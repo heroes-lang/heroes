@@ -113,7 +113,8 @@ void h_deadhandlereadbycatthelastwordofthedeadregion_main(void);
 #line 18 "tests/golden/run/dead-handle-read-by-c-at-the-last-word-of-the-dead-region.hero"
 void h_deadhandlereadbycatthelastwordofthedeadregion_main(void) {
 #line 116 "deadhandlereadbycatthelastwordofthedeadregion.c"
-    ob * h0_cert;
+    ob * *const hero_lend_h0_cert = (ob * *)hero_lend_local(sizeof(ob *), "deadhandlereadbycatthelastwordofthedeadregion.main", "cert");
+#define h0_cert (*hero_lend_h0_cert)
     ob * t1;
     int64_t t2;
     int64_t t3;
@@ -146,6 +147,8 @@ bb0:
 bb1:
 #line 23 "tests/golden/run/dead-handle-read-by-c-at-the-last-word-of-the-dead-region.hero"
     t6 = HERO_STR_LIT(hero_str_2f90affa);
+#line 23 "tests/golden/run/dead-handle-read-by-c-at-the-last-word-of-the-dead-region.hero"
+    hero_lend_local_name(hero_lend_h0_cert, "ob_last_cell", "a");
 #line 23 "tests/golden/run/dead-handle-read-by-c-at-the-last-word-of-the-dead-region.hero"
     t7 = ob_last_cell(&h0_cert);
 #line 23 "tests/golden/run/dead-handle-read-by-c-at-the-last-word-of-the-dead-region.hero"
@@ -201,14 +204,17 @@ bb4:
 #line 24 "tests/golden/run/dead-handle-read-by-c-at-the-last-word-of-the-dead-region.hero"
     hero_print_end();
 #line 24 "tests/golden/run/dead-handle-read-by-c-at-the-last-word-of-the-dead-region.hero"
+    hero_lend_local_give(hero_lend_h0_cert);
+#line 24 "tests/golden/run/dead-handle-read-by-c-at-the-last-word-of-the-dead-region.hero"
     return;
 #line 24 "tests/golden/run/dead-handle-read-by-c-at-the-last-word-of-the-dead-region.hero"
 bb5:
 #line 23 "tests/golden/run/dead-handle-read-by-c-at-the-last-word-of-the-dead-region.hero"
-#line 209 "deadhandlereadbycatthelastwordofthedeadregion.c"
+#line 214 "deadhandlereadbycatthelastwordofthedeadregion.c"
     hero_panic_assert_sides(t6, hero_int_to_str(t7), hero_int_to_str(t8));
     hero_unreachable();
 }
+#undef h0_cert
 HERO_TU_LOCAL bool h_deadhandlereadbycatthelastwordofthedeadregion_X509_eq(ob * const *a, ob * const *b) {
     return hero_handle_eq(*a, *b);
 }

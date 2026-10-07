@@ -127,7 +127,8 @@ hero_mutex h_fixedbugs094thesystemsmutexinitialiserbuildsarecord_HERO_MUTEX_INIT
 #line 16 "tests/golden/run/fixedbugs-094-the-systems-mutex-initialiser-builds-a-record.hero"
 void h_fixedbugs094thesystemsmutexinitialiserbuildsarecord_main(void) {
 #line 130 "fixedbugs094thesystemsmutexinitialiserbuildsarecord.c"
-    hero_mutex h0_m;
+    hero_mutex *const hero_lend_h0_m = (hero_mutex *)hero_lend_local(sizeof(hero_mutex), "fixedbugs094thesystemsmutexinitialiserbuildsarecord.main", "m");
+#define h0_m (*hero_lend_h0_m)
     hero_mutex t1;
     hero_mutex t2;
     int32_t t3;
@@ -148,11 +149,15 @@ bb0:
 #line 18 "tests/golden/run/fixedbugs-094-the-systems-mutex-initialiser-builds-a-record.hero"
     hero_print_end();
 #line 19 "tests/golden/run/fixedbugs-094-the-systems-mutex-initialiser-builds-a-record.hero"
+    hero_lend_local_name(hero_lend_h0_m, "hero_lock", "h");
+#line 19 "tests/golden/run/fixedbugs-094-the-systems-mutex-initialiser-builds-a-record.hero"
     t4 = hero_lock(&h0_m);
 #line 19 "tests/golden/run/fixedbugs-094-the-systems-mutex-initialiser-builds-a-record.hero"
     hero_print_int(t4);
 #line 19 "tests/golden/run/fixedbugs-094-the-systems-mutex-initialiser-builds-a-record.hero"
     hero_print_end();
+#line 20 "tests/golden/run/fixedbugs-094-the-systems-mutex-initialiser-builds-a-record.hero"
+    hero_lend_local_name(hero_lend_h0_m, "hero_unlock", "h");
 #line 20 "tests/golden/run/fixedbugs-094-the-systems-mutex-initialiser-builds-a-record.hero"
     t5 = hero_unlock(&h0_m);
 #line 20 "tests/golden/run/fixedbugs-094-the-systems-mutex-initialiser-builds-a-record.hero"
@@ -160,9 +165,12 @@ bb0:
 #line 20 "tests/golden/run/fixedbugs-094-the-systems-mutex-initialiser-builds-a-record.hero"
     hero_print_end();
 #line 20 "tests/golden/run/fixedbugs-094-the-systems-mutex-initialiser-builds-a-record.hero"
+    hero_lend_local_give(hero_lend_h0_m);
+#line 20 "tests/golden/run/fixedbugs-094-the-systems-mutex-initialiser-builds-a-record.hero"
     return;
-#line 165 "fixedbugs094thesystemsmutexinitialiserbuildsarecord.c"
+#line 172 "fixedbugs094thesystemsmutexinitialiserbuildsarecord.c"
 }
+#undef h0_m
 HERO_TU_LOCAL bool h_fixedbugs094thesystemsmutexinitialiserbuildsarecord_hero_mutex_eq(const hero_mutex *a, const hero_mutex *b) {
     hero_panic("h_fixedbugs094thesystemsmutexinitialiserbuildsarecord_hero_mutex_eq: a partial record has no structural equality");
 }

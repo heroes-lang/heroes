@@ -170,11 +170,15 @@ bb0:
 #line 36 "tests/golden/run/fixedbugs-092-a-record-lent-whole-with-its-count-runs.hero"
 void h_fixedbugs092arecordlentwholewithitscountruns_main(void) {
 #line 173 "fixedbugs092arecordlentwholewithitscountruns.c"
-    struct one h0_o;
-    struct pad h1_p;
+    struct one *const hero_lend_h0_o = (struct one *)hero_lend_local(sizeof(struct one), "fixedbugs092arecordlentwholewithitscountruns.main", "o");
+#define h0_o (*hero_lend_h0_o)
+    struct pad *const hero_lend_h1_p = (struct pad *)hero_lend_local(sizeof(struct pad), "fixedbugs092arecordlentwholewithitscountruns.main", "p");
+#define h1_p (*hero_lend_h1_p)
     struct outer h2_w;
-    struct pfd h3_q;
-    __attribute__((unused)) uint32_t h4_n;
+    struct pfd *const hero_lend_h3_q = (struct pfd *)hero_lend_local(sizeof(struct pfd), "fixedbugs092arecordlentwholewithitscountruns.main", "q");
+#define h3_q (*hero_lend_h3_q)
+    uint32_t *const hero_lend_h4_n = (uint32_t *)hero_lend_local(sizeof(uint32_t), "fixedbugs092arecordlentwholewithitscountruns.main", "n");
+#define h4_n (*hero_lend_h4_n)
     int32_t t1;
     struct one t2;
     int8_t t3;
@@ -262,6 +266,8 @@ bb0:
 #line 41 "tests/golden/run/fixedbugs-092-a-record-lent-whole-with-its-count-runs.hero"
     _Static_assert(sizeof(*(void *)0) == 1 || ((uint64_t)(UINT64_C(4)) <= (uint64_t)(sizeof(h0_o) / sizeof(*(void *)0))), "heroes-ffi-extent-record fill buf n 1816 1817 unit void *");
 #line 41 "tests/golden/run/fixedbugs-092-a-record-lent-whole-with-its-count-runs.hero"
+    hero_lend_local_name(hero_lend_h0_o, "fill", "buf");
+#line 41 "tests/golden/run/fixedbugs-092-a-record-lent-whole-with-its-count-runs.hero"
     t15 = fill(&h0_o, t14);
 #line 41 "tests/golden/run/fixedbugs-092-a-record-lent-whole-with-its-count-runs.hero"
     hero_print_int(t15);
@@ -281,6 +287,8 @@ bb0:
     _Static_assert(sizeof(*(void *)0) != 1 || ((uint64_t)(UINT64_C(16)) <= (uint64_t)sizeof(h1_p)), "heroes-ffi-extent-record fill_pad buf n 1861 1863 bytes void *");
 #line 43 "tests/golden/run/fixedbugs-092-a-record-lent-whole-with-its-count-runs.hero"
     _Static_assert(sizeof(*(void *)0) == 1 || ((uint64_t)(UINT64_C(16)) <= (uint64_t)(sizeof(h1_p) / sizeof(*(void *)0))), "heroes-ffi-extent-record fill_pad buf n 1861 1863 unit void *");
+#line 43 "tests/golden/run/fixedbugs-092-a-record-lent-whole-with-its-count-runs.hero"
+    hero_lend_local_name(hero_lend_h1_p, "fill_pad", "buf");
 #line 43 "tests/golden/run/fixedbugs-092-a-record-lent-whole-with-its-count-runs.hero"
     t19 = fill_pad(&h1_p, t18);
 #line 43 "tests/golden/run/fixedbugs-092-a-record-lent-whole-with-its-count-runs.hero"
@@ -322,6 +330,8 @@ bb0:
 #line 47 "tests/golden/run/fixedbugs-092-a-record-lent-whole-with-its-count-runs.hero"
     _Static_assert(sizeof(*(LPVOID)0) == 1 || ((uint64_t)(UINT64_C(4)) <= (uint64_t)(sizeof(h0_o) / sizeof(*(LPVOID)0))), "heroes-ffi-extent-record fill_lpvoid buf n 1973 1974 unit LPVOID");
 #line 47 "tests/golden/run/fixedbugs-092-a-record-lent-whole-with-its-count-runs.hero"
+    hero_lend_local_name(hero_lend_h0_o, "fill_lpvoid", "buf");
+#line 47 "tests/golden/run/fixedbugs-092-a-record-lent-whole-with-its-count-runs.hero"
     t28 = fill_lpvoid(&h0_o, t27);
 #line 47 "tests/golden/run/fixedbugs-092-a-record-lent-whole-with-its-count-runs.hero"
     hero_print_int(t28);
@@ -333,6 +343,8 @@ bb0:
     _Static_assert(sizeof(*(const void *)0) != 1 || ((uint64_t)(UINT64_C(4)) <= (uint64_t)sizeof(h0_o)), "heroes-ffi-extent-record peek buf n 1999 2000 bytes const void *");
 #line 48 "tests/golden/run/fixedbugs-092-a-record-lent-whole-with-its-count-runs.hero"
     _Static_assert(sizeof(*(const void *)0) == 1 || ((uint64_t)(UINT64_C(4)) <= (uint64_t)(sizeof(h0_o) / sizeof(*(const void *)0))), "heroes-ffi-extent-record peek buf n 1999 2000 unit const void *");
+#line 48 "tests/golden/run/fixedbugs-092-a-record-lent-whole-with-its-count-runs.hero"
+    hero_lend_local_name(hero_lend_h0_o, "peek", "buf");
 #line 48 "tests/golden/run/fixedbugs-092-a-record-lent-whole-with-its-count-runs.hero"
     t30 = peek(&h0_o, t29);
 #line 48 "tests/golden/run/fixedbugs-092-a-record-lent-whole-with-its-count-runs.hero"
@@ -346,6 +358,10 @@ bb0:
 #line 50 "tests/golden/run/fixedbugs-092-a-record-lent-whole-with-its-count-runs.hero"
     if ((uint64_t)(h4_n) > (uint64_t)(sizeof(h0_o) / sizeof(*(void *)0))) hero_panic(sizeof(*(void *)0) == 1 ? "tests/golden/run/fixedbugs-092-a-record-lent-whole-with-its-count-runs.hero:50: `fill_len` was given a count past the record lent whole to `buf`, read from `n` at run time and counted in bytes" : "tests/golden/run/fixedbugs-092-a-record-lent-whole-with-its-count-runs.hero:50: `fill_len` was given a count past the record lent whole to `buf`, read from `n` at run time and counted in what the header's `void *` points at");
 #line 50 "tests/golden/run/fixedbugs-092-a-record-lent-whole-with-its-count-runs.hero"
+    hero_lend_local_name(hero_lend_h0_o, "fill_len", "buf");
+#line 50 "tests/golden/run/fixedbugs-092-a-record-lent-whole-with-its-count-runs.hero"
+    hero_lend_local_name(hero_lend_h4_n, "fill_len", "n");
+#line 50 "tests/golden/run/fixedbugs-092-a-record-lent-whole-with-its-count-runs.hero"
     t32 = fill_len(&h0_o, (void *)&h4_n);
 #line 50 "tests/golden/run/fixedbugs-092-a-record-lent-whole-with-its-count-runs.hero"
     hero_print_int(t32);
@@ -357,6 +373,8 @@ bb0:
     _Static_assert(sizeof(*(struct pfd *)0) != 1 || ((uint64_t)(UINT64_C(1)) <= (uint64_t)sizeof(h3_q)), "heroes-ffi-extent-record poll_like fds nfds 2076 2077 bytes struct pfd *");
 #line 51 "tests/golden/run/fixedbugs-092-a-record-lent-whole-with-its-count-runs.hero"
     _Static_assert(sizeof(*(struct pfd *)0) == 1 || ((uint64_t)(UINT64_C(1)) <= (uint64_t)(sizeof(h3_q) / sizeof(*(struct pfd *)0))), "heroes-ffi-extent-record poll_like fds nfds 2076 2077 unit struct pfd *");
+#line 51 "tests/golden/run/fixedbugs-092-a-record-lent-whole-with-its-count-runs.hero"
+    hero_lend_local_name(hero_lend_h3_q, "poll_like", "fds");
 #line 51 "tests/golden/run/fixedbugs-092-a-record-lent-whole-with-its-count-runs.hero"
     t34 = poll_like(&h3_q, t33);
 #line 51 "tests/golden/run/fixedbugs-092-a-record-lent-whole-with-its-count-runs.hero"
@@ -382,6 +400,8 @@ bb0:
 #line 54 "tests/golden/run/fixedbugs-092-a-record-lent-whole-with-its-count-runs.hero"
     if ((uint64_t)(t39) > (uint64_t)(sizeof(h3_q) / sizeof(*(LPPFD)0))) hero_panic(sizeof(*(LPPFD)0) == 1 ? "tests/golden/run/fixedbugs-092-a-record-lent-whole-with-its-count-runs.hero:54: `poll_typedef` was given a count past the record lent whole to `fds`, read from `nfds` at run time and counted in bytes" : "tests/golden/run/fixedbugs-092-a-record-lent-whole-with-its-count-runs.hero:54: `poll_typedef` was given a count past the record lent whole to `fds`, read from `nfds` at run time and counted in what the header's `LPPFD` points at");
 #line 54 "tests/golden/run/fixedbugs-092-a-record-lent-whole-with-its-count-runs.hero"
+    hero_lend_local_name(hero_lend_h3_q, "poll_typedef", "fds");
+#line 54 "tests/golden/run/fixedbugs-092-a-record-lent-whole-with-its-count-runs.hero"
     t40 = poll_typedef(&h3_q, t39);
 #line 54 "tests/golden/run/fixedbugs-092-a-record-lent-whole-with-its-count-runs.hero"
     hero_print_int(t40);
@@ -406,15 +426,31 @@ bb0:
 #line 56 "tests/golden/run/fixedbugs-092-a-record-lent-whole-with-its-count-runs.hero"
     _Static_assert(sizeof(*(const void *)0) == 1 || ((uint64_t)(UINT64_C(4)) <= (uint64_t)(sizeof(h0_o) / sizeof(*(const void *)0))), "heroes-ffi-extent-record copy_n src n 2221 2222 unit const void *");
 #line 56 "tests/golden/run/fixedbugs-092-a-record-lent-whole-with-its-count-runs.hero"
+    hero_lend_local_name(hero_lend_h1_p, "copy_n", "dst");
+#line 56 "tests/golden/run/fixedbugs-092-a-record-lent-whole-with-its-count-runs.hero"
+    hero_lend_local_name(hero_lend_h0_o, "copy_n", "src");
+#line 56 "tests/golden/run/fixedbugs-092-a-record-lent-whole-with-its-count-runs.hero"
     t44 = copy_n(&h1_p, &h0_o, t43);
 #line 56 "tests/golden/run/fixedbugs-092-a-record-lent-whole-with-its-count-runs.hero"
     hero_print_int(t44);
 #line 56 "tests/golden/run/fixedbugs-092-a-record-lent-whole-with-its-count-runs.hero"
     hero_print_end();
 #line 56 "tests/golden/run/fixedbugs-092-a-record-lent-whole-with-its-count-runs.hero"
+    hero_lend_local_give(hero_lend_h4_n);
+#line 56 "tests/golden/run/fixedbugs-092-a-record-lent-whole-with-its-count-runs.hero"
+    hero_lend_local_give(hero_lend_h3_q);
+#line 56 "tests/golden/run/fixedbugs-092-a-record-lent-whole-with-its-count-runs.hero"
+    hero_lend_local_give(hero_lend_h1_p);
+#line 56 "tests/golden/run/fixedbugs-092-a-record-lent-whole-with-its-count-runs.hero"
+    hero_lend_local_give(hero_lend_h0_o);
+#line 56 "tests/golden/run/fixedbugs-092-a-record-lent-whole-with-its-count-runs.hero"
     return;
-#line 417 "fixedbugs092arecordlentwholewithitscountruns.c"
+#line 449 "fixedbugs092arecordlentwholewithitscountruns.c"
 }
+#undef h0_o
+#undef h1_p
+#undef h3_q
+#undef h4_n
 HERO_TU_LOCAL bool h_fixedbugs092arecordlentwholewithitscountruns_One_eq(const struct one *a, const struct one *b) {
     if (!(a->a == b->a)) return false;
     return true;

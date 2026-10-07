@@ -1,0 +1,15 @@
+# fixedbugs, defect 396, lane b13-land-buf, 2026-10-07: panel 196's R7, a
+# local lent to two calls. `put_one` writes the one `int32_t` it is lent, and
+# `put_two` writes two where the binding says one. The region is labelled at
+# every call that lends it, so the abort names `put_two` and its parameter,
+# not the first call to have lent the local.
+extern "fixedbugs-396-buffers.h"
+    function put_one(@x: i32 lent, v: i32)
+    function put_two(@x: i32 lent)
+
+function main()
+    x: i32 @ 0
+    put_one(x: @x, v: 7)
+    print(x)
+    put_two(@x)
+    print("not reached ", x)

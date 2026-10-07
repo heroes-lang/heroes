@@ -216,7 +216,8 @@ bb0:
 void h_fficountedbyastatedextent_main(void) {
 #line 218 "fficountedbyastatedextent.c"
     struct held h0_h;
-    struct pair h1_pair;
+    struct pair *const hero_lend_h1_pair = (struct pair *)hero_lend_local(sizeof(struct pair), "fficountedbyastatedextent.main", "pair");
+#define h1_pair (*hero_lend_h1_pair)
     struct held t1;
     void * t4;
     struct held t5;
@@ -488,6 +489,8 @@ bb0:
 #line 48 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
     _Static_assert(sizeof(*(struct pair *)0) == 1 || ((uint64_t)(1) <= (uint64_t)(sizeof(h1_pair) / sizeof(*(struct pair *)0))), "heroes-ffi-extent-stated-record fill_pair p 1 1957 1973 0 unit struct pair *");
 #line 48 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
+    hero_lend_local_name(hero_lend_h1_pair, "fill_pair", "p");
+#line 48 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
     (void)fill_pair(&h1_pair);
 #line 49 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
     t74 = h1_pair;
@@ -508,9 +511,12 @@ bb0:
 #line 49 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
     hero_print_end();
 #line 49 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
+    hero_lend_local_give(hero_lend_h1_pair);
+#line 49 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
     return;
-#line 513 "fficountedbyastatedextent.c"
+#line 518 "fficountedbyastatedextent.c"
 }
+#undef h1_pair
 HERO_TU_LOCAL bool h_fficountedbyastatedextent_Held_eq(const struct held *a, const struct held *b) {
     if (!((a->buf[0] == b->buf[0] && a->buf[1] == b->buf[1] && a->buf[2] == b->buf[2] && a->buf[3] == b->buf[3] && a->buf[4] == b->buf[4] && a->buf[5] == b->buf[5] && a->buf[6] == b->buf[6] && a->buf[7] == b->buf[7] && a->buf[8] == b->buf[8] && a->buf[9] == b->buf[9] && a->buf[10] == b->buf[10] && a->buf[11] == b->buf[11] && a->buf[12] == b->buf[12] && a->buf[13] == b->buf[13] && a->buf[14] == b->buf[14] && a->buf[15] == b->buf[15]))) return false;
     if (!(a->after == b->after)) return false;

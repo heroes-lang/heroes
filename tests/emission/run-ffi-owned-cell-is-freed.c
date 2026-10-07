@@ -120,13 +120,15 @@ h_0opt_f87774a h_library_validated(const char * h0_c);
 void h_ffiownedcellisfreed_main(void) {
 #line 122 "ffiownedcellisfreed.c"
     h_0opt_f87774a h0_first = {0};
-    const char * h1_cell0;
+    const char * *const hero_lend_h1_cell0 = (const char * *)hero_lend_local(sizeof(const char *), "ffiownedcellisfreed.main", "$cell0");
+#define h1_cell0 (*hero_lend_h1_cell0)
     const char * h2_owned0;
     h_0opt_f87774a h3_owned1 = {0};
     h_0opt_f87774a h4_f0 = {0};
     HeroStr h5_r0 = {0};
     h_0opt_f87774a h6_second = {0};
-    const char * h7_cell1;
+    const char * *const hero_lend_h7_cell1 = (const char * *)hero_lend_local(sizeof(const char *), "ffiownedcellisfreed.main", "$cell1");
+#define h7_cell1 (*hero_lend_h7_cell1)
     const char * h8_owned2;
     h_0opt_f87774a h9_owned3 = {0};
     h_0opt_f87774a h10_f1 = {0};
@@ -136,7 +138,8 @@ void h_ffiownedcellisfreed_main(void) {
     h_0opt_f87774a h14_f3 = {0};
     HeroStr h15_r3 = {0};
     h_0opt_f87774a h16_quiet = {0};
-    const char * h17_cell2;
+    const char * *const hero_lend_h17_cell2 = (const char * *)hero_lend_local(sizeof(const char *), "ffiownedcellisfreed.main", "$cell2");
+#define h17_cell2 (*hero_lend_h17_cell2)
     const char * h18_owned4;
     h_0opt_f87774a h19_owned5 = {0};
     h_0opt_f87774a h20_s0 = {0};
@@ -275,10 +278,10 @@ bb0:
     t1 = HERO_STR_LIT(hero_str_edaa230);
 #line 48 "tests/golden/run/ffi-owned-cell-is-freed.hero"
     t2 = HERO_STR_LIT(hero_str_37c08f66);
-#line 279 "ffiownedcellisfreed.c"
+#line 282 "ffiownedcellisfreed.c"
     hero_str_incref(t1);
 #line 48 "tests/golden/run/ffi-owned-cell-is-freed.hero"
-#line 282 "ffiownedcellisfreed.c"
+#line 285 "ffiownedcellisfreed.c"
     hero_str_incref(t2);
 #line 48 "tests/golden/run/ffi-owned-cell-is-freed.hero"
     t3 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t1, .msg = t2}};
@@ -286,15 +289,15 @@ bb0:
     t95 = h23_own23;
 #line 48 "tests/golden/run/ffi-owned-cell-is-freed.hero"
     h23_own23 = t3;
-#line 290 "ffiownedcellisfreed.c"
+#line 293 "ffiownedcellisfreed.c"
     h_0opt_f87774a_release(&t95);
 #line 48 "tests/golden/run/ffi-owned-cell-is-freed.hero"
     t96 = h0_first;
-#line 294 "ffiownedcellisfreed.c"
+#line 297 "ffiownedcellisfreed.c"
     h_0opt_f87774a_retain(&t3);
 #line 48 "tests/golden/run/ffi-owned-cell-is-freed.hero"
     h0_first = t3;
-#line 298 "ffiownedcellisfreed.c"
+#line 301 "ffiownedcellisfreed.c"
     h_0opt_f87774a_release(&t96);
 #line 49 "tests/golden/run/ffi-owned-cell-is-freed.hero"
     t4 = INT64_C(0);
@@ -302,6 +305,8 @@ bb0:
     t5 = ((void *)0);
 #line 49 "tests/golden/run/ffi-owned-cell-is-freed.hero"
     h1_cell0 = t5;
+#line 49 "tests/golden/run/ffi-owned-cell-is-freed.hero"
+    hero_lend_local_name(hero_lend_h1_cell0, "hero_owned_describe", "out");
 #line 49 "tests/golden/run/ffi-owned-cell-is-freed.hero"
     (void)hero_owned_describe(t4, (char **)&h1_cell0);
 #line 49 "tests/golden/run/ffi-owned-cell-is-freed.hero"
@@ -316,15 +321,15 @@ bb0:
     t97 = h24_own24;
 #line 49 "tests/golden/run/ffi-owned-cell-is-freed.hero"
     h24_own24 = t9;
-#line 320 "ffiownedcellisfreed.c"
+#line 325 "ffiownedcellisfreed.c"
     h_0opt_f87774a_release(&t97);
 #line 49 "tests/golden/run/ffi-owned-cell-is-freed.hero"
     t98 = h3_owned1;
-#line 324 "ffiownedcellisfreed.c"
+#line 329 "ffiownedcellisfreed.c"
     h_0opt_f87774a_retain(&t9);
 #line 49 "tests/golden/run/ffi-owned-cell-is-freed.hero"
     h3_owned1 = t9;
-#line 328 "ffiownedcellisfreed.c"
+#line 333 "ffiownedcellisfreed.c"
     h_0opt_f87774a_release(&t98);
 #line 49 "tests/golden/run/ffi-owned-cell-is-freed.hero"
     t10 = ((void *)0);
@@ -350,21 +355,21 @@ bb2:
     t15 = h3_owned1;
 #line 49 "tests/golden/run/ffi-owned-cell-is-freed.hero"
     t99 = h0_first;
-#line 354 "ffiownedcellisfreed.c"
+#line 359 "ffiownedcellisfreed.c"
     h_0opt_f87774a_retain(&t15);
 #line 49 "tests/golden/run/ffi-owned-cell-is-freed.hero"
     h0_first = t15;
-#line 358 "ffiownedcellisfreed.c"
+#line 363 "ffiownedcellisfreed.c"
     h_0opt_f87774a_release(&t99);
 #line 50 "tests/golden/run/ffi-owned-cell-is-freed.hero"
     t16 = h0_first;
 #line 50 "tests/golden/run/ffi-owned-cell-is-freed.hero"
     t100 = h4_f0;
-#line 364 "ffiownedcellisfreed.c"
+#line 369 "ffiownedcellisfreed.c"
     h_0opt_f87774a_retain(&t16);
 #line 50 "tests/golden/run/ffi-owned-cell-is-freed.hero"
     h4_f0 = t16;
-#line 368 "ffiownedcellisfreed.c"
+#line 373 "ffiownedcellisfreed.c"
     h_0opt_f87774a_release(&t100);
 #line 50 "tests/golden/run/ffi-owned-cell-is-freed.hero"
     t17 = h4_f0;
@@ -384,11 +389,11 @@ bb3:
     t22 = t21.as.ok;
 #line 50 "tests/golden/run/ffi-owned-cell-is-freed.hero"
     t101 = h5_r0;
-#line 388 "ffiownedcellisfreed.c"
+#line 393 "ffiownedcellisfreed.c"
     hero_str_incref(t22);
 #line 50 "tests/golden/run/ffi-owned-cell-is-freed.hero"
     h5_r0 = t22;
-#line 392 "ffiownedcellisfreed.c"
+#line 397 "ffiownedcellisfreed.c"
     hero_str_decref(t101);
     goto bb5;
 bb4:
@@ -396,11 +401,11 @@ bb4:
     t23 = HERO_STR_LIT(hero_str_41624d2f);
 #line 50 "tests/golden/run/ffi-owned-cell-is-freed.hero"
     t102 = h5_r0;
-#line 400 "ffiownedcellisfreed.c"
+#line 405 "ffiownedcellisfreed.c"
     hero_str_incref(t23);
 #line 50 "tests/golden/run/ffi-owned-cell-is-freed.hero"
     h5_r0 = t23;
-#line 404 "ffiownedcellisfreed.c"
+#line 409 "ffiownedcellisfreed.c"
     hero_str_decref(t102);
     goto bb5;
 bb5:
@@ -414,10 +419,10 @@ bb5:
     t25 = HERO_STR_LIT(hero_str_edaa230);
 #line 54 "tests/golden/run/ffi-owned-cell-is-freed.hero"
     t26 = HERO_STR_LIT(hero_str_37c08f66);
-#line 418 "ffiownedcellisfreed.c"
+#line 423 "ffiownedcellisfreed.c"
     hero_str_incref(t25);
 #line 54 "tests/golden/run/ffi-owned-cell-is-freed.hero"
-#line 421 "ffiownedcellisfreed.c"
+#line 426 "ffiownedcellisfreed.c"
     hero_str_incref(t26);
 #line 54 "tests/golden/run/ffi-owned-cell-is-freed.hero"
     t27 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t25, .msg = t26}};
@@ -425,15 +430,15 @@ bb5:
     t103 = h25_own25;
 #line 54 "tests/golden/run/ffi-owned-cell-is-freed.hero"
     h25_own25 = t27;
-#line 429 "ffiownedcellisfreed.c"
+#line 434 "ffiownedcellisfreed.c"
     h_0opt_f87774a_release(&t103);
 #line 54 "tests/golden/run/ffi-owned-cell-is-freed.hero"
     t104 = h6_second;
-#line 433 "ffiownedcellisfreed.c"
+#line 438 "ffiownedcellisfreed.c"
     h_0opt_f87774a_retain(&t27);
 #line 54 "tests/golden/run/ffi-owned-cell-is-freed.hero"
     h6_second = t27;
-#line 437 "ffiownedcellisfreed.c"
+#line 442 "ffiownedcellisfreed.c"
     h_0opt_f87774a_release(&t104);
 #line 55 "tests/golden/run/ffi-owned-cell-is-freed.hero"
     t28 = INT64_C(7);
@@ -441,6 +446,8 @@ bb5:
     t29 = ((void *)0);
 #line 55 "tests/golden/run/ffi-owned-cell-is-freed.hero"
     h7_cell1 = t29;
+#line 55 "tests/golden/run/ffi-owned-cell-is-freed.hero"
+    hero_lend_local_name(hero_lend_h7_cell1, "hero_owned_describe", "out");
 #line 55 "tests/golden/run/ffi-owned-cell-is-freed.hero"
     (void)hero_owned_describe(t28, (char **)&h7_cell1);
 #line 55 "tests/golden/run/ffi-owned-cell-is-freed.hero"
@@ -455,15 +462,15 @@ bb5:
     t105 = h26_own26;
 #line 55 "tests/golden/run/ffi-owned-cell-is-freed.hero"
     h26_own26 = t33;
-#line 459 "ffiownedcellisfreed.c"
+#line 466 "ffiownedcellisfreed.c"
     h_0opt_f87774a_release(&t105);
 #line 55 "tests/golden/run/ffi-owned-cell-is-freed.hero"
     t106 = h9_owned3;
-#line 463 "ffiownedcellisfreed.c"
+#line 470 "ffiownedcellisfreed.c"
     h_0opt_f87774a_retain(&t33);
 #line 55 "tests/golden/run/ffi-owned-cell-is-freed.hero"
     h9_owned3 = t33;
-#line 467 "ffiownedcellisfreed.c"
+#line 474 "ffiownedcellisfreed.c"
     h_0opt_f87774a_release(&t106);
 #line 55 "tests/golden/run/ffi-owned-cell-is-freed.hero"
     t34 = ((void *)0);
@@ -489,21 +496,21 @@ bb7:
     t39 = h9_owned3;
 #line 55 "tests/golden/run/ffi-owned-cell-is-freed.hero"
     t107 = h6_second;
-#line 493 "ffiownedcellisfreed.c"
+#line 500 "ffiownedcellisfreed.c"
     h_0opt_f87774a_retain(&t39);
 #line 55 "tests/golden/run/ffi-owned-cell-is-freed.hero"
     h6_second = t39;
-#line 497 "ffiownedcellisfreed.c"
+#line 504 "ffiownedcellisfreed.c"
     h_0opt_f87774a_release(&t107);
 #line 56 "tests/golden/run/ffi-owned-cell-is-freed.hero"
     t40 = h6_second;
 #line 56 "tests/golden/run/ffi-owned-cell-is-freed.hero"
     t108 = h10_f1;
-#line 503 "ffiownedcellisfreed.c"
+#line 510 "ffiownedcellisfreed.c"
     h_0opt_f87774a_retain(&t40);
 #line 56 "tests/golden/run/ffi-owned-cell-is-freed.hero"
     h10_f1 = t40;
-#line 507 "ffiownedcellisfreed.c"
+#line 514 "ffiownedcellisfreed.c"
     h_0opt_f87774a_release(&t108);
 #line 56 "tests/golden/run/ffi-owned-cell-is-freed.hero"
     t41 = h10_f1;
@@ -523,11 +530,11 @@ bb8:
     t46 = t45.as.ok;
 #line 56 "tests/golden/run/ffi-owned-cell-is-freed.hero"
     t109 = h11_r1;
-#line 527 "ffiownedcellisfreed.c"
+#line 534 "ffiownedcellisfreed.c"
     hero_str_incref(t46);
 #line 56 "tests/golden/run/ffi-owned-cell-is-freed.hero"
     h11_r1 = t46;
-#line 531 "ffiownedcellisfreed.c"
+#line 538 "ffiownedcellisfreed.c"
     hero_str_decref(t109);
     goto bb10;
 bb9:
@@ -535,11 +542,11 @@ bb9:
     t47 = HERO_STR_LIT(hero_str_41624d2f);
 #line 56 "tests/golden/run/ffi-owned-cell-is-freed.hero"
     t110 = h11_r1;
-#line 539 "ffiownedcellisfreed.c"
+#line 546 "ffiownedcellisfreed.c"
     hero_str_incref(t47);
 #line 56 "tests/golden/run/ffi-owned-cell-is-freed.hero"
     h11_r1 = t47;
-#line 543 "ffiownedcellisfreed.c"
+#line 550 "ffiownedcellisfreed.c"
     hero_str_decref(t110);
     goto bb10;
 bb10:
@@ -553,11 +560,11 @@ bb10:
     t49 = h0_first;
 #line 59 "tests/golden/run/ffi-owned-cell-is-freed.hero"
     t111 = h12_f2;
-#line 557 "ffiownedcellisfreed.c"
+#line 564 "ffiownedcellisfreed.c"
     h_0opt_f87774a_retain(&t49);
 #line 59 "tests/golden/run/ffi-owned-cell-is-freed.hero"
     h12_f2 = t49;
-#line 561 "ffiownedcellisfreed.c"
+#line 568 "ffiownedcellisfreed.c"
     h_0opt_f87774a_release(&t111);
 #line 59 "tests/golden/run/ffi-owned-cell-is-freed.hero"
     t50 = h12_f2;
@@ -577,11 +584,11 @@ bb11:
     t55 = t54.as.ok;
 #line 59 "tests/golden/run/ffi-owned-cell-is-freed.hero"
     t112 = h13_r2;
-#line 581 "ffiownedcellisfreed.c"
+#line 588 "ffiownedcellisfreed.c"
     hero_str_incref(t55);
 #line 59 "tests/golden/run/ffi-owned-cell-is-freed.hero"
     h13_r2 = t55;
-#line 585 "ffiownedcellisfreed.c"
+#line 592 "ffiownedcellisfreed.c"
     hero_str_decref(t112);
     goto bb13;
 bb12:
@@ -589,11 +596,11 @@ bb12:
     t56 = HERO_STR_LIT(hero_str_0);
 #line 59 "tests/golden/run/ffi-owned-cell-is-freed.hero"
     t113 = h13_r2;
-#line 593 "ffiownedcellisfreed.c"
+#line 600 "ffiownedcellisfreed.c"
     hero_str_incref(t56);
 #line 59 "tests/golden/run/ffi-owned-cell-is-freed.hero"
     h13_r2 = t56;
-#line 597 "ffiownedcellisfreed.c"
+#line 604 "ffiownedcellisfreed.c"
     hero_str_decref(t113);
     goto bb13;
 bb13:
@@ -603,11 +610,11 @@ bb13:
     t58 = h6_second;
 #line 59 "tests/golden/run/ffi-owned-cell-is-freed.hero"
     t114 = h14_f3;
-#line 607 "ffiownedcellisfreed.c"
+#line 614 "ffiownedcellisfreed.c"
     h_0opt_f87774a_retain(&t58);
 #line 59 "tests/golden/run/ffi-owned-cell-is-freed.hero"
     h14_f3 = t58;
-#line 611 "ffiownedcellisfreed.c"
+#line 618 "ffiownedcellisfreed.c"
     h_0opt_f87774a_release(&t114);
 #line 59 "tests/golden/run/ffi-owned-cell-is-freed.hero"
     t59 = h14_f3;
@@ -627,11 +634,11 @@ bb14:
     t64 = t63.as.ok;
 #line 59 "tests/golden/run/ffi-owned-cell-is-freed.hero"
     t115 = h15_r3;
-#line 631 "ffiownedcellisfreed.c"
+#line 638 "ffiownedcellisfreed.c"
     hero_str_incref(t64);
 #line 59 "tests/golden/run/ffi-owned-cell-is-freed.hero"
     h15_r3 = t64;
-#line 635 "ffiownedcellisfreed.c"
+#line 642 "ffiownedcellisfreed.c"
     hero_str_decref(t115);
     goto bb16;
 bb15:
@@ -639,11 +646,11 @@ bb15:
     t65 = HERO_STR_LIT(hero_str_0);
 #line 59 "tests/golden/run/ffi-owned-cell-is-freed.hero"
     t116 = h15_r3;
-#line 643 "ffiownedcellisfreed.c"
+#line 650 "ffiownedcellisfreed.c"
     hero_str_incref(t65);
 #line 59 "tests/golden/run/ffi-owned-cell-is-freed.hero"
     h15_r3 = t65;
-#line 647 "ffiownedcellisfreed.c"
+#line 654 "ffiownedcellisfreed.c"
     hero_str_decref(t116);
     goto bb16;
 bb16:
@@ -659,10 +666,10 @@ bb16:
     t68 = HERO_STR_LIT(hero_str_edaa230);
 #line 63 "tests/golden/run/ffi-owned-cell-is-freed.hero"
     t69 = HERO_STR_LIT(hero_str_37c08f66);
-#line 663 "ffiownedcellisfreed.c"
+#line 670 "ffiownedcellisfreed.c"
     hero_str_incref(t68);
 #line 63 "tests/golden/run/ffi-owned-cell-is-freed.hero"
-#line 666 "ffiownedcellisfreed.c"
+#line 673 "ffiownedcellisfreed.c"
     hero_str_incref(t69);
 #line 63 "tests/golden/run/ffi-owned-cell-is-freed.hero"
     t70 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t68, .msg = t69}};
@@ -670,15 +677,15 @@ bb16:
     t117 = h27_own27;
 #line 63 "tests/golden/run/ffi-owned-cell-is-freed.hero"
     h27_own27 = t70;
-#line 674 "ffiownedcellisfreed.c"
+#line 681 "ffiownedcellisfreed.c"
     h_0opt_f87774a_release(&t117);
 #line 63 "tests/golden/run/ffi-owned-cell-is-freed.hero"
     t118 = h16_quiet;
-#line 678 "ffiownedcellisfreed.c"
+#line 685 "ffiownedcellisfreed.c"
     h_0opt_f87774a_retain(&t70);
 #line 63 "tests/golden/run/ffi-owned-cell-is-freed.hero"
     h16_quiet = t70;
-#line 682 "ffiownedcellisfreed.c"
+#line 689 "ffiownedcellisfreed.c"
     h_0opt_f87774a_release(&t118);
 #line 64 "tests/golden/run/ffi-owned-cell-is-freed.hero"
     t71 = INT64_C(3);
@@ -686,6 +693,8 @@ bb16:
     t72 = ((void *)0);
 #line 64 "tests/golden/run/ffi-owned-cell-is-freed.hero"
     h17_cell2 = t72;
+#line 64 "tests/golden/run/ffi-owned-cell-is-freed.hero"
+    hero_lend_local_name(hero_lend_h17_cell2, "hero_owned_silent", "out");
 #line 64 "tests/golden/run/ffi-owned-cell-is-freed.hero"
     (void)hero_owned_silent(t71, (char **)&h17_cell2);
 #line 64 "tests/golden/run/ffi-owned-cell-is-freed.hero"
@@ -700,15 +709,15 @@ bb16:
     t119 = h28_own28;
 #line 64 "tests/golden/run/ffi-owned-cell-is-freed.hero"
     h28_own28 = t76;
-#line 704 "ffiownedcellisfreed.c"
+#line 713 "ffiownedcellisfreed.c"
     h_0opt_f87774a_release(&t119);
 #line 64 "tests/golden/run/ffi-owned-cell-is-freed.hero"
     t120 = h19_owned5;
-#line 708 "ffiownedcellisfreed.c"
+#line 717 "ffiownedcellisfreed.c"
     h_0opt_f87774a_retain(&t76);
 #line 64 "tests/golden/run/ffi-owned-cell-is-freed.hero"
     h19_owned5 = t76;
-#line 712 "ffiownedcellisfreed.c"
+#line 721 "ffiownedcellisfreed.c"
     h_0opt_f87774a_release(&t120);
 #line 64 "tests/golden/run/ffi-owned-cell-is-freed.hero"
     t77 = ((void *)0);
@@ -734,21 +743,21 @@ bb18:
     t82 = h19_owned5;
 #line 64 "tests/golden/run/ffi-owned-cell-is-freed.hero"
     t121 = h16_quiet;
-#line 738 "ffiownedcellisfreed.c"
+#line 747 "ffiownedcellisfreed.c"
     h_0opt_f87774a_retain(&t82);
 #line 64 "tests/golden/run/ffi-owned-cell-is-freed.hero"
     h16_quiet = t82;
-#line 742 "ffiownedcellisfreed.c"
+#line 751 "ffiownedcellisfreed.c"
     h_0opt_f87774a_release(&t121);
 #line 66 "tests/golden/run/ffi-owned-cell-is-freed.hero"
     t83 = h16_quiet;
 #line 66 "tests/golden/run/ffi-owned-cell-is-freed.hero"
     t122 = h20_s0;
-#line 748 "ffiownedcellisfreed.c"
+#line 757 "ffiownedcellisfreed.c"
     h_0opt_f87774a_retain(&t83);
 #line 66 "tests/golden/run/ffi-owned-cell-is-freed.hero"
     h20_s0 = t83;
-#line 752 "ffiownedcellisfreed.c"
+#line 761 "ffiownedcellisfreed.c"
     h_0opt_f87774a_release(&t122);
 #line 66 "tests/golden/run/ffi-owned-cell-is-freed.hero"
     t84 = h20_s0;
@@ -767,74 +776,77 @@ bb18:
 #line 66 "tests/golden/run/ffi-owned-cell-is-freed.hero"
 bb19:
 #line 47 "tests/golden/run/ffi-owned-cell-is-freed.hero"
-#line 771 "ffiownedcellisfreed.c"
+#line 780 "ffiownedcellisfreed.c"
     h_0opt_f87774a_release(&h0_first);
 #line 47 "tests/golden/run/ffi-owned-cell-is-freed.hero"
-#line 774 "ffiownedcellisfreed.c"
+#line 783 "ffiownedcellisfreed.c"
     h_0opt_f87774a_release(&h3_owned1);
 #line 47 "tests/golden/run/ffi-owned-cell-is-freed.hero"
-#line 777 "ffiownedcellisfreed.c"
+#line 786 "ffiownedcellisfreed.c"
     h_0opt_f87774a_release(&h4_f0);
 #line 47 "tests/golden/run/ffi-owned-cell-is-freed.hero"
-#line 780 "ffiownedcellisfreed.c"
+#line 789 "ffiownedcellisfreed.c"
     hero_str_decref(h5_r0);
 #line 47 "tests/golden/run/ffi-owned-cell-is-freed.hero"
-#line 783 "ffiownedcellisfreed.c"
+#line 792 "ffiownedcellisfreed.c"
     h_0opt_f87774a_release(&h6_second);
 #line 47 "tests/golden/run/ffi-owned-cell-is-freed.hero"
-#line 786 "ffiownedcellisfreed.c"
+#line 795 "ffiownedcellisfreed.c"
     h_0opt_f87774a_release(&h9_owned3);
 #line 47 "tests/golden/run/ffi-owned-cell-is-freed.hero"
-#line 789 "ffiownedcellisfreed.c"
+#line 798 "ffiownedcellisfreed.c"
     h_0opt_f87774a_release(&h10_f1);
 #line 47 "tests/golden/run/ffi-owned-cell-is-freed.hero"
-#line 792 "ffiownedcellisfreed.c"
+#line 801 "ffiownedcellisfreed.c"
     hero_str_decref(h11_r1);
 #line 47 "tests/golden/run/ffi-owned-cell-is-freed.hero"
-#line 795 "ffiownedcellisfreed.c"
+#line 804 "ffiownedcellisfreed.c"
     h_0opt_f87774a_release(&h12_f2);
 #line 47 "tests/golden/run/ffi-owned-cell-is-freed.hero"
-#line 798 "ffiownedcellisfreed.c"
+#line 807 "ffiownedcellisfreed.c"
     hero_str_decref(h13_r2);
 #line 47 "tests/golden/run/ffi-owned-cell-is-freed.hero"
-#line 801 "ffiownedcellisfreed.c"
+#line 810 "ffiownedcellisfreed.c"
     h_0opt_f87774a_release(&h14_f3);
 #line 47 "tests/golden/run/ffi-owned-cell-is-freed.hero"
-#line 804 "ffiownedcellisfreed.c"
+#line 813 "ffiownedcellisfreed.c"
     hero_str_decref(h15_r3);
 #line 47 "tests/golden/run/ffi-owned-cell-is-freed.hero"
-#line 807 "ffiownedcellisfreed.c"
+#line 816 "ffiownedcellisfreed.c"
     h_0opt_f87774a_release(&h16_quiet);
 #line 47 "tests/golden/run/ffi-owned-cell-is-freed.hero"
-#line 810 "ffiownedcellisfreed.c"
+#line 819 "ffiownedcellisfreed.c"
     h_0opt_f87774a_release(&h19_owned5);
 #line 47 "tests/golden/run/ffi-owned-cell-is-freed.hero"
-#line 813 "ffiownedcellisfreed.c"
+#line 822 "ffiownedcellisfreed.c"
     h_0opt_f87774a_release(&h20_s0);
 #line 47 "tests/golden/run/ffi-owned-cell-is-freed.hero"
-#line 816 "ffiownedcellisfreed.c"
+#line 825 "ffiownedcellisfreed.c"
     hero_str_decref(h21_text);
 #line 47 "tests/golden/run/ffi-owned-cell-is-freed.hero"
-#line 819 "ffiownedcellisfreed.c"
+#line 828 "ffiownedcellisfreed.c"
     hero_failure_release(&h22_e);
 #line 47 "tests/golden/run/ffi-owned-cell-is-freed.hero"
-#line 822 "ffiownedcellisfreed.c"
+#line 831 "ffiownedcellisfreed.c"
     h_0opt_f87774a_release(&h23_own23);
 #line 47 "tests/golden/run/ffi-owned-cell-is-freed.hero"
-#line 825 "ffiownedcellisfreed.c"
+#line 834 "ffiownedcellisfreed.c"
     h_0opt_f87774a_release(&h24_own24);
 #line 47 "tests/golden/run/ffi-owned-cell-is-freed.hero"
-#line 828 "ffiownedcellisfreed.c"
+#line 837 "ffiownedcellisfreed.c"
     h_0opt_f87774a_release(&h25_own25);
 #line 47 "tests/golden/run/ffi-owned-cell-is-freed.hero"
-#line 831 "ffiownedcellisfreed.c"
+#line 840 "ffiownedcellisfreed.c"
     h_0opt_f87774a_release(&h26_own26);
 #line 47 "tests/golden/run/ffi-owned-cell-is-freed.hero"
-#line 834 "ffiownedcellisfreed.c"
+#line 843 "ffiownedcellisfreed.c"
     h_0opt_f87774a_release(&h27_own27);
 #line 47 "tests/golden/run/ffi-owned-cell-is-freed.hero"
-#line 837 "ffiownedcellisfreed.c"
+#line 846 "ffiownedcellisfreed.c"
     h_0opt_f87774a_release(&h28_own28);
+    hero_lend_local_give(hero_lend_h17_cell2);
+    hero_lend_local_give(hero_lend_h7_cell1);
+    hero_lend_local_give(hero_lend_h1_cell0);
     return;
 bb20:
 #line 67 "tests/golden/run/ffi-owned-cell-is-freed.hero"
@@ -843,11 +855,11 @@ bb20:
     t87 = t86.as.ok;
 #line 67 "tests/golden/run/ffi-owned-cell-is-freed.hero"
     t123 = h21_text;
-#line 847 "ffiownedcellisfreed.c"
+#line 859 "ffiownedcellisfreed.c"
     hero_str_incref(t87);
 #line 67 "tests/golden/run/ffi-owned-cell-is-freed.hero"
     h21_text = t87;
-#line 851 "ffiownedcellisfreed.c"
+#line 863 "ffiownedcellisfreed.c"
     hero_str_decref(t123);
 #line 67 "tests/golden/run/ffi-owned-cell-is-freed.hero"
     t88 = HERO_STR_LIT(hero_str_2c0c20d2);
@@ -869,11 +881,11 @@ bb21:
     t91 = t90.as.err;
 #line 68 "tests/golden/run/ffi-owned-cell-is-freed.hero"
     t124 = h22_e;
-#line 873 "ffiownedcellisfreed.c"
+#line 885 "ffiownedcellisfreed.c"
     hero_failure_retain(&t91);
 #line 68 "tests/golden/run/ffi-owned-cell-is-freed.hero"
     h22_e = t91;
-#line 877 "ffiownedcellisfreed.c"
+#line 889 "ffiownedcellisfreed.c"
     hero_failure_release(&t124);
 #line 68 "tests/golden/run/ffi-owned-cell-is-freed.hero"
     t92 = HERO_STR_LIT(hero_str_5d6883a8);
@@ -889,19 +901,23 @@ bb21:
     hero_print_end();
 #line 68 "tests/golden/run/ffi-owned-cell-is-freed.hero"
     goto bb19;
-#line 893 "ffiownedcellisfreed.c"
+#line 905 "ffiownedcellisfreed.c"
 }
+#undef h1_cell0
+#undef h7_cell1
+#undef h17_cell2
 
 #line 123 "<heroes library>"
 int64_t h_library_HERO_STR_OK(void) {
-#line 898 "ffiownedcellisfreed.c"
+#line 913 "ffiownedcellisfreed.c"
     return HERO_STR_OK;
 }
 
 #line 153 "<heroes library>"
 h_0opt_f87774a h_library_validated(const char * h0_c) {
-#line 904 "ffiownedcellisfreed.c"
-    int64_t h1_status;
+#line 919 "ffiownedcellisfreed.c"
+    int64_t *const hero_lend_h1_status = (int64_t *)hero_lend_local(sizeof(int64_t), "library.validated", "status");
+#define h1_status (*hero_lend_h1_status)
     HeroStr h2_text = {0};
     h_0opt_f87774a h3_ret0 = {0};
     HeroStr h4_own4 = {0};
@@ -950,20 +966,22 @@ bb1:
 #line 157 "<heroes library>"
     t8 = h0_c;
 #line 157 "<heroes library>"
+    hero_lend_local_name(hero_lend_h1_status, "hero_str_try_from_cstr", "status");
+#line 157 "<heroes library>"
     t9 = hero_str_try_from_cstr(hero_cstr_nonnull(t8), (void *)&h1_status);
 #line 157 "<heroes library>"
     t19 = h4_own4;
 #line 157 "<heroes library>"
     h4_own4 = t9;
-#line 959 "ffiownedcellisfreed.c"
+#line 977 "ffiownedcellisfreed.c"
     hero_str_decref(t19);
 #line 157 "<heroes library>"
     t20 = h2_text;
-#line 963 "ffiownedcellisfreed.c"
+#line 981 "ffiownedcellisfreed.c"
     hero_str_incref(t9);
 #line 157 "<heroes library>"
     h2_text = t9;
-#line 967 "ffiownedcellisfreed.c"
+#line 985 "ffiownedcellisfreed.c"
     hero_str_decref(t20);
 #line 158 "<heroes library>"
     t10 = h1_status;
@@ -979,10 +997,10 @@ bb2:
     t4 = HERO_STR_LIT(hero_str_4a05a740);
 #line 155 "<heroes library>"
     t5 = HERO_STR_LIT(hero_str_5263489);
-#line 983 "ffiownedcellisfreed.c"
+#line 1001 "ffiownedcellisfreed.c"
     hero_str_incref(t4);
 #line 155 "<heroes library>"
-#line 986 "ffiownedcellisfreed.c"
+#line 1004 "ffiownedcellisfreed.c"
     hero_str_incref(t5);
 #line 155 "<heroes library>"
     t6 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t4, .msg = t5}};
@@ -990,7 +1008,7 @@ bb2:
     t21 = h5_own5;
 #line 155 "<heroes library>"
     h5_own5 = t6;
-#line 994 "ffiownedcellisfreed.c"
+#line 1012 "ffiownedcellisfreed.c"
     h_0opt_f87774a_release(&t21);
 #line 155 "<heroes library>"
     h3_ret0 = t6;
@@ -1006,10 +1024,10 @@ bb4:
     t15 = HERO_STR_LIT(hero_str_34624695);
 #line 160 "<heroes library>"
     t16 = HERO_STR_LIT(hero_str_4bb64adb);
-#line 1010 "ffiownedcellisfreed.c"
+#line 1028 "ffiownedcellisfreed.c"
     hero_str_incref(t15);
 #line 160 "<heroes library>"
-#line 1013 "ffiownedcellisfreed.c"
+#line 1031 "ffiownedcellisfreed.c"
     hero_str_incref(t16);
 #line 160 "<heroes library>"
     t17 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t15, .msg = t16}};
@@ -1017,7 +1035,7 @@ bb4:
     t22 = h6_own6;
 #line 160 "<heroes library>"
     h6_own6 = t17;
-#line 1021 "ffiownedcellisfreed.c"
+#line 1039 "ffiownedcellisfreed.c"
     h_0opt_f87774a_release(&t22);
 #line 160 "<heroes library>"
     h3_ret0 = t17;
@@ -1027,7 +1045,7 @@ bb4:
 bb5:
 #line 159 "<heroes library>"
     t13 = h2_text;
-#line 1031 "ffiownedcellisfreed.c"
+#line 1049 "ffiownedcellisfreed.c"
     hero_str_incref(t13);
 #line 159 "<heroes library>"
     t14 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t13};
@@ -1035,7 +1053,7 @@ bb5:
     t23 = h7_own7;
 #line 159 "<heroes library>"
     h7_own7 = t14;
-#line 1039 "ffiownedcellisfreed.c"
+#line 1057 "ffiownedcellisfreed.c"
     h_0opt_f87774a_release(&t23);
 #line 159 "<heroes library>"
     h3_ret0 = t14;
@@ -1049,25 +1067,27 @@ bb6:
 bb7:
 #line 153 "<heroes library>"
     t18 = h3_ret0;
-#line 1053 "ffiownedcellisfreed.c"
+#line 1071 "ffiownedcellisfreed.c"
     h_0opt_f87774a_retain(&t18);
 #line 153 "<heroes library>"
-#line 1056 "ffiownedcellisfreed.c"
+#line 1074 "ffiownedcellisfreed.c"
     hero_str_decref(h2_text);
 #line 153 "<heroes library>"
-#line 1059 "ffiownedcellisfreed.c"
+#line 1077 "ffiownedcellisfreed.c"
     hero_str_decref(h4_own4);
 #line 153 "<heroes library>"
-#line 1062 "ffiownedcellisfreed.c"
+#line 1080 "ffiownedcellisfreed.c"
     h_0opt_f87774a_release(&h5_own5);
 #line 153 "<heroes library>"
-#line 1065 "ffiownedcellisfreed.c"
+#line 1083 "ffiownedcellisfreed.c"
     h_0opt_f87774a_release(&h6_own6);
 #line 153 "<heroes library>"
-#line 1068 "ffiownedcellisfreed.c"
+#line 1086 "ffiownedcellisfreed.c"
     h_0opt_f87774a_release(&h7_own7);
+    hero_lend_local_give(hero_lend_h1_status);
     return t18;
 }
+#undef h1_status
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_incref(v->as.ok);

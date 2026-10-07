@@ -113,7 +113,8 @@ void h_deadhandlewrittenbycthroughacellitshouldonlywrite_main(void);
 #line 18 "tests/golden/run/dead-handle-written-by-c-through-a-cell-it-should-only-write.hero"
 void h_deadhandlewrittenbycthroughacellitshouldonlywrite_main(void) {
 #line 116 "deadhandlewrittenbycthroughacellitshouldonlywrite.c"
-    ob * h0_cert;
+    ob * *const hero_lend_h0_cert = (ob * *)hero_lend_local(sizeof(ob *), "deadhandlewrittenbycthroughacellitshouldonlywrite.main", "cert");
+#define h0_cert (*hero_lend_h0_cert)
     ob * t1;
     int64_t t2;
     int64_t t3;
@@ -146,6 +147,8 @@ bb0:
 bb1:
 #line 23 "tests/golden/run/dead-handle-written-by-c-through-a-cell-it-should-only-write.hero"
     t6 = HERO_STR_LIT(hero_str_2d7822c4);
+#line 23 "tests/golden/run/dead-handle-written-by-c-through-a-cell-it-should-only-write.hero"
+    hero_lend_local_name(hero_lend_h0_cert, "ob_mark_cell", "a");
 #line 23 "tests/golden/run/dead-handle-written-by-c-through-a-cell-it-should-only-write.hero"
     t7 = ob_mark_cell(&h0_cert);
 #line 23 "tests/golden/run/dead-handle-written-by-c-through-a-cell-it-should-only-write.hero"
@@ -201,14 +204,17 @@ bb4:
 #line 24 "tests/golden/run/dead-handle-written-by-c-through-a-cell-it-should-only-write.hero"
     hero_print_end();
 #line 24 "tests/golden/run/dead-handle-written-by-c-through-a-cell-it-should-only-write.hero"
+    hero_lend_local_give(hero_lend_h0_cert);
+#line 24 "tests/golden/run/dead-handle-written-by-c-through-a-cell-it-should-only-write.hero"
     return;
 #line 24 "tests/golden/run/dead-handle-written-by-c-through-a-cell-it-should-only-write.hero"
 bb5:
 #line 23 "tests/golden/run/dead-handle-written-by-c-through-a-cell-it-should-only-write.hero"
-#line 209 "deadhandlewrittenbycthroughacellitshouldonlywrite.c"
+#line 214 "deadhandlewrittenbycthroughacellitshouldonlywrite.c"
     hero_panic_assert_sides(t6, hero_int_to_str(t7), hero_int_to_str(t8));
     hero_unreachable();
 }
+#undef h0_cert
 HERO_TU_LOCAL bool h_deadhandlewrittenbycthroughacellitshouldonlywrite_X509_eq(ob * const *a, ob * const *b) {
     return hero_handle_eq(*a, *b);
 }

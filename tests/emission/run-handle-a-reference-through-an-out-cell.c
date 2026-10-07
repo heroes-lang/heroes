@@ -114,7 +114,8 @@ void h_handleareferencethroughanoutcell_main(void);
 void h_handleareferencethroughanoutcell_main(void) {
 #line 116 "handleareferencethroughanoutcell.c"
     ob * h0_a;
-    ob * h1_b;
+    ob * *const hero_lend_h1_b = (ob * *)hero_lend_local(sizeof(ob *), "handleareferencethroughanoutcell.main", "b");
+#define h1_b (*hero_lend_h1_b)
     int32_t h2_rc;
     ob * t1;
     ob * t2;
@@ -142,6 +143,8 @@ bb0:
     h1_b = t2;
 #line 16 "tests/golden/run/handle-a-reference-through-an-out-cell.hero"
     t3 = h0_a;
+#line 16 "tests/golden/run/handle-a-reference-through-an-out-cell.hero"
+    hero_lend_local_name(hero_lend_h1_b, "ob_dup", "out");
 #line 16 "tests/golden/run/handle-a-reference-through-an-out-cell.hero"
     hero_handle_alive(t3, "the argument `o` of `ob_dup`");
 #line 16 "tests/golden/run/handle-a-reference-through-an-out-cell.hero"
@@ -213,9 +216,12 @@ bb0:
 #line 20 "tests/golden/run/handle-a-reference-through-an-out-cell.hero"
     hero_print_end();
 #line 20 "tests/golden/run/handle-a-reference-through-an-out-cell.hero"
+    hero_lend_local_give(hero_lend_h1_b);
+#line 20 "tests/golden/run/handle-a-reference-through-an-out-cell.hero"
     return;
-#line 218 "handleareferencethroughanoutcell.c"
+#line 223 "handleareferencethroughanoutcell.c"
 }
+#undef h1_b
 HERO_TU_LOCAL bool h_handleareferencethroughanoutcell_Ob_eq(ob * const *a, ob * const *b) {
     return hero_handle_eq(*a, *b);
 }

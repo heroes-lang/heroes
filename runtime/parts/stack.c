@@ -196,6 +196,9 @@ typedef struct HeroLendFault {
     const char *param;
     int64_t extent;
     int returned;
+    int local;
+    const char *owner;
+    const char *name;
 } HeroLendFault;
 static int hero_lend_fault_at(uintptr_t addr, HeroLendFault *out);
 static void hero_lend_tell(const HeroLendFault *f, void (*say)(const char *));

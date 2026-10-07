@@ -1,0 +1,96 @@
+# fixedbugs, defect 396, lane b13-land-buf, 2026-10-07: panel 196's R7, the
+# legal half. A local lent whole through `@` to an `extern` call lives for its
+# function's life in a region of the calling thread that ends at a page
+# nothing may touch, and C is handed the local itself: what C writes is what
+# the program reads, and an address C keeps between calls stays the local's.
+#
+# THE SHAPES BESIDE IT: a number lent in a loop, one region labelled at every
+# call; a record C knows by its address across two calls (`keeper_step`
+# refuses a moved one with -2, as zlib refuses a moved stream); a function
+# recursing with a local of its own at every depth, the regions in stack
+# order; a callback into the program, made while C holds one local, that lends
+# another; a local lent on a spawned thread, in that thread's regions; an
+# early return through the function's one exit; a buffer and a local lent to
+# one call, the buffer given back first; and the record C knows by its address
+# lent through two Heroes wrappers, whose `@` parameters are the caller's
+# place (R1), so the caller's local is the one guarded and kept.
+extern "fixedbugs-396-buffers.h"
+    record Keeper tag keeper
+        self: ptr
+        count: i64
+    function put_one(@x: i32 lent, v: i32)
+    function count_up(@x: i32 lent)
+    function put_after(@x: i32 lent, cb: (function() -> ()))
+    function keeper_init(@k: Keeper)
+    function keeper_step(@k: Keeper) -> i32
+    function stamp32(@md: [u8] counted_by 32 lent, seed: u64)
+
+extern "hero_os.h"
+    function hero_thread_spawn(body: (function(i64) -> i64), arg: i64) -> i64
+    function hero_thread_join(handle: i64) -> i64
+
+function inner()
+    y: i32 @ 0
+    put_one(x: @y, v: 5)
+    print("inner ", y)
+
+function depth(n: i64) -> i64
+    x: i32 @ 0
+    put_one(x: @x, v: n.to_i32().must())
+
+    if n == 0
+        return 0
+    below = depth(n - 1)
+    return below + x.to_i64().must()
+
+function early(flag: bool) -> i32
+    x: i32 @ 0
+    put_one(x: @x, v: 3)
+
+    if flag
+        return x
+    count_up(@x)
+    return x
+
+function on_a_thread(n: i64) -> i64
+    x: i32 @ 0
+    put_one(x: @x, v: n.to_i32().must())
+    count_up(@x)
+    return x.to_i64().must()
+
+function start(@k: Keeper)
+    keeper_init(@k)
+
+function step(@k: Keeper) -> i32
+    return keeper_step(@k)
+
+function step_twice(@k: Keeper) -> i32
+    return step(@k) + step(@k)
+
+function main()
+    n: i32 @ 0
+    round: i64 @ 0
+
+    while round < 5
+        count_up(@n)
+        round @ round + 1
+
+    print(n)
+    k: Keeper @ Keeper(self: nullptr, count: 0)
+    keeper_init(@k)
+    print(keeper_step(@k), " ", keeper_step(@k), " ", k.count)
+    print(depth(10))
+    late: i32 @ 0
+    put_after(@late, cb: inner)
+    print(late)
+    print(early(flag: true), " ", early(flag: false))
+    t = hero_thread_spawn(body: on_a_thread, arg: 41)
+    print(hero_thread_join(handle: t))
+    md: [u8] @ []
+    m: i32 @ 0
+    stamp32(@md, seed: 1)
+    put_one(x: @m, v: md.len().to_i32().must())
+    print(m, " ", md[0])
+    w: Keeper @ Keeper(self: nullptr, count: 0)
+    start(@w)
+    print(step_twice(@w), " ", w.count)

@@ -38,6 +38,7 @@ use emit
 use emit/unit
 use emit/members
 use emit/externs as emit_externs
+use emit/lend_local
 
 # What one build has settled before any round runs. Where the binary lands
 # is not among it: under `build/` that is named by the link line, which a
@@ -211,7 +212,7 @@ function per_module(t: toolchain.Toolchain, options: compile.Options, art: compi
         s: s,
         decls: art.decls,
         struct_tags: struct_tags,
-        lend_units: lend_units
+        lend_units: lend_local.with_flows(lend_units, art.program, art.checked)
     )
 
     # One build's answers about files on disk. Every TU asks whether the
