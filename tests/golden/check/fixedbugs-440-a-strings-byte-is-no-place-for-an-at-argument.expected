@@ -1,0 +1,6 @@
+tests/golden/check/fixedbugs-440-a-strings-byte-is-no-place-for-an-at-argument.hero:37:8: error[str_element_write]: a `str` is immutable, so `s[i]` is a value and not a place — this writes into one
+tests/golden/check/fixedbugs-440-a-strings-byte-is-no-place-for-an-at-argument.hero:38:11: error[str_element_write]: a `str` is immutable, so `s[i]` is a value and not a place — this writes into one
+tests/golden/check/fixedbugs-440-a-strings-byte-is-no-place-for-an-at-argument.hero:40:12: error[str_element_write]: a `str` is immutable, so `s[i]` is a value and not a place — this writes into one
+tests/golden/check/fixedbugs-440-a-strings-byte-is-no-place-for-an-at-argument.hero:42:8: error[str_element_write]: a `str` is immutable, so `s[i]` is a value and not a place — this writes into one
+tests/golden/check/fixedbugs-440-a-strings-byte-is-no-place-for-an-at-argument.hero:44:8: error[str_element_write]: a `str` is immutable, so `s[i]` is a value and not a place — this writes into one
+tests/golden/check/fixedbugs-440-a-strings-byte-is-no-place-for-an-at-argument.hero:46:13: error[str_element_write]: a `str` is immutable, so `s[i]` is a value and not a place — this writes into one
