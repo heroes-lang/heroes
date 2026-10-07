@@ -1,0 +1,101 @@
+# The C spelling of a probe's parameters: the declared FFI types written as C,
+# an `@` parameter as a pointer, and the two carve-outs a freer's mark asks for
+# (design.md §4.19; panels 109, 111, 116). Split from `emit/extern_probe.hero`
+# on 2026-10-07, when batch 13's lanes w411 and land-buf took that file past
+# its 300 lines together: the probe's writing stays there, its parameters'
+# spelling is here, and every reader of either names this module.
+
+use ast
+use check/table
+use check/state
+use check/freer as freer
+use widths
+use ir/containers
+use emit/ctype
+
+# The declared parameter types as C, positionally named a0, a1, … — or
+# absent for a type this backend has no spelling for, which the
+# checker's boundary rule has already refused. ONE unspellable
+# parameter withholds the WHOLE list, and the caller then skips the
+# probe for the entire function — which is why the named arm below
+# exists: losing it cost DrawText the width check on all four of its
+# i64s because of the fifth parameter (panel 061's audit).
+# **`frees` is what makes a wrong freer a COMPILE error** (panel 116, ratified
+# 2026-09-06). The probe never runs; it exists so clang checks a name against
+# its header, and the parameter's TYPE is the whole question it asks. Measured:
+# at `void *` both `free` and `fclose` are accepted in silence, because a
+# `void *` converts to anything; at `char *`, `free` passes and `fclose` is
+# refused in the header's own words. So a function some `owned` mark names gets
+# `char *`. The reasoning, the ten-freer table and the honest limit — `curl.h`
+# writes `typedef void CURL;`, so six of ten and not ten of ten — are in
+# `docs/panel/116-where-the-release-lives.md` and in the golden that pins it.
+function parameter_list(names: ctype.Names, c: state.Checked, decls: [ast.Decl], f: containers.Function, frees: bool) -> [str]?
+    out: [str] @ []
+    index: i64 @ 0
+
+    for slot_id in f.params
+        declared = f.slots[slot_id]
+        c_type = c_type_of(names, c, ty: declared.ty)
+
+        if c_type.is_err()
+            return fail(code: "none", msg: "a type the frontend should have stopped")
+
+        # An @ parameter is a pointer parameter (§4.8, CLAUDE.md §7),
+        # and the probe must declare it the same way the call site
+        # passes it or the probe itself would be the thing that does
+        # not compile.
+        mutable: bool @ false
+
+        match declared.kind
+            .param_slot ps =>
+                if ps.mutable
+                    mutable @ true
+            .local_slot | .synthetic_slot | .return_slot => mutable @ mutable
+
+        spelled: str @ c_type.must()
+
+        if frees && spelled == "void *"
+            spelled @ "char *"
+
+        # A marked `@cstr` is the `char **` carve-out: the cell is not const,
+        # or the probe itself is what stops compiling (§4.19, panel 109).
+        if mutable && freer.owned_parameter(decls, at: f.decl, index: index) && spelled == "const char *"
+            spelled @ "char *"
+
+        if mutable
+            out @ out.push(spelled + " * a" + index.to_str())
+        else
+            out @ out.push(spelled + " a" + index.to_str())
+        index @ index + 1
+
+    return ok(out)
+
+# A declared FFI parameter type as C. The set is the boundary rule's
+# own — anything else is refused in the checker, so failing here means
+# the emitter met a type the frontend should have stopped. The named
+# arm was missing for one milestone in the bootstrap and the cost was
+# silent: two tables answering "what is the C spelling of this FFI
+# type", one grown and one not, when a group's record became a legal
+# extern parameter.
+# It happened AGAIN and panel 111 R4 caught it before the permission
+# shipped: without the `.function_ty` arm below, binding one callback
+# withholds the whole list (see parameter_list) and the probe is skipped
+# for the ENTIRE extern, so every other parameter stops being checked
+# against the header, in silence — DrawText's defect with a new cause.
+# The arm hands back a typedef NAME because that is what ctype has, and
+# a typedef reads the same in a parameter list, a cast and a member.
+function c_type_of(names: ctype.Names, c: state.Checked, ty: i64) -> str?
+    match table.get(c.types, ty)
+        .named n                                            => return ok(ctype.of(names, decl: n.decl))
+        .int_ty ik                                          => return ok(widths.int_c_type(ik.kind))
+        .float_ty fk                                        => return ok(widths.float_c_type(fk.kind))
+        .bool                                               => return ok("bool")
+        .str                                                => return ok("HeroStr")
+        .cstr                                               => return ok("const char *")
+        .ptr                                                => return ok("void *")
+        .function_ty                                        => return ok(ctype.func_of(names, ty: ty))
+        .array x                                            => return c_type_of(names, c, ty: x.element)
+        .unit | .fixed | .map                               => return fail(code: "none", msg: "no C spelling")
+        .fallible | .case_ty | .failure | .generic | .error => return fail(code: "none", msg: "no C spelling")
+
+    return fail(code: "none", msg: "unreached")
