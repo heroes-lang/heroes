@@ -542,7 +542,7 @@ test "fixedbugs: the spec's example is never a pass for a missing library"
     at = scratch + "/spec-ffi.hero:1:1"
     elsewhere = absence.missing_header_said(
         header: absence.NOWHERE,
-        tail: " — clang looked and did not find it",
+        tail: absence.HEADER_LOOKED,
         at: at
     )
     assert !write_file(path: scratch + "/spec-ffi.said", text: elsewhere).is_err()
@@ -552,7 +552,7 @@ test "fixedbugs: the spec's example is never a pass for a missing library"
     assert unbound.failed == 1
     assert unbound.skips.len() == 0
     assert strings.contains(text: unbound.failures[0], needle: "binds no such header")
-    its_own = absence.missing_header_said(header: "sqlite3.h", tail: " — clang looked and did not find it", at: at)
+    its_own = absence.missing_header_said(header: "sqlite3.h", tail: absence.HEADER_LOOKED, at: at)
     assert !write_file(path: scratch + "/spec-ffi.said", text: its_own).is_err()
     claimed: report.Report @ report.empty()
     the_specs_own_example_opens_a_database(@claimed, scratch: scratch, compiler: compiler.must())

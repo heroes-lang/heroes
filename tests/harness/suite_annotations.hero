@@ -823,7 +823,7 @@ test "fixedbugs: a run-root program steps aside only where its case and the mach
     assert !shell.remove_tree(root).is_err()
     nowhere = absence.NOWHERE
     marked = "  #~ ffi_return_type"
-    told = " — clang looked and did not find it"
+    told = absence.HEADER_LOOKED
     lacks = root + "/a-lacks/main.hero"
     assert !plant(path: lacks, source: program(header: nowhere, on_head: "", on_function: marked), said: absence.missing_header_said(header: nowhere, tail: told, at: lacks + ":1:1")).is_err()
     has = root + "/b-has/main.hero"
@@ -877,7 +877,7 @@ test "fixedbugs: a machine stepping every run-root program aside reads red, and 
         path = root + "/" + name + "/main.hero"
         said = absence.missing_header_said(
             header: absence.NOWHERE,
-            tail: " — clang looked and did not find it",
+            tail: absence.HEADER_LOOKED,
             at: path + ":1:1"
         )
         assert !plant(path: path, source: program(header: absence.NOWHERE, on_head: "", on_function: "  #~ ffi_return_type"), said: said).is_err()
@@ -1042,7 +1042,7 @@ function grouped(scratch: str, root: str, compiler: str) -> Grouped
 function lacking(at: str) -> str
     return absence.missing_header_said(
         header: absence.NOWHERE,
-        tail: " — clang looked and did not find it",
+        tail: absence.HEADER_LOOKED,
         at: at + ":1:1"
     )
 
