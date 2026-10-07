@@ -1,0 +1,2 @@
+tests/golden/check/fixedbugs-430-a-result-whose-names-disagree-is-refused.hero:18:12: error[type_mismatch]: expected `(function(a: i64, b: i64) -> i64)`, found `(function(b: i64, a: i64) -> i64)`
+tests/golden/check/fixedbugs-430-a-result-whose-names-disagree-is-refused.hero:21:12: error[type_mismatch]: expected `(function(a: i64, b: i64) -> i64)`, found `(function(p: i64, q: i64) -> i64)`
