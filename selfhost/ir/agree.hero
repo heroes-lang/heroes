@@ -4,16 +4,16 @@
 #
 # A function type's names are the CHECKER's: they are part of the type so a
 # call through a value names each argument where two share a type, and
-# `check/table.hero`'s `fits` lets a value whose type names fewer positions,
-# or calls one `_`, stand where a named type is asked. The interner keeps the
-# names in the id, so such a value and the result it is returned as carry two
-# ids for one C function pointer type, and C never sees a name. Until
-# 2026-10-07 the verifier compared the ids, so `return inc` where the result
-# says `(function(x: i64) -> i64)` checked at exit 0 and stopped the build at
-# exit 2, *returns a value of the wrong type*, while the same value bound,
-# passed or stored in a field ran. The names are compared here at every depth
-# of a function type, which is the C type's own sameness; what a reader wrote
-# was held by the checker before the IR existed.
+# `check/type_fit.hero`'s `fits` lets a value whose type names fewer
+# positions, or calls one `_`, stand where a named type is asked. The interner
+# keeps the names in the id, so such a value and the result it is returned as
+# carry two ids for one C function pointer type, and C never sees a name.
+# Until 2026-10-07 the verifier compared the ids, so `return inc` where the
+# result says `(function(x: i64) -> i64)` checked at exit 0 and stopped the
+# build at exit 2, *returns a value of the wrong type*, while the same value
+# bound, passed or stored in a field ran. The names are compared here at every
+# depth of a function type, which is the C type's own sameness; what a reader
+# wrote was held by the checker before the IR existed.
 
 use check/table
 
