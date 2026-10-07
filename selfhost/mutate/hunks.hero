@@ -1,0 +1,258 @@
+# A planted mistake as line hunks, and where it lands in the text that
+# results: the recovery arm's arithmetic (panel 187's R2, defect 210).
+#
+# A mutant of the frozen plan is its program with each hunk's lines
+# `[start, end)` (0-based, `end` exclusive, `start == end` an insertion)
+# replaced by the hunk's new lines. Its SITE is where a message about it
+# belongs: the 1-based lines of the new text its hunks name (`site`, offsets
+# into each hunk's new lines), and the lines of every statement it touches
+# (`stmt_lines`, 1-based ranges of the ORIGINAL text, mapped into the new),
+# since a mistake lives in its statement: a `)` left out on one line of a
+# call is told at the opener it leaves unclosed, on another line of it.
+#
+# Every rule here is `replay.py`'s, read line by line from the instrument
+# the gate ran until this port (`apply_hunks`, `stmt_site`), because a
+# replay that put a site elsewhere would class the same message otherwise
+# and the two runs could not be compared: hunks applied in order of
+# `(start, end)`, two that overlap refused, and an original line inside a
+# replaced hunk mapped onto that hunk's first new line.
+
+# One replacement of lines, as the plan writes it.
+record Hunk
+    start: i64
+    end: i64
+    lines: [str]
+    site: [i64]
+
+# A 1-based inclusive range of the original's lines.
+record Lines
+    first: i64
+    last: i64
+
+# One mutant's hunks, under the tag that names it in a pair (`a` or `b`).
+record Tagged
+    tag: str
+    hunks: [Hunk]
+
+# A hunk with its owner, in the order the hunks are applied.
+record Placed
+    hunk: Hunk
+    tag: str
+
+# The text the hunks make, and per tag the 1-based lines its hunks name.
+record Applied
+    lines: [str]
+    order: [Placed]
+    site_tags: [str]
+    sites: [[i64]]
+
+# Every hunk of `sets` applied to `lines`; a failure where two overlap.
+function apply(lines: [str], sets: [Tagged]) -> Applied?
+    flat: [Placed] @ []
+
+    for one in sets
+        for h in one.hunks
+            flat @ flat.push(Placed(hunk: h, tag: one.tag))
+
+    order = sorted(flat)
+    out: [str] @ []
+    pos: i64 @ 0
+    shift: i64 @ 0
+    tags: [str] @ []
+    sites: [[i64]] @ []
+
+    for one in sets
+        tags @ tags.push(one.tag)
+        none: [i64] = []
+        sites @ sites.push(none)
+
+    for p in order
+        h = p.hunk
+
+        if h.start < pos
+            return fail(code: "overlap", msg: "overlapping hunks")
+
+        # Past the text, or ending before it starts: a plan that does not fit
+        # its program, which `replay.py` would have cut silently.
+        if h.end > lines.len() || h.end < h.start
+            return fail(code: "misfit", msg: "a hunk past the text")
+
+        for line in lines.slice(from: pos, to: h.start)
+            out @ out.push(line)
+
+        first = h.start + 1 + shift
+        at = index_of(tags, tag: p.tag)
+
+        for offset in h.site
+            sites[at] @ sites[at].push(first + offset)
+
+        for line in h.lines
+            out @ out.push(line)
+
+        shift @ shift + h.lines.len() - (h.end - h.start)
+        pos @ h.end
+
+    for line in lines.slice(from: pos, to: lines.len())
+        out @ out.push(line)
+
+    return ok(Applied(lines: out, order: order, site_tags: tags, sites: sites))
+
+# The hunks in the order they are applied, `(start, end)` ascending, ties
+# kept in the order given: an insertion before a replacement at one line.
+function sorted(flat: [Placed]) -> [Placed]
+    out: [Placed] @ []
+
+    for p in flat
+        at: i64 @ out.len()
+
+        while at > 0 && later(a: out[at - 1].hunk, than: p.hunk)
+            at @ at - 1
+
+        out @ insert(out, at: at, p: p)
+
+    return out
+
+function later(a: Hunk, than: Hunk) -> bool
+    return a.start > than.start || a.start == than.start && a.end > than.end
+
+function insert(list: [Placed], at: i64, p: Placed) -> [Placed]
+    out: [Placed] @ []
+    i: i64 @ 0
+
+    for one in list
+        if i == at
+            out @ out.push(p)
+        out @ out.push(one)
+        i @ i + 1
+
+    if at == list.len()
+        out @ out.push(p)
+    return out
+
+function index_of(tags: [str], tag: str) -> i64
+    at: i64 @ 0
+
+    for one in tags
+        if one == tag
+            return at
+        at @ at + 1
+
+    return 0
+
+# The 1-based lines a tag's hunks name in the applied text.
+function site_of(a: Applied, tag: str) -> [i64]
+    at: i64 @ 0
+
+    for one in a.site_tags
+        if one == tag
+            return a.sites[at]
+        at @ at + 1
+
+    none: [i64] = []
+    return none
+
+# Where line `line` (1-based) of the original stands in the applied text:
+# past every hunk wholly before it, or on the first new line of the hunk
+# that replaces it.
+function mapped(a: Applied, line: i64) -> i64
+    shift: i64 @ 0
+    index = line - 1
+
+    for p in a.order
+        h = p.hunk
+        inside = h.start <= index && index < h.end
+
+        if h.end <= index && !inside
+            shift @ shift + h.lines.len() - (h.end - h.start)
+        else if inside
+            return h.start + 1 + shift
+
+    return line + shift
+
+# A mutant's site: its hunks' own lines, and the lines of each statement
+# it touches mapped into the applied text, ascending, each once.
+function statement_site(a: Applied, tag: str, statements: [Lines]) -> [i64]
+    seen: {i64: bool} @ {}
+
+    for line in site_of(a, tag: tag)
+        seen[line] @ true
+
+    for range_of in statements
+        line: i64 @ range_of.first
+
+        while line <= range_of.last
+            seen[mapped(a, line: line)] @ true
+            line @ line + 1
+
+    # ORDER: ascending line numbers, the order `replay.py` writes a site in.
+    return sort(keys(seen))
+
+# A text's lines as `replay.py` reads them: one final newline taken off and
+# remembered, the rest split at each line feed.
+function lines_of(text: str) -> [str]
+    body: str @ text
+
+    if ends_newline(text)
+        body @ text.slice(from: 0, to: text.len() - 1)
+    out: [str] @ []
+    start: i64 @ 0
+    at: i64 @ 0
+
+    while at < body.len()
+        if body[at] == 10
+            out @ out.push(body.slice(from: start, to: at))
+            start @ at + 1
+        at @ at + 1
+
+    out @ out.push(body.slice(from: start, to: body.len()))
+    return out
+
+function ends_newline(text: str) -> bool
+    return text.len() > 0 && text[text.len() - 1] == 10
+
+# The applied lines as a file: joined by line feeds, and the original's
+# final newline, if it had one, given back.
+function text_of(lines: [str], newline: bool) -> str
+    if newline
+        return lines.join("\n") + "\n"
+    return lines.join("\n")
+
+## Tests
+
+function hunk(start: i64, end: i64, lines: [str], site: [i64]) -> Hunk
+    return Hunk(start: start, end: end, lines: lines, site: site)
+
+test "a replacement and an insertion land where the plan says, and the site follows the shift"
+    base = ["a", "b", "c", "d"]
+    one = Tagged(tag: "a", hunks: [hunk(start: 1, end: 2, lines: ["B1", "B2"], site: [1])])
+    two = Tagged(tag: "b", hunks: [hunk(start: 3, end: 3, lines: ["new"], site: [0])])
+    got = apply(base, sets: [one, two]).must()
+    assert got.lines == ["a", "B1", "B2", "c", "new", "d"]
+    assert site_of(got, tag: "a") == [3]
+
+    # The insertion before `d` (line 4) is past the replacement, which grew by one.
+    assert site_of(got, tag: "b") == [5]
+
+test "two hunks over one line are refused"
+    base = ["a", "b", "c"]
+    one = Tagged(tag: "a", hunks: [hunk(start: 0, end: 2, lines: ["x"], site: [0])])
+    two = Tagged(tag: "b", hunks: [hunk(start: 1, end: 2, lines: ["y"], site: [0])])
+    assert apply(base, sets: [one, two]).is_err()
+
+test "a line inside a replaced hunk maps onto its first new line, and a line past it moves with it"
+    base = ["a", "b", "c", "d", "e"]
+    one = Tagged(tag: "a", hunks: [hunk(start: 1, end: 3, lines: ["X"], site: [0])])
+    got = apply(base, sets: [one]).must()
+    assert got.lines == ["a", "X", "d", "e"]
+    assert mapped(got, line: 1) == 1
+    assert mapped(got, line: 2) == 2
+    assert mapped(got, line: 3) == 2
+    assert mapped(got, line: 4) == 3
+    assert statement_site(got, tag: "a", statements: [Lines(first: 3, last: 5)]) == [2, 3, 4]
+
+test "a text's last newline is kept apart, and a text without one gets none back"
+    assert lines_of("a\nb\n") == ["a", "b"]
+    assert text_of(lines_of("a\nb\n"), newline: ends_newline("a\nb\n")) == "a\nb\n"
+    assert lines_of("a\nb") == ["a", "b"]
+    assert text_of(lines_of("a\nb"), newline: ends_newline("a\nb")) == "a\nb"
+    assert lines_of("") == [""]

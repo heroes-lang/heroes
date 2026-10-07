@@ -1,0 +1,261 @@
+# `heroes mutate --recovery`: the frozen plan replayed with one compiler,
+# its records written to a folder of their own (panel 187's R2, defect 210).
+#
+# Panel 187 asked the parser's recovery to be read at every round that
+# touches it, the round's compiler against the trunk's over one frozen
+# corpus of planted mistakes, and ruled the instrument's home to be the tree
+# (CLAUDE.md § 10, *never a script*). Until this arm it was Python in a
+# session's scratchpad, rebuilt once from its own results after a reboot
+# took it (defect 358). This is that replay, `replay.py`'s records written
+# the same way, field for field, plus a record the Python never kept: what
+# each unmutated program of the corpus is told by the compiler judged, so a
+# reading can subtract it before it calls a mutant worse (the fourth
+# round's reading, 2026-10-03, done by hand when the language moved under
+# a corpus program).
+#
+# A run, in order: the plan read whole (`mutate/plan.hero`); the compiler
+# asked its version, which also proves it starts; the corpus copied from
+# the plan's `corpus/`, each `<path>.frozen` to `<out>/mirror/<path>`; then
+# three phases, each `workers.JOBS` threads (`mutate/workers.hero`), the
+# corpus unmutated, the singles, the pairs; and each phase's records joined
+# in the plan's order into `corpus.jsonl`, `singles.jsonl` and
+# `pairs.jsonl`, with `run.json` saying what was run. A folder that already
+# holds anything is refused, so a run never mixes with another's records.
+
+use bytes
+use cli/process
+use mutate/child
+use mutate/json_fields
+use mutate/json_read
+use mutate/plan
+use mutate/workers
+
+extern "hero_os.h"
+    function hero_thread_spawn(body: (function(i64) -> i64), arg: i64) -> i64
+    function hero_thread_join(handle: i64) -> i64
+
+# What a run judged.
+record Made
+    programs: i64
+    singles: i64
+    pairs: i64
+
+function replay(compiler: str, plan_dir: str, out: str) -> Made?
+    for path in [compiler, plan_dir, out]
+        if has_byte(path, byte: 10)
+            return fail(code: "bad_path", msg: "a path holding a line feed cannot be handed to the workers")
+
+    if process.path_exists(out) && !empty_folder(out)
+        return fail(
+            code: "taken",
+            msg: out + " already holds something, and a run writes into a folder of its own: name a new one"
+        )
+    p = plan.read_plan(plan_dir)?
+    files = plan.files(p)
+    process.mkdir_all(out + "/work")?
+    version = child.bounded(program: compiler, words: [compiler, "--version"], capture: out + "/work/version")
+
+    if version.is_err()
+        return fail(code: "no_compiler", msg: "cannot start the compiler " + compiler)
+
+    if version.must().exit != 0
+        return fail(code: "no_compiler", msg: "`" + compiler + " --version` exited " + version.must().exit.to_str())
+    mirrored(plan_dir: plan_dir, out: out, files: files)?
+    workers.write_job(workers.Job(compiler: compiler, plan_dir: plan_dir, out: out))?
+    corpus = phase(out, which: workers.CORPUS, count: files.len())?
+    written(out + "/corpus.jsonl", lines: corpus)?
+    singles = phase(out, which: workers.SINGLES, count: p.singles.len())?
+    written(out + "/singles.jsonl", lines: singles)?
+    pairs = phase(out, which: workers.PAIRS, count: p.pairs.len())?
+    written(out + "/pairs.jsonl", lines: pairs)?
+    told = json_fields.strings(lines_of(version.must().out))
+    run: json_read.Json = .fields(
+        names: ["compiler", "version", "plan", "plan_digests", "jobs", "limit", "programs", "singles", "pairs"],
+        values: [json_fields.string(compiler), told, json_fields.string(plan_dir), json_fields.strings(plan.digests(plan_dir)?), json_fields.whole(workers.JOBS), json_fields.whole(child.LIMIT), json_fields.whole(files.len()), json_fields.whole(p.singles.len()), json_fields.whole(p.pairs.len())]
+    )
+    written(out + "/run.json", lines: [json_fields.written(run)])?
+    process.remove_file(workers.job_path())?
+    return ok(Made(programs: files.len(), singles: p.singles.len(), pairs: p.pairs.len()))
+
+function has_byte(text: str, byte: u8) -> bool
+    for at in range(from: 0, to: text.len())
+        if text[at] == byte
+            return true
+
+    return false
+
+function empty_folder(path: str) -> bool
+    walked = process.walk(path)
+
+    if walked.is_err()
+        return false
+    return walked.must().files.len() == 0 && walked.must().unnamed.len() == 0
+
+# The corpus of the plan's `corpus/`, each `<path>.frozen` written to
+# `<out>/mirror/<path>`; every program the plan mutates must be among them.
+function mirrored(plan_dir: str, out: str, files: [str]) -> ()?
+    root = plan_dir + "/corpus/"
+    walked = process.walk(plan_dir + "/corpus")
+
+    if walked.is_err()
+        return fail(code: "no_corpus", msg: "cannot read " + root)
+
+    if walked.must().unnamed.len() > 0
+        return fail(code: "no_corpus", msg: process.unnamed_said(walked.must().unnamed[0]))
+    suffix = ".frozen"
+    copied: {str: bool} @ {}
+
+    for path in walked.must().files
+        if path.len() <= root.len() + suffix.len() || !bytes.bytes_at(text: path, at: path.len() - suffix.len(), needle: suffix)
+            return fail(
+                code: "no_corpus",
+                msg: path + " is not a frozen program: the corpus holds `<path>.frozen` alone"
+            )
+        rel = path.slice(from: root.len(), to: path.len() - suffix.len())
+        text = read_file(path)
+
+        if text.is_err()
+            return fail(code: "no_corpus", msg: "cannot read " + path)
+        target = out + "/mirror/" + rel
+        process.mkdir_all(directory(target))?
+
+        if write_file(path: target, text: text.must()).is_err()
+            return fail(code: "unwritable", msg: "cannot write " + target)
+        copied[rel] @ true
+
+    for file in files
+        if copied[file].is_err()
+            return fail(
+                code: "no_corpus",
+                msg: "the plan mutates " + file + ", and " + root + " has no " + file + suffix
+            )
+
+    return ok()
+
+function directory(path: str) -> str
+    at: i64 @ path.len() - 1
+
+    while at > 0 && path[at] != '/'
+        at @ at - 1
+
+    return path.slice(from: 0, to: at)
+
+# One phase on `workers.JOBS` threads, its `count` records in task order.
+function phase(out: str, which: i64, count: i64) -> [str]?
+    handles: [i64] @ []
+
+    for index in range(from: 0, to: workers.JOBS)
+        handles @ handles.push(hero_thread_spawn(body: workers.work, arg: index * 4 + which))
+
+    done: i64 @ 0
+
+    for h in handles
+        done @ done + hero_thread_join(handle: h)
+
+    if done != workers.JOBS
+        return fail(code: "worker_failed", msg: failures(out, which: which))
+    rows: [str] @ []
+    filled: [bool] @ []
+
+    for _ in range(from: 0, to: count)
+        rows @ rows.push("")
+        filled @ filled.push(false)
+
+    for index in range(from: 0, to: workers.JOBS)
+        path = workers.records_path(out, phase: which, index: index)
+        text = read_file(path)
+
+        if text.is_err()
+            return fail(code: "worker_failed", msg: "cannot read " + path)
+
+        for line in lines_of(text.must())
+            tab = first_tab(line)
+
+            if tab <= 0
+                return fail(code: "worker_failed", msg: path + " holds a line that is no task's")
+            task = json_fields.whole_of(.number(written: line.slice(from: 0, to: tab)))
+
+            if task.is_err() || task.must() < 0 || task.must() >= count || filled[task.must()]
+                return fail(code: "worker_failed", msg: path + " holds a line that is no task's")
+            rows[task.must()] @ line.slice(from: tab + 1, to: line.len())
+            filled[task.must()] @ true
+
+    for one in filled
+        if !one
+            return fail(code: "worker_failed", msg: "a task of phase " + which.to_str() + " has no record")
+
+    if which == workers.SINGLES
+        alone: [str] @ []
+
+        for index in range(from: 0, to: workers.JOBS)
+            for line in lines_of(read_file(workers.alone_path(out, index: index))?)
+                alone @ alone.push(line)
+
+        written(out + "/work/alone.jsonl", lines: alone)?
+    return ok(rows)
+
+# What the workers that failed wrote, each on a line.
+function failures(out: str, which: i64) -> str
+    said: [str] @ []
+
+    for index in range(from: 0, to: workers.JOBS)
+        got = read_file(workers.failure_path(out, phase: which, index: index))
+
+        if !got.is_err()
+            said @ said.push("worker " + index.to_str() + ": " + got.must())
+
+    if said.len() == 0
+        return "a worker of phase " + which.to_str() + " could not read its job"
+    return said.join("")
+
+function first_tab(line: str) -> i64
+    for at in range(from: 0, to: line.len())
+        if line[at] == 9
+            return at
+
+    return -1
+
+# A text's lines, the last one's line feed not making an empty line.
+function lines_of(text: str) -> [str]
+    out: [str] @ []
+    start: i64 @ 0
+
+    for at in range(from: 0, to: text.len())
+        if text[at] == 10
+            out @ out.push(text.slice(from: start, to: at))
+            start @ at + 1
+
+    if start < text.len()
+        out @ out.push(text.slice(from: start, to: text.len()))
+    return out
+
+function written(path: str, lines: [str]) -> ()?
+    text: str @ ""
+
+    if lines.len() > 0
+        text @ lines.join("\n") + "\n"
+
+    if write_file(path: path, text: text).is_err()
+        return fail(code: "unwritable", msg: "cannot write " + path)
+    return ok()
+
+## Tests
+
+test "a folder that already holds a run is refused, and a path with a line feed too"
+    dir = "build/selftest-recovery-taken"
+    assert !process.mkdir_all(dir).is_err()
+    assert !write_file(path: dir + "/singles.jsonl", text: "").is_err()
+
+    match replay(compiler: "heroes", plan_dir: plan.DEFAULT, out: dir)
+        .ok _  => assert false
+        .err e => assert e.msg == dir + " already holds something, and a run writes into a folder of its own: name a new one"
+
+    assert replay(compiler: "heroes", plan_dir: plan.DEFAULT, out: "build/a\nb").is_err()
+
+test "a worker's lines are split at their first tab, and a text's last line feed makes no line"
+    assert first_tab("12\t{\"a\": 1}") == 2
+    assert first_tab("none") == -1
+    assert lines_of("a\nb\n") == ["a", "b"]
+    assert lines_of("a\nb") == ["a", "b"]
+    assert lines_of("").len() == 0
+    assert directory("o/mirror/x/y.hero") == "o/mirror/x"

@@ -1,0 +1,175 @@
+# The recovery arm's workers: `JOBS` threads, each judging every `JOBS`-th
+# task of a phase with its own child processes (panel 187's R2, defect 210).
+#
+# `replay.py` ran six checks at a time (`--jobs 6`, its default), and this
+# arm runs as many and no more, so a gate pays the CPU it paid before
+# (the lane's brief: *in parallel at most as the Python did*).
+#
+# **What crosses a thread is one `i64`** (`examples/threads/main.hero`), so a
+# worker learns its job from a file named by the process every thread
+# shares: `build/recovery-<pid>.job`, the compiler, the plan's folder and the
+# run's folder, one a line (`suite_cache.hero`'s precedent). Its number and
+# its phase ride in the `i64`. It reads the plan itself, writes each record
+# it makes as one line `<task>\t<json>` in a file of its own under the run's
+# `work/`, and answers 1 when every task of its share is judged; on any
+# failure it writes the reason beside them and answers 0, and the run stops
+# there, exit 2: a run with a hole is not a run two compilers can compare.
+
+use cli/process
+use mutate/json_fields
+use mutate/json_read
+use mutate/judged
+use mutate/plan
+use mutate/planted
+
+constant JOBS: i64
+    6
+
+# The three phases, in the order a run makes them: the corpus unmutated,
+# the singles, the pairs (which read what the singles were told alone).
+constant CORPUS: i64
+    0
+
+constant SINGLES: i64
+    1
+
+constant PAIRS: i64
+    2
+
+record Job
+    compiler: str
+    plan_dir: str
+    out: str
+
+function job_path() -> str
+    return "build/recovery-" + process.pid().to_str() + ".job"
+
+function write_job(job: Job) -> ()?
+    process.mkdir_all("build")?
+
+    if write_file(path: job_path(), text: job.compiler + "\n" + job.plan_dir + "\n" + job.out + "\n").is_err()
+        return fail(code: "unwritable", msg: "cannot write " + job_path())
+    return ok()
+
+function read_job() -> Job?
+    text = read_file(job_path())
+
+    if text.is_err()
+        return fail(code: "no_job", msg: "cannot read " + job_path())
+    lines = judged.told_lines(text.must())
+
+    if lines.len() != 3
+        return fail(code: "no_job", msg: job_path() + " is not three lines")
+    return ok(Job(compiler: lines[0], plan_dir: lines[1], out: lines[2]))
+
+# The file a worker writes its records to, and the one its failure goes to.
+function records_path(out: str, phase: i64, index: i64) -> str
+    return out + "/work/" + phase.to_str() + "-" + index.to_str() + ".jsonl"
+
+function failure_path(out: str, phase: i64, index: i64) -> str
+    return out + "/work/" + phase.to_str() + "-" + index.to_str() + ".failed"
+
+# The codes each single was told on its own site, written by the singles'
+# workers and read by the pairs'.
+function alone_path(out: str, index: i64) -> str
+    return out + "/work/alone-" + index.to_str() + ".jsonl"
+
+# A thread's body: `arg` is the worker's number times four plus its phase.
+function work(arg: i64) -> i64
+    index = arg / 4
+    phase = arg % 4
+    job = read_job()
+
+    if job.is_err()
+        return 0
+    done = judged_share(job.must(), phase: phase, index: index)
+
+    match done
+        .ok _ => return 1
+        .err e =>
+            _ = write_file(path: failure_path(job.must().out, phase: phase, index: index), text: e.msg + "\n").is_err()
+            return 0
+
+function judged_share(job: Job, phase: i64, index: i64) -> ()?
+    p = plan.read_plan(job.plan_dir)?
+    at = judged.Place(
+        compiler: job.compiler,
+        mirror: job.out + "/mirror",
+        capture: job.out + "/work/capture-" + phase.to_str() + "-" + index.to_str()
+    )
+    lines: [str] @ []
+    alone_lines: [str] @ []
+    texts: {str: str} @ {}
+
+    if phase == CORPUS
+        files = plan.files(p)
+        task: i64 @ index
+
+        while task < files.len()
+            row = planted.unmutated(at, file: files[task], index: task, original: original(at, file: files[task], @texts)?)?
+            lines @ lines.push(task.to_str() + "\t" + json_fields.written(row))
+            task @ task + JOBS
+    else if phase == SINGLES
+        task: i64 @ index
+
+        while task < p.singles.len()
+            one = p.singles[task]
+            got = planted.single(at, one: one, original: original(at, file: one.file, @texts)?)?
+            lines @ lines.push(task.to_str() + "\t" + json_fields.written(got.row))
+            alone_lines @ alone_lines.push(
+                json_fields.written(.fields(names: ["key", "normal", "control"], values: [json_fields.string(one.key), json_fields.strings(got.normal_codes), json_fields.strings(got.control_codes)]))
+            )
+            task @ task + JOBS
+
+        written(alone_path(job.out, index: index), lines: alone_lines)?
+    else
+        alone = read_alone(job.out)?
+        singles = plan.by_key(p)
+        task: i64 @ index
+
+        while task < p.pairs.len()
+            two = p.pairs[task]
+            row = planted.pair(at, p: two, a: singles[two.a]?, b: singles[two.b]?, original: original(at, file: two.file, @texts)?, alone: alone)?
+            lines @ lines.push(task.to_str() + "\t" + json_fields.written(row))
+            task @ task + JOBS
+
+    return written(records_path(job.out, phase: phase, index: index), lines: lines)
+
+# A corpus program's text, read from the mirror once per worker.
+function original(at: judged.Place, file: str, @texts: {str: str}) -> str?
+    held = texts[file]
+
+    if !held.is_err()
+        return held
+    got = read_file(at.mirror + "/" + file)
+
+    if got.is_err()
+        return fail(code: "no_corpus", msg: "cannot read " + at.mirror + "/" + file)
+    texts[file] @ got.must()
+    return got
+
+function written(path: str, lines: [str]) -> ()?
+    text: str @ ""
+
+    if lines.len() > 0
+        text @ lines.join("\n") + "\n"
+
+    if write_file(path: path, text: text).is_err()
+        return fail(code: "unwritable", msg: "cannot write " + path)
+    return ok()
+
+# Every single's codes alone, by key, the normal arm's first.
+function read_alone(out: str) -> {str: [[str]]}?
+    got: {str: [[str]]} @ {}
+    text = read_file(out + "/work/alone.jsonl")
+
+    if text.is_err()
+        return fail(code: "no_alone", msg: "cannot read " + out + "/work/alone.jsonl")
+
+    for row in json_read.read_lines(text.must())?
+        got[json_fields.text_field(row, name: "key")?] @ [
+            json_fields.texts_field(row, name: "normal")?
+            json_fields.texts_field(row, name: "control")?
+        ]
+
+    return ok(got)

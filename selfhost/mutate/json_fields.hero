@@ -1,0 +1,234 @@
+# Reading a field of a JSON value, and writing a value back as text: the
+# two halves `mutate/json_read.hero`'s reader leaves to its callers, the
+# recovery arm's plan, records and differential (defect 210).
+#
+# A field asked for and absent, or of another kind, is a failure that names
+# the field, never a default: a record missing its `key` is a broken
+# record, and reading it as `""` would compare two runs on nothing.
+#
+# The writer prints what Python's `json.dumps` prints by default, `, ` and
+# `: ` between parts, because the records it writes are the Python
+# instrument's (`replay.py`), and a reader comparing the two runs line by
+# line should find the same lines. Every string goes through
+# `cli/json_text.hero`, the one escape every JSON this compiler writes
+# shares (defect 102): it writes DEL and C1's controls as `\u00XX` where
+# Python writes them raw, which is the same character to any reader.
+
+use cli/json_text
+use mutate/json_read
+
+# The value under `name` in an object.
+function field(j: json_read.Json, name: str) -> json_read.Json?
+    match j
+        .fields f =>
+            at: i64 @ 0
+
+            for one in f.names
+                if one == name
+                    return ok(f.values[at])
+                at @ at + 1
+
+            return fail(code: "no_field", msg: "no field `" + name + "`")
+        .null_value | .truth _ | .number _ | .text _ | .items _ => return fail(
+            code: "no_field",
+            msg: "not an object, so no field `" + name + "`"
+        )
+
+# Whether an object holds `name` at all.
+function has(j: json_read.Json, name: str) -> bool
+    return !field(j, name: name).is_err()
+
+function text_of(j: json_read.Json) -> str?
+    return match j
+        .text t                                                   => ok(t.v)
+        .null_value | .truth _ | .number _ | .items _ | .fields _ => fail(code: "not_text", msg: "not a string")
+
+function items_of(j: json_read.Json) -> [json_read.Json]?
+    return match j
+        .items l                                                 => ok(l.all)
+        .null_value | .truth _ | .number _ | .text _ | .fields _ => fail(code: "not_items", msg: "not an array")
+
+function truth_of(j: json_read.Json) -> bool?
+    return match j
+        .truth t                                                 => ok(t.v)
+        .null_value | .number _ | .text _ | .items _ | .fields _ => fail(code: "not_truth", msg: "not true or false")
+
+# An integer, from a number written with no fraction and no exponent. The
+# digits are judged before each is taken, so a number past `i64` is a
+# failure and never the abort overflow is (spec § 7).
+function whole_of(j: json_read.Json) -> i64?
+    spelled = match j
+        .number n                                               => n.written
+        .null_value | .truth _ | .text _ | .items _ | .fields _ => ""
+
+    if spelled.len() == 0
+        return fail(code: "not_whole", msg: "not a number")
+    negative = spelled[0] == '-'
+    at: i64 @ 0
+
+    if negative
+        at @ 1
+    out: i64 @ 0
+
+    while at < spelled.len()
+        b = spelled[at]
+
+        if b < '0' || b > '9'
+            return fail(code: "not_whole", msg: "`" + spelled + "` is not a whole number")
+        d = to_i64(b - '0').must()
+
+        # The negative side holds one more than the positive, so the
+        # number is built negative and turned once, at the end.
+        if out < (-9223372036854775807 - 1 + d) / 10
+            return fail(code: "not_whole", msg: "`" + spelled + "` is past what an i64 holds")
+        out @ out * 10 - d
+        at @ at + 1
+
+    if negative
+        return ok(out)
+
+    if out == -9223372036854775807 - 1
+        return fail(code: "not_whole", msg: "`" + spelled + "` is past what an i64 holds")
+    return ok(0 - out)
+
+# The field read as each kind, the failure naming the field.
+function text_field(j: json_read.Json, name: str) -> str?
+    got = text_of(field(j, name: name)?)
+
+    if got.is_err()
+        return fail(code: "bad_field", msg: "`" + name + "` is not a string")
+    return got
+
+function whole_field(j: json_read.Json, name: str) -> i64?
+    got = whole_of(field(j, name: name)?)
+
+    if got.is_err()
+        return fail(code: "bad_field", msg: "`" + name + "` is not a whole number")
+    return got
+
+function items_field(j: json_read.Json, name: str) -> [json_read.Json]?
+    got = items_of(field(j, name: name)?)
+
+    if got.is_err()
+        return fail(code: "bad_field", msg: "`" + name + "` is not an array")
+    return got
+
+# An array of strings, or of whole numbers, under `name`.
+function texts_field(j: json_read.Json, name: str) -> [str]?
+    out: [str] @ []
+
+    for one in items_field(j, name: name)?
+        out @ out.push(text_of(one)?)
+
+    return ok(out)
+
+function wholes_field(j: json_read.Json, name: str) -> [i64]?
+    out: [i64] @ []
+
+    for one in items_field(j, name: name)?
+        out @ out.push(whole_of(one)?)
+
+    return ok(out)
+
+## Building and writing
+
+function whole(v: i64) -> json_read.Json
+    return .number(written: v.to_str())
+
+function string(v: str) -> json_read.Json
+    return .text(v: v)
+
+function strings(vs: [str]) -> json_read.Json
+    out: [json_read.Json] @ []
+
+    for v in vs
+        out @ out.push(.text(v: v))
+
+    return .items(all: out)
+
+function wholes(vs: [i64]) -> json_read.Json
+    out: [json_read.Json] @ []
+
+    for v in vs
+        out @ out.push(whole(v))
+
+    return .items(all: out)
+
+# A value as one line of text, as `json.dumps` writes it.
+function written(j: json_read.Json) -> str
+    parts: [str] @ []
+    write_into(@parts, j: j)
+    return parts.join("")
+
+# The pieces of `j`'s text pushed onto `parts`, joined once by the caller
+# (defect 105's rule: a text is never grown by `+` at every step).
+function write_into(@parts: [str], j: json_read.Json)
+    match j
+        .null_value => parts @ parts.push("null")
+        .truth t =>
+            if t.v
+                parts @ parts.push("true")
+            else
+                parts @ parts.push("false")
+        .number n => parts @ parts.push(n.written)
+        .text t   => parts @ parts.push("\"" + json_text.json_string(t.v) + "\"")
+        .items l =>
+            parts @ parts.push("[")
+            at: i64 @ 0
+
+            for one in l.all
+                if at > 0
+                    parts @ parts.push(", ")
+                write_into(@parts, j: one)
+                at @ at + 1
+
+            parts @ parts.push("]")
+        .fields f =>
+            parts @ parts.push("{")
+            at: i64 @ 0
+
+            for name in f.names
+                if at > 0
+                    parts @ parts.push(", ")
+                parts @ parts.push("\"" + json_text.json_string(name) + "\": ")
+                write_into(@parts, j: f.values[at])
+                at @ at + 1
+
+            parts @ parts.push("}")
+
+## Tests
+
+test "a field is found by its name, and one absent or of another kind names itself"
+    j = json_read.read_json("{\"key\": \"k1\", \"line\": 7, \"site\": [3, 4], \"codes\": [\"a\"]}").must()
+    assert text_field(j, name: "key").must() == "k1"
+    assert whole_field(j, name: "line").must() == 7
+    assert wholes_field(j, name: "site").must() == [3, 4]
+    assert texts_field(j, name: "codes").must() == ["a"]
+    assert has(j, name: "key")
+    assert !has(j, name: "nope")
+
+    match text_field(j, name: "line")
+        .ok _  => assert false
+        .err e => assert e.msg == "`line` is not a string"
+
+    match whole_field(j, name: "nope")
+        .ok _  => assert false
+        .err e => assert e.msg == "no field `nope`"
+
+test "a whole number is read to both ends of i64, and past them is a failure"
+    assert whole_of(.number(written: "9223372036854775807")).must() == 9223372036854775807
+    assert whole_of(.number(written: "-9223372036854775808")).must() == -9223372036854775807 - 1
+    assert whole_of(.number(written: "-9")).must() == -9
+    assert whole_of(.number(written: "0")).must() == 0
+    assert whole_of(.number(written: "9223372036854775808")).is_err()
+    assert whole_of(.number(written: "-9223372036854775809")).is_err()
+    assert whole_of(.number(written: "1.5")).is_err()
+    assert whole_of(.number(written: "1e3")).is_err()
+    assert whole_of(.text(v: "1")).is_err()
+
+test "a value is written as json.dumps writes it, and read back as itself"
+    j = json_read.read_json("{\"a\": [1, -2, true, null], \"b\": {}, \"c\": [], \"d\": \"q\\\"\\n\"}").must()
+    assert written(j) == "{\"a\": [1, -2, true, null], \"b\": {}, \"c\": [], \"d\": \"q\\\"\\n\"}"
+    assert json_read.read_json(written(j)).must() == j
+    assert written(strings(["x", "y"])) == "[\"x\", \"y\"]"
+    assert written(wholes([])) == "[]"
