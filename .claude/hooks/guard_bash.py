@@ -533,7 +533,8 @@ def verdict(command, cwd=None):
         # stopped on a conflict is concluded with the whole index, git refusing
         # a partial commit while it stands, so a bare commit then is allowed
         # when the index holds no file the operation did not bring
-        # (`commits.concluded`).
+        # (`commits.concluded`). A rebase or an am takes a pathspec, so a bare
+        # commit while one stands keeps this refusal (defect 487).
         if rest is not None and "--" not in rest:
             sequence = commits.concluded(where, None)
             if sequence:
@@ -550,9 +551,11 @@ def verdict(command, cwd=None):
             said = commits.pathspec(rest, where)
             if said is not None:
                 return said
-        for name, _head in commits.OPERATIONS if is_git else ():
+        # A rebase and an am are concluded the same way, and `--cont` is
+        # `--continue` to git (defect 487, `commits.continues`).
+        for name in commits.CONCLUDED_BY if is_git else ():
             more = git_args(w, name)
-            if more is not None and "--continue" in more:
+            if more is not None and commits.continues(name, more):
                 said = commits.concluded(where, name)
                 if said:
                     return said

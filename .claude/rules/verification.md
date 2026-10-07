@@ -654,7 +654,12 @@ could.* Measured on the trunk's compiler the same day, `real` equal to `user`:
   by the whole tree is refused as a commit with no `--` is; a merge, a
   cherry-pick or a revert concluded with the whole index, `--continue` or a
   bare commit while it stands, is refused when the index holds a file it did
-  not bring; and a command behind an assignment, a wrapper (`env`, `time`,
+  not bring, and so since 2026-10-08 is a rebase or an am concluded by
+  `--continue` (an am's `--resolved` and `-r`, and every abbreviation git
+  reads as `--continue`), a rebase bringing what its pick or the merge it
+  redoes brings and an am what its patch names (defect 487; a bare commit
+  while either stands keeps its refusal, git taking a pathspec then); and a
+  command behind an assignment, a wrapper (`env`, `time`,
   `caffeinate`, `timeout`) or a shell's `-c` is read as the shell runs it.
   And a commit's, a merge's or a tag's message, `-m` or `-F` and the heredoc
   `-F -` reads, is refused where it holds a character the `unseen` suite
