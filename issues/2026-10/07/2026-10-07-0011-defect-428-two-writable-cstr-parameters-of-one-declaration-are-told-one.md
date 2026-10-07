@@ -3,7 +3,7 @@ kind: defect
 area: emit
 milestone: none
 filed: 2026-10-07
-commit: none
+commit: 868c26c23b80055c8c57caddafa4896e2a7394fe
 github: none
 ---
 
@@ -12,3 +12,5 @@ github: none
     **Origin:** filed by the coordinator at 00:11 on 2026-10-07, from lane b13-w411's report of the evening before (*found beside*); the lane's measurement, not re-run by the coordinator.
 
     **Class: adjacent**, 2026-10-07 (`.claude/rules/verification.md` § Bounded discovery): a mistake told only after another is fixed.
+
+    Repaired at `868c26c2`, 2026-10-07 (lane b13-w411): the writable diagnostic points at the parameter's own name in both routes, so two writable parameters are told together, its fix replacing the parameter's type with `ptr`; 14 expectations moved in column and caret only (the lane read each diff); cases `fixedbugs-428-*`; gated by its cases, the compiler's own tests, every form whole on this Mac and its cases on Linux arm64 (the lane's); a C-boundary defect, so it closes after the batch's platform legs; the card filled by the coordinator.
