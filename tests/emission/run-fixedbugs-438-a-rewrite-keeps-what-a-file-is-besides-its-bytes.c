@@ -129,37 +129,26 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 25 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs438arewritekeepswhatafileisbesidesitsbytes_hero_fs_mkdir_all(const char * a0) { (void)(hero_fs_mkdir_all)(a0); }
-#line 26 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs438arewritekeepswhatafileisbesidesitsbytes_hero_fs_exists(const char * a0) { (void)(hero_fs_exists)(a0); }
-#line 27 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs438arewritekeepswhatafileisbesidesitsbytes_hero_fs_is_directory(const char * a0) { (void)(hero_fs_is_directory)(a0); }
-#line 28 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs438arewritekeepswhatafileisbesidesitsbytes_hero_fs_kind(const char * a0) { (void)(hero_fs_kind)(a0); }
-#line 29 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs438arewritekeepswhatafileisbesidesitsbytes_hero_fs_links(const char * a0) { (void)(hero_fs_links)(a0); }
-#line 30 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs438arewritekeepswhatafileisbesidesitsbytes_hero_fs_mode(const char * a0) { (void)(hero_fs_mode)(a0); }
-#line 31 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs438arewritekeepswhatafileisbesidesitsbytes_hero_fs_set_mode(const char * a0, int64_t a1) { (void)(hero_fs_set_mode)(a0, a1); }
-#line 32 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs438arewritekeepswhatafileisbesidesitsbytes_hero_fs_link(const char * a0, const char * a1) { (void)(hero_fs_link)(a0, a1); }
-#line 33 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs438arewritekeepswhatafileisbesidesitsbytes_hero_dir_scan(const char * a0, int64_t a1, int64_t a2) { (void)(hero_dir_scan)(a0, a1, a2); }
 #line 35 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs438arewritekeepswhatafileisbesidesitsbytes_hero_dir_remove_tree(const char * a0) { (void)(hero_dir_remove_tree)(a0); }
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-#line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 163 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 152 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -193,32 +182,32 @@ h_0opt_a8ea2 h_library_write_file(HeroStr h0_path, HeroStr h1_text);
 
 #line 36 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
 int64_t h_fixedbugs438arewritekeepswhatafileisbesidesitsbytes_HERO_DIR_FILES(void) {
-#line 197 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 186 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     return HERO_DIR_FILES;
 }
 
 #line 37 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
 int64_t h_fixedbugs438arewritekeepswhatafileisbesidesitsbytes_HERO_FS_OTHER(void) {
-#line 203 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 192 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     return HERO_FS_OTHER;
 }
 
 #line 39 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
 HeroStr h_fixedbugs438arewritekeepswhatafileisbesidesitsbytes_TEXT(void) {
-#line 209 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 198 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     HeroStr t1;
     goto bb0;
 bb0:
 #line 40 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     t1 = HERO_STR_LIT(hero_str_70a25bad);
-#line 215 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 204 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_incref(t1);
     return t1;
 }
 
 #line 43 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
 int64_t h_fixedbugs438arewritekeepswhatafileisbesidesitsbytes_files_in(HeroStr h0_dir) {
-#line 222 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 211 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     int64_t h1_count;
     HeroStr t1;
     const char * t2;
@@ -240,18 +229,16 @@ bb0:
     t5 = hero_dir_scan(hero_cstr_nonnull(t2), t3, t4);
 #line 44 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     h1_count = t5;
-#line 45 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     (void)hero_dir_release();
-#line 46 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     t6 = h1_count;
 #line 46 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     return t6;
-#line 250 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 237 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
 }
 
 #line 48 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
 bool h_fixedbugs438arewritekeepswhatafileisbesidesitsbytes_holds(HeroStr h0_path) {
-#line 255 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 242 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     h_0opt_f87774a h1_f0 = {0};
     HeroStr h2_r0 = {0};
     h_0opt_f87774a h3_own3 = {0};
@@ -283,15 +270,15 @@ bb0:
     t13 = h3_own3;
 #line 49 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     h3_own3 = t2;
-#line 287 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 274 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     h_0opt_f87774a_release(&t13);
 #line 49 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     t14 = h1_f0;
-#line 291 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 278 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     h_0opt_f87774a_retain(&t2);
 #line 49 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     h1_f0 = t2;
-#line 295 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 282 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     h_0opt_f87774a_release(&t14);
 #line 49 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     t3 = h1_f0;
@@ -311,11 +298,11 @@ bb1:
     t8 = t7.as.ok;
 #line 49 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     t15 = h2_r0;
-#line 315 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 302 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_incref(t8);
 #line 49 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     h2_r0 = t8;
-#line 319 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 306 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_decref(t15);
     goto bb3;
 bb2:
@@ -323,11 +310,11 @@ bb2:
     t9 = HERO_STR_LIT(hero_str_c328310);
 #line 49 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     t16 = h2_r0;
-#line 327 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 314 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_incref(t9);
 #line 49 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     h2_r0 = t9;
-#line 331 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 318 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_decref(t16);
     goto bb3;
 bb3:
@@ -339,27 +326,21 @@ bb3:
     t17 = h4_own4;
 #line 49 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     h4_own4 = t11;
-#line 343 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 330 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_decref(t17);
 #line 49 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     t12 = hero_str_eq(t10, t11);
-#line 347 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 334 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     h_0opt_f87774a_release(&h1_f0);
-#line 49 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
-#line 350 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_decref(h2_r0);
-#line 49 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
-#line 353 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     h_0opt_f87774a_release(&h3_own3);
-#line 49 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
-#line 356 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_decref(h4_own4);
     return t12;
 }
 
 #line 51 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
 bool h_fixedbugs438arewritekeepswhatafileisbesidesitsbytes_wrote(HeroStr h0_path) {
-#line 363 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 344 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     h_0opt_a8ea2 h1_f0 = {0};
     HeroStr h2_own2 = {0};
     h_0opt_a8ea2 h3_own3 = {0};
@@ -384,7 +365,7 @@ bb0:
     t9 = h2_own2;
 #line 52 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     h2_own2 = t2;
-#line 388 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 369 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_decref(t9);
 #line 52 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     t3 = h_library_write_file(t1, t2);
@@ -392,15 +373,15 @@ bb0:
     t10 = h3_own3;
 #line 52 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     h3_own3 = t3;
-#line 396 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 377 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     h_0opt_a8ea2_release(&t10);
 #line 52 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     t11 = h1_f0;
-#line 400 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 381 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     h_0opt_a8ea2_retain(&t3);
 #line 52 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     h1_f0 = t3;
-#line 404 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 385 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     h_0opt_a8ea2_release(&t11);
 #line 52 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     t4 = h1_f0;
@@ -412,20 +393,16 @@ bb0:
     t7 = t5 == t6;
 #line 52 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     t8 = !t7;
-#line 416 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 397 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     h_0opt_a8ea2_release(&h1_f0);
-#line 52 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
-#line 419 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_decref(h2_own2);
-#line 52 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
-#line 422 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     h_0opt_a8ea2_release(&h3_own3);
     return t8;
 }
 
 #line 54 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
 void h_fixedbugs438arewritekeepswhatafileisbesidesitsbytes_absent(HeroStr h0_dir) {
-#line 429 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 406 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     HeroStr h1_path = {0};
     HeroStr h2_own2 = {0};
     HeroStr t1;
@@ -454,15 +431,15 @@ bb0:
     t13 = h2_own2;
 #line 55 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     h2_own2 = t3;
-#line 458 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 435 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_decref(t13);
 #line 55 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     t14 = h1_path;
-#line 462 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 439 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_incref(t3);
 #line 55 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     h1_path = t3;
-#line 466 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 443 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_decref(t14);
 #line 56 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     t4 = HERO_STR_LIT(hero_str_71d4b748);
@@ -496,17 +473,15 @@ bb0:
     hero_print_int(t12);
 #line 56 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     hero_print_end();
-#line 500 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 477 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_decref(h1_path);
-#line 56 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
-#line 503 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_decref(h2_own2);
     return;
 }
 
 #line 58 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
 void h_fixedbugs438arewritekeepswhatafileisbesidesitsbytes_own_mode(HeroStr h0_dir) {
-#line 510 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 485 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     HeroStr h1_path = {0};
     bool h2_b0;
     int64_t h3_before;
@@ -558,15 +533,15 @@ bb0:
     t34 = h4_own4;
 #line 59 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     h4_own4 = t3;
-#line 562 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 537 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_decref(t34);
 #line 59 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     t35 = h1_path;
-#line 566 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 541 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_incref(t3);
 #line 59 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     h1_path = t3;
-#line 570 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 545 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_decref(t35);
 #line 61 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     t4 = h1_path;
@@ -590,19 +565,14 @@ bb1:
     h3_before = t18;
 #line 66 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     t19 = HERO_STR_LIT(hero_str_4797d0b5);
-#line 67 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     t20 = h1_path;
 #line 67 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     t21 = h_fixedbugs438arewritekeepswhatafileisbesidesitsbytes_wrote(t20);
-#line 68 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     t22 = HERO_STR_LIT(hero_str_70a8b09f);
-#line 69 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     t23 = h1_path;
 #line 69 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     t24 = h_fixedbugs438arewritekeepswhatafileisbesidesitsbytes_holds(t23);
-#line 70 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     t25 = HERO_STR_LIT(hero_str_3d62d81a);
-#line 71 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     t26 = h1_path;
 #line 71 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     t27 = hero_str_lend(t26);
@@ -612,9 +582,7 @@ bb1:
     t29 = h3_before;
 #line 71 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     t30 = t28 == t29;
-#line 72 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     t31 = HERO_STR_LIT(hero_str_322b620b);
-#line 73 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     t32 = h0_dir;
 #line 73 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     t33 = h_fixedbugs438arewritekeepswhatafileisbesidesitsbytes_files_in(t32);
@@ -664,7 +632,6 @@ bb3:
     if (t13) goto bb4; else goto bb5;
 #line 61 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
 bb4:
-#line 62 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     t14 = HERO_STR_LIT(hero_str_552d9e74);
 #line 62 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     t15 = h1_path;
@@ -682,18 +649,15 @@ bb5:
     goto bb1;
 #line 62 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
 bb6:
-#line 58 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
-#line 687 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 653 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_decref(h1_path);
-#line 58 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
-#line 690 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_decref(h4_own4);
     return;
 }
 
 #line 76 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
 void h_fixedbugs438arewritekeepswhatafileisbesidesitsbytes_two_names(HeroStr h0_dir) {
-#line 697 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 661 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     HeroStr h1_one = {0};
     HeroStr h2_two = {0};
     bool h3_b0;
@@ -760,15 +724,15 @@ bb0:
     t41 = h6_own6;
 #line 77 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     h6_own6 = t3;
-#line 764 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 728 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_decref(t41);
 #line 77 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     t42 = h1_one;
-#line 768 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 732 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_incref(t3);
 #line 77 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     h1_one = t3;
-#line 772 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 736 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_decref(t42);
 #line 78 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     t4 = h0_dir;
@@ -780,15 +744,15 @@ bb0:
     t43 = h7_own7;
 #line 78 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     h7_own7 = t6;
-#line 784 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 748 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_decref(t43);
 #line 78 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     t44 = h2_two;
-#line 788 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 752 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_incref(t6);
 #line 78 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     h2_two = t6;
-#line 792 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 756 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_decref(t44);
 #line 80 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     t7 = h1_one;
@@ -800,15 +764,15 @@ bb0:
     t45 = h8_own8;
 #line 80 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     h8_own8 = t9;
-#line 804 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 768 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     h_0opt_a8ea2_release(&t45);
 #line 80 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     t46 = h4_f0;
-#line 808 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 772 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     h_0opt_a8ea2_retain(&t9);
 #line 80 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     h4_f0 = t9;
-#line 812 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 776 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     h_0opt_a8ea2_release(&t46);
 #line 80 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     t10 = h4_f0;
@@ -826,13 +790,10 @@ bb0:
 bb1:
 #line 84 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     t26 = HERO_STR_LIT(hero_str_2fa8e659);
-#line 85 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     t27 = h1_one;
 #line 85 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     t28 = h_fixedbugs438arewritekeepswhatafileisbesidesitsbytes_wrote(t27);
-#line 86 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     t29 = HERO_STR_LIT(hero_str_36e27b7d);
-#line 87 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     t30 = h1_one;
 #line 87 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     t31 = h_fixedbugs438arewritekeepswhatafileisbesidesitsbytes_holds(t30);
@@ -868,7 +829,6 @@ bb3:
     if (t21) goto bb4; else goto bb5;
 #line 80 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
 bb4:
-#line 81 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     t22 = HERO_STR_LIT(hero_str_552d9e74);
 #line 81 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     t23 = h1_one;
@@ -906,9 +866,7 @@ bb6:
 bb7:
 #line 87 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     t34 = h5_b1;
-#line 88 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     t35 = HERO_STR_LIT(hero_str_163ff1f9);
-#line 89 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     t36 = h1_one;
 #line 89 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     t37 = hero_str_lend(t36);
@@ -936,30 +894,19 @@ bb7:
     goto bb8;
 #line 83 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
 bb8:
-#line 76 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
-#line 941 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 898 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_decref(h1_one);
-#line 76 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
-#line 944 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_decref(h2_two);
-#line 76 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
-#line 947 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     h_0opt_a8ea2_release(&h4_f0);
-#line 76 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
-#line 950 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_decref(h6_own6);
-#line 76 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
-#line 953 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_decref(h7_own7);
-#line 76 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
-#line 956 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     h_0opt_a8ea2_release(&h8_own8);
     return;
 }
 
 #line 92 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
 void h_fixedbugs438arewritekeepswhatafileisbesidesitsbytes_no_new_name(HeroStr h0_dir) {
-#line 963 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 910 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     HeroStr h1_shut = {0};
     HeroStr h2_path = {0};
     bool h3_b0;
@@ -1025,15 +972,15 @@ bb0:
     t40 = h7_own7;
 #line 93 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     h7_own7 = t3;
-#line 1029 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 976 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_decref(t40);
 #line 93 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     t41 = h1_shut;
-#line 1033 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 980 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_incref(t3);
 #line 93 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     h1_shut = t3;
-#line 1037 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 984 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_decref(t41);
 #line 94 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     t4 = h1_shut;
@@ -1045,15 +992,15 @@ bb0:
     t42 = h8_own8;
 #line 94 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     h8_own8 = t6;
-#line 1049 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 996 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_decref(t42);
 #line 94 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     t43 = h2_path;
-#line 1053 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 1000 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_incref(t6);
 #line 94 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     h2_path = t6;
-#line 1057 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 1004 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_decref(t43);
 #line 96 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     t7 = h1_shut;
@@ -1077,7 +1024,6 @@ bb1:
     t30 = h_fixedbugs438arewritekeepswhatafileisbesidesitsbytes_wrote(t29);
 #line 99 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     h6_written = t30;
-#line 100 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     t31 = h1_shut;
 #line 100 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     t32 = hero_str_lend(t31);
@@ -1085,7 +1031,6 @@ bb1:
     t33 = INT64_C(493);
 #line 100 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     (void)hero_fs_set_mode(hero_cstr_nonnull(t32), t33);
-#line 101 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     t35 = HERO_STR_LIT(hero_str_3d9d6f9);
 #line 101 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     t36 = h6_written;
@@ -1119,15 +1064,15 @@ bb2:
     t44 = h9_own9;
 #line 96 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     h9_own9 = t14;
-#line 1123 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 1068 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     h_0opt_a8ea2_release(&t44);
 #line 96 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     t45 = h5_f0;
-#line 1127 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 1072 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     h_0opt_a8ea2_retain(&t14);
 #line 96 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     h5_f0 = t14;
-#line 1131 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 1076 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     h_0opt_a8ea2_release(&t45);
 #line 96 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     t15 = h5_f0;
@@ -1175,7 +1120,6 @@ bb5:
     if (t26) goto bb6; else goto bb7;
 #line 96 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
 bb6:
-#line 97 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     t27 = HERO_STR_LIT(hero_str_552d9e74);
 #line 97 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     t28 = h2_path;
@@ -1193,30 +1137,19 @@ bb7:
     goto bb1;
 #line 97 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
 bb8:
-#line 92 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
-#line 1198 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 1141 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_decref(h1_shut);
-#line 92 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
-#line 1201 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_decref(h2_path);
-#line 92 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
-#line 1204 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     h_0opt_a8ea2_release(&h5_f0);
-#line 92 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
-#line 1207 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_decref(h7_own7);
-#line 92 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
-#line 1210 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_decref(h8_own8);
-#line 92 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
-#line 1213 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     h_0opt_a8ea2_release(&h9_own9);
     return;
 }
 
 #line 103 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
 void h_fixedbugs438arewritekeepswhatafileisbesidesitsbytes_device(void) {
-#line 1220 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 1153 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     HeroStr h0_sink = {0};
     HeroStr h1_own1 = {0};
     HeroStr t1;
@@ -1242,11 +1175,11 @@ bb0:
     t1 = HERO_STR_LIT(hero_str_323bd022);
 #line 104 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     t15 = h0_sink;
-#line 1246 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 1179 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_incref(t1);
 #line 104 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     h0_sink = t1;
-#line 1250 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 1183 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_decref(t15);
 #line 106 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     t2 = hero_run_exe_suffix();
@@ -1254,7 +1187,7 @@ bb0:
     t16 = h1_own1;
 #line 106 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     h1_own1 = t2;
-#line 1258 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 1191 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_decref(t16);
 #line 106 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     t3 = HERO_STR_LIT(hero_str_644a234);
@@ -1266,13 +1199,10 @@ bb0:
 bb1:
 #line 109 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     t6 = HERO_STR_LIT(hero_str_3ac41caa);
-#line 110 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     t7 = h0_sink;
 #line 110 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     t8 = h_fixedbugs438arewritekeepswhatafileisbesidesitsbytes_wrote(t7);
-#line 111 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     t9 = HERO_STR_LIT(hero_str_5ff2aca9);
-#line 112 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     t10 = h0_sink;
 #line 112 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     t11 = hero_str_lend(t10);
@@ -1292,10 +1222,8 @@ bb1:
     hero_print_bool(t14);
 #line 108 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     hero_print_end();
-#line 1296 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 1226 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_decref(h0_sink);
-#line 108 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
-#line 1299 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_decref(h1_own1);
     return;
 bb2:
@@ -1303,11 +1231,11 @@ bb2:
     t5 = HERO_STR_LIT(hero_str_149889);
 #line 107 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     t17 = h0_sink;
-#line 1307 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 1235 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_incref(t5);
 #line 107 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     h0_sink = t5;
-#line 1311 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 1239 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_decref(t17);
     goto bb1;
 bb3:
@@ -1316,7 +1244,7 @@ bb3:
 
 #line 115 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
 void h_fixedbugs438arewritekeepswhatafileisbesidesitsbytes_refused(HeroStr h0_dir) {
-#line 1320 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 1248 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     HeroStr h1_path = {0};
     HeroStr h2_own2 = {0};
     HeroStr t1;
@@ -1372,7 +1300,6 @@ bb0:
     hero_print_bool(t9);
 #line 116 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     hero_print_end();
-#line 117 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     t10 = h0_dir;
 #line 117 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     t11 = HERO_STR_LIT(hero_str_e1f15a5);
@@ -1382,25 +1309,22 @@ bb0:
     t22 = h2_own2;
 #line 117 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     h2_own2 = t12;
-#line 1386 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 1313 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_decref(t22);
 #line 117 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     t23 = h1_path;
-#line 1390 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 1317 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_incref(t12);
 #line 117 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     h1_path = t12;
-#line 1394 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 1321 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_decref(t23);
 #line 119 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     t13 = HERO_STR_LIT(hero_str_70ef7bcf);
-#line 120 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     t14 = h1_path;
 #line 120 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     t15 = h_fixedbugs438arewritekeepswhatafileisbesidesitsbytes_wrote(t14);
-#line 121 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     t16 = HERO_STR_LIT(hero_str_4c484fa3);
-#line 122 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     t17 = h1_path;
 #line 122 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     t18 = hero_str_lend(t17);
@@ -1420,17 +1344,15 @@ bb0:
     hero_print_bool(t21);
 #line 118 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     hero_print_end();
-#line 1424 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 1348 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_decref(h1_path);
-#line 118 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
-#line 1427 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_decref(h2_own2);
     return;
 }
 
 #line 125 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
 void h_fixedbugs438arewritekeepswhatafileisbesidesitsbytes_main(void) {
-#line 1434 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 1356 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     HeroStr h0_root = {0};
     HeroStr h1_lone = {0};
     HeroStr h2_moded = {0};
@@ -1502,7 +1424,7 @@ bb0:
     t41 = h6_own6;
 #line 126 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     h6_own6 = t3;
-#line 1506 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 1428 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_decref(t41);
 #line 126 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     t4 = hero_str_concat(t1, t3);
@@ -1510,15 +1432,15 @@ bb0:
     t42 = h7_own7;
 #line 126 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     h7_own7 = t4;
-#line 1514 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 1436 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_decref(t42);
 #line 126 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     t43 = h0_root;
-#line 1518 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 1440 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_incref(t4);
 #line 126 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     h0_root = t4;
-#line 1522 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 1444 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_decref(t43);
 #line 127 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     t5 = h0_root;
@@ -1530,15 +1452,15 @@ bb0:
     t44 = h8_own8;
 #line 127 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     h8_own8 = t7;
-#line 1534 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 1456 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_decref(t44);
 #line 127 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     t45 = h1_lone;
-#line 1538 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 1460 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_incref(t7);
 #line 127 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     h1_lone = t7;
-#line 1542 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 1464 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_decref(t45);
 #line 128 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     t8 = h0_root;
@@ -1550,15 +1472,15 @@ bb0:
     t46 = h9_own9;
 #line 128 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     h9_own9 = t10;
-#line 1554 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 1476 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_decref(t46);
 #line 128 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     t47 = h2_moded;
-#line 1558 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 1480 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_incref(t10);
 #line 128 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     h2_moded = t10;
-#line 1562 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 1484 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_decref(t47);
 #line 129 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     t11 = h0_root;
@@ -1570,15 +1492,15 @@ bb0:
     t48 = h10_own10;
 #line 129 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     h10_own10 = t13;
-#line 1574 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 1496 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_decref(t48);
 #line 129 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     t49 = h3_linked;
-#line 1578 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 1500 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_incref(t13);
 #line 129 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     h3_linked = t13;
-#line 1582 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 1504 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_decref(t49);
 #line 131 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     t14 = h1_lone;
@@ -1600,25 +1522,19 @@ bb1:
     t33 = h1_lone;
 #line 134 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     h_fixedbugs438arewritekeepswhatafileisbesidesitsbytes_absent(t33);
-#line 135 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     t34 = h2_moded;
 #line 135 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     h_fixedbugs438arewritekeepswhatafileisbesidesitsbytes_own_mode(t34);
-#line 136 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     t35 = h3_linked;
 #line 136 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     h_fixedbugs438arewritekeepswhatafileisbesidesitsbytes_two_names(t35);
-#line 137 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     t36 = h0_root;
 #line 137 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     h_fixedbugs438arewritekeepswhatafileisbesidesitsbytes_no_new_name(t36);
-#line 138 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     h_fixedbugs438arewritekeepswhatafileisbesidesitsbytes_device();
-#line 139 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     t37 = h0_root;
 #line 139 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     h_fixedbugs438arewritekeepswhatafileisbesidesitsbytes_refused(t37);
-#line 140 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     t38 = h0_root;
 #line 140 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     t39 = hero_str_lend(t38);
@@ -1674,7 +1590,6 @@ bb5:
     if (t30) goto bb6; else goto bb7;
 #line 131 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
 bb6:
-#line 132 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     t31 = HERO_STR_LIT(hero_str_552d9e74);
 #line 132 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     t32 = h0_root;
@@ -1692,63 +1607,46 @@ bb7:
     goto bb1;
 #line 132 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
 bb8:
-#line 125 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
-#line 1697 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 1611 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_decref(h0_root);
-#line 125 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
-#line 1700 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_decref(h1_lone);
-#line 125 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
-#line 1703 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_decref(h2_moded);
-#line 125 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
-#line 1706 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_decref(h3_linked);
-#line 125 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
-#line 1709 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_decref(h6_own6);
-#line 125 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
-#line 1712 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_decref(h7_own7);
-#line 125 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
-#line 1715 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_decref(h8_own8);
-#line 125 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
-#line 1718 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_decref(h9_own9);
-#line 125 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
-#line 1721 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_decref(h10_own10);
     return;
 }
 
 #line 109 "<heroes library>"
 int64_t h_library_HERO_OS_OK(void) {
-#line 1728 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 1626 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     return HERO_OS_OK;
 }
 
 #line 110 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_FOUND(void) {
-#line 1734 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 1632 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     return HERO_OS_NOT_FOUND;
 }
 
 #line 111 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_TEXT(void) {
-#line 1740 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 1638 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     return HERO_OS_NOT_TEXT;
 }
 
 #line 112 "<heroes library>"
 int64_t h_library_HERO_OS_BAD_NAME(void) {
-#line 1746 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 1644 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     return HERO_OS_BAD_NAME;
 }
 
 #line 167 "<heroes library>"
 h_0opt_f87774a h_library_read_file(HeroStr h0_path) {
-#line 1752 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 1650 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     int64_t *const hero_lend_h1_status = (int64_t *)hero_lend_local(sizeof(int64_t), "library.read_file", "status");
 #define h1_status (*hero_lend_h1_status)
     HeroStr h2_text = {0};
@@ -1818,7 +1716,6 @@ bb0:
     t1 = INT64_C(0);
 #line 168 "<heroes library>"
     h1_status = t1;
-#line 169 "<heroes library>"
     t2 = h0_path;
 #line 169 "<heroes library>"
     hero_lend_local_name(hero_lend_h1_status, "hero_file_read_str", "status");
@@ -1828,15 +1725,15 @@ bb0:
     t39 = h4_own4;
 #line 169 "<heroes library>"
     h4_own4 = t3;
-#line 1832 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 1729 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_decref(t39);
 #line 169 "<heroes library>"
     t40 = h2_text;
-#line 1836 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 1733 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_incref(t3);
 #line 169 "<heroes library>"
     h2_text = t3;
-#line 1840 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 1737 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_decref(t40);
 #line 170 "<heroes library>"
     t4 = h1_status;
@@ -1860,7 +1757,7 @@ bb1:
 bb2:
 #line 171 "<heroes library>"
     t7 = h2_text;
-#line 1864 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 1761 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_incref(t7);
 #line 171 "<heroes library>"
     t8 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t7};
@@ -1868,7 +1765,7 @@ bb2:
     t41 = h5_own5;
 #line 171 "<heroes library>"
     h5_own5 = t8;
-#line 1872 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 1769 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     h_0opt_f87774a_release(&t41);
 #line 171 "<heroes library>"
     h3_ret0 = t8;
@@ -1894,10 +1791,8 @@ bb5:
     t12 = HERO_STR_LIT(hero_str_3e46668);
 #line 175 "<heroes library>"
     t13 = HERO_STR_LIT(hero_str_75aeb685);
-#line 1898 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 1795 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_incref(t12);
-#line 175 "<heroes library>"
-#line 1901 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_incref(t13);
 #line 175 "<heroes library>"
     t14 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t12, .msg = t13}};
@@ -1905,7 +1800,7 @@ bb5:
     t42 = h6_own6;
 #line 175 "<heroes library>"
     h6_own6 = t14;
-#line 1909 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 1804 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     h_0opt_f87774a_release(&t42);
 #line 175 "<heroes library>"
     h3_ret0 = t14;
@@ -1939,13 +1834,9 @@ bb8:
     t43 = h7_own7;
 #line 177 "<heroes library>"
     h7_own7 = t21;
-#line 1943 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 1838 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_decref(t43);
-#line 177 "<heroes library>"
-#line 1946 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_incref(t18);
-#line 177 "<heroes library>"
-#line 1949 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_incref(t21);
 #line 177 "<heroes library>"
     t22 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t18, .msg = t21}};
@@ -1953,7 +1844,7 @@ bb8:
     t44 = h8_own8;
 #line 177 "<heroes library>"
     h8_own8 = t22;
-#line 1957 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 1848 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     h_0opt_f87774a_release(&t44);
 #line 177 "<heroes library>"
     h3_ret0 = t22;
@@ -1977,13 +1868,9 @@ bb10:
     t45 = h9_own9;
 #line 183 "<heroes library>"
     h9_own9 = t36;
-#line 1981 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 1872 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_decref(t45);
-#line 183 "<heroes library>"
-#line 1984 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_incref(t33);
-#line 183 "<heroes library>"
-#line 1987 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_incref(t36);
 #line 183 "<heroes library>"
     t37 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t33, .msg = t36}};
@@ -1991,7 +1878,7 @@ bb10:
     t46 = h10_own10;
 #line 183 "<heroes library>"
     h10_own10 = t37;
-#line 1995 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 1882 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     h_0opt_f87774a_release(&t46);
 #line 183 "<heroes library>"
     h3_ret0 = t37;
@@ -2011,7 +1898,7 @@ bb11:
     t47 = h11_own11;
 #line 182 "<heroes library>"
     h11_own11 = t29;
-#line 2015 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 1902 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_decref(t47);
 #line 182 "<heroes library>"
     t30 = HERO_STR_LIT(hero_str_612f4355);
@@ -2021,13 +1908,9 @@ bb11:
     t48 = h12_own12;
 #line 182 "<heroes library>"
     h12_own12 = t31;
-#line 2025 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 1912 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_decref(t48);
-#line 182 "<heroes library>"
-#line 2028 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_incref(t26);
-#line 182 "<heroes library>"
-#line 2031 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_incref(t31);
 #line 182 "<heroes library>"
     t32 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t26, .msg = t31}};
@@ -2035,7 +1918,7 @@ bb11:
     t49 = h13_own13;
 #line 182 "<heroes library>"
     h13_own13 = t32;
-#line 2039 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 1922 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     h_0opt_f87774a_release(&t49);
 #line 182 "<heroes library>"
     h3_ret0 = t32;
@@ -2047,42 +1930,19 @@ bb12:
     goto bb10;
 #line 182 "<heroes library>"
 bb13:
-#line 167 "<heroes library>"
+#line 1934 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     t38 = h3_ret0;
-#line 2053 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     h_0opt_f87774a_retain(&t38);
-#line 167 "<heroes library>"
-#line 2056 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_decref(h2_text);
-#line 167 "<heroes library>"
-#line 2059 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_decref(h4_own4);
-#line 167 "<heroes library>"
-#line 2062 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     h_0opt_f87774a_release(&h5_own5);
-#line 167 "<heroes library>"
-#line 2065 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     h_0opt_f87774a_release(&h6_own6);
-#line 167 "<heroes library>"
-#line 2068 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_decref(h7_own7);
-#line 167 "<heroes library>"
-#line 2071 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     h_0opt_f87774a_release(&h8_own8);
-#line 167 "<heroes library>"
-#line 2074 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_decref(h9_own9);
-#line 167 "<heroes library>"
-#line 2077 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     h_0opt_f87774a_release(&h10_own10);
-#line 167 "<heroes library>"
-#line 2080 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_decref(h11_own11);
-#line 167 "<heroes library>"
-#line 2083 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_decref(h12_own12);
-#line 167 "<heroes library>"
-#line 2086 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     h_0opt_f87774a_release(&h13_own13);
     hero_lend_local_give(hero_lend_h1_status);
     return t38;
@@ -2091,7 +1951,7 @@ bb13:
 
 #line 186 "<heroes library>"
 h_0opt_a8ea2 h_library_write_file(HeroStr h0_path, HeroStr h1_text) {
-#line 2095 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 1955 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     int64_t h2_wrote;
     h_0opt_a8ea2 h3_ret0 = {0};
     h_0opt_a8ea2 h4_own4 = {0};
@@ -2131,7 +1991,6 @@ bb0:
     t3 = hero_file_write_str(t1, t2);
 #line 187 "<heroes library>"
     h2_wrote = t3;
-#line 188 "<heroes library>"
     t4 = h2_wrote;
 #line 188 "<heroes library>"
     t5 = h_library_HERO_OS_OK();
@@ -2157,7 +2016,7 @@ bb2:
     t20 = h4_own4;
 #line 189 "<heroes library>"
     h4_own4 = t7;
-#line 2161 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 2020 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     h_0opt_a8ea2_release(&t20);
 #line 189 "<heroes library>"
     h3_ret0 = t7;
@@ -2181,13 +2040,9 @@ bb4:
     t21 = h5_own5;
 #line 192 "<heroes library>"
     h5_own5 = t17;
-#line 2185 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 2044 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_decref(t21);
-#line 192 "<heroes library>"
-#line 2188 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_incref(t14);
-#line 192 "<heroes library>"
-#line 2191 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_incref(t17);
 #line 192 "<heroes library>"
     t18 = (h_0opt_a8ea2){.tag = INT64_C(1), .as.err = {.code = t14, .msg = t17}};
@@ -2195,7 +2050,7 @@ bb4:
     t22 = h6_own6;
 #line 192 "<heroes library>"
     h6_own6 = t18;
-#line 2199 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 2054 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     h_0opt_a8ea2_release(&t22);
 #line 192 "<heroes library>"
     h3_ret0 = t18;
@@ -2207,10 +2062,8 @@ bb5:
     t11 = HERO_STR_LIT(hero_str_7e662f9e);
 #line 191 "<heroes library>"
     t12 = HERO_STR_LIT(hero_str_1755ec20);
-#line 2211 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 2066 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_incref(t11);
-#line 191 "<heroes library>"
-#line 2214 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_incref(t12);
 #line 191 "<heroes library>"
     t13 = (h_0opt_a8ea2){.tag = INT64_C(1), .as.err = {.code = t11, .msg = t12}};
@@ -2218,7 +2071,7 @@ bb5:
     t23 = h7_own7;
 #line 191 "<heroes library>"
     h7_own7 = t13;
-#line 2222 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 2075 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     h_0opt_a8ea2_release(&t23);
 #line 191 "<heroes library>"
     h3_ret0 = t13;
@@ -2230,21 +2083,12 @@ bb6:
     goto bb4;
 #line 191 "<heroes library>"
 bb7:
-#line 186 "<heroes library>"
+#line 2087 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     t19 = h3_ret0;
-#line 2236 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     h_0opt_a8ea2_retain(&t19);
-#line 186 "<heroes library>"
-#line 2239 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     h_0opt_a8ea2_release(&h4_own4);
-#line 186 "<heroes library>"
-#line 2242 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_decref(h5_own5);
-#line 186 "<heroes library>"
-#line 2245 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     h_0opt_a8ea2_release(&h6_own6);
-#line 186 "<heroes library>"
-#line 2248 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     h_0opt_a8ea2_release(&h7_own7);
     return t19;
 }
