@@ -55,6 +55,13 @@ extern "hero_os.h"
     function hero_fs_mkdir_all(path: cstr lent) -> i64
     function hero_fs_remove(path: cstr lent) -> i64
     function hero_fs_newer_than(path: cstr lent, reference: cstr lent) -> i64
+    # What is at a path, the link itself where it is one, and the file a link's
+    # chain finally names: what a compiler path that cannot be started IS
+    # (defect 332, `unstartable`).
+    function hero_fs_kind(path: cstr lent) -> i64
+    function hero_fs_landing(path: cstr lent) -> str
+    constant HERO_FS_ABSENT: i64
+    constant HERO_FS_LINK: i64
     function hero_dir_scan(root: cstr lent, want: i64, recursive: i64) -> i64
     function hero_dir_release()
     function hero_dir_remove_tree(path: cstr lent) -> i64
@@ -914,32 +921,101 @@ function some_compiler() -> str?
     # spells a program, its suffix added where it has one, as the candidates
     # below are. An empty value is no value, as the compiler's own `env` reads
     # an empty `HEROES_RUNTIME` (`selfhost/cli/process.hero`).
+    #
+    # **And one that names what no case could start is refused as well**
+    # (defect 332, 2026-10-07): a directory, a file this machine will not
+    # start, a link to nothing. Each was answered as the compiler, and every
+    # case of every suite then failed as a program that could not be started,
+    # 4,000 failures and 23 suites before one could not run, measured with a
+    # directory that day; `unstartable` says what the path is instead.
     hint = named.must()
 
     if hint.len() > 0
-        if exists(hint)
-            return ok(started_as(hint))
+        for name in spellings(hint)
+            if hero_fs_kind(path: name.cstr()) != HERO_FS_ABSENT
+                why = unstartable(scratch: SELFTEST, path: name)
 
-        if exists(hint + exe_suffix())
-            return ok(started_as(hint + exe_suffix()))
+                if why.len() > 0
+                    return fail(
+                        code: "unstartable",
+                        msg: "HEROES_COMPILER is set to `" + hint + "`, and " + why + ", so it names no compiler this machine can start: set it to one, unset it, or name the compiler, -- <compiler>"
+                    )
+                return ok(started_as(name))
+
         return fail(
             code: "absent",
             msg: "HEROES_COMPILER is set to `" + hint + "`, and no file is there, so it names no compiler: set it to one, unset it, or name the compiler, -- <compiler>"
         )
 
+    # The first place that holds anything is the answer, and what it holds
+    # must start: a directory or a link to nothing at `./heroes` is refused by
+    # name (defect 332), never passed over for the next place, which would
+    # judge a compiler nobody chose without a word, defect 316's shape.
     for path in CANDIDATES
-        if exists(path)
-            return ok(path)
+        for name in spellings(path)
+            if hero_fs_kind(path: name.cstr()) != HERO_FS_ABSENT
+                why = unstartable(scratch: SELFTEST, path: name)
 
-        # The same name as the machine spells it: `./heroes` here is
-        # `./heroes.exe` on Windows, and a list that forgets the suffix
-        # answers "" on a machine with a perfectly good compiler in the
-        # root — measured 2026-08-31, four self-tests red on the VPS while
-        # CI passed them only because its leg names HEROES_COMPILER.
-        if exists(path + exe_suffix())
-            return ok(path + exe_suffix())
+                if why.len() > 0
+                    return fail(
+                        code: "unstartable",
+                        msg: "`" + name + "` is the first place this harness finds anything where it looks for a compiler, and " + why + ", so no compiler is chosen: build one there, or name the compiler, -- <compiler>"
+                    )
+                return ok(name)
 
     return fail(code: "none", msg: no_compiler_anywhere())
+
+# A program's name as given, then as the machine spells it: `./heroes` is
+# `./heroes.exe` on Windows, and a list that forgets the suffix answers "" on a
+# machine with a perfectly good compiler in the root — measured 2026-08-31,
+# four self-tests red on the VPS while CI passed them only because its leg
+# names HEROES_COMPILER.
+function spellings(name: str) -> [str]
+    if exe_suffix().len() == 0
+        return [name]
+    return [name, name + exe_suffix()]
+
+# WHY A PATH NAMES NO COMPILER A CASE COULD START, "" where it names one
+# (defect 332, 2026-10-07). Every case of every suite starts the compiler it is
+# handed, so a path naming a directory, a file this machine will not start or a
+# link to nothing was one failure per case, each *could not be started*, where
+# one refusal at the start says it. What is at the path is asked first, so the
+# refusal names it; then the machine is asked to start it, as every case would,
+# with `--version`, which a compiler answers and nothing here reads, since only
+# a start says whether this machine runs a file. The program started is the one
+# a case starts (`started_as`, defect 331), and its two captures go as every
+# run's do.
+function unstartable(scratch: str, path: str) -> str
+    if path.len() == 0
+        return "it is an empty word, which names no file"
+    kind = hero_fs_kind(path: path.cstr())
+
+    if kind == HERO_FS_ABSENT
+        return "no file is there"
+
+    if kind == HERO_FS_LINK && !exists(path)
+        target = hero_fs_landing(path: path.cstr())
+
+        if target.len() == 0
+            return "it is a link whose chain cannot be followed"
+        return "it is a link to `" + target + "`, and no file is there"
+
+    if is_directory(path)
+        return "it is a directory"
+    program = started_as(path)
+    said: str @ ""
+
+    match attempted(scratch: scratch, program: program, words: [program, "--version"])
+        .ok ran =>
+            if !ran.started
+                said @ "this machine refuses to start it, the operating system's own reason being " + ran.why.to_str() + " (13 is a file it may not run, on Linux and macOS)"
+        .err e =>
+            # It ran and wrote what is not text (defect 317), which is a start;
+            # anything else kept the question from being asked.
+            if e.code != "not_text"
+                said @ "it could not be asked to start: " + e.msg
+
+    return said
 
 # The name a compiler is checked by and started by: one string for both
 # (defect 331). `exists` asks for a name with no separator in the working
@@ -1101,9 +1177,18 @@ test "a command's two streams come back apart, with its status"
 # would still pass if the removal were broken? Nothing — the count is the
 # subject.
 #
-# The ceiling is 2 rather than 0 because a capture is alive between its
-# `CreateFileA` and its read, and a self-test is free to be the call that is
-# in flight. Anything above that is accumulation.
+# **IT COUNTED NOTHING UNTIL DEFECT 330** (2026-10-07). Its loop asked each
+# listed PATH, whole, whether it opened with `stdout-`, and a listing names
+# `<dir>/stdout-…`, so it counted 0 over any directory: measured with 2 and with
+# 24 captures planted beside its twelve runs, it read 0 and passed both. It
+# reads the names now, through `captures_left`, the count the tests of defects
+# 317 and 320 already asked, and it plants two captures and asks that count to
+# see them, so a count that stops seeing a capture fails here before it can
+# pass over a pile of them.
+#
+# **The ceiling is 0.** It was 2, for a capture in flight in a directory another
+# process shared; since defect 320 the directory is this test's own, the twelve
+# runs have ended when it is read, and nothing else writes a capture in it.
 test "the captures are removed, so a run cannot fill the disk with them"
     if !can_run_scripts()
         return
@@ -1115,18 +1200,15 @@ test "the captures are removed, so a run cannot fill the disk with them"
         said = run(scratch: scratch, program: "/bin/sh", words: ["/bin/sh", "-c", "exit 0"])
         assert !said.is_err()
 
-    listed = list_entries(scratch: scratch, dir: scratch)
-    assert !listed.is_err()
-    left: i64 @ 0
-
-    for name in listed.must()
-        if strings.starts_with(text: name, prefix: "stdout-") || strings.starts_with(text: name, prefix: "stderr-")
-            left @ left + 1
-
     # Twelve spawns wrote twenty-four capture files. If the removal works the
     # directory holds none of them; if it does not, it holds twenty-four and a
     # real run holds thousands.
-    assert left <= 2
+    assert captures_left(scratch) == 0
+
+    # The count sees what a removal that stopped working would leave.
+    assert !write_file(path: scratch + "/stdout-planted", text: "").is_err()
+    assert !write_file(path: scratch + "/stderr-planted", text: "").is_err()
+    assert captures_left(scratch) == 2
     assert !remove_tree(scratch).is_err()
 
 test "the directory walk keeps a filename that contains a newline"
@@ -1357,6 +1439,63 @@ test "fixedbugs: a HEROES_COMPILER that names nothing is refused, never passed o
     empty = run(scratch: scratch, program: "/bin/sh", words: ["/bin/sh", "-c", "HEROES_COMPILER= exec \"$0\"", probe])
     assert !empty.is_err()
     assert strings.contains(text: empty.must().out, needle: "compiler ok ")
+    assert !remove_tree(scratch).is_err()
+
+# DEFECT 332, held as a test (2026-10-07): a compiler path naming a directory,
+# a file this machine will not start or a link to nothing is refused, saying
+# which, where each was answered as the compiler and every case then failed as
+# a program that could not be started. Asked of `unstartable`, which the net's
+# start asks of `-- <compiler>`; of `HEROES_COMPILER` through a child's
+# environment, as the net reads it; and of `./heroes`, the first place looked
+# at, from a folder where it is a directory. Until that day the probe printed
+# `compiler ok` for each value, and `checked ./heroes` for the folder.
+test "fixedbugs: a compiler path that names a directory, a file that will not start or a link to nothing is refused, saying which (defect 332)"
+    if !can_run_scripts()
+        return
+    scratch = own_scratch()
+    folder = scratch + "/a-folder"
+    plain = scratch + "/a-plain-file"
+    link = scratch + "/a-link"
+    assert !mkdir_all(folder).is_err()
+    assert !write_file(path: plain, text: "#!/bin/sh\nexit 0\n").is_err()
+    linked = run(scratch: scratch, program: "ln", words: ["ln", "-s", "nothing-332", link])
+    assert !linked.is_err()
+    assert linked.must().code == 0
+    assert unstartable(scratch: scratch, path: folder) == "it is a directory"
+    assert unstartable(scratch: scratch, path: plain) == "this machine refuses to start it, the operating system's own reason being 13 (13 is a file it may not run, on Linux and macOS)"
+    assert unstartable(scratch: scratch, path: link) == "it is a link to `" + scratch + "/nothing-332`, and no file is there"
+    assert unstartable(scratch: scratch, path: scratch + "/nothing-332") == "no file is there"
+    assert unstartable(scratch: scratch, path: "") == "it is an empty word, which names no file"
+    assert unstartable(scratch: scratch, path: some_compiler().must()) == ""
+
+    # The starts asked leave no capture behind.
+    assert captures_left(scratch) == 0
+    probe = env_probe(scratch).must()
+
+    for value in [folder, plain, link]
+        told = run(
+            scratch: scratch,
+            program: "/bin/sh",
+            words: ["/bin/sh", "-c", "HEROES_COMPILER=\"$1\" exec \"$0\"", probe, value]
+        )
+        assert !told.is_err()
+        assert strings.contains(
+            text: told.must().out,
+            needle: "compiler unstartable: HEROES_COMPILER is set to `" + value + "`, and " + unstartable(scratch: scratch, path: value) + ", so it names no compiler this machine can start"
+        )
+
+    # `./heroes` a directory, HEROES_COMPILER unset: refused by name, never
+    # passed over for the next place and never started.
+    here = scratch + "/candidate"
+    assert !mkdir_all(here + "/heroes").is_err()
+    start = harness_probe(scratch: scratch, name: "candidate-probe", main: START_PROBE).must()
+    ran = run(
+        scratch: scratch,
+        program: "/bin/sh",
+        words: ["/bin/sh", "-c", "p=\"$PWD/$0\"; cd \"$1\" && unset HEROES_COMPILER && exec \"$p\"", start, here]
+    )
+    assert !ran.is_err()
+    assert ran.must().out == "refused unstartable: `./heroes` is the first place this harness finds anything where it looks for a compiler, and it is a directory, so no compiler is chosen: build one there, or name the compiler, -- <compiler>\n"
     assert !remove_tree(scratch).is_err()
 
 # DEFECT 331, held as a test (2026-10-04): a compiler named bare is the file
