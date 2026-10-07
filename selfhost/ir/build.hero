@@ -162,11 +162,7 @@ function result_type(b: Lowering) -> i64
 ## Blocks
 
 function block(@b: Lowering, note: str) -> i64
-    empty_preds: [i64] = []
-    empty_insts: [ir.Inst] = []
-    b.building.blocks @ b.building.blocks.push(
-        containers.Block(preds: empty_preds, insts: empty_insts, term: .open, note: note)
-    )
+    append_block(@b.building.blocks, containers.Block(preds: [], insts: [], term: .open, note: note))
     return b.building.blocks.len() - 1
 
 function switch_to(@b: Lowering, target: i64)
@@ -191,15 +187,18 @@ function terminate(@b: Lowering, term: ir.Term)
     if is_terminated(b)
         return
 
+    # A target named twice by one terminator gets one edge. Its last
+    # predecessor is the only place a twin can be: edges are recorded here
+    # alone and this block ends once, so it was not one before this call. The
+    # list is hoisted as `push_inst`'s is (defect 261): walked and copied at
+    # every edge into it, a join of N arms cost N squared.
     for target in flow.successors(term)
-        already: bool @ false
+        preds: [i64] @ b.building.blocks[target].preds
 
-        for p in b.building.blocks[target].preds
-            if p == b.current
-                already @ true
-
-        if !already
-            b.building.blocks[target].preds @ b.building.blocks[target].preds.push(b.current)
+        if preds.len() == 0 || preds[preds.len() - 1] != b.current
+            b.building.blocks[target].preds @ []
+            preds @ preds.push(b.current)
+            b.building.blocks[target].preds @ preds
 
     b.building.blocks[b.current].term @ term
 
@@ -234,30 +233,40 @@ function push_inst(@b: Lowering, inst: ir.Inst)
     b.building.blocks[b.current].insts @ held
 
 function fresh_value(@b: Lowering, ty: i64) -> i64
-    append_type(@b.building.values, ty)
+    append_id(@b.building.values, ty)
     return b.building.values.len() - 1
 
 # **Lent, so each push grows its array in place** (defect 112). Through the
 # field, `b.building.values @ …push(ty)` copied the whole list at every value,
-# and the functions and the strings the same: lowering grew with the square
-# of a function's size. The helper is the spelling design.md Part 8 wart 8's
-# ruling names (panel 144), the one defect 103 used for the lexer; a place
-# with an index in it is hoisted instead (`push_inst`).
-function append_type(@values: [i64], ty: i64)
-    values @ values.push(ty)
+# and the functions, the strings, and until defect 261 the slots, the
+# parameters, the blocks and the path steps the same: lowering grew with the
+# square of a function's size. The helpers are the spelling design.md Part 8
+# wart 8's ruling names (panel 144), the one defect 103 used for the lexer; a
+# place with an index in it is hoisted instead (`push_inst`, `terminate`).
+function append_id(@ids: [i64], id: i64)
+    ids @ ids.push(id)
 
 function append_function(@functions: [containers.Function], f: containers.Function)
     functions @ functions.push(f)
+
+function append_slot(@slots: [containers.Slot], s: containers.Slot)
+    slots @ slots.push(s)
+
+function append_block(@blocks: [containers.Block], blk: containers.Block)
+    blocks @ blocks.push(blk)
+
+function append_step(@steps: [ir.PathStep], s: ir.PathStep)
+    steps @ steps.push(s)
 
 ## Slots — the half of the state that holds a value
 
 function param(@b: Lowering, name: str, ty: i64, mutable: bool) -> i64
     added = slot(@b, name: name, ty: ty, kind: .param_slot(mutable: mutable))
-    b.building.params @ b.building.params.push(added)
+    append_id(@b.building.params, added)
     return added
 
 function slot(@b: Lowering, name: str, ty: i64, kind: containers.SlotKind) -> i64
-    b.building.slots @ b.building.slots.push(containers.Slot(name: name, ty: ty, kind: kind))
+    append_slot(@b.building.slots, containers.Slot(name: name, ty: ty, kind: kind))
     return b.building.slots.len() - 1
 
 # The kind of a slot the author wrote. Whether they may write it is the
@@ -328,7 +337,7 @@ function steps_run(@b: Lowering, list: [ir.PathStep]) -> ir.Run
     start = b.building.steps.len()
 
     for s in list
-        b.building.steps @ b.building.steps.push(s)
+        append_step(@b.building.steps, s)
 
     return ir.Run(start: start, length: list.len())
 
@@ -370,6 +379,41 @@ test "a block ends once, and nothing lands after the terminator"
     assert b.building.blocks[exit_block].preds.len() == 1
     assert has_preds(b, exit_block)
     assert v == 1
+
+test "defect 261: one edge per target a terminator names, every arm a predecessor of its join in order"
+    b: Lowering @ fresh()
+    begin(@b, name: "j", decl: 0, kind: .function_kind, result: 0, generics: [], span: token.Span(start: 0, end: 1))
+    entry(@b)
+    twice = block(@b, note: "twice")
+    other = block(@b, note: "other")
+    meet = block(@b, note: "meet")
+
+    # A switch naming one target twice, around another: one edge each.
+    terminate(@b, .switch_term(tag: 0, cases: [twice, other, twice]))
+    assert b.building.blocks[twice].preds == [0]
+    assert b.building.blocks[other].preds == [0]
+
+    # A branch whose two sides are one block: one edge.
+    switch_to(@b, target: twice)
+    terminate(@b, .branch(cond: 0, then_to: meet, else_to: meet))
+    arms: [i64] @ [twice]
+
+    # Forty arms into one join, each recorded once and in the order they ended.
+    while arms.len() <= 40
+        arm = block(@b, note: "arm")
+        switch_to(@b, target: arm)
+        terminate(@b, .jump(to: meet))
+        arms @ arms.push(arm)
+
+    assert b.building.blocks[meet].preds == arms
+    assert b.building.blocks[other].preds == [0]
+
+    # The tables grown in place hold what each call added, at the index it said.
+    p = param(@b, name: "p", ty: 3, mutable: true)
+    q = slot(@b, name: "q", ty: 4, kind: .synthetic_slot)
+    assert b.building.params == [p]
+    assert b.building.slots[p].name == "p" && b.building.slots[q].ty == 4
+    assert b.building.blocks.len() == arms.len() + 3
 
 test "value 0 is unit, temporaries count up, synthetics never collide"
     b: Lowering @ fresh()
