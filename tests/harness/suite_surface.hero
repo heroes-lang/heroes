@@ -119,7 +119,55 @@ function run_all(scratch: str, compiler: str) -> report.Report?
     probe.run_table(scratch: scratch, compiler: compiler, probes: bracket_probes(), r: @r)
     in_place_cases(scratch: scratch, compiler: compiler, r: @r)
     apply_json_in_place(scratch: scratch, compiler: compiler, r: @r)
+    measure_with_no_operand(scratch: scratch, compiler: compiler, r: @r)
     return ok(r)
+
+# **`measure` with no operand measures the spec, whatever its pin says**
+# (defect 379). A row stood in the help table asking for exit 0, which is the
+# answer only while the spec's pinned digest is the spec's own: a lane that
+# amended the spec read it red until a paid `measure --refresh` re-pinned the
+# count, and a row cannot ask for an ending a file decides. What the verb owes
+# with no operand is what it answers when the spec is named, both streams and
+# the exit, ending one of the ways its contract names: the verdict under the
+# ceiling at 0, a breach at 1, or the stale record's refusal at 1, which gives
+# no verdict. Whether the pin is fresh is `suite_spec`'s `real`, `budget` and
+# `ledger` at the gate, which stay as strict.
+function measure_with_no_operand(scratch: str, compiler: str, @r: report.Report)
+    label = "surface/measure with no operand measures the spec as naming it does, its pin fresh or stale (defect 379)"
+    bare = shell.run(scratch: scratch, program: compiler, words: [compiler, "measure"])
+    spelled = shell.run(scratch: scratch, program: compiler, words: [compiler, "measure", "spec/heroes-spec.md"])
+
+    if bare.is_err() || spelled.is_err()
+        report.keep_failure(@r, label: label, detail: "  " + shell.ending(bare) + " " + shell.ending(spelled))
+        return
+    wrong = no_operand_wrong(said: bare.must(), spelled: spelled.must())
+
+    if wrong.len() > 0
+        report.keep_failure(@r, label: label, detail: wrong.join("\n"))
+        return
+    report.keep_pass(@r)
+
+# What is wrong with `said`, `measure` with no operand, beside `spelled`,
+# `measure spec/heroes-spec.md`: one sentence each, none when it is right.
+function no_operand_wrong(said: shell.Run, spelled: shell.Run) -> [str]
+    wrong: [str] @ []
+
+    if said.code != spelled.code || said.out != spelled.out || said.err != spelled.err
+        wrong @ wrong.push(
+            "  `measure` exits " + said.code.to_str() + " and `measure spec/heroes-spec.md` " + spelled.code.to_str() + ", and their streams differ:\n" + report.mismatch(what: "stdout", expected: spelled.out, actual: said.out)
+        )
+
+    if !strings.starts_with(text: said.out, prefix: "spec/heroes-spec.md\n") || said.err != ""
+        wrong @ wrong.push("  its report is not of spec/heroes-spec.md alone, on stdout")
+    verdict = strings.contains(text: said.out, needle: " — the binding number\n") && strings.contains(text: said.out, needle: "An addition needs a named removal")
+    breach = strings.contains(text: said.out, needle: "\nBREACH: ")
+    stale = strings.contains(text: said.out, needle: "\nSTALE: the recorded count is for ") && strings.contains(text: said.out, needle: "No verdict is given against a stale count")
+
+    if !(said.code == 0 && verdict && !stale || said.code == 1 && (stale && !verdict || breach && !stale))
+        wrong @ wrong.push(
+            "  exit " + said.code.to_str() + ", where the verb ends at 0 with its verdict, or at 1 with a breach or with the stale record's refusal and no verdict:\n" + said.out
+        )
+    return wrong
 
 # **`check --apply --in-place --json` writes the file and prints the applied
 # document all the same** (defect 371, panel 193's R4): its `output` is the
@@ -330,7 +378,6 @@ function help_probes() -> [probe.Probe]
         row(name: "help states the exit codes and the streams", argv: "--help", code: 0).out_has("1 diagnostics were reported, no artifact was produced").out_has("2 the tool could not run.").out_has("HEROES_RUNTIME").out_has("streams: the artifact on stdout")
         row(name: "every flag in the table is documented", argv: "--help", code: 0).out_has("--dump-tokens").out_has("--json").out_has("--dump-ast").out_has("--dump-scopes").out_has("--in-place")
         row(name: "measure states its default", argv: "--help", code: 0).out_has("(default: spec/heroes-spec.md)")
-        row(name: "measure runs with no operand", argv: "measure", code: 0)
         row(name: "probe states its default and names its two flags' values", argv: "--help", code: 0).out_has("  probe [file]\n").out_has("(default: the formatter's fixture directories)").out_has("--family <name>").out_has("--stride <count>")
     ]
 
@@ -801,7 +848,10 @@ test "the tables are what this module is, so they are counted"
     assert argv_probes().len() == 31
 
     # 4 -> 5 on 2026-09-28: `probe`'s default and its two flags (panel 179).
-    assert help_probes().len() == 5
+    # 5 -> 4 on 2026-10-07, defect 379: `measure` with no operand left the
+    # table for `measure_with_no_operand`, which asks it what naming the spec
+    # answers, its pin fresh or stale, where the row asked for exit 0.
+    assert help_probes().len() == 4
 
     # 9 -> 13 on 2026-10-06, defect 271's JSON half (panel 193): a fix's place
     # and first round, withheld and written inside `certain137-inside`,
@@ -1015,6 +1065,52 @@ test "the tables are what this module is, so they are counted"
     # row per shape, its exit the adopted sentence's; a shape added to the map
     # is a fixture and a row, and this is where the count moves.
     assert bracket_probes().len() == 117
+
+test "measure with no operand is held to naming the spec, and to an ending its contract names, its pin fresh or stale (defect 379)"
+    head = "spec/heroes-spec.md\n  claude-legacy      7338   (64995 ranks)\n"
+    fresh = shell.Run(
+        code: 0,
+        out: head + "  real               9831   claude-opus-5, 2026-10-07 — the binding number\n\nAn addition needs a named removal or a pre-registered falsifiable\n",
+        err: "",
+        started: true,
+        why: 0
+    )
+    stale = shell.Run(
+        code: 1,
+        out: head + "\nSTALE: the recorded count is for 5f6c56b946f3fb85 and this file is 3592499c3ce8c2a6.\nNo verdict is given against a stale count: that is the sentence that\n",
+        err: "",
+        started: true,
+        why: 0
+    )
+    over = shell.Run(
+        code: 1,
+        out: head + "  real              10999   claude-opus-5, 2026-10-07 — the binding number\n\nBREACH: 10999 over the 10240-token ceiling (design.md §1.6).\n",
+        err: "",
+        started: true,
+        why: 0
+    )
+
+    # The three endings the verb's contract names, each the same with no operand
+    # as with the spec named: the pin's staleness is an ending, not a failure.
+    assert no_operand_wrong(said: fresh, spelled: fresh).len() == 0
+    assert no_operand_wrong(said: stale, spelled: stale).len() == 0
+    assert no_operand_wrong(said: over, spelled: over).len() == 0
+
+    # No operand answering otherwise than the spec named, whichever ending.
+    assert no_operand_wrong(said: stale, spelled: fresh).len() > 0
+
+    # An exit that does not go with what was printed: 1 with a verdict and no
+    # breach, 0 with the stale refusal, 2 for anything.
+    fresh_one = shell.Run(code: 1, out: fresh.out, err: "", started: true, why: 0)
+    stale_zero = shell.Run(code: 0, out: stale.out, err: "", started: true, why: 0)
+    refused = shell.Run(code: 2, out: "", err: "error: cannot read spec/heroes-spec.md\n", started: true, why: 0)
+    assert no_operand_wrong(said: fresh_one, spelled: fresh_one).len() == 1
+    assert no_operand_wrong(said: stale_zero, spelled: stale_zero).len() == 1
+    assert no_operand_wrong(said: refused, spelled: refused).len() == 2
+
+    # And a report of another file, or one that writes on stderr.
+    other = shell.Run(code: 0, out: "CLAUDE.md\n" + fresh.out, err: "", started: true, why: 0)
+    assert no_operand_wrong(said: other, spelled: other).len() == 1
 
 test "a probe holds when everything it asks for is true"
     scratch = shell.own_scratch()
