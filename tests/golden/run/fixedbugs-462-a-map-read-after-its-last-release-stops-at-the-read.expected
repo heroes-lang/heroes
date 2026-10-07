@@ -1,0 +1,3 @@
+four entries, given back
+!sanitizer: heap-use-after-free
+!panic: a map read after its last reference was released
