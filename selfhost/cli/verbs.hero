@@ -23,6 +23,11 @@ use cli/process
 use cli/input
 use library_source
 use cli/produce
+use cli/served
+use cli/files
+use cli/publish
+use cli/strings
+use module/reading as file_reading
 
 function run_build(path: str, s: source.Source, inv: argv.Invocation, t: toolchain.Toolchain, version: str) -> cli_table.Exit
     if argv.has(inv, spelling: "--dump-ir") && argv.has(inv, spelling: "--emit-c")
@@ -205,3 +210,114 @@ test "end to end: the port compiles a Heroes program and runs it"
     # build: the artifact line names the hash the reader cannot guess.
     binv = argv.Invocation(tag: .build_cmd, file: ok("build/selftest_e2e.hero"), program_args: [], flags: empty)
     assert run_build(path: "build/selftest_e2e.hero", s: s, inv: binv, t: t, version: "0.0.0-port") == .ok_exit
+
+test "an object zeroed, cut or replaced is compiled again, never linked, and a refused link is the linker's (defect 443)"
+    # DEFECT 443's CASE: every object a build serves, the runtime's and each
+    # module's, served as the very file where it is whole, and compiled again where
+    # it was zeroed at its length, cut to nothing, or another unit's object stands
+    # at its name. Before the repair each of the three was linked, `ld: unknown
+    # file type` or a unit twice and one missing, at exit 2, said as *clang refused
+    # the generated C* (measured on the base, and a file cut at half its length
+    # the same, which no test here can write).
+    # Then an object zeroed under a seal forged to match, which the cache serves:
+    # its link is refused, and said as the linker's.
+    library = library_source.text()
+    dir = "build/selftest-objects-443"
+    assert !process.remove_tree(dir).is_err()
+    assert !process.mkdir_all(dir).is_err()
+    path = dir + "/p.hero"
+    assert !write_file(path: path, text: "function main()\n    print(443)\n").is_err()
+    s = input.read_compilation(path: path, library: library).must()
+    t: toolchain.Toolchain @ toolchain.locate_toolchain(hint: "", fingerprint: "port-objects").must()
+    t.build @ dir + "/build"
+    none: [str] = []
+    options = compile.Options(
+        level: "-O0",
+        dump_ir: false,
+        emit_c: false,
+        output: ok(dir + "/out"),
+        sanitize: false,
+        target: .program_build,
+        headers_from: none,
+        library: none
+    )
+    assert produce.produced_code(produce.produce(path: path, s: s, options: options, t: t, version: "0.0.0-port")) == ""
+    objects = objects_under(t.build)
+
+    # The runtime's, the program's unit and the library's at the least.
+    assert objects.len() >= 3
+
+    # Whole: served, each the very file that was there, its second name with it.
+    for object in objects
+        assert served.check(object) == .whole
+        assert !files.second_name(existing: object, name: object + ".kept").is_err()
+
+    assert produce.produced_code(produce.produce(path: path, s: s, options: options, t: t, version: "0.0.0-port")) == ""
+
+    for object in objects
+        assert files.names_of(object) == 2
+        publish.discard(object + ".kept")
+
+    nul = read_file("tests/golden/surface-fixtures/notext357/one-nul.txt").must()
+
+    for shape in ["zeroed", "emptied", "another"]
+        at: i64 @ 0
+
+        for object in objects
+            if shape == "zeroed"
+                assert !write_file(path: object, text: nul.repeat(bytes_long(object).to_u64().must())).is_err()
+
+            if shape == "emptied"
+                assert !write_file(path: object, text: "").is_err()
+
+            # Another unit's whole object at each name: the first object's
+            # at every other one, and the second's at the first, so the link
+            # holds one unit twice and lacks another, as a rotation would not.
+            if shape == "another"
+                from: i64 @ 0
+
+                if at == 0
+                    from @ 1
+                assert !files.second_name(existing: objects[from], name: object + ".other").is_err()
+            at @ at + 1
+
+        if shape == "another"
+            for object in objects
+                publish.discard(object)
+                assert !files.second_name(existing: object + ".other", name: object).is_err()
+                publish.discard(object + ".other")
+
+        for object in objects
+            assert served.check(object) == .changed
+
+        assert produce.produced_code(produce.produce(path: path, s: s, options: options, t: t, version: "0.0.0-port")) == ""
+
+        for object in objects
+            assert served.check(object) == .whole
+
+    # A seal forged over zeros, so the cache serves them: the link is refused,
+    # and the sentence is the linker's, never that clang refused the C.
+    for object in objects
+        assert !write_file(path: object, text: nul.repeat(bytes_long(object).to_u64().must())).is_err()
+        assert !served.seal(staged: object, object: object).is_err()
+
+    made = produce.produce(path: path, s: s, options: options, t: t, version: "0.0.0-port")
+    assert produce.produced_code(made) == "failed"
+    assert produce.produced_failure(made) == "the linker refused the objects clang compiled"
+    assert !process.remove_tree(dir).is_err()
+
+# Every object under `dir`.
+function objects_under(dir: str) -> [str]
+    out: [str] @ []
+
+    for file in process.files_under(dir).must()
+        if strings.ends_with(text: file, suffix: ".o")
+            out @ out.push(file)
+
+    return out
+
+# A file's length in bytes, as the shown read gives it: each byte that is not
+# UTF-8 is three bytes of U+FFFD in its text and one fault.
+function bytes_long(path: str) -> i64
+    read = file_reading.source_text(path).must()
+    return read.text.len() - 2 * read.faults.len()

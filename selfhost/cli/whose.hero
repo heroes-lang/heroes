@@ -18,6 +18,7 @@ use cli/pointee_ask
 use cli/header_ask
 use cli/header_refused
 use cli/deep_types
+use cli/link
 
 # The verdict on a refused round or artifact, always a failure: `diagnostics`
 # where the author was told, `failed` where the refusal is the compiler's, and
@@ -28,9 +29,10 @@ use cli/deep_types
 # rounds asked it already, under these very `struct_tags`
 # (`cli/tag_spelling.hero`, defect 400), so it is not asked twice.
 function of_refusal(failed: ()?, art: compile.Artifact, s: source.Source, t: toolchain.Toolchain, under: compiling.Compiling, answered: [pointee_ask.Answered], struct_tags: {str: bool}, asked: ffi_asked.Asked?, refused: str) -> ()?
-    message = failure_message(failed) + deep_types.note(failure_code(failed), art.decls, art.checked, s)
+    code = failure_code(failed)
+    message = failure_message(failed) + deep_types.note(code, art.decls, art.checked, s)
 
-    if failure_code(failed) != "clang"
+    if code != "clang" && code != link.REFUSED
         return fail(code: "failed", msg: message)
 
     # A bound header clang refused on its own is the author's (defect 360),
@@ -53,6 +55,10 @@ function of_refusal(failed: ()?, art: compile.Artifact, s: source.Source, t: too
     # A unit clang refused carries its own path inside the message
     # (`units.tu_object`), the fused test unit's included.
     io.eprint(text: "internal error: " + message)
+
+    # A link the linker refused is not C clang refused (defect 443).
+    if code == link.REFUSED
+        return fail(code: "failed", msg: "the linker refused the objects clang compiled")
     return fail(code: "failed", msg: refused)
 
 # Whether a clang failure is the AUTHOR's: `emit/ffi.hero` reads its marker
