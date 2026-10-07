@@ -1,0 +1,215 @@
+# Fixed 2026-10-07, defect 409 (class improvement): the type table pushed
+# through its own fields, `t.nodes @ t.nodes.push(ty)` and the parameter and
+# name runs of a function type the same, so each new type copied every type
+# before it; and the C writer pushed each line onto its chunk, and each chunk
+# onto the output, through the writer's field. Both grow in place now
+# (`check/type_runs.hero`, `table.append_node`, `writer.add_line`). The
+# counts are the lane's report; what this case pins is the program they
+# compile: 40 functions whose two `i64` parameters make their names part of
+# their type, one parameter run shared by all and 40 runs of names, each
+# called directly and through a value of its own type, and a C file long
+# enough to flush the writer's chunk many times.
+
+function f0(a0: i64, b0: i64) -> i64
+    return a0 * 1 + b0
+
+function f1(a1: i64, b1: i64) -> i64
+    return a1 * 2 + b1
+
+function f2(a2: i64, b2: i64) -> i64
+    return a2 * 3 + b2
+
+function f3(a3: i64, b3: i64) -> i64
+    return a3 * 4 + b3
+
+function f4(a4: i64, b4: i64) -> i64
+    return a4 * 5 + b4
+
+function f5(a5: i64, b5: i64) -> i64
+    return a5 * 6 + b5
+
+function f6(a6: i64, b6: i64) -> i64
+    return a6 * 7 + b6
+
+function f7(a7: i64, b7: i64) -> i64
+    return a7 * 8 + b7
+
+function f8(a8: i64, b8: i64) -> i64
+    return a8 * 9 + b8
+
+function f9(a9: i64, b9: i64) -> i64
+    return a9 * 10 + b9
+
+function f10(a10: i64, b10: i64) -> i64
+    return a10 * 11 + b10
+
+function f11(a11: i64, b11: i64) -> i64
+    return a11 * 12 + b11
+
+function f12(a12: i64, b12: i64) -> i64
+    return a12 * 13 + b12
+
+function f13(a13: i64, b13: i64) -> i64
+    return a13 * 14 + b13
+
+function f14(a14: i64, b14: i64) -> i64
+    return a14 * 15 + b14
+
+function f15(a15: i64, b15: i64) -> i64
+    return a15 * 16 + b15
+
+function f16(a16: i64, b16: i64) -> i64
+    return a16 * 17 + b16
+
+function f17(a17: i64, b17: i64) -> i64
+    return a17 * 18 + b17
+
+function f18(a18: i64, b18: i64) -> i64
+    return a18 * 19 + b18
+
+function f19(a19: i64, b19: i64) -> i64
+    return a19 * 20 + b19
+
+function f20(a20: i64, b20: i64) -> i64
+    return a20 * 21 + b20
+
+function f21(a21: i64, b21: i64) -> i64
+    return a21 * 22 + b21
+
+function f22(a22: i64, b22: i64) -> i64
+    return a22 * 23 + b22
+
+function f23(a23: i64, b23: i64) -> i64
+    return a23 * 24 + b23
+
+function f24(a24: i64, b24: i64) -> i64
+    return a24 * 25 + b24
+
+function f25(a25: i64, b25: i64) -> i64
+    return a25 * 26 + b25
+
+function f26(a26: i64, b26: i64) -> i64
+    return a26 * 27 + b26
+
+function f27(a27: i64, b27: i64) -> i64
+    return a27 * 28 + b27
+
+function f28(a28: i64, b28: i64) -> i64
+    return a28 * 29 + b28
+
+function f29(a29: i64, b29: i64) -> i64
+    return a29 * 30 + b29
+
+function f30(a30: i64, b30: i64) -> i64
+    return a30 * 31 + b30
+
+function f31(a31: i64, b31: i64) -> i64
+    return a31 * 32 + b31
+
+function f32(a32: i64, b32: i64) -> i64
+    return a32 * 33 + b32
+
+function f33(a33: i64, b33: i64) -> i64
+    return a33 * 34 + b33
+
+function f34(a34: i64, b34: i64) -> i64
+    return a34 * 35 + b34
+
+function f35(a35: i64, b35: i64) -> i64
+    return a35 * 36 + b35
+
+function f36(a36: i64, b36: i64) -> i64
+    return a36 * 37 + b36
+
+function f37(a37: i64, b37: i64) -> i64
+    return a37 * 38 + b37
+
+function f38(a38: i64, b38: i64) -> i64
+    return a38 * 39 + b38
+
+function f39(a39: i64, b39: i64) -> i64
+    return a39 * 40 + b39
+
+function main()
+    total: i64 @ 0
+    g0 = f0
+    total @ total + f0(a0: 0, b0: 1) + g0(a0: 2, b0: 0)
+    g1 = f1
+    total @ total + f1(a1: 1, b1: 1) + g1(a1: 2, b1: 1)
+    g2 = f2
+    total @ total + f2(a2: 2, b2: 1) + g2(a2: 2, b2: 2)
+    g3 = f3
+    total @ total + f3(a3: 3, b3: 1) + g3(a3: 2, b3: 3)
+    g4 = f4
+    total @ total + f4(a4: 4, b4: 1) + g4(a4: 2, b4: 4)
+    g5 = f5
+    total @ total + f5(a5: 5, b5: 1) + g5(a5: 2, b5: 5)
+    g6 = f6
+    total @ total + f6(a6: 6, b6: 1) + g6(a6: 2, b6: 6)
+    g7 = f7
+    total @ total + f7(a7: 7, b7: 1) + g7(a7: 2, b7: 7)
+    g8 = f8
+    total @ total + f8(a8: 8, b8: 1) + g8(a8: 2, b8: 8)
+    g9 = f9
+    total @ total + f9(a9: 9, b9: 1) + g9(a9: 2, b9: 9)
+    g10 = f10
+    total @ total + f10(a10: 10, b10: 1) + g10(a10: 2, b10: 10)
+    g11 = f11
+    total @ total + f11(a11: 11, b11: 1) + g11(a11: 2, b11: 11)
+    g12 = f12
+    total @ total + f12(a12: 12, b12: 1) + g12(a12: 2, b12: 12)
+    g13 = f13
+    total @ total + f13(a13: 13, b13: 1) + g13(a13: 2, b13: 13)
+    g14 = f14
+    total @ total + f14(a14: 14, b14: 1) + g14(a14: 2, b14: 14)
+    g15 = f15
+    total @ total + f15(a15: 15, b15: 1) + g15(a15: 2, b15: 15)
+    g16 = f16
+    total @ total + f16(a16: 16, b16: 1) + g16(a16: 2, b16: 16)
+    g17 = f17
+    total @ total + f17(a17: 17, b17: 1) + g17(a17: 2, b17: 17)
+    g18 = f18
+    total @ total + f18(a18: 18, b18: 1) + g18(a18: 2, b18: 18)
+    g19 = f19
+    total @ total + f19(a19: 19, b19: 1) + g19(a19: 2, b19: 19)
+    g20 = f20
+    total @ total + f20(a20: 20, b20: 1) + g20(a20: 2, b20: 20)
+    g21 = f21
+    total @ total + f21(a21: 21, b21: 1) + g21(a21: 2, b21: 21)
+    g22 = f22
+    total @ total + f22(a22: 22, b22: 1) + g22(a22: 2, b22: 22)
+    g23 = f23
+    total @ total + f23(a23: 23, b23: 1) + g23(a23: 2, b23: 23)
+    g24 = f24
+    total @ total + f24(a24: 24, b24: 1) + g24(a24: 2, b24: 24)
+    g25 = f25
+    total @ total + f25(a25: 25, b25: 1) + g25(a25: 2, b25: 25)
+    g26 = f26
+    total @ total + f26(a26: 26, b26: 1) + g26(a26: 2, b26: 26)
+    g27 = f27
+    total @ total + f27(a27: 27, b27: 1) + g27(a27: 2, b27: 27)
+    g28 = f28
+    total @ total + f28(a28: 28, b28: 1) + g28(a28: 2, b28: 28)
+    g29 = f29
+    total @ total + f29(a29: 29, b29: 1) + g29(a29: 2, b29: 29)
+    g30 = f30
+    total @ total + f30(a30: 30, b30: 1) + g30(a30: 2, b30: 30)
+    g31 = f31
+    total @ total + f31(a31: 31, b31: 1) + g31(a31: 2, b31: 31)
+    g32 = f32
+    total @ total + f32(a32: 32, b32: 1) + g32(a32: 2, b32: 32)
+    g33 = f33
+    total @ total + f33(a33: 33, b33: 1) + g33(a33: 2, b33: 33)
+    g34 = f34
+    total @ total + f34(a34: 34, b34: 1) + g34(a34: 2, b34: 34)
+    g35 = f35
+    total @ total + f35(a35: 35, b35: 1) + g35(a35: 2, b35: 35)
+    g36 = f36
+    total @ total + f36(a36: 36, b36: 1) + g36(a36: 2, b36: 36)
+    g37 = f37
+    total @ total + f37(a37: 37, b37: 1) + g37(a37: 2, b37: 37)
+    g38 = f38
+    total @ total + f38(a38: 38, b38: 1) + g38(a38: 2, b38: 38)
+    g39 = f39
+    total @ total + f39(a39: 39, b39: 1) + g39(a39: 2, b39: 39)
+    print(total)
