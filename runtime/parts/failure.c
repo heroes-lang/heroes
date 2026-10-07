@@ -187,7 +187,10 @@ static void hero_failure_write(const HeroStr *pieces, int count) {
 
 _Noreturn void hero_panic_must(HeroFailure f) {
     /* Built by hand rather than through `hero_panic`: `code` and `msg` come
-     * from the program, so they go through the printer above. */
+     * from the program, so they go through the printer above, read as every
+     * reader reads a str (defect 462). */
+    hero_str_require(f.code);
+    hero_str_require(f.msg);
     fflush(stdout);
     HeroStr pieces[5] = {HERO_FAILURE_TEXT("panic: .must() on an error: "), f.code,
                          HERO_FAILURE_TEXT(": "), f.msg, HERO_FAILURE_TEXT("\n")};

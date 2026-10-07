@@ -60,12 +60,48 @@ static void hero_str_mark_nul(HeroStr r) {
     hero_str_hdr(r)->magic = HERO_STR_MAGIC_NUL;
 }
 
+/* The words for a block whose mark is gone, said by every reader and by every
+ * new reference and release (`hero_str_hdr_checked` below says what it sees). */
+_Noreturn static void hero_str_mark_lost(void) {
+    hero_panic("a str's block has lost its mark: the bytes just before its text "
+               "were overwritten, or the block was freed, or it never was a string "
+               "block. Three things do this: C writing or freeing memory this program "
+               "still holds, which an `extern` mark that is not true of its function "
+               "lets happen (`owned`, `consumes`, `lent`); a `HeroStr` built by hand "
+               "in C rather than by `hero_str_from_bytes`; or a compiler bug, which is "
+               "worth reporting");
+}
+
 /* Every reader goes through this: a NULL ptr is an unassigned or moved-out
- * slot, and reading one is a compiler bug, not an empty string. */
-static void hero_str_require(HeroStr s) {
+ * slot, and reading one is a compiler bug, not an empty string.
+ *
+ * **AND THE MARK, SO A STRING READ AFTER ITS LAST RELEASE STOPS AT THE READ**
+ * (defect 462, 2026-10-07). Only a new reference and a release asked the mark,
+ * so a read of a block already given back went on with whatever the freed
+ * bytes held. Measured on this Mac at `56def9b4`: panel 190's control, this
+ * tree's C of a function with two returns with one release written twice,
+ * printed five NUL bytes where `p-one` had been, at `-O0` and `-O2`; a
+ * 65,536-byte string C released to its last reference answered its length and
+ * a slice from the freed block; each stopped only at the program's own
+ * release. The runtime writes the mark over itself before a block goes
+ * (`hero_str_decref`), so the read finds no mark whatever the allocator did,
+ * and both stop at their first read now. A block the allocator has handed to a
+ * new string carries a true mark again, and is ASan's, as for a release.
+ *
+ * INLINED, AND THAT IS A COUNT: the check is a load and a test, and at `-O0`,
+ * where the compiler itself runs, a call costs more than either. Measured in
+ * instructions retired on the compiler's own `check` of itself, of
+ * `examples/interpreter` and of `examples/roman`: +3.0 to +3.4% with the check
+ * as a call, +1.2% inlined, at each of the three; a loop of string, array and map
+ * traffic +0.8 to +1.0% at `-O0` and +1.8 to +2.0% at `-O2`, flat from 100,000
+ * to 1,000,000 rounds. The array's and the map's checks below are inlined for
+ * the same reason. */
+__attribute__((always_inline)) static inline void hero_str_require(HeroStr s) {
     if (s.ptr == NULL) {
         hero_panic("read of an unassigned str slot — this is a compiler bug, please report it");
     }
+    const HeroStrHeader *h = (const HeroStrHeader *)(const void *)(s.ptr - sizeof(HeroStrHeader));
+    if ((h->magic | UINT64_C(1)) != HERO_STR_MAGIC_NUL) hero_str_mark_lost();
 }
 
 static HeroStr hero_str_alloc(int64_t len) {
@@ -99,15 +135,7 @@ static HeroStr hero_str_alloc(int64_t len) {
  * the three causes as causes, worst first; panel 173 R1 is the standard. */
 static HeroStrHeader *hero_str_hdr_checked(HeroStr s) {
     HeroStrHeader *h = hero_str_hdr(s);
-    if ((h->magic | UINT64_C(1)) != HERO_STR_MAGIC_NUL) {
-        hero_panic("a str's block has lost its mark: the bytes just before its text "
-                   "were overwritten, or the block was freed, or it never was a string "
-                   "block. Three things do this: C writing or freeing memory this program "
-                   "still holds, which an `extern` mark that is not true of its function "
-                   "lets happen (`owned`, `consumes`, `lent`); a `HeroStr` built by hand "
-                   "in C rather than by `hero_str_from_bytes`; or a compiler bug, which is "
-                   "worth reporting");
-    }
+    if ((h->magic | UINT64_C(1)) != HERO_STR_MAGIC_NUL) hero_str_mark_lost();
     return h;
 }
 
