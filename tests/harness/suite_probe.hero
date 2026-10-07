@@ -167,10 +167,13 @@ function trees() -> [Tree]
     # to what the suite asked: the round's 53 new `.hero` files under `tests/`
     # took its seeds to 799, past 634 by more than a quarter, and its
     # variants to 7191.
+    # Both rows raised 2026-10-07 at batch 13's gate, to what the suite asked:
+    # selfhost to 469 seeds and 4221 variants, tests to 1100 and 9900, the
+    # batch's modules and cases taking each past its floor by more than a quarter.
     none: [str] = []
     return [
-        Tree(name: "selfhost, multi", root: "selfhost", seeds: 356, floor: Floor(family: "multi", generated: 3204, parsing: 3204), known: none)
-        Tree(name: "tests, multi", root: "tests", seeds: 799, floor: Floor(family: "multi", generated: 7191, parsing: 7191), known: none)
+        Tree(name: "selfhost, multi", root: "selfhost", seeds: 469, floor: Floor(family: "multi", generated: 4221, parsing: 4221), known: none)
+        Tree(name: "tests, multi", root: "tests", seeds: 1100, floor: Floor(family: "multi", generated: 9900, parsing: 9900), known: none)
         Tree(name: "examples, multi", root: "examples", seeds: 120, floor: Floor(family: "multi", generated: 1080, parsing: 1080), known: none)
     ]
 
