@@ -1,0 +1,52 @@
+# Defect 436, 2026-10-07. Symptom: a program `heroes run` started, stopped by
+# Ctrl-Z at the terminal, left `heroes` waiting for ever on Linux, the shell
+# waiting on it, its prompt gone; and on Darwin `heroes run` answered 137 at
+# once, the stopped program killed. Cause: `hero_run_go` waited for an exit
+# alone, and Darwin reports a stop to that wait too (`si_code` CLD_STOPPED),
+# which the sweep after an exit answered with SIGKILL. Now a stop is taken
+# and the wait goes on; where the child held the terminal, `heroes` gives it
+# back and stops itself, so the shell has its job and `fg` continues both
+# (`runtime/parts/run.c`, `hero_run_stopped`). A terminal cannot be asked
+# for here: the lane's probes drove one through a pty, and this case holds
+# the half with none.
+#
+# The program runs itself under a two-second watchdog, and the child stops
+# itself with SIGSTOP: waited on, not killed, until the watchdog's SIGTERM,
+# which SIGCONT now follows, ends it, and the run answers the watchdog's 124.
+# `unistd.h` is no header of Windows, which has no stop to wait on, so the
+# case is skipped there by its build's own words.
+
+extern "signal.h"
+    constant SIGSTOP: i32
+    function kill(pid: i32, sig: i32) -> i32
+
+extern "unistd.h"
+    function getpid() -> i32
+
+extern "hero_os.h"
+    function hero_run_reset()
+    function hero_run_arg(word: str)
+    function hero_run_limit(seconds: i64)
+    function hero_run_go(program: cstr lent, in_path: cstr lent, out_path: cstr lent, err_path: cstr lent, @status: i64) -> i64
+    function hero_exe_path_shown(@status: i64, @marks: i64) -> str
+
+function itself() -> str
+    status: i64 @ 0
+    marks: i64 @ 0
+    return hero_exe_path_shown(status: @status, marks: @marks)
+
+function main()
+    if args().len() > 0
+        # The child: stopped by its own hand, until something continues it.
+        _ = kill(pid: getpid(), sig: SIGSTOP)
+        print("the child was continued and lived on")
+        return
+    program = itself()
+    hero_run_reset()
+    hero_run_arg(word: program)
+    hero_run_arg(word: "child")
+    hero_run_limit(seconds: 2)
+    status: i64 @ 0
+    code = hero_run_go(program: program.cstr(), in_path: "".cstr(), out_path: "".cstr(), err_path: "".cstr(), @status)
+    hero_run_reset()
+    print("a child that stopped itself was waited on until its watchdog ended it: ", code)
