@@ -138,6 +138,9 @@ function visible_locals(r: Resolver) -> [str]
 record GenericParam
     name: str
     position: i64
+    # Refused at the angle list, a built-in's name, and told there once: its
+    # uses are left unresolved and say nothing more (defect 460).
+    told: bool
 
 # The pass's working state. It owns everything and takes the tree and the
 # source as parameters — the Cyclone rule kept by a language that never had

@@ -74,9 +74,12 @@ function named(@r: state.Resolver, a: ast.Ast, s: source.Source, decls: [ast.Dec
         r.out.type_uses[id] @ .prim(value: prim.must())
         return
 
+    # A type parameter refused at the angle list was told there: its uses
+    # stay unresolved, one mistake and one message (defect 460).
     for g in r.generics
         if g.name == name
-            r.out.type_uses[id] @ .generic(at: g.position)
+            if !g.told
+                r.out.type_uses[id] @ .generic(at: g.position)
             return
 
     # A qualified type: `geom.Point`. The module has to be one this file
@@ -189,7 +192,8 @@ function type_candidates(@r: state.Resolver, decls: [ast.Decl]) -> [[str]]
     generics: [str] @ []
 
     for g in r.generics
-        generics @ generics.push(g.name)
+        if !g.told
+            generics @ generics.push(g.name)
 
     primitives: [str] @ []
 
@@ -234,7 +238,7 @@ test "the three namespaces answer in order: primitive, generic, declaration"
     top_node = typed(@a, start: 6, end: 11)
     r: state.Resolver @ state.new_resolver(expr_count: 0, type_count: 3)
     r.module @ "t"
-    r.generics @ r.generics.push(state.GenericParam(name: "A", position: 0))
+    r.generics @ r.generics.push(state.GenericParam(name: "A", position: 0, told: false))
     decls: [ast.Decl] @ [record_decl_named(name_start: 6, name_end: 11)]
     resolved.declare_top(@r.out, module: "t", name: "Point", decl: 0)
     resolve_type(@r, a, s, decls, prim_node)
@@ -316,7 +320,7 @@ test "an unknown type earns the nearest names, generics ranked first"
     typo = typed(@a, start: 32, end: 36)
     r: state.Resolver @ state.new_resolver(expr_count: 0, type_count: 1)
     r.module @ "t"
-    r.generics @ r.generics.push(state.GenericParam(name: "flob", position: 0))
+    r.generics @ r.generics.push(state.GenericParam(name: "flob", position: 0, told: false))
     resolve_type(@r, a, s, empty_decls(), typo)
     assert r.out.diagnostics.len() == 1
     assert r.out.diagnostics[0].code == "unknown_type"
