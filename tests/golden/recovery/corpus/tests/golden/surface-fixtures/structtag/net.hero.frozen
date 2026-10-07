@@ -1,0 +1,16 @@
+# The module that carries the group. An `extern` is never callable across a
+# module boundary, so the three functions below are the route `main` takes.
+extern "probe.h"
+    record Probe tag probe
+    function probe_open(n: i64) -> Probe acquires probe_close
+    function probe_value(p: Probe) -> i64
+    function probe_close(p: Probe consumes)
+
+function open(n: i64) -> Probe
+    return probe_open(n: n)
+
+function value(p: Probe) -> i64
+    return probe_value(p)
+
+function close(@p: Probe)
+    probe_close(p)

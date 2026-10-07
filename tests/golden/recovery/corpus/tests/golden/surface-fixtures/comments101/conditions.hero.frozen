@@ -1,0 +1,47 @@
+# A comment inside the value of a line that opens a block, which the first
+# repair of defect 101 refused at exit 2 and the trunk moved into the block
+# at exit 0: inside a call in an `if`, an `else if`, a `while`, a `for` and a
+# `match`, with a comment on the opening line and on the closing one, and in
+# a condition the author wrote inside parentheses, after an operator. The
+# value is opened where the comment is, and the block goes on under it.
+
+function g(a: i64, b: i64) -> i64
+    return a + b
+
+function f(n: i64, m: i64) -> i64
+    if n > g(  # the opener
+        a: 1,
+        b: 2
+    )  # the closer
+        return 1
+    else if n < g(
+        a: 3,  # in an else if
+        b: 4
+    )
+        return 2
+
+    while n > g(
+        a: 5,  # in a while
+        b: 6
+    )
+        return 3
+
+    for x in [
+        1,  # in a for
+        2
+    ]
+        print(x)
+
+    if (n > 0 &&  # positive
+        m < 10)  # and small
+        return 4
+
+    match g(
+        a: 7,  # in a match
+        b: 8
+    )
+        0 => return 5
+        _ => return 6
+
+function main()
+    print(f(n: 1, m: 2))

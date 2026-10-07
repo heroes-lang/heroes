@@ -1,0 +1,11 @@
+# Panel 173 q4: the library installs its handler in a constructor, BEFORE the
+# runtime's installer runs (only when LIB_CTOR is set in the environment). The
+# runtime then saves that disposition and never calls it.
+extern "libabrt.h"
+    function lib_free(p: cstr)
+
+function main()
+    x = "payload"
+    c: cstr @ x.lease()
+    lib_free(p: c)
+    end_lease(@c)

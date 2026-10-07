@@ -1,0 +1,48 @@
+# FIXED DEFECT, 2026-09-15: a record reaching two handles through two fields of
+# the SAME type had only the FIRST of them acquired.
+#
+# SYMPTOM: this program, which is correct, printed its two numbers and then
+# aborted at exit 134 saying `1 C handle(s) given back that were never taken`.
+# The identical program with `b` given a second record NAME over the same C
+# struct exited 0, so the axis was the declaration and never the layout. The
+# `e: Inner[2]` form collapsed the same way, and so did `Inner` seventeen times.
+#
+# CAUSE: `check/reaches.hero`'s `gather` threaded one `seen` map across SIBLING
+# fields and never cleared it. The map was written to break a declaration CYCLE
+# and it also truncated a DAG: the second field whose type had already been
+# walked returned having pushed nothing, so `emit/handle_traffic.hero` wrote one
+# `hero_handle_acquired(t.a.s);` where the value carries two addresses.
+#
+# `walk` in the same file is unaffected and keeps its whole-walk memo, because
+# it asks an EXISTENTIAL question and unwinds on the first hit: every entry it
+# leaves behind belongs to a subtree that reached NOTHING, and a declaration
+# that reached nothing once reaches nothing again. `gather` COLLECTS, and its
+# answer is the PREFIX, which differs per route — so the same memo is a wrong
+# answer rather than a saving.
+#
+# FIX: `seen` guards the current ROUTE. A declaration is marked on the way down
+# and unmarked on the way out, so a sibling may walk it under its own prefix
+# while a cycle still terminates because a declaration reached from inside its
+# own subtree is still marked when it arrives.
+#
+# The other direction is `fixedbugs-the-unacquired-sibling-leaks-loudly.hero`,
+# which is the half a passing program cannot see.
+
+extern "fixedbugs-sibling-fields-of-one-record-type.h"
+    record Slot tag Slot
+    record Inner
+        s: Slot
+    record Pair
+        a: Inner
+        b: Inner
+    function pair_open(n: i64) -> Pair acquires slot_close
+    function slot_close(s: Slot consumes)
+    function slot_value(s: Slot) -> i64
+
+function main()
+    p = pair_open(n: 7)
+    print(slot_value(s: p.a.s))
+    print(slot_value(s: p.b.s))
+    slot_close(p.a.s)
+    slot_close(p.b.s)
+    print("both given back")

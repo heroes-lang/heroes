@@ -1,0 +1,32 @@
+# fixedbugs, M-c-callbacks step 0, 2026-09-05 (panel 111 R4).
+#
+# SYMPTOM: the first correct callback binding ever written was exit 2 —
+# `internal error: compiling the generated C failed`, with clang saying `unknown
+# type name 'h_0fn_294870dd'` on the probe line, under a `#line` pointing at
+# this declaration. The compiler blamed itself for a program that had nothing
+# wrong with it, which is the failure §4.19's guarantee exists to prevent.
+#
+# CAUSE: two of them, and both were invisible until a boundary type needed a
+# typedef. (1) A per-module TU carries only the typedefs its own reach names,
+# and an `extern` is in neither of the two lists that build that reach — it is
+# nobody's Heroes function, so its parameter types never joined. (2) Even once
+# they did, the probe was emitted in the PRELUDE, which runs before the typedef
+# section, against emit.hero's own written invariant "types before anything that
+# can mention one". Every earlier boundary type spells itself without a table —
+# `int64_t`, `HeroStr`, `void *` — so neither gap could fire.
+#
+# FIX: `emit/unit.hero` joins every extern's declared parameter types to the
+# reach, asked of the same `tu_p` the prelude writes probes from; and both
+# emitters call `extern_probes` after `typeorder.definitions` instead of inside
+# the prelude. The emit goldens moved by exactly that block and by nothing else,
+# measured: the same multiset of lines and the same line count.
+
+extern "stdlib.h"
+    function atexit(f: (function() -> ())) -> i32
+
+function bye()
+    print("bye")
+
+function main()
+    if atexit(bye) != 0
+        print("atexit refused the handler")

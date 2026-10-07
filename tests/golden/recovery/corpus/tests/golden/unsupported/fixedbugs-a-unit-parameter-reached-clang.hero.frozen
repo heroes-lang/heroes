@@ -1,0 +1,31 @@
+# FIXED DEFECT, 2026-09-04 (defect 012, found by panel 110's ffi-pragmatist
+# while it was measuring the `()` row). Symptom: `error: argument may not
+# have 'void' type` on `int64_t h_f(void h0_);`, exit 2 — the compiler
+# blaming itself for the author's program, on eight lines with no `???` in
+# them. `heroes check` said 0.
+#
+# Cause: the gate calls `check_type` on a parameter's type and on the
+# result with the SAME function, and `()` as a result is legal — it is C's
+# `void` — so `check_type`'s `.unit` arm returns, as its own comment says it
+# should. Nothing asked the parameter position separately. `_` is the one
+# spelling that reaches the emitter: a named `()` parameter is
+# `unused_binding` when it is not read and `bound_unit` when it is, and `_`
+# binds nothing, so neither rule fires.
+#
+# **This is the field defect's sibling, twelve lines away, twenty-three days
+# later.** `unit_fields` closed exactly this hole for `record Box { u: () }`
+# on 2026-08-12 — `fixedbugs-a-unit-field-reached-clang.hero` beside this
+# file — and the parameter next to it was never done, which is CLAUDE.md
+# §1's "a repair shipped without its adjacent shapes".
+#
+# Fix: five lines in the loop that already walks `f.params`, raising
+# `unit_parameter` beside `unit_field` and `unit_element`.
+
+function g() -> ()
+    print("g")
+
+function takes_nothing(_: ()) -> i64     #~ unit_parameter
+    return 1
+
+function main()
+    print(takes_nothing(g()))

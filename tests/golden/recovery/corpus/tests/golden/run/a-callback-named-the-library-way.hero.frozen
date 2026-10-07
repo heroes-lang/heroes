@@ -1,0 +1,34 @@
+# UNVERIFIED — pending debrief
+# The legal side of M-named-callbacks, and the bargain it made. `fold`'s callback
+# type names its two parameters, `(function(acc: B, item: A) -> B)`, so a function
+# handed to `fold` names its two the way `fold` does. That is a NAMING MANDATE
+# and not a detector, and the record says so rather than letting a green suite
+# imply otherwise.
+#
+# **Why the cheaper reading was refused.** A first version fired only where the
+# callee reused the type's own word for the other position — panel 127's
+# `elsewhere` test, applied to a value. Measured against the seven callbacks this
+# repository hands to `fold`, each transposed, it caught **2 of 7**: the five it
+# missed called their parameters `a` and `b`, `so_far` and `one`, `total` and `i`.
+# A rule that catches an inversion only when the author happened to borrow the
+# library's words gives the impression of closing a class it does not close, so
+# the author took agreement over it with that number in front of them
+# (2026-09-11). Agreement catches 7 of 7.
+#
+# What this file pins is the other half: that naming them the library's way
+# compiles and runs, at both the same-typed shape and the differently-typed one.
+function join_up(acc: str, item: str) -> str
+    return acc + item
+
+function running(acc: i64, item: i64) -> i64
+    return acc + item
+
+function tally(acc: str, item: i64) -> str
+    return acc + item.to_str()
+
+function main()
+    words: [str] = ["a", "b", "c"]
+    print(words.fold("", join_up))
+    ns: [i64] = [1, 2, 3]
+    print(ns.fold(0, running))
+    print(ns.fold("", tally))

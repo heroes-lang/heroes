@@ -1,0 +1,15 @@
+# The leaking half of the success clause: the add fails, the child stays the
+# program's, and nobody ends it. Before `when` the obligation ended at the
+# call whatever C returned and this program ran at 0 (panel 176's critic's
+# leak shape); now the child is still owed when `main` returns.
+extern "fixedbugs-a-transfer-that-failed-and-nobody-ended-is-owed-at-exit.h"
+    record Node tag node
+    function node_new(v: i64) -> Node acquires node_put
+    function node_add(parent: Node, child: Node transfers node_put, outcome: i32) -> i32 when 0
+    function node_put(n: Node consumes)
+
+function main()
+    parent = node_new(v: 10)
+    child = node_new(v: 5)
+    print("failed add: ", node_add(parent: parent, child: child, outcome: 1))
+    node_put(n: parent)

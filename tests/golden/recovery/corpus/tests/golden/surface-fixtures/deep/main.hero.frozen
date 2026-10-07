@@ -1,0 +1,25 @@
+# The program that falsified §1.12 in five lines, kept as the fixture that
+# pins its repair (M-robustness-guards step 4, panel 104). Before the guard,
+# 100,000 frames at `-O0` ran off the 8 MB main stack on the Mac and on
+# Linux at exit 139 with nothing on stderr; the guard-page handler in
+# `runtime/parts/stack.c` turns that fault into `panic: stack exhausted in
+# main.down`, exit 134. The depth is ten million and not a hundred thousand
+# because of Windows: the 64 MB `/STACK` panel 058 ratified HOLDS a hundred
+# thousand frames (measured 2026-09-03 on the box, `100000` at exit 0), and
+# a fixture that overflows on two platforms out of three tests the platform
+# and not the guard. Ten million fits nowhere, at any level: measured on the
+# Mac, `-O0` and `-O2` both panic with the name; on the box, both print
+# `panic: stack exhausted` — the Windows arm names the failure and not the
+# function, and says so in its own comment. What `-O2` buys is cheaper
+# frames, not a loop: a hundred thousand printed at `-O2` on all three
+# platforms and a million did not (the Mac, measured), so the rows in
+# `tests/harness/suite_surface.hero` name the level the tools default to,
+# and the depth counter the sitting rejected would have cost every program
+# at every level for a message this handler gives for free.
+function down(n: i64) -> i64
+    if n == 0
+        return 0
+    return 1 + down(n - 1)
+
+function main()
+    print(down(10000000))

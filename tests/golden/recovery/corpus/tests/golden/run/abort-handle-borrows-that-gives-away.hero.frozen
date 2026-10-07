@@ -1,0 +1,27 @@
+# A MARK THAT LIES, and no rule in this compiler can catch it
+# (M-marked-acquisition, 2026-09-14). `slot_open` is declared `borrows`, so the
+# program is told it owes nothing; the C function in fact hands the handle over.
+# The program then releases it, which is right, and the count goes to -1.
+#
+# **`check/acquiring.hero` is satisfied and has to be.** R5 asks that a producer
+# of a consumed handle type SAY which it is, and this one says. Whether the
+# sentence is TRUE is a fact about a C function's body, which no Heroes rule can
+# read — panel 148 refused the inferred obligation on exactly that ground, with
+# twelve headers of nineteen declaring both a giving and a lending function of
+# the same C signature. `SSL_get0_peer_certificate` and
+# `SSL_get1_peer_certificate` are adjacent lines and differ by one digit.
+#
+# So the two instruments hand off here, and this case is the seam: the rule says
+# *you must state it*, the counter says *what you stated does not add up*.
+# Neither can do the other's half.
+
+extern "abort-handle-borrows-that-gives-away.h"
+    record Slot tag Slot
+    function slot_open(n: i64) -> Slot borrows
+    function slot_close(s: Slot consumes)
+    function slot_value(s: Slot) -> i64
+
+function main()
+    a = slot_open(n: 7)
+    print(slot_value(s: a))
+    slot_close(a)

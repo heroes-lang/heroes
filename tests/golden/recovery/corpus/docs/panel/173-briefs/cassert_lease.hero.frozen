@@ -1,0 +1,10 @@
+extern "beside3.h"
+    function look3(s: cstr lent)
+    function cassert()
+
+function main()
+    x = "payload"
+    c: cstr @ x.lease()
+    look3(s: c)
+    cassert()
+    end_lease(@c)

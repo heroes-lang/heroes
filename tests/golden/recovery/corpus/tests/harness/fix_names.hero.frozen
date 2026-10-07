@@ -1,0 +1,296 @@
+# The TEXT of a fix, which nothing in this repository watched until
+# 2026-09-16 (M-check-completeness; the item was filed 2026-09-08 at
+# M-closures-verdict step 3 and moved here the same day).
+#
+# ## What was unwatched, and why two suites both missed it
+#
+# `.expected` compares the stderr of `check --brief`, which carries one line
+# per diagnostic and **no `fix (…)` line** — measured: of the `check/*.expected`
+# files in this tree, ZERO carry one. `suite_fixes` tests only `certain` fixes,
+# through `.fixed`, because CLAUDE.md §8 makes only those machine-applicable.
+# So a `guess` fix's title was pinned by nothing at all, and `mixed_arithmetic`
+# recommended `fit_<width>(x)` for as long as that family had been gone. The
+# only reason anybody noticed is that a reader ran the compiler's own advice.
+#
+# **A `guess` fix is MORE likely to be read by a human than a `certain` one**,
+# which is applied without being read. The unwatched half was the half a person
+# acts on.
+#
+# ## The rule, and it is narrow because the measurement said so
+#
+# The item warned that a hasty rule either misses the class or cries wolf, so
+# the corpus was measured before the rule was written: 93 fix titles produced
+# over `tests/golden/check/`, 53 distinct, and the backticked spans inside them
+# are of four shapes. Two of those shapes name something the language must
+# have; two are prose the rule must not touch.
+#
+# | shape | example, measured | judged |
+# |---|---|---|
+# | a pure identifier, called | `to_f64(x)` | YES — the name must exist |
+# | a family template, called | `to_<width>(x)` | YES — some name must start `to_` |
+# | a method or an expression | `.must()`, `"n is " + n.to_str()` | no |
+# | a type or a sketch | `T?`, `x: <type> = wanted(…)` | no |
+#
+# **THE FAMILY ARM IS WHAT CATCHES THE DEFECT THIS EXISTS FOR, and the obvious
+# rule would have missed it.** `fit_<width>` is not a pure identifier — it
+# carries `<` and `>` — so a rule checking only identifiers skips exactly the
+# span that shipped. The stem is what was wrong: the language has `to_str`,
+# `to_i8` … `to_u64` and has never had a `fit_` anything.
+#
+# ## Where the truth comes from
+#
+# `spec_text.offered_builtins` reads the names out of § 11's own `Built-ins:`
+# sentence — the SPECIFICATION's list, which is what a reader is given, and not
+# the compiler's internal table. That is deliberate: an instrument that asked
+# `selfhost/inventory.hero` would agree with the compiler by construction and
+# could never catch the compiler recommending a name it had itself withdrawn.
+#
+# ## What it deliberately does not do
+#
+# It reads only a span that BEGINS with the callee, because that is where a
+# recommended name stands. `"n is " + n.to_str()` is prose containing a call,
+# and parsing inside it would be the crying-wolf half of the item's warning.
+# When that becomes the shape that ships a wrong name, the arm is added and
+# this paragraph is what it is added against.
+
+use report
+use shell
+use strings
+use spec_text
+
+constant CHECK_DIR: str
+    "tests/golden/check"
+
+# A floor, in the shape `suite_fixes` already uses: a walk that finds no fix
+# titles at all has tested nothing and says so rather than reporting green.
+# Measured 2026-09-16: 93 titles over that directory.
+constant LEAST_TITLES: i64
+    40
+
+function run_default(scratch: str, compiler: str) -> report.Report?
+    r: report.Report @ report.empty()
+    spec = read_file("spec/heroes-spec.md")
+
+    if spec.is_err()
+        report.keep_failure(@r, label: "fix-names", detail: "  cannot read spec/heroes-spec.md")
+        return ok(r)
+    offered = spec_text.offered_builtins(spec.must())
+
+    if offered.is_err()
+        report.keep_failure(
+            @r,
+            label: "fix-names",
+            detail: "  the spec has no `Built-ins:` sentence to read names from"
+        )
+        return ok(r)
+    names = offered.must()
+    listed = shell.run_guarded(scratch: scratch, words: ["ls", CHECK_DIR])
+
+    if listed.is_err()
+        report.keep_failure(@r, label: "fix-names", detail: "  cannot list " + CHECK_DIR)
+        return ok(r)
+    seen: i64 @ 0
+
+    for entry in strings.lines(listed.must().out)
+        if !strings.ends_with(text: entry, suffix: ".hero")
+            continue
+        said = shell.run_guarded(
+            scratch: scratch,
+            words: [compiler, "check", CHECK_DIR + "/" + entry, "--json"]
+        )
+
+        if said.is_err()
+            continue
+
+        for title in titles_in(said.must().err)
+            seen @ seen + 1
+            judge(@r, where: entry, title: title, names: names)
+
+    if seen < LEAST_TITLES
+        report.keep_failure(
+            @r,
+            label: "fix-names",
+            detail: "  only " + seen.to_str() + " fix titles were read, against a floor of " + LEAST_TITLES.to_str() + " — a walk that finds nothing reports green, and this one found nothing worth judging"
+        )
+    return ok(r)
+
+# Every `"title": "…"` in one `--json` answer. The value is read to its
+# closing quote with `\"` skipped, because a title carries quoted C and a
+# split on `"` alone would cut it in half — measured on
+# `"n is " + n.to_str()`, which is one of the 53.
+function titles_in(text: str) -> [str]
+    out: [str] @ []
+    cs = chars_of(text)
+    at: i64 @ 0
+    marker = chars_of("\"title\": \"")
+
+    while at + marker.len() <= cs.len()
+        if !matches(cs: cs, at: at, needle: marker)
+            at @ at + 1
+            continue
+        from = at + marker.len()
+        k: i64 @ from
+        built: [str] @ []
+
+        while k < cs.len()
+            if cs[k] == "\\" && k + 1 < cs.len()
+                built @ built.push(cs[k + 1])
+                k @ k + 2
+                continue
+
+            if cs[k] == "\""
+                break
+            built @ built.push(cs[k])
+            k @ k + 1
+
+        out @ out.push(join(built, ""))
+        at @ k + 1
+
+    return out
+
+function matches(cs: [str], at: i64, needle: [str]) -> bool
+    i: i64 @ 0
+
+    while i < needle.len()
+        if at + i >= cs.len() || cs[at + i] != needle[i]
+            return false
+        i @ i + 1
+
+    return true
+
+# One title's backticked spans, judged. The span is judged only where it
+# BEGINS with a call, which is the position a recommended name stands in.
+function judge(@r: report.Report, where: str, title: str, names: [str])
+    for span in backticked(title)
+        callee = callee_of(span)
+
+        if callee.is_err()
+            continue
+        word = callee.must()
+
+        if strings.contains(text: word, needle: "<")
+            stem = before_angle(word)
+
+            if !family_exists(names: names, stem: stem)
+                report.keep_failure(
+                    @r,
+                    label: "fix-names/" + where,
+                    detail: "  a fix recommends the family `" + word + "` and the language has no name beginning `" + stem + "`\n  the title: " + title
+                )
+            else
+                report.keep_pass(@r)
+            continue
+
+        if !offers(names: names, word: word)
+            report.keep_failure(
+                @r,
+                label: "fix-names/" + where,
+                detail: "  a fix recommends `" + word + "`, which is not a name this language offers\n  the title: " + title + "\n  § 11's `Built-ins:` sentence is the list, and a fix that names something else sends a reader to write what does not exist"
+            )
+        else
+
+            # **COUNTED, and the leg was invisible without it.** Written green
+            # the first time with no `keep_pass`, this contributed 0 passes and
+            # 0 failures — a leg that runs and reports nothing is a leg nobody
+            # can tell from one that never ran, which is the very shape
+            # `.claude/rules/diagnostics-and-goldens.md`'s instrument rule
+            # names. The floor above is the second witness, not the first.
+            report.keep_pass(@r)
+
+function backticked(title: str) -> [str]
+    out: [str] @ []
+    cs = chars_of(title)
+    at: i64 @ 0
+
+    while at < cs.len()
+        if cs[at] != "`"
+            at @ at + 1
+            continue
+        k: i64 @ at + 1
+        built: [str] @ []
+
+        while k < cs.len() && cs[k] != "`"
+            built @ built.push(cs[k])
+            k @ k + 1
+
+        if k < cs.len()
+            out @ out.push(join(built, ""))
+        at @ k + 1
+
+    return out
+
+# The callee of a span that BEGINS with one: everything before the first `(`,
+# absent where the span does not open a call at its start or where the head is
+# not made of a name's characters plus the `<` a family template carries.
+function callee_of(span: str) -> str?
+    cs = chars_of(span)
+    at: i64 @ 0
+    built: [str] @ []
+
+    while at < cs.len() && cs[at] != "("
+        built @ built.push(cs[at])
+        at @ at + 1
+
+    if at >= cs.len() || built.len() == 0
+        return fail(code: "absent", msg: "the span does not open a call")
+    word = join(built, "")
+
+    if !name_shaped(word)
+        return fail(code: "absent", msg: "not a name, and not a family template either")
+    return ok(word)
+
+# A name, or a family template: `a`-`z`, `0`-`9`, `_`, and the `<` `>` a
+# template writes — nothing else, so `.must`, `"n is " + n.to_str` and
+# `x: <type> = wanted` are all left alone.
+#
+# Walked as BYTES and not as characters, because `<` `<=` `>` `>=` take a
+# number only (spec § 7) and `s.chars()` yields a single-character `str`. The
+# language's own answer to "what is this byte" is `s[i]`, which yields a `u8`
+# (§ 10), and 97/122, 48/57, 95, 60 and 62 are `a`/`z`, `0`/`9`, `_`, `<`, `>`.
+function name_shaped(word: str) -> bool
+    if word.len() == 0
+        return false
+    at: i64 @ 0
+
+    while at < word.len()
+        b = word[at]
+        low = b >= 97 && b <= 122
+        digit = b >= 48 && b <= 57
+
+        if !low && !digit && b != 95 && b != 60 && b != 62
+            return false
+        at @ at + 1
+
+    return true
+
+function offers(names: [str], word: str) -> bool
+    for one in names
+        if one == word
+            return true
+
+    return false
+
+function family_exists(names: [str], stem: str) -> bool
+    if stem.len() == 0
+        return false
+
+    for one in names
+        if strings.starts_with(text: one, prefix: stem)
+            return true
+
+    return false
+
+# `s.chars()` in the shape this file walks: `strings` has no character
+# splitter and the built-in is the language's own answer (spec § 10).
+function chars_of(text: str) -> [str]
+    return text.chars()
+
+# The stem of a family template: everything before the `<`. `index_of` is
+# `strings`' own, and the caller has already asked `contains`, so the absent
+# arm is unreachable and answers the whole word rather than inventing one.
+function before_angle(word: str) -> str
+    at = strings.index_of(text: word, needle: "<")
+
+    if at.is_err()
+        return word
+    return word.slice(from: 0, to: at.must())

@@ -1,0 +1,31 @@
+# One call, two marks, two obligations (defect 034, panel 149, 2026-09-14).
+#
+# **THIS PROGRAM IS CORRECT AND IT ABORTED AT 134.** `emit/ops.hero` asked
+# `hands_a_handle_over`, a per-DECLARATION yes-or-no, and wrote **one**
+# `hero_handle_acquired();` after the call however many marks the call carried.
+# So `both_open` incremented once, the two `consumes` calls decremented twice,
+# and the count reached -1: the instrument killed the program that did the right
+# thing, with a message naming three causes and none of them this one. The
+# program that released only the connection, and leaked the slot, exited 0.
+#
+# `spec § 13` had already settled it — *"which the program owes it. The owing is
+# counted"* — one owing per handle and not per call, so this was the compiler
+# disagreeing with the specification (CLAUDE.md § 12) and it cost no spec token.
+# Found by panel 149's spec-warden while pricing an unrelated repair, and
+# reproduced by its compiler-engineer with two parameters of ONE handle type,
+# which is why the axis is the number of MARKS and never the number of types.
+
+extern "fixedbugs-two-marks-on-one-call-are-two-obligations.h"
+    record Slot tag Slot
+    record Conn tag Conn
+    function slot_close(s: Slot consumes)
+    function conn_close(c: Conn consumes)
+    function both_open(n: i64, @a: Slot acquires slot_close, @b: Conn acquires conn_close)
+
+function main()
+    a: Slot @ nullptr
+    b: Conn @ nullptr
+    both_open(n: 1, @a, @b)
+    slot_close(a)
+    conn_close(b)
+    print("both given back")

@@ -1,0 +1,69 @@
+# Top-level functions are values (spec line 89), and a value is a plain C function
+# pointer — no captured environment, because v1 has no closures.
+#
+# That representation is the founding constraint working (§1.11): a Heroes
+# function value and a C callback are the same eight bytes, which is what makes
+# `qsort`'s comparator and raylib's callbacks expressible at M7 with no shim.
+# Panel 013 recorded the consequence in advance — the day closures arrive, a
+# capturing one is a record plus a pointer, so the type system must distinguish
+# capture-free AT THE BOUNDARY.
+#
+# What this pins:
+#   - a function bound to a name, and called through it;
+#   - a function passed as an argument and called there;
+#   - a zero-parameter, unit-returning one — the shape whose C typedef must say
+#     `(void)` rather than `()`, or a wrong-arity call becomes undefined
+#     behaviour instead of a compile error;
+#   - one stored in an array, which needs a descriptor: a function value owns
+#     nothing, so copy is an assignment and drop is nothing;
+#   - equality, which is pointer identity.
+#
+# `apply(add, x: 2, y: 3)` carries labels because §4.11's rule counts parameters
+# in the SIGNATURE, and two of `apply`'s three are `i64`. The function value is
+# not one of them and needs no label — which is the rule being narrow rather than
+# blanket.
+#
+# And the function TYPE names its two `i64` for the same reason since defect
+# 026: a call made through a value takes its arguments by the type's names, so
+# `f(a: x, b: y)` is checked the way a call to a declaration is. The names are
+# part of the type, which is what puts `add` and `mul` in one array: both
+# declare `(a, b)`, so both have that type. Two functions that agreed on
+# everything but the spelling of their parameters would be two types, and the
+# array would have no answer to which names its calls use.
+# Bulk regression case.
+
+function add(a: i64, b: i64) -> i64
+    return a + b
+
+function mul(a: i64, b: i64) -> i64
+    return a * b
+
+function apply(f: (function(a: i64, b: i64) -> i64), x: i64, y: i64) -> i64
+    return f(a: x, b: y)
+
+function tick()
+    print("tick")
+
+function twice(f: (function() -> ()))
+    f()
+    f()
+
+function main()
+    g = add
+    print(g(a: 2, b: 3), " ", apply(add, x: 2, y: 3), " ", apply(mul, x: 2, y: 3))
+
+    twice(tick)
+
+    # An array of them: the element descriptor is one shared by every function
+    # type, the way `hero_desc_array` is one for every `[T]`.
+    ops: [(function(a: i64, b: i64) -> i64)] = [add, mul]
+    print(ops[0](a: 4, b: 5), " ", ops[1](a: 4, b: 5), " ", len(ops))
+
+    # Pointer identity, both ways.
+    h = add
+    print(g == h, " ", g == mul)
+
+# Since 2026-09-10 the specification's sections are numbered and a citation names
+# the section, never a line (CL-037). The line numbers above were written against
+# the layout at commit 834d804f; read today they are:
+#   spec line 89 is spec § 9 Functions and calls

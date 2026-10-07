@@ -1,0 +1,57 @@
+# fixedbugs, M-selfhost-fixpoint, 2026-08-18 (panel 085 R7).
+#
+# SYMPTOM: a field declared as a scalar where the header has an ARRAY was
+# **exit 2** — `internal error: compiling the generated C failed` — so the
+# compiler took the blame for the author's own `extern`. Measured on `dirent.h`:
+# `d_name: i8` and `d_name: i64` both, while `cstr`, `bool`, `f64` and
+# `i8[256]` were all correctly exit 1 with `ffi_field_type`. CLAUDE.md §7 names
+# four classes that are the author's error and this was a fifth, unlisted
+# because nobody had written the program that meets it.
+#
+# CAUSE: the integer field's assertion asked the sign with
+# `((__typeof__(place))-1 < 0)`, which is **ill-formed** — not false — when the
+# member's type is an array or a struct: *"used type 'char[1024]' where
+# arithmetic or pointer type is required"*. C's `&&` does not save it, because
+# every operand is type-checked whether or not an earlier one is false. So
+# clang emitted an error that is **not this assertion failing**, `emit/ffi.rs`
+# could not recognise it as the author's, and the mapping fell through to the
+# compiler's own exit 2.
+#
+# FIX: the sign goes through a `_Generic`, which lvalue-converts its controlling
+# expression — an array decays to a pointer, a struct matches nothing, and both
+# reach `default` — so the assertion is well-formed for every member type and
+# **fails** where it used to break the build. Written out rather than calling
+# `HERO_C_UNSIGNED`, because that macro's preamble is emitted only where an
+# `extern` *function* needs it and a struct-only group emits none.
+#
+# This file must NOT compile. It is built by the CLI surface test
+# `a_field_the_header_has_as_an_array_is_the_authors_error`, which pins the half
+# that makes it a diagnostic rather than an internal error: exit 1, the `.hero`
+# line, and the field named as the author named it.
+#
+# THE TWIN WAS OPEN WHEN THIS WAS WRITTEN AND IS CLOSED NOW. The MIRROR shape —
+# a fixed array declared where the header has a scalar, `d_type: i8[4]` against
+# `unsigned char` — was exit 2 for the same reason one position over: its
+# assertion SUBSCRIPTED the member, and a scalar cannot be subscripted. It was
+# repaired 2026-08-24, and the repair is option (a) of the three that were
+# priced: C's twelve integer types enumerated as array-pointer `_Generic`
+# associations, so the length rides inside each association as `(*)[N]` and no
+# subscript is needed anywhere (`docs/work/DONE.md`).
+#
+# Re-measured 2026-09-06 rather than taken from that record: `heroes build` on
+# the mirror program is `error[ffi_field_type]` at **exit 1** with the caret on
+# the field — the same shape this file pins. Worth knowing beside it:
+# `heroes check` on that program is exit **0**, because the header is read by
+# the extern probe and the probe runs at build.
+#
+# This paragraph said *"the still-open twin … is still exit 2"* for thirteen
+# days after the repair, and pointed at a decision list in a directory retired
+# 2026-08-26. A comment that describes a defect the compiler no longer has is
+# read as current by whoever meets it next (CLAUDE.md §11).
+
+extern "dirent.h"
+    record Dirent tag dirent partial
+        d_name: i8  #~ ffi_field_type
+
+function main()
+    print(1)

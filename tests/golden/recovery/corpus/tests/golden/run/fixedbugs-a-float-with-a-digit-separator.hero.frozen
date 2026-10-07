@@ -1,0 +1,38 @@
+# fixedbugs, M-selfhost-fixpoint, 2026-08-18 (panel 085 R6's sweep).
+#
+# SYMPTOM: `x: f64 @ 1_0.5` compiled clean and printed **0.0**. At exit 0, with
+# no diagnostic, under every flag this project passes. `1.5_5` printed 0.0 and
+# `1_000.000_1` printed 0.0 — a program that says one number and runs another,
+# which is the worst class this compiler has. The self-hosted compiler had the
+# same input as **exit 2**, since `1_0.5` is not a C literal either.
+#
+# CAUSE: `ir/exprs.rs` read the literal with `parse::<f64>().unwrap_or(0.0)`,
+# under the comment *"the parse cannot fail: the lexer already accepted the
+# shape"*. `lexer/number.rs` accepts `_` between any two digits and does so on
+# **both sides of the point**; Rust's `f64` parser accepts none. So the premise
+# was written as a justification and falsified by the shortest program that uses
+# the separator the spec grants, while `unwrap_or` turned the failure into a
+# number. CLAUDE.md §11's shape twice over: a premise about the world, and a
+# fallback pointing in the quiet direction.
+#
+# FIX: the separators come off before the parse, and the fallback is LOUD. After
+# they are gone every shape the lexer can produce is `digits[.digits]`, which
+# Rust parses and an out-of-range literal makes an infinity rather than an
+# error — so a failure there is the compiler's bug and now says so instead of
+# inventing a value. The port needed the other half of the same fact: it emits
+# hex from `atof`, which stops at a separator, so `emit_literal.hero` strips
+# them too and the two compilers agree byte for byte.
+#
+# The four rows below are the four the defect covered: a separator left of the
+# point, right of it, on both sides, and none at all.
+
+function main()
+    left: f64 @ 1_0.5
+    right: f64 @ 1.5_5
+    both: f64 @ 1_000.000_1
+    plain: f64 @ 10.5
+    print(left)
+    print(right)
+    print(both)
+    print(plain)
+    print(left == plain)

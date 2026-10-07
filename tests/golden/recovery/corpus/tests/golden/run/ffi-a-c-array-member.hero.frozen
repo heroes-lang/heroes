@@ -1,0 +1,101 @@
+# A C array member, which is the last field form raylib needed (§4.19; panel 062,
+# author instruction 2026-08-15: *"è fondamentale chiamare il C, altrimenti non
+# andiamo da nessuna parte"*).
+#
+# `VrStereoConfig` is why. Its eight members are ALL arrays, so it had no nameable
+# field at all — `partial` gave `empty_record` rather than a binding, and three
+# raylib entry points were unreachable at any price. With this form raylib reaches
+# **all 35 structs and all 349 by-value crossings with a complete field list and
+# zero `partial`**.
+#
+# THE SPELLING IS C'S, and the bracket after the type is what makes it unambiguous:
+# `[i32]`'s bracket OPENS the type, this one follows a complete one. It is also the
+# only one of the three that a reader comparing header to source does not have to
+# translate — `float leftLensCenter[2]` becomes `leftLensCenter: f32[2]` by
+# deletion. `[i32; 4]` was refused for a measured reason too: the `;` appears
+# nowhere else in this language, so it would cost a `TokenKind`, a scan row and a
+# row in every "found X" diagnostic.
+#
+# WHAT IT IS NOT is a `[T]`. A `[T]` is a heap block with a reference count in a
+# header before the elements; this is the elements themselves, inline, at an offset
+# a C compiler chose. They cannot share a representation any more than `str` and
+# `cstr` can, which is why it is a separate `Ty` and why `a->arr == b->arr` — legal
+# C, zero warnings — had to be replaced by an elementwise walk: that comparison is
+# a POINTER comparison, so two byte-identical structs answer `false` while
+# `eq(a, a)` answers `true`.
+#
+# THE BOUND IS THE COMPILER'S, and that is not caution. An inline array has no
+# length header, so a wrong index is an offset into a struct C laid out — and
+# AddressSanitizer is documented blind to an intra-object overflow in a **C**
+# struct (`-fsanitize-address-field-padding` covers C++ non-standard-layout classes
+# with a destructor, never C). `-Warray-bounds` was measured not to fire on
+# `int64_t i = 7; arr[i]` at `-O0` or `-O2`, and this emitter always writes a
+# temporary. So nothing in the toolchain would catch it: a constant index out of
+# range is a compile error, and a computed one carries a guard whose cost was
+# measured at a 0.94–0.95 ratio over four million opaque indices — under the noise
+# floor. The subscript stays on an array-typed lvalue so UBSan's `array-bounds`
+# keeps its one remaining view of it.
+
+extern "raylib.h" package "raylib"
+    record Matrix
+        m0: f32
+        m4: f32
+        m8: f32
+        m12: f32
+        m1: f32
+        m5: f32
+        m9: f32
+        m13: f32
+        m2: f32
+        m6: f32
+        m10: f32
+        m14: f32
+        m3: f32
+        m7: f32
+        m11: f32
+        m15: f32
+    # Eight array members and nothing else. An array OF a group record is the
+    # first two — 128 bytes each — and the struct is 304 in total.
+    record VrStereoConfig
+        projection: Matrix[2]
+        viewOffset: Matrix[2]
+        leftLensCenter: f32[2]
+        rightLensCenter: f32[2]
+        leftScreenCenter: f32[2]
+        rightScreenCenter: f32[2]
+        scale: f32[2]
+        scaleIn: f32[2]
+    record VrDeviceInfo
+        hResolution: i32
+        vResolution: i32
+        hScreenSize: f32
+        vScreenSize: f32
+        eyeToScreenDistance: f32
+        lensSeparationDistance: f32
+        interpupillaryDistance: f32
+        lensDistortionValues: f32[4]
+        chromaAbCorrection: f32[4]
+    function LoadVrStereoConfig(device: VrDeviceInfo) -> VrStereoConfig
+    function UnloadVrStereoConfig(config: VrStereoConfig)
+
+function main()
+    # A literal takes the fixed array's type when the length agrees — the same rule
+    # `255` follows into a `u8`.
+    device = VrDeviceInfo(
+        hResolution: 2160,
+        vResolution: 1200,
+        hScreenSize: 0.133793,
+        vScreenSize: 0.0669,
+        eyeToScreenDistance: 0.041,
+        lensSeparationDistance: 0.07,
+        interpupillaryDistance: 0.07,
+        lensDistortionValues: [1.0, 0.22, 0.24, 0.0],
+        chromaAbCorrection: [0.996, -0.004, 1.014, 0.0]
+    )
+    print(device.lensDistortionValues[1])
+
+    # 60 bytes in, 304 out, 304 back in — by value, both directions, no shim.
+    config = LoadVrStereoConfig(device: device)
+    print(config.scale[0] > 0.0)
+    print(config.leftScreenCenter[1] > 0.0)
+    UnloadVrStereoConfig(config: config)

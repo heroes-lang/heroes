@@ -1,0 +1,4 @@
+# The DECOY: what `use util` in `leaf.hero` reads when the leaf is compiled
+# directly, and never when `main.hero` is.
+function scale() -> i64
+    return 4

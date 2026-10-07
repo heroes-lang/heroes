@@ -1,0 +1,30 @@
+# fixedbugs, M-binding-fidelity, 2026-08-14 (panel 052).
+#
+# SYMPTOM: `print(n)` and `print(n.to_str())` printed different numbers for the
+# same `u64`. At 18446744073709551615 the first said 18446744073709551615 and
+# the second said -1.
+#
+# CAUSE: two readers of one decision. `abort.rs` chose the runtime entry point
+# with an exhaustive match over `IntKind` and a comment explaining that `u64`
+# needs `hero_uint_to_str` because 2^64-1 read as signed is -1 — the exact defect
+# panel 042 records as fixed. `builtins.rs` chose it again, with
+# `_ => "hero_int_to_str"`, and the catch-all swallowed `u64`. So the fix landed
+# on one path and not the other, and stayed half-landed for two milestones.
+#
+# The `_` arm is CLAUDE.md §11's rule read backwards: the fallback was in the
+# quiet direction, so a width the table did not know became a wrong number
+# instead of a compile error.
+#
+# FOUND BY: `-Werror=sign-conversion`, added for the FFI, which made the
+# emitter's own `uint64_t` argument to an `int64_t` parameter a hard error in a
+# three-line program with no FFI in it at all.
+#
+# FIX: one reader, `builtins::to_str_entry`, exhaustive over `IntKind`. A new
+# width now has to answer there, and answering wrongly is a Rust compile error.
+
+function main()
+    n: u64 @ 18446744073709551615
+    print(n)
+    print(n.to_str())
+    small: u64 @ 42
+    print(small.to_str())

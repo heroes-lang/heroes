@@ -1,0 +1,25 @@
+# A point, and the one measurement everything else is built from.
+#
+# This module names nothing: it is the leaf of the program's little graph,
+# which is why it is the one every other file reaches for. It sits in
+# `geom/` and is spelled `geom/point` from every file that uses it,
+# including the one beside it.
+
+record Point
+    x: i64
+    y: i64
+
+# The distance along x, never negative. `span` rather than `width` because a
+# pair of points has no orientation until somebody gives it one.
+function span(from: Point, to: Point) -> i64
+    dx = to.x - from.x
+
+    if dx < 0
+        return 0 - dx
+    return dx
+
+test "a span is the same in both directions"
+    a = Point(x: 1, y: 0)
+    b = Point(x: 5, y: 0)
+    assert span(from: a, to: b) == 4
+    assert span(from: b, to: a) == 4

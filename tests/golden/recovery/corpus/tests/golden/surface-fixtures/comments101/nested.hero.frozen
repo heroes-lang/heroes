@@ -1,0 +1,24 @@
+# Several comments in nested brackets, on every opener and every closer,
+# above elements and after the last: each stays on its line, in its
+# bracket. This file is canonical: `fmt` prints it back byte for byte.
+
+function g(a: i64, b: i64) -> i64
+    return a + b
+
+function f() -> i64
+    return g(  # the opener
+        a: g(  # an inner opener
+            a: 1,  # one
+            # above two
+            b: 2  # two
+            # after two
+        ),  # the inner closer
+        # above b
+        b: [
+            3  # three
+            4
+        ].len()  # the length
+    )  # the closer
+
+function main()
+    print(f())

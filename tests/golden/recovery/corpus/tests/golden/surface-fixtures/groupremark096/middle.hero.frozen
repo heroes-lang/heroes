@@ -1,0 +1,15 @@
+# Defect 096: a remark inside an `extern` group, a blank line, and the member
+# it does not document. `fmt` printed the remark at the member's indent and
+# dropped the blank line under it, so the re-parse read the remark as `Pool`'s
+# documentation and the tree guard refused at exit 2 a program `check`
+# accepts. This file is canonical: `fmt` prints it back byte for byte.
+
+extern "x.h"
+    record Ob tag ob
+    function ob_put(o: Ob consumes)
+    # a remark about what follows
+
+    record Pool tag pool
+
+function main()
+    print(0)

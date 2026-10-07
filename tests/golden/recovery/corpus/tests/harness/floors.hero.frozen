@@ -1,0 +1,146 @@
+# A floor is checked from BOTH sides, because it decays from the side nobody
+# watches.
+#
+# **What a floor is for.** Every counting suite here holds one: a walk that finds
+# nothing reports green, an extractor that reads the wrong shape returns an empty
+# list and every comparison under it passes vacuously. So each suite counts what
+# it found and refuses to pass when the count is below a number somebody wrote
+# down. That half has always worked.
+#
+# **THE HALF THAT DID NOT, measured 2026-09-12.** A floor is a premise about the
+# world — *"there are 144 modules today"* — and `.claude/rules/module-shape.md`
+# says exactly what that costs: *a fact about the value cannot expire; a premise
+# about the world expires silently, and the comment justifying it goes on reading
+# as correct.* The tree grows, the floor does not, and the net it holds goes
+# slack with nothing ever turning red. The census that opened M-declared-thresholds
+# measured the slack, and it was not small:
+#
+#     LEAST_WALKS        10 against ~30   +200%
+#     LEAST_MARKS        14 against 23    +64%
+#     emission          142 against 225   +58%
+#     canonical         340 against 521   +53%
+#     layout            140 against 202   +44%
+#     golden/check       65 against 112   +42%
+#
+# **`suite_canonical` is the proof rather than the argument.** Its floor was
+# written for a defect its own comment records: the first draft used the flat
+# walk and found 325 files of 371, and 340 caught it. The tree is 521 now, so the
+# same fault — a walk reaching 88% — would find 458 and pass. That floor would no
+# longer catch the defect it was written for.
+#
+# **What this module does about it, and what it deliberately does NOT.** It does
+# not keep a register, and no list of floors exists anywhere: a second list is a
+# second thing to forget, and the suites already count what they need. It adds
+# the other comparison to the one they were already making. A floor that the tree
+# has outgrown by more than `SLACK` is reported, with the number to write down,
+# so re-basing is a line somebody edits on purpose rather than a thing nobody
+# notices.
+#
+# **The repair is always to RAISE the floor to today's count**, never to delete
+# the check and never to lower anything. That is the ratchet, and it is the one
+# shape panel 134's historian found that ever held: the number moves one way, and
+# the human is left with nothing to decide except when.
+
+use report
+
+# How far a count may run ahead of its floor before the floor is reported as
+# outgrown, in percent.
+#
+# **25 and not a tighter number, because this is housekeeping** (author,
+# 2026-09-12: the floors are the contract ceiling's case, tidying rather than a
+# forcing function). A quarter is a tree that has grown visibly since anybody
+# last looked, and it is wide enough that ordinary work never trips it: adding a
+# golden case or a module moves a count by one.
+#
+# It is also the number that makes the six rows above fire today, which is the
+# only way to know the check is not decoration — every one of them is over 25%,
+# and four are over 40%.
+constant SLACK: i64
+    25
+
+# The floor, checked both ways.
+#
+# `found` is what the suite counted, `floor` the number it holds, `what` the
+# thing being counted, in the suite's own words, for the message.
+# The same check where the caller has to STOP on a bad count.
+#
+# Most floors guard an extractor, and everything under one reads what the
+# extractor produced: a check that carries on after an empty read does not fail
+# twice, it passes vacuously on the second comparison. Those callers wrote
+# `if found < FLOOR ... return`, so they need the verdict back rather than only
+# in the report. `true` means the count is sound and the caller may go on.
+function sound(@r: report.Report, label: str, found: i64, floor: i64, what: str) -> bool
+    before = r.failed
+    check(@r, label: label, found: found, floor: floor, what: what)
+    return r.failed == before
+
+function check(@r: report.Report, label: str, found: i64, floor: i64, what: str)
+    if found < floor
+        report.keep_failure(
+            @r,
+            label: label,
+            detail: "  the walk found " + found.to_str() + " " + what + " and had " + floor.to_str() + " — it is not reaching the tree, or it is reading the wrong shape, and every comparison under it was about to pass vacuously: a check that stops testing its subject reports the property it has stopped testing"
+        )
+        return
+
+    if outgrown(found: found, floor: floor)
+        report.keep_failure(
+            @r,
+            label: label,
+            detail: "  " + what + ": " + found.to_str() + " against a floor of " + floor.to_str() + ", which the tree has outgrown by more than " + SLACK.to_str() + "%.\n  RAISE the floor to " + found.to_str() + " in this commit. A floor is a premise about the world and it expires in silence: this one now passes a walk that misses " + (found - floor).to_str() + " of them, which is the defect it was written to catch.\n  Never lower a count to fit, and never delete the check: the number moves one way, and what is left to decide is when."
+        )
+        return
+    report.keep_pass(@r)
+
+# The comparison itself, written once so a test can reach it without a report.
+#
+# `found * 100 > floor * (100 + SLACK)` and not a division, because integer
+# division truncates and would put the boundary a hair in the wrong place —
+# which for a threshold is the difference between firing and not.
+function outgrown(found: i64, floor: i64) -> bool
+    # **A floor of zero is never outgrown**, and the guard is here rather than at
+    # the call sites because the arithmetic says the opposite of what is meant:
+    # any count at all is more than 25% above nothing, so every suite holding an
+    # unset floor would go red through the side that is supposed to be quiet.
+    # The low side still catches the empty walk, which is what a zero floor was
+    # failing to do in the first place.
+    if floor <= 0
+        return false
+    return found * 100 > floor * (100 + SLACK)
+
+test "a count under its floor fails, and the message names both numbers"
+    r: report.Report @ report.empty()
+    check(@r, label: "x", found: 37, floor: 140, what: "modules")
+    assert r.failed == 1
+    assert r.passed == 0
+
+test "a count that has outgrown its floor fails, and says which number to write"
+    # `suite_canonical`'s real pair on the day this was written, which is the
+    # row that proves the check is not decoration.
+    r: report.Report @ report.empty()
+    check(@r, label: "x", found: 521, floor: 340, what: "files")
+    assert r.failed == 1
+
+test "an ordinary count passes, and so does one exactly at the edge"
+    r: report.Report @ report.empty()
+    check(@r, label: "x", found: 150, floor: 140, what: "modules")
+    assert r.passed == 1
+    assert r.failed == 0
+
+    # The boundary, asserted on both sides, because a threshold tested from one
+    # side only is a threshold nobody has tested. 125 is 25% above 100 and
+    # passes; 126 does not.
+    assert !outgrown(found: 125, floor: 100)
+    assert outgrown(found: 126, floor: 100)
+
+    # And equality passes: a count sitting exactly on its floor is a floor doing
+    # its job, not one being outgrown.
+    assert !outgrown(found: 140, floor: 140)
+
+test "a zero floor is never outgrown, and a zero count fails the low side"
+    # A floor of zero is a floor nobody set. It must not turn every suite red
+    # through the high side, and the low side still catches an empty walk.
+    assert !outgrown(found: 900, floor: 0)
+    r: report.Report @ report.empty()
+    check(@r, label: "x", found: 0, floor: 1, what: "cases")
+    assert r.failed == 1

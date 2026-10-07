@@ -1,0 +1,34 @@
+# A null `cstr` handed straight back to C, which is the path nothing guarded
+# until panel 053 (CLAUDE.md §12: a Heroes program must not segfault).
+#
+# `to_str` on a null `cstr` was always safe — `hero_str_from_cstr` checks the
+# pointer and panics with its own name. This is the other path, and it is the one
+# `to_str` never sees: the value arrives from C and goes back to C without ever
+# becoming a Heroes string, so nothing looked at it. Measured before the guard
+# existed, under `--sanitize`: `AddressSanitizer: SEGV on unknown address 0x0`,
+# inside libsystem, with no line of this program on the stack.
+#
+# A `strstr` that finds nothing is the smallest way to get one. The check the
+# author *should* write is on the line below, and it is writable only because
+# `nullptr` takes the type its context asks for — the other half of the same
+# sitting. This case deliberately omits it, which is what makes it an abort case.
+# Fixed defect: `docs/panel/053`, 2026-08-14.
+
+extern "string.h"
+    function strstr(haystack: cstr lent, needle: cstr lent) -> cstr
+
+function main()
+    print("before")
+
+    # `strstr` returns NULL when the needle is absent, so one binding produces
+    # the null and consumes it. `getenv` was the first spelling and it is
+    # deprecated by MSVC — a warning the harness forbids, and a dependency this
+    # case does not need.
+    absent = strstr(haystack: "abc".cstr(), needle: "zzz".cstr())
+
+    # The result is **used**, not discarded: glibc marks `strstr`
+    # `__attribute_pure__`, so `_ = strstr(…)` is `-Wunused-value` on Linux and
+    # not on Darwin — a warning the harness forbids, and one more fact about this
+    # project that only two platforms together could have told it.
+    if strstr(haystack: absent, needle: "y".cstr()) == nullptr
+        print("unreachable")

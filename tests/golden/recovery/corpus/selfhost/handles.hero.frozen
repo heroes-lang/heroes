@@ -1,0 +1,327 @@
+# What a C handle is, asked once (panel 145, 2026-09-13; `docs/work/DEFECTS.md` 029).
+#
+# A **handle** is a `record` declared inside an `extern` group with a `tag` and
+# no fields: a pointer to a type the header names. `record Db tag sqlite3` is
+# C's `sqlite3 *`, the tag being **the author's word**, written as the author
+# wrote it: `curl/curl.h` reads `typedef void CURL;` on this Mac's SDK, so a
+# `struct <tag>` spelling written unconditionally would fabricate an incomplete
+# type over one of the handle types in this tree, and `netdb.h` declares
+# `struct addrinfo` with no typedef, so the bare word written unconditionally
+# does not compile there. **Neither spelling works for every header, and the
+# compiler guesses neither** (panels 151 and 152, defect 037): the emitter
+# writes the author's word, and where clang refuses it with *must use 'struct'
+# tag to refer to type 'addrinfo'* — a message clang produces only when that
+# exact word names a struct tag — `cli/produce.hero` reads the refusal, spells
+# the tag `struct addrinfo` and compiles again. A misspelled tag stays refused,
+# because clang says *unknown type name* for it and never *must use 'struct'*.
+# `c_spelling` below is the one place both spellings are written.
+#
+# **THIS FILE EXISTS BECAUSE THE QUESTION WAS ABOUT TO BE ANSWERED FOUR TIMES.**
+# Five scouts mapped step 4 and each proposed its own predicate in its own home:
+# the parser wanted `in_group && tag && !partial`, the checker `header &&
+# !partial && fields == 0` with `tag` deliberately dropped, the emitter
+# `fields == 0` nested inside a `tag` branch with `partial` untested, and
+# `mutate` a fourth. A completeness critic counted them, and CLAUDE.md's opening
+# rule is that each rule is written in exactly one place and everything else
+# cites it. So it is written here and the parser, the checker, the emitter and
+# `heroes mutate` all ask this function.
+#
+# **Why all three clauses, and none of them is decoration.**
+#
+#   - **inside a group**: outside one there is no header to leave a type opaque,
+#     so a fieldless `record` names nothing and stays `error[empty_record]`.
+#   - **a `tag`**: the C type has to be NAMED — the Heroes name is the author's
+#     and the C name is the header's — and requiring it is what keeps a group
+#     record whose field block lost its indentation from becoming a handle in
+#     silence.
+#   - **not `partial`**: `partial` means *names only SOME of the struct's
+#     fields*, and spec § 13 makes `==` on a `partial` record a compile error,
+#     while a handle has to compare as an address. A `partial` record with no
+#     fields names nothing at all, which is its own diagnostic.
+
+use ast
+use token
+use source
+use diag
+
+# The three clauses, over the PIECES, because the parser asks before a
+# declaration exists: it holds `is_from_c(linkage)` where everyone later holds
+# `header`, and it has not read a field block yet. One definition, two shapes of
+# caller, and every other spelling in the compiler calls one of them.
+function is_handle_parts(in_group: bool, tagged: bool, partial: bool, field_count: i64) -> bool
+    return in_group && tagged && !partial && field_count == 0
+
+# Whether a record declaration is a handle. It takes the declaration rather than
+# a name so that no caller has to know which of `header`, `tag` and `partial`
+# carries which half of the answer.
+function is_handle_record(kind: ast.DeclKind) -> bool
+    return match kind
+        .record_decl r => is_handle_parts(
+            in_group: !r.header.is_err(),
+            tagged: !r.tag.is_err(),
+            partial: r.partial,
+            field_count: r.fields.len()
+        )
+        .constant_decl | .function_decl | .variant_decl | .test_decl => false
+
+# The same question of a declaration, which is what most callers hold.
+function is_handle(decl: ast.Decl) -> bool
+    return is_handle_record(decl.kind)
+
+# THE TWO COUNTS THAT LIVED HERE WERE DELETED ON 2026-09-15, one day after they
+# were written, and the reason is worth more than the code was.
+#
+# They arrived as defect 034's repair: `emit/ops.hero` asked a per-DECLARATION
+# BOOLEAN and wrote one `hero_handle_acquired();` per call however many marks the
+# call carried, so a correct program aborted and a leaking one passed. Making
+# them COUNTS was right while the runtime held a NUMBER.
+#
+# Panel 150 made it hold a SET, so the two ends take the handle's own address and
+# the emitter needs each mark's POSITION rather than how many there are — which
+# is the AST and not a rule, so nothing is asked twice and nothing belongs here.
+# `emit/ops.hero`'s `handle_traffic` reads `acquires_result`, `p.acquires` and
+# `p.consumes` directly.
+#
+# **What carries defect 034's regression now is stronger than the test that
+# went with them**: `tests/golden/run/fixedbugs-two-marks-on-one-call-are-two-obligations.hero`
+# builds a program with two marks on one call, releases both handles, and asserts
+# it exits 0 — which the unit test could not do, because it read the counts and
+# not the emitted C.
+
+# A `const` pointer TO a value of this C type, and the reason it is a function
+# rather than a `"const " +` at four sites.
+#
+# `const T *` qualifies what T points AT when T is itself a pointer, and a
+# handle's C type is one: `const sqlite3 * *` reads `const sqlite3 **`, and C's
+# qualification conversion does not reach one level down, so `&db` — a
+# `sqlite3 **` — is refused. Measured 2026-09-13 under
+# `-Werror=incompatible-pointer-types-discards-qualifiers` (`cli/flags.hero:50`),
+# at every generated `_eq`, at a record holding a handle, and in the descriptor's
+# own copy. The const has to land on the CELL: `sqlite3 * const *`.
+#
+# For every other type the two spellings are the same type, and this one keeps
+# the old text so no emission golden moves.
+function const_pointer(c_type: str) -> str
+    if c_type.len() > 0 && c_type[c_type.len() - 1] == 42
+        return c_type + " const *"
+    return "const " + c_type + " *"
+
+# The C type a handle is spelled as: the author's word, starred, and `struct`
+# in front of it only where clang's own refusal named that word (the module doc
+# above). `spelled` below is the one caller, and this is the one place the two
+# spellings are written, so a third cannot appear elsewhere.
+function c_spelling(tag_text: str, needs_struct: bool) -> str
+    if needs_struct
+        return "struct " + tag_text + " *"
+    return tag_text + " *"
+
+# The same answer from the record's own tag span and the set of tags clang said
+# need `struct` (`cli/produce.hero` fills it; empty on every first emission).
+# `emit/ctype.hero` asks this and writes one line, so the file that names every
+# C type does not also decide how a handle is spelled.
+function spelled(s: source.Source, tag: token.Span, struct_tags: {str: bool}) -> str
+    word = source.span_text(s, tag)
+    return c_spelling(tag_text: word, needs_struct: !struct_tags[word].is_err())
+
+# Two records of the SAME KIND naming one C type, and it is refused for a reason
+# that outlives this compiler (panel 145's narrowing, author decision
+# 2026-09-13). Two handles of one tag are two Heroes types and ONE C type,
+# `struct s *` twice, so the checker refuses a swap between them and clang
+# accepts it: the mutant survives every instrument the language has,
+# permanently. Two records WITH FIELDS are the same story as `struct s`.
+#
+# **A handle BESIDE a record with fields is not that shape, and panel 153
+# narrowed the rule to say so.** Those are `struct s *` and `struct s`, two C
+# types, and the swap is two clang errors in either direction — measured, under
+# the compiler's own flags. It is how a struct C hands back by pointer is both
+# pointed at and read, which `netdb.h` needs nineteen times over.
+#
+# **The second reason this entry used to give is repaired rather than
+# inherited.** It read *"the diagnostic machinery cannot even name the second —
+# `record_by_tag` answers with the FIRST record carrying the tag, so a message
+# about the second would carry the first's caret"*, and panel 153's completeness
+# critic measured exactly that wrong caret against the narrowing before it
+# landed. `record_by_tag` is now asked WHICH KIND the message is about. One tag,
+# one of each kind.
+function duplicate_tag(tag: str, first: str, second: str, kind: str, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "duplicate_tag",
+        message: "`" + second + "` and `" + first + "` are both " + kind + " over `" + tag + "` — one tag, one of each kind",
+        span: span
+    )
+    d.notes @ d.notes.push(
+        "two Heroes types over ONE C type is a hole nothing can close: this compiler refuses handing one where the other belongs, and clang accepts it, so the mistake survives every check the language has. Give the two types two tags, or give the one type one name and use it twice"
+    )
+    d.notes @ d.notes.push(
+        "one tag may carry a HANDLE and a record WITH FIELDS, because those are two different C types — `struct " + tag + " *` and `struct " + tag + "` — and clang refuses a swap between them on its own. That pair is how a struct C hands back by pointer is both pointed at and read (§ 13). What is refused here is two of the SAME kind"
+    )
+    return d
+
+# A HANDLE cannot be a map key, and this is a REFUSAL rather than a cost
+# (panel 145's narrowing, author decision 2026-09-13). A handle is an address C
+# owns: two handles are equal when the addresses are, and an address is recycled
+# — the allocator hands the same bytes back for an unrelated object, so a key
+# stored under a closed handle is found again by a fresh one that has nothing to
+# do with it. The sitting that adopted the form did not rule on hashing at all
+# (`hash` appears zero times in it), so the language refuses the shape rather
+# than choosing an answer nobody argued.
+function handle_map_key(key: str, reached: str, span: token.Span) -> diag.Diagnostic
+    because: str @ "it is a handle, an address C owns"
+
+    if reached.len() > 0
+        because @ "`" + reached + "` is a handle, an address C owns"
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "handle_map_key",
+        message: "`" + key + "` cannot be a map key, because " + because,
+        span: span
+    )
+    d.notes @ d.notes.push(
+        "two handles are equal when their addresses are, and C recycles an address: close one and the next allocation can hand back the same bytes, so a value stored under the closed handle is found again by a handle that has nothing to do with it. Key the map on something the program owns — an `i64` the library gives you, or a `str` — and keep the handle in the value"
+    )
+    return d
+
+## The releaser set
+
+# `acquires a | b`: the names a mark carries, in order (defect 075; panel
+# 175's route A, panel 176's item 1). ONE home for four readers — the parser
+# hands over one span for the whole set, the checker looks up each name, the
+# two printers spell it back `a | b`, and the emitter hands the runtime `a|b`
+# as a C string — so the four cannot disagree on where one name ends. The
+# names are read off `releaser_spans`, the one scanner, so a name and its
+# span cannot disagree either: the checker indexes one list by the other.
+function releasers(text: str) -> [str]
+    out: [str] @ []
+
+    for span in releaser_spans(text, at: token.Span(start: 0, end: text.len()))
+        name = text.slice(from: span.start, to: span.end)
+        out @ out.push(name)
+
+    return out
+
+# A space, a tab, a newline or a carriage return: inside parentheses a line
+# may end after `|` and continue below, so the span the parser hands on then
+# carries the line break, and a reader that dropped spaces alone made the
+# second name `\nfree_ob` (panel 176's landing review, 2026-09-24).
+function blank(b: u8) -> bool
+    return b == ' ' || b == 9 || b == 10 || b == 13
+
+# Each name's own span inside the set's span, `at` being where the set's text
+# starts. What stands between two names in the span the parser hands on is
+# what its cursor passed over between two tokens, and that is a `|`, the
+# blanks, and a comment: a line may end after a `|` inside parentheses, so a
+# comment may stand there, and it runs to the line's end. A comment is part
+# of no name (defect 108: `acquires h_close |  # either one` over
+# `h_close_v2` read the second name as `#eitheroneh_close_v2`, and `check`
+# refused it). A name is an identifier, so a byte is a character here, and
+# `#` begins none.
+function releaser_spans(text: str, at: token.Span) -> [token.Span]
+    out: [token.Span] @ []
+    from: i64 @ -1
+    i: i64 @ 0
+
+    while i < text.len()
+        b = text[i]
+
+        if b == '|' || b == '#' || blank(b)
+            if from >= 0
+                out @ out.push(token.Span(start: at.start + from, end: at.start + i))
+            from @ -1
+
+            # A comment's text, `|` included, up to the line end after it.
+            if b == '#'
+                while i < text.len() && text[i] != 10
+                    i @ i + 1
+        else if from < 0
+            from @ i
+        i @ i + 1
+
+    if from >= 0
+        out @ out.push(token.Span(start: at.start + from, end: at.start + text.len()))
+
+    return out
+
+# The canonical spelling, ` | ` between names, which is what the formatter
+# writes back whatever the author typed.
+function releasers_spelled(text: str) -> str
+    return releasers(text).join(" | ")
+
+# The runtime's spelling, `|` with no spaces: one C string literal the set
+# compares by content, token by token.
+function releasers_c(text: str) -> str
+    return releasers(text).join("|")
+
+test "a releaser set is split on `|`, spaces dropped, and spelled back canonically"
+    assert releasers("sqlite3_close") == ["sqlite3_close"]
+    assert releasers("sqlite3_close | sqlite3_close_v2") == ["sqlite3_close", "sqlite3_close_v2"]
+    assert releasers("a|b|c") == ["a", "b", "c"]
+    assert releasers_spelled("a|b") == "a | b"
+    assert releasers_c(" a | b ") == "a|b"
+    spans = releaser_spans("a | bc", at: token.Span(start: 10, end: 16))
+    assert spans.len() == 2
+    assert spans[0].start == 10 && spans[0].end == 11
+    assert spans[1].start == 14 && spans[1].end == 16
+
+# Defect 108, at every place a comment can stand inside a set: after a `|`
+# at a line's end, on a line of its own, two of them, one holding a `|`, in
+# a CRLF file, and before the set's own end (which the parser's span does
+# not reach, and which is read the same where it does).
+test "a comment inside a releaser set is part of no name, and each name keeps its own span"
+    trailing = "h_close |  # either one\n        h_close_v2"
+    assert releasers(trailing) == ["h_close", "h_close_v2"]
+    assert releasers_spelled(trailing) == "h_close | h_close_v2"
+    assert releasers_c(trailing) == "h_close|h_close_v2"
+    spans = releaser_spans(trailing, at: token.Span(start: 100, end: 100 + trailing.len()))
+    assert spans.len() == 2
+    assert spans[0].start == 100 && spans[0].end == 107
+    assert spans[1].start == 100 + 32 && spans[1].end == 100 + 42
+    own = "a |\n        # on its own line\n        b"
+    assert releasers(own) == ["a", "b"]
+    two = "a |  # one\n        # two | c\n        b | c"
+    assert releasers(two) == ["a", "b", "c"]
+    assert releaser_spans(two, at: token.Span(start: 0, end: two.len())).len() == 3
+    crlf = "a |  # a comment\r\n        b"
+    assert releasers(crlf) == ["a", "b"]
+    assert releasers("a | b  # after the set") == ["a", "b"]
+    assert releasers("a|#c\nb") == ["a", "b"]
+
+test "all three clauses are load-bearing, and a record with fields is never a handle"
+    header: token.Span? = ok(token.Span(start: 0, end: 1))
+    tag: token.Span? = ok(token.Span(start: 2, end: 3))
+    none: token.Span? = fail(code: "absent", msg: "none")
+    empty: [ast.Field] = []
+    one: [ast.Field] = [ast.Field(name: token.Span(start: 4, end: 5), ty: 0, doc: [])]
+
+    assert is_handle_record(
+        .record_decl(fields: empty, header: header, library: none_library(), partial: false, tag: tag)
+    )
+
+    # Outside a group there is no header to leave a type opaque.
+    assert !is_handle_record(.record_decl(fields: empty, header: none, library: none_library(), partial: false, tag: tag))
+
+    # Without a tag the C type has no name.
+    assert !is_handle_record(.record_decl(fields: empty, header: header, library: none_library(), partial: false, tag: none))
+
+    # `partial` names SOME fields; with none it names nothing.
+    assert !is_handle_record(.record_decl(fields: empty, header: header, library: none_library(), partial: true, tag: tag))
+
+    # A group record WITH fields is the header's struct, by value, as before.
+    assert !is_handle_record(.record_decl(fields: one, header: header, library: none_library(), partial: false, tag: tag))
+
+    # And nothing else is a record at all.
+    assert !is_handle_record(.test_decl(body: ast.Block(span: token.Span(start: 0, end: 0), stmts: [])))
+
+function none_library() -> ast.Library?
+    return fail(code: "absent", msg: "no library")
+
+test "a handle is spelled with the author's word, and `struct` only where clang asked"
+    assert c_spelling(tag_text: "sqlite3", needs_struct: false) == "sqlite3 *"
+    assert c_spelling(tag_text: "addrinfo", needs_struct: true) == "struct addrinfo *"
+
+    # From the span, through the set: the word is the key, and only a word in
+    # the set is qualified.
+    s = source.new_source(name: "t.hero", text: "record AI tag addrinfo\n")
+    tag = token.Span(start: 14, end: 22)
+    asked: {str: bool} @ {}
+    assert spelled(s, tag, asked) == "addrinfo *"
+    asked["addrinfo"] @ true
+    assert spelled(s, tag, asked) == "struct addrinfo *"

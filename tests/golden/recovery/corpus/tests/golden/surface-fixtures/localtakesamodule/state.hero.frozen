@@ -1,0 +1,5 @@
+# The module half of the defect. It declares a FUNCTION called `value`, and
+# `main.hero` declares a record with a FIELD called `value` — which is what
+# made the two readings of `state.value` both well-typed.
+function value(x: i64) -> i64
+    return x + 100

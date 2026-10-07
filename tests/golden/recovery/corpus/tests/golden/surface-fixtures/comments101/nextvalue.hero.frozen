@@ -1,0 +1,42 @@
+# A comma kept on a line of its own after a comment (`commas.hero`), with a
+# comment further along the comma's line, inside the value that follows it
+# (the continuation-column generator over `qualified.hero`, `T90`, and the
+# shapes beside it): the comma's line took that comment as its own and the
+# value was printed without it, refused at exit 2, or, with the comment at
+# the value's end, no fixpoint. A comma's line takes a comment only when it
+# is the comma's next token: in a signature before a named type and before
+# a value's end, and in a call before a field, a group and a sign.
+
+use money
+
+function g(a: i64, b: i64) -> i64
+    return a + b
+
+function named(n: i64  # before the comma
+        , b: money.  # after the dot
+            Balance) -> i64
+    return n + b.cents
+
+function ended(n: i64  # before the comma
+        , b: i64  # at the value's end
+        , c: i64) -> i64
+    return n + b + c
+
+function field(m: money.Balance) -> i64
+    return g(a: 1  # before the comma
+        , b: m.  # after the dot
+            cents)
+
+function group() -> i64
+    return g(a: 1  # before the comma
+        , b: (  # after the paren
+            1 + 2))
+
+function sign(x: i64) -> i64
+    return g(a: 1  # before the comma
+        , b: -  # after the sign
+            x)
+
+function main()
+    print(named(n: 1, b: money.Balance(cents: 2)) + ended(n: 3, b: 4, c: 5))
+    print(field(m: money.Balance(cents: 6)) + group() + sign(x: 7))

@@ -1,0 +1,20 @@
+# A comment in a parameter or an argument before its value: after a mutable
+# parameter's `@` (the second skeptic seat's `function h(@  # c`), which the
+# signature printed above the parameter, and between an argument's name
+# and its `@` (`h(xs:  # c`), which went after the `@`: both refused at
+# exit 2, where the trunk moved them at exit 0. A parameter starts at its
+# `@` now, and the lead of an argument breaks after the token its comment
+# follows.
+
+function h(@  # after the parameter's @
+        xs: [i64])
+    xs @ xs.push(1)
+
+function f() -> i64
+    ys: [i64] @ []
+    h(xs:  # between the name and the @
+        @ys)
+    return ys.len()
+
+function main()
+    print(f())

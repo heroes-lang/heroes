@@ -1,0 +1,46 @@
+# `f32`, the second float width — arithmetic, rendering, conversion and the
+# containers, in one program (spec § Types; panel 060, author instruction
+# 2026-08-15).
+#
+# The case is built around values that **separate the two widths**, because a
+# test that only exercises numbers both widths represent exactly would pass with
+# `f32` implemented as an alias for `f64`:
+#
+#   - 2^24+1 is the first integer binary32 cannot hold, so it renders as
+#     16777216.0 here and 16777217.0 at `f64`;
+#   - 0.1 is inexact at both widths and its shortest round-trip differs, which is
+#     what `to_f64` of an `f32` shows;
+#   - 3.4e38 is past binary32's maximum, so `to_f32` of it is `inf` — a value of
+#     the type rather than a failure, which is why the conversion is infallible.
+
+function main()
+    a: f32 @ 1.5
+    a @ a + 0.25
+    print(a)
+
+    # The width shows itself: 2^24+1 has no binary32 representation.
+    edge: f32 @ 16777217.0
+    print(edge)
+
+    # Rendering stops at the width's own shortest round-trip; widening reveals
+    # what was actually stored.
+    tenth: f32 @ 0.1
+    print(tenth)
+    print(to_f64(tenth))
+
+    # Infallible in both directions, and `inf` is an answer rather than an error.
+    big: f64 @ 340282350000000000000000000000000000000.0
+    print(to_f32(big))
+    huge: f64 @ 3402823500000000000000000000000000000000.0
+    print(to_f32(huge))
+
+    # An `f32` is an ordinary value: it has a descriptor, so it lives in a
+    # container, sorts, and answers `==` and `hash`.
+    xs: [f32] = [2.5, 0.5, 1.5]
+    sorted = sort(xs)
+    print(sorted[0])
+    print(sorted[2])
+    m: {str: f32} @ {}
+    m["half"] @ 0.5
+    print(m["half"].must())
+    print(xs[0] == 2.5)

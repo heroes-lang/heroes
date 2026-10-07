@@ -1,0 +1,12 @@
+# Panel 172's `b_out`: an `@out: cstr` C fills, and the program then hands it to a
+# freeing C function twice. No lease is live, the pointer is C's, and the report
+# adopted at 172 is rightly silent here: the class boundary, as a program.
+extern "beside.h"
+    function fill_out(@out: cstr)
+    function free_out(p: cstr)
+
+function main()
+    p: cstr @ nullptr
+    fill_out(@p)
+    free_out(p: p)
+    free_out(p: p)

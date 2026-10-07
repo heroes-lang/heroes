@@ -1,0 +1,26 @@
+# M-held-bytes, panel 124: the second shape of defect 024, closed with a lease.
+#
+# C does not keep the pointer here — it hands back a pointer INTO the bytes it
+# was handed, through an out-parameter, and the caller reads that after the
+# frame that lent the bytes has returned. Written with a lend inside `tail_of`
+# this was exit 0, an empty line where the answer belongs, and a
+# heap-use-after-free under `--sanitize`. With the lease in the CALLER's cell
+# the bytes outlive `tail_of`, the tail is read while they are alive, and the
+# cell is emptied only after. The tail cell itself is a plain `cstr` cell, not
+# a lease, which is right: it owns nothing and `end_lease` on it is refused.
+
+extern "string.h"
+    function strlen(s: cstr) -> u64
+
+extern "lease-tail-points-into-the-bytes.h"
+    function after_dash(s: cstr, @tail: cstr)
+
+function tail_of(s: cstr, @out: cstr)
+    after_dash(s: s, tail: @out)
+
+function main()
+    label: cstr @ "row-payload".lease()
+    tail: cstr @ nullptr
+    tail_of(s: label, out: @tail)
+    print(strlen(s: tail))
+    end_lease(@label)

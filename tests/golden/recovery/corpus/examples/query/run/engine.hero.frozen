@@ -1,0 +1,322 @@
+# The engine: filter, join, order, group, aggregate — over the whole table,
+# at the size the table actually is (design.md §4.10; spec § Strings,
+# arrays, maps).
+#
+# Corpus material (CLAUDE.md §9), M-corpus-depth. **This module exists to
+# make copy-on-write cost something.** Value semantics say every value
+# behaves as an independent copy (spec § Types), and the implementation
+# pays for that lazily: an array is shared until somebody writes, and one
+# write unshares it (CLAUDE.md §7's *one unshare per step*). Nothing in
+# this corpus has ever handed that mechanism five thousand records and
+# then filtered, sorted and grouped them — so nothing has ever measured
+# it. `main.hero` runs this module under `--sanitize` like every other
+# corpus program, which is where a copy that was not made and a copy made
+# twice both show up.
+#
+# THE SORT IS A MERGE SORT AND THAT IS NOT A FLOURISH. `sort` in this
+# language takes an array of numbers, of `str` or of `bool` (spec
+# § Built-ins) — it cannot order records, because it has no way to be told
+# which field to look at. Ordering five thousand records by insertion
+# would be twenty-five million comparisons; the merge sort below is
+# thirteen passes. **It is also the shape that makes the copies visible**:
+# every level slices its input in two and joins two halves back, so a run
+# over the whole table allocates and releases sixty-odd thousand rows'
+# worth of array — which is exactly the traffic the leak gate and the
+# sanitiser are watching.
+
+use data/row
+use query/plan
+
+# The rows a filter keeps, in the order they arrived.
+function filtered(rows: [row.Row], keep: plan.Where) -> [row.Row]
+    out: [row.Row] @ []
+
+    for r in rows
+        if plan.kept(keep, r)
+            out @ out.push(r)
+
+    return out
+
+# The team table as a map, built once per join rather than searched per
+# row: eight lookups of eight entries is nothing, five thousand searches of
+# eight is a habit worth not teaching.
+function regions_of(teams: [row.Team]) -> {str: str}
+    m: {str: str} @ {}
+
+    for t in teams
+        m[t.team] @ t.region
+
+    return m
+
+# The join. A row whose team is not in the table is **dropped and counted
+# by its absence**, not given an empty region: a report with a blank column
+# is a report somebody reads as data.
+function joined_with(rows: [row.Row], teams: [row.Team]) -> [plan.Joined]
+    lookup = regions_of(teams)
+    out: [plan.Joined] @ []
+
+    for r in rows
+        found = lookup[r.team]
+
+        if !found.is_err()
+            out @ out.push(plan.Joined(r: r, region: found.must()))
+
+    return out
+
+# Whether `a` comes before `b` under an order. Total and deterministic: the
+# id breaks every tie, so two runs over the same table give the same array
+# and `main.expected` means something.
+function before(o: plan.Order, a: row.Row, b: row.Row) -> bool
+    return match o
+        .unordered => a.id < b.id
+        .by_id     => a.id < b.id
+        .by_score_high_first =>
+            if a.score != b.score
+                a.score > b.score
+            else
+                a.id < b.id
+        .by_name =>
+            if a.name != b.name
+                text_before(a: a.name, b: b.name)
+            else
+                a.id < b.id
+        .by_active =>
+            if a.active != b.active
+                a.active
+            else
+                a.id < b.id
+
+# Whether `a` sorts before `b`, byte by byte — **and the language taught
+# this program that it was needed**. `sort` orders an array of `str`
+# (spec § Built-ins), so a reader reasonably expects `<` to compare two of
+# them; it does not. `error[bad_operand]: `<` takes `i64` or `f64`, found
+# `str`` is what `a.name < b.name` answers, and the rule behind it is
+# `spec:162`: a comparison takes a number, and nothing else. So a program
+# that orders records by a text field writes this, and the six lines are
+# the whole of it: the first byte that differs decides, and a prefix comes
+# before what extends it.
+function text_before(a: str, b: str) -> bool
+    shortest: i64 @ a.len()
+
+    if b.len() < shortest
+        shortest @ b.len()
+    at: i64 @ 0
+
+    while at < shortest
+        if a[at] != b[at]
+            return a[at] < b[at]
+        at @ at + 1
+
+    return a.len() < b.len()
+
+# The two halves merged, stable: when neither comes first the left one
+# wins, which is what keeps the previous order inside a tie.
+function merged(left: [row.Row], right: [row.Row], o: plan.Order) -> [row.Row]
+    out: [row.Row] @ []
+    at_left: i64 @ 0
+    at_right: i64 @ 0
+
+    while at_left < left.len() && at_right < right.len()
+        if before(o, a: right[at_right], b: left[at_left])
+            out @ out.push(right[at_right])
+            at_right @ at_right + 1
+        else
+            out @ out.push(left[at_left])
+            at_left @ at_left + 1
+
+    while at_left < left.len()
+        out @ out.push(left[at_left])
+        at_left @ at_left + 1
+
+    while at_right < right.len()
+        out @ out.push(right[at_right])
+        at_right @ at_right + 1
+
+    return out
+
+# The rows in order. Recursion depth is the logarithm of the table's size —
+# thirteen levels for five thousand rows — which is why this is the sort a
+# language with a recursion ceiling can afford.
+function ordered(rows: [row.Row], o: plan.Order) -> [row.Row]
+    if rows.len() <= 1
+        return rows
+    middle = rows.len() / 2
+    return merged(
+        left: ordered(rows.slice(from: 0, to: middle), o),
+        right: ordered(rows.slice(from: middle, to: rows.len()), o),
+        o: o
+    )
+
+# The first `n`, or all of them. A limit of zero or less means no limit,
+# so a query that does not care carries no special case.
+function limited(rows: [row.Row], n: i64) -> [row.Row]
+    if n <= 0 || n >= rows.len()
+        return rows
+    return rows.slice(from: 0, to: n)
+
+# One aggregate over the kept rows. Every one of them is an `i64` except
+# the mean, which is why the mean has its own function and this one does
+# not pretend to answer it.
+function aggregate(rows: [row.Row], what: plan.Aggregate) -> i64
+    s: plan.Summary @ plan.nothing_yet()
+
+    for r in rows
+        s @ plan.with_row(s, r)
+
+    return match what
+        .how_many    => s.rows
+        .total_score => s.total
+        .best_score  => s.best
+        .mean_rate   => s.rows
+
+# The rows grouped by team and by whether they are active — **a map keyed
+# by a record**, which is the shape that makes the generated `hash` and
+# `eq` earn their keep (CLAUDE.md §7: they walk fields, never bytes).
+function grouped(rows: [row.Row]) -> {plan.Group: plan.Summary}
+    out: {plan.Group: plan.Summary} @ {}
+
+    for r in rows
+        key = plan.Group(team: r.team, active: r.active)
+        so_far = out[key]
+
+        if so_far.is_err()
+            out[key] @ plan.with_row(plan.nothing_yet(), r)
+        else
+            out[key] @ plan.with_row(so_far.must(), r)
+
+    return out
+
+# A group's keys in a fixed order — team first, then active before
+# inactive. **The map has no order** (spec § Bindings: `keys(m)` gives the
+# keys in no order), so a report that walked the map as it came would print
+# a different table on a different day. This is the `# ORDER:` discipline
+# `examples/words/` teaches, applied to a key that is a record and so
+# cannot be handed to `sort` directly.
+function group_order(m: {plan.Group: plan.Summary}) -> [plan.Group]
+    labels: [str] @ []
+
+    for k in m.keys()
+        labels @ labels.push(label_of(k))
+
+    out: [plan.Group] @ []
+
+    for one in labels.sort()
+        out @ out.push(group_of(one))
+
+    return out
+
+# A group as one sortable string, and back. The `~` is a byte no team name
+# holds, so the split is exact — and `group_of` is the inverse, which the
+# test below checks over every key the table produces rather than over one
+# example.
+function label_of(g: plan.Group) -> str
+    if g.active
+        return g.team + "~1"
+    return g.team + "~0"
+
+function group_of(label: str) -> plan.Group
+    cut = label.len() - 2
+    return plan.Group(team: label.slice(from: 0, to: cut), active: label[label.len() - 1] == '1')
+
+test "a filter keeps what it says and nothing else"
+    rows = row.generated(200)
+    argo = filtered(rows, .team_is(team: "argo"))
+    assert argo.len() > 0
+    assert argo.len() < rows.len()
+
+    for r in argo
+        assert r.team == "argo"
+
+test "the sort is total, stable and the same twice"
+    rows = row.generated(400)
+    by_score = ordered(rows, .by_score_high_first)
+    assert by_score.len() == rows.len()
+    at: i64 @ 1
+
+    while at < by_score.len()
+        earlier = by_score[at - 1]
+        later = by_score[at]
+        assert earlier.score > later.score || earlier.score == later.score && earlier.id < later.id
+        at @ at + 1
+
+    # The same input gives the same output, which is what `main.expected`
+    # rests on — and a sort that lost or invented a row would fail here.
+    assert ordered(rows, .by_score_high_first) == by_score
+
+test "sorting on a bool puts the inactive rows last and keeps ids inside a tie"
+    rows = row.generated(200)
+    by_active = ordered(rows, .by_active)
+    seen_inactive: bool @ false
+
+    for r in by_active
+        if !r.active
+            seen_inactive @ true
+        else
+            assert !seen_inactive
+
+test "the sort is a permutation: every row goes in and every row comes out"
+    rows = row.generated(300)
+    out = ordered(rows, .by_name)
+    assert out.len() == rows.len()
+    ids: [i64] @ []
+
+    for r in out
+        ids @ ids.push(r.id)
+
+    at: i64 @ 0
+    in_order = ids.sort()
+
+    while at < in_order.len()
+        assert in_order[at] == at + 1
+        at @ at + 1
+
+test "the join attaches a region to every row whose team is in the table"
+    rows = row.generated(100)
+    with_region = joined_with(rows, row.teams())
+    assert with_region.len() == rows.len()
+
+    for j in with_region
+        assert j.region.len() > 0
+
+test "a row whose team is not in the table is dropped rather than blanked"
+    stranger = row.Row(id: 1, team: "nowhere", name: "p1", active: true, score: 1, rate: 1.0)
+    only_one: [row.Row] = [stranger]
+    assert joined_with(only_one, row.teams()).len() == 0
+
+test "the groups partition the table: every row lands in exactly one"
+    rows = row.generated(500)
+    m = grouped(rows)
+    total: i64 @ 0
+
+    for k in group_order(m)
+        total @ total + m[k].must().rows
+
+    assert total == rows.len()
+
+test "a group label survives the round trip for every key the table makes"
+    m = grouped(row.generated(500))
+
+    for k in m.keys()
+        assert group_of(label_of(k)) == k
+
+test "the aggregates agree with a second count taken another way"
+    rows = filtered(row.generated(400), .team_is(team: "borea"))
+    total: i64 @ 0
+    best: i64 @ -1
+
+    for r in rows
+        total @ total + r.score
+
+        if r.score > best
+            best @ r.score
+
+    assert aggregate(rows, .how_many) == rows.len()
+    assert aggregate(rows, .total_score) == total
+    assert aggregate(rows, .best_score) == best
+
+test "a limit takes the first rows, and no limit takes them all"
+    rows = row.generated(50)
+    assert limited(rows, 10).len() == 10
+    assert limited(rows, 0).len() == 50
+    assert limited(rows, 500).len() == 50
+    assert limited(rows, 10)[0] == rows[0]

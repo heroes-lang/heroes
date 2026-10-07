@@ -1,0 +1,45 @@
+# Defect 101's first shape, and the `else` beside it: a comment trailing a
+# line that opens a block was printed as the block's first line at exit 0,
+# for `if`, `else if`, `while`, `for`, `match`, a block arm and a group's
+# head. On a variant's head and on `else` the trunk refused at exit 2, and
+# the first repair of defects 096, 099 and 100 moved it under the line at
+# exit 0. Each stays on the line it trails now. This file is canonical:
+# `fmt` prints it back byte for byte.
+
+extern "x.h"  # on a group's head
+    record Ob tag ob
+
+variant Shape  # on a variant's head
+    dot
+    box
+
+function f(n: i64, xs: [i64]) -> i64
+    if n == 0  # on an if
+        print(0)
+    else if n == 1  # on an else if
+        print(1)
+    else  # on an else
+        print(2)
+
+    while n > 5  # on a while
+        print(3)
+
+    for x in xs  # on a for
+        print(x)
+
+    match n  # on a match
+        0 =>  # on a block arm
+            print(4)
+        _ => print(5)
+
+    y = if n > 0  # on an if that is a value
+        1
+    else  # and on its else
+        2
+
+    return match y  # on a match that is returned
+        1 => 10
+        _ => 20
+
+function main()
+    print(f(n: 1, xs: [1]))

@@ -1,0 +1,15 @@
+extern "cj.h"
+    record Json tag cJSON
+    function cJSON_CreateObject() -> Json acquires cJSON_Delete
+    function cJSON_Delete(item: Json consumes)
+    function cJSON_AddItemToObject(object: Json, string: cstr lent, item: Json consumes) -> i64
+
+function finish(@j: Json)
+    cJSON_Delete(item: j)
+
+function main()
+    a = cJSON_CreateObject()
+    b: Json @ cJSON_CreateObject()
+    finish(@b)
+    _ = cJSON_AddItemToObject(object: a, string: "b".cstr(), item: b)
+    cJSON_Delete(item: a)

@@ -1,0 +1,30 @@
+# The ffi-pragmatist's `sqlite_copies` at panel 177, shape 3 of 4: the copy
+# is an ELEMENT of a growing array made before the close. An element behind
+# copy-on-write is not a place the poison writes (`emit/handle_place.hero`
+# says why), so this is the dead set's alone: the address `db_close` ended is
+# remembered until C hands it out again, and the pool never does.
+
+extern "dead-address-copy-in-a-growing-array.h"
+    record CDb tag cdb
+    function db_open(path: cstr lent, @out: CDb acquires db_close) -> i64
+    function db_close(db: CDb consumes) -> i64
+    function db_changes(db: CDb) -> i32
+
+record Db
+    handle: CDb
+
+function opened() -> Db?
+    db: CDb @ nullptr
+
+    if db_open(path: ":memory:".cstr(), out: @db) != 0
+        return fail(code: "cannot_open", msg: "no")
+    return ok(Db(handle: db))
+
+function closed(@db: Db) -> i64
+    return db_close(db: db.handle)
+
+function main()
+    db: Db @ opened().must()
+    handles = [db.handle]
+    _ = closed(@db)
+    print(db_changes(db: handles[0]))

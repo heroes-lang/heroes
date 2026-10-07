@@ -1,0 +1,308 @@
+# Where a word stands in a text, read from the text alone (design.md §4.17;
+# defect 133, 2026-09-29).
+#
+# A foreign word's swap is `certain` only where the word it writes is right
+# in that position (`foreign_at.hero`), and the lexer, which writes the fix,
+# has the text and nothing else: no tree, and no token after the word. So the
+# position is read the way defect 015 read the byte after the word, from the
+# characters around it, one step further:
+#
+# - a word that OPENS its line stands at the margin (`top`), one level under
+#   an `extern` group's head (`member`), or anywhere else a line begins
+#   (`statement`: a body, a block of fields or cases);
+# - in the middle of a line it stands where a name goes (`named`, right
+#   after a declaration's keyword), where a type goes (`typed`: after `:`,
+#   `->`, a type's `[` or `{`, or inside a function type's parameters),
+#   where a parenthesised function type opens (`function_type`: the `(` of
+#   `(fn(i64) -> i64)`), where a value goes (`valued`: after `=`, `@`, `=>`
+#   or `return`), or anywhere else (`other`).
+#
+# A premise about the world, written as a claim so that it can fail: these
+# positions are the language's own, spec § 5's productions read from their
+# first characters, and a new production that puts a declaration's keyword,
+# a type or a value somewhere else is a place this reading calls `other`,
+# which only ever withholds a `certain` fix. That is the loud direction: a
+# fix withheld costs a turn, a fix wrongly certain writes a broken program.
+
+use token
+use bytes
+
+## The places
+
+variant Place
+    top
+    member
+    statement
+    named
+    typed
+    function_type
+    valued
+    other
+
+# Where the word at `span` stands in `text`.
+function place_of(text: str, span: token.Span) -> Place
+    begins = line_start(text, at: span.start)
+
+    # A line that begins inside a bracket left open above it goes on with
+    # that bracket's list, and nothing heads it.
+    if only_margin(text, from: begins, to: span.start) && inside_brackets(text, at: begins)
+        return .other
+
+    if only_margin(text, from: begins, to: span.start)
+        margin = span.start - begins
+
+        if margin == 0
+            return .top
+
+        if margin == 4 && under_a_group(text, line: begins)
+            return .member
+        return .statement
+    before = significant_before(text, at: span.start, floor: begins)
+    ch = text[before]
+
+    if bytes.is_alnum(ch) || ch == '_'
+        word = word_ending(text, at: before + 1)
+
+        if is_declaring(word)
+            return .named
+
+        if word == "return"
+            return .valued
+        return .other
+
+    if ch == ':' && !(before > 0 && text[before - 1] == ':')
+        return .typed
+
+    if ch == '>' && before > 0 && text[before - 1] == '-'
+        return .typed
+
+    if ch == '>' && before > 0 && text[before - 1] == '='
+        return .valued
+
+    if ch == '=' || ch == '@'
+        return .valued
+
+    if ch == '[' || ch == '{'
+        return type_bracket(text, at: before, floor: begins)
+
+    if ch == '('
+        return after_paren(text, at: before, floor: begins)
+
+    if ch == ','
+        return after_comma(text, at: before, floor: begins)
+    return .other
+
+## Reading the text
+
+# The offset where the line holding `at` begins.
+function line_start(text: str, at: i64) -> i64
+    i: i64 @ at
+
+    while i > 0 && text[i - 1] != '\n'
+        i @ i - 1
+
+    return i
+
+function only_margin(text: str, from: i64, to: i64) -> bool
+    i: i64 @ from
+
+    while i < to
+        if text[i] != ' ' && text[i] != '\t'
+            return false
+        i @ i + 1
+
+    return true
+
+# The last character before `at` on its line that is not a space, or `floor`
+# minus one where there is none.
+function significant_before(text: str, at: i64, floor: i64) -> i64
+    i: i64 @ at - 1
+
+    while i >= floor && (text[i] == ' ' || text[i] == '\t')
+        i @ i - 1
+
+    return i
+
+# The identifier that ends just before `at`.
+function word_ending(text: str, at: i64) -> str
+    i: i64 @ at
+
+    while i > 0 && (bytes.is_alnum(text[i - 1]) || text[i - 1] == '_')
+        i @ i - 1
+
+    return text.slice(from: i, to: at)
+
+# A word after which a name is written: a declaration's keyword, the
+# language's or the foreign one it was mistaken for.
+function is_declaring(word: str) -> bool
+    for one in ["function", "record", "variant", "constant", "use", "fn", "func", "def", "struct", "enum", "union", "const", "class", "import", "include"]
+        if word == one
+            return true
+
+    return false
+
+# A `[` or `{` is a type's when what stands before it is not a value it
+# could index or a statement it could open: `[i64]` after `:`, never
+# `xs[i]`.
+function type_bracket(text: str, at: i64, floor: i64) -> Place
+    before = significant_before(text, at: at, floor: floor)
+
+    if before < floor
+        return .other
+    ch = text[before]
+
+    if ch == ':' || ch == '[' || ch == '(' || ch == ',' || ch == '>' && before > 0 && text[before - 1] == '-'
+        return .typed
+    return .other
+
+# After a `(`: the opening of a parenthesised function type where a type
+# goes, a function type's own parameter list after `function`, or a call's
+# or a signature's list.
+function after_paren(text: str, at: i64, floor: i64) -> Place
+    before = significant_before(text, at: at, floor: floor)
+
+    if before < floor
+        return .other
+    ch = text[before]
+
+    if bytes.is_alnum(ch) || ch == '_'
+        if names_a_function_type(word_ending(text, at: before + 1))
+            return .typed
+        return .other
+
+    if ch == ':' || ch == '[' || ch == '(' || ch == ',' || ch == '>' && before > 0 && text[before - 1] == '-'
+        return .function_type
+    return .other
+
+# After a `,`: inside a function type's parameter list, a type's place.
+function after_comma(text: str, at: i64, floor: i64) -> Place
+    depth: i64 @ 0
+    i: i64 @ at - 1
+
+    while i >= floor
+        ch = text[i]
+
+        if ch == ')' || ch == ']' || ch == '}'
+            depth @ depth + 1
+        else if ch == '(' || ch == '[' || ch == '{'
+            if depth == 0
+                return after_paren(text, at: i, floor: floor)
+            depth @ depth - 1
+        i @ i - 1
+
+    return .other
+
+function names_a_function_type(word: str) -> bool
+    return word == "function" || word == "fn" || word == "func" || word == "def"
+
+# Whether the line at `line` is one level under an `extern` group's head:
+# the nearest line above it that opens at the margin, past blank lines and
+# comments, begins with `extern`.
+function under_a_group(text: str, line: i64) -> bool
+    at: i64 @ line
+
+    while at > 0
+        above = line_start(text, at: at - 1)
+        first = first_mark(text, from: above)
+
+        if first < text.len() && text[first] != '\n' && text[first] != '#' && first == above
+            return text.slice(from: first, to: word_end(text, from: first)) == "extern"
+        at @ above
+
+    return false
+
+# The first character on the line at `from` that is not a space or a tab.
+function first_mark(text: str, from: i64) -> i64
+    i: i64 @ from
+
+    while i < text.len() && (text[i] == ' ' || text[i] == '\t')
+        i @ i + 1
+
+    return i
+
+function word_end(text: str, from: i64) -> i64
+    i: i64 @ from
+
+    while i < text.len() && (bytes.is_alnum(text[i]) || text[i] == '_')
+        i @ i + 1
+
+    return i
+
+# Whether `at` stands inside a bracket some earlier line left open: the
+# brackets of the text before it counted, past comments, strings and
+# characters. Asked only of a word that opens its line, which is rare: a
+# foreign word is.
+function inside_brackets(text: str, at: i64) -> bool
+    depth: i64 @ 0
+    i: i64 @ 0
+
+    while i < at
+        ch = text[i]
+
+        if ch == '#'
+            while i < at && text[i] != '\n'
+                i @ i + 1
+        else if ch == '"' || ch == '\''
+            i @ past_quoted(text, from: i, quote: ch, limit: at)
+        else if ch == '(' || ch == '[' || ch == '{'
+            depth @ depth + 1
+        else if (ch == ')' || ch == ']' || ch == '}') && depth > 0
+            depth @ depth - 1
+        i @ i + 1
+
+    return depth > 0
+
+# The offset of the quote that closes the one at `from`, or of the line's
+# end where none does: a string never runs past its line.
+function past_quoted(text: str, from: i64, quote: u8, limit: i64) -> i64
+    i: i64 @ from + 1
+
+    while i < limit && text[i] != quote && text[i] != '\n'
+        if text[i] == '\\'
+            i @ i + 1
+        i @ i + 1
+
+    return i
+
+## Tests
+
+function at_word(text: str, word: str) -> token.Span
+    i: i64 @ 0
+
+    while i + word.len() <= text.len()
+        if text.slice(from: i, to: i + word.len()) == word && (i == 0 || !bytes.is_alnum(text[i - 1]))
+            return token.Span(start: i, end: i + word.len())
+        i @ i + 1
+
+    return token.Span(start: 0, end: 0)
+
+test "a word that opens its line stands at the margin, in a group or in a block"
+    assert place_of("fn main()\n", at_word(text: "fn main()\n", word: "fn")) == .top
+    group = "extern \"m.h\"\n    fn q() -> f64\n"
+    assert place_of(group, at_word(text: group, word: "fn")) == .member
+    body = "function main()\n    const x = 5\n"
+    assert place_of(body, at_word(text: body, word: "const")) == .statement
+    fields = "extern \"m.h\"\n    record P\n        struct Q\n"
+    assert place_of(fields, at_word(text: fields, word: "struct")) == .statement
+
+test "in the middle of a line a word stands where a name, a type or a value goes"
+    named = "function fn(x: i64)\n"
+    assert place_of(named, at_word(text: named, word: "fn")) == .named
+    assert place_of("f(x: int)", at_word(text: "f(x: int)", word: "int")) == .typed
+    assert place_of("f() -> int", at_word(text: "f() -> int", word: "int")) == .typed
+    assert place_of("f(xs: [int])", at_word(text: "f(xs: [int])", word: "int")) == .typed
+    assert place_of("g: (fn(i64) -> i64)", at_word(text: "g: (fn(i64) -> i64)", word: "fn")) == .function_type
+    assert place_of("g: fn(i64) -> i64", at_word(text: "g: fn(i64) -> i64", word: "fn")) == .typed
+    assert place_of("(function(int, int) -> i64)", at_word(text: "(function(int, int) -> i64)", word: "int")) == .typed
+    assert place_of("y = switch x", at_word(text: "y = switch x", word: "switch")) == .valued
+    assert place_of("return switch x", at_word(text: "return switch x", word: "switch")) == .valued
+    assert place_of("print(int)", at_word(text: "print(int)", word: "int")) == .other
+    assert place_of("record P fn", at_word(text: "record P fn", word: "fn")) == .other
+
+test "a line inside an open bracket heads nothing"
+    params = "function f(x: i64\nfn g()\n"
+    assert place_of(params, at_word(text: params, word: "fn")) == .other
+    shut = "function f(x: i64)\nfn g()\n"
+    assert place_of(shut, at_word(text: shut, word: "fn")) == .top
+    quoted = "x = \"(\"\nfn g()\n"
+    assert place_of(quoted, at_word(text: quoted, word: "fn")) == .top

@@ -1,0 +1,20 @@
+# `acquires` names a SET of releasers (panel 175's route A, panel 176's item 1;
+# defect 075's repair, 2026-09-24). Nine real pairs of C releasers are
+# interchangeable for one acquisition — `sqlite3_close` and `sqlite3_close_v2`
+# are the pair the sitting measured — so a mark naming one refused the correct
+# program that used the other. Here the mark names both, the program ends one
+# handle with each, and nothing is owed at exit.
+extern "handle-set-any-releaser-named-ends-the-life.h"
+    record H tag hh
+    function h_open(n: i64) -> H acquires h_close | h_close_v2
+    function h_close(x: H consumes)
+    function h_close_v2(x: H consumes)
+    function h_value(x: H) -> i64
+
+function main()
+    a = h_open(n: 7)
+    b = h_open(n: 9)
+    print(h_value(x: a) + h_value(x: b))
+    h_close(x: a)
+    h_close_v2(x: b)
+    print("both ended, each by a name the mark gave")

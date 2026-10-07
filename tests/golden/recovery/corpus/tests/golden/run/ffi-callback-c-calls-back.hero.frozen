@@ -1,0 +1,33 @@
+# A Heroes function handed to C, and C calling it back (§4.19; panel 111 R4,
+# M-c-callbacks). Before this, `atexit`, `qsort`, `signal`, `sqlite3_exec` and
+# every raylib callback were unbindable by two different doors: declared `ptr`
+# the declaration was accepted and the CALL SITE failed `type_mismatch`;
+# declared at its real type the DECLARATION failed `ffi_type`.
+#
+# What makes it cost nothing in the backend: a Heroes `function bye()` is
+# emitted as `void h_x_bye(void)`, which IS what `void (*)(void)` points at, so
+# the address goes to C with no cast and no trampoline. Panel 030 R6 had
+# deferred this on the worry that a C11 backend could not express it; measured,
+# it always could.
+#
+# AND IT IS ALSO THE GUARD'S QUIET DIRECTION. `bye` carries a
+# `hero_thread_guard` call at its entry, because this program hands C a function
+# (panel 111 R9). `atexit` runs its handlers on the thread that called `exit`,
+# which is this program's own, so the guard passes and says nothing — which is
+# the half a case can easily forget to assert. The loud direction needs a thread
+# C made, and `pthread.h` is not on all three platforms, so it is asserted in
+# the compiler's own tests instead of here.
+
+extern "stdlib.h"
+    function atexit(f: (function() -> ())) -> i32
+
+function bye()
+    print("bye")
+
+function main()
+    print("before")
+
+    # The result is USED rather than discarded: `atexit` answers 0 on success,
+    # and a binding whose result nothing reads is a different case from this one.
+    if atexit(bye) != 0
+        print("atexit refused the handler")

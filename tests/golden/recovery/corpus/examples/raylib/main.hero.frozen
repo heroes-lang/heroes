@@ -1,0 +1,145 @@
+# §4.19's ladder, rung 5, both halves: the library is *asked for* rather than
+# described, and a **struct crosses the boundary by value**.
+#
+#     heroes run examples/raylib/main.hero
+#
+# **This program is the acceptance test for two milestones.** `package "raylib"`
+# is M-ffi-ladder's: raylib is the ladder's first third-party library, and the
+# rung was unclimbable for a milestone because the language had no way to say
+# where a header lives. `package` says it the same way everywhere — `-I`, `-L`
+# and `-lraylib` here, `-lGL -lX11 -lm -ldl` on Linux, frameworks where
+# frameworks are the answer — from one line with no platform name in it.
+#
+# The `record`s are M-struct-passing's, and this file used to carry a
+# paragraph explaining what it could NOT do: *"383 of raylib's 600 entry points
+# pass or return a struct by value. `ClearBackground(Color)` does not compile,
+# because Heroes has seven boundary types and none of them is a struct."* That
+# paragraph is why the milestone existed, and it is deleted rather than softened.
+#
+# **The number, measured rather than claimed** (re-taken four times in
+# one day because the first three were wrong). raylib declares **600** entry
+# points — `grep -c "^RLAPI"` and clang's own `FunctionDecl` count agree — and
+# **349** of them pass or return a struct by value. **All 349 bind, with every
+# field named and no `partial` anywhere**, across all 35 of raylib's structs —
+# measured against **this** machine's raylib, which is the only honest way to say
+# it: see the note on `Model` below.
+#
+# It went 191 → 200 → 328 → 349 in an afternoon, and the last two steps were not
+# features: they were a `ptr` rule that asked whether the header spells a member
+# `void *` rather than whether it is a pointer at all, and a completeness probe
+# that counted a nested record's members as the outer record's. Both refused
+# bindings with **no spelling that would have worked**, which is the shape panel
+# 061 cited against an option and this project then shipped twice.
+#
+# **The layout is the header's, and that is the whole mechanism.** The emitter
+# writes no `typedef` for `Color`, `Vector2` or `Rectangle`: it uses raylib's own
+# types, so their size, their padding and — on arm64 — the register file each
+# field travels in are C's answers and never this compiler's. What the compiler
+# checks is each *field*, with a `_Generic` on the field's address: write
+# `r: i32` where raylib says `unsigned char` and it is `error[ffi_field_type]`
+# on that line, not a program that prints a plausible number. It did print one,
+# measured, before the assertion existed.
+#
+# **`f32` is here because a struct made it unavoidable.** Two panels struck it,
+# both correctly on their own evidence: a C `float` *parameter* bound `f64` is
+# bit-exact, because clang converts against the real prototype. Inside a struct
+# there is no prototype — a `Vector2` is two `float`s and nothing widens them —
+# so the width that was a convenience at the signature is the layout at the
+# field.
+#
+# **It opens no window**, for the reason this file learned the hard way: a corpus
+# program runs unattended on a headless runner in three configurations, so the
+# binding it exercises must need no screen. `ColorToInt`, `ColorAlpha`,
+# `GetSplinePointLinear` and `CheckCollisionPointRec` are all pure computation
+# over structs. The window *was* opened by hand from this same `package` line,
+# and that is recorded in `docs/panel/050` rather than asserted by a
+# test no runner can run.
+
+extern "raylib.h" package "raylib"
+    # raylib's own structs, at raylib's own widths. Four `unsigned char` for a
+    # colour, two `float` for a point — a Heroes `i64` anywhere here would be a
+    # different struct, and the field assertions are what say so.
+    record Color
+        r: u8
+        g: u8
+        b: u8
+        a: u8
+    record Vector2
+        x: f32
+        y: f32
+    record Rectangle
+        x: f32
+        y: f32
+        width: f32
+        height: f32
+    function SetRandomSeed(seed: u32)
+    function GetRandomValue(min: i32, max: i32) -> i32
+    # A struct in, an integer out.
+    function ColorToInt(color: Color) -> i32
+    # A struct in and a struct out, with an `f32` beside it.
+    function ColorAlpha(color: Color, alpha: f32) -> Color
+    # Two structs in, a struct **returned by value** — the direction that needs
+    # the ABI to agree in both directions rather than one.
+    function GetSplinePointLinear(startPos: Vector2, endPos: Vector2, t: f32) -> Vector2
+    function CheckCollisionPointRec(point: Vector2, rec: Rectangle) -> bool
+    # **`AutomationEvent` carries a C array member**, which is the field form
+    # panel 062 added and the last one raylib needed. `int params[4]` is inline
+    # bytes at an offset C chose — not a `[T]`, which is a heap block with a
+    # reference count before its elements.
+    #
+    # **`Model` is deliberately NOT here, and that is a lesson rather than a
+    # retreat.** It was, for one commit, and the macOS runner refused it:
+    # `error[ffi_unknown_field]: `raylib.h` declares no `skeleton` in `Model``.
+    # The diagnostic was right — that machine's raylib is a different version from
+    # this one's, and `Model`'s tail changed between them. **A field list is a
+    # claim about a version**, and a corpus program runs against whatever raylib
+    # the machine's package manager gave it. `Color`, `Vector2`, `Rectangle` and
+    # `AutomationEvent` have not changed shape in raylib's life; `Model` has.
+    record AutomationEvent
+        frame: u32
+        type: u32
+        params: i32[4]
+
+function main()
+    SetRandomSeed(7)
+    print("raylib answered ", GetRandomValue(min: 1, max: 6))
+
+    red = Color(r: 255, g: 0, b: 0, a: 255)
+    print(ColorToInt(red))
+    print(ColorToInt(ColorAlpha(color: red, alpha: 0.5)))
+
+    mid = GetSplinePointLinear(
+        startPos: Vector2(x: 0.0, y: 0.0),
+        endPos: Vector2(x: 10.0, y: 20.0),
+        t: 0.5
+    )
+    print(mid.x, " ", mid.y)
+
+    # A C array member, built from a literal of exactly its length and read by
+    # index. The bound is in the type, so `params[9]` would not compile.
+    event = AutomationEvent(frame: 0, type: 0, params: [10, 20, 30, 40])
+    print(event.params[2])
+
+    box = Rectangle(x: 0.0, y: 0.0, width: 10.0, height: 10.0)
+    print(CheckCollisionPointRec(point: Vector2(x: 5.0, y: 5.0), rec: box))
+    print(CheckCollisionPointRec(point: Vector2(x: 50.0, y: 5.0), rec: box))
+
+test "the binding reaches raylib and comes back with a value in range"
+    SetRandomSeed(1)
+    roll = GetRandomValue(min: 1, max: 6)
+    assert roll >= 1
+    assert roll <= 6
+
+test "a struct crosses by value, in both directions"
+    # 0xFF0000FF as a signed 32-bit integer: opaque red, packed by raylib.
+    assert ColorToInt(Color(r: 255, g: 0, b: 0, a: 255)) == -16776961
+
+    # Halfway along a segment is the midpoint, and the fields come back exact
+    # because 5.0 and 10.0 are representable in binary32.
+    mid = GetSplinePointLinear(
+        startPos: Vector2(x: 0.0, y: 0.0),
+        endPos: Vector2(x: 10.0, y: 20.0),
+        t: 0.5
+    )
+    assert mid.x == 5.0
+    assert mid.y == 10.0

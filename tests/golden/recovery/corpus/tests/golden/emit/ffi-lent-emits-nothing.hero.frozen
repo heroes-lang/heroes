@@ -1,0 +1,15 @@
+# `lent` reaches no C (panel 171). It is a fact the CHECKER reads about a
+# declaration and the lowering drops: `--dump-ir` of this program shows no
+# `lent`, and the emitted C of `strlen(s: cstr lent)` is byte for byte the C of
+# `strlen(s: cstr)`. The ffi seat measured the same on the ledger's 24 probes
+# and holds a veto for the day the word ever appears in an emission — a mark in
+# the C would be a claim clang cannot check either, dressed as one it can.
+#
+# So this golden is the ABI half of the word's landing: the `emit` form blesses
+# the bytes, and a `lent` that ever changed them turns this case red.
+
+extern "string.h"
+    function strlen(s: cstr lent) -> u64
+
+function main()
+    print(strlen(s: "hello".cstr()))

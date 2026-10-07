@@ -1,0 +1,113 @@
+# Multiplying two matrices, a band of rows per thread — the member of this
+# family where each thread builds a big structure and hands back a small one.
+#
+# Every other program here computes a number from numbers. This one builds a
+# whole band of the result matrix inside the thread, as `[[i64]]`, and then
+# reduces it to a checksum before returning. That is design.md Part 7.13's cost
+# rule made visible: the work is large, the message is one `i64`, and the ratio
+# is what makes the model pay.
+#
+# AND THE ARRAYS NEVER LEAVE. A `[[i64]]` cannot cross a thread boundary — it
+# is refused in a callback signature by the compiler, not by a convention — so
+# the band's rows are built, read and dropped on the thread that made them. The
+# reference counts on those arrays are the thread's own, which is why nothing
+# in this program can race even though it allocates thousands of times.
+
+extern "hero_os.h"
+    function hero_thread_spawn(body: (function(i64) -> i64), arg: i64) -> i64
+    function hero_thread_join(handle: i64) -> i64
+
+constant SIZE: i64
+    48
+
+constant BANDS: i64
+    6
+
+# The two matrices as functions of their indices, so no array crosses anything.
+function left_at(row: i64, col: i64) -> i64
+    return (row * 7 + col * 3) % 11
+
+function right_at(row: i64, col: i64) -> i64
+    return (row * 5 + col * 2) % 13
+
+# One row of the product, as a real array built on this thread.
+function product_row(row: i64) -> [i64]
+    out: [i64] @ []
+    col: i64 @ 0
+
+    while col < SIZE
+        total: i64 @ 0
+        k: i64 @ 0
+
+        while k < SIZE
+            total @ total + left_at(row: row, col: k) * right_at(row: k, col: col)
+            k @ k + 1
+
+        out @ out.push(total)
+        col @ col + 1
+
+    return out
+
+# A band of eight rows, built in full and then reduced to one number. The rows
+# are dropped when this function returns, on the thread that allocated them.
+function band(index: i64) -> i64
+    rows: [[i64]] @ []
+    row: i64 @ index * (SIZE / BANDS)
+
+    while row < index * (SIZE / BANDS) + SIZE / BANDS
+        rows @ rows.push(product_row(row: row))
+        row @ row + 1
+
+    total: i64 @ 0
+
+    for r in rows
+        for v in r
+            total @ total + v
+
+    return total
+
+function together() -> i64
+    handles: [i64] @ []
+    i: i64 @ 0
+
+    while i < BANDS
+        handles @ handles.push(hero_thread_spawn(body: band, arg: i))
+        i @ i + 1
+
+    total: i64 @ 0
+
+    for h in handles
+        total @ total + hero_thread_join(handle: h)
+
+    return total
+
+function alone() -> i64
+    total: i64 @ 0
+    row: i64 @ 0
+
+    while row < SIZE
+        for v in product_row(row: row)
+            total @ total + v
+
+        row @ row + 1
+
+    return total
+
+function main()
+    print("sum of a ", SIZE, " by ", SIZE, " product: ", together())
+
+test "the bands agree with the whole product"
+    assert together() == alone()
+
+test "a row of the product has one entry per column"
+    assert len(product_row(row: 0)) == SIZE
+
+test "the first entry is the first row against the first column, by hand"
+    total: i64 @ 0
+    k: i64 @ 0
+
+    while k < SIZE
+        total @ total + left_at(row: 0, col: k) * right_at(row: k, col: 0)
+        k @ k + 1
+
+    assert product_row(row: 0)[0] == total

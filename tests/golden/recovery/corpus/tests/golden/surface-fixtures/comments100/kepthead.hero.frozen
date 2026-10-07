@@ -1,0 +1,17 @@
+# The shape beside defect 100's second one: a second `extern` head with the
+# same header, a doc above it and a remark under it. Merged into the group
+# above, the remark would stand between `Pool` and its doc and the re-parse
+# would take it as the doc instead; no layout that keeps the source order
+# has both, so `fmt` keeps the second head. This file is canonical: `fmt`
+# prints it back byte for byte.
+
+extern "x.h"
+    record Ob tag ob
+
+# the doc of Pool, above its own head
+extern "x.h"
+    # a remark under that head, which documents nothing
+    record Pool tag pool
+
+function main()
+    print(0)

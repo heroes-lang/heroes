@@ -1,0 +1,9 @@
+# Panel 173 q3: a `char *` owner-taker against a `cstr` lease.
+extern "writable.h"
+    function take_owner(s: cstr)
+
+function main()
+    x = "payload"
+    c: cstr @ x.lease()
+    take_owner(s: c)
+    end_lease(@c)

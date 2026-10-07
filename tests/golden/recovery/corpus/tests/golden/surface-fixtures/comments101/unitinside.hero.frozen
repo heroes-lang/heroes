@@ -1,0 +1,35 @@
+# A comment inside a `-> ()` the author wrote (the second skeptic seat's
+# `k01` to `k07` over e0e08d18). `fmt` drops `-> ()`, and the output guard
+# read the `()` around the comment as kept tokens and compared the rest by
+# text alone: with no parameters the comment moved into the parameter list
+# at exit 0 (`k01`); with one it was refused at exit 2 (`k04` to `k07`),
+# where the trunk printed it. `fmt` keeps the `()` where a comment is inside
+# it, the one place the comment has: trailing its `(`, on a line of its own,
+# with a comment after the `)` too, and in an extern member.
+
+function g() -> (  # inside the unit
+)
+    print(1)
+
+function h(a: i64) -> (  # inside the unit result
+)
+    print(a)
+
+function k(a: i64, b: i64) -> (
+    # inside the unit result, on its own line
+)
+    print(a + b)
+
+function m(a: i64) -> (  # inside the unit result
+)  # and after it
+    print(a)
+
+extern "x.h"
+    function n(a: i64) -> (  # inside an extern member's unit result
+    )
+
+function main()
+    g()
+    h(a: 1)
+    k(a: 1, b: 2)
+    m(a: 1)

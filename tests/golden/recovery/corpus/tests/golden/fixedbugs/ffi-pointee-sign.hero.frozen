@@ -1,0 +1,23 @@
+# fixedbugs, M-robustness-guards step 3, 2026-09-03 (panel 103's
+# ffi-pragmatist, measured on three clangs).
+#
+# SYMPTOM: `@n: i64` against `size_t *` — the right width, the wrong sign —
+# built at exit 0 on every clang. `-Werror=incompatible-pointer-types` does not
+# see it: `long *` against `unsigned long *` is `-Wpointer-sign`, a warning
+# nobody escalates, on clang 18, 21 and 22 alike. So the strict flag alone
+# could never have been the check, and the compiler's own check asks about
+# sign as well as width.
+#
+# CAUSE and FIX: as `ffi-pointee-width.hero`'s, one file over — the same two
+# `_Static_assert`s, and this is the one the second half of the pair catches:
+# `((time_t)-1 > 0) == ((uint64_t)-1 > 0)` is false. `time(time_t *)` is the
+# witness because `time_t` is a signed 64-bit integer on all three platforms
+# (`long` on the Mac and Linux, `__int64` on Windows), so `@t: u64` is the sign
+# mistake on every leg, where `getline`'s `size_t *` exists on only two.
+extern "time.h"
+    function time(@t: u64) -> i64  #~ ffi_parameter_type
+
+function main()
+    t: u64 @ 0
+    _ = time(@t)
+    print(t > 0)
