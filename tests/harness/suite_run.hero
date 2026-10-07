@@ -1,8 +1,8 @@
-# tests/golden/run/ — every program, three configurations, one
-# expectation.
+# tests/golden/run/ — every program, five configurations (four off Darwin),
+# one expectation.
 #
 # Port of golden_run_cases_produce_their_output_at_both_optimisation
-# _levels (archive/bootstrap-rs/heroes-cli/tests/golden.rs:707). The three
+# _levels (archive/bootstrap-rs/heroes-cli/tests/golden.rs:707). The
 # configurations are the test, and each one exists for a measured reason:
 #
 # -O0        `build -o <binary>`, then the harness runs the binary
@@ -25,6 +25,18 @@
 #            adds is use-after-free and double-free, which is what
 #            reference counting gets wrong.
 #
+# And two more since 2026-10-07, each for a fault the three above pass:
+#
+# --sanitize -O0  the sanitiser again at `-O0` (defect 390): at `-O2`
+#            clang may fold a C write past an object into nothing ASan
+#            checks, and `-O0` catches it. Both sanitised runs are handed
+#            ASan's fill (`freed_bytes.hero`, defect 321), so a C library
+#            reading bytes already freed reads the fill and the answer
+#            moves, where ASan alone keeps them intact and says nothing.
+# Guard Malloc  the `-O0` binary again under Darwin's `libgmalloc`, where
+#            a read of freed bytes faults where it is made (defect 321);
+#            on Darwin only, and a Darwin without it is a failure.
+#
 # A sanitiser's own words are checked separately from the expectation:
 # ASan and UBSan report on stderr and can leave the exit status alone, so
 # a program can print exactly the right thing while UBSan is saying
@@ -38,6 +50,7 @@
 use absence
 use cases
 use expectation
+use freed_bytes
 use report
 use shell
 use strings
@@ -64,6 +77,15 @@ function run_all(scratch: str, compiler: str, only: str) -> report.Report?
         )
     binaries = scratch + "/binaries"
     shell.mkdir_all(binaries)?
+
+    # A Darwin without Guard Malloc runs no leg that sees a C library read
+    # freed bytes, said once here; elsewhere the fill is that leg's only half.
+    match freed_bytes.guard_malloc()
+        .ok => _ = 0
+        .err e =>
+            if e.code != "not_darwin"
+                report.keep_failure(@r, label: "run under Guard Malloc", detail: "  " + e.msg)
+
     skipped: i64 @ 0
 
     for item in found
@@ -102,7 +124,7 @@ function run_all(scratch: str, compiler: str, only: str) -> report.Report?
         )
     return ok(r)
 
-# One case through the three configurations. Answers whether it was
+# One case through every configuration. Answers whether it was
 # SKIPPED, so the caller can floor the skips; a failure is recorded on
 # the spot and stops this case, because the second configuration's
 # verdict on a program that did not build says nothing.
@@ -156,23 +178,50 @@ function one_case(scratch: str, compiler: str, binaries: str, item: cases.Case, 
 
     if judged(@r, item: item, level: "-O0", want: want, said: at_o0)
         return false
+
+    if guard_malloc_failed(@r, scratch: scratch, item: item, want: want, binary: binary)
+        return false
     at_o2 = shell.run(scratch: scratch, program: compiler, words: [compiler, "run", item.source])
 
     if judged(@r, item: item, level: "-O2", want: want, said: at_o2)
         return false
-    sanitised = shell.run(
-        scratch: scratch,
-        program: compiler,
-        words: [compiler, "run", item.source, "--sanitize"]
-    )
+
+    # **The sanitiser at both levels** (defect 390): `run --sanitize` builds at
+    # `-O2`, where clang may fold a C write past an object into nothing ASan
+    # checks; measured 2026-10-07, `memset` eight bytes past a record's last
+    # field, in a header's `static inline`: `--sanitize` exit 0 and silent,
+    # `--sanitize -O0` *stack-buffer-overflow*. The `-O0` build is not a
+    # flag of its own: `-O0` and `--sanitize` compose (cli-surface.md, the
+    # stopping rule).
+    for flags in [["--sanitize"], ["--sanitize", "-O0"]]
+        if sanitised_failed(@r, scratch: scratch, compiler: compiler, item: item, want: want, flags: flags)
+            return false
+
+    report.keep_pass(@r)
+    return false
+
+# One sanitised configuration, `run <case> <flags>` with the fill handed to
+# the program (`freed_bytes.filled`, defect 321): what ASan frees is
+# overwritten, so a C library reading freed bytes reads the fill and the
+# program's answer moves, where ASan alone keeps them and says nothing.
+# Answers whether it FAILED, the failure recorded.
+function sanitised_failed(@r: report.Report, scratch: str, compiler: str, item: cases.Case, want: expectation.Expectation, flags: [str]) -> bool
+    level = flags.join(" ")
+    words: [str] @ [compiler, "run", item.source]
+
+    for flag in flags
+        words @ words.push(flag)
+
+    words @ freed_bytes.filled(words)
+    sanitised = shell.run(scratch: scratch, program: words[0], words: words)
 
     if sanitised.is_err()
         report.keep_failure(
             @r,
-            label: "run/" + item.name + " at --sanitize",
-            detail: "  `run " + item.source + " --sanitize`: " + shell.refusal(sanitised)
+            label: "run/" + item.name + " at " + level,
+            detail: "  `run " + item.source + " " + level + "`: " + shell.refusal(sanitised)
         )
-        return false
+        return true
 
     # **A CASE MAY DECLARE THAT THE SANITISER SPEAKS** (panel 173): its
     # `.expected` carries `!sanitizer: <needle>`, and then the report is the
@@ -183,29 +232,63 @@ function one_case(scratch: str, compiler: str, binaries: str, item: cases.Case, 
     # `tripped a sanitiser`, whatever the `.expected` says.
     #
     # The waiver and the assertion are one line on purpose: a case that stops
-    # provoking the sanitiser goes red. And the ending is still judged at `-O0`
-    # and `-O2` above, so the runtime's own report stays pinned where it prints.
+    # provoking the sanitiser goes red, at either level. And the ending is
+    # still judged at `-O0` and `-O2` above, so the runtime's own report stays
+    # pinned where it prints.
     if !want.sanitizer.is_err()
         missing = expectation.sanitizer_unmet(want, err: sanitised.must().err)
 
         if !missing.is_err()
             report.keep_failure(
                 @r,
-                label: "run/" + item.name + " at --sanitize",
+                label: "run/" + item.name + " at " + level,
                 detail: "  " + item.source + " " + missing.must()
             )
-            return false
-        report.keep_pass(@r)
+            return true
         return false
 
     if strings.contains(text: sanitised.must().err, needle: "AddressSanitizer") || strings.contains(text: sanitised.must().err, needle: "runtime error:")
-        report.keep_failure(@r, label: "run/" + item.name, detail: "  tripped a sanitiser:\n" + sanitised.must().err)
-        return false
+        report.keep_failure(
+            @r,
+            label: "run/" + item.name + " at " + level,
+            detail: "  tripped a sanitiser:\n" + sanitised.must().err
+        )
+        return true
+    return judged(@r, item: item, level: level, want: want, said: sanitised)
 
-    if judged(@r, item: item, level: "--sanitize", want: want, said: sanitised)
+# The `-O0` binary again under Guard Malloc, where this is Darwin (defect
+# 321, `freed_bytes`): every block on a page of its own and a freed one gone,
+# so a read of freed bytes faults where C makes it. Its own messages are
+# kept in a file beside the binary and told with a failure. A case that
+# declares the sanitiser's report is a program C corrupts on purpose, judged
+# by the sanitiser and by the runtime's own report at `-O0` and `-O2`; this
+# leg is not asked of it. Answers whether it FAILED.
+function guard_malloc_failed(@r: report.Report, scratch: str, item: cases.Case, want: expectation.Expectation, binary: str) -> bool
+    library = freed_bytes.guard_malloc()
+
+    if library.is_err() || !want.sanitizer.is_err()
         return false
-    report.keep_pass(@r)
-    return false
+    log = binary + ".gmalloc.txt"
+    words = freed_bytes.guarded(binary: binary, library: library.must(), log: log)
+    said = shell.run(scratch: scratch, program: words[0], words: words)
+
+    if said.is_err()
+        report.keep_failure(
+            @r,
+            label: "run/" + item.name + " at -O0 under Guard Malloc",
+            detail: "  " + shell.refusal(said)
+        )
+        return true
+    wrong = expectation.unmet(want, out: said.must().out, err: said.must().err, code: said.must().code)
+
+    if wrong.is_err()
+        return false
+    report.keep_failure(
+        @r,
+        label: "run/" + item.name + " at -O0 under Guard Malloc",
+        detail: "  " + item.source + " " + wrong.must() + "\n  Guard Malloc said:\n" + read_file(log).default("  (nothing)")
+    )
+    return true
 
 # One configuration against the expectation. Answers whether it FAILED,
 # so the caller stops asking about this case.
@@ -249,6 +332,54 @@ test "fixedbugs: a program that writes bytes that are not UTF-8 is told as one t
     assert strings.starts_with(text: got.failures[0], prefix: "FAIL run/latin at -O0\n")
     assert strings.contains(text: got.failures[0], needle: "ran and exited 0, and what it wrote is not UTF-8")
     assert strings.contains(text: got.failures[0], needle: "on stdout 1 byte is not, in `c<0xE9>`")
+    assert !shell.remove_tree(scratch).is_err()
+
+# DEFECT 390's control (2026-10-07): a C library writing eight bytes past a
+# record's last field, its `memset` named past the header's fortified macro,
+# as a library compiled apart calls it, so `-O2` sets no trap of its own. The
+# plain runs and the sanitiser at `-O2` pass it; the sanitiser at `-O0` names
+# the overflow. The same call writing the field alone passes every leg, so
+# what the leg sees is the write past it.
+constant SPILL_H: str
+    "#include <stdint.h>\n#include <string.h>\nstatic inline void spill_n(int64_t *out, int64_t n) { (memset)(out, 0x41, (size_t)n); }\n"
+
+function spilling(bytes: i64) -> str
+    return "extern \"spill.h\"\n    function spill_n(@out: i64, n: i64)\n\nrecord Pair\n    a: i64\n    b: i64\n\nfunction main()\n    o: Pair @ Pair(a: 0, b: 0)\n    spill_n(out: @o.b, n: " + bytes.to_str() + ")\n    print(o.a)\n    print(\"done\")\n"
+
+test "fixedbugs: a C write past a field is seen by the sanitiser at -O0, the one leg that sees it (defect 390)"
+    scratch = shell.own_scratch()
+    tree = scratch + "/run-390"
+    assert !shell.mkdir_all(tree).is_err()
+    binaries = scratch + "/binaries-390"
+    assert !shell.mkdir_all(binaries).is_err()
+    assert !write_file(path: tree + "/spill.h", text: SPILL_H).is_err()
+    assert !write_file(path: tree + "/over.hero", text: spilling(16)).is_err()
+    assert !write_file(path: tree + "/exact.hero", text: spilling(8)).is_err()
+    want = expectation.split("0\ndone\n").must()
+    compiler = shell.some_compiler().must()
+    over: report.Report @ report.empty()
+    _ = one_case(
+        scratch: scratch,
+        compiler: compiler,
+        binaries: binaries,
+        item: cases.Case(source: tree + "/over.hero", expected: "", name: "over"),
+        want: want,
+        r: @over
+    )
+    assert over.failed == 1
+    assert strings.starts_with(text: over.failures[0], prefix: "FAIL run/over at --sanitize -O0\n")
+    assert strings.contains(text: over.failures[0], needle: "stack-buffer-overflow")
+    exact: report.Report @ report.empty()
+    _ = one_case(
+        scratch: scratch,
+        compiler: compiler,
+        binaries: binaries,
+        item: cases.Case(source: tree + "/exact.hero", expected: "", name: "exact"),
+        want: want,
+        r: @exact
+    )
+    assert exact.failed == 0
+    assert exact.passed == 1
     assert !shell.remove_tree(scratch).is_err()
 
 test "the run suite passes a matching program and catches each way one can fail"
