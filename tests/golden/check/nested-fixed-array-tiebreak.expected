@@ -1,2 +1,1 @@
-tests/golden/check/nested-fixed-array-tiebreak.hero:22:8: error[fixed_outside_a_group]: `i64[2][3]` is a C array member, so it stands only as a field of a `record` inside an `extern` group, whose layout a C compiler chose — here no group's record holds it (§4.19)
-tests/golden/check/nested-fixed-array-tiebreak.hero:23:11: error[bad_operand]: `len` takes `str`, `[T]` or `{K: V}`, found `i64[2][3]`
+tests/golden/check/nested-fixed-array-tiebreak.hero:27:8: error[fixed_outside_a_group]: `i64[2][3]` is a C array member, so it stands only as a field of a `record` inside an `extern` group, whose layout a C compiler chose — here no group's record holds it (§4.19)
