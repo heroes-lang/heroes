@@ -681,5 +681,53 @@ class Marks(unittest.TestCase):
         self.assertEqual(runs(self.tree), ["annotations w"])
 
 
+class Growth(unittest.TestCase):
+    """Defect 215: a written `selfhost/` module that might grow a text by `+`
+    is asked of `layout` narrowed to it; one that cannot asks nothing."""
+
+    GROWN = 'function f(xs: [str]) -> str\n    beside: str @ ""\n\n    for ch in xs\n        beside @ beside + ch\n\n    return beside\n'
+
+    def setUp(self):
+        self.top = fresh("hooks-215-")
+        self.tree = make_tree(os.path.join(self.top, "tree"))
+
+    def test_a_module_growing_a_text_is_refused_with_the_suite_words(self):
+        answer(self.tree, "layout", 1, "FAIL layout/concat\n  a text is grown by pushing\n    selfhost/g.hero:5: beside @ beside + ch\n")
+        module = write(os.path.join(self.tree, "selfhost", "g.hero"), self.GROWN)
+        code, said = written(self.tree, module)
+        self.assertEqual(code, 2, said)
+        self.assertIn("FAIL layout/concat", said)
+        self.assertIn("selfhost/g.hero:5: beside @ beside + ch", said)
+        self.assertEqual(runs(self.tree), ["layout selfhost/g.hero"])
+
+    def test_a_module_the_suite_passes_is_quiet(self):
+        answer(self.tree, "layout", 0, "  layout (only selfhost/g.hero): 3 passed, 0 failed\n")
+        module = write(os.path.join(self.tree, "selfhost", "g.hero"), self.GROWN)
+        code, said = written(self.tree, module)
+        self.assertEqual(code, 0, said)
+
+    def test_a_module_that_cannot_grow_a_text_asks_no_run(self):
+        module = write(os.path.join(self.tree, "selfhost", "n.hero"), "function f(n: i64) -> i64\n    at: i64 @ 0\n    at @ at + 1\n    return at\n")
+        code, said = written(self.tree, module)
+        self.assertEqual(code, 0, said)
+        self.assertEqual(runs(self.tree), [])
+
+    def test_the_prefilter_holds_every_shape_the_suite_refuses(self):
+        import ceiling
+
+        appends = ["l.tokens @ l.tokens.push("]
+        for text in (
+            self.GROWN,
+            "function f(@out: str)\n    out @ out + \"x\"\n",
+            '    p.page @ p.page + "line\\n"\n',
+            "    l.tokens @ l.tokens.push(t)\n",
+            "    r.out.diagnostics @ r.out.diagnostics.push(d)\n",
+            'function f() -> str\n    out: str @ ""\n    match k\n        .a => out @ out + "a"\n',
+        ):
+            self.assertTrue(ceiling.might_grow(text, appends), text)
+        for text in ("    at @ at + 1\n", "    p.page @ p.page + word\n", "    r.items @ r.items.push(x)\n"):
+            self.assertFalse(ceiling.might_grow(text, appends), text)
+
+
 if __name__ == "__main__":
     unittest.main()

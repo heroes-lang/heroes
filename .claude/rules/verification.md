@@ -29,13 +29,16 @@ rather than trusting the table:
 grep -oE '"[a-z_]+"' tests/harness/main.hero | sort -u
 
 # what each suite file walks, from its own constants — the literal paths, and
-# the bare group names of a suite that builds `"tests/golden/" + group`
+# the bare group names of a suite that builds `"tests/golden/" + group` — read
+# in the suite's code alone: its `test` blocks and its comments left out, since
+# a literal a test asserts the suite does NOT walk is not a walk (defect 288)
 for f in tests/harness/suite_*.hero; do
   printf "%-14s " "$(basename $f .hero | sed 's/^suite_//')"
-  { grep -ohE '"(tests/golden/[a-z-]+|tests/emission|examples|selfhost|seed/heroes\.c|spec/[a-z-]+\.md|docs/[a-z/]+|issues)"' "$f"
-    if grep -q '"tests/golden/" +' "$f"; then
+  code=$(awk '/^test "/ { t = 1; next } t && /^[^ \t#]/ { t = 0 } !t && !/^[[:space:]]*#/' "$f")
+  { printf '%s\n' "$code" | grep -ohE '"(tests/golden/[a-z-]+|tests/emission|examples|selfhost|seed/heroes\.c|spec/[a-z-]+\.md|docs/[a-z/]+|issues)"'
+    if printf '%s\n' "$code" | grep -q '"tests/golden/" +'; then
       for d in $(ls tests/golden); do
-        grep -qE "^[[:space:]]*\"$d\"[[:space:]]*$" "$f" && echo "\"tests/golden/$d\""
+        printf '%s\n' "$code" | grep -qE "^[[:space:]]*\"$d\"[[:space:]]*$" && echo "\"tests/golden/$d\""
       done
     fi
   } | sort -u | tr '\n' ' '; echo
@@ -60,11 +63,11 @@ which pins a diagnostic's notes and excerpts (defect 289).
 | `selfhost/**` | `canonical` `layout` `order` `records`, **plus the compiler's own tests** |
 | `selfhost/emit/**`, `selfhost/ir/**` (they move `tests/emission/**`, `tests/golden/emit/**` and `seed/heroes.c`) | **`emission`** **`emit`** `determinism` **`wholes`** `descriptors`, plus everything `selfhost/**` already gets |
 | `selfhost/print/**`, `selfhost/lexer.hero`, `selfhost/parse/**` | **`probe`** `surface`, plus everything `selfhost/**` already gets, and the run by hand below before a push |
-| `tests/golden/check/**` | **`check`** `annotations` `canonical` `fixes` |
+| `tests/golden/check/**` | **`check`** `annotations` `fixes` |
 | `tests/golden/fixedbugs/**` | `annotations` `canonical` **`emission`** |
-| `tests/golden/unsupported/**` | **`unsupported`** `annotations` `canonical` |
-| `tests/golden/permissive/**` | **`permissive`** `annotations` `canonical` |
-| `tests/golden/full/**` | **`full`** `annotations` `canonical` |
+| `tests/golden/unsupported/**` | **`unsupported`** `annotations` |
+| `tests/golden/permissive/**` | **`permissive`** `annotations` |
+| `tests/golden/full/**` | **`full`** `annotations` |
 | `tests/golden/run/**` | `canonical` `determinism` **`emission`** `lines` `run` `warnings` |
 | `tests/golden/emit/**` | **`emit`** `canonical` `determinism` **`emission`** `warnings` |
 | `tests/golden/ir/**` | **`ir`** `canonical` `determinism` **`emission`** |
@@ -76,6 +79,20 @@ which pins a diagnostic's notes and excerpts (defect 289).
 | `.claude/hooks/**` | **the hooks' own tests**, `python3 -I -m unittest discover -s .claude/hooks -t .claude/hooks`, plus what `.claude/**` already gets |
 | `tests/harness/**` | **the net's own tests**, `heroes test tests/harness/main.hero` |
 | a file `site/src/lib/claims.ts` names at its top (`selfhost/cli/table.hero`, `selfhost/cli/doctor.hero`, `selfhost/parse/decl.hero`, `tests/harness/suite_spec.hero`, `.claude/agents/`, `.github/workflows/ci.yml`, and the rest it lists), or `site/**` | **the site's build**, `npm run build` in `site/`, before the push |
+
+**`canonical` stood in four golden rows until 2026-10-07, and walks none of
+them** (defect 288, lane b9-harness's reading of 2026-10-04): its test *the
+exempt directories are named nowhere in the walk* asserts `dir !=
+"tests/golden/check"`, and the same of `unsupported`, `permissive` and
+`full`, and the command read those four literals as four walks. It now reads a
+suite's code without its `test` blocks and its comments. Run against its old
+self that day it moved three rows of its output and no other: `canonical` lost
+the four directories, `unseen` lost `seed/heroes.c` (its test asserts the seed
+EXEMPT), and `records` lost `selfhost` and two retired document paths,
+three literals of its tests, the two paths asserted absent; the table's
+`records` cells stand, since `records` reads every file
+`shell.project_files` names, which no literal shows. The four rows above lost
+`canonical`, which runs a suite too many and never one too few.
 
 **`emit` and `unseen` were missing until 2026-10-06**, both found at batch 12's
 close. `tests/golden/emit/` holds emissions kept by hand that an emitter change
@@ -587,11 +604,17 @@ could.* Measured on the trunk's compiler the same day, `real` equal to `user`:
   `heroes check selfhost/main.hero`, the whole compiler's names and types in
   **5.8 s** (measured 2026-09-29), because a nested module cannot be checked
   alone and a root module checked alone does not see its callers; a `selfhost/` module's
-  line ceiling is judged in two stages, the file's non-blank lines first (a
-  count that is always at least the instrument's, so under 300 it is silent)
-  and the harness's own `layout` filtered to the file when that count passes
-  300 or the file is in `DECIDED`; a `tests/golden/` case's `#~` annotations
-  are held to its `.expected`. The hook notices and never rewrites (CL-025).
+  line ceiling is judged by `.claude/hooks/ceiling.py`, a declared mirror of
+  the `layout` suite's `code_lines` against its `DECIDED` table read from
+  disk; its growths and appends by the `layout` suite itself, narrowed to the
+  file, wherever a line might be one (`ceiling.might_grow`, a necessary
+  condition, 29 of 470 modules on 2026-10-07; defect 215), a narrowed `layout`
+  asking the file's appends, its growths against the allowances that name it
+  and its directory's budget; a `tests/golden/` case's `#~` annotations
+  are held to its `.expected`. (Until 2026-10-07 this bullet said the ceiling
+  was judged in two stages, the second the harness's `layout` filtered to the
+  file; no hook ran that stage, `ceiling.py` having been a mirror since
+  2026-09-29.) The hook notices and never rewrites (CL-025).
   **The last check was named here from 2026-09-29 and performed by no hook
   until 2026-10-05** (defect 286): since then the hook asks the `annotations`
   suite itself, narrowed to the case, on a write of its `.hero` or its

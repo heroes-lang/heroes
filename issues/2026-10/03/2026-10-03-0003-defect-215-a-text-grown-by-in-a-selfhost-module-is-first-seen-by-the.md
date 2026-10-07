@@ -3,7 +3,7 @@ kind: defect
 area: cli
 milestone: none
 filed: 2026-10-03
-commit: none
+commit: 9c5c603110d7932f938c623cc48fc3987bd29202
 github: none
 ---
 
@@ -12,3 +12,5 @@ github: none
     **Origin:** the coordinator, 2026-10-03, at lane win214's gate: one run of 25 suites stopped at 20 to repair it, then run again whole.
 
     **Class: improvement**, 2026-10-03 (`.claude/rules/verification.md` § Bounded discovery): an instrument's coverage. § A suite is the last judge asks that what a hook can see on the touched file never wait for a suite, and the growth sites of one file against `GROWTH_ALLOWED`'s entries for that file are such a thing.
+
+    Repaired at `9c5c6031`, 2026-10-07 (lane b14-hooks), gated by its cases, the hooks' own tests and the net's own tests; the net is owed at the batch's close. `layout` narrowed to a file asks its appends, its growths against the `GROWTH_ALLOWED` entries that name it and its directory's budget, and the write hook asks that narrowed run of a `selfhost/` module wherever `ceiling.might_grow` holds (29 of 470 modules); a module growing a text by `+` in a loop read 1 passed narrowed on the base harness and FAIL layout/concat now, passed the base write hook and is refused by the repaired one; the net's own tests 292 and 0, the hooks' 61 and 0, `layout` whole 5 and 0.
