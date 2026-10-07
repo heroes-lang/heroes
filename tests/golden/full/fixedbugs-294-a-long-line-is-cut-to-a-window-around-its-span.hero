@@ -1,0 +1,16 @@
+# Defect 294, 2026-10-07. Symptom: the excerpt under a message printed
+# its line whole, so a line of 4,000 refused characters was about 32 KB
+# under each of its eight messages. A line wider than 120 columns is cut
+# now to a window of them around the span, up to 40 columns before it, `…`
+# where the line goes on past a side, the caret under the span; a line
+# within 120 columns is printed whole, as it always was. Below, a name no
+# scope holds near the end of a long line, near its start, in its middle
+# past characters above ASCII and one written by its code, and on a line
+# of 120 columns, printed whole.
+
+function main()
+    a = "abcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghij" + missing_one  #~ unknown_name
+    b = missing_two + "abcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghij"  #~ unknown_name
+    c = "abcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghij café € ​ " + missing_three + "abcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghij"  #~ unknown_name
+    d = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" + missing_four  #~ unknown_name
+    print(a + b + c + d)
