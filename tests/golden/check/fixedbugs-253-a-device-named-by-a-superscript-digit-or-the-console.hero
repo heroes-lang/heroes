@@ -1,0 +1,61 @@
+# Defect 253 (batch 14, 2026-10-07): Windows reads `COM¹` to `COM³` and
+# `LPT¹` to `LPT³`, the superscript digits of ISO 8859-1, as `COM1` to `COM3`
+# and `LPT1` to `LPT3`, and `CONIN$` and `CONOUT$` as the console; the device
+# rule knew neither, so `COM¹.h` passed on every platform. Microsoft's *Naming
+# Files, Paths, and Namespaces* lists the six (read 2026-10-07), and on the
+# Windows box (10.0.26100) each of the eight, bare, is the device by
+# `RtlIsDosDeviceName_U` and `GetFullPathNameW` (`\\.\COM¹`), the console's
+# two opened as the console. Refused at `check` as `unwritable_name` in all
+# three strings, the part before its first `.` read, the spaces ending it
+# dropped (`nul .h`), as CPython's `ntpath.isreserved` and Wine's
+# `RtlIsDosDeviceName_U` read it. `COM0` and `LPT0` are no device in that
+# list or on the box, files at every width probed, and were refused until
+# this repair; with `COM⁴`, `CONERR$` and `CLOCK$`, the last five lines pass.
+
+extern "COM¹.h"  #~ unwritable_name
+    function d1() -> i32
+
+extern "com²"  #~ unwritable_name
+    function d2() -> i32
+
+extern "sub/Lpt³.h"  #~ unwritable_name
+    function d3() -> i32
+
+extern "CONIN$.h"  #~ unwritable_name
+    function d4() -> i32
+
+extern "conout$"  #~ unwritable_name
+    function d5() -> i32
+
+extern "nul .h"  #~ unwritable_name
+    function d6() -> i32
+
+extern "stdio.h" link "LPT¹"  #~ unwritable_name
+    function d7() -> i32
+
+extern "stdio.h" link "CONOUT$"  #~ unwritable_name
+    function d8() -> i32
+
+extern "stdio.h" package "conin$"  #~ unwritable_name
+    function d9() -> i32
+
+extern "stdio.h" package "COM³"  #~ unwritable_name
+    function d10() -> i32
+
+extern "com0.h"
+    function d11() -> i32
+
+extern "stdio.h" link "LPT0"
+    function d12() -> i32
+
+extern "COM⁴.h"
+    function d13() -> i32
+
+extern "CONERR$.h"
+    function d14() -> i32
+
+extern "stdio.h" package "CLOCK$"
+    function d15() -> i32
+
+function main()
+    print(d1() + d2() + d3() + d4() + d5() + d6() + d7() + d8() + d9() + d10() + d11() + d12() + d13() + d14() + d15())
