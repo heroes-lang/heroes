@@ -74,17 +74,14 @@ typedef struct h_0opt_a8ea2 {
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs314astrreleasedtwiceisnamedateverysize_release_behind(const char * a0) { (void)(release_behind)(a0); }
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-#line 114 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
 #line 116 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-#line 117 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-#line 118 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 88 "fixedbugs314astrreleasedtwiceisnamedateverysize.c"
+#line 85 "fixedbugs314astrreleasedtwiceisnamedateverysize.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -100,7 +97,7 @@ void h_fixedbugs314astrreleasedtwiceisnamedateverysize_main(void);
 
 #line 25 "tests/golden/run/fixedbugs-314-a-str-released-twice-is-named-at-every-size.hero"
 void h_fixedbugs314astrreleasedtwiceisnamedateverysize_main(void) {
-#line 104 "fixedbugs314astrreleasedtwiceisnamedateverysize.c"
+#line 101 "fixedbugs314astrreleasedtwiceisnamedateverysize.c"
     HeroStr h0_word = {0};
     HeroStr h1_own1 = {0};
     HeroStr t1;
@@ -124,15 +121,15 @@ bb0:
     t8 = h1_own1;
 #line 26 "tests/golden/run/fixedbugs-314-a-str-released-twice-is-named-at-every-size.hero"
     h1_own1 = t3;
-#line 128 "fixedbugs314astrreleasedtwiceisnamedateverysize.c"
+#line 125 "fixedbugs314astrreleasedtwiceisnamedateverysize.c"
     hero_str_decref(t8);
 #line 26 "tests/golden/run/fixedbugs-314-a-str-released-twice-is-named-at-every-size.hero"
     t9 = h0_word;
-#line 132 "fixedbugs314astrreleasedtwiceisnamedateverysize.c"
+#line 129 "fixedbugs314astrreleasedtwiceisnamedateverysize.c"
     hero_str_incref(t3);
 #line 26 "tests/golden/run/fixedbugs-314-a-str-released-twice-is-named-at-every-size.hero"
     h0_word = t3;
-#line 136 "fixedbugs314astrreleasedtwiceisnamedateverysize.c"
+#line 133 "fixedbugs314astrreleasedtwiceisnamedateverysize.c"
     hero_str_decref(t9);
 #line 27 "tests/golden/run/fixedbugs-314-a-str-released-twice-is-named-at-every-size.hero"
     t4 = h0_word;
@@ -142,16 +139,13 @@ bb0:
     hero_print_int(t5);
 #line 27 "tests/golden/run/fixedbugs-314-a-str-released-twice-is-named-at-every-size.hero"
     hero_print_end();
-#line 28 "tests/golden/run/fixedbugs-314-a-str-released-twice-is-named-at-every-size.hero"
     t6 = h0_word;
 #line 28 "tests/golden/run/fixedbugs-314-a-str-released-twice-is-named-at-every-size.hero"
     t7 = hero_str_lend(t6);
 #line 28 "tests/golden/run/fixedbugs-314-a-str-released-twice-is-named-at-every-size.hero"
     (void)release_behind(hero_cstr_nonnull(t7));
-#line 152 "fixedbugs314astrreleasedtwiceisnamedateverysize.c"
+#line 148 "fixedbugs314astrreleasedtwiceisnamedateverysize.c"
     hero_str_decref(h0_word);
-#line 28 "tests/golden/run/fixedbugs-314-a-str-released-twice-is-named-at-every-size.hero"
-#line 155 "fixedbugs314astrreleasedtwiceisnamedateverysize.c"
     hero_str_decref(h1_own1);
     return;
 }
