@@ -1,0 +1,32 @@
+# Defect 433, 2026-10-07 (lane b13-fixed405, found beside defect 423; filed
+# by the coordinator). Symptom: defect 423's first repair followed a value
+# to the fixed array it was judged against through a binding, a store, a
+# constant, a `return`, an argument, literals and branches, and not through
+# `ok(...)`, a UFCS call's receiver or a call's result, which kept their
+# `type_mismatch` or `fixed_array_length` beside `fixed_outside_a_group`.
+# Cause: a list of positions, each a copy of a rule the typing holds.
+# Repair: the program is typed again as the refusal repairs it, and what
+# the repaired program does not tell again is withdrawn
+# (`selfhost/check/fixed_judged.hero`), whatever form the value takes.
+# `ok("ab")` stays, a `str` being no array either, and so does
+# `[].first()`, whose empty literal has nothing to infer from.
+
+function first(xs: i64[2]) -> i64  #~ fixed_outside_a_group
+    return xs[0]
+
+function listed() -> [i64]
+    return [1, 2]
+
+function pair() -> i64[2]?  #~ fixed_outside_a_group
+    return ok([])
+
+function main()
+    maybe: i64[2]? = ok([])  #~ fixed_outside_a_group
+    long: i64[2]? = ok([1, 2, 3])  #~ fixed_outside_a_group
+    a = [].first()  #~ cannot_infer
+    b = [1, 2, 3].first()
+    c: i64[2] = listed()  #~ fixed_outside_a_group
+    d = listed().first()
+    e: i64[2]? = ok(listed())  #~ fixed_outside_a_group
+    word: i64[2]? = ok("ab")  #~ fixed_outside_a_group type_mismatch
+    print(maybe.is_err(), long.is_err(), a, b, c[0], d, e.is_err(), word.is_err(), pair().is_err())

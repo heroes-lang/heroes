@@ -1,0 +1,53 @@
+# Defect 432, 2026-10-07 (lane b13-fixed405, found beside defect 423; filed
+# by the coordinator). Symptom: with `x: i64[2][3]` refused
+# `fixed_outside_a_group`, every use of it was judged against the fixed type
+# as well: `len(x)` `bad_operand`, `grow(x[0])` `type_mismatch`, `x[0][7]`
+# `fixed_index_out_of_range`, `for row in x` `not_iterable`, each gone once
+# the refusal's `[[i64]]` is written. Cause: the checker types every use
+# before the sweep refuses the type. Repair: when the sweep refuses, the
+# program is typed again as the refusal repairs it, and a message the
+# repaired program does not tell again is withdrawn
+# (`selfhost/check/fixed_judged.hero`, `selfhost/checker.hero`'s `typed`).
+# Through a binding, a result, a fallible's payload and a record's field.
+# `print(x)` stays, `print` taking no array either; and so does `len` of a
+# group record's own `i8[4]`, which no refusal touches.
+
+extern "names.h"
+    record Tag
+        name: i8[4]
+        id: i32
+
+record Holder
+    xs: i64[3]  #~ fixed_outside_a_group
+
+function grow(xs: [i64]) -> i64
+    return xs.len()
+
+function made() -> i64[2]  #~ fixed_outside_a_group
+    return [1, 2]
+
+function maybe() -> i64[2]?  #~ fixed_outside_a_group
+    return ok([1, 2])
+
+function main()
+    x: i64[2][3] @ [[1, 2], [3, 4], [5, 6]]  #~ fixed_outside_a_group
+    a = len(x)
+    b = x.len()
+    c = len(x[0])
+    d = grow(x[0])
+    e: [i64] = x[1]
+    f = x[0][7]
+    g = sort(x[0])
+    h = made().len()
+    k = grow(made())
+    m = maybe().must().len()
+    holder = Holder(xs: [1, 2, 3])
+    n = len(holder.xs)
+    t = Tag(id: 1, rest: zero)
+    named = len(t.name)  #~ bad_operand
+
+    for row in x
+        print(len(row))
+
+    print(x)  #~ bad_operand
+    print(a, b, c, d, len(e), f, len(g), h, k, m, n, t.id, named)

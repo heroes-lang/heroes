@@ -18,6 +18,11 @@
 # `[[i64]]` the refusal offers takes it, so that judgement is withdrawn
 # (`selfhost/check/fixed_judged.hero`). The line holds one message, and
 # `bad_operand` below is a use of the binding, which keeps what it was told.
+#
+# **And `bad_operand` left `len(x)` with defect 432** (2026-10-07): the
+# program is typed again as the refusal repairs it, where `len` takes the
+# `[[i64]]` the refusal offers, and what the repaired program does not tell
+# again is withdrawn. The case holds one message: the refusal.
 function main()
     x: i64[2][3] @ [[1, 2, 3], [1, 2, 3]]  #~ fixed_outside_a_group
-    print(len(x))  #~ bad_operand
+    print(len(x))
