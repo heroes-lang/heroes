@@ -43,6 +43,7 @@
 # check catches an emitter bug and says so.
 
 use ast
+use token
 use source
 use parse
 use resolve
@@ -51,6 +52,7 @@ use resolved
 use check/state
 use check/lending
 use lease_errors
+use data_errors
 
 function is_lease(a: ast.Ast, r: resolved.Resolved, at: i64) -> bool
     return lending.is_builtin_named(a, r, at, name: "lease")
@@ -143,14 +145,53 @@ function marked_in(a: ast.Ast, call: i64, value: i64) -> bool
 
     return false
 
-# An `end_lease` call takes exactly one `@` argument naming a lease cell.
+# An `end_lease` call takes exactly one `@` argument naming a lease cell, and
+# each way of missing that is told by the one message true of it (defect 458:
+# `end_lease(@c, 1)` on a lease cell was told *this argument is not such a
+# cell* beside the count's own message). The dotted form hides the `@`, as it
+# does for any function that changes its first argument. A count other than
+# one is the built-in dispatch's to tell, `builtin_shape` (`check/walk.hero`'s
+# `builtin_dispatch`), so it is not told again here; the cases named
+# `fixedbugs-458-*` hold that claim, each annotated with the count's message.
+# Then an argument that is not a lease cell is this rule's refusal, and a
+# lease cell written without its `@` is told the `@` it owes.
 function end_lease_at(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, at: i64)
     if !is_end_lease(a, r, at)
         return
+
+    if is_dotted(a, at)
+        state.push_diagnostic(@c, data_errors.ufcs_on_mutable("end_lease", called_name(a, at)))
+        return
     given = arguments_of(a, at)
 
-    if given.len() != 1 || !given[0].mutable || !names_a_lease_cell(a, r, at: given[0].value)
+    if given.len() != 1
+        return
+    value = given[0].value
+
+    if !names_a_lease_cell(a, r, at: value)
         state.push_diagnostic(@c, lease_errors.end_lease_of_no_lease(a.exprs[at].span))
+    else if !given[0].mutable
+        state.push_diagnostic(
+            @c,
+            data_errors.marker_mismatch(name: "end_lease", wants: true, blocked: "", span: a.exprs[value].span)
+        )
+
+# Whether a call is written dotted, `x.f()`, and the name it calls there.
+function is_dotted(a: ast.Ast, at: i64) -> bool
+    return match a.exprs[at].kind
+        .method                                                                     => true
+        .call | .name | .int_lit | .char_lit | .float_lit | .str_lit | .interp      => false
+        .bool_lit | .null_ptr | .hole | .unary | .binary | .field | .field_name     => false
+        .index | .variant_case | .array | .map | .try_expr | .if_expr | .match_expr => false
+        .error                                                                      => false
+
+function called_name(a: ast.Ast, at: i64) -> token.Span
+    return match a.exprs[at].kind
+        .method m                                                               => m.name
+        .call | .name | .int_lit | .char_lit | .float_lit | .str_lit | .interp  => a.exprs[at].span
+        .bool_lit | .null_ptr | .hole | .unary | .binary | .field | .field_name => a.exprs[at].span
+        .index | .variant_case | .array | .map | .try_expr | .if_expr           => a.exprs[at].span
+        .match_expr | .error                                                    => a.exprs[at].span
 
 function names_a_lease_cell(a: ast.Ast, r: resolved.Resolved, at: i64) -> bool
     if !is_name(a, at)
@@ -251,6 +292,13 @@ test "a lease copied by = or into a second cell escapes"
 
 test "a write to a lease cell that is not its end_lease is refused"
     assert swept(GROUP + "function w(@y: cstr)\n    y @ nullptr\n\nfunction f(x: str) -> u64\n    c: cstr @ x.lease()\n    c @ nullptr\n    w(@c)\n    k = n(s: c)\n    end_lease(@c)\n    return k\n") == 2
+
+# Defect 458: an `end_lease` with a count other than one is the built-in
+# dispatch's to tell, so this sweep says nothing of it, and the dotted form is
+# told the `@` it hides, once.
+test "end_lease's count is not this rule's to tell, and its dotted form is"
+    assert swept(GROUP + "function f(x: str) -> u64\n    c: cstr @ x.lease()\n    k = n(s: c)\n    end_lease(@c, 1)\n    end_lease()\n    end_lease(@c)\n    return k\n") == 0
+    assert swept(GROUP + "function f(x: str) -> u64\n    c: cstr @ x.lease()\n    k = n(s: c)\n    c.end_lease()\n    return k\n") == 1
 
 test "end_lease takes only a lease cell: not a lend cell, not a lease by value"
     assert swept(GROUP + "function f(x: str) -> u64\n    d: cstr @ g()\n    end_lease(@d)\n    c: cstr @ x.lease()\n    end_lease(c)\n    k = n(s: c)\n    end_lease(@c)\n    return k\n") == 2

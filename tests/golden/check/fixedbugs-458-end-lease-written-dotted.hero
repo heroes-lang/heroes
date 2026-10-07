@@ -1,0 +1,9 @@
+# Fixed 2026-10-07, defect 458, lane b14-check: the shape beside it written
+# with a dot. Symptom: `c.end_lease()` on a lease cell was told *this
+# argument is not such a cell*. `end_lease` changes its first argument, and
+# the dotted form hides the `@` it owes, which is what any such call is told.
+
+function main()
+    x = "abc"
+    c: cstr @ x.lease()
+    c.end_lease()  #~ ufcs_on_mutable

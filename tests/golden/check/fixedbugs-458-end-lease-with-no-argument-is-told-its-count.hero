@@ -1,0 +1,10 @@
+# Fixed 2026-10-07, defect 458, lane b14-check: the shape beside it with
+# no argument at all. Symptom: `end_lease()` was told `builtin_shape` and
+# `end_lease_of_no_lease`, *this argument is not such a cell*, of an
+# argument that is not there. Now the count is told and nothing else.
+
+function main()
+    x = "abc"
+    c: cstr @ x.lease()
+    end_lease()  #~ builtin_shape
+    end_lease(@c)
