@@ -1,0 +1,49 @@
+# Panel 196's R5, the legal half (lane b13-land-buf, 2026-10-07): `counted_by`
+# states the extent itself where C's is fixed and no argument carries it, a
+# number or a constant of the group, and the lend is held to it in C's own
+# unit before the call, as a count a sibling carries is (panel 166's route C).
+#
+# FIVE SPELLINGS OF ONE EXTENT, each against a field or a record that holds
+# it: a decimal literal, the group's constant (the header's macro, written into
+# C by its name), the same number with a `_` between its digits and in hex
+# (which C reads as their decimal value, since C has neither spelling of
+# Heroes' own), a count in a unit wider than a byte (`int32_t`, four of them in
+# 16 bytes), and a record lent whole with `@`, one of it. Each prints what C
+# wrote and the field beside it, so a write past the place would show.
+extern "ffi-counted-by-a-stated-extent.h"
+    constant HELD_LEN: i64
+    record Held tag held
+        buf: u8[16]
+        after: i64
+    record Pair tag pair
+        a: i32
+        b: i32
+    function fill16(p: ptr counted_by 16 lent)
+    function fill16_const(p: ptr counted_by HELD_LEN lent)
+    function fill16_under(p: ptr counted_by 1_6 lent)
+    function fill16_hex(p: ptr counted_by 0x10 lent)
+    function fill_ints4(p: ptr counted_by 4 lent)
+    function fill_pair(@p: Pair counted_by 1)
+
+function zero() -> Held
+    return Held(buf: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], after: 7)
+
+function main()
+    h: Held @ zero()
+    fill16(p: h.buf.ptr())
+    print(h.buf[0], " ", h.buf[15], " ", h.after)
+    h @ zero()
+    fill16_const(p: h.buf.ptr())
+    print(h.buf[0], " ", h.buf[15], " ", h.after)
+    h @ zero()
+    fill16_under(p: h.buf.ptr())
+    print(h.buf[15], " ", h.after)
+    h @ zero()
+    fill16_hex(p: h.buf.ptr())
+    print(h.buf[15], " ", h.after)
+    h @ zero()
+    fill_ints4(p: h.buf.ptr())
+    print(h.buf[0], " ", h.buf[12], " ", h.after)
+    pair: Pair @ Pair(a: 0, b: 0)
+    fill_pair(@pair)
+    print(pair.a, " ", pair.b)

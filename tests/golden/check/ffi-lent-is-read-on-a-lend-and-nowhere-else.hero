@@ -25,6 +25,12 @@
 # commit accepted silently: a `ptr` that declares no extent, which no `ptr`
 # lend can ever reach (`field_lend_uncounted` refuses it first), so the word
 # there says nothing and is refused like the three below.
+#
+# CORRECTION, 2026-10-07, panel 196's R3 (lane b13-land-buf): `lent` is read on
+# an `@` parameter too, where it says C keeps nothing of the ADDRESS after the
+# call, and a temporary the emitter makes for a call (the buffer C fills)
+# reaches only a parameter so declared. So `grab` below is quiet since: the
+# sentence beside it was true of a word nothing read, and the word is read.
 
 extern "lent.h"
     # The two shapes that carry it, quiet.
@@ -36,9 +42,8 @@ extern "lent.h"
     #~v lent_shape
     function fill(buf: ptr lent, n: u64) -> i64
 
-    # An `@` out-parameter: C writes into the program's own cell, and no lend
-    # can stand in an `@` position, so there is nothing for the word to admit.
-    #~v lent_shape
+    # An `@` out-parameter: C writes into the program's own cell, and since
+    # panel 196's R3 the word says C keeps nothing of the cell's address.
     function grab(@out: cstr lent) -> i32
 
     # A number is never lent.

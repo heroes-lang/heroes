@@ -351,8 +351,8 @@ width and sign — `i32` where C says int, `i8` where it says char, `u64` where 
 says `size_t` — and one that
 disagrees is refused, except a parameter C converts exactly (`i16` against int)
 and what a `ptr` points at. A C out-parameter is an `@` parameter, and what it
-points at is held to the same width and sign — `@n: u64` where it says
-`size_t *`:
+points at is ONE element, held to the same width and sign — `@n: u64` where it
+says `size_t *`:
 ```
 extern "sqlite3.h" link "sqlite3"
     constant SQLITE_OK: i64
@@ -360,6 +360,11 @@ extern "sqlite3.h" link "sqlite3"
     function sqlite3_open(path: cstr lent, @out: Db acquires sqlite3_close) -> i64
     function sqlite3_close(db: Db consumes) -> i64
 ```
+Where C writes several, `@md: [u8] counted_by N lent` hands C `N` elements, the
+array's own then zeros, and leaves the array exactly those `N`: numbers, the
+group's records, or bytes where the header says `void *`, `N` the sibling that
+tells C how many, a constant of the group or a number. C reaching past them
+aborts, or fails the call where the kernel writes.
 A callback is a **parameter**, never a result; its parameters follow the same rule
 and `()` is `void`: `atexit(f: (function() -> ()))`.
 
@@ -394,10 +399,11 @@ bytes, reading to its first zero or the whole field, and for a `[u8]` every
 byte, and either fails `not_text`.
 Nothing lends a field to `cstr`, which promises a zero the field does not;
 `f.ptr()` lends a binding's field to a `ptr` parameter declared `counted_by n`,
-naming the sibling that gives the extent, and one past the field is refused.
+naming the sibling C reads the extent from, a constant of the group or a number,
+and one past the field is refused; a group's record lent whole with `@` may say it too.
 C writes back through the lend only where the binding is a `@` name. A lend
-lives for its call and no longer: a parameter is taken to keep what it is
-handed unless declared `lent`, and a lend reaches only one so declared.
+lives for its call and no longer: a parameter, `@` or not, is taken to keep what
+it is handed unless declared `lent`, and a lend reaches only one so declared.
 `x: cstr @ s.lease()` is a COPY of the bytes that C may read for as long as the
 program says, and `end_lease(@x)` frees it and empties the cell. A lend and a
 lease name stand only as an argument of a call, nothing else writes a lease's
@@ -444,5 +450,5 @@ asks the system where its headers and libraries are and what else it needs.
                  [ "when" ( integer | "true" | "false" ) ] ] NEWLINE
            | "constant" ident ":" Type NEWLINE
            | "record" ident [ "tag" ident ] [ "partial" ] ( Fields | NEWLINE ) .
-    CParam = [ "@" ] ident ":" Type [ "counted_by" ident ] [ "lent" ]
+    CParam = [ "@" ] ident ":" Type [ "counted_by" ( ident | integer ) ] [ "lent" ]
              [ "owned" ident ] [ "consumes" | ( "transfers" | "acquires" | "retains" ) ident { "|" ident } | "borrows" ] .

@@ -57,32 +57,48 @@ use handles
 use check/state
 use check/table
 use check/lower
+use check/ffi_buffer
 use ffi_errors
+use digits
+use widths
 use parse
 use resolve
 
 ## The declaration
 
-# Every `counted_by` in an extern signature, judged where it is written.
-function declared_extents(@c: state.Checker, s: source.Source, decls: [ast.Decl], f: ast.FunctionDecl, declared_name: token.Span)
+# Every `counted_by` in an extern signature, judged where it is written. A
+# parameter whose type the boundary check already refused (`refused`, by
+# position) is not judged again: one mistake, one message (panel 196's R8).
+#
+# WHAT THE MARK MAY NAME, SINCE PANEL 196's R5: the sibling C reads the count
+# from, as before; a `constant` of the same group, the header's own macro
+# (`SHA256_DIGEST_LENGTH`), whose value only C knows and which the emitter
+# writes by its name; or a number, `counted_by 32`, at least one. A name that
+# is a sibling is the sibling, whatever the group also declares.
+function declared_extents(@c: state.Checker, a: ast.Ast, s: source.Source, decls: [ast.Decl], f: ast.FunctionDecl, declared_name: token.Span, refused: {i64: bool})
     function_name = source.span_text(s, declared_name)
+    position: i64 @ 0 - 1
 
     for param in f.params
-        if param.counted_by.is_err()
+        position @ position + 1
+
+        if param.counted_by.is_err() || !refused[position].is_err()
             continue
         mark = param.counted_by.must()
         param_name = source.span_text(s, param.name)
         sibling_name = source.span_text(s, mark)
         why: str @ ""
 
-        if !is_ptr(c, param.ty) && !lent_whole(c, decls, param)
-            why @ "`counted_by` says how far C reads or writes through a `ptr`, or through a group's record lent whole with `@`, and `" + param_name + "` is neither"
+        if !is_ptr(c, param.ty) && !lent_whole(c, decls, param) && !ffi_buffer.is_array_out(c, param)
+            why @ "`counted_by` says how far C reads or writes through a `ptr`, through a group's record lent whole with `@`, or through an array lent with `@` as a buffer, and `" + param_name + "` is none of them"
         sibling = sibling_named(f, s, owner: param.name, name: sibling_name)
+        literal = is_literal(sibling_name)
 
-        if why == "" && sibling.is_err()
-            why @ "`" + sibling_name + "` names no other parameter of `" + function_name + "` — the extent is a sibling in the same signature, the one C reads the count from"
-
-        if why == "" && !integer_count(c, sibling.must())
+        if why == "" && literal
+            why @ literal_why(text: sibling_name)
+        else if why == "" && sibling.is_err()
+            why @ constant_why(a, s, decls, f: f, name: sibling_name, function_name: function_name)
+        else if why == "" && !sibling.is_err() && !integer_count(c, sibling.must())
             why @ "`" + sibling_name + "` is not an integer C takes by value or reads through an `@` cell, so it cannot say how far C reads — an extent is `i32`, `u64`, or another width the header spells"
 
         if why != ""
@@ -90,6 +106,64 @@ function declared_extents(@c: state.Checker, s: source.Source, decls: [ast.Decl]
                 @c,
                 ffi_errors.counted_by_shape(parameter: param_name, function_name: function_name, why: why, span: mark)
             )
+
+# Whether a mark's text is a number, `counted_by 32`: the lexer starts every
+# integer literal with a digit and every name with something else.
+function is_literal(text: str) -> bool
+    return text.len() > 0 && text[0] >= '0' && text[0] <= '9'
+
+# Why a stated number is no extent, or "" where it is one: at least one
+# element, and no more than an `i64` counts, which is what the emitter hands
+# the runtime.
+function literal_why(text: str) -> str
+    value = digits.decode_int(digits.canonical_int(text))
+
+    if value.is_err()
+        return "`" + text + "` is more elements than an `i64` counts, and no buffer C can be handed holds that many"
+
+    if value.must() < 1
+        return "`" + text + "` states no element at all — a stated extent is the number of elements C reaches, at least one"
+    return ""
+
+# Why a name that is no sibling is no extent either, or "" where it is a
+# `constant` of the function's own group, of an integer type: the header's
+# macro, which C reads where the call is compiled. The group is the header
+# the two declarations were written under, compared by its text.
+function constant_why(a: ast.Ast, s: source.Source, decls: [ast.Decl], f: ast.FunctionDecl, name: str, function_name: str) -> str
+    nowhere = "`" + name + "` names no other parameter of `" + function_name + "` and no `constant` of its group — the extent is the sibling C reads the count from, a constant the group declares from the header, or the number itself"
+
+    if f.header.is_err()
+        return nowhere
+    header = source.span_text(s, f.header.must())
+
+    for d in decls
+        if source.span_text(s, d.name) == name
+            match d.kind
+                .constant_decl k =>
+                    if k.header.is_err()
+                        return nowhere
+
+                    if source.span_text(s, k.header.must()) != header
+                        return "`" + name + "` is a `constant` of the group of " + source.span_text(s, k.header.must()) + ", and the extent's macro must be one the header declaring `" + function_name + "` defines — declare the constant in that function's own group"
+
+                    # The type AS WRITTEN, never `written_type`: that table is
+                    # filled in declaration order, so a constant declared below
+                    # the function, or in a later group, has no entry yet, and
+                    # declaration order never matters (§ 4).
+                    if !int_spelled(source.span_text(s, a.types[k.ty].span))
+                        return "`" + name + "` is not an integer constant, so it counts no elements — an extent is a whole number of what C's pointer points at"
+                    return ""
+                .function_decl | .record_decl | .variant_decl | .test_decl => return nowhere
+
+    return nowhere
+
+# Whether a type as written is one of the eight integer widths.
+function int_spelled(text: str) -> bool
+    for kind in widths.int_kinds()
+        if widths.int_name(kind) == text
+            return true
+
+    return false
 
 # The parameter of this signature with that name, other than the one carrying
 # the mark: `p: ptr counted_by p` names no sibling.
@@ -116,9 +190,13 @@ function is_cstr(c: state.Checker, ty: i64) -> bool
 
 # Every `lent` in an extern signature, judged where it is written (panel 171).
 # The word is read on a by-value `cstr` or a `ptr` that declares its extent —
-# the two parameters a lend can land on — and nowhere else: in an `@` position
-# no lend can stand, on a handle or a number nothing is lent, and a `ptr` with
-# no `counted_by` refuses every lend before the word is read. Unread, it is
+# the two parameters a lend can land on — and, since panel 196's R3, on every
+# `@` parameter, where it says C keeps nothing of the ADDRESS after the call:
+# an `@` argument is the place itself (R1), and a temporary the emitter makes
+# for a call, the buffer C fills (R4), reaches only a parameter so declared.
+# Elsewhere nothing reads it: on a handle or a number by value nothing is
+# lent, and a `ptr` with no `counted_by` refuses every lend before the word is
+# read. Unread, it is
 # refused, which is `check/marks.hero`'s rule for the handle words applied to
 # this one. The word landed one commit before this rule did, so the seed
 # compiler that built this one could parse the marks it writes on the
@@ -132,8 +210,9 @@ function declared_lends(@c: state.Checker, s: source.Source, f: ast.FunctionDecl
         why: str @ ""
 
         if param.mutable
-            why @ "`" + param_name + "` is an `@` out-parameter, and no lend can stand in an `@` position"
-        else if !is_ptr(c, param.ty) && !is_cstr(c, param.ty)
+            continue
+
+        if !is_ptr(c, param.ty) && !is_cstr(c, param.ty)
             why @ "`" + param_name + "` is not a `cstr` or a `ptr`, and only those two are ever lent"
         else if is_ptr(c, param.ty) && param.counted_by.is_err()
             why @ "`" + param_name + "` is a `ptr` that declares no extent, and a `ptr` lend reaches only a parameter declared `counted_by` — nothing is ever lent here, so the word is dead text; write `counted_by <n> lent`"
@@ -202,7 +281,8 @@ function shape_refusals(text: str) -> i64
         match decl.kind
             .function_decl fd =>
                 if fd.value.is_extern
-                    declared_extents(@c, s, p.decls, f: fd.value, declared_name: decl.name)
+                    none: {i64: bool} = {}
+                    declared_extents(@c, p.tree, s, p.decls, f: fd.value, declared_name: decl.name, refused: none)
             .constant_decl | .record_decl | .variant_decl | .test_decl =>
                 _ = 0
 
@@ -232,3 +312,18 @@ test "a record lent whole takes counted_by, by value and as a handle it does not
     assert shape_refusals(one + "    function f(@b: One counted_by n, n: u64) -> i64\n\nfunction main()\n    print(1)\n") == 0
     assert shape_refusals(one + "    function f(b: One counted_by n, n: u64) -> i64\n\nfunction main()\n    print(1)\n") == 1
     assert shape_refusals(one + "    function f(@h: Op counted_by n, n: u64) -> i64\n\nfunction main()\n    print(1)\n") == 1
+
+# Panel 196's R5: the declaration may state the extent itself, a number of at
+# least one or a constant of its own group, of an integer type.
+test "a stated extent is a number of at least one or an integer constant of the function's own group"
+    group = "extern \"s.h\"\n    constant LEN: i64\n    constant SCALE: f64\n"
+    other = "extern \"o.h\"\n    constant OTHER: i64\n"
+    tail = "\nfunction main()\n    print(1)\n"
+    assert shape_refusals(group + "    function f(p: ptr counted_by 32)\n" + tail) == 0
+    assert shape_refusals(group + "    function f(p: ptr counted_by 0x20)\n" + tail) == 0
+    assert shape_refusals(group + "    function f(p: ptr counted_by LEN)\n" + tail) == 0
+    assert shape_refusals(group + "    function f(p: ptr counted_by 0)\n" + tail) == 1
+    assert shape_refusals(group + "    function f(p: ptr counted_by 99999999999999999999)\n" + tail) == 1
+    assert shape_refusals(group + "    function f(p: ptr counted_by SCALE)\n" + tail) == 1
+    assert shape_refusals(group + "    function f(p: ptr counted_by OTHER)\n" + other + tail) == 1
+    assert shape_refusals(group + "    function f(p: ptr counted_by LEN, LEN: u64)\n" + tail) == 0

@@ -1,0 +1,114 @@
+# The buffer C fills, as a declaration (design.md §4.19, §1.12; panel 196's
+# R4, ratified 2026-10-06; defect 396): `@md: [u8] counted_by 32 lent`.
+#
+# WHY IT EXISTS. `SHA256_Final(unsigned char *md, SHA256_CTX *c)` writes 32
+# bytes and takes no count, so the only binding of it was C written by hand
+# or a one-byte cell C wrote 31 bytes past, at exit 0 (defect 396). An array
+# lent through `@` with a stated extent crosses as a buffer the emitter owns
+# for the call (`emit/lend_buffer.hero`) and the runtime places against a page
+# nothing may touch (`runtime/parts/lend.c`).
+#
+# THREE THINGS ARE JUDGED, each a fact about the declaration in hand, in the
+# order a reader repairs them, and one message per parameter:
+# - the ELEMENT: a number, or a group's record that is not a handle (`poll`'s
+#   `struct pollfd`), since C writes the bytes of what its pointer points at;
+#   whether the header's pointer points at THAT is C's question, asked in the
+#   emitted unit before the call, and `[u8]` alone is lent to a `void *`;
+# - the EXTENT: a buffer is exactly as long as its declaration says, so
+#   `counted_by` is required, a number, a constant of the group or the
+#   sibling that tells C how many (`check/lend_extent.hero` judges the mark);
+# - the WORD: the buffer lives for one call, so it reaches only a parameter
+#   declared `lent` (panel 196's R3). `setvbuf` keeps the buffer it is handed,
+#   and without the word stdio wrote into a dead frame at exit 0 (the
+#   sitting's completeness critic); with it the binding says what C does.
+#
+# An array by value, `md: [u8]`, is not a buffer and stays the boundary's
+# refusal (`check/ffi.hero`).
+
+use ast
+use source
+use handles
+use check/state
+use check/table
+use ffi_errors
+
+# What the judgement found: not a buffer, a buffer, or a buffer refused.
+variant Verdict
+    not_a_buffer
+    buffer
+    refused
+
+# Whether a parameter is an array lent through `@`, the shape a buffer has.
+function is_array_out(c: state.Checker, param: ast.Param) -> bool
+    if !param.mutable
+        return false
+    written = state.written_type(c.out, param.ty)
+
+    if written.is_err()
+        return false
+
+    match table.get(c.out.types, written.must())
+        .array                                                    => return true
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return false
+        .fixed | .map | .fallible | .function_ty | .named         => return false
+        .case_ty | .failure | .generic | .error                   => return false
+
+    return false
+
+# Whether an element may fill a buffer: a number, or a group's record that is
+# not a handle, a handle being a pointer whose life the marks keep.
+function element_fits(c: state.Checker, decls: [ast.Decl], element: i64) -> bool
+    match table.get(c.out.types, element)
+        .int_ty | .float_ty => return true
+        .named n =>
+            match decls[n.decl].kind
+                .record_decl r => return !r.header.is_err() && !handles.is_handle(decls[n.decl])
+                .constant_decl | .function_decl | .variant_decl | .test_decl => return false
+        .bool | .str | .ptr | .cstr | .unit               => return false
+        .array | .fixed | .map | .fallible | .function_ty => return false
+        .case_ty | .failure | .generic | .error           => return false
+
+    return false
+
+# Whether a type is a group's handle, a record with a tag and no fields.
+function is_handle(decls: [ast.Decl], element: table.Ty) -> bool
+    match element
+        .named n                                                  => return handles.is_handle(decls[n.decl])
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return false
+        .array | .fixed | .map | .fallible | .function_ty         => return false
+        .case_ty | .failure | .generic | .error                   => return false
+
+    return false
+
+# The parameter judged, where it is an array lent through `@`.
+function judged(@c: state.Checker, a: ast.Ast, s: source.Source, decls: [ast.Decl], param: ast.Param, function_name: str) -> Verdict
+    if !is_array_out(c, param)
+        return .not_a_buffer
+    written = state.written_type(c.out, param.ty).must()
+    element: i64 @ written
+
+    match table.get(c.out.types, written)
+        .array x                                                  => element @ x.element
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => element @ written
+        .fixed | .map | .fallible | .function_ty | .named         => element @ written
+        .case_ty | .failure | .generic | .error                   => element @ written
+
+    name = source.span_text(s, param.name)
+    why: str @ ""
+
+    if is_handle(decls, element: table.get(c.out.types, element))
+        why @ "`" + state.show(c, s, decls, element) + "` is a handle, a pointer whose life its marks keep, and a buffer of them would hand the program pointers no mark began — a buffer holds numbers or this group's records"
+    else if !element_fits(c, decls, element)
+        why @ "an array lent through `@` crosses as a buffer C fills, of numbers or of this group's records, and `" + state.show(c, s, decls, element) + "` is neither"
+    else if param.counted_by.is_err()
+        why @ "an array lent through `@` crosses as a buffer exactly as long as its declaration says, and this one states no extent: `@" + name + ": " + state.show(c, s, decls, written) + " counted_by <n> lent`, the number C writes, a constant of the group, or the sibling that tells C how many"
+    else if !param.lent
+        why @ "the buffer C is handed lives for this call and no longer, and `" + name + "` is not declared `lent`, so it is taken to keep it — if C keeps the address after the call (`setvbuf`), no buffer of one call can serve it; if it does not, say so: `counted_by " + source.span_text(s, param.counted_by.must()) + " lent`"
+
+    if why == ""
+        return .buffer
+    state.push_diagnostic(
+        @c,
+        ffi_errors.ffi_parameter_position(parameter: name, function_name: function_name, name: state.show(c, s, decls, written), why: why, span: a.types[param.ty].span)
+    )
+    return .refused

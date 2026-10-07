@@ -1,0 +1,35 @@
+# fixedbugs, defect 396, lane b13-land-buf, 2026-10-07: panel 196's R4, the
+# buffer C fills as a declaration. An array lent through `@` crosses as a
+# buffer the emitter makes for one call, so its declaration says three things,
+# each refused where it is missing, one message per parameter.
+#
+# `setvbuf` KEEPS the buffer it is handed and stdio writes into it after the
+# call returns: bound without `lent`, the sitting's critic measured stdio
+# writing into a dead frame at exit 0. The buffer reaches only a parameter
+# declared `lent` (R3), so the binding is refused at `check`, and the message
+# says that no buffer of one call can serve a function that keeps one.
+#
+# THE SHAPES BESIDE IT: no extent; an element that is neither a number nor a
+# group's record (a `str`), and a handle, which is a pointer whose life the
+# marks keep; a `counted_by` naming nothing, one message and not two; an
+# array by value, the boundary's refusal and not the buffer's; and the quiet
+# three, a number with a stated extent, `double`s, and records counted by a
+# sibling.
+extern "fixedbugs-396-buffers.h"
+    record PollFd tag pfd
+        fd: i32
+        events: i16
+        revents: i16
+    record Handle tag opaque
+    function setvbuf(stream: ptr, @buf: [i8] counted_by 64, mode: i32, size: u64) -> i32  #~ ffi_parameter_type
+    function no_extent(@md: [u8] lent)  #~ ffi_parameter_type
+    function strings(@out: [str] counted_by 4 lent)  #~ ffi_parameter_type
+    function handles(@out: [Handle] counted_by 4 lent)  #~ ffi_parameter_type
+    function nowhere(@md: [u8] counted_by NOPE lent)  #~ counted_by_shape
+    function by_value(md: [u8] counted_by 32)  #~ ffi_type
+    function digest32(@md: [u8] counted_by 32 lent)
+    function reals(@p: [f64] counted_by 3 lent)
+    function records(@p: [PollFd] counted_by n lent, n: u32) -> i32
+
+function main()
+    print(0)

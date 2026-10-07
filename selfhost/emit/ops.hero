@@ -23,6 +23,7 @@ use emit/convert
 use emit/bytes_text
 use emit/field_lend
 use emit/lend_extent
+use emit/lend_buffer
 use emit/extern_probe
 use emit/writer
 use emit/handle_traffic
@@ -153,11 +154,17 @@ function call(@w: writer.Writer, p: containers.Program, f: containers.Function, 
             # `_Static_assert` is a declaration and the call is a statement.
             lend_extent.assertions(@w, c, names, s, decls, f, run: run, decl: e.decl)
 
+            # An array lent through `@` crosses as a buffer the runtime places
+            # against a page nothing may touch (panel 196's R4,
+            # `emit/lend_buffer.hero`): taken here, given back after the call.
+            held = lend_buffer.buffers(c, names, s, decls, f, run: run, decl: e.decl)
+            buffered = lend_buffer.before(@w, held, arguments: arguments)
+
             # A `cstr` lent to a pointer the check read crosses cast (defect 427).
             guarded = lend_type.cast_lends(
                 names.lend_units,
                 name: extern_name,
-                arguments: guard_arguments(p, c, decls, decl: e.decl, arguments: arguments)
+                arguments: guard_arguments(p, c, decls, decl: e.decl, arguments: buffered)
             )
 
             # Where each argument was read from, for the poison a consuming
@@ -257,6 +264,7 @@ function call(@w: writer.Writer, p: containers.Program, f: containers.Function, 
 
             if lives
                 writer.line(@w, text: "    }")
+            lend_buffer.after(@w, held)
 
 # Every cstr argument of an extern call, wrapped in the runtime's null
 # check (panel 053; §12's robustness rule) — and every opaque or numeric

@@ -7,7 +7,7 @@
 #include <dead-address-copy-reaching-a-callback-called-by-name.h>
 #include "heroes_guard_close.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 28, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 

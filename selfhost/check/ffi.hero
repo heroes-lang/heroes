@@ -28,6 +28,7 @@ use check/table
 use check/state
 use check/lower
 use check/lend_extent
+use check/ffi_buffer
 use check/fixed_repairs
 use ffi_errors
 
@@ -100,14 +101,30 @@ function ffi_signature(@c: state.Checker, a: ast.Ast, s: source.Source, decls: [
     if !crosses_the_boundary(c, decls, result)
         refused(@c, s, decls, ty: result, what: "an `extern`'s result", span: a.types[f.result].span)
 
+    # The positions refused here, so the marks on them are not judged again:
+    # one mistake, one message (panel 196's R8).
+    told: {i64: bool} @ {}
+    position: i64 @ 0 - 1
+
     for param in f.params
+        position @ position + 1
         written = state.written_type(c.out, param.ty)
 
         if written.is_err()
             continue
 
+        # An array lent through `@` is the buffer C fills (panel 196's R4),
+        # judged where it is declared and nowhere else here.
+        match ffi_buffer.judged(@c, a, s, decls, param: param, function_name: source.span_text(s, declared_name))
+            .buffer => continue
+            .refused =>
+                told[position] @ true
+                continue
+            .not_a_buffer => _ = 0
+
         if !crosses_the_boundary(c, decls, written.must())
             refused(@c, s, decls, ty: written.must(), what: "an `extern`'s parameter", span: a.types[param.ty].span)
+            told[position] @ true
 
     result_may_stand(@c, a, s, decls, f: f, result: result, declared_name: declared_name)
     arguments_may_stand(@c, a, s, decls, f: f, declared_name: declared_name)
@@ -116,7 +133,7 @@ function ffi_signature(@c: state.Checker, a: ast.Ast, s: source.Source, decls: [
     # 166's route C). It is the signature's question and belongs on this walk,
     # and it is `check/lend_extent.hero`'s because the same module answers the
     # other half — which parameter a lend lands on — for `check/lending.hero`.
-    lend_extent.declared_extents(@c, s, decls, f: f, declared_name: declared_name)
+    lend_extent.declared_extents(@c, a, s, decls, f: f, declared_name: declared_name, refused: told)
     lend_extent.declared_lends(@c, s, f: f, declared_name: declared_name)
 
 # One refusal, and it picks the message by WHERE the refused type is.

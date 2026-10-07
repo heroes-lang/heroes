@@ -1,0 +1,13 @@
+# fixedbugs, defect 396, lane b13-land-buf, 2026-10-07: panel 196's R4 at an
+# extent above a page, which the one guarded page the sitting prototyped could
+# not hold (its copy faulted outside the guard and died unnamed). The region
+# is the extent rounded up to pages, so C writing one byte past 20000 stops
+# on the guard page, and the runtime names the call and the extent.
+extern "fixedbugs-396-buffers.h"
+    function fill_one_more(@buf: [u8] counted_by n lent, n: u64) -> i64
+
+function main()
+    buf: [u8] @ []
+    print("before")
+    print(fill_one_more(@buf, n: 20000))
+    print("not reached ", buf.len())

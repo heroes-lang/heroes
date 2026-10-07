@@ -1,0 +1,50 @@
+# fixedbugs, defect 396, lane b13-land-buf, 2026-10-07: panel 196's R4 on the
+# POSIX calls the sitting named, each of which had no correct binding without
+# C written by hand. `pipe` writes two `int`s through `int [2]`: as a one-cell
+# lend it set the field after the cell to 4 at exit 0. `read` writes bytes
+# through `void *`, which takes `[u8]`, the byte being the unit where the
+# header gives none. `poll` reads and writes an array of records, two
+# `struct pollfd`s. `gethostname` writes through `char *` as far as the count
+# beside it says, so the buffer is sized by that sibling at the call.
+#
+# Windows has neither `unistd.h` nor `poll.h`, so this case is judged where
+# the headers are (`.claude/rules/platforms.md`); its twin on a header of the
+# program's own, `fixedbugs-396-a-buffer-c-fills`, runs everywhere.
+extern "unistd.h"
+    function pipe(@fds: [i32] counted_by 2 lent) -> i32
+    function write(fd: i32, data: cstr lent, n: u64) -> i64
+    function read(fd: i32, @buf: [u8] counted_by 64 lent, n: u64) -> i64
+    function close(fd: i32) -> i32
+    function gethostname(@name: [i8] counted_by namelen lent, namelen: u64) -> i32
+
+extern "poll.h"
+    constant POLLIN: i32
+    constant POLLOUT: i32
+    record PollFd tag pollfd
+        fd: i32
+        events: i16
+        revents: i16
+    function poll(@fds: [PollFd] counted_by 2 lent, nfds: u32, timeout: i32) -> i32
+
+function main()
+    fds: [i32] @ []
+    print(pipe(@fds), " ", fds.len(), " ", fds[0] != fds[1])
+    print(write(fd: fds[1], data: "hello".cstr(), n: 5))
+    watched: [PollFd] @ [
+        PollFd(fd: fds[0], events: POLLIN.to_i16().must(), revents: 0)
+        PollFd(fd: fds[1], events: POLLOUT.to_i16().must(), revents: 0)
+    ]
+    print(
+        poll(@watched, nfds: 2, timeout: 0),
+        " ",
+        watched.len(),
+        " ",
+        watched[0].revents == POLLIN.to_i16().must(),
+        " ",
+        watched[1].revents == POLLOUT.to_i16().must()
+    )
+    buf: [u8] @ []
+    print(read(fd: fds[0], @buf, n: 64), " ", buf.len(), " ", buf[0], " ", buf[4], " ", buf[5])
+    print(close(fd: fds[0]), " ", close(fd: fds[1]))
+    name: [i8] @ []
+    print(gethostname(@name, namelen: 256), " ", name.len(), " ", name[0] != 0)
