@@ -238,10 +238,10 @@ function fresh_value(@b: Lowering, ty: i64) -> i64
 
 # **Lent, so each push grows its array in place** (defect 112). Through the
 # field, `b.building.values @ …push(ty)` copied the whole list at every value,
-# and the functions, the strings, and until defect 261 the slots, the
-# parameters, the blocks and the path steps the same: lowering grew with the
-# square of a function's size. The helpers are the spelling design.md Part 8
-# wart 8's ruling names (panel 144), the one defect 103 used for the lexer; a
+# as did the functions, the strings, and until defects 261 and 394 the slots,
+# parameters, blocks, steps and arguments: lowering grew with the square of a
+# function's size or an array literal's length. The helpers are design.md Part
+# 8 wart 8's spelling (panel 144), the one defect 103 used for the lexer; a
 # place with an index in it is hoisted instead (`push_inst`, `terminate`).
 function append_id(@ids: [i64], id: i64)
     ids @ ids.push(id)
@@ -257,6 +257,9 @@ function append_block(@blocks: [containers.Block], blk: containers.Block)
 
 function append_step(@steps: [ir.PathStep], s: ir.PathStep)
     steps @ steps.push(s)
+
+function append_arg(@arguments: [ir.Arg], a: ir.Arg)
+    arguments @ arguments.push(a)
 
 ## Slots — the half of the state that holds a value
 
@@ -329,7 +332,7 @@ function args_run(@b: Lowering, list: [ir.Arg]) -> ir.Run
     start = b.building.arguments.len()
 
     for a in list
-        b.building.arguments @ b.building.arguments.push(a)
+        append_arg(@b.building.arguments, a)
 
     return ir.Run(start: start, length: list.len())
 

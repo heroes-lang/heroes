@@ -1,0 +1,64 @@
+# Defect 394, 2026-10-07. Every element of an array literal, every key and
+# value of a map literal and every field of a record built at once is one
+# argument of one `construct`, and the lowering added each to the function's
+# argument table by pushing through a field of the builder, which copies the
+# whole table at every push (design.md Part 8, wart 8): one `constant BIG:
+# [i64]` of N elements cost the square of N, 18.8 billion instructions retired
+# at 20,000 under `--dump-ir`. The table is lent to a helper that grows it in
+# place now, 6.4 billion at 20,000 and 12.5 at 40,000 (lane b14-ir); the IR
+# and the C are what they were, byte for byte, and this case pins the IR of
+# each literal that fills a run: an array of 32 elements, a map of six
+# entries and a record of eight fields.
+
+record Wide
+    a: i64
+    b: i64
+    c: i64
+    d: i64
+    e: i64
+    f: i64
+    g: i64
+    h: i64
+
+constant PRIMES: [i64]
+    [
+        2
+        3
+        5
+        7
+        11
+        13
+        17
+        19
+        23
+        29
+        31
+        37
+        41
+        43
+        47
+        53
+        59
+        61
+        67
+        71
+        73
+        79
+        83
+        89
+        97
+        101
+        103
+        107
+        109
+        113
+        127
+        131
+    ]
+
+constant AGES: {str: i64}
+    {"ziggy": 42, "mars": 7, "stardust": 19, "spiders": 5, "jean": 30, "genie": 8}
+
+function main()
+    w = Wide(a: 1, b: 2, c: 3, d: 4, e: 5, f: 6, g: 7, h: 8)
+    print(PRIMES.len(), PRIMES[31], AGES["mars"].default(0), w.a + w.h)
