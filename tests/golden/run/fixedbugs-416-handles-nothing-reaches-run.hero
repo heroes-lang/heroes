@@ -1,0 +1,17 @@
+# Defect 416, lane run400, 2026-10-06: the control beside the repair, two
+# correct handles nothing in the program reaches.
+#
+# SINCE THE REPAIR every verb asks the header about every group record the
+# program declares, reached or not: `test` always did, through the fused
+# unit's per-type functions, and `build` and `run` asked only what a module's
+# code reached. So these two declarations, which no line uses, are now
+# compiled by `build` and `run` too. Both bind, so the program runs: `named_t`
+# as the typedef's name, `only_tag` once the round learns `struct` from
+# clang's own sentence, as it does for a handle the program uses.
+
+extern "fixedbugs-416-handles-nothing-reaches.h"
+    record ByTag tag only_tag
+    record ByName tag named_t
+
+function main()
+    print(1)

@@ -116,6 +116,14 @@ function unit(module: str, p: containers.Program, c: state.Checked, s: source.So
         for slot in f.params
             reached[f.slots[slot].ty] @ true
 
+    # Every group record this module declares, used or not (defect 416): the
+    # fused unit spells them all, so a binding the header refutes was refused
+    # by `heroes test` alone (`members.group_records`).
+    groups = members.group_records(module, c, s, decls)
+
+    for id in groups.types
+        reached[id] @ true
+
     # Which functions C may call back (panel 111 R9). Over the FULL
     # program, never the TU's slice: a function this TU defines may have
     # its address taken in another module, and the fused path must reach
@@ -143,7 +151,12 @@ function unit(module: str, p: containers.Program, c: state.Checked, s: source.So
     # (`h_clitoolchain_Toolchain_desc`). Four symptoms, one cause, and
     # the cause is two sets where there should be one.
     declared = members.declared_reach(c, decls, seed: emit.closed_over(c, reached: reached))
-    want = synth.wanted_of(c, reached: declared)
+    want: synth.Wanted @ synth.wanted_of(c, reached: declared)
+
+    # By declaration too, since a record nothing mentions has no type id.
+    for decl in groups.decls
+        want.named[decl] @ true
+
     names = whole.names
     w: writer.Writer @ writer.new_writer(module)
     emit_decls.prelude(
