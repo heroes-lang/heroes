@@ -111,13 +111,11 @@ void h_deadhandlecomparedafteritsaddresswashandedoutagain_main(void);
 #line 18 "tests/golden/run/dead-handle-compared-after-its-address-was-handed-out-again.hero"
 void h_deadhandlecomparedafteritsaddresswashandedoutagain_closed(hh * *ph0_x) {
 #line 114 "deadhandlecomparedafteritsaddresswashandedoutagain.c"
-    hh * h0_x;
     hh * t1;
-    h0_x = *ph0_x;
     goto bb0;
 bb0:
 #line 19 "tests/golden/run/dead-handle-compared-after-its-address-was-handed-out-again.hero"
-    t1 = h0_x;
+    t1 = (*ph0_x);
 #line 19 "tests/golden/run/dead-handle-compared-after-its-address-was-handed-out-again.hero"
     {
 #line 19 "tests/golden/run/dead-handle-compared-after-its-address-was-handed-out-again.hero"
@@ -127,17 +125,17 @@ bb0:
 #line 19 "tests/golden/run/dead-handle-compared-after-its-address-was-handed-out-again.hero"
     (void)f_close(t1);
 #line 19 "tests/golden/run/dead-handle-compared-after-its-address-was-handed-out-again.hero"
-    if (hero_handle_ended(t1, hero_life_0_0) && h0_x == t1) h0_x = hero_handle_dead();
+    if (hero_handle_ended(t1, hero_life_0_0) && (*ph0_x) == t1) (*ph0_x) = hero_handle_dead();
 #line 19 "tests/golden/run/dead-handle-compared-after-its-address-was-handed-out-again.hero"
     }
-#line 134 "deadhandlecomparedafteritsaddresswashandedoutagain.c"
-    *ph0_x = h0_x;
+#line 19 "tests/golden/run/dead-handle-compared-after-its-address-was-handed-out-again.hero"
     return;
+#line 134 "deadhandlecomparedafteritsaddresswashandedoutagain.c"
 }
 
 #line 21 "tests/golden/run/dead-handle-compared-after-its-address-was-handed-out-again.hero"
 void h_deadhandlecomparedafteritsaddresswashandedoutagain_main(void) {
-#line 141 "deadhandlecomparedafteritsaddresswashandedoutagain.c"
+#line 139 "deadhandlecomparedafteritsaddresswashandedoutagain.c"
     hh * h0_a;
     hh * h1_b;
     hh * t1;
@@ -195,7 +193,7 @@ bb0:
     hero_print_end();
 #line 27 "tests/golden/run/dead-handle-compared-after-its-address-was-handed-out-again.hero"
     return;
-#line 199 "deadhandlecomparedafteritsaddresswashandedoutagain.c"
+#line 197 "deadhandlecomparedafteritsaddresswashandedoutagain.c"
 }
 HERO_TU_LOCAL bool h_deadhandlecomparedafteritsaddresswashandedoutagain_H_eq(hh * const *a, hh * const *b) {
     return hero_handle_eq(*a, *b);

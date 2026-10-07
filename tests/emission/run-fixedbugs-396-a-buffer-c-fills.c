@@ -270,9 +270,9 @@ void h_fixedbugs396abuffercfills_main(void) {
     HeroArrayHeader * h7_small = {0};
     h_fixedbugs396abuffercfills_Holder h8_h = {0};
     HeroArrayHeader * h9_rows = {0};
-    HeroArrayHeader * h10_e0 = {0};
-    HeroArrayHeader * h11_late = {0};
-    HeroArrayHeader * h12_big = {0};
+    HeroArrayHeader * h10_late = {0};
+    HeroArrayHeader * h11_big = {0};
+    HeroArrayHeader * h12_own12 = {0};
     HeroArrayHeader * h13_own13 = {0};
     HeroArrayHeader * h14_own14 = {0};
     HeroArrayHeader * h15_own15 = {0};
@@ -280,13 +280,12 @@ void h_fixedbugs396abuffercfills_main(void) {
     HeroArrayHeader * h17_own17 = {0};
     HeroArrayHeader * h18_own18 = {0};
     HeroArrayHeader * h19_own19 = {0};
-    HeroArrayHeader * h20_own20 = {0};
-    h_fixedbugs396abuffercfills_Holder h21_own21 = {0};
+    h_fixedbugs396abuffercfills_Holder h20_own20 = {0};
+    HeroArrayHeader * h21_own21 = {0};
     HeroArrayHeader * h22_own22 = {0};
     HeroArrayHeader * h23_own23 = {0};
     HeroArrayHeader * h24_own24 = {0};
     HeroArrayHeader * h25_own25 = {0};
-    HeroArrayHeader * h26_own26 = {0};
     uint8_t t1;
     uint8_t t2;
     uint8_t t3;
@@ -438,42 +437,42 @@ void h_fixedbugs396abuffercfills_main(void) {
     HeroArrayHeader * t150;
     HeroArrayHeader * t151;
     int64_t t152;
-    HeroArrayHeader * t153;
     HeroArrayHeader * t154;
+    int64_t t155;
     HeroArrayHeader * t156;
-    HeroArrayHeader * t157;
-    int64_t t158;
+    int64_t t157;
+    HeroStr t158;
     HeroArrayHeader * t159;
     int64_t t160;
-    HeroStr t161;
-    HeroArrayHeader * t162;
-    int64_t t163;
+    HeroArrayHeader * t161;
+    int64_t t162;
+    HeroStr t163;
     HeroArrayHeader * t164;
     int64_t t165;
-    HeroStr t166;
-    HeroArrayHeader * t167;
-    int64_t t168;
+    HeroArrayHeader * t166;
+    int64_t t167;
+    uint8_t t168;
     HeroArrayHeader * t169;
-    int64_t t170;
-    uint8_t t171;
-    HeroArrayHeader * t172;
-    h_0fn_294870dd t173;
+    h_0fn_294870dd t170;
+    HeroArrayHeader * t171;
+    int64_t t172;
+    HeroStr t173;
     HeroArrayHeader * t174;
     int64_t t175;
-    HeroStr t176;
+    uint8_t t176;
     HeroArrayHeader * t177;
-    int64_t t178;
-    uint8_t t179;
-    HeroArrayHeader * t180;
-    uint64_t t181;
+    uint64_t t178;
+    int64_t t179;
+    HeroStr t180;
+    HeroArrayHeader * t181;
     int64_t t182;
     HeroStr t183;
     HeroArrayHeader * t184;
     int64_t t185;
-    HeroStr t186;
+    uint8_t t186;
     HeroArrayHeader * t187;
-    int64_t t188;
-    uint8_t t189;
+    HeroArrayHeader * t188;
+    HeroArrayHeader * t189;
     HeroArrayHeader * t190;
     HeroArrayHeader * t191;
     HeroArrayHeader * t192;
@@ -487,20 +486,16 @@ void h_fixedbugs396abuffercfills_main(void) {
     HeroArrayHeader * t200;
     HeroArrayHeader * t201;
     HeroArrayHeader * t202;
-    HeroArrayHeader * t203;
-    HeroArrayHeader * t204;
+    h_fixedbugs396abuffercfills_Holder t203;
+    h_fixedbugs396abuffercfills_Holder t204;
     HeroArrayHeader * t205;
-    h_fixedbugs396abuffercfills_Holder t206;
-    h_fixedbugs396abuffercfills_Holder t207;
+    HeroArrayHeader * t206;
+    HeroArrayHeader * t207;
     HeroArrayHeader * t208;
     HeroArrayHeader * t209;
     HeroArrayHeader * t210;
     HeroArrayHeader * t211;
     HeroArrayHeader * t212;
-    HeroArrayHeader * t213;
-    HeroArrayHeader * t214;
-    HeroArrayHeader * t215;
-    HeroArrayHeader * t216;
     goto bb0;
 bb0:
 #line 44 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
@@ -666,29 +661,29 @@ bb0:
 #line 43 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     hero_array_push_owned(&t41, &t40);
 #line 43 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    t190 = h13_own13;
+    t187 = h12_own12;
 #line 43 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    h13_own13 = t41;
-#line 673 "fixedbugs396abuffercfills.c"
-    hero_array_decref(t190);
+    h12_own12 = t41;
+#line 668 "fixedbugs396abuffercfills.c"
+    hero_array_decref(t187);
 #line 43 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    t191 = h0_md;
-#line 677 "fixedbugs396abuffercfills.c"
+    t188 = h0_md;
+#line 672 "fixedbugs396abuffercfills.c"
     hero_array_incref(t41);
 #line 43 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     h0_md = t41;
-#line 681 "fixedbugs396abuffercfills.c"
-    hero_array_decref(t191);
+#line 676 "fixedbugs396abuffercfills.c"
+    hero_array_decref(t188);
 #line 85 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     t42 = h0_md;
 #line 85 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    t192 = h1_before;
-#line 687 "fixedbugs396abuffercfills.c"
+    t189 = h1_before;
+#line 682 "fixedbugs396abuffercfills.c"
     hero_array_incref(t42);
 #line 85 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     h1_before = t42;
-#line 691 "fixedbugs396abuffercfills.c"
-    hero_array_decref(t192);
+#line 686 "fixedbugs396abuffercfills.c"
+    hero_array_decref(t189);
 #line 86 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     {
 #line 86 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
@@ -766,19 +761,19 @@ bb0:
 #line 87 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     t62 = hero_array_new(&hero_desc_u8, 1);
 #line 87 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    t193 = h14_own14;
+    t190 = h13_own13;
 #line 87 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    h14_own14 = t62;
-#line 773 "fixedbugs396abuffercfills.c"
-    hero_array_decref(t193);
+    h13_own13 = t62;
+#line 768 "fixedbugs396abuffercfills.c"
+    hero_array_decref(t190);
 #line 87 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    t194 = h2_named;
-#line 777 "fixedbugs396abuffercfills.c"
+    t191 = h2_named;
+#line 772 "fixedbugs396abuffercfills.c"
     hero_array_incref(t62);
 #line 87 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     h2_named = t62;
-#line 781 "fixedbugs396abuffercfills.c"
-    hero_array_decref(t194);
+#line 776 "fixedbugs396abuffercfills.c"
+    hero_array_decref(t191);
 #line 88 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     {
 #line 88 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
@@ -822,19 +817,19 @@ bb0:
 #line 89 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     t71 = hero_array_new(&hero_desc_u8, 1);
 #line 89 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    t195 = h15_own15;
+    t192 = h14_own14;
 #line 89 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    h15_own15 = t71;
-#line 829 "fixedbugs396abuffercfills.c"
-    hero_array_decref(t195);
+    h14_own14 = t71;
+#line 824 "fixedbugs396abuffercfills.c"
+    hero_array_decref(t192);
 #line 89 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    t196 = h3_bytes;
-#line 833 "fixedbugs396abuffercfills.c"
+    t193 = h3_bytes;
+#line 828 "fixedbugs396abuffercfills.c"
     hero_array_incref(t71);
 #line 89 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     h3_bytes = t71;
-#line 837 "fixedbugs396abuffercfills.c"
-    hero_array_decref(t196);
+#line 832 "fixedbugs396abuffercfills.c"
+    hero_array_decref(t193);
 #line 90 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     t72 = UINT64_C(5);
 #line 90 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
@@ -884,19 +879,19 @@ bb0:
 #line 91 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     hero_array_push_owned(&t82, &t81);
 #line 91 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    t197 = h16_own16;
+    t194 = h15_own15;
 #line 91 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    h16_own16 = t82;
-#line 891 "fixedbugs396abuffercfills.c"
-    hero_array_decref(t197);
+    h15_own15 = t82;
+#line 886 "fixedbugs396abuffercfills.c"
+    hero_array_decref(t194);
 #line 91 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    t198 = h4_ints;
-#line 895 "fixedbugs396abuffercfills.c"
+    t195 = h4_ints;
+#line 890 "fixedbugs396abuffercfills.c"
     hero_array_incref(t82);
 #line 91 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     h4_ints = t82;
-#line 899 "fixedbugs396abuffercfills.c"
-    hero_array_decref(t198);
+#line 894 "fixedbugs396abuffercfills.c"
+    hero_array_decref(t195);
 #line 92 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     {
 #line 92 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
@@ -946,19 +941,19 @@ bb0:
 #line 94 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     t93 = hero_array_new(&h_fixedbugs396abuffercfills_Pair_desc, 1);
 #line 94 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    t199 = h17_own17;
+    t196 = h16_own16;
 #line 94 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    h17_own17 = t93;
-#line 953 "fixedbugs396abuffercfills.c"
-    hero_array_decref(t199);
+    h16_own16 = t93;
+#line 948 "fixedbugs396abuffercfills.c"
+    hero_array_decref(t196);
 #line 94 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    t200 = h5_pairs;
-#line 957 "fixedbugs396abuffercfills.c"
+    t197 = h5_pairs;
+#line 952 "fixedbugs396abuffercfills.c"
     hero_array_incref(t93);
 #line 94 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     h5_pairs = t93;
-#line 961 "fixedbugs396abuffercfills.c"
-    hero_array_decref(t200);
+#line 956 "fixedbugs396abuffercfills.c"
+    hero_array_decref(t197);
 #line 95 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     {
 #line 95 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
@@ -1012,19 +1007,19 @@ bb0:
 #line 97 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     t106 = hero_array_new(&hero_desc_f64, 1);
 #line 97 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    t201 = h18_own18;
+    t198 = h17_own17;
 #line 97 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    h18_own18 = t106;
-#line 1019 "fixedbugs396abuffercfills.c"
-    hero_array_decref(t201);
+    h17_own17 = t106;
+#line 1014 "fixedbugs396abuffercfills.c"
+    hero_array_decref(t198);
 #line 97 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    t202 = h6_reals;
-#line 1023 "fixedbugs396abuffercfills.c"
+    t199 = h6_reals;
+#line 1018 "fixedbugs396abuffercfills.c"
     hero_array_incref(t106);
 #line 97 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     h6_reals = t106;
-#line 1027 "fixedbugs396abuffercfills.c"
-    hero_array_decref(t202);
+#line 1022 "fixedbugs396abuffercfills.c"
+    hero_array_decref(t199);
 #line 98 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     {
 #line 98 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
@@ -1070,19 +1065,19 @@ bb0:
 #line 100 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     hero_array_push_owned(&t115, &t114);
 #line 100 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    t203 = h19_own19;
+    t200 = h18_own18;
 #line 100 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    h19_own19 = t115;
-#line 1077 "fixedbugs396abuffercfills.c"
-    hero_array_decref(t203);
+    h18_own18 = t115;
+#line 1072 "fixedbugs396abuffercfills.c"
+    hero_array_decref(t200);
 #line 100 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    t204 = h7_small;
-#line 1081 "fixedbugs396abuffercfills.c"
+    t201 = h7_small;
+#line 1076 "fixedbugs396abuffercfills.c"
     hero_array_incref(t115);
 #line 100 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     h7_small = t115;
-#line 1085 "fixedbugs396abuffercfills.c"
-    hero_array_decref(t204);
+#line 1080 "fixedbugs396abuffercfills.c"
+    hero_array_decref(t201);
 #line 101 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     {
 #line 101 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
@@ -1156,31 +1151,31 @@ bb0:
 #line 103 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     t134 = hero_array_new(&hero_desc_u8, 1);
 #line 103 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    t205 = h20_own20;
+    t202 = h19_own19;
 #line 103 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    h20_own20 = t134;
-#line 1163 "fixedbugs396abuffercfills.c"
-    hero_array_decref(t205);
+    h19_own19 = t134;
+#line 1158 "fixedbugs396abuffercfills.c"
+    hero_array_decref(t202);
 #line 103 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     t135 = INT64_C(7);
-#line 1167 "fixedbugs396abuffercfills.c"
+#line 1162 "fixedbugs396abuffercfills.c"
     hero_array_incref(t134);
 #line 103 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     t136 = (h_fixedbugs396abuffercfills_Holder){.f_digest = t134, .f_after = t135};
 #line 103 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    t206 = h21_own21;
+    t203 = h20_own20;
 #line 103 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    h21_own21 = t136;
-#line 1175 "fixedbugs396abuffercfills.c"
-    h_fixedbugs396abuffercfills_Holder_release(&t206);
+    h20_own20 = t136;
+#line 1170 "fixedbugs396abuffercfills.c"
+    h_fixedbugs396abuffercfills_Holder_release(&t203);
 #line 103 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    t207 = h8_h;
-#line 1179 "fixedbugs396abuffercfills.c"
+    t204 = h8_h;
+#line 1174 "fixedbugs396abuffercfills.c"
     h_fixedbugs396abuffercfills_Holder_retain(&t136);
 #line 103 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     h8_h = t136;
-#line 1183 "fixedbugs396abuffercfills.c"
-    h_fixedbugs396abuffercfills_Holder_release(&t207);
+#line 1178 "fixedbugs396abuffercfills.c"
+    h_fixedbugs396abuffercfills_Holder_release(&t204);
 #line 104 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     {
 #line 104 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
@@ -1232,19 +1227,19 @@ bb0:
 #line 106 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     t149 = hero_array_new(&hero_desc_u8, 1);
 #line 106 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    t208 = h22_own22;
+    t205 = h21_own21;
 #line 106 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    h22_own22 = t149;
-#line 1239 "fixedbugs396abuffercfills.c"
-    hero_array_decref(t208);
+    h21_own21 = t149;
+#line 1234 "fixedbugs396abuffercfills.c"
+    hero_array_decref(t205);
 #line 106 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     t150 = hero_array_new(&hero_desc_u8, 1);
 #line 106 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    t209 = h23_own23;
+    t206 = h22_own22;
 #line 106 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    h23_own23 = t150;
-#line 1247 "fixedbugs396abuffercfills.c"
-    hero_array_decref(t209);
+    h22_own22 = t150;
+#line 1242 "fixedbugs396abuffercfills.c"
+    hero_array_decref(t206);
 #line 106 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     t151 = hero_array_new(&hero_desc_array, 2);
 #line 106 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
@@ -1252,33 +1247,23 @@ bb0:
 #line 106 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     hero_array_push_owned(&t151, &t150);
 #line 106 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    t210 = h24_own24;
+    t207 = h23_own23;
 #line 106 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    h24_own24 = t151;
-#line 1259 "fixedbugs396abuffercfills.c"
-    hero_array_decref(t210);
+    h23_own23 = t151;
+#line 1254 "fixedbugs396abuffercfills.c"
+    hero_array_decref(t207);
 #line 106 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    t211 = h9_rows;
-#line 1263 "fixedbugs396abuffercfills.c"
+    t208 = h9_rows;
+#line 1258 "fixedbugs396abuffercfills.c"
     hero_array_incref(t151);
 #line 106 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     h9_rows = t151;
-#line 1267 "fixedbugs396abuffercfills.c"
-    hero_array_decref(t211);
+#line 1262 "fixedbugs396abuffercfills.c"
+    hero_array_decref(t208);
 #line 107 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     t152 = INT64_C(1);
 #line 107 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    t153 = h9_rows;
-#line 107 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    t154 = *(HeroArrayHeader * const *)hero_array_at(t153, t152);
-#line 107 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    t212 = h10_e0;
-#line 1277 "fixedbugs396abuffercfills.c"
-    hero_array_incref(t154);
-#line 107 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    h10_e0 = t154;
-#line 1281 "fixedbugs396abuffercfills.c"
-    hero_array_decref(t212);
+    hero_array_unshare(&(h9_rows));
 #line 107 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     {
 #line 107 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
@@ -1286,79 +1271,73 @@ bb0:
 #line 107 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     int64_t hero_lend_e113_0 = INT64_C(32);
 #line 107 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    void *hero_lend_b113_0 = hero_lend_take(h10_e0, hero_lend_e113_0, "digest32", "md");
+    void *hero_lend_b113_0 = hero_lend_take((*(HeroArrayHeader * *)hero_array_at_mut(h9_rows, t152)), hero_lend_e113_0, "digest32", "md");
 #line 107 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     (void)digest32((void *)hero_lend_b113_0);
 #line 107 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    h10_e0 = hero_lend_give(h10_e0, hero_lend_b113_0, hero_lend_e113_0);
+    (*(HeroArrayHeader * *)hero_array_at_mut(h9_rows, t152)) = hero_lend_give((*(HeroArrayHeader * *)hero_array_at_mut(h9_rows, t152)), hero_lend_b113_0, hero_lend_e113_0);
 #line 107 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     }
-#line 107 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    t156 = h10_e0;
-#line 1299 "fixedbugs396abuffercfills.c"
-    hero_array_incref(t156);
-#line 107 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    hero_array_set(&(h9_rows), t152, &t156);
 #line 108 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    t157 = h9_rows;
+    t154 = h9_rows;
 #line 108 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    t158 = INT64_C(0);
+    t155 = INT64_C(0);
 #line 108 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    t159 = *(HeroArrayHeader * const *)hero_array_at(t157, t158);
+    t156 = *(HeroArrayHeader * const *)hero_array_at(t154, t155);
 #line 108 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    t160 = hero_array_len(t159);
+    t157 = hero_array_len(t156);
 #line 108 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    t161 = HERO_STR_LIT(hero_str_20);
+    t158 = HERO_STR_LIT(hero_str_20);
 #line 108 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    t162 = h9_rows;
+    t159 = h9_rows;
 #line 108 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    t163 = INT64_C(1);
+    t160 = INT64_C(1);
 #line 108 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    t164 = *(HeroArrayHeader * const *)hero_array_at(t162, t163);
+    t161 = *(HeroArrayHeader * const *)hero_array_at(t159, t160);
 #line 108 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    t165 = hero_array_len(t164);
+    t162 = hero_array_len(t161);
 #line 108 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    t166 = HERO_STR_LIT(hero_str_20);
+    t163 = HERO_STR_LIT(hero_str_20);
 #line 108 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    t167 = h9_rows;
+    t164 = h9_rows;
 #line 108 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    t168 = INT64_C(1);
+    t165 = INT64_C(1);
 #line 108 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    t169 = *(HeroArrayHeader * const *)hero_array_at(t167, t168);
+    t166 = *(HeroArrayHeader * const *)hero_array_at(t164, t165);
 #line 108 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    t170 = INT64_C(2);
+    t167 = INT64_C(2);
 #line 108 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    t171 = *(uint8_t const *)hero_array_at(t169, t170);
+    t168 = *(uint8_t const *)hero_array_at(t166, t167);
 #line 108 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    hero_print_int(t160);
+    hero_print_int(t157);
 #line 108 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    hero_print_str(t161);
+    hero_print_str(t158);
 #line 108 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    hero_print_int(t165);
+    hero_print_int(t162);
 #line 108 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    hero_print_str(t166);
+    hero_print_str(t163);
 #line 108 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    hero_print_int(t171);
+    hero_print_int(t168);
 #line 108 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     hero_print_end();
 #line 109 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    t172 = hero_array_new(&hero_desc_u8, 1);
+    t169 = hero_array_new(&hero_desc_u8, 1);
 #line 109 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    t213 = h25_own25;
+    t209 = h24_own24;
 #line 109 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    h25_own25 = t172;
-#line 1351 "fixedbugs396abuffercfills.c"
-    hero_array_decref(t213);
+    h24_own24 = t169;
+#line 1330 "fixedbugs396abuffercfills.c"
+    hero_array_decref(t209);
 #line 109 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    t214 = h11_late;
-#line 1355 "fixedbugs396abuffercfills.c"
-    hero_array_incref(t172);
+    t210 = h10_late;
+#line 1334 "fixedbugs396abuffercfills.c"
+    hero_array_incref(t169);
 #line 109 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    h11_late = t172;
-#line 1359 "fixedbugs396abuffercfills.c"
-    hero_array_decref(t214);
+    h10_late = t169;
+#line 1338 "fixedbugs396abuffercfills.c"
+    hero_array_decref(t210);
 #line 110 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    t173 = h_fixedbugs396abuffercfills_inner;
+    t170 = h_fixedbugs396abuffercfills_inner;
 #line 110 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     {
 #line 110 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
@@ -1366,171 +1345,168 @@ bb0:
 #line 110 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     int64_t hero_lend_e121_0 = INT64_C(16);
 #line 110 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    void *hero_lend_b121_0 = hero_lend_take(h11_late, hero_lend_e121_0, "fill_after", "md");
+    void *hero_lend_b121_0 = hero_lend_take(h10_late, hero_lend_e121_0, "fill_after", "md");
 #line 110 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    (void)fill_after((void *)hero_lend_b121_0, (h_0fn_294870dd)hero_callback_of((void (*)(void))t173));
+    (void)fill_after((void *)hero_lend_b121_0, (h_0fn_294870dd)hero_callback_of((void (*)(void))t170));
 #line 110 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    h11_late = hero_lend_give(h11_late, hero_lend_b121_0, hero_lend_e121_0);
+    h10_late = hero_lend_give(h10_late, hero_lend_b121_0, hero_lend_e121_0);
 #line 110 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     }
 #line 111 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    t174 = h11_late;
+    t171 = h10_late;
 #line 111 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    t175 = hero_array_len(t174);
+    t172 = hero_array_len(t171);
 #line 111 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    t176 = HERO_STR_LIT(hero_str_20);
+    t173 = HERO_STR_LIT(hero_str_20);
 #line 111 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    t177 = h11_late;
+    t174 = h10_late;
 #line 111 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    t178 = INT64_C(15);
+    t175 = INT64_C(15);
 #line 111 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    t179 = *(uint8_t const *)hero_array_at(t177, t178);
+    t176 = *(uint8_t const *)hero_array_at(t174, t175);
 #line 111 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    hero_print_int(t175);
+    hero_print_int(t172);
 #line 111 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    hero_print_str(t176);
+    hero_print_str(t173);
 #line 111 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    hero_print_int(t179);
+    hero_print_int(t176);
 #line 111 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     hero_print_end();
 #line 112 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    t180 = hero_array_new(&hero_desc_u8, 1);
+    t177 = hero_array_new(&hero_desc_u8, 1);
 #line 112 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    t215 = h26_own26;
+    t211 = h25_own25;
 #line 112 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    h26_own26 = t180;
-#line 1403 "fixedbugs396abuffercfills.c"
-    hero_array_decref(t215);
+    h25_own25 = t177;
+#line 1382 "fixedbugs396abuffercfills.c"
+    hero_array_decref(t211);
 #line 112 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    t216 = h12_big;
-#line 1407 "fixedbugs396abuffercfills.c"
-    hero_array_incref(t180);
+    t212 = h11_big;
+#line 1386 "fixedbugs396abuffercfills.c"
+    hero_array_incref(t177);
 #line 112 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    h12_big = t180;
-#line 1411 "fixedbugs396abuffercfills.c"
-    hero_array_decref(t216);
+    h11_big = t177;
+#line 1390 "fixedbugs396abuffercfills.c"
+    hero_array_decref(t212);
 #line 113 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    t181 = UINT64_C(16777216);
+    t178 = UINT64_C(16777216);
 #line 113 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     {
 #line 113 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     _Static_assert((__builtin_types_compatible_p(__typeof__(*(void *)0), unsigned char) && sizeof(unsigned char) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(void *)0), unsigned short) && sizeof(unsigned short) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(void *)0), unsigned int) && sizeof(unsigned int) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(void *)0), unsigned long) && sizeof(unsigned long) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(void *)0), unsigned long long) && sizeof(unsigned long long) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(void *)0), char) && (char)-1 > 0) || __builtin_types_compatible_p(__typeof__(*(void *)0), void), "heroes-ffi-buffer fill_void buf 1332 1335 u8 void *");
 #line 113 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    int64_t hero_lend_e127_0 = hero_lend_count_u64((uint64_t)(t181), "fill_void", "buf");
+    int64_t hero_lend_e127_0 = hero_lend_count_u64((uint64_t)(t178), "fill_void", "buf");
 #line 113 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    void *hero_lend_b127_0 = hero_lend_take(h12_big, hero_lend_e127_0, "fill_void", "buf");
+    void *hero_lend_b127_0 = hero_lend_take(h11_big, hero_lend_e127_0, "fill_void", "buf");
 #line 113 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    t182 = fill_void((void *)hero_lend_b127_0, t181);
+    t179 = fill_void((void *)hero_lend_b127_0, t178);
 #line 113 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    h12_big = hero_lend_give(h12_big, hero_lend_b127_0, hero_lend_e127_0);
+    h11_big = hero_lend_give(h11_big, hero_lend_b127_0, hero_lend_e127_0);
 #line 113 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     }
 #line 113 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
+    t180 = HERO_STR_LIT(hero_str_20);
+#line 113 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
+    t181 = h11_big;
+#line 113 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
+    t182 = hero_array_len(t181);
+#line 113 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     t183 = HERO_STR_LIT(hero_str_20);
 #line 113 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    t184 = h12_big;
+    t184 = h11_big;
 #line 113 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    t185 = hero_array_len(t184);
+    t185 = INT64_C(16777215);
 #line 113 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    t186 = HERO_STR_LIT(hero_str_20);
+    t186 = *(uint8_t const *)hero_array_at(t184, t185);
 #line 113 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    t187 = h12_big;
+    hero_print_int(t179);
 #line 113 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    t188 = INT64_C(16777215);
-#line 113 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    t189 = *(uint8_t const *)hero_array_at(t187, t188);
+    hero_print_str(t180);
 #line 113 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     hero_print_int(t182);
 #line 113 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     hero_print_str(t183);
 #line 113 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    hero_print_int(t185);
-#line 113 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    hero_print_str(t186);
-#line 113 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    hero_print_int(t189);
+    hero_print_int(t186);
 #line 113 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     hero_print_end();
-#line 1455 "fixedbugs396abuffercfills.c"
+#line 1434 "fixedbugs396abuffercfills.c"
     hero_array_decref(h0_md);
 #line 113 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-#line 1458 "fixedbugs396abuffercfills.c"
+#line 1437 "fixedbugs396abuffercfills.c"
     hero_array_decref(h1_before);
 #line 113 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-#line 1461 "fixedbugs396abuffercfills.c"
+#line 1440 "fixedbugs396abuffercfills.c"
     hero_array_decref(h2_named);
 #line 113 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-#line 1464 "fixedbugs396abuffercfills.c"
+#line 1443 "fixedbugs396abuffercfills.c"
     hero_array_decref(h3_bytes);
 #line 113 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-#line 1467 "fixedbugs396abuffercfills.c"
+#line 1446 "fixedbugs396abuffercfills.c"
     hero_array_decref(h4_ints);
 #line 113 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-#line 1470 "fixedbugs396abuffercfills.c"
+#line 1449 "fixedbugs396abuffercfills.c"
     hero_array_decref(h5_pairs);
 #line 113 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-#line 1473 "fixedbugs396abuffercfills.c"
+#line 1452 "fixedbugs396abuffercfills.c"
     hero_array_decref(h6_reals);
 #line 113 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-#line 1476 "fixedbugs396abuffercfills.c"
+#line 1455 "fixedbugs396abuffercfills.c"
     hero_array_decref(h7_small);
 #line 113 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-#line 1479 "fixedbugs396abuffercfills.c"
+#line 1458 "fixedbugs396abuffercfills.c"
     h_fixedbugs396abuffercfills_Holder_release(&h8_h);
 #line 113 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-#line 1482 "fixedbugs396abuffercfills.c"
+#line 1461 "fixedbugs396abuffercfills.c"
     hero_array_decref(h9_rows);
 #line 113 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-#line 1485 "fixedbugs396abuffercfills.c"
-    hero_array_decref(h10_e0);
+#line 1464 "fixedbugs396abuffercfills.c"
+    hero_array_decref(h10_late);
 #line 113 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-#line 1488 "fixedbugs396abuffercfills.c"
-    hero_array_decref(h11_late);
+#line 1467 "fixedbugs396abuffercfills.c"
+    hero_array_decref(h11_big);
 #line 113 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-#line 1491 "fixedbugs396abuffercfills.c"
-    hero_array_decref(h12_big);
+#line 1470 "fixedbugs396abuffercfills.c"
+    hero_array_decref(h12_own12);
 #line 113 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-#line 1494 "fixedbugs396abuffercfills.c"
+#line 1473 "fixedbugs396abuffercfills.c"
     hero_array_decref(h13_own13);
 #line 113 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-#line 1497 "fixedbugs396abuffercfills.c"
+#line 1476 "fixedbugs396abuffercfills.c"
     hero_array_decref(h14_own14);
 #line 113 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-#line 1500 "fixedbugs396abuffercfills.c"
+#line 1479 "fixedbugs396abuffercfills.c"
     hero_array_decref(h15_own15);
 #line 113 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-#line 1503 "fixedbugs396abuffercfills.c"
+#line 1482 "fixedbugs396abuffercfills.c"
     hero_array_decref(h16_own16);
 #line 113 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-#line 1506 "fixedbugs396abuffercfills.c"
+#line 1485 "fixedbugs396abuffercfills.c"
     hero_array_decref(h17_own17);
 #line 113 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-#line 1509 "fixedbugs396abuffercfills.c"
+#line 1488 "fixedbugs396abuffercfills.c"
     hero_array_decref(h18_own18);
 #line 113 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-#line 1512 "fixedbugs396abuffercfills.c"
+#line 1491 "fixedbugs396abuffercfills.c"
     hero_array_decref(h19_own19);
 #line 113 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-#line 1515 "fixedbugs396abuffercfills.c"
-    hero_array_decref(h20_own20);
+#line 1494 "fixedbugs396abuffercfills.c"
+    h_fixedbugs396abuffercfills_Holder_release(&h20_own20);
 #line 113 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-#line 1518 "fixedbugs396abuffercfills.c"
-    h_fixedbugs396abuffercfills_Holder_release(&h21_own21);
+#line 1497 "fixedbugs396abuffercfills.c"
+    hero_array_decref(h21_own21);
 #line 113 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-#line 1521 "fixedbugs396abuffercfills.c"
+#line 1500 "fixedbugs396abuffercfills.c"
     hero_array_decref(h22_own22);
 #line 113 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-#line 1524 "fixedbugs396abuffercfills.c"
+#line 1503 "fixedbugs396abuffercfills.c"
     hero_array_decref(h23_own23);
 #line 113 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-#line 1527 "fixedbugs396abuffercfills.c"
+#line 1506 "fixedbugs396abuffercfills.c"
     hero_array_decref(h24_own24);
 #line 113 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-#line 1530 "fixedbugs396abuffercfills.c"
+#line 1509 "fixedbugs396abuffercfills.c"
     hero_array_decref(h25_own25);
-#line 113 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-#line 1533 "fixedbugs396abuffercfills.c"
-    hero_array_decref(h26_own26);
     return;
 }
 HERO_TU_LOCAL bool h_fixedbugs396abuffercfills_Pair_eq(const struct pair *a, const struct pair *b) {

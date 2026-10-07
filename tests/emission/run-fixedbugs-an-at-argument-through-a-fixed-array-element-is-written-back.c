@@ -130,39 +130,35 @@ void h_fixedbugsanatargumentthroughafixedarrayelementiswrittenback_main(void);
 #line 25 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
 void h_fixedbugsanatargumentthroughafixedarrayelementiswrittenback_inc(int64_t *ph0_x) {
 #line 133 "fixedbugsanatargumentthroughafixedarrayelementiswrittenback.c"
-    int64_t h0_x;
     int64_t t1;
     int64_t t2;
     int64_t t3;
-    h0_x = *ph0_x;
     goto bb0;
 bb0:
 #line 26 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
-    t1 = h0_x;
+    t1 = (*ph0_x);
 #line 26 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
     t2 = INT64_C(1);
 #line 26 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
     if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow();
 #line 26 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
-    h0_x = t3;
-#line 149 "fixedbugsanatargumentthroughafixedarrayelementiswrittenback.c"
-    *ph0_x = h0_x;
+    (*ph0_x) = t3;
+#line 26 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
     return;
+#line 149 "fixedbugsanatargumentthroughafixedarrayelementiswrittenback.c"
 }
 
 #line 28 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
 void h_fixedbugsanatargumentthroughafixedarrayelementiswrittenback_widen(struct cell *ph0_c) {
-#line 156 "fixedbugsanatargumentthroughafixedarrayelementiswrittenback.c"
-    struct cell h0_c;
+#line 154 "fixedbugsanatargumentthroughafixedarrayelementiswrittenback.c"
     struct cell t1;
     int64_t t2;
     int64_t t3;
     int64_t t4;
-    h0_c = *ph0_c;
     goto bb0;
 bb0:
 #line 29 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
-    t1 = h0_c;
+    t1 = (*ph0_c);
 #line 29 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
     t2 = t1.w;
 #line 29 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
@@ -170,20 +166,16 @@ bb0:
 #line 29 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
     if (__builtin_mul_overflow(t2, t3, &t4)) hero_panic_overflow();
 #line 29 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
-    h0_c.w = t4;
-#line 175 "fixedbugsanatargumentthroughafixedarrayelementiswrittenback.c"
-    *ph0_c = h0_c;
+    (*ph0_c).w = t4;
+#line 29 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
     return;
+#line 173 "fixedbugsanatargumentthroughafixedarrayelementiswrittenback.c"
 }
 
 #line 31 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
 void h_fixedbugsanatargumentthroughafixedarrayelementiswrittenback_main(void) {
-#line 182 "fixedbugsanatargumentthroughafixedarrayelementiswrittenback.c"
+#line 178 "fixedbugsanatargumentthroughafixedarrayelementiswrittenback.c"
     struct holder h0_h;
-    int64_t h1_e0;
-    int64_t h2_e1;
-    struct cell h3_e2;
-    int64_t h4_e3;
     int64_t t1;
     int64_t t2;
     struct cell t3;
@@ -199,48 +191,35 @@ void h_fixedbugsanatargumentthroughafixedarrayelementiswrittenback_main(void) {
     int64_t t14;
     struct holder t16;
     int64_t t17;
-    struct holder t18;
+    int64_t t18;
+    int64_t t19;
     int64_t t20;
-    int64_t t21;
-    int64_t t22;
-    struct holder t23;
-    struct cell t25;
-    int64_t t26;
-    int64_t t27;
+    struct holder t21;
+    int64_t t23;
+    int64_t t24;
+    HeroStr t25;
+    struct holder t26;
     int64_t t28;
-    struct holder t29;
-    struct cell t31;
-    struct cell t32;
+    int64_t t29;
+    HeroStr t30;
+    struct holder t31;
     int64_t t33;
-    struct holder t34;
-    int64_t t36;
-    int64_t t37;
-    struct holder t38;
+    int64_t t34;
+    HeroStr t35;
+    struct holder t36;
+    int64_t t38;
+    struct cell t39;
     int64_t t40;
-    int64_t t41;
-    HeroStr t42;
-    struct holder t43;
-    int64_t t45;
+    HeroStr t41;
+    struct holder t42;
+    int64_t t44;
+    struct cell t45;
     int64_t t46;
     HeroStr t47;
     struct holder t48;
     int64_t t50;
-    int64_t t51;
-    HeroStr t52;
-    struct holder t53;
-    int64_t t55;
-    struct cell t56;
-    int64_t t57;
-    HeroStr t58;
-    struct holder t59;
-    int64_t t61;
-    struct cell t62;
-    int64_t t63;
-    HeroStr t64;
-    struct holder t65;
-    int64_t t67;
-    struct cell t68;
-    int64_t t69;
+    struct cell t51;
+    int64_t t52;
     goto bb0;
 bb0:
 #line 32 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
@@ -276,75 +255,61 @@ bb0:
 #line 33 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
     t17 = INT64_C(2);
 #line 33 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
-    t18 = h0_h;
-#line 33 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
-    t20 = t18.a[((uint64_t)(t17) >= UINT64_C(4) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t17))];
-#line 33 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
-    h1_e0 = t20;
-#line 33 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
-    h_fixedbugsanatargumentthroughafixedarrayelementiswrittenback_inc(&h1_e0);
-#line 33 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
-    t21 = h1_e0;
-#line 33 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
-    h0_h.a[((uint64_t)(t17) >= UINT64_C(4) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t17))] = t21;
+    h_fixedbugsanatargumentthroughafixedarrayelementiswrittenback_inc(&h0_h.a[((uint64_t)(t17) >= UINT64_C(4) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t17))]);
 #line 34 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
-    t22 = INT64_C(1);
+    t18 = INT64_C(1);
 #line 34 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
-    t23 = h0_h;
-#line 34 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
-    t25 = t23.xs[((uint64_t)(t22) >= UINT64_C(3) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t22))];
-#line 34 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
-    t26 = t25.v;
-#line 34 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
-    h2_e1 = t26;
-#line 34 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
-    h_fixedbugsanatargumentthroughafixedarrayelementiswrittenback_inc(&h2_e1);
-#line 34 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
-    t27 = h2_e1;
-#line 34 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
-    h0_h.xs[((uint64_t)(t22) >= UINT64_C(3) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t22))].v = t27;
+    h_fixedbugsanatargumentthroughafixedarrayelementiswrittenback_inc(&h0_h.xs[((uint64_t)(t18) >= UINT64_C(3) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t18))].v);
 #line 35 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
-    t28 = INT64_C(2);
+    t19 = INT64_C(2);
 #line 35 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
-    t29 = h0_h;
-#line 35 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
-    t31 = t29.xs[((uint64_t)(t28) >= UINT64_C(3) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t28))];
-#line 35 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
-    h3_e2 = t31;
-#line 35 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
-    h_fixedbugsanatargumentthroughafixedarrayelementiswrittenback_widen(&h3_e2);
-#line 35 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
-    t32 = h3_e2;
-#line 35 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
-    h0_h.xs[((uint64_t)(t28) >= UINT64_C(3) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t28))] = t32;
+    h_fixedbugsanatargumentthroughafixedarrayelementiswrittenback_widen(&h0_h.xs[((uint64_t)(t19) >= UINT64_C(3) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t19))]);
 #line 36 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
-    t33 = INT64_C(0);
+    t20 = INT64_C(0);
 #line 36 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
-    t34 = h0_h;
-#line 36 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
-    t36 = t34.a[((uint64_t)(t33) >= UINT64_C(4) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t33))];
-#line 36 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
-    h4_e3 = t36;
-#line 36 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
-    (void)put_seven((void *)&h4_e3);
-#line 36 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
-    t37 = h4_e3;
-#line 36 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
-    h0_h.a[((uint64_t)(t33) >= UINT64_C(4) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t33))] = t37;
+    (void)put_seven((void *)&h0_h.a[((uint64_t)(t20) >= UINT64_C(4) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t20))]);
 #line 37 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
-    t38 = h0_h;
+    t21 = h0_h;
 #line 37 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
-    t40 = INT64_C(0);
+    t23 = INT64_C(0);
 #line 37 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
-    t41 = t38.a[((uint64_t)(t40) >= UINT64_C(4) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t40))];
+    t24 = t21.a[((uint64_t)(t23) >= UINT64_C(4) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t23))];
 #line 37 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
-    t42 = HERO_STR_LIT(hero_str_20);
+    t25 = HERO_STR_LIT(hero_str_20);
 #line 37 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
-    t43 = h0_h;
+    t26 = h0_h;
 #line 37 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
-    t45 = INT64_C(1);
+    t28 = INT64_C(1);
 #line 37 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
-    t46 = t43.a[((uint64_t)(t45) >= UINT64_C(4) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t45))];
+    t29 = t26.a[((uint64_t)(t28) >= UINT64_C(4) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t28))];
+#line 37 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
+    t30 = HERO_STR_LIT(hero_str_20);
+#line 37 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
+    t31 = h0_h;
+#line 37 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
+    t33 = INT64_C(2);
+#line 37 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
+    t34 = t31.a[((uint64_t)(t33) >= UINT64_C(4) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t33))];
+#line 37 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
+    t35 = HERO_STR_LIT(hero_str_20);
+#line 37 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
+    t36 = h0_h;
+#line 37 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
+    t38 = INT64_C(1);
+#line 37 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
+    t39 = t36.xs[((uint64_t)(t38) >= UINT64_C(3) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t38))];
+#line 37 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
+    t40 = t39.v;
+#line 37 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
+    t41 = HERO_STR_LIT(hero_str_20);
+#line 37 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
+    t42 = h0_h;
+#line 37 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
+    t44 = INT64_C(2);
+#line 37 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
+    t45 = t42.xs[((uint64_t)(t44) >= UINT64_C(3) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t44))];
+#line 37 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
+    t46 = t45.v;
 #line 37 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
     t47 = HERO_STR_LIT(hero_str_20);
 #line 37 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
@@ -352,64 +317,36 @@ bb0:
 #line 37 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
     t50 = INT64_C(2);
 #line 37 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
-    t51 = t48.a[((uint64_t)(t50) >= UINT64_C(4) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t50))];
+    t51 = t48.xs[((uint64_t)(t50) >= UINT64_C(3) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t50))];
 #line 37 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
-    t52 = HERO_STR_LIT(hero_str_20);
+    t52 = t51.w;
 #line 37 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
-    t53 = h0_h;
+    hero_print_int(t24);
 #line 37 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
-    t55 = INT64_C(1);
+    hero_print_str(t25);
 #line 37 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
-    t56 = t53.xs[((uint64_t)(t55) >= UINT64_C(3) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t55))];
+    hero_print_int(t29);
 #line 37 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
-    t57 = t56.v;
+    hero_print_str(t30);
 #line 37 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
-    t58 = HERO_STR_LIT(hero_str_20);
+    hero_print_int(t34);
 #line 37 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
-    t59 = h0_h;
+    hero_print_str(t35);
 #line 37 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
-    t61 = INT64_C(2);
+    hero_print_int(t40);
 #line 37 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
-    t62 = t59.xs[((uint64_t)(t61) >= UINT64_C(3) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t61))];
-#line 37 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
-    t63 = t62.v;
-#line 37 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
-    t64 = HERO_STR_LIT(hero_str_20);
-#line 37 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
-    t65 = h0_h;
-#line 37 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
-    t67 = INT64_C(2);
-#line 37 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
-    t68 = t65.xs[((uint64_t)(t67) >= UINT64_C(3) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t67))];
-#line 37 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
-    t69 = t68.w;
-#line 37 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
-    hero_print_int(t41);
-#line 37 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
-    hero_print_str(t42);
+    hero_print_str(t41);
 #line 37 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
     hero_print_int(t46);
 #line 37 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
     hero_print_str(t47);
 #line 37 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
-    hero_print_int(t51);
-#line 37 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
-    hero_print_str(t52);
-#line 37 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
-    hero_print_int(t57);
-#line 37 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
-    hero_print_str(t58);
-#line 37 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
-    hero_print_int(t63);
-#line 37 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
-    hero_print_str(t64);
-#line 37 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
-    hero_print_int(t69);
+    hero_print_int(t52);
 #line 37 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
     hero_print_end();
 #line 37 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
     return;
-#line 413 "fixedbugsanatargumentthroughafixedarrayelementiswrittenback.c"
+#line 350 "fixedbugsanatargumentthroughafixedarrayelementiswrittenback.c"
 }
 HERO_TU_LOCAL bool h_fixedbugsanatargumentthroughafixedarrayelementiswrittenback_Cell_eq(const struct cell *a, const struct cell *b) {
     if (!(a->v == b->v)) return false;

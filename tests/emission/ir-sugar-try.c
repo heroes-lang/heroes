@@ -209,7 +209,6 @@ bb4:
 #line 12 "tests/golden/ir/sugar-try.hero"
 h_0opt_e201354 h_sugartry_step(h_sugartry_Reader *ph0_r, HeroArrayHeader * h1_xs) {
 #line 212 "sugartry.c"
-    h_sugartry_Reader h0_r;
     h_0opt_e201354 h2_f0 = {0};
     int64_t h3_v;
     h_0opt_e201354 h4_ret0 = {0};
@@ -238,7 +237,6 @@ h_0opt_e201354 h_sugartry_step(h_sugartry_Reader *ph0_r, HeroArrayHeader * h1_xs
     h_0opt_e201354 t20;
     h_0opt_e201354 t21;
     h_0opt_e201354 t22;
-    h0_r = *ph0_r;
     goto bb0;
 bb0:
 #line 13 "tests/golden/ir/sugar-try.hero"
@@ -249,15 +247,15 @@ bb0:
     t19 = h5_own5;
 #line 13 "tests/golden/ir/sugar-try.hero"
     h5_own5 = t2;
-#line 253 "sugartry.c"
+#line 251 "sugartry.c"
     h_0opt_e201354_release(&t19);
 #line 13 "tests/golden/ir/sugar-try.hero"
     t20 = h2_f0;
-#line 257 "sugartry.c"
+#line 255 "sugartry.c"
     h_0opt_e201354_retain(&t2);
 #line 13 "tests/golden/ir/sugar-try.hero"
     h2_f0 = t2;
-#line 261 "sugartry.c"
+#line 259 "sugartry.c"
     h_0opt_e201354_release(&t20);
 #line 13 "tests/golden/ir/sugar-try.hero"
     t3 = h2_f0;
@@ -278,7 +276,7 @@ bb1:
 #line 13 "tests/golden/ir/sugar-try.hero"
     h3_v = t11;
 #line 14 "tests/golden/ir/sugar-try.hero"
-    t12 = h0_r;
+    t12 = (*ph0_r);
 #line 14 "tests/golden/ir/sugar-try.hero"
     t13 = t12.f_pos;
 #line 14 "tests/golden/ir/sugar-try.hero"
@@ -286,7 +284,7 @@ bb1:
 #line 14 "tests/golden/ir/sugar-try.hero"
     if (__builtin_add_overflow(t13, t14, &t15)) hero_panic_overflow();
 #line 14 "tests/golden/ir/sugar-try.hero"
-    h0_r.f_pos = t15;
+    (*ph0_r).f_pos = t15;
 #line 15 "tests/golden/ir/sugar-try.hero"
     t16 = h3_v;
 #line 15 "tests/golden/ir/sugar-try.hero"
@@ -295,7 +293,7 @@ bb1:
     t21 = h6_own6;
 #line 15 "tests/golden/ir/sugar-try.hero"
     h6_own6 = t17;
-#line 299 "sugartry.c"
+#line 297 "sugartry.c"
     h_0opt_e201354_release(&t21);
 #line 15 "tests/golden/ir/sugar-try.hero"
     h4_ret0 = t17;
@@ -307,7 +305,7 @@ bb2:
     t7 = h2_f0;
 #line 13 "tests/golden/ir/sugar-try.hero"
     t8 = t7.as.err;
-#line 311 "sugartry.c"
+#line 309 "sugartry.c"
     hero_failure_retain(&t8);
 #line 13 "tests/golden/ir/sugar-try.hero"
     t9 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t8};
@@ -315,7 +313,7 @@ bb2:
     t22 = h7_own7;
 #line 13 "tests/golden/ir/sugar-try.hero"
     h7_own7 = t9;
-#line 319 "sugartry.c"
+#line 317 "sugartry.c"
     h_0opt_e201354_release(&t22);
 #line 13 "tests/golden/ir/sugar-try.hero"
     h4_ret0 = t9;
@@ -323,23 +321,21 @@ bb2:
     goto bb3;
 #line 13 "tests/golden/ir/sugar-try.hero"
 bb3:
-#line 327 "sugartry.c"
-    *ph0_r = h0_r;
 #line 12 "tests/golden/ir/sugar-try.hero"
     t18 = h4_ret0;
-#line 331 "sugartry.c"
+#line 327 "sugartry.c"
     h_0opt_e201354_retain(&t18);
 #line 12 "tests/golden/ir/sugar-try.hero"
-#line 334 "sugartry.c"
+#line 330 "sugartry.c"
     h_0opt_e201354_release(&h2_f0);
 #line 12 "tests/golden/ir/sugar-try.hero"
-#line 337 "sugartry.c"
+#line 333 "sugartry.c"
     h_0opt_e201354_release(&h5_own5);
 #line 12 "tests/golden/ir/sugar-try.hero"
-#line 340 "sugartry.c"
+#line 336 "sugartry.c"
     h_0opt_e201354_release(&h6_own6);
 #line 12 "tests/golden/ir/sugar-try.hero"
-#line 343 "sugartry.c"
+#line 339 "sugartry.c"
     h_0opt_e201354_release(&h7_own7);
     return t18;
 }
