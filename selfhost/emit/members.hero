@@ -23,7 +23,7 @@ use ir/phases
 use emit
 use emit/ctype
 use emit/types
-use emit/func_ref
+use ir/instances
 
 # The tables every TU shares, built ONCE for the whole build.
 #
@@ -45,7 +45,7 @@ record Whole
     # Declaration index -> function index, for ORDINARY functions only.
     # A call names its callee by declaration; a TU has to turn that into
     # the function whose prototype it owes, and a linear search per call
-    # is what `instance_index` already costs for the generic ones.
+    # is what `instances.index_of` already costs for the generic ones.
     by_decl: {i64: i64}
     # Every type's flags (`phases.type_kinds`), read by each TU's loops
     # over the arena: found here once where every TU walked every type as
@@ -119,21 +119,12 @@ function members(module: str, p: containers.Program, c: state.Checked, s: source
             for inst in blk.insts
                 match inst.op
                     .call cl =>
-                        instance: [i64] @ []
-                        on_copy = f.call_instances[inst.span.end]
-
-                        if !on_copy.is_err()
-                            instance @ on_copy.must()
-                        else
-                            recorded = c.instantiations[inst.span.end]
-
-                            if !recorded.is_err()
-                                instance @ recorded.must()
-
                         match cl.callee
                             .heroes_fn hf =>
+                                instance = instances.named_at(f, c, at: inst.span.end)
+
                                 if instance.len() > 0
-                                    found = instance_index(p, decl: hf.decl, instance: instance)
+                                    found = instances.index_of(p, decl: hf.decl, instance: instance)
 
                                     if !found.is_err() && taken[found.must()].is_err()
                                         taken[found.must()] @ true
@@ -147,7 +138,7 @@ function members(module: str, p: containers.Program, c: state.Checked, s: source
 
                                     if !ordinary.is_err()
                                         declared[ordinary.must()] @ true
-                            .extern_fn | .builtin_fn | .indirect => instance @ instance
+                            .extern_fn | .builtin_fn | .indirect => continue
                     # A function VALUE names its target without calling
                     # it, and C needs the name declared just the same —
                     # `xs.fold(0, add)` puts `&h_m_add` in a temporary. A
@@ -160,10 +151,10 @@ function members(module: str, p: containers.Program, c: state.Checked, s: source
                     .func_ref fr =>
                         match fr.callee
                             .heroes_fn hf =>
-                                named = func_ref.instance_at(f, c, at: inst.span.end)
+                                named = instances.named_at(f, c, at: inst.span.end)
 
                                 if named.len() > 0
-                                    found = instance_index(p, decl: hf.decl, instance: named)
+                                    found = instances.index_of(p, decl: hf.decl, instance: named)
 
                                     if !found.is_err() && taken[found.must()].is_err()
                                         taken[found.must()] @ true
@@ -185,30 +176,6 @@ function members(module: str, p: containers.Program, c: state.Checked, s: source
         declared[at] @ true
 
     return Members(defined: sort(keys(taken)), needed: sort(keys(declared)))
-
-# The instance of `decl` at exactly these type arguments, if the mono
-# pass created one.
-function instance_index(p: containers.Program, decl: i64, instance: [i64]) -> i64?
-    index: i64 @ 0
-
-    for f in p.functions
-        if f.decl == decl && same_list(a: f.instance, b: instance)
-            return ok(index)
-        index @ index + 1
-
-    return fail(code: "none", msg: "no such instance")
-
-function same_list(a: [i64], b: [i64]) -> bool
-    if a.len() != b.len()
-        return false
-    at: i64 @ 0
-
-    while at < a.len()
-        if a[at] != b[at]
-            return false
-        at @ at + 1
-
-    return true
 
 # The types a TU must DECLARE, closed the way C reads them rather than
 # the way the arena holds them.

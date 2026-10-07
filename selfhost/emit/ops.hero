@@ -14,6 +14,7 @@ use check/state
 use check/freer as freer
 use ir
 use ir/containers
+use ir/instances
 use inventory
 use emit/mangle
 use emit/ctype
@@ -55,16 +56,13 @@ function call(@w: writer.Writer, p: containers.Program, f: containers.Function, 
             # a defect: "hero_unreachable" as a NAME emitted arguments
             # handed to a zero-argument _Noreturn, exit 2, the compiler
             # blaming itself (panel 084's class).
-            found: str? @ fail(code: "none", msg: "no instance")
-
-            for candidate in p.functions
-                if candidate.decl == h.decl && candidate.instance == instance
-                    found @ ok(signature.instance_name(candidate, c, s, decls))
+            found = instances.index_of(p, decl: h.decl, instance: instance)
 
             if found.is_err()
                 writer.line(@w, text: "    hero_unreachable(); /* no instance for this call — compiler bug */")
             else
-                writer.line(@w, text: "    " + assign + found.must() + "(" + arguments.join(", ") + ");")
+                named = signature.instance_name(p.functions[found.must()], c, s, decls)
+                writer.line(@w, text: "    " + assign + named + "(" + arguments.join(", ") + ");")
         .builtin_fn bt =>
             builtin_name = inventory.table()[bt.at].name
 

@@ -108,6 +108,16 @@ function union_assertions(@w: writer.Writer, p: containers.Program, c: state.Che
             .record_decl rec =>
                 if rec.header.is_err()
                     continue
+
+                # A HANDLE is asked nothing (defect 419, 2026-10-07). It has no
+                # field, so it is never built from two, and its `==` and hash
+                # read its address, never a member's bytes. Its C type is a
+                # pointer, so the assertion it was given here classified a
+                # pointer and held for every handle, one over a union too;
+                # asked of the pointee instead, it fires on such a handle and
+                # refuses a program that compares two addresses correctly.
+                if rec.fields.len() == 0
+                    continue
                 c_type = ctype.of(names, decl: decl)
                 not_union = "__builtin_classify_type(*(" + c_type + " *)0) != 13"
 
@@ -139,15 +149,7 @@ function union_assertions(@w: writer.Writer, p: containers.Program, c: state.Che
 
                 # Compared, hashed or a map key (R3): each declared field
                 # compares bit for bit and is as wide as the union, or the
-                # walk reads bytes that may hold another member. A handle
-                # has no field and is C's pointer, which is never a union.
-                if !u.operated[decl].is_err() && rec.fields.len() == 0
-                    writer.line(
-                        @w,
-                        text: "_Static_assert(" + not_union + ", \"" + UNION_ASSERTION + " " + hero_name + " \");"
-                    )
-                    wrote @ true
-
+                # walk reads bytes that may hold another member.
                 if !u.operated[decl].is_err()
                     for field in rec.fields
                         name = source.span_text(s, field.name)
@@ -375,3 +377,21 @@ test "constructed and compared records are asked, read-only ones are not"
     # The premise-death pair rides along whenever anything was asked.
     assert has(text: got, needle: "a union must classify as 13")
     assert has(text: got, needle: "a struct must classify as 12")
+
+test "a compared handle asks C nothing, a union's handle included (defect 419)"
+    # A handle's C type is `H *`: classifying it answers "pointer" whatever
+    # `H` is, and the handle's `==` reads that pointer. No assertion, no
+    # `#line` for one, and no premise pair riding on its account.
+    text = "extern \"m.h\"\n    record H tag H\n    function h_at() -> H\n\nfunction main()\n    a = h_at()\n    b = h_at()\n    print(a == b)\n    print([a] == [b])\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    c: state.Checked @ checker.check(parsed.tree, out, s, parsed.decls)
+    assert c.diagnostics.len() == 0
+    low = lower.lower(parsed.tree, out, c, s, parsed.decls)
+    names = ctype.new_names(s, parsed.decls)
+    w: writer.Writer @ writer.new_writer("t")
+    union_assertions(@w, low.program, c, names, s, parsed.decls)
+    got = writer.finish(w)
+    assert !has(text: got, needle: "_Static_assert")
+    assert !has(text: got, needle: "#line")
