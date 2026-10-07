@@ -1,0 +1,223 @@
+# The `@` arguments of one call kept so far, as a tree of their steps, and
+# the first of them a new one may reach (design.md §4.8; panels 010, 110;
+# defect 260).
+#
+# `resolve/writes.refuse_aliased_places` asked `overlaps` of each `@`
+# argument against every earlier one, so a call of `n` of them made
+# `n (n - 1) / 2` comparisons, each a walk of two lists of steps: 319,600 on
+# one call of 800, and at 3,200 fields the comparisons were six tenths of the
+# whole `check`. Here the places kept are one tree, root step first, and a
+# new place walks it once, asking at each node the three facts `overlaps`
+# reads off two places, about every place below that node at once:
+#
+# - a place that ENDS at a node the walk passes is a prefix of the new one;
+# - where the new place's step is undecided (`[?]`), every place going on
+#   below through a decided step differs from it there undecidedly, and one
+#   going on through `[?]` is the same so far;
+# - where the new step is decided, every place going on through `[?]`
+#   differs from it there undecidedly, one through the same step is the same
+#   so far, and one through another decided step is proved apart;
+#
+# and where the new place ends, every place through that node has it as a
+# prefix. Each node keeps, for each fact, the FIRST place it holds, which is
+# the least, since places are kept in the order of their arguments: the
+# answer is the earliest overlapping place, the one `overlaps` met first.
+# So a call costs the steps of its places, each a lookup by name.
+
+# The step this pass cannot decide (`resolve/writes.index_step`). Two of
+# them never prove two places apart, not even against each other: `xs[i]`
+# and `xs[j]` may be one element, and `ast.hero:109` keeps a literal's TEXT
+# rather than its value, decoding being the checker's job, so `xs[0x0]` is a
+# spelling this pass declines to guess at rather than one it reads.
+constant UNDECIDED_STEP: str
+    "[?]"
+
+# One node: the step each child is reached by, and the first place that
+# ends here, that passes through here (ending here or below), and that goes
+# on below through a decided step; -1 where none does.
+record Node
+    next: {str: i64}
+    ended: i64
+    first: i64
+    decided: i64
+
+record Places
+    nodes: [Node]
+
+function new_places() -> Places
+    nodes: [Node] = [blank()]
+    return Places(nodes: nodes)
+
+function blank() -> Node
+    next: {str: i64} = {}
+    return Node(next: next, ended: -1, first: -1, decided: -1)
+
+# The first place kept that `path` may reach, by the order they were kept,
+# or -1 where it reaches none.
+function first_reached(places: Places, path: [str]) -> i64
+    best: i64 @ -1
+    at: i64 @ 0
+
+    for step in path
+        node = places.nodes[at]
+        best @ least(a: best, b: node.ended)
+
+        if step == UNDECIDED_STEP
+            best @ least(a: best, b: node.decided)
+        else
+            undecided = node.next[UNDECIDED_STEP]
+
+            if !undecided.is_err()
+                best @ least(a: best, b: places.nodes[undecided.must()].first)
+        below = node.next[step]
+
+        if below.is_err()
+            return best
+        at @ below.must()
+
+    return least(a: best, b: places.nodes[at].first)
+
+# `path` kept as the place numbered `index`, which is above every number
+# kept before it.
+function keep(@places: Places, path: [str], index: i64)
+    at: i64 @ 0
+
+    for step in path
+        mark(@places.nodes, at: at, index: index, decided: step != UNDECIDED_STEP)
+        below = places.nodes[at].next[step]
+
+        if below.is_err()
+            grow(@places.nodes, one: blank())
+            child = places.nodes.len() - 1
+            places.nodes[at].next[step] @ child
+            at @ child
+        else
+            at @ below.must()
+
+    mark(@places.nodes, at: at, index: index, decided: false)
+
+    if places.nodes[at].ended < 0
+        places.nodes[at].ended @ index
+
+function mark(@nodes: [Node], at: i64, index: i64, decided: bool)
+    if nodes[at].first < 0
+        nodes[at].first @ index
+
+    if decided && nodes[at].decided < 0
+        nodes[at].decided @ index
+
+function grow(@nodes: [Node], one: Node)
+    nodes @ nodes.push(one)
+
+# The lesser of two places' numbers, -1 standing for none.
+function least(a: i64, b: i64) -> i64
+    if a < 0
+        return b
+
+    if b < 0 || a < b
+        return a
+    return b
+
+## Tests
+
+# Whether two places may reach one value, read off the two alone: the rule
+# `writes.refuse_aliased_places` asked of every pair until defect 260. False
+# only where a step proves them apart; a prefix (`@p` against `@p.x`) is an
+# overlap, and so is any pair whose difference is undecided.
+function overlaps(x: [str], y: [str]) -> bool
+    i: i64 @ 0
+
+    while i < x.len() && i < y.len()
+        if x[i] != y[i]
+            return x[i] == UNDECIDED_STEP || y[i] == UNDECIDED_STEP
+        i @ i + 1
+
+    return true
+
+# What the pairwise walk answered for each place of `paths` in turn: the
+# first kept place it overlaps, or -1, and a place that overlaps none is
+# kept.
+function walked(paths: [[str]]) -> [i64]
+    kept: [[str]] @ []
+    out: [i64] @ []
+
+    for path in paths
+        clash: i64 @ -1
+        i: i64 @ 0
+
+        while i < kept.len()
+            if clash < 0 && overlaps(x: kept[i], y: path)
+                clash @ i
+            i @ i + 1
+
+        out @ out.push(clash)
+
+        if clash < 0
+            kept @ kept.push(path)
+
+    return out
+
+# The same, asked of the tree.
+function indexed(paths: [[str]]) -> [i64]
+    places: Places @ new_places()
+    count: i64 @ 0
+    out: [i64] @ []
+
+    for path in paths
+        clash = first_reached(places, path)
+        out @ out.push(clash)
+
+        if clash < 0
+            keep(@places, path, index: count)
+            count @ count + 1
+
+    return out
+
+# Every place of one or two steps under two roots, each step a field, a
+# literal index or the undecided one, and some of three: prefixes, equal
+# places, a difference at the root, at a decided step and at an undecided
+# one, on either side.
+function sample_places() -> [[str]]
+    steps: [str] = [".x", ".y", "[0]", UNDECIDED_STEP]
+    out: [[str]] @ []
+
+    for root in ["#0", "#1"]
+        out @ out.push([root])
+
+        for one in steps
+            out @ out.push([root, one])
+
+            for two in [".x", UNDECIDED_STEP]
+                out @ out.push([root, one, two])
+
+    return out
+
+test "the tree answers what the walk of every pair answered"
+    places = sample_places()
+    assert places.len() == 2 * (1 + 4 + 8)
+    lists: i64 @ 0
+
+    # Every list of up to three places drawn from them, repeats included,
+    # each answered place by place.
+    for a in places
+        assert indexed([a]) == walked([a])
+
+        for b in places
+            assert indexed([a, b]) == walked([a, b])
+
+            for c in places
+                assert indexed([a, b, c]) == walked([a, b, c])
+                lists @ lists + 1
+
+    assert lists == 26 * 26 * 26
+
+test "the first place reached is the earliest that overlaps"
+    # `#0[?]` overlaps `#0.y` and `#0.x`, and the first kept is answered;
+    # `#0.x.z` overlaps `#0.x` alone, `#0.y` proved apart from it.
+    paths: [[str]] = [["#0", ".y"], ["#1"], ["#0", ".x"], ["#0", UNDECIDED_STEP], ["#0", ".x", ".z"]]
+    assert indexed(paths) == [-1, -1, -1, 0, 2]
+    assert indexed(paths) == walked(paths)
+    apart: [[str]] = [["#0", ".x"], ["#0", ".y"], ["#0", "[0]"], ["#0", "[1]"]]
+    assert indexed(apart) == [-1, -1, -1, -1]
+    undecided: [[str]] = [["#0", "[0]"], ["#0", "[1]"], ["#0", UNDECIDED_STEP]]
+    assert indexed(undecided) == [-1, -1, 0]
