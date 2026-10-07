@@ -196,5 +196,77 @@ class Place(unittest.TestCase):
         self.assertEqual([c.split("|")[1] for c in calls(self.trunk)], ["fmt " + module])
 
 
+class Age(unittest.TestCase):
+    """Defect 384: a compiler older than its tree is told as that, never as the
+    file's fault, and only where it refused something."""
+
+    def setUp(self):
+        self.top = fresh("hooks-384-")
+
+    def stale(self, newer="selfhost/lexer.hero"):
+        """A tree whose compiler was built before `newer` was written."""
+        tree = make_tree(os.path.join(self.top, "tree"))
+        write(os.path.join(tree, newer), "# moved\n", T0 + 200)
+        return tree
+
+    def test_an_older_compiler_refusing_a_file_is_told_as_its_age(self):
+        tree = self.stale()
+        case = write(os.path.join(tree, "tests", "harness", "suite_x.hero"), "BROKEN\n")
+        code, said = written(tree, case)
+        self.assertEqual(code, 2, said)
+        self.assertNotIn("does not parse", said)
+        self.assertIn("older than its tree", said)
+        self.assertIn("selfhost/lexer.hero", said)
+        self.assertIn("./heroes build selfhost/main.hero -o heroes", said)
+        self.assertIn("holds BROKEN", said)
+
+    def test_a_seed_newer_than_the_compiler_names_the_seed_and_the_build_from_it(self):
+        tree = self.stale(newer="seed/heroes.c")
+        case = write(os.path.join(tree, "examples", "e.hero"), "BROKEN\n")
+        code, said = written(tree, case)
+        self.assertEqual(code, 2, said)
+        self.assertIn("seed/heroes.c", said)
+        self.assertIn("clang -I runtime seed/heroes.c runtime/runtime.c -o heroes", said)
+
+    def test_an_older_compiler_finding_a_file_not_canonical_is_told_as_its_age(self):
+        tree = self.stale()
+        case = write(os.path.join(tree, "examples", "e.hero"), "UNCANONICAL\n")
+        code, said = written(tree, case)
+        self.assertEqual(code, 2, said)
+        self.assertNotIn("is not canonical", said)
+        self.assertIn("older than its tree", said)
+
+    def test_an_older_compiler_failing_the_whole_check_is_told_as_its_age(self):
+        tree = self.stale()
+        module = write(os.path.join(tree, "selfhost", "y.hero"), "UNCHECKED\n")
+        code, said = written(tree, module)
+        self.assertEqual(code, 2, said)
+        self.assertNotIn("does not check", said)
+        self.assertIn("older than its tree", said)
+
+    def test_the_file_written_is_not_the_age_it_is_the_subject(self):
+        tree = make_tree(os.path.join(self.top, "tree"))
+        module = write(os.path.join(tree, "selfhost", "y.hero"), "BROKEN\n", T0 + 200)
+        code, said = written(tree, module)
+        self.assertEqual(code, 2, said)
+        self.assertTrue(said.startswith("selfhost/y.hero does not parse"), said)
+
+    def test_a_compiler_newer_than_its_tree_is_read_as_its_verdict(self):
+        tree = make_tree(os.path.join(self.top, "tree"), built=T0 + 900)
+        write(os.path.join(tree, "selfhost", "lexer.hero"), "# moved\n", T0 + 200)
+        case = write(os.path.join(tree, "examples", "e.hero"), "BROKEN\n")
+        code, said = written(tree, case)
+        self.assertEqual(code, 2, said)
+        self.assertIn("does not parse", said)
+        self.assertNotIn("older than its tree", said)
+
+    def test_an_older_compiler_accepting_a_file_says_nothing(self):
+        tree = self.stale()
+        case = write(os.path.join(tree, "examples", "e.hero"), "fine\n")
+        code, said = written(tree, case)
+        self.assertEqual(code, 0, said)
+        self.assertEqual(said, "")
+
+
 if __name__ == "__main__":
     unittest.main()
