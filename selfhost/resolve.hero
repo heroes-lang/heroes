@@ -193,3 +193,17 @@ test "an @ handed to a construction is told at the name stage"
         "function g(x: i64) -> i64\n    return x\n\nfunction f() -> i64\n    n: i64 @ 1\n    return g(@n)\n"
     )
     assert called.diagnostics.len() == 0
+
+# Defect 431: an `@` the called function takes none for is the checker's to
+# tell, so the name stage holds it to no rule of the left of `@`; one the
+# function does write back still is.
+test "an @ a function takes none for asks nothing of the name it marks"
+    stray = resolved_source(
+        "function f(x: i64) -> i64\n    return x\n\nfunction g() -> i64\n    p = 1\n    return f(x: @p)\n"
+    )
+    assert stray.diagnostics.len() == 0
+    written = resolved_source(
+        "function f(@x: i64)\n    x @ x + 1\n\nfunction g()\n    p = 1\n    f(@p)\n"
+    )
+    assert written.diagnostics.len() == 1
+    assert written.diagnostics[0].code == "not_mutable"

@@ -1,0 +1,3 @@
+tests/golden/check/fixedbugs-422-a-built-in-written-with-no-binding.hero:8:5: error[no_mutable_globals]: `args` is a built-in, and there are no mutable globals — pass what changes as an `@` parameter
+tests/golden/check/fixedbugs-422-a-built-in-written-with-no-binding.hero:9:5: error[no_mutable_globals]: `range` is a built-in, and there are no mutable globals — pass what changes as an `@` parameter
+tests/golden/check/fixedbugs-422-a-built-in-written-with-no-binding.hero:10:5: error[no_mutable_globals]: `len` is a built-in, and there are no mutable globals — pass what changes as an `@` parameter

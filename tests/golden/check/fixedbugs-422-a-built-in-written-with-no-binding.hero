@@ -1,0 +1,10 @@
+# fixedbugs, defect 422, lane b13-zero401, 2026-10-06: the shape beside it, a
+# built-in's name written where no binding of it stands. The library declares
+# some built-ins (`args`, `range`), and a write to one was told it reached a
+# top-level declaration, where `len`, which the library does not declare,
+# was told it reached a built-in. Both are built-ins, and each is told so.
+
+function main()
+    args @ 2  #~ no_mutable_globals
+    range @ 3  #~ no_mutable_globals
+    len @ 4  #~ no_mutable_globals
