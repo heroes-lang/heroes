@@ -1,0 +1,79 @@
+# The extern records a type reaches BY VALUE, through records, a variant's
+# cases, arrays, fixed arrays, options and maps (design.md §4.19; panels 073,
+# 077 and 186's R3). `emit/extern_union.hero` asks it of every type a program
+# compares, hashes or keys a map by, because `==` on a Heroes record calls its
+# fields' generated eq, so a union any number of levels down is compared by
+# the same wrong walk as one at the top.
+#
+# Its own file since defect 419 (2026-10-07) took `extern_union.hero` past
+# §11's ceiling: what a type reaches is a question about the type, asked
+# before and apart from what is then asserted of each record it names.
+
+use ast
+use check/table
+use check/state
+
+# The extern records a type reaches by value: a SET, which the caller
+# reads sorted, so the order the queue drains in reaches nothing.
+#
+# **TOTAL SINCE DEFECT 140 (2026-10-01).** It stopped at `depth > 16`,
+# saying it was bounded like the checker's partial walk and that a nest of
+# extern records sixteen deep does not exist. The partial walk lost its
+# bound to defect 046 on 2026-09-16, and the nest needs no extern record
+# but the last: `==` over a value holding a union sixteen PLAIN records
+# down was built, measured, and printed `true`, the generated eq reading
+# the union's bytes under two types, where fifteen down was refused. A set
+# of the type ids walked makes it total, and a cyclic generic the old
+# comment feared ends there too, since every id is entered once.
+#
+# `seen` is the CALLER's, one for all its calls (defect 229, 2026-10-03):
+# each call drains its queue, so a type walked before has already put every
+# record it reaches in `out`, and walking it again for each of 2,000 nested
+# map literals cost 4 million steps.
+function reach(@out: {i64: bool}, @seen: {i64: bool}, c: state.Checked, decls: [ast.Decl], ty: i64)
+    queue: [i64] @ [ty]
+    next: i64 @ 0
+
+    while next < queue.len()
+        at = queue[next]
+        next @ next + 1
+
+        if !seen[at].is_err()
+            continue
+        seen[at] @ true
+
+        match table.get(c.types, at)
+            .named n =>
+                out[n.decl] @ true
+
+                match decls[n.decl].kind
+                    .record_decl rec =>
+                        for field in rec.fields
+                            written = state.written_type(c, field.ty)
+
+                            if !written.is_err()
+                                queue @ queue.push(written.must())
+                    # **A VARIANT'S CASES ARE A ROUTE TOO** (2026-10-01,
+                    # found beside defect 140). This arm stopped at a variant,
+                    # so `==` over a variant whose case holds a union was
+                    # built and printed `true`, and a map keyed by one was
+                    # built, the generated eq and hash calling the payload's:
+                    # the transitivity `extern_union.used` states, missed at
+                    # the one kind `check/partial.hero` names as what a list
+                    # of container kinds would miss.
+                    .variant_decl v =>
+                        for one_case in v.cases
+                            for field in one_case.fields
+                                written = state.written_type(c, field.ty)
+
+                                if !written.is_err()
+                                    queue @ queue.push(written.must())
+                    .constant_decl | .function_decl | .test_decl => continue
+            .array a     => queue @ queue.push(a.element)
+            .fixed x     => queue @ queue.push(x.element)
+            .fallible fl => queue @ queue.push(fl.payload)
+            .map m =>
+                queue @ queue.push(m.key)
+                queue @ queue.push(m.value)
+            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => continue
+            .function_ty | .case_ty | .failure | .generic | .error    => continue
