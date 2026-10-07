@@ -1,0 +1,68 @@
+# Defect 481, 2026-10-08 (lane b15-parse). A cost, not a message: the
+# parser's reports a lost quote's line holds were found by reading each
+# lexer report's line to its end, before its code was asked, and by a walk
+# over every lost line for every report, so a string of 4,000 unknown
+# escapes cost `check` 2.66 billion instructions retired and 8,000 lines
+# each with a lost quote 10.5 billion; now 0.77 and 3.73, linear. Cause:
+# `parse/quote_held.held`. Repair: the code is asked first, and the lost
+# stretches are sorted once and searched (`lost_quote.lost_lines`,
+# `lost_quote.holds`). The messages are those of the base, byte for byte:
+# below, a string of unknown escapes, each told, and lines a quote left
+# open, each told once, the report past the quote held and the next line's
+# own mistake told. Each lost line's annotation stands on the line above
+# it, a lost quote's string taking a comment at its line's end.
+
+function g(a: str, b: str) -> str
+    return a
+
+function main()
+    x = "\q\q\q\q\q\q\q\q\q\q\q\q"  #~ unknown_escape unknown_escape unknown_escape unknown_escape unknown_escape unknown_escape unknown_escape unknown_escape unknown_escape unknown_escape unknown_escape unknown_escape
+    print(x)
+    #~v unterminated_string
+    print(g("a, "b"))
+    y0 = 1 2  #~ expected_end_of_line
+    #~v unterminated_string
+    print(g(a: "gate, b: "west"))
+    y1 = 1 2  #~ expected_end_of_line
+    #~v unterminated_string
+    words = ["fn", "struct, "enum", "class"]
+    y2 = 1 2  #~ expected_end_of_line
+    #~v unterminated_string
+    assert g(") == "lines: 0", "x")
+    y3 = 1 2  #~ expected_end_of_line
+    #~v char_literal unterminated_char
+    c = 'a, 'b'
+    y4 = 1 2  #~ expected_end_of_line
+    #~v unterminated_string
+    print(g("a, "b"))
+    y5 = 1 2  #~ expected_end_of_line
+    #~v unterminated_string
+    print(g(a: "gate, b: "west"))
+    y6 = 1 2  #~ expected_end_of_line
+    #~v unterminated_string
+    words = ["fn", "struct, "enum", "class"]
+    y7 = 1 2  #~ expected_end_of_line
+    #~v unterminated_string
+    assert g(") == "lines: 0", "x")
+    y8 = 1 2  #~ expected_end_of_line
+    #~v char_literal unterminated_char
+    c = 'a, 'b'
+    y9 = 1 2  #~ expected_end_of_line
+    #~v unterminated_string
+    print(g("a, "b"))
+    y10 = 1 2  #~ expected_end_of_line
+    #~v unterminated_string
+    print(g(a: "gate, b: "west"))
+    y11 = 1 2  #~ expected_end_of_line
+    #~v unterminated_string
+    words = ["fn", "struct, "enum", "class"]
+    y12 = 1 2  #~ expected_end_of_line
+    #~v unterminated_string
+    assert g(") == "lines: 0", "x")
+    y13 = 1 2  #~ expected_end_of_line
+    #~v char_literal unterminated_char
+    c = 'a, 'b'
+    y14 = 1 2  #~ expected_end_of_line
+    #~v unterminated_string
+    print(g("a, "b"))
+    y15 = 1 2  #~ expected_end_of_line
