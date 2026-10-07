@@ -1,0 +1,680 @@
+# The editor's grammar run as an editor runs it, over the rules that paint a
+# literal's text (defect 377).
+#
+# `suite_spec`'s colouring check read the grammar as TEXT: the members of the
+# first `[…]` in a rule's `match`. That sees a class of letters and nothing
+# else, so the rule panel 192's R5 added for `\u{1b}`, a second rule with the
+# same scope, was outside every instrument, and the lane that landed it tested
+# its pattern with Python alone. A pattern is a program, and what it paints is
+# what it matches: so this reads the grammar's JSON (layout-free, its keys and
+# not its lines) and RUNS a rule list on a text, first match wins, the way a
+# TextMate editor picks between the rules that can start at one place.
+#
+# **A reader, not a regular-expression engine.** It knows what the literal
+# rules use (literals and their escapes, `\xHH`, `.`, classes with ranges and
+# `^`, groups with `|`, the greedy `?` `*` `+` `{n}` `{n,}` `{n,m}`) and it
+# REFUSES the rest by name: an anchor, a lookaround, a back-reference, a lazy or
+# possessive quantifier, a class escape such as `\d`. A construct read as
+# something else is a check that passes on a grammar it never ran, which is
+# the failure the module exists to end; a refusal is red and says what to teach
+# it.
+#
+# **The order is the editor's.** At one place every rule of the list is tried,
+# the earliest start wins and a tie goes to the rule written first. Every rule
+# here is tried at the place where the text in question begins, so the first
+# rule that matches THERE is the one that paints it; a rule that could only
+# match later never wins against one that matches now. The match a rule takes is
+# the one Oniguruma's backtracking takes, the first in its order of preference,
+# which `ends` below lists in that order.
+
+use strings
+
+# A stretch of the grammar's text, `start` up to but not including `stop`.
+record Span
+    start: i64
+    stop: i64
+
+# One rule of a `patterns` list as the editor reads it at one place: what it
+# matches (its `match`, or the `begin` that opens its region), the scope it
+# paints, and whether that scope is a region's rather than the match's own.
+record Rule
+    pattern: str
+    scope: str
+    opens: bool
+
+# What a rule list paints at the start of a text: the scope of the rule that
+# wins there, "" where none matches, and how far its match reaches.
+record Painted
+    scope: str
+    reach: i64
+
+# One item of a pattern: an atom and how often it repeats. `kind` is
+# `literal`, `any`, `class` or `group`; `from` and `to` bound a class's members
+# or a group's alternatives inside the pattern; `max` is -1 for no bound.
+record Item
+    kind: str
+    one: str
+    from: i64
+    to: i64
+    negated: bool
+    min: i64
+    max: i64
+    next: i64
+
+## The grammar's JSON
+
+# The rules of `repository.<name>.patterns`, in order, each include of another
+# rule of the repository read as that rule. An include of `$self` or `$base` is
+# refused: it would bring the whole grammar to one place, which no literal's
+# rules do today, and reading it as nothing would paint by fewer rules than an
+# editor does.
+function rules_of(grammar: str, name: str) -> [Rule]?
+    whole = Span(start: skip_space(text: grammar, at: 0), stop: grammar.len())
+    repository = member(text: grammar, object: whole, key: "repository")?
+    entry = member(text: grammar, object: repository, key: name)?
+    patterns = member(text: grammar, object: entry, key: "patterns")?
+    out: [Rule] @ []
+
+    for element in elements(text: grammar, array: patterns)?
+        included = optional_string(text: grammar, object: element, key: "include")?
+
+        if included.len() == 0
+            out @ out.push(rule_in(text: grammar, object: element)?)
+            continue
+
+        if !strings.starts_with(text: included, prefix: "#")
+            return fail(
+                code: "unread_include",
+                msg: "`" + name + "` includes `" + included + "`, which this reader does not follow"
+            )
+        target = member(text: grammar, object: repository, key: included.slice(from: 1, to: included.len()))?
+        out @ out.push(rule_in(text: grammar, object: target)?)
+
+    return ok(out)
+
+# One rule object: its `match`, else its `begin`; its `name`. A rule with
+# neither pattern is refused, since it paints nothing an editor could start on.
+function rule_in(text: str, object: Span) -> Rule?
+    scope = optional_string(text: text, object: object, key: "name")?
+    matched = optional_string(text: text, object: object, key: "match")?
+
+    if matched.len() > 0
+        return ok(Rule(pattern: matched, scope: scope, opens: false))
+    began = optional_string(text: text, object: object, key: "begin")?
+
+    if began.len() > 0
+        return ok(Rule(pattern: began, scope: scope, opens: true))
+    return fail(
+        code: "no_pattern",
+        msg: "a rule holds neither `match` nor `begin`: " + text.slice(from: object.start, to: object.stop)
+    )
+
+# The string value of `key` in `object`, "" where the key is absent.
+function optional_string(text: str, object: Span, key: str) -> str?
+    found = member(text: text, object: object, key: key)
+
+    if found.is_err()
+        return ok("")
+    return json_string(text: text, value: found.must())
+
+# The value of `key` in the JSON object `object` spans.
+function member(text: str, object: Span, key: str) -> Span?
+    if object.start >= object.stop || text[object.start] != '{'
+        return fail(code: "not_an_object", msg: "`" + key + "` was asked of a value that is not an object")
+    at: i64 @ skip_space(text: text, at: object.start + 1)
+
+    while at < object.stop && text[at] != '}'
+        named = Span(start: at, stop: value_end(text: text, at: at)?)
+        colon = skip_space(text: text, at: named.stop)
+
+        if colon >= object.stop || text[colon] != ':'
+            return fail(code: "malformed", msg: "a key with no `:` after it in the grammar")
+        begins = skip_space(text: text, at: colon + 1)
+        value = Span(start: begins, stop: value_end(text: text, at: begins)?)
+
+        if json_string(text: text, value: named)? == key
+            return ok(value)
+        at @ skip_space(text: text, at: value.stop)
+
+        if at < object.stop && text[at] == ','
+            at @ skip_space(text: text, at: at + 1)
+
+    return fail(code: "absent", msg: "no `" + key + "` in the object")
+
+# The values of the JSON array `array` spans, in order.
+function elements(text: str, array: Span) -> [Span]?
+    if array.start >= array.stop || text[array.start] != '['
+        return fail(code: "not_an_array", msg: "a `patterns` that is not an array")
+    out: [Span] @ []
+    at: i64 @ skip_space(text: text, at: array.start + 1)
+
+    while at < array.stop && text[at] != ']'
+        stop = value_end(text: text, at: at)?
+        out @ out.push(Span(start: at, stop: stop))
+        at @ skip_space(text: text, at: stop)
+
+        if at < array.stop && text[at] == ','
+            at @ skip_space(text: text, at: at + 1)
+
+    return ok(out)
+
+# Past the JSON value that starts at `at`: a string to its closing quote, an
+# object or an array to the bracket that closes it, anything else to the
+# punctuation that ends it. Every cut is at an ASCII byte, so a slice of the
+# grammar never splits the characters above ASCII its comments hold.
+function value_end(text: str, at: i64) -> i64?
+    if at >= text.len()
+        return fail(code: "malformed", msg: "the grammar ends where a value was due")
+
+    if text[at] == '"'
+        return string_end(text: text, at: at)
+
+    if text[at] == '{' || text[at] == '['
+        depth: i64 @ 0
+        i: i64 @ at
+
+        while i < text.len()
+            if text[i] == '"'
+                i @ string_end(text: text, at: i)?
+                continue
+
+            if text[i] == '{' || text[i] == '['
+                depth @ depth + 1
+            else if text[i] == '}' || text[i] == ']'
+                depth @ depth - 1
+
+                if depth == 0
+                    return ok(i + 1)
+            i @ i + 1
+
+        return fail(code: "malformed", msg: "a bracket the grammar never closes")
+    i: i64 @ at
+
+    while i < text.len() && text[i] != ',' && text[i] != '}' && text[i] != ']' && !strings.is_space(text[i])
+        i @ i + 1
+
+    return ok(i)
+
+function string_end(text: str, at: i64) -> i64?
+    i: i64 @ at + 1
+
+    while i < text.len()
+        if text[i] == '\\'
+            i @ i + 2
+            continue
+
+        if text[i] == '"'
+            return ok(i + 1)
+        i @ i + 1
+
+    return fail(code: "malformed", msg: "a string the grammar never closes")
+
+function skip_space(text: str, at: i64) -> i64
+    i: i64 @ at
+
+    while i < text.len() && strings.is_space(text[i])
+        i @ i + 1
+
+    return i
+
+# The JSON string `value` spans, its escapes undone: what the editor hands its
+# regular-expression engine, where the file stores every backslash twice.
+function json_string(text: str, value: Span) -> str?
+    if value.stop - value.start < 2 || text[value.start] != '"'
+        return fail(code: "not_a_string", msg: "a value that is not a string where one was due")
+    cs = text.slice(from: value.start + 1, to: value.stop - 1).chars()
+    out: str @ ""
+    i: i64 @ 0
+
+    while i < cs.len()
+        if cs[i] != "\\"
+            out @ out + cs[i]
+            i @ i + 1
+            continue
+
+        if i + 1 >= cs.len()
+            return fail(code: "malformed", msg: "a string ending in a lone backslash")
+        c = cs[i + 1]
+
+        if c == "\"" || c == "\\" || c == "/"
+            out @ out + c
+        else if c == "n"
+            out @ out + "\n"
+        else if c == "t"
+            out @ out + "\t"
+        else if c == "r"
+            out @ out + "\r"
+        else
+            return fail(code: "unread_escape", msg: "the JSON escape `\\" + c + "`, which this reader does not undo")
+        i @ i + 2
+
+    return ok(out)
+
+## Running a rule list
+
+# What `rules` paint at the start of `text`: the first rule, in the list's
+# order, whose pattern matches there.
+function painted(rules: [Rule], text: str) -> Painted?
+    for rule in rules
+        reached = ends(pattern: rule.pattern, text: text, at: 0)?
+
+        if reached.len() > 0
+            scope = if rule.opens
+                "region " + rule.scope
+            else
+                rule.scope
+            return ok(Painted(scope: scope, reach: reached[0]))
+
+    return ok(Painted(scope: "", reach: 0))
+
+# Every place a match of `pattern` starting at `at` in `text` can end, in the
+# order the backtracking engine prefers them: the first is the match it takes.
+function ends(pattern: str, text: str, at: i64) -> [i64]?
+    p = pattern.chars()
+    return alternatives_ends(p: p, from: 0, to: p.len(), s: text.chars(), at: at)
+
+# The branches of `p[from..to]` split at its own `|`, tried in order.
+function alternatives_ends(p: [str], from: i64, to: i64, s: [str], at: i64) -> [i64]?
+    out: [i64] @ []
+    start: i64 @ from
+    i: i64 @ from
+
+    while i <= to
+        if i == to || p[i] == "|"
+            for one in sequence_ends(p: p, from: start, to: i, s: s, at: at)?
+                out @ kept(out, one)
+
+            start @ i + 1
+            i @ i + 1
+            continue
+
+        # Never past `to`: a pattern ending inside an escape still has its last
+        # branch read, and `item_at` refuses it by name.
+        i @ skip_atom(p: p, at: i, to: to)?
+
+        if i > to
+            i @ to
+
+    return ok(out)
+
+# Past one atom, a class or a group whole, so a `|` inside either is not a
+# branch of the pattern around it.
+function skip_atom(p: [str], at: i64, to: i64) -> i64?
+    if p[at] == "\\"
+        return ok(at + 2)
+
+    if p[at] == "["
+        return ok(class_end(p: p, at: at, to: to)? + 1)
+
+    if p[at] == "("
+        return ok(group_end(p: p, at: at, to: to)? + 1)
+    return ok(at + 1)
+
+# One branch: its items one after another, the places reached so far carried
+# from each to the next in the order of preference.
+function sequence_ends(p: [str], from: i64, to: i64, s: [str], at: i64) -> [i64]?
+    places: [i64] @ [at]
+    i: i64 @ from
+
+    while i < to
+        item = item_at(p: p, at: i, to: to)?
+        next_places: [i64] @ []
+
+        for place in places
+            for one in repeated(p: p, item: item, s: s, at: place, count: 0)?
+                next_places @ kept(next_places, one)
+
+        places @ next_places
+
+        if places.len() == 0
+            return ok(places)
+        i @ item.next
+
+    return ok(places)
+
+# Greedy: one more repetition first, then stopping, the order the engine
+# backtracks in. A repetition that matched nothing ends the loop, as
+# Oniguruma's own empty-loop check does.
+function repeated(p: [str], item: Item, s: [str], at: i64, count: i64) -> [i64]?
+    out: [i64] @ []
+
+    if item.max < 0 || count < item.max
+        for one in once(p: p, item: item, s: s, at: at)?
+            if one != at
+                for further in repeated(p: p, item: item, s: s, at: one, count: count + 1)?
+                    out @ kept(out, further)
+
+    if count >= item.min
+        out @ kept(out, at)
+    return ok(out)
+
+# The places one match of the item's atom can end.
+function once(p: [str], item: Item, s: [str], at: i64) -> [i64]?
+    none: [i64] = []
+
+    if item.kind == "group"
+        return alternatives_ends(p: p, from: item.from, to: item.to, s: s, at: at)
+
+    if at >= s.len()
+        return ok(none)
+
+    if item.kind == "literal" && s[at] == item.one
+        return ok([at + 1])
+
+    if item.kind == "any" && s[at] != "\n"
+        return ok([at + 1])
+
+    if item.kind == "class" && in_class(p: p, from: item.from, to: item.to, c: s[at])? != item.negated
+        return ok([at + 1])
+    return ok(none)
+
+function kept(places: [i64], one: i64) -> [i64]
+    for place in places
+        if place == one
+            return places
+
+    return places.push(one)
+
+# The item that opens at `p[at]`, its quantifier read with it.
+function item_at(p: [str], at: i64, to: i64) -> Item?
+    c = p[at]
+    item: Item @ Item(kind: "literal", one: c, from: 0, to: 0, negated: false, min: 1, max: 1, next: at + 1)
+
+    if c == "\\"
+        item.one @ escaped(p: p, at: at, to: to)?
+        item.next @ escape_end(p: p, at: at)
+    else if c == "."
+        item.kind @ "any"
+    else if c == "["
+        close = class_end(p: p, at: at, to: to)?
+        item.kind @ "class"
+        item.from @ at + 1
+
+        if at + 1 < to && p[at + 1] == "^"
+            item.negated @ true
+            item.from @ at + 2
+        item.to @ close
+        item.next @ close + 1
+    else if c == "("
+        close = group_end(p: p, at: at, to: to)?
+        item.kind @ "group"
+        item.from @ at + 1
+
+        if at + 1 < to && p[at + 1] == "?"
+            if at + 2 >= to || p[at + 2] != ":"
+                return fail(
+                    code: "unread",
+                    msg: "`(?" + shown_at(p: p, at: at + 2, to: to) + "`, a lookaround or an option, which this reader does not run"
+                )
+            item.from @ at + 3
+        item.to @ close
+        item.next @ close + 1
+    else if c == "^" || c == "$"
+        return fail(code: "unread", msg: "the anchor `" + c + "`, which this reader does not run")
+    else if c == "*" || c == "+" || c == "?" || c == "{" || c == ")"
+        return fail(code: "unread", msg: "`" + c + "` with nothing before it to repeat or close")
+    return quantified(p: p, item: item, to: to)
+
+# The quantifier after an atom, if any. A lazy `?` or a possessive `+` after
+# one is refused: the order of preference it asks for is not the one `repeated`
+# keeps.
+function quantified(p: [str], item: Item, to: i64) -> Item?
+    out: Item @ item
+    at = item.next
+
+    if at >= to
+        return ok(out)
+    q = p[at]
+
+    if q == "*" || q == "+" || q == "?"
+        out.min @ 0
+        out.max @ -1
+
+        if q == "+"
+            out.min @ 1
+
+        if q == "?"
+            out.max @ 1
+        out.next @ at + 1
+    else if q == "{"
+        close: i64 @ at + 1
+
+        while close < to && p[close] != "}"
+            close @ close + 1
+
+        if close >= to
+            return fail(code: "unread", msg: "a `{` that opens no count")
+        bounds = strings.split_text(text: p.slice(from: at + 1, to: close).join(""), separator: ",")
+        out.min @ strings.to_number(bounds[0])?
+        out.max @ out.min
+
+        if bounds.len() == 2 && bounds[1].len() == 0
+            out.max @ -1
+        else if bounds.len() == 2
+            out.max @ strings.to_number(bounds[1])?
+        else if bounds.len() != 1
+            return fail(code: "unread", msg: "the count `{" + bounds.join(",") + "}`")
+        out.next @ close + 1
+    else
+        return ok(out)
+
+    if out.next < to && (p[out.next] == "?" || p[out.next] == "+")
+        return fail(code: "unread", msg: "a lazy or possessive quantifier, which this reader does not run")
+    return ok(out)
+
+# The one character `\…` at `p[at]` stands for: `\xHH` by its code, and any
+# other character but a letter or a digit as itself. A letter or a digit names
+# a class, an anchor or a back-reference, each refused.
+function escaped(p: [str], at: i64, to: i64) -> str?
+    if at + 1 >= to
+        return fail(code: "unread", msg: "a pattern ending in a lone backslash")
+    c = p[at + 1]
+
+    if c == "x"
+        if at + 3 >= to
+            return fail(code: "unread", msg: "`\\x` without its two digits")
+        code = hex_value(p[at + 2]) * 16 + hex_value(p[at + 3])
+
+        if code < 0 || hex_value(p[at + 2]) < 0 || hex_value(p[at + 3]) < 0 || code > 127
+            return fail(
+                code: "unread",
+                msg: "`\\x" + p[at + 2] + p[at + 3] + "`, which this reader reads only below 0x80"
+            )
+        return ok(ascii.slice(from: code - 32, to: code - 31))
+
+    if c.len() == 1 && is_alnum(c[0])
+        return fail(
+            code: "unread",
+            msg: "`\\" + c + "`, a class, an anchor or a reference, which this reader does not run"
+        )
+    return ok(c)
+
+function escape_end(p: [str], at: i64) -> i64
+    if at + 1 < p.len() && p[at + 1] == "x"
+        return at + 4
+    return at + 2
+
+# The `]` that closes the class opening at `p[at]`. A `]` first in it is a
+# member, as in Oniguruma; a `[` inside it is a nested class or a POSIX
+# bracket, refused.
+function class_end(p: [str], at: i64, to: i64) -> i64?
+    i: i64 @ at + 1
+
+    if i < to && p[i] == "^"
+        i @ i + 1
+
+    if i < to && p[i] == "]"
+        i @ i + 1
+
+    while i < to
+        if p[i] == "\\"
+            i @ escape_end(p: p, at: i)
+            continue
+
+        if p[i] == "["
+            return fail(code: "unread", msg: "a class inside a class, which this reader does not run")
+
+        if p[i] == "]"
+            return ok(i)
+        i @ i + 1
+
+    return fail(code: "unread", msg: "a class the pattern never closes")
+
+# The `)` that closes the group opening at `p[at]`.
+function group_end(p: [str], at: i64, to: i64) -> i64?
+    depth: i64 @ 0
+    i: i64 @ at
+
+    while i < to
+        if p[i] == "\\"
+            i @ escape_end(p: p, at: i)
+            continue
+
+        if p[i] == "["
+            i @ class_end(p: p, at: i, to: to)? + 1
+            continue
+
+        if p[i] == "("
+            depth @ depth + 1
+        else if p[i] == ")"
+            depth @ depth - 1
+
+            if depth == 0
+                return ok(i)
+        i @ i + 1
+
+    return fail(code: "unread", msg: "a group the pattern never closes")
+
+# Whether `c` is a member of the class `p[from..to]`: single characters,
+# escaped ones, and ranges between two of them, compared by code.
+function in_class(p: [str], from: i64, to: i64, c: str) -> bool?
+    code = code_of(c)
+    i: i64 @ from
+
+    while i < to
+        low = class_member(p: p, at: i, to: to)?
+        i @ next_member(p: p, at: i)
+
+        if i + 1 < to && p[i] == "-"
+            high = class_member(p: p, at: i + 1, to: to)?
+            i @ next_member(p: p, at: i + 1)
+
+            if code >= code_of(low) && code <= code_of(high)
+                return ok(true)
+            continue
+
+        if code == code_of(low)
+            return ok(true)
+
+    return ok(false)
+
+function class_member(p: [str], at: i64, to: i64) -> str?
+    if p[at] == "\\"
+        return escaped(p: p, at: at, to: to)
+    return ok(p[at])
+
+function next_member(p: [str], at: i64) -> i64
+    if p[at] == "\\"
+        return escape_end(p: p, at: at)
+    return at + 1
+
+## Characters
+
+# The printable ASCII characters from the space, so a code below 0x80 names
+# its character by a slice rather than by a conversion the language lacks.
+constant ascii: str
+    " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"
+
+# One character's code, from its UTF-8 bytes.
+function code_of(c: str) -> i64
+    if c.len() == 0
+        return -1
+    first = to_i64(c[0]).must()
+
+    if c.len() == 1
+        return first
+    value: i64 @ first & 127 >> c.len()
+    i: i64 @ 1
+
+    while i < c.len()
+        value @ value * 64 + (to_i64(c[i]).must() & 63)
+        i @ i + 1
+
+    return value
+
+function hex_value(c: str) -> i64
+    if c.len() != 1
+        return -1
+    b = to_i64(c[0]).must()
+
+    if b >= 48 && b <= 57
+        return b - 48
+
+    if b >= 97 && b <= 102
+        return b - 87
+
+    if b >= 65 && b <= 70
+        return b - 55
+    return -1
+
+function is_alnum(b: u8) -> bool
+    return b >= '0' && b <= '9' || b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z'
+
+function shown_at(p: [str], at: i64, to: i64) -> str
+    if at >= to
+        return ""
+    return p[at]
+
+test "a pattern is run, and the match taken is the one the engine prefers"
+    assert ends(pattern: "\\\\[ntr\\\\\"]", text: "\\nz", at: 0).must() == [2]
+    assert ends(pattern: "\\\\[ntr\\\\\"]", text: "\\'z", at: 0).must().len() == 0
+    code = "\\\\u\\{[1-9a-f][0-9a-f]{0,5}\\}"
+    assert ends(pattern: code, text: "\\u{1b}z", at: 0).must() == [6]
+    assert ends(pattern: code, text: "\\u{1B}z", at: 0).must().len() == 0
+    assert ends(pattern: code, text: "\\u{01b}z", at: 0).must().len() == 0
+    assert ends(pattern: code, text: "\\u{10ffff}z", at: 0).must() == [10]
+    assert ends(pattern: code, text: "\\u{1b00000}z", at: 0).must().len() == 0
+
+    # Greedy and backtracking: `[^']*` takes the most it can, then gives back
+    # what the closing quote needs.
+    assert ends(pattern: "'[^']*'", text: "'ab'c'", at: 0).must() == [4]
+    assert ends(pattern: "a*", text: "aab", at: 0).must() == [2, 1, 0]
+    assert ends(pattern: "(?:ab|a)b", text: "abz", at: 0).must() == [2]
+    assert ends(pattern: "\\{\\{|\\}\\}", text: "}}", at: 0).must() == [2]
+    assert ends(pattern: "'[\\x20-\\x7E]'", text: "'~'", at: 0).must() == [3]
+    assert ends(pattern: "'[\\x20-\\x7E]'", text: "'\t'", at: 0).must().len() == 0
+    assert ends(pattern: "x{2,}", text: "xxxy", at: 0).must() == [3, 2]
+
+test "a construct the reader does not know is refused, never read as another"
+    assert ends(pattern: "(?<![A-Za-z0-9_])f\"", text: "f\"", at: 0).is_err()
+    assert ends(pattern: "\\bif\\b", text: "if", at: 0).is_err()
+    assert ends(pattern: "^\\s*##", text: "##", at: 0).is_err()
+    assert ends(pattern: "a*?", text: "aa", at: 0).is_err()
+    assert ends(pattern: "[[:alpha:]]", text: "a", at: 0).is_err()
+    assert ends(pattern: "(ab", text: "ab", at: 0).is_err()
+    assert ends(pattern: "a\\", text: "a", at: 0).is_err()
+    assert ends(pattern: "a|\\x4", text: "a", at: 0).is_err()
+
+test "a rule list is read from the JSON by its keys, whatever its layout"
+    one_line = "{\"repository\": {\"s\": {\"patterns\": [{\"match\": \"\\\\\\\\[nt]\", \"name\": \"esc\"}, {\"include\": \"#hole\"}, {\"match\": \"\\\\\\\\.\", \"name\": \"bad\"}]}, \"hole\": {\"begin\": \"\\\\{\", \"end\": \"\\\\}\"}}}"
+    rules = rules_of(grammar: one_line, name: "s").must()
+    assert rules.len() == 3
+    assert rules[0].pattern == "\\\\[nt]"
+    assert rules[1].opens
+    assert painted(rules: rules, text: "\\nz").must().scope == "esc"
+    assert painted(rules: rules, text: "\\qz").must().scope == "bad"
+    assert painted(rules: rules, text: "{z").must().scope == "region "
+    assert painted(rules: rules, text: "z").must().scope == ""
+    spread = "{\n  \"repository\": {\n    \"s\": {\n      \"comment\": \"a [xy] class in prose\",\n      \"patterns\": [\n        {\n          \"name\": \"esc\",\n          \"match\": \"\\\\\\\\[nt]\"\n        }\n      ]\n    }\n  }\n}\n"
+    assert rules_of(grammar: spread, name: "s").must()[0].pattern == "\\\\[nt]"
+    assert rules_of(grammar: spread, name: "absent").is_err()
+    selfish = "{\"repository\": {\"s\": {\"patterns\": [{\"include\": \"$self\"}]}}}"
+    assert rules_of(grammar: selfish, name: "s").is_err()
+
+test "a code is read from its bytes"
+    assert code_of("a") == 97
+    assert code_of("é") == 233
+    assert code_of("€") == 8364
+    assert code_of("😀") == 128512
+    assert hex_value("f") == 15
+    assert hex_value("g") == -1
