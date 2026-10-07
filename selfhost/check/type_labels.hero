@@ -29,7 +29,7 @@ use source
 use parse
 use resolve
 use check/decls as check_decls
-use check/table
+use check/type_fit
 use check/state
 use data_errors
 
@@ -78,7 +78,7 @@ function judge(@c: state.Checker, a: ast.Ast, s: source.Source, decls: [ast.Decl
         # program that reads them the other way round compiles and prints the
         # wrong answer. The name is what lets the type say it, and
         # `check/generics.hero` is what checks it.
-        if table.shared_at(lowered, at: i) && !named && missing.is_err()
+        if type_fit.shared_at(lowered, at: i) && !named && missing.is_err()
 
             # The FIRST unnamed one only: a type whose three parameters are all
             # `str` is one mistake with one repair, and saying it three times
