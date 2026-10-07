@@ -44,6 +44,7 @@ use ir/phases
 use ir/one_exit
 use ir/agree
 use ir/instances
+use ir/callees
 
 # Whether this function's implementation is C's: an extern function's
 # code, or an extern constant's value (§4.19, panel 038). Both have no
@@ -92,7 +93,7 @@ function verify(p: containers.Program, c: state.Checked, decls: [ast.Decl]) -> [
             check_terminator(f, blk, at: at, problems: @problems)
             check_preds(jumps, index: index, blk: blk, at: at, problems: @problems)
             check_instructions(f, blk, at: at, problems: @problems)
-            check_named(p, f, blk, c, held: held, at: at, problems: @problems)
+            callees.check(p, f, blk, c, held: held, at: at, problems: @problems)
             check_copy_out(f, blk, at: at, problems: @problems)
             check_return_type(f, blk, c, at: at, problems: @problems)
             phases.check(p, f, blk, c, known: known, label: at, problems: @problems)
@@ -162,16 +163,10 @@ function check_instructions(f: containers.Function, blk: containers.Block, at: s
         # refused to emit its own source.
         match inst.op
             .missing => is_missing @ true
-            # A built-in is a shape the emitter expands and never a symbol, so
-            # one named as a value has no C (`emit/func_ref.hero`); the checker
-            # refuses it as `builtin_as_value` (defect 417's neighbour).
             .func_ref fr =>
                 match fr.callee
-                    .indirect               => problems @ problems.push(at + "the address of an address")
-                    .builtin_fn             => problems @ problems.push(
-                        at + "a built-in named as a value, which C has no name for"
-                    )
-                    .heroes_fn | .extern_fn => is_abort @ is_abort
+                    .indirect                             => problems @ problems.push(at + "the address of an address")
+                    .heroes_fn | .extern_fn | .builtin_fn => is_abort @ is_abort
             # An `@` argument's place runs through an index only at a CALL,
             # since panel 196's R1 handed C an element's own address: the
             # emitter unshares the array right before a call and nowhere
@@ -226,65 +221,6 @@ function check_instructions(f: containers.Function, blk: containers.Block, at: s
                 problems @ problems.push(at + "names slot " + slot.to_str() + ", which does not exist")
 
         index @ index + 1
-
-# A Heroes callee the emitter could not name (defect 417, 2026-10-07): a call,
-# or a function used as a value, whose declaration at the type arguments the
-# instruction names is no function of the program. The emitter's answer to
-# one was `hero_unreachable()` where it stood, so the program built at exit 0
-# and aborted on reaching that line, saying the compiler was wrong. It is the
-# compiler's fault all the same, and it is said here, at build time and before
-# any C, with the instruction's bytes, by the lookup the emitter names it with
-# (`ir/instances.hero`), read from an index of the program built once per
-# verification. Asked once monomorphisation has run: before it a generic call
-# names type arguments no copy holds yet.
-function check_named(p: containers.Program, f: containers.Function, blk: containers.Block, c: state.Checked, held: instances.Index, at: str, @problems: [str])
-    if !after_mono(p.phase)
-        return
-
-    for inst in blk.insts
-        what: str @ ""
-        decl: i64 @ 0 - 1
-
-        match inst.op
-            .call cl =>
-                match cl.callee
-                    .heroes_fn h =>
-                        what @ "a call"
-                        decl @ h.decl
-                    .extern_fn | .builtin_fn | .indirect => what @ what
-            .func_ref fr =>
-                match fr.callee
-                    .heroes_fn h =>
-                        what @ "a function value"
-                        decl @ h.decl
-                    .extern_fn | .builtin_fn | .indirect => what @ what
-            .lit | .load | .store | .push_owned | .unary | .binary | .cast | .construct => what @ what
-            .field | .index | .map_get | .len_of | .tag_of | .payload                   => what @ what
-            .copy_out | .abort_op | .incref | .decref | .decref_slot | .hole | .missing => what @ what
-
-        if decl >= 0
-            named = instances.named_at(f, c, at: inst.span.end)
-
-            if instances.index_in(held, decl: decl, instance: named).is_err()
-                problems @ problems.push(
-                    at + what + " at bytes " + inst.span.start.to_str() + " to " + inst.span.end.to_str() + " names " + callee_name(p, decl: decl) + " at the types " + render_list(named) + ", and the program holds no such function: C would have no name for it"
-                )
-
-function after_mono(phase: containers.Phase) -> bool
-    match phase
-        .lowered       => return false
-        .mono | .owned => return true
-
-    return false
-
-# The callee's source name, from any copy of it the program holds, or its
-# declaration's index where it holds none: the verifier has no source text.
-function callee_name(p: containers.Program, decl: i64) -> str
-    for f in p.functions
-        if f.decl == decl
-            return "`" + f.name + "`"
-
-    return "declaration " + decl.to_str()
 
 # §4.8: copy-out happens ALWAYS. Every block that returns must write
 # back every @ parameter — WHICH parameters, not how many: this check

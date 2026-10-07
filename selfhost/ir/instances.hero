@@ -88,6 +88,16 @@ function index_in(ix: Index, decl: i64, instance: [i64]) -> i64?
 
     return fail(code: "none", msg: "no function of this declaration at these type arguments")
 
+# The type arguments as a message writes them, their type ids in brackets:
+# the verifier holds no source text to spell a type with.
+function spelled(instance: [i64]) -> str
+    parts: [str] @ []
+
+    for one in instance
+        parts @ parts.push(one.to_str())
+
+    return "[" + parts.join(", ") + "]"
+
 ## Tests
 
 test "a call names its callee at the type arguments the checker recorded"
