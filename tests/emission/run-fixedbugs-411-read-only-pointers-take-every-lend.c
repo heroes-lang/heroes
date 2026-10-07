@@ -82,11 +82,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs411readonlypointer
 #line 16 "tests/golden/run/fixedbugs-411-read-only-pointers-take-every-lend.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs411readonlypointerstakeeverylend_r_void(const char * a0) { (void)(r_void)(a0); }
 #line 17 "tests/golden/run/fixedbugs-411-read-only-pointers-take-every-lend.hero"
-__attribute__((unused)) static void hero_ffi_probe_h_fixedbugs411readonlypointerstakeeverylend_r_typedef(const char * a0) { (void)(r_typedef)(a0); }
+__attribute__((unused)) static void hero_ffi_probe_h_fixedbugs411readonlypointerstakeeverylend_r_typedef(const char * a0) { (void)(r_typedef)((hero_text)a0); }
 #line 18 "tests/golden/run/fixedbugs-411-read-only-pointers-take-every-lend.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs411readonlypointerstakeeverylend_r_const_pointer(const char * a0) { (void)(r_const_pointer)(a0); }
 #line 19 "tests/golden/run/fixedbugs-411-read-only-pointers-take-every-lend.hero"
-__attribute__((unused)) static void hero_ffi_probe_h_fixedbugs411readonlypointerstakeeverylend_r_volatile(const char * a0) { (void)(r_volatile)(a0); }
+__attribute__((unused)) static void hero_ffi_probe_h_fixedbugs411readonlypointerstakeeverylend_r_volatile(const char * a0) { (void)(r_volatile)((const volatile char *)a0); }
 #line 20 "tests/golden/run/fixedbugs-411-read-only-pointers-take-every-lend.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugs411readonlypointerstakeeverylend_r_array(const char * a0) { (void)(r_array)(a0); }
 #line 21 "tests/golden/run/fixedbugs-411-read-only-pointers-take-every-lend.hero"
@@ -217,7 +217,7 @@ bb0:
 #line 28 "tests/golden/run/fixedbugs-411-read-only-pointers-take-every-lend.hero"
     t12 = hero_str_lend(t11);
 #line 28 "tests/golden/run/fixedbugs-411-read-only-pointers-take-every-lend.hero"
-    t13 = r_typedef(hero_cstr_nonnull(t12));
+    t13 = r_typedef((hero_text)hero_cstr_nonnull(t12));
 #line 28 "tests/golden/run/fixedbugs-411-read-only-pointers-take-every-lend.hero"
     hero_print_int(t13);
 #line 28 "tests/golden/run/fixedbugs-411-read-only-pointers-take-every-lend.hero"
@@ -237,7 +237,7 @@ bb0:
 #line 30 "tests/golden/run/fixedbugs-411-read-only-pointers-take-every-lend.hero"
     t18 = hero_str_lend(t17);
 #line 30 "tests/golden/run/fixedbugs-411-read-only-pointers-take-every-lend.hero"
-    t19 = r_volatile(hero_cstr_nonnull(t18));
+    t19 = r_volatile((const volatile char *)hero_cstr_nonnull(t18));
 #line 30 "tests/golden/run/fixedbugs-411-read-only-pointers-take-every-lend.hero"
     hero_print_int(t19);
 #line 30 "tests/golden/run/fixedbugs-411-read-only-pointers-take-every-lend.hero"

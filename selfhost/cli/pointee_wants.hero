@@ -64,6 +64,13 @@ function pointees(p: containers.Program, c: state.Checked, s: source.Source, dec
                 )
             index @ index + 1
 
+        # The count a read-only lend's question is asked under (defect 411),
+        # and whether the header gives a prototype at all (defect 426).
+        if f.params.len() > 0
+            out @ out.push(
+                pointee_ask.Pointee(name: name, param: "", index: f.params.len(), declared: pointee_ask.ARITY, file: found.file, line: found.line, depth: false)
+            )
+
     return out
 
 # A `cstr` parameter that is not `@` (defect 411): whatever reaches it, a
@@ -213,7 +220,7 @@ test "a numeric @ parameter is asked its width, an opaque one its depth, and eac
     # `@line: ptr` is opaque and asks for depth (defect 083); `@n: i32` and `@e: i32`
     # are numeric and ask for width; `stream: ptr` and `x: f64` are not `@` and ask
     # nothing.
-    assert named == ["getline.line@0:ptr:2:depth", "getline.n@1:int32_t:2:width", "frexp.e@1:int32_t:3:width"]
+    assert named == ["getline.line@0:ptr:2:depth", "getline.n@1:int32_t:2:width", "getline.@3:arity:2:width", "frexp.e@1:int32_t:3:width", "frexp.@2:arity:3:width"]
 
 # Panel 194's R7: a counted parameter asks its unit, a `ptr` and a record lent
 # whole alike; a record lent whole with no count asks whether C takes it as
@@ -232,10 +239,11 @@ test "a lend asks the unit of a counted parameter, and a record lent whole with 
         if one.file == "t.hero"
             named @ named.push(one.name + "." + one.param + "@" + one.index.to_str() + ":" + one.declared)
 
-    assert sort(named) == ["eat.h@0:handle", "fill.p@0:unit", "plain.buf@0:whole", "read_into.buf@0:unit"]
+    assert sort(named) == ["eat.@1:arity", "eat.h@0:handle", "fill.@2:arity", "fill.p@0:unit", "plain.@2:arity", "plain.buf@0:whole", "read_into.@2:arity", "read_into.buf@0:unit", "show.@1:arity"]
 
 # Defect 411: a `cstr` that is not `@` asks whether the header's pointer points
-# at `const` bytes, `lent` or not; a `@cstr` cell and a `ptr` ask nothing of it.
+# at `const` bytes, `lent` or not, under the declaration's count of parameters;
+# a `@cstr` cell and a `ptr` ask nothing of it.
 test "a cstr parameter asks whether its pointer points at const bytes, and a cstr cell does not"
     text = "extern \"s.h\"\n    function free(p: ptr)\n    function digest(md: cstr lent, n: u64, key: cstr) -> i32\n    function name_of(@out: cstr owned free, p: ptr) -> i32\n\nfunction main()\n    print(1)\n"
     parsed = parse.parse(text)
@@ -250,4 +258,4 @@ test "a cstr parameter asks whether its pointer points at const bytes, and a cst
         if one.file == "t.hero"
             named @ named.push(one.name + "." + one.param + "@" + one.index.to_str() + ":" + one.declared)
 
-    assert sort(named) == ["digest.key@2:read", "digest.md@0:read"]
+    assert sort(named) == ["digest.@3:arity", "digest.key@2:read", "digest.md@0:read", "free.@1:arity", "name_of.@2:arity"]

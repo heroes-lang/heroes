@@ -22,3 +22,15 @@ extern "string.h"
 
 function main()
     print(strtok(target: "a,b".cstr(), sep: ",".cstr(), pad: "".cstr()) == nullptr)
+
+# NOTE, 2026-10-07 (lane b13-w411): this binding carries a second mistake,
+# and it is told after the first, on purpose. C11's `strtok` writes its first
+# argument, so `target: cstr lent` is defect 411's shape, and since that repair
+# the pointee check asks the header whether each `cstr` parameter points at
+# `const` bytes. It asks by POSITION, and with three parameters declared where
+# the header has two, which header parameter `target` stands for is unknown:
+# `f(a: cstr lent, b: cstr lent)` against `int f(char *x, const char *a, const
+# char *b)` would be told that `a` may be written, which is false. So the
+# question waits for the counts to agree (`emit/ffi_read_only.hero`,
+# `lend_answers`), this case is told its count alone, and the build after the
+# count is repaired tells `target`.

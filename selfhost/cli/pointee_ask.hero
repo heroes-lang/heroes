@@ -7,10 +7,11 @@
 # asking and reading is the one worth keeping.
 #
 # `declared` is a C type for a width ask, `ptr` or `handle` for a depth ask,
-# and one of the three words below for the asks a LEND makes (panel 194's R7,
+# and one of the words below for the asks a LEND makes (panel 194's R7,
 # defects 092 and 395; defect 411): what unit C counts a `counted_by`
 # parameter in, whether a whole record lent with `@` and no count reaches a
-# `void *`, and whether a `cstr`'s pointer points at `const` bytes.
+# `void *`, and whether a `cstr`'s pointer points at `const` bytes, with the
+# count of parameters it is asked under.
 record Pointee
     name: str
     param: str
@@ -32,9 +33,16 @@ constant WHOLE: str
 
 # A `cstr` parameter that is not `@`: what `s.cstr()`, a lease or a literal
 # lends it is read-only, so the header's pointer must point at `const` bytes
-# (defect 411, `emit/ffi_mutable.hero`).
+# (defect 411, `emit/ffi_read_only.hero`).
 constant READ: str
     "read"
+
+# How many parameters the declaration gives, in `index`, asked of every
+# function with one: its parameters stand for the header's only where the two
+# counts agree, and a header that gives the function no prototype is refused
+# (`emit/ffi_read_only.hero`, defects 411 and 426).
+constant ARITY: str
+    "arity"
 
 # The same ask once the header has answered: what its parameter points at,
 # as the header's own type text (`size_t`, `void`, `struct opaque`). Built by

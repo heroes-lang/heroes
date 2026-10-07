@@ -1,0 +1,8 @@
+error[ffi_writable_parameter]: `b` of `w_second` is declared `cstr`, and the header says `unsigned char *` — C does not promise to leave it alone
+  at tests/golden/unsupported/fixedbugs-428-the-written-parameter-of-two-is-told-on-its-name.hero:14:37
+     |
+  14 |     function w_second(a: cstr lent, b: cstr lent) -> i32  #~ ffi_writable_parameter
+     |                                     ^
+  note: §4.20: `s.cstr()` lends the string's own bytes, and they may be shared with other values — a C write through them changes values this program never passed to C, and on a literal it aborts
+  note: declare it `ptr` and give `w_second` a buffer C owns, then read the result back
+  fix (guess): declare it `ptr`

@@ -1,0 +1,21 @@
+# FIXED DEFECT 411, its shape through a function pointer, found 2026-10-07 in
+# lane b13-w411 while attacking defect 426.
+#
+# SYMPTOM: a header that hands a function out as a function pointer VARIABLE,
+# `int32_t (*fp_write)(unsigned char *)`, bound `fp_write(p: cstr lent)`: exit
+# 0, and C wrote the `str` a copy shared (`Zbc`), after 411's repair.
+#
+# CAUSE: the pointee check's dump declared `extern __typeof__(fp_write)`, a
+# variable whose parameters the dump does not list, so no question was asked.
+# FIX: the dump reads it through `*`, the function it points at, as it reads a
+# function; and the check's key names the dump's own text, since a build
+# directory replayed the older answer measured beside it.
+
+extern "fixedbugs-411-pointers.h"
+    function fp_write(p: cstr lent) -> i32  #~ ffi_writable_parameter
+
+function main()
+    s = "abc".repeat(1)
+    t = s
+    print(fp_write(p: s.cstr()))
+    print(t)

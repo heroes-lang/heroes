@@ -28,6 +28,7 @@ use emit/mangle
 use emit/ctype
 use emit/externs as emit_externs
 use emit/ffi_lookup as ffi_lookup
+use emit/lend_type
 use emit/writer
 use parse
 use resolve
@@ -116,7 +117,7 @@ function extern_probes(@w: writer.Writer, p: containers.Program, c: state.Checke
 
         if parameters.is_err()
             continue
-        arguments = probe_arguments(f, c)
+        arguments = probe_arguments(f, c, names, callee: name)
 
         # The declaration's own file and line, so clang's verdict lands
         # where the author can act on it — and a probe for a library's
@@ -182,8 +183,10 @@ function probe_line(probe: str, name: str, parameters: [str], arguments: [str]) 
 # width and sign, in `cli/pointee.hero`. A `cstr` `@` stays TYPED: its
 # `const char **` against a header's `char **` is panel 058's
 # `discards qualifiers`, the writability check, and a cast would
-# silence it. So would a `record`'s: the header's own struct is exact.
-function probe_arguments(f: containers.Function, c: state.Checked) -> [str]
+# silence it. So would a `record`'s: the header's own struct is exact. A
+# `cstr` lent to a pointer the check read crosses cast, as at the call
+# (`emit/lend_type.hero`, defect 427), so every reader rebuilds it alike.
+function probe_arguments(f: containers.Function, c: state.Checked, names: ctype.Names, callee: str) -> [str]
     out: [str] @ []
     index: i64 @ 0
 
@@ -196,7 +199,7 @@ function probe_arguments(f: containers.Function, c: state.Checked) -> [str]
             out @ out.push(name)
         index @ index + 1
 
-    return out
+    return lend_type.cast_lends(names.lend_units, name: callee, arguments: out)
 
 # An `@` parameter whose declared type is opaque or numeric — the two
 # the emitter hands to C as `(void *)`, at the call and in the probe.

@@ -20,7 +20,7 @@
 # parameter is `ptr`; DWARF is cgo's route and the CI's Linux leg has no
 # `llvm-dwarfdump`. What works on clang 18, 21 and 22 alike, measured: one
 # translation unit that includes the program's headers and declares
-# `extern __typeof__(getline) hero_ty_getline;` per extern with a numeric
+# `extern __typeof__(*getline) hero_ty_getline;` per extern with a numeric
 # `@`, dumped with `-ast-dump=json -ast-dump-filter=hero_ty_` — 6–8 KB, 0.02 s,
 # the k-th `ParmVarDecl`'s `qualType` is the header's own text for the
 # parameter (`size_t *restrict`). The JSON is not the verdict: it is only
@@ -75,7 +75,7 @@ use cli/strings
 use cli/read_back
 use cli/kept
 use emit/ffi_lookup
-use emit/ffi_mutable
+use emit/ffi_read_only
 use parse
 use resolve
 use checker
@@ -123,9 +123,14 @@ function check(t: toolchain.Toolchain, p: containers.Program, c: state.Checked, 
     # program: so the library's own asks, judged beside a header whose macro
     # renames one of them, replayed that refusal onto a program in another
     # directory with no such header, measured 2026-10-02 both ways on one
-    # `build/`.
+    # `build/`. **And it names the dump unit's own text** (2026-10-07, defect
+    # 411's function pointers): the fingerprint moves only at a release, so a
+    # compiler that writes the dump another way replayed the answer an older
+    # one had read, measured on one `build/` the day the dump began to read a
+    # function pointer through `*`.
+    dump_text = header_types.dump_unit(headers, wanted)
     key = digest.digest(
-        t.fingerprint + "|pointee|" + t.compiler_key + "|" + asked.join(",") + "|" + headers.join(",") + "|words:" + libraries.key_text(words) + "|reads:" + probe.read.must() + "|" + t.runtime_key
+        t.fingerprint + "|pointee|" + t.compiler_key + "|" + asked.join(",") + "|" + headers.join(",") + "|words:" + libraries.key_text(words) + "|reads:" + probe.read.must() + "|" + t.runtime_key + "|dump:" + digest.digest(dump_text)
     )
     dir = t.build + "/pointee-" + key
     listed = dir + "/dump.deps.txt"
@@ -160,7 +165,6 @@ function check(t: toolchain.Toolchain, p: containers.Program, c: state.Checked, 
     # Both units are published under the digest of their own text and
     # compiled from there, so a copy another build put there is these
     # bytes; clang's outputs are this check's alone.
-    dump_text = header_types.dump_unit(headers, wanted)
     dump_c = unit_path(dir: dir, stem: "dump", text: dump_text)
     publish.write_whole(path: dump_c, text: dump_text, keyed: true)?
     depfile = publish.private_name(dir + "/dump.d")
@@ -515,9 +519,10 @@ test "the pointee check judges a parameter under the build's level and sanitizer
 # call** (defect 411). Every spelling below, both directions, is judged by
 # this check on the real clang: `unsigned char *` and its kin were accepted at
 # exit 0 while C wrote the program's shared bytes, because clang tells them as
-# `-Wpointer-sign`, and their `const` twins must stay accepted though clang
-# warns the same way about them. A golden cannot hold the `const` half while
-# that warning stands, so this test holds it.
+# `-Wpointer-sign`, and their `const` twins must stay accepted. Until defect
+# 427 clang warned on those too, so no golden could hold the `const` half and
+# this test held it; since then `run/fixedbugs-427-*` holds it as a program,
+# and this test holds the check's own verdict on every clang it runs on.
 test "the pointee check refuses a cstr to bytes C may write and takes one to const bytes (defect 411)"
     header = "#include <stdint.h>\ntypedef unsigned char *w_bytes;\ntypedef const unsigned char *r_bytes;\nint32_t w_uchar(unsigned char *p);\nint32_t w_schar(signed char *p);\nint32_t w_u8(uint8_t *p);\nint32_t w_typedef(w_bytes p);\nint32_t w_array(unsigned char p[32]);\nint32_t w_restrict(unsigned char *restrict p);\nint32_t w_char(char *const p);\nint32_t w_void(void *p);\nint32_t r_uchar(const unsigned char *p);\nint32_t r_schar(const signed char *p);\nint32_t r_u8(const uint8_t *p);\nint32_t r_typedef(r_bytes p);\nint32_t r_array(const unsigned char p[32]);\nint32_t r_void(const void *p);\nint32_t r_char(const char *p);\n"
     t: toolchain.Toolchain @ toolchain.locate_toolchain(hint: "", fingerprint: "port-test").must()
@@ -566,4 +571,4 @@ test "the pointee check refuses a cstr to bytes C may write and takes one to con
         # Each writable parameter is its own failure, carrying the marker the
         # reader turns into `ffi_writable_parameter`.
         for name in names
-            assert ffi_lookup.has(text: failure_text(asked), needle: ffi_mutable.WRITABLE_MARKER + name + " p ") == (names[0] == "w_uchar")
+            assert ffi_lookup.has(text: failure_text(asked), needle: ffi_read_only.WRITABLE_MARKER + name + " p ") == (names[0] == "w_uchar")

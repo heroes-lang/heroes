@@ -1,0 +1,15 @@
+# FIXED DEFECT 427's shape beside it, lane b13-w411, 2026-10-07.
+#
+# A `cstr` lent to a pointer the pointee check reads now crosses cast to the
+# header's own type, so the probe's call no longer refuses one that points at
+# no kind of byte, as it did as `ffi_parameter_type`. The check asks it
+# instead (`emit/ffi_read_only.hero`, the bytes question), on the same line as
+# its `const` question, and tells it on the parameter.
+#
+# THIS SHAPE: `const int *`.
+
+extern "fixedbugs-427-no-byte.h"
+    function r_int(p: cstr lent) -> i32  #~ ffi_parameter_type
+
+function main()
+    print(r_int(p: "abcd".cstr()))
