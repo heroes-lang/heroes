@@ -1,0 +1,21 @@
+# fixedbugs, defect 396, lane b13-land-buf, 2026-10-07: PINNED, not repaired.
+# Defect 396's `md_field.hero` lends a record's FIELD through `@md: u8` to a
+# function writing past one cell. Panel 196's R2 rules that an unmarked `@`
+# promises ONE element, and its R7 that a field keeps its record's layout and
+# cannot be guarded: for a field, the extent is the binding's word, as every
+# other C promise is. So this binding, which says one and lets C write 16,
+# writes the seven bytes beside the cell and the field after them, at exit 0,
+# and this case pins exactly that, kept inside the record so nothing else is
+# reached. The repair a binding owes is to state the extent: a buffer,
+# `@md: [u8] counted_by 16 lent` (`fixedbugs-396-a-buffer-c-fills`). If a
+# later sitting guards fields too, this case is the one that moves.
+extern "fixedbugs-396-buffers.h"
+    record Cell tag cell
+        m: u8
+        rest: u8[7]
+        after: i64
+    function digest_cell(@md: u8) -> i32
+
+function main()
+    b: Cell @ Cell(m: 0, rest: [0, 0, 0, 0, 0, 0, 0], after: 7)
+    print(digest_cell(@b.m), " ", b.m, " ", b.rest[6], " ", b.after)

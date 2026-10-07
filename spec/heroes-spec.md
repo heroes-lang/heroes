@@ -360,6 +360,11 @@ extern "sqlite3.h" link "sqlite3"
     function sqlite3_open(path: cstr lent, @out: Db acquires sqlite3_close) -> i64
     function sqlite3_close(db: Db consumes) -> i64
 ```
+Where C writes several, `@md: [u8] counted_by N lent` hands C `N` elements, the
+array's own then zeros, and leaves the array exactly those `N`: numbers, the
+group's records, or bytes where the header says `void *`, `N` the sibling that
+tells C how many, a constant of the group or a number. C reaching past them
+aborts, or fails the call where the kernel writes.
 A callback is a **parameter**, never a result; its parameters follow the same rule
 and `()` is `void`: `atexit(f: (function() -> ()))`.
 

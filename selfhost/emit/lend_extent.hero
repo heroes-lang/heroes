@@ -98,7 +98,13 @@ function assertions(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: 
     index: i64 @ 0
 
     for arg in given
-        if index < counted.len() && counted[index] >= 0 && counted[index] < given.len()
+        # A buffer (panel 196's R4) is the emitter's own and exactly its
+        # extent, `emit/lend_buffer.hero`; nothing of the program's is lent.
+        buffer = !lend_count.buffer_element(c, decls, decl: decl, index: index).is_err()
+
+        if buffer
+            _ = 0
+        else if index < counted.len() && counted[index] >= 0 && counted[index] < given.len()
             lent = lent_by(c, s, decls, f, arg: arg, run: run)
 
             if !lent.is_err()

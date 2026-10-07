@@ -28,6 +28,7 @@ use check/table
 use check/state
 use check/lower
 use check/lend_extent
+use check/ffi_buffer
 use check/fixed_repairs
 use ffi_errors
 
@@ -111,6 +112,15 @@ function ffi_signature(@c: state.Checker, a: ast.Ast, s: source.Source, decls: [
 
         if written.is_err()
             continue
+
+        # An array lent through `@` is the buffer C fills (panel 196's R4),
+        # judged where it is declared and nowhere else here.
+        match ffi_buffer.judged(@c, a, s, decls, param: param, function_name: source.span_text(s, declared_name))
+            .buffer => continue
+            .refused =>
+                told[position] @ true
+                continue
+            .not_a_buffer => _ = 0
 
         if !crosses_the_boundary(c, decls, written.must())
             refused(@c, s, decls, ty: written.must(), what: "an `extern`'s parameter", span: a.types[param.ty].span)

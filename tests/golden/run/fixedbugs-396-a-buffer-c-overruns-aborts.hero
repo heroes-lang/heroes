@@ -1,0 +1,15 @@
+# fixedbugs, defect 396, lane b13-land-buf, 2026-10-07: panel 196's R4, an
+# extent the declaration understates. `digest32` writes 32 bytes and the
+# binding says 16, the binding's word being wrong about C. The buffer ends at
+# a page nothing may touch, so C stops on its seventeenth byte and the
+# runtime names the call and the parameter, exit 134, where the canary the
+# sitting built first was silent under `--sanitize` and the bare buffer wrote
+# over its neighbour.
+extern "fixedbugs-396-buffers.h"
+    function digest32(@md: [u8] counted_by 16 lent) -> i32
+
+function main()
+    md: [u8] @ []
+    print("before")
+    print(digest32(@md))
+    print("not reached ", md.len())

@@ -1,0 +1,19 @@
+# fixedbugs, defect 396, lane b13-land-buf, 2026-10-07: `SHA256_Final` bound
+# with an extent of 16, where it writes 32: the binding's word wrong about C.
+# The ffi-pragmatist's registered prediction for panel 196: the call aborts
+# naming `SHA256_Final`'s `md`, on Darwin and Linux arm64. The buffer ends at
+# a page nothing may touch, so OpenSSL stops on the seventeenth byte, before
+# anything beside the buffer is written.
+extern "fixedbugs-396-openssl.h" package "libcrypto"
+    record Sha256Ctx tag SHA256state_st partial
+        num: u32
+    function SHA256_Init(@c: Sha256Ctx) -> i32
+    function SHA256_Update(@c: Sha256Ctx, data: cstr lent, len: u64) -> i32
+    function SHA256_Final(@md: [u8] counted_by 16 lent, @c: Sha256Ctx) -> i32
+
+function main()
+    c: Sha256Ctx @ Sha256Ctx(num: 0)
+    md: [u8] @ []
+    print(SHA256_Init(@c), " ", SHA256_Update(@c, data: "abc".cstr(), len: 3))
+    print(SHA256_Final(@md, @c))
+    print("not reached ", md.len())
