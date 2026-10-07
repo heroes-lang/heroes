@@ -23,6 +23,8 @@ static inline int64_t fill_void(void *buf, uint64_t n) { memset(buf, 0x41, (size
 static inline int64_t fill_one_more(void *buf, uint64_t n) { memset(buf, 0x41, (size_t)n + 1); return (int64_t)n; }
 /* `fgets`'s shape with the bytes a canary would hold: `n` of 0xA5. */
 static inline void fill_a5(char *s, int32_t n) { memset(s, 0xA5, (size_t)n); }
+/* `getsockopt`'s shape: the count read through a pointer, `*n` bytes. */
+static inline int64_t fill_cell(void *buf, int32_t *n) { memset(buf, 0x43, (size_t)*n); return (int64_t)*n; }
 /* Four `int32_t`s, two records, three doubles. */
 static inline void fill_ints4(int32_t *p) { for (int k = 0; k < 4; k++) p[k] = -(k + 1); }
 static inline void fill_pairs2(struct pair *p) { p[0].a = 1; p[0].b = 2; p[1].a = 3; p[1].b = 4; }
