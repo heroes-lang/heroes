@@ -35,6 +35,8 @@ use emit/ffi_incomplete
 use emit/ffi_build
 use emit/ffi_narrowed
 use emit/ffi_mutable
+use emit/ffi_read_only
+use emit/lend_type
 use emit/ffi_lend
 use emit/ffi_extent
 use emit/ffi_unit
@@ -75,13 +77,17 @@ function explain(stderr: str, s: source.Source, tree: ast.Ast, decls: [ast.Decl]
     # type spells itself without a table. `struct_tags` is the same
     # reason one level up: the round that failed spelled its handles with
     # it, so the table rebuilt here has to (defect 037).
-    names = ctype.with_functions(
+    names: ctype.Names @ ctype.with_functions(
         ctype.new_names_qualified(s, decls, struct_tags: struct_tags),
         c: c,
         s: s,
         decls: decls,
         p: p
     )
+
+    # And the casts the round wrote its lends with, read from the same answers
+    # (defect 427), so a probe line rebuilt here is the one clang read.
+    names.lend_units @ lend_type.with_read_casts(names.lend_units, answered)
     found: [diag.Diagnostic] @ []
     text: str @ stderr
 
@@ -250,10 +256,31 @@ function explain(stderr: str, s: source.Source, tree: ast.Ast, decls: [ast.Decl]
 
         if !width.is_err()
             found @ ffi_lookup.add_once(found, d: width.must())
-        writable = ffi_mutable.writable_parameter(s, decls, p, c, names, line: line)
+
+        # A `cstr`'s pointer the header lets C write: the pointee check's answer
+        # (defect 411), then clang's phrase about the probe's call.
+        asked_w = ffi_read_only.writable_pointee(s, decls, tree, p, c, line: line)
+
+        if !asked_w.is_err()
+            found @ ffi_lookup.add_once(found, d: asked_w.must())
+        writable = ffi_mutable.writable_parameter(s, decls, tree, p, c, names, line: line)
 
         if !writable.is_err()
             found @ ffi_lookup.add_once(found, d: writable.must())
+
+        # A function the header declares with no prototype (defect 426): the
+        # pointee check's own line, which no question above has a type to ask.
+        bare = ffi_read_only.no_prototype(s, decls, p, line: line)
+
+        if !bare.is_err()
+            found @ ffi_lookup.add_once(found, d: bare.must())
+
+        # A `cstr` to a pointer at no kind of byte (defect 427): asked in the
+        # check, where the probe's call no longer can be once the lend is cast.
+        unbyte = ffi_read_only.not_bytes(s, decls, tree, p, line: line)
+
+        if !unbyte.is_err()
+            found @ ffi_lookup.add_once(found, d: unbyte.must())
 
         # The same clang phrase at a CALL's line rather than a probe's: a
         # `ptr` lend from a name the program may not write, handed to a

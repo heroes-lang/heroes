@@ -5,7 +5,7 @@
 # and how to read clang's answer back.
 #
 # **Where the type text comes from.** One unit includes the program's
-# headers and declares `extern __typeof__(getline) hero_ty_getline;` per
+# headers and declares `extern __typeof__(*getline) hero_ty_getline;` per
 # extern asked about; `clang -fsyntax-only -Xclang -ast-dump=json -Xclang
 # -ast-dump-filter=hero_ty_` prints, for each, a `FunctionDecl` whose
 # `ParmVarDecl` children carry the parameter types as the header spelled
@@ -32,7 +32,8 @@
 use bytes
 use emit/ffi_pointee
 use emit/ffi_unit
-use emit/ffi_mutable
+use emit/ffi_read_only
+use emit/lend_type
 use cli/pointee_ask
 use emit/c_text
 
@@ -58,7 +59,10 @@ function dump_unit(headers: [str], wanted: [pointee_ask.Pointee]) -> str
 
         if !already
             named @ named.push(one.name)
-            lines @ lines.push("extern __typeof__(" + one.name + ") " + PREFIX + one.name + ";")
+
+            # Through `*` (defect 411, 2026-10-07): a function pointer the header
+            # declares as a variable is read as the function it points at.
+            lines @ lines.push("extern __typeof__(*" + one.name + ") " + PREFIX + one.name + ";")
 
     return lines.join("\n") + "\n"
 
@@ -96,9 +100,9 @@ function check_unit(headers: [str], wanted: [pointee_ask.Pointee], types: {str: 
             )
             continue
 
-        # A read-only lend's question and answer are `emit/ffi_mutable.hero`'s.
-        if asked.declared == pointee_ask.READ
-            lines @ lines.push(ffi_mutable.read_only_assertion(asked, header_type: header_type))
+        # A read-only lend's question and answer are `emit/ffi_read_only.hero`'s.
+        if asked.declared == pointee_ask.READ || asked.declared == pointee_ask.ARITY
+            lines @ lines.push(ffi_read_only.question(asked, header_type: header_type))
             continue
 
         # **A depth ask is one line and its own marker** (defect 083). The
@@ -148,17 +152,12 @@ function answered(wanted: [pointee_ask.Pointee], types: {str: [str]}, sugar: {st
     for one in wanted
         params = types[one.name]
 
-        if params.is_err()
+        if params.is_err() || one.declared == pointee_ask.READ || one.declared == pointee_ask.ARITY
             continue
 
         if one.index >= params.must().len()
             continue
         written = params.must()[one.index]
-
-        if one.declared == pointee_ask.READ
-            through = desugared_at(sugar, name: one.name, index: one.index)
-            out @ ffi_mutable.with_read_answer(out, one, written: written, through: through)
-            continue
 
         # A lend's asks keep the parameter's type whole, and only where it is
         # a pointer as clang reads it through every typedef: one the header
@@ -180,7 +179,7 @@ function answered(wanted: [pointee_ask.Pointee], types: {str: [str]}, sugar: {st
             continue
         out @ out.push(pointee_ask.Answered(asked: one, header_type: pointed.must(), pointee: ""))
 
-    return out
+    return ffi_read_only.lend_answers(out, wanted, types: types, sugar: sugar)
 
 # What clang read a parameter's type as through every typedef, or empty where
 # the dump gave no `desugaredQualType`, which it leaves out when the two agree.
@@ -201,7 +200,7 @@ function lend_units(answers: [pointee_ask.Answered]) -> {str: str}
         if one.asked.declared == pointee_ask.UNIT
             out[one.asked.name + " " + one.asked.index.to_str()] @ one.header_type
 
-    return out
+    return lend_type.with_read_casts(out, answers)
 
 # What a header's parameter type points at: the text before its last `*`,
 # with `restrict` and `__restrict` gone. Absent when the header takes the
@@ -420,4 +419,4 @@ test "the check unit asserts width and sign at the author's line, with the marke
     assert locate_text(text: unit, needle: "_Static_assert(!__builtin_types_compatible_p(void, void) && __builtin_classify_type(*(void *)0) == 5, \"heroes-ffi-pointee-depth eat p handle void\");", from: 0).must() > 0
     assert locate_text(text: unit, needle: "sizeof(handle)", from: 0).is_err()
     dumped = dump_unit(headers, wanted)
-    assert locate_text(text: dumped, needle: "extern __typeof__(getline) hero_ty_getline;", from: 0).must() > 0
+    assert locate_text(text: dumped, needle: "extern __typeof__(*getline) hero_ty_getline;", from: 0).must() > 0

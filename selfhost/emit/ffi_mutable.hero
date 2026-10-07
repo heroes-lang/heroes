@@ -11,30 +11,20 @@
 # headers, 159 of them genuinely write, and the correct spelling —
 # ptr with a buffer C owns — compiles today.
 #
-# **The verdict is the header's answer to one question, asked directly**
-# (defect 411, 2026-10-06): does the parameter's pointer point at `const`
-# bytes? It was clang's word *discards qualifiers* about the probe's call,
-# and clang tells a `const char *` handed to an `unsigned char *` another
-# way, `-Wpointer-sign`, a warning: `SHA256_Final(md: cstr lent)` built at
-# exit 0, wrote SHA-256's 32 bytes through a `str` the program shared, and
-# a literal lent the same way was SIGBUS. So every `cstr` parameter that is
-# not `@` is asked in the pointee check's unit (`cli/header_types.hero`),
-# at the author's own line, as C11 arithmetic on the header's own type `P`:
-#     __builtin_types_compatible_p(P, __typeof__(*(P)0) const *)
-# which holds exactly when what `P` points at is already `const`, whatever
-# typedef, sign, `restrict` or array spelling the header uses. Its failure
-# carries `WRITABLE_MARKER`, and `writable_pointee` reads it back here.
+# **The verdict is the header's answer first** (defect 411, 2026-10-06):
+# every `cstr` parameter that is not `@` is asked in the pointee check
+# whether its pointer points at `const` bytes, `emit/ffi_read_only.hero`
+# reads the answer, and this file's route is clang's phrase about the
+# probe's call, kept for the header the check could not read alone.
 #
-# The phrase is kept as a second route, sibling of emit_ffi_narrowed and
-# gated the same way: the message carries no C name, so the question is
-# asked of the LOCATION. It answers only where the pointee check could not
-# ask (a header the dump could not read alone). The DISCARDS phrase itself
+# The phrase is a sibling of emit_ffi_narrowed and gated the same way: the
+# message carries no C name, so the question is asked of the LOCATION. The
+# DISCARDS phrase itself
 # lives in emit_ffi_lookup, because narrowed names it to step aside — the
 # one Rust cycle in this family, cut by giving the shared string the
 # shared home.
 
 use ast
-use bytes
 use source
 use token
 use diag
@@ -49,26 +39,14 @@ use emit/probe_reply as probe_reply
 use emit/ffi_lookup
 use emit/ffi_site
 use emit/ffi_pointee
-use cli/pointee_ask
 use parse
 use resolve
 use checker
 use ir/lower
 
-# The contract between the check unit that asks the question and the reader
-# below: one string, one home (CLAUDE.md §11). No other `heroes-ffi-` marker
-# is a prefix of it, nor it of one.
-constant WRITABLE_MARKER: str
-    "heroes-ffi-writable "
-
 # A parameter the header declares WRITABLE, which .cstr() cannot
-# supply: the pointee check's answer first, then clang's phrase.
-function writable_parameter(s: source.Source, decls: [ast.Decl], p: containers.Program, c: state.Checked, names: ctype.Names, line: str) -> diag.Diagnostic?
-    asked = writable_pointee(s, decls, p, c, line: line)
-
-    if !asked.is_err()
-        return asked
-
+# supply, as clang's phrase about the probe's call says it.
+function writable_parameter(s: source.Source, decls: [ast.Decl], tree: ast.Ast, p: containers.Program, c: state.Checked, names: ctype.Names, line: str) -> diag.Diagnostic?
     if !ffi_lookup.has(text: line, needle: ffi_lookup.DISCARDS)
         return fail(code: "none", msg: "not a qualifier line")
     at = ffi_site.location(s, line: line)
@@ -101,7 +79,7 @@ function writable_parameter(s: source.Source, decls: [ast.Decl], p: containers.P
 
     if parameters.is_err()
         return fail(code: "none", msg: "a parameter with no C spelling")
-    arguments = extern_probe.probe_arguments(f, c)
+    arguments = extern_probe.probe_arguments(f, c, names, callee: name)
     module = source.component_at(s, decls[f.decl].span.start)
     probe = extern_probe.probe_name(module: module, name: name)
     columns = probe_reply.argument_columns(
@@ -115,7 +93,7 @@ function writable_parameter(s: source.Source, decls: [ast.Decl], p: containers.P
     # than asserted to be cstr (CLAUDE.md §11 — a narrowing asks the
     # value): a future Heroes type that also lowers to a pointer would
     # otherwise be described wrong.
-    which: str @ "a parameter"
+    param: str @ ""
     declared: str @ "cstr"
     index: i64 @ 0
 
@@ -133,16 +111,33 @@ function writable_parameter(s: source.Source, decls: [ast.Decl], p: containers.P
                 if c_type.must() != "const char **"
                     return fail(code: "none", msg: "a marked `@cstr` owns what C writes there")
                 return ok(owned_const(name: name, param: f.slots[f.params[index]].name, span: decls[f.decl].span))
-            which @ "`" + f.slots[f.params[index]].name + "`"
+            param @ f.slots[f.params[index]].name
             none: [str] = []
             declared @ render.render_ty(c.types, s, decls, f.slots[f.params[index]].ty, none)
         index @ index + 1
 
-    return ok(refusal(name: name, which: which, declared: declared, c_type: c_type.must(), span: decls[f.decl].span))
+    spans = spans_of(s, decls, tree, decl: f.decl, param: param)
+    return ok(
+        refusal(name: name, param: param, declared: declared, c_type: c_type.must(), spans: spans, whole: decls[f.decl].span)
+    )
 
 # The one diagnostic both routes give, so the header's answer and clang's
-# phrase tell the author the same thing.
-function refusal(name: str, which: str, declared: str, c_type: str, span: token.Span) -> diag.Diagnostic
+# phrase tell the author the same thing. **It lands on the parameter** (defect
+# 428, 2026-10-07): its span was the whole declaration, and one diagnostic is
+# kept per span, so a declaration's second writable parameter was told only
+# once the first was repaired; its fix replaced the whole declaration with
+# `ptr`, and now replaces the parameter's type. A parameter the route could not
+# name keeps the declaration's span and has no fix.
+function refusal(name: str, param: str, declared: str, c_type: str, spans: ffi_pointee.ParamSpans?, whole: token.Span) -> diag.Diagnostic
+    which: str @ "a parameter"
+    span: token.Span @ whole
+
+    if param.len() > 0
+        which @ "`" + param + "`"
+
+    if !spans.is_err()
+        span @ spans.must().name
+
     # "does not promise to leave it alone", not "would write through
     # it" (author decision 2026-08-15, from panel 059): free(void *)
     # does not WRITE through its argument, it deallocates it — both
@@ -160,158 +155,24 @@ function refusal(name: str, which: str, declared: str, c_type: str, span: token.
     # The repair is not "add const", which is the header's to choose
     # and not this program's. It is to stop lending and start owning.
     d.notes @ d.notes.push("declare it `ptr` and give `" + name + "` a buffer C owns, then read the result back")
-    d.fixes @ d.fixes.push(diag.Fix(title: "declare it `ptr`", replacement: "ptr", span: span, certainty: .guess))
+
+    if !spans.is_err()
+        d.fixes @ d.fixes.push(
+            diag.Fix(title: "declare it `ptr`", replacement: "ptr", span: spans.must().ty, certainty: .guess)
+        )
     return d
 
-## The header's answer
-
-# `heroes-ffi-writable <name> <param> <header type…>` failed: the pointer the
-# header takes for a `cstr` parameter points at bytes it does not promise to
-# leave alone. Gated on the LOCATION like the route above, since the check
-# unit `#line`s the question at the author's declaration: a line in a file
-# this compilation does not own, the library's among them, is not the
-# author's to be told.
-function writable_pointee(s: source.Source, decls: [ast.Decl], p: containers.Program, c: state.Checked, line: str) -> diag.Diagnostic?
-    if !ffi_lookup.has(text: line, needle: ffi_lookup.FAILED)
-        return fail(code: "none", msg: "not an assertion failure")
-    rest = ffi_lookup.after(text: line, marker: WRITABLE_MARKER)
-
-    if rest.is_err()
-        return fail(code: "none", msg: "not a read-only lend's assertion")
-    parts = ffi_lookup.words(text: rest.must())
-
-    if parts.len() < 3
-        return fail(code: "none", msg: "the marker's tail is not ours")
-    at = ffi_site.location(s, line: line)
-
-    if at.is_err()
-        return fail(code: "none", msg: "no usable location")
-    found = ffi_site.extern_at_line(p, s, decls, file: at.must().file, at_line: at.must().line)
-
-    if found.is_err() || found.must().name != parts[0]
-        return fail(code: "none", msg: "no extern of that name is declared at that line")
-    f = found.must().f
-    tail: [str] @ []
-    index: i64 @ 2
-
-    while index < parts.len()
-        tail @ tail.push(parts[index])
-        index @ index + 1
-
-    header_type = unqualified(ffi_pointee.trim_quote(tail.join(" ")))
-
-    for slot_id in f.params
-        if f.slots[slot_id].name == parts[1]
-            none: [str] = []
-            declared = render.render_ty(c.types, s, decls, f.slots[slot_id].ty, none)
-            return ok(
-                refusal(name: parts[0], which: "`" + parts[1] + "`", declared: declared, c_type: header_type, span: decls[f.decl].span)
-            )
+# Where a parameter of the extern declared at `decl` stands, its name and its
+# type, asked of that declaration and never of another group's of one name.
+function spans_of(s: source.Source, decls: [ast.Decl], tree: ast.Ast, decl: i64, param: str) -> ffi_pointee.ParamSpans?
+    match decls[decl].kind
+        .function_decl fd =>
+            for one in fd.value.params
+                if source.span_text(s, one.name) == param
+                    return ok(ffi_pointee.ParamSpans(name: one.name, ty: tree.types[one.ty].span))
+        .constant_decl | .record_decl | .variant_decl | .test_decl => return fail(code: "none", msg: "not a function")
 
     return fail(code: "none", msg: "no parameter of that name")
-
-# The question, as the line the check unit writes for one parameter whose
-# header type is `header_type`. `*(P)0` names the pointee as C reads it, so a
-# typedef (`LPSTR`, `uint8_t *`), an array parameter (adjusted to a pointer)
-# and a `void *` are asked alike; `__builtin_types_compatible_p` ignores the
-# qualifiers on the pointer itself, `char *const` and `restrict`, which bind
-# the callee's own copy. On a function pointer `const` has no effect, so the
-# question holds and the probe's call says what is wrong with the binding.
-function read_only_assertion(asked: pointee_ask.Pointee, header_type: str) -> str
-    return "_Static_assert(__builtin_types_compatible_p(" + header_type + ", __typeof__(*(" + header_type + ")0) const *), \"" + WRITABLE_MARKER + asked.name + " " + asked.param + " " + header_type + "\");"
-
-# `out` with the read-only ask's answer, where the header takes a pointer.
-function with_read_answer(out: [pointee_ask.Answered], one: pointee_ask.Pointee, written: str, through: str) -> [pointee_ask.Answered]
-    pointer = asked_type(written: written, through: through)
-
-    if pointer.is_err()
-        return out
-    return out.push(pointee_ask.Answered(asked: one, header_type: pointer.must(), pointee: ""))
-
-# The type a `cstr` parameter's question is asked of, from the two spellings
-# the pointee check's dump gives it, the header's own (`written`) and the one
-# through its typedefs (`through`, empty where they agree); or absent where
-# the header takes the parameter by value, where the probe's call is the
-# verdict. The header's own spelling is asked, as a lend's other questions
-# ask it, since a type spelled through its typedefs can name a struct with
-# no name C can write. An ATOMIC pointer (`_Atomic(char *)`) is the one
-# exception: C cannot apply `*` to it, so the pointer inside is asked, which
-# is what the call converts the argument to.
-function asked_type(written: str, through: str) -> str?
-    plain: str @ through
-
-    if plain.len() == 0
-        plain @ written
-    bare = without_leading_qualifiers(plain)
-
-    if bytes.bytes_at(text: bare, at: 0, needle: "_Atomic(") && bytes.bytes_at(text: bare, at: bare.len() - 1, needle: ")")
-        inner = ffi_lookup.trimmed(bare.slice(from: 8, to: bare.len() - 1))
-
-        if !ffi_lookup.has(text: inner, needle: "*")
-            return fail(code: "none", msg: "an atomic value or a pointer only its typedef spells")
-        return ok(inner)
-
-    if !ffi_lookup.has(text: plain, needle: "*")
-        return fail(code: "none", msg: "the header takes it by value")
-    return ok(written)
-
-# The type without the qualifiers written before it, `const _Atomic(char *)`
-# being an atomic pointer that is itself `const`.
-function without_leading_qualifiers(text: str) -> str
-    kept: str @ ffi_lookup.trimmed(text)
-    cut: bool @ true
-
-    while cut
-        cut @ false
-
-        for word in ["const ", "volatile "]
-            if !cut && bytes.bytes_at(text: kept, at: 0, needle: word)
-                kept @ ffi_lookup.trimmed(kept.slice(from: word.len(), to: kept.len()))
-                cut @ true
-
-    return kept
-
-# A qualifier written after a pointer's last `*` binds the parameter itself,
-# which only the callee sees: the type the call hands its argument to is the
-# type without it. So the message names that, as clang's own word for the
-# call always did, and reads the same on a libc that writes glibc's `char
-# *restrict` as on one that writes `char *`. Asked of the bytes: the text after
-# the last `*` is cut only where every word of it is such a qualifier, so `int
-# (*)[4]` and a type with no `*` are left whole.
-constant TOP_QUALIFIERS: [str]
-    [
-        "const"
-        "volatile"
-        "restrict"
-        "__restrict"
-        "__restrict__"
-        "_Nonnull"
-        "_Nullable"
-        "_Null_unspecified"
-        "_Nullable_result"
-    ]
-
-function unqualified(text: str) -> str
-    kept = ffi_lookup.trimmed(text)
-    star: i64 @ kept.len() - 1
-
-    while star >= 0 && !bytes.bytes_at(text: kept, at: star, needle: "*")
-        star @ star - 1
-
-    if star < 0
-        return kept
-
-    for word in ffi_lookup.words(text: kept.slice(from: star + 1, to: kept.len()))
-        qualifier: bool @ false
-
-        for one in TOP_QUALIFIERS
-            if one == word
-                qualifier @ true
-
-        if !qualifier
-            return kept
-
-    return kept.slice(from: 0, to: star + 1)
 
 # DEFECT 078 (panel 176, question 4; landed 2026-09-24 on the sitting's
 # provisional resolution, item 8). `owned` on an `@cstr` cell is emitted as
@@ -368,82 +229,22 @@ test "a writable char * names the lent parameter and the owning repair"
         arguments: arguments
     )
     line = "t.hero:2:" + columns[0].to_str() + ": warning: passing 'const char *' to parameter of type 'char *' discards qualifiers"
-    d = writable_parameter(s, parsed.decls, low.program, c, names, line: line)
+    d = writable_parameter(s, parsed.decls, parsed.tree, low.program, c, names, line: line)
     assert d.must().code == "ffi_writable_parameter"
     assert d.must().message == "`target` of `strtok` is declared `cstr`, and the header says `char *` — C does not promise to leave it alone"
     assert d.must().fixes.len() == 1
     assert d.must().fixes[0].replacement == "ptr"
     assert d.must().fixes[0].certainty == .guess
+    assert source.span_text(s, d.must().span) == "target"
+    assert source.span_text(s, d.must().fixes[0].span) == "cstr"
 
     # A line without the qualifier phrase is not this class.
     plain = "t.hero:2:9: error: implicit conversion loses integer precision: 'int64_t' to 'int'"
-    assert writable_parameter(s, parsed.decls, low.program, c, names, line: plain).is_err()
+    assert writable_parameter(s, parsed.decls, parsed.tree, low.program, c, names, line: plain).is_err()
 
     # A caret that misses every argument column still lands, with the
     # parameter unnamed — the rule is the rule, only the name is lost.
     off = "t.hero:2:1: warning: passing 'const char *' to parameter of type 'char *' discards qualifiers"
-    k = writable_parameter(s, parsed.decls, low.program, c, names, line: off)
+    k = writable_parameter(s, parsed.decls, parsed.tree, low.program, c, names, line: off)
     assert k.must().message == "a parameter of `strtok` is declared `cstr`, and the header says `char *` — C does not promise to leave it alone"
-
-# Defect 411: the pointee check's answer, read off its marker at the author's
-# line, names the parameter and the header's type as the call sees it.
-test "the header's answer names the parameter and the type the call hands it to (defect 411)"
-    text = "extern \"sha.h\"\n    function SHA256_Final(md: cstr lent, n: u64) -> i32\n\nfunction main()\n    print(SHA256_Final(md: \"a\".cstr(), n: 1))\n"
-    parsed = parse.parse(text)
-    s = source.new_source(name: "t.hero", text: text)
-    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
-    c: state.Checked @ checker.check(parsed.tree, out, s, parsed.decls)
-    assert c.diagnostics.len() == 0
-    low = lower.lower(parsed.tree, out, c, s, parsed.decls)
-    names = ctype.new_names(s, parsed.decls)
-    line = "t.hero:2:1: error: static assertion failed due to requirement '__builtin_types_compatible_p(unsigned char *, const unsigned char *)': heroes-ffi-writable SHA256_Final md unsigned char *restrict"
-    d = writable_parameter(s, parsed.decls, low.program, c, names, line: line)
-    assert d.must().code == "ffi_writable_parameter"
-    assert d.must().message == "`md` of `SHA256_Final` is declared `cstr`, and the header says `unsigned char *` — C does not promise to leave it alone"
-    assert d.must().fixes[0].replacement == "ptr"
-    assert d.must().fixes[0].certainty == .guess
-
-    # clang's echo of the unit's line carries the marker and is no failure; a
-    # line at a file this compilation does not own, the library's among them,
-    # and a parameter the extern does not have are not the author's.
-    echo = "_Static_assert(__builtin_types_compatible_p(unsigned char *, __typeof__(*(unsigned char *)0) const *), \"heroes-ffi-writable SHA256_Final md unsigned char *\");"
-    assert writable_parameter(s, parsed.decls, low.program, c, names, line: echo).is_err()
-    elsewhere = "<heroes library>:2:1: error: static assertion failed: heroes-ffi-writable SHA256_Final md unsigned char *"
-    assert writable_pointee(s, parsed.decls, low.program, c, line: elsewhere).is_err()
-    other = "t.hero:2:1: error: static assertion failed: heroes-ffi-writable SHA256_Final key unsigned char *"
-    assert writable_pointee(s, parsed.decls, low.program, c, line: other).is_err()
-
-test "the question is asked of the header's own pointer, an atomic one's inner pointer, and nothing by value"
-    asked = pointee_ask.Pointee(
-        name: "SHA256_Final",
-        param: "md",
-        index: 0,
-        declared: pointee_ask.READ,
-        file: "t.hero",
-        line: 2,
-        depth: false
-    )
-    assert read_only_assertion(asked, header_type: "unsigned char *") == "_Static_assert(__builtin_types_compatible_p(unsigned char *, __typeof__(*(unsigned char *)0) const *), \"heroes-ffi-writable SHA256_Final md unsigned char *\");"
-    assert asked_type(written: "unsigned char *", through: "").must() == "unsigned char *"
-    assert asked_type(written: "LPSTR", through: "char *").must() == "LPSTR"
-    assert asked_type(written: "cb_t", through: "void (*)(int)").must() == "cb_t"
-    assert asked_type(written: "_Atomic(char *)", through: "").must() == "char *"
-    assert asked_type(written: "const _Atomic(unsigned char *)", through: "").must() == "unsigned char *"
-    assert asked_type(written: "ap", through: "_Atomic(const char *)").must() == "const char *"
-    assert asked_type(written: "int", through: "").is_err()
-    assert asked_type(written: "struct sv", through: "").is_err()
-    assert asked_type(written: "_Atomic(ubuf)", through: "").is_err()
-    none: [pointee_ask.Answered] = []
-    assert with_read_answer(none, asked, written: "int", through: "").len() == 0
-    assert with_read_answer(none, asked, written: "ap", through: "_Atomic(char *)")[0].header_type == "char *"
-
-test "a qualifier after the pointer's last star is the callee's, and nothing else is cut"
-    assert unqualified("char *restrict") == "char *"
-    assert unqualified("unsigned char *const") == "unsigned char *"
-    assert unqualified("char *const restrict") == "char *"
-    assert unqualified("char * _Nonnull") == "char *"
-    assert unqualified("int (*)[4]") == "int (*)[4]"
-    assert unqualified("foo_const") == "foo_const"
-    assert unqualified("const LPSTR") == "const LPSTR"
-    assert unqualified("漢 *restrict") == "漢 *"
-    assert unqualified("restrict") == "restrict"
+    assert k.must().fixes.len() == 0

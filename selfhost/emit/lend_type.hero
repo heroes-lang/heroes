@@ -1,0 +1,182 @@
+# The header's type for a READ-ONLY LEND, as text, and the cast the lend
+# crosses to C with where that type is not spelled `const char *` (design.md
+# §4.19; defects 411 and 427, 2026-10-07).
+#
+# A `cstr` is a `const char *`, and a header that takes a string's bytes as
+# `const unsigned char *`, `const uint8_t *` or `const signed char *` takes them
+# correctly; clang still warns at every such call, `-Wpointer-sign`, since
+# `char` and its two signed kinds are three types, so a correct program printed
+# fourteen warnings for nine calls. The pointee check has asked the header that
+# pointer's own two questions by then (`emit/ffi_read_only.hero`): that what it
+# points at is `const`, and that it is a byte, `char` of any sign or `void`. So
+# the argument is cast to the header's own type, at the call and in the probe
+# alike, and the two questions the cast answers are clang's no longer: the
+# cast is written only from what the check read, and a binding the check
+# refused never compiles a unit with it.
+#
+# The type text comes first: which spelling the questions are asked of
+# (`asked_type`), and the spelling a message names (`unqualified`), moved here
+# from `emit/ffi_read_only.hero` with the cast, which reads them.
+#
+# The table is `emit/ctype.Names.lend_units`, the one the emitter already
+# holds for a counted parameter's unit, under keys of its own: `KEY`, the C
+# name, a space, the parameter's position. Nothing here imports a module that
+# writes or reads the probe, so the probe's writer and every reader that
+# rebuilds the probe's line can ask it, and that line stays one formatter's.
+
+use bytes
+use emit/ffi_lookup
+use cli/pointee_ask
+
+constant KEY: str
+    "read "
+
+# Where the parameter at `index` of `name` crosses with a cast, its key.
+function key(name: str, index: i64) -> str
+    return KEY + name + " " + index.to_str()
+
+# `arguments` as `name`'s call hands them to C: each one the table holds a
+# type for is cast to it.
+function cast_lends(units: {str: str}, name: str, arguments: [str]) -> [str]
+    out: [str] @ []
+    index: i64 @ 0
+
+    for argument in arguments
+        to = units[key(name: name, index: index)]
+
+        if to.is_err()
+            out @ out.push(argument)
+        else
+            out @ out.push("(" + to.must() + ")" + argument)
+        index @ index + 1
+
+    return out
+
+# The table with every read-only answer whose pointer is spelled otherwise
+# than `const char *` or `const void *`, which a `const char *` reaches with no
+# word from clang: those cross cast. `answers` are the pointee check's, so a
+# binding it refused never reaches a unit that holds its cast.
+function with_read_casts(units: {str: str}, answers: [pointee_ask.Answered]) -> {str: str}
+    out: {str: str} @ units
+
+    for one in answers
+        if one.asked.declared == pointee_ask.READ && casts(one.header_type)
+            out[key(name: one.asked.name, index: one.asked.index)] @ one.header_type
+
+    return out
+
+# Whether a lend to a pointer spelled `header_type` crosses with a cast.
+function casts(header_type: str) -> bool
+    plain = unqualified(header_type)
+    return plain != "const char *" && plain != "const void *"
+
+# The type a `cstr` parameter's question is asked of, from the two spellings
+# the pointee check's dump gives it, the header's own (`written`) and the one
+# through its typedefs (`through`, empty where they agree); or absent where
+# the header takes the parameter by value, where the probe's call is the
+# verdict. The header's own spelling is asked, as a lend's other questions
+# ask it, since a type spelled through its typedefs can name a struct with
+# no name C can write. An ATOMIC pointer (`_Atomic(char *)`) is the one
+# exception: C cannot apply `*` to it, so the pointer inside is asked, which
+# is what the call converts the argument to.
+function asked_type(written: str, through: str) -> str?
+    plain: str @ through
+
+    if plain.len() == 0
+        plain @ written
+    bare = without_leading_qualifiers(plain)
+
+    if bytes.bytes_at(text: bare, at: 0, needle: "_Atomic(") && bytes.bytes_at(text: bare, at: bare.len() - 1, needle: ")")
+        inner = ffi_lookup.trimmed(bare.slice(from: 8, to: bare.len() - 1))
+
+        if !ffi_lookup.has(text: inner, needle: "*")
+            return fail(code: "none", msg: "an atomic value or a pointer only its typedef spells")
+        return ok(inner)
+
+    if !ffi_lookup.has(text: plain, needle: "*")
+        return fail(code: "none", msg: "the header takes it by value")
+    return ok(written)
+
+# The type without the qualifiers written before it, `const _Atomic(char *)`
+# being an atomic pointer that is itself `const`.
+function without_leading_qualifiers(text: str) -> str
+    kept: str @ ffi_lookup.trimmed(text)
+    cut: bool @ true
+
+    while cut
+        cut @ false
+
+        for word in ["const ", "volatile "]
+            if !cut && bytes.bytes_at(text: kept, at: 0, needle: word)
+                kept @ ffi_lookup.trimmed(kept.slice(from: word.len(), to: kept.len()))
+                cut @ true
+
+    return kept
+
+# A qualifier written after a pointer's last `*` binds the parameter itself,
+# which only the callee sees: the type the call hands its argument to is the
+# type without it. So the message names that, as clang's own word for the
+# call always did, and reads the same on a libc that writes glibc's `char
+# *restrict` as on one that writes `char *`. Asked of the bytes: the text after
+# the last `*` is cut only where every word of it is such a qualifier, so `int
+# (*)[4]` and a type with no `*` are left whole.
+constant TOP_QUALIFIERS: [str]
+    [
+        "const"
+        "volatile"
+        "restrict"
+        "__restrict"
+        "__restrict__"
+        "_Nonnull"
+        "_Nullable"
+        "_Null_unspecified"
+        "_Nullable_result"
+    ]
+
+function unqualified(text: str) -> str
+    kept = ffi_lookup.trimmed(text)
+    star: i64 @ kept.len() - 1
+
+    while star >= 0 && !bytes.bytes_at(text: kept, at: star, needle: "*")
+        star @ star - 1
+
+    if star < 0
+        return kept
+
+    for word in ffi_lookup.words(text: kept.slice(from: star + 1, to: kept.len()))
+        qualifier: bool @ false
+
+        for one in TOP_QUALIFIERS
+            if one == word
+                qualifier @ true
+
+        if !qualifier
+            return kept
+
+    return kept.slice(from: 0, to: star + 1)
+
+## Tests
+
+test "a lend the table names a type for is cast to it, and every other argument is left as it was"
+    units: {str: str} @ {}
+    units[key(name: "SHA256_Update", index: 1)] @ "const unsigned char *"
+    units["SHA256_Update 1"] @ "int *"
+    got = cast_lends(units, name: "SHA256_Update", arguments: ["a0", "hero_cstr_nonnull(t3)", "a2"])
+    assert got == ["a0", "(const unsigned char *)hero_cstr_nonnull(t3)", "a2"]
+    none: {str: str} = {}
+    assert cast_lends(none, name: "f", arguments: ["a0"]) == ["a0"]
+    assert casts("const unsigned char *")
+    assert casts("hero_text")
+    assert !casts("const char *const")
+    assert !casts("const void *restrict")
+
+test "a qualifier after the pointer's last star is the callee's, and nothing else is cut"
+    assert unqualified("char *restrict") == "char *"
+    assert unqualified("unsigned char *const") == "unsigned char *"
+    assert unqualified("char *const restrict") == "char *"
+    assert unqualified("char * _Nonnull") == "char *"
+    assert unqualified("int (*)[4]") == "int (*)[4]"
+    assert unqualified("foo_const") == "foo_const"
+    assert unqualified("const LPSTR") == "const LPSTR"
+    assert unqualified("漢 *restrict") == "漢 *"
+    assert unqualified("restrict") == "restrict"

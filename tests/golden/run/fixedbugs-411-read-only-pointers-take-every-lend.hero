@@ -35,3 +35,9 @@ function main()
     end_lease(@x)
     print(r_void(p: "z".cstr()))
     print(t)
+
+# NOTE, 2026-10-07 (lane b13-w411): since defect 427's repair the `const
+# unsigned char *` family builds with no warning, a lend to it crossing cast to
+# the header's own type, and `run/fixedbugs-427-a-cstr-to-const-unsigned-bytes-
+# builds-with-no-warning` holds it here beside this case; the paragraph above
+# stands as it was written.

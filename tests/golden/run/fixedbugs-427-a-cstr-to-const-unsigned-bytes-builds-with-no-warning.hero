@@ -1,0 +1,42 @@
+# FIXED DEFECT 427, found beside defect 411 by lane b13-w411 on 2026-10-06 and
+# repaired there on 2026-10-07.
+#
+# SYMPTOM: a correct binding of a `cstr` to a header's `const unsigned char *`,
+# `const signed char *` or `const uint8_t *` built and ran, and clang printed
+# `-Wpointer-sign` at the probe and at every call: fourteen warnings for nine
+# calls in defect 411's first run case.
+#
+# CAUSE: a `cstr` is a `const char *`, and `char` and its two signed kinds are
+# three types to C. FIX: the pointee check asks the header's pointer whether it
+# points at `const` bytes, a `char` of any sign or `void`, and the lend crosses
+# cast to the header's own type, at the call and in the probe alike
+# (`emit/lend_type.hero`). This directory is held to no warning at all, so the
+# case is the proof, through a typedef, an array, a `volatile` and an atomic
+# pointer, and lent three ways; the copy made before the calls is unchanged.
+
+extern "fixedbugs-427-unsigned-bytes.h"
+    function r_uchar(p: cstr lent) -> i32
+    function r_schar(p: cstr lent) -> i32
+    function r_u8(p: cstr lent) -> i32
+    function r_typedef(p: cstr lent) -> i32
+    function r_byte_typedef(p: cstr lent) -> i32
+    function r_array(p: cstr lent) -> i32
+    function r_volatile(p: cstr lent) -> i32
+    function r_atomic(p: cstr lent) -> i32
+
+function main()
+    s = "abc".repeat(1)
+    t = s
+    print(r_uchar(p: s.cstr()))
+    print(r_schar(p: s.cstr()))
+    print(r_u8(p: s.cstr()))
+    print(r_typedef(p: s.cstr()))
+    print(r_byte_typedef(p: s.cstr()))
+    print(r_array(p: s.cstr()))
+    print(r_volatile(p: s.cstr()))
+    print(r_atomic(p: s.cstr()))
+    x: cstr @ s.lease()
+    print(r_u8(p: x))
+    end_lease(@x)
+    print(r_u8(p: "z".cstr()))
+    print(t)

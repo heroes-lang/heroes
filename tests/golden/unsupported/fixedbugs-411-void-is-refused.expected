@@ -1,8 +1,8 @@
 error[ffi_writable_parameter]: `p` of `w_void` is declared `cstr`, and the header says `void *` — C does not promise to leave it alone
-  at tests/golden/unsupported/fixedbugs-411-void-is-refused.hero:17:5
+  at tests/golden/unsupported/fixedbugs-411-void-is-refused.hero:17:21
      |
   17 |     function w_void(p: cstr lent) -> i32  #~ ffi_writable_parameter
-     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     |                     ^
   note: §4.20: `s.cstr()` lends the string's own bytes, and they may be shared with other values — a C write through them changes values this program never passed to C, and on a literal it aborts
   note: declare it `ptr` and give `w_void` a buffer C owns, then read the result back
   fix (guess): declare it `ptr`

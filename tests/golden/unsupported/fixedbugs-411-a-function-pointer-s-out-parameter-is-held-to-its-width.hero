@@ -1,0 +1,15 @@
+# FIXED DEFECT 411, its shape through a function pointer, found 2026-10-07 in
+# lane b13-w411 while attacking defect 426.
+#
+# SYMPTOM, the same cause on panel 103's class: `fp_count(@n: i32)` against a
+# variable `void (*fp_count)(size_t *)` built at exit 0 and C wrote eight bytes
+# through a four-byte cell, since the width question was never asked either.
+# FIX: the dump through `*`, as above; the parameter is told its width.
+
+extern "fixedbugs-411-pointers.h"
+    function fp_count(@n: i32)  #~ ffi_parameter_type
+
+function main()
+    n: i32 @ 0
+    fp_count(n: @n)
+    print(n)

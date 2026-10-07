@@ -1,8 +1,8 @@
 error[ffi_writable_parameter]: `p` of `w_u8` is declared `cstr`, and the header says `uint8_t *` — C does not promise to leave it alone
-  at tests/golden/unsupported/fixedbugs-411-uint8-t-is-refused.hero:17:5
+  at tests/golden/unsupported/fixedbugs-411-uint8-t-is-refused.hero:17:19
      |
   17 |     function w_u8(p: cstr lent) -> i32  #~ ffi_writable_parameter
-     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     |                   ^
   note: §4.20: `s.cstr()` lends the string's own bytes, and they may be shared with other values — a C write through them changes values this program never passed to C, and on a literal it aborts
   note: declare it `ptr` and give `w_u8` a buffer C owns, then read the result back
   fix (guess): declare it `ptr`
