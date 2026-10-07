@@ -1,0 +1,17 @@
+# fixedbugs, defect 439, lane b14-resolve, 2026-10-07: `end_lease` takes one
+# argument, the cell it frees (`check/lend_types.hero`), and the name stage
+# held every `@` handed to it to the rule of the left of `@`, the second
+# included, so `n` bound with `=` was told `not_mutable` where the call's own
+# mistake is its second argument. The mark stays on the first argument alone
+# now (`resolve/built_marks.hero`, `END_LEASE_WRITES`), and the checker tells
+# the call. If `end_lease` ever takes a second `@`, this case moves.
+#
+# The checker's two messages are its own, the same on the base with `n` a
+# cell: the second, *this argument is not such a cell*, is said of a call
+# whose `@c` is a lease's cell, reported beside defect 439 by its lane.
+
+function main()
+    c: cstr @ "abc".lease()
+    n = 1
+    end_lease(@c, @n)  #~ builtin_shape end_lease_of_no_lease
+    print(n)

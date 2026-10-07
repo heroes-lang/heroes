@@ -1,0 +1,44 @@
+# fixedbugs, defect 439, lane b14-resolve, 2026-10-07, found beside defect
+# 401 by lane b13-zero401.
+#
+# SYMPTOM: an `@` argument past a call's last parameter kept its mark, so a
+# name bound with `=` was told `not_mutable`, *a cell is declared with its
+# type*, and the name stage stopped there: the arity's own mistake was told
+# only once the name was made a cell, which was never the repair. So through
+# a function, a labelled argument, a generic, an extern and a call from a
+# test; and a constant called with an `@` was told `not_mutable` alone.
+#
+# CAUSE: the name stage held an `@` to the rule of the left of `@` wherever
+# no parameter at its position said it takes none, past the last included,
+# and wherever the callee was no function.
+#
+# FIX: the mark stays only on an argument whose parameter, at its position,
+# takes an `@`; every other is set aside, its value read and nothing
+# written, and the checker tells the call's own mistake once.
+
+extern "fixedbugs-439.h"
+    function touch(x: i32) -> i64
+
+function bump(@x: i64)
+    x @ x + 1
+
+function pair<T>(@x: T, y: T)
+    x @ y
+
+constant LIMIT: i64
+    3
+
+function main()
+    n: i64 @ 1
+    m = 2
+    t: i32 = 3
+    bump(@n, @m)  #~ wrong_arity
+    bump(x: @n, y: @m)  #~ wrong_arity
+    pair(x: @n, y: 3, z: @m)  #~ wrong_arity
+    print(touch(t, @t))  #~ wrong_arity
+    print(LIMIT(@m))  #~ not_callable
+    print(n + m)
+
+test "a call from a test past the last parameter"
+    k = 1
+    main(@k)  #~ wrong_arity
