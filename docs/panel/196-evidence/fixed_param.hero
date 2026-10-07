@@ -1,0 +1,17 @@
+# Probe: a fixed-array parameter type, `@md: u8[32]`, lent a group field of that type.
+extern "sha_shim.h" package "libcrypto"
+    record Digest32 tag digest32
+        b: u8[32]
+    record Sha256Ctx tag SHA256state_st partial
+        num: u32
+    function SHA256_Init(@c: Sha256Ctx) -> i32
+    function SHA256_Update(@c: Sha256Ctx, data: cstr lent, len: u64) -> i32
+    function SHA256_Final(@md: u8[32], @c: Sha256Ctx) -> i32
+
+function main()
+    c: Sha256Ctx @ Sha256Ctx(num: 0)
+    d: Digest32 @ Digest32(rest: zero)
+    print(SHA256_Init(@c))
+    print(SHA256_Update(@c, data: "abc".cstr(), len: 3))
+    print(SHA256_Final(md: @d.b, @c))
+    print(d.b[31])

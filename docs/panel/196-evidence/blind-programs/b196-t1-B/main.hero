@@ -1,0 +1,21 @@
+extern "openssl/sha.h" package "libcrypto"
+    function SHA256(d: ptr counted_by n lent, n: u64, md: ptr counted_by 32 lent) -> ptr
+
+# Byte buffers of fixed size, so that `f.ptr()` can lend them to C.
+extern "abc_buffers.h"
+    record Message
+        bytes: u8[3]
+    record Digest
+        bytes: u8[32]
+
+function main()
+    message = Message(bytes: ['a', 'b', 'c'])
+    digest: Digest @ Digest(rest: zero)
+    _ = SHA256(d: message.bytes.ptr(), n: 3, md: digest.bytes.ptr())
+    hex = "0123456789abcdef"
+    parts: [str] @ []
+    for i in range(from: 0, to: 32)
+        v = to_i64(digest.bytes[i]).must()
+        parts @ parts.push(hex.slice(from: v / 16, to: v / 16 + 1))
+        parts @ parts.push(hex.slice(from: v % 16, to: v % 16 + 1))
+    print(join(parts, ""))

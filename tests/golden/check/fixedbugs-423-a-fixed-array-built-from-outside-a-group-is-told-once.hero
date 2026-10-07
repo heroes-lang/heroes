@@ -1,0 +1,57 @@
+# Defect 423, 2026-10-06 (lane b13-fixed405, found beside defect 405; filed
+# by the coordinator, who reproduced it). Symptom: `xs: i64[2] = []` was
+# told `fixed_outside_a_group` for the type and `type_mismatch` for the
+# `[]`, and `[1, 2, 3]` there `fixed_array_length`: one mistake, two
+# messages, the second gone once the first is repaired, since the `[i64]`
+# the refusal offers takes either. Cause: the walk judges every value before
+# the sweep refuses the type, and it cannot tell a refused `i64[2]` from a
+# group field's. Repair: the sweep withdraws what the walk told of a value
+# judged against a type it refused, where the value fits the `[T]`
+# (`selfhost/check/fixed_judged.hero`): a binding's value, a store, a
+# constant's last line, a `return`, a call's argument, and through
+# literals and branches. A value the `[T]` would refuse too, `"ab"` or an
+# element `"a"`, keeps its message, and so does a value judged against a
+# group's field or a type with no fixed array in it.
+
+extern "tags.h"
+    record Tag
+        name: i8[4]
+        id: i32
+    function tag_sum(grid: i64[2]) -> i64  #~ ffi_type
+
+constant EMPTY: i64[2]  #~ fixed_outside_a_group
+    []
+
+constant LONG: i64[2]  #~ fixed_outside_a_group
+    [1, 2, 3]
+
+function take(xs: i64[2]) -> i64  #~ fixed_outside_a_group
+    return xs[0]
+
+function made() -> i64[2]  #~ fixed_outside_a_group
+    return []
+
+function main()
+    xs: i64[2] = []  #~ fixed_outside_a_group
+    long: i64[2] = [1, 2, 3]  #~ fixed_outside_a_group
+    grid: i64[2][3] = []  #~ fixed_outside_a_group
+    rows: i64[2][3] @ [[1, 2], [3, 4]]  #~ fixed_outside_a_group
+    cell: i64[2] @ [1, 2]  #~ fixed_outside_a_group
+    cell @ []
+    named: {str: i64[2]} @ {"a": [1, 2, 3]}  #~ fixed_outside_a_group
+    listed: [i64[2]] @ [[1, 2, 3]]  #~ fixed_outside_a_group
+    ys: [i64] = [1]
+    from_name: i64[2] = ys  #~ fixed_outside_a_group
+    flag = ys.len() > 0
+
+    branched: i64[2] = if flag  #~ fixed_outside_a_group
+        []
+    else
+        [1, 2, 3]
+    word: i64[2] = "ab"  #~ fixed_outside_a_group type_mismatch
+    mixed: i64[3] = [1, "a", 3]  #~ fixed_outside_a_group type_mismatch
+    n: i64 = []  #~ type_mismatch
+    t = Tag(name: [], id: 1)  #~ type_mismatch
+    u = Tag(name: [1, 2], id: 2)  #~ fixed_array_length
+    print(xs[0], long[0], grid[0][0], rows[0][0], cell[0], len(named), len(listed), from_name[0], branched[0])
+    print(word[0], mixed[0], n, t.id, u.id, EMPTY[0], LONG[0], take([]), made()[0], tag_sum([]))

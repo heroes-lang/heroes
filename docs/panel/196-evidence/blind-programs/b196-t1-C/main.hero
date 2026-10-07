@@ -1,0 +1,26 @@
+# Prints the SHA-256 digest of the three bytes `abc` as lowercase hex.
+
+extern "sha256_abc.h" package "libcrypto"
+    constant SHA256_DIGEST_LENGTH: i64
+    record Sha256Digest tag sha256_digest
+        md: u8[32]
+    function sha256_into(data: cstr lent, data_len: u64, md: ptr counted_by md_len lent, md_len: u64) -> i32
+
+function main()
+    digest: Sha256Digest @ Sha256Digest(rest: zero)
+    status = sha256_into(data: "abc".cstr(),
+        data_len: 3,
+        md: digest.md.ptr(),
+        md_len: SHA256_DIGEST_LENGTH.to_u64().must())
+    if status != 1
+        print("sha256 failed")
+        exit(code: 1)
+    parts: [str] @ []
+    for i in range(from: 0, to: SHA256_DIGEST_LENGTH)
+        byte = digest.md[i].to_i64().must()
+        parts @ parts.push(hex_digit(byte / 16))
+        parts @ parts.push(hex_digit(byte % 16))
+    print(parts.join(""))
+
+function hex_digit(n: i64) -> str
+    return "0123456789abcdef".slice(from: n, to: n + 1)

@@ -20,9 +20,15 @@
 # raw tab was copied into a string that refuses it. A NUL, which no escape
 # writes, and a hole whose code goes over lines have no spelling.
 #
+# **A backtick its line leaves open** (defect 414) is told once with the rest
+# of its line (`backtick_strings.open_end`), where the scanner told the
+# backtick and again each `$` of a hole after it, a run of characters in it,
+# or the string a `"` in it left open. No literal is offered: where its
+# author meant it to end is not on its line.
+#
 # | entry | called by |
 # |---|---|
-# | `template` | `refused_stretch.told` |
+# | `template`, `unclosed` | `refused_stretch.told` |
 
 use token
 use diag
@@ -44,7 +50,7 @@ function template(text: str, from: i64, to: i64) -> diag.Diagnostic
     broken: str @ ""
 
     if lines > 1
-        shown @ escape_readings.quoted(text.slice(from: from, to: first_line_end(text, from: from)) + "…") + ", over " + lines.to_str() + " lines,"
+        shown @ escape_readings.quoted(text.slice(from: from, to: backtick_strings.line_end(text, from: from)) + "…") + ", over " + lines.to_str() + " lines,"
         broken @ ", on one line, a line break in its text written `\\n`"
     message: str @ shown + backtick_strings.BACKTICKS_SAID + " — a string is written in double quotes" + broken
 
@@ -75,18 +81,18 @@ function lines_in(text: str, from: i64, to: i64) -> i64
 
     return n
 
-# Where the line holding `from` ends, before its `\r\n` or its `\n`.
-function first_line_end(text: str, from: i64) -> i64
-    i: i64 @ from
+# The rest of a line after a backtick it leaves open, from `from` to `to`,
+# told once, with no literal offered.
+function unclosed(text: str, from: i64, to: i64) -> diag.Diagnostic
+    shown = escape_readings.quoted(text.slice(from: from, to: to)) + ", closed nowhere on its line,"
+    message: str @ shown + backtick_strings.BACKTICKS_SAID + " — a string is written in double quotes, opened and closed on one line"
 
-    while i < text.len() && text[i] != '\n'
-        i @ i + 1
+    if holds_a_hole(text, from: from, to: to)
+        message @ shown + backtick_strings.TEMPLATE_SAID + " — a value goes into a string through a hole of an `f\"…\"` literal, opened and closed on one line"
+    return diag.new_diagnostic(code: "unexpected_character", message: message, span: token.Span(start: from, end: to))
 
-    if i > from && text[i - 1] == '\r'
-        return i - 1
-    return i
-
-# Whether the template from `from` holds a `${` in its own text.
+# Whether the template from `from` holds a `${` in its own text, the byte
+# before `to` aside, which is its closing backtick or a hole's own `{`.
 function holds_a_hole(text: str, from: i64, to: i64) -> bool
     i: i64 @ from + 1
 
@@ -277,3 +283,15 @@ test "a character a string refuses as itself is written as a string writes it"
     assert told_at_start("`a\u{1b}b\u{202e}`").must().fixes[0].replacement == "\"a\\u{1b}b\\u{202e}\""
     nul: [u8] = [96, 97, 0, 98, 96]
     assert told_at_start(nul.validated_bytes().must()).must().fixes.len() == 0
+
+# Defect 414: the rest of the line a backtick leaves open, told once by
+# name, with no literal.
+test "a backtick its line leaves open is told once with the rest of its line"
+    d = unclosed("s = `never closed ${x}\n", from: 4, to: 22)
+    assert d.message == "`` `never closed ${x} ``, closed nowhere on its line, is JavaScript's template literal, and backticks are not part of the language's syntax — a value goes into a string through a hole of an `f\"…\"` literal, opened and closed on one line"
+    assert d.span == token.Span(start: 4, end: 22)
+    assert d.fixes.len() == 0
+    assert backtick_strings.is_template(d)
+    plain = unclosed("`it is \"open\n", from: 0, to: 12)
+    assert plain.message == "`` `it is \"open ``, closed nowhere on its line, is a string in backticks, which are not part of the language's syntax — a string is written in double quotes, opened and closed on one line"
+    assert backtick_strings.is_template(plain)

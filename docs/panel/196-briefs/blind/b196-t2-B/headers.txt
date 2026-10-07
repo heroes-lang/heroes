@@ -1,0 +1,5 @@
+From `math.h`:
+
+```c
+extern double frexp(double, int *);
+```

@@ -3,7 +3,7 @@ kind: defect
 area: check
 milestone: none
 filed: 2026-10-06
-commit: none
+commit: 50bcbcb297d39983f5f81010deea8c090b8543c8
 github: none
 ---
 
@@ -12,3 +12,5 @@ github: none
     **Origin:** lane b13-zero401, 2026-10-06 (its report, *found beside it*), beside defect 401; reproduced by the coordinator. Measured by the lane, not re-run by the coordinator: `.circle(r: @n)` and `.ring(r: 2, rest: @zero)` also check at 0.
 
     **Class: blocking**, 2026-10-06 (`.claude/rules/verification.md` § Bounded discovery): an exit 2 where the author can be told, `check` accepting a program the build cannot make.
+
+    Repaired at `50bcbcb2`, 2026-10-07 (lane b13-zero401): an `@` handed to a construction refused at the name stage (`resolve/built_marks.hero`), `marker_mismatch` quoting the argument as written, its guess fix dropping the mark; cases `check/fixedbugs-412-*` and `full/fixedbugs-412-*`; gated by its cases and the compiler's own tests, the net owed at the batch's close; merged into round b13 by the coordinator, the card filled by the coordinator since the lane was told not to edit it.

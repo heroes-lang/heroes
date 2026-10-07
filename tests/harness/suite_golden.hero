@@ -206,6 +206,9 @@ constant NO_FLAGS: [str]
 # front: defect 391's template literal and defect 399's repair that works.
 # **14 the same night**, at the merges of lanes tmpl407 and fixed405: defect
 # 407's template over lines, 405's nested fixed array, 408's `rest: zero`.
+# **18 on 2026-10-07**, at the merges of lanes zero401, tmpl407 and fixed405:
+# defect 401's binding named `zero`, 412's `@` in a construction, 414's open
+# backtick, 424's result.
 function shape_full() -> Shape
     return Shape(
         name: "full",
@@ -214,7 +217,7 @@ function shape_full() -> Shape
         flags: NO_FLAGS,
         on_stderr: true,
         want_code: 1,
-        least: 14,
+        least: 18,
         watched: true,
         silent_stdout: false,
         library_skip: false

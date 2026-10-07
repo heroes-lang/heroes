@@ -1,0 +1,56 @@
+# Defect 414, 2026-10-06 (lane b13-tmpl407's finding beside defect 407).
+# Symptom: `` s = `never closed ${x} ``, its backtick closed nowhere, was
+# told twice, under `check` and `check --permissive` alike: at the backtick
+# and again at the `$` of its hole, once more for each hole after it, and at
+# a `"` in it, which opened a string its line never closed. Cause: a
+# backtick that opens no template was told alone (defect 391), and the rest
+# of its line lexed as code. Where JavaScript's reading of its line closes
+# nothing the backtick opens, the rest of the line is its string's, as the
+# rest of a line is a `"`'s that the line does not close, told once, with no
+# literal offered, since where its author meant it to end is not on its
+# line (`backtick_strings.open_end`, `backtick_told.unclosed`). It ends
+# before a comment begun after a space, and before a closer that closes
+# nothing opened after the backtick, which is the line's: the call's `)`,
+# the `}` closing the hole of an `f"…"` literal it stands in. A `$` with no
+# backtick before it is the case beside this one.
+
+function one_hole(x: i64)
+    #~v unexpected_character
+    s = `never closed ${x}
+    print(s)
+
+function two_holes(x: i64, y: i64)
+    #~v unexpected_character
+    s = `a ${x} and ${y}
+    print(s)
+
+function in_a_call(x: i64)
+    print(`never closed ${x})  #~ unexpected_character
+
+function a_quote_and_a_run(x: i64)
+    #~v unexpected_character
+    s = `it is "open ключ ${x}
+    print(s)
+
+function before_a_comment(x: i64)
+    s = `never closed ${x}  #~ unexpected_character
+    print(s)
+
+function in_an_f_hole(x: i64)
+    print(f"{`a ${x}}")  #~ unexpected_character
+
+function main()
+    one_hole(7)
+    two_holes(7, 8)
+    in_a_call(7)
+    a_quote_and_a_run(7)
+    before_a_comment(7)
+    in_an_f_hole(7)
+    to_the_end(7)
+
+# A hole no brace closes before the file's end: the line is told, and the
+# lines below it are the program's.
+function to_the_end(x: i64)
+    #~v unexpected_character
+    s = `a ${
+    print(x)
