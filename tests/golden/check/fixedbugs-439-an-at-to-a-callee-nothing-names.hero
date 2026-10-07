@@ -1,0 +1,32 @@
+# fixedbugs, defect 439, lane b14-resolve, 2026-10-07, found beside defect
+# 401 by lane b13-zero401.
+#
+# SYMPTOM: an `@` handed to a call whose callee is a name nothing binds, or a
+# variant named as a value, kept its mark, so a name bound with `=` was told
+# `not_mutable` beside `unknown_name` or `variant_in_value_position`: a
+# second message for one mistake, and a repair nobody can know is owed until
+# the callee is known (`bmup(@n)` is told nothing about `n` now, whether the
+# function it meant takes an `@` or not).
+#
+# CAUSE: the name stage held an `@` to the rule of the left of `@` before
+# anything knew whether the call writes the argument back.
+#
+# FIX: the mark stays only on an argument whose parameter, at its position,
+# takes an `@`; a callee that resolved to nothing, a module or a variant has
+# none, so the `@` is set aside untold and the callee's own mistake is the one
+# message.
+
+variant Mode
+    on
+    off
+
+function bump(@x: i64)
+    x @ x + 1
+
+function main()
+    n = 1
+    m = 2
+    bmup(@n)  #~ unknown_name
+    grow(@n, k: @m)  #~ unknown_name
+    print(Mode(@n))  #~ variant_in_value_position
+    print(n + m)

@@ -1,0 +1,14 @@
+# Defect 270, lane b14-resolve, 2026-10-07, found beside defect 220 by batch
+# 8's source lane: `print(sqrt(2.0))` with no `extern` was asked *did you
+# mean `sort`?*, a guess that is true and points away from the repair, and
+# the one route the message named. A name nothing binds, called, now carries
+# a note saying how a function of C is bound, in words true whatever the
+# name is (whether `sqrt` is C's is a standard library's knowledge, which
+# the compiler does not hold), and the rename stays a guess; so does the
+# name after a dot. A name read as a value is told nothing of C.
+
+function main()
+    print(sqrt(2.0))  #~ unknown_name
+    print(2.0.sqrt())  #~ unknown_function
+    xs = [1.0, 4.0]
+    print(xs.map(sqrt))  #~ unknown_name

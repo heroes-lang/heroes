@@ -29,6 +29,15 @@
 # `@` is asked only of an argument a call does write back. Asked of every
 # `@`, it told `f(x: @p)` that `p` bound with `=` should be a cell, which was
 # never the repair, and the `@` only once that was done.
+#
+# **And of every call not known to write the argument back** (defect 439):
+# an argument past the last parameter, which the checker tells as the
+# arity's mistake; a name that resolved to nothing, told already; and a
+# callee that is no function, a module, a constant or a variant, told as
+# what it is. Each kept its mark, so a name bound with `=` was told
+# `not_mutable` beside that mistake, or, where the checker tells it, in its
+# place. So the mark stays on one argument only: one whose parameter, at its
+# position, takes an `@`.
 
 use token
 use ast
@@ -54,36 +63,36 @@ function of_a_call(@r: state.Resolver, a: ast.Ast, s: source.Source, decls: [ast
                 .record_decl =>
                     # `x.Point(…)` is refused as no function already.
                     if receiver
-                        return given
+                        return set_aside(given)
                     built = source.span_text(s, decls[t.at].name)
                     tell = !handles.is_handle(decls[t.at])
                     return unmarked(@r, a, s, built: built, what: "a `record`", tell: tell, given: given)
                 .function_decl fd =>
-                    first: i64 @ 0
+                    writes: [bool] @ []
 
-                    if receiver
-                        first @ 1
-                    return beside(fd.value.params, first: first, given: given)
-                .constant_decl | .variant_decl | .test_decl => return given
+                    for p in fd.value.params
+                        writes @ writes.push(p.mutable)
+
+                    return beside(writes, first: first_position(receiver), given: given)
+                # No function: told as what it is, a constant or a variant
+                # called; a test has no name a call can write.
+                .constant_decl | .variant_decl | .test_decl => return set_aside(given)
         .builtin b =>
             if a.exprs[callee].kind == .name && is_a_constructor(source.span_text(s, a.exprs[callee].span))
                 built = source.span_text(s, a.exprs[callee].span)
                 return unmarked(@r, a, s, built: built, what: "a `T?`", tell: true, given: given)
 
             # One built-in takes an `@`, `end_lease(@x)`, which empties the
-            # cell it frees (panel 125); no other changes an argument.
+            # cell it frees (panel 125), and it takes that one argument alone
+            # (`check/lend_types.hero`); no other changes an argument.
             if inventory.table()[b.at].name == "end_lease"
-                return given
-            return unmarked(@r, a, s, built: "", what: "", tell: false, given: given)
+                return beside(END_LEASE_WRITES, first: first_position(receiver), given: given)
+            return set_aside(given)
         # A function value: no function type carries an `@` (defect 398).
-        .local => return unmarked(@r, a, s, built: "", what: "", tell: false, given: given)
-        .unresolved =>
-            # A name that resolved to nothing is told already; any other
-            # callee unresolved is a value called, `pick()(x)` or a field.
-            if a.exprs[callee].kind == .name
-                return given
-            return unmarked(@r, a, s, built: "", what: "", tell: false, given: given)
-        .module => return given
+        # A name that resolved to nothing is told already, and any other
+        # callee unresolved is a value called, `pick()(x)` or a field; a
+        # module called is told as no value. None is known to write back.
+        .local | .unresolved | .module => return set_aside(given)
 
 # The arguments of a variant case, `name` its case: all of them, since a case
 # is always built.
@@ -101,15 +110,33 @@ function any_marked(given: [ast.Arg]) -> bool
 
     return false
 
-# `given` against a function's parameters from `first`: an `@` where the
-# parameter at its position has none is taken off, untold. An argument past
-# the last parameter keeps its mark, the arity being the checker's to tell.
-function beside(params: [ast.Param], first: i64, given: [ast.Arg]) -> [ast.Arg]
+# `end_lease`'s one parameter, the cell it frees, which takes an `@`.
+constant END_LEASE_WRITES: [bool]
+    [true]
+
+# Where the written arguments begin among the parameters: at the second
+# where a UFCS receiver is the first.
+function first_position(receiver: bool) -> i64
+    if receiver
+        return 1
+    return 0
+
+# `given` with every `@` taken off, untold: no parameter of the callee
+# takes one.
+function set_aside(given: [ast.Arg]) -> [ast.Arg]
+    none: [bool] = []
+    return beside(none, first: 0, given: given)
+
+# `given` against the parameters from `first`, `writes` saying which takes an
+# `@`: an `@` is kept only where the parameter at its position takes one, and
+# taken off, untold, where it takes none or where no parameter stands, past
+# the last, whose arity the checker tells (defect 439).
+function beside(writes: [bool], first: i64, given: [ast.Arg]) -> [ast.Arg]
     kept: [ast.Arg] @ []
     k: i64 @ first
 
     for arg in given
-        if arg.mutable && k < params.len() && !params[k].mutable
+        if arg.mutable && (k >= writes.len() || !writes[k])
             kept @ kept.push(ast.Arg(name: arg.name, mutable: false, value: arg.value))
         else
             kept @ kept.push(arg)

@@ -1,0 +1,6 @@
+tests/golden/check/fixedbugs-439-an-at-past-the-last-parameter.hero:35:5: error[wrong_arity]: `bump` takes 1 argument(s), found 2
+tests/golden/check/fixedbugs-439-an-at-past-the-last-parameter.hero:36:5: error[wrong_arity]: `bump` takes 1 argument(s), found 2
+tests/golden/check/fixedbugs-439-an-at-past-the-last-parameter.hero:37:5: error[wrong_arity]: `pair` takes 2 argument(s), found 3
+tests/golden/check/fixedbugs-439-an-at-past-the-last-parameter.hero:38:11: error[wrong_arity]: `touch` takes 1 argument(s), found 2
+tests/golden/check/fixedbugs-439-an-at-past-the-last-parameter.hero:39:11: error[not_callable]: this is a `i64`, and a `i64` cannot be called
+tests/golden/check/fixedbugs-439-an-at-past-the-last-parameter.hero:44:5: error[wrong_arity]: `main` takes 0 argument(s), found 1
