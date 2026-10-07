@@ -1,0 +1,85 @@
+# What each typedef must be declared AFTER, as a graph (design.md §4.2,
+# §4.6, §4.20; panel 023 R3): by-value containment only, which is exactly
+# what C needs a complete type for. `emit/typeorder.hero` walks the graph
+# and writes the typedefs in its post-order.
+#
+# Its own file since defect 189 (2026-10-07), when `typeorder.visit` came
+# to take its graph as data so a test can hold the walk to a depth no
+# program affords: what an item needs is a question about the program's
+# types, asked before and apart from the order they are written in. An item
+# is one i64, decl*2 for a declared aggregate and ty*2+1 for a generated
+# typedef, as `typeorder.hero` keeps it.
+
+use ast
+use check/table
+use check/state
+use emit/ctype
+use emit/types
+
+# What each item the seeds reach must be declared after, every item once:
+# the graph `typeorder.visit` walks. A queue and a set, never a recursion,
+# for `visit`'s reason (a record holds the one before it by value, as deep
+# as the program nests them); the order it finds them in reaches nothing,
+# since what it builds is a map.
+function graph_of(c: state.Checked, names: ctype.Names, decls: [ast.Decl], seeds: [i64]) -> {i64: [i64]}
+    found: {i64: [i64]} @ {}
+    queue: [i64] @ seeds
+    next: i64 @ 0
+
+    while next < queue.len()
+        item = queue[next]
+        next @ next + 1
+
+        if found[item].is_err()
+            item_needs = needs(c, names, decls, item: item)
+            found[item] @ item_needs
+
+            for need in item_needs
+                if found[need].is_err()
+                    queue @ queue.push(need)
+
+    return found
+
+# What an item must be declared AFTER: by-value containment only,
+# which is exactly what C needs a complete type for.
+function needs(c: state.Checked, names: ctype.Names, decls: [ast.Decl], item: i64) -> [i64]
+    written: [i64] @ []
+
+    if item % 2 == 0
+        for field in types.fields_of(decls, decl: item / 2)
+            found = state.written_type(c, field.ty)
+
+            if !found.is_err()
+                written @ written.push(found.must())
+
+        for one_case in types.cases_of(decls, decl: item / 2)
+            for field in one_case.fields
+                found = state.written_type(c, field.ty)
+
+                if !found.is_err()
+                    written @ written.push(found.must())
+    else
+        match table.get(c.types, item / 2)
+            .fallible o => written @ written.push(o.payload)
+            .function_ty fn_ty =>
+                for p in table.params_of(c.types, fn_ty.params)
+                    written @ written.push(p)
+
+                written @ written.push(fn_ty.result)
+            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => written @ written
+            .array | .fixed | .map | .named                           => written @ written
+            .case_ty | .failure | .generic | .error                   => written @ written
+    out: [i64] @ []
+
+    for ty in written
+        match table.get(c.types, ty)
+            .named n    => out @ out.push(n.decl * 2)
+            .case_ty ct => out @ out.push(ct.decl * 2)
+            .fallible   => out @ out.push(ty * 2 + 1)
+            .function_ty =>
+                if !names.funcs[ty].is_err()
+                    out @ out.push(ty * 2 + 1)
+            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => continue
+            .array | .fixed | .map | .failure | .generic | .error     => continue
+
+    return out

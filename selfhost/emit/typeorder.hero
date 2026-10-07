@@ -34,6 +34,7 @@ use resolve
 use checker
 use ir/lower
 use emit/ffi_lookup
+use emit/type_needs
 
 # Every typedef the program needs, each after everything it contains
 # by value. The seed order is the two old orders concatenated —
@@ -73,17 +74,15 @@ function definitions(@w: writer.Writer, c: state.Checked, names: ctype.Names, s:
                 seeds @ seeds.push(id * 2 + 1)
         id @ id + 1
 
-    order: Ordered @ Ordered(done: {}, out: [], depth: {}, deepest: 0)
-
-    for seed in seeds
-        order @ visit(order, c, names, decls, item: seed)
+    graph = type_needs.graph_of(c, names, decls, seeds: seeds)
+    out = visit(seeds, graph: graph)
 
     # A struct typedef ends with its own blank line and a
     # function-pointer typedef does not, so the group owes one exactly
     # when the last thing written was the latter.
     owed_blank: bool @ false
 
-    for item in order.out
+    for item in out
         if item % 2 == 0
             types.declared(@w, c, names, s, decls, decl: item / 2)
             owed_blank @ false
@@ -111,8 +110,8 @@ function definitions(@w: writer.Writer, c: state.Checked, names: ctype.Names, s:
     if owed_blank
         writer.blank(@w)
 
-    if order.deepest > IN_ORDER_FROM
-        in_order(@w, c, names, decls, out: order.out)
+    if deepest(c, names, decls, out: out, graph: graph) > IN_ORDER_FROM
+        in_order(@w, c, names, decls, out: out)
 
 # HOW DEEP A CHAIN OF STRUCTS CLANG IS LEFT TO CONVERT BY ITSELF (defect 170,
 # 2026-10-03). Clang turns a struct type into its own the first time a
@@ -178,15 +177,32 @@ function struct_named(c: state.Checked, names: ctype.Names, decls: [ast.Decl], i
         .variant_decl                                => return ctype.of(names, decl: decl)
         .constant_decl | .function_decl | .test_decl => return ""
 
-record Ordered
-    done: {i64: bool}
-    out: [i64]
-    # How many of this unit's own structs each item holds by value, itself
-    # included, and the most of any (defect 170). A function type's typedef
-    # and a group's record count none: C keeps a pointer to the one, and the
-    # header lays out the other.
-    depth: {i64: i64}
-    deepest: i64
+# How many of this unit's own structs the deepest item holds by value,
+# itself included (defect 170), read off the walk's order: post-order, so
+# every item's needs are counted before it. A function type's typedef and a
+# group's record count none: C keeps a pointer to the one, and the header
+# lays out the other.
+function deepest(c: state.Checked, names: ctype.Names, decls: [ast.Decl], out: [i64], graph: {i64: [i64]}) -> i64
+    depth: {i64: i64} @ {}
+    most: i64 @ 0
+
+    for item in out
+        held: i64 @ 0
+
+        if struct_named(c, names, decls, item: item).len() > 0
+            for need in graph[item].must()
+                below = depth[need].default(0)
+
+                if below > held
+                    held @ below
+
+            held @ held + 1
+        depth[item] @ held
+
+        if held > most
+            most @ held
+
+    return most
 
 # Where the walk below stands in one item: the item, what it needs, and
 # how many of those it has already gone into. A recursion keeps the same
@@ -196,8 +212,9 @@ record Frame
     needs: [i64]
     next: i64
 
-# One item, after everything it needs. Post-order, so a dependency
-# reached from two places is written once.
+# Every item the seeds reach, each after everything it needs: post-order
+# from each seed in turn, so a dependency reached from two places is
+# written once, where it is first reached.
 #
 # **ITS FRAMES ARE A STACK OF ITS OWN, NOT THE MACHINE'S** (defect 140,
 # 2026-10-01): a record holds the one before it by value, so the walk goes
@@ -206,94 +223,49 @@ record Frame
 # recursion's frames keep and in the same order, item marked done on the
 # way in and written on the way out, so `out` is the recursion's sequence
 # item for item, and the emitted C is unchanged with it.
-function visit(order: Ordered, c: state.Checked, names: ctype.Names, decls: [ast.Decl], item: i64) -> Ordered
-    if !order.done[item].is_err()
-        return order
-    st: Ordered @ order
-    st.done[item] @ true
-    frames: [Frame] @ [Frame(item: item, needs: needs(c, names, decls, item: item), next: 0)]
-    live: i64 @ 1
-
-    while live > 0
-        top = frames[live - 1]
-
-        if top.next < top.needs.len()
-            need = top.needs[top.next]
-            frames[live - 1].next @ top.next + 1
-
-            if st.done[need].is_err()
-                st.done[need] @ true
-                entered = Frame(item: need, needs: needs(c, names, decls, item: need), next: 0)
-
-                if live < frames.len()
-                    frames[live] @ entered
-                else
-                    frames @ frames.push(entered)
-                live @ live + 1
-        else
-            st.out @ st.out.push(top.item)
-
-            # Every need is written by now (post-order over a DAG, the
-            # checker refusing a by-value cycle), so its depth is known.
-            held: i64 @ 0
-
-            if struct_named(c, names, decls, item: top.item).len() > 0
-                for need in top.needs
-                    below = st.depth[need].default(0)
-
-                    if below > held
-                        held @ below
-
-                held @ held + 1
-            st.depth[top.item] @ held
-
-            if held > st.deepest
-                st.deepest @ held
-            live @ live - 1
-
-    return st
-
-# What an item must be declared AFTER: by-value containment only,
-# which is exactly what C needs a complete type for.
-function needs(c: state.Checked, names: ctype.Names, decls: [ast.Decl], item: i64) -> [i64]
-    written: [i64] @ []
-
-    if item % 2 == 0
-        for field in types.fields_of(decls, decl: item / 2)
-            found = state.written_type(c, field.ty)
-
-            if !found.is_err()
-                written @ written.push(found.must())
-
-        for one_case in types.cases_of(decls, decl: item / 2)
-            for field in one_case.fields
-                found = state.written_type(c, field.ty)
-
-                if !found.is_err()
-                    written @ written.push(found.must())
-    else
-        match table.get(c.types, item / 2)
-            .fallible o => written @ written.push(o.payload)
-            .function_ty fn_ty =>
-                for p in table.params_of(c.types, fn_ty.params)
-                    written @ written.push(p)
-
-                written @ written.push(fn_ty.result)
-            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => written @ written
-            .array | .fixed | .map | .named                           => written @ written
-            .case_ty | .failure | .generic | .error                   => written @ written
+#
+# **It walks a graph handed to it, so it can be held to that** (defect 189,
+# 2026-10-07): a mutant restoring the recursion emitted the same bytes as
+# this walk at 1,000 and 5,000 records, and the front end costs 233 billion
+# instructions at 20,000, so no program a test can afford reaches a depth a
+# recursion dies at. The test below walks a chain a million deep, given as
+# data, which no machine stack this compiler runs on holds as a recursion.
+function visit(seeds: [i64], graph: {i64: [i64]}) -> [i64]
+    done: {i64: bool} @ {}
     out: [i64] @ []
+    frames: [Frame] @ []
+    live: i64 @ 0
 
-    for ty in written
-        match table.get(c.types, ty)
-            .named n    => out @ out.push(n.decl * 2)
-            .case_ty ct => out @ out.push(ct.decl * 2)
-            .fallible   => out @ out.push(ty * 2 + 1)
-            .function_ty =>
-                if !names.funcs[ty].is_err()
-                    out @ out.push(ty * 2 + 1)
-            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => continue
-            .array | .fixed | .map | .failure | .generic | .error     => continue
+    for seed in seeds
+        if done[seed].is_err()
+            done[seed] @ true
+            entered = Frame(item: seed, needs: graph[seed].must(), next: 0)
+
+            if frames.len() > 0
+                frames[0] @ entered
+            else
+                frames @ frames.push(entered)
+            live @ 1
+
+        while live > 0
+            top = frames[live - 1]
+
+            if top.next < top.needs.len()
+                need = top.needs[top.next]
+                frames[live - 1].next @ top.next + 1
+
+                if done[need].is_err()
+                    done[need] @ true
+                    entered = Frame(item: need, needs: graph[need].must(), next: 0)
+
+                    if live < frames.len()
+                        frames[live] @ entered
+                    else
+                        frames @ frames.push(entered)
+                    live @ live + 1
+            else
+                out @ out.push(top.item)
+                live @ live - 1
 
     return out
 
@@ -356,3 +328,38 @@ test "past 32 structs held by value clang is handed the chain from its bottom, a
     assert !top.is_err()
     assert last_typedef.must() < order_at.must()
     assert bottom.must() < top.must()
+
+test "the walk writes each item after its needs, in the order they are listed, where it is first reached"
+    # Two seeds, 5 then 4. From 5: 3 needs 2, written, then 3; 1 needs 2,
+    # already written, so 1; then 5. From 4: 0, then 1 already written, then
+    # 4. A recursion writes the same sequence, which is what the emitted C's
+    # order has been since panel 023.
+    graph: {i64: [i64]} @ {}
+    none: [i64] = []
+    graph[5] @ [3, 1]
+    graph[3] @ [2]
+    graph[1] @ [2]
+    graph[2] @ none
+    graph[4] @ [0, 1]
+    graph[0] @ none
+    assert visit([5, 4], graph: graph) == [2, 3, 1, 5, 0, 4]
+
+test "the walk keeps a stack of its own: a chain a hundred thousand deep, given as data (defect 189)"
+    # A recursion of this walk dies between 6,000 and 7,000 items deep on an
+    # 8 MiB stack at -O0 (`panic: stack exhausted`, measured 2026-10-07), and
+    # Windows' 64 MiB reserve is eight times that: no machine stack this
+    # compiler runs on holds 100,000 frames of it.
+    n: i64 = 100000
+    graph: {i64: [i64]} @ {}
+    none: [i64] = []
+    graph[0] @ none
+    at: i64 @ 1
+
+    while at < n
+        graph[at] @ [at - 1]
+        at @ at + 1
+
+    out = visit([n - 1], graph: graph)
+    assert out.len() == n
+    assert out[0] == 0
+    assert out[n - 1] == n - 1
