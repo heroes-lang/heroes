@@ -83,7 +83,10 @@ HeroStr hero_file_read_shown(const char *path, int64_t *status, int64_t *marks);
  * Bound in `selfhost/cli/process.hero`'s own group, like the read above. */
 HeroStr hero_env_shown(const char *name, int64_t *status, int64_t *marks);
 
-/* The text, written whole, replacing whatever was there. Returns a status. */
+/* The text, written whole, replacing whatever was there. Returns a status.
+ * Through a private name and a rename since defect 438, so the name holds the
+ * old text or the new and never a part, and in place where a rename could not
+ * make the new file everything the old one was (`parts/write.c` names each). */
 int64_t hero_file_write(const char *path, HeroStr text);
 /* The same two doors taking the program's `str` rather than a lend of it
  * (panel 192), so a name holding a NUL is a status the prelude turns into a

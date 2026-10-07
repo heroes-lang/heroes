@@ -216,3 +216,7 @@
  * 136). After `fs.c`, whose platform arm it shares a reason with, and `os.c`,
  * whose `hero_fs_why_code` it sets. */
 #include "parts/replace.c"
+
+/* The program's `write_file`, whole or not at all (defect 438): through
+ * `replace.c`'s private name and rename, which is why it comes after it. */
+#include "parts/write.c"

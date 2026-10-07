@@ -1,0 +1,140 @@
+# Defect 438, 2026-10-07, the shapes beside its repair. `write_file` now
+# writes a private name beside the file and renames it over the file
+# (`runtime/parts/write.c`), and a rename puts a NEW file at the name, where
+# the write before it wrote into the old one and kept everything the file was
+# besides its bytes. So each of these is what the old write did, held:
+#
+#   - a name not there is made, and nothing else is left beside it;
+#   - a file's own mode is kept (on Windows the mode is read-only or not);
+#   - a file with a second name is written in place, both names reading the
+#     new text, still one file;
+#   - a directory that takes no new name still has its file written, in place;
+#   - the null device is written to and stays a device;
+#   - a directory, and a name in a directory that is not there, are refused,
+#     and nothing is made.
+#
+# Every line is the same on every platform, the null device named by the
+# platform's own spelling. Run as an account the system lets past a mode
+# (root in a container), the directory that takes no new name takes one, and
+# the line is the same. `build/` for the directory,
+# `edges-file-args-exit.hero`'s reason.
+
+extern "hero_os.h"
+    function hero_os_pid() -> i64
+    function hero_run_exe_suffix() -> str
+    function hero_fs_mkdir_all(path: cstr lent) -> i64
+    function hero_fs_exists(path: cstr lent) -> i64
+    function hero_fs_is_directory(path: cstr lent) -> i64
+    function hero_fs_kind(path: cstr lent) -> i64
+    function hero_fs_links(path: cstr lent) -> i64
+    function hero_fs_mode(path: cstr lent) -> i64
+    function hero_fs_set_mode(path: cstr lent, mode: i64) -> i64
+    function hero_fs_link(existing: cstr lent, name: cstr lent) -> i64
+    function hero_dir_scan(root: cstr lent, want: i64, recursive: i64) -> i64
+    function hero_dir_release()
+    function hero_dir_remove_tree(path: cstr lent) -> i64
+    constant HERO_DIR_FILES: i64
+    constant HERO_FS_OTHER: i64
+
+constant TEXT: str
+    "the new text\n"
+
+# How many files `dir` holds.
+function files_in(dir: str) -> i64
+    count = hero_dir_scan(root: dir.cstr(), want: HERO_DIR_FILES, recursive: 0)
+    hero_dir_release()
+    return count
+
+function holds(path: str) -> bool
+    return read_file(path).default("(unreadable)") == TEXT
+
+function wrote(path: str) -> bool
+    return !write_file(path: path, text: TEXT).is_err()
+
+function absent(dir: str)
+    path = dir + "/made.txt"
+    print("a name not there: written ", wrote(path), ", holds the text ", holds(path), ", beside it ", files_in(dir))
+
+function own_mode(dir: str)
+    path = dir + "/moded.txt"
+
+    if !wrote(path) || hero_fs_set_mode(path: path.cstr(), mode: 416) != 0
+        print("cannot make ", path)
+        return
+    before = hero_fs_mode(path: path.cstr())
+    print(
+        "a file with its own mode: written ",
+        wrote(path),
+        ", holds the text ",
+        holds(path),
+        ", mode kept ",
+        hero_fs_mode(path: path.cstr()) == before,
+        ", beside it ",
+        files_in(dir)
+    )
+
+function two_names(dir: str)
+    one = dir + "/one.txt"
+    two = dir + "/two.txt"
+
+    if write_file(path: one, text: "OLD").is_err() || hero_fs_link(existing: one.cstr(), name: two.cstr()) != 0
+        print("cannot make ", one, " and ", two)
+        return
+    print(
+        "a file with two names: written ",
+        wrote(one),
+        ", both hold the text ",
+        holds(one) && holds(two),
+        ", still two names ",
+        hero_fs_links(path: one.cstr()) == 2
+    )
+
+function no_new_name(dir: str)
+    shut = dir + "/shut"
+    path = shut + "/inside.txt"
+
+    if hero_fs_mkdir_all(path: shut.cstr()) != 0 || write_file(path: path, text: "OLD").is_err() || hero_fs_set_mode(path: shut.cstr(), mode: 365) != 0
+        print("cannot make ", path)
+        return
+    written = wrote(path)
+    _ = hero_fs_set_mode(path: shut.cstr(), mode: 493)
+    print("a directory that takes no new name: written ", written, ", holds the text ", holds(path))
+
+function device()
+    sink: str @ "/dev/null"
+
+    if hero_run_exe_suffix() == ".exe"
+        sink @ "NUL"
+    print(
+        "the null device: written ",
+        wrote(sink),
+        ", still a device ",
+        hero_fs_kind(path: sink.cstr()) == HERO_FS_OTHER
+    )
+
+function refused(dir: str)
+    print("a directory: written ", wrote(dir), ", still a directory ", hero_fs_is_directory(path: dir.cstr()) == 1)
+    path = dir + "/missing/x.txt"
+    print(
+        "a name in a directory not there: written ",
+        wrote(path),
+        ", nothing made ",
+        hero_fs_exists(path: path.cstr()) == 0
+    )
+
+function main()
+    root = "build/heroes-golden-438-kept-" + hero_os_pid().to_str()
+    lone = root + "/lone"
+    moded = root + "/moded"
+    linked = root + "/linked"
+
+    if hero_fs_mkdir_all(path: lone.cstr()) != 0 || hero_fs_mkdir_all(path: moded.cstr()) != 0 || hero_fs_mkdir_all(path: linked.cstr()) != 0
+        print("cannot make ", root)
+        return
+    absent(lone)
+    own_mode(moded)
+    two_names(linked)
+    no_new_name(root)
+    device()
+    refused(root)
+    _ = hero_dir_remove_tree(path: root.cstr())

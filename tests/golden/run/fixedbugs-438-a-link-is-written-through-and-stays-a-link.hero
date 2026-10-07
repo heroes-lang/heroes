@@ -1,0 +1,115 @@
+# Defect 438, 2026-10-07, the links beside its repair. `write_file` now
+# renames a private copy over the file (`runtime/parts/write.c`), and a rename
+# over a symbolic link would put a file where the link was. So a link is
+# followed to the file its chain names and THAT file is replaced, its mode
+# kept, the link still a link reading the same target; and a link whose chain
+# names nothing yet makes that name, as the write before the repair did.
+#
+# The links are made with `symlink` and read back with `readlink`, both
+# `unistd.h`'s, which is no header of Windows (a link there needs a privilege
+# a test cannot assume), so the case is skipped there by its build's own
+# words. `build/` for the directory, `edges-file-args-exit.hero`'s reason.
+
+extern "unistd.h"
+    function symlink(target: cstr lent, name: cstr lent) -> i32
+    function readlink(path: cstr lent, @buf: [i8] counted_by size lent, size: u64) -> i64
+
+extern "hero_os.h"
+    function hero_os_pid() -> i64
+    function hero_fs_mkdir_all(path: cstr lent) -> i64
+    function hero_fs_kind(path: cstr lent) -> i64
+    function hero_fs_mode(path: cstr lent) -> i64
+    function hero_fs_set_mode(path: cstr lent, mode: i64) -> i64
+    function hero_dir_scan(root: cstr lent, want: i64, recursive: i64) -> i64
+    function hero_dir_release()
+    function hero_dir_remove_tree(path: cstr lent) -> i64
+    constant HERO_DIR_FILES: i64
+    constant HERO_FS_LINK: i64
+
+constant TEXT: str
+    "the new text\n"
+
+# What the link at `path` reads, as bytes, where it is one.
+function target_of(path: str) -> [i8]
+    buf: [i8] @ []
+    got = readlink(path: path.cstr(), @buf, size: 256)
+    out: [i8] @ []
+    i: i64 @ 0
+
+    while i < got
+        out @ out.push(buf[i])
+        i @ i + 1
+
+    return out
+
+function byte_list(text: str) -> [i8]
+    out: [i8] @ []
+    i: i64 @ 0
+
+    while i < text.len()
+        out @ out.push(text[i].to_i8().must())
+        i @ i + 1
+
+    return out
+
+function holds(path: str) -> bool
+    return read_file(path).default("(unreadable)") == TEXT
+
+# How many files `dir` holds, a link counted as one.
+function files_in(dir: str) -> i64
+    count = hero_dir_scan(root: dir.cstr(), want: HERO_DIR_FILES, recursive: 0)
+    hero_dir_release()
+    return count
+
+function to_a_file(dir: str)
+    file = dir + "/file.txt"
+    link = dir + "/link.txt"
+
+    if write_file(path: file, text: "OLD").is_err() || hero_fs_set_mode(path: file.cstr(), mode: 416) != 0 || symlink(target: "file.txt".cstr(), name: link.cstr()) != 0
+        print("cannot make ", link)
+        return
+    before = hero_fs_mode(path: file.cstr())
+    written = !write_file(path: link, text: TEXT).is_err()
+    print(
+        "a link to a file: written ",
+        written,
+        ", the file holds the text ",
+        holds(file),
+        ", its mode kept ",
+        hero_fs_mode(path: file.cstr()) == before,
+        ", still a link to it ",
+        hero_fs_kind(path: link.cstr()) == HERO_FS_LINK && target_of(link) == byte_list("file.txt"),
+        ", beside them ",
+        files_in(dir)
+    )
+
+function to_nothing(dir: str)
+    link = dir + "/dangling.txt"
+    named = dir + "/named.txt"
+
+    if symlink(target: "named.txt".cstr(), name: link.cstr()) != 0
+        print("cannot make ", link)
+        return
+    written = !write_file(path: link, text: TEXT).is_err()
+    print(
+        "a link to nothing: written ",
+        written,
+        ", made what it names ",
+        holds(named),
+        ", still a link to it ",
+        hero_fs_kind(path: link.cstr()) == HERO_FS_LINK && target_of(link) == byte_list("named.txt"),
+        ", beside them ",
+        files_in(dir)
+    )
+
+function main()
+    root = "build/heroes-golden-438-links-" + hero_os_pid().to_str()
+    one = root + "/one"
+    two = root + "/two"
+
+    if hero_fs_mkdir_all(path: one.cstr()) != 0 || hero_fs_mkdir_all(path: two.cstr()) != 0
+        print("cannot make ", root)
+        return
+    to_a_file(one)
+    to_nothing(two)
+    _ = hero_dir_remove_tree(path: root.cstr())
