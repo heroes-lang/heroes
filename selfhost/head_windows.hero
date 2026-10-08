@@ -69,6 +69,24 @@ function reserved_byte(value: str) -> str
 
     return ""
 
+# The first byte from U+0001 to U+001F in the value, or -1: no NTFS name
+# holds one. Measured on the box on 2026-10-08 (Windows 10.0.26100,
+# `CreateFileW`): `a`, a byte, `b.h` failed with Win32 error 123 for 0x01,
+# 0x09, 0x0B, 0x0C, 0x1B and 0x1F, as for `"`, where DEL, U+0080, U+009F,
+# U+200B and U+2028 each stood in a file's name. Panel 188's sweeps had read
+# the tools carrying them on macOS and Linux, which is why `unshowable_name`
+# was a thesis rule for them, and the author's reading of 2026-10-03 extends
+# R2 to a name no NTFS file holds (defect 445).
+function control_byte(value: str) -> i64
+    at: i64 @ 0
+
+    while at < value.len()
+        if value[at] >= 1 && value[at] < 32
+            return to_i64(value[at]).must()
+        at @ at + 1
+
+    return -1
+
 # What a `link`'s or a `package`'s name holds past `unwritable`'s that names
 # no one file on every machine, as its reason, or "" (defect 252). Measured
 # on the box on 2026-10-07, clang 23.1.1 driving lld-link over NTFS: `>` and
