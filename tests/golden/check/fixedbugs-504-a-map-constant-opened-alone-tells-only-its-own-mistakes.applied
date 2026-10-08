@@ -1,0 +1,62 @@
+# Fixed defect 504, 2026-10-08 (lane b15-parse): a map value that opens
+# with `{` alone on its line was read as a body in braces and refused
+# three times. Below, shapes `heroes fmt` would lay out again, each told
+# nothing now: the reproducer, its entries on one line; a map holding a
+# map whose braces stand on lines of their own; an empty map over two
+# lines. Then a map's own mistakes, told as a map's: a key with no `:`,
+# told once where the base told three messages, and a trailing comma; a
+# map alone as a statement is its own case, its one message the checker's
+# (`fixedbugs-504-a-map-alone-as-a-statement-is-told-once`). And the
+# boundaries, told as before: a `{` at a constant's own margin is Allman's
+# habit, as under any head; one a level deeper than an `if` over a
+# statement is Whitesmiths' body; and one over a typed binding at a
+# statement's margin is a block in braces, no map.
+
+constant AGES: {str: i64}
+    {
+        "ziggy": 42, "mars": 7
+    }
+
+constant NESTED: {str: {str: i64}}
+    {
+        "a":
+            {
+                "b": 1
+            }
+    }
+
+constant EMPTY: {str: i64}
+    {
+    }
+
+constant NO_COLON: {str: i64}
+    {
+        "a" 1  #~ expected_map_entry_colon
+    }
+
+constant TRAILING: {str: i64}
+    {
+        "a": 1,
+        "b": 2  #~ trailing_comma
+    }
+
+constant ALLMAN: {str: i64}
+{  #~ missing_body
+    "a": 1  #~ expected_end_of_line
+}
+
+function whitesmiths(x: i64)
+    if x == 1
+        {  #~ missing_body
+        print(x)
+        }
+
+function a_block(x: i64)
+    y = x
+    {
+        z: i64 @ 2  #~ expected_expression
+        print(y + z)
+    }
+
+function main()
+    print(AGES.len() + NESTED.len() + EMPTY.len())

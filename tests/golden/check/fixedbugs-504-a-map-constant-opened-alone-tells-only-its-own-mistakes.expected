@@ -1,0 +1,6 @@
+tests/golden/check/fixedbugs-504-a-map-constant-opened-alone-tells-only-its-own-mistakes.hero:34:13: error[expected_map_entry_colon]: expected `:` between a map's key and its value, found a number (`1`)
+tests/golden/check/fixedbugs-504-a-map-constant-opened-alone-tells-only-its-own-mistakes.hero:40:15: error[trailing_comma]: a trailing comma is not part of the list — write `f(a, b)`, `[1, 2]`
+tests/golden/check/fixedbugs-504-a-map-constant-opened-alone-tells-only-its-own-mistakes.hero:44:1: error[missing_body]: the `constant` `ALLMAN` needs an indented body — one level deeper, exactly 4 spaces (found `{`)
+tests/golden/check/fixedbugs-504-a-map-constant-opened-alone-tells-only-its-own-mistakes.hero:45:8: error[expected_end_of_line]: expected the end of the line, found `:` — one statement per line, no semicolons
+tests/golden/check/fixedbugs-504-a-map-constant-opened-alone-tells-only-its-own-mistakes.hero:50:9: error[missing_body]: an `if` needs an indented body — one level deeper, exactly 4 spaces (found `{`)
+tests/golden/check/fixedbugs-504-a-map-constant-opened-alone-tells-only-its-own-mistakes.hero:57:1: error[expected_expression]: expected an expression, found an indented block — a value, a name, a call, `[`, `{`, `.case`, `if`, `match`, or `???`
