@@ -107,7 +107,13 @@ def might_grow(text, appends=()):
     `layout/appends` refuses: a superset of `tests/harness/growth.hero`'s
     sites and of `suite_layout.hero`'s slow appends, `appends` being its
     `SLOW_APPENDS` and any list of reports grown through a field, each of
-    which stores a place back into itself on one line."""
+    which stores a place back into itself on one line.
+
+    The names the module declares or lends as a `str` are read once, where a
+    search of the whole text for each stored line made it quadratic: about
+    0.6 billion instructions of the write hook's own on a module of 300 such
+    lines, measured 2026-10-08, which defect 493 asks of more writes."""
+    texts = None
     for line in text.split("\n"):
         if any(needle in line for needle in appends):
             return True
@@ -119,9 +125,17 @@ def might_grow(text, appends=()):
             elif "." in name:
                 if "\\n" in line[found.start():]:
                     return True
-            elif how == " + " and re.search(r"(^|[\s(,])@?" + re.escape(name) + r": str\b", text):
-                return True
+            elif how == " + ":
+                if texts is None:
+                    texts = set(DECLARED_STR.findall(text))
+                if name in texts:
+                    return True
     return False
+
+
+# A name declared or lent as a `str`, `name: str` or `@name: str`, after the
+# start of the text, a space, a bracket or a comma.
+DECLARED_STR = re.compile(r"(?:^|[\s(,])@?([A-Za-z_][A-Za-z0-9_]*): str\b")
 
 
 def layout_rows(compiler, root, rel, limit):
@@ -143,15 +157,20 @@ def layout_rows(compiler, root, rel, limit):
     return rows
 
 
-def verdict(root, rel):
-    """A refusal for a `selfhost/` module over its ceiling, or None."""
+def verdict(root, rel, text=None, counted=None):
+    """A refusal for a `selfhost/` module over its ceiling, or None: `text`
+    counted where it is given, the file on disk where it is not, and
+    `counted`, where given, naming what was counted (defect 493: the write
+    hook counts a module's canonical form, which `heroes fmt --in-place` will
+    write, since that command runs no hook)."""
     if not rel.startswith("selfhost/") or not rel.endswith(".hero"):
         return None
-    try:
-        with open(os.path.join(root, rel), encoding="utf-8", errors="replace") as handle:
-            text = handle.read()
-    except OSError:
-        return None
+    if text is None:
+        try:
+            with open(os.path.join(root, rel), encoding="utf-8", errors="replace") as handle:
+                text = handle.read()
+        except OSError:
+            return None
     lines = code_lines(text)
     limit = decided(root).get(rel, CEILING)
     if lines <= limit:
@@ -161,7 +180,7 @@ def verdict(root, rel):
     else:
         what = "past the " + str(limit) + " the `layout` suite's DECIDED table holds it to; a file already over the ceiling may not grow"
     return (
-        rel + ": " + str(lines) + " lines of code, " + what + ".\n"
+        rel + ": " + str(lines) + " lines of code" + (" in " + counted if counted else "") + ", " + what + ".\n"
         "Counted here the way `tests/harness/suite_layout.hero`'s `code_lines` counts; "
         "that suite is the judge: `heroes run tests/harness/main.hero -- <compiler> layout " + rel + "` "
         "(`.claude/rules/verification.md` § A suite is the last judge, CL-079)."

@@ -16,8 +16,9 @@ A TREE here is what `trees.py` recognises: `seed/heroes.c`, a `.git` entry,
 shell script that answers `fmt`, `check` and the harness's `run` as the test
 arranges and writes every call it receives into `calls.log` beside it, so a
 test asks WHICH compiler judged and with what. Its words: a file holding
-`BROKEN` does not parse, one holding `UNCANONICAL` is not canonical, a
-`selfhost/` holding `UNCHECKED` does not check; `run ... -- <c> <suite> <pick>`
+`BROKEN` does not parse, one holding `UNCANONICAL` is not canonical, one
+holding `SPLIT` is not canonical and its canonical form holds that line twice,
+a `selfhost/` holding `UNCHECKED` does not check; `run ... -- <c> <suite> <pick>`
 prints `answer-<suite>` and exits with `answer-<suite>.code`, or exits 2 when
 the test wrote none, as the harness does for a filter that selects nothing.
 
@@ -45,6 +46,7 @@ case "$1" in
 fmt)
     if grep -q BROKEN "$2"; then echo "error[broken]: $2 holds BROKEN" >&2; exit 1; fi
     if grep -q UNCANONICAL "$2"; then sed 's/UNCANONICAL/canonical/' "$2"; exit 0; fi
+    if grep -q SPLIT "$2"; then awk '/SPLIT/ { print "split"; print "split"; next } { print }' "$2"; exit 0; fi
     cat "$2"; exit 0 ;;
 check)
     if [ "$2" = selfhost/main.hero ]; then
@@ -942,6 +944,98 @@ class Growth(unittest.TestCase):
             self.assertTrue(ceiling.might_grow(text, appends), text)
         for text in ("    at @ at + 1\n", "    p.page @ p.page + word\n", "    r.items @ r.items.push(x)\n"):
             self.assertFalse(ceiling.might_grow(text, appends), text)
+
+
+class EveryAnswer(unittest.TestCase):
+    """Defect 493: a write is asked every question the hook can answer, and
+    told every answer; a refusal never hides the ceiling, nor the questions
+    after it, since the `heroes fmt --in-place` that answers *not canonical*
+    is a shell command and runs no write hook."""
+
+    def setUp(self):
+        self.top = fresh("hooks-493-")
+        self.tree = make_tree(os.path.join(self.top, "tree"))
+
+    def module(self, name, last, lines=300):
+        """A `selfhost/` module of `lines` lines of code then `last`."""
+        return write(os.path.join(self.tree, "selfhost", name), "x\n" * lines + last + "\n")
+
+    def test_a_module_not_canonical_is_told_its_ceiling_too(self):
+        code, said = written(self.tree, self.module("big.hero", "UNCANONICAL"))
+        self.assertEqual(code, 2, said)
+        self.assertIn("is not canonical", said)
+        self.assertIn("selfhost/big.hero: 301 lines of code in its canonical form", said)
+
+    def test_the_canonical_form_is_counted_not_the_text_as_written(self):
+        code, said = written(self.tree, self.module("split.hero", "SPLIT", lines=299))
+        self.assertEqual(code, 2, said)
+        self.assertIn("is not canonical", said)
+        self.assertIn("301 lines of code in its canonical form", said)
+
+    def test_a_module_that_does_not_check_is_told_its_ceiling_too(self):
+        code, said = written(self.tree, self.module("big.hero", "UNCHECKED"))
+        self.assertEqual(code, 2, said)
+        self.assertIn("does not check", said)
+        self.assertIn("selfhost/big.hero: 301 lines of code", said)
+
+    def test_a_module_that_does_not_parse_is_told_its_ceiling_as_written(self):
+        code, said = written(self.tree, self.module("big.hero", "BROKEN"))
+        self.assertEqual(code, 2, said)
+        self.assertIn("does not parse", said)
+        self.assertIn("301 lines of code in the text as written", said)
+        self.assertNotIn("check selfhost/main.hero", " ".join(calls(self.tree)))
+
+    def test_a_module_refused_by_an_older_compiler_is_told_its_ceiling_too(self):
+        write(os.path.join(self.tree, "selfhost", "lexer.hero"), "# moved\n", T0 + 200)
+        code, said = written(self.tree, self.module("big.hero", "UNCANONICAL"))
+        self.assertEqual(code, 2, said)
+        self.assertIn("older than its tree", said)
+        self.assertIn("selfhost/big.hero: 301 lines of code", said)
+
+    def test_a_module_not_canonical_is_still_checked(self):
+        code, said = written(self.tree, self.module("small.hero", "UNCANONICAL UNCHECKED", lines=3))
+        self.assertEqual(code, 2, said)
+        self.assertIn("is not canonical", said)
+        self.assertIn("does not check", said)
+        self.assertIn(self.tree + "|check selfhost/main.hero", calls(self.tree))
+
+    def test_a_module_not_canonical_is_still_asked_its_growth(self):
+        answer(self.tree, "layout", 1, "FAIL layout/concat\n  a text is grown by pushing\n")
+        module = write(os.path.join(self.tree, "selfhost", "g.hero"), Growth.GROWN + "# UNCANONICAL\n")
+        code, said = written(self.tree, module)
+        self.assertEqual(code, 2, said)
+        self.assertIn("is not canonical", said)
+        self.assertIn("FAIL layout/concat", said)
+
+    def test_a_case_not_canonical_is_still_asked_its_marks(self):
+        write(os.path.join(self.tree, "tests", "harness", "suite_annotations.hero"), ANNOTATIONS)
+        answer(self.tree, "annotations", 1, "FAIL annotations/w\n  disagree\n")
+        write(os.path.join(self.tree, "tests", "golden", "check", "w.expected"), "x\n")
+        case = write(os.path.join(self.tree, "tests", "golden", "check", "w.hero"), "UNCANONICAL\n")
+        code, said = written(self.tree, case)
+        self.assertEqual(code, 2, said)
+        self.assertIn("is not canonical", said)
+        self.assertIn("marks and its expectation disagree", said)
+
+    def test_a_module_under_its_ceiling_and_canonical_is_quiet(self):
+        code, said = written(self.tree, self.module("fine.hero", "y", lines=299))
+        self.assertEqual((code, said), (0, ""))
+
+    def test_a_spent_budget_asks_no_slow_question(self):
+        import fmt_check
+        import time
+
+        kept = fmt_check.STARTED
+        try:
+            fmt_check.STARTED = time.monotonic() - fmt_check.marks.LIMIT
+            self.assertIsNone(fmt_check.left())
+            self.assertIsNone(fmt_check.ask("/bin/sleep", ["30"], self.top))
+            fmt_check.STARTED = time.monotonic() - fmt_check.marks.LIMIT + fmt_check.FLOOR + 1
+            started = time.monotonic()
+            self.assertIsNone(fmt_check.ask("/bin/sleep", ["30"], self.top))
+            self.assertLess(time.monotonic() - started, 20)
+        finally:
+            fmt_check.STARTED = kept
 
 
 if __name__ == "__main__":

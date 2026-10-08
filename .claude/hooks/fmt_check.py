@@ -54,6 +54,28 @@ neither the whole compiler's check nor the ceiling was asked of it. A file
 outside every tree is still a program: the session's tree's compiler says
 whether it parses and is canonical, and nothing a tree owns is asked of it.
 
+**Every question is asked and every answer said, since 2026-10-08** (defect
+493). Until that day the hook stopped at its first refusal. A module written
+not canonical was told so and nothing else, and the `heroes fmt --in-place`
+that answers it is a shell command, which runs no write hook, so a module that
+crossed its ceiling in the same write was first told so by the commit guard or
+by `layout`. Measured on the base that day: a `selfhost/` module of 303 lines
+of code written with `x+1` for `x + 1` was told only *not canonical*, and the
+same module written canonical was told its count. A check that failed, or a
+compiler older than its tree, hid the ceiling the same way, and the growth and
+marks questions behind them. (The four modules the defect names crossed the
+ceiling in batch 14 under the trunk's hook of before defect 254, which read a
+lane's module as `.claude/worktrees/...` and asked it no ceiling: that hook,
+run on the same 303 lines in a tree below the session's directory, exits 0
+and says nothing.) So the ceiling is counted on every write, on the canonical
+form where the file parses (what `fmt --in-place` will write) and on the text
+as written where it does not; the whole compiler's check, the growth run and
+a case's marks are asked of a file that parses, canonical or not; and every
+answer goes into one message. The slow questions share the hook's budget,
+`marks.LIMIT`: the check is bounded by it as the growth run already was, so
+the hook ends and speaks before the 120 s the settings give it, a hook ended
+by its timeout saying nothing at all.
+
 Contract with the harness: the tool call arrives as JSON on stdin and the path
 is `tool_input.file_path`. A missing file, or anything unexpected, means exit 0
 and no opinion: this hook never blocks work over its own inability to run. A
@@ -64,7 +86,6 @@ would read as a pass.
 
 import json
 import os
-import subprocess
 import sys
 import time
 
@@ -80,7 +101,9 @@ import marks
 import trees
 
 STARTED = time.monotonic()
-LAYER = "(layer 0, `.claude/rules/verification.md` § A suite is the last judge, CL-079)"
+# The least a slow question is given; under it the question is not asked.
+FLOOR = 5.0
+LAYER ="(layer 0, `.claude/rules/verification.md` § A suite is the last judge, CL-079)"
 
 
 class Place:
@@ -104,13 +127,6 @@ class Place:
         return self.rel is not None and self.rel.startswith(prefix)
 
 
-def run(compiler, args, root):
-    try:
-        return subprocess.run([compiler] + args, capture_output=True, timeout=120, cwd=root)
-    except (OSError, subprocess.SubprocessError):
-        return None
-
-
 def head(text, lines=40):
     rows = text.decode("utf-8", errors="replace").rstrip("\n").split("\n")
     if len(rows) > lines:
@@ -118,12 +134,13 @@ def head(text, lines=40):
     return "\n".join(rows)
 
 
-def refused(place, verdict, said):
-    """Put the compiler's refusal of the file in front, exit 2: `verdict` and
-    what the compiler `said` when it is as new as the sources of the tree it
-    judges for, and its age instead when it is older (defect 384).
+def told(place, refusals):
+    """The compiler's refusals of the file as one message, or None: each
+    verdict with what the compiler said when it is as new as the sources of
+    the tree it judges for, and its age instead when it is older (defect 384),
+    `refusals` being (verdict, what the compiler said) pairs.
 
-    The age is asked before the verdict is read. A compiler built before a
+    The age is asked before the verdicts are read. A compiler built before a
     source of its tree was written may not know a form the tree's language
     now writes: on 2026-10-06 a file holding panel 192's `\\u{1b}` escape, under
     a tree whose compiler predated the escape, was told *does not parse* and
@@ -132,21 +149,49 @@ def refused(place, verdict, said):
     left out of the question, being the subject rather than the language; and
     a refusal alone asks it, so an older compiler that accepts the file costs
     nothing and says nothing."""
+    if not refusals:
+        return None
     old = trees.older_than_tree(place.compiler, place.home, besides=place.path)
     if old is None:
-        print(verdict + ("; the compiler says:\n" + said if said else "") + "\n" + LAYER, file=sys.stderr)
-        return 2
+        return "\n".join(verdict + ("; the compiler says:\n" + said if said else "") for verdict, said in refusals)
     where, built, wrote = old
-    print(
+    return (
         place.shown + " was refused by a compiler older than its tree: " + place.compiler
         + " was built at " + trees.stamp(built) + ", before " + where + " was written at "
         + trees.stamp(wrote) + ", so the refusal may be that compiler's age rather than the "
         "file. Rebuild it in " + place.home + ", " + trees.rebuild_hint(where)
         + ", and write the file again. What the older compiler said:\n"
-        + (said or "(nothing; its canonical form differs from the file)") + "\n" + LAYER,
-        file=sys.stderr,
+        + "\n".join(said or "(nothing; its canonical form differs from the file)" for _verdict, said in refusals)
     )
+
+
+def say(parts):
+    """Every answer the hook has, in front of the assistant, exit 2; exit 0
+    when it has none."""
+    parts = [part for part in parts if part]
+    if not parts:
+        return 0
+    print("\n".join(parts) + "\n" + LAYER, file=sys.stderr)
     return 2
+
+
+def left():
+    """What the hook's budget leaves a slow question, `marks.LIMIT` less the
+    time already spent, or None under `FLOOR` seconds: a question asked past
+    it would carry the hook past the timeout the settings give it, and a
+    question not asked gives no opinion."""
+    remaining = marks.LIMIT - (time.monotonic() - STARTED)
+    return remaining if remaining >= FLOOR else None
+
+
+def ask(compiler, args, root):
+    """`compiler args` run in `root` within what the budget leaves, or None
+    when it could not answer in that time (`marks.bounded` ends it with its
+    children)."""
+    limit = left()
+    if limit is None:
+        return None
+    return marks.bounded([compiler] + args, root, limit)
 
 
 def main():
@@ -179,102 +224,114 @@ def main():
     # An expectation written is judged against its case's marks, and nothing
     # else here reads it.
     if path.endswith(".expected"):
-        return marks_against_expectation(compiler, place)
+        return say([told(place, marks_against_expectation(compiler, place))])
+
+    try:
+        with open(path, "rb") as handle:
+            on_disk = handle.read()
+    except OSError:
+        return 0
+
+    # Every question below is asked whatever an earlier one answered, and
+    # every answer is said together (defect 493): the compiler's refusals,
+    # told as its age where it is older than its tree, then what the mirror
+    # and the suites say.
+    refusals = []
+    beside = []
 
     # 1. The file parses, and it is canonical. `heroes fmt <file>` prints the
     #    canonical form and writes nothing; a file that does not parse makes it
     #    exit non-zero with the diagnostic on stderr.
-    fmt = run(compiler, ["fmt", path], place.home)
+    fmt = ask(compiler, ["fmt", path], place.home)
     if fmt is None:
-        return 0
+        # No compiler's answer in time: the mirror needs none.
+        if place.rel is None:
+            return 0
+        return say([ceiling.verdict(place.tree, place.rel, text=on_disk.decode("utf-8", errors="replace"))])
     if fmt.returncode != 0 and place.under("tests/golden/") and marks.has_marks(path):
         # A golden case whose `#~` marks claim diagnostics is refused by `fmt`
         # on purpose: its diagnostics are its subject (defect 272, 2026-10-05).
         # This hook said *does not parse* of every such case, a false alarm
         # that teaches its reader to pass it by; the marks are judged against
         # the expectation instead, which is the question the case asks.
-        return marks_against_expectation(compiler, place)
-    if fmt.returncode != 0:
-        return refused(place, place.shown + " does not parse", head(fmt.stderr))
-    try:
-        with open(path, "rb") as handle:
-            on_disk = handle.read()
-    except OSError:
-        return 0
-    if fmt.stdout != on_disk:
-        return refused(
-            place,
+        return say([told(place, marks_against_expectation(compiler, place))])
+    parses = fmt.returncode == 0
+    if not parses:
+        refusals.append((place.shown + " does not parse", head(fmt.stderr)))
+    elif fmt.stdout != on_disk:
+        refusals.append((
             place.shown + " is not canonical: run `heroes fmt " + path + " --in-place`.\n"
             "The `canonical` suite fails on it otherwise, and design.md §4.15 "
             "rests on a textual difference meaning a semantic one "
             "(CLAUDE.md § Verification)",
             "",
-        )
+        ))
+    # What the file is once formatted: the text the ceiling and the growth
+    # are asked of, the file as written where it does not parse.
+    shaped = (fmt.stdout if parses else on_disk).decode("utf-8", errors="replace")
 
-    # 2. Names and types: the whole compiler for one of its modules, the one
-    #    file for a harness module, each in the tree the file stands in.
-    if place.under("selfhost/"):
-        check = run(compiler, ["check", "selfhost/main.hero"], place.tree)
-        subject = "selfhost/main.hero, with " + place.shown + " as written,"
-    elif place.under("tests/harness/"):
-        check = run(compiler, ["check", place.rel], place.tree)
-        subject = place.shown
-    else:
-        check = None
-        subject = ""
-    if check is not None and check.returncode != 0:
-        return refused(place, subject + " does not check", head(check.stderr))
-
-    # 3. The line ceiling, by the mirror; the `layout` suite is the judge.
+    # 2. The line ceiling, by the mirror; the `layout` suite is the judge. It
+    #    reads no compiler, so it is asked first and of every write.
     if place.rel is not None:
-        over = ceiling.verdict(place.tree, place.rel)
-        if over is not None:
-            print(over, file=sys.stderr)
-            return 2
+        how = None if parses and fmt.stdout == on_disk else ("its canonical form, which `heroes fmt --in-place` writes" if parses else "the text as written, which does not parse")
+        beside.append(ceiling.verdict(place.tree, place.rel, text=shaped, counted=how))
 
-    # 3b. A module's growths and appends, asked of `layout` narrowed to it
-    #     where a line might be one (defect 215, `ceiling.might_grow`), within
-    #     what the hook's minute leaves after the checks above.
-    if place.under("selfhost/") and place.rel.endswith(".hero") and ceiling.might_grow(on_disk.decode("utf-8", errors="replace"), ceiling.slow_appends(place.tree)):
-        rows = ceiling.layout_rows(compiler, place.tree, place.rel, max(5.0, marks.LIMIT - (time.monotonic() - STARTED)))
+    # 3. Names and types: the whole compiler for one of its modules, the one
+    #    file for a harness module, each in the tree the file stands in, of a
+    #    file that parses, canonical or not.
+    check = None
+    if parses and place.under("selfhost/"):
+        check = ask(compiler, ["check", "selfhost/main.hero"], place.tree)
+        subject = "selfhost/main.hero, with " + place.shown + " as written,"
+    elif parses and place.under("tests/harness/"):
+        check = ask(compiler, ["check", place.rel], place.tree)
+        subject = place.shown
+    if check is not None and check.returncode != 0:
+        refusals.append((subject + " does not check", head(check.stderr)))
+
+    # 4. A module's growths and appends, asked of `layout` narrowed to it
+    #    where a line might be one (defect 215, `ceiling.might_grow`), within
+    #    what the hook's budget leaves after the checks above.
+    if parses and place.under("selfhost/") and place.rel.endswith(".hero") and ceiling.might_grow(shaped, ceiling.slow_appends(place.tree)):
+        limit = left()
+        rows = ceiling.layout_rows(compiler, place.tree, place.rel, limit) if limit is not None else None
         if rows:
-            print(
-                place.shown + " is refused by the `layout` suite narrowed to it:\n" + "\n".join(rows) + "\n" + LAYER,
-                file=sys.stderr,
-            )
-            return 2
+            beside.append(place.shown + " is refused by the `layout` suite narrowed to it:\n" + "\n".join(rows))
 
-    # 4. A golden case's marks against its expectation.
-    return marks_against_expectation(compiler, place)
+    # 5. A golden case's marks against its expectation.
+    if parses:
+        refusals += marks_against_expectation(compiler, place)
+    return say([told(place, refusals)] + beside)
 
 
 def marks_against_expectation(compiler, place):
     """The `annotations` suite narrowed to the case `place` names (defect 286),
     run in the case's own tree with that tree's compiler (`marks.py`, which
-    the commit guard asks through too).
+    the commit guard asks through too), as a list of refusals, `told`'s pairs.
 
-    Exit 2 with the suite's own words where it fails THIS case; no opinion
+    One refusal with the suite's own words where it fails THIS case; none
     where the case is not one a narrowed run judges (a `.hero` of the suite's
     `DIRECTORIES` with its `.expected` beside it), or the run could not be
-    made. Until 2026-10-07 the run was made for any golden case with an
-    `.expected` and its answer, *no case matches*, read as no opinion: the
-    same verdict, at the price of a harness run (`marks.py` has the price)."""
+    made within the hook's budget. Until 2026-10-07 the run was made for any
+    golden case with an `.expected` and its answer, *no case matches*, read as
+    no opinion: the same verdict, at the price of a harness run (`marks.py`
+    has the price)."""
     if not place.under("tests/golden/"):
-        return 0
+        return []
     stem = place.rel[: place.rel.rfind(".")]
     if not marks.judged_narrowed(place.tree, stem + ".hero"):
-        return 0
+        return []
     name = os.path.basename(stem)
-    found = marks.disagreements(compiler, place.tree, [name])
+    limit = left()
+    found = marks.disagreements(compiler, place.tree, [name], limit) if limit is not None else None
     if not found or name not in found:
-        return 0
-    return refused(
-        place,
+        return []
+    return [(
         place.shown[: place.shown.rfind(".")] + "'s marks and its expectation disagree. "
         "Change whichever side is wrong; if the `.expected` is being rewritten "
         "next, this clears when it is",
         "\n".join(found[name]),
-    )
+    )]
 
 
 if __name__ == "__main__":
