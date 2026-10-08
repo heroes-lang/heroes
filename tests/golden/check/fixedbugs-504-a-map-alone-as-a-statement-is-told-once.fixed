@@ -1,0 +1,11 @@
+# Fixed defect 504, 2026-10-08 (lane b15-parse): a map alone as a
+# statement, as `heroes fmt` writes one too wide for its line, `{` alone
+# on its line over its entries, was read as a body in braces: told
+# `indentation_jump` and `missing_body` found `{`, and `fmt` refused its
+# own output of it. It is the map it is now, told once, by the checker,
+# that nothing receives its value.
+
+function main()
+    _ = {  #~ discarded_value
+        "ziggy": 42
+    }
