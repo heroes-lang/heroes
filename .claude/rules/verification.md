@@ -614,7 +614,14 @@ could.* Measured on the trunk's compiler the same day, `real` equal to `user`:
   are held to its `.expected`. (Until 2026-10-07 this bullet said the ceiling
   was judged in two stages, the second the harness's `layout` filtered to the
   file; no hook ran that stage, `ceiling.py` having been a mirror since
-  2026-09-29.) The hook notices and never rewrites (CL-025).
+  2026-09-29.) The hook notices and never rewrites (CL-025). **Since
+  2026-10-08 it asks every question whatever an earlier one answered and says
+  every answer** (defect 493): it stopped at its first refusal, and the `heroes
+  fmt --in-place` that answers *not canonical* runs no hook, so a module
+  written not canonical past its ceiling was told only *not canonical*. The
+  ceiling is counted on every write, on the canonical form where the file
+  parses; the check, the growth run and a case's marks are asked of a file
+  that parses, canonical or not, within the hook's budget.
   **The last check was named here from 2026-09-29 and performed by no hook
   until 2026-10-05** (defect 286): since then the hook asks the `annotations`
   suite itself, narrowed to the case, on a write of its `.hero` or its
@@ -654,7 +661,12 @@ could.* Measured on the trunk's compiler the same day, `real` equal to `user`:
   by the whole tree is refused as a commit with no `--` is; a merge, a
   cherry-pick or a revert concluded with the whole index, `--continue` or a
   bare commit while it stands, is refused when the index holds a file it did
-  not bring; and a command behind an assignment, a wrapper (`env`, `time`,
+  not bring, and so since 2026-10-08 is a rebase or an am concluded by
+  `--continue` (an am's `--resolved` and `-r`, and every abbreviation git
+  reads as `--continue`), a rebase bringing what its pick or the merge it
+  redoes brings and an am what its patch names (defect 487; a bare commit
+  while either stands keeps its refusal, git taking a pathspec then); and a
+  command behind an assignment, a wrapper (`env`, `time`,
   `caffeinate`, `timeout`) or a shell's `-c` is read as the shell runs it.
   And a commit's, a merge's or a tag's message, `-m` or `-F` and the heredoc
   `-F -` reads, is refused where it holds a character the `unseen` suite
