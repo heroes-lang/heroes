@@ -11,7 +11,7 @@
 # line, at or past its first quote, is held; one before that quote stands, a
 # mistake of its own, and so does every one on a line whose literal ended
 # before it, the classic `'\'` at its third byte. A leaf: it reads the
-# reports and the text.
+# reports, and the stretches `lost_quote.lost_lines` reads from the text.
 #
 # | entry | called by |
 # |---|---|
@@ -25,43 +25,20 @@ use parse/which_arm
 # `said` without the reports a lost quote's line holds past its first quote,
 # the lines `lexed` names a literal never closed on.
 function held(said: which_arm.Said, lexed: [diag.Diagnostic], text: str) -> which_arm.Said
-    lost: [token.Span] @ []
+    lost = lost_quote.lost_lines(lexed, text: text)
 
-    for d in lexed
-        ends = line_end(text, at: d.span.start)
-
-        if (d.code == "unterminated_string" || d.code == "unterminated_char") && d.span.end == ends
-            line = lost_quote.line_start(text, at: d.span.start)
-            quote = lost_quote.first_quote(text, from: line, to: d.span.start + 1)
-            lost @ lost.push(token.Span(start: quote, end: ends))
-
-    if lost.len() == 0
+    if lost.spans.len() == 0
         return said
     return which_arm.Said(normal: kept(said.normal, lost: lost), control: kept(said.control, lost: lost))
 
-function kept(said: [diag.Diagnostic], lost: [token.Span]) -> [diag.Diagnostic]
+function kept(said: [diag.Diagnostic], lost: lost_quote.Lost) -> [diag.Diagnostic]
     out: [diag.Diagnostic] @ []
 
     for d in said
-        if !inside(lost, at: d.span.start)
+        if !lost_quote.holds(lost, at: d.span.start)
             out @ out.push(d)
 
     return out
-
-function inside(spans: [token.Span], at: i64) -> bool
-    for s in spans
-        if at >= s.start && at <= s.end
-            return true
-
-    return false
-
-function line_end(text: str, at: i64) -> i64
-    i: i64 @ at
-
-    while i < text.len() && text[i] != '\n'
-        i @ i + 1
-
-    return i
 
 ## Tests
 

@@ -15,17 +15,75 @@
 # report of its own (`lost_in`); the openers the line
 # opened are closed at its end where each has a closer of its kind past that
 # quote, a string's, and nothing from a line above is open (`ended`); and the
-# parser holds its own reports there (`parse/quote_held`). The literal's
-# report is the line's one message.
+# parser holds its own reports there (`parse/quote_held`), on the stretches
+# `lost_lines` reads from the lexer's reports. The literal's report is the
+# line's one message.
 #
 # | entry | called by |
 # |---|---|
 # | `lost_in` | `scan.punct`, `scan.ident` |
 # | `ended` | `layout.maybe_terminator`, at a line a literal swallowed |
+# | `lost_lines`, `holds` | `parse/quote_held.held` |
 
 use token
+use diag
 use state
+use stable
 use lost_reading
+use text_outline
+
+# The stretches of the lines a literal never closed on, each from its line's
+# first quote to its end, in the order of the text, and where each begins.
+record Lost
+    spans: [token.Span]
+    starts: [i64]
+
+# The lost stretches a text's lexer reports `lexed` name: an
+# `unterminated_string` or `unterminated_char` that runs to its line's end.
+# The code is asked before the line is read, and only a report's own span,
+# so a text of many reports reads only the lines a literal never closed on,
+# where each report read its line to its end (defect 481).
+function lost_lines(lexed: [diag.Diagnostic], text: str) -> Lost
+    spans: [token.Span] @ []
+    starts: [i64] @ []
+
+    for d in lexed
+        if (d.code == "unterminated_string" || d.code == "unterminated_char") && ends_its_line(text, span: d.span)
+            quote = first_quote(text, from: line_start(text, at: d.span.start), to: d.span.start + 1)
+            spans @ spans.push(token.Span(start: quote, end: d.span.end))
+            starts @ starts.push(quote)
+
+    ordered: [token.Span] @ []
+    ascending: [i64] @ []
+
+    for i in stable.order(by: starts)
+        ordered @ ordered.push(spans[i])
+        ascending @ ascending.push(starts[i])
+
+    return Lost(spans: ordered, starts: ascending)
+
+# Whether the offset `at` stands in one of `lost`'s stretches. The two
+# stretches of one line are one, and two lines' never meet, so the last one
+# beginning at or before `at` is the only one it can stand in: a binary
+# search, where a walk over every stretch for every report cost a text of
+# such lines their square (defect 481, 8,000 of them 10.5 billion
+# instructions retired).
+function holds(lost: Lost, at: i64) -> bool
+    k = text_outline.last_at_most(lost.starts, at: at)
+    return k >= 0 && at <= lost.spans[k].end
+
+# Whether `span` ends where its line does and holds no line end before.
+function ends_its_line(text: str, span: token.Span) -> bool
+    if span.end < text.len() && text[span.end] != '\n'
+        return false
+    i: i64 @ span.start
+
+    while i < span.end
+        if text[i] == '\n'
+            return false
+        i @ i + 1
+
+    return true
 
 # Whether the text at `at` stands past a quote on its line, and its line ends
 # inside a literal that never closes, read on from it as the lexer reads:
@@ -144,3 +202,21 @@ test "the openers a line opened are closed at its end where a string took their 
     open.pos @ alone.len() - 1
     ended(@open, alone)
     assert open.open_brackets.len() == 2
+
+# Defect 481: the lost stretches are read from the reports a literal ran to
+# its line's end with, in the order of the text whatever the reports' order,
+# and an offset is asked of the one it may stand in.
+test "the lines a literal never closed on are found by their reports, and an offset by a search"
+    text = "a(\"x, \"y\")\nb = 'c\nd = \"e\" f\n"
+    told = [
+        diag.new_diagnostic(code: "unterminated_char", message: "m", span: token.Span(start: 15, end: 17))
+        diag.new_diagnostic(code: "unterminated_string", message: "m", span: token.Span(start: 8, end: 10))
+        diag.new_diagnostic(code: "unterminated_string", message: "m", span: token.Span(start: 22, end: 24))
+        diag.new_diagnostic(code: "unknown_escape", message: "m", span: token.Span(start: 8, end: 10))
+    ]
+    lost = lost_lines(told, text: text)
+    assert lost.starts == [2, 15]
+    assert lost.spans[0].end == 10
+    assert !holds(lost, at: 1)
+    assert holds(lost, at: 2) && holds(lost, at: 10) && holds(lost, at: 16)
+    assert !holds(lost, at: 12) && !holds(lost, at: 22)
