@@ -66,6 +66,8 @@ function places_of(c: state.Checked, s: source.Source, decls: [ast.Decl], f: con
             .inout_arg io => written @ written.push(key_of_place(f, at: io.place))
             .value_arg    => continue
 
+    writes = writes_of(written)
+
     out: [str?] @ []
 
     for arg in given
@@ -74,7 +76,7 @@ function places_of(c: state.Checked, s: source.Source, decls: [ast.Decl], f: con
                 place = place_of(c, s, decls, f, value: v.value)
                 key = key_of(c, f, value: v.value)
 
-                if !place.is_err() && !key.is_err() && rewritten(written, key: key.must())
+                if !place.is_err() && !key.is_err() && rewritten(writes, key: key.must())
                     out @ out.push(fail(code: "none", msg: "the call writes this place itself, through `@`"))
                 else
                     out @ out.push(place)
@@ -82,13 +84,54 @@ function places_of(c: state.Checked, s: source.Source, decls: [ast.Decl], f: con
 
     return out
 
-# Does a place overlap one the call writes through `@`?
-function rewritten(written: [str], key: str) -> bool
-    for other in written
-        if overlaps(one: key, other: other)
+# The places a call writes through `@`, held for the question `rewritten`
+# asks of each of its value arguments (defect 479, 2026-10-07): the keys
+# themselves, and every key a step boundary cuts one short at. Until then
+# each value argument was compared with each `@` argument, `overlaps` pair by
+# pair, a cost growing with the two counts' product; now each argument asks
+# two sets once per step of its own key.
+record Writes
+    places: {str: bool}
+    outers: {str: bool}
+
+function writes_of(written: [str]) -> Writes
+    places: {str: bool} @ {}
+    outers: {str: bool} @ {}
+
+    for one in written
+        places[one] @ true
+
+        for outer in outers_of(one)
+            outers[outer] @ true
+
+    return Writes(places: places, outers: outers)
+
+# Does a place overlap one the call writes through `@`? It does when it is
+# one of them, lies inside one (a key it is cut short to is written), or one
+# lies inside it (it is a key a written one is cut short to): `overlaps`, the
+# pairwise test, asked of every pair at once.
+function rewritten(writes: Writes, key: str) -> bool
+    if !writes.places[key].is_err() || !writes.outers[key].is_err()
+        return true
+
+    for outer in outers_of(key)
+        if !writes.places[outer].is_err()
             return true
 
     return false
+
+# Every place a key lies inside: the key cut at each step boundary, a `.` or
+# a `[`, so `3[].0` lies inside `3` and `3[]`, as `inside` reads a boundary.
+function outers_of(key: str) -> [str]
+    out: [str] @ []
+    at: i64 @ 1
+
+    while at < key.len()
+        if key[at] == 46 || key[at] == 91
+            out @ out.push(key.slice(from: 0, to: at))
+        at @ at + 1
+
+    return out
 
 # Two places overlap when one is the other or lies inside it. The key is
 # the root slot and the path spelled for comparison, `4.1[]` for slot 4's
@@ -214,5 +257,19 @@ test "a place overlaps one it lies in, and a slot does not overlap a longer numb
     assert !overlaps(one: "0.1", other: "0.2")
     assert !overlaps(one: "1", other: "10")
     assert !overlaps(one: "1.2", other: "12")
-    assert rewritten(["5", "0.1"], key: "0.1")
-    assert !rewritten(["5", "0.2"], key: "0.1")
+    assert rewritten(writes_of(["5", "0.1"]), key: "0.1")
+    assert !rewritten(writes_of(["5", "0.2"]), key: "0.1")
+
+# Defect 479's oracle: the sets answer as the pairwise walk over `overlaps`
+# answers, for every key against every set of written keys drawn from one
+# list of shapes: equal, inside, around, a sibling, a longer slot number and
+# an element's field.
+test "the written places answer as the pairwise walk does (defect 479)"
+    shapes = ["0", "1", "10", "0.1", "0.2", "0.1.3", "0[]", "0[].1", "3[].0", "3[]", "3", "12", "1.2", "4.1[]"]
+
+    for one in shapes
+        for other in shapes
+            for third in shapes
+                written = [other, third]
+                pairwise = overlaps(one: one, other: other) || overlaps(one: one, other: third)
+                assert rewritten(writes_of(written), key: one) == pairwise

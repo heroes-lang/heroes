@@ -41,7 +41,9 @@ use parse
 use resolve
 use checker
 
-function call(@w: writer.Writer, p: containers.Program, f: containers.Function, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], callee: ir.Callee, run: ir.Run, arguments: [str], target: str?, instance: [i64])
+# `p` is the program held with its index, built once per program
+# (`instances.Held`, defect 492): every lookup below reads it.
+function call(@w: writer.Writer, p: instances.Held, f: containers.Function, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], callee: ir.Callee, run: ir.Run, arguments: [str], target: str?, instance: [i64])
     assign: str @ ""
 
     if !target.is_err()
@@ -56,12 +58,12 @@ function call(@w: writer.Writer, p: containers.Program, f: containers.Function, 
             # a defect: "hero_unreachable" as a NAME emitted arguments
             # handed to a zero-argument _Noreturn, exit 2, the compiler
             # blaming itself (panel 084's class).
-            found = instances.index_of(p, decl: h.decl, instance: instance)
+            found = instances.function_at(p, decl: h.decl, instance: instance)
 
             if found.is_err()
                 writer.line(@w, text: "    hero_unreachable(); /* no instance for this call — compiler bug */")
             else
-                named = signature.instance_name(p.functions[found.must()], c, s, decls)
+                named = signature.instance_name(p.program.functions[found.must()], c, s, decls)
                 writer.line(@w, text: "    " + assign + named + "(" + arguments.join(", ") + ");")
         .builtin_fn bt =>
             builtin_name = inventory.table()[bt.at].name
@@ -210,14 +212,15 @@ function call(@w: writer.Writer, p: containers.Program, f: containers.Function, 
                 writer.line(@w, text: "    {")
             handle_before.before_call(@w, c, s, decls: decls, decl: e.decl, arguments: guarded)
 
-            for candidate in p.functions
-                if candidate.decl == e.decl && assign.len() > 0
-                    match table.get(c.types, candidate.result)
-                        .ptr                                                       => cast @ "(void *)"
-                        .cstr                                                      => cast @ "(const char *)"
-                        .int_ty | .float_ty | .bool | .str | .unit                 => cast @ cast
-                        .array | .fixed | .map | .fallible | .function_ty | .named => cast @ cast
-                        .case_ty | .failure | .generic | .error                    => cast @ cast
+            declared = instances.last_of(p, decl: e.decl)
+
+            if !declared.is_err() && assign.len() > 0
+                match table.get(c.types, p.program.functions[declared.must()].result)
+                    .ptr                                                       => cast @ "(void *)"
+                    .cstr                                                      => cast @ "(const char *)"
+                    .int_ty | .float_ty | .bool | .str | .unit                 => cast @ cast
+                    .array | .fixed | .map | .fallible | .function_ty | .named => cast @ cast
+                    .case_ty | .failure | .generic | .error                    => cast @ cast
 
             # A `when` clause reads the result (panel 177's item 6). Where the
             # program discarded it, the value is kept in a block-local the
@@ -284,15 +287,12 @@ function call(@w: writer.Writer, p: containers.Program, f: containers.Function, 
 # excluded: §4.8 makes it a pointer parameter, so the argument is the
 # address of a local, never null — a guard that cannot fail is read as
 # protection that is there (author decision 2026-08-15).
-function guard_arguments(p: containers.Program, c: state.Checked, decls: [ast.Decl], decl: i64, arguments: [str]) -> [str]
-    callee: containers.Function? @ fail(code: "none", msg: "not lowered")
+function guard_arguments(p: instances.Held, c: state.Checked, decls: [ast.Decl], decl: i64, arguments: [str]) -> [str]
+    declared = instances.last_of(p, decl: decl)
 
-    for candidate in p.functions
-        if candidate.decl == decl
-            callee @ ok(candidate)
-
-    if callee.is_err()
+    if declared.is_err()
         return arguments
+    callee = p.program.functions[declared.must()]
     out: [str] @ []
     index: i64 @ 0
 
@@ -301,8 +301,8 @@ function guard_arguments(p: containers.Program, c: state.Checked, decls: [ast.De
         is_out: bool @ false
         cast: bool @ false
 
-        if index < callee.must().params.len()
-            slot = callee.must().slots[callee.must().params[index]]
+        if index < callee.params.len()
+            slot = callee.slots[callee.params[index]]
             cast @ extern_probe.is_cast_out(c, slot)
 
             match table.get(c.types, slot.ty)
@@ -411,7 +411,7 @@ test "a Heroes call names the copy, an extern stays bare with its cstr guarded"
     w: writer.Writer @ writer.new_writer("t")
     call(
         @w,
-        p,
+        instances.hold(p),
         caller,
         c,
         names,
@@ -425,7 +425,7 @@ test "a Heroes call names the copy, an extern stays bare with its cstr guarded"
     )
     call(
         @w,
-        p,
+        instances.hold(p),
         caller,
         c,
         names,

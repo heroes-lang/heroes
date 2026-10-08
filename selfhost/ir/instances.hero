@@ -88,6 +88,35 @@ function index_in(ix: Index, decl: i64, instance: [i64]) -> i64?
 
     return fail(code: "none", msg: "no function of this declaration at these type arguments")
 
+# A program held with its index (defect 492, 2026-10-07): the emitter asks
+# which function a call or a function value names at every one of them, and
+# until then each asking scanned the whole program with `index_of`, a cost
+# growing with the calls times the functions. Built once per program by
+# `hold`, the two travel as one value, so no lookup can read an index of
+# another program, a translation unit's slice say.
+record Held
+    program: containers.Program
+    index: Index
+
+function hold(p: containers.Program) -> Held
+    return Held(program: p, index: indexed(p))
+
+# `index_of`'s answer for the program held: absent where it holds no such
+# function, which is the emitter's loud fallback, as `index_of`'s was.
+function function_at(h: Held, decl: i64, instance: [i64]) -> i64?
+    return index_in(h.index, decl: decl, instance: instance)
+
+# The LAST function of `decl` in the program's order, as a walk that keeps
+# every match keeps the last: an extern declaration's own function, whose
+# parameters and result its call sites read. Absent where it has none.
+function last_of(h: Held, decl: i64) -> i64?
+    some = h.index.by_decl[decl]
+
+    if some.is_err()
+        return fail(code: "none", msg: "no function of this declaration")
+    held_at = some.must()
+    return ok(held_at[held_at.len() - 1])
+
 # The type arguments as a message writes them, their type ids in brackets:
 # the verifier holds no source text to spell a type with.
 function spelled(instance: [i64]) -> str
@@ -146,6 +175,16 @@ test "a call names its callee at the type arguments the checker recorded"
     for decl in [0, 1, 2, 3]
         assert same(a: index_in(ix, decl: decl, instance: none), b: index_of(p, decl: decl, instance: none))
         assert same(a: index_in(ix, decl: decl, instance: named[0]), b: index_of(p, decl: decl, instance: named[0]))
+        assert same(a: function_at(hold(p), decl: decl, instance: none), b: index_of(p, decl: decl, instance: none))
+        assert same(
+            a: function_at(hold(p), decl: decl, instance: named[0]),
+            b: index_of(p, decl: decl, instance: named[0])
+        )
+
+    # The last of a declaration's functions answers as a walk keeping every
+    # match does (defect 492).
+    assert same(a: last_of(hold(p), decl: 1), b: twice_at)
+    assert last_of(hold(p), decl: 99).is_err()
 
 function source_of(text: str) -> source.Source
     return source.new_source(name: "t.hero", text: text)

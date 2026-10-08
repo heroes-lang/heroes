@@ -17,17 +17,21 @@ use source
 use check/table
 use check/state
 use check/render
+use emit/worklist
 
 function content_key(c: state.Checked, s: source.Source, decls: [ast.Decl], ty: i64) -> str
     no_generics: [str] = []
     rendered = render.render_ty(c.types, s, decls, ty, no_generics)
     named: {str: bool} @ {}
     seen: {i64: bool} @ {}
-    frontier: [i64] @ [ty]
 
-    while frontier.len() > 0
-        id = frontier[frontier.len() - 1]
-        frontier @ frontier.slice(from: 0, to: frontier.len() - 1)
+    # Drained from its top without copying it (`emit/worklist.hero`, defect
+    # 498).
+    frontier: [i64] @ [ty]
+    size: i64 @ 1
+
+    while size > 0
+        id = worklist.take(frontier, size: @size)
 
         if !seen[id].is_err()
             continue
@@ -40,7 +44,7 @@ function content_key(c: state.Checked, s: source.Source, decls: [ast.Decl], ty: 
             .case_ty | .failure | .generic | .error                   => named @ named
 
         for inner in table.contained(c.types, id)
-            frontier @ frontier.push(inner)
+            worklist.put(@frontier, size: @size, value: inner)
 
     # A type with no declared parts is already canonical, and keeping
     # its key equal to its rendering keeps `i64?`'s hash what every

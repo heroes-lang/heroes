@@ -16,9 +16,9 @@ use ast
 use source
 use module/names as module_names
 use diag
-use check/table
 use check/state
 use ir/containers
+use ir/instances
 use ir/phases
 use emit/ctype
 use emit/synth
@@ -34,6 +34,7 @@ use emit/body
 use emit/callback_guard
 use emit/callback_thunk
 use emit/builtins
+use emit/reach
 use emit/externs as emit_externs
 use parse
 use resolve
@@ -109,85 +110,6 @@ function shown_fused(p: containers.Program, s: source.Source) -> [i64]
 
     return shown
 
-# What one unit's type walk found: every type its functions mention —
-# transitively, because a type names the types it holds: [i64?] is one
-# slot type and two declarations, and naming only the outer one left
-# the inner i64? unnamed under a rule that asserts every T? is named
-# before anything mentions one (found by the mutant corpus) — and the
-# subset an instruction actually CONSTRUCTS. Reachability cannot answer
-# the second and over-answers: `[Probe]` is interned because a function
-# takes one, so `probe.hero` got a descriptor for `Probe` that nothing
-# pointed at — `-Wunused-const-variable` against §7's zero-warning bar.
-# A `construct` is the only instruction that reaches `build_array`/
-# `build_map`, which are the only callers that ask for an element's, a
-# key's or a value's descriptor.
-record Reach
-    reached: {i64: bool}
-    constructed: {i64: bool}
-
-function reach_of(p: containers.Program, c: state.Checked, target: emit_decls.BuildTarget, shown: [i64]) -> Reach
-    reached: {i64: bool} @ {}
-    constructed: {i64: bool} @ {}
-
-    for at in shown
-        f = p.functions[at]
-        skipped: bool @ false
-
-        match f.kind
-            .test_kind =>
-                match target
-                    .program_build => skipped @ true
-                    .tests_build   => skipped @ skipped
-            .function_kind | .constant_kind | .extern_kind => skipped @ skipped
-
-        if skipped
-            continue
-        reached[f.result] @ true
-
-        for slot in f.slots
-            reached[slot.ty] @ true
-
-        for blk in f.blocks
-            for inst in blk.insts
-                reached[inst.ty] @ true
-
-                match inst.op
-                    .construct                                                   => constructed[inst.ty] @ true
-                    .lit | .load | .field | .payload | .tag_of | .len_of | .call => reached[inst.ty] @ true
-                    .func_ref | .store | .push_owned | .unary | .binary | .cast  => reached[inst.ty] @ true
-                    .index | .map_get | .copy_out | .abort_op                    => reached[inst.ty] @ true
-                    .incref | .decref | .decref_slot | .hole | .missing          => reached[inst.ty] @ true
-
-    return Reach(reached: closed_over(c, reached: reached), constructed: constructed)
-
-# A set of types plus everything they contain: naming `[i64?]` declares
-# one slot type and two declarations, and naming only the outer one left
-# the inner `i64?` unnamed under a rule that asserts every T? is named
-# before anything mentions one (found by the mutant corpus).
-#
-# Its own function because the per-module path closes a SECOND set: the
-# signature types of the functions a TU prototypes, which the body walk
-# above never sees.
-function closed_over(c: state.Checked, reached: {i64: bool}) -> {i64: bool}
-    out: {i64: bool} @ reached
-
-    # ORDER: none — this is a worklist, and what leaves it is a SET. Every
-    # id drained is added to `out`, which two sorted walks read later
-    # (emit_ctype, emit_descriptor_set), so the drain order changes how
-    # long the loop runs and nothing a reader or clang can see.
-    frontier: [i64] @ keys(out)
-
-    while frontier.len() > 0
-        id = frontier[frontier.len() - 1]
-        frontier @ frontier.slice(from: 0, to: frontier.len() - 1)
-
-        for inner in table.contained(c.types, id)
-            if out[inner].is_err()
-                out[inner] @ true
-                frontier @ frontier.push(inner)
-
-    return out
-
 function emit(p: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl], version: str) -> Emitted
     return emit_for(target: .program_build, p: p, c: c, s: s, decls: decls, version: version)
 
@@ -246,7 +168,7 @@ function emit_told(target: emit_decls.BuildTarget, p: containers.Program, c: sta
     # read_file -> str? put two option structs and eight per-type
     # functions into every translation unit in the language.
     shown = shown_fused(p, s)
-    walked = reach_of(p, c, target: target, shown: shown)
+    walked = reach.reach_of(p, c, target: target, shown: shown)
     reached: {i64: bool} @ walked.reached
     constructed: {i64: bool} @ walked.constructed
     names: ctype.Names @ ctype.new_names_qualified(s, decls, struct_tags: struct_tags)
@@ -291,19 +213,21 @@ function emit_told(target: emit_decls.BuildTarget, p: containers.Program, c: sta
     )
 
     # Which functions C may call back, computed ONCE for the whole unit
-    # (panel 111 R9). Empty for every program that hands C no function,
-    # which is this compiler and all 45 corpus programs.
-    guarded_decls = callback_guard.guarded(p, c, decls)
+    # (panel 111 R9), the table and every body reading the one answer
+    # (defect 497). Empty for every program that hands C no function.
+    callbacks = callback_guard.callbacks_of(p, c, decls)
+    guarded_decls = callbacks.decls
+    callees = instances.hold(p)
 
     for at in shown
         if emit_decls.emitted(p.functions[at], target: target)
             signature.prototype(@w, p.functions[at], c, names, s, decls)
 
-    callback_thunk.lookup_table(@w, p, c, names, s, decls)
+    callback_thunk.lookup_table(@w, p, c, names, s, decls, callbacks: callbacks)
 
     for at in shown
         if emit_decls.emitted(p.functions[at], target: target)
-            body.definition(@w, p, c, names, s, decls, f: p.functions[at], guarded_decls: guarded_decls)
+            body.definition(@w, callees, c, names, s, decls, f: p.functions[at], guarded_decls: guarded_decls)
 
     perfn.bodies(@w, c, names, s, decls, want: synth.everything())
 
