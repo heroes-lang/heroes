@@ -17,6 +17,12 @@
 # **What the case asserts** is the first sentence of the new line, the fact the
 # runtime holds: the mark is gone. The causes follow it as causes, which is
 # panel 173 R1's rule, *no path prints a sentence measured false*.
+#
+# **Corrected 2026-10-08, defect 462**: every reader of a `str` now asks its
+# block's mark, so the `print` that reads the word finds the mark gone and
+# stops there, before anything is printed. The expected output lost its
+# `abababab` line and keeps the panic's first sentence; until that repair the
+# check ran when the word's last reference went, after the print.
 
 extern "fixedbugs-c-writes-over-a-strings-header.h"
     function clobber_before(s: cstr lent)

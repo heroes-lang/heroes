@@ -555,8 +555,13 @@ constant BUDGETS: [str]
 # gate: the trunk stood at 392, the batch's lanes added eleven modules,
 # `head_names.hero`, `head_package.hero` and `head_windows.hero` among them,
 # and 403 is past 322 by more than a quarter.
+#
+# **527 on 2026-10-08**, re-based when `floors.check` said so at batch 15's
+# gate: lane b15-mutate's port of the recovery cut added 24 modules under
+# `selfhost/mutate/`, the other lanes their own, and 527 is past 403 by more
+# than a quarter.
 constant LEAST: i64
-    403
+    527
 
 # THE LEXER'S GROWING ARRAYS ARE APPENDED ONLY THROUGH ITS TWO HELPERS
 # (defect 103, 2026-09-26). `l.tokens @ l.tokens.push(t)` is a field place,

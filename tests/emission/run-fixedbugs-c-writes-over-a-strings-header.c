@@ -70,7 +70,7 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
-#line 22 "tests/golden/run/fixedbugs-c-writes-over-a-strings-header.hero"
+#line 28 "tests/golden/run/fixedbugs-c-writes-over-a-strings-header.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_fixedbugscwritesoverastringsheader_clobber_before(const char * a0) { (void)(clobber_before)(a0); }
 #line 113 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
@@ -95,7 +95,7 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_fixedbugscwritesoverastringsheader_main(void);
 
-#line 24 "tests/golden/run/fixedbugs-c-writes-over-a-strings-header.hero"
+#line 30 "tests/golden/run/fixedbugs-c-writes-over-a-strings-header.hero"
 void h_fixedbugscwritesoverastringsheader_main(void) {
 #line 101 "fixedbugscwritesoverastringsheader.c"
     HeroStr h0_word = {0};
@@ -110,36 +110,36 @@ void h_fixedbugscwritesoverastringsheader_main(void) {
     HeroStr t8;
     goto bb0;
 bb0:
-#line 25 "tests/golden/run/fixedbugs-c-writes-over-a-strings-header.hero"
+#line 31 "tests/golden/run/fixedbugs-c-writes-over-a-strings-header.hero"
     t1 = HERO_STR_LIT(hero_str_3205);
-#line 25 "tests/golden/run/fixedbugs-c-writes-over-a-strings-header.hero"
+#line 31 "tests/golden/run/fixedbugs-c-writes-over-a-strings-header.hero"
     t2 = UINT64_C(4);
-#line 25 "tests/golden/run/fixedbugs-c-writes-over-a-strings-header.hero"
+#line 31 "tests/golden/run/fixedbugs-c-writes-over-a-strings-header.hero"
     t3 = hero_str_repeat(t1, t2);
-#line 25 "tests/golden/run/fixedbugs-c-writes-over-a-strings-header.hero"
+#line 31 "tests/golden/run/fixedbugs-c-writes-over-a-strings-header.hero"
     t7 = h1_own1;
-#line 25 "tests/golden/run/fixedbugs-c-writes-over-a-strings-header.hero"
+#line 31 "tests/golden/run/fixedbugs-c-writes-over-a-strings-header.hero"
     h1_own1 = t3;
 #line 124 "fixedbugscwritesoverastringsheader.c"
     hero_str_decref(t7);
-#line 25 "tests/golden/run/fixedbugs-c-writes-over-a-strings-header.hero"
+#line 31 "tests/golden/run/fixedbugs-c-writes-over-a-strings-header.hero"
     t8 = h0_word;
 #line 128 "fixedbugscwritesoverastringsheader.c"
     hero_str_incref(t3);
-#line 25 "tests/golden/run/fixedbugs-c-writes-over-a-strings-header.hero"
+#line 31 "tests/golden/run/fixedbugs-c-writes-over-a-strings-header.hero"
     h0_word = t3;
 #line 132 "fixedbugscwritesoverastringsheader.c"
     hero_str_decref(t8);
-#line 26 "tests/golden/run/fixedbugs-c-writes-over-a-strings-header.hero"
+#line 32 "tests/golden/run/fixedbugs-c-writes-over-a-strings-header.hero"
     t4 = h0_word;
-#line 26 "tests/golden/run/fixedbugs-c-writes-over-a-strings-header.hero"
+#line 32 "tests/golden/run/fixedbugs-c-writes-over-a-strings-header.hero"
     t5 = hero_str_lend(t4);
-#line 26 "tests/golden/run/fixedbugs-c-writes-over-a-strings-header.hero"
+#line 32 "tests/golden/run/fixedbugs-c-writes-over-a-strings-header.hero"
     (void)clobber_before(hero_cstr_nonnull(t5));
     t6 = h0_word;
-#line 27 "tests/golden/run/fixedbugs-c-writes-over-a-strings-header.hero"
+#line 33 "tests/golden/run/fixedbugs-c-writes-over-a-strings-header.hero"
     hero_print_str(t6);
-#line 27 "tests/golden/run/fixedbugs-c-writes-over-a-strings-header.hero"
+#line 33 "tests/golden/run/fixedbugs-c-writes-over-a-strings-header.hero"
     hero_print_end();
 #line 145 "fixedbugscwritesoverastringsheader.c"
     hero_str_decref(h0_word);

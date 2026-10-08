@@ -240,6 +240,8 @@ function shape_full() -> Shape
 # 251's, which pins that the control arm keeps refusing a character a reader
 # cannot see (panel 192's R4). **8 on 2026-10-06**, as the suite asked at
 # batch 13's merge: defect 391's and defect 407's control-arm cases.
+# **14 on 2026-10-08**, as the suite asked at batch 15's gate: defects 445's
+# and 446's control-arm cases, lane b15-box's, and the round's others.
 function shape_permissive() -> Shape
     return Shape(
         name: "permissive",
@@ -248,7 +250,7 @@ function shape_permissive() -> Shape
         flags: ["--brief", "--permissive"],
         on_stderr: true,
         want_code: 1,
-        least: 8,
+        least: 14,
         watched: true,
         silent_stdout: false,
         library_skip: false
