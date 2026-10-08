@@ -224,6 +224,28 @@ function parsing(r: Run, family: str) -> i64
 
     return -1
 
+# Defect 503, 2026-10-08: a map opened where its line begins. `fmt` printed
+# one a line broke open with its `{` alone, spread as design.md §4.9 has it,
+# and refused its own output at exit 2: 15 `bracket` and 12 `paren` variants
+# of the first seed, a constant's map on one line, and 51 and 36 of the file
+# of defect 394. The lexer read that `{` as a body's brace (defect 504). The
+# second seed is the form `fmt` prints, which the parser refused outright,
+# the third the same in a match arm's block, and the fourth the three places
+# a map already held, a binding, an argument and a return, which must not
+# move. Every variant the parser takes holds, and the two families that break
+# inside a bracket take at least as many as measured that day.
+test "every family holds over a map opened where its line begins"
+    seeds = [
+        "constant AGES: {str: i64}\n    {\"ziggy\": 42, \"mars\": 7}\n\nfunction main()\n    print(AGES[\"mars\"].default(0))\n"
+        "constant AGES: {str: i64}\n    {\n        \"ziggy\": 42\n        \"mars\": 7\n    }\n\nfunction main()\n    print(AGES[\"mars\"].default(0))\n"
+        "function f(n: i64) -> {str: i64}\n    return match n\n        1 =>\n            {\n                \"ziggy\": 42\n            }\n        _ => {\"mars\": 7}\n\nfunction main()\n    print(f(1)[\"ziggy\"].default(0))\n"
+        "function show(m: {str: i64})\n    print(m[\"mars\"].default(0))\n\nfunction make() -> {str: i64}\n    return {\"ziggy\": 42, \"mars\": 7}\n\nfunction main()\n    m = {\"ziggy\": 42, \"mars\": 7}\n    show(m: {\"ziggy\": 42, \"mars\": 7})\n    print(make().len(), m.len())\n"
+    ]
+    r = every_family(seeds)
+    assert r.failures.len() == 0
+    assert parsing(r, family: "bracket") >= 294
+    assert parsing(r, family: "paren") >= 81
+
 # Defect 506, 2026-10-08: a comment after the `(` around a map's key, alone
 # on its line or after the `{`. The guard refused every variant of the first
 # seed and three `bracket` ones of the second, where the break put the `(`
