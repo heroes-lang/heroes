@@ -45,6 +45,7 @@ use source
 use emit/ctype
 use emit/layout_rows
 use emit/c_text
+use bytes
 
 # A group record the dump is asked about: its declaration and its C type.
 record Asked
@@ -316,16 +317,16 @@ function union_sizes(rows: [str]) -> {str: i64}
     return out
 
 # The text after the last ` at ` of an anonymous record's type, or "".
+# Asked of the bytes (`bytes.rfind`, defect 452): the walk back sliced four
+# bytes at each offset, so a header whose name or path held a character
+# above ASCII split it, and `heroes build` aborted, exit 134, on a correct
+# binding of a record holding an anonymous union.
 function place_of(type_text: str) -> str
-    at: i64 @ type_text.len() - 4
-    needle = " at "
+    at = bytes.rfind(text: type_text, needle: " at ")
 
-    while at >= 0
-        if layout_rows.byte_index(text: type_text.slice(from: at, to: at + 4), needle: needle) == 0
-            return type_text.slice(from: at + 4, to: type_text.len())
-        at @ at - 1
-
-    return ""
+    if at.is_err()
+        return ""
+    return type_text.slice(from: at.must() + 4, to: type_text.len())
 
 # The members a program can name on T, in the dump's order: below a NAMED
 # record member the fields are that member's own, and are skipped.
@@ -398,3 +399,14 @@ test "a named record member's own fields are not T's"
     # C names the union's members through it, and does not take it for an
     # anonymous union: a named member is classified by C, never by its text.
     assert read[2].path == "u.i" && read[3].path == "u.n" && !read[1].union_kw
+
+# Defect 452's case beside its helpers: an anonymous member's type names the
+# header it stands in, and a header's name may hold a character above ASCII.
+test "an anonymous member's place is read past a header named above ASCII (defect 452)"
+    # The text after the last ` at `, its closing parenthesis with it, as the
+    # walk it replaced answered for every name in ASCII.
+    assert place_of("union (anonymous at x.h:12:40)") == "x.h:12:40)"
+    assert place_of("union (anonymous at uné.h:12:40)") == "uné.h:12:40)"
+    assert place_of("struct (unnamed at /tmp/dé/x.h:3:5)") == "/tmp/dé/x.h:3:5)"
+    assert place_of("é") == ""
+    assert place_of("") == ""
