@@ -614,7 +614,14 @@ could.* Measured on the trunk's compiler the same day, `real` equal to `user`:
   are held to its `.expected`. (Until 2026-10-07 this bullet said the ceiling
   was judged in two stages, the second the harness's `layout` filtered to the
   file; no hook ran that stage, `ceiling.py` having been a mirror since
-  2026-09-29.) The hook notices and never rewrites (CL-025).
+  2026-09-29.) The hook notices and never rewrites (CL-025). **Since
+  2026-10-08 it asks every question whatever an earlier one answered and says
+  every answer** (defect 493): it stopped at its first refusal, and the `heroes
+  fmt --in-place` that answers *not canonical* runs no hook, so a module
+  written not canonical past its ceiling was told only *not canonical*. The
+  ceiling is counted on every write, on the canonical form where the file
+  parses; the check, the growth run and a case's marks are asked of a file
+  that parses, canonical or not, within the hook's budget.
   **The last check was named here from 2026-09-29 and performed by no hook
   until 2026-10-05** (defect 286): since then the hook asks the `annotations`
   suite itself, narrowed to the case, on a write of its `.hero` or its
