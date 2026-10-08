@@ -25,6 +25,8 @@
 
 use source
 use inventory
+use parse
+use library_source
 
 # The two numbers the golden witness copies.
 constant HASH_BASE: i64
@@ -69,7 +71,14 @@ function hex(number: i64) -> str
 # A Heroes function or constant. A function whose name is in the
 # built-in inventory belongs to the library, and that is not a
 # heuristic: the resolver refuses a user declaration of any reserved
-# name, and the library declares nothing else.
+# name. **The library declares two names the inventory lacks**,
+# `validated` and `args_checked` (this said until 2026-10-07 that it
+# declared nothing else, defect 480): each is spelled by the module that
+# declares it, which for the library's own is the library, so it reaches
+# the same `h_<library>_` name by the second route, and a program's own
+# `validated`, the one such name a program may declare (`inventory.hero`
+# says why), keeps its own module. The test below names the two, so a
+# third makes it fail.
 function function_name(module: str, name: str) -> str
     if !inventory.index_of(name).is_err()
         return "h_" + source.LIBRARY_MODULE + "_" + name
@@ -232,3 +241,26 @@ test "names collide with nothing: library capture, sanitised slots, foreign fiel
     assert test_name(module: "geom", index: 2) == "h_geom_test2"
     assert constant_block(owner: "h_geom_K", held: 5) == "hero_constant_h_geom_K_5"
     assert constant_block(owner: "h_geom_K_3", held: 5) != constant_block(owner: "h_geom_K", held: 35)
+
+# Defect 480's case: the library's functions outside the inventory are
+# exactly `args_checked` and `validated`, read from the library's own
+# declarations, and each is spelled by the module that declares it.
+test "the library declares two names the inventory lacks, each spelled by its module (defect 480)"
+    text = library_source.text()
+    parsed = parse.parse(text)
+    s = source.new_source(name: "library.hero", text: text)
+    outside: [str] @ []
+
+    for d in parsed.decls
+        match d.kind
+            .function_decl fd =>
+                name = source.span_text(s, d.name)
+
+                if !fd.value.is_extern && inventory.index_of(name).is_err()
+                    outside @ outside.push(name)
+            .constant_decl | .record_decl | .variant_decl | .test_decl => continue
+
+    assert sort(outside) == ["args_checked", "validated"]
+    assert function_name(module: source.LIBRARY_MODULE, name: "validated") == "h_" + source.LIBRARY_MODULE + "_validated"
+    assert function_name(module: source.LIBRARY_MODULE, name: "args_checked") == "h_" + source.LIBRARY_MODULE + "_args_checked"
+    assert function_name(module: "geom", name: "validated") == "h_geom_validated"
