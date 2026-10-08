@@ -199,7 +199,7 @@ function pattern(f: containers.Function, where: {i64: Def}, reads: {i64: i64}, i
         .call cl =>
             match cl.callee
                 .builtin_fn bt =>
-                    if inventory.table()[bt.at].name != "push"
+                    if inventory.name_of(bt.at) != "push"
                         return fail(code: "not_push", msg: "another builtin")
                 .heroes_fn | .extern_fn | .indirect => return fail(code: "not_push", msg: "not a builtin")
 
@@ -386,15 +386,7 @@ function accumulator() -> containers.Function
     return f
 
 function push_index() -> i64
-    at: i64 @ 0
-    found: i64 @ 0
-
-    for b in inventory.table()
-        if b.name == "push"
-            found @ at
-        at @ at + 1
-
-    return found
+    return inventory.index_of("push").must()
 
 function op_names(f: containers.Function) -> [str]
     out: [str] @ []

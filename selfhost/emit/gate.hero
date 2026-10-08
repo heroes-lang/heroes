@@ -396,7 +396,7 @@ function callee_note(@found: [GateNote], callee: ir.Callee, span: token.Span)
         # the prelude, so the name is declared by the real header.
         .heroes_fn | .extern_fn | .indirect => return
         .builtin_fn bt =>
-            builtin_name = inventory.table()[bt.at].name
+            builtin_name = inventory.name_of(bt.at)
             in_emitted: bool @ false
 
             for one in builtins.EMITTED

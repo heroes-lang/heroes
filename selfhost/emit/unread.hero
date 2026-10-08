@@ -54,7 +54,7 @@ function reads_a_place(op: ir.OpKind) -> bool
     match op
         .call cl =>
             match cl.callee
-                .builtin_fn bt                      => return inventory.table()[bt.at].name == "ptr"
+                .builtin_fn bt                      => return inventory.name_of(bt.at) == "ptr"
                 .heroes_fn | .extern_fn | .indirect => return false
         .lit | .load | .field | .payload | .tag_of | .len_of | .func_ref => return false
         .store | .push_owned | .unary | .binary | .cast | .construct     => return false
