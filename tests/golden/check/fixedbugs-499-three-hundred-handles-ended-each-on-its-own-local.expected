@@ -1,0 +1,7 @@
+tests/golden/check/fixedbugs-499-three-hundred-handles-ended-each-on-its-own-local.hero:623:16: error[handle_used_after_end]: `a0` was given to `f_close` at line 24, which ended its life, and this reads it again
+tests/golden/check/fixedbugs-499-three-hundred-handles-ended-each-on-its-own-local.hero:624:16: error[handle_used_after_end]: `a150` was given to `f_close` at line 324, which ended its life, and this reads it again
+tests/golden/check/fixedbugs-499-three-hundred-handles-ended-each-on-its-own-local.hero:625:16: error[handle_used_after_end]: `a299` was given to `f_close` at line 622, which ended its life, and this reads it again
+tests/golden/check/fixedbugs-499-three-hundred-handles-ended-each-on-its-own-local.hero:633:16: error[handle_used_after_end]: `p.right` was given to `f_close` at line 630, which ended its life, and this reads it again
+tests/golden/check/fixedbugs-499-three-hundred-handles-ended-each-on-its-own-local.hero:638:16: error[handle_used_after_end]: `c` was given to `f_close` at line 637, which ended its life, and this reads it again
+tests/golden/check/fixedbugs-499-three-hundred-handles-ended-each-on-its-own-local.hero:639:16: error[handle_used_after_end]: `c` was given to `f_close` at line 638, which ended its life, and this reads it again
+tests/golden/check/fixedbugs-499-three-hundred-handles-ended-each-on-its-own-local.hero:651:16: error[handle_used_after_end]: `e` was given to `f_close` at line 647, which ended its life, and this reads it again

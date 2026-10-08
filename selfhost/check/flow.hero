@@ -23,6 +23,16 @@
 # the whole difference between route M (must) and the route M (may) the
 # sitting refused, which took the union and refused two correct programs
 # whose correctness was a value (`if_correlated`, `match_correlated`, E10).
+#
+# **The places are kept one group per local** (defect 499). A path's first
+# segment is its local, written in decimal, and never an element, so two
+# paths on two locals neither overlap nor prefix each other: every question
+# about a path is asked of its local's group alone, and an end, a write or a
+# read costs what that local holds, not what the body has ended. Kept as one
+# list, each end rebuilt it without the place it ended and each binding
+# without what it revived: ending 2,000 handles cost 26.8 billion
+# instructions, the square of the handles. A group grows in place, lent
+# (defect 409), and is rebuilt only where an event takes a place out of it.
 
 use token
 
@@ -34,29 +44,61 @@ record Dead
     callee: str
     at: token.Span
 
-record Flow
+# One local's places: those ended on every path to here, in the order they
+# were ended, and those a `retains` position or result added a reference to.
+# An end on one of those is not the end of its life: the count the runtime
+# keeps is above one, and only the run knows by how much (the ergonomist's
+# A3, panel 177's item 10).
+record Held
+    local: str
     dead: [Dead]
-    # Places a `retains` position or result added a reference to. An end on
-    # one of these is not the end of its life: the count the runtime keeps is
-    # above one, and only the run knows by how much (the ergonomist's A3,
-    # panel 177's item 10).
     kept: [[str]]
+
+record Flow
+    # A group per local an event has named, and where each local's stands.
+    held: [Held]
+    at: {str: i64}
     # False after `return`, `break` and `continue`: nothing is reachable here,
     # so nothing read here is refused, and it contributes nothing where paths
     # meet.
     live: bool
 
 function start() -> Flow
-    dead: [Dead] = []
-    kept: [[str]] = []
-    return Flow(dead: dead, kept: kept, live: true)
+    held: [Held] = []
+    at: {str: i64} = {}
+    return Flow(held: held, at: at, live: true)
 
 function unreachable() -> Flow
     f: Flow @ start()
     f.live @ false
     return f
 
-# Where two paths meet: dead on both, or alive; kept on either, or not.
+# The local a path is rooted at. Both makers of a path start from its local
+# (`moved_calls.place_of`, `moved_walk.revive`), so a path with no segment is
+# a defect in its maker, stopped here rather than answered as some local's.
+function local_of(path: [str]) -> str
+    assert path.len() > 0
+    return path[0]
+
+# The group of `path`'s local, made where the local has none yet.
+function group(@f: Flow, path: [str]) -> i64
+    local = local_of(path)
+    found = f.at[local]
+
+    if !found.is_err()
+        return found.must()
+    dead: [Dead] = []
+    kept: [[str]] = []
+    add_group(@f.held, Held(local: local, dead: dead, kept: kept))
+    f.at[local] @ f.held.len() - 1
+    return f.held.len() - 1
+
+function add_group(@held: [Held], one: Held)
+    held @ held.push(one)
+
+# Where two paths meet: dead on both, or alive; kept on either, or not. A
+# local's group meets its twin, and a local with no twin keeps only its
+# kept places.
 function meet(one: Flow, two: Flow) -> Flow
     if !one.live
         return two
@@ -65,17 +107,35 @@ function meet(one: Flow, two: Flow) -> Flow
         return one
     out: Flow @ start()
 
-    for d in one.dead
-        if holds(two.dead, path: d.path)
-            out.dead @ out.dead.push(d)
+    for mine in one.held
+        both: [Dead] @ []
+        kept: [[str]] @ mine.kept
+        twin = two.at[mine.local]
 
-    out.kept @ one.kept
+        if !twin.is_err()
+            theirs = two.held[twin.must()]
 
-    for k in two.kept
-        if !listed(out.kept, path: k)
-            out.kept @ out.kept.push(k)
+            for d in mine.dead
+                if holds(theirs.dead, path: d.path)
+                    both @ both.push(d)
+
+            for k in theirs.kept
+                if !listed(kept, path: k)
+                    kept @ kept.push(k)
+
+        if both.len() > 0 || kept.len() > 0
+            joined(@out, Held(local: mine.local, dead: both, kept: kept))
+
+    for theirs in two.held
+        if one.at[theirs.local].is_err() && theirs.kept.len() > 0
+            none: [Dead] = []
+            joined(@out, Held(local: theirs.local, dead: none, kept: theirs.kept))
 
     return out
+
+function joined(@f: Flow, one: Held)
+    f.at[one.local] @ f.held.len()
+    add_group(@f.held, one)
 
 function holds(set: [Dead], path: [str]) -> bool
     for d in set
@@ -120,9 +180,18 @@ function may_overlap(a: [str], b: [str]) -> bool
 function is_element(segment: str) -> bool
     return segment.len() > 0 && segment[0] == 91
 
+# The places ended on `path`'s local, in the order they were ended.
+function dead_on(f: Flow, path: [str]) -> [Dead]
+    found = f.at[local_of(path)]
+
+    if found.is_err()
+        none: [Dead] = []
+        return none
+    return f.held[found.must()].dead
+
 # A read of `path`: dead where an ended place covers it for certain.
 function dead_read(f: Flow, path: [str]) -> Dead?
-    for d in f.dead
+    for d in dead_on(f, path: path)
         if definite_prefix(k: d.path, p: path)
             return ok(d)
 
@@ -131,7 +200,7 @@ function dead_read(f: Flow, path: [str]) -> Dead?
 # `path` handed to C whole: dead where it covers an ended place for certain,
 # or one covers it.
 function dead_crossing(f: Flow, path: [str]) -> Dead?
-    for d in f.dead
+    for d in dead_on(f, path: path)
         if definite_prefix(k: d.path, p: path) || definite_prefix(k: path, p: d.path)
             return ok(d)
 
@@ -139,43 +208,108 @@ function dead_crossing(f: Flow, path: [str]) -> Dead?
 
 ## The three events
 
+# An end of a place ended before on this path moves it to the end of its
+# local's order, as a second end of it would have been written last.
 function ended(@f: Flow, path: [str], shown: str, callee: str, at: token.Span)
-    for k in f.kept
+    g = group(@f, path)
+
+    for k in f.held[g].kept
         if may_overlap(a: k, b: path)
             return
 
+    one = Dead(path: path, shown: shown, callee: callee, at: at)
+
+    if holds(f.held[g].dead, path: path)
+        ended_again(@f.held[g].dead, last: one)
+    else
+        add_dead(@f.held[g].dead, one: one)
+
+function add_dead(@dead: [Dead], one: Dead)
+    dead @ dead.push(one)
+
+function ended_again(@dead: [Dead], last: Dead)
     survivors: [Dead] @ []
 
-    for d in f.dead
-        if d.path != path
+    for d in dead
+        if d.path != last.path
             survivors @ survivors.push(d)
 
-    f.dead @ survivors.push(Dead(path: path, shown: shown, callee: callee, at: at))
+    dead @ survivors.push(last)
 
+# A write revives what it could reach on its local, and nothing on another.
 function written(@f: Flow, path: [str])
-    survivors: [Dead] @ []
+    found = f.at[local_of(path)]
 
-    for d in f.dead
-        if !may_overlap(a: d.path, b: path)
-            survivors @ survivors.push(d)
+    if !found.is_err()
+        g = found.must()
+        revived(@f.held[g], path: path)
 
-    f.dead @ survivors
-    still: [[str]] @ []
+function revived(@h: Held, path: [str])
+    if reaches_dead(h.dead, path: path)
+        survivors: [Dead] @ []
 
-    for k in f.kept
-        if !may_overlap(a: k, b: path)
-            still @ still.push(k)
+        for d in h.dead
+            if !may_overlap(a: d.path, b: path)
+                survivors @ survivors.push(d)
 
-    f.kept @ still
+        h.dead @ survivors
+
+    if reaches_kept(h.kept, path: path)
+        still: [[str]] @ []
+
+        for k in h.kept
+            if !may_overlap(a: k, b: path)
+                still @ still.push(k)
+
+        h.kept @ still
+
+function reaches_dead(set: [Dead], path: [str]) -> bool
+    for d in set
+        if may_overlap(a: d.path, b: path)
+            return true
+
+    return false
+
+function reaches_kept(set: [[str]], path: [str]) -> bool
+    for k in set
+        if may_overlap(a: k, b: path)
+            return true
+
+    return false
 
 function retained(@f: Flow, path: [str])
-    if !listed(f.kept, path: path)
-        f.kept @ f.kept.push(path)
+    g = group(@f, path)
+
+    if !listed(f.held[g].kept, path: path)
+        add_kept(@f.held[g].kept, path: path)
+
+function add_kept(@kept: [[str]], path: [str])
+    kept @ kept.push(path)
 
 ## Tests
 
 function span_at(n: i64) -> token.Span
     return token.Span(start: n, end: n + 1)
+
+# Every place a flow holds dead, local by local, and every kept one: what
+# the one list held before defect 499, for the tests to read.
+function every_dead(f: Flow) -> [Dead]
+    out: [Dead] @ []
+
+    for h in f.held
+        for d in h.dead
+            out @ out.push(d)
+
+    return out
+
+function every_kept(f: Flow) -> [[str]]
+    out: [[str]] @ []
+
+    for h in f.held
+        for k in h.kept
+            out @ out.push(k)
+
+    return out
 
 test "a read is dead under a definite prefix and alive under an element only the run knows"
     f: Flow @ start()
@@ -229,10 +363,45 @@ test "where paths meet a place is dead only on both, and kept on either"
     retained(@two, path: ["3"])
     both = meet(one: one, two: two)
     assert both.live
-    assert both.dead.len() == 1
-    assert both.dead[0].shown == "b"
-    assert both.dead[0].at.start == 1
-    assert both.kept == [["3"]]
-    assert meet(one: unreachable(), two: one).dead.len() == 2
-    assert meet(one: one, two: unreachable()).dead.len() == 2
+    assert every_dead(both).len() == 1
+    assert every_dead(both)[0].shown == "b"
+    assert every_dead(both)[0].at.start == 1
+    assert every_kept(both) == [["3"]]
+    assert every_dead(meet(one: unreachable(), two: one)).len() == 2
+    assert every_dead(meet(one: one, two: unreachable())).len() == 2
     assert !meet(one: unreachable(), two: unreachable()).live
+
+# Defect 499: each local's places are its own group. An end of one place
+# again moves it last on its local, and the first place a read finds is the
+# earliest ended that covers it; a write to one local leaves every other
+# local's places dead; and a meet keeps each local's order.
+test "each local's places are one group, kept in the order they were ended"
+    f: Flow @ start()
+    ended(@f, path: ["4", ".a"], shown: "x.a", callee: "close", at: span_at(0))
+    ended(@f, path: ["4"], shown: "x", callee: "close", at: span_at(1))
+    ended(@f, path: ["9"], shown: "y", callee: "close", at: span_at(2))
+    assert dead_read(f, path: ["4", ".a"]).must().shown == "x.a"
+    ended(@f, path: ["4", ".a"], shown: "x.a", callee: "close", at: span_at(3))
+    assert dead_read(f, path: ["4", ".a"]).must().shown == "x"
+    assert dead_crossing(f, path: ["4"]).must().shown == "x"
+    assert every_dead(f).len() == 3
+
+    # Writing `x.b` reaches `x` whole, which holds it, and not `x.a`.
+    written(@f, path: ["4", ".b"])
+    assert every_dead(f).len() == 2
+    assert dead_read(f, path: ["4", ".a"]).must().shown == "x.a"
+    written(@f, path: ["4"])
+    assert every_dead(f).len() == 1
+    assert !dead_read(f, path: ["9"]).is_err()
+    assert dead_read(f, path: ["4", ".a"]).is_err()
+    many: Flow @ start()
+    k: i64 @ 0
+
+    while k < 300
+        ended(@many, path: [k.to_str()], shown: "h", callee: "close", at: span_at(k))
+        k @ k + 1
+
+    assert many.held.len() == 300
+    again = meet(one: many, two: many)
+    assert every_dead(again).len() == 300
+    assert every_dead(again)[299].at.start == 299
