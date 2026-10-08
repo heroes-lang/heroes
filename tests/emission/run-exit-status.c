@@ -108,6 +108,8 @@ bb0:
     t2 = INT64_C(3);
 #line 20 "tests/golden/run/exit-status.hero"
     h_library_exit(t2);
+#line 20 "tests/golden/run/exit-status.hero"
+    hero_unreachable();
     t3 = HERO_STR_LIT(hero_str_347b94b5);
 #line 21 "tests/golden/run/exit-status.hero"
     hero_print_str(t3);
@@ -115,12 +117,12 @@ bb0:
     hero_print_end();
 #line 21 "tests/golden/run/exit-status.hero"
     return;
-#line 119 "exitstatus.c"
+#line 121 "exitstatus.c"
 }
 
 #line 227 "<heroes library>"
 void h_library_exit(int64_t h0_code) {
-#line 124 "exitstatus.c"
+#line 126 "exitstatus.c"
     int64_t t1;
     goto bb0;
 bb0:
@@ -130,7 +132,7 @@ bb0:
     (void)hero_exit(t1);
 #line 228 "<heroes library>"
     return;
-#line 134 "exitstatus.c"
+#line 136 "exitstatus.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

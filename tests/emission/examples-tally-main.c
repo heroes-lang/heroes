@@ -1381,6 +1381,8 @@ bb2:
 #line 158 "examples/tally/main.hero"
     h_library_exit(t8);
 #line 158 "examples/tally/main.hero"
+    hero_unreachable();
+#line 158 "examples/tally/main.hero"
     goto bb1;
 #line 158 "examples/tally/main.hero"
 bb3:
@@ -1393,11 +1395,11 @@ bb4:
     t17 = t16.as.ok;
 #line 159 "examples/tally/main.hero"
     t29 = h3_body;
-#line 1397 "main.c"
+#line 1399 "main.c"
     hero_str_incref(t17);
 #line 159 "examples/tally/main.hero"
     h3_body = t17;
-#line 1401 "main.c"
+#line 1403 "main.c"
     hero_str_decref(t29);
 #line 160 "examples/tally/main.hero"
     t18 = h3_body;
@@ -1409,7 +1411,7 @@ bb4:
     t30 = h5_own5;
 #line 160 "examples/tally/main.hero"
     h5_own5 = t20;
-#line 1413 "main.c"
+#line 1415 "main.c"
     hero_str_decref(t30);
 #line 160 "examples/tally/main.hero"
     hero_print_str(t20);
@@ -1426,7 +1428,7 @@ bb4:
     t31 = h6_own6;
 #line 161 "examples/tally/main.hero"
     h6_own6 = t24;
-#line 1430 "main.c"
+#line 1432 "main.c"
     hero_str_decref(t31);
 #line 161 "examples/tally/main.hero"
     hero_print_str(t21);
@@ -1434,7 +1436,7 @@ bb4:
     hero_print_str(t24);
 #line 161 "examples/tally/main.hero"
     hero_print_end();
-#line 1438 "main.c"
+#line 1440 "main.c"
     h_0opt_f87774a_release(&h0_text);
     h_0opt_f87774a_release(&h1_f0);
     h_0opt_f87774a_release(&h2_f1);
@@ -1448,14 +1450,14 @@ bb5:
     t14 = h2_f1;
 #line 159 "examples/tally/main.hero"
     t15 = t14.as.err;
-#line 1452 "main.c"
+#line 1454 "main.c"
     hero_panic_must(t15);
     hero_unreachable();
 }
 
 #line 166 "examples/tally/main.hero"
 int64_t h_main_longest(HeroStr h0_text) {
-#line 1459 "main.c"
+#line 1461 "main.c"
     int64_t h1_best;
     int64_t h2_here;
     int64_t h3_at;
@@ -1608,12 +1610,12 @@ bb11:
 bb12:
 #line 181 "examples/tally/main.hero"
     goto bb10;
-#line 1612 "main.c"
+#line 1614 "main.c"
 }
 
 #line 227 "<heroes library>"
 void h_library_exit(int64_t h0_code) {
-#line 1617 "main.c"
+#line 1619 "main.c"
     int64_t t1;
     goto bb0;
 bb0:
@@ -1623,7 +1625,7 @@ bb0:
     (void)hero_exit(t1);
 #line 228 "<heroes library>"
     return;
-#line 1627 "main.c"
+#line 1629 "main.c"
 }
 HERO_TU_LOCAL bool h_main_Count_eq(const h_main_Count *a, const h_main_Count *b) {
     if (!(a->f_lines == b->f_lines)) return false;
