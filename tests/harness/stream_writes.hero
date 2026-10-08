@@ -1,0 +1,361 @@
+# Where the compiler writes a token stream's `tokens` other than through
+# `stream_tables.relaid`, read from its source (defect 483, 2026-10-07).
+# `suite_layout` runs it over every module as `layout/streams`.
+#
+# THE PREMISE IT HOLDS is defect 258's (`selfhost/stream_tables.hero`): once
+# a stream is made, the parser writes a token only to lay a line out again,
+# as a line end, an indent or a dedent, and only through `relaid`, which
+# asserts that the kind it writes is one a reader does not see. The cursor's
+# kept walk back (`stream_tables.seen_before`) goes on from where the last
+# walk ended on the strength of it, so a token written visible behind a kept
+# walk would be walked past. `relaid`'s assertion holds the premise at the
+# one write it guards; a write that went around it was refused by nothing
+# until this check (lane b14-parse's report).
+#
+# A WRITE, as the language writes one: a store whose place runs through a
+# `tokens` field, `c.tokens @ …`, `c.tokens[i] @ …` or `c.tokens[i].kind @
+# …`, or a lend of such a place, `f(@c.tokens, …)` or `f(@c.tokens[i])`,
+# whatever holds the field and whatever the holder is named, on a line of its
+# own or in a match arm, and a lend on an argument line of a call broken over
+# lines read as that call's. The one lend kept is `stream_tables.relaid(@<place>,
+# …)`, and a bare `relaid(` inside `selfhost/stream_tables.hero` itself.
+#
+# THE LEXER'S OWN STATE IS THE STREAM BEING MADE, not one made: a
+# `state.LexState`'s `tokens` is grown through `state.push_token` and laid
+# out again by the lexer's joins (`alone_lines.hero`, `sign_above.hero`)
+# before any parser reads it. Which holder is a lexer's is asked of the
+# declaration in hand, a parameter or a local of type `LexState` declared
+# earlier in the same function or test, never of its name.
+#
+# WHAT IT CANNOT SEE, said so a green run is not read as more: a cursor built
+# whole around tokens with the tables of another
+# (`Cursor(tokens: …, tables: c.tables)`), the premise's other half, which no
+# module writes today (`cursor.lexed_cursor` is the one construction, its
+# tables `stream_tables.none()`); a stream held under a field of another
+# name; and `relaid` reached through a module alias, which reads as a write
+# and is refused, the loud direction.
+
+use strings
+use growth
+
+# The field a stream's tokens are held in.
+constant FIELD: str
+    "tokens"
+
+# The one writer kept, as a caller spells it, and the module that defines
+# it, where its own name is bare.
+constant RELAID: str
+    "stream_tables.relaid("
+
+constant HOME: str
+    "selfhost/stream_tables.hero"
+
+constant BARE: str
+    "relaid("
+
+# One write: its line in the module, and the line as written.
+record Site
+    line: i64
+    code: str
+
+# Every write to a stream's tokens in `text`, the module at `path`, that is
+# neither `relaid`'s nor one to a lexer's own state, in order.
+function sites(path: str, text: str) -> [Site]
+    out: [Site] @ []
+    lexers: {str: bool} @ {}
+    calls: [str] @ []
+    levels: [i64] @ []
+    at: i64 @ 0
+
+    for row in strings.split_on(text: text, byte: 10)
+        at @ at + 1
+        code = strings.trimmed(growth.bare(row))
+
+        if code.len() == 0
+            continue
+        indent = growth.indent_of(row)
+
+        # A top-level item starts a new function or test: nothing it
+        # declared reaches the next one. A bracket closing a header broken
+        # over lines is the same item's.
+        if indent == 0 && !closes_a_header(code)
+            lexers @ {}
+
+        # A call broken over lines, its arguments one a line beneath it, is
+        # open until a line stands where it does, its closing bracket's.
+        while levels.len() > 0 && indent <= levels[levels.len() - 1]
+            levels @ levels.slice(from: 0, to: levels.len() - 1)
+            calls @ calls.slice(from: 0, to: calls.len() - 1)
+
+        opened: str @ ""
+
+        if calls.len() > 0
+            opened @ calls[calls.len() - 1]
+
+        for name in lexer_names(code)
+            lexers[name] @ true
+
+        hit: bool @ false
+
+        for place in written_places(path: path, code: code, opened: opened)
+            if holds_field(place) && lexers[root_of(place)].is_err()
+                hit @ true
+
+        if hit
+            out @ out.push(Site(line: at, code: strings.trimmed(row)))
+
+        if strings.ends_with(text: code, suffix: "(")
+            levels @ levels.push(indent)
+            calls @ calls.push(code)
+
+    return out
+
+function closes_a_header(code: str) -> bool
+    return code[0] == ')' || code[0] == ']' || code[0] == '}'
+
+# The places a line writes: the place of its store, `place @ value`, a match
+# arm's included, and each place it lends, `@place` as an argument; a place
+# lent to `relaid` is not one. `opened` is the line that opened the call this
+# line is an argument of, where the call is broken over lines, else "".
+function written_places(path: str, code: str, opened: str) -> [str]
+    out: [str] @ []
+    body = growth.arm_body(code)
+    store = strings.index_of(text: body, needle: " @ ")
+
+    if !store.is_err()
+        place = body.slice(from: 0, to: store.must())
+
+        # `name: Type @ value` declares a local, and writes no place.
+        if strings.index_of(text: place, needle: ": ").is_err() && starts_a_name(place, at: 0)
+            out @ out.push(place)
+    i: i64 @ 0
+
+    while i + 1 < code.len()
+        if code[i] == '@' && starts_a_name(code, at: i + 1) && (i == 0 || opens_an_argument(code[i - 1]))
+            lent = place_at(code, from: i + 1)
+            before: str @ code.slice(from: 0, to: i)
+
+            if i == 0
+                before @ opened
+
+            if !kept_lend(path: path, before: before)
+                out @ out.push(lent)
+            i @ i + 1 + lent.len()
+        else
+            i @ i + 1
+
+    return out
+
+function opens_an_argument(b: u8) -> bool
+    return b == '(' || b == ' ' || b == ',' || b == '['
+
+function starts_a_name(text: str, at: i64) -> bool
+    if at >= text.len()
+        return false
+    b = text[at]
+    return b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z' || b == '_'
+
+# Whether a lend whose call is written as `before` is `relaid`'s: the call
+# opens right before the `@`, and its callee is `stream_tables.relaid`, or a
+# bare `relaid` in the module that defines it.
+function kept_lend(path: str, before: str) -> bool
+    if called(before: before, callee: RELAID)
+        return true
+    return path == HOME && called(before: before, callee: BARE)
+
+# Whether `before` ends with `callee`, a name and its open bracket, read as a
+# whole name: `xstream_tables.relaid(` and `st.relaid(` are other callees.
+function called(before: str, callee: str) -> bool
+    if !strings.ends_with(text: before, suffix: callee)
+        return false
+    at = before.len() - callee.len()
+    return at == 0 || !growth.word_byte(before[at - 1])
+
+# The place that starts at `from`: names joined by dots, each followed by any
+# number of index brackets, read to the first byte that cannot continue it.
+function place_at(text: str, from: i64) -> str
+    end: i64 @ from
+
+    while end < text.len()
+        b = text[end]
+
+        if growth.word_byte(b)
+            end @ end + 1
+        else if b == '['
+            end @ past_bracket(text, from: end)
+        else
+            return text.slice(from: from, to: end)
+
+    return text.slice(from: from, to: end)
+
+# The index past the bracket that closes the one opened at `from`, or the
+# end of the text.
+function past_bracket(text: str, from: i64) -> i64
+    depth: i64 @ 0
+    at: i64 @ from
+
+    while at < text.len()
+        if text[at] == '['
+            depth @ depth + 1
+        else if text[at] == ']'
+            depth @ depth - 1
+
+            if depth == 0
+                return at + 1
+        at @ at + 1
+
+    return at
+
+# Whether a place runs through the stream's field: `.tokens` followed by the
+# place's end, an index or a further field, its brackets' contents left out
+# so an index reading another stream is not the place written.
+function holds_field(place: str) -> bool
+    shape = without_indexes(place)
+    needle = "." + FIELD
+    at: i64 @ 0
+
+    while at + needle.len() <= shape.len()
+        found = strings.index_of(text: shape.slice(from: at, to: shape.len()), needle: needle)
+
+        if found.is_err()
+            return false
+        end = at + found.must() + needle.len()
+
+        if end == shape.len() || shape[end] == '[' || shape[end] == '.'
+            return true
+        at @ end
+
+    return false
+
+# `place` with every index bracket's contents taken out: `c.tokens[i].kind`
+# reads `c.tokens[].kind`.
+function without_indexes(place: str) -> str
+    kept: [str] @ []
+    start: i64 @ 0
+    at: i64 @ 0
+
+    while at < place.len()
+        if place[at] == '['
+            kept @ kept.push(place.slice(from: start, to: at + 1))
+            at @ past_bracket(place, from: at)
+            start @ at - 1
+        else
+            at @ at + 1
+
+    kept @ kept.push(place.slice(from: start, to: place.len()))
+    return kept.join("")
+
+# The name a place starts from: `c` of `c.tokens[i]`.
+function root_of(place: str) -> str
+    end: i64 @ 0
+
+    while end < place.len() && place[end] != '.' && place[end] != '['
+        end @ end + 1
+
+    return place.slice(from: 0, to: end)
+
+# The names this line declares of the lexer's state, a parameter
+# `@l: state.LexState` or a local `kept: LexState @ …`, as written.
+function lexer_names(code: str) -> [str]
+    out: [str] @ []
+
+    for typed in [": state.LexState", ": LexState"]
+        at: i64 @ 0
+
+        while at < code.len()
+            found = strings.index_of(text: code.slice(from: at, to: code.len()), needle: typed)
+
+            if found.is_err()
+                break
+            start = at + found.must()
+            end = start + typed.len()
+
+            if end == code.len() || !growth.word_byte(code[end])
+                name = name_before(code, at: start)
+
+                if name.len() > 0
+                    out @ out.push(name)
+            at @ end
+
+    return out
+
+# The identifier that ends right before `at`, or nothing.
+function name_before(code: str, at: i64) -> str
+    start: i64 @ at
+
+    while start > 0 && growth.word_byte(code[start - 1]) && code[start - 1] != '.'
+        start @ start - 1
+
+    return code.slice(from: start, to: at)
+
+## Tests
+
+test "a write to a stream's tokens is found however it is spelled, and relaid's and a lexer's are not"
+    text = "function f(@c: cursor.Cursor, @l: state.LexState, i: i64)\n    c.tokens[i] @ token.Token(kind: .ident, span: s)\n    c.tokens @ []\n    c.tokens[i].kind @ .ident\n    other(@c.tokens, at: i)\n    touch(n, @c.tokens[i])\n    stream_tables.relaid(@c.tokens, at: i, kind: .terminator, span: c.tokens[i].span)\n    state.push_token(@l.tokens, t)\n    l.tokens @ l.tokens.slice(from: 0, to: i)\n    # c.tokens[i] @ x in a comment\n    say = \"c.tokens[i] @ x in a literal\"\n    held @ c.tokens\n    c.tokens_seen @ 1\n\nfunction g(@d: cursor.Cursor, @p: Parser)\n    d.tokens[0] @ t\n    p.c.tokens[1] @ t\n    l.tokens @ []\n    match k\n        .a => d.tokens[2] @ t\n        .b => return\n    copy: [token.Token] @ d.tokens\n    copy[0] @ t\n    d.tokens[d.tokens.len() - 1].span @ s\n"
+    lines: [i64] @ []
+
+    for one in sites(path: "selfhost/parse/x.hero", text: text)
+        lines @ lines.push(one.line)
+
+    # The stores, the field written whole, an element and an element's field;
+    # the lends, whole and of an element; then in `g`, which declares no
+    # lexer, every write, `l`'s among them, a path through another record, an
+    # arm, and an index reading the stream inside the place written.
+    assert lines == [2, 3, 4, 5, 6, 16, 17, 18, 20, 24]
+
+test "relaid is kept by its own name only where it is defined, and a local lexer is a lexer"
+    bare = "test \"x\"\n    c: cursor.Cursor @ made()\n    relaid(@c.tokens, at: 1, kind: .indent, span: s)\n"
+    assert sites(path: HOME, text: bare).len() == 0
+    assert sites(path: "selfhost/parse/x.hero", text: bare).len() == 1
+    alias = "function f(@c: cursor.Cursor)\n    st.relaid(@c.tokens, at: 1, kind: .indent, span: s)\n"
+    assert sites(path: "selfhost/parse/x.hero", text: alias).len() == 1
+    local = "function h()\n    kept: state.LexState @ fresh()\n    kept.tokens @ []\n    push_token(@kept.tokens, t)\n"
+    assert sites(path: "selfhost/x.hero", text: local).len() == 0
+
+    # A call broken over lines is the call its argument lines are lent to,
+    # nested or not, until its closing bracket.
+    broken = "function f(@c: cursor.Cursor)\n    stream_tables.relaid(\n        @c.tokens,\n        at: 1,\n        kind: .indent,\n        span: s\n    )\n    other(\n        @c.tokens,\n        at: 1\n    )\n    outer(\n        stream_tables.relaid(\n            @c.tokens,\n            at: 2\n        ),\n        @c.tokens\n    )\n"
+    lent: [i64] @ []
+
+    for one in sites(path: "selfhost/parse/x.hero", text: broken)
+        lent @ lent.push(one.line)
+
+    assert lent == [9, 17]
+
+    # A lexer declared in one function is not one in the next.
+    after = "function a(@l: LexState)\n    l.tokens @ []\n\nfunction b(@l: Cursor)\n    l.tokens @ []\n"
+    found = sites(path: "selfhost/x.hero", text: after)
+    assert found.len() == 1
+    assert found[0].line == 5
+
+test "a place is read to its end, its indexes left out of what it holds"
+    assert place_at("f(@c.tokens[i + a[1]].span, x)", from: 3) == "c.tokens[i + a[1]].span"
+    assert holds_field("c.tokens")
+    assert holds_field("c.tokens[i].kind")
+    assert holds_field("p.c.tokens[d.tokens.len() - 1]")
+    assert !holds_field("c.tokens_seen")
+    assert !holds_field("tokens[i]")
+    assert !holds_field("c.toks[d.tokens.len()]")
+    assert root_of("p.c.tokens[1]") == "p"
+    assert lexer_names("function f(@l: state.LexState, n: i64, m: LexState) -> i64") == ["l", "m"]
+    assert lexer_names("    states: [state.LexState] @ []").len() == 0
+
+# The two names the check rests on stand in the compiler, as it spells them:
+# the writer it keeps, which still refuses a kind a reader sees, and the
+# lexer's state it exempts. A rename of either reads as a refusal of every
+# write it covered, the loud direction; this says which name moved.
+test "relaid and the lexer's state are where the check says they are"
+    home = read_file(HOME)
+    assert !home.is_err()
+    assert strings.contains(
+        text: home.must(),
+        needle: "function relaid(@tokens: [token.Token], at: i64, kind: token.TokenKind, span: token.Span)\n    assert is_invisible(kind)\n"
+    )
+    lexer = read_file("selfhost/state.hero")
+    assert !lexer.is_err()
+    assert strings.contains(text: lexer.must(), needle: "record LexState\n")
+    assert strings.contains(text: lexer.must(), needle: "\n    tokens: [token.Token]\n")
+    cursor = read_file("selfhost/cursor.hero")
+    assert !cursor.is_err()
+    assert strings.contains(text: cursor.must(), needle: "record Cursor\n")
+    assert strings.contains(text: cursor.must(), needle: "\n    tokens: [token.Token]\n")

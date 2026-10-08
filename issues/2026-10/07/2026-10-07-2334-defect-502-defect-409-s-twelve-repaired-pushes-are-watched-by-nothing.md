@@ -3,7 +3,7 @@ kind: defect
 area: harness
 milestone: none
 filed: 2026-10-07
-commit: none
+commit: c613c67f0df794135deb6b71e8dae6d43c782764
 github: none
 ---
 
@@ -12,3 +12,5 @@ github: none
     **Origin:** filed by the coordinator at 23:34 on 2026-10-07 from lane b14-p409's final report; the lane's measurement, not re-run by the coordinator.
 
     **Class: improvement**, 2026-10-07 (`.claude/rules/verification.md` § Bounded discovery): a repair nothing keeps, and a ceiling with room nobody sees.
+
+    Repaired at `c613c67f`, 2026-10-08 (lane b15-harness), gated by its cases and the net's own tests; the net is owed at the batch's close. `layout`'s slow-push list names the ten spellings defect 409's repair removed from twelve lines, and `check/table.hero`'s ceiling reads 353, what lane b14-p409's tip measures (370 on the trunk): `layout` whole reads 5 passed, 0 failed on this lane merged with that one, and red on this lane alone, the twelve lines and the 370, until the round merges defect 409's lane.

@@ -337,16 +337,25 @@ test "fixedbugs: a program that writes bytes that are not UTF-8 is told as one t
 # DEFECT 390's control (2026-10-07): a C library writing eight bytes past a
 # record's last field, its `memset` named past the header's fortified macro,
 # as a library compiled apart calls it, so `-O2` sets no trap of its own. The
-# plain runs and the sanitiser at `-O2` pass it; the sanitiser at `-O0` names
-# the overflow. The same call writing the field alone passes every leg, so
-# what the leg sees is the write past it.
+# sanitiser at `-O0` names the overflow on every platform. What the other
+# legs make of it is the platform's: on Darwin and Linux the plain runs and
+# the sanitiser at `-O2` pass it, and on Windows the plain `-O0` run falls
+# first, exit 139, with the sanitiser at `-O2` naming it too (defect 505,
+# the CI's Windows leg after batch 14's push). The same call writing the
+# field alone passes every leg, so what the leg sees is the write past it.
 constant SPILL_H: str
     "#include <stdint.h>\n#include <string.h>\nstatic inline void spill_n(int64_t *out, int64_t n) { (memset)(out, 0x41, (size_t)n); }\n"
 
 function spilling(bytes: i64) -> str
     return "extern \"spill.h\"\n    function spill_n(@out: i64, n: i64)\n\nrecord Pair\n    a: i64\n    b: i64\n\nfunction main()\n    o: Pair @ Pair(a: 0, b: 0)\n    spill_n(out: @o.b, n: " + bytes.to_str() + ")\n    print(o.a)\n    print(\"done\")\n"
 
-test "fixedbugs: a C write past a field is seen by the sanitiser at -O0, the one leg that sees it (defect 390)"
+# The sanitiser at `-O0` is asked ALONE, built and run as `one_case` runs it
+# (`sanitised_failed`), and so is the control: whether that leg sees the write
+# is that leg's verdict, never the order of the legs before it. Until defect
+# 505 the case read the first failure of the whole case and asserted it was
+# that leg's, which held where every leg before it passes the program, Darwin
+# and Linux, and failed on Windows, where the plain `-O0` run falls first.
+test "fixedbugs: a C write past a field is seen by the sanitiser at -O0, asked of that leg alone (defects 390 and 505)"
     scratch = shell.own_scratch()
     tree = scratch + "/run-390"
     assert !shell.mkdir_all(tree).is_err()
@@ -357,27 +366,26 @@ test "fixedbugs: a C write past a field is seen by the sanitiser at -O0, the one
     assert !write_file(path: tree + "/exact.hero", text: spilling(8)).is_err()
     want = expectation.split("0\ndone\n").must()
     compiler = shell.some_compiler().must()
+    over_case = cases.Case(source: tree + "/over.hero", expected: "", name: "over")
+    exact_case = cases.Case(source: tree + "/exact.hero", expected: "", name: "exact")
+    leg = ["--sanitize", "-O0"]
+    seen: report.Report @ report.empty()
+    assert sanitised_failed(@seen, scratch: scratch, compiler: compiler, item: over_case, want: want, flags: leg)
+    assert seen.failed == 1
+    assert strings.starts_with(text: seen.failures[0], prefix: "FAIL run/over at --sanitize -O0\n")
+    assert strings.contains(text: seen.failures[0], needle: "stack-buffer-overflow")
+    unseen: report.Report @ report.empty()
+    assert !sanitised_failed(@unseen, scratch: scratch, compiler: compiler, item: exact_case, want: want, flags: leg)
+    assert unseen.failed == 0
+
+    # The whole case fails at some leg on every platform, whichever falls
+    # first, and its control passes them all.
     over: report.Report @ report.empty()
-    _ = one_case(
-        scratch: scratch,
-        compiler: compiler,
-        binaries: binaries,
-        item: cases.Case(source: tree + "/over.hero", expected: "", name: "over"),
-        want: want,
-        r: @over
-    )
+    _ = one_case(scratch: scratch, compiler: compiler, binaries: binaries, item: over_case, want: want, r: @over)
     assert over.failed == 1
-    assert strings.starts_with(text: over.failures[0], prefix: "FAIL run/over at --sanitize -O0\n")
-    assert strings.contains(text: over.failures[0], needle: "stack-buffer-overflow")
+    assert over.passed == 0
     exact: report.Report @ report.empty()
-    _ = one_case(
-        scratch: scratch,
-        compiler: compiler,
-        binaries: binaries,
-        item: cases.Case(source: tree + "/exact.hero", expected: "", name: "exact"),
-        want: want,
-        r: @exact
-    )
+    _ = one_case(scratch: scratch, compiler: compiler, binaries: binaries, item: exact_case, want: want, r: @exact)
     assert exact.failed == 0
     assert exact.passed == 1
     assert !shell.remove_tree(scratch).is_err()
