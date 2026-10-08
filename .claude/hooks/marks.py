@@ -13,9 +13,11 @@ module, so there is one way to ask it and one reading of its answer.
 THE JUDGE, NOT A MIRROR. The comparison is `tests/harness/mark_readers.hero`'s;
 a second reader in Python would be a copy that can disagree with it in silence.
 A narrowed `annotations` run compares the marks of each case of its
-`DIRECTORIES` with that case's `.expected` and asks the run roots nothing, so
-the directories it judges narrowed are read from that constant, in the tree
-judged, never written down here.
+`DIRECTORIES` with that case's `.expected`, and asks a run root's group only
+where its word names that group (defect 485, `asked_groups`: the directory's
+name or a file's stem in it holds the word), the WHOLE group then, each
+program compiled; so the directories it judges narrowed are read from that
+constant, in the tree judged, never written down here.
 
 ITS COST, measured 2026-10-07 on this Mac beside twelve other lanes: 80.1
 billion instructions of `heroes run` and 13.0 s of user time for one case or
@@ -102,8 +104,12 @@ def judged_narrowed(tree, rel):
 
 
 def in_run_roots(tree, rel):
-    """Whether `rel` is under the suite's `RUN_ROOTS`, whose marks only the
-    whole suite asks, each program compiled."""
+    """Whether `rel` is under the suite's `RUN_ROOTS`, whose marks the whole
+    suite asks, each program compiled, and a narrowed run asks only for a word
+    that names the group, the group whole (defect 485): so the hooks leave such
+    a case out of the question they ask, and a word of theirs that happens to
+    name a group is asked within `LIMIT`, a run that does not end in time
+    giving no opinion."""
     roots = constant(tree, "RUN_ROOTS") or []
     return any(rel.startswith(root + "/") for root in roots)
 

@@ -105,6 +105,7 @@ which pins a diagnostic's notes and excerpts (defect 289).
 | `examples/**` | `canonical` `corpus` `emission` `probe` `special` `warnings` |
 | `spec/heroes-spec.md` | `spec` `special` **`grammar`** `fixes` `unseen` |
 | `selfhost/keywords.hero`, `selfhost/operators.hero`, `selfhost/grammar_expr.hero`'s `binary_op` | **`grammar`**, `spec` for `selfhost/keywords.hero`, plus everything `selfhost/**` already gets |
+| `selfhost/cli/flags.hero` (the words a compile and a link take, `debug_words`, `level_words`) | **`run`** whole and **`cache` alone** (every unit's and the runtime's key moves, so every build directory goes cold once; lane land197, panel 197), plus everything `selfhost/**` already gets, and `emission` where emitted C moved |
 | `selfhost/inventory.hero`, `selfhost/escape.hero` | **`spec`** (its built-ins' and escapes' tables), plus everything `selfhost/**` already gets |
 | `selfhost/diag.hero` | **`annotations`** (every thesis rule it lists has a witness), plus everything `selfhost/**` already gets |
 | `selfhost/emit/ffi_build.hero`, `ffi_lookup.hero`, `header_reach.hero`, `selfhost/cli/package_answer.hero`, `selfhost/diag_render.hero` | **the net's own tests** (`absence.hero`'s `spellings()`), plus everything `selfhost/**` already gets |
@@ -731,8 +732,10 @@ could.* Measured on the trunk's compiler the same day, `real` equal to `user`:
   by the trunk's index), and a refusal by a compiler older than that tree told
   as its age; a golden case whose `#~` marks claim diagnostics is judged by
   its marks, not by `fmt`, every such case of a commit asked of `annotations`
-  in one run bounded at 45 s, which gives no opinion past it (defect 334,
-  `.claude/hooks/marks.py`, which the write-time hook asks through too). The
+  in one run bounded at 100 s (`marks.LIMIT`, 45 s until 2026-10-07, with both
+  hooks' `timeout` 120 in `.claude/settings.json`), which gives no opinion past
+  it (defect 334, `.claude/hooks/marks.py`, which the write-time hook asks
+  through too). The
   hard stops' commit rule is read where it was blind until
   2026-10-07 (defect 403): a `--` followed by no path, by expansions alone or
   by the whole tree is refused as a commit with no `--` is; a merge, a
