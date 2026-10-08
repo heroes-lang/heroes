@@ -3,11 +3,15 @@
 # (panel 188), and the lexer's refusal of the same character is left out
 # (`heads_told`): one mistake, one message, and the lexer's fix, `\u{1b}`,
 # wrote a name the head refuses next. In any of the head's three strings.
+#
+# 2026-10-08, defect 445: the head's refusal is `unwritable_name` now, no
+# NTFS name holding a byte below U+0020 (measured on the Windows box), so
+# `check --permissive` refuses the character too; still one message.
 
-extern "ab.h"  #~ unshowable_name
+extern "ab.h"  #~ unwritable_name
     function f() -> i32
 
-extern "c.h" link "m"  #~ unshowable_name
+extern "c.h" link "m"  #~ unwritable_name
     function g() -> i32
 
 function main()

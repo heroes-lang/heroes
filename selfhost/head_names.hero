@@ -57,6 +57,15 @@ function cannot_carry(spelled: str, value: str, span: token.Span, what: str) -> 
 
         if !c_says.is_err()
             return c_says
+
+    # A control byte no NTFS name holds (defect 445), named by its code and
+    # never quoted, as `unshowable_name` names it, since no message shows one.
+    control = head_windows.control_byte(value)
+
+    if control >= 0
+        return ok(
+            diag.new_diagnostic(code: "unwritable_name", message: "this " + noun(what) + "'s name holds the control character " + shown_char.u_plus(control) + ", which no file's name on Windows can hold and no message can show: write the name without it, as " + example(what), span: span)
+        )
     windows = head_windows.unwritable(value: value, suffixed: what != "header")
 
     if windows.len() > 0
@@ -169,7 +178,9 @@ function unwritable(what: str, held: str) -> str
 # message shows as nothing or, for a bidirectional override, shows the rest of
 # its line reordered, so a missing header's message read as another name
 # (the completeness critic's third pass). The tools carry each one, so this is
-# a thesis rule.
+# a thesis rule. A control byte below U+0020 is told before it, since no NTFS
+# name holds one (defect 445), and what reaches this rule is DEL, a C1
+# control or an invisible character, which NTFS holds.
 function unshowable_character(value: str) -> str
     for ch in value.chars()
         code = shown_char.code_point(ch)
@@ -368,9 +379,9 @@ test "a header's name is judged on its value, its escapes decoded (panel 188)"
     assert said(spelled: "\"e/*b.h\"", what: "header") == "unwritable_name"
     assert said(spelled: "\"\\\"stdio.h\\\"\"", what: "header") == "unwritable_name"
 
-test "a control character is named by its code, a thesis rule after what nothing carries (panel 188)"
-    assert said(spelled: "\"a\\tb.h\"", what: "header") == "unshowable_name"
-    assert said(spelled: "\"\\tb.h\"", what: "header") == "unshowable_name"
+test "a control character is named by its code, told before a thesis rule where no Windows file holds it (panel 188, defect 445)"
+    assert said(spelled: "\"a\\tb.h\"", what: "header") == "unwritable_name"
+    assert said(spelled: "\"\\tb.h\"", what: "header") == "unwritable_name"
     assert said(spelled: "\"éa.h\"", what: "header") == ""
     assert said(spelled: "\"aé\"", what: "header") == ""
     assert said(spelled: "\"é\"", what: "link") == ""
@@ -398,7 +409,7 @@ test "a library's name shares the first classes and none of a header's"
     assert said(spelled: "\"a b\"", what: "link") == ""
     assert said(spelled: "\"\"", what: "link") == "unwritable_name"
     assert said(spelled: "\"a\\nb\"", what: "link") == "unwritable_name"
-    assert said(spelled: "\"a\\tb\"", what: "link") == "unshowable_name"
+    assert said(spelled: "\"a\\tb\"", what: "link") == "unwritable_name"
     assert said(spelled: "\":libm.a\"", what: "link") == "machine_locked_path"
     assert said(spelled: "\"-out:pwn188\"", what: "link") == "option_like_name"
     assert said(spelled: "\"-\"", what: "link") == "option_like_name"
@@ -515,3 +526,20 @@ test "a rooted library's `/` and `\\` are what nothing carries as written, with 
     rooted_link = judged(spelled: "\"/opt/foo\"", span: token.Span(start: 0, end: 10), what: "link").must()
     assert rooted_link.message == "this library's name holds `/`, which macOS's and Linux's linkers read below each directory they search and not from the root it names, and `/opt/foo` names a path from a root, where this machine keeps the library rather than what the machine has\n  " + route("link")
     assert rooted_link.fixes.len() == 0
+
+# Defect 445, measured on the box: no NTFS name holds a byte from U+0001 to
+# U+001F, so each is `unwritable_name`, told before panel 188's thesis rule;
+# DEL, a C1 control and an invisible character stand in a file's name there,
+# and stay `unshowable_name`.
+test "a control byte below U+0020 names no file on Windows, and DEL and C1 stay the thesis rule's (defect 445)"
+    assert said(spelled: "\"a\\u{1}b.h\"", what: "header") == "unwritable_name"
+    assert said(spelled: "\"a\\u{1f}b\"", what: "link") == "unwritable_name"
+    assert said(spelled: "\"a\\u{1b}b\"", what: "package") == "unwritable_name"
+    assert said(spelled: "\"a\\u{7f}b.h\"", what: "header") == "unshowable_name"
+    assert said(spelled: "\"a\\u{80}b.h\"", what: "header") == "unshowable_name"
+    assert said(spelled: "\"a\\u{200b}b.h\"", what: "header") == "unshowable_name"
+    assert said(spelled: "\"zlib\\tx\"", what: "package") == "unwritable_name"
+    esc = judged(spelled: "\"a\\u{1b}b.h\"", span: token.Span(start: 0, end: 13), what: "header").must()
+    assert esc.message == "this header's name holds the control character U+001B, which no file's name on Windows can hold and no message can show: write the name without it, as `extern \"math.h\"`"
+    assert head_windows.control_byte("ab\u{7f}") == -1
+    assert head_windows.control_byte("a\tb") == 9

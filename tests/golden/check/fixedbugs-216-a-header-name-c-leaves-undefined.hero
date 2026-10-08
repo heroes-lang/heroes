@@ -19,6 +19,9 @@
 # error 123, defect 252's measure on the Windows box), so `a\"b.h` is
 # `unwritable_name` too, told before the thesis rule, and `check
 # --permissive` refuses it as it refuses `*`; `'` and `//` stay C's.
+#
+# 2026-10-08, defect 445: the tab is `unwritable_name` too, no NTFS name
+# holding a byte below U+0020 (measured on the Windows box).
 
 extern "a'b.h"    #~ undefined_header_name
     function g1() -> i32
@@ -32,7 +35,7 @@ extern "d//b.h"    #~ undefined_header_name
 extern "e/*b.h"    #~ unwritable_name
     function g5() -> i32
 
-extern "\tb.h"    #~ unshowable_name
+extern "\tb.h"    #~ unwritable_name
     function g6() -> i32
 
 function main()
