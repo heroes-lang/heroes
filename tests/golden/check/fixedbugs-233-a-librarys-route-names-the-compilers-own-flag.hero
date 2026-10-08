@@ -6,8 +6,12 @@
 # `--library <dir>` built and printed 7. The route names `--library <dir>`
 # now, true on every platform measured; a header's route, `CPATH`, worked on
 # the box and stays.
+#
+# 2026-10-08, defect 446: a rooted `link` holding `/` is `unwritable_name`,
+# ld64 and GNU ld 2.44 reading `C:/side/m` below each directory they search,
+# and its message ends with the same route.
 
-extern "stdio.h" link "C:/side/lp188"  #~ machine_locked_path
+extern "stdio.h" link "C:/side/lp188"  #~ unwritable_name
     function lp188() -> i32
 
 function main()

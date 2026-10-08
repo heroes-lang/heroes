@@ -30,11 +30,14 @@
 
 use bytes
 
-# Why Windows holds no file of this name, or "": one of `*`, `<`, `?` and
-# `|`, which NTFS refuses in any file's name (Win32 error 123, defect 235); a
-# part ending in `.` or a space; or a part naming a device, the part before
-# its first `.` read in any case. `suffixed` is true where the tool adds to
-# the last part.
+# Why Windows holds no file of this name, or "": one of `*`, `<`, `>`, `"`,
+# `?` and `|`, which NTFS refuses in any file's name (Win32 error 123,
+# defects 235 and 252); a part ending in `.` or a space; or a part naming a
+# device, the part before its first `.` read in any case. `suffixed` is true
+# where the tool adds to the last part. A header's `"` is told here since
+# defect 445, before panel 188's `undefined_header_name`, a thesis rule, which
+# `check --permissive` drops: no Windows file holds the name, so without the
+# thesis the program still names nothing there, as `*` names nothing.
 function unwritable(value: str, suffixed: bool) -> str
     reserved = reserved_byte(value)
 
@@ -60,7 +63,7 @@ function reserved_byte(value: str) -> str
     while at < value.len()
         b = value[at]
 
-        if b == '*' || b == '<' || b == '?' || b == '|'
+        if b == '*' || b == '<' || b == '>' || b == '"' || b == '?' || b == '|'
             return value.slice(from: at, to: at + 1)
         at @ at + 1
 
@@ -72,25 +75,38 @@ function reserved_byte(value: str) -> str
 # `"` stand in no file's name there, `CopyFileW` into `a>b.lib`, `a"b.lib`,
 # `a>b.pc` and `a"b.pc` failing with Win32 error 123 as into `a*b.lib`, and
 # lld-link, handed `g>h.lib` and `g"h.lib` by `-l`, by `/defaultlib:` and as a
-# path, could not open them, *invalid argument*, Git Bash having written both;
-# a `\` is a directory to lld-link, `-la\b` linking `b.lib` inside `a`, where
+# path, could not open them, *invalid argument*, Git Bash having written both,
+# which `reserved_byte` tells since defect 445; a `\` is a directory to
+# lld-link, `-la\b` linking `b.lib` inside `a`, where
 # ld64 and GNU ld 2.44 link one file, `liba\b.a`; and in a `link` a `/` is a
 # directory to every linker but not the same one, lld-link opening
 # `sub/m252.lib` and ld64 and GNU ld `libsub/m252.a`, `lib` written before the
-# directory. A `rooted` value is a path whatever it holds, which `head_names`
-# tells with its route, so its `/` and `\` are left to that. A package's `/`
-# passes, as a header's `sub/foo.h` does: `pkg-config` looks it up under each
-# search directory.
+# directory. A package's `/` passes, as a header's `sub/foo.h` does:
+# `pkg-config` looks it up under each search directory.
+#
+# **A `rooted` value holds them for the same reasons** (defect 446): until
+# then its `/` and `\` were left to panel 055's `machine_locked_path`, a thesis
+# rule, which `check --permissive` drops. Measured on 2026-10-08, ld64 and GNU
+# ld 2.44 read a rooted `link` below each directory they search, not at the
+# path written: `-l/opt/q/m446` opened `<dir>/lib/opt/q/m446.a`, `-lC:/side/m`
+# `<dir>/libC:/side/m.a`, GNU's `-l:/w/abs/libm446.a` `<dir>/w/abs/libm446.a`,
+# where lld-link is handed `/opt/q/m446.lib` (clang's `-###`) and reads
+# `/out:pwn.lib` as its own `/out:` option, writing the program there (lld-link
+# 22 in the Linux container). Such a value's message keeps its route, which
+# `head_names` adds.
 function library_unwritable(value: str, what: str, rooted: bool) -> str
     at: i64 @ 0
 
     while at < value.len()
         b = value[at]
 
-        if b == '>' || b == '"' || b == '\\' && !rooted
-            return "holds `" + value.slice(from: at, to: at + 1) + "`, which no file's name on Windows can hold"
+        if b == '\\'
+            return "holds `\\`, which no file's name on Windows can hold"
 
-        if b == '/' && what == "link" && !rooted
+        if b == '/' && what == "link" && rooted
+            return "holds `/`, which macOS's and Linux's linkers read below each directory they search and not from the root it names"
+
+        if b == '/' && what == "link"
             return "holds `/`, which every linker reads as a directory and not the same one, `" + value + ".lib` on Windows and `lib" + value + "` on macOS and Linux"
         at @ at + 1
 
@@ -211,7 +227,7 @@ test "a part Windows stores under another name, or reads as a device (defect 234
     assert unwritable(value: "a?b.h", suffixed: false) != ""
     assert unwritable(value: "sub/a|b.h", suffixed: false) != ""
     assert unwritable(value: "a?b", suffixed: true) != ""
-    assert unwritable(value: "a>b!=c", suffixed: true) == ""
+    assert unwritable(value: "a!=c", suffixed: true) == ""
     assert unwritable(value: "ab.h.", suffixed: false) != ""
     assert unwritable(value: "ab.h ", suffixed: false) != ""
     assert unwritable(value: "ab.h..", suffixed: false) != ""
@@ -264,6 +280,19 @@ test "a device is named by a superscript digit or by the console's two, and neve
     assert unwritable(value: " nul.h", suffixed: false) == ""
     assert device("CONOUT$ ")
     assert !device("CONOUT")
+
+# Defect 445: `>` and `"` are NTFS's too (defect 252's measure), so every
+# string tells them here, a header's `"` before panel 188's thesis rule.
+test "a name holding `>` or `\"` is one no Windows file holds, in every string (defects 252 and 445)"
+    held = "holds `\"`, which no file's name on Windows can hold"
+    assert unwritable(value: "a\"b.h", suffixed: false) == held
+    assert unwritable(value: "\"stdio.h\"", suffixed: false) == held
+    assert unwritable(value: "sub/a\"b", suffixed: true) == held
+    assert unwritable(value: "/a\"b.h", suffixed: false) == held
+    assert unwritable(value: "a>b", suffixed: true) == "holds `>`, which no file's name on Windows can hold"
+    assert unwritable(value: "a'b.h", suffixed: false) == ""
+    assert library_unwritable(value: "a\"b", what: "link", rooted: false) == ""
+    assert library_unwritable(value: "a\\b", what: "link", rooted: false) == "holds `\\`, which no file's name on Windows can hold"
 
 test "a name whose file depends on the machine: a `:`, a `~`, a climb out of a named directory (defect 234)"
     assert locked("ab.h") == ""

@@ -1,0 +1,30 @@
+# Defect 445 (lane b14-box's finding, 2026-10-07): a header's name holding
+# `"` was refused only by panel 188's `undefined_header_name`, a thesis rule,
+# so `check --permissive`, the control arm, passed it, though NTFS holds no
+# file of such a name (Win32 error 123, defect 252's measure on the Windows
+# box), as it holds none with `*`, which defect 235 refuses in the control
+# arm too. The `"` is now `unwritable_name`, told before any thesis rule, in
+# every position and in C's own quotes carried in whole, which keep their
+# certain fix; a `'`, which a Windows file can hold, stays C's thesis rule
+# and the control arm drops it, as the last group shows.
+
+extern "a\"b.h"  #~ unwritable_name
+    function q1() -> i32
+
+extern "sub/a\"b.h"  #~ unwritable_name
+    function q2() -> i32
+
+extern "\"string.h\""  #~ unwritable_name
+    function q3() -> i32
+
+extern "/a\"b.h"  #~ unwritable_name
+    function q4() -> i32
+
+extern "a'b\"c.h"  #~ unwritable_name
+    function q5() -> i32
+
+extern "a'b.h"
+    function q6() -> i32
+
+function main()
+    print(q1() + q2() + q3() + q4() + q5() + q6())
