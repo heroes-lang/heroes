@@ -65,6 +65,7 @@ function judge(@c: state.Checker, a: ast.Ast, s: source.Source, decls: [ast.Decl
         lowered @ lowered.push(written.must())
 
     missing: i64? @ fail(code: "named", msg: "every confusable position carries a name")
+    shared = type_fit.shared(lowered)
     i: i64 @ 0
 
     while i < lowered.len()
@@ -78,7 +79,7 @@ function judge(@c: state.Checker, a: ast.Ast, s: source.Source, decls: [ast.Decl
         # program that reads them the other way round compiles and prints the
         # wrong answer. The name is what lets the type say it, and
         # `check/generics.hero` is what checks it.
-        if type_fit.shared_at(lowered, at: i) && !named && missing.is_err()
+        if shared[i] && !named && missing.is_err()
 
             # The FIRST unnamed one only: a type whose three parameters are all
             # `str` is one mistake with one repair, and saying it three times
