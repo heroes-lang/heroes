@@ -55,16 +55,46 @@ use resolve
 use checker
 use ir/lower
 
-# The decl indices of every function C may call back, or an empty map when this
-# program hands C no function at all. ONE computation with two consumers — the
-# guard line and the emitted set — because two answers to one question is how
-# the per-TU sections stopped compiling four separate times (emit/unit.hero's
-# own note).
-function guarded(p: containers.Program, c: state.Checked, decls: [ast.Decl]) -> {i64: bool}
-    out: {i64: bool} @ {}
+# Which functions C may call back, as the whole program answers it: whether an
+# `extern` takes a callback at all (`opened`), the decl indices of every
+# function C may call back (`decls`, empty when this program hands C no
+# function), and the functions of those declarations by index, in the
+# program's order (`functions`). ONE computation with every consumer — the
+# guard line, the thunks, the table and a unit's reach — because two answers
+# to one question is how the per-TU sections stopped compiling four separate
+# times (emit/unit.hero's own note).
+#
+# **Asked ONCE per program** (defect 497, 2026-10-07): every field is a
+# function of the program and not of the module, and until then each
+# translation unit of a build asked both questions again over the whole
+# program, twice, the walk below copying every instruction of every function
+# each time: two fifths of the emitting thread on the compiler's own
+# `--emit-c` (lane b14-p409's sample). The fused unit and `members.Whole` each
+# hold one, and every unit reads it.
+record Callbacks
+    opened: bool
+    decls: {i64: bool}
+    functions: [i64]
+
+function callbacks_of(p: containers.Program, c: state.Checked, decls: [ast.Decl]) -> Callbacks
+    none: {i64: bool} = {}
+    held: [i64] @ []
 
     if !takes_a_callback(p, c, decls)
-        return out
+        return Callbacks(opened: false, decls: none, functions: held)
+    taken = addresses_taken(p)
+    index: i64 @ 0
+
+    for f in p.functions
+        if !taken[f.decl].is_err()
+            held @ held.push(index)
+        index @ index + 1
+
+    return Callbacks(opened: true, decls: taken, functions: held)
+
+# Every declaration whose address an instruction of the program takes.
+function addresses_taken(p: containers.Program) -> {i64: bool}
+    out: {i64: bool} @ {}
 
     for f in p.functions
         for blk in f.blocks
@@ -145,19 +175,32 @@ constant NO_CALLBACK: str
 
 test "a program that hands C no function guards nobody"
     text = NO_CALLBACK
-    found = guarded(program_of(text), checked_of(text), decls_of(text))
-    assert found.len() == 0
+    found = callbacks_of(program_of(text), checked_of(text), decls_of(text))
+    assert found.decls.len() == 0
 
 # The premise this module rests on, as a test that fires when it dies
 # (CLAUDE.md §11): the address of a function C can call is taken by a `func_ref`
 # instruction, so the walk that reads them finds it.
 test "a function value comes from func_ref"
     text = WITH_CALLBACK
-    found = guarded(program_of(text), checked_of(text), decls_of(text))
-    assert found.len() == 1
+    found = callbacks_of(program_of(text), checked_of(text), decls_of(text))
+    assert found.decls.len() == 1
 
 test "an extern taking a callback is what opens the question"
     text = WITH_CALLBACK
     assert takes_a_callback(program_of(text), checked_of(text), decls_of(text))
     other = NO_CALLBACK
     assert !takes_a_callback(program_of(other), checked_of(other), decls_of(other))
+
+# The answer every unit reads (defect 497): the guarded functions by index, in
+# the program's order, each one's declaration in the set.
+test "the program's answer holds the guarded functions in the program's order"
+    p = program_of(WITH_CALLBACK)
+    found = callbacks_of(p, checked_of(WITH_CALLBACK), decls_of(WITH_CALLBACK))
+    assert found.opened
+    assert found.functions.len() == 1
+    assert p.functions[found.functions[0]].name == "bye"
+    assert !found.decls[p.functions[found.functions[0]].decl].is_err()
+    closed = callbacks_of(program_of(NO_CALLBACK), checked_of(NO_CALLBACK), decls_of(NO_CALLBACK))
+    assert !closed.opened
+    assert closed.functions.len() == 0

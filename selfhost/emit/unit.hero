@@ -18,7 +18,7 @@
 # a TU that has no use for it — one TU of this 157-module program was
 # 19,193 lines, and the build went 188 s -> 484 s. So typedefs, per-type
 # functions and descriptors are all filtered by ONE per-TU reach
-# (`emit.reach_of` over the TU's own members, read through
+# (`reach.reach_of` over the TU's own members, read through
 # `synth.Wanted`). One filter over all four sections is what makes
 # them agree: trimming the descriptors alone left `h_parse_Expr_desc`
 # undeclared under satellites that still mentioned it.
@@ -54,6 +54,7 @@ use check/state
 use ir/containers
 use emit
 use emit/synth
+use emit/reach
 use emit/members
 use emit/writer
 use emit/decls as emit_decls
@@ -64,14 +65,13 @@ use emit/perfn
 use emit/descriptors
 use emit/signature
 use emit/body
-use emit/callback_guard
 use emit/callback_thunk
 
 # One module's translation unit. The caller has already run the gate
 # over the whole program (a refusal is program-wide) and monomorphised;
 # `is_root` says whether this TU carries the shim.
 function unit(module: str, p: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl], version: str, is_root: bool, whole: members.Whole) -> str
-    mine = members.members(module, p, c, s, decls, shown: whole.shown, by_decl: whole.by_decl)
+    mine = members.members(module, p, c, s, decls, shown: whole.shown, by_decl: whole.by_decl, callees: whole.callees)
     keep = mine.defined
     tu_p = members.tu_program(p, keep: keep)
 
@@ -82,7 +82,7 @@ function unit(module: str, p: containers.Program, c: state.Checked, s: source.So
     # 19,193 lines where 87% belonged to other modules, and the
     # compiler's own build went 188 s -> 484 s (measured 2026-08-25).
     # One filter over all four sections is what makes them agree.
-    walked = emit.reach_of(tu_p, c, target: .program_build, shown: members.all_of(tu_p))
+    walked = reach.reach_of(tu_p, c, target: .program_build, shown: members.all_of(tu_p))
 
     # A PROTOTYPE names types too, and the body walk above cannot see
     # the ones belonging to another TU's function. So the signatures of
@@ -128,18 +128,19 @@ function unit(module: str, p: containers.Program, c: state.Checked, s: source.So
     # program, never the TU's slice: a function this TU defines may have
     # its address taken in another module, and the fused path must reach
     # the same answer or the two emitters disagree about one program.
-    guarded_decls = callback_guard.guarded(p, c, decls)
+    # Asked once for the whole build and read here (defect 497).
+    guarded_decls = whole.callbacks.decls
 
     # The callback table names every one of them and its thunk in EVERY
     # TU that can hand C a function (panel 177's item 2), so their
     # signatures' types join the reach too, or a TU that never calls one
     # of them is missing the typedef its prototype names.
-    for f in p.functions
-        if !guarded_decls[f.decl].is_err()
-            reached[f.result] @ true
+    for at in whole.callbacks.functions
+        f = p.functions[at]
+        reached[f.result] @ true
 
-            for slot in f.params
-                reached[f.slots[slot].ty] @ true
+        for slot in f.params
+            reached[f.slots[slot].ty] @ true
 
     # ONE set feeds all four sections, and that is the invariant rather
     # than a tidiness. Every time a section got its own answer the TU
@@ -150,7 +151,7 @@ function unit(module: str, p: containers.Program, c: state.Checked, s: source.So
     # wanted `T?` whose payload descriptor nobody defined
     # (`h_clitoolchain_Toolchain_desc`). Four symptoms, one cause, and
     # the cause is two sets where there should be one.
-    declared = members.declared_reach(c, decls, seed: emit.closed_over(c, reached: reached))
+    declared = members.declared_reach(c, decls, seed: reach.closed_over(c, reached: reached))
     want: synth.Wanted @ synth.wanted_of(c, reached: declared)
 
     # By declaration too, since a record nothing mentions has no type id.
@@ -208,7 +209,7 @@ function unit(module: str, p: containers.Program, c: state.Checked, s: source.So
         if emit_decls.emitted(f, target: .program_build)
             signature.prototype(@w, f, c, names, s, decls)
 
-    callback_thunk.lookup_table(@w, p, c, names, s, decls)
+    callback_thunk.lookup_table(@w, p, c, names, s, decls, callbacks: whole.callbacks)
 
     for at in keep
         f = p.functions[at]
@@ -221,7 +222,7 @@ function unit(module: str, p: containers.Program, c: state.Checked, s: source.So
             # `hero_unreachable()` at exit 0 potential — found by the
             # first real per-module build, as three symptoms of this
             # one cause.
-            body.definition(@w, p, c, names, s, decls, f: f, guarded_decls: guarded_decls)
+            body.definition(@w, whole.callees, c, names, s, decls, f: f, guarded_decls: guarded_decls)
 
     perfn.bodies(@w, c, names, s, decls, want: want)
 

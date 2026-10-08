@@ -23,6 +23,8 @@ use ir/phases
 use emit
 use emit/ctype
 use emit/types
+use emit/callback_guard
+use emit/worklist
 use ir/instances
 
 # The tables every TU shares, built ONCE for the whole build.
@@ -52,6 +54,14 @@ record Whole
     # deep as it goes, 8.9 million steps in the compiler's own build
     # (defect 229).
     kinds: [i64]
+    # Which functions C may call back, and whether any can be: asked of the
+    # whole program here, where every TU asked it twice of the whole program
+    # until defect 497 (2026-10-07).
+    callbacks: callback_guard.Callbacks
+    # The program held with its functions by declaration, which every call
+    # a TU writes and every instance it reaches is looked up in, where each
+    # lookup scanned the whole program until defect 492 (2026-10-07).
+    callees: instances.Held
 
 # `lend_units` is what the round's pointee check read of each counted
 # parameter (`emit.emit_told`'s, panel 194's R7).
@@ -68,7 +78,14 @@ function whole_of(p: containers.Program, c: state.Checked, s: source.Source, dec
             by_decl[f.decl] @ index
         index @ index + 1
 
-    return Whole(names: names, shown: emit.shown_fused(p, s), by_decl: by_decl, kinds: phases.type_kinds(c))
+    return Whole(
+        names: names,
+        shown: emit.shown_fused(p, s),
+        by_decl: by_decl,
+        kinds: phases.type_kinds(c),
+        callbacks: callback_guard.callbacks_of(p, c, decls),
+        callees: instances.hold(p)
+    )
 
 # What one TU emits, and what it merely declares.
 #
@@ -93,10 +110,11 @@ record Members
 # The function indices a module's TU defines: its own, then the
 # instances they reach. `taken` is keyed by function index; the
 # frontier carries indices whose calls are still to be walked.
-function members(module: str, p: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl], shown: [i64], by_decl: {i64: i64}) -> Members
+function members(module: str, p: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl], shown: [i64], by_decl: {i64: i64}, callees: instances.Held) -> Members
     taken: {i64: bool} @ {}
     declared: {i64: bool} @ {}
     frontier: [i64] @ []
+    size: i64 @ 0
 
     # Seeded from the FUSED unit's own selection, filtered to this
     # module: for an author module that is exactly its functions, and
@@ -108,11 +126,12 @@ function members(module: str, p: containers.Program, c: state.Checked, s: source
 
         if f.instance.len() == 0 && source.component_at(s, decls[f.decl].name.start) == module
             taken[at] @ true
-            frontier @ frontier.push(at)
+            worklist.put(@frontier, size: @size, value: at)
 
-    while frontier.len() > 0
-        at = frontier[frontier.len() - 1]
-        frontier @ frontier.slice(from: 0, to: frontier.len() - 1)
+    # Drained from its top without copying it (`emit/worklist.hero`, defect
+    # 498).
+    while size > 0
+        at = worklist.take(frontier, size: @size)
         f = p.functions[at]
 
         for blk in f.blocks
@@ -124,11 +143,11 @@ function members(module: str, p: containers.Program, c: state.Checked, s: source
                                 instance = instances.named_at(f, c, at: inst.span.end)
 
                                 if instance.len() > 0
-                                    found = instances.index_of(p, decl: hf.decl, instance: instance)
+                                    found = instances.function_at(callees, decl: hf.decl, instance: instance)
 
                                     if !found.is_err() && taken[found.must()].is_err()
                                         taken[found.must()] @ true
-                                        frontier @ frontier.push(found.must())
+                                        worklist.put(@frontier, size: @size, value: found.must())
                                 else
 
                                     # An ordinary callee: its body is
@@ -154,11 +173,11 @@ function members(module: str, p: containers.Program, c: state.Checked, s: source
                                 named = instances.named_at(f, c, at: inst.span.end)
 
                                 if named.len() > 0
-                                    found = instances.index_of(p, decl: hf.decl, instance: named)
+                                    found = instances.function_at(callees, decl: hf.decl, instance: named)
 
                                     if !found.is_err() && taken[found.must()].is_err()
                                         taken[found.must()] @ true
-                                        frontier @ frontier.push(found.must())
+                                        worklist.put(@frontier, size: @size, value: found.must())
                                 else
                                     ordinary = by_decl[hf.decl]
 
@@ -197,12 +216,13 @@ function declared_reach(c: state.Checked, decls: [ast.Decl], seed: {i64: bool}) 
     out: {i64: bool} @ seed
 
     # ORDER: none — a worklist whose output is a SET, and every reader
-    # below asks it a membership question.
+    # below asks it a membership question. Drained from its top without
+    # copying it (`emit/worklist.hero`, defect 498).
     frontier: [i64] @ keys(out)
+    size: i64 @ frontier.len()
 
-    while frontier.len() > 0
-        id = frontier[frontier.len() - 1]
-        frontier @ frontier.slice(from: 0, to: frontier.len() - 1)
+    while size > 0
+        id = worklist.take(frontier, size: @size)
         next: [i64] @ table.contained(c.types, id)
         written_ids: [i64] @ []
 
@@ -232,7 +252,7 @@ function declared_reach(c: state.Checked, decls: [ast.Decl], seed: {i64: bool}) 
         for ty in next
             if out[ty].is_err()
                 out[ty] @ true
-                frontier @ frontier.push(ty)
+                worklist.put(@frontier, size: @size, value: ty)
 
     return out
 
