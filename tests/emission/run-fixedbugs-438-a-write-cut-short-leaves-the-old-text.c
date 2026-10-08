@@ -442,6 +442,8 @@ bb6:
 #line 55 "tests/golden/run/fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero"
     h_library_exit(t22);
 #line 55 "tests/golden/run/fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero"
+    hero_unreachable();
+#line 55 "tests/golden/run/fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero"
     goto bb1;
 #line 55 "tests/golden/run/fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero"
 bb7:
@@ -453,7 +455,9 @@ bb8:
     t33 = INT64_C(4);
 #line 59 "tests/golden/run/fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero"
     h_library_exit(t33);
-#line 457 "fixedbugs438awritecutshortleavestheoldtext.c"
+#line 59 "tests/golden/run/fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero"
+    hero_unreachable();
+#line 461 "fixedbugs438awritecutshortleavestheoldtext.c"
     h_0opt_fbbb698_release(&h3_f0);
     h_0opt_a8ea2_release(&h4_f1);
     hero_str_decref(h5_own5);
@@ -467,18 +471,20 @@ bb9:
 #line 58 "tests/golden/run/fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero"
     h_library_exit(t32);
 #line 58 "tests/golden/run/fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero"
+    hero_unreachable();
+#line 58 "tests/golden/run/fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero"
     goto bb8;
 #line 58 "tests/golden/run/fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero"
 bb10:
 #line 58 "tests/golden/run/fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero"
     goto bb8;
-#line 476 "fixedbugs438awritecutshortleavestheoldtext.c"
+#line 482 "fixedbugs438awritecutshortleavestheoldtext.c"
 }
 #undef h1_limit
 
 #line 62 "tests/golden/run/fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero"
 int64_t h_fixedbugs438awritecutshortleavestheoldtext_cut_short(HeroStr h0_path) {
-#line 482 "fixedbugs438awritecutshortleavestheoldtext.c"
+#line 488 "fixedbugs438awritecutshortleavestheoldtext.c"
     HeroStr h1_program = {0};
     int64_t *const hero_lend_h2_status = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs438awritecutshortleavestheoldtext.cut_short", "status");
 #define h2_status (*hero_lend_h2_status)
@@ -510,15 +516,15 @@ bb0:
     t18 = h4_own4;
 #line 63 "tests/golden/run/fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero"
     h4_own4 = t1;
-#line 514 "fixedbugs438awritecutshortleavestheoldtext.c"
+#line 520 "fixedbugs438awritecutshortleavestheoldtext.c"
     hero_str_decref(t18);
 #line 63 "tests/golden/run/fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero"
     t19 = h1_program;
-#line 518 "fixedbugs438awritecutshortleavestheoldtext.c"
+#line 524 "fixedbugs438awritecutshortleavestheoldtext.c"
     hero_str_incref(t1);
 #line 63 "tests/golden/run/fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero"
     h1_program = t1;
-#line 522 "fixedbugs438awritecutshortleavestheoldtext.c"
+#line 528 "fixedbugs438awritecutshortleavestheoldtext.c"
     hero_str_decref(t19);
 #line 64 "tests/golden/run/fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero"
     (void)hero_run_reset();
@@ -560,7 +566,7 @@ bb0:
     h3_code = t16;
     (void)hero_run_reset();
     t17 = h3_code;
-#line 564 "fixedbugs438awritecutshortleavestheoldtext.c"
+#line 570 "fixedbugs438awritecutshortleavestheoldtext.c"
     hero_str_decref(h1_program);
     hero_str_decref(h4_own4);
     hero_lend_local_give(hero_lend_h2_status);
@@ -570,7 +576,7 @@ bb0:
 
 #line 75 "tests/golden/run/fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero"
 int64_t h_fixedbugs438awritecutshortleavestheoldtext_files_in(HeroStr h0_dir) {
-#line 574 "fixedbugs438awritecutshortleavestheoldtext.c"
+#line 580 "fixedbugs438awritecutshortleavestheoldtext.c"
     int64_t h1_count;
     HeroStr t1;
     const char * t2;
@@ -596,12 +602,12 @@ bb0:
     t6 = h1_count;
 #line 78 "tests/golden/run/fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero"
     return t6;
-#line 600 "fixedbugs438awritecutshortleavestheoldtext.c"
+#line 606 "fixedbugs438awritecutshortleavestheoldtext.c"
 }
 
 #line 80 "tests/golden/run/fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero"
 void h_fixedbugs438awritecutshortleavestheoldtext_main(void) {
-#line 605 "fixedbugs438awritecutshortleavestheoldtext.c"
+#line 611 "fixedbugs438awritecutshortleavestheoldtext.c"
     HeroArrayHeader * h0_words = {0};
     HeroStr h1_dir = {0};
     HeroStr h2_held = {0};
@@ -716,15 +722,15 @@ bb0:
     t76 = h10_own10;
 #line 81 "tests/golden/run/fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero"
     h10_own10 = t1;
-#line 720 "fixedbugs438awritecutshortleavestheoldtext.c"
+#line 726 "fixedbugs438awritecutshortleavestheoldtext.c"
     hero_array_decref(t76);
 #line 81 "tests/golden/run/fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero"
     t77 = h0_words;
-#line 724 "fixedbugs438awritecutshortleavestheoldtext.c"
+#line 730 "fixedbugs438awritecutshortleavestheoldtext.c"
     hero_array_incref(t1);
 #line 81 "tests/golden/run/fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero"
     h0_words = t1;
-#line 728 "fixedbugs438awritecutshortleavestheoldtext.c"
+#line 734 "fixedbugs438awritecutshortleavestheoldtext.c"
     hero_array_decref(t77);
 #line 83 "tests/golden/run/fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero"
     t2 = h0_words;
@@ -748,7 +754,7 @@ bb1:
     t78 = h11_own11;
 #line 86 "tests/golden/run/fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero"
     h11_own11 = t11;
-#line 752 "fixedbugs438awritecutshortleavestheoldtext.c"
+#line 758 "fixedbugs438awritecutshortleavestheoldtext.c"
     hero_str_decref(t78);
 #line 86 "tests/golden/run/fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero"
     t12 = hero_str_concat(t9, t11);
@@ -756,15 +762,15 @@ bb1:
     t79 = h12_own12;
 #line 86 "tests/golden/run/fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero"
     h12_own12 = t12;
-#line 760 "fixedbugs438awritecutshortleavestheoldtext.c"
+#line 766 "fixedbugs438awritecutshortleavestheoldtext.c"
     hero_str_decref(t79);
 #line 86 "tests/golden/run/fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero"
     t80 = h1_dir;
-#line 764 "fixedbugs438awritecutshortleavestheoldtext.c"
+#line 770 "fixedbugs438awritecutshortleavestheoldtext.c"
     hero_str_incref(t12);
 #line 86 "tests/golden/run/fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero"
     h1_dir = t12;
-#line 768 "fixedbugs438awritecutshortleavestheoldtext.c"
+#line 774 "fixedbugs438awritecutshortleavestheoldtext.c"
     hero_str_decref(t80);
 #line 87 "tests/golden/run/fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero"
     t13 = h1_dir;
@@ -781,15 +787,15 @@ bb1:
     t81 = h13_own13;
 #line 88 "tests/golden/run/fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero"
     h13_own13 = t18;
-#line 785 "fixedbugs438awritecutshortleavestheoldtext.c"
+#line 791 "fixedbugs438awritecutshortleavestheoldtext.c"
     hero_str_decref(t81);
 #line 88 "tests/golden/run/fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero"
     t82 = h2_held;
-#line 789 "fixedbugs438awritecutshortleavestheoldtext.c"
+#line 795 "fixedbugs438awritecutshortleavestheoldtext.c"
     hero_str_incref(t18);
 #line 88 "tests/golden/run/fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero"
     h2_held = t18;
-#line 793 "fixedbugs438awritecutshortleavestheoldtext.c"
+#line 799 "fixedbugs438awritecutshortleavestheoldtext.c"
     hero_str_decref(t82);
 #line 90 "tests/golden/run/fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero"
     t19 = h2_held;
@@ -801,15 +807,15 @@ bb1:
     t83 = h14_own14;
 #line 90 "tests/golden/run/fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero"
     h14_own14 = t21;
-#line 805 "fixedbugs438awritecutshortleavestheoldtext.c"
+#line 811 "fixedbugs438awritecutshortleavestheoldtext.c"
     h_0opt_a8ea2_release(&t83);
 #line 90 "tests/golden/run/fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero"
     t84 = h3_f0;
-#line 809 "fixedbugs438awritecutshortleavestheoldtext.c"
+#line 815 "fixedbugs438awritecutshortleavestheoldtext.c"
     h_0opt_a8ea2_retain(&t21);
 #line 90 "tests/golden/run/fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero"
     h3_f0 = t21;
-#line 813 "fixedbugs438awritecutshortleavestheoldtext.c"
+#line 819 "fixedbugs438awritecutshortleavestheoldtext.c"
     h_0opt_a8ea2_release(&t84);
 #line 90 "tests/golden/run/fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero"
     t22 = h3_f0;
@@ -865,15 +871,15 @@ bb4:
     t85 = h15_own15;
 #line 95 "tests/golden/run/fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero"
     h15_own15 = t35;
-#line 869 "fixedbugs438awritecutshortleavestheoldtext.c"
+#line 875 "fixedbugs438awritecutshortleavestheoldtext.c"
     h_0opt_f87774a_release(&t85);
 #line 95 "tests/golden/run/fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero"
     t86 = h5_f1;
-#line 873 "fixedbugs438awritecutshortleavestheoldtext.c"
+#line 879 "fixedbugs438awritecutshortleavestheoldtext.c"
     h_0opt_f87774a_retain(&t35);
 #line 95 "tests/golden/run/fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero"
     h5_f1 = t35;
-#line 877 "fixedbugs438awritecutshortleavestheoldtext.c"
+#line 883 "fixedbugs438awritecutshortleavestheoldtext.c"
     h_0opt_f87774a_release(&t86);
 #line 95 "tests/golden/run/fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero"
     t36 = h5_f1;
@@ -911,11 +917,11 @@ bb7:
     t41 = t40.as.ok;
 #line 95 "tests/golden/run/fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero"
     t87 = h6_r0;
-#line 915 "fixedbugs438awritecutshortleavestheoldtext.c"
+#line 921 "fixedbugs438awritecutshortleavestheoldtext.c"
     hero_str_incref(t41);
 #line 95 "tests/golden/run/fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero"
     h6_r0 = t41;
-#line 919 "fixedbugs438awritecutshortleavestheoldtext.c"
+#line 925 "fixedbugs438awritecutshortleavestheoldtext.c"
     hero_str_decref(t87);
     goto bb9;
 bb8:
@@ -923,11 +929,11 @@ bb8:
     t42 = HERO_STR_LIT(hero_str_c328310);
 #line 95 "tests/golden/run/fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero"
     t88 = h6_r0;
-#line 927 "fixedbugs438awritecutshortleavestheoldtext.c"
+#line 933 "fixedbugs438awritecutshortleavestheoldtext.c"
     hero_str_incref(t42);
 #line 95 "tests/golden/run/fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero"
     h6_r0 = t42;
-#line 931 "fixedbugs438awritecutshortleavestheoldtext.c"
+#line 937 "fixedbugs438awritecutshortleavestheoldtext.c"
     hero_str_decref(t88);
     goto bb9;
 bb9:
@@ -935,11 +941,11 @@ bb9:
     t43 = h6_r0;
 #line 95 "tests/golden/run/fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero"
     t89 = h7_after;
-#line 939 "fixedbugs438awritecutshortleavestheoldtext.c"
+#line 945 "fixedbugs438awritecutshortleavestheoldtext.c"
     hero_str_incref(t43);
 #line 95 "tests/golden/run/fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero"
     h7_after = t43;
-#line 943 "fixedbugs438awritecutshortleavestheoldtext.c"
+#line 949 "fixedbugs438awritecutshortleavestheoldtext.c"
     hero_str_decref(t89);
 #line 97 "tests/golden/run/fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero"
     t44 = HERO_STR_LIT(hero_str_23bc109c);
@@ -982,15 +988,15 @@ bb9:
     t90 = h16_own16;
 #line 104 "tests/golden/run/fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero"
     h16_own16 = t57;
-#line 986 "fixedbugs438awritecutshortleavestheoldtext.c"
+#line 992 "fixedbugs438awritecutshortleavestheoldtext.c"
     hero_str_decref(t90);
 #line 104 "tests/golden/run/fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero"
     t91 = h8_fresh;
-#line 990 "fixedbugs438awritecutshortleavestheoldtext.c"
+#line 996 "fixedbugs438awritecutshortleavestheoldtext.c"
     hero_str_incref(t57);
 #line 104 "tests/golden/run/fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero"
     h8_fresh = t57;
-#line 994 "fixedbugs438awritecutshortleavestheoldtext.c"
+#line 1000 "fixedbugs438awritecutshortleavestheoldtext.c"
     hero_str_decref(t91);
 #line 105 "tests/golden/run/fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero"
     t58 = h8_fresh;
@@ -1043,7 +1049,7 @@ bb9:
     goto bb10;
 #line 114 "tests/golden/run/fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero"
 bb10:
-#line 1047 "fixedbugs438awritecutshortleavestheoldtext.c"
+#line 1053 "fixedbugs438awritecutshortleavestheoldtext.c"
     hero_array_decref(h0_words);
     hero_str_decref(h1_dir);
     hero_str_decref(h2_held);
@@ -1064,31 +1070,31 @@ bb10:
 
 #line 109 "<heroes library>"
 int64_t h_library_HERO_OS_OK(void) {
-#line 1068 "fixedbugs438awritecutshortleavestheoldtext.c"
+#line 1074 "fixedbugs438awritecutshortleavestheoldtext.c"
     return HERO_OS_OK;
 }
 
 #line 110 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_FOUND(void) {
-#line 1074 "fixedbugs438awritecutshortleavestheoldtext.c"
+#line 1080 "fixedbugs438awritecutshortleavestheoldtext.c"
     return HERO_OS_NOT_FOUND;
 }
 
 #line 111 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_TEXT(void) {
-#line 1080 "fixedbugs438awritecutshortleavestheoldtext.c"
+#line 1086 "fixedbugs438awritecutshortleavestheoldtext.c"
     return HERO_OS_NOT_TEXT;
 }
 
 #line 112 "<heroes library>"
 int64_t h_library_HERO_OS_BAD_NAME(void) {
-#line 1086 "fixedbugs438awritecutshortleavestheoldtext.c"
+#line 1092 "fixedbugs438awritecutshortleavestheoldtext.c"
     return HERO_OS_BAD_NAME;
 }
 
 #line 167 "<heroes library>"
 h_0opt_f87774a h_library_read_file(HeroStr h0_path) {
-#line 1092 "fixedbugs438awritecutshortleavestheoldtext.c"
+#line 1098 "fixedbugs438awritecutshortleavestheoldtext.c"
     int64_t *const hero_lend_h1_status = (int64_t *)hero_lend_local(sizeof(int64_t), "library.read_file", "status");
 #define h1_status (*hero_lend_h1_status)
     HeroStr h2_text = {0};
@@ -1167,15 +1173,15 @@ bb0:
     t39 = h4_own4;
 #line 169 "<heroes library>"
     h4_own4 = t3;
-#line 1171 "fixedbugs438awritecutshortleavestheoldtext.c"
+#line 1177 "fixedbugs438awritecutshortleavestheoldtext.c"
     hero_str_decref(t39);
 #line 169 "<heroes library>"
     t40 = h2_text;
-#line 1175 "fixedbugs438awritecutshortleavestheoldtext.c"
+#line 1181 "fixedbugs438awritecutshortleavestheoldtext.c"
     hero_str_incref(t3);
 #line 169 "<heroes library>"
     h2_text = t3;
-#line 1179 "fixedbugs438awritecutshortleavestheoldtext.c"
+#line 1185 "fixedbugs438awritecutshortleavestheoldtext.c"
     hero_str_decref(t40);
 #line 170 "<heroes library>"
     t4 = h1_status;
@@ -1199,7 +1205,7 @@ bb1:
 bb2:
 #line 171 "<heroes library>"
     t7 = h2_text;
-#line 1203 "fixedbugs438awritecutshortleavestheoldtext.c"
+#line 1209 "fixedbugs438awritecutshortleavestheoldtext.c"
     hero_str_incref(t7);
 #line 171 "<heroes library>"
     t8 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t7};
@@ -1207,7 +1213,7 @@ bb2:
     t41 = h5_own5;
 #line 171 "<heroes library>"
     h5_own5 = t8;
-#line 1211 "fixedbugs438awritecutshortleavestheoldtext.c"
+#line 1217 "fixedbugs438awritecutshortleavestheoldtext.c"
     h_0opt_f87774a_release(&t41);
 #line 171 "<heroes library>"
     h3_ret0 = t8;
@@ -1233,7 +1239,7 @@ bb5:
     t12 = HERO_STR_LIT(hero_str_3e46668);
 #line 175 "<heroes library>"
     t13 = HERO_STR_LIT(hero_str_75aeb685);
-#line 1237 "fixedbugs438awritecutshortleavestheoldtext.c"
+#line 1243 "fixedbugs438awritecutshortleavestheoldtext.c"
     hero_str_incref(t12);
     hero_str_incref(t13);
 #line 175 "<heroes library>"
@@ -1242,7 +1248,7 @@ bb5:
     t42 = h6_own6;
 #line 175 "<heroes library>"
     h6_own6 = t14;
-#line 1246 "fixedbugs438awritecutshortleavestheoldtext.c"
+#line 1252 "fixedbugs438awritecutshortleavestheoldtext.c"
     h_0opt_f87774a_release(&t42);
 #line 175 "<heroes library>"
     h3_ret0 = t14;
@@ -1276,7 +1282,7 @@ bb8:
     t43 = h7_own7;
 #line 177 "<heroes library>"
     h7_own7 = t21;
-#line 1280 "fixedbugs438awritecutshortleavestheoldtext.c"
+#line 1286 "fixedbugs438awritecutshortleavestheoldtext.c"
     hero_str_decref(t43);
     hero_str_incref(t18);
     hero_str_incref(t21);
@@ -1286,7 +1292,7 @@ bb8:
     t44 = h8_own8;
 #line 177 "<heroes library>"
     h8_own8 = t22;
-#line 1290 "fixedbugs438awritecutshortleavestheoldtext.c"
+#line 1296 "fixedbugs438awritecutshortleavestheoldtext.c"
     h_0opt_f87774a_release(&t44);
 #line 177 "<heroes library>"
     h3_ret0 = t22;
@@ -1310,7 +1316,7 @@ bb10:
     t45 = h9_own9;
 #line 183 "<heroes library>"
     h9_own9 = t36;
-#line 1314 "fixedbugs438awritecutshortleavestheoldtext.c"
+#line 1320 "fixedbugs438awritecutshortleavestheoldtext.c"
     hero_str_decref(t45);
     hero_str_incref(t33);
     hero_str_incref(t36);
@@ -1320,7 +1326,7 @@ bb10:
     t46 = h10_own10;
 #line 183 "<heroes library>"
     h10_own10 = t37;
-#line 1324 "fixedbugs438awritecutshortleavestheoldtext.c"
+#line 1330 "fixedbugs438awritecutshortleavestheoldtext.c"
     h_0opt_f87774a_release(&t46);
 #line 183 "<heroes library>"
     h3_ret0 = t37;
@@ -1340,7 +1346,7 @@ bb11:
     t47 = h11_own11;
 #line 182 "<heroes library>"
     h11_own11 = t29;
-#line 1344 "fixedbugs438awritecutshortleavestheoldtext.c"
+#line 1350 "fixedbugs438awritecutshortleavestheoldtext.c"
     hero_str_decref(t47);
 #line 182 "<heroes library>"
     t30 = HERO_STR_LIT(hero_str_612f4355);
@@ -1350,7 +1356,7 @@ bb11:
     t48 = h12_own12;
 #line 182 "<heroes library>"
     h12_own12 = t31;
-#line 1354 "fixedbugs438awritecutshortleavestheoldtext.c"
+#line 1360 "fixedbugs438awritecutshortleavestheoldtext.c"
     hero_str_decref(t48);
     hero_str_incref(t26);
     hero_str_incref(t31);
@@ -1360,7 +1366,7 @@ bb11:
     t49 = h13_own13;
 #line 182 "<heroes library>"
     h13_own13 = t32;
-#line 1364 "fixedbugs438awritecutshortleavestheoldtext.c"
+#line 1370 "fixedbugs438awritecutshortleavestheoldtext.c"
     h_0opt_f87774a_release(&t49);
 #line 182 "<heroes library>"
     h3_ret0 = t32;
@@ -1372,7 +1378,7 @@ bb12:
     goto bb10;
 #line 182 "<heroes library>"
 bb13:
-#line 1376 "fixedbugs438awritecutshortleavestheoldtext.c"
+#line 1382 "fixedbugs438awritecutshortleavestheoldtext.c"
     t38 = h3_ret0;
     h_0opt_f87774a_retain(&t38);
     hero_str_decref(h2_text);
@@ -1393,7 +1399,7 @@ bb13:
 
 #line 186 "<heroes library>"
 h_0opt_a8ea2 h_library_write_file(HeroStr h0_path, HeroStr h1_text) {
-#line 1397 "fixedbugs438awritecutshortleavestheoldtext.c"
+#line 1403 "fixedbugs438awritecutshortleavestheoldtext.c"
     int64_t h2_wrote;
     h_0opt_a8ea2 h3_ret0 = {0};
     h_0opt_a8ea2 h4_own4 = {0};
@@ -1458,7 +1464,7 @@ bb2:
     t20 = h4_own4;
 #line 189 "<heroes library>"
     h4_own4 = t7;
-#line 1462 "fixedbugs438awritecutshortleavestheoldtext.c"
+#line 1468 "fixedbugs438awritecutshortleavestheoldtext.c"
     h_0opt_a8ea2_release(&t20);
 #line 189 "<heroes library>"
     h3_ret0 = t7;
@@ -1482,7 +1488,7 @@ bb4:
     t21 = h5_own5;
 #line 192 "<heroes library>"
     h5_own5 = t17;
-#line 1486 "fixedbugs438awritecutshortleavestheoldtext.c"
+#line 1492 "fixedbugs438awritecutshortleavestheoldtext.c"
     hero_str_decref(t21);
     hero_str_incref(t14);
     hero_str_incref(t17);
@@ -1492,7 +1498,7 @@ bb4:
     t22 = h6_own6;
 #line 192 "<heroes library>"
     h6_own6 = t18;
-#line 1496 "fixedbugs438awritecutshortleavestheoldtext.c"
+#line 1502 "fixedbugs438awritecutshortleavestheoldtext.c"
     h_0opt_a8ea2_release(&t22);
 #line 192 "<heroes library>"
     h3_ret0 = t18;
@@ -1504,7 +1510,7 @@ bb5:
     t11 = HERO_STR_LIT(hero_str_7e662f9e);
 #line 191 "<heroes library>"
     t12 = HERO_STR_LIT(hero_str_1755ec20);
-#line 1508 "fixedbugs438awritecutshortleavestheoldtext.c"
+#line 1514 "fixedbugs438awritecutshortleavestheoldtext.c"
     hero_str_incref(t11);
     hero_str_incref(t12);
 #line 191 "<heroes library>"
@@ -1513,7 +1519,7 @@ bb5:
     t23 = h7_own7;
 #line 191 "<heroes library>"
     h7_own7 = t13;
-#line 1517 "fixedbugs438awritecutshortleavestheoldtext.c"
+#line 1523 "fixedbugs438awritecutshortleavestheoldtext.c"
     h_0opt_a8ea2_release(&t23);
 #line 191 "<heroes library>"
     h3_ret0 = t13;
@@ -1525,7 +1531,7 @@ bb6:
     goto bb4;
 #line 191 "<heroes library>"
 bb7:
-#line 1529 "fixedbugs438awritecutshortleavestheoldtext.c"
+#line 1535 "fixedbugs438awritecutshortleavestheoldtext.c"
     t19 = h3_ret0;
     h_0opt_a8ea2_retain(&t19);
     h_0opt_a8ea2_release(&h4_own4);
@@ -1537,7 +1543,7 @@ bb7:
 
 #line 196 "<heroes library>"
 HeroArrayHeader * h_library_args(void) {
-#line 1541 "fixedbugs438awritecutshortleavestheoldtext.c"
+#line 1547 "fixedbugs438awritecutshortleavestheoldtext.c"
     HeroArrayHeader * h0_out = {0};
     int64_t h1_i;
     HeroArrayHeader * h2_own2 = {0};
@@ -1564,15 +1570,15 @@ bb0:
     t14 = h2_own2;
 #line 197 "<heroes library>"
     h2_own2 = t1;
-#line 1568 "fixedbugs438awritecutshortleavestheoldtext.c"
+#line 1574 "fixedbugs438awritecutshortleavestheoldtext.c"
     hero_array_decref(t14);
 #line 197 "<heroes library>"
     t15 = h0_out;
-#line 1572 "fixedbugs438awritecutshortleavestheoldtext.c"
+#line 1578 "fixedbugs438awritecutshortleavestheoldtext.c"
     hero_array_incref(t1);
 #line 197 "<heroes library>"
     h0_out = t1;
-#line 1576 "fixedbugs438awritecutshortleavestheoldtext.c"
+#line 1582 "fixedbugs438awritecutshortleavestheoldtext.c"
     hero_array_decref(t15);
 #line 198 "<heroes library>"
     t2 = INT64_C(0);
@@ -1598,7 +1604,7 @@ bb2:
     t16 = h3_own3;
 #line 200 "<heroes library>"
     h3_own3 = t8;
-#line 1602 "fixedbugs438awritecutshortleavestheoldtext.c"
+#line 1608 "fixedbugs438awritecutshortleavestheoldtext.c"
     hero_str_decref(t16);
 #line 200 "<heroes library>"
     hero_array_push_owned(&h0_out, &t8);
@@ -1614,7 +1620,7 @@ bb2:
 #line 201 "<heroes library>"
 bb3:
     t13 = h0_out;
-#line 1618 "fixedbugs438awritecutshortleavestheoldtext.c"
+#line 1624 "fixedbugs438awritecutshortleavestheoldtext.c"
     hero_array_incref(t13);
     hero_array_decref(h0_out);
     hero_array_decref(h2_own2);
@@ -1624,7 +1630,7 @@ bb3:
 
 #line 227 "<heroes library>"
 void h_library_exit(int64_t h0_code) {
-#line 1628 "fixedbugs438awritecutshortleavestheoldtext.c"
+#line 1634 "fixedbugs438awritecutshortleavestheoldtext.c"
     int64_t t1;
     goto bb0;
 bb0:
@@ -1634,7 +1640,7 @@ bb0:
     (void)hero_exit(t1);
 #line 228 "<heroes library>"
     return;
-#line 1638 "fixedbugs438awritecutshortleavestheoldtext.c"
+#line 1644 "fixedbugs438awritecutshortleavestheoldtext.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs438awritecutshortleavestheoldtext_Ceiling_eq(const struct rlimit *a, const struct rlimit *b) {
     if (!(a->rlim_cur == b->rlim_cur)) return false;

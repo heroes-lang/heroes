@@ -1,0 +1,50 @@
+# fixedbugs, defect 507, lane b15-emit, 2026-10-08 (panel 199's completeness
+# critic, its first pass, finding 2).
+# Symptom: a correct function calling itself on every path but one, the one
+# ending in `exit(code:)`, built at exit 0 printing clang's *warning: all
+# paths through this function will call itself [-Winfinite-recursion]* over
+# the generated C, and ran as written.
+# Cause: Heroes ends a path at `exit` (`check/path_end.calls_exit`), and the
+# C a call of the library's `exit` became was a call followed by a jump: clang
+# read the jump as taken. The call is now followed by `hero_unreachable()`,
+# which says in C what Heroes says.
+#
+# The shapes beside it, each a function of its own: `exit` in an arm with no
+# `else`, in an arm with one, and in a loop. One of them runs, and every one
+# is built at both levels, which is where the warning was printed. `exit`
+# inside a function the self-calling one calls is not here: Heroes does not
+# end a path at such a call, so neither can its C, and that shape is
+# reported apart.
+
+function next(n: i64) -> i64
+    return n + 1
+
+function in_an_arm(n: i64) -> i64
+    if n > 3
+        exit(code: 0)
+    print(n)
+    return in_an_arm(next(n))
+
+function in_an_arm_with_an_else(n: i64) -> i64
+    if n > 3
+        exit(code: 0)
+    else
+        print(n)
+    return in_an_arm_with_an_else(next(n))
+
+function in_a_loop(n: i64) -> i64
+    i: i64 @ n
+
+    while i < 10
+        if i > 3
+            exit(code: 0)
+        print(i)
+        i @ next(i)
+
+    return in_a_loop(i)
+
+function main()
+    if args().len() > 99
+        _ = in_an_arm_with_an_else(1)
+        _ = in_a_loop(1)
+    _ = in_an_arm(1)
