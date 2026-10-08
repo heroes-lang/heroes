@@ -76,6 +76,14 @@ record Builtin
 # list* holds them to each other position by position, so an entry added to
 # one and not the other, or written in another place, fails the compiler's own
 # tests and is never a wrong index in silence.
+#
+# **No part of the compiler builds `table()` since defect 500** (2026-10-09):
+# the readers in `resolve/`, `ir/` and `emit/` that wanted one name, the
+# whole list or one index read `name_of`, `NAMES` or `index_of`. It stays for
+# the two instruments that read it: the test below, which holds `NAMES` to it,
+# and `tests/harness/suite_spec.hero`, which reads its `Builtin(name: ` lines
+# as text for the reserved names it holds spec § 11 to. It is also the one
+# place each name's tier is written.
 
 function table() -> [Builtin]
     return [

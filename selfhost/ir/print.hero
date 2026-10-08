@@ -418,7 +418,7 @@ function target(callee: ir.Callee, s: source.Source, decls: [ast.Decl]) -> str
     match callee
         .heroes_fn h   => return "heroes " + source.span_text(s, decls[h.decl].name)
         .extern_fn e   => return "extern " + source.span_text(s, decls[e.decl].name)
-        .builtin_fn bt => return "builtin " + inventory.table()[bt.at].name
+        .builtin_fn bt => return "builtin " + inventory.name_of(bt.at)
         .indirect ind  => return "indirect " + value_name(ind.value)
 
     return ""

@@ -62,7 +62,7 @@ function call(@w: writer.Writer, p: instances.Held, f: containers.Function, c: s
             arguments: arguments
         )
         .builtin_fn bt =>
-            builtin_name = inventory.table()[bt.at].name
+            builtin_name = inventory.name_of(bt.at)
 
             if builtin_name == "print"
                 printing.print_call(@w, f, c, run: run, arguments: arguments)

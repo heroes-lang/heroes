@@ -85,7 +85,7 @@ function of_a_call(@r: state.Resolver, a: ast.Ast, s: source.Source, decls: [ast
             # One built-in takes an `@`, `end_lease(@x)`, which empties the
             # cell it frees (panel 125), and it takes that one argument alone
             # (`check/lend_types.hero`); no other changes an argument.
-            if inventory.table()[b.at].name == "end_lease"
+            if inventory.name_of(b.at) == "end_lease"
                 return beside(END_LEASE_WRITES, first: first_position(receiver), given: given)
             return set_aside(given)
         # A function value: no function type carries an `@` (defect 398).

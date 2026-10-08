@@ -52,8 +52,8 @@ function named(@held: {str: Offered}, out: resolved.Resolved, module: str) -> Of
     names = resolved.names_in(out, module)
     values: [str] @ names
 
-    for b in inventory.table()
-        values @ values.push(b.name)
+    for name in inventory.NAMES
+        values @ values.push(name)
 
     none: [str] = []
     fresh = Offered(
@@ -93,8 +93,8 @@ function kinded(@held: {str: Offered}, out: resolved.Resolved, module: str, decl
         if is_type
             types @ types.push(name)
 
-    for b in inventory.table()
-        functions @ functions.push(b.name)
+    for name in inventory.NAMES
+        functions @ functions.push(name)
 
     one.kinded @ true
     one.functions @ functions
@@ -114,7 +114,7 @@ test "a name declared after the lists were gathered is offered with them"
     first = named(@held, out, module: "m")
     assert first.names == ["beta"]
     assert first.values[0] == "beta"
-    assert first.values.len() == 1 + inventory.table().len()
+    assert first.values.len() == 1 + inventory.NAMES.len()
     assert named(@held, out, module: "m").written == first.written
     resolved.declare_top(@out, module: "m", name: "alpha", decl: 1)
     again = named(@held, out, module: "m")
@@ -141,4 +141,4 @@ test "the functions and the types are the declarations of those kinds"
     assert one.names == ["LIMIT", "Mode", "Zone", "apply", "walk"]
     assert one.types == ["Mode", "Zone"]
     assert one.functions[0] == "apply" && one.functions[1] == "walk"
-    assert one.functions.len() == 2 + inventory.table().len()
+    assert one.functions.len() == 2 + inventory.NAMES.len()
