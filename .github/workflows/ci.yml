@@ -397,10 +397,51 @@ jobs:
           pkg-config --exists raylib \
             || { echo '::error::raylib is still missing — examples/raylib/ would SKIP on the one leg meant to cover it'; exit 1; }
 
-      # Windows carries clang with Visual Studio; pkg-config and the C libraries
-      # the FFI examples bind are not there, so this leg is honest about what it
-      # covers — the FFI examples SKIP here, which is itself a live test of the
-      # skip rule.
+      # **SDL3 and a `pkg-config`, for `tests/golden/run/ffi-a-construction-polls-
+      # an-sdl3-event.hero` and `examples/sdl/` on this leg** (defect 447,
+      # 2026-10-08). The image carries vcpkg and no pkg-config, so `package
+      # "sdl3"` told `ffi_package` here and both programs skipped. Measured on
+      # the Windows box (Windows 10.0.26100, clang 23.1.1 driving lld-link, the
+      # image's vcpkg tool 2026-09-26 and registry `2750401336fb`): `vcpkg
+      # install sdl3:x64-windows-release pkgconf:x64-windows-release` took 1.7
+      # minutes and gave SDL3 3.4.18 and pkgconf 3.0.3; the compiler asks for
+      # `pkg-config` by that name, so the pkgconf tool is copied under it with
+      # its DLL beside (pkgconf's own `pc_path` reads `bin/../lib/pkgconfig`,
+      # so `PKG_CONFIG_PATH` names vcpkg's directory); it answered `-IC:/…
+      # -LC:/… -lSDL3`, which the compiler's allow-list passes. `SDL3.dll`
+      # is found through PATH at run time, and without it the program dies at
+      # load. The case and the example built and printed their `.expected` at
+      # `-O0`, `-O2`, `--sanitize` and `--sanitize -O0`, after the case's third
+      # union member became `SDL_CommonEvent`: its first, `SDL_KeyboardEvent`,
+      # has `type` and `scancode` of an enumerated type, `int` on Windows and
+      # `unsigned int` on macOS and Linux, so `u32` was `ffi_field_type` here.
+      # This step's own text ran on the box with the runner's variables
+      # simulated, and its next step's environment was rebuilt from
+      # GITHUB_PATH and GITHUB_ENV; it has not run on a runner, and its first
+      # run here is its measurement. No version is pinned, since the registry
+      # of the image decides one and the case needs none; the notice says which.
+      - name: Install SDL3 and pkg-config with vcpkg
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          set -e
+          root="$VCPKG_INSTALLATION_ROOT/installed/x64-windows-release"
+          "$VCPKG_INSTALLATION_ROOT/vcpkg.exe" install sdl3:x64-windows-release pkgconf:x64-windows-release --disable-metrics
+          bin="$RUNNER_TEMP/pkgconfig-bin"
+          mkdir -p "$bin"
+          cp "$root/tools/pkgconf/pkgconf.exe" "$bin/pkg-config.exe"
+          cp "$root/tools/pkgconf/"*.dll "$bin/"
+          cygpath -w "$bin" >> "$GITHUB_PATH"
+          cygpath -w "$root/bin" >> "$GITHUB_PATH"
+          echo "PKG_CONFIG_PATH=$(cygpath -m "$root/lib/pkgconfig")" >> "$GITHUB_ENV"
+          PATH="$bin:$root/bin:$PATH" PKG_CONFIG_PATH="$(cygpath -m "$root/lib/pkgconfig")" pkg-config --exists sdl3 \
+            || { echo '::error::pkg-config does not answer sdl3 after the vcpkg install, so the SDL3 case would skip'; exit 1; }
+          echo "::notice::SDL3 $(PATH="$bin:$root/bin:$PATH" PKG_CONFIG_PATH="$(cygpath -m "$root/lib/pkgconfig")" pkg-config --modversion sdl3) from vcpkg, pkgconf $(PATH="$bin:$PATH" pkg-config --version)"
+
+      # Windows carries clang with Visual Studio; sqlite, curl and raylib are not
+      # there (SDL3 and a pkg-config are, from the step above), so this leg is
+      # honest about what it covers — those FFI examples SKIP here, which is
+      # itself a live test of the skip rule.
       # **This step no longer says the leg gates nothing** (2026-08-24): the
       # steps below it run here now, because `hero_write_err` took the port's
       # only POSIX extern out of the seed. What it still reports is the one thing
@@ -427,7 +468,7 @@ jobs:
         # runner carries it, so the run says so instead of a document guessing.
         # `|| true`: this step reports, it does not gate.
         run: |
-          echo "::notice::this leg builds and tests the compiler again as of 2026-08-24 — the seed's POSIX include is gone (hero_write_err). What is still uncovered here is the DEBUGGER: lldb.exe exits 0xC0000135 before running a command. The FFI examples skip for want of pkg-config, which exercises the skip rule."
+          echo "::notice::this leg builds and tests the compiler again as of 2026-08-24 — the seed's POSIX include is gone (hero_write_err). What is still uncovered here is the DEBUGGER: lldb.exe exits 0xC0000135 before running a command. The sqlite, curl and raylib examples skip for want of their libraries, which exercises the skip rule; SDL3 comes from vcpkg."
           clang --version
           where llvm-pdbutil 2>NUL || echo "llvm-pdbutil: not on PATH (DECIDE.md, the third CI leg)"
           where lldb 2>NUL || echo "lldb: not on PATH"
