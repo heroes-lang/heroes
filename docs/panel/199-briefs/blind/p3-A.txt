@@ -1,0 +1,11 @@
+$ heroes check p3.hero
+(exit 0)
+$ heroes build -O2 p3.hero -o p3
+p3.hero:1:45: warning: all paths through this function will call itself [-Winfinite-recursion]
+    1 | int64_t h_p3_count(HeroArrayHeader * h0_xs) {
+      |                                             ^
+1 warning generated.
+wrote p3
+(exit 0)
+$ ./p3
+(nothing printed; still running after 10 seconds, when it was stopped from outside: exit 124)

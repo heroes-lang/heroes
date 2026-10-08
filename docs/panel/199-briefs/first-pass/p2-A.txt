@@ -1,0 +1,9 @@
+$ heroes check main.hero
+(exit 0)
+$ heroes build main.hero -o main
+wrote main
+(exit 0)
+$ ./main
+panic: stack exhausted in main.fact
+bash: line 1: 92067 Abort trap: 6           timeout 30 ./main
+(exit )

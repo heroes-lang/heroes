@@ -1,0 +1,9 @@
+$ heroes check p1.hero
+error[endless_recursion]: every path through `bytes` calls `bytes` again before it returns, so no call to it can return
+  at p1.hero:2:12
+    |
+  2 |     return s.bytes()
+    |            ^^^^^^^^^
+  note: `s.bytes()` calls `bytes` with `s` first, since `x.f(y)` is `f(x, y)`, and inside `function bytes` that is this function
+  note: a call to `bytes` gives nothing back until the call it makes does, and that one makes another: give `bytes` a path that returns before the call, or ends on `exit(code:)`, `assert false` or a `while true` with no `break` of its own; an overflow or an index out of bounds stops the program and is no such path
+(exit 1)

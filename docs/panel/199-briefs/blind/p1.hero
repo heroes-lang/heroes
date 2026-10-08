@@ -1,0 +1,6 @@
+function bytes(s: str) -> [u8]
+    return s.bytes()
+
+function main()
+    b = bytes("hi")
+    print(b.len())

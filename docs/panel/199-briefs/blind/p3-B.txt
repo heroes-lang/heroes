@@ -1,0 +1,9 @@
+$ heroes check p3.hero
+error[endless_recursion]: every path through `count` calls `count` again before it returns, so no call to it can return
+  at p3.hero:2:12
+    |
+  2 |     return xs.count()
+    |            ^^^^^^^^^^
+  note: `xs.count()` calls `count` with `xs` first, since `x.f(y)` is `f(x, y)`, and inside `function count` that is this function
+  note: a call to `count` gives nothing back until the call it makes does, and that one makes another: give `count` a path that returns before the call, or ends on `exit(code:)`, `assert false` or a `while true` with no `break` of its own; an overflow or an index out of bounds stops the program and is no such path
+(exit 1)

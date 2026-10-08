@@ -1,0 +1,8 @@
+$ heroes check p2.hero
+error[endless_recursion]: every path through `fact` calls `fact` again before it returns, so no call to it can return
+  at p2.hero:2:16
+    |
+  2 |     return n * fact(n - 1)
+    |                ^^^^^^^^^^^
+  note: a call to `fact` gives nothing back until the call it makes does, and that one makes another: give `fact` a path that returns before the call, or ends on `exit(code:)`, `assert false` or a `while true` with no `break` of its own; an overflow or an index out of bounds stops the program and is no such path
+(exit 1)
