@@ -131,6 +131,7 @@ function commands() -> [Command]
         valued(spelling: "--compiler", what: "with --recovery, the compiler that judges the plan's mistakes")
         valued(spelling: "-o", what: "with --recovery, the folder a run writes its records to, which must be new, or the run --compare reads")
         valued(spelling: "--compare", what: "with --recovery, read the run in -o against this earlier one, the base, and name every mutant that moved")
+        valued(spelling: "--cut", what: "with --recovery, cut a new plan from the programs of this folder, an exported commit, lexed and judged by --compiler, into the new folder -o")
     ]
     probe_flags: [Flag] = [
         named(spelling: "--family", what: "make that family's variants alone: single, multi, bracket, paren, ends, columns or texts", placeholder: "name")

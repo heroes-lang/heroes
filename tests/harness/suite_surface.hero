@@ -719,6 +719,9 @@ function verb_probes() -> [probe.Probe]
         row(name: "the recovery arm refuses a run folder that already holds anything, before it starts a compiler, so a run never mixes with another's records (defect 210)", argv: "mutate --recovery --compiler no/such/compiler -o tests/golden/surface-fixtures/recovery210/head", code: 2).err_has("tests/golden/surface-fixtures/recovery210/head already holds something, and a run writes into a folder of its own: name a new one").err_lacks("cannot start the compiler").out_empty()
         row(name: "and a word of the arm given without `--recovery` is refused by name, never read as the metric's (defect 210)", argv: "mutate --compare tests/golden/surface-fixtures/recovery210/base", code: 2).err_is("error: `--compare` is a word of the recovery arm alone: `heroes mutate --recovery`\n").out_empty()
         row(name: "and two runs read against each other are refused where one replayed another plan than the one they are read over (defect 210)", argv: "mutate --recovery -o tests/golden/surface-fixtures/recovery210/head --compare tests/golden/surface-fixtures/recovery210/base", code: 2).err_has("a run replayed another plan than tests/golden/recovery: its digests are plan-singles.jsonl 0000000000000001").out_empty()
+        row(name: "the recovery arm's cut word is refused without `--recovery`, by name, as its other words are (defect 448)", argv: "mutate --cut tests/golden/surface-fixtures/recovery210/base", code: 2).err_is("error: `--cut` is a word of the recovery arm alone: `heroes mutate --recovery`\n").out_empty()
+        row(name: "and a cut reads neither a plan nor a run, so `--compare` beside it is refused rather than ignored (defect 448)", argv: "mutate --recovery --cut tests/golden/surface-fixtures/recovery210/base --compare tests/golden/surface-fixtures/recovery210/base", code: 2).err_is("error: `--cut` cuts a new plan from a tree and reads neither a plan nor a run: give `--cut <tree> --compiler <path> -o <folder>` alone\n").out_empty()
+        row(name: "and a cut without the compiler that judges it and the folder it writes is refused, before it reads the tree (defect 448)", argv: "mutate --recovery --cut tests/golden/surface-fixtures/recovery210/base", code: 2).err_is("error: `--cut` needs `--compiler <path>`, the compiler that lexes and judges the tree, and `-o <folder>`, the new plan's\n").out_empty()
         row(name: "the zen prints and says nothing on stderr", argv: "this", code: 0).err_empty().out_has("20. We can be heroes, just for one day.\n")
     ]
 
@@ -1140,7 +1143,10 @@ test "the tables are what this module is, so they are counted"
     # these rows lane b14-harness-b's, the two meeting at the round): a run
     # folder that holds something, `--compare` without `--recovery`, and two
     # runs of another plan, over `recovery210/`.
-    assert verb_probes().len() == 193
+    # 193 -> 196 on 2026-10-08, defect 448's `--cut` arm (lane b15-mutate's,
+    # these rows the coordinator's at the round): its word without
+    # `--recovery`, beside `--compare`, and without `--compiler` and `-o`.
+    assert verb_probes().len() == 196
 
     # 117 on 2026-09-27, panel 180 R5: the compiler-engineer's break map, one
     # row per shape, its exit the adopted sentence's; a shape added to the map
