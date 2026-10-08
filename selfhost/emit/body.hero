@@ -77,6 +77,7 @@ use parse
 use resolve
 use checker
 use ir/lower
+use cli/strings
 
 # An extern constant has no blocks, so it takes none of the machinery:
 # what it needs is one line — the C name, read where the preprocessor
@@ -316,19 +317,6 @@ function prologue(@w: writer.Writer, c: state.Checked, names: ctype.Names, f: co
 
 ## Tests
 
-function has(text: str, needle: str) -> bool
-    if needle.len() == 0
-        return true
-    stop = text.len() - needle.len()
-    at: i64 @ 0
-
-    while at <= stop
-        if text.slice(from: at, to: at + needle.len()) == needle
-            return true
-        at @ at + 1
-
-    return false
-
 test "a whole function prints: signature, prologue, goto bb0, blocks, close"
     text = "function add(a: i64, b: i64) -> i64\n    return a + b\n\nfunction main()\n    print(add(a: 1, b: 2))\n"
     parsed = parse.parse(text)
@@ -353,13 +341,13 @@ test "a whole function prints: signature, prologue, goto bb0, blocks, close"
         guarded_decls: none
     )
     got = writer.finish(w)
-    assert has(text: got, needle: "int64_t h_t_add(int64_t h0_a, int64_t h1_b) {")
-    assert has(text: got, needle: "    int64_t t1;")
-    assert has(text: got, needle: "    int64_t t3;")
-    assert has(text: got, needle: "    goto bb0;")
-    assert has(text: got, needle: "bb0:")
-    assert has(text: got, needle: "    if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow();")
-    assert has(text: got, needle: "    return t3;")
+    assert strings.holds(text: got, needle: "int64_t h_t_add(int64_t h0_a, int64_t h1_b) {")
+    assert strings.holds(text: got, needle: "    int64_t t1;")
+    assert strings.holds(text: got, needle: "    int64_t t3;")
+    assert strings.holds(text: got, needle: "    goto bb0;")
+    assert strings.holds(text: got, needle: "bb0:")
+    assert strings.holds(text: got, needle: "    if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow();")
+    assert strings.holds(text: got, needle: "    return t3;")
 
     # Deterministic: the same input prints the same bytes.
     again: writer.Writer @ writer.new_writer("t")
@@ -407,5 +395,5 @@ test "an unreachable join is omitted entirely, label and all"
 
     # The join block (bb1, created before the arms) has no preds: its
     # label must not appear.
-    assert !has(text: got, needle: "bb1:")
-    assert has(text: got, needle: "bb2:")
+    assert !strings.holds(text: got, needle: "bb1:")
+    assert strings.holds(text: got, needle: "bb2:")

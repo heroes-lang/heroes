@@ -25,6 +25,7 @@ use emit/assert_spelling
 use parse
 use resolve
 use checker
+use cli/strings
 
 constant FIELD_ASSERTION: str
     "heroes-ffi-field"
@@ -335,28 +336,14 @@ test "a cstr field accepts every spelling C gives a string, not just const char 
     got = lines.must()[0]
 
     # all six, and the plain `char *` first — the one the old form refused
-    assert strings_has(text: got, needle: "char *:1")
-    assert strings_has(text: got, needle: "const char *:1")
-    assert strings_has(text: got, needle: "signed char *:1")
-    assert strings_has(text: got, needle: "unsigned char *:1")
+    assert strings.holds(text: got, needle: "char *:1")
+    assert strings.holds(text: got, needle: "const char *:1")
+    assert strings.holds(text: got, needle: "signed char *:1")
+    assert strings.holds(text: got, needle: "unsigned char *:1")
 
     # and NOT the address-identity form the fallback writes
-    assert !strings_has(text: got, needle: "const char * *:")
-    assert !strings_has(text: got, needle: "&((Probe *)0)->name")
-
-# A substring test, local because this module has no strings dependency and
-# one `use` for one predicate is a worse trade than six lines.
-function strings_has(text: str, needle: str) -> bool
-    if needle.len() > text.len()
-        return false
-    at: i64 @ 0
-
-    while at + needle.len() <= text.len()
-        if text.slice(from: at, to: at + needle.len()) == needle
-            return true
-        at @ at + 1
-
-    return false
+    assert !strings.holds(text: got, needle: "const char * *:")
+    assert !strings.holds(text: got, needle: "&((Probe *)0)->name")
 
 test "the four branches: pointer, char array, integer by width+sign, float by identity"
     text = "extern \"m.h\"\n    record Probe\n        p: ptr\n        name: u8[4]\n        count: i64\n        ratio: f32\n\nfunction touch(x: Probe)\n    _ = x\n\nfunction main()\n    print(1)\n"
@@ -385,11 +372,11 @@ test "the four branches: pointer, char array, integer by width+sign, float by id
     # it is handed, and a newline inside one is a line it never counted.
     name_lines = assertions(c, names, s, c_type: "Probe", hero_name: "Probe", field: fields[1]).must()
     assert name_lines.len() == 2
-    assert strings_has(text: name_lines[0], needle: "\"heroes-ffi-flex Probe name\"")
-    assert strings_has(text: name_lines[1], needle: "\"heroes-ffi-field Probe name\"")
+    assert strings.holds(text: name_lines[0], needle: "\"heroes-ffi-flex Probe name\"")
+    assert strings.holds(text: name_lines[1], needle: "\"heroes-ffi-field Probe name\"")
 
     for one in name_lines
-        assert !strings_has(text: one, needle: "\n")
+        assert !strings.holds(text: one, needle: "\n")
 
 test "a float array and a record array are two lines each, as the integer one is"
     # The other array branch (an element C need not ask the sign of), with
@@ -410,8 +397,8 @@ test "a float array and a record array are two lines each, as the integer one is
     for field in fields
         got = assertions(c, names, s, c_type: "Probe", hero_name: "Probe", field: field).must()
         assert got.len() == 2
-        assert strings_has(text: got[0], needle: "heroes-ffi-flex Probe")
-        assert strings_has(text: got[1], needle: "heroes-ffi-field Probe")
+        assert strings.holds(text: got[0], needle: "heroes-ffi-flex Probe")
+        assert strings.holds(text: got[1], needle: "heroes-ffi-field Probe")
 
         for one in got
-            assert !strings_has(text: one, needle: "\n")
+            assert !strings.holds(text: one, needle: "\n")

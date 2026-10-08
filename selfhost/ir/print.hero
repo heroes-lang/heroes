@@ -41,6 +41,7 @@ use parse
 use resolve
 use checker
 use ir/lower
+use cli/strings
 
 # The whole program, in source order. The strings section lists only
 # the literals the SHOWN functions read — the table is program-wide, so
@@ -544,22 +545,6 @@ function escaped(text: str) -> str
 
 ## Tests
 
-# str has no substring builtin — find is the array one, taking a
-# predicate — so the tests scan by slice. Local to the tests: the dump
-# itself never searches its own output.
-function has(text: str, needle: str) -> bool
-    if needle.len() == 0
-        return true
-    stop = text.len() - needle.len()
-    at: i64 @ 0
-
-    while at <= stop
-        if text.slice(from: at, to: at + needle.len()) == needle
-            return true
-        at @ at + 1
-
-    return false
-
 function dumped(text: str) -> str
     p = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
@@ -574,16 +559,16 @@ test "the dump is deterministic, dest-left, and marks what can abort"
     first = dumped(text)
     again = dumped(text)
     assert first == again
-    assert has(text: first, needle: "function add(a: i64, b: i64) -> i64")
-    assert has(text: first, needle: "bb0  entry")
-    assert has(text: first, needle: "$t3: i64 = add! $t1, $t2")
-    assert has(text: first, needle: "return $t3")
+    assert strings.holds(text: first, needle: "function add(a: i64, b: i64) -> i64")
+    assert strings.holds(text: first, needle: "bb0  entry")
+    assert strings.holds(text: first, needle: "$t3: i64 = add! $t1, $t2")
+    assert strings.holds(text: first, needle: "return $t3")
 
 test "strings are escaped and listed once, and the linkage is spelled"
     got = dumped("function greet()\n    print(\"line one\\nline two\")\n")
-    assert has(text: got, needle: "strings")
-    assert has(text: got, needle: "\"line one\\nline two\"")
-    assert has(text: got, needle: "call builtin print($t1) variadic")
+    assert strings.holds(text: got, needle: "strings")
+    assert strings.holds(text: got, needle: "\"line one\\nline two\"")
+    assert strings.holds(text: got, needle: "call builtin print($t1) variadic")
 
 # Defect 290: a string literal and a test's title may hold an ESC raw, and the
 # string table and the header wrote it to the terminal that showed the dump.
@@ -594,5 +579,5 @@ test "the dump writes a string's control characters by their code, never raw (de
         "test \"title " + esc + "[2J\"\n    assert 1 == 1\n\nfunction main()\n    print(\"" + esc + "[2Jboom\")\n"
     )
     assert !shown_char.holds_control(got)
-    assert has(text: got, needle: "\"<U+001B>[2Jboom\"")
-    assert has(text: got, needle: "test \"title <U+001B>[2J\"")
+    assert strings.holds(text: got, needle: "\"<U+001B>[2Jboom\"")
+    assert strings.holds(text: got, needle: "test \"title <U+001B>[2J\"")

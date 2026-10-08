@@ -29,6 +29,8 @@ use emit/writer
 use parse
 use resolve
 use checker
+use cli/strings
+use bytes
 
 record GeneratedType
     at: ctype.Aggregate
@@ -252,19 +254,6 @@ function one_reference(@w: writer.Writer, c: state.Checked, names: ctype.Names, 
 
 ## Tests
 
-function has(text: str, needle: str) -> bool
-    if needle.len() == 0
-        return true
-    stop = text.len() - needle.len()
-    at: i64 @ 0
-
-    while at <= stop
-        if text.slice(from: at, to: at + needle.len()) == needle
-            return true
-        at @ at + 1
-
-    return false
-
 test "payloads come before their variant, and every option gets four functions"
     text = "variant Tok\n    word\n        text: str\n    plus\n\nrecord Holder\n    maybe: i64?\n\nfunction main()\n    t: Tok = .word(text: \"hi\")\n    h = Holder(maybe: ok(3))\n    _ = t\n    _ = h\n"
     p = parse.parse(text)
@@ -277,11 +266,11 @@ test "payloads come before their variant, and every option gets four functions"
     w: writer.Writer @ writer.new_writer("t")
     prototypes(@w, c, names, p.decls, want: synth.everything())
     protos = writer.finish(w)
-    assert has(
+    assert strings.holds(
         text: protos,
         needle: "HERO_TU_LOCAL bool h_t_Tok_c_word_eq(const h_t_Tok_c_word *a, const h_t_Tok_c_word *b);"
     )
-    assert has(text: protos, needle: "HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);")
+    assert strings.holds(text: protos, needle: "HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);")
     bw: writer.Writer @ writer.new_writer("t")
     bodies(@bw, c, names, s, p.decls, want: synth.everything())
     body_text = writer.finish(bw)
@@ -291,20 +280,18 @@ test "payloads come before their variant, and every option gets four functions"
     outer_at: i64 @ 0 - 1
     scan: i64 @ 0
 
-    # Room for the LONGEST needle below, not for the shortest: the two
-    # were 30 and 21 bytes until `HERO_TU_LOCAL ` was prefixed to every
-    # per-type function, which made them 44 and 35 and left this bound
-    # 14 bytes short — so the last slice ran past the end of the string
-    # and the test aborted, exactly as spec § 10 Strings, arrays, maps promises. The needle and
-    # the bound have to move together.
-    stop = body_text.len() - 44
-
-    while scan <= stop
-        if body_text.slice(from: scan, to: scan + 44) == "HERO_TU_LOCAL bool h_t_Tok_c_word_eq(const h"
+    # Each offset is asked of its bytes (`bytes.bytes_at`, defect 452),
+    # which answers no past the end and never slices: until then the bound
+    # had to make room for the LONGEST needle, and when `HERO_TU_LOCAL ` was
+    # prefixed to every per-type function it was left 14 bytes short, the
+    # last slice ran past the end and the test aborted, exactly as spec § 10
+    # Strings, arrays, maps promises.
+    while scan < body_text.len()
+        if bytes.bytes_at(text: body_text, at: scan, needle: "HERO_TU_LOCAL bool h_t_Tok_c_word_eq(const h")
             if payload_at < 0
                 payload_at @ scan
 
-        if body_text.slice(from: scan, to: scan + 35) == "HERO_TU_LOCAL bool h_t_Tok_eq(const"
+        if bytes.bytes_at(text: body_text, at: scan, needle: "HERO_TU_LOCAL bool h_t_Tok_eq(const")
             if outer_at < 0
                 outer_at @ scan
         scan @ scan + 1
@@ -314,6 +301,9 @@ test "payloads come before their variant, and every option gets four functions"
 
     # The i64? four: retain returns on ok (i64 is not counted), eq
     # reaches the payload through its descriptor.
-    assert has(text: body_text, needle: "HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {")
-    assert has(text: body_text, needle: "    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);")
-    assert has(text: body_text, needle: "        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);")
+    assert strings.holds(text: body_text, needle: "HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {")
+    assert strings.holds(text: body_text, needle: "    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);")
+    assert strings.holds(
+        text: body_text,
+        needle: "        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);"
+    )

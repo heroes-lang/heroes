@@ -27,6 +27,7 @@ use emit/writer
 use parse
 use resolve
 use checker
+use cli/strings
 
 # Every aggregate the program declares, in the order C can accept them.
 function aggregates(c: state.Checked, decls: [ast.Decl]) -> [i64]
@@ -291,16 +292,7 @@ test "an all-bare variant has no union, and a group's record no definition"
     w: writer.Writer @ writer.new_writer("t")
     declared(@w, got.c, got.names, got.s, got.decls, decl: 0)
     bare = writer.finish(w)
-    no_union: bool @ true
-    walk: i64 @ 0
-    stop = bare.len() - 5
-
-    while walk <= stop
-        if bare.slice(from: walk, to: walk + 5) == "union"
-            no_union @ false
-        walk @ walk + 1
-
-    assert no_union
+    assert !strings.holds(text: bare, needle: "union")
     quiet: writer.Writer @ writer.new_writer("t")
     declared(@quiet, got.c, got.names, got.s, got.decls, decl: 1)
     assert writer.finish(quiet) == ""
@@ -316,13 +308,4 @@ test "an option carries ok and err, a unit option only err, and (void) guards ar
     bare: writer.Writer @ writer.new_writer("t")
     option(@bare, got.c, got.names, name: "h_t_0opt1", payload: table.unit_ty(got.c.types))
     unit_text = writer.finish(bare)
-    has_ok: bool @ false
-    walk: i64 @ 0
-    stop = unit_text.len() - 3
-
-    while walk <= stop
-        if unit_text.slice(from: walk, to: walk + 3) == "ok;"
-            has_ok @ true
-        walk @ walk + 1
-
-    assert !has_ok
+    assert !strings.holds(text: unit_text, needle: "ok;")

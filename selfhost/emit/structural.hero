@@ -35,6 +35,7 @@ use emit/writer
 use parse
 use resolve
 use checker
+use cli/strings
 
 # Structural ==, field by field (§4.3).
 function equality_body(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: source.Source, at: ctype.Aggregate, fields: [ast.Field])
@@ -308,20 +309,11 @@ function hash_body(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: s
 # Whether a line the hash is about to write reads `v`. Every place this
 # emitter builds spells it `&v->`, in both branches of the loop above and
 # nowhere else, so the needle is that and not the bare letter — which would
-# match the `v` inside a field named `value`.
+# match the `v` inside a field named `value`. Asked of the bytes
+# (`strings.holds`, defect 452): it sliced the line at every byte, safe only
+# while every line it read was ASCII.
 function mentions_v(line: str) -> bool
-    needle = "&v->"
-
-    if needle.len() > line.len()
-        return false
-    at: i64 @ 0
-
-    while at + needle.len() <= line.len()
-        if line.slice(from: at, to: at + needle.len()) == needle
-            return true
-        at @ at + 1
-
-    return false
+    return strings.holds(text: line, needle: "&v->")
 
 function one_hash(c: state.Checked, names: ctype.Names, ty: i64, place: str) -> str
     found = descriptors.hash_call(c, names, ty: ty, place: place)
@@ -419,3 +411,11 @@ test "a fixed member unrolls elementwise, and a partial record aborts loudly"
     equality_body(@fw, got.c, got.names, got.s, at: font, fields: types.fields_of(got.decls, decl: 1))
     font_text = writer.finish(fw)
     assert font_text == "#line 2 \"t.c\"\nHERO_TU_LOCAL bool h_t_Font_eq(const Font *a, const Font *b) {\n    hero_panic(\"h_t_Font_eq: a partial record has no structural equality\");\n}\n\n"
+
+# Defect 452's case: a line holding characters above ASCII, the needle
+# absent, after them and before them; the slicing search split the first one
+# it met.
+test "a line is searched by its bytes, whatever it holds (defect 452)"
+    assert !mentions_v("    /* é€😀 */ h = h * 3;")
+    assert mentions_v("    /* é€😀 */ h = hash(&v->f_x);")
+    assert mentions_v("    h = hash(&v->f_x); /* é */")

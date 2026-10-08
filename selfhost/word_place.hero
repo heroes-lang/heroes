@@ -284,7 +284,7 @@ function at_word(text: str, word: str) -> token.Span
     i: i64 @ 0
 
     while i + word.len() <= text.len()
-        if text.slice(from: i, to: i + word.len()) == word && (i == 0 || !bytes.is_alnum(text[i - 1]))
+        if bytes.bytes_at(text: text, at: i, needle: word) && (i == 0 || !bytes.is_alnum(text[i - 1]))
             return token.Span(start: i, end: i + word.len())
         i @ i + 1
 
@@ -369,3 +369,12 @@ test "a word's place takes the lines above it from the outline alone"
     assert place_of(other, token.Span(start: member.start, end: member.start + 2), @read_group) == .member
     read_other: text_outline.Outline @ text_outline.unread()
     assert place_of(other, token.Span(start: member.start, end: member.start + 2), @read_other) == .statement
+
+# Defect 452's case: the helper finds a word past characters above ASCII,
+# asking each offset of its bytes where it sliced the text at every byte.
+test "a word is found past characters above ASCII (defect 452)"
+    found = at_word(text: "é€ fn x", word: "fn")
+    assert found.start == 6
+    assert found.end == 8
+    absent = at_word(text: "é€😀", word: "fn")
+    assert absent.start == 0 && absent.end == 0
