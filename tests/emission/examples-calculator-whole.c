@@ -327,78 +327,78 @@ void h_whole_main(void);
 HERO_TU_LOCAL HeroArrayHeader * h_whole_apply_37f8817a(HeroArrayHeader * h0_xs, h_0fn_48ac9712 h1_f);
 HERO_TU_LOCAL int64_t h_whole_reduce_37f8817a(HeroArrayHeader * h0_xs, int64_t h1_initial, h_0fn_7b615d8f h2_f);
 
-#line 37 "examples/calculator/whole.hero"
+#line 32 "examples/calculator/whole.hero"
 HeroStr h_whole_ERR_EXPECTED_FACTOR(void) {
 #line 333 "whole.c"
     HeroStr t1;
     goto bb0;
 bb0:
-#line 38 "examples/calculator/whole.hero"
+#line 33 "examples/calculator/whole.hero"
     t1 = HERO_STR_LIT(hero_str_7c822393);
 #line 339 "whole.c"
     hero_str_incref(t1);
     return t1;
 }
 
-#line 40 "examples/calculator/whole.hero"
+#line 35 "examples/calculator/whole.hero"
 HeroStr h_whole_ERR_TRAILING_TOKENS(void) {
 #line 346 "whole.c"
     HeroStr t1;
     goto bb0;
 bb0:
-#line 41 "examples/calculator/whole.hero"
+#line 36 "examples/calculator/whole.hero"
     t1 = HERO_STR_LIT(hero_str_a26a417);
 #line 352 "whole.c"
     hero_str_incref(t1);
     return t1;
 }
 
-#line 43 "examples/calculator/whole.hero"
+#line 38 "examples/calculator/whole.hero"
 HeroStr h_whole_ERR_UNCLOSED_PAREN(void) {
 #line 359 "whole.c"
     HeroStr t1;
     goto bb0;
 bb0:
-#line 44 "examples/calculator/whole.hero"
+#line 39 "examples/calculator/whole.hero"
     t1 = HERO_STR_LIT(hero_str_7b0b513f);
 #line 365 "whole.c"
     hero_str_incref(t1);
     return t1;
 }
 
-#line 46 "examples/calculator/whole.hero"
+#line 41 "examples/calculator/whole.hero"
 HeroStr h_whole_ERR_UNEXPECTED_END(void) {
 #line 372 "whole.c"
     HeroStr t1;
     goto bb0;
 bb0:
-#line 47 "examples/calculator/whole.hero"
+#line 42 "examples/calculator/whole.hero"
     t1 = HERO_STR_LIT(hero_str_7423baed);
 #line 378 "whole.c"
     hero_str_incref(t1);
     return t1;
 }
 
-#line 49 "examples/calculator/whole.hero"
+#line 44 "examples/calculator/whole.hero"
 HeroStr h_whole_ERR_UNKNOWN_CHAR(void) {
 #line 385 "whole.c"
     HeroStr t1;
     goto bb0;
 bb0:
-#line 50 "examples/calculator/whole.hero"
+#line 45 "examples/calculator/whole.hero"
     t1 = HERO_STR_LIT(hero_str_7bbd4cfb);
 #line 391 "whole.c"
     hero_str_incref(t1);
     return t1;
 }
 
-#line 52 "examples/calculator/whole.hero"
+#line 47 "examples/calculator/whole.hero"
 HeroStr h_whole_ERR_UNKNOWN_NAME(void) {
 #line 398 "whole.c"
     HeroStr t1;
     goto bb0;
 bb0:
-#line 53 "examples/calculator/whole.hero"
+#line 48 "examples/calculator/whole.hero"
     t1 = HERO_STR_LIT(hero_str_7d34d37c);
 #line 404 "whole.c"
     hero_str_incref(t1);

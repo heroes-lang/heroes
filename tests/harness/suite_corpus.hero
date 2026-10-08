@@ -422,6 +422,43 @@ function holds(modules: [str], needle: str) -> bool
 
     return false
 
+# DEFECT 466, held as a test (2026-10-07): no comment of a program under
+# `examples/` runs straight into a `##` section heading. A comment directly
+# above a declaration is its documentation (design.md §4.1) and a heading
+# opens a section, so a comment that runs into one documents nothing:
+# `examples/calculator/whole.hero` held `apply`'s comment so, cut from
+# `apply` by the error codes' block, from b70aa5a6 (2026-08-13) to that day,
+# and two of four blind sessions moved it unasked (lane b14-m212's
+# measurement 040). The site reads these programs.
+test "fixedbugs: no comment of an example runs straight into a section heading (defect 466)"
+    nothing: [str] = []
+    files = shell.list_tree(scratch: "build/harness-selftest", dir: EXAMPLES, skip: nothing)
+    assert !files.is_err()
+    cut: [str] @ []
+    read: i64 @ 0
+
+    for path in files.must()
+        if !strings.ends_with(text: path, suffix: ".hero")
+            continue
+        text = read_file(path)
+        assert !text.is_err()
+        read @ read + 1
+        before: str @ ""
+        at: i64 @ 0
+
+        for row in strings.lines(text.must())
+            at @ at + 1
+
+            if strings.starts_with(text: row, prefix: "## ") && strings.starts_with(text: before, prefix: "#") && !strings.starts_with(text: before, prefix: "##")
+                cut @ cut.push(path + ":" + at.to_str())
+            before @ row
+
+    assert cut.join(" ") == ""
+
+    # A hundred and twenty modules on the day: a walk reaching fewer is not
+    # reading the corpus.
+    assert read >= 120
+
 test "a directory that neither tests itself nor binds C is caught"
     tested = ["function main()\n    print(1)\n\ntest \"a\"\n    assert true\n"]
     binding = ["extern \"curl.h\"\n    function go() -> i64\n"]

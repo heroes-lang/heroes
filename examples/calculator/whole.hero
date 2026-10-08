@@ -24,11 +24,6 @@
 #     term       := factor ('*' factor)*
 #     factor     := number | name | '(' expression ')'
 
-## Generic library
-
-# Applies `f` to every element, in order. Named `apply` rather than `map`
-# because `map` is a built-in name and no file may redeclare one (panel 015);
-# the point here is generics, and any name demonstrates them.
 ## Error codes
 #
 # One `constant` per code, so a typo is `error[unknown_name]` here rather
@@ -52,6 +47,11 @@ constant ERR_UNKNOWN_CHAR: str
 constant ERR_UNKNOWN_NAME: str
     "unknown_name"
 
+## Generic library
+
+# Applies `f` to every element, in order. Named `apply` rather than `map`
+# because `map` is a built-in name and no file may redeclare one (panel 015);
+# the point here is generics, and any name demonstrates them.
 function apply<A, B>(xs: [A], f: (function(A) -> B)) -> [B]
     out: [B] @ []
 
