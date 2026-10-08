@@ -81,20 +81,32 @@ function reserved_byte(value: str) -> str
 # ld64 and GNU ld 2.44 link one file, `liba\b.a`; and in a `link` a `/` is a
 # directory to every linker but not the same one, lld-link opening
 # `sub/m252.lib` and ld64 and GNU ld `libsub/m252.a`, `lib` written before the
-# directory. A `rooted` value is a path whatever it holds, which `head_names`
-# tells with its route, so its `/` and `\` are left to that. A package's `/`
-# passes, as a header's `sub/foo.h` does: `pkg-config` looks it up under each
-# search directory.
+# directory. A package's `/` passes, as a header's `sub/foo.h` does:
+# `pkg-config` looks it up under each search directory.
+#
+# **A `rooted` value holds them for the same reasons** (defect 446): until
+# then its `/` and `\` were left to panel 055's `machine_locked_path`, a thesis
+# rule, which `check --permissive` drops. Measured on 2026-10-08, ld64 and GNU
+# ld 2.44 read a rooted `link` below each directory they search, not at the
+# path written: `-l/opt/q/m446` opened `<dir>/lib/opt/q/m446.a`, `-lC:/side/m`
+# `<dir>/libC:/side/m.a`, GNU's `-l:/w/abs/libm446.a` `<dir>/w/abs/libm446.a`,
+# where lld-link is handed `/opt/q/m446.lib` (clang's `-###`) and reads
+# `/out:pwn.lib` as its own `/out:` option, writing the program there (lld-link
+# 22 in the Linux container). Such a value's message keeps its route, which
+# `head_names` adds.
 function library_unwritable(value: str, what: str, rooted: bool) -> str
     at: i64 @ 0
 
     while at < value.len()
         b = value[at]
 
-        if b == '\\' && !rooted
+        if b == '\\'
             return "holds `\\`, which no file's name on Windows can hold"
 
-        if b == '/' && what == "link" && !rooted
+        if b == '/' && what == "link" && rooted
+            return "holds `/`, which macOS's and Linux's linkers read below each directory they search and not from the root it names"
+
+        if b == '/' && what == "link"
             return "holds `/`, which every linker reads as a directory and not the same one, `" + value + ".lib` on Windows and `lib" + value + "` on macOS and Linux"
         at @ at + 1
 

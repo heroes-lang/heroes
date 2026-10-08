@@ -1,0 +1,44 @@
+# Defect 446 (lane b14-box's finding, 2026-10-07): a rooted `link` was
+# refused only by panel 055's `machine_locked_path`, a thesis rule, so `check
+# --permissive`, the control arm, passed it. Measured on 2026-10-08, no
+# linker reads one at the path written: ld64 and GNU ld 2.44 opened
+# `<dir>/lib/opt/q/m446.a` for `-l/opt/q/m446` and `<dir>/libC:/side/m.a` for
+# `-lC:/side/m`, GNU's `-l:/w/abs/libm446.a` `<dir>/w/abs/libm446.a`, below
+# each directory they search, and lld-link 22 read `/out:pwn.lib`, which
+# clang hands it for `-l/out:pwn`, as its own `/out:` option and wrote the
+# program there. So a rooted `link` holding `/` or `\` is `unwritable_name`,
+# defect 252's reason, with panel 055's route, and the control arm refuses it.
+# A rooted `link` with neither, `C:x`, holds a `:`, which the author's reading
+# of 2026-10-03 keeps a thesis rule, and a rooted header and package are
+# carried as paths by clang and `pkg-config`: the control arm drops all three,
+# as the last groups show.
+
+extern "stdio.h" link "/opt/foo/lib/libfoo"  #~ unwritable_name
+    function r1() -> i32
+
+extern "stdio.h" link "/out:pwn"  #~ unwritable_name
+    function r2() -> i32
+
+extern "stdio.h" link "C:/side/m"  #~ unwritable_name
+    function r3() -> i32
+
+extern "stdio.h" link "\\side\\m"  #~ unwritable_name
+    function r4() -> i32
+
+extern "stdio.h" link ":/opt/foo/libfoo.a"  #~ unwritable_name
+    function r5() -> i32
+
+extern "stdio.h" package "C:\\pc\\x"  #~ unwritable_name
+    function r6() -> i32
+
+extern "stdio.h" link "C:x"
+    function r7() -> i32
+
+extern "/opt/foo/include/foo.h"
+    function r8() -> i32
+
+extern "stdio.h" package "/opt/x.pc"
+    function r9() -> i32
+
+function main()
+    print(r1() + r2() + r3() + r4() + r5() + r6() + r7() + r8() + r9())
