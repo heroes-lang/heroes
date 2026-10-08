@@ -112,6 +112,25 @@ function definitions(@w: writer.Writer, c: state.Checked, names: ctype.Names, s:
 
     if deepest(c, names, decls, out: out, graph: graph) > IN_ORDER_FROM
         in_order(@w, c, names, decls, out: out)
+        eager(@w)
+
+# Past the same depth every per-type function is emitted WHERE IT IS DEFINED
+# (defect 468). clang emits a `static` function the first time an emitted
+# function names it, and recursively (`CodeGenModule::EmitDeferred`): the top
+# of a chain's `_eq` names the next level's, which names the next, so the
+# emission recurses as deep as the chain. Measured on this Mac with a 1 MiB
+# stack, 10,000 levels with every other one an option: `-fsyntax-only`
+# passes and `-emit-llvm` dies. `used` has clang emit each function at its
+# definition, so none waits on another: 2,798 nested emissions at 1,000
+# levels became 3. It costs the binary every per-type function the unit
+# defines, called or not, which is why it is not every unit's: on the
+# compiler's own 500 units it was 55% more of clang's instructions and 131%
+# more object.
+function eager(@w: writer.Writer)
+    writer.at_generated(@w)
+    writer.line(@w, text: "#undef HERO_TU_LOCAL")
+    writer.line(@w, text: "#define HERO_TU_LOCAL __attribute__((unused, used)) static")
+    writer.blank(@w)
 
 # HOW DEEP A CHAIN OF STRUCTS CLANG IS LEFT TO CONVERT BY ITSELF (defect 170,
 # 2026-10-03). Clang turns a struct type into its own the first time a
@@ -342,6 +361,15 @@ test "past 32 structs held by value clang is handed the chain from its bottom, a
     assert !top.is_err()
     assert last_typedef.must() < order_at.must()
     assert bottom.must() < top.must()
+
+test "past 32 structs held by value the per-type functions are emitted where they are defined, and at 32 they are not (defect 468)"
+    eager_line = "#undef HERO_TU_LOCAL\n#define HERO_TU_LOCAL __attribute__((unused, used)) static\n"
+    assert ffi_lookup.char_index_of(text: chain_text(n: 32), needle: eager_line).is_err()
+    past = chain_text(n: 33)
+    eager_at = ffi_lookup.char_index_of(text: past, needle: eager_line)
+    order_at = ffi_lookup.char_index_of(text: past, needle: "hero_tu_type_order")
+    assert !eager_at.is_err()
+    assert order_at.must() < eager_at.must()
 
 test "the walk writes each item after its needs, in the order they are listed, where it is first reached"
     # Two seeds, 5 then 4. From 5: 3 needs 2, written, then 3; 1 needs 2,
