@@ -1,0 +1,19 @@
+# Defect 462's map, 2026-10-07. Symptom: a map read after its last release
+# went on reading the freed block: a map made for four entries, released,
+# then asked its length, answered at exit 0 (measured on this Mac at
+# `56def9b4`). Cause: the key descriptor, which the runtime sets to none
+# before a map's block goes (defect 314), was asked by a new reference and a
+# release and never by a read. Now every reader asks it
+# (`hero_map_require`, `runtime/parts/map.c`), and the read is named.
+#
+# The map is the C's own, made through the runtime and read after its
+# release by a function of the program's own header: a map does not cross
+# to C, and the compiler never reads one it has released. AddressSanitizer
+# names the read of the freed block.
+
+extern "fixedbugs-462-a-map-read-after-its-last-release-stops-at-the-read.h"
+    function read_after_release(entries: i64) -> i64
+
+function main()
+    print("four entries, given back")
+    print(read_after_release(entries: 4))

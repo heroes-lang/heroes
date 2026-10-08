@@ -38,11 +38,27 @@ static const unsigned char *hero_array_data_const(const HeroArrayHeader *a) {
 }
 
 /* Every reader goes through this: NULL is an unassigned or moved-out slot, and
- * reading one is a compiler bug, not an empty array. */
-static void hero_array_require(const HeroArrayHeader *a) {
+ * reading one is a compiler bug, not an empty array.
+ *
+ * **AND AN ARRAY WHOSE BLOCK WAS GIVEN BACK** (defect 462's array, 2026-10-07):
+ * the element descriptor, which a live array always has, is set to none
+ * before the block goes (defect 314, below), and only a new reference and a
+ * release asked it, so a read after the last release went on in freed memory:
+ * measured on this Mac at `56def9b4`, an array of four released and then asked
+ * its length answered from freed memory at exit 0 (4 in one run, 0 in
+ * another), and asked an element read through the descriptor's null and was
+ * told *a null pointer was read through*, which names a handle. One load and one test a read, of the word the read's own
+ * element size is taken from, inlined for `hero_str_require`'s count
+ * (`parts/str.c`). */
+_Noreturn static void hero_array_read_released(void) {
+    hero_panic("an array read after its last reference was released — a compiler bug, please report it");
+}
+
+__attribute__((always_inline)) static inline void hero_array_require(const HeroArrayHeader *a) {
     if (a == NULL) {
         hero_panic("read of an unassigned array slot — this is a compiler bug, please report it");
     }
+    if (a->elem == NULL) hero_array_read_released();
 }
 
 HeroArrayHeader *hero_array_new(const HeroDesc *elem, int64_t cap) {

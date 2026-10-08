@@ -1,0 +1,27 @@
+# Defect 462, 2026-10-07. Symptom: a `str` read after its last release went
+# on reading the freed block: a string of 65,536 bytes whose every reference
+# C released answered its length and a slice from freed memory, printing
+# `65536` and `abababab`, and panel 190's control, one release written twice
+# in this tree's C, printed five NUL bytes where `p-one` had been, at `-O0`
+# and `-O2`; each stopped only at the program's own release (measured on
+# this Mac at `56def9b4`). Cause: only a new reference and a release asked
+# the block's mark, and every reader asked whether the str was null and no
+# more. Now every reader asks the mark too (`hero_str_require`,
+# `runtime/parts/str.c`), and the runtime overwrites the mark before a block
+# goes, so the first read after the last release stops there by name.
+#
+# The string is 65,536 bytes, the size defect 314's case chose: under the
+# size glibc gives back to the system at once (a read of an unmapped block
+# would be a fault, not this check's to name). A C function of the
+# program's own releases every reference to it, and the length is the first
+# read after. AddressSanitizer names the read of the freed block.
+
+extern "fixedbugs-462-a-str-read-after-its-last-release-stops-at-the-read.h"
+    function release_all(s: cstr lent)
+
+function main()
+    word = repeat("ab", 32768)
+    print("given back")
+    release_all(s: word.cstr())
+    print(word.len())
+    print(word.slice(from: 0, to: 8))

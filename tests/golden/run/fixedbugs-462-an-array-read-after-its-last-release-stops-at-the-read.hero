@@ -1,0 +1,22 @@
+# Defect 462's array, 2026-10-07. Symptom: an array read after its last
+# release went on reading the freed block: four elements, released, then
+# asked their length, answered from freed memory at exit 0 (4 in one run, 0
+# in this case's, the allocator's bytes either way), and asked an element,
+# read through a null descriptor and was told *a null pointer was read
+# through*, which names a handle (measured on this Mac at `56def9b4`).
+# Cause: the element descriptor, which the runtime sets to none before an
+# array's block goes (defect 314), was asked by a new reference and a
+# release and never by a read. Now every reader asks it
+# (`hero_array_require`, `runtime/parts/array.c`), and the read is named.
+#
+# The array is the C's own, made through the runtime and read after its
+# release by a function of the program's own header: a program cannot hand
+# C an array's block, and the compiler never reads one it has released.
+# AddressSanitizer names the read of the freed block.
+
+extern "fixedbugs-462-an-array-read-after-its-last-release-stops-at-the-read.h"
+    function read_after_release(elements: i64) -> i64
+
+function main()
+    print("four elements, given back")
+    print(read_after_release(elements: 4))

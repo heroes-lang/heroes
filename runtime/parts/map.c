@@ -55,10 +55,22 @@ static const unsigned char *hero_map_val_at_const(const HeroMapHeader *m, int64_
     return (const unsigned char *)(const void *)m + m->vals + (size_t)at * m->val->size;
 }
 
-static void hero_map_require(const HeroMapHeader *m) {
+/* Every reader goes through this: NULL is an unassigned slot. **And a map
+ * whose block was given back** (defect 462's map, 2026-10-07): the key
+ * descriptor, which a live map always has, is set to none before the block
+ * goes (defect 314, below), and a read asked nothing of it, so a map made for
+ * four entries, released and then asked its length, answered from the freed
+ * block at exit 0, measured on this Mac at `56def9b4`. One load and one test a
+ * read, inlined, `hero_array_require`'s. */
+_Noreturn static void hero_map_read_released(void) {
+    hero_panic("a map read after its last reference was released — a compiler bug, please report it");
+}
+
+__attribute__((always_inline)) static inline void hero_map_require(const HeroMapHeader *m) {
     if (m == NULL) {
         hero_panic("read of an unassigned map slot — this is a compiler bug, please report it");
     }
+    if (m->key == NULL) hero_map_read_released();
 }
 
 /* THE FIXED SEED. Mixed into every probe so that the bucket a key lands in is a
