@@ -252,7 +252,13 @@ static void hero_handle_report_twice_in_one_call(const void *h, size_t held) {
  * be running, and a message that names a number the test never saw the moment
  * something can. The gate is the last thing a program does, so this costs one
  * load and removes a whole class of confusing report. */
+/* `parts/lend.c`, later in this translation unit: the regions lent to C and
+ * given back, audited before the counts (defect 451), since a C library that
+ * wrote through an address it kept is the earlier fault. */
+static void hero_lend_audit_given(const char *when);
+
 void hero_runtime_check_leaks(void) {
+    hero_lend_audit_given("found when the program ended");
     int64_t blocks = hero_live_blocks;
     if (blocks != 0) {
         fflush(stdout);

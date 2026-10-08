@@ -1,0 +1,4 @@
+1
+written
+!sanitizer: on unknown address
+!panic: C wrote to a local lent to it after the function that lent it had returned: the last lent there was `n` of `fixedbugs451alocalcwritesafteritsfunctionreturnsisnamed.lend`, to `out` of `cell_keep`, found when the next lend at its depth took its memory

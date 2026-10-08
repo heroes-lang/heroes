@@ -186,7 +186,8 @@ __attribute__((unused)) static int hero_handle_dead_at(uintptr_t addr, uintptr_t
  * defect 396). `@md: [u8] counted_by 32 lent` hands C a buffer that ends where
  * a page with no access begins, so C reaching past the extent its declaration
  * states faults there, and both handlers below ask `parts/lend.c`, which owns
- * the calling thread's regions, whether the address is on one of those pages.
+ * the calling thread's regions, whether the address is on one of those pages,
+ * or, since defect 451, in a region given back and sealed (`inside`).
  * The address alone is the witness and it cannot be confused with the two
  * above: the page is a mapping of its own, which no stack, no null window and
  * no dead region shares. Declared here because `lend.c` comes later in this
@@ -196,6 +197,7 @@ typedef struct HeroLendFault {
     const char *param;
     int64_t extent;
     int returned;
+    int inside;
     int local;
     const char *owner;
     const char *name;

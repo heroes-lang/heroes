@@ -1,0 +1,23 @@
+# Defect 451, 2026-10-08, the buffer beside the local. Symptom: C keeping
+# the address of a buffer it was lent for one call and writing through it
+# after the call had returned did so in silence, at exit 0 at `-O0`, `-O2`
+# and under `--sanitize` at both (measured on this Mac at `56def9b4`).
+# Cause: the buffer's region, given back at the call's end, was watched by
+# nothing. Now its bytes are summed when it is given back and summed again
+# when the program ends, and a sum that moved is named; under `--sanitize`
+# the region is sealed and the write faults (`runtime/parts/lend.c`). The
+# parameter is declared `lent`, and C kept the address all the same, which
+# is the declaration's mistake about C.
+
+extern "fixedbugs-451-keepers.h"
+    function bytes_keep32(@md: [u8] counted_by 32 lent) -> i32
+    function bytes_write_later() -> i64
+
+function fill() -> i64
+    md: [u8] @ []
+    _ = bytes_keep32(@md)
+    return md.len()
+
+function main()
+    print(fill())
+    print(bytes_write_later())

@@ -1,0 +1,32 @@
+# Defect 451, 2026-10-08, on a thread the program started. Symptom: C
+# keeping the address of an `@` local lent on a spawned thread, and writing
+# through it after the local's function had returned, did so in silence,
+# the thread's regions unmapped at its end with nothing asked of them
+# (measured on this Mac at `56def9b4`). Cause: a region given back was
+# watched by nothing. Now a thread's regions given back are summed again
+# when the thread ends, before they are unmapped, and a sum that moved is
+# named; under `--sanitize` the region is sealed and the write faults
+# (`runtime/parts/lend.c`).
+
+extern "fixedbugs-451-keepers.h"
+    function cell_keep(@out: i64)
+    function cell_write_later(v: i64)
+
+extern "hero_os.h"
+    function hero_thread_spawn(body: (function(i64) -> i64), arg: i64) -> i64
+    function hero_thread_join(handle: i64) -> i64
+
+function lend() -> i64
+    n: i64 @ 0
+    cell_keep(@n)
+    return n
+
+function worker(arg: i64) -> i64
+    got = lend()
+    cell_write_later(v: arg)
+    return got
+
+function main()
+    print("on a thread")
+    t = hero_thread_spawn(body: worker, arg: 77)
+    print(hero_thread_join(handle: t))
