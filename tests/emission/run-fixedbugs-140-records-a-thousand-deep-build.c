@@ -5064,6 +5064,9 @@ __attribute__((used)) static void hero_tu_type_order(void *at) {
     { h_0opt_a8ea2 *p = at; (void)(p + 1); }
 }
 
+#undef HERO_TU_LOCAL
+#define HERO_TU_LOCAL __attribute__((unused, used)) static
+
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wdouble-promotion"
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
@@ -5078,7 +5081,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 5082 "fixedbugs140recordsathousanddeepbuild.c"
+#line 5085 "fixedbugs140recordsathousanddeepbuild.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs140recordsathousanddeepbuild_R0_eq(const h_fixedbugs140recordsathousanddeepbuild_R0 *a, const h_fixedbugs140recordsathousanddeepbuild_R0 *b);
@@ -7111,7 +7114,7 @@ void h_fixedbugs140recordsathousanddeepbuild_main(void);
 
 #line 3016 "tests/golden/run/fixedbugs-140-records-a-thousand-deep-build.hero"
 void h_fixedbugs140recordsathousanddeepbuild_main(void) {
-#line 7115 "fixedbugs140recordsathousanddeepbuild.c"
+#line 7118 "fixedbugs140recordsathousanddeepbuild.c"
     HeroArrayHeader * h0_xs = {0};
     HeroMapHeader * h1_m = {0};
     HeroArrayHeader * h2_own2 = {0};
@@ -7137,15 +7140,15 @@ bb0:
     t10 = h2_own2;
 #line 3017 "tests/golden/run/fixedbugs-140-records-a-thousand-deep-build.hero"
     h2_own2 = t1;
-#line 7141 "fixedbugs140recordsathousanddeepbuild.c"
+#line 7144 "fixedbugs140recordsathousanddeepbuild.c"
     hero_array_decref(t10);
 #line 3017 "tests/golden/run/fixedbugs-140-records-a-thousand-deep-build.hero"
     t11 = h0_xs;
-#line 7145 "fixedbugs140recordsathousanddeepbuild.c"
+#line 7148 "fixedbugs140recordsathousanddeepbuild.c"
     hero_array_incref(t1);
 #line 3017 "tests/golden/run/fixedbugs-140-records-a-thousand-deep-build.hero"
     h0_xs = t1;
-#line 7149 "fixedbugs140recordsathousanddeepbuild.c"
+#line 7152 "fixedbugs140recordsathousanddeepbuild.c"
     hero_array_decref(t11);
 #line 3018 "tests/golden/run/fixedbugs-140-records-a-thousand-deep-build.hero"
     t2 = h0_xs;
@@ -7169,15 +7172,15 @@ bb0:
     t12 = h3_own3;
 #line 3020 "tests/golden/run/fixedbugs-140-records-a-thousand-deep-build.hero"
     h3_own3 = t7;
-#line 7173 "fixedbugs140recordsathousanddeepbuild.c"
+#line 7176 "fixedbugs140recordsathousanddeepbuild.c"
     hero_map_decref(t12);
 #line 3020 "tests/golden/run/fixedbugs-140-records-a-thousand-deep-build.hero"
     t13 = h1_m;
-#line 7177 "fixedbugs140recordsathousanddeepbuild.c"
+#line 7180 "fixedbugs140recordsathousanddeepbuild.c"
     hero_map_incref(t7);
 #line 3020 "tests/golden/run/fixedbugs-140-records-a-thousand-deep-build.hero"
     h1_m = t7;
-#line 7181 "fixedbugs140recordsathousanddeepbuild.c"
+#line 7184 "fixedbugs140recordsathousanddeepbuild.c"
     hero_map_decref(t13);
 #line 3021 "tests/golden/run/fixedbugs-140-records-a-thousand-deep-build.hero"
     t8 = h1_m;
@@ -7187,7 +7190,7 @@ bb0:
     hero_print_int(t9);
 #line 3021 "tests/golden/run/fixedbugs-140-records-a-thousand-deep-build.hero"
     hero_print_end();
-#line 7191 "fixedbugs140recordsathousanddeepbuild.c"
+#line 7194 "fixedbugs140recordsathousanddeepbuild.c"
     hero_array_decref(h0_xs);
     hero_map_decref(h1_m);
     hero_array_decref(h2_own2);
