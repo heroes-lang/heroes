@@ -58,6 +58,7 @@ use ast
 use source
 use check/state
 use ir/containers
+use ir/instances
 use ir/layout
 use emit/mangle
 use emit/ctype
@@ -90,9 +91,10 @@ function is_extern_constant(decls: [ast.Decl], f: containers.Function) -> bool
 
 # A constant of literals is written twice, its static block and the function
 # that builds it, and the runtime's switch picks one (panel 195,
-# `emit/static_constant.hero`); every other function once.
-function definition(@w: writer.Writer, p: containers.Program, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], f: containers.Function, guarded_decls: {i64: bool})
-    laid = static_constant.laid_for(p, c, names, s, decls, f: f)
+# `emit/static_constant.hero`); every other function once. `p` is the
+# program held with its index, built once per program (defect 492).
+function definition(@w: writer.Writer, p: instances.Held, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], f: containers.Function, guarded_decls: {i64: bool})
+    laid = static_constant.laid_for(p.program, c, names, s, decls, f: f)
 
     if !laid.is_err()
         static_constant.open(@w, c, names, s, decls, f: f, laid: laid.must())
@@ -101,7 +103,7 @@ function definition(@w: writer.Writer, p: containers.Program, c: state.Checked, 
     if !laid.is_err()
         static_constant.close(@w)
 
-function built(@w: writer.Writer, p: containers.Program, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], f: containers.Function, guarded_decls: {i64: bool})
+function built(@w: writer.Writer, p: instances.Held, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], f: containers.Function, guarded_decls: {i64: bool})
     writer.blank(@w)
 
     # The signature is pointed at the author's declaration: a clang
@@ -339,7 +341,16 @@ test "a whole function prints: signature, prologue, goto bb0, blocks, close"
     names = ctype.with_functions(names1, c: c, s: s, decls: parsed.decls, p: low.program)
     w: writer.Writer @ writer.new_writer("t")
     none: {i64: bool} = {}
-    definition(@w, low.program, c, names, s, parsed.decls, low.program.functions[0], guarded_decls: none)
+    definition(
+        @w,
+        instances.hold(low.program),
+        c,
+        names,
+        s,
+        parsed.decls,
+        low.program.functions[0],
+        guarded_decls: none
+    )
     got = writer.finish(w)
     assert has(text: got, needle: "int64_t h_t_add(int64_t h0_a, int64_t h1_b) {")
     assert has(text: got, needle: "    int64_t t1;")
@@ -351,7 +362,16 @@ test "a whole function prints: signature, prologue, goto bb0, blocks, close"
 
     # Deterministic: the same input prints the same bytes.
     again: writer.Writer @ writer.new_writer("t")
-    definition(@again, low.program, c, names, s, parsed.decls, low.program.functions[0], guarded_decls: none)
+    definition(
+        @again,
+        instances.hold(low.program),
+        c,
+        names,
+        s,
+        parsed.decls,
+        low.program.functions[0],
+        guarded_decls: none
+    )
     assert writer.finish(again) == got
 
 test "an unreachable join is omitted entirely, label and all"
@@ -372,7 +392,16 @@ test "an unreachable join is omitted entirely, label and all"
     )
     w: writer.Writer @ writer.new_writer("t")
     none: {i64: bool} = {}
-    definition(@w, low.program, c, names, s, parsed.decls, low.program.functions[0], guarded_decls: none)
+    definition(
+        @w,
+        instances.hold(low.program),
+        c,
+        names,
+        s,
+        parsed.decls,
+        low.program.functions[0],
+        guarded_decls: none
+    )
     got = writer.finish(w)
 
     # The join block (bb1, created before the arms) has no preds: its

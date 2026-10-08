@@ -1,0 +1,92 @@
+# What a unit reaches: the types its functions mention, closed over what
+# they contain, and the ones its instructions construct (design.md §3.1;
+# panel 093). It left `emit.hero` on 2026-10-07 (defect 492), when the
+# front door's own work for defects 497, 498 and 492 took it past §11's
+# 300 lines: moved whole, the fused unit and every translation unit
+# (`emit/unit.hero`) asking it as before.
+
+use check/table
+use check/state
+use ir/containers
+use emit/decls as emit_decls
+use emit/worklist
+
+# What one unit's type walk found: every type its functions mention —
+# transitively, because a type names the types it holds: [i64?] is one
+# slot type and two declarations, and naming only the outer one left
+# the inner i64? unnamed under a rule that asserts every T? is named
+# before anything mentions one (found by the mutant corpus) — and the
+# subset an instruction actually CONSTRUCTS. Reachability cannot answer
+# the second and over-answers: `[Probe]` is interned because a function
+# takes one, so `probe.hero` got a descriptor for `Probe` that nothing
+# pointed at — `-Wunused-const-variable` against §7's zero-warning bar.
+# A `construct` is the only instruction that reaches `build_array`/
+# `build_map`, which are the only callers that ask for an element's, a
+# key's or a value's descriptor.
+record Reach
+    reached: {i64: bool}
+    constructed: {i64: bool}
+
+function reach_of(p: containers.Program, c: state.Checked, target: emit_decls.BuildTarget, shown: [i64]) -> Reach
+    reached: {i64: bool} @ {}
+    constructed: {i64: bool} @ {}
+
+    for at in shown
+        f = p.functions[at]
+        skipped: bool @ false
+
+        match f.kind
+            .test_kind =>
+                match target
+                    .program_build => skipped @ true
+                    .tests_build   => skipped @ skipped
+            .function_kind | .constant_kind | .extern_kind => skipped @ skipped
+
+        if skipped
+            continue
+        reached[f.result] @ true
+
+        for slot in f.slots
+            reached[slot.ty] @ true
+
+        for blk in f.blocks
+            for inst in blk.insts
+                reached[inst.ty] @ true
+
+                match inst.op
+                    .construct                                                   => constructed[inst.ty] @ true
+                    .lit | .load | .field | .payload | .tag_of | .len_of | .call => reached[inst.ty] @ true
+                    .func_ref | .store | .push_owned | .unary | .binary | .cast  => reached[inst.ty] @ true
+                    .index | .map_get | .copy_out | .abort_op                    => reached[inst.ty] @ true
+                    .incref | .decref | .decref_slot | .hole | .missing          => reached[inst.ty] @ true
+
+    return Reach(reached: closed_over(c, reached: reached), constructed: constructed)
+
+# A set of types plus everything they contain: naming `[i64?]` declares
+# one slot type and two declarations, and naming only the outer one left
+# the inner `i64?` unnamed under a rule that asserts every T? is named
+# before anything mentions one (found by the mutant corpus).
+#
+# Its own function because the per-module path closes a SECOND set: the
+# signature types of the functions a TU prototypes, which the body walk
+# above never sees.
+function closed_over(c: state.Checked, reached: {i64: bool}) -> {i64: bool}
+    out: {i64: bool} @ reached
+
+    # ORDER: none — this is a worklist, and what leaves it is a SET. Every
+    # id drained is added to `out`, which two sorted walks read later
+    # (emit_ctype, emit_descriptor_set), so the drain order changes how
+    # long the loop runs and nothing a reader or clang can see. Drained from
+    # its top without copying it (`emit/worklist.hero`, defect 498).
+    frontier: [i64] @ keys(out)
+    size: i64 @ frontier.len()
+
+    while size > 0
+        id = worklist.take(frontier, size: @size)
+
+        for inner in table.contained(c.types, id)
+            if out[inner].is_err()
+                out[inner] @ true
+                worklist.put(@frontier, size: @size, value: inner)
+
+    return out

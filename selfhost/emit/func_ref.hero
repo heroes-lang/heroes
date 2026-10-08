@@ -42,14 +42,14 @@ use emit/writer
 # symbol — and `.indirect` is already a pointer in a temporary, so its
 # reference would be the address of an address, which `ir.hero`'s own comment
 # refuses.
-function designator(p: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl], callee: ir.Callee, instance: [i64]) -> str?
+function designator(p: instances.Held, c: state.Checked, s: source.Source, decls: [ast.Decl], callee: ir.Callee, instance: [i64]) -> str?
     match callee
         .heroes_fn h =>
-            found = instances.index_of(p, decl: h.decl, instance: instance)
+            found = instances.function_at(p, decl: h.decl, instance: instance)
 
             if found.is_err()
                 return fail(code: "no_function", msg: "a Heroes function the program does not hold")
-            return ok(signature.instance_name(p.functions[found.must()], c, s, decls))
+            return ok(signature.instance_name(p.program.functions[found.must()], c, s, decls))
         .extern_fn e  => return ok(source.span_text(s, decls[e.decl].name))
         .builtin_fn _ => return fail(code: "builtin", msg: "a built-in is expanded, never named")
         .indirect _   => return fail(code: "indirect", msg: "the address of an address")
@@ -57,8 +57,9 @@ function designator(p: containers.Program, c: state.Checked, s: source.Source, d
 # The assignment itself. A target the caller does not have means the value is
 # discarded, and a function designator has no side effect, so nothing is
 # written — the same reasoning `emit/unread.hero` applies everywhere else.
-# `at` is the instruction's span end, where the type arguments are kept.
-function emit(@w: writer.Writer, p: containers.Program, f: containers.Function, c: state.Checked, s: source.Source, decls: [ast.Decl], callee: ir.Callee, at: i64, target: str?)
+# `at` is the instruction's span end, where the type arguments are kept;
+# `p` the program held with its index (defect 492).
+function emit(@w: writer.Writer, p: instances.Held, f: containers.Function, c: state.Checked, s: source.Source, decls: [ast.Decl], callee: ir.Callee, at: i64, target: str?)
     if target.is_err()
         return
     named = designator(p, c, s, decls, callee: callee, instance: instances.named_at(f, c, at: at))

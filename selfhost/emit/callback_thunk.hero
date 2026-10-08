@@ -47,6 +47,7 @@ use check/table
 use check/state
 use check/reaches
 use ir/containers
+use ir/instances
 use emit/mangle
 use emit/ctype
 use emit/signature
@@ -198,23 +199,20 @@ function is_ordinary(f: containers.Function) -> bool
 # `void (*)(void)` being the one C11 6.3.2.3 defines for every function
 # pointer type, and clang under the flag list in `cli/flags.hero` says nothing
 # about it (measured 2026-09-25, `-Wextra` included).
-function crossings(p: containers.Program, c: state.Checked, names: ctype.Names, decl: i64, arguments: [str]) -> [str]
-    callee: containers.Function? @ fail(code: "none", msg: "not lowered")
+function crossings(p: instances.Held, c: state.Checked, names: ctype.Names, decl: i64, arguments: [str]) -> [str]
+    declared = instances.last_of(p, decl: decl)
 
-    for candidate in p.functions
-        if candidate.decl == decl
-            callee @ ok(candidate)
-
-    if callee.is_err()
+    if declared.is_err()
         return arguments
+    callee = p.program.functions[declared.must()]
     out: [str] @ []
     index: i64 @ 0
 
     for argument in arguments
         wrapped: str @ argument
 
-        if index < callee.must().params.len()
-            ty = callee.must().slots[callee.must().params[index]].ty
+        if index < callee.params.len()
+            ty = callee.slots[callee.params[index]].ty
 
             if table.is_function_ty(c.types, ty)
                 wrapped @ "(" + ctype.func_of(names, ty: ty) + ")hero_callback_of((void (*)(void))" + argument + ")"
@@ -264,7 +262,7 @@ test "an extern handed as a callback comes out of the table unchanged, a Heroes 
     got = writer.finish(w)
     assert has(text: got, needle: "void h_0cb_t_bye(void);")
     assert has(text: got, needle: "    if (f == (void (*)(void))h_t_bye) return (void (*)(void))h_0cb_t_bye;")
-    crossed = crossings(low, c, names, decl: 0, arguments: ["t1"])
+    crossed = crossings(instances.hold(low), c, names, decl: 0, arguments: ["t1"])
     assert crossed.len() == 1
     assert has(text: crossed[0], needle: "hero_callback_of((void (*)(void))t1)")
 
