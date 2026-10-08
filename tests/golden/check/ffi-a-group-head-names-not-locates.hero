@@ -17,6 +17,15 @@
 # **Only the absolute form is refused**, and the narrowing is the whole point:
 # `sub/bar.h` resolves against this file's own directory and is portable, and
 # `curl/curl.h` is path-shaped and correct.
+#
+# 2026-10-08, defect 446: no linker reads a rooted `link` at the path
+# written. ld64 and GNU ld 2.44 read it below each directory they search,
+# `-l/opt/q/m446` as `<dir>/lib/opt/q/m446.a`, and GNU's `-l:/w/abs/libm446.a`
+# as `<dir>/w/abs/libm446.a`, so the second paragraph's *names one* reads a
+# file below each search directory, not the one written. A rooted `link`
+# holding `/` is `unwritable_name` now, defect 252's reason with this rule's
+# route, and `check --permissive` refuses it; the header keeps the thesis
+# rule, clang opening it where it is.
 
 extern "stdio.h" link "c"
     function puts(s: cstr lent) -> i64
@@ -24,10 +33,10 @@ extern "stdio.h" link "c"
 extern "/opt/foo/include/foo.h"      #~ machine_locked_path
     function foo_a() -> i64
 
-extern "stdio.h" link "/opt/foo/lib/libfoo.a"    #~ machine_locked_path
+extern "stdio.h" link "/opt/foo/lib/libfoo.a"    #~ unwritable_name
     function foo_b() -> i64
 
-extern "stdio.h" link ":/opt/foo/lib/libfoo.a"   #~ machine_locked_path
+extern "stdio.h" link ":/opt/foo/lib/libfoo.a"   #~ unwritable_name
     function foo_c() -> i64
 
 function main()

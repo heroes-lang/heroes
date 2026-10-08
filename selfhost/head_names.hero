@@ -63,9 +63,16 @@ function cannot_carry(spelled: str, value: str, span: token.Span, what: str) -> 
         return windows_said(code: "unwritable_name", reason: windows, spelled: spelled, span: span, what: what)
 
     # A library's and a package's own (defect 252): a header's `>` and `\` are
-    # told above, and every string's `"` by `head_windows` (defect 445).
+    # told above, and every string's `"` by `head_windows` (defect 445). A
+    # rooted value holding one is a path too, told with panel 055's route, as
+    # a rooted header's `\` is (defect 446).
     if what != "header"
         library = head_windows.library_unwritable(value: value, what: what, rooted: rooted(value))
+
+        if library.len() > 0 && rooted(value)
+            return ok(
+                diag.new_diagnostic(code: "unwritable_name", message: "this " + noun(what) + "'s name " + library + ", and `" + inside(spelled) + "` names a path from a root, where this machine keeps the " + noun(what) + " rather than what the machine has\n  " + route(what), span: span)
+            )
 
         if library.len() > 0
             return windows_said(code: "unwritable_name", reason: library, spelled: spelled, span: span, what: what)
@@ -462,9 +469,9 @@ test "a library's and a package's name holds no `>`, `\"` or `\\`, and a library
     assert said(spelled: "\"p>q\"", what: "package") == "unwritable_name"
     assert said(spelled: "\"p\\\"q\"", what: "package") == "unwritable_name"
     assert said(spelled: "\"p\\\\q\"", what: "package") == "unwritable_name"
-    assert said(spelled: "\"/opt/foo/lib/libfoo.a\"", what: "link") == "machine_locked_path"
-    assert said(spelled: "\"C:\\\\side\\\\m\"", what: "link") == "machine_locked_path"
-    assert said(spelled: "\"C:/side/lp188\"", what: "link") == "machine_locked_path"
+    assert said(spelled: "\"/opt/foo/lib/libfoo.a\"", what: "link") == "unwritable_name"
+    assert said(spelled: "\"C:\\\\side\\\\m\"", what: "link") == "unwritable_name"
+    assert said(spelled: "\"C:/side/lp188\"", what: "link") == "unwritable_name"
     assert said(spelled: "\"a\\\"b.h\"", what: "header") == "unwritable_name"
     assert said(spelled: "\"sub/m.h\"", what: "header") == ""
     slash = judged(spelled: "\"sub/m\"", span: token.Span(start: 0, end: 7), what: "link").must()
@@ -491,3 +498,20 @@ test "a header's `\"` names no file on Windows, told before a thesis rule (defec
     left = judged(spelled: "\"\\\"a'b.h\\\"\"", span: token.Span(start: 0, end: 11), what: "header").must()
     assert left.code == "unwritable_name"
     assert left.fixes[0].certainty == .guess
+
+# Defect 446: a rooted `link` holding `/` or `\\` is read below each search
+# directory on macOS and Linux and is no one file, so it is `unwritable_name`
+# with panel 055's route, which the control arm keeps; a rooted `link` with
+# neither, a rooted header and a rooted package keep panel 055's thesis rule.
+test "a rooted library's `/` and `\\` are what nothing carries as written, with the path's route (defect 446)"
+    assert said(spelled: "\"/out:pwn\"", what: "link") == "unwritable_name"
+    assert said(spelled: "\"\\\\x\"", what: "link") == "unwritable_name"
+    assert said(spelled: "\":/opt/foo/libfoo.a\"", what: "link") == "unwritable_name"
+    assert said(spelled: "\"\\\\p\"", what: "package") == "unwritable_name"
+    assert said(spelled: "\"C:x\"", what: "link") == "machine_locked_path"
+    assert said(spelled: "\":libm.a\"", what: "link") == "machine_locked_path"
+    assert said(spelled: "\"/opt/x\"", what: "package") == "machine_locked_path"
+    assert said(spelled: "\"/opt/x.h\"", what: "header") == "machine_locked_path"
+    rooted_link = judged(spelled: "\"/opt/foo\"", span: token.Span(start: 0, end: 10), what: "link").must()
+    assert rooted_link.message == "this library's name holds `/`, which macOS's and Linux's linkers read below each directory they search and not from the root it names, and `/opt/foo` names a path from a root, where this machine keeps the library rather than what the machine has\n  " + route("link")
+    assert rooted_link.fixes.len() == 0
