@@ -286,7 +286,10 @@ def brought(top, name, what):
             return patched(top, what)
         pick = heads_in(top, "REBASE_HEAD")
         # No pick in flight, a `break` or an `exec` stop: the rebase brings
-        # nothing, and git refuses to continue over a staged change there.
+        # nothing, and git refuses to continue over a staged change there
+        # (`error: you have staged changes in your working tree`, exit 1,
+        # measured at a `break` stop on 2026-10-08, git 2.56.0; an `exec` stop
+        # is unmeasured).
         return changed_by(top, pick[0]) if pick else set()
     files = set()
     for head in what:
