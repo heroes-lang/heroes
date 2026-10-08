@@ -1,0 +1,30 @@
+# Defect 445, its shape beside measured on the Windows box on 2026-10-08
+# (Windows 10.0.26100, `CreateFileW`): no NTFS name holds a byte from U+0001
+# to U+001F, Win32 error 123 for 0x01, 0x09, 0x0B, 0x0C, 0x1B and 0x1F, as
+# for `"`. Each was `unshowable_name`, panel 188's thesis rule, which `check
+# --permissive` drops, so the control arm passed a name no Windows file can
+# hold. Each is `unwritable_name` now, told before any thesis rule, in all
+# three strings. DEL, U+0080, U+009F and U+200B each stood in a file's name
+# there, so they stay the thesis rule's, and the control arm drops them, as
+# the last two groups show for DEL and U+0080.
+
+extern "a\tb.h"  #~ unwritable_name
+    function c1() -> i32
+
+extern "a\u{1}b.h"  #~ unwritable_name
+    function c2() -> i32
+
+extern "stdio.h" link "m\u{1f}x"  #~ unwritable_name
+    function c3() -> i32
+
+extern "stdio.h" package "z\u{1b}z"  #~ unwritable_name
+    function c4() -> i32
+
+extern "a\u{7f}b.h"
+    function c5() -> i32
+
+extern "a\u{80}b.h"
+    function c6() -> i32
+
+function main()
+    print(c1() + c2() + c3() + c4() + c5() + c6())

@@ -9,11 +9,16 @@
 # escape spells; the raw bytes are the sitting's runner cases. In a package's
 # string a tab is where `pkg-config` splits its argument, which nothing
 # carries, so it is told as that.
+#
+# 2026-10-08, defect 445: no NTFS name holds a byte from U+0001 to U+001F
+# (Win32 error 123 on the Windows box), so the tab in a header and a library
+# is `unwritable_name`, told before the thesis rule, and `check --permissive`
+# refuses it; U+200B and U+2028 stand in a file's name there and stay.
 
-extern "a\tb.h"    #~ unshowable_name
+extern "a\tb.h"    #~ unwritable_name
     function h1() -> i32
 
-extern "stdio.h" link "m\tx"    #~ unshowable_name
+extern "stdio.h" link "m\tx"    #~ unwritable_name
     function h2() -> i32
 
 extern "stdio.h" package "zlib\tzlib"    #~ unwritable_name
