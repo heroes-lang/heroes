@@ -8,6 +8,7 @@
 # | entry | called by |
 # |---|---|
 # | `opens_a_block` | `indent_runs.with_words`, `indent_runs.tab_line` |
+# | `opens_a_block_before` | `map_alone.begins_a_value` |
 
 use token
 use brace_layout
@@ -20,7 +21,12 @@ use brace_layout
 # or it ends with a body's `{`, alone on its line below its head included,
 # which no value or type comes before (`brace_layout.hero`).
 function opens_a_block(tokens: [token.Token]) -> bool
-    last: i64 @ tokens.len() - 1
+    return opens_a_block_before(tokens, end: tokens.len())
+
+# The same of the tokens before `end`, the stream's own past it left out
+# (`map_alone.hero`, which asks it of the line above a `{`).
+function opens_a_block_before(tokens: [token.Token], end: i64) -> bool
+    last: i64 @ end - 1
 
     while last >= 0 && (tokens[last].kind == .comment || tokens[last].kind == .terminator)
         last @ last - 1

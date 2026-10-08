@@ -1,0 +1,1 @@
+tests/golden/check/fixedbugs-504-a-map-alone-as-a-statement-is-told-once.hero:9:5: error[discarded_value]: this line's value has type `{str: i64}` and nothing receives it — write `_ = …` to discard it on purpose
