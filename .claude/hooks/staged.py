@@ -66,8 +66,8 @@ def offences(where):
     such case a narrowed `annotations` run judges is asked of that suite in ONE
     run (`marks.py`, which has the run's price), and a case it fails is an
     offence with the suite's words; one under the suite's run roots, whose
-    marks only the whole suite asks by compiling each program, is left to the
-    batch's gate, as the write-time hook leaves it. A marked case elsewhere, a
+    marks the whole suite asks by compiling each program (a narrowed run asks a
+    group only for a word naming it, defect 485), is left to the batch's gate, as the write-time hook leaves it. A marked case elsewhere, a
     `run/` or `emit/` program, keeps `fmt`'s verdict: such a program parses.
     And a run that cannot answer gives no opinion: this guard never refuses
     over its own inability to judge.

@@ -74,6 +74,14 @@ file states no count and no copy of it** (CL-030: that one sentence has been
 wrong three times, twice by pointing at a tree nobody builds and once by
 carrying a count in prose). `-std=gnu11` is named and not inherited (CL-013).
 
+**The debug word is not in that list: it is the level's**, `flags.debug_words`,
+`-g` at `-O0` and `-gline-tables-only` at `-O2`, and `flags.level_words` hands
+the list, the level, its debug word and the sanitizers alike to a unit's
+compile and its probes (`compiling.unit_words`), the runtime's object, the
+identity probe and the link, so no word reaches one of them and not the others;
+`toolchain.build_words` names the debug word in the runtime's key (panel 197,
+ratified 2026-10-07).
+
 A clang failure is exit 2 and says the **compiler** is wrong, with one named
 class of exception that belongs to the author's own `extern`:
 `.claude/rules/c-boundary.md` has it.

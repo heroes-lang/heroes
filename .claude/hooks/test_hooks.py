@@ -938,11 +938,20 @@ class Growth(unittest.TestCase):
             "function f(@out: str)\n    out @ out + \"x\"\n",
             '    p.page @ p.page + "line\\n"\n',
             "    l.tokens @ l.tokens.push(t)\n",
+            "    c.tokens[i] @ t\n",
+            "    c.tokens[i].kind @ .newline\n",
+            "    kept(@c.tokens, 1)\n",
             "    r.out.diagnostics @ r.out.diagnostics.push(d)\n",
             'function f() -> str\n    out: str @ ""\n    match k\n        .a => out @ out + "a"\n',
         ):
             self.assertTrue(ceiling.might_grow(text, appends), text)
-        for text in ("    at @ at + 1\n", "    p.page @ p.page + word\n", "    r.items @ r.items.push(x)\n"):
+        for text in (
+            "    at @ at + 1\n",
+            "    p.page @ p.page + word\n",
+            "    r.items @ r.items.push(x)\n",
+            "    n = c.tokens.len()\n",
+            "    t = c.tokens[i]\n",
+        ):
             self.assertFalse(ceiling.might_grow(text, appends), text)
 
 

@@ -107,7 +107,9 @@ def might_grow(text, appends=()):
     `layout/appends` refuses: a superset of `tests/harness/growth.hero`'s
     sites and of `suite_layout.hero`'s slow appends, `appends` being its
     `SLOW_APPENDS` and any list of reports grown through a field, each of
-    which stores a place back into itself on one line.
+    which stores a place back into itself on one line, and of
+    `layout/streams` (defect 483, `tests/harness/stream_writes.hero`): a
+    store or a lend whose place runs through a `tokens` field, `STREAM_WRITE`.
 
     The names the module declares or lends as a `str` are read once, where a
     search of the whole text for each stored line made it quadratic: about
@@ -116,6 +118,8 @@ def might_grow(text, appends=()):
     texts = None
     for line in text.split("\n"):
         if any(needle in line for needle in appends):
+            return True
+        if STREAM_WRITE.search(line):
             return True
         for found in GROWS.finditer(line):
             name, how = found.group(1), found.group(2)
@@ -131,6 +135,15 @@ def might_grow(text, appends=()):
                 if name in texts:
                     return True
     return False
+
+
+# A line that may write a stream's `tokens` (`layout/streams`, defect 483): a
+# `.tokens` in the place of a store, before its ` @ `, or a lend, `@` and a
+# place that runs through `.tokens`. It cannot tell a lexer's own state, which
+# the suite exempts by the declaration in hand, from a parsed stream's, so a
+# lend of `@l.tokens` wakes it too; a line that only READS the field, with an
+# `@` elsewhere on it, does not.
+STREAM_WRITE = re.compile(r"\.tokens\b[^@]*\s@\s|@[^\s,()][^,()]*\.tokens\b")
 
 
 # A name declared or lent as a `str`, `name: str` or `@name: str`, after the
