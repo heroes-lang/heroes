@@ -984,6 +984,10 @@ void hero_write_err(HeroStr text) {
  * other is `conflicting types for 'exit'` (panel 030 R3, reproduced on clang 21).
  * A shell reads the low 8 bits anyway. */
 _Noreturn void hero_exit(int64_t code) {
+    /* Not the leak gate, for `hero_os.h`'s reason; the regions lent to C are
+     * audited all the same, which asks nothing of the frames the exit leaves
+     * (defect 451, `parts/lend.c`). */
+    hero_lend_audit_given("found when the program ended");
     exit((int)code);
 }
 
