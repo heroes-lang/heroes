@@ -3,7 +3,7 @@ kind: defect
 area: parse
 milestone: none
 filed: 2026-10-07
-commit: none
+commit: 0e3bdd7758748f4622ad4739f8e52705fe4cead6
 github: none
 ---
 
@@ -12,3 +12,7 @@ github: none
     **Origin:** filed by the coordinator at 18:37 on 2026-10-07 from lane b14-parse's final report (*decisions* 1); the lane's measurement, not re-run by the coordinator.
 
     **Class: improvement**, 2026-10-07 (`.claude/rules/verification.md` § Bounded discovery): a premise held by one assertion, no rule.
+
+    Repaired at `0e3bdd77`, 2026-10-08 (lane b15-harness), gated by its cases and the net's own tests; the net is owed at the batch's close. `layout/streams` (`tests/harness/stream_writes.hero`) refuses any store into, or lend of, a place running through a `tokens` field other than `stream_tables.relaid`'s, whatever the holder is named, the lexer's own state exempt by its declared type: a write planted in place of `parse/orphans.hero:54`'s `relaid` reads `layout` 5 passed, 0 failed on the base's suite and red here naming the line; the tree holds no such write.
+
+    Widened at `8943002f`, 2026-10-08 (lane b15-harness), the same gate: a `relaid` call broken over lines, one argument a line as `heroes fmt` breaks a long call, was refused as a write, since its argument line names no callee; the check now reads an argument line's lend as the innermost open call's, so of a broken `relaid`, a broken other call and a `relaid` nested in one only the other's lends are told, where the first version told the two `relaid` lines too.

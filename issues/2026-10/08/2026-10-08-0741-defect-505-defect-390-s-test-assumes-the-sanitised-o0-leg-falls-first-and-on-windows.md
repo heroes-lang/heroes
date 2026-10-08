@@ -3,7 +3,7 @@ kind: defect
 area: harness
 milestone: none
 filed: 2026-10-08
-commit: none
+commit: e607e48920e16d914fe9e9b171b129026d7931c9
 github: none
 ---
 
@@ -12,3 +12,5 @@ github: none
     **Origin:** filed by the coordinator at 07:41 on 2026-10-08 from the CI's Windows leg after batch 14's push, reproduced on the box before filing.
 
     **Class: blocking**, 2026-10-08 (`.claude/rules/verification.md` § Bounded discovery): a red CI. The compiler and the sanitiser leg are right on Windows; the test's premise is a fact of Darwin and Linux, a narrowing that asks the world (`.claude/rules/module-shape.md` § A narrowing asks the value).
+
+    Repaired at `e607e489`, 2026-10-08 (lane b15-harness), gated by its cases and the net's own tests (318 passed); the net is owed at the batch's close, and Windows is the CI's leg after the push. The test asks the sanitised `-O0` leg alone (`sanitised_failed` with `--sanitize -O0`), which must fail naming `stack-buffer-overflow` for the over-writing program and pass the control, then that the whole case fails at some leg and its control passes every leg; in scratch copies on this Mac it is red with `-O0` removed from that leg's build, and green where a plain `-O0` leg falls first, the old test red there at `over.failures[0]` as on Windows.

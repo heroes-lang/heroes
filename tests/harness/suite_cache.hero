@@ -158,11 +158,16 @@ constant NOISE_HEADER_WARNS: str
 constant NOISE_HEADER_SILENT: str
     "#include <stdint.h>\nstatic inline int64_t noise_spare(int64_t n) { return n; }\nstatic inline int64_t noise_take(int64_t n) { return n + 1; }\n"
 
+# Where `heroes build` keeps its objects: the `build/` of the directory the
+# harness runs in, the repository root.
+constant OBJECTS: str
+    "build"
+
 function run_all(scratch: str, compiler: str) -> report.Report?
     r: report.Report @ report.empty()
     a_header_edit_is_not_invisible(@r, scratch: scratch, compiler: compiler)
-    an_untouched_build_still_hits(@r, scratch: scratch, compiler: compiler)
-    only_the_module_that_read_it_is_rebuilt(@r, scratch: scratch, compiler: compiler)
+    an_untouched_build_still_hits(@r, scratch: scratch, compiler: compiler, objects: OBJECTS)
+    only_the_module_that_read_it_is_rebuilt(@r, scratch: scratch, compiler: compiler, objects: OBJECTS)
     a_reordered_variant_is_not_served_warm(@r, scratch: scratch, compiler: compiler)
     a_warm_cache_never_turns_a_failure_into_a_pass(@r, scratch: scratch, compiler: compiler)
     a_warm_cache_never_replays_a_warning_that_was_repaired(@r, scratch: scratch, compiler: compiler)
@@ -384,9 +389,11 @@ function a_header_edit_is_not_invisible(@r: report.Report, scratch: str, compile
 # **The cache still hits.** Recompiling everything would pass the case
 # above and cost the whole architecture, so this is the other half of
 # the same claim. Asked of the filesystem: after a build, a marker; then
-# a second build that touches nothing; then no object may be newer than
-# the marker.
-function an_untouched_build_still_hits(@r: report.Report, scratch: str, compiler: str)
+# a second build that touches nothing; then no object under `objects` may
+# be newer than the marker, the runtime's own among them: a warm build
+# compiles no runtime (defect 435's reading, witnessed here since defect
+# 454; until 2026-10-07 the runtime's object was left out of the question).
+function an_untouched_build_still_hits(@r: report.Report, scratch: str, compiler: str, objects: str)
     label = "cache/an untouched build still hits"
     dir = laid_out(scratch: scratch, value: "3")
 
@@ -404,7 +411,8 @@ function an_untouched_build_still_hits(@r: report.Report, scratch: str, compiler
     moved = objects_newer_than(
         scratch: scratch,
         marker: dir.must() + "/marker",
-        words: [compiler, "build", dir.must() + "/prog.hero"]
+        words: [compiler, "build", dir.must() + "/prog.hero"],
+        objects: objects
     )
 
     if moved.is_err()
@@ -422,8 +430,9 @@ function an_untouched_build_still_hits(@r: report.Report, scratch: str, compiler
 
 # **Only the module that read the header is rebuilt.** Acceptance row 1
 # from the cache's side: the header reaches exactly one translation
-# unit, so an edit to it moves exactly one object.
-function only_the_module_that_read_it_is_rebuilt(@r: report.Report, scratch: str, compiler: str)
+# unit, so an edit to it moves exactly one object, and never the
+# runtime's, which reads no header of the program (defect 454).
+function only_the_module_that_read_it_is_rebuilt(@r: report.Report, scratch: str, compiler: str, objects: str)
     label = "cache/only the module that read it is rebuilt"
     dir = laid_out(scratch: scratch, value: "4")
 
@@ -445,7 +454,8 @@ function only_the_module_that_read_it_is_rebuilt(@r: report.Report, scratch: str
     moved = objects_newer_than(
         scratch: scratch,
         marker: dir.must() + "/marker",
-        words: [compiler, "build", dir.must() + "/prog.hero"]
+        words: [compiler, "build", dir.must() + "/prog.hero"],
+        objects: objects
     )
 
     if moved.is_err()
@@ -652,14 +662,23 @@ function hue_module(order: [str]) -> str
 
     return text
 
-# Run `command`, and answer which object files under `build/` came out
-# of it newer than a marker written just before.
+# Run `command`, and answer which object files under `objects` came out
+# of it newer than a marker written just before, every one of them.
 #
 # `find -newer` rather than a timestamp read and compared: the harness
 # has no clock, and the question is a comparison between two files
 # rather than a moment in time. The marker is written first and the
 # command runs after it, so anything newer was written by the command.
-function objects_newer_than(scratch: str, marker: str, words: [str]) -> [str]?
+#
+# **The runtime's object is asked too** (defect 454, 2026-10-07). It was
+# left out, *keyed on the runtime's contents and nothing here edits
+# those*, which is the reason it must NOT move rather than a reason not to
+# look: defect 435 read a warm build compiling no runtime in clang's call
+# log, and nothing at the filesystem said so. A suite that ran beside
+# another build could see that build's runtime object, keyed for other
+# flags, and read it as moved; `cache` runs alone at a batch's gate for
+# that reason already (`.claude/rules/verification.md`).
+function objects_newer_than(scratch: str, marker: str, words: [str], objects: str) -> [str]?
     touched = shell.run(scratch: scratch, program: "touch", words: ["touch", marker])
 
     if touched.is_err() || touched.must().code != 0
@@ -668,16 +687,52 @@ function objects_newer_than(scratch: str, marker: str, words: [str]) -> [str]?
 
     if ran.is_err() || ran.must().code != 0
         return fail(code: "cannot_run", msg: "the build: " + shell.ending(ran))
-    listed = shell.found_under(dir: "build", suffix: ".o", reference: marker)
+    listed = shell.found_under(dir: objects, suffix: ".o", reference: marker)
 
     if listed.is_err()
-        return fail(code: "cannot_run", msg: "cannot list what moved under build/")
+        return fail(code: "cannot_run", msg: "cannot list what moved under " + objects + "/")
     out: [str] @ []
 
     for row in listed.must()
-        # The runtime's own object is not in scope: it is keyed on the
-        # runtime's contents and nothing here edits those.
-        if row.len() > 0 && !strings.starts_with(text: strings.base_name(row), prefix: "runtime-")
+        if row.len() > 0
             out @ out.push(row)
 
     return ok(out.sort())
+
+## Tests
+
+# DEFECT 454, held as a test (2026-10-07): a second build that rewrites the
+# runtime's object is told, by its name, and one that rewrites nothing is
+# not. A stand-in compiler writes a runtime object under its own `objects`
+# at every build, dated 2030 so it is newer than the marker however fine the
+# filesystem's clock, as a compiler that compiled the runtime at every warm
+# build would; until that day the check left `runtime-` objects out and read
+# that build green.
+test "fixedbugs: a warm build that rewrites the runtime's object is told (defect 454)"
+    if !shell.can_run_scripts()
+        return
+    scratch = shell.own_scratch()
+    every_objects = scratch + "/objects454-every"
+    once_objects = scratch + "/objects454-once"
+    assert !shell.mkdir_all(every_objects).is_err()
+    assert !shell.mkdir_all(once_objects).is_err()
+    name = "/runtime-0123456789abcdef-fedcba9876543210.o"
+    every = scratch + "/every-build.sh"
+    assert !write_file(path: every, text: "#!/bin/sh\ntouch -t 203001010000 '" + every_objects + name + "'\nexit 0\n").is_err()
+    once = scratch + "/first-build.sh"
+    assert !write_file(path: once, text: "#!/bin/sh\n[ -e '" + once_objects + name + "' ] || touch '" + once_objects + name + "'\nexit 0\n").is_err()
+
+    for stub in [every, once]
+        made = shell.run(scratch: scratch, program: "chmod", words: ["chmod", "+x", stub])
+        assert !made.is_err()
+        assert made.must().code == 0
+
+    rebuilt: report.Report @ report.empty()
+    an_untouched_build_still_hits(@rebuilt, scratch: scratch, compiler: every, objects: every_objects)
+    assert rebuilt.failed == 1
+    assert strings.contains(text: rebuilt.failures[0], needle: every_objects + name)
+    kept: report.Report @ report.empty()
+    an_untouched_build_still_hits(@kept, scratch: scratch, compiler: once, objects: once_objects)
+    assert kept.passed == 1
+    assert kept.failed == 0
+    assert !shell.remove_tree(scratch).is_err()
