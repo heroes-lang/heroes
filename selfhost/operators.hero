@@ -28,9 +28,11 @@ use ast
 # Every token that is a binary operator, weakest binding first. The powers
 # themselves stay with the climber that asks for them, in
 # `grammar_expr.binary_op`: this is the enumeration Heroes has no reflection to
-# derive, and nothing more.
-function binary_tokens() -> [token.TokenKind]
-    return [
+# derive, and nothing more. A constant, laid out once, read through the
+# function its callers name: the function's body built the list again at
+# every call (defect 475, `widths.int_kinds`'s shape).
+constant BINARY_TOKENS: [token.TokenKind]
+    [
         .or_or
         .and_and
         .eq_eq
@@ -50,6 +52,9 @@ function binary_tokens() -> [token.TokenKind]
         .slash
         .percent
     ]
+
+function binary_tokens() -> [token.TokenKind]
+    return BINARY_TOKENS
 
 # The tree's own name for an operator, which is the half `spelling` cannot say
 # and the half panel 067's defect lived in. `.percent => .add` left `%` parsing

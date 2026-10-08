@@ -80,10 +80,11 @@ function check_label(@c: state.Checker, s: source.Source, name: str, position: i
 # the call writes: what else its argument could be.
 function unwritten(params: [str], position: i64, taken: [str]) -> [str]
     others: [str] @ []
+    written = label_set(taken)
     q: i64 @ 0
 
     for label in params
-        if q != position && label.len() > 0 && !listed(taken, label)
+        if q != position && label.len() > 0 && written[label].is_err()
             others @ others.push(label)
         q @ q + 1
 
@@ -122,6 +123,17 @@ function holds(xs: [i64], x: i64) -> bool
 
     return false
 
+# The labels a call writes as a set, made once by each question that asks it
+# of every position, so a position asks it once (defect 477): asked of the
+# list, a call of n arguments half of them unlabelled cost the cube of n.
+function label_set(taken: [str]) -> {str: bool}
+    out: {str: bool} @ {}
+
+    for label in taken
+        out[label] @ true
+
+    return out
+
 # A label that is not its position's name, at a declared function, a function
 # value or a construction (`check/walk.hero`; a built-in's is `check_label`).
 # What its fix's certainty rests on is a fact about the call in hand: a label
@@ -129,26 +141,48 @@ function holds(xs: [i64], x: i64) -> bool
 # leaves both values where they are (panel 127's compiler seat measured the
 # program printing the other answer); one naming nothing is renamed by its
 # position only where nothing else could stand there (`other_labels`).
-# `every` is each position's name and `open` the same with "" where only its
-# own argument can stand (`open_names`). Asked once the argument is checked,
-# because what else a label naming nothing could be asks its type.
-function misnamed(c: state.Checker, a: ast.Ast, s: source.Source, decls: [ast.Decl], holder: str, label: token.Span, every: [str], open: [str], types: [i64], at: i64, from: i64, value: i64, taken: [str]) -> diag.Diagnostic
+# `asked` is what every such label of the call asks of it (`Asked`). Asked
+# once the argument is checked, because what else a label naming nothing
+# could be asks its type.
+function misnamed(c: state.Checker, a: ast.Ast, s: source.Source, decls: [ast.Decl], asked: Asked, holder: str, label: token.Span, types: [i64], at: i64, from: i64, value: i64) -> diag.Diagnostic
     written = source.span_text(s, label)
-    expected = every[at]
-    elsewhere = listed(every, written)
+    expected = asked.every[at]
+    elsewhere = !asked.named[written].is_err()
     others: [str] @ []
 
     if !elsewhere
-        others @ other_labels(c, a, decls, names: open, types: types, at: at, from: from, value: value, taken: taken)
+        others @ other_labels(c, a, decls, asked, types: types, at: at, from: from, value: value)
     return label_errors.wrong_label(
         holder: holder,
         written: written,
         expected: expected,
         elsewhere: elsewhere,
-        doubled: listed(taken, expected),
+        doubled: !asked.taken[expected].is_err(),
         others: others,
         span: label
     )
+
+# What every label at fault in one call asks of it, made at the first of them
+# and kept for the rest of the call (defect 477): `every` is each position's
+# name, `open` the same with "" where only its own argument can stand
+# (`open_names`), and `named` and `taken` are the names and the labels the
+# call writes, as sets. Made again at each label, a call of n swapped labels
+# cost n times its length, the names of its parameters cut from the source
+# each time.
+record Asked
+    made: bool
+    every: [str]
+    open: [str]
+    named: {str: bool}
+    taken: {str: bool}
+
+function unasked() -> Asked
+    none: [str] = []
+    nothing: {str: bool} = {}
+    return Asked(made: false, every: none, open: none, named: nothing, taken: nothing)
+
+function asked_of(every: [str], open: [str], taken: [str]) -> Asked
+    return Asked(made: true, every: every, open: open, named: label_set(every), taken: label_set(taken))
 
 # What else a label that names no position could be (defect 135, C3): a
 # position past the receiver (`from`) with a name, that no label of the call
@@ -160,35 +194,27 @@ function misnamed(c: state.Checker, a: ast.Ast, s: source.Source, decls: [ast.De
 # checks clean. The position's own type counts as well as the argument's,
 # because a type parameter's position takes what the argument's type does
 # not name.
-function other_labels(c: state.Checker, a: ast.Ast, decls: [ast.Decl], names: [str], types: [i64], at: i64, from: i64, value: i64, taken: [str]) -> [str]
+function other_labels(c: state.Checker, a: ast.Ast, decls: [ast.Decl], asked: Asked, types: [i64], at: i64, from: i64, value: i64) -> [str]
     out: [str] @ []
+    names = asked.open
     q: i64 @ from
 
     while q < names.len() && q < types.len()
         fits = types[q] == types[at] || could_take(c, a, decls, value: value, ty: types[q])
 
-        if q != at && names[q].len() > 0 && !listed(taken, names[q]) && fits
+        if q != at && names[q].len() > 0 && asked.taken[names[q]].is_err() && fits
             out @ out.push(names[q])
         q @ q + 1
 
     return out
 
-# The same at a declared function, whose names are its parameters'.
-function misnamed_parameter(c: state.Checker, a: ast.Ast, s: source.Source, decls: [ast.Decl], holder: str, label: token.Span, declared: [ast.Param], types: [i64], ambiguous: [i64], given: [ast.Arg], at: i64, from: i64, value: i64, taken: [str]) -> diag.Diagnostic
-    return misnamed(
-        c,
-        a,
-        s,
-        decls,
-        holder: holder,
-        label: label,
+# What a declared function's labels at fault ask, whose names are its
+# parameters'.
+function asked_of_declared(s: source.Source, declared: [ast.Param], shared: [bool], given: [ast.Arg], from: i64) -> Asked
+    return asked_of(
         every: parameter_names(s, declared),
-        open: open_names(s, declared, ambiguous: ambiguous, given: given, from: from),
-        types: types,
-        at: at,
-        from: from,
-        value: value,
-        taken: taken
+        open: open_names(s, declared, shared: shared, given: given, from: from),
+        taken: written_labels(s, given)
     )
 
 # A declared function's parameter names, and the same with "" where a label
@@ -203,7 +229,7 @@ function parameter_names(s: source.Source, declared: [ast.Param]) -> [str]
 
     return out
 
-function open_names(s: source.Source, declared: [ast.Param], ambiguous: [i64], given: [ast.Arg], from: i64) -> [str]
+function open_names(s: source.Source, declared: [ast.Param], shared: [bool], given: [ast.Arg], from: i64) -> [str]
     out: [str] @ []
     q: i64 @ 0
 
@@ -214,7 +240,7 @@ function open_names(s: source.Source, declared: [ast.Param], ambiguous: [i64], g
         if name == "_"
             name @ ""
 
-        if argument >= 0 && argument < given.len() && given[argument].name.is_err() && !holds(ambiguous, q)
+        if argument >= 0 && argument < given.len() && given[argument].name.is_err() && !shared[q]
             name @ ""
         out @ out.push(name)
         q @ q + 1
@@ -222,23 +248,27 @@ function open_names(s: source.Source, declared: [ast.Param], ambiguous: [i64], g
     return out
 
 # The other parameters an unlabelled argument at position `at` of a declared
-# function could be: among `ambiguous`, the positions whose type another
+# function could be: among the `shared` positions, those whose type another
 # shares, those of its type, past the UFCS receiver (`from`), whose name no
 # label of the call writes. Its `@` or none tells the positions apart only
 # where it agrees with its own position's: `add_to(@t, 5)` over
 # `add_to(@total, amount)` has one reading, while `swap(x, y)` over
 # `swap(@a, @b)` lacks both markers, which is `marker_mismatch`'s to say and
 # says nothing about the order.
-function other_parameters(s: source.Source, declared: [ast.Param], types: [i64], ambiguous: [i64], at: i64, from: i64, taken: [str], mutable: bool) -> [str]
+function other_parameters(s: source.Source, declared: [ast.Param], types: [i64], shared: [bool], at: i64, from: i64, taken: [str], mutable: bool) -> [str]
     out: [str] @ []
     marker_tells = declared[at].mutable == mutable
+    written = label_set(taken)
+    q: i64 @ 0
 
-    for q in ambiguous
-        name = source.span_text(s, declared[q].name)
-        same_marker = !marker_tells || declared[q].mutable == mutable
+    while q < shared.len()
+        if shared[q]
+            name = source.span_text(s, declared[q].name)
+            same_marker = !marker_tells || declared[q].mutable == mutable
 
-        if q != at && q >= from && types[q] == types[at] && same_marker && !listed(taken, name)
-            out @ out.push(name)
+            if q != at && q >= from && types[q] == types[at] && same_marker && written[name].is_err()
+                out @ out.push(name)
+        q @ q + 1
 
     return out
 
@@ -246,10 +276,11 @@ function other_parameters(s: source.Source, declared: [ast.Param], types: [i64],
 # position of the same type, past the receiver, that no label takes.
 function other_names(names: [str], types: [i64], at: i64, from: i64, taken: [str]) -> [str]
     out: [str] @ []
+    written = label_set(taken)
     q: i64 @ from
 
     while q < names.len() && q < types.len()
-        if q != at && names[q].len() > 0 && types[q] == types[at] && !listed(taken, names[q])
+        if q != at && names[q].len() > 0 && types[q] == types[at] && written[names[q]].is_err()
             out @ out.push(names[q])
         q @ q + 1
 
@@ -262,10 +293,11 @@ function other_names(names: [str], types: [i64], at: i64, from: i64, taken: [str
 # may be of several types and only the argument tells which it can be.
 function other_fields(c: state.Checker, a: ast.Ast, decls: [ast.Decl], names: [str], types: [i64], at: i64, value: i64, taken: [str]) -> [str]
     out: [str] @ []
+    written = label_set(taken)
     q: i64 @ 0
 
     while q < names.len() && q < types.len()
-        if q != at && !listed(taken, names[q]) && could_take(c, a, decls, value: value, ty: types[q])
+        if q != at && written[names[q]].is_err() && could_take(c, a, decls, value: value, ty: types[q])
             out @ out.push(names[q])
         q @ q + 1
 
@@ -294,12 +326,13 @@ function declared_labels(s: source.Source, params: [ast.Param], lowered: [i64]) 
     names: [str] @ []
     none: [str] = []
     any_shared: bool @ false
+    shared = type_fit.shared(lowered)
     i: i64 @ 0
 
     while i < lowered.len()
         written = source.span_text(s, params[i].name)
 
-        if type_fit.shared_at(lowered, at: i) && written != "_"
+        if shared[i] && written != "_"
             any_shared @ true
             names @ names.push(written)
         else

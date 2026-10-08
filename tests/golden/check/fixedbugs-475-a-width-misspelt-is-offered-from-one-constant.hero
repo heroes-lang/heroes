@@ -1,0 +1,24 @@
+# Fixed 2026-10-08, defect 475, lane b15-check (class improvement).
+# Symptom: `widths.int_kinds`, `widths.float_kinds` and
+# `operators.binary_tokens` built their arrays again at every call: 23,606,
+# 17,048 and 3,663 calls in the compiler's own check.
+# Cause: each list was a function's body. Each is now a constant clang lays
+# out once, read through the function its callers name, so a lookup builds
+# nothing (panel 195), and the compiler's own check retires 116 million
+# fewer instructions.
+# This case: what the resolver offers is read from the constants: a width
+# that does not exist, a float width that does not exist, and a conversion
+# to a width that does not exist.
+
+function narrow(n: u9) -> i64  #~ unknown_type
+    _ = n
+    return 0
+
+function float_of(n: f16) -> i64  #~ unknown_type
+    _ = n
+    return 0
+
+function main()
+    v: i64 = 300
+    small = v.to_u7()  #~ unknown_function
+    print(small)
