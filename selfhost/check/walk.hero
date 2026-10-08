@@ -1154,13 +1154,6 @@ function literal_pattern(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s:
         return
     check(@c, a, r, s, decls, id: value, expected: subject)
 
-function listed(xs: [i64], x: i64) -> bool
-    for it in xs
-        if it == x
-            return true
-
-    return false
-
 ## Calls — the dispatch, and the one place generics are inferred
 
 # A declaration's type is `function_value.signature_of` (§4.13), moved out of
@@ -1309,6 +1302,8 @@ function indirect_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: s
                 return state.error_ty_of(c)
             names = table.labels_of(c.out.types, f.labels)
             taken = labels.written_labels(s, given)
+            shared = type_fit.shared(params)
+            asked: labels.Asked @ labels.unasked()
             index: i64 @ 0
 
             for arg in given
@@ -1336,7 +1331,7 @@ function indirect_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: s
                 # own site, and reading the name here would earn that one
                 # mistake a second message whose reason — *two of these are
                 # `str`* — is not even true.
-                if type_fit.shared_at(params, at: position)
+                if shared[position]
                     wanted @ carried
                 misnamed: bool @ false
 
@@ -1369,9 +1364,11 @@ function indirect_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: s
                 # Told once the argument is checked, since what else a label
                 # naming nothing could be asks its type (defect 135, C3).
                 if misnamed
+                    if !asked.made
+                        asked @ labels.asked_of(every: names, open: names, taken: taken)
                     state.push_diagnostic(
                         @c,
-                        labels.misnamed(c, a, s, decls, holder: "this function", label: arg.name.must(), every: names, open: names, types: params, at: position, from: offset, value: arg.value, taken: taken)
+                        labels.misnamed(c, a, s, decls, asked: asked, holder: "this function", label: arg.name.must(), types: params, at: position, from: offset, value: arg.value)
                     )
                 index @ index + 1
 
@@ -1559,21 +1556,7 @@ function user_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: sourc
             # type, the call site names them — the rule that spends tokens
             # exactly where argument inversion happens. The UFCS receiver
             # is exempt: the dot IS its position.
-            ambiguous: [i64] @ []
-            i: i64 @ 0
-
-            while i < params.len()
-                j: i64 @ 0
-                shared: bool @ false
-
-                while j < params.len()
-                    if j != i && params[j] == params[i]
-                        shared @ true
-                    j @ j + 1
-
-                if shared
-                    ambiguous @ ambiguous.push(i)
-                i @ i + 1
+            shared = type_fit.shared(params)
 
             if !receiver.is_err()
                 bind_argument(
@@ -1588,6 +1571,7 @@ function user_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: sourc
                 )
             index: i64 @ 0
             taken = labels.written_labels(s, given)
+            asked: labels.Asked @ labels.unasked()
 
             for arg in given
                 position = index + offset
@@ -1598,7 +1582,7 @@ function user_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: sourc
                 # with a comment on it. Told once the argument is checked.
                 misnamed = !arg.name.is_err() && source.span_text(s, arg.name.must()) != source.span_text(s, fd.value.params[position].name)
 
-                if listed(ambiguous, position) && arg.name.is_err()
+                if shared[position] && arg.name.is_err()
                     wanted = source.span_text(s, fd.value.params[position].name)
 
                     # Rendered with the CALLEE's type-parameter names: at a
@@ -1614,7 +1598,7 @@ function user_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: sourc
                         s,
                         fd.value.params,
                         types: params,
-                        ambiguous: ambiguous,
+                        shared: shared,
                         at: position,
                         from: offset,
                         taken: taken,
@@ -1658,9 +1642,11 @@ function user_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: sourc
                 # What else a label naming nothing could be asks the
                 # argument's type, now known (defect 135, C3).
                 if misnamed
+                    if !asked.made
+                        asked @ labels.asked_of_declared(s, fd.value.params, shared: shared, given: given, from: offset)
                     state.push_diagnostic(
                         @c,
-                        labels.misnamed_parameter(c, a, s, decls, holder: name, label: arg.name.must(), declared: fd.value.params, types: params, ambiguous: ambiguous, given: given, at: position, from: offset, value: arg.value, taken: taken)
+                        labels.misnamed(c, a, s, decls, asked: asked, holder: name, label: arg.name.must(), types: params, at: position, from: offset, value: arg.value)
                     )
                 index @ index + 1
 
@@ -2006,13 +1992,16 @@ function check_named_fields(@c: state.Checker, a: ast.Ast, r: resolved.Resolved,
     # which other fields an argument could fill asks the type it has (defect
     # 135), and the label must be the field at its position.
     taken = labels.written_labels(s, given)
+    asked: labels.Asked @ labels.unasked()
     index @ 0
 
     for arg in given
         if !arg.name.is_err() && source.span_text(s, arg.name.must()) != spec_names[index]
+            if !asked.made
+                asked @ labels.asked_of(every: spec_names, open: spec_names, taken: taken)
             state.push_diagnostic(
                 @c,
-                labels.misnamed(c, a, s, decls, holder: label, label: arg.name.must(), every: spec_names, open: spec_names, types: spec_types, at: index, from: 0, value: arg.value, taken: taken)
+                labels.misnamed(c, a, s, decls, asked: asked, holder: label, label: arg.name.must(), types: spec_types, at: index, from: 0, value: arg.value)
             )
 
         if arg.name.is_err()

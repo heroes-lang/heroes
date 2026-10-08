@@ -80,19 +80,31 @@ function fits(@t: table.Types, wanted: i64, got: i64) -> bool
 
     return table.intern_function(@t, spelled, filled, result: result) == wanted
 
-# Whether ONE position of a parameter run shares its type with another — the
+# Whether each position of a parameter run shares its type with another — the
 # single fact §4.9 rests on, since defect 026 for a function TYPE as well as for
 # a declaration. The rule that makes a name mandatory in the type
-# (`check/type_labels.hero`) and the rule that checks a call made through a
-# value of it (`check/walk.hero`) both ask it HERE, per position, so the two
-# cannot answer it differently — and asking per position is what lets a type
-# name the two `u64` of `qsort` and leave its `ptr` alone.
-function shared_at(params: [i64], at: i64) -> bool
-    i: i64 @ 0
+# (`check/type_labels.hero`), the names a declaration's type carries
+# (`check/labels.declared_labels`) and the two calls that owe a label, by name
+# and through a value (`check/walk.hero`), all ask it HERE, so none can answer
+# it differently — and answering per position is what lets a type name the
+# two `u64` of `qsort` and leave its `ptr` alone. Each type is counted once,
+# so a run costs its length (defect 477): asked of one position against every
+# other, n positions cost n times n, and the call by name asked it in a copy
+# of its own.
+function shared(params: [i64]) -> [bool]
+    count: {i64: i64} @ {}
 
-    while i < params.len()
-        if i != at && params[i] == params[at]
-            return true
-        i @ i + 1
+    for p in params
+        seen = count[p]
 
-    return false
+        if seen.is_err()
+            count[p] @ 1
+        else
+            count[p] @ seen.must() + 1
+
+    out: [bool] @ []
+
+    for p in params
+        out @ out.push(count[p].must() > 1)
+
+    return out
