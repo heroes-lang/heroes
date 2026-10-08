@@ -49,8 +49,10 @@ ones (CL-041).
 - **Destructive operations are asked for.**
 - **`UPDATE_GOLDEN=1` does not exist**, and in `tests/golden/check/` and
   `tests/golden/ir/` it is forbidden outright.
-- **Nothing goes into the assistant's own memory.** What the author wants kept
-  goes in this file, under the section it amends, with its date (CL-043).
+- **Nothing goes into the assistant's own memory** but local notes, which may
+  be lost, and **no file is written outside this repository's root** (author,
+  2026-10-08). What the author wants kept goes in this file, under the section
+  it amends, with its date (CL-043).
 
 ## RUN IT, OR SAY IT IS UNRUN
 
