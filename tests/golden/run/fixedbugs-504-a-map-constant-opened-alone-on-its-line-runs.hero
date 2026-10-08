@@ -1,0 +1,97 @@
+# Fixed defect 504, 2026-10-08 (lane b15-parse; filed by the coordinator,
+# found beside defect 503). Symptom: a map value written as `heroes fmt`
+# lays out one too wide for its line, `{` alone where the value begins, its
+# entries deeper and `}` under the `{`, was refused three times,
+# `indentation_jump`, `missing_body` found `{` and `expected_end_of_line`,
+# where the same layout of a list ran; and `fmt` refused its own output of
+# such a map as a compiler bug (defect 503). Cause: the lexer read a `{`
+# alone on its line below a head as a body in braces, the habit of other
+# languages (`brace_layout.opens_a_body`), and the parser the same
+# (`parse/brace_habit`). Repair: such a `{` begins a value where it stands
+# where a statement begins and its value begins below it, under a
+# `constant`'s head or over a map's entry (`map_alone.begins_a_value`),
+# lexer and parser alike. Below, as `fmt` writes them: a constant, a map
+# holding a map, an empty one, a remark between head and value, a remark
+# first among the entries; an arm's block, with a remark above it; an `if`
+# branch's block; and keys that do not begin with a literal, a name, a
+# call and a negative number. A key in parentheses over two lines reads
+# as one too (`map_alone`'s test), and is left out here: `heroes probe`
+# finds `fmt` moving a comment written after such a key's `(`, the base's
+# printer doing the same to a map opened after `=`, a defect of its own.
+
+constant AGES: {str: i64}
+    {
+        "ziggy": 42
+        "mars": 7
+    }
+
+constant NESTED: {str: {str: i64}}
+    {
+        "a": {"b": 1}
+    }
+
+constant EMPTY: {str: i64}
+    {}
+
+constant NOTED: {str: i64}  # the ages
+    # one per line
+    {
+        "x": 3
+    }
+
+constant FIRST: {str: i64}
+    {
+        # first remark
+        "y": 4
+    }
+
+constant K: str
+    "ziggy"
+
+constant BY_NAME: {str: i64}
+    {
+        K: 5
+        "mars": 7
+    }
+
+constant NEGATIVE: {i64: i64}
+    {
+        -1: 6
+        2: 7
+    }
+
+function name() -> str
+    return "ziggy"
+
+function by_arm(n: i64) -> {str: i64}
+    return match n
+        1 =>
+            {
+                "ziggy": 9
+            }
+        2 =>
+            # remark
+            {
+                "ziggy": 10
+            }
+        _ => {"mars": 7}
+
+function by_branch(n: i64) -> {str: i64}
+    return if n == 1
+        {
+            name(): 11
+        }
+    else
+        {"mars": 7}
+
+function main()
+    print(AGES["mars"].default(0))
+    print(NESTED["a"].default({})["b"].default(0))
+    print(EMPTY.len())
+    print(NOTED["x"].default(0))
+    print(FIRST["y"].default(0))
+    print(BY_NAME["ziggy"].default(0))
+    print(NEGATIVE[-1].default(0))
+    print(by_arm(1)["ziggy"].default(0))
+    print(by_arm(2)["ziggy"].default(0))
+    print(by_branch(1)["ziggy"].default(0))

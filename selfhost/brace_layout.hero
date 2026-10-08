@@ -31,7 +31,10 @@
 # line (`parse/braced_arms`); so is a `{` with words after it on its line,
 # `function f() { return 1 }`, which the parser reads as it did. A line that
 # holds only a body's `{`, Allman's or GNU's, is no line of the program the
-# fix writes: it takes no margin and lays out no level.
+# fix writes: it takes no margin and lays out no level. A `{` alone on its
+# line that begins a value, a constant's or a map's over its first entry,
+# is a bracket too (`map_alone.hero`, defect 504), which the lexer asks
+# before this module's answer.
 #
 # **Which `}` closes it**: one met outside every bracket while a body's
 # braces are open, or at the head of its line where the body left a bracket

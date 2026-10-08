@@ -1,0 +1,174 @@
+# A `{` alone on its line that begins a value, a map (design.md §4.15,
+# §4.17; defect 504, 2026-10-08).
+#
+# `heroes fmt` lays out a map too wide for its line as `{` alone where the
+# value begins, its entries deeper, one a line, and `}` under the `{`: a
+# constant's value, an arm's or a branch's block, a statement. The lexer
+# read every `{` alone on its line outside brackets, after no value, as a
+# body in braces, the habit of other languages (`brace_layout.hero`), so
+# such a program was refused three times where the same layout of a list
+# checked, and `fmt` refused its own output as a compiler bug (defect 503).
+# The `{` is the value's where both of these hold:
+#
+# - it stands where a statement begins: one level deeper than a line that
+#   opens a block, or no deeper than a line that opens none, at a margin a
+#   multiple of four. At the head's own margin, or two spaces past it, it
+#   is Allman's or GNU's body in braces, told as before; and in the block
+#   of a head that holds members, `record`, `variant` or `extern`, never;
+# - its value begins below it: under a `constant`'s head always, a
+#   constant's body being a value; elsewhere where the line below, past
+#   blank and comment lines and read across its brackets, is a map's
+#   entry, a `:` outside every bracket, string and comment with no `=` or
+#   `@` after it there, which no statement holds: a typed binding has one,
+#   and a call's label stands inside its brackets.
+#
+# The lexer asks it before it lays out a `{` (`scan.finish`,
+# `layout.line_start`), and the parser asks it of the same tokens before it
+# reads one as the habit (`parse/brace_habit.opens_a_value`), so the two
+# read one `{` one way. Each line is read by the `{` alone below or above
+# it, so the reading costs the text once.
+#
+# | entry | called by |
+# |---|---|
+# | `opens_a_body` | `scan.finish`, `layout.line_start` |
+# | `begins_a_value` | `opens_a_body`, `parse/brace_habit.opens_a_value` |
+
+use token
+use closers
+use line_opens
+use brace_layout
+
+# `brace_layout.opens_a_body`, but where the `{` begins a value.
+function opens_a_body(tokens: [token.Token], open: i64, text: str, at: i64) -> bool
+    return brace_layout.opens_a_body(tokens, open: open, text, at: at) && !begins_a_value(tokens, before: tokens.len(), text, at: at)
+
+# Whether the `{` at `at`, alone on its line outside every bracket, its
+# stream before it `tokens` up to `before`, begins a value.
+function begins_a_value(tokens: [token.Token], before: i64, text: str, at: i64) -> bool
+    start = line_start(text, at: at)
+    margin = at - start
+
+    if !spaces(text, from: start, to: at) || margin % 4 != 0
+        return false
+    last: i64 @ before - 1
+
+    while last >= 0 && (tokens[last].kind == .comment || token.is_line_end(tokens[last].kind))
+        last @ last - 1
+
+    if last < 0
+        return false
+    first: i64 @ last
+
+    while first > 0 && !token.is_line_end(tokens[first - 1].kind)
+        first @ first - 1
+
+    while first < last && tokens[first].kind == .comment
+        first @ first + 1
+
+    head = tokens[first].kind
+    above = tokens[first].span.start - line_start(text, at: tokens[first].span.start)
+    opens = line_opens.opens_a_block_before(tokens, end: last + 1)
+
+    if opens && (head == .kw_record || head == .kw_variant || head == .kw_extern || margin != above + 4) || !opens && margin > above
+        return false
+    return opens && head == .kw_constant || entry_below(text, at: at)
+
+# Whether the line below the one holding `at`, past blank and comment lines,
+# is a map's entry: a `:` outside every bracket, string and comment, and no
+# `=` or `@` after it there, read across the line ends its brackets hold, to
+# one outside them or to a closer of a bracket it did not open, the map's
+# own `}` after its last entry.
+function entry_below(text: str, at: i64) -> bool
+    i: i64 @ code_below(text, at: at)
+    depth: i64 @ 0
+    colon: bool @ false
+
+    while i < text.len() && !(text[i] == '\n' && depth == 0)
+        b = text[i]
+
+        if b == '#'
+            while i < text.len() && text[i] != '\n'
+                i @ i + 1
+
+            continue
+
+        if b == '"' || b == '\''
+            i @ closers.past_literal(text, from: i)
+            continue
+
+        if b == '(' || b == '[' || b == '{'
+            depth @ depth + 1
+        else if b == ')' || b == ']' || b == '}'
+            depth @ depth - 1
+
+            if depth < 0
+                return colon
+        else if depth == 0 && b == ':' && i + 1 < text.len() && text[i + 1] == ':'
+            i @ i + 1
+        else if depth == 0 && b == ':'
+            colon @ true
+        else if depth == 0 && colon && (b == '@' || b == '=' && !compared(text, at: i))
+            return false
+        i @ i + 1
+
+    return colon
+
+# Whether the `=` at `at` is part of `==`, `!=`, `<=`, `>=` or `=>`.
+function compared(text: str, at: i64) -> bool
+    after = at + 1 < text.len() && (text[at + 1] == '=' || text[at + 1] == '>')
+    return after || at > 0 && (text[at - 1] == '=' || text[at - 1] == '!' || text[at - 1] == '<' || text[at - 1] == '>')
+
+# Where the first line below the one holding `at` that holds code begins its
+# code, past blank lines and lines of a comment alone.
+function code_below(text: str, at: i64) -> i64
+    i: i64 @ at
+
+    while i < text.len()
+        while i < text.len() && text[i] != '\n'
+            i @ i + 1
+
+        i @ i + 1
+        j: i64 @ i
+
+        while j < text.len() && (text[j] == ' ' || text[j] == '\t' || text[j] == '\r')
+            j @ j + 1
+
+        if j < text.len() && text[j] != '\n' && text[j] != '#'
+            return j
+
+        # A blank line's end, or a comment's `#`, which the walk passes to
+        # its line's end.
+        i @ j
+
+    return text.len()
+
+function line_start(text: str, at: i64) -> i64
+    i: i64 @ at
+
+    while i > 0 && text[i - 1] != '\n'
+        i @ i - 1
+
+    return i
+
+# Whether nothing but spaces stands from `from` up to `to`.
+function spaces(text: str, from: i64, to: i64) -> bool
+    i: i64 @ from
+
+    while i < to
+        if text[i] != ' '
+            return false
+        i @ i + 1
+
+    return true
+
+## Tests
+
+test "a line below a lone brace is an entry where a colon stands outside its brackets with no binding after it"
+    assert entry_below("{\n    \"ziggy\": 42\n", at: 0)
+    assert entry_below("{\n    # a remark\n\n    ('a'  # c\n    ): 1}\n", at: 0)
+    assert entry_below("{\n    Room::width: f(a: 1) == 2\n", at: 0)
+    assert !entry_below("{\n    x: i64 @ 0\n", at: 0)
+    assert !entry_below("{\n    xs: [i64] = []\n", at: 0)
+    assert !entry_below("{\n    print(a: 1)\n", at: 0)
+    assert !entry_below("{\n    s = \"a: b\"\n", at: 0)
+    assert !entry_below("{\n", at: 0)
