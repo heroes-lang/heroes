@@ -1,0 +1,4 @@
+32
+99
+!sanitizer: on unknown address
+!panic: C wrote to a buffer lent to it after the call it was lent to had returned: the last lent there was the 32 elements lent to `md` of `bytes_keep32`, found when the program ended

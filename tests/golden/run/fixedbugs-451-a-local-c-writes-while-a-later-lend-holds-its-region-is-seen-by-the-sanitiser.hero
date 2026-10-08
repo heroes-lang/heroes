@@ -1,0 +1,37 @@
+# Defect 451, 2026-10-08, the shape the seal cannot see. Symptom: C keeping
+# the address of an `@` local and writing through it while a later
+# function's local held the same region wrote into that local: `later`
+# printed the 77 C wrote and not the 5 its own call wrote, at exit 0, under
+# `--sanitize` too (measured on this Mac at `56def9b4`). Cause: a region
+# given back is taken again by the next lend at its depth, which is where
+# `later`'s local lives.
+#
+# A KNOWN COST OF THE PLAIN BUILDS, PINNED: they sum a region given back
+# and check the sum when the next lend at its depth takes it, and a write
+# made while that next lend holds the region lands in its own bytes before
+# any sum is taken of them, so the plain runs still print 77
+# (`runtime/parts/lend.c`, WHAT A PLAIN BUILD CANNOT SEE). Under `--sanitize`
+# a region given back is sealed and never taken again (the quarantine), so
+# C's write meets a sealed page and AddressSanitizer names it. A plain build
+# that comes to see it turns this case red, and its expectation is then
+# written again.
+
+extern "fixedbugs-451-keepers.h"
+    function cell_keep(@out: i64)
+    function cell_write_later(v: i64)
+    function put_one(@x: i64, v: i64)
+
+function lend() -> i64
+    n: i64 @ 0
+    cell_keep(@n)
+    return n
+
+function later() -> i64
+    m: i64 @ 0
+    put_one(x: @m, v: 5)
+    cell_write_later(v: 77)
+    return m
+
+function main()
+    print(lend())
+    print(later())
