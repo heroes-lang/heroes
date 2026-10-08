@@ -73,8 +73,9 @@ as written where it does not; the whole compiler's check, the growth run and
 a case's marks are asked of a file that parses, canonical or not; and every
 answer goes into one message. The slow questions share the hook's budget,
 `marks.LIMIT`: the check is bounded by it as the growth run already was, so
-the hook ends and speaks before the 120 s the settings give it, a hook ended
-by its timeout saying nothing at all.
+the hook ends and speaks before the 120 s the settings give it. What Claude
+Code shows of a hook it ends at its timeout is a question rather than a
+premise, unmeasured; this hook prints once, at its end, so it is not asked to.
 
 Contract with the harness: the tool call arrives as JSON on stdin and the path
 is `tool_input.file_path`. A missing file, or anything unexpected, means exit 0
