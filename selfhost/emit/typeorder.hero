@@ -119,10 +119,11 @@ function definitions(@w: writer.Writer, c: state.Checked, names: ctype.Names, s:
 # function names it, and recursively (`CodeGenModule::EmitDeferred`): the top
 # of a chain's `_eq` names the next level's, which names the next, so the
 # emission recurses as deep as the chain. Measured on this Mac with a 1 MiB
-# stack, 10,000 levels with every other one an option: `-fsyntax-only`
-# passes and `-emit-llvm` dies. `used` has clang emit each function at its
-# definition, so none waits on another: 2,798 nested emissions at 1,000
-# levels became 3. It costs the binary every per-type function the unit
+# stack and defect 469's memmove, 10,000 levels with every other one an
+# option: `-fsyntax-only` passes and `-emit-llvm` dies. `used` has clang emit
+# each function at its definition, so none waits on another: the deepest of
+# six samples across a 1,000-level unit held about 2,800 nested emissions,
+# and with `used` three. It costs the binary every per-type function the unit
 # defines, called or not, which is why it is not every unit's: on the
 # compiler's own 500 units it was 55% more of clang's instructions and 131%
 # more object.
