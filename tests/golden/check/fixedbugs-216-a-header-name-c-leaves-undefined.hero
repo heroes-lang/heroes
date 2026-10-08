@@ -14,11 +14,16 @@
 # 2026-10-03, defect 235: `*` is refused in any name, no NTFS file holding
 # one, and what nothing carries is told before a thesis rule (panel 188), so
 # `e/*b.h` is `unwritable_name` now, its `/*` no longer reached.
+#
+# 2026-10-07, defect 445: `"` stands in no NTFS file's name either (Win32
+# error 123, defect 252's measure on the Windows box), so `a\"b.h` is
+# `unwritable_name` too, told before the thesis rule, and `check
+# --permissive` refuses it as it refuses `*`; `'` and `//` stay C's.
 
 extern "a'b.h"    #~ undefined_header_name
     function g1() -> i32
 
-extern "a\"b.h"    #~ undefined_header_name
+extern "a\"b.h"    #~ unwritable_name
     function g3() -> i32
 
 extern "d//b.h"    #~ undefined_header_name
