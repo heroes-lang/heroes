@@ -1,0 +1,287 @@
+# A recovery plan's pairs: for every ordered pair of operators, a mistake
+# the compiler reported followed by one it told on its own site, in one
+# program, in distinct files (defect 448; the Python instrument's
+# `recovery.py`, its `reported`, `on_site`, `pair_ok` and `plan_pairs`,
+# rule for rule).
+#
+# A pair asks whether a first mistake hides the next one, so its first must
+# be one the compiler reports alone and its second one it tells on its own
+# site alone: what the singles' judgement answered (`mutate/brief.hero`).
+# Where the singles hold no pair for an ordered pair of operators, one is
+# planted from the sites (`fallback`), and a half the singles did not hold
+# is added to them, to be judged alone as every pair's halves are.
+
+use mutate/ascii_json
+use mutate/json_fields
+use mutate/json_read
+use mutate/mutant
+use mutate/operators
+use mutate/strata
+
+# Pairs per ordered pair of operators, in distinct files: `--pair-samples`.
+constant SAMPLES: i64
+    2
+
+# Files of the sites a fallback reads, and firsts of each it tries.
+constant FALLBACK_FILES: i64
+    40
+
+constant FALLBACK_FIRSTS: i64
+    6
+
+record Pair
+    a: str
+    b: str
+    a_op: str
+    b_op: str
+    file: str
+    fallback: bool
+
+record Paired
+    pairs: [Pair]
+    extra: [mutant.Mutant]
+
+# Two mutants that are not one: another operator, or another anchor.
+function distinct(a: mutant.Mutant, b: mutant.Mutant) -> bool
+    return a.op != b.op || a.anchor != b.anchor || a.file != b.file
+
+# `b` after `a` in one program: `b` begins after `a`'s first hunk, the two
+# touch different statements, and their hunks can be planted together.
+function pair_ok(a: mutant.Mutant, b: mutant.Mutant) -> bool
+    if a.file != b.file || !distinct(a: a, b: b)
+        return false
+    b_start = mutant.first_start(b)
+
+    if b_start < a.hunks[0].end || b_start <= mutant.first_start(a)
+        return false
+
+    for x in a.stmts
+        for y in b.stmts
+            if x == y
+                return false
+
+    return mutant.compatible(a: a, b: b)
+
+# `plan` the singles in order, with what each was told alone: `reported`
+# (a first), `second` (told on its site, in either arm); `sites` every
+# operator's sites, the table's order.
+function planned(plan: [mutant.Mutant], named: [str], reported: [bool], second: [bool], sites: [strata.Sites]) -> Paired
+    firsts: {str: [i64]} @ {}
+    seconds: {str: [i64]} @ {}
+
+    for i in range(from: 0, to: plan.len())
+        if reported[i]
+            firsts[plan[i].op] @ firsts[plan[i].op].default([]).push(i)
+
+        if second[i]
+            seconds[plan[i].op] @ seconds[plan[i].op].default([]).push(i)
+
+    # Each operator's seconds by file, each file's by where they begin.
+    by_file: {str: {str: [i64]}} @ {}
+
+    for op in operators.IDS
+        files: {str: [i64]} @ {}
+
+        for i in seconds[op].default([])
+            files[plan[i].file] @ files[plan[i].file].default([]).push(i)
+
+        sorted_files: {str: [i64]} @ {}
+
+        # ORDER: none observed; each file's list is ordered on its own.
+        for f in keys(files)
+            list = files[f].must()
+            starts: [str] @ []
+
+            for i in list
+                starts @ starts.push(strata.padded(mutant.first_start(plan[i])))
+
+            in_order: [i64] @ []
+
+            for pos in strata.ordered_by(starts)
+                in_order @ in_order.push(list[pos])
+
+            sorted_files[f] @ in_order
+
+        by_file[op] @ sorted_files
+
+    pairs: [Pair] @ []
+    missing: [[str]] @ []
+
+    for a_op in operators.IDS
+        for b_op in operators.IDS
+            got = pairs_of(
+                plan,
+                named: named,
+                a_op: a_op,
+                b_op: b_op,
+                firsts: firsts[a_op].default([]),
+                seconds: by_file[b_op].must(),
+                @pairs
+            )
+
+            if got == 0
+                missing @ missing.push([a_op, b_op])
+
+    return fallbacks(named: named, sites: sites, missing: missing, pairs: pairs)
+
+# The pairs of one ordered pair of operators, up to `SAMPLES`, each in a
+# file of its own; how many were found.
+function pairs_of(plan: [mutant.Mutant], named: [str], a_op: str, b_op: str, firsts: [i64], seconds: {str: [i64]}, @pairs: [Pair]) -> i64
+    order_keys: [str] @ []
+
+    for i in firsts
+        order_keys @ order_keys.push(strata.hkey([a_op, b_op, plan[i].file, plan[i].anchor]))
+
+    got: i64 @ 0
+    used: {str: bool} @ {}
+
+    for pos in strata.ordered_by(order_keys)
+        a = firsts[pos]
+
+        if !used[plan[a].file].is_err()
+            continue
+        none: [i64] = []
+
+        for b in seconds[plan[a].file].default(none)
+            if pair_ok(a: plan[a], b: plan[b])
+                pairs @ pairs.push(
+                    Pair(a: named[a], b: named[b], a_op: a_op, b_op: b_op, file: plan[a].file, fallback: false)
+                )
+                used[plan[a].file] @ true
+                got @ got + 1
+                break
+
+        if got >= SAMPLES
+            break
+
+    return got
+
+# Where the singles hold no pair for an ordered pair of operators, one
+# planted from the sites, in the files the two share, by their hash.
+function fallbacks(named: [str], sites: [strata.Sites], missing: [[str]], pairs: [Pair]) -> Paired
+    out: [Pair] @ pairs
+    extra: [mutant.Mutant] @ []
+    known: {str: bool} @ {}
+
+    for k in named
+        known[k] @ true
+
+    by_op: {str: {str: [mutant.Mutant]}} @ {}
+
+    for one in sites
+        files: {str: [mutant.Mutant]} @ {}
+
+        for m in one.found
+            files[m.file] @ files[m.file].default([]).push(m)
+
+        by_op[one.op] @ files
+
+    for both in missing
+        a_op = both[0]
+        b_op = both[1]
+        a_files = by_op[a_op].default({})
+        b_files = by_op[b_op].default({})
+        shared: [str] @ []
+        shared_keys: [str] @ []
+
+        # ORDER: none observed; the shared files are ordered by their hash.
+        for f in keys(a_files)
+            if !b_files[f].is_err()
+                shared @ shared.push(f)
+                shared_keys @ shared_keys.push(strata.hkey([a_op, b_op, f]))
+
+        found = first_fit(a_op, files: ordered(items: shared, by: shared_keys), a_files: a_files, b_files: b_files)
+
+        if found.len() == 2
+            for m in found
+                k = mutant.key_of(m)
+
+                if known[k].is_err()
+                    extra @ extra.push(m)
+                    known[k] @ true
+
+            out @ out.push(
+                Pair(a: mutant.key_of(found[0]), b: mutant.key_of(found[1]), a_op: a_op, b_op: b_op, file: found[0].file, fallback: true)
+            )
+
+    return Paired(pairs: out, extra: extra)
+
+function ordered(items: [str], by: [str]) -> [str]
+    out: [str] @ []
+
+    for pos in strata.ordered_by(by)
+        out @ out.push(items[pos])
+
+    return out
+
+# The first pair that fits in the first `FALLBACK_FILES` files: of each
+# file's first `FALLBACK_FIRSTS` firsts by their anchor's hash, each tried
+# against the seconds in the order they begin.
+function first_fit(a_op: str, files: [str], a_files: {str: [mutant.Mutant]}, b_files: {str: [mutant.Mutant]}) -> [mutant.Mutant]
+    tried: i64 @ 0
+
+    for f in files
+        if tried >= FALLBACK_FILES
+            break
+        tried @ tried + 1
+        a_all = a_files[f].must()
+        a_keys: [str] @ []
+
+        for m in a_all
+            a_keys @ a_keys.push(strata.hkey([a_op, m.anchor]))
+
+        b_all = b_files[f].must()
+        b_keys: [str] @ []
+
+        for m in b_all
+            b_keys @ b_keys.push(strata.padded(mutant.first_start(m)))
+
+        b_order = strata.ordered_by(b_keys)
+        taken: i64 @ 0
+
+        for ai in strata.ordered_by(a_keys)
+            if taken >= FALLBACK_FIRSTS
+                break
+            taken @ taken + 1
+
+            for bi in b_order
+                if pair_ok(a: a_all[ai], b: b_all[bi])
+                    return [a_all[ai], b_all[bi]]
+
+    none: [mutant.Mutant] = []
+    return none
+
+# A pair as `plan-pairs.jsonl` holds it.
+function row(p: Pair) -> str
+    names: [str] @ ["a", "b", "a_op", "b_op", "file"]
+    values: [json_read.Json] @ [
+        json_fields.string(p.a)
+        json_fields.string(p.b)
+        json_fields.string(p.a_op)
+        json_fields.string(p.b_op)
+        json_fields.string(p.file)
+    ]
+
+    if p.fallback
+        names @ names.push("fallback")
+        values @ values.push(.truth(v: true))
+    return ascii_json.written(.fields(names: names, values: values))
+
+## Tests
+
+function at(line: i64, stmt: i64, op: str) -> mutant.Mutant
+    return mutant.made(
+        op: op,
+        file: "f",
+        anchor: "L" + line.to_str(),
+        hunks: [mutant.hunk(start: line - 1, end: line, lines: ["x"])],
+        context: "c",
+        stmts: [stmt]
+    )
+
+test "a pair's second begins after its first, in another statement, and the two fit together"
+    assert pair_ok(a: at(line: 2, stmt: 1, op: "o"), b: at(line: 5, stmt: 2, op: "o"))
+    assert !pair_ok(a: at(line: 5, stmt: 1, op: "o"), b: at(line: 2, stmt: 2, op: "o"))
+    assert !pair_ok(a: at(line: 2, stmt: 1, op: "o"), b: at(line: 5, stmt: 1, op: "o"))
+    assert !pair_ok(a: at(line: 2, stmt: 1, op: "o"), b: at(line: 2, stmt: 2, op: "p"))
+    assert row(Pair(a: "k1", b: "k2", a_op: "o", b_op: "p", file: "é.hero", fallback: true)) == "{\"a\": \"k1\", \"b\": \"k2\", \"a_op\": \"o\", \"b_op\": \"p\", \"file\": \"\\u00e9.hero\", \"fallback\": true}"

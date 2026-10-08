@@ -1,0 +1,178 @@
+# The recovery plan's operators of foreign words: a keyword another
+# language spells otherwise, `let`, `var`, `pub`, a keyword's letters
+# transposed (defect 448; the Python instrument's `ops.py`, its section
+# *words*, rule for rule, each appending its mutants in the order the
+# Python's generator yielded them).
+
+use mutate/model
+use mutate/mutant
+use mutate/op_base
+use mutate/tokens
+
+## Words
+
+# The first token of a statement of `kinds`, of kind `kw`, written `word`.
+function first_word(op: str, word: str, kinds: [str], kw: str, p: model.Program, @out: [mutant.Mutant])
+    for s in p.stmts
+        if !op_base.one_of(s.kind, set: kinds) || s.toks[0].kind != kw
+            continue
+        out @ out.push(op_base.swapped(op: op, p, t: s.toks[0], word: word, context: s.kind, sid: s.sid))
+
+# `function` written `word`, where it begins a declaration and, with
+# `types_too`, where it begins a function type after `(`.
+function function_word(op: str, word: str, types_too: bool, p: model.Program, @out: [mutant.Mutant])
+    for s in p.stmts
+        for i in range(from: 0, to: s.toks.len())
+            t = s.toks[i]
+
+            if t.kind != "kw_function"
+                continue
+            context: str @ ""
+
+            if i == 0 && (s.kind == "top-function" || s.kind == "member-function")
+                context @ s.kind
+            else if types_too && i > 0 && s.toks[i - 1].kind == "lparen"
+                context @ "function-type"
+            else
+                continue
+            out @ out.push(op_base.swapped(op: op, p, t: t, word: word, context: context, sid: s.sid))
+
+function let_word(p: model.Program, @out: [mutant.Mutant])
+    for s in p.stmts
+        if s.kind != "bind" || s.toks[0].kind != "ident"
+            continue
+        t = s.toks[0]
+        context: str @ "bind"
+
+        if t.text == "_"
+            context @ "discard"
+        else if s.head && s.opens == "arms"
+            context @ "bound-match"
+        else if s.head
+            context @ "bound-if"
+        out @ out.push(op_base.prefixed(op: "let", p, t: t, word: "let ", context: context, sid: s.sid))
+
+function var_word(p: model.Program, @out: [mutant.Mutant])
+    for s in p.stmts
+        if s.kind != "declare"
+            continue
+        context: str @ "declare"
+
+        if s.head
+            context @ "bound-head"
+        out @ out.push(op_base.prefixed(op: "var", p, t: s.toks[0], word: "var ", context: context, sid: s.sid))
+
+function const_local(p: model.Program, @out: [mutant.Mutant])
+    for s in p.stmts
+        if s.kind != "bind" || s.head || s.parent < 0
+            continue
+        t = s.toks[0]
+
+        if t.kind != "ident" || t.text == "_"
+            continue
+        out @ out.push(op_base.prefixed(op: "const-local", p, t: t, word: "const ", context: "bind", sid: s.sid))
+
+function elif_word(p: model.Program, @out: [mutant.Mutant])
+    for s in p.stmts
+        if s.kind != "else-if"
+            continue
+        a = s.toks[0]
+        b = s.toks[1]
+
+        if a.line != b.line
+            continue
+        text = model.line(p, no: a.line).text
+        out @ out.push(
+            op_base.mk(op: "elif", p, anchor: tokens.anchor(a), hunks: [op_base.line_edit(no: a.line, text: op_base.splice(text: text, c0: a.c0, c1: b.c1, put: "elif"))], context: "else-if", stmts: [s.sid])
+        )
+
+function switch_word(p: model.Program, @out: [mutant.Mutant])
+    for s in p.stmts
+        for t in s.toks
+            if t.kind == "kw_match"
+                out @ out.push(op_base.swapped(op: "switch", p, t: t, word: "switch", context: s.kind, sid: s.sid))
+
+function case_word(p: model.Program, @out: [mutant.Mutant])
+    for s in p.stmts
+        if s.kind != "arm"
+            continue
+        context: str @ "arm"
+
+        if s.head
+            context @ "arm-block"
+        out @ out.push(op_base.prefixed(op: "case", p, t: s.toks[0], word: "case ", context: context, sid: s.sid))
+
+# Every name `from` written `to`.
+function swap_ident(op: str, from: str, to: str, p: model.Program, @out: [mutant.Mutant])
+    for s in p.stmts
+        for t in s.toks
+            if t.kind == "ident" && t.text == from
+                out @ out.push(op_base.swapped(op: op, p, t: t, word: to, context: s.kind, sid: s.sid))
+
+# Every token of `kind` written `to`.
+function swap_kind(op: str, kind: str, to: str, p: model.Program, @out: [mutant.Mutant])
+    for s in p.stmts
+        for t in s.toks
+            if t.kind == kind
+                out @ out.push(op_base.swapped(op: op, p, t: t, word: to, context: s.kind, sid: s.sid))
+
+function pub(p: model.Program, @out: [mutant.Mutant])
+    for s in p.stmts
+        if s.parent >= 0 || !op_base.one_of(s.kind, set: ["top-function", "top-record", "top-variant", "top-constant"])
+            continue
+        out @ out.push(op_base.prefixed(op: "pub", p, t: s.toks[0], word: "pub ", context: s.kind, sid: s.sid))
+
+function keyword_typo(p: model.Program, @out: [mutant.Mutant])
+    kinds = ["kw_record", "kw_function", "kw_variant", "kw_constant"]
+    typos = ["recrod", "fucntion", "varaint", "cosntant"]
+
+    for s in p.stmts
+        if s.parent >= 0
+            continue
+        t = s.toks[0]
+
+        for i in range(from: 0, to: kinds.len())
+            if t.kind == kinds[i]
+                out @ out.push(
+                    op_base.swapped(op: "keyword-typo", p, t: t, word: typos[i], context: s.kind, sid: s.sid)
+                )
+
+## The family's ids
+
+# Whether `id` is one of this family's operators, having run it on `p`.
+function run(id: str, p: model.Program, @out: [mutant.Mutant]) -> bool?
+    if id == "fn" || id == "func"
+        function_word(op: id, word: id, types_too: true, p: p, @out)
+    else if id == "def"
+        function_word(op: id, word: id, types_too: false, p: p, @out)
+    else if id == "struct" || id == "class"
+        first_word(op: id, word: id, kinds: ["top-record", "member-record"], kw: "kw_record", p: p, @out)
+    else if id == "enum" || id == "union"
+        first_word(op: id, word: id, kinds: ["top-variant"], kw: "kw_variant", p: p, @out)
+    else if id == "const"
+        first_word(op: id, word: id, kinds: ["top-constant", "member-constant"], kw: "kw_constant", p: p, @out)
+    else if id == "import"
+        first_word(op: id, word: id, kinds: ["top-use"], kw: "kw_use", p: p, @out)
+    else if id == "let"
+        let_word(p, @out)
+    else if id == "var"
+        var_word(p, @out)
+    else if id == "const-local"
+        const_local(p, @out)
+    else if id == "elif"
+        elif_word(p, @out)
+    else if id == "switch"
+        switch_word(p, @out)
+    else if id == "case"
+        case_word(p, @out)
+    else if id == "int"
+        swap_ident(op: id, from: "i64", to: "int", p: p, @out)
+    else if id == "null"
+        swap_kind(op: id, kind: "kw_nullptr", to: "null", p: p, @out)
+    else if id == "pub"
+        pub(p, @out)
+    else if id == "keyword-typo"
+        keyword_typo(p, @out)
+    else
+        return ok(false)
+    return ok(true)

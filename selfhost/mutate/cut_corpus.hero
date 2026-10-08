@@ -1,0 +1,175 @@
+# The corpus a recovery plan is cut from, and the corpus it is frozen with
+# (defect 448; the Python instrument's `recovery.py`, its `tracked_files`
+# and `prepare`, and defect 210's frozen `corpus/`).
+#
+# A cut reads a TREE, a folder of programs exported from a commit (`git
+# archive`): every `.hero` file under it, its folders named `.git`,
+# `node_modules` and `worktrees` left out wherever they stand, as the
+# Python walked a tree that was not a checkout. A checkout is refused
+# (`cut.hero`): what a build or another lane left beside a commit's files
+# would be read as programs of the corpus. Every program is copied into the
+# cut's mirror, where it is checked and its mutants are planted beside it.
+#
+# **The Python's wall clock is a count here.** The Python left out a
+# program whose own check took longer than 0.8 s, which a loaded machine
+# answers otherwise from one run to the next (a premise about the world,
+# `.claude/rules/module-shape.md`). A check reads its program's `use`
+# closure, and the cost of each of its mutants grows with it, so the cut
+# leaves out a program whose closure holds more than `CLOSURE_CAP` bytes.
+# Measured on the tree the frozen plan was cut from (c85bccb8), the nine
+# programs the Python left out are the nine whose closure holds 728,205
+# bytes or more (`selfhost/grammar_expr.hero` the least), and the largest
+# it kept holds 299,470 (`tests/harness/suite_records.hero`): the cap
+# stands between the two, so the cut keeps what the frozen plan kept.
+
+use cli/process
+use library_source
+use modules
+
+# Bytes of source a program's `use` closure may hold and be kept.
+constant CLOSURE_CAP: i64
+    524288
+
+constant SKIPPED: [str]
+    [
+        ".git"
+        "node_modules"
+        "worktrees"
+    ]
+
+# Every `.hero` file under `tree`, relative to it, sorted by bytes (the
+# Python's `sorted`, code points and UTF-8 bytes ordering alike).
+function listed(tree: str) -> [str]?
+    walked = process.walk(tree)?
+
+    if walked.unnamed.len() > 0
+        return fail(code: "no_corpus", msg: process.unnamed_said(walked.unnamed[0]))
+    out: [str] @ []
+    root = tree + "/"
+
+    for path in walked.files
+        rel = path.slice(from: root.len(), to: path.len())
+
+        if ends_hero(rel) && !skipped(rel)
+            out @ out.push(rel)
+
+    return ok(sort(out))
+
+function ends_hero(path: str) -> bool
+    tail = ".hero"
+    return path.len() >= tail.len() && path.slice(from: path.len() - tail.len(), to: path.len()) == tail
+
+# Whether a folder of the path, its last part being the file, is skipped.
+function skipped(rel: str) -> bool
+    start: i64 @ 0
+
+    for at in range(from: 0, to: rel.len())
+        if rel[at] == '/'
+            part = rel.slice(from: start, to: at)
+
+            for name in SKIPPED
+                if part == name
+                    return true
+
+            start @ at + 1
+
+    return false
+
+# Every program copied into the mirror; the ones whose bytes are not text,
+# which the compiler refuses unread, are named and left out of it.
+function mirrored(tree: str, files: [str], mirror: str) -> [str]?
+    unread: [str] @ []
+
+    for rel in files
+        text = read_file(tree + "/" + rel)
+
+        if text.is_err()
+            unread @ unread.push(rel)
+            continue
+        target = mirror + "/" + rel
+        process.mkdir_all(folder(target))?
+
+        if write_file(path: target, text: text.must()).is_err()
+            return fail(code: "unwritable", msg: "cannot write " + target)
+
+    return ok(unread)
+
+function folder(path: str) -> str
+    at: i64 @ path.len() - 1
+
+    while at > 0 && path[at] != '/'
+        at @ at - 1
+
+    return path.slice(from: 0, to: at)
+
+# The files a check of `rel` reads, as the compiler loads them, relative
+# to the mirror, the program first: its `use` closure.
+function closure(mirror: str, rel: str) -> [str]?
+    path = mirror + "/" + rel
+    text = read_file(path)
+
+    if text.is_err()
+        return fail(code: "no_corpus", msg: "cannot read " + path)
+    loaded = modules.load_text(path: path, root_text: text.must(), library: library_source.text())?
+    out: [str] @ []
+    prefix = mirror + "/"
+
+    for f in loaded.files
+        if !f.is_library && f.name.len() > prefix.len() && f.name.slice(from: 0, to: prefix.len()) == prefix
+            out @ out.push(f.name.slice(from: prefix.len(), to: f.name.len()))
+
+    return ok(out)
+
+# The bytes of every file of a closure.
+function closure_bytes(mirror: str, files: [str]) -> i64?
+    total: i64 @ 0
+
+    for rel in files
+        text = read_file(mirror + "/" + rel)
+
+        if text.is_err()
+            return fail(code: "no_corpus", msg: "cannot read " + mirror + "/" + rel)
+        total @ total + text.must().len()
+
+    return ok(total)
+
+# The frozen corpus: every file `programs` read, each `<path>.frozen` under
+# `<out>/corpus/`, named so no walker of `.hero` files reads a program the
+# language may move under (defect 210's step 1); how many were written.
+function frozen(mirror: str, out: str, programs: [str]) -> i64?
+    seen: {str: bool} @ {}
+
+    for rel in programs
+        for file in closure(mirror: mirror, rel: rel)?
+            seen[file] @ true
+
+    # ORDER: none observed; each file is written once, wherever it falls.
+    for file in keys(seen)
+        text = read_file(mirror + "/" + file)
+
+        if text.is_err()
+            return fail(code: "no_corpus", msg: "cannot read " + mirror + "/" + file)
+        target = out + "/corpus/" + file + ".frozen"
+        process.mkdir_all(folder(target))?
+
+        if write_file(path: target, text: text.must()).is_err()
+            return fail(code: "unwritable", msg: "cannot write " + target)
+
+    return ok(seen.len())
+
+## Tests
+
+test "a folder named .git, node_modules or worktrees is skipped wherever it stands, and a file so named is not"
+    assert skipped("a/.git/x.hero")
+    assert skipped("node_modules/x.hero")
+    assert skipped(".claude/worktrees/lane/selfhost/main.hero")
+    assert !skipped("examples/worktrees.hero")
+    assert !skipped("x.hero")
+    assert ends_hero("a/b.hero")
+    assert !ends_hero("a/b.her")
+    assert folder("o/work/mirror/a/b.hero") == "o/work/mirror/a"
+
+test "a program's closure is what the compiler loads for it, the program first"
+    got = closure(mirror: "tests/golden/surface-fixtures", rel: "nested/main.hero").must()
+    assert got[0] == "nested/main.hero"
+    assert got.len() > 1

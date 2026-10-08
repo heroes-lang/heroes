@@ -1,0 +1,97 @@
+# Whitespace as Python's `str.strip` and `str.rstrip` take it off, and a
+# character's code point: what the recovery plan's operators measure a
+# line with (defect 448).
+#
+# The Python instrument that cut the frozen plan stripped a line with
+# `strip()`, which takes off every character `str.isspace` answers yes to,
+# above ASCII as well, and a cut made here must take off the same: a line
+# stripped of less would plant another text. A `str` here is bytes (spec
+# § 10), so a character is decoded from its UTF-8 before it is asked.
+
+# The length of `text` with its trailing whitespace off, as Python's
+# `rstrip()` takes it: every character `str.isspace` answers yes to.
+function trimmed_end(text: str) -> i64
+    at: i64 @ text.len()
+
+    while at > 0
+        begins: i64 @ at - 1
+
+        while begins > 0 && text[begins] >= 128 && text[begins] < 192
+            begins @ begins - 1
+
+        if !space(code_at(text, at: begins))
+            return at
+        at @ begins
+
+    return at
+
+# `text` with its whitespace off both ends, as Python's `strip()` takes it.
+function stripped(text: str) -> str
+    end = trimmed_end(text)
+    start: i64 @ 0
+
+    while start < end && space(code_at(text, at: start))
+        start @ start + width_at(text, at: start)
+
+    return text.slice(from: start, to: end)
+
+# The code point of the character beginning at `at`; a byte that begins
+# none is read as itself, which no whitespace is.
+function code_at(text: str, at: i64) -> i64
+    b = text[at].to_i64().must()
+    width = width_at(text, at: at)
+
+    if width == 1
+        return b
+    code: i64 @ b & 127 >> width
+    i: i64 @ 1
+
+    while i < width
+        code @ code << 6 | text[at + i].to_i64().must() & 63
+        i @ i + 1
+
+    return code
+
+# The bytes of the character beginning at `at`, by its lead byte, never
+# past the text.
+function width_at(text: str, at: i64) -> i64
+    b = text[at]
+    width: i64 @ 1
+
+    if b >= 240
+        width @ 4
+    else if b >= 224
+        width @ 3
+    else if b >= 192
+        width @ 2
+
+    if at + width > text.len()
+        return 1
+    return width
+
+# What Python's `str.isspace` answers yes to: ASCII's six and its four
+# separators, NEL, NO-BREAK SPACE, OGHAM SPACE MARK, U+2000 to U+200A, the
+# LINE and PARAGRAPH SEPARATORS, NARROW NO-BREAK SPACE, MEDIUM MATHEMATICAL
+# SPACE and IDEOGRAPHIC SPACE.
+function space(code: i64) -> bool
+    if code == 32 || code >= 9 && code <= 13 || code >= 28 && code <= 31
+        return true
+
+    if code == 133 || code == 160 || code == 5760
+        return true
+
+    if code >= 8192 && code <= 8202 || code == 8232 || code == 8233
+        return true
+    return code == 8239 || code == 8287 || code == 12288
+
+## Tests
+
+test "whitespace comes off as Python's strip takes it off"
+    assert stripped("  a b \t") == "a b"
+    assert stripped("\u{85}x\u{2028}") == "x"
+    assert trimmed_end("x  ") == 1
+    assert stripped("") == ""
+    assert code_at("é€😀", at: 2) == 8364
+    assert width_at("é€😀", at: 5) == 4
+    assert space(12288)
+    assert !space(8203)

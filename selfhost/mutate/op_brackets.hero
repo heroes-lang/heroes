@@ -1,0 +1,332 @@
+# The recovery plan's operators of brackets, commas and strings: a closer
+# left out or of the wrong kind, a comma missing or trailing, a string in
+# single quotes, an interpolation as another language writes it (defect
+# 448; the Python instrument's `ops.py`, its section *brackets, commas,
+# strings*, rule for rule, each appending its mutants in the order the
+# Python's generator yielded them).
+
+use bytes
+use mutate/model
+use mutate/mutant
+use mutate/op_base
+use mutate/tokens
+
+# The last token of a line when it is `)` or `]` whose opener is on the
+# same line: the opener's index and the closer's in the line's tokens.
+function last_closer(l: model.Line) -> [i64]
+    none: [i64] = []
+    toks = l.toks
+
+    if toks.len() == 0 || toks[toks.len() - 1].kind != "rparen" && toks[toks.len() - 1].kind != "rbracket"
+        return none
+    stack: [i64] @ []
+
+    for i in range(from: 0, to: toks.len())
+        if tokens.opener(toks[i].kind)
+            stack @ stack.push(i)
+        else if tokens.closer(toks[i].kind)
+            if stack.len() == 0
+                return none
+            o = stack[stack.len() - 1]
+            stack @ stack.slice(from: 0, to: stack.len() - 1)
+
+            if i == toks.len() - 1
+                return [o, i]
+
+    return none
+
+# `wrong` false: the closer left out; true: the other kind written.
+function closer_slip(wrong: bool, p: model.Program, @out: [mutant.Mutant])
+    for l in p.lines
+        got = last_closer(l)
+
+        if got.len() == 0 || l.stmt < 0
+            continue
+        c = l.toks[got[1]]
+
+        if wrong
+            other: str @ ")"
+
+            if c.text == ")"
+                other @ "]"
+            out @ out.push(
+                op_base.swapped(op: "wrong-closer", p, t: c, word: other, context: c.text + "->" + other, sid: l.stmt)
+            )
+        else
+            out @ out.push(op_base.swapped(op: "bracket-open", p, t: c, word: "", context: c.text, sid: l.stmt))
+
+function extra_closer(p: model.Program, @out: [mutant.Mutant])
+    for s in p.stmts
+        if s.head || !op_base.simple_kind(s.kind)
+            continue
+        t = s.toks[s.toks.len() - 1]
+
+        if t.kind != "rparen"
+            continue
+        text = model.line(p, no: t.line).text
+        out @ out.push(
+            op_base.mk(op: "extra-closer", p, anchor: tokens.anchor(t), hunks: [op_base.line_edit(no: t.line, text: op_base.splice(text: text, c0: t.c1, c1: t.c1, put: ")"))], context: s.kind, stmts: [s.sid])
+        )
+
+function stray_closer_head(p: model.Program, @out: [mutant.Mutant])
+    for s in p.stmts
+        if !op_base.block_ok(s) || !op_base.one_of(s.kind, set: ["if", "else-if", "while", "for", "match", "top-function", "top-test", "top-record", "top-variant", "top-constant"])
+            continue
+        out @ out.push(op_base.appended(op: "stray-closer-head", p, s: s, word: " )", anchor: "S" + s.first.to_str()))
+
+function missing_comma(p: model.Program, @out: [mutant.Mutant])
+    for s in p.stmts
+        toks = s.toks
+        around = op_base.enclosing(toks).around
+
+        for i in range(from: 1, to: toks.len() - 1)
+            t = toks[i]
+
+            if t.kind != "comma" || toks[i - 1].line != t.line || toks[i + 1].line != t.line
+                continue
+            o = around[i]
+
+            if o < 0
+                continue
+            context: str @ "array"
+
+            if toks[o].kind != "lbracket"
+                if !op_base.is_call_paren(toks, i: o)
+                    continue
+                context @ "call"
+
+                if op_base.decl_head(s)
+                    context @ "params"
+            out @ out.push(op_base.swapped(op: "missing-comma", p, t: t, word: "", context: context, sid: s.sid))
+
+function trailing_comma(p: model.Program, @out: [mutant.Mutant])
+    for s in p.stmts
+        if op_base.decl_head(s)
+            continue
+        toks = s.toks
+
+        for pair in op_base.enclosing(toks).pairs
+            o = pair[0]
+            c = pair[1]
+
+            if c <= 0 || c - o < 2 || toks[o].line != toks[c].line
+                continue
+
+            if !op_base.is_call_paren(toks, i: o) && toks[o].kind != "lbracket"
+                continue
+
+            if !comma_inside(toks, o: o, c: c)
+                continue
+            prev = toks[c - 1]
+            text = model.line(p, no: prev.line).text
+            context: str @ "array"
+
+            if toks[o].kind == "lparen"
+                context @ "call"
+            out @ out.push(
+                op_base.mk(op: "trailing-comma", p, anchor: tokens.anchor(toks[c]), hunks: [op_base.line_edit(no: prev.line, text: op_base.splice(text: text, c0: prev.c1, c1: prev.c1, put: ","))], context: context, stmts: [s.sid])
+            )
+
+# A comma at the opener's own depth plus one, between it and its closer.
+function comma_inside(toks: [tokens.Tok], o: i64, c: i64) -> bool
+    for j in range(from: o + 1, to: c)
+        if toks[j].kind == "comma" && toks[j].depth == toks[o].depth + 1
+            return true
+
+    return false
+
+function string_open(p: model.Program, @out: [mutant.Mutant])
+    for s in p.stmts
+        for t in s.toks
+            if t.kind != "str" || t.text.len() < 2 || t.text[0] != '"' || t.text[t.text.len() - 1] != '"'
+                continue
+            text = model.line(p, no: t.line).text
+            out @ out.push(
+                op_base.mk(op: "string-open", p, anchor: tokens.anchor(t), hunks: [op_base.line_edit(no: t.line, text: op_base.splice(text: text, c0: t.c1 - 1, c1: t.c1, put: ""))], context: s.kind, stmts: [s.sid])
+            )
+
+function single_quotes(p: model.Program, @out: [mutant.Mutant])
+    for s in p.stmts
+        for t in s.toks
+            if t.kind != "str" || t.text.len() == 0 || t.text[0] != '"'
+                continue
+            inner = inside(t.text)
+
+            if tokens.characters(inner) < 2 || has(inner, byte: '\'') || has(inner, byte: '\\')
+                continue
+            out @ out.push(
+                op_base.swapped(op: "single-quotes", p, t: t, word: "'" + inner + "'", context: s.kind, sid: s.sid)
+            )
+
+# `text[1:-1]`: its first and last character off, both ASCII here.
+function inside(text: str) -> str
+    return op_base.cut(text, from: 1, to: text.len() - 1)
+
+function has(text: str, byte: u8) -> bool
+    for at in range(from: 0, to: text.len())
+        if text[at] == byte
+            return true
+
+    return false
+
+function starts(text: str, head: str) -> bool
+    return bytes.bytes_at(text: text, at: 0, needle: head)
+
+function ends(text: str, tail: str) -> bool
+    return text.len() >= tail.len() && bytes.bytes_at(text: text, at: text.len() - tail.len(), needle: tail)
+
+# The interpolated strings of one line in a statement, each as the indices
+# of its tokens: the first piece `f"...{`, the holes, middle pieces
+# `}...{`, the last piece `}..."`. One holding another is left out.
+function fstrings(s: model.Statement) -> [[i64]]
+    out: [[i64]] @ []
+    toks = s.toks
+    i: i64 @ 0
+
+    while i < toks.len()
+        t = toks[i]
+
+        if !(t.kind == "str_piece" && starts(text: t.text, head: "f\"") && ends(text: t.text, tail: "{"))
+            i @ i + 1
+            continue
+        j: i64 @ i + 1
+        done: i64 @ -1
+
+        while j < toks.len()
+            u = toks[j]
+
+            if u.kind == "str_piece"
+                if starts(text: u.text, head: "f\"")
+                    break
+
+                if starts(text: u.text, head: "}") && ends(text: u.text, tail: "{") && u.text.len() >= 2
+                    j @ j + 1
+                    continue
+
+                if starts(text: u.text, head: "}") && ends(text: u.text, tail: "\"")
+                    done @ j
+                break
+            j @ j + 1
+
+        if done >= 0 && one_line(toks, from: i, to: done)
+            out @ out.push(range(from: i, to: done + 1))
+            i @ done + 1
+        else
+            i @ j + 1
+
+    return out
+
+function one_line(toks: [tokens.Tok], from: i64, to: i64) -> bool
+    for k in range(from: from, to: to + 1)
+        if toks[k].line != toks[from].line
+            return false
+
+    return true
+
+# The line with one interpolated string rewritten in `style`: `plain`
+# without its `f`, `swift` as `\(x)`, `js` as a template literal; none
+# where it writes a brace as `{{` or `}}`.
+function interp_rewrite(p: model.Program, toks: [tokens.Tok], style: str) -> [str]
+    none: [str] = []
+    text = model.line(p, no: toks[0].line).text
+    a = toks[0].c0
+    b = toks[toks.len() - 1].c1
+    span = op_base.cut(text, from: a, to: b)
+
+    if has_pair(span, byte: '{') || has_pair(span, byte: '}')
+        return none
+    pieces: [tokens.Tok] @ []
+
+    for t in toks
+        if t.kind == "str_piece"
+            pieces @ pieces.push(t)
+
+    res: [str] @ []
+    pos: i64 @ a
+
+    for k in range(from: 0, to: pieces.len())
+        t = pieces[k]
+        res @ res.push(op_base.cut(text, from: pos, to: t.c0))
+        piece: str @ t.text
+
+        if k == 0
+            piece @ op_base.cut(t.text, from: 1, to: t.text.len())
+        res @ res.push(rewritten(piece: piece, first: k == 0, last: k == pieces.len() - 1, style: style))
+        pos @ t.c1
+
+    return [op_base.cut(text, from: 0, to: a) + res.join("") + op_base.cut(text, from: b, to: text.len())]
+
+function has_pair(text: str, byte: u8) -> bool
+    for at in range(from: 1, to: text.len())
+        if text[at] == byte && text[at - 1] == byte
+            return true
+
+    return false
+
+function rewritten(piece: str, first: bool, last: bool, style: str) -> str
+    if style == "plain"
+        return piece
+    head = op_base.cut(piece, from: 0, to: piece.len() - 1)
+    tail = op_base.cut(piece, from: 1, to: piece.len())
+    middle = inside(piece)
+
+    if style == "swift"
+        if first
+            return head + "\\("
+
+        if last
+            return ")" + tail
+        return ")" + middle + "\\("
+
+    if first
+        return "`" + middle + "${"
+
+    if last
+        return "}" + middle + "`"
+    return "}" + middle + "${"
+
+function interp(op: str, style: str, p: model.Program, @out: [mutant.Mutant])
+    for s in p.stmts
+        for found in fstrings(s)
+            toks: [tokens.Tok] @ []
+
+            for k in found
+                toks @ toks.push(s.toks[k])
+
+            new = interp_rewrite(p, toks: toks, style: style)
+
+            if new.len() == 0
+                continue
+            out @ out.push(
+                op_base.mk(op: op, p, anchor: tokens.anchor(toks[0]), hunks: [op_base.line_edit(no: toks[0].line, text: new[0])], context: s.kind, stmts: [s.sid])
+            )
+
+## The family's ids
+
+# Whether `id` is one of this family's operators, having run it on `p`.
+function run(id: str, p: model.Program, @out: [mutant.Mutant]) -> bool?
+    if id == "bracket-open"
+        closer_slip(wrong: false, p: p, @out)
+    else if id == "wrong-closer"
+        closer_slip(wrong: true, p: p, @out)
+    else if id == "extra-closer"
+        extra_closer(p, @out)
+    else if id == "stray-closer-head"
+        stray_closer_head(p, @out)
+    else if id == "missing-comma"
+        missing_comma(p, @out)
+    else if id == "trailing-comma"
+        trailing_comma(p, @out)
+    else if id == "string-open"
+        string_open(p, @out)
+    else if id == "single-quotes"
+        single_quotes(p, @out)
+    else if id == "interp-swift"
+        interp(op: id, style: "swift", p: p, @out)
+    else if id == "interp-js"
+        interp(op: id, style: "js", p: p, @out)
+    else if id == "forget-f"
+        interp(op: id, style: "plain", p: p, @out)
+    else
+        return ok(false)
+    return ok(true)

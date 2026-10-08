@@ -1,0 +1,280 @@
+# The workers of a recovery plan's cut: `JOBS` threads, each running every
+# `JOBS`-th task of a phase as child processes of the compiler that cuts
+# (defect 448). The shape is `mutate/workers.hero`'s, the replay's: what
+# crosses a thread is one `i64`, the worker's number times eight plus its
+# phase; the job, the compiler and the cut's folder, is a file under
+# `build/` named by this process; each phase's tasks are a file of the
+# cut's `work/`, one a line; each worker writes `<task>\t<record>` lines to
+# a file of its own and answers 1, or writes why it could not and answers
+# 0, and the cut stops there, exit 2: a plan cut over a hole is not the
+# plan of its tree.
+#
+# The phases, in the order a cut makes them (the Python's `recovery.py`):
+# the census, `check --brief` of every program of the tree where it stands;
+# the baseline, each accepted program copied beside itself and checked
+# again; the lexing, `lex --dump-tokens --json` of each program kept; the
+# singles, each chosen mutant planted beside its program and judged in
+# both arms; the halves, the singles a pair's fallback added, judged so.
+
+use cli/process
+use mutate/brief
+use mutate/child
+use mutate/json_fields
+use mutate/json_read
+use mutate/judged
+use mutate/mutant
+use mutate/operators
+
+constant JOBS: i64
+    6
+
+constant CENSUS: i64
+    0
+
+constant BASELINE: i64
+    1
+
+constant LEX: i64
+    2
+
+constant SINGLES: i64
+    3
+
+constant HALVES: i64
+    4
+
+record Job
+    compiler: str
+    out: str
+
+function job_path() -> str
+    return "build/cut-" + process.pid().to_str() + ".job"
+
+function write_job(job: Job) -> ()?
+    process.mkdir_all("build")?
+
+    if write_file(path: job_path(), text: job.compiler + "\n" + job.out + "\n").is_err()
+        return fail(code: "unwritable", msg: "cannot write " + job_path())
+    return ok()
+
+function read_job() -> Job?
+    text = read_file(job_path())
+
+    if text.is_err()
+        return fail(code: "no_job", msg: "cannot read " + job_path())
+    lines = judged.told_lines(text.must())
+
+    if lines.len() != 2
+        return fail(code: "no_job", msg: job_path() + " is not two lines")
+    return ok(Job(compiler: lines[0], out: lines[1]))
+
+function tasks_path(out: str, phase: i64) -> str
+    return out + "/work/tasks-" + phase.to_str() + ".txt"
+
+function records_path(out: str, phase: i64, index: i64) -> str
+    return out + "/work/" + phase.to_str() + "-" + index.to_str() + ".tsv"
+
+function failure_path(out: str, phase: i64, index: i64) -> str
+    return out + "/work/" + phase.to_str() + "-" + index.to_str() + ".failed"
+
+function dump_path(out: str, task: i64) -> str
+    return out + "/work/lex/" + task.to_str() + ".json"
+
+# A thread's body: `arg` is the worker's number times eight plus its phase.
+function work(arg: i64) -> i64
+    index = arg / 8
+    phase = arg % 8
+    job = read_job()
+
+    if job.is_err()
+        return 0
+
+    match share(job.must(), phase: phase, index: index)
+        .ok _ => return 1
+        .err e =>
+            _ = write_file(path: failure_path(job.must().out, phase: phase, index: index), text: e.msg + "\n").is_err()
+            return 0
+
+function share(job: Job, phase: i64, index: i64) -> ()?
+    text = read_file(tasks_path(job.out, phase: phase))
+
+    if text.is_err()
+        return fail(code: "no_tasks", msg: "cannot read " + tasks_path(job.out, phase: phase))
+    tasks = judged.told_lines(text.must())
+    capture = job.out + "/work/capture-" + phase.to_str() + "-" + index.to_str()
+    mirror = job.out + "/work/mirror"
+    lines: [str] @ []
+    texts: {str: str} @ {}
+    task: i64 @ index
+
+    while task < tasks.len()
+        said: str @ ""
+
+        if phase == CENSUS
+            said @ census(job, mirror: mirror, rel: tasks[task], capture: capture)?
+        else if phase == BASELINE
+            said @ baseline(job, mirror: mirror, rel: tasks[task], task: task, capture: capture)?
+        else if phase == LEX
+            said @ lexed(job, mirror: mirror, rel: tasks[task], task: task, capture: capture)?
+        else
+            said @ single(job, mirror: mirror, row: tasks[task], capture: capture, @texts)?
+        lines @ lines.push(task.to_str() + "\t" + said)
+        task @ task + JOBS
+
+    body: str @ ""
+
+    if lines.len() > 0
+        body @ lines.join("\n") + "\n"
+
+    if write_file(path: records_path(job.out, phase: phase, index: index), text: body).is_err()
+        return fail(code: "unwritable", msg: "cannot write " + records_path(job.out, phase: phase, index: index))
+    return ok()
+
+# Every code of an arm's messages, sorted, each once.
+function codes(a: brief.Arm) -> [str]
+    seen: {str: bool} @ {}
+
+    for m in a.messages
+        seen[m.code] @ true
+
+    # ORDER: codes ascending by bytes, the Python's `sorted`.
+    return sort(keys(seen))
+
+function census(job: Job, mirror: str, rel: str, capture: str) -> str?
+    a = brief.checked(compiler: job.compiler, mirror: mirror, rel: rel, extra: [], capture: capture)?
+    told = codes(a)
+    kind: str @ "other"
+
+    if a.exit == 0 && a.messages.len() == 0 && a.other.len() == 0
+        kind @ "accepted"
+    else if a.exit == 1 && has(told, word: "unknown_module")
+        kind @ "nested"
+    else if a.exit == 1
+        kind @ "refused"
+    return ok(
+        json_fields.written(.fields(names: ["file", "kind", "exit", "codes"], values: [json_fields.string(rel), json_fields.string(kind), json_fields.whole(a.exit), json_fields.strings(told)]))
+    )
+
+function has(words: [str], word: str) -> bool
+    for one in words
+        if one == word
+            return true
+
+    return false
+
+# Each accepted program checked again under a name of its own beside
+# itself: the pipeline that judges a mutant judges its base.
+function baseline(job: Job, mirror: str, rel: str, task: i64, capture: str) -> str?
+    text = read_file(mirror + "/" + rel)
+
+    if text.is_err()
+        return fail(code: "no_corpus", msg: "cannot read " + mirror + "/" + rel)
+    copy = beside(rel: rel, name: "zzb_" + task.to_str() + ".hero")
+    at = judged.Place(compiler: job.compiler, mirror: mirror, capture: capture)
+    judged.plant(at, rel: copy, text: text.must())?
+    a = brief.checked(compiler: job.compiler, mirror: mirror, rel: copy, extra: [], capture: capture)?
+    judged.uproot(at, rel: copy)?
+    clean = a.exit == 0 && a.messages.len() == 0 && a.other.len() == 0
+    return ok(
+        json_fields.written(.fields(names: ["file", "clean", "exit"], values: [json_fields.string(rel), .truth(v: clean), json_fields.whole(a.exit)]))
+    )
+
+function lexed(job: Job, mirror: str, rel: str, task: i64, capture: str) -> str?
+    answer = child.bounded(program: job.compiler, words: [job.compiler, "lex", "--dump-tokens", "--json", mirror + "/" + rel], capture: capture)?
+
+    if answer.exit != 0
+        return fail(code: "no_tokens", msg: "`lex --dump-tokens --json` exited " + answer.exit.to_str() + " on " + rel)
+
+    if write_file(path: dump_path(job.out, task: task), text: answer.out).is_err()
+        return fail(code: "unwritable", msg: "cannot write " + dump_path(job.out, task: task))
+    return ok(rel)
+
+function beside(rel: str, name: str) -> str
+    at: i64 @ rel.len() - 1
+
+    while at >= 0
+        if rel[at] == '/'
+            return rel.slice(from: 0, to: at + 1) + name
+        at @ at - 1
+
+    return name
+
+# One chosen mutant, `row` its line of `plan-singles.jsonl`, planted beside
+# its program and judged: its stage, its two classes, whether it is a
+# pair's first (reported) and whether it can be a pair's second (told on
+# its own site in either arm).
+function single(job: Job, mirror: str, row: str, capture: str, @texts: {str: str}) -> str?
+    j = json_read.read_json(row)?
+    m = mutant_of(j)?
+    key = json_fields.text_field(j, name: "key")?
+    spans: [[i64]] @ []
+
+    for span in json_fields.items_field(j, name: "stmt_lines")?
+        ends = json_fields.items_of(span)?
+
+        if ends.len() != 2
+            return fail(code: "bad_plan", msg: "a statement's lines are not two numbers in the row of " + key)
+        spans @ spans.push([json_fields.whole_of(ends[0])?, json_fields.whole_of(ends[1])?])
+
+    original = text_of(mirror: mirror, file: m.file, @texts)?
+    lines = model_lines(original)
+    planted = mutant.sited([m], lines: lines, ranges: [spans])?
+    site = planted.sites[0]
+    text: str @ planted.lines.join("\n")
+
+    if original.len() > 0 && original[original.len() - 1] == 10
+        text @ text + "\n"
+    rel = beside(rel: m.file, name: "zzm_" + key + ".hero")
+    at = judged.Place(compiler: job.compiler, mirror: mirror, capture: capture)
+    judged.plant(at, rel: rel, text: text)?
+    normal = brief.checked(compiler: job.compiler, mirror: mirror, rel: rel, extra: [], capture: capture)?
+    control = brief.checked(compiler: job.compiler, mirror: mirror, rel: rel, extra: ["--permissive"], capture: capture)?
+    stage = brief.stage_of(compiler: job.compiler, mirror: mirror, rel: rel, normal: normal, capture: capture)?
+    judged.uproot(at, rel: rel)?
+    reading = operators.spec_reading(m.op)
+    class_normal = brief.class_of(normal, site: site, path: rel, reading: reading)
+    reported = normal.exit == 1 && (class_normal == "ONE" || class_normal == "EXTRA" || class_normal == "ELSEWHERE")
+    second = brief.told_on_site(normal, site: site, path: rel) || brief.told_on_site(control, site: site, path: rel)
+    return ok(
+        json_fields.written(.fields(names: ["key", "stage", "class_normal", "class_control", "reported", "second"], values: [json_fields.string(key), json_fields.string(stage), json_fields.string(class_normal), json_fields.string(brief.class_of(control, site: site, path: rel, reading: reading)), .truth(v: reported), .truth(v: second)]))
+    )
+
+# A plan row's mutant, its hunks with their sites as written.
+function mutant_of(j: json_read.Json) -> mutant.Mutant?
+    hunks: [mutant.Hunk] @ []
+
+    for h in json_fields.items_field(j, name: "hunks")?
+        hunks @ hunks.push(
+            mutant.Hunk(start: json_fields.whole_field(h, name: "start")?, end: json_fields.whole_field(h, name: "end")?, lines: json_fields.texts_field(h, name: "new")?, site: json_fields.wholes_field(h, name: "site")?)
+        )
+
+    return ok(
+        mutant.Mutant(op: json_fields.text_field(j, name: "op")?, file: json_fields.text_field(j, name: "file")?, anchor: json_fields.text_field(j, name: "anchor")?, hunks: hunks, context: json_fields.text_field(j, name: "context")?, stmts: json_fields.wholes_field(j, name: "stmts")?)
+    )
+
+function text_of(mirror: str, file: str, @texts: {str: str}) -> str?
+    held = texts[file]
+
+    if !held.is_err()
+        return held
+    got = read_file(mirror + "/" + file)
+
+    if got.is_err()
+        return fail(code: "no_corpus", msg: "cannot read " + mirror + "/" + file)
+    texts[file] @ got.must()
+    return got
+
+# A text's lines as the model splits them: at each line feed, a final one
+# making none.
+function model_lines(text: str) -> [str]
+    out: [str] @ []
+    start: i64 @ 0
+
+    for at in range(from: 0, to: text.len())
+        if text[at] == 10
+            out @ out.push(text.slice(from: start, to: at))
+            start @ at + 1
+
+    if text.len() == 0 || text[text.len() - 1] != 10
+        out @ out.push(text.slice(from: start, to: text.len()))
+    return out
