@@ -1,0 +1,138 @@
+# The tokens a recovery plan is cut from: `heroes lex --dump-tokens --json`
+# of the cutting compiler, read back (defect 448).
+#
+# The Python instrument that cut the frozen plan read its tokens from a
+# lexer run as a child, never from the compiler under test's own decisions,
+# so a site is a fact about the tokens and the text alone (its `model.py`).
+# The cut keeps that: the compiler named by `--compiler` is run as `lex
+# --dump-tokens --json <file>`, and every token is the dump's `kind`,
+# `text`, `line` and `col`, as the Python read them.
+#
+# **A column is a count of characters, and a slice here is a count of
+# bytes** (spec § 10: a `str` is indexed in bytes). The dump's `col` counts
+# characters (measured on a line holding `"héé"`), and the Python indexed
+# its lines with it, a Python string being indexed in characters. So each
+# token keeps its `col` for its anchor, which names it in the plan's keys,
+# and is given `c0` and `c1`, the BYTES of its line it covers, for every
+# splice: the same characters, counted the way a Heroes slice counts them,
+# so no splice can cut a character in two.
+
+use bytes
+use mutate/json_fields
+use mutate/json_read
+
+# One token of the dump. `c0` and `c1` are byte offsets into its line, set
+# for a token whose line is in the text; `depth` is the bracket depth before
+# it, set by the model.
+record Tok
+    kind: str
+    text: str
+    line: i64
+    col: i64
+    c0: i64
+    c1: i64
+    idx: i64
+    depth: i64
+
+# What a dump read: its tokens, and why any of them could not be placed in
+# its line, which makes the program one no site can be planted in.
+record Read
+    toks: [Tok]
+    misplaced: [str]
+
+# The tokens of a dump, `lines` being the program's lines as the model
+# splits them.
+function read_dump(dump: str, lines: [str]) -> Read?
+    rows = json_fields.items_of(json_read.read_json(dump)?)?
+    out: [Tok] @ []
+    misplaced: [str] @ []
+    index: i64 @ 0
+
+    for row in rows
+        t: Tok @ Tok(
+            kind: json_fields.text_field(row, name: "kind")?,
+            text: json_fields.text_field(row, name: "text")?,
+            line: json_fields.whole_field(row, name: "line")?,
+            col: json_fields.whole_field(row, name: "col")?,
+            c0: 0,
+            c1: 0,
+            idx: index,
+            depth: 0
+        )
+
+        if !synthetic(t.kind) && t.line >= 1 && t.line <= lines.len()
+            text = lines[t.line - 1]
+            start = byte_of_char(text, count: t.col - 1)
+
+            if start < 0 || !bytes.bytes_at(text: text, at: start, needle: t.text)
+                misplaced @ misplaced.push(t.kind + " `" + t.text + "` at " + t.line.to_str() + ":" + t.col.to_str())
+            else
+                t.c0 @ start
+                t.c1 @ start + t.text.len()
+        else if !synthetic(t.kind)
+            misplaced @ misplaced.push(t.kind + " `" + t.text + "` past the text, at line " + t.line.to_str())
+        out @ out.push(t)
+        index @ index + 1
+
+    return ok(Read(toks: out, misplaced: misplaced))
+
+# The four tokens the lexer makes of the layout, which carry no text.
+function synthetic(kind: str) -> bool
+    return kind == "terminator" || kind == "indent" || kind == "dedent" || kind == "eof"
+
+function opener(kind: str) -> bool
+    return kind == "lparen" || kind == "lbracket" || kind == "lbrace"
+
+function closer(kind: str) -> bool
+    return kind == "rparen" || kind == "rbracket" || kind == "rbrace"
+
+# The byte offset in `text` where its character number `chars` (0-based)
+# begins, its length where `chars` is the count of all of them, or -1 past
+# that. A character is every byte but a continuation byte.
+function byte_of_char(text: str, count: i64) -> i64
+    at: i64 @ 0
+    counted: i64 @ 0
+
+    while counted < count
+        if at >= text.len()
+            return -1
+        at @ at + 1
+
+        while at < text.len() && text[at] >= 128 && text[at] < 192
+            at @ at + 1
+
+        counted @ counted + 1
+
+    return at
+
+# How many characters `text` holds.
+function characters(text: str) -> i64
+    count: i64 @ 0
+
+    for at in range(from: 0, to: text.len())
+        if text[at] < 128 || text[at] >= 192
+            count @ count + 1
+
+    return count
+
+# The anchor a token names a mutant by: its line and its column, the
+# column in characters, as the Python wrote it (`L{line}C{col}`).
+function anchor(t: Tok) -> str
+    return "L" + t.line.to_str() + "C" + t.col.to_str()
+
+## Tests
+
+test "a column in characters becomes the bytes of its line, and a token not there is named"
+    line = "    print(\"héé\") + x"
+    assert byte_of_char(line, count: 10) == 10
+    assert byte_of_char(line, count: 16) == 18
+    assert byte_of_char(line, count: characters(line)) == line.len()
+    assert byte_of_char(line, count: characters(line) + 1) == -1
+    assert characters("é€😀") == 3
+    dump = "[{\"kind\": \"str\", \"text\": \"\\\"h\\u00e9\\u00e9\\\"\", \"line\": 1, \"col\": 11}, {\"kind\": \"plus\", \"text\": \"+\", \"line\": 1, \"col\": 18}, {\"kind\": \"ident\", \"text\": \"y\", \"line\": 1, \"col\": 20}, {\"kind\": \"eof\", \"text\": \"\", \"line\": 2, \"col\": 1}]"
+    got = read_dump(dump, lines: [line]).must()
+    assert got.toks[0].c0 == 10
+    assert got.toks[0].c1 == 17
+    assert got.toks[1].c0 == 19
+    assert got.misplaced == ["ident `y` at 1:20"]
+    assert anchor(got.toks[1]) == "L1C18"

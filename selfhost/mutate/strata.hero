@@ -1,0 +1,249 @@
+# A recovery plan's singles: every site each operator finds in the corpus,
+# and up to `PER_OP` of them chosen by strata (defect 448; the Python
+# instrument's `recovery.py`, its `candidates`, `hkey` and `stratified`,
+# rule for rule).
+#
+# An operator's mutants are grouped by context (the kind of statement it
+# was planted in, or what it rewrote), and the contexts are taken in turn,
+# and inside a context the files in turn, each order fixed by a hash: so a
+# rare context is represented, and a cut is reproducible from the tree and
+# the lexer alone. Every order here is the SHA-1 of the words it orders by
+# joined with `|`, as the Python's `hkey`, ties kept in the order met, as
+# Python's `sorted` keeps them.
+
+use mutate/model
+use mutate/mutant
+use mutate/operators
+use mutate/sha1
+
+# Single mutants per operator, the Python's `--per-op` default.
+constant PER_OP: i64
+    150
+
+# One operator's sites over the corpus, in the order met: the corpus's
+# programs in order, each program's mutants in its generator's order.
+record Sites
+    op: str
+    found: [mutant.Mutant]
+
+function hkey(parts: [str]) -> str
+    return sha1.hex(parts.join("|"))
+
+# The indices of `keys` in the order of their keys, ties in index order.
+# Every key must be one width, as a hash or `padded` makes it, so the
+# index written after it orders only a tie.
+function ordered_by(by: [str]) -> [i64]
+    at: {str: i64} @ {}
+
+    for i in range(from: 0, to: by.len())
+        at[by[i] + "\t" + padded(i)] @ i
+
+    out: [i64] @ []
+
+    # ORDER: by key, then by index: every key one width, the index padded.
+    for k in sort(keys(at))
+        out @ out.push(at[k].must())
+
+    return out
+
+# A non-negative number in twelve digits, so a text sort is a number sort.
+function padded(n: i64) -> str
+    text = n.to_str()
+    return "0".repeat((12 - text.len()).to_u64().must()) + text
+
+# Every operator's sites over `programs`, the table's order kept; a mutant
+# that leaves its program's lines as they were is no site.
+function candidates(programs: [model.Program]) -> [Sites]?
+    out: [Sites] @ []
+    texts: [[str]] @ []
+
+    for p in programs
+        lines: [str] @ []
+
+        for l in p.lines
+            lines @ lines.push(l.text)
+
+        texts @ texts.push(lines)
+
+    for op in operators.IDS
+        found: [mutant.Mutant] @ []
+
+        for index in range(from: 0, to: programs.len())
+            for m in operators.generate(op, p: programs[index])?
+                if mutant.changes(m, lines: texts[index])?
+                    found @ found.push(m)
+
+        out @ out.push(Sites(op: op, found: found))
+
+    return ok(out)
+
+# Up to `cap` of one operator's sites (`stratified`).
+function stratified(op: str, found: [mutant.Mutant], cap: i64) -> [mutant.Mutant]
+    contexts: [str] @ []
+    seen: {str: bool} @ {}
+
+    for m in found
+        if seen[m.context].is_err()
+            seen[m.context] @ true
+            contexts @ contexts.push(m.context)
+
+    context_keys: [str] @ []
+
+    for c in contexts
+        context_keys @ context_keys.push(hkey([op, c]))
+
+    queues: [[mutant.Mutant]] @ []
+
+    for ci in ordered_by(context_keys)
+        queues @ queues.push(queue(op: op, context: contexts[ci], found: found))
+
+    out: [mutant.Mutant] @ []
+    heads: [i64] @ []
+
+    for _ in queues
+        heads @ heads.push(0)
+
+    left: bool @ true
+
+    while out.len() < cap && left
+        left @ false
+
+        for qi in range(from: 0, to: queues.len())
+            if heads[qi] < queues[qi].len() && out.len() < cap
+                out @ out.push(queues[qi][heads[qi]])
+                heads[qi] @ heads[qi] + 1
+
+            if heads[qi] < queues[qi].len()
+                left @ true
+
+    return out
+
+# One context's queue: its files in their hash's order, and inside each
+# file its mutants in their anchor's; then the first of every file, the
+# second of every file, and so on.
+function queue(op: str, context: str, found: [mutant.Mutant]) -> [mutant.Mutant]
+    files: [str] @ []
+    by_file: {str: [mutant.Mutant]} @ {}
+
+    for m in found
+        if m.context != context
+            continue
+        held = by_file[m.file]
+
+        if held.is_err()
+            files @ files.push(m.file)
+            by_file[m.file] @ [m]
+        else
+            by_file[m.file] @ held.must().push(m)
+
+    file_keys: [str] @ []
+
+    for f in files
+        file_keys @ file_keys.push(hkey([op, context, f]))
+
+    per_file: [[mutant.Mutant]] @ []
+
+    for fi in ordered_by(file_keys)
+        mine = by_file[files[fi]].must()
+        anchor_keys: [str] @ []
+
+        for m in mine
+            anchor_keys @ anchor_keys.push(hkey([op, m.anchor]))
+
+        sorted_mine: [mutant.Mutant] @ []
+
+        for mi in ordered_by(anchor_keys)
+            sorted_mine @ sorted_mine.push(mine[mi])
+
+        per_file @ per_file.push(sorted_mine)
+
+    q: [mutant.Mutant] @ []
+    depth: i64 @ 0
+    took: bool @ true
+
+    while took
+        took @ false
+
+        for list in per_file
+            if depth < list.len()
+                q @ q.push(list[depth])
+                took @ true
+
+        depth @ depth + 1
+
+    return q
+
+# Each mutant's row of `plan-singles.jsonl`.
+function plan_rows(chosen: [mutant.Mutant], programs: [model.Program], by_file: {str: i64}, for_pairs: bool) -> [str]
+    rows: [str] @ []
+
+    for m in chosen
+        p = programs[by_file[m.file].must()]
+        rows @ rows.push(
+            mutant.row(m, key: mutant.key_of(m), extent: extent_of(p, m: m), stmt_lines: stmt_lines(p, m: m), for_pairs: for_pairs)
+        )
+
+    return rows
+
+# The lines of the statements a mutant touches, their blocks with them, or
+# its hunks' lines where it touches none.
+function extent_of(p: model.Program, m: mutant.Mutant) -> [i64]
+    if m.stmts.len() == 0
+        return [mutant.first_start(m) + 1, mutant.last_end(m)]
+    lo: i64 @ 0
+    hi: i64 @ 0
+
+    for sid in m.stmts
+        s = p.stmts[sid]
+        b: i64 @ s.last
+
+        if s.head && s.block_last > 0
+            b @ s.block_last
+
+        if lo == 0 || s.first < lo
+            lo @ s.first
+
+        if b > hi
+            hi @ b
+
+    return [lo, hi]
+
+function stmt_lines(p: model.Program, m: mutant.Mutant) -> [[i64]]
+    out: [[i64]] @ []
+
+    for sid in m.stmts
+        out @ out.push([p.stmts[sid].first, p.stmts[sid].last])
+
+    return out
+
+## Tests
+
+function site(file: str, anchor: str, context: str) -> mutant.Mutant
+    return mutant.made(
+        op: "o",
+        file: file,
+        anchor: anchor,
+        hunks: [mutant.hunk(start: 0, end: 1, lines: ["x"])],
+        context: context,
+        stmts: []
+    )
+
+test "an order by key keeps a tie as it was met, and a number is padded to sort as one"
+    assert ordered_by(["b", "a", "b", "a"]) == [1, 3, 0, 2]
+    assert padded(42) == "000000000042"
+    assert ordered_by([padded(10), padded(9)]) == [1, 0]
+
+test "the strata take every context in turn and every file in turn, up to the cap"
+    found = [
+        site(file: "f1", anchor: "L1", context: "a")
+        site(file: "f1", anchor: "L2", context: "a")
+        site(file: "f2", anchor: "L1", context: "a")
+        site(file: "f1", anchor: "L9", context: "b")
+    ]
+    every = stratified("o", found: found, cap: 10)
+    assert every.len() == 4
+    two = stratified("o", found: found, cap: 2)
+    assert two.len() == 2
+
+    # One of each context comes before any context's second.
+    assert two[0].context != two[1].context

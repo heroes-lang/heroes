@@ -1,0 +1,136 @@
+# `heroes mutate --recovery`: the recovery arm's words, read from argv and
+# handed to the replay, the reading of two runs, and the cut of a new plan
+# (panel 187's R2, defects 210 and 448). `cli/mutate.hero` sends an
+# invocation here when it holds `--recovery`, and refuses a word of this
+# arm given without it; the metric is that file's.
+
+use cli/argv
+use cli/io
+use cli/table as cli_table
+use mutate/cut
+use mutate/differential
+use mutate/plan
+use mutate/recovery
+use mutate/run_records
+
+# The words only the recovery arm reads.
+constant WORDS: [str]
+    [
+        "--compiler"
+        "-o"
+        "--compare"
+        "--cut"
+    ]
+
+# `heroes mutate [plan] --recovery --compiler <c> -o <run>` replays the
+# frozen plan (default `tests/golden/recovery`) with that compiler and
+# writes its records to `<run>`, a folder of its own; `heroes mutate
+# --recovery -o <head> --compare <base>` reads two such runs against each
+# other, and with `--compiler` as well it runs first, then reads. The run
+# is exit 0 when every record is written; the reading exit 1 over a
+# finding and 0 over none; either is exit 2 where it cannot be made
+# (`.claude/rules/cli-surface.md`'s contract). The metric's words,
+# `--operator` and `--survivors`, are another question and refused here.
+# `--cut <tree>` cuts a new plan instead (defect 448, `cut_arm`).
+function recovery_arm(inv: argv.Invocation) -> cli_table.Exit
+    if argv.has(inv, spelling: "--operator") || argv.has(inv, spelling: "--survivors")
+        io.eprint(
+            text: "error: `--operator` and `--survivors` score the metric, and `--recovery` replays the recovery plan: give one or the other"
+        )
+        return .failed_exit
+    tree = argv.value_of(inv, spelling: "--cut")
+
+    if !tree.is_err()
+        return cut_arm(inv, tree: tree.must())
+    out = argv.value_of(inv, spelling: "-o")
+
+    if out.is_err()
+        io.eprint(
+            text: "error: `--recovery` needs `-o <folder>`, the run it writes or, with `--compare`, the run it reads"
+        )
+        return .failed_exit
+    plan_dir = inv.file.default(plan.DEFAULT)
+    compiler = argv.value_of(inv, spelling: "--compiler")
+    base = argv.value_of(inv, spelling: "--compare")
+
+    if compiler.is_err() && base.is_err()
+        io.eprint(
+            text: "error: `--recovery` needs `--compiler <path>` to run the plan, `--compare <folder>` to read a run against another, or both"
+        )
+        return .failed_exit
+
+    if !compiler.is_err()
+        made = recovery.replay(compiler: compiler.must(), plan_dir: plan_dir, out: out.must())
+
+        match made
+            .err e =>
+                io.eprint(text: "error: " + e.msg)
+                return .failed_exit
+            .ok m => print(
+                "recovery: " + m.programs.to_str() + " programs, " + m.singles.to_str() + " singles, " + m.pairs.to_str() + " pairs, judged by " + compiler.must() + " into " + out.must()
+            )
+
+    if base.is_err()
+        return .ok_exit
+    return read_against(plan_dir: plan_dir, base: base.must(), head: out.must())
+
+# `heroes mutate --recovery --cut <tree> --compiler <c> -o <plan>` cuts a
+# new plan from the programs of `tree`, an exported commit, lexed and
+# judged by that compiler, into `<plan>`, a folder of its own: the plan the
+# replay above reads, `plan-singles.jsonl`, `plan-pairs.jsonl`,
+# `plan-base.jsonl` and `corpus/`. Exit 0 when the plan is written, 2 where
+# it cannot be cut. It reads no plan and no run, so a plan named as the
+# operand and `--compare` are refused rather than ignored.
+function cut_arm(inv: argv.Invocation, tree: str) -> cli_table.Exit
+    if argv.has(inv, spelling: "--compare") || !inv.file.is_err()
+        io.eprint(
+            text: "error: `--cut` cuts a new plan from a tree and reads neither a plan nor a run: give `--cut <tree> --compiler <path> -o <folder>` alone"
+        )
+        return .failed_exit
+    compiler = argv.value_of(inv, spelling: "--compiler")
+    out = argv.value_of(inv, spelling: "-o")
+
+    if compiler.is_err() || out.is_err()
+        io.eprint(
+            text: "error: `--cut` needs `--compiler <path>`, the compiler that lexes and judges the tree, and `-o <folder>`, the new plan's"
+        )
+        return .failed_exit
+
+    match cut.cut(compiler: compiler.must(), tree: tree, out: out.must())
+        .err e =>
+            io.eprint(text: "error: " + e.msg)
+            return .failed_exit
+        .ok m => print(
+            "recovery cut: " + m.files.to_str() + " files, " + m.kept.to_str() + " programs kept, " + m.sites.to_str() + " sites, " + m.singles.to_str() + " singles, " + m.pairs.to_str() + " pairs, judged by " + compiler.must() + " into " + out.must()
+        )
+
+    return .ok_exit
+
+function read_against(plan_dir: str, base: str, head: str) -> cli_table.Exit
+    runs = both_runs(base: base, head: head)
+
+    if runs.is_err()
+        io.eprint(text: "error: " + failure_of(runs))
+        return .failed_exit
+    got = differential.compared(plan_dir, base: runs.must()[0], head: runs.must()[1])
+
+    match got
+        .err e =>
+            io.eprint(text: "error: " + e.msg)
+            return .failed_exit
+        .ok r =>
+            io.print_artifact(
+                text: "recovery differential: base " + base + ", head " + head + "\n" + r.lines.join("\n") + "\n"
+            )
+
+            if r.findings.len() > 0
+                return .diagnostics_exit
+            return .ok_exit
+
+function both_runs(base: str, head: str) -> [run_records.Run]?
+    return ok([run_records.read_run(base)?, run_records.read_run(head)?])
+
+function failure_of(got: [run_records.Run]?) -> str
+    return match got
+        .ok _  => ""
+        .err e => e.msg

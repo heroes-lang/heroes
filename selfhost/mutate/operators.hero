@@ -1,0 +1,170 @@
+# The recovery plan's operator table: the 96 habits the Python
+# instrument's `OPERATORS` held, in its order, which is the order a plan's
+# singles are chosen and written in (defect 448).
+#
+# Each row is an id and what the specification reads its mutant as, where
+# it reads one: `legal`, a program of the language with the same meaning
+# (exit 0 is right), or `another-program`, a different program (exit 0 is
+# the specification's own gap); "" for the rest, whose mutant is a mistake.
+# What each imitates and where it came from are the Python's `Op` rows,
+# kept in the report's table there and not repeated here; the generators
+# are `mutate/op_*.hero`. `generate` is the one place an id meets its
+# generator, and an id it does not know is a failure, never a silence.
+
+use mutate/model
+use mutate/mutant
+use mutate/op_arms
+use mutate/op_brackets
+use mutate/op_decls
+use mutate/op_exprs
+use mutate/op_flow
+use mutate/op_layout
+use mutate/op_sigs
+use mutate/op_words
+
+constant IDS: [str]
+    [
+        "brace-same-line"
+        "brace-allman"
+        "brace-one-line"
+        "brace-else-chain"
+        "semicolon"
+        "fn"
+        "func"
+        "def"
+        "struct"
+        "class"
+        "enum"
+        "union"
+        "const"
+        "let"
+        "var"
+        "const-local"
+        "elif"
+        "switch"
+        "case"
+        "int"
+        "import"
+        "null"
+        "pub"
+        "keyword-typo"
+        "result-colon"
+        "result-fat-arrow"
+        "result-bare"
+        "result-void"
+        "type-first"
+        "param-no-colon"
+        "param-default"
+        "named-arg-equals"
+        "amp-arg"
+        "at-prefix"
+        "paren-condition"
+        "python-colon"
+        "colon-one-line"
+        "for-parens"
+        "for-of"
+        "c-for"
+        "range-dots"
+        "plus-plus"
+        "compound-assign"
+        "assign-equals"
+        "walrus"
+        "bracket-open"
+        "wrong-closer"
+        "extra-closer"
+        "stray-closer-head"
+        "missing-comma"
+        "trailing-comma"
+        "string-open"
+        "single-quotes"
+        "interp-swift"
+        "interp-js"
+        "forget-f"
+        "indent-2"
+        "indent-tab"
+        "over-indent"
+        "trailing-operator"
+        "leading-operator"
+        "backslash"
+        "missing-operand"
+        "missing-operand-in-brackets"
+        "and-or-words"
+        "not-word"
+        "python-bool"
+        "triple-equals"
+        "line-comment"
+        "ternary"
+        "nullish"
+        "force-unwrap"
+        "slice-colon"
+        "new-construct"
+        "construct-braces"
+        "turbofish"
+        "string-type"
+        "boolean-type"
+        "double-type"
+        "option-type"
+        "slice-type-go"
+        "array-suffix"
+        "map-type-generic"
+        "field-commas"
+        "case-parens"
+        "constant-inline"
+        "use-quoted"
+        "use-dotted"
+        "assert-message"
+        "arm-comma"
+        "arm-thin-arrow"
+        "arm-colon"
+        "arm-default"
+        "payload-parens"
+        "pattern-comma"
+        "arms-at-margin"
+    ]
+
+# What the specification reads an operator's mutant as: `legal`,
+# `another-program`, or "" for a mistake.
+function spec_reading(id: str) -> str
+    if id == "paren-condition"
+        return "legal"
+
+    if id == "forget-f"
+        return "another-program"
+    return ""
+
+function known(id: str) -> bool
+    for one in IDS
+        if one == id
+            return true
+
+    return false
+
+# The mutants of operator `id` in one program, in the Python's order.
+function generate(id: str, p: model.Program) -> [mutant.Mutant]?
+    out: [mutant.Mutant] @ []
+
+    if op_layout.run(id, p: p, @out)? || op_words.run(id, p: p, @out)? || op_sigs.run(id, p: p, @out)? || op_flow.run(id, p: p, @out)?
+        return ok(out)
+
+    if op_brackets.run(id, p: p, @out)? || op_exprs.run(id, p: p, @out)? || op_decls.run(id, p: p, @out)? || op_arms.run(id, p: p, @out)?
+        return ok(out)
+    return fail(code: "no_operator", msg: "no operator `" + id + "` has a generator")
+
+## Tests
+
+# The table's count is read off the table and the Python's: 96 rows on
+# 2026-09-30, `ops.py`'s `OPERATORS`, the frozen plan's operators. Every
+# row has a generator: an id `generate` refuses is a row with no habit.
+test "the table holds the Python's 96 operators, each with a generator"
+    assert IDS.len() == 96
+    seen: {str: bool} @ {}
+
+    for id in IDS
+        assert seen[id].is_err()
+        seen[id] @ true
+        p = model.program(path: "t.hero", text: "", toks: [])
+        assert !generate(id, p: p).is_err()
+
+    assert generate("no-such-habit", p: model.program(path: "t.hero", text: "", toks: [])).is_err()
+    assert spec_reading("paren-condition") == "legal"
+    assert spec_reading("semicolon") == ""

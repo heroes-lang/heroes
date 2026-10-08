@@ -28,17 +28,14 @@ use diag
 use source
 use cli/argv
 use cli/io
+use cli/mutate_recovery
 use cli/table as cli_table
 use cli/process
 use library_source
 use modules
 use not_text
 use module/reading
-use mutate/differential
 use mutate/ops
-use mutate/plan
-use mutate/recovery
-use mutate/run_records
 use mutate/score
 
 constant DEFAULT_DIR: str
@@ -46,9 +43,9 @@ constant DEFAULT_DIR: str
 
 function run(inv: argv.Invocation) -> cli_table.Exit
     if argv.has(inv, spelling: "--recovery")
-        return recovery_arm(inv)
+        return mutate_recovery.recovery_arm(inv)
 
-    for word in RECOVERY_WORDS
+    for word in mutate_recovery.WORDS
         if argv.has(inv, spelling: word)
             io.eprint(text: "error: `" + word + "` is a word of the recovery arm alone: `heroes mutate --recovery`")
             return .failed_exit
@@ -85,92 +82,6 @@ function run(inv: argv.Invocation) -> cli_table.Exit
     if argv.has(inv, spelling: "--survivors")
         io.print_artifact(text: score.survivor_report(run_out.survivors))
     return .ok_exit
-
-## The recovery arm (panel 187's R2, defect 210)
-
-# The words only the recovery arm reads.
-constant RECOVERY_WORDS: [str]
-    [
-        "--compiler"
-        "-o"
-        "--compare"
-    ]
-
-# `heroes mutate [plan] --recovery --compiler <c> -o <run>` replays the
-# frozen plan (default `tests/golden/recovery`) with that compiler and
-# writes its records to `<run>`, a folder of its own; `heroes mutate
-# --recovery -o <head> --compare <base>` reads two such runs against each
-# other, and with `--compiler` as well it runs first, then reads. The run
-# is exit 0 when every record is written; the reading exit 1 over a
-# finding and 0 over none; either is exit 2 where it cannot be made
-# (`.claude/rules/cli-surface.md`'s contract). The metric's words,
-# `--operator` and `--survivors`, are another question and refused here.
-function recovery_arm(inv: argv.Invocation) -> cli_table.Exit
-    if argv.has(inv, spelling: "--operator") || argv.has(inv, spelling: "--survivors")
-        io.eprint(
-            text: "error: `--operator` and `--survivors` score the metric, and `--recovery` replays the recovery plan: give one or the other"
-        )
-        return .failed_exit
-    out = argv.value_of(inv, spelling: "-o")
-
-    if out.is_err()
-        io.eprint(
-            text: "error: `--recovery` needs `-o <folder>`, the run it writes or, with `--compare`, the run it reads"
-        )
-        return .failed_exit
-    plan_dir = inv.file.default(plan.DEFAULT)
-    compiler = argv.value_of(inv, spelling: "--compiler")
-    base = argv.value_of(inv, spelling: "--compare")
-
-    if compiler.is_err() && base.is_err()
-        io.eprint(
-            text: "error: `--recovery` needs `--compiler <path>` to run the plan, `--compare <folder>` to read a run against another, or both"
-        )
-        return .failed_exit
-
-    if !compiler.is_err()
-        made = recovery.replay(compiler: compiler.must(), plan_dir: plan_dir, out: out.must())
-
-        match made
-            .err e =>
-                io.eprint(text: "error: " + e.msg)
-                return .failed_exit
-            .ok m => print(
-                "recovery: " + m.programs.to_str() + " programs, " + m.singles.to_str() + " singles, " + m.pairs.to_str() + " pairs, judged by " + compiler.must() + " into " + out.must()
-            )
-
-    if base.is_err()
-        return .ok_exit
-    return read_against(plan_dir: plan_dir, base: base.must(), head: out.must())
-
-function read_against(plan_dir: str, base: str, head: str) -> cli_table.Exit
-    runs = both_runs(base: base, head: head)
-
-    if runs.is_err()
-        io.eprint(text: "error: " + failure_of(runs))
-        return .failed_exit
-    got = differential.compared(plan_dir, base: runs.must()[0], head: runs.must()[1])
-
-    match got
-        .err e =>
-            io.eprint(text: "error: " + e.msg)
-            return .failed_exit
-        .ok r =>
-            io.print_artifact(
-                text: "recovery differential: base " + base + ", head " + head + "\n" + r.lines.join("\n") + "\n"
-            )
-
-            if r.findings.len() > 0
-                return .diagnostics_exit
-            return .ok_exit
-
-function both_runs(base: str, head: str) -> [run_records.Run]?
-    return ok([run_records.read_run(base)?, run_records.read_run(head)?])
-
-function failure_of(got: [run_records.Run]?) -> str
-    return match got
-        .ok _  => ""
-        .err e => e.msg
 
 # A corpus as read: its programs, and the line the compiler tells for each
 # file of it that is not UTF-8, which is a program the compiler refuses, so
@@ -409,11 +320,25 @@ test "the recovery arm's words are its alone, and it asks for what it needs befo
     assert cli_table.exit_code(run(flagged(words: ["--compare"], values: ["build/x"]))) == 2
 
     # The arm needs a folder, and a compiler or a run to read against.
-    assert cli_table.exit_code(recovery_arm(flagged(words: ["--recovery", "--compiler"], values: ["", "heroes"]))) == 2
-    assert cli_table.exit_code(recovery_arm(flagged(words: ["--recovery", "-o"], values: ["", "build/x"]))) == 2
+    assert cli_table.exit_code(mutate_recovery.recovery_arm(flagged(words: ["--recovery", "--compiler"], values: ["", "heroes"]))) == 2
+    assert cli_table.exit_code(mutate_recovery.recovery_arm(flagged(words: ["--recovery", "-o"], values: ["", "build/x"]))) == 2
 
     # And the metric's words are another question.
-    assert cli_table.exit_code(recovery_arm(flagged(words: ["--recovery", "-o", "--operator"], values: ["", "build/x", "typo-digit"]))) == 2
+    assert cli_table.exit_code(mutate_recovery.recovery_arm(flagged(words: ["--recovery", "-o", "--operator"], values: ["", "build/x", "typo-digit"]))) == 2
 
     # A reading of runs that are not there is the tool unable to run.
-    assert cli_table.exit_code(recovery_arm(flagged(words: ["--recovery", "-o", "--compare"], values: ["", "build/no-such-head", "build/no-such-base"]))) == 2
+    assert cli_table.exit_code(mutate_recovery.recovery_arm(flagged(words: ["--recovery", "-o", "--compare"], values: ["", "build/no-such-head", "build/no-such-base"]))) == 2
+
+test "a cut asks for its compiler and its folder, and reads no plan and no run (defect 448)"
+    # `--cut` without `--recovery` is a word of the arm, refused by name.
+    assert cli_table.exit_code(run(flagged(words: ["--cut"], values: ["tree"]))) == 2
+
+    # A cut needs the compiler that lexes and judges, and the plan's folder.
+    assert cli_table.exit_code(mutate_recovery.recovery_arm(flagged(words: ["--recovery", "--cut", "-o"], values: ["", "tree", "build/x"]))) == 2
+    assert cli_table.exit_code(mutate_recovery.recovery_arm(flagged(words: ["--recovery", "--cut", "--compiler"], values: ["", "tree", "heroes"]))) == 2
+
+    # It reads no run, so `--compare` beside it is refused, never ignored.
+    assert cli_table.exit_code(mutate_recovery.recovery_arm(flagged(words: ["--recovery", "--cut", "--compiler", "-o", "--compare"], values: ["", "tree", "heroes", "build/x", "build/y"]))) == 2
+
+    # And a tree that is not a folder is the tool unable to cut.
+    assert cli_table.exit_code(mutate_recovery.recovery_arm(flagged(words: ["--recovery", "--cut", "--compiler", "-o"], values: ["", "no/such/tree", "heroes", "build/selftest-cut-arm"]))) == 2

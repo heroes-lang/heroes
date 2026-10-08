@@ -1,0 +1,226 @@
+# The recovery plan's operators of signatures: a result after `:` or
+# `=>` or none, `-> void`, a type before its name, a parameter's default, a
+# named argument with `=`, `&x` for `@x`, `@v = e` (defect 448; the Python
+# instrument's `ops.py`, its section *signatures*, rule for rule, each
+# appending its mutants in the order the Python's generator yielded them).
+
+use mutate/model
+use mutate/mutant
+use mutate/op_base
+use mutate/tokens
+
+# The index of a function declaration's depth-0 `->`, or -1.
+function result_arrow(s: model.Statement) -> i64
+    if s.kind != "top-function" && s.kind != "member-function"
+        return -1
+
+    for i in range(from: 0, to: s.toks.len())
+        if s.toks[i].kind == "arrow" && s.toks[i].depth == 0
+            return i
+
+    return -1
+
+# The `->` written `spelled`: `:` takes a space before it, `` takes one after.
+function result(op: str, spelled: str, p: model.Program, @out: [mutant.Mutant])
+    for s in p.stmts
+        at = result_arrow(s)
+
+        if at < 0
+            continue
+        a = s.toks[at]
+        text = model.line(p, no: a.line).text
+        new: str @ op_base.splice(text: text, c0: a.c0, c1: a.c1, put: spelled)
+
+        if spelled == ":" && a.c0 >= 1 && text[a.c0 - 1] == ' '
+            new @ op_base.splice(text: text, c0: a.c0 - 1, c1: a.c1, put: ":")
+        else if spelled == "" && a.c1 < text.len() && text[a.c1] == ' '
+            new @ op_base.splice(text: text, c0: a.c0, c1: a.c1 + 1, put: "")
+        out @ out.push(
+            op_base.mk(op: op, p, anchor: tokens.anchor(a), hunks: [op_base.line_edit(no: a.line, text: new)], context: s.kind, stmts: [s.sid])
+        )
+
+function result_void(p: model.Program, @out: [mutant.Mutant])
+    for s in p.stmts
+        if s.kind != "top-function" || result_arrow(s) >= 0
+            continue
+        last = s.toks[s.toks.len() - 1]
+
+        if last.kind != "rparen" || last.depth != 1
+            continue
+        text = model.line(p, no: last.line).text
+        out @ out.push(
+            op_base.mk(op: "result-void", p, anchor: tokens.anchor(last), hunks: [op_base.line_edit(no: last.line, text: op_base.splice(text: text, c0: last.c1, c1: last.c1, put: " -> void"))], context: s.kind, stmts: [s.sid])
+        )
+
+# The indices of simple parameters `a: T` in a declaration head: depth 1,
+# `T` one name, on one line.
+function params(s: model.Statement) -> [i64]
+    out: [i64] @ []
+    toks = s.toks
+
+    for i in range(from: 1, to: toks.len() - 2)
+        a = toks[i]
+
+        if a.kind != "ident" || toks[i + 1].kind != "colon" || toks[i + 2].kind != "ident" || a.depth != 1
+            continue
+
+        if toks[i - 1].kind != "lparen" && toks[i - 1].kind != "comma"
+            continue
+
+        if i + 3 < toks.len() && toks[i + 3].kind != "comma" && toks[i + 3].kind != "rparen"
+            continue
+
+        if a.line == toks[i + 2].line
+            out @ out.push(i)
+
+    return out
+
+function type_first(p: model.Program, @out: [mutant.Mutant])
+    for s in p.stmts
+        if s.kind == "top-function" || s.kind == "member-function"
+            for i in params(s)
+                out @ out.push(name_typed(p, s: s, at: i, context: "param"))
+        else if s.kind == "field" && s.toks.len() == 3 && s.toks[1].kind == "colon" && s.toks[2].kind == "ident"
+            out @ out.push(name_typed(p, s: s, at: 0, context: "field"))
+
+# `a: T` at `at` written `T a`.
+function name_typed(p: model.Program, s: model.Statement, at: i64, context: str) -> mutant.Mutant
+    a = s.toks[at]
+    ty = s.toks[at + 2]
+    text = model.line(p, no: a.line).text
+    new = op_base.splice(text: text, c0: a.c0, c1: ty.c1, put: ty.text + " " + a.text)
+    return op_base.mk(
+        op: "type-first",
+        p,
+        anchor: tokens.anchor(a),
+        hunks: [op_base.line_edit(no: a.line, text: new)],
+        context: context,
+        stmts: [s.sid]
+    )
+
+function param_no_colon(p: model.Program, @out: [mutant.Mutant])
+    for s in p.stmts
+        if s.kind != "top-function" && s.kind != "member-function"
+            continue
+
+        for i in params(s)
+            a = s.toks[i]
+            text = model.line(p, no: a.line).text
+            new = op_base.splice(text: text, c0: a.c1, c1: s.toks[i + 2].c0, put: " ")
+            out @ out.push(
+                op_base.mk(op: "param-no-colon", p, anchor: tokens.anchor(a), hunks: [op_base.line_edit(no: a.line, text: new)], context: s.kind, stmts: [s.sid])
+            )
+
+function param_default(p: model.Program, @out: [mutant.Mutant])
+    for s in p.stmts
+        if s.kind != "top-function"
+            continue
+
+        for i in params(s)
+            a = s.toks[i]
+            ty = s.toks[i + 2]
+            v = default_of(ty.text)
+
+            if v.len() == 0
+                continue
+            text = model.line(p, no: a.line).text
+            new = op_base.splice(text: text, c0: ty.c1, c1: ty.c1, put: " = " + v)
+            out @ out.push(
+                op_base.mk(op: "param-default", p, anchor: tokens.anchor(a), hunks: [op_base.line_edit(no: a.line, text: new)], context: ty.text, stmts: [s.sid])
+            )
+
+# The default a parameter of type `ty` is given, or "" for a type with none.
+function default_of(ty: str) -> str
+    if op_base.one_of(ty, set: ["i8", "i16", "i32", "i64", "u8", "u16", "u32", "u64"])
+        return "0"
+
+    if ty == "f32" || ty == "f64"
+        return "0.0"
+
+    if ty == "str"
+        return "\"\""
+
+    if ty == "bool"
+        return "false"
+    return ""
+
+function named_arg_equals(p: model.Program, @out: [mutant.Mutant])
+    for s in p.stmts
+        if op_base.decl_head(s)
+            continue
+        toks = s.toks
+        around = op_base.enclosing(toks).around
+
+        for i in range(from: 1, to: toks.len() - 2)
+            a = toks[i]
+            c = toks[i + 1]
+
+            if a.kind != "ident" || c.kind != "colon" || toks[i - 1].kind != "lparen" && toks[i - 1].kind != "comma"
+                continue
+            o = around[i]
+
+            if o < 0 || !op_base.is_call_paren(toks, i: o)
+                continue
+            next = toks[i + 2]
+
+            if next.line != c.line
+                continue
+            text = model.line(p, no: c.line).text
+            out @ out.push(
+                op_base.mk(op: "named-arg-equals", p, anchor: tokens.anchor(a), hunks: [op_base.line_edit(no: c.line, text: op_base.splice(text: text, c0: c.c0, c1: next.c0, put: "="))], context: s.kind, stmts: [s.sid])
+            )
+
+function amp_arg(p: model.Program, @out: [mutant.Mutant])
+    for s in p.stmts
+        if op_base.decl_head(s)
+            continue
+        toks = s.toks
+
+        for i in range(from: 1, to: toks.len() - 1)
+            t = toks[i]
+
+            if t.kind == "at" && (toks[i - 1].kind == "lparen" || toks[i - 1].kind == "comma") && toks[i + 1].kind == "ident"
+                out @ out.push(op_base.swapped(op: "amp-arg", p, t: t, word: "&", context: s.kind, sid: s.sid))
+
+function at_prefix(p: model.Program, @out: [mutant.Mutant])
+    for s in p.stmts
+        if s.kind != "mutate" || s.head || !op_base.single_line(s) || s.toks.len() < 3
+            continue
+        a = s.toks[0]
+
+        if a.kind != "ident" || s.toks[1].kind != "at"
+            continue
+        text = model.line(p, no: a.line).text
+        rest = op_base.cut(text, from: s.toks[2].c0, to: text.len())
+        new = op_base.cut(text, from: 0, to: a.c0) + "@" + a.text + " = " + rest
+        out @ out.push(
+            op_base.mk(op: "at-prefix", p, anchor: tokens.anchor(a), hunks: [op_base.line_edit(no: a.line, text: new)], context: "mutate", stmts: [s.sid])
+        )
+
+## The family's ids
+
+# Whether `id` is one of this family's operators, having run it on `p`.
+function run(id: str, p: model.Program, @out: [mutant.Mutant]) -> bool?
+    if id == "result-colon"
+        result(op: id, spelled: ":", p: p, @out)
+    else if id == "result-fat-arrow"
+        result(op: id, spelled: "=>", p: p, @out)
+    else if id == "result-bare"
+        result(op: id, spelled: "", p: p, @out)
+    else if id == "result-void"
+        result_void(p, @out)
+    else if id == "type-first"
+        type_first(p, @out)
+    else if id == "param-no-colon"
+        param_no_colon(p, @out)
+    else if id == "param-default"
+        param_default(p, @out)
+    else if id == "named-arg-equals"
+        named_arg_equals(p, @out)
+    else if id == "amp-arg"
+        amp_arg(p, @out)
+    else if id == "at-prefix"
+        at_prefix(p, @out)
+    else
+        return ok(false)
+    return ok(true)

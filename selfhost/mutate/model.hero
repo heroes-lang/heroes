@@ -1,0 +1,360 @@
+# The program model a recovery plan's operators read: the tokens, the
+# physical lines, the statements, their heads and blocks, of one Heroes file
+# (defect 448; the Python instrument's `model.py`, rule for rule).
+#
+# Statements are built from the token stream: one ends at a terminator
+# planted at bracket depth 0, or where an indent or a dedent begins (a head
+# that plants no terminator, `else` or an arm ending in `=>`, ends there). A
+# statement is a HEAD when an indent follows it; its block runs to the
+# dedent that returns to the level before that indent, and its parent is
+# the innermost head whose block holds its first line. Every site an
+# operator picks is a fact about this model and the text, never about what
+# a compiler under test decided, which is what makes a plan cut twice from
+# one tree and one lexer the same plan.
+#
+# A statement, a line and a head are numbered as the Python numbered them:
+# a statement by its index (`sid`), a line from 1, and `0` stands for the
+# Python's `None` where a line number may be absent (`block_first`,
+# `block_last`), `-1` where an index may be (`parent`, `stmt`).
+
+use mutate/kinds
+use mutate/spaces
+use mutate/tokens
+
+record Line
+    no: i64
+    text: str
+    # The real tokens of the line, comments left out, each as it stood in
+    # the walk (its `depth` set).
+    toks: [tokens.Tok]
+    # The line's comment, none or one.
+    comment: [tokens.Tok]
+    stmt: i64
+
+record Statement
+    sid: i64
+    toks: [tokens.Tok]
+    first: i64
+    last: i64
+    head: bool
+    block_first: i64
+    block_last: i64
+    parent: i64
+    children: [i64]
+    kind: str
+    # What a head's block holds: body, arms, fields, cases, members, value.
+    opens: str
+
+record Program
+    path: str
+    text: str
+    trailing_newline: bool
+    lines: [Line]
+    stmts: [Statement]
+    # The statements no head holds, in order: the top level's block.
+    top: [i64]
+    # What the walk could not place: `indent with no head at line N`, which
+    # the Python logged and went on past.
+    problems: [str]
+
+# The model of `path`'s `text`, from its tokens.
+function program(path: str, text: str, toks: [tokens.Tok]) -> Program
+    lines: [Line] @ []
+    no: i64 @ 1
+
+    for one in split_lines(text)
+        lines @ lines.push(Line(no: no, text: one, toks: [], comment: [], stmt: -1))
+        no @ no + 1
+
+    p: Program @ Program(
+        path: path,
+        text: text,
+        trailing_newline: ends_newline(text),
+        lines: lines,
+        stmts: [],
+        top: [],
+        problems: []
+    )
+    walk(@p, toks: toks)
+    relate(@p)
+    return p
+
+# A text's lines as the Python split them: at each line feed, the final
+# one's empty remainder dropped where the text ends with one.
+function split_lines(text: str) -> [str]
+    out: [str] @ []
+    start: i64 @ 0
+
+    for at in range(from: 0, to: text.len())
+        if text[at] == 10
+            out @ out.push(text.slice(from: start, to: at))
+            start @ at + 1
+
+    if !ends_newline(text)
+        out @ out.push(text.slice(from: start, to: text.len()))
+    return out
+
+function ends_newline(text: str) -> bool
+    return text.len() > 0 && text[text.len() - 1] == 10
+
+# The statements, their lines, and which of them are heads (`_walk`).
+function walk(@p: Program, toks: [tokens.Tok])
+    depth: i64 @ 0
+    stack_heads: [i64] @ []
+    stack_levels: [i64] @ []
+    level: i64 @ 0
+    last_real_line: i64 @ 0
+    last_closed: i64 @ -1
+    open: bool @ false
+    cur_toks: [tokens.Tok] @ []
+    cur_first: i64 @ 0
+    cur_last: i64 @ 0
+
+    for t0 in toks
+        t: tokens.Tok @ t0
+        layout = tokens.synthetic(t.kind)
+
+        if layout && open && (t.kind != "terminator" || depth == 0)
+            last_closed @ p.stmts.len()
+            p.stmts @ p.stmts.push(started(sid: p.stmts.len(), toks: cur_toks, first: cur_first, last: cur_last))
+            open @ false
+            cur_toks @ []
+
+        if t.kind == "eof"
+            while stack_heads.len() > 0
+                p.stmts[stack_heads[stack_heads.len() - 1]].block_last @ last_real_line
+                stack_heads @ stack_heads.slice(from: 0, to: stack_heads.len() - 1)
+                stack_levels @ stack_levels.slice(from: 0, to: stack_levels.len() - 1)
+
+            continue
+
+        if t.kind == "terminator"
+            continue
+
+        if t.kind == "indent"
+            level @ level + 1
+
+            if last_closed >= 0 && !p.stmts[last_closed].head
+                p.stmts[last_closed].head @ true
+                stack_heads @ stack_heads.push(last_closed)
+                stack_levels @ stack_levels.push(level)
+            else
+                p.problems @ p.problems.push("indent with no head at line " + t.line.to_str())
+            last_closed @ -1
+            continue
+
+        if t.kind == "dedent"
+            level @ level - 1
+
+            while stack_heads.len() > 0 && stack_levels[stack_levels.len() - 1] > level
+                p.stmts[stack_heads[stack_heads.len() - 1]].block_last @ last_real_line
+                stack_heads @ stack_heads.slice(from: 0, to: stack_heads.len() - 1)
+                stack_levels @ stack_levels.slice(from: 0, to: stack_levels.len() - 1)
+
+            last_closed @ -1
+            continue
+
+        # A token whose line is not the text's is one `tokens.read_dump`
+        # already named as misplaced, and the cut refuses its program.
+        if t.line < 1 || t.line > p.lines.len()
+            continue
+
+        if t.kind == "comment"
+            p.lines[t.line - 1].comment @ [t]
+            continue
+        t.depth @ depth
+        p.lines[t.line - 1].toks @ p.lines[t.line - 1].toks.push(t)
+
+        if tokens.opener(t.kind)
+            depth @ depth + 1
+        else if tokens.closer(t.kind) && depth > 0
+            depth @ depth - 1
+
+        if !open
+            open @ true
+            cur_first @ t.line
+        cur_toks @ cur_toks.push(t)
+        cur_last @ t.line
+
+        if t.line > last_real_line
+            last_real_line @ t.line
+
+    # A stream with no `eof` leaves its last statement open: it is one.
+    if open
+        p.stmts @ p.stmts.push(started(sid: p.stmts.len(), toks: cur_toks, first: cur_first, last: cur_last))
+
+    for s in p.stmts
+        for no in range(from: s.first, to: s.last + 1)
+            p.lines[no - 1].stmt @ s.sid
+
+        if s.head
+            first: i64 @ s.last + 1
+
+            while first <= p.lines.len() && p.lines[first - 1].toks.len() == 0
+                first @ first + 1
+
+            p.stmts[s.sid].block_first @ first
+
+function started(sid: i64, toks: [tokens.Tok], first: i64, last: i64) -> Statement
+    return Statement(
+        sid: sid,
+        toks: toks,
+        first: first,
+        last: last,
+        head: false,
+        block_first: 0,
+        block_last: 0,
+        parent: -1,
+        children: [],
+        kind: "",
+        opens: ""
+    )
+
+# Each statement's parent, kind and, for a head, what its block holds
+# (`_relate`): the innermost open head whose block holds its first line.
+function relate(@p: Program)
+    open_heads: [i64] @ []
+    parents: [i64] @ []
+
+    for index in range(from: 0, to: p.stmts.len())
+        s = p.stmts[index]
+
+        while open_heads.len() > 0 && !holds(p.stmts[open_heads[open_heads.len() - 1]], no: s.first)
+            open_heads @ open_heads.slice(from: 0, to: open_heads.len() - 1)
+
+        parent: i64 @ -1
+
+        if open_heads.len() > 0
+            parent @ open_heads[open_heads.len() - 1]
+        p.stmts[index].parent @ parent
+        parents @ parents.push(parent)
+
+        if parent < 0
+            p.top @ p.top.push(index)
+        parent_opens: str @ ""
+
+        if parent >= 0
+            parent_opens @ p.stmts[parent].opens
+        kind = kinds.classify(s.toks, top: parent < 0, parent_opens: parent_opens)
+        p.stmts[index].kind @ kind
+
+        if s.head
+            p.stmts[index].opens @ kinds.opens(kind: kind, toks: s.toks)
+
+            if s.block_last > 0
+                open_heads @ open_heads.push(index)
+
+    # Each head's children in statement order, gathered once: a push onto a
+    # field copies the array it grows (spec § 10).
+    gathered: [[i64]] @ []
+
+    for _ in p.stmts
+        none: [i64] = []
+        gathered @ gathered.push(none)
+
+    for index in range(from: 0, to: parents.len())
+        if parents[index] >= 0
+            kids = gathered[parents[index]]
+            gathered[parents[index]] @ kids.push(index)
+
+    for index in range(from: 0, to: p.stmts.len())
+        p.stmts[index].children @ gathered[index]
+
+# Whether a head's block holds `line`: `block_first <= line <= block_last`,
+# an absent `block_last` holding nothing.
+function holds(head: Statement, no: i64) -> bool
+    return head.block_first <= no && no <= head.block_last
+
+## Reading the model
+
+function line(p: Program, no: i64) -> Line
+    return p.lines[no - 1]
+
+function stmt(p: Program, sid: i64) -> Statement
+    return p.stmts[sid]
+
+function indent(l: Line) -> i64
+    count: i64 @ 0
+
+    while count < l.text.len() && l.text[count] == ' '
+        count @ count + 1
+
+    return count
+
+function code(l: Line) -> bool
+    return l.toks.len() > 0
+
+# `text` with its whitespace off both ends (`mutate/spaces.hero`).
+function stripped(text: str) -> str
+    return spaces.stripped(text)
+
+# Where an insertion at the line's end goes, before any trailing comment:
+# just past its last real token, or the text's end, whitespace taken off.
+function end_col(l: Line) -> i64
+    if l.toks.len() > 0
+        return l.toks[l.toks.len() - 1].c1
+    return spaces.trimmed_end(l.text)
+
+## Tests
+
+function modelled(text: str, toks: [tokens.Tok]) -> Program
+    return program(path: "t.hero", text: text, toks: toks)
+
+function tok(kind: str, text: str, row: i64, col: i64) -> tokens.Tok
+    return tokens.Tok(
+        kind: kind,
+        text: text,
+        line: row,
+        col: col,
+        c0: col - 1,
+        c1: col - 1 + text.len(),
+        idx: 0,
+        depth: 0
+    )
+
+test "a head's block runs to its dedent, and its child is classified by what it opens"
+    text = "record P\n    x: i64\n\nfunction f()\n    y = 1\n"
+    toks = [
+        tok(kind: "kw_record", text: "record", row: 1, col: 1)
+        tok(kind: "ident", text: "P", row: 1, col: 8)
+        tok(kind: "terminator", text: "", row: 1, col: 9)
+        tok(kind: "indent", text: "", row: 2, col: 1)
+        tok(kind: "ident", text: "x", row: 2, col: 5)
+        tok(kind: "colon", text: ":", row: 2, col: 6)
+        tok(kind: "ident", text: "i64", row: 2, col: 8)
+        tok(kind: "terminator", text: "", row: 2, col: 11)
+        tok(kind: "dedent", text: "", row: 4, col: 1)
+        tok(kind: "kw_function", text: "function", row: 4, col: 1)
+        tok(kind: "ident", text: "f", row: 4, col: 10)
+        tok(kind: "lparen", text: "(", row: 4, col: 11)
+        tok(kind: "rparen", text: ")", row: 4, col: 12)
+        tok(kind: "terminator", text: "", row: 4, col: 13)
+        tok(kind: "indent", text: "", row: 5, col: 1)
+        tok(kind: "ident", text: "y", row: 5, col: 5)
+        tok(kind: "eq", text: "=", row: 5, col: 7)
+        tok(kind: "int", text: "1", row: 5, col: 9)
+        tok(kind: "terminator", text: "", row: 5, col: 10)
+        tok(kind: "dedent", text: "", row: 6, col: 1)
+        tok(kind: "eof", text: "", row: 6, col: 1)
+    ]
+    p = modelled(text, toks: toks)
+    assert p.stmts.len() == 4
+    assert p.stmts[0].kind == "top-record"
+    assert p.stmts[0].opens == "fields"
+    assert p.stmts[0].block_first == 2
+    assert p.stmts[0].block_last == 2
+    assert p.stmts[1].kind == "field"
+    assert p.stmts[1].parent == 0
+    assert p.stmts[0].children == [1]
+    assert p.stmts[2].kind == "top-function"
+    assert p.stmts[3].kind == "bind"
+    assert p.stmts[2].block_last == 5
+    assert p.lines[1].stmt == 1
+    assert p.lines[2].stmt == -1
+    assert p.problems.len() == 0
+    assert end_col(p.lines[0]) == 8
+
+test "a text's lines are split as Python splits them, a final line feed making none"
+    assert split_lines("a\nb\n") == ["a", "b"]
+    assert split_lines("a\nb") == ["a", "b"]
+    assert split_lines("") == [""]

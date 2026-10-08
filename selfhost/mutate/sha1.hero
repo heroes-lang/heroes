@@ -1,0 +1,167 @@
+# SHA-1 of a text's bytes, as FIPS 180-4 defines it: the hash the recovery
+# plan's keys and its stratified orders are written in (defect 448).
+#
+# The plan the recovery arm replays was cut by the Python instrument, which
+# names each planted mistake by `sha1("<op>|<file>|<anchor>")`'s first
+# sixteen hexadecimal digits and orders every choice it makes by the SHA-1
+# of the words that choice is about. A cut made here names and orders them
+# the same way, so a plan it cuts is the Python's, key for key, and a run of
+# either replays the other's. Not a security digest, and never used as one:
+# it is the order the plan of 2026-09-30 was written in.
+#
+# The arithmetic is 32 bits wide inside an `i64`, every sum masked and every
+# rotation's low bits masked before they move up, as `cli/sha256.hero` does,
+# so nothing passes bit 31 and no `i64` overflows (spec § 7).
+
+constant MASK: i64
+    4294967295
+
+# The digest of `text`'s bytes, 40 lowercase hexadecimal digits.
+function hex(text: str) -> str
+    h: [i64] @ [1732584193, 4023233417, 2562383102, 271733878, 3285377520]
+    w: [i64] @ []
+
+    while w.len() < 80
+        w @ w.push(0)
+
+    whole = text.len() - text.len() % 64
+    at: i64 @ 0
+
+    while at < whole
+        i: i64 @ 0
+
+        while i < 16
+            b = at + i * 4
+            w[i] @ byte(text, at: b) << 24 | byte(text, at: b + 1) << 16 | byte(text, at: b + 2) << 8 | byte(text, at: b + 3)
+            i @ i + 1
+
+        compress(h: @h, w: @w)
+        at @ at + 64
+
+    tail = padded_tail(text, from: whole)
+    block: i64 @ 0
+
+    while block < tail.len()
+        i: i64 @ 0
+
+        while i < 16
+            b = block + i * 4
+            w[i] @ tail[b] << 24 | tail[b + 1] << 16 | tail[b + 2] << 8 | tail[b + 3]
+            i @ i + 1
+
+        compress(h: @h, w: @w)
+        block @ block + 64
+
+    out: [str] @ []
+
+    for word in h
+        out @ out.push(hex8(word))
+
+    return out.join("")
+
+function byte(text: str, at: i64) -> i64
+    return text[at].to_i64().must()
+
+# The bytes from `from` to the end, then the padding: a one bit, zeros to 56
+# bytes of 64, and the length in bits, big-endian, in the last 8.
+function padded_tail(text: str, from: i64) -> [i64]
+    bytes: [i64] @ []
+    at: i64 @ from
+
+    while at < text.len()
+        bytes @ bytes.push(byte(text, at: at))
+        at @ at + 1
+
+    bytes @ bytes.push(128)
+
+    while bytes.len() % 64 != 56
+        bytes @ bytes.push(0)
+
+    bits = text.len() * 8
+    shift: i64 @ 56
+
+    while shift >= 0
+        bytes @ bytes.push(bits >> shift & 255)
+        shift @ shift - 8
+
+    return bytes
+
+# A 32-bit word rotated left by `r`, 0 < r < 32: its high bits come round
+# to the bottom, its low bits are masked before they move up.
+function rotl(x: i64, r: i64) -> i64
+    return (x & MASK >> r) << r | x >> 32 - r
+
+# One block into the hash: `w`'s first 16 words are the block, the other 64
+# its schedule, written here.
+function compress(@h: [i64], @w: [i64])
+    i: i64 @ 16
+
+    while i < 80
+        w[i] @ rotl(x: w[i - 3] ^ w[i - 8] ^ w[i - 14] ^ w[i - 16], r: 1)
+        i @ i + 1
+
+    a: i64 @ h[0]
+    b: i64 @ h[1]
+    c: i64 @ h[2]
+    d: i64 @ h[3]
+    e: i64 @ h[4]
+    round: i64 @ 0
+
+    while round < 80
+        f: i64 @ 0
+        k: i64 @ 0
+
+        if round < 20
+            f @ b & c | (b ^ MASK) & d
+            k @ 1518500249
+        else if round < 40
+            f @ b ^ c ^ d
+            k @ 1859775393
+        else if round < 60
+            f @ b & c | b & d | c & d
+            k @ 2400959708
+        else
+            f @ b ^ c ^ d
+            k @ 3395469782
+        t = rotl(x: a, r: 5) + f + e + k + w[round] & MASK
+        e @ d
+        d @ c
+        c @ rotl(x: b, r: 30)
+        b @ a
+        a @ t
+        round @ round + 1
+
+    h[0] @ h[0] + a & MASK
+    h[1] @ h[1] + b & MASK
+    h[2] @ h[2] + c & MASK
+    h[3] @ h[3] + d & MASK
+    h[4] @ h[4] + e & MASK
+
+# A 32-bit word as eight lowercase hexadecimal digits.
+function hex8(word: i64) -> str
+    digits = "0123456789abcdef"
+    out: [str] @ []
+    shift: i64 @ 28
+
+    while shift >= 0
+        d = word >> shift & 15
+        out @ out.push(digits.slice(from: d, to: d + 1))
+        shift @ shift - 4
+
+    return out.join("")
+
+## Tests
+
+# FIPS 180-4's own examples, the empty text, the padding's two edges (55
+# and 56 bytes), a text of two whole blocks, and a key of the frozen plan:
+# its first mutant, `6a20fd3239cb781e`, is the SHA-1 of its op, file and
+# anchor joined by `|` (`tests/golden/recovery/plan-singles.jsonl`, line 1).
+test "SHA-1 is FIPS 180-4's, and names the frozen plan's first mutant"
+    assert hex("abc") == "a9993e364706816aba3e25717850c26c9cd0d89d"
+    assert hex("") == "da39a3ee5e6b4b0d3255bfef95601890afd80709"
+    assert hex("abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq") == "84983e441c3bd26ebaae4aa1f95129e5e54670f1"
+    assert hex("a".repeat(55)) == "c1c8bbdc22796e28c0e15163d20899b65621d65a"
+    assert hex("a".repeat(56)) == "c2db330f6083854c99d4b5bfb6e8f29f201be699"
+    assert hex("a".repeat(128)) == "ad5b3fdbcb526778c2839d2f151ea753995e26a0"
+    assert hex("brace-same-line|selfhost/keywords.hero|S182").slice(from: 0, to: 16) == "6a20fd3239cb781e"
+    assert hex("é€😀") == "c18ebd62bacc0aac83670707d9204486ec605731"

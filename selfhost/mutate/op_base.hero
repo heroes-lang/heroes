@@ -1,0 +1,267 @@
+# What every operator of a recovery plan reads its program with: the
+# helpers of the Python instrument's `ops.py`, rule for rule (defect 448).
+#
+# An operator is a habit a model brings from the languages it has read
+# most, ONE mistake, a deterministic textual edit at a site found in the
+# tokens of a program `heroes check` accepts. The operators themselves are
+# `mutate/op_*.hero`, each a family of the Python's table, and
+# `mutate/operators.hero` is the table, in the Python's order, which is the
+# order a plan is written in. Each one appends to `@out` the mutants it
+# finds in one program, in the order the Python's generator yielded them.
+#
+# A token's `c0` and `c1` are the bytes of its line it covers
+# (`mutate/tokens.hero`), so every splice here cuts at a character's edge.
+
+use mutate/model
+use mutate/mutant
+use mutate/tokens
+
+function operand_end(kind: str) -> bool
+    for k in ["ident", "int", "float", "str", "char", "rparen", "rbracket", "rbrace", "kw_true", "kw_false", "kw_nullptr", "question", "hole"]
+        if k == kind
+            return true
+
+    return false
+
+function binary(kind: str) -> bool
+    for k in ["plus", "minus", "star", "slash", "percent", "and_and", "or_or", "eq_eq", "bang_eq", "lt", "le", "gt", "ge", "pipe", "amp", "caret", "shl", "shr"]
+        if k == kind
+            return true
+
+    return false
+
+function simple_kind(kind: str) -> bool
+    return one_of(kind, set: ["bind", "declare", "mutate", "return", "jump", "assert", "expr"])
+
+function one_of(word: str, set: [str]) -> bool
+    for one in set
+        if one == word
+            return true
+
+    return false
+
+function mk(op: str, p: model.Program, anchor: str, hunks: [mutant.Hunk], context: str, stmts: [i64]) -> mutant.Mutant
+    return mutant.made(op: op, file: p.path, anchor: anchor, hunks: hunks, context: context, stmts: stmts)
+
+# A hunk replacing physical line `no` (1-based).
+function line_edit(no: i64, text: str) -> mutant.Hunk
+    return mutant.hunk(start: no - 1, end: no, lines: [text])
+
+function splice(text: str, c0: i64, c1: i64, put: str) -> str
+    return cut(text, from: 0, to: c0) + put + cut(text, from: c1, to: text.len())
+
+# `text[from:to]` as Python slices it: empty where `from` is not before
+# `to`, and never past the end, so a span the Python read as empty is
+# empty here and never the abort a reversed slice is (spec § 10).
+function cut(text: str, from: i64, to: i64) -> str
+    end: i64 @ to
+
+    if end > text.len()
+        end @ text.len()
+
+    if from >= end
+        return ""
+    return text.slice(from: from, to: end)
+
+function text_of(p: model.Program, no: i64) -> str
+    return p.lines[no - 1].text
+
+# One token's text replaced by `word`, its line the hunk.
+function swapped(op: str, p: model.Program, t: tokens.Tok, word: str, context: str, sid: i64) -> mutant.Mutant
+    return mk(
+        op: op,
+        p,
+        anchor: tokens.anchor(t),
+        hunks: [line_edit(no: t.line, text: splice(text: text_of(p, no: t.line), c0: t.c0, c1: t.c1, put: word))],
+        context: context,
+        stmts: [sid]
+    )
+
+# `word` written just before one token.
+function prefixed(op: str, p: model.Program, t: tokens.Tok, word: str, context: str, sid: i64) -> mutant.Mutant
+    return mk(
+        op: op,
+        p,
+        anchor: tokens.anchor(t),
+        hunks: [line_edit(no: t.line, text: splice(text: text_of(p, no: t.line), c0: t.c0, c1: t.c0, put: word))],
+        context: context,
+        stmts: [sid]
+    )
+
+# `word` written at the end of statement `s`'s last line, before a comment.
+function appended(op: str, p: model.Program, s: model.Statement, word: str, anchor: str) -> mutant.Mutant
+    l = model.line(p, no: s.last)
+    at = model.end_col(l)
+    return mk(
+        op: op,
+        p,
+        anchor: anchor,
+        hunks: [line_edit(no: s.last, text: splice(text: l.text, c0: at, c1: at, put: word))],
+        context: s.kind,
+        stmts: [s.sid]
+    )
+
+function single_line(s: model.Statement) -> bool
+    return s.first == s.last
+
+function no_comment(p: model.Program, s: model.Statement) -> bool
+    for no in range(from: s.first, to: s.last + 1)
+        if p.lines[no - 1].comment.len() > 0
+            return false
+
+    return true
+
+# Whether a line from `first` to `last` holds a comment.
+function comment_between(p: model.Program, first: i64, last: i64) -> bool
+    for no in range(from: first, to: last + 1)
+        if p.lines[no - 1].comment.len() > 0
+            return true
+
+    return false
+
+# Whether `toks[i]` is a binary operator, not a sign.
+function binary_at(toks: [tokens.Tok], i: i64) -> bool
+    return binary(toks[i].kind) && i > 0 && operand_end(toks[i - 1].kind)
+
+# For each token the index of the innermost opener around it (or -1); for
+# each opener the index of its closer (or -1, as for a token that is no
+# opener); and the openers with their closers in the order the Python's
+# dict held them: as each was closed, then those left open, outermost first.
+record Enclosing
+    around: [i64]
+    closer: [i64]
+    pairs: [[i64]]
+
+function enclosing(toks: [tokens.Tok]) -> Enclosing
+    stack: [i64] @ []
+    around: [i64] @ []
+    closer: [i64] @ []
+    pairs: [[i64]] @ []
+
+    for i in range(from: 0, to: toks.len())
+        closer @ closer.push(-1)
+
+        if stack.len() > 0
+            around @ around.push(stack[stack.len() - 1])
+        else
+            around @ around.push(-1)
+
+        if tokens.opener(toks[i].kind)
+            stack @ stack.push(i)
+        else if tokens.closer(toks[i].kind) && stack.len() > 0
+            o = stack[stack.len() - 1]
+            stack @ stack.slice(from: 0, to: stack.len() - 1)
+            closer[o] @ i
+            pairs @ pairs.push([o, i])
+
+    for o in stack
+        pairs @ pairs.push([o, -1])
+
+    return Enclosing(around: around, closer: closer, pairs: pairs)
+
+# `toks[i]` is the `(` of a call or a construction: after a name or a
+# closer, and not a function's own parameter list.
+function is_call_paren(toks: [tokens.Tok], i: i64) -> bool
+    if toks[i].kind != "lparen" || i == 0
+        return false
+    before = toks[i - 1].kind
+    return (before == "ident" || before == "rparen" || before == "rbracket") && !(i >= 2 && toks[i - 2].kind == "kw_function")
+
+function decl_head(s: model.Statement) -> bool
+    return one_of(
+        s.kind,
+        set: ["top-function", "member-function", "top-test", "top-record", "member-record", "top-variant", "top-constant", "member-constant", "top-extern", "top-use"]
+    )
+
+# The statements after `s` in its block, in order.
+function siblings_after(p: model.Program, s: model.Statement) -> [i64]
+    group: [i64] @ p.top
+
+    if s.parent >= 0
+        group @ p.stmts[s.parent].children
+    out: [i64] @ []
+    seen: bool @ false
+
+    for x in group
+        if seen
+            out @ out.push(x)
+
+        if x == s.sid
+            seen @ true
+
+    return out
+
+# An `if` head and the `else if` and `else` heads after it: the chain.
+function else_chain(p: model.Program, s: model.Statement) -> [i64]
+    chain: [i64] @ [s.sid]
+
+    for x in siblings_after(p, s: s)
+        n = p.stmts[x]
+
+        if (n.kind == "else-if" || n.kind == "else") && n.head
+            chain @ chain.push(x)
+
+            if n.kind == "else"
+                break
+        else
+            break
+
+    return chain
+
+function has_else_after(p: model.Program, s: model.Statement) -> bool
+    next = siblings_after(p, s: s)
+    return next.len() > 0 && (p.stmts[next[0]].kind == "else-if" || p.stmts[next[0]].kind == "else")
+
+function indent_of(p: model.Program, s: model.Statement) -> i64
+    return model.indent(model.line(p, no: s.first))
+
+function block_ok(s: model.Statement) -> bool
+    return s.head && s.block_last > 0 && s.block_first > 0 && s.block_first <= s.block_last
+
+# The block's first line is the one right after its head, so a merge of
+# the head and its block deletes nothing but the habit's own line break.
+function contiguous(s: model.Statement) -> bool
+    return block_ok(s) && s.block_first == s.last + 1
+
+# The one statement of a head's block where that block is one single-line
+# simple statement right below the head, with no comment; else -1.
+function simple_body_line(p: model.Program, s: model.Statement) -> i64
+    if !contiguous(s) || s.children.len() != 1
+        return -1
+    k = p.stmts[s.children[0]]
+
+    if k.head || !single_line(k) || !no_comment(p, s: k) || !simple_kind(k.kind)
+        return -1
+
+    if comment_between(p, first: s.block_first, last: s.block_last)
+        return -1
+
+    if k.first != s.block_first || k.last != s.block_last
+        return -1
+    return k.sid
+
+# A run of spaces `count` long.
+function spaces(count: i64) -> str
+    return " ".repeat(count.to_u64().must())
+
+## Tests
+
+function tok(kind: str) -> tokens.Tok
+    return tokens.Tok(kind: kind, text: "", line: 1, col: 1, c0: 0, c1: 0, idx: 0, depth: 0)
+
+test "an opener's closer, the opener around each token, and the order the Python's dict held them in"
+    toks = [tok("ident"), tok("lparen"), tok("lbracket"), tok("rbracket"), tok("lparen"), tok("rparen")]
+    e = enclosing(toks)
+    assert e.around == [-1, -1, 1, 2, 1, 4]
+    assert e.closer == [-1, -1, 3, -1, 5, -1]
+    assert e.pairs == [[2, 3], [4, 5], [1, -1]]
+    assert is_call_paren(toks, i: 1)
+
+    # After a closer it is a call too, `xs[i](...)`; a `[` is never one, and
+    # a function's own parameter list is not.
+    assert is_call_paren(toks, i: 4)
+    assert !is_call_paren(toks, i: 2)
+    assert !is_call_paren([tok("kw_function"), tok("ident"), tok("lparen")], i: 2)
+    assert binary_at([tok("ident"), tok("minus")], i: 1)
+    assert !binary_at([tok("lparen"), tok("minus")], i: 1)
+    assert splice(text: "abcd", c0: 1, c1: 3, put: "X") == "aXd"
