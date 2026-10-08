@@ -1629,7 +1629,7 @@ bb4:
 #line 42 "examples/logs/entry.hero"
     t7 = h1_from;
 #line 42 "examples/logs/entry.hero"
-    t8 = hero_str_byte(t6, t7);
+    t8 = ((void)((t6.ptr == NULL || t7 < 0 || t7 >= t6.len) ? ((void)hero_str_byte(t6, t7), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t6.ptr[t7]);
 #line 42 "examples/logs/entry.hero"
     t9 = h_entry_is_space(t8);
 #line 42 "examples/logs/entry.hero"
@@ -1694,7 +1694,7 @@ bb9:
 #line 47 "examples/logs/entry.hero"
     if (__builtin_sub_overflow(t20, t21, &t22)) hero_panic_overflow();
 #line 47 "examples/logs/entry.hero"
-    t23 = hero_str_byte(t19, t22);
+    t23 = ((void)((t19.ptr == NULL || t22 < 0 || t22 >= t19.len) ? ((void)hero_str_byte(t19, t22), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t19.ptr[t22]);
 #line 47 "examples/logs/entry.hero"
     t24 = h_entry_is_space(t23);
 #line 47 "examples/logs/entry.hero"
@@ -1800,7 +1800,7 @@ bb2:
 #line 58 "examples/logs/entry.hero"
     t9 = h3_i;
 #line 58 "examples/logs/entry.hero"
-    t10 = hero_str_byte(t8, t9);
+    t10 = ((void)((t8.ptr == NULL || t9 < 0 || t9 >= t8.len) ? ((void)hero_str_byte(t8, t9), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t8.ptr[t9]);
 #line 58 "examples/logs/entry.hero"
     t11 = UINT64_C(10);
 #line 58 "examples/logs/entry.hero"
@@ -1950,7 +1950,7 @@ bb2:
 #line 71 "examples/logs/entry.hero"
     t7 = h2_i;
 #line 71 "examples/logs/entry.hero"
-    t8 = hero_str_byte(t6, t7);
+    t8 = ((void)((t6.ptr == NULL || t7 < 0 || t7 >= t6.len) ? ((void)hero_str_byte(t6, t7), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t6.ptr[t7]);
 #line 71 "examples/logs/entry.hero"
     t9 = h1_c;
 #line 71 "examples/logs/entry.hero"
@@ -2414,7 +2414,7 @@ bb1:
 #line 105 "examples/logs/entry.hero"
     if (__builtin_sub_overflow(t30, t31, &t32)) hero_panic_overflow();
 #line 105 "examples/logs/entry.hero"
-    t33 = hero_str_byte(t26, t32);
+    t33 = ((void)((t26.ptr == NULL || t32 < 0 || t32 >= t26.len) ? ((void)hero_str_byte(t26, t32), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t26.ptr[t32]);
 #line 105 "examples/logs/entry.hero"
     t34 = UINT64_C(58);
 #line 105 "examples/logs/entry.hero"
@@ -4273,7 +4273,7 @@ bb5:
 #line 134 "examples/logs/mask.hero"
     t13 = h4_i;
 #line 134 "examples/logs/mask.hero"
-    t14 = hero_str_byte(t12, t13);
+    t14 = ((void)((t12.ptr == NULL || t13 < 0 || t13 >= t12.len) ? ((void)hero_str_byte(t12, t13), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t12.ptr[t13]);
 #line 134 "examples/logs/mask.hero"
     t15 = h1_c;
 #line 134 "examples/logs/mask.hero"

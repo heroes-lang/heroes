@@ -856,7 +856,7 @@ bb3:
 #line 51 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
     hero_array_unshare(&(h5_g));
 #line 51 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    t67 = h_fixedbugs387afieldoranelementreadbeforeawritekeepsitsvalue_bump(&(*(HeroArrayHeader * *)hero_array_at_mut(h5_g, t66)));
+    t67 = h_fixedbugs387afieldoranelementreadbeforeawritekeepsitsvalue_bump(&(*((void)((h5_g == NULL || t66 < 0 || t66 >= h5_g->len) ? ((void)hero_array_at_mut(h5_g, t66), hero_unreachable()) : (void)0), (void)(h5_g->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), (HeroArrayHeader * *)(void *)(h5_g + 1) + t66)));
 #line 51 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
     t68 = h_fixedbugs387afieldoranelementreadbeforeawritekeepsitsvalue_total(t65, t67);
 #line 51 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
@@ -923,7 +923,7 @@ bb5:
 #line 52 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
     hero_array_unshare(&(h5_g));
 #line 52 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
-    t83 = h_fixedbugs387afieldoranelementreadbeforeawritekeepsitsvalue_bump(&(*(HeroArrayHeader * *)hero_array_at_mut(h5_g, t82)));
+    t83 = h_fixedbugs387afieldoranelementreadbeforeawritekeepsitsvalue_bump(&(*((void)((h5_g == NULL || t82 < 0 || t82 >= h5_g->len) ? ((void)hero_array_at_mut(h5_g, t82), hero_unreachable()) : (void)0), (void)(h5_g->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), (HeroArrayHeader * *)(void *)(h5_g + 1) + t82)));
 #line 52 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
     if (__builtin_add_overflow(t81, t83, &t84)) hero_panic_overflow();
 #line 52 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"

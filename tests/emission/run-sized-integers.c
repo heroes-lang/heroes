@@ -536,7 +536,7 @@ bb3:
 #line 44 "tests/golden/run/sized-integers.hero"
     t65 = INT64_C(0);
 #line 44 "tests/golden/run/sized-integers.hero"
-    t66 = hero_str_byte(t64, t65);
+    t66 = ((void)((t64.ptr == NULL || t65 < 0 || t65 >= t64.len) ? ((void)hero_str_byte(t64, t65), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t64.ptr[t65]);
 #line 44 "tests/golden/run/sized-integers.hero"
     t67 = HERO_STR_LIT(hero_str_20);
 #line 44 "tests/golden/run/sized-integers.hero"
@@ -544,7 +544,7 @@ bb3:
 #line 44 "tests/golden/run/sized-integers.hero"
     t69 = INT64_C(1);
 #line 44 "tests/golden/run/sized-integers.hero"
-    t70 = hero_str_byte(t68, t69);
+    t70 = ((void)((t68.ptr == NULL || t69 < 0 || t69 >= t68.len) ? ((void)hero_str_byte(t68, t69), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t68.ptr[t69]);
 #line 44 "tests/golden/run/sized-integers.hero"
     t71 = HERO_STR_LIT(hero_str_20);
 #line 44 "tests/golden/run/sized-integers.hero"
@@ -552,7 +552,7 @@ bb3:
 #line 44 "tests/golden/run/sized-integers.hero"
     t73 = INT64_C(0);
 #line 44 "tests/golden/run/sized-integers.hero"
-    t74 = hero_str_byte(t72, t73);
+    t74 = ((void)((t72.ptr == NULL || t73 < 0 || t73 >= t72.len) ? ((void)hero_str_byte(t72, t73), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t72.ptr[t73]);
 #line 44 "tests/golden/run/sized-integers.hero"
     t75 = UINT64_C(65);
 #line 44 "tests/golden/run/sized-integers.hero"

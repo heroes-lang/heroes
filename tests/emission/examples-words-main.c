@@ -428,7 +428,7 @@ bb1:
 #line 45 "examples/words/main.hero"
     t7 = INT64_C(0);
 #line 45 "examples/words/main.hero"
-    t8 = hero_str_byte(t6, t7);
+    t8 = ((void)((t6.ptr == NULL || t7 < 0 || t7 >= t6.len) ? ((void)hero_str_byte(t6, t7), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t6.ptr[t7]);
 #line 45 "examples/words/main.hero"
     h1_b = t8;
     t9 = h1_b;
@@ -567,7 +567,7 @@ bb1:
 #line 51 "examples/words/main.hero"
     t7 = INT64_C(0);
 #line 51 "examples/words/main.hero"
-    t8 = hero_str_byte(t6, t7);
+    t8 = ((void)((t6.ptr == NULL || t7 < 0 || t7 >= t6.len) ? ((void)hero_str_byte(t6, t7), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t6.ptr[t7]);
 #line 51 "examples/words/main.hero"
     h1_b = t8;
 #line 53 "examples/words/main.hero"
@@ -714,7 +714,7 @@ bb2:
 #line 66 "examples/words/main.hero"
     t7 = h2_i;
 #line 66 "examples/words/main.hero"
-    t8 = hero_str_byte(t6, t7);
+    t8 = ((void)((t6.ptr == NULL || t7 < 0 || t7 >= t6.len) ? ((void)hero_str_byte(t6, t7), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t6.ptr[t7]);
 #line 66 "examples/words/main.hero"
     t9 = h0_b;
 #line 66 "examples/words/main.hero"

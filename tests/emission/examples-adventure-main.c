@@ -900,7 +900,7 @@ bb6:
 #line 61 "examples/adventure/main.hero"
     t18 = INT64_C(0);
 #line 61 "examples/adventure/main.hero"
-    t19 = hero_str_byte(t17, t18);
+    t19 = ((void)((t17.ptr == NULL || t18 < 0 || t18 >= t17.len) ? ((void)hero_str_byte(t17, t18), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t17.ptr[t18]);
 #line 61 "examples/adventure/main.hero"
     t20 = UINT64_C(35);
 #line 61 "examples/adventure/main.hero"
@@ -1086,7 +1086,7 @@ bb4:
 #line 73 "examples/adventure/main.hero"
     t7 = h1_from;
 #line 73 "examples/adventure/main.hero"
-    t8 = hero_str_byte(t6, t7);
+    t8 = ((void)((t6.ptr == NULL || t7 < 0 || t7 >= t6.len) ? ((void)hero_str_byte(t6, t7), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t6.ptr[t7]);
 #line 73 "examples/adventure/main.hero"
     t9 = h_main_is_space(t8);
 #line 73 "examples/adventure/main.hero"
@@ -1151,7 +1151,7 @@ bb9:
 #line 78 "examples/adventure/main.hero"
     if (__builtin_sub_overflow(t20, t21, &t22)) hero_panic_overflow();
 #line 78 "examples/adventure/main.hero"
-    t23 = hero_str_byte(t19, t22);
+    t23 = ((void)((t19.ptr == NULL || t22 < 0 || t22 >= t19.len) ? ((void)hero_str_byte(t19, t22), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t19.ptr[t22]);
 #line 78 "examples/adventure/main.hero"
     t24 = h_main_is_space(t23);
 #line 78 "examples/adventure/main.hero"
@@ -1257,7 +1257,7 @@ bb2:
 #line 89 "examples/adventure/main.hero"
     t9 = h3_i;
 #line 89 "examples/adventure/main.hero"
-    t10 = hero_str_byte(t8, t9);
+    t10 = ((void)((t8.ptr == NULL || t9 < 0 || t9 >= t8.len) ? ((void)hero_str_byte(t8, t9), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t8.ptr[t9]);
 #line 89 "examples/adventure/main.hero"
     t11 = UINT64_C(10);
 #line 89 "examples/adventure/main.hero"
@@ -1579,7 +1579,7 @@ bb4:
 #line 32 "examples/adventure/game.hero"
     t7 = h1_from;
 #line 32 "examples/adventure/game.hero"
-    t8 = hero_str_byte(t6, t7);
+    t8 = ((void)((t6.ptr == NULL || t7 < 0 || t7 >= t6.len) ? ((void)hero_str_byte(t6, t7), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t6.ptr[t7]);
 #line 32 "examples/adventure/game.hero"
     t9 = h_game_is_space(t8);
 #line 32 "examples/adventure/game.hero"
@@ -1644,7 +1644,7 @@ bb9:
 #line 37 "examples/adventure/game.hero"
     if (__builtin_sub_overflow(t20, t21, &t22)) hero_panic_overflow();
 #line 37 "examples/adventure/game.hero"
-    t23 = hero_str_byte(t19, t22);
+    t23 = ((void)((t19.ptr == NULL || t22 < 0 || t22 >= t19.len) ? ((void)hero_str_byte(t19, t22), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t19.ptr[t22]);
 #line 37 "examples/adventure/game.hero"
     t24 = h_game_is_space(t23);
 #line 37 "examples/adventure/game.hero"
@@ -1743,7 +1743,7 @@ bb4:
 #line 45 "examples/adventure/game.hero"
     t7 = h1_i;
 #line 45 "examples/adventure/game.hero"
-    t8 = hero_str_byte(t6, t7);
+    t8 = ((void)((t6.ptr == NULL || t7 < 0 || t7 >= t6.len) ? ((void)hero_str_byte(t6, t7), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t6.ptr[t7]);
 #line 45 "examples/adventure/game.hero"
     t9 = UINT64_C(32);
 #line 45 "examples/adventure/game.hero"

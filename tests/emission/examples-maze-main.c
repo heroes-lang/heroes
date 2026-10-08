@@ -1614,7 +1614,7 @@ bb2:
 #line 53 "examples/maze/grid.hero"
     t9 = h3_i;
 #line 53 "examples/maze/grid.hero"
-    t10 = hero_str_byte(t8, t9);
+    t10 = ((void)((t8.ptr == NULL || t9 < 0 || t9 >= t8.len) ? ((void)hero_str_byte(t8, t9), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t8.ptr[t9]);
 #line 53 "examples/maze/grid.hero"
     t11 = UINT64_C(10);
 #line 53 "examples/maze/grid.hero"
@@ -2431,7 +2431,7 @@ bb0:
 #line 94 "examples/maze/grid.hero"
     t9 = h_grid_column_of(t7, t8);
 #line 94 "examples/maze/grid.hero"
-    t10 = hero_str_byte(t6, t9);
+    t10 = ((void)((t6.ptr == NULL || t9 < 0 || t9 >= t6.len) ? ((void)hero_str_byte(t6, t9), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t6.ptr[t9]);
 #line 94 "examples/maze/grid.hero"
     return t10;
 #line 2438 "main.c"

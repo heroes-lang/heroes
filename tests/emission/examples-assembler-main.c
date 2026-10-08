@@ -6331,7 +6331,7 @@ bb4:
 #line 79 "examples/assembler/program.hero"
     t7 = h1_from;
 #line 79 "examples/assembler/program.hero"
-    t8 = hero_str_byte(t6, t7);
+    t8 = ((void)((t6.ptr == NULL || t7 < 0 || t7 >= t6.len) ? ((void)hero_str_byte(t6, t7), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t6.ptr[t7]);
 #line 79 "examples/assembler/program.hero"
     t9 = h_program_is_space(t8);
 #line 79 "examples/assembler/program.hero"
@@ -6396,7 +6396,7 @@ bb9:
 #line 84 "examples/assembler/program.hero"
     if (__builtin_sub_overflow(t20, t21, &t22)) hero_panic_overflow();
 #line 84 "examples/assembler/program.hero"
-    t23 = hero_str_byte(t19, t22);
+    t23 = ((void)((t19.ptr == NULL || t22 < 0 || t22 >= t19.len) ? ((void)hero_str_byte(t19, t22), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t19.ptr[t22]);
 #line 84 "examples/assembler/program.hero"
     t24 = h_program_is_space(t23);
 #line 84 "examples/assembler/program.hero"
@@ -6502,7 +6502,7 @@ bb2:
 #line 95 "examples/assembler/program.hero"
     t9 = h3_i;
 #line 95 "examples/assembler/program.hero"
-    t10 = hero_str_byte(t8, t9);
+    t10 = ((void)((t8.ptr == NULL || t9 < 0 || t9 >= t8.len) ? ((void)hero_str_byte(t8, t9), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t8.ptr[t9]);
 #line 95 "examples/assembler/program.hero"
     t11 = UINT64_C(10);
 #line 95 "examples/assembler/program.hero"
@@ -6652,7 +6652,7 @@ bb2:
 #line 108 "examples/assembler/program.hero"
     t7 = h2_i;
 #line 108 "examples/assembler/program.hero"
-    t8 = hero_str_byte(t6, t7);
+    t8 = ((void)((t6.ptr == NULL || t7 < 0 || t7 >= t6.len) ? ((void)hero_str_byte(t6, t7), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t6.ptr[t7]);
 #line 108 "examples/assembler/program.hero"
     t9 = h1_c;
 #line 108 "examples/assembler/program.hero"
@@ -6833,7 +6833,7 @@ bb5:
 #line 122 "examples/assembler/program.hero"
     t13 = h4_i;
 #line 122 "examples/assembler/program.hero"
-    t14 = hero_str_byte(t12, t13);
+    t14 = ((void)((t12.ptr == NULL || t13 < 0 || t13 >= t12.len) ? ((void)hero_str_byte(t12, t13), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t12.ptr[t13]);
 #line 122 "examples/assembler/program.hero"
     t15 = h1_c;
 #line 122 "examples/assembler/program.hero"
@@ -7701,7 +7701,7 @@ bb1:
 #line 181 "examples/assembler/program.hero"
     t24 = INT64_C(1);
 #line 181 "examples/assembler/program.hero"
-    t25 = hero_str_byte(t23, t24);
+    t25 = ((void)((t23.ptr == NULL || t24 < 0 || t24 >= t23.len) ? ((void)hero_str_byte(t23, t24), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t23.ptr[t24]);
 #line 181 "examples/assembler/program.hero"
     t26 = UINT64_C(48);
 #line 181 "examples/assembler/program.hero"
@@ -7739,7 +7739,7 @@ bb2:
 #line 176 "examples/assembler/program.hero"
     t6 = INT64_C(0);
 #line 176 "examples/assembler/program.hero"
-    t7 = hero_str_byte(t5, t6);
+    t7 = ((void)((t5.ptr == NULL || t6 < 0 || t6 >= t5.len) ? ((void)hero_str_byte(t5, t6), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t5.ptr[t6]);
 #line 176 "examples/assembler/program.hero"
     t8 = UINT64_C(114);
 #line 176 "examples/assembler/program.hero"
@@ -8195,7 +8195,7 @@ bb2:
 #line 194 "examples/assembler/program.hero"
     t8 = INT64_C(0);
 #line 194 "examples/assembler/program.hero"
-    t9 = hero_str_byte(t7, t8);
+    t9 = ((void)((t7.ptr == NULL || t8 < 0 || t8 >= t7.len) ? ((void)hero_str_byte(t7, t8), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t7.ptr[t8]);
 #line 194 "examples/assembler/program.hero"
     t10 = UINT64_C(45);
 #line 194 "examples/assembler/program.hero"
@@ -8378,7 +8378,7 @@ bb10:
 #line 203 "examples/assembler/program.hero"
     t49 = h8_i;
 #line 203 "examples/assembler/program.hero"
-    t50 = hero_str_byte(t48, t49);
+    t50 = ((void)((t48.ptr == NULL || t49 < 0 || t49 >= t48.len) ? ((void)hero_str_byte(t48, t49), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t48.ptr[t49]);
 #line 203 "examples/assembler/program.hero"
     t51 = UINT64_C(48);
 #line 203 "examples/assembler/program.hero"
@@ -8418,7 +8418,7 @@ bb13:
 #line 205 "examples/assembler/program.hero"
     t75 = h8_i;
 #line 205 "examples/assembler/program.hero"
-    t76 = hero_str_byte(t74, t75);
+    t76 = ((void)((t74.ptr == NULL || t75 < 0 || t75 >= t74.len) ? ((void)hero_str_byte(t74, t75), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t74.ptr[t75]);
 #line 205 "examples/assembler/program.hero"
     t77 = UINT64_C(48);
 #line 205 "examples/assembler/program.hero"
@@ -8456,7 +8456,7 @@ bb14:
 #line 203 "examples/assembler/program.hero"
     t54 = h8_i;
 #line 203 "examples/assembler/program.hero"
-    t55 = hero_str_byte(t53, t54);
+    t55 = ((void)((t53.ptr == NULL || t54 < 0 || t54 >= t53.len) ? ((void)hero_str_byte(t53, t54), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t53.ptr[t54]);
 #line 203 "examples/assembler/program.hero"
     t56 = UINT64_C(57);
 #line 203 "examples/assembler/program.hero"

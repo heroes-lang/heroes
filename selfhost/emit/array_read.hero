@@ -41,9 +41,39 @@ function element(spelling: str, base: str, index: str) -> str
 function length(value: str) -> str
     return "((void)(" + value + " == NULL ? ((void)hero_array_len(" + value + "), hero_unreachable()) : (void)0), " + value + "->len)"
 
+# An element's own PLACE after its array was unshared, the lvalue a step of
+# a nested place descends through (panel 196's R1; defect 491, 2026-10-08):
+# `hero_array_at_mut` returned its address, and a call per step is what this
+# spells in place, by the reasoning above and with the same abort, handed to
+# `hero_array_at_mut` itself for a NULL slot or an index outside [0, len).
+# The comma is the operand of the dereference, so the checks are sequenced
+# before the pointer arithmetic and the whole stays an lvalue.
+#
+# `base` is named five times here, and that is the whole difficulty: it is a
+# place, not a temporary, and a place that holds a call, the previous step's
+# own `hero_array_at_mut`, would write that call five times over, and each
+# deeper step five times that. So `pure` says whether `base` is a slot and
+# fields alone, which no call can be in, and is a fact the walk carries as it
+# builds the place, never read back off the text. Where it is not, the
+# runtime's call stays: the one spelling both walks had before, now written
+# once (`emit/places.hero`, `emit/container.hero`).
+function place(spelling: str, base: str, index: str, pure: bool) -> str
+    if !pure
+        return "(*(" + spelling + " *)hero_array_at_mut(" + base + ", " + index + "))"
+    checked = "(" + base + " == NULL || " + index + " < 0 || " + index + " >= " + base + "->len)"
+    sized = "(" + base + "->elem->size != sizeof(" + spelling + ") ? hero_unreachable() : (void)0)"
+    return "(*((void)(" + checked + " ? ((void)hero_array_at_mut(" + base + ", " + index + "), hero_unreachable()) : (void)0), (void)" + sized + ", (" + spelling + " *)(void *)(" + base + " + 1) + " + index + "))"
+
 ## Tests
 
 test "an element and a length are read in place, every failing read handed to the runtime"
     assert element(spelling: "int64_t", base: "t0", index: "t1") == "((void)((t0 == NULL || t1 < 0 || t1 >= t0->len) ? ((void)hero_array_at(t0, t1), hero_unreachable()) : (void)0), (void)(t0->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t0 + 1))[t1])"
     assert element(spelling: "char *", base: "t2", index: "t3") == "((void)((t2 == NULL || t3 < 0 || t3 >= t2->len) ? ((void)hero_array_at(t2, t3), hero_unreachable()) : (void)0), (void)(t2->elem->size != sizeof(char *) ? hero_unreachable() : (void)0), ((char * const *)(const void *)(t2 + 1))[t3])"
     assert length("t4") == "((void)(t4 == NULL ? ((void)hero_array_len(t4), hero_unreachable()) : (void)0), t4->len)"
+
+# Defect 491's spelling: an element's place in place where the base holds no
+# call, the runtime's call, as it was, where it does.
+test "an element's place is read in place over a call-free base, and by the runtime's call otherwise (defect 491)"
+    assert place(spelling: "int64_t", base: "h0_xs", index: "t1", pure: true) == "(*((void)((h0_xs == NULL || t1 < 0 || t1 >= h0_xs->len) ? ((void)hero_array_at_mut(h0_xs, t1), hero_unreachable()) : (void)0), (void)(h0_xs->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), (int64_t *)(void *)(h0_xs + 1) + t1))"
+    assert place(spelling: "h_t_Row", base: "(*ph0_s).f_rows", index: "t2", pure: true) == "(*((void)(((*ph0_s).f_rows == NULL || t2 < 0 || t2 >= (*ph0_s).f_rows->len) ? ((void)hero_array_at_mut((*ph0_s).f_rows, t2), hero_unreachable()) : (void)0), (void)((*ph0_s).f_rows->elem->size != sizeof(h_t_Row) ? hero_unreachable() : (void)0), (h_t_Row *)(void *)((*ph0_s).f_rows + 1) + t2))"
+    assert place(spelling: "h_t_Row", base: "h0_xs", index: "t3", pure: false) == "(*(h_t_Row *)hero_array_at_mut(h0_xs, t3))"

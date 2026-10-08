@@ -343,9 +343,9 @@ bb0:
 #line 37 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
     hero_array_unshare(&(h0_rows));
 #line 37 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
-    hero_str_decref((*(h_fixedbugsafieldstoredbehindanindex_Row *)hero_array_at_mut(h0_rows, t8)).f_label);
+    hero_str_decref((*((void)((h0_rows == NULL || t8 < 0 || t8 >= h0_rows->len) ? ((void)hero_array_at_mut(h0_rows, t8), hero_unreachable()) : (void)0), (void)(h0_rows->elem->size != sizeof(h_fixedbugsafieldstoredbehindanindex_Row) ? hero_unreachable() : (void)0), (h_fixedbugsafieldstoredbehindanindex_Row *)(void *)(h0_rows + 1) + t8)).f_label);
 #line 37 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
-    (*(h_fixedbugsafieldstoredbehindanindex_Row *)hero_array_at_mut(h0_rows, t8)).f_label = t9;
+    (*((void)((h0_rows == NULL || t8 < 0 || t8 >= h0_rows->len) ? ((void)hero_array_at_mut(h0_rows, t8), hero_unreachable()) : (void)0), (void)(h0_rows->elem->size != sizeof(h_fixedbugsafieldstoredbehindanindex_Row) ? hero_unreachable() : (void)0), (h_fixedbugsafieldstoredbehindanindex_Row *)(void *)(h0_rows + 1) + t8)).f_label = t9;
     t10 = INT64_C(0);
 #line 38 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
     t11 = INT64_C(0);
@@ -354,9 +354,9 @@ bb0:
 #line 38 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
     hero_array_unshare(&(h0_rows));
 #line 38 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
-    hero_array_unshare(&((*(h_fixedbugsafieldstoredbehindanindex_Row *)hero_array_at_mut(h0_rows, t10)).f_cells));
+    hero_array_unshare(&((*((void)((h0_rows == NULL || t10 < 0 || t10 >= h0_rows->len) ? ((void)hero_array_at_mut(h0_rows, t10), hero_unreachable()) : (void)0), (void)(h0_rows->elem->size != sizeof(h_fixedbugsafieldstoredbehindanindex_Row) ? hero_unreachable() : (void)0), (h_fixedbugsafieldstoredbehindanindex_Row *)(void *)(h0_rows + 1) + t10)).f_cells));
 #line 38 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
-    (*(h_fixedbugsafieldstoredbehindanindex_Cell *)hero_array_at_mut((*(h_fixedbugsafieldstoredbehindanindex_Row *)hero_array_at_mut(h0_rows, t10)).f_cells, t11)).f_n = t12;
+    (*(h_fixedbugsafieldstoredbehindanindex_Cell *)hero_array_at_mut((*((void)((h0_rows == NULL || t10 < 0 || t10 >= h0_rows->len) ? ((void)hero_array_at_mut(h0_rows, t10), hero_unreachable()) : (void)0), (void)(h0_rows->elem->size != sizeof(h_fixedbugsafieldstoredbehindanindex_Row) ? hero_unreachable() : (void)0), (h_fixedbugsafieldstoredbehindanindex_Row *)(void *)(h0_rows + 1) + t10)).f_cells, t11)).f_n = t12;
 #line 41 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
     t13 = INT64_C(0);
 #line 41 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
@@ -377,11 +377,11 @@ bb0:
 #line 41 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
     hero_array_unshare(&(h0_rows));
 #line 41 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
-    hero_array_unshare(&((*(h_fixedbugsafieldstoredbehindanindex_Row *)hero_array_at_mut(h0_rows, t13)).f_cells));
+    hero_array_unshare(&((*((void)((h0_rows == NULL || t13 < 0 || t13 >= h0_rows->len) ? ((void)hero_array_at_mut(h0_rows, t13), hero_unreachable()) : (void)0), (void)(h0_rows->elem->size != sizeof(h_fixedbugsafieldstoredbehindanindex_Row) ? hero_unreachable() : (void)0), (h_fixedbugsafieldstoredbehindanindex_Row *)(void *)(h0_rows + 1) + t13)).f_cells));
 #line 41 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
-    hero_str_decref((*(h_fixedbugsafieldstoredbehindanindex_Cell *)hero_array_at_mut((*(h_fixedbugsafieldstoredbehindanindex_Row *)hero_array_at_mut(h0_rows, t13)).f_cells, t14)).f_tag);
+    hero_str_decref((*(h_fixedbugsafieldstoredbehindanindex_Cell *)hero_array_at_mut((*((void)((h0_rows == NULL || t13 < 0 || t13 >= h0_rows->len) ? ((void)hero_array_at_mut(h0_rows, t13), hero_unreachable()) : (void)0), (void)(h0_rows->elem->size != sizeof(h_fixedbugsafieldstoredbehindanindex_Row) ? hero_unreachable() : (void)0), (h_fixedbugsafieldstoredbehindanindex_Row *)(void *)(h0_rows + 1) + t13)).f_cells, t14)).f_tag);
 #line 41 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
-    (*(h_fixedbugsafieldstoredbehindanindex_Cell *)hero_array_at_mut((*(h_fixedbugsafieldstoredbehindanindex_Row *)hero_array_at_mut(h0_rows, t13)).f_cells, t14)).f_tag = t17;
+    (*(h_fixedbugsafieldstoredbehindanindex_Cell *)hero_array_at_mut((*((void)((h0_rows == NULL || t13 < 0 || t13 >= h0_rows->len) ? ((void)hero_array_at_mut(h0_rows, t13), hero_unreachable()) : (void)0), (void)(h0_rows->elem->size != sizeof(h_fixedbugsafieldstoredbehindanindex_Row) ? hero_unreachable() : (void)0), (h_fixedbugsafieldstoredbehindanindex_Row *)(void *)(h0_rows + 1) + t13)).f_cells, t14)).f_tag = t17;
     t18 = INT64_C(0);
 #line 42 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
     t19 = INT64_C(0);
@@ -401,11 +401,11 @@ bb0:
 #line 42 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
     hero_array_unshare(&(h0_rows));
 #line 42 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
-    hero_array_unshare(&((*(h_fixedbugsafieldstoredbehindanindex_Row *)hero_array_at_mut(h0_rows, t18)).f_cells));
+    hero_array_unshare(&((*((void)((h0_rows == NULL || t18 < 0 || t18 >= h0_rows->len) ? ((void)hero_array_at_mut(h0_rows, t18), hero_unreachable()) : (void)0), (void)(h0_rows->elem->size != sizeof(h_fixedbugsafieldstoredbehindanindex_Row) ? hero_unreachable() : (void)0), (h_fixedbugsafieldstoredbehindanindex_Row *)(void *)(h0_rows + 1) + t18)).f_cells));
 #line 42 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
-    hero_str_decref((*(h_fixedbugsafieldstoredbehindanindex_Cell *)hero_array_at_mut((*(h_fixedbugsafieldstoredbehindanindex_Row *)hero_array_at_mut(h0_rows, t18)).f_cells, t19)).f_tag);
+    hero_str_decref((*(h_fixedbugsafieldstoredbehindanindex_Cell *)hero_array_at_mut((*((void)((h0_rows == NULL || t18 < 0 || t18 >= h0_rows->len) ? ((void)hero_array_at_mut(h0_rows, t18), hero_unreachable()) : (void)0), (void)(h0_rows->elem->size != sizeof(h_fixedbugsafieldstoredbehindanindex_Row) ? hero_unreachable() : (void)0), (h_fixedbugsafieldstoredbehindanindex_Row *)(void *)(h0_rows + 1) + t18)).f_cells, t19)).f_tag);
 #line 42 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
-    (*(h_fixedbugsafieldstoredbehindanindex_Cell *)hero_array_at_mut((*(h_fixedbugsafieldstoredbehindanindex_Row *)hero_array_at_mut(h0_rows, t18)).f_cells, t19)).f_tag = t22;
+    (*(h_fixedbugsafieldstoredbehindanindex_Cell *)hero_array_at_mut((*((void)((h0_rows == NULL || t18 < 0 || t18 >= h0_rows->len) ? ((void)hero_array_at_mut(h0_rows, t18), hero_unreachable()) : (void)0), (void)(h0_rows->elem->size != sizeof(h_fixedbugsafieldstoredbehindanindex_Row) ? hero_unreachable() : (void)0), (h_fixedbugsafieldstoredbehindanindex_Row *)(void *)(h0_rows + 1) + t18)).f_cells, t19)).f_tag = t22;
 #line 46 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
     t23 = h0_rows;
 #line 46 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
@@ -425,9 +425,9 @@ bb0:
 #line 47 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
     hero_array_unshare(&(h0_rows));
 #line 47 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
-    hero_array_unshare(&((*(h_fixedbugsafieldstoredbehindanindex_Row *)hero_array_at_mut(h0_rows, t24)).f_cells));
+    hero_array_unshare(&((*((void)((h0_rows == NULL || t24 < 0 || t24 >= h0_rows->len) ? ((void)hero_array_at_mut(h0_rows, t24), hero_unreachable()) : (void)0), (void)(h0_rows->elem->size != sizeof(h_fixedbugsafieldstoredbehindanindex_Row) ? hero_unreachable() : (void)0), (h_fixedbugsafieldstoredbehindanindex_Row *)(void *)(h0_rows + 1) + t24)).f_cells));
 #line 47 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
-    (*(h_fixedbugsafieldstoredbehindanindex_Cell *)hero_array_at_mut((*(h_fixedbugsafieldstoredbehindanindex_Row *)hero_array_at_mut(h0_rows, t24)).f_cells, t25)).f_n = t26;
+    (*(h_fixedbugsafieldstoredbehindanindex_Cell *)hero_array_at_mut((*((void)((h0_rows == NULL || t24 < 0 || t24 >= h0_rows->len) ? ((void)hero_array_at_mut(h0_rows, t24), hero_unreachable()) : (void)0), (void)(h0_rows->elem->size != sizeof(h_fixedbugsafieldstoredbehindanindex_Row) ? hero_unreachable() : (void)0), (h_fixedbugsafieldstoredbehindanindex_Row *)(void *)(h0_rows + 1) + t24)).f_cells, t25)).f_n = t26;
     t27 = HERO_STR_LIT(hero_str_3ed3d9ee);
 #line 48 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
     t28 = h1_kept;
@@ -500,7 +500,7 @@ bb3:
 #line 52 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
     hero_array_unshare(&(h0_rows));
 #line 52 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
-    hero_array_set(&((*(h_fixedbugsafieldstoredbehindanindex_Row *)hero_array_at_mut(h0_rows, t47)).f_cells), t48, &t51);
+    hero_array_set(&((*((void)((h0_rows == NULL || t47 < 0 || t47 >= h0_rows->len) ? ((void)hero_array_at_mut(h0_rows, t47), hero_unreachable()) : (void)0), (void)(h0_rows->elem->size != sizeof(h_fixedbugsafieldstoredbehindanindex_Row) ? hero_unreachable() : (void)0), (h_fixedbugsafieldstoredbehindanindex_Row *)(void *)(h0_rows + 1) + t47)).f_cells), t48, &t51);
     t52 = hero_map_new(&hero_desc_str, &hero_desc_int, 0);
 #line 53 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
     t93 = h11_own11;

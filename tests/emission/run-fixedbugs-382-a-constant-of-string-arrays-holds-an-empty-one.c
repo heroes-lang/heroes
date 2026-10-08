@@ -550,7 +550,7 @@ bb4:
 #line 19 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
     hero_array_unshare(&(h4_copy));
 #line 19 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
-    hero_array_set(&((*(HeroArrayHeader * *)hero_array_at_mut(h4_copy, t50))), t51, &t52);
+    hero_array_set(&((*((void)((h4_copy == NULL || t50 < 0 || t50 >= h4_copy->len) ? ((void)hero_array_at_mut(h4_copy, t50), hero_unreachable()) : (void)0), (void)(h4_copy->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), (HeroArrayHeader * *)(void *)(h4_copy + 1) + t50))), t51, &t52);
     t53 = h4_copy;
 #line 20 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
     t54 = INT64_C(1);

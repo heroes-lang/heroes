@@ -826,7 +826,7 @@ bb4:
 #line 52 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
     hero_array_unshare(&(h4_copy));
 #line 52 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
-    hero_array_set(&((*(HeroArrayHeader * *)hero_array_at_mut(h4_copy, t67))), t68, &t69);
+    hero_array_set(&((*((void)((h4_copy == NULL || t67 < 0 || t67 >= h4_copy->len) ? ((void)hero_array_at_mut(h4_copy, t67), hero_unreachable()) : (void)0), (void)(h4_copy->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), (HeroArrayHeader * *)(void *)(h4_copy + 1) + t67))), t68, &t69);
     t70 = h4_copy;
 #line 53 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
     t71 = INT64_C(0);

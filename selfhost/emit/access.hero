@@ -19,6 +19,7 @@ use emit/ctype
 use emit/aggregate
 use emit/container
 use emit/array_read
+use emit/str_read
 use emit/fallible
 use emit/writer
 use token
@@ -53,13 +54,14 @@ function len_read(@w: writer.Writer, c: state.Checked, f: containers.Function, v
         return
     writer.line(@w, text: "    " + target.must() + " = " + counter + "(" + mangle.value(value) + ");")
 
-# s[i]: a byte, aborting out of range (spec § 10 Strings, arrays, maps).
+# s[i]: a byte, aborting out of range (spec § 10 Strings, arrays, maps), read
+# in place (defect 491, `emit/str_read.hero`).
 function string_byte(@w: writer.Writer, base: i64, index: i64, target: str?)
     if target.is_err()
         return
     writer.line(
         @w,
-        text: "    " + target.must() + " = hero_str_byte(" + mangle.value(base) + ", " + mangle.value(index) + ");"
+        text: "    " + target.must() + " = " + str_read.byte(base: mangle.value(base), index: mangle.value(index)) + ";"
     )
 
 # xs[i]: an element, read through the descriptor — or, for a fixed
@@ -184,4 +186,4 @@ test "len splits three ways, tag and payload split on the operand"
     payload_read(@w, c, names, s, parsed.decls, f, base: 2, at: 1, target: ok("t9"))
     string_byte(@w, base: 0, index: 2, target: ok("t9"))
     got = writer.finish(w)
-    assert got == "    t9 = hero_str_len(t0);\n    t9 = t1.tag;\n    t9 = t2.tag;\n    t9 = t1.as.c_word;\n    t9 = t2.as.err;\n    t9 = hero_str_byte(t0, t2);\n"
+    assert got == "    t9 = hero_str_len(t0);\n    t9 = t1.tag;\n    t9 = t2.tag;\n    t9 = t1.as.c_word;\n    t9 = t2.as.err;\n    t9 = ((void)((t0.ptr == NULL || t2 < 0 || t2 >= t0.len) ? ((void)hero_str_byte(t0, t2), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t0.ptr[t2]);\n"

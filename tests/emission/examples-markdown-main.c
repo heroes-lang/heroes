@@ -1191,7 +1191,7 @@ bb2:
 #line 40 "examples/markdown/blocks.hero"
     t9 = h3_i;
 #line 40 "examples/markdown/blocks.hero"
-    t10 = hero_str_byte(t8, t9);
+    t10 = ((void)((t8.ptr == NULL || t9 < 0 || t9 >= t8.len) ? ((void)hero_str_byte(t8, t9), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t8.ptr[t9]);
 #line 40 "examples/markdown/blocks.hero"
     t11 = UINT64_C(10);
 #line 40 "examples/markdown/blocks.hero"
@@ -1452,7 +1452,7 @@ bb4:
 #line 56 "examples/markdown/blocks.hero"
     t7 = h1_from;
 #line 56 "examples/markdown/blocks.hero"
-    t8 = hero_str_byte(t6, t7);
+    t8 = ((void)((t6.ptr == NULL || t7 < 0 || t7 >= t6.len) ? ((void)hero_str_byte(t6, t7), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t6.ptr[t7]);
 #line 56 "examples/markdown/blocks.hero"
     t9 = h_blocks_is_space(t8);
 #line 56 "examples/markdown/blocks.hero"
@@ -1517,7 +1517,7 @@ bb9:
 #line 61 "examples/markdown/blocks.hero"
     if (__builtin_sub_overflow(t20, t21, &t22)) hero_panic_overflow();
 #line 61 "examples/markdown/blocks.hero"
-    t23 = hero_str_byte(t19, t22);
+    t23 = ((void)((t19.ptr == NULL || t22 < 0 || t22 >= t19.len) ? ((void)hero_str_byte(t19, t22), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t19.ptr[t22]);
 #line 61 "examples/markdown/blocks.hero"
     t24 = h_blocks_is_space(t23);
 #line 61 "examples/markdown/blocks.hero"
@@ -1679,7 +1679,7 @@ bb4:
 #line 75 "examples/markdown/blocks.hero"
     t7 = h2_n;
 #line 75 "examples/markdown/blocks.hero"
-    t8 = hero_str_byte(t6, t7);
+    t8 = ((void)((t6.ptr == NULL || t7 < 0 || t7 >= t6.len) ? ((void)hero_str_byte(t6, t7), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t6.ptr[t7]);
 #line 75 "examples/markdown/blocks.hero"
     t9 = h1_c;
 #line 75 "examples/markdown/blocks.hero"
@@ -1770,7 +1770,7 @@ bb4:
 #line 83 "examples/markdown/blocks.hero"
     t7 = h1_n;
 #line 83 "examples/markdown/blocks.hero"
-    t8 = hero_str_byte(t6, t7);
+    t8 = ((void)((t6.ptr == NULL || t7 < 0 || t7 >= t6.len) ? ((void)hero_str_byte(t6, t7), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t6.ptr[t7]);
 #line 83 "examples/markdown/blocks.hero"
     t9 = UINT64_C(48);
 #line 83 "examples/markdown/blocks.hero"
@@ -1794,7 +1794,7 @@ bb6:
 #line 83 "examples/markdown/blocks.hero"
     t13 = h1_n;
 #line 83 "examples/markdown/blocks.hero"
-    t14 = hero_str_byte(t12, t13);
+    t14 = ((void)((t12.ptr == NULL || t13 < 0 || t13 >= t12.len) ? ((void)hero_str_byte(t12, t13), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t12.ptr[t13]);
 #line 83 "examples/markdown/blocks.hero"
     t15 = UINT64_C(57);
 #line 83 "examples/markdown/blocks.hero"
@@ -1865,7 +1865,7 @@ bb1:
 #line 92 "examples/markdown/blocks.hero"
     t7 = INT64_C(0);
 #line 92 "examples/markdown/blocks.hero"
-    t8 = hero_str_byte(t6, t7);
+    t8 = ((void)((t6.ptr == NULL || t7 < 0 || t7 >= t6.len) ? ((void)hero_str_byte(t6, t7), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t6.ptr[t7]);
 #line 92 "examples/markdown/blocks.hero"
     h1_c = t8;
 #line 94 "examples/markdown/blocks.hero"
@@ -2025,7 +2025,7 @@ bb1:
 #line 105 "examples/markdown/blocks.hero"
     t15 = h1_n;
 #line 105 "examples/markdown/blocks.hero"
-    t16 = hero_str_byte(t14, t15);
+    t16 = ((void)((t14.ptr == NULL || t15 < 0 || t15 >= t14.len) ? ((void)hero_str_byte(t14, t15), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t14.ptr[t15]);
 #line 105 "examples/markdown/blocks.hero"
     t17 = UINT64_C(46);
 #line 105 "examples/markdown/blocks.hero"
@@ -2088,7 +2088,7 @@ bb7:
 #line 105 "examples/markdown/blocks.hero"
     if (__builtin_add_overflow(t20, t21, &t22)) hero_panic_overflow();
 #line 105 "examples/markdown/blocks.hero"
-    t23 = hero_str_byte(t19, t22);
+    t23 = ((void)((t19.ptr == NULL || t22 < 0 || t22 >= t19.len) ? ((void)hero_str_byte(t19, t22), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t19.ptr[t22]);
 #line 105 "examples/markdown/blocks.hero"
     t24 = UINT64_C(32);
 #line 105 "examples/markdown/blocks.hero"
@@ -2233,7 +2233,7 @@ bb2:
 #line 113 "examples/markdown/blocks.hero"
     t17 = h5_i;
 #line 113 "examples/markdown/blocks.hero"
-    t18 = hero_str_byte(t16, t17);
+    t18 = ((void)((t16.ptr == NULL || t17 < 0 || t17 >= t16.len) ? ((void)hero_str_byte(t16, t17), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t16.ptr[t17]);
 #line 113 "examples/markdown/blocks.hero"
     t19 = UINT64_C(48);
 #line 113 "examples/markdown/blocks.hero"
@@ -4874,7 +4874,7 @@ bb0:
 #line 21 "examples/markdown/inline.hero"
     t4 = t3.f_pos;
 #line 21 "examples/markdown/inline.hero"
-    t5 = hero_str_byte(t2, t4);
+    t5 = ((void)((t2.ptr == NULL || t4 < 0 || t4 >= t2.len) ? ((void)hero_str_byte(t2, t4), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t2.ptr[t4]);
 #line 21 "examples/markdown/inline.hero"
     return t5;
 #line 4881 "main.c"

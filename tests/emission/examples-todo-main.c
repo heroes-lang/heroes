@@ -1738,7 +1738,7 @@ bb5:
 #line 100 "examples/todo/main.hero"
     t22 = h4_i;
 #line 100 "examples/todo/main.hero"
-    t23 = hero_str_byte(t21, t22);
+    t23 = ((void)((t21.ptr == NULL || t22 < 0 || t22 >= t21.len) ? ((void)hero_str_byte(t21, t22), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t21.ptr[t22]);
 #line 100 "examples/todo/main.hero"
     t24 = UINT64_C(48);
 #line 100 "examples/todo/main.hero"
@@ -1788,7 +1788,7 @@ bb8:
 #line 102 "examples/todo/main.hero"
     t43 = h4_i;
 #line 102 "examples/todo/main.hero"
-    t44 = hero_str_byte(t42, t43);
+    t44 = ((void)((t42.ptr == NULL || t43 < 0 || t43 >= t42.len) ? ((void)hero_str_byte(t42, t43), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t42.ptr[t43]);
 #line 102 "examples/todo/main.hero"
     t45 = UINT64_C(48);
 #line 102 "examples/todo/main.hero"
@@ -1826,7 +1826,7 @@ bb9:
 #line 100 "examples/todo/main.hero"
     t27 = h4_i;
 #line 100 "examples/todo/main.hero"
-    t28 = hero_str_byte(t26, t27);
+    t28 = ((void)((t26.ptr == NULL || t27 < 0 || t27 >= t26.len) ? ((void)hero_str_byte(t26, t27), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t26.ptr[t27]);
 #line 100 "examples/todo/main.hero"
     t29 = UINT64_C(57);
 #line 100 "examples/todo/main.hero"
@@ -2139,7 +2139,7 @@ bb4:
 #line 44 "examples/todo/list.hero"
     t7 = h1_from;
 #line 44 "examples/todo/list.hero"
-    t8 = hero_str_byte(t6, t7);
+    t8 = ((void)((t6.ptr == NULL || t7 < 0 || t7 >= t6.len) ? ((void)hero_str_byte(t6, t7), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t6.ptr[t7]);
 #line 44 "examples/todo/list.hero"
     t9 = h_list_is_space(t8);
 #line 44 "examples/todo/list.hero"
@@ -2204,7 +2204,7 @@ bb9:
 #line 49 "examples/todo/list.hero"
     if (__builtin_sub_overflow(t20, t21, &t22)) hero_panic_overflow();
 #line 49 "examples/todo/list.hero"
-    t23 = hero_str_byte(t19, t22);
+    t23 = ((void)((t19.ptr == NULL || t22 < 0 || t22 >= t19.len) ? ((void)hero_str_byte(t19, t22), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t19.ptr[t22]);
 #line 49 "examples/todo/list.hero"
     t24 = h_list_is_space(t23);
 #line 49 "examples/todo/list.hero"
@@ -2310,7 +2310,7 @@ bb2:
 #line 60 "examples/todo/list.hero"
     t9 = h3_i;
 #line 60 "examples/todo/list.hero"
-    t10 = hero_str_byte(t8, t9);
+    t10 = ((void)((t8.ptr == NULL || t9 < 0 || t9 >= t8.len) ? ((void)hero_str_byte(t8, t9), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t8.ptr[t9]);
 #line 60 "examples/todo/list.hero"
     t11 = UINT64_C(10);
 #line 60 "examples/todo/list.hero"
@@ -2714,7 +2714,7 @@ bb8:
 #line 84 "examples/todo/list.hero"
     t52 = INT64_C(1);
 #line 84 "examples/todo/list.hero"
-    t53 = hero_str_byte(t51, t52);
+    t53 = ((void)((t51.ptr == NULL || t52 < 0 || t52 >= t51.len) ? ((void)hero_str_byte(t51, t52), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t51.ptr[t52]);
 #line 84 "examples/todo/list.hero"
     h10_marker = t53;
 #line 86 "examples/todo/list.hero"
@@ -2734,7 +2734,7 @@ bb9:
 #line 82 "examples/todo/list.hero"
     t26 = INT64_C(0);
 #line 82 "examples/todo/list.hero"
-    t27 = hero_str_byte(t25, t26);
+    t27 = ((void)((t25.ptr == NULL || t26 < 0 || t26 >= t25.len) ? ((void)hero_str_byte(t25, t26), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t25.ptr[t26]);
 #line 82 "examples/todo/list.hero"
     t28 = UINT64_C(91);
 #line 82 "examples/todo/list.hero"
@@ -2758,7 +2758,7 @@ bb11:
 #line 82 "examples/todo/list.hero"
     t32 = INT64_C(2);
 #line 82 "examples/todo/list.hero"
-    t33 = hero_str_byte(t31, t32);
+    t33 = ((void)((t31.ptr == NULL || t32 < 0 || t32 >= t31.len) ? ((void)hero_str_byte(t31, t32), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t31.ptr[t32]);
 #line 82 "examples/todo/list.hero"
     t34 = UINT64_C(93);
 #line 82 "examples/todo/list.hero"
@@ -2782,7 +2782,7 @@ bb13:
 #line 82 "examples/todo/list.hero"
     t38 = INT64_C(3);
 #line 82 "examples/todo/list.hero"
-    t39 = hero_str_byte(t37, t38);
+    t39 = ((void)((t37.ptr == NULL || t38 < 0 || t38 >= t37.len) ? ((void)hero_str_byte(t37, t38), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t37.ptr[t38]);
 #line 82 "examples/todo/list.hero"
     t40 = UINT64_C(32);
 #line 82 "examples/todo/list.hero"
