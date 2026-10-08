@@ -118,7 +118,7 @@ bb0:
 #line 9 "tests/golden/run/abort-str-index.hero"
     t3 = INT64_C(2);
 #line 9 "tests/golden/run/abort-str-index.hero"
-    t4 = hero_str_byte(t2, t3);
+    t4 = ((void)((t2.ptr == NULL || t3 < 0 || t3 >= t2.len) ? ((void)hero_str_byte(t2, t3), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t2.ptr[t3]);
 #line 9 "tests/golden/run/abort-str-index.hero"
     hero_print_int(t4);
 #line 9 "tests/golden/run/abort-str-index.hero"
@@ -127,7 +127,7 @@ bb0:
 #line 10 "tests/golden/run/abort-str-index.hero"
     t6 = INT64_C(9);
 #line 10 "tests/golden/run/abort-str-index.hero"
-    t7 = hero_str_byte(t5, t6);
+    t7 = ((void)((t5.ptr == NULL || t6 < 0 || t6 >= t5.len) ? ((void)hero_str_byte(t5, t6), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t5.ptr[t6]);
 #line 10 "tests/golden/run/abort-str-index.hero"
     hero_print_int(t7);
 #line 10 "tests/golden/run/abort-str-index.hero"

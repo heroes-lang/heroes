@@ -3609,7 +3609,7 @@ bb1:
 #line 126 "examples/interpreter/lex/scan.hero"
     t13 = h1_at;
 #line 126 "examples/interpreter/lex/scan.hero"
-    t14 = hero_str_byte(t12, t13);
+    t14 = ((void)((t12.ptr == NULL || t13 < 0 || t13 >= t12.len) ? ((void)hero_str_byte(t12, t13), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t12.ptr[t13]);
 #line 126 "examples/interpreter/lex/scan.hero"
     t15 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t14};
 #line 126 "examples/interpreter/lex/scan.hero"

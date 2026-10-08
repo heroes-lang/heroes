@@ -387,7 +387,7 @@ bb0:
 #line 52 "tests/golden/run/adversarial-cow-per-step.hero"
     hero_array_unshare(&(h0_g.f_rows));
 #line 52 "tests/golden/run/adversarial-cow-per-step.hero"
-    hero_array_set(&((*(h_adversarialcowperstep_Row *)hero_array_at_mut(h0_g.f_rows, t8)).f_cells), t9, &t10);
+    hero_array_set(&((*((void)((h0_g.f_rows == NULL || t8 < 0 || t8 >= h0_g.f_rows->len) ? ((void)hero_array_at_mut(h0_g.f_rows, t8), hero_unreachable()) : (void)0), (void)(h0_g.f_rows->elem->size != sizeof(h_adversarialcowperstep_Row) ? hero_unreachable() : (void)0), (h_adversarialcowperstep_Row *)(void *)(h0_g.f_rows + 1) + t8)).f_cells), t9, &t10);
     t11 = h0_g;
 #line 53 "tests/golden/run/adversarial-cow-per-step.hero"
     t12 = t11.f_rows;
@@ -689,7 +689,7 @@ bb0:
 #line 73 "tests/golden/run/adversarial-cow-per-step.hero"
     hero_array_unshare(&(h3_m.f_rows));
 #line 73 "tests/golden/run/adversarial-cow-per-step.hero"
-    hero_array_set(&((*(h_adversarialcowperstep_Row *)hero_array_at_mut(h3_m.f_rows, t92)).f_cells), t93, &t94);
+    hero_array_set(&((*((void)((h3_m.f_rows == NULL || t92 < 0 || t92 >= h3_m.f_rows->len) ? ((void)hero_array_at_mut(h3_m.f_rows, t92), hero_unreachable()) : (void)0), (void)(h3_m.f_rows->elem->size != sizeof(h_adversarialcowperstep_Row) ? hero_unreachable() : (void)0), (h_adversarialcowperstep_Row *)(void *)(h3_m.f_rows + 1) + t92)).f_cells), t93, &t94);
     t95 = h3_m;
 #line 74 "tests/golden/run/adversarial-cow-per-step.hero"
     t96 = t95.f_rows;

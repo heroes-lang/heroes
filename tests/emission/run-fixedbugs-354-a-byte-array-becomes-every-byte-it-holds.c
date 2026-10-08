@@ -229,7 +229,7 @@ bb2:
 #line 21 "tests/golden/run/fixedbugs-354-a-byte-array-becomes-every-byte-it-holds.hero"
     t18 = h4_i;
 #line 21 "tests/golden/run/fixedbugs-354-a-byte-array-becomes-every-byte-it-holds.hero"
-    t19 = hero_str_byte(t17, t18);
+    t19 = ((void)((t17.ptr == NULL || t18 < 0 || t18 >= t17.len) ? ((void)hero_str_byte(t17, t18), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t17.ptr[t18]);
 #line 21 "tests/golden/run/fixedbugs-354-a-byte-array-becomes-every-byte-it-holds.hero"
     t20 = hero_int_to_str(t19);
 #line 21 "tests/golden/run/fixedbugs-354-a-byte-array-becomes-every-byte-it-holds.hero"

@@ -121,7 +121,7 @@ bb0:
 #line 13 "tests/golden/ir/place-paths.hero"
     hero_array_unshare(&((*ph0_g).f_rows));
 #line 13 "tests/golden/ir/place-paths.hero"
-    hero_array_set(&((*(h_placepaths_Row *)hero_array_at_mut((*ph0_g).f_rows, t1)).f_cells), t2, &t3);
+    hero_array_set(&((*((void)(((*ph0_g).f_rows == NULL || t1 < 0 || t1 >= (*ph0_g).f_rows->len) ? ((void)hero_array_at_mut((*ph0_g).f_rows, t1), hero_unreachable()) : (void)0), (void)((*ph0_g).f_rows->elem->size != sizeof(h_placepaths_Row) ? hero_unreachable() : (void)0), (h_placepaths_Row *)(void *)((*ph0_g).f_rows + 1) + t1)).f_cells), t2, &t3);
 #line 13 "tests/golden/ir/place-paths.hero"
     return;
 #line 128 "placepaths.c"

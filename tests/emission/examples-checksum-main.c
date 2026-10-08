@@ -1189,7 +1189,7 @@ bb2:
 #line 51 "examples/checksum/adler.hero"
     t9 = h3_i;
 #line 51 "examples/checksum/adler.hero"
-    t10 = hero_str_byte(t8, t9);
+    t10 = ((void)((t8.ptr == NULL || t9 < 0 || t9 >= t8.len) ? ((void)hero_str_byte(t8, t9), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t8.ptr[t9]);
 #line 51 "examples/checksum/adler.hero"
     h4_byte = t10;
     t11 = h1_s1;
@@ -1850,7 +1850,7 @@ bb2:
 #line 61 "examples/checksum/base64.hero"
     t9 = h2_i;
 #line 61 "examples/checksum/base64.hero"
-    t10 = hero_str_byte(t8, t9);
+    t10 = ((void)((t8.ptr == NULL || t9 < 0 || t9 >= t8.len) ? ((void)hero_str_byte(t8, t9), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t8.ptr[t9]);
 #line 61 "examples/checksum/base64.hero"
     hero_array_push_owned(&h1_out, &t10);
     t12 = h2_i;
@@ -4643,7 +4643,7 @@ bb2:
 #line 66 "examples/checksum/crc.hero"
     t8 = h2_i;
 #line 66 "examples/checksum/crc.hero"
-    t9 = hero_str_byte(t7, t8);
+    t9 = ((void)((t7.ptr == NULL || t8 < 0 || t8 >= t7.len) ? ((void)hero_str_byte(t7, t8), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t7.ptr[t8]);
 #line 66 "examples/checksum/crc.hero"
     h3_byte = t9;
     t10 = h1_reg;

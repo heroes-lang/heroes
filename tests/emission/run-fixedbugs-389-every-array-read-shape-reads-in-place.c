@@ -530,7 +530,7 @@ bb1:
 #line 40 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
     hero_array_unshare(&(h0_xs));
 #line 40 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
-    h_fixedbugs389everyarrayreadshapereadsinplace_bump(&(*(int64_t *)hero_array_at_mut(h0_xs, t42)));
+    h_fixedbugs389everyarrayreadshapereadsinplace_bump(&(*((void)((h0_xs == NULL || t42 < 0 || t42 >= h0_xs->len) ? ((void)hero_array_at_mut(h0_xs, t42), hero_unreachable()) : (void)0), (void)(h0_xs->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), (int64_t *)(void *)(h0_xs + 1) + t42)));
     t43 = h0_xs;
 #line 41 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
     t44 = INT64_C(3);

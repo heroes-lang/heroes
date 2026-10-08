@@ -21,6 +21,7 @@ use check/state
 use ir
 use ir/containers
 use emit/mangle
+use emit/array_read
 use emit/ctype
 use emit/writer
 
@@ -165,6 +166,11 @@ function reached(c: state.Checked, names: ctype.Names?, s: source.Source, decls:
     unshares: [str] @ []
     known: ctype.Names? @ names
 
+    # Whether the place so far is a slot and fields alone, which holds no call
+    # (defect 491): an element step over such a base is read in place, over
+    # any other the runtime's call stays (`emit/array_read.hero`'s `place`).
+    pure: bool @ true
+
     for step in containers.steps_of(f, at.path)
         match step
             .field_step fs =>
@@ -182,6 +188,7 @@ function reached(c: state.Checked, names: ctype.Names?, s: source.Source, decls:
                     .fixed x =>
                         parts @ [subscript(base: so_far, index: index, length: x.length)]
                         ty @ x.element
+                        pure @ false
                     .array arr =>
                         if known.is_err()
                             known @ ok(ctype.new_names(s, decls))
@@ -190,8 +197,9 @@ function reached(c: state.Checked, names: ctype.Names?, s: source.Source, decls:
                         if spelled.is_err()
                             return Reached(lvalue: so_far + NOT_AN_LVALUE, unshares: unshares)
                         unshares @ unshares.push("hero_array_unshare(&(" + so_far + "));")
-                        parts @ ["(*(" + spelled.must() + " *)hero_array_at_mut(" + so_far + ", " + index + "))"]
+                        parts @ [array_read.place(spelling: spelled.must(), base: so_far, index: index, pure: pure)]
                         ty @ arr.element
+                        pure @ false
                     # A map's element is a `V?`, which the checker refuses
                     # after `@`; a string's byte is no place either, and the
                     # checker does not refuse it yet (found beside panel 196's

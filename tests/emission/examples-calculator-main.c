@@ -3146,7 +3146,7 @@ bb0:
 #line 34 "examples/calculator/lex.hero"
     t4 = t3.f_pos;
 #line 34 "examples/calculator/lex.hero"
-    t5 = hero_str_byte(t2, t4);
+    t5 = ((void)((t2.ptr == NULL || t4 < 0 || t4 >= t2.len) ? ((void)hero_str_byte(t2, t4), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t2.ptr[t4]);
 #line 34 "examples/calculator/lex.hero"
     return t5;
 #line 3153 "main.c"

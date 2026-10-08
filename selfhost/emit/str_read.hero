@@ -1,0 +1,29 @@
+# A string's byte, READ IN PLACE (defect 491, 2026-10-08; design.md §4.9,
+# §4.20, spec § 10). `s[i]` was a call of `hero_str_byte` at every byte, the
+# step every scanner of text takes (937 sites in the compiler's own C), and
+# the emitted C now reads the byte itself, as `emit/array_read.hero` reads an
+# array's element and for its reasons: the same C once preprocessed, and a
+# word the header gains is owed to the guard list and to two of the
+# runtime's files (`emit/guarded_names.hero`).
+#
+# THE ABORT IS STILL THE RUNTIME'S. A NULL pointer, the non-value of a slot
+# nothing assigned, or an index outside [0, len), is handed to
+# `hero_str_byte` itself, which aborts in its own words and with its own
+# exit code, so a program reading out of range prints what it always
+# printed. `hero_unreachable()` after that call is never reached; it is there
+# so clang sees the branch end, as in `array_read`.
+#
+# The byte is an unsigned `char` widened to the `int64_t` the call returned,
+# so every conversion after it is what it was. Both arguments are
+# temporaries' names, so naming either more than once evaluates nothing
+# twice.
+
+# `s[i]`: `base` and `index` are the two temporaries.
+function byte(base: str, index: str) -> str
+    checked = "(" + base + ".ptr == NULL || " + index + " < 0 || " + index + " >= " + base + ".len)"
+    return "((void)(" + checked + " ? ((void)hero_str_byte(" + base + ", " + index + "), hero_unreachable()) : (void)0), (int64_t)(unsigned char)" + base + ".ptr[" + index + "])"
+
+## Tests
+
+test "a byte is read in place, every failing read handed to the runtime (defect 491)"
+    assert byte(base: "t0", index: "t1") == "((void)((t0.ptr == NULL || t1 < 0 || t1 >= t0.len) ? ((void)hero_str_byte(t0, t1), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t0.ptr[t1])"

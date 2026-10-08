@@ -3392,7 +3392,7 @@ bb2:
 #line 50 "examples/query/data/table.hero"
     t9 = h4_index;
 #line 50 "examples/query/data/table.hero"
-    t10 = hero_str_byte(t8, t9);
+    t10 = ((void)((t8.ptr == NULL || t9 < 0 || t9 >= t8.len) ? ((void)hero_str_byte(t8, t9), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t8.ptr[t9]);
 #line 50 "examples/query/data/table.hero"
     t11 = h1_at;
 #line 50 "examples/query/data/table.hero"
@@ -3971,7 +3971,7 @@ bb1:
 #line 84 "examples/query/data/table.hero"
     t14 = INT64_C(0);
 #line 84 "examples/query/data/table.hero"
-    t15 = hero_str_byte(t13, t14);
+    t15 = ((void)((t13.ptr == NULL || t14 < 0 || t14 >= t13.len) ? ((void)hero_str_byte(t13, t14), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t13.ptr[t14]);
 #line 84 "examples/query/data/table.hero"
     t16 = UINT64_C(45);
 #line 84 "examples/query/data/table.hero"
@@ -4153,7 +4153,7 @@ bb11:
 #line 96 "examples/query/data/table.hero"
     t40 = h5_at;
 #line 96 "examples/query/data/table.hero"
-    t41 = hero_str_byte(t39, t40);
+    t41 = ((void)((t39.ptr == NULL || t40 < 0 || t40 >= t39.len) ? ((void)hero_str_byte(t39, t40), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t39.ptr[t40]);
 #line 96 "examples/query/data/table.hero"
     h6_digit = t41;
 #line 98 "examples/query/data/table.hero"
@@ -4815,7 +4815,7 @@ bb4:
 #line 131 "examples/query/data/table.hero"
     t25 = INT64_C(0);
 #line 131 "examples/query/data/table.hero"
-    t26 = hero_str_byte(t24, t25);
+    t26 = ((void)((t24.ptr == NULL || t25 < 0 || t25 >= t24.len) ? ((void)hero_str_byte(t24, t25), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t24.ptr[t25]);
 #line 131 "examples/query/data/table.hero"
     t27 = UINT64_C(45);
 #line 131 "examples/query/data/table.hero"
@@ -5217,7 +5217,7 @@ bb18:
 #line 151 "examples/query/data/table.hero"
     t104 = h10_at;
 #line 151 "examples/query/data/table.hero"
-    t105 = hero_str_byte(t103, t104);
+    t105 = ((void)((t103.ptr == NULL || t104 < 0 || t104 >= t103.len) ? ((void)hero_str_byte(t103, t104), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t103.ptr[t104]);
 #line 151 "examples/query/data/table.hero"
     h11_digit = t105;
 #line 153 "examples/query/data/table.hero"
@@ -9533,7 +9533,7 @@ bb2:
 #line 213 "examples/query/fmt/report.hero"
     t9 = h3_at;
 #line 213 "examples/query/fmt/report.hero"
-    t10 = hero_str_byte(t8, t9);
+    t10 = ((void)((t8.ptr == NULL || t9 < 0 || t9 >= t8.len) ? ((void)hero_str_byte(t8, t9), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t8.ptr[t9]);
 #line 213 "examples/query/fmt/report.hero"
     t11 = UINT64_C(10);
 #line 213 "examples/query/fmt/report.hero"
@@ -11645,13 +11645,13 @@ bb5:
 #line 106 "examples/query/run/engine.hero"
     t14 = h3_at;
 #line 106 "examples/query/run/engine.hero"
-    t15 = hero_str_byte(t13, t14);
+    t15 = ((void)((t13.ptr == NULL || t14 < 0 || t14 >= t13.len) ? ((void)hero_str_byte(t13, t14), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t13.ptr[t14]);
 #line 106 "examples/query/run/engine.hero"
     t16 = h1_b;
 #line 106 "examples/query/run/engine.hero"
     t17 = h3_at;
 #line 106 "examples/query/run/engine.hero"
-    t18 = hero_str_byte(t16, t17);
+    t18 = ((void)((t16.ptr == NULL || t17 < 0 || t17 >= t16.len) ? ((void)hero_str_byte(t16, t17), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t16.ptr[t17]);
 #line 106 "examples/query/run/engine.hero"
     t19 = t15 != t18;
 #line 106 "examples/query/run/engine.hero"
@@ -11691,13 +11691,13 @@ bb8:
 #line 107 "examples/query/run/engine.hero"
     t21 = h3_at;
 #line 107 "examples/query/run/engine.hero"
-    t22 = hero_str_byte(t20, t21);
+    t22 = ((void)((t20.ptr == NULL || t21 < 0 || t21 >= t20.len) ? ((void)hero_str_byte(t20, t21), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t20.ptr[t21]);
 #line 107 "examples/query/run/engine.hero"
     t23 = h1_b;
 #line 107 "examples/query/run/engine.hero"
     t24 = h3_at;
 #line 107 "examples/query/run/engine.hero"
-    t25 = hero_str_byte(t23, t24);
+    t25 = ((void)((t23.ptr == NULL || t24 < 0 || t24 >= t23.len) ? ((void)hero_str_byte(t23, t24), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t23.ptr[t24]);
 #line 107 "examples/query/run/engine.hero"
     t26 = t22 < t25;
 #line 107 "examples/query/run/engine.hero"
@@ -13135,7 +13135,7 @@ bb0:
 #line 219 "examples/query/run/engine.hero"
     if (__builtin_sub_overflow(t11, t12, &t13)) hero_panic_overflow();
 #line 219 "examples/query/run/engine.hero"
-    t14 = hero_str_byte(t9, t13);
+    t14 = ((void)((t9.ptr == NULL || t13 < 0 || t13 >= t9.len) ? ((void)hero_str_byte(t9, t13), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t9.ptr[t13]);
 #line 219 "examples/query/run/engine.hero"
     t15 = UINT64_C(49);
 #line 219 "examples/query/run/engine.hero"

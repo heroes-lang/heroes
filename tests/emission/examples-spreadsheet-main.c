@@ -1286,7 +1286,7 @@ bb0:
 #line 54 "examples/spreadsheet/formula.hero"
     t4 = t3.f_pos;
 #line 54 "examples/spreadsheet/formula.hero"
-    t5 = hero_str_byte(t2, t4);
+    t5 = ((void)((t2.ptr == NULL || t4 < 0 || t4 >= t2.len) ? ((void)hero_str_byte(t2, t4), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t2.ptr[t4]);
 #line 54 "examples/spreadsheet/formula.hero"
     return t5;
 #line 1293 "main.c"
@@ -5007,7 +5007,7 @@ bb4:
 #line 48 "examples/spreadsheet/sheet.hero"
     t7 = h1_from;
 #line 48 "examples/spreadsheet/sheet.hero"
-    t8 = hero_str_byte(t6, t7);
+    t8 = ((void)((t6.ptr == NULL || t7 < 0 || t7 >= t6.len) ? ((void)hero_str_byte(t6, t7), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t6.ptr[t7]);
 #line 48 "examples/spreadsheet/sheet.hero"
     t9 = h_sheet_is_space(t8);
 #line 48 "examples/spreadsheet/sheet.hero"
@@ -5072,7 +5072,7 @@ bb9:
 #line 53 "examples/spreadsheet/sheet.hero"
     if (__builtin_sub_overflow(t20, t21, &t22)) hero_panic_overflow();
 #line 53 "examples/spreadsheet/sheet.hero"
-    t23 = hero_str_byte(t19, t22);
+    t23 = ((void)((t19.ptr == NULL || t22 < 0 || t22 >= t19.len) ? ((void)hero_str_byte(t19, t22), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t19.ptr[t22]);
 #line 53 "examples/spreadsheet/sheet.hero"
     t24 = h_sheet_is_space(t23);
 #line 53 "examples/spreadsheet/sheet.hero"
@@ -5178,7 +5178,7 @@ bb2:
 #line 64 "examples/spreadsheet/sheet.hero"
     t9 = h3_i;
 #line 64 "examples/spreadsheet/sheet.hero"
-    t10 = hero_str_byte(t8, t9);
+    t10 = ((void)((t8.ptr == NULL || t9 < 0 || t9 >= t8.len) ? ((void)hero_str_byte(t8, t9), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t8.ptr[t9]);
 #line 64 "examples/spreadsheet/sheet.hero"
     t11 = UINT64_C(10);
 #line 64 "examples/spreadsheet/sheet.hero"
@@ -5436,7 +5436,7 @@ bb2:
 #line 77 "examples/spreadsheet/sheet.hero"
     t6 = INT64_C(0);
 #line 77 "examples/spreadsheet/sheet.hero"
-    t7 = hero_str_byte(t5, t6);
+    t7 = ((void)((t5.ptr == NULL || t6 < 0 || t6 >= t5.len) ? ((void)hero_str_byte(t5, t6), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t5.ptr[t6]);
 #line 77 "examples/spreadsheet/sheet.hero"
     t8 = h_sheet_is_letter(t7);
 #line 77 "examples/spreadsheet/sheet.hero"
@@ -5518,7 +5518,7 @@ bb7:
 #line 83 "examples/spreadsheet/sheet.hero"
     t25 = h3_i;
 #line 83 "examples/spreadsheet/sheet.hero"
-    t26 = hero_str_byte(t24, t25);
+    t26 = ((void)((t24.ptr == NULL || t25 < 0 || t25 >= t24.len) ? ((void)hero_str_byte(t24, t25), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t24.ptr[t25]);
 #line 83 "examples/spreadsheet/sheet.hero"
     t27 = h_sheet_is_digit(t26);
 #line 83 "examples/spreadsheet/sheet.hero"
@@ -5548,7 +5548,7 @@ bb9:
 #line 85 "examples/spreadsheet/sheet.hero"
     t40 = h3_i;
 #line 85 "examples/spreadsheet/sheet.hero"
-    t41 = hero_str_byte(t39, t40);
+    t41 = ((void)((t39.ptr == NULL || t40 < 0 || t40 >= t39.len) ? ((void)hero_str_byte(t39, t40), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t39.ptr[t40]);
 #line 85 "examples/spreadsheet/sheet.hero"
     t42 = UINT64_C(48);
 #line 85 "examples/spreadsheet/sheet.hero"
@@ -5662,7 +5662,7 @@ bb14:
 #line 90 "examples/spreadsheet/sheet.hero"
     t68 = INT64_C(0);
 #line 90 "examples/spreadsheet/sheet.hero"
-    t69 = hero_str_byte(t67, t68);
+    t69 = ((void)((t67.ptr == NULL || t68 < 0 || t68 >= t67.len) ? ((void)hero_str_byte(t67, t68), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t67.ptr[t68]);
 #line 90 "examples/spreadsheet/sheet.hero"
     t70 = UINT64_C(65);
 #line 90 "examples/spreadsheet/sheet.hero"
@@ -6565,7 +6565,7 @@ bb2:
 #line 124 "examples/spreadsheet/sheet.hero"
     t7 = h2_i;
 #line 124 "examples/spreadsheet/sheet.hero"
-    t8 = hero_str_byte(t6, t7);
+    t8 = ((void)((t6.ptr == NULL || t7 < 0 || t7 >= t6.len) ? ((void)hero_str_byte(t6, t7), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t6.ptr[t7]);
 #line 124 "examples/spreadsheet/sheet.hero"
     t9 = h1_c;
 #line 124 "examples/spreadsheet/sheet.hero"
@@ -6894,7 +6894,7 @@ bb6:
 #line 139 "examples/spreadsheet/sheet.hero"
     t18 = INT64_C(0);
 #line 139 "examples/spreadsheet/sheet.hero"
-    t19 = hero_str_byte(t17, t18);
+    t19 = ((void)((t17.ptr == NULL || t18 < 0 || t18 >= t17.len) ? ((void)hero_str_byte(t17, t18), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t17.ptr[t18]);
 #line 139 "examples/spreadsheet/sheet.hero"
     t20 = UINT64_C(35);
 #line 139 "examples/spreadsheet/sheet.hero"

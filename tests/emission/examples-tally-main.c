@@ -953,7 +953,7 @@ bb2:
 #line 132 "examples/tally/main.hero"
     t10 = h4_at;
 #line 132 "examples/tally/main.hero"
-    t11 = hero_str_byte(t9, t10);
+    t11 = ((void)((t9.ptr == NULL || t10 < 0 || t10 >= t9.len) ? ((void)hero_str_byte(t9, t10), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t9.ptr[t10]);
 #line 132 "examples/tally/main.hero"
     h5_b = t11;
 #line 134 "examples/tally/main.hero"
@@ -1521,7 +1521,7 @@ bb2:
 #line 172 "examples/tally/main.hero"
     t9 = h3_at;
 #line 172 "examples/tally/main.hero"
-    t10 = hero_str_byte(t8, t9);
+    t10 = ((void)((t8.ptr == NULL || t9 < 0 || t9 >= t8.len) ? ((void)hero_str_byte(t8, t9), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t8.ptr[t9]);
 #line 172 "examples/tally/main.hero"
     t11 = UINT64_C(10);
 #line 172 "examples/tally/main.hero"

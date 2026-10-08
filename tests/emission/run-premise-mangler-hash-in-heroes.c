@@ -221,7 +221,7 @@ bb2:
 #line 28 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     t18 = h4_i;
 #line 28 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
-    t19 = hero_str_byte(t17, t18);
+    t19 = ((void)((t17.ptr == NULL || t18 < 0 || t18 >= t17.len) ? ((void)hero_str_byte(t17, t18), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t17.ptr[t18]);
 #line 28 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     t20 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t19};
 #line 28 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
