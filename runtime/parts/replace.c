@@ -303,6 +303,32 @@ static int hero_stage_flush(int fd) {
     return errno == EINVAL || errno == ENOTSUP ? 0 : -1;
 }
 
+#if defined(__linux__)
+/* Attributes that are about a file's BYTES and not about the file, which the
+ * kernel itself does not keep across a write in place (file capabilities:
+ * `cap_inode_killpriv`) or that vouch for the old bytes alone (the integrity
+ * module's hash and its HMAC): the new bytes are not carried what was said of
+ * the old ones (the head of `hero_stage_attributes`). */
+static int hero_stage_bound_to_bytes(const char *name) {
+    return strcmp(name, "security.capability") == 0 || strcmp(name, "security.ima") == 0 ||
+           strcmp(name, "security.evm") == 0;
+}
+
+/* Whether the new file, open at `fd`, already holds exactly `value` of
+ * `size` bytes under `name`: what its creation gave it, which is then no
+ * change. */
+static int hero_stage_has_value(int fd, const char *name, const char *value, ssize_t size) {
+    ssize_t held = fgetxattr(fd, name, NULL, 0);
+    if (held != size) return 0;
+    if (size == 0) return 1;
+    char *now = hero_alloc((size_t)size);
+    ssize_t got = fgetxattr(fd, name, now, (size_t)size);
+    int same = got == size && memcmp(now, value, (size_t)size) == 0;
+    hero_release(now);
+    return same;
+}
+#endif
+
 /* The ACL and the extended attributes of `like`, given to the new file. */
 static int64_t hero_stage_attributes(int fd, const char *like) {
 #if defined(__APPLE__)
@@ -318,10 +344,30 @@ static int64_t hero_stage_attributes(int fd, const char *like) {
 #elif defined(__linux__)
     /* Linux keeps a POSIX ACL as the extended attribute
      * `system.posix_acl_access`, so copying every attribute copies it. The
-     * `security.` namespace is the security module's (SELinux, Smack), which
-     * labels a new file itself: a label it will not let this process set is
-     * skipped rather than refused, so that a policy cannot make every rewrite
-     * impossible. Every other attribute is carried or the rewrite is refused. */
+     * `security.` namespace is the security module's (SELinux, Smack), and it
+     * is the one place where the new file is not a blank: it was labelled at
+     * its creation, by the module's own rule for a new file in that directory,
+     * and an in-place write would have kept the OLD file's label. So a label
+     * is carried or the rewrite is refused (defect 463, measured on Fedora 44,
+     * SELinux enforcing, 2026-10-08): the same rule as every other attribute,
+     * where this arm skipped any `security.` attribute it could not set, so
+     * that a policy could not make every rewrite impossible, and a process
+     * the policy confined, rewriting a file another SELinux user had labelled,
+     * left `unconfined_u:object_r:user_tmp_t:s0` as `user_u:object_r:
+     * user_home_t:s0` in silence through both doors. What a policy forbids is
+     * not an excuse to change the label, it is a reason to write in place,
+     * which keeps it: HERO_STAGE_ATTRIBUTES is what `hero_file_write` answers
+     * by writing in place (`parts/write.c`) and the publish route by refusing
+     * with the file untouched (`selfhost/cli/publish.hero`). The one thing a
+     * refused set does not refuse is a new file that already HAS the old
+     * file's value, the common case of a directory whose default label is the
+     * file's.
+     *
+     * NOT CARRIED, and not refused: the names `hero_stage_bound_to_bytes`
+     * lists, which are about the bytes and not about the file, so an in-place
+     * write drops them too (measured: the kernel drops `security.capability`
+     * on a write, and this arm, running as root, had been giving it to the
+     * new bytes). Every other attribute is carried or the rewrite is refused. */
     int from = open(like, O_RDONLY | O_CLOEXEC);
     if (from < 0) {
         hero_fs_why_code = (int64_t)errno;
@@ -349,6 +395,7 @@ static int64_t hero_stage_attributes(int fd, const char *like) {
         const char *name = names + at;
         size_t name_length = strlen(name);
         at += (ssize_t)name_length + 1;
+        if (hero_stage_bound_to_bytes(name)) continue;
         ssize_t size = fgetxattr(from, name, NULL, 0);
         if (size < 0) {
             hero_fs_why_code = (int64_t)errno;
@@ -357,9 +404,11 @@ static int64_t hero_stage_attributes(int fd, const char *like) {
         }
         char *value = hero_alloc(size > 0 ? (size_t)size : 1);
         ssize_t read_back = size > 0 ? fgetxattr(from, name, value, (size_t)size) : 0;
-        if (read_back < 0 || fsetxattr(fd, name, value, (size_t)(read_back < 0 ? 0 : read_back), 0) != 0) {
-            if (strncmp(name, "security.", 9) != 0) {
-                hero_fs_why_code = (int64_t)errno;
+        int why = errno;
+        if (read_back < 0 || fsetxattr(fd, name, value, (size_t)read_back, 0) != 0) {
+            if (read_back >= 0) why = errno;
+            if (strncmp(name, "security.", 9) != 0 || read_back < 0 || !hero_stage_has_value(fd, name, value, read_back)) {
+                hero_fs_why_code = (int64_t)why;
                 step = HERO_STAGE_ATTRIBUTES;
             }
         }

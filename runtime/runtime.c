@@ -14,14 +14,20 @@
  * runtime would void the "clang type-checks every call" property. So this whole
  * directory holds only what the language cannot express.
  *
- * ONE TRANSLATION UNIT, SEVENTEEN FILES, and the arrangement is deliberate.
+ * ONE TRANSLATION UNIT, MANY FILES, and the arrangement is deliberate. **This
+ * says no count of them**: it said SEVENTEEN while `parts/` held 24 (defect
+ * 464, measured 2026-10-07: 24 files, 24 `#include "parts/..."` lines below),
+ * a number nobody re-counts when a part is added. What it says instead is a
+ * claim a test holds: every file under `parts/` is included below, and every
+ * part included is there (`selfhost/cli/runtime_key.hero`, the test *every
+ * file under the runtime's parts is included by runtime.c*).
  *
  * The runtime passed 1200 lines at M-generics-library step 3, four times CLAUDE.md §11's ceiling
  * — "the author must be able to open any file and read it without drowning".
  * `runtime/parts/` is that file split by concern, and this file includes them in
  * dependency order so the result is still exactly one translation unit.
  *
- * Why not seventeen translation units, which is what a C programmer expects:
+ * Why not one translation unit a part, which is what a C programmer expects:
  *
  *   - `hero_live_blocks` is `static`, and it is the leak gate's whole
  *     foundation (panel 021: ASan has no leak detector on Darwin arm64, so this
@@ -32,9 +38,9 @@
  *     nobody outside. Splitting into TUs promotes all of them to public symbols
  *     and turns an internal contract into an ABI.
  *   - `Toolchain::runtime_object` compiles the runtime to ONE `.o` and caches it
- *     (`selfhost/cli/toolchain.hero`). Eleven objects would need
- *     an archive or `ld -r`, which is build machinery CLAUDE.md §10 does not
- *     want and this project does not need.
+ *     (`selfhost/cli/toolchain.hero`). An object a part would need an archive
+ *     or `ld -r`, which is build machinery CLAUDE.md §10 does not want and
+ *     this project does not need.
  *
  * The cost is one rule, and it is the one a reader has to know: **the include
  * order below IS the dependency order**, so a part may use anything the parts
