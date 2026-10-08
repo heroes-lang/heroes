@@ -3,7 +3,7 @@ kind: defect
 area: parse
 milestone: none
 filed: 2026-10-07
-commit: none
+commit: f65efa513a3a6ee025d8b158bbb327e800a0fbf9
 github: none
 ---
 
@@ -12,3 +12,5 @@ github: none
     **Origin:** filed by the coordinator at 18:37 on 2026-10-07 from lane b14-parse's final report; the lane's measurement, not re-run by the coordinator.
 
     **Class: improvement**, 2026-10-07 (`.claude/rules/verification.md` § Bounded discovery): a cost growing with the line's square.
+
+    Repaired at `f65efa51`, 2026-10-08 (lane b15-parse), gated by its cases and the compiler's own tests; the net is owed at the batch's close. A report's code is asked before its line is read, and the lost lines are sorted once and searched (`lost_quote.lost_lines`, `holds`), the shape beside, many lost-quote lines, with it: `check` of 4,000 unknown escapes 2.66 to 0.77 billion instructions retired, 8,000 lost-quote lines 10.47 to 3.73, defect 410's 10,000 openers 7.30 to 1.37, every output byte-identical.
