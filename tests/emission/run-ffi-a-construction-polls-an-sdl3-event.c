@@ -6,7 +6,6 @@
 #include "heroes_guard_open.h"
 #include <SDL3/SDL.h>
 #pragma push_macro("code")
-#pragma push_macro("key")
 #pragma push_macro("type")
 #include "heroes_guard_close.h"
 
@@ -14,19 +13,11 @@ _Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compile
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
-#line 17 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
-_Static_assert(__builtin_classify_type(((SDL_KeyboardEvent *)0)->type) == 1 && sizeof(((SDL_KeyboardEvent *)0)->type) == sizeof(uint32_t) && (_Generic(((SDL_KeyboardEvent *)0)->type, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 1), "heroes-ffi-field SDL_KeyboardEvent type");
-_Static_assert(__builtin_classify_type(((SDL_KeyboardEvent *)0)->reserved) == 1 && sizeof(((SDL_KeyboardEvent *)0)->reserved) == sizeof(uint32_t) && (_Generic(((SDL_KeyboardEvent *)0)->reserved, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 1), "heroes-ffi-field SDL_KeyboardEvent reserved");
-_Static_assert(__builtin_classify_type(((SDL_KeyboardEvent *)0)->timestamp) == 1 && sizeof(((SDL_KeyboardEvent *)0)->timestamp) == sizeof(uint64_t) && (_Generic(((SDL_KeyboardEvent *)0)->timestamp, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 1), "heroes-ffi-field SDL_KeyboardEvent timestamp");
-_Static_assert(__builtin_classify_type(((SDL_KeyboardEvent *)0)->windowID) == 1 && sizeof(((SDL_KeyboardEvent *)0)->windowID) == sizeof(uint32_t) && (_Generic(((SDL_KeyboardEvent *)0)->windowID, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 1), "heroes-ffi-field SDL_KeyboardEvent windowID");
-_Static_assert(__builtin_classify_type(((SDL_KeyboardEvent *)0)->which) == 1 && sizeof(((SDL_KeyboardEvent *)0)->which) == sizeof(uint32_t) && (_Generic(((SDL_KeyboardEvent *)0)->which, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 1), "heroes-ffi-field SDL_KeyboardEvent which");
-_Static_assert(__builtin_classify_type(((SDL_KeyboardEvent *)0)->scancode) == 1 && sizeof(((SDL_KeyboardEvent *)0)->scancode) == sizeof(uint32_t) && (_Generic(((SDL_KeyboardEvent *)0)->scancode, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 1), "heroes-ffi-field SDL_KeyboardEvent scancode");
-_Static_assert(__builtin_classify_type(((SDL_KeyboardEvent *)0)->key) == 1 && sizeof(((SDL_KeyboardEvent *)0)->key) == sizeof(uint32_t) && (_Generic(((SDL_KeyboardEvent *)0)->key, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 1), "heroes-ffi-field SDL_KeyboardEvent key");
-_Static_assert(__builtin_classify_type(((SDL_KeyboardEvent *)0)->mod) == 1 && sizeof(((SDL_KeyboardEvent *)0)->mod) == sizeof(uint16_t) && (_Generic(((SDL_KeyboardEvent *)0)->mod, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 1), "heroes-ffi-field SDL_KeyboardEvent mod");
-_Static_assert(__builtin_classify_type(((SDL_KeyboardEvent *)0)->raw) == 1 && sizeof(((SDL_KeyboardEvent *)0)->raw) == sizeof(uint16_t) && (_Generic(((SDL_KeyboardEvent *)0)->raw, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 1), "heroes-ffi-field SDL_KeyboardEvent raw");
-_Static_assert(_Generic(&((SDL_KeyboardEvent *)0)->down, bool *: 1, default: 0) && sizeof(((SDL_KeyboardEvent *)0)->down) == sizeof(bool), "heroes-ffi-field SDL_KeyboardEvent down");
-_Static_assert(_Generic(&((SDL_KeyboardEvent *)0)->repeat, bool *: 1, default: 0) && sizeof(((SDL_KeyboardEvent *)0)->repeat) == sizeof(bool), "heroes-ffi-field SDL_KeyboardEvent repeat");
-#line 29 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
+#line 26 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
+_Static_assert(__builtin_classify_type(((SDL_CommonEvent *)0)->type) == 1 && sizeof(((SDL_CommonEvent *)0)->type) == sizeof(uint32_t) && (_Generic(((SDL_CommonEvent *)0)->type, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 1), "heroes-ffi-field SDL_CommonEvent type");
+_Static_assert(__builtin_classify_type(((SDL_CommonEvent *)0)->reserved) == 1 && sizeof(((SDL_CommonEvent *)0)->reserved) == sizeof(uint32_t) && (_Generic(((SDL_CommonEvent *)0)->reserved, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 1), "heroes-ffi-field SDL_CommonEvent reserved");
+_Static_assert(__builtin_classify_type(((SDL_CommonEvent *)0)->timestamp) == 1 && sizeof(((SDL_CommonEvent *)0)->timestamp) == sizeof(uint64_t) && (_Generic(((SDL_CommonEvent *)0)->timestamp, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 1), "heroes-ffi-field SDL_CommonEvent timestamp");
+#line 30 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
 _Static_assert(__builtin_classify_type(((SDL_UserEvent *)0)->type) == 1 && sizeof(((SDL_UserEvent *)0)->type) == sizeof(uint32_t) && (_Generic(((SDL_UserEvent *)0)->type, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 1), "heroes-ffi-field SDL_UserEvent type");
 _Static_assert(__builtin_classify_type(((SDL_UserEvent *)0)->reserved) == 1 && sizeof(((SDL_UserEvent *)0)->reserved) == sizeof(uint32_t) && (_Generic(((SDL_UserEvent *)0)->reserved, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 1), "heroes-ffi-field SDL_UserEvent reserved");
 _Static_assert(__builtin_classify_type(((SDL_UserEvent *)0)->timestamp) == 1 && sizeof(((SDL_UserEvent *)0)->timestamp) == sizeof(uint64_t) && (_Generic(((SDL_UserEvent *)0)->timestamp, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 1), "heroes-ffi-field SDL_UserEvent timestamp");
@@ -34,15 +25,15 @@ _Static_assert(__builtin_classify_type(((SDL_UserEvent *)0)->windowID) == 1 && s
 _Static_assert(__builtin_classify_type(((SDL_UserEvent *)0)->code) == 1 && sizeof(((SDL_UserEvent *)0)->code) == sizeof(int32_t) && (_Generic(((SDL_UserEvent *)0)->code, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field SDL_UserEvent code");
 _Static_assert(__builtin_classify_type(((SDL_UserEvent *)0)->data1) == 5 && _Generic(((SDL_UserEvent *)0)->data1, __typeof__(((SDL_UserEvent *)0)->data1): 1, default: 0) && sizeof(((SDL_UserEvent *)0)->data1) == sizeof(void *), "heroes-ffi-field SDL_UserEvent data1");
 _Static_assert(__builtin_classify_type(((SDL_UserEvent *)0)->data2) == 5 && _Generic(((SDL_UserEvent *)0)->data2, __typeof__(((SDL_UserEvent *)0)->data2): 1, default: 0) && sizeof(((SDL_UserEvent *)0)->data2) == sizeof(void *), "heroes-ffi-field SDL_UserEvent data2");
-#line 37 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
+#line 38 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
 _Static_assert(__builtin_classify_type(((SDL_Event *)0)->type) == 1 && sizeof(((SDL_Event *)0)->type) == sizeof(uint32_t) && (_Generic(((SDL_Event *)0)->type, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 1), "heroes-ffi-field SDL_Event type");
-_Static_assert(_Generic(&((SDL_Event *)0)->key, SDL_KeyboardEvent *: 1, default: 0) && sizeof(((SDL_Event *)0)->key) == sizeof(SDL_KeyboardEvent), "heroes-ffi-field SDL_Event key");
+_Static_assert(_Generic(&((SDL_Event *)0)->common, SDL_CommonEvent *: 1, default: 0) && sizeof(((SDL_Event *)0)->common) == sizeof(SDL_CommonEvent), "heroes-ffi-field SDL_Event common");
 _Static_assert(_Generic(&((SDL_Event *)0)->user, SDL_UserEvent *: 1, default: 0) && sizeof(((SDL_Event *)0)->user) == sizeof(SDL_UserEvent), "heroes-ffi-field SDL_Event user");
-#line 42 "ffiaconstructionpollsansdl3event.c"
+#line 33 "ffiaconstructionpollsansdl3event.c"
 
-#line 28 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
+#line 29 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
 _Static_assert(__builtin_classify_type(*(SDL_UserEvent *)0) != 13, "heroes-ffi-union SDL_UserEvent type reserved timestamp windowID code data1 data2");
-#line 46 "ffiaconstructionpollsansdl3event.c"
+#line 37 "ffiaconstructionpollsansdl3event.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -105,7 +96,7 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
-#line 40 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
+#line 41 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
 __attribute__((unused)) static void hero_ffi_probe_h_ffiaconstructionpollsansdl3event_SDL_Init(uint32_t a0) { (void)(SDL_Init)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_ffiaconstructionpollsansdl3event_SDL_PushEvent(SDL_Event * a0) { (void)(SDL_PushEvent)(a0); }
 __attribute__((unused)) static void hero_ffi_probe_h_ffiaconstructionpollsansdl3event_SDL_PollEvent(SDL_Event * a0) { (void)(SDL_PollEvent)(a0); }
@@ -118,11 +109,11 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 122 "ffiaconstructionpollsansdl3event.c"
+#line 113 "ffiaconstructionpollsansdl3event.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL bool h_ffiaconstructionpollsansdl3event_SDL_KeyboardEvent_eq(const SDL_KeyboardEvent *a, const SDL_KeyboardEvent *b);
-HERO_TU_LOCAL uint64_t h_ffiaconstructionpollsansdl3event_SDL_KeyboardEvent_hash(const void *elem);
+HERO_TU_LOCAL bool h_ffiaconstructionpollsansdl3event_SDL_CommonEvent_eq(const SDL_CommonEvent *a, const SDL_CommonEvent *b);
+HERO_TU_LOCAL uint64_t h_ffiaconstructionpollsansdl3event_SDL_CommonEvent_hash(const void *elem);
 HERO_TU_LOCAL bool h_ffiaconstructionpollsansdl3event_SDL_UserEvent_eq(const SDL_UserEvent *a, const SDL_UserEvent *b);
 HERO_TU_LOCAL uint64_t h_ffiaconstructionpollsansdl3event_SDL_UserEvent_hash(const void *elem);
 HERO_TU_LOCAL bool h_ffiaconstructionpollsansdl3event_SDL_Event_eq(const SDL_Event *a, const SDL_Event *b);
@@ -138,9 +129,9 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_ffiaconstructionpollsansdl3event_main(void);
 
-#line 45 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
+#line 46 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
 void h_ffiaconstructionpollsansdl3event_main(void) {
-#line 144 "ffiaconstructionpollsansdl3event.c"
+#line 135 "ffiaconstructionpollsansdl3event.c"
     SDL_Event *const hero_lend_h0_sent = (SDL_Event *)hero_lend_local(sizeof(SDL_Event), "ffiaconstructionpollsansdl3event.main", "sent");
 #define h0_sent (*hero_lend_h0_sent)
     bool h1_found;
@@ -186,7 +177,7 @@ void h_ffiaconstructionpollsansdl3event_main(void) {
     SDL_UserEvent t33;
     int32_t t34;
     SDL_Event t35;
-    SDL_KeyboardEvent t36;
+    SDL_CommonEvent t36;
     uint32_t t37;
     int64_t t38;
     int64_t t39;
@@ -198,218 +189,202 @@ void h_ffiaconstructionpollsansdl3event_main(void) {
     bool t45;
     goto bb0;
 bb0:
-#line 46 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
+#line 47 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
     t1 = UINT64_C(16384);
-#line 46 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
+#line 47 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
     t2 = SDL_Init(t1);
-#line 46 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
+#line 47 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
     hero_print_bool(t2);
-#line 46 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
+#line 47 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
     hero_print_end();
-#line 48 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
+#line 49 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
     t3 = UINT64_C(32768);
-#line 48 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
+#line 49 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
     t4 = UINT64_C(0);
-#line 48 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
+#line 49 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
     t5 = UINT64_C(0);
-#line 48 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
+#line 49 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
     t6 = UINT64_C(0);
-#line 48 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
+#line 49 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
     t7 = INT64_C(42);
-#line 48 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
+#line 49 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
     t8 = ((void *)0);
-#line 48 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
+#line 49 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
     t9 = ((void *)0);
-#line 48 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
+#line 49 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
     t10 = (SDL_UserEvent){.type = t3, .reserved = t4, .timestamp = t5, .windowID = t6, .code = t7, .data1 = t8, .data2 = t9};
-#line 47 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
+#line 48 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
     t11 = (SDL_Event){.user = t10};
-#line 47 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
+#line 48 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
     h0_sent = t11;
-#line 50 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
+#line 51 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
     hero_lend_local_name(hero_lend_h0_sent, "SDL_PushEvent", "event");
-#line 50 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
+#line 51 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
     t12 = SDL_PushEvent(&h0_sent);
-#line 50 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
+#line 51 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
     hero_print_bool(t12);
-#line 50 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
+#line 51 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
     hero_print_end();
     t13 = false;
-#line 51 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
+#line 52 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
     h1_found = t13;
     t14 = INT64_C(0);
-#line 52 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
+#line 53 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
     h2_code = t14;
     t15 = UINT64_C(0);
-#line 53 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
+#line 54 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
     h3_keyed = t15;
     t16 = INT64_C(0);
-#line 54 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
+#line 55 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
     h4_tries = t16;
-#line 54 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
+#line 55 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
     goto bb1;
-#line 54 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
+#line 55 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
 bb1:
-#line 56 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
+#line 57 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
     t17 = h1_found;
-#line 56 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
+#line 57 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
     t18 = !t17;
-#line 56 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
+#line 57 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
     h5_b0 = t18;
-#line 56 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
+#line 57 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
     if (t18) goto bb4; else goto bb5;
-#line 56 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
+#line 57 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
 bb2:
     t23 = UINT64_C(0);
-#line 57 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
+#line 58 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
     t24 = (SDL_Event){.type = t23};
-#line 57 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
+#line 58 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
     h6_got = t24;
-#line 59 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
+#line 60 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
     hero_lend_local_name(hero_lend_h6_got, "SDL_PollEvent", "event");
-#line 59 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
+#line 60 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
     t25 = SDL_PollEvent(&h6_got);
-#line 59 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
+#line 60 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
     h7_b1 = t25;
-#line 59 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
+#line 60 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
     if (t25) goto bb7; else goto bb8;
-#line 59 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
+#line 60 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
 bb3:
-#line 65 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
+#line 66 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
     t41 = h1_found;
-#line 65 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
+#line 66 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
     hero_print_bool(t41);
-#line 65 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
+#line 66 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
     hero_print_end();
     t42 = h2_code;
-#line 66 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
+#line 67 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
     hero_print_int(t42);
-#line 66 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
+#line 67 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
     hero_print_end();
     t43 = h3_keyed;
-#line 67 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
+#line 68 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
     t44 = UINT64_C(32768);
-#line 67 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
+#line 68 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
     t45 = t43 == t44;
-#line 67 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
+#line 68 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
     hero_print_bool(t45);
-#line 67 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
+#line 68 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
     hero_print_end();
     (void)SDL_Quit();
-#line 68 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
+#line 69 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
     hero_lend_local_give(hero_lend_h6_got);
-#line 68 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
+#line 69 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
     hero_lend_local_give(hero_lend_h0_sent);
-#line 68 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
+#line 69 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
     return;
-#line 68 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
+#line 69 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
 bb4:
-#line 56 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
+#line 57 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
     t19 = h4_tries;
-#line 56 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
+#line 57 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
     t20 = INT64_C(64);
-#line 56 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
+#line 57 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
     t21 = t19 < t20;
-#line 56 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
+#line 57 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
     h5_b0 = t21;
-#line 56 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
+#line 57 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
     goto bb5;
-#line 56 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
+#line 57 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
 bb5:
-#line 56 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
+#line 57 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
     t22 = h5_b0;
-#line 56 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
+#line 57 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
     if (t22) goto bb2; else goto bb3;
-#line 56 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
+#line 57 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
 bb6:
-#line 63 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
+#line 64 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
     t38 = h4_tries;
-#line 63 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
+#line 64 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
     t39 = INT64_C(1);
-#line 63 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
+#line 64 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
     if (__builtin_add_overflow(t38, t39, &t40)) hero_panic_overflow();
-#line 63 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
+#line 64 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
     h4_tries = t40;
-#line 63 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
+#line 64 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
     goto bb1;
-#line 63 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
+#line 64 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
 bb7:
-#line 59 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
+#line 60 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
     t26 = h6_got;
-#line 59 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
+#line 60 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
     t27 = t26.type;
-#line 59 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
+#line 60 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
     t28 = UINT64_C(32768);
-#line 59 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
+#line 60 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
     t29 = t27 == t28;
-#line 59 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
+#line 60 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
     h7_b1 = t29;
-#line 59 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
+#line 60 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
     goto bb8;
-#line 59 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
+#line 60 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
 bb8:
-#line 59 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
+#line 60 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
     t30 = h7_b1;
-#line 59 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
+#line 60 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
     if (t30) goto bb9; else goto bb10;
-#line 59 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
+#line 60 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
 bb9:
     t31 = true;
-#line 60 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
+#line 61 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
     h1_found = t31;
     t32 = h6_got;
-#line 61 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
+#line 62 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
     t33 = t32.user;
-#line 61 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
+#line 62 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
     t34 = t33.code;
-#line 61 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
+#line 62 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
     h2_code = t34;
     t35 = h6_got;
-#line 62 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
-    t36 = t35.key;
-#line 62 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
+#line 63 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
+    t36 = t35.common;
+#line 63 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
     t37 = t36.type;
-#line 62 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
+#line 63 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
     h3_keyed = t37;
-#line 62 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
+#line 63 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
     goto bb6;
-#line 62 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
+#line 63 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
 bb10:
-#line 62 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
+#line 63 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
     goto bb6;
-#line 381 "ffiaconstructionpollsansdl3event.c"
+#line 372 "ffiaconstructionpollsansdl3event.c"
 }
 #undef h0_sent
 #undef h6_got
-HERO_TU_LOCAL bool h_ffiaconstructionpollsansdl3event_SDL_KeyboardEvent_eq(const SDL_KeyboardEvent *a, const SDL_KeyboardEvent *b) {
+HERO_TU_LOCAL bool h_ffiaconstructionpollsansdl3event_SDL_CommonEvent_eq(const SDL_CommonEvent *a, const SDL_CommonEvent *b) {
     if (!(a->type == b->type)) return false;
     if (!(a->reserved == b->reserved)) return false;
     if (!(a->timestamp == b->timestamp)) return false;
-    if (!(a->windowID == b->windowID)) return false;
-    if (!(a->which == b->which)) return false;
-    if (!(a->scancode == b->scancode)) return false;
-    if (!(a->key == b->key)) return false;
-    if (!(a->mod == b->mod)) return false;
-    if (!(a->raw == b->raw)) return false;
-    if (!(a->down == b->down)) return false;
-    if (!(a->repeat == b->repeat)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_ffiaconstructionpollsansdl3event_SDL_KeyboardEvent_hash(const void *elem) {
-    const SDL_KeyboardEvent *v = elem;
+HERO_TU_LOCAL uint64_t h_ffiaconstructionpollsansdl3event_SDL_CommonEvent_hash(const void *elem) {
+    const SDL_CommonEvent *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (&hero_desc_u32)->hash(&v->type)) * UINT64_C(0x100000001b3);
     h = (h ^ (&hero_desc_u32)->hash(&v->reserved)) * UINT64_C(0x100000001b3);
     h = (h ^ (&hero_desc_u64)->hash(&v->timestamp)) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_u32)->hash(&v->windowID)) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_u32)->hash(&v->which)) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_u32)->hash(&v->scancode)) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_u32)->hash(&v->key)) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_u16)->hash(&v->mod)) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_u16)->hash(&v->raw)) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_bool)->hash(&v->down)) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_bool)->hash(&v->repeat)) * UINT64_C(0x100000001b3);
     return h;
 }
 
@@ -439,7 +414,7 @@ HERO_TU_LOCAL uint64_t h_ffiaconstructionpollsansdl3event_SDL_UserEvent_hash(con
 
 HERO_TU_LOCAL bool h_ffiaconstructionpollsansdl3event_SDL_Event_eq(const SDL_Event *a, const SDL_Event *b) {
     if (!(a->type == b->type)) return false;
-    if (!(h_ffiaconstructionpollsansdl3event_SDL_KeyboardEvent_eq(&a->key, &b->key))) return false;
+    if (!(h_ffiaconstructionpollsansdl3event_SDL_CommonEvent_eq(&a->common, &b->common))) return false;
     if (!(h_ffiaconstructionpollsansdl3event_SDL_UserEvent_eq(&a->user, &b->user))) return false;
     return true;
 }
@@ -448,7 +423,7 @@ HERO_TU_LOCAL uint64_t h_ffiaconstructionpollsansdl3event_SDL_Event_hash(const v
     const SDL_Event *v = elem;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
     h = (h ^ (&hero_desc_u32)->hash(&v->type)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_ffiaconstructionpollsansdl3event_SDL_KeyboardEvent_hash(&v->key)) * UINT64_C(0x100000001b3);
+    h = (h ^ h_ffiaconstructionpollsansdl3event_SDL_CommonEvent_hash(&v->common)) * UINT64_C(0x100000001b3);
     h = (h ^ h_ffiaconstructionpollsansdl3event_SDL_UserEvent_hash(&v->user)) * UINT64_C(0x100000001b3);
     return h;
 }

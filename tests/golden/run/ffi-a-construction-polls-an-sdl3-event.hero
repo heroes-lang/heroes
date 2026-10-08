@@ -11,20 +11,21 @@
 # through a pointer. A user event is pushed and polled back; the loop stops at
 # it, so an event of the machine's polled first changes nothing. A machine
 # without SDL3 skips the case, which `package` tells (`ffi_package`).
+#
+# 2026-10-08, defect 447: the third member was SDL_KeyboardEvent, whose `type`
+# and `scancode` are enumerated types, and those are `unsigned int` on this
+# Mac and on Debian's clang and `int` on Windows' (measured with C on all
+# three, SDL 3.4.18 there and 3.2.10 on Debian), so `u32` bound on two and
+# `ffi_field_type` refused the case on the third. It is SDL_CommonEvent now,
+# whose `type` is a plain Uint32 on every platform: the case still names three
+# members of the union and still polls a user event back through two of them,
+# and it builds and prints the same five lines on all three.
 
 extern "SDL3/SDL.h" package "sdl3"
-    record SDL_KeyboardEvent
+    record SDL_CommonEvent
         type: u32
         reserved: u32
         timestamp: u64
-        windowID: u32
-        which: u32
-        scancode: u32
-        key: u32
-        mod: u16
-        raw: u16
-        down: bool
-        repeat: bool
     record SDL_UserEvent
         type: u32
         reserved: u32
@@ -35,7 +36,7 @@ extern "SDL3/SDL.h" package "sdl3"
         data2: ptr
     record SDL_Event
         type: u32
-        key: SDL_KeyboardEvent
+        common: SDL_CommonEvent
         user: SDL_UserEvent
     function SDL_Init(flags: u32) -> bool
     function SDL_PushEvent(@event: SDL_Event) -> bool
@@ -59,7 +60,7 @@ function main()
         if SDL_PollEvent(@got) && got.type == 0x8000
             found @ true
             code @ got.user.code
-            keyed @ got.key.type
+            keyed @ got.common.type
         tries @ tries + 1
 
     print(found)
