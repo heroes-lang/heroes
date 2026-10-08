@@ -1,0 +1,226 @@
+# The recovery plan's operators of conditions, loops and mutation: a
+# condition in parentheses, Python's colon, C's loop, `v++`, `v += e`
+# (defect 448; the Python instrument's `ops.py`, its section *conditions
+# and loops*, rule for rule, each appending its mutants in the order the
+# Python's generator yielded them).
+
+use mutate/model
+use mutate/mutant
+use mutate/op_base
+use mutate/tokens
+
+# The text of `line` with the span from token `a` to token `b` in brackets.
+function bracketed(text: str, a: tokens.Tok, b: tokens.Tok) -> str
+    return op_base.cut(text, from: 0, to: a.c0) + "(" + op_base.cut(text, from: a.c0, to: b.c1) + ")" + op_base.cut(text, from: b.c1, to: text.len())
+
+function paren_condition(p: model.Program, @out: [mutant.Mutant])
+    for s in p.stmts
+        if !op_base.one_of(s.kind, set: ["if", "else-if", "while"]) || !op_base.single_line(s) || !s.head
+            continue
+        k: i64 @ 1
+
+        if s.kind == "else-if"
+            k @ 2
+
+        if s.toks.len() <= k
+            continue
+        a = s.toks[k]
+
+        if a.kind == "lparen"
+            continue
+        text = model.line(p, no: a.line).text
+        new = bracketed(text, a: a, b: s.toks[s.toks.len() - 1])
+        out @ out.push(
+            op_base.mk(op: "paren-condition", p, anchor: tokens.anchor(a), hunks: [op_base.line_edit(no: a.line, text: new)], context: s.kind, stmts: [s.sid])
+        )
+
+function python_colon(p: model.Program, @out: [mutant.Mutant])
+    for s in p.stmts
+        if !op_base.block_ok(s) || !op_base.one_of(s.kind, set: ["top-function", "top-test", "if", "else-if", "else", "while", "for", "match", "top-record", "top-variant", "bind", "return", "case"])
+            continue
+        out @ out.push(op_base.appended(op: "python-colon", p, s: s, word: ":", anchor: "S" + s.first.to_str()))
+
+function colon_one_line(p: model.Program, @out: [mutant.Mutant])
+    for s in p.stmts
+        if !op_base.one_of(s.kind, set: ["if", "else-if", "else", "while", "for", "top-function"]) || !op_base.single_line(s) || !op_base.no_comment(p, s: s)
+            continue
+        k = op_base.simple_body_line(p, s: s)
+
+        if k < 0
+            continue
+        l = model.line(p, no: s.first)
+        new = op_base.cut(l.text, from: 0, to: model.end_col(l)) + ": " + model.stripped(model.line(p, no: p.stmts[k].first).text)
+        out @ out.push(
+            op_base.mk(op: "colon-one-line", p, anchor: "S" + s.first.to_str(), hunks: [mutant.hunk(start: s.first - 1, end: s.block_last, lines: [new])], context: s.kind, stmts: [s.sid])
+        )
+
+# A `for x in ...` head: its tokens begin `for`, a name, `in`.
+function for_head(s: model.Statement) -> bool
+    return s.kind == "for" && s.toks.len() >= 4 && s.toks[1].kind == "ident" && s.toks[2].kind == "kw_in"
+
+function for_parens(p: model.Program, @out: [mutant.Mutant])
+    for s in p.stmts
+        if !for_head(s) || !op_base.single_line(s)
+            continue
+        text = model.line(p, no: s.first).text
+        new = bracketed(text, a: s.toks[1], b: s.toks[s.toks.len() - 1])
+        out @ out.push(
+            op_base.mk(op: "for-parens", p, anchor: tokens.anchor(s.toks[0]), hunks: [op_base.line_edit(no: s.first, text: new)], context: "for", stmts: [s.sid])
+        )
+
+function for_of(p: model.Program, @out: [mutant.Mutant])
+    for s in p.stmts
+        if for_head(s)
+            out @ out.push(op_base.swapped(op: "for-of", p, t: s.toks[2], word: "of", context: "for", sid: s.sid))
+
+# `for i in range(from: A, to: B)` on one line: the name, A's text and B's,
+# or none.
+function range_loop(p: model.Program, s: model.Statement) -> [str]
+    none: [str] = []
+
+    if !for_head(s) || !op_base.single_line(s)
+        return none
+    rest = s.toks.slice(from: 3, to: s.toks.len())
+
+    if rest.len() < 8 || rest[0].text != "range" || rest[1].kind != "lparen" || rest[rest.len() - 1].kind != "rparen"
+        return none
+
+    if rest[2].text != "from" || rest[3].kind != "colon"
+        return none
+    inner = rest.slice(from: 4, to: rest.len() - 1)
+    k: i64 @ -1
+
+    for j in range(from: 0, to: inner.len())
+        if inner[j].kind == "comma" && inner[j].depth == rest[1].depth + 1
+            k @ j
+            break
+
+    if k < 0
+        return none
+    b_part = inner.slice(from: k + 1, to: inner.len())
+
+    if b_part.len() < 3 || b_part[0].text != "to" || b_part[1].kind != "colon"
+        return none
+
+    if k == 0
+        return none
+    text = model.line(p, no: s.first).text
+    a_text = op_base.cut(text, from: inner[0].c0, to: inner[k - 1].c1)
+    b_text = op_base.cut(text, from: b_part[2].c0, to: b_part[b_part.len() - 1].c1)
+    return [s.toks[1].text, a_text, b_text]
+
+function c_for(p: model.Program, @out: [mutant.Mutant])
+    for s in p.stmts
+        r = range_loop(p, s: s)
+        l = model.line(p, no: s.first)
+        pad = op_base.spaces(model.indent(l))
+        tail = op_base.cut(l.text, from: s.toks[s.toks.len() - 1].c1, to: l.text.len())
+
+        if r.len() > 0
+            i = r[0]
+            new = pad + "for (" + i + " = " + r[1] + "; " + i + " < " + r[2] + "; " + i + "++)" + tail
+            out @ out.push(
+                op_base.mk(op: "c-for", p, anchor: "S" + s.first.to_str(), hunks: [op_base.line_edit(no: s.first, text: new)], context: "range", stmts: [s.sid])
+            )
+        else if s.kind == "while" && op_base.single_line(s) && s.toks.len() == 2 && s.toks[1].kind == "kw_true"
+            out @ out.push(
+                op_base.mk(op: "c-for", p, anchor: "S" + s.first.to_str(), hunks: [op_base.line_edit(no: s.first, text: pad + "for (;;)" + tail)], context: "while-true", stmts: [s.sid])
+            )
+
+function range_dots(p: model.Program, @out: [mutant.Mutant])
+    for s in p.stmts
+        r = range_loop(p, s: s)
+
+        if r.len() == 0
+            continue
+        text = model.line(p, no: s.first).text
+        new = op_base.cut(text, from: 0, to: s.toks[3].c0) + r[1] + ".." + r[2] + op_base.cut(text, from: s.toks[s.toks.len() - 1].c1, to: text.len())
+        out @ out.push(
+            op_base.mk(op: "range-dots", p, anchor: "S" + s.first.to_str(), hunks: [op_base.line_edit(no: s.first, text: new)], context: "range", stmts: [s.sid])
+        )
+
+# `v @ v <op> ...` on one line, its own name on both sides of the `@`.
+function self_mutation(s: model.Statement) -> bool
+    toks = s.toks
+
+    if s.kind != "mutate" || s.head || toks.len() < 5
+        return false
+
+    if toks[0].kind != "ident" || toks[1].kind != "at" || toks[2].kind != "ident" || toks[2].text != toks[0].text
+        return false
+    return toks[0].line == toks[toks.len() - 1].line
+
+function plus_plus(p: model.Program, @out: [mutant.Mutant])
+    for s in p.stmts
+        if !self_mutation(s) || s.toks.len() != 5 || s.toks[3].kind != "plus" && s.toks[3].kind != "minus" || s.toks[4].text != "1"
+            continue
+        sign: str @ "++"
+
+        if s.toks[3].kind == "minus"
+            sign @ "--"
+        text = model.line(p, no: s.first).text
+        new = op_base.cut(text, from: 0, to: s.toks[0].c1) + sign + op_base.cut(text, from: s.toks[4].c1, to: text.len())
+        out @ out.push(
+            op_base.mk(op: "plus-plus", p, anchor: "S" + s.first.to_str(), hunks: [op_base.line_edit(no: s.first, text: new)], context: sign, stmts: [s.sid])
+        )
+
+function compound_assign(p: model.Program, @out: [mutant.Mutant])
+    for s in p.stmts
+        if !self_mutation(s) || !op_base.one_of(s.toks[3].kind, set: ["plus", "minus", "star", "slash", "percent"]) || !op_base.binary_at(s.toks, i: 3)
+            continue
+        text = model.line(p, no: s.first).text
+        new = op_base.cut(text, from: 0, to: s.toks[0].c1) + " " + s.toks[3].text + "= " + op_base.cut(text, from: s.toks[4].c0, to: text.len())
+        out @ out.push(
+            op_base.mk(op: "compound-assign", p, anchor: "S" + s.first.to_str(), hunks: [op_base.line_edit(no: s.first, text: new)], context: s.toks[3].text + "=", stmts: [s.sid])
+        )
+
+function assign_equals(p: model.Program, @out: [mutant.Mutant])
+    for s in p.stmts
+        if s.kind != "mutate" || s.head
+            continue
+
+        for t in s.toks
+            if t.kind == "at" && t.depth == 0
+                out @ out.push(op_base.swapped(op: "assign-equals", p, t: t, word: "=", context: "mutate", sid: s.sid))
+                break
+
+function walrus(p: model.Program, @out: [mutant.Mutant])
+    for s in p.stmts
+        if s.kind != "bind" || s.head || s.toks.len() < 3
+            continue
+        a = s.toks[0]
+        eq = s.toks[1]
+
+        if a.kind != "ident" || eq.kind != "eq" || a.text == "_"
+            continue
+        out @ out.push(op_base.swapped(op: "walrus", p, t: eq, word: ":=", context: "bind", sid: s.sid))
+
+## The family's ids
+
+# Whether `id` is one of this family's operators, having run it on `p`.
+function run(id: str, p: model.Program, @out: [mutant.Mutant]) -> bool?
+    if id == "paren-condition"
+        paren_condition(p, @out)
+    else if id == "python-colon"
+        python_colon(p, @out)
+    else if id == "colon-one-line"
+        colon_one_line(p, @out)
+    else if id == "for-parens"
+        for_parens(p, @out)
+    else if id == "for-of"
+        for_of(p, @out)
+    else if id == "c-for"
+        c_for(p, @out)
+    else if id == "range-dots"
+        range_dots(p, @out)
+    else if id == "plus-plus"
+        plus_plus(p, @out)
+    else if id == "compound-assign"
+        compound_assign(p, @out)
+    else if id == "assign-equals"
+        assign_equals(p, @out)
+    else if id == "walrus"
+        walrus(p, @out)
+    else
+        return ok(false)
+    return ok(true)

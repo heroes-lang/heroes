@@ -1,0 +1,151 @@
+# The recovery plan's operators of match arms: an arm ending with `,`, its
+# `=>` written `->` or `:`, `default` for `_`, a payload in parentheses,
+# patterns joined by `,`, arms at their `match`'s margin (defect 448; the
+# Python instrument's `ops.py`, its section *match arms*, rule for rule,
+# each appending its mutants in the order the Python's generator yielded
+# them).
+
+use mutate/model
+use mutate/mutant
+use mutate/op_base
+use mutate/tokens
+
+# The index of an arm's depth-0 `=>`, or -1.
+function arm_arrow(s: model.Statement) -> i64
+    for i in range(from: 0, to: s.toks.len())
+        if s.toks[i].kind == "fat_arrow" && s.toks[i].depth == 0
+            return i
+
+    return -1
+
+function arm_comma(p: model.Program, @out: [mutant.Mutant])
+    for s in p.stmts
+        if s.kind == "arm" && !s.head && op_base.single_line(s)
+            out @ out.push(op_base.appended(op: "arm-comma", p, s: s, word: ",", anchor: "L" + s.first.to_str()))
+
+# The arm's `=>` written `spelled`; `:` takes the spaces before it.
+function arm_spelled(op: str, spelled: str, p: model.Program, @out: [mutant.Mutant])
+    for s in p.stmts
+        if s.kind != "arm"
+            continue
+        at = arm_arrow(s)
+
+        if at < 0
+            continue
+        a = s.toks[at]
+        text = model.line(p, no: a.line).text
+        c0: i64 @ a.c0
+
+        if spelled == ":"
+            while c0 > 0 && text[c0 - 1] == ' '
+                c0 @ c0 - 1
+
+        context: str @ "arm"
+
+        if s.head
+            context @ "arm-block"
+        out @ out.push(
+            op_base.mk(op: op, p, anchor: tokens.anchor(a), hunks: [op_base.line_edit(no: a.line, text: op_base.splice(text: text, c0: c0, c1: a.c1, put: spelled))], context: context, stmts: [s.sid])
+        )
+
+function arm_default(p: model.Program, @out: [mutant.Mutant])
+    for s in p.stmts
+        if s.kind != "arm" || s.toks.len() < 2
+            continue
+        t = s.toks[0]
+
+        if t.kind == "ident" && t.text == "_" && s.toks[1].kind == "fat_arrow"
+            out @ out.push(op_base.swapped(op: "arm-default", p, t: t, word: "default", context: "arm", sid: s.sid))
+
+function payload_parens(p: model.Program, @out: [mutant.Mutant])
+    for s in p.stmts
+        toks = s.toks
+
+        if s.kind != "arm" || toks.len() < 4 || toks[0].kind != "dot" || toks[1].kind != "ident" || toks[2].kind != "ident" || toks[3].kind != "fat_arrow"
+            continue
+        n = toks[2]
+        text = model.line(p, no: n.line).text
+        new = op_base.cut(text, from: 0, to: toks[1].c1) + "(" + n.text + ")" + op_base.cut(text, from: n.c1, to: text.len())
+        out @ out.push(
+            op_base.mk(op: "payload-parens", p, anchor: tokens.anchor(n), hunks: [op_base.line_edit(no: n.line, text: new)], context: "arm", stmts: [s.sid])
+        )
+
+function pattern_comma(p: model.Program, @out: [mutant.Mutant])
+    for s in p.stmts
+        if s.kind != "arm"
+            continue
+        a = arm_arrow(s)
+
+        if a < 0
+            continue
+
+        for i in range(from: 0, to: a)
+            t = s.toks[i]
+
+            if t.kind == "pipe" && t.depth == 0
+                text = model.line(p, no: t.line).text
+                c0: i64 @ t.c0
+
+                if t.c0 > 0 && text[t.c0 - 1] == ' '
+                    c0 @ t.c0 - 1
+                out @ out.push(
+                    op_base.mk(op: "pattern-comma", p, anchor: tokens.anchor(t), hunks: [op_base.line_edit(no: t.line, text: op_base.splice(text: text, c0: c0, c1: t.c1, put: ","))], context: "arm", stmts: [s.sid])
+                )
+                break
+
+function arms_at_margin(p: model.Program, @out: [mutant.Mutant])
+    for s in p.stmts
+        if !s.head || s.opens != "arms" || !op_base.block_ok(s)
+            continue
+        base = op_base.indent_of(p, s: s)
+        new: [str] @ []
+        ok_all: bool @ true
+
+        for no in range(from: s.block_first, to: s.block_last + 1)
+            l = model.line(p, no: no)
+
+            if model.stripped(l.text).len() == 0
+                new @ new.push(l.text)
+                continue
+
+            if model.indent(l) < base + 4
+                ok_all @ false
+                break
+            new @ new.push(op_base.cut(l.text, from: 4, to: l.text.len()))
+
+        if !ok_all
+            continue
+        site: [i64] @ []
+
+        for no in range(from: s.block_first, to: s.block_last + 1)
+            l = model.line(p, no: no)
+
+            if model.code(l) && l.stmt >= 0 && p.stmts[l.stmt].parent == s.sid && p.stmts[l.stmt].first == no
+                site @ site.push(no - s.block_first)
+
+        h = mutant.Hunk(start: s.block_first - 1, end: s.block_last, lines: new, site: site)
+        out @ out.push(
+            op_base.mk(op: "arms-at-margin", p, anchor: "S" + s.first.to_str(), hunks: [h], context: s.kind, stmts: [s.sid])
+        )
+
+## The family's ids
+
+# Whether `id` is one of this family's operators, having run it on `p`.
+function run(id: str, p: model.Program, @out: [mutant.Mutant]) -> bool?
+    if id == "arm-comma"
+        arm_comma(p, @out)
+    else if id == "arm-thin-arrow"
+        arm_spelled(op: id, spelled: "->", p: p, @out)
+    else if id == "arm-colon"
+        arm_spelled(op: id, spelled: ":", p: p, @out)
+    else if id == "arm-default"
+        arm_default(p, @out)
+    else if id == "payload-parens"
+        payload_parens(p, @out)
+    else if id == "pattern-comma"
+        pattern_comma(p, @out)
+    else if id == "arms-at-margin"
+        arms_at_margin(p, @out)
+    else
+        return ok(false)
+    return ok(true)

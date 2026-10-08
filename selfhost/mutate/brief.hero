@@ -1,0 +1,272 @@
+# A cut's verdicts on one file: `check --brief` run as a child, its lines
+# read back, and a planted mistake classed (defect 448; the Python
+# instrument's `judge.py`, its `run`, `parse_brief`, `position`, `classify`
+# and `stage_of`, rule for rule).
+#
+# The cut judges with the compiler it names, as the replay does, and the
+# plan it cuts depends on what that compiler says: a pair's first is a
+# mutant the compiler REPORTED, a pair's second one it told ON ITS SITE.
+# Those two answers are the Python's, so a cut here pairs what the
+# Python's paired. The Python ran each check inside the corpus's mirror,
+# so a message named the file by its path there; the child here runs where
+# this process stands (`mutate/child.hero`), and the mirror's path is taken
+# off every line it tells before the line is read.
+
+use bytes
+use mutate/child
+use mutate/judged
+use mutate/spaces
+
+# One message of `--brief`, as `judge.py`'s pattern reads it.
+record Message
+    file: str
+    line: i64
+    code: str
+
+# One arm's answer: its exit (-9 for a check the watchdog ended), its
+# messages, and its other lines.
+record Arm
+    exit: i64
+    messages: [Message]
+    other: [str]
+
+# `check --brief` and any `extra` words on `rel`, a path inside `mirror`.
+function checked(compiler: str, mirror: str, rel: str, extra: [str], capture: str) -> Arm?
+    words: [str] @ [compiler, "check"]
+
+    for word in extra
+        words @ words.push(word)
+
+    words @ words.push("--brief")
+    words @ words.push(mirror + "/" + rel)
+    answer = child.bounded(program: compiler, words: words, capture: capture)?
+
+    if answer.exit == -9 && answer.err == "timeout"
+        none: [Message] = []
+        return ok(Arm(exit: -9, messages: none, other: []))
+    return ok(arm_of(answer, mirror: mirror))
+
+function read_brief(err: str) -> Arm
+    messages: [Message] @ []
+    other: [str] @ []
+
+    for line in split(err)
+        got = message_of(line)
+
+        if got.len() > 0
+            messages @ messages.push(got[0])
+        else if spaces.stripped(line).len() > 0
+            other @ other.push(line)
+
+    return Arm(exit: 0, messages: messages, other: other)
+
+# A child's answer read: its exit, and its stderr's lines, the mirror's
+# path taken off them.
+function arm_of(answer: child.Answer, mirror: str) -> Arm
+    a = read_brief(judged.without(text: answer.err, prefix: mirror + "/"))
+    return Arm(exit: answer.exit, messages: a.messages, other: a.other)
+
+# The lines of a text as Python's `splitlines` gives them: at a line
+# feed, a carriage return or the two together, a vertical tab, a form
+# feed, the three separators U+001C to U+001E, NEL, and U+2028 and U+2029.
+function split(text: str) -> [str]
+    out: [str] @ []
+    start: i64 @ 0
+    at: i64 @ 0
+
+    while at < text.len()
+        width = break_at(text, at: at)
+
+        if width > 0
+            out @ out.push(text.slice(from: start, to: at))
+            at @ at + width
+            start @ at
+        else
+            at @ at + 1
+
+    if start < text.len()
+        out @ out.push(text.slice(from: start, to: text.len()))
+    return out
+
+# The bytes of the line break beginning at `at`, or 0 where none does.
+function break_at(text: str, at: i64) -> i64
+    b = text[at]
+
+    if b == 13 && at + 1 < text.len() && text[at + 1] == 10
+        return 2
+
+    if b == 10 || b == 13 || b == 11 || b == 12 || b >= 28 && b <= 30
+        return 1
+
+    if b == 194 && at + 1 < text.len() && text[at + 1] == 133
+        return 2
+
+    if b == 226 && at + 2 < text.len() && text[at + 1] == 128 && (text[at + 2] == 168 || text[at + 2] == 169)
+        return 3
+    return 0
+
+# A line read as `^(.+?):(\d+):(\d+): (error|unsupported)\[([^\]]+)\]: (.*)$`:
+# the file is the shortest prefix after which the rest is a message.
+function message_of(line: str) -> [Message]
+    none: [Message] = []
+
+    for at in range(from: 1, to: line.len())
+        if line[at] != ':'
+            continue
+        rest = after_file(line, from: at)
+
+        if rest.len() > 0
+            return [
+                Message(file: line.slice(from: 0, to: at), line: rest[0], code: line.slice(from: rest[1], to: rest[2]))
+            ]
+
+    return none
+
+# From the `:` at `from`: `:<line>:<col>: <kind>[<code>]: `, and what that
+# gives, the line and the code's bytes; none where the rest is not that.
+function after_file(line: str, from: i64) -> [i64]
+    none: [i64] = []
+    at: i64 @ from + 1
+    number: i64 @ 0
+    digits: i64 @ 0
+
+    while at < line.len() && line[at] >= '0' && line[at] <= '9'
+        if digits < 18
+            number @ number * 10 + (line[at] - '0').to_i64().must()
+        digits @ digits + 1
+        at @ at + 1
+
+    if digits == 0 || at >= line.len() || line[at] != ':'
+        return none
+    at @ at + 1
+    col_digits: i64 @ 0
+
+    while at < line.len() && line[at] >= '0' && line[at] <= '9'
+        col_digits @ col_digits + 1
+        at @ at + 1
+
+    if col_digits == 0 || !bytes.bytes_at(text: line, at: at, needle: ": ")
+        return none
+    at @ at + 2
+
+    if bytes.bytes_at(text: line, at: at, needle: "error[")
+        at @ at + 6
+    else if bytes.bytes_at(text: line, at: at, needle: "unsupported[")
+        at @ at + 12
+    else
+        return none
+    code_start = at
+
+    while at < line.len() && line[at] != ']'
+        at @ at + 1
+
+    if at == code_start || !bytes.bytes_at(text: line, at: at, needle: "]: ")
+        return none
+    return [number, code_start, at]
+
+# Where a message falls: on the site, in another file, or elsewhere.
+function on_site(m: Message, site: [i64], path: str) -> bool
+    if m.file != path
+        return false
+
+    for line in site
+        if line == m.line
+            return true
+
+    return false
+
+# The class of one arm (`judge.py`'s `classify`); `reading` is the
+# operator's specification reading, `legal` or none.
+function class_of(a: Arm, site: [i64], path: str, reading: str) -> str
+    if a.exit == -9
+        return "HANG"
+
+    if a.exit != 0 && a.exit != 1
+        return "CRASH"
+
+    if a.exit == 0
+        if a.messages.len() > 0
+            return "EXIT0-WITH-DIAGNOSTICS"
+
+        if reading == "legal"
+            return "LEGAL"
+        return "SILENT"
+
+    if reading == "legal"
+        return "REFUSED-LEGAL"
+
+    if a.messages.len() == 0
+        return "EXIT1-NO-DIAGNOSTIC"
+    on: bool @ false
+
+    for m in a.messages
+        if on_site(m, site: site, path: path)
+            on @ true
+
+    if a.messages.len() == 1
+        if on
+            return "ONE"
+        return "ELSEWHERE"
+    return "EXTRA"
+
+# Whether an arm told anything on the site at all (`recovery.py`'s `on_site`).
+function told_on_site(a: Arm, site: [i64], path: str) -> bool
+    if a.exit != 1
+        return false
+
+    for m in a.messages
+        if on_site(m, site: site, path: path)
+            return true
+
+    return false
+
+# Which stage told the normal arm (`judge.py`'s `stage_of`): `parse` where
+# `heroes parse` refuses the file, `later` where it does not and `check`
+# does, `none` where nothing does.
+function stage_of(compiler: str, mirror: str, rel: str, normal: Arm, capture: str) -> str?
+    if normal.exit != 1
+        return ok("none")
+    answer = child.bounded(program: compiler, words: [compiler, "parse", mirror + "/" + rel], capture: capture)?
+
+    if answer.exit == -9 && answer.err == "timeout"
+        return ok("parse-timeout")
+
+    if answer.exit == 1
+        return ok("parse")
+
+    if answer.exit == 0
+        return ok("later")
+    return ok("parse-exit-" + answer.exit.to_str())
+
+## Tests
+
+test "a brief line is read as judge.py's pattern reads it, the file the shortest prefix that leaves a message"
+    got = message_of("a/b.hero:12:5: error[unknown_name]: no `x` here: 3:4: error[y]: z")
+    assert got.len() == 1
+    assert got[0].file == "a/b.hero"
+    assert got[0].line == 12
+    assert got[0].code == "unknown_name"
+    odd = message_of("x:1:2: odd:3:4: unsupported[c]: m")
+    assert odd[0].file == "x:1:2: odd"
+    assert odd[0].code == "c"
+    assert message_of("error: no such file").len() == 0
+    assert message_of("f:1:2: error[]: m").len() == 0
+    a = read_brief("f.hero:3:1: error[c1]: m\n\nnote\r\nf.hero:4:1: error[c2]: n\u{2028}  \t\u{85}x")
+    assert a.messages.len() == 2
+    assert a.other == ["note", "x"]
+    assert split("a\r\nb\rc\u{b}d") == ["a", "b", "c", "d"]
+
+test "the classes are judge.py's, and a message is on the site by its exact line"
+    one = Message(file: "f.hero", line: 5, code: "c")
+    none: [Message] = []
+    assert class_of(Arm(exit: 1, messages: [one], other: []), site: [5, 9], path: "f.hero", reading: "") == "ONE"
+    assert class_of(Arm(exit: 1, messages: [one], other: []), site: [4, 6], path: "f.hero", reading: "") == "ELSEWHERE"
+    assert class_of(Arm(exit: 1, messages: [one], other: []), site: [5], path: "g.hero", reading: "") == "ELSEWHERE"
+    assert class_of(Arm(exit: 1, messages: [one, one], other: []), site: [5], path: "f.hero", reading: "") == "EXTRA"
+    assert class_of(Arm(exit: 0, messages: none, other: []), site: [5], path: "f.hero", reading: "legal") == "LEGAL"
+    assert class_of(Arm(exit: 1, messages: [one], other: []), site: [5], path: "f.hero", reading: "legal") == "REFUSED-LEGAL"
+    assert class_of(Arm(exit: -9, messages: none, other: []), site: [5], path: "f.hero", reading: "") == "HANG"
+    assert class_of(Arm(exit: 2, messages: none, other: []), site: [5], path: "f.hero", reading: "") == "CRASH"
+    assert class_of(Arm(exit: 1, messages: none, other: []), site: [5], path: "f.hero", reading: "") == "EXIT1-NO-DIAGNOSTIC"
+    assert told_on_site(Arm(exit: 1, messages: [one], other: []), site: [5], path: "f.hero")
+    assert !told_on_site(Arm(exit: 0, messages: [one], other: []), site: [5], path: "f.hero")

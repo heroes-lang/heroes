@@ -1,0 +1,358 @@
+# The recovery plan's operators of layout: braces, the semicolon, the
+# indentation and the broken line (defect 448; the Python instrument's
+# `ops.py`, its sections *braces*, *line ends*, *indentation* and *line
+# breaks*, rule for rule, each appending its mutants in the order the
+# Python's generator yielded them).
+
+use mutate/model
+use mutate/mutant
+use mutate/op_base
+use mutate/tokens
+
+## Braces
+
+function brace_head(kind: str) -> bool
+    return op_base.one_of(
+        kind,
+        set: ["top-function", "top-test", "if", "while", "for", "match", "top-record", "top-variant", "top-extern", "arm", "bind", "return", "declare", "mutate", "case", "member-record"]
+    )
+
+# A head whose body may take braces alone: an `if` followed by an `else`
+# is the chain's, `brace-else-chain`.
+function brace_head_ok(p: model.Program, s: model.Statement) -> bool
+    return op_base.block_ok(s) && brace_head(s.kind) && !op_base.has_else_after(p, s: s)
+
+function brace_same_line(p: model.Program, @out: [mutant.Mutant])
+    for s in p.stmts
+        if !brace_head_ok(p, s: s)
+            continue
+        l = model.line(p, no: s.last)
+        at = model.end_col(l)
+        h1 = op_base.line_edit(no: s.last, text: op_base.splice(text: l.text, c0: at, c1: at, put: " {"))
+        h2 = mutant.hunk(
+            start: s.block_last,
+            end: s.block_last,
+            lines: [op_base.spaces(op_base.indent_of(p, s: s)) + "}"]
+        )
+        out @ out.push(
+            op_base.mk(op: "brace-same-line", p, anchor: "S" + s.first.to_str(), hunks: [h1, h2], context: s.kind, stmts: [s.sid])
+        )
+
+function brace_allman(p: model.Program, @out: [mutant.Mutant])
+    for s in p.stmts
+        if !brace_head_ok(p, s: s)
+            continue
+        l = model.line(p, no: s.last)
+        pad = op_base.spaces(op_base.indent_of(p, s: s))
+        h1 = mutant.hunk(start: s.last - 1, end: s.last, lines: [l.text, pad + "{"])
+        h2 = mutant.hunk(start: s.block_last, end: s.block_last, lines: [pad + "}"])
+        out @ out.push(
+            op_base.mk(op: "brace-allman", p, anchor: "S" + s.first.to_str(), hunks: [h1, h2], context: s.kind, stmts: [s.sid])
+        )
+
+function brace_one_line(p: model.Program, @out: [mutant.Mutant])
+    for s in p.stmts
+        if !op_base.single_line(s) || !op_base.no_comment(p, s: s) || !op_base.block_ok(s)
+            continue
+        l = model.line(p, no: s.first)
+        head = op_base.cut(l.text, from: 0, to: model.end_col(l))
+
+        if s.kind == "top-record" || s.kind == "member-record" || s.kind == "top-variant"
+            if !op_base.contiguous(s) || s.children.len() == 0 || !simple_kids(p, s: s)
+                continue
+
+            if !all_code(p, first: s.block_first, last: s.block_last) || op_base.comment_between(p, first: s.block_first, last: s.block_last)
+                continue
+            new = head + " { " + kid_texts(p, s: s).join(", ") + " }"
+            out @ out.push(
+                op_base.mk(op: "brace-one-line", p, anchor: "S" + s.first.to_str(), hunks: [mutant.hunk(start: s.first - 1, end: s.block_last, lines: [new])], context: s.kind, stmts: [s.sid])
+            )
+            continue
+
+        if !op_base.one_of(s.kind, set: ["if", "while", "for", "top-function", "top-test", "arm"]) || op_base.has_else_after(p, s: s)
+            continue
+        k = op_base.simple_body_line(p, s: s)
+
+        if k < 0
+            continue
+        body = model.stripped(model.line(p, no: p.stmts[k].first).text)
+        new = head + " { " + body + " }"
+        out @ out.push(
+            op_base.mk(op: "brace-one-line", p, anchor: "S" + s.first.to_str(), hunks: [mutant.hunk(start: s.first - 1, end: s.block_last, lines: [new])], context: s.kind, stmts: [s.sid])
+        )
+
+# Every child of `s` a one-line statement with no comment and no block.
+function simple_kids(p: model.Program, s: model.Statement) -> bool
+    for kid in s.children
+        k = p.stmts[kid]
+
+        if k.head || !op_base.single_line(k) || !op_base.no_comment(p, s: k)
+            return false
+
+    return true
+
+function all_code(p: model.Program, first: i64, last: i64) -> bool
+    for no in range(from: first, to: last + 1)
+        if !model.code(model.line(p, no: no))
+            return false
+
+    return true
+
+# Each child's first line, stripped.
+function kid_texts(p: model.Program, s: model.Statement) -> [str]
+    out: [str] @ []
+
+    for kid in s.children
+        out @ out.push(model.stripped(model.line(p, no: p.stmts[kid].first).text))
+
+    return out
+
+function brace_else_chain(p: model.Program, @out: [mutant.Mutant])
+    for s in p.stmts
+        if s.kind != "if" || !op_base.block_ok(s)
+            continue
+        chain = op_base.else_chain(p, s: s)
+
+        if chain.len() < 2 || !chain_ok(p, chain: chain)
+            continue
+        hunks: [mutant.Hunk] @ []
+        pad = op_base.spaces(op_base.indent_of(p, s: s))
+
+        for i in range(from: 0, to: chain.len())
+            c = p.stmts[chain[i]]
+            l = model.line(p, no: c.first)
+            head = op_base.cut(l.text, from: 0, to: model.end_col(l))
+
+            if i == 0
+                hunks @ hunks.push(op_base.line_edit(no: c.first, text: head + " {"))
+            else
+                hunks @ hunks.push(op_base.line_edit(no: c.first, text: pad + "} " + model.stripped(head) + " {"))
+
+        last = p.stmts[chain[chain.len() - 1]]
+        hunks @ hunks.push(mutant.hunk(start: last.block_last, end: last.block_last, lines: [pad + "}"]))
+        out @ out.push(
+            op_base.mk(op: "brace-else-chain", p, anchor: "S" + s.first.to_str(), hunks: hunks, context: "if+" + (chain.len() - 1).to_str(), stmts: chain)
+        )
+
+function chain_ok(p: model.Program, chain: [i64]) -> bool
+    for sid in chain
+        c = p.stmts[sid]
+
+        if !op_base.block_ok(c) || !op_base.single_line(c) || !op_base.no_comment(p, s: c)
+            return false
+
+    return true
+
+## Line ends
+
+function semicolon(p: model.Program, @out: [mutant.Mutant])
+    for s in p.stmts
+        if s.head || !(op_base.simple_kind(s.kind) || op_base.one_of(s.kind, set: ["field", "member-function", "member-constant", "top-use"]))
+            continue
+        out @ out.push(op_base.appended(op: "semicolon", p, s: s, word: ";", anchor: "L" + s.last.to_str()))
+
+## Indentation
+
+# A block re-indented two spaces a level (`two`), or with a tab for every
+# four spaces (`tab`); blank lines kept as they are.
+function reindented(p: model.Program, s: model.Statement, two: bool) -> [str]
+    lines: [str] @ []
+    base = op_base.indent_of(p, s: s)
+
+    for no in range(from: s.block_first, to: s.block_last + 1)
+        l = model.line(p, no: no)
+
+        if model.stripped(l.text).len() == 0
+            lines @ lines.push(l.text)
+            continue
+        ind = model.indent(l)
+        body = op_base.cut(l.text, from: ind, to: l.text.len())
+
+        if two
+            new_ind: i64 @ ind
+
+            if ind >= base
+                new_ind @ base + (ind - base) / 2
+            lines @ lines.push(op_base.spaces(new_ind) + body)
+        else
+            lines @ lines.push("\t".repeat((ind / 4).to_u64().must()) + op_base.spaces(ind % 4) + body)
+
+    return lines
+
+function reindent(op: str, p: model.Program, two: bool, @out: [mutant.Mutant])
+    for s in p.stmts
+        if !op_base.block_ok(s) || s.kind == "top-constant"
+            continue
+        site: [i64] @ []
+
+        for no in range(from: s.block_first, to: s.block_last + 1)
+            if model.code(model.line(p, no: no))
+                site @ site.push(no - s.block_first)
+
+        h = mutant.Hunk(start: s.block_first - 1, end: s.block_last, lines: reindented(p, s: s, two: two), site: site)
+        out @ out.push(
+            op_base.mk(op: op, p, anchor: "S" + s.first.to_str(), hunks: [h], context: s.kind, stmts: [s.sid])
+        )
+
+function over_indent(p: model.Program, @out: [mutant.Mutant])
+    for s in p.stmts
+        if s.head || s.parent < 0 || !op_base.simple_kind(s.kind) || !op_base.single_line(s)
+            continue
+        new = "    " + model.line(p, no: s.first).text
+        out @ out.push(
+            op_base.mk(op: "over-indent", p, anchor: "L" + s.first.to_str(), hunks: [op_base.line_edit(no: s.first, text: new)], context: s.kind, stmts: [s.sid])
+        )
+
+## Line breaks
+
+# The last binary operator at depth 0 with a token after it, or -1.
+function last_binary(s: model.Statement) -> i64
+    best: i64 @ -1
+
+    for i in range(from: 0, to: s.toks.len())
+        if s.toks[i].depth == 0 && op_base.binary_at(s.toks, i: i) && i + 1 < s.toks.len()
+            best @ i
+
+    return best
+
+# The statements a line may break in, each with its operator: one line,
+# simple or an arm whose operator lies after its `=>`.
+record Break
+    sid: i64
+    at: i64
+
+function break_sites(p: model.Program) -> [Break]
+    out: [Break] @ []
+
+    for s in p.stmts
+        if s.head || !op_base.one_of(s.kind, set: ["bind", "declare", "mutate", "return", "expr", "assert", "arm"]) || !op_base.single_line(s)
+            continue
+        i = last_binary(s)
+
+        if i < 0
+            continue
+
+        if s.kind == "arm"
+            fa = first_of(s.toks, kind: "fat_arrow")
+
+            if fa < 0 || i < fa
+                continue
+        out @ out.push(Break(sid: s.sid, at: i))
+
+    return out
+
+function first_of(toks: [tokens.Tok], kind: str) -> i64
+    for i in range(from: 0, to: toks.len())
+        if toks[i].kind == kind
+            return i
+
+    return -1
+
+# `style` is `trailing-operator`, `leading-operator` or `backslash`.
+function broken(style: str, p: model.Program, @out: [mutant.Mutant])
+    for b in break_sites(p)
+        s = p.stmts[b.sid]
+        op_t = s.toks[b.at]
+        next = s.toks[b.at + 1]
+        prev = s.toks[b.at - 1]
+        text = model.line(p, no: s.first).text
+        pad = op_base.spaces(model.indent(model.line(p, no: s.first)) + 4)
+        l1: str @ op_base.cut(text, from: 0, to: op_t.c1)
+        l2: str @ pad + op_base.cut(text, from: next.c0, to: text.len())
+
+        if style == "leading-operator"
+            l1 @ op_base.cut(text, from: 0, to: prev.c1)
+            l2 @ pad + op_base.cut(text, from: op_t.c0, to: text.len())
+        else if style == "backslash"
+            l1 @ l1 + " \\"
+        out @ out.push(
+            op_base.mk(op: style, p, anchor: tokens.anchor(op_t), hunks: [mutant.hunk(start: s.first - 1, end: s.first, lines: [l1, l2])], context: s.kind + ":" + op_t.text, stmts: [s.sid])
+        )
+
+function missing_operand(p: model.Program, @out: [mutant.Mutant])
+    for b in break_sites(p)
+        out @ out.push(cut_after(p, s: p.stmts[b.sid], at: b.at))
+
+    for s in p.stmts
+        if !op_base.one_of(s.kind, set: ["if", "else-if", "while"]) || !op_base.single_line(s)
+            continue
+        i = last_binary(s)
+
+        if i >= 0
+            out @ out.push(cut_after(p, s: s, at: i))
+
+# The statement's line with everything after operator `at` taken off but
+# what follows its last token.
+function cut_after(p: model.Program, s: model.Statement, at: i64) -> mutant.Mutant
+    op_t = s.toks[at]
+    text = model.line(p, no: s.first).text
+    tail = op_base.cut(text, from: s.toks[s.toks.len() - 1].c1, to: text.len())
+    new = op_base.cut(text, from: 0, to: op_t.c1) + tail
+    return op_base.mk(
+        op: "missing-operand",
+        p,
+        anchor: tokens.anchor(op_t),
+        hunks: [op_base.line_edit(no: s.first, text: new)],
+        context: s.kind + ":" + op_t.text,
+        stmts: [s.sid]
+    )
+
+function missing_operand_in_brackets(p: model.Program, @out: [mutant.Mutant])
+    for s in p.stmts
+        toks = s.toks
+
+        for i in range(from: 1, to: toks.len() - 2)
+            t = toks[i]
+
+            if t.depth == 0 || !op_base.binary_at(toks, i: i)
+                continue
+            j: i64 @ i + 1
+
+            while j < toks.len() && !(toks[j].depth == t.depth && ends_operand(toks[j].kind))
+                if toks[j].depth < t.depth
+                    break
+                j @ j + 1
+
+            if j >= toks.len() || toks[j].depth != t.depth || !ends_operand(toks[j].kind)
+                continue
+
+            if toks[i + 1].line != t.line || toks[j].line != t.line
+                continue
+            text = model.line(p, no: t.line).text
+            new = op_base.cut(text, from: 0, to: t.c1) + op_base.cut(text, from: toks[j].c0, to: text.len())
+            out @ out.push(
+                op_base.mk(op: "missing-operand-in-brackets", p, anchor: tokens.anchor(t), hunks: [op_base.line_edit(no: t.line, text: new)], context: s.kind + ":" + t.text, stmts: [s.sid])
+            )
+
+function ends_operand(kind: str) -> bool
+    return kind == "comma" || kind == "rparen" || kind == "rbracket" || kind == "rbrace"
+
+## The family's ids
+
+# Whether `id` is one of this family's operators, having run it on `p`.
+function run(id: str, p: model.Program, @out: [mutant.Mutant]) -> bool?
+    if id == "brace-same-line"
+        brace_same_line(p, @out)
+    else if id == "brace-allman"
+        brace_allman(p, @out)
+    else if id == "brace-one-line"
+        brace_one_line(p, @out)
+    else if id == "brace-else-chain"
+        brace_else_chain(p, @out)
+    else if id == "semicolon"
+        semicolon(p, @out)
+    else if id == "indent-2"
+        reindent("indent-2", p: p, two: true, @out)
+    else if id == "indent-tab"
+        reindent("indent-tab", p: p, two: false, @out)
+    else if id == "over-indent"
+        over_indent(p, @out)
+    else if id == "trailing-operator" || id == "leading-operator" || id == "backslash"
+        broken(id, p: p, @out)
+    else if id == "missing-operand"
+        missing_operand(p, @out)
+    else if id == "missing-operand-in-brackets"
+        missing_operand_in_brackets(p, @out)
+    else
+        return ok(false)
+    return ok(true)

@@ -1,0 +1,10 @@
+examples/gallery/12-interpolation.hero
+examples/pipeline/main.hero
+tests/golden/ir/regression-wildcard-binds-nothing.hero
+tests/golden/ir/sugar-fallible-ops.hero
+tests/golden/ir/sugar-if.hero
+tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero
+tests/golden/run/fixedbugs-case-payload-leaked.hero
+tests/golden/surface-fixtures/continuation181/twostatements.hero
+tests/golden/surface-fixtures/releaser108/contract.hero
+tests/golden/unsupported/three-capabilities.hero

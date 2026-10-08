@@ -1,0 +1,133 @@
+# A JSON value written as Python's `json.dumps` writes it by default, every
+# character outside printable ASCII escaped: the form the recovery plan's
+# files are written in (defect 448).
+#
+# The plan the Python instrument cut was written with `json.dumps(row)`,
+# whose default `ensure_ascii` writes every character outside ` ` to `~`
+# as `\uXXXX`, lowercase, one above U+FFFF as its UTF-16 surrogate pair, and
+# the five controls with a short form as `\b` `\f` `\n` `\r` `\t`. A plan
+# cut here is written the same way, byte for byte, so the frozen plan and a
+# plan cut again by this arm are one file wherever their records are one.
+# `mutate/json_fields.hero` writes the replay's records, which the Python
+# wrote with `ensure_ascii=False`; this writer is the plan's alone.
+
+use mutate/json_read
+use mutate/spaces
+
+function written(j: json_read.Json) -> str
+    parts: [str] @ []
+    write_into(@parts, j: j)
+    return parts.join("")
+
+function write_into(@parts: [str], j: json_read.Json)
+    match j
+        .null_value => parts @ parts.push("null")
+        .truth t =>
+            if t.v
+                parts @ parts.push("true")
+            else
+                parts @ parts.push("false")
+        .number n => parts @ parts.push(n.written)
+        .text t   => parts @ parts.push(quoted(t.v))
+        .items l =>
+            parts @ parts.push("[")
+            at: i64 @ 0
+
+            for one in l.all
+                if at > 0
+                    parts @ parts.push(", ")
+                write_into(@parts, j: one)
+                at @ at + 1
+
+            parts @ parts.push("]")
+        .fields f =>
+            parts @ parts.push("{")
+            at: i64 @ 0
+
+            for name in f.names
+                if at > 0
+                    parts @ parts.push(", ")
+                parts @ parts.push(quoted(name) + ": ")
+                write_into(@parts, j: f.values[at])
+                at @ at + 1
+
+            parts @ parts.push("}")
+
+# `text` as a JSON string, quotes included, in printable ASCII alone.
+function quoted(text: str) -> str
+    parts: [str] @ ["\""]
+    plain: i64 @ 0
+    at: i64 @ 0
+
+    while at < text.len()
+        b = text[at]
+
+        if b >= 32 && b < 127 && b != 34 && b != 92
+            at @ at + 1
+            continue
+        parts @ parts.push(text.slice(from: plain, to: at))
+        width = spaces.width_at(text, at: at)
+        parts @ parts.push(escaped(spaces.code_at(text, at: at)))
+        at @ at + width
+        plain @ at
+
+    parts @ parts.push(text.slice(from: plain, to: text.len()))
+    parts @ parts.push("\"")
+    return parts.join("")
+
+# One character's escape: a short form where JSON has one, `\uXXXX`
+# otherwise, a pair of them above U+FFFF.
+function escaped(code: i64) -> str
+    if code == 34
+        return "\\\""
+
+    if code == 92
+        return "\\\\"
+
+    if code == 10
+        return "\\n"
+
+    if code == 13
+        return "\\r"
+
+    if code == 9
+        return "\\t"
+
+    if code == 8
+        return "\\b"
+
+    if code == 12
+        return "\\f"
+
+    if code > 65535
+        v = code - 65536
+        return unit(55296 + (v >> 10)) + unit(56320 + (v & 1023))
+    return unit(code)
+
+function unit(code: i64) -> str
+    digits = "0123456789abcdef"
+    out: [str] @ ["\\u"]
+    shift: i64 @ 12
+
+    while shift >= 0
+        d = code >> shift & 15
+        out @ out.push(digits.slice(from: d, to: d + 1))
+        shift @ shift - 4
+
+    return out.join("")
+
+## Tests
+
+# Each value below is what `python3 -c 'import json; print(json.dumps(...))'`
+# printed on 2026-10-08 for the same text.
+test "a string is written as json.dumps writes it, every character above ASCII escaped"
+    assert quoted("hint {") == "\"hint {\""
+    assert quoted("a\"b\\c\nd\te") == "\"a\\\"b\\\\c\\nd\\te\""
+    assert quoted("é—€") == "\"\\u00e9\\u2014\\u20ac\""
+    assert quoted("😀") == "\"\\ud83d\\ude00\""
+    assert quoted("\u{7f}\u{1b}") == "\"\\u007f\\u001b\""
+    j: json_read.Json = .fields(
+        names: ["a", "b"],
+        values: [.items(all: [.number(written: "1"), .text(v: "x")]), .truth(v: true)]
+    )
+    assert written(j) == "{\"a\": [1, \"x\"], \"b\": true}"
