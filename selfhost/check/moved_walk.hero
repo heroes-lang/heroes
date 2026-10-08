@@ -13,6 +13,7 @@ use ast
 use source
 use diag
 use resolved
+use check/state
 use check/flow
 use check/moved_calls as calls
 use check/moved_errors as errors
@@ -219,7 +220,8 @@ function refuse_if_dead(@w: Walk, a: ast.Ast, s: source.Source, id: i64, path: [
         return
     span = a.exprs[id].span
     whole = found.must().path.len() > path.len()
-    w.found @ w.found.push(
+    state.append_diagnostic(
+        @w.found,
         errors.used_after_end(s, read: span, shown: source.span_text(s, span), ended: found.must(), whole: whole)
     )
 

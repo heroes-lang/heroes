@@ -250,6 +250,11 @@ function push_diagnostic(@c: Checker, d: diag.Diagnostic)
 function append_diagnostic(@said: [diag.Diagnostic], d: diag.Diagnostic)
     said @ said.push(d)
 
+# A typed hole the walk met, appended in place for the same reason: through
+# `c.out.holes` each hole copied every one before it (defect 409).
+function append_hole(@holes: [Hole], h: Hole)
+    holes @ holes.push(h)
+
 # A type as the author would have written it — every message goes through
 # here so that no diagnostic ever prints a notation the language lacks.
 function show(c: Checker, s: source.Source, decls: [ast.Decl], id: i64) -> str

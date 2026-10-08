@@ -174,7 +174,8 @@ function file(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Sou
                     if got.leaves == .falls && result != table.unit_ty(c.out.types)
                         want = state.show(c, s, decls, result)
                         name = source.span_text(s, decl.name)
-                        c.missing_returns @ c.missing_returns.push(
+                        state.append_diagnostic(
+                            @c.missing_returns,
                             flow_errors.missing_return(name: name, want: want, span: a.types[fd.value.result].span)
                         )
             .test_decl t =>
