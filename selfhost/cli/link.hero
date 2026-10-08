@@ -122,8 +122,10 @@ function link_objects(t: toolchain.Toolchain, objects: [str], module: str, outpu
 # The words of the link but its output. The compiler's flags ride it whole:
 # Debian clang 22.1.8 and Apple clang 21.0.0 link under the whole list
 # without a word (measured 2026-10-03), and the `warnings` suite reads every
-# program's link, so it fires the day a clang does not. Then the level, the
-# sanitizers, the link's own flags (`flags.link_flags`, which carries the
+# program's link, so it fires the day a clang does not. Then the level, its
+# debug word (`flags.level_words`: clang's driver for Windows writes the
+# `.pdb` only when the link line carries a `-g` word), the sanitizers, the
+# link's own flags (`flags.link_flags`, which carries the
 # measurements: `-rdynamic` on POSIX, the stack reserve and a full link on
 # Windows), the `--library` directories, the objects, a package's link
 # words (`libraries.link_words`) and the `link` names. No include directory:
@@ -131,9 +133,7 @@ function link_objects(t: toolchain.Toolchain, objects: [str], module: str, outpu
 # directories and a package's whole answer, whose `-F` clang on Linux
 # called *argument unused during compilation*.
 function link_line(objects: [str], level: str, sanitize: bool, search_library: [str], package_flags: [str], link_names: [str]) -> [str]
-    line: [str] @ strings.with_all(list: ["clang"], more: flags.flags())
-    line @ line.push(level)
-    line @ strings.with_all(list: line, more: flags.sanitizers(sanitize: sanitize))
+    line: [str] @ strings.with_all(list: ["clang"], more: flags.level_words(level: level, sanitize: sanitize))
     line @ strings.with_all(list: line, more: flags.link_flags())
 
     for dir in search_library

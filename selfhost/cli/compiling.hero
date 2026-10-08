@@ -62,14 +62,13 @@ record Compiling
     source_dir: str
 
 # Every word a unit of the program compiles under but its run's own: the
-# compiler's flags (`flags.flags`), the level, the sanitizers' flags, then
-# the search. `units.tu_object` builds its line from this list and names it
-# in its key, and every probe takes it but its diagnostics, so no word
-# reaches the program's compile without reaching every probe of its headers.
+# compiler's flags, the level, its debug word and the sanitizers' flags
+# (`flags.level_words`), then the search. `units.tu_object` builds its line
+# from this list and names it in its key, and every probe takes it but its
+# diagnostics, so no word reaches the program's compile without reaching every
+# probe of its headers.
 function unit_words(c: Compiling) -> [str]
-    out: [str] @ strings.with_all(list: flags.flags(), more: [c.level])
-    out @ strings.with_all(list: out, more: flags.sanitizers(sanitize: c.sanitize))
-    return strings.with_all(list: out, more: search_words(c))
+    return strings.with_all(list: flags.level_words(level: c.level, sanitize: c.sanitize), more: search_words(c))
 
 # The search, in the order a unit's compile searches (`units.tu_object`): the
 # `--include` directories, a package's compile words by the one rule every
@@ -123,11 +122,12 @@ function probe(build: str, under: Compiling, headers: [str]) -> Probe
 # the program's compile does (defect 163, 2026-10-02): every flag of
 # `flags.flags()` but its diagnostics, one rule and never a second list.
 # Measured with this Mac's clang 21, preprocessing for the four legs'
-# targets: of the sixteen, `-std=gnu11` (against clang's own gnu17), the two
-# `-D`s and, on Linux arm64 alone, `-fsigned-char` change what C means by a
-# predefined macro; `-g` and the two code-generation flags change none and
-# are kept, so a flag that changes what a type is without a macro is never
-# left out; the diagnostics change none either and decide whether a unit
+# targets: of the sixteen the list held then, `-std=gnu11` (against clang's
+# own gnu17), the two `-D`s and, on Linux arm64 alone, `-fsigned-char` change
+# what C means by a predefined macro; `-g` and the two code-generation flags
+# change none and are kept, so a flag that changes what a type is without a
+# macro is never left out (since panel 197 `-g` is the level's, and reaches a
+# probe with the level, through `unit_words`); the diagnostics change none either and decide whether a unit
 # compiles, not what a type is, so a probe never fails on a header's
 # warning. The probes compiled under `-std=gnu11` alone until then, so on
 # Linux arm64, where a plain `char` is unsigned by default, the pointee
@@ -268,9 +268,9 @@ test "a probe compiles under a unit's words but their diagnostics, the level and
         source_dir: "src"
     )
     assert search_words(c) == ["-I", "inc", "-DHERO_PKG", "-Ipkg", "-I", "rt", "-I", "src"]
-    unit = strings.with_all(list: flags.flags(), more: ["-O2", "-fsanitize=address,undefined"])
+    unit = strings.with_all(list: flags.flags(), more: ["-O2", "-gline-tables-only", "-fsanitize=address,undefined"])
     assert unit_words(c) == strings.with_all(list: unit, more: search_words(c))
-    probed = strings.with_all(list: probe_flags(), more: ["-O2", "-fsanitize=address,undefined"])
+    probed = strings.with_all(list: probe_flags(), more: ["-O2", "-gline-tables-only", "-fsanitize=address,undefined"])
     assert probe_words(c) == strings.with_all(list: probed, more: search_words(c))
     none = Compiling(
         level: "-O0",
@@ -281,7 +281,7 @@ test "a probe compiles under a unit's words but their diagnostics, the level and
         source_dir: ""
     )
     assert search_words(none) == ["-I", "rt"]
-    assert probe_words(none) == strings.with_all(list: probe_flags(), more: ["-O0", "-I", "rt"])
+    assert probe_words(none) == strings.with_all(list: probe_flags(), more: ["-O0", "-g", "-I", "rt"])
 
 # **A probe reads a plain `char` as the program's compile does** (defect
 # 163). The leg where the sign differs is Linux arm64, and clang answers for
