@@ -197,6 +197,48 @@ test "a clean file is formatted and passes its guard, and one with diagnostics i
     assert broken.formatted == ""
     assert broken.refusal.is_err()
 
+# Defect 503, 2026-10-08: a map opened where its line begins, a constant's
+# body or the value line of a block, is printed in the spread form of
+# design.md §4.9, its `{` alone on the line over one entry a line, and the
+# guard reads that output back as the map it is. The lexer read such a `{` as
+# a body's brace, the habit of other languages (defect 504), so `fmt`
+# refused its own output at exit 2 as a compiler bug on programs `check`
+# accepts: a map broken after a key's `:`, after a value, before its `}`,
+# nested, in a match arm's block, written on one line past the width, which
+# `fmt` breaks itself, and a map alone as a statement, which `check` refuses
+# and the parser does not, so `fmt` owes it its canonical form.
+test "a map opened where its line begins is printed spread and passes its guard"
+    given = [
+        "constant AGES: {str: i64}\n    {\"ziggy\":\n        42, \"mars\": 7}\n"
+        "constant AGES: {str: i64}\n    {\"ziggy\": 42,\n        \"mars\": 7}\n"
+        "constant AGES: {str: i64}\n    {\"ziggy\": 42, \"mars\": 7, \"a_long_name_here_and_there\": 1, \"another_long_name_here_and_there\": 2, \"and_one_more_name\": 3}\n"
+        "constant AGES: {str: i64}\n    {\"ziggy\": 42, \"mars\": 7\n    }\n"
+        "constant NEST: {str: {str: i64}}\n    {\"a\": {\"ziggy\":\n        42}, \"b\": {\"mars\": 7}}\n"
+        "function main()\n    {\"ziggy\":\n        42}\n"
+        "function f(n: i64) -> {str: i64}\n    return match n\n        1 =>\n            {\"ziggy\":\n                42}\n        _ => {\"mars\": 7}\n"
+    ]
+    spread = [
+        "constant AGES: {str: i64}\n    {\n        \"ziggy\": 42\n        \"mars\": 7\n    }\n"
+        "constant AGES: {str: i64}\n    {\n        \"ziggy\": 42\n        \"mars\": 7\n    }\n"
+        "constant AGES: {str: i64}\n    {\n        \"ziggy\": 42\n        \"mars\": 7\n        \"a_long_name_here_and_there\": 1\n        \"another_long_name_here_and_there\": 2\n        \"and_one_more_name\": 3\n    }\n"
+        "constant AGES: {str: i64}\n    {\n        \"ziggy\": 42\n        \"mars\": 7\n    }\n"
+        "constant NEST: {str: {str: i64}}\n    {\n        \"a\": {\"ziggy\": 42}\n        \"b\": {\"mars\": 7}\n    }\n"
+        "function main()\n    {\n        \"ziggy\": 42\n    }\n"
+        "function f(n: i64) -> {str: i64}\n    return match n\n        1 =>\n            {\n                \"ziggy\": 42\n            }\n        _ => {\"mars\": 7}\n"
+    ]
+
+    for at in range(from: 0, to: given.len())
+        done = checked(path: "t.hero", s: source.new_source(name: "t.hero", text: given[at]))
+        assert done.input.diagnostics.len() == 0
+        assert done.formatted == spread[at]
+        assert done.refusal.is_err()
+
+        # And the printed form is a fixpoint the parser reads as it was written.
+        again = checked(path: "t.hero", s: source.new_source(name: "t.hero", text: done.formatted))
+        assert again.input.diagnostics.len() == 0
+        assert again.formatted == done.formatted
+        assert again.refusal.is_err()
+
 # Defect 506, 2026-10-08: a comment after the `(` around a map's key stays
 # after it. The entry was read as beginning on its key's own line, so the
 # comment went above the entry, out of the parentheses, and the guard
