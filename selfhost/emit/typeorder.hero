@@ -137,12 +137,26 @@ constant IN_ORDER_FROM: i64
     32
 
 # Every struct this unit defines, touched in the order the typedefs above were
-# written, inside one function nothing calls: `p + 1` makes clang convert the
-# struct to step over it, and each one's fields are already converted when it
-# comes. `used` keeps clang from dropping a function no line calls before it
-# converts anything, and it is static, so each unit carries its own. A group's
-# record is the header's and is left to it. The function costs the binary its
-# few instructions and is never run.
+# written, inside one function nothing calls: the pointer arithmetic makes
+# clang convert the struct to step over it, and each one's fields are already
+# converted when it comes. `used` keeps clang from dropping a function no line
+# calls before it converts anything, and it is static, so each unit carries
+# its own. A group's record is the header's and is left to it. The function
+# costs the binary its few instructions and is never run.
+#
+# **The touch is a CAST, so the debug information is handed the chain from
+# its bottom too** (defect 219, panel 197's R1). Under `-g` clang keeps the
+# type of every explicit cast in a list LLVM's debug-information writer builds
+# before any function (`retainedTypes`), and the unit's element descriptor
+# casts to the chain's top (`desc_copy`, `desc_eq`), so the writer met the top
+# first and recursed as deep as the chain: 5,000 variants died in clang's
+# backend on this Mac (`-emit-llvm` exit 0, `-c` *Illegal instruction: 4*), and
+# 10,000 under the CI's Linux clang 18.1.3. The casts here are written before
+# any descriptor, so the list opens with the chain's bottom and each type's
+# fields are already written when it comes: 5,000 and 10,000 build under `-g`
+# on this Mac and Linux (measured 2026-10-07 by the sitting). Its witness is
+# `cli/deep_types.hero`'s test of the first retained type, which no golden can
+# be: the 32- and 100-deep cases build without the cast on every clang measured.
 function in_order(@w: writer.Writer, c: state.Checked, names: ctype.Names, decls: [ast.Decl], out: [i64])
     writer.at_generated(@w)
     writer.line(@w, text: "__attribute__((used)) static void hero_tu_type_order(void *at) {")
@@ -151,7 +165,7 @@ function in_order(@w: writer.Writer, c: state.Checked, names: ctype.Names, decls
         spelled = struct_named(c, names, decls, item: item)
 
         if spelled.len() > 0
-            writer.line(@w, text: "    { " + spelled + " *p = at; (void)(p + 1); }")
+            writer.line(@w, text: "    (void)((" + spelled + " *)at + 1);")
 
     writer.line(@w, text: "}")
     writer.blank(@w)
@@ -320,8 +334,8 @@ test "past 32 structs held by value clang is handed the chain from its bottom, a
     assert ffi_lookup.char_index_of(text: at_the_number, needle: "hero_tu_type_order").is_err()
     past = chain_text(n: 33)
     order_at = ffi_lookup.char_index_of(text: past, needle: "hero_tu_type_order")
-    bottom = ffi_lookup.char_index_of(text: past, needle: "{ h_t_R0 *p = at; (void)(p + 1); }")
-    top = ffi_lookup.char_index_of(text: past, needle: "{ h_t_R32 *p = at; (void)(p + 1); }")
+    bottom = ffi_lookup.char_index_of(text: past, needle: "(void)((h_t_R0 *)at + 1);")
+    top = ffi_lookup.char_index_of(text: past, needle: "(void)((h_t_R32 *)at + 1);")
     last_typedef = ffi_lookup.char_index_of(text: past, needle: "} h_t_R32;")
     assert !order_at.is_err()
     assert !bottom.is_err()

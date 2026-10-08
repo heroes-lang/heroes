@@ -65,7 +65,8 @@ record Toolchain
     runtime_key: str
     # THE C COMPILER AND THE FLAGS EVERY OBJECT IS COMPILED UNDER, hashed
     # (defect 122, panel 182's item 4): what `clang_floor.identity` says this
-    # machine's clang will run for `flags.flags()`, and that list itself. Every
+    # machine's clang will run for the unoptimised build's words
+    # (`flags.level_words`), and those words themselves. Every
     # key under `build/` that names an object or an answer clang gave carries
     # it, so another clang, another flag or another sysroot is another
     # directory and never a warm hit. Asked once, here, for the reason
@@ -115,10 +116,17 @@ function locate_toolchain(hint: str, fingerprint: str) -> Toolchain?
 # The toolchain over the runtime at `runtime`, whose two files read.
 function toolchain_at(runtime: str, fingerprint: str) -> Toolchain?
     gathered = runtime_key.each_file(runtime)?
-    said = clang_floor.identity(build_dir: "build", runtime: runtime, words: flags.flags())
+
+    # Asked with the unoptimised build's words, its `-g` among them, so the kind
+    # `-g` means to this clang (`standalone` on this Mac, `constructor` on
+    # Linux, `constructor` in CodeView on Windows, panel 197's critic) is in
+    # the key as it was while the word was the list's; `build_words` names
+    # each level's word.
+    asked = flags.level_words(level: "-O0", sanitize: false)
+    said = clang_floor.identity(build_dir: "build", runtime: runtime, words: asked)
 
     return ok(
-        Toolchain(runtime: runtime, build: "build", fingerprint: fingerprint + "|" + LAYOUT, runtime_key: digest.digest(gathered), compiler_key: digest.digest(flags.flags().join(" ") + "|" + answer_text(said)), compiler_banner: clang_floor.banner(said.default("")))
+        Toolchain(runtime: runtime, build: "build", fingerprint: fingerprint + "|" + LAYOUT, runtime_key: digest.digest(gathered), compiler_key: digest.digest(asked.join(" ") + "|" + answer_text(said)), compiler_banner: clang_floor.banner(said.default("")))
     )
 
 # What the key is given for clang's answer: the answer, or what was said
@@ -129,11 +137,12 @@ function answer_text(said: str?) -> str
         .ok text => return "answered|" + text
         .err e   => return "unanswered|" + e.msg
 
-# The words a key carries for the level and the sanitizers: the flags
-# themselves, so a sanitizer list that grows is another key, where one bit
-# said only whether there was any.
+# The words a key carries for the level, its debug word and the sanitizers:
+# the flags themselves, so a sanitizer list that grows is another key, where
+# one bit said only whether there was any, and an object compiled under one
+# debug word is never served to a build under another (panel 197).
 function build_words(level: str, sanitize: bool) -> str
-    return level + "|" + flags.sanitizers(sanitize: sanitize).join(" ")
+    return level + "|" + flags.debug_words(level).join(" ") + "|" + flags.sanitizers(sanitize: sanitize).join(" ")
 
 # Run one clang line, stderr captured to a file and read back. clang's
 # own words are kept verbatim: a failure here says THE COMPILER is
@@ -280,9 +289,7 @@ function runtime_object(t: Toolchain, level: str, sanitize: bool) -> str?
     depfile = publish.private_name(stem + ".d")
     staged = publish.private_name(stem + ".o")
     err_path = publish.private_name(stem + ".clang-stderr.txt")
-    line: [str] @ strings.with_all(list: ["clang"], more: flags.flags())
-    line @ line.push(level)
-    line @ strings.with_all(list: line, more: flags.sanitizers(sanitize: sanitize))
+    line: [str] @ strings.with_all(list: ["clang"], more: flags.level_words(level: level, sanitize: sanitize))
     line @ strings.with_all(
         list: line,
         more: ["-c", "-MD", "-MT", "dep", "-MF", depfile, t.runtime + "/runtime.c", "-I", t.runtime, "-o", staged]
@@ -466,7 +473,7 @@ test "an object compiled under one clang answer is never served under another (d
     # The same toolchain as clang describes it under one more flag: the
     # answer is clang's own, asked of the real compiler, so what moves the
     # key is what the world said and not a string this test made up.
-    more = strings.with_all(list: flags.flags(), more: ["-DHEROES_KEY_PROBE=1"])
+    more = strings.with_all(list: flags.level_words(level: "-O0", sanitize: false), more: ["-DHEROES_KEY_PROBE=1"])
     said = clang_floor.identity(build_dir: "build", runtime: here.runtime, words: more)
     assert !said.is_err()
     other: Toolchain @ here
@@ -482,5 +489,5 @@ test "an object compiled under one clang answer is never served under another (d
     assert runtime_object(here, level: "-O0", sanitize: false).must() == first
 
     # And so do the sanitizer's flags, which were one bit.
-    assert build_words(level: "-O0", sanitize: true) == "-O0|-fsanitize=address,undefined"
-    assert build_words(level: "-O2", sanitize: false) == "-O2|"
+    assert build_words(level: "-O0", sanitize: true) == "-O0|-g|-fsanitize=address,undefined"
+    assert build_words(level: "-O2", sanitize: false) == "-O2|-gline-tables-only|"

@@ -9,13 +9,12 @@
 # corrected — a count in prose is the premise §11 says expires in
 # silence. The reasons ride each flag below; the array is the fact.
 
-# The sixteen — the bootstrap's thirteen in their order, then panel 103's,
-# then panel 154's, then panel 161's:
+# The fifteen — the bootstrap's thirteen in their order but `-g`, then panel
+# 103's, then panel 154's, then panel 161's; the debug word is the level's
+# since panel 197 (`debug_words` below):
 # - gnu11 not c11: one predefined macro apart (__STRICT_ANSI__), whose
 #   only effect on glibc is to hide M_PI, strdup, fileno and most of
 #   what §1.11 says a program binds (panel 047, ratified).
-# - -g on EVERY build: design.md §2 promises lldb steps .hero lines,
-#   and until 2026-08-16 the DWARF existed only under --sanitize.
 # - the two Windows macros: MSVC hides M_PI behind _USE_MATH_DEFINES
 #   and deprecates getenv/fopen/strcpy without _CRT_SECURE_NO_WARNINGS.
 # - -Werror=conditional-uninitialized is -Werror because the corpus
@@ -91,7 +90,6 @@ use cli/process
 function flags() -> [str]
     return [
         "-std=gnu11"
-        "-g"
         "-D_USE_MATH_DEFINES"
         "-D_CRT_SECURE_NO_WARNINGS"
         "-Wall"
@@ -107,6 +105,48 @@ function flags() -> [str]
         "-Werror=incompatible-pointer-types"
         "-fsigned-char"
     ]
+
+# **THE DEBUG WORD IS THE LEVEL'S** (panel 197, defects 219 and 322,
+# ratified 2026-10-07). Every build carries line tables, so lldb breaks on and
+# steps through `.hero` lines and a sanitiser names a file and a line at every
+# level (design.md §3.1); the unoptimised build, where `heroes build` and
+# `heroes test` compile and an author debugs, carries the variables and their
+# types too (design.md Part 2). Until then `-g` was the list's second word on
+# every build, since 2026-08-16, when the DWARF had existed only under
+# `--sanitize`. At `-O2`, where `heroes run` compiles, the variable DWARF
+# bought the parameters' values and nothing else on the sitting's probe (the
+# locals were optimised out under `-g` as well), and it cost clang 2.3 times
+# the memory on a function of 400 ways out: 2,041,923,528 bytes of peak
+# footprint under `-g` against 881,263,672 under line tables and 882,328,656
+# under `-g0` (Apple clang 21); `-fno-standalone-debug`, `-gno-column-info` and
+# `-gdwarf-4` moved nothing. `-g0` is refused: ASan loses the file and line it
+# names everywhere and Linux names a false file, and a breakpoint on a `.hero`
+# line never resolves. A level that is not `-O0` takes the line tables.
+function debug_words(level: str) -> [str]
+    if level == "-O0"
+        return ["-g"]
+    return ["-gline-tables-only"]
+
+# Every word a compile or a link at `level` takes from this file, in the order
+# each line takes them: the list, the level, its debug word, the sanitizers.
+# A unit's compile (`compiling.unit_words`), the runtime's
+# (`toolchain.runtime_object`) and the link (`link.link_line`) read this one
+# list, so no word reaches one of them and not the others, and each key that
+# names these words (`toolchain.build_words`, a unit's words) names the debug
+# word with them. The link carries it because clang's driver for Windows
+# writes the `.pdb` only when the link line carries a `-g` word (`clang -###`
+# on the box, panel 197).
+function level_words(level: str, sanitize: bool) -> [str]
+    out: [str] @ flags()
+    out @ out.push(level)
+
+    for word in debug_words(level)
+        out @ out.push(word)
+
+    for word in sanitizers(sanitize: sanitize)
+        out @ out.push(word)
+
+    return out
 
 # **WHAT A BINARY IS LINKED WITH, and it exists for one platform.**
 #
@@ -171,9 +211,11 @@ function link_flags() -> [str]
     # `dladdr` reads only `.dynsym` — measured in the Linux image: without the
     # flag the message is `panic: stack exhausted` and nothing more; with it,
     # `… in d100000.down`, and the binary grows 134,640 → 142,832 bytes. Darwin
-    # names the symbol either way (`-g` on every build, nothing strips) and
-    # accepts the flag (measured: exit 0, no diagnostic), so the flag is POSIX's
-    # rather than Linux's — `selfhost/` still asks the machine one question,
+    # names the symbol either way, from its symbol table under every debug word
+    # (`in deep.down` under `-g`, line tables and `-g0` alike, panel 197; this
+    # said *`-g` on every build*, which was never the cause), nothing strips,
+    # and it accepts the flag (measured: exit 0, no diagnostic), so the flag is
+    # POSIX's rather than Linux's — `selfhost/` still asks the machine one question,
     # `exe_suffix()`, and gains no second platform axis.
     if process.exe_suffix() != ".exe"
         return ["-rdynamic"]
@@ -204,22 +246,66 @@ function sanitizers(sanitize: bool) -> [str]
 
 ## Tests
 
-test "the array is the fact: sixteen flags, gnu11 named first and the char sign last"
+test "the array is the fact: fifteen flags, gnu11 named first and the char sign last"
     got = flags()
-    assert got.len() == 16
+    assert got.len() == 15
     assert got[0] == "-std=gnu11"
-    assert got[1] == "-g"
-    assert got[10] == "-fno-delete-null-pointer-checks"
-    assert got[13] == "-Werror=incompatible-pointer-types-discards-qualifiers"
-    assert got[14] == "-Werror=incompatible-pointer-types"
+    assert got[9] == "-fno-delete-null-pointer-checks"
+    assert got[12] == "-Werror=incompatible-pointer-types-discards-qualifiers"
+    assert got[13] == "-Werror=incompatible-pointer-types"
 
     # Panel 161's. It is asserted by NAME and not only by the count,
-    # because the count alone would go green on any sixteenth string and
+    # because the count alone would go green on any fifteenth string and
     # this one is the difference between a plain `char` meaning the same
     # thing on four legs and meaning two things on four legs.
-    assert got[15] == "-fsigned-char"
+    assert got[14] == "-fsigned-char"
     assert sanitizers(sanitize: true).len() == 1
     assert sanitizers(sanitize: false).len() == 0
+
+    # No debug word is the list's: it is the level's (panel 197).
+    for flag in got
+        assert flag.len() < 2 || flag[0] != '-' || flag[1] != 'g'
+
+    assert debug_words("-O0") == ["-g"]
+    assert debug_words("-O2") == ["-gline-tables-only"]
+    o2 = level_words(level: "-O2", sanitize: true)
+    assert o2.len() == 18
+    assert o2[15] == "-O2"
+    assert o2[16] == "-gline-tables-only"
+    assert o2[17] == "-fsanitize=address,undefined"
+    assert level_words(level: "-O0", sanitize: false) == flags().push("-O0").push("-g")
+
+# **What a debugger is handed, asked of the platform's own clang** (panel
+# 197's R2): a unit compiled under the unoptimised build's words describes its
+# locals, by the name the C gives them, and one under the optimised build's
+# describes none, its lines alone. Read from clang's assembly, where a local's
+# name stands only in the debug information (DWARF's string table, or the
+# `.pdb`'s CodeView records on Windows), so no other tool is asked for. The
+# unoptimised half is what `-g` buys over line tables: under line tables
+# lldb's `frame variable` says *no variable information is available* (the
+# sitting's probe); and the optimised half is the memory the sitting measured.
+# The lines themselves are the location a sanitiser names at `-O2`,
+# `tests/golden/run/fixedbugs-322-a-sanitiser-names-the-hero-line-at-every-level.hero`.
+test "an unoptimised unit describes its locals to a debugger, and an optimised one only its lines (panel 197)"
+    assert !process.mkdir_all("build/selftest-debug-words").is_err()
+    unit = "build/selftest-debug-words/unit.c"
+    text = "int heroes_debug_probe(int seen);\nint heroes_debug_probe(int seen) {\n    int heroes_seen_local = seen + 1;\n    return heroes_seen_local;\n}\n"
+    assert !write_file(path: unit, text: text).is_err()
+
+    for level in ["-O0", "-O2"]
+        said = "build/selftest-debug-words/unit" + level + ".s"
+        words: [str] @ ["clang"]
+
+        for word in level_words(level: level, sanitize: false)
+            words @ words.push(word)
+
+        for word in ["-S", unit, "-o", said]
+            words @ words.push(word)
+
+        assert process.run(program: "clang", words: words, out: process.discard(), err: process.discard()).code == 0
+        assembly = read_file(said).must()
+        assert first_at(text: assembly, needle: "heroes_debug_probe") >= 0
+        assert first_at(text: assembly, needle: "heroes_seen_local") >= 0 == (level == "-O0")
 
 test "the link flags are one platform's, and the platform is asked not assumed"
     # On this machine the answer is whatever `exe_suffix()` says, so the case

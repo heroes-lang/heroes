@@ -3,7 +3,7 @@ kind: defect
 area: cli
 milestone: none
 filed: 2026-10-04
-commit: none
+commit: bcb68219a3daa3356aa6d7da690a63f73d91e131
 github: none
 ---
 
@@ -12,3 +12,5 @@ github: none
     **Origin:** panel 190's completeness critic, second pass, 2026-10-04 (`docs/panel/190-reports/completeness-critic.md` § 6, `<scratchpad>/190-critic/pass2/fpx.sh`).
 
     **Class: improvement**, 2026-10-04 (`.claude/rules/verification.md` § Bounded discovery): a cost on extreme shapes, nobody's program wrong for it; the flag list touches every program's debug information, a question for a sitting of its own (CLAUDE.md § 4, architecture).
+
+    Repaired at `bcb68219`, 2026-10-08 (lane b14-land197), gated by its cases and the compiler's own tests; the net is owed at the batch's close. Panel 197's R2 (ratified 2026-10-07), not this item's own route (B): `-g` left `flags()` for the level, `-g` at `-O0` and `-gline-tables-only` at `-O2`, in each unit's words, the runtime object's key, the identity probe and the link, so the constant factor is what closes: the N-return shape's unit at `-O2`, replayed alone with the compiler's own words, peaks at 77, 257, 887 and 3,404 MB at 100, 200, 400 and 800 returns where it peaked at 175, 579, 2,023 and 8,017 MB (two reads each, -56% to -58%), its instructions -11% to -6%; the growth, about fourfold per doubling under both words, is filed apart as defect 470.

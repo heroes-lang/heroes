@@ -274,7 +274,7 @@ test "a unit compiled under one clang answer is compiled again under another (de
     here = toolchain.locate_toolchain(hint: "", fingerprint: "port-test").must()
 
     # clang's own answer under one more flag, asked of the real compiler.
-    more = strings.with_all(list: flags.flags(), more: ["-DHEROES_KEY_PROBE=1"])
+    more = strings.with_all(list: flags.level_words(level: "-O0", sanitize: false), more: ["-DHEROES_KEY_PROBE=1"])
     said = clang_floor.identity(build_dir: "build", runtime: here.runtime, words: more)
     other: toolchain.Toolchain @ here
     other.compiler_key @ digest.digest(more.join(" ") + "|" + toolchain.answer_text(said))

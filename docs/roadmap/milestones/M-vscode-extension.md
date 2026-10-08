@@ -18,6 +18,9 @@ extension somebody could install and forget about.
   ordinary DWARF pointing at Heroes source. `lldb-dap` therefore composes with
   the generated binary without this project writing a debug adapter — which is
   CLAUDE.md §10's *"nothing if two existing invocations already compose to it"*.
+  **The launch builds at `-O0`** (`heroes build`): since panel 197 that is the build
+  whose debug information describes the variables, and `heroes run`'s `-O2` carries
+  line tables alone, where stepping works and the variables pane is empty.
   If a launch configuration cannot be expressed that way, `heroes dap` enters
   under the stopping rule like any other verb, with the reason recorded. **The
   ceiling stated here used to be design.md §2's, and M-typed-inspection is the row

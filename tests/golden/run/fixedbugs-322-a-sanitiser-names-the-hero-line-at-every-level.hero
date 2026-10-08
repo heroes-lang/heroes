@@ -1,0 +1,21 @@
+# Defect 322, panel 197's R2, 2026-10-07: the debug word follows the level,
+# `-g` at `-O0` and `-gline-tables-only` at `-O2` (`cli/flags.hero`,
+# `debug_words`). What the line tables keep at every level is the location a
+# sanitiser names: AddressSanitizer's report of a heap block read after it
+# was freed carries this file's name and the line of the call below, at
+# `--sanitize` (built at `-O2`, under line tables) and at `--sanitize -O0`
+# (under `-g`), and it would carry neither under `-g0`, the word the sitting
+# refused for it (measured by its ffi-pragmatist on this Mac and Linux, where
+# `-g0` also named a false file). UBSan keeps its location under every word,
+# so the witness is ASan's.
+#
+# The read is C's, in the header's `static inline`, compiled under the
+# program's own words; its value is never used, so the plain runs print the
+# same whatever the freed block holds.
+
+extern "fixedbugs-322-a-sanitiser-names-the-hero-line-at-every-level.h"
+    function read_after_free(v: i64) -> i64
+
+function main()
+    print("a freed block is read in C")
+    print(read_after_free(v: 7))
