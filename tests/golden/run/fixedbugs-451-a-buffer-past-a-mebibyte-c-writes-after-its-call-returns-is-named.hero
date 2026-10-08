@@ -1,0 +1,22 @@
+# Defect 451, 2026-10-08, a buffer whose region is released. Symptom: C
+# writing through the address of a 2,000,000-byte buffer after the call it
+# was lent to had returned died at exit 139 with no word at `-O0` and `-O2`,
+# AddressSanitizer alone naming the fault: a region above a mebibyte was
+# unmapped when given back, so the write met no mapping and no handler knew
+# the address (measured on this Mac at `56def9b4`). Cause: the release of a
+# large region gave its address back with its pages. Now its pages are
+# released and its address kept with no access, so the write faults where C
+# makes it and the handler names it (`runtime/parts/lend.c`).
+
+extern "fixedbugs-451-keepers.h"
+    function bytes_keep(@md: [u8] counted_by 2000000 lent) -> i32
+    function bytes_write_later() -> i64
+
+function fill() -> i64
+    md: [u8] @ []
+    _ = bytes_keep(@md)
+    return md.len()
+
+function main()
+    print(fill())
+    print(bytes_write_later())

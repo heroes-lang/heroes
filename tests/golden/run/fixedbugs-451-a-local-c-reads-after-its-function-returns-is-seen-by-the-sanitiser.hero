@@ -1,0 +1,27 @@
+# Defect 451, 2026-10-08, the read beside the write. Symptom: C reading
+# through the address of an `@` local after the local's function had
+# returned read what the region still held, the 1 it had written, at exit 0
+# at `-O0`, `-O2` and under `--sanitize` at both (measured on this Mac at
+# `56def9b4`). Cause: a region given back stayed readable.
+#
+# A KNOWN COST OF THE PLAIN BUILDS, PINNED: they watch a region given back
+# by the sum of its bytes, which a read does not move, so the plain runs
+# still read the 1 (`runtime/parts/lend.c`, WHAT A PLAIN BUILD CANNOT SEE);
+# sealing every room in every build would see it, at x7.8 to x18.4 the
+# instructions of a loop that lends. Under `--sanitize` a region given back
+# is sealed, so the read faults where C makes it and AddressSanitizer names
+# it. A plain build that comes to see it turns this case red, and its
+# expectation is then written again.
+
+extern "fixedbugs-451-keepers.h"
+    function cell_keep(@out: i64)
+    function cell_read_later() -> i64
+
+function lend() -> i64
+    n: i64 @ 0
+    cell_keep(@n)
+    return n
+
+function main()
+    print(lend())
+    print(cell_read_later())

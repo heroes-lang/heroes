@@ -1,0 +1,38 @@
+# Defect 451, 2026-10-08. Symptom: C keeping the address of an `@` local
+# and writing through it after the local's function had returned did so in
+# silence: the write landed in the region the local was lent from, which
+# stayed readable and writable, and the program went on at exit 0 at `-O0`,
+# `-O2` and under `--sanitize` at both, ASan, its free fill and Guard Malloc
+# blind to a mapping that is not the heap (measured on this Mac at
+# `56def9b4`, the shape of lane b14-cli's `p321b/cell.hero`). Cause: a
+# region given back was watched by nothing until the next lend at its depth
+# took it. Now its lent bytes are summed when it is given back and summed
+# again when the next lend at its depth takes it, and a sum that moved is
+# named; under `--sanitize` the region is sealed instead, so the write
+# faults where C makes it and AddressSanitizer names it
+# (`runtime/parts/lend.c`).
+#
+# `cell_keep`'s parameter is not declared `lent`, so C may keep the address
+# while `lend` runs; `lend` returns, C writes, and `lend_again` is the next
+# lend at the same depth.
+
+extern "fixedbugs-451-keepers.h"
+    function cell_keep(@out: i64)
+    function cell_write_later(v: i64)
+    function put_one(@x: i64, v: i64)
+
+function lend() -> i64
+    n: i64 @ 0
+    cell_keep(@n)
+    return n
+
+function lend_again() -> i64
+    m: i64 @ 0
+    put_one(x: @m, v: 5)
+    return m
+
+function main()
+    print(lend())
+    cell_write_later(v: 77)
+    print("written")
+    print(lend_again())
