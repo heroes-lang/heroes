@@ -1,0 +1,821 @@
+# Fixed 2026-10-08, defect 476, lane b15-check (class improvement).
+# Symptom: a variant of n cases matched by n arms made the checker copy the
+# type table's entries as the square of n: 96,589 at 400, 352,389 at 800.
+# Cause: each case an arm names is a type of its own, and `check/table.intern`
+# pushed each new type through the table's own field, which copies every
+# type before it: defect 409's shape, repaired in lane b14-p409, on which
+# this shape copies 1,568 and 1,871. What still grows with the square of the
+# cases is `check/reach.hero`'s search of a variant's cases by name at each
+# arm, a cause of its own.
+# This case: 400 cases matched by 399 arms, the one left out told.
+
+variant V
+    c0
+    c1
+    c2
+    c3
+    c4
+    c5
+    c6
+    c7
+    c8
+    c9
+    c10
+    c11
+    c12
+    c13
+    c14
+    c15
+    c16
+    c17
+    c18
+    c19
+    c20
+    c21
+    c22
+    c23
+    c24
+    c25
+    c26
+    c27
+    c28
+    c29
+    c30
+    c31
+    c32
+    c33
+    c34
+    c35
+    c36
+    c37
+    c38
+    c39
+    c40
+    c41
+    c42
+    c43
+    c44
+    c45
+    c46
+    c47
+    c48
+    c49
+    c50
+    c51
+    c52
+    c53
+    c54
+    c55
+    c56
+    c57
+    c58
+    c59
+    c60
+    c61
+    c62
+    c63
+    c64
+    c65
+    c66
+    c67
+    c68
+    c69
+    c70
+    c71
+    c72
+    c73
+    c74
+    c75
+    c76
+    c77
+    c78
+    c79
+    c80
+    c81
+    c82
+    c83
+    c84
+    c85
+    c86
+    c87
+    c88
+    c89
+    c90
+    c91
+    c92
+    c93
+    c94
+    c95
+    c96
+    c97
+    c98
+    c99
+    c100
+    c101
+    c102
+    c103
+    c104
+    c105
+    c106
+    c107
+    c108
+    c109
+    c110
+    c111
+    c112
+    c113
+    c114
+    c115
+    c116
+    c117
+    c118
+    c119
+    c120
+    c121
+    c122
+    c123
+    c124
+    c125
+    c126
+    c127
+    c128
+    c129
+    c130
+    c131
+    c132
+    c133
+    c134
+    c135
+    c136
+    c137
+    c138
+    c139
+    c140
+    c141
+    c142
+    c143
+    c144
+    c145
+    c146
+    c147
+    c148
+    c149
+    c150
+    c151
+    c152
+    c153
+    c154
+    c155
+    c156
+    c157
+    c158
+    c159
+    c160
+    c161
+    c162
+    c163
+    c164
+    c165
+    c166
+    c167
+    c168
+    c169
+    c170
+    c171
+    c172
+    c173
+    c174
+    c175
+    c176
+    c177
+    c178
+    c179
+    c180
+    c181
+    c182
+    c183
+    c184
+    c185
+    c186
+    c187
+    c188
+    c189
+    c190
+    c191
+    c192
+    c193
+    c194
+    c195
+    c196
+    c197
+    c198
+    c199
+    c200
+    c201
+    c202
+    c203
+    c204
+    c205
+    c206
+    c207
+    c208
+    c209
+    c210
+    c211
+    c212
+    c213
+    c214
+    c215
+    c216
+    c217
+    c218
+    c219
+    c220
+    c221
+    c222
+    c223
+    c224
+    c225
+    c226
+    c227
+    c228
+    c229
+    c230
+    c231
+    c232
+    c233
+    c234
+    c235
+    c236
+    c237
+    c238
+    c239
+    c240
+    c241
+    c242
+    c243
+    c244
+    c245
+    c246
+    c247
+    c248
+    c249
+    c250
+    c251
+    c252
+    c253
+    c254
+    c255
+    c256
+    c257
+    c258
+    c259
+    c260
+    c261
+    c262
+    c263
+    c264
+    c265
+    c266
+    c267
+    c268
+    c269
+    c270
+    c271
+    c272
+    c273
+    c274
+    c275
+    c276
+    c277
+    c278
+    c279
+    c280
+    c281
+    c282
+    c283
+    c284
+    c285
+    c286
+    c287
+    c288
+    c289
+    c290
+    c291
+    c292
+    c293
+    c294
+    c295
+    c296
+    c297
+    c298
+    c299
+    c300
+    c301
+    c302
+    c303
+    c304
+    c305
+    c306
+    c307
+    c308
+    c309
+    c310
+    c311
+    c312
+    c313
+    c314
+    c315
+    c316
+    c317
+    c318
+    c319
+    c320
+    c321
+    c322
+    c323
+    c324
+    c325
+    c326
+    c327
+    c328
+    c329
+    c330
+    c331
+    c332
+    c333
+    c334
+    c335
+    c336
+    c337
+    c338
+    c339
+    c340
+    c341
+    c342
+    c343
+    c344
+    c345
+    c346
+    c347
+    c348
+    c349
+    c350
+    c351
+    c352
+    c353
+    c354
+    c355
+    c356
+    c357
+    c358
+    c359
+    c360
+    c361
+    c362
+    c363
+    c364
+    c365
+    c366
+    c367
+    c368
+    c369
+    c370
+    c371
+    c372
+    c373
+    c374
+    c375
+    c376
+    c377
+    c378
+    c379
+    c380
+    c381
+    c382
+    c383
+    c384
+    c385
+    c386
+    c387
+    c388
+    c389
+    c390
+    c391
+    c392
+    c393
+    c394
+    c395
+    c396
+    c397
+    c398
+    c399
+
+function f(v: V) -> i64
+    total: i64 @ 0
+
+    match v  #~ non_exhaustive
+        .c0   => total @ total + 0
+        .c1   => total @ total + 1
+        .c2   => total @ total + 2
+        .c3   => total @ total + 3
+        .c4   => total @ total + 4
+        .c5   => total @ total + 5
+        .c6   => total @ total + 6
+        .c7   => total @ total + 7
+        .c8   => total @ total + 8
+        .c9   => total @ total + 9
+        .c10  => total @ total + 10
+        .c11  => total @ total + 11
+        .c12  => total @ total + 12
+        .c13  => total @ total + 13
+        .c14  => total @ total + 14
+        .c15  => total @ total + 15
+        .c16  => total @ total + 16
+        .c17  => total @ total + 17
+        .c18  => total @ total + 18
+        .c19  => total @ total + 19
+        .c20  => total @ total + 20
+        .c21  => total @ total + 21
+        .c22  => total @ total + 22
+        .c23  => total @ total + 23
+        .c24  => total @ total + 24
+        .c25  => total @ total + 25
+        .c26  => total @ total + 26
+        .c27  => total @ total + 27
+        .c28  => total @ total + 28
+        .c29  => total @ total + 29
+        .c30  => total @ total + 30
+        .c31  => total @ total + 31
+        .c32  => total @ total + 32
+        .c33  => total @ total + 33
+        .c34  => total @ total + 34
+        .c35  => total @ total + 35
+        .c36  => total @ total + 36
+        .c37  => total @ total + 37
+        .c38  => total @ total + 38
+        .c39  => total @ total + 39
+        .c40  => total @ total + 40
+        .c41  => total @ total + 41
+        .c42  => total @ total + 42
+        .c43  => total @ total + 43
+        .c44  => total @ total + 44
+        .c45  => total @ total + 45
+        .c46  => total @ total + 46
+        .c47  => total @ total + 47
+        .c48  => total @ total + 48
+        .c49  => total @ total + 49
+        .c50  => total @ total + 50
+        .c51  => total @ total + 51
+        .c52  => total @ total + 52
+        .c53  => total @ total + 53
+        .c54  => total @ total + 54
+        .c55  => total @ total + 55
+        .c56  => total @ total + 56
+        .c57  => total @ total + 57
+        .c58  => total @ total + 58
+        .c59  => total @ total + 59
+        .c60  => total @ total + 60
+        .c61  => total @ total + 61
+        .c62  => total @ total + 62
+        .c63  => total @ total + 63
+        .c64  => total @ total + 64
+        .c65  => total @ total + 65
+        .c66  => total @ total + 66
+        .c67  => total @ total + 67
+        .c68  => total @ total + 68
+        .c69  => total @ total + 69
+        .c70  => total @ total + 70
+        .c71  => total @ total + 71
+        .c72  => total @ total + 72
+        .c73  => total @ total + 73
+        .c74  => total @ total + 74
+        .c75  => total @ total + 75
+        .c76  => total @ total + 76
+        .c77  => total @ total + 77
+        .c78  => total @ total + 78
+        .c79  => total @ total + 79
+        .c80  => total @ total + 80
+        .c81  => total @ total + 81
+        .c82  => total @ total + 82
+        .c83  => total @ total + 83
+        .c84  => total @ total + 84
+        .c85  => total @ total + 85
+        .c86  => total @ total + 86
+        .c87  => total @ total + 87
+        .c88  => total @ total + 88
+        .c89  => total @ total + 89
+        .c90  => total @ total + 90
+        .c91  => total @ total + 91
+        .c92  => total @ total + 92
+        .c93  => total @ total + 93
+        .c94  => total @ total + 94
+        .c95  => total @ total + 95
+        .c96  => total @ total + 96
+        .c97  => total @ total + 97
+        .c98  => total @ total + 98
+        .c99  => total @ total + 99
+        .c100 => total @ total + 100
+        .c101 => total @ total + 101
+        .c102 => total @ total + 102
+        .c103 => total @ total + 103
+        .c104 => total @ total + 104
+        .c105 => total @ total + 105
+        .c106 => total @ total + 106
+        .c107 => total @ total + 107
+        .c108 => total @ total + 108
+        .c109 => total @ total + 109
+        .c110 => total @ total + 110
+        .c111 => total @ total + 111
+        .c112 => total @ total + 112
+        .c113 => total @ total + 113
+        .c114 => total @ total + 114
+        .c115 => total @ total + 115
+        .c116 => total @ total + 116
+        .c117 => total @ total + 117
+        .c118 => total @ total + 118
+        .c119 => total @ total + 119
+        .c120 => total @ total + 120
+        .c121 => total @ total + 121
+        .c122 => total @ total + 122
+        .c123 => total @ total + 123
+        .c124 => total @ total + 124
+        .c125 => total @ total + 125
+        .c126 => total @ total + 126
+        .c127 => total @ total + 127
+        .c128 => total @ total + 128
+        .c129 => total @ total + 129
+        .c130 => total @ total + 130
+        .c131 => total @ total + 131
+        .c132 => total @ total + 132
+        .c133 => total @ total + 133
+        .c134 => total @ total + 134
+        .c135 => total @ total + 135
+        .c136 => total @ total + 136
+        .c137 => total @ total + 137
+        .c138 => total @ total + 138
+        .c139 => total @ total + 139
+        .c140 => total @ total + 140
+        .c141 => total @ total + 141
+        .c142 => total @ total + 142
+        .c143 => total @ total + 143
+        .c144 => total @ total + 144
+        .c145 => total @ total + 145
+        .c146 => total @ total + 146
+        .c147 => total @ total + 147
+        .c148 => total @ total + 148
+        .c149 => total @ total + 149
+        .c150 => total @ total + 150
+        .c151 => total @ total + 151
+        .c152 => total @ total + 152
+        .c153 => total @ total + 153
+        .c154 => total @ total + 154
+        .c155 => total @ total + 155
+        .c156 => total @ total + 156
+        .c157 => total @ total + 157
+        .c158 => total @ total + 158
+        .c159 => total @ total + 159
+        .c160 => total @ total + 160
+        .c161 => total @ total + 161
+        .c162 => total @ total + 162
+        .c163 => total @ total + 163
+        .c164 => total @ total + 164
+        .c165 => total @ total + 165
+        .c166 => total @ total + 166
+        .c167 => total @ total + 167
+        .c168 => total @ total + 168
+        .c169 => total @ total + 169
+        .c170 => total @ total + 170
+        .c171 => total @ total + 171
+        .c172 => total @ total + 172
+        .c173 => total @ total + 173
+        .c174 => total @ total + 174
+        .c175 => total @ total + 175
+        .c176 => total @ total + 176
+        .c177 => total @ total + 177
+        .c178 => total @ total + 178
+        .c179 => total @ total + 179
+        .c180 => total @ total + 180
+        .c181 => total @ total + 181
+        .c182 => total @ total + 182
+        .c183 => total @ total + 183
+        .c184 => total @ total + 184
+        .c185 => total @ total + 185
+        .c186 => total @ total + 186
+        .c187 => total @ total + 187
+        .c188 => total @ total + 188
+        .c189 => total @ total + 189
+        .c190 => total @ total + 190
+        .c191 => total @ total + 191
+        .c192 => total @ total + 192
+        .c193 => total @ total + 193
+        .c194 => total @ total + 194
+        .c195 => total @ total + 195
+        .c196 => total @ total + 196
+        .c197 => total @ total + 197
+        .c198 => total @ total + 198
+        .c199 => total @ total + 199
+        .c200 => total @ total + 200
+        .c201 => total @ total + 201
+        .c202 => total @ total + 202
+        .c203 => total @ total + 203
+        .c204 => total @ total + 204
+        .c205 => total @ total + 205
+        .c206 => total @ total + 206
+        .c207 => total @ total + 207
+        .c208 => total @ total + 208
+        .c209 => total @ total + 209
+        .c210 => total @ total + 210
+        .c211 => total @ total + 211
+        .c212 => total @ total + 212
+        .c213 => total @ total + 213
+        .c214 => total @ total + 214
+        .c215 => total @ total + 215
+        .c216 => total @ total + 216
+        .c217 => total @ total + 217
+        .c218 => total @ total + 218
+        .c219 => total @ total + 219
+        .c220 => total @ total + 220
+        .c221 => total @ total + 221
+        .c222 => total @ total + 222
+        .c223 => total @ total + 223
+        .c224 => total @ total + 224
+        .c225 => total @ total + 225
+        .c226 => total @ total + 226
+        .c227 => total @ total + 227
+        .c228 => total @ total + 228
+        .c229 => total @ total + 229
+        .c230 => total @ total + 230
+        .c231 => total @ total + 231
+        .c232 => total @ total + 232
+        .c233 => total @ total + 233
+        .c234 => total @ total + 234
+        .c235 => total @ total + 235
+        .c236 => total @ total + 236
+        .c237 => total @ total + 237
+        .c238 => total @ total + 238
+        .c239 => total @ total + 239
+        .c240 => total @ total + 240
+        .c241 => total @ total + 241
+        .c242 => total @ total + 242
+        .c243 => total @ total + 243
+        .c244 => total @ total + 244
+        .c245 => total @ total + 245
+        .c246 => total @ total + 246
+        .c247 => total @ total + 247
+        .c248 => total @ total + 248
+        .c249 => total @ total + 249
+        .c250 => total @ total + 250
+        .c251 => total @ total + 251
+        .c252 => total @ total + 252
+        .c253 => total @ total + 253
+        .c254 => total @ total + 254
+        .c255 => total @ total + 255
+        .c256 => total @ total + 256
+        .c257 => total @ total + 257
+        .c258 => total @ total + 258
+        .c259 => total @ total + 259
+        .c260 => total @ total + 260
+        .c261 => total @ total + 261
+        .c262 => total @ total + 262
+        .c263 => total @ total + 263
+        .c264 => total @ total + 264
+        .c265 => total @ total + 265
+        .c266 => total @ total + 266
+        .c267 => total @ total + 267
+        .c268 => total @ total + 268
+        .c269 => total @ total + 269
+        .c270 => total @ total + 270
+        .c271 => total @ total + 271
+        .c272 => total @ total + 272
+        .c273 => total @ total + 273
+        .c274 => total @ total + 274
+        .c275 => total @ total + 275
+        .c276 => total @ total + 276
+        .c277 => total @ total + 277
+        .c278 => total @ total + 278
+        .c279 => total @ total + 279
+        .c280 => total @ total + 280
+        .c281 => total @ total + 281
+        .c282 => total @ total + 282
+        .c283 => total @ total + 283
+        .c284 => total @ total + 284
+        .c285 => total @ total + 285
+        .c286 => total @ total + 286
+        .c287 => total @ total + 287
+        .c288 => total @ total + 288
+        .c289 => total @ total + 289
+        .c290 => total @ total + 290
+        .c291 => total @ total + 291
+        .c292 => total @ total + 292
+        .c293 => total @ total + 293
+        .c294 => total @ total + 294
+        .c295 => total @ total + 295
+        .c296 => total @ total + 296
+        .c297 => total @ total + 297
+        .c298 => total @ total + 298
+        .c299 => total @ total + 299
+        .c300 => total @ total + 300
+        .c301 => total @ total + 301
+        .c302 => total @ total + 302
+        .c303 => total @ total + 303
+        .c304 => total @ total + 304
+        .c305 => total @ total + 305
+        .c306 => total @ total + 306
+        .c307 => total @ total + 307
+        .c308 => total @ total + 308
+        .c309 => total @ total + 309
+        .c310 => total @ total + 310
+        .c311 => total @ total + 311
+        .c312 => total @ total + 312
+        .c313 => total @ total + 313
+        .c314 => total @ total + 314
+        .c315 => total @ total + 315
+        .c316 => total @ total + 316
+        .c317 => total @ total + 317
+        .c318 => total @ total + 318
+        .c319 => total @ total + 319
+        .c320 => total @ total + 320
+        .c321 => total @ total + 321
+        .c322 => total @ total + 322
+        .c323 => total @ total + 323
+        .c324 => total @ total + 324
+        .c325 => total @ total + 325
+        .c326 => total @ total + 326
+        .c327 => total @ total + 327
+        .c328 => total @ total + 328
+        .c329 => total @ total + 329
+        .c330 => total @ total + 330
+        .c331 => total @ total + 331
+        .c332 => total @ total + 332
+        .c333 => total @ total + 333
+        .c334 => total @ total + 334
+        .c335 => total @ total + 335
+        .c336 => total @ total + 336
+        .c337 => total @ total + 337
+        .c338 => total @ total + 338
+        .c339 => total @ total + 339
+        .c340 => total @ total + 340
+        .c341 => total @ total + 341
+        .c342 => total @ total + 342
+        .c343 => total @ total + 343
+        .c344 => total @ total + 344
+        .c345 => total @ total + 345
+        .c346 => total @ total + 346
+        .c347 => total @ total + 347
+        .c348 => total @ total + 348
+        .c349 => total @ total + 349
+        .c350 => total @ total + 350
+        .c351 => total @ total + 351
+        .c352 => total @ total + 352
+        .c353 => total @ total + 353
+        .c354 => total @ total + 354
+        .c355 => total @ total + 355
+        .c356 => total @ total + 356
+        .c357 => total @ total + 357
+        .c358 => total @ total + 358
+        .c359 => total @ total + 359
+        .c360 => total @ total + 360
+        .c361 => total @ total + 361
+        .c362 => total @ total + 362
+        .c363 => total @ total + 363
+        .c364 => total @ total + 364
+        .c365 => total @ total + 365
+        .c366 => total @ total + 366
+        .c367 => total @ total + 367
+        .c368 => total @ total + 368
+        .c369 => total @ total + 369
+        .c370 => total @ total + 370
+        .c371 => total @ total + 371
+        .c372 => total @ total + 372
+        .c373 => total @ total + 373
+        .c374 => total @ total + 374
+        .c375 => total @ total + 375
+        .c376 => total @ total + 376
+        .c377 => total @ total + 377
+        .c378 => total @ total + 378
+        .c379 => total @ total + 379
+        .c380 => total @ total + 380
+        .c381 => total @ total + 381
+        .c382 => total @ total + 382
+        .c383 => total @ total + 383
+        .c384 => total @ total + 384
+        .c385 => total @ total + 385
+        .c386 => total @ total + 386
+        .c387 => total @ total + 387
+        .c388 => total @ total + 388
+        .c389 => total @ total + 389
+        .c390 => total @ total + 390
+        .c391 => total @ total + 391
+        .c392 => total @ total + 392
+        .c393 => total @ total + 393
+        .c394 => total @ total + 394
+        .c395 => total @ total + 395
+        .c396 => total @ total + 396
+        .c397 => total @ total + 397
+        .c398 => total @ total + 398
+
+    return total
+
+function main()
+    print(f(.c1).to_str())

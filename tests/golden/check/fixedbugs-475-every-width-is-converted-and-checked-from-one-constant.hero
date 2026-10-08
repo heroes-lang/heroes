@@ -1,0 +1,29 @@
+# Fixed 2026-10-08, defect 475, lane b15-check (class improvement).
+# Symptom: `widths.int_kinds`, `widths.float_kinds` and
+# `operators.binary_tokens` built their arrays again at every call: 23,606,
+# 17,048 and 3,663 calls in the compiler's own check.
+# Cause: each list was a function's body. Each is now a constant clang lays
+# out once, read through the function its callers name, so a lookup builds
+# nothing (panel 195), and the compiler's own check retires 116 million
+# fewer instructions.
+# This case: every width named as a type and converted to `i64`, and three
+# conversions whose fallible result is not the width asked for.
+
+function widen(a: i8, b: i16, c: i32, d: i64, e: u8, f: u16, g: u32, h: u64, x: f32, y: f64) -> i64
+    _ = x
+    _ = y
+    low = a.to_i64().must() + b.to_i64().must() + c.to_i64().must() + d
+    return low + e.to_i64().must() + f.to_i64().must() + g.to_i64().must() + h.to_i64().must()
+
+function sum(a: i64, b: i64) -> i64
+    return a + b * 2
+
+function main()
+    v: i64 = 300
+    k: u8 = v.to_u16()  #~ type_mismatch
+    print(k)
+    m: i32 = v.to_i8()  #~ type_mismatch
+    print(m)
+    n: u32 = v.to_u32()  #~ type_mismatch
+    print(n.to_str())
+    print(sum(a: 1, b: 2))

@@ -1,0 +1,3 @@
+tests/golden/check/fixedbugs-475-a-width-misspelt-is-offered-from-one-constant.hero:13:20: error[unknown_type]: no type named `u9` — did you mean `u8`?
+tests/golden/check/fixedbugs-475-a-width-misspelt-is-offered-from-one-constant.hero:17:22: error[unknown_type]: no type named `f16` — the closest names in scope are `i16`, `u16`
+tests/golden/check/fixedbugs-475-a-width-misspelt-is-offered-from-one-constant.hero:23:15: error[unknown_function]: no function named `to_u7` — `x.to_u7(…)` means `to_u7(x, …)`, so `to_u7` has to be a top-level function or a built-in — the closest names in scope are `to_i8`, `to_u16`, `to_u32`
