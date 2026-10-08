@@ -1,0 +1,14 @@
+---
+kind: defect
+area: emit
+milestone: none
+filed: 2026-10-08
+commit: none
+github: none
+---
+
+- [ ] **508 — a function whose every path calls itself runs for ever at `-O2`, where the spec says recursion too deep aborts** | `function forever(n: i64) -> i64` returning `forever(n)`, called from `main`, built at `-O2`: exit 0; its run is killed by `timeout 10` at exit 124 with nothing printed (run by the coordinator before 07:48 on 2026-10-08 on the trunk's compiler, `<scratchpad>/batch15/serve/forever.hero`); clang turns the self-call into a jump; `heroes run` builds at `-O2` by default (`selfhost/cli/verbs.hero`), and the spec says *Recursion too deep aborts* (`spec/heroes-spec.md:280`); found by panel 199's completeness critic, with mutual recursion, a self-call through a function value and a UFCS wrapper hanging the same way | the emitted C at `-O2` · `spec/heroes-spec.md:280` · defect 457 · panel 199 · **class: blocking**
+
+    **Origin:** filed by the coordinator at 07:48 on 2026-10-08 from panel 199's completeness critic's first pass (finding 1), reproduced before filing. Its route (`-fno-optimize-sibling-calls` or its equal, the spec naming the level, or a rule refusing the shape) is panel 199's to choose.
+
+    **Class: blocking**, 2026-10-08 (`.claude/rules/verification.md` § Bounded discovery): the spec's sentence false at the default level of `heroes run`, a program that hangs where it is promised an abort.
