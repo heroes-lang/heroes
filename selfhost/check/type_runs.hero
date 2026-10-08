@@ -1,0 +1,73 @@
+# The runs of the type table (`check/table.hero`): a function type keeps its
+# parameter types and its parameter names as RUNS in two arrays of the table,
+# each distinct run written once and found again by its key (design.md §4.13,
+# panel 128 for the names).
+#
+# Out of `table.hero` on 2026-10-07 (defect 409). The table appended a run
+# through its own fields, `t.params @ t.params.push(p)`, which copies the whole
+# array at every element, so interning cost the square of every parameter the
+# program's function types hold. Here the arrays are lent, and a push onto a
+# lent array grows it in place (design.md §4.10, Part 8 wart 8's spelling,
+# panel 144). The seam is the concern: a run is a list and its key, and
+# neither function reads a type, so this file uses nothing and the table uses
+# it.
+
+# Where the run of type ids `run` begins in `ids`: where `starts` says one of
+# the same ids was written, or else at the end, where it is written now. The
+# key joins the ids on a comma, which an id rendered in decimal cannot contain.
+function id_run(@ids: [i64], @starts: {str: i64}, run: [i64]) -> i64
+    rendered: [str] @ []
+
+    for one in run
+        rendered @ rendered.push(one.to_str())
+
+    key = rendered.join(",")
+    found = starts[key]
+
+    if !found.is_err()
+        return found.must()
+    start = ids.len()
+
+    for one in run
+        ids @ ids.push(one)
+
+    starts[key] @ start
+    return start
+
+# The same for a run of parameter names. The key joins them on a comma, which
+# a name, an identifier, cannot contain.
+function name_run(@names: [str], @starts: {str: i64}, run: [str]) -> i64
+    key = run.join(",")
+    found = starts[key]
+
+    if !found.is_err()
+        return found.must()
+    start = names.len()
+
+    for one in run
+        names @ names.push(one)
+
+    starts[key] @ start
+    return start
+
+test "a run is written once and found again by its content"
+    ids: [i64] @ [9]
+    starts: {str: i64} @ {}
+    a = id_run(ids: @ids, @starts, run: [2, 5])
+    b = id_run(ids: @ids, @starts, run: [2, 5])
+    c = id_run(ids: @ids, @starts, run: [5, 2])
+    assert a == 1 && b == 1 && c == 3
+    assert ids == [9, 2, 5, 5, 2]
+
+    # An empty run begins where the ids end, once, and adds nothing.
+    d = id_run(ids: @ids, @starts, run: [])
+    assert d == 5 && id_run(ids: @ids, @starts, run: []) == 5
+    assert ids.len() == 5
+
+test "a run of names keeps its order in its key"
+    names: [str] @ []
+    starts: {str: i64} @ {}
+    assert name_run(names: @names, @starts, run: ["a", "b"]) == 0
+    assert name_run(names: @names, @starts, run: ["b", "a"]) == 2
+    assert name_run(names: @names, @starts, run: ["a", "b"]) == 0
+    assert names == ["a", "b", "b", "a"]
