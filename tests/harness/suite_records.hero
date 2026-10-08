@@ -2763,7 +2763,10 @@ function marked_at(text: str, at: i64, needle: str) -> bool
 function c_files(@r: report.Report, living: [str])
     # No leading `./`: `git ls-files` spells a path from the repository root,
     # where `find .` spelled it from the current directory.
-    owns: [str] @ ["runtime/", "tools/spike/", "seed/"]
+    # `docs/platforms/` since 2026-10-08: a probe written by hand for one
+    # machine lives with that machine's page, as defect 463's does, run on a
+    # Linux with SELinux enforcing, which no leg of the net is.
+    owns: [str] @ ["runtime/", "tools/spike/", "seed/", "docs/platforms/"]
     strays: [str] @ []
 
     for path in living

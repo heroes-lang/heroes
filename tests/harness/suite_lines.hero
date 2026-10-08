@@ -86,8 +86,12 @@ constant LIBRARY_FILE: str
 # **311 on 2026-10-06**, in lane b13-c382: panel 195's fifteen `fixedbugs-382-`
 # run cases took the directory to 311 from 296, which was already past 235 by
 # more than a quarter at that lane's base, and the suite asked 311.
+#
+# **398 on 2026-10-08**, at batch 15's gate: batches 14 and 15 took the
+# directory from 311 to 398, past it by more than a quarter, and the suite
+# asked 398.
 constant LEAST: i64
-    311
+    398
 
 function run_all(scratch: str, compiler: str) -> report.Report?
     r: report.Report @ report.empty()

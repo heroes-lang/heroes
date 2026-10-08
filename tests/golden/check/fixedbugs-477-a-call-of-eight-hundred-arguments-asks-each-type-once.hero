@@ -1,7 +1,7 @@
 # Fixed 2026-10-08, defect 477, lane b15-check (class improvement).
 # Symptom: a call of n arguments cost the checker faster than n: whether a
 # parameter's type is shared, which decides whether its argument is named
-# (spec § 4.9), was asked of each position against every other, at the
+# (spec § 9), was asked of each position against every other, at the
 # call, at the callee's own type and at a type written; and each argument
 # asked the list of shared positions, and of labels the call writes.
 # Cause: four copies of one pairwise question, and lists asked by scanning.
