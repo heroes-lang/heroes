@@ -44,7 +44,8 @@ use parse
 use resolve
 use checker
 
-function emit(@w: writer.Writer, p: containers.Program, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], f: containers.Function, inst: ir.Inst, live_values: {i64: bool})
+# `p` is the program held with its index (`instances.Held`, defect 492).
+function emit(@w: writer.Writer, p: instances.Held, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], f: containers.Function, inst: ir.Inst, live_values: {i64: bool})
     # §4.8's second half writes no C since panel 196's R1: an `@` parameter
     # IS the caller's place (`places.slot_lvalue`), so nothing is left to
     # copy; the IR keeps it as the point the place is the caller's again.
@@ -111,7 +112,7 @@ function emit(@w: writer.Writer, p: containers.Program, c: state.Checked, names:
 
                 writer.line(
                     @w,
-                    text: "    " + target.must() + " = " + literal.constant_text(lt.value, kind: kind, strings: p.strings) + ";"
+                    text: "    " + target.must() + " = " + literal.constant_text(lt.value, kind: kind, strings: p.program.strings) + ";"
                 )
         .load ld =>
             if !target.is_err()
@@ -426,7 +427,7 @@ test "the dispatcher: a discarded call keeps its effect, a unit store vanishes"
     # A constant nobody reads: no line at all.
     emit(
         @w,
-        p,
+        instances.hold(p),
         c,
         names,
         s,
@@ -441,7 +442,7 @@ test "the dispatcher: a discarded call keeps its effect, a unit store vanishes"
     run0 = ir.Run(start: 0, length: 0)
     emit(
         @w,
-        p,
+        instances.hold(p),
         c,
         names,
         s,
@@ -455,7 +456,7 @@ test "the dispatcher: a discarded call keeps its effect, a unit store vanishes"
     live[2] @ true
     emit(
         @w,
-        p,
+        instances.hold(p),
         c,
         names,
         s,

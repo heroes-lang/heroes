@@ -18,6 +18,7 @@ use check/table
 use check/state
 use ir
 use ir/containers
+use ir/instances
 use emit/array_read
 use emit/worklist
 use token
@@ -213,8 +214,11 @@ function called(callee: str, arguments: [str], wanted: bool) -> str
 # reads, and seven unused definitions would be seven pieces of noise
 # about a library they cannot change. A worklist rather than one pass,
 # because a library function may call another; drained from its top
-# without copying it (`emit/worklist.hero`, defect 498).
+# without copying it (`emit/worklist.hero`, defect 498), and a callee's
+# functions read from the program's index rather than a scan of every
+# function at every callee (defect 492).
 function reachable(p: containers.Program, s: source.Source) -> {i64: bool}
+    callees = instances.indexed(p)
     seen: {i64: bool} @ {}
     work: [i64] @ []
     size: i64 @ 0
@@ -231,9 +235,11 @@ function reachable(p: containers.Program, s: source.Source) -> {i64: bool}
             continue
         seen[decl] @ true
 
-        for f in p.functions
-            if f.decl == decl
-                for callee in calls_of(f)
+        held = callees.by_decl[decl]
+
+        if !held.is_err()
+            for at in held.must()
+                for callee in calls_of(p.functions[at])
                     worklist.put(@work, size: @size, value: callee)
 
     return seen

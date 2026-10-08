@@ -58,6 +58,10 @@ record Whole
     # whole program here, where every TU asked it twice of the whole program
     # until defect 497 (2026-10-07).
     callbacks: callback_guard.Callbacks
+    # The program held with its functions by declaration, which every call
+    # a TU writes and every instance it reaches is looked up in, where each
+    # lookup scanned the whole program until defect 492 (2026-10-07).
+    callees: instances.Held
 
 # `lend_units` is what the round's pointee check read of each counted
 # parameter (`emit.emit_told`'s, panel 194's R7).
@@ -79,7 +83,8 @@ function whole_of(p: containers.Program, c: state.Checked, s: source.Source, dec
         shown: emit.shown_fused(p, s),
         by_decl: by_decl,
         kinds: phases.type_kinds(c),
-        callbacks: callback_guard.callbacks_of(p, c, decls)
+        callbacks: callback_guard.callbacks_of(p, c, decls),
+        callees: instances.hold(p)
     )
 
 # What one TU emits, and what it merely declares.
@@ -105,7 +110,7 @@ record Members
 # The function indices a module's TU defines: its own, then the
 # instances they reach. `taken` is keyed by function index; the
 # frontier carries indices whose calls are still to be walked.
-function members(module: str, p: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl], shown: [i64], by_decl: {i64: i64}) -> Members
+function members(module: str, p: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl], shown: [i64], by_decl: {i64: i64}, callees: instances.Held) -> Members
     taken: {i64: bool} @ {}
     declared: {i64: bool} @ {}
     frontier: [i64] @ []
@@ -138,7 +143,7 @@ function members(module: str, p: containers.Program, c: state.Checked, s: source
                                 instance = instances.named_at(f, c, at: inst.span.end)
 
                                 if instance.len() > 0
-                                    found = instances.index_of(p, decl: hf.decl, instance: instance)
+                                    found = instances.function_at(callees, decl: hf.decl, instance: instance)
 
                                     if !found.is_err() && taken[found.must()].is_err()
                                         taken[found.must()] @ true
@@ -168,7 +173,7 @@ function members(module: str, p: containers.Program, c: state.Checked, s: source
                                 named = instances.named_at(f, c, at: inst.span.end)
 
                                 if named.len() > 0
-                                    found = instances.index_of(p, decl: hf.decl, instance: named)
+                                    found = instances.function_at(callees, decl: hf.decl, instance: named)
 
                                     if !found.is_err() && taken[found.must()].is_err()
                                         taken[found.must()] @ true
