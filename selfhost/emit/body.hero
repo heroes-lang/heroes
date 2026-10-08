@@ -197,17 +197,18 @@ function prologue(@w: writer.Writer, c: state.Checked, names: ctype.Names, f: co
     for at in lend_local.guarded(c, names, f)
         in_place[at] @ true
 
+    # A parameter is already declared by the signature: a plain one as its
+    # value, an `@` one as the pointer to the caller's place, which is the
+    # slot (the header above says why it has no local). Asked of a set made
+    # once, where each slot walked every parameter (defect 478, 2026-10-08):
+    # defect 230's shape, the parameters times the slots.
+    params: {i64: bool} @ {}
+
+    for param in f.params
+        params[param] @ true
+
     for slot in f.slots
-        # A parameter is already declared by the signature: a plain one as
-        # its value, an `@` one as the pointer to the caller's place, which
-        # is the slot (the header above says why it has no local).
-        is_param: bool @ false
-
-        for param in f.params
-            if param == index
-                is_param @ true
-
-        if is_param
+        if !params[index].is_err()
             index @ index + 1
             continue
 

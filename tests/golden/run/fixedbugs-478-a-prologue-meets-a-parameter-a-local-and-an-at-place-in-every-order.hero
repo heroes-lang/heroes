@@ -1,0 +1,184 @@
+# fixedbugs, defect 478, lane b15-emit, 2026-10-08 (lane b14-ir's reading).
+# Symptom: the emitted prologue asked of every slot whether it was one of the
+# function's parameters by walking every parameter, the shape defect 230
+# removed from the ownership pass: a cost of the parameters times the slots,
+# 88 of 995 samples on a function of 3,200 parameters.
+# Cause: `emit/body.hero`'s prologue, one loop over `f.params` per slot.
+# Now the parameters are one set, made once.
+#
+# The shape: forty plain parameters interleaved with forty `@` strings, and a
+# local between every pair, so the prologue meets a parameter, a local and an
+# `@` place in every order the loop has a branch for. The program's output is
+# the sum its own arithmetic gives: every `a` is its index plus one, every
+# local one more, every `@` string two bytes long once it has grown.
+
+function mix(a0: i64, @b0: str, a1: i64, @b1: str, a2: i64, @b2: str, a3: i64, @b3: str, a4: i64, @b4: str, a5: i64, @b5: str, a6: i64, @b6: str, a7: i64, @b7: str, a8: i64, @b8: str, a9: i64, @b9: str, a10: i64, @b10: str, a11: i64, @b11: str, a12: i64, @b12: str, a13: i64, @b13: str, a14: i64, @b14: str, a15: i64, @b15: str, a16: i64, @b16: str, a17: i64, @b17: str, a18: i64, @b18: str, a19: i64, @b19: str, a20: i64, @b20: str, a21: i64, @b21: str, a22: i64, @b22: str, a23: i64, @b23: str, a24: i64, @b24: str, a25: i64, @b25: str, a26: i64, @b26: str, a27: i64, @b27: str, a28: i64, @b28: str, a29: i64, @b29: str, a30: i64, @b30: str, a31: i64, @b31: str, a32: i64, @b32: str, a33: i64, @b33: str, a34: i64, @b34: str, a35: i64, @b35: str, a36: i64, @b36: str, a37: i64, @b37: str, a38: i64, @b38: str, a39: i64, @b39: str) -> i64
+    total: i64 @ 0
+    l0 = a0 + 1
+    b0 @ b0 + "!"
+    total @ total + a0 + l0 + b0.len()
+    l1 = a1 + 1
+    b1 @ b1 + "!"
+    total @ total + a1 + l1 + b1.len()
+    l2 = a2 + 1
+    b2 @ b2 + "!"
+    total @ total + a2 + l2 + b2.len()
+    l3 = a3 + 1
+    b3 @ b3 + "!"
+    total @ total + a3 + l3 + b3.len()
+    l4 = a4 + 1
+    b4 @ b4 + "!"
+    total @ total + a4 + l4 + b4.len()
+    l5 = a5 + 1
+    b5 @ b5 + "!"
+    total @ total + a5 + l5 + b5.len()
+    l6 = a6 + 1
+    b6 @ b6 + "!"
+    total @ total + a6 + l6 + b6.len()
+    l7 = a7 + 1
+    b7 @ b7 + "!"
+    total @ total + a7 + l7 + b7.len()
+    l8 = a8 + 1
+    b8 @ b8 + "!"
+    total @ total + a8 + l8 + b8.len()
+    l9 = a9 + 1
+    b9 @ b9 + "!"
+    total @ total + a9 + l9 + b9.len()
+    l10 = a10 + 1
+    b10 @ b10 + "!"
+    total @ total + a10 + l10 + b10.len()
+    l11 = a11 + 1
+    b11 @ b11 + "!"
+    total @ total + a11 + l11 + b11.len()
+    l12 = a12 + 1
+    b12 @ b12 + "!"
+    total @ total + a12 + l12 + b12.len()
+    l13 = a13 + 1
+    b13 @ b13 + "!"
+    total @ total + a13 + l13 + b13.len()
+    l14 = a14 + 1
+    b14 @ b14 + "!"
+    total @ total + a14 + l14 + b14.len()
+    l15 = a15 + 1
+    b15 @ b15 + "!"
+    total @ total + a15 + l15 + b15.len()
+    l16 = a16 + 1
+    b16 @ b16 + "!"
+    total @ total + a16 + l16 + b16.len()
+    l17 = a17 + 1
+    b17 @ b17 + "!"
+    total @ total + a17 + l17 + b17.len()
+    l18 = a18 + 1
+    b18 @ b18 + "!"
+    total @ total + a18 + l18 + b18.len()
+    l19 = a19 + 1
+    b19 @ b19 + "!"
+    total @ total + a19 + l19 + b19.len()
+    l20 = a20 + 1
+    b20 @ b20 + "!"
+    total @ total + a20 + l20 + b20.len()
+    l21 = a21 + 1
+    b21 @ b21 + "!"
+    total @ total + a21 + l21 + b21.len()
+    l22 = a22 + 1
+    b22 @ b22 + "!"
+    total @ total + a22 + l22 + b22.len()
+    l23 = a23 + 1
+    b23 @ b23 + "!"
+    total @ total + a23 + l23 + b23.len()
+    l24 = a24 + 1
+    b24 @ b24 + "!"
+    total @ total + a24 + l24 + b24.len()
+    l25 = a25 + 1
+    b25 @ b25 + "!"
+    total @ total + a25 + l25 + b25.len()
+    l26 = a26 + 1
+    b26 @ b26 + "!"
+    total @ total + a26 + l26 + b26.len()
+    l27 = a27 + 1
+    b27 @ b27 + "!"
+    total @ total + a27 + l27 + b27.len()
+    l28 = a28 + 1
+    b28 @ b28 + "!"
+    total @ total + a28 + l28 + b28.len()
+    l29 = a29 + 1
+    b29 @ b29 + "!"
+    total @ total + a29 + l29 + b29.len()
+    l30 = a30 + 1
+    b30 @ b30 + "!"
+    total @ total + a30 + l30 + b30.len()
+    l31 = a31 + 1
+    b31 @ b31 + "!"
+    total @ total + a31 + l31 + b31.len()
+    l32 = a32 + 1
+    b32 @ b32 + "!"
+    total @ total + a32 + l32 + b32.len()
+    l33 = a33 + 1
+    b33 @ b33 + "!"
+    total @ total + a33 + l33 + b33.len()
+    l34 = a34 + 1
+    b34 @ b34 + "!"
+    total @ total + a34 + l34 + b34.len()
+    l35 = a35 + 1
+    b35 @ b35 + "!"
+    total @ total + a35 + l35 + b35.len()
+    l36 = a36 + 1
+    b36 @ b36 + "!"
+    total @ total + a36 + l36 + b36.len()
+    l37 = a37 + 1
+    b37 @ b37 + "!"
+    total @ total + a37 + l37 + b37.len()
+    l38 = a38 + 1
+    b38 @ b38 + "!"
+    total @ total + a38 + l38 + b38.len()
+    l39 = a39 + 1
+    b39 @ b39 + "!"
+    total @ total + a39 + l39 + b39.len()
+    return total
+
+function main()
+    s0: str @ "s"
+    s1: str @ "s"
+    s2: str @ "s"
+    s3: str @ "s"
+    s4: str @ "s"
+    s5: str @ "s"
+    s6: str @ "s"
+    s7: str @ "s"
+    s8: str @ "s"
+    s9: str @ "s"
+    s10: str @ "s"
+    s11: str @ "s"
+    s12: str @ "s"
+    s13: str @ "s"
+    s14: str @ "s"
+    s15: str @ "s"
+    s16: str @ "s"
+    s17: str @ "s"
+    s18: str @ "s"
+    s19: str @ "s"
+    s20: str @ "s"
+    s21: str @ "s"
+    s22: str @ "s"
+    s23: str @ "s"
+    s24: str @ "s"
+    s25: str @ "s"
+    s26: str @ "s"
+    s27: str @ "s"
+    s28: str @ "s"
+    s29: str @ "s"
+    s30: str @ "s"
+    s31: str @ "s"
+    s32: str @ "s"
+    s33: str @ "s"
+    s34: str @ "s"
+    s35: str @ "s"
+    s36: str @ "s"
+    s37: str @ "s"
+    s38: str @ "s"
+    s39: str @ "s"
+    print(
+        mix(a0: 1, b0: @s0, a1: 2, b1: @s1, a2: 3, b2: @s2, a3: 4, b3: @s3, a4: 5, b4: @s4, a5: 6, b5: @s5, a6: 7, b6: @s6, a7: 8, b7: @s7, a8: 9, b8: @s8, a9: 10, b9: @s9, a10: 11, b10: @s10, a11: 12, b11: @s11, a12: 13, b12: @s12, a13: 14, b13: @s13, a14: 15, b14: @s14, a15: 16, b15: @s15, a16: 17, b16: @s16, a17: 18, b17: @s17, a18: 19, b18: @s18, a19: 20, b19: @s19, a20: 21, b20: @s20, a21: 22, b21: @s21, a22: 23, b22: @s22, a23: 24, b23: @s23, a24: 25, b24: @s24, a25: 26, b25: @s25, a26: 27, b26: @s26, a27: 28, b27: @s27, a28: 29, b28: @s28, a29: 30, b29: @s29, a30: 31, b30: @s30, a31: 32, b31: @s31, a32: 33, b32: @s32, a33: 34, b33: @s33, a34: 35, b34: @s34, a35: 36, b35: @s35, a36: 37, b36: @s36, a37: 38, b37: @s37, a38: 39, b38: @s38, a39: 40, b39: @s39)
+    )
+    print(s0)
+    print(s39)
