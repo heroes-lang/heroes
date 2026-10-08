@@ -48,6 +48,7 @@ use state
 use line_above
 use brace_layout
 use laid_braces
+use map_alone
 use pairing
 use parse/line_end
 
@@ -63,14 +64,14 @@ function ending(c: cursor.Cursor, text: str) -> i64
     i: i64 @ c.pos
 
     while !token.ends_a_line(c.tokens[i].kind)
-        if c.tokens[i].kind == .lbrace && ends_line(text, c.tokens[i].span) && !opens_a_value(c, at: i)
+        if c.tokens[i].kind == .lbrace && ends_line(text, c.tokens[i].span) && !opens_a_value(c, text, at: i)
             return i
         i @ i + 1
 
     while c.tokens[i].kind == .terminator || c.tokens[i].kind == .comment
         i @ i + 1
 
-    if c.tokens[i].kind == .lbrace && alone(text, c.tokens[i].span) && !opens_a_value(c, at: i)
+    if c.tokens[i].kind == .lbrace && alone(text, c.tokens[i].span) && !opens_a_value(c, text, at: i)
         return i
     return -1
 
@@ -86,7 +87,7 @@ function ends_line(text: str, span: token.Span) -> bool
 
 # Whether the cursor stands on a `{` that ends its line.
 function opens_here(c: cursor.Cursor, text: str) -> bool
-    return cursor.at(c, .lbrace) && ends_line(text, cursor.current_span(c)) && !opens_a_value(c, at: c.pos)
+    return cursor.at(c, .lbrace) && ends_line(text, cursor.current_span(c)) && !opens_a_value(c, text, at: c.pos)
 
 # Whether the `{` at token `at` stands where a value goes: after `=` or `@`,
 # an operator, an opening bracket or a `,`, `return`, `assert` or `in`. It
@@ -98,11 +99,15 @@ function opens_here(c: cursor.Cursor, text: str) -> bool
 # is the lexer's, `brace_layout.value_follows`, but `:`, `->` and `=>`, which
 # that one counts for a type or an arm's value and this one leaves to the
 # body a `{` may open there; kept as a copy here until defect 196.
-function opens_a_value(c: cursor.Cursor, at: i64) -> bool
+function opens_a_value(c: cursor.Cursor, text: str, at: i64) -> bool
     # One the lexer laid out opens a body, past what it read before it: the
-    # `{` that ends C's `for` header, `i++ {` (defect 302).
+    # `{` that ends C's `for` header, `i++ {` (defect 302); one alone on its
+    # line that begins a value, a map, does not (`map_alone`, defect 504).
     if laid_braces.laid_out_by_lexer(c, open: at)
         return false
+
+    if map_alone.begins_a_value(c.tokens, before: at, text, at: c.tokens[at].span.start)
+        return true
     i: i64 @ at - 1
 
     while i > 0 && c.tokens[i].kind == .comment

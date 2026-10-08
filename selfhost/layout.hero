@@ -25,6 +25,7 @@ use open_line
 use backslash
 use indent_runs
 use brace_layout
+use map_alone
 use closers
 use bracket_reach
 use lost_quote
@@ -121,7 +122,7 @@ function line_start(@l: state.LexState, text: str)
             indent_runs.quiet(@l, text, m, line: ws_start, blank: false)
         brace_layout.ended(@l, text, at: l.pos, level: (spaces + 2) / 4)
         return
-    alone = b == '{' && brace_layout.opens_a_body(l.tokens, open: l.open_brackets.len() + l.holes.len(), text, at: l.pos)
+    alone = b == '{' && map_alone.opens_a_body(l.tokens, open: l.open_brackets.len() + l.holes.len(), text, at: l.pos)
 
     if alone && habit
         indent_runs.quiet(@l, text, m, line: ws_start, blank: false)
