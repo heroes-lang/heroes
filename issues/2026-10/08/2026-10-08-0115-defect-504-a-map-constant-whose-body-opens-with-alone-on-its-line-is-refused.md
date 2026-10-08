@@ -3,7 +3,7 @@ kind: defect
 area: parse
 milestone: none
 filed: 2026-10-08
-commit: none
+commit: 25d458aa520756810270827e5a58759ee81545ad
 github: none
 ---
 
@@ -12,3 +12,5 @@ github: none
     **Origin:** filed by the coordinator at 01:15 on 2026-10-08, found beside defect 503 while reducing it, and run before filing.
 
     **Class: blocking**, 2026-10-08 (`.claude/rules/verification.md` § Bounded discovery): a correct program refused, with three messages for it.
+
+    Repaired at `25d458aa`, 2026-10-08 (lane b15-parse), gated by its cases and the compiler's own tests; the net is owed at the batch's close. A `{` alone on its line begins a value where it stands where a statement begins and its value begins below it, under a `constant`'s head or over a map's entry (`map_alone.hero`), the lexer and the parser asking it alike; Allman's, GNU's and Whitesmiths' braces read as before; lane print's 31 shapes each `fmt` exit 0 at its fixpoint, defect 503's reproducer among them, and `heroes probe` over defect 394's file refuses 0 variants where the base refused 51 bracket and 36 paren; a parenthesised key's comment moved by `fmt` is defect 506, apart.
