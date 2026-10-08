@@ -7,8 +7,12 @@
 # - A group head's string names a header or a library, and no name holds a
 #   control character (panel 188): the escape decodes, and the head refuses
 #   the character it writes, one message, as it refuses `\t` there.
+#
+# 2026-10-08, defect 445: the ESC is `unwritable_name` now, no NTFS name
+# holding a byte below U+0020 (measured on the Windows box); U+202E stands in
+# a file's name there and stays `unshowable_name`.
 
-extern "a\u{1b}b.h"  #~ unshowable_name
+extern "a\u{1b}b.h"  #~ unwritable_name
     function f() -> i32
 
 extern "c.h" link "m\u{202e}"  #~ unshowable_name
