@@ -34,11 +34,15 @@ use cli/process
 # `#include "…"` lines answers all three: no shell, no `readdir` order
 # to depend on, and a failure that is a failure.
 #
-# It is also exact rather than approximate. `runtime.c` names all
-# sixteen other files — two headers and fourteen parts — so the set it
+# It is also exact rather than approximate. `runtime.c` names every other
+# file the runtime is made of, its headers and each part, so the set it
 # yields IS the set the old glob collected, and a part that stops being
 # included stops being compiled, which is the property the key is
-# supposed to track.
+# supposed to track. **This said how many, sixteen** (two headers and
+# fourteen parts), **until 2026-10-08**, when the runtime held four headers
+# and twenty-four parts (defect 464): a count in prose is a premise nobody
+# re-counts, so the claim it stood for is a test now, the last one below,
+# which names the directory and the entry point and fires when they differ.
 #
 # **Each file is keyed alone, and the keys joined** (panel 189's R6). The
 # answer was the files' texts joined, so a part read as text and a part that
@@ -142,3 +146,38 @@ test "the repository's own runtime names every part it includes"
 
     for name in names
         assert !read_file("runtime/" + name).is_err()
+
+# The directory and the entry point say the same files (defect 464): a part
+# nothing includes is never compiled, nor keyed, and one included and gone is a
+# build that fails. The parts are what a listing of `runtime/parts` holds that
+# is a C file and not a hidden one (`._name`, an archive's AppleDouble, is not
+# a part).
+function has(list: [str], one: str) -> bool
+    for item in list
+        if item == one
+            return true
+
+    return false
+
+function is_part(name: str) -> bool
+    return name.len() > 8 && name[6] != '.' && name.slice(from: name.len() - 2, to: name.len()) == ".c"
+
+test "every file under the runtime's parts is included by runtime.c, and every part it includes is there"
+    included = included_names(text: read_file("runtime/runtime.c").must())
+    found = process.files_under("runtime/parts").must()
+    parts: [str] @ []
+
+    for path in found
+        name = path.slice(from: "runtime/".len(), to: path.len())
+
+        if is_part(name)
+            parts @ parts.push(name)
+
+    assert parts.len() > 10
+
+    for name in parts
+        assert has(included, name)
+
+    for name in included
+        if name.len() > 6 && name.slice(from: 0, to: 6) == "parts/"
+            assert has(parts, name)
