@@ -202,3 +202,40 @@ function reader_fails(text: str) -> bool
     return match judged(path: "reduced.hero", text: text)
         .moved                        => true
         .discarded | .held | .refused => false
+
+## Tests
+
+# Every family over `seeds`, judged whole: the run and what it counted.
+function every_family(seeds: [str]) -> Run
+    r: Run @ start(FAMILIES, stride: 1)
+
+    for text in seeds
+        done = guard.checked(path: "t.hero", s: source.new_source(name: "t.hero", text: text))
+        assert done.input.diagnostics.len() == 0
+        probe_seed(@r, s: seed.read(path: "t.hero", text: text, tokens: done.input.tokens))
+
+    return r
+
+# The variants the parser took in `family`.
+function parsing(r: Run, family: str) -> i64
+    for t in r.tallies
+        if t.family == family
+            return t.parsing
+
+    return -1
+
+# Defect 506, 2026-10-08: a comment after the `(` around a map's key, alone
+# on its line or after the `{`. The guard refused every variant of the first
+# seed and three `bracket` ones of the second, where the break put the `(`
+# alone on its line; every variant the parser takes holds now, and the two
+# families that break inside a bracket take at least as many as measured
+# that day, so a generator that made fewer would not pass.
+test "every family holds over a comment after the parenthesis around a map's key"
+    seeds = [
+        "function main()\n    m = {\n        (  # c1\n            \"ziggy\"  # c2\n        ): 8\n    }\n"
+        "function main()\n    m = {(\"ziggy\"  # c1\n            ): 42, \"mars\": 7}\n    print(m.len())\n"
+    ]
+    r = every_family(seeds)
+    assert r.failures.len() == 0
+    assert parsing(r, family: "bracket") >= 42
+    assert parsing(r, family: "paren") >= 9

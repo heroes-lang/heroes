@@ -75,8 +75,16 @@ function one_line(@f: page.Fmt, c: elements.Code, head: str, value: i64, indent:
 
 # The line an element starts on: its own first, or that of the author's
 # outermost `(` around it not printed yet, which a comment after it trails.
+# A map's entry begins with its key, so the parentheses asked are the key's
+# (defect 506): asked of the value, a key's `(` alone on its line was read as
+# before the entry, and the comment after it was printed above it, out of
+# the parentheses it was written in.
 function starts(c: elements.Code, item: elements.Element, taken: i64) -> i64
-    pairs = untaken(c, span: c.tree.exprs[item.value].span, taken: taken)
+    head: i64 @ item.value
+
+    if item.key >= 0
+        head @ item.key
+    pairs = untaken(c, span: c.tree.exprs[head].span, taken: taken)
 
     if pairs.len() > 0 && source.line_of(c.s, pairs[pairs.len() - 1].start) < item.first
         return source.line_of(c.s, pairs[pairs.len() - 1].start)

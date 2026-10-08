@@ -196,3 +196,27 @@ test "a clean file is formatted and passes its guard, and one with diagnostics i
     assert broken.input.diagnostics.len() > 0
     assert broken.formatted == ""
     assert broken.refusal.is_err()
+
+# Defect 506, 2026-10-08: a comment after the `(` around a map's key stays
+# after it. The entry was read as beginning on its key's own line, so the
+# comment went above the entry, out of the parentheses, and the guard
+# refused at exit 2 (the first two); written on the `{` line, `fmt` moved it
+# to trail the `{` and dropped the parentheses, where a list keeps both
+# (`[(  # c` over `8` over `)]`), and prints it as the list does now.
+test "a comment after the parenthesis around a map's key stays after it"
+    given = [
+        "function main()\n    m = {\n        (  # c1\n            \"ziggy\"  # c2\n        ): 8\n    }\n"
+        "function main()\n    m = {\n        \"mars\": 7\n        (  # c1\n            \"zig\" + \"gy\"\n        ): 8\n    }\n"
+        "function main()\n    m = {(  # c1\n            \"ziggy\"\n        ): 8}\n"
+    ]
+    printed = [
+        given[0]
+        given[1]
+        "function main()\n    m = {\n        (  # c1\n            \"ziggy\"\n        ): 8\n    }\n"
+    ]
+
+    for at in range(from: 0, to: given.len())
+        done = checked(path: "t.hero", s: source.new_source(name: "t.hero", text: given[at]))
+        assert done.input.diagnostics.len() == 0
+        assert done.formatted == printed[at]
+        assert done.refusal.is_err()
