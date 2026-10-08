@@ -1,0 +1,356 @@
+# A planted mistake as the plan's cut makes it: line hunks over the
+# original text, the operator that made it, where it was found, and the
+# key that names it (defect 448; the Python instrument's `edits.py`).
+#
+# Every mutation is a list of line-range replacements of the original, so
+# two mutants can be planted together (a pair) and every site line found in
+# the text that results. A hunk replaces the 0-based lines `[start, end)`,
+# `start == end` inserting before `start`; its `site` is the offsets of its
+# new lines a message about the mistake belongs on. A mutant's hunks are
+# kept in the order `(start, end > start)`, an insertion before a
+# replacement at one line, ties in the order made: the Python sorted them
+# so at construction, and a plan writes them in that order.
+#
+# Its key is the first sixteen hexadecimal digits of the SHA-1 of
+# `<op>|<file>|<anchor>`, so a mutant is named by what it is, never by when
+# a run met it, and two cuts of one tree name it alike.
+
+use mutate/ascii_json
+use mutate/json_fields
+use mutate/json_read
+use mutate/sha1
+
+record Hunk
+    start: i64
+    end: i64
+    lines: [str]
+    site: [i64]
+
+record Mutant
+    op: str
+    file: str
+    anchor: str
+    hunks: [Hunk]
+    context: str
+    stmts: [i64]
+
+# A hunk whose every new line is a site line, as the Python's default.
+function hunk(start: i64, end: i64, lines: [str]) -> Hunk
+    return Hunk(start: start, end: end, lines: lines, site: range(from: 0, to: lines.len()))
+
+# A mutant, its hunks put in order and its statements each once, ascending.
+function made(op: str, file: str, anchor: str, hunks: [Hunk], context: str, stmts: [i64]) -> Mutant
+    seen: {i64: bool} @ {}
+
+    for sid in stmts
+        seen[sid] @ true
+
+    # ORDER: statement numbers ascending, the Python's `sorted(set(stmts))`.
+    return Mutant(op: op, file: file, anchor: anchor, hunks: ordered(hunks), context: context, stmts: sort(keys(seen)))
+
+# Hunks in the order `(start, end > start)`, ties kept as given: an
+# insertion sort, stable, as Python's `sorted` is.
+function ordered(hunks: [Hunk]) -> [Hunk]
+    out: [Hunk] @ []
+
+    for h in hunks
+        out @ out.push(h)
+        at: i64 @ out.len() - 1
+
+        while at > 0 && after(a: out[at - 1], b: h)
+            out[at] @ out[at - 1]
+            at @ at - 1
+
+        out[at] @ h
+
+    return out
+
+# Whether `a` goes after `b` in the order `(start, end > start)`.
+function after(a: Hunk, b: Hunk) -> bool
+    if a.start != b.start
+        return a.start > b.start
+    return a.end > a.start && b.end <= b.start
+
+function key_of(m: Mutant) -> str
+    return sha1.hex(m.op + "|" + m.file + "|" + m.anchor).slice(from: 0, to: 16)
+
+function first_start(m: Mutant) -> i64
+    return m.hunks[0].start
+
+# One past the last original line any hunk touches, an insertion counting
+# the line it goes before.
+function last_end(m: Mutant) -> i64
+    out: i64 @ 0
+
+    for h in m.hunks
+        reach: i64 @ h.end
+
+        if h.start + 1 > reach
+            reach @ h.start + 1
+
+        if reach > out
+            out @ reach
+
+    return out
+
+# Whether hunks put in order can be applied together: none begins before
+# the furthest line an earlier one replaced (`edits.apply`'s refusal).
+function fits(hunks: [Hunk]) -> bool
+    pos: i64 @ 0
+
+    for h in ordered(hunks)
+        if h.start < pos
+            return false
+
+        if h.end > pos
+            pos @ h.end
+
+    return true
+
+# Whether two mutants' hunks can be planted together (`edits.compatible`).
+function compatible(a: Mutant, b: Mutant) -> bool
+    both: [Hunk] @ a.hunks
+
+    for h in b.hunks
+        both @ both.push(h)
+
+    return fits(both)
+
+# Whether planting the mutant changes the lines at all: the Python dropped
+# every mutant whose text came out the same. Its hunks are in order and do
+# not overlap; one reaching past the text, or two overlapping, is a failure
+# naming the mutant, which the Python met as an exception.
+function changes(m: Mutant, lines: [str]) -> bool?
+    if !fits(m.hunks)
+        return fail(code: "overlap", msg: m.op + " made overlapping hunks in " + m.file + " at " + m.anchor)
+    delta: i64 @ 0
+
+    for h in m.hunks
+        if h.end > lines.len() || h.start > lines.len()
+            return fail(code: "misfit", msg: m.op + " made a hunk past the text of " + m.file + " at " + m.anchor)
+        delta @ delta + h.lines.len() - (h.end - h.start)
+
+    if delta != 0
+        return ok(true)
+
+    # The same length: compare the lines the hunks rewrite, from the first
+    # hunk's start to the last line any of them replaced.
+    region: [str] @ []
+    pos: i64 @ m.hunks[0].start
+
+    for h in m.hunks
+        for line in lines.slice(from: pos, to: h.start)
+            region @ region.push(line)
+
+        for line in h.lines
+            region @ region.push(line)
+
+        if h.end > pos
+            pos @ h.end
+
+    first = m.hunks[0].start
+
+    for at in range(from: 0, to: region.len())
+        if region[at] != lines[first + at]
+            return ok(true)
+
+    return ok(false)
+
+## Planted, and where its site is
+
+# The lines after every mutant's hunks, and for each mutant the 1-based
+# lines of its site in them (`edits.site_lines`): the lines its hunks name,
+# and the lines of each statement it touches (1-based inclusive ranges of
+# the original, `ranges`), an original line inside a replaced hunk standing
+# for every new line of that hunk.
+record Sited
+    lines: [str]
+    sites: [[i64]]
+
+record Placed
+    hunk: Hunk
+    owner: i64
+    where: i64
+
+function sited(mutants: [Mutant], lines: [str], ranges: [[[i64]]]) -> Sited?
+    flat: [Hunk] @ []
+    owners: [i64] @ []
+
+    for index in range(from: 0, to: mutants.len())
+        for h in mutants[index].hunks
+            flat @ flat.push(h)
+            owners @ owners.push(index)
+
+    order = order_of(flat)
+    placed: [Placed] @ []
+    out: [str] @ []
+    pos: i64 @ 0
+
+    for i in order
+        h = flat[i]
+
+        if h.start < pos || h.end > lines.len()
+            return fail(code: "overlap", msg: "the hunks of a planted pair overlap")
+
+        for line in lines.slice(from: pos, to: h.start)
+            out @ out.push(line)
+
+        placed @ placed.push(Placed(hunk: h, owner: owners[i], where: out.len()))
+
+        for line in h.lines
+            out @ out.push(line)
+
+        if h.end > pos
+            pos @ h.end
+
+    for line in lines.slice(from: pos, to: lines.len())
+        out @ out.push(line)
+
+    sites: [[i64]] @ []
+
+    for index in range(from: 0, to: mutants.len())
+        got: {i64: bool} @ {}
+
+        for p in placed
+            if p.owner == index
+                for offset in p.hunk.site
+                    got[p.where + offset + 1] @ true
+
+        for span in ranges[index]
+            for i in range(from: span[0] - 1, to: span[1])
+                for x in mapped(placed, line: i)
+                    got[x + 1] @ true
+
+        # ORDER: ascending line numbers, the Python's `sorted(got)`.
+        sites @ sites.push(sort(keys(got)))
+
+    return ok(Sited(lines: out, sites: sites))
+
+# The indices of `flat` in the order hunks are applied, stable.
+function order_of(flat: [Hunk]) -> [i64]
+    out: [i64] @ []
+
+    for index in range(from: 0, to: flat.len())
+        out @ out.push(index)
+        at: i64 @ out.len() - 1
+
+        while at > 0 && after(a: flat[out[at - 1]], b: flat[index])
+            out[at] @ out[at - 1]
+            at @ at - 1
+
+        out[at] @ index
+
+    return out
+
+# Original 0-based line `i` in the planted text: its new 0-based indices.
+function mapped(placed: [Placed], line: i64) -> [i64]
+    shift: i64 @ 0
+
+    for p in placed
+        h = p.hunk
+
+        if h.end > h.start && h.start <= line && line < h.end
+            return range(from: p.where, to: p.where + h.lines.len())
+
+        if h.start <= line
+            shift @ shift + h.lines.len() - (h.end - h.start)
+
+    return [line + shift]
+
+## The plan's row
+
+# A mutant as `plan-singles.jsonl` holds it: the Python's `as_json`, then
+# its extent and its statements' lines, and `for_pairs` where it was added
+# to be a pair's half.
+function row(m: Mutant, key: str, extent: [i64], stmt_lines: [[i64]], for_pairs: bool) -> str
+    hunks: [json_read.Json] @ []
+
+    for h in m.hunks
+        hunks @ hunks.push(
+            .fields(names: ["start", "end", "new", "site"], values: [json_fields.whole(h.start), json_fields.whole(h.end), json_fields.strings(h.lines), json_fields.wholes(h.site)])
+        )
+
+    spans: [json_read.Json] @ []
+
+    for span in stmt_lines
+        spans @ spans.push(json_fields.wholes(span))
+
+    names: [str] @ ["op", "file", "anchor", "context", "stmts", "hunks", "key", "extent", "stmt_lines"]
+    values: [json_read.Json] @ [
+        json_fields.string(m.op)
+        json_fields.string(m.file)
+        json_fields.string(m.anchor)
+        json_fields.string(m.context)
+        json_fields.wholes(m.stmts)
+        .items(all: hunks)
+        json_fields.string(key)
+        json_fields.wholes(extent)
+        .items(all: spans)
+    ]
+
+    if for_pairs
+        names @ names.push("for_pairs")
+        values @ values.push(.truth(v: true))
+    return ascii_json.written(.fields(names: names, values: values))
+
+## Tests
+
+test "hunks go in the order (start, end > start), an insertion before a replacement at one line"
+    a = hunk(start: 3, end: 4, lines: ["x"])
+    b = hunk(start: 3, end: 3, lines: ["y"])
+    c = hunk(start: 1, end: 2, lines: ["z"])
+    assert ordered([a, b, c]) == [c, b, a]
+    m = made(op: "o", file: "f.hero", anchor: "S4", hunks: [a, b], context: "c", stmts: [2, 1, 2])
+    assert m.stmts == [1, 2]
+    assert first_start(m) == 3
+    assert last_end(m) == 4
+    assert key_of(made(op: "brace-same-line", file: "selfhost/keywords.hero", anchor: "S182", hunks: [a], context: "case", stmts: [64])) == "6a20fd3239cb781e"
+
+test "a mutant that writes its lines back unchanged changes nothing, and two that overlap do not fit"
+    lines = ["a", "b", "c"]
+    same = made(
+        op: "o",
+        file: "f",
+        anchor: "L2",
+        hunks: [hunk(start: 1, end: 2, lines: ["b"])],
+        context: "c",
+        stmts: []
+    )
+    other = made(
+        op: "o",
+        file: "f",
+        anchor: "L2",
+        hunks: [hunk(start: 1, end: 2, lines: ["B"])],
+        context: "c",
+        stmts: []
+    )
+    grown = made(
+        op: "o",
+        file: "f",
+        anchor: "L2",
+        hunks: [hunk(start: 1, end: 1, lines: ["n"])],
+        context: "c",
+        stmts: []
+    )
+    assert !changes(same, lines: lines).must()
+    assert changes(other, lines: lines).must()
+    assert changes(grown, lines: lines).must()
+    assert !compatible(a: other, b: same)
+    assert compatible(
+        a: other,
+        b: made(op: "o", file: "f", anchor: "L3", hunks: [hunk(start: 2, end: 3, lines: ["C"])], context: "c", stmts: [])
+    )
+
+test "a site is the hunks' own lines and the statement's, a replaced line standing for every new one"
+    lines = ["a", "b", "c", "d"]
+    m = made(
+        op: "o",
+        file: "f",
+        anchor: "S2",
+        hunks: [hunk(start: 1, end: 2, lines: ["b", "{"]), hunk(start: 3, end: 3, lines: ["}"])],
+        context: "c",
+        stmts: [0]
+    )
+    got = sited([m], lines: lines, ranges: [[[2, 2]]]).must()
+    assert got.lines == ["a", "b", "{", "c", "}", "d"]
+    assert got.sites[0] == [2, 3, 5]

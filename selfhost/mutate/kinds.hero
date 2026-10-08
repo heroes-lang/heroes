@@ -1,0 +1,109 @@
+# What a statement of a recovery plan's program model is: its kind, from
+# its own tokens and what its parent's block holds, and what a head's own
+# block holds (defect 448; the Python instrument's `model.py`, its
+# `classify` and `opens`, rule for rule). `mutate/model.hero` asks it of
+# each statement in order, a parent before its children.
+
+use mutate/tokens
+
+# What a head's block holds, from its kind and its own tokens.
+function opens(kind: str, toks: [tokens.Tok]) -> str
+    if kind == "top-record" || kind == "member-record"
+        return "fields"
+
+    if kind == "top-variant"
+        return "cases"
+
+    if kind == "case"
+        return "fields"
+
+    if kind == "top-extern"
+        return "members"
+
+    if kind == "top-constant"
+        return "value"
+
+    for t in toks
+        if t.kind == "kw_match" && t.depth == 0
+            return "arms"
+
+    return "body"
+
+function decl_kind(kind: str) -> str
+    names = ["kw_function", "kw_record", "kw_variant", "kw_constant", "kw_test", "kw_extern", "kw_use"]
+    words = ["function", "record", "variant", "constant", "test", "extern", "use"]
+
+    for index in range(from: 0, to: names.len())
+        if names[index] == kind
+            return words[index]
+
+    return "other"
+
+function classify(toks: [tokens.Tok], top: bool, parent_opens: str) -> str
+    k = toks[0].kind
+
+    if top
+        return "top-" + decl_kind(k)
+
+    if parent_opens == "members"
+        return "member-" + decl_kind(k)
+
+    if parent_opens == "fields"
+        return "field"
+
+    if parent_opens == "cases"
+        return "case"
+
+    if parent_opens == "value"
+        return "constant-value"
+
+    if parent_opens == "arms"
+        return "arm"
+
+    if k == "kw_if"
+        return "if"
+
+    if k == "kw_else"
+        if toks.len() > 1 && toks[1].kind == "kw_if"
+            return "else-if"
+        return "else"
+
+    if k == "kw_while" || k == "kw_for" || k == "kw_match" || k == "kw_return" || k == "kw_assert"
+        return k.slice(from: 3, to: k.len())
+
+    if k == "kw_break" || k == "kw_continue"
+        return "jump"
+
+    for i in range(from: 1, to: toks.len())
+        t = toks[i]
+
+        if t.depth != 0
+            continue
+
+        if t.kind == "at"
+            for j in range(from: 0, to: i)
+                if toks[j].kind == "colon" && toks[j].depth == 0
+                    return "declare"
+
+            return "mutate"
+
+        if t.kind == "eq"
+            return "bind"
+
+    return "expr"
+
+## Tests
+
+function tok(kind: str, depth: i64) -> tokens.Tok
+    return tokens.Tok(kind: kind, text: "", line: 1, col: 1, c0: 0, c1: 0, idx: 0, depth: depth)
+
+test "a statement's kind is read from its first token and its parent's block"
+    assert classify([tok(kind: "kw_function", depth: 0)], top: true, parent_opens: "") == "top-function"
+    assert classify([tok(kind: "ident", depth: 0)], top: false, parent_opens: "fields") == "field"
+    assert classify([tok(kind: "kw_else", depth: 0), tok(kind: "kw_if", depth: 0)], top: false, parent_opens: "body") == "else-if"
+    assert classify([tok(kind: "kw_while", depth: 0)], top: false, parent_opens: "body") == "while"
+    assert classify([tok(kind: "ident", depth: 0), tok(kind: "colon", depth: 0), tok(kind: "ident", depth: 0), tok(kind: "at", depth: 0)], top: false, parent_opens: "body") == "declare"
+    assert classify([tok(kind: "ident", depth: 0), tok(kind: "at", depth: 0)], top: false, parent_opens: "body") == "mutate"
+    assert classify([tok(kind: "ident", depth: 0), tok(kind: "lparen", depth: 0), tok(kind: "eq", depth: 1)], top: false, parent_opens: "body") == "expr"
+    assert opens(kind: "bind", toks: [tok(kind: "kw_match", depth: 0)]) == "arms"
+    assert opens(kind: "top-constant", toks: []) == "value"

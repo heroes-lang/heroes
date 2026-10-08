@@ -1,0 +1,447 @@
+# `heroes mutate --recovery --cut <tree>`: a recovery plan cut again, from
+# a tree's programs and the compiler that judges them (defect 448).
+#
+# The plan the recovery arm replays (panel 187's R2, defect 210) was cut
+# on 2026-09-30 by Python in a session's scratchpad (`recovery.py` and its
+# modules), and while its generator lived there a plan could be replayed
+# from the tree and never cut again. This is that generator, its rules
+# read from the Python line by line; measured against it record for record
+# on one compiler and one tree (the lane's report). A cut, in order:
+#
+# - the tree's programs copied into `<out>/work/mirror`; the census, `check
+#   --brief` of each where it stands; the baseline, each accepted program
+#   checked again beside itself; the programs kept, clean and with a closure
+#   under `cut_corpus.CLOSURE_CAP`;
+# - each kept program lexed by the compiler (`lex --dump-tokens --json`)
+#   and modelled (`mutate/model.hero`); every operator's sites over them
+#   (`mutate/strata.hero`), and up to `strata.PER_OP` of each chosen;
+# - each chosen mutant judged alone (`mutate/brief.hero`), and the pairs
+#   cut from what the singles were told (`mutate/pair_plan.hero`), the
+#   halves a fallback added judged alone in turn;
+# - the plan written: `plan-singles.jsonl` and `plan-pairs.jsonl` as the
+#   Python wrote them, `plan-base.jsonl` from the singles' own verdicts, and
+#   `corpus/`, every file the plan's programs read, as `<path>.frozen`.
+#
+# `work/` keeps what the cut read and decided (the census, the baseline,
+# each program's closure, the sites per operator); it is not the plan, and
+# a plan pinned in the tree is its other files.
+
+use cli/process
+use mutate/ascii_json
+use mutate/child
+use mutate/cut_corpus
+use mutate/cut_workers
+use mutate/json_fields
+use mutate/json_read
+use mutate/judged
+use mutate/model
+use mutate/mutant
+use mutate/pair_plan
+use mutate/strata
+use mutate/tokens
+
+extern "hero_os.h"
+    function hero_thread_spawn(body: (function(i64) -> i64), arg: i64) -> i64
+    function hero_thread_join(handle: i64) -> i64
+
+record Made
+    files: i64
+    kept: i64
+    sites: i64
+    singles: i64
+    pairs: i64
+
+function cut(compiler: str, tree: str, out: str) -> Made?
+    for path in [compiler, tree, out]
+        for at in range(from: 0, to: path.len())
+            if path[at] == 10
+                return fail(code: "bad_path", msg: "a path holding a line feed cannot be handed to the workers")
+
+    if !process.is_directory(tree)
+        return fail(code: "no_tree", msg: "no folder of programs is at " + tree)
+
+    if process.path_exists(tree + "/.git")
+        return fail(
+            code: "checkout",
+            msg: tree + " is a checkout, and a cut reads a commit's programs and nothing a build left beside them: export one (`git archive <commit> | tar -x -C <folder>`) and name that folder"
+        )
+
+    if process.path_exists(out) && !empty_folder(out)
+        return fail(
+            code: "taken",
+            msg: out + " already holds something, and a cut writes into a folder of its own: name a new one"
+        )
+    files = cut_corpus.listed(tree)?
+
+    if files.len() == 0
+        return fail(code: "no_tree", msg: "no `.hero` file is under " + tree)
+    mirror = out + "/work/mirror"
+    process.mkdir_all(out + "/work/lex")?
+    version = child.bounded(program: compiler, words: [compiler, "--version"], capture: out + "/work/version")
+
+    if version.is_err() || version.must().exit != 0
+        return fail(code: "no_compiler", msg: "cannot start the compiler " + compiler)
+    unread = cut_corpus.mirrored(tree: tree, files: files, mirror: mirror)?
+    mirrored = without(files: files, gone: unread)
+    cut_workers.write_job(cut_workers.Job(compiler: compiler, out: out))?
+    census = phase(out, which: cut_workers.CENSUS, tasks: mirrored)?
+    written(out + "/work/census.jsonl", lines: census)?
+    accepted = where(records: census, files: mirrored, name: "kind", value: "accepted")?
+    base = phase(out, which: cut_workers.BASELINE, tasks: accepted)?
+    written(out + "/work/baseline.jsonl", lines: base)?
+    clean = where(records: base, files: accepted, name: "clean", value: "true")?
+    kept = within_cap(mirror: mirror, out: out, clean: clean)?
+    _ = phase(out, which: cut_workers.LEX, tasks: kept)?
+    programs = modelled(out: out, mirror: mirror, kept: kept)?
+    sites = strata.candidates(programs)?
+    chosen: [mutant.Mutant] @ []
+    counts: [str] @ []
+
+    for one in sites
+        counts @ counts.push(one.op + " " + one.found.len().to_str())
+
+        for m in strata.stratified(one.op, found: one.found, cap: strata.PER_OP)
+            chosen @ chosen.push(m)
+
+    written(out + "/work/sites.txt", lines: counts)?
+    by_file: {str: i64} @ {}
+
+    for index in range(from: 0, to: programs.len())
+        by_file[programs[index].path] @ index
+
+    rows = strata.plan_rows(chosen, programs: programs, by_file: by_file, for_pairs: false)
+    judged_singles = verdicts(phase(out, which: cut_workers.SINGLES, tasks: rows)?)?
+    named: [str] @ []
+
+    for m in chosen
+        named @ named.push(mutant.key_of(m))
+
+    paired = pair_plan.planned(
+        chosen,
+        named: named,
+        reported: judged_singles.reported,
+        second: judged_singles.second,
+        sites: sites
+    )
+    halves = strata.plan_rows(paired.extra, programs: programs, by_file: by_file, for_pairs: true)
+    judged_halves = verdicts(phase(out, which: cut_workers.HALVES, tasks: halves)?)?
+    all_rows: [str] @ rows
+
+    for row in halves
+        all_rows @ all_rows.push(row)
+
+    written(out + "/plan-singles.jsonl", lines: all_rows)?
+    pair_rows: [str] @ []
+
+    for p in paired.pairs
+        pair_rows @ pair_rows.push(pair_plan.row(p))
+
+    written(out + "/plan-pairs.jsonl", lines: pair_rows)?
+    base_rows: [str] @ judged_singles.base
+
+    for row in judged_halves.base
+        base_rows @ base_rows.push(row)
+
+    written(out + "/plan-base.jsonl", lines: base_rows)?
+    planted: {str: bool} @ {}
+
+    for m in chosen
+        planted[m.file] @ true
+
+    for m in paired.extra
+        planted[m.file] @ true
+
+    # ORDER: by path, so the corpus is read in one order on every run.
+    frozen = cut_corpus.frozen(mirror: mirror, out: out, programs: sort(keys(planted)))?
+    told = judged.told_lines(version.must().out)
+    run: json_read.Json = .fields(
+        names: ["compiler", "version", "tree", "files", "unread", "accepted", "clean", "kept", "sites", "singles", "halves", "pairs", "programs", "corpus", "per_op", "pair_samples", "closure_cap"],
+        values: [json_fields.string(compiler), json_fields.strings(told), json_fields.string(tree), json_fields.whole(files.len()), json_fields.strings(unread), json_fields.whole(accepted.len()), json_fields.whole(clean.len()), json_fields.whole(kept.len()), json_fields.whole(total_sites(sites)), json_fields.whole(chosen.len()), json_fields.whole(paired.extra.len()), json_fields.whole(paired.pairs.len()), json_fields.whole(planted.len()), json_fields.whole(frozen), json_fields.whole(strata.PER_OP), json_fields.whole(pair_plan.SAMPLES), json_fields.whole(cut_corpus.CLOSURE_CAP)]
+    )
+    written(out + "/work/cut.json", lines: [ascii_json.written(run)])?
+    process.remove_file(cut_workers.job_path())?
+    return ok(
+        Made(files: files.len(), kept: kept.len(), sites: total_sites(sites), singles: all_rows.len(), pairs: paired.pairs.len())
+    )
+
+function total_sites(sites: [strata.Sites]) -> i64
+    n: i64 @ 0
+
+    for one in sites
+        n @ n + one.found.len()
+
+    return n
+
+function empty_folder(path: str) -> bool
+    walked = process.walk(path)
+
+    if walked.is_err()
+        return false
+    return walked.must().files.len() == 0 && walked.must().unnamed.len() == 0
+
+function without(files: [str], gone: [str]) -> [str]
+    out: [str] @ []
+
+    for f in files
+        keep: bool @ true
+
+        for g in gone
+            if g == f
+                keep @ false
+
+        if keep
+            out @ out.push(f)
+
+    return out
+
+# The tasks whose record's field `name` is written `value`.
+function where(records: [str], files: [str], name: str, value: str) -> [str]?
+    out: [str] @ []
+
+    for index in range(from: 0, to: records.len())
+        j = json_read.read_json(records[index])?
+        got = json_fields.field(j, name: name)?
+
+        if ascii_json.written(got) == value || ascii_json.written(got) == "\"" + value + "\""
+            out @ out.push(files[index])
+
+    return ok(out)
+
+# The clean programs whose closure is within the cap, each closure's bytes
+# written to `work/closures.jsonl`.
+function within_cap(mirror: str, out: str, clean: [str]) -> [str]?
+    kept: [str] @ []
+    lines: [str] @ []
+
+    for rel in clean
+        read = cut_corpus.closure(mirror: mirror, rel: rel)?
+        bytes = cut_corpus.closure_bytes(mirror, files: read)?
+        fits = bytes <= cut_corpus.CLOSURE_CAP
+
+        if fits
+            kept @ kept.push(rel)
+        lines @ lines.push(
+            ascii_json.written(.fields(names: ["file", "modules", "bytes", "kept"], values: [json_fields.string(rel), json_fields.whole(read.len()), json_fields.whole(bytes), .truth(v: fits)]))
+        )
+
+    written(out + "/work/closures.jsonl", lines: lines)?
+    return ok(kept)
+
+# Each kept program modelled from its dump; a token the dump places where
+# its text is not stops the cut, naming it: a site planted from it would
+# be planted elsewhere.
+function modelled(out: str, mirror: str, kept: [str]) -> [model.Program]?
+    programs: [model.Program] @ []
+    problems: [str] @ []
+
+    for index in range(from: 0, to: kept.len())
+        rel = kept[index]
+        text = read_file(mirror + "/" + rel)?
+        dump_at = cut_workers.dump_path(out, task: index)
+        dump = read_file(dump_at)?
+        read = tokens.read_dump(dump, lines: model.split_lines(text))?
+
+        if read.misplaced.len() > 0
+            return fail(
+                code: "misplaced",
+                msg: rel + ": the lexer's dump places " + read.misplaced[0] + " where its text is not"
+            )
+        p = model.program(path: rel, text: text, toks: read.toks)
+
+        for one in p.problems
+            problems @ problems.push(rel + ": " + one)
+
+        programs @ programs.push(p)
+        process.remove_file(dump_at)?
+
+    written(out + "/work/problems.txt", lines: problems)?
+    return ok(programs)
+
+# The singles' verdicts: whether each is a pair's first, whether a second,
+# and its `plan-base.jsonl` row.
+record Verdicts
+    reported: [bool]
+    second: [bool]
+    base: [str]
+
+function verdicts(records: [str]) -> Verdicts?
+    reported: [bool] @ []
+    second: [bool] @ []
+    base: [str] @ []
+
+    for line in records
+        j = json_read.read_json(line)?
+        reported @ reported.push(json_fields.truth_of(json_fields.field(j, name: "reported")?)?)
+        second @ second.push(json_fields.truth_of(json_fields.field(j, name: "second")?)?)
+        names = ["key", "stage", "class_normal", "class_control"]
+        values: [json_read.Json] @ []
+
+        for name in names
+            values @ values.push(json_fields.field(j, name: name)?)
+
+        base @ base.push(ascii_json.written(.fields(names: names, values: values)))
+
+    return ok(Verdicts(reported: reported, second: second, base: base))
+
+# One phase over `tasks` on `cut_workers.JOBS` threads; its records in
+# task order.
+function phase(out: str, which: i64, tasks: [str]) -> [str]?
+    written(cut_workers.tasks_path(out, phase: which), lines: tasks)?
+    handles: [i64] @ []
+
+    for index in range(from: 0, to: cut_workers.JOBS)
+        handles @ handles.push(hero_thread_spawn(body: cut_workers.work, arg: index * 8 + which))
+
+    done: i64 @ 0
+
+    for h in handles
+        done @ done + hero_thread_join(handle: h)
+
+    if done != cut_workers.JOBS
+        return fail(code: "worker_failed", msg: failures(out, which: which))
+    rows: [str] @ []
+    filled: [bool] @ []
+
+    for _ in tasks
+        rows @ rows.push("")
+        filled @ filled.push(false)
+
+    for index in range(from: 0, to: cut_workers.JOBS)
+        path = cut_workers.records_path(out, phase: which, index: index)
+
+        for line in judged.told_lines(read_file(path)?)
+            tab = first_tab(line)
+            task = json_fields.whole_of(.number(written: line.slice(from: 0, to: tab.default(0))))
+
+            if tab.is_err() || task.is_err() || task.must() < 0 || task.must() >= tasks.len() || filled[task.must()]
+                return fail(code: "worker_failed", msg: path + " holds a line that is no task's")
+            rows[task.must()] @ line.slice(from: tab.must() + 1, to: line.len())
+            filled[task.must()] @ true
+
+    for one in filled
+        if !one
+            return fail(code: "worker_failed", msg: "a task of phase " + which.to_str() + " has no record")
+
+    return ok(rows)
+
+function first_tab(line: str) -> i64?
+    for at in range(from: 0, to: line.len())
+        if line[at] == 9
+            return ok(at)
+
+    return fail(code: "no_tab", msg: "no tab")
+
+function failures(out: str, which: i64) -> str
+    said: [str] @ []
+
+    for index in range(from: 0, to: cut_workers.JOBS)
+        got = read_file(cut_workers.failure_path(out, phase: which, index: index))
+
+        if !got.is_err()
+            said @ said.push("worker " + index.to_str() + ": " + got.must())
+
+    if said.len() == 0
+        return "a worker of phase " + which.to_str() + " could not read its job"
+    return said.join("")
+
+function written(path: str, lines: [str]) -> ()?
+    text: str @ ""
+
+    if lines.len() > 0
+        text @ lines.join("\n") + "\n"
+
+    if write_file(path: path, text: text).is_err()
+        return fail(code: "unwritable", msg: "cannot write " + path)
+    return ok()
+
+## Tests
+
+test "a checkout, a folder that holds something and a tree that is not there are refused before anything is cut"
+    assert cut(compiler: "heroes", tree: "no/such/tree", out: "build/selftest-cut-none").is_err()
+
+    match cut(compiler: "heroes", tree: ".", out: "build/selftest-cut-checkout")
+        .ok _  => assert false
+        .err e => assert e.code == "checkout"
+
+    dir = "build/selftest-cut-taken"
+    assert !process.mkdir_all(dir).is_err()
+    assert !write_file(path: dir + "/plan-singles.jsonl", text: "").is_err()
+
+    match cut(compiler: "heroes", tree: "tests/golden/surface-fixtures/nested", out: dir)
+        .ok _  => assert false
+        .err e => assert e.msg == dir + " already holds something, and a cut writes into a folder of its own: name a new one"
+
+# The witness that this generator is the Python's: ten programs of the
+# frozen corpus that between them hold a site of all 96 operators, their
+# tokens as the lexer of the tree the frozen plan was cut from dumped them
+# (c85bccb8's `lex --dump-tokens --json`, `tests/golden/recovery/cut/`),
+# and what the Python instrument (`recovery.py`, `ops.py`, `model.py`,
+# `edits.py`, run 2026-10-08) made of them: every operator's sites, rows
+# and order, as a count and the SHA-1 of its rows (`sites.txt`); the
+# strata at a cap of three (`strata.txt`); and the pairs and halves cut
+# from verdicts read off each chosen key, a first where its first hex digit
+# is below 8, a second where its second is (`pairs.txt`). A moved digest
+# names the operator whose rows moved.
+test "the operators, the strata and the pairs are the Python instrument's on ten programs of the frozen corpus (defect 448)"
+    dir = "tests/golden/recovery/cut"
+    listed = judged.told_lines(read_file(dir + "/programs.txt").must())
+    programs: [model.Program] @ []
+
+    for i in range(from: 0, to: listed.len())
+        text = read_file("tests/golden/recovery/corpus/" + listed[i] + ".frozen").must()
+        read = tokens.read_dump(
+            read_file(dir + "/dump-" + i.to_str() + ".json").must(),
+            lines: model.split_lines(text)
+        ).must()
+        assert read.misplaced.len() == 0
+        p = model.program(path: listed[i], text: text, toks: read.toks)
+        assert p.problems.len() == 0
+        programs @ programs.push(p)
+
+    by_file: {str: i64} @ {}
+
+    for i in range(from: 0, to: programs.len())
+        by_file[programs[i].path] @ i
+
+    sites = strata.candidates(programs).must()
+    expected_sites = judged.told_lines(read_file(dir + "/sites.txt").must())
+    expected_strata = judged.told_lines(read_file(dir + "/strata.txt").must())
+    assert sites.len() == 96
+    plan: [mutant.Mutant] @ []
+    named: [str] @ []
+
+    for k in range(from: 0, to: sites.len())
+        rows = strata.plan_rows(sites[k].found, programs: programs, by_file: by_file, for_pairs: false)
+        assert sites[k].op + " " + rows.len().to_str() + " " + digest_of(rows) == expected_sites[k]
+        line: [str] @ [sites[k].op]
+
+        for m in strata.stratified(sites[k].op, found: sites[k].found, cap: 3)
+            plan @ plan.push(m)
+            named @ named.push(mutant.key_of(m))
+            line @ line.push(mutant.key_of(m))
+
+        assert line.join(" ") == expected_strata[k]
+
+    reported: [bool] @ []
+    second: [bool] @ []
+
+    for k in named
+        reported @ reported.push(k[0] < '8')
+        second @ second.push(k[1] < '8')
+
+    paired = pair_plan.planned(plan, named: named, reported: reported, second: second, sites: sites)
+    pair_rows: [str] @ []
+
+    for p in paired.pairs
+        pair_rows @ pair_rows.push(pair_plan.row(p))
+
+    halves = strata.plan_rows(paired.extra, programs: programs, by_file: by_file, for_pairs: true)
+    expected_pairs = judged.told_lines(read_file(dir + "/pairs.txt").must())
+    assert "pairs " + pair_rows.len().to_str() + " " + digest_of(pair_rows) == expected_pairs[0]
+    assert "halves " + halves.len().to_str() + " " + digest_of(halves) == expected_pairs[1]
+
+# The SHA-1 of rows written one a line, as the Python's file of them.
+function digest_of(rows: [str]) -> str
+    if rows.len() == 0
+        return strata.hkey([""])
+    return strata.hkey([rows.join("\n") + "\n"])

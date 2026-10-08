@@ -1,0 +1,322 @@
+# The recovery plan's operators of expressions: Python's `not` and `and`,
+# `===`, a `//` comment, a ternary, `??`, `!`, a slice in brackets, `new`,
+# a construction in braces, a turbofish (defect 448; the Python
+# instrument's `ops.py`, its section *operators and expressions*, rule for
+# rule, each appending its mutants in the order the Python's generator
+# yielded them).
+
+use bytes
+use mutate/model
+use mutate/mutant
+use mutate/op_base
+use mutate/tokens
+
+function not_word(p: model.Program, @out: [mutant.Mutant])
+    for s in p.stmts
+        for i in range(from: 0, to: s.toks.len())
+            if s.toks[i].kind == "bang" && !(i > 0 && op_base.operand_end(s.toks[i - 1].kind))
+                out @ out.push(
+                    op_base.swapped(op: "not-word", p, t: s.toks[i], word: "not ", context: s.kind, sid: s.sid)
+                )
+
+function and_or_words(p: model.Program, @out: [mutant.Mutant])
+    for s in p.stmts
+        for t in s.toks
+            if t.kind == "and_and" || t.kind == "or_or"
+                w: str @ "or"
+
+                if t.kind == "and_and"
+                    w @ "and"
+                out @ out.push(
+                    op_base.swapped(op: "and-or-words", p, t: t, word: w, context: s.kind + ":" + w, sid: s.sid)
+                )
+
+function python_bool(p: model.Program, @out: [mutant.Mutant])
+    for s in p.stmts
+        for t in s.toks
+            if t.kind == "kw_true"
+                out @ out.push(op_base.swapped(op: "python-bool", p, t: t, word: "True", context: s.kind, sid: s.sid))
+            else if t.kind == "kw_false"
+                out @ out.push(op_base.swapped(op: "python-bool", p, t: t, word: "False", context: s.kind, sid: s.sid))
+
+function triple_equals(p: model.Program, @out: [mutant.Mutant])
+    for s in p.stmts
+        for t in s.toks
+            if t.kind == "eq_eq" || t.kind == "bang_eq"
+                w: str @ "!=="
+
+                if t.kind == "eq_eq"
+                    w @ "==="
+                out @ out.push(
+                    op_base.swapped(op: "triple-equals", p, t: t, word: w, context: s.kind + ":" + w, sid: s.sid)
+                )
+
+function line_comment(p: model.Program, @out: [mutant.Mutant])
+    for l in p.lines
+        if l.comment.len() == 0
+            continue
+        c = l.comment[0]
+
+        if bytes.bytes_at(text: c.text, at: 0, needle: "##") || bytes.bytes_at(text: c.text, at: 0, needle: "#~")
+            continue
+        context: str @ "own-line"
+
+        if model.code(l)
+            context @ "trailing"
+        stmts: [i64] @ []
+
+        if l.stmt >= 0
+            stmts @ [l.stmt]
+        new = op_base.splice(text: l.text, c0: c.c0, c1: c.c0 + 1, put: "//")
+        out @ out.push(
+            op_base.mk(op: "line-comment", p, anchor: tokens.anchor(c), hunks: [op_base.line_edit(no: l.no, text: new)], context: context, stmts: stmts)
+        )
+
+function ternary(p: model.Program, @out: [mutant.Mutant])
+    for s in p.stmts
+        if !op_base.one_of(s.kind, set: ["bind", "declare", "return"]) || !s.head || !op_base.single_line(s) || !op_base.no_comment(p, s: s)
+            continue
+        toks = s.toks
+        ki: i64 @ -1
+
+        for j in range(from: 0, to: toks.len())
+            if toks[j].kind == "kw_if" && toks[j].depth == 0
+                ki @ j
+                break
+
+        if ki < 0 || ki == toks.len() - 1
+            continue
+        then_line = op_base.simple_body_line(p, s: s)
+
+        if then_line < 0 || p.stmts[then_line].kind != "expr"
+            continue
+        next = op_base.siblings_after(p, s: s)
+
+        if next.len() == 0
+            continue
+        e = p.stmts[next[0]]
+
+        if e.kind != "else" || !op_base.single_line(e) || !op_base.no_comment(p, s: e) || e.first != s.block_last + 1
+            continue
+        else_line = op_base.simple_body_line(p, s: e)
+
+        if else_line < 0 || p.stmts[else_line].kind != "expr"
+            continue
+        text = model.line(p, no: s.first).text
+        cond = op_base.cut(text, from: toks[ki + 1].c0, to: toks[toks.len() - 1].c1)
+        a = model.stripped(model.line(p, no: p.stmts[then_line].first).text)
+        b = model.stripped(model.line(p, no: p.stmts[else_line].first).text)
+        new = op_base.cut(text, from: 0, to: toks[ki].c0) + cond + " ? " + a + " : " + b
+        out @ out.push(
+            op_base.mk(op: "ternary", p, anchor: "S" + s.first.to_str(), hunks: [mutant.hunk(start: s.first - 1, end: e.block_last, lines: [new])], context: s.kind, stmts: [s.sid, e.sid])
+        )
+
+# `.name(` ... `)` on one line: the dot's index and the closer's, each pair.
+function method_calls(s: model.Statement, name: str) -> [[i64]]
+    out: [[i64]] @ []
+    toks = s.toks
+    closer = op_base.enclosing(toks).closer
+
+    for i in range(from: 0, to: toks.len() - 2)
+        if toks[i].kind == "dot" && toks[i + 1].kind == "ident" && toks[i + 1].text == name && toks[i + 2].kind == "lparen"
+            c = closer[i + 2]
+
+            if c > 0 && toks[c].line == toks[i].line
+                out @ out.push([i, c])
+
+    return out
+
+# The span from the dot at `i` to the closer at `c` written `put`.
+function call_rewritten(op: str, p: model.Program, s: model.Statement, i: i64, c: i64, put: str) -> mutant.Mutant
+    t = s.toks[i]
+    text = model.line(p, no: t.line).text
+    new = op_base.splice(text: text, c0: t.c0, c1: s.toks[c].c1, put: put)
+    return op_base.mk(
+        op: op,
+        p,
+        anchor: tokens.anchor(t),
+        hunks: [op_base.line_edit(no: t.line, text: new)],
+        context: s.kind,
+        stmts: [s.sid]
+    )
+
+function nullish(p: model.Program, @out: [mutant.Mutant])
+    for s in p.stmts
+        for call in method_calls(s, name: "default")
+            i = call[0]
+            c = call[1]
+
+            if c == i + 3
+                continue
+            text = model.line(p, no: s.toks[i].line).text
+            inner = op_base.cut(text, from: s.toks[i + 3].c0, to: s.toks[c - 1].c1)
+            out @ out.push(call_rewritten(op: "nullish", p, s: s, i: i, c: c, put: " ?? " + inner))
+
+function force_unwrap(p: model.Program, @out: [mutant.Mutant])
+    for s in p.stmts
+        for call in method_calls(s, name: "must")
+            if call[1] == call[0] + 3
+                out @ out.push(call_rewritten(op: "force-unwrap", p, s: s, i: call[0], c: call[1], put: "!"))
+
+function slice_colon(p: model.Program, @out: [mutant.Mutant])
+    for s in p.stmts
+        toks = s.toks
+
+        for call in method_calls(s, name: "slice")
+            i = call[0]
+            c = call[1]
+            inner = toks.slice(from: i + 3, to: c)
+
+            if inner.len() < 6 || inner[0].text != "from" || inner[1].kind != "colon"
+                continue
+            d = toks[i + 2].depth + 1
+            k: i64 @ -1
+
+            for j in range(from: 0, to: inner.len())
+                if inner[j].kind == "comma" && inner[j].depth == d
+                    k @ j
+                    break
+
+            if k < 0 || k + 3 >= inner.len() || inner[k + 1].text != "to" || inner[k + 2].kind != "colon"
+                continue
+            text = model.line(p, no: toks[i].line).text
+            a = op_base.cut(text, from: inner[2].c0, to: inner[k - 1].c1)
+            b = op_base.cut(text, from: inner[k + 3].c0, to: inner[inner.len() - 1].c1)
+            out @ out.push(call_rewritten(op: "slice-colon", p, s: s, i: i, c: c, put: "[" + a + ":" + b + "]"))
+
+# The names this file declares as records, and as functions.
+record Declared
+    records: {str: bool}
+    functions: {str: bool}
+
+function declared(p: model.Program) -> Declared
+    records: {str: bool} @ {}
+    functions: {str: bool} @ {}
+
+    for s in p.stmts
+        if s.toks.len() > 1 && s.toks[1].kind == "ident"
+            if s.kind == "top-record" || s.kind == "member-record"
+                records[s.toks[1].text] @ true
+            else if s.kind == "top-function" || s.kind == "member-function"
+                functions[s.toks[1].text] @ true
+
+    return Declared(records: records, functions: functions)
+
+# Every argument between the opener `o` and the closer `c` is `name: value`.
+function all_labelled(toks: [tokens.Tok], o: i64, c: i64) -> bool
+    if c == o + 1
+        return false
+    d = toks[o].depth + 1
+    starts: [i64] @ [o + 1]
+
+    for j in range(from: o + 1, to: c)
+        if toks[j].kind == "comma" && toks[j].depth == d
+            starts @ starts.push(j + 1)
+
+    for j in starts
+        if !(j + 1 < c && toks[j].kind == "ident" && toks[j + 1].kind == "colon")
+            return false
+
+    return true
+
+# Record constructions `Name(field: value, ...)` on one line: a name the
+# file declares as a record, or a capitalised name it does not declare as
+# a function, called with every argument labelled; the name's index and
+# the closer's, each pair.
+function constructions(s: model.Statement, names: Declared) -> [[i64]]
+    out: [[i64]] @ []
+    toks = s.toks
+    closer = op_base.enclosing(toks).closer
+
+    for i in range(from: 0, to: toks.len() - 1)
+        t = toks[i]
+
+        if t.kind != "ident" || t.text.len() == 0 || t.text[0] < 'A' || t.text[0] > 'Z' || toks[i + 1].kind != "lparen"
+            continue
+
+        if i > 0 && op_base.one_of(toks[i - 1].kind, set: ["dot", "kw_record", "kw_variant", "kw_function", "colon", "arrow", "colon_colon"])
+            continue
+        c = closer[i + 1]
+
+        if c <= 0 || toks[c].line != t.line
+            continue
+        record_named = !names.records[t.text].is_err()
+
+        if !record_named && (!names.functions[t.text].is_err() || !all_labelled(toks, o: i + 1, c: c))
+            continue
+        out @ out.push([i, c])
+
+    return out
+
+function new_construct(p: model.Program, @out: [mutant.Mutant])
+    names = declared(p)
+
+    for s in p.stmts
+        if op_base.decl_head(s)
+            continue
+
+        for site in constructions(s, names: names)
+            out @ out.push(
+                op_base.prefixed(op: "new-construct", p, t: s.toks[site[0]], word: "new ", context: s.kind, sid: s.sid)
+            )
+
+function construct_braces(p: model.Program, @out: [mutant.Mutant])
+    names = declared(p)
+
+    for s in p.stmts
+        if op_base.decl_head(s)
+            continue
+
+        for site in constructions(s, names: names)
+            o = s.toks[site[0] + 1]
+            cl = s.toks[site[1]]
+            text = model.line(p, no: o.line).text
+            new = op_base.cut(text, from: 0, to: o.c0) + "{" + op_base.cut(text, from: o.c1, to: cl.c0) + "}" + op_base.cut(text, from: cl.c1, to: text.len())
+            out @ out.push(
+                op_base.mk(op: "construct-braces", p, anchor: tokens.anchor(s.toks[site[0]]), hunks: [op_base.line_edit(no: o.line, text: new)], context: s.kind, stmts: [s.sid])
+            )
+
+function turbofish(p: model.Program, @out: [mutant.Mutant])
+    for s in p.stmts
+        toks = s.toks
+
+        for i in range(from: 0, to: toks.len() - 1)
+            t = toks[i]
+
+            if t.kind == "ident" && op_base.one_of(t.text, set: ["map", "filter", "fold", "find", "any", "all"]) && toks[i + 1].kind == "lparen" && toks[i + 1].line == t.line
+                text = model.line(p, no: t.line).text
+                out @ out.push(
+                    op_base.mk(op: "turbofish", p, anchor: tokens.anchor(t), hunks: [op_base.line_edit(no: t.line, text: op_base.splice(text: text, c0: t.c1, c1: t.c1, put: "<i64>"))], context: s.kind, stmts: [s.sid])
+                )
+
+## The family's ids
+
+# Whether `id` is one of this family's operators, having run it on `p`.
+function run(id: str, p: model.Program, @out: [mutant.Mutant]) -> bool?
+    if id == "and-or-words"
+        and_or_words(p, @out)
+    else if id == "not-word"
+        not_word(p, @out)
+    else if id == "python-bool"
+        python_bool(p, @out)
+    else if id == "triple-equals"
+        triple_equals(p, @out)
+    else if id == "line-comment"
+        line_comment(p, @out)
+    else if id == "ternary"
+        ternary(p, @out)
+    else if id == "nullish"
+        nullish(p, @out)
+    else if id == "force-unwrap"
+        force_unwrap(p, @out)
+    else if id == "slice-colon"
+        slice_colon(p, @out)
+    else if id == "new-construct"
+        new_construct(p, @out)
+    else if id == "construct-braces"
+        construct_braces(p, @out)
+    else if id == "turbofish"
+        turbofish(p, @out)
+    else
+        return ok(false)
+    return ok(true)

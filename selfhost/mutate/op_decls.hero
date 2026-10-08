@@ -1,0 +1,260 @@
+# The recovery plan's operators of types and declarations:
+# `Option<T>`, `[]T`, `T[]`, `Map<K, V>`, a type word from another
+# language, a field ending with `,`, a constant on its head's line, a
+# module in quotes (defect 448; the Python instrument's `ops.py`, its
+# sections *types* and *declarations*, rule for rule, each appending its
+# mutants in the order the Python's generator yielded them).
+
+use mutate/model
+use mutate/mutant
+use mutate/op_base
+use mutate/tokens
+
+## Types
+
+# The token indices that begin a type: after `->`, and after a
+# declaration's `:` (not a map entry's, not a call's label).
+function type_positions(s: model.Statement) -> [i64]
+    out: [i64] @ []
+    toks = s.toks
+    around = op_base.enclosing(toks).around
+
+    for i in range(from: 0, to: toks.len() - 1)
+        t = toks[i]
+
+        if t.kind == "arrow"
+            out @ out.push(i + 1)
+        else if t.kind == "colon" && i > 0 && toks[i - 1].kind == "ident"
+            o = around[i]
+
+            if o >= 0 && toks[o].kind == "lbrace"
+                continue
+
+            if o >= 0 && op_base.is_call_paren(toks, i: o) && s.kind != "top-function" && s.kind != "member-function"
+                continue
+            out @ out.push(i + 1)
+
+    return out
+
+# A span of tokens on one line written `put`, named by its first token.
+function span_rewritten(op: str, p: model.Program, s: model.Statement, a: tokens.Tok, b: tokens.Tok, put: str) -> mutant.Mutant
+    text = model.line(p, no: a.line).text
+    return op_base.mk(
+        op: op,
+        p,
+        anchor: tokens.anchor(a),
+        hunks: [op_base.line_edit(no: a.line, text: op_base.splice(text: text, c0: a.c0, c1: b.c1, put: put))],
+        context: s.kind,
+        stmts: [s.sid]
+    )
+
+function option_type(p: model.Program, @out: [mutant.Mutant])
+    for s in p.stmts
+        toks = s.toks
+
+        for i in type_positions(s)
+            if i + 1 < toks.len() && toks[i].kind == "ident" && toks[i + 1].kind == "question" && toks[i].line == toks[i + 1].line
+                out @ out.push(
+                    span_rewritten(op: "option-type", p, s: s, a: toks[i], b: toks[i + 1], put: "Option<" + toks[i].text + ">")
+                )
+
+# `[T]` where a type begins: `prefix` written before `T` (`[]T`), or `T[]`.
+function bracket_type(op: str, go: bool, p: model.Program, @out: [mutant.Mutant])
+    for s in p.stmts
+        toks = s.toks
+
+        for i in type_positions(s)
+            if i + 2 < toks.len() && toks[i].kind == "lbracket" && toks[i + 1].kind == "ident" && toks[i + 2].kind == "rbracket" && toks[i].line == toks[i + 2].line
+                put: str @ toks[i + 1].text + "[]"
+
+                if go
+                    put @ "[]" + toks[i + 1].text
+                out @ out.push(span_rewritten(op: op, p, s: s, a: toks[i], b: toks[i + 2], put: put))
+
+function map_type_generic(p: model.Program, @out: [mutant.Mutant])
+    for s in p.stmts
+        toks = s.toks
+
+        for i in type_positions(s)
+            if i + 4 < toks.len() && toks[i].kind == "lbrace" && toks[i + 1].kind == "ident" && toks[i + 2].kind == "colon" && toks[i + 3].kind == "ident" && toks[i + 4].kind == "rbrace" && toks[i].line == toks[i + 4].line
+                put = "Map<" + toks[i + 1].text + ", " + toks[i + 3].text + ">"
+                out @ out.push(span_rewritten(op: "map-type-generic", p, s: s, a: toks[i], b: toks[i + 4], put: put))
+
+# The type word `from` where a type begins, or as the element of `[T]`.
+function type_word(op: str, from: str, to: str, p: model.Program, @out: [mutant.Mutant])
+    for s in p.stmts
+        toks = s.toks
+
+        for i in type_positions(s)
+            j: i64 @ i
+
+            if i < toks.len() && toks[i].kind == "lbracket"
+                j @ i + 1
+
+            if j < toks.len() && toks[j].kind == "ident" && toks[j].text == from
+                out @ out.push(op_base.swapped(op: op, p, t: toks[j], word: to, context: s.kind, sid: s.sid))
+
+## Declarations
+
+function field_commas(p: model.Program, @out: [mutant.Mutant])
+    for s in p.stmts
+        if !op_base.one_of(s.kind, set: ["top-record", "member-record", "top-variant"]) || !op_base.block_ok(s)
+            continue
+
+        if s.children.len() < 2 || !one_line_kids(p, s: s, comments: false)
+            continue
+        hunks: [mutant.Hunk] @ []
+        sids: [i64] @ [s.sid]
+
+        for kid in s.children
+            l = model.line(p, no: p.stmts[kid].first)
+            at = model.end_col(l)
+            hunks @ hunks.push(
+                op_base.line_edit(no: l.no, text: op_base.splice(text: l.text, c0: at, c1: at, put: ","))
+            )
+            sids @ sids.push(kid)
+
+        out @ out.push(
+            op_base.mk(op: "field-commas", p, anchor: "S" + s.first.to_str(), hunks: hunks, context: s.kind, stmts: sids)
+        )
+
+# Every child a one-line statement with no block, and, with `comments`,
+# none of them holding a comment.
+function one_line_kids(p: model.Program, s: model.Statement, comments: bool) -> bool
+    for kid in s.children
+        k = p.stmts[kid]
+
+        if k.head || !op_base.single_line(k) || comments && !op_base.no_comment(p, s: k)
+            return false
+
+    return true
+
+function block_all_code(p: model.Program, s: model.Statement) -> bool
+    for no in range(from: s.block_first, to: s.block_last + 1)
+        if !model.code(model.line(p, no: no))
+            return false
+
+    return true
+
+function case_parens(p: model.Program, @out: [mutant.Mutant])
+    for s in p.stmts
+        if s.kind != "case" || !s.head || !op_base.contiguous(s) || !op_base.single_line(s) || !op_base.no_comment(p, s: s)
+            continue
+
+        if !block_all_code(p, s: s) || s.children.len() == 0 || !one_line_kids(p, s: s, comments: true)
+            continue
+
+        if op_base.comment_between(p, first: s.block_first, last: s.block_last)
+            continue
+        l = model.line(p, no: s.first)
+        inner: [str] @ []
+        sids: [i64] @ [s.sid]
+
+        for kid in s.children
+            inner @ inner.push(model.stripped(model.line(p, no: p.stmts[kid].first).text))
+            sids @ sids.push(kid)
+
+        new = op_base.cut(l.text, from: 0, to: model.end_col(l)) + "(" + inner.join(", ") + ")"
+        out @ out.push(
+            op_base.mk(op: "case-parens", p, anchor: "S" + s.first.to_str(), hunks: [mutant.hunk(start: s.first - 1, end: s.block_last, lines: [new])], context: "case", stmts: sids)
+        )
+
+function constant_inline(p: model.Program, @out: [mutant.Mutant])
+    for s in p.stmts
+        if s.kind != "top-constant" || !op_base.contiguous(s) || !op_base.single_line(s) || !op_base.no_comment(p, s: s)
+            continue
+
+        if s.children.len() != 1
+            continue
+        k = p.stmts[s.children[0]]
+
+        if !op_base.single_line(k) || !op_base.no_comment(p, s: k) || k.first != s.block_first || k.last != s.block_last
+            continue
+        l = model.line(p, no: s.first)
+        new = op_base.cut(l.text, from: 0, to: model.end_col(l)) + " = " + model.stripped(model.line(p, no: k.first).text)
+        out @ out.push(
+            op_base.mk(op: "constant-inline", p, anchor: "S" + s.first.to_str(), hunks: [mutant.hunk(start: s.first - 1, end: s.block_last, lines: [new])], context: "constant", stmts: [s.sid, k.sid])
+        )
+
+function use_quoted(p: model.Program, @out: [mutant.Mutant])
+    for s in p.stmts
+        if s.kind != "top-use" || s.toks.len() < 2 || named_as(s)
+            continue
+        a = s.toks[1]
+        b = s.toks[s.toks.len() - 1]
+        text = model.line(p, no: a.line).text
+        put = "\"" + op_base.cut(text, from: a.c0, to: b.c1) + "\""
+        out @ out.push(
+            op_base.mk(op: "use-quoted", p, anchor: tokens.anchor(a), hunks: [op_base.line_edit(no: a.line, text: op_base.splice(text: text, c0: a.c0, c1: b.c1, put: put))], context: "use", stmts: [s.sid])
+        )
+
+function named_as(s: model.Statement) -> bool
+    for t in s.toks
+        if t.text == "as"
+            return true
+
+    return false
+
+function use_dotted(p: model.Program, @out: [mutant.Mutant])
+    for s in p.stmts
+        if s.kind != "top-use"
+            continue
+        slashes: [tokens.Tok] @ []
+
+        for t in s.toks
+            if t.kind == "slash"
+                slashes @ slashes.push(t)
+
+        if slashes.len() == 0
+            continue
+        text: str @ model.line(p, no: s.first).text
+        at: i64 @ slashes.len() - 1
+
+        while at >= 0
+            text @ op_base.splice(text: text, c0: slashes[at].c0, c1: slashes[at].c1, put: ".")
+            at @ at - 1
+
+        out @ out.push(
+            op_base.mk(op: "use-dotted", p, anchor: tokens.anchor(slashes[0]), hunks: [op_base.line_edit(no: s.first, text: text)], context: "use", stmts: [s.sid])
+        )
+
+function assert_message(p: model.Program, @out: [mutant.Mutant])
+    for s in p.stmts
+        if s.kind == "assert" && op_base.single_line(s)
+            out @ out.push(
+                op_base.appended(op: "assert-message", p, s: s, word: ", \"failed\"", anchor: "L" + s.first.to_str())
+            )
+
+## The family's ids
+
+# Whether `id` is one of this family's operators, having run it on `p`.
+function run(id: str, p: model.Program, @out: [mutant.Mutant]) -> bool?
+    if id == "string-type"
+        type_word(op: id, from: "str", to: "string", p: p, @out)
+    else if id == "boolean-type"
+        type_word(op: id, from: "bool", to: "boolean", p: p, @out)
+    else if id == "double-type"
+        type_word(op: id, from: "f64", to: "double", p: p, @out)
+    else if id == "option-type"
+        option_type(p, @out)
+    else if id == "slice-type-go"
+        bracket_type(id, go: true, p: p, @out)
+    else if id == "array-suffix"
+        bracket_type(id, go: false, p: p, @out)
+    else if id == "map-type-generic"
+        map_type_generic(p, @out)
+    else if id == "field-commas"
+        field_commas(p, @out)
+    else if id == "case-parens"
+        case_parens(p, @out)
+    else if id == "constant-inline"
+        constant_inline(p, @out)
+    else if id == "use-quoted"
+        use_quoted(p, @out)
+    else if id == "use-dotted"
+        use_dotted(p, @out)
+    else if id == "assert-message"
+        assert_message(p, @out)
+    else
+        return ok(false)
+    return ok(true)
