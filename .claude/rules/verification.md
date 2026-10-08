@@ -28,22 +28,51 @@ rather than trusting the table:
 # (one word it prints, `harness`, is not a suite; the count is the command's)
 grep -oE '"[a-z_]+"' tests/harness/main.hero | sort -u
 
-# what each suite file walks, from its own constants — the literal paths, and
-# the bare group names of a suite that builds `"tests/golden/" + group` — read
-# in the suite's code alone: its `test` blocks and its comments left out, since
-# a literal a test asserts the suite does NOT walk is not a walk (defect 288)
+# every path git tracks, each file and each directory above one: the paths a
+# suite can name are read from the tree, never listed here (defect 486)
+paths=$(git ls-files | awk -F/ '{ p = $1; print p; for (i = 2; i <= NF; i++) { p = p "/" $i; print p } }' | sort -u)
+# a module's code alone: its `test` blocks and its comments left out, since a
+# literal a test asserts the suite does NOT walk is not a walk (defect 288)
+code_of() { awk '/^test "/ { t = 1; next } t && /^[^ \t#]/ { t = 0 } !t && !/^[[:space:]]*#/' "$1"; }
+# the literals of that code that name a tracked path, a trailing `/` read as none
+named() { code_of "$1" | grep -oE '"[^" ]+"' | tr -d '"' | sed 's:/$::' | sort -u | grep -Fx -f <(printf '%s\n' "$paths") | sed 's/.*/"&"/'; }
+
+# what each suite file walks: the paths its code names, and the bare group
+# names of a suite that builds `"tests/golden/" + group`
 for f in tests/harness/suite_*.hero; do
-  printf "%-14s " "$(basename $f .hero | sed 's/^suite_//')"
-  code=$(awk '/^test "/ { t = 1; next } t && /^[^ \t#]/ { t = 0 } !t && !/^[[:space:]]*#/' "$f")
-  { printf '%s\n' "$code" | grep -ohE '"(tests/golden/[a-z-]+|tests/emission|examples|selfhost|seed/heroes\.c|spec/[a-z-]+\.md|docs/[a-z/]+|issues)"'
-    if printf '%s\n' "$code" | grep -q '"tests/golden/" +'; then
+  printf "%-14s " "$(basename "$f" .hero | sed 's/^suite_//')"
+  { named "$f"
+    if code_of "$f" | grep -q '"tests/golden/" +'; then
       for d in $(ls tests/golden); do
-        printf '%s\n' "$code" | grep -qE "^[[:space:]]*\"$d\"[[:space:]]*$" && echo "\"tests/golden/$d\""
+        code_of "$f" | grep -qE "^[[:space:]]*\"$d\"[[:space:]]*$" && echo "\"tests/golden/$d\""
       done
     fi
   } | sort -u | tr '\n' ' '; echo
 done
+
+# and the paths the harness's other modules name, with the suites that reach
+# each through `use`, the module itself or a module that uses it; `main.hero`
+# is left out, its literals being the suites' own names
+reaching() {
+  printf '%s\n' "$1"
+  grep -l "^use $1\$" tests/harness/*.hero | grep -v '/suite_' | sed 's:.*/::; s:\.hero$::' |
+    while read -r up; do reaching "$up"; done
+}
+for f in tests/harness/*.hero; do
+  case "$f" in */suite_*|*/main.hero) continue ;; esac
+  m=$(basename "$f" .hero)
+  said=$(named "$f" | tr '\n' ' ')
+  [ -n "$said" ] || continue
+  printf "%-14s %s<- " "$m" "$said"
+  reaching "$m" | sort -u | while read -r r; do grep -l "^use $r\$" tests/harness/suite_*.hero; done |
+    sed 's:.*/suite_::; s:\.hero$::' | sort -u | tr '\n' ' '; echo
+done
 ```
+
+**A literal is read as a walk until its use is read**, the safe direction: a
+row then runs a suite too many, never one too few. What the command prints
+that is not a walk, read on 2026-10-08, is written beneath the table with the
+day it was read.
 
 **`golden` is not one of the twenty**, measured 2026-09-09, and finding out
 why corrected the map: `suite_golden.hero` runs as **four FORMS**, and their
@@ -60,9 +89,9 @@ which pins a diagnostic's notes and excerpts (defect 289).
 
 | touched | the suites that judge it |
 |---|---|
-| `selfhost/**` | `canonical` `layout` `order` `records`, **plus the compiler's own tests** |
+| `selfhost/**` | `canonical` `layout` `order` `probe` `records` `spec`, **plus the compiler's own tests** |
 | `selfhost/emit/**`, `selfhost/ir/**` (they move `tests/emission/**`, `tests/golden/emit/**` and `seed/heroes.c`) | **`emission`** **`emit`** `determinism` **`wholes`** `descriptors`, plus everything `selfhost/**` already gets |
-| `selfhost/print/**`, `selfhost/lexer.hero`, `selfhost/parse/**` | **`probe`** `surface`, plus everything `selfhost/**` already gets, and the run by hand below before a push |
+| `selfhost/print/**`, `selfhost/lexer.hero`, `selfhost/parse/**` | **`probe`** `surface`, `grammar` for `selfhost/parse/**` (it reads the contextual words there), plus everything `selfhost/**` already gets, and the run by hand below before a push |
 | `tests/golden/check/**` | **`check`** `annotations` `fixes` |
 | `tests/golden/fixedbugs/**` | `annotations` `canonical` **`emission`** |
 | `tests/golden/unsupported/**` | **`unsupported`** `annotations` |
@@ -71,14 +100,62 @@ which pins a diagnostic's notes and excerpts (defect 289).
 | `tests/golden/run/**` | `canonical` `determinism` **`emission`** `lines` `run` `warnings` |
 | `tests/golden/emit/**` | **`emit`** `canonical` `determinism` **`emission`** `warnings` |
 | `tests/golden/ir/**` | **`ir`** `canonical` `determinism` **`emission`** |
-| `tests/golden/surface-fixtures/**` | `annotations` `fixes` **`probe`** |
-| `examples/**` | `canonical` `corpus` `emission` `warnings` |
-| `spec/heroes-spec.md` | `spec` `special` **`grammar`** `unseen` |
-| `selfhost/keywords.hero`, `selfhost/operators.hero`, `selfhost/grammar_expr.hero`'s `binary_op` | **`grammar`**, plus everything `selfhost/**` already gets |
-| `docs/**`, `issues/**`, `CLAUDE.md`, `.claude/**` | `records` `unseen` |
+| `tests/golden/surface-fixtures/**` | `annotations` `fixes` **`probe`** `surface` |
+| `tests/**`, every `.hero` under it | `probe` (its `multi` family walks the tree) `spec` (every `spec §` citation names a section), plus the row of its directory |
+| `examples/**` | `canonical` `corpus` `emission` `probe` `special` `warnings` |
+| `spec/heroes-spec.md` | `spec` `special` **`grammar`** `fixes` `unseen` |
+| `selfhost/keywords.hero`, `selfhost/operators.hero`, `selfhost/grammar_expr.hero`'s `binary_op` | **`grammar`**, `spec` for `selfhost/keywords.hero`, plus everything `selfhost/**` already gets |
+| `selfhost/inventory.hero`, `selfhost/escape.hero` | **`spec`** (its built-ins' and escapes' tables), plus everything `selfhost/**` already gets |
+| `selfhost/diag.hero` | **`annotations`** (every thesis rule it lists has a witness), plus everything `selfhost/**` already gets |
+| `selfhost/emit/ffi_build.hero`, `ffi_lookup.hero`, `header_reach.hero`, `selfhost/cli/package_answer.hero`, `selfhost/diag_render.hero` | **the net's own tests** (`absence.hero`'s `spellings()`), plus everything `selfhost/**` already gets |
+| `runtime/**` | **`runtime`**, plus the form that holds the change's cases (`run` for a program that runs) and the platforms (`.claude/rules/platforms.md`) |
+| `docs/**`, `issues/**`, `.claude/**` | `records` `unseen` |
+| `CLAUDE.md`, `docs/ROADMAP.md`, `docs/measurements/010-spec-budget-ledger.md` | `records` `unseen` **`spec`** (the contract's ceiling, the headings a `§` citation names, the spec's ledger) |
+| `editors/**` | `spec` (the editor's grammar, held to the language's words) |
 | `.claude/hooks/**` | **the hooks' own tests**, `python3 -I -m unittest discover -s .claude/hooks -t .claude/hooks`, plus what `.claude/**` already gets |
-| `tests/harness/**` | **the net's own tests**, `heroes test tests/harness/main.hero` |
-| a file `site/src/lib/claims.ts` names at its top (`selfhost/cli/table.hero`, `selfhost/cli/doctor.hero`, `selfhost/parse/decl.hero`, `tests/harness/suite_spec.hero`, `.claude/agents/`, `.github/workflows/ci.yml`, and the rest it lists), or `site/**` | **the site's build**, `npm run build` in `site/`, before the push |
+| `tests/harness/**` | **the net's own tests**, `heroes test tests/harness/main.hero`, and `canonical`, plus what `tests/**` gets |
+| a file `site/src/lib/claims.ts` names at its top (`selfhost/cli/table.hero`, `selfhost/cli/doctor.hero`, `selfhost/parse/decl.hero`, `tests/harness/suite_spec.hero`, `.claude/agents/`, `.github/workflows/ci.yml`, and the rest it lists), or `site/**` | **the site's build**, `npm run build` in `site/`, before the push; and `spec` for `site/README.md`, whose headings a `§` citation names |
+
+**The paths a suite names have been read from the tree since 2026-10-08, and
+`tests/harness` was the first one found missing** (defect 486, lane
+b14-hooks's reading of 2026-10-07): `canonical`'s `SOURCE_DIRS` names
+`"tests/harness"`, the command's alternation named no `tests/harness`, and the
+`tests/harness/**` row ran one suite too few. The alternation was this
+section's own warning one level down, a hand-written list of the roots a
+suite may name. So the command asks git which paths exist and prints every
+literal of a suite's code that names one, and in a second listing the paths
+the harness's other modules name, with the suites that reach each through
+`use`. Run against its old self that day it moved eleven of its twenty-four
+suite rows and no other, and the table took what they showed:
+
+- `canonical` `tests/harness`, the defect; `annotations` `selfhost/diag.hero`,
+  the thesis rules each needing a witness; `grammar` `selfhost/parse`, where it
+  reads the contextual words; `special` the calculator's two files and the
+  gallery's first; `surface` a fixture of `surface-fixtures`; `runtime` the
+  directory `runtime` and two of its files, a directory no row named;
+- `spec` `CLAUDE.md`, the contract whose ceiling it judges, `docs/ROADMAP.md`
+  and `site/README.md`, whose headings a `§` citation names, the spec's ledger,
+  the editor's grammar, three `selfhost/` tables, and `tests`, whose `spec §`
+  citations its `anchors` walk reads as it reads `selfhost`'s; `probe` `tests`,
+  the root of its `multi` family, which walks `selfhost` and `examples` the
+  same way. The old command printed `spec` and `probe` over `selfhost`, and
+  `probe` over `examples`, and the table named them in neither row; it does
+  now, for the reason above;
+- the second listing: `fixes` reads the spec through `fix_names.hero`, and the
+  net's own tests read five `selfhost/` files through `absence.hero`'s
+  `spellings()`, which only a test calls.
+
+What it prints and is not a walk, read that day: `records` and `unseen` name
+tens of paths and each reads every file `shell.project_files` names, so their
+cells stand as they were (the paragraph below says why for `records`);
+`unseen`'s `seed`, `tests/emission` and `tests/golden` are its exemptions and
+its two `docs/panel/` paths findings it knows; `emission`'s `tests/golden` is
+the root its groups are built on; `spec`'s `spec` and `site` are a word it
+matches and a citation's prefix; `shell.hero`'s two are helpers only the net's
+own tests call, `cards.hero`'s the areas `records` holds a card to, and
+`absence.hero`'s `runtime` the header search the `unsupported` form asks. The
+command also stopped printing eleven retired `docs/` paths of `records`, which
+name nothing the tree holds.
 
 **`canonical` stood in four golden rows until 2026-10-07, and walks none of
 them** (defect 288, lane b9-harness's reading of 2026-10-04): its test *the
