@@ -32,8 +32,9 @@ use bytes
 
 # Why Windows holds no file of this name, or "": one of `*`, `<`, `>`, `"`,
 # `?` and `|`, which NTFS refuses in any file's name (Win32 error 123,
-# defects 235 and 252); a part ending in `.` or a space; or a part naming a
-# device, the part before its first `.` read in any case. `suffixed` is true
+# defects 235 and 252); a part ending in `.` or a space; a part naming a
+# device, the part before its first `.` read in any case; or a part ending in
+# `:`, a device or no file (defect 446). `suffixed` is true
 # where the tool adds to the last part. A header's `"` is told here since
 # defect 445, before panel 188's `undefined_header_name`, a thesis rule, which
 # `check --permissive` drops: no Windows file holds the name, so without the
@@ -140,6 +141,15 @@ function part_unwritable(part: str, last: bool, suffixed: bool) -> str
 
     if device(part)
         return "has a part Windows reads as one of its devices, not as a file"
+
+    # Defect 446, measured on the box on 2026-10-08 (Windows 10.0.26100,
+    # `CreateFileW`): a part ending in `:` is a device or no file, `ab:`,
+    # `nulx:`, `COM0:` and `nul.h:` failing with Win32 error 123; behind an
+    # extension the tool adds, `ab:.lib` is the stream `.lib` of a file `ab`,
+    # which `locked` tells. A part of one byte and a `:`, `C:`, is a drive and
+    # a lone `:` GNU ld's `-l:` form, so each is left to `rooted` and `locked`.
+    if end == ':' && part.len() >= 3 && !(last && suffixed)
+        return "has a part ending in `:`, which no file's name on Windows can end in"
     return ""
 
 function ending(b: u8) -> str
@@ -165,13 +175,22 @@ function ending(b: u8) -> str
 # `sub/NUL` stays the device), and refuses a directory so named (error 267).
 # Git Bash wrote every one bare as a file, and clang's `#include` of `NUL`
 # then read the device, its declaration unseen.
+#
+# **The `:`s ending the stem are dropped too** (defect 446). Measured on the
+# box on 2026-10-08: `NUL:`, `nul:`, `NUL::`, `nul :`, `nul.:`, `sub\NUL:`,
+# `COM1:`, `lpt2:`, `aux:`, `CONOUT$:` and `COM¹:` are each the device
+# (`RtlIsDosDeviceName_U` nonzero, `GetFullPathNameW` `\\.\NUL`), as Wine
+# reads them; `nul:x.h` is not, NTFS storing the stream `x.h` of a file
+# `nul`, which clang's `#include` read whole, so its `:` stays `locked`'s.
+# That build reads `nul:.h` as the stream `.h` of `nul` where Wine reads the
+# device, and the rule takes Wine's reading, as it does behind an extension.
 function device(part: str) -> bool
     stem: i64 @ 0
 
     while stem < part.len() && part[stem] != '.'
         stem @ stem + 1
 
-    while stem > 0 && part[stem - 1] == ' '
+    while stem > 0 && (part[stem - 1] == ' ' || part[stem - 1] == ':')
         stem @ stem - 1
 
     if stem == 3
@@ -311,6 +330,32 @@ test "a name holding `>` or `\"` is one no Windows file holds, in every string (
     assert unwritable(value: "a'b.h", suffixed: false) == ""
     assert library_unwritable(value: "a\"b", what: "link", rooted: false) == ""
     assert library_unwritable(value: "a\\b", what: "link", rooted: false) == "holds `\\`, which no file's name on Windows can hold"
+
+# Defect 446, measured on the box: a device name followed by `:`s is the
+# device, any other part ending in `:` is no file, and `nul:x.h` is a stream
+# of a file `nul`, which `locked` tells as every `:` it holds.
+test "a part ending in `:` is a device or no file on Windows, and a stream's `:` is left to `locked` (defect 446)"
+    device_said = "has a part Windows reads as one of its devices, not as a file"
+    assert unwritable(value: "NUL:", suffixed: false) == device_said
+    assert unwritable(value: "nul::", suffixed: false) == device_said
+    assert unwritable(value: "nul :", suffixed: false) == device_said
+    assert unwritable(value: "sub/COM1:", suffixed: false) == device_said
+    assert unwritable(value: "CONOUT$:", suffixed: false) == device_said
+    assert unwritable(value: "COM¹:", suffixed: false) == device_said
+    assert unwritable(value: "nul:", suffixed: true) == device_said
+    assert unwritable(value: "ab:", suffixed: false) == "has a part ending in `:`, which no file's name on Windows can end in"
+    assert unwritable(value: "COM0:", suffixed: false) != device_said
+    assert unwritable(value: "COM0:", suffixed: false) != ""
+    assert unwritable(value: "ab:/c.h", suffixed: false) != ""
+    assert unwritable(value: "ab:", suffixed: true) == ""
+    assert unwritable(value: "nul:x.h", suffixed: false) == ""
+    assert unwritable(value: "con:x.h", suffixed: false) == ""
+    assert unwritable(value: "ab:c.h", suffixed: false) == ""
+    assert locked("nul:x.h") != ""
+    assert unwritable(value: "C:/side/m", suffixed: true) == ""
+    assert unwritable(value: "C:/x.h", suffixed: false) == ""
+    assert unwritable(value: ":/opt/foo/libfoo.a", suffixed: true) == ""
+    assert unwritable(value: "a:", suffixed: false) == ""
 
 test "a name whose file depends on the machine: a `:`, a `~`, a climb out of a named directory (defect 234)"
     assert locked("ab.h") == ""

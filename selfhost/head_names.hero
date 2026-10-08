@@ -543,3 +543,14 @@ test "a control byte below U+0020 names no file on Windows, and DEL and C1 stay 
     assert esc.message == "this header's name holds the control character U+001B, which no file's name on Windows can hold and no message can show: write the name without it, as `extern \"math.h\"`"
     assert head_windows.control_byte("ab\u{7f}") == -1
     assert head_windows.control_byte("a\tb") == 9
+
+# Defect 446, measured on the box: a part ending in `:` is a device or no file
+# there, `unwritable_name` before the thesis rule; `nul:x.h` is the stream
+# `x.h` of a file `nul`, which clang opened, and stays `machine_locked_path`.
+test "a part ending in `:` names a device or no file, and `nul:x.h` a stream (defect 446)"
+    assert said(spelled: "\"NUL:\"", what: "header") == "unwritable_name"
+    assert said(spelled: "\"sub/ab:\"", what: "header") == "unwritable_name"
+    assert said(spelled: "\"nul:\"", what: "link") == "unwritable_name"
+    assert said(spelled: "\"con:\"", what: "package") == "unwritable_name"
+    assert said(spelled: "\"nul:x.h\"", what: "header") == "machine_locked_path"
+    assert said(spelled: "\"ab:\"", what: "link") == "machine_locked_path"

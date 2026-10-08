@@ -1,0 +1,40 @@
+# Defect 446's `nul:x.h`, measured on the Windows box on 2026-10-08 (Windows
+# 10.0.26100, `CreateFileW`, `GetFullPathNameW`, `RtlIsDosDeviceName_U`, and
+# clang 23.1.1's `#include`). `nul:x.h` is no device: NTFS stores the stream
+# `x.h` of an ordinary file `nul` and clang opened it at exit 0, as it opens
+# `ab:c.h`, so its `:` is panel 055's and defect 234's `machine_locked_path`,
+# a thesis rule the control arm drops, the name being one a Windows file can
+# hold (as a stream) and another machine reads as a file of that name. A part
+# that ENDS in `:` is another matter: `NUL:`, `nul :`, `NUL::`, `COM1:`,
+# `aux:` and `CONOUT$:` are the device (`\\.\NUL`), and `ab:`, `nulx:` and
+# `COM0:` fail with Win32 error 123, no file at all. So such a name is
+# `unwritable_name`, defect 253's reason, told before any thesis rule and
+# kept by the control arm. A lone `C:` is a drive and a lone `:` GNU ld's
+# `-l:` form, left to `rooted` as before.
+
+extern "NUL:"  #~ unwritable_name
+    function d1() -> i32
+
+extern "sub/ab:"  #~ unwritable_name
+    function d2() -> i32
+
+extern "COM1::"  #~ unwritable_name
+    function d3() -> i32
+
+extern "stdio.h" link "nul:"  #~ unwritable_name
+    function d4() -> i32
+
+extern "stdio.h" package "con:"  #~ unwritable_name
+    function d5() -> i32
+
+extern "nul:x.h"
+    function s1() -> i32
+
+extern "ab:c.h"
+    function s2() -> i32
+
+extern "stdio.h" link "ab:"
+    function s3() -> i32
+
+function main()
+    print(d1() + d2() + d3() + d4() + d5() + s1() + s2() + s3())
