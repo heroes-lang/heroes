@@ -204,10 +204,11 @@ def heads_in(top, head):
 def sequence(top):
     """The sequence standing in the worktree rooted at `top`, as (its name,
     the verbs whose `--continue` concludes it, the directory git keeps it
-    in), or None. Read as `git status` reads it: `rebase-apply` holding
-    `applying` is an am, any other `rebase-apply` and `rebase-merge` a
-    rebase; a rebase by the apply backend is concluded by an am's verbs too,
-    being an am underneath."""
+    in), or None. Measured on git 2.56.0: an am keeps `rebase-apply` holding
+    `applying`, a rebase by the apply backend `rebase-apply` holding
+    `rebasing`, one by the merge backend `rebase-merge`; and `git am
+    --continue` concludes a rebase by the apply backend too, the index and a
+    file staged beside its resolution with it (2026-10-08)."""
     merge = kept(top, "rebase-merge")
     if merge is not None and os.path.isdir(merge):
         return "rebase", ("rebase",), merge
