@@ -1,0 +1,8 @@
+$ heroes check p2.hero
+(exit 0)
+$ heroes build p2.hero -o p2
+wrote p2
+(exit 0)
+$ ./p2
+panic: stack exhausted in p2.fact
+(exit 134)

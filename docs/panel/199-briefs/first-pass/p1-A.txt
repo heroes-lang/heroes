@@ -1,0 +1,13 @@
+$ heroes check main.hero
+(exit 0)
+$ heroes build main.hero -o main
+main.hero:1:46: warning: all paths through this function will call itself [-Winfinite-recursion]
+    1 | HeroArrayHeader * h_main_bytes(HeroStr h0_s) {
+      |                                              ^
+1 warning generated.
+wrote main
+(exit 0)
+$ ./main
+panic: stack exhausted in main.bytes
+bash: line 1: 92053 Abort trap: 6           timeout 30 ./main
+(exit )

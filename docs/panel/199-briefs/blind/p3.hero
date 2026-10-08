@@ -1,0 +1,5 @@
+function count(xs: [i64]) -> i64
+    return xs.count()
+
+function main()
+    print(count([4, 5, 6]))

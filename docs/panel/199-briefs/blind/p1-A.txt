@@ -1,0 +1,12 @@
+$ heroes check p1.hero
+(exit 0)
+$ heroes build p1.hero -o p1
+p1.hero:1:44: warning: all paths through this function will call itself [-Winfinite-recursion]
+    1 | HeroArrayHeader * h_p1_bytes(HeroStr h0_s) {
+      |                                            ^
+1 warning generated.
+wrote p1
+(exit 0)
+$ ./p1
+panic: stack exhausted in p1.bytes
+(exit 134)
