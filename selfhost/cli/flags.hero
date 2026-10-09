@@ -9,9 +9,9 @@
 # corrected — a count in prose is the premise §11 says expires in
 # silence. The reasons ride each flag below; the array is the fact.
 
-# The fifteen — the bootstrap's thirteen in their order but `-g`, then panel
-# 103's, then panel 154's, then panel 161's; the debug word is the level's
-# since panel 197 (`debug_words` below):
+# The sixteen — the bootstrap's thirteen in their order but `-g`, then panel
+# 103's, then panel 154's, then panel 161's, then panel 199's; the debug word
+# is the level's since panel 197 (`debug_words` below):
 # - gnu11 not c11: one predefined macro apart (__STRICT_ANSI__), whose
 #   only effect on glibc is to hide M_PI, strdup, fileno and most of
 #   what §1.11 says a program binds (panel 047, ratified).
@@ -85,6 +85,25 @@
 #   was rebuilt under this flag on that leg to settle it. The Linux kernel took
 #   the mirror flag, `-funsigned-char`, in 6.2 for the reason Torvalds gave:
 #   making the language rules stricter to avoid differences is a good thing.
+# - **-fno-optimize-sibling-calls is panel 199's R2** (2026-10-09, defect 508,
+#   ratified with *unbounded recursion is an abort*): spec `:280` says
+#   recursion too deep aborts, and at `-O2`, where `heroes run` compiles,
+#   clang turned a call in tail position into a jump, so a function whose
+#   every path called itself, `ping` and `pong` calling each other, or a
+#   self-call through a function value ran until `timeout` stopped it (exit
+#   124) where `-O0` printed `panic: stack exhausted` (134). With the flag a
+#   call stays a call and every such program aborts at every level (Apple
+#   clang 21.0.0 and 22.1.8, the sitting's compiler-engineer; the landing's
+#   run goldens `fixedbugs-508-*`). It is every level's and not `-O2`'s: at
+#   `-O0` clang turns no call into a jump today, and the objects of the
+#   runtime and of two programs are byte-identical with the flag and without
+#   (Apple clang 21, 2026-10-09), so the word costs `-O0` nothing and the
+#   promise no longer rests on what clang does at `-O0`. The price, measured
+#   by the sitting: a correct tail recursion ten million deep, which printed
+#   its sum at `-O2` and aborted at `-O0`, aborts at both; a hundred thousand
+#   deep prints at both, as `fixedbugs-508-a-tail-recursion-...` asks. And
+#   it moves every unit's key and the runtime's once, since the key names
+#   this list (`toolchain.toolchain_at`).
 use cli/process
 
 function flags() -> [str]
@@ -104,6 +123,7 @@ function flags() -> [str]
         "-Werror=incompatible-pointer-types-discards-qualifiers"
         "-Werror=incompatible-pointer-types"
         "-fsigned-char"
+        "-fno-optimize-sibling-calls"
     ]
 
 # **THE DEBUG WORD IS THE LEVEL'S** (panel 197, defects 219 and 322,
@@ -246,9 +266,9 @@ function sanitizers(sanitize: bool) -> [str]
 
 ## Tests
 
-test "the array is the fact: fifteen flags, gnu11 named first and the char sign last"
+test "the array is the fact: sixteen flags, gnu11 named first and the sibling calls last"
     got = flags()
-    assert got.len() == 15
+    assert got.len() == 16
     assert got[0] == "-std=gnu11"
     assert got[9] == "-fno-delete-null-pointer-checks"
     assert got[12] == "-Werror=incompatible-pointer-types-discards-qualifiers"
@@ -259,6 +279,10 @@ test "the array is the fact: fifteen flags, gnu11 named first and the char sign 
     # this one is the difference between a plain `char` meaning the same
     # thing on four legs and meaning two things on four legs.
     assert got[14] == "-fsigned-char"
+
+    # Panel 199's, by name for the same reason: spec `:280`'s abort at `-O2`
+    # is this word (defect 508).
+    assert got[15] == "-fno-optimize-sibling-calls"
     assert sanitizers(sanitize: true).len() == 1
     assert sanitizers(sanitize: false).len() == 0
 
@@ -269,11 +293,54 @@ test "the array is the fact: fifteen flags, gnu11 named first and the char sign 
     assert debug_words("-O0") == ["-g"]
     assert debug_words("-O2") == ["-gline-tables-only"]
     o2 = level_words(level: "-O2", sanitize: true)
-    assert o2.len() == 18
-    assert o2[15] == "-O2"
-    assert o2[16] == "-gline-tables-only"
-    assert o2[17] == "-fsanitize=address,undefined"
+    assert o2.len() == 19
+    assert o2[16] == "-O2"
+    assert o2[17] == "-gline-tables-only"
+    assert o2[18] == "-fsanitize=address,undefined"
     assert level_words(level: "-O0", sanitize: false) == flags().push("-O0").push("-g")
+
+    # A call stays a call at every level (panel 199's R2), the words each
+    # level hands a unit, the runtime and the link.
+    for level in ["-O0", "-O2"]
+        kept: i64 @ 0
+
+        for word in level_words(level: level, sanitize: false)
+            if word == "-fno-optimize-sibling-calls"
+                kept @ kept + 1
+
+        assert kept == 1
+
+# **What the optimised build does with a call in tail position, asked of the
+# platform's own clang** (panel 199's R2, defect 508): a function that calls
+# itself last, compiled under the optimised build's words, still names
+# itself in its assembly as the callee of a call; under the same words less
+# panel 199's, the call becomes a jump to a label inside the function, and
+# the name stands fewer times. Counted rather than matched, so no one
+# platform's spelling of a call (`bl`, `call`, `callq`) is assumed; the
+# program-level witness is `tests/golden/run/fixedbugs-508-*`, which abort
+# at both levels where `-O2` ran until `timeout` stopped it.
+test "the optimised build keeps a call in tail position a call (panel 199's R2)"
+    assert !process.mkdir_all("build/selftest-sibling-calls").is_err()
+    unit = "build/selftest-sibling-calls/unit.c"
+    text = "void heroes_sibling_sink(int seen);\nint heroes_sibling_probe(int n);\nint heroes_sibling_probe(int n) {\n    if (n == 0) {\n        return 0;\n    }\n    heroes_sibling_sink(n);\n    return heroes_sibling_probe(n - 1);\n}\n"
+    assert !write_file(path: unit, text: text).is_err()
+    counts: [i64] @ []
+
+    for keep in [true, false]
+        said = "build/selftest-sibling-calls/unit-" + keep.to_str() + ".s"
+        words: [str] @ ["clang"]
+
+        for word in level_words(level: "-O2", sanitize: false)
+            if keep || word != "-fno-optimize-sibling-calls"
+                words @ words.push(word)
+
+        for word in ["-S", unit, "-o", said]
+            words @ words.push(word)
+
+        assert process.run(program: "clang", words: words, out: process.discard(), err: process.discard()).code == 0
+        counts @ counts.push(times(text: read_file(said).must(), needle: "heroes_sibling_probe"))
+
+    assert counts[0] > counts[1]
 
 # **What a debugger is handed, asked of the platform's own clang** (panel
 # 197's R2): a unit compiled under the unoptimised build's words describes its
@@ -361,6 +428,28 @@ test "every macro flags() defines is the runtime header's own on Windows, before
             defined @ defined + 1
 
     assert defined > 0
+
+# How many times `needle` stands in `text`, none overlapping, compared byte
+# by byte as `first_at` compares.
+function times(text: str, needle: str) -> i64
+    count: i64 @ 0
+    at: i64 @ 0
+
+    while at + needle.len() <= text.len()
+        same: bool @ true
+        k: i64 @ 0
+
+        while same && k < needle.len()
+            same @ text[at + k] == needle[k]
+            k @ k + 1
+
+        if same
+            count @ count + 1
+            at @ at + needle.len()
+        else
+            at @ at + 1
+
+    return count
 
 # Where `needle` first stands in `text`, compared byte by byte, so a text
 # holding a longer character is never sliced through one; or -1.
