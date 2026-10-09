@@ -204,7 +204,7 @@ function main()
                 print("harness: the " + form.name + "/ suite could not run" + why(got))
                 exit(2)
             print(
-                "  " + shown(name: form.name, pick: pick) + ": " + got.must().passed.to_str() + " passed, " + got.must().failed.to_str() + " failed"
+                "  " + shown(name: form.name, pick: pick) + ": " + report.counted(got.must())
             )
             total @ report.tally(one: total, two: got.must())
             ran @ ran + 1
@@ -219,7 +219,7 @@ function main()
             print("harness: the run/ suite could not run" + why(got))
             exit(2)
         print(
-            "  " + shown(name: "run", pick: pick) + ": " + got.must().passed.to_str() + " passed, " + got.must().failed.to_str() + " failed"
+            "  " + shown(name: "run", pick: pick) + ": " + report.counted(got.must())
         )
         total @ report.tally(one: total, two: got.must())
         ran @ ran + 1
@@ -234,7 +234,7 @@ function main()
             print("harness: the annotations sweep could not run" + why(got))
             exit(2)
         print(
-            "  " + shown(name: "annotations", pick: pick) + ": " + got.must().passed.to_str() + " passed, " + got.must().failed.to_str() + " failed"
+            "  " + shown(name: "annotations", pick: pick) + ": " + report.counted(got.must())
         )
         total @ report.tally(one: total, two: got.must())
         ran @ ran + 1
@@ -245,7 +245,7 @@ function main()
         if got.is_err()
             print("harness: the determinism suite could not run" + why(got))
             exit(2)
-        print("  determinism: " + got.must().passed.to_str() + " passed, " + got.must().failed.to_str() + " failed")
+        print("  determinism: " + report.counted(got.must()))
         total @ report.tally(one: total, two: got.must())
         ran @ ran + 1
 
@@ -258,7 +258,7 @@ function main()
         if got.is_err()
             print("harness: the emission suite could not run" + why(got))
             exit(2)
-        print("  emission: " + got.must().passed.to_str() + " passed, " + got.must().failed.to_str() + " failed")
+        print("  emission: " + report.counted(got.must()))
         total @ report.tally(one: total, two: got.must())
         ran @ ran + 1
 
@@ -271,7 +271,7 @@ function main()
         if got.is_err()
             print("harness: the descriptors suite could not run" + why(got))
             exit(2)
-        print("  descriptors: " + got.must().passed.to_str() + " passed, " + got.must().failed.to_str() + " failed")
+        print("  descriptors: " + report.counted(got.must()))
         total @ report.tally(one: total, two: got.must())
         ran @ ran + 1
 
@@ -283,7 +283,7 @@ function main()
         if got.is_err()
             print("harness: the wholes suite could not run" + why(got))
             exit(2)
-        print("  wholes: " + got.must().passed.to_str() + " passed, " + got.must().failed.to_str() + " failed")
+        print("  wholes: " + report.counted(got.must()))
         total @ report.tally(one: total, two: got.must())
         ran @ ran + 1
 
@@ -295,7 +295,7 @@ function main()
         if got.is_err()
             print("harness: the cache suite could not run" + why(got))
             exit(2)
-        print("  cache: " + got.must().passed.to_str() + " passed, " + got.must().failed.to_str() + " failed")
+        print("  cache: " + report.counted(got.must()))
         total @ report.tally(one: total, two: got.must())
         ran @ ran + 1
 
@@ -308,7 +308,7 @@ function main()
         if got.is_err()
             print("harness: the units suite could not run" + why(got))
             exit(2)
-        print("  units: " + got.must().passed.to_str() + " passed, " + got.must().failed.to_str() + " failed")
+        print("  units: " + report.counted(got.must()))
         total @ report.tally(one: total, two: got.must())
         ran @ ran + 1
 
@@ -319,7 +319,7 @@ function main()
             print("harness: the fixes suite could not run" + why(got))
             exit(2)
         print(
-            "  " + shown(name: "fixes", pick: pick) + ": " + got.must().passed.to_str() + " passed, " + got.must().failed.to_str() + " failed"
+            "  " + shown(name: "fixes", pick: pick) + ": " + report.counted(got.must())
         )
         total @ report.tally(one: total, two: got.must())
         ran @ ran + 1
@@ -330,7 +330,7 @@ function main()
         if got.is_err()
             print("harness: the lines sweep could not run" + why(got))
             exit(2)
-        print("  lines: " + got.must().passed.to_str() + " passed, " + got.must().failed.to_str() + " failed")
+        print("  lines: " + report.counted(got.must()))
         total @ report.tally(one: total, two: got.must())
         ran @ ran + 1
 
@@ -340,7 +340,7 @@ function main()
         if got.is_err()
             print("harness: the corpus suite could not run" + why(got))
             exit(2)
-        print("  corpus: " + got.must().passed.to_str() + " passed, " + got.must().failed.to_str() + " failed")
+        print("  corpus: " + report.counted(got.must()))
         total @ report.tally(one: total, two: got.must())
         ran @ ran + 1
 
@@ -350,7 +350,7 @@ function main()
         if got.is_err()
             print("harness: the warnings gate could not run" + why(got))
             exit(2)
-        print("  warnings: " + got.must().passed.to_str() + " passed, " + got.must().failed.to_str() + " failed")
+        print("  warnings: " + report.counted(got.must()))
         total @ report.tally(one: total, two: got.must())
         ran @ ran + 1
 
@@ -362,7 +362,7 @@ function main()
         if got.is_err()
             print("harness: the record checks could not run" + why(got))
             exit(2)
-        print("  records: " + got.must().passed.to_str() + " passed, " + got.must().failed.to_str() + " failed")
+        print("  records: " + report.counted(got.must()))
         total @ report.tally(one: total, two: got.must())
         ran @ ran + 1
 
@@ -372,7 +372,7 @@ function main()
         if got.is_err()
             print("harness: the surface suite could not run" + why(got))
             exit(2)
-        print("  surface: " + got.must().passed.to_str() + " passed, " + got.must().failed.to_str() + " failed")
+        print("  surface: " + report.counted(got.must()))
         total @ report.tally(one: total, two: got.must())
         ran @ ran + 1
 
@@ -382,7 +382,7 @@ function main()
         if got.is_err()
             print("harness: the special cases could not run" + why(got))
             exit(2)
-        print("  special: " + got.must().passed.to_str() + " passed, " + got.must().failed.to_str() + " failed")
+        print("  special: " + report.counted(got.must()))
         total @ report.tally(one: total, two: got.must())
         ran @ ran + 1
 
@@ -394,7 +394,7 @@ function main()
         if got.is_err()
             print("harness: the spec checks could not run" + why(got))
             exit(2)
-        print("  spec: " + got.must().passed.to_str() + " passed, " + got.must().failed.to_str() + " failed")
+        print("  spec: " + report.counted(got.must()))
         total @ report.tally(one: total, two: got.must())
         ran @ ran + 1
 
@@ -404,7 +404,7 @@ function main()
         if got.is_err()
             print("harness: the grammar checks could not run" + why(got))
             exit(2)
-        print("  grammar: " + got.must().passed.to_str() + " passed, " + got.must().failed.to_str() + " failed")
+        print("  grammar: " + report.counted(got.must()))
         total @ report.tally(one: total, two: got.must())
         ran @ ran + 1
 
@@ -415,7 +415,7 @@ function main()
             print("harness: the layout check could not run" + why(got))
             exit(2)
         print(
-            "  " + shown(name: "layout", pick: pick) + ": " + got.must().passed.to_str() + " passed, " + got.must().failed.to_str() + " failed"
+            "  " + shown(name: "layout", pick: pick) + ": " + report.counted(got.must())
         )
         total @ report.tally(one: total, two: got.must())
         ran @ ran + 1
@@ -430,7 +430,7 @@ function main()
         if got.is_err()
             print("harness: the canonical check could not run" + why(got))
             exit(2)
-        print("  canonical: " + got.must().passed.to_str() + " passed, " + got.must().failed.to_str() + " failed")
+        print("  canonical: " + report.counted(got.must()))
         total @ report.tally(one: total, two: got.must())
         ran @ ran + 1
 
@@ -442,7 +442,7 @@ function main()
         if got.is_err()
             print("harness: the probe rows could not run" + why(got))
             exit(2)
-        print("  probe: " + got.must().passed.to_str() + " passed, " + got.must().failed.to_str() + " failed")
+        print("  probe: " + report.counted(got.must()))
         total @ report.tally(one: total, two: got.must())
         ran @ ran + 1
 
@@ -454,7 +454,7 @@ function main()
         if got.is_err()
             print("harness: the order check could not run" + why(got))
             exit(2)
-        print("  order: " + got.must().passed.to_str() + " passed, " + got.must().failed.to_str() + " failed")
+        print("  order: " + report.counted(got.must()))
         total @ report.tally(one: total, two: got.must())
         ran @ ran + 1
 
@@ -468,7 +468,7 @@ function main()
         if got.is_err()
             print("harness: the runtime invariants could not run" + why(got))
             exit(2)
-        print("  runtime: " + got.must().passed.to_str() + " passed, " + got.must().failed.to_str() + " failed")
+        print("  runtime: " + report.counted(got.must()))
         total @ report.tally(one: total, two: got.must())
         ran @ ran + 1
 
@@ -482,7 +482,7 @@ function main()
         if got.is_err()
             print("harness: the unseen check could not run" + why(got))
             exit(2)
-        print("  unseen: " + got.must().passed.to_str() + " passed, " + got.must().failed.to_str() + " failed")
+        print("  unseen: " + report.counted(got.must()))
         total @ report.tally(one: total, two: got.must())
         ran @ ran + 1
 

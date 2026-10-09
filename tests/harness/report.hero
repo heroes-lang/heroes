@@ -19,16 +19,25 @@
 # "there by name" (`.claude/rules/platforms.md`), so each skip is kept with its
 # reason and printed beside the failures, and the reader of a green run sees
 # which cases it did not judge.
+#
+# **A floor the tree has outgrown is a fourth, and it is TOLD** (defect 536,
+# 2026-10-09). `floors.check` reads a count from both sides; below its floor is
+# a failure, and past it by more than `floors.SLACK` was one too until that
+# day, gate B's most frequent red over batches 8 to 15 and never a defect of
+# the compiler. Since then the count passes, the floor is kept here with the
+# number to write, printed beside the skips, and counted on the suite's line
+# and the verdict's (`counted`), so it is seen on every run and moves no exit.
 
 record Report
     passed: i64
     failed: i64
     failures: [str]
     skips: [str]
+    outgrown: [str]
 
 function empty() -> Report
     none: [str] = []
-    return Report(passed: 0, failed: 0, failures: none, skips: none)
+    return Report(passed: 0, failed: 0, failures: none, skips: none, outgrown: none)
 
 function keep_pass(@r: Report)
     r.passed @ r.passed + 1
@@ -42,6 +51,27 @@ function keep_failure(@r: Report, label: str, detail: str)
 # that can judge nothing is a failure rather than a list of names.
 function keep_skip(@r: Report, label: str, detail: str)
     r.skips @ r.skips.push("SKIP " + label + "\n" + detail)
+
+# A floor the tree has outgrown, and the number to write: printed and counted,
+# never a failure. The count it judged is sound, so its caller keeps a pass
+# beside it (`floors.check`).
+function keep_outgrown(@r: Report, label: str, detail: str)
+    r.outgrown @ r.outgrown.push("FLOOR " + label + "\n" + detail)
+
+# The counts as a suite's line and the verdict say them: the passes, the
+# failures, and the floors outgrown where there are any, so a floor told is
+# counted on the line a reader reads, and the two numbers before it keep the
+# shape every reader of these lines parses.
+function counted(r: Report) -> str
+    said = r.passed.to_str() + " passed, " + r.failed.to_str() + " failed"
+
+    if r.outgrown.len() == 0
+        return said
+
+    if r.outgrown.len() == 1
+        return said + ", 1 floor outgrown"
+
+    return said + ", " + r.outgrown.len().to_str() + " floors outgrown"
 
 # Two texts, framed so the eye finds the edges. The frame is
 # golden.rs:145's, because a reader who has seen one of these should
@@ -62,18 +92,32 @@ function tally(one: Report, two: Report) -> Report
     for skip in two.skips
         skipped @ skipped.push(skip)
 
-    return Report(passed: one.passed + two.passed, failed: one.failed + two.failed, failures: merged, skips: skipped)
+    told: [str] @ one.outgrown
 
-# Prints every skip and every failure, then the count. The bool is the exit
-# verdict, and a skip does not move it.
+    for floor in two.outgrown
+        told @ told.push(floor)
+
+    return Report(
+        passed: one.passed + two.passed,
+        failed: one.failed + two.failed,
+        failures: merged,
+        skips: skipped,
+        outgrown: told
+    )
+
+# Prints every skip, every floor outgrown and every failure, then the count.
+# The bool is the exit verdict, and neither a skip nor a floor outgrown moves it.
 function verdict(r: Report, what: str) -> bool
     for skip in r.skips
         print(skip)
 
+    for floor in r.outgrown
+        print(floor)
+
     for failure in r.failures
         print(failure)
 
-    print(what + ": " + r.passed.to_str() + " passed, " + r.failed.to_str() + " failed")
+    print(what + ": " + counted(r))
     return r.failed == 0
 
 test "a report counts, keeps its failures and prints its verdict"
@@ -118,3 +162,29 @@ test "a skip is named and kept, and it is neither a pass nor a failure"
     both = tally(one: r, two: other)
     assert both.skips.len() == 2
     assert both.skips[1] == "SKIP unsupported/y\n  no `pkg-config` here"
+
+test "a floor outgrown is told and counted, and it moves no verdict"
+    r: Report @ empty()
+    keep_pass(@r)
+    keep_outgrown(@r, label: "canonical", detail: "  files: 1200 against a floor of 900")
+    assert r.passed == 1
+    assert r.failed == 0
+    assert r.outgrown == ["FLOOR canonical\n  files: 1200 against a floor of 900"]
+    assert counted(r) == "1 passed, 0 failed, 1 floor outgrown"
+    assert verdict(r, "self-test")
+
+    # The shape every reader of a count line parses is kept when none is told,
+    # and a second floor is counted in the plural.
+    plain: Report @ empty()
+    keep_pass(@plain)
+    assert counted(plain) == "1 passed, 0 failed"
+    other: Report @ empty()
+    keep_outgrown(@other, label: "layout", detail: "  modules: 700 against a floor of 527")
+    keep_failure(@other, label: "layout", detail: "  over its ceiling")
+    both = tally(one: r, two: other)
+    assert both.outgrown.len() == 2
+    assert both.outgrown[1] == "FLOOR layout\n  modules: 700 against a floor of 527"
+    assert counted(both) == "1 passed, 1 failed, 2 floors outgrown"
+
+    # A failure beside a floor told is still a red verdict.
+    assert !verdict(both, "self-test")
