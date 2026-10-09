@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""What a commit would carry, read from the index of the tree it runs in.
+"""What a commit would carry, read from the tree it runs in.
 
 Why this exists. The commit guard asks, of every staged `.hero` file, what the
 write-time hook would have asked of it: a file that reached the tree some other
@@ -11,6 +11,16 @@ accepted it, while the trunk's own staged files could refuse a lane's commit
 that held none of them (defect 287). The index is now the one of the directory
 the commit runs in, `git -C` or the command's own `cd` (`guard_bash.placed`),
 its paths read from that tree's root, and judged by that tree's compiler.
+
+**And what the commit carries is judged, not the index's list** (defect 515,
+2026-10-09). `git commit -- <paths>`, the commit the hard stops prescribe,
+takes each named file as the working tree holds it, staged or not, so a module
+over its ceiling and never staged passed unjudged (lane b15-emit, about 04:15
+that day); and a commit taking the whole index, a merge's conclusion, takes
+the staged version, so a broken file staged and then repaired in the working
+tree alone was judged by the repair and committed broken (measured 2026-10-09).
+So the files a pathspec names that differ from HEAD are judged as the working
+tree holds them, and every other staged file as the index holds it.
 """
 
 import os
@@ -52,9 +62,44 @@ def staged_hero_files(top):
     return lines(git(top, "diff", "--cached", "--name-only", "--diff-filter=AM", "--", ":/*.hero"))
 
 
-def offences(where):
-    """The staged `.hero` files of the tree `where` stands in that are not
-    canonical or are over their ceiling, one line each.
+def named_hero_files(where, paths):
+    """The `.hero` files a commit's pathspec `paths`, read in `where`, takes
+    from the working tree: each file git knows that it matches and that the
+    working tree adds or changes against HEAD, staged or not, by its path
+    from the root (defect 515). With no HEAD yet, every such file git knows."""
+    if not paths:
+        return []
+    out = git(where, "diff", "-z", "--name-only", "--no-renames", "--no-relative", "--diff-filter=AM", "HEAD", "--", *paths)
+    if out is None:
+        out = git(where, "ls-files", "-z", "--full-name", "--", *paths)
+    if out is None:
+        return []
+    return [rel for rel in out.split("\0") if rel.endswith(".hero")]
+
+
+def unlike_their_index(top):
+    """The paths whose working tree differs from what the index holds."""
+    out = git(top, "diff", "-z", "--name-only", "--no-renames", "--no-relative")
+    return set() if out is None else {rel for rel in out.split("\0") if rel}
+
+
+def index_text(top, rel):
+    """What the index holds as `rel`, or None (an unmerged path, or git
+    cannot say)."""
+    try:
+        done = subprocess.run(["git", "show", ":" + rel], capture_output=True, timeout=30, cwd=top)
+    except (OSError, subprocess.SubprocessError):
+        return None
+    return done.stdout if done.returncode == 0 else None
+
+
+def offences(where, paths=()):
+    """The `.hero` files a commit run in `where` carries that are not
+    canonical or are over their ceiling, one line each: the staged ones, and
+    with a pathspec `paths` the ones it names. A file a pathspec names is
+    judged as the working tree holds it, as git takes it; any other staged
+    file as the index holds it, its text handed to `fmt` on its standard
+    input where the working tree holds another (defect 515).
 
     A refusal by a compiler older than its tree is told as that age rather than
     as the file's fault (defect 384's shape, here at the commit): the commit is
@@ -70,7 +115,9 @@ def offences(where):
     group only for a word naming it, defect 485), is left to the batch's gate, as the write-time hook leaves it. A marked case elsewhere, a
     `run/` or `emit/` program, keeps `fmt`'s verdict: such a program parses.
     And a run that cannot answer gives no opinion: this guard never refuses
-    over its own inability to judge.
+    over its own inability to judge, so a marked case whose index holds another
+    version than its working tree, which the suite would not read, is left to
+    the batch's gate.
     """
     top = toplevel(where)
     if top is None:
@@ -79,31 +126,43 @@ def offences(where):
     can_fmt = trees.runnable(compiler)
     found = []
     marked = []
-    for rel in staged_hero_files(top):
+    named = named_hero_files(where, list(paths))
+    others = [rel for rel in staged_hero_files(top) if rel not in named]
+    moved = unlike_their_index(top) if others else set()
+    for rel in named + others:
         path = os.path.join(top, rel)
-        if not os.path.isfile(path):
+        held = index_text(top, rel) if rel in moved and rel not in named else None
+        if held is None and not os.path.isfile(path):
             continue
+        how = "" if held is None else " as the index holds it"
         if can_fmt:
             try:
-                run = subprocess.run([compiler, "fmt", rel], capture_output=True, timeout=120, cwd=top)
-                with open(path, "rb") as handle:
-                    on_disk = handle.read()
+                if held is None:
+                    run = subprocess.run([compiler, "fmt", rel], capture_output=True, timeout=120, cwd=top)
+                    with open(path, "rb") as handle:
+                        text = handle.read()
+                else:
+                    run = subprocess.run([compiler, "fmt", "/dev/stdin"], input=held, capture_output=True, timeout=120, cwd=top)
+                    text = held
             except (OSError, subprocess.SubprocessError):
-                run = None
+                run, text = None, b""
             said = None
-            if run is not None and run.returncode != 0 and rel.startswith("tests/golden/") and marks.has_marks(path):
-                if marks.judged_narrowed(top, rel):
+            if run is not None and run.returncode != 0 and rel.startswith("tests/golden/") and marks.MARK.search(text.decode("utf-8", errors="replace")):
+                if held is None and marks.judged_narrowed(top, rel):
                     marked.append(rel)
                     continue
-                if marks.in_run_roots(top, rel):
+                if held is not None or marks.in_run_roots(top, rel):
                     continue
             if run is not None and run.returncode != 0:
-                said = rel + " does not parse"
-            elif run is not None and run.stdout != on_disk:
-                said = rel + " is not canonical (`heroes fmt " + rel + " --in-place`)"
+                said = rel + " does not parse" + how
+            elif run is not None and run.stdout != text:
+                said = rel + " is not canonical" + how + " (`heroes fmt " + rel + " --in-place`)"
             if said is not None:
                 found.append(aged(said, rel, compiler, top, path))
-        over = ceiling.verdict(top, rel)
+        if held is None:
+            over = ceiling.verdict(top, rel)
+        else:
+            over = ceiling.verdict(top, rel, text=held.decode("utf-8", errors="replace"), counted="the version the index holds")
         if over is not None:
             found.append(over.split("\n")[0])
     if marked:

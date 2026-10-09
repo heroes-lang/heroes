@@ -15,7 +15,8 @@ A TREE here is what `trees.py` recognises: `seed/heroes.c`, a `.git` entry,
 `selfhost/main.hero`, `runtime/runtime.c`, and a stand-in compiler, `heroes`, a
 shell script that answers `fmt`, `check` and the harness's `run` as the test
 arranges and writes every call it receives into `calls.log` beside it, so a
-test asks WHICH compiler judged and with what. Its words: a file holding
+test asks WHICH compiler judged and with what; `fmt /dev/stdin` reads its text
+as the real one does, kept beside it as `stdin.<pid>`. Its words: a file holding
 `BROKEN` does not parse, one holding `UNCANONICAL` is not canonical, one
 holding `SPLIT` is not canonical and its canonical form holds that line twice,
 a `selfhost/` holding `UNCHECKED` does not check; `run ... -- <c> <suite> <pick>`
@@ -45,10 +46,12 @@ here=$(cd "$(dirname "$0")" && pwd)
 echo "$PWD|$*" >> "$here/calls.log"
 case "$1" in
 fmt)
-    if grep -q BROKEN "$2"; then echo "error[broken]: $2 holds BROKEN" >&2; exit 1; fi
-    if grep -q UNCANONICAL "$2"; then sed 's/UNCANONICAL/canonical/' "$2"; exit 0; fi
-    if grep -q SPLIT "$2"; then awk '/SPLIT/ { print "split"; print "split"; next } { print }' "$2"; exit 0; fi
-    cat "$2"; exit 0 ;;
+    src=$2
+    if [ "$src" = /dev/stdin ]; then src="$here/stdin.$$"; cat > "$src"; fi
+    if grep -q BROKEN "$src"; then echo "error[broken]: $2 holds BROKEN" >&2; exit 1; fi
+    if grep -q UNCANONICAL "$src"; then sed 's/UNCANONICAL/canonical/' "$src"; exit 0; fi
+    if grep -q SPLIT "$src"; then awk '/SPLIT/ { print "split"; print "split"; next } { print }' "$src"; exit 0; fi
+    cat "$src"; exit 0 ;;
 check)
     if [ "$2" = selfhost/main.hero ]; then
         if grep -rq UNCHECKED selfhost; then echo "error[unchecked]: selfhost holds UNCHECKED" >&2; exit 1; fi
@@ -420,6 +423,107 @@ class CommitTree(unittest.TestCase):
         staged(self.lane, "examples/x.hero", "fine\n")
         said = guard_bash.verdict("cd " + self.lane + " && git commit -F m -- examples/x.hero", self.trunk)
         self.assertIsNone(said)
+
+
+class Carried(unittest.TestCase):
+    """Defect 515: what a commit carries is judged, not the index's list. A
+    pathspec commit takes each named file as the working tree holds it,
+    staged or not; a commit of the whole index takes each file as the index
+    holds it; each witnessed against what git then commits."""
+
+    def setUp(self):
+        self.top = fresh("hooks-515-")
+        self.tree = make_tree(os.path.join(self.top, "tree"), repo=True)
+        staged(self.tree, "examples/x.hero", "fine\n")
+        staged(self.tree, "selfhost/big.hero", "x\n" * 10)
+        git(self.tree, "commit", "-q", "-m", "x", "--", "examples/x.hero", "selfhost/big.hero")
+
+    def said(self, command, cwd=None):
+        return guard_bash.verdict(command, cwd or self.tree)
+
+    def test_a_file_never_staged_is_judged_when_its_path_is_committed(self):
+        write(os.path.join(self.tree, "examples", "x.hero"), "BROKEN\n")
+        for command in ("git commit -F m -- examples/x.hero", "git commit -F m -- examples", "git commit -F m -- 'examples/*.hero'",
+                        "git commit -F m -- examples/*.hero", "git commit -F m -- examples/x.hero $more", "cd examples && git commit -F m -- x.hero",
+                        "git commit -i -F m -- examples/x.hero", "git commit --amend -F m -- examples/x.hero"):
+            said = self.said(command)
+            self.assertIsNotNone(said, command)
+            self.assertIn("examples/x.hero does not parse", said)
+            self.assertNotIn("as the index holds it", said)
+        self.assertIsNone(self.said("git commit -F m -- selfhost"))
+
+    def test_a_module_over_its_ceiling_and_never_staged_is_told_so(self):
+        write(os.path.join(self.tree, "selfhost", "big.hero"), "x\n" * 301)
+        said = self.said("git commit -F m -- selfhost/big.hero")
+        self.assertIsNotNone(said)
+        self.assertIn("selfhost/big.hero: 301 lines of code", said)
+        self.assertIsNotNone(self.said("cd selfhost && git commit -F m -- big.hero"))
+
+    def test_a_path_committed_is_judged_as_the_working_tree_holds_it(self):
+        staged(self.tree, "examples/x.hero", "BROKEN\n")
+        write(os.path.join(self.tree, "examples", "x.hero"), "fine again\n")
+        self.assertIsNone(self.said("git commit -F m -- examples/x.hero"))
+        git(self.tree, "commit", "-q", "-m", "x", "--", "examples/x.hero")
+        self.assertEqual(git(self.tree, "show", "HEAD:examples/x.hero").stdout, "fine again\n")
+
+    def test_a_staged_file_beside_the_paths_is_judged_as_the_index_holds_it(self):
+        staged(self.tree, "examples/y.hero", "UNCANONICAL\n")
+        write(os.path.join(self.tree, "examples", "y.hero"), "fine\n")
+        said = self.said("git commit -i -F m -- selfhost/big.hero")
+        self.assertIsNotNone(said)
+        self.assertIn("examples/y.hero is not canonical as the index holds it", said)
+        staged(self.tree, "selfhost/big.hero", "x\n" * 301)
+        write(os.path.join(self.tree, "selfhost", "big.hero"), "x\n")
+        said = self.said("git commit -i -F m -- examples/x.hero")
+        self.assertIn("selfhost/big.hero: 301 lines of code in the version the index holds", said)
+
+    def test_a_merge_concluded_takes_the_index_and_is_judged_by_it(self):
+        write(os.path.join(self.tree, "a.txt"), "a\n")
+        git(self.tree, "add", "--", "a.txt")
+        git(self.tree, "commit", "-q", "-m", "a", "--", "a.txt")
+        git(self.tree, "checkout", "-q", "-b", "other")
+        write(os.path.join(self.tree, "a.txt"), "a other\n")
+        staged(self.tree, "examples/y.hero", "fine\n")
+        git(self.tree, "commit", "-q", "-m", "o", "--", "a.txt", "examples/y.hero")
+        git(self.tree, "checkout", "-q", "main")
+        write(os.path.join(self.tree, "a.txt"), "a main\n")
+        git(self.tree, "commit", "-q", "-m", "m", "--", "a.txt")
+        self.assertNotEqual(git(self.tree, "merge", "other", check=False).returncode, 0)
+        staged(self.tree, "a.txt", "a resolved\n")
+        write(os.path.join(self.tree, "examples", "y.hero"), "BROKEN\n")
+        self.assertIsNone(self.said("git merge --continue"))
+        staged(self.tree, "examples/y.hero", "BROKEN\n")
+        write(os.path.join(self.tree, "examples", "y.hero"), "fine\n")
+        for command in ("git merge --continue", "git commit --no-edit"):
+            self.assertIn("examples/y.hero does not parse as the index holds it", self.said(command), command)
+        git(self.tree, "commit", "-q", "--no-edit")
+        self.assertEqual(git(self.tree, "show", "HEAD:examples/y.hero").stdout, "BROKEN\n")
+
+    def test_a_marked_case_staged_unlike_its_working_tree_is_left_to_the_gate(self):
+        write(os.path.join(self.tree, "tests", "harness", "suite_annotations.hero"), ANNOTATIONS)
+        staged(self.tree, "tests/golden/check/w.expected", "x\n")
+        staged(self.tree, "tests/golden/check/w.hero", "BROKEN  #~ unknown_escape\n")
+        write(os.path.join(self.tree, "tests", "golden", "check", "w.hero"), "BROKEN  #~ unknown_escape, edited\n")
+        self.assertIsNone(self.said("git commit -F m -- examples/x.hero"))
+        self.assertEqual(runs(self.tree), [])
+
+    def test_a_path_deleted_from_the_working_tree_is_not_judged(self):
+        os.remove(os.path.join(self.tree, "examples", "x.hero"))
+        self.assertIsNone(self.said("git commit -F m -- examples/x.hero"))
+
+    def test_a_first_commit_reads_what_git_knows_under_the_paths(self):
+        fresh_tree = os.path.join(self.top, "first")
+        for part, text in (("seed/heroes.c", "/* seed */\n"), ("selfhost/main.hero", "function main()\n    return\n"), ("runtime/runtime.c", "/* runtime */\n")):
+            write(os.path.join(fresh_tree, part), text, T0)
+        heroes = write(os.path.join(fresh_tree, "heroes"), FAKE)
+        os.chmod(heroes, 0o755)
+        date(heroes, T0 + 100)
+        git(fresh_tree, "init", "-q", "-b", "main", ".")
+        staged(fresh_tree, "examples/z.hero", "fine\n")
+        write(os.path.join(fresh_tree, "examples", "z.hero"), "BROKEN\n")
+        said = guard_bash.verdict("git commit -F m -- examples/z.hero", fresh_tree)
+        self.assertIsNotNone(said)
+        self.assertIn("examples/z.hero does not parse", said)
 
 
 def conflicted(tree, op, extra=None):

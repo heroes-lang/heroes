@@ -563,11 +563,11 @@ def verdict(command, cwd=None):
                     return said
                 rest = more
         if rest is not None:
-            offences = staged.offences(where)
+            offences = staged.offences(where, commits.paths_of(git_args(w, "commit")))
             if offences:
                 return (
-                    "refused: a staged `.hero` file would reach the suites with what a "
-                    "hook can see now:\n    " + "\n    ".join(offences) + "\n" + LAST_JUDGE
+                    "refused: a `.hero` file this commit carries would reach the suites with "
+                    "what a hook can see now:\n    " + "\n    ".join(offences) + "\n" + LAST_JUDGE
                 )
 
         rest = git_args(w, "stash")
