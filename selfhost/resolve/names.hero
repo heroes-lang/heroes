@@ -44,6 +44,11 @@ function bare_name(@r: state.Resolver, a: ast.Ast, s: source.Source, decls: [ast
     if !top.is_err()
         decl = top.must()
 
+        # A record or a variant written as a type argument (defect 545).
+        if type_argument.declares_a_type(decls[decl]) && type_argument.in_list(s, span)
+            state.push_diagnostic(@r, type_argument.told(text, span))
+            return
+
         # A variant names a type, never a value: its cases are the values,
         # written `.case` (§4.5's ⇐ mode).
         match decls[decl].kind
