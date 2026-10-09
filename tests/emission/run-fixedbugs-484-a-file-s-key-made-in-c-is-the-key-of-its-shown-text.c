@@ -540,7 +540,7 @@ bb2:
 #line 56 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     t17 = h6_k;
 #line 56 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
-    t18 = hero_str_byte(t16, t17);
+    t18 = ((void)((t16.ptr == NULL || t17 < 0 || t17 >= t16.len) ? ((void)hero_str_byte(t16, t17), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t16.ptr[t17]);
 #line 56 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     t19 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t18};
 #line 56 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"

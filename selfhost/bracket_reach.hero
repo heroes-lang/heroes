@@ -30,6 +30,7 @@ use next_line
 use closers
 use loop_headers
 use brace_layout
+use openers
 
 # Whether the line under `l.pos`, whose margin is `spaces`, ends the reach
 # of every opener still open: where it does, each is named there and the
@@ -38,7 +39,7 @@ use brace_layout
 function ends_at(@l: state.LexState, text: str, spaces: i64) -> bool
     margin = l.level * 4
     word = next_line.ends_a_reach(text, at: l.pos, spaces: spaces, margin: margin)
-    header = !word && below_a_header(l, text)
+    header = !word && below_a_header(@l, text)
 
     if !word && !header && !a_name_after_a_kept_end(l, text, spaces: spaces, margin: margin)
         return false
@@ -68,7 +69,7 @@ function a_name_after_a_kept_end(l: state.LexState, text: str, spaces: i64, marg
         return false
     last = last_not_a_comment(l)
     kept = last >= 0 && l.tokens[last].kind == .terminator
-    inner = text[l.open_brackets[l.open_brackets.len() - 1].start]
+    inner = text[openers.top(l.open_brackets).start]
     return kept && inner == '(' && next_line.opens_with_a_name(text, at: l.pos)
 
 # Inside the `(` of C's `for` header, which holds a `;` the lexer left to
@@ -76,15 +77,15 @@ function a_name_after_a_kept_end(l: state.LexState, text: str, spaces: i64, marg
 # it did not open is no clause of the header: the body below it, or the next
 # statement, which the `)` left out took in (defect 302). A line that holds
 # one is the header split over lines, as C allows, its `)` below.
-function below_a_header(l: state.LexState, text: str) -> bool
-    return a_header_open(l, text) && !a_clause(text, at: l.pos)
+function below_a_header(@l: state.LexState, text: str) -> bool
+    return a_header_open(@l, text) && !a_clause(text, at: l.pos)
 
 # The same `(` at a `{` at `at` that ends its line, the body's brace C's
 # header opens, `for (i = 0; i < 3; i++ {`: its reach ends there, named, so
 # the brace is read as a body's (`brace_layout.hero`) and the `(` withdrawn
 # where the parser tells the header (`parse/unclosed.withdrawn`).
 function ended_by_a_brace(@l: state.LexState, text: str, at: i64) -> bool
-    if !a_header_open(l, text) || !brace_layout.ends_its_line(text, from: at + 1)
+    if !a_header_open(@l, text) || !brace_layout.ends_its_line(text, from: at + 1)
         return false
     end_the_reach(@l, text, name: false, header: true)
     state.push_offset(@l.closes, at: at)
@@ -93,12 +94,12 @@ function ended_by_a_brace(@l: state.LexState, text: str, at: i64) -> bool
 # Whether a bracket open is the `(` of C's `for` header (`loop_headers.for_header`)
 # holding a `;` the lexer left to the parser, in it or in a bracket it holds,
 # a call or a list left open there (defect 366).
-function a_header_open(l: state.LexState, text: str) -> bool
-    k = loop_headers.for_header(l, text)
+function a_header_open(@l: state.LexState, text: str) -> bool
+    k = loop_headers.for_header(@l, text)
 
     if k < 0
         return false
-    open = l.open_brackets[k].start
+    open = openers.opener(l.open_brackets, k).start
     i: i64 @ l.tokens.len() - 1
 
     while i >= 0 && l.tokens[i].span.start > open
@@ -148,11 +149,10 @@ function end_the_reach(@l: state.LexState, text: str, name: bool, header: bool)
     line = state.line_of(@l, text, at: l.pos)
     word = next_line.word_at(text, at: l.pos)
 
-    for span in l.open_brackets
+    for span in openers.live(l.open_brackets)
         state.push_diagnostic(
             @l.diagnostics,
             closers.still_open(text: text, span: span, line: line, word: word, name: name, header: header)
         )
 
-    none: [token.Span] = []
-    l.open_brackets @ none
+    openers.clear(@l.open_brackets)

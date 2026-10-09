@@ -424,7 +424,7 @@ HERO_TU_LOCAL bool h_0opt_fbbb698_eq(const h_0opt_fbbb698 *a, const h_0opt_fbbb6
 HERO_TU_LOCAL uint64_t h_0opt_fbbb698_hash(const void *elem);
 
 static void h_datarow_Row_desc_copy(void *dst, const void *src) {
-    *(h_datarow_Row *)dst = *(const h_datarow_Row *)src;
+    __builtin_memmove(dst, src, sizeof(h_datarow_Row));
     h_datarow_Row_retain((const h_datarow_Row *)dst);
 }
 static void h_datarow_Row_desc_drop(void *elem) {
@@ -442,7 +442,7 @@ HERO_TU_QUIET static const HeroDesc h_datarow_Row_desc = {
 };
 
 static void h_queryplan_Column_desc_copy(void *dst, const void *src) {
-    *(h_queryplan_Column *)dst = *(const h_queryplan_Column *)src;
+    __builtin_memmove(dst, src, sizeof(h_queryplan_Column));
 }
 static void h_queryplan_Column_desc_drop(void *elem) {
     (void)elem;
@@ -459,7 +459,7 @@ HERO_TU_QUIET static const HeroDesc h_queryplan_Column_desc = {
 };
 
 static void h_queryplan_Joined_desc_copy(void *dst, const void *src) {
-    *(h_queryplan_Joined *)dst = *(const h_queryplan_Joined *)src;
+    __builtin_memmove(dst, src, sizeof(h_queryplan_Joined));
     h_queryplan_Joined_retain((const h_queryplan_Joined *)dst);
 }
 static void h_queryplan_Joined_desc_drop(void *elem) {
@@ -477,7 +477,7 @@ HERO_TU_QUIET static const HeroDesc h_queryplan_Joined_desc = {
 };
 
 static void h_datarow_Team_desc_copy(void *dst, const void *src) {
-    *(h_datarow_Team *)dst = *(const h_datarow_Team *)src;
+    __builtin_memmove(dst, src, sizeof(h_datarow_Team));
     h_datarow_Team_retain((const h_datarow_Team *)dst);
 }
 static void h_datarow_Team_desc_drop(void *elem) {
@@ -495,7 +495,7 @@ HERO_TU_QUIET static const HeroDesc h_datarow_Team_desc = {
 };
 
 static void h_queryplan_Where_desc_copy(void *dst, const void *src) {
-    *(h_queryplan_Where *)dst = *(const h_queryplan_Where *)src;
+    __builtin_memmove(dst, src, sizeof(h_queryplan_Where));
     h_queryplan_Where_retain((const h_queryplan_Where *)dst);
 }
 static void h_queryplan_Where_desc_drop(void *elem) {
@@ -513,7 +513,7 @@ HERO_TU_QUIET static const HeroDesc h_queryplan_Where_desc = {
 };
 
 static void h_queryplan_Group_desc_copy(void *dst, const void *src) {
-    *(h_queryplan_Group *)dst = *(const h_queryplan_Group *)src;
+    __builtin_memmove(dst, src, sizeof(h_queryplan_Group));
     h_queryplan_Group_retain((const h_queryplan_Group *)dst);
 }
 static void h_queryplan_Group_desc_drop(void *elem) {
@@ -531,7 +531,7 @@ HERO_TU_QUIET static const HeroDesc h_queryplan_Group_desc = {
 };
 
 static void h_queryplan_Summary_desc_copy(void *dst, const void *src) {
-    *(h_queryplan_Summary *)dst = *(const h_queryplan_Summary *)src;
+    __builtin_memmove(dst, src, sizeof(h_queryplan_Summary));
 }
 static void h_queryplan_Summary_desc_drop(void *elem) {
     (void)elem;

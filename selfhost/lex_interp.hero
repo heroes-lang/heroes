@@ -35,6 +35,7 @@ use literals
 use escape
 use raw_chars
 use raw_refusal
+use openers
 
 # `f"` at the cursor: the head piece.
 function head(@l: state.LexState, text: str)
@@ -54,7 +55,7 @@ function piece(@l: state.LexState, text: str)
 function closes_a_hole(l: state.LexState) -> bool
     if l.holes.len() == 0
         return false
-    return l.open_brackets.len() == l.holes[l.holes.len() - 1]
+    return openers.depth(l.open_brackets) == l.holes[l.holes.len() - 1]
 
 # A line ended with a hole still open: the literal never closed, and the next
 # line must not inherit the hole.
@@ -90,7 +91,7 @@ function scan_piece(@l: state.LexState, text: str, start: i64)
             else
                 l.pos @ l.pos + 1
                 state.emit(@l, .str_piece, start)
-                l.holes @ l.holes.push(l.open_brackets.len())
+                l.holes @ l.holes.push(openers.depth(l.open_brackets))
                 return
         else if b == '}'
             if l.pos + 1 < text.len() && text[l.pos + 1] == '}'

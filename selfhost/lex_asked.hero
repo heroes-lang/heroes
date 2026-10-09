@@ -1,0 +1,130 @@
+# What the lexer asks of its own state again and again, remembered so that a
+# long line does not pay for it once a token (design.md §4.15; defects 482
+# and 495). Each question here walked the stack of openers or the line's
+# tokens afresh at every closer, `;` or line, a cost that grew with the
+# line's square: 4,000 `(` and as many `]` on one line, 4.6 billion
+# instructions to lex; 1,333 `x; ` on one, 8.3 billion.
+#
+# **One array of numbers, in `LexState.asked`**, a state every lexing call
+# copies in and out holding one pointer for them all (`state.hero`). An answer
+# remembered is a fact about the state it was read from, so each entry says
+# which: the count of openers pushed so far (`PUSHES`, added to at the one
+# place a push is made, `state.emit`), the offset of the question, and the
+# token index read up to. **The premises that make a remembered answer
+# stand are falsifiable, and `closers.hero`'s and `loop_headers.hero`'s
+# tests ask them**: the stack changes only by a push (counted), a pop, a cut
+# to a prefix or a clear, the four verbs `openers.hero` gives it, so a stack
+# with no push since an answer is a prefix of the one it was read from; the text never changes; and the stream
+# of tokens changes only by a push or by the three rewrites of an operator's
+# line (`alone_lines.rejoined`, `sign_above.leave_out` and `signed_below`),
+# each of which calls `forget`.
+#
+# | entry | called by |
+# |---|---|
+# | `fresh` | `state.new_state` |
+# | `forget` | the three rewrites |
+# | the indexes | `closers.close_to_its_kind`, `loop_headers`, `state.emit` |
+
+# The openers pushed on the bracket stack so far.
+constant PUSHES: i64
+    0
+
+# Per opener kind, `(` `[` `{` as 0 to 2: the `PUSHES` count at which no
+# opener of the kind stood in the stack from the floor to its top, or -1, and
+# that floor (`closers.close_to_its_kind`).
+constant NONE_AT: i64
+    1
+
+constant NONE_FLOOR: i64
+    4
+
+# Per word, `for` and `while` as 0 and 1: the `PUSHES` count at which no `(`
+# after the word stood in the stack from the floor to its top, or -1, and
+# that floor (`loop_headers.opened_by`).
+constant OPENED_AT: i64
+    7
+
+constant OPENED_FLOOR: i64
+    9
+
+# The line whose first token and `in` are remembered (`loop_headers.begun_by`):
+# its first byte, the tokens read up to, the first token that is no comment
+# and no line end, and whether an `in` stands among them, 1 or 0.
+constant LINE: i64
+    11
+
+constant LINE_SEEN: i64
+    12
+
+constant LINE_FIRST: i64
+    13
+
+constant LINE_IN: i64
+    14
+
+# Where a line begins, found from the last question's: the offset of that
+# question, and the first byte of its line (`loop_headers.line_from`).
+constant LINE_AT: i64
+    15
+
+constant LINE_FROM: i64
+    16
+
+# The tokens past a `for` header's `(` (`loop_headers.in_past`): its offset,
+# the tokens read up to, whether an `in` stands among them, 1 or 0.
+constant FOR_OPEN: i64
+    17
+
+constant FOR_SEEN: i64
+    18
+
+constant FOR_IN: i64
+    19
+
+# The `;` a header holds from its `(` to the end of the line of the last
+# question (`loop_headers.semicolons`): the `(`'s offset, that question's
+# offset, and the count.
+constant SEMI_FROM: i64
+    20
+
+constant SEMI_AT: i64
+    21
+
+constant SEMI_COUNT: i64
+    22
+
+constant SIZE: i64
+    23
+
+# Nothing remembered.
+function fresh() -> [i64]
+    out: [i64] @ []
+
+    for _ in range(from: 0, to: SIZE)
+        out @ out.push(-1)
+
+    out[PUSHES] @ 0
+    out[LINE_IN] @ 0
+    out[FOR_IN] @ 0
+    return out
+
+# The stream of tokens was rewritten: what was read of it is read again.
+function forget(@asked: [i64])
+    asked[LINE_SEEN] @ -1
+    asked[FOR_SEEN] @ -1
+
+## Tests
+
+test "a fresh memory holds nothing, and a rewrite of the tokens empties what was read of them"
+    asked = fresh()
+    assert asked.len() == SIZE
+    assert asked[PUSHES] == 0
+    assert asked[NONE_AT] == -1 && asked[NONE_AT + 2] == -1 && asked[NONE_FLOOR + 1] == -1
+    assert asked[LINE_SEEN] == -1 && asked[LINE_IN] == 0 && asked[SEMI_AT] == -1
+    read: [i64] @ asked
+    read[LINE_SEEN] @ 9
+    read[FOR_SEEN] @ 4
+    read[LINE_FROM] @ 3
+    forget(@read)
+    assert read[LINE_SEEN] == -1 && read[FOR_SEEN] == -1
+    assert read[LINE_FROM] == 3

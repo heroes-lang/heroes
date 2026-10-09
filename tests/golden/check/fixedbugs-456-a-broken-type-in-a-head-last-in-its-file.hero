@@ -2,9 +2,18 @@
 # opened by `(` on one line and closed on the next, standing last in its
 # file with no body under it. `check` stopped there at exit 134 too, the
 # step past the stray closers reading past the last token; told now.
+#
+# Moved 2026-10-09 with defect 496's repair (lane b15-parse): the line
+# below a type broken after its `(` is the head's own, no body a closer one
+# too many spilled into it (`spill_reading`), so the head is read to its
+# end and the type told once; `expected_end_of_line` and
+# `expected_binding_symbol` are gone. The body it owes is not told missing:
+# a head that failed over more than one line holds that report back
+# (`parse/opening.body_follows`'s `silent`), as on one line it is told, a
+# defect apart. This note stands above, so the head stays last in its file.
 
 function main()
     print(1)
 
-function f(a: (  #~v expected_function_type expected_end_of_line expected_binding_symbol
+function f(a: (  #~v expected_function_type
         bool), b: bool)

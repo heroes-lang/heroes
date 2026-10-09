@@ -118,7 +118,7 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 static void h_0opt_e201354_desc_copy(void *dst, const void *src) {
-    *(h_0opt_e201354 *)dst = *(const h_0opt_e201354 *)src;
+    __builtin_memmove(dst, src, sizeof(h_0opt_e201354));
     h_0opt_e201354_retain((const h_0opt_e201354 *)dst);
 }
 static void h_0opt_e201354_desc_drop(void *elem) {
@@ -136,7 +136,7 @@ HERO_TU_QUIET static const HeroDesc h_0opt_e201354_desc = {
 };
 
 static void h_0opt_f87774a_desc_copy(void *dst, const void *src) {
-    *(h_0opt_f87774a *)dst = *(const h_0opt_f87774a *)src;
+    __builtin_memmove(dst, src, sizeof(h_0opt_f87774a));
     h_0opt_f87774a_retain((const h_0opt_f87774a *)dst);
 }
 static void h_0opt_f87774a_desc_drop(void *elem) {

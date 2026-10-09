@@ -735,7 +735,7 @@ HERO_TU_LOCAL bool h_0opt_5a58f2ca_eq(const h_0opt_5a58f2ca *a, const h_0opt_5a5
 HERO_TU_LOCAL uint64_t h_0opt_5a58f2ca_hash(const void *elem);
 
 static void h_syntree_Tree_desc_copy(void *dst, const void *src) {
-    *(h_syntree_Tree *)dst = *(const h_syntree_Tree *)src;
+    __builtin_memmove(dst, src, sizeof(h_syntree_Tree));
     h_syntree_Tree_retain((const h_syntree_Tree *)dst);
 }
 static void h_syntree_Tree_desc_drop(void *elem) {
@@ -753,7 +753,7 @@ HERO_TU_QUIET static const HeroDesc h_syntree_Tree_desc = {
 };
 
 static void h_runvalue_Frame_desc_copy(void *dst, const void *src) {
-    *(h_runvalue_Frame *)dst = *(const h_runvalue_Frame *)src;
+    __builtin_memmove(dst, src, sizeof(h_runvalue_Frame));
     h_runvalue_Frame_retain((const h_runvalue_Frame *)dst);
 }
 static void h_runvalue_Frame_desc_drop(void *elem) {
@@ -771,7 +771,7 @@ HERO_TU_QUIET static const HeroDesc h_runvalue_Frame_desc = {
 };
 
 static void h_lextoken_Token_desc_copy(void *dst, const void *src) {
-    *(h_lextoken_Token *)dst = *(const h_lextoken_Token *)src;
+    __builtin_memmove(dst, src, sizeof(h_lextoken_Token));
     h_lextoken_Token_retain((const h_lextoken_Token *)dst);
 }
 static void h_lextoken_Token_desc_drop(void *elem) {
@@ -789,7 +789,7 @@ HERO_TU_QUIET static const HeroDesc h_lextoken_Token_desc = {
 };
 
 static void h_syntree_Expr_desc_copy(void *dst, const void *src) {
-    *(h_syntree_Expr *)dst = *(const h_syntree_Expr *)src;
+    __builtin_memmove(dst, src, sizeof(h_syntree_Expr));
     h_syntree_Expr_retain((const h_syntree_Expr *)dst);
 }
 static void h_syntree_Expr_desc_drop(void *elem) {
@@ -807,7 +807,7 @@ HERO_TU_QUIET static const HeroDesc h_syntree_Expr_desc = {
 };
 
 static void h_syntree_Op_desc_copy(void *dst, const void *src) {
-    *(h_syntree_Op *)dst = *(const h_syntree_Op *)src;
+    __builtin_memmove(dst, src, sizeof(h_syntree_Op));
 }
 static void h_syntree_Op_desc_drop(void *elem) {
     (void)elem;
@@ -824,7 +824,7 @@ HERO_TU_QUIET static const HeroDesc h_syntree_Op_desc = {
 };
 
 static void h_syntree_Stmt_desc_copy(void *dst, const void *src) {
-    *(h_syntree_Stmt *)dst = *(const h_syntree_Stmt *)src;
+    __builtin_memmove(dst, src, sizeof(h_syntree_Stmt));
     h_syntree_Stmt_retain((const h_syntree_Stmt *)dst);
 }
 static void h_syntree_Stmt_desc_drop(void *elem) {
@@ -842,7 +842,7 @@ HERO_TU_QUIET static const HeroDesc h_syntree_Stmt_desc = {
 };
 
 static void h_runvalue_Value_desc_copy(void *dst, const void *src) {
-    *(h_runvalue_Value *)dst = *(const h_runvalue_Value *)src;
+    __builtin_memmove(dst, src, sizeof(h_runvalue_Value));
     h_runvalue_Value_retain((const h_runvalue_Value *)dst);
 }
 static void h_runvalue_Value_desc_drop(void *elem) {
@@ -860,7 +860,7 @@ HERO_TU_QUIET static const HeroDesc h_runvalue_Value_desc = {
 };
 
 static void h_lexscan_Read_desc_copy(void *dst, const void *src) {
-    *(h_lexscan_Read *)dst = *(const h_lexscan_Read *)src;
+    __builtin_memmove(dst, src, sizeof(h_lexscan_Read));
     h_lexscan_Read_retain((const h_lexscan_Read *)dst);
 }
 static void h_lexscan_Read_desc_drop(void *elem) {
@@ -878,7 +878,7 @@ HERO_TU_QUIET static const HeroDesc h_lexscan_Read_desc = {
 };
 
 static void h_runexpr_Answer_desc_copy(void *dst, const void *src) {
-    *(h_runexpr_Answer *)dst = *(const h_runexpr_Answer *)src;
+    __builtin_memmove(dst, src, sizeof(h_runexpr_Answer));
     h_runexpr_Answer_retain((const h_runexpr_Answer *)dst);
 }
 static void h_runexpr_Answer_desc_drop(void *elem) {

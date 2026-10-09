@@ -27,7 +27,7 @@ use parse/line_end
 use parse/unclosed
 use pairing
 use parse/bracket_head
-use parse/brace_habit
+use stray_closers
 
 # Whether the line end the parser just crossed may separate a literal's element
 # from what follows (§4.9). Asked only where a line end separates with no `,`,
@@ -335,5 +335,5 @@ function another_kind(c: cursor.Cursor, text: str, what: str, closer: token.Toke
     # Inside a call, the call's `(` closes above with it, and every closer
     # past this one on the line is a stray (defect 310).
     if with.names != ""
-        return said + "if this line is its last " + what + ", " + swap + "; if it closes on a line above, with " + with.names + " it stands in, write `" + with.closers + "` there and delete this `" + cursor.slice_of(text, brace_habit.stray_run(c, text, at: c.pos)) + "`"
+        return said + "if this line is its last " + what + ", " + swap + "; if it closes on a line above, with " + with.names + " it stands in, write `" + with.closers + "` there and delete this `" + cursor.slice_of(text, stray_closers.stray_run(c, text, at: c.pos)) + "`"
     return said + "if this line is its last " + what + ", " + swap + "; if it closes on a line above, write its " + own + " there and delete this `" + cursor.slice_of(text, found) + "`"

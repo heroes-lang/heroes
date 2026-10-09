@@ -1,0 +1,13 @@
+error[expected_group_close]: expected `)` to close the group, found `]`
+  at tests/golden/full/fixedbugs-482-a-run-of-closers-told-once-says-how-many.hero:10:13
+     |
+  10 |     x = (((1]]]  #~ expected_group_close
+     |             ^
+  note: the same stands at the 2 closers after it on its line, `]]`
+
+error[expected_args_close]: expected `)`, or `,` and another argument, found `]`
+  at tests/golden/full/fixedbugs-482-a-run-of-closers-told-once-says-how-many.hero:12:14
+     |
+  12 |     y = f(f(1]]  #~ expected_args_close
+     |              ^
+  note: the same stands at the closer after it on its line, `]`

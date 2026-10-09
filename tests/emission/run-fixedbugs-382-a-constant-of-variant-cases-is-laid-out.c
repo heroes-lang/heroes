@@ -208,7 +208,7 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 static void h_fixedbugs382aconstantofvariantcasesislaidout_Tree_desc_copy(void *dst, const void *src) {
-    *(h_fixedbugs382aconstantofvariantcasesislaidout_Tree *)dst = *(const h_fixedbugs382aconstantofvariantcasesislaidout_Tree *)src;
+    __builtin_memmove(dst, src, sizeof(h_fixedbugs382aconstantofvariantcasesislaidout_Tree));
     h_fixedbugs382aconstantofvariantcasesislaidout_Tree_retain((const h_fixedbugs382aconstantofvariantcasesislaidout_Tree *)dst);
 }
 static void h_fixedbugs382aconstantofvariantcasesislaidout_Tree_desc_drop(void *elem) {
@@ -226,7 +226,7 @@ HERO_TU_QUIET static const HeroDesc h_fixedbugs382aconstantofvariantcasesislaido
 };
 
 static void h_fixedbugs382aconstantofvariantcasesislaidout_Shape_desc_copy(void *dst, const void *src) {
-    *(h_fixedbugs382aconstantofvariantcasesislaidout_Shape *)dst = *(const h_fixedbugs382aconstantofvariantcasesislaidout_Shape *)src;
+    __builtin_memmove(dst, src, sizeof(h_fixedbugs382aconstantofvariantcasesislaidout_Shape));
     h_fixedbugs382aconstantofvariantcasesislaidout_Shape_retain((const h_fixedbugs382aconstantofvariantcasesislaidout_Shape *)dst);
 }
 static void h_fixedbugs382aconstantofvariantcasesislaidout_Shape_desc_drop(void *elem) {

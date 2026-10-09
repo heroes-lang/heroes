@@ -56,6 +56,7 @@
 
 use token
 use state
+use lex_asked
 use diag
 use bytes
 use join_fix
@@ -216,6 +217,7 @@ function leave_out(@l: state.LexState, text: str, first: i64, at: i64) -> bool
         from @ taken_back(@l, text, at: first)
     after: [token.Token] = l.tokens.slice(from: at + 1, to: l.tokens.len())
     l.tokens @ l.tokens.slice(from: 0, to: from)
+    lex_asked.forget(@l.asked)
 
     for t in after
         state.push_token(@l.tokens, t)
@@ -244,6 +246,7 @@ function signed_below(@l: state.LexState, text: str, at: i64)
         return
     operator: [token.Token] = l.tokens.slice(from: at, to: l.tokens.len())
     l.tokens @ l.tokens.slice(from: 0, to: taken_back(@l, text, at: at))
+    lex_asked.forget(@l.asked)
     margin = token.Span(start: arm, end: l.pos)
 
     while l.level < spaces / 4

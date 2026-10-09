@@ -3,7 +3,15 @@
 # for one; told now, the second type twice at one place, the recovery's as
 # it stands.
 
-function f(a: (  #~v expected_function_type expected_end_of_line
-        bool), b: (  #~v expected_function_type expected_function_type expected_binding_symbol
+function f(a: (  #~v expected_function_type
+        bool), b: (  #~v expected_function_type
         bool))
-    print(1)  #~ expected_declaration
+    print(1)
+
+# Moved 2026-10-09 with defect 496's repair (lane b15-parse): the line
+# below a type broken after its `(` is the head's own, no body a closer one
+# too many spilled into it (`spill_reading`), so the head is read to its
+# end and each broken type is told once, its body read as the body; the
+# reports past the types, `expected_end_of_line`, the second type's
+# `expected_function_type` told again at 8:9, `expected_binding_symbol` and
+# the body's `expected_declaration`, are gone.

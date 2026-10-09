@@ -31,6 +31,7 @@ use state
 use stable
 use lost_reading
 use text_outline
+use openers
 
 # The stretches of the lines a literal never closed on, each from its line's
 # first quote to its end, in the order of the text, and where each begins.
@@ -101,7 +102,7 @@ function lost_in(@l: state.LexState, text: str, at: i64) -> bool
 # taken each one's closer, and the lexer keeps the offset where it closed
 # them (`LexState.closes`), which the parser's pairing reads.
 function ended(@l: state.LexState, text: str)
-    n = l.open_brackets.len()
+    n = openers.depth(l.open_brackets)
 
     if n == 0 || l.pos == 0
         return
@@ -111,7 +112,7 @@ function ended(@l: state.LexState, text: str)
     if quote < 0
         return
 
-    for span in l.open_brackets
+    for span in openers.live(l.open_brackets)
         past: i64 @ quote
 
         if span.end > past
@@ -120,8 +121,7 @@ function ended(@l: state.LexState, text: str)
         if span.start < line || !closer_past(text, from: past, to: l.pos, opener: text[span.start])
             return
 
-    none: [token.Span] = []
-    l.open_brackets @ none
+    openers.clear(@l.open_brackets)
     state.push_offset(@l.closes, at: l.pos)
 
 function line_start(text: str, at: i64) -> i64
@@ -180,28 +180,28 @@ test "a backslash past a quote on a line that ends inside a literal is the lost 
 test "the openers a line opened are closed at its end where a string took their closers"
     text = "assert report(\") == \"lines: 0\"\n"
     l: state.LexState @ state.new_state()
-    l.open_brackets @ [token.Span(start: 13, end: 14)]
+    l.open_brackets @ openers.of([token.Span(start: 13, end: 14)])
     l.pos @ text.len() - 1
     ended(@l, text)
-    assert l.open_brackets.len() == 0
+    assert openers.depth(l.open_brackets) == 0
     assert l.closes == [text.len() - 1]
 
     # An opener of a line above, or one whose kind's closer the line does not
     # hold, is left open, and so is every one beside it.
     above = "f(\nassert report(\") == \"lines: 0\"\n"
     kept: state.LexState @ state.new_state()
-    kept.open_brackets @ [token.Span(start: 1, end: 2), token.Span(start: 16, end: 17)]
+    kept.open_brackets @ openers.of([token.Span(start: 1, end: 2), token.Span(start: 16, end: 17)])
     kept.pos @ above.len() - 1
     ended(@kept, above)
-    assert kept.open_brackets.len() == 2
+    assert openers.depth(kept.open_brackets) == 2
     assert kept.closes.len() == 0
 
     alone = "x = [f(\"a \"b\n"
     open: state.LexState @ state.new_state()
-    open.open_brackets @ [token.Span(start: 4, end: 5), token.Span(start: 6, end: 7)]
+    open.open_brackets @ openers.of([token.Span(start: 4, end: 5), token.Span(start: 6, end: 7)])
     open.pos @ alone.len() - 1
     ended(@open, alone)
-    assert open.open_brackets.len() == 2
+    assert openers.depth(open.open_brackets) == 2
 
 # Defect 481: the lost stretches are read from the reports a literal ran to
 # its line's end with, in the order of the text whatever the reports' order,

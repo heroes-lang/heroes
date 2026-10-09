@@ -151,7 +151,7 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 static void h_fixedbugsdescriptorforwhattheemitternames_P_desc_copy(void *dst, const void *src) {
-    *(h_fixedbugsdescriptorforwhattheemitternames_P *)dst = *(const h_fixedbugsdescriptorforwhattheemitternames_P *)src;
+    __builtin_memmove(dst, src, sizeof(h_fixedbugsdescriptorforwhattheemitternames_P));
 }
 static void h_fixedbugsdescriptorforwhattheemitternames_P_desc_drop(void *elem) {
     (void)elem;
@@ -168,7 +168,7 @@ HERO_TU_QUIET static const HeroDesc h_fixedbugsdescriptorforwhattheemitternames_
 };
 
 static void h_fixedbugsdescriptorforwhattheemitternames_Shape_desc_copy(void *dst, const void *src) {
-    *(h_fixedbugsdescriptorforwhattheemitternames_Shape *)dst = *(const h_fixedbugsdescriptorforwhattheemitternames_Shape *)src;
+    __builtin_memmove(dst, src, sizeof(h_fixedbugsdescriptorforwhattheemitternames_Shape));
 }
 static void h_fixedbugsdescriptorforwhattheemitternames_Shape_desc_drop(void *elem) {
     (void)elem;
@@ -185,7 +185,7 @@ HERO_TU_QUIET static const HeroDesc h_fixedbugsdescriptorforwhattheemitternames_
 };
 
 static void h_0opt_e201354_desc_copy(void *dst, const void *src) {
-    *(h_0opt_e201354 *)dst = *(const h_0opt_e201354 *)src;
+    __builtin_memmove(dst, src, sizeof(h_0opt_e201354));
     h_0opt_e201354_retain((const h_0opt_e201354 *)dst);
 }
 static void h_0opt_e201354_desc_drop(void *elem) {
