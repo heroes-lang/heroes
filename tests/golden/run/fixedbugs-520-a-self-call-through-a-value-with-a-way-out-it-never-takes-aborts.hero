@@ -1,0 +1,16 @@
+# Defect 520, 2026-10-09, panel 201's R3, ratified: the witness that replaced
+# `fixedbugs-508-a-self-call-through-a-function-value-aborts-at-every-level`
+# once `check` refuses a self-call through a value bound once to the function
+# (that case is in `check/` since). `go` returns when `n` is 0, a way out by
+# syntax, so the rule lets it through; called with 1 it never takes it, and
+# it calls itself through `f` until the stack is exhausted, an abort at every
+# level (panel 199's R2). Under the sanitiser the runtime's guard yields to
+# ASan, which says `stack-overflow`.
+function go(n: i64) -> i64
+    if n == 0
+        return 0
+    f = go
+    return f(n)
+
+function main()
+    print(go(1))
