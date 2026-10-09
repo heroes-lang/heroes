@@ -40,6 +40,7 @@ use emit/mangle
 use emit/ctype
 use emit/aggregate
 use emit/writer
+use emit/typeorder
 use parse
 use resolve
 use checker
@@ -74,7 +75,21 @@ function lines(c: state.Checked, names: ctype.Names, s: source.Source, decls: [a
 
     if given.len() != arguments.len()
         return fail(code: "none", msg: "a construction names a field for every argument, and this one does not")
-    out: [str] @ [target + " = (" + name + "){0};", "__builtin_memset(&" + target + ", 0, sizeof " + target + ");"]
+
+    # Past `typeorder`'s depth the whole write is `{}` (defect 549): clang
+    # reaches the first scalar of `{0}` by brace elision, a recursion as deep
+    # as the records the group's record holds by value, which died at 1,000
+    # (Apple clang 21, arm64 macOS) where `{}` builds, `-std=gnu11` taking the
+    # empty braces as C23 does. Below it panel 194's C11 `{0}` stands.
+    whole: str @ "{0}"
+    known: {i64: i64} @ {}
+
+    if depth_of(c, decls, decl: decl, cap: typeorder.IN_ORDER_FROM + 1, @known) > typeorder.IN_ORDER_FROM
+        whole @ "{}"
+    out: [str] @ [
+        target + " = (" + name + ")" + whole + ";"
+        "__builtin_memset(&" + target + ", 0, sizeof " + target + ");"
+    ]
     k: i64 @ 0
 
     for at in given
@@ -94,6 +109,51 @@ function lines(c: state.Checked, names: ctype.Names, s: source.Source, decls: [a
         k @ k + 1
 
     return ok(out)
+
+# How many records deep `decl` holds records by value, itself counted and
+# through fixed arrays, asked no deeper than `cap` (defect 549): the walk
+# recurses at most `cap` levels, and `known` keeps each answer by its
+# declaration and its cap, so a record two fields hold is walked once.
+function depth_of(c: state.Checked, decls: [ast.Decl], decl: i64, cap: i64, @known: {i64: i64}) -> i64
+    key = decl * 64 + cap
+
+    if !known[key].is_err()
+        return known[key].must()
+    deepest: i64 @ 1
+
+    if cap > 1
+        match decls[decl].kind
+            .record_decl rec =>
+                for field in rec.fields
+                    held = held_record(c, ty: field.ty)
+
+                    if !held.is_err()
+                        below = depth_of(c, decls, decl: held.must(), cap: cap - 1, @known)
+
+                        if 1 + below > deepest
+                            deepest @ 1 + below
+            .constant_decl | .function_decl | .variant_decl | .test_decl => deepest @ deepest
+
+    known[key] @ deepest
+    return deepest
+
+# The record a field's written type holds by value, through fixed arrays.
+function held_record(c: state.Checked, ty: i64) -> i64?
+    written = state.written_type(c, ty)
+
+    if written.is_err()
+        return fail(code: "none", msg: "no written type")
+    at: i64 @ written.must()
+
+    while true
+        match table.get(c.types, at)
+            .fixed f                                                  => at @ f.element
+            .named n                                                  => return ok(n.decl)
+            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return fail(code: "none", msg: "no record")
+            .array | .map | .fallible | .function_ty                  => return fail(code: "none", msg: "no record")
+            .case_ty | .failure | .generic | .error                   => return fail(code: "none", msg: "no record")
+
+    return fail(code: "none", msg: "no record")
 
 # Whether a field's written type is a fixed array, which C cannot assign.
 function is_fixed(c: state.Checked, ty: i64) -> bool
