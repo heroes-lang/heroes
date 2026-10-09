@@ -362,11 +362,12 @@ def autostash(verb, words, where, options, env):
     )
 
 
-def verdict(verb, words, where, options=(), env=None, line=None):
+def verdict(verb, words, where, options=(), env=None, line=None, appended=False):
     """A refusal for `git <options> <verb> <words>` run in `where`, or None.
     `options` are git's own before the verb, `-C` left out, `where` having
     read it; `env` the environment the command runs with; `line` the whole
-    command line, which a list of paths it writes is read against."""
+    command line, which a list of paths it writes is read against;
+    `appended`, that `xargs` runs it and adds words the text does not hold."""
     global overwrites
     if where is None:
         return None
@@ -379,13 +380,13 @@ def verdict(verb, words, where, options=(), env=None, line=None):
         mode = reset_mode(words)
         if mode in ("--hard", "--merge"):
             return thrown_away(where, "git reset " + mode, hard=mode == "--hard")
-        return overwrites.verdict(verb, words, where, options, env, line)
+        return overwrites.verdict(verb, words, where, options, env, line, appended)
     if verb in ("checkout", "switch"):
         if forced(verb, words, where):
             return thrown_away(where, "git " + verb + " " + ("--discard-changes" if verb == "switch" else "-f"), hard=True)
-        return overwrites.verdict(verb, words, where, options, env, line) if verb == "checkout" else None
+        return overwrites.verdict(verb, words, where, options, env, line, appended) if verb == "checkout" else None
     if verb in NAMING:
-        return overwrites.verdict(verb, words, where, options, env, line)
+        return overwrites.verdict(verb, words, where, options, env, line, appended)
     if verb in ENDING:
         how = ends(verb, words)
         if how is not None:

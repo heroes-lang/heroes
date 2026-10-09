@@ -585,7 +585,9 @@ def verdict(command, cwd=None):
         for verb in discards.VERBS if is_git else ():
             more = git_args(w, verb)
             if more is not None:
-                said = discards.verdict(verb, more, where, discards.git_options(w), discards.environment(bare(raw)), command)
+                runs_through = bare(raw)[: len(bare(raw)) - len(w)]
+                appended = any(os.path.basename(word) == "xargs" for word in runs_through)
+                said = discards.verdict(verb, more, where, discards.git_options(w), discards.environment(bare(raw)), command, appended)
                 if said is not None:
                     return said
 
