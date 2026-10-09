@@ -1,0 +1,22 @@
+# Defect 510's shape beside it, 2026-10-09: a constant holding a function,
+# called inside a generic function's body, which is lowered once per type
+# it is instantiated at. Each instance called the accessor with the
+# argument, and clang refused the C twice at exit 2; each now reads the
+# constant and calls what it holds.
+function twice(n: i64) -> i64
+    return n * 2
+
+constant DOUBLE: (function(i64) -> i64)
+    twice
+
+function repeated<T>(x: T, n: i64) -> [T]
+    out: [T] @ []
+
+    for _ in range(from: 0, to: DOUBLE(n))
+        out @ out.push(x)
+
+    return out
+
+function main()
+    print(repeated("a", 1).len())
+    print(repeated(true, 3).len())

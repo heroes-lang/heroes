@@ -19,6 +19,7 @@
 use token
 use ast
 use source
+use resolved
 use check/table
 use check/state
 use ir
@@ -203,6 +204,16 @@ function is_constant(decls: [ast.Decl], decl: i64) -> bool
     return match decls[decl].kind
         .constant_decl                                             => true
         .function_decl | .record_decl | .variant_decl | .test_decl => false
+
+# A constant holding a function is a VALUE (§4.13): `DOUBLE(4)` reads it by
+# calling its zero-argument accessor and calls what that gives back, the
+# path a local holding a function takes and the one the checker takes
+# (`check/walk.hero`'s `named_call`). Calling the accessor itself with the
+# arguments was clang's refusal at exit 2 (defect 510).
+function names_a_constant(r: resolved.Resolved, decls: [ast.Decl], callee: i64) -> bool
+    return match r.uses[callee]
+        .top t                                    => is_constant(decls, t.at)
+        .local | .builtin | .module | .unresolved => false
 
 # Which callee a declaration is: an extern's name must not be mangled,
 # so the two cannot share a case.

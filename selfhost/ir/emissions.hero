@@ -181,6 +181,24 @@ function name_expr(@b: build.Lowering, r: resolved.Resolved, decls: [ast.Decl], 
 
     return build.emit(@b, op: .missing, ty: ty, span: span)
 
+# `geom.DOUBLE` as the callee of `geom.DOUBLE(4)`: the name has no
+# expression of its own, so it is read at the method node, at the type the
+# constant declares, which the checker recorded where it lowered that
+# type (defect 510).
+function constant_value(@b: build.Lowering, r: resolved.Resolved, c: state.Checked, decls: [ast.Decl], at: i64, span: token.Span) -> i64
+    declared: i64? @ fail(code: "none", msg: "not a constant")
+
+    match r.uses[at]
+        .top t =>
+            match decls[t.at].kind
+                .constant_decl k                                           => declared @ c.written_types[k.ty]
+                .function_decl | .record_decl | .variant_decl | .test_decl => declared @ declared
+        .local | .builtin | .module | .unresolved => declared @ declared
+
+    if declared.is_err()
+        return build.emit(@b, op: .missing, ty: table.unit_ty(c.types), span: span)
+    return name_expr(@b, r, decls, id: at, ty: declared.must(), span: span)
+
 # An i64 literal, decoded by the same sign-and-magnitude carrier the
 # checker used. The checker reports the range first, so this is the net
 # rather than the gate — a literal reaching here out of range is a

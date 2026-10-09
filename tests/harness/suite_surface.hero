@@ -598,6 +598,8 @@ function verb_probes() -> [probe.Probe]
         row(name: "deep recursion stops with a word at -O0, on every platform", argv: "run tests/golden/surface-fixtures/deep/main.hero -O0", code: -1).err_has("panic: stack exhausted").out_empty()
         row(name: "and on a thread the program started, where it said nothing at all until M-thread-stacks", argv: "run tests/golden/surface-fixtures/deepthread/main.hero -O0", code: -1).err_has("panic: stack exhausted").out_empty()
         row(name: "a correct recursion a hundred thousand deep in tail position still returns at -O2, where a call stays a call (panel 199's R2, defect 508)", argv: "run tests/golden/surface-fixtures/deeptail/main.hero", code: 0).out_is("5000050000\n").err_empty()
+        row(name: "a constant of another module holding a function is called by its qualified name, where the build stopped at exit 2 (defect 510)", argv: "run tests/golden/surface-fixtures/constcall510/main.hero", code: 0).out_is("8\n9\n").err_empty()
+        row(name: "and its wrong calls are told as an unqualified one's are, where check passed them", argv: "check tests/golden/surface-fixtures/constcall510/wrong.hero --brief", code: 1).err_has("wrong.hero:8:11: error[wrong_arity]").err_has("wrong.hero:9:11: error[not_callable]").err_has("wrong.hero:10:25: error[type_mismatch]").err_lacks("internal error")
         row(name: "a recursion of WIDE frames stops with the same word at -O0: the probe reaches the guard before sp does (defect 007)", argv: "run tests/golden/surface-fixtures/wideframe/main.hero -O0", code: -1).err_has("panic: stack exhausted").out_empty()
         row(name: "and at -O2, where the frame is smaller and the witness is the other one", argv: "run tests/golden/surface-fixtures/wideframe/main.hero -O2", code: -1).err_has("panic: stack exhausted").out_empty()
         row(name: "a nested program runs from its root, the leaf reading the root's module by path", argv: "run tests/golden/surface-fixtures/nested/main.hero", code: 0).out_is("2\n20\n")
@@ -1150,7 +1152,10 @@ test "the tables are what this module is, so they are counted"
     # 196 -> 197 on 2026-10-09, defect 508 (lane land199, panel 199's R2): a
     # correct tail recursion a hundred thousand deep at `-O2`, the price of
     # keeping a call a call, `deeptail/`, a level no `run/` case can name.
-    assert verb_probes().len() == 197
+    # 197 -> 199 the same day, defect 510 (lane b16-compiler): a constant of
+    # another module holding a function, called by its qualified name, and its
+    # three wrong calls, `constcall510/`, the spelling no `run/` case can hold.
+    assert verb_probes().len() == 199
 
     # 117 on 2026-09-27, panel 180 R5: the compiler-engineer's break map, one
     # row per shape, its exit the adopted sentence's; a shape added to the map

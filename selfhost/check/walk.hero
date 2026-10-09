@@ -1416,7 +1416,22 @@ function method(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.S
                         span: span,
                         expected: expected
                     )
-                    .constant_decl | .variant_decl | .test_decl => return state.error_ty_of(c)
+                    # `geom.DOUBLE(4)`: a constant is a value, so the call
+                    # is through it, as `named_call` sends `DOUBLE(4)`. This
+                    # arm answered the error type and no diagnostic, and the
+                    # verifier refused the program at exit 2 (defect 510).
+                    .constant_decl k => return indirect_call(
+                        @c,
+                        a,
+                        r,
+                        s,
+                        decls,
+                        callee_ty: lower.lower_ty(@c, a, r, k.ty),
+                        given: given,
+                        receiver: fail(code: "absent", msg: "no receiver"),
+                        span: span
+                    )
+                    .variant_decl | .test_decl => return state.error_ty_of(c)
             # The resolver already said what is wrong with it.
 
             .unresolved | .local | .builtin | .module => return state.error_ty_of(c)
