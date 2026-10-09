@@ -19,6 +19,7 @@ use cli/header_ask
 use cli/header_refused
 use cli/deep_types
 use cli/link
+use cli/package_missing
 
 # The verdict on a refused round or artifact, always a failure: `diagnostics`
 # where the author was told, `failed` where the refusal is the compiler's, and
@@ -51,6 +52,21 @@ function of_refusal(failed: ()?, art: compile.Artifact, s: source.Source, t: too
 
     if blamed(message, art, s, answered, struct_tags: struct_tags, asked: answer)
         return fail(code: "diagnostics", msg: "the author's extern disagrees with the header")
+
+    # A package's `-l` the linker found no library for, asked after every
+    # `link` group was (`cli/package_missing.hero`, defect 528).
+    if code == link.REFUSED
+        lacked = package_missing.missing(
+            message: message,
+            s: s,
+            decls: art.decls,
+            build: t.build,
+            linked: under.package_flags
+        )
+
+        if lacked.len() > 0
+            _ = compile.stage(lacked, s).is_err()
+            return fail(code: "diagnostics", msg: "a package names a library this machine does not have")
 
     # A unit clang refused carries its own path inside the message
     # (`units.tu_object`), the fused test unit's included.
