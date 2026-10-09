@@ -121,6 +121,7 @@ function run_all(scratch: str, compiler: str) -> report.Report?
     apply_json_in_place(scratch: scratch, compiler: compiler, r: @r)
     measure_with_no_operand(scratch: scratch, compiler: compiler, r: @r)
     warning_told_once(scratch: scratch, compiler: compiler, r: @r)
+    recursion_named(scratch: scratch, compiler: compiler, r: @r)
     return ok(r)
 
 # **A clang warning on a bound header is told once, by the program's own unit,
@@ -165,6 +166,59 @@ function warning_told_once(scratch: str, compiler: str, @r: report.Report)
         report.keep_failure(@r, label: label, detail: wrong.join("\n") + "\n  its stderr was:\n" + built.must().err)
         return
     report.keep_pass(@r)
+
+# **The stack guard names the recursion beside the frame that ran out**
+# (defect 521, panel 199's route (M)): `recursion521/`, each run at `-O0`,
+# where every platform keeps its frame records. A function met twice on the
+# frame walk is a recursion, so `behind` is told `helper`, the frame being
+# entered, and `climbs` beside it; `mutual` both of its functions, from the
+# first by name, whichever ran out; and `direct` its name alone, the frame
+# being the recursion. The Windows guard walks no frames (`runtime/parts/
+# stack.c`) and says the first sentence alone, which it is held to there.
+record Told
+    file: str
+    posix: [str]
+
+function recursion_rows() -> [Told]
+    return [
+        Told(file: "behind", posix: ["panic: stack exhausted in behind.helper, inside the recursion of behind.climbs"])
+        Told(file: "mutual", posix: ["panic: stack exhausted in mutual.ping, inside the recursion of mutual.ping and mutual.pong", "panic: stack exhausted in mutual.pong, inside the recursion of mutual.ping and mutual.pong"])
+        Told(file: "direct", posix: ["panic: stack exhausted in direct.down"])
+    ]
+
+function recursion_named(scratch: str, compiler: str, @r: report.Report)
+    for program in recursion_rows()
+        label = "surface/the stack guard names the recursion beside the frame that ran out, `" + program.file + "` at -O0 (defect 521)"
+        ran = shell.run(
+            scratch: scratch,
+            program: compiler,
+            words: [compiler, "run", "tests/golden/surface-fixtures/recursion521/" + program.file + ".hero", "-O0"]
+        )
+
+        if ran.is_err()
+            report.keep_failure(@r, label: label, detail: "  " + shell.ending(ran))
+            continue
+        wanted: [str] @ program.posix
+
+        if shell.exe_suffix() == ".exe"
+            wanted @ ["panic: stack exhausted"]
+        said = strings.trimmed(ran.must().err)
+
+        if ran.must().code == 0 || !told_one(wanted, said: said)
+            report.keep_failure(
+                @r,
+                label: label,
+                detail: "  " + shell.ending(ran) + "\n  where it must abort saying one of:\n    " + wanted.join("\n    ")
+            )
+            continue
+        report.keep_pass(@r)
+
+function told_one(wanted: [str], said: str) -> bool
+    for one in wanted
+        if one == said
+            return true
+
+    return false
 
 # What is wrong with a build of `warning248/`: one sentence each, none when it
 # exits 0 telling clang's warning exactly once and naming no probe's file.
