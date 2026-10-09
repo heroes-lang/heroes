@@ -13,8 +13,8 @@
 # token index read up to. **The premises that make a remembered answer
 # stand are falsifiable, and `closers.hero`'s and `loop_headers.hero`'s
 # tests ask them**: the stack changes only by a push (counted), a pop, a cut
-# to a prefix or a clear, so a stack with no push since an answer is a
-# prefix of the one it was read from; the text never changes; and the stream
+# to a prefix or a clear, the four verbs `openers.hero` gives it, so a stack
+# with no push since an answer is a prefix of the one it was read from; the text never changes; and the stream
 # of tokens changes only by a push or by the three rewrites of an operator's
 # line (`alone_lines.rejoined`, `sign_above.leave_out` and `signed_below`),
 # each of which calls `forget`.

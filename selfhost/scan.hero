@@ -41,6 +41,7 @@ use separator_runs
 use text_lines
 use comment_refusal
 use refused_stretch
+use openers
 
 ## One line of words
 
@@ -122,7 +123,7 @@ function foreign_comment(@l: state.LexState, text: str)
     block = text[start + 1] == '*'
     after_code = !word_place.only_margin(text, from: word_place.line_start(text, at: start), to: start)
 
-    if !block && comment_habit.divides_at(text, at: start, inside: l.open_brackets.len() + l.holes.len() > 0)
+    if !block && comment_habit.divides_at(text, at: start, inside: openers.depth(l.open_brackets) + l.holes.len() > 0)
         d: diag.Diagnostic @ diag.new_diagnostic(
             code: "unexpected_character",
             message: "`//` is not part of the language's syntax — an integer is divided by `/`, and a comment begins with `#`",
@@ -270,7 +271,7 @@ function punct(@l: state.LexState, text: str)
 
     # C's `;` that ends its line outside brackets is a habit told once a run,
     # its deletion certain (`separator_runs`, defect 178).
-    if ch == ";" && l.open_brackets.len() == 0 && separator_runs.ends_its_line(text, at: l.pos)
+    if ch == ";" && openers.depth(l.open_brackets) == 0 && separator_runs.ends_its_line(text, at: l.pos)
         separator_runs.semicolon(@l.diagnostics, text, at: span)
         state.error_token_at(@l, start)
         return
@@ -296,13 +297,13 @@ function finish(@l: state.LexState, text: str, kind: token.TokenKind, start: i64
     # A `{` that ends its head's line is read as the line's end, a `}` that
     # closes it as nothing where its line ends (`brace_layout.hero`, ruling 1);
     # and one that ends C's `for` header, whose `)` was left out (defect 302).
-    if kind == .lbrace && (bracket_reach.ended_by_a_brace(@l, text, at: start) || map_alone.opens_a_body(l.tokens, open: l.open_brackets.len() + l.holes.len(), text, at: start))
+    if kind == .lbrace && (bracket_reach.ended_by_a_brace(@l, text, at: start) || map_alone.opens_a_body(l.tokens, open: openers.depth(l.open_brackets) + l.holes.len(), text, at: start))
         brace_layout.opened(@l)
         state.emit_open_body(@l, start)
         return
 
     if kind == .rbrace && brace_layout.closes(braced: l.braced.len(), brackets: l.open_brackets, holes: l.holes.len(), text, at: start)
-        if l.open_brackets.len() > 0
+        if openers.depth(l.open_brackets) > 0
             layout.close_brackets(@l, text)
             state.push_offset(@l.closes, at: start)
         brace_layout.closed(@l)

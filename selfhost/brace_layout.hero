@@ -55,6 +55,7 @@
 
 use token
 use state
+use openers
 
 ## The `{`
 
@@ -110,13 +111,13 @@ function opened(@l: state.LexState)
 # outside every bracket, or at its line's head where the body left a bracket
 # open, which the caller names never closed (`layout.close_brackets`). Then it
 # is no token.
-function closes(braced: i64, brackets: [token.Span], holes: i64, text: str, at: i64) -> bool
+function closes(braced: i64, brackets: openers.Openers, holes: i64, text: str, at: i64) -> bool
     if braced == 0 || holes > 0
         return false
 
-    if brackets.len() == 0
+    if openers.depth(brackets) == 0
         return true
-    return text[brackets[brackets.len() - 1].start] != '{' && heads_its_line(text, at: at)
+    return text[openers.top(brackets).start] != '{' && heads_its_line(text, at: at)
 
 # The innermost braces, closed.
 function closed(@l: state.LexState)
