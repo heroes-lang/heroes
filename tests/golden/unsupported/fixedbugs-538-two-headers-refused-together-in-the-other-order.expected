@@ -1,0 +1,9 @@
+error[ffi_header_refused]: `fixedbugs-538-int.h` and `fixedbugs-538-long.h`, the headers two groups name, cannot be compiled in one unit: clang refuses them together, at `fixedbugs-538-int.h` line 3 and `fixedbugs-538-long.h` line 3: conflicting types for 'twice'
+  at tests/golden/unsupported/fixedbugs-538-two-headers-refused-together-in-the-other-order.hero:9:8
+    |
+  9 | extern "fixedbugs-538-int.h"  #~ ffi_header_refused
+    |        ^^^^^^^^^^^^^^^^^^^^^
+  note: `fixedbugs-538-int.h` line 3 reads `static inline int twice(int x) { return x + x; }`
+  note: `fixedbugs-538-long.h` line 3 reads `static inline long twice(long x) { return 2 * x; }`
+  note: the other group names `fixedbugs-538-long.h` at line 12
+  note: each group's header is included in the unit clang compiled before a line of its own, so these two are read together there, and these cannot be compiled in one unit whichever comes first: bind a C name they share from one header, or name for one group a header of your own that declares only what that group binds
