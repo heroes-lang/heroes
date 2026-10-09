@@ -120,7 +120,7 @@ named.
   into the spec (+17 to +18 tokens on the `maximum` row) and keeps one program
   with two meanings. Which one the language means is the author's.
 
-## The resolution, provisional — author ratification pending
+## The resolution, ratified by the author (below)
 
 The most robust and complete route at every disagreement (CLAUDE.md § 4,
 CL-040); what conservative would have been is below the list.
@@ -196,5 +196,12 @@ emitter must turn self tail calls into jumps, which nobody built.
 
 ## Author's verdict
 
-Pending. The ratification issue is
+**RATIFIED, 2026-10-09**, R1 to R8 as written above, the author answering
+through the question widget between 01:39 and 04:07 by the clocks read before
+the question and after the answer, choosing
+*ratify R1-R8* over R3 in place of R4, over the conservative alternative and
+over *I want to read it first*, on the coordinator's summary of the route; and,
+to the language's question, **unbounded recursion is an abort** (R2), over the
+loop (N). Recorded as a reading (CLAUDE.md § 4). The author may overturn it.
+The ratification issue is
 `issues/2026-10/09/2026-10-09-0139-panel-199-ratify-amend-or-overturn-r1-to-r8-a-function-that.md`.
