@@ -3,11 +3,11 @@ error[ffi_unknown_field]: `ffi-a-field-named-after-a-header-macro.h` defines `si
      |
   17 |         size: i32  #~ ffi_unknown_field
      |         ^^^^
-  note: a group's `record` IS the header's type (§4.19), so a field is named exactly as the header names it: correct the spelling, or name the header whose `BUF` has a `size`
+  note: a group's `record` IS the header's type (§4.19), so a field is named exactly as the header names it: correct the spelling, or name the header whose `BUF` has a member `size`
 
 error[ffi_unknown_field]: `ffi-a-field-named-after-a-header-macro.h` defines `spare` as a macro, and the type `BUF2` binds has no member it names: C reads the macro's text where the field's name stands
   at tests/golden/unsupported/ffi-a-field-named-after-a-header-macro.hero:20:9
      |
   20 |         spare: i32  #~ ffi_unknown_field
      |         ^^^^^
-  note: a group's `record` IS the header's type (§4.19), so a field is named exactly as the header names it: correct the spelling, or name the header whose `BUF2` has a `spare`
+  note: a group's `record` IS the header's type (§4.19), so a field is named exactly as the header names it: correct the spelling, or name the header whose `BUF2` has a member `spare`

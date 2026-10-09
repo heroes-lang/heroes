@@ -3,4 +3,4 @@ error[ffi_incomplete_record]: `DEEP` does not name `y`, and `fixedbugs-151-union
      |
   14 |     record DEEP  #~ ffi_incomplete_record
      |            ^^^^
-  note: the assertions above check every field you DO name and cannot see one you leave out: a `DEEP` built here would carry a zero `y` into C, which is a value rather than a crash
+  note: the assertions above check every field you DO name and cannot see one you leave out: every `DEEP` built here would carry a zero `y` into C, which is a value rather than a crash

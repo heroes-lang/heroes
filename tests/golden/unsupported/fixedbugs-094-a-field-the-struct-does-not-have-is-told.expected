@@ -1,4 +1,4 @@
-error[ffi_constant_type]: `PT_NO_Z` in `fixedbugs-094-values.h` cannot be a `Pt`: clang refuses the header's value at line 16: field designator 'z' does not refer to any field in type 'struct pt'
+error[ffi_constant_type]: `PT_NO_Z` in `fixedbugs-094-values.h` cannot be declared `Pt`: clang refuses the header's value at line 16: field designator 'z' does not refer to any field in type 'struct pt'
   at tests/golden/unsupported/fixedbugs-094-a-field-the-struct-does-not-have-is-told.hero:9:5
     |
   9 |     constant PT_NO_Z: Pt  #~ ffi_constant_type

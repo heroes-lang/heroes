@@ -1,4 +1,4 @@
-error[ffi_constant_type]: `NAMED_EXTRA` in `fixedbugs-094-outer.h` cannot be a `Named`: clang refuses the header's value at line 7 of `fixedbugs-094-inner.h`: excess elements in struct initializer
+error[ffi_constant_type]: `NAMED_EXTRA` in `fixedbugs-094-outer.h` cannot be declared `Named`: clang refuses the header's value at line 7 of `fixedbugs-094-inner.h`: excess elements in struct initializer
   at tests/golden/unsupported/fixedbugs-094-a-value-spelled-in-a-header-the-group-includes.hero:9:5
     |
   9 |     constant NAMED_EXTRA: Named  #~ ffi_constant_type

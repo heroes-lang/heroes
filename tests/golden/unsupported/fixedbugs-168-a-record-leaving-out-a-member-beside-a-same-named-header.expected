@@ -3,4 +3,4 @@ error[ffi_incomplete_record]: `E` does not name `y`, and `fixedbugs-168-beside.h
      |
   11 |     record E  #~ ffi_incomplete_record
      |            ^
-  note: the assertions above check every field you DO name and cannot see one you leave out: a `E` built here would carry a zero `y` into C, which is a value rather than a crash
+  note: the assertions above check every field you DO name and cannot see one you leave out: every `E` built here would carry a zero `y` into C, which is a value rather than a crash

@@ -118,7 +118,7 @@ function told(name: str, declared: str, struct_c: str, known: ffi_lookup.Declare
             where @ where + " of `" + file + "`"
     d: diag.Diagnostic @ diag.new_diagnostic(
         code: "ffi_constant_type",
-        message: "`" + name + "` in `" + known.header + "` cannot be a `" + declared + "`: clang refuses the header's value" + where + ": " + without_flag(message),
+        message: "`" + name + "` in `" + known.header + "` cannot be declared `" + declared + "`: clang refuses the header's value" + where + ": " + without_flag(message),
         span: known.span
     )
 
@@ -240,7 +240,7 @@ test "a value C will not build as the record is told on the constant's line, in 
     said = read_back(mac)
     assert said.len() == 1
     assert said[0].code == "ffi_constant_type"
-    assert said[0].message == "`PT_INIT` in `cinit.h` cannot be a `Pt`: clang refuses the header's value at line 2: excess elements in struct initializer"
+    assert said[0].message == "`PT_INIT` in `cinit.h` cannot be declared `Pt`: clang refuses the header's value at line 2: excess elements in struct initializer"
     assert said[0].notes[0] == "`cinit.h` line 2 reads `#define PT_INIT {1, 2, 3}`"
     assert said[0].notes.len() == 3
     windows = "t.hero:5:28: error: excess elements in struct initializer [-Werror,-Wexcess-initializers]\r\n    5 |     struct pt hero_constant_value = PT_INIT;\r\n      |                                     ^~~~~~~\r\ntests\\cinit.h:2:23: note: expanded from macro 'PT_INIT'\r\n    2 | #define PT_INIT {1, 2, 3}\r\n"
