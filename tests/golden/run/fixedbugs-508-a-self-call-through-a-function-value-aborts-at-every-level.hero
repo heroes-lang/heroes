@@ -1,0 +1,14 @@
+# Defect 508 and panel 199's R2, ratified 2026-10-09: a function that calls
+# itself through a function value ran at `-O2` until `timeout` stopped it
+# (exit 124), the call in tail position turned into a jump, where `-O0`
+# printed `panic: stack exhausted` (134). The `-O2` words keep a call a call
+# (`-fno-optimize-sibling-calls`), and it aborts at every level. `check` lets
+# it through: a call through a function value is not the function, to
+# `endless_recursion` (panel 199's R7, filed apart). Under the sanitiser the
+# runtime's guard yields to ASan, which says `stack-overflow`.
+function go(n: i64) -> i64
+    f = go
+    return f(n)
+
+function main()
+    print(go(1))
