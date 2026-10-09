@@ -1,0 +1,25 @@
+# Fixed defect 551, 2026-10-09 (found beside defect 544 by lane b17-check).
+# Symptom: `ok(1).h()` with a non-generic `h(n: i64?)` was refused
+# `cannot_infer` telling the program to *pass it where a `T?` is expected*,
+# which it had done. Cause: the walk synthesises a receiver before it asks
+# what the call names, since `x.f()` may call a field of `x`, so the value
+# written before `.h(…)` takes no type from `h`'s parameter. Repair: the
+# message said at the whole receiver is told again by that rule, its guess
+# binding the program's own text first with the parameter's type
+# (`check/generic_argument.hero`). The shapes: `ok(…)`, `fail(…)`, an empty
+# array, and a receiver of a call with an argument of its own.
+
+function h(n: i64?) -> i64
+    return n.default(0)
+
+function count(xs: [i64]) -> i64
+    return xs.len()
+
+function plus(n: i64?, m: i64) -> i64
+    return n.default(0) + m
+
+function main()
+    print(ok(1).h())  #~ cannot_infer
+    print(fail(code: 1, msg: "no").h())  #~ cannot_infer
+    print([].count())  #~ cannot_infer
+    print(ok(2).plus(3))  #~ cannot_infer
