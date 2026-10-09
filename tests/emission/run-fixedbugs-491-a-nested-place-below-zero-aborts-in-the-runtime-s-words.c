@@ -170,8 +170,9 @@ bb0:
     t26 = h2_own2;
 #line 8 "tests/golden/run/fixedbugs-491-a-nested-place-below-zero-aborts-in-the-runtime-s-words.hero"
     h2_own2 = t3;
-#line 174 "fixedbugs491anestedplacebelowzeroabortsintheruntimeswords.c"
+#line 8 "tests/golden/run/fixedbugs-491-a-nested-place-below-zero-aborts-in-the-runtime-s-words.hero"
     hero_array_decref(t26);
+#line 8 "tests/golden/run/fixedbugs-491-a-nested-place-below-zero-aborts-in-the-runtime-s-words.hero"
     hero_array_incref(t3);
 #line 8 "tests/golden/run/fixedbugs-491-a-nested-place-below-zero-aborts-in-the-runtime-s-words.hero"
     t4 = (h_fixedbugs491anestedplacebelowzeroabortsintheruntimeswords_Row){.f_cells = t3};
@@ -179,7 +180,7 @@ bb0:
     t27 = h3_own3;
 #line 8 "tests/golden/run/fixedbugs-491-a-nested-place-below-zero-aborts-in-the-runtime-s-words.hero"
     h3_own3 = t4;
-#line 183 "fixedbugs491anestedplacebelowzeroabortsintheruntimeswords.c"
+#line 8 "tests/golden/run/fixedbugs-491-a-nested-place-below-zero-aborts-in-the-runtime-s-words.hero"
     h_fixedbugs491anestedplacebelowzeroabortsintheruntimeswords_Row_release(&t27);
 #line 8 "tests/golden/run/fixedbugs-491-a-nested-place-below-zero-aborts-in-the-runtime-s-words.hero"
     t5 = INT64_C(3);
@@ -195,8 +196,9 @@ bb0:
     t28 = h4_own4;
 #line 8 "tests/golden/run/fixedbugs-491-a-nested-place-below-zero-aborts-in-the-runtime-s-words.hero"
     h4_own4 = t7;
-#line 199 "fixedbugs491anestedplacebelowzeroabortsintheruntimeswords.c"
+#line 8 "tests/golden/run/fixedbugs-491-a-nested-place-below-zero-aborts-in-the-runtime-s-words.hero"
     hero_array_decref(t28);
+#line 8 "tests/golden/run/fixedbugs-491-a-nested-place-below-zero-aborts-in-the-runtime-s-words.hero"
     hero_array_incref(t7);
 #line 8 "tests/golden/run/fixedbugs-491-a-nested-place-below-zero-aborts-in-the-runtime-s-words.hero"
     t8 = (h_fixedbugs491anestedplacebelowzeroabortsintheruntimeswords_Row){.f_cells = t7};
@@ -204,7 +206,7 @@ bb0:
     t29 = h5_own5;
 #line 8 "tests/golden/run/fixedbugs-491-a-nested-place-below-zero-aborts-in-the-runtime-s-words.hero"
     h5_own5 = t8;
-#line 208 "fixedbugs491anestedplacebelowzeroabortsintheruntimeswords.c"
+#line 8 "tests/golden/run/fixedbugs-491-a-nested-place-below-zero-aborts-in-the-runtime-s-words.hero"
     h_fixedbugs491anestedplacebelowzeroabortsintheruntimeswords_Row_release(&t29);
 #line 8 "tests/golden/run/fixedbugs-491-a-nested-place-below-zero-aborts-in-the-runtime-s-words.hero"
     t9 = hero_array_new(&h_fixedbugs491anestedplacebelowzeroabortsintheruntimeswords_Row_desc, 2);
@@ -216,17 +218,16 @@ bb0:
     t30 = h6_own6;
 #line 8 "tests/golden/run/fixedbugs-491-a-nested-place-below-zero-aborts-in-the-runtime-s-words.hero"
     h6_own6 = t9;
-#line 220 "fixedbugs491anestedplacebelowzeroabortsintheruntimeswords.c"
+#line 8 "tests/golden/run/fixedbugs-491-a-nested-place-below-zero-aborts-in-the-runtime-s-words.hero"
     hero_array_decref(t30);
 #line 8 "tests/golden/run/fixedbugs-491-a-nested-place-below-zero-aborts-in-the-runtime-s-words.hero"
     t31 = h0_rows;
-#line 224 "fixedbugs491anestedplacebelowzeroabortsintheruntimeswords.c"
+#line 8 "tests/golden/run/fixedbugs-491-a-nested-place-below-zero-aborts-in-the-runtime-s-words.hero"
     hero_array_incref(t9);
 #line 8 "tests/golden/run/fixedbugs-491-a-nested-place-below-zero-aborts-in-the-runtime-s-words.hero"
     h0_rows = t9;
-#line 228 "fixedbugs491anestedplacebelowzeroabortsintheruntimeswords.c"
+#line 8 "tests/golden/run/fixedbugs-491-a-nested-place-below-zero-aborts-in-the-runtime-s-words.hero"
     hero_array_decref(t31);
-#line 9 "tests/golden/run/fixedbugs-491-a-nested-place-below-zero-aborts-in-the-runtime-s-words.hero"
     t10 = INT64_C(0);
 #line 9 "tests/golden/run/fixedbugs-491-a-nested-place-below-zero-aborts-in-the-runtime-s-words.hero"
     t11 = INT64_C(1);
@@ -272,7 +273,7 @@ bb0:
     hero_print_int(t25);
 #line 13 "tests/golden/run/fixedbugs-491-a-nested-place-below-zero-aborts-in-the-runtime-s-words.hero"
     hero_print_end();
-#line 276 "fixedbugs491anestedplacebelowzeroabortsintheruntimeswords.c"
+#line 277 "fixedbugs491anestedplacebelowzeroabortsintheruntimeswords.c"
     hero_array_release_at(&h0_rows);
     hero_array_release_at(&h2_own2);
     h_fixedbugs491anestedplacebelowzeroabortsintheruntimeswords_Row_release(hero_slot_escape(&h3_own3));

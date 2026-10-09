@@ -196,8 +196,9 @@ bb0:
     t4 = h1_own1;
 #line 58 "tests/golden/fixedbugs/function-typed-field-never-called-through.hero"
     h1_own1 = t3;
-#line 200 "functiontypedfieldnevercalledthrough.c"
+#line 58 "tests/golden/fixedbugs/function-typed-field-never-called-through.hero"
     hero_str_decref(t4);
+#line 202 "functiontypedfieldnevercalledthrough.c"
     hero_str_incref(t3);
     hero_str_release_at(&h1_own1);
     return t3;
@@ -205,7 +206,7 @@ bb0:
 
 #line 60 "tests/golden/fixedbugs/function-typed-field-never-called-through.hero"
 void h_functiontypedfieldnevercalledthrough_main(void) {
-#line 209 "functiontypedfieldnevercalledthrough.c"
+#line 210 "functiontypedfieldnevercalledthrough.c"
     __attribute__((unused)) h_functiontypedfieldnevercalledthrough_Direct h0_direct;
     h_functiontypedfieldnevercalledthrough_Outer h1_outer = {0};
     h_functiontypedfieldnevercalledthrough_Held h2_held = {0};
@@ -244,7 +245,7 @@ bb0:
     t4 = (h_functiontypedfieldnevercalledthrough_Direct){.f_f = t3};
 #line 62 "tests/golden/fixedbugs/function-typed-field-never-called-through.hero"
     t5 = HERO_STR_LIT(hero_str_e0a312d);
-#line 248 "functiontypedfieldnevercalledthrough.c"
+#line 62 "tests/golden/fixedbugs/function-typed-field-never-called-through.hero"
     hero_str_incref(t5);
 #line 62 "tests/golden/fixedbugs/function-typed-field-never-called-through.hero"
     t6 = (h_functiontypedfieldnevercalledthrough_Outer){.f_inner = t4, .f_label = t5};
@@ -252,17 +253,16 @@ bb0:
     t18 = h4_own4;
 #line 62 "tests/golden/fixedbugs/function-typed-field-never-called-through.hero"
     h4_own4 = t6;
-#line 256 "functiontypedfieldnevercalledthrough.c"
+#line 62 "tests/golden/fixedbugs/function-typed-field-never-called-through.hero"
     h_functiontypedfieldnevercalledthrough_Outer_release(&t18);
 #line 62 "tests/golden/fixedbugs/function-typed-field-never-called-through.hero"
     t19 = h1_outer;
-#line 260 "functiontypedfieldnevercalledthrough.c"
+#line 62 "tests/golden/fixedbugs/function-typed-field-never-called-through.hero"
     h_functiontypedfieldnevercalledthrough_Outer_retain(&t6);
 #line 62 "tests/golden/fixedbugs/function-typed-field-never-called-through.hero"
     h1_outer = t6;
-#line 264 "functiontypedfieldnevercalledthrough.c"
+#line 62 "tests/golden/fixedbugs/function-typed-field-never-called-through.hero"
     h_functiontypedfieldnevercalledthrough_Outer_release(&t19);
-#line 63 "tests/golden/fixedbugs/function-typed-field-never-called-through.hero"
     t7 = h_functiontypedfieldnevercalledthrough_twice;
 #line 63 "tests/golden/fixedbugs/function-typed-field-never-called-through.hero"
     t8 = (h_functiontypedfieldnevercalledthrough_Direct){.f_f = t7};
@@ -274,8 +274,9 @@ bb0:
     t20 = h5_own5;
 #line 63 "tests/golden/fixedbugs/function-typed-field-never-called-through.hero"
     h5_own5 = t9;
-#line 278 "functiontypedfieldnevercalledthrough.c"
+#line 63 "tests/golden/fixedbugs/function-typed-field-never-called-through.hero"
     hero_array_decref(t20);
+#line 63 "tests/golden/fixedbugs/function-typed-field-never-called-through.hero"
     hero_array_incref(t9);
 #line 63 "tests/golden/fixedbugs/function-typed-field-never-called-through.hero"
     t10 = (h_functiontypedfieldnevercalledthrough_Held){.f_all = t9};
@@ -283,17 +284,16 @@ bb0:
     t21 = h6_own6;
 #line 63 "tests/golden/fixedbugs/function-typed-field-never-called-through.hero"
     h6_own6 = t10;
-#line 287 "functiontypedfieldnevercalledthrough.c"
+#line 63 "tests/golden/fixedbugs/function-typed-field-never-called-through.hero"
     h_functiontypedfieldnevercalledthrough_Held_release(&t21);
 #line 63 "tests/golden/fixedbugs/function-typed-field-never-called-through.hero"
     t22 = h2_held;
-#line 291 "functiontypedfieldnevercalledthrough.c"
+#line 63 "tests/golden/fixedbugs/function-typed-field-never-called-through.hero"
     h_functiontypedfieldnevercalledthrough_Held_retain(&t10);
 #line 63 "tests/golden/fixedbugs/function-typed-field-never-called-through.hero"
     h2_held = t10;
-#line 295 "functiontypedfieldnevercalledthrough.c"
+#line 63 "tests/golden/fixedbugs/function-typed-field-never-called-through.hero"
     h_functiontypedfieldnevercalledthrough_Held_release(&t22);
-#line 64 "tests/golden/fixedbugs/function-typed-field-never-called-through.hero"
     t11 = h_functiontypedfieldnevercalledthrough_shout;
 #line 64 "tests/golden/fixedbugs/function-typed-field-never-called-through.hero"
     t12 = (h_functiontypedfieldnevercalledthrough_Either){.tag = h_functiontypedfieldnevercalledthrough_Either_tag_one, .as.c_one = {.f_f = t11}};

@@ -159,8 +159,9 @@ bb0:
     t9 = h0_own0;
 #line 9 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
     h0_own0 = t8;
-#line 163 "fixedbugs382aconstantofstringsisonestaticblock.c"
+#line 9 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
     hero_array_decref(t9);
+#line 165 "fixedbugs382aconstantofstringsisonestaticblock.c"
     hero_array_incref(t8);
     hero_array_release_at(&h0_own0);
     return t8;
@@ -169,7 +170,7 @@ bb0:
 
 #line 11 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
 void h_fixedbugs382aconstantofstringsisonestaticblock_main(void) {
-#line 173 "fixedbugs382aconstantofstringsisonestaticblock.c"
+#line 174 "fixedbugs382aconstantofstringsisonestaticblock.c"
     int64_t h0_letters;
     int64_t h1_at;
     HeroArrayHeader * h2_xs = {0};
@@ -318,7 +319,7 @@ bb2:
     t75 = h3_own3;
 #line 16 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
     h3_own3 = t7;
-#line 322 "fixedbugs382aconstantofstringsisonestaticblock.c"
+#line 16 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
     hero_array_decref(t75);
 #line 16 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
     t8 = h1_at;
@@ -359,7 +360,7 @@ bb3:
     t76 = h4_own4;
 #line 19 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
     h4_own4 = t19;
-#line 363 "fixedbugs382aconstantofstringsisonestaticblock.c"
+#line 19 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
     hero_array_decref(t76);
 #line 19 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
     t20 = ((void)(t19 == NULL ? ((void)hero_array_len(t19), hero_unreachable()) : (void)0), t19->len);
@@ -371,7 +372,7 @@ bb3:
     t77 = h5_own5;
 #line 19 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
     h5_own5 = t22;
-#line 375 "fixedbugs382aconstantofstringsisonestaticblock.c"
+#line 19 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
     hero_array_decref(t77);
 #line 19 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
     t23 = INT64_C(1);
@@ -387,7 +388,7 @@ bb3:
     t78 = h6_own6;
 #line 19 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
     h6_own6 = t27;
-#line 391 "fixedbugs382aconstantofstringsisonestaticblock.c"
+#line 19 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
     hero_array_decref(t78);
 #line 19 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
     t28 = INT64_C(0);
@@ -399,7 +400,7 @@ bb3:
     t79 = h7_own7;
 #line 19 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
     h7_own7 = t30;
-#line 403 "fixedbugs382aconstantofstringsisonestaticblock.c"
+#line 19 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
     hero_array_decref(t79);
 #line 19 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
     t31 = INT64_C(5);
@@ -428,7 +429,7 @@ bb3:
     t80 = h8_own8;
 #line 20 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
     h8_own8 = t34;
-#line 432 "fixedbugs382aconstantofstringsisonestaticblock.c"
+#line 20 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
     hero_array_decref(t80);
 #line 20 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
     t35 = HERO_STR_LIT(hero_str_7c);
@@ -438,7 +439,7 @@ bb3:
     t81 = h9_own9;
 #line 20 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
     h9_own9 = t36;
-#line 442 "fixedbugs382aconstantofstringsisonestaticblock.c"
+#line 20 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
     hero_str_decref(t81);
 #line 20 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
     hero_print_str(t36);
@@ -449,7 +450,7 @@ bb3:
     t82 = h10_own10;
 #line 21 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
     h10_own10 = t37;
-#line 453 "fixedbugs382aconstantofstringsisonestaticblock.c"
+#line 21 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
     hero_array_decref(t82);
 #line 21 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
     t38 = hero_array_sort(t37);
@@ -457,7 +458,7 @@ bb3:
     t83 = h11_own11;
 #line 21 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
     h11_own11 = t38;
-#line 461 "fixedbugs382aconstantofstringsisonestaticblock.c"
+#line 21 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
     hero_array_decref(t83);
 #line 21 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
     t39 = HERO_STR_LIT(hero_str_2c);
@@ -467,7 +468,7 @@ bb3:
     t84 = h12_own12;
 #line 21 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
     h12_own12 = t40;
-#line 471 "fixedbugs382aconstantofstringsisonestaticblock.c"
+#line 21 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
     hero_str_decref(t84);
 #line 21 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
     hero_print_str(t40);
@@ -478,7 +479,7 @@ bb3:
     t85 = h13_own13;
 #line 22 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
     h13_own13 = t41;
-#line 482 "fixedbugs382aconstantofstringsisonestaticblock.c"
+#line 22 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
     hero_array_decref(t85);
 #line 22 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
     t42 = INT64_C(2);
@@ -490,7 +491,7 @@ bb3:
     t86 = h14_own14;
 #line 22 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
     h14_own14 = t44;
-#line 494 "fixedbugs382aconstantofstringsisonestaticblock.c"
+#line 22 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
     hero_array_decref(t86);
 #line 22 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
     t45 = INT64_C(4);
@@ -502,7 +503,7 @@ bb3:
     t87 = h15_own15;
 #line 22 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
     h15_own15 = t47;
-#line 506 "fixedbugs382aconstantofstringsisonestaticblock.c"
+#line 22 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
     hero_str_decref(t87);
 #line 22 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
     t48 = HERO_STR_LIT(hero_str_20);
@@ -512,7 +513,7 @@ bb3:
     t88 = h16_own16;
 #line 22 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
     h16_own16 = t49;
-#line 516 "fixedbugs382aconstantofstringsisonestaticblock.c"
+#line 22 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
     hero_array_decref(t88);
 #line 22 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
     t50 = INT64_C(4);
@@ -524,7 +525,7 @@ bb3:
     t89 = h17_own17;
 #line 22 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
     h17_own17 = t52;
-#line 528 "fixedbugs382aconstantofstringsisonestaticblock.c"
+#line 22 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
     hero_array_decref(t89);
 #line 22 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
     t53 = ((void)(t52 == NULL ? ((void)hero_array_len(t52), hero_unreachable()) : (void)0), t52->len);
@@ -536,7 +537,7 @@ bb3:
     t90 = h18_own18;
 #line 22 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
     h18_own18 = t55;
-#line 540 "fixedbugs382aconstantofstringsisonestaticblock.c"
+#line 22 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
     hero_array_decref(t90);
 #line 22 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
     t56 = h_fixedbugs382aconstantofstringsisonestaticblock_WORDS();
@@ -544,7 +545,7 @@ bb3:
     t91 = h19_own19;
 #line 22 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
     h19_own19 = t56;
-#line 548 "fixedbugs382aconstantofstringsisonestaticblock.c"
+#line 22 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
     hero_array_decref(t91);
 #line 22 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
     t57 = hero_array_eq(t55, t56);
@@ -565,21 +566,20 @@ bb3:
     t92 = h20_own20;
 #line 23 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
     h20_own20 = t58;
-#line 569 "fixedbugs382aconstantofstringsisonestaticblock.c"
+#line 23 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
     hero_array_decref(t92);
 #line 23 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
     t93 = h2_xs;
-#line 573 "fixedbugs382aconstantofstringsisonestaticblock.c"
+#line 23 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
     hero_array_incref(t58);
 #line 23 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
     h2_xs = t58;
-#line 577 "fixedbugs382aconstantofstringsisonestaticblock.c"
+#line 23 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
     hero_array_decref(t93);
-#line 24 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
     t59 = INT64_C(1);
 #line 24 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
     t60 = HERO_STR_LIT(hero_str_318606e5);
-#line 583 "fixedbugs382aconstantofstringsisonestaticblock.c"
+#line 24 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
     hero_str_incref(t60);
 #line 24 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
     hero_array_set(&(h2_xs), t59, &t60);
@@ -595,7 +595,7 @@ bb3:
     t94 = h21_own21;
 #line 26 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
     h21_own21 = t66;
-#line 599 "fixedbugs382aconstantofstringsisonestaticblock.c"
+#line 26 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
     hero_str_decref(t94);
 #line 26 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
     t67 = HERO_STR_LIT(hero_str_20);
@@ -605,7 +605,7 @@ bb3:
     t95 = h22_own22;
 #line 26 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
     h22_own22 = t68;
-#line 609 "fixedbugs382aconstantofstringsisonestaticblock.c"
+#line 26 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
     hero_array_decref(t95);
 #line 26 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
     t69 = INT64_C(1);
@@ -621,7 +621,7 @@ bb3:
     t96 = h23_own23;
 #line 26 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
     h23_own23 = t73;
-#line 625 "fixedbugs382aconstantofstringsisonestaticblock.c"
+#line 26 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
     hero_array_decref(t96);
 #line 26 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
     t74 = ((void)(t73 == NULL ? ((void)hero_array_len(t73), hero_unreachable()) : (void)0), t73->len);

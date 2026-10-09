@@ -128,17 +128,16 @@ bb0:
     t14 = h2_own2;
 #line 6 "tests/golden/run/fixedbugs-389-a-negative-index-aborts-in-the-runtime-s-words.hero"
     h2_own2 = t4;
-#line 132 "fixedbugs389anegativeindexabortsintheruntimeswords.c"
+#line 6 "tests/golden/run/fixedbugs-389-a-negative-index-aborts-in-the-runtime-s-words.hero"
     hero_array_decref(t14);
 #line 6 "tests/golden/run/fixedbugs-389-a-negative-index-aborts-in-the-runtime-s-words.hero"
     t15 = h0_xs;
-#line 136 "fixedbugs389anegativeindexabortsintheruntimeswords.c"
+#line 6 "tests/golden/run/fixedbugs-389-a-negative-index-aborts-in-the-runtime-s-words.hero"
     hero_array_incref(t4);
 #line 6 "tests/golden/run/fixedbugs-389-a-negative-index-aborts-in-the-runtime-s-words.hero"
     h0_xs = t4;
-#line 140 "fixedbugs389anegativeindexabortsintheruntimeswords.c"
+#line 6 "tests/golden/run/fixedbugs-389-a-negative-index-aborts-in-the-runtime-s-words.hero"
     hero_array_decref(t15);
-#line 7 "tests/golden/run/fixedbugs-389-a-negative-index-aborts-in-the-runtime-s-words.hero"
     t5 = INT64_C(0);
 #line 7 "tests/golden/run/fixedbugs-389-a-negative-index-aborts-in-the-runtime-s-words.hero"
     t6 = INT64_C(1);
@@ -164,7 +163,7 @@ bb0:
     hero_print_int(t13);
 #line 9 "tests/golden/run/fixedbugs-389-a-negative-index-aborts-in-the-runtime-s-words.hero"
     hero_print_end();
-#line 168 "fixedbugs389anegativeindexabortsintheruntimeswords.c"
+#line 167 "fixedbugs389anegativeindexabortsintheruntimeswords.c"
     hero_array_release_at(&h0_xs);
     hero_array_release_at(&h2_own2);
     return;

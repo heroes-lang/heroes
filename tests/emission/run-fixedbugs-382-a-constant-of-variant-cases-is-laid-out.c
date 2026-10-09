@@ -317,11 +317,10 @@ bb0:
     t22 = h0_own0;
 #line 35 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     h0_own0 = t1;
-#line 321 "fixedbugs382aconstantofvariantcasesislaidout.c"
+#line 35 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     h_fixedbugs382aconstantofvariantcasesislaidout_Shape_release(&t22);
-#line 36 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     t2 = HERO_STR_LIT(hero_str_6bb5e50a);
-#line 325 "fixedbugs382aconstantofvariantcasesislaidout.c"
+#line 36 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     hero_str_incref(t2);
 #line 36 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     t3 = (h_fixedbugs382aconstantofvariantcasesislaidout_Shape){.tag = h_fixedbugs382aconstantofvariantcasesislaidout_Shape_tag_named, .as.c_named = {.f_label = t2}};
@@ -329,9 +328,8 @@ bb0:
     t23 = h1_own1;
 #line 36 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     h1_own1 = t3;
-#line 333 "fixedbugs382aconstantofvariantcasesislaidout.c"
+#line 36 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     h_fixedbugs382aconstantofvariantcasesislaidout_Shape_release(&t23);
-#line 37 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     t4 = INT64_C(7);
 #line 37 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     t5 = INT64_C(1);
@@ -351,8 +349,9 @@ bb0:
     t24 = h2_own2;
 #line 37 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     h2_own2 = t8;
-#line 355 "fixedbugs382aconstantofvariantcasesislaidout.c"
+#line 37 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     hero_array_decref(t24);
+#line 37 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     hero_array_incref(t8);
 #line 37 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     t9 = (h_fixedbugs382aconstantofvariantcasesislaidout_Shape){.tag = h_fixedbugs382aconstantofvariantcasesislaidout_Shape_tag_line, .as.c_line = {.f_n = t4, .f_pts = t8}};
@@ -360,9 +359,8 @@ bb0:
     t25 = h3_own3;
 #line 37 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     h3_own3 = t9;
-#line 364 "fixedbugs382aconstantofvariantcasesislaidout.c"
+#line 37 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     h_fixedbugs382aconstantofvariantcasesislaidout_Shape_release(&t25);
-#line 38 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     t10 = INT64_C(2);
 #line 38 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     t11 = hero_array_new(&hero_desc_int, 1);
@@ -370,8 +368,9 @@ bb0:
     t26 = h4_own4;
 #line 38 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     h4_own4 = t11;
-#line 374 "fixedbugs382aconstantofvariantcasesislaidout.c"
+#line 38 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     hero_array_decref(t26);
+#line 38 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     hero_array_incref(t11);
 #line 38 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     t12 = (h_fixedbugs382aconstantofvariantcasesislaidout_Shape){.tag = h_fixedbugs382aconstantofvariantcasesislaidout_Shape_tag_line, .as.c_line = {.f_n = t10, .f_pts = t11}};
@@ -379,9 +378,8 @@ bb0:
     t27 = h5_own5;
 #line 38 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     h5_own5 = t12;
-#line 383 "fixedbugs382aconstantofvariantcasesislaidout.c"
+#line 38 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     h_fixedbugs382aconstantofvariantcasesislaidout_Shape_release(&t27);
-#line 39 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     t13 = UINT64_C(255);
 #line 39 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     t14 = true;
@@ -391,9 +389,8 @@ bb0:
     t28 = h6_own6;
 #line 39 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     h6_own6 = t15;
-#line 395 "fixedbugs382aconstantofvariantcasesislaidout.c"
+#line 39 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     h_fixedbugs382aconstantofvariantcasesislaidout_Shape_release(&t28);
-#line 40 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     t16 = INT64_C(5);
 #line 40 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     t17 = (h_fixedbugs382aconstantofvariantcasesislaidout_Mark){.tag = h_fixedbugs382aconstantofvariantcasesislaidout_Mark_tag_count, .as.c_count = {.f_n = t16}};
@@ -403,9 +400,8 @@ bb0:
     t29 = h7_own7;
 #line 40 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     h7_own7 = t18;
-#line 407 "fixedbugs382aconstantofvariantcasesislaidout.c"
+#line 40 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     h_fixedbugs382aconstantofvariantcasesislaidout_Shape_release(&t29);
-#line 41 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     t19 = (h_fixedbugs382aconstantofvariantcasesislaidout_Mark){.tag = h_fixedbugs382aconstantofvariantcasesislaidout_Mark_tag_plain};
 #line 41 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     t20 = (h_fixedbugs382aconstantofvariantcasesislaidout_Shape){.tag = h_fixedbugs382aconstantofvariantcasesislaidout_Shape_tag_wrap, .as.c_wrap = {.f_inner = t19}};
@@ -413,7 +409,7 @@ bb0:
     t30 = h8_own8;
 #line 41 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     h8_own8 = t20;
-#line 417 "fixedbugs382aconstantofvariantcasesislaidout.c"
+#line 41 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     h_fixedbugs382aconstantofvariantcasesislaidout_Shape_release(&t30);
 #line 34 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     t21 = hero_array_new(&h_fixedbugs382aconstantofvariantcasesislaidout_Shape_desc, 7);
@@ -435,8 +431,9 @@ bb0:
     t31 = h9_own9;
 #line 34 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     h9_own9 = t21;
-#line 439 "fixedbugs382aconstantofvariantcasesislaidout.c"
+#line 34 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     hero_array_decref(t31);
+#line 437 "fixedbugs382aconstantofvariantcasesislaidout.c"
     hero_array_incref(t21);
     h_fixedbugs382aconstantofvariantcasesislaidout_Shape_release(hero_slot_escape(&h0_own0));
     h_fixedbugs382aconstantofvariantcasesislaidout_Shape_release(hero_slot_escape(&h1_own1));
@@ -463,14 +460,14 @@ HERO_ARRAY_STATIC(hero_constant_h_fixedbugs382aconstantofvariantcasesislaidout_F
 HERO_ARRAY_STATIC(hero_constant_h_fixedbugs382aconstantofvariantcasesislaidout_FOREST_13, h_fixedbugs382aconstantofvariantcasesislaidout_Tree, &h_fixedbugs382aconstantofvariantcasesislaidout_Tree_desc, 2, (h_fixedbugs382aconstantofvariantcasesislaidout_Tree){.tag = h_fixedbugs382aconstantofvariantcasesislaidout_Tree_tag_node, .as.c_node = {.f_kids = HERO_ARRAY_LIT(hero_constant_h_fixedbugs382aconstantofvariantcasesislaidout_FOREST_9)}}, (h_fixedbugs382aconstantofvariantcasesislaidout_Tree){.tag = h_fixedbugs382aconstantofvariantcasesislaidout_Tree_tag_leaf, .as.c_leaf = {.f_v = INT64_C(2)}});
 #line 44 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
 HeroArrayHeader * h_fixedbugs382aconstantofvariantcasesislaidout_FOREST(void) {
-#line 467 "fixedbugs382aconstantofvariantcasesislaidout.c"
+#line 464 "fixedbugs382aconstantofvariantcasesislaidout.c"
     return HERO_ARRAY_LIT(hero_constant_h_fixedbugs382aconstantofvariantcasesislaidout_FOREST_13);
 }
 #else
 
 #line 44 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
 HeroArrayHeader * h_fixedbugs382aconstantofvariantcasesislaidout_FOREST(void) {
-#line 474 "fixedbugs382aconstantofvariantcasesislaidout.c"
+#line 471 "fixedbugs382aconstantofvariantcasesislaidout.c"
     h_fixedbugs382aconstantofvariantcasesislaidout_Tree h0_own0 = {0};
     h_fixedbugs382aconstantofvariantcasesislaidout_Tree h1_own1 = {0};
     HeroArrayHeader * h2_own2 = {0};
@@ -514,7 +511,7 @@ bb0:
     t14 = h0_own0;
 #line 45 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     h0_own0 = t2;
-#line 518 "fixedbugs382aconstantofvariantcasesislaidout.c"
+#line 45 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     h_fixedbugs382aconstantofvariantcasesislaidout_Tree_release(&t14);
 #line 45 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     t3 = INT64_C(4);
@@ -524,7 +521,7 @@ bb0:
     t15 = h1_own1;
 #line 45 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     h1_own1 = t4;
-#line 528 "fixedbugs382aconstantofvariantcasesislaidout.c"
+#line 45 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     h_fixedbugs382aconstantofvariantcasesislaidout_Tree_release(&t15);
 #line 45 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     t5 = hero_array_new(&h_fixedbugs382aconstantofvariantcasesislaidout_Tree_desc, 1);
@@ -534,8 +531,9 @@ bb0:
     t16 = h2_own2;
 #line 45 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     h2_own2 = t5;
-#line 538 "fixedbugs382aconstantofvariantcasesislaidout.c"
+#line 45 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     hero_array_decref(t16);
+#line 45 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     hero_array_incref(t5);
 #line 45 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     t6 = (h_fixedbugs382aconstantofvariantcasesislaidout_Tree){.tag = h_fixedbugs382aconstantofvariantcasesislaidout_Tree_tag_node, .as.c_node = {.f_kids = t5}};
@@ -543,7 +541,7 @@ bb0:
     t17 = h3_own3;
 #line 45 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     h3_own3 = t6;
-#line 547 "fixedbugs382aconstantofvariantcasesislaidout.c"
+#line 45 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     h_fixedbugs382aconstantofvariantcasesislaidout_Tree_release(&t17);
 #line 45 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     t7 = hero_array_new(&h_fixedbugs382aconstantofvariantcasesislaidout_Tree_desc, 1);
@@ -551,8 +549,9 @@ bb0:
     t18 = h4_own4;
 #line 45 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     h4_own4 = t7;
-#line 555 "fixedbugs382aconstantofvariantcasesislaidout.c"
+#line 45 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     hero_array_decref(t18);
+#line 45 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     hero_array_incref(t7);
 #line 45 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     t8 = (h_fixedbugs382aconstantofvariantcasesislaidout_Tree){.tag = h_fixedbugs382aconstantofvariantcasesislaidout_Tree_tag_node, .as.c_node = {.f_kids = t7}};
@@ -560,7 +559,7 @@ bb0:
     t19 = h5_own5;
 #line 45 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     h5_own5 = t8;
-#line 564 "fixedbugs382aconstantofvariantcasesislaidout.c"
+#line 45 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     h_fixedbugs382aconstantofvariantcasesislaidout_Tree_release(&t19);
 #line 45 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     t9 = hero_array_new(&h_fixedbugs382aconstantofvariantcasesislaidout_Tree_desc, 3);
@@ -574,8 +573,9 @@ bb0:
     t20 = h6_own6;
 #line 45 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     h6_own6 = t9;
-#line 578 "fixedbugs382aconstantofvariantcasesislaidout.c"
+#line 45 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     hero_array_decref(t20);
+#line 45 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     hero_array_incref(t9);
 #line 45 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     t10 = (h_fixedbugs382aconstantofvariantcasesislaidout_Tree){.tag = h_fixedbugs382aconstantofvariantcasesislaidout_Tree_tag_node, .as.c_node = {.f_kids = t9}};
@@ -583,7 +583,7 @@ bb0:
     t21 = h7_own7;
 #line 45 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     h7_own7 = t10;
-#line 587 "fixedbugs382aconstantofvariantcasesislaidout.c"
+#line 45 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     h_fixedbugs382aconstantofvariantcasesislaidout_Tree_release(&t21);
 #line 45 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     t11 = INT64_C(2);
@@ -593,7 +593,7 @@ bb0:
     t22 = h8_own8;
 #line 45 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     h8_own8 = t12;
-#line 597 "fixedbugs382aconstantofvariantcasesislaidout.c"
+#line 45 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     h_fixedbugs382aconstantofvariantcasesislaidout_Tree_release(&t22);
 #line 45 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     t13 = hero_array_new(&h_fixedbugs382aconstantofvariantcasesislaidout_Tree_desc, 2);
@@ -605,8 +605,9 @@ bb0:
     t23 = h9_own9;
 #line 45 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     h9_own9 = t13;
-#line 609 "fixedbugs382aconstantofvariantcasesislaidout.c"
+#line 45 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     hero_array_decref(t23);
+#line 611 "fixedbugs382aconstantofvariantcasesislaidout.c"
     hero_array_incref(t13);
     h_fixedbugs382aconstantofvariantcasesislaidout_Tree_release(hero_slot_escape(&h0_own0));
     h_fixedbugs382aconstantofvariantcasesislaidout_Tree_release(hero_slot_escape(&h1_own1));
@@ -624,7 +625,7 @@ bb0:
 
 #line 47 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
 int64_t h_fixedbugs382aconstantofvariantcasesislaidout_weight(h_fixedbugs382aconstantofvariantcasesislaidout_Shape h0_s) {
-#line 628 "fixedbugs382aconstantofvariantcasesislaidout.c"
+#line 629 "fixedbugs382aconstantofvariantcasesislaidout.c"
     h_fixedbugs382aconstantofvariantcasesislaidout_Shape h1_s0 = {0};
     int64_t h2_r0;
     h_fixedbugs382aconstantofvariantcasesislaidout_Shape_c_named h3_m = {0};
@@ -690,11 +691,11 @@ bb0:
     t1 = h0_s;
 #line 48 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     t44 = h1_s0;
-#line 694 "fixedbugs382aconstantofvariantcasesislaidout.c"
+#line 48 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     h_fixedbugs382aconstantofvariantcasesislaidout_Shape_retain(&t1);
 #line 48 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     h1_s0 = t1;
-#line 698 "fixedbugs382aconstantofvariantcasesislaidout.c"
+#line 48 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     h_fixedbugs382aconstantofvariantcasesislaidout_Shape_release(&t44);
 #line 48 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     t2 = h1_s0;
@@ -720,7 +721,7 @@ bb0:
 bb1:
 #line 48 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     t43 = h2_r0;
-#line 724 "fixedbugs382aconstantofvariantcasesislaidout.c"
+#line 725 "fixedbugs382aconstantofvariantcasesislaidout.c"
     h_fixedbugs382aconstantofvariantcasesislaidout_Shape_release(hero_slot_escape(&h1_s0));
     h_fixedbugs382aconstantofvariantcasesislaidout_Shape_c_named_release(hero_slot_escape(&h3_m));
     h_fixedbugs382aconstantofvariantcasesislaidout_Shape_c_line_release(hero_slot_escape(&h4_l));
@@ -742,11 +743,11 @@ bb3:
     t6 = t5.as.c_named;
 #line 50 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     t45 = h3_m;
-#line 746 "fixedbugs382aconstantofvariantcasesislaidout.c"
+#line 50 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     h_fixedbugs382aconstantofvariantcasesislaidout_Shape_c_named_retain(&t6);
 #line 50 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     h3_m = t6;
-#line 750 "fixedbugs382aconstantofvariantcasesislaidout.c"
+#line 50 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     h_fixedbugs382aconstantofvariantcasesislaidout_Shape_c_named_release(&t45);
 #line 50 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     t7 = h3_m;
@@ -766,11 +767,11 @@ bb4:
     t11 = t10.as.c_line;
 #line 51 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     t46 = h4_l;
-#line 770 "fixedbugs382aconstantofvariantcasesislaidout.c"
+#line 51 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     h_fixedbugs382aconstantofvariantcasesislaidout_Shape_c_line_retain(&t11);
 #line 51 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     h4_l = t11;
-#line 774 "fixedbugs382aconstantofvariantcasesislaidout.c"
+#line 51 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     h_fixedbugs382aconstantofvariantcasesislaidout_Shape_c_line_release(&t46);
 #line 51 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     t12 = h4_l;
@@ -806,15 +807,15 @@ bb5:
     t47 = h11_own11;
 #line 52 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     h11_own11 = t22;
-#line 810 "fixedbugs382aconstantofvariantcasesislaidout.c"
+#line 52 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     h_0opt_e201354_release(&t47);
 #line 52 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     t48 = h6_f0;
-#line 814 "fixedbugs382aconstantofvariantcasesislaidout.c"
+#line 52 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     h_0opt_e201354_retain(&t22);
 #line 52 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     h6_f0 = t22;
-#line 818 "fixedbugs382aconstantofvariantcasesislaidout.c"
+#line 52 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     h_0opt_e201354_release(&t48);
 #line 52 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     t23 = h6_f0;
@@ -868,7 +869,7 @@ bb8:
     t27 = h6_f0;
 #line 52 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     t28 = t27.as.err;
-#line 872 "fixedbugs382aconstantofvariantcasesislaidout.c"
+#line 873 "fixedbugs382aconstantofvariantcasesislaidout.c"
     hero_panic_must(t28);
     hero_unreachable();
 bb9:
@@ -902,12 +903,12 @@ bb11:
     h9_r1 = t41;
 #line 54 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     goto bb9;
-#line 906 "fixedbugs382aconstantofvariantcasesislaidout.c"
+#line 907 "fixedbugs382aconstantofvariantcasesislaidout.c"
 }
 
 #line 58 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
 int64_t h_fixedbugs382aconstantofvariantcasesislaidout_sum(h_fixedbugs382aconstantofvariantcasesislaidout_Tree h0_t) {
-#line 911 "fixedbugs382aconstantofvariantcasesislaidout.c"
+#line 912 "fixedbugs382aconstantofvariantcasesislaidout.c"
     h_fixedbugs382aconstantofvariantcasesislaidout_Tree h1_s0 = {0};
     int64_t h2_r0;
     h_fixedbugs382aconstantofvariantcasesislaidout_Tree_c_leaf h3_l;
@@ -935,11 +936,11 @@ bb0:
     t1 = h0_t;
 #line 59 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     t16 = h1_s0;
-#line 939 "fixedbugs382aconstantofvariantcasesislaidout.c"
+#line 59 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     h_fixedbugs382aconstantofvariantcasesislaidout_Tree_retain(&t1);
 #line 59 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     h1_s0 = t1;
-#line 943 "fixedbugs382aconstantofvariantcasesislaidout.c"
+#line 59 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     h_fixedbugs382aconstantofvariantcasesislaidout_Tree_release(&t16);
 #line 59 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     t2 = h1_s0;
@@ -959,7 +960,7 @@ bb0:
 bb1:
 #line 59 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     t15 = h2_r0;
-#line 963 "fixedbugs382aconstantofvariantcasesislaidout.c"
+#line 964 "fixedbugs382aconstantofvariantcasesislaidout.c"
     h_fixedbugs382aconstantofvariantcasesislaidout_Tree_release(hero_slot_escape(&h1_s0));
     h_fixedbugs382aconstantofvariantcasesislaidout_Tree_c_node_release(hero_slot_escape(&h4_n));
     return t15;
@@ -986,11 +987,11 @@ bb3:
     t9 = t8.as.c_node;
 #line 61 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     t17 = h4_n;
-#line 990 "fixedbugs382aconstantofvariantcasesislaidout.c"
+#line 61 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     h_fixedbugs382aconstantofvariantcasesislaidout_Tree_c_node_retain(&t9);
 #line 61 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     h4_n = t9;
-#line 994 "fixedbugs382aconstantofvariantcasesislaidout.c"
+#line 61 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     h_fixedbugs382aconstantofvariantcasesislaidout_Tree_c_node_release(&t17);
 #line 61 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     t10 = h4_n;
@@ -1006,12 +1007,12 @@ bb3:
     h2_r0 = t14;
 #line 59 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     goto bb1;
-#line 1010 "fixedbugs382aconstantofvariantcasesislaidout.c"
+#line 1011 "fixedbugs382aconstantofvariantcasesislaidout.c"
 }
 
 #line 63 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
 int64_t h_fixedbugs382aconstantofvariantcasesislaidout_add(int64_t h0_acc, h_fixedbugs382aconstantofvariantcasesislaidout_Tree h1_item) {
-#line 1015 "fixedbugs382aconstantofvariantcasesislaidout.c"
+#line 1016 "fixedbugs382aconstantofvariantcasesislaidout.c"
     int64_t t1;
     h_fixedbugs382aconstantofvariantcasesislaidout_Tree t2;
     int64_t t3;
@@ -1028,12 +1029,12 @@ bb0:
     if (__builtin_add_overflow(t1, t3, &t4)) hero_panic_overflow();
 #line 64 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     return t4;
-#line 1032 "fixedbugs382aconstantofvariantcasesislaidout.c"
+#line 1033 "fixedbugs382aconstantofvariantcasesislaidout.c"
 }
 
 #line 66 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
 void h_fixedbugs382aconstantofvariantcasesislaidout_main(void) {
-#line 1037 "fixedbugs382aconstantofvariantcasesislaidout.c"
+#line 1038 "fixedbugs382aconstantofvariantcasesislaidout.c"
     int64_t h0_total;
     int64_t h1_at;
     HeroArrayHeader * h2_copy = {0};
@@ -1146,7 +1147,7 @@ bb2:
     t57 = h3_own3;
 #line 71 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     h3_own3 = t7;
-#line 1150 "fixedbugs382aconstantofvariantcasesislaidout.c"
+#line 71 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     hero_array_decref(t57);
 #line 71 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     t8 = h1_at;
@@ -1187,7 +1188,7 @@ bb3:
     t58 = h4_own4;
 #line 74 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     h4_own4 = t19;
-#line 1191 "fixedbugs382aconstantofvariantcasesislaidout.c"
+#line 74 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     hero_array_decref(t58);
 #line 74 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     t20 = INT64_C(0);
@@ -1203,7 +1204,7 @@ bb3:
     t59 = h5_own5;
 #line 74 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     h5_own5 = t24;
-#line 1207 "fixedbugs382aconstantofvariantcasesislaidout.c"
+#line 74 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     hero_array_decref(t59);
 #line 74 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     t25 = INT64_C(1);
@@ -1219,7 +1220,7 @@ bb3:
     t60 = h6_own6;
 #line 74 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     h6_own6 = t29;
-#line 1223 "fixedbugs382aconstantofvariantcasesislaidout.c"
+#line 74 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     hero_array_decref(t60);
 #line 74 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     t30 = INT64_C(4);
@@ -1235,7 +1236,7 @@ bb3:
     t61 = h7_own7;
 #line 74 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     h7_own7 = t34;
-#line 1239 "fixedbugs382aconstantofvariantcasesislaidout.c"
+#line 74 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     h_fixedbugs382aconstantofvariantcasesislaidout_Shape_release(&t61);
 #line 74 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     t35 = h_fixedbugs382aconstantofvariantcasesislaidout_Shape_eq(&t31, &t34);
@@ -1260,21 +1261,20 @@ bb3:
     t62 = h8_own8;
 #line 75 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     h8_own8 = t36;
-#line 1264 "fixedbugs382aconstantofvariantcasesislaidout.c"
+#line 75 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     hero_array_decref(t62);
 #line 75 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     t63 = h2_copy;
-#line 1268 "fixedbugs382aconstantofvariantcasesislaidout.c"
+#line 75 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     hero_array_incref(t36);
 #line 75 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     h2_copy = t36;
-#line 1272 "fixedbugs382aconstantofvariantcasesislaidout.c"
+#line 75 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     hero_array_decref(t63);
-#line 76 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     t37 = INT64_C(1);
 #line 76 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     t38 = HERO_STR_LIT(hero_str_eb4ac31);
-#line 1278 "fixedbugs382aconstantofvariantcasesislaidout.c"
+#line 76 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     hero_str_incref(t38);
 #line 76 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     t39 = (h_fixedbugs382aconstantofvariantcasesislaidout_Shape){.tag = h_fixedbugs382aconstantofvariantcasesislaidout_Shape_tag_named, .as.c_named = {.f_label = t38}};
@@ -1282,8 +1282,9 @@ bb3:
     t64 = h9_own9;
 #line 76 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     h9_own9 = t39;
-#line 1286 "fixedbugs382aconstantofvariantcasesislaidout.c"
+#line 76 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     h_fixedbugs382aconstantofvariantcasesislaidout_Shape_release(&t64);
+#line 76 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     h_fixedbugs382aconstantofvariantcasesislaidout_Shape_retain(&t39);
 #line 76 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     hero_array_set(&(h2_copy), t37, &t39);
@@ -1302,7 +1303,7 @@ bb3:
     t65 = h10_own10;
 #line 77 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     h10_own10 = t45;
-#line 1306 "fixedbugs382aconstantofvariantcasesislaidout.c"
+#line 77 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     hero_array_decref(t65);
 #line 77 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     t46 = INT64_C(1);
@@ -1320,7 +1321,7 @@ bb3:
     t66 = h11_own11;
 #line 77 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     h11_own11 = t51;
-#line 1324 "fixedbugs382aconstantofvariantcasesislaidout.c"
+#line 77 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     hero_array_decref(t66);
 #line 77 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     t52 = hero_array_eq(t50, t51);
@@ -1332,7 +1333,7 @@ bb3:
     t67 = h12_own12;
 #line 77 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     h12_own12 = t54;
-#line 1336 "fixedbugs382aconstantofvariantcasesislaidout.c"
+#line 77 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     hero_array_decref(t67);
 #line 77 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     t55 = h_fixedbugs382aconstantofvariantcasesislaidout_SHAPES();
@@ -1340,7 +1341,7 @@ bb3:
     t68 = h13_own13;
 #line 77 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     h13_own13 = t55;
-#line 1344 "fixedbugs382aconstantofvariantcasesislaidout.c"
+#line 77 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     hero_array_decref(t68);
 #line 77 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     t56 = hero_array_eq(t54, t55);
@@ -1360,7 +1361,7 @@ bb3:
     hero_print_bool(t56);
 #line 77 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     hero_print_end();
-#line 1364 "fixedbugs382aconstantofvariantcasesislaidout.c"
+#line 1365 "fixedbugs382aconstantofvariantcasesislaidout.c"
     hero_array_release_at(&h2_copy);
     hero_array_release_at(&h3_own3);
     hero_array_release_at(&h4_own4);
@@ -1380,7 +1381,7 @@ bb3:
 /* fold<Tree, i64> */
 #line 58 "<heroes library>"
 HERO_TU_LOCAL int64_t h_library_fold_3fb5a198(HeroArrayHeader * h0_xs, int64_t h1_start, h_0fn_61a5ba7e h2_f) {
-#line 1384 "fixedbugs382aconstantofvariantcasesislaidout.c"
+#line 1385 "fixedbugs382aconstantofvariantcasesislaidout.c"
     int64_t h3_total;
     HeroArrayHeader * h4_xs0 = {0};
     int64_t h5_i0;
@@ -1414,11 +1415,11 @@ bb0:
     t2 = h0_xs;
 #line 60 "<heroes library>"
     t19 = h4_xs0;
-#line 1418 "fixedbugs382aconstantofvariantcasesislaidout.c"
+#line 60 "<heroes library>"
     hero_array_incref(t2);
 #line 60 "<heroes library>"
     h4_xs0 = t2;
-#line 1422 "fixedbugs382aconstantofvariantcasesislaidout.c"
+#line 60 "<heroes library>"
     hero_array_decref(t19);
 #line 60 "<heroes library>"
     t3 = INT64_C(0);
@@ -1448,13 +1449,12 @@ bb2:
     t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(h_fixedbugs382aconstantofvariantcasesislaidout_Tree) ? hero_unreachable() : (void)0), ((h_fixedbugs382aconstantofvariantcasesislaidout_Tree const *)(const void *)(t8 + 1))[t9]);
 #line 60 "<heroes library>"
     t20 = h6_x;
-#line 1452 "fixedbugs382aconstantofvariantcasesislaidout.c"
+#line 60 "<heroes library>"
     h_fixedbugs382aconstantofvariantcasesislaidout_Tree_retain(&t10);
 #line 60 "<heroes library>"
     h6_x = t10;
-#line 1456 "fixedbugs382aconstantofvariantcasesislaidout.c"
+#line 60 "<heroes library>"
     h_fixedbugs382aconstantofvariantcasesislaidout_Tree_release(&t20);
-#line 61 "<heroes library>"
     t11 = h2_f;
 #line 61 "<heroes library>"
     t12 = h3_total;

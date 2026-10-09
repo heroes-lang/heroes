@@ -142,17 +142,16 @@ bb0:
     t23 = h3_own3;
 #line 19 "tests/golden/run/fixedbugs-map-store-leaked.hero"
     h3_own3 = t1;
-#line 146 "fixedbugsmapstoreleaked.c"
+#line 19 "tests/golden/run/fixedbugs-map-store-leaked.hero"
     hero_map_decref(t23);
 #line 19 "tests/golden/run/fixedbugs-map-store-leaked.hero"
     t24 = h0_m;
-#line 150 "fixedbugsmapstoreleaked.c"
+#line 19 "tests/golden/run/fixedbugs-map-store-leaked.hero"
     hero_map_incref(t1);
 #line 19 "tests/golden/run/fixedbugs-map-store-leaked.hero"
     h0_m = t1;
-#line 154 "fixedbugsmapstoreleaked.c"
+#line 19 "tests/golden/run/fixedbugs-map-store-leaked.hero"
     hero_map_decref(t24);
-#line 20 "tests/golden/run/fixedbugs-map-store-leaked.hero"
     t2 = HERO_STR_LIT(hero_str_61);
 #line 20 "tests/golden/run/fixedbugs-map-store-leaked.hero"
     t3 = HERO_STR_LIT(hero_str_78);
@@ -164,8 +163,9 @@ bb0:
     t25 = h4_own4;
 #line 20 "tests/golden/run/fixedbugs-map-store-leaked.hero"
     h4_own4 = t5;
-#line 168 "fixedbugsmapstoreleaked.c"
+#line 20 "tests/golden/run/fixedbugs-map-store-leaked.hero"
     hero_str_decref(t25);
+#line 20 "tests/golden/run/fixedbugs-map-store-leaked.hero"
     hero_str_incref(t5);
 #line 20 "tests/golden/run/fixedbugs-map-store-leaked.hero"
     hero_map_set(&(h0_m), &t2, &t5);
@@ -180,8 +180,9 @@ bb0:
     t26 = h5_own5;
 #line 21 "tests/golden/run/fixedbugs-map-store-leaked.hero"
     h5_own5 = t9;
-#line 184 "fixedbugsmapstoreleaked.c"
+#line 21 "tests/golden/run/fixedbugs-map-store-leaked.hero"
     hero_str_decref(t26);
+#line 21 "tests/golden/run/fixedbugs-map-store-leaked.hero"
     hero_str_incref(t9);
 #line 21 "tests/golden/run/fixedbugs-map-store-leaked.hero"
     hero_map_set(&(h0_m), &t6, &t9);
@@ -210,15 +211,15 @@ bb0:
     t27 = h6_own6;
 #line 22 "tests/golden/run/fixedbugs-map-store-leaked.hero"
     h6_own6 = t12;
-#line 214 "fixedbugsmapstoreleaked.c"
+#line 22 "tests/golden/run/fixedbugs-map-store-leaked.hero"
     h_0opt_f87774a_release(&t27);
 #line 22 "tests/golden/run/fixedbugs-map-store-leaked.hero"
     t28 = h1_f0;
-#line 218 "fixedbugsmapstoreleaked.c"
+#line 22 "tests/golden/run/fixedbugs-map-store-leaked.hero"
     h_0opt_f87774a_retain(&t12);
 #line 22 "tests/golden/run/fixedbugs-map-store-leaked.hero"
     h1_f0 = t12;
-#line 222 "fixedbugsmapstoreleaked.c"
+#line 22 "tests/golden/run/fixedbugs-map-store-leaked.hero"
     h_0opt_f87774a_release(&t28);
 #line 22 "tests/golden/run/fixedbugs-map-store-leaked.hero"
     t13 = h1_f0;
@@ -238,25 +239,29 @@ bb1:
     t18 = t17.as.ok;
 #line 22 "tests/golden/run/fixedbugs-map-store-leaked.hero"
     t29 = h2_r0;
-#line 242 "fixedbugsmapstoreleaked.c"
+#line 22 "tests/golden/run/fixedbugs-map-store-leaked.hero"
     hero_str_incref(t18);
 #line 22 "tests/golden/run/fixedbugs-map-store-leaked.hero"
     h2_r0 = t18;
-#line 246 "fixedbugsmapstoreleaked.c"
+#line 22 "tests/golden/run/fixedbugs-map-store-leaked.hero"
     hero_str_decref(t29);
+#line 22 "tests/golden/run/fixedbugs-map-store-leaked.hero"
     goto bb3;
+#line 22 "tests/golden/run/fixedbugs-map-store-leaked.hero"
 bb2:
 #line 22 "tests/golden/run/fixedbugs-map-store-leaked.hero"
     t19 = HERO_STR_LIT(hero_str_3f);
 #line 22 "tests/golden/run/fixedbugs-map-store-leaked.hero"
     t30 = h2_r0;
-#line 254 "fixedbugsmapstoreleaked.c"
+#line 22 "tests/golden/run/fixedbugs-map-store-leaked.hero"
     hero_str_incref(t19);
 #line 22 "tests/golden/run/fixedbugs-map-store-leaked.hero"
     h2_r0 = t19;
-#line 258 "fixedbugsmapstoreleaked.c"
+#line 22 "tests/golden/run/fixedbugs-map-store-leaked.hero"
     hero_str_decref(t30);
+#line 22 "tests/golden/run/fixedbugs-map-store-leaked.hero"
     goto bb3;
+#line 22 "tests/golden/run/fixedbugs-map-store-leaked.hero"
 bb3:
 #line 22 "tests/golden/run/fixedbugs-map-store-leaked.hero"
     t20 = h2_r0;
@@ -271,7 +276,7 @@ bb3:
     hero_print_int(t22);
 #line 23 "tests/golden/run/fixedbugs-map-store-leaked.hero"
     hero_print_end();
-#line 275 "fixedbugsmapstoreleaked.c"
+#line 280 "fixedbugsmapstoreleaked.c"
     hero_map_release_at(&h0_m);
     h_0opt_f87774a_release(hero_slot_escape(&h1_f0));
     hero_str_release_at(&h2_r0);

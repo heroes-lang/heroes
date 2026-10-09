@@ -119,8 +119,9 @@ bb0:
     t4 = h1_own1;
 #line 16 "tests/golden/run/ffi-cstr.hero"
     h1_own1 = t3;
-#line 123 "fficstr.c"
+#line 16 "tests/golden/run/ffi-cstr.hero"
     hero_str_decref(t4);
+#line 125 "fficstr.c"
     hero_str_incref(t3);
     hero_str_release_at(&h1_own1);
     return t3;
@@ -128,7 +129,7 @@ bb0:
 
 #line 18 "tests/golden/run/ffi-cstr.hero"
 void h_fficstr_main(void) {
-#line 132 "fficstr.c"
+#line 133 "fficstr.c"
     HeroStr h0_own0 = {0};
     HeroStr t1;
     const char * t2;
@@ -153,7 +154,7 @@ bb0:
     t9 = h0_own0;
 #line 24 "tests/golden/run/ffi-cstr.hero"
     h0_own0 = t5;
-#line 157 "fficstr.c"
+#line 24 "tests/golden/run/ffi-cstr.hero"
     hero_str_decref(t9);
 #line 24 "tests/golden/run/ffi-cstr.hero"
     t6 = hero_str_lend(t5);
@@ -164,7 +165,7 @@ bb0:
     hero_print_str(t8);
 #line 25 "tests/golden/run/ffi-cstr.hero"
     hero_print_end();
-#line 168 "fficstr.c"
+#line 169 "fficstr.c"
     hero_str_release_at(&h0_own0);
     return;
 }

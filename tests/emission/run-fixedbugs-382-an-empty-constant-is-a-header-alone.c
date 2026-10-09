@@ -119,8 +119,9 @@ bb0:
     t2 = h0_own0;
 #line 8 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     h0_own0 = t1;
-#line 123 "fixedbugs382anemptyconstantisaheaderalone.c"
+#line 8 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     hero_array_decref(t2);
+#line 125 "fixedbugs382anemptyconstantisaheaderalone.c"
     hero_array_incref(t1);
     hero_array_release_at(&h0_own0);
     return t1;
@@ -132,14 +133,14 @@ bb0:
 HERO_ARRAY_STATIC_EMPTY(hero_constant_h_fixedbugs382anemptyconstantisaheaderalone_NO_WORDS_1, &hero_desc_str);
 #line 10 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
 HeroArrayHeader * h_fixedbugs382anemptyconstantisaheaderalone_NO_WORDS(void) {
-#line 136 "fixedbugs382anemptyconstantisaheaderalone.c"
+#line 137 "fixedbugs382anemptyconstantisaheaderalone.c"
     return HERO_ARRAY_LIT(hero_constant_h_fixedbugs382anemptyconstantisaheaderalone_NO_WORDS_1);
 }
 #else
 
 #line 10 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
 HeroArrayHeader * h_fixedbugs382anemptyconstantisaheaderalone_NO_WORDS(void) {
-#line 143 "fixedbugs382anemptyconstantisaheaderalone.c"
+#line 144 "fixedbugs382anemptyconstantisaheaderalone.c"
     HeroArrayHeader * h0_own0 = {0};
     HeroArrayHeader * t1;
     HeroArrayHeader * t2;
@@ -151,8 +152,9 @@ bb0:
     t2 = h0_own0;
 #line 11 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     h0_own0 = t1;
-#line 155 "fixedbugs382anemptyconstantisaheaderalone.c"
+#line 11 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     hero_array_decref(t2);
+#line 158 "fixedbugs382anemptyconstantisaheaderalone.c"
     hero_array_incref(t1);
     hero_array_release_at(&h0_own0);
     return t1;
@@ -166,14 +168,14 @@ HERO_ARRAY_STATIC_EMPTY(hero_constant_h_fixedbugs382anemptyconstantisaheaderalon
 HERO_ARRAY_STATIC(hero_constant_h_fixedbugs382anemptyconstantisaheaderalone_HOLLOW_2, HeroArrayHeader *, &hero_desc_array, 1, HERO_ARRAY_LIT(hero_constant_h_fixedbugs382anemptyconstantisaheaderalone_HOLLOW_1));
 #line 13 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
 HeroArrayHeader * h_fixedbugs382anemptyconstantisaheaderalone_HOLLOW(void) {
-#line 170 "fixedbugs382anemptyconstantisaheaderalone.c"
+#line 172 "fixedbugs382anemptyconstantisaheaderalone.c"
     return HERO_ARRAY_LIT(hero_constant_h_fixedbugs382anemptyconstantisaheaderalone_HOLLOW_2);
 }
 #else
 
 #line 13 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
 HeroArrayHeader * h_fixedbugs382anemptyconstantisaheaderalone_HOLLOW(void) {
-#line 177 "fixedbugs382anemptyconstantisaheaderalone.c"
+#line 179 "fixedbugs382anemptyconstantisaheaderalone.c"
     HeroArrayHeader * h0_own0 = {0};
     HeroArrayHeader * h1_own1 = {0};
     HeroArrayHeader * t1;
@@ -188,7 +190,7 @@ bb0:
     t3 = h0_own0;
 #line 14 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     h0_own0 = t1;
-#line 192 "fixedbugs382anemptyconstantisaheaderalone.c"
+#line 14 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     hero_array_decref(t3);
 #line 14 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     t2 = hero_array_new(&hero_desc_array, 1);
@@ -198,8 +200,9 @@ bb0:
     t4 = h1_own1;
 #line 14 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     h1_own1 = t2;
-#line 202 "fixedbugs382anemptyconstantisaheaderalone.c"
+#line 14 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     hero_array_decref(t4);
+#line 206 "fixedbugs382anemptyconstantisaheaderalone.c"
     hero_array_incref(t2);
     hero_array_release_at(&h0_own0);
     hero_array_release_at(&h1_own1);
@@ -209,7 +212,7 @@ bb0:
 
 #line 16 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
 void h_fixedbugs382anemptyconstantisaheaderalone_main(void) {
-#line 213 "fixedbugs382anemptyconstantisaheaderalone.c"
+#line 216 "fixedbugs382anemptyconstantisaheaderalone.c"
     int64_t h0_walked;
     HeroArrayHeader * h1_xs0 = {0};
     int64_t h2_i0;
@@ -347,15 +350,15 @@ bb0:
     t83 = h7_own7;
 #line 19 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     h7_own7 = t2;
-#line 351 "fixedbugs382anemptyconstantisaheaderalone.c"
+#line 19 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     hero_array_decref(t83);
 #line 19 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     t84 = h1_xs0;
-#line 355 "fixedbugs382anemptyconstantisaheaderalone.c"
+#line 19 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     hero_array_incref(t2);
 #line 19 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     h1_xs0 = t2;
-#line 359 "fixedbugs382anemptyconstantisaheaderalone.c"
+#line 19 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     hero_array_decref(t84);
 #line 19 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     t3 = INT64_C(0);
@@ -418,7 +421,7 @@ bb4:
     t85 = h8_own8;
 #line 22 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     h8_own8 = t19;
-#line 422 "fixedbugs382anemptyconstantisaheaderalone.c"
+#line 22 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     hero_array_decref(t85);
 #line 22 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     t20 = ((void)(t19 == NULL ? ((void)hero_array_len(t19), hero_unreachable()) : (void)0), t19->len);
@@ -430,7 +433,7 @@ bb4:
     t86 = h9_own9;
 #line 22 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     h9_own9 = t22;
-#line 434 "fixedbugs382anemptyconstantisaheaderalone.c"
+#line 22 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     hero_array_decref(t86);
 #line 22 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     t23 = ((void)(t22 == NULL ? ((void)hero_array_len(t22), hero_unreachable()) : (void)0), t22->len);
@@ -442,7 +445,7 @@ bb4:
     t87 = h10_own10;
 #line 22 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     h10_own10 = t25;
-#line 446 "fixedbugs382anemptyconstantisaheaderalone.c"
+#line 22 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     hero_array_decref(t87);
 #line 22 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     t26 = ((void)(t25 == NULL ? ((void)hero_array_len(t25), hero_unreachable()) : (void)0), t25->len);
@@ -454,7 +457,7 @@ bb4:
     t88 = h11_own11;
 #line 22 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     h11_own11 = t28;
-#line 458 "fixedbugs382anemptyconstantisaheaderalone.c"
+#line 22 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     hero_array_decref(t88);
 #line 22 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     t29 = INT64_C(0);
@@ -487,7 +490,7 @@ bb4:
     t89 = h12_own12;
 #line 23 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     h12_own12 = t32;
-#line 491 "fixedbugs382anemptyconstantisaheaderalone.c"
+#line 23 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     hero_array_decref(t89);
 #line 23 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     t33 = hero_array_new(&hero_desc_int, 1);
@@ -495,7 +498,7 @@ bb4:
     t90 = h13_own13;
 #line 23 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     h13_own13 = t33;
-#line 499 "fixedbugs382anemptyconstantisaheaderalone.c"
+#line 23 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     hero_array_decref(t90);
 #line 23 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     t34 = hero_array_eq(t32, t33);
@@ -507,7 +510,7 @@ bb4:
     t91 = h14_own14;
 #line 23 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     h14_own14 = t36;
-#line 511 "fixedbugs382anemptyconstantisaheaderalone.c"
+#line 23 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     hero_array_decref(t91);
 #line 23 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     t37 = HERO_STR_LIT(hero_str_2c);
@@ -517,7 +520,7 @@ bb4:
     t92 = h15_own15;
 #line 23 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     h15_own15 = t38;
-#line 521 "fixedbugs382anemptyconstantisaheaderalone.c"
+#line 23 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     hero_str_decref(t92);
 #line 23 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     t39 = HERO_STR_LIT(hero_str_7c);
@@ -527,7 +530,7 @@ bb4:
     t93 = h16_own16;
 #line 23 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     h16_own16 = t40;
-#line 531 "fixedbugs382anemptyconstantisaheaderalone.c"
+#line 23 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     hero_array_decref(t93);
 #line 23 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     t41 = INT64_C(0);
@@ -539,7 +542,7 @@ bb4:
     t94 = h17_own17;
 #line 23 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     h17_own17 = t43;
-#line 543 "fixedbugs382anemptyconstantisaheaderalone.c"
+#line 23 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     hero_array_decref(t94);
 #line 23 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     t44 = hero_array_eq(t42, t43);
@@ -560,17 +563,16 @@ bb4:
     t95 = h18_own18;
 #line 24 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     h18_own18 = t45;
-#line 564 "fixedbugs382anemptyconstantisaheaderalone.c"
+#line 24 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     hero_array_decref(t95);
 #line 24 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     t96 = h4_xs;
-#line 568 "fixedbugs382anemptyconstantisaheaderalone.c"
+#line 24 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     hero_array_incref(t45);
 #line 24 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     h4_xs = t45;
-#line 572 "fixedbugs382anemptyconstantisaheaderalone.c"
+#line 24 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     hero_array_decref(t96);
-#line 25 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     t47 = INT64_C(4);
 #line 25 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     hero_array_push_owned(&h4_xs, &t47);
@@ -579,17 +581,16 @@ bb4:
     t97 = h19_own19;
 #line 26 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     h19_own19 = t49;
-#line 583 "fixedbugs382anemptyconstantisaheaderalone.c"
+#line 26 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     hero_array_decref(t97);
 #line 26 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     t98 = h5_words;
-#line 587 "fixedbugs382anemptyconstantisaheaderalone.c"
+#line 26 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     hero_array_incref(t49);
 #line 26 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     h5_words = t49;
-#line 591 "fixedbugs382anemptyconstantisaheaderalone.c"
+#line 26 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     hero_array_decref(t98);
-#line 27 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     t51 = HERO_STR_LIT(hero_str_eb4ac31);
 #line 27 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     hero_array_push_owned(&h5_words, &t51);
@@ -598,17 +599,16 @@ bb4:
     t99 = h20_own20;
 #line 28 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     h20_own20 = t53;
-#line 602 "fixedbugs382anemptyconstantisaheaderalone.c"
+#line 28 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     hero_array_decref(t99);
 #line 28 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     t100 = h6_deep;
-#line 606 "fixedbugs382anemptyconstantisaheaderalone.c"
+#line 28 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     hero_array_incref(t53);
 #line 28 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     h6_deep = t53;
-#line 610 "fixedbugs382anemptyconstantisaheaderalone.c"
+#line 28 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     hero_array_decref(t100);
-#line 29 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     t54 = INT64_C(0);
 #line 29 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     t55 = h6_deep;
@@ -624,8 +624,9 @@ bb4:
     t101 = h21_own21;
 #line 29 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     h21_own21 = t59;
-#line 628 "fixedbugs382anemptyconstantisaheaderalone.c"
+#line 29 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     hero_array_decref(t101);
+#line 29 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     hero_array_incref(t59);
 #line 29 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     hero_array_set(&(h6_deep), t54, &t59);
@@ -660,7 +661,7 @@ bb4:
     t102 = h22_own22;
 #line 30 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     h22_own22 = t73;
-#line 664 "fixedbugs382anemptyconstantisaheaderalone.c"
+#line 30 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     hero_array_decref(t102);
 #line 30 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     t74 = ((void)(t73 == NULL ? ((void)hero_array_len(t73), hero_unreachable()) : (void)0), t73->len);
@@ -672,7 +673,7 @@ bb4:
     t103 = h23_own23;
 #line 30 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     h23_own23 = t76;
-#line 676 "fixedbugs382anemptyconstantisaheaderalone.c"
+#line 30 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     hero_array_decref(t103);
 #line 30 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     t77 = ((void)(t76 == NULL ? ((void)hero_array_len(t76), hero_unreachable()) : (void)0), t76->len);
@@ -684,7 +685,7 @@ bb4:
     t104 = h24_own24;
 #line 30 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     h24_own24 = t79;
-#line 688 "fixedbugs382anemptyconstantisaheaderalone.c"
+#line 30 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     hero_array_decref(t104);
 #line 30 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     t80 = INT64_C(0);
@@ -716,7 +717,7 @@ bb4:
     hero_print_int(t82);
 #line 30 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     hero_print_end();
-#line 720 "fixedbugs382anemptyconstantisaheaderalone.c"
+#line 721 "fixedbugs382anemptyconstantisaheaderalone.c"
     hero_array_release_at(&h1_xs0);
     hero_array_release_at(&h4_xs);
     hero_array_release_at(&h5_words);

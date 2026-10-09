@@ -1,0 +1,31 @@
+# Fixed defect 540, 2026-10-09 (panel 200's compiler-engineer, lldb on this
+# Mac). Symptom: a release inside a line stopped the debugger under the
+# generated file: in `greet`, `next` from `a = n.to_str()` stopped at the
+# generated C three times before line 3, at the release of the slot's old
+# value, the retain of the new one and the release of the temporary. Cause:
+# every retain and release of a value was written under the generated file,
+# the exit's housekeeping and a line's own alike. Repair: a retain or a
+# release inside a line keeps that line (`emit/release.hero`'s `named`), and
+# the exit keeps the generated file: a merged exit's load (defect 335), the
+# retain of what a way out returns (`term.retains_returned`) and the sweep.
+# In `greet` lines 2 and 3 each read as one line; `keep` builds a record
+# whose field is retained inside its line.
+
+record Box
+    s: str
+
+function greet(n: i64) -> str
+    a = n.to_str()
+    b = a + "!"
+
+    if n == 0
+        return a
+    return b
+
+function keep(s: str) -> Box
+    b = Box(s: s)
+    return b
+
+function main()
+    s = greet(3)
+    print(s, keep(s).s)

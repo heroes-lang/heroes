@@ -146,7 +146,7 @@ bb0:
     t18 = h4_own4;
 #line 12 "tests/golden/run/fixedbugs-263-a-release-after-a-release-writes-no-dead-line.hero"
     h4_own4 = t3;
-#line 150 "fixedbugs263areleaseafterareleasewritesnodeadline.c"
+#line 12 "tests/golden/run/fixedbugs-263-a-release-after-a-release-writes-no-dead-line.hero"
     hero_str_decref(t18);
 #line 12 "tests/golden/run/fixedbugs-263-a-release-after-a-release-writes-no-dead-line.hero"
     t4 = hero_str_concat(t1, t3);
@@ -154,17 +154,16 @@ bb0:
     t19 = h5_own5;
 #line 12 "tests/golden/run/fixedbugs-263-a-release-after-a-release-writes-no-dead-line.hero"
     h5_own5 = t4;
-#line 158 "fixedbugs263areleaseafterareleasewritesnodeadline.c"
+#line 12 "tests/golden/run/fixedbugs-263-a-release-after-a-release-writes-no-dead-line.hero"
     hero_str_decref(t19);
 #line 12 "tests/golden/run/fixedbugs-263-a-release-after-a-release-writes-no-dead-line.hero"
     t20 = h1_a;
-#line 162 "fixedbugs263areleaseafterareleasewritesnodeadline.c"
+#line 12 "tests/golden/run/fixedbugs-263-a-release-after-a-release-writes-no-dead-line.hero"
     hero_str_incref(t4);
 #line 12 "tests/golden/run/fixedbugs-263-a-release-after-a-release-writes-no-dead-line.hero"
     h1_a = t4;
-#line 166 "fixedbugs263areleaseafterareleasewritesnodeadline.c"
+#line 12 "tests/golden/run/fixedbugs-263-a-release-after-a-release-writes-no-dead-line.hero"
     hero_str_decref(t20);
-#line 13 "tests/golden/run/fixedbugs-263-a-release-after-a-release-writes-no-dead-line.hero"
     t5 = HERO_STR_LIT(hero_str_62);
 #line 13 "tests/golden/run/fixedbugs-263-a-release-after-a-release-writes-no-dead-line.hero"
     t6 = h0_n;
@@ -174,7 +173,7 @@ bb0:
     t21 = h6_own6;
 #line 13 "tests/golden/run/fixedbugs-263-a-release-after-a-release-writes-no-dead-line.hero"
     h6_own6 = t7;
-#line 178 "fixedbugs263areleaseafterareleasewritesnodeadline.c"
+#line 13 "tests/golden/run/fixedbugs-263-a-release-after-a-release-writes-no-dead-line.hero"
     hero_str_decref(t21);
 #line 13 "tests/golden/run/fixedbugs-263-a-release-after-a-release-writes-no-dead-line.hero"
     t8 = hero_str_concat(t5, t7);
@@ -182,17 +181,16 @@ bb0:
     t22 = h7_own7;
 #line 13 "tests/golden/run/fixedbugs-263-a-release-after-a-release-writes-no-dead-line.hero"
     h7_own7 = t8;
-#line 186 "fixedbugs263areleaseafterareleasewritesnodeadline.c"
+#line 13 "tests/golden/run/fixedbugs-263-a-release-after-a-release-writes-no-dead-line.hero"
     hero_str_decref(t22);
 #line 13 "tests/golden/run/fixedbugs-263-a-release-after-a-release-writes-no-dead-line.hero"
     t23 = h2_b;
-#line 190 "fixedbugs263areleaseafterareleasewritesnodeadline.c"
+#line 13 "tests/golden/run/fixedbugs-263-a-release-after-a-release-writes-no-dead-line.hero"
     hero_str_incref(t8);
 #line 13 "tests/golden/run/fixedbugs-263-a-release-after-a-release-writes-no-dead-line.hero"
     h2_b = t8;
-#line 194 "fixedbugs263areleaseafterareleasewritesnodeadline.c"
+#line 13 "tests/golden/run/fixedbugs-263-a-release-after-a-release-writes-no-dead-line.hero"
     hero_str_decref(t23);
-#line 14 "tests/golden/run/fixedbugs-263-a-release-after-a-release-writes-no-dead-line.hero"
     t9 = HERO_STR_LIT(hero_str_63);
 #line 14 "tests/golden/run/fixedbugs-263-a-release-after-a-release-writes-no-dead-line.hero"
     t10 = h0_n;
@@ -202,7 +200,7 @@ bb0:
     t24 = h8_own8;
 #line 14 "tests/golden/run/fixedbugs-263-a-release-after-a-release-writes-no-dead-line.hero"
     h8_own8 = t11;
-#line 206 "fixedbugs263areleaseafterareleasewritesnodeadline.c"
+#line 14 "tests/golden/run/fixedbugs-263-a-release-after-a-release-writes-no-dead-line.hero"
     hero_str_decref(t24);
 #line 14 "tests/golden/run/fixedbugs-263-a-release-after-a-release-writes-no-dead-line.hero"
     t12 = hero_str_concat(t9, t11);
@@ -210,17 +208,16 @@ bb0:
     t25 = h9_own9;
 #line 14 "tests/golden/run/fixedbugs-263-a-release-after-a-release-writes-no-dead-line.hero"
     h9_own9 = t12;
-#line 214 "fixedbugs263areleaseafterareleasewritesnodeadline.c"
+#line 14 "tests/golden/run/fixedbugs-263-a-release-after-a-release-writes-no-dead-line.hero"
     hero_str_decref(t25);
 #line 14 "tests/golden/run/fixedbugs-263-a-release-after-a-release-writes-no-dead-line.hero"
     t26 = h3_c;
-#line 218 "fixedbugs263areleaseafterareleasewritesnodeadline.c"
+#line 14 "tests/golden/run/fixedbugs-263-a-release-after-a-release-writes-no-dead-line.hero"
     hero_str_incref(t12);
 #line 14 "tests/golden/run/fixedbugs-263-a-release-after-a-release-writes-no-dead-line.hero"
     h3_c = t12;
-#line 222 "fixedbugs263areleaseafterareleasewritesnodeadline.c"
+#line 14 "tests/golden/run/fixedbugs-263-a-release-after-a-release-writes-no-dead-line.hero"
     hero_str_decref(t26);
-#line 15 "tests/golden/run/fixedbugs-263-a-release-after-a-release-writes-no-dead-line.hero"
     t13 = h1_a;
 #line 15 "tests/golden/run/fixedbugs-263-a-release-after-a-release-writes-no-dead-line.hero"
     t14 = h2_b;
@@ -230,7 +227,7 @@ bb0:
     t27 = h10_own10;
 #line 15 "tests/golden/run/fixedbugs-263-a-release-after-a-release-writes-no-dead-line.hero"
     h10_own10 = t15;
-#line 234 "fixedbugs263areleaseafterareleasewritesnodeadline.c"
+#line 15 "tests/golden/run/fixedbugs-263-a-release-after-a-release-writes-no-dead-line.hero"
     hero_str_decref(t27);
 #line 15 "tests/golden/run/fixedbugs-263-a-release-after-a-release-writes-no-dead-line.hero"
     t16 = h3_c;
@@ -240,8 +237,9 @@ bb0:
     t28 = h11_own11;
 #line 15 "tests/golden/run/fixedbugs-263-a-release-after-a-release-writes-no-dead-line.hero"
     h11_own11 = t17;
-#line 244 "fixedbugs263areleaseafterareleasewritesnodeadline.c"
+#line 15 "tests/golden/run/fixedbugs-263-a-release-after-a-release-writes-no-dead-line.hero"
     hero_str_decref(t28);
+#line 243 "fixedbugs263areleaseafterareleasewritesnodeadline.c"
     hero_str_incref(t17);
     hero_str_release_at(&h1_a);
     hero_str_release_at(&h2_b);
@@ -259,7 +257,7 @@ bb0:
 
 #line 17 "tests/golden/run/fixedbugs-263-a-release-after-a-release-writes-no-dead-line.hero"
 void h_fixedbugs263areleaseafterareleasewritesnodeadline_main(void) {
-#line 263 "fixedbugs263areleaseafterareleasewritesnodeadline.c"
+#line 261 "fixedbugs263areleaseafterareleasewritesnodeadline.c"
     HeroStr h0_own0 = {0};
     int64_t t1;
     HeroStr t2;
@@ -274,13 +272,13 @@ bb0:
     t3 = h0_own0;
 #line 18 "tests/golden/run/fixedbugs-263-a-release-after-a-release-writes-no-dead-line.hero"
     h0_own0 = t2;
-#line 278 "fixedbugs263areleaseafterareleasewritesnodeadline.c"
+#line 18 "tests/golden/run/fixedbugs-263-a-release-after-a-release-writes-no-dead-line.hero"
     hero_str_decref(t3);
 #line 18 "tests/golden/run/fixedbugs-263-a-release-after-a-release-writes-no-dead-line.hero"
     hero_print_str(t2);
 #line 18 "tests/golden/run/fixedbugs-263-a-release-after-a-release-writes-no-dead-line.hero"
     hero_print_end();
-#line 284 "fixedbugs263areleaseafterareleasewritesnodeadline.c"
+#line 282 "fixedbugs263areleaseafterareleasewritesnodeadline.c"
     hero_str_release_at(&h0_own0);
     return;
 }

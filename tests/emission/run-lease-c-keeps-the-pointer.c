@@ -153,7 +153,7 @@ bb2:
     t17 = h2_own2;
 #line 19 "tests/golden/run/lease-c-keeps-the-pointer.hero"
     h2_own2 = t7;
-#line 157 "leaseckeepsthepointer.c"
+#line 19 "tests/golden/run/lease-c-keeps-the-pointer.hero"
     hero_str_decref(t17);
 #line 19 "tests/golden/run/lease-c-keeps-the-pointer.hero"
     t8 = hero_str_concat(t5, t7);
@@ -161,7 +161,7 @@ bb2:
     t18 = h3_own3;
 #line 19 "tests/golden/run/lease-c-keeps-the-pointer.hero"
     h3_own3 = t8;
-#line 165 "leaseckeepsthepointer.c"
+#line 19 "tests/golden/run/lease-c-keeps-the-pointer.hero"
     hero_str_decref(t18);
 #line 19 "tests/golden/run/lease-c-keeps-the-pointer.hero"
     t9 = HERO_STR_LIT(hero_str_3390715c);
@@ -171,7 +171,7 @@ bb2:
     t19 = h4_own4;
 #line 19 "tests/golden/run/lease-c-keeps-the-pointer.hero"
     h4_own4 = t10;
-#line 175 "leaseckeepsthepointer.c"
+#line 19 "tests/golden/run/lease-c-keeps-the-pointer.hero"
     hero_str_decref(t19);
 #line 19 "tests/golden/run/lease-c-keeps-the-pointer.hero"
     t11 = hero_str_held(t10);

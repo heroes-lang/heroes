@@ -164,7 +164,7 @@ bb0:
     t17 = h0_own0;
 #line 26 "tests/golden/run/f64-rendering.hero"
     h0_own0 = t16;
-#line 168 "f64rendering.c"
+#line 26 "tests/golden/run/f64-rendering.hero"
     hero_str_decref(t17);
 #line 26 "tests/golden/run/f64-rendering.hero"
     hero_print_str(t16);

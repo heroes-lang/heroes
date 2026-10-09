@@ -426,17 +426,16 @@ bb0:
     t34 = h7_own7;
 #line 57 "examples/collatz/main.hero"
     h7_own7 = t1;
-#line 430 "main.c"
+#line 57 "examples/collatz/main.hero"
     hero_array_decref(t34);
 #line 57 "examples/collatz/main.hero"
     t35 = h0_handles;
-#line 434 "main.c"
+#line 57 "examples/collatz/main.hero"
     hero_array_incref(t1);
 #line 57 "examples/collatz/main.hero"
     h0_handles = t1;
-#line 438 "main.c"
+#line 57 "examples/collatz/main.hero"
     hero_array_decref(t35);
-#line 58 "examples/collatz/main.hero"
     t2 = INT64_C(0);
 #line 58 "examples/collatz/main.hero"
     h1_i = t2;
@@ -480,11 +479,11 @@ bb3:
     t15 = h0_handles;
 #line 66 "examples/collatz/main.hero"
     t36 = h3_xs0;
-#line 484 "main.c"
+#line 66 "examples/collatz/main.hero"
     hero_array_incref(t15);
 #line 66 "examples/collatz/main.hero"
     h3_xs0 = t15;
-#line 488 "main.c"
+#line 66 "examples/collatz/main.hero"
     hero_array_decref(t36);
 #line 66 "examples/collatz/main.hero"
     t16 = INT64_C(0);
@@ -543,7 +542,7 @@ bb6:
 bb7:
 #line 72 "examples/collatz/main.hero"
     t33 = h2_best;
-#line 547 "main.c"
+#line 546 "main.c"
     hero_array_release_at(&h0_handles);
     hero_array_release_at(&h3_xs0);
     hero_array_release_at(&h7_own7);
@@ -561,12 +560,12 @@ bb9:
 bb10:
 #line 70 "examples/collatz/main.hero"
     goto bb8;
-#line 565 "main.c"
+#line 564 "main.c"
 }
 
 #line 75 "examples/collatz/main.hero"
 int64_t h_main_longest_alone(void) {
-#line 570 "main.c"
+#line 569 "main.c"
     int64_t h0_best;
     int64_t h1_n;
     int64_t h2_s;
@@ -657,12 +656,12 @@ bb5:
 bb6:
 #line 83 "examples/collatz/main.hero"
     goto bb4;
-#line 661 "main.c"
+#line 660 "main.c"
 }
 
 #line 88 "examples/collatz/main.hero"
 void h_main_main(void) {
-#line 666 "main.c"
+#line 665 "main.c"
     HeroStr t1;
     int64_t t2;
     int64_t t3;
@@ -695,7 +694,7 @@ bb0:
     hero_print_end();
 #line 89 "examples/collatz/main.hero"
     return;
-#line 699 "main.c"
+#line 698 "main.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

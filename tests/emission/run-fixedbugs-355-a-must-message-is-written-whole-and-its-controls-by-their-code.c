@@ -156,17 +156,16 @@ bb0:
     t28 = h4_own4;
 #line 9 "tests/golden/run/fixedbugs-355-a-must-message-is-written-whole-and-its-controls-by-their-code.hero"
     h4_own4 = t4;
-#line 160 "fixedbugs355amustmessageiswrittenwholeanditscontrolsbytheircode.c"
+#line 9 "tests/golden/run/fixedbugs-355-a-must-message-is-written-whole-and-its-controls-by-their-code.hero"
     hero_array_decref(t28);
 #line 9 "tests/golden/run/fixedbugs-355-a-must-message-is-written-whole-and-its-controls-by-their-code.hero"
     t29 = h0_b;
-#line 164 "fixedbugs355amustmessageiswrittenwholeanditscontrolsbytheircode.c"
+#line 9 "tests/golden/run/fixedbugs-355-a-must-message-is-written-whole-and-its-controls-by-their-code.hero"
     hero_array_incref(t4);
 #line 9 "tests/golden/run/fixedbugs-355-a-must-message-is-written-whole-and-its-controls-by-their-code.hero"
     h0_b = t4;
-#line 168 "fixedbugs355amustmessageiswrittenwholeanditscontrolsbytheircode.c"
+#line 9 "tests/golden/run/fixedbugs-355-a-must-message-is-written-whole-and-its-controls-by-their-code.hero"
     hero_array_decref(t29);
-#line 10 "tests/golden/run/fixedbugs-355-a-must-message-is-written-whole-and-its-controls-by-their-code.hero"
     t5 = HERO_STR_LIT(hero_str_65);
 #line 10 "tests/golden/run/fixedbugs-355-a-must-message-is-written-whole-and-its-controls-by-their-code.hero"
     t6 = HERO_STR_LIT(hero_str_5ef853e9);
@@ -194,15 +193,15 @@ bb0:
     t30 = h5_own5;
 #line 10 "tests/golden/run/fixedbugs-355-a-must-message-is-written-whole-and-its-controls-by-their-code.hero"
     h5_own5 = t8;
-#line 198 "fixedbugs355amustmessageiswrittenwholeanditscontrolsbytheircode.c"
+#line 10 "tests/golden/run/fixedbugs-355-a-must-message-is-written-whole-and-its-controls-by-their-code.hero"
     h_0opt_f87774a_release(&t30);
 #line 10 "tests/golden/run/fixedbugs-355-a-must-message-is-written-whole-and-its-controls-by-their-code.hero"
     t31 = h1_f0;
-#line 202 "fixedbugs355amustmessageiswrittenwholeanditscontrolsbytheircode.c"
+#line 10 "tests/golden/run/fixedbugs-355-a-must-message-is-written-whole-and-its-controls-by-their-code.hero"
     h_0opt_f87774a_retain(&t8);
 #line 10 "tests/golden/run/fixedbugs-355-a-must-message-is-written-whole-and-its-controls-by-their-code.hero"
     h1_f0 = t8;
-#line 206 "fixedbugs355amustmessageiswrittenwholeanditscontrolsbytheircode.c"
+#line 10 "tests/golden/run/fixedbugs-355-a-must-message-is-written-whole-and-its-controls-by-their-code.hero"
     h_0opt_f87774a_release(&t31);
 #line 10 "tests/golden/run/fixedbugs-355-a-must-message-is-written-whole-and-its-controls-by-their-code.hero"
     t9 = h1_f0;
@@ -226,9 +225,11 @@ bb1:
     t32 = h6_own6;
 #line 10 "tests/golden/run/fixedbugs-355-a-must-message-is-written-whole-and-its-controls-by-their-code.hero"
     h6_own6 = t17;
-#line 230 "fixedbugs355amustmessageiswrittenwholeanditscontrolsbytheircode.c"
+#line 10 "tests/golden/run/fixedbugs-355-a-must-message-is-written-whole-and-its-controls-by-their-code.hero"
     hero_str_decref(t32);
+#line 10 "tests/golden/run/fixedbugs-355-a-must-message-is-written-whole-and-its-controls-by-their-code.hero"
     hero_str_incref(t5);
+#line 10 "tests/golden/run/fixedbugs-355-a-must-message-is-written-whole-and-its-controls-by-their-code.hero"
     hero_str_incref(t17);
 #line 10 "tests/golden/run/fixedbugs-355-a-must-message-is-written-whole-and-its-controls-by-their-code.hero"
     t18 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t5, .msg = t17}};
@@ -236,25 +237,24 @@ bb1:
     t33 = h7_own7;
 #line 10 "tests/golden/run/fixedbugs-355-a-must-message-is-written-whole-and-its-controls-by-their-code.hero"
     h7_own7 = t18;
-#line 240 "fixedbugs355amustmessageiswrittenwholeanditscontrolsbytheircode.c"
+#line 10 "tests/golden/run/fixedbugs-355-a-must-message-is-written-whole-and-its-controls-by-their-code.hero"
     h_0opt_f87774a_release(&t33);
 #line 10 "tests/golden/run/fixedbugs-355-a-must-message-is-written-whole-and-its-controls-by-their-code.hero"
     t34 = h2_r;
-#line 244 "fixedbugs355amustmessageiswrittenwholeanditscontrolsbytheircode.c"
+#line 10 "tests/golden/run/fixedbugs-355-a-must-message-is-written-whole-and-its-controls-by-their-code.hero"
     h_0opt_f87774a_retain(&t18);
 #line 10 "tests/golden/run/fixedbugs-355-a-must-message-is-written-whole-and-its-controls-by-their-code.hero"
     h2_r = t18;
-#line 248 "fixedbugs355amustmessageiswrittenwholeanditscontrolsbytheircode.c"
+#line 10 "tests/golden/run/fixedbugs-355-a-must-message-is-written-whole-and-its-controls-by-their-code.hero"
     h_0opt_f87774a_release(&t34);
-#line 11 "tests/golden/run/fixedbugs-355-a-must-message-is-written-whole-and-its-controls-by-their-code.hero"
     t19 = h2_r;
 #line 11 "tests/golden/run/fixedbugs-355-a-must-message-is-written-whole-and-its-controls-by-their-code.hero"
     t35 = h3_f1;
-#line 254 "fixedbugs355amustmessageiswrittenwholeanditscontrolsbytheircode.c"
+#line 11 "tests/golden/run/fixedbugs-355-a-must-message-is-written-whole-and-its-controls-by-their-code.hero"
     h_0opt_f87774a_retain(&t19);
 #line 11 "tests/golden/run/fixedbugs-355-a-must-message-is-written-whole-and-its-controls-by-their-code.hero"
     h3_f1 = t19;
-#line 258 "fixedbugs355amustmessageiswrittenwholeanditscontrolsbytheircode.c"
+#line 11 "tests/golden/run/fixedbugs-355-a-must-message-is-written-whole-and-its-controls-by-their-code.hero"
     h_0opt_f87774a_release(&t35);
 #line 11 "tests/golden/run/fixedbugs-355-a-must-message-is-written-whole-and-its-controls-by-their-code.hero"
     t20 = h3_f1;

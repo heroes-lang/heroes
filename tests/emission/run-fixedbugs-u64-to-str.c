@@ -121,7 +121,7 @@ bb0:
     t8 = h2_own2;
 #line 28 "tests/golden/run/fixedbugs-u64-to-str.hero"
     h2_own2 = t4;
-#line 125 "fixedbugsu64tostr.c"
+#line 28 "tests/golden/run/fixedbugs-u64-to-str.hero"
     hero_str_decref(t8);
 #line 28 "tests/golden/run/fixedbugs-u64-to-str.hero"
     hero_print_str(t4);
@@ -137,7 +137,7 @@ bb0:
     t9 = h3_own3;
 #line 30 "tests/golden/run/fixedbugs-u64-to-str.hero"
     h3_own3 = t7;
-#line 141 "fixedbugsu64tostr.c"
+#line 30 "tests/golden/run/fixedbugs-u64-to-str.hero"
     hero_str_decref(t9);
 #line 30 "tests/golden/run/fixedbugs-u64-to-str.hero"
     hero_print_str(t7);

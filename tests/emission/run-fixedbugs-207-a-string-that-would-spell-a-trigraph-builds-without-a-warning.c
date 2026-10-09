@@ -142,11 +142,11 @@ bb0:
     t1 = h0_s;
 #line 23 "tests/golden/run/fixedbugs-207-a-string-that-would-spell-a-trigraph-builds-without-a-warning.hero"
     t8 = h1_s0;
-#line 146 "fixedbugs207astringthatwouldspellatrigraphbuildswithoutawarning.c"
+#line 23 "tests/golden/run/fixedbugs-207-a-string-that-would-spell-a-trigraph-builds-without-a-warning.hero"
     hero_str_incref(t1);
 #line 23 "tests/golden/run/fixedbugs-207-a-string-that-would-spell-a-trigraph-builds-without-a-warning.hero"
     h1_s0 = t1;
-#line 150 "fixedbugs207astringthatwouldspellatrigraphbuildswithoutawarning.c"
+#line 23 "tests/golden/run/fixedbugs-207-a-string-that-would-spell-a-trigraph-builds-without-a-warning.hero"
     hero_str_decref(t8);
 #line 23 "tests/golden/run/fixedbugs-207-a-string-that-would-spell-a-trigraph-builds-without-a-warning.hero"
     t2 = h1_s0;
@@ -270,7 +270,7 @@ bb0:
     t31 = h3_own3;
 #line 33 "tests/golden/run/fixedbugs-207-a-string-that-would-spell-a-trigraph-builds-without-a-warning.hero"
     h3_own3 = t10;
-#line 274 "fixedbugs207astringthatwouldspellatrigraphbuildswithoutawarning.c"
+#line 33 "tests/golden/run/fixedbugs-207-a-string-that-would-spell-a-trigraph-builds-without-a-warning.hero"
     hero_str_decref(t31);
 #line 33 "tests/golden/run/fixedbugs-207-a-string-that-would-spell-a-trigraph-builds-without-a-warning.hero"
     t11 = HERO_STR_LIT(hero_str_109f9c);
@@ -280,7 +280,7 @@ bb0:
     t32 = h4_own4;
 #line 33 "tests/golden/run/fixedbugs-207-a-string-that-would-spell-a-trigraph-builds-without-a-warning.hero"
     h4_own4 = t12;
-#line 284 "fixedbugs207astringthatwouldspellatrigraphbuildswithoutawarning.c"
+#line 33 "tests/golden/run/fixedbugs-207-a-string-that-would-spell-a-trigraph-builds-without-a-warning.hero"
     hero_str_decref(t32);
 #line 33 "tests/golden/run/fixedbugs-207-a-string-that-would-spell-a-trigraph-builds-without-a-warning.hero"
     t13 = hero_str_concat(t12, t11);
@@ -288,7 +288,7 @@ bb0:
     t33 = h5_own5;
 #line 33 "tests/golden/run/fixedbugs-207-a-string-that-would-spell-a-trigraph-builds-without-a-warning.hero"
     h5_own5 = t13;
-#line 292 "fixedbugs207astringthatwouldspellatrigraphbuildswithoutawarning.c"
+#line 33 "tests/golden/run/fixedbugs-207-a-string-that-would-spell-a-trigraph-builds-without-a-warning.hero"
     hero_str_decref(t33);
 #line 33 "tests/golden/run/fixedbugs-207-a-string-that-would-spell-a-trigraph-builds-without-a-warning.hero"
     hero_print_str(t13);
@@ -299,7 +299,7 @@ bb0:
     t34 = h6_own6;
 #line 34 "tests/golden/run/fixedbugs-207-a-string-that-would-spell-a-trigraph-builds-without-a-warning.hero"
     h6_own6 = t14;
-#line 303 "fixedbugs207astringthatwouldspellatrigraphbuildswithoutawarning.c"
+#line 34 "tests/golden/run/fixedbugs-207-a-string-that-would-spell-a-trigraph-builds-without-a-warning.hero"
     hero_str_decref(t34);
 #line 34 "tests/golden/run/fixedbugs-207-a-string-that-would-spell-a-trigraph-builds-without-a-warning.hero"
     hero_print_str(t14);
@@ -323,17 +323,16 @@ bb0:
     t35 = h7_own7;
 #line 36 "tests/golden/run/fixedbugs-207-a-string-that-would-spell-a-trigraph-builds-without-a-warning.hero"
     h7_own7 = t19;
-#line 327 "fixedbugs207astringthatwouldspellatrigraphbuildswithoutawarning.c"
+#line 36 "tests/golden/run/fixedbugs-207-a-string-that-would-spell-a-trigraph-builds-without-a-warning.hero"
     hero_map_decref(t35);
 #line 36 "tests/golden/run/fixedbugs-207-a-string-that-would-spell-a-trigraph-builds-without-a-warning.hero"
     t36 = h1_m;
-#line 331 "fixedbugs207astringthatwouldspellatrigraphbuildswithoutawarning.c"
+#line 36 "tests/golden/run/fixedbugs-207-a-string-that-would-spell-a-trigraph-builds-without-a-warning.hero"
     hero_map_incref(t19);
 #line 36 "tests/golden/run/fixedbugs-207-a-string-that-would-spell-a-trigraph-builds-without-a-warning.hero"
     h1_m = t19;
-#line 335 "fixedbugs207astringthatwouldspellatrigraphbuildswithoutawarning.c"
+#line 36 "tests/golden/run/fixedbugs-207-a-string-that-would-spell-a-trigraph-builds-without-a-warning.hero"
     hero_map_decref(t36);
-#line 37 "tests/golden/run/fixedbugs-207-a-string-that-would-spell-a-trigraph-builds-without-a-warning.hero"
     t20 = h1_m;
 #line 37 "tests/golden/run/fixedbugs-207-a-string-that-would-spell-a-trigraph-builds-without-a-warning.hero"
     t21 = HERO_STR_LIT(hero_str_e670f6a);
@@ -359,15 +358,15 @@ bb0:
     t37 = h8_own8;
 #line 37 "tests/golden/run/fixedbugs-207-a-string-that-would-spell-a-trigraph-builds-without-a-warning.hero"
     h8_own8 = t22;
-#line 363 "fixedbugs207astringthatwouldspellatrigraphbuildswithoutawarning.c"
+#line 37 "tests/golden/run/fixedbugs-207-a-string-that-would-spell-a-trigraph-builds-without-a-warning.hero"
     h_0opt_e201354_release(&t37);
 #line 37 "tests/golden/run/fixedbugs-207-a-string-that-would-spell-a-trigraph-builds-without-a-warning.hero"
     t38 = h2_f0;
-#line 367 "fixedbugs207astringthatwouldspellatrigraphbuildswithoutawarning.c"
+#line 37 "tests/golden/run/fixedbugs-207-a-string-that-would-spell-a-trigraph-builds-without-a-warning.hero"
     h_0opt_e201354_retain(&t22);
 #line 37 "tests/golden/run/fixedbugs-207-a-string-that-would-spell-a-trigraph-builds-without-a-warning.hero"
     h2_f0 = t22;
-#line 371 "fixedbugs207astringthatwouldspellatrigraphbuildswithoutawarning.c"
+#line 37 "tests/golden/run/fixedbugs-207-a-string-that-would-spell-a-trigraph-builds-without-a-warning.hero"
     h_0opt_e201354_release(&t38);
 #line 37 "tests/golden/run/fixedbugs-207-a-string-that-would-spell-a-trigraph-builds-without-a-warning.hero"
     t23 = h2_f0;
@@ -389,7 +388,7 @@ bb1:
     hero_print_int(t30);
 #line 37 "tests/golden/run/fixedbugs-207-a-string-that-would-spell-a-trigraph-builds-without-a-warning.hero"
     hero_print_end();
-#line 393 "fixedbugs207astringthatwouldspellatrigraphbuildswithoutawarning.c"
+#line 392 "fixedbugs207astringthatwouldspellatrigraphbuildswithoutawarning.c"
     hero_map_release_at(&h1_m);
     h_0opt_e201354_release(hero_slot_escape(&h2_f0));
     hero_str_release_at(&h3_own3);
@@ -404,7 +403,7 @@ bb2:
     t27 = h2_f0;
 #line 37 "tests/golden/run/fixedbugs-207-a-string-that-would-spell-a-trigraph-builds-without-a-warning.hero"
     t28 = t27.as.err;
-#line 408 "fixedbugs207astringthatwouldspellatrigraphbuildswithoutawarning.c"
+#line 407 "fixedbugs207astringthatwouldspellatrigraphbuildswithoutawarning.c"
     hero_panic_must(t28);
     hero_unreachable();
 }

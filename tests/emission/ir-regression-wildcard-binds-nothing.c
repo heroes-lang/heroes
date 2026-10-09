@@ -194,11 +194,11 @@ bb0:
     t2 = h0_xs;
 #line 21 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
     t15 = h2_xs0;
-#line 198 "regressionwildcardbindsnothing.c"
+#line 21 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
     hero_array_incref(t2);
 #line 21 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
     h2_xs0 = t2;
-#line 202 "regressionwildcardbindsnothing.c"
+#line 21 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
     hero_array_decref(t15);
 #line 21 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
     t3 = INT64_C(0);

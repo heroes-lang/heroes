@@ -122,11 +122,11 @@ bb0:
     t2 = h0_xs;
 #line 7 "tests/golden/ir/sugar-for.hero"
     t18 = h2_xs0;
-#line 126 "sugarfor.c"
+#line 7 "tests/golden/ir/sugar-for.hero"
     hero_array_incref(t2);
 #line 7 "tests/golden/ir/sugar-for.hero"
     h2_xs0 = t2;
-#line 130 "sugarfor.c"
+#line 7 "tests/golden/ir/sugar-for.hero"
     hero_array_decref(t18);
 #line 7 "tests/golden/ir/sugar-for.hero"
     t3 = INT64_C(0);

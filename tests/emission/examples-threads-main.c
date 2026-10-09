@@ -421,17 +421,16 @@ bb0:
     t32 = h7_own7;
 #line 97 "examples/threads/main.hero"
     h7_own7 = t1;
-#line 425 "main.c"
+#line 97 "examples/threads/main.hero"
     hero_array_decref(t32);
 #line 97 "examples/threads/main.hero"
     t33 = h1_handles;
-#line 429 "main.c"
+#line 97 "examples/threads/main.hero"
     hero_array_incref(t1);
 #line 97 "examples/threads/main.hero"
     h1_handles = t1;
-#line 433 "main.c"
+#line 97 "examples/threads/main.hero"
     hero_array_decref(t33);
-#line 98 "examples/threads/main.hero"
     t2 = INT64_C(0);
 #line 98 "examples/threads/main.hero"
     h2_i = t2;
@@ -475,11 +474,11 @@ bb3:
     t15 = h1_handles;
 #line 106 "examples/threads/main.hero"
     t34 = h4_xs0;
-#line 479 "main.c"
+#line 106 "examples/threads/main.hero"
     hero_array_incref(t15);
 #line 106 "examples/threads/main.hero"
     h4_xs0 = t15;
-#line 483 "main.c"
+#line 106 "examples/threads/main.hero"
     hero_array_decref(t34);
 #line 106 "examples/threads/main.hero"
     t16 = INT64_C(0);
@@ -536,7 +535,7 @@ bb6:
 bb7:
 #line 109 "examples/threads/main.hero"
     t31 = h3_total;
-#line 540 "main.c"
+#line 539 "main.c"
     hero_array_release_at(&h1_handles);
     hero_array_release_at(&h4_xs0);
     hero_array_release_at(&h7_own7);
@@ -545,7 +544,7 @@ bb7:
 
 #line 111 "examples/threads/main.hero"
 void h_main_main(void) {
-#line 549 "main.c"
+#line 548 "main.c"
     HeroStr t1;
     int64_t t2;
     int64_t t3;
@@ -595,7 +594,7 @@ bb0:
     hero_print_end();
 #line 114 "examples/threads/main.hero"
     return;
-#line 599 "main.c"
+#line 598 "main.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

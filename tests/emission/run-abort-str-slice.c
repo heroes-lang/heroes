@@ -113,13 +113,12 @@ bb0:
     t1 = HERO_STR_LIT(hero_str_33edea20);
 #line 7 "tests/golden/run/abort-str-slice.hero"
     t10 = h0_s;
-#line 117 "abortstrslice.c"
+#line 7 "tests/golden/run/abort-str-slice.hero"
     hero_str_incref(t1);
 #line 7 "tests/golden/run/abort-str-slice.hero"
     h0_s = t1;
-#line 121 "abortstrslice.c"
+#line 7 "tests/golden/run/abort-str-slice.hero"
     hero_str_decref(t10);
-#line 8 "tests/golden/run/abort-str-slice.hero"
     t2 = h0_s;
 #line 8 "tests/golden/run/abort-str-slice.hero"
     t3 = INT64_C(1);
@@ -131,7 +130,7 @@ bb0:
     t11 = h1_own1;
 #line 8 "tests/golden/run/abort-str-slice.hero"
     h1_own1 = t5;
-#line 135 "abortstrslice.c"
+#line 8 "tests/golden/run/abort-str-slice.hero"
     hero_str_decref(t11);
 #line 8 "tests/golden/run/abort-str-slice.hero"
     hero_print_str(t5);
@@ -148,13 +147,13 @@ bb0:
     t12 = h2_own2;
 #line 9 "tests/golden/run/abort-str-slice.hero"
     h2_own2 = t9;
-#line 152 "abortstrslice.c"
+#line 9 "tests/golden/run/abort-str-slice.hero"
     hero_str_decref(t12);
 #line 9 "tests/golden/run/abort-str-slice.hero"
     hero_print_str(t9);
 #line 9 "tests/golden/run/abort-str-slice.hero"
     hero_print_end();
-#line 158 "abortstrslice.c"
+#line 157 "abortstrslice.c"
     hero_str_release_at(&h0_s);
     hero_str_release_at(&h1_own1);
     hero_str_release_at(&h2_own2);

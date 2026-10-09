@@ -114,8 +114,9 @@ bb0:
     t4 = h1_own1;
 #line 18 "tests/golden/run/fixedbugs-concat-leaked.hero"
     h1_own1 = t3;
-#line 118 "fixedbugsconcatleaked.c"
+#line 18 "tests/golden/run/fixedbugs-concat-leaked.hero"
     hero_str_decref(t4);
+#line 120 "fixedbugsconcatleaked.c"
     hero_str_incref(t3);
     hero_str_release_at(&h1_own1);
     return t3;
@@ -123,7 +124,7 @@ bb0:
 
 #line 20 "tests/golden/run/fixedbugs-concat-leaked.hero"
 void h_fixedbugsconcatleaked_main(void) {
-#line 127 "fixedbugsconcatleaked.c"
+#line 128 "fixedbugsconcatleaked.c"
     HeroStr h0_s = {0};
     HeroStr h1_out = {0};
     int64_t h2_i;
@@ -165,7 +166,7 @@ bb0:
     t20 = h3_own3;
 #line 21 "tests/golden/run/fixedbugs-concat-leaked.hero"
     h3_own3 = t2;
-#line 169 "fixedbugsconcatleaked.c"
+#line 21 "tests/golden/run/fixedbugs-concat-leaked.hero"
     hero_str_decref(t20);
 #line 21 "tests/golden/run/fixedbugs-concat-leaked.hero"
     hero_print_str(t2);
@@ -174,13 +175,12 @@ bb0:
     t3 = HERO_STR_LIT(hero_str_3205);
 #line 22 "tests/golden/run/fixedbugs-concat-leaked.hero"
     t21 = h0_s;
-#line 178 "fixedbugsconcatleaked.c"
+#line 22 "tests/golden/run/fixedbugs-concat-leaked.hero"
     hero_str_incref(t3);
 #line 22 "tests/golden/run/fixedbugs-concat-leaked.hero"
     h0_s = t3;
-#line 182 "fixedbugsconcatleaked.c"
+#line 22 "tests/golden/run/fixedbugs-concat-leaked.hero"
     hero_str_decref(t21);
-#line 23 "tests/golden/run/fixedbugs-concat-leaked.hero"
     t4 = h0_s;
 #line 23 "tests/golden/run/fixedbugs-concat-leaked.hero"
     t5 = h0_s;
@@ -190,7 +190,7 @@ bb0:
     t22 = h4_own4;
 #line 23 "tests/golden/run/fixedbugs-concat-leaked.hero"
     h4_own4 = t6;
-#line 194 "fixedbugsconcatleaked.c"
+#line 23 "tests/golden/run/fixedbugs-concat-leaked.hero"
     hero_str_decref(t22);
 #line 23 "tests/golden/run/fixedbugs-concat-leaked.hero"
     hero_print_str(t6);
@@ -199,13 +199,12 @@ bb0:
     t7 = HERO_STR_LIT(hero_str_0);
 #line 24 "tests/golden/run/fixedbugs-concat-leaked.hero"
     t23 = h1_out;
-#line 203 "fixedbugsconcatleaked.c"
+#line 24 "tests/golden/run/fixedbugs-concat-leaked.hero"
     hero_str_incref(t7);
 #line 24 "tests/golden/run/fixedbugs-concat-leaked.hero"
     h1_out = t7;
-#line 207 "fixedbugsconcatleaked.c"
+#line 24 "tests/golden/run/fixedbugs-concat-leaked.hero"
     hero_str_decref(t23);
-#line 25 "tests/golden/run/fixedbugs-concat-leaked.hero"
     t8 = INT64_C(0);
 #line 25 "tests/golden/run/fixedbugs-concat-leaked.hero"
     h2_i = t8;
@@ -232,17 +231,16 @@ bb2:
     t24 = h5_own5;
 #line 28 "tests/golden/run/fixedbugs-concat-leaked.hero"
     h5_own5 = t14;
-#line 236 "fixedbugsconcatleaked.c"
+#line 28 "tests/golden/run/fixedbugs-concat-leaked.hero"
     hero_str_decref(t24);
 #line 28 "tests/golden/run/fixedbugs-concat-leaked.hero"
     t25 = h1_out;
-#line 240 "fixedbugsconcatleaked.c"
+#line 28 "tests/golden/run/fixedbugs-concat-leaked.hero"
     hero_str_incref(t14);
 #line 28 "tests/golden/run/fixedbugs-concat-leaked.hero"
     h1_out = t14;
-#line 244 "fixedbugsconcatleaked.c"
+#line 28 "tests/golden/run/fixedbugs-concat-leaked.hero"
     hero_str_decref(t25);
-#line 29 "tests/golden/run/fixedbugs-concat-leaked.hero"
     t15 = h2_i;
 #line 29 "tests/golden/run/fixedbugs-concat-leaked.hero"
     t16 = INT64_C(1);
@@ -262,7 +260,7 @@ bb3:
     hero_print_int(t19);
 #line 31 "tests/golden/run/fixedbugs-concat-leaked.hero"
     hero_print_end();
-#line 266 "fixedbugsconcatleaked.c"
+#line 264 "fixedbugsconcatleaked.c"
     hero_str_release_at(&h0_s);
     hero_str_release_at(&h1_out);
     hero_str_release_at(&h3_own3);

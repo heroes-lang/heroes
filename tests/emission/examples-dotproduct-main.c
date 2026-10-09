@@ -345,17 +345,16 @@ bb0:
     t32 = h6_own6;
 #line 46 "examples/dotproduct/main.hero"
     h6_own6 = t1;
-#line 349 "main.c"
+#line 46 "examples/dotproduct/main.hero"
     hero_array_decref(t32);
 #line 46 "examples/dotproduct/main.hero"
     t33 = h0_handles;
-#line 353 "main.c"
+#line 46 "examples/dotproduct/main.hero"
     hero_array_incref(t1);
 #line 46 "examples/dotproduct/main.hero"
     h0_handles = t1;
-#line 357 "main.c"
+#line 46 "examples/dotproduct/main.hero"
     hero_array_decref(t33);
-#line 47 "examples/dotproduct/main.hero"
     t2 = INT64_C(0);
 #line 47 "examples/dotproduct/main.hero"
     h1_i = t2;
@@ -399,11 +398,11 @@ bb3:
     t15 = h0_handles;
 #line 55 "examples/dotproduct/main.hero"
     t34 = h3_xs0;
-#line 403 "main.c"
+#line 55 "examples/dotproduct/main.hero"
     hero_array_incref(t15);
 #line 55 "examples/dotproduct/main.hero"
     h3_xs0 = t15;
-#line 407 "main.c"
+#line 55 "examples/dotproduct/main.hero"
     hero_array_decref(t34);
 #line 55 "examples/dotproduct/main.hero"
     t16 = INT64_C(0);
@@ -460,7 +459,7 @@ bb6:
 bb7:
 #line 58 "examples/dotproduct/main.hero"
     t31 = h2_total;
-#line 464 "main.c"
+#line 463 "main.c"
     hero_array_release_at(&h0_handles);
     hero_array_release_at(&h3_xs0);
     hero_array_release_at(&h6_own6);
@@ -469,7 +468,7 @@ bb7:
 
 #line 60 "examples/dotproduct/main.hero"
 int64_t h_main_alone(void) {
-#line 473 "main.c"
+#line 472 "main.c"
     int64_t h0_total;
     int64_t h1_at;
     int64_t t1;
@@ -547,12 +546,12 @@ bb3:
     t18 = h0_total;
 #line 68 "examples/dotproduct/main.hero"
     return t18;
-#line 551 "main.c"
+#line 550 "main.c"
 }
 
 #line 70 "examples/dotproduct/main.hero"
 void h_main_main(void) {
-#line 556 "main.c"
+#line 555 "main.c"
     HeroStr t1;
     int64_t t2;
     int64_t t3;
@@ -585,7 +584,7 @@ bb0:
     hero_print_end();
 #line 71 "examples/dotproduct/main.hero"
     return;
-#line 589 "main.c"
+#line 588 "main.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

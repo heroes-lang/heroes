@@ -47,7 +47,7 @@ use resolve
 use checker
 
 # `p` is the program held with its index (`instances.Held`, defect 492).
-function emit(@w: writer.Writer, p: instances.Held, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], f: containers.Function, inst: ir.Inst, live_values: {i64: bool})
+function emit(@w: writer.Writer, p: instances.Held, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], f: containers.Function, inst: ir.Inst, live_values: {i64: bool}, ends: ir.Term)
     # §4.8's second half writes no C since panel 196's R1: an `@` parameter
     # IS the caller's place (`places.slot_lvalue`), so nothing is left to
     # copy; the IR keeps it as the point the place is the caller's again.
@@ -63,8 +63,10 @@ function emit(@w: writer.Writer, p: instances.Held, c: state.Checked, names: cty
         return
 
     # A merged exit's load and what follows it are the generated file's
-    # (defect 335, `term.loads_return_slot`).
-    if term.loads_return_slot(f, op: inst.op)
+    # (defect 335, `term.loads_return_slot`), and so is the retain of what a
+    # way out returns (defect 540, `term.retains_returned`); a release inside
+    # a line is that line's.
+    if term.loads_return_slot(f, op: inst.op) || term.retains_returned(inst.op, term: ends)
         writer.at_generated(@w)
     else
         writer.at_span(@w, s, offset: inst.span.start)
@@ -383,7 +385,8 @@ test "the dispatcher: a discarded call keeps its effect, a unit store vanishes"
         parsed.decls,
         caller,
         inst: ir.Inst(dest: ok(1), op: .lit(value: .int_const(value: contextual.LitValue(negative: false, magnitude: 7))), ty: int_id, span: span),
-        live_values: live
+        live_values: live,
+        ends: .unreachable
     )
 
     # A call to a ()-returning function: emitted for its effect, no
@@ -398,7 +401,8 @@ test "the dispatcher: a discarded call keeps its effect, a unit store vanishes"
         parsed.decls,
         caller,
         inst: ir.Inst(dest: fail(code: "none", msg: "void"), op: .call(callee: .heroes_fn(decl: 0), arguments: run0, variadic: false), ty: unit_id, span: span),
-        live_values: live
+        live_values: live,
+        ends: .unreachable
     )
 
     # A live constant with the width from its own type.
@@ -412,7 +416,8 @@ test "the dispatcher: a discarded call keeps its effect, a unit store vanishes"
         parsed.decls,
         caller,
         inst: ir.Inst(dest: ok(2), op: .lit(value: .int_const(value: contextual.LitValue(negative: false, magnitude: 7))), ty: int_id, span: span),
-        live_values: live
+        live_values: live,
+        ends: .unreachable
     )
     got = writer.finish(w)
 

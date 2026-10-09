@@ -654,17 +654,16 @@ bb0:
     t34 = h6_own6;
 #line 77 "examples/mandelbrot/main.hero"
     h6_own6 = t1;
-#line 658 "main.c"
+#line 77 "examples/mandelbrot/main.hero"
     hero_array_decref(t34);
 #line 77 "examples/mandelbrot/main.hero"
     t35 = h0_handles;
-#line 662 "main.c"
+#line 77 "examples/mandelbrot/main.hero"
     hero_array_incref(t1);
 #line 77 "examples/mandelbrot/main.hero"
     h0_handles = t1;
-#line 666 "main.c"
+#line 77 "examples/mandelbrot/main.hero"
     hero_array_decref(t35);
-#line 78 "examples/mandelbrot/main.hero"
     t2 = INT64_C(0);
 #line 78 "examples/mandelbrot/main.hero"
     h1_i = t2;
@@ -716,11 +715,11 @@ bb3:
     t17 = h0_handles;
 #line 86 "examples/mandelbrot/main.hero"
     t36 = h3_xs0;
-#line 720 "main.c"
+#line 86 "examples/mandelbrot/main.hero"
     hero_array_incref(t17);
 #line 86 "examples/mandelbrot/main.hero"
     h3_xs0 = t17;
-#line 724 "main.c"
+#line 86 "examples/mandelbrot/main.hero"
     hero_array_decref(t36);
 #line 86 "examples/mandelbrot/main.hero"
     t18 = INT64_C(0);
@@ -777,7 +776,7 @@ bb6:
 bb7:
 #line 89 "examples/mandelbrot/main.hero"
     t33 = h2_total;
-#line 781 "main.c"
+#line 780 "main.c"
     hero_array_release_at(&h0_handles);
     hero_array_release_at(&h3_xs0);
     hero_array_release_at(&h6_own6);
@@ -786,7 +785,7 @@ bb7:
 
 #line 91 "examples/mandelbrot/main.hero"
 int64_t h_main_alone(void) {
-#line 790 "main.c"
+#line 789 "main.c"
     int64_t h0_total;
     int64_t h1_row;
     int64_t t1;
@@ -849,12 +848,12 @@ bb3:
     t13 = h0_total;
 #line 99 "examples/mandelbrot/main.hero"
     return t13;
-#line 853 "main.c"
+#line 852 "main.c"
 }
 
 #line 101 "examples/mandelbrot/main.hero"
 void h_main_main(void) {
-#line 858 "main.c"
+#line 857 "main.c"
     HeroStr t1;
     int64_t t2;
     HeroStr t3;
@@ -891,7 +890,7 @@ bb0:
     hero_print_end();
 #line 102 "examples/mandelbrot/main.hero"
     return;
-#line 895 "main.c"
+#line 894 "main.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

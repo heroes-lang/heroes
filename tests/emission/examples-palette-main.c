@@ -518,23 +518,21 @@ bb0:
     t1 = HERO_STR_LIT(hero_str_35b2f7b2);
 #line 106 "examples/palette/main.hero"
     t26 = h1_digits;
-#line 522 "main.c"
+#line 106 "examples/palette/main.hero"
     hero_str_incref(t1);
 #line 106 "examples/palette/main.hero"
     h1_digits = t1;
-#line 526 "main.c"
+#line 106 "examples/palette/main.hero"
     hero_str_decref(t26);
-#line 107 "examples/palette/main.hero"
     t2 = HERO_STR_LIT(hero_str_0);
 #line 107 "examples/palette/main.hero"
     t27 = h2_out;
-#line 532 "main.c"
+#line 107 "examples/palette/main.hero"
     hero_str_incref(t2);
 #line 107 "examples/palette/main.hero"
     h2_out = t2;
-#line 536 "main.c"
+#line 107 "examples/palette/main.hero"
     hero_str_decref(t27);
-#line 108 "examples/palette/main.hero"
     t3 = INT64_C(7);
 #line 108 "examples/palette/main.hero"
     h3_i = t3;
@@ -586,7 +584,7 @@ bb2:
     t28 = h5_own5;
 #line 112 "examples/palette/main.hero"
     h5_own5 = t20;
-#line 590 "main.c"
+#line 112 "examples/palette/main.hero"
     hero_str_decref(t28);
 #line 112 "examples/palette/main.hero"
     t21 = hero_str_concat(t14, t20);
@@ -594,17 +592,16 @@ bb2:
     t29 = h6_own6;
 #line 112 "examples/palette/main.hero"
     h6_own6 = t21;
-#line 598 "main.c"
+#line 112 "examples/palette/main.hero"
     hero_str_decref(t29);
 #line 112 "examples/palette/main.hero"
     t30 = h2_out;
-#line 602 "main.c"
+#line 112 "examples/palette/main.hero"
     hero_str_incref(t21);
 #line 112 "examples/palette/main.hero"
     h2_out = t21;
-#line 606 "main.c"
+#line 112 "examples/palette/main.hero"
     hero_str_decref(t30);
-#line 113 "examples/palette/main.hero"
     t22 = h3_i;
 #line 113 "examples/palette/main.hero"
     t23 = INT64_C(1);
@@ -618,7 +615,7 @@ bb2:
 bb3:
 #line 115 "examples/palette/main.hero"
     t25 = h2_out;
-#line 622 "main.c"
+#line 619 "main.c"
     hero_str_incref(t25);
     hero_str_release_at(&h1_digits);
     hero_str_release_at(&h2_out);
@@ -629,7 +626,7 @@ bb3:
 
 #line 117 "examples/palette/main.hero"
 void h_main_main(void) {
-#line 633 "main.c"
+#line 630 "main.c"
     h_main_Colour h0_red;
     HeroStr h1_own1 = {0};
     HeroStr h2_own2 = {0};
@@ -774,7 +771,7 @@ bb0:
     t48 = h1_own1;
 #line 133 "examples/palette/main.hero"
     h1_own1 = t28;
-#line 778 "main.c"
+#line 133 "examples/palette/main.hero"
     hero_str_decref(t48);
 #line 133 "examples/palette/main.hero"
     hero_print_str(t28);
@@ -789,7 +786,7 @@ bb0:
     t49 = h2_own2;
 #line 134 "examples/palette/main.hero"
     h2_own2 = t31;
-#line 793 "main.c"
+#line 134 "examples/palette/main.hero"
     hero_str_decref(t49);
 #line 134 "examples/palette/main.hero"
     hero_print_str(t31);
@@ -844,7 +841,7 @@ bb0:
     hero_print_bool(t47);
 #line 143 "examples/palette/main.hero"
     hero_print_end();
-#line 848 "main.c"
+#line 845 "main.c"
     hero_str_release_at(&h1_own1);
     hero_str_release_at(&h2_own2);
     return;

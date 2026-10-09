@@ -124,17 +124,16 @@ bb0:
     t10 = h2_own2;
 #line 27 "tests/golden/run/fixedbugs-a-c-handler-that-recovers-leaves-no-line.hero"
     h2_own2 = t3;
-#line 128 "fixedbugsachandlerthatrecoversleavesnoline.c"
+#line 27 "tests/golden/run/fixedbugs-a-c-handler-that-recovers-leaves-no-line.hero"
     hero_str_decref(t10);
 #line 27 "tests/golden/run/fixedbugs-a-c-handler-that-recovers-leaves-no-line.hero"
     t11 = h0_word;
-#line 132 "fixedbugsachandlerthatrecoversleavesnoline.c"
+#line 27 "tests/golden/run/fixedbugs-a-c-handler-that-recovers-leaves-no-line.hero"
     hero_str_incref(t3);
 #line 27 "tests/golden/run/fixedbugs-a-c-handler-that-recovers-leaves-no-line.hero"
     h0_word = t3;
-#line 136 "fixedbugsachandlerthatrecoversleavesnoline.c"
+#line 27 "tests/golden/run/fixedbugs-a-c-handler-that-recovers-leaves-no-line.hero"
     hero_str_decref(t11);
-#line 28 "tests/golden/run/fixedbugs-a-c-handler-that-recovers-leaves-no-line.hero"
     t4 = h0_word;
 #line 28 "tests/golden/run/fixedbugs-a-c-handler-that-recovers-leaves-no-line.hero"
     t5 = hero_str_held(t4);
@@ -154,7 +153,7 @@ bb0:
 #line 29 "tests/golden/run/fixedbugs-a-c-handler-that-recovers-leaves-no-line.hero"
     hero_print_end();
     hero_held_release(&h1_held);
-#line 158 "fixedbugsachandlerthatrecoversleavesnoline.c"
+#line 157 "fixedbugsachandlerthatrecoversleavesnoline.c"
     hero_str_release_at(&h0_word);
     hero_str_release_at(&h2_own2);
     return;

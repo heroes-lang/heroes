@@ -248,15 +248,15 @@ bb0:
     t52 = h7_own7;
 #line 21 "tests/golden/run/fixedbugs-092-getsockopt-reads-its-length-through-a-cell.hero"
     h7_own7 = t2;
-#line 252 "fixedbugs092getsockoptreadsitslengththroughacell.c"
+#line 21 "tests/golden/run/fixedbugs-092-getsockopt-reads-its-length-through-a-cell.hero"
     h_0opt_e1f4933_release(&t52);
 #line 21 "tests/golden/run/fixedbugs-092-getsockopt-reads-its-length-through-a-cell.hero"
     t53 = h0_f0;
-#line 256 "fixedbugs092getsockoptreadsitslengththroughacell.c"
+#line 21 "tests/golden/run/fixedbugs-092-getsockopt-reads-its-length-through-a-cell.hero"
     h_0opt_e1f4933_retain(&t2);
 #line 21 "tests/golden/run/fixedbugs-092-getsockopt-reads-its-length-through-a-cell.hero"
     h0_f0 = t2;
-#line 260 "fixedbugs092getsockoptreadsitslengththroughacell.c"
+#line 21 "tests/golden/run/fixedbugs-092-getsockopt-reads-its-length-through-a-cell.hero"
     h_0opt_e1f4933_release(&t53);
 #line 21 "tests/golden/run/fixedbugs-092-getsockopt-reads-its-length-through-a-cell.hero"
     t3 = h0_f0;
@@ -290,15 +290,15 @@ bb1:
     t54 = h8_own8;
 #line 21 "tests/golden/run/fixedbugs-092-getsockopt-reads-its-length-through-a-cell.hero"
     h8_own8 = t12;
-#line 294 "fixedbugs092getsockoptreadsitslengththroughacell.c"
+#line 21 "tests/golden/run/fixedbugs-092-getsockopt-reads-its-length-through-a-cell.hero"
     h_0opt_e1f4933_release(&t54);
 #line 21 "tests/golden/run/fixedbugs-092-getsockopt-reads-its-length-through-a-cell.hero"
     t55 = h1_f1;
-#line 298 "fixedbugs092getsockoptreadsitslengththroughacell.c"
+#line 21 "tests/golden/run/fixedbugs-092-getsockopt-reads-its-length-through-a-cell.hero"
     h_0opt_e1f4933_retain(&t12);
 #line 21 "tests/golden/run/fixedbugs-092-getsockopt-reads-its-length-through-a-cell.hero"
     h1_f1 = t12;
-#line 302 "fixedbugs092getsockoptreadsitslengththroughacell.c"
+#line 21 "tests/golden/run/fixedbugs-092-getsockopt-reads-its-length-through-a-cell.hero"
     h_0opt_e1f4933_release(&t55);
 #line 21 "tests/golden/run/fixedbugs-092-getsockopt-reads-its-length-through-a-cell.hero"
     t13 = h1_f1;
@@ -357,15 +357,15 @@ bb3:
     t56 = h9_own9;
 #line 24 "tests/golden/run/fixedbugs-092-getsockopt-reads-its-length-through-a-cell.hero"
     h9_own9 = t29;
-#line 361 "fixedbugs092getsockoptreadsitslengththroughacell.c"
+#line 24 "tests/golden/run/fixedbugs-092-getsockopt-reads-its-length-through-a-cell.hero"
     h_0opt_e1f4933_release(&t56);
 #line 24 "tests/golden/run/fixedbugs-092-getsockopt-reads-its-length-through-a-cell.hero"
     t57 = h5_f2;
-#line 365 "fixedbugs092getsockoptreadsitslengththroughacell.c"
+#line 24 "tests/golden/run/fixedbugs-092-getsockopt-reads-its-length-through-a-cell.hero"
     h_0opt_e1f4933_retain(&t29);
 #line 24 "tests/golden/run/fixedbugs-092-getsockopt-reads-its-length-through-a-cell.hero"
     h5_f2 = t29;
-#line 369 "fixedbugs092getsockoptreadsitslengththroughacell.c"
+#line 24 "tests/golden/run/fixedbugs-092-getsockopt-reads-its-length-through-a-cell.hero"
     h_0opt_e1f4933_release(&t57);
 #line 24 "tests/golden/run/fixedbugs-092-getsockopt-reads-its-length-through-a-cell.hero"
     t30 = h5_f2;
@@ -407,15 +407,15 @@ bb5:
     t58 = h10_own10;
 #line 24 "tests/golden/run/fixedbugs-092-getsockopt-reads-its-length-through-a-cell.hero"
     h10_own10 = t39;
-#line 411 "fixedbugs092getsockoptreadsitslengththroughacell.c"
+#line 24 "tests/golden/run/fixedbugs-092-getsockopt-reads-its-length-through-a-cell.hero"
     h_0opt_e1f4933_release(&t58);
 #line 24 "tests/golden/run/fixedbugs-092-getsockopt-reads-its-length-through-a-cell.hero"
     t59 = h6_f3;
-#line 415 "fixedbugs092getsockoptreadsitslengththroughacell.c"
+#line 24 "tests/golden/run/fixedbugs-092-getsockopt-reads-its-length-through-a-cell.hero"
     h_0opt_e1f4933_retain(&t39);
 #line 24 "tests/golden/run/fixedbugs-092-getsockopt-reads-its-length-through-a-cell.hero"
     h6_f3 = t39;
-#line 419 "fixedbugs092getsockoptreadsitslengththroughacell.c"
+#line 24 "tests/golden/run/fixedbugs-092-getsockopt-reads-its-length-through-a-cell.hero"
     h_0opt_e1f4933_release(&t59);
 #line 24 "tests/golden/run/fixedbugs-092-getsockopt-reads-its-length-through-a-cell.hero"
     t40 = h6_f3;

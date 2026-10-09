@@ -220,17 +220,16 @@ bb0:
     t20 = h3_own3;
 #line 21 "tests/golden/run/fixedbugs-151-a-union-in-a-variant-case-compared-by-an-arm-as-wide-builds.hero"
     h3_own3 = t11;
-#line 224 "fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds.c"
+#line 21 "tests/golden/run/fixedbugs-151-a-union-in-a-variant-case-compared-by-an-arm-as-wide-builds.hero"
     hero_map_decref(t20);
 #line 21 "tests/golden/run/fixedbugs-151-a-union-in-a-variant-case-compared-by-an-arm-as-wide-builds.hero"
     t21 = h2_m;
-#line 228 "fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds.c"
+#line 21 "tests/golden/run/fixedbugs-151-a-union-in-a-variant-case-compared-by-an-arm-as-wide-builds.hero"
     hero_map_incref(t11);
 #line 21 "tests/golden/run/fixedbugs-151-a-union-in-a-variant-case-compared-by-an-arm-as-wide-builds.hero"
     h2_m = t11;
-#line 232 "fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds.c"
+#line 21 "tests/golden/run/fixedbugs-151-a-union-in-a-variant-case-compared-by-an-arm-as-wide-builds.hero"
     hero_map_decref(t21);
-#line 22 "tests/golden/run/fixedbugs-151-a-union-in-a-variant-case-compared-by-an-arm-as-wide-builds.hero"
     t12 = h0_a;
 #line 22 "tests/golden/run/fixedbugs-151-a-union-in-a-variant-case-compared-by-an-arm-as-wide-builds.hero"
     t13 = INT64_C(1);
@@ -253,7 +252,7 @@ bb0:
     hero_print_int(t19);
 #line 25 "tests/golden/run/fixedbugs-151-a-union-in-a-variant-case-compared-by-an-arm-as-wide-builds.hero"
     hero_print_end();
-#line 257 "fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds.c"
+#line 256 "fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds.c"
     hero_map_release_at(&h2_m);
     hero_map_release_at(&h3_own3);
     return;

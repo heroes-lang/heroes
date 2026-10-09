@@ -305,7 +305,7 @@ bb0:
     t79 = h7_own7;
 #line 42 "tests/golden/run/fixedbugs-461-the-publish-route-keeps-the-owner-the-acl-and-the-streams.hero"
     h7_own7 = t3;
-#line 309 "fixedbugs461thepublishroutekeepstheownertheaclandthestreams.c"
+#line 42 "tests/golden/run/fixedbugs-461-the-publish-route-keeps-the-owner-the-acl-and-the-streams.hero"
     hero_str_decref(t79);
 #line 42 "tests/golden/run/fixedbugs-461-the-publish-route-keeps-the-owner-the-acl-and-the-streams.hero"
     t4 = hero_str_concat(t1, t3);
@@ -313,17 +313,16 @@ bb0:
     t80 = h8_own8;
 #line 42 "tests/golden/run/fixedbugs-461-the-publish-route-keeps-the-owner-the-acl-and-the-streams.hero"
     h8_own8 = t4;
-#line 317 "fixedbugs461thepublishroutekeepstheownertheaclandthestreams.c"
+#line 42 "tests/golden/run/fixedbugs-461-the-publish-route-keeps-the-owner-the-acl-and-the-streams.hero"
     hero_str_decref(t80);
 #line 42 "tests/golden/run/fixedbugs-461-the-publish-route-keeps-the-owner-the-acl-and-the-streams.hero"
     t81 = h0_dir;
-#line 321 "fixedbugs461thepublishroutekeepstheownertheaclandthestreams.c"
+#line 42 "tests/golden/run/fixedbugs-461-the-publish-route-keeps-the-owner-the-acl-and-the-streams.hero"
     hero_str_incref(t4);
 #line 42 "tests/golden/run/fixedbugs-461-the-publish-route-keeps-the-owner-the-acl-and-the-streams.hero"
     h0_dir = t4;
-#line 325 "fixedbugs461thepublishroutekeepstheownertheaclandthestreams.c"
+#line 42 "tests/golden/run/fixedbugs-461-the-publish-route-keeps-the-owner-the-acl-and-the-streams.hero"
     hero_str_decref(t81);
-#line 43 "tests/golden/run/fixedbugs-461-the-publish-route-keeps-the-owner-the-acl-and-the-streams.hero"
     t5 = h0_dir;
 #line 43 "tests/golden/run/fixedbugs-461-the-publish-route-keeps-the-owner-the-acl-and-the-streams.hero"
     t6 = HERO_STR_LIT(hero_str_78365c7c);
@@ -333,17 +332,16 @@ bb0:
     t82 = h9_own9;
 #line 43 "tests/golden/run/fixedbugs-461-the-publish-route-keeps-the-owner-the-acl-and-the-streams.hero"
     h9_own9 = t7;
-#line 337 "fixedbugs461thepublishroutekeepstheownertheaclandthestreams.c"
+#line 43 "tests/golden/run/fixedbugs-461-the-publish-route-keeps-the-owner-the-acl-and-the-streams.hero"
     hero_str_decref(t82);
 #line 43 "tests/golden/run/fixedbugs-461-the-publish-route-keeps-the-owner-the-acl-and-the-streams.hero"
     t83 = h1_path;
-#line 341 "fixedbugs461thepublishroutekeepstheownertheaclandthestreams.c"
+#line 43 "tests/golden/run/fixedbugs-461-the-publish-route-keeps-the-owner-the-acl-and-the-streams.hero"
     hero_str_incref(t7);
 #line 43 "tests/golden/run/fixedbugs-461-the-publish-route-keeps-the-owner-the-acl-and-the-streams.hero"
     h1_path = t7;
-#line 345 "fixedbugs461thepublishroutekeepstheownertheaclandthestreams.c"
+#line 43 "tests/golden/run/fixedbugs-461-the-publish-route-keeps-the-owner-the-acl-and-the-streams.hero"
     hero_str_decref(t83);
-#line 44 "tests/golden/run/fixedbugs-461-the-publish-route-keeps-the-owner-the-acl-and-the-streams.hero"
     t8 = h1_path;
 #line 44 "tests/golden/run/fixedbugs-461-the-publish-route-keeps-the-owner-the-acl-and-the-streams.hero"
     t9 = HERO_STR_LIT(hero_str_75d8c5ca);
@@ -353,15 +351,15 @@ bb0:
     t84 = h10_own10;
 #line 44 "tests/golden/run/fixedbugs-461-the-publish-route-keeps-the-owner-the-acl-and-the-streams.hero"
     h10_own10 = t10;
-#line 357 "fixedbugs461thepublishroutekeepstheownertheaclandthestreams.c"
+#line 44 "tests/golden/run/fixedbugs-461-the-publish-route-keeps-the-owner-the-acl-and-the-streams.hero"
     hero_str_decref(t84);
 #line 44 "tests/golden/run/fixedbugs-461-the-publish-route-keeps-the-owner-the-acl-and-the-streams.hero"
     t85 = h2_staged;
-#line 361 "fixedbugs461thepublishroutekeepstheownertheaclandthestreams.c"
+#line 44 "tests/golden/run/fixedbugs-461-the-publish-route-keeps-the-owner-the-acl-and-the-streams.hero"
     hero_str_incref(t10);
 #line 44 "tests/golden/run/fixedbugs-461-the-publish-route-keeps-the-owner-the-acl-and-the-streams.hero"
     h2_staged = t10;
-#line 365 "fixedbugs461thepublishroutekeepstheownertheaclandthestreams.c"
+#line 44 "tests/golden/run/fixedbugs-461-the-publish-route-keeps-the-owner-the-acl-and-the-streams.hero"
     hero_str_decref(t85);
 #line 46 "tests/golden/run/fixedbugs-461-the-publish-route-keeps-the-owner-the-acl-and-the-streams.hero"
     t11 = h0_dir;
@@ -408,7 +406,7 @@ bb1:
     t86 = h11_own11;
 #line 50 "tests/golden/run/fixedbugs-461-the-publish-route-keeps-the-owner-the-acl-and-the-streams.hero"
     h11_own11 = t35;
-#line 412 "fixedbugs461thepublishroutekeepstheownertheaclandthestreams.c"
+#line 50 "tests/golden/run/fixedbugs-461-the-publish-route-keeps-the-owner-the-acl-and-the-streams.hero"
     hero_str_decref(t86);
 #line 50 "tests/golden/run/fixedbugs-461-the-publish-route-keeps-the-owner-the-acl-and-the-streams.hero"
     t36 = h1_path;
@@ -456,15 +454,15 @@ bb1:
     t87 = h12_own12;
 #line 52 "tests/golden/run/fixedbugs-461-the-publish-route-keeps-the-owner-the-acl-and-the-streams.hero"
     h12_own12 = t51;
-#line 460 "fixedbugs461thepublishroutekeepstheownertheaclandthestreams.c"
+#line 52 "tests/golden/run/fixedbugs-461-the-publish-route-keeps-the-owner-the-acl-and-the-streams.hero"
     h_0opt_f87774a_release(&t87);
 #line 52 "tests/golden/run/fixedbugs-461-the-publish-route-keeps-the-owner-the-acl-and-the-streams.hero"
     t88 = h5_f1;
-#line 464 "fixedbugs461thepublishroutekeepstheownertheaclandthestreams.c"
+#line 52 "tests/golden/run/fixedbugs-461-the-publish-route-keeps-the-owner-the-acl-and-the-streams.hero"
     h_0opt_f87774a_retain(&t51);
 #line 52 "tests/golden/run/fixedbugs-461-the-publish-route-keeps-the-owner-the-acl-and-the-streams.hero"
     h5_f1 = t51;
-#line 468 "fixedbugs461thepublishroutekeepstheownertheaclandthestreams.c"
+#line 52 "tests/golden/run/fixedbugs-461-the-publish-route-keeps-the-owner-the-acl-and-the-streams.hero"
     h_0opt_f87774a_release(&t88);
 #line 52 "tests/golden/run/fixedbugs-461-the-publish-route-keeps-the-owner-the-acl-and-the-streams.hero"
     t52 = h5_f1;
@@ -488,15 +486,15 @@ bb2:
     t89 = h13_own13;
 #line 46 "tests/golden/run/fixedbugs-461-the-publish-route-keeps-the-owner-the-acl-and-the-streams.hero"
     h13_own13 = t18;
-#line 492 "fixedbugs461thepublishroutekeepstheownertheaclandthestreams.c"
+#line 46 "tests/golden/run/fixedbugs-461-the-publish-route-keeps-the-owner-the-acl-and-the-streams.hero"
     h_0opt_a8ea2_release(&t89);
 #line 46 "tests/golden/run/fixedbugs-461-the-publish-route-keeps-the-owner-the-acl-and-the-streams.hero"
     t90 = h4_f0;
-#line 496 "fixedbugs461thepublishroutekeepstheownertheaclandthestreams.c"
+#line 46 "tests/golden/run/fixedbugs-461-the-publish-route-keeps-the-owner-the-acl-and-the-streams.hero"
     h_0opt_a8ea2_retain(&t18);
 #line 46 "tests/golden/run/fixedbugs-461-the-publish-route-keeps-the-owner-the-acl-and-the-streams.hero"
     h4_f0 = t18;
-#line 500 "fixedbugs461thepublishroutekeepstheownertheaclandthestreams.c"
+#line 46 "tests/golden/run/fixedbugs-461-the-publish-route-keeps-the-owner-the-acl-and-the-streams.hero"
     h_0opt_a8ea2_release(&t90);
 #line 46 "tests/golden/run/fixedbugs-461-the-publish-route-keeps-the-owner-the-acl-and-the-streams.hero"
     t19 = h4_f0;
@@ -541,25 +539,29 @@ bb6:
     t57 = t56.as.ok;
 #line 52 "tests/golden/run/fixedbugs-461-the-publish-route-keeps-the-owner-the-acl-and-the-streams.hero"
     t91 = h6_r0;
-#line 545 "fixedbugs461thepublishroutekeepstheownertheaclandthestreams.c"
+#line 52 "tests/golden/run/fixedbugs-461-the-publish-route-keeps-the-owner-the-acl-and-the-streams.hero"
     hero_str_incref(t57);
 #line 52 "tests/golden/run/fixedbugs-461-the-publish-route-keeps-the-owner-the-acl-and-the-streams.hero"
     h6_r0 = t57;
-#line 549 "fixedbugs461thepublishroutekeepstheownertheaclandthestreams.c"
+#line 52 "tests/golden/run/fixedbugs-461-the-publish-route-keeps-the-owner-the-acl-and-the-streams.hero"
     hero_str_decref(t91);
+#line 52 "tests/golden/run/fixedbugs-461-the-publish-route-keeps-the-owner-the-acl-and-the-streams.hero"
     goto bb8;
+#line 52 "tests/golden/run/fixedbugs-461-the-publish-route-keeps-the-owner-the-acl-and-the-streams.hero"
 bb7:
 #line 52 "tests/golden/run/fixedbugs-461-the-publish-route-keeps-the-owner-the-acl-and-the-streams.hero"
     t58 = HERO_STR_LIT(hero_str_c328310);
 #line 52 "tests/golden/run/fixedbugs-461-the-publish-route-keeps-the-owner-the-acl-and-the-streams.hero"
     t92 = h6_r0;
-#line 557 "fixedbugs461thepublishroutekeepstheownertheaclandthestreams.c"
+#line 52 "tests/golden/run/fixedbugs-461-the-publish-route-keeps-the-owner-the-acl-and-the-streams.hero"
     hero_str_incref(t58);
 #line 52 "tests/golden/run/fixedbugs-461-the-publish-route-keeps-the-owner-the-acl-and-the-streams.hero"
     h6_r0 = t58;
-#line 561 "fixedbugs461thepublishroutekeepstheownertheaclandthestreams.c"
+#line 52 "tests/golden/run/fixedbugs-461-the-publish-route-keeps-the-owner-the-acl-and-the-streams.hero"
     hero_str_decref(t92);
+#line 52 "tests/golden/run/fixedbugs-461-the-publish-route-keeps-the-owner-the-acl-and-the-streams.hero"
     goto bb8;
+#line 52 "tests/golden/run/fixedbugs-461-the-publish-route-keeps-the-owner-the-acl-and-the-streams.hero"
 bb8:
 #line 52 "tests/golden/run/fixedbugs-461-the-publish-route-keeps-the-owner-the-acl-and-the-streams.hero"
     t59 = h6_r0;
@@ -569,7 +571,7 @@ bb8:
     t93 = h14_own14;
 #line 52 "tests/golden/run/fixedbugs-461-the-publish-route-keeps-the-owner-the-acl-and-the-streams.hero"
     h14_own14 = t60;
-#line 573 "fixedbugs461thepublishroutekeepstheownertheaclandthestreams.c"
+#line 52 "tests/golden/run/fixedbugs-461-the-publish-route-keeps-the-owner-the-acl-and-the-streams.hero"
     hero_str_decref(t93);
 #line 52 "tests/golden/run/fixedbugs-461-the-publish-route-keeps-the-owner-the-acl-and-the-streams.hero"
     t61 = hero_str_eq(t59, t60);
@@ -628,7 +630,7 @@ bb8:
     goto bb9;
 #line 57 "tests/golden/run/fixedbugs-461-the-publish-route-keeps-the-owner-the-acl-and-the-streams.hero"
 bb9:
-#line 632 "fixedbugs461thepublishroutekeepstheownertheaclandthestreams.c"
+#line 634 "fixedbugs461thepublishroutekeepstheownertheaclandthestreams.c"
     hero_str_release_at(&h0_dir);
     hero_str_release_at(&h1_path);
     hero_str_release_at(&h2_staged);
@@ -648,31 +650,31 @@ bb9:
 
 #line 109 "<heroes library>"
 int64_t h_library_HERO_OS_OK(void) {
-#line 652 "fixedbugs461thepublishroutekeepstheownertheaclandthestreams.c"
+#line 654 "fixedbugs461thepublishroutekeepstheownertheaclandthestreams.c"
     return HERO_OS_OK;
 }
 
 #line 110 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_FOUND(void) {
-#line 658 "fixedbugs461thepublishroutekeepstheownertheaclandthestreams.c"
+#line 660 "fixedbugs461thepublishroutekeepstheownertheaclandthestreams.c"
     return HERO_OS_NOT_FOUND;
 }
 
 #line 111 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_TEXT(void) {
-#line 664 "fixedbugs461thepublishroutekeepstheownertheaclandthestreams.c"
+#line 666 "fixedbugs461thepublishroutekeepstheownertheaclandthestreams.c"
     return HERO_OS_NOT_TEXT;
 }
 
 #line 112 "<heroes library>"
 int64_t h_library_HERO_OS_BAD_NAME(void) {
-#line 670 "fixedbugs461thepublishroutekeepstheownertheaclandthestreams.c"
+#line 672 "fixedbugs461thepublishroutekeepstheownertheaclandthestreams.c"
     return HERO_OS_BAD_NAME;
 }
 
 #line 167 "<heroes library>"
 h_0opt_f87774a h_library_read_file(HeroStr h0_path) {
-#line 676 "fixedbugs461thepublishroutekeepstheownertheaclandthestreams.c"
+#line 678 "fixedbugs461thepublishroutekeepstheownertheaclandthestreams.c"
     int64_t *const hero_lend_h1_status = (int64_t *)hero_lend_local(sizeof(int64_t), "library.read_file", "status");
 #define h1_status (*hero_lend_h1_status)
     HeroStr h2_text = {0};
@@ -751,17 +753,16 @@ bb0:
     t39 = h4_own4;
 #line 169 "<heroes library>"
     h4_own4 = t3;
-#line 755 "fixedbugs461thepublishroutekeepstheownertheaclandthestreams.c"
+#line 169 "<heroes library>"
     hero_str_decref(t39);
 #line 169 "<heroes library>"
     t40 = h2_text;
-#line 759 "fixedbugs461thepublishroutekeepstheownertheaclandthestreams.c"
+#line 169 "<heroes library>"
     hero_str_incref(t3);
 #line 169 "<heroes library>"
     h2_text = t3;
-#line 763 "fixedbugs461thepublishroutekeepstheownertheaclandthestreams.c"
+#line 169 "<heroes library>"
     hero_str_decref(t40);
-#line 170 "<heroes library>"
     t4 = h1_status;
 #line 170 "<heroes library>"
     t5 = h_library_HERO_OS_OK();
@@ -783,7 +784,7 @@ bb1:
 bb2:
 #line 171 "<heroes library>"
     t7 = h2_text;
-#line 787 "fixedbugs461thepublishroutekeepstheownertheaclandthestreams.c"
+#line 171 "<heroes library>"
     hero_str_incref(t7);
 #line 171 "<heroes library>"
     t8 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t7};
@@ -791,7 +792,7 @@ bb2:
     t41 = h5_own5;
 #line 171 "<heroes library>"
     h5_own5 = t8;
-#line 795 "fixedbugs461thepublishroutekeepstheownertheaclandthestreams.c"
+#line 171 "<heroes library>"
     h_0opt_f87774a_release(&t41);
 #line 171 "<heroes library>"
     h3_ret0 = t8;
@@ -817,8 +818,9 @@ bb5:
     t12 = HERO_STR_LIT(hero_str_3e46668);
 #line 175 "<heroes library>"
     t13 = HERO_STR_LIT(hero_str_75aeb685);
-#line 821 "fixedbugs461thepublishroutekeepstheownertheaclandthestreams.c"
+#line 175 "<heroes library>"
     hero_str_incref(t12);
+#line 175 "<heroes library>"
     hero_str_incref(t13);
 #line 175 "<heroes library>"
     t14 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t12, .msg = t13}};
@@ -826,7 +828,7 @@ bb5:
     t42 = h6_own6;
 #line 175 "<heroes library>"
     h6_own6 = t14;
-#line 830 "fixedbugs461thepublishroutekeepstheownertheaclandthestreams.c"
+#line 175 "<heroes library>"
     h_0opt_f87774a_release(&t42);
 #line 175 "<heroes library>"
     h3_ret0 = t14;
@@ -860,9 +862,11 @@ bb8:
     t43 = h7_own7;
 #line 177 "<heroes library>"
     h7_own7 = t21;
-#line 864 "fixedbugs461thepublishroutekeepstheownertheaclandthestreams.c"
+#line 177 "<heroes library>"
     hero_str_decref(t43);
+#line 177 "<heroes library>"
     hero_str_incref(t18);
+#line 177 "<heroes library>"
     hero_str_incref(t21);
 #line 177 "<heroes library>"
     t22 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t18, .msg = t21}};
@@ -870,7 +874,7 @@ bb8:
     t44 = h8_own8;
 #line 177 "<heroes library>"
     h8_own8 = t22;
-#line 874 "fixedbugs461thepublishroutekeepstheownertheaclandthestreams.c"
+#line 177 "<heroes library>"
     h_0opt_f87774a_release(&t44);
 #line 177 "<heroes library>"
     h3_ret0 = t22;
@@ -894,9 +898,11 @@ bb10:
     t45 = h9_own9;
 #line 183 "<heroes library>"
     h9_own9 = t36;
-#line 898 "fixedbugs461thepublishroutekeepstheownertheaclandthestreams.c"
+#line 183 "<heroes library>"
     hero_str_decref(t45);
+#line 183 "<heroes library>"
     hero_str_incref(t33);
+#line 183 "<heroes library>"
     hero_str_incref(t36);
 #line 183 "<heroes library>"
     t37 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t33, .msg = t36}};
@@ -904,7 +910,7 @@ bb10:
     t46 = h10_own10;
 #line 183 "<heroes library>"
     h10_own10 = t37;
-#line 908 "fixedbugs461thepublishroutekeepstheownertheaclandthestreams.c"
+#line 183 "<heroes library>"
     h_0opt_f87774a_release(&t46);
 #line 183 "<heroes library>"
     h3_ret0 = t37;
@@ -924,7 +930,7 @@ bb11:
     t47 = h11_own11;
 #line 182 "<heroes library>"
     h11_own11 = t29;
-#line 928 "fixedbugs461thepublishroutekeepstheownertheaclandthestreams.c"
+#line 182 "<heroes library>"
     hero_str_decref(t47);
 #line 182 "<heroes library>"
     t30 = HERO_STR_LIT(hero_str_612f4355);
@@ -934,9 +940,11 @@ bb11:
     t48 = h12_own12;
 #line 182 "<heroes library>"
     h12_own12 = t31;
-#line 938 "fixedbugs461thepublishroutekeepstheownertheaclandthestreams.c"
+#line 182 "<heroes library>"
     hero_str_decref(t48);
+#line 182 "<heroes library>"
     hero_str_incref(t26);
+#line 182 "<heroes library>"
     hero_str_incref(t31);
 #line 182 "<heroes library>"
     t32 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t26, .msg = t31}};
@@ -944,7 +952,7 @@ bb11:
     t49 = h13_own13;
 #line 182 "<heroes library>"
     h13_own13 = t32;
-#line 948 "fixedbugs461thepublishroutekeepstheownertheaclandthestreams.c"
+#line 182 "<heroes library>"
     h_0opt_f87774a_release(&t49);
 #line 182 "<heroes library>"
     h3_ret0 = t32;
@@ -956,7 +964,7 @@ bb12:
     goto bb10;
 #line 182 "<heroes library>"
 bb13:
-#line 960 "fixedbugs461thepublishroutekeepstheownertheaclandthestreams.c"
+#line 968 "fixedbugs461thepublishroutekeepstheownertheaclandthestreams.c"
     t38 = h3_ret0;
     h_0opt_f87774a_retain(&t38);
     hero_str_release_at(&h2_text);
@@ -977,7 +985,7 @@ bb13:
 
 #line 186 "<heroes library>"
 h_0opt_a8ea2 h_library_write_file(HeroStr h0_path, HeroStr h1_text) {
-#line 981 "fixedbugs461thepublishroutekeepstheownertheaclandthestreams.c"
+#line 989 "fixedbugs461thepublishroutekeepstheownertheaclandthestreams.c"
     int64_t h2_wrote;
     h_0opt_a8ea2 h3_ret0 = {0};
     h_0opt_a8ea2 h4_own4 = {0};
@@ -1042,7 +1050,7 @@ bb2:
     t20 = h4_own4;
 #line 189 "<heroes library>"
     h4_own4 = t7;
-#line 1046 "fixedbugs461thepublishroutekeepstheownertheaclandthestreams.c"
+#line 189 "<heroes library>"
     h_0opt_a8ea2_release(&t20);
 #line 189 "<heroes library>"
     h3_ret0 = t7;
@@ -1066,9 +1074,11 @@ bb4:
     t21 = h5_own5;
 #line 192 "<heroes library>"
     h5_own5 = t17;
-#line 1070 "fixedbugs461thepublishroutekeepstheownertheaclandthestreams.c"
+#line 192 "<heroes library>"
     hero_str_decref(t21);
+#line 192 "<heroes library>"
     hero_str_incref(t14);
+#line 192 "<heroes library>"
     hero_str_incref(t17);
 #line 192 "<heroes library>"
     t18 = (h_0opt_a8ea2){.tag = INT64_C(1), .as.err = {.code = t14, .msg = t17}};
@@ -1076,7 +1086,7 @@ bb4:
     t22 = h6_own6;
 #line 192 "<heroes library>"
     h6_own6 = t18;
-#line 1080 "fixedbugs461thepublishroutekeepstheownertheaclandthestreams.c"
+#line 192 "<heroes library>"
     h_0opt_a8ea2_release(&t22);
 #line 192 "<heroes library>"
     h3_ret0 = t18;
@@ -1088,8 +1098,9 @@ bb5:
     t11 = HERO_STR_LIT(hero_str_7e662f9e);
 #line 191 "<heroes library>"
     t12 = HERO_STR_LIT(hero_str_1755ec20);
-#line 1092 "fixedbugs461thepublishroutekeepstheownertheaclandthestreams.c"
+#line 191 "<heroes library>"
     hero_str_incref(t11);
+#line 191 "<heroes library>"
     hero_str_incref(t12);
 #line 191 "<heroes library>"
     t13 = (h_0opt_a8ea2){.tag = INT64_C(1), .as.err = {.code = t11, .msg = t12}};
@@ -1097,7 +1108,7 @@ bb5:
     t23 = h7_own7;
 #line 191 "<heroes library>"
     h7_own7 = t13;
-#line 1101 "fixedbugs461thepublishroutekeepstheownertheaclandthestreams.c"
+#line 191 "<heroes library>"
     h_0opt_a8ea2_release(&t23);
 #line 191 "<heroes library>"
     h3_ret0 = t13;
@@ -1109,7 +1120,7 @@ bb6:
     goto bb4;
 #line 191 "<heroes library>"
 bb7:
-#line 1113 "fixedbugs461thepublishroutekeepstheownertheaclandthestreams.c"
+#line 1124 "fixedbugs461thepublishroutekeepstheownertheaclandthestreams.c"
     t19 = h3_ret0;
     h_0opt_a8ea2_retain(&t19);
     h_0opt_a8ea2_release(hero_slot_escape(&h4_own4));

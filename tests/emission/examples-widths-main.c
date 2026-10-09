@@ -280,15 +280,15 @@ bb0:
     t8 = h2_own2;
 #line 49 "examples/widths/main.hero"
     h2_own2 = t2;
-#line 284 "main.c"
+#line 49 "examples/widths/main.hero"
     h_0opt_1ec004_release(&t8);
 #line 49 "examples/widths/main.hero"
     t9 = h1_f0;
-#line 288 "main.c"
+#line 49 "examples/widths/main.hero"
     h_0opt_1ec004_retain(&t2);
 #line 49 "examples/widths/main.hero"
     h1_f0 = t2;
-#line 292 "main.c"
+#line 49 "examples/widths/main.hero"
     h_0opt_1ec004_release(&t9);
 #line 49 "examples/widths/main.hero"
     t3 = h1_f0;
@@ -364,15 +364,15 @@ bb0:
     t24 = h5_own5;
 #line 52 "examples/widths/main.hero"
     h5_own5 = t2;
-#line 368 "main.c"
+#line 52 "examples/widths/main.hero"
     h_0opt_1ec004_release(&t24);
 #line 52 "examples/widths/main.hero"
     t25 = h1_f0;
-#line 372 "main.c"
+#line 52 "examples/widths/main.hero"
     h_0opt_1ec004_retain(&t2);
 #line 52 "examples/widths/main.hero"
     h1_f0 = t2;
-#line 376 "main.c"
+#line 52 "examples/widths/main.hero"
     h_0opt_1ec004_release(&t25);
 #line 52 "examples/widths/main.hero"
     t3 = h1_f0;
@@ -400,15 +400,15 @@ bb1:
     t26 = h6_own6;
 #line 59 "examples/widths/main.hero"
     h6_own6 = t13;
-#line 404 "main.c"
+#line 59 "examples/widths/main.hero"
     h_0opt_e201354_release(&t26);
 #line 59 "examples/widths/main.hero"
     t27 = h3_f1;
-#line 408 "main.c"
+#line 59 "examples/widths/main.hero"
     h_0opt_e201354_retain(&t13);
 #line 59 "examples/widths/main.hero"
     h3_f1 = t13;
-#line 412 "main.c"
+#line 59 "examples/widths/main.hero"
     h_0opt_e201354_release(&t27);
 #line 59 "examples/widths/main.hero"
     t14 = h3_f1;
@@ -426,7 +426,7 @@ bb2:
     t7 = h1_f0;
 #line 52 "examples/widths/main.hero"
     t8 = t7.as.err;
-#line 430 "main.c"
+#line 52 "examples/widths/main.hero"
     hero_failure_retain(&t8);
 #line 52 "examples/widths/main.hero"
     t9 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t8};
@@ -434,7 +434,7 @@ bb2:
     t28 = h7_own7;
 #line 52 "examples/widths/main.hero"
     h7_own7 = t9;
-#line 438 "main.c"
+#line 52 "examples/widths/main.hero"
     h_0opt_e201354_release(&t28);
 #line 52 "examples/widths/main.hero"
     h4_ret0 = t9;
@@ -452,7 +452,7 @@ bb3:
     t29 = h8_own8;
 #line 59 "examples/widths/main.hero"
     h8_own8 = t22;
-#line 456 "main.c"
+#line 59 "examples/widths/main.hero"
     h_0opt_e201354_release(&t29);
 #line 59 "examples/widths/main.hero"
     h4_ret0 = t22;
@@ -514,15 +514,15 @@ bb0:
     t11 = h2_own2;
 #line 65 "examples/widths/main.hero"
     h2_own2 = t2;
-#line 518 "main.c"
+#line 65 "examples/widths/main.hero"
     h_0opt_e201354_release(&t11);
 #line 65 "examples/widths/main.hero"
     t12 = h1_f0;
-#line 522 "main.c"
+#line 65 "examples/widths/main.hero"
     h_0opt_e201354_retain(&t2);
 #line 65 "examples/widths/main.hero"
     h1_f0 = t2;
-#line 526 "main.c"
+#line 65 "examples/widths/main.hero"
     h_0opt_e201354_release(&t12);
 #line 65 "examples/widths/main.hero"
     t3 = h1_f0;
@@ -724,15 +724,15 @@ bb0:
     t87 = h11_own11;
 #line 76 "examples/widths/main.hero"
     h11_own11 = t12;
-#line 728 "main.c"
+#line 76 "examples/widths/main.hero"
     h_0opt_e201354_release(&t87);
 #line 76 "examples/widths/main.hero"
     t88 = h0_f0;
-#line 732 "main.c"
+#line 76 "examples/widths/main.hero"
     h_0opt_e201354_retain(&t12);
 #line 76 "examples/widths/main.hero"
     h0_f0 = t12;
-#line 736 "main.c"
+#line 76 "examples/widths/main.hero"
     h_0opt_e201354_release(&t88);
 #line 76 "examples/widths/main.hero"
     t13 = h0_f0;
@@ -761,15 +761,15 @@ bb1:
     t89 = h12_own12;
 #line 77 "examples/widths/main.hero"
     h12_own12 = t22;
-#line 765 "main.c"
+#line 77 "examples/widths/main.hero"
     h_0opt_e201354_release(&t89);
 #line 77 "examples/widths/main.hero"
     t90 = h1_f1;
-#line 769 "main.c"
+#line 77 "examples/widths/main.hero"
     h_0opt_e201354_retain(&t22);
 #line 77 "examples/widths/main.hero"
     h1_f1 = t22;
-#line 773 "main.c"
+#line 77 "examples/widths/main.hero"
     h_0opt_e201354_release(&t90);
 #line 77 "examples/widths/main.hero"
     t23 = h1_f1;
@@ -799,15 +799,15 @@ bb1:
     t91 = h13_own13;
 #line 81 "examples/widths/main.hero"
     h13_own13 = t28;
-#line 803 "main.c"
+#line 81 "examples/widths/main.hero"
     h_0opt_1b9b98_release(&t91);
 #line 81 "examples/widths/main.hero"
     t92 = h2_f2;
-#line 807 "main.c"
+#line 81 "examples/widths/main.hero"
     h_0opt_1b9b98_retain(&t28);
 #line 81 "examples/widths/main.hero"
     h2_f2 = t28;
-#line 811 "main.c"
+#line 81 "examples/widths/main.hero"
     h_0opt_1b9b98_release(&t92);
 #line 81 "examples/widths/main.hero"
     t29 = h2_f2;
@@ -838,15 +838,15 @@ bb1:
     t93 = h14_own14;
 #line 82 "examples/widths/main.hero"
     h14_own14 = t35;
-#line 842 "main.c"
+#line 82 "examples/widths/main.hero"
     h_0opt_1b9b98_release(&t93);
 #line 82 "examples/widths/main.hero"
     t94 = h3_f3;
-#line 846 "main.c"
+#line 82 "examples/widths/main.hero"
     h_0opt_1b9b98_retain(&t35);
 #line 82 "examples/widths/main.hero"
     h3_f3 = t35;
-#line 850 "main.c"
+#line 82 "examples/widths/main.hero"
     h_0opt_1b9b98_release(&t94);
 #line 82 "examples/widths/main.hero"
     t36 = h3_f3;
@@ -881,15 +881,15 @@ bb1:
     t95 = h15_own15;
 #line 83 "examples/widths/main.hero"
     h15_own15 = t44;
-#line 885 "main.c"
+#line 83 "examples/widths/main.hero"
     h_0opt_1b9b98_release(&t95);
 #line 83 "examples/widths/main.hero"
     t96 = h4_f4;
-#line 889 "main.c"
+#line 83 "examples/widths/main.hero"
     h_0opt_1b9b98_retain(&t44);
 #line 83 "examples/widths/main.hero"
     h4_f4 = t44;
-#line 893 "main.c"
+#line 83 "examples/widths/main.hero"
     h_0opt_1b9b98_release(&t96);
 #line 83 "examples/widths/main.hero"
     t45 = h4_f4;
@@ -918,15 +918,15 @@ bb1:
     t97 = h16_own16;
 #line 84 "examples/widths/main.hero"
     h16_own16 = t50;
-#line 922 "main.c"
+#line 84 "examples/widths/main.hero"
     h_0opt_1b9b98_release(&t97);
 #line 84 "examples/widths/main.hero"
     t98 = h5_f5;
-#line 926 "main.c"
+#line 84 "examples/widths/main.hero"
     h_0opt_1b9b98_retain(&t50);
 #line 84 "examples/widths/main.hero"
     h5_f5 = t50;
-#line 930 "main.c"
+#line 84 "examples/widths/main.hero"
     h_0opt_1b9b98_release(&t98);
 #line 84 "examples/widths/main.hero"
     t51 = h5_f5;
@@ -1007,15 +1007,15 @@ bb1:
     t99 = h17_own17;
 #line 101 "examples/widths/main.hero"
     h17_own17 = t73;
-#line 1011 "main.c"
+#line 101 "examples/widths/main.hero"
     h_0opt_e201354_release(&t99);
 #line 101 "examples/widths/main.hero"
     t100 = h9_f6;
-#line 1015 "main.c"
+#line 101 "examples/widths/main.hero"
     h_0opt_e201354_retain(&t73);
 #line 101 "examples/widths/main.hero"
     h9_f6 = t73;
-#line 1019 "main.c"
+#line 101 "examples/widths/main.hero"
     h_0opt_e201354_release(&t100);
 #line 101 "examples/widths/main.hero"
     t74 = h9_f6;
@@ -1040,7 +1040,7 @@ bb1:
     t101 = h18_own18;
 #line 106 "examples/widths/main.hero"
     h18_own18 = t80;
-#line 1044 "main.c"
+#line 106 "examples/widths/main.hero"
     hero_str_decref(t101);
 #line 106 "examples/widths/main.hero"
     hero_print_str(t80);
@@ -1057,7 +1057,7 @@ bb1:
     t102 = h19_own19;
 #line 107 "examples/widths/main.hero"
     h19_own19 = t84;
-#line 1061 "main.c"
+#line 107 "examples/widths/main.hero"
     hero_str_decref(t102);
 #line 107 "examples/widths/main.hero"
     hero_print_str(t84);
@@ -1070,7 +1070,7 @@ bb1:
     t103 = h20_own20;
 #line 108 "examples/widths/main.hero"
     h20_own20 = t86;
-#line 1074 "main.c"
+#line 108 "examples/widths/main.hero"
     hero_str_decref(t103);
 #line 108 "examples/widths/main.hero"
     hero_print_str(t86);

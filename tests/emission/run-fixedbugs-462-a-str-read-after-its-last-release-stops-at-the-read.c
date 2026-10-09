@@ -129,17 +129,16 @@ bb0:
     t13 = h1_own1;
 #line 23 "tests/golden/run/fixedbugs-462-a-str-read-after-its-last-release-stops-at-the-read.hero"
     h1_own1 = t3;
-#line 133 "fixedbugs462astrreadafteritslastreleasestopsattheread.c"
+#line 23 "tests/golden/run/fixedbugs-462-a-str-read-after-its-last-release-stops-at-the-read.hero"
     hero_str_decref(t13);
 #line 23 "tests/golden/run/fixedbugs-462-a-str-read-after-its-last-release-stops-at-the-read.hero"
     t14 = h0_word;
-#line 137 "fixedbugs462astrreadafteritslastreleasestopsattheread.c"
+#line 23 "tests/golden/run/fixedbugs-462-a-str-read-after-its-last-release-stops-at-the-read.hero"
     hero_str_incref(t3);
 #line 23 "tests/golden/run/fixedbugs-462-a-str-read-after-its-last-release-stops-at-the-read.hero"
     h0_word = t3;
-#line 141 "fixedbugs462astrreadafteritslastreleasestopsattheread.c"
+#line 23 "tests/golden/run/fixedbugs-462-a-str-read-after-its-last-release-stops-at-the-read.hero"
     hero_str_decref(t14);
-#line 24 "tests/golden/run/fixedbugs-462-a-str-read-after-its-last-release-stops-at-the-read.hero"
     t4 = HERO_STR_LIT(hero_str_88572c6);
 #line 24 "tests/golden/run/fixedbugs-462-a-str-read-after-its-last-release-stops-at-the-read.hero"
     hero_print_str(t4);
@@ -168,13 +167,13 @@ bb0:
     t15 = h2_own2;
 #line 27 "tests/golden/run/fixedbugs-462-a-str-read-after-its-last-release-stops-at-the-read.hero"
     h2_own2 = t12;
-#line 172 "fixedbugs462astrreadafteritslastreleasestopsattheread.c"
+#line 27 "tests/golden/run/fixedbugs-462-a-str-read-after-its-last-release-stops-at-the-read.hero"
     hero_str_decref(t15);
 #line 27 "tests/golden/run/fixedbugs-462-a-str-read-after-its-last-release-stops-at-the-read.hero"
     hero_print_str(t12);
 #line 27 "tests/golden/run/fixedbugs-462-a-str-read-after-its-last-release-stops-at-the-read.hero"
     hero_print_end();
-#line 178 "fixedbugs462astrreadafteritslastreleasestopsattheread.c"
+#line 177 "fixedbugs462astrreadafteritslastreleasestopsattheread.c"
     hero_str_release_at(&h0_word);
     hero_str_release_at(&h1_own1);
     hero_str_release_at(&h2_own2);

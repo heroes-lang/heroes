@@ -194,7 +194,7 @@ bb0:
     t22 = h2_own2;
 #line 30 "examples/shapes/main.hero"
     h2_own2 = t16;
-#line 198 "main.c"
+#line 30 "examples/shapes/main.hero"
     hero_str_decref(t22);
 #line 30 "examples/shapes/main.hero"
     hero_print_str(t16);
@@ -209,7 +209,7 @@ bb0:
     t23 = h3_own3;
 #line 31 "examples/shapes/main.hero"
     h3_own3 = t19;
-#line 213 "main.c"
+#line 31 "examples/shapes/main.hero"
     hero_str_decref(t23);
 #line 31 "examples/shapes/main.hero"
     hero_print_str(t19);
@@ -493,15 +493,15 @@ bb0:
     t21 = h4_own4;
 #line 17 "examples/shapes/render/ascii.hero"
     h4_own4 = t11;
-#line 497 "main.c"
+#line 17 "examples/shapes/render/ascii.hero"
     h_0opt_fbbb698_release(&t21);
 #line 17 "examples/shapes/render/ascii.hero"
     t22 = h3_f0;
-#line 501 "main.c"
+#line 17 "examples/shapes/render/ascii.hero"
     h_0opt_fbbb698_retain(&t11);
 #line 17 "examples/shapes/render/ascii.hero"
     h3_f0 = t11;
-#line 505 "main.c"
+#line 17 "examples/shapes/render/ascii.hero"
     h_0opt_fbbb698_release(&t22);
 #line 17 "examples/shapes/render/ascii.hero"
     t12 = h3_f0;
@@ -525,8 +525,9 @@ bb1:
     t23 = h5_own5;
 #line 17 "examples/shapes/render/ascii.hero"
     h5_own5 = t20;
-#line 529 "main.c"
+#line 17 "examples/shapes/render/ascii.hero"
     hero_str_decref(t23);
+#line 531 "main.c"
     hero_str_incref(t20);
     h_0opt_fbbb698_release(hero_slot_escape(&h3_f0));
     h_0opt_fbbb698_release(hero_slot_escape(&h4_own4));
@@ -537,14 +538,14 @@ bb2:
     t16 = h3_f0;
 #line 17 "examples/shapes/render/ascii.hero"
     t17 = t16.as.err;
-#line 541 "main.c"
+#line 542 "main.c"
     hero_panic_must(t17);
     hero_unreachable();
 }
 
 #line 19 "examples/shapes/render/ascii.hero"
 HeroStr h_renderascii_frame(int64_t h0_width, int64_t h1_height) {
-#line 548 "main.c"
+#line 549 "main.c"
     HeroArrayHeader * h2_rows = {0};
     int64_t h3_at;
     HeroStr h4_own4 = {0};
@@ -581,7 +582,7 @@ bb0:
     t18 = h4_own4;
 #line 20 "examples/shapes/render/ascii.hero"
     h4_own4 = t2;
-#line 585 "main.c"
+#line 20 "examples/shapes/render/ascii.hero"
     hero_str_decref(t18);
 #line 20 "examples/shapes/render/ascii.hero"
     t3 = hero_array_new(&hero_desc_str, 1);
@@ -591,17 +592,16 @@ bb0:
     t19 = h5_own5;
 #line 20 "examples/shapes/render/ascii.hero"
     h5_own5 = t3;
-#line 595 "main.c"
+#line 20 "examples/shapes/render/ascii.hero"
     hero_array_decref(t19);
 #line 20 "examples/shapes/render/ascii.hero"
     t20 = h2_rows;
-#line 599 "main.c"
+#line 20 "examples/shapes/render/ascii.hero"
     hero_array_incref(t3);
 #line 20 "examples/shapes/render/ascii.hero"
     h2_rows = t3;
-#line 603 "main.c"
+#line 20 "examples/shapes/render/ascii.hero"
     hero_array_decref(t20);
-#line 21 "examples/shapes/render/ascii.hero"
     t4 = INT64_C(1);
 #line 21 "examples/shapes/render/ascii.hero"
     h3_at = t4;
@@ -626,7 +626,7 @@ bb2:
     t21 = h6_own6;
 #line 24 "examples/shapes/render/ascii.hero"
     h6_own6 = t10;
-#line 630 "main.c"
+#line 24 "examples/shapes/render/ascii.hero"
     hero_str_decref(t21);
 #line 24 "examples/shapes/render/ascii.hero"
     hero_array_push_owned(&h2_rows, &t10);
@@ -651,8 +651,9 @@ bb3:
     t22 = h7_own7;
 #line 27 "examples/shapes/render/ascii.hero"
     h7_own7 = t17;
-#line 655 "main.c"
+#line 27 "examples/shapes/render/ascii.hero"
     hero_str_decref(t22);
+#line 657 "main.c"
     hero_str_incref(t17);
     hero_array_release_at(&h2_rows);
     hero_str_release_at(&h4_own4);
@@ -664,7 +665,7 @@ bb3:
 
 #line 35 "examples/shapes/render/ascii.hero"
 int64_t h_renderascii_scaled(int64_t h0_width) {
-#line 668 "main.c"
+#line 669 "main.c"
     int64_t t1;
     int64_t t2;
     int64_t t3;
@@ -678,12 +679,12 @@ bb0:
     if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow();
 #line 36 "examples/shapes/render/ascii.hero"
     return t3;
-#line 682 "main.c"
+#line 683 "main.c"
 }
 
 #line 12 "examples/shapes/render/scale.hero"
 int64_t h_renderscale_factor(void) {
-#line 687 "main.c"
+#line 688 "main.c"
     int64_t t1;
     goto bb0;
 bb0:
@@ -691,12 +692,12 @@ bb0:
     t1 = INT64_C(3);
 #line 13 "examples/shapes/render/scale.hero"
     return t1;
-#line 695 "main.c"
+#line 696 "main.c"
 }
 
 #line 19 "examples/shapes/scale.hero"
 int64_t h_scale_factor(void) {
-#line 700 "main.c"
+#line 701 "main.c"
     int64_t t1;
     goto bb0;
 bb0:
@@ -704,7 +705,7 @@ bb0:
     t1 = INT64_C(10);
 #line 20 "examples/shapes/scale.hero"
     return t1;
-#line 708 "main.c"
+#line 709 "main.c"
 }
 HERO_TU_LOCAL bool h_geompoint_Point_eq(const h_geompoint_Point *a, const h_geompoint_Point *b) {
     if (!(a->f_x == b->f_x)) return false;

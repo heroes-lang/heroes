@@ -150,17 +150,16 @@ bb0:
     t45 = h6_own6;
 #line 16 "tests/golden/run/place-store-c4.hero"
     h6_own6 = t1;
-#line 154 "placestorec4.c"
+#line 16 "tests/golden/run/place-store-c4.hero"
     hero_array_decref(t45);
 #line 16 "tests/golden/run/place-store-c4.hero"
     t46 = h0_xs;
-#line 158 "placestorec4.c"
+#line 16 "tests/golden/run/place-store-c4.hero"
     hero_array_incref(t1);
 #line 16 "tests/golden/run/place-store-c4.hero"
     h0_xs = t1;
-#line 162 "placestorec4.c"
+#line 16 "tests/golden/run/place-store-c4.hero"
     hero_array_decref(t46);
-#line 17 "tests/golden/run/place-store-c4.hero"
     t2 = INT64_C(0);
 #line 17 "tests/golden/run/place-store-c4.hero"
     h1_i = t2;
@@ -243,11 +242,11 @@ bb3:
     t29 = h0_xs;
 #line 32 "tests/golden/run/place-store-c4.hero"
     t47 = h3_xs0;
-#line 247 "placestorec4.c"
+#line 32 "tests/golden/run/place-store-c4.hero"
     hero_array_incref(t29);
 #line 32 "tests/golden/run/place-store-c4.hero"
     h3_xs0 = t29;
-#line 251 "placestorec4.c"
+#line 32 "tests/golden/run/place-store-c4.hero"
     hero_array_decref(t47);
 #line 32 "tests/golden/run/place-store-c4.hero"
     t30 = INT64_C(0);
@@ -306,7 +305,7 @@ bb7:
     hero_print_int(t44);
 #line 35 "tests/golden/run/place-store-c4.hero"
     hero_print_end();
-#line 310 "placestorec4.c"
+#line 309 "placestorec4.c"
     hero_array_release_at(&h0_xs);
     hero_array_release_at(&h3_xs0);
     hero_array_release_at(&h6_own6);

@@ -188,15 +188,15 @@ bb0:
     t19 = h3_own3;
 #line 22 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
     h3_own3 = t6;
-#line 192 "deadhandleinacallbackresultrecordnamesitsfield.c"
+#line 22 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
     h_0opt_e201354_release(&t19);
 #line 22 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
     t20 = h2_f0;
-#line 196 "deadhandleinacallbackresultrecordnamesitsfield.c"
+#line 22 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
     h_0opt_e201354_retain(&t6);
 #line 22 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
     h2_f0 = t6;
-#line 200 "deadhandleinacallbackresultrecordnamesitsfield.c"
+#line 22 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
     h_0opt_e201354_release(&t20);
 #line 22 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
     t7 = h2_f0;

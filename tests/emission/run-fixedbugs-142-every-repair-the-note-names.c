@@ -228,11 +228,11 @@ bb0:
     t1 = h0_xs;
 #line 27 "tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero"
     t19 = h2_xs0;
-#line 232 "fixedbugs142everyrepairthenotenames.c"
+#line 27 "tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero"
     hero_array_incref(t1);
 #line 27 "tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero"
     h2_xs0 = t1;
-#line 236 "fixedbugs142everyrepairthenotenames.c"
+#line 27 "tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero"
     hero_array_decref(t19);
 #line 27 "tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero"
     t2 = INT64_C(0);
@@ -690,7 +690,7 @@ bb0:
     t31 = h0_own0;
 #line 81 "tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero"
     h0_own0 = t12;
-#line 694 "fixedbugs142everyrepairthenotenames.c"
+#line 81 "tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero"
     hero_array_decref(t31);
 #line 81 "tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero"
     t13 = INT64_C(3);
@@ -709,7 +709,7 @@ bb0:
     t32 = h1_own1;
 #line 82 "tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero"
     h1_own1 = t16;
-#line 713 "fixedbugs142everyrepairthenotenames.c"
+#line 82 "tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero"
     hero_array_decref(t32);
 #line 82 "tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero"
     t17 = INT64_C(3);

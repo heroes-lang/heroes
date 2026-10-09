@@ -765,17 +765,16 @@ bb0:
     t7 = h1_own1;
 #line 171 "tests/golden/run/fixedbugs-170-variants-32-deep-build.hero"
     h1_own1 = t1;
-#line 769 "fixedbugs170variants32deepbuild.c"
+#line 171 "tests/golden/run/fixedbugs-170-variants-32-deep-build.hero"
     hero_array_decref(t7);
 #line 171 "tests/golden/run/fixedbugs-170-variants-32-deep-build.hero"
     t8 = h0_xs;
-#line 773 "fixedbugs170variants32deepbuild.c"
+#line 171 "tests/golden/run/fixedbugs-170-variants-32-deep-build.hero"
     hero_array_incref(t1);
 #line 171 "tests/golden/run/fixedbugs-170-variants-32-deep-build.hero"
     h0_xs = t1;
-#line 777 "fixedbugs170variants32deepbuild.c"
+#line 171 "tests/golden/run/fixedbugs-170-variants-32-deep-build.hero"
     hero_array_decref(t8);
-#line 172 "tests/golden/run/fixedbugs-170-variants-32-deep-build.hero"
     t2 = h0_xs;
 #line 172 "tests/golden/run/fixedbugs-170-variants-32-deep-build.hero"
     t3 = ((void)(t2 == NULL ? ((void)hero_array_len(t2), hero_unreachable()) : (void)0), t2->len);
@@ -792,7 +791,7 @@ bb0:
     hero_print_bool(t6);
 #line 173 "tests/golden/run/fixedbugs-170-variants-32-deep-build.hero"
     hero_print_end();
-#line 796 "fixedbugs170variants32deepbuild.c"
+#line 795 "fixedbugs170variants32deepbuild.c"
     hero_array_release_at(&h0_xs);
     hero_array_release_at(&h1_own1);
     return;

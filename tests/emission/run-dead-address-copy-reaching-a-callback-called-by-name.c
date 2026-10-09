@@ -192,17 +192,16 @@ bb0:
     t13 = h2_own2;
 #line 23 "tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero"
     h2_own2 = t3;
-#line 196 "deadaddresscopyreachingacallbackcalledbyname.c"
+#line 23 "tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero"
     hero_array_decref(t13);
 #line 23 "tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero"
     t14 = h1_keep;
-#line 200 "deadaddresscopyreachingacallbackcalledbyname.c"
+#line 23 "tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero"
     hero_array_incref(t3);
 #line 23 "tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero"
     h1_keep = t3;
-#line 204 "deadaddresscopyreachingacallbackcalledbyname.c"
+#line 23 "tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero"
     hero_array_decref(t14);
-#line 24 "tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero"
     t4 = h0_mine;
 #line 24 "tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero"
     {
@@ -242,7 +241,7 @@ bb0:
     hero_print_int(t12);
 #line 26 "tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero"
     hero_print_end();
-#line 246 "deadaddresscopyreachingacallbackcalledbyname.c"
+#line 245 "deadaddresscopyreachingacallbackcalledbyname.c"
     hero_array_release_at(&h1_keep);
     hero_array_release_at(&h2_own2);
     return;

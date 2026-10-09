@@ -155,7 +155,7 @@ bb2:
     t18 = h2_own2;
 #line 17 "tests/golden/run/lend-inside-a-loop.hero"
     h2_own2 = t9;
-#line 159 "lendinsidealoop.c"
+#line 17 "tests/golden/run/lend-inside-a-loop.hero"
     hero_str_decref(t18);
 #line 17 "tests/golden/run/lend-inside-a-loop.hero"
     t10 = hero_str_concat(t7, t9);
@@ -163,7 +163,7 @@ bb2:
     t19 = h3_own3;
 #line 17 "tests/golden/run/lend-inside-a-loop.hero"
     h3_own3 = t10;
-#line 167 "lendinsidealoop.c"
+#line 17 "tests/golden/run/lend-inside-a-loop.hero"
     hero_str_decref(t19);
 #line 17 "tests/golden/run/lend-inside-a-loop.hero"
     t11 = hero_str_lend(t10);

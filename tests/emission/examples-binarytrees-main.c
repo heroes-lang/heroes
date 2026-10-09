@@ -219,7 +219,7 @@ bb1:
     t16 = h2_own2;
 #line 78 "examples/binarytrees/main.hero"
     h2_own2 = t8;
-#line 223 "main.c"
+#line 78 "examples/binarytrees/main.hero"
     h_main_Tree_release(&t16);
 #line 78 "examples/binarytrees/main.hero"
     t9 = h0_depth;
@@ -233,7 +233,7 @@ bb1:
     t17 = h3_own3;
 #line 78 "examples/binarytrees/main.hero"
     h3_own3 = t12;
-#line 237 "main.c"
+#line 78 "examples/binarytrees/main.hero"
     h_main_Tree_release(&t17);
 #line 78 "examples/binarytrees/main.hero"
     t13 = hero_array_new(&h_main_Tree_desc, 2);
@@ -245,8 +245,9 @@ bb1:
     t18 = h4_own4;
 #line 78 "examples/binarytrees/main.hero"
     h4_own4 = t13;
-#line 249 "main.c"
+#line 78 "examples/binarytrees/main.hero"
     hero_array_decref(t18);
+#line 78 "examples/binarytrees/main.hero"
     hero_array_incref(t13);
 #line 78 "examples/binarytrees/main.hero"
     t14 = (h_main_Tree){.tag = h_main_Tree_tag_branch, .as.c_branch = {.f_halves = t13}};
@@ -254,7 +255,7 @@ bb1:
     t19 = h5_own5;
 #line 78 "examples/binarytrees/main.hero"
     h5_own5 = t14;
-#line 258 "main.c"
+#line 78 "examples/binarytrees/main.hero"
     h_main_Tree_release(&t19);
 #line 78 "examples/binarytrees/main.hero"
     h1_ret0 = t14;
@@ -268,7 +269,7 @@ bb2:
     t20 = h6_own6;
 #line 76 "examples/binarytrees/main.hero"
     h6_own6 = t4;
-#line 272 "main.c"
+#line 76 "examples/binarytrees/main.hero"
     h_main_Tree_release(&t20);
 #line 76 "examples/binarytrees/main.hero"
     h1_ret0 = t4;
@@ -280,7 +281,7 @@ bb3:
     goto bb1;
 #line 76 "examples/binarytrees/main.hero"
 bb4:
-#line 284 "main.c"
+#line 285 "main.c"
     t15 = h1_ret0;
     h_main_Tree_retain(&t15);
     h_main_Tree_release(hero_slot_escape(&h2_own2));
@@ -293,7 +294,7 @@ bb4:
 
 #line 84 "examples/binarytrees/main.hero"
 int64_t h_main_checked(h_main_Tree h0_t) {
-#line 297 "main.c"
+#line 298 "main.c"
     h_main_Tree h1_s0 = {0};
     int64_t h2_r0;
     h_main_Tree_c_branch h3_b = {0};
@@ -325,11 +326,11 @@ bb0:
     t1 = h0_t;
 #line 85 "examples/binarytrees/main.hero"
     t21 = h1_s0;
-#line 329 "main.c"
+#line 85 "examples/binarytrees/main.hero"
     h_main_Tree_retain(&t1);
 #line 85 "examples/binarytrees/main.hero"
     h1_s0 = t1;
-#line 333 "main.c"
+#line 85 "examples/binarytrees/main.hero"
     h_main_Tree_release(&t21);
 #line 85 "examples/binarytrees/main.hero"
     t2 = h1_s0;
@@ -349,7 +350,7 @@ bb0:
 bb1:
 #line 85 "examples/binarytrees/main.hero"
     t20 = h2_r0;
-#line 353 "main.c"
+#line 354 "main.c"
     h_main_Tree_release(hero_slot_escape(&h1_s0));
     h_main_Tree_c_branch_release(hero_slot_escape(&h3_b));
     return t20;
@@ -368,11 +369,11 @@ bb3:
     t6 = t5.as.c_branch;
 #line 87 "examples/binarytrees/main.hero"
     t22 = h3_b;
-#line 372 "main.c"
+#line 87 "examples/binarytrees/main.hero"
     h_main_Tree_c_branch_retain(&t6);
 #line 87 "examples/binarytrees/main.hero"
     h3_b = t6;
-#line 376 "main.c"
+#line 87 "examples/binarytrees/main.hero"
     h_main_Tree_c_branch_release(&t22);
 #line 87 "examples/binarytrees/main.hero"
     t7 = INT64_C(1);
@@ -404,12 +405,12 @@ bb3:
     h2_r0 = t19;
 #line 85 "examples/binarytrees/main.hero"
     goto bb1;
-#line 408 "main.c"
+#line 409 "main.c"
 }
 
 #line 91 "examples/binarytrees/main.hero"
 int64_t h_main_depth_of(h_main_Tree h0_t) {
-#line 413 "main.c"
+#line 414 "main.c"
     h_main_Tree h1_s0 = {0};
     int64_t h2_r0;
     h_main_Tree_c_branch h3_b = {0};
@@ -435,11 +436,11 @@ bb0:
     t1 = h0_t;
 #line 92 "examples/binarytrees/main.hero"
     t15 = h1_s0;
-#line 439 "main.c"
+#line 92 "examples/binarytrees/main.hero"
     h_main_Tree_retain(&t1);
 #line 92 "examples/binarytrees/main.hero"
     h1_s0 = t1;
-#line 443 "main.c"
+#line 92 "examples/binarytrees/main.hero"
     h_main_Tree_release(&t15);
 #line 92 "examples/binarytrees/main.hero"
     t2 = h1_s0;
@@ -459,7 +460,7 @@ bb0:
 bb1:
 #line 92 "examples/binarytrees/main.hero"
     t14 = h2_r0;
-#line 463 "main.c"
+#line 464 "main.c"
     h_main_Tree_release(hero_slot_escape(&h1_s0));
     h_main_Tree_c_branch_release(hero_slot_escape(&h3_b));
     return t14;
@@ -478,11 +479,11 @@ bb3:
     t6 = t5.as.c_branch;
 #line 94 "examples/binarytrees/main.hero"
     t16 = h3_b;
-#line 482 "main.c"
+#line 94 "examples/binarytrees/main.hero"
     h_main_Tree_c_branch_retain(&t6);
 #line 94 "examples/binarytrees/main.hero"
     h3_b = t6;
-#line 486 "main.c"
+#line 94 "examples/binarytrees/main.hero"
     h_main_Tree_c_branch_release(&t16);
 #line 94 "examples/binarytrees/main.hero"
     t7 = INT64_C(1);
@@ -502,12 +503,12 @@ bb3:
     h2_r0 = t13;
 #line 92 "examples/binarytrees/main.hero"
     goto bb1;
-#line 506 "main.c"
+#line 507 "main.c"
 }
 
 #line 101 "examples/binarytrees/main.hero"
 bool h_main_balanced(h_main_Tree h0_t) {
-#line 511 "main.c"
+#line 512 "main.c"
     h_main_Tree h1_s0 = {0};
     bool h2_r0;
     h_main_Tree_c_branch h3_b = {0};
@@ -551,11 +552,11 @@ bb0:
     t1 = h0_t;
 #line 102 "examples/binarytrees/main.hero"
     t31 = h1_s0;
-#line 555 "main.c"
+#line 102 "examples/binarytrees/main.hero"
     h_main_Tree_retain(&t1);
 #line 102 "examples/binarytrees/main.hero"
     h1_s0 = t1;
-#line 559 "main.c"
+#line 102 "examples/binarytrees/main.hero"
     h_main_Tree_release(&t31);
 #line 102 "examples/binarytrees/main.hero"
     t2 = h1_s0;
@@ -575,7 +576,7 @@ bb0:
 bb1:
 #line 102 "examples/binarytrees/main.hero"
     t30 = h2_r0;
-#line 579 "main.c"
+#line 580 "main.c"
     h_main_Tree_release(hero_slot_escape(&h1_s0));
     h_main_Tree_c_branch_release(hero_slot_escape(&h3_b));
     return t30;
@@ -594,11 +595,11 @@ bb3:
     t6 = t5.as.c_branch;
 #line 104 "examples/binarytrees/main.hero"
     t32 = h3_b;
-#line 598 "main.c"
+#line 104 "examples/binarytrees/main.hero"
     h_main_Tree_c_branch_retain(&t6);
 #line 104 "examples/binarytrees/main.hero"
     h3_b = t6;
-#line 602 "main.c"
+#line 104 "examples/binarytrees/main.hero"
     h_main_Tree_c_branch_release(&t32);
 #line 104 "examples/binarytrees/main.hero"
     t7 = h3_b;
@@ -674,12 +675,12 @@ bb7:
     h2_r0 = t29;
 #line 102 "examples/binarytrees/main.hero"
     goto bb1;
-#line 678 "main.c"
+#line 679 "main.c"
 }
 
 #line 109 "examples/binarytrees/main.hero"
 void h_main_main(void) {
-#line 683 "main.c"
+#line 684 "main.c"
     h_main_Tree h0_long_lived = {0};
     int64_t h1_depth;
     int64_t h2_iterations;
@@ -765,7 +766,7 @@ bb0:
     t50 = h5_own5;
 #line 110 "examples/binarytrees/main.hero"
     h5_own5 = t9;
-#line 769 "main.c"
+#line 110 "examples/binarytrees/main.hero"
     h_main_Tree_release(&t50);
 #line 110 "examples/binarytrees/main.hero"
     t10 = h_main_checked(t9);
@@ -787,17 +788,16 @@ bb0:
     t51 = h6_own6;
 #line 117 "examples/binarytrees/main.hero"
     h6_own6 = t12;
-#line 791 "main.c"
+#line 117 "examples/binarytrees/main.hero"
     h_main_Tree_release(&t51);
 #line 117 "examples/binarytrees/main.hero"
     t52 = h0_long_lived;
-#line 795 "main.c"
+#line 117 "examples/binarytrees/main.hero"
     h_main_Tree_retain(&t12);
 #line 117 "examples/binarytrees/main.hero"
     h0_long_lived = t12;
-#line 799 "main.c"
+#line 117 "examples/binarytrees/main.hero"
     h_main_Tree_release(&t52);
-#line 118 "examples/binarytrees/main.hero"
     t13 = h_main_MIN_DEPTH();
 #line 118 "examples/binarytrees/main.hero"
     h1_depth = t13;
@@ -889,7 +889,7 @@ bb5:
     t53 = h7_own7;
 #line 128 "examples/binarytrees/main.hero"
     h7_own7 = t31;
-#line 893 "main.c"
+#line 128 "examples/binarytrees/main.hero"
     h_main_Tree_release(&t53);
 #line 128 "examples/binarytrees/main.hero"
     t32 = h_main_checked(t31);

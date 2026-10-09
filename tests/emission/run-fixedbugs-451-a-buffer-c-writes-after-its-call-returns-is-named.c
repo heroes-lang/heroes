@@ -113,17 +113,16 @@ bb0:
     t5 = h1_own1;
 #line 17 "tests/golden/run/fixedbugs-451-a-buffer-c-writes-after-its-call-returns-is-named.hero"
     h1_own1 = t1;
-#line 117 "fixedbugs451abuffercwritesafteritscallreturnsisnamed.c"
+#line 17 "tests/golden/run/fixedbugs-451-a-buffer-c-writes-after-its-call-returns-is-named.hero"
     hero_array_decref(t5);
 #line 17 "tests/golden/run/fixedbugs-451-a-buffer-c-writes-after-its-call-returns-is-named.hero"
     t6 = h0_md;
-#line 121 "fixedbugs451abuffercwritesafteritscallreturnsisnamed.c"
+#line 17 "tests/golden/run/fixedbugs-451-a-buffer-c-writes-after-its-call-returns-is-named.hero"
     hero_array_incref(t1);
 #line 17 "tests/golden/run/fixedbugs-451-a-buffer-c-writes-after-its-call-returns-is-named.hero"
     h0_md = t1;
-#line 125 "fixedbugs451abuffercwritesafteritscallreturnsisnamed.c"
+#line 17 "tests/golden/run/fixedbugs-451-a-buffer-c-writes-after-its-call-returns-is-named.hero"
     hero_array_decref(t6);
-#line 18 "tests/golden/run/fixedbugs-451-a-buffer-c-writes-after-its-call-returns-is-named.hero"
     {
 #line 18 "tests/golden/run/fixedbugs-451-a-buffer-c-writes-after-its-call-returns-is-named.hero"
     _Static_assert((__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned char) && sizeof(unsigned char) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned short) && sizeof(unsigned short) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned int) && sizeof(unsigned int) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned long) && sizeof(unsigned long) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned long long) && sizeof(unsigned long long) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), char) && (char)-1 > 0) || __builtin_types_compatible_p(__typeof__(*(unsigned char *)0), void), "heroes-ffi-buffer bytes_keep32 md 769 771 u8 unsigned char *");
@@ -140,7 +139,7 @@ bb0:
     t3 = h0_md;
 #line 19 "tests/golden/run/fixedbugs-451-a-buffer-c-writes-after-its-call-returns-is-named.hero"
     t4 = ((void)(t3 == NULL ? ((void)hero_array_len(t3), hero_unreachable()) : (void)0), t3->len);
-#line 144 "fixedbugs451abuffercwritesafteritscallreturnsisnamed.c"
+#line 143 "fixedbugs451abuffercwritesafteritscallreturnsisnamed.c"
     hero_array_release_at(&h0_md);
     hero_array_release_at(&h1_own1);
     return t4;
@@ -148,7 +147,7 @@ bb0:
 
 #line 21 "tests/golden/run/fixedbugs-451-a-buffer-c-writes-after-its-call-returns-is-named.hero"
 void h_fixedbugs451abuffercwritesafteritscallreturnsisnamed_main(void) {
-#line 152 "fixedbugs451abuffercwritesafteritscallreturnsisnamed.c"
+#line 151 "fixedbugs451abuffercwritesafteritscallreturnsisnamed.c"
     int64_t t1;
     int64_t t2;
     goto bb0;
@@ -166,7 +165,7 @@ bb0:
     hero_print_end();
 #line 23 "tests/golden/run/fixedbugs-451-a-buffer-c-writes-after-its-call-returns-is-named.hero"
     return;
-#line 170 "fixedbugs451abuffercwritesafteritscallreturnsisnamed.c"
+#line 169 "fixedbugs451abuffercwritesafteritscallreturnsisnamed.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

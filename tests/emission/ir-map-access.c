@@ -150,15 +150,15 @@ bb0:
     t12 = h4_own4;
 #line 6 "tests/golden/ir/map-access.hero"
     h4_own4 = t3;
-#line 154 "mapaccess.c"
+#line 6 "tests/golden/ir/map-access.hero"
     h_0opt_e201354_release(&t12);
 #line 6 "tests/golden/ir/map-access.hero"
     t13 = h2_f0;
-#line 158 "mapaccess.c"
+#line 6 "tests/golden/ir/map-access.hero"
     h_0opt_e201354_retain(&t3);
 #line 6 "tests/golden/ir/map-access.hero"
     h2_f0 = t3;
-#line 162 "mapaccess.c"
+#line 6 "tests/golden/ir/map-access.hero"
     h_0opt_e201354_release(&t13);
 #line 6 "tests/golden/ir/map-access.hero"
     t4 = h2_f0;

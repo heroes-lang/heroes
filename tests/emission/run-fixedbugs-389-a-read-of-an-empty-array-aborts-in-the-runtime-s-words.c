@@ -108,17 +108,16 @@ bb0:
     t7 = h1_own1;
 #line 6 "tests/golden/run/fixedbugs-389-a-read-of-an-empty-array-aborts-in-the-runtime-s-words.hero"
     h1_own1 = t1;
-#line 112 "fixedbugs389areadofanemptyarrayabortsintheruntimeswords.c"
+#line 6 "tests/golden/run/fixedbugs-389-a-read-of-an-empty-array-aborts-in-the-runtime-s-words.hero"
     hero_array_decref(t7);
 #line 6 "tests/golden/run/fixedbugs-389-a-read-of-an-empty-array-aborts-in-the-runtime-s-words.hero"
     t8 = h0_empty;
-#line 116 "fixedbugs389areadofanemptyarrayabortsintheruntimeswords.c"
+#line 6 "tests/golden/run/fixedbugs-389-a-read-of-an-empty-array-aborts-in-the-runtime-s-words.hero"
     hero_array_incref(t1);
 #line 6 "tests/golden/run/fixedbugs-389-a-read-of-an-empty-array-aborts-in-the-runtime-s-words.hero"
     h0_empty = t1;
-#line 120 "fixedbugs389areadofanemptyarrayabortsintheruntimeswords.c"
+#line 6 "tests/golden/run/fixedbugs-389-a-read-of-an-empty-array-aborts-in-the-runtime-s-words.hero"
     hero_array_decref(t8);
-#line 7 "tests/golden/run/fixedbugs-389-a-read-of-an-empty-array-aborts-in-the-runtime-s-words.hero"
     t2 = h0_empty;
 #line 7 "tests/golden/run/fixedbugs-389-a-read-of-an-empty-array-aborts-in-the-runtime-s-words.hero"
     t3 = ((void)(t2 == NULL ? ((void)hero_array_len(t2), hero_unreachable()) : (void)0), t2->len);
@@ -135,7 +134,7 @@ bb0:
     hero_print_int(t6);
 #line 8 "tests/golden/run/fixedbugs-389-a-read-of-an-empty-array-aborts-in-the-runtime-s-words.hero"
     hero_print_end();
-#line 139 "fixedbugs389areadofanemptyarrayabortsintheruntimeswords.c"
+#line 138 "fixedbugs389areadofanemptyarrayabortsintheruntimeswords.c"
     hero_array_release_at(&h0_empty);
     hero_array_release_at(&h1_own1);
     return;

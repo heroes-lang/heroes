@@ -199,15 +199,15 @@ bb0:
     t23 = h3_own3;
 #line 47 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
     h3_own3 = t3;
-#line 203 "ffiafilledrecordisaskedfor.c"
+#line 47 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
     h_0opt_e201354_release(&t23);
 #line 47 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
     t24 = h1_f0;
-#line 207 "ffiafilledrecordisaskedfor.c"
+#line 47 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
     h_0opt_e201354_retain(&t3);
 #line 47 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
     h1_f0 = t3;
-#line 211 "ffiafilledrecordisaskedfor.c"
+#line 47 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
     h_0opt_e201354_release(&t24);
 #line 47 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
     t4 = h1_f0;
@@ -244,15 +244,15 @@ bb1:
     t25 = h4_own4;
 #line 48 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
     h4_own4 = t14;
-#line 248 "ffiafilledrecordisaskedfor.c"
+#line 48 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
     h_0opt_f87774a_release(&t25);
 #line 48 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
     t26 = h2_f1;
-#line 252 "ffiafilledrecordisaskedfor.c"
+#line 48 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
     h_0opt_f87774a_retain(&t14);
 #line 48 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
     h2_f1 = t14;
-#line 256 "ffiafilledrecordisaskedfor.c"
+#line 48 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
     h_0opt_f87774a_release(&t26);
 #line 48 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
     t15 = h2_f1;

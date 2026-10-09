@@ -154,7 +154,7 @@ bb0:
     t9 = h0_own0;
 #line 21 "tests/golden/run/fixedbugs-510-a-constant-is-called-inside-a-generic.hero"
     h0_own0 = t3;
-#line 158 "fixedbugs510aconstantiscalledinsideageneric.c"
+#line 21 "tests/golden/run/fixedbugs-510-a-constant-is-called-inside-a-generic.hero"
     hero_array_decref(t9);
 #line 21 "tests/golden/run/fixedbugs-510-a-constant-is-called-inside-a-generic.hero"
     t4 = ((void)(t3 == NULL ? ((void)hero_array_len(t3), hero_unreachable()) : (void)0), t3->len);
@@ -171,7 +171,7 @@ bb0:
     t10 = h1_own1;
 #line 22 "tests/golden/run/fixedbugs-510-a-constant-is-called-inside-a-generic.hero"
     h1_own1 = t7;
-#line 175 "fixedbugs510aconstantiscalledinsideageneric.c"
+#line 22 "tests/golden/run/fixedbugs-510-a-constant-is-called-inside-a-generic.hero"
     hero_array_decref(t10);
 #line 22 "tests/golden/run/fixedbugs-510-a-constant-is-called-inside-a-generic.hero"
     t8 = ((void)(t7 == NULL ? ((void)hero_array_len(t7), hero_unreachable()) : (void)0), t7->len);
@@ -211,17 +211,16 @@ bb0:
     t13 = h4_own4;
 #line 27 "<heroes library>"
     h4_own4 = t1;
-#line 215 "fixedbugs510aconstantiscalledinsideageneric.c"
+#line 27 "<heroes library>"
     hero_array_decref(t13);
 #line 27 "<heroes library>"
     t14 = h2_out;
-#line 219 "fixedbugs510aconstantiscalledinsideageneric.c"
+#line 27 "<heroes library>"
     hero_array_incref(t1);
 #line 27 "<heroes library>"
     h2_out = t1;
-#line 223 "fixedbugs510aconstantiscalledinsideageneric.c"
+#line 27 "<heroes library>"
     hero_array_decref(t14);
-#line 28 "<heroes library>"
     t2 = h0_from;
 #line 28 "<heroes library>"
     h3_i = t2;
@@ -253,7 +252,7 @@ bb2:
 #line 31 "<heroes library>"
 bb3:
     t12 = h2_out;
-#line 257 "fixedbugs510aconstantiscalledinsideageneric.c"
+#line 256 "fixedbugs510aconstantiscalledinsideageneric.c"
     hero_array_incref(t12);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h4_own4);
@@ -264,7 +263,7 @@ bb3:
 /* repeated<str> */
 #line 12 "tests/golden/run/fixedbugs-510-a-constant-is-called-inside-a-generic.hero"
 HERO_TU_LOCAL HeroArrayHeader * h_fixedbugs510aconstantiscalledinsideageneric_repeated_1e58d9(HeroStr h0_x, int64_t h1_n) {
-#line 268 "fixedbugs510aconstantiscalledinsideageneric.c"
+#line 267 "fixedbugs510aconstantiscalledinsideageneric.c"
     HeroArrayHeader * h2_out = {0};
     HeroArrayHeader * h3_xs0 = {0};
     int64_t h4_i0;
@@ -298,15 +297,15 @@ bb0:
     t19 = h5_own5;
 #line 13 "tests/golden/run/fixedbugs-510-a-constant-is-called-inside-a-generic.hero"
     h5_own5 = t1;
-#line 302 "fixedbugs510aconstantiscalledinsideageneric.c"
+#line 13 "tests/golden/run/fixedbugs-510-a-constant-is-called-inside-a-generic.hero"
     hero_array_decref(t19);
 #line 13 "tests/golden/run/fixedbugs-510-a-constant-is-called-inside-a-generic.hero"
     t20 = h2_out;
-#line 306 "fixedbugs510aconstantiscalledinsideageneric.c"
+#line 13 "tests/golden/run/fixedbugs-510-a-constant-is-called-inside-a-generic.hero"
     hero_array_incref(t1);
 #line 13 "tests/golden/run/fixedbugs-510-a-constant-is-called-inside-a-generic.hero"
     h2_out = t1;
-#line 310 "fixedbugs510aconstantiscalledinsideageneric.c"
+#line 13 "tests/golden/run/fixedbugs-510-a-constant-is-called-inside-a-generic.hero"
     hero_array_decref(t20);
 #line 15 "tests/golden/run/fixedbugs-510-a-constant-is-called-inside-a-generic.hero"
     t2 = INT64_C(0);
@@ -322,15 +321,15 @@ bb0:
     t21 = h6_own6;
 #line 15 "tests/golden/run/fixedbugs-510-a-constant-is-called-inside-a-generic.hero"
     h6_own6 = t6;
-#line 326 "fixedbugs510aconstantiscalledinsideageneric.c"
+#line 15 "tests/golden/run/fixedbugs-510-a-constant-is-called-inside-a-generic.hero"
     hero_array_decref(t21);
 #line 15 "tests/golden/run/fixedbugs-510-a-constant-is-called-inside-a-generic.hero"
     t22 = h3_xs0;
-#line 330 "fixedbugs510aconstantiscalledinsideageneric.c"
+#line 15 "tests/golden/run/fixedbugs-510-a-constant-is-called-inside-a-generic.hero"
     hero_array_incref(t6);
 #line 15 "tests/golden/run/fixedbugs-510-a-constant-is-called-inside-a-generic.hero"
     h3_xs0 = t6;
-#line 334 "fixedbugs510aconstantiscalledinsideageneric.c"
+#line 15 "tests/golden/run/fixedbugs-510-a-constant-is-called-inside-a-generic.hero"
     hero_array_decref(t22);
 #line 15 "tests/golden/run/fixedbugs-510-a-constant-is-called-inside-a-generic.hero"
     t7 = INT64_C(0);
@@ -373,7 +372,7 @@ bb3:
 bb4:
 #line 18 "tests/golden/run/fixedbugs-510-a-constant-is-called-inside-a-generic.hero"
     t18 = h2_out;
-#line 377 "fixedbugs510aconstantiscalledinsideageneric.c"
+#line 376 "fixedbugs510aconstantiscalledinsideageneric.c"
     hero_array_incref(t18);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h3_xs0);
@@ -386,7 +385,7 @@ bb4:
 /* repeated<bool> */
 #line 12 "tests/golden/run/fixedbugs-510-a-constant-is-called-inside-a-generic.hero"
 HERO_TU_LOCAL HeroArrayHeader * h_fixedbugs510aconstantiscalledinsideageneric_repeated_d3eff76(bool h0_x, int64_t h1_n) {
-#line 390 "fixedbugs510aconstantiscalledinsideageneric.c"
+#line 389 "fixedbugs510aconstantiscalledinsideageneric.c"
     HeroArrayHeader * h2_out = {0};
     HeroArrayHeader * h3_xs0 = {0};
     int64_t h4_i0;
@@ -420,15 +419,15 @@ bb0:
     t19 = h5_own5;
 #line 13 "tests/golden/run/fixedbugs-510-a-constant-is-called-inside-a-generic.hero"
     h5_own5 = t1;
-#line 424 "fixedbugs510aconstantiscalledinsideageneric.c"
+#line 13 "tests/golden/run/fixedbugs-510-a-constant-is-called-inside-a-generic.hero"
     hero_array_decref(t19);
 #line 13 "tests/golden/run/fixedbugs-510-a-constant-is-called-inside-a-generic.hero"
     t20 = h2_out;
-#line 428 "fixedbugs510aconstantiscalledinsideageneric.c"
+#line 13 "tests/golden/run/fixedbugs-510-a-constant-is-called-inside-a-generic.hero"
     hero_array_incref(t1);
 #line 13 "tests/golden/run/fixedbugs-510-a-constant-is-called-inside-a-generic.hero"
     h2_out = t1;
-#line 432 "fixedbugs510aconstantiscalledinsideageneric.c"
+#line 13 "tests/golden/run/fixedbugs-510-a-constant-is-called-inside-a-generic.hero"
     hero_array_decref(t20);
 #line 15 "tests/golden/run/fixedbugs-510-a-constant-is-called-inside-a-generic.hero"
     t2 = INT64_C(0);
@@ -444,15 +443,15 @@ bb0:
     t21 = h6_own6;
 #line 15 "tests/golden/run/fixedbugs-510-a-constant-is-called-inside-a-generic.hero"
     h6_own6 = t6;
-#line 448 "fixedbugs510aconstantiscalledinsideageneric.c"
+#line 15 "tests/golden/run/fixedbugs-510-a-constant-is-called-inside-a-generic.hero"
     hero_array_decref(t21);
 #line 15 "tests/golden/run/fixedbugs-510-a-constant-is-called-inside-a-generic.hero"
     t22 = h3_xs0;
-#line 452 "fixedbugs510aconstantiscalledinsideageneric.c"
+#line 15 "tests/golden/run/fixedbugs-510-a-constant-is-called-inside-a-generic.hero"
     hero_array_incref(t6);
 #line 15 "tests/golden/run/fixedbugs-510-a-constant-is-called-inside-a-generic.hero"
     h3_xs0 = t6;
-#line 456 "fixedbugs510aconstantiscalledinsideageneric.c"
+#line 15 "tests/golden/run/fixedbugs-510-a-constant-is-called-inside-a-generic.hero"
     hero_array_decref(t22);
 #line 15 "tests/golden/run/fixedbugs-510-a-constant-is-called-inside-a-generic.hero"
     t7 = INT64_C(0);
@@ -495,7 +494,7 @@ bb3:
 bb4:
 #line 18 "tests/golden/run/fixedbugs-510-a-constant-is-called-inside-a-generic.hero"
     t18 = h2_out;
-#line 499 "fixedbugs510aconstantiscalledinsideageneric.c"
+#line 498 "fixedbugs510aconstantiscalledinsideageneric.c"
     hero_array_incref(t18);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h3_xs0);

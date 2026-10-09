@@ -124,17 +124,16 @@ bb0:
     t11 = h1_own1;
 #line 5 "tests/golden/run/abort-array-index.hero"
     h1_own1 = t4;
-#line 128 "abortarrayindex.c"
+#line 5 "tests/golden/run/abort-array-index.hero"
     hero_array_decref(t11);
 #line 5 "tests/golden/run/abort-array-index.hero"
     t12 = h0_xs;
-#line 132 "abortarrayindex.c"
+#line 5 "tests/golden/run/abort-array-index.hero"
     hero_array_incref(t4);
 #line 5 "tests/golden/run/abort-array-index.hero"
     h0_xs = t4;
-#line 136 "abortarrayindex.c"
+#line 5 "tests/golden/run/abort-array-index.hero"
     hero_array_decref(t12);
-#line 6 "tests/golden/run/abort-array-index.hero"
     t5 = h0_xs;
 #line 6 "tests/golden/run/abort-array-index.hero"
     t6 = INT64_C(2);
@@ -153,7 +152,7 @@ bb0:
     hero_print_int(t10);
 #line 7 "tests/golden/run/abort-array-index.hero"
     hero_print_end();
-#line 157 "abortarrayindex.c"
+#line 156 "abortarrayindex.c"
     hero_array_release_at(&h0_xs);
     hero_array_release_at(&h1_own1);
     return;

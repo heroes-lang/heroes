@@ -157,17 +157,16 @@ bb0:
     t9 = h1_own1;
 #line 15 "tests/golden/run/fixedbugs-413-an-element-past-the-end-is-refused-when-the-call-is-made.hero"
     h1_own1 = t2;
-#line 161 "fixedbugs413anelementpasttheendisrefusedwhenthecallismade.c"
+#line 15 "tests/golden/run/fixedbugs-413-an-element-past-the-end-is-refused-when-the-call-is-made.hero"
     hero_array_decref(t9);
 #line 15 "tests/golden/run/fixedbugs-413-an-element-past-the-end-is-refused-when-the-call-is-made.hero"
     t10 = h0_xs;
-#line 165 "fixedbugs413anelementpasttheendisrefusedwhenthecallismade.c"
+#line 15 "tests/golden/run/fixedbugs-413-an-element-past-the-end-is-refused-when-the-call-is-made.hero"
     hero_array_incref(t2);
 #line 15 "tests/golden/run/fixedbugs-413-an-element-past-the-end-is-refused-when-the-call-is-made.hero"
     h0_xs = t2;
-#line 169 "fixedbugs413anelementpasttheendisrefusedwhenthecallismade.c"
+#line 15 "tests/golden/run/fixedbugs-413-an-element-past-the-end-is-refused-when-the-call-is-made.hero"
     hero_array_decref(t10);
-#line 16 "tests/golden/run/fixedbugs-413-an-element-past-the-end-is-refused-when-the-call-is-made.hero"
     t3 = INT64_C(3);
 #line 16 "tests/golden/run/fixedbugs-413-an-element-past-the-end-is-refused-when-the-call-is-made.hero"
     t4 = INT64_C(5);
@@ -186,7 +185,7 @@ bb0:
     hero_print_int(t8);
 #line 17 "tests/golden/run/fixedbugs-413-an-element-past-the-end-is-refused-when-the-call-is-made.hero"
     hero_print_end();
-#line 190 "fixedbugs413anelementpasttheendisrefusedwhenthecallismade.c"
+#line 189 "fixedbugs413anelementpasttheendisrefusedwhenthecallismade.c"
     hero_array_release_at(&h0_xs);
     hero_array_release_at(&h1_own1);
     return;

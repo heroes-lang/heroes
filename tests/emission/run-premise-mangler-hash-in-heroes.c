@@ -173,15 +173,15 @@ bb0:
     t36 = h6_own6;
 #line 27 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     h6_own6 = t5;
-#line 177 "premisemanglerhashinheroes.c"
+#line 27 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     hero_array_decref(t36);
 #line 27 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     t37 = h2_xs0;
-#line 181 "premisemanglerhashinheroes.c"
+#line 27 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     hero_array_incref(t5);
 #line 27 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     h2_xs0 = t5;
-#line 185 "premisemanglerhashinheroes.c"
+#line 27 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     hero_array_decref(t37);
 #line 27 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     t6 = INT64_C(0);
@@ -228,15 +228,15 @@ bb2:
     t38 = h7_own7;
 #line 28 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     h7_own7 = t20;
-#line 232 "premisemanglerhashinheroes.c"
+#line 28 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     h_0opt_e201354_release(&t38);
 #line 28 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     t39 = h5_f0;
-#line 236 "premisemanglerhashinheroes.c"
+#line 28 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     h_0opt_e201354_retain(&t20);
 #line 28 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     h5_f0 = t20;
-#line 240 "premisemanglerhashinheroes.c"
+#line 28 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     h_0opt_e201354_release(&t39);
 #line 28 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     t21 = h5_f0;
@@ -374,17 +374,16 @@ bb0:
     t13 = h4_own4;
 #line 27 "<heroes library>"
     h4_own4 = t1;
-#line 378 "premisemanglerhashinheroes.c"
+#line 27 "<heroes library>"
     hero_array_decref(t13);
 #line 27 "<heroes library>"
     t14 = h2_out;
-#line 382 "premisemanglerhashinheroes.c"
+#line 27 "<heroes library>"
     hero_array_incref(t1);
 #line 27 "<heroes library>"
     h2_out = t1;
-#line 386 "premisemanglerhashinheroes.c"
+#line 27 "<heroes library>"
     hero_array_decref(t14);
-#line 28 "<heroes library>"
     t2 = h0_from;
 #line 28 "<heroes library>"
     h3_i = t2;
@@ -416,7 +415,7 @@ bb2:
 #line 31 "<heroes library>"
 bb3:
     t12 = h2_out;
-#line 420 "premisemanglerhashinheroes.c"
+#line 419 "premisemanglerhashinheroes.c"
     hero_array_incref(t12);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h4_own4);

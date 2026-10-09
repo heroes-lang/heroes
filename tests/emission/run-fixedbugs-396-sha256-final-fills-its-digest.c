@@ -242,27 +242,25 @@ bb0:
     t62 = h6_own6;
 #line 32 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
     h6_own6 = t6;
-#line 246 "fixedbugs396sha256finalfillsitsdigest.c"
+#line 32 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
     hero_array_decref(t62);
 #line 32 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
     t63 = h1_md;
-#line 250 "fixedbugs396sha256finalfillsitsdigest.c"
+#line 32 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
     hero_array_incref(t6);
 #line 32 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
     h1_md = t6;
-#line 254 "fixedbugs396sha256finalfillsitsdigest.c"
+#line 32 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
     hero_array_decref(t63);
-#line 33 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
     t7 = h1_md;
 #line 33 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
     t64 = h2_kept;
-#line 260 "fixedbugs396sha256finalfillsitsdigest.c"
+#line 33 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
     hero_array_incref(t7);
 #line 33 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
     h2_kept = t7;
-#line 264 "fixedbugs396sha256finalfillsitsdigest.c"
+#line 33 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
     hero_array_decref(t64);
-#line 34 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
     hero_lend_local_name(hero_lend_h0_c, "SHA256_Init", "c");
 #line 34 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
     t8 = SHA256_Init(&h0_c);
@@ -371,17 +369,16 @@ bb0:
     t65 = h7_own7;
 #line 37 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
     h7_own7 = t34;
-#line 375 "fixedbugs396sha256finalfillsitsdigest.c"
+#line 37 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
     hero_array_decref(t65);
 #line 37 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
     t66 = h4_out;
-#line 379 "fixedbugs396sha256finalfillsitsdigest.c"
+#line 37 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
     hero_array_incref(t34);
 #line 37 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
     h4_out = t34;
-#line 383 "fixedbugs396sha256finalfillsitsdigest.c"
+#line 37 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
     hero_array_decref(t66);
-#line 38 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
     t35 = UINT64_C(0);
 #line 38 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
     h5_s = t35;
@@ -492,7 +489,7 @@ bb0:
     if (hero_handle_ended(t61, hero_life_0_0) && h3_ctx == t61) h3_ctx = hero_handle_dead();
 #line 47 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
     }
-#line 496 "fixedbugs396sha256finalfillsitsdigest.c"
+#line 493 "fixedbugs396sha256finalfillsitsdigest.c"
     hero_array_release_at(&h1_md);
     hero_array_release_at(&h2_kept);
     hero_array_release_at(&h4_out);

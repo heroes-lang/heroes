@@ -134,11 +134,11 @@ bb0:
     t2 = h0_xs;
 #line 14 "tests/golden/ir/adversarial-diverging-arms.hero"
     t18 = h2_xs0;
-#line 138 "adversarialdivergingarms.c"
+#line 14 "tests/golden/ir/adversarial-diverging-arms.hero"
     hero_array_incref(t2);
 #line 14 "tests/golden/ir/adversarial-diverging-arms.hero"
     h2_xs0 = t2;
-#line 142 "adversarialdivergingarms.c"
+#line 14 "tests/golden/ir/adversarial-diverging-arms.hero"
     hero_array_decref(t18);
 #line 14 "tests/golden/ir/adversarial-diverging-arms.hero"
     t3 = INT64_C(0);

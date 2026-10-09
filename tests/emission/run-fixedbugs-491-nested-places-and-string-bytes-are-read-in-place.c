@@ -333,13 +333,12 @@ bb0:
     t1 = HERO_STR_LIT(hero_str_2a0b7016);
 #line 23 "tests/golden/run/fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero"
     t131 = h0_text;
-#line 337 "fixedbugs491nestedplacesandstringbytesarereadinplace.c"
+#line 23 "tests/golden/run/fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero"
     hero_str_incref(t1);
 #line 23 "tests/golden/run/fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero"
     h0_text = t1;
-#line 341 "fixedbugs491nestedplacesandstringbytesarereadinplace.c"
+#line 23 "tests/golden/run/fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero"
     hero_str_decref(t131);
-#line 24 "tests/golden/run/fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero"
     t2 = INT64_C(1);
 #line 24 "tests/golden/run/fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero"
     t3 = INT64_C(2);
@@ -357,12 +356,13 @@ bb0:
     t132 = h8_own8;
 #line 24 "tests/golden/run/fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero"
     h8_own8 = t5;
-#line 361 "fixedbugs491nestedplacesandstringbytesarereadinplace.c"
+#line 24 "tests/golden/run/fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero"
     hero_array_decref(t132);
 #line 24 "tests/golden/run/fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero"
     t6 = HERO_STR_LIT(hero_str_61);
-#line 365 "fixedbugs491nestedplacesandstringbytesarereadinplace.c"
+#line 24 "tests/golden/run/fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero"
     hero_array_incref(t5);
+#line 24 "tests/golden/run/fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero"
     hero_str_incref(t6);
 #line 24 "tests/golden/run/fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero"
     t7 = (h_fixedbugs491nestedplacesandstringbytesarereadinplace_Row){.f_cells = t5, .f_label = t6};
@@ -370,7 +370,7 @@ bb0:
     t133 = h9_own9;
 #line 24 "tests/golden/run/fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero"
     h9_own9 = t7;
-#line 374 "fixedbugs491nestedplacesandstringbytesarereadinplace.c"
+#line 24 "tests/golden/run/fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero"
     h_fixedbugs491nestedplacesandstringbytesarereadinplace_Row_release(&t133);
 #line 24 "tests/golden/run/fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero"
     t8 = INT64_C(4);
@@ -390,12 +390,13 @@ bb0:
     t134 = h10_own10;
 #line 24 "tests/golden/run/fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero"
     h10_own10 = t11;
-#line 394 "fixedbugs491nestedplacesandstringbytesarereadinplace.c"
+#line 24 "tests/golden/run/fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero"
     hero_array_decref(t134);
 #line 24 "tests/golden/run/fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero"
     t12 = HERO_STR_LIT(hero_str_62);
-#line 398 "fixedbugs491nestedplacesandstringbytesarereadinplace.c"
+#line 24 "tests/golden/run/fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero"
     hero_array_incref(t11);
+#line 24 "tests/golden/run/fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero"
     hero_str_incref(t12);
 #line 24 "tests/golden/run/fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero"
     t13 = (h_fixedbugs491nestedplacesandstringbytesarereadinplace_Row){.f_cells = t11, .f_label = t12};
@@ -403,7 +404,7 @@ bb0:
     t135 = h11_own11;
 #line 24 "tests/golden/run/fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero"
     h11_own11 = t13;
-#line 407 "fixedbugs491nestedplacesandstringbytesarereadinplace.c"
+#line 24 "tests/golden/run/fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero"
     h_fixedbugs491nestedplacesandstringbytesarereadinplace_Row_release(&t135);
 #line 24 "tests/golden/run/fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero"
     t14 = hero_array_new(&h_fixedbugs491nestedplacesandstringbytesarereadinplace_Row_desc, 2);
@@ -415,17 +416,16 @@ bb0:
     t136 = h12_own12;
 #line 24 "tests/golden/run/fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero"
     h12_own12 = t14;
-#line 419 "fixedbugs491nestedplacesandstringbytesarereadinplace.c"
+#line 24 "tests/golden/run/fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero"
     hero_array_decref(t136);
 #line 24 "tests/golden/run/fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero"
     t137 = h1_rows;
-#line 423 "fixedbugs491nestedplacesandstringbytesarereadinplace.c"
+#line 24 "tests/golden/run/fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero"
     hero_array_incref(t14);
 #line 24 "tests/golden/run/fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero"
     h1_rows = t14;
-#line 427 "fixedbugs491nestedplacesandstringbytesarereadinplace.c"
+#line 24 "tests/golden/run/fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero"
     hero_array_decref(t137);
-#line 25 "tests/golden/run/fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero"
     t15 = INT64_C(1);
 #line 25 "tests/golden/run/fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero"
     t16 = INT64_C(2);
@@ -439,7 +439,7 @@ bb0:
     t138 = h13_own13;
 #line 25 "tests/golden/run/fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero"
     h13_own13 = t17;
-#line 443 "fixedbugs491nestedplacesandstringbytesarereadinplace.c"
+#line 25 "tests/golden/run/fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero"
     hero_array_decref(t138);
 #line 25 "tests/golden/run/fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero"
     t18 = INT64_C(3);
@@ -455,7 +455,7 @@ bb0:
     t139 = h14_own14;
 #line 25 "tests/golden/run/fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero"
     h14_own14 = t20;
-#line 459 "fixedbugs491nestedplacesandstringbytesarereadinplace.c"
+#line 25 "tests/golden/run/fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero"
     hero_array_decref(t139);
 #line 25 "tests/golden/run/fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero"
     t21 = hero_array_new(&hero_desc_array, 2);
@@ -467,7 +467,7 @@ bb0:
     t140 = h15_own15;
 #line 25 "tests/golden/run/fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero"
     h15_own15 = t21;
-#line 471 "fixedbugs491nestedplacesandstringbytesarereadinplace.c"
+#line 25 "tests/golden/run/fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero"
     hero_array_decref(t140);
 #line 25 "tests/golden/run/fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero"
     t22 = INT64_C(5);
@@ -483,7 +483,7 @@ bb0:
     t141 = h16_own16;
 #line 25 "tests/golden/run/fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero"
     h16_own16 = t24;
-#line 487 "fixedbugs491nestedplacesandstringbytesarereadinplace.c"
+#line 25 "tests/golden/run/fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero"
     hero_array_decref(t141);
 #line 25 "tests/golden/run/fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero"
     t25 = INT64_C(7);
@@ -499,7 +499,7 @@ bb0:
     t142 = h17_own17;
 #line 25 "tests/golden/run/fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero"
     h17_own17 = t27;
-#line 503 "fixedbugs491nestedplacesandstringbytesarereadinplace.c"
+#line 25 "tests/golden/run/fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero"
     hero_array_decref(t142);
 #line 25 "tests/golden/run/fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero"
     t28 = hero_array_new(&hero_desc_array, 2);
@@ -511,7 +511,7 @@ bb0:
     t143 = h18_own18;
 #line 25 "tests/golden/run/fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero"
     h18_own18 = t28;
-#line 515 "fixedbugs491nestedplacesandstringbytesarereadinplace.c"
+#line 25 "tests/golden/run/fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero"
     hero_array_decref(t143);
 #line 25 "tests/golden/run/fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero"
     t29 = hero_array_new(&hero_desc_array, 2);
@@ -523,17 +523,16 @@ bb0:
     t144 = h19_own19;
 #line 25 "tests/golden/run/fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero"
     h19_own19 = t29;
-#line 527 "fixedbugs491nestedplacesandstringbytesarereadinplace.c"
+#line 25 "tests/golden/run/fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero"
     hero_array_decref(t144);
 #line 25 "tests/golden/run/fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero"
     t145 = h2_grid;
-#line 531 "fixedbugs491nestedplacesandstringbytesarereadinplace.c"
+#line 25 "tests/golden/run/fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero"
     hero_array_incref(t29);
 #line 25 "tests/golden/run/fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero"
     h2_grid = t29;
-#line 535 "fixedbugs491nestedplacesandstringbytesarereadinplace.c"
+#line 25 "tests/golden/run/fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero"
     hero_array_decref(t145);
-#line 26 "tests/golden/run/fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero"
     t30 = INT64_C(10);
 #line 26 "tests/golden/run/fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero"
     t31 = INT64_C(20);
@@ -551,27 +550,25 @@ bb0:
     t146 = h20_own20;
 #line 26 "tests/golden/run/fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero"
     h20_own20 = t33;
-#line 555 "fixedbugs491nestedplacesandstringbytesarereadinplace.c"
+#line 26 "tests/golden/run/fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero"
     hero_array_decref(t146);
 #line 26 "tests/golden/run/fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero"
     t147 = h3_xs;
-#line 559 "fixedbugs491nestedplacesandstringbytesarereadinplace.c"
+#line 26 "tests/golden/run/fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero"
     hero_array_incref(t33);
 #line 26 "tests/golden/run/fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero"
     h3_xs = t33;
-#line 563 "fixedbugs491nestedplacesandstringbytesarereadinplace.c"
+#line 26 "tests/golden/run/fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero"
     hero_array_decref(t147);
-#line 27 "tests/golden/run/fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero"
     t34 = h2_grid;
 #line 27 "tests/golden/run/fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero"
     t148 = h4_before;
-#line 569 "fixedbugs491nestedplacesandstringbytesarereadinplace.c"
+#line 27 "tests/golden/run/fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero"
     hero_array_incref(t34);
 #line 27 "tests/golden/run/fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero"
     h4_before = t34;
-#line 573 "fixedbugs491nestedplacesandstringbytesarereadinplace.c"
+#line 27 "tests/golden/run/fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero"
     hero_array_decref(t148);
-#line 28 "tests/golden/run/fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero"
     t35 = INT64_C(0);
 #line 28 "tests/golden/run/fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero"
     h5_i = t35;
@@ -607,15 +604,15 @@ bb2:
     t149 = h21_own21;
 #line 32 "tests/golden/run/fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero"
     h21_own21 = t45;
-#line 611 "fixedbugs491nestedplacesandstringbytesarereadinplace.c"
+#line 32 "tests/golden/run/fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero"
     h_0opt_e201354_release(&t149);
 #line 32 "tests/golden/run/fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero"
     t150 = h7_f0;
-#line 615 "fixedbugs491nestedplacesandstringbytesarereadinplace.c"
+#line 32 "tests/golden/run/fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero"
     h_0opt_e201354_retain(&t45);
 #line 32 "tests/golden/run/fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero"
     h7_f0 = t45;
-#line 619 "fixedbugs491nestedplacesandstringbytesarereadinplace.c"
+#line 32 "tests/golden/run/fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero"
     h_0opt_e201354_release(&t150);
 #line 32 "tests/golden/run/fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero"
     t46 = h7_f0;
@@ -829,7 +826,7 @@ bb3:
     hero_print_int(t130);
 #line 49 "tests/golden/run/fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero"
     hero_print_end();
-#line 833 "fixedbugs491nestedplacesandstringbytesarereadinplace.c"
+#line 830 "fixedbugs491nestedplacesandstringbytesarereadinplace.c"
     hero_str_release_at(&h0_text);
     hero_array_release_at(&h1_rows);
     hero_array_release_at(&h2_grid);
@@ -875,7 +872,7 @@ bb5:
     t50 = h7_f0;
 #line 32 "tests/golden/run/fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero"
     t51 = t50.as.err;
-#line 879 "fixedbugs491nestedplacesandstringbytesarereadinplace.c"
+#line 876 "fixedbugs491nestedplacesandstringbytesarereadinplace.c"
     hero_panic_must(t51);
     hero_unreachable();
 }

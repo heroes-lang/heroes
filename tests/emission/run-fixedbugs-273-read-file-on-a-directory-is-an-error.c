@@ -160,15 +160,15 @@ bb0:
     t26 = h5_own5;
 #line 12 "tests/golden/run/fixedbugs-273-read-file-on-a-directory-is-an-error.hero"
     h5_own5 = t2;
-#line 164 "fixedbugs273readfileonadirectoryisanerror.c"
+#line 12 "tests/golden/run/fixedbugs-273-read-file-on-a-directory-is-an-error.hero"
     h_0opt_f87774a_release(&t26);
 #line 12 "tests/golden/run/fixedbugs-273-read-file-on-a-directory-is-an-error.hero"
     t27 = h0_s0;
-#line 168 "fixedbugs273readfileonadirectoryisanerror.c"
+#line 12 "tests/golden/run/fixedbugs-273-read-file-on-a-directory-is-an-error.hero"
     h_0opt_f87774a_retain(&t2);
 #line 12 "tests/golden/run/fixedbugs-273-read-file-on-a-directory-is-an-error.hero"
     h0_s0 = t2;
-#line 172 "fixedbugs273readfileonadirectoryisanerror.c"
+#line 12 "tests/golden/run/fixedbugs-273-read-file-on-a-directory-is-an-error.hero"
     h_0opt_f87774a_release(&t27);
 #line 12 "tests/golden/run/fixedbugs-273-read-file-on-a-directory-is-an-error.hero"
     t3 = h0_s0;
@@ -194,15 +194,15 @@ bb1:
     t28 = h6_own6;
 #line 16 "tests/golden/run/fixedbugs-273-read-file-on-a-directory-is-an-error.hero"
     h6_own6 = t17;
-#line 198 "fixedbugs273readfileonadirectoryisanerror.c"
+#line 16 "tests/golden/run/fixedbugs-273-read-file-on-a-directory-is-an-error.hero"
     h_0opt_f87774a_release(&t28);
 #line 16 "tests/golden/run/fixedbugs-273-read-file-on-a-directory-is-an-error.hero"
     t29 = h3_s1;
-#line 202 "fixedbugs273readfileonadirectoryisanerror.c"
+#line 16 "tests/golden/run/fixedbugs-273-read-file-on-a-directory-is-an-error.hero"
     h_0opt_f87774a_retain(&t17);
 #line 16 "tests/golden/run/fixedbugs-273-read-file-on-a-directory-is-an-error.hero"
     h3_s1 = t17;
-#line 206 "fixedbugs273readfileonadirectoryisanerror.c"
+#line 16 "tests/golden/run/fixedbugs-273-read-file-on-a-directory-is-an-error.hero"
     h_0opt_f87774a_release(&t29);
 #line 16 "tests/golden/run/fixedbugs-273-read-file-on-a-directory-is-an-error.hero"
     t18 = h3_s1;
@@ -226,11 +226,11 @@ bb2:
     t6 = t5.as.ok;
 #line 13 "tests/golden/run/fixedbugs-273-read-file-on-a-directory-is-an-error.hero"
     t30 = h1_text;
-#line 230 "fixedbugs273readfileonadirectoryisanerror.c"
+#line 13 "tests/golden/run/fixedbugs-273-read-file-on-a-directory-is-an-error.hero"
     hero_str_incref(t6);
 #line 13 "tests/golden/run/fixedbugs-273-read-file-on-a-directory-is-an-error.hero"
     h1_text = t6;
-#line 234 "fixedbugs273readfileonadirectoryisanerror.c"
+#line 13 "tests/golden/run/fixedbugs-273-read-file-on-a-directory-is-an-error.hero"
     hero_str_decref(t30);
 #line 13 "tests/golden/run/fixedbugs-273-read-file-on-a-directory-is-an-error.hero"
     t7 = HERO_STR_LIT(hero_str_7cd91441);
@@ -257,11 +257,11 @@ bb3:
     t12 = t11.as.err;
 #line 14 "tests/golden/run/fixedbugs-273-read-file-on-a-directory-is-an-error.hero"
     t31 = h2_e;
-#line 261 "fixedbugs273readfileonadirectoryisanerror.c"
+#line 14 "tests/golden/run/fixedbugs-273-read-file-on-a-directory-is-an-error.hero"
     hero_failure_retain(&t12);
 #line 14 "tests/golden/run/fixedbugs-273-read-file-on-a-directory-is-an-error.hero"
     h2_e = t12;
-#line 265 "fixedbugs273readfileonadirectoryisanerror.c"
+#line 14 "tests/golden/run/fixedbugs-273-read-file-on-a-directory-is-an-error.hero"
     hero_failure_release(&t31);
 #line 14 "tests/golden/run/fixedbugs-273-read-file-on-a-directory-is-an-error.hero"
     t13 = HERO_STR_LIT(hero_str_28fec532);
@@ -304,11 +304,11 @@ bb6:
     t22 = t21.as.err;
 #line 18 "tests/golden/run/fixedbugs-273-read-file-on-a-directory-is-an-error.hero"
     t32 = h4_e;
-#line 308 "fixedbugs273readfileonadirectoryisanerror.c"
+#line 18 "tests/golden/run/fixedbugs-273-read-file-on-a-directory-is-an-error.hero"
     hero_failure_retain(&t22);
 #line 18 "tests/golden/run/fixedbugs-273-read-file-on-a-directory-is-an-error.hero"
     h4_e = t22;
-#line 312 "fixedbugs273readfileonadirectoryisanerror.c"
+#line 18 "tests/golden/run/fixedbugs-273-read-file-on-a-directory-is-an-error.hero"
     hero_failure_release(&t32);
 #line 18 "tests/golden/run/fixedbugs-273-read-file-on-a-directory-is-an-error.hero"
     t23 = HERO_STR_LIT(hero_str_63ebf303);
@@ -432,17 +432,16 @@ bb0:
     t39 = h4_own4;
 #line 169 "<heroes library>"
     h4_own4 = t3;
-#line 436 "fixedbugs273readfileonadirectoryisanerror.c"
+#line 169 "<heroes library>"
     hero_str_decref(t39);
 #line 169 "<heroes library>"
     t40 = h2_text;
-#line 440 "fixedbugs273readfileonadirectoryisanerror.c"
+#line 169 "<heroes library>"
     hero_str_incref(t3);
 #line 169 "<heroes library>"
     h2_text = t3;
-#line 444 "fixedbugs273readfileonadirectoryisanerror.c"
+#line 169 "<heroes library>"
     hero_str_decref(t40);
-#line 170 "<heroes library>"
     t4 = h1_status;
 #line 170 "<heroes library>"
     t5 = h_library_HERO_OS_OK();
@@ -464,7 +463,7 @@ bb1:
 bb2:
 #line 171 "<heroes library>"
     t7 = h2_text;
-#line 468 "fixedbugs273readfileonadirectoryisanerror.c"
+#line 171 "<heroes library>"
     hero_str_incref(t7);
 #line 171 "<heroes library>"
     t8 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t7};
@@ -472,7 +471,7 @@ bb2:
     t41 = h5_own5;
 #line 171 "<heroes library>"
     h5_own5 = t8;
-#line 476 "fixedbugs273readfileonadirectoryisanerror.c"
+#line 171 "<heroes library>"
     h_0opt_f87774a_release(&t41);
 #line 171 "<heroes library>"
     h3_ret0 = t8;
@@ -498,8 +497,9 @@ bb5:
     t12 = HERO_STR_LIT(hero_str_3e46668);
 #line 175 "<heroes library>"
     t13 = HERO_STR_LIT(hero_str_75aeb685);
-#line 502 "fixedbugs273readfileonadirectoryisanerror.c"
+#line 175 "<heroes library>"
     hero_str_incref(t12);
+#line 175 "<heroes library>"
     hero_str_incref(t13);
 #line 175 "<heroes library>"
     t14 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t12, .msg = t13}};
@@ -507,7 +507,7 @@ bb5:
     t42 = h6_own6;
 #line 175 "<heroes library>"
     h6_own6 = t14;
-#line 511 "fixedbugs273readfileonadirectoryisanerror.c"
+#line 175 "<heroes library>"
     h_0opt_f87774a_release(&t42);
 #line 175 "<heroes library>"
     h3_ret0 = t14;
@@ -541,9 +541,11 @@ bb8:
     t43 = h7_own7;
 #line 177 "<heroes library>"
     h7_own7 = t21;
-#line 545 "fixedbugs273readfileonadirectoryisanerror.c"
+#line 177 "<heroes library>"
     hero_str_decref(t43);
+#line 177 "<heroes library>"
     hero_str_incref(t18);
+#line 177 "<heroes library>"
     hero_str_incref(t21);
 #line 177 "<heroes library>"
     t22 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t18, .msg = t21}};
@@ -551,7 +553,7 @@ bb8:
     t44 = h8_own8;
 #line 177 "<heroes library>"
     h8_own8 = t22;
-#line 555 "fixedbugs273readfileonadirectoryisanerror.c"
+#line 177 "<heroes library>"
     h_0opt_f87774a_release(&t44);
 #line 177 "<heroes library>"
     h3_ret0 = t22;
@@ -575,9 +577,11 @@ bb10:
     t45 = h9_own9;
 #line 183 "<heroes library>"
     h9_own9 = t36;
-#line 579 "fixedbugs273readfileonadirectoryisanerror.c"
+#line 183 "<heroes library>"
     hero_str_decref(t45);
+#line 183 "<heroes library>"
     hero_str_incref(t33);
+#line 183 "<heroes library>"
     hero_str_incref(t36);
 #line 183 "<heroes library>"
     t37 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t33, .msg = t36}};
@@ -585,7 +589,7 @@ bb10:
     t46 = h10_own10;
 #line 183 "<heroes library>"
     h10_own10 = t37;
-#line 589 "fixedbugs273readfileonadirectoryisanerror.c"
+#line 183 "<heroes library>"
     h_0opt_f87774a_release(&t46);
 #line 183 "<heroes library>"
     h3_ret0 = t37;
@@ -605,7 +609,7 @@ bb11:
     t47 = h11_own11;
 #line 182 "<heroes library>"
     h11_own11 = t29;
-#line 609 "fixedbugs273readfileonadirectoryisanerror.c"
+#line 182 "<heroes library>"
     hero_str_decref(t47);
 #line 182 "<heroes library>"
     t30 = HERO_STR_LIT(hero_str_612f4355);
@@ -615,9 +619,11 @@ bb11:
     t48 = h12_own12;
 #line 182 "<heroes library>"
     h12_own12 = t31;
-#line 619 "fixedbugs273readfileonadirectoryisanerror.c"
+#line 182 "<heroes library>"
     hero_str_decref(t48);
+#line 182 "<heroes library>"
     hero_str_incref(t26);
+#line 182 "<heroes library>"
     hero_str_incref(t31);
 #line 182 "<heroes library>"
     t32 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t26, .msg = t31}};
@@ -625,7 +631,7 @@ bb11:
     t49 = h13_own13;
 #line 182 "<heroes library>"
     h13_own13 = t32;
-#line 629 "fixedbugs273readfileonadirectoryisanerror.c"
+#line 182 "<heroes library>"
     h_0opt_f87774a_release(&t49);
 #line 182 "<heroes library>"
     h3_ret0 = t32;
@@ -637,7 +643,7 @@ bb12:
     goto bb10;
 #line 182 "<heroes library>"
 bb13:
-#line 641 "fixedbugs273readfileonadirectoryisanerror.c"
+#line 647 "fixedbugs273readfileonadirectoryisanerror.c"
     t38 = h3_ret0;
     h_0opt_f87774a_retain(&t38);
     hero_str_release_at(&h2_text);

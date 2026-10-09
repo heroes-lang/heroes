@@ -125,7 +125,7 @@ bb0:
     t8 = h1_own1;
 #line 26 "tests/golden/run/abort-repeat-overflows.hero"
     h1_own1 = t5;
-#line 129 "abortrepeatoverflows.c"
+#line 26 "tests/golden/run/abort-repeat-overflows.hero"
     hero_str_decref(t8);
 #line 26 "tests/golden/run/abort-repeat-overflows.hero"
     t6 = hero_str_len(t5);

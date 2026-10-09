@@ -209,15 +209,15 @@ bb0:
     t43 = h6_own6;
 #line 40 "tests/golden/fixedbugs/ffi-const-pointer.hero"
     h6_own6 = t10;
-#line 213 "fficonstpointer.c"
+#line 40 "tests/golden/fixedbugs/ffi-const-pointer.hero"
     h_0opt_e201354_release(&t43);
 #line 40 "tests/golden/fixedbugs/ffi-const-pointer.hero"
     t44 = h2_f0;
-#line 217 "fficonstpointer.c"
+#line 40 "tests/golden/fixedbugs/ffi-const-pointer.hero"
     h_0opt_e201354_retain(&t10);
 #line 40 "tests/golden/fixedbugs/ffi-const-pointer.hero"
     h2_f0 = t10;
-#line 221 "fficonstpointer.c"
+#line 40 "tests/golden/fixedbugs/ffi-const-pointer.hero"
     h_0opt_e201354_release(&t44);
 #line 40 "tests/golden/fixedbugs/ffi-const-pointer.hero"
     t11 = h2_f0;
@@ -262,15 +262,15 @@ bb1:
     t45 = h7_own7;
 #line 43 "tests/golden/fixedbugs/ffi-const-pointer.hero"
     h7_own7 = t24;
-#line 266 "fficonstpointer.c"
+#line 43 "tests/golden/fixedbugs/ffi-const-pointer.hero"
     h_0opt_f87774a_release(&t45);
 #line 43 "tests/golden/fixedbugs/ffi-const-pointer.hero"
     t46 = h4_f1;
-#line 270 "fficonstpointer.c"
+#line 43 "tests/golden/fixedbugs/ffi-const-pointer.hero"
     h_0opt_f87774a_retain(&t24);
 #line 43 "tests/golden/fixedbugs/ffi-const-pointer.hero"
     h4_f1 = t24;
-#line 274 "fficonstpointer.c"
+#line 43 "tests/golden/fixedbugs/ffi-const-pointer.hero"
     h_0opt_f87774a_release(&t46);
 #line 43 "tests/golden/fixedbugs/ffi-const-pointer.hero"
     t25 = h4_f1;
@@ -307,15 +307,15 @@ bb3:
     t47 = h8_own8;
 #line 44 "tests/golden/fixedbugs/ffi-const-pointer.hero"
     h8_own8 = t34;
-#line 311 "fficonstpointer.c"
+#line 44 "tests/golden/fixedbugs/ffi-const-pointer.hero"
     h_0opt_f87774a_release(&t47);
 #line 44 "tests/golden/fixedbugs/ffi-const-pointer.hero"
     t48 = h5_f2;
-#line 315 "fficonstpointer.c"
+#line 44 "tests/golden/fixedbugs/ffi-const-pointer.hero"
     h_0opt_f87774a_retain(&t34);
 #line 44 "tests/golden/fixedbugs/ffi-const-pointer.hero"
     h5_f2 = t34;
-#line 319 "fficonstpointer.c"
+#line 44 "tests/golden/fixedbugs/ffi-const-pointer.hero"
     h_0opt_f87774a_release(&t48);
 #line 44 "tests/golden/fixedbugs/ffi-const-pointer.hero"
     t35 = h5_f2;
@@ -428,17 +428,16 @@ bb1:
     t19 = h4_own4;
 #line 157 "<heroes library>"
     h4_own4 = t9;
-#line 432 "fficonstpointer.c"
+#line 157 "<heroes library>"
     hero_str_decref(t19);
 #line 157 "<heroes library>"
     t20 = h2_text;
-#line 436 "fficonstpointer.c"
+#line 157 "<heroes library>"
     hero_str_incref(t9);
 #line 157 "<heroes library>"
     h2_text = t9;
-#line 440 "fficonstpointer.c"
+#line 157 "<heroes library>"
     hero_str_decref(t20);
-#line 158 "<heroes library>"
     t10 = h1_status;
 #line 158 "<heroes library>"
     t11 = h_library_HERO_STR_OK();
@@ -452,8 +451,9 @@ bb2:
     t4 = HERO_STR_LIT(hero_str_4a05a740);
 #line 155 "<heroes library>"
     t5 = HERO_STR_LIT(hero_str_5263489);
-#line 456 "fficonstpointer.c"
+#line 155 "<heroes library>"
     hero_str_incref(t4);
+#line 155 "<heroes library>"
     hero_str_incref(t5);
 #line 155 "<heroes library>"
     t6 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t4, .msg = t5}};
@@ -461,7 +461,7 @@ bb2:
     t21 = h5_own5;
 #line 155 "<heroes library>"
     h5_own5 = t6;
-#line 465 "fficonstpointer.c"
+#line 155 "<heroes library>"
     h_0opt_f87774a_release(&t21);
 #line 155 "<heroes library>"
     h3_ret0 = t6;
@@ -477,8 +477,9 @@ bb4:
     t15 = HERO_STR_LIT(hero_str_34624695);
 #line 160 "<heroes library>"
     t16 = HERO_STR_LIT(hero_str_4bb64adb);
-#line 481 "fficonstpointer.c"
+#line 160 "<heroes library>"
     hero_str_incref(t15);
+#line 160 "<heroes library>"
     hero_str_incref(t16);
 #line 160 "<heroes library>"
     t17 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t15, .msg = t16}};
@@ -486,7 +487,7 @@ bb4:
     t22 = h6_own6;
 #line 160 "<heroes library>"
     h6_own6 = t17;
-#line 490 "fficonstpointer.c"
+#line 160 "<heroes library>"
     h_0opt_f87774a_release(&t22);
 #line 160 "<heroes library>"
     h3_ret0 = t17;
@@ -496,7 +497,7 @@ bb4:
 bb5:
 #line 159 "<heroes library>"
     t13 = h2_text;
-#line 500 "fficonstpointer.c"
+#line 159 "<heroes library>"
     hero_str_incref(t13);
 #line 159 "<heroes library>"
     t14 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t13};
@@ -504,7 +505,7 @@ bb5:
     t23 = h7_own7;
 #line 159 "<heroes library>"
     h7_own7 = t14;
-#line 508 "fficonstpointer.c"
+#line 159 "<heroes library>"
     h_0opt_f87774a_release(&t23);
 #line 159 "<heroes library>"
     h3_ret0 = t14;
@@ -516,7 +517,7 @@ bb6:
     goto bb4;
 #line 159 "<heroes library>"
 bb7:
-#line 520 "fficonstpointer.c"
+#line 521 "fficonstpointer.c"
     t18 = h3_ret0;
     h_0opt_f87774a_retain(&t18);
     hero_str_release_at(&h2_text);

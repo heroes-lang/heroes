@@ -127,11 +127,11 @@ bb0:
     t2 = h0_xs;
 #line 10 "tests/golden/ir/adversarial-continue-steps.hero"
     t23 = h2_xs0;
-#line 131 "adversarialcontinuesteps.c"
+#line 10 "tests/golden/ir/adversarial-continue-steps.hero"
     hero_array_incref(t2);
 #line 10 "tests/golden/ir/adversarial-continue-steps.hero"
     h2_xs0 = t2;
-#line 135 "adversarialcontinuesteps.c"
+#line 10 "tests/golden/ir/adversarial-continue-steps.hero"
     hero_array_decref(t23);
 #line 10 "tests/golden/ir/adversarial-continue-steps.hero"
     t3 = INT64_C(0);
