@@ -7,10 +7,17 @@
 # 4,000 of each was 4,000 reports, a line copied under every one. A run of
 # closers one line holds, each report of the same code in the same words at
 # one closer byte and nothing between them but closers and spaces, is one
-# report at the first, a note saying how many stand after it. A report that
-# names the closer's own place in its words, `expected_separator`'s *the `[`
-# still open at column 11*, differs from the next and is told apart, as is
-# one with a fix or a note of its own: dropped, it would no longer be read.
+# report at the first, a note saying how many stand after it. A report with
+# a fix or a note of its own is told apart: dropped, it would no longer be
+# read.
+#
+# **Reports alike but for a number are one run too** (defect 525,
+# 2026-10-09): `x = [[[[1))))` is four lists each closed by `)`, and
+# `expected_separator` names each its own `[`, *the `[` still open at column
+# 12*, then 11, 10 and 9, so the four were told four times where `((((1]]]]`
+# was told once. Adjacent closers close openers one inside the next, so the
+# run's note says the closers after the first are each for the next opener
+# out, where the words of each name it.
 #
 # | entry | called by |
 # |---|---|
@@ -33,8 +40,14 @@ function told_once(said: [diag.Diagnostic], text: str) -> [diag.Diagnostic]
 
         if j - i > 1
             told: diag.Diagnostic @ said[i]
+            outward: str @ ""
+
+            if said[j - 1].message != said[i].message && j - i > 2
+                outward @ ", each for the next opener out"
+            else if said[j - 1].message != said[i].message
+                outward @ ", for the next opener out"
             told.notes @ told.notes.push(
-                after(more: j - i - 1) + ", `" + text.slice(from: said[i + 1].span.start, to: said[j - 1].span.end) + "`"
+                after(more: j - i - 1) + ", `" + text.slice(from: said[i + 1].span.start, to: said[j - 1].span.end) + "`" + outward
             )
             out @ out.push(told)
         else
@@ -49,10 +62,14 @@ function after(more: i64) -> str
         return "the same stands at the closer after it on its line"
     return "the same stands at the " + more.to_str() + " closers after it on its line"
 
-# Whether `next` is a report in the same words as `first`, neither with a fix
-# or a note, at a closer right after it on its line.
+# Whether `next` is a report in the same words as `first` but for its
+# numbers, neither with a fix or a note, at a closer right after it on its
+# line.
 function follows(first: diag.Diagnostic, next: diag.Diagnostic, text: str) -> bool
-    if first.code != next.code || first.message != next.message || first.fixes.len() > 0 || first.notes.len() > 0 || next.fixes.len() > 0 || next.notes.len() > 0
+    if first.code != next.code || first.fixes.len() > 0 || first.notes.len() > 0 || next.fixes.len() > 0 || next.notes.len() > 0
+        return false
+
+    if first.message != next.message && without_digits(first.message) != without_digits(next.message)
         return false
 
     if !closer_at(text, first.span) || !closer_at(text, next.span) || next.span.start < first.span.end
@@ -65,6 +82,22 @@ function follows(first: diag.Diagnostic, next: diag.Diagnostic, text: str) -> bo
         i @ i + 1
 
     return true
+
+# `message` with every decimal digit left out: the words two reports share
+# where each names its own opener's place.
+function without_digits(message: str) -> str
+    kept: [str] @ []
+    from: i64 @ 0
+    at: i64 @ 0
+
+    while at <= message.len()
+        if at == message.len() || message[at] >= '0' && message[at] <= '9'
+            if at > from
+                kept @ kept.push(message.slice(from: from, to: at))
+            from @ at + 1
+        at @ at + 1
+
+    return kept.join("")
 
 # Whether `span` is one closer byte of `text`.
 function closer_at(text: str, span: token.Span) -> bool
@@ -99,3 +132,19 @@ test "closers told alike one after another are told once, at the first"
     spaced = told_once([said_at(0, "m"), said_at(3, "m")], text: "]  ]\n")
     assert spaced.len() == 1
     assert spaced[0].notes == ["the same stands at the closer after it on its line, `]`"]
+
+# Defect 525: four lists closed by `)`, each naming its own `[`, are one run,
+# and the note says each closer after the first is for the next opener out.
+test "closers told alike but for the opener each names are told once, each for the next opener out"
+    text = "x = [[[[1))))\n"
+    told = told_once(
+        [said_at(9, "the `[` at column 8"), said_at(10, "the `[` at column 7"), said_at(11, "the `[` at column 6"), said_at(12, "the `[` at column 5")],
+        text: text
+    )
+    assert told.len() == 1
+    assert told[0].message == "the `[` at column 8"
+    assert told[0].notes == ["the same stands at the 3 closers after it on its line, `)))`, each for the next opener out"]
+    assert without_digits("column 12, line 3") == "column , line "
+    assert told_once([said_at(9, "a `[` at 8"), said_at(10, "a `(` at 7")], text: text).len() == 2
+    one = told_once([said_at(9, "the `[` at column 8"), said_at(10, "the `[` at column 7")], text: text)
+    assert one[0].notes == ["the same stands at the closer after it on its line, `)`, for the next opener out"]
