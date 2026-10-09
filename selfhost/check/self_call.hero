@@ -1,0 +1,261 @@
+# A function whose every path calls the function itself before it returns
+# is refused at that call (panel 199's R1, ratified 2026-10-09, defect 457;
+# design.md §4.7, §4.17). Such a function never gives anything back: a call
+# to it returns only once the call it makes has, and that one makes another.
+#
+# **What counts as a way out** is what `check/path_end.hero` counts, by the
+# same predicates and so by SYNTAX, never by a value: a `return` reached
+# before the call, a `?` that may return before it, the end of a body that
+# returns nothing, and the three written ends, `exit(code:)`, `assert false`
+# and a `while true` with no `break` of its own; **and a call that may end the
+# program**, through a function value (a constant's included), a field or an
+# expression, or to a function that may (`check/may_end.hero`, the sitting's
+# reading R4). An abort nobody wrote, an overflow, an index out of bounds or a
+# `.must()`, is no way out: it ends the program, and the function still gives
+# nothing back.
+#
+# **What counts as the function itself** is the resolver's answer, never a
+# name: a plain call whose callee resolves to this declaration, and its UFCS
+# spelling `x.f()` (spec § 9: `x.f(y)` is `f(x, y)`) where the checker itself
+# reads it so, asked of `check/walk.hero` and never read twice (§4.11: a field
+# of the receiver holding a function takes the call first; an `@` first
+# parameter takes no UFCS, `ufcs_on_mutable`). A same-named function of
+# another module, a variant case `.f(...)` and a call through a function value
+# are not the function.
+#
+# **What a path is**: statements in order; the right side of `&&` and `||`,
+# a branch, an arm, a loop's body and a `for`'s are on some paths only, a
+# condition and an iterable on every path through them; and a call is made
+# once its arguments are, so a call among them comes first. Where the walk
+# stands, and its moves, are `check/self_walk.hero`'s.
+
+use token
+use ast
+use source
+use resolved
+use check/state
+use check/path_end
+use check/walk
+use check/may_end
+use check/self_walk
+
+## The rule
+
+function walked(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], at: i64, body: ast.Block, collect: bool) -> self_walk.Walk
+    w: self_walk.Walk @ self_walk.start(at: at, collect: collect)
+    block(@w, @c, a, r, s, decls, body: body)
+
+    # The end of the body returns, from a function with no result; from one
+    # with a result it is `missing_return`'s, and a way out all the same.
+    self_walk.leave(@w)
+    return w
+
+## Statements
+
+# A block's statements in order; those after a jump word never run, and their
+# `break`s are no loop's (`path_end.is_jump`, defect 208).
+function block(@w: self_walk.Walk, @c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], body: ast.Block)
+    for id in body.stmts
+        statement(@w, @c, a, r, s, decls, id: id)
+
+        if path_end.is_jump(a, at: id)
+            return
+
+function statement(@w: self_walk.Walk, @c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], id: i64)
+    match a.stmts[id].kind
+        .bind b    => expr(@w, @c, a, r, s, decls, id: b.value)
+        .declare d => expr(@w, @c, a, r, s, decls, id: d.value)
+        .mutate m =>
+            expr(@w, @c, a, r, s, decls, id: m.value)
+            expr(@w, @c, a, r, s, decls, id: m.place)
+        .return_stmt rv =>
+            if !rv.value.is_err()
+                expr(@w, @c, a, r, s, decls, id: rv.value.must())
+            self_walk.leave(@w)
+        .break_stmt    => self_walk.jumped(@w, broke: true)
+        .continue_stmt => self_walk.jumped(@w, broke: false)
+        .assert_stmt v =>
+            expr(@w, @c, a, r, s, decls, id: v.value)
+
+            if path_end.aborts(a, s, value: v.value)
+                self_walk.leave(@w)
+        .while_stmt l => looped(@w, @c, a, r, s, decls, cond: ok(l.cond), body: l.block)
+        .for_in f =>
+            expr(@w, @c, a, r, s, decls, id: f.iterable)
+            looped(@w, @c, a, r, s, decls, cond: fail(code: "none", msg: "a for"), body: f.block)
+        .expr_stmt v =>
+            expr(@w, @c, a, r, s, decls, id: v.value)
+
+            if path_end.calls_exit(a, r, s, decls, value: v.value)
+                self_walk.leave(@w)
+        .error => return
+
+# A loop's head is where its entry meets its turns, and a call made on every
+# path to the head was made before the loop, so the body is walked once. A
+# `for` and a `while <cond>` may run no turn; a `while true` leaves only by a
+# `break`, and with none of its own it ends its path.
+function looped(@w: self_walk.Walk, @c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], cond: i64?, body: ast.Block)
+    if !cond.is_err()
+        expr(@w, @c, a, r, s, decls, id: cond.must())
+    head = w.flow
+    self_walk.enter_loop(@w.frames)
+    block(@w, @c, a, r, s, decls, body: body)
+    top = self_walk.leave_loop(@w.frames)
+    turns = self_walk.meet(one: top.turns, two: w.flow)
+
+    if cond.is_err()
+        w.flow @ self_walk.meet(one: head, two: top.breaks)
+        return
+
+    if path_end.forever(a, s, cond: cond.must(), broken: top.broke)
+        if turns.live && !turns.called
+            w.escaped @ true
+        w.flow @ self_walk.dead()
+        return
+
+    if path_end.forever(a, s, cond: cond.must(), broken: false)
+        w.flow @ top.breaks
+        return
+    w.flow @ self_walk.meet(one: head, two: top.breaks)
+
+## Expressions
+
+function expr(@w: self_walk.Walk, @c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], id: i64)
+    match a.exprs[id].kind
+        .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit | .null_ptr => return
+        .hole | .field_name | .error                                         => return
+        .name =>
+            match r.uses[id]
+                .top t =>
+                    if may_end.constant_function(c, decls, at: t.at, id: id)
+                        self_walk.may_leave(@w)
+                    else
+                        self_walk.other_call(@w, decls, at: t.at)
+                .local l =>
+                    if w.flow.live && !w.flow.called && may_end.holds_a_function(c, at: l.at)
+                        self_walk.may_leave(@w)
+                .builtin | .module | .unresolved => return
+        .interp ip =>
+            for h in ip.holes
+                expr(@w, @c, a, r, s, decls, id: h)
+        .unary u => expr(@w, @c, a, r, s, decls, id: u.operand)
+        .binary b =>
+            expr(@w, @c, a, r, s, decls, id: b.left)
+            before = w.flow
+            expr(@w, @c, a, r, s, decls, id: b.right)
+
+            # The right side of `&&` and `||` runs on one path and not the other.
+            if b.op == .and || b.op == .or
+                w.flow @ self_walk.meet(one: before, two: w.flow)
+        .field f =>
+            if r.uses[f.base] != .module
+                expr(@w, @c, a, r, s, decls, id: f.base)
+        .index i =>
+            expr(@w, @c, a, r, s, decls, id: i.base)
+            expr(@w, @c, a, r, s, decls, id: i.index)
+        .call cl        => call(@w, @c, a, r, s, decls, id: id, callee: cl.callee, given: cl.args)
+        .method m       => method(@w, @c, a, r, s, decls, id: id, receiver: m.receiver, name: m.name, given: m.args)
+        .variant_case v => arguments(@w, @c, a, r, s, decls, given: v.args, own: false)
+        .array el =>
+            for e in el.elements
+                expr(@w, @c, a, r, s, decls, id: e)
+        .map en =>
+            for e in en.entries
+                expr(@w, @c, a, r, s, decls, id: e.key)
+                expr(@w, @c, a, r, s, decls, id: e.value)
+        .try_expr t =>
+            expr(@w, @c, a, r, s, decls, id: t.value)
+
+            # `?` hands the error back, so a path may return here; the one
+            # that did not fail goes on.
+            self_walk.may_leave(@w)
+        .if_expr br   => branches(@w, @c, a, r, s, decls, arms: br.branches, otherwise: br.otherwise)
+        .match_expr m => matched(@w, @c, a, r, s, decls, scrutinee: m.scrutinee, arms: m.arms)
+
+# The arguments in order. A function handed to the function itself is no way
+# out by being handed: the body it reaches is this one, which calls what it
+# holds only where this walk sees the call (`own`).
+function arguments(@w: self_walk.Walk, @c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], given: [ast.Arg], own: bool)
+    for arg in given
+        if !own || a.exprs[arg.value].kind != .name
+            expr(@w, @c, a, r, s, decls, id: arg.value)
+
+# A call is made once its callee and its arguments are, so a call among the
+# arguments comes before it: in `stop(f(n))` inside `function f`, `f` is
+# called before `stop` can end anything. A call through a function value or
+# an expression may be a call to anything (the name's own visit says so for
+# a value).
+function call(@w: self_walk.Walk, @c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], id: i64, callee: i64, given: [ast.Arg])
+    if a.exprs[callee].kind != .name
+        expr(@w, @c, a, r, s, decls, id: callee)
+        arguments(@w, @c, a, r, s, decls, given: given, own: false)
+        self_walk.may_leave(@w)
+        return
+    own = names_itself(r, w, at: callee, ufcs: false, decls: decls)
+    arguments(@w, @c, a, r, s, decls, given: given, own: own)
+    expr(@w, @c, a, r, s, decls, id: callee)
+
+    if own
+        self_walk.hit(@w, id: id)
+
+# `m.f(x)` names another module's `f` or this one's, by the resolver's
+# answer; `x.f(y)` calls a field of `x` holding a function where one is named
+# so, and is `f(x, y)` otherwise, as the checker's `method` reads it, its
+# receiver the first argument.
+function method(@w: self_walk.Walk, @c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], id: i64, receiver: i64, name: token.Span, given: [ast.Arg])
+    qualified = r.uses[receiver] == .module
+    field = !qualified && !walk.field_of_function_type(@c, a, r, s, decls, receiver: c.out.expr_types[receiver], name: source.span_text(s, name)).is_err()
+    own = !field && names_itself(r, w, at: id, ufcs: !qualified, decls: decls)
+
+    if !qualified && !(own && a.exprs[receiver].kind == .name)
+        expr(@w, @c, a, r, s, decls, id: receiver)
+    arguments(@w, @c, a, r, s, decls, given: given, own: own)
+
+    if field
+        self_walk.may_leave(@w)
+    else if own
+        self_walk.hit(@w, id: id)
+    else
+        match r.uses[id]
+            .top t                                    => self_walk.other_call(@w, decls, at: t.at)
+            .local | .builtin | .module | .unresolved => return
+
+# Whether the call at `at` is the function itself, by the resolver's answer;
+# spelled `x.f()`, only where `x` can be its first argument (an `@` first
+# parameter takes no UFCS, `ufcs_on_mutable`).
+function names_itself(r: resolved.Resolved, w: self_walk.Walk, at: i64, ufcs: bool, decls: [ast.Decl]) -> bool
+    match r.uses[at]
+        .top t => return t.at == w.decl && (!ufcs || !walk.ufcs_hides_the_marker(decls, decl: t.at))
+        .local | .builtin | .module | .unresolved => return false
+
+## Where control splits
+
+function branches(@w: self_walk.Walk, @c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], arms: [ast.Branch], otherwise: ast.Block?)
+    out: self_walk.Flow @ self_walk.dead()
+
+    for one in arms
+        expr(@w, @c, a, r, s, decls, id: one.cond)
+        tested = w.flow
+        block(@w, @c, a, r, s, decls, body: one.block)
+        out @ self_walk.meet(one: out, two: w.flow)
+        w.flow @ tested
+
+    if !otherwise.is_err()
+        block(@w, @c, a, r, s, decls, body: otherwise.must())
+    w.flow @ self_walk.meet(one: out, two: w.flow)
+
+function matched(@w: self_walk.Walk, @c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], scrutinee: i64, arms: [ast.Arm])
+    expr(@w, @c, a, r, s, decls, id: scrutinee)
+    entry = w.flow
+    out: self_walk.Flow @ self_walk.dead()
+
+    for arm in arms
+        w.flow @ entry
+
+        match arm.body
+            .one_stmt one => statement(@w, @c, a, r, s, decls, id: one.at)
+            .block bb     => block(@w, @c, a, r, s, decls, body: bb.block)
+
+        out @ self_walk.meet(one: out, two: w.flow)
+
+    w.flow @ out

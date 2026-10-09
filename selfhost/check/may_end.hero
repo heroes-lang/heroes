@@ -1,0 +1,223 @@
+# Whether a call to a function may end the program before it returns, for
+# `check/self_call.hero` (panel 199's reading R4, after its completeness
+# critic's second pass; ratified 2026-10-09). A call is a way out of a function that calls itself
+# only where the callee may end the program; a call to `map` or to a helper
+# that only computes is not, so `xs.filter(is_even).count()` inside `function
+# count` is refused, where the reading before it (R3) let any call through.
+#
+# **What may end**, read by syntax and always in the direction that spares a
+# program: an `extern` (C may end the process), `assert false`, any `while
+# true` (a `break` of its own is not looked for), a call through a field
+# holding a function, through an expression that is not a name, or through a
+# function value that is not the function's own parameter, a constant's
+# included; and a reference to a function that may end, whether called or
+# handed on as a value. A call
+# through the function's OWN parameter is judged at each call site instead,
+# by what is handed in: `map(xs, f)` may end where `f` may, which is what lets
+# the library's `map`, `filter` and `fold` through. `exit(code:)` is the
+# library's, calling the `extern` `hero_exit`, so it may end by the first
+# rule. The answer is the least fixpoint over the program's functions.
+#
+# Built only when a function would be refused and has calls on the paths
+# before its self-call, so a program that writes no such function pays
+# nothing for it.
+
+use ast
+use source
+use resolved
+use check/table
+use check/state
+use check/path_end
+use check/walk
+
+# One function's facts: whether it may end by itself, and the functions it
+# names, any of which may end it.
+record Facts
+    owner: i64
+    ends: bool
+    names: [i64]
+
+# For every declaration, by index: whether a call to it may end the program.
+function answers(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl]) -> [bool]
+    ends: [bool] @ []
+    names_of: [[i64]] @ []
+    at: i64 @ 0
+
+    for decl in decls
+        none: [i64] = []
+        f: Facts @ Facts(owner: at, ends: false, names: none)
+
+        match decl.kind
+            .function_decl fd =>
+                if fd.value.is_extern
+                    f.ends @ true
+                else if !fd.value.body.is_err()
+                    block(@f, @c, a, r, s, decls, body: fd.value.body.must())
+            .constant_decl | .record_decl | .variant_decl | .test_decl => f.ends @ false
+
+        ends @ ends.push(f.ends)
+        names_of @ names_of.push(f.names)
+        at @ at + 1
+
+    changed: bool @ true
+
+    while changed
+        changed @ false
+        i: i64 @ 0
+
+        while i < ends.len()
+            if !ends[i]
+                for d in names_of[i]
+                    if ends[d] && !ends[i]
+                        ends[i] @ true
+                        changed @ true
+
+            i @ i + 1
+
+    return ends
+
+function block(@f: Facts, @c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], body: ast.Block)
+    for id in body.stmts
+        statement(@f, @c, a, r, s, decls, id: id)
+
+function statement(@f: Facts, @c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], id: i64)
+    match a.stmts[id].kind
+        .bind b    => expr(@f, @c, a, r, s, decls, id: b.value)
+        .declare d => expr(@f, @c, a, r, s, decls, id: d.value)
+        .mutate m =>
+            expr(@f, @c, a, r, s, decls, id: m.value)
+            expr(@f, @c, a, r, s, decls, id: m.place)
+        .return_stmt rv =>
+            if !rv.value.is_err()
+                expr(@f, @c, a, r, s, decls, id: rv.value.must())
+        .break_stmt | .continue_stmt | .error => return
+        .assert_stmt v =>
+            expr(@f, @c, a, r, s, decls, id: v.value)
+
+            if path_end.aborts(a, s, value: v.value)
+                f.ends @ true
+        .while_stmt l =>
+            expr(@f, @c, a, r, s, decls, id: l.cond)
+            block(@f, @c, a, r, s, decls, body: l.block)
+
+            if path_end.forever(a, s, cond: l.cond, broken: false)
+                f.ends @ true
+        .for_in fi =>
+            expr(@f, @c, a, r, s, decls, id: fi.iterable)
+            block(@f, @c, a, r, s, decls, body: fi.block)
+        .expr_stmt v => expr(@f, @c, a, r, s, decls, id: v.value)
+
+function expr(@f: Facts, @c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], id: i64)
+    match a.exprs[id].kind
+        .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit | .null_ptr | .hole | .field_name | .error => return
+        .name =>
+            match r.uses[id]
+                .top t =>
+                    if constant_function(c, decls, at: t.at, id: id)
+                        f.ends @ true
+                    else
+                        named(@f, decls, at: t.at)
+                .local l =>
+                    if holds_a_function(c, at: l.at) && !(r.locals[l.at].kind == .param && r.locals[l.at].owner == f.owner)
+                        f.ends @ true
+                .builtin | .module | .unresolved => return
+        .interp ip =>
+            for h in ip.holes
+                expr(@f, @c, a, r, s, decls, id: h)
+        .unary u => expr(@f, @c, a, r, s, decls, id: u.operand)
+        .binary b =>
+            expr(@f, @c, a, r, s, decls, id: b.left)
+            expr(@f, @c, a, r, s, decls, id: b.right)
+        .field fl =>
+            if r.uses[fl.base] != .module
+                expr(@f, @c, a, r, s, decls, id: fl.base)
+        .index i =>
+            expr(@f, @c, a, r, s, decls, id: i.base)
+            expr(@f, @c, a, r, s, decls, id: i.index)
+        .call cl =>
+            expr(@f, @c, a, r, s, decls, id: cl.callee)
+            arguments(@f, @c, a, r, s, decls, given: cl.args)
+
+            if a.exprs[cl.callee].kind != .name
+                f.ends @ true
+        .method m =>
+            qualified = r.uses[m.receiver] == .module
+
+            if !qualified
+                expr(@f, @c, a, r, s, decls, id: m.receiver)
+            arguments(@f, @c, a, r, s, decls, given: m.args)
+
+            if !qualified && !walk.field_of_function_type(@c, a, r, s, decls, receiver: c.out.expr_types[m.receiver], name: source.span_text(s, m.name)).is_err()
+                f.ends @ true
+            else
+                match r.uses[id]
+                    .top t                                    => named(@f, decls, at: t.at)
+                    .local | .builtin | .module | .unresolved => return
+        .variant_case v => arguments(@f, @c, a, r, s, decls, given: v.args)
+        .array el =>
+            for e in el.elements
+                expr(@f, @c, a, r, s, decls, id: e)
+        .map en =>
+            for e in en.entries
+                expr(@f, @c, a, r, s, decls, id: e.key)
+                expr(@f, @c, a, r, s, decls, id: e.value)
+        .try_expr t => expr(@f, @c, a, r, s, decls, id: t.value)
+        .if_expr br =>
+            for one in br.branches
+                expr(@f, @c, a, r, s, decls, id: one.cond)
+                block(@f, @c, a, r, s, decls, body: one.block)
+
+            if !br.otherwise.is_err()
+                block(@f, @c, a, r, s, decls, body: br.otherwise.must())
+        .match_expr mt =>
+            expr(@f, @c, a, r, s, decls, id: mt.scrutinee)
+
+            for arm in mt.arms
+                match arm.body
+                    .one_stmt one => statement(@f, @c, a, r, s, decls, id: one.at)
+                    .block bb     => block(@f, @c, a, r, s, decls, body: bb.block)
+
+function arguments(@f: Facts, @c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], given: [ast.Arg])
+    for arg in given
+        expr(@f, @c, a, r, s, decls, id: arg.value)
+
+# A function this one names, called or handed on, other than itself.
+function named(@f: Facts, decls: [ast.Decl], at: i64)
+    if at == f.owner
+        return
+
+    match decls[at].kind
+        .function_decl _                                           => append(@f.names, at: at)
+        .constant_decl | .record_decl | .variant_decl | .test_decl => return
+
+# Lent, so the list grows in place (defect 409: grown through the field, a
+# function naming a thousand others copied it a thousand times).
+function append(@names: [i64], at: i64)
+    names @ names.push(at)
+
+# Whether any function named is one that may end the program.
+function any_of(ends: [bool], names: [i64]) -> bool
+    for at in names
+        if at < ends.len() && ends[at]
+            return true
+
+    return false
+
+# Whether a local holds a function value, by the type the checker gave it.
+function holds_a_function(c: state.Checker, at: i64) -> bool
+    return is_function(c, ty: state.local_type(c.out, index: at))
+
+# Whether the name at `id` is a constant holding a function, by the type the
+# checker gave the name: a call through it is a call through a function value,
+# and handing it on hands one on (`constant HANDLER: (function(i64) -> ())`).
+function constant_function(c: state.Checker, decls: [ast.Decl], at: i64, id: i64) -> bool
+    match decls[at].kind
+        .constant_decl _                                           => return is_function(c, ty: c.out.expr_types[id])
+        .function_decl | .record_decl | .variant_decl | .test_decl => return false
+
+function is_function(c: state.Checker, ty: i64) -> bool
+    return match table.get(c.out.types, ty)
+        .function_ty                                              => true
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => false
+        .array | .fixed | .map | .fallible | .named               => false
+        .case_ty | .failure | .generic | .error                   => false

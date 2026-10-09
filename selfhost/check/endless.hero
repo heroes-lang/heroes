@@ -1,0 +1,43 @@
+# Panel 199's rule over a program (R1, ratified 2026-10-09; defect 457): each
+# function the program writes, walked by `check/self_call.hero`, is refused at
+# its first self-call where no path returns or ends before one, and none calls
+# a function that may end the program (`check/may_end.hero`, reading R4). The
+# walk is a knot, a statement holding expressions and an expression holding
+# blocks; this is what drives it, cut from it along that seam as
+# `check/moved.hero` is from `check/moved_walk.hero`.
+
+use ast
+use source
+use resolved
+use check/state
+use check/self_call
+use check/may_end
+use flow_errors
+
+# Every function the program writes, with a body, after the types are
+# written (`checker.hero`); the library's are not asked.
+function every_path_calls_itself(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl])
+    at: i64 @ 0
+    ends: [bool] @ []
+
+    for decl in decls
+        match decl.kind
+            .function_decl fd =>
+                if !fd.value.is_extern && !fd.value.body.is_err() && !source.is_library(s, decl.name.start)
+                    w = self_call.walked(@c, a, r, s, decls, at: at, body: fd.value.body.must(), collect: false)
+                    named: [i64] @ []
+
+                    if !w.escaped && w.witness >= 0 && w.saw
+                        named @ self_call.walked(@c, a, r, s, decls, at: at, body: fd.value.body.must(), collect: true).named
+
+                        if ends.len() == 0
+                            ends @ may_end.answers(@c, a, r, s, decls)
+
+                    if !w.escaped && w.witness >= 0 && !may_end.any_of(ends, names: named)
+                        state.push_diagnostic(
+                            @c,
+                            flow_errors.endless_recursion_at(a, r, s, decls, at: at, site: w.witness)
+                        )
+            .constant_decl | .record_decl | .variant_decl | .test_decl => at @ at
+
+        at @ at + 1

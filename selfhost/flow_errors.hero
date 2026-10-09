@@ -12,6 +12,9 @@
 
 use token
 use diag
+use ast
+use source
+use resolved
 
 # `inner` is the operand's own span, so the fix deletes exactly what lies
 # between the operand's end and the expression's — the `?`, and any space
@@ -256,6 +259,49 @@ function missing_return(name: str, want: str, span: token.Span) -> diag.Diagnost
         "a value at the end of a path is not returned: a function hands its value back only through `return`, so write `return` before it"
     )
     return d
+
+# A function every path of which calls the function itself before it
+# returns (panel 199's R1, defect 457; `check/self_call.hero`), told at
+# the first such call, naming the function. `spelled` and `receiver` are the
+# call's text and its receiver's where it is written `x.f(y)`, "" otherwise:
+# that spelling is how the author meets the shape (defect 455), and the note
+# says what it means. No fix: which path should return, and what, are the
+# author's to say, and any edit changes what the function does.
+function endless_recursion(name: str, spelled: str, receiver: str, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "endless_recursion",
+        message: "every path through `" + name + "` calls `" + name + "` again before it returns, so no call to it can return",
+        span: span
+    )
+
+    if spelled != ""
+        d.notes @ d.notes.push(
+            "`" + spelled + "` calls `" + name + "` with `" + receiver + "` first, since `x.f(y)` is `f(x, y)`, and inside `function " + name + "` that is this function"
+        )
+    d.notes @ d.notes.push(
+        "a call to `" + name + "` gives nothing back until the call it makes does, and that one makes another: give `" + name + "` a path that returns before the call, or ends on `exit(code:)`, `assert false` or a `while true` with no `break` of its own; an overflow or an index out of bounds stops the program and is no such path"
+    )
+    return d
+
+# The words the message is built from: the function's name, and for a call
+# written `x.f(y)` its own text and its receiver's, since that spelling is how
+# the author meets the shape (defect 455). A receiver the resolver reads as a
+# module names where `f` lives, `m.f(y)`, and is no first argument.
+function endless_recursion_at(a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], at: i64, site: i64) -> diag.Diagnostic
+    name = source.span_text(s, decls[at].name)
+    spelled: str @ ""
+    receiver: str @ ""
+
+    match a.exprs[site].kind
+        .method m =>
+            if r.uses[m.receiver] != .module
+                spelled @ source.span_text(s, a.exprs[site].span)
+                receiver @ source.span_text(s, a.exprs[m.receiver].span)
+        .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit | .interp | .null_ptr => spelled @ spelled
+        .name | .hole | .unary | .binary | .field | .field_name | .index | .call       => spelled @ spelled
+        .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error    => spelled @ spelled
+
+    return endless_recursion(name: name, spelled: spelled, receiver: receiver, span: a.exprs[site].span)
 
 ## Tests
 
