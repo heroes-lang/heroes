@@ -1439,7 +1439,9 @@ function method(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.S
             # The resolver already said what is wrong with it.
 
             .unresolved | .local | .builtin | .module => return state.error_ty_of(c)
+    said = c.out.diagnostics.len()
     receiver_ty = synth(@c, a, r, s, decls, receiver)
+    generic_argument.retell_receiver(@c, a, r, s, decls, from: said, id: receiver, at: at)
     name = source.span_text(s, called)
     field = field_of_function_type(@c, a, r, s, decls, receiver: receiver_ty, name: name)
 

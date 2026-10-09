@@ -51,11 +51,45 @@ function retell(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.S
                 form: form,
                 callee: source.span_text(s, decls[decl].name),
                 fd: fd.value,
-                at: at
+                at: at,
+                receiver: false
             )
         .constant_decl | .record_decl | .variant_decl | .test_decl => return
 
-function told_at(@c: state.Checker, a: ast.Ast, s: source.Source, decls: [ast.Decl], from: i64, id: i64, form: str, callee: str, fd: ast.FunctionDecl, at: i64)
+# The same, of the receiver `id` of the call `at`, `ok(1).h()` (defect 551):
+# the walk synthesises a receiver before it asks what the call names, since
+# `x.f()` may call a field of `x`, so its position asks for no type either,
+# and the message advised *pass it where a `T?` is expected*, which the
+# program had done. Told only where the call names a function of the
+# program with a first parameter, whose type the fix then writes.
+function retell_receiver(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], from: i64, id: i64, at: i64)
+    form = form_of(a, r, s, id)
+
+    if form == "" || from >= c.out.diagnostics.len()
+        return
+
+    match r.uses[at]
+        .top t =>
+            match decls[t.at].kind
+                .function_decl fd =>
+                    if fd.value.params.len() > 0
+                        told_at(
+                            @c,
+                            a,
+                            s,
+                            decls,
+                            from: from,
+                            id: id,
+                            form: form,
+                            callee: source.span_text(s, decls[t.at].name),
+                            fd: fd.value,
+                            at: 0,
+                            receiver: true
+                        )
+                .constant_decl | .record_decl | .variant_decl | .test_decl => return
+        .local | .builtin | .module | .unresolved => return
+
+function told_at(@c: state.Checker, a: ast.Ast, s: source.Source, decls: [ast.Decl], from: i64, id: i64, form: str, callee: str, fd: ast.FunctionDecl, at: i64, receiver: bool)
     span = a.exprs[id].span
     parameter = fd.params[at]
     letters: [str] @ []
@@ -88,6 +122,13 @@ function told_at(@c: state.Checker, a: ast.Ast, s: source.Source, decls: [ast.De
                 at: k,
                 d: told(form: form, callee: callee, parameter: source.span_text(s, parameter.name), written: written, text: source.span_text(s, span), span: span)
             )
+
+            if receiver
+                replace(
+                    @c.out.diagnostics,
+                    at: k,
+                    d: receiver_told(form: form, callee: callee, written: written, text: source.span_text(s, span), span: span)
+                )
         k @ k + 1
 
 # Lent, so the list is written in place (defect 350's shape).
@@ -133,6 +174,19 @@ function told(form: str, callee: str, parameter: str, written: str, text: str, s
     )
     d.fixes @ d.fixes.push(
         diag.Fix(title: "bind it first, `v: " + written + " = " + text + "`, and pass `v`", replacement: "", span: span, certainty: .guess)
+    )
+    return d
+
+# The receiver's message: what the form takes its type from, that the value
+# written before the call's name gives none, and the fix that binds it first.
+function receiver_told(form: str, callee: str, written: str, text: str, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "cannot_infer",
+        message: "`" + form + "` takes its type from the type the context asks for, and the value written before `." + callee + "(…)` asks for none: its type is read first, to know what the call names",
+        span: span
+    )
+    d.fixes @ d.fixes.push(
+        diag.Fix(title: "bind it first, `v: " + written + " = " + text + "`, and call `v." + callee + "(…)`", replacement: "", span: span, certainty: .guess)
     )
     return d
 
