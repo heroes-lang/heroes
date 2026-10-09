@@ -8,8 +8,12 @@
 # aborts at every level. `check` lets it through: mutual recursion is no
 # shape `endless_recursion` reads (panel 199's R7, filed apart). Under the
 # sanitiser the runtime's guard yields to ASan, which says `stack-overflow`.
+# Corrected 2026-10-09, defect 520 and panel 201's R3, ratified: `check`
+# refuses it now, `endless_recursion`, and the case moved from `run/` to
+# `check/`; what aborts at every level since is a cycle with a way out it
+# never takes, `run/fixedbugs-520-...`, the witness that replaced this one.
 function ping(n: i64) -> i64
-    return pong(n)
+    return pong(n)  #~ endless_recursion
 
 function pong(n: i64) -> i64
     return ping(n)
