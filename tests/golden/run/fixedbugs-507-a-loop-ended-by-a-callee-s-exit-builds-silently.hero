@@ -1,0 +1,19 @@
+# Defect 507's class and panel 199's R3, ratified 2026-10-09: a correct
+# program whose recursion ends on a callee's `exit`. Panel 199's R1 spares
+# it, the call before the self-call being one that may end the program
+# (reading R4), and it prints 0, 1 and 2 and exits 0 at every level. Since R3
+# clang's `-Winfinite-recursion` is not passed on (`-Wno-infinite-recursion`,
+# `selfhost/cli/flags.hero`), the checker its witness, and the `warnings`
+# suite holds this build to no clang warning. Reading R1 refused it, which
+# is why R4 was built (`calleeexit` in the sitting).
+function work(n: i64)
+    if n > 2
+        exit(code: 0)
+    print(n)
+
+function turn(n: i64)
+    work(n: n)
+    turn(n: n + 1)
+
+function main()
+    turn(n: 0)
