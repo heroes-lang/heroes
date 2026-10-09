@@ -40,8 +40,24 @@
 # the check and never to lower anything. That is the ratchet, and it is the one
 # shape panel 134's historian found that ever held: the number moves one way, and
 # the human is left with nothing to decide except when.
+#
+# **The two sides are not the same kind of finding, and since 2026-10-09 they
+# are not the same outcome** (defect 536). A count BELOW its floor is a walk that
+# stopped reaching the tree: every comparison under it is about to pass
+# vacuously, and it is a failure, as it always was. A count PAST its floor is a
+# tree that grew: nothing under it is wrong today, and what decays is the floor's
+# reach, slowly, the housekeeping the author named on 2026-09-12. Until defect
+# 536 both were a red, and over batches 8 to 15 the high side was gate B's most
+# frequent one, about 24 reds of 26, none a defect of the compiler. The
+# optimistic chain of 2026-10-09 (`.claude/rules/verification.md`) asked that it
+# stop turning a batch red while the decay side stayed. So the high side passes
+# and is TOLD: `report.keep_outgrown` keeps the floor with the number to write,
+# the verdict prints it beside the skips, and the suite's line counts it
+# (`report.counted`), so every run says it and none goes red on it. What it still
+# asks is the same raise, made on purpose rather than to unblock a gate.
 
 use report
+use strings
 
 # How far a count may run ahead of its floor before the floor is reported as
 # outgrown, in percent.
@@ -55,6 +71,10 @@ use report
 # It is also the number that makes the six rows above fire today, which is the
 # only way to know the check is not decoration — every one of them is over 25%,
 # and four are over 40%.
+#
+# Since defect 536 (2026-10-09) crossing it is told and counted rather than
+# failed, so the number decides when a floor is named, never whether a gate
+# passes.
 constant SLACK: i64
     25
 
@@ -62,7 +82,8 @@ constant SLACK: i64
 #
 # `found` is what the suite counted, `floor` the number it holds, `what` the
 # thing being counted, in the suite's own words, for the message.
-# The same check where the caller has to STOP on a bad count.
+# The same check where the caller has to STOP on a bad count; a floor outgrown
+# is told and is not a reason to stop.
 #
 # Most floors guard an extractor, and everything under one reads what the
 # extractor produced: a check that carries on after an empty read does not fail
@@ -83,13 +104,14 @@ function check(@r: report.Report, label: str, found: i64, floor: i64, what: str)
         )
         return
 
+    # The count is sound whatever the high side says, so it is a pass; a floor
+    # the tree has outgrown is told beside it, never failed (defect 536).
     if outgrown(found: found, floor: floor)
-        report.keep_failure(
+        report.keep_outgrown(
             @r,
             label: label,
-            detail: "  " + what + ": " + found.to_str() + " against a floor of " + floor.to_str() + ", which the tree has outgrown by more than " + SLACK.to_str() + "%.\n  RAISE the floor to " + found.to_str() + " in this commit. A floor is a premise about the world and it expires in silence: this one now passes a walk that misses " + (found - floor).to_str() + " of them, which is the defect it was written to catch.\n  Never lower a count to fit, and never delete the check: the number moves one way, and what is left to decide is when."
+            detail: "  " + what + ": " + found.to_str() + " against a floor of " + floor.to_str() + ", which the tree has outgrown by more than " + SLACK.to_str() + "%.\n  RAISE the floor to " + found.to_str() + ", on purpose and in a commit that says so. A floor is a premise about the world and it expires in silence: this one now passes a walk that misses " + (found - floor).to_str() + " of them, which is the defect it was written to catch.\n  Told and counted, never a failure: never lower a count to fit, and never delete the check; the number moves one way, and what is left to decide is when."
         )
-        return
     report.keep_pass(@r)
 
 # The comparison itself, written once so a test can reach it without a report.
@@ -114,18 +136,44 @@ test "a count under its floor fails, and the message names both numbers"
     assert r.failed == 1
     assert r.passed == 0
 
-test "a count that has outgrown its floor fails, and says which number to write"
+test "a count that has outgrown its floor passes, and is told with the number to write"
     # `suite_canonical`'s real pair on the day this was written, which is the
-    # row that proves the check is not decoration.
+    # row that proves the check is not decoration. Until defect 536 it was a
+    # failure; it is a pass now, and the floor is told and counted beside it.
     r: report.Report @ report.empty()
     check(@r, label: "x", found: 521, floor: 340, what: "files")
-    assert r.failed == 1
+    assert r.failed == 0
+    assert r.passed == 1
+    assert r.outgrown.len() == 1
+    assert strings.starts_with(text: r.outgrown[0], prefix: "FLOOR x\n  files: 521 against a floor of 340")
+    assert strings.contains(text: r.outgrown[0], needle: "RAISE the floor to 521")
+    assert strings.contains(text: r.outgrown[0], needle: "misses 181 of them")
+    assert report.counted(r) == "1 passed, 0 failed, 1 floor outgrown"
+
+    # The caller that stops on a bad count is not stopped by a tree that grew,
+    # and is stopped by one that shrank below its floor.
+    grown: report.Report @ report.empty()
+    assert sound(@grown, label: "x", found: 521, floor: 340, what: "files")
+    assert grown.outgrown.len() == 1
+    shrunk: report.Report @ report.empty()
+    assert !sound(@shrunk, label: "x", found: 300, floor: 340, what: "files")
+    assert shrunk.outgrown.len() == 0
 
 test "an ordinary count passes, and so does one exactly at the edge"
     r: report.Report @ report.empty()
     check(@r, label: "x", found: 150, floor: 140, what: "modules")
     assert r.passed == 1
     assert r.failed == 0
+    assert r.outgrown.len() == 0
+
+    # The edge through `check` itself, so the told side and the arithmetic
+    # below cannot part: 125 against 100 is told nothing, 126 is told.
+    edge: report.Report @ report.empty()
+    check(@edge, label: "x", found: 125, floor: 100, what: "modules")
+    assert edge.outgrown.len() == 0
+    check(@edge, label: "x", found: 126, floor: 100, what: "modules")
+    assert edge.outgrown.len() == 1
+    assert edge.failed == 0
 
     # The boundary, asserted on both sides, because a threshold tested from one
     # side only is a threshold nobody has tested. 125 is 25% above 100 and

@@ -1,0 +1,13 @@
+# Defect 459, 2026-10-09 (lane b17-fix): the whole form of the one message an
+# outer `[` never closed around an inner list gets where a binding below ends
+# the inner one, `x = [[1, 2` over `print(x)` over `y = 3 )`. Until this
+# repair the lexer named the outer `[` never closed at its own place, with its
+# own excerpt, and the binding's report named the inner one, two messages for
+# one `]]` edit; the binding's report now names both and carries the lexer's,
+# which is withdrawn (`check/fixedbugs-459-*` holds the shapes beside it).
+
+function main()
+    x = [[1, 2
+    print(x)
+    y = 3 )  #~ expected_separator expected_end_of_line
+    print(y)

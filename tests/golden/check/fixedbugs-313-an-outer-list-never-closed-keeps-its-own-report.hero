@@ -13,36 +13,44 @@
 # element between, a `}` for the closer, and on the line above; and, beside
 # them, the outer `[` closed by a `]` further down, which the binding's
 # message names with the inner one.
+#
+# Corrected 2026-10-09 (defect 459, lane b17-fix): the outer `[` the lexer
+# named never closed no longer keeps its own report where the binding's report
+# names the inner list. The binding is no item of it either, so it closes on a
+# line above with the inner one, and that report names it with the closers the
+# one edit writes, `]]` or `])]`, and carries the lexer's report, which is
+# withdrawn; this case's name keeps the reading of 2026-10-07. The last shape,
+# closed further down, is unchanged.
 
 function f(a: [i64]) -> i64
     return 1
 
 function on_its_line()
-    x = [[1, 2  #~ unclosed_bracket
+    x = [[1, 2
     print(x)
     y = 3 )  #~ expected_separator expected_end_of_line
     print(y)
 
 function around_a_call()
-    x = [f([1, 2  #~ unclosed_bracket
+    x = [f([1, 2
     print(x)
     y = 3 ))  #~ expected_separator expected_end_of_line
     print(y)
 
 function an_element_between()
-    x = [1, [2, 3  #~ unclosed_bracket
+    x = [1, [2, 3
     print(x)
     y = 3 )  #~ expected_separator expected_end_of_line
     print(y)
 
 function a_brace_for_the_closer()
-    x = [[1, 2  #~ unclosed_bracket
+    x = [[1, 2
     print(x)
     y = 3 }  #~ expected_separator expected_end_of_line
     print(y)
 
 function on_the_line_above()
-    x = [  #~ unclosed_bracket
+    x = [
         [1, 2
     print(x)
     y = 3 )  #~ expected_separator expected_end_of_line

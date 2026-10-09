@@ -92,6 +92,175 @@ function matching(found: [Case], only: str) -> [Case]
 
     return kept
 
+# **A shard of a suite's cases, the third word's second form** (defect 537,
+# 2026-10-09). `run` was the batch gate's critical path, 19:40 of gate B's
+# 19:56 on 2026-10-09, and splitting it one harness process per case cost
+# four seconds a process and read a one-case run's skipped case as a red. So
+# the word `<i>/<n>` asks for shard `i` of `n`: the cases in the order
+# `collect` gives them, which is the sorted listing, dealt round, the case at
+# index `k` (from 0) to shard `k % n + 1`. Each case is in exactly one shard
+# for any `n`, and the `n` shards' union is the suite, which a test below
+# asserts over every `n` up to past the cases' count. Dealt round rather than
+# cut in runs because neighbours in the listing share a defect's number and
+# often its cost, so a run of them would load one shard.
+#
+# The word is a shard only in the shape `<digits>/<digits>`, at most six digits
+# a side: no case name holds a `/` (a name is a file's stem), so the shape
+# takes no filter anybody could mean, and a module's path, which a filter of
+# `layout` names, is not in it. Where it is in the shape and out of range,
+# `0/4`, `5/4`, `1/0`, it is refused by `main` with exit 2 rather than read
+# as a filter that selects nothing.
+record Shard
+    index: i64
+    count: i64
+
+# The six digits a side: a count past a million shards is no gate's, and the
+# bound keeps `strings.to_number` from an overflow the harness would abort on.
+constant SHARD_DIGITS: i64
+    6
+
+# Whether the word has a shard's shape, `<digits>/<digits>`, in or out of range.
+function shard_shaped(word: str) -> bool
+    halves = strings.split_on(text: word, byte: 47)
+
+    if halves.len() != 2
+        return false
+
+    for half in halves
+        if half.len() == 0 || half.len() > SHARD_DIGITS || strings.to_number(half).is_err()
+            return false
+
+        if strings.starts_with(text: half, prefix: "-")
+            return false
+
+    return true
+
+# The word as a shard: `not_a_shard` where it lacks the shape, `bad_shard`
+# with the words to tell where it has the shape and no shard is `i` of `n`
+# with `1 <= i <= n`.
+function shard_of(word: str) -> Shard?
+    if !shard_shaped(word)
+        return fail(code: "not_a_shard", msg: "`" + word + "` is not `<i>/<n>`")
+    halves = strings.split_on(text: word, byte: 47)
+    index = strings.to_number(halves[0])?
+    count = strings.to_number(halves[1])?
+
+    if count < 1 || index < 1 || index > count
+        return fail(
+            code: "bad_shard",
+            msg: "`" + word + "` names no shard: a shard is `<i>/<n>`, the i-th of n, with 1 <= i <= n"
+        )
+    return ok(Shard(index: index, count: count))
+
+# The cases of shard `index` of `count`, dealt round by their sorted index.
+function sharded(found: [Case], shard: Shard) -> [Case]
+    kept: [Case] @ []
+    k: i64 @ 0
+
+    for item in found
+        if k % shard.count == shard.index - 1
+            kept @ kept.push(item)
+        k @ k + 1
+
+    return kept
+
+# The third word, either form: a shard where the word is one, else the cases
+# whose name holds it (`matching`). A word in the shape and out of range keeps
+# nothing; `main` refuses it before any suite runs.
+function selected(found: [Case], only: str) -> [Case]
+    shard = shard_of(only)
+
+    if !shard.is_err()
+        return sharded(found: found, shard: shard.must())
+
+    if shard_shaped(only)
+        none: [Case] = []
+        return none
+    return matching(found: found, only: only)
+
+# Whether the word asks for a shard, so that a suite asks none of the whole
+# suite's questions of it (its floor, its skip ratio).
+function is_shard(only: str) -> bool
+    return shard_shaped(only)
+
+# The code of a shard's answer, `ok` where it is one, for the refusal `main`
+# makes and the tests that read it.
+function code_of(got: Shard?) -> str
+    return match got
+        .ok _  => "ok"
+        .err e => e.code
+
+test "a shard is <i>/<n>, and a word in that shape out of range is no shard and no filter"
+    assert shard_of("2/6").must().index == 2
+    assert shard_of("2/6").must().count == 6
+    assert shard_of("1/1").must().index == 1
+    assert shard_of("06/06").must().index == 6
+
+    for word in ["0/4", "5/4", "1/0", "0/0"]
+        assert shard_shaped(word)
+        assert is_shard(word)
+        assert code_of(shard_of(word)) == "bad_shard"
+
+    # What is not a shard stays the filter it always was: a name, a path a
+    # filter of `layout` names, and the shapes beside a shard's.
+    for word in ["", "fixedbugs-133", "selfhost/g.hero", "2/", "/6", "2/6/1", "-1/4", "1/-4", "a/4", "1234567/2"]
+        assert !shard_shaped(word)
+        assert !is_shard(word)
+        assert code_of(shard_of(word)) == "not_a_shard"
+
+    a = Case(source: "x/a.hero", expected: "x/a.expected", name: "a")
+    b = Case(source: "x/fixedbugs-133-b.hero", expected: "x/fixedbugs-133-b.expected", name: "fixedbugs-133-b")
+    c = Case(source: "x/fixedbugs-134-c.hero", expected: "x/fixedbugs-134-c.expected", name: "fixedbugs-134-c")
+    three: [Case] = [a, b, c]
+    assert selected(found: three, only: "5/4").len() == 0
+    assert selected(found: three, only: "fixedbugs").len() == 2
+    assert selected(found: three, only: "").len() == 3
+    assert selected(found: three, only: "2/2").len() == 1
+    assert selected(found: three, only: "2/2")[0].name == "fixedbugs-133-b"
+    assert selected(found: three, only: "1/2")[1].name == "fixedbugs-134-c"
+
+test "the shards of any n are disjoint, their union is the suite, and none holds two more than another"
+    # Every n from 1 to past the cases' count, so the shards that come out
+    # empty are asked too, and the gate's own size with the shard counts a
+    # gate would take.
+    for size in [0, 1, 2, 7, 13, 423]
+        found: [Case] @ []
+        k: i64 @ 0
+
+        while k < size
+            name = "c" + k.to_str()
+            found @ found.push(Case(source: "x/" + name + ".hero", expected: "x/" + name + ".expected", name: name))
+            k @ k + 1
+
+        last: i64 @ size + 3
+
+        if size > 13
+            last @ 8
+        n: i64 @ 1
+
+        while n <= last
+            seen: {str: i64} @ {}
+            total: i64 @ 0
+            i: i64 @ 1
+
+            while i <= n
+                part = selected(found: found, only: i.to_str() + "/" + n.to_str())
+                assert part.len() == size / n || part.len() == size / n + 1
+
+                for item in part
+                    assert seen[item.name].is_err()
+                    seen[item.name] @ i
+                    total @ total + 1
+
+                i @ i + 1
+
+            assert total == size
+
+            for item in found
+                assert !seen[item.name].is_err()
+
+            n @ n + 1
+
 test "the filter keeps the cases whose name holds the word, and an empty word keeps all"
     a = Case(source: "x/a.hero", expected: "x/a.expected", name: "a")
     b = Case(source: "x/fixedbugs-133-b.hero", expected: "x/fixedbugs-133-b.expected", name: "fixedbugs-133-b")

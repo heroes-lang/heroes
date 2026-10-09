@@ -252,12 +252,13 @@ function ended_at_a_binding(@c: cursor.Cursor, text: str, open: i64, first: i64,
 
     if pair < 0 || c.tokens[pair].kind == .rbracket
         return false
-    cursor.error(
-        @c,
+    report: diag.Diagnostic @ diag.new_diagnostic(
         code: "expected_separator",
         message: "expected `,` or a new line between one element and the next, found " + cursor.found(c, text) + " — a binding is no element: the `[` still open " + text_lines.place_above(text, at: c.tokens[open].span.start, from: cursor.current_span(c).start) + ", " + closing_above(c, text: text, open: open, own: "]"),
         span: cursor.current_span(c)
     )
+    report.carries @ bracket_head.openers_around(c, text: text, open: open, own: "]", also_unclosed: true).carries
+    cursor.say(@c, report)
 
     if binding
         c.pos @ first
@@ -281,9 +282,10 @@ function binding_begins(c: cursor.Cursor) -> bool
 # openers it stands in on its line, which close where it does: a call's `(`
 # around a list, `f([1, 2` over a binding, is owed its `)` on the same line
 # above (defect 307), where only the list's `]` was named and the call's `)`
-# was told owed at the binding, a second message.
+# was told owed at the binding, a second message; and one the lexer named
+# never closed, whose report the binding's carries (defect 459).
 function closing_above(c: cursor.Cursor, text: str, open: i64, own: str) -> str
-    with = bracket_head.openers_around(c, text: text, open: open, own: own)
+    with = bracket_head.openers_around(c, text: text, open: open, own: own, also_unclosed: true)
 
     if with.names == ""
         return "closes on a line above, so write its `" + own + "` there"
@@ -330,7 +332,7 @@ function another_kind(c: cursor.Cursor, text: str, what: str, closer: token.Toke
 
     if text_lines.newlines_between(text: text, from: opener.start, to: found.start) == 0
         return said + swap
-    with = bracket_head.openers_around(c, text: text, open: open, own: own.slice(from: 1, to: 2))
+    with = bracket_head.openers_around(c, text: text, open: open, own: own.slice(from: 1, to: 2), also_unclosed: false)
 
     # Inside a call, the call's `(` closes above with it, and every closer
     # past this one on the line is a stray (defect 310).

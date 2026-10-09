@@ -40,6 +40,7 @@ HOOKS = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HOOKS)
 
 import guard_bash  # noqa: E402
+import runs as what_runs  # noqa: E402
 
 FAKE = r"""#!/bin/sh
 here=$(cd "$(dirname "$0")" && pwd)
@@ -1293,6 +1294,240 @@ class Overwrites(unittest.TestCase):
         self.passed("git reset", cwd=tree)
         write(os.path.join(tree, "x.txt"), "x worktree\n")
         self.assertIn("x.txt", self.refused("git reset", cwd=tree))
+
+
+class Runs(unittest.TestCase):
+    """Defect 534: what a command runs that its first word does not say is
+    judged as the command line it was given is: a git command a `find` runs
+    for its files, and what a git alias stands for, asked of git; and, beside
+    them with the same cause, a command after a shell's reserved word, inside a
+    function, a `case` arm or a substitution, behind an escaped `;`, and after
+    an `xargs` option that takes a value. Each witnessed against what the
+    shell and git do."""
+
+    def setUp(self):
+        self.top = fresh("hooks-534-")
+        self.tree = make_tree(os.path.join(self.top, "tree"), repo=True)
+        isolated = mock.patch.dict(os.environ, {"GIT_CONFIG_GLOBAL": os.devnull, "GIT_CONFIG_NOSYSTEM": "1"})
+        isolated.start()
+        self.addCleanup(isolated.stop)
+        every_state(self.tree)
+
+    def refused(self, command, cwd=None):
+        said = guard_bash.verdict(command, cwd or self.tree)
+        self.assertIsNotNone(said, command)
+        return said
+
+    def passed(self, command, cwd=None):
+        said = guard_bash.verdict(command, cwd or self.tree)
+        self.assertIsNone(said, command)
+
+    def test_a_git_command_a_find_runs_is_judged(self):
+        for command in ("find . -name d.txt -exec git rm -f {} \\;", "find . -name d.txt -exec git rm -f {} ';'",
+                        "find . -name '*.txt' -exec git restore -S -W -- {} +", "find . -name d.txt -execdir git rm -f {} \\;",
+                        "find . -name d.txt -ok git rm -f {} \\;", "find sub -name s.txt -okdir git checkout HEAD -- {} \\;",
+                        "find . -name d.txt -exec env X=1 git rm -f {} \\;", "find . -type f -name 'd*' -exec git rm -f ./{} \\; -print"):
+            self.assertIn("the words `find` puts for `{}`", self.refused(command), command)
+        self.assertIn("`$1`", self.refused("find . -name d.txt -exec sh -c 'git rm -f \"$1\"' _ {} \\;"))
+        for command in ("find . -maxdepth 0 -exec git reset --hard \\;", "find . -maxdepth 0 -exec git stash \\;",
+                        "find . -maxdepth 0 -exec git commit -m x \\;", "find . -maxdepth 0 -exec git add -A \\; -print",
+                        "find . -maxdepth 0 -exec true \\; -exec git add -A \\;"):
+            self.refused(command)
+        for command in ("find . -name '*.txt' -exec git add -- {} +", "find . -name d.txt -exec git rm -n -f {} \\;",
+                        "find . -name d.txt -exec echo git rm -f {} \\;", "find . -name '*.txt' -exec grep -l staged {} +",
+                        "find . -name d.txt -print", "find . -name d.txt -exec git diff -- {} +"):
+            self.passed(command)
+
+    def test_what_a_find_runs_is_what_was_refused(self):
+        self.refused("find . -name d.txt -exec git rm -q -f {} \\;")
+        subprocess.run("find . -name d.txt -exec git rm -q -f {} \\;", shell=True, cwd=self.tree, env=GIT_ENV, capture_output=True, check=True)
+        self.assertIsNone(index_holds(self.tree, "d.txt"))
+        self.assertIsNone(read(os.path.join(self.tree, "d.txt")))
+
+    def test_a_backslash_is_read_as_the_shell_reads_it(self):
+        self.assertEqual(len(guard_bash.segments("find . -exec git rm -f {} \\; -print")), 1)
+        self.passed("echo a \\; git add -A")
+        self.passed("git commit -m x \\\n  -- a.txt")
+        self.refused("git rm -f \\\n  -- d.txt")
+        self.refused("git add \\\n  -A")
+        done = subprocess.run("echo a \\; git add -A", shell=True, cwd=self.tree, env=GIT_ENV, capture_output=True, text=True, check=True)
+        self.assertEqual(done.stdout, "a ; git add -A\n")
+
+    def test_xargs_reads_the_options_that_take_a_value(self):
+        for command in ("printf 'd.txt\\n' | xargs -J % git rm -f %", "xargs -R 1 -I % git rm -f %", "xargs -S 255 -I % git rm -f %",
+                        "xargs --max-procs 4 git rm -f", "xargs --arg-file list git rm -f", "xargs -0 -P 4 -n 1 git rm -f"):
+            self.assertIn("the words `xargs` adds", self.refused(command), command)
+        self.passed("xargs -J % git rm -n -f %")
+
+    def test_a_reserved_word_a_function_a_case_or_a_substitution_runs_its_command(self):
+        for command in ("if true; then git add -A; fi", "for f in d.txt; do git rm -f \"$f\"; done", "while false; do git stash; done",
+                        "until true; do git stash; done", "{ git add -A; }", "f() { git reset --hard; }; f", "f () { git stash; }",
+                        "function f { git stash; }", "case x in x) git add -A;; esac", "case x in y) true;; x) git stash;; esac",
+                        "! git stash", "if git stash; then echo; fi", "echo $(git add -A)", "echo \"$(git stash)\"", "echo `git add -A`",
+                        "x=$(git reset --hard)", "echo $(echo $(git stash))"):
+            self.refused(command)
+        for command in ("echo '$(git add -A)'", "echo \"\\$(git add -A)\"", "x=$((1+2)); echo $x", "echo 'if true; then git add -A; fi'",
+                        "if git diff --quiet; then echo same; fi", "echo \"$(git rev-parse HEAD)\"", "echo 'a) git add -A'"):
+            self.passed(command)
+
+    def test_a_git_alias_is_judged_as_what_it_stands_for(self):
+        for name, value in (("rr", "reset --hard"), ("rmf", "rm -f"), ("st", "stash"), ("ci", "commit"), ("nuke", "!git reset --hard"),
+                            ("sh", "!f() { git rm -f \"$@\"; }; f"), ("a", "b"), ("b", "reset --hard"), ("p", "-p reset --hard"),
+                            ("RS", "restore -S -W"), ("lg", "log --oneline")):
+            git(self.tree, "config", "alias." + name, value)
+        for command in ("git rr", "git RR", "git st", "git ci -m x", "git nuke", "git sh d.txt", "git a", "git p", "git rs -- d.txt",
+                        "git -c alias.zz='reset --hard' zz", "GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=alias.yy GIT_CONFIG_VALUE_0='rm -f' git yy d.txt",
+                        "find . -maxdepth 0 -exec git rr \\;", "xargs git rmf", "bash -c 'git rr'", "if true; then git rr; fi"):
+            self.refused(command)
+        said = self.refused("git rmf -- d.txt e.txt")
+        self.assertIn("d.txt", said)
+        self.assertNotIn("e.txt", said)
+        self.refused("git -C " + self.tree + " rr", cwd=self.top)
+        for command in ("git ci -m x -- a.txt", "git rmf -- a.txt", "git lg", "git rs -- a.txt e.txt"):
+            self.passed(command)
+
+    def test_an_alias_git_does_not_use_is_not_read(self):
+        git(self.tree, "config", "alias.status", "reset --hard")
+        git(self.tree, "config", "alias.loop", "!git loop")
+        git(self.tree, "config", "alias.zap", "reset --hard")
+        self.passed("git status")
+        self.passed("git loop")
+        self.refused("git zap")
+        # A `git-<name>` on the PATH is the command git runs, never the alias.
+        tools = os.path.join(self.top, "bin")
+        os.makedirs(tools)
+        os.chmod(write(os.path.join(tools, "git-zap"), "#!/bin/sh\nexit 0\n"), 0o755)
+        with mock.patch.dict(os.environ, {"PATH": tools + os.pathsep + os.environ.get("PATH", "")}):
+            self.passed("git zap")
+            env = dict(GIT_ENV, PATH=os.environ["PATH"])
+            subprocess.run(["git", "zap"], cwd=self.tree, env=env, capture_output=True, check=True)
+        git(self.tree, "status")
+        self.assertEqual(index_holds(self.tree, "c.txt"), "c.txt staged\n")
+
+    def test_the_alias_refused_is_the_one_that_loses_the_change(self):
+        git(self.tree, "config", "alias.rr", "reset --hard")
+        self.refused("git rr")
+        git(self.tree, "rr")
+        self.assertIsNone(read(os.path.join(self.tree, "c.txt")))
+
+    def test_a_gate_beside_a_commit_an_alias_or_a_find_runs_is_refused(self):
+        git(self.tree, "config", "alias.ci", "commit")
+        gate = "./heroes run tests/harness/main.hero -- ./heroes check"
+        self.assertIn("a gate and a `git commit`", self.refused(gate + " && git ci -m x -- a.txt"))
+        self.assertIn("a gate and a `git commit`", self.refused(gate + "; find . -maxdepth 0 -exec git commit -m x -- a.txt \\;"))
+
+    def test_the_names_not_asked_about_are_git_s_own(self):
+        # `runs.BUILTIN` is a premise about git: each name a builtin, which an
+        # alias cannot replace. Asked of the git this machine runs.
+        listed = git(self.tree, "--list-cmds=builtins").stdout.split()
+        for name in sorted(what_runs.BUILTIN):
+            self.assertIn(name, listed, name)
+
+
+class Plumbing(unittest.TestCase):
+    """Defect 535: `git read-tree` and `git update-index` write over a staged
+    version as a reset of the index and a forced removal do, and are refused
+    where one would be left nowhere, as `overwrites.py` reads those; each
+    witnessed against what git does."""
+
+    def setUp(self):
+        self.top = fresh("hooks-535-")
+        self.tree = make_tree(os.path.join(self.top, "tree"), repo=True)
+        isolated = mock.patch.dict(os.environ, {"GIT_CONFIG_GLOBAL": os.devnull, "GIT_CONFIG_NOSYSTEM": "1"})
+        isolated.start()
+        self.addCleanup(isolated.stop)
+        every_state(self.tree)
+        # A staged new file the disk no longer holds, the state `-m` and
+        # `--remove` write over.
+        staged(self.tree, "x.txt", "x.txt staged\n")
+        os.remove(os.path.join(self.tree, "x.txt"))
+        self.blob = git(self.tree, "rev-parse", "HEAD:a.txt").stdout.strip()
+
+    def refused(self, command, cwd=None):
+        said = guard_bash.verdict(command, cwd or self.tree)
+        self.assertIsNotNone(said, command)
+        return said
+
+    def passed(self, command, cwd=None):
+        said = guard_bash.verdict(command, cwd or self.tree)
+        self.assertIsNone(said, command)
+
+    def test_a_read_tree_writes_its_trees_over_the_index(self):
+        for command in ("git read-tree HEAD", "git read-tree other", "git read-tree --reset HEAD", "git read-tree --empty",
+                        "git read-tree", "git read-tree HEAD other", "git read-tree -q HEAD", "git read-tree -v HEAD",
+                        "git read-tree --reset other", "git -C " + self.tree + " read-tree HEAD"):
+            said = self.refused(command, cwd=self.top if " -C " in command else None)
+            self.assertIn("defect 535", said, command)
+            for rel in ("f.txt", "g.txt", "x.txt"):
+                self.assertIn(rel, said, command)
+            for rel in ("c.txt", "d.txt", "h.txt"):
+                self.assertNotIn(rel, said, command)
+
+    def test_a_read_tree_merging_one_tree_writes_over_what_the_disk_no_longer_holds(self):
+        said = self.refused("git read-tree -m HEAD")
+        self.assertIn("x.txt", said)
+        self.assertIn("git checkout --", said)
+        for rel in ("f.txt", "g.txt", "c.txt"):
+            self.assertNotIn(rel, said)
+        said = self.refused("git read-tree -m -u HEAD")
+        for rel in ("c.txt", "d.txt", "x.txt"):
+            self.assertIn(rel, said)
+        said = self.refused("git read-tree --reset -u HEAD")
+        self.assertIn("e.txt", said)
+        self.assertIn("defect 514", said)
+
+    def test_a_read_tree_that_loses_nothing_or_that_git_refuses_passes(self):
+        for command in ("git read-tree -n HEAD", "git read-tree --index-output=alt HEAD", "git read-tree --prefix=p/ HEAD",
+                        "git read-tree -m HEAD other", "git read-tree -m HEAD HEAD other", "git read-tree --reset HEAD other",
+                        "git read-tree -u HEAD", "git read-tree -m --reset HEAD", "git read-tree --nonsense HEAD",
+                        "git read-tree --empty HEAD", "git read-tree -m", "git read-tree --reset -u"):
+            self.passed(command)
+
+    def test_an_update_index_is_read_in_order(self):
+        said = self.refused("git update-index --force-remove -- c.txt d.txt f.txt g.txt x.txt")
+        for rel in ("f.txt", "g.txt", "x.txt"):
+            self.assertIn(rel, said)
+        for rel in ("c.txt", "d.txt"):
+            self.assertNotIn(rel, said)
+        self.assertNotIn("f.txt", self.refused("git update-index f.txt --force-remove g.txt"))
+        for command in ("git update-index --force-rem g.txt", "git update-index --add --force-remove -- g.txt",
+                        "printf 'a.txt\\n' | git update-index --force-remove --stdin", "git update-index --force-remove -z --stdin",
+                        "find . -name g.txt -exec git update-index --force-remove {} +", "xargs git update-index --force-remove"):
+            self.refused(command)
+        said = self.refused("git update-index --remove -- x.txt f.txt g.txt")
+        self.assertIn("x.txt", said)
+        self.assertNotIn("f.txt", said)
+        for command in ("git update-index --cacheinfo 100644," + self.blob + ",f.txt", "git update-index --cacheinfo 100644 " + self.blob + " f.txt",
+                        "git update-index --cacheinfo=100644," + self.blob + ",g.txt", "git update-index --index-info"):
+            self.refused(command)
+        for command in ("git update-index --force-remove --no-force-remove g.txt", "git update-index -- f.txt g.txt",
+                        "git update-index --add -- f.txt", "git update-index --force-remove -- c.txt d.txt h.txt",
+                        "git update-index --remove -- f.txt", "git update-index --again", "git update-index -g --remove",
+                        "git update-index --cacheinfo 100644," + self.blob + ",d.txt", "git update-index --refresh",
+                        "git update-index --chmod=+x f.txt", "git update-index --nonsense g.txt", "git update-index --force-remove",
+                        "printf 'a.txt\\n' | git update-index --stdin"):
+            self.passed(command)
+
+    def test_the_refused_plumbing_is_what_loses_the_change(self):
+        cases = (
+            ("git read-tree HEAD", "f.txt"), ("git read-tree -m HEAD", "x.txt"), ("git read-tree --empty", "g.txt"),
+            ("git update-index --force-remove g.txt", "g.txt"), ("git update-index --remove x.txt", "x.txt"),
+            ("git update-index --cacheinfo 100644," + self.blob + ",f.txt", "f.txt"),
+        )
+        for at, (command, rel) in enumerate(cases):
+            tree = make_tree(os.path.join(self.top, "witness-" + str(at)), repo=True)
+            every_state(tree)
+            staged(tree, "x.txt", "x.txt staged\n")
+            os.remove(os.path.join(tree, "x.txt"))
+            if " -m " in command:
+                # git refuses `-m` over a path the working tree holds otherwise
+                # (`f.txt`, `g.txt`), and writes over the one it no longer holds.
+                git(tree, "restore", "--staged", "--worktree", "--", "f.txt")
+                git(tree, "rm", "-q", "--cached", "-f", "--", "g.txt")
+            self.refused(command, cwd=tree)
+            subprocess.run(command, shell=True, cwd=tree, env=GIT_ENV, capture_output=True, check=True)
+            self.assertNotEqual(index_holds(tree, rel), rel + " staged\n", command)
+            self.assertNotEqual(read(os.path.join(tree, rel)), rel + " staged\n", command)
 
 
 REPO = os.path.dirname(os.path.dirname(HOOKS))
