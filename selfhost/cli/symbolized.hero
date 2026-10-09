@@ -1,0 +1,88 @@
+# Which symbolizer names the frames of a program this compiler runs under
+# `--sanitize`, on Windows (design.md §3.1; defect 509, 2026-10-09).
+#
+# **AddressSanitizer asks `llvm-symbolizer` first where one is on the PATH**,
+# and on Windows that one reads a PDB wrongly: for a function whose line table
+# spans two files, which every Heroes function's does (its `.hero` lines and
+# the generated C's own around the code the compiler adds, `#line` both ways),
+# it answers the LAST file's line for every address of the function. Measured
+# on the box (clang 23.1.1) and on the same binary and PDB with Debian LLVM
+# 22.1.8's: defect 322's case at `--sanitize -O0` named
+# `fixedbugs322...c:122`, the function's closing brace, where the call stands
+# on the `.hero` file's line 21; DbgHelp, the symbolizer ASan falls back to,
+# named line 21 at both levels. So a program `run` or `test` starts under
+# `--sanitize` on Windows is given `external_symbolizer_path=` in its
+# `ASAN_OPTIONS`, ASan's own word for *no external symbolizer*, and DbgHelp
+# names its frames. What DbgHelp does not give is a frame for C a header
+# inlined, whose code it reports under the Heroes line that called it.
+#
+# **Through the environment, because the program itself cannot say it**:
+# `__asan_default_options` defined in the program is not read by clang
+# 23.1.1's dynamic runtime on Windows (measured: `verbosity=1` in it printed
+# nothing), so the compiler, which starts the program, sets the variable it
+# inherits. A user who named a symbolizer, in `ASAN_OPTIONS` or in
+# `ASAN_SYMBOLIZER_PATH`, keeps theirs. A binary run by hand, not by `run` or
+# `test`, gets what its environment says.
+
+use cli/process
+
+# `runtime/hero_compiler.h`: this process's environment, which the program it
+# starts inherits.
+extern "hero_compiler.h"
+    function hero_env_put(name: cstr lent, value: cstr lent) -> i64
+
+constant OPTIONS: str
+    "ASAN_OPTIONS"
+
+constant SYMBOLIZER_WORD: str
+    "external_symbolizer_path"
+
+# Before a program built under `--sanitize` is started: on Windows, DbgHelp
+# for its frames unless the user chose a symbolizer.
+function prepare(sanitize: bool)
+    if !sanitize || process.exe_suffix() != ".exe"
+        return
+    chosen = process.env("ASAN_SYMBOLIZER_PATH")
+
+    if chosen.is_err() || chosen.must().len() > 0
+        return
+    current = process.env(OPTIONS)
+
+    if current.is_err()
+        return
+    wanted = options_with(current.must())
+
+    if wanted != current.must()
+        _ = hero_env_put(name: OPTIONS.cstr(), value: wanted.cstr())
+
+# `current` with no external symbolizer, unless it already names one; ASan's
+# options are `name=value` words joined by `:`.
+function options_with(current: str) -> str
+    if holds(text: current, needle: SYMBOLIZER_WORD)
+        return current
+
+    if current.len() == 0
+        return SYMBOLIZER_WORD + "="
+    return current + ":" + SYMBOLIZER_WORD + "="
+
+# Whether `needle` stands in `text`, byte for byte.
+function holds(text: str, needle: str) -> bool
+    at: i64 @ 0
+
+    while at + needle.len() <= text.len()
+        if text.slice(from: at, to: at + needle.len()) == needle
+            return true
+        at @ at + 1
+
+    return false
+
+test "the options keep a symbolizer the user named, and otherwise name none (defect 509)"
+    assert options_with("") == "external_symbolizer_path="
+    assert options_with("max_free_fill_size=2147483647:free_fill_byte=85") == "max_free_fill_size=2147483647:free_fill_byte=85:external_symbolizer_path="
+    assert options_with("external_symbolizer_path=C:/llvm/llvm-symbolizer.exe") == "external_symbolizer_path=C:/llvm/llvm-symbolizer.exe"
+    assert options_with("verbosity=1:external_symbolizer_path=") == "verbosity=1:external_symbolizer_path="
+
+test "a program not sanitised, or not on Windows, changes nothing in the environment"
+    before = process.env(OPTIONS)
+    prepare(sanitize: false)
+    assert process.env(OPTIONS).default("unread") == before.default("unread")
