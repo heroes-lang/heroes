@@ -1,0 +1,823 @@
+# Fixed 2026-10-09, defect 513, lane b16-compiler (class improvement).
+# Symptom: constructing each case of an N-case variant cost the checker the
+# square of N, 0.56, 1.52 and 4.78 billion instructions at 400, 800 and
+# 1,600 cases, and the lowering the same, 1.24, 3.39 and 10.9 billion.
+# Cause: `check/walk.hero`'s `case_construct` and `ir/layout.hero`'s
+# `case_index` each walked the variant's case names at every construction.
+# Each reads a table of the variant's names now, made the first time one
+# of its cases is asked for.
+# This case: each of 400 cases built, and beside them a case with fields
+# built from the table's index and a name the variant does not have.
+variant Big
+    c0
+    c1
+    c2
+    c3
+    c4
+    c5
+    c6
+    c7
+    c8
+    c9
+    c10
+    c11
+    c12
+    c13
+    c14
+    c15
+    c16
+    c17
+    c18
+    c19
+    c20
+    c21
+    c22
+    c23
+    c24
+    c25
+    c26
+    c27
+    c28
+    c29
+    c30
+    c31
+    c32
+    c33
+    c34
+    c35
+    c36
+    c37
+    c38
+    c39
+    c40
+    c41
+    c42
+    c43
+    c44
+    c45
+    c46
+    c47
+    c48
+    c49
+    c50
+    c51
+    c52
+    c53
+    c54
+    c55
+    c56
+    c57
+    c58
+    c59
+    c60
+    c61
+    c62
+    c63
+    c64
+    c65
+    c66
+    c67
+    c68
+    c69
+    c70
+    c71
+    c72
+    c73
+    c74
+    c75
+    c76
+    c77
+    c78
+    c79
+    c80
+    c81
+    c82
+    c83
+    c84
+    c85
+    c86
+    c87
+    c88
+    c89
+    c90
+    c91
+    c92
+    c93
+    c94
+    c95
+    c96
+    c97
+    c98
+    c99
+    c100
+    c101
+    c102
+    c103
+    c104
+    c105
+    c106
+    c107
+    c108
+    c109
+    c110
+    c111
+    c112
+    c113
+    c114
+    c115
+    c116
+    c117
+    c118
+    c119
+    c120
+    c121
+    c122
+    c123
+    c124
+    c125
+    c126
+    c127
+    c128
+    c129
+    c130
+    c131
+    c132
+    c133
+    c134
+    c135
+    c136
+    c137
+    c138
+    c139
+    c140
+    c141
+    c142
+    c143
+    c144
+    c145
+    c146
+    c147
+    c148
+    c149
+    c150
+    c151
+    c152
+    c153
+    c154
+    c155
+    c156
+    c157
+    c158
+    c159
+    c160
+    c161
+    c162
+    c163
+    c164
+    c165
+    c166
+    c167
+    c168
+    c169
+    c170
+    c171
+    c172
+    c173
+    c174
+    c175
+    c176
+    c177
+    c178
+    c179
+    c180
+    c181
+    c182
+    c183
+    c184
+    c185
+    c186
+    c187
+    c188
+    c189
+    c190
+    c191
+    c192
+    c193
+    c194
+    c195
+    c196
+    c197
+    c198
+    c199
+    c200
+    c201
+    c202
+    c203
+    c204
+    c205
+    c206
+    c207
+    c208
+    c209
+    c210
+    c211
+    c212
+    c213
+    c214
+    c215
+    c216
+    c217
+    c218
+    c219
+    c220
+    c221
+    c222
+    c223
+    c224
+    c225
+    c226
+    c227
+    c228
+    c229
+    c230
+    c231
+    c232
+    c233
+    c234
+    c235
+    c236
+    c237
+    c238
+    c239
+    c240
+    c241
+    c242
+    c243
+    c244
+    c245
+    c246
+    c247
+    c248
+    c249
+    c250
+    c251
+    c252
+    c253
+    c254
+    c255
+    c256
+    c257
+    c258
+    c259
+    c260
+    c261
+    c262
+    c263
+    c264
+    c265
+    c266
+    c267
+    c268
+    c269
+    c270
+    c271
+    c272
+    c273
+    c274
+    c275
+    c276
+    c277
+    c278
+    c279
+    c280
+    c281
+    c282
+    c283
+    c284
+    c285
+    c286
+    c287
+    c288
+    c289
+    c290
+    c291
+    c292
+    c293
+    c294
+    c295
+    c296
+    c297
+    c298
+    c299
+    c300
+    c301
+    c302
+    c303
+    c304
+    c305
+    c306
+    c307
+    c308
+    c309
+    c310
+    c311
+    c312
+    c313
+    c314
+    c315
+    c316
+    c317
+    c318
+    c319
+    c320
+    c321
+    c322
+    c323
+    c324
+    c325
+    c326
+    c327
+    c328
+    c329
+    c330
+    c331
+    c332
+    c333
+    c334
+    c335
+    c336
+    c337
+    c338
+    c339
+    c340
+    c341
+    c342
+    c343
+    c344
+    c345
+    c346
+    c347
+    c348
+    c349
+    c350
+    c351
+    c352
+    c353
+    c354
+    c355
+    c356
+    c357
+    c358
+    c359
+    c360
+    c361
+    c362
+    c363
+    c364
+    c365
+    c366
+    c367
+    c368
+    c369
+    c370
+    c371
+    c372
+    c373
+    c374
+    c375
+    c376
+    c377
+    c378
+    c379
+    c380
+    c381
+    c382
+    c383
+    c384
+    c385
+    c386
+    c387
+    c388
+    c389
+    c390
+    c391
+    c392
+    c393
+    c394
+    c395
+    c396
+    c397
+    c398
+    c399
+
+variant Shape
+    dot
+    line
+        n: i64
+
+function main()
+    xs: [Big] @ []
+    xs @ xs.push(.c0)
+    xs @ xs.push(.c1)
+    xs @ xs.push(.c2)
+    xs @ xs.push(.c3)
+    xs @ xs.push(.c4)
+    xs @ xs.push(.c5)
+    xs @ xs.push(.c6)
+    xs @ xs.push(.c7)
+    xs @ xs.push(.c8)
+    xs @ xs.push(.c9)
+    xs @ xs.push(.c10)
+    xs @ xs.push(.c11)
+    xs @ xs.push(.c12)
+    xs @ xs.push(.c13)
+    xs @ xs.push(.c14)
+    xs @ xs.push(.c15)
+    xs @ xs.push(.c16)
+    xs @ xs.push(.c17)
+    xs @ xs.push(.c18)
+    xs @ xs.push(.c19)
+    xs @ xs.push(.c20)
+    xs @ xs.push(.c21)
+    xs @ xs.push(.c22)
+    xs @ xs.push(.c23)
+    xs @ xs.push(.c24)
+    xs @ xs.push(.c25)
+    xs @ xs.push(.c26)
+    xs @ xs.push(.c27)
+    xs @ xs.push(.c28)
+    xs @ xs.push(.c29)
+    xs @ xs.push(.c30)
+    xs @ xs.push(.c31)
+    xs @ xs.push(.c32)
+    xs @ xs.push(.c33)
+    xs @ xs.push(.c34)
+    xs @ xs.push(.c35)
+    xs @ xs.push(.c36)
+    xs @ xs.push(.c37)
+    xs @ xs.push(.c38)
+    xs @ xs.push(.c39)
+    xs @ xs.push(.c40)
+    xs @ xs.push(.c41)
+    xs @ xs.push(.c42)
+    xs @ xs.push(.c43)
+    xs @ xs.push(.c44)
+    xs @ xs.push(.c45)
+    xs @ xs.push(.c46)
+    xs @ xs.push(.c47)
+    xs @ xs.push(.c48)
+    xs @ xs.push(.c49)
+    xs @ xs.push(.c50)
+    xs @ xs.push(.c51)
+    xs @ xs.push(.c52)
+    xs @ xs.push(.c53)
+    xs @ xs.push(.c54)
+    xs @ xs.push(.c55)
+    xs @ xs.push(.c56)
+    xs @ xs.push(.c57)
+    xs @ xs.push(.c58)
+    xs @ xs.push(.c59)
+    xs @ xs.push(.c60)
+    xs @ xs.push(.c61)
+    xs @ xs.push(.c62)
+    xs @ xs.push(.c63)
+    xs @ xs.push(.c64)
+    xs @ xs.push(.c65)
+    xs @ xs.push(.c66)
+    xs @ xs.push(.c67)
+    xs @ xs.push(.c68)
+    xs @ xs.push(.c69)
+    xs @ xs.push(.c70)
+    xs @ xs.push(.c71)
+    xs @ xs.push(.c72)
+    xs @ xs.push(.c73)
+    xs @ xs.push(.c74)
+    xs @ xs.push(.c75)
+    xs @ xs.push(.c76)
+    xs @ xs.push(.c77)
+    xs @ xs.push(.c78)
+    xs @ xs.push(.c79)
+    xs @ xs.push(.c80)
+    xs @ xs.push(.c81)
+    xs @ xs.push(.c82)
+    xs @ xs.push(.c83)
+    xs @ xs.push(.c84)
+    xs @ xs.push(.c85)
+    xs @ xs.push(.c86)
+    xs @ xs.push(.c87)
+    xs @ xs.push(.c88)
+    xs @ xs.push(.c89)
+    xs @ xs.push(.c90)
+    xs @ xs.push(.c91)
+    xs @ xs.push(.c92)
+    xs @ xs.push(.c93)
+    xs @ xs.push(.c94)
+    xs @ xs.push(.c95)
+    xs @ xs.push(.c96)
+    xs @ xs.push(.c97)
+    xs @ xs.push(.c98)
+    xs @ xs.push(.c99)
+    xs @ xs.push(.c100)
+    xs @ xs.push(.c101)
+    xs @ xs.push(.c102)
+    xs @ xs.push(.c103)
+    xs @ xs.push(.c104)
+    xs @ xs.push(.c105)
+    xs @ xs.push(.c106)
+    xs @ xs.push(.c107)
+    xs @ xs.push(.c108)
+    xs @ xs.push(.c109)
+    xs @ xs.push(.c110)
+    xs @ xs.push(.c111)
+    xs @ xs.push(.c112)
+    xs @ xs.push(.c113)
+    xs @ xs.push(.c114)
+    xs @ xs.push(.c115)
+    xs @ xs.push(.c116)
+    xs @ xs.push(.c117)
+    xs @ xs.push(.c118)
+    xs @ xs.push(.c119)
+    xs @ xs.push(.c120)
+    xs @ xs.push(.c121)
+    xs @ xs.push(.c122)
+    xs @ xs.push(.c123)
+    xs @ xs.push(.c124)
+    xs @ xs.push(.c125)
+    xs @ xs.push(.c126)
+    xs @ xs.push(.c127)
+    xs @ xs.push(.c128)
+    xs @ xs.push(.c129)
+    xs @ xs.push(.c130)
+    xs @ xs.push(.c131)
+    xs @ xs.push(.c132)
+    xs @ xs.push(.c133)
+    xs @ xs.push(.c134)
+    xs @ xs.push(.c135)
+    xs @ xs.push(.c136)
+    xs @ xs.push(.c137)
+    xs @ xs.push(.c138)
+    xs @ xs.push(.c139)
+    xs @ xs.push(.c140)
+    xs @ xs.push(.c141)
+    xs @ xs.push(.c142)
+    xs @ xs.push(.c143)
+    xs @ xs.push(.c144)
+    xs @ xs.push(.c145)
+    xs @ xs.push(.c146)
+    xs @ xs.push(.c147)
+    xs @ xs.push(.c148)
+    xs @ xs.push(.c149)
+    xs @ xs.push(.c150)
+    xs @ xs.push(.c151)
+    xs @ xs.push(.c152)
+    xs @ xs.push(.c153)
+    xs @ xs.push(.c154)
+    xs @ xs.push(.c155)
+    xs @ xs.push(.c156)
+    xs @ xs.push(.c157)
+    xs @ xs.push(.c158)
+    xs @ xs.push(.c159)
+    xs @ xs.push(.c160)
+    xs @ xs.push(.c161)
+    xs @ xs.push(.c162)
+    xs @ xs.push(.c163)
+    xs @ xs.push(.c164)
+    xs @ xs.push(.c165)
+    xs @ xs.push(.c166)
+    xs @ xs.push(.c167)
+    xs @ xs.push(.c168)
+    xs @ xs.push(.c169)
+    xs @ xs.push(.c170)
+    xs @ xs.push(.c171)
+    xs @ xs.push(.c172)
+    xs @ xs.push(.c173)
+    xs @ xs.push(.c174)
+    xs @ xs.push(.c175)
+    xs @ xs.push(.c176)
+    xs @ xs.push(.c177)
+    xs @ xs.push(.c178)
+    xs @ xs.push(.c179)
+    xs @ xs.push(.c180)
+    xs @ xs.push(.c181)
+    xs @ xs.push(.c182)
+    xs @ xs.push(.c183)
+    xs @ xs.push(.c184)
+    xs @ xs.push(.c185)
+    xs @ xs.push(.c186)
+    xs @ xs.push(.c187)
+    xs @ xs.push(.c188)
+    xs @ xs.push(.c189)
+    xs @ xs.push(.c190)
+    xs @ xs.push(.c191)
+    xs @ xs.push(.c192)
+    xs @ xs.push(.c193)
+    xs @ xs.push(.c194)
+    xs @ xs.push(.c195)
+    xs @ xs.push(.c196)
+    xs @ xs.push(.c197)
+    xs @ xs.push(.c198)
+    xs @ xs.push(.c199)
+    xs @ xs.push(.c200)
+    xs @ xs.push(.c201)
+    xs @ xs.push(.c202)
+    xs @ xs.push(.c203)
+    xs @ xs.push(.c204)
+    xs @ xs.push(.c205)
+    xs @ xs.push(.c206)
+    xs @ xs.push(.c207)
+    xs @ xs.push(.c208)
+    xs @ xs.push(.c209)
+    xs @ xs.push(.c210)
+    xs @ xs.push(.c211)
+    xs @ xs.push(.c212)
+    xs @ xs.push(.c213)
+    xs @ xs.push(.c214)
+    xs @ xs.push(.c215)
+    xs @ xs.push(.c216)
+    xs @ xs.push(.c217)
+    xs @ xs.push(.c218)
+    xs @ xs.push(.c219)
+    xs @ xs.push(.c220)
+    xs @ xs.push(.c221)
+    xs @ xs.push(.c222)
+    xs @ xs.push(.c223)
+    xs @ xs.push(.c224)
+    xs @ xs.push(.c225)
+    xs @ xs.push(.c226)
+    xs @ xs.push(.c227)
+    xs @ xs.push(.c228)
+    xs @ xs.push(.c229)
+    xs @ xs.push(.c230)
+    xs @ xs.push(.c231)
+    xs @ xs.push(.c232)
+    xs @ xs.push(.c233)
+    xs @ xs.push(.c234)
+    xs @ xs.push(.c235)
+    xs @ xs.push(.c236)
+    xs @ xs.push(.c237)
+    xs @ xs.push(.c238)
+    xs @ xs.push(.c239)
+    xs @ xs.push(.c240)
+    xs @ xs.push(.c241)
+    xs @ xs.push(.c242)
+    xs @ xs.push(.c243)
+    xs @ xs.push(.c244)
+    xs @ xs.push(.c245)
+    xs @ xs.push(.c246)
+    xs @ xs.push(.c247)
+    xs @ xs.push(.c248)
+    xs @ xs.push(.c249)
+    xs @ xs.push(.c250)
+    xs @ xs.push(.c251)
+    xs @ xs.push(.c252)
+    xs @ xs.push(.c253)
+    xs @ xs.push(.c254)
+    xs @ xs.push(.c255)
+    xs @ xs.push(.c256)
+    xs @ xs.push(.c257)
+    xs @ xs.push(.c258)
+    xs @ xs.push(.c259)
+    xs @ xs.push(.c260)
+    xs @ xs.push(.c261)
+    xs @ xs.push(.c262)
+    xs @ xs.push(.c263)
+    xs @ xs.push(.c264)
+    xs @ xs.push(.c265)
+    xs @ xs.push(.c266)
+    xs @ xs.push(.c267)
+    xs @ xs.push(.c268)
+    xs @ xs.push(.c269)
+    xs @ xs.push(.c270)
+    xs @ xs.push(.c271)
+    xs @ xs.push(.c272)
+    xs @ xs.push(.c273)
+    xs @ xs.push(.c274)
+    xs @ xs.push(.c275)
+    xs @ xs.push(.c276)
+    xs @ xs.push(.c277)
+    xs @ xs.push(.c278)
+    xs @ xs.push(.c279)
+    xs @ xs.push(.c280)
+    xs @ xs.push(.c281)
+    xs @ xs.push(.c282)
+    xs @ xs.push(.c283)
+    xs @ xs.push(.c284)
+    xs @ xs.push(.c285)
+    xs @ xs.push(.c286)
+    xs @ xs.push(.c287)
+    xs @ xs.push(.c288)
+    xs @ xs.push(.c289)
+    xs @ xs.push(.c290)
+    xs @ xs.push(.c291)
+    xs @ xs.push(.c292)
+    xs @ xs.push(.c293)
+    xs @ xs.push(.c294)
+    xs @ xs.push(.c295)
+    xs @ xs.push(.c296)
+    xs @ xs.push(.c297)
+    xs @ xs.push(.c298)
+    xs @ xs.push(.c299)
+    xs @ xs.push(.c300)
+    xs @ xs.push(.c301)
+    xs @ xs.push(.c302)
+    xs @ xs.push(.c303)
+    xs @ xs.push(.c304)
+    xs @ xs.push(.c305)
+    xs @ xs.push(.c306)
+    xs @ xs.push(.c307)
+    xs @ xs.push(.c308)
+    xs @ xs.push(.c309)
+    xs @ xs.push(.c310)
+    xs @ xs.push(.c311)
+    xs @ xs.push(.c312)
+    xs @ xs.push(.c313)
+    xs @ xs.push(.c314)
+    xs @ xs.push(.c315)
+    xs @ xs.push(.c316)
+    xs @ xs.push(.c317)
+    xs @ xs.push(.c318)
+    xs @ xs.push(.c319)
+    xs @ xs.push(.c320)
+    xs @ xs.push(.c321)
+    xs @ xs.push(.c322)
+    xs @ xs.push(.c323)
+    xs @ xs.push(.c324)
+    xs @ xs.push(.c325)
+    xs @ xs.push(.c326)
+    xs @ xs.push(.c327)
+    xs @ xs.push(.c328)
+    xs @ xs.push(.c329)
+    xs @ xs.push(.c330)
+    xs @ xs.push(.c331)
+    xs @ xs.push(.c332)
+    xs @ xs.push(.c333)
+    xs @ xs.push(.c334)
+    xs @ xs.push(.c335)
+    xs @ xs.push(.c336)
+    xs @ xs.push(.c337)
+    xs @ xs.push(.c338)
+    xs @ xs.push(.c339)
+    xs @ xs.push(.c340)
+    xs @ xs.push(.c341)
+    xs @ xs.push(.c342)
+    xs @ xs.push(.c343)
+    xs @ xs.push(.c344)
+    xs @ xs.push(.c345)
+    xs @ xs.push(.c346)
+    xs @ xs.push(.c347)
+    xs @ xs.push(.c348)
+    xs @ xs.push(.c349)
+    xs @ xs.push(.c350)
+    xs @ xs.push(.c351)
+    xs @ xs.push(.c352)
+    xs @ xs.push(.c353)
+    xs @ xs.push(.c354)
+    xs @ xs.push(.c355)
+    xs @ xs.push(.c356)
+    xs @ xs.push(.c357)
+    xs @ xs.push(.c358)
+    xs @ xs.push(.c359)
+    xs @ xs.push(.c360)
+    xs @ xs.push(.c361)
+    xs @ xs.push(.c362)
+    xs @ xs.push(.c363)
+    xs @ xs.push(.c364)
+    xs @ xs.push(.c365)
+    xs @ xs.push(.c366)
+    xs @ xs.push(.c367)
+    xs @ xs.push(.c368)
+    xs @ xs.push(.c369)
+    xs @ xs.push(.c370)
+    xs @ xs.push(.c371)
+    xs @ xs.push(.c372)
+    xs @ xs.push(.c373)
+    xs @ xs.push(.c374)
+    xs @ xs.push(.c375)
+    xs @ xs.push(.c376)
+    xs @ xs.push(.c377)
+    xs @ xs.push(.c378)
+    xs @ xs.push(.c379)
+    xs @ xs.push(.c380)
+    xs @ xs.push(.c381)
+    xs @ xs.push(.c382)
+    xs @ xs.push(.c383)
+    xs @ xs.push(.c384)
+    xs @ xs.push(.c385)
+    xs @ xs.push(.c386)
+    xs @ xs.push(.c387)
+    xs @ xs.push(.c388)
+    xs @ xs.push(.c389)
+    xs @ xs.push(.c390)
+    xs @ xs.push(.c391)
+    xs @ xs.push(.c392)
+    xs @ xs.push(.c393)
+    xs @ xs.push(.c394)
+    xs @ xs.push(.c395)
+    xs @ xs.push(.c396)
+    xs @ xs.push(.c397)
+    xs @ xs.push(.c398)
+    xs @ xs.push(.c399)
+    print(xs.len())
+    s: Shape @ .line(n: 3)
+    s @ .square(n: 4)  #~ no_such_case
+    print(s == .dot)

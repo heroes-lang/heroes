@@ -65,6 +65,8 @@ record Lowering
     # literals made quadratic. Ids are still given in the order of first
     # appearance, so the table in the program is the one it was.
     string_ids: {str: i64}
+    # Each variant's cases by name, by declaration (defect 513, `layout`).
+    cases: {i64: {str: i64}}
 
 function empty_function() -> containers.Function
     return containers.Function(
@@ -105,7 +107,8 @@ function new_lowering(r: resolved.Resolved, unit: i64) -> Lowering
         counters: {},
         unit: unit,
         validated: fail(code: "absent", msg: "the library's `validated` is found when the program is lowered"),
-        string_ids: {}
+        string_ids: {},
+        cases: {}
     )
 
 ## One function at a time
