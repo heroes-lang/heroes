@@ -267,10 +267,11 @@ function shape_permissive() -> Shape
         library_skip: false
     )
 
-# `only` narrows the form to the cases whose name holds it (cases.matching);
-# a narrowed run is not the whole form, so its floor is not asked.
+# `only` narrows the form to the cases whose name holds it, or to a shard of
+# them, `<i>/<n>` (cases.selected, defect 537); a narrowed run is not the whole
+# form, so neither its floor nor its skip ratio is asked of it.
 function run_all(scratch: str, compiler: str, shape: Shape, only: str) -> report.Report?
-    found = cases.matching(found: cases.collect(scratch: scratch, dir: shape.dir)?, only: only)
+    found = cases.selected(found: cases.collect(scratch: scratch, dir: shape.dir)?, only: only)
     r: report.Report @ report.empty()
 
     if only == "" && shape.watched
@@ -318,7 +319,10 @@ function run_all(scratch: str, compiler: str, shape: Shape, only: str) -> report
             else
                 verdict(@r, shape: shape, item: item, expected: expectation.must(), said: said.must(), refused: "")
 
-    if skipped > 0 && skipped * 3 >= found.len()
+    # The skip ratio is the whole form's question, asked of a filter's cases as
+    # it always was and of no shard (defect 537): a shard's skips are summed
+    # with the others' by whoever split the form.
+    if skipped > 0 && skipped * 3 >= found.len() && !cases.is_shard(only)
         report.keep_failure(
             @r,
             label: shape.name,

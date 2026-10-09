@@ -63,10 +63,11 @@ constant RUN_DIR: str
 constant LEAST: i64
     87
 
-# `only` narrows the suite to the cases whose name holds it (cases.matching);
-# a narrowed run is not the whole suite, so its floor is not asked.
+# `only` narrows the suite to the cases whose name holds it, or to a shard of
+# them, `<i>/<n>` (cases.selected, defect 537); a narrowed run is not the whole
+# suite, so its floor is not asked, and a shard's skip ratio is not either.
 function run_all(scratch: str, compiler: str, only: str) -> report.Report?
-    found = cases.matching(found: cases.collect(scratch: scratch, dir: RUN_DIR)?, only: only)
+    found = cases.selected(found: cases.collect(scratch: scratch, dir: RUN_DIR)?, only: only)
     r: report.Report @ report.empty()
 
     if only == "" && found.len() < LEAST
@@ -115,8 +116,12 @@ function run_all(scratch: str, compiler: str, only: str) -> report.Report?
                 if took
                     skipped @ skipped + 1
 
-    # A skip is not a pass — the same floor the unsupported leg carries.
-    if skipped > 0 && skipped * 3 >= found.len()
+    # A skip is not a pass — the same floor the unsupported leg carries. It is
+    # the whole suite's question, asked of a filter's cases as it always was and
+    # of no shard (defect 537): a shard of one in six holding the suite's one
+    # skipped case is not a machine that runs no corpus, and the shards' skips
+    # are summed by whoever split the suite (the gate's script).
+    if skipped > 0 && skipped * 3 >= found.len() && !cases.is_shard(only)
         report.keep_failure(
             @r,
             label: "run",
