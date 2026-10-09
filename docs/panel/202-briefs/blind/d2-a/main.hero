@@ -1,0 +1,8 @@
+use left
+use right
+use mid
+
+function main()
+    print(left.left(x: 3))
+    print(right.right(x: 4.0))
+    print(mid.mid(x: 5))

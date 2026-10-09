@@ -1,0 +1,1 @@
+double twice(double x);

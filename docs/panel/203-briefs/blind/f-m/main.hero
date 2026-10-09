@@ -1,0 +1,8 @@
+function go(n: i64, f: (function(i64) -> i64)) -> i64
+    return f(n)
+
+function step(n: i64) -> i64
+    return go(n: n, f: step)
+
+function main()
+    print(step(1))
