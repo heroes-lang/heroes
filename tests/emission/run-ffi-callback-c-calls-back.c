@@ -108,12 +108,10 @@ __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
 
 #line 24 "tests/golden/run/ffi-callback-c-calls-back.hero"
 void h_fficallbackccallsback_bye(void) {
-#line 112 "fficallbackccallsback.c"
-    hero_thread_guard("fficallbackccallsback.bye");
-    HeroStr t1;
-    goto bb0;
+#line 24 "tests/golden/run/ffi-callback-c-calls-back.hero"
+    hero_thread_guard("fficallbackccallsback.bye"); HeroStr t1; goto bb0;
+#line 24 "tests/golden/run/ffi-callback-c-calls-back.hero"
 bb0:
-#line 25 "tests/golden/run/ffi-callback-c-calls-back.hero"
     t1 = HERO_STR_LIT(hero_str_19e7c2);
 #line 25 "tests/golden/run/ffi-callback-c-calls-back.hero"
     hero_print_str(t1);
@@ -121,7 +119,7 @@ bb0:
     hero_print_end();
 #line 25 "tests/golden/run/ffi-callback-c-calls-back.hero"
     return;
-#line 125 "fficallbackccallsback.c"
+#line 123 "fficallbackccallsback.c"
 }
 
 void h_0cb_fficallbackccallsback_bye(void) {
@@ -130,16 +128,10 @@ void h_0cb_fficallbackccallsback_bye(void) {
 
 #line 27 "tests/golden/run/ffi-callback-c-calls-back.hero"
 void h_fficallbackccallsback_main(void) {
-#line 134 "fficallbackccallsback.c"
-    HeroStr t1;
-    h_0fn_294870dd t2;
-    int32_t t3;
-    int32_t t4;
-    bool t5;
-    HeroStr t6;
-    goto bb0;
+#line 27 "tests/golden/run/ffi-callback-c-calls-back.hero"
+    HeroStr t1; h_0fn_294870dd t2; int32_t t3; int32_t t4; bool t5; HeroStr t6; goto bb0;
+#line 27 "tests/golden/run/ffi-callback-c-calls-back.hero"
 bb0:
-#line 28 "tests/golden/run/ffi-callback-c-calls-back.hero"
     t1 = HERO_STR_LIT(hero_str_43560e4d);
 #line 28 "tests/golden/run/ffi-callback-c-calls-back.hero"
     hero_print_str(t1);
@@ -172,7 +164,7 @@ bb2:
 bb3:
 #line 33 "tests/golden/run/ffi-callback-c-calls-back.hero"
     goto bb1;
-#line 176 "fficallbackccallsback.c"
+#line 168 "fficallbackccallsback.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

@@ -120,28 +120,10 @@ HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to);
 
 #line 23 "tests/golden/run/fixedbugs-381-a-write-inside-a-branching-pushed-value-keeps-the-receiver-first.hero"
 h_0opt_e201354 h_fixedbugs381awriteinsideabranchingpushedvaluekeepsthereceiverfirst_half(int64_t h0_n) {
-#line 124 "fixedbugs381awriteinsideabranchingpushedvaluekeepsthereceiverfirst.c"
-    h_0opt_e201354 h1_ret0 = {0};
-    h_0opt_e201354 h2_own2 = {0};
-    h_0opt_e201354 h3_own3 = {0};
-    int64_t t1;
-    int64_t t2;
-    int64_t t3;
-    int64_t t4;
-    bool t5;
-    int64_t t6;
-    int64_t t7;
-    int64_t t8;
-    h_0opt_e201354 t9;
-    HeroStr t10;
-    HeroStr t11;
-    h_0opt_e201354 t12;
-    h_0opt_e201354 t13;
-    h_0opt_e201354 t14;
-    h_0opt_e201354 t15;
-    goto bb0;
+#line 23 "tests/golden/run/fixedbugs-381-a-write-inside-a-branching-pushed-value-keeps-the-receiver-first.hero"
+    h_0opt_e201354 h1_ret0 = {0}; h_0opt_e201354 h2_own2 = {0}; h_0opt_e201354 h3_own3 = {0}; int64_t t1; int64_t t2; int64_t t3; int64_t t4; bool t5; int64_t t6; int64_t t7; int64_t t8; h_0opt_e201354 t9; HeroStr t10; HeroStr t11; h_0opt_e201354 t12; h_0opt_e201354 t13; h_0opt_e201354 t14; h_0opt_e201354 t15; goto bb0;
+#line 23 "tests/golden/run/fixedbugs-381-a-write-inside-a-branching-pushed-value-keeps-the-receiver-first.hero"
 bb0:
-#line 24 "tests/golden/run/fixedbugs-381-a-write-inside-a-branching-pushed-value-keeps-the-receiver-first.hero"
     t1 = h0_n;
 #line 24 "tests/golden/run/fixedbugs-381-a-write-inside-a-branching-pushed-value-keeps-the-receiver-first.hero"
     t2 = INT64_C(2);
@@ -209,7 +191,7 @@ bb3:
     goto bb1;
 #line 25 "tests/golden/run/fixedbugs-381-a-write-inside-a-branching-pushed-value-keeps-the-receiver-first.hero"
 bb4:
-#line 213 "fixedbugs381awriteinsideabranchingpushedvaluekeepsthereceiverfirst.c"
+#line 195 "fixedbugs381awriteinsideabranchingpushedvaluekeepsthereceiverfirst.c"
     t13 = h1_ret0;
     h_0opt_e201354_retain(&t13);
     h_0opt_e201354_release(hero_slot_escape(&h2_own2));
@@ -219,13 +201,10 @@ bb4:
 
 #line 28 "tests/golden/run/fixedbugs-381-a-write-inside-a-branching-pushed-value-keeps-the-receiver-first.hero"
 int64_t h_fixedbugs381awriteinsideabranchingpushedvaluekeepsthereceiverfirst_bump(HeroArrayHeader * *ph0_xs) {
-#line 223 "fixedbugs381awriteinsideabranchingpushedvaluekeepsthereceiverfirst.c"
-    int64_t t2;
-    HeroArrayHeader * t4;
-    int64_t t5;
-    goto bb0;
+#line 28 "tests/golden/run/fixedbugs-381-a-write-inside-a-branching-pushed-value-keeps-the-receiver-first.hero"
+    int64_t t2; HeroArrayHeader * t4; int64_t t5; goto bb0;
+#line 28 "tests/golden/run/fixedbugs-381-a-write-inside-a-branching-pushed-value-keeps-the-receiver-first.hero"
 bb0:
-#line 29 "tests/golden/run/fixedbugs-381-a-write-inside-a-branching-pushed-value-keeps-the-receiver-first.hero"
     t2 = INT64_C(100);
 #line 29 "tests/golden/run/fixedbugs-381-a-write-inside-a-branching-pushed-value-keeps-the-receiver-first.hero"
     hero_array_push_owned(&(*ph0_xs), &t2);
@@ -234,52 +213,15 @@ bb0:
     t5 = ((void)(t4 == NULL ? ((void)hero_array_len(t4), hero_unreachable()) : (void)0), t4->len);
 #line 30 "tests/golden/run/fixedbugs-381-a-write-inside-a-branching-pushed-value-keeps-the-receiver-first.hero"
     return t5;
-#line 238 "fixedbugs381awriteinsideabranchingpushedvaluekeepsthereceiverfirst.c"
+#line 217 "fixedbugs381awriteinsideabranchingpushedvaluekeepsthereceiverfirst.c"
 }
 
 #line 32 "tests/golden/run/fixedbugs-381-a-write-inside-a-branching-pushed-value-keeps-the-receiver-first.hero"
 HeroArrayHeader * h_fixedbugs381awriteinsideabranchingpushedvaluekeepsthereceiverfirst_written_after_a_branch(void) {
-#line 243 "fixedbugs381awriteinsideabranchingpushedvaluekeepsthereceiverfirst.c"
-    HeroArrayHeader * h0_out = {0};
-    HeroArrayHeader * h1_kept = {0};
-    h_0opt_e201354 h2_f0 = {0};
-    HeroArrayHeader * h3_own3 = {0};
-    HeroArrayHeader * h4_own4 = {0};
-    h_0opt_e201354 h5_own5 = {0};
-    HeroArrayHeader * h6_own6 = {0};
-    int64_t t1;
-    int64_t t2;
-    HeroArrayHeader * t3;
-    HeroArrayHeader * t4;
-    HeroArrayHeader * t5;
-    int64_t t6;
-    h_0opt_e201354 t7;
-    h_0opt_e201354 t8;
-    int64_t t9;
-    int64_t t10;
-    bool t11;
-    h_0opt_e201354 t12;
-    HeroFailure t13;
-    h_0opt_e201354 t14;
-    int64_t t15;
-    int64_t t16;
-    int64_t t17;
-    HeroArrayHeader * t18;
-    HeroStr t19;
-    HeroArrayHeader * t20;
-    int64_t t21;
-    HeroArrayHeader * t22;
-    HeroArrayHeader * t23;
-    HeroArrayHeader * t24;
-    HeroArrayHeader * t25;
-    HeroArrayHeader * t26;
-    h_0opt_e201354 t27;
-    h_0opt_e201354 t28;
-    HeroArrayHeader * t29;
-    HeroArrayHeader * t30;
-    goto bb0;
+#line 32 "tests/golden/run/fixedbugs-381-a-write-inside-a-branching-pushed-value-keeps-the-receiver-first.hero"
+    HeroArrayHeader * h0_out = {0}; HeroArrayHeader * h1_kept = {0}; h_0opt_e201354 h2_f0 = {0}; HeroArrayHeader * h3_own3 = {0}; HeroArrayHeader * h4_own4 = {0}; h_0opt_e201354 h5_own5 = {0}; HeroArrayHeader * h6_own6 = {0}; int64_t t1; int64_t t2; HeroArrayHeader * t3; HeroArrayHeader * t4; HeroArrayHeader * t5; int64_t t6; h_0opt_e201354 t7; h_0opt_e201354 t8; int64_t t9; int64_t t10; bool t11; h_0opt_e201354 t12; HeroFailure t13; h_0opt_e201354 t14; int64_t t15; int64_t t16; int64_t t17; HeroArrayHeader * t18; HeroStr t19; HeroArrayHeader * t20; int64_t t21; HeroArrayHeader * t22; HeroArrayHeader * t23; HeroArrayHeader * t24; HeroArrayHeader * t25; HeroArrayHeader * t26; h_0opt_e201354 t27; h_0opt_e201354 t28; HeroArrayHeader * t29; HeroArrayHeader * t30; goto bb0;
+#line 32 "tests/golden/run/fixedbugs-381-a-write-inside-a-branching-pushed-value-keeps-the-receiver-first.hero"
 bb0:
-#line 33 "tests/golden/run/fixedbugs-381-a-write-inside-a-branching-pushed-value-keeps-the-receiver-first.hero"
     t1 = INT64_C(1);
 #line 33 "tests/golden/run/fixedbugs-381-a-write-inside-a-branching-pushed-value-keeps-the-receiver-first.hero"
     t2 = INT64_C(2);
@@ -387,7 +329,7 @@ bb1:
 #line 36 "tests/golden/run/fixedbugs-381-a-write-inside-a-branching-pushed-value-keeps-the-receiver-first.hero"
     hero_print_end();
     t22 = h0_out;
-#line 391 "fixedbugs381awriteinsideabranchingpushedvaluekeepsthereceiverfirst.c"
+#line 333 "fixedbugs381awriteinsideabranchingpushedvaluekeepsthereceiverfirst.c"
     hero_array_incref(t22);
     hero_array_release_at(&h0_out);
     hero_array_release_at(&h1_kept);
@@ -402,54 +344,17 @@ bb2:
     t12 = h2_f0;
 #line 35 "tests/golden/run/fixedbugs-381-a-write-inside-a-branching-pushed-value-keeps-the-receiver-first.hero"
     t13 = t12.as.err;
-#line 406 "fixedbugs381awriteinsideabranchingpushedvaluekeepsthereceiverfirst.c"
+#line 348 "fixedbugs381awriteinsideabranchingpushedvaluekeepsthereceiverfirst.c"
     hero_panic_must(t13);
     hero_unreachable();
 }
 
 #line 39 "tests/golden/run/fixedbugs-381-a-write-inside-a-branching-pushed-value-keeps-the-receiver-first.hero"
 HeroArrayHeader * h_fixedbugs381awriteinsideabranchingpushedvaluekeepsthereceiverfirst_written_in_the_load_block(void) {
-#line 413 "fixedbugs381awriteinsideabranchingpushedvaluekeepsthereceiverfirst.c"
-    HeroArrayHeader * h0_out = {0};
-    HeroArrayHeader * h1_kept = {0};
-    h_0opt_e201354 h2_f0 = {0};
-    HeroArrayHeader * h3_own3 = {0};
-    HeroArrayHeader * h4_own4 = {0};
-    h_0opt_e201354 h5_own5 = {0};
-    HeroArrayHeader * h6_own6 = {0};
-    int64_t t1;
-    int64_t t2;
-    HeroArrayHeader * t3;
-    HeroArrayHeader * t4;
-    HeroArrayHeader * t5;
-    int64_t t6;
-    int64_t t7;
-    h_0opt_e201354 t8;
-    h_0opt_e201354 t9;
-    int64_t t10;
-    int64_t t11;
-    bool t12;
-    h_0opt_e201354 t13;
-    HeroFailure t14;
-    h_0opt_e201354 t15;
-    int64_t t16;
-    int64_t t17;
-    HeroArrayHeader * t18;
-    HeroStr t19;
-    HeroArrayHeader * t20;
-    int64_t t21;
-    HeroArrayHeader * t22;
-    HeroArrayHeader * t23;
-    HeroArrayHeader * t24;
-    HeroArrayHeader * t25;
-    HeroArrayHeader * t26;
-    h_0opt_e201354 t27;
-    h_0opt_e201354 t28;
-    HeroArrayHeader * t29;
-    HeroArrayHeader * t30;
-    goto bb0;
+#line 39 "tests/golden/run/fixedbugs-381-a-write-inside-a-branching-pushed-value-keeps-the-receiver-first.hero"
+    HeroArrayHeader * h0_out = {0}; HeroArrayHeader * h1_kept = {0}; h_0opt_e201354 h2_f0 = {0}; HeroArrayHeader * h3_own3 = {0}; HeroArrayHeader * h4_own4 = {0}; h_0opt_e201354 h5_own5 = {0}; HeroArrayHeader * h6_own6 = {0}; int64_t t1; int64_t t2; HeroArrayHeader * t3; HeroArrayHeader * t4; HeroArrayHeader * t5; int64_t t6; int64_t t7; h_0opt_e201354 t8; h_0opt_e201354 t9; int64_t t10; int64_t t11; bool t12; h_0opt_e201354 t13; HeroFailure t14; h_0opt_e201354 t15; int64_t t16; int64_t t17; HeroArrayHeader * t18; HeroStr t19; HeroArrayHeader * t20; int64_t t21; HeroArrayHeader * t22; HeroArrayHeader * t23; HeroArrayHeader * t24; HeroArrayHeader * t25; HeroArrayHeader * t26; h_0opt_e201354 t27; h_0opt_e201354 t28; HeroArrayHeader * t29; HeroArrayHeader * t30; goto bb0;
+#line 39 "tests/golden/run/fixedbugs-381-a-write-inside-a-branching-pushed-value-keeps-the-receiver-first.hero"
 bb0:
-#line 40 "tests/golden/run/fixedbugs-381-a-write-inside-a-branching-pushed-value-keeps-the-receiver-first.hero"
     t1 = INT64_C(1);
 #line 40 "tests/golden/run/fixedbugs-381-a-write-inside-a-branching-pushed-value-keeps-the-receiver-first.hero"
     t2 = INT64_C(2);
@@ -557,7 +462,7 @@ bb1:
 #line 43 "tests/golden/run/fixedbugs-381-a-write-inside-a-branching-pushed-value-keeps-the-receiver-first.hero"
     hero_print_end();
     t22 = h0_out;
-#line 561 "fixedbugs381awriteinsideabranchingpushedvaluekeepsthereceiverfirst.c"
+#line 466 "fixedbugs381awriteinsideabranchingpushedvaluekeepsthereceiverfirst.c"
     hero_array_incref(t22);
     hero_array_release_at(&h0_out);
     hero_array_release_at(&h1_kept);
@@ -572,68 +477,17 @@ bb2:
     t13 = h2_f0;
 #line 42 "tests/golden/run/fixedbugs-381-a-write-inside-a-branching-pushed-value-keeps-the-receiver-first.hero"
     t14 = t13.as.err;
-#line 576 "fixedbugs381awriteinsideabranchingpushedvaluekeepsthereceiverfirst.c"
+#line 481 "fixedbugs381awriteinsideabranchingpushedvaluekeepsthereceiverfirst.c"
     hero_panic_must(t14);
     hero_unreachable();
 }
 
 #line 46 "tests/golden/run/fixedbugs-381-a-write-inside-a-branching-pushed-value-keeps-the-receiver-first.hero"
 h_fixedbugs381awriteinsideabranchingpushedvaluekeepsthereceiverfirst_Bag h_fixedbugs381awriteinsideabranchingpushedvaluekeepsthereceiverfirst_through_a_field(void) {
-#line 583 "fixedbugs381awriteinsideabranchingpushedvaluekeepsthereceiverfirst.c"
-    h_fixedbugs381awriteinsideabranchingpushedvaluekeepsthereceiverfirst_Bag h0_b = {0};
-    HeroArrayHeader * h1_xs0 = {0};
-    int64_t h2_i0;
-    int64_t h3_at;
-    h_0opt_e201354 h4_f0 = {0};
-    HeroArrayHeader * h5_own5 = {0};
-    h_fixedbugs381awriteinsideabranchingpushedvaluekeepsthereceiverfirst_Bag h6_own6 = {0};
-    HeroArrayHeader * h7_own7 = {0};
-    h_0opt_e201354 h8_own8 = {0};
-    HeroArrayHeader * h9_own9 = {0};
-    HeroArrayHeader * t1;
-    h_fixedbugs381awriteinsideabranchingpushedvaluekeepsthereceiverfirst_Bag t2;
-    int64_t t3;
-    int64_t t4;
-    HeroArrayHeader * t5;
-    int64_t t6;
-    int64_t t7;
-    HeroArrayHeader * t8;
-    int64_t t9;
-    bool t10;
-    HeroArrayHeader * t11;
-    int64_t t12;
-    int64_t t13;
-    h_fixedbugs381awriteinsideabranchingpushedvaluekeepsthereceiverfirst_Bag t14;
-    HeroArrayHeader * t15;
-    int64_t t16;
-    int64_t t17;
-    int64_t t18;
-    h_0opt_e201354 t19;
-    h_0opt_e201354 t20;
-    int64_t t21;
-    int64_t t22;
-    bool t23;
-    h_0opt_e201354 t24;
-    HeroFailure t25;
-    h_0opt_e201354 t26;
-    int64_t t27;
-    HeroArrayHeader * t28;
-    int64_t t29;
-    int64_t t30;
-    int64_t t31;
-    h_fixedbugs381awriteinsideabranchingpushedvaluekeepsthereceiverfirst_Bag t32;
-    HeroArrayHeader * t33;
-    h_fixedbugs381awriteinsideabranchingpushedvaluekeepsthereceiverfirst_Bag t34;
-    h_fixedbugs381awriteinsideabranchingpushedvaluekeepsthereceiverfirst_Bag t35;
-    HeroArrayHeader * t36;
-    HeroArrayHeader * t37;
-    h_0opt_e201354 t38;
-    h_0opt_e201354 t39;
-    HeroArrayHeader * t40;
-    HeroArrayHeader * t41;
-    goto bb0;
+#line 46 "tests/golden/run/fixedbugs-381-a-write-inside-a-branching-pushed-value-keeps-the-receiver-first.hero"
+    h_fixedbugs381awriteinsideabranchingpushedvaluekeepsthereceiverfirst_Bag h0_b = {0}; HeroArrayHeader * h1_xs0 = {0}; int64_t h2_i0; int64_t h3_at; h_0opt_e201354 h4_f0 = {0}; HeroArrayHeader * h5_own5 = {0}; h_fixedbugs381awriteinsideabranchingpushedvaluekeepsthereceiverfirst_Bag h6_own6 = {0}; HeroArrayHeader * h7_own7 = {0}; h_0opt_e201354 h8_own8 = {0}; HeroArrayHeader * h9_own9 = {0}; HeroArrayHeader * t1; h_fixedbugs381awriteinsideabranchingpushedvaluekeepsthereceiverfirst_Bag t2; int64_t t3; int64_t t4; HeroArrayHeader * t5; int64_t t6; int64_t t7; HeroArrayHeader * t8; int64_t t9; bool t10; HeroArrayHeader * t11; int64_t t12; int64_t t13; h_fixedbugs381awriteinsideabranchingpushedvaluekeepsthereceiverfirst_Bag t14; HeroArrayHeader * t15; int64_t t16; int64_t t17; int64_t t18; h_0opt_e201354 t19; h_0opt_e201354 t20; int64_t t21; int64_t t22; bool t23; h_0opt_e201354 t24; HeroFailure t25; h_0opt_e201354 t26; int64_t t27; HeroArrayHeader * t28; int64_t t29; int64_t t30; int64_t t31; h_fixedbugs381awriteinsideabranchingpushedvaluekeepsthereceiverfirst_Bag t32; HeroArrayHeader * t33; h_fixedbugs381awriteinsideabranchingpushedvaluekeepsthereceiverfirst_Bag t34; h_fixedbugs381awriteinsideabranchingpushedvaluekeepsthereceiverfirst_Bag t35; HeroArrayHeader * t36; HeroArrayHeader * t37; h_0opt_e201354 t38; h_0opt_e201354 t39; HeroArrayHeader * t40; HeroArrayHeader * t41; goto bb0;
+#line 46 "tests/golden/run/fixedbugs-381-a-write-inside-a-branching-pushed-value-keeps-the-receiver-first.hero"
 bb0:
-#line 47 "tests/golden/run/fixedbugs-381-a-write-inside-a-branching-pushed-value-keeps-the-receiver-first.hero"
     t1 = hero_array_new(&hero_desc_int, 1);
 #line 47 "tests/golden/run/fixedbugs-381-a-write-inside-a-branching-pushed-value-keeps-the-receiver-first.hero"
     t33 = h5_own5;
@@ -758,7 +612,7 @@ bb3:
 bb4:
 #line 52 "tests/golden/run/fixedbugs-381-a-write-inside-a-branching-pushed-value-keeps-the-receiver-first.hero"
     t32 = h0_b;
-#line 762 "fixedbugs381awriteinsideabranchingpushedvaluekeepsthereceiverfirst.c"
+#line 616 "fixedbugs381awriteinsideabranchingpushedvaluekeepsthereceiverfirst.c"
     h_fixedbugs381awriteinsideabranchingpushedvaluekeepsthereceiverfirst_Bag_retain(&t32);
     h_fixedbugs381awriteinsideabranchingpushedvaluekeepsthereceiverfirst_Bag_release(hero_slot_escape(&h0_b));
     hero_array_release_at(&h1_xs0);
@@ -798,47 +652,17 @@ bb6:
     t24 = h4_f0;
 #line 50 "tests/golden/run/fixedbugs-381-a-write-inside-a-branching-pushed-value-keeps-the-receiver-first.hero"
     t25 = t24.as.err;
-#line 802 "fixedbugs381awriteinsideabranchingpushedvaluekeepsthereceiverfirst.c"
+#line 656 "fixedbugs381awriteinsideabranchingpushedvaluekeepsthereceiverfirst.c"
     hero_panic_must(t25);
     hero_unreachable();
 }
 
 #line 54 "tests/golden/run/fixedbugs-381-a-write-inside-a-branching-pushed-value-keeps-the-receiver-first.hero"
 HeroStr h_fixedbugs381awriteinsideabranchingpushedvaluekeepsthereceiverfirst_shown(HeroArrayHeader * h0_xs) {
-#line 809 "fixedbugs381awriteinsideabranchingpushedvaluekeepsthereceiverfirst.c"
-    HeroArrayHeader * h1_parts = {0};
-    HeroArrayHeader * h2_xs0 = {0};
-    int64_t h3_i0;
-    int64_t h4_x;
-    HeroArrayHeader * h5_own5 = {0};
-    HeroStr h6_own6 = {0};
-    HeroStr h7_own7 = {0};
-    HeroArrayHeader * t1;
-    HeroArrayHeader * t2;
-    int64_t t3;
-    int64_t t4;
-    HeroArrayHeader * t5;
-    int64_t t6;
-    bool t7;
-    HeroArrayHeader * t8;
-    int64_t t9;
-    int64_t t10;
-    int64_t t12;
-    HeroStr t13;
-    int64_t t15;
-    int64_t t16;
-    int64_t t17;
-    HeroArrayHeader * t18;
-    HeroStr t19;
-    HeroStr t20;
-    HeroArrayHeader * t21;
-    HeroArrayHeader * t22;
-    HeroArrayHeader * t23;
-    HeroStr t24;
-    HeroStr t25;
-    goto bb0;
+#line 54 "tests/golden/run/fixedbugs-381-a-write-inside-a-branching-pushed-value-keeps-the-receiver-first.hero"
+    HeroArrayHeader * h1_parts = {0}; HeroArrayHeader * h2_xs0 = {0}; int64_t h3_i0; int64_t h4_x; HeroArrayHeader * h5_own5 = {0}; HeroStr h6_own6 = {0}; HeroStr h7_own7 = {0}; HeroArrayHeader * t1; HeroArrayHeader * t2; int64_t t3; int64_t t4; HeroArrayHeader * t5; int64_t t6; bool t7; HeroArrayHeader * t8; int64_t t9; int64_t t10; int64_t t12; HeroStr t13; int64_t t15; int64_t t16; int64_t t17; HeroArrayHeader * t18; HeroStr t19; HeroStr t20; HeroArrayHeader * t21; HeroArrayHeader * t22; HeroArrayHeader * t23; HeroStr t24; HeroStr t25; goto bb0;
+#line 54 "tests/golden/run/fixedbugs-381-a-write-inside-a-branching-pushed-value-keeps-the-receiver-first.hero"
 bb0:
-#line 55 "tests/golden/run/fixedbugs-381-a-write-inside-a-branching-pushed-value-keeps-the-receiver-first.hero"
     t1 = hero_array_new(&hero_desc_str, 1);
 #line 55 "tests/golden/run/fixedbugs-381-a-write-inside-a-branching-pushed-value-keeps-the-receiver-first.hero"
     t21 = h5_own5;
@@ -931,7 +755,7 @@ bb4:
     h7_own7 = t20;
 #line 60 "tests/golden/run/fixedbugs-381-a-write-inside-a-branching-pushed-value-keeps-the-receiver-first.hero"
     hero_str_decref(t25);
-#line 935 "fixedbugs381awriteinsideabranchingpushedvaluekeepsthereceiverfirst.c"
+#line 759 "fixedbugs381awriteinsideabranchingpushedvaluekeepsthereceiverfirst.c"
     hero_str_incref(t20);
     hero_array_release_at(&h1_parts);
     hero_array_release_at(&h2_xs0);
@@ -943,29 +767,10 @@ bb4:
 
 #line 62 "tests/golden/run/fixedbugs-381-a-write-inside-a-branching-pushed-value-keeps-the-receiver-first.hero"
 void h_fixedbugs381awriteinsideabranchingpushedvaluekeepsthereceiverfirst_main(void) {
-#line 947 "fixedbugs381awriteinsideabranchingpushedvaluekeepsthereceiverfirst.c"
-    HeroArrayHeader * h0_own0 = {0};
-    HeroStr h1_own1 = {0};
-    HeroArrayHeader * h2_own2 = {0};
-    HeroStr h3_own3 = {0};
-    h_fixedbugs381awriteinsideabranchingpushedvaluekeepsthereceiverfirst_Bag h4_own4 = {0};
-    HeroStr h5_own5 = {0};
-    HeroArrayHeader * t1;
-    HeroStr t2;
-    HeroArrayHeader * t3;
-    HeroStr t4;
-    h_fixedbugs381awriteinsideabranchingpushedvaluekeepsthereceiverfirst_Bag t5;
-    HeroArrayHeader * t6;
-    HeroStr t7;
-    HeroArrayHeader * t8;
-    HeroStr t9;
-    HeroArrayHeader * t10;
-    HeroStr t11;
-    h_fixedbugs381awriteinsideabranchingpushedvaluekeepsthereceiverfirst_Bag t12;
-    HeroStr t13;
-    goto bb0;
+#line 62 "tests/golden/run/fixedbugs-381-a-write-inside-a-branching-pushed-value-keeps-the-receiver-first.hero"
+    HeroArrayHeader * h0_own0 = {0}; HeroStr h1_own1 = {0}; HeroArrayHeader * h2_own2 = {0}; HeroStr h3_own3 = {0}; h_fixedbugs381awriteinsideabranchingpushedvaluekeepsthereceiverfirst_Bag h4_own4 = {0}; HeroStr h5_own5 = {0}; HeroArrayHeader * t1; HeroStr t2; HeroArrayHeader * t3; HeroStr t4; h_fixedbugs381awriteinsideabranchingpushedvaluekeepsthereceiverfirst_Bag t5; HeroArrayHeader * t6; HeroStr t7; HeroArrayHeader * t8; HeroStr t9; HeroArrayHeader * t10; HeroStr t11; h_fixedbugs381awriteinsideabranchingpushedvaluekeepsthereceiverfirst_Bag t12; HeroStr t13; goto bb0;
+#line 62 "tests/golden/run/fixedbugs-381-a-write-inside-a-branching-pushed-value-keeps-the-receiver-first.hero"
 bb0:
-#line 63 "tests/golden/run/fixedbugs-381-a-write-inside-a-branching-pushed-value-keeps-the-receiver-first.hero"
     t1 = h_fixedbugs381awriteinsideabranchingpushedvaluekeepsthereceiverfirst_written_after_a_branch();
 #line 63 "tests/golden/run/fixedbugs-381-a-write-inside-a-branching-pushed-value-keeps-the-receiver-first.hero"
     t8 = h0_own0;
@@ -1025,7 +830,7 @@ bb0:
     hero_print_str(t7);
 #line 65 "tests/golden/run/fixedbugs-381-a-write-inside-a-branching-pushed-value-keeps-the-receiver-first.hero"
     hero_print_end();
-#line 1029 "fixedbugs381awriteinsideabranchingpushedvaluekeepsthereceiverfirst.c"
+#line 834 "fixedbugs381awriteinsideabranchingpushedvaluekeepsthereceiverfirst.c"
     hero_array_release_at(&h0_own0);
     hero_str_release_at(&h1_own1);
     hero_array_release_at(&h2_own2);
@@ -1037,25 +842,10 @@ bb0:
 
 #line 26 "<heroes library>"
 HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to) {
-#line 1041 "fixedbugs381awriteinsideabranchingpushedvaluekeepsthereceiverfirst.c"
-    HeroArrayHeader * h2_out = {0};
-    int64_t h3_i;
-    HeroArrayHeader * h4_own4 = {0};
-    HeroArrayHeader * t1;
-    int64_t t2;
-    int64_t t3;
-    int64_t t4;
-    bool t5;
-    int64_t t7;
-    int64_t t9;
-    int64_t t10;
-    int64_t t11;
-    HeroArrayHeader * t12;
-    HeroArrayHeader * t13;
-    HeroArrayHeader * t14;
-    goto bb0;
+#line 26 "<heroes library>"
+    HeroArrayHeader * h2_out = {0}; int64_t h3_i; HeroArrayHeader * h4_own4 = {0}; HeroArrayHeader * t1; int64_t t2; int64_t t3; int64_t t4; bool t5; int64_t t7; int64_t t9; int64_t t10; int64_t t11; HeroArrayHeader * t12; HeroArrayHeader * t13; HeroArrayHeader * t14; goto bb0;
+#line 26 "<heroes library>"
 bb0:
-#line 27 "<heroes library>"
     t1 = hero_array_new(&hero_desc_int, 1);
 #line 27 "<heroes library>"
     t13 = h4_own4;
@@ -1102,7 +892,7 @@ bb2:
 #line 31 "<heroes library>"
 bb3:
     t12 = h2_out;
-#line 1106 "fixedbugs381awriteinsideabranchingpushedvaluekeepsthereceiverfirst.c"
+#line 896 "fixedbugs381awriteinsideabranchingpushedvaluekeepsthereceiverfirst.c"
     hero_array_incref(t12);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h4_own4);

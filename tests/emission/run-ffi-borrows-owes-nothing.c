@@ -106,22 +106,10 @@ void h_ffiborrowsowesnothing_main(void);
 
 #line 24 "tests/golden/run/ffi-borrows-owes-nothing.hero"
 void h_ffiborrowsowesnothing_main(void) {
-#line 110 "ffiborrowsowesnothing.c"
-    Slot * h0_mine;
-    Slot * h1_theirs;
-    int64_t t1;
-    Slot * t2;
-    Slot * t3;
-    Slot * t4;
-    int64_t t5;
-    Slot * t6;
-    int64_t t7;
-    int64_t t8;
-    Slot * t9;
-    HeroStr t10;
-    goto bb0;
+#line 24 "tests/golden/run/ffi-borrows-owes-nothing.hero"
+    Slot * h0_mine; Slot * h1_theirs; int64_t t1; Slot * t2; Slot * t3; Slot * t4; int64_t t5; Slot * t6; int64_t t7; int64_t t8; Slot * t9; HeroStr t10; goto bb0;
+#line 24 "tests/golden/run/ffi-borrows-owes-nothing.hero"
 bb0:
-#line 25 "tests/golden/run/ffi-borrows-owes-nothing.hero"
     t1 = INT64_C(3);
 #line 25 "tests/golden/run/ffi-borrows-owes-nothing.hero"
     t2 = slot_open(t1);
@@ -171,7 +159,7 @@ bb0:
     hero_print_end();
 #line 29 "tests/golden/run/ffi-borrows-owes-nothing.hero"
     return;
-#line 175 "ffiborrowsowesnothing.c"
+#line 163 "ffiborrowsowesnothing.c"
 }
 HERO_TU_LOCAL bool h_ffiborrowsowesnothing_Slot_eq(Slot * const *a, Slot * const *b) {
     return hero_handle_eq(*a, *b);

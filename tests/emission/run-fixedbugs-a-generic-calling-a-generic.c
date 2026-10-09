@@ -130,46 +130,9 @@ HERO_TU_LOCAL h_fixedbugsagenericcallingageneric_P h_fixedbugsagenericcallingage
 
 #line 48 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
 void h_fixedbugsagenericcallingageneric_main(void) {
-#line 134 "fixedbugsagenericcallingageneric.c"
-    h_fixedbugsagenericcallingageneric_P h0_p;
-    HeroArrayHeader * h1_own1 = {0};
-    HeroArrayHeader * h2_own2 = {0};
-    HeroStr h3_own3 = {0};
-    HeroArrayHeader * h4_own4 = {0};
-    HeroArrayHeader * h5_own5 = {0};
-    HeroArrayHeader * h6_own6 = {0};
-    int64_t t1;
-    int64_t t2;
-    HeroArrayHeader * t3;
-    int64_t t4;
-    HeroStr t5;
-    HeroStr t6;
-    HeroArrayHeader * t7;
-    HeroStr t8;
-    int64_t t9;
-    h_fixedbugsagenericcallingageneric_P t10;
-    int64_t t11;
-    h_fixedbugsagenericcallingageneric_P t12;
-    HeroArrayHeader * t13;
-    h_fixedbugsagenericcallingageneric_P t14;
-    h_fixedbugsagenericcallingageneric_P t15;
-    int64_t t16;
-    int64_t t17;
-    int64_t t18;
-    int64_t t19;
-    HeroArrayHeader * t20;
-    int64_t t21;
-    HeroStr t22;
-    HeroStr t23;
-    HeroArrayHeader * t24;
-    int64_t t25;
-    HeroArrayHeader * t26;
-    HeroArrayHeader * t27;
-    HeroStr t28;
-    HeroArrayHeader * t29;
-    HeroArrayHeader * t30;
-    HeroArrayHeader * t31;
-    goto bb0;
+#line 48 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
+    h_fixedbugsagenericcallingageneric_P h0_p; HeroArrayHeader * h1_own1 = {0}; HeroArrayHeader * h2_own2 = {0}; HeroStr h3_own3 = {0}; HeroArrayHeader * h4_own4 = {0}; HeroArrayHeader * h5_own5 = {0}; HeroArrayHeader * h6_own6 = {0}; int64_t t1; int64_t t2; HeroArrayHeader * t3; int64_t t4; HeroStr t5; HeroStr t6; HeroArrayHeader * t7; HeroStr t8; int64_t t9; h_fixedbugsagenericcallingageneric_P t10; int64_t t11; h_fixedbugsagenericcallingageneric_P t12; HeroArrayHeader * t13; h_fixedbugsagenericcallingageneric_P t14; h_fixedbugsagenericcallingageneric_P t15; int64_t t16; int64_t t17; int64_t t18; int64_t t19; HeroArrayHeader * t20; int64_t t21; HeroStr t22; HeroStr t23; HeroArrayHeader * t24; int64_t t25; HeroArrayHeader * t26; HeroArrayHeader * t27; HeroStr t28; HeroArrayHeader * t29; HeroArrayHeader * t30; HeroArrayHeader * t31; goto bb0;
+#line 48 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
 bb0:
 #line 50 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     t1 = INT64_C(7);
@@ -296,7 +259,7 @@ bb0:
     hero_print_int(t25);
 #line 56 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     hero_print_end();
-#line 300 "fixedbugsagenericcallingageneric.c"
+#line 263 "fixedbugsagenericcallingageneric.c"
     hero_array_release_at(&h1_own1);
     hero_array_release_at(&h2_own2);
     hero_str_release_at(&h3_own3);
@@ -310,32 +273,26 @@ bb0:
 /* outer<i64> */
 #line 39 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
 HERO_TU_LOCAL int64_t h_fixedbugsagenericcallingageneric_outer_1b9a87(HeroArrayHeader * h0_xs) {
-#line 314 "fixedbugsagenericcallingageneric.c"
-    HeroArrayHeader * t1;
-    int64_t t2;
-    goto bb0;
+#line 39 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
+    HeroArrayHeader * t1; int64_t t2; goto bb0;
+#line 39 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
 bb0:
-#line 40 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     t1 = h0_xs;
 #line 40 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     t2 = h_fixedbugsagenericcallingageneric_middle_1b9a87(t1);
 #line 40 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     return t2;
-#line 325 "fixedbugsagenericcallingageneric.c"
+#line 286 "fixedbugsagenericcallingageneric.c"
 }
 
 #line 39 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
 /* outer<str> */
 #line 39 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
 HERO_TU_LOCAL HeroStr h_fixedbugsagenericcallingageneric_outer_1e58d9(HeroArrayHeader * h0_xs) {
-#line 332 "fixedbugsagenericcallingageneric.c"
-    HeroStr h1_own1 = {0};
-    HeroArrayHeader * t1;
-    HeroStr t2;
-    HeroStr t3;
-    goto bb0;
+#line 39 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
+    HeroStr h1_own1 = {0}; HeroArrayHeader * t1; HeroStr t2; HeroStr t3; goto bb0;
+#line 39 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
 bb0:
-#line 40 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     t1 = h0_xs;
 #line 40 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     t2 = h_fixedbugsagenericcallingageneric_middle_1e58d9(t1);
@@ -345,7 +302,7 @@ bb0:
     h1_own1 = t2;
 #line 40 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     hero_str_decref(t3);
-#line 349 "fixedbugsagenericcallingageneric.c"
+#line 306 "fixedbugsagenericcallingageneric.c"
     hero_str_incref(t2);
     hero_str_release_at(&h1_own1);
     return t2;
@@ -355,37 +312,26 @@ bb0:
 /* outer<P> */
 #line 39 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
 HERO_TU_LOCAL h_fixedbugsagenericcallingageneric_P h_fixedbugsagenericcallingageneric_outer_50(HeroArrayHeader * h0_xs) {
-#line 359 "fixedbugsagenericcallingageneric.c"
-    HeroArrayHeader * t1;
-    h_fixedbugsagenericcallingageneric_P t2;
-    goto bb0;
+#line 39 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
+    HeroArrayHeader * t1; h_fixedbugsagenericcallingageneric_P t2; goto bb0;
+#line 39 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
 bb0:
-#line 40 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     t1 = h0_xs;
 #line 40 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     t2 = h_fixedbugsagenericcallingageneric_middle_50(t1);
 #line 40 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     return t2;
-#line 370 "fixedbugsagenericcallingageneric.c"
+#line 325 "fixedbugsagenericcallingageneric.c"
 }
 
 #line 45 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
 /* both<i64> */
 #line 45 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
 HERO_TU_LOCAL int64_t h_fixedbugsagenericcallingageneric_both_1b9a87(HeroArrayHeader * h0_es) {
-#line 377 "fixedbugsagenericcallingageneric.c"
-    HeroArrayHeader * h1_own1 = {0};
-    HeroArrayHeader * t1;
-    int64_t t2;
-    HeroArrayHeader * t3;
-    int64_t t4;
-    HeroArrayHeader * t5;
-    int64_t t6;
-    int64_t t7;
-    HeroArrayHeader * t8;
-    goto bb0;
+#line 45 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
+    HeroArrayHeader * h1_own1 = {0}; HeroArrayHeader * t1; int64_t t2; HeroArrayHeader * t3; int64_t t4; HeroArrayHeader * t5; int64_t t6; int64_t t7; HeroArrayHeader * t8; goto bb0;
+#line 45 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
 bb0:
-#line 46 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     t1 = h0_es;
 #line 46 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     t2 = h_fixedbugsagenericcallingageneric_tally_1b9a87(t1);
@@ -407,7 +353,7 @@ bb0:
     t6 = h_fixedbugsagenericcallingageneric_tally_1b9a87(t5);
 #line 46 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     if (__builtin_add_overflow(t2, t6, &t7)) hero_panic_overflow();
-#line 411 "fixedbugsagenericcallingageneric.c"
+#line 357 "fixedbugsagenericcallingageneric.c"
     hero_array_release_at(&h1_own1);
     return t7;
 }
@@ -416,21 +362,10 @@ bb0:
 /* both<str> */
 #line 45 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
 HERO_TU_LOCAL int64_t h_fixedbugsagenericcallingageneric_both_1e58d9(HeroArrayHeader * h0_es) {
-#line 420 "fixedbugsagenericcallingageneric.c"
-    HeroStr h1_own1 = {0};
-    HeroArrayHeader * h2_own2 = {0};
-    HeroArrayHeader * t1;
-    int64_t t2;
-    HeroArrayHeader * t3;
-    HeroStr t4;
-    HeroArrayHeader * t5;
-    int64_t t6;
-    int64_t t7;
-    HeroStr t8;
-    HeroArrayHeader * t9;
-    goto bb0;
+#line 45 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
+    HeroStr h1_own1 = {0}; HeroArrayHeader * h2_own2 = {0}; HeroArrayHeader * t1; int64_t t2; HeroArrayHeader * t3; HeroStr t4; HeroArrayHeader * t5; int64_t t6; int64_t t7; HeroStr t8; HeroArrayHeader * t9; goto bb0;
+#line 45 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
 bb0:
-#line 46 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     t1 = h0_es;
 #line 46 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     t2 = h_fixedbugsagenericcallingageneric_tally_1e58d9(t1);
@@ -458,7 +393,7 @@ bb0:
     t6 = h_fixedbugsagenericcallingageneric_tally_1e58d9(t5);
 #line 46 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     if (__builtin_add_overflow(t2, t6, &t7)) hero_panic_overflow();
-#line 462 "fixedbugsagenericcallingageneric.c"
+#line 397 "fixedbugsagenericcallingageneric.c"
     hero_str_release_at(&h1_own1);
     hero_array_release_at(&h2_own2);
     return t7;
@@ -468,32 +403,26 @@ bb0:
 /* middle<i64> */
 #line 36 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
 HERO_TU_LOCAL int64_t h_fixedbugsagenericcallingageneric_middle_1b9a87(HeroArrayHeader * h0_ys) {
-#line 472 "fixedbugsagenericcallingageneric.c"
-    HeroArrayHeader * t1;
-    int64_t t2;
-    goto bb0;
+#line 36 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
+    HeroArrayHeader * t1; int64_t t2; goto bb0;
+#line 36 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
 bb0:
-#line 37 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     t1 = h0_ys;
 #line 37 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     t2 = h_fixedbugsagenericcallingageneric_innermost_1b9a87(t1);
 #line 37 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     return t2;
-#line 483 "fixedbugsagenericcallingageneric.c"
+#line 416 "fixedbugsagenericcallingageneric.c"
 }
 
 #line 36 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
 /* middle<str> */
 #line 36 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
 HERO_TU_LOCAL HeroStr h_fixedbugsagenericcallingageneric_middle_1e58d9(HeroArrayHeader * h0_ys) {
-#line 490 "fixedbugsagenericcallingageneric.c"
-    HeroStr h1_own1 = {0};
-    HeroArrayHeader * t1;
-    HeroStr t2;
-    HeroStr t3;
-    goto bb0;
+#line 36 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
+    HeroStr h1_own1 = {0}; HeroArrayHeader * t1; HeroStr t2; HeroStr t3; goto bb0;
+#line 36 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
 bb0:
-#line 37 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     t1 = h0_ys;
 #line 37 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     t2 = h_fixedbugsagenericcallingageneric_innermost_1e58d9(t1);
@@ -503,7 +432,7 @@ bb0:
     h1_own1 = t2;
 #line 37 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     hero_str_decref(t3);
-#line 507 "fixedbugsagenericcallingageneric.c"
+#line 436 "fixedbugsagenericcallingageneric.c"
     hero_str_incref(t2);
     hero_str_release_at(&h1_own1);
     return t2;
@@ -513,67 +442,58 @@ bb0:
 /* middle<P> */
 #line 36 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
 HERO_TU_LOCAL h_fixedbugsagenericcallingageneric_P h_fixedbugsagenericcallingageneric_middle_50(HeroArrayHeader * h0_ys) {
-#line 517 "fixedbugsagenericcallingageneric.c"
-    HeroArrayHeader * t1;
-    h_fixedbugsagenericcallingageneric_P t2;
-    goto bb0;
+#line 36 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
+    HeroArrayHeader * t1; h_fixedbugsagenericcallingageneric_P t2; goto bb0;
+#line 36 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
 bb0:
-#line 37 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     t1 = h0_ys;
 #line 37 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     t2 = h_fixedbugsagenericcallingageneric_innermost_50(t1);
 #line 37 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     return t2;
-#line 528 "fixedbugsagenericcallingageneric.c"
+#line 455 "fixedbugsagenericcallingageneric.c"
 }
 
 #line 42 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
 /* tally<i64> */
 #line 42 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
 HERO_TU_LOCAL int64_t h_fixedbugsagenericcallingageneric_tally_1b9a87(HeroArrayHeader * h0_ds) {
-#line 535 "fixedbugsagenericcallingageneric.c"
-    HeroArrayHeader * t1;
-    int64_t t2;
-    goto bb0;
+#line 42 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
+    HeroArrayHeader * t1; int64_t t2; goto bb0;
+#line 42 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
 bb0:
-#line 43 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     t1 = h0_ds;
 #line 43 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     t2 = ((void)(t1 == NULL ? ((void)hero_array_len(t1), hero_unreachable()) : (void)0), t1->len);
 #line 43 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     return t2;
-#line 546 "fixedbugsagenericcallingageneric.c"
+#line 471 "fixedbugsagenericcallingageneric.c"
 }
 
 #line 42 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
 /* tally<str> */
 #line 42 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
 HERO_TU_LOCAL int64_t h_fixedbugsagenericcallingageneric_tally_1e58d9(HeroArrayHeader * h0_ds) {
-#line 553 "fixedbugsagenericcallingageneric.c"
-    HeroArrayHeader * t1;
-    int64_t t2;
-    goto bb0;
+#line 42 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
+    HeroArrayHeader * t1; int64_t t2; goto bb0;
+#line 42 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
 bb0:
-#line 43 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     t1 = h0_ds;
 #line 43 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     t2 = ((void)(t1 == NULL ? ((void)hero_array_len(t1), hero_unreachable()) : (void)0), t1->len);
 #line 43 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     return t2;
-#line 564 "fixedbugsagenericcallingageneric.c"
+#line 487 "fixedbugsagenericcallingageneric.c"
 }
 
 #line 33 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
 /* innermost<i64> */
 #line 33 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
 HERO_TU_LOCAL int64_t h_fixedbugsagenericcallingageneric_innermost_1b9a87(HeroArrayHeader * h0_zs) {
-#line 571 "fixedbugsagenericcallingageneric.c"
-    HeroArrayHeader * t1;
-    int64_t t2;
-    int64_t t3;
-    goto bb0;
+#line 33 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
+    HeroArrayHeader * t1; int64_t t2; int64_t t3; goto bb0;
+#line 33 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
 bb0:
-#line 34 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     t1 = h0_zs;
 #line 34 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     t2 = INT64_C(0);
@@ -581,26 +501,23 @@ bb0:
     t3 = ((void)((t1 == NULL || t2 < 0 || t2 >= t1->len) ? ((void)hero_array_at(t1, t2), hero_unreachable()) : (void)0), (void)(t1->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t1 + 1))[t2]);
 #line 34 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     return t3;
-#line 585 "fixedbugsagenericcallingageneric.c"
+#line 505 "fixedbugsagenericcallingageneric.c"
 }
 
 #line 33 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
 /* innermost<str> */
 #line 33 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
 HERO_TU_LOCAL HeroStr h_fixedbugsagenericcallingageneric_innermost_1e58d9(HeroArrayHeader * h0_zs) {
-#line 592 "fixedbugsagenericcallingageneric.c"
-    HeroArrayHeader * t1;
-    int64_t t2;
-    HeroStr t3;
-    goto bb0;
+#line 33 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
+    HeroArrayHeader * t1; int64_t t2; HeroStr t3; goto bb0;
+#line 33 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
 bb0:
-#line 34 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     t1 = h0_zs;
 #line 34 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     t2 = INT64_C(0);
 #line 34 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     t3 = ((void)((t1 == NULL || t2 < 0 || t2 >= t1->len) ? ((void)hero_array_at(t1, t2), hero_unreachable()) : (void)0), (void)(t1->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t1 + 1))[t2]);
-#line 604 "fixedbugsagenericcallingageneric.c"
+#line 521 "fixedbugsagenericcallingageneric.c"
     hero_str_incref(t3);
     return t3;
 }
@@ -609,13 +526,10 @@ bb0:
 /* innermost<P> */
 #line 33 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
 HERO_TU_LOCAL h_fixedbugsagenericcallingageneric_P h_fixedbugsagenericcallingageneric_innermost_50(HeroArrayHeader * h0_zs) {
-#line 613 "fixedbugsagenericcallingageneric.c"
-    HeroArrayHeader * t1;
-    int64_t t2;
-    h_fixedbugsagenericcallingageneric_P t3;
-    goto bb0;
+#line 33 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
+    HeroArrayHeader * t1; int64_t t2; h_fixedbugsagenericcallingageneric_P t3; goto bb0;
+#line 33 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
 bb0:
-#line 34 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     t1 = h0_zs;
 #line 34 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     t2 = INT64_C(0);
@@ -623,7 +537,7 @@ bb0:
     t3 = ((void)((t1 == NULL || t2 < 0 || t2 >= t1->len) ? ((void)hero_array_at(t1, t2), hero_unreachable()) : (void)0), (void)(t1->elem->size != sizeof(h_fixedbugsagenericcallingageneric_P) ? hero_unreachable() : (void)0), ((h_fixedbugsagenericcallingageneric_P const *)(const void *)(t1 + 1))[t2]);
 #line 34 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     return t3;
-#line 627 "fixedbugsagenericcallingageneric.c"
+#line 541 "fixedbugsagenericcallingageneric.c"
 }
 HERO_TU_LOCAL bool h_fixedbugsagenericcallingageneric_P_eq(const h_fixedbugsagenericcallingageneric_P *a, const h_fixedbugsagenericcallingageneric_P *b) {
     if (!(a->f_x == b->f_x)) return false;

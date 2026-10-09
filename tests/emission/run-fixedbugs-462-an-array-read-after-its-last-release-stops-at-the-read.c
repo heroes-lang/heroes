@@ -97,13 +97,10 @@ void h_fixedbugs462anarrayreadafteritslastreleasestopsattheread_main(void);
 
 #line 20 "tests/golden/run/fixedbugs-462-an-array-read-after-its-last-release-stops-at-the-read.hero"
 void h_fixedbugs462anarrayreadafteritslastreleasestopsattheread_main(void) {
-#line 101 "fixedbugs462anarrayreadafteritslastreleasestopsattheread.c"
-    HeroStr t1;
-    int64_t t2;
-    int64_t t3;
-    goto bb0;
+#line 20 "tests/golden/run/fixedbugs-462-an-array-read-after-its-last-release-stops-at-the-read.hero"
+    HeroStr t1; int64_t t2; int64_t t3; goto bb0;
+#line 20 "tests/golden/run/fixedbugs-462-an-array-read-after-its-last-release-stops-at-the-read.hero"
 bb0:
-#line 21 "tests/golden/run/fixedbugs-462-an-array-read-after-its-last-release-stops-at-the-read.hero"
     t1 = HERO_STR_LIT(hero_str_583e9abf);
 #line 21 "tests/golden/run/fixedbugs-462-an-array-read-after-its-last-release-stops-at-the-read.hero"
     hero_print_str(t1);
@@ -118,7 +115,7 @@ bb0:
     hero_print_end();
 #line 22 "tests/golden/run/fixedbugs-462-an-array-read-after-its-last-release-stops-at-the-read.hero"
     return;
-#line 122 "fixedbugs462anarrayreadafteritslastreleasestopsattheread.c"
+#line 119 "fixedbugs462anarrayreadafteritslastreleasestopsattheread.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

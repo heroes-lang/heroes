@@ -97,52 +97,10 @@ bool h_main_by_division(int64_t h0_n);
 
 #line 22 "examples/sieve/main.hero"
 HeroArrayHeader * h_main_sieve(int64_t h0_limit) {
-#line 101 "main.c"
-    HeroArrayHeader * h1_flags = {0};
-    int64_t h2_i;
-    int64_t h3_at;
-    int64_t h4_multiple;
-    HeroArrayHeader * h5_own5 = {0};
-    HeroArrayHeader * t1;
-    int64_t t2;
-    int64_t t3;
-    int64_t t4;
-    bool t5;
-    int64_t t7;
-    int64_t t8;
-    bool t9;
-    int64_t t11;
-    int64_t t12;
-    int64_t t13;
-    int64_t t14;
-    int64_t t15;
-    int64_t t16;
-    int64_t t17;
-    int64_t t18;
-    bool t19;
-    HeroArrayHeader * t20;
-    int64_t t21;
-    bool t22;
-    int64_t t23;
-    int64_t t24;
-    int64_t t25;
-    int64_t t26;
-    int64_t t27;
-    bool t28;
-    int64_t t29;
-    bool t30;
-    int64_t t31;
-    int64_t t32;
-    int64_t t33;
-    int64_t t34;
-    int64_t t35;
-    int64_t t36;
-    HeroArrayHeader * t37;
-    HeroArrayHeader * t38;
-    HeroArrayHeader * t39;
-    goto bb0;
+#line 22 "examples/sieve/main.hero"
+    HeroArrayHeader * h1_flags = {0}; int64_t h2_i; int64_t h3_at; int64_t h4_multiple; HeroArrayHeader * h5_own5 = {0}; HeroArrayHeader * t1; int64_t t2; int64_t t3; int64_t t4; bool t5; int64_t t7; int64_t t8; bool t9; int64_t t11; int64_t t12; int64_t t13; int64_t t14; int64_t t15; int64_t t16; int64_t t17; int64_t t18; bool t19; HeroArrayHeader * t20; int64_t t21; bool t22; int64_t t23; int64_t t24; int64_t t25; int64_t t26; int64_t t27; bool t28; int64_t t29; bool t30; int64_t t31; int64_t t32; int64_t t33; int64_t t34; int64_t t35; int64_t t36; HeroArrayHeader * t37; HeroArrayHeader * t38; HeroArrayHeader * t39; goto bb0;
+#line 22 "examples/sieve/main.hero"
 bb0:
-#line 23 "examples/sieve/main.hero"
     t1 = hero_array_new(&hero_desc_bool, 1);
 #line 23 "examples/sieve/main.hero"
     t38 = h5_own5;
@@ -226,7 +184,7 @@ bb5:
 bb6:
 #line 44 "examples/sieve/main.hero"
     t37 = h1_flags;
-#line 230 "main.c"
+#line 188 "main.c"
     hero_array_incref(t37);
     hero_array_release_at(&h1_flags);
     hero_array_release_at(&h5_own5);
@@ -288,53 +246,15 @@ bb11:
 bb12:
 #line 41 "examples/sieve/main.hero"
     goto bb7;
-#line 292 "main.c"
+#line 250 "main.c"
 }
 
 #line 46 "examples/sieve/main.hero"
 HeroArrayHeader * h_main_primes_below(int64_t h0_limit) {
-#line 297 "main.c"
-    HeroArrayHeader * h1_empty = {0};
-    HeroArrayHeader * h2_flags = {0};
-    HeroArrayHeader * h3_out = {0};
-    int64_t h4_i;
-    HeroArrayHeader * h5_ret0 = {0};
-    HeroArrayHeader * h6_own6 = {0};
-    HeroArrayHeader * h7_own7 = {0};
-    HeroArrayHeader * h8_own8 = {0};
-    int64_t t1;
-    int64_t t2;
-    bool t3;
-    HeroArrayHeader * t4;
-    HeroArrayHeader * t5;
-    int64_t t6;
-    int64_t t7;
-    int64_t t8;
-    HeroArrayHeader * t9;
-    HeroArrayHeader * t10;
-    int64_t t11;
-    int64_t t12;
-    HeroArrayHeader * t13;
-    int64_t t14;
-    bool t15;
-    HeroArrayHeader * t16;
-    int64_t t17;
-    bool t18;
-    int64_t t20;
-    int64_t t22;
-    int64_t t23;
-    int64_t t24;
-    HeroArrayHeader * t25;
-    HeroArrayHeader * t26;
-    HeroArrayHeader * t27;
-    HeroArrayHeader * t28;
-    HeroArrayHeader * t29;
-    HeroArrayHeader * t30;
-    HeroArrayHeader * t31;
-    HeroArrayHeader * t32;
-    goto bb0;
+#line 46 "examples/sieve/main.hero"
+    HeroArrayHeader * h1_empty = {0}; HeroArrayHeader * h2_flags = {0}; HeroArrayHeader * h3_out = {0}; int64_t h4_i; HeroArrayHeader * h5_ret0 = {0}; HeroArrayHeader * h6_own6 = {0}; HeroArrayHeader * h7_own7 = {0}; HeroArrayHeader * h8_own8 = {0}; int64_t t1; int64_t t2; bool t3; HeroArrayHeader * t4; HeroArrayHeader * t5; int64_t t6; int64_t t7; int64_t t8; HeroArrayHeader * t9; HeroArrayHeader * t10; int64_t t11; int64_t t12; HeroArrayHeader * t13; int64_t t14; bool t15; HeroArrayHeader * t16; int64_t t17; bool t18; int64_t t20; int64_t t22; int64_t t23; int64_t t24; HeroArrayHeader * t25; HeroArrayHeader * t26; HeroArrayHeader * t27; HeroArrayHeader * t28; HeroArrayHeader * t29; HeroArrayHeader * t30; HeroArrayHeader * t31; HeroArrayHeader * t32; goto bb0;
+#line 46 "examples/sieve/main.hero"
 bb0:
-#line 47 "examples/sieve/main.hero"
     t1 = h0_limit;
 #line 47 "examples/sieve/main.hero"
     t2 = INT64_C(2);
@@ -468,7 +388,7 @@ bb9:
     goto bb7;
 #line 56 "examples/sieve/main.hero"
 bb10:
-#line 472 "main.c"
+#line 392 "main.c"
     t26 = h5_ret0;
     hero_array_incref(t26);
     hero_array_release_at(&h1_empty);
@@ -482,22 +402,10 @@ bb10:
 
 #line 61 "examples/sieve/main.hero"
 bool h_main_is_prime(int64_t h0_n) {
-#line 486 "main.c"
-    bool h1_ret0;
-    HeroArrayHeader * h2_own2 = {0};
-    int64_t t1;
-    int64_t t2;
-    bool t3;
-    bool t4;
-    int64_t t5;
-    HeroArrayHeader * t6;
-    int64_t t7;
-    bool t8;
-    bool t9;
-    HeroArrayHeader * t10;
-    goto bb0;
+#line 61 "examples/sieve/main.hero"
+    bool h1_ret0; HeroArrayHeader * h2_own2 = {0}; int64_t t1; int64_t t2; bool t3; bool t4; int64_t t5; HeroArrayHeader * t6; int64_t t7; bool t8; bool t9; HeroArrayHeader * t10; goto bb0;
+#line 61 "examples/sieve/main.hero"
 bb0:
-#line 62 "examples/sieve/main.hero"
     t1 = h0_n;
 #line 62 "examples/sieve/main.hero"
     t2 = INT64_C(2);
@@ -539,7 +447,7 @@ bb3:
     goto bb1;
 #line 63 "examples/sieve/main.hero"
 bb4:
-#line 543 "main.c"
+#line 451 "main.c"
     t9 = h1_ret0;
     hero_array_release_at(&h2_own2);
     return t9;
@@ -547,40 +455,10 @@ bb4:
 
 #line 69 "examples/sieve/main.hero"
 HeroArrayHeader * h_main_gaps(int64_t h0_limit) {
-#line 551 "main.c"
-    HeroArrayHeader * h1_found = {0};
-    HeroArrayHeader * h2_out = {0};
-    int64_t h3_i;
-    HeroArrayHeader * h4_own4 = {0};
-    HeroArrayHeader * h5_own5 = {0};
-    int64_t t1;
-    HeroArrayHeader * t2;
-    HeroArrayHeader * t3;
-    int64_t t4;
-    int64_t t5;
-    HeroArrayHeader * t6;
-    int64_t t7;
-    bool t8;
-    HeroArrayHeader * t10;
-    int64_t t11;
-    int64_t t12;
-    HeroArrayHeader * t13;
-    int64_t t14;
-    int64_t t15;
-    int64_t t16;
-    int64_t t17;
-    int64_t t18;
-    int64_t t20;
-    int64_t t21;
-    int64_t t22;
-    HeroArrayHeader * t23;
-    HeroArrayHeader * t24;
-    HeroArrayHeader * t25;
-    HeroArrayHeader * t26;
-    HeroArrayHeader * t27;
-    goto bb0;
+#line 69 "examples/sieve/main.hero"
+    HeroArrayHeader * h1_found = {0}; HeroArrayHeader * h2_out = {0}; int64_t h3_i; HeroArrayHeader * h4_own4 = {0}; HeroArrayHeader * h5_own5 = {0}; int64_t t1; HeroArrayHeader * t2; HeroArrayHeader * t3; int64_t t4; int64_t t5; HeroArrayHeader * t6; int64_t t7; bool t8; HeroArrayHeader * t10; int64_t t11; int64_t t12; HeroArrayHeader * t13; int64_t t14; int64_t t15; int64_t t16; int64_t t17; int64_t t18; int64_t t20; int64_t t21; int64_t t22; HeroArrayHeader * t23; HeroArrayHeader * t24; HeroArrayHeader * t25; HeroArrayHeader * t26; HeroArrayHeader * t27; goto bb0;
+#line 69 "examples/sieve/main.hero"
 bb0:
-#line 70 "examples/sieve/main.hero"
     t1 = h0_limit;
 #line 70 "examples/sieve/main.hero"
     t2 = h_main_primes_below(t1);
@@ -664,7 +542,7 @@ bb2:
 bb3:
 #line 78 "examples/sieve/main.hero"
     t23 = h2_out;
-#line 668 "main.c"
+#line 546 "main.c"
     hero_array_incref(t23);
     hero_array_release_at(&h1_found);
     hero_array_release_at(&h2_out);
@@ -675,60 +553,10 @@ bb3:
 
 #line 80 "examples/sieve/main.hero"
 void h_main_main(void) {
-#line 679 "main.c"
-    HeroArrayHeader * h0_own0 = {0};
-    HeroArrayHeader * h1_own1 = {0};
-    HeroArrayHeader * h2_own2 = {0};
-    HeroStr h3_own3 = {0};
-    HeroArrayHeader * h4_own4 = {0};
-    HeroArrayHeader * h5_own5 = {0};
-    HeroArrayHeader * h6_own6 = {0};
-    HeroArrayHeader * h7_own7 = {0};
-    HeroArrayHeader * h8_own8 = {0};
-    HeroStr h9_own9 = {0};
-    int64_t t1;
-    HeroArrayHeader * t2;
-    int64_t t3;
-    int64_t t4;
-    HeroArrayHeader * t5;
-    HeroArrayHeader * t6;
-    HeroStr t7;
-    HeroStr t8;
-    int64_t t9;
-    HeroArrayHeader * t10;
-    int64_t t11;
-    int64_t t12;
-    HeroArrayHeader * t13;
-    int64_t t14;
-    int64_t t15;
-    HeroArrayHeader * t16;
-    int64_t t17;
-    int64_t t18;
-    HeroArrayHeader * t19;
-    HeroArrayHeader * t20;
-    HeroStr t21;
-    HeroStr t22;
-    int64_t t23;
-    bool t24;
-    int64_t t25;
-    bool t26;
-    int64_t t27;
-    bool t28;
-    int64_t t29;
-    bool t30;
-    HeroArrayHeader * t31;
-    HeroArrayHeader * t32;
-    HeroArrayHeader * t33;
-    HeroStr t34;
-    HeroArrayHeader * t35;
-    HeroArrayHeader * t36;
-    HeroArrayHeader * t37;
-    HeroArrayHeader * t38;
-    HeroArrayHeader * t39;
-    HeroStr t40;
-    goto bb0;
+#line 80 "examples/sieve/main.hero"
+    HeroArrayHeader * h0_own0 = {0}; HeroArrayHeader * h1_own1 = {0}; HeroArrayHeader * h2_own2 = {0}; HeroStr h3_own3 = {0}; HeroArrayHeader * h4_own4 = {0}; HeroArrayHeader * h5_own5 = {0}; HeroArrayHeader * h6_own6 = {0}; HeroArrayHeader * h7_own7 = {0}; HeroArrayHeader * h8_own8 = {0}; HeroStr h9_own9 = {0}; int64_t t1; HeroArrayHeader * t2; int64_t t3; int64_t t4; HeroArrayHeader * t5; HeroArrayHeader * t6; HeroStr t7; HeroStr t8; int64_t t9; HeroArrayHeader * t10; int64_t t11; int64_t t12; HeroArrayHeader * t13; int64_t t14; int64_t t15; HeroArrayHeader * t16; int64_t t17; int64_t t18; HeroArrayHeader * t19; HeroArrayHeader * t20; HeroStr t21; HeroStr t22; int64_t t23; bool t24; int64_t t25; bool t26; int64_t t27; bool t28; int64_t t29; bool t30; HeroArrayHeader * t31; HeroArrayHeader * t32; HeroArrayHeader * t33; HeroStr t34; HeroArrayHeader * t35; HeroArrayHeader * t36; HeroArrayHeader * t37; HeroArrayHeader * t38; HeroArrayHeader * t39; HeroStr t40; goto bb0;
+#line 80 "examples/sieve/main.hero"
 bb0:
-#line 81 "examples/sieve/main.hero"
     t1 = INT64_C(30);
 #line 81 "examples/sieve/main.hero"
     t2 = h_main_primes_below(t1);
@@ -880,7 +708,7 @@ bb0:
     hero_print_bool(t30);
 #line 91 "examples/sieve/main.hero"
     hero_print_end();
-#line 884 "main.c"
+#line 712 "main.c"
     hero_array_release_at(&h0_own0);
     hero_array_release_at(&h1_own1);
     hero_array_release_at(&h2_own2);
@@ -896,36 +724,10 @@ bb0:
 
 #line 93 "examples/sieve/main.hero"
 HeroArrayHeader * h_main_shown(HeroArrayHeader * h0_numbers) {
-#line 900 "main.c"
-    HeroArrayHeader * h1_out = {0};
-    HeroArrayHeader * h2_xs0 = {0};
-    int64_t h3_i0;
-    int64_t h4_one;
-    HeroArrayHeader * h5_own5 = {0};
-    HeroStr h6_own6 = {0};
-    HeroArrayHeader * t1;
-    HeroArrayHeader * t2;
-    int64_t t3;
-    int64_t t4;
-    HeroArrayHeader * t5;
-    int64_t t6;
-    bool t7;
-    HeroArrayHeader * t8;
-    int64_t t9;
-    int64_t t10;
-    int64_t t12;
-    HeroStr t13;
-    int64_t t15;
-    int64_t t16;
-    int64_t t17;
-    HeroArrayHeader * t18;
-    HeroArrayHeader * t19;
-    HeroArrayHeader * t20;
-    HeroArrayHeader * t21;
-    HeroStr t22;
-    goto bb0;
+#line 93 "examples/sieve/main.hero"
+    HeroArrayHeader * h1_out = {0}; HeroArrayHeader * h2_xs0 = {0}; int64_t h3_i0; int64_t h4_one; HeroArrayHeader * h5_own5 = {0}; HeroStr h6_own6 = {0}; HeroArrayHeader * t1; HeroArrayHeader * t2; int64_t t3; int64_t t4; HeroArrayHeader * t5; int64_t t6; bool t7; HeroArrayHeader * t8; int64_t t9; int64_t t10; int64_t t12; HeroStr t13; int64_t t15; int64_t t16; int64_t t17; HeroArrayHeader * t18; HeroArrayHeader * t19; HeroArrayHeader * t20; HeroArrayHeader * t21; HeroStr t22; goto bb0;
+#line 93 "examples/sieve/main.hero"
 bb0:
-#line 94 "examples/sieve/main.hero"
     t1 = hero_array_new(&hero_desc_str, 1);
 #line 94 "examples/sieve/main.hero"
     t19 = h5_own5;
@@ -1008,7 +810,7 @@ bb3:
 bb4:
 #line 99 "examples/sieve/main.hero"
     t18 = h1_out;
-#line 1012 "main.c"
+#line 814 "main.c"
     hero_array_incref(t18);
     hero_array_release_at(&h1_out);
     hero_array_release_at(&h2_xs0);
@@ -1019,33 +821,10 @@ bb4:
 
 #line 175 "examples/sieve/main.hero"
 bool h_main_by_division(int64_t h0_n) {
-#line 1023 "main.c"
-    int64_t h1_d;
-    bool h2_ret0;
-    int64_t t1;
-    int64_t t2;
-    bool t3;
-    bool t4;
-    int64_t t5;
-    int64_t t6;
-    int64_t t7;
-    int64_t t8;
-    int64_t t9;
-    bool t10;
-    int64_t t11;
-    int64_t t12;
-    int64_t t13;
-    int64_t t14;
-    bool t15;
-    bool t16;
-    int64_t t17;
-    int64_t t18;
-    int64_t t19;
-    bool t20;
-    bool t21;
-    goto bb0;
+#line 175 "examples/sieve/main.hero"
+    int64_t h1_d; bool h2_ret0; int64_t t1; int64_t t2; bool t3; bool t4; int64_t t5; int64_t t6; int64_t t7; int64_t t8; int64_t t9; bool t10; int64_t t11; int64_t t12; int64_t t13; int64_t t14; bool t15; bool t16; int64_t t17; int64_t t18; int64_t t19; bool t20; bool t21; goto bb0;
+#line 175 "examples/sieve/main.hero"
 bb0:
-#line 176 "examples/sieve/main.hero"
     t1 = h0_n;
 #line 176 "examples/sieve/main.hero"
     t2 = INT64_C(2);
@@ -1138,7 +917,7 @@ bb9:
     goto bb7;
 #line 182 "examples/sieve/main.hero"
 bb10:
-#line 1142 "main.c"
+#line 921 "main.c"
     t21 = h2_ret0;
     return t21;
 }

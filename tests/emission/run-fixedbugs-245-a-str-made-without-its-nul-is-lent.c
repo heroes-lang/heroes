@@ -148,88 +148,22 @@ h_0opt_f87774a h_library_read_file(HeroStr h0_path);
 
 #line 18 "tests/golden/run/fixedbugs-245-a-str-made-without-its-nul-is-lent.hero"
 HeroStr h_fixedbugs245astrmadewithoutitsnulislent_HELD(void) {
-#line 152 "fixedbugs245astrmadewithoutitsnulislent.c"
-    HeroStr t1;
-    goto bb0;
+#line 18 "tests/golden/run/fixedbugs-245-a-str-made-without-its-nul-is-lent.hero"
+    HeroStr t1; goto bb0;
+#line 18 "tests/golden/run/fixedbugs-245-a-str-made-without-its-nul-is-lent.hero"
 bb0:
-#line 19 "tests/golden/run/fixedbugs-245-a-str-made-without-its-nul-is-lent.hero"
     t1 = HERO_STR_LIT(hero_str_6f23ee1d);
-#line 158 "fixedbugs245astrmadewithoutitsnulislent.c"
+#line 157 "fixedbugs245astrmadewithoutitsnulislent.c"
     hero_str_incref(t1);
     return t1;
 }
 
 #line 21 "tests/golden/run/fixedbugs-245-a-str-made-without-its-nul-is-lent.hero"
 HeroStr h_fixedbugs245astrmadewithoutitsnulislent_held(void) {
-#line 165 "fixedbugs245astrmadewithoutitsnulislent.c"
-    void * h0_handle;
-    HeroArrayHeader * h1_xs0 = {0};
-    int64_t h2_i0;
-    int64_t h3_b;
-    h_0opt_e1f4933 h4_f0 = {0};
-    h_0opt_f87774a h5_f1 = {0};
-    HeroStr h6_own6 = {0};
-    HeroArrayHeader * h7_own7 = {0};
-    h_0opt_e1f4933 h8_own8 = {0};
-    HeroStr h9_own9 = {0};
-    h_0opt_f87774a h10_own10 = {0};
-    HeroStr t1;
-    const char * t2;
-    HeroStr t3;
-    const char * t4;
-    void * t5;
-    HeroStr t6;
-    void * t7;
-    void * t8;
-    bool t9;
-    int64_t t10;
-    int64_t t11;
-    int64_t t12;
-    HeroArrayHeader * t13;
-    int64_t t14;
-    int64_t t15;
-    HeroArrayHeader * t16;
-    int64_t t17;
-    bool t18;
-    HeroArrayHeader * t19;
-    int64_t t20;
-    int64_t t21;
-    int64_t t22;
-    h_0opt_e1f4933 t23;
-    h_0opt_e1f4933 t24;
-    int64_t t25;
-    int64_t t26;
-    bool t27;
-    h_0opt_e1f4933 t28;
-    HeroFailure t29;
-    h_0opt_e1f4933 t30;
-    int32_t t31;
-    void * t32;
-    int64_t t34;
-    int64_t t35;
-    int64_t t36;
-    void * t37;
-    HeroStr t39;
-    h_0opt_f87774a t40;
-    h_0opt_f87774a t41;
-    int64_t t42;
-    int64_t t43;
-    bool t44;
-    h_0opt_f87774a t45;
-    HeroFailure t46;
-    h_0opt_f87774a t47;
-    HeroStr t48;
-    HeroStr t49;
-    HeroArrayHeader * t50;
-    HeroArrayHeader * t51;
-    h_0opt_e1f4933 t52;
-    h_0opt_e1f4933 t53;
-    HeroStr t54;
-    h_0opt_f87774a t55;
-    h_0opt_f87774a t56;
-    goto bb0;
+#line 21 "tests/golden/run/fixedbugs-245-a-str-made-without-its-nul-is-lent.hero"
+    void * h0_handle; HeroArrayHeader * h1_xs0 = {0}; int64_t h2_i0; int64_t h3_b; h_0opt_e1f4933 h4_f0 = {0}; h_0opt_f87774a h5_f1 = {0}; HeroStr h6_own6 = {0}; HeroArrayHeader * h7_own7 = {0}; h_0opt_e1f4933 h8_own8 = {0}; HeroStr h9_own9 = {0}; h_0opt_f87774a h10_own10 = {0}; HeroStr t1; const char * t2; HeroStr t3; const char * t4; void * t5; HeroStr t6; void * t7; void * t8; bool t9; int64_t t10; int64_t t11; int64_t t12; HeroArrayHeader * t13; int64_t t14; int64_t t15; HeroArrayHeader * t16; int64_t t17; bool t18; HeroArrayHeader * t19; int64_t t20; int64_t t21; int64_t t22; h_0opt_e1f4933 t23; h_0opt_e1f4933 t24; int64_t t25; int64_t t26; bool t27; h_0opt_e1f4933 t28; HeroFailure t29; h_0opt_e1f4933 t30; int32_t t31; void * t32; int64_t t34; int64_t t35; int64_t t36; void * t37; HeroStr t39; h_0opt_f87774a t40; h_0opt_f87774a t41; int64_t t42; int64_t t43; bool t44; h_0opt_f87774a t45; HeroFailure t46; h_0opt_f87774a t47; HeroStr t48; HeroStr t49; HeroArrayHeader * t50; HeroArrayHeader * t51; h_0opt_e1f4933 t52; h_0opt_e1f4933 t53; HeroStr t54; h_0opt_f87774a t55; h_0opt_f87774a t56; goto bb0;
+#line 21 "tests/golden/run/fixedbugs-245-a-str-made-without-its-nul-is-lent.hero"
 bb0:
-#line 22 "tests/golden/run/fixedbugs-245-a-str-made-without-its-nul-is-lent.hero"
     t1 = h_fixedbugs245astrmadewithoutitsnulislent_HELD();
 #line 22 "tests/golden/run/fixedbugs-245-a-str-made-without-its-nul-is-lent.hero"
     t49 = h6_own6;
@@ -294,7 +228,7 @@ bb1:
     goto bb3;
 #line 25 "tests/golden/run/fixedbugs-245-a-str-made-without-its-nul-is-lent.hero"
 bb2:
-#line 298 "fixedbugs245astrmadewithoutitsnulislent.c"
+#line 232 "fixedbugs245astrmadewithoutitsnulislent.c"
     (void)t7;
     (void)t8;
     hero_panic_assert(t6);
@@ -424,7 +358,7 @@ bb8:
     t28 = h4_f0;
 #line 26 "tests/golden/run/fixedbugs-245-a-str-made-without-its-nul-is-lent.hero"
     t29 = t28.as.err;
-#line 428 "fixedbugs245astrmadewithoutitsnulislent.c"
+#line 362 "fixedbugs245astrmadewithoutitsnulislent.c"
     hero_panic_must(t29);
     hero_unreachable();
 bb9:
@@ -432,7 +366,7 @@ bb9:
     t47 = h5_f1;
 #line 29 "tests/golden/run/fixedbugs-245-a-str-made-without-its-nul-is-lent.hero"
     t48 = t47.as.ok;
-#line 436 "fixedbugs245astrmadewithoutitsnulislent.c"
+#line 370 "fixedbugs245astrmadewithoutitsnulislent.c"
     hero_str_incref(t48);
     hero_array_release_at(&h1_xs0);
     h_0opt_e1f4933_release(hero_slot_escape(&h4_f0));
@@ -448,25 +382,17 @@ bb10:
     t45 = h5_f1;
 #line 29 "tests/golden/run/fixedbugs-245-a-str-made-without-its-nul-is-lent.hero"
     t46 = t45.as.err;
-#line 452 "fixedbugs245astrmadewithoutitsnulislent.c"
+#line 386 "fixedbugs245astrmadewithoutitsnulislent.c"
     hero_panic_must(t46);
     hero_unreachable();
 }
 
 #line 31 "tests/golden/run/fixedbugs-245-a-str-made-without-its-nul-is-lent.hero"
 void h_fixedbugs245astrmadewithoutitsnulislent_lent(HeroStr h0_name, HeroStr h1_s) {
-#line 459 "fixedbugs245astrmadewithoutitsnulislent.c"
-    HeroStr t1;
-    HeroStr t2;
-    HeroStr t3;
-    int64_t t4;
-    HeroStr t5;
-    HeroStr t6;
-    const char * t7;
-    uint64_t t8;
-    goto bb0;
+#line 31 "tests/golden/run/fixedbugs-245-a-str-made-without-its-nul-is-lent.hero"
+    HeroStr t1; HeroStr t2; HeroStr t3; int64_t t4; HeroStr t5; HeroStr t6; const char * t7; uint64_t t8; goto bb0;
+#line 31 "tests/golden/run/fixedbugs-245-a-str-made-without-its-nul-is-lent.hero"
 bb0:
-#line 32 "tests/golden/run/fixedbugs-245-a-str-made-without-its-nul-is-lent.hero"
     t1 = h0_name;
 #line 32 "tests/golden/run/fixedbugs-245-a-str-made-without-its-nul-is-lent.hero"
     t2 = HERO_STR_LIT(hero_str_6f5328ea);
@@ -496,63 +422,15 @@ bb0:
     hero_print_end();
 #line 32 "tests/golden/run/fixedbugs-245-a-str-made-without-its-nul-is-lent.hero"
     return;
-#line 500 "fixedbugs245astrmadewithoutitsnulislent.c"
+#line 426 "fixedbugs245astrmadewithoutitsnulislent.c"
 }
 
 #line 34 "tests/golden/run/fixedbugs-245-a-str-made-without-its-nul-is-lent.hero"
 void h_fixedbugs245astrmadewithoutitsnulislent_main(void) {
-#line 505 "fixedbugs245astrmadewithoutitsnulislent.c"
-    HeroStr h0_s = {0};
-    HeroStr h1_own1 = {0};
-    HeroStr h2_own2 = {0};
-    HeroStr h3_own3 = {0};
-    HeroArrayHeader * h4_own4 = {0};
-    HeroArrayHeader * h5_own5 = {0};
-    HeroStr h6_own6 = {0};
-    HeroStr h7_own7 = {0};
-    HeroStr h8_own8 = {0};
-    HeroStr t1;
-    HeroStr t2;
-    HeroStr t3;
-    int64_t t4;
-    int64_t t5;
-    HeroStr t6;
-    HeroStr t7;
-    HeroStr t8;
-    int64_t t9;
-    int64_t t10;
-    HeroStr t11;
-    HeroStr t12;
-    HeroStr t13;
-    HeroArrayHeader * t14;
-    int64_t t15;
-    HeroStr t16;
-    HeroStr t17;
-    HeroStr t18;
-    HeroArrayHeader * t19;
-    HeroStr t20;
-    HeroStr t21;
-    HeroStr t22;
-    int64_t t23;
-    HeroStr t24;
-    HeroStr t25;
-    HeroStr t26;
-    HeroStr t27;
-    HeroStr t28;
-    HeroStr t29;
-    HeroStr t30;
-    HeroStr t31;
-    HeroStr t32;
-    HeroStr t33;
-    HeroStr t34;
-    HeroArrayHeader * t35;
-    HeroArrayHeader * t36;
-    HeroStr t37;
-    HeroStr t38;
-    HeroStr t39;
-    goto bb0;
+#line 34 "tests/golden/run/fixedbugs-245-a-str-made-without-its-nul-is-lent.hero"
+    HeroStr h0_s = {0}; HeroStr h1_own1 = {0}; HeroStr h2_own2 = {0}; HeroStr h3_own3 = {0}; HeroArrayHeader * h4_own4 = {0}; HeroArrayHeader * h5_own5 = {0}; HeroStr h6_own6 = {0}; HeroStr h7_own7 = {0}; HeroStr h8_own8 = {0}; HeroStr t1; HeroStr t2; HeroStr t3; int64_t t4; int64_t t5; HeroStr t6; HeroStr t7; HeroStr t8; int64_t t9; int64_t t10; HeroStr t11; HeroStr t12; HeroStr t13; HeroArrayHeader * t14; int64_t t15; HeroStr t16; HeroStr t17; HeroStr t18; HeroArrayHeader * t19; HeroStr t20; HeroStr t21; HeroStr t22; int64_t t23; HeroStr t24; HeroStr t25; HeroStr t26; HeroStr t27; HeroStr t28; HeroStr t29; HeroStr t30; HeroStr t31; HeroStr t32; HeroStr t33; HeroStr t34; HeroArrayHeader * t35; HeroArrayHeader * t36; HeroStr t37; HeroStr t38; HeroStr t39; goto bb0;
+#line 34 "tests/golden/run/fixedbugs-245-a-str-made-without-its-nul-is-lent.hero"
 bb0:
-#line 35 "tests/golden/run/fixedbugs-245-a-str-made-without-its-nul-is-lent.hero"
     t1 = h_fixedbugs245astrmadewithoutitsnulislent_held();
 #line 35 "tests/golden/run/fixedbugs-245-a-str-made-without-its-nul-is-lent.hero"
     t31 = h1_own1;
@@ -677,7 +555,7 @@ bb0:
     hero_str_decref(t39);
 #line 42 "tests/golden/run/fixedbugs-245-a-str-made-without-its-nul-is-lent.hero"
     h_fixedbugs245astrmadewithoutitsnulislent_lent(t27, t30);
-#line 681 "fixedbugs245astrmadewithoutitsnulislent.c"
+#line 559 "fixedbugs245astrmadewithoutitsnulislent.c"
     hero_str_release_at(&h0_s);
     hero_str_release_at(&h1_own1);
     hero_str_release_at(&h2_own2);
@@ -692,97 +570,36 @@ bb0:
 
 #line 109 "<heroes library>"
 int64_t h_library_HERO_OS_OK(void) {
-#line 696 "fixedbugs245astrmadewithoutitsnulislent.c"
+#line 574 "fixedbugs245astrmadewithoutitsnulislent.c"
     return HERO_OS_OK;
 }
 
 #line 110 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_FOUND(void) {
-#line 702 "fixedbugs245astrmadewithoutitsnulislent.c"
+#line 580 "fixedbugs245astrmadewithoutitsnulislent.c"
     return HERO_OS_NOT_FOUND;
 }
 
 #line 111 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_TEXT(void) {
-#line 708 "fixedbugs245astrmadewithoutitsnulislent.c"
+#line 586 "fixedbugs245astrmadewithoutitsnulislent.c"
     return HERO_OS_NOT_TEXT;
 }
 
 #line 112 "<heroes library>"
 int64_t h_library_HERO_OS_BAD_NAME(void) {
-#line 714 "fixedbugs245astrmadewithoutitsnulislent.c"
+#line 592 "fixedbugs245astrmadewithoutitsnulislent.c"
     return HERO_OS_BAD_NAME;
 }
 
 #line 167 "<heroes library>"
 h_0opt_f87774a h_library_read_file(HeroStr h0_path) {
-#line 720 "fixedbugs245astrmadewithoutitsnulislent.c"
-    int64_t *const hero_lend_h1_status = (int64_t *)hero_lend_local(sizeof(int64_t), "library.read_file", "status");
+#line 167 "<heroes library>"
 #define h1_status (*hero_lend_h1_status)
-    HeroStr h2_text = {0};
-    h_0opt_f87774a h3_ret0 = {0};
-    HeroStr h4_own4 = {0};
-    h_0opt_f87774a h5_own5 = {0};
-    h_0opt_f87774a h6_own6 = {0};
-    HeroStr h7_own7 = {0};
-    h_0opt_f87774a h8_own8 = {0};
-    HeroStr h9_own9 = {0};
-    h_0opt_f87774a h10_own10 = {0};
-    HeroStr h11_own11 = {0};
-    HeroStr h12_own12 = {0};
-    h_0opt_f87774a h13_own13 = {0};
-    int64_t t1;
-    HeroStr t2;
-    HeroStr t3;
-    int64_t t4;
-    int64_t t5;
-    bool t6;
-    HeroStr t7;
-    h_0opt_f87774a t8;
-    int64_t t9;
-    int64_t t10;
-    bool t11;
-    HeroStr t12;
-    HeroStr t13;
-    h_0opt_f87774a t14;
-    int64_t t15;
-    int64_t t16;
-    bool t17;
-    HeroStr t18;
-    HeroStr t19;
-    HeroStr t20;
-    HeroStr t21;
-    h_0opt_f87774a t22;
-    int64_t t23;
-    int64_t t24;
-    bool t25;
-    HeroStr t26;
-    HeroStr t27;
-    HeroStr t28;
-    HeroStr t29;
-    HeroStr t30;
-    HeroStr t31;
-    h_0opt_f87774a t32;
-    HeroStr t33;
-    HeroStr t34;
-    HeroStr t35;
-    HeroStr t36;
-    h_0opt_f87774a t37;
-    h_0opt_f87774a t38;
-    HeroStr t39;
-    HeroStr t40;
-    h_0opt_f87774a t41;
-    h_0opt_f87774a t42;
-    HeroStr t43;
-    h_0opt_f87774a t44;
-    HeroStr t45;
-    h_0opt_f87774a t46;
-    HeroStr t47;
-    HeroStr t48;
-    h_0opt_f87774a t49;
-    goto bb0;
+#line 167 "<heroes library>"
+    int64_t *const hero_lend_h1_status = (int64_t *)hero_lend_local(sizeof(int64_t), "library.read_file", "status"); HeroStr h2_text = {0}; h_0opt_f87774a h3_ret0 = {0}; HeroStr h4_own4 = {0}; h_0opt_f87774a h5_own5 = {0}; h_0opt_f87774a h6_own6 = {0}; HeroStr h7_own7 = {0}; h_0opt_f87774a h8_own8 = {0}; HeroStr h9_own9 = {0}; h_0opt_f87774a h10_own10 = {0}; HeroStr h11_own11 = {0}; HeroStr h12_own12 = {0}; h_0opt_f87774a h13_own13 = {0}; int64_t t1; HeroStr t2; HeroStr t3; int64_t t4; int64_t t5; bool t6; HeroStr t7; h_0opt_f87774a t8; int64_t t9; int64_t t10; bool t11; HeroStr t12; HeroStr t13; h_0opt_f87774a t14; int64_t t15; int64_t t16; bool t17; HeroStr t18; HeroStr t19; HeroStr t20; HeroStr t21; h_0opt_f87774a t22; int64_t t23; int64_t t24; bool t25; HeroStr t26; HeroStr t27; HeroStr t28; HeroStr t29; HeroStr t30; HeroStr t31; h_0opt_f87774a t32; HeroStr t33; HeroStr t34; HeroStr t35; HeroStr t36; h_0opt_f87774a t37; h_0opt_f87774a t38; HeroStr t39; HeroStr t40; h_0opt_f87774a t41; h_0opt_f87774a t42; HeroStr t43; h_0opt_f87774a t44; HeroStr t45; h_0opt_f87774a t46; HeroStr t47; HeroStr t48; h_0opt_f87774a t49; goto bb0;
+#line 167 "<heroes library>"
 bb0:
-#line 168 "<heroes library>"
     t1 = INT64_C(0);
 #line 168 "<heroes library>"
     h1_status = t1;
@@ -1006,7 +823,7 @@ bb12:
     goto bb10;
 #line 182 "<heroes library>"
 bb13:
-#line 1010 "fixedbugs245astrmadewithoutitsnulislent.c"
+#line 827 "fixedbugs245astrmadewithoutitsnulislent.c"
     t38 = h3_ret0;
     h_0opt_f87774a_retain(&t38);
     hero_str_release_at(&h2_text);

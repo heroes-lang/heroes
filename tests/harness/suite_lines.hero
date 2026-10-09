@@ -153,7 +153,10 @@ function one_case(@r: report.Report, @skipped: i64, scratch: str, compiler: str,
             detail @ detail + "\n  not skipped for a missing library: " + why
         report.keep_failure(@r, label: "lines/" + item.name, detail: detail)
         return
-    wrong = offences(c: said.must().out, source: item.source)
+    wrong: [str] @ offences(c: said.must().out, source: item.source)
+
+    for one in entry_offences(c: said.must().out, source: item.source)
+        wrong @ wrong.push(one)
 
     if wrong.len() == 0
         report.keep_pass(@r)
@@ -161,7 +164,7 @@ function one_case(@r: report.Report, @skipped: i64, scratch: str, compiler: str,
     report.keep_failure(
         @r,
         label: "lines/" + item.name,
-        detail: "  " + wrong.len().to_str() + " `#line` claim(s) wrong: a generated line pointing at a source line that is blank or absent, or a restore of the generated file not naming its own next line — `#line` drifted, and a debugger or a clang note will show the author a line they did not write:\n" + shown(wrong)
+        detail: "  " + wrong.len().to_str() + " `#line` claim(s) wrong: a generated line pointing at a source line that is blank or absent, a restore of the generated file not naming its own next line, or a function's entry off its `function` line — `#line` drifted, and a debugger or a clang note will show the author a line they did not write:\n" + shown(wrong)
     )
 
 # A machine that skipped a third of the tree for libraries it lacks is not
@@ -305,6 +308,87 @@ function offences(c: str, source: str) -> [str]
 
     return found
 
+# THE ENTRY IS THE FUNCTION'S OWN LINE (defect 472, panel 200's R4,
+# 2026-10-10): a function's thread guard, prologue and jump to its first
+# block are one C line, the first after its `{` but for a guarded local's
+# `#define`, claimed by the line its signature is claimed by, so a `step`
+# into the function and a breakpoint on it stop on its `function` line. The
+# walk above asks only that a claim lands on a real line, which the
+# generated file's restore always did; this asks where the entry lands. A
+# case whose C holds no entry is an offence too: a walk that found nothing
+# to ask is blind, never green.
+function entry_offences(c: str, source: str) -> [str]
+    found: [str] @ []
+    file: str @ ""
+    line: i64 @ 0
+    signature_file: str @ ""
+    signature_line: i64 @ 0
+    first_file: str @ ""
+    first_line: i64 @ 0
+
+    # A signature was read and its entry is not found yet; `spread` counts
+    # the indented lines of C read since it that are not the entry's end.
+    pending: bool @ false
+    spread: i64 @ 0
+    entries: i64 @ 0
+    row_number: i64 @ 0
+
+    for row in strings.lines(c)
+        row_number @ row_number + 1
+
+        if strings.starts_with(text: row, prefix: "#line ")
+            rest = strings.without_prefix(text: row, prefix: "#line ")
+            space = strings.index_of(text: rest, needle: " ")
+            file @ ""
+            line @ 0
+
+            if !space.is_err()
+                number = strings.to_number(rest.slice(from: 0, to: space.must()))
+                named = unquoted(rest.slice(from: space.must() + 1, to: rest.len()))
+
+                if !number.is_err() && !named.is_err()
+                    line @ number.must()
+                    file @ named.must()
+            continue
+
+        if strings.starts_with(text: row, prefix: "#define ")
+            line @ line + 1
+            continue
+
+        if pending
+            if strings.ends_with(text: row, suffix: "goto bb0;")
+                entries @ entries + 1
+                pending @ false
+
+                if spread > 0
+                    found @ found.push(
+                        "    C:" + row_number.to_str() + " a function's entry is " + (spread + 1).to_str() + " lines of C, the first claimed by " + first_file + ":" + first_line.to_str() + ", where one line claimed by its signature's " + signature_file + ":" + signature_line.to_str() + " is owed (from " + source + ")"
+                    )
+                else if file != signature_file || line != signature_line
+                    found @ found.push(
+                        "    C:" + row_number.to_str() + " a function's entry is claimed by " + file + ":" + line.to_str() + ", and its signature by " + signature_file + ":" + signature_line.to_str() + " (from " + source + ")"
+                    )
+            else if row.len() > 0 && row[0] == 32
+                if spread == 0
+                    first_file @ file
+                    first_line @ line
+                spread @ spread + 1
+            else
+                pending @ false
+
+        if row.len() > 0 && row[0] != 32 && strings.ends_with(text: row, suffix: ") {")
+            pending @ true
+            spread @ 0
+            signature_file @ file
+            signature_line @ line
+        line @ line + 1
+
+    if entries == 0
+        found @ found.push(
+            "    no function's entry, a line ending `goto bb0;` after a signature's `{`, was found in the C of " + source + ", so the walk asked nothing"
+        )
+    return found
+
 # Whether a claim names the generated file: a name, neither the author's
 # `.hero` file nor the library. An empty name is a directive this walk could
 # not read, and claims nothing.
@@ -445,6 +529,26 @@ test "a restore of the generated file names its own next line, and one short is 
     assert !generated_claim("<heroes library>")
     assert !generated_claim("a/b.hero")
     assert generated_claim("m.c")
+
+test "a function's entry is claimed by its signature's line, and an entry under the generated file is an offence (defect 472)"
+    good = "#line 3 \"a.hero\"\nint64_t f(void) {\n#line 3 \"a.hero\"\n    int64_t t1; goto bb0;\n#line 3 \"a.hero\"\nbb0:\n"
+    assert entry_offences(c: good, source: "t").len() == 0
+    guarded = "#line 3 \"a.hero\"\nint64_t f(void) {\n#line 3 \"a.hero\"\n#define h1_x (*p)\n#line 3 \"a.hero\"\n    int64_t *const p = 0; goto bb0;\n"
+    assert entry_offences(c: guarded, source: "t").len() == 0
+    generated = "#line 3 \"a.hero\"\nint64_t f(void) {\n#line 3 \"m.c\"\n    int64_t t1;\n    goto bb0;\n"
+    spread = entry_offences(c: generated, source: "t")
+    assert spread.len() == 1
+    assert strings.contains(
+        text: spread[0],
+        needle: "entry is 2 lines of C, the first claimed by m.c:3, where one line claimed by its signature's a.hero:3 is owed"
+    )
+    accessor = "#line 3 \"a.hero\"\nint64_t f(void) {\n    return X;\n}\n" + good
+    assert entry_offences(c: accessor, source: "t").len() == 0
+    drifted = "#line 3 \"a.hero\"\nint64_t f(void) {\n    int64_t t1; goto bb0;\n"
+    found = entry_offences(c: drifted, source: "t")
+    assert found.len() == 1
+    assert strings.contains(text: found[0], needle: "claimed by a.hero:4, and its signature by a.hero:3")
+    assert strings.contains(text: entry_offences(c: "int x;\n", source: "t")[0], needle: "so the walk asked nothing")
 
 test "unquoted undoes C's escapes"
     assert unquoted("\"a.hero\"").must() == "a.hero"

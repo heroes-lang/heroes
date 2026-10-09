@@ -96,47 +96,10 @@ void h_fixedbugsmapstoreleaked_main(void);
 
 #line 18 "tests/golden/run/fixedbugs-map-store-leaked.hero"
 void h_fixedbugsmapstoreleaked_main(void) {
-#line 100 "fixedbugsmapstoreleaked.c"
-    HeroMapHeader * h0_m = {0};
-    h_0opt_f87774a h1_f0 = {0};
-    HeroStr h2_r0 = {0};
-    HeroMapHeader * h3_own3 = {0};
-    HeroStr h4_own4 = {0};
-    HeroStr h5_own5 = {0};
-    h_0opt_f87774a h6_own6 = {0};
-    HeroMapHeader * t1;
-    HeroStr t2;
-    HeroStr t3;
-    HeroStr t4;
-    HeroStr t5;
-    HeroStr t6;
-    HeroStr t7;
-    HeroStr t8;
-    HeroStr t9;
-    HeroMapHeader * t10;
-    HeroStr t11;
-    h_0opt_f87774a t12;
-    h_0opt_f87774a t13;
-    int64_t t14;
-    int64_t t15;
-    bool t16;
-    h_0opt_f87774a t17;
-    HeroStr t18;
-    HeroStr t19;
-    HeroStr t20;
-    HeroMapHeader * t21;
-    int64_t t22;
-    HeroMapHeader * t23;
-    HeroMapHeader * t24;
-    HeroStr t25;
-    HeroStr t26;
-    h_0opt_f87774a t27;
-    h_0opt_f87774a t28;
-    HeroStr t29;
-    HeroStr t30;
-    goto bb0;
+#line 18 "tests/golden/run/fixedbugs-map-store-leaked.hero"
+    HeroMapHeader * h0_m = {0}; h_0opt_f87774a h1_f0 = {0}; HeroStr h2_r0 = {0}; HeroMapHeader * h3_own3 = {0}; HeroStr h4_own4 = {0}; HeroStr h5_own5 = {0}; h_0opt_f87774a h6_own6 = {0}; HeroMapHeader * t1; HeroStr t2; HeroStr t3; HeroStr t4; HeroStr t5; HeroStr t6; HeroStr t7; HeroStr t8; HeroStr t9; HeroMapHeader * t10; HeroStr t11; h_0opt_f87774a t12; h_0opt_f87774a t13; int64_t t14; int64_t t15; bool t16; h_0opt_f87774a t17; HeroStr t18; HeroStr t19; HeroStr t20; HeroMapHeader * t21; int64_t t22; HeroMapHeader * t23; HeroMapHeader * t24; HeroStr t25; HeroStr t26; h_0opt_f87774a t27; h_0opt_f87774a t28; HeroStr t29; HeroStr t30; goto bb0;
+#line 18 "tests/golden/run/fixedbugs-map-store-leaked.hero"
 bb0:
-#line 19 "tests/golden/run/fixedbugs-map-store-leaked.hero"
     t1 = hero_map_new(&hero_desc_str, &hero_desc_str, 0);
 #line 19 "tests/golden/run/fixedbugs-map-store-leaked.hero"
     t23 = h3_own3;
@@ -276,7 +239,7 @@ bb3:
     hero_print_int(t22);
 #line 23 "tests/golden/run/fixedbugs-map-store-leaked.hero"
     hero_print_end();
-#line 280 "fixedbugsmapstoreleaked.c"
+#line 243 "fixedbugsmapstoreleaked.c"
     hero_map_release_at(&h0_m);
     h_0opt_f87774a_release(hero_slot_escape(&h1_f0));
     hero_str_release_at(&h2_r0);

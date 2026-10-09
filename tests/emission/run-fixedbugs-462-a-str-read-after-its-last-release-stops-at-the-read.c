@@ -98,28 +98,10 @@ void h_fixedbugs462astrreadafteritslastreleasestopsattheread_main(void);
 
 #line 22 "tests/golden/run/fixedbugs-462-a-str-read-after-its-last-release-stops-at-the-read.hero"
 void h_fixedbugs462astrreadafteritslastreleasestopsattheread_main(void) {
-#line 102 "fixedbugs462astrreadafteritslastreleasestopsattheread.c"
-    HeroStr h0_word = {0};
-    HeroStr h1_own1 = {0};
-    HeroStr h2_own2 = {0};
-    HeroStr t1;
-    uint64_t t2;
-    HeroStr t3;
-    HeroStr t4;
-    HeroStr t5;
-    const char * t6;
-    HeroStr t7;
-    int64_t t8;
-    HeroStr t9;
-    int64_t t10;
-    int64_t t11;
-    HeroStr t12;
-    HeroStr t13;
-    HeroStr t14;
-    HeroStr t15;
-    goto bb0;
+#line 22 "tests/golden/run/fixedbugs-462-a-str-read-after-its-last-release-stops-at-the-read.hero"
+    HeroStr h0_word = {0}; HeroStr h1_own1 = {0}; HeroStr h2_own2 = {0}; HeroStr t1; uint64_t t2; HeroStr t3; HeroStr t4; HeroStr t5; const char * t6; HeroStr t7; int64_t t8; HeroStr t9; int64_t t10; int64_t t11; HeroStr t12; HeroStr t13; HeroStr t14; HeroStr t15; goto bb0;
+#line 22 "tests/golden/run/fixedbugs-462-a-str-read-after-its-last-release-stops-at-the-read.hero"
 bb0:
-#line 23 "tests/golden/run/fixedbugs-462-a-str-read-after-its-last-release-stops-at-the-read.hero"
     t1 = HERO_STR_LIT(hero_str_3205);
 #line 23 "tests/golden/run/fixedbugs-462-a-str-read-after-its-last-release-stops-at-the-read.hero"
     t2 = UINT64_C(32768);
@@ -173,7 +155,7 @@ bb0:
     hero_print_str(t12);
 #line 27 "tests/golden/run/fixedbugs-462-a-str-read-after-its-last-release-stops-at-the-read.hero"
     hero_print_end();
-#line 177 "fixedbugs462astrreadafteritslastreleasestopsattheread.c"
+#line 159 "fixedbugs462astrreadafteritslastreleasestopsattheread.c"
     hero_str_release_at(&h0_word);
     hero_str_release_at(&h1_own1);
     hero_str_release_at(&h2_own2);

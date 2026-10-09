@@ -143,23 +143,10 @@ HERO_TU_LOCAL HeroArrayHeader * h_library_map_37fb3fcc(HeroArrayHeader * h0_xs, 
 
 #line 26 "tests/golden/run/closure-list.hero"
 int64_t h_closurelist_area(h_closurelist_Shape h0_s) {
-#line 147 "closurelist.c"
-    h_closurelist_Shape h1_s0;
-    int64_t h2_r0;
-    h_closurelist_Shape_c_seg h3_g;
-    h_closurelist_Shape t1;
-    h_closurelist_Shape t2;
-    int64_t t3;
-    int64_t t4;
-    h_closurelist_Shape t5;
-    h_closurelist_Shape_c_seg t6;
-    h_closurelist_Shape_c_seg t7;
-    h_closurelist_Point t8;
-    int64_t t9;
-    int64_t t10;
-    goto bb0;
+#line 26 "tests/golden/run/closure-list.hero"
+    h_closurelist_Shape h1_s0; int64_t h2_r0; h_closurelist_Shape_c_seg h3_g; h_closurelist_Shape t1; h_closurelist_Shape t2; int64_t t3; int64_t t4; h_closurelist_Shape t5; h_closurelist_Shape_c_seg t6; h_closurelist_Shape_c_seg t7; h_closurelist_Point t8; int64_t t9; int64_t t10; goto bb0;
+#line 26 "tests/golden/run/closure-list.hero"
 bb0:
-#line 27 "tests/golden/run/closure-list.hero"
     t1 = h0_s;
 #line 27 "tests/golden/run/closure-list.hero"
     h1_s0 = t1;
@@ -208,22 +195,15 @@ bb3:
     h2_r0 = t9;
 #line 27 "tests/golden/run/closure-list.hero"
     goto bb1;
-#line 212 "closurelist.c"
+#line 199 "closurelist.c"
 }
 
 #line 31 "tests/golden/run/closure-list.hero"
 void h_closurelist_shift(h_closurelist_Point *ph0_p, int64_t h1_by) {
-#line 217 "closurelist.c"
-    h_closurelist_Point t1;
-    int64_t t2;
-    int64_t t3;
-    int64_t t4;
-    h_closurelist_Point t5;
-    int64_t t6;
-    h_closurelist_Point t7;
-    goto bb0;
+#line 31 "tests/golden/run/closure-list.hero"
+    h_closurelist_Point t1; int64_t t2; int64_t t3; int64_t t4; h_closurelist_Point t5; int64_t t6; h_closurelist_Point t7; goto bb0;
+#line 31 "tests/golden/run/closure-list.hero"
 bb0:
-#line 32 "tests/golden/run/closure-list.hero"
     t1 = (*ph0_p);
 #line 32 "tests/golden/run/closure-list.hero"
     t2 = t1.f_x;
@@ -241,33 +221,15 @@ bb0:
     (*ph0_p) = t7;
 #line 32 "tests/golden/run/closure-list.hero"
     return;
-#line 245 "closurelist.c"
+#line 225 "closurelist.c"
 }
 
 #line 34 "tests/golden/run/closure-list.hero"
 h_0opt_e201354 h_closurelist_halve(int64_t h0_n) {
-#line 250 "closurelist.c"
-    h_0opt_e201354 h1_ret0 = {0};
-    h_0opt_e201354 h2_own2 = {0};
-    h_0opt_e201354 h3_own3 = {0};
-    int64_t t1;
-    int64_t t2;
-    int64_t t3;
-    int64_t t4;
-    bool t5;
-    HeroStr t6;
-    HeroStr t7;
-    h_0opt_e201354 t8;
-    int64_t t9;
-    int64_t t10;
-    int64_t t11;
-    h_0opt_e201354 t12;
-    h_0opt_e201354 t13;
-    h_0opt_e201354 t14;
-    h_0opt_e201354 t15;
-    goto bb0;
+#line 34 "tests/golden/run/closure-list.hero"
+    h_0opt_e201354 h1_ret0 = {0}; h_0opt_e201354 h2_own2 = {0}; h_0opt_e201354 h3_own3 = {0}; int64_t t1; int64_t t2; int64_t t3; int64_t t4; bool t5; HeroStr t6; HeroStr t7; h_0opt_e201354 t8; int64_t t9; int64_t t10; int64_t t11; h_0opt_e201354 t12; h_0opt_e201354 t13; h_0opt_e201354 t14; h_0opt_e201354 t15; goto bb0;
+#line 34 "tests/golden/run/closure-list.hero"
 bb0:
-#line 35 "tests/golden/run/closure-list.hero"
     t1 = h0_n;
 #line 35 "tests/golden/run/closure-list.hero"
     t2 = INT64_C(2);
@@ -335,7 +297,7 @@ bb3:
     goto bb1;
 #line 36 "tests/golden/run/closure-list.hero"
 bb4:
-#line 339 "closurelist.c"
+#line 301 "closurelist.c"
     t13 = h1_ret0;
     h_0opt_e201354_retain(&t13);
     h_0opt_e201354_release(hero_slot_escape(&h2_own2));
@@ -345,36 +307,10 @@ bb4:
 
 #line 39 "tests/golden/run/closure-list.hero"
 h_0opt_e201354 h_closurelist_chain(int64_t h0_n) {
-#line 349 "closurelist.c"
-    h_0opt_e201354 h1_f0 = {0};
-    int64_t h2_v;
-    h_0opt_e201354 h3_ret0 = {0};
-    h_0opt_e201354 h4_own4 = {0};
-    h_0opt_e201354 h5_own5 = {0};
-    h_0opt_e201354 h6_own6 = {0};
-    int64_t t1;
-    h_0opt_e201354 t2;
-    h_0opt_e201354 t3;
-    int64_t t4;
-    int64_t t5;
-    bool t6;
-    h_0opt_e201354 t7;
-    HeroFailure t8;
-    h_0opt_e201354 t9;
-    h_0opt_e201354 t10;
-    int64_t t11;
-    int64_t t12;
-    int64_t t13;
-    int64_t t14;
-    h_0opt_e201354 t15;
-    h_0opt_e201354 t16;
-    h_0opt_e201354 t17;
-    h_0opt_e201354 t18;
-    h_0opt_e201354 t19;
-    h_0opt_e201354 t20;
-    goto bb0;
+#line 39 "tests/golden/run/closure-list.hero"
+    h_0opt_e201354 h1_f0 = {0}; int64_t h2_v; h_0opt_e201354 h3_ret0 = {0}; h_0opt_e201354 h4_own4 = {0}; h_0opt_e201354 h5_own5 = {0}; h_0opt_e201354 h6_own6 = {0}; int64_t t1; h_0opt_e201354 t2; h_0opt_e201354 t3; int64_t t4; int64_t t5; bool t6; h_0opt_e201354 t7; HeroFailure t8; h_0opt_e201354 t9; h_0opt_e201354 t10; int64_t t11; int64_t t12; int64_t t13; int64_t t14; h_0opt_e201354 t15; h_0opt_e201354 t16; h_0opt_e201354 t17; h_0opt_e201354 t18; h_0opt_e201354 t19; h_0opt_e201354 t20; goto bb0;
+#line 39 "tests/golden/run/closure-list.hero"
 bb0:
-#line 40 "tests/golden/run/closure-list.hero"
     t1 = h0_n;
 #line 40 "tests/golden/run/closure-list.hero"
     t2 = h_closurelist_halve(t1);
@@ -449,7 +385,7 @@ bb2:
     goto bb3;
 #line 40 "tests/golden/run/closure-list.hero"
 bb3:
-#line 453 "closurelist.c"
+#line 389 "closurelist.c"
     t16 = h3_ret0;
     h_0opt_e201354_retain(&t16);
     h_0opt_e201354_release(hero_slot_escape(&h1_f0));
@@ -461,14 +397,10 @@ bb3:
 
 #line 43 "tests/golden/run/closure-list.hero"
 HeroStr h_closurelist_show(int64_t h0_n) {
-#line 465 "closurelist.c"
-    HeroStr h1_own1 = {0};
-    int64_t t1;
-    HeroStr t2;
-    HeroStr t3;
-    goto bb0;
+#line 43 "tests/golden/run/closure-list.hero"
+    HeroStr h1_own1 = {0}; int64_t t1; HeroStr t2; HeroStr t3; goto bb0;
+#line 43 "tests/golden/run/closure-list.hero"
 bb0:
-#line 44 "tests/golden/run/closure-list.hero"
     t1 = h0_n;
 #line 44 "tests/golden/run/closure-list.hero"
     t2 = hero_int_to_str(t1);
@@ -478,7 +410,7 @@ bb0:
     h1_own1 = t2;
 #line 44 "tests/golden/run/closure-list.hero"
     hero_str_decref(t3);
-#line 482 "closurelist.c"
+#line 414 "closurelist.c"
     hero_str_incref(t2);
     hero_str_release_at(&h1_own1);
     return t2;
@@ -486,157 +418,10 @@ bb0:
 
 #line 46 "tests/golden/run/closure-list.hero"
 void h_closurelist_main(void) {
-#line 490 "closurelist.c"
-    HeroArrayHeader * h0_xs = {0};
-    HeroMapHeader * h1_m = {0};
-    h_closurelist_Point h2_p;
-    int64_t h3_total;
-    HeroArrayHeader * h4_xs0 = {0};
-    int64_t h5_i0;
-    HeroStr h6_k = {0};
-    h_0opt_e201354 h7_f0 = {0};
-    int64_t h8_i;
-    h_0opt_e201354 h9_f1 = {0};
-    int64_t h10_r0;
-    h_0opt_e201354 h11_f2 = {0};
-    HeroArrayHeader * h12_own12 = {0};
-    HeroMapHeader * h13_own13 = {0};
-    HeroArrayHeader * h14_own14 = {0};
-    HeroArrayHeader * h15_own15 = {0};
-    h_0opt_e201354 h16_own16 = {0};
-    h_0opt_e201354 h17_own17 = {0};
-    HeroArrayHeader * h18_own18 = {0};
-    HeroStr h19_own19 = {0};
-    HeroArrayHeader * h20_own20 = {0};
-    HeroStr h21_own21 = {0};
-    h_0opt_e201354 h22_own22 = {0};
-    int64_t t1;
-    int64_t t2;
-    int64_t t3;
-    HeroArrayHeader * t4;
-    HeroMapHeader * t5;
-    HeroStr t6;
-    int64_t t7;
-    int64_t t8;
-    int64_t t9;
-    h_closurelist_Point t10;
-    int64_t t11;
-    int64_t t12;
-    HeroMapHeader * t13;
-    HeroArrayHeader * t14;
-    HeroArrayHeader * t15;
-    int64_t t16;
-    int64_t t17;
-    HeroArrayHeader * t18;
-    int64_t t19;
-    bool t20;
-    HeroArrayHeader * t21;
-    int64_t t22;
-    HeroStr t23;
-    int64_t t24;
-    HeroMapHeader * t25;
-    HeroStr t26;
-    h_0opt_e201354 t27;
-    h_0opt_e201354 t28;
-    int64_t t29;
-    int64_t t30;
-    bool t31;
-    h_0opt_e201354 t32;
-    HeroFailure t33;
-    h_0opt_e201354 t34;
-    int64_t t35;
-    int64_t t36;
-    int64_t t37;
-    int64_t t38;
-    int64_t t39;
-    int64_t t40;
-    int64_t t41;
-    HeroArrayHeader * t42;
-    int64_t t43;
-    bool t44;
-    HeroArrayHeader * t45;
-    int64_t t46;
-    int64_t t47;
-    int64_t t48;
-    bool t49;
-    int64_t t50;
-    int64_t t51;
-    int64_t t52;
-    int64_t t53;
-    HeroArrayHeader * t54;
-    int64_t t55;
-    int64_t t56;
-    int64_t t57;
-    int64_t t58;
-    int64_t t59;
-    int64_t t60;
-    int64_t t61;
-    HeroStr t62;
-    h_closurelist_Point t63;
-    h_closurelist_Shape t64;
-    int64_t t65;
-    HeroStr t66;
-    int64_t t67;
-    h_0opt_e201354 t68;
-    h_0opt_e201354 t69;
-    int64_t t70;
-    int64_t t71;
-    bool t72;
-    h_0opt_e201354 t73;
-    int64_t t74;
-    int64_t t75;
-    int64_t t76;
-    int64_t t77;
-    int64_t t78;
-    HeroArrayHeader * t79;
-    int64_t t80;
-    HeroStr t81;
-    HeroArrayHeader * t82;
-    h_0fn_4a13fb08 t83;
-    HeroArrayHeader * t84;
-    HeroStr t85;
-    HeroStr t86;
-    HeroStr t87;
-    HeroArrayHeader * t88;
-    int64_t t89;
-    HeroStr t90;
-    HeroStr t91;
-    int64_t t92;
-    int64_t t93;
-    HeroStr t94;
-    double t95;
-    h_0opt_e201354 t96;
-    h_0opt_e201354 t97;
-    int64_t t98;
-    int64_t t99;
-    bool t100;
-    h_0opt_e201354 t101;
-    HeroFailure t102;
-    h_0opt_e201354 t103;
-    int64_t t104;
-    int64_t t105;
-    double t106;
-    HeroArrayHeader * t107;
-    HeroArrayHeader * t108;
-    HeroMapHeader * t109;
-    HeroMapHeader * t110;
-    HeroArrayHeader * t111;
-    HeroArrayHeader * t112;
-    HeroArrayHeader * t113;
-    HeroStr t114;
-    h_0opt_e201354 t115;
-    h_0opt_e201354 t116;
-    h_0opt_e201354 t117;
-    h_0opt_e201354 t118;
-    HeroArrayHeader * t119;
-    HeroStr t120;
-    HeroArrayHeader * t121;
-    HeroStr t122;
-    h_0opt_e201354 t123;
-    h_0opt_e201354 t124;
-    goto bb0;
+#line 46 "tests/golden/run/closure-list.hero"
+    HeroArrayHeader * h0_xs = {0}; HeroMapHeader * h1_m = {0}; h_closurelist_Point h2_p; int64_t h3_total; HeroArrayHeader * h4_xs0 = {0}; int64_t h5_i0; HeroStr h6_k = {0}; h_0opt_e201354 h7_f0 = {0}; int64_t h8_i; h_0opt_e201354 h9_f1 = {0}; int64_t h10_r0; h_0opt_e201354 h11_f2 = {0}; HeroArrayHeader * h12_own12 = {0}; HeroMapHeader * h13_own13 = {0}; HeroArrayHeader * h14_own14 = {0}; HeroArrayHeader * h15_own15 = {0}; h_0opt_e201354 h16_own16 = {0}; h_0opt_e201354 h17_own17 = {0}; HeroArrayHeader * h18_own18 = {0}; HeroStr h19_own19 = {0}; HeroArrayHeader * h20_own20 = {0}; HeroStr h21_own21 = {0}; h_0opt_e201354 h22_own22 = {0}; int64_t t1; int64_t t2; int64_t t3; HeroArrayHeader * t4; HeroMapHeader * t5; HeroStr t6; int64_t t7; int64_t t8; int64_t t9; h_closurelist_Point t10; int64_t t11; int64_t t12; HeroMapHeader * t13; HeroArrayHeader * t14; HeroArrayHeader * t15; int64_t t16; int64_t t17; HeroArrayHeader * t18; int64_t t19; bool t20; HeroArrayHeader * t21; int64_t t22; HeroStr t23; int64_t t24; HeroMapHeader * t25; HeroStr t26; h_0opt_e201354 t27; h_0opt_e201354 t28; int64_t t29; int64_t t30; bool t31; h_0opt_e201354 t32; HeroFailure t33; h_0opt_e201354 t34; int64_t t35; int64_t t36; int64_t t37; int64_t t38; int64_t t39; int64_t t40; int64_t t41; HeroArrayHeader * t42; int64_t t43; bool t44; HeroArrayHeader * t45; int64_t t46; int64_t t47; int64_t t48; bool t49; int64_t t50; int64_t t51; int64_t t52; int64_t t53; HeroArrayHeader * t54; int64_t t55; int64_t t56; int64_t t57; int64_t t58; int64_t t59; int64_t t60; int64_t t61; HeroStr t62; h_closurelist_Point t63; h_closurelist_Shape t64; int64_t t65; HeroStr t66; int64_t t67; h_0opt_e201354 t68; h_0opt_e201354 t69; int64_t t70; int64_t t71; bool t72; h_0opt_e201354 t73; int64_t t74; int64_t t75; int64_t t76; int64_t t77; int64_t t78; HeroArrayHeader * t79; int64_t t80; HeroStr t81; HeroArrayHeader * t82; h_0fn_4a13fb08 t83; HeroArrayHeader * t84; HeroStr t85; HeroStr t86; HeroStr t87; HeroArrayHeader * t88; int64_t t89; HeroStr t90; HeroStr t91; int64_t t92; int64_t t93; HeroStr t94; double t95; h_0opt_e201354 t96; h_0opt_e201354 t97; int64_t t98; int64_t t99; bool t100; h_0opt_e201354 t101; HeroFailure t102; h_0opt_e201354 t103; int64_t t104; int64_t t105; double t106; HeroArrayHeader * t107; HeroArrayHeader * t108; HeroMapHeader * t109; HeroMapHeader * t110; HeroArrayHeader * t111; HeroArrayHeader * t112; HeroArrayHeader * t113; HeroStr t114; h_0opt_e201354 t115; h_0opt_e201354 t116; h_0opt_e201354 t117; h_0opt_e201354 t118; HeroArrayHeader * t119; HeroStr t120; HeroArrayHeader * t121; HeroStr t122; h_0opt_e201354 t123; h_0opt_e201354 t124; goto bb0;
+#line 46 "tests/golden/run/closure-list.hero"
 bb0:
-#line 47 "tests/golden/run/closure-list.hero"
     t1 = INT64_C(1);
 #line 47 "tests/golden/run/closure-list.hero"
     t2 = INT64_C(2);
@@ -842,7 +627,7 @@ bb6:
     t32 = h7_f0;
 #line 55 "tests/golden/run/closure-list.hero"
     t33 = t32.as.err;
-#line 846 "closurelist.c"
+#line 631 "closurelist.c"
     hero_panic_must(t33);
     hero_unreachable();
 bb7:
@@ -1106,7 +891,7 @@ bb16:
     hero_print_f64(t106);
 #line 68 "tests/golden/run/closure-list.hero"
     hero_print_end();
-#line 1110 "closurelist.c"
+#line 895 "closurelist.c"
     hero_array_release_at(&h0_xs);
     hero_map_release_at(&h1_m);
     hero_array_release_at(&h4_xs0);
@@ -1131,7 +916,7 @@ bb17:
     t101 = h11_f2;
 #line 68 "tests/golden/run/closure-list.hero"
     t102 = t101.as.err;
-#line 1135 "closurelist.c"
+#line 920 "closurelist.c"
     hero_panic_must(t102);
     hero_unreachable();
 }
@@ -1140,37 +925,10 @@ bb17:
 /* map<i64, str> */
 #line 36 "<heroes library>"
 HERO_TU_LOCAL HeroArrayHeader * h_library_map_37fb3fcc(HeroArrayHeader * h0_xs, h_0fn_4a13fb08 h1_f) {
-#line 1144 "closurelist.c"
-    HeroArrayHeader * h2_out = {0};
-    HeroArrayHeader * h3_xs0 = {0};
-    int64_t h4_i0;
-    int64_t h5_x;
-    HeroArrayHeader * h6_own6 = {0};
-    HeroStr h7_own7 = {0};
-    HeroArrayHeader * t1;
-    HeroArrayHeader * t2;
-    int64_t t3;
-    int64_t t4;
-    HeroArrayHeader * t5;
-    int64_t t6;
-    bool t7;
-    HeroArrayHeader * t8;
-    int64_t t9;
-    int64_t t10;
-    h_0fn_4a13fb08 t12;
-    int64_t t13;
-    HeroStr t14;
-    int64_t t16;
-    int64_t t17;
-    int64_t t18;
-    HeroArrayHeader * t19;
-    HeroArrayHeader * t20;
-    HeroArrayHeader * t21;
-    HeroArrayHeader * t22;
-    HeroStr t23;
-    goto bb0;
+#line 36 "<heroes library>"
+    HeroArrayHeader * h2_out = {0}; HeroArrayHeader * h3_xs0 = {0}; int64_t h4_i0; int64_t h5_x; HeroArrayHeader * h6_own6 = {0}; HeroStr h7_own7 = {0}; HeroArrayHeader * t1; HeroArrayHeader * t2; int64_t t3; int64_t t4; HeroArrayHeader * t5; int64_t t6; bool t7; HeroArrayHeader * t8; int64_t t9; int64_t t10; h_0fn_4a13fb08 t12; int64_t t13; HeroStr t14; int64_t t16; int64_t t17; int64_t t18; HeroArrayHeader * t19; HeroArrayHeader * t20; HeroArrayHeader * t21; HeroArrayHeader * t22; HeroStr t23; goto bb0;
+#line 36 "<heroes library>"
 bb0:
-#line 37 "<heroes library>"
     t1 = hero_array_new(&hero_desc_str, 1);
 #line 37 "<heroes library>"
     t20 = h6_own6;
@@ -1254,7 +1012,7 @@ bb3:
 bb4:
 #line 40 "<heroes library>"
     t19 = h2_out;
-#line 1258 "closurelist.c"
+#line 1016 "closurelist.c"
     hero_array_incref(t19);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h3_xs0);

@@ -107,39 +107,10 @@ h_0opt_f87774a h_library_validated(const char * h0_c);
 
 #line 28 "tests/golden/ir/owned-release.hero"
 HeroStr h_ownedrelease_copy_of(HeroStr h0_text) {
-#line 111 "ownedrelease.c"
-    const char * h1_owned0;
-    h_0opt_f87774a h2_owned1 = {0};
-    h_0opt_f87774a h3_f0 = {0};
-    HeroStr h4_r0 = {0};
-    h_0opt_f87774a h5_own5 = {0};
-    HeroStr t1;
-    const char * t2;
-    const char * t3;
-    const char * t4;
-    h_0opt_f87774a t5;
-    const char * t6;
-    const char * t7;
-    bool t8;
-    const char * t9;
-    void * t10;
-    h_0opt_f87774a t11;
-    h_0opt_f87774a t12;
-    int64_t t13;
-    int64_t t14;
-    bool t15;
-    h_0opt_f87774a t16;
-    HeroStr t17;
-    HeroStr t18;
-    HeroStr t19;
-    h_0opt_f87774a t20;
-    h_0opt_f87774a t21;
-    h_0opt_f87774a t22;
-    HeroStr t23;
-    HeroStr t24;
-    goto bb0;
+#line 28 "tests/golden/ir/owned-release.hero"
+    const char * h1_owned0; h_0opt_f87774a h2_owned1 = {0}; h_0opt_f87774a h3_f0 = {0}; HeroStr h4_r0 = {0}; h_0opt_f87774a h5_own5 = {0}; HeroStr t1; const char * t2; const char * t3; const char * t4; h_0opt_f87774a t5; const char * t6; const char * t7; bool t8; const char * t9; void * t10; h_0opt_f87774a t11; h_0opt_f87774a t12; int64_t t13; int64_t t14; bool t15; h_0opt_f87774a t16; HeroStr t17; HeroStr t18; HeroStr t19; h_0opt_f87774a t20; h_0opt_f87774a t21; h_0opt_f87774a t22; HeroStr t23; HeroStr t24; goto bb0;
+#line 28 "tests/golden/ir/owned-release.hero"
 bb0:
-#line 29 "tests/golden/ir/owned-release.hero"
     t1 = h0_text;
 #line 29 "tests/golden/ir/owned-release.hero"
     t2 = hero_str_lend(t1);
@@ -239,7 +210,7 @@ bb4:
 bb5:
 #line 29 "tests/golden/ir/owned-release.hero"
     t19 = h4_r0;
-#line 243 "ownedrelease.c"
+#line 214 "ownedrelease.c"
     hero_str_incref(t19);
     h_0opt_f87774a_release(hero_slot_escape(&h2_owned1));
     h_0opt_f87774a_release(hero_slot_escape(&h3_f0));
@@ -250,47 +221,18 @@ bb5:
 
 #line 123 "<heroes library>"
 int64_t h_library_HERO_STR_OK(void) {
-#line 254 "ownedrelease.c"
+#line 225 "ownedrelease.c"
     return HERO_STR_OK;
 }
 
 #line 153 "<heroes library>"
 h_0opt_f87774a h_library_validated(const char * h0_c) {
-#line 260 "ownedrelease.c"
-    int64_t *const hero_lend_h1_status = (int64_t *)hero_lend_local(sizeof(int64_t), "library.validated", "status");
+#line 153 "<heroes library>"
 #define h1_status (*hero_lend_h1_status)
-    HeroStr h2_text = {0};
-    h_0opt_f87774a h3_ret0 = {0};
-    HeroStr h4_own4 = {0};
-    h_0opt_f87774a h5_own5 = {0};
-    h_0opt_f87774a h6_own6 = {0};
-    h_0opt_f87774a h7_own7 = {0};
-    const char * t1;
-    const char * t2;
-    bool t3;
-    HeroStr t4;
-    HeroStr t5;
-    h_0opt_f87774a t6;
-    int64_t t7;
-    const char * t8;
-    HeroStr t9;
-    int64_t t10;
-    int64_t t11;
-    bool t12;
-    HeroStr t13;
-    h_0opt_f87774a t14;
-    HeroStr t15;
-    HeroStr t16;
-    h_0opt_f87774a t17;
-    h_0opt_f87774a t18;
-    HeroStr t19;
-    HeroStr t20;
-    h_0opt_f87774a t21;
-    h_0opt_f87774a t22;
-    h_0opt_f87774a t23;
-    goto bb0;
+#line 153 "<heroes library>"
+    int64_t *const hero_lend_h1_status = (int64_t *)hero_lend_local(sizeof(int64_t), "library.validated", "status"); HeroStr h2_text = {0}; h_0opt_f87774a h3_ret0 = {0}; HeroStr h4_own4 = {0}; h_0opt_f87774a h5_own5 = {0}; h_0opt_f87774a h6_own6 = {0}; h_0opt_f87774a h7_own7 = {0}; const char * t1; const char * t2; bool t3; HeroStr t4; HeroStr t5; h_0opt_f87774a t6; int64_t t7; const char * t8; HeroStr t9; int64_t t10; int64_t t11; bool t12; HeroStr t13; h_0opt_f87774a t14; HeroStr t15; HeroStr t16; h_0opt_f87774a t17; h_0opt_f87774a t18; HeroStr t19; HeroStr t20; h_0opt_f87774a t21; h_0opt_f87774a t22; h_0opt_f87774a t23; goto bb0;
+#line 153 "<heroes library>"
 bb0:
-#line 154 "<heroes library>"
     t1 = h0_c;
 #line 154 "<heroes library>"
     t2 = ((void *)0);
@@ -402,7 +344,7 @@ bb6:
     goto bb4;
 #line 159 "<heroes library>"
 bb7:
-#line 406 "ownedrelease.c"
+#line 348 "ownedrelease.c"
     t18 = h3_ret0;
     h_0opt_f87774a_retain(&t18);
     hero_str_release_at(&h2_text);

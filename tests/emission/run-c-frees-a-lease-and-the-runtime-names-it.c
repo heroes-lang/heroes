@@ -97,18 +97,10 @@ void h_cfreesaleaseandtheruntimenamesit_main(void);
 
 #line 26 "tests/golden/run/c-frees-a-lease-and-the-runtime-names-it.hero"
 void h_cfreesaleaseandtheruntimenamesit_main(void) {
-#line 101 "cfreesaleaseandtheruntimenamesit.c"
-    HeroStr h0_x = {0};
-    const char * h1_c;
-    HeroStr t1;
-    HeroStr t2;
-    const char * t3;
-    int64_t t4;
-    const char * t5;
-    HeroStr t6;
-    goto bb0;
+#line 26 "tests/golden/run/c-frees-a-lease-and-the-runtime-names-it.hero"
+    HeroStr h0_x = {0}; const char * h1_c; HeroStr t1; HeroStr t2; const char * t3; int64_t t4; const char * t5; HeroStr t6; goto bb0;
+#line 26 "tests/golden/run/c-frees-a-lease-and-the-runtime-names-it.hero"
 bb0:
-#line 27 "tests/golden/run/c-frees-a-lease-and-the-runtime-names-it.hero"
     t1 = HERO_STR_LIT(hero_str_35d9fe9b);
 #line 27 "tests/golden/run/c-frees-a-lease-and-the-runtime-names-it.hero"
     t6 = h0_x;
@@ -132,7 +124,7 @@ bb0:
 #line 30 "tests/golden/run/c-frees-a-lease-and-the-runtime-names-it.hero"
     (void)eat(hero_cstr_nonnull(t5));
     hero_held_release(&h1_c);
-#line 136 "cfreesaleaseandtheruntimenamesit.c"
+#line 128 "cfreesaleaseandtheruntimenamesit.c"
     hero_str_release_at(&h0_x);
     return;
 }

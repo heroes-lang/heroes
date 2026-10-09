@@ -108,54 +108,38 @@ void h_fixedbugs396alocallentthroughawrapperaborts_main(void);
 
 #line 16 "tests/golden/run/fixedbugs-396-a-local-lent-through-a-wrapper-aborts.hero"
 int32_t h_fixedbugs396alocallentthroughawrapperaborts_inner(uint8_t *ph0_x) {
-#line 112 "fixedbugs396alocallentthroughawrapperaborts.c"
-    int32_t t1;
-    goto bb0;
+#line 16 "tests/golden/run/fixedbugs-396-a-local-lent-through-a-wrapper-aborts.hero"
+    int32_t t1; goto bb0;
+#line 16 "tests/golden/run/fixedbugs-396-a-local-lent-through-a-wrapper-aborts.hero"
 bb0:
-#line 17 "tests/golden/run/fixedbugs-396-a-local-lent-through-a-wrapper-aborts.hero"
     hero_lend_local_name(ph0_x, "digest32", "md");
 #line 17 "tests/golden/run/fixedbugs-396-a-local-lent-through-a-wrapper-aborts.hero"
     t1 = digest32((void *)&(*ph0_x));
 #line 17 "tests/golden/run/fixedbugs-396-a-local-lent-through-a-wrapper-aborts.hero"
     return t1;
-#line 122 "fixedbugs396alocallentthroughawrapperaborts.c"
+#line 121 "fixedbugs396alocallentthroughawrapperaborts.c"
 }
 
 #line 19 "tests/golden/run/fixedbugs-396-a-local-lent-through-a-wrapper-aborts.hero"
 int32_t h_fixedbugs396alocallentthroughawrapperaborts_outer(uint8_t *ph0_y) {
-#line 127 "fixedbugs396alocallentthroughawrapperaborts.c"
-    int32_t t1;
-    goto bb0;
+#line 19 "tests/golden/run/fixedbugs-396-a-local-lent-through-a-wrapper-aborts.hero"
+    int32_t t1; goto bb0;
+#line 19 "tests/golden/run/fixedbugs-396-a-local-lent-through-a-wrapper-aborts.hero"
 bb0:
-#line 20 "tests/golden/run/fixedbugs-396-a-local-lent-through-a-wrapper-aborts.hero"
     t1 = h_fixedbugs396alocallentthroughawrapperaborts_inner(&(*ph0_y));
 #line 20 "tests/golden/run/fixedbugs-396-a-local-lent-through-a-wrapper-aborts.hero"
     return t1;
-#line 135 "fixedbugs396alocallentthroughawrapperaborts.c"
+#line 133 "fixedbugs396alocallentthroughawrapperaborts.c"
 }
 
 #line 22 "tests/golden/run/fixedbugs-396-a-local-lent-through-a-wrapper-aborts.hero"
 void h_fixedbugs396alocallentthroughawrapperaborts_main(void) {
-#line 140 "fixedbugs396alocallentthroughawrapperaborts.c"
-    h_fixedbugs396alocallentthroughawrapperaborts_Pair h0_p;
-    uint8_t *const hero_lend_h1_m = (uint8_t *)hero_lend_local(sizeof(uint8_t), "fixedbugs396alocallentthroughawrapperaborts.main", "m");
+#line 22 "tests/golden/run/fixedbugs-396-a-local-lent-through-a-wrapper-aborts.hero"
 #define h1_m (*hero_lend_h1_m)
-    uint8_t t1;
-    int64_t t2;
-    h_fixedbugs396alocallentthroughawrapperaborts_Pair t3;
-    uint8_t t4;
-    HeroStr t5;
-    h_fixedbugs396alocallentthroughawrapperaborts_Pair t6;
-    int64_t t7;
-    int32_t t8;
-    HeroStr t9;
-    uint8_t t10;
-    HeroStr t11;
-    h_fixedbugs396alocallentthroughawrapperaborts_Pair t12;
-    int64_t t13;
-    goto bb0;
+#line 22 "tests/golden/run/fixedbugs-396-a-local-lent-through-a-wrapper-aborts.hero"
+    h_fixedbugs396alocallentthroughawrapperaborts_Pair h0_p; uint8_t *const hero_lend_h1_m = (uint8_t *)hero_lend_local(sizeof(uint8_t), "fixedbugs396alocallentthroughawrapperaborts.main", "m"); uint8_t t1; int64_t t2; h_fixedbugs396alocallentthroughawrapperaborts_Pair t3; uint8_t t4; HeroStr t5; h_fixedbugs396alocallentthroughawrapperaborts_Pair t6; int64_t t7; int32_t t8; HeroStr t9; uint8_t t10; HeroStr t11; h_fixedbugs396alocallentthroughawrapperaborts_Pair t12; int64_t t13; goto bb0;
+#line 22 "tests/golden/run/fixedbugs-396-a-local-lent-through-a-wrapper-aborts.hero"
 bb0:
-#line 23 "tests/golden/run/fixedbugs-396-a-local-lent-through-a-wrapper-aborts.hero"
     t1 = UINT64_C(0);
 #line 23 "tests/golden/run/fixedbugs-396-a-local-lent-through-a-wrapper-aborts.hero"
     t2 = INT64_C(7);
@@ -205,7 +189,7 @@ bb0:
     hero_lend_local_give(hero_lend_h1_m);
 #line 27 "tests/golden/run/fixedbugs-396-a-local-lent-through-a-wrapper-aborts.hero"
     return;
-#line 209 "fixedbugs396alocallentthroughawrapperaborts.c"
+#line 193 "fixedbugs396alocallentthroughawrapperaborts.c"
 }
 #undef h1_m
 HERO_TU_LOCAL bool h_fixedbugs396alocallentthroughawrapperaborts_Pair_eq(const h_fixedbugs396alocallentthroughawrapperaborts_Pair *a, const h_fixedbugs396alocallentthroughawrapperaborts_Pair *b) {

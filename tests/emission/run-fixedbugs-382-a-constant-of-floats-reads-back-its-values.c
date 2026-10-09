@@ -105,17 +105,10 @@ HeroArrayHeader * h_fixedbugs382aconstantoffloatsreadsbackitsvalues_HALF(void) {
 
 #line 7 "tests/golden/run/fixedbugs-382-a-constant-of-floats-reads-back-its-values.hero"
 HeroArrayHeader * h_fixedbugs382aconstantoffloatsreadsbackitsvalues_HALF(void) {
-#line 109 "fixedbugs382aconstantoffloatsreadsbackitsvalues.c"
-    HeroArrayHeader * h0_own0 = {0};
-    float t1;
-    float t2;
-    float t3;
-    float t4;
-    HeroArrayHeader * t5;
-    HeroArrayHeader * t6;
-    goto bb0;
+#line 7 "tests/golden/run/fixedbugs-382-a-constant-of-floats-reads-back-its-values.hero"
+    HeroArrayHeader * h0_own0 = {0}; float t1; float t2; float t3; float t4; HeroArrayHeader * t5; HeroArrayHeader * t6; goto bb0;
+#line 7 "tests/golden/run/fixedbugs-382-a-constant-of-floats-reads-back-its-values.hero"
 bb0:
-#line 8 "tests/golden/run/fixedbugs-382-a-constant-of-floats-reads-back-its-values.hero"
     t1 = 0x1p-1;
 #line 8 "tests/golden/run/fixedbugs-382-a-constant-of-floats-reads-back-its-values.hero"
     t2 = 0x1.4p+0;
@@ -139,7 +132,7 @@ bb0:
     h0_own0 = t5;
 #line 8 "tests/golden/run/fixedbugs-382-a-constant-of-floats-reads-back-its-values.hero"
     hero_array_decref(t6);
-#line 143 "fixedbugs382aconstantoffloatsreadsbackitsvalues.c"
+#line 136 "fixedbugs382aconstantoffloatsreadsbackitsvalues.c"
     hero_array_incref(t5);
     hero_array_release_at(&h0_own0);
     return t5;
@@ -151,23 +144,17 @@ bb0:
 HERO_ARRAY_STATIC(hero_constant_h_fixedbugs382aconstantoffloatsreadsbackitsvalues_WIDE_4, double, &hero_desc_f64, 3, 0x1.999999999999ap-4, 0x1.5af1d78b58c4p+66, 0x1.12e0be826d695p-32);
 #line 10 "tests/golden/run/fixedbugs-382-a-constant-of-floats-reads-back-its-values.hero"
 HeroArrayHeader * h_fixedbugs382aconstantoffloatsreadsbackitsvalues_WIDE(void) {
-#line 155 "fixedbugs382aconstantoffloatsreadsbackitsvalues.c"
+#line 148 "fixedbugs382aconstantoffloatsreadsbackitsvalues.c"
     return HERO_ARRAY_LIT(hero_constant_h_fixedbugs382aconstantoffloatsreadsbackitsvalues_WIDE_4);
 }
 #else
 
 #line 10 "tests/golden/run/fixedbugs-382-a-constant-of-floats-reads-back-its-values.hero"
 HeroArrayHeader * h_fixedbugs382aconstantoffloatsreadsbackitsvalues_WIDE(void) {
-#line 162 "fixedbugs382aconstantoffloatsreadsbackitsvalues.c"
-    HeroArrayHeader * h0_own0 = {0};
-    double t1;
-    double t2;
-    double t3;
-    HeroArrayHeader * t4;
-    HeroArrayHeader * t5;
-    goto bb0;
+#line 10 "tests/golden/run/fixedbugs-382-a-constant-of-floats-reads-back-its-values.hero"
+    HeroArrayHeader * h0_own0 = {0}; double t1; double t2; double t3; HeroArrayHeader * t4; HeroArrayHeader * t5; goto bb0;
+#line 10 "tests/golden/run/fixedbugs-382-a-constant-of-floats-reads-back-its-values.hero"
 bb0:
-#line 11 "tests/golden/run/fixedbugs-382-a-constant-of-floats-reads-back-its-values.hero"
     t1 = 0x1.999999999999ap-4;
 #line 11 "tests/golden/run/fixedbugs-382-a-constant-of-floats-reads-back-its-values.hero"
     t2 = 0x1.5af1d78b58c4p+66;
@@ -187,7 +174,7 @@ bb0:
     h0_own0 = t4;
 #line 11 "tests/golden/run/fixedbugs-382-a-constant-of-floats-reads-back-its-values.hero"
     hero_array_decref(t5);
-#line 191 "fixedbugs382aconstantoffloatsreadsbackitsvalues.c"
+#line 178 "fixedbugs382aconstantoffloatsreadsbackitsvalues.c"
     hero_array_incref(t4);
     hero_array_release_at(&h0_own0);
     return t4;
@@ -199,22 +186,17 @@ bb0:
 HERO_ARRAY_STATIC(hero_constant_h_fixedbugs382aconstantoffloatsreadsbackitsvalues_FLAGS_3, bool, &hero_desc_bool, 2, true, false);
 #line 13 "tests/golden/run/fixedbugs-382-a-constant-of-floats-reads-back-its-values.hero"
 HeroArrayHeader * h_fixedbugs382aconstantoffloatsreadsbackitsvalues_FLAGS(void) {
-#line 203 "fixedbugs382aconstantoffloatsreadsbackitsvalues.c"
+#line 190 "fixedbugs382aconstantoffloatsreadsbackitsvalues.c"
     return HERO_ARRAY_LIT(hero_constant_h_fixedbugs382aconstantoffloatsreadsbackitsvalues_FLAGS_3);
 }
 #else
 
 #line 13 "tests/golden/run/fixedbugs-382-a-constant-of-floats-reads-back-its-values.hero"
 HeroArrayHeader * h_fixedbugs382aconstantoffloatsreadsbackitsvalues_FLAGS(void) {
-#line 210 "fixedbugs382aconstantoffloatsreadsbackitsvalues.c"
-    HeroArrayHeader * h0_own0 = {0};
-    bool t1;
-    bool t2;
-    HeroArrayHeader * t3;
-    HeroArrayHeader * t4;
-    goto bb0;
+#line 13 "tests/golden/run/fixedbugs-382-a-constant-of-floats-reads-back-its-values.hero"
+    HeroArrayHeader * h0_own0 = {0}; bool t1; bool t2; HeroArrayHeader * t3; HeroArrayHeader * t4; goto bb0;
+#line 13 "tests/golden/run/fixedbugs-382-a-constant-of-floats-reads-back-its-values.hero"
 bb0:
-#line 14 "tests/golden/run/fixedbugs-382-a-constant-of-floats-reads-back-its-values.hero"
     t1 = true;
 #line 14 "tests/golden/run/fixedbugs-382-a-constant-of-floats-reads-back-its-values.hero"
     t2 = false;
@@ -230,7 +212,7 @@ bb0:
     h0_own0 = t3;
 #line 14 "tests/golden/run/fixedbugs-382-a-constant-of-floats-reads-back-its-values.hero"
     hero_array_decref(t4);
-#line 234 "fixedbugs382aconstantoffloatsreadsbackitsvalues.c"
+#line 216 "fixedbugs382aconstantoffloatsreadsbackitsvalues.c"
     hero_array_incref(t3);
     hero_array_release_at(&h0_own0);
     return t3;
@@ -239,16 +221,10 @@ bb0:
 
 #line 16 "tests/golden/run/fixedbugs-382-a-constant-of-floats-reads-back-its-values.hero"
 HeroArrayHeader * h_fixedbugs382aconstantoffloatsreadsbackitsvalues_SIGNED(void) {
-#line 243 "fixedbugs382aconstantoffloatsreadsbackitsvalues.c"
-    HeroArrayHeader * h0_own0 = {0};
-    double t1;
-    double t2;
-    double t3;
-    HeroArrayHeader * t4;
-    HeroArrayHeader * t5;
-    goto bb0;
+#line 16 "tests/golden/run/fixedbugs-382-a-constant-of-floats-reads-back-its-values.hero"
+    HeroArrayHeader * h0_own0 = {0}; double t1; double t2; double t3; HeroArrayHeader * t4; HeroArrayHeader * t5; goto bb0;
+#line 16 "tests/golden/run/fixedbugs-382-a-constant-of-floats-reads-back-its-values.hero"
 bb0:
-#line 17 "tests/golden/run/fixedbugs-382-a-constant-of-floats-reads-back-its-values.hero"
     t1 = 0x1.6p+1;
 #line 17 "tests/golden/run/fixedbugs-382-a-constant-of-floats-reads-back-its-values.hero"
     t2 = -t1;
@@ -266,7 +242,7 @@ bb0:
     h0_own0 = t4;
 #line 17 "tests/golden/run/fixedbugs-382-a-constant-of-floats-reads-back-its-values.hero"
     hero_array_decref(t5);
-#line 270 "fixedbugs382aconstantoffloatsreadsbackitsvalues.c"
+#line 246 "fixedbugs382aconstantoffloatsreadsbackitsvalues.c"
     hero_array_incref(t4);
     hero_array_release_at(&h0_own0);
     return t4;
@@ -274,103 +250,10 @@ bb0:
 
 #line 19 "tests/golden/run/fixedbugs-382-a-constant-of-floats-reads-back-its-values.hero"
 void h_fixedbugs382aconstantoffloatsreadsbackitsvalues_main(void) {
-#line 278 "fixedbugs382aconstantoffloatsreadsbackitsvalues.c"
-    HeroArrayHeader * h0_own0 = {0};
-    HeroArrayHeader * h1_own1 = {0};
-    HeroArrayHeader * h2_own2 = {0};
-    HeroArrayHeader * h3_own3 = {0};
-    HeroArrayHeader * h4_own4 = {0};
-    HeroArrayHeader * h5_own5 = {0};
-    HeroArrayHeader * h6_own6 = {0};
-    HeroArrayHeader * h7_own7 = {0};
-    HeroArrayHeader * h8_own8 = {0};
-    HeroArrayHeader * h9_own9 = {0};
-    HeroArrayHeader * h10_own10 = {0};
-    HeroArrayHeader * h11_own11 = {0};
-    HeroArrayHeader * h12_own12 = {0};
-    HeroArrayHeader * h13_own13 = {0};
-    HeroArrayHeader * h14_own14 = {0};
-    HeroArrayHeader * h15_own15 = {0};
-    HeroArrayHeader * h16_own16 = {0};
-    HeroArrayHeader * t1;
-    int64_t t2;
-    float t3;
-    HeroStr t4;
-    HeroArrayHeader * t5;
-    int64_t t6;
-    float t7;
-    HeroStr t8;
-    HeroArrayHeader * t9;
-    int64_t t10;
-    float t11;
-    HeroStr t12;
-    HeroArrayHeader * t13;
-    int64_t t14;
-    float t15;
-    HeroStr t16;
-    HeroArrayHeader * t17;
-    int64_t t18;
-    float t19;
-    HeroArrayHeader * t20;
-    int64_t t21;
-    float t22;
-    float t23;
-    HeroArrayHeader * t24;
-    int64_t t25;
-    double t26;
-    HeroStr t27;
-    HeroArrayHeader * t28;
-    int64_t t29;
-    double t30;
-    HeroStr t31;
-    HeroArrayHeader * t32;
-    int64_t t33;
-    double t34;
-    HeroArrayHeader * t35;
-    int64_t t36;
-    bool t37;
-    HeroStr t38;
-    HeroArrayHeader * t39;
-    int64_t t40;
-    bool t41;
-    HeroStr t42;
-    HeroArrayHeader * t43;
-    bool t44;
-    bool t45;
-    HeroArrayHeader * t46;
-    bool t47;
-    HeroArrayHeader * t48;
-    int64_t t49;
-    double t50;
-    HeroStr t51;
-    HeroArrayHeader * t52;
-    int64_t t53;
-    double t54;
-    HeroStr t55;
-    HeroArrayHeader * t56;
-    HeroArrayHeader * t57;
-    int64_t t58;
-    double t59;
-    HeroArrayHeader * t60;
-    HeroArrayHeader * t61;
-    HeroArrayHeader * t62;
-    HeroArrayHeader * t63;
-    HeroArrayHeader * t64;
-    HeroArrayHeader * t65;
-    HeroArrayHeader * t66;
-    HeroArrayHeader * t67;
-    HeroArrayHeader * t68;
-    HeroArrayHeader * t69;
-    HeroArrayHeader * t70;
-    HeroArrayHeader * t71;
-    HeroArrayHeader * t72;
-    HeroArrayHeader * t73;
-    HeroArrayHeader * t74;
-    HeroArrayHeader * t75;
-    HeroArrayHeader * t76;
-    goto bb0;
+#line 19 "tests/golden/run/fixedbugs-382-a-constant-of-floats-reads-back-its-values.hero"
+    HeroArrayHeader * h0_own0 = {0}; HeroArrayHeader * h1_own1 = {0}; HeroArrayHeader * h2_own2 = {0}; HeroArrayHeader * h3_own3 = {0}; HeroArrayHeader * h4_own4 = {0}; HeroArrayHeader * h5_own5 = {0}; HeroArrayHeader * h6_own6 = {0}; HeroArrayHeader * h7_own7 = {0}; HeroArrayHeader * h8_own8 = {0}; HeroArrayHeader * h9_own9 = {0}; HeroArrayHeader * h10_own10 = {0}; HeroArrayHeader * h11_own11 = {0}; HeroArrayHeader * h12_own12 = {0}; HeroArrayHeader * h13_own13 = {0}; HeroArrayHeader * h14_own14 = {0}; HeroArrayHeader * h15_own15 = {0}; HeroArrayHeader * h16_own16 = {0}; HeroArrayHeader * t1; int64_t t2; float t3; HeroStr t4; HeroArrayHeader * t5; int64_t t6; float t7; HeroStr t8; HeroArrayHeader * t9; int64_t t10; float t11; HeroStr t12; HeroArrayHeader * t13; int64_t t14; float t15; HeroStr t16; HeroArrayHeader * t17; int64_t t18; float t19; HeroArrayHeader * t20; int64_t t21; float t22; float t23; HeroArrayHeader * t24; int64_t t25; double t26; HeroStr t27; HeroArrayHeader * t28; int64_t t29; double t30; HeroStr t31; HeroArrayHeader * t32; int64_t t33; double t34; HeroArrayHeader * t35; int64_t t36; bool t37; HeroStr t38; HeroArrayHeader * t39; int64_t t40; bool t41; HeroStr t42; HeroArrayHeader * t43; bool t44; bool t45; HeroArrayHeader * t46; bool t47; HeroArrayHeader * t48; int64_t t49; double t50; HeroStr t51; HeroArrayHeader * t52; int64_t t53; double t54; HeroStr t55; HeroArrayHeader * t56; HeroArrayHeader * t57; int64_t t58; double t59; HeroArrayHeader * t60; HeroArrayHeader * t61; HeroArrayHeader * t62; HeroArrayHeader * t63; HeroArrayHeader * t64; HeroArrayHeader * t65; HeroArrayHeader * t66; HeroArrayHeader * t67; HeroArrayHeader * t68; HeroArrayHeader * t69; HeroArrayHeader * t70; HeroArrayHeader * t71; HeroArrayHeader * t72; HeroArrayHeader * t73; HeroArrayHeader * t74; HeroArrayHeader * t75; HeroArrayHeader * t76; goto bb0;
+#line 19 "tests/golden/run/fixedbugs-382-a-constant-of-floats-reads-back-its-values.hero"
 bb0:
-#line 20 "tests/golden/run/fixedbugs-382-a-constant-of-floats-reads-back-its-values.hero"
     t1 = h_fixedbugs382aconstantoffloatsreadsbackitsvalues_HALF();
 #line 20 "tests/golden/run/fixedbugs-382-a-constant-of-floats-reads-back-its-values.hero"
     t60 = h0_own0;
@@ -647,7 +530,7 @@ bb0:
     hero_print_f64(t59);
 #line 23 "tests/golden/run/fixedbugs-382-a-constant-of-floats-reads-back-its-values.hero"
     hero_print_end();
-#line 651 "fixedbugs382aconstantoffloatsreadsbackitsvalues.c"
+#line 534 "fixedbugs382aconstantoffloatsreadsbackitsvalues.c"
     hero_array_release_at(&h0_own0);
     hero_array_release_at(&h1_own1);
     hero_array_release_at(&h2_own2);

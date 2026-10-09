@@ -106,24 +106,10 @@ void h_handlesetanyreleasernamedendsthelife_main(void);
 
 #line 14 "tests/golden/run/handle-set-any-releaser-named-ends-the-life.hero"
 void h_handlesetanyreleasernamedendsthelife_main(void) {
-#line 110 "handlesetanyreleasernamedendsthelife.c"
-    hh * h0_a;
-    hh * h1_b;
-    int64_t t1;
-    hh * t2;
-    int64_t t3;
-    hh * t4;
-    hh * t5;
-    int64_t t6;
-    hh * t7;
-    int64_t t8;
-    int64_t t9;
-    hh * t10;
-    hh * t11;
-    HeroStr t12;
-    goto bb0;
+#line 14 "tests/golden/run/handle-set-any-releaser-named-ends-the-life.hero"
+    hh * h0_a; hh * h1_b; int64_t t1; hh * t2; int64_t t3; hh * t4; hh * t5; int64_t t6; hh * t7; int64_t t8; int64_t t9; hh * t10; hh * t11; HeroStr t12; goto bb0;
+#line 14 "tests/golden/run/handle-set-any-releaser-named-ends-the-life.hero"
 bb0:
-#line 15 "tests/golden/run/handle-set-any-releaser-named-ends-the-life.hero"
     t1 = INT64_C(7);
 #line 15 "tests/golden/run/handle-set-any-releaser-named-ends-the-life.hero"
     t2 = h_open(t1);
@@ -188,7 +174,7 @@ bb0:
     hero_print_end();
 #line 20 "tests/golden/run/handle-set-any-releaser-named-ends-the-life.hero"
     return;
-#line 192 "handlesetanyreleasernamedendsthelife.c"
+#line 178 "handlesetanyreleasernamedendsthelife.c"
 }
 HERO_TU_LOCAL bool h_handlesetanyreleasernamedendsthelife_H_eq(hh * const *a, hh * const *b) {
     return hero_handle_eq(*a, *b);

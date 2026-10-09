@@ -133,13 +133,10 @@ void h_fixedbugs491nestedplacesandstringbytesarereadinplace_main(void);
 
 #line 19 "tests/golden/run/fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero"
 void h_fixedbugs491nestedplacesandstringbytesarereadinplace_bump(int64_t *ph0_x, int64_t h1_by) {
-#line 137 "fixedbugs491nestedplacesandstringbytesarereadinplace.c"
-    int64_t t1;
-    int64_t t2;
-    int64_t t3;
-    goto bb0;
+#line 19 "tests/golden/run/fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero"
+    int64_t t1; int64_t t2; int64_t t3; goto bb0;
+#line 19 "tests/golden/run/fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero"
 bb0:
-#line 20 "tests/golden/run/fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero"
     t1 = (*ph0_x);
 #line 20 "tests/golden/run/fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero"
     t2 = h1_by;
@@ -149,187 +146,15 @@ bb0:
     (*ph0_x) = t3;
 #line 20 "tests/golden/run/fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero"
     return;
-#line 153 "fixedbugs491nestedplacesandstringbytesarereadinplace.c"
+#line 150 "fixedbugs491nestedplacesandstringbytesarereadinplace.c"
 }
 
 #line 22 "tests/golden/run/fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero"
 void h_fixedbugs491nestedplacesandstringbytesarereadinplace_main(void) {
-#line 158 "fixedbugs491nestedplacesandstringbytesarereadinplace.c"
-    HeroStr h0_text = {0};
-    HeroArrayHeader * h1_rows = {0};
-    HeroArrayHeader * h2_grid = {0};
-    HeroArrayHeader * h3_xs = {0};
-    HeroArrayHeader * h4_before = {0};
-    int64_t h5_i;
-    int64_t h6_sum;
-    h_0opt_e201354 h7_f0 = {0};
-    HeroArrayHeader * h8_own8 = {0};
-    h_fixedbugs491nestedplacesandstringbytesarereadinplace_Row h9_own9 = {0};
-    HeroArrayHeader * h10_own10 = {0};
-    h_fixedbugs491nestedplacesandstringbytesarereadinplace_Row h11_own11 = {0};
-    HeroArrayHeader * h12_own12 = {0};
-    HeroArrayHeader * h13_own13 = {0};
-    HeroArrayHeader * h14_own14 = {0};
-    HeroArrayHeader * h15_own15 = {0};
-    HeroArrayHeader * h16_own16 = {0};
-    HeroArrayHeader * h17_own17 = {0};
-    HeroArrayHeader * h18_own18 = {0};
-    HeroArrayHeader * h19_own19 = {0};
-    HeroArrayHeader * h20_own20 = {0};
-    h_0opt_e201354 h21_own21 = {0};
-    HeroStr t1;
-    int64_t t2;
-    int64_t t3;
-    int64_t t4;
-    HeroArrayHeader * t5;
-    HeroStr t6;
-    h_fixedbugs491nestedplacesandstringbytesarereadinplace_Row t7;
-    int64_t t8;
-    int64_t t9;
-    int64_t t10;
-    HeroArrayHeader * t11;
-    HeroStr t12;
-    h_fixedbugs491nestedplacesandstringbytesarereadinplace_Row t13;
-    HeroArrayHeader * t14;
-    int64_t t15;
-    int64_t t16;
-    HeroArrayHeader * t17;
-    int64_t t18;
-    int64_t t19;
-    HeroArrayHeader * t20;
-    HeroArrayHeader * t21;
-    int64_t t22;
-    int64_t t23;
-    HeroArrayHeader * t24;
-    int64_t t25;
-    int64_t t26;
-    HeroArrayHeader * t27;
-    HeroArrayHeader * t28;
-    HeroArrayHeader * t29;
-    int64_t t30;
-    int64_t t31;
-    int64_t t32;
-    HeroArrayHeader * t33;
-    HeroArrayHeader * t34;
-    int64_t t35;
-    int64_t t36;
-    int64_t t37;
-    HeroStr t38;
-    int64_t t39;
-    bool t40;
-    int64_t t41;
-    HeroStr t42;
-    int64_t t43;
-    uint8_t t44;
-    h_0opt_e201354 t45;
-    h_0opt_e201354 t46;
-    int64_t t47;
-    int64_t t48;
-    bool t49;
-    h_0opt_e201354 t50;
-    HeroFailure t51;
-    h_0opt_e201354 t52;
-    int64_t t53;
-    int64_t t54;
-    int64_t t55;
-    int64_t t56;
-    int64_t t57;
-    int64_t t58;
-    int64_t t59;
-    int64_t t60;
-    int64_t t61;
-    int64_t t62;
-    int64_t t63;
-    int64_t t64;
-    int64_t t65;
-    int64_t t66;
-    int64_t t67;
-    int64_t t68;
-    int64_t t69;
-    int64_t t70;
-    int64_t t71;
-    int64_t t72;
-    int64_t t73;
-    int64_t t74;
-    HeroArrayHeader * t75;
-    int64_t t76;
-    h_fixedbugs491nestedplacesandstringbytesarereadinplace_Row t77;
-    HeroArrayHeader * t78;
-    int64_t t79;
-    int64_t t80;
-    HeroArrayHeader * t81;
-    int64_t t82;
-    HeroArrayHeader * t83;
-    int64_t t84;
-    HeroArrayHeader * t85;
-    int64_t t86;
-    int64_t t87;
-    HeroArrayHeader * t88;
-    int64_t t89;
-    int64_t t90;
-    HeroArrayHeader * t91;
-    int64_t t92;
-    h_fixedbugs491nestedplacesandstringbytesarereadinplace_Row t93;
-    HeroArrayHeader * t94;
-    int64_t t95;
-    int64_t t96;
-    HeroArrayHeader * t97;
-    int64_t t98;
-    HeroArrayHeader * t99;
-    int64_t t100;
-    HeroArrayHeader * t101;
-    int64_t t102;
-    int64_t t103;
-    HeroArrayHeader * t104;
-    int64_t t105;
-    h_fixedbugs491nestedplacesandstringbytesarereadinplace_Row t106;
-    HeroArrayHeader * t107;
-    int64_t t108;
-    int64_t t109;
-    HeroArrayHeader * t110;
-    int64_t t111;
-    HeroArrayHeader * t112;
-    int64_t t113;
-    HeroArrayHeader * t114;
-    int64_t t115;
-    int64_t t116;
-    HeroArrayHeader * t117;
-    int64_t t118;
-    HeroArrayHeader * t119;
-    int64_t t120;
-    HeroArrayHeader * t121;
-    int64_t t122;
-    int64_t t123;
-    HeroArrayHeader * t124;
-    int64_t t125;
-    HeroArrayHeader * t126;
-    int64_t t127;
-    HeroArrayHeader * t128;
-    int64_t t129;
-    int64_t t130;
-    HeroStr t131;
-    HeroArrayHeader * t132;
-    h_fixedbugs491nestedplacesandstringbytesarereadinplace_Row t133;
-    HeroArrayHeader * t134;
-    h_fixedbugs491nestedplacesandstringbytesarereadinplace_Row t135;
-    HeroArrayHeader * t136;
-    HeroArrayHeader * t137;
-    HeroArrayHeader * t138;
-    HeroArrayHeader * t139;
-    HeroArrayHeader * t140;
-    HeroArrayHeader * t141;
-    HeroArrayHeader * t142;
-    HeroArrayHeader * t143;
-    HeroArrayHeader * t144;
-    HeroArrayHeader * t145;
-    HeroArrayHeader * t146;
-    HeroArrayHeader * t147;
-    HeroArrayHeader * t148;
-    h_0opt_e201354 t149;
-    h_0opt_e201354 t150;
-    goto bb0;
+#line 22 "tests/golden/run/fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero"
+    HeroStr h0_text = {0}; HeroArrayHeader * h1_rows = {0}; HeroArrayHeader * h2_grid = {0}; HeroArrayHeader * h3_xs = {0}; HeroArrayHeader * h4_before = {0}; int64_t h5_i; int64_t h6_sum; h_0opt_e201354 h7_f0 = {0}; HeroArrayHeader * h8_own8 = {0}; h_fixedbugs491nestedplacesandstringbytesarereadinplace_Row h9_own9 = {0}; HeroArrayHeader * h10_own10 = {0}; h_fixedbugs491nestedplacesandstringbytesarereadinplace_Row h11_own11 = {0}; HeroArrayHeader * h12_own12 = {0}; HeroArrayHeader * h13_own13 = {0}; HeroArrayHeader * h14_own14 = {0}; HeroArrayHeader * h15_own15 = {0}; HeroArrayHeader * h16_own16 = {0}; HeroArrayHeader * h17_own17 = {0}; HeroArrayHeader * h18_own18 = {0}; HeroArrayHeader * h19_own19 = {0}; HeroArrayHeader * h20_own20 = {0}; h_0opt_e201354 h21_own21 = {0}; HeroStr t1; int64_t t2; int64_t t3; int64_t t4; HeroArrayHeader * t5; HeroStr t6; h_fixedbugs491nestedplacesandstringbytesarereadinplace_Row t7; int64_t t8; int64_t t9; int64_t t10; HeroArrayHeader * t11; HeroStr t12; h_fixedbugs491nestedplacesandstringbytesarereadinplace_Row t13; HeroArrayHeader * t14; int64_t t15; int64_t t16; HeroArrayHeader * t17; int64_t t18; int64_t t19; HeroArrayHeader * t20; HeroArrayHeader * t21; int64_t t22; int64_t t23; HeroArrayHeader * t24; int64_t t25; int64_t t26; HeroArrayHeader * t27; HeroArrayHeader * t28; HeroArrayHeader * t29; int64_t t30; int64_t t31; int64_t t32; HeroArrayHeader * t33; HeroArrayHeader * t34; int64_t t35; int64_t t36; int64_t t37; HeroStr t38; int64_t t39; bool t40; int64_t t41; HeroStr t42; int64_t t43; uint8_t t44; h_0opt_e201354 t45; h_0opt_e201354 t46; int64_t t47; int64_t t48; bool t49; h_0opt_e201354 t50; HeroFailure t51; h_0opt_e201354 t52; int64_t t53; int64_t t54; int64_t t55; int64_t t56; int64_t t57; int64_t t58; int64_t t59; int64_t t60; int64_t t61; int64_t t62; int64_t t63; int64_t t64; int64_t t65; int64_t t66; int64_t t67; int64_t t68; int64_t t69; int64_t t70; int64_t t71; int64_t t72; int64_t t73; int64_t t74; HeroArrayHeader * t75; int64_t t76; h_fixedbugs491nestedplacesandstringbytesarereadinplace_Row t77; HeroArrayHeader * t78; int64_t t79; int64_t t80; HeroArrayHeader * t81; int64_t t82; HeroArrayHeader * t83; int64_t t84; HeroArrayHeader * t85; int64_t t86; int64_t t87; HeroArrayHeader * t88; int64_t t89; int64_t t90; HeroArrayHeader * t91; int64_t t92; h_fixedbugs491nestedplacesandstringbytesarereadinplace_Row t93; HeroArrayHeader * t94; int64_t t95; int64_t t96; HeroArrayHeader * t97; int64_t t98; HeroArrayHeader * t99; int64_t t100; HeroArrayHeader * t101; int64_t t102; int64_t t103; HeroArrayHeader * t104; int64_t t105; h_fixedbugs491nestedplacesandstringbytesarereadinplace_Row t106; HeroArrayHeader * t107; int64_t t108; int64_t t109; HeroArrayHeader * t110; int64_t t111; HeroArrayHeader * t112; int64_t t113; HeroArrayHeader * t114; int64_t t115; int64_t t116; HeroArrayHeader * t117; int64_t t118; HeroArrayHeader * t119; int64_t t120; HeroArrayHeader * t121; int64_t t122; int64_t t123; HeroArrayHeader * t124; int64_t t125; HeroArrayHeader * t126; int64_t t127; HeroArrayHeader * t128; int64_t t129; int64_t t130; HeroStr t131; HeroArrayHeader * t132; h_fixedbugs491nestedplacesandstringbytesarereadinplace_Row t133; HeroArrayHeader * t134; h_fixedbugs491nestedplacesandstringbytesarereadinplace_Row t135; HeroArrayHeader * t136; HeroArrayHeader * t137; HeroArrayHeader * t138; HeroArrayHeader * t139; HeroArrayHeader * t140; HeroArrayHeader * t141; HeroArrayHeader * t142; HeroArrayHeader * t143; HeroArrayHeader * t144; HeroArrayHeader * t145; HeroArrayHeader * t146; HeroArrayHeader * t147; HeroArrayHeader * t148; h_0opt_e201354 t149; h_0opt_e201354 t150; goto bb0;
+#line 22 "tests/golden/run/fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero"
 bb0:
-#line 23 "tests/golden/run/fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero"
     t1 = HERO_STR_LIT(hero_str_2a0b7016);
 #line 23 "tests/golden/run/fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero"
     t131 = h0_text;
@@ -826,7 +651,7 @@ bb3:
     hero_print_int(t130);
 #line 49 "tests/golden/run/fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero"
     hero_print_end();
-#line 830 "fixedbugs491nestedplacesandstringbytesarereadinplace.c"
+#line 655 "fixedbugs491nestedplacesandstringbytesarereadinplace.c"
     hero_str_release_at(&h0_text);
     hero_array_release_at(&h1_rows);
     hero_array_release_at(&h2_grid);
@@ -872,7 +697,7 @@ bb5:
     t50 = h7_f0;
 #line 32 "tests/golden/run/fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero"
     t51 = t50.as.err;
-#line 876 "fixedbugs491nestedplacesandstringbytesarereadinplace.c"
+#line 701 "fixedbugs491nestedplacesandstringbytesarereadinplace.c"
     hero_panic_must(t51);
     hero_unreachable();
 }

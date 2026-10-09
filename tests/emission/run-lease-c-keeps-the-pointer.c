@@ -99,34 +99,10 @@ void h_leaseckeepsthepointer_main(void);
 
 #line 15 "tests/golden/run/lease-c-keeps-the-pointer.hero"
 void h_leaseckeepsthepointer_main(void) {
-#line 103 "leaseckeepsthepointer.c"
-    int64_t h0_at;
-    const char * h1_label;
-    HeroStr h2_own2 = {0};
-    HeroStr h3_own3 = {0};
-    HeroStr h4_own4 = {0};
-    int64_t t1;
-    int64_t t2;
-    int64_t t3;
-    bool t4;
-    HeroStr t5;
-    int64_t t6;
-    HeroStr t7;
-    HeroStr t8;
-    HeroStr t9;
-    HeroStr t10;
-    const char * t11;
-    const char * t12;
-    uint64_t t13;
-    int64_t t14;
-    int64_t t15;
-    int64_t t16;
-    HeroStr t17;
-    HeroStr t18;
-    HeroStr t19;
-    goto bb0;
+#line 15 "tests/golden/run/lease-c-keeps-the-pointer.hero"
+    int64_t h0_at; const char * h1_label; HeroStr h2_own2 = {0}; HeroStr h3_own3 = {0}; HeroStr h4_own4 = {0}; int64_t t1; int64_t t2; int64_t t3; bool t4; HeroStr t5; int64_t t6; HeroStr t7; HeroStr t8; HeroStr t9; HeroStr t10; const char * t11; const char * t12; uint64_t t13; int64_t t14; int64_t t15; int64_t t16; HeroStr t17; HeroStr t18; HeroStr t19; goto bb0;
+#line 15 "tests/golden/run/lease-c-keeps-the-pointer.hero"
 bb0:
-#line 16 "tests/golden/run/lease-c-keeps-the-pointer.hero"
     t1 = INT64_C(0);
 #line 16 "tests/golden/run/lease-c-keeps-the-pointer.hero"
     h0_at = t1;
@@ -197,7 +173,7 @@ bb2:
     goto bb1;
 #line 23 "tests/golden/run/lease-c-keeps-the-pointer.hero"
 bb3:
-#line 201 "leaseckeepsthepointer.c"
+#line 177 "leaseckeepsthepointer.c"
     hero_str_release_at(&h2_own2);
     hero_str_release_at(&h3_own3);
     hero_str_release_at(&h4_own4);

@@ -97,14 +97,10 @@ void h_ffivariadicatafixedarity_main(void);
 
 #line 10 "tests/golden/run/ffi-variadic-at-a-fixed-arity.hero"
 void h_ffivariadicatafixedarity_main(void) {
-#line 101 "ffivariadicatafixedarity.c"
-    HeroStr t1;
-    const char * t2;
-    int64_t t3;
-    int64_t t5;
-    goto bb0;
+#line 10 "tests/golden/run/ffi-variadic-at-a-fixed-arity.hero"
+    HeroStr t1; const char * t2; int64_t t3; int64_t t5; goto bb0;
+#line 10 "tests/golden/run/ffi-variadic-at-a-fixed-arity.hero"
 bb0:
-#line 11 "tests/golden/run/ffi-variadic-at-a-fixed-arity.hero"
     t1 = HERO_STR_LIT(hero_str_18109220);
 #line 11 "tests/golden/run/ffi-variadic-at-a-fixed-arity.hero"
     t2 = hero_str_lend(t1);
@@ -119,7 +115,7 @@ bb0:
     hero_print_end();
 #line 12 "tests/golden/run/ffi-variadic-at-a-fixed-arity.hero"
     return;
-#line 123 "ffivariadicatafixedarity.c"
+#line 119 "ffivariadicatafixedarity.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

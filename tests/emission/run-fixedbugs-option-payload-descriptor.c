@@ -177,72 +177,10 @@ void h_fixedbugsoptionpayloaddescriptor_main(void);
 
 #line 29 "tests/golden/run/fixedbugs-option-payload-descriptor.hero"
 void h_fixedbugsoptionpayloaddescriptor_main(void) {
-#line 181 "fixedbugsoptionpayloaddescriptor.c"
-    h_fixedbugsoptionpayloaddescriptor_Node h0_a = {0};
-    h_fixedbugsoptionpayloaddescriptor_Node h1_b = {0};
-    h_fixedbugsoptionpayloaddescriptor_Held h2_h = {0};
-    h_fixedbugsoptionpayloaddescriptor_Held h3_g = {0};
-    h_fixedbugsoptionpayloaddescriptor_Node h4_c = {0};
-    h_fixedbugsoptionpayloaddescriptor_Node h5_d = {0};
-    h_fixedbugsoptionpayloaddescriptor_Node h6_own6 = {0};
-    h_fixedbugsoptionpayloaddescriptor_Node h7_own7 = {0};
-    h_0opt_4dbf93f0 h8_own8 = {0};
-    h_fixedbugsoptionpayloaddescriptor_Held h9_own9 = {0};
-    h_0opt_4dbf93f0 h10_own10 = {0};
-    h_fixedbugsoptionpayloaddescriptor_Held h11_own11 = {0};
-    h_0opt_4dbf93f0 h12_own12 = {0};
-    h_fixedbugsoptionpayloaddescriptor_Node h13_own13 = {0};
-    h_0opt_4dbf93f0 h14_own14 = {0};
-    h_fixedbugsoptionpayloaddescriptor_Node h15_own15 = {0};
-    h_fixedbugsoptionpayloaddescriptor_Node t1;
-    h_fixedbugsoptionpayloaddescriptor_Node t2;
-    h_fixedbugsoptionpayloaddescriptor_Node t3;
-    h_fixedbugsoptionpayloaddescriptor_Node t4;
-    bool t5;
-    HeroStr t6;
-    HeroStr t7;
-    h_0opt_4dbf93f0 t8;
-    h_fixedbugsoptionpayloaddescriptor_Held t9;
-    HeroStr t10;
-    HeroStr t11;
-    h_0opt_4dbf93f0 t12;
-    h_fixedbugsoptionpayloaddescriptor_Held t13;
-    h_fixedbugsoptionpayloaddescriptor_Held t14;
-    h_fixedbugsoptionpayloaddescriptor_Held t15;
-    bool t16;
-    int64_t t17;
-    h_fixedbugsoptionpayloaddescriptor_Block t18;
-    h_0opt_4dbf93f0 t19;
-    h_fixedbugsoptionpayloaddescriptor_Node t20;
-    int64_t t21;
-    h_fixedbugsoptionpayloaddescriptor_Block t22;
-    h_0opt_4dbf93f0 t23;
-    h_fixedbugsoptionpayloaddescriptor_Node t24;
-    h_fixedbugsoptionpayloaddescriptor_Node t25;
-    h_fixedbugsoptionpayloaddescriptor_Node t26;
-    bool t27;
-    h_fixedbugsoptionpayloaddescriptor_Node t28;
-    h_fixedbugsoptionpayloaddescriptor_Node t29;
-    bool t30;
-    h_fixedbugsoptionpayloaddescriptor_Node t31;
-    h_fixedbugsoptionpayloaddescriptor_Node t32;
-    h_fixedbugsoptionpayloaddescriptor_Node t33;
-    h_fixedbugsoptionpayloaddescriptor_Node t34;
-    h_0opt_4dbf93f0 t35;
-    h_fixedbugsoptionpayloaddescriptor_Held t36;
-    h_fixedbugsoptionpayloaddescriptor_Held t37;
-    h_0opt_4dbf93f0 t38;
-    h_fixedbugsoptionpayloaddescriptor_Held t39;
-    h_fixedbugsoptionpayloaddescriptor_Held t40;
-    h_0opt_4dbf93f0 t41;
-    h_fixedbugsoptionpayloaddescriptor_Node t42;
-    h_fixedbugsoptionpayloaddescriptor_Node t43;
-    h_0opt_4dbf93f0 t44;
-    h_fixedbugsoptionpayloaddescriptor_Node t45;
-    h_fixedbugsoptionpayloaddescriptor_Node t46;
-    goto bb0;
+#line 29 "tests/golden/run/fixedbugs-option-payload-descriptor.hero"
+    h_fixedbugsoptionpayloaddescriptor_Node h0_a = {0}; h_fixedbugsoptionpayloaddescriptor_Node h1_b = {0}; h_fixedbugsoptionpayloaddescriptor_Held h2_h = {0}; h_fixedbugsoptionpayloaddescriptor_Held h3_g = {0}; h_fixedbugsoptionpayloaddescriptor_Node h4_c = {0}; h_fixedbugsoptionpayloaddescriptor_Node h5_d = {0}; h_fixedbugsoptionpayloaddescriptor_Node h6_own6 = {0}; h_fixedbugsoptionpayloaddescriptor_Node h7_own7 = {0}; h_0opt_4dbf93f0 h8_own8 = {0}; h_fixedbugsoptionpayloaddescriptor_Held h9_own9 = {0}; h_0opt_4dbf93f0 h10_own10 = {0}; h_fixedbugsoptionpayloaddescriptor_Held h11_own11 = {0}; h_0opt_4dbf93f0 h12_own12 = {0}; h_fixedbugsoptionpayloaddescriptor_Node h13_own13 = {0}; h_0opt_4dbf93f0 h14_own14 = {0}; h_fixedbugsoptionpayloaddescriptor_Node h15_own15 = {0}; h_fixedbugsoptionpayloaddescriptor_Node t1; h_fixedbugsoptionpayloaddescriptor_Node t2; h_fixedbugsoptionpayloaddescriptor_Node t3; h_fixedbugsoptionpayloaddescriptor_Node t4; bool t5; HeroStr t6; HeroStr t7; h_0opt_4dbf93f0 t8; h_fixedbugsoptionpayloaddescriptor_Held t9; HeroStr t10; HeroStr t11; h_0opt_4dbf93f0 t12; h_fixedbugsoptionpayloaddescriptor_Held t13; h_fixedbugsoptionpayloaddescriptor_Held t14; h_fixedbugsoptionpayloaddescriptor_Held t15; bool t16; int64_t t17; h_fixedbugsoptionpayloaddescriptor_Block t18; h_0opt_4dbf93f0 t19; h_fixedbugsoptionpayloaddescriptor_Node t20; int64_t t21; h_fixedbugsoptionpayloaddescriptor_Block t22; h_0opt_4dbf93f0 t23; h_fixedbugsoptionpayloaddescriptor_Node t24; h_fixedbugsoptionpayloaddescriptor_Node t25; h_fixedbugsoptionpayloaddescriptor_Node t26; bool t27; h_fixedbugsoptionpayloaddescriptor_Node t28; h_fixedbugsoptionpayloaddescriptor_Node t29; bool t30; h_fixedbugsoptionpayloaddescriptor_Node t31; h_fixedbugsoptionpayloaddescriptor_Node t32; h_fixedbugsoptionpayloaddescriptor_Node t33; h_fixedbugsoptionpayloaddescriptor_Node t34; h_0opt_4dbf93f0 t35; h_fixedbugsoptionpayloaddescriptor_Held t36; h_fixedbugsoptionpayloaddescriptor_Held t37; h_0opt_4dbf93f0 t38; h_fixedbugsoptionpayloaddescriptor_Held t39; h_fixedbugsoptionpayloaddescriptor_Held t40; h_0opt_4dbf93f0 t41; h_fixedbugsoptionpayloaddescriptor_Node t42; h_fixedbugsoptionpayloaddescriptor_Node t43; h_0opt_4dbf93f0 t44; h_fixedbugsoptionpayloaddescriptor_Node t45; h_fixedbugsoptionpayloaddescriptor_Node t46; goto bb0;
+#line 29 "tests/golden/run/fixedbugs-option-payload-descriptor.hero"
 bb0:
-#line 30 "tests/golden/run/fixedbugs-option-payload-descriptor.hero"
     t1 = (h_fixedbugsoptionpayloaddescriptor_Node){.tag = h_fixedbugsoptionpayloaddescriptor_Node_tag_leaf};
 #line 30 "tests/golden/run/fixedbugs-option-payload-descriptor.hero"
     t31 = h6_own6;
@@ -435,7 +373,7 @@ bb0:
     hero_print_bool(t30);
 #line 43 "tests/golden/run/fixedbugs-option-payload-descriptor.hero"
     hero_print_end();
-#line 439 "fixedbugsoptionpayloaddescriptor.c"
+#line 377 "fixedbugsoptionpayloaddescriptor.c"
     h_fixedbugsoptionpayloaddescriptor_Node_release(hero_slot_escape(&h0_a));
     h_fixedbugsoptionpayloaddescriptor_Node_release(hero_slot_escape(&h1_b));
     h_fixedbugsoptionpayloaddescriptor_Held_release(hero_slot_escape(&h2_h));

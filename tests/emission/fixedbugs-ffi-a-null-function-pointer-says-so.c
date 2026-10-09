@@ -97,12 +97,10 @@ void h_ffianullfunctionpointersaysso_main(void);
 
 #line 46 "tests/golden/fixedbugs/ffi-a-null-function-pointer-says-so.hero"
 void h_ffianullfunctionpointersaysso_main(void) {
-#line 101 "ffianullfunctionpointersaysso.c"
-    HeroStr t1;
-    void * t2;
-    goto bb0;
+#line 46 "tests/golden/fixedbugs/ffi-a-null-function-pointer-says-so.hero"
+    HeroStr t1; void * t2; goto bb0;
+#line 46 "tests/golden/fixedbugs/ffi-a-null-function-pointer-says-so.hero"
 bb0:
-#line 47 "tests/golden/fixedbugs/ffi-a-null-function-pointer-says-so.hero"
     t1 = HERO_STR_LIT(hero_str_43560e4d);
 #line 47 "tests/golden/fixedbugs/ffi-a-null-function-pointer-says-so.hero"
     hero_print_str(t1);
@@ -113,7 +111,7 @@ bb0:
     (void)atexit(t2);
 #line 48 "tests/golden/fixedbugs/ffi-a-null-function-pointer-says-so.hero"
     return;
-#line 117 "ffianullfunctionpointersaysso.c"
+#line 115 "ffianullfunctionpointersaysso.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

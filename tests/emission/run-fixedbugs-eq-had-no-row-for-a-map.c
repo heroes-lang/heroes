@@ -151,13 +151,10 @@ void h_fixedbugseqhadnorowforamap_main(void);
 
 #line 23 "tests/golden/run/fixedbugs-eq-had-no-row-for-a-map.hero"
 int64_t h_fixedbugseqhadnorowforamap_bump(int64_t h0_n) {
-#line 155 "fixedbugseqhadnorowforamap.c"
-    int64_t t1;
-    int64_t t2;
-    int64_t t3;
-    goto bb0;
+#line 23 "tests/golden/run/fixedbugs-eq-had-no-row-for-a-map.hero"
+    int64_t t1; int64_t t2; int64_t t3; goto bb0;
+#line 23 "tests/golden/run/fixedbugs-eq-had-no-row-for-a-map.hero"
 bb0:
-#line 24 "tests/golden/run/fixedbugs-eq-had-no-row-for-a-map.hero"
     t1 = h0_n;
 #line 24 "tests/golden/run/fixedbugs-eq-had-no-row-for-a-map.hero"
     t2 = INT64_C(1);
@@ -165,105 +162,15 @@ bb0:
     if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow();
 #line 24 "tests/golden/run/fixedbugs-eq-had-no-row-for-a-map.hero"
     return t3;
-#line 169 "fixedbugseqhadnorowforamap.c"
+#line 166 "fixedbugseqhadnorowforamap.c"
 }
 
 #line 26 "tests/golden/run/fixedbugs-eq-had-no-row-for-a-map.hero"
 void h_fixedbugseqhadnorowforamap_main(void) {
-#line 174 "fixedbugseqhadnorowforamap.c"
-    h_fixedbugseqhadnorowforamap_Box h0_a = {0};
-    h_fixedbugseqhadnorowforamap_Box h1_b = {0};
-    h_fixedbugseqhadnorowforamap_Box h2_c = {0};
-    HeroMapHeader * h3_seen = {0};
-    h_0opt_e201354 h4_f0 = {0};
-    int64_t h5_r0;
-    h_0opt_e201354 h6_f1 = {0};
-    int64_t h7_r1;
-    HeroMapHeader * h8_own8 = {0};
-    h_0opt_e201354 h9_own9 = {0};
-    h_fixedbugseqhadnorowforamap_Box h10_own10 = {0};
-    HeroMapHeader * h11_own11 = {0};
-    h_0opt_e201354 h12_own12 = {0};
-    h_fixedbugseqhadnorowforamap_Box h13_own13 = {0};
-    HeroMapHeader * h14_own14 = {0};
-    h_0opt_e201354 h15_own15 = {0};
-    h_fixedbugseqhadnorowforamap_Box h16_own16 = {0};
-    HeroMapHeader * h17_own17 = {0};
-    h_0opt_e201354 h18_own18 = {0};
-    h_0opt_e201354 h19_own19 = {0};
-    HeroStr t1;
-    int64_t t2;
-    HeroMapHeader * t3;
-    int64_t t4;
-    h_0opt_e201354 t5;
-    h_0fn_48ac9712 t6;
-    h_fixedbugseqhadnorowforamap_Box t7;
-    HeroStr t8;
-    int64_t t9;
-    HeroMapHeader * t10;
-    int64_t t11;
-    h_0opt_e201354 t12;
-    h_0fn_48ac9712 t13;
-    h_fixedbugseqhadnorowforamap_Box t14;
-    HeroStr t15;
-    int64_t t16;
-    HeroMapHeader * t17;
-    int64_t t18;
-    h_0opt_e201354 t19;
-    h_0fn_48ac9712 t20;
-    h_fixedbugseqhadnorowforamap_Box t21;
-    h_fixedbugseqhadnorowforamap_Box t22;
-    h_fixedbugseqhadnorowforamap_Box t23;
-    bool t24;
-    h_fixedbugseqhadnorowforamap_Box t25;
-    h_fixedbugseqhadnorowforamap_Box t26;
-    bool t27;
-    HeroMapHeader * t28;
-    h_fixedbugseqhadnorowforamap_Box t29;
-    int64_t t30;
-    HeroMapHeader * t31;
-    h_fixedbugseqhadnorowforamap_Box t32;
-    h_0opt_e201354 t33;
-    h_0opt_e201354 t34;
-    int64_t t35;
-    int64_t t36;
-    bool t37;
-    h_0opt_e201354 t38;
-    int64_t t39;
-    int64_t t40;
-    int64_t t41;
-    HeroMapHeader * t42;
-    h_fixedbugseqhadnorowforamap_Box t43;
-    h_0opt_e201354 t44;
-    h_0opt_e201354 t45;
-    int64_t t46;
-    int64_t t47;
-    bool t48;
-    h_0opt_e201354 t49;
-    int64_t t50;
-    int64_t t51;
-    int64_t t52;
-    HeroMapHeader * t53;
-    h_0opt_e201354 t54;
-    h_fixedbugseqhadnorowforamap_Box t55;
-    h_fixedbugseqhadnorowforamap_Box t56;
-    HeroMapHeader * t57;
-    h_0opt_e201354 t58;
-    h_fixedbugseqhadnorowforamap_Box t59;
-    h_fixedbugseqhadnorowforamap_Box t60;
-    HeroMapHeader * t61;
-    h_0opt_e201354 t62;
-    h_fixedbugseqhadnorowforamap_Box t63;
-    h_fixedbugseqhadnorowforamap_Box t64;
-    HeroMapHeader * t65;
-    HeroMapHeader * t66;
-    h_0opt_e201354 t67;
-    h_0opt_e201354 t68;
-    h_0opt_e201354 t69;
-    h_0opt_e201354 t70;
-    goto bb0;
+#line 26 "tests/golden/run/fixedbugs-eq-had-no-row-for-a-map.hero"
+    h_fixedbugseqhadnorowforamap_Box h0_a = {0}; h_fixedbugseqhadnorowforamap_Box h1_b = {0}; h_fixedbugseqhadnorowforamap_Box h2_c = {0}; HeroMapHeader * h3_seen = {0}; h_0opt_e201354 h4_f0 = {0}; int64_t h5_r0; h_0opt_e201354 h6_f1 = {0}; int64_t h7_r1; HeroMapHeader * h8_own8 = {0}; h_0opt_e201354 h9_own9 = {0}; h_fixedbugseqhadnorowforamap_Box h10_own10 = {0}; HeroMapHeader * h11_own11 = {0}; h_0opt_e201354 h12_own12 = {0}; h_fixedbugseqhadnorowforamap_Box h13_own13 = {0}; HeroMapHeader * h14_own14 = {0}; h_0opt_e201354 h15_own15 = {0}; h_fixedbugseqhadnorowforamap_Box h16_own16 = {0}; HeroMapHeader * h17_own17 = {0}; h_0opt_e201354 h18_own18 = {0}; h_0opt_e201354 h19_own19 = {0}; HeroStr t1; int64_t t2; HeroMapHeader * t3; int64_t t4; h_0opt_e201354 t5; h_0fn_48ac9712 t6; h_fixedbugseqhadnorowforamap_Box t7; HeroStr t8; int64_t t9; HeroMapHeader * t10; int64_t t11; h_0opt_e201354 t12; h_0fn_48ac9712 t13; h_fixedbugseqhadnorowforamap_Box t14; HeroStr t15; int64_t t16; HeroMapHeader * t17; int64_t t18; h_0opt_e201354 t19; h_0fn_48ac9712 t20; h_fixedbugseqhadnorowforamap_Box t21; h_fixedbugseqhadnorowforamap_Box t22; h_fixedbugseqhadnorowforamap_Box t23; bool t24; h_fixedbugseqhadnorowforamap_Box t25; h_fixedbugseqhadnorowforamap_Box t26; bool t27; HeroMapHeader * t28; h_fixedbugseqhadnorowforamap_Box t29; int64_t t30; HeroMapHeader * t31; h_fixedbugseqhadnorowforamap_Box t32; h_0opt_e201354 t33; h_0opt_e201354 t34; int64_t t35; int64_t t36; bool t37; h_0opt_e201354 t38; int64_t t39; int64_t t40; int64_t t41; HeroMapHeader * t42; h_fixedbugseqhadnorowforamap_Box t43; h_0opt_e201354 t44; h_0opt_e201354 t45; int64_t t46; int64_t t47; bool t48; h_0opt_e201354 t49; int64_t t50; int64_t t51; int64_t t52; HeroMapHeader * t53; h_0opt_e201354 t54; h_fixedbugseqhadnorowforamap_Box t55; h_fixedbugseqhadnorowforamap_Box t56; HeroMapHeader * t57; h_0opt_e201354 t58; h_fixedbugseqhadnorowforamap_Box t59; h_fixedbugseqhadnorowforamap_Box t60; HeroMapHeader * t61; h_0opt_e201354 t62; h_fixedbugseqhadnorowforamap_Box t63; h_fixedbugseqhadnorowforamap_Box t64; HeroMapHeader * t65; HeroMapHeader * t66; h_0opt_e201354 t67; h_0opt_e201354 t68; h_0opt_e201354 t69; h_0opt_e201354 t70; goto bb0;
+#line 26 "tests/golden/run/fixedbugs-eq-had-no-row-for-a-map.hero"
 bb0:
-#line 27 "tests/golden/run/fixedbugs-eq-had-no-row-for-a-map.hero"
     t1 = HERO_STR_LIT(hero_str_78);
 #line 27 "tests/golden/run/fixedbugs-eq-had-no-row-for-a-map.hero"
     t2 = INT64_C(1);
@@ -580,7 +487,7 @@ bb6:
     hero_print_int(t52);
 #line 38 "tests/golden/run/fixedbugs-eq-had-no-row-for-a-map.hero"
     hero_print_end();
-#line 584 "fixedbugseqhadnorowforamap.c"
+#line 491 "fixedbugseqhadnorowforamap.c"
     h_fixedbugseqhadnorowforamap_Box_release(hero_slot_escape(&h0_a));
     h_fixedbugseqhadnorowforamap_Box_release(hero_slot_escape(&h1_b));
     h_fixedbugseqhadnorowforamap_Box_release(hero_slot_escape(&h2_c));

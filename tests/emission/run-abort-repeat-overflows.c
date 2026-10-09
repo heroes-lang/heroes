@@ -93,20 +93,10 @@ void h_abortrepeatoverflows_main(void);
 
 #line 21 "tests/golden/run/abort-repeat-overflows.hero"
 void h_abortrepeatoverflows_main(void) {
-#line 97 "abortrepeatoverflows.c"
-    uint64_t h0_n;
-    HeroStr h1_own1 = {0};
-    HeroStr t1;
-    uint64_t t2;
-    HeroStr t3;
-    uint64_t t4;
-    HeroStr t5;
-    int64_t t6;
-    HeroStr t7;
-    HeroStr t8;
-    goto bb0;
+#line 21 "tests/golden/run/abort-repeat-overflows.hero"
+    uint64_t h0_n; HeroStr h1_own1 = {0}; HeroStr t1; uint64_t t2; HeroStr t3; uint64_t t4; HeroStr t5; int64_t t6; HeroStr t7; HeroStr t8; goto bb0;
+#line 21 "tests/golden/run/abort-repeat-overflows.hero"
 bb0:
-#line 22 "tests/golden/run/abort-repeat-overflows.hero"
     t1 = HERO_STR_LIT(hero_str_43560e4d);
 #line 22 "tests/golden/run/abort-repeat-overflows.hero"
     hero_print_str(t1);
@@ -138,7 +128,7 @@ bb0:
     hero_print_str(t7);
 #line 27 "tests/golden/run/abort-repeat-overflows.hero"
     hero_print_end();
-#line 142 "abortrepeatoverflows.c"
+#line 132 "abortrepeatoverflows.c"
     hero_str_release_at(&h1_own1);
     return;
 }

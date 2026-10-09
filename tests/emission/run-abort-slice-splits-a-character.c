@@ -91,25 +91,10 @@ void h_abortslicesplitsacharacter_main(void);
 
 #line 21 "tests/golden/run/abort-slice-splits-a-character.hero"
 void h_abortslicesplitsacharacter_main(void) {
-#line 95 "abortslicesplitsacharacter.c"
-    HeroStr h0_word = {0};
-    HeroStr h1_own1 = {0};
-    HeroStr h2_own2 = {0};
-    HeroStr t1;
-    HeroStr t2;
-    int64_t t3;
-    int64_t t4;
-    HeroStr t5;
-    HeroStr t6;
-    int64_t t7;
-    int64_t t8;
-    HeroStr t9;
-    HeroStr t10;
-    HeroStr t11;
-    HeroStr t12;
-    goto bb0;
+#line 21 "tests/golden/run/abort-slice-splits-a-character.hero"
+    HeroStr h0_word = {0}; HeroStr h1_own1 = {0}; HeroStr h2_own2 = {0}; HeroStr t1; HeroStr t2; int64_t t3; int64_t t4; HeroStr t5; HeroStr t6; int64_t t7; int64_t t8; HeroStr t9; HeroStr t10; HeroStr t11; HeroStr t12; goto bb0;
+#line 21 "tests/golden/run/abort-slice-splits-a-character.hero"
 bb0:
-#line 22 "tests/golden/run/abort-slice-splits-a-character.hero"
     t1 = HERO_STR_LIT(hero_str_78a14ef2);
 #line 22 "tests/golden/run/abort-slice-splits-a-character.hero"
     t10 = h0_word;
@@ -155,7 +140,7 @@ bb0:
     hero_print_str(t9);
 #line 28 "tests/golden/run/abort-slice-splits-a-character.hero"
     hero_print_end();
-#line 159 "abortslicesplitsacharacter.c"
+#line 144 "abortslicesplitsacharacter.c"
     hero_str_release_at(&h0_word);
     hero_str_release_at(&h1_own1);
     hero_str_release_at(&h2_own2);

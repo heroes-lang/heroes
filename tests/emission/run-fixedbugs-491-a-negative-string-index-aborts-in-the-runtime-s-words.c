@@ -91,23 +91,10 @@ void h_fixedbugs491anegativestringindexabortsintheruntimeswords_main(void);
 
 #line 5 "tests/golden/run/fixedbugs-491-a-negative-string-index-aborts-in-the-runtime-s-words.hero"
 void h_fixedbugs491anegativestringindexabortsintheruntimeswords_main(void) {
-#line 95 "fixedbugs491anegativestringindexabortsintheruntimeswords.c"
-    HeroStr h0_text = {0};
-    int64_t h1_at;
-    HeroStr t1;
-    int64_t t2;
-    int64_t t3;
-    int64_t t4;
-    HeroStr t5;
-    int64_t t6;
-    uint8_t t7;
-    HeroStr t8;
-    int64_t t9;
-    uint8_t t10;
-    HeroStr t11;
-    goto bb0;
+#line 5 "tests/golden/run/fixedbugs-491-a-negative-string-index-aborts-in-the-runtime-s-words.hero"
+    HeroStr h0_text = {0}; int64_t h1_at; HeroStr t1; int64_t t2; int64_t t3; int64_t t4; HeroStr t5; int64_t t6; uint8_t t7; HeroStr t8; int64_t t9; uint8_t t10; HeroStr t11; goto bb0;
+#line 5 "tests/golden/run/fixedbugs-491-a-negative-string-index-aborts-in-the-runtime-s-words.hero"
 bb0:
-#line 6 "tests/golden/run/fixedbugs-491-a-negative-string-index-aborts-in-the-runtime-s-words.hero"
     t1 = HERO_STR_LIT(hero_str_1998f2);
 #line 6 "tests/golden/run/fixedbugs-491-a-negative-string-index-aborts-in-the-runtime-s-words.hero"
     t11 = h0_text;
@@ -142,7 +129,7 @@ bb0:
     hero_print_int(t10);
 #line 9 "tests/golden/run/fixedbugs-491-a-negative-string-index-aborts-in-the-runtime-s-words.hero"
     hero_print_end();
-#line 146 "fixedbugs491anegativestringindexabortsintheruntimeswords.c"
+#line 133 "fixedbugs491anegativestringindexabortsintheruntimeswords.c"
     hero_str_release_at(&h0_text);
     return;
 }

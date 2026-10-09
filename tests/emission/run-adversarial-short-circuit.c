@@ -89,34 +89,10 @@ void h_adversarialshortcircuit_main(void);
 
 #line 9 "tests/golden/run/adversarial-short-circuit.hero"
 void h_adversarialshortcircuit_main(void) {
-#line 93 "adversarialshortcircuit.c"
-    bool h0_b0;
-    int64_t h1_n;
-    bool h2_b1;
-    bool t1;
-    int64_t t2;
-    int64_t t3;
-    int64_t t4;
-    int64_t t5;
-    bool t6;
-    bool t7;
-    int64_t t8;
-    int64_t t9;
-    int64_t t10;
-    int64_t t11;
-    int64_t t12;
-    bool t13;
-    int64_t t14;
-    int64_t t15;
-    int64_t t16;
-    int64_t t17;
-    bool t18;
-    bool t19;
-    int64_t t20;
-    int64_t t21;
-    goto bb0;
+#line 9 "tests/golden/run/adversarial-short-circuit.hero"
+    bool h0_b0; int64_t h1_n; bool h2_b1; bool t1; int64_t t2; int64_t t3; int64_t t4; int64_t t5; bool t6; bool t7; int64_t t8; int64_t t9; int64_t t10; int64_t t11; int64_t t12; bool t13; int64_t t14; int64_t t15; int64_t t16; int64_t t17; bool t18; bool t19; int64_t t20; int64_t t21; goto bb0;
+#line 9 "tests/golden/run/adversarial-short-circuit.hero"
 bb0:
-#line 10 "tests/golden/run/adversarial-short-circuit.hero"
     t1 = false;
 #line 10 "tests/golden/run/adversarial-short-circuit.hero"
     h0_b0 = t1;
@@ -232,7 +208,7 @@ bb10:
     hero_print_end();
 #line 19 "tests/golden/run/adversarial-short-circuit.hero"
     goto bb6;
-#line 236 "adversarialshortcircuit.c"
+#line 212 "adversarialshortcircuit.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

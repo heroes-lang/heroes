@@ -158,16 +158,10 @@ struct pt h_fixedbugs094aconstanttheheaderspellsasanexpressionstillbuilds_PT_OBJ
 
 #line 14 "tests/golden/run/fixedbugs-094-a-constant-the-header-spells-as-an-expression-still-builds.hero"
 void h_fixedbugs094aconstanttheheaderspellsasanexpressionstillbuilds_main(void) {
-#line 162 "fixedbugs094aconstanttheheaderspellsasanexpressionstillbuilds.c"
-    struct pt t1;
-    int32_t t2;
-    struct pt t3;
-    int32_t t4;
-    struct pt t5;
-    int32_t t6;
-    goto bb0;
+#line 14 "tests/golden/run/fixedbugs-094-a-constant-the-header-spells-as-an-expression-still-builds.hero"
+    struct pt t1; int32_t t2; struct pt t3; int32_t t4; struct pt t5; int32_t t6; goto bb0;
+#line 14 "tests/golden/run/fixedbugs-094-a-constant-the-header-spells-as-an-expression-still-builds.hero"
 bb0:
-#line 15 "tests/golden/run/fixedbugs-094-a-constant-the-header-spells-as-an-expression-still-builds.hero"
     t1 = h_fixedbugs094aconstanttheheaderspellsasanexpressionstillbuilds_PT_LIT();
 #line 15 "tests/golden/run/fixedbugs-094-a-constant-the-header-spells-as-an-expression-still-builds.hero"
     t2 = t1.y;
@@ -191,7 +185,7 @@ bb0:
     hero_print_end();
 #line 17 "tests/golden/run/fixedbugs-094-a-constant-the-header-spells-as-an-expression-still-builds.hero"
     return;
-#line 195 "fixedbugs094aconstanttheheaderspellsasanexpressionstillbuilds.c"
+#line 189 "fixedbugs094aconstanttheheaderspellsasanexpressionstillbuilds.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs094aconstanttheheaderspellsasanexpressionstillbuilds_Pt_eq(const struct pt *a, const struct pt *b) {
     if (!(a->x == b->x)) return false;

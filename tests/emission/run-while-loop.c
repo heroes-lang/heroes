@@ -89,31 +89,10 @@ void h_whileloop_main(void);
 
 #line 5 "tests/golden/run/while-loop.hero"
 void h_whileloop_main(void) {
-#line 93 "whileloop.c"
-    int64_t h0_n;
-    int64_t h1_total;
-    int64_t t1;
-    int64_t t2;
-    int64_t t3;
-    int64_t t4;
-    bool t5;
-    int64_t t6;
-    int64_t t7;
-    int64_t t8;
-    int64_t t9;
-    int64_t t10;
-    int64_t t11;
-    int64_t t12;
-    int64_t t13;
-    int64_t t14;
-    int64_t t15;
-    int64_t t16;
-    bool t17;
-    int64_t t18;
-    int64_t t19;
-    goto bb0;
+#line 5 "tests/golden/run/while-loop.hero"
+    int64_t h0_n; int64_t h1_total; int64_t t1; int64_t t2; int64_t t3; int64_t t4; bool t5; int64_t t6; int64_t t7; int64_t t8; int64_t t9; int64_t t10; int64_t t11; int64_t t12; int64_t t13; int64_t t14; int64_t t15; int64_t t16; bool t17; int64_t t18; int64_t t19; goto bb0;
+#line 5 "tests/golden/run/while-loop.hero"
 bb0:
-#line 6 "tests/golden/run/while-loop.hero"
     t1 = INT64_C(0);
 #line 6 "tests/golden/run/while-loop.hero"
     h0_n = t1;
@@ -193,7 +172,7 @@ bb6:
     hero_print_end();
 #line 18 "tests/golden/run/while-loop.hero"
     goto bb4;
-#line 197 "whileloop.c"
+#line 176 "whileloop.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

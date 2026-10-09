@@ -148,119 +148,22 @@ int64_t h_fixedbugs461arewritekeepstheownertheaclandthestreams_HERO_DIR_FILES(vo
 
 #line 35 "tests/golden/run/fixedbugs-461-a-rewrite-keeps-the-owner-the-acl-and-the-streams.hero"
 HeroStr h_fixedbugs461arewritekeepstheownertheaclandthestreams_TEXT(void) {
-#line 152 "fixedbugs461arewritekeepstheownertheaclandthestreams.c"
-    HeroStr t1;
-    goto bb0;
+#line 35 "tests/golden/run/fixedbugs-461-a-rewrite-keeps-the-owner-the-acl-and-the-streams.hero"
+    HeroStr t1; goto bb0;
+#line 35 "tests/golden/run/fixedbugs-461-a-rewrite-keeps-the-owner-the-acl-and-the-streams.hero"
 bb0:
-#line 36 "tests/golden/run/fixedbugs-461-a-rewrite-keeps-the-owner-the-acl-and-the-streams.hero"
     t1 = HERO_STR_LIT(hero_str_70a25bad);
-#line 158 "fixedbugs461arewritekeepstheownertheaclandthestreams.c"
+#line 157 "fixedbugs461arewritekeepstheownertheaclandthestreams.c"
     hero_str_incref(t1);
     return t1;
 }
 
 #line 38 "tests/golden/run/fixedbugs-461-a-rewrite-keeps-the-owner-the-acl-and-the-streams.hero"
 void h_fixedbugs461arewritekeepstheownertheaclandthestreams_main(void) {
-#line 165 "fixedbugs461arewritekeepstheownertheaclandthestreams.c"
-    HeroStr h0_dir = {0};
-    HeroStr h1_path = {0};
-    bool h2_b0;
-    h_0opt_a8ea2 h3_f0 = {0};
-    h_0opt_a8ea2 h4_f1 = {0};
-    h_0opt_f87774a h5_f2 = {0};
-    HeroStr h6_r0 = {0};
-    HeroStr h7_own7 = {0};
-    HeroStr h8_own8 = {0};
-    HeroStr h9_own9 = {0};
-    HeroStr h10_own10 = {0};
-    h_0opt_a8ea2 h11_own11 = {0};
-    h_0opt_f87774a h12_own12 = {0};
-    h_0opt_a8ea2 h13_own13 = {0};
-    HeroStr h14_own14 = {0};
-    HeroStr t1;
-    int64_t t2;
-    HeroStr t3;
-    HeroStr t4;
-    HeroStr t5;
-    HeroStr t6;
-    HeroStr t7;
-    HeroStr t8;
-    const char * t9;
-    int64_t t10;
-    int64_t t11;
-    bool t12;
-    HeroStr t13;
-    HeroStr t14;
-    h_0opt_a8ea2 t15;
-    h_0opt_a8ea2 t16;
-    int64_t t17;
-    int64_t t18;
-    bool t19;
-    bool t20;
-    HeroStr t21;
-    HeroStr t22;
-    HeroStr t23;
-    HeroStr t24;
-    const char * t25;
-    int64_t t26;
-    int64_t t27;
-    bool t28;
-    HeroStr t29;
-    HeroStr t30;
-    HeroStr t31;
-    h_0opt_a8ea2 t32;
-    h_0opt_a8ea2 t33;
-    int64_t t34;
-    int64_t t35;
-    bool t36;
-    bool t37;
-    HeroStr t38;
-    HeroStr t39;
-    h_0opt_f87774a t40;
-    h_0opt_f87774a t41;
-    int64_t t42;
-    int64_t t43;
-    bool t44;
-    h_0opt_f87774a t45;
-    HeroStr t46;
-    HeroStr t47;
-    HeroStr t48;
-    HeroStr t49;
-    bool t50;
-    HeroStr t51;
-    HeroStr t52;
-    const char * t53;
-    int64_t t54;
-    int64_t t55;
-    bool t56;
-    HeroStr t57;
-    HeroStr t58;
-    const char * t59;
-    int64_t t60;
-    int64_t t61;
-    int64_t t62;
-    HeroStr t63;
-    const char * t64;
-    HeroStr t65;
-    const char * t66;
-    HeroStr t68;
-    HeroStr t69;
-    HeroStr t70;
-    HeroStr t71;
-    HeroStr t72;
-    HeroStr t73;
-    h_0opt_a8ea2 t74;
-    h_0opt_a8ea2 t75;
-    h_0opt_f87774a t76;
-    h_0opt_f87774a t77;
-    h_0opt_a8ea2 t78;
-    h_0opt_a8ea2 t79;
-    HeroStr t80;
-    HeroStr t81;
-    HeroStr t82;
-    goto bb0;
+#line 38 "tests/golden/run/fixedbugs-461-a-rewrite-keeps-the-owner-the-acl-and-the-streams.hero"
+    HeroStr h0_dir = {0}; HeroStr h1_path = {0}; bool h2_b0; h_0opt_a8ea2 h3_f0 = {0}; h_0opt_a8ea2 h4_f1 = {0}; h_0opt_f87774a h5_f2 = {0}; HeroStr h6_r0 = {0}; HeroStr h7_own7 = {0}; HeroStr h8_own8 = {0}; HeroStr h9_own9 = {0}; HeroStr h10_own10 = {0}; h_0opt_a8ea2 h11_own11 = {0}; h_0opt_f87774a h12_own12 = {0}; h_0opt_a8ea2 h13_own13 = {0}; HeroStr h14_own14 = {0}; HeroStr t1; int64_t t2; HeroStr t3; HeroStr t4; HeroStr t5; HeroStr t6; HeroStr t7; HeroStr t8; const char * t9; int64_t t10; int64_t t11; bool t12; HeroStr t13; HeroStr t14; h_0opt_a8ea2 t15; h_0opt_a8ea2 t16; int64_t t17; int64_t t18; bool t19; bool t20; HeroStr t21; HeroStr t22; HeroStr t23; HeroStr t24; const char * t25; int64_t t26; int64_t t27; bool t28; HeroStr t29; HeroStr t30; HeroStr t31; h_0opt_a8ea2 t32; h_0opt_a8ea2 t33; int64_t t34; int64_t t35; bool t36; bool t37; HeroStr t38; HeroStr t39; h_0opt_f87774a t40; h_0opt_f87774a t41; int64_t t42; int64_t t43; bool t44; h_0opt_f87774a t45; HeroStr t46; HeroStr t47; HeroStr t48; HeroStr t49; bool t50; HeroStr t51; HeroStr t52; const char * t53; int64_t t54; int64_t t55; bool t56; HeroStr t57; HeroStr t58; const char * t59; int64_t t60; int64_t t61; int64_t t62; HeroStr t63; const char * t64; HeroStr t65; const char * t66; HeroStr t68; HeroStr t69; HeroStr t70; HeroStr t71; HeroStr t72; HeroStr t73; h_0opt_a8ea2 t74; h_0opt_a8ea2 t75; h_0opt_f87774a t76; h_0opt_f87774a t77; h_0opt_a8ea2 t78; h_0opt_a8ea2 t79; HeroStr t80; HeroStr t81; HeroStr t82; goto bb0;
+#line 38 "tests/golden/run/fixedbugs-461-a-rewrite-keeps-the-owner-the-acl-and-the-streams.hero"
 bb0:
-#line 39 "tests/golden/run/fixedbugs-461-a-rewrite-keeps-the-owner-the-acl-and-the-streams.hero"
     t1 = HERO_STR_LIT(hero_str_72d84edc);
 #line 39 "tests/golden/run/fixedbugs-461-a-rewrite-keeps-the-owner-the-acl-and-the-streams.hero"
     t2 = hero_os_pid();
@@ -569,7 +472,7 @@ bb8:
     goto bb9;
 #line 52 "tests/golden/run/fixedbugs-461-a-rewrite-keeps-the-owner-the-acl-and-the-streams.hero"
 bb9:
-#line 573 "fixedbugs461arewritekeepstheownertheaclandthestreams.c"
+#line 476 "fixedbugs461arewritekeepstheownertheaclandthestreams.c"
     hero_str_release_at(&h0_dir);
     hero_str_release_at(&h1_path);
     h_0opt_a8ea2_release(hero_slot_escape(&h3_f0));
@@ -589,97 +492,36 @@ bb9:
 
 #line 109 "<heroes library>"
 int64_t h_library_HERO_OS_OK(void) {
-#line 593 "fixedbugs461arewritekeepstheownertheaclandthestreams.c"
+#line 496 "fixedbugs461arewritekeepstheownertheaclandthestreams.c"
     return HERO_OS_OK;
 }
 
 #line 110 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_FOUND(void) {
-#line 599 "fixedbugs461arewritekeepstheownertheaclandthestreams.c"
+#line 502 "fixedbugs461arewritekeepstheownertheaclandthestreams.c"
     return HERO_OS_NOT_FOUND;
 }
 
 #line 111 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_TEXT(void) {
-#line 605 "fixedbugs461arewritekeepstheownertheaclandthestreams.c"
+#line 508 "fixedbugs461arewritekeepstheownertheaclandthestreams.c"
     return HERO_OS_NOT_TEXT;
 }
 
 #line 112 "<heroes library>"
 int64_t h_library_HERO_OS_BAD_NAME(void) {
-#line 611 "fixedbugs461arewritekeepstheownertheaclandthestreams.c"
+#line 514 "fixedbugs461arewritekeepstheownertheaclandthestreams.c"
     return HERO_OS_BAD_NAME;
 }
 
 #line 167 "<heroes library>"
 h_0opt_f87774a h_library_read_file(HeroStr h0_path) {
-#line 617 "fixedbugs461arewritekeepstheownertheaclandthestreams.c"
-    int64_t *const hero_lend_h1_status = (int64_t *)hero_lend_local(sizeof(int64_t), "library.read_file", "status");
+#line 167 "<heroes library>"
 #define h1_status (*hero_lend_h1_status)
-    HeroStr h2_text = {0};
-    h_0opt_f87774a h3_ret0 = {0};
-    HeroStr h4_own4 = {0};
-    h_0opt_f87774a h5_own5 = {0};
-    h_0opt_f87774a h6_own6 = {0};
-    HeroStr h7_own7 = {0};
-    h_0opt_f87774a h8_own8 = {0};
-    HeroStr h9_own9 = {0};
-    h_0opt_f87774a h10_own10 = {0};
-    HeroStr h11_own11 = {0};
-    HeroStr h12_own12 = {0};
-    h_0opt_f87774a h13_own13 = {0};
-    int64_t t1;
-    HeroStr t2;
-    HeroStr t3;
-    int64_t t4;
-    int64_t t5;
-    bool t6;
-    HeroStr t7;
-    h_0opt_f87774a t8;
-    int64_t t9;
-    int64_t t10;
-    bool t11;
-    HeroStr t12;
-    HeroStr t13;
-    h_0opt_f87774a t14;
-    int64_t t15;
-    int64_t t16;
-    bool t17;
-    HeroStr t18;
-    HeroStr t19;
-    HeroStr t20;
-    HeroStr t21;
-    h_0opt_f87774a t22;
-    int64_t t23;
-    int64_t t24;
-    bool t25;
-    HeroStr t26;
-    HeroStr t27;
-    HeroStr t28;
-    HeroStr t29;
-    HeroStr t30;
-    HeroStr t31;
-    h_0opt_f87774a t32;
-    HeroStr t33;
-    HeroStr t34;
-    HeroStr t35;
-    HeroStr t36;
-    h_0opt_f87774a t37;
-    h_0opt_f87774a t38;
-    HeroStr t39;
-    HeroStr t40;
-    h_0opt_f87774a t41;
-    h_0opt_f87774a t42;
-    HeroStr t43;
-    h_0opt_f87774a t44;
-    HeroStr t45;
-    h_0opt_f87774a t46;
-    HeroStr t47;
-    HeroStr t48;
-    h_0opt_f87774a t49;
-    goto bb0;
+#line 167 "<heroes library>"
+    int64_t *const hero_lend_h1_status = (int64_t *)hero_lend_local(sizeof(int64_t), "library.read_file", "status"); HeroStr h2_text = {0}; h_0opt_f87774a h3_ret0 = {0}; HeroStr h4_own4 = {0}; h_0opt_f87774a h5_own5 = {0}; h_0opt_f87774a h6_own6 = {0}; HeroStr h7_own7 = {0}; h_0opt_f87774a h8_own8 = {0}; HeroStr h9_own9 = {0}; h_0opt_f87774a h10_own10 = {0}; HeroStr h11_own11 = {0}; HeroStr h12_own12 = {0}; h_0opt_f87774a h13_own13 = {0}; int64_t t1; HeroStr t2; HeroStr t3; int64_t t4; int64_t t5; bool t6; HeroStr t7; h_0opt_f87774a t8; int64_t t9; int64_t t10; bool t11; HeroStr t12; HeroStr t13; h_0opt_f87774a t14; int64_t t15; int64_t t16; bool t17; HeroStr t18; HeroStr t19; HeroStr t20; HeroStr t21; h_0opt_f87774a t22; int64_t t23; int64_t t24; bool t25; HeroStr t26; HeroStr t27; HeroStr t28; HeroStr t29; HeroStr t30; HeroStr t31; h_0opt_f87774a t32; HeroStr t33; HeroStr t34; HeroStr t35; HeroStr t36; h_0opt_f87774a t37; h_0opt_f87774a t38; HeroStr t39; HeroStr t40; h_0opt_f87774a t41; h_0opt_f87774a t42; HeroStr t43; h_0opt_f87774a t44; HeroStr t45; h_0opt_f87774a t46; HeroStr t47; HeroStr t48; h_0opt_f87774a t49; goto bb0;
+#line 167 "<heroes library>"
 bb0:
-#line 168 "<heroes library>"
     t1 = INT64_C(0);
 #line 168 "<heroes library>"
     h1_status = t1;
@@ -903,7 +745,7 @@ bb12:
     goto bb10;
 #line 182 "<heroes library>"
 bb13:
-#line 907 "fixedbugs461arewritekeepstheownertheaclandthestreams.c"
+#line 749 "fixedbugs461arewritekeepstheownertheaclandthestreams.c"
     t38 = h3_ret0;
     h_0opt_f87774a_retain(&t38);
     hero_str_release_at(&h2_text);
@@ -924,39 +766,10 @@ bb13:
 
 #line 186 "<heroes library>"
 h_0opt_a8ea2 h_library_write_file(HeroStr h0_path, HeroStr h1_text) {
-#line 928 "fixedbugs461arewritekeepstheownertheaclandthestreams.c"
-    int64_t h2_wrote;
-    h_0opt_a8ea2 h3_ret0 = {0};
-    h_0opt_a8ea2 h4_own4 = {0};
-    HeroStr h5_own5 = {0};
-    h_0opt_a8ea2 h6_own6 = {0};
-    h_0opt_a8ea2 h7_own7 = {0};
-    HeroStr t1;
-    HeroStr t2;
-    int64_t t3;
-    int64_t t4;
-    int64_t t5;
-    bool t6;
-    h_0opt_a8ea2 t7;
-    int64_t t8;
-    int64_t t9;
-    bool t10;
-    HeroStr t11;
-    HeroStr t12;
-    h_0opt_a8ea2 t13;
-    HeroStr t14;
-    HeroStr t15;
-    HeroStr t16;
-    HeroStr t17;
-    h_0opt_a8ea2 t18;
-    h_0opt_a8ea2 t19;
-    h_0opt_a8ea2 t20;
-    HeroStr t21;
-    h_0opt_a8ea2 t22;
-    h_0opt_a8ea2 t23;
-    goto bb0;
+#line 186 "<heroes library>"
+    int64_t h2_wrote; h_0opt_a8ea2 h3_ret0 = {0}; h_0opt_a8ea2 h4_own4 = {0}; HeroStr h5_own5 = {0}; h_0opt_a8ea2 h6_own6 = {0}; h_0opt_a8ea2 h7_own7 = {0}; HeroStr t1; HeroStr t2; int64_t t3; int64_t t4; int64_t t5; bool t6; h_0opt_a8ea2 t7; int64_t t8; int64_t t9; bool t10; HeroStr t11; HeroStr t12; h_0opt_a8ea2 t13; HeroStr t14; HeroStr t15; HeroStr t16; HeroStr t17; h_0opt_a8ea2 t18; h_0opt_a8ea2 t19; h_0opt_a8ea2 t20; HeroStr t21; h_0opt_a8ea2 t22; h_0opt_a8ea2 t23; goto bb0;
+#line 186 "<heroes library>"
 bb0:
-#line 187 "<heroes library>"
     t1 = h0_path;
 #line 187 "<heroes library>"
     t2 = h1_text;
@@ -1059,7 +872,7 @@ bb6:
     goto bb4;
 #line 191 "<heroes library>"
 bb7:
-#line 1063 "fixedbugs461arewritekeepstheownertheaclandthestreams.c"
+#line 876 "fixedbugs461arewritekeepstheownertheaclandthestreams.c"
     t19 = h3_ret0;
     h_0opt_a8ea2_retain(&t19);
     h_0opt_a8ea2_release(hero_slot_escape(&h4_own4));

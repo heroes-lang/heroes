@@ -89,24 +89,10 @@ void h_adversarialdivisionedges_main(void);
 
 #line 13 "tests/golden/run/adversarial-division-edges.hero"
 void h_adversarialdivisionedges_main(void) {
-#line 93 "adversarialdivisionedges.c"
-    int64_t h0_low;
-    int64_t h1_minus;
-    int64_t t1;
-    int64_t t2;
-    int64_t t3;
-    int64_t t4;
-    int64_t t5;
-    int64_t t6;
-    int64_t t7;
-    int64_t t8;
-    int64_t t9;
-    int64_t t10;
-    int64_t t11;
-    int64_t t12;
-    goto bb0;
+#line 13 "tests/golden/run/adversarial-division-edges.hero"
+    int64_t h0_low; int64_t h1_minus; int64_t t1; int64_t t2; int64_t t3; int64_t t4; int64_t t5; int64_t t6; int64_t t7; int64_t t8; int64_t t9; int64_t t10; int64_t t11; int64_t t12; goto bb0;
+#line 13 "tests/golden/run/adversarial-division-edges.hero"
 bb0:
-#line 14 "tests/golden/run/adversarial-division-edges.hero"
     t1 = INT64_C(0);
 #line 14 "tests/golden/run/adversarial-division-edges.hero"
     t2 = INT64_C(9223372036854775807);
@@ -143,7 +129,7 @@ bb0:
     hero_print_end();
 #line 17 "tests/golden/run/adversarial-division-edges.hero"
     return;
-#line 147 "adversarialdivisionedges.c"
+#line 133 "adversarialdivisionedges.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

@@ -89,17 +89,10 @@ void h_adversarialoverflowaborts_main(void);
 
 #line 12 "tests/golden/run/adversarial-overflow-aborts.hero"
 void h_adversarialoverflowaborts_main(void) {
-#line 93 "adversarialoverflowaborts.c"
-    int64_t h0_big;
-    int64_t t1;
-    int64_t t2;
-    int64_t t3;
-    int64_t t4;
-    int64_t t5;
-    int64_t t6;
-    goto bb0;
+#line 12 "tests/golden/run/adversarial-overflow-aborts.hero"
+    int64_t h0_big; int64_t t1; int64_t t2; int64_t t3; int64_t t4; int64_t t5; int64_t t6; goto bb0;
+#line 12 "tests/golden/run/adversarial-overflow-aborts.hero"
 bb0:
-#line 13 "tests/golden/run/adversarial-overflow-aborts.hero"
     t1 = INT64_C(1);
 #line 13 "tests/golden/run/adversarial-overflow-aborts.hero"
     hero_print_int(t1);
@@ -122,7 +115,7 @@ bb0:
     hero_print_end();
 #line 16 "tests/golden/run/adversarial-overflow-aborts.hero"
     return;
-#line 126 "adversarialoverflowaborts.c"
+#line 119 "adversarialoverflowaborts.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

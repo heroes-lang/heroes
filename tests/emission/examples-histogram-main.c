@@ -109,28 +109,22 @@ __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
 
 #line 22 "examples/histogram/main.hero"
 int64_t h_main_NUMBERS(void) {
-#line 113 "main.c"
-    int64_t t1;
-    goto bb0;
+#line 22 "examples/histogram/main.hero"
+    int64_t t1; goto bb0;
+#line 22 "examples/histogram/main.hero"
 bb0:
-#line 23 "examples/histogram/main.hero"
     t1 = INT64_C(20000);
 #line 23 "examples/histogram/main.hero"
     return t1;
-#line 121 "main.c"
+#line 120 "main.c"
 }
 
 #line 26 "examples/histogram/main.hero"
 int64_t h_main_value_at(int64_t h0_n) {
-#line 126 "main.c"
-    int64_t t1;
-    int64_t t2;
-    int64_t t3;
-    int64_t t4;
-    int64_t t5;
-    goto bb0;
+#line 26 "examples/histogram/main.hero"
+    int64_t t1; int64_t t2; int64_t t3; int64_t t4; int64_t t5; goto bb0;
+#line 26 "examples/histogram/main.hero"
 bb0:
-#line 27 "examples/histogram/main.hero"
     t1 = h0_n;
 #line 27 "examples/histogram/main.hero"
     t2 = h0_n;
@@ -146,55 +140,15 @@ bb0:
     t5 = t3 % t4;
 #line 27 "examples/histogram/main.hero"
     return t5;
-#line 150 "main.c"
+#line 144 "main.c"
 }
 
 #line 30 "examples/histogram/main.hero"
 int64_t h_main_count_of(int64_t h0_digit) {
-#line 155 "main.c"
-    hero_thread_guard("main.count_of");
-    int64_t h1_seen;
-    int64_t h2_n;
-    int64_t h3_v;
-    bool h4_b0;
-    int64_t t1;
-    int64_t t2;
-    int64_t t3;
-    int64_t t4;
-    bool t5;
-    int64_t t6;
-    int64_t t7;
-    int64_t t8;
-    int64_t t9;
-    bool t10;
-    int64_t t11;
-    int64_t t12;
-    bool t13;
-    bool t14;
-    int64_t t15;
-    int64_t t16;
-    int64_t t17;
-    int64_t t18;
-    int64_t t19;
-    bool t20;
-    int64_t t21;
-    int64_t t22;
-    int64_t t23;
-    int64_t t24;
-    bool t25;
-    int64_t t26;
-    int64_t t27;
-    int64_t t28;
-    int64_t t29;
-    int64_t t30;
-    int64_t t31;
-    int64_t t32;
-    int64_t t33;
-    int64_t t34;
-    int64_t t35;
-    goto bb0;
+#line 30 "examples/histogram/main.hero"
+    hero_thread_guard("main.count_of"); int64_t h1_seen; int64_t h2_n; int64_t h3_v; bool h4_b0; int64_t t1; int64_t t2; int64_t t3; int64_t t4; bool t5; int64_t t6; int64_t t7; int64_t t8; int64_t t9; bool t10; int64_t t11; int64_t t12; bool t13; bool t14; int64_t t15; int64_t t16; int64_t t17; int64_t t18; int64_t t19; bool t20; int64_t t21; int64_t t22; int64_t t23; int64_t t24; bool t25; int64_t t26; int64_t t27; int64_t t28; int64_t t29; int64_t t30; int64_t t31; int64_t t32; int64_t t33; int64_t t34; int64_t t35; goto bb0;
+#line 30 "examples/histogram/main.hero"
 bb0:
-#line 31 "examples/histogram/main.hero"
     t1 = INT64_C(0);
 #line 31 "examples/histogram/main.hero"
     h1_seen = t1;
@@ -344,7 +298,7 @@ bb13:
 bb14:
 #line 42 "examples/histogram/main.hero"
     goto bb12;
-#line 348 "main.c"
+#line 302 "main.c"
 }
 
 int64_t h_0cb_main_count_of(int64_t h0_digit) {
@@ -354,50 +308,10 @@ int64_t h_0cb_main_count_of(int64_t h0_digit) {
 
 #line 49 "examples/histogram/main.hero"
 HeroArrayHeader * h_main_counts(void) {
-#line 358 "main.c"
-    HeroArrayHeader * h0_handles = {0};
-    int64_t h1_d;
-    HeroArrayHeader * h2_out = {0};
-    HeroArrayHeader * h3_xs0 = {0};
-    int64_t h4_i0;
-    int64_t h5_h;
-    HeroArrayHeader * h6_own6 = {0};
-    HeroArrayHeader * h7_own7 = {0};
-    HeroArrayHeader * t1;
-    int64_t t2;
-    int64_t t3;
-    int64_t t4;
-    bool t5;
-    h_0fn_48ac9712 t7;
-    int64_t t8;
-    int64_t t9;
-    int64_t t11;
-    int64_t t12;
-    int64_t t13;
-    HeroArrayHeader * t14;
-    HeroArrayHeader * t15;
-    int64_t t16;
-    int64_t t17;
-    HeroArrayHeader * t18;
-    int64_t t19;
-    bool t20;
-    HeroArrayHeader * t21;
-    int64_t t22;
-    int64_t t23;
-    int64_t t25;
-    int64_t t26;
-    int64_t t28;
-    int64_t t29;
-    int64_t t30;
-    HeroArrayHeader * t31;
-    HeroArrayHeader * t32;
-    HeroArrayHeader * t33;
-    HeroArrayHeader * t34;
-    HeroArrayHeader * t35;
-    HeroArrayHeader * t36;
-    goto bb0;
+#line 49 "examples/histogram/main.hero"
+    HeroArrayHeader * h0_handles = {0}; int64_t h1_d; HeroArrayHeader * h2_out = {0}; HeroArrayHeader * h3_xs0 = {0}; int64_t h4_i0; int64_t h5_h; HeroArrayHeader * h6_own6 = {0}; HeroArrayHeader * h7_own7 = {0}; HeroArrayHeader * t1; int64_t t2; int64_t t3; int64_t t4; bool t5; h_0fn_48ac9712 t7; int64_t t8; int64_t t9; int64_t t11; int64_t t12; int64_t t13; HeroArrayHeader * t14; HeroArrayHeader * t15; int64_t t16; int64_t t17; HeroArrayHeader * t18; int64_t t19; bool t20; HeroArrayHeader * t21; int64_t t22; int64_t t23; int64_t t25; int64_t t26; int64_t t28; int64_t t29; int64_t t30; HeroArrayHeader * t31; HeroArrayHeader * t32; HeroArrayHeader * t33; HeroArrayHeader * t34; HeroArrayHeader * t35; HeroArrayHeader * t36; goto bb0;
+#line 49 "examples/histogram/main.hero"
 bb0:
-#line 50 "examples/histogram/main.hero"
     t1 = hero_array_new(&hero_desc_int, 1);
 #line 50 "examples/histogram/main.hero"
     t32 = h6_own6;
@@ -525,7 +439,7 @@ bb6:
 bb7:
 #line 62 "examples/histogram/main.hero"
     t31 = h2_out;
-#line 529 "main.c"
+#line 443 "main.c"
     hero_array_incref(t31);
     hero_array_release_at(&h0_handles);
     hero_array_release_at(&h2_out);
@@ -537,29 +451,10 @@ bb7:
 
 #line 64 "examples/histogram/main.hero"
 void h_main_main(void) {
-#line 541 "main.c"
-    HeroArrayHeader * h0_found = {0};
-    int64_t h1_d;
-    HeroArrayHeader * h2_own2 = {0};
-    HeroArrayHeader * t1;
-    int64_t t2;
-    int64_t t3;
-    int64_t t4;
-    bool t5;
-    HeroStr t6;
-    int64_t t7;
-    HeroStr t8;
-    HeroArrayHeader * t9;
-    int64_t t10;
-    int64_t t11;
-    int64_t t12;
-    int64_t t13;
-    int64_t t14;
-    HeroArrayHeader * t15;
-    HeroArrayHeader * t16;
-    goto bb0;
+#line 64 "examples/histogram/main.hero"
+    HeroArrayHeader * h0_found = {0}; int64_t h1_d; HeroArrayHeader * h2_own2 = {0}; HeroArrayHeader * t1; int64_t t2; int64_t t3; int64_t t4; bool t5; HeroStr t6; int64_t t7; HeroStr t8; HeroArrayHeader * t9; int64_t t10; int64_t t11; int64_t t12; int64_t t13; int64_t t14; HeroArrayHeader * t15; HeroArrayHeader * t16; goto bb0;
+#line 64 "examples/histogram/main.hero"
 bb0:
-#line 65 "examples/histogram/main.hero"
     t1 = h_main_counts();
 #line 65 "examples/histogram/main.hero"
     t15 = h2_own2;
@@ -624,7 +519,7 @@ bb2:
     goto bb1;
 #line 70 "examples/histogram/main.hero"
 bb3:
-#line 628 "main.c"
+#line 523 "main.c"
     hero_array_release_at(&h0_found);
     hero_array_release_at(&h2_own2);
     return;

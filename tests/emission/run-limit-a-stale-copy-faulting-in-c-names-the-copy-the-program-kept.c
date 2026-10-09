@@ -107,28 +107,10 @@ void h_limitastalecopyfaultingincnamesthecopytheprogramkept_main(void);
 
 #line 24 "tests/golden/run/limit-a-stale-copy-faulting-in-c-names-the-copy-the-program-kept.hero"
 void h_limitastalecopyfaultingincnamesthecopytheprogramkept_main(void) {
-#line 111 "limitastalecopyfaultingincnamesthecopytheprogramkept.c"
-    outer * h0_a;
-    outer * h1_kept;
-    outer * h2_b;
-    outer * t1;
-    outer * t2;
-    HeroStr t3;
-    outer * t4;
-    int64_t t5;
-    outer * t6;
-    outer * t7;
-    HeroStr t8;
-    outer * t9;
-    outer * t10;
-    bool t11;
-    HeroStr t12;
-    outer * t13;
-    int64_t t14;
-    outer * t15;
-    goto bb0;
+#line 24 "tests/golden/run/limit-a-stale-copy-faulting-in-c-names-the-copy-the-program-kept.hero"
+    outer * h0_a; outer * h1_kept; outer * h2_b; outer * t1; outer * t2; HeroStr t3; outer * t4; int64_t t5; outer * t6; outer * t7; HeroStr t8; outer * t9; outer * t10; bool t11; HeroStr t12; outer * t13; int64_t t14; outer * t15; goto bb0;
+#line 24 "tests/golden/run/limit-a-stale-copy-faulting-in-c-names-the-copy-the-program-kept.hero"
 bb0:
-#line 25 "tests/golden/run/limit-a-stale-copy-faulting-in-c-names-the-copy-the-program-kept.hero"
     t1 = make();
 #line 25 "tests/golden/run/limit-a-stale-copy-faulting-in-c-names-the-copy-the-program-kept.hero"
     hero_handle_acquired(t1, "release");
@@ -209,7 +191,7 @@ bb0:
     }
 #line 32 "tests/golden/run/limit-a-stale-copy-faulting-in-c-names-the-copy-the-program-kept.hero"
     return;
-#line 213 "limitastalecopyfaultingincnamesthecopytheprogramkept.c"
+#line 195 "limitastalecopyfaultingincnamesthecopytheprogramkept.c"
 }
 HERO_TU_LOCAL bool h_limitastalecopyfaultingincnamesthecopytheprogramkept_Outer_eq(outer * const *a, outer * const *b) {
     return hero_handle_eq(*a, *b);

@@ -119,30 +119,10 @@ void h_ffiaconstructionnamestheintegerarmandcompares_main(void);
 
 #line 20 "tests/golden/run/ffi-a-construction-names-the-integer-arm-and-compares.hero"
 void h_ffiaconstructionnamestheintegerarmandcompares_main(void) {
-#line 123 "ffiaconstructionnamestheintegerarmandcompares.c"
-    SA h0_m;
-    SA h1_b;
-    SA h2_p;
-    SA h3_q;
-    SA t1;
-    SA t2;
-    int32_t t3;
-    int32_t t4;
-    int32_t t5;
-    int32_t t6;
-    SA t7;
-    SA t8;
-    float t9;
-    SA t10;
-    int32_t t11;
-    SA t12;
-    SA t13;
-    SA t14;
-    SA t15;
-    bool t16;
-    goto bb0;
+#line 20 "tests/golden/run/ffi-a-construction-names-the-integer-arm-and-compares.hero"
+    SA h0_m; SA h1_b; SA h2_p; SA h3_q; SA t1; SA t2; int32_t t3; int32_t t4; int32_t t5; int32_t t6; SA t7; SA t8; float t9; SA t10; int32_t t11; SA t12; SA t13; SA t14; SA t15; bool t16; goto bb0;
+#line 20 "tests/golden/run/ffi-a-construction-names-the-integer-arm-and-compares.hero"
 bb0:
-#line 21 "tests/golden/run/ffi-a-construction-names-the-integer-arm-and-compares.hero"
     t1 = make_sa();
 #line 21 "tests/golden/run/ffi-a-construction-names-the-integer-arm-and-compares.hero"
     h0_m = t1;
@@ -193,7 +173,7 @@ bb0:
     hero_print_end();
 #line 28 "tests/golden/run/ffi-a-construction-names-the-integer-arm-and-compares.hero"
     return;
-#line 197 "ffiaconstructionnamestheintegerarmandcompares.c"
+#line 177 "ffiaconstructionnamestheintegerarmandcompares.c"
 }
 HERO_TU_LOCAL bool h_ffiaconstructionnamestheintegerarmandcompares_SA_eq(const SA *a, const SA *b) {
     if (!(a->kind == b->kind)) return false;

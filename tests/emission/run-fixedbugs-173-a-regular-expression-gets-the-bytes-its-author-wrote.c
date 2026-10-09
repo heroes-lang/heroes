@@ -133,35 +133,12 @@ int32_t h_fixedbugs173aregularexpressiongetsthebytesitsauthorwrote_REG_EXTENDED(
 
 #line 26 "tests/golden/run/fixedbugs-173-a-regular-expression-gets-the-bytes-its-author-wrote.hero"
 bool h_fixedbugs173aregularexpressiongetsthebytesitsauthorwrote_matches(HeroStr h0_pattern, HeroStr h1_text) {
-#line 137 "fixedbugs173aregularexpressiongetsthebytesitsauthorwrote.c"
-    regex_t *const hero_lend_h2_re = (regex_t *)hero_lend_local(sizeof(regex_t), "fixedbugs173aregularexpressiongetsthebytesitsauthorwrote.matches", "re");
+#line 26 "tests/golden/run/fixedbugs-173-a-regular-expression-gets-the-bytes-its-author-wrote.hero"
 #define h2_re (*hero_lend_h2_re)
-    int64_t h3_rc;
-    bool h4_ret0;
-    uint64_t t1;
-    regex_t t2;
-    HeroStr t3;
-    const char * t4;
-    int32_t t5;
-    int64_t t6;
-    int64_t t7;
-    bool t8;
-    HeroStr t9;
-    HeroStr t10;
-    bool t11;
-    HeroStr t12;
-    const char * t13;
-    uint64_t t14;
-    void * t15;
-    int32_t t16;
-    int64_t t17;
-    int64_t t18;
-    int64_t t19;
-    bool t20;
-    bool t21;
-    goto bb0;
+#line 26 "tests/golden/run/fixedbugs-173-a-regular-expression-gets-the-bytes-its-author-wrote.hero"
+    regex_t *const hero_lend_h2_re = (regex_t *)hero_lend_local(sizeof(regex_t), "fixedbugs173aregularexpressiongetsthebytesitsauthorwrote.matches", "re"); int64_t h3_rc; bool h4_ret0; uint64_t t1; regex_t t2; HeroStr t3; const char * t4; int32_t t5; int64_t t6; int64_t t7; bool t8; HeroStr t9; HeroStr t10; bool t11; HeroStr t12; const char * t13; uint64_t t14; void * t15; int32_t t16; int64_t t17; int64_t t18; int64_t t19; bool t20; bool t21; goto bb0;
+#line 26 "tests/golden/run/fixedbugs-173-a-regular-expression-gets-the-bytes-its-author-wrote.hero"
 bb0:
-#line 27 "tests/golden/run/fixedbugs-173-a-regular-expression-gets-the-bytes-its-author-wrote.hero"
     t1 = UINT64_C(0);
 #line 27 "tests/golden/run/fixedbugs-173-a-regular-expression-gets-the-bytes-its-author-wrote.hero"
     t2 = (regex_t){.re_nsub = t1};
@@ -236,7 +213,7 @@ bb3:
     goto bb1;
 #line 31 "tests/golden/run/fixedbugs-173-a-regular-expression-gets-the-bytes-its-author-wrote.hero"
 bb4:
-#line 240 "fixedbugs173aregularexpressiongetsthebytesitsauthorwrote.c"
+#line 217 "fixedbugs173aregularexpressiongetsthebytesitsauthorwrote.c"
     t21 = h4_ret0;
     hero_lend_local_give(hero_lend_h2_re);
     return t21;
@@ -245,29 +222,10 @@ bb4:
 
 #line 36 "tests/golden/run/fixedbugs-173-a-regular-expression-gets-the-bytes-its-author-wrote.hero"
 void h_fixedbugs173aregularexpressiongetsthebytesitsauthorwrote_report(HeroStr h0_pattern, HeroStr h1_yes, HeroStr h2_no) {
-#line 249 "fixedbugs173aregularexpressiongetsthebytesitsauthorwrote.c"
-    HeroStr t1;
-    HeroStr t2;
-    HeroStr t3;
-    HeroStr t4;
-    const char * t5;
-    uint64_t t6;
-    HeroStr t7;
-    HeroStr t8;
-    HeroStr t9;
-    HeroStr t10;
-    HeroStr t11;
-    HeroStr t12;
-    bool t13;
-    HeroStr t14;
-    HeroStr t15;
-    HeroStr t16;
-    HeroStr t17;
-    HeroStr t18;
-    bool t19;
-    goto bb0;
+#line 36 "tests/golden/run/fixedbugs-173-a-regular-expression-gets-the-bytes-its-author-wrote.hero"
+    HeroStr t1; HeroStr t2; HeroStr t3; HeroStr t4; const char * t5; uint64_t t6; HeroStr t7; HeroStr t8; HeroStr t9; HeroStr t10; HeroStr t11; HeroStr t12; bool t13; HeroStr t14; HeroStr t15; HeroStr t16; HeroStr t17; HeroStr t18; bool t19; goto bb0;
+#line 36 "tests/golden/run/fixedbugs-173-a-regular-expression-gets-the-bytes-its-author-wrote.hero"
 bb0:
-#line 37 "tests/golden/run/fixedbugs-173-a-regular-expression-gets-the-bytes-its-author-wrote.hero"
     t1 = HERO_STR_LIT(hero_str_55115239);
 #line 37 "tests/golden/run/fixedbugs-173-a-regular-expression-gets-the-bytes-its-author-wrote.hero"
     t2 = h0_pattern;
@@ -337,34 +295,15 @@ bb0:
     hero_print_end();
 #line 39 "tests/golden/run/fixedbugs-173-a-regular-expression-gets-the-bytes-its-author-wrote.hero"
     return;
-#line 341 "fixedbugs173aregularexpressiongetsthebytesitsauthorwrote.c"
+#line 299 "fixedbugs173aregularexpressiongetsthebytesitsauthorwrote.c"
 }
 
 #line 41 "tests/golden/run/fixedbugs-173-a-regular-expression-gets-the-bytes-its-author-wrote.hero"
 void h_fixedbugs173aregularexpressiongetsthebytesitsauthorwrote_main(void) {
-#line 346 "fixedbugs173aregularexpressiongetsthebytesitsauthorwrote.c"
-    int64_t h0_digits;
-    HeroStr h1_own1 = {0};
-    HeroStr h2_own2 = {0};
-    HeroStr h3_own3 = {0};
-    HeroStr t1;
-    HeroStr t2;
-    HeroStr t3;
-    int64_t t4;
-    int64_t t5;
-    HeroStr t6;
-    HeroStr t7;
-    HeroStr t8;
-    HeroStr t9;
-    HeroStr t10;
-    HeroStr t11;
-    HeroStr t12;
-    HeroStr t13;
-    HeroStr t14;
-    HeroStr t15;
-    goto bb0;
+#line 41 "tests/golden/run/fixedbugs-173-a-regular-expression-gets-the-bytes-its-author-wrote.hero"
+    int64_t h0_digits; HeroStr h1_own1 = {0}; HeroStr h2_own2 = {0}; HeroStr h3_own3 = {0}; HeroStr t1; HeroStr t2; HeroStr t3; int64_t t4; int64_t t5; HeroStr t6; HeroStr t7; HeroStr t8; HeroStr t9; HeroStr t10; HeroStr t11; HeroStr t12; HeroStr t13; HeroStr t14; HeroStr t15; goto bb0;
+#line 41 "tests/golden/run/fixedbugs-173-a-regular-expression-gets-the-bytes-its-author-wrote.hero"
 bb0:
-#line 42 "tests/golden/run/fixedbugs-173-a-regular-expression-gets-the-bytes-its-author-wrote.hero"
     t1 = HERO_STR_LIT(hero_str_1415a99b);
 #line 42 "tests/golden/run/fixedbugs-173-a-regular-expression-gets-the-bytes-its-author-wrote.hero"
     t2 = HERO_STR_LIT(hero_str_50f0fc0c);
@@ -410,7 +349,7 @@ bb0:
     t12 = HERO_STR_LIT(hero_str_7280d90);
 #line 44 "tests/golden/run/fixedbugs-173-a-regular-expression-gets-the-bytes-its-author-wrote.hero"
     h_fixedbugs173aregularexpressiongetsthebytesitsauthorwrote_report(t10, t11, t12);
-#line 414 "fixedbugs173aregularexpressiongetsthebytesitsauthorwrote.c"
+#line 353 "fixedbugs173aregularexpressiongetsthebytesitsauthorwrote.c"
     hero_str_release_at(&h1_own1);
     hero_str_release_at(&h2_own2);
     hero_str_release_at(&h3_own3);

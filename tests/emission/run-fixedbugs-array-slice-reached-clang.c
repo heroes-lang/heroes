@@ -91,40 +91,10 @@ void h_fixedbugsarrayslicereachedclang_main(void);
 
 #line 33 "tests/golden/run/fixedbugs-array-slice-reached-clang.hero"
 void h_fixedbugsarrayslicereachedclang_main(void) {
-#line 95 "fixedbugsarrayslicereachedclang.c"
-    HeroArrayHeader * h0_xs = {0};
-    HeroArrayHeader * h1_ys = {0};
-    HeroArrayHeader * h2_own2 = {0};
-    HeroArrayHeader * h3_own3 = {0};
-    HeroStr h4_own4 = {0};
-    int64_t t1;
-    int64_t t2;
-    int64_t t3;
-    HeroArrayHeader * t4;
-    HeroArrayHeader * t5;
-    int64_t t6;
-    int64_t t7;
-    HeroArrayHeader * t8;
-    HeroArrayHeader * t9;
-    int64_t t10;
-    HeroArrayHeader * t11;
-    int64_t t12;
-    int64_t t13;
-    HeroArrayHeader * t14;
-    int64_t t15;
-    int64_t t16;
-    HeroStr t17;
-    int64_t t18;
-    int64_t t19;
-    HeroStr t20;
-    HeroArrayHeader * t21;
-    HeroArrayHeader * t22;
-    HeroArrayHeader * t23;
-    HeroArrayHeader * t24;
-    HeroStr t25;
-    goto bb0;
+#line 33 "tests/golden/run/fixedbugs-array-slice-reached-clang.hero"
+    HeroArrayHeader * h0_xs = {0}; HeroArrayHeader * h1_ys = {0}; HeroArrayHeader * h2_own2 = {0}; HeroArrayHeader * h3_own3 = {0}; HeroStr h4_own4 = {0}; int64_t t1; int64_t t2; int64_t t3; HeroArrayHeader * t4; HeroArrayHeader * t5; int64_t t6; int64_t t7; HeroArrayHeader * t8; HeroArrayHeader * t9; int64_t t10; HeroArrayHeader * t11; int64_t t12; int64_t t13; HeroArrayHeader * t14; int64_t t15; int64_t t16; HeroStr t17; int64_t t18; int64_t t19; HeroStr t20; HeroArrayHeader * t21; HeroArrayHeader * t22; HeroArrayHeader * t23; HeroArrayHeader * t24; HeroStr t25; goto bb0;
+#line 33 "tests/golden/run/fixedbugs-array-slice-reached-clang.hero"
 bb0:
-#line 34 "tests/golden/run/fixedbugs-array-slice-reached-clang.hero"
     t1 = INT64_C(1);
 #line 34 "tests/golden/run/fixedbugs-array-slice-reached-clang.hero"
     t2 = INT64_C(2);
@@ -215,7 +185,7 @@ bb0:
     hero_print_str(t20);
 #line 40 "tests/golden/run/fixedbugs-array-slice-reached-clang.hero"
     hero_print_end();
-#line 219 "fixedbugsarrayslicereachedclang.c"
+#line 189 "fixedbugsarrayslicereachedclang.c"
     hero_array_release_at(&h0_xs);
     hero_array_release_at(&h1_ys);
     hero_array_release_at(&h2_own2);

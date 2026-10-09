@@ -126,81 +126,10 @@ void h_ffiabytefieldcrossestoc_main(void);
 
 #line 41 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
 void h_ffiabytefieldcrossestoc_main(void) {
-#line 130 "ffiabytefieldcrossestoc.c"
-    Slot h0_s;
-    h_0opt_e201354 h1_f0 = {0};
-    Slot h2_t;
-    h_0opt_f87774a h3_f1 = {0};
-    h_0opt_e201354 h4_own4 = {0};
-    h_0opt_f87774a h5_own5 = {0};
-    uint8_t t1;
-    uint8_t t2;
-    uint8_t t3;
-    uint8_t t4;
-    uint8_t t5;
-    uint8_t t6;
-    uint8_t t7;
-    uint8_t t8;
-    int8_t t10;
-    int8_t t11;
-    int8_t t12;
-    int8_t t13;
-    int64_t t15;
-    Slot t16;
-    void * t19;
-    int64_t t20;
-    int64_t t21;
-    void * t24;
-    int64_t t25;
-    int64_t t26;
-    void * t29;
-    int64_t t30;
-    void * t33;
-    int64_t t34;
-    int64_t t35;
-    Slot t36;
-    int64_t t38;
-    uint8_t t39;
-    h_0opt_e201354 t40;
-    h_0opt_e201354 t41;
-    int64_t t42;
-    int64_t t43;
-    bool t44;
-    h_0opt_e201354 t45;
-    HeroFailure t46;
-    h_0opt_e201354 t47;
-    int64_t t48;
-    uint8_t t49;
-    uint8_t t50;
-    uint8_t t51;
-    uint8_t t52;
-    uint8_t t53;
-    uint8_t t54;
-    uint8_t t55;
-    uint8_t t56;
-    int8_t t58;
-    int8_t t59;
-    int8_t t60;
-    int8_t t61;
-    int64_t t63;
-    Slot t64;
-    Slot t65;
-    h_0opt_f87774a t67;
-    h_0opt_f87774a t68;
-    int64_t t69;
-    int64_t t70;
-    bool t71;
-    h_0opt_f87774a t72;
-    HeroFailure t73;
-    h_0opt_f87774a t74;
-    HeroStr t75;
-    h_0opt_e201354 t76;
-    h_0opt_e201354 t77;
-    h_0opt_f87774a t78;
-    h_0opt_f87774a t79;
-    goto bb0;
+#line 41 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
+    Slot h0_s; h_0opt_e201354 h1_f0 = {0}; Slot h2_t; h_0opt_f87774a h3_f1 = {0}; h_0opt_e201354 h4_own4 = {0}; h_0opt_f87774a h5_own5 = {0}; uint8_t t1; uint8_t t2; uint8_t t3; uint8_t t4; uint8_t t5; uint8_t t6; uint8_t t7; uint8_t t8; int8_t t10; int8_t t11; int8_t t12; int8_t t13; int64_t t15; Slot t16; void * t19; int64_t t20; int64_t t21; void * t24; int64_t t25; int64_t t26; void * t29; int64_t t30; void * t33; int64_t t34; int64_t t35; Slot t36; int64_t t38; uint8_t t39; h_0opt_e201354 t40; h_0opt_e201354 t41; int64_t t42; int64_t t43; bool t44; h_0opt_e201354 t45; HeroFailure t46; h_0opt_e201354 t47; int64_t t48; uint8_t t49; uint8_t t50; uint8_t t51; uint8_t t52; uint8_t t53; uint8_t t54; uint8_t t55; uint8_t t56; int8_t t58; int8_t t59; int8_t t60; int8_t t61; int64_t t63; Slot t64; Slot t65; h_0opt_f87774a t67; h_0opt_f87774a t68; int64_t t69; int64_t t70; bool t71; h_0opt_f87774a t72; HeroFailure t73; h_0opt_f87774a t74; HeroStr t75; h_0opt_e201354 t76; h_0opt_e201354 t77; h_0opt_f87774a t78; h_0opt_f87774a t79; goto bb0;
+#line 41 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
 bb0:
-#line 42 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
     t1 = UINT64_C(1);
 #line 42 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
     t2 = UINT64_C(0);
@@ -401,7 +330,7 @@ bb2:
     t45 = h1_f0;
 #line 56 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
     t46 = t45.as.err;
-#line 405 "ffiabytefieldcrossestoc.c"
+#line 334 "ffiabytefieldcrossestoc.c"
     hero_panic_must(t46);
     hero_unreachable();
 bb3:
@@ -413,7 +342,7 @@ bb3:
     hero_print_str(t75);
 #line 61 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
     hero_print_end();
-#line 417 "ffiabytefieldcrossestoc.c"
+#line 346 "ffiabytefieldcrossestoc.c"
     h_0opt_e201354_release(hero_slot_escape(&h1_f0));
     h_0opt_f87774a_release(hero_slot_escape(&h3_f1));
     h_0opt_e201354_release(hero_slot_escape(&h4_own4));
@@ -424,7 +353,7 @@ bb4:
     t72 = h3_f1;
 #line 61 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
     t73 = t72.as.err;
-#line 428 "ffiabytefieldcrossestoc.c"
+#line 357 "ffiabytefieldcrossestoc.c"
     hero_panic_must(t73);
     hero_unreachable();
 }

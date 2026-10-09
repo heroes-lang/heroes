@@ -92,13 +92,10 @@ void h_fixedbugsadiscardedbindingwarnsinc_main(void);
 
 #line 29 "tests/golden/run/fixedbugs-a-discarded-binding-warns-in-c.hero"
 int64_t h_fixedbugsadiscardedbindingwarnsinc_twice(int64_t h0_n) {
-#line 96 "fixedbugsadiscardedbindingwarnsinc.c"
-    int64_t t1;
-    int64_t t2;
-    int64_t t3;
-    goto bb0;
+#line 29 "tests/golden/run/fixedbugs-a-discarded-binding-warns-in-c.hero"
+    int64_t t1; int64_t t2; int64_t t3; goto bb0;
+#line 29 "tests/golden/run/fixedbugs-a-discarded-binding-warns-in-c.hero"
 bb0:
-#line 30 "tests/golden/run/fixedbugs-a-discarded-binding-warns-in-c.hero"
     t1 = h0_n;
 #line 30 "tests/golden/run/fixedbugs-a-discarded-binding-warns-in-c.hero"
     t2 = INT64_C(2);
@@ -106,23 +103,14 @@ bb0:
     if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow();
 #line 30 "tests/golden/run/fixedbugs-a-discarded-binding-warns-in-c.hero"
     return t3;
-#line 110 "fixedbugsadiscardedbindingwarnsinc.c"
+#line 107 "fixedbugsadiscardedbindingwarnsinc.c"
 }
 
 #line 32 "tests/golden/run/fixedbugs-a-discarded-binding-warns-in-c.hero"
 void h_fixedbugsadiscardedbindingwarnsinc_main(void) {
-#line 115 "fixedbugsadiscardedbindingwarnsinc.c"
-    __attribute__((unused)) int64_t h0_v;
-    HeroStr h1_s = {0};
-    int64_t h2_kept;
-    int64_t t1;
-    HeroStr t3;
-    int64_t t5;
-    int64_t t7;
-    int64_t t8;
-    int64_t t9;
-    HeroStr t10;
-    goto bb0;
+#line 32 "tests/golden/run/fixedbugs-a-discarded-binding-warns-in-c.hero"
+    __attribute__((unused)) int64_t h0_v; HeroStr h1_s = {0}; int64_t h2_kept; int64_t t1; HeroStr t3; int64_t t5; int64_t t7; int64_t t8; int64_t t9; HeroStr t10; goto bb0;
+#line 32 "tests/golden/run/fixedbugs-a-discarded-binding-warns-in-c.hero"
 bb0:
 #line 34 "tests/golden/run/fixedbugs-a-discarded-binding-warns-in-c.hero"
     t1 = INT64_C(41);
@@ -153,7 +141,7 @@ bb0:
     hero_print_int(t9);
 #line 46 "tests/golden/run/fixedbugs-a-discarded-binding-warns-in-c.hero"
     hero_print_end();
-#line 157 "fixedbugsadiscardedbindingwarnsinc.c"
+#line 145 "fixedbugsadiscardedbindingwarnsinc.c"
     hero_str_release_at(&h1_s);
     return;
 }

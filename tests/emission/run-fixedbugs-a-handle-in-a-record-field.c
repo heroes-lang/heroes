@@ -108,21 +108,10 @@ void h_fixedbugsahandleinarecordfield_main(void);
 
 #line 50 "tests/golden/run/fixedbugs-a-handle-in-a-record-field.hero"
 void h_fixedbugsahandleinarecordfield_main(void) {
-#line 112 "fixedbugsahandleinarecordfield.c"
-    Slot h0_s;
-    int64_t t1;
-    Slot t2;
-    Slot t3;
-    int64_t t4;
-    Slot t5;
-    Thing * t6;
-    Thing * t7;
-    bool t8;
-    Slot t9;
-    double t10;
-    goto bb0;
+#line 50 "tests/golden/run/fixedbugs-a-handle-in-a-record-field.hero"
+    Slot h0_s; int64_t t1; Slot t2; Slot t3; int64_t t4; Slot t5; Thing * t6; Thing * t7; bool t8; Slot t9; double t10; goto bb0;
+#line 50 "tests/golden/run/fixedbugs-a-handle-in-a-record-field.hero"
 bb0:
-#line 51 "tests/golden/run/fixedbugs-a-handle-in-a-record-field.hero"
     t1 = INT64_C(7);
 #line 51 "tests/golden/run/fixedbugs-a-handle-in-a-record-field.hero"
     t2 = slot_make(t1);
@@ -158,7 +147,7 @@ bb0:
     hero_print_end();
 #line 57 "tests/golden/run/fixedbugs-a-handle-in-a-record-field.hero"
     return;
-#line 162 "fixedbugsahandleinarecordfield.c"
+#line 151 "fixedbugsahandleinarecordfield.c"
 }
 HERO_TU_LOCAL bool h_fixedbugsahandleinarecordfield_Thing_eq(Thing * const *a, Thing * const *b) {
     return hero_handle_eq(*a, *b);

@@ -115,249 +115,10 @@ void h_builtins_main(void);
 
 #line 19 "tests/golden/run/builtins.hero"
 void h_builtins_main(void) {
-#line 119 "builtins.c"
-    HeroArrayHeader * h0_xs = {0};
-    HeroArrayHeader * h1_sorted = {0};
-    HeroArrayHeader * h2_names = {0};
-    HeroArrayHeader * h3_fs = {0};
-    HeroArrayHeader * h4_flags = {0};
-    HeroArrayHeader * h5_ordered = {0};
-    HeroArrayHeader * h6_tail = {0};
-    HeroArrayHeader * h7_empty = {0};
-    HeroStr h8_word = {0};
-    h_0opt_e201354 h9_f0 = {0};
-    h_0opt_e201354 h10_f1 = {0};
-    h_0opt_e201354 h11_f2 = {0};
-    HeroArrayHeader * h12_own12 = {0};
-    HeroArrayHeader * h13_own13 = {0};
-    HeroArrayHeader * h14_own14 = {0};
-    HeroArrayHeader * h15_own15 = {0};
-    HeroStr h16_own16 = {0};
-    HeroArrayHeader * h17_own17 = {0};
-    HeroArrayHeader * h18_own18 = {0};
-    HeroArrayHeader * h19_own19 = {0};
-    HeroArrayHeader * h20_own20 = {0};
-    HeroArrayHeader * h21_own21 = {0};
-    HeroArrayHeader * h22_own22 = {0};
-    HeroStr h23_own23 = {0};
-    HeroArrayHeader * h24_own24 = {0};
-    HeroArrayHeader * h25_own25 = {0};
-    HeroArrayHeader * h26_own26 = {0};
-    HeroStr h27_own27 = {0};
-    HeroArrayHeader * h28_own28 = {0};
-    HeroStr h29_own29 = {0};
-    HeroArrayHeader * h30_own30 = {0};
-    HeroArrayHeader * h31_own31 = {0};
-    HeroStr h32_own32 = {0};
-    HeroArrayHeader * h33_own33 = {0};
-    HeroStr h34_own34 = {0};
-    HeroArrayHeader * h35_own35 = {0};
-    HeroStr h36_own36 = {0};
-    h_0opt_e201354 h37_own37 = {0};
-    h_0opt_e201354 h38_own38 = {0};
-    h_0opt_e201354 h39_own39 = {0};
-    int64_t t1;
-    int64_t t2;
-    int64_t t3;
-    HeroArrayHeader * t4;
-    HeroArrayHeader * t5;
-    HeroArrayHeader * t6;
-    HeroArrayHeader * t7;
-    int64_t t8;
-    int64_t t9;
-    HeroArrayHeader * t10;
-    int64_t t11;
-    int64_t t12;
-    HeroArrayHeader * t13;
-    int64_t t14;
-    int64_t t15;
-    HeroArrayHeader * t16;
-    int64_t t17;
-    int64_t t18;
-    HeroArrayHeader * t19;
-    int64_t t20;
-    int64_t t21;
-    HeroArrayHeader * t22;
-    int64_t t23;
-    int64_t t24;
-    HeroStr t25;
-    HeroStr t26;
-    HeroStr t27;
-    HeroStr t28;
-    HeroArrayHeader * t29;
-    HeroArrayHeader * t30;
-    HeroArrayHeader * t31;
-    HeroStr t32;
-    HeroStr t33;
-    double t34;
-    double t35;
-    double t36;
-    HeroArrayHeader * t37;
-    HeroArrayHeader * t38;
-    HeroArrayHeader * t39;
-    int64_t t40;
-    double t41;
-    HeroStr t42;
-    HeroArrayHeader * t43;
-    HeroArrayHeader * t44;
-    int64_t t45;
-    double t46;
-    bool t47;
-    bool t48;
-    bool t49;
-    bool t50;
-    bool t51;
-    HeroArrayHeader * t52;
-    HeroArrayHeader * t53;
-    HeroArrayHeader * t54;
-    HeroArrayHeader * t55;
-    int64_t t56;
-    bool t57;
-    HeroArrayHeader * t58;
-    int64_t t59;
-    bool t60;
-    HeroArrayHeader * t61;
-    int64_t t62;
-    bool t63;
-    HeroArrayHeader * t64;
-    int64_t t65;
-    bool t66;
-    HeroArrayHeader * t67;
-    int64_t t68;
-    bool t69;
-    HeroArrayHeader * t70;
-    int64_t t71;
-    int64_t t72;
-    HeroArrayHeader * t73;
-    HeroArrayHeader * t74;
-    int64_t t75;
-    HeroArrayHeader * t76;
-    HeroStr t77;
-    HeroStr t78;
-    HeroArrayHeader * t79;
-    int64_t t80;
-    int64_t t81;
-    HeroArrayHeader * t82;
-    int64_t t83;
-    HeroArrayHeader * t84;
-    int64_t t85;
-    int64_t t86;
-    HeroArrayHeader * t87;
-    int64_t t88;
-    HeroArrayHeader * t89;
-    HeroStr t90;
-    HeroArrayHeader * t91;
-    HeroStr t92;
-    HeroStr t93;
-    HeroStr t94;
-    HeroStr t95;
-    HeroStr t96;
-    HeroArrayHeader * t97;
-    HeroStr t98;
-    HeroStr t99;
-    HeroStr t100;
-    HeroStr t101;
-    HeroStr t102;
-    int64_t t103;
-    HeroStr t104;
-    HeroStr t105;
-    HeroArrayHeader * t106;
-    int64_t t107;
-    HeroStr t108;
-    HeroArrayHeader * t109;
-    HeroStr t110;
-    HeroStr t111;
-    HeroStr t112;
-    HeroArrayHeader * t113;
-    HeroStr t114;
-    HeroStr t115;
-    HeroStr t116;
-    bool t117;
-    HeroStr t118;
-    HeroArrayHeader * t119;
-    HeroStr t120;
-    HeroStr t121;
-    HeroStr t122;
-    bool t123;
-    double t124;
-    h_0opt_e201354 t125;
-    h_0opt_e201354 t126;
-    int64_t t127;
-    int64_t t128;
-    bool t129;
-    h_0opt_e201354 t130;
-    HeroFailure t131;
-    h_0opt_e201354 t132;
-    int64_t t133;
-    double t134;
-    double t135;
-    h_0opt_e201354 t136;
-    h_0opt_e201354 t137;
-    int64_t t138;
-    int64_t t139;
-    bool t140;
-    h_0opt_e201354 t141;
-    HeroFailure t142;
-    h_0opt_e201354 t143;
-    int64_t t144;
-    double t145;
-    h_0opt_e201354 t146;
-    h_0opt_e201354 t147;
-    int64_t t148;
-    int64_t t149;
-    bool t150;
-    h_0opt_e201354 t151;
-    HeroFailure t152;
-    h_0opt_e201354 t153;
-    int64_t t154;
-    int64_t t155;
-    double t156;
-    HeroStr t157;
-    int64_t t158;
-    double t159;
-    HeroArrayHeader * t160;
-    HeroArrayHeader * t161;
-    HeroArrayHeader * t162;
-    HeroArrayHeader * t163;
-    HeroArrayHeader * t164;
-    HeroArrayHeader * t165;
-    HeroArrayHeader * t166;
-    HeroStr t167;
-    HeroArrayHeader * t168;
-    HeroArrayHeader * t169;
-    HeroArrayHeader * t170;
-    HeroArrayHeader * t171;
-    HeroArrayHeader * t172;
-    HeroArrayHeader * t173;
-    HeroArrayHeader * t174;
-    HeroArrayHeader * t175;
-    HeroArrayHeader * t176;
-    HeroArrayHeader * t177;
-    HeroStr t178;
-    HeroArrayHeader * t179;
-    HeroArrayHeader * t180;
-    HeroArrayHeader * t181;
-    HeroArrayHeader * t182;
-    HeroStr t183;
-    HeroArrayHeader * t184;
-    HeroStr t185;
-    HeroStr t186;
-    HeroArrayHeader * t187;
-    HeroArrayHeader * t188;
-    HeroStr t189;
-    HeroArrayHeader * t190;
-    HeroStr t191;
-    HeroArrayHeader * t192;
-    HeroStr t193;
-    h_0opt_e201354 t194;
-    h_0opt_e201354 t195;
-    h_0opt_e201354 t196;
-    h_0opt_e201354 t197;
-    h_0opt_e201354 t198;
-    h_0opt_e201354 t199;
-    goto bb0;
+#line 19 "tests/golden/run/builtins.hero"
+    HeroArrayHeader * h0_xs = {0}; HeroArrayHeader * h1_sorted = {0}; HeroArrayHeader * h2_names = {0}; HeroArrayHeader * h3_fs = {0}; HeroArrayHeader * h4_flags = {0}; HeroArrayHeader * h5_ordered = {0}; HeroArrayHeader * h6_tail = {0}; HeroArrayHeader * h7_empty = {0}; HeroStr h8_word = {0}; h_0opt_e201354 h9_f0 = {0}; h_0opt_e201354 h10_f1 = {0}; h_0opt_e201354 h11_f2 = {0}; HeroArrayHeader * h12_own12 = {0}; HeroArrayHeader * h13_own13 = {0}; HeroArrayHeader * h14_own14 = {0}; HeroArrayHeader * h15_own15 = {0}; HeroStr h16_own16 = {0}; HeroArrayHeader * h17_own17 = {0}; HeroArrayHeader * h18_own18 = {0}; HeroArrayHeader * h19_own19 = {0}; HeroArrayHeader * h20_own20 = {0}; HeroArrayHeader * h21_own21 = {0}; HeroArrayHeader * h22_own22 = {0}; HeroStr h23_own23 = {0}; HeroArrayHeader * h24_own24 = {0}; HeroArrayHeader * h25_own25 = {0}; HeroArrayHeader * h26_own26 = {0}; HeroStr h27_own27 = {0}; HeroArrayHeader * h28_own28 = {0}; HeroStr h29_own29 = {0}; HeroArrayHeader * h30_own30 = {0}; HeroArrayHeader * h31_own31 = {0}; HeroStr h32_own32 = {0}; HeroArrayHeader * h33_own33 = {0}; HeroStr h34_own34 = {0}; HeroArrayHeader * h35_own35 = {0}; HeroStr h36_own36 = {0}; h_0opt_e201354 h37_own37 = {0}; h_0opt_e201354 h38_own38 = {0}; h_0opt_e201354 h39_own39 = {0}; int64_t t1; int64_t t2; int64_t t3; HeroArrayHeader * t4; HeroArrayHeader * t5; HeroArrayHeader * t6; HeroArrayHeader * t7; int64_t t8; int64_t t9; HeroArrayHeader * t10; int64_t t11; int64_t t12; HeroArrayHeader * t13; int64_t t14; int64_t t15; HeroArrayHeader * t16; int64_t t17; int64_t t18; HeroArrayHeader * t19; int64_t t20; int64_t t21; HeroArrayHeader * t22; int64_t t23; int64_t t24; HeroStr t25; HeroStr t26; HeroStr t27; HeroStr t28; HeroArrayHeader * t29; HeroArrayHeader * t30; HeroArrayHeader * t31; HeroStr t32; HeroStr t33; double t34; double t35; double t36; HeroArrayHeader * t37; HeroArrayHeader * t38; HeroArrayHeader * t39; int64_t t40; double t41; HeroStr t42; HeroArrayHeader * t43; HeroArrayHeader * t44; int64_t t45; double t46; bool t47; bool t48; bool t49; bool t50; bool t51; HeroArrayHeader * t52; HeroArrayHeader * t53; HeroArrayHeader * t54; HeroArrayHeader * t55; int64_t t56; bool t57; HeroArrayHeader * t58; int64_t t59; bool t60; HeroArrayHeader * t61; int64_t t62; bool t63; HeroArrayHeader * t64; int64_t t65; bool t66; HeroArrayHeader * t67; int64_t t68; bool t69; HeroArrayHeader * t70; int64_t t71; int64_t t72; HeroArrayHeader * t73; HeroArrayHeader * t74; int64_t t75; HeroArrayHeader * t76; HeroStr t77; HeroStr t78; HeroArrayHeader * t79; int64_t t80; int64_t t81; HeroArrayHeader * t82; int64_t t83; HeroArrayHeader * t84; int64_t t85; int64_t t86; HeroArrayHeader * t87; int64_t t88; HeroArrayHeader * t89; HeroStr t90; HeroArrayHeader * t91; HeroStr t92; HeroStr t93; HeroStr t94; HeroStr t95; HeroStr t96; HeroArrayHeader * t97; HeroStr t98; HeroStr t99; HeroStr t100; HeroStr t101; HeroStr t102; int64_t t103; HeroStr t104; HeroStr t105; HeroArrayHeader * t106; int64_t t107; HeroStr t108; HeroArrayHeader * t109; HeroStr t110; HeroStr t111; HeroStr t112; HeroArrayHeader * t113; HeroStr t114; HeroStr t115; HeroStr t116; bool t117; HeroStr t118; HeroArrayHeader * t119; HeroStr t120; HeroStr t121; HeroStr t122; bool t123; double t124; h_0opt_e201354 t125; h_0opt_e201354 t126; int64_t t127; int64_t t128; bool t129; h_0opt_e201354 t130; HeroFailure t131; h_0opt_e201354 t132; int64_t t133; double t134; double t135; h_0opt_e201354 t136; h_0opt_e201354 t137; int64_t t138; int64_t t139; bool t140; h_0opt_e201354 t141; HeroFailure t142; h_0opt_e201354 t143; int64_t t144; double t145; h_0opt_e201354 t146; h_0opt_e201354 t147; int64_t t148; int64_t t149; bool t150; h_0opt_e201354 t151; HeroFailure t152; h_0opt_e201354 t153; int64_t t154; int64_t t155; double t156; HeroStr t157; int64_t t158; double t159; HeroArrayHeader * t160; HeroArrayHeader * t161; HeroArrayHeader * t162; HeroArrayHeader * t163; HeroArrayHeader * t164; HeroArrayHeader * t165; HeroArrayHeader * t166; HeroStr t167; HeroArrayHeader * t168; HeroArrayHeader * t169; HeroArrayHeader * t170; HeroArrayHeader * t171; HeroArrayHeader * t172; HeroArrayHeader * t173; HeroArrayHeader * t174; HeroArrayHeader * t175; HeroArrayHeader * t176; HeroArrayHeader * t177; HeroStr t178; HeroArrayHeader * t179; HeroArrayHeader * t180; HeroArrayHeader * t181; HeroArrayHeader * t182; HeroStr t183; HeroArrayHeader * t184; HeroStr t185; HeroStr t186; HeroArrayHeader * t187; HeroArrayHeader * t188; HeroStr t189; HeroArrayHeader * t190; HeroStr t191; HeroArrayHeader * t192; HeroStr t193; h_0opt_e201354 t194; h_0opt_e201354 t195; h_0opt_e201354 t196; h_0opt_e201354 t197; h_0opt_e201354 t198; h_0opt_e201354 t199; goto bb0;
+#line 19 "tests/golden/run/builtins.hero"
 bb0:
-#line 20 "tests/golden/run/builtins.hero"
     t1 = INT64_C(3);
 #line 20 "tests/golden/run/builtins.hero"
     t2 = INT64_C(1);
@@ -1018,7 +779,7 @@ bb2:
     t130 = h9_f0;
 #line 58 "tests/golden/run/builtins.hero"
     t131 = t130.as.err;
-#line 1022 "builtins.c"
+#line 783 "builtins.c"
     hero_panic_must(t131);
     hero_unreachable();
 bb3:
@@ -1068,7 +829,7 @@ bb4:
     t141 = h10_f1;
 #line 58 "tests/golden/run/builtins.hero"
     t142 = t141.as.err;
-#line 1072 "builtins.c"
+#line 833 "builtins.c"
     hero_panic_must(t142);
     hero_unreachable();
 bb5:
@@ -1101,7 +862,7 @@ bb5:
     hero_print_f64(t159);
 #line 59 "tests/golden/run/builtins.hero"
     hero_print_end();
-#line 1105 "builtins.c"
+#line 866 "builtins.c"
     hero_array_release_at(&h0_xs);
     hero_array_release_at(&h1_sorted);
     hero_array_release_at(&h2_names);
@@ -1148,7 +909,7 @@ bb6:
     t151 = h11_f2;
 #line 58 "tests/golden/run/builtins.hero"
     t152 = t151.as.err;
-#line 1152 "builtins.c"
+#line 913 "builtins.c"
     hero_panic_must(t152);
     hero_unreachable();
 }

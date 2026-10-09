@@ -141,43 +141,9 @@ void h_fixedbugsanestedrecordandatypedpointer_main(void);
 
 #line 59 "tests/golden/run/fixedbugs-a-nested-record-and-a-typed-pointer.hero"
 void h_fixedbugsanestedrecordandatypedpointer_main(void) {
-#line 145 "fixedbugsanestedrecordandatypedpointer.c"
-    Camera2D h0_c;
-    Vector2 h1_p;
-    Font h2_empty;
-    float t1;
-    float t2;
-    Vector2 t3;
-    float t4;
-    float t5;
-    Vector2 t6;
-    float t7;
-    float t8;
-    Camera2D t9;
-    float t10;
-    float t11;
-    Vector2 t12;
-    Camera2D t13;
-    Vector2 t14;
-    Vector2 t15;
-    float t16;
-    Vector2 t17;
-    float t18;
-    int32_t t19;
-    int32_t t20;
-    int32_t t21;
-    uint32_t t22;
-    int32_t t23;
-    int32_t t24;
-    int32_t t25;
-    int32_t t26;
-    Texture t27;
-    void * t28;
-    void * t29;
-    Font t30;
-    Font t31;
-    bool t32;
-    goto bb0;
+#line 59 "tests/golden/run/fixedbugs-a-nested-record-and-a-typed-pointer.hero"
+    Camera2D h0_c; Vector2 h1_p; Font h2_empty; float t1; float t2; Vector2 t3; float t4; float t5; Vector2 t6; float t7; float t8; Camera2D t9; float t10; float t11; Vector2 t12; Camera2D t13; Vector2 t14; Vector2 t15; float t16; Vector2 t17; float t18; int32_t t19; int32_t t20; int32_t t21; uint32_t t22; int32_t t23; int32_t t24; int32_t t25; int32_t t26; Texture t27; void * t28; void * t29; Font t30; Font t31; bool t32; goto bb0;
+#line 59 "tests/golden/run/fixedbugs-a-nested-record-and-a-typed-pointer.hero"
 bb0:
 #line 63 "tests/golden/run/fixedbugs-a-nested-record-and-a-typed-pointer.hero"
     t1 = 0x0p+0;
@@ -253,7 +219,7 @@ bb0:
     hero_print_end();
 #line 83 "tests/golden/run/fixedbugs-a-nested-record-and-a-typed-pointer.hero"
     return;
-#line 257 "fixedbugsanestedrecordandatypedpointer.c"
+#line 223 "fixedbugsanestedrecordandatypedpointer.c"
 }
 HERO_TU_LOCAL bool h_fixedbugsanestedrecordandatypedpointer_Texture_eq(const Texture *a, const Texture *b) {
     if (!(a->id == b->id)) return false;

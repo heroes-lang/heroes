@@ -97,20 +97,10 @@ void h_fixedbugscwritesoverastringsheader_main(void);
 
 #line 30 "tests/golden/run/fixedbugs-c-writes-over-a-strings-header.hero"
 void h_fixedbugscwritesoverastringsheader_main(void) {
-#line 101 "fixedbugscwritesoverastringsheader.c"
-    HeroStr h0_word = {0};
-    HeroStr h1_own1 = {0};
-    HeroStr t1;
-    uint64_t t2;
-    HeroStr t3;
-    HeroStr t4;
-    const char * t5;
-    HeroStr t6;
-    HeroStr t7;
-    HeroStr t8;
-    goto bb0;
+#line 30 "tests/golden/run/fixedbugs-c-writes-over-a-strings-header.hero"
+    HeroStr h0_word = {0}; HeroStr h1_own1 = {0}; HeroStr t1; uint64_t t2; HeroStr t3; HeroStr t4; const char * t5; HeroStr t6; HeroStr t7; HeroStr t8; goto bb0;
+#line 30 "tests/golden/run/fixedbugs-c-writes-over-a-strings-header.hero"
 bb0:
-#line 31 "tests/golden/run/fixedbugs-c-writes-over-a-strings-header.hero"
     t1 = HERO_STR_LIT(hero_str_3205);
 #line 31 "tests/golden/run/fixedbugs-c-writes-over-a-strings-header.hero"
     t2 = UINT64_C(4);
@@ -140,7 +130,7 @@ bb0:
     hero_print_str(t6);
 #line 33 "tests/golden/run/fixedbugs-c-writes-over-a-strings-header.hero"
     hero_print_end();
-#line 144 "fixedbugscwritesoverastringsheader.c"
+#line 134 "fixedbugscwritesoverastringsheader.c"
     hero_str_release_at(&h0_word);
     hero_str_release_at(&h1_own1);
     return;

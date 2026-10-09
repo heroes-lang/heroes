@@ -114,163 +114,16 @@ h_0opt_f87774a h_library_validated(const char * h0_c);
 
 #line 47 "tests/golden/run/ffi-owned-cell-is-freed.hero"
 void h_ffiownedcellisfreed_main(void) {
-#line 118 "ffiownedcellisfreed.c"
-    h_0opt_f87774a h0_first = {0};
-    const char * *const hero_lend_h1_cell0 = (const char * *)hero_lend_local(sizeof(const char *), "ffiownedcellisfreed.main", "$cell0");
+#line 47 "tests/golden/run/ffi-owned-cell-is-freed.hero"
 #define h1_cell0 (*hero_lend_h1_cell0)
-    const char * h2_owned0;
-    h_0opt_f87774a h3_owned1 = {0};
-    h_0opt_f87774a h4_f0 = {0};
-    HeroStr h5_r0 = {0};
-    h_0opt_f87774a h6_second = {0};
-    const char * *const hero_lend_h7_cell1 = (const char * *)hero_lend_local(sizeof(const char *), "ffiownedcellisfreed.main", "$cell1");
+#line 47 "tests/golden/run/ffi-owned-cell-is-freed.hero"
 #define h7_cell1 (*hero_lend_h7_cell1)
-    const char * h8_owned2;
-    h_0opt_f87774a h9_owned3 = {0};
-    h_0opt_f87774a h10_f1 = {0};
-    HeroStr h11_r1 = {0};
-    h_0opt_f87774a h12_f2 = {0};
-    HeroStr h13_r2 = {0};
-    h_0opt_f87774a h14_f3 = {0};
-    HeroStr h15_r3 = {0};
-    h_0opt_f87774a h16_quiet = {0};
-    const char * *const hero_lend_h17_cell2 = (const char * *)hero_lend_local(sizeof(const char *), "ffiownedcellisfreed.main", "$cell2");
+#line 47 "tests/golden/run/ffi-owned-cell-is-freed.hero"
 #define h17_cell2 (*hero_lend_h17_cell2)
-    const char * h18_owned4;
-    h_0opt_f87774a h19_owned5 = {0};
-    h_0opt_f87774a h20_s0 = {0};
-    HeroStr h21_text = {0};
-    HeroFailure h22_e = {0};
-    h_0opt_f87774a h23_own23 = {0};
-    h_0opt_f87774a h24_own24 = {0};
-    h_0opt_f87774a h25_own25 = {0};
-    h_0opt_f87774a h26_own26 = {0};
-    h_0opt_f87774a h27_own27 = {0};
-    h_0opt_f87774a h28_own28 = {0};
-    HeroStr t1;
-    HeroStr t2;
-    h_0opt_f87774a t3;
-    int32_t t4;
-    const char * t5;
-    const char * t7;
-    const char * t8;
-    h_0opt_f87774a t9;
-    const char * t10;
-    const char * t11;
-    bool t12;
-    const char * t13;
-    void * t14;
-    h_0opt_f87774a t15;
-    h_0opt_f87774a t16;
-    h_0opt_f87774a t17;
-    int64_t t18;
-    int64_t t19;
-    bool t20;
-    h_0opt_f87774a t21;
-    HeroStr t22;
-    HeroStr t23;
-    HeroStr t24;
-    HeroStr t25;
-    HeroStr t26;
-    h_0opt_f87774a t27;
-    int32_t t28;
-    const char * t29;
-    const char * t31;
-    const char * t32;
-    h_0opt_f87774a t33;
-    const char * t34;
-    const char * t35;
-    bool t36;
-    const char * t37;
-    void * t38;
-    h_0opt_f87774a t39;
-    h_0opt_f87774a t40;
-    h_0opt_f87774a t41;
-    int64_t t42;
-    int64_t t43;
-    bool t44;
-    h_0opt_f87774a t45;
-    HeroStr t46;
-    HeroStr t47;
-    HeroStr t48;
-    h_0opt_f87774a t49;
-    h_0opt_f87774a t50;
-    int64_t t51;
-    int64_t t52;
-    bool t53;
-    h_0opt_f87774a t54;
-    HeroStr t55;
-    HeroStr t56;
-    HeroStr t57;
-    h_0opt_f87774a t58;
-    h_0opt_f87774a t59;
-    int64_t t60;
-    int64_t t61;
-    bool t62;
-    h_0opt_f87774a t63;
-    HeroStr t64;
-    HeroStr t65;
-    HeroStr t66;
-    bool t67;
-    HeroStr t68;
-    HeroStr t69;
-    h_0opt_f87774a t70;
-    int32_t t71;
-    const char * t72;
-    const char * t74;
-    const char * t75;
-    h_0opt_f87774a t76;
-    const char * t77;
-    const char * t78;
-    bool t79;
-    const char * t80;
-    void * t81;
-    h_0opt_f87774a t82;
-    h_0opt_f87774a t83;
-    h_0opt_f87774a t84;
-    int64_t t85;
-    h_0opt_f87774a t86;
-    HeroStr t87;
-    HeroStr t88;
-    HeroStr t89;
-    h_0opt_f87774a t90;
-    HeroFailure t91;
-    HeroStr t92;
-    HeroFailure t93;
-    HeroStr t94;
-    h_0opt_f87774a t95;
-    h_0opt_f87774a t96;
-    h_0opt_f87774a t97;
-    h_0opt_f87774a t98;
-    h_0opt_f87774a t99;
-    h_0opt_f87774a t100;
-    HeroStr t101;
-    HeroStr t102;
-    h_0opt_f87774a t103;
-    h_0opt_f87774a t104;
-    h_0opt_f87774a t105;
-    h_0opt_f87774a t106;
-    h_0opt_f87774a t107;
-    h_0opt_f87774a t108;
-    HeroStr t109;
-    HeroStr t110;
-    h_0opt_f87774a t111;
-    HeroStr t112;
-    HeroStr t113;
-    h_0opt_f87774a t114;
-    HeroStr t115;
-    HeroStr t116;
-    h_0opt_f87774a t117;
-    h_0opt_f87774a t118;
-    h_0opt_f87774a t119;
-    h_0opt_f87774a t120;
-    h_0opt_f87774a t121;
-    h_0opt_f87774a t122;
-    HeroStr t123;
-    HeroFailure t124;
-    goto bb0;
+#line 47 "tests/golden/run/ffi-owned-cell-is-freed.hero"
+    h_0opt_f87774a h0_first = {0}; const char * *const hero_lend_h1_cell0 = (const char * *)hero_lend_local(sizeof(const char *), "ffiownedcellisfreed.main", "$cell0"); const char * h2_owned0; h_0opt_f87774a h3_owned1 = {0}; h_0opt_f87774a h4_f0 = {0}; HeroStr h5_r0 = {0}; h_0opt_f87774a h6_second = {0}; const char * *const hero_lend_h7_cell1 = (const char * *)hero_lend_local(sizeof(const char *), "ffiownedcellisfreed.main", "$cell1"); const char * h8_owned2; h_0opt_f87774a h9_owned3 = {0}; h_0opt_f87774a h10_f1 = {0}; HeroStr h11_r1 = {0}; h_0opt_f87774a h12_f2 = {0}; HeroStr h13_r2 = {0}; h_0opt_f87774a h14_f3 = {0}; HeroStr h15_r3 = {0}; h_0opt_f87774a h16_quiet = {0}; const char * *const hero_lend_h17_cell2 = (const char * *)hero_lend_local(sizeof(const char *), "ffiownedcellisfreed.main", "$cell2"); const char * h18_owned4; h_0opt_f87774a h19_owned5 = {0}; h_0opt_f87774a h20_s0 = {0}; HeroStr h21_text = {0}; HeroFailure h22_e = {0}; h_0opt_f87774a h23_own23 = {0}; h_0opt_f87774a h24_own24 = {0}; h_0opt_f87774a h25_own25 = {0}; h_0opt_f87774a h26_own26 = {0}; h_0opt_f87774a h27_own27 = {0}; h_0opt_f87774a h28_own28 = {0}; HeroStr t1; HeroStr t2; h_0opt_f87774a t3; int32_t t4; const char * t5; const char * t7; const char * t8; h_0opt_f87774a t9; const char * t10; const char * t11; bool t12; const char * t13; void * t14; h_0opt_f87774a t15; h_0opt_f87774a t16; h_0opt_f87774a t17; int64_t t18; int64_t t19; bool t20; h_0opt_f87774a t21; HeroStr t22; HeroStr t23; HeroStr t24; HeroStr t25; HeroStr t26; h_0opt_f87774a t27; int32_t t28; const char * t29; const char * t31; const char * t32; h_0opt_f87774a t33; const char * t34; const char * t35; bool t36; const char * t37; void * t38; h_0opt_f87774a t39; h_0opt_f87774a t40; h_0opt_f87774a t41; int64_t t42; int64_t t43; bool t44; h_0opt_f87774a t45; HeroStr t46; HeroStr t47; HeroStr t48; h_0opt_f87774a t49; h_0opt_f87774a t50; int64_t t51; int64_t t52; bool t53; h_0opt_f87774a t54; HeroStr t55; HeroStr t56; HeroStr t57; h_0opt_f87774a t58; h_0opt_f87774a t59; int64_t t60; int64_t t61; bool t62; h_0opt_f87774a t63; HeroStr t64; HeroStr t65; HeroStr t66; bool t67; HeroStr t68; HeroStr t69; h_0opt_f87774a t70; int32_t t71; const char * t72; const char * t74; const char * t75; h_0opt_f87774a t76; const char * t77; const char * t78; bool t79; const char * t80; void * t81; h_0opt_f87774a t82; h_0opt_f87774a t83; h_0opt_f87774a t84; int64_t t85; h_0opt_f87774a t86; HeroStr t87; HeroStr t88; HeroStr t89; h_0opt_f87774a t90; HeroFailure t91; HeroStr t92; HeroFailure t93; HeroStr t94; h_0opt_f87774a t95; h_0opt_f87774a t96; h_0opt_f87774a t97; h_0opt_f87774a t98; h_0opt_f87774a t99; h_0opt_f87774a t100; HeroStr t101; HeroStr t102; h_0opt_f87774a t103; h_0opt_f87774a t104; h_0opt_f87774a t105; h_0opt_f87774a t106; h_0opt_f87774a t107; h_0opt_f87774a t108; HeroStr t109; HeroStr t110; h_0opt_f87774a t111; HeroStr t112; HeroStr t113; h_0opt_f87774a t114; HeroStr t115; HeroStr t116; h_0opt_f87774a t117; h_0opt_f87774a t118; h_0opt_f87774a t119; h_0opt_f87774a t120; h_0opt_f87774a t121; h_0opt_f87774a t122; HeroStr t123; HeroFailure t124; goto bb0;
+#line 47 "tests/golden/run/ffi-owned-cell-is-freed.hero"
 bb0:
-#line 48 "tests/golden/run/ffi-owned-cell-is-freed.hero"
     t1 = HERO_STR_LIT(hero_str_edaa230);
 #line 48 "tests/golden/run/ffi-owned-cell-is-freed.hero"
     t2 = HERO_STR_LIT(hero_str_37c08f66);
@@ -779,7 +632,7 @@ bb18:
     }
 #line 66 "tests/golden/run/ffi-owned-cell-is-freed.hero"
 bb19:
-#line 783 "ffiownedcellisfreed.c"
+#line 636 "ffiownedcellisfreed.c"
     h_0opt_f87774a_release(hero_slot_escape(&h0_first));
     h_0opt_f87774a_release(hero_slot_escape(&h3_owned1));
     h_0opt_f87774a_release(hero_slot_escape(&h4_f0));
@@ -859,7 +712,7 @@ bb21:
     hero_print_end();
 #line 68 "tests/golden/run/ffi-owned-cell-is-freed.hero"
     goto bb19;
-#line 863 "ffiownedcellisfreed.c"
+#line 716 "ffiownedcellisfreed.c"
 }
 #undef h1_cell0
 #undef h7_cell1
@@ -867,47 +720,18 @@ bb21:
 
 #line 123 "<heroes library>"
 int64_t h_library_HERO_STR_OK(void) {
-#line 871 "ffiownedcellisfreed.c"
+#line 724 "ffiownedcellisfreed.c"
     return HERO_STR_OK;
 }
 
 #line 153 "<heroes library>"
 h_0opt_f87774a h_library_validated(const char * h0_c) {
-#line 877 "ffiownedcellisfreed.c"
-    int64_t *const hero_lend_h1_status = (int64_t *)hero_lend_local(sizeof(int64_t), "library.validated", "status");
+#line 153 "<heroes library>"
 #define h1_status (*hero_lend_h1_status)
-    HeroStr h2_text = {0};
-    h_0opt_f87774a h3_ret0 = {0};
-    HeroStr h4_own4 = {0};
-    h_0opt_f87774a h5_own5 = {0};
-    h_0opt_f87774a h6_own6 = {0};
-    h_0opt_f87774a h7_own7 = {0};
-    const char * t1;
-    const char * t2;
-    bool t3;
-    HeroStr t4;
-    HeroStr t5;
-    h_0opt_f87774a t6;
-    int64_t t7;
-    const char * t8;
-    HeroStr t9;
-    int64_t t10;
-    int64_t t11;
-    bool t12;
-    HeroStr t13;
-    h_0opt_f87774a t14;
-    HeroStr t15;
-    HeroStr t16;
-    h_0opt_f87774a t17;
-    h_0opt_f87774a t18;
-    HeroStr t19;
-    HeroStr t20;
-    h_0opt_f87774a t21;
-    h_0opt_f87774a t22;
-    h_0opt_f87774a t23;
-    goto bb0;
+#line 153 "<heroes library>"
+    int64_t *const hero_lend_h1_status = (int64_t *)hero_lend_local(sizeof(int64_t), "library.validated", "status"); HeroStr h2_text = {0}; h_0opt_f87774a h3_ret0 = {0}; HeroStr h4_own4 = {0}; h_0opt_f87774a h5_own5 = {0}; h_0opt_f87774a h6_own6 = {0}; h_0opt_f87774a h7_own7 = {0}; const char * t1; const char * t2; bool t3; HeroStr t4; HeroStr t5; h_0opt_f87774a t6; int64_t t7; const char * t8; HeroStr t9; int64_t t10; int64_t t11; bool t12; HeroStr t13; h_0opt_f87774a t14; HeroStr t15; HeroStr t16; h_0opt_f87774a t17; h_0opt_f87774a t18; HeroStr t19; HeroStr t20; h_0opt_f87774a t21; h_0opt_f87774a t22; h_0opt_f87774a t23; goto bb0;
+#line 153 "<heroes library>"
 bb0:
-#line 154 "<heroes library>"
     t1 = h0_c;
 #line 154 "<heroes library>"
     t2 = ((void *)0);
@@ -1019,7 +843,7 @@ bb6:
     goto bb4;
 #line 159 "<heroes library>"
 bb7:
-#line 1023 "ffiownedcellisfreed.c"
+#line 847 "ffiownedcellisfreed.c"
     t18 = h3_ret0;
     h_0opt_f87774a_retain(&t18);
     hero_str_release_at(&h2_text);

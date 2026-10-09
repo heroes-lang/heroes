@@ -101,16 +101,10 @@ HeroArrayHeader * h_fixedbugs382anindexpastastaticconstantaborts_K(void) {
 
 #line 7 "tests/golden/run/fixedbugs-382-an-index-past-a-static-constant-aborts.hero"
 HeroArrayHeader * h_fixedbugs382anindexpastastaticconstantaborts_K(void) {
-#line 105 "fixedbugs382anindexpastastaticconstantaborts.c"
-    HeroArrayHeader * h0_own0 = {0};
-    int64_t t1;
-    int64_t t2;
-    int64_t t3;
-    HeroArrayHeader * t4;
-    HeroArrayHeader * t5;
-    goto bb0;
+#line 7 "tests/golden/run/fixedbugs-382-an-index-past-a-static-constant-aborts.hero"
+    HeroArrayHeader * h0_own0 = {0}; int64_t t1; int64_t t2; int64_t t3; HeroArrayHeader * t4; HeroArrayHeader * t5; goto bb0;
+#line 7 "tests/golden/run/fixedbugs-382-an-index-past-a-static-constant-aborts.hero"
 bb0:
-#line 8 "tests/golden/run/fixedbugs-382-an-index-past-a-static-constant-aborts.hero"
     t1 = INT64_C(1);
 #line 8 "tests/golden/run/fixedbugs-382-an-index-past-a-static-constant-aborts.hero"
     t2 = INT64_C(2);
@@ -130,7 +124,7 @@ bb0:
     h0_own0 = t4;
 #line 8 "tests/golden/run/fixedbugs-382-an-index-past-a-static-constant-aborts.hero"
     hero_array_decref(t5);
-#line 134 "fixedbugs382anindexpastastaticconstantaborts.c"
+#line 128 "fixedbugs382anindexpastastaticconstantaborts.c"
     hero_array_incref(t4);
     hero_array_release_at(&h0_own0);
     return t4;
@@ -139,15 +133,10 @@ bb0:
 
 #line 10 "tests/golden/run/fixedbugs-382-an-index-past-a-static-constant-aborts.hero"
 int64_t h_fixedbugs382anindexpastastaticconstantaborts_at(int64_t h0_i) {
-#line 143 "fixedbugs382anindexpastastaticconstantaborts.c"
-    HeroArrayHeader * h1_own1 = {0};
-    HeroArrayHeader * t1;
-    int64_t t2;
-    int64_t t3;
-    HeroArrayHeader * t4;
-    goto bb0;
+#line 10 "tests/golden/run/fixedbugs-382-an-index-past-a-static-constant-aborts.hero"
+    HeroArrayHeader * h1_own1 = {0}; HeroArrayHeader * t1; int64_t t2; int64_t t3; HeroArrayHeader * t4; goto bb0;
+#line 10 "tests/golden/run/fixedbugs-382-an-index-past-a-static-constant-aborts.hero"
 bb0:
-#line 11 "tests/golden/run/fixedbugs-382-an-index-past-a-static-constant-aborts.hero"
     t1 = h_fixedbugs382anindexpastastaticconstantaborts_K();
 #line 11 "tests/golden/run/fixedbugs-382-an-index-past-a-static-constant-aborts.hero"
     t4 = h1_own1;
@@ -159,21 +148,17 @@ bb0:
     t2 = h0_i;
 #line 11 "tests/golden/run/fixedbugs-382-an-index-past-a-static-constant-aborts.hero"
     t3 = ((void)((t1 == NULL || t2 < 0 || t2 >= t1->len) ? ((void)hero_array_at(t1, t2), hero_unreachable()) : (void)0), (void)(t1->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t1 + 1))[t2]);
-#line 163 "fixedbugs382anindexpastastaticconstantaborts.c"
+#line 152 "fixedbugs382anindexpastastaticconstantaborts.c"
     hero_array_release_at(&h1_own1);
     return t3;
 }
 
 #line 13 "tests/golden/run/fixedbugs-382-an-index-past-a-static-constant-aborts.hero"
 void h_fixedbugs382anindexpastastaticconstantaborts_main(void) {
-#line 170 "fixedbugs382anindexpastastaticconstantaborts.c"
-    int64_t t1;
-    int64_t t2;
-    int64_t t3;
-    int64_t t4;
-    goto bb0;
+#line 13 "tests/golden/run/fixedbugs-382-an-index-past-a-static-constant-aborts.hero"
+    int64_t t1; int64_t t2; int64_t t3; int64_t t4; goto bb0;
+#line 13 "tests/golden/run/fixedbugs-382-an-index-past-a-static-constant-aborts.hero"
 bb0:
-#line 14 "tests/golden/run/fixedbugs-382-an-index-past-a-static-constant-aborts.hero"
     t1 = INT64_C(2);
 #line 14 "tests/golden/run/fixedbugs-382-an-index-past-a-static-constant-aborts.hero"
     t2 = h_fixedbugs382anindexpastastaticconstantaborts_at(t1);
@@ -190,7 +175,7 @@ bb0:
     hero_print_end();
 #line 15 "tests/golden/run/fixedbugs-382-an-index-past-a-static-constant-aborts.hero"
     return;
-#line 194 "fixedbugs382anindexpastastaticconstantaborts.c"
+#line 179 "fixedbugs382anindexpastastaticconstantaborts.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

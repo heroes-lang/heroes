@@ -96,12 +96,10 @@ void h_fixedbugs361aboundnametheguardholdskeepsitsheadersmacro_main(void);
 
 #line 11 "tests/golden/run/fixedbugs-361-a-bound-name-the-guard-holds-keeps-its-header-s-macro.hero"
 void h_fixedbugs361aboundnametheguardholdskeepsitsheadersmacro_main(void) {
-#line 100 "fixedbugs361aboundnametheguardholdskeepsitsheadersmacro.c"
-    double t1;
-    double t2;
-    goto bb0;
+#line 11 "tests/golden/run/fixedbugs-361-a-bound-name-the-guard-holds-keeps-its-header-s-macro.hero"
+    double t1; double t2; goto bb0;
+#line 11 "tests/golden/run/fixedbugs-361-a-bound-name-the-guard-holds-keeps-its-header-s-macro.hero"
 bb0:
-#line 12 "tests/golden/run/fixedbugs-361-a-bound-name-the-guard-holds-keeps-its-header-s-macro.hero"
     t1 = 0x1p+2;
 #line 12 "tests/golden/run/fixedbugs-361-a-bound-name-the-guard-holds-keeps-its-header-s-macro.hero"
     t2 = sqrt(t1);
@@ -111,7 +109,7 @@ bb0:
     hero_print_end();
 #line 12 "tests/golden/run/fixedbugs-361-a-bound-name-the-guard-holds-keeps-its-header-s-macro.hero"
     return;
-#line 115 "fixedbugs361aboundnametheguardholdskeepsitsheadersmacro.c"
+#line 113 "fixedbugs361aboundnametheguardholdskeepsitsheadersmacro.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

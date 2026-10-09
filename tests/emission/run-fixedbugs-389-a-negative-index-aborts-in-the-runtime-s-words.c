@@ -89,28 +89,10 @@ void h_fixedbugs389anegativeindexabortsintheruntimeswords_main(void);
 
 #line 5 "tests/golden/run/fixedbugs-389-a-negative-index-aborts-in-the-runtime-s-words.hero"
 void h_fixedbugs389anegativeindexabortsintheruntimeswords_main(void) {
-#line 93 "fixedbugs389anegativeindexabortsintheruntimeswords.c"
-    HeroArrayHeader * h0_xs = {0};
-    int64_t h1_at;
-    HeroArrayHeader * h2_own2 = {0};
-    int64_t t1;
-    int64_t t2;
-    int64_t t3;
-    HeroArrayHeader * t4;
-    int64_t t5;
-    int64_t t6;
-    int64_t t7;
-    HeroArrayHeader * t8;
-    int64_t t9;
-    int64_t t10;
-    HeroArrayHeader * t11;
-    int64_t t12;
-    int64_t t13;
-    HeroArrayHeader * t14;
-    HeroArrayHeader * t15;
-    goto bb0;
+#line 5 "tests/golden/run/fixedbugs-389-a-negative-index-aborts-in-the-runtime-s-words.hero"
+    HeroArrayHeader * h0_xs = {0}; int64_t h1_at; HeroArrayHeader * h2_own2 = {0}; int64_t t1; int64_t t2; int64_t t3; HeroArrayHeader * t4; int64_t t5; int64_t t6; int64_t t7; HeroArrayHeader * t8; int64_t t9; int64_t t10; HeroArrayHeader * t11; int64_t t12; int64_t t13; HeroArrayHeader * t14; HeroArrayHeader * t15; goto bb0;
+#line 5 "tests/golden/run/fixedbugs-389-a-negative-index-aborts-in-the-runtime-s-words.hero"
 bb0:
-#line 6 "tests/golden/run/fixedbugs-389-a-negative-index-aborts-in-the-runtime-s-words.hero"
     t1 = INT64_C(10);
 #line 6 "tests/golden/run/fixedbugs-389-a-negative-index-aborts-in-the-runtime-s-words.hero"
     t2 = INT64_C(20);
@@ -163,7 +145,7 @@ bb0:
     hero_print_int(t13);
 #line 9 "tests/golden/run/fixedbugs-389-a-negative-index-aborts-in-the-runtime-s-words.hero"
     hero_print_end();
-#line 167 "fixedbugs389anegativeindexabortsintheruntimeswords.c"
+#line 149 "fixedbugs389anegativeindexabortsintheruntimeswords.c"
     hero_array_release_at(&h0_xs);
     hero_array_release_at(&h2_own2);
     return;

@@ -101,23 +101,10 @@ void h_fixedbugs245astrccopiesholdinganulstops_main(void);
 
 #line 13 "tests/golden/run/fixedbugs-245-a-str-c-copies-holding-a-nul-stops.hero"
 void h_fixedbugs245astrccopiesholdinganulstops_main(void) {
-#line 105 "fixedbugs245astrccopiesholdinganulstops.c"
-    HeroStr h0_made = {0};
-    HeroStr h1_own1 = {0};
-    HeroStr t1;
-    HeroStr t2;
-    HeroStr t3;
-    int64_t t4;
-    HeroStr t5;
-    HeroStr t6;
-    HeroStr t7;
-    const char * t8;
-    uint64_t t9;
-    HeroStr t10;
-    HeroStr t11;
-    goto bb0;
+#line 13 "tests/golden/run/fixedbugs-245-a-str-c-copies-holding-a-nul-stops.hero"
+    HeroStr h0_made = {0}; HeroStr h1_own1 = {0}; HeroStr t1; HeroStr t2; HeroStr t3; int64_t t4; HeroStr t5; HeroStr t6; HeroStr t7; const char * t8; uint64_t t9; HeroStr t10; HeroStr t11; goto bb0;
+#line 13 "tests/golden/run/fixedbugs-245-a-str-c-copies-holding-a-nul-stops.hero"
 bb0:
-#line 14 "tests/golden/run/fixedbugs-245-a-str-c-copies-holding-a-nul-stops.hero"
     t1 = made_by_c();
 #line 14 "tests/golden/run/fixedbugs-245-a-str-c-copies-holding-a-nul-stops.hero"
     t10 = h1_own1;
@@ -161,7 +148,7 @@ bb0:
     hero_print_uint(t9);
 #line 16 "tests/golden/run/fixedbugs-245-a-str-c-copies-holding-a-nul-stops.hero"
     hero_print_end();
-#line 165 "fixedbugs245astrccopiesholdinganulstops.c"
+#line 152 "fixedbugs245astrccopiesholdinganulstops.c"
     hero_str_release_at(&h0_made);
     hero_str_release_at(&h1_own1);
     return;

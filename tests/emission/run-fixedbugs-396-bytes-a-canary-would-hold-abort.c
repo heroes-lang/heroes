@@ -98,20 +98,10 @@ void h_fixedbugs396bytesacanarywouldholdabort_main(void);
 
 #line 10 "tests/golden/run/fixedbugs-396-bytes-a-canary-would-hold-abort.hero"
 void h_fixedbugs396bytesacanarywouldholdabort_main(void) {
-#line 102 "fixedbugs396bytesacanarywouldholdabort.c"
-    HeroArrayHeader * h0_s = {0};
-    HeroArrayHeader * h1_own1 = {0};
-    HeroArrayHeader * t1;
-    HeroStr t2;
-    int32_t t3;
-    HeroStr t4;
-    HeroArrayHeader * t5;
-    int64_t t6;
-    HeroArrayHeader * t7;
-    HeroArrayHeader * t8;
-    goto bb0;
+#line 10 "tests/golden/run/fixedbugs-396-bytes-a-canary-would-hold-abort.hero"
+    HeroArrayHeader * h0_s = {0}; HeroArrayHeader * h1_own1 = {0}; HeroArrayHeader * t1; HeroStr t2; int32_t t3; HeroStr t4; HeroArrayHeader * t5; int64_t t6; HeroArrayHeader * t7; HeroArrayHeader * t8; goto bb0;
+#line 10 "tests/golden/run/fixedbugs-396-bytes-a-canary-would-hold-abort.hero"
 bb0:
-#line 11 "tests/golden/run/fixedbugs-396-bytes-a-canary-would-hold-abort.hero"
     t1 = hero_array_new(&hero_desc_i8, 1);
 #line 11 "tests/golden/run/fixedbugs-396-bytes-a-canary-would-hold-abort.hero"
     t7 = h1_own1;
@@ -158,7 +148,7 @@ bb0:
     hero_print_int(t6);
 #line 14 "tests/golden/run/fixedbugs-396-bytes-a-canary-would-hold-abort.hero"
     hero_print_end();
-#line 162 "fixedbugs396bytesacanarywouldholdabort.c"
+#line 152 "fixedbugs396bytesacanarywouldholdabort.c"
     hero_array_release_at(&h0_s);
     hero_array_release_at(&h1_own1);
     return;

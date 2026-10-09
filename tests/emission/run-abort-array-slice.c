@@ -89,32 +89,10 @@ void h_abortarrayslice_main(void);
 
 #line 5 "tests/golden/run/abort-array-slice.hero"
 void h_abortarrayslice_main(void) {
-#line 93 "abortarrayslice.c"
-    HeroArrayHeader * h0_xs = {0};
-    HeroArrayHeader * h1_own1 = {0};
-    HeroArrayHeader * h2_own2 = {0};
-    HeroArrayHeader * h3_own3 = {0};
-    int64_t t1;
-    int64_t t2;
-    int64_t t3;
-    HeroArrayHeader * t4;
-    HeroArrayHeader * t5;
-    int64_t t6;
-    int64_t t7;
-    HeroArrayHeader * t8;
-    int64_t t9;
-    HeroArrayHeader * t10;
-    int64_t t11;
-    int64_t t12;
-    HeroArrayHeader * t13;
-    int64_t t14;
-    HeroArrayHeader * t15;
-    HeroArrayHeader * t16;
-    HeroArrayHeader * t17;
-    HeroArrayHeader * t18;
-    goto bb0;
+#line 5 "tests/golden/run/abort-array-slice.hero"
+    HeroArrayHeader * h0_xs = {0}; HeroArrayHeader * h1_own1 = {0}; HeroArrayHeader * h2_own2 = {0}; HeroArrayHeader * h3_own3 = {0}; int64_t t1; int64_t t2; int64_t t3; HeroArrayHeader * t4; HeroArrayHeader * t5; int64_t t6; int64_t t7; HeroArrayHeader * t8; int64_t t9; HeroArrayHeader * t10; int64_t t11; int64_t t12; HeroArrayHeader * t13; int64_t t14; HeroArrayHeader * t15; HeroArrayHeader * t16; HeroArrayHeader * t17; HeroArrayHeader * t18; goto bb0;
+#line 5 "tests/golden/run/abort-array-slice.hero"
 bb0:
-#line 6 "tests/golden/run/abort-array-slice.hero"
     t1 = INT64_C(10);
 #line 6 "tests/golden/run/abort-array-slice.hero"
     t2 = INT64_C(20);
@@ -180,7 +158,7 @@ bb0:
     hero_print_int(t14);
 #line 8 "tests/golden/run/abort-array-slice.hero"
     hero_print_end();
-#line 184 "abortarrayslice.c"
+#line 162 "abortarrayslice.c"
     hero_array_release_at(&h0_xs);
     hero_array_release_at(&h1_own1);
     hero_array_release_at(&h2_own2);

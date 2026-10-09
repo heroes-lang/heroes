@@ -49,7 +49,6 @@ use check/table
 use check/state
 use ir/containers
 use emit/externs as emit_externs
-use emit/writer
 use parse
 use resolve
 use checker
@@ -136,11 +135,13 @@ function takes_a_callback(p: containers.Program, c: state.Checked, decls: [ast.D
 # program did not start` is looking at a .hero file and never at the C, and
 # panel 104's stack guard pays a whole un-mangler at run time for the same
 # sentence because it has only a symbol to work from. Here the compiler knows.
-function entry(@w: writer.Writer, s: source.Source, f: containers.Function, guarded_decls: {i64: bool})
+# Returned as a statement, "" for a function no thread can reach unguarded:
+# the prologue's line carries it first (`emit/body.hero`, defect 472).
+function entry(s: source.Source, f: containers.Function, guarded_decls: {i64: bool}) -> str
     if guarded_decls[f.decl].is_err()
-        return
+        return ""
     who = source.component_at(s, f.span.start) + "." + f.name
-    writer.line(@w, text: "    hero_thread_guard(\"" + who + "\");")
+    return "hero_thread_guard(\"" + who + "\");"
 
 ## Tests
 

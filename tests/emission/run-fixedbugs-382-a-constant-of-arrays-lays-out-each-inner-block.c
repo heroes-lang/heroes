@@ -109,27 +109,10 @@ HeroArrayHeader * h_fixedbugs382aconstantofarrayslaysouteachinnerblock_GRID(void
 
 #line 8 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
 HeroArrayHeader * h_fixedbugs382aconstantofarrayslaysouteachinnerblock_GRID(void) {
-#line 113 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
-    HeroArrayHeader * h0_own0 = {0};
-    HeroArrayHeader * h1_own1 = {0};
-    HeroArrayHeader * h2_own2 = {0};
-    HeroArrayHeader * h3_own3 = {0};
-    int64_t t1;
-    int64_t t2;
-    HeroArrayHeader * t3;
-    HeroArrayHeader * t4;
-    int64_t t5;
-    int64_t t6;
-    int64_t t7;
-    HeroArrayHeader * t8;
-    HeroArrayHeader * t9;
-    HeroArrayHeader * t10;
-    HeroArrayHeader * t11;
-    HeroArrayHeader * t12;
-    HeroArrayHeader * t13;
-    goto bb0;
+#line 8 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
+    HeroArrayHeader * h0_own0 = {0}; HeroArrayHeader * h1_own1 = {0}; HeroArrayHeader * h2_own2 = {0}; HeroArrayHeader * h3_own3 = {0}; int64_t t1; int64_t t2; HeroArrayHeader * t3; HeroArrayHeader * t4; int64_t t5; int64_t t6; int64_t t7; HeroArrayHeader * t8; HeroArrayHeader * t9; HeroArrayHeader * t10; HeroArrayHeader * t11; HeroArrayHeader * t12; HeroArrayHeader * t13; goto bb0;
+#line 8 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
 bb0:
-#line 9 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     t1 = INT64_C(1);
 #line 9 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     t2 = INT64_C(2);
@@ -187,7 +170,7 @@ bb0:
     h3_own3 = t9;
 #line 9 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     hero_array_decref(t13);
-#line 191 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
+#line 174 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
     hero_array_incref(t9);
     hero_array_release_at(&h0_own0);
     hero_array_release_at(&h1_own1);
@@ -216,45 +199,17 @@ HERO_ARRAY_STATIC(hero_constant_h_fixedbugs382aconstantofarrayslaysouteachinnerb
 HERO_ARRAY_STATIC(hero_constant_h_fixedbugs382aconstantofarrayslaysouteachinnerblock_DEEP_12, HeroArrayHeader *, &hero_desc_array, 3, HERO_ARRAY_LIT(hero_constant_h_fixedbugs382aconstantofarrayslaysouteachinnerblock_DEEP_4), HERO_ARRAY_LIT(hero_constant_h_fixedbugs382aconstantofarrayslaysouteachinnerblock_DEEP_5), HERO_ARRAY_LIT(hero_constant_h_fixedbugs382aconstantofarrayslaysouteachinnerblock_DEEP_11));
 #line 11 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
 HeroArrayHeader * h_fixedbugs382aconstantofarrayslaysouteachinnerblock_DEEP(void) {
-#line 220 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
+#line 203 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
     return HERO_ARRAY_LIT(hero_constant_h_fixedbugs382aconstantofarrayslaysouteachinnerblock_DEEP_12);
 }
 #else
 
 #line 11 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
 HeroArrayHeader * h_fixedbugs382aconstantofarrayslaysouteachinnerblock_DEEP(void) {
-#line 227 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
-    HeroArrayHeader * h0_own0 = {0};
-    HeroArrayHeader * h1_own1 = {0};
-    HeroArrayHeader * h2_own2 = {0};
-    HeroArrayHeader * h3_own3 = {0};
-    HeroArrayHeader * h4_own4 = {0};
-    HeroArrayHeader * h5_own5 = {0};
-    HeroArrayHeader * h6_own6 = {0};
-    HeroArrayHeader * h7_own7 = {0};
-    int64_t t1;
-    HeroArrayHeader * t2;
-    HeroArrayHeader * t3;
-    HeroArrayHeader * t4;
-    HeroArrayHeader * t5;
-    int64_t t6;
-    int64_t t7;
-    HeroArrayHeader * t8;
-    int64_t t9;
-    HeroArrayHeader * t10;
-    HeroArrayHeader * t11;
-    HeroArrayHeader * t12;
-    HeroArrayHeader * t13;
-    HeroArrayHeader * t14;
-    HeroArrayHeader * t15;
-    HeroArrayHeader * t16;
-    HeroArrayHeader * t17;
-    HeroArrayHeader * t18;
-    HeroArrayHeader * t19;
-    HeroArrayHeader * t20;
-    goto bb0;
+#line 11 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
+    HeroArrayHeader * h0_own0 = {0}; HeroArrayHeader * h1_own1 = {0}; HeroArrayHeader * h2_own2 = {0}; HeroArrayHeader * h3_own3 = {0}; HeroArrayHeader * h4_own4 = {0}; HeroArrayHeader * h5_own5 = {0}; HeroArrayHeader * h6_own6 = {0}; HeroArrayHeader * h7_own7 = {0}; int64_t t1; HeroArrayHeader * t2; HeroArrayHeader * t3; HeroArrayHeader * t4; HeroArrayHeader * t5; int64_t t6; int64_t t7; HeroArrayHeader * t8; int64_t t9; HeroArrayHeader * t10; HeroArrayHeader * t11; HeroArrayHeader * t12; HeroArrayHeader * t13; HeroArrayHeader * t14; HeroArrayHeader * t15; HeroArrayHeader * t16; HeroArrayHeader * t17; HeroArrayHeader * t18; HeroArrayHeader * t19; HeroArrayHeader * t20; goto bb0;
+#line 11 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
 bb0:
-#line 12 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     t1 = INT64_C(1);
 #line 12 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     t2 = hero_array_new(&hero_desc_int, 1);
@@ -348,7 +303,7 @@ bb0:
     h7_own7 = t12;
 #line 12 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     hero_array_decref(t20);
-#line 352 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
+#line 307 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
     hero_array_incref(t12);
     hero_array_release_at(&h0_own0);
     hero_array_release_at(&h1_own1);
@@ -364,178 +319,10 @@ bb0:
 
 #line 14 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
 void h_fixedbugs382aconstantofarrayslaysouteachinnerblock_main(void) {
-#line 368 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
-    int64_t h0_cells;
-    int64_t h1_at;
-    HeroArrayHeader * h2_ys = {0};
-    HeroArrayHeader * h3_zs = {0};
-    HeroArrayHeader * h4_own4 = {0};
-    HeroArrayHeader * h5_own5 = {0};
-    HeroArrayHeader * h6_own6 = {0};
-    HeroArrayHeader * h7_own7 = {0};
-    HeroArrayHeader * h8_own8 = {0};
-    HeroArrayHeader * h9_own9 = {0};
-    HeroArrayHeader * h10_own10 = {0};
-    HeroArrayHeader * h11_own11 = {0};
-    HeroArrayHeader * h12_own12 = {0};
-    HeroArrayHeader * h13_own13 = {0};
-    HeroArrayHeader * h14_own14 = {0};
-    HeroArrayHeader * h15_own15 = {0};
-    HeroArrayHeader * h16_own16 = {0};
-    HeroArrayHeader * h17_own17 = {0};
-    HeroArrayHeader * h18_own18 = {0};
-    HeroArrayHeader * h19_own19 = {0};
-    HeroArrayHeader * h20_own20 = {0};
-    HeroArrayHeader * h21_own21 = {0};
-    HeroArrayHeader * h22_own22 = {0};
-    int64_t t1;
-    int64_t t2;
-    int64_t t3;
-    int64_t t4;
-    bool t5;
-    int64_t t6;
-    HeroArrayHeader * t7;
-    int64_t t8;
-    int64_t t9;
-    int64_t t10;
-    HeroArrayHeader * t11;
-    int64_t t12;
-    int64_t t13;
-    HeroArrayHeader * t14;
-    int64_t t15;
-    int64_t t16;
-    int64_t t17;
-    HeroArrayHeader * t18;
-    int64_t t19;
-    int64_t t20;
-    int64_t t21;
-    int64_t t22;
-    int64_t t23;
-    int64_t t24;
-    HeroStr t25;
-    HeroArrayHeader * t26;
-    int64_t t27;
-    HeroArrayHeader * t28;
-    int64_t t29;
-    int64_t t30;
-    HeroStr t31;
-    HeroArrayHeader * t32;
-    int64_t t33;
-    HeroArrayHeader * t34;
-    int64_t t35;
-    HeroStr t36;
-    HeroArrayHeader * t37;
-    int64_t t38;
-    HeroArrayHeader * t39;
-    int64_t t40;
-    HeroArrayHeader * t41;
-    int64_t t42;
-    int64_t t43;
-    HeroStr t44;
-    HeroArrayHeader * t45;
-    int64_t t46;
-    HeroArrayHeader * t47;
-    int64_t t48;
-    HeroArrayHeader * t49;
-    int64_t t50;
-    HeroArrayHeader * t51;
-    int64_t t52;
-    int64_t t53;
-    int64_t t54;
-    int64_t t55;
-    HeroArrayHeader * t56;
-    int64_t t57;
-    HeroArrayHeader * t58;
-    int64_t t59;
-    HeroArrayHeader * t60;
-    HeroArrayHeader * t61;
-    int64_t t62;
-    HeroArrayHeader * t63;
-    int64_t t64;
-    int64_t t65;
-    HeroStr t66;
-    HeroArrayHeader * t67;
-    int64_t t68;
-    HeroArrayHeader * t69;
-    int64_t t70;
-    int64_t t71;
-    HeroStr t72;
-    HeroArrayHeader * t73;
-    int64_t t74;
-    HeroArrayHeader * t75;
-    int64_t t76;
-    int64_t t77;
-    HeroStr t78;
-    HeroArrayHeader * t79;
-    int64_t t80;
-    HeroArrayHeader * t81;
-    int64_t t82;
-    HeroArrayHeader * t83;
-    int64_t t84;
-    int64_t t85;
-    int64_t t86;
-    int64_t t87;
-    HeroArrayHeader * t88;
-    int64_t t89;
-    HeroArrayHeader * t90;
-    int64_t t91;
-    HeroArrayHeader * t92;
-    int64_t t93;
-    int64_t t94;
-    HeroStr t95;
-    HeroArrayHeader * t96;
-    int64_t t97;
-    HeroArrayHeader * t98;
-    int64_t t99;
-    HeroArrayHeader * t100;
-    int64_t t101;
-    int64_t t102;
-    HeroStr t103;
-    HeroArrayHeader * t104;
-    int64_t t105;
-    int64_t t106;
-    HeroArrayHeader * t107;
-    HeroArrayHeader * t108;
-    int64_t t109;
-    int64_t t110;
-    int64_t t111;
-    HeroArrayHeader * t112;
-    HeroArrayHeader * t113;
-    bool t114;
-    HeroStr t115;
-    HeroArrayHeader * t116;
-    int64_t t117;
-    HeroArrayHeader * t118;
-    HeroArrayHeader * t119;
-    int64_t t120;
-    HeroArrayHeader * t121;
-    int64_t t122;
-    HeroArrayHeader * t123;
-    bool t124;
-    HeroArrayHeader * t125;
-    HeroArrayHeader * t126;
-    HeroArrayHeader * t127;
-    HeroArrayHeader * t128;
-    HeroArrayHeader * t129;
-    HeroArrayHeader * t130;
-    HeroArrayHeader * t131;
-    HeroArrayHeader * t132;
-    HeroArrayHeader * t133;
-    HeroArrayHeader * t134;
-    HeroArrayHeader * t135;
-    HeroArrayHeader * t136;
-    HeroArrayHeader * t137;
-    HeroArrayHeader * t138;
-    HeroArrayHeader * t139;
-    HeroArrayHeader * t140;
-    HeroArrayHeader * t141;
-    HeroArrayHeader * t142;
-    HeroArrayHeader * t143;
-    HeroArrayHeader * t144;
-    HeroArrayHeader * t145;
-    goto bb0;
+#line 14 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
+    int64_t h0_cells; int64_t h1_at; HeroArrayHeader * h2_ys = {0}; HeroArrayHeader * h3_zs = {0}; HeroArrayHeader * h4_own4 = {0}; HeroArrayHeader * h5_own5 = {0}; HeroArrayHeader * h6_own6 = {0}; HeroArrayHeader * h7_own7 = {0}; HeroArrayHeader * h8_own8 = {0}; HeroArrayHeader * h9_own9 = {0}; HeroArrayHeader * h10_own10 = {0}; HeroArrayHeader * h11_own11 = {0}; HeroArrayHeader * h12_own12 = {0}; HeroArrayHeader * h13_own13 = {0}; HeroArrayHeader * h14_own14 = {0}; HeroArrayHeader * h15_own15 = {0}; HeroArrayHeader * h16_own16 = {0}; HeroArrayHeader * h17_own17 = {0}; HeroArrayHeader * h18_own18 = {0}; HeroArrayHeader * h19_own19 = {0}; HeroArrayHeader * h20_own20 = {0}; HeroArrayHeader * h21_own21 = {0}; HeroArrayHeader * h22_own22 = {0}; int64_t t1; int64_t t2; int64_t t3; int64_t t4; bool t5; int64_t t6; HeroArrayHeader * t7; int64_t t8; int64_t t9; int64_t t10; HeroArrayHeader * t11; int64_t t12; int64_t t13; HeroArrayHeader * t14; int64_t t15; int64_t t16; int64_t t17; HeroArrayHeader * t18; int64_t t19; int64_t t20; int64_t t21; int64_t t22; int64_t t23; int64_t t24; HeroStr t25; HeroArrayHeader * t26; int64_t t27; HeroArrayHeader * t28; int64_t t29; int64_t t30; HeroStr t31; HeroArrayHeader * t32; int64_t t33; HeroArrayHeader * t34; int64_t t35; HeroStr t36; HeroArrayHeader * t37; int64_t t38; HeroArrayHeader * t39; int64_t t40; HeroArrayHeader * t41; int64_t t42; int64_t t43; HeroStr t44; HeroArrayHeader * t45; int64_t t46; HeroArrayHeader * t47; int64_t t48; HeroArrayHeader * t49; int64_t t50; HeroArrayHeader * t51; int64_t t52; int64_t t53; int64_t t54; int64_t t55; HeroArrayHeader * t56; int64_t t57; HeroArrayHeader * t58; int64_t t59; HeroArrayHeader * t60; HeroArrayHeader * t61; int64_t t62; HeroArrayHeader * t63; int64_t t64; int64_t t65; HeroStr t66; HeroArrayHeader * t67; int64_t t68; HeroArrayHeader * t69; int64_t t70; int64_t t71; HeroStr t72; HeroArrayHeader * t73; int64_t t74; HeroArrayHeader * t75; int64_t t76; int64_t t77; HeroStr t78; HeroArrayHeader * t79; int64_t t80; HeroArrayHeader * t81; int64_t t82; HeroArrayHeader * t83; int64_t t84; int64_t t85; int64_t t86; int64_t t87; HeroArrayHeader * t88; int64_t t89; HeroArrayHeader * t90; int64_t t91; HeroArrayHeader * t92; int64_t t93; int64_t t94; HeroStr t95; HeroArrayHeader * t96; int64_t t97; HeroArrayHeader * t98; int64_t t99; HeroArrayHeader * t100; int64_t t101; int64_t t102; HeroStr t103; HeroArrayHeader * t104; int64_t t105; int64_t t106; HeroArrayHeader * t107; HeroArrayHeader * t108; int64_t t109; int64_t t110; int64_t t111; HeroArrayHeader * t112; HeroArrayHeader * t113; bool t114; HeroStr t115; HeroArrayHeader * t116; int64_t t117; HeroArrayHeader * t118; HeroArrayHeader * t119; int64_t t120; HeroArrayHeader * t121; int64_t t122; HeroArrayHeader * t123; bool t124; HeroArrayHeader * t125; HeroArrayHeader * t126; HeroArrayHeader * t127; HeroArrayHeader * t128; HeroArrayHeader * t129; HeroArrayHeader * t130; HeroArrayHeader * t131; HeroArrayHeader * t132; HeroArrayHeader * t133; HeroArrayHeader * t134; HeroArrayHeader * t135; HeroArrayHeader * t136; HeroArrayHeader * t137; HeroArrayHeader * t138; HeroArrayHeader * t139; HeroArrayHeader * t140; HeroArrayHeader * t141; HeroArrayHeader * t142; HeroArrayHeader * t143; HeroArrayHeader * t144; HeroArrayHeader * t145; goto bb0;
+#line 14 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
 bb0:
-#line 15 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     t1 = INT64_C(0);
 #line 15 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     h0_cells = t1;
@@ -1013,7 +800,7 @@ bb3:
     hero_print_bool(t124);
 #line 29 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     hero_print_end();
-#line 1017 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
+#line 804 "fixedbugs382aconstantofarrayslaysouteachinnerblock.c"
     hero_array_release_at(&h2_ys);
     hero_array_release_at(&h3_zs);
     hero_array_release_at(&h4_own4);

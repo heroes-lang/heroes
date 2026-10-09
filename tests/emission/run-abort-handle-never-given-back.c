@@ -102,22 +102,10 @@ void h_aborthandlenevergivenback_main(void);
 
 #line 20 "tests/golden/run/abort-handle-never-given-back.hero"
 void h_aborthandlenevergivenback_main(void) {
-#line 106 "aborthandlenevergivenback.c"
-    Slot * h0_a;
-    Slot * h1_b;
-    int64_t t1;
-    Slot * t2;
-    int64_t t3;
-    Slot * t4;
-    Slot * t5;
-    int64_t t6;
-    Slot * t7;
-    int64_t t8;
-    int64_t t9;
-    Slot * t10;
-    goto bb0;
+#line 20 "tests/golden/run/abort-handle-never-given-back.hero"
+    Slot * h0_a; Slot * h1_b; int64_t t1; Slot * t2; int64_t t3; Slot * t4; Slot * t5; int64_t t6; Slot * t7; int64_t t8; int64_t t9; Slot * t10; goto bb0;
+#line 20 "tests/golden/run/abort-handle-never-given-back.hero"
 bb0:
-#line 21 "tests/golden/run/abort-handle-never-given-back.hero"
     t1 = INT64_C(7);
 #line 21 "tests/golden/run/abort-handle-never-given-back.hero"
     t2 = slot_open(t1);
@@ -164,7 +152,7 @@ bb0:
     }
 #line 24 "tests/golden/run/abort-handle-never-given-back.hero"
     return;
-#line 168 "aborthandlenevergivenback.c"
+#line 156 "aborthandlenevergivenback.c"
 }
 HERO_TU_LOCAL bool h_aborthandlenevergivenback_Slot_eq(Slot * const *a, Slot * const *b) {
     return hero_handle_eq(*a, *b);

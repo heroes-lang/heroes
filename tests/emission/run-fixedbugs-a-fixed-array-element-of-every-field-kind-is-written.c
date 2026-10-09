@@ -126,43 +126,9 @@ void h_fixedbugsafixedarrayelementofeveryfieldkindiswritten_main(void);
 
 #line 24 "tests/golden/run/fixedbugs-a-fixed-array-element-of-every-field-kind-is-written.hero"
 void h_fixedbugsafixedarrayelementofeveryfieldkindiswritten_main(void) {
-#line 130 "fixedbugsafixedarrayelementofeveryfieldkindiswritten.c"
-    struct kinds h0_k;
-    uint8_t t1;
-    uint8_t t2;
-    uint8_t t3;
-    uint8_t t4;
-    uint8_t t5;
-    uint8_t t6;
-    uint8_t t7;
-    uint8_t t8;
-    bool t10;
-    bool t11;
-    float t13;
-    float t14;
-    void * t16;
-    void * t17;
-    const char * t19;
-    const char * t20;
-    int16_t t22;
-    int16_t t23;
-    int16_t t24;
-    struct kinds t26;
-    int64_t t27;
-    uint8_t t28;
-    int64_t t29;
-    bool t30;
-    int64_t t31;
-    float t32;
-    int64_t t33;
-    void * t34;
-    int64_t t35;
-    const char * t36;
-    int64_t t37;
-    int16_t t38;
-    struct kinds t39;
-    int64_t t40;
-    goto bb0;
+#line 24 "tests/golden/run/fixedbugs-a-fixed-array-element-of-every-field-kind-is-written.hero"
+    struct kinds h0_k; uint8_t t1; uint8_t t2; uint8_t t3; uint8_t t4; uint8_t t5; uint8_t t6; uint8_t t7; uint8_t t8; bool t10; bool t11; float t13; float t14; void * t16; void * t17; const char * t19; const char * t20; int16_t t22; int16_t t23; int16_t t24; struct kinds t26; int64_t t27; uint8_t t28; int64_t t29; bool t30; int64_t t31; float t32; int64_t t33; void * t34; int64_t t35; const char * t36; int64_t t37; int16_t t38; struct kinds t39; int64_t t40; goto bb0;
+#line 24 "tests/golden/run/fixedbugs-a-fixed-array-element-of-every-field-kind-is-written.hero"
 bb0:
 #line 26 "tests/golden/run/fixedbugs-a-fixed-array-element-of-every-field-kind-is-written.hero"
     t1 = UINT64_C(0);
@@ -241,7 +207,7 @@ bb0:
     hero_print_end();
 #line 39 "tests/golden/run/fixedbugs-a-fixed-array-element-of-every-field-kind-is-written.hero"
     return;
-#line 245 "fixedbugsafixedarrayelementofeveryfieldkindiswritten.c"
+#line 211 "fixedbugsafixedarrayelementofeveryfieldkindiswritten.c"
 }
 HERO_TU_LOCAL bool h_fixedbugsafixedarrayelementofeveryfieldkindiswritten_Kinds_eq(const struct kinds *a, const struct kinds *b) {
     if (!((a->name[0] == b->name[0] && a->name[1] == b->name[1] && a->name[2] == b->name[2] && a->name[3] == b->name[3] && a->name[4] == b->name[4] && a->name[5] == b->name[5] && a->name[6] == b->name[6] && a->name[7] == b->name[7]))) return false;

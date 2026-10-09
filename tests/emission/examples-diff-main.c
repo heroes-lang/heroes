@@ -174,107 +174,10 @@ void h_main_main(void);
 
 #line 38 "examples/diff/main.hero"
 HeroArrayHeader * h_main_table(HeroArrayHeader * h0_old, HeroArrayHeader * h1_new) {
-#line 178 "main.c"
-    HeroArrayHeader * h2_same = {0};
-    int64_t h3_i;
-    HeroArrayHeader * h4_row = {0};
-    int64_t h5_j;
-    int64_t h6_j;
-    int64_t h7_left;
-    int64_t h8_up;
-    int64_t h9_r0;
-    HeroArrayHeader * h10_own10 = {0};
-    HeroArrayHeader * h11_own11 = {0};
-    HeroArrayHeader * t1;
-    int64_t t2;
-    int64_t t3;
-    HeroArrayHeader * t4;
-    int64_t t5;
-    bool t6;
-    HeroArrayHeader * t7;
-    int64_t t8;
-    int64_t t9;
-    HeroArrayHeader * t10;
-    int64_t t11;
-    bool t12;
-    int64_t t14;
-    int64_t t16;
-    int64_t t17;
-    int64_t t18;
-    HeroArrayHeader * t20;
-    int64_t t22;
-    int64_t t23;
-    int64_t t24;
-    int64_t t25;
-    int64_t t26;
-    HeroArrayHeader * t27;
-    int64_t t28;
-    bool t29;
-    int64_t t30;
-    int64_t t31;
-    HeroArrayHeader * t32;
-    int64_t t33;
-    bool t34;
-    HeroArrayHeader * t35;
-    int64_t t36;
-    int64_t t37;
-    int64_t t38;
-    HeroStr t39;
-    HeroArrayHeader * t40;
-    int64_t t41;
-    int64_t t42;
-    int64_t t43;
-    HeroStr t44;
-    bool t45;
-    int64_t t46;
-    int64_t t47;
-    HeroArrayHeader * t48;
-    int64_t t49;
-    int64_t t50;
-    int64_t t51;
-    HeroArrayHeader * t52;
-    int64_t t53;
-    int64_t t54;
-    int64_t t55;
-    int64_t t56;
-    int64_t t57;
-    int64_t t58;
-    HeroArrayHeader * t59;
-    int64_t t60;
-    HeroArrayHeader * t61;
-    int64_t t62;
-    int64_t t63;
-    int64_t t64;
-    int64_t t65;
-    HeroArrayHeader * t66;
-    int64_t t67;
-    int64_t t68;
-    int64_t t69;
-    HeroArrayHeader * t70;
-    int64_t t71;
-    int64_t t72;
-    int64_t t73;
-    int64_t t74;
-    int64_t t75;
-    int64_t t76;
-    bool t77;
-    int64_t t78;
-    int64_t t79;
-    int64_t t80;
-    int64_t t81;
-    int64_t t82;
-    int64_t t83;
-    int64_t t84;
-    int64_t t85;
-    int64_t t86;
-    HeroArrayHeader * t87;
-    HeroArrayHeader * t88;
-    HeroArrayHeader * t89;
-    HeroArrayHeader * t90;
-    HeroArrayHeader * t91;
-    goto bb0;
+#line 38 "examples/diff/main.hero"
+    HeroArrayHeader * h2_same = {0}; int64_t h3_i; HeroArrayHeader * h4_row = {0}; int64_t h5_j; int64_t h6_j; int64_t h7_left; int64_t h8_up; int64_t h9_r0; HeroArrayHeader * h10_own10 = {0}; HeroArrayHeader * h11_own11 = {0}; HeroArrayHeader * t1; int64_t t2; int64_t t3; HeroArrayHeader * t4; int64_t t5; bool t6; HeroArrayHeader * t7; int64_t t8; int64_t t9; HeroArrayHeader * t10; int64_t t11; bool t12; int64_t t14; int64_t t16; int64_t t17; int64_t t18; HeroArrayHeader * t20; int64_t t22; int64_t t23; int64_t t24; int64_t t25; int64_t t26; HeroArrayHeader * t27; int64_t t28; bool t29; int64_t t30; int64_t t31; HeroArrayHeader * t32; int64_t t33; bool t34; HeroArrayHeader * t35; int64_t t36; int64_t t37; int64_t t38; HeroStr t39; HeroArrayHeader * t40; int64_t t41; int64_t t42; int64_t t43; HeroStr t44; bool t45; int64_t t46; int64_t t47; HeroArrayHeader * t48; int64_t t49; int64_t t50; int64_t t51; HeroArrayHeader * t52; int64_t t53; int64_t t54; int64_t t55; int64_t t56; int64_t t57; int64_t t58; HeroArrayHeader * t59; int64_t t60; HeroArrayHeader * t61; int64_t t62; int64_t t63; int64_t t64; int64_t t65; HeroArrayHeader * t66; int64_t t67; int64_t t68; int64_t t69; HeroArrayHeader * t70; int64_t t71; int64_t t72; int64_t t73; int64_t t74; int64_t t75; int64_t t76; bool t77; int64_t t78; int64_t t79; int64_t t80; int64_t t81; int64_t t82; int64_t t83; int64_t t84; int64_t t85; int64_t t86; HeroArrayHeader * t87; HeroArrayHeader * t88; HeroArrayHeader * t89; HeroArrayHeader * t90; HeroArrayHeader * t91; goto bb0;
+#line 38 "examples/diff/main.hero"
 bb0:
-#line 39 "examples/diff/main.hero"
     t1 = hero_array_new(&hero_desc_array, 1);
 #line 39 "examples/diff/main.hero"
     t88 = h10_own10;
@@ -401,7 +304,7 @@ bb8:
 bb9:
 #line 73 "examples/diff/main.hero"
     t87 = h2_same;
-#line 405 "main.c"
+#line 308 "main.c"
     hero_array_incref(t87);
     hero_array_release_at(&h2_same);
     hero_array_release_at(&h4_row);
@@ -572,143 +475,15 @@ bb18:
     h9_r0 = t79;
 #line 65 "examples/diff/main.hero"
     goto bb16;
-#line 576 "main.c"
+#line 479 "main.c"
 }
 
 #line 78 "examples/diff/main.hero"
 HeroArrayHeader * h_main_edits(HeroArrayHeader * h0_old, HeroArrayHeader * h1_new) {
-#line 581 "main.c"
-    HeroArrayHeader * h2_same = {0};
-    HeroArrayHeader * h3_backwards = {0};
-    int64_t h4_i;
-    int64_t h5_j;
-    bool h6_b0;
-    bool h7_b1;
-    bool h8_b2;
-    bool h9_b3;
-    bool h10_b4;
-    HeroArrayHeader * h11_out = {0};
-    int64_t h12_at;
-    HeroArrayHeader * h13_own13 = {0};
-    HeroArrayHeader * h14_own14 = {0};
-    HeroArrayHeader * h15_own15 = {0};
-    h_main_Edit h16_own16 = {0};
-    h_main_Edit h17_own17 = {0};
-    h_main_Edit h18_own18 = {0};
-    HeroArrayHeader * t1;
-    HeroArrayHeader * t2;
-    HeroArrayHeader * t3;
-    HeroArrayHeader * t4;
-    HeroArrayHeader * t5;
-    int64_t t6;
-    HeroArrayHeader * t7;
-    int64_t t8;
-    int64_t t9;
-    int64_t t10;
-    bool t11;
-    int64_t t12;
-    int64_t t13;
-    bool t14;
-    bool t15;
-    int64_t t16;
-    int64_t t17;
-    bool t18;
-    int64_t t19;
-    int64_t t20;
-    bool t21;
-    bool t22;
-    HeroArrayHeader * t23;
-    int64_t t24;
-    int64_t t25;
-    int64_t t26;
-    HeroStr t27;
-    HeroArrayHeader * t28;
-    int64_t t29;
-    int64_t t30;
-    int64_t t31;
-    HeroStr t32;
-    bool t33;
-    bool t34;
-    HeroArrayHeader * t36;
-    int64_t t37;
-    int64_t t38;
-    int64_t t39;
-    HeroStr t40;
-    h_main_Edit t41;
-    int64_t t43;
-    int64_t t44;
-    int64_t t45;
-    int64_t t46;
-    int64_t t47;
-    int64_t t48;
-    int64_t t49;
-    int64_t t50;
-    bool t51;
-    int64_t t52;
-    int64_t t53;
-    bool t54;
-    HeroArrayHeader * t55;
-    int64_t t56;
-    HeroArrayHeader * t57;
-    int64_t t58;
-    int64_t t59;
-    int64_t t60;
-    int64_t t61;
-    HeroArrayHeader * t62;
-    int64_t t63;
-    int64_t t64;
-    int64_t t65;
-    HeroArrayHeader * t66;
-    int64_t t67;
-    int64_t t68;
-    bool t69;
-    bool t70;
-    bool t71;
-    HeroArrayHeader * t73;
-    int64_t t74;
-    int64_t t75;
-    int64_t t76;
-    HeroStr t77;
-    h_main_Edit t78;
-    int64_t t80;
-    int64_t t81;
-    int64_t t82;
-    HeroArrayHeader * t84;
-    int64_t t85;
-    int64_t t86;
-    int64_t t87;
-    HeroStr t88;
-    h_main_Edit t89;
-    int64_t t91;
-    int64_t t92;
-    int64_t t93;
-    HeroArrayHeader * t94;
-    HeroArrayHeader * t95;
-    int64_t t96;
-    int64_t t97;
-    int64_t t98;
-    int64_t t99;
-    int64_t t100;
-    bool t101;
-    HeroArrayHeader * t103;
-    int64_t t104;
-    h_main_Edit t105;
-    int64_t t107;
-    int64_t t108;
-    int64_t t109;
-    HeroArrayHeader * t110;
-    HeroArrayHeader * t111;
-    HeroArrayHeader * t112;
-    HeroArrayHeader * t113;
-    HeroArrayHeader * t114;
-    HeroArrayHeader * t115;
-    HeroArrayHeader * t116;
-    h_main_Edit t117;
-    h_main_Edit t118;
-    h_main_Edit t119;
-    goto bb0;
+#line 78 "examples/diff/main.hero"
+    HeroArrayHeader * h2_same = {0}; HeroArrayHeader * h3_backwards = {0}; int64_t h4_i; int64_t h5_j; bool h6_b0; bool h7_b1; bool h8_b2; bool h9_b3; bool h10_b4; HeroArrayHeader * h11_out = {0}; int64_t h12_at; HeroArrayHeader * h13_own13 = {0}; HeroArrayHeader * h14_own14 = {0}; HeroArrayHeader * h15_own15 = {0}; h_main_Edit h16_own16 = {0}; h_main_Edit h17_own17 = {0}; h_main_Edit h18_own18 = {0}; HeroArrayHeader * t1; HeroArrayHeader * t2; HeroArrayHeader * t3; HeroArrayHeader * t4; HeroArrayHeader * t5; int64_t t6; HeroArrayHeader * t7; int64_t t8; int64_t t9; int64_t t10; bool t11; int64_t t12; int64_t t13; bool t14; bool t15; int64_t t16; int64_t t17; bool t18; int64_t t19; int64_t t20; bool t21; bool t22; HeroArrayHeader * t23; int64_t t24; int64_t t25; int64_t t26; HeroStr t27; HeroArrayHeader * t28; int64_t t29; int64_t t30; int64_t t31; HeroStr t32; bool t33; bool t34; HeroArrayHeader * t36; int64_t t37; int64_t t38; int64_t t39; HeroStr t40; h_main_Edit t41; int64_t t43; int64_t t44; int64_t t45; int64_t t46; int64_t t47; int64_t t48; int64_t t49; int64_t t50; bool t51; int64_t t52; int64_t t53; bool t54; HeroArrayHeader * t55; int64_t t56; HeroArrayHeader * t57; int64_t t58; int64_t t59; int64_t t60; int64_t t61; HeroArrayHeader * t62; int64_t t63; int64_t t64; int64_t t65; HeroArrayHeader * t66; int64_t t67; int64_t t68; bool t69; bool t70; bool t71; HeroArrayHeader * t73; int64_t t74; int64_t t75; int64_t t76; HeroStr t77; h_main_Edit t78; int64_t t80; int64_t t81; int64_t t82; HeroArrayHeader * t84; int64_t t85; int64_t t86; int64_t t87; HeroStr t88; h_main_Edit t89; int64_t t91; int64_t t92; int64_t t93; HeroArrayHeader * t94; HeroArrayHeader * t95; int64_t t96; int64_t t97; int64_t t98; int64_t t99; int64_t t100; bool t101; HeroArrayHeader * t103; int64_t t104; h_main_Edit t105; int64_t t107; int64_t t108; int64_t t109; HeroArrayHeader * t110; HeroArrayHeader * t111; HeroArrayHeader * t112; HeroArrayHeader * t113; HeroArrayHeader * t114; HeroArrayHeader * t115; HeroArrayHeader * t116; h_main_Edit t117; h_main_Edit t118; h_main_Edit t119; goto bb0;
+#line 78 "examples/diff/main.hero"
 bb0:
-#line 79 "examples/diff/main.hero"
     t1 = h0_old;
 #line 79 "examples/diff/main.hero"
     t2 = h1_new;
@@ -1097,7 +872,7 @@ bb21:
 bb22:
 #line 109 "examples/diff/main.hero"
     t110 = h11_out;
-#line 1101 "main.c"
+#line 876 "main.c"
     hero_array_incref(t110);
     hero_array_release_at(&h2_same);
     hero_array_release_at(&h3_backwards);
@@ -1113,21 +888,10 @@ bb22:
 
 #line 111 "examples/diff/main.hero"
 int64_t h_main_common_length(HeroArrayHeader * h0_old, HeroArrayHeader * h1_new) {
-#line 1117 "main.c"
-    HeroArrayHeader * h2_own2 = {0};
-    HeroArrayHeader * t1;
-    HeroArrayHeader * t2;
-    HeroArrayHeader * t3;
-    HeroArrayHeader * t4;
-    int64_t t5;
-    HeroArrayHeader * t6;
-    HeroArrayHeader * t7;
-    int64_t t8;
-    int64_t t9;
-    HeroArrayHeader * t10;
-    goto bb0;
+#line 111 "examples/diff/main.hero"
+    HeroArrayHeader * h2_own2 = {0}; HeroArrayHeader * t1; HeroArrayHeader * t2; HeroArrayHeader * t3; HeroArrayHeader * t4; int64_t t5; HeroArrayHeader * t6; HeroArrayHeader * t7; int64_t t8; int64_t t9; HeroArrayHeader * t10; goto bb0;
+#line 111 "examples/diff/main.hero"
 bb0:
-#line 112 "examples/diff/main.hero"
     t1 = h0_old;
 #line 112 "examples/diff/main.hero"
     t2 = h1_new;
@@ -1151,57 +915,17 @@ bb0:
     t8 = ((void)(t7 == NULL ? ((void)hero_array_len(t7), hero_unreachable()) : (void)0), t7->len);
 #line 112 "examples/diff/main.hero"
     t9 = ((void)((t6 == NULL || t8 < 0 || t8 >= t6->len) ? ((void)hero_array_at(t6, t8), hero_unreachable()) : (void)0), (void)(t6->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t6 + 1))[t8]);
-#line 1155 "main.c"
+#line 919 "main.c"
     hero_array_release_at(&h2_own2);
     return t9;
 }
 
 #line 114 "examples/diff/main.hero"
 HeroStr h_main_shown(h_main_Edit h0_one) {
-#line 1162 "main.c"
-    h_main_Edit h1_s0 = {0};
-    HeroStr h2_r0 = {0};
-    h_main_Edit_c_kept h3_k = {0};
-    h_main_Edit_c_added h4_a = {0};
-    h_main_Edit_c_removed h5_r = {0};
-    HeroStr h6_own6 = {0};
-    HeroStr h7_own7 = {0};
-    HeroStr h8_own8 = {0};
-    h_main_Edit t1;
-    h_main_Edit t2;
-    int64_t t3;
-    h_main_Edit t4;
-    h_main_Edit_c_kept t5;
-    HeroStr t6;
-    h_main_Edit_c_kept t7;
-    HeroStr t8;
-    HeroStr t9;
-    h_main_Edit t10;
-    h_main_Edit_c_added t11;
-    HeroStr t12;
-    h_main_Edit_c_added t13;
-    HeroStr t14;
-    HeroStr t15;
-    h_main_Edit t16;
-    h_main_Edit_c_removed t17;
-    HeroStr t18;
-    h_main_Edit_c_removed t19;
-    HeroStr t20;
-    HeroStr t21;
-    HeroStr t22;
-    h_main_Edit t23;
-    h_main_Edit_c_kept t24;
-    HeroStr t25;
-    HeroStr t26;
-    h_main_Edit_c_added t27;
-    HeroStr t28;
-    HeroStr t29;
-    h_main_Edit_c_removed t30;
-    HeroStr t31;
-    HeroStr t32;
-    goto bb0;
+#line 114 "examples/diff/main.hero"
+    h_main_Edit h1_s0 = {0}; HeroStr h2_r0 = {0}; h_main_Edit_c_kept h3_k = {0}; h_main_Edit_c_added h4_a = {0}; h_main_Edit_c_removed h5_r = {0}; HeroStr h6_own6 = {0}; HeroStr h7_own7 = {0}; HeroStr h8_own8 = {0}; h_main_Edit t1; h_main_Edit t2; int64_t t3; h_main_Edit t4; h_main_Edit_c_kept t5; HeroStr t6; h_main_Edit_c_kept t7; HeroStr t8; HeroStr t9; h_main_Edit t10; h_main_Edit_c_added t11; HeroStr t12; h_main_Edit_c_added t13; HeroStr t14; HeroStr t15; h_main_Edit t16; h_main_Edit_c_removed t17; HeroStr t18; h_main_Edit_c_removed t19; HeroStr t20; HeroStr t21; HeroStr t22; h_main_Edit t23; h_main_Edit_c_kept t24; HeroStr t25; HeroStr t26; h_main_Edit_c_added t27; HeroStr t28; HeroStr t29; h_main_Edit_c_removed t30; HeroStr t31; HeroStr t32; goto bb0;
+#line 114 "examples/diff/main.hero"
 bb0:
-#line 115 "examples/diff/main.hero"
     t1 = h0_one;
 #line 115 "examples/diff/main.hero"
     t23 = h1_s0;
@@ -1231,7 +955,7 @@ bb0:
 bb1:
 #line 115 "examples/diff/main.hero"
     t22 = h2_r0;
-#line 1235 "main.c"
+#line 959 "main.c"
     hero_str_incref(t22);
     h_main_Edit_release(hero_slot_escape(&h1_s0));
     hero_str_release_at(&h2_r0);
@@ -1355,50 +1079,15 @@ bb4:
     hero_str_decref(t32);
 #line 115 "examples/diff/main.hero"
     goto bb1;
-#line 1359 "main.c"
+#line 1083 "main.c"
 }
 
 #line 120 "examples/diff/main.hero"
 HeroStr h_main_rendered(HeroArrayHeader * h0_old, HeroArrayHeader * h1_new) {
-#line 1364 "main.c"
-    HeroArrayHeader * h2_rows = {0};
-    HeroArrayHeader * h3_xs0 = {0};
-    int64_t h4_i0;
-    h_main_Edit h5_one = {0};
-    HeroArrayHeader * h6_own6 = {0};
-    HeroArrayHeader * h7_own7 = {0};
-    HeroStr h8_own8 = {0};
-    HeroStr h9_own9 = {0};
-    HeroArrayHeader * t1;
-    HeroArrayHeader * t2;
-    HeroArrayHeader * t3;
-    HeroArrayHeader * t4;
-    int64_t t5;
-    int64_t t6;
-    HeroArrayHeader * t7;
-    int64_t t8;
-    bool t9;
-    HeroArrayHeader * t10;
-    int64_t t11;
-    h_main_Edit t12;
-    h_main_Edit t14;
-    HeroStr t15;
-    int64_t t17;
-    int64_t t18;
-    int64_t t19;
-    HeroArrayHeader * t20;
-    HeroStr t21;
-    HeroStr t22;
-    HeroArrayHeader * t23;
-    HeroArrayHeader * t24;
-    HeroArrayHeader * t25;
-    HeroArrayHeader * t26;
-    h_main_Edit t27;
-    HeroStr t28;
-    HeroStr t29;
-    goto bb0;
+#line 120 "examples/diff/main.hero"
+    HeroArrayHeader * h2_rows = {0}; HeroArrayHeader * h3_xs0 = {0}; int64_t h4_i0; h_main_Edit h5_one = {0}; HeroArrayHeader * h6_own6 = {0}; HeroArrayHeader * h7_own7 = {0}; HeroStr h8_own8 = {0}; HeroStr h9_own9 = {0}; HeroArrayHeader * t1; HeroArrayHeader * t2; HeroArrayHeader * t3; HeroArrayHeader * t4; int64_t t5; int64_t t6; HeroArrayHeader * t7; int64_t t8; bool t9; HeroArrayHeader * t10; int64_t t11; h_main_Edit t12; h_main_Edit t14; HeroStr t15; int64_t t17; int64_t t18; int64_t t19; HeroArrayHeader * t20; HeroStr t21; HeroStr t22; HeroArrayHeader * t23; HeroArrayHeader * t24; HeroArrayHeader * t25; HeroArrayHeader * t26; h_main_Edit t27; HeroStr t28; HeroStr t29; goto bb0;
+#line 120 "examples/diff/main.hero"
 bb0:
-#line 121 "examples/diff/main.hero"
     t1 = hero_array_new(&hero_desc_str, 1);
 #line 121 "examples/diff/main.hero"
     t23 = h6_own6;
@@ -1507,7 +1196,7 @@ bb4:
     h9_own9 = t22;
 #line 126 "examples/diff/main.hero"
     hero_str_decref(t29);
-#line 1511 "main.c"
+#line 1200 "main.c"
     hero_str_incref(t22);
     hero_array_release_at(&h2_rows);
     hero_array_release_at(&h3_xs0);
@@ -1521,43 +1210,10 @@ bb4:
 
 #line 128 "examples/diff/main.hero"
 int64_t h_main_counted(HeroArrayHeader * h0_old, HeroArrayHeader * h1_new, HeroStr h2_of) {
-#line 1525 "main.c"
-    int64_t h3_total;
-    HeroArrayHeader * h4_xs0 = {0};
-    int64_t h5_i0;
-    h_main_Edit h6_one = {0};
-    HeroArrayHeader * h7_own7 = {0};
-    HeroStr h8_own8 = {0};
-    int64_t t1;
-    HeroArrayHeader * t2;
-    HeroArrayHeader * t3;
-    HeroArrayHeader * t4;
-    int64_t t5;
-    int64_t t6;
-    HeroArrayHeader * t7;
-    int64_t t8;
-    bool t9;
-    HeroArrayHeader * t10;
-    int64_t t11;
-    h_main_Edit t12;
-    h_main_Edit t13;
-    HeroStr t14;
-    HeroStr t15;
-    bool t16;
-    int64_t t17;
-    int64_t t18;
-    int64_t t19;
-    int64_t t20;
-    int64_t t21;
-    int64_t t22;
-    int64_t t23;
-    HeroArrayHeader * t24;
-    HeroArrayHeader * t25;
-    h_main_Edit t26;
-    HeroStr t27;
-    goto bb0;
+#line 128 "examples/diff/main.hero"
+    int64_t h3_total; HeroArrayHeader * h4_xs0 = {0}; int64_t h5_i0; h_main_Edit h6_one = {0}; HeroArrayHeader * h7_own7 = {0}; HeroStr h8_own8 = {0}; int64_t t1; HeroArrayHeader * t2; HeroArrayHeader * t3; HeroArrayHeader * t4; int64_t t5; int64_t t6; HeroArrayHeader * t7; int64_t t8; bool t9; HeroArrayHeader * t10; int64_t t11; h_main_Edit t12; h_main_Edit t13; HeroStr t14; HeroStr t15; bool t16; int64_t t17; int64_t t18; int64_t t19; int64_t t20; int64_t t21; int64_t t22; int64_t t23; HeroArrayHeader * t24; HeroArrayHeader * t25; h_main_Edit t26; HeroStr t27; goto bb0;
+#line 128 "examples/diff/main.hero"
 bb0:
-#line 129 "examples/diff/main.hero"
     t1 = INT64_C(0);
 #line 129 "examples/diff/main.hero"
     h3_total = t1;
@@ -1646,7 +1302,7 @@ bb3:
 bb4:
 #line 135 "examples/diff/main.hero"
     t23 = h3_total;
-#line 1650 "main.c"
+#line 1306 "main.c"
     hero_array_release_at(&h4_xs0);
     h_main_Edit_release(hero_slot_escape(&h6_one));
     hero_array_release_at(&h7_own7);
@@ -1669,28 +1325,15 @@ bb6:
 bb7:
 #line 133 "examples/diff/main.hero"
     goto bb5;
-#line 1673 "main.c"
+#line 1329 "main.c"
 }
 
 #line 137 "examples/diff/main.hero"
 HeroStr h_main_kind_of(h_main_Edit h0_one) {
-#line 1678 "main.c"
-    h_main_Edit h1_s0 = {0};
-    HeroStr h2_r0 = {0};
-    h_main_Edit t1;
-    h_main_Edit t2;
-    int64_t t3;
-    HeroStr t4;
-    HeroStr t5;
-    HeroStr t6;
-    HeroStr t7;
-    h_main_Edit t8;
-    HeroStr t9;
-    HeroStr t10;
-    HeroStr t11;
-    goto bb0;
+#line 137 "examples/diff/main.hero"
+    h_main_Edit h1_s0 = {0}; HeroStr h2_r0 = {0}; h_main_Edit t1; h_main_Edit t2; int64_t t3; HeroStr t4; HeroStr t5; HeroStr t6; HeroStr t7; h_main_Edit t8; HeroStr t9; HeroStr t10; HeroStr t11; goto bb0;
+#line 137 "examples/diff/main.hero"
 bb0:
-#line 138 "examples/diff/main.hero"
     t1 = h0_one;
 #line 138 "examples/diff/main.hero"
     t8 = h1_s0;
@@ -1720,7 +1363,7 @@ bb0:
 bb1:
 #line 138 "examples/diff/main.hero"
     t7 = h2_r0;
-#line 1724 "main.c"
+#line 1367 "main.c"
     hero_str_incref(t7);
     h_main_Edit_release(hero_slot_escape(&h1_s0));
     hero_str_release_at(&h2_r0);
@@ -1766,109 +1409,15 @@ bb4:
     hero_str_decref(t11);
 #line 138 "examples/diff/main.hero"
     goto bb1;
-#line 1770 "main.c"
+#line 1413 "main.c"
 }
 
 #line 143 "examples/diff/main.hero"
 void h_main_main(void) {
-#line 1775 "main.c"
-    HeroArrayHeader * h0_before = {0};
-    HeroArrayHeader * h1_after = {0};
-    HeroArrayHeader * h2_empty = {0};
-    HeroArrayHeader * h3_own3 = {0};
-    HeroArrayHeader * h4_own4 = {0};
-    HeroStr h5_own5 = {0};
-    HeroArrayHeader * h6_own6 = {0};
-    HeroArrayHeader * h7_own7 = {0};
-    HeroStr h8_own8 = {0};
-    HeroArrayHeader * h9_own9 = {0};
-    HeroArrayHeader * h10_own10 = {0};
-    HeroArrayHeader * h11_own11 = {0};
-    HeroArrayHeader * h12_own12 = {0};
-    HeroArrayHeader * h13_own13 = {0};
-    HeroArrayHeader * h14_own14 = {0};
-    HeroStr h15_own15 = {0};
-    HeroArrayHeader * h16_own16 = {0};
-    HeroStr h17_own17 = {0};
-    HeroStr t1;
-    HeroStr t2;
-    HeroStr t3;
-    HeroArrayHeader * t4;
-    HeroStr t5;
-    HeroStr t6;
-    HeroStr t7;
-    HeroArrayHeader * t8;
-    HeroArrayHeader * t9;
-    HeroArrayHeader * t10;
-    HeroStr t11;
-    HeroArrayHeader * t12;
-    HeroArrayHeader * t13;
-    int64_t t14;
-    HeroStr t15;
-    HeroStr t16;
-    HeroStr t17;
-    HeroArrayHeader * t18;
-    HeroStr t19;
-    HeroStr t20;
-    HeroStr t21;
-    HeroStr t22;
-    HeroArrayHeader * t23;
-    HeroStr t24;
-    HeroStr t25;
-    HeroStr t26;
-    HeroStr t27;
-    HeroArrayHeader * t28;
-    HeroStr t29;
-    HeroStr t30;
-    HeroStr t31;
-    HeroStr t32;
-    HeroArrayHeader * t33;
-    HeroStr t34;
-    int64_t t35;
-    HeroStr t36;
-    HeroStr t37;
-    HeroStr t38;
-    HeroArrayHeader * t39;
-    HeroStr t40;
-    HeroStr t41;
-    HeroStr t42;
-    HeroStr t43;
-    HeroArrayHeader * t44;
-    HeroStr t45;
-    int64_t t46;
-    HeroArrayHeader * t47;
-    HeroArrayHeader * t48;
-    HeroStr t49;
-    HeroArrayHeader * t50;
-    HeroStr t51;
-    HeroStr t52;
-    HeroArrayHeader * t53;
-    HeroArrayHeader * t54;
-    HeroStr t55;
-    HeroArrayHeader * t56;
-    HeroArrayHeader * t57;
-    int64_t t58;
-    HeroArrayHeader * t59;
-    HeroArrayHeader * t60;
-    HeroArrayHeader * t61;
-    HeroArrayHeader * t62;
-    HeroStr t63;
-    HeroArrayHeader * t64;
-    HeroArrayHeader * t65;
-    HeroStr t66;
-    HeroArrayHeader * t67;
-    HeroArrayHeader * t68;
-    HeroArrayHeader * t69;
-    HeroArrayHeader * t70;
-    HeroArrayHeader * t71;
-    HeroArrayHeader * t72;
-    HeroArrayHeader * t73;
-    HeroStr t74;
-    HeroArrayHeader * t75;
-    HeroStr t76;
-    goto bb0;
+#line 143 "examples/diff/main.hero"
+    HeroArrayHeader * h0_before = {0}; HeroArrayHeader * h1_after = {0}; HeroArrayHeader * h2_empty = {0}; HeroArrayHeader * h3_own3 = {0}; HeroArrayHeader * h4_own4 = {0}; HeroStr h5_own5 = {0}; HeroArrayHeader * h6_own6 = {0}; HeroArrayHeader * h7_own7 = {0}; HeroStr h8_own8 = {0}; HeroArrayHeader * h9_own9 = {0}; HeroArrayHeader * h10_own10 = {0}; HeroArrayHeader * h11_own11 = {0}; HeroArrayHeader * h12_own12 = {0}; HeroArrayHeader * h13_own13 = {0}; HeroArrayHeader * h14_own14 = {0}; HeroStr h15_own15 = {0}; HeroArrayHeader * h16_own16 = {0}; HeroStr h17_own17 = {0}; HeroStr t1; HeroStr t2; HeroStr t3; HeroArrayHeader * t4; HeroStr t5; HeroStr t6; HeroStr t7; HeroArrayHeader * t8; HeroArrayHeader * t9; HeroArrayHeader * t10; HeroStr t11; HeroArrayHeader * t12; HeroArrayHeader * t13; int64_t t14; HeroStr t15; HeroStr t16; HeroStr t17; HeroArrayHeader * t18; HeroStr t19; HeroStr t20; HeroStr t21; HeroStr t22; HeroArrayHeader * t23; HeroStr t24; HeroStr t25; HeroStr t26; HeroStr t27; HeroArrayHeader * t28; HeroStr t29; HeroStr t30; HeroStr t31; HeroStr t32; HeroArrayHeader * t33; HeroStr t34; int64_t t35; HeroStr t36; HeroStr t37; HeroStr t38; HeroArrayHeader * t39; HeroStr t40; HeroStr t41; HeroStr t42; HeroStr t43; HeroArrayHeader * t44; HeroStr t45; int64_t t46; HeroArrayHeader * t47; HeroArrayHeader * t48; HeroStr t49; HeroArrayHeader * t50; HeroStr t51; HeroStr t52; HeroArrayHeader * t53; HeroArrayHeader * t54; HeroStr t55; HeroArrayHeader * t56; HeroArrayHeader * t57; int64_t t58; HeroArrayHeader * t59; HeroArrayHeader * t60; HeroArrayHeader * t61; HeroArrayHeader * t62; HeroStr t63; HeroArrayHeader * t64; HeroArrayHeader * t65; HeroStr t66; HeroArrayHeader * t67; HeroArrayHeader * t68; HeroArrayHeader * t69; HeroArrayHeader * t70; HeroArrayHeader * t71; HeroArrayHeader * t72; HeroArrayHeader * t73; HeroStr t74; HeroArrayHeader * t75; HeroStr t76; goto bb0;
+#line 143 "examples/diff/main.hero"
 bb0:
-#line 144 "examples/diff/main.hero"
     t1 = HERO_STR_LIT(hero_str_1b8159e6);
 #line 144 "examples/diff/main.hero"
     t2 = HERO_STR_LIT(hero_str_429fea27);
@@ -2181,7 +1730,7 @@ bb0:
     hero_print_int(t58);
 #line 159 "examples/diff/main.hero"
     hero_print_end();
-#line 2185 "main.c"
+#line 1734 "main.c"
     hero_array_release_at(&h0_before);
     hero_array_release_at(&h1_after);
     hero_array_release_at(&h2_empty);

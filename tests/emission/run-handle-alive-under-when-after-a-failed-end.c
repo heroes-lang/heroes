@@ -107,26 +107,10 @@ void h_handlealiveunderwhenafterafailedend_main(void);
 
 #line 14 "tests/golden/run/handle-alive-under-when-after-a-failed-end.hero"
 void h_handlealiveunderwhenafterafailedend_main(void) {
-#line 111 "handlealiveunderwhenafterafailedend.c"
-    db * h0_d;
-    int32_t h1_first;
-    int32_t h2_second;
-    db * t1;
-    db * t2;
-    int32_t t3;
-    HeroStr t4;
-    int32_t t5;
-    HeroStr t6;
-    db * t7;
-    int64_t t8;
-    db * t9;
-    db * t10;
-    int32_t t11;
-    HeroStr t12;
-    int32_t t13;
-    goto bb0;
+#line 14 "tests/golden/run/handle-alive-under-when-after-a-failed-end.hero"
+    db * h0_d; int32_t h1_first; int32_t h2_second; db * t1; db * t2; int32_t t3; HeroStr t4; int32_t t5; HeroStr t6; db * t7; int64_t t8; db * t9; db * t10; int32_t t11; HeroStr t12; int32_t t13; goto bb0;
+#line 14 "tests/golden/run/handle-alive-under-when-after-a-failed-end.hero"
 bb0:
-#line 15 "tests/golden/run/handle-alive-under-when-after-a-failed-end.hero"
     t1 = db_open();
 #line 15 "tests/golden/run/handle-alive-under-when-after-a-failed-end.hero"
     hero_handle_acquired(t1, "db_close");
@@ -215,7 +199,7 @@ bb0:
     hero_print_end();
 #line 20 "tests/golden/run/handle-alive-under-when-after-a-failed-end.hero"
     return;
-#line 219 "handlealiveunderwhenafterafailedend.c"
+#line 203 "handlealiveunderwhenafterafailedend.c"
 }
 HERO_TU_LOCAL bool h_handlealiveunderwhenafterafailedend_Db_eq(db * const *a, db * const *b) {
     return hero_handle_eq(*a, *b);

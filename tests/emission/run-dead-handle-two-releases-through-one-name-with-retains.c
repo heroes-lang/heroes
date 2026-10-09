@@ -107,26 +107,10 @@ void h_deadhandletworeleasesthroughonenamewithretains_main(void);
 
 #line 18 "tests/golden/run/dead-handle-two-releases-through-one-name-with-retains.hero"
 void h_deadhandletworeleasesthroughonenamewithretains_main(void) {
-#line 111 "deadhandletworeleasesthroughonenamewithretains.c"
-    ob * h0_cert;
-    ob * t1;
-    HeroStr t2;
-    ob * t3;
-    int32_t t4;
-    int32_t t5;
-    bool t6;
-    HeroStr t7;
-    ob * t8;
-    int64_t t9;
-    ob * t10;
-    HeroStr t11;
-    ob * t12;
-    int64_t t13;
-    ob * t14;
-    HeroStr t15;
-    goto bb0;
+#line 18 "tests/golden/run/dead-handle-two-releases-through-one-name-with-retains.hero"
+    ob * h0_cert; ob * t1; HeroStr t2; ob * t3; int32_t t4; int32_t t5; bool t6; HeroStr t7; ob * t8; int64_t t9; ob * t10; HeroStr t11; ob * t12; int64_t t13; ob * t14; HeroStr t15; goto bb0;
+#line 18 "tests/golden/run/dead-handle-two-releases-through-one-name-with-retains.hero"
 bb0:
-#line 19 "tests/golden/run/dead-handle-two-releases-through-one-name-with-retains.hero"
     t1 = ob_new();
 #line 19 "tests/golden/run/dead-handle-two-releases-through-one-name-with-retains.hero"
     hero_handle_acquired(t1, "ob_put");
@@ -216,7 +200,7 @@ bb1:
     return;
 #line 25 "tests/golden/run/dead-handle-two-releases-through-one-name-with-retains.hero"
 bb2:
-#line 220 "deadhandletworeleasesthroughonenamewithretains.c"
+#line 204 "deadhandletworeleasesthroughonenamewithretains.c"
     hero_panic_assert_sides(t2, hero_int_to_str(t4), hero_int_to_str(t5));
     hero_unreachable();
 }

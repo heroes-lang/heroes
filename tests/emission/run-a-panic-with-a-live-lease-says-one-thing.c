@@ -97,31 +97,10 @@ void h_apanicwithaliveleasesaysonething_main(void);
 
 #line 10 "tests/golden/run/a-panic-with-a-live-lease-says-one-thing.hero"
 void h_apanicwithaliveleasesaysonething_main(void) {
-#line 101 "apanicwithaliveleasesaysonething.c"
-    HeroStr h0_x = {0};
-    const char * h1_c;
-    HeroArrayHeader * h2_a = {0};
-    HeroArrayHeader * h3_own3 = {0};
-    HeroStr h4_own4 = {0};
-    HeroStr t1;
-    HeroStr t2;
-    const char * t3;
-    const char * t4;
-    int64_t t5;
-    int64_t t6;
-    int64_t t7;
-    HeroArrayHeader * t8;
-    HeroArrayHeader * t9;
-    int64_t t10;
-    int64_t t11;
-    HeroStr t12;
-    HeroStr t13;
-    HeroArrayHeader * t14;
-    HeroArrayHeader * t15;
-    HeroStr t16;
-    goto bb0;
+#line 10 "tests/golden/run/a-panic-with-a-live-lease-says-one-thing.hero"
+    HeroStr h0_x = {0}; const char * h1_c; HeroArrayHeader * h2_a = {0}; HeroArrayHeader * h3_own3 = {0}; HeroStr h4_own4 = {0}; HeroStr t1; HeroStr t2; const char * t3; const char * t4; int64_t t5; int64_t t6; int64_t t7; HeroArrayHeader * t8; HeroArrayHeader * t9; int64_t t10; int64_t t11; HeroStr t12; HeroStr t13; HeroArrayHeader * t14; HeroArrayHeader * t15; HeroStr t16; goto bb0;
+#line 10 "tests/golden/run/a-panic-with-a-live-lease-says-one-thing.hero"
 bb0:
-#line 11 "tests/golden/run/a-panic-with-a-live-lease-says-one-thing.hero"
     t1 = HERO_STR_LIT(hero_str_35d9fe9b);
 #line 11 "tests/golden/run/a-panic-with-a-live-lease-says-one-thing.hero"
     t13 = h0_x;
@@ -184,7 +163,7 @@ bb0:
 #line 15 "tests/golden/run/a-panic-with-a-live-lease-says-one-thing.hero"
     hero_print_end();
     hero_held_release(&h1_c);
-#line 188 "apanicwithaliveleasesaysonething.c"
+#line 167 "apanicwithaliveleasesaysonething.c"
     hero_str_release_at(&h0_x);
     hero_array_release_at(&h2_a);
     hero_array_release_at(&h3_own3);

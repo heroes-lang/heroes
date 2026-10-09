@@ -107,37 +107,10 @@ void h_handletransferonlyonsuccesskeepstheobligation_main(void);
 
 #line 13 "tests/golden/run/handle-transfer-only-on-success-keeps-the-obligation.hero"
 void h_handletransferonlyonsuccesskeepstheobligation_main(void) {
-#line 111 "handletransferonlyonsuccesskeepstheobligation.c"
-    node * h0_parent;
-    node * h1_child;
-    int32_t h2_rc;
-    node * h3_other;
-    int64_t t1;
-    node * t2;
-    int64_t t3;
-    node * t4;
-    node * t5;
-    node * t6;
-    int32_t t7;
-    int32_t t8;
-    HeroStr t9;
-    int32_t t10;
-    int32_t t11;
-    int32_t t12;
-    bool t13;
-    node * t14;
-    int64_t t15;
-    node * t16;
-    node * t17;
-    node * t18;
-    int32_t t19;
-    HeroStr t21;
-    node * t22;
-    int64_t t23;
-    node * t24;
-    goto bb0;
+#line 13 "tests/golden/run/handle-transfer-only-on-success-keeps-the-obligation.hero"
+    node * h0_parent; node * h1_child; int32_t h2_rc; node * h3_other; int64_t t1; node * t2; int64_t t3; node * t4; node * t5; node * t6; int32_t t7; int32_t t8; HeroStr t9; int32_t t10; int32_t t11; int32_t t12; bool t13; node * t14; int64_t t15; node * t16; node * t17; node * t18; int32_t t19; HeroStr t21; node * t22; int64_t t23; node * t24; goto bb0;
+#line 13 "tests/golden/run/handle-transfer-only-on-success-keeps-the-obligation.hero"
 bb0:
-#line 14 "tests/golden/run/handle-transfer-only-on-success-keeps-the-obligation.hero"
     t1 = INT64_C(10);
 #line 14 "tests/golden/run/handle-transfer-only-on-success-keeps-the-obligation.hero"
     t2 = node_new(t1);
@@ -289,7 +262,7 @@ bb2:
 bb3:
 #line 20 "tests/golden/run/handle-transfer-only-on-success-keeps-the-obligation.hero"
     goto bb1;
-#line 293 "handletransferonlyonsuccesskeepstheobligation.c"
+#line 266 "handletransferonlyonsuccesskeepstheobligation.c"
 }
 HERO_TU_LOCAL bool h_handletransferonlyonsuccesskeepstheobligation_Node_eq(node * const *a, node * const *b) {
     return hero_handle_eq(*a, *b);

@@ -95,14 +95,12 @@ void h_fixedbugs163aplaincharpointeeboundasi8_main(void);
 
 #line 15 "tests/golden/run/fixedbugs-163-a-plain-char-pointee-bound-as-i8.hero"
 void h_fixedbugs163aplaincharpointeeboundasi8_main(void) {
-#line 99 "fixedbugs163aplaincharpointeeboundasi8.c"
-    int8_t *const hero_lend_h0_v = (int8_t *)hero_lend_local(sizeof(int8_t), "fixedbugs163aplaincharpointeeboundasi8.main", "v");
+#line 15 "tests/golden/run/fixedbugs-163-a-plain-char-pointee-bound-as-i8.hero"
 #define h0_v (*hero_lend_h0_v)
-    int8_t t1;
-    int8_t t2;
-    goto bb0;
+#line 15 "tests/golden/run/fixedbugs-163-a-plain-char-pointee-bound-as-i8.hero"
+    int8_t *const hero_lend_h0_v = (int8_t *)hero_lend_local(sizeof(int8_t), "fixedbugs163aplaincharpointeeboundasi8.main", "v"); int8_t t1; int8_t t2; goto bb0;
+#line 15 "tests/golden/run/fixedbugs-163-a-plain-char-pointee-bound-as-i8.hero"
 bb0:
-#line 16 "tests/golden/run/fixedbugs-163-a-plain-char-pointee-bound-as-i8.hero"
     t1 = INT64_C(0);
 #line 16 "tests/golden/run/fixedbugs-163-a-plain-char-pointee-bound-as-i8.hero"
     h0_v = t1;
@@ -118,7 +116,7 @@ bb0:
     hero_lend_local_give(hero_lend_h0_v);
 #line 18 "tests/golden/run/fixedbugs-163-a-plain-char-pointee-bound-as-i8.hero"
     return;
-#line 122 "fixedbugs163aplaincharpointeeboundasi8.c"
+#line 120 "fixedbugs163aplaincharpointeeboundasi8.c"
 }
 #undef h0_v
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {

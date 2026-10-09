@@ -128,146 +128,9 @@ void h_adversarialaggregateoverwrite_main(void);
 
 #line 29 "tests/golden/run/adversarial-aggregate-overwrite.hero"
 void h_adversarialaggregateoverwrite_main(void) {
-#line 132 "adversarialaggregateoverwrite.c"
-    h_adversarialaggregateoverwrite_Cell h0_c = {0};
-    int64_t h1_i;
-    h_adversarialaggregateoverwrite_Slot h2_s = {0};
-    int64_t h3_j;
-    h_adversarialaggregateoverwrite_Slot h4_s0 = {0};
-    HeroStr h5_r0 = {0};
-    h_adversarialaggregateoverwrite_Slot_c_full h6_f = {0};
-    HeroStr h7_tag1 = {0};
-    h_adversarialaggregateoverwrite_Slot h8_s1 = {0};
-    HeroStr h9_r1 = {0};
-    h_adversarialaggregateoverwrite_Slot_c_full h10_f = {0};
-    HeroStr h11_tag2 = {0};
-    h_adversarialaggregateoverwrite_Slot h12_s2 = {0};
-    int64_t h13_r2;
-    h_adversarialaggregateoverwrite_Slot_c_full h14_f = {0};
-    int64_t h15_n;
-    h_adversarialaggregateoverwrite_Cell h16_own16 = {0};
-    HeroStr h17_own17 = {0};
-    HeroStr h18_own18 = {0};
-    h_adversarialaggregateoverwrite_Cell h19_own19 = {0};
-    h_adversarialaggregateoverwrite_Slot h20_own20 = {0};
-    HeroStr h21_own21 = {0};
-    HeroStr h22_own22 = {0};
-    h_adversarialaggregateoverwrite_Cell h23_own23 = {0};
-    h_adversarialaggregateoverwrite_Slot h24_own24 = {0};
-    h_adversarialaggregateoverwrite_Slot h25_own25 = {0};
-    HeroStr h26_own26 = {0};
-    HeroStr h27_own27 = {0};
-    h_adversarialaggregateoverwrite_Cell h28_own28 = {0};
-    h_adversarialaggregateoverwrite_Slot h29_own29 = {0};
-    HeroStr t1;
-    int64_t t2;
-    h_adversarialaggregateoverwrite_Cell t3;
-    int64_t t4;
-    int64_t t5;
-    int64_t t6;
-    bool t7;
-    HeroStr t8;
-    int64_t t9;
-    HeroStr t10;
-    HeroStr t11;
-    int64_t t12;
-    h_adversarialaggregateoverwrite_Cell t13;
-    int64_t t14;
-    int64_t t15;
-    int64_t t16;
-    h_adversarialaggregateoverwrite_Cell t17;
-    HeroStr t18;
-    h_adversarialaggregateoverwrite_Slot t19;
-    int64_t t20;
-    int64_t t21;
-    int64_t t22;
-    bool t23;
-    HeroStr t24;
-    int64_t t25;
-    HeroStr t26;
-    HeroStr t27;
-    int64_t t28;
-    h_adversarialaggregateoverwrite_Cell t29;
-    h_adversarialaggregateoverwrite_Slot t30;
-    h_adversarialaggregateoverwrite_Slot t31;
-    HeroStr t32;
-    int64_t t33;
-    HeroStr t34;
-    HeroStr t35;
-    int64_t t36;
-    h_adversarialaggregateoverwrite_Cell t37;
-    h_adversarialaggregateoverwrite_Slot t38;
-    int64_t t39;
-    int64_t t40;
-    int64_t t41;
-    h_adversarialaggregateoverwrite_Slot t42;
-    h_adversarialaggregateoverwrite_Slot t43;
-    int64_t t44;
-    HeroStr t45;
-    h_adversarialaggregateoverwrite_Slot t46;
-    h_adversarialaggregateoverwrite_Slot_c_full t47;
-    h_adversarialaggregateoverwrite_Slot_c_full t48;
-    h_adversarialaggregateoverwrite_Cell t49;
-    HeroStr t50;
-    HeroStr t51;
-    HeroStr t52;
-    h_adversarialaggregateoverwrite_Slot t53;
-    h_adversarialaggregateoverwrite_Slot t54;
-    h_adversarialaggregateoverwrite_Slot t55;
-    int64_t t56;
-    HeroStr t57;
-    h_adversarialaggregateoverwrite_Slot t58;
-    h_adversarialaggregateoverwrite_Slot_c_full t59;
-    h_adversarialaggregateoverwrite_Slot_c_full t60;
-    h_adversarialaggregateoverwrite_Cell t61;
-    HeroStr t62;
-    HeroStr t63;
-    HeroStr t64;
-    h_adversarialaggregateoverwrite_Slot t65;
-    h_adversarialaggregateoverwrite_Slot t66;
-    int64_t t67;
-    int64_t t68;
-    h_adversarialaggregateoverwrite_Slot t69;
-    h_adversarialaggregateoverwrite_Slot_c_full t70;
-    h_adversarialaggregateoverwrite_Slot_c_full t71;
-    h_adversarialaggregateoverwrite_Cell t72;
-    int64_t t73;
-    int64_t t74;
-    int64_t t75;
-    h_adversarialaggregateoverwrite_Cell t76;
-    h_adversarialaggregateoverwrite_Cell t77;
-    HeroStr t78;
-    HeroStr t79;
-    h_adversarialaggregateoverwrite_Cell t80;
-    h_adversarialaggregateoverwrite_Cell t81;
-    h_adversarialaggregateoverwrite_Slot t82;
-    h_adversarialaggregateoverwrite_Slot t83;
-    HeroStr t84;
-    HeroStr t85;
-    h_adversarialaggregateoverwrite_Cell t86;
-    h_adversarialaggregateoverwrite_Slot t87;
-    h_adversarialaggregateoverwrite_Slot t88;
-    h_adversarialaggregateoverwrite_Slot t89;
-    h_adversarialaggregateoverwrite_Slot t90;
-    HeroStr t91;
-    HeroStr t92;
-    h_adversarialaggregateoverwrite_Cell t93;
-    h_adversarialaggregateoverwrite_Slot t94;
-    h_adversarialaggregateoverwrite_Slot t95;
-    h_adversarialaggregateoverwrite_Slot t96;
-    HeroStr t97;
-    h_adversarialaggregateoverwrite_Slot t98;
-    h_adversarialaggregateoverwrite_Slot t99;
-    HeroStr t100;
-    h_adversarialaggregateoverwrite_Slot_c_full t101;
-    HeroStr t102;
-    HeroStr t103;
-    h_adversarialaggregateoverwrite_Slot t104;
-    HeroStr t105;
-    h_adversarialaggregateoverwrite_Slot_c_full t106;
-    HeroStr t107;
-    h_adversarialaggregateoverwrite_Slot_c_full t108;
-    goto bb0;
+#line 29 "tests/golden/run/adversarial-aggregate-overwrite.hero"
+    h_adversarialaggregateoverwrite_Cell h0_c = {0}; int64_t h1_i; h_adversarialaggregateoverwrite_Slot h2_s = {0}; int64_t h3_j; h_adversarialaggregateoverwrite_Slot h4_s0 = {0}; HeroStr h5_r0 = {0}; h_adversarialaggregateoverwrite_Slot_c_full h6_f = {0}; HeroStr h7_tag1 = {0}; h_adversarialaggregateoverwrite_Slot h8_s1 = {0}; HeroStr h9_r1 = {0}; h_adversarialaggregateoverwrite_Slot_c_full h10_f = {0}; HeroStr h11_tag2 = {0}; h_adversarialaggregateoverwrite_Slot h12_s2 = {0}; int64_t h13_r2; h_adversarialaggregateoverwrite_Slot_c_full h14_f = {0}; int64_t h15_n; h_adversarialaggregateoverwrite_Cell h16_own16 = {0}; HeroStr h17_own17 = {0}; HeroStr h18_own18 = {0}; h_adversarialaggregateoverwrite_Cell h19_own19 = {0}; h_adversarialaggregateoverwrite_Slot h20_own20 = {0}; HeroStr h21_own21 = {0}; HeroStr h22_own22 = {0}; h_adversarialaggregateoverwrite_Cell h23_own23 = {0}; h_adversarialaggregateoverwrite_Slot h24_own24 = {0}; h_adversarialaggregateoverwrite_Slot h25_own25 = {0}; HeroStr h26_own26 = {0}; HeroStr h27_own27 = {0}; h_adversarialaggregateoverwrite_Cell h28_own28 = {0}; h_adversarialaggregateoverwrite_Slot h29_own29 = {0}; HeroStr t1; int64_t t2; h_adversarialaggregateoverwrite_Cell t3; int64_t t4; int64_t t5; int64_t t6; bool t7; HeroStr t8; int64_t t9; HeroStr t10; HeroStr t11; int64_t t12; h_adversarialaggregateoverwrite_Cell t13; int64_t t14; int64_t t15; int64_t t16; h_adversarialaggregateoverwrite_Cell t17; HeroStr t18; h_adversarialaggregateoverwrite_Slot t19; int64_t t20; int64_t t21; int64_t t22; bool t23; HeroStr t24; int64_t t25; HeroStr t26; HeroStr t27; int64_t t28; h_adversarialaggregateoverwrite_Cell t29; h_adversarialaggregateoverwrite_Slot t30; h_adversarialaggregateoverwrite_Slot t31; HeroStr t32; int64_t t33; HeroStr t34; HeroStr t35; int64_t t36; h_adversarialaggregateoverwrite_Cell t37; h_adversarialaggregateoverwrite_Slot t38; int64_t t39; int64_t t40; int64_t t41; h_adversarialaggregateoverwrite_Slot t42; h_adversarialaggregateoverwrite_Slot t43; int64_t t44; HeroStr t45; h_adversarialaggregateoverwrite_Slot t46; h_adversarialaggregateoverwrite_Slot_c_full t47; h_adversarialaggregateoverwrite_Slot_c_full t48; h_adversarialaggregateoverwrite_Cell t49; HeroStr t50; HeroStr t51; HeroStr t52; h_adversarialaggregateoverwrite_Slot t53; h_adversarialaggregateoverwrite_Slot t54; h_adversarialaggregateoverwrite_Slot t55; int64_t t56; HeroStr t57; h_adversarialaggregateoverwrite_Slot t58; h_adversarialaggregateoverwrite_Slot_c_full t59; h_adversarialaggregateoverwrite_Slot_c_full t60; h_adversarialaggregateoverwrite_Cell t61; HeroStr t62; HeroStr t63; HeroStr t64; h_adversarialaggregateoverwrite_Slot t65; h_adversarialaggregateoverwrite_Slot t66; int64_t t67; int64_t t68; h_adversarialaggregateoverwrite_Slot t69; h_adversarialaggregateoverwrite_Slot_c_full t70; h_adversarialaggregateoverwrite_Slot_c_full t71; h_adversarialaggregateoverwrite_Cell t72; int64_t t73; int64_t t74; int64_t t75; h_adversarialaggregateoverwrite_Cell t76; h_adversarialaggregateoverwrite_Cell t77; HeroStr t78; HeroStr t79; h_adversarialaggregateoverwrite_Cell t80; h_adversarialaggregateoverwrite_Cell t81; h_adversarialaggregateoverwrite_Slot t82; h_adversarialaggregateoverwrite_Slot t83; HeroStr t84; HeroStr t85; h_adversarialaggregateoverwrite_Cell t86; h_adversarialaggregateoverwrite_Slot t87; h_adversarialaggregateoverwrite_Slot t88; h_adversarialaggregateoverwrite_Slot t89; h_adversarialaggregateoverwrite_Slot t90; HeroStr t91; HeroStr t92; h_adversarialaggregateoverwrite_Cell t93; h_adversarialaggregateoverwrite_Slot t94; h_adversarialaggregateoverwrite_Slot t95; h_adversarialaggregateoverwrite_Slot t96; HeroStr t97; h_adversarialaggregateoverwrite_Slot t98; h_adversarialaggregateoverwrite_Slot t99; HeroStr t100; h_adversarialaggregateoverwrite_Slot_c_full t101; HeroStr t102; HeroStr t103; h_adversarialaggregateoverwrite_Slot t104; HeroStr t105; h_adversarialaggregateoverwrite_Slot_c_full t106; HeroStr t107; h_adversarialaggregateoverwrite_Slot_c_full t108; goto bb0;
+#line 29 "tests/golden/run/adversarial-aggregate-overwrite.hero"
 bb0:
 #line 32 "tests/golden/run/adversarial-aggregate-overwrite.hero"
     t1 = HERO_STR_LIT(hero_str_f838341);
@@ -741,7 +604,7 @@ bb13:
     hero_print_int(t75);
 #line 71 "tests/golden/run/adversarial-aggregate-overwrite.hero"
     hero_print_end();
-#line 745 "adversarialaggregateoverwrite.c"
+#line 608 "adversarialaggregateoverwrite.c"
     h_adversarialaggregateoverwrite_Cell_release(hero_slot_escape(&h0_c));
     h_adversarialaggregateoverwrite_Slot_release(hero_slot_escape(&h2_s));
     h_adversarialaggregateoverwrite_Slot_release(hero_slot_escape(&h4_s0));
@@ -800,7 +663,7 @@ bb15:
     h13_r2 = t73;
 #line 67 "tests/golden/run/adversarial-aggregate-overwrite.hero"
     goto bb13;
-#line 804 "adversarialaggregateoverwrite.c"
+#line 667 "adversarialaggregateoverwrite.c"
 }
 HERO_TU_LOCAL void h_adversarialaggregateoverwrite_Cell_retain(const h_adversarialaggregateoverwrite_Cell *v) {
     hero_str_incref(v->f_tag);

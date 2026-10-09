@@ -115,72 +115,10 @@ HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to);
 
 #line 29 "tests/golden/run/fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.hero"
 void h_fixedbugsanacquiredhandleiswrittenintoafixedarray_main(void) {
-#line 119 "fixedbugsanacquiredhandleiswrittenintoafixedarray.c"
-    struct four h0_f;
-    int64_t h1_n;
-    HeroArrayHeader * h2_xs0 = {0};
-    int64_t h3_i0;
-    int64_t h4_i;
-    HeroArrayHeader * h5_xs1 = {0};
-    int64_t h6_i1;
-    int64_t h7_i;
-    HeroArrayHeader * h8_own8 = {0};
-    HeroArrayHeader * h9_own9 = {0};
-    ob * t1;
-    ob * t2;
-    ob * t3;
-    ob * t4;
-    struct four t6;
-    int64_t t7;
-    int64_t t8;
-    int64_t t9;
-    HeroArrayHeader * t10;
-    int64_t t11;
-    int64_t t12;
-    HeroArrayHeader * t13;
-    int64_t t14;
-    bool t15;
-    HeroArrayHeader * t16;
-    int64_t t17;
-    int64_t t18;
-    int64_t t19;
-    int64_t t20;
-    ob * t21;
-    int64_t t22;
-    int64_t t23;
-    int64_t t24;
-    int64_t t25;
-    int64_t t26;
-    int64_t t27;
-    HeroStr t28;
-    struct four t29;
-    int64_t t30;
-    int64_t t31;
-    int64_t t32;
-    HeroArrayHeader * t33;
-    int64_t t34;
-    int64_t t35;
-    HeroArrayHeader * t36;
-    int64_t t37;
-    bool t38;
-    HeroArrayHeader * t39;
-    int64_t t40;
-    int64_t t41;
-    struct four t42;
-    int64_t t44;
-    ob * t45;
-    int64_t t46;
-    int64_t t47;
-    int64_t t48;
-    HeroStr t49;
-    int64_t t50;
-    HeroArrayHeader * t51;
-    HeroArrayHeader * t52;
-    HeroArrayHeader * t53;
-    HeroArrayHeader * t54;
-    goto bb0;
+#line 29 "tests/golden/run/fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.hero"
+    struct four h0_f; int64_t h1_n; HeroArrayHeader * h2_xs0 = {0}; int64_t h3_i0; int64_t h4_i; HeroArrayHeader * h5_xs1 = {0}; int64_t h6_i1; int64_t h7_i; HeroArrayHeader * h8_own8 = {0}; HeroArrayHeader * h9_own9 = {0}; ob * t1; ob * t2; ob * t3; ob * t4; struct four t6; int64_t t7; int64_t t8; int64_t t9; HeroArrayHeader * t10; int64_t t11; int64_t t12; HeroArrayHeader * t13; int64_t t14; bool t15; HeroArrayHeader * t16; int64_t t17; int64_t t18; int64_t t19; int64_t t20; ob * t21; int64_t t22; int64_t t23; int64_t t24; int64_t t25; int64_t t26; int64_t t27; HeroStr t28; struct four t29; int64_t t30; int64_t t31; int64_t t32; HeroArrayHeader * t33; int64_t t34; int64_t t35; HeroArrayHeader * t36; int64_t t37; bool t38; HeroArrayHeader * t39; int64_t t40; int64_t t41; struct four t42; int64_t t44; ob * t45; int64_t t46; int64_t t47; int64_t t48; HeroStr t49; int64_t t50; HeroArrayHeader * t51; HeroArrayHeader * t52; HeroArrayHeader * t53; HeroArrayHeader * t54; goto bb0;
+#line 29 "tests/golden/run/fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.hero"
 bb0:
-#line 30 "tests/golden/run/fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.hero"
     t1 = ((void *)0);
 #line 30 "tests/golden/run/fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.hero"
     t2 = ((void *)0);
@@ -386,7 +324,7 @@ bb8:
     hero_print_int(t50);
 #line 42 "tests/golden/run/fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.hero"
     hero_print_end();
-#line 390 "fixedbugsanacquiredhandleiswrittenintoafixedarray.c"
+#line 328 "fixedbugsanacquiredhandleiswrittenintoafixedarray.c"
     hero_array_release_at(&h2_xs0);
     hero_array_release_at(&h5_xs1);
     hero_array_release_at(&h8_own8);
@@ -396,25 +334,10 @@ bb8:
 
 #line 26 "<heroes library>"
 HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to) {
-#line 400 "fixedbugsanacquiredhandleiswrittenintoafixedarray.c"
-    HeroArrayHeader * h2_out = {0};
-    int64_t h3_i;
-    HeroArrayHeader * h4_own4 = {0};
-    HeroArrayHeader * t1;
-    int64_t t2;
-    int64_t t3;
-    int64_t t4;
-    bool t5;
-    int64_t t7;
-    int64_t t9;
-    int64_t t10;
-    int64_t t11;
-    HeroArrayHeader * t12;
-    HeroArrayHeader * t13;
-    HeroArrayHeader * t14;
-    goto bb0;
+#line 26 "<heroes library>"
+    HeroArrayHeader * h2_out = {0}; int64_t h3_i; HeroArrayHeader * h4_own4 = {0}; HeroArrayHeader * t1; int64_t t2; int64_t t3; int64_t t4; bool t5; int64_t t7; int64_t t9; int64_t t10; int64_t t11; HeroArrayHeader * t12; HeroArrayHeader * t13; HeroArrayHeader * t14; goto bb0;
+#line 26 "<heroes library>"
 bb0:
-#line 27 "<heroes library>"
     t1 = hero_array_new(&hero_desc_int, 1);
 #line 27 "<heroes library>"
     t13 = h4_own4;
@@ -461,7 +384,7 @@ bb2:
 #line 31 "<heroes library>"
 bb3:
     t12 = h2_out;
-#line 465 "fixedbugsanacquiredhandleiswrittenintoafixedarray.c"
+#line 388 "fixedbugsanacquiredhandleiswrittenintoafixedarray.c"
     hero_array_incref(t12);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h4_own4);

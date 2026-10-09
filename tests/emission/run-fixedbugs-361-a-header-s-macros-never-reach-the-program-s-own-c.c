@@ -104,14 +104,10 @@ int64_t h_fixedbugs361aheadersmacrosneverreachtheprogramsownc_LIMIT(void) {
 
 #line 18 "tests/golden/run/fixedbugs-361-a-header-s-macros-never-reach-the-program-s-own-c.hero"
 void h_fixedbugs361aheadersmacrosneverreachtheprogramsownc_main(void) {
-#line 108 "fixedbugs361aheadersmacrosneverreachtheprogramsownc.c"
-    int64_t t1;
-    int64_t t2;
-    int64_t t3;
-    int64_t t4;
-    goto bb0;
+#line 18 "tests/golden/run/fixedbugs-361-a-header-s-macros-never-reach-the-program-s-own-c.hero"
+    int64_t t1; int64_t t2; int64_t t3; int64_t t4; goto bb0;
+#line 18 "tests/golden/run/fixedbugs-361-a-header-s-macros-never-reach-the-program-s-own-c.hero"
 bb0:
-#line 19 "tests/golden/run/fixedbugs-361-a-header-s-macros-never-reach-the-program-s-own-c.hero"
     t1 = INT64_C(21);
 #line 19 "tests/golden/run/fixedbugs-361-a-header-s-macros-never-reach-the-program-s-own-c.hero"
     t2 = twice(t1);
@@ -131,7 +127,7 @@ bb0:
     hero_print_end();
 #line 21 "tests/golden/run/fixedbugs-361-a-header-s-macros-never-reach-the-program-s-own-c.hero"
     return;
-#line 135 "fixedbugs361aheadersmacrosneverreachtheprogramsownc.c"
+#line 131 "fixedbugs361aheadersmacrosneverreachtheprogramsownc.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

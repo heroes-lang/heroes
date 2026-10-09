@@ -104,14 +104,10 @@ void h_fixedbugs157aunionnamedbyitstagreachedbythenotesroutes_main(void);
 
 #line 14 "tests/golden/run/fixedbugs-157-a-union-named-by-its-tag-reached-by-the-note-s-routes.hero"
 void h_fixedbugs157aunionnamedbyitstagreachedbythenotesroutes_main(void) {
-#line 108 "fixedbugs157aunionnamedbyitstagreachedbythenotesroutes.c"
-    UI t1;
-    int32_t t2;
-    void * t3;
-    int32_t t4;
-    goto bb0;
+#line 14 "tests/golden/run/fixedbugs-157-a-union-named-by-its-tag-reached-by-the-note-s-routes.hero"
+    UI t1; int32_t t2; void * t3; int32_t t4; goto bb0;
+#line 14 "tests/golden/run/fixedbugs-157-a-union-named-by-its-tag-reached-by-the-note-s-routes.hero"
 bb0:
-#line 15 "tests/golden/run/fixedbugs-157-a-union-named-by-its-tag-reached-by-the-note-s-routes.hero"
     t1 = make_u();
 #line 15 "tests/golden/run/fixedbugs-157-a-union-named-by-its-tag-reached-by-the-note-s-routes.hero"
     t2 = t1.i;
@@ -128,7 +124,7 @@ bb0:
     hero_print_end();
 #line 16 "tests/golden/run/fixedbugs-157-a-union-named-by-its-tag-reached-by-the-note-s-routes.hero"
     return;
-#line 132 "fixedbugs157aunionnamedbyitstagreachedbythenotesroutes.c"
+#line 128 "fixedbugs157aunionnamedbyitstagreachedbythenotesroutes.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs157aunionnamedbyitstagreachedbythenotesroutes_UI_eq(const UI *a, const UI *b) {
     if (!(a->i == b->i)) return false;

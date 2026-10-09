@@ -93,63 +93,9 @@ void h_premiseslicenevershares_main(void);
 
 #line 21 "tests/golden/run/premise-slice-never-shares.hero"
 void h_premiseslicenevershares_main(void) {
-#line 97 "premiseslicenevershares.c"
-    HeroArrayHeader * h0_xs = {0};
-    HeroArrayHeader * h1_part = {0};
-    HeroStr h2_s = {0};
-    HeroStr h3_mid = {0};
-    HeroStr h4_joined = {0};
-    HeroArrayHeader * h5_own5 = {0};
-    HeroArrayHeader * h6_own6 = {0};
-    HeroStr h7_own7 = {0};
-    HeroStr h8_own8 = {0};
-    int64_t t1;
-    int64_t t2;
-    int64_t t3;
-    int64_t t4;
-    HeroArrayHeader * t5;
-    HeroArrayHeader * t6;
-    int64_t t7;
-    int64_t t8;
-    HeroArrayHeader * t9;
-    int64_t t10;
-    int64_t t11;
-    int64_t t12;
-    int64_t t13;
-    HeroArrayHeader * t14;
-    int64_t t15;
-    int64_t t16;
-    HeroStr t17;
-    HeroArrayHeader * t18;
-    int64_t t19;
-    int64_t t20;
-    int64_t t22;
-    HeroArrayHeader * t24;
-    int64_t t25;
-    HeroStr t26;
-    HeroArrayHeader * t27;
-    int64_t t28;
-    HeroStr t29;
-    HeroStr t30;
-    int64_t t31;
-    int64_t t32;
-    HeroStr t33;
-    HeroStr t34;
-    HeroStr t35;
-    HeroStr t36;
-    HeroStr t37;
-    HeroStr t38;
-    HeroStr t39;
-    HeroArrayHeader * t40;
-    HeroArrayHeader * t41;
-    HeroArrayHeader * t42;
-    HeroArrayHeader * t43;
-    HeroStr t44;
-    HeroStr t45;
-    HeroStr t46;
-    HeroStr t47;
-    HeroStr t48;
-    goto bb0;
+#line 21 "tests/golden/run/premise-slice-never-shares.hero"
+    HeroArrayHeader * h0_xs = {0}; HeroArrayHeader * h1_part = {0}; HeroStr h2_s = {0}; HeroStr h3_mid = {0}; HeroStr h4_joined = {0}; HeroArrayHeader * h5_own5 = {0}; HeroArrayHeader * h6_own6 = {0}; HeroStr h7_own7 = {0}; HeroStr h8_own8 = {0}; int64_t t1; int64_t t2; int64_t t3; int64_t t4; HeroArrayHeader * t5; HeroArrayHeader * t6; int64_t t7; int64_t t8; HeroArrayHeader * t9; int64_t t10; int64_t t11; int64_t t12; int64_t t13; HeroArrayHeader * t14; int64_t t15; int64_t t16; HeroStr t17; HeroArrayHeader * t18; int64_t t19; int64_t t20; int64_t t22; HeroArrayHeader * t24; int64_t t25; HeroStr t26; HeroArrayHeader * t27; int64_t t28; HeroStr t29; HeroStr t30; int64_t t31; int64_t t32; HeroStr t33; HeroStr t34; HeroStr t35; HeroStr t36; HeroStr t37; HeroStr t38; HeroStr t39; HeroArrayHeader * t40; HeroArrayHeader * t41; HeroArrayHeader * t42; HeroArrayHeader * t43; HeroStr t44; HeroStr t45; HeroStr t46; HeroStr t47; HeroStr t48; goto bb0;
+#line 21 "tests/golden/run/premise-slice-never-shares.hero"
 bb0:
 #line 23 "tests/golden/run/premise-slice-never-shares.hero"
     t1 = INT64_C(10);
@@ -319,7 +265,7 @@ bb0:
     hero_print_str(t39);
 #line 39 "tests/golden/run/premise-slice-never-shares.hero"
     hero_print_end();
-#line 323 "premiseslicenevershares.c"
+#line 269 "premiseslicenevershares.c"
     hero_array_release_at(&h0_xs);
     hero_array_release_at(&h1_part);
     hero_str_release_at(&h2_s);

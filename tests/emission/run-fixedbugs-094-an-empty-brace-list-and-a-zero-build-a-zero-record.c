@@ -146,27 +146,10 @@ struct pt h_fixedbugs094anemptybracelistandazerobuildazerorecord_PT_ZERO(void) {
 
 #line 12 "tests/golden/run/fixedbugs-094-an-empty-brace-list-and-a-zero-build-a-zero-record.hero"
 void h_fixedbugs094anemptybracelistandazerobuildazerorecord_main(void) {
-#line 150 "fixedbugs094anemptybracelistandazerobuildazerorecord.c"
-    struct pt h0_e;
-    struct pt h1_z;
-    struct pt t1;
-    struct pt t2;
-    struct pt t3;
-    int32_t t4;
-    struct pt t5;
-    int32_t t6;
-    int32_t t7;
-    struct pt t8;
-    int32_t t9;
-    struct pt t10;
-    int32_t t11;
-    int32_t t12;
-    struct pt t13;
-    struct pt t14;
-    bool t15;
-    goto bb0;
+#line 12 "tests/golden/run/fixedbugs-094-an-empty-brace-list-and-a-zero-build-a-zero-record.hero"
+    struct pt h0_e; struct pt h1_z; struct pt t1; struct pt t2; struct pt t3; int32_t t4; struct pt t5; int32_t t6; int32_t t7; struct pt t8; int32_t t9; struct pt t10; int32_t t11; int32_t t12; struct pt t13; struct pt t14; bool t15; goto bb0;
+#line 12 "tests/golden/run/fixedbugs-094-an-empty-brace-list-and-a-zero-build-a-zero-record.hero"
 bb0:
-#line 13 "tests/golden/run/fixedbugs-094-an-empty-brace-list-and-a-zero-build-a-zero-record.hero"
     t1 = h_fixedbugs094anemptybracelistandazerobuildazerorecord_PT_EMPTY();
 #line 13 "tests/golden/run/fixedbugs-094-an-empty-brace-list-and-a-zero-build-a-zero-record.hero"
     h0_e = t1;
@@ -210,7 +193,7 @@ bb0:
     hero_print_end();
 #line 17 "tests/golden/run/fixedbugs-094-an-empty-brace-list-and-a-zero-build-a-zero-record.hero"
     return;
-#line 214 "fixedbugs094anemptybracelistandazerobuildazerorecord.c"
+#line 197 "fixedbugs094anemptybracelistandazerobuildazerorecord.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs094anemptybracelistandazerobuildazerorecord_Pt_eq(const struct pt *a, const struct pt *b) {
     if (!(a->x == b->x)) return false;

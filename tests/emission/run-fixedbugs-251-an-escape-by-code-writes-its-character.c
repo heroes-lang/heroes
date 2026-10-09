@@ -110,63 +110,22 @@ HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to);
 
 #line 10 "tests/golden/run/fixedbugs-251-an-escape-by-code-writes-its-character.hero"
 HeroStr h_fixedbugs251anescapebycodewritesitscharacter_RESET(void) {
-#line 114 "fixedbugs251anescapebycodewritesitscharacter.c"
-    HeroStr t1;
-    goto bb0;
+#line 10 "tests/golden/run/fixedbugs-251-an-escape-by-code-writes-its-character.hero"
+    HeroStr t1; goto bb0;
+#line 10 "tests/golden/run/fixedbugs-251-an-escape-by-code-writes-its-character.hero"
 bb0:
-#line 11 "tests/golden/run/fixedbugs-251-an-escape-by-code-writes-its-character.hero"
     t1 = HERO_STR_LIT(hero_str_3b61c89);
-#line 120 "fixedbugs251anescapebycodewritesitscharacter.c"
+#line 119 "fixedbugs251anescapebycodewritesitscharacter.c"
     hero_str_incref(t1);
     return t1;
 }
 
 #line 13 "tests/golden/run/fixedbugs-251-an-escape-by-code-writes-its-character.hero"
 HeroStr h_fixedbugs251anescapebycodewritesitscharacter_bytes_of(HeroStr h0_s) {
-#line 127 "fixedbugs251anescapebycodewritesitscharacter.c"
-    HeroStr h1_out = {0};
-    HeroArrayHeader * h2_xs0 = {0};
-    int64_t h3_i0;
-    int64_t h4_i;
-    HeroArrayHeader * h5_own5 = {0};
-    HeroStr h6_own6 = {0};
-    HeroStr h7_own7 = {0};
-    HeroStr h8_own8 = {0};
-    HeroStr t1;
-    int64_t t2;
-    HeroStr t3;
-    int64_t t4;
-    HeroArrayHeader * t5;
-    int64_t t6;
-    int64_t t7;
-    HeroArrayHeader * t8;
-    int64_t t9;
-    bool t10;
-    HeroArrayHeader * t11;
-    int64_t t12;
-    int64_t t13;
-    HeroStr t14;
-    HeroStr t15;
-    HeroStr t16;
-    HeroStr t17;
-    int64_t t18;
-    uint8_t t19;
-    HeroStr t20;
-    HeroStr t21;
-    int64_t t22;
-    int64_t t23;
-    int64_t t24;
-    HeroStr t25;
-    HeroStr t26;
-    HeroArrayHeader * t27;
-    HeroArrayHeader * t28;
-    HeroStr t29;
-    HeroStr t30;
-    HeroStr t31;
-    HeroStr t32;
-    goto bb0;
+#line 13 "tests/golden/run/fixedbugs-251-an-escape-by-code-writes-its-character.hero"
+    HeroStr h1_out = {0}; HeroArrayHeader * h2_xs0 = {0}; int64_t h3_i0; int64_t h4_i; HeroArrayHeader * h5_own5 = {0}; HeroStr h6_own6 = {0}; HeroStr h7_own7 = {0}; HeroStr h8_own8 = {0}; HeroStr t1; int64_t t2; HeroStr t3; int64_t t4; HeroArrayHeader * t5; int64_t t6; int64_t t7; HeroArrayHeader * t8; int64_t t9; bool t10; HeroArrayHeader * t11; int64_t t12; int64_t t13; HeroStr t14; HeroStr t15; HeroStr t16; HeroStr t17; int64_t t18; uint8_t t19; HeroStr t20; HeroStr t21; int64_t t22; int64_t t23; int64_t t24; HeroStr t25; HeroStr t26; HeroArrayHeader * t27; HeroArrayHeader * t28; HeroStr t29; HeroStr t30; HeroStr t31; HeroStr t32; goto bb0;
+#line 13 "tests/golden/run/fixedbugs-251-an-escape-by-code-writes-its-character.hero"
 bb0:
-#line 14 "tests/golden/run/fixedbugs-251-an-escape-by-code-writes-its-character.hero"
     t1 = HERO_STR_LIT(hero_str_0);
 #line 14 "tests/golden/run/fixedbugs-251-an-escape-by-code-writes-its-character.hero"
     t26 = h1_out;
@@ -285,7 +244,7 @@ bb3:
 bb4:
 #line 19 "tests/golden/run/fixedbugs-251-an-escape-by-code-writes-its-character.hero"
     t25 = h1_out;
-#line 289 "fixedbugs251anescapebycodewritesitscharacter.c"
+#line 248 "fixedbugs251anescapebycodewritesitscharacter.c"
     hero_str_incref(t25);
     hero_str_release_at(&h1_out);
     hero_array_release_at(&h2_xs0);
@@ -298,65 +257,10 @@ bb4:
 
 #line 21 "tests/golden/run/fixedbugs-251-an-escape-by-code-writes-its-character.hero"
 void h_fixedbugs251anescapebycodewritesitscharacter_main(void) {
-#line 302 "fixedbugs251anescapebycodewritesitscharacter.c"
-    int64_t h0_x;
-    HeroStr h1_s0 = {0};
-    HeroStr h2_own2 = {0};
-    HeroStr h3_own3 = {0};
-    HeroStr h4_own4 = {0};
-    HeroStr h5_own5 = {0};
-    HeroStr h6_own6 = {0};
-    HeroStr h7_own7 = {0};
-    HeroStr h8_own8 = {0};
-    HeroStr h9_own9 = {0};
-    HeroStr h10_own10 = {0};
-    HeroStr h11_own11 = {0};
-    HeroStr h12_own12 = {0};
-    HeroStr t1;
-    HeroStr t2;
-    HeroStr t3;
-    HeroStr t4;
-    HeroStr t5;
-    HeroStr t6;
-    HeroStr t7;
-    HeroStr t8;
-    HeroStr t9;
-    HeroStr t10;
-    HeroStr t11;
-    HeroStr t12;
-    int64_t t13;
-    HeroStr t14;
-    int64_t t15;
-    HeroStr t16;
-    HeroStr t17;
-    HeroStr t18;
-    HeroStr t19;
-    HeroStr t20;
-    HeroStr t21;
-    HeroStr t22;
-    HeroStr t23;
-    HeroStr t24;
-    HeroStr t25;
-    HeroStr t26;
-    HeroStr t27;
-    bool t28;
-    HeroStr t29;
-    HeroStr t30;
-    HeroStr t31;
-    HeroStr t32;
-    HeroStr t33;
-    HeroStr t34;
-    HeroStr t35;
-    HeroStr t36;
-    HeroStr t37;
-    HeroStr t38;
-    HeroStr t39;
-    HeroStr t40;
-    HeroStr t41;
-    HeroStr t42;
-    goto bb0;
+#line 21 "tests/golden/run/fixedbugs-251-an-escape-by-code-writes-its-character.hero"
+    int64_t h0_x; HeroStr h1_s0 = {0}; HeroStr h2_own2 = {0}; HeroStr h3_own3 = {0}; HeroStr h4_own4 = {0}; HeroStr h5_own5 = {0}; HeroStr h6_own6 = {0}; HeroStr h7_own7 = {0}; HeroStr h8_own8 = {0}; HeroStr h9_own9 = {0}; HeroStr h10_own10 = {0}; HeroStr h11_own11 = {0}; HeroStr h12_own12 = {0}; HeroStr t1; HeroStr t2; HeroStr t3; HeroStr t4; HeroStr t5; HeroStr t6; HeroStr t7; HeroStr t8; HeroStr t9; HeroStr t10; HeroStr t11; HeroStr t12; int64_t t13; HeroStr t14; int64_t t15; HeroStr t16; HeroStr t17; HeroStr t18; HeroStr t19; HeroStr t20; HeroStr t21; HeroStr t22; HeroStr t23; HeroStr t24; HeroStr t25; HeroStr t26; HeroStr t27; bool t28; HeroStr t29; HeroStr t30; HeroStr t31; HeroStr t32; HeroStr t33; HeroStr t34; HeroStr t35; HeroStr t36; HeroStr t37; HeroStr t38; HeroStr t39; HeroStr t40; HeroStr t41; HeroStr t42; goto bb0;
+#line 21 "tests/golden/run/fixedbugs-251-an-escape-by-code-writes-its-character.hero"
 bb0:
-#line 22 "tests/golden/run/fixedbugs-251-an-escape-by-code-writes-its-character.hero"
     t1 = HERO_STR_LIT(hero_str_18f3f579);
 #line 22 "tests/golden/run/fixedbugs-251-an-escape-by-code-writes-its-character.hero"
     t2 = HERO_STR_LIT(hero_str_1422fcb4);
@@ -521,7 +425,7 @@ bb0:
     if (t28) goto bb2; else goto bb3;
 #line 30 "tests/golden/run/fixedbugs-251-an-escape-by-code-writes-its-character.hero"
 bb1:
-#line 525 "fixedbugs251anescapebycodewritesitscharacter.c"
+#line 429 "fixedbugs251anescapebycodewritesitscharacter.c"
     hero_str_release_at(&h1_s0);
     hero_str_release_at(&h2_own2);
     hero_str_release_at(&h3_own3);
@@ -557,30 +461,15 @@ bb4:
     hero_print_end();
 #line 32 "tests/golden/run/fixedbugs-251-an-escape-by-code-writes-its-character.hero"
     goto bb1;
-#line 561 "fixedbugs251anescapebycodewritesitscharacter.c"
+#line 465 "fixedbugs251anescapebycodewritesitscharacter.c"
 }
 
 #line 26 "<heroes library>"
 HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to) {
-#line 566 "fixedbugs251anescapebycodewritesitscharacter.c"
-    HeroArrayHeader * h2_out = {0};
-    int64_t h3_i;
-    HeroArrayHeader * h4_own4 = {0};
-    HeroArrayHeader * t1;
-    int64_t t2;
-    int64_t t3;
-    int64_t t4;
-    bool t5;
-    int64_t t7;
-    int64_t t9;
-    int64_t t10;
-    int64_t t11;
-    HeroArrayHeader * t12;
-    HeroArrayHeader * t13;
-    HeroArrayHeader * t14;
-    goto bb0;
+#line 26 "<heroes library>"
+    HeroArrayHeader * h2_out = {0}; int64_t h3_i; HeroArrayHeader * h4_own4 = {0}; HeroArrayHeader * t1; int64_t t2; int64_t t3; int64_t t4; bool t5; int64_t t7; int64_t t9; int64_t t10; int64_t t11; HeroArrayHeader * t12; HeroArrayHeader * t13; HeroArrayHeader * t14; goto bb0;
+#line 26 "<heroes library>"
 bb0:
-#line 27 "<heroes library>"
     t1 = hero_array_new(&hero_desc_int, 1);
 #line 27 "<heroes library>"
     t13 = h4_own4;
@@ -627,7 +516,7 @@ bb2:
 #line 31 "<heroes library>"
 bb3:
     t12 = h2_out;
-#line 631 "fixedbugs251anescapebycodewritesitscharacter.c"
+#line 520 "fixedbugs251anescapebycodewritesitscharacter.c"
     hero_array_incref(t12);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h4_own4);
