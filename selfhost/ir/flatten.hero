@@ -575,7 +575,7 @@ function value_call(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: sta
 function case_construct(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl], name: token.Span, given: [ast.Arg], ty: i64, span: token.Span) -> i64
     match table.get(c.types, ty)
         .named n =>
-            found = layout.case_index(decls, s, decl: n.decl, name: name)
+            found = layout.case_index(@b.cases, decls, s, decl: n.decl, name: name)
 
             if found.is_err()
                 return build.emit(@b, op: .missing, ty: ty, span: span)

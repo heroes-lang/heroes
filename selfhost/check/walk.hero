@@ -1843,13 +1843,7 @@ function case_construct(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: 
     match decls[decl].kind
         .variant_decl v =>
             holder = source.span_text(s, decls[decl].name)
-            found: i64 @ -1
-            index: i64 @ 0
-
-            for one_case in v.cases
-                if source.span_text(s, one_case.name) == name
-                    found @ index
-                index @ index + 1
+            found = reach.case_named(@c, s, decl: decl, cases: v.cases, name: name)
 
             if found < 0
                 known: [str] @ []

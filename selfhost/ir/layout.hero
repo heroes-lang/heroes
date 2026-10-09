@@ -114,19 +114,31 @@ function field_index(decls: [ast.Decl], c: state.Checked, s: source.Source, owne
 
     return fail(code: "absent", msg: "unreached")
 
-# The index of a variant's case by name: what a switch arm and a `.case`
-# construction both need.
-function case_index(decls: [ast.Decl], s: source.Source, decl: i64, name: token.Span) -> i64?
+# The index of a variant's case by name: what a `.case` construction needs.
+# The variant's names are read into `cases` the first time one of its cases
+# is asked for, the first case of a name winning as the walk over them did,
+# and every later construction asks that table (defect 513).
+function case_index(@cases: {i64: {str: i64}}, decls: [ast.Decl], s: source.Source, decl: i64, name: token.Span) -> i64?
     wanted = source.span_text(s, name)
+    found = cases[decl]
+
+    if !found.is_err()
+        return found.must()[wanted]
 
     match decls[decl].kind
         .variant_decl v =>
-            names: [str] @ []
+            names: {str: i64} @ {}
+            at: i64 @ 0
 
             for one_case in v.cases
-                names @ names.push(source.span_text(s, one_case.name))
+                text = source.span_text(s, one_case.name)
 
-            return position(names, wanted)
+                if names[text].is_err()
+                    names[text] @ at
+                at @ at + 1
+
+            cases[decl] @ names
+            return names[wanted]
         .constant_decl | .function_decl | .record_decl | .test_decl => return fail(code: "absent", msg: "not a variant")
 
     return fail(code: "absent", msg: "unreached")
@@ -205,6 +217,9 @@ test "a case name becomes its index, and counted is a lookup"
     c = checker.check(p.tree, out, s, p.decls)
     plus_span = token.Span(start: 79, end: 83)
     assert source.span_text(s, plus_span) == "plus"
-    assert case_index(p.decls, s, decl: 1, name: plus_span).must() == 1
+    cases: {i64: {str: i64}} @ {}
+    assert case_index(@cases, p.decls, s, decl: 1, name: plus_span).must() == 1
+    assert case_index(@cases, p.decls, s, decl: 1, name: plus_span).must() == 1
+    assert cases.len() == 1
     assert is_refcounted(c, table.str_ty(c.types))
     assert !is_refcounted(c, table.int_ty_id(c.types))
