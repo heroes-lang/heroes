@@ -1047,6 +1047,247 @@ class Discards(unittest.TestCase):
         self.passed("git -c rebase.autoStash=true pull", cwd=down)
 
 
+def every_state(tree):
+    """`tree` holding a path in each state a peer can leave one in, beside a
+    branch `other` that changes `a.txt`, `d.txt` and `f.txt`: `a.txt` clean,
+    `c.txt` a staged new file, `d.txt` a staged change, `e.txt` an unstaged
+    one, `f.txt` a staged change changed again, `g.txt` a staged new file
+    changed again, `h.txt` a staged deletion, `sub/s.txt` a staged change in
+    a directory, and `my file.txt` a staged change with a space in its name."""
+    for rel in ("a.txt", "d.txt", "e.txt", "f.txt", "h.txt", "sub/s.txt", "my file.txt"):
+        write(os.path.join(tree, rel), rel + " head\n")
+    git(tree, "add", "--", "a.txt", "d.txt", "e.txt", "f.txt", "h.txt", "sub/s.txt", "my file.txt")
+    git(tree, "commit", "-q", "-m", "states", "--", "a.txt", "d.txt", "e.txt", "f.txt", "h.txt", "sub/s.txt", "my file.txt")
+    git(tree, "checkout", "-q", "-b", "other")
+    for rel in ("a.txt", "d.txt", "f.txt"):
+        write(os.path.join(tree, rel), rel + " other\n")
+    git(tree, "commit", "-q", "-m", "other", "--", "a.txt", "d.txt", "f.txt")
+    git(tree, "checkout", "-q", "main")
+    for rel in ("c.txt", "d.txt", "f.txt", "g.txt", "sub/s.txt", "my file.txt"):
+        staged(tree, rel, rel + " staged\n")
+    git(tree, "rm", "-q", "--", "h.txt")
+    for rel in ("e.txt", "f.txt", "g.txt"):
+        write(os.path.join(tree, rel), rel + " worktree\n")
+
+
+def index_holds(tree, rel):
+    """What the index of `tree` holds as `rel`, or None."""
+    done = git(tree, "show", ":" + rel, check=False)
+    return done.stdout if done.returncode == 0 else None
+
+
+class Overwrites(unittest.TestCase):
+    """Defect 529: the commands that write over what the index holds for the
+    paths they name are refused where a path they name holds a staged change
+    they would throw away, whosever: a restore of the index, a checkout from a
+    commit, a forced removal or move, a reset of the index; each witnessed
+    against what git does. A restore or a checkout of the working tree alone
+    reaches no staged change, and is the hard stops' *asked for*."""
+
+    def setUp(self):
+        self.top = fresh("hooks-529-")
+        self.tree = make_tree(os.path.join(self.top, "tree"), repo=True)
+        isolated = mock.patch.dict(os.environ, {"GIT_CONFIG_GLOBAL": os.devnull, "GIT_CONFIG_NOSYSTEM": "1"})
+        isolated.start()
+        self.addCleanup(isolated.stop)
+        every_state(self.tree)
+
+    def refused(self, command, cwd=None):
+        said = guard_bash.verdict(command, cwd or self.tree)
+        self.assertIsNotNone(said, command)
+        self.assertIn("defect 529", said, command)
+        return said
+
+    def passed(self, command, cwd=None):
+        said = guard_bash.verdict(command, cwd or self.tree)
+        self.assertIsNone(said, command)
+
+    def test_a_restore_of_the_index_and_the_working_tree_is_refused_in_every_spelling(self):
+        said = self.refused("git restore -S -W -- c.txt d.txt e.txt a.txt")
+        self.assertIn("c.txt, d.txt", said)
+        self.assertNotIn("e.txt", said)
+        self.assertNotIn("a.txt", said)
+        for command in ("git restore --staged --worktree -- d.txt", "git restore -SW d.txt", "git restore -WS -- d.txt",
+                        "git restore -qSW -- d.txt", "git restore --st --w -- d.txt", "git restore --sta --wor d.txt",
+                        "git restore --source=other -S -W -- d.txt", "git restore -s other -SW -- d.txt",
+                        "git restore -sother -SW -- d.txt", "git restore -SWs other -- d.txt", "git restore --so=other --staged --worktree d.txt",
+                        "git restore --no-overlay -S -W -- d.txt", "git restore -S -W -- 'my file.txt'"):
+            self.refused(command)
+        self.assertIn("sub/s.txt", self.refused("git restore -S -W -- sub"))
+        self.assertIn("sub/s.txt", self.refused("git restore -S -W -- s.txt", cwd=os.path.join(self.tree, "sub")))
+        self.assertIn("d.txt", self.refused("git restore -S -W -- ../d.txt", cwd=os.path.join(self.tree, "sub")))
+        for command in ("git restore -S -W .", "git restore -S -W :/", "git restore -S -W -- '*.txt'"):
+            said = self.refused(command)
+            for rel in ("c.txt", "d.txt", "f.txt", "g.txt", "h.txt"):
+                self.assertIn(rel, said, command)
+        self.refused("git -C " + self.tree + " restore -S -W -- d.txt", cwd=self.top)
+        self.refused("bash -c 'cd " + self.tree + " && git restore -S -W -- d.txt'", cwd=self.top)
+
+    def test_a_restore_git_refuses_or_that_names_no_staged_change_passes(self):
+        for command in ("git restore -S -W -- a.txt e.txt", "git restore --s --w -- d.txt", "git restore -S -W --overlay -- c.txt",
+                        "git restore -p -S -W -- d.txt", "git restore -S -W", "git restore -s other -SW -- a.txt"):
+            self.passed(command)
+
+    def test_a_restore_of_the_index_alone_is_refused_where_the_working_tree_holds_another_version(self):
+        said = self.refused("git restore -S -- c.txt d.txt f.txt g.txt h.txt")
+        self.assertIn("f.txt, g.txt", said)
+        for rel in ("c.txt", "d.txt", "h.txt"):
+            self.assertNotIn(rel, said)
+        self.assertIn("git add --", said)
+        self.refused("git restore --staged --source=other -- f.txt")
+        for command in ("git restore --staged -- c.txt d.txt h.txt", "git restore --staged -- sub", "git restore -S --source=other -- d.txt"):
+            self.passed(command)
+
+    def test_a_restore_of_the_working_tree_alone_reaches_no_staged_change(self):
+        for command in ("git restore -- d.txt e.txt f.txt g.txt", "git restore -W -- d.txt f.txt", "git restore --worktree .",
+                        "git restore --source=HEAD -- c.txt d.txt f.txt g.txt", "git restore -s other -- d.txt f.txt", "git restore ."):
+            self.passed(command)
+        git(self.tree, "restore", "--", "d.txt", "f.txt", "g.txt")
+        git(self.tree, "restore", "--source=HEAD", "--", "c.txt")
+        for rel in ("c.txt", "d.txt", "f.txt", "g.txt"):
+            self.assertEqual(index_holds(self.tree, rel), rel + " staged\n", rel)
+
+    def test_a_checkout_from_a_commit_is_refused_over_a_staged_change(self):
+        said = self.refused("git checkout HEAD -- d.txt e.txt a.txt")
+        self.assertIn("d.txt", said)
+        self.assertNotIn("e.txt", said)
+        for command in ("git checkout HEAD d.txt", "git checkout @ -- d.txt", "git checkout main -- f.txt", "git checkout other -- d.txt f.txt",
+                        "git checkout other d.txt", "git checkout -f HEAD -- d.txt", "git checkout -q HEAD -- d.txt", "git checkout HEAD -q -- d.txt",
+                        "git checkout HEAD^{tree} -- d.txt", "git checkout HEAD -- h.txt"):
+            self.refused(command)
+        self.assertIn("sub/s.txt", self.refused("git checkout HEAD -- s.txt", cwd=os.path.join(self.tree, "sub")))
+        for command in ("git checkout HEAD -- .", "git checkout HEAD ."):
+            said = self.refused(command)
+            self.assertIn("d.txt", said)
+            self.assertNotIn("c.txt", said)
+            self.assertNotIn("g.txt", said)
+        said = self.refused("git checkout --no-overlay HEAD -- .")
+        self.assertIn("c.txt", said)
+        self.assertIn("g.txt", said)
+        self.refused("git checkout --no-overl HEAD -- d.txt")
+
+    def test_a_checkout_from_the_index_or_of_a_branch_or_that_git_refuses_passes(self):
+        for command in ("git checkout -- d.txt e.txt f.txt g.txt", "git checkout -f -- d.txt f.txt", "git checkout -- .", "git checkout .",
+                        "git checkout d.txt", "git checkout other", "git checkout -b fix", "git checkout -b fix HEAD",
+                        "git checkout HEAD -- a.txt e.txt", "git checkout other -- a.txt", "git checkout HEAD -- c.txt",
+                        "git checkout -p HEAD -- d.txt", "git checkout --ov HEAD -- d.txt", "git checkout nowhere -- d.txt",
+                        "git checkout HEAD other -- d.txt", "git checkout -m -- d.txt", "git checkout --ours -- d.txt"):
+            self.passed(command)
+
+    def test_a_forced_removal_is_refused_over_a_staged_change(self):
+        said = self.refused("git rm -f -- a.txt c.txt d.txt e.txt")
+        self.assertIn("c.txt, d.txt", said)
+        self.assertNotIn("a.txt", said)
+        for command in ("git rm -q --force c.txt", "git rm --f d.txt", "git rm --fo -- d.txt", "git rm -qf d.txt", "git rm -rf sub",
+                        "git rm -fr -- sub", "git rm -r --force -- '*.txt'", "git rm -f -q -- 'my file.txt'"):
+            self.refused(command)
+        said = self.refused("git rm --cached -f -- c.txt d.txt f.txt g.txt")
+        self.assertIn("f.txt, g.txt", said)
+        self.assertNotIn("c.txt", said)
+        self.refused("git rm --ca --f -- f.txt")
+        for command in ("git rm -- d.txt", "git rm -f -- a.txt e.txt", "git rm --cached -- c.txt d.txt f.txt", "git rm --cached -f -- c.txt d.txt",
+                        "git rm -n -f -- d.txt", "git rm -f --dry-run -- d.txt", "git rm -nf d.txt", "git rm -f --no-force -- d.txt",
+                        "git rm -f -- h.txt"):
+            self.passed(command)
+
+    def test_a_reset_of_the_index_is_refused_where_the_working_tree_holds_another_version(self):
+        for command in ("git reset -- f.txt", "git reset f.txt", "git reset -q HEAD -- f.txt g.txt", "git reset HEAD f.txt", "git reset --mixed -- f.txt",
+                        "git reset --mi -- f.txt", "git reset other -- f.txt", "git reset -N -- f.txt", "git reset", "git reset -q", "git reset --keep",
+                        "git reset --ke", "git reset HEAD", "git reset other", "git reset -- :/", "git reset -- ."):
+            said = self.refused(command)
+            self.assertIn("f.txt", said, command)
+        said = self.refused("git reset")
+        self.assertIn("f.txt, g.txt", said)
+        for rel in ("c.txt", "d.txt", "h.txt", "sub/s.txt"):
+            self.assertNotIn(rel, said)
+        for command in ("git reset -- c.txt d.txt h.txt", "git reset other -- d.txt", "git reset --soft", "git reset -p", "git reset --m",
+                        "git reset -- a.txt e.txt"):
+            self.passed(command)
+
+    def test_a_forced_move_over_a_staged_change_is_refused(self):
+        said = self.refused("git mv -f a.txt d.txt")
+        self.assertIn("d.txt", said)
+        self.assertNotIn("a.txt", said)
+        self.refused("git mv --force -v a.txt f.txt")
+        write(os.path.join(self.tree, "dir", "d.txt"), "dir d\n")
+        git(self.tree, "add", "--", "dir/d.txt")
+        git(self.tree, "commit", "-q", "-m", "dir", "--", "dir/d.txt")
+        staged(self.tree, "dir/d.txt", "dir d staged\n")
+        self.assertIn("dir/d.txt", self.refused("git mv -f d.txt dir"))
+        for command in ("git mv a.txt d.txt", "git mv -n -f a.txt d.txt", "git mv -f d.txt z.txt", "git mv -f a.txt sub", "git mv -f a.txt"):
+            self.passed(command)
+
+    def test_the_refused_commands_are_the_ones_that_lose_the_change(self):
+        cases = (
+            ("git restore -S -W -- d.txt", "d.txt"), ("git restore -S -- f.txt", "f.txt"), ("git checkout HEAD -- d.txt", "d.txt"),
+            ("git rm -q -f -- c.txt", "c.txt"), ("git rm -q --cached -f -- g.txt", "g.txt"), ("git reset -q -- f.txt", "f.txt"),
+            ("git reset -q", "g.txt"), ("git mv -f a.txt d.txt", "d.txt"),
+        )
+        for at, (command, rel) in enumerate(cases):
+            tree = make_tree(os.path.join(self.top, "witness-" + str(at)), repo=True)
+            every_state(tree)
+            self.refused(command, cwd=tree)
+            subprocess.run(command, shell=True, cwd=tree, env=GIT_ENV, capture_output=True, check=True)
+            self.assertNotEqual(index_holds(tree, rel), rel + " staged\n", command)
+            self.assertNotEqual(read(os.path.join(tree, rel)), rel + " staged\n", command)
+
+    def test_what_the_refusal_says_keeps_the_files_does(self):
+        said = self.refused("git restore -S -W -- d.txt")
+        self.assertIn("git restore --staged --", said)
+        self.passed("git restore --staged -- d.txt")
+        git(self.tree, "restore", "--staged", "--", "d.txt")
+        self.assertEqual(read(os.path.join(self.tree, "d.txt")), "d.txt staged\n")
+        said = self.refused("git reset -- f.txt")
+        self.assertIn("git add --", said)
+        git(self.tree, "add", "--", "f.txt")
+        self.passed("git reset -- f.txt")
+        git(self.tree, "reset", "-q", "--", "f.txt")
+        self.assertEqual(read(os.path.join(self.tree, "f.txt")), "f.txt worktree\n")
+
+    def test_paths_the_text_cannot_read_are_judged_as_every_path(self):
+        for command in ('git restore -S -W -- "$f"', "git checkout HEAD -- $(cat list)", "git rm -f -- `cat list`",
+                        "git restore -S -W -- {a,e}.txt", "git restore -S -W --pathspec-from-file=-", "git checkout HEAD -- ~/x"):
+            said = self.refused(command)
+            self.assertIn("every path", said, command)
+        for command in ("git checkout $rev -- d.txt", "git checkout $rev d.txt", 'git reset "$rev" -- f.txt'):
+            self.assertIn("cannot read", self.refused(command))
+        for command in ("git checkout $rev -- a.txt", "git checkout $rev", "git reset $rev -- d.txt"):
+            self.passed(command)
+        write(os.path.join(self.tree, "list"), "a.txt\nd.txt\n")
+        self.assertIn("d.txt", self.refused("git restore -S -W --pathspec-from-file=list"))
+        self.assertIn("d.txt", self.refused("git checkout --pathspec-from-file list HEAD"))
+        write(os.path.join(self.tree, "list"), "a.txt\ne.txt\n")
+        self.passed("git restore -S -W --pathspec-from-file=list")
+        write(os.path.join(self.tree, "nul"), "a.txt\0d.txt\0")
+        self.assertIn("d.txt", self.refused("git rm -f --pathspec-from-file=nul --pathspec-file-nul"))
+        self.assertIn("every path", self.refused("git rm -f --pathspec-from-file=missing"))
+        # A list the same command line writes is read as every path: what it
+        # holds now is not what git will read.
+        write(os.path.join(self.tree, "list"), "a.txt\n")
+        self.assertIn("every path", self.refused("printf 'd.txt\\n' > list && git restore -S -W --pathspec-from-file=list"))
+
+    def test_while_an_operation_stands_its_own_files_are_its_to_resolve(self):
+        tree = make_tree(os.path.join(self.top, "merging"), repo=True)
+        conflicted(tree, "merge", extra="c.txt")
+        for command in ("git checkout other -- a.txt", "git checkout MERGE_HEAD -- a.txt b.txt", "git restore -S -W -- a.txt",
+                        "git restore --source=other -SW -- a.txt", "git checkout --theirs -- a.txt", "git checkout -m -- a.txt"):
+            self.passed(command, cwd=tree)
+        said = self.refused("git restore -S -W -- a.txt c.txt", cwd=tree)
+        self.assertIn("c.txt", said)
+        self.assertNotIn("a.txt", said)
+        self.assertIn("the merge standing did not bring", said)
+
+    def test_a_first_commit_s_staged_files_are_read_with_no_head(self):
+        tree = os.path.join(self.top, "unborn")
+        os.makedirs(tree)
+        git(tree, "init", "-q", "-b", "main", ".")
+        staged(tree, "x.txt", "x staged\n")
+        self.assertIn("x.txt", self.refused("git rm -f -- x.txt", cwd=tree))
+        self.passed("git reset", cwd=tree)
+        write(os.path.join(tree, "x.txt"), "x worktree\n")
+        self.assertIn("x.txt", self.refused("git reset", cwd=tree))
+
+
 REPO = os.path.dirname(os.path.dirname(HOOKS))
 ZWSP = chr(0x200B)
 RLO = chr(0x202E)
