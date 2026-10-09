@@ -22,6 +22,7 @@ use emit/array_read
 use emit/str_read
 use emit/fallible
 use emit/writer
+use emit/byte_copy
 use token
 use parse
 use resolve
@@ -95,14 +96,19 @@ function tag_read(@w: writer.Writer, c: state.Checked, f: containers.Function, b
         text @ fallible.option_tag(base: base)
     writer.line(@w, text: "    " + target.must() + " = " + text + ";")
 
-# What that case is carrying.
+# What that case is carrying: a case's payload is a struct of the unit's
+# own, and an option's is its payload type or a failure, which
+# `byte_copy` asks of (defect 522).
 function payload_read(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], f: containers.Function, base: i64, at: i64, target: str?)
     if target.is_err()
         return
     is_fallible: bool @ false
+    owned: bool @ true
 
     match table.get(c.types, containers.value_type(f, base))
-        .fallible                                                 => is_fallible @ true
+        .fallible o =>
+            is_fallible @ true
+            owned @ at == 0 && byte_copy.own_struct(c, decls, ty: o.payload)
         .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => is_fallible @ is_fallible
         .array | .fixed | .map | .function_ty | .named            => is_fallible @ is_fallible
         .case_ty | .failure | .generic | .error                   => is_fallible @ is_fallible
@@ -110,7 +116,7 @@ function payload_read(@w: writer.Writer, c: state.Checked, names: ctype.Names, s
     if is_fallible
         writer.line(
             @w,
-            text: "    " + target.must() + " = " + fallible.option_payload(base: base, at: at) + ";"
+            text: "    " + byte_copy.copied(w, owned: owned, target: target.must(), value: fallible.option_payload(base: base, at: at))
         )
         return
     text = aggregate.payload_member(c, names, s, decls, f, base: base, at: at)
@@ -118,7 +124,7 @@ function payload_read(@w: writer.Writer, c: state.Checked, names: ctype.Names, s
     if text.is_err()
         writer.line(@w, text: "    hero_unreachable(); /* not a variant */")
         return
-    writer.line(@w, text: "    " + target.must() + " = " + text.must() + ";")
+    writer.line(@w, text: "    " + byte_copy.copied(w, owned: owned, target: target.must(), value: text.must()))
 
 # One field of a record. A C header may declare a member `const T *`,
 # and Heroes' ptr has no qualifier to receive it: without the cast the
@@ -139,6 +145,7 @@ function field_read(@w: writer.Writer, c: state.Checked, s: source.Source, decls
         return
     cast: str @ ""
     found = aggregate.field(c, s, decls, owner: containers.value_type(f, base), index: at)
+    owned = !found.is_err() && byte_copy.own_struct(c, decls, ty: found.must().ty)
 
     if !found.is_err()
         match table.get(c.types, found.must().ty)
@@ -146,7 +153,10 @@ function field_read(@w: writer.Writer, c: state.Checked, s: source.Source, decls
             .int_ty | .float_ty | .bool | .str | .cstr | .unit         => cast @ cast
             .array | .fixed | .map | .fallible | .function_ty | .named => cast @ cast
             .case_ty | .failure | .generic | .error                    => cast @ cast
-    writer.line(@w, text: "    " + target.must() + " = " + cast + text.must() + ";")
+    writer.line(
+        @w,
+        text: "    " + byte_copy.copied(w, owned: owned, target: target.must(), value: cast + text.must())
+    )
 
 ## Tests
 

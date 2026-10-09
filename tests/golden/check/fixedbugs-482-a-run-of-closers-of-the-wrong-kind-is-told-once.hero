@@ -12,6 +12,11 @@
 # groups, of calls, of groups through spaces, each told once; and, told as
 # before, closers on lines of their own, one a line, and a run of lists
 # closed by `)`, each told with its own `[`'s column, a message of its own.
+#
+# Moved 2026-10-09 with defect 525's repair (lane b16-compiler): reports
+# alike but for the numbers in them are one run, so the lists closed by `)`
+# are told once, at the first, the note saying each closer after it is for
+# the next opener out.
 
 function f(a: i64) -> i64
     return a
@@ -23,7 +28,7 @@ function main()
     print(y)
     z = (((1] ] ]  #~ expected_group_close
     print(z)
-    w = [[[1)))  #~ expected_separator expected_separator expected_separator
+    w = [[[1)))  #~ expected_separator
     print(w)
     v = (((1
     ]  #~ expected_group_close

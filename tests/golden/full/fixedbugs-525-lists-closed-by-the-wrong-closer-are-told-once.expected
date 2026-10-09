@@ -1,0 +1,20 @@
+error[expected_separator]: expected `,` or a new line between one element and the next, found `)` — the `[` still open at column 11 of this line: write `]` for this `)`
+  at tests/golden/full/fixedbugs-525-lists-closed-by-the-wrong-closer-are-told-once.hero:10:13
+     |
+  10 |     w = [[[1)))  #~ expected_separator
+     |             ^
+  note: the same stands at the 2 closers after it on its line, `))`, each for the next opener out
+
+error[expected_separator]: expected `,` or a new line between one element and the next, found `)` — the `[` still open at column 10 of this line: write `]` for this `)`
+  at tests/golden/full/fixedbugs-525-lists-closed-by-the-wrong-closer-are-told-once.hero:12:12
+     |
+  12 |     u = [[1))  #~ expected_separator
+     |            ^
+  note: the same stands at the closer after it on its line, `)`, for the next opener out
+
+error[expected_separator]: expected `,` or a new line between one entry and the next, found `)` — the `{` still open at column 13 of this line: write `}` for this `)`
+  at tests/golden/full/fixedbugs-525-lists-closed-by-the-wrong-closer-are-told-once.hero:14:18
+     |
+  14 |     v = {1: {2: 3))  #~ expected_separator
+     |                  ^
+  note: the same stands at the closer after it on its line, `)`, for the next opener out

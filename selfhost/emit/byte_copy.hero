@@ -1,0 +1,91 @@
+# Past the depth `emit/typeorder.hero` hands clang a chain of structs from
+# its bottom, an assignment of one of the unit's own structs in a function
+# body is a byte copy, with its type still checked (defect 522, defect
+# 469's other half; design.md §3.1).
+#
+# **Why.** clang asks of every assignment of a struct whether it holds a
+# `const` field, by a walk of every struct it holds by value that costs the
+# square of their number (`RecordType::hasConstFields`, 98.5% of a sample of
+# the front end, defect 469). Defect 469 made each descriptor's copy a byte
+# copy; a chain whose every level's value is built in one function assigns
+# each level's struct several times in that body, so its front end still
+# cost the cube of the depth: 3.39, 18.74 and 130.95 billion instructions at
+# 250, 500 and 1,000 levels on this Mac, where the same C with every such
+# assignment written as a byte copy by hand reads 1.46, 3.39 and 9.21.
+#
+# **How, and what it keeps.** `HERO_COPY(dst, (src))`, defined once in such a
+# unit, asserts that the two sides are one type
+# (`__builtin_types_compatible_p`, which compares the canonical types and
+# walks no field) and copies `sizeof(dst)` bytes from the source's address:
+# the type check an assignment made stays, the cost goes, and no temporary
+# is added at any site, which panel 106 measured as frame clang pins for a
+# function's whole life. The source is a place or a compound literal, both
+# of which have an address; a call's result has none and stays an
+# assignment. `memmove`, not `memcpy`, since a place may be copied onto
+# itself. The source is written in parentheses, so a compound literal's
+# commas are one argument. Below the depth nothing is defined and every
+# unit's C is what it was, byte for byte.
+
+use ast
+use source
+use check/state
+use check/table
+use emit/writer
+use parse
+use resolve
+use checker
+
+constant DEFINITION: str
+    "#define HERO_COPY(dst, src) do { _Static_assert(__builtin_types_compatible_p(__typeof__(dst), __typeof__(src)), \"heroes-copy\"); __builtin_memmove(&(dst), &(src), sizeof(dst)); } while (0)"
+
+# The statement that gives `target` the value `value` has: a byte copy where
+# the unit defines `HERO_COPY` and the type is one of its own structs, the
+# assignment everywhere else. `value` must be a place or a compound literal.
+function assignment(w: writer.Writer, c: state.Checked, decls: [ast.Decl], ty: i64, target: str, value: str) -> str
+    return copied(w, owned: own_struct(c, decls, ty: ty), target: target, value: value)
+
+# The same, where the site knows whether the type is one of the unit's own
+# structs: a construction knows it by its shape.
+function copied(w: writer.Writer, owned: bool, target: str, value: str) -> str
+    if w.copies_bytes && owned
+        return "HERO_COPY(" + target + ", (" + value + "));"
+    return target + " = " + value + ";"
+
+# One of the structs a unit defines for its program's types: a record that
+# is no group's, whose struct is the header's, a variant, a case's payload
+# and an option.
+function own_struct(c: state.Checked, decls: [ast.Decl], ty: i64) -> bool
+    if table.poisoned(c.types, ty)
+        return false
+
+    return match table.get(c.types, ty)
+        .named n                                                  => own_declaration(decls[n.decl])
+        .fallible | .case_ty                                      => true
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => false
+        .array | .fixed | .map | .function_ty                     => false
+        .failure | .generic | .error                              => false
+
+function own_declaration(decl: ast.Decl) -> bool
+    return match decl.kind
+        .record_decl rec                             => rec.header.is_err()
+        .variant_decl                                => true
+        .constant_decl | .function_decl | .test_decl => false
+
+test "a unit's own struct is copied as bytes where the unit defines the copy, and nothing else is (defect 522)"
+    text = "extern \"g.h\"\n    record G\n        n: i32\n\nrecord P\n    x: i64\n\nvariant V\n    one\n\nfunction main()\n    p = P(x: 1)\n    v: V = .one\n    m: i64? = ok(1)\n    _ = v\n    _ = m.is_err()\n    print(p.x)\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    c: state.Checked @ checker.check(parsed.tree, out, s, parsed.decls)
+    assert c.diagnostics.len() == 0
+    assert !own_declaration(parsed.decls[0])
+    assert own_declaration(parsed.decls[1])
+    assert own_declaration(parsed.decls[2])
+    assert !own_struct(c, parsed.decls, ty: table.int_ty_id(c.types))
+    assert !own_struct(c, parsed.decls, ty: table.str_ty(c.types))
+    w: writer.Writer @ writer.new_writer("t")
+    assert copied(w, owned: true, target: "t1", value: "t2") == "t1 = t2;"
+    w.copies_bytes @ true
+    assert copied(w, owned: true, target: "t1", value: "(h_t_P){.f_x = t2}") == "HERO_COPY(t1, ((h_t_P){.f_x = t2}));"
+    assert copied(w, owned: false, target: "t1", value: "t2") == "t1 = t2;"
+    assert assignment(w, c, parsed.decls, ty: table.int_ty_id(c.types), target: "t1", value: "t2") == "t1 = t2;"

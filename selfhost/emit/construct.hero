@@ -23,6 +23,7 @@ use emit/fallible
 use emit/storageless
 use emit/zeroed
 use emit/writer
+use emit/byte_copy
 use token
 use check/table
 use parse
@@ -106,10 +107,19 @@ function record_or_case(@w: writer.Writer, c: state.Checked, names: ctype.Names,
         )
         .array_shape | .map_shape | .ok_shape | .fail_shape | .err_shape => literal @ literal
 
+    owned: bool @ false
+
+    match shape
+        .record_shape rs                                                 => owned @ byte_copy.own_declaration(
+            decls[rs.decl]
+        )
+        .case_shape                                                      => owned @ true
+        .array_shape | .map_shape | .ok_shape | .fail_shape | .err_shape => owned @ false
+
     if literal.is_err()
         writer.line(@w, text: "    hero_unreachable(); /* not an aggregate */")
     else
-        writer.line(@w, text: "    " + target.must() + " = " + literal.must() + ";")
+        writer.line(@w, text: "    " + byte_copy.copied(w, owned: owned, target: target.must(), value: literal.must()))
 
 # An array literal is several statements, because each push releases
 # the array it grew from.
@@ -154,7 +164,7 @@ function option(@w: writer.Writer, names: ctype.Names, f: containers.Function, t
     if text.is_err()
         writer.line(@w, text: "    hero_unreachable(); /* not a T? */")
         return
-    writer.line(@w, text: "    " + target.must() + " = " + text.must() + ";")
+    writer.line(@w, text: "    " + byte_copy.copied(w, owned: true, target: target.must(), value: text.must()))
 
 ## Tests
 

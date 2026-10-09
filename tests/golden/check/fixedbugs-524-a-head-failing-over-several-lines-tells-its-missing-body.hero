@@ -1,0 +1,27 @@
+# Fixed 2026-10-09, defect 524, lane b16-compiler (class adjacent).
+# Symptom: a function head that failed over several lines held back the
+# report that its body is missing, where the same head on one line was told
+# both: `function f(a: i64,` over `        b: 5)` over no body was told the
+# `5` alone, its missing body only once the `5` was a type.
+# Cause: `parse/opening.body_follows` silenced the absent body of any failed
+# head that crossed a line, since a head's recovery can read the body's own
+# line inside its brackets (`function f(` over `    y = 3 )`). It now holds
+# the report back only where the head went on to a line at its body's
+# margin, one level below its own; at any other margin the lines are the
+# head's, and its body is told missing as on one line.
+# This case: the head over two lines, a list aligned under its first
+# parameter, and a head that goes on at its body's margin, whose missing
+# body is held back as before, its second line standing where a body would.
+
+function two_lines(a: i64,
+        b: 5)  #~ expected_type
+
+function aligned(a: i64,  #~ missing_body
+                 b: i64,
+                 c: [5])  #~ expected_type
+
+function held(a: i64,  #~ missing_body
+    b: 5)  #~ expected_type
+
+function main()
+    print(1)

@@ -104,6 +104,10 @@ record Writer
     generated_name: str
     named_file: str
     named: str
+    # Whether this unit defines `HERO_COPY` and copies its own structs as
+    # bytes (`emit/byte_copy.hero`, defect 522): set where the types are
+    # written, before any body, and only past `typeorder`'s depth.
+    copies_bytes: bool
 
 function new_writer(module: str) -> Writer
     generated = module + ".c"
@@ -119,7 +123,8 @@ function new_writer(module: str) -> Writer
         generated: generated,
         generated_name: generated_name,
         named_file: generated,
-        named: generated_name
+        named: generated_name,
+        copies_bytes: false
     )
 
 # One line of C. Everything goes through here, which is what keeps the

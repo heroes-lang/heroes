@@ -1,0 +1,15 @@
+# Defect 525, 2026-10-09 (lane b16-compiler; filed from lane b15-parse's
+# report): defect 482's repair told a run of wrong closers once, and lists
+# closed by `)` kept one message each, each naming its own `[`'s column, so
+# `[[[1)))` was told three times where `(((1]]]` was told once. A run whose
+# reports are alike but for the numbers in them is one report now, its note
+# saying each closer after the first is for the next opener out; maps, `{`s
+# closed by `)`, the same. A run of one more is in the singular.
+
+function main()
+    w = [[[1)))  #~ expected_separator
+    print(w)
+    u = [[1))  #~ expected_separator
+    print(u)
+    v = {1: {2: 3))  #~ expected_separator
+    print(v)
