@@ -1,0 +1,25 @@
+# Defect 507's class, 2026-10-08, and panel 199's R3, ratified 2026-10-09:
+# the spec-warden's `hidden2`, a correct program whose recursion ends on an
+# `exit` inside a callee that otherwise returns. clang cannot see that the
+# call may not return, and said *all paths through this function will call
+# itself [-Winfinite-recursion]* at every level, false, where no mark on the
+# emitted `exit` reaches (lane b15-emit's repair left it standing). Panel
+# 199's R1 spares the function (reading R4: the callee may end the program),
+# and since R3 clang's warning is not passed on (`-Wno-infinite-recursion`,
+# `selfhost/cli/flags.hero`), the checker the witness of what it could tell.
+# It prints 1, 2 and 3 and exits 0 at every level; the `warnings` suite holds
+# its build to no clang warning, which it gave before.
+function next(n: i64) -> i64
+    return n + 1
+
+function stop_after(n: i64)
+    if n > 3
+        exit(code: 0)
+
+function serve(n: i64) -> i64
+    stop_after(n)
+    print(n)
+    return serve(next(n))
+
+function main()
+    print(serve(1))

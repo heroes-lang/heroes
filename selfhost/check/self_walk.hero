@@ -1,0 +1,128 @@
+# Where `check/self_call.hero`'s walk stands, and the moves that change it
+# (panel 199's R1, ratified 2026-10-09, defect 457): whether a path reaches a
+# point, whether every path that does has called the function itself, and
+# whether one returned or ended before it did. The state and its moves read
+# no syntax, so they stand apart from the walk, which is a knot (a statement
+# holding expressions and an expression holding blocks), as
+# `check/moved_walk.hero` stands apart from `check/moved.hero`.
+
+use ast
+
+# How a point of the body stands: whether any path reaches it, and whether
+# every path that does has called the function itself.
+record Flow
+    live: bool
+    called: bool
+
+# A loop the walk is inside: what its `break`s and the ends of its turns
+# carry, met, and whether a `break` of its own stood.
+record Frame
+    breaks: Flow
+    turns: Flow
+    broke: bool
+
+record Walk
+    decl: i64
+    flow: Flow
+    frames: [Frame]
+
+    # A path that returns or ends before the call: a way out.
+    escaped: bool
+
+    # The first call to the function itself the walk met, where the caret goes.
+    witness: i64
+
+    # The functions named on a path before the call: a way out where one may
+    # end the program, which `check/may_end.hero` answers. Collected only on a
+    # second walk, of a function the first would refuse having seen one, and
+    # lent to `append` to grow in place (defect 409: grown through the field,
+    # the list is copied whole at each push).
+    named: [i64]
+    collect: bool
+    saw: bool
+
+# A walk of the function declared at `at`, before its first statement.
+function start(at: i64, collect: bool) -> Walk
+    frames: [Frame] = []
+    none: [i64] = []
+    return Walk(
+        decl: at,
+        flow: Flow(live: true, called: false),
+        frames: frames,
+        escaped: false,
+        witness: -1,
+        named: none,
+        collect: collect,
+        saw: false
+    )
+
+function dead() -> Flow
+    return Flow(live: false, called: true)
+
+# Where two paths join: a path nothing reaches says nothing about the other.
+function meet(one: Flow, two: Flow) -> Flow
+    if !one.live
+        return two
+
+    if !two.live
+        return one
+    return Flow(live: true, called: one.called && two.called)
+
+# A path returns or ends here, or may: before the call, a way out.
+function leave(@w: Walk)
+    may_leave(@w)
+    w.flow @ dead()
+
+function may_leave(@w: Walk)
+    if w.flow.live && !w.flow.called
+        w.escaped @ true
+
+# A call to the function itself, on the paths that reach it.
+function hit(@w: Walk, id: i64)
+    if w.flow.live && !w.flow.called
+        w.flow @ Flow(live: true, called: true)
+
+        if w.witness < 0
+            w.witness @ id
+
+# A function of the program or its library, other than this one, named on the
+# paths that reach here, called or handed on: a way out if it may end.
+function other_call(@w: Walk, decls: [ast.Decl], at: i64)
+    if at == w.decl || !w.flow.live || w.flow.called
+        return
+
+    match decls[at].kind
+        .function_decl _ =>
+            w.saw @ true
+
+            if w.collect
+                append(@w.named, at: at)
+        .constant_decl | .record_decl | .variant_decl | .test_decl => return
+
+# Lent, so the list grows in place (defect 409).
+function append(@named: [i64], at: i64)
+    named @ named.push(at)
+
+# A `break` goes on after its loop, a `continue` at its head; outside every
+# loop either is refused where it stands and goes nowhere.
+function jumped(@w: Walk, broke: bool)
+    if w.frames.len() > 0
+        top = w.frames.len() - 1
+
+        if broke
+            w.frames[top].breaks @ meet(one: w.frames[top].breaks, two: w.flow)
+            w.frames[top].broke @ true
+        else
+            w.frames[top].turns @ meet(one: w.frames[top].turns, two: w.flow)
+
+    w.flow @ dead()
+
+# A loop's body is entered with a frame of its own, and left with it; the
+# frames are lent, so they grow in place (defect 409).
+function enter_loop(@frames: [Frame])
+    frames @ frames.push(Frame(breaks: dead(), turns: dead(), broke: false))
+
+function leave_loop(@frames: [Frame]) -> Frame
+    top = frames[frames.len() - 1]
+    frames @ frames.slice(from: 0, to: frames.len() - 1)
+    return top

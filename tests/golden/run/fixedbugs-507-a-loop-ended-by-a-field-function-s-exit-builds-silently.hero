@@ -1,0 +1,21 @@
+# Defect 507's class and panel 199's R3, ratified 2026-10-09: a correct
+# program whose recursion ends on the `exit` of a function a record's field
+# holds. Panel 199's R1 spares it, a call through a field being one that may
+# end the program (reading R4, spec § 9: a field holding a function takes
+# `h.act(n)` first), and it prints 0, 1 and 2 and exits 0 at every level,
+# with no clang warning since R3. Reading R1 refused it (`fieldcb` in the
+# sitting).
+record Hooks
+    act: (function(i64) -> ())
+
+function stop_at_three(n: i64)
+    if n > 2
+        exit(code: 0)
+    print(n)
+
+function turn(n: i64, h: Hooks)
+    h.act(n)
+    turn(n: n + 1, h: h)
+
+function main()
+    turn(n: 0, h: Hooks(act: stop_at_three))

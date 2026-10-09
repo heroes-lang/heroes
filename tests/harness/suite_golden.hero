@@ -102,9 +102,10 @@ record Shape
 # directory past 393 by more than a quarter at lane b10-cli's cases for
 # defects 324 and 325, and the merged tree's suite asked for 498.
 #
-# **623 in lane b15-emit, 2026-10-09**: the batches after it took the
-# directory past 498 by more than a quarter at defect 501's case, a
-# program's own `validated`, and the suite asked for 623.
+# **623 on 2026-10-09**, asked by the suite twice the same day, in lane
+# b15-emit at defect 501's case (a program's own `validated`) and in lane
+# land199 at defect 457's (panel 199's R1): the batches after it took the
+# directory past 498 by more than a quarter.
 function shape_check() -> Shape
     return Shape(
         name: "check",
@@ -212,7 +213,8 @@ constant NO_FLAGS: [str]
 # 407's template over lines, 405's nested fixed array, 408's `rest: zero`.
 # **18 on 2026-10-07**, at the merges of lanes zero401, tmpl407 and fixed405:
 # defect 401's binding named `zero`, 412's `@` in a construction, 414's open
-# backtick, 424's result.
+# backtick, 424's result. **23 on 2026-10-09**, as the suite asked in lane
+# land199: defect 457's message told whole (panel 199's R1), over the round's.
 function shape_full() -> Shape
     return Shape(
         name: "full",
@@ -221,7 +223,7 @@ function shape_full() -> Shape
         flags: NO_FLAGS,
         on_stderr: true,
         want_code: 1,
-        least: 18,
+        least: 23,
         watched: true,
         silent_stdout: false,
         library_skip: false

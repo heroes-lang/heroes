@@ -1,0 +1,19 @@
+# Defect 508 and panel 199's R2, ratified 2026-10-09: the price of keeping a
+# call a call at `-O2` (`-fno-optimize-sibling-calls`). A correct recursion
+# in tail position, which clang turned into a loop at `-O2`, now spends a
+# frame a call there as at `-O0`: ten million deep, it printed its sum at
+# `-O2` and aborted at `-O0`, and aborts at both now (spec `:280`, one
+# meaning at every level). Measured on this Mac on 2026-10-09: twenty
+# thousand and fifty thousand deep print at `-O0`, at `-O2` and under both
+# sanitised builds, eighty thousand and a hundred thousand abort at `-O0`
+# before the flag and after it, and a hundred thousand prints at `-O2` with
+# it (`tests/harness/suite_surface.hero`, the `deeptail` row). Twenty
+# thousand is the depth this case asks at every level, with room under the
+# smallest of them.
+function sum_to(n: i64, acc: i64) -> i64
+    if n == 0
+        return acc
+    return sum_to(n: n - 1, acc: acc + n)
+
+function main()
+    print(sum_to(n: 20000, acc: 0))

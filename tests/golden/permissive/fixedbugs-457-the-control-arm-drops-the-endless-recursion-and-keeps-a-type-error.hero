@@ -1,0 +1,13 @@
+# Defect 457 and panel 199's R1, ratified 2026-10-09: `endless_recursion` is a
+# thesis rule, so the control arm drops it: without the rule this program has
+# a meaning, a function that never returns, which stops with a stack error.
+# The type error stays.
+
+function bytes(s: str) -> [u8]
+    return s.bytes()
+
+function wrong() -> i64
+    return "text"  #~ type_mismatch
+
+function main()
+    print(bytes("hi").len() + wrong())

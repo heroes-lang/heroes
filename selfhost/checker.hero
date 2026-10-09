@@ -43,6 +43,7 @@ use check/lending
 use check/leasing
 use check/counted
 use check/freer_marks
+use check/endless
 
 # Check one resolved program. The resolver ran first and its answers are
 # inputs, never recomputed.
@@ -107,6 +108,11 @@ function check(a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.D
     # is a use-after-free the moment that cell is emptied (panel 125).
     leasing.leases_stay_in_their_cell(@c, a, r, s, decls)
 
+    # Panel 199 (defect 457): a function whose every path calls the function
+    # itself before it returns or ends, told at the call; after the types,
+    # which say whether `x.f()` calls a field of `x` (§4.11).
+    endless.every_path_calls_itself(@c, a, r, s, decls)
+
     # §4.16's FILE-WIDE hole exemption, the same one the unused rule
     # takes: a body that is ??? falls off its end by construction — that
     # is what an unwritten thing does — and demanding a return from it
@@ -169,6 +175,50 @@ function checked(text: str) -> state.Checked
     s = source.new_source(name: "t.hero", text: text)
     out = resolve.resolve(p.tree, s, p.decls, p.uses)
     return check(p.tree, out, s, p.decls)
+
+# Panel 199's R1 (defect 457): a function every path of which calls the
+# function itself is refused at that call, once; a way out spares it.
+function endless_calls(text: str) -> [str]
+    out = checked(text)
+    lines: [str] @ []
+
+    for d in out.diagnostics
+        if d.code == "endless_recursion"
+            lines @ lines.push(d.message)
+
+    return lines
+
+test "a function whose every path calls itself is refused, UFCS spelling included"
+    shown = "every path through `bytes` calls `bytes` again before it returns, so no call to it can return"
+    assert endless_calls("function bytes(s: str) -> [u8]\n    return s.bytes()\n") == [shown]
+    assert endless_calls("function forever(n: i64) -> i64\n    return forever(n)\n").len() == 1
+    assert endless_calls("function fact(n: i64) -> i64\n    return n * fact(n - 1)\n").len() == 1
+
+    # Reading R4: a call is a way out only where the callee may end the program,
+    # so a helper that only computes is none, and one handed to `map` is followed.
+    assert endless_calls("function pred(n: i64) -> i64\n    return n - 1\n\nfunction fact(n: i64) -> i64\n    return n * fact(pred(n))\n").len() == 1
+
+# `exit(code:)` is the library's, which this driver's source does not hold:
+# its case is the golden `fixedbugs-457`, through the whole pipeline.
+test "a path that returns, ends or calls something that may end the program spares the function"
+    assert endless_calls("function f(n: i64) -> i64\n    if n > 0\n        return 1\n    return f(n: n - 1)\n").len() == 0
+    assert endless_calls("function f(n: i64) -> i64\n    if n > 3\n        assert false\n    return f(n: n + 1)\n").len() == 0
+    assert endless_calls("function g(n: i64)\n    if n > 3\n        assert false\n    print(n)\n\nfunction f(n: i64)\n    g(n: n)\n    f(n: n + 1)\n").len() == 0
+    assert endless_calls("function f(n: i64, act: (function(i64) -> ()))\n    act(n)\n    f(n: n + 1, act: act)\n").len() == 0
+    assert endless_calls("function f(n: i64) -> bool\n    return n > 0 && f(n: n - 1)\n").len() == 0
+
+# A call is made once its arguments are: a self-call among the arguments of a
+# function that may end comes first, and one that may end among the
+# self-call's own arguments is a way out. A function handed to the function
+# itself is none by being handed, since the body it reaches is this one.
+test "a call among a call's arguments is made before the call (panel 199's landing)"
+    stop = "function stop(n: i64) -> i64\n    if n > 3\n        assert false\n    return n\n\n"
+    acting = "function f(n: i64, act: (function(i64) -> i64)) -> i64\n"
+    assert endless_calls(stop + "function f(n: i64) -> i64\n    return stop(f(n))\n").len() == 1
+    assert endless_calls(acting + "    return act(f(n: n, act: act))\n").len() == 1
+    assert endless_calls(stop + acting + "    return 1 + f(n: n, act: stop)\n").len() == 1
+    assert endless_calls(stop + "function f(n: i64) -> i64\n    return f(stop(n + 1))\n").len() == 0
+    assert endless_calls(acting + "    return f(n: act(n), act: act)\n").len() == 0
 
 test "a whole program checks end to end, every table filled"
     out = checked(

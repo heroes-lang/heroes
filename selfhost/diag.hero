@@ -162,6 +162,7 @@ function is_thesis_rule(d: Diagnostic) -> bool
         "undefined_header_name"
         "unshowable_name"
         "package_comparison"
+        "endless_recursion"
     ]
 
     for one in codes

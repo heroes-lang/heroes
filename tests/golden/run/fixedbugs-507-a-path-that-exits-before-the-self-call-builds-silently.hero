@@ -1,0 +1,19 @@
+# Defect 507, 2026-10-08 (panel 199's completeness critic): `serve` ends on
+# `exit` in an arm before it calls itself, and clang said *all paths through
+# this function will call itself*. Lane b15-emit's `hero_unreachable()` after
+# the library's `exit` closed this shape (`fixedbugs-507-a-function-that-...`
+# beside it); panel 199's R3, ratified 2026-10-09, closes the class beside it
+# (`fixedbugs-507-a-callee-that-exits-...`), and this case holds the shape
+# the sitting named to the build that has both. It prints 1, 2 and 3 and
+# exits 0 at every level, with no clang warning.
+function next(n: i64) -> i64
+    return n + 1
+
+function serve(n: i64) -> i64
+    if n > 3
+        exit(code: 0)
+    print(n)
+    return serve(next(n))
+
+function main()
+    print(serve(1))
