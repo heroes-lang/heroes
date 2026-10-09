@@ -41,7 +41,10 @@ lifts it, and git then refuses over a change it would lose.
 **And what names its paths is read too** (defect 529, `overwrites.py`): a
 restore of the index, a checkout from a commit, a forced removal or move, a
 reset of the index alone, by its paths or of the whole index, are refused
-where a path they name holds a staged change they would throw away.
+where a path they name holds a staged change they would throw away; and
+`git read-tree` and `git update-index`, which do the same as plumbing
+(defect 535), `git read-tree --reset -u` of one tree being a hard reset read
+here.
 """
 
 import os
@@ -62,7 +65,9 @@ ASSIGNMENT = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*=")
 # write over the paths they name (defect 529).
 ENDING = ("merge", "cherry-pick", "revert", "rebase", "am")
 NAMING = ("restore", "rm", "mv")
-VERBS = ENDING + ("reset", "checkout", "switch", "pull") + NAMING
+# The plumbing that does the same (defect 535).
+PLUMBING = ("read-tree", "update-index")
+VERBS = ENDING + ("reset", "checkout", "switch", "pull") + NAMING + PLUMBING
 # The ends that put back every tracked file, an unstaged change as well.
 HARD = frozenset({"rebase"})
 # The words with which a rebase or a merge does not begin one, and so takes
@@ -372,7 +377,7 @@ def verdict(verb, words, where, options=(), env=None, line=None, appended=False)
     if where is None:
         return None
     env = dict(os.environ) if env is None else env
-    if overwrites is None and verb in ("reset", "checkout") + NAMING:
+    if overwrites is None and verb in ("reset", "checkout") + NAMING + PLUMBING:
         import overwrites as overwrites_module
 
         overwrites = overwrites_module
@@ -385,7 +390,9 @@ def verdict(verb, words, where, options=(), env=None, line=None, appended=False)
         if forced(verb, words, where):
             return thrown_away(where, "git " + verb + " " + ("--discard-changes" if verb == "switch" else "-f"), hard=True)
         return overwrites.verdict(verb, words, where, options, env, line, appended) if verb == "checkout" else None
-    if verb in NAMING:
+    if verb == "read-tree" and overwrites.read_tree_hard(words):
+        return thrown_away(where, "git read-tree --reset -u", hard=True)
+    if verb in NAMING + PLUMBING:
         return overwrites.verdict(verb, words, where, options, env, line, appended)
     if verb in ENDING:
         how = ends(verb, words)

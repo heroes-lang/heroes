@@ -43,6 +43,24 @@ read as naming every path; a source it cannot read as differing from every
 staged version. Where git refuses the words (an
 option it does not know or cannot tell, measured from `git <verb> -h`) or
 cannot say, this gives no opinion.
+
+**And the two plumbing commands that do the same, since 2026-10-09** (defect
+535, lane b16-misc's finding; measured again that day in scratch
+repositories, git 2.56.0, over the same states and a staged new file deleted
+from the disk). `git read-tree <tree-ish>...`, and with `--reset` or
+`--empty`, writes the trees over the index alone, as a reset of the whole
+index does; with `-m` and one tree it refuses a path the working tree holds
+otherwise and still writes over one the disk no longer holds, so a staged
+version deleted from the disk is then nowhere; with `-u` beside `-m` it writes
+the working tree too, a staged new file deleted from it; and `--reset -u` puts
+back every tracked file as a hard reset does (`discards.py` reads that one).
+Two or three trees, `--prefix`, `--index-output` and `-n` lost nothing, and
+`-u` alone git refuses. `git update-index` reads its options in order, each
+path under the ones before it: `--force-remove` acts on the paths after it as
+`git rm --cached -f`, `--remove` drops a path the disk no longer holds (a path
+it holds it stages, as `git add` does, which is not this guard's), and
+`--cacheinfo` and `--index-info` write an entry over the one staged; `--again`
+lost nothing.
 """
 
 import os
@@ -55,7 +73,17 @@ import staged
 
 CONTRACT = "CLAUDE.md § Hard stops"
 WHOLE = ":/"
-UNREAD = object()
+
+
+class Source:
+    """A source no word of the text names as git reads it: what the refusal
+    calls it, and every staged version read as unlike it."""
+
+    def __init__(self, label):
+        self.label = label
+
+
+UNREAD = Source("a commit the text does not hold")
 # What stands for the words `xargs` adds to the command it runs, which the
 # text does not hold.
 XARGS = "the words `xargs` adds"
@@ -63,6 +91,11 @@ XARGS = "the words `xargs` adds"
 # read as `XARGS` is: each a word the text does not hold.
 FOUND = runs.FOUND
 GIVEN = (XARGS, FOUND)
+# What `git read-tree` writes from with `--empty`, and with several trees, and
+# what `git update-index` writes from with `--cacheinfo` or `--index-info`.
+EMPTY = Source("an empty index")
+SEVERAL = Source("the trees it names")
+ENTRY = Source("the entries it names")
 # A brace expansion the shell makes before git reads the word: `{a,e}.txt`.
 BRACES = re.compile(r"\{[^{}]*(,|\.\.)[^{}]*\}")
 
@@ -106,7 +139,30 @@ MV = (
     ("verbose", "v", "", True), ("dry-run", "n", "", True), ("force", "f", "", True),
     ("", "k", "", False), ("sparse", "", "", True),
 )
-TABLES = {"restore": RESTORE, "checkout": CHECKOUT, "rm": RM, "reset": RESET, "mv": MV}
+READ_TREE = (
+    ("index-output", "", "=", False), ("empty", "", "", True), ("verbose", "v", "", True), ("", "m", "", False),
+    ("trivial", "", "", True), ("aggressive", "", "", True), ("reset", "", "", True), ("prefix", "", "=", False),
+    ("", "u", "", False), ("exclude-per-directory", "", "=", False), ("", "i", "", False), ("dry-run", "n", "", True),
+    ("no-sparse-checkout", "", "", False), ("sparse-checkout", "", "", False), ("debug-unpack", "", "", True),
+    ("recurse-submodules", "", "?", True), ("quiet", "q", "", True),
+)
+UPDATE_INDEX = (
+    ("", "q", "", False), ("ignore-submodules", "", "", True), ("add", "", "", True), ("replace", "", "", True),
+    ("remove", "", "", True), ("unmerged", "", "", True), ("refresh", "", "", False), ("really-refresh", "", "", False),
+    ("cacheinfo", "", "=", False), ("chmod", "", "=", False), ("assume-unchanged", "", "", False),
+    ("no-assume-unchanged", "", "", False), ("skip-worktree", "", "", False), ("no-skip-worktree", "", "", False),
+    ("ignore-skip-worktree-entries", "", "", True), ("info-only", "", "", True), ("force-remove", "", "", True),
+    ("", "z", "", False), ("stdin", "", "", False), ("index-info", "", "", False), ("unresolve", "", "", False),
+    ("again", "g", "", False), ("ignore-missing", "", "", True), ("verbose", "", "", True),
+    ("clear-resolve-undo", "", "", False), ("index-version", "", "=", True), ("show-index-version", "", "", True),
+    ("split-index", "", "", True), ("untracked-cache", "", "", True), ("test-untracked-cache", "", "", True),
+    ("force-untracked-cache", "", "", True), ("force-write-index", "", "", True), ("fsmonitor", "", "", True),
+    ("fsmonitor-valid", "", "", False), ("no-fsmonitor-valid", "", "", False),
+)
+# The plumbing read since defect 535, as a refusal names it.
+PLUMBING = ("git read-tree", "git update-index")
+TABLES = {"restore": RESTORE, "checkout": CHECKOUT, "rm": RM, "reset": RESET, "mv": MV, "read-tree": READ_TREE,
+          "update-index": UPDATE_INDEX}
 MODES = ("mixed", "soft", "hard", "merge", "keep")
 
 
@@ -275,24 +331,25 @@ def tree_ish(where, opts, env, word):
     return bool(out and out.strip())
 
 
-def lost(where, opts, env, spec, source, index_alone, overlay=False, removing=False):
+def lost(where, opts, env, spec, source, index_alone, overlay=False, removing=False, missing=False):
     """The staged paths under `spec` whose staged version a command would
-    leave nowhere: one writing `source` (None for HEAD, UNREAD for a commit
-    the text cannot tell) over the index, and with `index_alone` False over
-    the working tree too; `overlay` keeps a path its source lacks, and
-    `removing` names a removal, which a staged deletion escapes. None where
-    git cannot say."""
+    leave nowhere: one writing `source` (None for HEAD, a `Source` for one no
+    word names, UNREAD a commit the text cannot tell) over the index, and with
+    `index_alone` False over the working tree too; `overlay` keeps a path its
+    source lacks, and `removing` names a removal, which a staged deletion
+    escapes; `missing`, that it writes over a path the working tree no longer
+    holds and refuses or stages one it holds. None where git cannot say."""
     exempt = ["--diff-filter=d"] if (index_alone or removing) else (["--diff-filter=a"] if overlay and source is None else [])
     held = names(where, opts, env, ["--cached"] + exempt, spec)
     if not held:
         return held
-    if source is not None and source is not UNREAD and not removing:
+    if source is not None and not isinstance(source, Source) and not removing:
         unlike = names(where, opts, env, ["--cached"] + (["--diff-filter=a"] if overlay else []) + [source], spec)
         if unlike is None:
             return None
         held = [rel for rel in held if rel in unlike]
     if index_alone and held:
-        moved = names(where, opts, env, [], spec)
+        moved = names(where, opts, env, ["--diff-filter=D"] if missing else [], spec)
         if moved is None:
             return None
         held = [rel for rel in held if rel in moved]
@@ -301,8 +358,9 @@ def lost(where, opts, env, spec, source, index_alone, overlay=False, removing=Fa
 
 def judged(verb, words, where, opts, env, line, appended=False):
     """What `git <verb> <words>` would write over, read in `where`: (how it
-    is said, its pathspec or None for every path, its source, whether it
-    writes the index alone, overlay, removing, the words it cannot read), or
+    is said, its source, whether it writes the index alone, overlay, removing,
+    whether it reads the paths the disk no longer holds, its pathspec or None
+    for every path, the words it cannot read), or
     None where it writes over no staged version or git refuses it.
     `appended`: `xargs` runs it, adding words the text does not hold."""
     read = options(TABLES[verb], list(words) + ([XARGS] if appended else []))
@@ -352,7 +410,7 @@ def judged(verb, words, where, opts, env, line, appended=False):
     if isinstance(from_file, str):
         more = listed(where, from_file, got.get("pathspec-file-nul") is True, line)
         if more is None:
-            return shape + (None, ["--pathspec-from-file=" + from_file])
+            return shape + (False, None, ["--pathspec-from-file=" + from_file])
         named = (named or []) + more
     elif verb in ("restore", "rm", "mv") and not named:
         return None
@@ -360,7 +418,7 @@ def judged(verb, words, where, opts, env, line, appended=False):
         named, unread = readable(named)
         if unread:
             named = None
-    return shape + (named, unread)
+    return shape + (False, named, unread)
 
 
 def tree_and_paths(verb, got, plain, after, where, opts, env):
@@ -393,6 +451,118 @@ def tree_and_paths(verb, got, plain, after, where, opts, env):
     return head, paths
 
 
+def read_tree(words, where, opts, env, appended=False):
+    """The shapes of `git read-tree <words>` that write over a staged version
+    (defect 535), each as `judged` gives one; none where it writes over none,
+    git refuses it, or it is a hard reset, `discards.py`'s (`read_tree_hard`)."""
+    read = options(READ_TREE, list(words) + ([XARGS] if appended else []))
+    if read is None:
+        return []
+    got, plain, after = read
+    trees = plain + (after or [])
+    merging, resetting, updating, empty = (got.get(k) is True for k in ("m", "reset", "u", "empty"))
+    if got.get("dry-run") is True or isinstance(got.get("index-output"), str) or isinstance(got.get("prefix"), str):
+        return []
+    if (merging and resetting) or (updating and not (merging or resetting)) or (resetting and updating):
+        return []
+    # No tree at all empties the index as `--empty` does (git warns it is
+    # deprecated, and does it); with `-m` or `--reset`, git refuses.
+    if (empty and trees) or ((merging or resetting) and len(trees) != 1):
+        return []
+    if not trees:
+        source = EMPTY
+    elif any(unreadable(tree) for tree in trees):
+        source = UNREAD
+    else:
+        source = trees[0] if len(trees) == 1 else SEVERAL
+    said = "git read-tree" + (" -m" if merging else "") + (" --reset" if resetting else "") + (" -u" if updating else "")
+    said += (" --empty" if empty else "") + "".join(" " + ("<commit>" if tree in GIVEN else tree) for tree in trees)
+    if merging and updating:
+        return [(said, source, False, False, False, False, None, [])]
+    return [(said, source, True, False, False, merging, None, [])]
+
+
+def read_tree_hard(words):
+    """Whether `git read-tree <words>` puts back every tracked file as a hard
+    reset does: `--reset -u` and one tree or `--empty`, measured 2026-10-09."""
+    read = options(READ_TREE, list(words))
+    if read is None:
+        return False
+    got, plain, after = read
+    if got.get("dry-run") is True or isinstance(got.get("index-output"), str) or got.get("m") is True:
+        return False
+    return got.get("reset") is True and got.get("u") is True and len(plain + (after or [])) + (got.get("empty") is True) == 1
+
+
+def index_updates(words, where, opts, env, appended=False):
+    """The shapes of `git update-index <words>` that write over a staged
+    version (defect 535), each as `judged` gives one, read in order as git
+    reads them: `--force-remove` and `--remove` bind the paths after them,
+    `--stdin` every path under the ones before it, `--cacheinfo` its own path
+    and `--index-info` every path. Where git refuses the words, none."""
+    words = list(words) + ([XARGS] if appended else [])
+    letters = {row[1]: row for row in UPDATE_INDEX if row[1]}
+    force = remove = dashed = False
+    bound = {"force-remove": [], "remove": [], "cacheinfo": []}
+    every = []
+    i = 0
+    while i < len(words):
+        word = words[i]
+        if not dashed and word == "--":
+            dashed = True
+        elif not dashed and word.startswith("--"):
+            found = long_row(UPDATE_INDEX, word[2:])
+            if found is None:
+                return []
+            row, unset = found
+            name = key_of(row)
+            joined = word.split("=", 1)[1] if "=" in word else None
+            if name == "cacheinfo":
+                value = joined if joined is not None else (words[i + 1] if i + 1 < len(words) else None)
+                i += 0 if joined is not None else 1
+                parts = (value or "").split(",", 2)
+                if len(parts) == 3:
+                    bound["cacheinfo"].append(parts[2])
+                elif i + 2 < len(words):
+                    bound["cacheinfo"].append(words[i + 2])
+                    i += 2
+                else:
+                    return []
+            elif name in ("force-remove", "remove"):
+                force = not unset if name == "force-remove" else force
+                remove = not unset if name == "remove" else remove
+            elif name == "stdin" and (force or remove):
+                every.append(("force-remove" if force else "remove", "--stdin"))
+            elif name == "index-info":
+                every.append(("cacheinfo", "--index-info"))
+            elif row[2] == "=" and joined is None and not unset:
+                i += 1
+        elif not dashed and word.startswith("-") and word != "-":
+            if any(letter not in letters for letter in word[1:]):
+                return []
+        elif force or remove:
+            bound["force-remove" if force else "remove"].append(word)
+        i += 1
+    shapes = []
+    for name, paths in bound.items():
+        if paths:
+            named, unread = readable(paths)
+            spec = None if unread else [":(literal)" + path for path in named]
+            shapes.append(index_shape(name, spec, unread))
+    for name, how in every:
+        shapes.append(index_shape(name, None, [how]))
+    return shapes
+
+
+def index_shape(name, spec, unread):
+    """A shape of `git update-index`: what `--<name>` writes over the paths
+    `spec` names, None for every path."""
+    said = "git update-index --" + name
+    if name == "cacheinfo":
+        return (said, ENTRY, True, False, False, False, spec, unread)
+    return (said, None, True, False, True, name == "remove", spec, unread)
+
+
 def verdict(verb, words, where, opts=(), env=None, line=None, appended=False):
     """A refusal for `git <opts> <verb> <words>` run in `where`, or None.
     `line` is the whole command line, which a pathspec file it writes is read
@@ -400,37 +570,44 @@ def verdict(verb, words, where, opts=(), env=None, line=None, appended=False):
     if where is None or verb not in TABLES or not os.path.isdir(where):
         return None
     env = dict(os.environ) if env is None else env
-    shape = judged(verb, words, where, opts, env, line, appended)
-    if shape is None:
-        return None
-    said, source, index_alone, overlay, removing, spec, unread = shape
-    gone = lost(where, opts, env, spec if spec is not None else [WHOLE], source, index_alone, overlay, removing)
-    if not gone:
-        return None
-    top = staged.toplevel(where)
-    if top is None:
-        return None
-    now = commits.standing(top)
-    own = set()
-    for name, _verbs, what in now:
-        got = commits.brought(top, name, what)
-        if got is None:
+    if verb == "read-tree":
+        shapes = read_tree(words, where, opts, env, appended)
+    elif verb == "update-index":
+        shapes = index_updates(words, where, opts, env, appended)
+    else:
+        shape = judged(verb, words, where, opts, env, line, appended)
+        shapes = [] if shape is None else [shape]
+    for said, source, index_alone, overlay, removing, missing, spec, unread in shapes:
+        gone = lost(where, opts, env, spec if spec is not None else [WHOLE], source, index_alone, overlay, removing, missing)
+        if not gone:
+            continue
+        top = staged.toplevel(where)
+        if top is None:
             return None
-        own |= got
-    extra = [rel for rel in gone if rel not in own]
-    if not extra:
-        return None
-    return refusal(said, extra, source, index_alone, removing, overlay, [n for n, _v, _w in now], unread)
+        now = commits.standing(top)
+        own = set()
+        for name, _verbs, what in now:
+            got = commits.brought(top, name, what)
+            if got is None:
+                return None
+            own |= got
+        extra = [rel for rel in gone if rel not in own]
+        if extra:
+            return refusal(said, extra, source, index_alone, removing, overlay, [n for n, _v, _w in now], unread, missing)
+    return None
 
 
-def refusal(said, extra, source, index_alone, removing, overlay, standing, unread):
+def refusal(said, extra, source, index_alone, removing, overlay, standing, unread, missing=False):
     """The refusal's words: what `said` writes over, the paths it would
     leave without their staged version, and what keeps them."""
-    whence = "HEAD" if source is None else ("a commit the text does not hold" if source is UNREAD else "`" + source + "`")
+    whence = "HEAD" if source is None else (source.label if isinstance(source, Source) else "`" + source + "`")
     beside = (" that the " + " and the ".join(standing) + " standing did not bring") if standing else ""
     shown = ", ".join(extra[:12]) + ("" if len(extra) <= 12 else ", ...")
     count = str(len(extra)) + (" paths" if len(extra) > 1 else " path") + beside + (" hold" if len(extra) > 1 else " holds")
-    if removing and index_alone:
+    if missing:
+        what = ("writes over the index of every path it names that the working tree no longer holds, and " + count
+                + " a staged version the working tree does not: " + shown + ". That version is then nowhere")
+    elif removing and index_alone:
         what = ("removes every path it names from the index, and " + count
                 + " a staged version the working tree does not: " + shown + ". That version is then nowhere")
     elif removing:
@@ -449,7 +626,10 @@ def refusal(said, extra, source, index_alone, removing, overlay, standing, unrea
                  + " name" + ("" if len(unread) > 1 or unread[0] in GIVEN else "s") + ", so it read the command as naming every path.")
     if source is UNREAD:
         blind += " This guard cannot read that commit, so it read it as unlike every staged version."
-    if index_alone:
+    if missing:
+        advice = ("If they are this conversation's own, write the staged version back to the disk first (`git checkout -- "
+                  "<paths>` writes the index's), and the command then leaves it there; another session's are left to it.")
+    elif index_alone:
         advice = ("If they are this conversation's own, stage the version to keep first (`git add -- <paths>` stages the "
                   "working tree's), and the command then leaves it on the disk; another session's are left to it.")
     else:
@@ -459,5 +639,5 @@ def refusal(said, extra, source, index_alone, removing, overlay, standing, unrea
     return (
         "refused: `" + said + "` " + what + ", whosever " + ("they are" if len(extra) > 1 else "it is")
         + " (measured, git 2.56.0)." + blind + " " + advice
-        + " " + CONTRACT + " (CL-041, defect 529)"
+        + " " + CONTRACT + " (CL-041, defect 529" + ("; defect 535" if said.startswith(PLUMBING) else "") + ")"
     )
