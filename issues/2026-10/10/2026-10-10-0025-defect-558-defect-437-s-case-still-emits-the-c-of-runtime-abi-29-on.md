@@ -12,3 +12,5 @@ github: none
     **Origin:** filed by the coordinator at 00:25 on 2026-10-10 from the CI's Linux arm64 leg of batch 17's push, its job log read through the API (`gh api .../actions/jobs/114033692047/logs`, kept under `.claude/worktrees/scratch-b15/gate17/post/`, ignored by git), as `.claude/rules/verification.md` § The optimistic chain item 5 asks: a red CI leg is a new `blocking` defect, the next batch's first item.
 
     **Class: blocking**, 2026-10-10 (`.claude/rules/verification.md` § Bounded discovery): a red CI.
+
+    **Widened 2026-10-10**, read at 00:31: the CI's Linux x86-64 leg of the same run is red on the same case and only on it, 7,275 passed and 1 failed (job log through the API, kept beside the arm64 one); Darwin arm64 is green, the case skipped there as on this Mac.
