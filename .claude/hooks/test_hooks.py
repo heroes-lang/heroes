@@ -33,6 +33,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest import mock
 
 HOOKS = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HOOKS)
@@ -711,6 +712,216 @@ class Sequences(unittest.TestCase):
         self.passed("git cherry-pick --continue")
         staged(self.tree, "c.txt", "not the pick's\n")
         self.assertIn("c.txt", self.refused("git cherry-pick --continue"))
+
+
+def peer(tree, rel, text, stage=True):
+    """Another session's change to `rel` in `tree`, staged or left unstaged."""
+    path = write(os.path.join(tree, rel), text)
+    if stage:
+        git(tree, "add", "--", rel)
+    return path
+
+
+def read(path):
+    try:
+        with open(path, encoding="utf-8") as handle:
+            return handle.read()
+    except OSError:
+        return None
+
+
+class Discards(unittest.TestCase):
+    """Defect 514: what throws work away is read as what commits it. An
+    abort, a skip and a reset by `--merge` or `--hard` are refused where the
+    tree holds a change they would throw away that the operation standing did
+    not bring, and an autostash where the tree holds a change it would take;
+    each witnessed against what git does."""
+
+    def setUp(self):
+        self.top = fresh("hooks-514-")
+        self.tree = make_tree(os.path.join(self.top, "tree"), repo=True)
+        # The guard asks git's configuration as the command would, so this
+        # machine's own is kept out of what the tests read.
+        isolated = mock.patch.dict(os.environ, {"GIT_CONFIG_GLOBAL": os.devnull, "GIT_CONFIG_NOSYSTEM": "1"})
+        isolated.start()
+        self.addCleanup(isolated.stop)
+
+    def refused(self, command, cwd=None):
+        said = guard_bash.verdict(command, cwd or self.tree)
+        self.assertIsNotNone(said, command)
+        return said
+
+    def passed(self, command, cwd=None):
+        said = guard_bash.verdict(command, cwd or self.tree)
+        self.assertIsNone(said, command)
+
+    def test_a_merge_aborted_over_a_file_it_did_not_bring_is_refused(self):
+        conflicted(self.tree, "merge", extra="c.txt")
+        said = self.refused("git merge --abort")
+        self.assertIn("c.txt", said)
+        self.assertNotIn("a.txt", said)
+        self.assertIn("the merge standing did not bring", said)
+        self.assertIn("git restore --staged", said)
+        for command in ("git merge --ab", "GIT_EDITOR=true git merge --abort", "git reset --merge", "git reset --hard"):
+            self.assertIn("c.txt", self.refused(command))
+        self.refused("git -C " + self.tree + " merge --abort", cwd=self.top)
+        self.refused("bash -c 'cd " + self.tree + " && git merge --abort'", cwd=self.top)
+
+    def test_a_merge_aborted_with_its_own_files_passes(self):
+        conflicted(self.tree, "merge")
+        self.passed("git merge --abort")
+        self.passed("git reset --merge")
+        self.passed("git reset --hard")
+        self.passed("git merge --quit")
+
+    def test_an_unstaged_change_is_left_by_an_abort_and_taken_by_a_hard_reset(self):
+        conflicted(self.tree, "merge")
+        kept = peer(self.tree, "runtime/runtime.c", "/* a peer's */\n", stage=False)
+        self.passed("git merge --abort")
+        self.passed("git reset --merge")
+        self.assertIn("runtime/runtime.c", self.refused("git reset --hard"))
+        git(self.tree, "merge", "--abort")
+        self.assertEqual(read(kept), "/* a peer's */\n")
+
+    def test_what_the_refusal_says_keeps_the_files_does(self):
+        conflicted(self.tree, "merge", extra="c.txt")
+        kept = peer(self.tree, "runtime/runtime.c", "/* a peer's */\n")
+        said = self.refused("git merge --abort")
+        self.assertIn("runtime/runtime.c", said)
+        git(self.tree, "restore", "--staged", "--", "c.txt", "runtime/runtime.c")
+        self.passed("git merge --abort")
+        git(self.tree, "merge", "--abort")
+        self.assertEqual(read(os.path.join(self.tree, "c.txt")), "not the operation's\n")
+        self.assertEqual(read(kept), "/* a peer's */\n")
+
+    def test_the_abort_refused_is_the_one_that_loses_the_file(self):
+        conflicted(self.tree, "merge", extra="c.txt")
+        self.refused("git merge --abort")
+        git(self.tree, "merge", "--abort")
+        self.assertIsNone(read(os.path.join(self.tree, "c.txt")))
+
+    def test_a_pick_and_a_revert_are_ended_by_either_verb(self):
+        conflicted(self.tree, "cherry-pick", extra="c.txt")
+        for command in ("git cherry-pick --abort", "git cherry-pick --skip", "git revert --abort", "git revert --skip"):
+            self.assertIn("c.txt", self.refused(command))
+        self.passed("git merge --abort")
+        self.passed("git am --abort")
+
+    def test_a_conflicted_revert_is_read(self):
+        write(os.path.join(self.tree, "a.txt"), "a\n")
+        git(self.tree, "add", "--", "a.txt")
+        git(self.tree, "commit", "-q", "-m", "a", "--", "a.txt")
+        write(os.path.join(self.tree, "a.txt"), "a1\n")
+        git(self.tree, "commit", "-q", "-m", "a1", "--", "a.txt")
+        write(os.path.join(self.tree, "a.txt"), "a2\n")
+        git(self.tree, "commit", "-q", "-m", "a2", "--", "a.txt")
+        done = git(self.tree, "revert", "--no-edit", "HEAD~1", check=False)
+        self.assertNotEqual(done.returncode, 0, done.stdout)
+        staged(self.tree, "a.txt", "a resolved\n")
+        self.passed("git revert --abort")
+        staged(self.tree, "c.txt", "not the revert's\n")
+        self.assertIn("c.txt", self.refused("git revert --abort"))
+        self.assertIn("the revert standing", self.refused("git cherry-pick --skip"))
+
+    def test_a_rebase_s_abort_and_skip_take_an_unstaged_change_too(self):
+        stopped(self.tree, "rebase")
+        self.passed("git rebase --abort")
+        self.passed("git rebase --skip")
+        kept = peer(self.tree, "runtime/runtime.c", "/* a peer's */\n", stage=False)
+        said = self.refused("git rebase --abort")
+        self.assertIn("runtime/runtime.c", said)
+        self.assertIn("staged or not", said)
+        self.assertIn("Unstaging does not keep them", said)
+        self.refused("git rebase --sk")
+        git(self.tree, "rebase", "--abort")
+        self.assertEqual(read(kept), "/* runtime */\n")
+
+    def test_a_rebase_by_the_apply_backend_is_ended_by_a_rebase_or_an_am(self):
+        stopped(self.tree, "rebase-apply")
+        peer(self.tree, "runtime/runtime.c", "/* a peer's */\n", stage=False)
+        self.refused("git rebase --abort")
+        self.passed("git am --abort")
+        staged(self.tree, "c.txt", "not the patch's\n")
+        self.assertIn("c.txt", self.refused("git am --skip"))
+
+    def test_an_am_aborted_over_a_file_it_did_not_bring_is_refused(self):
+        stopped(self.tree, "am", extra="c.txt")
+        for command in ("git am --abort", "git am --skip", "git am --abo"):
+            self.assertIn("c.txt", self.refused(command))
+        self.passed("git rebase --abort")
+
+    def test_with_nothing_standing_an_abort_is_git_s_to_refuse_and_a_reset_is_read(self):
+        branched(self.tree)
+        staged(self.tree, "c.txt", "c\n")
+        for command in ("git merge --abort", "git rebase --abort", "git am --skip", "git cherry-pick --abort"):
+            self.passed(command)
+        for command in ("git reset --hard", "git reset --h", "git reset --merge", "git reset --me", "git reset --soft --hard", "git reset -q --hard HEAD"):
+            said = self.refused(command)
+            self.assertIn("c.txt", said)
+            self.assertNotIn("standing did not bring", said)
+        for command in ("git reset --keep", "git reset", "git reset --soft", "git reset --hard --soft", "git reset --m"):
+            self.passed(command)
+
+    def test_a_clean_tree_is_reset_freely(self):
+        branched(self.tree)
+        self.passed("git reset --hard")
+        self.passed("git reset --hard main~1")
+
+    def test_an_autostash_over_a_change_is_refused_in_every_spelling(self):
+        branched(self.tree)
+        git(self.tree, "checkout", "-q", "other")
+        staged(self.tree, "c.txt", "a peer's\n")
+        said = self.refused("git rebase --autostash main")
+        self.assertIn("c.txt", said)
+        self.assertIn("--no-autostash", said)
+        self.refused("git rebase --autost main")
+        self.passed("git rebase --no-autostash main")
+        self.passed("git rebase --autostash --no-autostash main")
+        self.refused("git -c rebase.autoStash=true rebase main")
+        self.refused("GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=rebase.autostash GIT_CONFIG_VALUE_0=true git rebase main")
+        self.passed("git -c rebase.autoStash=true rebase --no-autostash main")
+        self.passed("git rebase main")
+        git(self.tree, "config", "rebase.autoStash", "true")
+        self.assertIn("rebase.autoStash", self.refused("git rebase main"))
+        self.passed("git rebase --continue")
+        self.refused("git merge --autostash main")
+        self.refused("git merge --au main")
+        self.passed("git merge main")
+        git(self.tree, "config", "merge.autoStash", "yes")
+        self.refused("git merge main")
+        self.passed("git merge --quit")
+
+    def test_an_unstaged_change_is_stashed_too_and_a_clean_tree_is_not(self):
+        branched(self.tree)
+        git(self.tree, "checkout", "-q", "other")
+        self.passed("git rebase --autostash main")
+        peer(self.tree, "runtime/runtime.c", "/* a peer's */\n", stage=False)
+        self.assertIn("runtime/runtime.c", self.refused("git rebase --autostash main"))
+
+    def test_the_autostash_refused_is_the_one_that_takes_the_file(self):
+        branched(self.tree)
+        git(self.tree, "checkout", "-q", "other")
+        staged(self.tree, "c.txt", "a peer's\n")
+        self.refused("git rebase --autostash main")
+        done = git(self.tree, "rebase", "--autostash", "main", check=False)
+        self.assertNotEqual(done.returncode, 0, done.stdout)
+        self.assertIsNone(read(os.path.join(self.tree, "c.txt")))
+
+    def test_a_pull_reads_the_autostash_of_the_way_it_will_go(self):
+        down = os.path.join(self.top, "down")
+        git(self.top, "clone", "-q", self.tree, down)
+        staged(down, "c.txt", "a peer's\n")
+        for command in ("git pull --autostash", "git pull --au", "git -c merge.autoStash=true pull --no-rebase",
+                        "git -c rebase.autoStash=true pull --rebase", "git -c rebase.autoStash=true pull -r",
+                        "git -c rebase.autoStash=true pull --reb"):
+            self.refused(command, cwd=down)
+        for command in ("git pull", "git -c rebase.autoStash=true pull --no-rebase", "git -c merge.autoStash=true pull --rebase",
+                        "git -c rebase.autoStash=true pull --rebase=false", "git pull --autostash --no-autostash"):
+            self.passed(command, cwd=down)
+        git(down, "config", "pull.rebase", "true")
+        self.refused("git -c rebase.autoStash=true pull", cwd=down)
+        git(down, "config", "branch.main.rebase", "false")
+        self.passed("git -c rebase.autoStash=true pull", cwd=down)
 
 
 REPO = os.path.dirname(os.path.dirname(HOOKS))
