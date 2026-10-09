@@ -1630,6 +1630,61 @@ test "an admitted -Wl,-rpath leaves a RUNPATH where readelf reads the binary, th
     assert !strings.contains(text: dynamic.out, needle: "(RPATH)")
     assert !shell.remove_tree(scratch).is_err()
 
+# PANEL 198's route V (defect 527), asked of the compiler itself: a value the list
+# admits by its word is still judged as a value. A response file in a value's
+# place (`@<file>`), which clang and the linkers read as more words, and GNU ld's
+# `-l:<file>`, which names a file, are refused at the package's string, the
+# message naming the words and why, and no binary is written. Until route V the
+# compiler passed all of them on: panel 198's completeness critic had clang and
+# the linker read options out of such a file through `-framework`, `-Wl,-rpath`
+# and `-Wl,-framework`, and `libuv-static`'s `-l:libuv.a` ended at exit 2.
+test "a package whose admitted word carries @<file> or -l:<file> is refused, naming it (panel 198, route V)"
+    if !shell.can_run_scripts()
+        return
+    scratch = shell.own_scratch()
+    compiler = shell.some_compiler().must()
+    dir = scratch + "/said198v"
+    inc = dir + "/inc"
+    assert !shell.mkdir_all(inc).is_err()
+    assert !write_file(path: inc + "/pkgv198.h", text: "static inline int seven198(void) { return 7; }\n").is_err()
+    assert !write_file(path: dir + "/rsp.txt", text: "/opt/heroes-198-v\n").is_err()
+    asking = "extern \"pkgv198.h\" package \"pkgv198\"\n    function seven198() -> i32\n\nfunction main()\n    print(seven198())\n"
+    shapes = [
+        "-Wl,-rpath,@" + dir + "/rsp.txt"
+        "-Wl,-rpath -Wl,@" + dir + "/rsp.txt"
+        "-Wl,-framework,@" + dir + "/rsp.txt"
+        "-framework @" + dir + "/rsp.txt"
+        "-isystem @" + dir + "/rsp.txt"
+        "-L@" + dir + "/rsp.txt"
+        "-l:libheroes198.a"
+    ]
+    shape: i64 @ 0
+
+    for word in shapes
+        why: str @ "a value beginning with `@` names a file"
+
+        if strings.starts_with(text: word, prefix: "-l:")
+            why @ "`-l:<file>` names a file"
+        stood = dir + "/bin-" + shape.to_str()
+        assert !answering(dir: stood, answer: "-I" + inc + " " + word + "\n").is_err()
+        path = dir + "/v-" + shape.to_str() + ".hero"
+        said = built_said(
+            scratch: scratch,
+            compiler: compiler,
+            path: path,
+            source: asking,
+            bin: stood,
+            alone: false
+        ).must()
+        assert strings.contains(
+            text: said,
+            needle: "answered with `" + word + "`, which this compiler does not pass on: " + why
+        )
+        assert !shell.exists(path + ".out")
+        shape @ shape + 1
+
+    assert !shell.remove_tree(scratch).is_err()
+
 # The two answers are pkgconf's own, recorded by panel 188's ffi-pragmatist on
 # this Mac (3.0.7) and in the Linux image (1.8.1), 2026-10-03, for a package
 # named `zz9`.

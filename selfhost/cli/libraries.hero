@@ -105,8 +105,12 @@ function filter_words(package: str, said: str) -> [str]?
                     msg: "heroes-ffi-package `" + package + "` answered with `" + shell_split.shown(word, keep_lines: false) + "` and nothing after it"
                 )
 
-            if next.len() == 0 || next.chars()[0] == "-"
-                return refused(package: package, said: word + " " + next, told: "")
+            if !package_words.is_value(flag: word, value: next)
+                return refused(
+                    package: package,
+                    said: word + " " + next,
+                    told: package_words.told(flag: word, value: next)
+                )
 
             if word == "-framework"
                 flags @ flags.push(word)
@@ -138,7 +142,8 @@ function filter_words(package: str, said: str) -> [str]?
             flags @ flags.push(framed.must().value)
             index @ index + framed.must().words
             continue
-        return refused(package: package, said: word, told: shell_split.no_flag(said: said, parts: parts, at: index))
+        told = shell_split.no_flag(said: said, parts: parts, at: index) + package_words.told_word(word: word, next: next)
+        return refused(package: package, said: package_words.named(word: word, next: next), told: told)
 
     return ok(flags)
 
@@ -155,7 +160,8 @@ function filter_words(package: str, said: str) -> [str]?
 # with clang's text, and its `-F` never reached a compile, so a framework's
 # header was told missing. The rule reads `filter_words`' own output, whose
 # contract is that a value is joined to its flag and that `-framework`'s
-# name, the one value in a word of its own, never begins with `-`.
+# name, the one value in a word of its own, never begins with `-` or `@`
+# (`package_words.is_value`).
 function compile_flags(package_flags: [str]) -> [str]
     out: [str] @ []
 
@@ -251,8 +257,8 @@ function tail_after(word: str, prefix: str) -> str?
 
     return ok(ws.slice(from: ps.len(), to: ws.len()).join(""))
 
-# The tail of a whole-checked -Wl form: non-empty, no further comma,
-# not itself a flag.
+# The tail of a whole-checked -Wl form: no further comma, and a value
+# (`package_words.is_value`: not empty, not a flag, not a response file).
 function clean_tail(rest: str) -> bool
     if rest.len() == 0
         return false
@@ -261,7 +267,7 @@ function clean_tail(rest: str) -> bool
         if ch == ","
             return false
 
-    return rest.chars()[0] != "-"
+    return package_words.is_value(flag: "-Wl,", value: rest)
 
 # Words as a key names them, each by its length, a colon and itself, so a
 # word holding a space is never read as two: the shape `cli/link.hero`'s
@@ -497,6 +503,40 @@ test "a package's -pthread, -isystem and its own link line's words (panel 198)"
     match tunnel
         .ok    => assert false
         .err e => assert has_text(text: e.msg, needle: "answered with `-Wl,--enable-new-dtags,--plugin,x.so`")
+
+# Route V (panel 198, its completeness critic's second pass; defect 527): a
+# value is a name in every slot, joined or as the next word, never `@<file>`,
+# which clang and the linkers read as more words, and `-l` never GNU ld's
+# `:<file>` (defect 528's `libuv-static`); the refusal names the words it read
+# and why.
+test "a value beginning with @ is refused in every slot, and -l:<file> with it (panel 198, route V)"
+    for answer in ["-framework @r", "-I @r", "-I@r", "-D @r", "-D@r", "-U @r", "-U@r", "-L @r", "-L@r", "-l @r", "-l@r", "-F @r", "-F@r", "-isystem @r", "-isystem@r", "-Wl,-rpath,@r", "-Wl,-rpath -Wl,@r", "-Wl,-framework,@r", "-Wl,-framework -Wl,@r"]
+        match filter_words(package: "v", said: answer)
+            .ok => assert false
+            .err e =>
+                assert has_text(
+                    text: e.msg,
+                    needle: "answered with `" + answer + "`, which this compiler does not pass on: a value beginning with `@` names a file"
+                )
+
+    for answer in ["-l:libuv.a", "-l :libuv.a"]
+        match filter_words(package: "v", said: answer)
+            .ok    => assert false
+            .err e => assert has_text(
+                text: e.msg,
+                needle: "answered with `" + answer + "`, which this compiler does not pass on: `-l:<file>` names a file"
+            )
+
+    # A flag in a joined value's place is refused as it is in the next word's.
+    assert filter_words(package: "v", said: "-I-fplugin=attack.so").is_err()
+    assert filter_words(package: "v", said: "-isystem-after").is_err()
+
+    # An `@` inside a path is a letter of the path, as in Homebrew's `openssl@4`.
+    kept = filter_words(
+        package: "openssl",
+        said: "-I/opt/homebrew/Cellar/openssl@4/4.0.3/include -L/opt/homebrew/Cellar/openssl@4/4.0.3/lib -lssl\n"
+    ).must()
+    assert kept == ["-I/opt/homebrew/Cellar/openssl@4/4.0.3/include", "-L/opt/homebrew/Cellar/openssl@4/4.0.3/lib", "-lssl"]
 
 # Over the same measured answer: a compile is handed every compile word and
 # no link word, in the package's order (defect 161).

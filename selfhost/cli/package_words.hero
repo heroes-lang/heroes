@@ -61,6 +61,22 @@
 # and then reads its value as an INPUT FILE, so `-Wl,-rpath,h.o` linked an object
 # the list never admitted (panel 198's ffi-pragmatist, clang 23.1.1).
 #
+# **A VALUE IS A NAME, never a file of more words** (route V, from panel 198's
+# completeness critic, second pass; defect 527). clang reads an argument
+# beginning with `@` as a response file and puts its words in its place, and so
+# do Apple's `ld` and GNU `ld` for theirs. Measured with the compiler of that
+# sitting and a stand-in `pkg-config`: `-framework @f`, `-Wl,-framework,@f` and
+# `-Wl,-rpath,@f` had clang or the linker read `f`'s words as options on macOS
+# and Debian 13, a map written and a linker the file named run, every one an
+# admitted word. So a value is judged as a value in every slot, joined or as the
+# next word (`is_value`): not empty, not a flag (`-`), not a file of words (`@`),
+# and for `-l` not GNU ld's `:<file>`, which names a file where `-l` names a
+# library (`libuv-static`'s `-l:libuv.a`, defect 528, which ld64 refused at exit
+# 2). An `@` inside a path (`openssl@4`) is a letter of the path. The refusal says
+# which of these it read (`told`). Its price, refused by construction: an ld64
+# rpath macro leading a value, `-Wl,-rpath,@loader_path/../lib`, which no package
+# of either census answers.
+#
 # **`-pthread` reaches a COMPILE everywhere and a LINK everywhere but Windows**,
 # where clang 23.1.1 for `x86_64-pc-windows-msvc` calls it at a link *argument
 # unused during compilation* (measured 2026-10-08): a warning on a correct
@@ -106,17 +122,65 @@ function valued(word: str) -> bool
     return false
 
 # The one word a package's `word` is handed on as where the list admits it in one
-# word: `-pthread` as it is, and a `VALUED` flag with its value joined,
-# `-isystem`'s as `-I`'s; an error where the list does not.
+# word: `-pthread` as it is, and a `VALUED` flag with its value joined, that value
+# a value (`is_value`), `-isystem`'s as `-I`'s; an error where the list does not.
 function one_word(word: str) -> str?
     if passes(word)
         return ok(word)
 
     for flag in VALUED
-        if strings.starts_with(text: word, prefix: flag) && word.len() > flag.len()
+        if strings.starts_with(text: word, prefix: flag) && is_value(flag: flag, value: after(text: word, from: flag.len()))
             return ok(spelled(flag) + after(text: word, from: flag.len()))
 
     return fail(code: "none", msg: "not a word the list admits whole")
+
+# Whether `value`, written after `flag` or as the value of a `-Wl,` option, is a
+# value: not empty, not a flag, not a response file, and for `-l` not `:<file>`.
+function is_value(flag: str, value: str) -> bool
+    if value.len() == 0
+        return false
+    first = value.chars()[0]
+
+    if first == "-" || first == "@"
+        return false
+    return !(flag == "-l" && first == ":")
+
+# What a refusal of `value` owes its reader after the words it names, or "".
+function told(flag: str, value: str) -> str
+    if value.len() == 0
+        return ""
+    first = value.chars()[0]
+
+    if first == "@"
+        return ": a value beginning with `@` names a file whose words clang and the linker read in its place"
+
+    if flag == "-l" && first == ":"
+        return ": `-l:<file>` names a file, where `-l` names a library"
+    return ""
+
+# The same, for a word refused whole: a joined value, or a `-Wl,` option's.
+function told_word(word: str, next: str) -> str
+    for flag in VALUED
+        if strings.starts_with(text: word, prefix: flag) && word.len() > flag.len()
+            return told(flag: flag, value: after(text: word, from: flag.len()))
+
+    for option in ["-Wl,-rpath,", "-Wl,-framework,"]
+        if strings.starts_with(text: word, prefix: option)
+            return told(flag: "", value: after(text: word, from: option.len()))
+
+    if split_option(word: word, next: next)
+        return told(flag: "", value: after(text: next, from: 4))
+    return ""
+
+# The words a refusal names at `word`: a `-Wl,` option split from its value names
+# both.
+function named(word: str, next: str) -> str
+    if split_option(word: word, next: next)
+        return word + " " + next
+    return word
+
+function split_option(word: str, next: str) -> bool
+    return (word == "-Wl,-rpath" || word == "-Wl,-framework") && strings.starts_with(text: next, prefix: "-Wl,")
 
 function after(text: str, from: i64) -> str
     cs = text.chars()
@@ -158,6 +222,10 @@ test "a word is passed or left out by its whole spelling, and nothing near it is
     assert one_word("-isystem").is_err()
     assert one_word("-iquote/sys/a").is_err()
     assert one_word("-pthreads").is_err()
+    assert one_word("-isystem-after").is_err()
+    assert one_word("-I-fplugin=x.so").is_err()
+    assert one_word("-I@r").is_err()
+    assert one_word("-l:libuv.a").is_err()
     assert valued("-isystem")
     assert !valued("-isystem/sys/a")
     assert !valued("-iquote")
@@ -171,6 +239,24 @@ test "a word is passed or left out by its whole spelling, and nothing near it is
     assert !restates("-Wl,--no-as-needed")
     assert !restates("-Wl,--whole-archive")
     assert !restates("-Xlinker")
+
+test "a value is a name: not empty, not a flag, not a file of words, and -l not :<file>"
+    assert is_value(flag: "-I", value: "/opt/homebrew/Cellar/openssl@4/4.0.3/include")
+    assert is_value(flag: "-l", value: "ssl")
+    assert !is_value(flag: "-I", value: "")
+    assert !is_value(flag: "-I", value: "-fplugin=x.so")
+    assert !is_value(flag: "-framework", value: "@rsp")
+    assert !is_value(flag: "-Wl,", value: "@loader_path/../lib")
+    assert !is_value(flag: "-l", value: ":libuv.a")
+    assert is_value(flag: "-L", value: ":odd")
+    assert told(flag: "-I", value: "/x") == ""
+    assert told_word(word: "-I@r", next: "") == told(flag: "-I", value: "@r")
+    assert told_word(word: "-isystem@r", next: "") == told(flag: "-isystem", value: "@r")
+    assert told_word(word: "-l:libuv.a", next: "-lm") == ": `-l:<file>` names a file, where `-l` names a library"
+    assert told_word(word: "-Wl,-rpath", next: "-Wl,@r") == told(flag: "", value: "@r")
+    assert told_word(word: "-Wl,-framework,@r", next: "") != ""
+    assert named(word: "-Wl,-rpath", next: "-Wl,@r") == "-Wl,-rpath -Wl,@r"
+    assert named(word: "-Wl,-rpath", next: "-lz") == "-Wl,-rpath"
 
 # Where the rpath means something it is one word, and on Windows none.
 test "an admitted rpath is one word where a loader reads it, and none on Windows"
