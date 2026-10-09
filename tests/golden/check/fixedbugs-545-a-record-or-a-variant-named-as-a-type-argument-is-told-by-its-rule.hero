@@ -1,0 +1,28 @@
+# Fixed defect 545, 2026-10-09, the shape beside its first case (lane
+# b17-check). Symptom: `ident<Point>(p)`, `Point` a record, was told two
+# things and neither was the rule: `ident` a generic function used as a value
+# with nothing to say what `A` is, and `Point` a record built by calling it.
+# Cause: the one of `fixedbugs-545-a-type-argument-written-at-a-call-is-told-
+# by-its-rule`: the call parses as two comparisons, and here the type is a
+# name the program declares, so the resolver found it. Repair: a record's or
+# a variant's name read as a value inside a list of types written after a
+# name is told by the rule, once, as a type word is (`resolve/
+# type_argument.hero`). The shapes: a record, a variant, a record inside an
+# array type; and a record built in the argument stays a construction.
+
+record Point
+    x: i64
+
+variant Way
+    left
+    right
+
+function ident<A>(x: A) -> A
+    return x
+
+function main()
+    p = Point(x: 1)
+    w: Way = .left
+    print(ident<Point>(p).x)  #~ unknown_name
+    print(ident<Way>(w) == .left)  #~ unknown_name
+    print(ident<[Point]>([p]).len())  #~ unknown_name
