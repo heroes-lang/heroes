@@ -1,0 +1,4 @@
+tests/golden/check/fixedbugs-512-four-hundred-arms-each-ask-a-table.hero:824:12: error[non_exhaustive]: this `match` does not cover `.two`, `.three`
+tests/golden/check/fixedbugs-512-four-hundred-arms-each-ask-a-table.hero:826:9: error[duplicate_arm]: `.one` is already covered by an earlier arm
+tests/golden/check/fixedbugs-512-four-hundred-arms-each-ask-a-table.hero:827:10: error[no_such_case]: `Small` has no case `.four` — it has `.one`, `.two`, `.three`
+tests/golden/check/fixedbugs-512-four-hundred-arms-each-ask-a-table.hero:837:9: error[duplicate_arm]: `.ok` is already covered by an earlier arm
