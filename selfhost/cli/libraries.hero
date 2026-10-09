@@ -98,7 +98,7 @@ function filter_words(package: str, said: str) -> [str]?
         if index + 1 < parts.len()
             next @ parts[index + 1]
 
-        if word == "-framework" || package_words.valued(word)
+        if package_words.separate(word) || package_words.valued(word)
             if index + 1 >= parts.len()
                 return fail(
                     code: "failed",
@@ -112,7 +112,7 @@ function filter_words(package: str, said: str) -> [str]?
                     told: package_words.told(flag: word, value: next)
                 )
 
-            if word == "-framework"
+            if package_words.separate(word)
                 flags @ flags.push(word)
                 flags @ flags.push(next)
             else
@@ -129,18 +129,11 @@ function filter_words(package: str, said: str) -> [str]?
             flags @ flags.push(one.must())
             index @ index + 1
             continue
-        rpath = linker_value(word: word, next: next, option: "-rpath")
+        link = package_words.linked(word: word, next: next)
 
-        if !rpath.is_err()
-            flags @ strings.with_all(list: flags, more: package_words.rpath_words(rpath.must().value))
-            index @ index + rpath.must().words
-            continue
-        framed = linker_value(word: word, next: next, option: "-framework")
-
-        if !framed.is_err()
-            flags @ flags.push("-framework")
-            flags @ flags.push(framed.must().value)
-            index @ index + framed.must().words
+        if !link.is_err()
+            flags @ strings.with_all(list: flags, more: package_words.linked_words(link.must()))
+            index @ index + link.must().words
             continue
         told = shell_split.no_flag(said: said, parts: parts, at: index) + package_words.told_word(word: word, next: next)
         return refused(package: package, said: package_words.named(word: word, next: next), told: told)
@@ -214,33 +207,16 @@ function link_words(package_flags: [str]) -> [str]
     return out
 
 # The refusal, naming what the package said and what is accepted, `told`
-# after it where a word is no flag (`shell_split.no_flag`, defect 183). The
-# list in it is the function above, word for word.
+# after it where a word is no flag (`shell_split.no_flag`, defect 183) or a
+# value no value (`package_words.told`). The list in it is
+# `cli/package_words`' five tables, word for word, and the test *the
+# refusal's note names the list word for word* holds it to them (panel 198's
+# R3: the note is the rule's only statement a reader meets).
 function refused(package: str, said: str, told: str) -> [str]?
     return fail(
         code: "failed",
-        msg: "heroes-ffi-package `" + package + "` answered with `" + shell_split.shown(said, keep_lines: false) + "`, which this compiler does not pass on" + told + "\n  only `-D`, `-U`, `-I`, `-L`, `-l`, `-F` and `-isystem`, each with its value joined or as the next word (`-isystem <dir>` handed on as `-I<dir>`), `-pthread`, `-framework <name>`, and `-Wl,-framework,<name>` and `-Wl,-rpath,<dir>`, in one word or split as `-Wl,-rpath -Wl,<dir>`, are accepted, as are `-Wl,--enable-new-dtags` and `-Wl,--export-dynamic`, which are not sent to the linker because this compiler's own link line says both already: everything else is a flag a package file could use to run code during the build (Go's CVE-2018-6574)\n  name the library directly with `link` if you need it"
+        msg: "heroes-ffi-package `" + package + "` answered with `" + shell_split.shown(said, keep_lines: false) + "`, which this compiler does not pass on" + told + "\n  only `-D`, `-U`, `-I`, `-L`, `-l`, `-F` and `-isystem`, each with its value joined or as the next word (`-isystem <dir>` handed on as `-I<dir>`), `-pthread`, `-framework <name>`, and `-Wl,-framework,<name>` and `-Wl,-rpath,<dir>`, in one word or split as `-Wl,-rpath -Wl,<dir>`, are accepted, as are `-Wl,--enable-new-dtags` and `-Wl,--export-dynamic`, which are not sent to the linker because this compiler's own link line says both already: everything else is refused, because a word the list does not name could be one that runs code during the build (Go's CVE-2018-6574)\n  name the library directly with `link` if you need it"
     )
-
-# The value of a `-Wl,<option>,<value>` word, or of `-Wl,<option>` followed
-# by `-Wl,<value>`, and how many words it took.
-record Linked
-    value: str
-    words: i64
-
-function linker_value(word: str, next: str, option: str) -> Linked?
-    whole = tail_after(word: word, prefix: "-Wl," + option + ",")
-
-    if !whole.is_err() && clean_tail(whole.must())
-        return ok(Linked(value: whole.must(), words: 1))
-
-    if word == "-Wl," + option
-        split = tail_after(word: next, prefix: "-Wl,")
-
-        if !split.is_err() && clean_tail(split.must())
-            return ok(Linked(value: split.must(), words: 2))
-
-    return fail(code: "none", msg: "not this linker option")
 
 function tail_after(word: str, prefix: str) -> str?
     ws = word.chars()
@@ -256,18 +232,6 @@ function tail_after(word: str, prefix: str) -> str?
         index @ index + 1
 
     return ok(ws.slice(from: ps.len(), to: ws.len()).join(""))
-
-# The tail of a whole-checked -Wl form: no further comma, and a value
-# (`package_words.is_value`: not empty, not a flag, not a response file).
-function clean_tail(rest: str) -> bool
-    if rest.len() == 0
-        return false
-
-    for ch in rest.chars()
-        if ch == ","
-            return false
-
-    return package_words.is_value(flag: "-Wl,", value: rest)
 
 # Words as a key names them, each by its length, a colon and itself, so a
 # word holding a space is never read as two: the shape `cli/link.hero`'s
@@ -503,6 +467,86 @@ test "a package's -pthread, -isystem and its own link line's words (panel 198)"
     match tunnel
         .ok    => assert false
         .err e => assert has_text(text: e.msg, needle: "answered with `-Wl,--enable-new-dtags,--plugin,x.so`")
+
+# PANEL 198's R3, the spec-warden's finding: the refusal's note is the list's only
+# statement a reader meets, and nothing held it to the code. So both ways: every
+# word the note names is accepted, its placeholder filled and a valued flag in
+# both its spellings; and every word of `cli/package_words`' tables is named in
+# it. A word added to a table and not to the note, or named in the note and not
+# admitted, fires here.
+test "the refusal's note names the list word for word, and the list admits every word it names (panel 198)"
+    refusal = filter_words(package: "n", said: "-fplugin=x.so")
+    note: str @ ""
+
+    match refusal
+        .ok => assert false
+        .err e =>
+            row: str @ ""
+
+            for ch in e.msg.chars()
+                if ch == "\n" && strings.starts_with(text: row, prefix: "  only ")
+                    note @ row
+
+                if ch == "\n"
+                    row @ ""
+                    continue
+                row @ row + ch
+
+    # The reason clause, true of every word refused (the spec-warden's finding:
+    # it said *a flag a package file could use to run code*, false of
+    # `--disable-new-dtags`), and the list before it.
+    reason = "everything else is refused, because a word the list does not name could be one that runs code during the build (Go's CVE-2018-6574)"
+    assert strings.starts_with(text: note, prefix: "  only `-D`")
+    assert strings.ends_with(text: note, suffix: ": " + reason)
+    listed = note.slice(from: 0, to: note.len() - reason.len())
+    spans: [str] @ []
+    open: bool @ false
+    span: str @ ""
+
+    for ch in listed.chars()
+        if ch == "`" && open
+            spans @ spans.push(span)
+            span @ ""
+            open @ false
+            continue
+
+        if ch == "`"
+            open @ true
+            continue
+
+        if open
+            span @ span + ch
+
+    # Sixteen spans on the day (2026-10-09): a read finding another number is
+    # not reading the note, or the note gained a word this test must be shown.
+    assert !open
+    assert spans.len() == 16
+
+    for named in spans
+        if package_words.valued(named)
+            assert !filter_words(package: "n", said: named + " v").is_err()
+            assert !filter_words(package: "n", said: named + "v").is_err()
+            continue
+        filled: str @ named
+
+        if strings.ends_with(text: named, suffix: "<dir>")
+            filled @ named.slice(from: 0, to: named.len() - 5) + "/d"
+
+        if strings.ends_with(text: named, suffix: "<name>")
+            filled @ named.slice(from: 0, to: named.len() - 6) + "N"
+        assert !filter_words(package: "n", said: filled).is_err()
+
+    for flag in package_words.VALUED
+        assert has_text(text: listed, needle: "`" + flag + "`")
+
+    for flag in package_words.SEPARATE
+        assert has_text(text: listed, needle: "`" + flag + " <")
+
+    for word in strings.with_all(list: package_words.PASSED, more: package_words.RESTATED)
+        assert has_text(text: listed, needle: "`" + word + "`")
+
+    for option in package_words.LINKED
+        assert has_text(text: listed, needle: "`-Wl," + option + ",<")
 
 # Route V (panel 198, its completeness critic's second pass; defect 527): a
 # value is a name in every slot, joined or as the next word, never `@<file>`,

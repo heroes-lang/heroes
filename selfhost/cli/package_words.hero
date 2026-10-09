@@ -82,15 +82,61 @@
 # unused during compilation* (measured 2026-10-08): a warning on a correct
 # program. The question is the one `flags.link_flags` asks, `exe_suffix()`.
 #
-# What is not here stays refused, and the refusal's note is `libraries.refused`.
+# **The list is five tables** (panel 198's R3): `VALUED`, `SEPARATE`, `PASSED`,
+# `RESTATED` and `LINKED`, which `libraries.filter_words` reads and nothing else
+# admits a word. The refusal's note, `libraries.refused`, names them word for
+# word, and `libraries.hero`'s test *the refusal's note names the list word for
+# word* holds the two together both ways: every word the note names is accepted,
+# and every word of a table is named. What is not here stays refused.
 
 use cli/process
 use cli/flags
 use cli/strings
 
+# The flag clang reads with its value as the next word alone (clang's
+# `Separate`): `-framework <name>`.
+constant SEPARATE: [str]
+    [
+        "-framework"
+    ]
+
+# The words passed on as they are.
+constant PASSED: [str]
+    [
+        "-pthread"
+    ]
+
+# The words that say nothing the compiler's own link line does not already say,
+# and are left out.
+constant RESTATED: [str]
+    [
+        "-Wl,--enable-new-dtags"
+        "-Wl,--export-dynamic"
+    ]
+
+# The linker options a `-Wl,` word may carry with one value, `-Wl,<option>,<value>`
+# or split as `-Wl,<option> -Wl,<value>`, each checked whole (`linked`).
+constant LINKED: [str]
+    [
+        "-rpath"
+        "-framework"
+    ]
+
+# Whether `word` is one of `table`, by its whole spelling.
+function in_table(word: str, table: [str]) -> bool
+    for one in table
+        if word == one
+            return true
+
+    return false
+
+# Whether `word` is one of `SEPARATE`, its value in the next word.
+function separate(word: str) -> bool
+    return in_table(word: word, table: SEPARATE)
+
 # Whether `word` is passed on as it is.
 function passes(word: str) -> bool
-    return word == "-pthread"
+    return in_table(word: word, table: PASSED)
 
 # The flag a package's valued word is handed to clang as: `-isystem` is `-I`.
 function spelled(word: str) -> str
@@ -115,11 +161,7 @@ constant VALUED: [str]
 
 # Whether `word` is one of `VALUED` alone, its value in the next word.
 function valued(word: str) -> bool
-    for flag in VALUED
-        if word == flag
-            return true
-
-    return false
+    return in_table(word: word, table: VALUED)
 
 # The one word a package's `word` is handed on as where the list admits it in one
 # word: `-pthread` as it is, and a `VALUED` flag with its value joined, that value
@@ -164,9 +206,9 @@ function told_word(word: str, next: str) -> str
         if strings.starts_with(text: word, prefix: flag) && word.len() > flag.len()
             return told(flag: flag, value: after(text: word, from: flag.len()))
 
-    for option in ["-Wl,-rpath,", "-Wl,-framework,"]
-        if strings.starts_with(text: word, prefix: option)
-            return told(flag: "", value: after(text: word, from: option.len()))
+    for option in LINKED
+        if strings.starts_with(text: word, prefix: "-Wl," + option + ",")
+            return told(flag: "", value: after(text: word, from: option.len() + 5))
 
     if split_option(word: word, next: next)
         return told(flag: "", value: after(text: next, from: 4))
@@ -179,8 +221,13 @@ function named(word: str, next: str) -> str
         return word + " " + next
     return word
 
+# Whether `word` is a `LINKED` option split from its value, `-Wl,<option> -Wl,<value>`.
 function split_option(word: str, next: str) -> bool
-    return (word == "-Wl,-rpath" || word == "-Wl,-framework") && strings.starts_with(text: next, prefix: "-Wl,")
+    for option in LINKED
+        if word == "-Wl," + option && strings.starts_with(text: next, prefix: "-Wl,")
+            return true
+
+    return false
 
 function after(text: str, from: i64) -> str
     cs = text.chars()
@@ -192,7 +239,44 @@ function link_passes(word: str) -> bool
 
 # Whether `word` says nothing the compiler's link line does not already say.
 function restates(word: str) -> bool
-    return word == "-Wl,--enable-new-dtags" || word == "-Wl,--export-dynamic"
+    return in_table(word: word, table: RESTATED)
+
+# The value of a `-Wl,<option>,<value>` word, or of `-Wl,<option>` followed by
+# `-Wl,<value>`, for an option of `LINKED`, and how many words it took. Moved
+# here from `libraries.linker_value` with panel 198's R3, so the options are a
+# table the note is held to.
+record Linked
+    option: str
+    value: str
+    words: i64
+
+function linked(word: str, next: str) -> Linked?
+    for option in LINKED
+        whole = "-Wl," + option + ","
+
+        if strings.starts_with(text: word, prefix: whole) && clean_tail(after(text: word, from: whole.len()))
+            return ok(Linked(option: option, value: after(text: word, from: whole.len()), words: 1))
+
+        if word == "-Wl," + option && strings.starts_with(text: next, prefix: "-Wl,") && clean_tail(after(text: next, from: 4))
+            return ok(Linked(option: option, value: after(text: next, from: 4), words: 2))
+
+    return fail(code: "none", msg: "not a linker option the list admits")
+
+# The tail of a whole-checked `-Wl,` form: no further comma, and a value
+# (`is_value`: not empty, not a flag, not a response file).
+function clean_tail(rest: str) -> bool
+    for ch in rest.chars()
+        if ch == ","
+            return false
+
+    return is_value(flag: "-Wl,", value: rest)
+
+# What an admitted linker option becomes on clang's line: an rpath its one word,
+# or none on Windows (`rpath_words`); a framework the driver's own pair.
+function linked_words(link: Linked) -> [str]
+    if link.option == "-framework"
+        return ["-framework", link.value]
+    return rpath_words(link.value)
 
 # What an admitted rpath becomes: the one word, or none where the linker would
 # read its value as a file.
@@ -257,6 +341,32 @@ test "a value is a name: not empty, not a flag, not a file of words, and -l not 
     assert told_word(word: "-Wl,-framework,@r", next: "") != ""
     assert named(word: "-Wl,-rpath", next: "-Wl,@r") == "-Wl,-rpath -Wl,@r"
     assert named(word: "-Wl,-rpath", next: "-lz") == "-Wl,-rpath"
+
+# Every option of `LINKED` is read whole or split and handed on as its own word,
+# so a new option without its own words fails here rather than reaching the line
+# as another's.
+test "every linker option the list admits is read in both spellings and handed on as itself"
+    for option in LINKED
+        one = linked(word: "-Wl," + option + ",v", next: "").must()
+        two = linked(word: "-Wl," + option, next: "-Wl,v").must()
+        assert one.option == option && one.value == "v" && one.words == 1
+        assert two.option == option && two.value == "v" && two.words == 2
+        handed = linked_words(one)
+
+        if option == "-framework"
+            assert handed == ["-framework", "v"]
+
+        if option != "-framework"
+            assert option == "-rpath"
+            assert handed == rpath_words("v")
+
+    assert linked(word: "-Wl,-rpath,a,b", next: "").is_err()
+    assert linked(word: "-Wl,-rpath", next: "-Wl,-e,evil").is_err()
+    assert linked(word: "-Wl,-rpath", next: "-L/lib").is_err()
+    assert linked(word: "-Wl,-rpath,@r", next: "").is_err()
+    assert linked(word: "-Wl,-e,main", next: "").is_err()
+    assert separate("-framework")
+    assert !separate("-frameworkCocoa")
 
 # Where the rpath means something it is one word, and on Windows none.
 test "an admitted rpath is one word where a loader reads it, and none on Windows"
