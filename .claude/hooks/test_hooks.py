@@ -970,6 +970,25 @@ class Discards(unittest.TestCase):
         branched(self.tree)
         self.passed("git reset --hard")
         self.passed("git reset --hard main~1")
+        self.passed("git checkout -f other")
+        self.passed("git switch --discard-changes other")
+
+    def test_a_forced_checkout_or_switch_of_the_whole_tree_is_a_hard_reset(self):
+        branched(self.tree)
+        staged(self.tree, "c.txt", "a peer's\n")
+        kept = peer(self.tree, "runtime/runtime.c", "/* a peer's */\n", stage=False)
+        for command in ("git checkout -f", "git checkout -f other", "git checkout -qf other", "git checkout --for other",
+                        "git checkout -f HEAD", "git checkout -f other --", "git switch -f other", "git switch --discard-changes other",
+                        "git switch --di other", "git switch -qf other"):
+            said = self.refused(command)
+            self.assertIn("c.txt", said, command)
+            self.assertIn("runtime/runtime.c", said, command)
+        for command in ("git checkout other", "git switch other", "git checkout -f runtime/runtime.c", "git checkout -f other -- a.txt",
+                        "git checkout -f other a.txt", "git checkout -bfix", "git checkout -p other", "git switch --f other"):
+            self.passed(command)
+        git(self.tree, "checkout", "-q", "-f", "other")
+        self.assertIsNone(read(os.path.join(self.tree, "c.txt")))
+        self.assertEqual(read(kept), "/* runtime */\n")
 
     def test_an_autostash_over_a_change_is_refused_in_every_spelling(self):
         branched(self.tree)
