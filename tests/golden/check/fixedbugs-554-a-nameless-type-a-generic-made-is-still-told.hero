@@ -1,0 +1,29 @@
+# Defect 554's witness, 2026-10-09: a mismatch between a nameless function
+# type and a named one is quiet where the nameless type is one the program
+# wrote, refused already as `needs_parameter_names`
+# (`fixedbugs-554-a-nameless-function-type-is-told-once`). Here the nameless
+# `(function(i64, i64) -> i64)` is made by binding `make`'s two letters to
+# `i64`, which no rule refuses (`check/type_labels.hero` says why it cannot
+# see it), so the mismatch is the only message and must stay told. Green on
+# the base as well: it pins what the repair must not take away.
+
+function first<A, B>(x: A, y: B) -> A
+    _ = y
+    return x
+
+function make<A, B>(x: A, y: B) -> (function(A, B) -> A)
+    _ = x
+    _ = y
+    return first
+
+function add(a: i64, b: i64) -> i64
+    return a + b
+
+function main()
+    k = make(x: 1, y: 2)
+    print(k == add)  #~ type_mismatch
+    print(both(x: k, y: add)(1, 2))  #~ type_mismatch
+
+function both<A>(x: A, y: A) -> A
+    _ = y
+    return x
