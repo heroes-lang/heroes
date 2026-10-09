@@ -433,11 +433,13 @@ filed and repaired in a later batch. So, from batch 16:
 
 1. **Before the push**: gate A (the seed over two generations, its fixpoint,
    the compiler's own tests, the net's own tests) and gate B (the full net,
-   balanced: one pool, the longest job first, `run` one harness process per
-   case so its 422 cases fill the gaps; the pool held under the cores, since
-   a pool of 7 read a load of 10 on this Mac's 8 that day), and the site's
-   build when a file `claims.ts` names moved, a push publishing the site.
-   Nothing else.
+   its suites four at a time, `run` first since it is the critical path,
+   `cache` alone after), and the site's build when a file `claims.ts` names
+   moved, a push publishing the site. Nothing else. Measured the first day:
+   `run` split into one harness process per case, a pool of 7, read gate B
+   18:39 against 19:56 whole, the load at 10 on this Mac's 8 cores and each
+   process's four seconds eating the gain; so `run` stays whole until it can
+   be split inside one process (defect 537).
 2. **The push**, at once.
 3. **After the push, beside the CI**: the census, the round's side only (the
    trunk's reused from the last census for each file unchanged since, the
