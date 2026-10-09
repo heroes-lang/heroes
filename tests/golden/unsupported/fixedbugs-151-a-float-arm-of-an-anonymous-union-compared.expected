@@ -1,6 +1,6 @@
-error[ffi_union_field]: `SZ` holds `f` in a union of `fixedbugs-151-unions.h`, sharing its bytes with `i`, and a `f32` is not compared bit for bit, so comparing a `SZ` or using one as a map key can call two different values equal
+error[ffi_union_field]: `SZ` holds `f` in a union of `fixedbugs-151-unions.h`, sharing its bytes with `i`, and `f32` is not compared bit for bit, so comparing `SZ` values or using one as a map key can call two different values equal
   at tests/golden/unsupported/fixedbugs-151-a-float-arm-of-an-anonymous-union-compared.hero:13:12
      |
   13 |     record SZ  #~ ffi_union_field
      |            ^^
-  note: only an integer, a pointer or an array of them as wide as the union compares a union's bytes: to compare a `SZ`, name that member; reading `f` and building a `SZ` that names it stay legal
+  note: only an integer, a pointer or an array of them as wide as the union compares a union's bytes: to compare `SZ` values, name that member; reading `f` and building any `SZ` that names it stay legal

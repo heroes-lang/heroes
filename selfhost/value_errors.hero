@@ -193,7 +193,7 @@ function main_parameters(count: i64, span: token.Span) -> diag.Diagnostic
 function not_callable(got: str, span: token.Span) -> diag.Diagnostic
     return diag.new_diagnostic(
         code: "not_callable",
-        message: "this is a `" + got + "`, and a `" + got + "` cannot be called",
+        message: "this value's type is `" + got + "`, and no value of that type can be called",
         span: span
     )
 

@@ -10,6 +10,7 @@ use token
 use source
 use diag
 use check/flow
+use check/flow_groups
 
 # What a read of `path` is told where a place it reaches has ended on every
 # path here: the value read again, or handed to C whole with a dead part
@@ -28,7 +29,7 @@ function refusal(f: flow.Flow, s: source.Source, read: token.Span, path: [str], 
     whole = found.must().path.len() > path.len()
     return ok(used_after_end(s, read: read, shown: source.span_text(s, read), ended: found.must(), whole: whole))
 
-function used_after_end(s: source.Source, read: token.Span, shown: str, ended: flow.Dead, whole: bool) -> diag.Diagnostic
+function used_after_end(s: source.Source, read: token.Span, shown: str, ended: flow_groups.Dead, whole: bool) -> diag.Diagnostic
     where = where_it_ended(s, read: read, ended: ended)
 
     message = if whole
@@ -46,7 +47,7 @@ function used_after_end(s: source.Source, read: token.Span, shown: str, ended: f
 
 # `on this line` when the call and the read share one, else the line, and the
 # file too when it is not the one on screen (`source.elsewhere`'s rule).
-function where_it_ended(s: source.Source, read: token.Span, ended: flow.Dead) -> str
+function where_it_ended(s: source.Source, read: token.Span, ended: flow_groups.Dead) -> str
     here = source.locate(s, read.start)
     there = source.locate(s, ended.at.start)
 
@@ -58,13 +59,13 @@ function where_it_ended(s: source.Source, read: token.Span, ended: flow.Dead) ->
 
 test "the message names the value, the call and its line, and the whole-record case says which part"
     s = source.new_source(name: "t.hero", text: "a\nclose(b)\nprint(b)\n")
-    ended = flow.Dead(path: ["1"], shown: "b", callee: "close", at: token.Span(start: 2, end: 10))
+    ended = flow_groups.Dead(path: ["1"], shown: "b", callee: "close", at: token.Span(start: 2, end: 10))
     later = used_after_end(s, read: token.Span(start: 17, end: 18), shown: "b", ended: ended, whole: false)
     assert later.code == "handle_used_after_end"
     assert later.message == "`b` was given to `close` at line 2, which ended its life, and this reads it again"
     assert later.notes.len() == 2
     same = used_after_end(s, read: token.Span(start: 8, end: 9), shown: "b", ended: ended, whole: false)
     assert same.message == "`b` was given to `close` on this line, which ended its life, and this reads it again"
-    part = flow.Dead(path: ["1", ".cell"], shown: "x.cell", callee: "free", at: token.Span(start: 2, end: 10))
+    part = flow_groups.Dead(path: ["1", ".cell"], shown: "x.cell", callee: "free", at: token.Span(start: 2, end: 10))
     crossing = used_after_end(s, read: token.Span(start: 17, end: 18), shown: "x", ended: part, whole: true)
     assert crossing.message == "`x` is handed to C whole here, and its `x.cell` was given to `free` at line 2, which ended its life"

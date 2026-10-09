@@ -1,0 +1,48 @@
+# Defect 531 (lane b16-misc, 2026-10-09): a call through a function value
+# that gave the wrong number of arguments was told *`this function` takes 1
+# argument(s), found 2*, a placeholder printed in backticks where a name
+# stands, and so were a label owed and a label naming nothing through one,
+# *two of `this function`'s parameters*, *`this function` has nothing called*.
+# A call of a declaration names the declaration; each of these now names the
+# callee as the program wrote it, a parameter, a local, a field, a constant,
+# an element, a call's result, and one written over two lines on one line,
+# its comment left out, so no backticks hold a line break.
+record Ops
+    op: (function(i64) -> i64)
+
+constant TWICE: (function(i64) -> i64)
+    double
+
+function double(n: i64) -> i64
+    return n * 2
+
+function pick() -> (function(i64) -> i64)
+    return double
+
+function copy_text(from: str, to: str) -> str
+    return from + to
+
+function apply(g: (function(i64) -> i64)) -> i64
+    return g(1, 2)  #~ wrong_arity
+
+function main()
+    f: (function(i64) -> i64) @ double
+    print(f(1, 2))  #~ wrong_arity
+    r = Ops(op: double)
+    print(r.op(1, 2))  #~ wrong_arity
+    print(TWICE(1, 2))  #~ wrong_arity
+    fs: [(function(i64) -> i64)] = [double]
+    print(fs[0]())  #~ wrong_arity
+    print(pick()(1, 2))  #~ wrong_arity
+    print(
+        fs[  #~ wrong_arity
+            # the first
+            0](
+            1,
+            2
+        )
+    )
+    print(apply(double))
+    move: (function(from: str, to: str) -> str) @ copy_text
+    print(move("a", "b"))  #~ needs_label needs_label
+    print(move(from: "a", too: "b"))  #~ wrong_label

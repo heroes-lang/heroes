@@ -580,11 +580,14 @@ def verdict(command, cwd=None):
                 )
 
         # What throws work away is read as what commits it (defect 514,
-        # `discards.py`): an abort, a skip, a hard or merge reset, an autostash.
+        # `discards.py`): an abort, a skip, a hard or merge reset, an autostash;
+        # and what writes over the paths it names (defect 529, `overwrites.py`).
         for verb in discards.VERBS if is_git else ():
             more = git_args(w, verb)
             if more is not None:
-                said = discards.verdict(verb, more, where, discards.git_options(w), discards.environment(bare(raw)))
+                runs_through = bare(raw)[: len(bare(raw)) - len(w)]
+                appended = any(os.path.basename(word) == "xargs" for word in runs_through)
+                said = discards.verdict(verb, more, where, discards.git_options(w), discards.environment(bare(raw)), command, appended)
                 if said is not None:
                     return said
 

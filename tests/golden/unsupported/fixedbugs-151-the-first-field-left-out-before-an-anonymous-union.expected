@@ -3,4 +3,4 @@ error[ffi_incomplete_record]: `SA` does not name `kind`, and `fixedbugs-151-unio
      |
   11 |     record SA  #~ ffi_incomplete_record
      |            ^^
-  note: the assertions above check every field you DO name and cannot see one you leave out: a `SA` built here would carry a zero `kind` into C, which is a value rather than a crash
+  note: the assertions above check every field you DO name and cannot see one you leave out: every `SA` built here would carry a zero `kind` into C, which is a value rather than a crash

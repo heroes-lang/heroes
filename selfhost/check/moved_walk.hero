@@ -98,14 +98,13 @@ function statement(@w: Walk, a: ast.Ast, r: resolved.Resolved, s: source.Source,
 # place's fate through the body is one of three monotone functions of its
 # fate at the head: always ended, always alive, or unchanged.
 function looped(@w: Walk, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], cond: i64?, body: ast.Block, bound: token.Span?)
-    entry = w.flow
     loud = w.loud
     w.loud @ false
     once = pass(@w, a, r, s, decls, cond: cond, body: body, bound: bound)
     w.loud @ loud
-    w.flow @ flow.closed(outer: entry, inner: flow.meet(base: once.base, one: once.base, two: once.turned))
+    w.flow @ flow.meet(base: once.base, one: once.base, two: once.turned)
     last = pass(@w, a, r, s, decls, cond: cond, body: body, bound: bound)
-    w.flow @ flow.closed(outer: entry, inner: flow.meet(base: last.base, one: last.head, two: last.breaks))
+    w.flow @ flow.meet(base: last.base, one: last.head, two: last.breaks)
 
 function pass(@w: Walk, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], cond: i64?, body: ast.Block, bound: token.Span?) -> Pass
     base = flow.split(w.flow)
@@ -156,11 +155,10 @@ function expr(@w: Walk, a: ast.Ast, r: resolved.Resolved, s: source.Source, decl
 
             # The right side of `&&` and `||` runs on one path and not the other.
             if b.op == .and || b.op == .or
-                before = w.flow
-                base = flow.split(before)
+                base = flow.split(w.flow)
                 w.flow @ base
                 expr(@w, a, r, s, decls, id: b.right)
-                w.flow @ flow.closed(outer: before, inner: flow.meet(base: base, one: base, two: w.flow))
+                w.flow @ flow.meet(base: base, one: base, two: w.flow)
             else
                 expr(@w, a, r, s, decls, id: b.right)
         .call c         => call(@w, a, r, s, decls, id: id, callee: c.callee, given: c.args)
@@ -302,8 +300,7 @@ function crossed(@w: Walk, a: ast.Ast, r: resolved.Resolved, s: source.Source, d
 ## Where control splits
 
 function branches(@w: Walk, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], arms: [ast.Branch], otherwise: ast.Block?)
-    entry = w.flow
-    base = flow.split(entry)
+    base = flow.split(w.flow)
     w.flow @ base
     out: flow.Flow @ flow.unreachable()
 
@@ -316,12 +313,11 @@ function branches(@w: Walk, a: ast.Ast, r: resolved.Resolved, s: source.Source, 
 
     if !otherwise.is_err()
         block(@w, a, r, s, decls, body: otherwise.must())
-    w.flow @ flow.closed(outer: entry, inner: flow.meet(base: base, one: out, two: w.flow))
+    w.flow @ flow.meet(base: base, one: out, two: w.flow)
 
 function matched(@w: Walk, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], scrutinee: i64, arms: [ast.Arm])
     expr(@w, a, r, s, decls, id: scrutinee)
-    entry = w.flow
-    base = flow.split(entry)
+    base = flow.split(w.flow)
     out: flow.Flow @ flow.unreachable()
 
     for arm in arms
@@ -341,4 +337,4 @@ function matched(@w: Walk, a: ast.Ast, r: resolved.Resolved, s: source.Source, d
 
         out @ flow.meet(base: base, one: out, two: w.flow)
 
-    w.flow @ flow.closed(outer: entry, inner: out)
+    w.flow @ out

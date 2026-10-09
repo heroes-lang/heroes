@@ -3,4 +3,4 @@ error[ffi_unknown_field]: `fixedbugs-152-fields.h` declares no `c` in `struct ta
      |
   16 |         c: i32  #~ ffi_unknown_field
      |         ^
-  note: a group's `record` IS the header's type (§4.19), so a field is named exactly as the header names it: correct the spelling, or name the header whose `struct tagged_s` has a `c`
+  note: a group's `record` IS the header's type (§4.19), so a field is named exactly as the header names it: correct the spelling, or name the header whose `struct tagged_s` has a member `c`

@@ -1,4 +1,4 @@
-error[ffi_constant_type]: `PT_EXCESS` in `fixedbugs-094-values.h` cannot be a `Pt`: clang refuses the header's value at line 15: excess elements in struct initializer
+error[ffi_constant_type]: `PT_EXCESS` in `fixedbugs-094-values.h` cannot be declared `Pt`: clang refuses the header's value at line 15: excess elements in struct initializer
   at tests/golden/unsupported/fixedbugs-094-an-element-too-many-is-told-on-the-constant.hero:11:5
      |
   11 |     constant PT_EXCESS: Pt  #~ ffi_constant_type

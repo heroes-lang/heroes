@@ -41,7 +41,7 @@ function report(@c: state.Checker, a: ast.Ast, s: source.Source, decls: [ast.Dec
 function hole_not_renderable(shown: str, span: token.Span) -> diag.Diagnostic
     d: diag.Diagnostic @ diag.new_diagnostic(
         code: "hole_not_renderable",
-        message: "a hole in an `f\"…\"` literal writes its value as `to_str` does, and `to_str` takes an integer, a float, `bool` or `str` — this one holds a `" + shown + "`, which has no text",
+        message: "a hole in an `f\"…\"` literal writes its value as `to_str` does, and `to_str` takes an integer, a float, `bool` or `str` — this one's type is `" + shown + "`, which has no text",
         span: span
     )
     d.notes @ d.notes.push(

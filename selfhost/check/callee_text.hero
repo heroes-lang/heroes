@@ -1,0 +1,55 @@
+# What a call through a function value is named in its messages: the
+# callee as the program wrote it, `move`, `r.op`, `fs[0]` or `geom.DOUBLE`,
+# the way a call of a declaration is named by the declaration's own name.
+#
+# Defect 531, 2026-10-09 (lane b16-misc): a wrong-arity call, a label owed
+# and a label naming nothing through a VALUE each named `this function`, a
+# placeholder printed in backticks where a name stands, *`this function`
+# takes 1 argument(s), found 2*, where the same mistakes through a
+# declaration say *`double` takes 1 argument(s), found 2*. What the program
+# wrote is the one name the reader can find in the line.
+#
+# A callee written over several lines is read on one, as
+# `parse/members_below.on_one_line` reads a head (defect 131's class): its
+# tokens as the text spells them, one space where a line break stood between
+# two of them, and no comment, so a name in backticks never holds a line
+# break or a margin. Lexed only then, and only for a message: a callee on
+# one line is its text.
+
+use token
+use source
+use lexer
+use stream_tables
+
+function written(s: source.Source, span: token.Span) -> str
+    text = source.span_text(s, span)
+
+    if source.newlines_in(text) == 0
+        return text
+    tokens = lexer.lex_one(text).tokens
+    parts: [str] @ []
+    last: i64 @ -1
+
+    for t in tokens
+        if !stream_tables.is_invisible(t.kind) && t.kind != .eof
+            if last >= 0 && source.newlines_in(text.slice(from: last, to: t.span.start)) > 0
+                parts @ parts.push(" ")
+            else if last >= 0
+                parts @ parts.push(text.slice(from: last, to: t.span.start))
+            parts @ parts.push(text.slice(from: t.span.start, to: t.span.end))
+            last @ t.span.end
+
+    return parts.join("")
+
+## Tests
+
+function named(text: str, from: i64, to: i64) -> str
+    return written(source.new_source(name: "t.hero", text: text), token.Span(start: from, end: to))
+
+test "a callee on one line is named as written"
+    assert named("print(fs[0](1, 2))", from: 6, to: 11) == "fs[0]"
+    assert named("x = r.op(3)", from: 4, to: 8) == "r.op"
+
+test "a callee over several lines is named on one, its comment left out"
+    assert named("print(fs[\n        0](1, 2))", from: 6, to: 20) == "fs[ 0]"
+    assert named("print(fs[ # the first\n        0](1, 2))", from: 6, to: 32) == "fs[ 0]"
