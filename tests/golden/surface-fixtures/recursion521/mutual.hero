@@ -1,0 +1,15 @@
+# Defect 521's shape beside it: `ping` and `pong` call each other, and the
+# frame that runs out is either; the guard names both, from the first by
+# name, so the line reads the same whichever ran out.
+function ping(n: i64) -> i64
+    if n == 0
+        return 0
+    return 1 + pong(n - 1)
+
+function pong(n: i64) -> i64
+    if n == 0
+        return 0
+    return 1 + ping(n - 1)
+
+function main()
+    print(ping(1000000000))

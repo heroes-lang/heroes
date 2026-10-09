@@ -1,0 +1,9 @@
+# Defect 521's shape beside it: `down` calls itself, so the frame that runs
+# out is the recursion, and the line says nothing more than its name.
+function down(n: i64) -> i64
+    if n == 0
+        return 0
+    return 1 + down(n - 1)
+
+function main()
+    print(down(1000000000))
