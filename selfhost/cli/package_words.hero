@@ -1,0 +1,392 @@
+# The words of a package's answer that the list judges by their WHOLE spelling,
+# and what becomes of each (design.md §4.19; panel 198). `libraries.filter_words`
+# walks the answer and asks here before it asks about prefixes. Its own module
+# because `cli/libraries.hero` stands at its ceiling, as `cli/package_answer.hero`
+# is.
+#
+# The property the list asks of a word is `libraries.hero`'s: does it name a file,
+# load anything, or write anything at build time? A word is admitted here by name,
+# never by a shape, because no test of a shape is complete (`-Wl,@file`,
+# `-Wl,--plugin`, `-Wl,-Map=<file>` each pass a test that asks whether a word
+# names a path), and every spelling is the whole word, so a comma that tunnels a
+# second option into it (`-Wl,--enable-new-dtags,--plugin,x.so`) is a different
+# word and is refused.
+#
+# **A word PASSES** when clang gives it the one meaning on every platform
+# measured and it reaches a compile and a link as it is: `-pthread`, a driver
+# spelling of `-D_REENTRANT` and `-lpthread`, which the list already admits.
+#
+# **A word is LEFT OUT** when it restates what the compiler's own link line
+# already says, so passing it adds nothing and one linker refuses it: Apple's
+# `ld` stops at `--enable-new-dtags` and at `--export-dynamic` (*ld: unknown
+# options*), and `lld-link` warns. Debian's GNU ld 2.44 and LLD 22.1.8 and
+# Ubuntu's GNU ld 2.42 write the same bytes with and without them:
+# `--enable-new-dtags` is the default tag those toolchains write beside the
+# admitted `-Wl,-rpath` (a GNU ld built with upstream's default writes RPATH
+# there, the tag a package that says only `-Wl,-rpath` already gets on it), and
+# `--export-dynamic` is what clang hands the linker for the `-rdynamic` every
+# POSIX link carries (`flags.link_flags`). The word that MOVES a tag,
+# `--disable-new-dtags`, is not here. Both premises are asked where they can be:
+# `tests/harness/absence.hero`'s *an admitted -Wl,-rpath leaves a RUNPATH* and
+# the test below on `-rdynamic`.
+#
+# **`-isystem <dir>` is handed on as `-I<dir>`** (`spelled`), its directory joined
+# or as the next word, as clang reads it (Apple clang 21: `-isystem/x` is
+# `-isystem` and `/x`). clang quiets every diagnostic LOCATED IN a header it finds
+# by `-isystem`, and only those: measured on Apple clang 21 and Debian clang
+# 22.1.8, the program's own lines, a header macro expanded in them among them,
+# keep every `-Werror` the compiler sets, and the header's own inline code loses
+# them. A library's header is judged under those flags as `ffi_header_refused`
+# says (*no warning is turned off for a header*) and as panel 188's
+# compiler-engineer argued from (`-isystem` is refused, so no bound header is in
+# a system directory), so the word is read as the directory it names and the
+# guarantee stands. Seven headers under Debian 13's `/usr/include/mit-krb5`, the
+# one directory its nine `-isystem` packages name, compile under `-I` with the
+# compiler's flags (krb5.h, gssapi/gssapi.h, gssapi/gssapi_krb5.h, gssrpc/rpc.h,
+# kadm5/admin.h, kdb.h, profile.h; panel 198's compiler-engineer);
+# gssapi/gssapi_alloc.h does not (implicit malloc and free), and none of the six
+# entry headers a binding names includes it (panel 198's critic).
+#
+# **`-Wl,-rpath,<dir>` stays where `eac3e5b5` put it**, and the argument it was
+# admitted on stands beside the list again, as that commit (2026-08-14, no
+# sitting) wrote it beside `ALLOWED` in the Rust and the port dropped it: an rpath
+# names no file, loads nothing and writes nothing at build time and changes what
+# the loader picks at run time; a hostile `.pc` saying `-L/tmp/x -lfoo` already
+# chooses the library, so it is no new capability, but it lets the choice be
+# swapped AFTER the build by anyone who can write that directory. The answer (c)
+# of 2026-08-15 left that class to the corpus timeout and refused the list a
+# second half: *a guard is not widened to cover a class it cannot see*. So no word
+# is admitted here for what it does at run time. **On Windows the rpath is left
+# out** (`rpath_words`): a PE loader has none, and `lld-link` warns on `-rpath`
+# and then reads its value as an INPUT FILE, so `-Wl,-rpath,h.o` linked an object
+# the list never admitted (panel 198's ffi-pragmatist, clang 23.1.1).
+#
+# **A VALUE IS A NAME, never a file of more words** (route V, from panel 198's
+# completeness critic, second pass; defect 527). clang reads an argument
+# beginning with `@` as a response file and puts its words in its place, and so
+# do Apple's `ld` and GNU `ld` for theirs. Measured with the compiler of that
+# sitting and a stand-in `pkg-config`: `-framework @f`, `-Wl,-framework,@f` and
+# `-Wl,-rpath,@f` had clang or the linker read `f`'s words as options on macOS
+# and Debian 13, a map written and a linker the file named run, every one an
+# admitted word. So a value is judged as a value in every slot, joined or as the
+# next word (`is_value`): not empty, not a flag (`-`), not a file of words (`@`),
+# and for `-l` not GNU ld's `:<file>`, which names a file where `-l` names a
+# library (`libuv-static`'s `-l:libuv.a`, defect 528, which ld64 refused at exit
+# 2). An `@` inside a path (`openssl@4`) is a letter of the path. The refusal says
+# which of these it read (`told`). Its price, refused by construction: an ld64
+# rpath macro leading a value, `-Wl,-rpath,@loader_path/../lib`, which no package
+# of either census answers.
+#
+# **`-pthread` reaches a COMPILE everywhere and a LINK everywhere but Windows**,
+# where clang 23.1.1 for `x86_64-pc-windows-msvc` calls it at a link *argument
+# unused during compilation* (measured 2026-10-08): a warning on a correct
+# program. The question is the one `flags.link_flags` asks, `exe_suffix()`.
+#
+# **The list is five tables** (panel 198's R3): `VALUED`, `SEPARATE`, `PASSED`,
+# `RESTATED` and `LINKED`, which `libraries.filter_words` reads and nothing else
+# admits a word. The refusal's note, `libraries.refused`, names them word for
+# word, and `libraries.hero`'s test *the refusal's note names the list word for
+# word* holds the two together both ways: every word the note names is accepted,
+# and every word of a table is named. What is not here stays refused.
+
+use cli/process
+use cli/flags
+use cli/strings
+
+# The flag clang reads with its value as the next word alone (clang's
+# `Separate`): `-framework <name>`.
+constant SEPARATE: [str]
+    [
+        "-framework"
+    ]
+
+# The words passed on as they are.
+constant PASSED: [str]
+    [
+        "-pthread"
+    ]
+
+# The words that say nothing the compiler's own link line does not already say,
+# and are left out.
+constant RESTATED: [str]
+    [
+        "-Wl,--enable-new-dtags"
+        "-Wl,--export-dynamic"
+    ]
+
+# The linker options a `-Wl,` word may carry with one value, `-Wl,<option>,<value>`
+# or split as `-Wl,<option> -Wl,<value>`, each checked whole (`linked`).
+constant LINKED: [str]
+    [
+        "-rpath"
+        "-framework"
+    ]
+
+# Whether `word` is one of `table`, by its whole spelling.
+function in_table(word: str, table: [str]) -> bool
+    for one in table
+        if word == one
+            return true
+
+    return false
+
+# Whether `word` is one of `SEPARATE`, its value in the next word.
+function separate(word: str) -> bool
+    return in_table(word: word, table: SEPARATE)
+
+# Whether `word` is passed on as it is.
+function passes(word: str) -> bool
+    return in_table(word: word, table: PASSED)
+
+# The flag a package's valued word is handed to clang as: `-isystem` is `-I`.
+function spelled(word: str) -> str
+    if word == "-isystem"
+        return "-I"
+    return word
+
+# The flags clang reads with their value joined or as the next word, every one
+# in both spellings (defect 160); `-isystem`'s value is handed on as `-I`'s
+# (`spelled`). Moved here from `libraries.valued` and `allowed_prefixed`, with
+# `-isystem`, when panel 198 took `cli/libraries.hero` past its ceiling.
+constant VALUED: [str]
+    [
+        "-D"
+        "-U"
+        "-I"
+        "-L"
+        "-l"
+        "-F"
+        "-isystem"
+    ]
+
+# Whether `word` is one of `VALUED` alone, its value in the next word.
+function valued(word: str) -> bool
+    return in_table(word: word, table: VALUED)
+
+# The one word a package's `word` is handed on as where the list admits it in one
+# word: `-pthread` as it is, and a `VALUED` flag with its value joined, that value
+# a value (`is_value`), `-isystem`'s as `-I`'s; an error where the list does not.
+function one_word(word: str) -> str?
+    if passes(word)
+        return ok(word)
+
+    for flag in VALUED
+        if strings.starts_with(text: word, prefix: flag) && is_value(flag: flag, value: after(text: word, from: flag.len()))
+            return ok(spelled(flag) + after(text: word, from: flag.len()))
+
+    return fail(code: "none", msg: "not a word the list admits whole")
+
+# Whether `value`, written after `flag` or as the value of a `-Wl,` option, is a
+# value: not empty, not a flag, not a response file, and for `-l` not `:<file>`.
+function is_value(flag: str, value: str) -> bool
+    if value.len() == 0
+        return false
+    first = value.chars()[0]
+
+    if first == "-" || first == "@"
+        return false
+    return !(flag == "-l" && first == ":")
+
+# What a refusal of `value` owes its reader after the words it names, or "".
+function told(flag: str, value: str) -> str
+    if value.len() == 0
+        return ""
+    first = value.chars()[0]
+
+    if first == "@"
+        return ": a value beginning with `@` names a file whose words clang and the linker read in its place"
+
+    if flag == "-l" && first == ":"
+        return ": `-l:<file>` names a file, where `-l` names a library"
+    return ""
+
+# The same, for a word refused whole: a joined value, or a `-Wl,` option's.
+function told_word(word: str, next: str) -> str
+    for flag in VALUED
+        if strings.starts_with(text: word, prefix: flag) && word.len() > flag.len()
+            return told(flag: flag, value: after(text: word, from: flag.len()))
+
+    for option in LINKED
+        if strings.starts_with(text: word, prefix: "-Wl," + option + ",")
+            return told(flag: "", value: after(text: word, from: option.len() + 5))
+
+    if split_option(word: word, next: next)
+        return told(flag: "", value: after(text: next, from: 4))
+    return ""
+
+# The words a refusal names at `word`: a `-Wl,` option split from its value names
+# both.
+function named(word: str, next: str) -> str
+    if split_option(word: word, next: next)
+        return word + " " + next
+    return word
+
+# Whether `word` is a `LINKED` option split from its value, `-Wl,<option> -Wl,<value>`.
+function split_option(word: str, next: str) -> bool
+    for option in LINKED
+        if word == "-Wl," + option && strings.starts_with(text: next, prefix: "-Wl,")
+            return true
+
+    return false
+
+function after(text: str, from: i64) -> str
+    cs = text.chars()
+    return cs.slice(from: from, to: cs.len()).join("")
+
+# Whether a LINK takes `word` as it is: `-pthread`, where clang does not call it unused.
+function link_passes(word: str) -> bool
+    return passes(word) && process.exe_suffix() != ".exe"
+
+# Whether `word` says nothing the compiler's link line does not already say.
+function restates(word: str) -> bool
+    return in_table(word: word, table: RESTATED)
+
+# The value of a `-Wl,<option>,<value>` word, or of `-Wl,<option>` followed by
+# `-Wl,<value>`, for an option of `LINKED`, and how many words it took. Moved
+# here from `libraries.linker_value` with panel 198's R3, so the options are a
+# table the note is held to.
+record Linked
+    option: str
+    value: str
+    words: i64
+
+function linked(word: str, next: str) -> Linked?
+    for option in LINKED
+        whole = "-Wl," + option + ","
+
+        if strings.starts_with(text: word, prefix: whole) && clean_tail(after(text: word, from: whole.len()))
+            return ok(Linked(option: option, value: after(text: word, from: whole.len()), words: 1))
+
+        if word == "-Wl," + option && strings.starts_with(text: next, prefix: "-Wl,") && clean_tail(after(text: next, from: 4))
+            return ok(Linked(option: option, value: after(text: next, from: 4), words: 2))
+
+    return fail(code: "none", msg: "not a linker option the list admits")
+
+# The tail of a whole-checked `-Wl,` form: no further comma, and a value
+# (`is_value`: not empty, not a flag, not a response file).
+function clean_tail(rest: str) -> bool
+    for ch in rest.chars()
+        if ch == ","
+            return false
+
+    return is_value(flag: "-Wl,", value: rest)
+
+# What an admitted linker option becomes on clang's line: an rpath its one word,
+# or none on Windows (`rpath_words`); a framework the driver's own pair.
+function linked_words(link: Linked) -> [str]
+    if link.option == "-framework"
+        return ["-framework", link.value]
+    return rpath_words(link.value)
+
+# What an admitted rpath becomes: the one word, or none where the linker would
+# read its value as a file.
+function rpath_words(value: str) -> [str]
+    if process.exe_suffix() == ".exe"
+        none: [str] = []
+        return none
+    return ["-Wl,-rpath," + value]
+
+test "a word is passed or left out by its whole spelling, and nothing near it is"
+    assert passes("-pthread")
+    assert !passes("-pthreads")
+    assert !passes("-pthread=1")
+    assert !passes("-Wl,-pthread")
+    assert !passes("")
+    assert link_passes("-pthread") == (process.exe_suffix() != ".exe")
+    assert !link_passes("-pthreads")
+    assert restates("-Wl,--enable-new-dtags")
+    assert restates("-Wl,--export-dynamic")
+    assert spelled("-isystem") == "-I"
+    assert spelled("-I") == "-I"
+    assert spelled("-isystem-after") == "-isystem-after"
+    assert one_word("-isystem/sys/a").must() == "-I/sys/a"
+    assert one_word("-I/inc").must() == "-I/inc"
+    assert one_word("-lz").must() == "-lz"
+    assert one_word("-pthread").must() == "-pthread"
+    assert one_word("-isystem").is_err()
+    assert one_word("-iquote/sys/a").is_err()
+    assert one_word("-pthreads").is_err()
+    assert one_word("-isystem-after").is_err()
+    assert one_word("-I-fplugin=x.so").is_err()
+    assert one_word("-I@r").is_err()
+    assert one_word("-l:libuv.a").is_err()
+    assert valued("-isystem")
+    assert !valued("-isystem/sys/a")
+    assert !valued("-iquote")
+
+    # The word that moves a tag, a comma that carries a second option, and the
+    # position-dependent words are not restatements of anything.
+    assert !restates("-Wl,--disable-new-dtags")
+    assert !restates("-Wl,--enable-new-dtags,--plugin,x.so")
+    assert !restates("-Wl,--export-dynamic,-e,evil")
+    assert !restates("--enable-new-dtags")
+    assert !restates("-Wl,--no-as-needed")
+    assert !restates("-Wl,--whole-archive")
+    assert !restates("-Xlinker")
+
+test "a value is a name: not empty, not a flag, not a file of words, and -l not :<file>"
+    assert is_value(flag: "-I", value: "/opt/homebrew/Cellar/openssl@4/4.0.3/include")
+    assert is_value(flag: "-l", value: "ssl")
+    assert !is_value(flag: "-I", value: "")
+    assert !is_value(flag: "-I", value: "-fplugin=x.so")
+    assert !is_value(flag: "-framework", value: "@rsp")
+    assert !is_value(flag: "-Wl,", value: "@loader_path/../lib")
+    assert !is_value(flag: "-l", value: ":libuv.a")
+    assert is_value(flag: "-L", value: ":odd")
+    assert told(flag: "-I", value: "/x") == ""
+    assert told_word(word: "-I@r", next: "") == told(flag: "-I", value: "@r")
+    assert told_word(word: "-isystem@r", next: "") == told(flag: "-isystem", value: "@r")
+    assert told_word(word: "-l:libuv.a", next: "-lm") == ": `-l:<file>` names a file, where `-l` names a library"
+    assert told_word(word: "-Wl,-rpath", next: "-Wl,@r") == told(flag: "", value: "@r")
+    assert told_word(word: "-Wl,-framework,@r", next: "") != ""
+    assert named(word: "-Wl,-rpath", next: "-Wl,@r") == "-Wl,-rpath -Wl,@r"
+    assert named(word: "-Wl,-rpath", next: "-lz") == "-Wl,-rpath"
+
+# Every option of `LINKED` is read whole or split and handed on as its own word,
+# so a new option without its own words fails here rather than reaching the line
+# as another's.
+test "every linker option the list admits is read in both spellings and handed on as itself"
+    for option in LINKED
+        one = linked(word: "-Wl," + option + ",v", next: "").must()
+        two = linked(word: "-Wl," + option, next: "-Wl,v").must()
+        assert one.option == option && one.value == "v" && one.words == 1
+        assert two.option == option && two.value == "v" && two.words == 2
+        handed = linked_words(one)
+
+        if option == "-framework"
+            assert handed == ["-framework", "v"]
+
+        if option != "-framework"
+            assert option == "-rpath"
+            assert handed == rpath_words("v")
+
+    assert linked(word: "-Wl,-rpath,a,b", next: "").is_err()
+    assert linked(word: "-Wl,-rpath", next: "-Wl,-e,evil").is_err()
+    assert linked(word: "-Wl,-rpath", next: "-L/lib").is_err()
+    assert linked(word: "-Wl,-rpath,@r", next: "").is_err()
+    assert linked(word: "-Wl,-e,main", next: "").is_err()
+    assert separate("-framework")
+    assert !separate("-frameworkCocoa")
+
+# Where the rpath means something it is one word, and on Windows none.
+test "an admitted rpath is one word where a loader reads it, and none on Windows"
+    if process.exe_suffix() == ".exe"
+        assert rpath_words("/opt/lib").len() == 0
+
+    if process.exe_suffix() != ".exe"
+        assert rpath_words("/opt/lib") == ["-Wl,-rpath,/opt/lib"]
+
+# The premise of the second word `restates` holds, asked of the line itself: the
+# compiler's own POSIX link already carries `-rdynamic`, which clang hands the
+# linker as `-export-dynamic`, so a package's `-Wl,--export-dynamic` adds nothing
+# (Debian GNU ld 2.44 and LLD 22.1.8: the same bytes with and without it). The day
+# `flags.link_flags` stops saying it, the word restates nothing and this fires.
+test "the link line carries -rdynamic on every POSIX link, which --export-dynamic restates"
+    if process.exe_suffix() != ".exe"
+        said: bool @ false
+
+        for flag in flags.link_flags()
+            if flag == "-rdynamic"
+                said @ true
+
+        assert said

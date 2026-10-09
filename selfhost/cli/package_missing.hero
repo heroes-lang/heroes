@@ -1,0 +1,188 @@
+# A package whose `-l` or `-framework` the linker found nothing for (design.md §4.19,
+# §4.17; defect 528, 2026-10-09): told at the package's string as
+# `ffi_missing_library`, the class defect 224 gives a `link` group's name the
+# linker cannot find, where it was exit 2 and the linker's text. Measured on
+# this Mac: `package "libiodbc"`, whose `.pc` answers `-I/usr/include -liodbc
+# -liodbcinst -ldl` on a machine with no `iodbc`, ended at *internal error:
+# linking failed: ld: library 'iodbc' not found*.
+#
+# **Asked of a link the linker refused, after every `link` group was**
+# (`cli/whose.hero`): `emit/ffi_build.missing_library` tells a name the program
+# wrote, and a package's names are the machine's answer, which the
+# explanation of a refused link does not hold. So the linker's lines are asked
+# about each `-l` and `-framework` the link CARRIED from the packages
+# (`libraries.link_words` of the round's package flags), a library the way
+# 224's reader asks it (`ffi_build.names_library`, ld64's, GNU ld's and
+# lld-link's wordings) and a framework in ld64's `framework 'X' not found`
+# (measured on this Mac, a package answering `-framework HeroesAbsent528`), the
+# longest name winning; and only then is each package the program asks asked
+# again, for which of them answered that word. A name is told only where the
+# link that ran carried it and a package's answer holds it, so an answer that
+# moved between the two asks is never told as the first's: nothing matching,
+# the refusal stays the compiler's, exit 2.
+
+use ast
+use diag
+use source
+use token
+use emit/externs as emit_externs
+use emit/ffi_build
+use emit/ffi_lookup
+use cli/libraries
+use cli/shell_split
+
+# What a refused link reports missing: its name, a `library` or a `framework`,
+# and the words the link carried it as, `-l<name>` or `-framework <name>`.
+record Lacked
+    name: str
+    kind: str
+    words: [str]
+
+# What a refused link's `message` reports missing among the `-l` and
+# `-framework` words the link carried from the packages, `linked`; an error
+# where it reports none of them.
+function reported(message: str, linked: [str]) -> Lacked?
+    words = libraries.link_words(linked)
+    best: Lacked? @ fail(code: "none", msg: "the linker reports none of the packages' words missing")
+    longest: i64 @ 0
+    index: i64 @ 0
+
+    while index < words.len()
+        one: Lacked @ Lacked(name: named_library(words[index]), kind: "library", words: [words[index]])
+
+        if words[index] == "-framework" && index + 1 < words.len()
+            one @ Lacked(name: words[index + 1], kind: "framework", words: ["-framework", words[index + 1]])
+        index @ index + one.words.len()
+
+        if one.name.len() > longest && says(message: message, lacked: one)
+            best @ ok(one)
+            longest @ one.name.len()
+
+    return best
+
+# Whether a line of the linker's `message` is its report of `lacked` missing.
+function says(message: str, lacked: Lacked) -> bool
+    for line in ffi_lookup.lines(text: message)
+        if lacked.kind == "library" && ffi_build.names_library(line: line, name: lacked.name)
+            return true
+
+        if lacked.kind == "framework" && ffi_lookup.has(text: line, needle: "framework '" + lacked.name + "' not found")
+            return true
+
+    return false
+
+# The name an `-l<name>` word links, or "" for any other word.
+function named_library(word: str) -> str
+    cs = word.chars()
+
+    if cs.len() < 3 || cs[0] != "-" || cs[1] != "l"
+        return ""
+    return cs.slice(from: 2, to: cs.len()).join("")
+
+# The diagnostic for a refused link's `message`, at the first group naming the
+# package whose answer holds the reported words; none where no package's
+# does. `build` is where `pkg-config`'s answer is read, as the
+# build reads it (`libraries.resolve_packages`).
+function missing(message: str, s: source.Source, decls: [ast.Decl], build: str, linked: [str]) -> [diag.Diagnostic]
+    none: [diag.Diagnostic] = []
+    lacked = reported(message: message, linked: linked)
+
+    if lacked.is_err()
+        return none
+    asked: {str: bool} @ {}
+
+    for decl in decls
+        group: ast.Library? @ fail(code: "none", msg: "no library")
+
+        match decl.kind
+            .function_decl fd          => group @ fd.value.library
+            .constant_decl k           => group @ k.library
+            .record_decl rec           => group @ rec.library
+            .variant_decl | .test_decl => continue
+
+        if group.is_err()
+            continue
+
+        match group.must()
+            .package pk =>
+                package = emit_externs.unquoted(s, span: pk.name)
+
+                if !asked[package].is_err()
+                    continue
+                asked[package] @ true
+
+                if answers(package: package, build: build, lacked: lacked.must())
+                    return [told(package: package, lacked: lacked.must(), span: pk.name)]
+            .link => continue
+
+    return none
+
+# Whether `package`'s answer, asked again, holds `lacked`'s words among its
+# link words, one after the other.
+function answers(package: str, build: str, lacked: Lacked) -> bool
+    flags = libraries.resolve_packages(packages: [package], build_dir: build)
+
+    if flags.is_err()
+        return false
+    words = libraries.link_words(flags.must())
+    at: i64 @ 0
+
+    while at + lacked.words.len() <= words.len()
+        if words.slice(from: at, to: at + lacked.words.len()) == lacked.words
+            return true
+        at @ at + 1
+
+    return false
+
+# What is told: the class defect 224 gives a `link` group's name, at the
+# package's string, naming the package and the words its answer carried; a
+# name from `pkg-config` written by its control characters' codes
+# (`shell_split.shown`, defect 237).
+function told(package: str, lacked: Lacked, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "ffi_missing_library",
+        message: "this machine has no " + lacked.kind + " called `" + shell_split.shown(lacked.name, keep_lines: false) + "` — the package `" + shell_split.shown(package, keep_lines: false) + "` answered with `" + shell_split.shown(lacked.words.join(" "), keep_lines: false) + "`, and the linker looked",
+        span: span
+    )
+    way: str @ ", or name the library directly with `link` and pass `--library <dir>`"
+
+    if lacked.kind == "framework"
+        way @ ""
+    d.notes @ d.notes.push(
+        "pkg-config's answer names a " + lacked.kind + " the linker does not find here: install its development files, or point `PKG_CONFIG_PATH` at a `.pc` naming one this machine has" + way
+    )
+    return d
+
+test "what a refused link reports missing is read from the words the link carried, in every linker's wording"
+    linked = ["-I/usr/include", "-liodbc", "-liodbcinst", "-ldl", "-L/opt/lib", "-framework", "Metal2"]
+    assert reported(message: "linking failed:\nld: library 'iodbc' not found\nclang: error: linker command failed", linked: linked).must().name == "iodbc"
+    assert reported(message: "/usr/bin/ld: cannot find -liodbcinst: No such file or directory", linked: linked).must().name == "iodbcinst"
+    gnu = reported(message: "/usr/bin/ld: cannot find -liodbc", linked: linked).must()
+    assert gnu.name == "iodbc" && gnu.kind == "library" && gnu.words == ["-liodbc"]
+    assert reported(message: "lld-link: error: could not open 'iodbc.lib': no such file or directory", linked: linked).must().name == "iodbc"
+    framed = reported(message: "ld: framework 'Metal2' not found", linked: linked).must()
+    assert framed.name == "Metal2" && framed.kind == "framework" && framed.words == ["-framework", "Metal2"]
+
+    # A library the link did not carry from a package, a symbol the linker
+    # could not find, a name that is another's prefix, a framework named as a
+    # library and a library named as a framework are not told.
+    assert reported(message: "ld: library 'sqlite3' not found", linked: linked).is_err()
+    assert reported(
+        message: "Undefined symbols for architecture arm64:\n  \"_SQLGetInfo\", referenced from:",
+        linked: linked
+    ).is_err()
+    assert reported(message: "/usr/bin/ld: cannot find -liodbcx", linked: linked).is_err()
+    assert reported(message: "ld: library 'iodbc' not found", linked: ["-L/usr/lib"]).is_err()
+    assert reported(message: "ld: library 'Metal2' not found", linked: linked).is_err()
+    assert reported(message: "ld: framework 'iodbc' not found", linked: linked).is_err()
+    assert reported(message: "ld: framework 'Metal' not found", linked: linked).is_err()
+
+    # The words a diagnostic is told with: the package, the kind, the words.
+    d = told(package: "libiodbc", lacked: gnu, span: token.Span(start: 0, end: 0))
+    assert d.code == "ffi_missing_library"
+    assert d.message == "this machine has no library called `iodbc` — the package `libiodbc` answered with `-liodbc`, and the linker looked"
+    assert told(package: "fw", lacked: framed, span: token.Span(start: 0, end: 0)).message == "this machine has no framework called `Metal2` — the package `fw` answered with `-framework Metal2`, and the linker looked"
+    assert named_library("-lz") == "z"
+    assert named_library("-l") == ""
+    assert named_library("-L/x") == ""
+    assert named_library("-pthread") == ""
