@@ -2657,6 +2657,21 @@ the first is the one that proves the project's premise:
    batch 8 (`c6bd5a6a`), the one `ffi_missing_library`'s note already gave. The rule, an
    absolute path refused, is unchanged; `PKG_CONFIG_PATH` on Windows is unrun.
 
+   **The parenthesis above, *a `.pc` answering `@…` is `ffi_package` at exit 1*, was false
+   from panel 055 to defect 527's repair; corrected here 2026-10-09** (panel 198's R2,
+   ratified that day; its completeness critic found it, its compiler-engineer re-measured
+   it). The allow-list named its words and never judged what an admitted word's VALUE
+   held. A `.pc` answering `-framework @<file>`, `-Wl,-framework,@<file>`, `-Wl,-rpath,@<file>`
+   or the split `-Wl,-rpath -Wl,@<file>` had clang or the linker read the file's words as
+   options, at exit 0: a map written on macOS and on Debian 13, and a linker the file named
+   run during the build; `-I@<file>` joined was not expanded, and `-l:<file>`, a word that
+   names a file, passed through the `-l` prefix. Since the repair every admitted word's
+   value is judged as a value in every slot, joined or as the next word: not empty, not
+   beginning with `-` or `@`, and for `-l` not beginning with `:`
+   (`selfhost/cli/package_words.hero`, `is_value`), and an `@` inside a path stays a
+   letter of it. So the parenthesis holds again: on this Mac each of those doors, and
+   `-isystem @<file>` and `-I@<file>`, is `ffi_package` at exit 1 and leaves no file.
+
 
 ### 4.20 The runtime, in C
 
