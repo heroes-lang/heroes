@@ -40,6 +40,13 @@ function bind(@c: state.Checker, s: source.Source, decls: [ast.Decl], @bindings:
             if bound == got
                 return
 
+            # A letter an earlier argument left poisoned is that mistake's
+            # shadow (§4.5): this argument's type is the better answer, and
+            # comparing against the poison printed *expected `?`* (defect 546).
+            if table.poisoned(c.out.types, bound)
+                bindings[g.at] @ ok(got)
+                return
+
             if !table.poisoned(c.out.types, got)
                 a = state.show(c, s, decls, bound)
                 b = state.show(c, s, decls, got)

@@ -31,6 +31,7 @@ use resolve
 use check/decls as check_decls
 use check/type_fit
 use check/state
+use check/render
 use data_errors
 
 # Every function type the program writes, judged once.
@@ -94,13 +95,41 @@ function judge(@c: state.Checker, a: ast.Ast, s: source.Source, decls: [ast.Decl
             return
         state.push_diagnostic(
             @c,
-            data_errors.needs_parameter_names(shared: state.show(c, s, decls, lowered[missing.must()]), shown: state.show(c, s, decls, whole.must()), span: a.types[at].span)
+            data_errors.needs_parameter_names(shared: shown(c, a, s, decls, ty: lowered[missing.must()], at: at), shown: shown(c, a, s, decls, ty: whole.must(), at: at), span: a.types[at].span)
         )
         return
     twice = repeated(s, labels)
 
     if !twice.is_err()
         state.push_diagnostic(@c, data_errors.repeated_parameter_name(written: twice.must(), span: a.types[at].span))
+
+# A type as the program writes it, its letters those of the function whose
+# signature or body holds the node `at`, the declaration that starts last
+# before it (defect 546): the walk runs after every declaration, where the
+# checker holds no function's letters, and the `A` a program wrote printed
+# *a type parameter*.
+function shown(c: state.Checker, a: ast.Ast, s: source.Source, decls: [ast.Decl], ty: i64, at: i64) -> str
+    start = a.types[at].span.start
+    letters: [str] @ []
+    best: i64 @ -1
+
+    for decl in decls
+        if decl.span.start <= start && decl.span.start > best
+            best @ decl.span.start
+            letters @ letters_of(s, decl)
+
+    return render.render_ty(c.out.types, s, decls, ty, letters)
+
+function letters_of(s: source.Source, decl: ast.Decl) -> [str]
+    letters: [str] @ []
+
+    match decl.kind
+        .function_decl fd =>
+            for g in fd.value.generics
+                letters @ letters.push(source.span_text(s, g))
+        .constant_decl | .record_decl | .variant_decl | .test_decl => return letters
+
+    return letters
 
 # A name used at two positions of one type. Panel 129's compiler seat found it
 # by attacking the shapes beside the repair: `(function(a: str, a: str) -> str)`
