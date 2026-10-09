@@ -1,0 +1,52 @@
+# Defect 461, 2026-10-08. Symptom: on Windows, rewriting a file through a
+# private name and a rename (`fmt --in-place` among the compiler's own
+# rewrites) gave it the directory's inherited ACEs alone, no named stream
+# (a downloaded file's mark of the web is one) and this process's owner,
+# and the program's `write_file`, which wrote in place over a file already
+# there for that reason, could not write a hidden file at all (the C
+# runtime's `fopen` refuses one, EACCES): measured on the box at
+# `56def9b4` (clang 23.1.1, NTFS) by a case of C over the runtime's own
+# doors. Cause: `MoveFileEx` puts a NEW file at the name, and the stage gave
+# it the attributes alone. Now the stage is made under the file's own
+# owner, group and DACL and put in its place by `ReplaceFileW`, which keeps
+# the DACL, the streams and the attributes, and `write_file` takes that
+# route over a file already there (`runtime/parts/replace.c`,
+# `runtime/parts/write.c`).
+#
+# A twin elsewhere: the same lines on every platform, the marks each
+# platform keeps on a file put by the fixture (an explicit ACE, the stream,
+# the hidden attribute and the owner on Windows; the mode 0640 and an
+# extended attribute where the filesystem keeps one, elsewhere). `build/`
+# for the directory, defect 438's case's reason.
+
+extern "fixedbugs-461-a-rewrite-keeps-the-owner-the-acl-and-the-streams.h"
+    function mark(path: cstr lent) -> i64
+    function keeps(path: cstr lent) -> i64
+    function unmark(path: cstr lent)
+
+extern "hero_os.h"
+    function hero_os_pid() -> i64
+    function hero_fs_mkdir_all(path: cstr lent) -> i64
+    function hero_dir_scan(root: cstr lent, want: i64, recursive: i64) -> i64
+    function hero_dir_release()
+    function hero_dir_remove_tree(path: cstr lent) -> i64
+    constant HERO_DIR_FILES: i64
+
+constant TEXT: str
+    "the new text\n"
+
+function main()
+    dir = "build/heroes-golden-461-" + hero_os_pid().to_str()
+    path = dir + "/marked.txt"
+
+    if hero_fs_mkdir_all(path: dir.cstr()) != 0 || write_file(path: path, text: "OLD").is_err()
+        print("cannot make ", path)
+        return
+    print("marked ", mark(path: path.cstr()) == 1)
+    print("written ", !write_file(path: path, text: TEXT).is_err())
+    print("holds the text ", read_file(path).default("(unreadable)") == TEXT)
+    print("keeps its marks ", keeps(path: path.cstr()) == 1)
+    print("beside it ", hero_dir_scan(root: dir.cstr(), want: HERO_DIR_FILES, recursive: 0))
+    hero_dir_release()
+    unmark(path: path.cstr())
+    _ = hero_dir_remove_tree(path: dir.cstr())

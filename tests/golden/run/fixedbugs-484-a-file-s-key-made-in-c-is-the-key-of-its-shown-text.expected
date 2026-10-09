@@ -1,0 +1,8 @@
+empty 0000000000000000 true false
+text 28bdfefe124a7eae true false
+latin-1 nb8639ac25c64410 true true
+a held U+FFFD 003ef7e10044d993 true false
+mixed n6957cc42bf67102 true true
+NUL and high bytes n16b51ff6858bc76 true true
+every byte naa497134d2af737 true true
+missing [] true

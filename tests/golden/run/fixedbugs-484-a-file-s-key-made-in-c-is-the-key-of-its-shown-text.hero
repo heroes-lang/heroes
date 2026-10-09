@@ -1,0 +1,110 @@
+# Defect 484, 2026-10-08. Symptom: the build cache keyed every object it
+# served, and every header and runtime file a build read, in Heroes at
+# `-O0`: the shown read, then `cli/digest`'s loop over the text, about
+# 1,158 instructions a byte of object, +13.4% on a warm build of `print(1)`
+# (lane b14-cli's count, defect 443). Cause: the key was made where the
+# compiler runs at `-O0`, over a text built for it. Now `hero_file_key`
+# (`runtime/hero_compiler.h`, `runtime/parts/key.c`) makes it in C over the
+# bytes where they lie, and `module/reading.hero`'s `key_of` asks it.
+#
+# THE KEYS MUST NOT MOVE, or every seal a build left beside its objects
+# would read as an object changed after its compile (`cli/served.hero`). So
+# each fixture's key is held to the key the Heroes route made, written again
+# here from its contract, `digest` of the shown read's answer and `n` first
+# where the bytes are not UTF-8, and printed, so a change to both at once is
+# seen too. The fixtures are built through C, as defect 227's case builds
+# its own, because no Heroes program can write a byte that is not text.
+
+extern "stdio.h"
+    function fopen(path: cstr lent, mode: cstr lent) -> ptr
+    function fputc(c: i32, stream: ptr) -> i32
+    function fclose(stream: ptr) -> i32
+
+extern "hero_os.h"
+    function hero_file_read_shown(path: cstr lent, @status: i64, @marks: i64) -> str
+    constant HERO_OS_OK: i64
+    constant HERO_OS_NOT_FOUND: i64
+    constant HERO_OS_NOT_TEXT: i64
+
+extern "hero_compiler.h"
+    function hero_file_key(path: cstr lent, @status: i64) -> str
+
+constant AT: str
+    "build/heroes-golden-key-484.bin"
+
+function put(path: str, bytes: [i64]) -> bool
+    handle = fopen(path: path.cstr(), mode: "wb".cstr())
+
+    if handle == nullptr
+        return false
+
+    for b in bytes
+        _ = fputc(c: b.to_i32().must(), stream: handle)
+
+    _ = fclose(stream: handle)
+    return true
+
+# `cli/digest.hero`'s digest, from its contract: two polynomial hashes over
+# the bytes, bases 131 and 137, mod 2^31 - 1, eight lower-case hexadecimal
+# digits each, the first's then the second's.
+function digest(text: str) -> str
+    m = 2147483647
+    a: i64 @ 0
+    b: i64 @ 0
+
+    for k in range(from: 0, to: text.len())
+        v = text[k].to_i64().must()
+        a @ (a * 131 + v) % m
+        b @ (b * 137 + v) % m
+
+    return hex8(a) + hex8(b)
+
+function hex8(number: i64) -> str
+    ds = "0123456789abcdef"
+    out: str @ ""
+    value: i64 @ number
+
+    for _ in range(from: 0, to: 8)
+        d = value % 16
+        out @ ds.slice(from: d, to: d + 1) + out
+        value @ value / 16
+
+    return out
+
+# The key the Heroes route made of the file at `path`.
+function keyed(path: str) -> str
+    status: i64 @ 0
+    marks: i64 @ 0
+    got = hero_file_read_shown(path: path.cstr(), status: @status, marks: @marks)
+
+    if status == HERO_OS_OK
+        return digest(got)
+    return "n" + digest(got).slice(from: 1, to: 16)
+
+function said(name: str, bytes: [i64])
+    if !put(path: AT, bytes: bytes)
+        print("cannot build the fixture")
+        return
+    status: i64 @ 0
+    key = hero_file_key(path: AT.cstr(), status: @status)
+    print(name, " ", key, " ", key == keyed(AT), " ", status == HERO_OS_NOT_TEXT)
+
+function main()
+    said(name: "empty", bytes: [])
+    said(name: "text", bytes: [105, 110, 116, 32, 120, 59, 10])
+    said(name: "latin-1", bytes: [97, 233, 98])
+    said(name: "a held U+FFFD", bytes: [239, 191, 189])
+
+    # Defect 227's mix: Latin-1, a U+FFFD the file holds, a line end, and a
+    # character cut short by the end of the file.
+    said(name: "mixed", bytes: [97, 233, 98, 239, 191, 189, 10, 195])
+    said(name: "NUL and high bytes", bytes: [0, 1, 2, 255, 254, 128, 191, 192, 245])
+    every: [i64] @ []
+
+    for k in range(from: 0, to: 300)
+        every @ every.push(k % 256)
+
+    said(name: "every byte", bytes: every)
+    status: i64 @ 0
+    missing = hero_file_key(path: "build/heroes-golden-key-484-not-there.bin".cstr(), status: @status)
+    print("missing [", missing, "] ", status == HERO_OS_NOT_FOUND)
