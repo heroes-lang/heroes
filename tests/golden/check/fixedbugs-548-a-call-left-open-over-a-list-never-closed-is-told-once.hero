@@ -1,0 +1,56 @@
+# Defect 548, 2026-10-09 (lane b17-fix), found beside defect 459: a call's
+# argument list left open over a list never closed, `x = g(1, [2, 3` over
+# `print(x)` over `y = 3 )`, was told twice for one `])` edit, the lexer
+# naming the `[` never closed (the `)` below pops it to close the `(`) and the
+# call's reader naming the `)` owed at `print`. The line below is none of the
+# call's arguments, so since this repair the call's report names the openers
+# its last argument left open on the `(`'s line, the `(`, and the openers the
+# `(` stands in, with the closers the one edit writes, and carries the ones
+# the lexer named never closed, whose reports are withdrawn
+# (`args_left_open.told`). The call ends on the line above, and the line below
+# is read as the statement it is, so its stray `)`, which the edit leaves, is
+# told by its own reader where until this repair it went unsaid. The shapes:
+# a list as the last argument, as the only one, a map, a call in a call whose
+# `(` the lexer named never closed too; and, beside them, a list closed
+# further down at a binding, defect 459's path, unchanged.
+
+function g(a: i64, b: [i64]) -> i64
+    return 1
+
+function f(b: [i64]) -> i64
+    return 1
+
+function h(m: {i64: i64}) -> i64
+    return 1
+
+function a_list_last()
+    x = g(1, [2, 3
+    print(x)  #~ expected_args_close
+    y = 3 )  #~ expected_end_of_line
+    print(y)
+
+function a_list_alone()
+    x = f([2, 3
+    print(x)  #~ expected_args_close
+    y = 3 )  #~ expected_end_of_line
+    print(y)
+
+function a_map()
+    x = h({2: 3
+    print(x)  #~ expected_args_close
+    y = 3 )  #~ expected_end_of_line
+    print(y)
+
+function a_call_in_a_call()
+    x = f(f([2, 3
+    print(x)  #~ expected_args_close
+    y = 3 )  #~ expected_end_of_line
+    print(y)
+
+function closed_at_a_binding()
+    x = g(1, [2, 3
+    y = 3 ))  #~ expected_separator expected_end_of_line
+    print(y)
+
+function main()
+    a_list_last()

@@ -1,0 +1,81 @@
+# A call's argument list that a list never closed left open over the line
+# below (design.md §4.17; defect 548, 2026-10-09, beside defect 459).
+#
+# `x = g(1, [2, 3` over `print(x)` over `y = 3 )`: the lexer names the `[`
+# never closed, since the `)` below pops it to close the `(`, and the call's
+# reader met `print` where its `)` was owed, two messages for one `])` edit.
+# The line below is none of the call's arguments, as a binding below a list
+# is none of its elements (defect 459's `list_line.ended_at_a_binding`), so
+# the call's report names the openers its last argument left open on the
+# `(`'s line, the `(`, and the openers the `(` stands in, with the closers
+# the one edit writes, and carries the ones the lexer named never closed, so
+# `parse/unclosed.withdrawn` withdraws the lexer's report of each. The call
+# ends on the line above, and the line below is read as the statement it is,
+# its stray closer told by its own reader. Out of `parse/`, whose budget it
+# would pass (`tests/harness/suite_layout.hero`, `BUDGETS`).
+#
+# A leaf: it reads the tokens, the pairing and the reach of the openers.
+#
+# | entry | called by |
+# |---|---|
+# | `told` | `grammar_expr.call_args` |
+
+use token
+use diag
+use cursor
+use pairing
+use text_lines
+use parse/unclosed
+use parse/bracket_head
+
+# Where the call's `(` at `open`, closed further down, stands above the
+# cursor, on a line below it, and its last argument left openers the lexer
+# named never closed on the `(`'s line: told once at the cursor, naming them
+# and the one edit, the cursor left at that line's first token. True where it
+# was told; false where the call's own reader asks for its `)`.
+function told(@c: cursor.Cursor, text: str, open: i64) -> bool
+    if cursor.at(c, .rparen) || cursor.at(c, .eof) || unclosed.never_closed(c, text, open: open) || !cursor.at_fresh_line(c)
+        return false
+    left: [i64] @ []
+    i: i64 @ c.pos - 1
+
+    # The openers after the `(` the lexer named never closed, innermost first.
+    while i > open
+        k = c.tokens[i].kind
+
+        if (k == .lparen || k == .lbracket || k == .lbrace) && unclosed.never_closed(c, text, open: i)
+            left @ left.push(i)
+        i @ i - 1
+
+    if left.len() == 0
+        return false
+    around = bracket_head.openers_around(c, text: text, open: open, own: ")", also_unclosed: true)
+    names: [str] @ []
+    closers: [str] @ []
+    carries: [token.Span] @ []
+
+    for at in left
+        written = cursor.slice_of(text, c.tokens[at].span)
+        closers @ closers.push(pairing.closer_written(written))
+        carries @ carries.push(c.tokens[at].span)
+
+        if at != left[0]
+            names @ names.push("the `" + written + "`")
+
+    names @ names.push("the `(`")
+
+    if around.names != ""
+        names @ names.push(around.names)
+
+    for span in around.carries
+        carries @ carries.push(span)
+
+    first = c.tokens[left[0]].span
+    report: diag.Diagnostic @ diag.new_diagnostic(
+        code: "expected_args_close",
+        message: "expected `)`, or `,` and another argument, found " + cursor.found(c, text) + " — the line below a call's arguments is none of them: the `" + cursor.slice_of(text, first) + "` still open " + text_lines.place_above(text, at: first.start, from: cursor.current_span(c).start) + ", and " + names.join(" and ") + " it stands in, close on a line above, so write `" + closers.join("") + around.closers + "` there",
+        span: cursor.current_span(c)
+    )
+    report.carries @ carries
+    cursor.say(@c, report)
+    return true

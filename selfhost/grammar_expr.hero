@@ -83,6 +83,7 @@ use parse/operator_arm
 use parse/headless
 use parse/brace_habit
 use stray_closers
+use args_left_open
 use parse/unclosed
 use parse/swallowed
 use parse/loop_habit
@@ -724,7 +725,7 @@ function call_args(@c: cursor.Cursor, @a: ast.Ast, text: str) -> [ast.Arg]
                 cursor.skip_terminators(@c)
                 reading @ cursor.eat(@c, .comma)
 
-    if !ended
+    if !ended && !args_left_open.told(@c, text: text, open: at)
         unclosed.end_arguments(@c, text: text, open: at)
     return arguments
 
