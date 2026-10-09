@@ -1,0 +1,9 @@
+$ heroes build main.hero -o main
+error[endless_recursion]: `ping` and `pong` call each other for ever: every path through `ping` calls `pong` and every path through `pong` calls `ping`, before it can return, so no call to either returns
+  at main.hero:4:12
+    |
+  4 |     return pong(n - 1)
+    |            ^^^^^^^^^^^
+  note: `pong` calls `ping` at line 7: `ping(n - 1)`
+  note: a call to either gives nothing back until the call it makes does, and that one makes another: give one of them a path that returns before its call, or ends on `exit(code:)`, `assert false` or a `while true` with no `break` of its own; an overflow or an index out of bounds stops the program and is no such path
+(exit 1)

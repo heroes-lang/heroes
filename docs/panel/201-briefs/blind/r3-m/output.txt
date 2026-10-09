@@ -1,0 +1,5 @@
+$ heroes build main.hero -o main
+(exit 0, nothing printed)
+$ ./main
+panic: stack exhausted in main.pong, inside the recursion of main.ping and main.pong
+(exit 134)
