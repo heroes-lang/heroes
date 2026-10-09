@@ -27,6 +27,7 @@ use cli/served
 use cli/files
 use cli/publish
 use cli/strings
+use cli/symbolized
 use module/reading as file_reading
 
 function run_build(path: str, s: source.Source, inv: argv.Invocation, t: toolchain.Toolchain, version: str) -> cli_table.Exit
@@ -88,7 +89,9 @@ function run_run(path: str, s: source.Source, inv: argv.Invocation, t: toolchain
         words @ words.push(arg)
 
     # The streams are INHERITED: this program's output is the point of
-    # the command, so it goes where the compiler's own output goes.
+    # the command, so it goes where the compiler's own output goes. Under
+    # `--sanitize` on Windows, DbgHelp names its frames (`cli/symbolized`).
+    symbolized.prepare(sanitize: options.sanitize)
     ran = process.run(program: made.must().binary, words: words, out: "", err: "")
 
     if !ran.started
@@ -136,6 +139,7 @@ function run_test(path: str, s: source.Source, inv: argv.Invocation, t: toolchai
         return .ok_exit
     failed: i64 @ 0
     index: i64 @ 0
+    symbolized.prepare(sanitize: options.sanitize)
 
     for title in titles
         one = process.run(

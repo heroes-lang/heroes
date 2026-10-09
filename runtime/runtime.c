@@ -207,6 +207,10 @@
  * are Tier 2, not built-ins, and the header exists so that clang checks them the
  * same way it checks a binding against `<sqlite3.h>`. */
 #include "hero_os.h"
+/* The doors only the compiler binds (`hero_compiler.h`, defect 509), declared
+ * before the parts that define them, so clang checks each definition against
+ * its declaration and the runtime's key covers the header. */
+#include "hero_compiler.h"
 #include "parts/os.c"
 
 /* The filesystem and the process, added at M-argv-execution. They are last

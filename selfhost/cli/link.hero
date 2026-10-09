@@ -89,6 +89,10 @@ function link_objects(t: toolchain.Toolchain, objects: [str], module: str, outpu
     stage_made?
     err_path = publish.private_name(t.build + "/link-clang-stderr.txt")
     inner = module + process.exe_suffix()
+    line @ strings.with_all(
+        list: line,
+        more: pdb_words(suffix: process.exe_suffix(), at: at, inner: inner, module: module)
+    )
     line @ strings.with_all(list: line, more: ["-o", stage + "/" + inner])
     linked = toolchain.run_clang(line: line, what: "linking", err_path: err_path)
     publish.discard(err_path)
@@ -215,6 +219,38 @@ function binary_home(t: toolchain.Toolchain, line: [str], name: str) -> str
         words @ words.push(word.len().to_str() + ":" + word)
 
     return t.build + "/" + digest.digest(words.join("|")) + "/" + name
+
+# **The PDB's name as the binary records it, on Windows** (defect 509,
+# 2026-10-09). The linker writes the PDB into the private directory, as
+# `<module>.pdb`, and records that absolute path in the binary; the PDB is
+# then published beside the binary as `<binary>.pdb` (`published_as`) and the
+# directory removed, so the path the binary carried named nothing, and the
+# name a symbolizer looks for beside the binary when the path fails was not
+# the published one either. Measured on the box (clang 23.1.1, lld-link):
+# AddressSanitizer's report at `--sanitize` and at `--sanitize -O0` named no
+# frame, every one an address alone, as on the CI's Windows leg (clang 20.1.8)
+# where defect 322's case went red; `/PDBALTPATH` naming the published PDB's
+# own last part, and the frames carry their files and lines. The last part
+# alone and not a path: a symbolizer and a debugger look for that name beside
+# the binary, so the pair can be moved together, and no directory of this
+# machine is written into the binary. `-Xlinker` and not `-Wl,`, which would
+# cut a name holding a comma. POSIX writes no PDB, and gets no word.
+function pdb_words(suffix: str, at: str, inner: str, module: str) -> [str]
+    if suffix != ".exe"
+        empty: [str] = []
+        return empty
+    pdb = published_as(binary: at, inner: inner, module: module, relative: module + ".pdb")
+    return ["-Xlinker", "/PDBALTPATH:" + last_part(pdb)]
+
+# The last part of a path, cut at Windows' two separators, `/` and `\`, the
+# one platform `pdb_words` asks it for.
+function last_part(path: str) -> str
+    at: i64 @ path.len()
+
+    while at > 0 && path[at - 1] != '/' && path[at - 1] != '\\'
+        at @ at - 1
+
+    return path.slice(from: at, to: path.len())
 
 # Where a file the linker wrote is published: the binary at the path asked
 # for, verbatim, and anything else under the binary's name and what followed
@@ -464,3 +500,11 @@ test "a link over a package's compile words carries none of them and prints noth
     out = t.build + "/linkwords" + process.exe_suffix()
     assert !toolchain.run_clang(line: strings.with_all(list: line, more: ["-o", out]), what: "linking", err_path: said).is_err()
     assert read_file(said).must() == ""
+
+test "a Windows link records the published PDB's own name, and a POSIX link records none (defect 509)"
+    assert pdb_words(suffix: ".exe", at: "build/0123456789abcdef/prog.exe", inner: "prog.exe", module: "prog") == ["-Xlinker", "/PDBALTPATH:prog.exe.pdb"]
+    assert pdb_words(suffix: ".exe", at: "C:\\out\\app.exe", inner: "m.exe", module: "m") == ["-Xlinker", "/PDBALTPATH:app.exe.pdb"]
+    assert pdb_words(suffix: ".exe", at: "dir/a,b.exe", inner: "a.exe", module: "a") == ["-Xlinker", "/PDBALTPATH:a,b.exe.pdb"]
+    assert pdb_words(suffix: "", at: "build/0123456789abcdef/prog", inner: "prog", module: "prog").len() == 0
+    assert last_part("a/b\\c.pdb") == "c.pdb"
+    assert last_part("plain.pdb") == "plain.pdb"
