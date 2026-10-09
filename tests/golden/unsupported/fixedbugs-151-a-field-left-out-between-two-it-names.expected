@@ -3,4 +3,4 @@ error[ffi_incomplete_record]: `S3` does not name `b`, and `fixedbugs-151-unions.
      |
   13 |     record S3  #~ ffi_incomplete_record
      |            ^^
-  note: the assertions above check every field you DO name and cannot see one you leave out: a `S3` built here would carry a zero `b` into C, which is a value rather than a crash
+  note: the assertions above check every field you DO name and cannot see one you leave out: every `S3` built here would carry a zero `b` into C, which is a value rather than a crash

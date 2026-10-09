@@ -1,4 +1,4 @@
-error[ffi_const_field]: `ffi-const-member.h` declares `Locked.id` as `const`, so C refuses to assign a `Locked` once it exists — and building one here is that assignment
+error[ffi_const_field]: `ffi-const-member.h` declares `Locked.id` as `const`, so C refuses to assign any `Locked` once it exists — and building one here is that assignment
   at tests/golden/unsupported/ffi-const-member.hero:46:9
      |
   46 |         id: i32  #~ ffi_const_field

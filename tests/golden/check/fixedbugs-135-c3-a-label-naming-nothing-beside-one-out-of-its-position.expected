@@ -6,8 +6,8 @@ tests/golden/check/fixedbugs-135-c3-a-label-naming-nothing-beside-one-out-of-its
 tests/golden/check/fixedbugs-135-c3-a-label-naming-nothing-beside-one-out-of-its-position.hero:38:33: error[wrong_label]: `Shape.box` has nothing called `height` at this position — it is `width`
 tests/golden/check/fixedbugs-135-c3-a-label-naming-nothing-beside-one-out-of-its-position.hero:39:21: error[wrong_label]: `copy_text` has nothing called `to` at this position — it is `from`
 tests/golden/check/fixedbugs-135-c3-a-label-naming-nothing-beside-one-out-of-its-position.hero:39:30: error[wrong_label]: `copy_text` has nothing called `fro` at this position — it is `to` in the order written, or `from` in the other order
-tests/golden/check/fixedbugs-135-c3-a-label-naming-nothing-beside-one-out-of-its-position.hero:41:13: error[wrong_label]: `this function` has nothing called `to` at this position — it is `from`
-tests/golden/check/fixedbugs-135-c3-a-label-naming-nothing-beside-one-out-of-its-position.hero:41:22: error[wrong_label]: `this function` has nothing called `fro` at this position — it is `to` in the order written, or `from` in the other order
+tests/golden/check/fixedbugs-135-c3-a-label-naming-nothing-beside-one-out-of-its-position.hero:41:13: error[wrong_label]: `g` has nothing called `to` at this position — it is `from`
+tests/golden/check/fixedbugs-135-c3-a-label-naming-nothing-beside-one-out-of-its-position.hero:41:22: error[wrong_label]: `g` has nothing called `fro` at this position — it is `to` in the order written, or `from` in the other order
 tests/golden/check/fixedbugs-135-c3-a-label-naming-nothing-beside-one-out-of-its-position.hero:44:10: error[wrong_label]: `swap` has nothing called `otw` at this position — it is `one` in the order written, or `two` in the other order
 tests/golden/check/fixedbugs-135-c3-a-label-naming-nothing-beside-one-out-of-its-position.hero:44:19: error[wrong_label]: `swap` has nothing called `one` at this position — it is `two`
 tests/golden/check/fixedbugs-135-c3-a-label-naming-nothing-beside-one-out-of-its-position.hero:46:20: error[wrong_label]: `slice` has nothing called `to` at this position — it is `from`

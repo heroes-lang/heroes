@@ -1,4 +1,4 @@
-error[ffi_constant_type]: `CP_WIDE` in `fixedbugs-094-values.h` cannot be a `Cp`: clang refuses the header's value at line 17: implicit conversion from 'int' to 'char' changes value from 300 to 44
+error[ffi_constant_type]: `CP_WIDE` in `fixedbugs-094-values.h` cannot be declared `Cp`: clang refuses the header's value at line 17: implicit conversion from 'int' to 'char' changes value from 300 to 44
   at tests/golden/unsupported/fixedbugs-094-a-number-c-would-change-is-told.hero:14:5
      |
   14 |     constant CP_WIDE: Cp  #~ ffi_constant_type
@@ -7,7 +7,7 @@ error[ffi_constant_type]: `CP_WIDE` in `fixedbugs-094-values.h` cannot be a `Cp`
   note: C only warns of this, and the accessor that builds a record's constant makes it an error: the value C would build is not the one the header wrote, or is of another kind than the field it fills
   note: a group's `constant` of a record is the value C builds when it initialises the header's `struct cp` with `CP_WIDE` (§ 13): declare it at the record whose value the header spells, or name the header that spells `CP_WIDE` for `struct cp`
 
-error[ffi_constant_type]: `PT_HALF` in `fixedbugs-094-values.h` cannot be a `Pt`: clang refuses the header's value at line 18: implicit conversion from 'double' to 'int32_t' (aka 'int') changes value from 1.5 to 1
+error[ffi_constant_type]: `PT_HALF` in `fixedbugs-094-values.h` cannot be declared `Pt`: clang refuses the header's value at line 18: implicit conversion from 'double' to 'int32_t' (aka 'int') changes value from 1.5 to 1
   at tests/golden/unsupported/fixedbugs-094-a-number-c-would-change-is-told.hero:15:5
      |
   15 |     constant PT_HALF: Pt  #~ ffi_constant_type

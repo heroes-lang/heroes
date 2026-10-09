@@ -1,0 +1,4 @@
+tests/golden/check/fixedbugs-530-three-hundred-ifs-each-ending-a-handle-copy-what-they-change.hero:1823:21: error[handle_used_after_end]: `a0` was given to `f_close` at line 325, which ended its life, and this reads it again
+tests/golden/check/fixedbugs-530-three-hundred-ifs-each-ending-a-handle-copy-what-they-change.hero:1824:21: error[handle_used_after_end]: `a299` was given to `f_close` at line 1820, which ended its life, and this reads it again
+tests/golden/check/fixedbugs-530-three-hundred-ifs-each-ending-a-handle-copy-what-they-change.hero:3630:25: error[handle_used_after_end]: `b0` was given to `f_close` at line 2131, which ended its life, and this reads it again
+tests/golden/check/fixedbugs-530-three-hundred-ifs-each-ending-a-handle-copy-what-they-change.hero:3631:25: error[handle_used_after_end]: `b299` was given to `f_close` at line 3626, which ended its life, and this reads it again

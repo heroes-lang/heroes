@@ -63,7 +63,7 @@ function try_in_infallible(result: str, span: token.Span) -> diag.Diagnostic
 function nested_read(inner: str, span: token.Span) -> diag.Diagnostic
     d: diag.Diagnostic @ diag.new_diagnostic(
         code: "nested_read",
-        message: "`.is_err()` reads one level, and this value is fallible twice — its payload is itself a `" + inner + "`, so the failure stored inside would go unread",
+        message: "`.is_err()` reads one level, and this value is fallible twice — its payload is itself fallible, `" + inner + "`, so the failure stored inside would go unread",
         span: span
     )
     d.notes @ d.notes.push(
@@ -210,7 +210,7 @@ function returns_nothing(span: token.Span) -> diag.Diagnostic
 function not_iterable(got: str, span: token.Span) -> diag.Diagnostic
     return diag.new_diagnostic(
         code: "not_iterable",
-        message: "`for x in …` walks an array, and this is a `" + got + "` — a string's characters come from `s.chars()`, a count from `range(a, b)`",
+        message: "`for x in …` walks an array, and this value's type is `" + got + "` — a string's characters come from `s.chars()`, a count from `range(a, b)`",
         span: span
     )
 

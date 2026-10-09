@@ -1,4 +1,4 @@
-error[ffi_constant_type]: `PAINTED_SHADE` in `fixedbugs-094-values.h` cannot be a `Painted`: clang refuses the header's value at line 19: implicit conversion from enumeration type 'enum shade' to different enumeration type 'enum colour'
+error[ffi_constant_type]: `PAINTED_SHADE` in `fixedbugs-094-values.h` cannot be declared `Painted`: clang refuses the header's value at line 19: implicit conversion from enumeration type 'enum shade' to different enumeration type 'enum colour'
   at tests/golden/unsupported/fixedbugs-094-a-value-of-another-kind-than-its-field-is-told.hero:13:5
      |
   13 |     constant PAINTED_SHADE: Painted  #~ ffi_constant_type

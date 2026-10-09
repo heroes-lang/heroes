@@ -209,17 +209,17 @@ function bindings_say_which(@c: state.Checker, s: source.Source, decls: [ast.Dec
 # repairs: the two marks a cell can carry, or dropping the `@` when the call
 # really takes the handle in (design.md §4.17: everything needed, on one line).
 function cell_cannot_end(word: str, param: str, producer: str, handle: str, route: str, span: token.Span) -> diag.Diagnostic
-    does: str @ "says the call takes a `" + handle + "` in and ends its life"
+    does: str @ "says the call ends the life of the `" + handle + "` it takes in"
 
     if word == "transfers"
-        does @ "says the call takes a `" + handle + "` in and hands its life into another value"
+        does @ "says the call hands the life of the `" + handle + "` it takes in into another value"
     inside: str @ ""
 
     if route != ""
         inside @ " inside `" + route + "`"
     d: diag.Diagnostic @ diag.new_diagnostic(
         code: "cell_cannot_end",
-        message: "`" + word + "` on `@" + param + "` of `" + producer + "` " + does + ", and `@` says the opposite: `" + param + "` is a cell `" + producer + "` writes into, where a `" + handle + "` comes out to the program" + inside + ", and a cell that receives a handle cannot end one",
+        message: "`" + word + "` on `@" + param + "` of `" + producer + "` " + does + ", and `@` says the opposite: `" + param + "` is a cell `" + producer + "` writes into, where the `" + handle + "` comes out to the program" + inside + ", and a cell that receives a handle cannot end one",
         span: span
     )
     d.notes @ d.notes.push(
@@ -258,13 +258,13 @@ function refusal_for(c: state.Checker, s: source.Source, decls: [ast.Decl], hand
     )
 
 function unmarked(producer: str, taker: str, where_taken: str, handle: str, route: str, span: token.Span) -> diag.Diagnostic
-    where: str @ "hands back a `" + handle + "`"
+    where: str @ "hands back a handle of type `" + handle + "`"
 
     if route != ""
-        where @ "hands back a `" + handle + "` inside `" + route + "`"
+        where @ "hands back a handle of type `" + handle + "` inside `" + route + "`"
     d: diag.Diagnostic @ diag.new_diagnostic(
         code: "unmarked_handle_producer",
-        message: "`" + producer + "` " + where + " and does not say whether the program owes it — `" + taker + "` takes one back" + where_taken + ", so this binding has said how a `" + handle + "` ends and not how it begins",
+        message: "`" + producer + "` " + where + " and does not say whether the program owes it — `" + taker + "` takes one back" + where_taken + ", so this binding has said how the `" + handle + "` ends and not how it begins",
         span: span
     )
     d.notes @ d.notes.push(
@@ -300,7 +300,7 @@ test "a transfer takes nothing back: the taker the note prescribes is the one th
         "extern \"m.h\"\n    record H tag hh\n    function h_wrap(x: H transfers h_close, keep: H)\n    function h_close(x: H consumes)\n    function h_open() -> H\n"
     )
     assert codes_of(c) == ["unmarked_handle_producer"]
-    assert c.out.diagnostics[0].message == "`h_open` hands back a `H` and does not say whether the program owes it — `h_close` takes one back, so this binding has said how a `H` ends and not how it begins"
+    assert c.out.diagnostics[0].message == "`h_open` hands back a handle of type `H` and does not say whether the program owes it — `h_close` takes one back, so this binding has said how the `H` ends and not how it begins"
     unarmed = driven(
         "extern \"m.h\"\n    record H tag hh\n    function h_wrap(x: H transfers h_close, keep: H)\n    function h_open() -> H\n"
     )
@@ -311,8 +311,8 @@ test "a word that hands a handle in is refused on an out-cell, before the produc
         "extern \"m.h\"\n    record H tag hh\n    function h_close(x: H consumes)\n    function h_take(@p: H consumes)\n    function h_give(@p: H transfers h_close)\n    function h_out(@p: H acquires h_close)\n"
     )
     assert codes_of(c) == ["cell_cannot_end", "cell_cannot_end"]
-    assert c.out.diagnostics[0].message == "`consumes` on `@p` of `h_take` says the call takes a `H` in and ends its life, and `@` says the opposite: `p` is a cell `h_take` writes into, where a `H` comes out to the program, and a cell that receives a handle cannot end one"
-    assert c.out.diagnostics[1].message == "`transfers` on `@p` of `h_give` says the call takes a `H` in and hands its life into another value, and `@` says the opposite: `p` is a cell `h_give` writes into, where a `H` comes out to the program, and a cell that receives a handle cannot end one"
+    assert c.out.diagnostics[0].message == "`consumes` on `@p` of `h_take` says the call ends the life of the `H` it takes in, and `@` says the opposite: `p` is a cell `h_take` writes into, where the `H` comes out to the program, and a cell that receives a handle cannot end one"
+    assert c.out.diagnostics[1].message == "`transfers` on `@p` of `h_give` says the call hands the life of the `H` it takes in into another value, and `@` says the opposite: `p` is a cell `h_give` writes into, where the `H` comes out to the program, and a cell that receives a handle cannot end one"
     assert c.out.diagnostics[1].notes[0] == "say how the handle the cell receives begins, with a mark on the cell: `acquires <releaser>` if the program owes its release, or `borrows` if the library keeps it. If `h_give` really takes the handle in, drop the `@`: a parameter written without it hands the value to C, and `transfers` reads there"
     routed = cell_cannot_end(
         word: "consumes",
@@ -322,4 +322,4 @@ test "a word that hands a handle in is refused on an out-cell, before the produc
         route: ".s",
         span: token.Span(start: 0, end: 1)
     )
-    assert routed.message == "`consumes` on `@p` of `pair_take` says the call takes a `H` in and ends its life, and `@` says the opposite: `p` is a cell `pair_take` writes into, where a `H` comes out to the program inside `.s`, and a cell that receives a handle cannot end one"
+    assert routed.message == "`consumes` on `@p` of `pair_take` says the call ends the life of the `H` it takes in, and `@` says the opposite: `p` is a cell `pair_take` writes into, where the `H` comes out to the program inside `.s`, and a cell that receives a handle cannot end one"
