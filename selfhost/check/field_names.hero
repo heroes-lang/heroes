@@ -117,7 +117,7 @@ function dot_on_a_record_name(@c: state.Checker, a: ast.Ast, s: source.Source, r
         else
             certainty @ fail(code: "absent", msg: "`::` gives a `str`")
             notes @ notes.push(
-                "this position asks for `" + state.show(c, s, decls, expected.must()) + "`, and `" + holder + "::" + field + "` is a `str`: a field's value is read from a value that holds a `" + holder + "`"
+                "this position asks for `" + state.show(c, s, decls, expected.must()) + "`, and `" + holder + "::" + field + "` is a `str`: a field's value is read from a value of type `" + holder + "`"
             )
     state.push_diagnostic(
         @c,

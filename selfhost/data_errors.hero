@@ -206,7 +206,7 @@ function not_matchable(got: str, span: token.Span) -> diag.Diagnostic
 function case_on_non_variant(got: str, case_name: str, span: token.Span) -> diag.Diagnostic
     return diag.new_diagnostic(
         code: "not_matchable",
-        message: "`." + case_name + "` is a variant case, and this value is a `" + got + "`",
+        message: "`." + case_name + "` is a variant case, and this value's type is `" + got + "`",
         span: span
     )
 

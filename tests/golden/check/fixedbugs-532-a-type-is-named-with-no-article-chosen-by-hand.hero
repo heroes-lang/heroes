@@ -1,0 +1,42 @@
+# Defect 532 (lane b16-misc, 2026-10-09): `not_callable` read *this is a
+# `i64`, and a `i64` cannot be called*, an article written by hand before a
+# type it cannot see, and a reader says *an i64*. The messages that named a
+# type, a record or a handle after a hand-picked `a` are shaped to need no
+# article: *this value's type is `i64`*, *its payload is itself fallible,
+# `i64?`*, *a handle of type `Image`*, *the life of any `Image`*. Each line
+# below was told with `a` before a name said with a vowel on the base.
+extern "images.h"
+    record Image tag img
+    function image_open() -> Image acquires image_close
+    function image_close(x: Image consumes)
+    function image_peek() -> Image  #~ unmarked_handle_producer
+    function image_keep(x: Image retains image_gone)  #~ unread_releaser
+    function image_eat(@p: Image consumes)  #~ cell_cannot_end
+    function image_free(p: ptr)
+    function image_width(x: Image) -> i64 owned image_free  #~ owned_needs_cstr
+
+record Item
+    n: i64
+
+function main()
+    n: i64 = 4
+    print(n(1))  #~ not_callable
+    item = Item(n: 1)
+    print(item(1))  #~ not_callable
+    width: f64 = 2.5
+
+    for x in width  #~ not_iterable
+        print(x)
+
+    match n
+        .dot => print("never")  #~ not_matchable
+        _    => print("always")
+
+    print(f"an item {item}")  #~ hole_not_renderable
+    m: {str: i64?} @ {"a": ok(1)}
+
+    #~v nested_read
+    if m["a"].is_err()
+        print("no key")
+    image = image_open()
+    image_close(x: image)

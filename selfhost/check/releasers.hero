@@ -196,7 +196,7 @@ function ends_a_life(c: state.Checker, s: source.Source, decls: [ast.Decl], name
 function unread_releaser(word: str, named: str, handle: str, span: token.Span) -> diag.Diagnostic
     d: diag.Diagnostic @ diag.new_diagnostic(
         code: "unread_releaser",
-        message: "`" + named + "` does not end a `" + handle + "`'s life: no `extern` of this module declares it taking one back with `consumes`",
+        message: "`" + named + "` does not end the life of any `" + handle + "`: no `extern` of this module declares it taking one back with `consumes`",
         span: span
     )
     d.notes @ d.notes.push(releaser_note(word: word, handle: handle))
@@ -209,7 +209,7 @@ function unread_releaser(word: str, named: str, handle: str, span: token.Span) -
 # 2026-09-25 the note said `acquires` under every word and offered `borrows`
 # to a transfer.
 function releaser_note(word: str, handle: str) -> str
-    declare = "so the name has to be an `extern` in this module with a `" + handle + "` parameter marked `consumes`. Declare it"
+    declare = "so the name has to be an `extern` in this module with a parameter of type `" + handle + "` marked `consumes`. Declare it"
 
     return match word
         "transfers" => "`transfers` names the call that will END the life this one hands over, " + declare + ": a transfer is not a borrow, because the value that receives the life ends it later, and only a releaser the handle's own set names can"
@@ -257,9 +257,9 @@ test "the refusal's words follow what it found"
     assert two.notes[1] == "a receiver survives the call, so the life it took can end later through it; a parameter marked `consumes` or `transfers` is gone when the call returns and keeps nothing. If `fl_merge` ends every handle it is given, mark each `consumes`; if it keeps them inside a value it hands back, mark that result `acquires <releaser>`"
 
 test "the unread-releaser note names the word it was written under"
-    assert releaser_note(word: "acquires", handle: "H") == "`acquires` names the call that ENDS what this one begins, so the name has to be an `extern` in this module with a `H` parameter marked `consumes`. Declare it, or write `borrows` if the library keeps the handle and the program owes nothing"
-    assert releaser_note(word: "retains", handle: "H") == "`retains` names the call that ENDS the reference this one adds, so the name has to be an `extern` in this module with a `H` parameter marked `consumes`. Declare it, or write `borrows` if the call adds no reference and the program owes nothing"
-    assert releaser_note(word: "transfers", handle: "H") == "`transfers` names the call that will END the life this one hands over, so the name has to be an `extern` in this module with a `H` parameter marked `consumes`. Declare it: a transfer is not a borrow, because the value that receives the life ends it later, and only a releaser the handle's own set names can"
+    assert releaser_note(word: "acquires", handle: "H") == "`acquires` names the call that ENDS what this one begins, so the name has to be an `extern` in this module with a parameter of type `H` marked `consumes`. Declare it, or write `borrows` if the library keeps the handle and the program owes nothing"
+    assert releaser_note(word: "retains", handle: "H") == "`retains` names the call that ENDS the reference this one adds, so the name has to be an `extern` in this module with a parameter of type `H` marked `consumes`. Declare it, or write `borrows` if the call adds no reference and the program owes nothing"
+    assert releaser_note(word: "transfers", handle: "H") == "`transfers` names the call that will END the life this one hands over, so the name has to be an `extern` in this module with a parameter of type `H` marked `consumes`. Declare it: a transfer is not a borrow, because the value that receives the life ends it later, and only a releaser the handle's own set names can"
     c = driven(
         "extern \"m.h\"\n    record H tag hh\n    function h_close(x: H consumes)\n    function h_wrap(x: H transfers nothere, keep: H)\n    function h_ref(x: H retains nothere)\n"
     )

@@ -1,3 +1,3 @@
-tests/golden/check/unread-releaser-names-its-word.hero:13:36: error[unread_releaser]: `nothere` does not end a `H`'s life: no `extern` of this module declares it taking one back with `consumes`
-tests/golden/check/unread-releaser-names-its-word.hero:14:33: error[unread_releaser]: `nothere` does not end a `H`'s life: no `extern` of this module declares it taking one back with `consumes`
-tests/golden/check/unread-releaser-names-its-word.hero:15:39: error[unread_releaser]: `nothere` does not end a `H`'s life: no `extern` of this module declares it taking one back with `consumes`
+tests/golden/check/unread-releaser-names-its-word.hero:13:36: error[unread_releaser]: `nothere` does not end the life of any `H`: no `extern` of this module declares it taking one back with `consumes`
+tests/golden/check/unread-releaser-names-its-word.hero:14:33: error[unread_releaser]: `nothere` does not end the life of any `H`: no `extern` of this module declares it taking one back with `consumes`
+tests/golden/check/unread-releaser-names-its-word.hero:15:39: error[unread_releaser]: `nothere` does not end the life of any `H`: no `extern` of this module declares it taking one back with `consumes`
