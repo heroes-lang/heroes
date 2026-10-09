@@ -1,0 +1,65 @@
+# Two headers two groups name, which clang refuses together (design.md §4.17,
+# §4.19; defect 538, panel 200's R1). A unit includes every header its
+# groups name before a line of its own, a module's unit as `build` compiles it
+# and the whole program's as `heroes test` does, so two headers each declaring
+# one C name another way, a `static inline twice` of `long` in one and of
+# `int` in the other, are read together there, and clang's first error lands
+# in whichever came second, its note in the other. Until 2026-10-09 that was
+# told as the second header's own refusal, *`b.h` ... does not compile*, where
+# each compiles alone, and the header blamed was chosen by the order of the
+# program's `use` lines, or of its groups in one module.
+#
+# So both headers are told, and both groups, in an order that is the headers'
+# own (by bytes, as `sort` orders a `str`), never the program's: the same
+# words whichever is included first. It stays `ffi_header_refused`'s, exit 1,
+# a header the author bound that this unit cannot compile; what `check`,
+# `build` and `test` should say of two groups binding one C name with
+# different types is a diagnostic class, panel 200 R1's question for a full
+# sitting, and this says only what is true of the unit clang refused.
+
+use source
+use diag
+use token
+
+# One of the two: the group's string, the header as the group wrote it, the
+# file clang names as that group's directory shows it, the line, and the line
+# as clang quoted it, where it did.
+record Side
+    span: token.Span
+    header: str
+    file: str
+    row: i64
+    quoted: str?
+
+# The diagnostic, on the string of the group whose header sorts first; `added`
+# are clang's other notes, already worded.
+function told(s: source.Source, one: Side, other: Side, message: str, added: [str]) -> diag.Diagnostic
+    first: Side @ one
+    second: Side @ other
+
+    if sort([one.header, other.header])[0] != one.header
+        first @ other
+        second @ one
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "ffi_header_refused",
+        message: "`" + first.header + "` and `" + second.header + "`, the headers two groups name, cannot be compiled in one unit: clang refuses them together, at `" + first.file + "` line " + first.row.to_str() + " and `" + second.file + "` line " + second.row.to_str() + ": " + message,
+        span: first.span
+    )
+
+    for side in [first, second]
+        if !side.quoted.is_err()
+            d.notes @ d.notes.push(
+                "`" + side.file + "` line " + side.row.to_str() + " reads `" + side.quoted.must() + "`"
+            )
+
+    d.notes @ d.notes.push(
+        "the other group names `" + second.header + "` at " + source.elsewhere(s, here: first.span.start, there: second.span.start)
+    )
+
+    for note in added
+        d.notes @ d.notes.push(note)
+
+    d.notes @ d.notes.push(
+        "each group's header is included in the unit clang compiled before a line of its own, so these two are read together there, and these cannot be compiled in one unit whichever comes first: bind a C name they share from one header, or name for one group a header of your own that declares only what that group binds"
+    )
+    return d

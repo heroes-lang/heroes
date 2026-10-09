@@ -1,0 +1,19 @@
+# fixedbugs, defect 538, lane b17-emit, 2026-10-09 (panel 200's R1).
+#
+# Two groups whose headers each compile alone and each declare `twice` of
+# another type, so one unit holding both cannot compile. Until 2026-10-09
+# this was told as the second header's own refusal, *`fixedbugs-538-int.h`,
+# the header this group names, does not compile*, and with the groups swapped
+# the other header was blamed (the case beside this one). Both headers are
+# told now, on the group whose header sorts first, the same words in both
+# orders.
+
+extern "fixedbugs-538-long.h"
+    function twice(x: i64) -> i64
+
+extern "fixedbugs-538-int.h"  #~ ffi_header_refused
+    function thrice(x: i32) -> i32
+
+function main()
+    print(twice(x: 3))
+    print(thrice(x: 4))
