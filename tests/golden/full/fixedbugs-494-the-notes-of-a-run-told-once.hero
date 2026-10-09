@@ -1,0 +1,20 @@
+# Defect 494, 2026-10-08 (lane b15-parse): the notes a run of tabs, of
+# carriage returns or of a foreign word is told with, which the other form
+# of this defect's case does not show: the first of how many in a row, and
+# how many more of the kind are counted past the eighth told of a text. This
+# file holds tabs and carriage returns on purpose.
+
+function main()
+    a = 1			+ 2  #~ tab_in_line
+    t0 = 0	+ 1  #~ tab_in_line
+    t1 = 1	+ 1  #~ tab_in_line
+    t2 = 2	+ 1  #~ tab_in_line
+    t3 = 3	+ 1  #~ tab_in_line
+    t4 = 4	+ 1  #~ tab_in_line
+    t5 = 5	+ 1  #~ tab_in_line
+    t6 = 6	+ 1  #~ tab_in_line
+    t7 = 7	+ 1
+    t8 = 8	+ 1
+    t9 = 9	+ 1
+    b = 1+ 2  #~ stray_carriage_return
+    fn fn fn  #~ reserved_word reserved_word
