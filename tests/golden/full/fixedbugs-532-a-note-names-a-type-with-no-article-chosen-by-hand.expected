@@ -1,0 +1,6 @@
+error[dot_on_a_record_name]: `Item` names a record, so `Item.n` reads a field from a value that is not there — `Item::n` is the NAME of that field, and `Item(field: value, …)` builds one
+  at tests/golden/full/fixedbugs-532-a-note-names-a-type-with-no-article-chosen-by-hand.hero:11:22
+     |
+  11 |     count: i64 = Item.n  #~ dot_on_a_record_name
+     |                      ^
+  note: this position asks for `i64`, and `Item::n` is a `str`: a field's value is read from a value of type `Item`

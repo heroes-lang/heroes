@@ -174,7 +174,7 @@ function wrong_owned_type(a: ast.Ast, s: source.Source, ty: i64, subject: str, m
         return fail(code: "none", msg: "the mark is on the type it is for")
     d: diag.Diagnostic @ diag.new_diagnostic(
         code: "owned_needs_cstr",
-        message: "`owned` marks a `cstr`, and " + subject + " is a `" + written + "`",
+        message: "`owned` marks a `cstr`, and " + subject + " is declared `" + written + "`",
         span: mark
     )
     d.notes @ d.notes.push(

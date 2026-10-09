@@ -1,0 +1,12 @@
+# Defect 532 (lane b16-misc, 2026-10-09): the note under
+# `dot_on_a_record_name`, where the position asks for another type than a
+# field's name, read *a field's value is read from a value that holds a
+# `Item`*, an article picked by hand before a name said with a vowel. It
+# reads *a value of type `Item`* now; `--brief` prints no note, so this form
+# pins it.
+record Item
+    n: i64
+
+function main()
+    count: i64 = Item.n  #~ dot_on_a_record_name
+    print(count)
