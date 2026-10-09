@@ -1,105 +1,82 @@
-# The log `check/flow.hero`'s `meet` reads (defect 511): which locals an event
-# changed since control split, so that where the paths meet again only those
-# are met. Every path from a split goes on from one flow, its base, and a
-# local no path changed holds on each what it held there; meeting every
-# local at each join instead cost the square of the handles, 41.3 billion
-# instructions for 2,000 handles ended and then 2,000 `if`s.
+# Which locals an event changed since control split, which
+# `check/flow.hero`'s `meet` reads (defect 511): every path from a split goes
+# on from one flow, its base, and a local no path changed holds on each what
+# it held there, so where the paths meet again only the changed ones are
+# met. Meeting every local at each join instead cost the square of the
+# handles, 41.3 billion instructions for 2,000 handles ended and then 2,000
+# `if`s.
 #
-# The log is one list and never shrinks while a split is open: a split
-# records where it began, and a join reads from there to the end. A local is
-# written once per split it is changed under, so a split inside another adds
-# its own entries and the outer join still finds every local changed since
-# the outer split. Where no split is open, nothing is written and nothing is
-# kept, since no join will read it.
+# **The record is the groups' own clock since defect 530**: each change
+# stamps its group with the clock of its path, one later than the last, and
+# each node of `check/flow_groups.hero`'s tree keeps the latest stamp below
+# it, so the groups a path changed after its split's clock are found by
+# going down only where a node's latest is later. Until then the record was
+# a list of the locals changed since the outermost split and a map of where
+# each was written, which, as the code reads, a path's first change copied
+# whole as it copied the groups, so that inside a loop every `if` copied
+# what the loop's body had changed so far: 2,000 `if`s in one turn of a
+# loop, each branch ending a handle, read 29.07 billion instructions, and
+# 4.66 billion with the clock and the tree.
 
-record Log
-    # Each local an event changed since the outermost open split, in order.
-    changed: [str]
-    # Where each local was last written in `changed`.
-    last: {str: i64}
-    # Where the innermost open split began, -1 where none is open.
-    since: i64
+use check/flow_groups
 
-function none() -> Log
-    changed: [str] = []
-    last: {str: i64} = {}
-    return Log(changed: changed, last: last, since: -1)
-
-# Control splits here: what is changed from now on is written again, even if
-# it was written under an outer split.
-function opened(log: Log) -> Log
-    out: Log @ log
-    out.since @ log.changed.len()
-    return out
-
-# The construct that split ends: the log goes on under the split open before
-# it, and is dropped where none was.
-function closed(outer: Log, inner: Log) -> Log
-    if outer.since < 0
-        return none()
-    out: Log @ inner
-    out.since @ outer.since
-    return out
-
-# An event changed `local`: written once under the innermost open split.
-function mark(@log: Log, local: str)
-    if log.since < 0
-        return
-    seen = log.last[local]
-
-    if !seen.is_err() && seen.must() >= log.since
-        return
-    log.last[local] @ log.changed.len()
-    add(@log.changed, local: local)
-
-function add(@changed: [str], local: str)
-    changed @ changed.push(local)
-
-# The locals two paths wrote since a split that began at `from`, each once,
-# `one`'s first, in the order first written.
-function since(one: Log, two: Log, from: i64) -> [str]
+# The locals two paths changed after the clock `from`, each once, `one`'s
+# first, each path's in the order of their numbers.
+function since(one: flow_groups.Groups, two: flow_groups.Groups, from: i64) -> [str]
     out: [str] @ []
     named: {str: bool} @ {}
 
-    for log in [one, two]
-        at: i64 @ from
-
-        while at < log.changed.len()
-            local = log.changed[at]
-            at @ at + 1
-
+    for g in [one, two]
+        for local in after(g, from: from)
             if named[local].is_err()
                 named[local] @ true
                 out @ out.push(local)
 
     return out
 
-test "a split writes what it changes once, and again under a split inside it"
-    log: Log @ opened(none())
-    mark(@log, local: "3")
-    mark(@log, local: "3")
-    mark(@log, local: "4")
-    assert log.changed == ["3", "4"]
-    inner: Log @ opened(log)
-    mark(@inner, local: "3")
-    mark(@inner, local: "5")
-    assert inner.changed == ["3", "4", "3", "5"]
-    assert since(one: inner, two: log, from: log.since) == ["3", "4", "5"]
-    assert since(one: inner, two: inner, from: inner.since) == ["3", "5"]
-    other: Log @ opened(log)
-    mark(@other, local: "6")
-    mark(@other, local: "5")
-    assert since(one: inner, two: other, from: inner.since) == ["3", "5", "6"]
-    back = closed(outer: log, inner: inner)
-    assert back.since == log.since
-    assert back.changed == inner.changed
+# The locals of `g` whose group changed after `from`, in the order of their
+# numbers.
+function after(g: flow_groups.Groups, from: i64) -> [str]
+    out: [str] @ []
 
-test "where no split is open nothing is written, and closing to it drops the log"
-    log: Log @ none()
-    mark(@log, local: "1")
-    assert log.changed.len() == 0
-    open: Log @ opened(log)
-    mark(@open, local: "1")
-    assert open.changed == ["1"]
-    assert closed(outer: log, inner: open).changed.len() == 0
-    assert closed(outer: log, inner: open).since == -1
+    if g.root.latest > from
+        later(@out, n: g.root, level: g.levels, from: from)
+    return out
+
+function later(@out: [str], n: flow_groups.Node, level: i64, from: i64)
+    at: i64 @ 0
+
+    if level > 0
+        while at < n.kids.len()
+            if n.kids[at].latest > from
+                later(@out, n: n.kids[at], level: level - 1, from: from)
+            at @ at + 1
+
+        return
+
+    while at < n.held.len()
+        if n.held[at].stamp > from
+            out @ out.push(n.held[at].local)
+        at @ at + 1
+
+test "what changed after a clock is found on each path, each local once"
+    base: flow_groups.Groups @ flow_groups.none()
+    flow_groups.put(@base, one: stamped("3", stamp: 1))
+    flow_groups.put(@base, one: stamped("4", stamp: 2))
+    one: flow_groups.Groups @ base
+    flow_groups.put(@one, one: stamped("5", stamp: 3))
+    flow_groups.put(@one, one: stamped("3", stamp: 4))
+    two: flow_groups.Groups @ base
+    flow_groups.put(@two, one: stamped("70000", stamp: 3))
+    flow_groups.put(@two, one: stamped("5", stamp: 4))
+    assert since(one: one, two: two, from: 2) == ["3", "5", "70000"]
+    assert since(one: two, two: one, from: 2) == ["5", "70000", "3"]
+    assert since(one: one, two: one, from: 3) == ["3"]
+    assert since(one: base, two: base, from: 2).len() == 0
+    assert after(base, from: 0) == ["3", "4"]
+
+function stamped(local: str, stamp: i64) -> flow_groups.Held
+    one: flow_groups.Held @ flow_groups.empty(local)
+    one.kept @ one.kept.push([local])
+    one.stamp @ stamp
+    return one

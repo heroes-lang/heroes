@@ -1,0 +1,3655 @@
+# Fixed 2026-10-09, defect 530, lane b16-misc (class improvement).
+# Symptom: n handles each ended in both branches of its own `if` cost the
+# checker the square of n after defect 511's repair, 1.49, 3.74, 10.73 and
+# 34.63 billion instructions at 500, 1,000, 2,000 and 4,000, and 107.28
+# billion at 4,000 inside a loop.
+# Cause: a path's first change copied what it shared with the base it went
+# on from, and the groups were one array and the record of what changed a
+# list and a map, so each branch and each join copied every local's group.
+# The groups are a tree indexed by the local's number (`check/flow_groups`)
+# and what changed is each group's stamp (`check/flow_log`): 1.10, 2.14,
+# 4.21 and 8.36 billion, and 9.27 inside the loop, every verdict the same.
+# This case: 300 handles each ended in both branches of its `if`, then the
+# same inside a loop, where a read after the `if`s is refused for the first
+# and the last; and beside them an end on one branch, read after it, and a
+# handle opened and ended inside a branch, which are not.
+extern "fixedbugs-530-three-hundred-ifs-each-ending-a-handle-copy-what-they-change.h"
+    record Cell tag hh
+    function f_open() -> Cell acquires f_close
+    function f_close(x: Cell consumes)
+    function f_peek(x: Cell) -> i64
+
+function ended(c: bool)
+    a0 = f_open()
+    a1 = f_open()
+    a2 = f_open()
+    a3 = f_open()
+    a4 = f_open()
+    a5 = f_open()
+    a6 = f_open()
+    a7 = f_open()
+    a8 = f_open()
+    a9 = f_open()
+    a10 = f_open()
+    a11 = f_open()
+    a12 = f_open()
+    a13 = f_open()
+    a14 = f_open()
+    a15 = f_open()
+    a16 = f_open()
+    a17 = f_open()
+    a18 = f_open()
+    a19 = f_open()
+    a20 = f_open()
+    a21 = f_open()
+    a22 = f_open()
+    a23 = f_open()
+    a24 = f_open()
+    a25 = f_open()
+    a26 = f_open()
+    a27 = f_open()
+    a28 = f_open()
+    a29 = f_open()
+    a30 = f_open()
+    a31 = f_open()
+    a32 = f_open()
+    a33 = f_open()
+    a34 = f_open()
+    a35 = f_open()
+    a36 = f_open()
+    a37 = f_open()
+    a38 = f_open()
+    a39 = f_open()
+    a40 = f_open()
+    a41 = f_open()
+    a42 = f_open()
+    a43 = f_open()
+    a44 = f_open()
+    a45 = f_open()
+    a46 = f_open()
+    a47 = f_open()
+    a48 = f_open()
+    a49 = f_open()
+    a50 = f_open()
+    a51 = f_open()
+    a52 = f_open()
+    a53 = f_open()
+    a54 = f_open()
+    a55 = f_open()
+    a56 = f_open()
+    a57 = f_open()
+    a58 = f_open()
+    a59 = f_open()
+    a60 = f_open()
+    a61 = f_open()
+    a62 = f_open()
+    a63 = f_open()
+    a64 = f_open()
+    a65 = f_open()
+    a66 = f_open()
+    a67 = f_open()
+    a68 = f_open()
+    a69 = f_open()
+    a70 = f_open()
+    a71 = f_open()
+    a72 = f_open()
+    a73 = f_open()
+    a74 = f_open()
+    a75 = f_open()
+    a76 = f_open()
+    a77 = f_open()
+    a78 = f_open()
+    a79 = f_open()
+    a80 = f_open()
+    a81 = f_open()
+    a82 = f_open()
+    a83 = f_open()
+    a84 = f_open()
+    a85 = f_open()
+    a86 = f_open()
+    a87 = f_open()
+    a88 = f_open()
+    a89 = f_open()
+    a90 = f_open()
+    a91 = f_open()
+    a92 = f_open()
+    a93 = f_open()
+    a94 = f_open()
+    a95 = f_open()
+    a96 = f_open()
+    a97 = f_open()
+    a98 = f_open()
+    a99 = f_open()
+    a100 = f_open()
+    a101 = f_open()
+    a102 = f_open()
+    a103 = f_open()
+    a104 = f_open()
+    a105 = f_open()
+    a106 = f_open()
+    a107 = f_open()
+    a108 = f_open()
+    a109 = f_open()
+    a110 = f_open()
+    a111 = f_open()
+    a112 = f_open()
+    a113 = f_open()
+    a114 = f_open()
+    a115 = f_open()
+    a116 = f_open()
+    a117 = f_open()
+    a118 = f_open()
+    a119 = f_open()
+    a120 = f_open()
+    a121 = f_open()
+    a122 = f_open()
+    a123 = f_open()
+    a124 = f_open()
+    a125 = f_open()
+    a126 = f_open()
+    a127 = f_open()
+    a128 = f_open()
+    a129 = f_open()
+    a130 = f_open()
+    a131 = f_open()
+    a132 = f_open()
+    a133 = f_open()
+    a134 = f_open()
+    a135 = f_open()
+    a136 = f_open()
+    a137 = f_open()
+    a138 = f_open()
+    a139 = f_open()
+    a140 = f_open()
+    a141 = f_open()
+    a142 = f_open()
+    a143 = f_open()
+    a144 = f_open()
+    a145 = f_open()
+    a146 = f_open()
+    a147 = f_open()
+    a148 = f_open()
+    a149 = f_open()
+    a150 = f_open()
+    a151 = f_open()
+    a152 = f_open()
+    a153 = f_open()
+    a154 = f_open()
+    a155 = f_open()
+    a156 = f_open()
+    a157 = f_open()
+    a158 = f_open()
+    a159 = f_open()
+    a160 = f_open()
+    a161 = f_open()
+    a162 = f_open()
+    a163 = f_open()
+    a164 = f_open()
+    a165 = f_open()
+    a166 = f_open()
+    a167 = f_open()
+    a168 = f_open()
+    a169 = f_open()
+    a170 = f_open()
+    a171 = f_open()
+    a172 = f_open()
+    a173 = f_open()
+    a174 = f_open()
+    a175 = f_open()
+    a176 = f_open()
+    a177 = f_open()
+    a178 = f_open()
+    a179 = f_open()
+    a180 = f_open()
+    a181 = f_open()
+    a182 = f_open()
+    a183 = f_open()
+    a184 = f_open()
+    a185 = f_open()
+    a186 = f_open()
+    a187 = f_open()
+    a188 = f_open()
+    a189 = f_open()
+    a190 = f_open()
+    a191 = f_open()
+    a192 = f_open()
+    a193 = f_open()
+    a194 = f_open()
+    a195 = f_open()
+    a196 = f_open()
+    a197 = f_open()
+    a198 = f_open()
+    a199 = f_open()
+    a200 = f_open()
+    a201 = f_open()
+    a202 = f_open()
+    a203 = f_open()
+    a204 = f_open()
+    a205 = f_open()
+    a206 = f_open()
+    a207 = f_open()
+    a208 = f_open()
+    a209 = f_open()
+    a210 = f_open()
+    a211 = f_open()
+    a212 = f_open()
+    a213 = f_open()
+    a214 = f_open()
+    a215 = f_open()
+    a216 = f_open()
+    a217 = f_open()
+    a218 = f_open()
+    a219 = f_open()
+    a220 = f_open()
+    a221 = f_open()
+    a222 = f_open()
+    a223 = f_open()
+    a224 = f_open()
+    a225 = f_open()
+    a226 = f_open()
+    a227 = f_open()
+    a228 = f_open()
+    a229 = f_open()
+    a230 = f_open()
+    a231 = f_open()
+    a232 = f_open()
+    a233 = f_open()
+    a234 = f_open()
+    a235 = f_open()
+    a236 = f_open()
+    a237 = f_open()
+    a238 = f_open()
+    a239 = f_open()
+    a240 = f_open()
+    a241 = f_open()
+    a242 = f_open()
+    a243 = f_open()
+    a244 = f_open()
+    a245 = f_open()
+    a246 = f_open()
+    a247 = f_open()
+    a248 = f_open()
+    a249 = f_open()
+    a250 = f_open()
+    a251 = f_open()
+    a252 = f_open()
+    a253 = f_open()
+    a254 = f_open()
+    a255 = f_open()
+    a256 = f_open()
+    a257 = f_open()
+    a258 = f_open()
+    a259 = f_open()
+    a260 = f_open()
+    a261 = f_open()
+    a262 = f_open()
+    a263 = f_open()
+    a264 = f_open()
+    a265 = f_open()
+    a266 = f_open()
+    a267 = f_open()
+    a268 = f_open()
+    a269 = f_open()
+    a270 = f_open()
+    a271 = f_open()
+    a272 = f_open()
+    a273 = f_open()
+    a274 = f_open()
+    a275 = f_open()
+    a276 = f_open()
+    a277 = f_open()
+    a278 = f_open()
+    a279 = f_open()
+    a280 = f_open()
+    a281 = f_open()
+    a282 = f_open()
+    a283 = f_open()
+    a284 = f_open()
+    a285 = f_open()
+    a286 = f_open()
+    a287 = f_open()
+    a288 = f_open()
+    a289 = f_open()
+    a290 = f_open()
+    a291 = f_open()
+    a292 = f_open()
+    a293 = f_open()
+    a294 = f_open()
+    a295 = f_open()
+    a296 = f_open()
+    a297 = f_open()
+    a298 = f_open()
+    a299 = f_open()
+
+    if c
+        f_close(x: a0)
+    else
+        f_close(x: a0)
+
+    if c
+        f_close(x: a1)
+    else
+        f_close(x: a1)
+
+    if c
+        f_close(x: a2)
+    else
+        f_close(x: a2)
+
+    if c
+        f_close(x: a3)
+    else
+        f_close(x: a3)
+
+    if c
+        f_close(x: a4)
+    else
+        f_close(x: a4)
+
+    if c
+        f_close(x: a5)
+    else
+        f_close(x: a5)
+
+    if c
+        f_close(x: a6)
+    else
+        f_close(x: a6)
+
+    if c
+        f_close(x: a7)
+    else
+        f_close(x: a7)
+
+    if c
+        f_close(x: a8)
+    else
+        f_close(x: a8)
+
+    if c
+        f_close(x: a9)
+    else
+        f_close(x: a9)
+
+    if c
+        f_close(x: a10)
+    else
+        f_close(x: a10)
+
+    if c
+        f_close(x: a11)
+    else
+        f_close(x: a11)
+
+    if c
+        f_close(x: a12)
+    else
+        f_close(x: a12)
+
+    if c
+        f_close(x: a13)
+    else
+        f_close(x: a13)
+
+    if c
+        f_close(x: a14)
+    else
+        f_close(x: a14)
+
+    if c
+        f_close(x: a15)
+    else
+        f_close(x: a15)
+
+    if c
+        f_close(x: a16)
+    else
+        f_close(x: a16)
+
+    if c
+        f_close(x: a17)
+    else
+        f_close(x: a17)
+
+    if c
+        f_close(x: a18)
+    else
+        f_close(x: a18)
+
+    if c
+        f_close(x: a19)
+    else
+        f_close(x: a19)
+
+    if c
+        f_close(x: a20)
+    else
+        f_close(x: a20)
+
+    if c
+        f_close(x: a21)
+    else
+        f_close(x: a21)
+
+    if c
+        f_close(x: a22)
+    else
+        f_close(x: a22)
+
+    if c
+        f_close(x: a23)
+    else
+        f_close(x: a23)
+
+    if c
+        f_close(x: a24)
+    else
+        f_close(x: a24)
+
+    if c
+        f_close(x: a25)
+    else
+        f_close(x: a25)
+
+    if c
+        f_close(x: a26)
+    else
+        f_close(x: a26)
+
+    if c
+        f_close(x: a27)
+    else
+        f_close(x: a27)
+
+    if c
+        f_close(x: a28)
+    else
+        f_close(x: a28)
+
+    if c
+        f_close(x: a29)
+    else
+        f_close(x: a29)
+
+    if c
+        f_close(x: a30)
+    else
+        f_close(x: a30)
+
+    if c
+        f_close(x: a31)
+    else
+        f_close(x: a31)
+
+    if c
+        f_close(x: a32)
+    else
+        f_close(x: a32)
+
+    if c
+        f_close(x: a33)
+    else
+        f_close(x: a33)
+
+    if c
+        f_close(x: a34)
+    else
+        f_close(x: a34)
+
+    if c
+        f_close(x: a35)
+    else
+        f_close(x: a35)
+
+    if c
+        f_close(x: a36)
+    else
+        f_close(x: a36)
+
+    if c
+        f_close(x: a37)
+    else
+        f_close(x: a37)
+
+    if c
+        f_close(x: a38)
+    else
+        f_close(x: a38)
+
+    if c
+        f_close(x: a39)
+    else
+        f_close(x: a39)
+
+    if c
+        f_close(x: a40)
+    else
+        f_close(x: a40)
+
+    if c
+        f_close(x: a41)
+    else
+        f_close(x: a41)
+
+    if c
+        f_close(x: a42)
+    else
+        f_close(x: a42)
+
+    if c
+        f_close(x: a43)
+    else
+        f_close(x: a43)
+
+    if c
+        f_close(x: a44)
+    else
+        f_close(x: a44)
+
+    if c
+        f_close(x: a45)
+    else
+        f_close(x: a45)
+
+    if c
+        f_close(x: a46)
+    else
+        f_close(x: a46)
+
+    if c
+        f_close(x: a47)
+    else
+        f_close(x: a47)
+
+    if c
+        f_close(x: a48)
+    else
+        f_close(x: a48)
+
+    if c
+        f_close(x: a49)
+    else
+        f_close(x: a49)
+
+    if c
+        f_close(x: a50)
+    else
+        f_close(x: a50)
+
+    if c
+        f_close(x: a51)
+    else
+        f_close(x: a51)
+
+    if c
+        f_close(x: a52)
+    else
+        f_close(x: a52)
+
+    if c
+        f_close(x: a53)
+    else
+        f_close(x: a53)
+
+    if c
+        f_close(x: a54)
+    else
+        f_close(x: a54)
+
+    if c
+        f_close(x: a55)
+    else
+        f_close(x: a55)
+
+    if c
+        f_close(x: a56)
+    else
+        f_close(x: a56)
+
+    if c
+        f_close(x: a57)
+    else
+        f_close(x: a57)
+
+    if c
+        f_close(x: a58)
+    else
+        f_close(x: a58)
+
+    if c
+        f_close(x: a59)
+    else
+        f_close(x: a59)
+
+    if c
+        f_close(x: a60)
+    else
+        f_close(x: a60)
+
+    if c
+        f_close(x: a61)
+    else
+        f_close(x: a61)
+
+    if c
+        f_close(x: a62)
+    else
+        f_close(x: a62)
+
+    if c
+        f_close(x: a63)
+    else
+        f_close(x: a63)
+
+    if c
+        f_close(x: a64)
+    else
+        f_close(x: a64)
+
+    if c
+        f_close(x: a65)
+    else
+        f_close(x: a65)
+
+    if c
+        f_close(x: a66)
+    else
+        f_close(x: a66)
+
+    if c
+        f_close(x: a67)
+    else
+        f_close(x: a67)
+
+    if c
+        f_close(x: a68)
+    else
+        f_close(x: a68)
+
+    if c
+        f_close(x: a69)
+    else
+        f_close(x: a69)
+
+    if c
+        f_close(x: a70)
+    else
+        f_close(x: a70)
+
+    if c
+        f_close(x: a71)
+    else
+        f_close(x: a71)
+
+    if c
+        f_close(x: a72)
+    else
+        f_close(x: a72)
+
+    if c
+        f_close(x: a73)
+    else
+        f_close(x: a73)
+
+    if c
+        f_close(x: a74)
+    else
+        f_close(x: a74)
+
+    if c
+        f_close(x: a75)
+    else
+        f_close(x: a75)
+
+    if c
+        f_close(x: a76)
+    else
+        f_close(x: a76)
+
+    if c
+        f_close(x: a77)
+    else
+        f_close(x: a77)
+
+    if c
+        f_close(x: a78)
+    else
+        f_close(x: a78)
+
+    if c
+        f_close(x: a79)
+    else
+        f_close(x: a79)
+
+    if c
+        f_close(x: a80)
+    else
+        f_close(x: a80)
+
+    if c
+        f_close(x: a81)
+    else
+        f_close(x: a81)
+
+    if c
+        f_close(x: a82)
+    else
+        f_close(x: a82)
+
+    if c
+        f_close(x: a83)
+    else
+        f_close(x: a83)
+
+    if c
+        f_close(x: a84)
+    else
+        f_close(x: a84)
+
+    if c
+        f_close(x: a85)
+    else
+        f_close(x: a85)
+
+    if c
+        f_close(x: a86)
+    else
+        f_close(x: a86)
+
+    if c
+        f_close(x: a87)
+    else
+        f_close(x: a87)
+
+    if c
+        f_close(x: a88)
+    else
+        f_close(x: a88)
+
+    if c
+        f_close(x: a89)
+    else
+        f_close(x: a89)
+
+    if c
+        f_close(x: a90)
+    else
+        f_close(x: a90)
+
+    if c
+        f_close(x: a91)
+    else
+        f_close(x: a91)
+
+    if c
+        f_close(x: a92)
+    else
+        f_close(x: a92)
+
+    if c
+        f_close(x: a93)
+    else
+        f_close(x: a93)
+
+    if c
+        f_close(x: a94)
+    else
+        f_close(x: a94)
+
+    if c
+        f_close(x: a95)
+    else
+        f_close(x: a95)
+
+    if c
+        f_close(x: a96)
+    else
+        f_close(x: a96)
+
+    if c
+        f_close(x: a97)
+    else
+        f_close(x: a97)
+
+    if c
+        f_close(x: a98)
+    else
+        f_close(x: a98)
+
+    if c
+        f_close(x: a99)
+    else
+        f_close(x: a99)
+
+    if c
+        f_close(x: a100)
+    else
+        f_close(x: a100)
+
+    if c
+        f_close(x: a101)
+    else
+        f_close(x: a101)
+
+    if c
+        f_close(x: a102)
+    else
+        f_close(x: a102)
+
+    if c
+        f_close(x: a103)
+    else
+        f_close(x: a103)
+
+    if c
+        f_close(x: a104)
+    else
+        f_close(x: a104)
+
+    if c
+        f_close(x: a105)
+    else
+        f_close(x: a105)
+
+    if c
+        f_close(x: a106)
+    else
+        f_close(x: a106)
+
+    if c
+        f_close(x: a107)
+    else
+        f_close(x: a107)
+
+    if c
+        f_close(x: a108)
+    else
+        f_close(x: a108)
+
+    if c
+        f_close(x: a109)
+    else
+        f_close(x: a109)
+
+    if c
+        f_close(x: a110)
+    else
+        f_close(x: a110)
+
+    if c
+        f_close(x: a111)
+    else
+        f_close(x: a111)
+
+    if c
+        f_close(x: a112)
+    else
+        f_close(x: a112)
+
+    if c
+        f_close(x: a113)
+    else
+        f_close(x: a113)
+
+    if c
+        f_close(x: a114)
+    else
+        f_close(x: a114)
+
+    if c
+        f_close(x: a115)
+    else
+        f_close(x: a115)
+
+    if c
+        f_close(x: a116)
+    else
+        f_close(x: a116)
+
+    if c
+        f_close(x: a117)
+    else
+        f_close(x: a117)
+
+    if c
+        f_close(x: a118)
+    else
+        f_close(x: a118)
+
+    if c
+        f_close(x: a119)
+    else
+        f_close(x: a119)
+
+    if c
+        f_close(x: a120)
+    else
+        f_close(x: a120)
+
+    if c
+        f_close(x: a121)
+    else
+        f_close(x: a121)
+
+    if c
+        f_close(x: a122)
+    else
+        f_close(x: a122)
+
+    if c
+        f_close(x: a123)
+    else
+        f_close(x: a123)
+
+    if c
+        f_close(x: a124)
+    else
+        f_close(x: a124)
+
+    if c
+        f_close(x: a125)
+    else
+        f_close(x: a125)
+
+    if c
+        f_close(x: a126)
+    else
+        f_close(x: a126)
+
+    if c
+        f_close(x: a127)
+    else
+        f_close(x: a127)
+
+    if c
+        f_close(x: a128)
+    else
+        f_close(x: a128)
+
+    if c
+        f_close(x: a129)
+    else
+        f_close(x: a129)
+
+    if c
+        f_close(x: a130)
+    else
+        f_close(x: a130)
+
+    if c
+        f_close(x: a131)
+    else
+        f_close(x: a131)
+
+    if c
+        f_close(x: a132)
+    else
+        f_close(x: a132)
+
+    if c
+        f_close(x: a133)
+    else
+        f_close(x: a133)
+
+    if c
+        f_close(x: a134)
+    else
+        f_close(x: a134)
+
+    if c
+        f_close(x: a135)
+    else
+        f_close(x: a135)
+
+    if c
+        f_close(x: a136)
+    else
+        f_close(x: a136)
+
+    if c
+        f_close(x: a137)
+    else
+        f_close(x: a137)
+
+    if c
+        f_close(x: a138)
+    else
+        f_close(x: a138)
+
+    if c
+        f_close(x: a139)
+    else
+        f_close(x: a139)
+
+    if c
+        f_close(x: a140)
+    else
+        f_close(x: a140)
+
+    if c
+        f_close(x: a141)
+    else
+        f_close(x: a141)
+
+    if c
+        f_close(x: a142)
+    else
+        f_close(x: a142)
+
+    if c
+        f_close(x: a143)
+    else
+        f_close(x: a143)
+
+    if c
+        f_close(x: a144)
+    else
+        f_close(x: a144)
+
+    if c
+        f_close(x: a145)
+    else
+        f_close(x: a145)
+
+    if c
+        f_close(x: a146)
+    else
+        f_close(x: a146)
+
+    if c
+        f_close(x: a147)
+    else
+        f_close(x: a147)
+
+    if c
+        f_close(x: a148)
+    else
+        f_close(x: a148)
+
+    if c
+        f_close(x: a149)
+    else
+        f_close(x: a149)
+
+    if c
+        f_close(x: a150)
+    else
+        f_close(x: a150)
+
+    if c
+        f_close(x: a151)
+    else
+        f_close(x: a151)
+
+    if c
+        f_close(x: a152)
+    else
+        f_close(x: a152)
+
+    if c
+        f_close(x: a153)
+    else
+        f_close(x: a153)
+
+    if c
+        f_close(x: a154)
+    else
+        f_close(x: a154)
+
+    if c
+        f_close(x: a155)
+    else
+        f_close(x: a155)
+
+    if c
+        f_close(x: a156)
+    else
+        f_close(x: a156)
+
+    if c
+        f_close(x: a157)
+    else
+        f_close(x: a157)
+
+    if c
+        f_close(x: a158)
+    else
+        f_close(x: a158)
+
+    if c
+        f_close(x: a159)
+    else
+        f_close(x: a159)
+
+    if c
+        f_close(x: a160)
+    else
+        f_close(x: a160)
+
+    if c
+        f_close(x: a161)
+    else
+        f_close(x: a161)
+
+    if c
+        f_close(x: a162)
+    else
+        f_close(x: a162)
+
+    if c
+        f_close(x: a163)
+    else
+        f_close(x: a163)
+
+    if c
+        f_close(x: a164)
+    else
+        f_close(x: a164)
+
+    if c
+        f_close(x: a165)
+    else
+        f_close(x: a165)
+
+    if c
+        f_close(x: a166)
+    else
+        f_close(x: a166)
+
+    if c
+        f_close(x: a167)
+    else
+        f_close(x: a167)
+
+    if c
+        f_close(x: a168)
+    else
+        f_close(x: a168)
+
+    if c
+        f_close(x: a169)
+    else
+        f_close(x: a169)
+
+    if c
+        f_close(x: a170)
+    else
+        f_close(x: a170)
+
+    if c
+        f_close(x: a171)
+    else
+        f_close(x: a171)
+
+    if c
+        f_close(x: a172)
+    else
+        f_close(x: a172)
+
+    if c
+        f_close(x: a173)
+    else
+        f_close(x: a173)
+
+    if c
+        f_close(x: a174)
+    else
+        f_close(x: a174)
+
+    if c
+        f_close(x: a175)
+    else
+        f_close(x: a175)
+
+    if c
+        f_close(x: a176)
+    else
+        f_close(x: a176)
+
+    if c
+        f_close(x: a177)
+    else
+        f_close(x: a177)
+
+    if c
+        f_close(x: a178)
+    else
+        f_close(x: a178)
+
+    if c
+        f_close(x: a179)
+    else
+        f_close(x: a179)
+
+    if c
+        f_close(x: a180)
+    else
+        f_close(x: a180)
+
+    if c
+        f_close(x: a181)
+    else
+        f_close(x: a181)
+
+    if c
+        f_close(x: a182)
+    else
+        f_close(x: a182)
+
+    if c
+        f_close(x: a183)
+    else
+        f_close(x: a183)
+
+    if c
+        f_close(x: a184)
+    else
+        f_close(x: a184)
+
+    if c
+        f_close(x: a185)
+    else
+        f_close(x: a185)
+
+    if c
+        f_close(x: a186)
+    else
+        f_close(x: a186)
+
+    if c
+        f_close(x: a187)
+    else
+        f_close(x: a187)
+
+    if c
+        f_close(x: a188)
+    else
+        f_close(x: a188)
+
+    if c
+        f_close(x: a189)
+    else
+        f_close(x: a189)
+
+    if c
+        f_close(x: a190)
+    else
+        f_close(x: a190)
+
+    if c
+        f_close(x: a191)
+    else
+        f_close(x: a191)
+
+    if c
+        f_close(x: a192)
+    else
+        f_close(x: a192)
+
+    if c
+        f_close(x: a193)
+    else
+        f_close(x: a193)
+
+    if c
+        f_close(x: a194)
+    else
+        f_close(x: a194)
+
+    if c
+        f_close(x: a195)
+    else
+        f_close(x: a195)
+
+    if c
+        f_close(x: a196)
+    else
+        f_close(x: a196)
+
+    if c
+        f_close(x: a197)
+    else
+        f_close(x: a197)
+
+    if c
+        f_close(x: a198)
+    else
+        f_close(x: a198)
+
+    if c
+        f_close(x: a199)
+    else
+        f_close(x: a199)
+
+    if c
+        f_close(x: a200)
+    else
+        f_close(x: a200)
+
+    if c
+        f_close(x: a201)
+    else
+        f_close(x: a201)
+
+    if c
+        f_close(x: a202)
+    else
+        f_close(x: a202)
+
+    if c
+        f_close(x: a203)
+    else
+        f_close(x: a203)
+
+    if c
+        f_close(x: a204)
+    else
+        f_close(x: a204)
+
+    if c
+        f_close(x: a205)
+    else
+        f_close(x: a205)
+
+    if c
+        f_close(x: a206)
+    else
+        f_close(x: a206)
+
+    if c
+        f_close(x: a207)
+    else
+        f_close(x: a207)
+
+    if c
+        f_close(x: a208)
+    else
+        f_close(x: a208)
+
+    if c
+        f_close(x: a209)
+    else
+        f_close(x: a209)
+
+    if c
+        f_close(x: a210)
+    else
+        f_close(x: a210)
+
+    if c
+        f_close(x: a211)
+    else
+        f_close(x: a211)
+
+    if c
+        f_close(x: a212)
+    else
+        f_close(x: a212)
+
+    if c
+        f_close(x: a213)
+    else
+        f_close(x: a213)
+
+    if c
+        f_close(x: a214)
+    else
+        f_close(x: a214)
+
+    if c
+        f_close(x: a215)
+    else
+        f_close(x: a215)
+
+    if c
+        f_close(x: a216)
+    else
+        f_close(x: a216)
+
+    if c
+        f_close(x: a217)
+    else
+        f_close(x: a217)
+
+    if c
+        f_close(x: a218)
+    else
+        f_close(x: a218)
+
+    if c
+        f_close(x: a219)
+    else
+        f_close(x: a219)
+
+    if c
+        f_close(x: a220)
+    else
+        f_close(x: a220)
+
+    if c
+        f_close(x: a221)
+    else
+        f_close(x: a221)
+
+    if c
+        f_close(x: a222)
+    else
+        f_close(x: a222)
+
+    if c
+        f_close(x: a223)
+    else
+        f_close(x: a223)
+
+    if c
+        f_close(x: a224)
+    else
+        f_close(x: a224)
+
+    if c
+        f_close(x: a225)
+    else
+        f_close(x: a225)
+
+    if c
+        f_close(x: a226)
+    else
+        f_close(x: a226)
+
+    if c
+        f_close(x: a227)
+    else
+        f_close(x: a227)
+
+    if c
+        f_close(x: a228)
+    else
+        f_close(x: a228)
+
+    if c
+        f_close(x: a229)
+    else
+        f_close(x: a229)
+
+    if c
+        f_close(x: a230)
+    else
+        f_close(x: a230)
+
+    if c
+        f_close(x: a231)
+    else
+        f_close(x: a231)
+
+    if c
+        f_close(x: a232)
+    else
+        f_close(x: a232)
+
+    if c
+        f_close(x: a233)
+    else
+        f_close(x: a233)
+
+    if c
+        f_close(x: a234)
+    else
+        f_close(x: a234)
+
+    if c
+        f_close(x: a235)
+    else
+        f_close(x: a235)
+
+    if c
+        f_close(x: a236)
+    else
+        f_close(x: a236)
+
+    if c
+        f_close(x: a237)
+    else
+        f_close(x: a237)
+
+    if c
+        f_close(x: a238)
+    else
+        f_close(x: a238)
+
+    if c
+        f_close(x: a239)
+    else
+        f_close(x: a239)
+
+    if c
+        f_close(x: a240)
+    else
+        f_close(x: a240)
+
+    if c
+        f_close(x: a241)
+    else
+        f_close(x: a241)
+
+    if c
+        f_close(x: a242)
+    else
+        f_close(x: a242)
+
+    if c
+        f_close(x: a243)
+    else
+        f_close(x: a243)
+
+    if c
+        f_close(x: a244)
+    else
+        f_close(x: a244)
+
+    if c
+        f_close(x: a245)
+    else
+        f_close(x: a245)
+
+    if c
+        f_close(x: a246)
+    else
+        f_close(x: a246)
+
+    if c
+        f_close(x: a247)
+    else
+        f_close(x: a247)
+
+    if c
+        f_close(x: a248)
+    else
+        f_close(x: a248)
+
+    if c
+        f_close(x: a249)
+    else
+        f_close(x: a249)
+
+    if c
+        f_close(x: a250)
+    else
+        f_close(x: a250)
+
+    if c
+        f_close(x: a251)
+    else
+        f_close(x: a251)
+
+    if c
+        f_close(x: a252)
+    else
+        f_close(x: a252)
+
+    if c
+        f_close(x: a253)
+    else
+        f_close(x: a253)
+
+    if c
+        f_close(x: a254)
+    else
+        f_close(x: a254)
+
+    if c
+        f_close(x: a255)
+    else
+        f_close(x: a255)
+
+    if c
+        f_close(x: a256)
+    else
+        f_close(x: a256)
+
+    if c
+        f_close(x: a257)
+    else
+        f_close(x: a257)
+
+    if c
+        f_close(x: a258)
+    else
+        f_close(x: a258)
+
+    if c
+        f_close(x: a259)
+    else
+        f_close(x: a259)
+
+    if c
+        f_close(x: a260)
+    else
+        f_close(x: a260)
+
+    if c
+        f_close(x: a261)
+    else
+        f_close(x: a261)
+
+    if c
+        f_close(x: a262)
+    else
+        f_close(x: a262)
+
+    if c
+        f_close(x: a263)
+    else
+        f_close(x: a263)
+
+    if c
+        f_close(x: a264)
+    else
+        f_close(x: a264)
+
+    if c
+        f_close(x: a265)
+    else
+        f_close(x: a265)
+
+    if c
+        f_close(x: a266)
+    else
+        f_close(x: a266)
+
+    if c
+        f_close(x: a267)
+    else
+        f_close(x: a267)
+
+    if c
+        f_close(x: a268)
+    else
+        f_close(x: a268)
+
+    if c
+        f_close(x: a269)
+    else
+        f_close(x: a269)
+
+    if c
+        f_close(x: a270)
+    else
+        f_close(x: a270)
+
+    if c
+        f_close(x: a271)
+    else
+        f_close(x: a271)
+
+    if c
+        f_close(x: a272)
+    else
+        f_close(x: a272)
+
+    if c
+        f_close(x: a273)
+    else
+        f_close(x: a273)
+
+    if c
+        f_close(x: a274)
+    else
+        f_close(x: a274)
+
+    if c
+        f_close(x: a275)
+    else
+        f_close(x: a275)
+
+    if c
+        f_close(x: a276)
+    else
+        f_close(x: a276)
+
+    if c
+        f_close(x: a277)
+    else
+        f_close(x: a277)
+
+    if c
+        f_close(x: a278)
+    else
+        f_close(x: a278)
+
+    if c
+        f_close(x: a279)
+    else
+        f_close(x: a279)
+
+    if c
+        f_close(x: a280)
+    else
+        f_close(x: a280)
+
+    if c
+        f_close(x: a281)
+    else
+        f_close(x: a281)
+
+    if c
+        f_close(x: a282)
+    else
+        f_close(x: a282)
+
+    if c
+        f_close(x: a283)
+    else
+        f_close(x: a283)
+
+    if c
+        f_close(x: a284)
+    else
+        f_close(x: a284)
+
+    if c
+        f_close(x: a285)
+    else
+        f_close(x: a285)
+
+    if c
+        f_close(x: a286)
+    else
+        f_close(x: a286)
+
+    if c
+        f_close(x: a287)
+    else
+        f_close(x: a287)
+
+    if c
+        f_close(x: a288)
+    else
+        f_close(x: a288)
+
+    if c
+        f_close(x: a289)
+    else
+        f_close(x: a289)
+
+    if c
+        f_close(x: a290)
+    else
+        f_close(x: a290)
+
+    if c
+        f_close(x: a291)
+    else
+        f_close(x: a291)
+
+    if c
+        f_close(x: a292)
+    else
+        f_close(x: a292)
+
+    if c
+        f_close(x: a293)
+    else
+        f_close(x: a293)
+
+    if c
+        f_close(x: a294)
+    else
+        f_close(x: a294)
+
+    if c
+        f_close(x: a295)
+    else
+        f_close(x: a295)
+
+    if c
+        f_close(x: a296)
+    else
+        f_close(x: a296)
+
+    if c
+        f_close(x: a297)
+    else
+        f_close(x: a297)
+
+    if c
+        f_close(x: a298)
+    else
+        f_close(x: a298)
+
+    if c
+        f_close(x: a299)
+    else
+        f_close(x: a299)
+    print(f_peek(x: a0))  #~ handle_used_after_end
+    print(f_peek(x: a299))  #~ handle_used_after_end
+
+function looped(c: bool)
+    b0 = f_open()
+    b1 = f_open()
+    b2 = f_open()
+    b3 = f_open()
+    b4 = f_open()
+    b5 = f_open()
+    b6 = f_open()
+    b7 = f_open()
+    b8 = f_open()
+    b9 = f_open()
+    b10 = f_open()
+    b11 = f_open()
+    b12 = f_open()
+    b13 = f_open()
+    b14 = f_open()
+    b15 = f_open()
+    b16 = f_open()
+    b17 = f_open()
+    b18 = f_open()
+    b19 = f_open()
+    b20 = f_open()
+    b21 = f_open()
+    b22 = f_open()
+    b23 = f_open()
+    b24 = f_open()
+    b25 = f_open()
+    b26 = f_open()
+    b27 = f_open()
+    b28 = f_open()
+    b29 = f_open()
+    b30 = f_open()
+    b31 = f_open()
+    b32 = f_open()
+    b33 = f_open()
+    b34 = f_open()
+    b35 = f_open()
+    b36 = f_open()
+    b37 = f_open()
+    b38 = f_open()
+    b39 = f_open()
+    b40 = f_open()
+    b41 = f_open()
+    b42 = f_open()
+    b43 = f_open()
+    b44 = f_open()
+    b45 = f_open()
+    b46 = f_open()
+    b47 = f_open()
+    b48 = f_open()
+    b49 = f_open()
+    b50 = f_open()
+    b51 = f_open()
+    b52 = f_open()
+    b53 = f_open()
+    b54 = f_open()
+    b55 = f_open()
+    b56 = f_open()
+    b57 = f_open()
+    b58 = f_open()
+    b59 = f_open()
+    b60 = f_open()
+    b61 = f_open()
+    b62 = f_open()
+    b63 = f_open()
+    b64 = f_open()
+    b65 = f_open()
+    b66 = f_open()
+    b67 = f_open()
+    b68 = f_open()
+    b69 = f_open()
+    b70 = f_open()
+    b71 = f_open()
+    b72 = f_open()
+    b73 = f_open()
+    b74 = f_open()
+    b75 = f_open()
+    b76 = f_open()
+    b77 = f_open()
+    b78 = f_open()
+    b79 = f_open()
+    b80 = f_open()
+    b81 = f_open()
+    b82 = f_open()
+    b83 = f_open()
+    b84 = f_open()
+    b85 = f_open()
+    b86 = f_open()
+    b87 = f_open()
+    b88 = f_open()
+    b89 = f_open()
+    b90 = f_open()
+    b91 = f_open()
+    b92 = f_open()
+    b93 = f_open()
+    b94 = f_open()
+    b95 = f_open()
+    b96 = f_open()
+    b97 = f_open()
+    b98 = f_open()
+    b99 = f_open()
+    b100 = f_open()
+    b101 = f_open()
+    b102 = f_open()
+    b103 = f_open()
+    b104 = f_open()
+    b105 = f_open()
+    b106 = f_open()
+    b107 = f_open()
+    b108 = f_open()
+    b109 = f_open()
+    b110 = f_open()
+    b111 = f_open()
+    b112 = f_open()
+    b113 = f_open()
+    b114 = f_open()
+    b115 = f_open()
+    b116 = f_open()
+    b117 = f_open()
+    b118 = f_open()
+    b119 = f_open()
+    b120 = f_open()
+    b121 = f_open()
+    b122 = f_open()
+    b123 = f_open()
+    b124 = f_open()
+    b125 = f_open()
+    b126 = f_open()
+    b127 = f_open()
+    b128 = f_open()
+    b129 = f_open()
+    b130 = f_open()
+    b131 = f_open()
+    b132 = f_open()
+    b133 = f_open()
+    b134 = f_open()
+    b135 = f_open()
+    b136 = f_open()
+    b137 = f_open()
+    b138 = f_open()
+    b139 = f_open()
+    b140 = f_open()
+    b141 = f_open()
+    b142 = f_open()
+    b143 = f_open()
+    b144 = f_open()
+    b145 = f_open()
+    b146 = f_open()
+    b147 = f_open()
+    b148 = f_open()
+    b149 = f_open()
+    b150 = f_open()
+    b151 = f_open()
+    b152 = f_open()
+    b153 = f_open()
+    b154 = f_open()
+    b155 = f_open()
+    b156 = f_open()
+    b157 = f_open()
+    b158 = f_open()
+    b159 = f_open()
+    b160 = f_open()
+    b161 = f_open()
+    b162 = f_open()
+    b163 = f_open()
+    b164 = f_open()
+    b165 = f_open()
+    b166 = f_open()
+    b167 = f_open()
+    b168 = f_open()
+    b169 = f_open()
+    b170 = f_open()
+    b171 = f_open()
+    b172 = f_open()
+    b173 = f_open()
+    b174 = f_open()
+    b175 = f_open()
+    b176 = f_open()
+    b177 = f_open()
+    b178 = f_open()
+    b179 = f_open()
+    b180 = f_open()
+    b181 = f_open()
+    b182 = f_open()
+    b183 = f_open()
+    b184 = f_open()
+    b185 = f_open()
+    b186 = f_open()
+    b187 = f_open()
+    b188 = f_open()
+    b189 = f_open()
+    b190 = f_open()
+    b191 = f_open()
+    b192 = f_open()
+    b193 = f_open()
+    b194 = f_open()
+    b195 = f_open()
+    b196 = f_open()
+    b197 = f_open()
+    b198 = f_open()
+    b199 = f_open()
+    b200 = f_open()
+    b201 = f_open()
+    b202 = f_open()
+    b203 = f_open()
+    b204 = f_open()
+    b205 = f_open()
+    b206 = f_open()
+    b207 = f_open()
+    b208 = f_open()
+    b209 = f_open()
+    b210 = f_open()
+    b211 = f_open()
+    b212 = f_open()
+    b213 = f_open()
+    b214 = f_open()
+    b215 = f_open()
+    b216 = f_open()
+    b217 = f_open()
+    b218 = f_open()
+    b219 = f_open()
+    b220 = f_open()
+    b221 = f_open()
+    b222 = f_open()
+    b223 = f_open()
+    b224 = f_open()
+    b225 = f_open()
+    b226 = f_open()
+    b227 = f_open()
+    b228 = f_open()
+    b229 = f_open()
+    b230 = f_open()
+    b231 = f_open()
+    b232 = f_open()
+    b233 = f_open()
+    b234 = f_open()
+    b235 = f_open()
+    b236 = f_open()
+    b237 = f_open()
+    b238 = f_open()
+    b239 = f_open()
+    b240 = f_open()
+    b241 = f_open()
+    b242 = f_open()
+    b243 = f_open()
+    b244 = f_open()
+    b245 = f_open()
+    b246 = f_open()
+    b247 = f_open()
+    b248 = f_open()
+    b249 = f_open()
+    b250 = f_open()
+    b251 = f_open()
+    b252 = f_open()
+    b253 = f_open()
+    b254 = f_open()
+    b255 = f_open()
+    b256 = f_open()
+    b257 = f_open()
+    b258 = f_open()
+    b259 = f_open()
+    b260 = f_open()
+    b261 = f_open()
+    b262 = f_open()
+    b263 = f_open()
+    b264 = f_open()
+    b265 = f_open()
+    b266 = f_open()
+    b267 = f_open()
+    b268 = f_open()
+    b269 = f_open()
+    b270 = f_open()
+    b271 = f_open()
+    b272 = f_open()
+    b273 = f_open()
+    b274 = f_open()
+    b275 = f_open()
+    b276 = f_open()
+    b277 = f_open()
+    b278 = f_open()
+    b279 = f_open()
+    b280 = f_open()
+    b281 = f_open()
+    b282 = f_open()
+    b283 = f_open()
+    b284 = f_open()
+    b285 = f_open()
+    b286 = f_open()
+    b287 = f_open()
+    b288 = f_open()
+    b289 = f_open()
+    b290 = f_open()
+    b291 = f_open()
+    b292 = f_open()
+    b293 = f_open()
+    b294 = f_open()
+    b295 = f_open()
+    b296 = f_open()
+    b297 = f_open()
+    b298 = f_open()
+    b299 = f_open()
+    t: i64 @ 0
+
+    while t < 1
+        if c
+            f_close(x: b0)
+        else
+            f_close(x: b0)
+
+        if c
+            f_close(x: b1)
+        else
+            f_close(x: b1)
+
+        if c
+            f_close(x: b2)
+        else
+            f_close(x: b2)
+
+        if c
+            f_close(x: b3)
+        else
+            f_close(x: b3)
+
+        if c
+            f_close(x: b4)
+        else
+            f_close(x: b4)
+
+        if c
+            f_close(x: b5)
+        else
+            f_close(x: b5)
+
+        if c
+            f_close(x: b6)
+        else
+            f_close(x: b6)
+
+        if c
+            f_close(x: b7)
+        else
+            f_close(x: b7)
+
+        if c
+            f_close(x: b8)
+        else
+            f_close(x: b8)
+
+        if c
+            f_close(x: b9)
+        else
+            f_close(x: b9)
+
+        if c
+            f_close(x: b10)
+        else
+            f_close(x: b10)
+
+        if c
+            f_close(x: b11)
+        else
+            f_close(x: b11)
+
+        if c
+            f_close(x: b12)
+        else
+            f_close(x: b12)
+
+        if c
+            f_close(x: b13)
+        else
+            f_close(x: b13)
+
+        if c
+            f_close(x: b14)
+        else
+            f_close(x: b14)
+
+        if c
+            f_close(x: b15)
+        else
+            f_close(x: b15)
+
+        if c
+            f_close(x: b16)
+        else
+            f_close(x: b16)
+
+        if c
+            f_close(x: b17)
+        else
+            f_close(x: b17)
+
+        if c
+            f_close(x: b18)
+        else
+            f_close(x: b18)
+
+        if c
+            f_close(x: b19)
+        else
+            f_close(x: b19)
+
+        if c
+            f_close(x: b20)
+        else
+            f_close(x: b20)
+
+        if c
+            f_close(x: b21)
+        else
+            f_close(x: b21)
+
+        if c
+            f_close(x: b22)
+        else
+            f_close(x: b22)
+
+        if c
+            f_close(x: b23)
+        else
+            f_close(x: b23)
+
+        if c
+            f_close(x: b24)
+        else
+            f_close(x: b24)
+
+        if c
+            f_close(x: b25)
+        else
+            f_close(x: b25)
+
+        if c
+            f_close(x: b26)
+        else
+            f_close(x: b26)
+
+        if c
+            f_close(x: b27)
+        else
+            f_close(x: b27)
+
+        if c
+            f_close(x: b28)
+        else
+            f_close(x: b28)
+
+        if c
+            f_close(x: b29)
+        else
+            f_close(x: b29)
+
+        if c
+            f_close(x: b30)
+        else
+            f_close(x: b30)
+
+        if c
+            f_close(x: b31)
+        else
+            f_close(x: b31)
+
+        if c
+            f_close(x: b32)
+        else
+            f_close(x: b32)
+
+        if c
+            f_close(x: b33)
+        else
+            f_close(x: b33)
+
+        if c
+            f_close(x: b34)
+        else
+            f_close(x: b34)
+
+        if c
+            f_close(x: b35)
+        else
+            f_close(x: b35)
+
+        if c
+            f_close(x: b36)
+        else
+            f_close(x: b36)
+
+        if c
+            f_close(x: b37)
+        else
+            f_close(x: b37)
+
+        if c
+            f_close(x: b38)
+        else
+            f_close(x: b38)
+
+        if c
+            f_close(x: b39)
+        else
+            f_close(x: b39)
+
+        if c
+            f_close(x: b40)
+        else
+            f_close(x: b40)
+
+        if c
+            f_close(x: b41)
+        else
+            f_close(x: b41)
+
+        if c
+            f_close(x: b42)
+        else
+            f_close(x: b42)
+
+        if c
+            f_close(x: b43)
+        else
+            f_close(x: b43)
+
+        if c
+            f_close(x: b44)
+        else
+            f_close(x: b44)
+
+        if c
+            f_close(x: b45)
+        else
+            f_close(x: b45)
+
+        if c
+            f_close(x: b46)
+        else
+            f_close(x: b46)
+
+        if c
+            f_close(x: b47)
+        else
+            f_close(x: b47)
+
+        if c
+            f_close(x: b48)
+        else
+            f_close(x: b48)
+
+        if c
+            f_close(x: b49)
+        else
+            f_close(x: b49)
+
+        if c
+            f_close(x: b50)
+        else
+            f_close(x: b50)
+
+        if c
+            f_close(x: b51)
+        else
+            f_close(x: b51)
+
+        if c
+            f_close(x: b52)
+        else
+            f_close(x: b52)
+
+        if c
+            f_close(x: b53)
+        else
+            f_close(x: b53)
+
+        if c
+            f_close(x: b54)
+        else
+            f_close(x: b54)
+
+        if c
+            f_close(x: b55)
+        else
+            f_close(x: b55)
+
+        if c
+            f_close(x: b56)
+        else
+            f_close(x: b56)
+
+        if c
+            f_close(x: b57)
+        else
+            f_close(x: b57)
+
+        if c
+            f_close(x: b58)
+        else
+            f_close(x: b58)
+
+        if c
+            f_close(x: b59)
+        else
+            f_close(x: b59)
+
+        if c
+            f_close(x: b60)
+        else
+            f_close(x: b60)
+
+        if c
+            f_close(x: b61)
+        else
+            f_close(x: b61)
+
+        if c
+            f_close(x: b62)
+        else
+            f_close(x: b62)
+
+        if c
+            f_close(x: b63)
+        else
+            f_close(x: b63)
+
+        if c
+            f_close(x: b64)
+        else
+            f_close(x: b64)
+
+        if c
+            f_close(x: b65)
+        else
+            f_close(x: b65)
+
+        if c
+            f_close(x: b66)
+        else
+            f_close(x: b66)
+
+        if c
+            f_close(x: b67)
+        else
+            f_close(x: b67)
+
+        if c
+            f_close(x: b68)
+        else
+            f_close(x: b68)
+
+        if c
+            f_close(x: b69)
+        else
+            f_close(x: b69)
+
+        if c
+            f_close(x: b70)
+        else
+            f_close(x: b70)
+
+        if c
+            f_close(x: b71)
+        else
+            f_close(x: b71)
+
+        if c
+            f_close(x: b72)
+        else
+            f_close(x: b72)
+
+        if c
+            f_close(x: b73)
+        else
+            f_close(x: b73)
+
+        if c
+            f_close(x: b74)
+        else
+            f_close(x: b74)
+
+        if c
+            f_close(x: b75)
+        else
+            f_close(x: b75)
+
+        if c
+            f_close(x: b76)
+        else
+            f_close(x: b76)
+
+        if c
+            f_close(x: b77)
+        else
+            f_close(x: b77)
+
+        if c
+            f_close(x: b78)
+        else
+            f_close(x: b78)
+
+        if c
+            f_close(x: b79)
+        else
+            f_close(x: b79)
+
+        if c
+            f_close(x: b80)
+        else
+            f_close(x: b80)
+
+        if c
+            f_close(x: b81)
+        else
+            f_close(x: b81)
+
+        if c
+            f_close(x: b82)
+        else
+            f_close(x: b82)
+
+        if c
+            f_close(x: b83)
+        else
+            f_close(x: b83)
+
+        if c
+            f_close(x: b84)
+        else
+            f_close(x: b84)
+
+        if c
+            f_close(x: b85)
+        else
+            f_close(x: b85)
+
+        if c
+            f_close(x: b86)
+        else
+            f_close(x: b86)
+
+        if c
+            f_close(x: b87)
+        else
+            f_close(x: b87)
+
+        if c
+            f_close(x: b88)
+        else
+            f_close(x: b88)
+
+        if c
+            f_close(x: b89)
+        else
+            f_close(x: b89)
+
+        if c
+            f_close(x: b90)
+        else
+            f_close(x: b90)
+
+        if c
+            f_close(x: b91)
+        else
+            f_close(x: b91)
+
+        if c
+            f_close(x: b92)
+        else
+            f_close(x: b92)
+
+        if c
+            f_close(x: b93)
+        else
+            f_close(x: b93)
+
+        if c
+            f_close(x: b94)
+        else
+            f_close(x: b94)
+
+        if c
+            f_close(x: b95)
+        else
+            f_close(x: b95)
+
+        if c
+            f_close(x: b96)
+        else
+            f_close(x: b96)
+
+        if c
+            f_close(x: b97)
+        else
+            f_close(x: b97)
+
+        if c
+            f_close(x: b98)
+        else
+            f_close(x: b98)
+
+        if c
+            f_close(x: b99)
+        else
+            f_close(x: b99)
+
+        if c
+            f_close(x: b100)
+        else
+            f_close(x: b100)
+
+        if c
+            f_close(x: b101)
+        else
+            f_close(x: b101)
+
+        if c
+            f_close(x: b102)
+        else
+            f_close(x: b102)
+
+        if c
+            f_close(x: b103)
+        else
+            f_close(x: b103)
+
+        if c
+            f_close(x: b104)
+        else
+            f_close(x: b104)
+
+        if c
+            f_close(x: b105)
+        else
+            f_close(x: b105)
+
+        if c
+            f_close(x: b106)
+        else
+            f_close(x: b106)
+
+        if c
+            f_close(x: b107)
+        else
+            f_close(x: b107)
+
+        if c
+            f_close(x: b108)
+        else
+            f_close(x: b108)
+
+        if c
+            f_close(x: b109)
+        else
+            f_close(x: b109)
+
+        if c
+            f_close(x: b110)
+        else
+            f_close(x: b110)
+
+        if c
+            f_close(x: b111)
+        else
+            f_close(x: b111)
+
+        if c
+            f_close(x: b112)
+        else
+            f_close(x: b112)
+
+        if c
+            f_close(x: b113)
+        else
+            f_close(x: b113)
+
+        if c
+            f_close(x: b114)
+        else
+            f_close(x: b114)
+
+        if c
+            f_close(x: b115)
+        else
+            f_close(x: b115)
+
+        if c
+            f_close(x: b116)
+        else
+            f_close(x: b116)
+
+        if c
+            f_close(x: b117)
+        else
+            f_close(x: b117)
+
+        if c
+            f_close(x: b118)
+        else
+            f_close(x: b118)
+
+        if c
+            f_close(x: b119)
+        else
+            f_close(x: b119)
+
+        if c
+            f_close(x: b120)
+        else
+            f_close(x: b120)
+
+        if c
+            f_close(x: b121)
+        else
+            f_close(x: b121)
+
+        if c
+            f_close(x: b122)
+        else
+            f_close(x: b122)
+
+        if c
+            f_close(x: b123)
+        else
+            f_close(x: b123)
+
+        if c
+            f_close(x: b124)
+        else
+            f_close(x: b124)
+
+        if c
+            f_close(x: b125)
+        else
+            f_close(x: b125)
+
+        if c
+            f_close(x: b126)
+        else
+            f_close(x: b126)
+
+        if c
+            f_close(x: b127)
+        else
+            f_close(x: b127)
+
+        if c
+            f_close(x: b128)
+        else
+            f_close(x: b128)
+
+        if c
+            f_close(x: b129)
+        else
+            f_close(x: b129)
+
+        if c
+            f_close(x: b130)
+        else
+            f_close(x: b130)
+
+        if c
+            f_close(x: b131)
+        else
+            f_close(x: b131)
+
+        if c
+            f_close(x: b132)
+        else
+            f_close(x: b132)
+
+        if c
+            f_close(x: b133)
+        else
+            f_close(x: b133)
+
+        if c
+            f_close(x: b134)
+        else
+            f_close(x: b134)
+
+        if c
+            f_close(x: b135)
+        else
+            f_close(x: b135)
+
+        if c
+            f_close(x: b136)
+        else
+            f_close(x: b136)
+
+        if c
+            f_close(x: b137)
+        else
+            f_close(x: b137)
+
+        if c
+            f_close(x: b138)
+        else
+            f_close(x: b138)
+
+        if c
+            f_close(x: b139)
+        else
+            f_close(x: b139)
+
+        if c
+            f_close(x: b140)
+        else
+            f_close(x: b140)
+
+        if c
+            f_close(x: b141)
+        else
+            f_close(x: b141)
+
+        if c
+            f_close(x: b142)
+        else
+            f_close(x: b142)
+
+        if c
+            f_close(x: b143)
+        else
+            f_close(x: b143)
+
+        if c
+            f_close(x: b144)
+        else
+            f_close(x: b144)
+
+        if c
+            f_close(x: b145)
+        else
+            f_close(x: b145)
+
+        if c
+            f_close(x: b146)
+        else
+            f_close(x: b146)
+
+        if c
+            f_close(x: b147)
+        else
+            f_close(x: b147)
+
+        if c
+            f_close(x: b148)
+        else
+            f_close(x: b148)
+
+        if c
+            f_close(x: b149)
+        else
+            f_close(x: b149)
+
+        if c
+            f_close(x: b150)
+        else
+            f_close(x: b150)
+
+        if c
+            f_close(x: b151)
+        else
+            f_close(x: b151)
+
+        if c
+            f_close(x: b152)
+        else
+            f_close(x: b152)
+
+        if c
+            f_close(x: b153)
+        else
+            f_close(x: b153)
+
+        if c
+            f_close(x: b154)
+        else
+            f_close(x: b154)
+
+        if c
+            f_close(x: b155)
+        else
+            f_close(x: b155)
+
+        if c
+            f_close(x: b156)
+        else
+            f_close(x: b156)
+
+        if c
+            f_close(x: b157)
+        else
+            f_close(x: b157)
+
+        if c
+            f_close(x: b158)
+        else
+            f_close(x: b158)
+
+        if c
+            f_close(x: b159)
+        else
+            f_close(x: b159)
+
+        if c
+            f_close(x: b160)
+        else
+            f_close(x: b160)
+
+        if c
+            f_close(x: b161)
+        else
+            f_close(x: b161)
+
+        if c
+            f_close(x: b162)
+        else
+            f_close(x: b162)
+
+        if c
+            f_close(x: b163)
+        else
+            f_close(x: b163)
+
+        if c
+            f_close(x: b164)
+        else
+            f_close(x: b164)
+
+        if c
+            f_close(x: b165)
+        else
+            f_close(x: b165)
+
+        if c
+            f_close(x: b166)
+        else
+            f_close(x: b166)
+
+        if c
+            f_close(x: b167)
+        else
+            f_close(x: b167)
+
+        if c
+            f_close(x: b168)
+        else
+            f_close(x: b168)
+
+        if c
+            f_close(x: b169)
+        else
+            f_close(x: b169)
+
+        if c
+            f_close(x: b170)
+        else
+            f_close(x: b170)
+
+        if c
+            f_close(x: b171)
+        else
+            f_close(x: b171)
+
+        if c
+            f_close(x: b172)
+        else
+            f_close(x: b172)
+
+        if c
+            f_close(x: b173)
+        else
+            f_close(x: b173)
+
+        if c
+            f_close(x: b174)
+        else
+            f_close(x: b174)
+
+        if c
+            f_close(x: b175)
+        else
+            f_close(x: b175)
+
+        if c
+            f_close(x: b176)
+        else
+            f_close(x: b176)
+
+        if c
+            f_close(x: b177)
+        else
+            f_close(x: b177)
+
+        if c
+            f_close(x: b178)
+        else
+            f_close(x: b178)
+
+        if c
+            f_close(x: b179)
+        else
+            f_close(x: b179)
+
+        if c
+            f_close(x: b180)
+        else
+            f_close(x: b180)
+
+        if c
+            f_close(x: b181)
+        else
+            f_close(x: b181)
+
+        if c
+            f_close(x: b182)
+        else
+            f_close(x: b182)
+
+        if c
+            f_close(x: b183)
+        else
+            f_close(x: b183)
+
+        if c
+            f_close(x: b184)
+        else
+            f_close(x: b184)
+
+        if c
+            f_close(x: b185)
+        else
+            f_close(x: b185)
+
+        if c
+            f_close(x: b186)
+        else
+            f_close(x: b186)
+
+        if c
+            f_close(x: b187)
+        else
+            f_close(x: b187)
+
+        if c
+            f_close(x: b188)
+        else
+            f_close(x: b188)
+
+        if c
+            f_close(x: b189)
+        else
+            f_close(x: b189)
+
+        if c
+            f_close(x: b190)
+        else
+            f_close(x: b190)
+
+        if c
+            f_close(x: b191)
+        else
+            f_close(x: b191)
+
+        if c
+            f_close(x: b192)
+        else
+            f_close(x: b192)
+
+        if c
+            f_close(x: b193)
+        else
+            f_close(x: b193)
+
+        if c
+            f_close(x: b194)
+        else
+            f_close(x: b194)
+
+        if c
+            f_close(x: b195)
+        else
+            f_close(x: b195)
+
+        if c
+            f_close(x: b196)
+        else
+            f_close(x: b196)
+
+        if c
+            f_close(x: b197)
+        else
+            f_close(x: b197)
+
+        if c
+            f_close(x: b198)
+        else
+            f_close(x: b198)
+
+        if c
+            f_close(x: b199)
+        else
+            f_close(x: b199)
+
+        if c
+            f_close(x: b200)
+        else
+            f_close(x: b200)
+
+        if c
+            f_close(x: b201)
+        else
+            f_close(x: b201)
+
+        if c
+            f_close(x: b202)
+        else
+            f_close(x: b202)
+
+        if c
+            f_close(x: b203)
+        else
+            f_close(x: b203)
+
+        if c
+            f_close(x: b204)
+        else
+            f_close(x: b204)
+
+        if c
+            f_close(x: b205)
+        else
+            f_close(x: b205)
+
+        if c
+            f_close(x: b206)
+        else
+            f_close(x: b206)
+
+        if c
+            f_close(x: b207)
+        else
+            f_close(x: b207)
+
+        if c
+            f_close(x: b208)
+        else
+            f_close(x: b208)
+
+        if c
+            f_close(x: b209)
+        else
+            f_close(x: b209)
+
+        if c
+            f_close(x: b210)
+        else
+            f_close(x: b210)
+
+        if c
+            f_close(x: b211)
+        else
+            f_close(x: b211)
+
+        if c
+            f_close(x: b212)
+        else
+            f_close(x: b212)
+
+        if c
+            f_close(x: b213)
+        else
+            f_close(x: b213)
+
+        if c
+            f_close(x: b214)
+        else
+            f_close(x: b214)
+
+        if c
+            f_close(x: b215)
+        else
+            f_close(x: b215)
+
+        if c
+            f_close(x: b216)
+        else
+            f_close(x: b216)
+
+        if c
+            f_close(x: b217)
+        else
+            f_close(x: b217)
+
+        if c
+            f_close(x: b218)
+        else
+            f_close(x: b218)
+
+        if c
+            f_close(x: b219)
+        else
+            f_close(x: b219)
+
+        if c
+            f_close(x: b220)
+        else
+            f_close(x: b220)
+
+        if c
+            f_close(x: b221)
+        else
+            f_close(x: b221)
+
+        if c
+            f_close(x: b222)
+        else
+            f_close(x: b222)
+
+        if c
+            f_close(x: b223)
+        else
+            f_close(x: b223)
+
+        if c
+            f_close(x: b224)
+        else
+            f_close(x: b224)
+
+        if c
+            f_close(x: b225)
+        else
+            f_close(x: b225)
+
+        if c
+            f_close(x: b226)
+        else
+            f_close(x: b226)
+
+        if c
+            f_close(x: b227)
+        else
+            f_close(x: b227)
+
+        if c
+            f_close(x: b228)
+        else
+            f_close(x: b228)
+
+        if c
+            f_close(x: b229)
+        else
+            f_close(x: b229)
+
+        if c
+            f_close(x: b230)
+        else
+            f_close(x: b230)
+
+        if c
+            f_close(x: b231)
+        else
+            f_close(x: b231)
+
+        if c
+            f_close(x: b232)
+        else
+            f_close(x: b232)
+
+        if c
+            f_close(x: b233)
+        else
+            f_close(x: b233)
+
+        if c
+            f_close(x: b234)
+        else
+            f_close(x: b234)
+
+        if c
+            f_close(x: b235)
+        else
+            f_close(x: b235)
+
+        if c
+            f_close(x: b236)
+        else
+            f_close(x: b236)
+
+        if c
+            f_close(x: b237)
+        else
+            f_close(x: b237)
+
+        if c
+            f_close(x: b238)
+        else
+            f_close(x: b238)
+
+        if c
+            f_close(x: b239)
+        else
+            f_close(x: b239)
+
+        if c
+            f_close(x: b240)
+        else
+            f_close(x: b240)
+
+        if c
+            f_close(x: b241)
+        else
+            f_close(x: b241)
+
+        if c
+            f_close(x: b242)
+        else
+            f_close(x: b242)
+
+        if c
+            f_close(x: b243)
+        else
+            f_close(x: b243)
+
+        if c
+            f_close(x: b244)
+        else
+            f_close(x: b244)
+
+        if c
+            f_close(x: b245)
+        else
+            f_close(x: b245)
+
+        if c
+            f_close(x: b246)
+        else
+            f_close(x: b246)
+
+        if c
+            f_close(x: b247)
+        else
+            f_close(x: b247)
+
+        if c
+            f_close(x: b248)
+        else
+            f_close(x: b248)
+
+        if c
+            f_close(x: b249)
+        else
+            f_close(x: b249)
+
+        if c
+            f_close(x: b250)
+        else
+            f_close(x: b250)
+
+        if c
+            f_close(x: b251)
+        else
+            f_close(x: b251)
+
+        if c
+            f_close(x: b252)
+        else
+            f_close(x: b252)
+
+        if c
+            f_close(x: b253)
+        else
+            f_close(x: b253)
+
+        if c
+            f_close(x: b254)
+        else
+            f_close(x: b254)
+
+        if c
+            f_close(x: b255)
+        else
+            f_close(x: b255)
+
+        if c
+            f_close(x: b256)
+        else
+            f_close(x: b256)
+
+        if c
+            f_close(x: b257)
+        else
+            f_close(x: b257)
+
+        if c
+            f_close(x: b258)
+        else
+            f_close(x: b258)
+
+        if c
+            f_close(x: b259)
+        else
+            f_close(x: b259)
+
+        if c
+            f_close(x: b260)
+        else
+            f_close(x: b260)
+
+        if c
+            f_close(x: b261)
+        else
+            f_close(x: b261)
+
+        if c
+            f_close(x: b262)
+        else
+            f_close(x: b262)
+
+        if c
+            f_close(x: b263)
+        else
+            f_close(x: b263)
+
+        if c
+            f_close(x: b264)
+        else
+            f_close(x: b264)
+
+        if c
+            f_close(x: b265)
+        else
+            f_close(x: b265)
+
+        if c
+            f_close(x: b266)
+        else
+            f_close(x: b266)
+
+        if c
+            f_close(x: b267)
+        else
+            f_close(x: b267)
+
+        if c
+            f_close(x: b268)
+        else
+            f_close(x: b268)
+
+        if c
+            f_close(x: b269)
+        else
+            f_close(x: b269)
+
+        if c
+            f_close(x: b270)
+        else
+            f_close(x: b270)
+
+        if c
+            f_close(x: b271)
+        else
+            f_close(x: b271)
+
+        if c
+            f_close(x: b272)
+        else
+            f_close(x: b272)
+
+        if c
+            f_close(x: b273)
+        else
+            f_close(x: b273)
+
+        if c
+            f_close(x: b274)
+        else
+            f_close(x: b274)
+
+        if c
+            f_close(x: b275)
+        else
+            f_close(x: b275)
+
+        if c
+            f_close(x: b276)
+        else
+            f_close(x: b276)
+
+        if c
+            f_close(x: b277)
+        else
+            f_close(x: b277)
+
+        if c
+            f_close(x: b278)
+        else
+            f_close(x: b278)
+
+        if c
+            f_close(x: b279)
+        else
+            f_close(x: b279)
+
+        if c
+            f_close(x: b280)
+        else
+            f_close(x: b280)
+
+        if c
+            f_close(x: b281)
+        else
+            f_close(x: b281)
+
+        if c
+            f_close(x: b282)
+        else
+            f_close(x: b282)
+
+        if c
+            f_close(x: b283)
+        else
+            f_close(x: b283)
+
+        if c
+            f_close(x: b284)
+        else
+            f_close(x: b284)
+
+        if c
+            f_close(x: b285)
+        else
+            f_close(x: b285)
+
+        if c
+            f_close(x: b286)
+        else
+            f_close(x: b286)
+
+        if c
+            f_close(x: b287)
+        else
+            f_close(x: b287)
+
+        if c
+            f_close(x: b288)
+        else
+            f_close(x: b288)
+
+        if c
+            f_close(x: b289)
+        else
+            f_close(x: b289)
+
+        if c
+            f_close(x: b290)
+        else
+            f_close(x: b290)
+
+        if c
+            f_close(x: b291)
+        else
+            f_close(x: b291)
+
+        if c
+            f_close(x: b292)
+        else
+            f_close(x: b292)
+
+        if c
+            f_close(x: b293)
+        else
+            f_close(x: b293)
+
+        if c
+            f_close(x: b294)
+        else
+            f_close(x: b294)
+
+        if c
+            f_close(x: b295)
+        else
+            f_close(x: b295)
+
+        if c
+            f_close(x: b296)
+        else
+            f_close(x: b296)
+
+        if c
+            f_close(x: b297)
+        else
+            f_close(x: b297)
+
+        if c
+            f_close(x: b298)
+        else
+            f_close(x: b298)
+
+        if c
+            f_close(x: b299)
+        else
+            f_close(x: b299)
+
+        print(f_peek(x: b0))  #~ handle_used_after_end
+        print(f_peek(x: b299))  #~ handle_used_after_end
+        t @ t + 1
+
+function beside(c: bool)
+    x = f_open()
+    y = f_open()
+
+    if c
+        f_close(x: x)
+
+    if c
+        z = f_open()
+        f_close(x: z)
+    else
+        f_close(x: y)
+        y2 = f_open()
+        f_close(x: y2)
+        f_close(x: x)
+    print(f_peek(x: x))
+    print(f_peek(x: y))
+
+function main()
+    ended(true)
+    looped(true)
+    beside(true)
