@@ -275,8 +275,9 @@ Loops: `while cond` and `for x in xs`, over an array or a `range` (section 11).
 - Generics: on functions only, no constraints, always inferred, never written
   at the call site: `function map<A, B>(xs: [A], f: (function(A) -> B)) -> [B]`.
   A type parameter takes its type from the arguments, else from the type the
-  context asks for; a call that says neither is an error. `xs.map(double)` takes
-  both from `double`'s signature.
+  context asks for, and a generic function's parameter asks for none; a call
+  that says neither is an error. `xs.map(double)` takes both from `double`'s
+  signature.
 - Recursion too deep aborts.
 
     Args     = "(" [ Arg { "," Arg } ] ")" .
