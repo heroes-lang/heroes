@@ -36,7 +36,8 @@
 #
 # | entry | called by |
 # |---|---|
-# | `unread`, `read`, `inside`, `top_above` | `word_place.place_of` |
+# | `unread`, `read`, `inside`, `top_above`, `line_start` | `word_place.place_of` |
+# | `start_of` | `foreign_at.holder_of` |
 # | `unread` | `state.new_state`, the tests of `foreign_at` and `word_place` |
 # | `lost`, the field | `lost_quote.lost_in` |
 #
@@ -63,6 +64,13 @@ record Outline
     # The start of every line that opens at the margin with a mark of its own,
     # no space or tab before it and neither blank nor a comment, ascending.
     tops: [i64]
+    # The line the last word asked about, from its first byte to its line
+    # end, -1 before any: the words of one line ask their line's start one
+    # after another, and a walk back to it for each cost a long line its
+    # square (`fn fn fn …`, defect 526). Kept beside the reading, not in it,
+    # so a word in the middle of its line still reads nothing else.
+    line_from: i64
+    line_to: i64
     # Whether a line ends inside a literal that never closes, read on from
     # an offset, its own reading, taken at the first refused character that
     # asks (`lost_reading.hero`). Held in an array of one, as `LexState.run`
@@ -74,7 +82,15 @@ record Outline
 # An outline nothing has read yet.
 function unread() -> Outline
     none: [i64] = []
-    return Outline(read: false, length: 0, opens: none, tops: none, lost: [lost_reading.unread()])
+    return Outline(
+        read: false,
+        length: 0,
+        opens: none,
+        tops: none,
+        line_from: -1,
+        line_to: -1,
+        lost: [lost_reading.unread()]
+    )
 
 # Read the outline of `text` into `o`, unless it holds it already.
 function read(@o: Outline, text: str)
@@ -85,8 +101,12 @@ function read(@o: Outline, text: str)
         assert o.length == text.len()
         return
     lost = o.lost
+    from = o.line_from
+    to = o.line_to
     o @ outline_of(text)
     o.lost @ lost
+    o.line_from @ from
+    o.line_to @ to
 
 # Whether the line that begins at `at` goes on inside a bracket some line
 # above it left open. `at` is a line's start.
@@ -144,8 +164,42 @@ function outline_of(text: str) -> Outline
         length: text.len(),
         opens: opens,
         tops: margin_lines(text),
+        line_from: -1,
+        line_to: -1,
         lost: [lost_reading.unread()]
     )
+
+# Where the line that holds `at` begins: the line the last word asked about
+# where it holds `at`, else a walk back to the line's start and on to its
+# end, kept for the words after it on that line.
+function line_start(@o: Outline, text: str, at: i64) -> i64
+    if o.line_from >= 0 && o.line_from <= at && at <= o.line_to
+        return o.line_from
+    from: i64 @ at
+
+    while from > 0 && text[from - 1] != '\n'
+        from @ from - 1
+
+    to: i64 @ at
+
+    while to < text.len() && text[to] != '\n'
+        to @ to + 1
+
+    o.line_from @ from
+    o.line_to @ to
+    return from
+
+# The same, asked of an outline that is not kept: the line it holds, else
+# the walk back.
+function start_of(o: Outline, text: str, at: i64) -> i64
+    if o.line_from >= 0 && o.line_from <= at && at <= o.line_to
+        return o.line_from
+    from: i64 @ at
+
+    while from > 0 && text[from - 1] != '\n'
+        from @ from - 1
+
+    return from
 
 # Whether a line begins at `at`.
 function begins_a_line(text: str, at: i64) -> bool

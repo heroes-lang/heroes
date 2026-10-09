@@ -191,7 +191,7 @@ function placed(text: str, span: token.Span, one: keywords.ForeignWord, word: st
 # The head over the member line the word at `span` opens, one level under
 # it, where that head is a `record` or a `variant`; else "" (defect 311).
 function holder_of(text: str, span: token.Span, outline: text_outline.Outline) -> str
-    begins = word_place.line_start(text, at: span.start)
+    begins = text_outline.start_of(outline, text, at: span.start)
     top = text_outline.top_above(outline, line: begins)
 
     if span.start - begins != 4 || top < 0
@@ -439,4 +439,23 @@ test "the outline is read once, and only for a word that opens its line"
     assert outline.read
     kept = outline
     assert certain_swap(heads, token.Span(start: 7, end: 9), @outline).must() == "function"
-    assert outline == kept
+
+    # Read once: what was read stays, and only the line the word asked about
+    # moves (defect 526, 2026-10-09).
+    assert outline.opens == kept.opens
+    assert outline.tops == kept.tops
+    assert outline.line_from == 7
+
+# Defect 526: the words of one line ask their line's start of the outline,
+# which walks to it once and keeps the line.
+test "the words of one line find its start once, and a word of another line walks to its own"
+    outline: text_outline.Outline @ text_outline.unread()
+    text = "x = 1\n    fn fn fn\n"
+    assert text_outline.line_start(@outline, text, at: 13) == 6
+    assert outline.line_from == 6
+    assert outline.line_to == 18
+    assert text_outline.line_start(@outline, text, at: 16) == 6
+    assert text_outline.start_of(outline, text, at: 2) == 0
+    assert text_outline.line_start(@outline, text, at: 2) == 0
+    assert outline.line_to == 5
+    assert !outline.read
