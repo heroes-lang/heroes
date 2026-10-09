@@ -57,9 +57,21 @@
  * and a hidden system file are rewritten with their attributes, where `fopen`
  * refused all three; a second name is refused; a link, to a source or as an
  * `-o`, is written through and stays a link; `-o NUL` is written into. It
- * carries the file's attributes but not its owner, its explicit ACL entries or
- * its alternate data streams: a new file there takes its owner and the inherited
- * entries of its directory, which no case there measured. No kill landed inside
+ * carried the file's attributes but not its owner, its explicit ACL entries or
+ * its alternate data streams: a new file there took its owner and the inherited
+ * entries of its directory, which no case there measured. **Measured on the
+ * box on 2026-10-08 (defect 461, clang 23.1.1, NTFS), and it was so**: a file
+ * with an explicit ACE, a mark of the web and the hidden attribute came out of
+ * the route with none of the three but the attribute, and one owned by the
+ * Administrators group came out owned by the user. Now the stage is created
+ * under the file's own owner, group and DACL (`hero_stage_security`) and put in
+ * its place with `ReplaceFileW` (`hero_fs_replace_windows`), and all four are
+ * kept, SDDL for SDDL; `write_file` takes the same route over a file already
+ * there (`parts/write.c`). What is not tried: an owner this process may not
+ * assign, which refuses the create and is told as `fchown` refused is on POSIX
+ * (NOT RUN: the box has no second account), and a file's inherited ACEs under a
+ * different owner, which Windows computes again (one CREATOR OWNER entry
+ * differed in that shape). No kill landed inside
  * the write there: of 13 per compiler, a Git Bash watcher's came after the write
  * and the fixed delays before or after it.
  */
@@ -67,6 +79,14 @@
 #include <errno.h>
 #if defined(_WIN32)
 #include <windows.h>
+/* `GetFileSecurityW` is advapi32's (defect 461), the first door of this
+ * runtime that library holds, and clang links no import library a source does
+ * not ask for. Asked here, the request travels in the object (`/DEFAULTLIB`),
+ * so every link of the runtime takes it with no word on any link line: a
+ * program's, through the compiler, and the compiler's own from the seed.
+ * Measured on the box (clang 23.1.1, lld-link): without it every program's
+ * link failed, `GetFileSecurityW` undefined. */
+#pragma comment(lib, "advapi32.lib")
 #else
 #include <fcntl.h>
 #include <sys/stat.h>
@@ -534,6 +554,40 @@ static int64_t hero_stage_fill(int fd, HeroStr text, const char *like) {
 }
 #endif
 
+#if defined(_WIN32)
+/* `like`'s owner, group and DACL, into a self-relative descriptor `hero_release`
+ * frees, for the new file to be created with (defect 461). HERO_STAGE_DONE, or
+ * HERO_STAGE_OWNER with `hero_fs_why` set where they cannot be read. Asked
+ * wide, as every question about a name the author gave is (parts/codepage.c). */
+static int64_t hero_stage_security(const char *like, PSECURITY_DESCRIPTOR *out) {
+    *out = NULL;
+    wchar_t *wide = hero_win_wide(like, NULL);
+    if (wide == NULL) {
+        hero_fs_why_code = (int64_t)GetLastError();
+        return HERO_STAGE_OWNER;
+    }
+    SECURITY_INFORMATION what = OWNER_SECURITY_INFORMATION | GROUP_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION;
+    DWORD need = 0;
+    GetFileSecurityW(wide, what, NULL, 0, &need);
+    DWORD why = GetLastError();
+    PSECURITY_DESCRIPTOR sd = need > 0 ? hero_alloc((size_t)need) : NULL;
+    if (sd == NULL || !GetFileSecurityW(wide, what, sd, need, &need)) {
+        if (sd != NULL) why = GetLastError();
+        if (sd != NULL) hero_release(sd);
+        hero_release(wide);
+        /* A volume that keeps no security (FAT, exFAT) has no owner or DACL to
+         * carry, as a Linux filesystem with no attributes has none: the new
+         * file is created as it was before this arm asked. */
+        if (why == ERROR_NOT_SUPPORTED || why == ERROR_INVALID_FUNCTION) return HERO_STAGE_DONE;
+        hero_fs_why_code = (int64_t)why;
+        return HERO_STAGE_OWNER;
+    }
+    hero_release(wide);
+    *out = sd;
+    return HERO_STAGE_DONE;
+}
+#endif
+
 /* `text`, written whole into a NEW file at `staged`, flushed to the device, and
  * given `like`'s owner, group, permission bits, flags, ACL and extended
  * attributes when `like` is not "": the author's file the new text is for. Answers
@@ -548,10 +602,33 @@ static int64_t hero_stage_fill(int fd, HeroStr text, const char *like) {
 int64_t hero_file_stage(const char *staged, HeroStr text, const char *like) {
     hero_fs_why_code = 0;
 #if defined(_WIN32)
-    HANDLE h = CreateFileA(staged, GENERIC_WRITE, 0, NULL, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL);
-    if (h == INVALID_HANDLE_VALUE) {
+    /* **Created with `like`'s owner, group and DACL** (defect 461): the bytes
+     * go into a file that is already the old one's to own and to read, as the
+     * POSIX arm's copy is its owner's alone until it is given `like`'s mode,
+     * and the owner is one no later step could give it (`hero_fs_replace`
+     * keeps the DACL and the streams, not the owner, measured on the box).
+     * An owner this process may not assign refuses the create, and that is
+     * HERO_STAGE_OWNER, as `fchown` refused is on POSIX: the caller writes in
+     * place or says so. */
+    PSECURITY_DESCRIPTOR sd = NULL;
+    if (like[0] != '\0') {
+        int64_t asked = hero_stage_security(like, &sd);
+        if (asked != HERO_STAGE_DONE) return asked;
+    }
+    SECURITY_ATTRIBUTES sa = {sizeof sa, sd, FALSE};
+    wchar_t *wide = hero_win_wide(staged, NULL);
+    if (wide == NULL) {
         hero_fs_why_code = (int64_t)GetLastError();
+        if (sd != NULL) hero_release(sd);
         return HERO_STAGE_CREATE;
+    }
+    HANDLE h = CreateFileW(wide, GENERIC_WRITE, 0, sd != NULL ? &sa : NULL, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL);
+    DWORD made = GetLastError();
+    hero_release(wide);
+    if (sd != NULL) hero_release(sd);
+    if (h == INVALID_HANDLE_VALUE) {
+        hero_fs_why_code = (int64_t)made;
+        return made == ERROR_INVALID_OWNER || made == ERROR_PRIVILEGE_NOT_HELD ? HERO_STAGE_OWNER : HERO_STAGE_CREATE;
     }
     int64_t step = HERO_STAGE_DONE;
     const char *bytes = hero_str_cstr(text);
@@ -646,6 +723,62 @@ static void hero_fs_sync_directory_of(const char *path) {
 }
 #endif
 
+#if defined(_WIN32)
+/* THE WINDOWS REPLACE KEEPS WHAT A RENAME LOSES (defect 461, measured on the
+ * box on 2026-10-08 with a file holding an explicit ACE, a mark of the web
+ * and the hidden attribute): `MoveFileEx` over it, this arm until then, put a
+ * file with the directory's inherited ACEs alone, no stream and the new
+ * file's own owner in its place; `ReplaceFileW` keeps the DACL, its
+ * auto-inherit flag, the named streams and the attributes, and with the stage
+ * made under `like`'s descriptor (`hero_file_stage`) the owner too, SDDL for
+ * SDDL. So a file already there is replaced through `ReplaceFileW`; a name
+ * not taken yet is a plain move, there being nothing to keep.
+ *
+ * WITH A BACKUP NAME, because without one a failure can lose the file: the
+ * documentation's ERROR_UNABLE_TO_MOVE_REPLACEMENT leaves *the replaced file
+ * no longer exists* when no backup was named, and with one both keep their
+ * names. ERROR_UNABLE_TO_MOVE_REPLACEMENT_2 leaves the old file under the
+ * backup name, which is put back here. The backup is the staged name with
+ * `.bak` after it, taken only where nothing is there, and removed once the
+ * replace is done. The file is replaced by then, so the answer is OK whether
+ * or not the removal is granted: a `DeleteFileW` of a file another process
+ * holds open with delete shared, which the replace itself needed, marks it
+ * for removal at the last close and answers yes, so a backup left beside the
+ * file is one nothing on the box was found to leave (NOT REACHED by a case).
+ * No write-through: the stage flushed the bytes before this, and
+ * `REPLACEFILE_WRITE_THROUGH` is documented as unsupported. */
+static int64_t hero_fs_replace_windows(const char *staged, const char *path) {
+    wchar_t *from = hero_win_wide(staged, NULL);
+    wchar_t *to = hero_win_wide(path, NULL);
+    wchar_t *backup = hero_win_wide(staged, L".bak");
+    int64_t answer = HERO_OS_FAILED;
+    if (from == NULL || to == NULL || backup == NULL) {
+        hero_fs_why_code = (int64_t)GetLastError();
+    } else if (GetFileAttributesW(to) == INVALID_FILE_ATTRIBUTES) {
+        if (MoveFileExW(from, to, MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH)) answer = HERO_OS_OK;
+        else hero_fs_why_code = (int64_t)GetLastError();
+    } else if (GetFileAttributesW(backup) != INVALID_FILE_ATTRIBUTES) {
+        hero_fs_why_code = (int64_t)ERROR_ALREADY_EXISTS;
+    } else if (ReplaceFileW(to, from, backup, 0, NULL, NULL)) {
+        SetFileAttributesW(backup, FILE_ATTRIBUTE_NORMAL);
+        (void)DeleteFileW(backup);
+        answer = HERO_OS_OK;
+    } else {
+        DWORD why = GetLastError();
+        hero_fs_why_code = (int64_t)why;
+        if (why == ERROR_UNABLE_TO_MOVE_REPLACEMENT_2) {
+            /* The old text is under the backup name and `staged` still holds
+             * the new one: the old file goes back to its own name. */
+            MoveFileExW(backup, to, MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH);
+        }
+    }
+    if (from != NULL) hero_release(from);
+    if (to != NULL) hero_release(to);
+    if (backup != NULL) hero_release(backup);
+    return answer;
+}
+#endif
+
 /* Put `staged` in place of `path`: one atomic rename on POSIX, and on Windows
  * `MoveFileEx` with the replacement and the write-through the Win32
  * documentation gives it (`parts/fs.c`'s `hero_fs_rename` carries the caveat
@@ -653,9 +786,7 @@ static void hero_fs_sync_directory_of(const char *path) {
 int64_t hero_fs_replace(const char *staged, const char *path) {
     hero_fs_why_code = 0;
 #if defined(_WIN32)
-    if (MoveFileExA(staged, path, MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH)) return HERO_OS_OK;
-    hero_fs_why_code = (int64_t)GetLastError();
-    return HERO_OS_FAILED;
+    return hero_fs_replace_windows(staged, path);
 #else
     if (rename(staged, path) != 0) {
         hero_fs_why_code = (int64_t)errno;
