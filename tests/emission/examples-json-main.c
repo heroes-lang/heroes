@@ -262,7 +262,7 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 static void h_value_Json_desc_copy(void *dst, const void *src) {
-    *(h_value_Json *)dst = *(const h_value_Json *)src;
+    __builtin_memmove(dst, src, sizeof(h_value_Json));
     h_value_Json_retain((const h_value_Json *)dst);
 }
 static void h_value_Json_desc_drop(void *elem) {

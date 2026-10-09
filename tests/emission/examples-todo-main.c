@@ -162,7 +162,7 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 static void h_list_Task_desc_copy(void *dst, const void *src) {
-    *(h_list_Task *)dst = *(const h_list_Task *)src;
+    __builtin_memmove(dst, src, sizeof(h_list_Task));
     h_list_Task_retain((const h_list_Task *)dst);
 }
 static void h_list_Task_desc_drop(void *elem) {

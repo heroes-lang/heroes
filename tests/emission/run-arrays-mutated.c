@@ -115,7 +115,7 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 static void h_arraysmutated_Point_desc_copy(void *dst, const void *src) {
-    *(h_arraysmutated_Point *)dst = *(const h_arraysmutated_Point *)src;
+    __builtin_memmove(dst, src, sizeof(h_arraysmutated_Point));
 }
 static void h_arraysmutated_Point_desc_drop(void *elem) {
     (void)elem;
@@ -132,7 +132,7 @@ HERO_TU_QUIET static const HeroDesc h_arraysmutated_Point_desc = {
 };
 
 static void h_arraysmutated_Holder_desc_copy(void *dst, const void *src) {
-    *(h_arraysmutated_Holder *)dst = *(const h_arraysmutated_Holder *)src;
+    __builtin_memmove(dst, src, sizeof(h_arraysmutated_Holder));
     h_arraysmutated_Holder_retain((const h_arraysmutated_Holder *)dst);
 }
 static void h_arraysmutated_Holder_desc_drop(void *elem) {

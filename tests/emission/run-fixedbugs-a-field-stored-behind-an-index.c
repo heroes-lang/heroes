@@ -128,7 +128,7 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 static void h_fixedbugsafieldstoredbehindanindex_Cell_desc_copy(void *dst, const void *src) {
-    *(h_fixedbugsafieldstoredbehindanindex_Cell *)dst = *(const h_fixedbugsafieldstoredbehindanindex_Cell *)src;
+    __builtin_memmove(dst, src, sizeof(h_fixedbugsafieldstoredbehindanindex_Cell));
     h_fixedbugsafieldstoredbehindanindex_Cell_retain((const h_fixedbugsafieldstoredbehindanindex_Cell *)dst);
 }
 static void h_fixedbugsafieldstoredbehindanindex_Cell_desc_drop(void *elem) {
@@ -146,7 +146,7 @@ HERO_TU_QUIET static const HeroDesc h_fixedbugsafieldstoredbehindanindex_Cell_de
 };
 
 static void h_fixedbugsafieldstoredbehindanindex_Row_desc_copy(void *dst, const void *src) {
-    *(h_fixedbugsafieldstoredbehindanindex_Row *)dst = *(const h_fixedbugsafieldstoredbehindanindex_Row *)src;
+    __builtin_memmove(dst, src, sizeof(h_fixedbugsafieldstoredbehindanindex_Row));
     h_fixedbugsafieldstoredbehindanindex_Row_retain((const h_fixedbugsafieldstoredbehindanindex_Row *)dst);
 }
 static void h_fixedbugsafieldstoredbehindanindex_Row_desc_drop(void *elem) {

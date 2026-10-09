@@ -181,7 +181,7 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 static void h_node_Node_desc_copy(void *dst, const void *src) {
-    *(h_node_Node *)dst = *(const h_node_Node *)src;
+    __builtin_memmove(dst, src, sizeof(h_node_Node));
     h_node_Node_retain((const h_node_Node *)dst);
 }
 static void h_node_Node_desc_drop(void *elem) {
@@ -199,7 +199,7 @@ HERO_TU_QUIET static const HeroDesc h_node_Node_desc = {
 };
 
 static void h_node_Note_desc_copy(void *dst, const void *src) {
-    *(h_node_Note *)dst = *(const h_node_Note *)src;
+    __builtin_memmove(dst, src, sizeof(h_node_Note));
     h_node_Note_retain((const h_node_Note *)dst);
 }
 static void h_node_Note_desc_drop(void *elem) {
@@ -217,7 +217,7 @@ HERO_TU_QUIET static const HeroDesc h_node_Note_desc = {
 };
 
 static void h_0opt_c7472a6_desc_copy(void *dst, const void *src) {
-    *(h_0opt_c7472a6 *)dst = *(const h_0opt_c7472a6 *)src;
+    __builtin_memmove(dst, src, sizeof(h_0opt_c7472a6));
     h_0opt_c7472a6_retain((const h_0opt_c7472a6 *)dst);
 }
 static void h_0opt_c7472a6_desc_drop(void *elem) {

@@ -97,7 +97,7 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 static void h_placestorec5_Node_desc_copy(void *dst, const void *src) {
-    *(h_placestorec5_Node *)dst = *(const h_placestorec5_Node *)src;
+    __builtin_memmove(dst, src, sizeof(h_placestorec5_Node));
     h_placestorec5_Node_retain((const h_placestorec5_Node *)dst);
 }
 static void h_placestorec5_Node_desc_drop(void *elem) {

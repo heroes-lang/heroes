@@ -454,7 +454,7 @@ HERO_TU_LOCAL bool h_0opt_fbbb698_eq(const h_0opt_fbbb698 *a, const h_0opt_fbbb6
 HERO_TU_LOCAL uint64_t h_0opt_fbbb698_hash(const void *elem);
 
 static void h_dbsqlite_Db_desc_copy(void *dst, const void *src) {
-    *(h_dbsqlite_Db *)dst = *(const h_dbsqlite_Db *)src;
+    __builtin_memmove(dst, src, sizeof(h_dbsqlite_Db));
 }
 static void h_dbsqlite_Db_desc_drop(void *elem) {
     (void)elem;
@@ -471,7 +471,7 @@ HERO_TU_QUIET static const HeroDesc h_dbsqlite_Db_desc = {
 };
 
 static void h_dbsqlite_Statement_desc_copy(void *dst, const void *src) {
-    *(h_dbsqlite_Statement *)dst = *(const h_dbsqlite_Statement *)src;
+    __builtin_memmove(dst, src, sizeof(h_dbsqlite_Statement));
 }
 static void h_dbsqlite_Statement_desc_drop(void *elem) {
     (void)elem;
@@ -488,7 +488,7 @@ HERO_TU_QUIET static const HeroDesc h_dbsqlite_Statement_desc = {
 };
 
 static void h_bookentry_Account_desc_copy(void *dst, const void *src) {
-    *(h_bookentry_Account *)dst = *(const h_bookentry_Account *)src;
+    __builtin_memmove(dst, src, sizeof(h_bookentry_Account));
     h_bookentry_Account_retain((const h_bookentry_Account *)dst);
 }
 static void h_bookentry_Account_desc_drop(void *elem) {
@@ -506,7 +506,7 @@ HERO_TU_QUIET static const HeroDesc h_bookentry_Account_desc = {
 };
 
 static void h_dbsqlite_Step_desc_copy(void *dst, const void *src) {
-    *(h_dbsqlite_Step *)dst = *(const h_dbsqlite_Step *)src;
+    __builtin_memmove(dst, src, sizeof(h_dbsqlite_Step));
 }
 static void h_dbsqlite_Step_desc_drop(void *elem) {
     (void)elem;
@@ -523,7 +523,7 @@ HERO_TU_QUIET static const HeroDesc h_dbsqlite_Step_desc = {
 };
 
 static void h_bookentry_Entry_desc_copy(void *dst, const void *src) {
-    *(h_bookentry_Entry *)dst = *(const h_bookentry_Entry *)src;
+    __builtin_memmove(dst, src, sizeof(h_bookentry_Entry));
     h_bookentry_Entry_retain((const h_bookentry_Entry *)dst);
 }
 static void h_bookentry_Entry_desc_drop(void *elem) {
@@ -541,7 +541,7 @@ HERO_TU_QUIET static const HeroDesc h_bookentry_Entry_desc = {
 };
 
 static void h_bookentry_Amount_desc_copy(void *dst, const void *src) {
-    *(h_bookentry_Amount *)dst = *(const h_bookentry_Amount *)src;
+    __builtin_memmove(dst, src, sizeof(h_bookentry_Amount));
 }
 static void h_bookentry_Amount_desc_drop(void *elem) {
     (void)elem;
@@ -558,7 +558,7 @@ HERO_TU_QUIET static const HeroDesc h_bookentry_Amount_desc = {
 };
 
 static void h_bookentry_Balance_desc_copy(void *dst, const void *src) {
-    *(h_bookentry_Balance *)dst = *(const h_bookentry_Balance *)src;
+    __builtin_memmove(dst, src, sizeof(h_bookentry_Balance));
     h_bookentry_Balance_retain((const h_bookentry_Balance *)dst);
 }
 static void h_bookentry_Balance_desc_drop(void *elem) {
@@ -576,7 +576,7 @@ HERO_TU_QUIET static const HeroDesc h_bookentry_Balance_desc = {
 };
 
 static void h_dbsqlite_Cell_desc_copy(void *dst, const void *src) {
-    *(h_dbsqlite_Cell *)dst = *(const h_dbsqlite_Cell *)src;
+    __builtin_memmove(dst, src, sizeof(h_dbsqlite_Cell));
     h_dbsqlite_Cell_retain((const h_dbsqlite_Cell *)dst);
 }
 static void h_dbsqlite_Cell_desc_drop(void *elem) {

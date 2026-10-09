@@ -228,7 +228,7 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 static void h_program_Line_desc_copy(void *dst, const void *src) {
-    *(h_program_Line *)dst = *(const h_program_Line *)src;
+    __builtin_memmove(dst, src, sizeof(h_program_Line));
     h_program_Line_retain((const h_program_Line *)dst);
 }
 static void h_program_Line_desc_drop(void *elem) {
@@ -246,7 +246,7 @@ HERO_TU_QUIET static const HeroDesc h_program_Line_desc = {
 };
 
 static void h_assemble_Assembled_desc_copy(void *dst, const void *src) {
-    *(h_assemble_Assembled *)dst = *(const h_assemble_Assembled *)src;
+    __builtin_memmove(dst, src, sizeof(h_assemble_Assembled));
     h_assemble_Assembled_retain((const h_assemble_Assembled *)dst);
 }
 static void h_assemble_Assembled_desc_drop(void *elem) {
