@@ -9,11 +9,13 @@ scratch repositories, git 2.56.0, with another session's new file and its
 change to a tracked file staged beside a stopped operation: `git merge
 --abort`, `git cherry-pick --abort` and `--skip`, `git revert --abort` and
 `--skip`, `git rebase --abort` and `--skip` by either backend, `git am
---abort` and `--skip` and `git reset --merge` and `--hard` each exit 0 with
-the new file deleted from the disk and the change put back as HEAD has it.
+--abort` and `--skip`, `git reset --merge` and `--hard`, and `git checkout
+-f` and `git switch --discard-changes` of the whole tree each exit 0 with the
+new file deleted from the disk and the change put back as HEAD has it.
 
-Two depths, measured the same day. A rebase's abort and skip, and `reset
---hard`, put back every tracked file, an UNSTAGED change as well; the rest
+Two depths, measured the same day. A rebase's abort and skip, `reset
+--hard` and a forced checkout or switch put back every tracked file, an
+UNSTAGED change as well; the rest
 reset what is staged and leave an unstaged change on the disk, as `reset
 --merge` does (an am's abort and skip of a rebase by the apply backend too).
 An untracked file stays under all of them, and `--quit` leaves the index and
@@ -49,7 +51,7 @@ ASSIGNMENT = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*=")
 # The verbs read here: the ones whose `--abort` or `--skip` ends an operation,
 # the reset, and the ones that may begin with an autostash.
 ENDING = ("merge", "cherry-pick", "revert", "rebase", "am")
-VERBS = ENDING + ("reset", "pull")
+VERBS = ENDING + ("reset", "checkout", "switch", "pull")
 # The ends that put back every tracked file, an unstaged change as well.
 HARD = frozenset({"rebase"})
 # The words with which a rebase or a merge does not begin one, and so takes
@@ -60,6 +62,8 @@ NOT_BEGUN = {
     "pull": (),
 }
 FALSE = frozenset({"false", "no", "off", "0", ""})
+# A checkout's or a switch's long options whose value may be the next word.
+VALUED = frozenset({"--orphan", "--conflict", "--create", "--force-create", "--pathspec-from-file"})
 
 
 def git_options(w):
@@ -143,6 +147,54 @@ def reset_mode(words):
         elif prefix_of(word, "--keep", 3) or prefix_of(word, "--soft", 4) or prefix_of(word, "--mixed", 4):
             mode = word
     return mode
+
+
+def forced(verb, words, where):
+    """Whether `git checkout` or `git switch` with `words`, run in `where`,
+    puts back every tracked file as a commit has it: a checkout by
+    `-f` (`--f` and longer, or an `f` in a cluster of flags) that names no
+    path, at most one commit before any `--` and nothing after it; a switch
+    by `-f` or `--discard-changes` (`--di` and longer, `--f` being
+    `--force-create` too). Measured 2026-10-09: `git checkout -f`, `-f
+    <branch>`, `-f HEAD` and `-f <branch> --`, and `git switch -f` and
+    `--discard-changes`, each threw away a staged new file, a staged change
+    and an unstaged one; `git checkout -f <path>` touched that path alone."""
+    options, after, plain, short = [], [], [], ""
+    seen_dashes = False
+    skip = False
+    for word in words:
+        if seen_dashes:
+            after.append(word)
+        elif word == "--":
+            seen_dashes = True
+        elif skip:
+            skip = False
+        elif word.startswith("--"):
+            options.append(word)
+            skip = word in VALUED
+        elif word.startswith("-") and word != "-":
+            # A cluster's letters up to one that takes a value, the rest of
+            # the word or the next one: `-bfix` names a branch and forces
+            # nothing.
+            for at, letter in enumerate(word[1:]):
+                short += letter
+                if letter in "bBcC":
+                    skip = at == len(word) - 2
+                    break
+        else:
+            plain.append(word)
+    if "p" in short or any(w.startswith("--pathspec-from-file") or prefix_of(w, "--patch", 4) for w in options):
+        return False
+    if verb == "switch":
+        return "f" in short or any(prefix_of(w, "--force", 5) or prefix_of(w, "--discard-changes", 4) for w in options)
+    if not ("f" in short or any(prefix_of(w, "--force", 3) for w in options)):
+        return False
+    if after or len(plain) > 1:
+        return False
+    if not plain:
+        return True
+    named = staged.git(where, "rev-parse", "--verify", "-q", plain[0] + "^{commit}")
+    return named is not None and bool(named.strip())
 
 
 def ended_by(verb, name, verbs):
@@ -310,6 +362,10 @@ def verdict(verb, words, where, options=(), env=None):
         mode = reset_mode(words)
         if mode in ("--hard", "--merge"):
             return thrown_away(where, "git reset " + mode, hard=mode == "--hard")
+        return None
+    if verb in ("checkout", "switch"):
+        if forced(verb, words, where):
+            return thrown_away(where, "git " + verb + " " + ("--discard-changes" if verb == "switch" else "-f"), hard=True)
         return None
     if verb in ENDING:
         how = ends(verb, words)
