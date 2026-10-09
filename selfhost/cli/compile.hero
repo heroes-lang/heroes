@@ -14,10 +14,8 @@
 # all three phases, unconditionally: the cost is linear and the thing
 # it catches is a wrong compiler.
 
-use token
 use ast
 use source
-use source_extent
 use diag
 use diag_render
 use parse
@@ -39,6 +37,7 @@ use emit
 use cli/table as cli_table
 use cli/argv
 use cli/io
+use cli/no_entry
 
 record Options
     # The clang optimisation level — part of the cache key, because
@@ -302,23 +301,7 @@ function to_unit(s: source.Source, options: Options, version: str) -> Artifact?
         needs_main @ false
 
     if needs_main && emit.entry_point(p).is_err()
-        # The ROOT file's end, never the whole text's: the library is
-        # appended, so text.len() lands inside it and the misplaced
-        # rule would turn the user's own mistake into internal error
-        # exit 2 — the message panel 020 measured sending an agent to
-        # reinstall its toolchain.
-        end = source_extent.root_end(s)
-        at: i64 @ end - 1
-
-        if at < 0
-            at @ 0
-        d: diag.Diagnostic @ diag.new_diagnostic(
-            code: "no_entry_point",
-            message: "this file declares no `function main()`, so it cannot become a binary",
-            span: token.Span(start: at, end: end)
-        )
-        d.notes @ d.notes.push("add `function main()`, or use `--emit-c` to produce C for another program to compile")
-        one: [diag.Diagnostic] = [d]
+        one: [diag.Diagnostic] = [no_entry.told(s)]
         stop_n = stage(one, s)
 
         if !stop_n.is_err()

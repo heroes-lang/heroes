@@ -1,0 +1,56 @@
+# The report of a build whose file declares no `function main()` (design.md
+# §4.17; `no_entry_point`, out of `cli/compile.hero` with defect 542 on
+# 2026-10-09, that file standing at its ceiling).
+#
+# A file with no `main` cannot become a binary, and two kinds of file have
+# none: a program its author has not finished, and a module another file
+# names with `use`, built alone. Panel 201's critic found measurement 040's
+# readers adding a `main` to a module under the one note this report carried,
+# *add `function main()`*, so the module's route is said first, and generally:
+# which file names this one, the build cannot know.
+#
+# A leaf: it reads the source's extent and builds one diagnostic.
+#
+# | entry | called by |
+# |---|---|
+# | `told` | `cli/compile.to_unit` |
+
+use token
+use source
+use source_extent
+use diag
+
+# The report, its caret on the root file's last byte, never the whole text's:
+# the library is appended, so the text's end lands inside it, and the
+# misplaced rule would turn the author's own mistake into an internal error,
+# exit 2, the message panel 020 measured sending an agent to reinstall its
+# toolchain.
+function told(s: source.Source) -> diag.Diagnostic
+    end = source_extent.root_end(s)
+    at: i64 @ end - 1
+
+    if at < 0
+        at @ 0
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "no_entry_point",
+        message: "this file declares no `function main()`, so it cannot become a binary",
+        span: token.Span(start: at, end: end)
+    )
+    d.notes @ notes()
+    return d
+
+# What the report says to do: a module's route first, then a program's.
+function notes() -> [str]
+    return [
+        "if another file names this one with `use`, build that file instead: a module is compiled with the file that uses it, and needs no `main` of its own"
+        "if this file is a program, add `function main()`; or use `--emit-c` to produce C for another program to compile"
+    ]
+
+test "a file with no main is told a module's route first, then a program's"
+    said = notes()
+    assert said.len() == 2
+    assert said[0] == "if another file names this one with `use`, build that file instead: a module is compiled with the file that uses it, and needs no `main` of its own"
+
+    # The program's route stays, with `--emit-c`, which the build of a module
+    # alone needs no `main` for.
+    assert said[1] == "if this file is a program, add `function main()`; or use `--emit-c` to produce C for another program to compile"

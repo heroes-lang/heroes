@@ -598,6 +598,8 @@ function verb_probes() -> [probe.Probe]
         row(name: "every module names itself in the emitted C", argv: "build examples/calculator/main.hero --emit-c", code: 0).out_has("examples/calculator/main.hero\"").out_has("examples/calculator/lex.hero\"").out_has("examples/calculator/parse.hero\"").out_has("examples/calculator/eval.hero\"")
         row(name: "a file with no main is the author's error under build", argv: "build tests/golden/surface-fixtures/no-main.hero", code: 1).err_has("error[no_entry_point]").err_has("no-main.hero").err_lacks("internal error").err_lacks("library")
         row(name: "a file with no main is the author's error under run", argv: "run tests/golden/surface-fixtures/no-main.hero", code: 1).err_has("error[no_entry_point]").err_has("no-main.hero").err_lacks("internal error").err_lacks("library")
+        row(name: "a file with no main may be a module, and is told to build the file that uses it (defect 542)", argv: "build tests/golden/surface-fixtures/no-main.hero", code: 1).err_has("note: if another file names this one with `use`, build that file instead").err_has("note: if this file is a program, add `function main()`")
+        row(name: "and so under run, which builds it first", argv: "run tests/golden/surface-fixtures/no-main.hero", code: 1).err_has("note: if another file names this one with `use`, build that file instead")
         row(name: "a file of zero bytes checks clean, where every verb that reads a program panicked on it (defect 109)", argv: "check tests/golden/surface-fixtures/empty109/empty.hero", code: 0).out_empty().err_empty()
         row(name: "and its answer as JSON is a document holding no diagnostic, naming the file it read and its SHA-256 (panel 193's R3 and R5)", argv: "check tests/golden/surface-fixtures/empty109/empty.hero --json", code: 0).out_empty().err_is("{\n  \"schema\": 2,\n  \"kind\": \"diagnostics\",\n  \"read\": [\n    {\"file\": \"tests/golden/surface-fixtures/empty109/empty.hero\", \"sha256\": \"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\"}\n  ],\n  \"diagnostics\": []\n}\n")
         row(name: "its token stream is the end of the file, at line 1 and column 1", argv: "lex tests/golden/surface-fixtures/empty109/empty.hero --dump-tokens", code: 0).out_is("1:1 eof\n").err_empty()
@@ -1209,7 +1211,9 @@ test "the tables are what this module is, so they are counted"
     # 197 -> 199 the same day, defect 510 (lane b16-compiler): a constant of
     # another module holding a function, called by its qualified name, and its
     # three wrong calls, `constcall510/`, the spelling no `run/` case can hold.
-    assert verb_probes().len() == 199
+    # 199 -> 201 the same day, defect 542 (lane b17-fix): a file with no main
+    # told, under `build` and `run`, the route of a module built alone.
+    assert verb_probes().len() == 201
 
     # 117 on 2026-09-27, panel 180 R5: the compiler-engineer's break map, one
     # row per shape, its exit the adopted sentence's; a shape added to the map
