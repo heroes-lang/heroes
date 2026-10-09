@@ -12,3 +12,5 @@ github: none
     **Origin:** filed by the coordinator at 20:59 on 2026-10-09 from panel 201 (`docs/panel/201-the-spec-says-a-generic-function-s-parameter-types-no-value-and-a-cycle-that-cannot-end-is-refused.md`, its reports beside it); the seats' and the critic's measurement, not re-run by the coordinator.
 
     **Class: improvement**, 2026-10-09 (`.claude/rules/verification.md` § Bounded discovery): a refusal the rule does not yet reach, the run still aborting.
+
+    Narrowed 2026-10-09 (lane b17-check): its first shape, a function calling itself or another that calls it back (`selfloop_first`), is refused with a true headline by defect 520's landing (`912b2df3`); its second, a self-call through a parameter, still passes and is the item.
