@@ -415,6 +415,56 @@ the full net runs once per BATCH, sixteen to sixty-four defects since
 (§ The batch, above; CL-079). The map keeps its other job: it says which form a
 change's cases live in, and which suites the batch's census and platforms owe.
 
+## The optimistic chain: before the push, only what the CI cannot do sooner
+
+**Author instruction 2026-10-09**, meant as: *favour optimistic algorithms,
+the ones that skip a check hoping all goes well and go back on the rare time
+the last check fails; re-read the whole history: the times we had to go back
+are few and do not justify so long a chain of checks.* Measured that day over
+batches 8 to 15, the record of their closing commits and of `issues/` read
+by an agent, every number its command's: of the 362 defects filed from
+2026-10-01 to 09, **24 were found by a check of the chain (6.6%)** and 338
+by a person, a seat or a lane at work. Gate A and gate B ran 8 times each and
+found **no defect of the compiler or the runtime** (gate B one in the harness,
+and about 24 reds of floors and expectations); the census found 2 (315, 392),
+R2 2 (271, 391), the formatter's probe 2 (503, 504), the platform legs before
+the push 4 and the CI after it 4. **Not one made a batch go back**: each was
+filed and repaired in a later batch. So, from batch 16:
+
+1. **Before the push**: gate A (the seed over two generations, its fixpoint,
+   the compiler's own tests, the net's own tests) and gate B (the full net,
+   balanced: one pool, the longest job first, `run` one harness process per
+   case so its 422 cases fill the gaps; the pool held under the cores, since
+   a pool of 7 read a load of 10 on this Mac's 8 that day), and the site's
+   build when a file `claims.ts` names moved, a push publishing the site.
+   Nothing else.
+2. **The push**, at once.
+3. **After the push, beside the CI**: the census, the round's side only (the
+   trunk's reused from the last census for each file unchanged since, the
+   trunk's compiler being the same binary); panel 187's R2, the round's run
+   only, the trunk's reused the same way; the formatter's probe where
+   `selfhost/print/` moved. What they find is filed by its class; nothing
+   waits for them.
+4. **No platform leg before the push**: Linux arm64 and the Windows box leave
+   the chain, and the CI's four legs are the platforms. The box stays where a
+   Windows defect is reproduced and repaired.
+5. **Every repaired defect closes at the gate**, the C boundary's too. A CI
+   leg red on a closed defect's case files a new `blocking` defect naming it,
+   the next batch's first item; a red that leaves the trunk unable to build on
+   a platform is a `git revert` of the culprit commit, pushed, never a
+   rewrite.
+6. **Gate B's floors stop turning a batch red**: they are its most frequent
+   red and found no defect. How is defect 536's question, since
+   `tests/harness/floors.hero` checks a floor from both sides on purpose (a
+   floor gone slack let a walk miss cases, measured 2026-09-12), and a plain
+   minimum, which the coordinator first described to the author, would drop
+   that half.
+
+What it gives up, said once: a CI red in public where a local leg would have
+seen it first (505 and 509 were found by the CI when the box's leg had been
+skipped), and a census or R2 finding reaching the trunk a batch later. Both
+had happened before this rule without a batch going back.
+
 ## The batch: repairs gated by their cases, one gate for sixteen to sixty-four
 
 **Amended 2026-10-03 by author instruction**, meant as: *here you have to
@@ -480,13 +530,15 @@ while the CI's x86-64 leg timed out on it, clang 22.1.8 against 18.1.3). So:
 - **step 5 leaves the gate**: no container at a gate. Before a push, Linux
   arm64 in its Docker container (native on this Mac, 24 and 27 minutes on
   2026-10-02) and the Windows box; Linux x86-64 is the CI's leg after the
-  push;
+  push. **Superseded 2026-10-09** by § The optimistic chain: no leg
+  before the push;
 - **a defect at the C boundary** (`runtime/`, `seed/`, `selfhost/emit/ffi*`
   and `extern*`, an `examples/` program with an `extern`) closes only after
   the push's platform legs have run its cases, a case on a header one
   platform lacks judged where the header is (`.claude/rules/platforms.md`,
   the author's *A* of 2026-10-03); every other defect closes at the round's
-  gate.
+  gate. **Superseded 2026-10-09** by § The optimistic chain: every defect
+  closes at the gate, a red leg filing a new one.
 
 The first round under it, 2026-10-02: four lanes, one gate, `e2d59fdb`, the
 full net 4,449 passed and 0 failed. The text below is the rule as it stood
@@ -770,7 +822,9 @@ could.* Measured on the trunk's compiler the same day, `real` equal to `user`:
 - **Layer 2, per repair**: the form that holds its cases and the compiler's own
   tests.
 - **Layer 3, per batch**: the seed, the fixpoint, the full net, the census.
-- **Layer 4, before a push**: Linux arm64, Windows, the probe, the site's build.
+- **Layer 4, around the push**: the site's build before it; the census, R2,
+  the probe and the CI's legs after it (§ The optimistic chain, 2026-10-09;
+  until then Linux arm64 and Windows ran before it).
 
 What the record says the suites found, 2026-09-04 to 29, every case: a file
 written and not formatted (twice), a blank line in the harness, a `DECIDED`

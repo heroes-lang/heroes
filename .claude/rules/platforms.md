@@ -29,6 +29,14 @@ LeakSanitizer needs (CL-055 put that leg on x86-64). **Measured 2026-10-07**
 (lane b14-box): LeakSanitizer runs in the arm64 container, which reported a
 77-byte leak there. The rule of 2026-09-29 below stands as history.
 
+**Superseded 2026-10-09 by author instruction**, the optimistic chain
+(`.claude/rules/verification.md` § The optimistic chain): no leg runs
+before the push, the CI's four legs are the platforms, and a defect at the
+C boundary closes at the round's gate; a leg red on its case files a new
+`blocking` defect naming it. Measured that day over batches 8 to 15: the
+legs before the push found 4 defects and the CI after it 4, and none made
+a batch go back. The box stays where a Windows defect is reproduced.
+
 **A case on a header or a library one platform does not have** (the
 author's answer *A*, 2026-10-03): skipped there by name, its build reading
 `ffi_missing_header` or `ffi_package`, it is judged on the platforms that
