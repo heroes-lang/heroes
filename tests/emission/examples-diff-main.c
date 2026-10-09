@@ -501,7 +501,7 @@ bb14:
 #line 60 "examples/diff/main.hero"
     hero_array_unshare(&(h2_same));
 #line 60 "examples/diff/main.hero"
-    hero_array_set(&((*(HeroArrayHeader * *)hero_array_at_mut(h2_same, t46))), t47, &t58);
+    hero_array_set(&((*((void)((h2_same == NULL || t46 < 0 || t46 >= h2_same->len) ? ((void)hero_array_at_mut(h2_same, t46), hero_unreachable()) : (void)0), (void)(h2_same->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), (HeroArrayHeader * *)(void *)(h2_same + 1) + t46))), t47, &t58);
 #line 60 "examples/diff/main.hero"
     goto bb13;
 #line 60 "examples/diff/main.hero"
@@ -556,7 +556,7 @@ bb16:
 #line 65 "examples/diff/main.hero"
     hero_array_unshare(&(h2_same));
 #line 65 "examples/diff/main.hero"
-    hero_array_set(&((*(HeroArrayHeader * *)hero_array_at_mut(h2_same, t73))), t74, &t80);
+    hero_array_set(&((*((void)((h2_same == NULL || t73 < 0 || t73 >= h2_same->len) ? ((void)hero_array_at_mut(h2_same, t73), hero_unreachable()) : (void)0), (void)(h2_same->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), (HeroArrayHeader * *)(void *)(h2_same + 1) + t73))), t74, &t80);
 #line 65 "examples/diff/main.hero"
     goto bb13;
 #line 65 "examples/diff/main.hero"

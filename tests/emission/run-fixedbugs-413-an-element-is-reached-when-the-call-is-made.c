@@ -204,7 +204,7 @@ bb0:
 #line 26 "tests/golden/run/fixedbugs-413-an-element-is-reached-when-the-call-is-made.hero"
     hero_array_unshare(&(h0_xs));
 #line 26 "tests/golden/run/fixedbugs-413-an-element-is-reached-when-the-call-is-made.hero"
-    h_fixedbugs413anelementisreachedwhenthecallismade_add(&(*(int64_t *)hero_array_at_mut(h0_xs, t3)), t4);
+    h_fixedbugs413anelementisreachedwhenthecallismade_add(&(*((void)((h0_xs == NULL || t3 < 0 || t3 >= h0_xs->len) ? ((void)hero_array_at_mut(h0_xs, t3), hero_unreachable()) : (void)0), (void)(h0_xs->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), (int64_t *)(void *)(h0_xs + 1) + t3)), t4);
     t5 = h0_xs;
 #line 27 "tests/golden/run/fixedbugs-413-an-element-is-reached-when-the-call-is-made.hero"
     t6 = INT64_C(0);

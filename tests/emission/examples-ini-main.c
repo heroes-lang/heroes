@@ -2323,7 +2323,7 @@ bb4:
 #line 130 "examples/ini/main.hero"
     t8 = h1_first;
 #line 130 "examples/ini/main.hero"
-    t9 = hero_str_byte(t7, t8);
+    t9 = ((void)((t7.ptr == NULL || t8 < 0 || t8 >= t7.len) ? ((void)hero_str_byte(t7, t8), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t7.ptr[t8]);
 #line 130 "examples/ini/main.hero"
     t10 = UINT64_C(32);
 #line 130 "examples/ini/main.hero"
@@ -2390,7 +2390,7 @@ bb9:
 #line 133 "examples/ini/main.hero"
     if (__builtin_sub_overflow(t20, t21, &t22)) hero_panic_overflow();
 #line 133 "examples/ini/main.hero"
-    t23 = hero_str_byte(t19, t22);
+    t23 = ((void)((t19.ptr == NULL || t22 < 0 || t22 >= t19.len) ? ((void)hero_str_byte(t19, t22), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t19.ptr[t22]);
 #line 133 "examples/ini/main.hero"
     t24 = UINT64_C(32);
 #line 133 "examples/ini/main.hero"
@@ -2634,7 +2634,7 @@ bb2:
 #line 154 "examples/ini/main.hero"
     t7 = h1_i;
 #line 154 "examples/ini/main.hero"
-    t8 = hero_str_byte(t6, t7);
+    t8 = ((void)((t6.ptr == NULL || t7 < 0 || t7 >= t6.len) ? ((void)hero_str_byte(t6, t7), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t6.ptr[t7]);
 #line 154 "examples/ini/main.hero"
     t9 = UINT64_C(61);
 #line 154 "examples/ini/main.hero"

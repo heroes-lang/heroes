@@ -1,0 +1,15 @@
+# FIXED DEFECT 491, 2026-10-08 (lane b15-emit): the element a nested place
+# descends through is read in place and keeps the runtime's abort. An index
+# past the end is handed to `hero_array_at_mut`, which says what it always
+# said; the write never happens, and what was written before it stands.
+
+record Row
+    cells: [i64]
+
+function main()
+    rows: [Row] @ [Row(cells: [1, 2]), Row(cells: [3, 4])]
+    at: i64 = 5
+    rows[1].cells[0] @ 30
+    print(rows[1].cells[0])
+    rows[at].cells[0] @ 1
+    print(0)

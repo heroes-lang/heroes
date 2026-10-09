@@ -63,6 +63,7 @@ use parse
 use resolve
 use checker
 use ir/lower
+use cli/strings
 
 # The accessor's one local: a name the unit's own C gives nothing else.
 constant VALUE: str
@@ -126,16 +127,6 @@ function accessor(@w: writer.Writer, f: containers.Function, c: state.Checked, n
 
 ## Tests
 
-function has(text: str, needle: str) -> bool
-    at: i64 @ 0
-
-    while at + needle.len() <= text.len()
-        if text.slice(from: at, to: at + needle.len()) == needle
-            return true
-        at @ at + 1
-
-    return false
-
 constant TEXT: str
     "extern \"cinit.h\"\n    record Pt tag pt\n        x: i32\n        y: i32\n    record Db tag sqlite3\n    constant PT_INIT: Pt\n    constant NO_DB: Db\n    constant LIMIT: i64\n\nfunction main()\n    print(PT_INIT.y)\n    print(NO_DB == NO_DB)\n    print(LIMIT)\n"
 
@@ -162,12 +153,18 @@ test "a record's constant is built from the header's value at its own line, a ha
 
             # The declaration stands at the constant's line, 6, and nothing
             # else does: the pragmas and the return are the generated file's.
-            assert has(text: got, needle: "#line 6 \"t.hero\"\n    struct pt hero_constant_value = PT_INIT;\n#line ")
-            assert has(text: got, needle: "#pragma clang diagnostic error \"-Wexcess-initializers\"\n")
-            assert has(text: got, needle: "#pragma clang diagnostic ignored \"-Wmissing-braces\"\n")
-            assert has(text: got, needle: "#pragma clang diagnostic pop\n    return hero_constant_value;\n}\n")
+            assert strings.holds(
+                text: got,
+                needle: "#line 6 \"t.hero\"\n    struct pt hero_constant_value = PT_INIT;\n#line "
+            )
+            assert strings.holds(text: got, needle: "#pragma clang diagnostic error \"-Wexcess-initializers\"\n")
+            assert strings.holds(text: got, needle: "#pragma clang diagnostic ignored \"-Wmissing-braces\"\n")
+            assert strings.holds(
+                text: got,
+                needle: "#pragma clang diagnostic pop\n    return hero_constant_value;\n}\n"
+            )
 
     assert kinds.len() == 3
-    assert has(text: kinds.join(" "), needle: "PT_INIT:true")
-    assert has(text: kinds.join(" "), needle: "NO_DB:false")
-    assert has(text: kinds.join(" "), needle: "LIMIT:false")
+    assert strings.holds(text: kinds.join(" "), needle: "PT_INIT:true")
+    assert strings.holds(text: kinds.join(" "), needle: "NO_DB:false")
+    assert strings.holds(text: kinds.join(" "), needle: "LIMIT:false")

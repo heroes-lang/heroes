@@ -3,7 +3,7 @@ kind: defect
 area: emit
 milestone: none
 filed: 2026-10-07
-commit: none
+commit: 0fa162168893ef5c2bf1d81cbb8599b22dae1425
 github: none
 ---
 
@@ -12,3 +12,5 @@ github: none
     **Origin:** filed by the coordinator at 18:37 on 2026-10-07 from lane b14-ir's final report; the lane's measurement, not re-run by the coordinator.
 
     **Class: improvement**, 2026-10-07 (`.claude/rules/verification.md` § Bounded discovery): a cost growing with parameters times slots.
+
+    Repaired at `0fa16216`, 2026-10-08 (lane b15-emit), gated by its cases and the compiler's own tests; the net is owed at the batch's close. The prologue asks one set, made once per function, which slots are parameters, where each slot walked every parameter: a function of 400, 800, 1,600 and 3,200 `@` parameters emits in 6.382, 9.866, 17.231 and 33.400 billion instructions before and 6.331, 9.678, 16.463 and 30.279 after, the C byte-identical.

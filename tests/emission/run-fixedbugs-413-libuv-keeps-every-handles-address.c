@@ -271,7 +271,7 @@ bb0:
 #line 40 "tests/golden/run/fixedbugs-413-libuv-keeps-every-handles-address.hero"
     hero_array_unshare(&(h2_ts));
 #line 40 "tests/golden/run/fixedbugs-413-libuv-keeps-every-handles-address.hero"
-    t11 = uv_timer_init(t9, &(*(struct uv_timer_s *)hero_array_at_mut(h2_ts, t10)));
+    t11 = uv_timer_init(t9, &(*((void)((h2_ts == NULL || t10 < 0 || t10 >= h2_ts->len) ? ((void)hero_array_at_mut(h2_ts, t10), hero_unreachable()) : (void)0), (void)(h2_ts->elem->size != sizeof(struct uv_timer_s) ? hero_unreachable() : (void)0), (struct uv_timer_s *)(void *)(h2_ts + 1) + t10)));
 #line 40 "tests/golden/run/fixedbugs-413-libuv-keeps-every-handles-address.hero"
     hero_print_int(t11);
 #line 40 "tests/golden/run/fixedbugs-413-libuv-keeps-every-handles-address.hero"
@@ -282,7 +282,7 @@ bb0:
 #line 41 "tests/golden/run/fixedbugs-413-libuv-keeps-every-handles-address.hero"
     hero_array_unshare(&(h2_ts));
 #line 41 "tests/golden/run/fixedbugs-413-libuv-keeps-every-handles-address.hero"
-    t14 = h_fixedbugs413libuvkeepseveryhandlesaddress_start(t12, &(*(struct uv_timer_s *)hero_array_at_mut(h2_ts, t13)));
+    t14 = h_fixedbugs413libuvkeepseveryhandlesaddress_start(t12, &(*((void)((h2_ts == NULL || t13 < 0 || t13 >= h2_ts->len) ? ((void)hero_array_at_mut(h2_ts, t13), hero_unreachable()) : (void)0), (void)(h2_ts->elem->size != sizeof(struct uv_timer_s) ? hero_unreachable() : (void)0), (struct uv_timer_s *)(void *)(h2_ts + 1) + t13)));
 #line 41 "tests/golden/run/fixedbugs-413-libuv-keeps-every-handles-address.hero"
     hero_print_int(t14);
 #line 41 "tests/golden/run/fixedbugs-413-libuv-keeps-every-handles-address.hero"
@@ -293,14 +293,14 @@ bb0:
 #line 42 "tests/golden/run/fixedbugs-413-libuv-keeps-every-handles-address.hero"
     hero_array_unshare(&(h2_ts));
 #line 42 "tests/golden/run/fixedbugs-413-libuv-keeps-every-handles-address.hero"
-    (*(struct uv_timer_s *)hero_array_at_mut(h2_ts, t15)).data = t16;
+    (*((void)((h2_ts == NULL || t15 < 0 || t15 >= h2_ts->len) ? ((void)hero_array_at_mut(h2_ts, t15), hero_unreachable()) : (void)0), (void)(h2_ts->elem->size != sizeof(struct uv_timer_s) ? hero_unreachable() : (void)0), (struct uv_timer_s *)(void *)(h2_ts + 1) + t15)).data = t16;
     t17 = INT64_C(1);
 #line 43 "tests/golden/run/fixedbugs-413-libuv-keeps-every-handles-address.hero"
     t18 = h0_loop;
 #line 43 "tests/golden/run/fixedbugs-413-libuv-keeps-every-handles-address.hero"
     hero_array_unshare(&(h2_ts));
 #line 43 "tests/golden/run/fixedbugs-413-libuv-keeps-every-handles-address.hero"
-    (*(struct uv_timer_s *)hero_array_at_mut(h2_ts, t17)).data = t18;
+    (*((void)((h2_ts == NULL || t17 < 0 || t17 >= h2_ts->len) ? ((void)hero_array_at_mut(h2_ts, t17), hero_unreachable()) : (void)0), (void)(h2_ts->elem->size != sizeof(struct uv_timer_s) ? hero_unreachable() : (void)0), (struct uv_timer_s *)(void *)(h2_ts + 1) + t17)).data = t18;
     t19 = h0_loop;
 #line 44 "tests/golden/run/fixedbugs-413-libuv-keeps-every-handles-address.hero"
     t20 = h_fixedbugs413libuvkeepseveryhandlesaddress_seen;

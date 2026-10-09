@@ -762,7 +762,7 @@ bb2:
 #line 48 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
     t17 = h4_i;
 #line 48 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
-    t18 = hero_str_byte(t16, t17);
+    t18 = ((void)((t16.ptr == NULL || t17 < 0 || t17 >= t16.len) ? ((void)hero_str_byte(t16, t17), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t16.ptr[t17]);
 #line 48 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
     t19 = h_aliteralarmtakesthewidthitmatches_byte_class(t18);
 #line 48 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"

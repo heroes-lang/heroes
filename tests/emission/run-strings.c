@@ -188,7 +188,7 @@ bb0:
 #line 10 "tests/golden/run/strings.hero"
     t11 = INT64_C(0);
 #line 10 "tests/golden/run/strings.hero"
-    t12 = hero_str_byte(t10, t11);
+    t12 = ((void)((t10.ptr == NULL || t11 < 0 || t11 >= t10.len) ? ((void)hero_str_byte(t10, t11), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t10.ptr[t11]);
 #line 10 "tests/golden/run/strings.hero"
     hero_print_int(t12);
 #line 10 "tests/golden/run/strings.hero"

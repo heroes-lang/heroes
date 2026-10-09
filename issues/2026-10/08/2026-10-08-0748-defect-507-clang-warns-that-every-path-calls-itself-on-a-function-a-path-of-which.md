@@ -3,7 +3,7 @@ kind: defect
 area: emit
 milestone: none
 filed: 2026-10-08
-commit: none
+commit: 67c94b9638553f84bc63f015664f9938f24ff078
 github: none
 ---
 
@@ -12,3 +12,5 @@ github: none
     **Origin:** filed by the coordinator at 07:48 on 2026-10-08 from panel 199's completeness critic's first pass (`docs/panel/199-reports/completeness-critic-pass1.md`, finding 2), reproduced before filing.
 
     **Class: blocking**, 2026-10-08 (`.claude/rules/verification.md` § Bounded discovery): a clang warning on a correct program.
+
+    Repaired at `67c94b96`, 2026-10-08 (lane b15-emit), gated by its cases and the compiler's own tests; the net is owed at the batch's close. A call of the library's `exit` is followed by `hero_unreachable()` in the C (`emit/heroes_call.hero`), so a function whose one other path calls itself builds silently: the case's three shapes, `exit` in an arm, in an arm with an `else` and in a loop, warned 3 times at -O0 and at -O2 on the base and 0 times now, and 17 emissions moved by one such line after each call of `exit`, 56 in all. A termination through a callee that returns for other values (the spec-warden's `hidden2` and six shapes beside it) keeps clang's warning before and after; the one repair that closes that class is a flag word in `selfhost/cli/flags.hero`, reported as a patch to the coordinator for panel 199.

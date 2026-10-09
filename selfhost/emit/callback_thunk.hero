@@ -57,6 +57,7 @@ use parse
 use resolve
 use checker
 use ir/lower
+use cli/strings
 
 # The thunk's C name: the function's own with the synthetic marker in front,
 # `h_0cb_main_seen` for `h_main_seen`. A Heroes module component is sanitised
@@ -260,21 +261,8 @@ test "an extern handed as a callback comes out of the table unchanged, a Heroes 
     w: writer.Writer @ writer.new_writer("t")
     lookup_table(@w, low, c, names, s, p.decls, callbacks: callback_guard.callbacks_of(low, c, p.decls))
     got = writer.finish(w)
-    assert has(text: got, needle: "void h_0cb_t_bye(void);")
-    assert has(text: got, needle: "    if (f == (void (*)(void))h_t_bye) return (void (*)(void))h_0cb_t_bye;")
+    assert strings.holds(text: got, needle: "void h_0cb_t_bye(void);")
+    assert strings.holds(text: got, needle: "    if (f == (void (*)(void))h_t_bye) return (void (*)(void))h_0cb_t_bye;")
     crossed = crossings(instances.hold(low), c, names, decl: 0, arguments: ["t1"])
     assert crossed.len() == 1
-    assert has(text: crossed[0], needle: "hero_callback_of((void (*)(void))t1)")
-
-function has(text: str, needle: str) -> bool
-    if needle.len() == 0
-        return true
-    stop = text.len() - needle.len()
-    at: i64 @ 0
-
-    while at <= stop
-        if text.slice(from: at, to: at + needle.len()) == needle
-            return true
-        at @ at + 1
-
-    return false
+    assert strings.holds(text: crossed[0], needle: "hero_callback_of((void (*)(void))t1)")

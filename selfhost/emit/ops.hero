@@ -18,7 +18,7 @@ use ir/instances
 use inventory
 use emit/mangle
 use emit/ctype
-use emit/signature
+use emit/heroes_call
 use emit/builtins
 use emit/convert
 use emit/bytes_text
@@ -50,23 +50,19 @@ function call(@w: writer.Writer, p: instances.Held, f: containers.Function, c: s
         assign @ target.must() + " = "
 
     match callee
-        .heroes_fn h =>
-            # THE INSTANCE, NOT THE TEMPLATE: monomorphisation deleted
-            # the generic function and left one copy per type tuple, so
-            # a call names the copy — read from the same table the pass
-            # read. The fallback is LOUD now, and the quiet one shipped
-            # a defect: "hero_unreachable" as a NAME emitted arguments
-            # handed to a zero-argument _Noreturn, exit 2, the compiler
-            # blaming itself (panel 084's class).
-            found = instances.function_at(p, decl: h.decl, instance: instance)
-
-            if found.is_err()
-                writer.line(@w, text: "    hero_unreachable(); /* no instance for this call — compiler bug */")
-            else
-                named = signature.instance_name(p.program.functions[found.must()], c, s, decls)
-                writer.line(@w, text: "    " + assign + named + "(" + arguments.join(", ") + ");")
+        .heroes_fn h => heroes_call.emit(
+            @w,
+            p,
+            c,
+            s,
+            decls,
+            callee: h.decl,
+            instance: instance,
+            assign: assign,
+            arguments: arguments
+        )
         .builtin_fn bt =>
-            builtin_name = inventory.table()[bt.at].name
+            builtin_name = inventory.name_of(bt.at)
 
             if builtin_name == "print"
                 printing.print_call(@w, f, c, run: run, arguments: arguments)
