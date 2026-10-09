@@ -1,0 +1,127 @@
+# The parts of the program's call graph in which a cycle of functions can
+# stand (panel 201, defect 520; design.md §4.7): its strongly connected
+# components, the largest sets of functions each of which reaches every
+# other through calls. A cycle of calls lies inside one of them, so
+# `check/endless_cycle.hero` asks each apart instead of the whole program.
+#
+# Tarjan's algorithm, kept iterative so that a chain of thousands of
+# functions needs no recursion as deep as itself (a call too deep aborts),
+# and a component is given only after every component it reaches: sinks
+# first, which is the order in which what a function does is settled after
+# what the functions it calls do.
+
+# Each component's functions, one component after another, sinks first, and
+# where each component ends in `nodes`.
+record Parts
+    nodes: [i64]
+    ends: [i64]
+
+# The components among the functions `asked` names, the calls of the
+# function at `i` being `edges[starts[i] .. starts[i + 1]]`; a call to a
+# function not asked is no edge.
+function components(asked: [bool], starts: [i64], edges: [i64]) -> Parts
+    n = asked.len()
+    index: [i64] @ []
+    low: [i64] @ []
+    on: [bool] @ []
+
+    for _ in asked
+        index @ index.push(-1)
+        low @ low.push(0)
+        on @ on.push(false)
+
+    # Tarjan's stack, `height` deep, and the path the search stands on,
+    # `depth` deep, each step with the next of its calls to follow; the lists
+    # never shrink, a slot above the height being free.
+    stack: [i64] @ []
+    height: i64 @ 0
+    path: [i64] @ []
+    next: [i64] @ []
+    depth: i64 @ 0
+    count: i64 @ 0
+    nodes: [i64] @ []
+    ends: [i64] @ []
+    root: i64 @ 0
+
+    while root < n
+        if asked[root] && index[root] < 0
+            index[root] @ count
+            low[root] @ count
+            count @ count + 1
+            put(@stack, at: height, value: root)
+            height @ height + 1
+            on[root] @ true
+            put(@path, at: 0, value: root)
+            put(@next, at: 0, value: starts[root])
+            depth @ 1
+
+            while depth > 0
+                u = path[depth - 1]
+                e = next[depth - 1]
+
+                if e < starts[u + 1]
+                    next[depth - 1] @ e + 1
+                    x = edges[e]
+
+                    if x >= 0 && x < n && asked[x]
+                        if index[x] < 0
+                            index[x] @ count
+                            low[x] @ count
+                            count @ count + 1
+                            put(@stack, at: height, value: x)
+                            height @ height + 1
+                            on[x] @ true
+                            put(@path, at: depth, value: x)
+                            put(@next, at: depth, value: starts[x])
+                            depth @ depth + 1
+                        else if on[x] && index[x] < low[u]
+                            low[u] @ index[x]
+                else
+                    if low[u] == index[u]
+                        popped: bool @ false
+
+                        while !popped
+                            height @ height - 1
+                            v = stack[height]
+                            on[v] @ false
+                            nodes @ nodes.push(v)
+                            popped @ v == u
+
+                        ends @ ends.push(nodes.len())
+                    depth @ depth - 1
+
+                    if depth > 0
+                        parent = path[depth - 1]
+
+                        if low[u] < low[parent]
+                            low[parent] @ low[u]
+
+        root @ root + 1
+
+    return Parts(nodes: nodes, ends: ends)
+
+# Lent, so the list grows in place (defect 409).
+function put(@xs: [i64], at: i64, value: i64)
+    if at < xs.len()
+        xs[at] @ value
+    else
+        xs @ xs.push(value)
+
+## Tests
+
+test "a chain is as many parts as functions, the callee first"
+    asked: [bool] = [true, true, true]
+    starts: [i64] = [0, 1, 2, 2]
+    edges: [i64] = [1, 2]
+    parts = components(asked, starts: starts, edges: edges)
+    assert parts.nodes == [2, 1, 0]
+    assert parts.ends == [1, 2, 3]
+
+test "a cycle is one part, after the part it calls"
+    asked: [bool] = [true, true, true, false]
+    starts: [i64] = [0, 2, 3, 3, 4]
+    edges: [i64] = [1, 2, 0, 0]
+    parts = components(asked, starts: starts, edges: edges)
+    assert parts.ends == [1, 3]
+    assert parts.nodes[0] == 2
+    assert parts.nodes.slice(from: 1, to: 3).sort() == [0, 1]

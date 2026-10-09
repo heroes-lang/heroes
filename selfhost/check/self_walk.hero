@@ -14,6 +14,11 @@ record Flow
     live: bool
     called: bool
 
+    # Whether every path that reaches here has named a function or called
+    # the function itself: a way out where one has not is a way out whatever
+    # set of functions counts as itself (`free`, panel 201).
+    touched: bool
+
 # A loop the walk is inside: what its `break`s and the ends of its turns
 # carry, met, and whether a `break` of its own stood.
 record Frame
@@ -29,6 +34,12 @@ record Walk
     # A path that returns or ends before the call: a way out.
     escaped: bool
 
+    # A way out on a path that named no function before it, read from the
+    # syntax alone (never from a name handed to a call, which a wider set
+    # may skip): no set of functions counting as this one's own can close
+    # it, so the function stands in no cycle (`check/endless_cycle.hero`).
+    free: bool
+
     # The first call to the function itself the walk met, where the caret goes.
     witness: i64
 
@@ -41,23 +52,47 @@ record Walk
     collect: bool
     saw: bool
 
-# A walk of the function declared at `at`, before its first statement.
-function start(at: i64, collect: bool) -> Walk
+    # The functions a call to which counts as the function's own, by index:
+    # none but itself for panel 199's rule, a cycle's for panel 201's
+    # (`check/endless_cycle.hero`).
+    members: [bool]
+
+    # The members other than itself a call to which the walk counted as its
+    # own: its verdict changes only where one of them stops being a member,
+    # whatever the flow (panel 201, `check/endless_cycle.hero`'s worklist).
+    deps: [i64]
+
+    # The members called first on some path, and the one the witness calls.
+    firsts: [i64]
+    reached: i64
+
+# A walk of the function declared at `at`, before its first statement; a
+# call to any of `members` counts as one to itself.
+function start(at: i64, collect: bool, members: [bool]) -> Walk
     frames: [Frame] = []
     none: [i64] = []
     return Walk(
         decl: at,
-        flow: Flow(live: true, called: false),
+        flow: Flow(live: true, called: false, touched: false),
         frames: frames,
         escaped: false,
+        free: false,
         witness: -1,
         named: none,
         collect: collect,
-        saw: false
+        saw: false,
+        members: members,
+        deps: none,
+        firsts: none,
+        reached: -1
     )
 
+# Whether a call to the declaration at `at` is a call to the function itself.
+function among(w: Walk, at: i64) -> bool
+    return at == w.decl || at < w.members.len() && w.members[at]
+
 function dead() -> Flow
-    return Flow(live: false, called: true)
+    return Flow(live: false, called: true, touched: true)
 
 # Where two paths join: a path nothing reaches says nothing about the other.
 function meet(one: Flow, two: Flow) -> Flow
@@ -66,7 +101,7 @@ function meet(one: Flow, two: Flow) -> Flow
 
     if !two.live
         return one
-    return Flow(live: true, called: one.called && two.called)
+    return Flow(live: true, called: one.called && two.called, touched: one.touched && two.touched)
 
 # A path returns or ends here, or may: before the call, a way out.
 function leave(@w: Walk)
@@ -74,26 +109,51 @@ function leave(@w: Walk)
     w.flow @ dead()
 
 function may_leave(@w: Walk)
+    escape_at(@w, flow: w.flow)
+
+# A way out where `flow` stands, which no wider set of functions closes
+# where no path to it named one.
+function escape_at(@w: Walk, flow: Flow)
+    if flow.live && !flow.called
+        w.escaped @ true
+
+        if !flow.touched
+            w.free @ true
+
+# A way out met at a name, which a call to a wider set may not visit.
+function may_leave_named(@w: Walk)
     if w.flow.live && !w.flow.called
         w.escaped @ true
 
-# A call to the function itself, on the paths that reach it.
-function hit(@w: Walk, id: i64)
+# A call to the function itself, or to a member `to`, on the paths that
+# reach it.
+function hit(@w: Walk, id: i64, to: i64)
+    if to != w.decl
+        append(@w.deps, at: to)
+
     if w.flow.live && !w.flow.called
-        w.flow @ Flow(live: true, called: true)
+        w.flow @ Flow(live: true, called: true, touched: true)
+        append(@w.firsts, at: to)
 
         if w.witness < 0
             w.witness @ id
+            w.reached @ to
 
 # A function of the program or its library, other than this one, named on the
 # paths that reach here, called or handed on: a way out if it may end.
 function other_call(@w: Walk, decls: [ast.Decl], at: i64)
-    if at == w.decl || !w.flow.live || w.flow.called
+    if among(w, at: at)
+        if at != w.decl
+            append(@w.deps, at: at)
+        return
+
+    if !w.flow.live || w.flow.called
         return
 
     match decls[at].kind
         .function_decl _ =>
             w.saw @ true
+            w.flow.touched @ true
 
             if w.collect
                 append(@w.named, at: at)

@@ -1,0 +1,1 @@
+tests/golden/check/fixedbugs-508-a-self-call-through-a-function-value-aborts-at-every-level.hero:15:12: error[endless_recursion]: every path through `go` calls `go` again before it returns, so no call to it can return

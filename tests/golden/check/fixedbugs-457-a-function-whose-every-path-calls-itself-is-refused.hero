@@ -251,12 +251,19 @@ function serve_after(n: i64) -> i64
 
 # What the rule leaves to the run, said here so it is not mistaken for a hole in
 # a test: a self-call through a function value, and mutual recursion.
+# Corrected 2026-10-09, defect 520 and panel 201's R3, ratified: both are
+# refused now, a value bound once to the function being the function where it
+# is called, and a cycle of functions every path of each of which calls
+# another of them told once, at the call of its first function by
+# declaration. What the rule still leaves to the run is a self-call through a
+# parameter, and a cycle with a way out it never takes
+# (`run/fixedbugs-520-...`).
 function through_a_value(n: i64) -> i64
     f = through_a_value
-    return f(n)
+    return f(n)  #~ endless_recursion
 
 function pong(n: i64) -> i64
-    return ping(n)
+    return ping(n)  #~ endless_recursion
 
 function ping(n: i64) -> i64
     return pong(n)
