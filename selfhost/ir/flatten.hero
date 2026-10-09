@@ -532,7 +532,7 @@ function call(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Che
                 handed = lower_args(@b, a, r, c, s, decls, given: given, callee: ok(t.at))
                 return owned_release.call_or_release(@b, c, s, decls, at: t.at, handed: handed, ty: ty, span: span)
             .builtin bt =>
-                builtin_name = inventory.table()[bt.at].name
+                builtin_name = inventory.name_of(bt.at)
 
                 # `.cstr()` is a CAST, not a call: §4.3's no-implicit-
                 # conversions rule would be invisible in the dump if the
@@ -686,7 +686,7 @@ function method(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.C
     # (Part 5): they read a tag and choose an edge.
     match r.uses[at]
         .builtin bt =>
-            if questions.is_fallible_operation(inventory.table()[bt.at].name)
+            if questions.is_fallible_operation(inventory.name_of(bt.at))
                 return fallible_operation(
                     @b,
                     a,
@@ -694,7 +694,7 @@ function method(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.C
                     c,
                     s,
                     decls,
-                    name: inventory.table()[bt.at].name,
+                    name: inventory.name_of(bt.at),
                     receiver: receiver,
                     given: given,
                     ty: ty,
@@ -721,7 +721,7 @@ function method(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.C
 
     match r.uses[at]
         .builtin bt =>
-            builtin_name = inventory.table()[bt.at].name
+            builtin_name = inventory.name_of(bt.at)
 
             # `s.cstr()` — the same cast the plain-call form makes, and
             # the shape every program actually writes. Taken before the

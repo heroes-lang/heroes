@@ -1205,11 +1205,11 @@ bb0:
 #line 107 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     int64_t hero_lend_e113_0 = INT64_C(32);
 #line 107 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    void *hero_lend_b113_0 = hero_lend_take((*(HeroArrayHeader * *)hero_array_at_mut(h9_rows, t152)), hero_lend_e113_0, "digest32", "md");
+    void *hero_lend_b113_0 = hero_lend_take((*((void)((h9_rows == NULL || t152 < 0 || t152 >= h9_rows->len) ? ((void)hero_array_at_mut(h9_rows, t152), hero_unreachable()) : (void)0), (void)(h9_rows->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), (HeroArrayHeader * *)(void *)(h9_rows + 1) + t152)), hero_lend_e113_0, "digest32", "md");
 #line 107 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     (void)digest32((void *)hero_lend_b113_0);
 #line 107 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
-    (*(HeroArrayHeader * *)hero_array_at_mut(h9_rows, t152)) = hero_lend_give((*(HeroArrayHeader * *)hero_array_at_mut(h9_rows, t152)), hero_lend_b113_0, hero_lend_e113_0);
+    (*((void)((h9_rows == NULL || t152 < 0 || t152 >= h9_rows->len) ? ((void)hero_array_at_mut(h9_rows, t152), hero_unreachable()) : (void)0), (void)(h9_rows->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), (HeroArrayHeader * *)(void *)(h9_rows + 1) + t152)) = hero_lend_give((*((void)((h9_rows == NULL || t152 < 0 || t152 >= h9_rows->len) ? ((void)hero_array_at_mut(h9_rows, t152), hero_unreachable()) : (void)0), (void)(h9_rows->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), (HeroArrayHeader * *)(void *)(h9_rows + 1) + t152)), hero_lend_b113_0, hero_lend_e113_0);
 #line 107 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     }
     t154 = h9_rows;

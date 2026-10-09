@@ -1,0 +1,9 @@
+# FIXED DEFECT 491, 2026-10-08 (lane b15-emit): a string's byte is read in
+# place and keeps the runtime's abort. An index below zero is handed to
+# `hero_str_byte`, which says what it always said; the read never happens.
+
+function main()
+    text = "abc"
+    at: i64 = 0 - 1
+    print(text[2])
+    print(text[at])

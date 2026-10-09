@@ -155,7 +155,7 @@ function at_word(text: str, word: str) -> token.Span
     i: i64 @ 0
 
     while i + word.len() <= text.len()
-        if text.slice(from: i, to: i + word.len()) == word && (i == 0 || !bytes.is_alnum(text[i - 1]))
+        if bytes.bytes_at(text: text, at: i, needle: word) && (i == 0 || !bytes.is_alnum(text[i - 1]))
             return token.Span(start: i, end: i + word.len())
         i @ i + 1
 
@@ -205,3 +205,12 @@ test "an elif continues an if that is its line's value, and no if in a string or
     assert !continues_an_if(commented, at_word(text: commented, word: "elif"))
     named = "function f()\n    if_done = true\n    elif z\n"
     assert !continues_an_if(named, at_word(text: named, word: "elif"))
+
+# Defect 452's case: the helper finds a word past characters above ASCII,
+# asking each offset of its bytes where it sliced the text at every byte.
+test "a word is found past characters above ASCII (defect 452)"
+    found = at_word(text: "é€ switch x", word: "switch")
+    assert found.start == 6
+    assert found.end == 12
+    absent = at_word(text: "é€😀", word: "switch")
+    assert absent.start == 0 && absent.end == 0

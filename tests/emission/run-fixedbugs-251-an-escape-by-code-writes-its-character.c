@@ -242,7 +242,7 @@ bb2:
 #line 17 "tests/golden/run/fixedbugs-251-an-escape-by-code-writes-its-character.hero"
     t18 = h4_i;
 #line 17 "tests/golden/run/fixedbugs-251-an-escape-by-code-writes-its-character.hero"
-    t19 = hero_str_byte(t17, t18);
+    t19 = ((void)((t17.ptr == NULL || t18 < 0 || t18 >= t17.len) ? ((void)hero_str_byte(t17, t18), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t17.ptr[t18]);
 #line 17 "tests/golden/run/fixedbugs-251-an-escape-by-code-writes-its-character.hero"
     t20 = hero_int_to_str(t19);
 #line 17 "tests/golden/run/fixedbugs-251-an-escape-by-code-writes-its-character.hero"

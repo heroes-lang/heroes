@@ -564,7 +564,7 @@ bb0:
 #line 54 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
     hero_array_unshare(&(h3_xs));
 #line 54 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-    (*(struct nums *)hero_array_at_mut(h3_xs, t112)).a[((uint64_t)(t113) >= UINT64_C(4) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t113))] = t114;
+    (*((void)((h3_xs == NULL || t112 < 0 || t112 >= h3_xs->len) ? ((void)hero_array_at_mut(h3_xs, t112), hero_unreachable()) : (void)0), (void)(h3_xs->elem->size != sizeof(struct nums) ? hero_unreachable() : (void)0), (struct nums *)(void *)(h3_xs + 1) + t112)).a[((uint64_t)(t113) >= UINT64_C(4) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t113))] = t114;
     t115 = h3_xs;
 #line 55 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
     t116 = INT64_C(1);

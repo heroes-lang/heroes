@@ -176,7 +176,7 @@ bb0:
 #line 16 "tests/golden/run/fixedbugs-413-an-element-past-the-end-is-refused-when-the-call-is-made.hero"
     hero_array_unshare(&(h0_xs));
 #line 16 "tests/golden/run/fixedbugs-413-an-element-past-the-end-is-refused-when-the-call-is-made.hero"
-    h_fixedbugs413anelementpasttheendisrefusedwhenthecallismade_set(&(*(int64_t *)hero_array_at_mut(h0_xs, t3)), t5);
+    h_fixedbugs413anelementpasttheendisrefusedwhenthecallismade_set(&(*((void)((h0_xs == NULL || t3 < 0 || t3 >= h0_xs->len) ? ((void)hero_array_at_mut(h0_xs, t3), hero_unreachable()) : (void)0), (void)(h0_xs->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), (int64_t *)(void *)(h0_xs + 1) + t3)), t5);
     t6 = h0_xs;
 #line 17 "tests/golden/run/fixedbugs-413-an-element-past-the-end-is-refused-when-the-call-is-made.hero"
     t7 = INT64_C(0);

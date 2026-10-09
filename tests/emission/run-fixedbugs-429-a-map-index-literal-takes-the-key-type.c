@@ -990,7 +990,7 @@ bb14:
 #line 39 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
     t113 = INT64_C(2);
 #line 39 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    t114 = hero_str_byte(t112, t113);
+    t114 = ((void)((t112.ptr == NULL || t113 < 0 || t113 >= t112.len) ? ((void)hero_str_byte(t112, t113), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t112.ptr[t113]);
 #line 39 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
     hero_print_int(t114);
 #line 39 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"

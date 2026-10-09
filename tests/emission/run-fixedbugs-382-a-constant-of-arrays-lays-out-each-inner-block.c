@@ -738,7 +738,7 @@ bb3:
 #line 24 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     hero_array_unshare(&(h2_ys));
 #line 24 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
-    hero_array_set(&((*(HeroArrayHeader * *)hero_array_at_mut(h2_ys, t52))), t53, &t54);
+    hero_array_set(&((*((void)((h2_ys == NULL || t52 < 0 || t52 >= h2_ys->len) ? ((void)hero_array_at_mut(h2_ys, t52), hero_unreachable()) : (void)0), (void)(h2_ys->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), (HeroArrayHeader * *)(void *)(h2_ys + 1) + t52))), t53, &t54);
     t55 = INT64_C(1);
 #line 25 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     t56 = h2_ys;
@@ -856,9 +856,9 @@ bb3:
 #line 28 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     hero_array_unshare(&(h3_zs));
 #line 28 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
-    hero_array_unshare(&((*(HeroArrayHeader * *)hero_array_at_mut(h3_zs, t84))));
+    hero_array_unshare(&((*((void)((h3_zs == NULL || t84 < 0 || t84 >= h3_zs->len) ? ((void)hero_array_at_mut(h3_zs, t84), hero_unreachable()) : (void)0), (void)(h3_zs->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), (HeroArrayHeader * *)(void *)(h3_zs + 1) + t84))));
 #line 28 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
-    hero_array_set(&((*(HeroArrayHeader * *)hero_array_at_mut((*(HeroArrayHeader * *)hero_array_at_mut(h3_zs, t84)), t85))), t86, &t87);
+    hero_array_set(&((*(HeroArrayHeader * *)hero_array_at_mut((*((void)((h3_zs == NULL || t84 < 0 || t84 >= h3_zs->len) ? ((void)hero_array_at_mut(h3_zs, t84), hero_unreachable()) : (void)0), (void)(h3_zs->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), (HeroArrayHeader * *)(void *)(h3_zs + 1) + t84)), t85))), t86, &t87);
     t88 = h3_zs;
 #line 29 "tests/golden/run/fixedbugs-382-a-constant-of-arrays-lays-out-each-inner-block.hero"
     t89 = INT64_C(2);

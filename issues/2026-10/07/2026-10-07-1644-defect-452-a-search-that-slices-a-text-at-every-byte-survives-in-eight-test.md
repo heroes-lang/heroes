@@ -3,7 +3,7 @@ kind: defect
 area: compiler
 milestone: none
 filed: 2026-10-07
-commit: none
+commit: b1bbe22910ba8bfd4c2bb57d49c2146e03db9767
 github: none
 ---
 
@@ -12,3 +12,5 @@ github: none
     **Origin:** filed by the coordinator at 16:44 on 2026-10-07 from lane b14-cli's final report (*found beside* 3).
 
     **Class: improvement**, 2026-10-07 (`.claude/rules/verification.md` § Bounded discovery): a panic on a character above ASCII a test or a future caller may hand them; no program moves today.
+
+    Repaired at `b1bbe229`, 2026-10-08 (lane b15-emit), gated by its cases and the compiler's own tests; the net is owed at the batch's close. Every search of a text in the nine places, and in `perfn`'s and `types`' test scans, asks its bytes (`strings.holds`, `bytes.bytes_at`), and so does `emit/layout_text`'s `place_of` (`bytes.rfind`), the shape beside it with the same cause, which aborted `heroes build` at exit 134 on a correct binding of an anonymous union declared in a header named `uné.h`; that program builds now and prints what it prints under an ASCII name.

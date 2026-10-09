@@ -347,7 +347,7 @@ bb0:
 #line 19 "tests/golden/run/crlf-literal.hero"
     t5 = INT64_C(0);
 #line 19 "tests/golden/run/crlf-literal.hero"
-    t6 = hero_str_byte(t4, t5);
+    t6 = ((void)((t4.ptr == NULL || t5 < 0 || t5 >= t4.len) ? ((void)hero_str_byte(t4, t5), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t4.ptr[t5]);
 #line 19 "tests/golden/run/crlf-literal.hero"
     hero_print_int(t6);
 #line 19 "tests/golden/run/crlf-literal.hero"
@@ -356,7 +356,7 @@ bb0:
 #line 20 "tests/golden/run/crlf-literal.hero"
     t8 = INT64_C(1);
 #line 20 "tests/golden/run/crlf-literal.hero"
-    t9 = hero_str_byte(t7, t8);
+    t9 = ((void)((t7.ptr == NULL || t8 < 0 || t8 >= t7.len) ? ((void)hero_str_byte(t7, t8), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t7.ptr[t8]);
 #line 20 "tests/golden/run/crlf-literal.hero"
     hero_print_int(t9);
 #line 20 "tests/golden/run/crlf-literal.hero"
@@ -405,7 +405,7 @@ bb0:
 #line 28 "tests/golden/run/crlf-literal.hero"
     if (__builtin_sub_overflow(t18, t19, &t20)) hero_panic_overflow();
 #line 28 "tests/golden/run/crlf-literal.hero"
-    t21 = hero_str_byte(t16, t20);
+    t21 = ((void)((t16.ptr == NULL || t20 < 0 || t20 >= t16.len) ? ((void)hero_str_byte(t16, t20), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t16.ptr[t20]);
 #line 28 "tests/golden/run/crlf-literal.hero"
     hero_print_int(t21);
 #line 28 "tests/golden/run/crlf-literal.hero"
@@ -420,7 +420,7 @@ bb0:
 #line 29 "tests/golden/run/crlf-literal.hero"
     if (__builtin_sub_overflow(t24, t25, &t26)) hero_panic_overflow();
 #line 29 "tests/golden/run/crlf-literal.hero"
-    t27 = hero_str_byte(t22, t26);
+    t27 = ((void)((t22.ptr == NULL || t26 < 0 || t26 >= t22.len) ? ((void)hero_str_byte(t22, t26), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t22.ptr[t26]);
 #line 29 "tests/golden/run/crlf-literal.hero"
     hero_print_int(t27);
 #line 29 "tests/golden/run/crlf-literal.hero"
@@ -435,7 +435,7 @@ bb0:
 #line 30 "tests/golden/run/crlf-literal.hero"
     if (__builtin_sub_overflow(t30, t31, &t32)) hero_panic_overflow();
 #line 30 "tests/golden/run/crlf-literal.hero"
-    t33 = hero_str_byte(t28, t32);
+    t33 = ((void)((t28.ptr == NULL || t32 < 0 || t32 >= t28.len) ? ((void)hero_str_byte(t28, t32), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t28.ptr[t32]);
 #line 30 "tests/golden/run/crlf-literal.hero"
     hero_print_int(t33);
 #line 30 "tests/golden/run/crlf-literal.hero"
@@ -450,7 +450,7 @@ bb0:
 #line 31 "tests/golden/run/crlf-literal.hero"
     if (__builtin_sub_overflow(t36, t37, &t38)) hero_panic_overflow();
 #line 31 "tests/golden/run/crlf-literal.hero"
-    t39 = hero_str_byte(t34, t38);
+    t39 = ((void)((t34.ptr == NULL || t38 < 0 || t38 >= t34.len) ? ((void)hero_str_byte(t34, t38), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t34.ptr[t38]);
 #line 31 "tests/golden/run/crlf-literal.hero"
     hero_print_int(t39);
 #line 31 "tests/golden/run/crlf-literal.hero"

@@ -1,0 +1,123 @@
+# A call of a Heroes function, as the one line of C it is, and the line that
+# says where a path ends (design.md §3.1, §4.12; panels 029 and 084; defect
+# 507). It left `emit/ops.hero` on 2026-10-08, which stood one line under
+# §11's 300 and had this arm to grow: the instance a call names, its C name,
+# the call, and what follows it.
+#
+# THE INSTANCE, NOT THE TEMPLATE: monomorphisation deleted the generic
+# function and left one copy per type tuple, so a call names the copy, read
+# from the same table the pass read. The fallback is LOUD now, and the quiet
+# one shipped a defect: "hero_unreachable" as a NAME emitted arguments handed
+# to a zero-argument _Noreturn, exit 2, the compiler blaming itself (panel
+# 084's class).
+#
+# WHAT FOLLOWS THE CALL, and there is one case where something does: the
+# library's `exit`. Heroes ends a path at it (`check/path_end.calls_exit`), so
+# a function every other path of which calls itself is correct, and the C
+# said less: the call, then the jump to the join. Clang read the jump as
+# taken and warned *all paths through this function will call itself* on a
+# function that was fine (defect 507, 2026-10-08). `hero_unreachable()` after
+# the call is the claim Heroes makes, in the spelling an `.unreachable`
+# terminator already has (`emit/term.hero`). The library's `exit` cannot be
+# declared `_Noreturn` instead: its body is the call of `hero_exit` and a
+# `return`, and clang refuses a `_Noreturn` function that can return
+# (-Winvalid-noreturn, measured).
+#
+# WHAT IT DOES NOT REACH, stated so nobody reads more into it: a call of a
+# HELPER that exits. Heroes ends no path at such a call, because the helper
+# may return for other values, and clang's reading of the C is the same, so a
+# self-calling function that terminates through a callee keeps clang's
+# warning. That is defect 457's shape and not this one's.
+#
+# THE FALSIFIABLE CLAIM this rests on: *the library's `exit` is one call of
+# `hero_exit`, which `runtime/hero_os.h` declares `_Noreturn`, and nothing
+# after it.* It dies the day `exit` does anything that can return, and
+# `the_library_exit_is_a_call_of_hero_exit_alone` below fires when it does.
+
+use ast
+use source
+use check/state
+use ir/instances
+use emit/signature
+use emit/writer
+use library_source
+use parse
+
+# `callee` is the declaration the call names and `instance` the type
+# arguments it names it at; `assign` is the target and its ` = `, or empty
+# where the result is discarded.
+function emit(@w: writer.Writer, p: instances.Held, c: state.Checked, s: source.Source, decls: [ast.Decl], callee: i64, instance: [i64], assign: str, arguments: [str])
+    found = instances.function_at(p, decl: callee, instance: instance)
+
+    if found.is_err()
+        writer.line(@w, text: "    hero_unreachable(); /* no instance for this call — compiler bug */")
+        return
+    named = signature.instance_name(p.program.functions[found.must()], c, s, decls)
+    writer.line(@w, text: "    " + assign + named + "(" + arguments.join(", ") + ");")
+    after(@w, s, decls, decl: callee)
+
+# The line after a call of declaration `decl`: where it is the library's own
+# `exit`, the one that says the path ends. No program may declare `exit`
+# (`builtin_name_taken`), so the name and the library's source are the whole
+# question, asked of the declaration as the checker asks it of a call.
+function after(@w: writer.Writer, s: source.Source, decls: [ast.Decl], decl: i64)
+    if is_exit(s, decls, decl: decl)
+        writer.line(@w, text: "    hero_unreachable();")
+
+function is_exit(s: source.Source, decls: [ast.Decl], decl: i64) -> bool
+    return source.is_library(s, decls[decl].name.start) && source.span_text(s, decls[decl].name) == "exit"
+
+## Tests
+
+# A program of one function beside the library, as every program is read.
+function beside_the_library() -> source.Source
+    return source.with_library(
+        name: "main.hero",
+        user: "function main()\n    exit(code: 0)\n",
+        library: library_source.text()
+    )
+
+test "exactly one declaration is the library's exit, and `main` is not it (defect 507)"
+    s = beside_the_library()
+    decls = parse.parse_source(s).decls
+    found: [i64] @ []
+    index: i64 @ 0
+
+    for _ in decls
+        if is_exit(s, decls, decl: index)
+            found @ found.push(index)
+        index @ index + 1
+
+    assert found.len() == 1
+    assert source.span_text(s, decls[found[0]].name) == "exit"
+
+    # What is written after a call: the claim for `exit` and nothing for any
+    # other declaration of the program.
+    ended: writer.Writer @ writer.new_writer("t")
+    after(@ended, s, decls, decl: found[0])
+    assert writer.finish(ended) == "    hero_unreachable();\n"
+    index @ 0
+
+    for _ in decls
+        if index != found[0]
+            quiet: writer.Writer @ writer.new_writer("t")
+            after(@quiet, s, decls, decl: index)
+            assert writer.finish(quiet) == ""
+        index @ index + 1
+
+# The premise, where it can die: the library's `exit` is the one call of
+# `hero_exit` and no statement after it, so the claim written after a call of
+# it is what the runtime's `_Noreturn` already makes true.
+test "the library's exit is a call of hero_exit alone (defect 507)"
+    at: i64 @ 0
+
+    while at < library_source.LINES.len() && library_source.LINES[at] != "function exit(code: i64)"
+        at @ at + 1
+
+    assert at + 1 < library_source.LINES.len()
+    assert library_source.LINES[at + 1] == "    hero_exit(code)"
+
+    # The next line, if any, opens no statement of `exit`'s body.
+    if at + 2 < library_source.LINES.len()
+        after_it = library_source.LINES[at + 2]
+        assert after_it.len() == 0 || after_it[0] != 32

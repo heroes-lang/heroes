@@ -1259,6 +1259,8 @@ bb2:
 #line 34 "examples/interpreter/main.hero"
     h_library_exit(t7);
 #line 34 "examples/interpreter/main.hero"
+    hero_unreachable();
+#line 34 "examples/interpreter/main.hero"
     goto bb1;
 #line 34 "examples/interpreter/main.hero"
 bb3:
@@ -1270,11 +1272,11 @@ bb4:
     t22 = h1_source;
 #line 40 "examples/interpreter/main.hero"
     t90 = h3_f1;
-#line 1274 "main.c"
+#line 1276 "main.c"
     h_0opt_f87774a_retain(&t22);
 #line 40 "examples/interpreter/main.hero"
     h3_f1 = t22;
-#line 1278 "main.c"
+#line 1280 "main.c"
     h_0opt_f87774a_release(&t90);
 #line 40 "examples/interpreter/main.hero"
     t23 = h3_f1;
@@ -1306,6 +1308,8 @@ bb5:
 #line 39 "examples/interpreter/main.hero"
     h_library_exit(t21);
 #line 39 "examples/interpreter/main.hero"
+    hero_unreachable();
+#line 39 "examples/interpreter/main.hero"
     goto bb4;
 #line 39 "examples/interpreter/main.hero"
 bb6:
@@ -1322,25 +1326,25 @@ bb7:
     t91 = h16_own16;
 #line 40 "examples/interpreter/main.hero"
     h16_own16 = t31;
-#line 1326 "main.c"
+#line 1330 "main.c"
     h_0opt_60498281_release(&t91);
 #line 40 "examples/interpreter/main.hero"
     t92 = h4_nodes;
-#line 1330 "main.c"
+#line 1334 "main.c"
     h_0opt_60498281_retain(&t31);
 #line 40 "examples/interpreter/main.hero"
     h4_nodes = t31;
-#line 1334 "main.c"
+#line 1338 "main.c"
     h_0opt_60498281_release(&t92);
 #line 42 "examples/interpreter/main.hero"
     t32 = h4_nodes;
 #line 42 "examples/interpreter/main.hero"
     t93 = h5_f2;
-#line 1340 "main.c"
+#line 1344 "main.c"
     h_0opt_60498281_retain(&t32);
 #line 42 "examples/interpreter/main.hero"
     h5_f2 = t32;
-#line 1344 "main.c"
+#line 1348 "main.c"
     h_0opt_60498281_release(&t93);
 #line 42 "examples/interpreter/main.hero"
     t33 = h5_f2;
@@ -1358,7 +1362,7 @@ bb8:
     t27 = h3_f1;
 #line 40 "examples/interpreter/main.hero"
     t28 = t27.as.err;
-#line 1362 "main.c"
+#line 1366 "main.c"
     hero_panic_must(t28);
     hero_unreachable();
 bb9:
@@ -1366,11 +1370,11 @@ bb9:
     t40 = h4_nodes;
 #line 45 "examples/interpreter/main.hero"
     t94 = h6_f3;
-#line 1370 "main.c"
+#line 1374 "main.c"
     h_0opt_60498281_retain(&t40);
 #line 45 "examples/interpreter/main.hero"
     h6_f3 = t40;
-#line 1374 "main.c"
+#line 1378 "main.c"
     h_0opt_60498281_release(&t94);
 #line 45 "examples/interpreter/main.hero"
     t41 = h6_f3;
@@ -1392,7 +1396,7 @@ bb10:
     t95 = h17_own17;
 #line 43 "examples/interpreter/main.hero"
     h17_own17 = t38;
-#line 1396 "main.c"
+#line 1400 "main.c"
     hero_str_decref(t95);
 #line 43 "examples/interpreter/main.hero"
     hero_print_str(t38);
@@ -1401,6 +1405,8 @@ bb10:
     t39 = INT64_C(1);
 #line 44 "examples/interpreter/main.hero"
     h_library_exit(t39);
+#line 44 "examples/interpreter/main.hero"
+    hero_unreachable();
 #line 44 "examples/interpreter/main.hero"
     goto bb9;
 #line 44 "examples/interpreter/main.hero"
@@ -1418,25 +1424,25 @@ bb12:
     t96 = h18_own18;
 #line 45 "examples/interpreter/main.hero"
     h18_own18 = t49;
-#line 1422 "main.c"
+#line 1428 "main.c"
     h_0opt_1be8f195_release(&t96);
 #line 45 "examples/interpreter/main.hero"
     t97 = h7_said;
-#line 1426 "main.c"
+#line 1432 "main.c"
     h_0opt_1be8f195_retain(&t49);
 #line 45 "examples/interpreter/main.hero"
     h7_said = t49;
-#line 1430 "main.c"
+#line 1436 "main.c"
     h_0opt_1be8f195_release(&t97);
 #line 47 "examples/interpreter/main.hero"
     t50 = h7_said;
 #line 47 "examples/interpreter/main.hero"
     t98 = h8_f4;
-#line 1436 "main.c"
+#line 1442 "main.c"
     h_0opt_1be8f195_retain(&t50);
 #line 47 "examples/interpreter/main.hero"
     h8_f4 = t50;
-#line 1440 "main.c"
+#line 1446 "main.c"
     h_0opt_1be8f195_release(&t98);
 #line 47 "examples/interpreter/main.hero"
     t51 = h8_f4;
@@ -1454,7 +1460,7 @@ bb13:
     t45 = h6_f3;
 #line 45 "examples/interpreter/main.hero"
     t46 = t45.as.err;
-#line 1458 "main.c"
+#line 1464 "main.c"
     hero_panic_must(t46);
     hero_unreachable();
 bb14:
@@ -1462,11 +1468,11 @@ bb14:
     t58 = h7_said;
 #line 50 "examples/interpreter/main.hero"
     t99 = h9_f5;
-#line 1466 "main.c"
+#line 1472 "main.c"
     h_0opt_1be8f195_retain(&t58);
 #line 50 "examples/interpreter/main.hero"
     h9_f5 = t58;
-#line 1470 "main.c"
+#line 1476 "main.c"
     h_0opt_1be8f195_release(&t99);
 #line 50 "examples/interpreter/main.hero"
     t59 = h9_f5;
@@ -1488,7 +1494,7 @@ bb15:
     t100 = h19_own19;
 #line 48 "examples/interpreter/main.hero"
     h19_own19 = t56;
-#line 1492 "main.c"
+#line 1498 "main.c"
     hero_str_decref(t100);
 #line 48 "examples/interpreter/main.hero"
     hero_print_str(t56);
@@ -1497,6 +1503,8 @@ bb15:
     t57 = INT64_C(1);
 #line 49 "examples/interpreter/main.hero"
     h_library_exit(t57);
+#line 49 "examples/interpreter/main.hero"
+    hero_unreachable();
 #line 49 "examples/interpreter/main.hero"
     goto bb14;
 #line 49 "examples/interpreter/main.hero"
@@ -1510,11 +1518,11 @@ bb17:
     t66 = t65.as.ok;
 #line 50 "examples/interpreter/main.hero"
     t101 = h10_f;
-#line 1514 "main.c"
+#line 1522 "main.c"
     h_runvalue_Frame_retain(&t66);
 #line 50 "examples/interpreter/main.hero"
     h10_f = t66;
-#line 1518 "main.c"
+#line 1526 "main.c"
     h_runvalue_Frame_release(&t101);
 #line 52 "examples/interpreter/main.hero"
     t67 = h10_f;
@@ -1522,11 +1530,11 @@ bb17:
     t68 = t67.f_lines;
 #line 52 "examples/interpreter/main.hero"
     t102 = h11_xs0;
-#line 1526 "main.c"
+#line 1534 "main.c"
     hero_array_incref(t68);
 #line 52 "examples/interpreter/main.hero"
     h11_xs0 = t68;
-#line 1530 "main.c"
+#line 1538 "main.c"
     hero_array_decref(t102);
 #line 52 "examples/interpreter/main.hero"
     t69 = INT64_C(0);
@@ -1540,7 +1548,7 @@ bb18:
     t63 = h9_f5;
 #line 50 "examples/interpreter/main.hero"
     t64 = t63.as.err;
-#line 1544 "main.c"
+#line 1552 "main.c"
     hero_panic_must(t64);
     hero_unreachable();
 bb19:
@@ -1564,11 +1572,11 @@ bb20:
     t76 = ((void)((t74 == NULL || t75 < 0 || t75 >= t74->len) ? ((void)hero_array_at(t74, t75), hero_unreachable()) : (void)0), (void)(t74->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t74 + 1))[t75]);
 #line 52 "examples/interpreter/main.hero"
     t103 = h13_line;
-#line 1568 "main.c"
+#line 1576 "main.c"
     hero_str_incref(t76);
 #line 52 "examples/interpreter/main.hero"
     h13_line = t76;
-#line 1572 "main.c"
+#line 1580 "main.c"
     hero_str_decref(t103);
 #line 53 "examples/interpreter/main.hero"
     t77 = h13_line;
@@ -1600,7 +1608,7 @@ bb22:
     if (t82) goto bb24; else goto bb25;
 #line 62 "examples/interpreter/main.hero"
 bb23:
-#line 1604 "main.c"
+#line 1612 "main.c"
     hero_array_decref(h0_given);
     h_0opt_f87774a_release(&h1_source);
     h_0opt_f87774a_release(&h2_f0);
@@ -1629,17 +1637,19 @@ bb24:
 #line 63 "examples/interpreter/main.hero"
     h_library_exit(t84);
 #line 63 "examples/interpreter/main.hero"
+    hero_unreachable();
+#line 63 "examples/interpreter/main.hero"
     goto bb23;
 #line 63 "examples/interpreter/main.hero"
 bb25:
 #line 63 "examples/interpreter/main.hero"
     goto bb23;
-#line 1638 "main.c"
+#line 1648 "main.c"
 }
 
 #line 66 "examples/interpreter/main.hero"
 HeroStr h_main_complaint(h_0opt_60498281 h0_said) {
-#line 1643 "main.c"
+#line 1653 "main.c"
     h_0opt_60498281 h1_s0 = {0};
     HeroStr h2_r0 = {0};
     HeroFailure h3_e = {0};
@@ -1675,11 +1685,11 @@ bb0:
     t1 = h0_said;
 #line 67 "examples/interpreter/main.hero"
     t17 = h1_s0;
-#line 1679 "main.c"
+#line 1689 "main.c"
     h_0opt_60498281_retain(&t1);
 #line 67 "examples/interpreter/main.hero"
     h1_s0 = t1;
-#line 1683 "main.c"
+#line 1693 "main.c"
     h_0opt_60498281_release(&t17);
 #line 67 "examples/interpreter/main.hero"
     t2 = h1_s0;
@@ -1699,7 +1709,7 @@ bb0:
 bb1:
 #line 67 "examples/interpreter/main.hero"
     t16 = h2_r0;
-#line 1703 "main.c"
+#line 1713 "main.c"
     hero_str_incref(t16);
     h_0opt_60498281_release(&h1_s0);
     hero_str_decref(h2_r0);
@@ -1713,11 +1723,11 @@ bb2:
     t4 = HERO_STR_LIT(hero_str_16ecc41b);
 #line 67 "examples/interpreter/main.hero"
     t18 = h2_r0;
-#line 1717 "main.c"
+#line 1727 "main.c"
     hero_str_incref(t4);
 #line 67 "examples/interpreter/main.hero"
     h2_r0 = t4;
-#line 1721 "main.c"
+#line 1731 "main.c"
     hero_str_decref(t18);
     goto bb1;
 bb3:
@@ -1727,11 +1737,11 @@ bb3:
     t6 = t5.as.err;
 #line 69 "examples/interpreter/main.hero"
     t19 = h3_e;
-#line 1731 "main.c"
+#line 1741 "main.c"
     hero_failure_retain(&t6);
 #line 69 "examples/interpreter/main.hero"
     h3_e = t6;
-#line 1735 "main.c"
+#line 1745 "main.c"
     hero_failure_release(&t19);
 #line 69 "examples/interpreter/main.hero"
     t7 = HERO_STR_LIT(hero_str_1bb0d635);
@@ -1745,7 +1755,7 @@ bb3:
     t20 = h4_own4;
 #line 69 "examples/interpreter/main.hero"
     h4_own4 = t10;
-#line 1749 "main.c"
+#line 1759 "main.c"
     hero_str_decref(t20);
 #line 69 "examples/interpreter/main.hero"
     t11 = HERO_STR_LIT(hero_str_187813);
@@ -1755,7 +1765,7 @@ bb3:
     t21 = h5_own5;
 #line 69 "examples/interpreter/main.hero"
     h5_own5 = t12;
-#line 1759 "main.c"
+#line 1769 "main.c"
     hero_str_decref(t21);
 #line 69 "examples/interpreter/main.hero"
     t13 = h3_e;
@@ -1767,22 +1777,22 @@ bb3:
     t22 = h6_own6;
 #line 69 "examples/interpreter/main.hero"
     h6_own6 = t15;
-#line 1771 "main.c"
+#line 1781 "main.c"
     hero_str_decref(t22);
 #line 67 "examples/interpreter/main.hero"
     t23 = h2_r0;
-#line 1775 "main.c"
+#line 1785 "main.c"
     hero_str_incref(t15);
 #line 67 "examples/interpreter/main.hero"
     h2_r0 = t15;
-#line 1779 "main.c"
+#line 1789 "main.c"
     hero_str_decref(t23);
     goto bb1;
 }
 
 #line 71 "examples/interpreter/main.hero"
 HeroStr h_main_complaint_of_run(h_0opt_1be8f195 h0_said) {
-#line 1786 "main.c"
+#line 1796 "main.c"
     h_0opt_1be8f195 h1_s0 = {0};
     HeroStr h2_r0 = {0};
     HeroFailure h3_e = {0};
@@ -1818,11 +1828,11 @@ bb0:
     t1 = h0_said;
 #line 72 "examples/interpreter/main.hero"
     t17 = h1_s0;
-#line 1822 "main.c"
+#line 1832 "main.c"
     h_0opt_1be8f195_retain(&t1);
 #line 72 "examples/interpreter/main.hero"
     h1_s0 = t1;
-#line 1826 "main.c"
+#line 1836 "main.c"
     h_0opt_1be8f195_release(&t17);
 #line 72 "examples/interpreter/main.hero"
     t2 = h1_s0;
@@ -1842,7 +1852,7 @@ bb0:
 bb1:
 #line 72 "examples/interpreter/main.hero"
     t16 = h2_r0;
-#line 1846 "main.c"
+#line 1856 "main.c"
     hero_str_incref(t16);
     h_0opt_1be8f195_release(&h1_s0);
     hero_str_decref(h2_r0);
@@ -1856,11 +1866,11 @@ bb2:
     t4 = HERO_STR_LIT(hero_str_16ecc41b);
 #line 72 "examples/interpreter/main.hero"
     t18 = h2_r0;
-#line 1860 "main.c"
+#line 1870 "main.c"
     hero_str_incref(t4);
 #line 72 "examples/interpreter/main.hero"
     h2_r0 = t4;
-#line 1864 "main.c"
+#line 1874 "main.c"
     hero_str_decref(t18);
     goto bb1;
 bb3:
@@ -1870,11 +1880,11 @@ bb3:
     t6 = t5.as.err;
 #line 74 "examples/interpreter/main.hero"
     t19 = h3_e;
-#line 1874 "main.c"
+#line 1884 "main.c"
     hero_failure_retain(&t6);
 #line 74 "examples/interpreter/main.hero"
     h3_e = t6;
-#line 1878 "main.c"
+#line 1888 "main.c"
     hero_failure_release(&t19);
 #line 74 "examples/interpreter/main.hero"
     t7 = HERO_STR_LIT(hero_str_1bb0d635);
@@ -1888,7 +1898,7 @@ bb3:
     t20 = h4_own4;
 #line 74 "examples/interpreter/main.hero"
     h4_own4 = t10;
-#line 1892 "main.c"
+#line 1902 "main.c"
     hero_str_decref(t20);
 #line 74 "examples/interpreter/main.hero"
     t11 = HERO_STR_LIT(hero_str_187813);
@@ -1898,7 +1908,7 @@ bb3:
     t21 = h5_own5;
 #line 74 "examples/interpreter/main.hero"
     h5_own5 = t12;
-#line 1902 "main.c"
+#line 1912 "main.c"
     hero_str_decref(t21);
 #line 74 "examples/interpreter/main.hero"
     t13 = h3_e;
@@ -1910,22 +1920,22 @@ bb3:
     t22 = h6_own6;
 #line 74 "examples/interpreter/main.hero"
     h6_own6 = t15;
-#line 1914 "main.c"
+#line 1924 "main.c"
     hero_str_decref(t22);
 #line 72 "examples/interpreter/main.hero"
     t23 = h2_r0;
-#line 1918 "main.c"
+#line 1928 "main.c"
     hero_str_incref(t15);
 #line 72 "examples/interpreter/main.hero"
     h2_r0 = t15;
-#line 1922 "main.c"
+#line 1932 "main.c"
     hero_str_decref(t23);
     goto bb1;
 }
 
 #line 266 "examples/interpreter/main.hero"
 HeroStr h_main_refusal_code(HeroStr h0_source) {
-#line 1929 "main.c"
+#line 1939 "main.c"
     h_0opt_60498281 h1_nodes = {0};
     h_0opt_60498281 h2_f0 = {0};
     h_0opt_60498281 h3_f1 = {0};
@@ -1972,25 +1982,25 @@ bb0:
     t22 = h5_own5;
 #line 267 "examples/interpreter/main.hero"
     h5_own5 = t2;
-#line 1976 "main.c"
+#line 1986 "main.c"
     h_0opt_60498281_release(&t22);
 #line 267 "examples/interpreter/main.hero"
     t23 = h1_nodes;
-#line 1980 "main.c"
+#line 1990 "main.c"
     h_0opt_60498281_retain(&t2);
 #line 267 "examples/interpreter/main.hero"
     h1_nodes = t2;
-#line 1984 "main.c"
+#line 1994 "main.c"
     h_0opt_60498281_release(&t23);
 #line 269 "examples/interpreter/main.hero"
     t3 = h1_nodes;
 #line 269 "examples/interpreter/main.hero"
     t24 = h2_f0;
-#line 1990 "main.c"
+#line 2000 "main.c"
     h_0opt_60498281_retain(&t3);
 #line 269 "examples/interpreter/main.hero"
     h2_f0 = t3;
-#line 1994 "main.c"
+#line 2004 "main.c"
     h_0opt_60498281_release(&t24);
 #line 269 "examples/interpreter/main.hero"
     t4 = h2_f0;
@@ -2008,11 +2018,11 @@ bb1:
     t10 = h1_nodes;
 #line 272 "examples/interpreter/main.hero"
     t25 = h3_f1;
-#line 2012 "main.c"
+#line 2022 "main.c"
     h_0opt_60498281_retain(&t10);
 #line 272 "examples/interpreter/main.hero"
     h3_f1 = t10;
-#line 2016 "main.c"
+#line 2026 "main.c"
     h_0opt_60498281_release(&t25);
 #line 272 "examples/interpreter/main.hero"
     t11 = h3_f1;
@@ -2034,7 +2044,7 @@ bb2:
     t26 = h6_own6;
 #line 270 "examples/interpreter/main.hero"
     h6_own6 = t9;
-#line 2038 "main.c"
+#line 2048 "main.c"
     hero_str_decref(t26);
 #line 270 "examples/interpreter/main.hero"
     h4_ret0 = t9;
@@ -2056,7 +2066,7 @@ bb4:
     t27 = h7_own7;
 #line 272 "examples/interpreter/main.hero"
     h7_own7 = t19;
-#line 2060 "main.c"
+#line 2070 "main.c"
     h_0opt_1be8f195_release(&t27);
 #line 272 "examples/interpreter/main.hero"
     t20 = h_main_code_of_frame(t19);
@@ -2064,7 +2074,7 @@ bb4:
     t28 = h8_own8;
 #line 272 "examples/interpreter/main.hero"
     h8_own8 = t20;
-#line 2068 "main.c"
+#line 2078 "main.c"
     hero_str_decref(t28);
 #line 272 "examples/interpreter/main.hero"
     h4_ret0 = t20;
@@ -2076,7 +2086,7 @@ bb5:
     t15 = h3_f1;
 #line 272 "examples/interpreter/main.hero"
     t16 = t15.as.err;
-#line 2080 "main.c"
+#line 2090 "main.c"
     hero_panic_must(t16);
     hero_unreachable();
 bb6:
@@ -2094,7 +2104,7 @@ bb6:
 
 #line 274 "examples/interpreter/main.hero"
 HeroStr h_main_code_of_tree(h_0opt_60498281 h0_said) {
-#line 2098 "main.c"
+#line 2108 "main.c"
     h_0opt_60498281 h1_s0 = {0};
     HeroStr h2_r0 = {0};
     HeroFailure h3_e = {0};
@@ -2117,11 +2127,11 @@ bb0:
     t1 = h0_said;
 #line 275 "examples/interpreter/main.hero"
     t10 = h1_s0;
-#line 2121 "main.c"
+#line 2131 "main.c"
     h_0opt_60498281_retain(&t1);
 #line 275 "examples/interpreter/main.hero"
     h1_s0 = t1;
-#line 2125 "main.c"
+#line 2135 "main.c"
     h_0opt_60498281_release(&t10);
 #line 275 "examples/interpreter/main.hero"
     t2 = h1_s0;
@@ -2141,7 +2151,7 @@ bb0:
 bb1:
 #line 275 "examples/interpreter/main.hero"
     t9 = h2_r0;
-#line 2145 "main.c"
+#line 2155 "main.c"
     hero_str_incref(t9);
     h_0opt_60498281_release(&h1_s0);
     hero_str_decref(h2_r0);
@@ -2152,11 +2162,11 @@ bb2:
     t4 = HERO_STR_LIT(hero_str_16ecc41b);
 #line 275 "examples/interpreter/main.hero"
     t11 = h2_r0;
-#line 2156 "main.c"
+#line 2166 "main.c"
     hero_str_incref(t4);
 #line 275 "examples/interpreter/main.hero"
     h2_r0 = t4;
-#line 2160 "main.c"
+#line 2170 "main.c"
     hero_str_decref(t11);
     goto bb1;
 bb3:
@@ -2166,11 +2176,11 @@ bb3:
     t6 = t5.as.err;
 #line 277 "examples/interpreter/main.hero"
     t12 = h3_e;
-#line 2170 "main.c"
+#line 2180 "main.c"
     hero_failure_retain(&t6);
 #line 277 "examples/interpreter/main.hero"
     h3_e = t6;
-#line 2174 "main.c"
+#line 2184 "main.c"
     hero_failure_release(&t12);
 #line 277 "examples/interpreter/main.hero"
     t7 = h3_e;
@@ -2178,18 +2188,18 @@ bb3:
     t8 = t7.code;
 #line 275 "examples/interpreter/main.hero"
     t13 = h2_r0;
-#line 2182 "main.c"
+#line 2192 "main.c"
     hero_str_incref(t8);
 #line 275 "examples/interpreter/main.hero"
     h2_r0 = t8;
-#line 2186 "main.c"
+#line 2196 "main.c"
     hero_str_decref(t13);
     goto bb1;
 }
 
 #line 279 "examples/interpreter/main.hero"
 HeroStr h_main_code_of_frame(h_0opt_1be8f195 h0_said) {
-#line 2193 "main.c"
+#line 2203 "main.c"
     h_0opt_1be8f195 h1_s0 = {0};
     HeroStr h2_r0 = {0};
     HeroFailure h3_e = {0};
@@ -2212,11 +2222,11 @@ bb0:
     t1 = h0_said;
 #line 280 "examples/interpreter/main.hero"
     t10 = h1_s0;
-#line 2216 "main.c"
+#line 2226 "main.c"
     h_0opt_1be8f195_retain(&t1);
 #line 280 "examples/interpreter/main.hero"
     h1_s0 = t1;
-#line 2220 "main.c"
+#line 2230 "main.c"
     h_0opt_1be8f195_release(&t10);
 #line 280 "examples/interpreter/main.hero"
     t2 = h1_s0;
@@ -2236,7 +2246,7 @@ bb0:
 bb1:
 #line 280 "examples/interpreter/main.hero"
     t9 = h2_r0;
-#line 2240 "main.c"
+#line 2250 "main.c"
     hero_str_incref(t9);
     h_0opt_1be8f195_release(&h1_s0);
     hero_str_decref(h2_r0);
@@ -2247,11 +2257,11 @@ bb2:
     t4 = HERO_STR_LIT(hero_str_16ecc41b);
 #line 280 "examples/interpreter/main.hero"
     t11 = h2_r0;
-#line 2251 "main.c"
+#line 2261 "main.c"
     hero_str_incref(t4);
 #line 280 "examples/interpreter/main.hero"
     h2_r0 = t4;
-#line 2255 "main.c"
+#line 2265 "main.c"
     hero_str_decref(t11);
     goto bb1;
 bb3:
@@ -2261,11 +2271,11 @@ bb3:
     t6 = t5.as.err;
 #line 282 "examples/interpreter/main.hero"
     t12 = h3_e;
-#line 2265 "main.c"
+#line 2275 "main.c"
     hero_failure_retain(&t6);
 #line 282 "examples/interpreter/main.hero"
     h3_e = t6;
-#line 2269 "main.c"
+#line 2279 "main.c"
     hero_failure_release(&t12);
 #line 282 "examples/interpreter/main.hero"
     t7 = h3_e;
@@ -2273,18 +2283,18 @@ bb3:
     t8 = t7.code;
 #line 280 "examples/interpreter/main.hero"
     t13 = h2_r0;
-#line 2277 "main.c"
+#line 2287 "main.c"
     hero_str_incref(t8);
 #line 280 "examples/interpreter/main.hero"
     h2_r0 = t8;
-#line 2281 "main.c"
+#line 2291 "main.c"
     hero_str_decref(t13);
     goto bb1;
 }
 
 #line 286 "examples/interpreter/main.hero"
 HeroStr h_main_ran(HeroStr h0_source) {
-#line 2288 "main.c"
+#line 2298 "main.c"
     h_0opt_60498281 h1_f0 = {0};
     h_syntree_Tree h2_nodes = {0};
     h_0opt_1be8f195 h3_f1 = {0};
@@ -2333,15 +2343,15 @@ bb0:
     t25 = h5_own5;
 #line 287 "examples/interpreter/main.hero"
     h5_own5 = t2;
-#line 2337 "main.c"
+#line 2347 "main.c"
     h_0opt_60498281_release(&t25);
 #line 287 "examples/interpreter/main.hero"
     t26 = h1_f0;
-#line 2341 "main.c"
+#line 2351 "main.c"
     h_0opt_60498281_retain(&t2);
 #line 287 "examples/interpreter/main.hero"
     h1_f0 = t2;
-#line 2345 "main.c"
+#line 2355 "main.c"
     h_0opt_60498281_release(&t26);
 #line 287 "examples/interpreter/main.hero"
     t3 = h1_f0;
@@ -2361,11 +2371,11 @@ bb1:
     t10 = t9.as.ok;
 #line 287 "examples/interpreter/main.hero"
     t27 = h2_nodes;
-#line 2365 "main.c"
+#line 2375 "main.c"
     h_syntree_Tree_retain(&t10);
 #line 287 "examples/interpreter/main.hero"
     h2_nodes = t10;
-#line 2369 "main.c"
+#line 2379 "main.c"
     h_syntree_Tree_release(&t27);
 #line 288 "examples/interpreter/main.hero"
     t11 = h2_nodes;
@@ -2375,15 +2385,15 @@ bb1:
     t28 = h6_own6;
 #line 288 "examples/interpreter/main.hero"
     h6_own6 = t12;
-#line 2379 "main.c"
+#line 2389 "main.c"
     h_0opt_1be8f195_release(&t28);
 #line 288 "examples/interpreter/main.hero"
     t29 = h3_f1;
-#line 2383 "main.c"
+#line 2393 "main.c"
     h_0opt_1be8f195_retain(&t12);
 #line 288 "examples/interpreter/main.hero"
     h3_f1 = t12;
-#line 2387 "main.c"
+#line 2397 "main.c"
     h_0opt_1be8f195_release(&t29);
 #line 288 "examples/interpreter/main.hero"
     t13 = h3_f1;
@@ -2401,7 +2411,7 @@ bb2:
     t7 = h1_f0;
 #line 287 "examples/interpreter/main.hero"
     t8 = t7.as.err;
-#line 2405 "main.c"
+#line 2415 "main.c"
     hero_panic_must(t8);
     hero_unreachable();
 bb3:
@@ -2411,11 +2421,11 @@ bb3:
     t20 = t19.as.ok;
 #line 288 "examples/interpreter/main.hero"
     t30 = h4_f;
-#line 2415 "main.c"
+#line 2425 "main.c"
     h_runvalue_Frame_retain(&t20);
 #line 288 "examples/interpreter/main.hero"
     h4_f = t20;
-#line 2419 "main.c"
+#line 2429 "main.c"
     h_runvalue_Frame_release(&t30);
 #line 289 "examples/interpreter/main.hero"
     t21 = h4_f;
@@ -2429,7 +2439,7 @@ bb3:
     t31 = h7_own7;
 #line 289 "examples/interpreter/main.hero"
     h7_own7 = t24;
-#line 2433 "main.c"
+#line 2443 "main.c"
     hero_str_decref(t31);
     hero_str_incref(t24);
     h_0opt_60498281_release(&h1_f0);
@@ -2445,14 +2455,14 @@ bb4:
     t17 = h3_f1;
 #line 288 "examples/interpreter/main.hero"
     t18 = t17.as.err;
-#line 2449 "main.c"
+#line 2459 "main.c"
     hero_panic_must(t18);
     hero_unreachable();
 }
 
 #line 293 "examples/interpreter/main.hero"
 HeroStr h_main_rendering(HeroStr h0_source) {
-#line 2456 "main.c"
+#line 2466 "main.c"
     h_0opt_7f1de476 h1_f0 = {0};
     HeroArrayHeader * h2_tokens = {0};
     h_syncursor_Cursor h3_c = {0};
@@ -2509,15 +2519,15 @@ bb0:
     t26 = h7_own7;
 #line 294 "examples/interpreter/main.hero"
     h7_own7 = t2;
-#line 2513 "main.c"
+#line 2523 "main.c"
     h_0opt_7f1de476_release(&t26);
 #line 294 "examples/interpreter/main.hero"
     t27 = h1_f0;
-#line 2517 "main.c"
+#line 2527 "main.c"
     h_0opt_7f1de476_retain(&t2);
 #line 294 "examples/interpreter/main.hero"
     h1_f0 = t2;
-#line 2521 "main.c"
+#line 2531 "main.c"
     h_0opt_7f1de476_release(&t27);
 #line 294 "examples/interpreter/main.hero"
     t3 = h1_f0;
@@ -2537,11 +2547,11 @@ bb1:
     t10 = t9.as.ok;
 #line 294 "examples/interpreter/main.hero"
     t28 = h2_tokens;
-#line 2541 "main.c"
+#line 2551 "main.c"
     hero_array_incref(t10);
 #line 294 "examples/interpreter/main.hero"
     h2_tokens = t10;
-#line 2545 "main.c"
+#line 2555 "main.c"
     hero_array_decref(t28);
 #line 295 "examples/interpreter/main.hero"
     t11 = h2_tokens;
@@ -2551,15 +2561,15 @@ bb1:
     t29 = h8_own8;
 #line 295 "examples/interpreter/main.hero"
     h8_own8 = t12;
-#line 2555 "main.c"
+#line 2565 "main.c"
     h_syncursor_Cursor_release(&t29);
 #line 295 "examples/interpreter/main.hero"
     t30 = h3_c;
-#line 2559 "main.c"
+#line 2569 "main.c"
     h_syncursor_Cursor_retain(&t12);
 #line 295 "examples/interpreter/main.hero"
     h3_c = t12;
-#line 2563 "main.c"
+#line 2573 "main.c"
     h_syncursor_Cursor_release(&t30);
 #line 296 "examples/interpreter/main.hero"
     t13 = h_syntree_empty();
@@ -2567,15 +2577,15 @@ bb1:
     t31 = h9_own9;
 #line 296 "examples/interpreter/main.hero"
     h9_own9 = t13;
-#line 2571 "main.c"
+#line 2581 "main.c"
     h_syntree_Tree_release(&t31);
 #line 296 "examples/interpreter/main.hero"
     t32 = h4_t;
-#line 2575 "main.c"
+#line 2585 "main.c"
     h_syntree_Tree_retain(&t13);
 #line 296 "examples/interpreter/main.hero"
     h4_t = t13;
-#line 2579 "main.c"
+#line 2589 "main.c"
     h_syntree_Tree_release(&t32);
 #line 297 "examples/interpreter/main.hero"
     t14 = h_synexpr_parsed(&h3_c, &h4_t);
@@ -2583,15 +2593,15 @@ bb1:
     t33 = h10_own10;
 #line 297 "examples/interpreter/main.hero"
     h10_own10 = t14;
-#line 2587 "main.c"
+#line 2597 "main.c"
     h_0opt_e201354_release(&t33);
 #line 297 "examples/interpreter/main.hero"
     t34 = h5_f1;
-#line 2591 "main.c"
+#line 2601 "main.c"
     h_0opt_e201354_retain(&t14);
 #line 297 "examples/interpreter/main.hero"
     h5_f1 = t14;
-#line 2595 "main.c"
+#line 2605 "main.c"
     h_0opt_e201354_release(&t34);
 #line 297 "examples/interpreter/main.hero"
     t15 = h5_f1;
@@ -2609,7 +2619,7 @@ bb2:
     t7 = h1_f0;
 #line 294 "examples/interpreter/main.hero"
     t8 = t7.as.err;
-#line 2613 "main.c"
+#line 2623 "main.c"
     hero_panic_must(t8);
     hero_unreachable();
 bb3:
@@ -2628,7 +2638,7 @@ bb3:
     t35 = h11_own11;
 #line 298 "examples/interpreter/main.hero"
     h11_own11 = t25;
-#line 2632 "main.c"
+#line 2642 "main.c"
     hero_str_decref(t35);
     hero_str_incref(t25);
     h_0opt_7f1de476_release(&h1_f0);
@@ -2647,27 +2657,27 @@ bb4:
     t19 = h5_f1;
 #line 297 "examples/interpreter/main.hero"
     t20 = t19.as.err;
-#line 2651 "main.c"
+#line 2661 "main.c"
     hero_panic_must(t20);
     hero_unreachable();
 }
 
 #line 42 "examples/interpreter/lex/scan.hero"
 HeroStr h_lexscan_DIGITS(void) {
-#line 2658 "main.c"
+#line 2668 "main.c"
     HeroStr t1;
     goto bb0;
 bb0:
 #line 43 "examples/interpreter/lex/scan.hero"
     t1 = HERO_STR_LIT(hero_str_2e281c4b);
-#line 2664 "main.c"
+#line 2674 "main.c"
     hero_str_incref(t1);
     return t1;
 }
 
 #line 45 "examples/interpreter/lex/scan.hero"
 int64_t h_lexscan_MAX(void) {
-#line 2671 "main.c"
+#line 2681 "main.c"
     int64_t t1;
     goto bb0;
 bb0:
@@ -2675,64 +2685,64 @@ bb0:
     t1 = INT64_C(9223372036854775807);
 #line 46 "examples/interpreter/lex/scan.hero"
     return t1;
-#line 2679 "main.c"
+#line 2689 "main.c"
 }
 
 #line 48 "examples/interpreter/lex/scan.hero"
 HeroStr h_lexscan_ERR_TEXT(void) {
-#line 2684 "main.c"
+#line 2694 "main.c"
     HeroStr t1;
     goto bb0;
 bb0:
 #line 49 "examples/interpreter/lex/scan.hero"
     t1 = HERO_STR_LIT(hero_str_1dd9856);
-#line 2690 "main.c"
+#line 2700 "main.c"
     hero_str_incref(t1);
     return t1;
 }
 
 #line 51 "examples/interpreter/lex/scan.hero"
 HeroStr h_lexscan_ERR_ESCAPE(void) {
-#line 2697 "main.c"
+#line 2707 "main.c"
     HeroStr t1;
     goto bb0;
 bb0:
 #line 52 "examples/interpreter/lex/scan.hero"
     t1 = HERO_STR_LIT(hero_str_188aaf9b);
-#line 2703 "main.c"
+#line 2713 "main.c"
     hero_str_incref(t1);
     return t1;
 }
 
 #line 54 "examples/interpreter/lex/scan.hero"
 HeroStr h_lexscan_ERR_BYTE(void) {
-#line 2710 "main.c"
+#line 2720 "main.c"
     HeroStr t1;
     goto bb0;
 bb0:
 #line 55 "examples/interpreter/lex/scan.hero"
     t1 = HERO_STR_LIT(hero_str_7b9f7ca5);
-#line 2716 "main.c"
+#line 2726 "main.c"
     hero_str_incref(t1);
     return t1;
 }
 
 #line 57 "examples/interpreter/lex/scan.hero"
 HeroStr h_lexscan_ERR_NUMBER(void) {
-#line 2723 "main.c"
+#line 2733 "main.c"
     HeroStr t1;
     goto bb0;
 bb0:
 #line 58 "examples/interpreter/lex/scan.hero"
     t1 = HERO_STR_LIT(hero_str_245840bf);
-#line 2729 "main.c"
+#line 2739 "main.c"
     hero_str_incref(t1);
     return t1;
 }
 
 #line 61 "examples/interpreter/lex/scan.hero"
 h_0opt_7f1de476 h_lexscan_scanned(HeroStr h0_source) {
-#line 2736 "main.c"
+#line 2746 "main.c"
     HeroArrayHeader * h1_out = {0};
     int64_t h2_at;
     int64_t h3_n;
@@ -2901,15 +2911,15 @@ bb0:
     t125 = h15_own15;
 #line 62 "examples/interpreter/lex/scan.hero"
     h15_own15 = t1;
-#line 2905 "main.c"
+#line 2915 "main.c"
     hero_array_decref(t125);
 #line 62 "examples/interpreter/lex/scan.hero"
     t126 = h1_out;
-#line 2909 "main.c"
+#line 2919 "main.c"
     hero_array_incref(t1);
 #line 62 "examples/interpreter/lex/scan.hero"
     h1_out = t1;
-#line 2913 "main.c"
+#line 2923 "main.c"
     hero_array_decref(t126);
 #line 63 "examples/interpreter/lex/scan.hero"
     t2 = INT64_C(0);
@@ -3062,7 +3072,7 @@ bb14:
     t127 = h16_own16;
 #line 79 "examples/interpreter/lex/scan.hero"
     h16_own16 = t37;
-#line 3066 "main.c"
+#line 3076 "main.c"
     h_lextoken_Token_release(&t127);
 #line 79 "examples/interpreter/lex/scan.hero"
     hero_array_push_owned(&h1_out, &t37);
@@ -3084,15 +3094,15 @@ bb16:
     t128 = h17_own17;
 #line 81 "examples/interpreter/lex/scan.hero"
     h17_own17 = t43;
-#line 3088 "main.c"
+#line 3098 "main.c"
     h_0opt_37811efc_release(&t128);
 #line 81 "examples/interpreter/lex/scan.hero"
     t129 = h6_f0;
-#line 3092 "main.c"
+#line 3102 "main.c"
     h_0opt_37811efc_retain(&t43);
 #line 81 "examples/interpreter/lex/scan.hero"
     h6_f0 = t43;
-#line 3096 "main.c"
+#line 3106 "main.c"
     h_0opt_37811efc_release(&t129);
 #line 81 "examples/interpreter/lex/scan.hero"
     t44 = h6_f0;
@@ -3122,11 +3132,11 @@ bb18:
     t52 = t51.as.ok;
 #line 81 "examples/interpreter/lex/scan.hero"
     t130 = h7_read;
-#line 3126 "main.c"
+#line 3136 "main.c"
     h_lexscan_Read_retain(&t52);
 #line 81 "examples/interpreter/lex/scan.hero"
     h7_read = t52;
-#line 3130 "main.c"
+#line 3140 "main.c"
     h_lexscan_Read_release(&t130);
 #line 82 "examples/interpreter/lex/scan.hero"
     t54 = h7_read;
@@ -3147,7 +3157,7 @@ bb19:
     t48 = h6_f0;
 #line 81 "examples/interpreter/lex/scan.hero"
     t49 = t48.as.err;
-#line 3151 "main.c"
+#line 3161 "main.c"
     hero_failure_retain(&t49);
 #line 81 "examples/interpreter/lex/scan.hero"
     t50 = (h_0opt_7f1de476){.tag = INT64_C(1), .as.err = t49};
@@ -3155,7 +3165,7 @@ bb19:
     t131 = h18_own18;
 #line 81 "examples/interpreter/lex/scan.hero"
     h18_own18 = t50;
-#line 3159 "main.c"
+#line 3169 "main.c"
     h_0opt_7f1de476_release(&t131);
 #line 81 "examples/interpreter/lex/scan.hero"
     h14_ret0 = t50;
@@ -3173,15 +3183,15 @@ bb20:
     t132 = h19_own19;
 #line 85 "examples/interpreter/lex/scan.hero"
     h19_own19 = t64;
-#line 3177 "main.c"
+#line 3187 "main.c"
     h_0opt_37811efc_release(&t132);
 #line 85 "examples/interpreter/lex/scan.hero"
     t133 = h8_f1;
-#line 3181 "main.c"
+#line 3191 "main.c"
     h_0opt_37811efc_retain(&t64);
 #line 85 "examples/interpreter/lex/scan.hero"
     h8_f1 = t64;
-#line 3185 "main.c"
+#line 3195 "main.c"
     h_0opt_37811efc_release(&t133);
 #line 85 "examples/interpreter/lex/scan.hero"
     t65 = h8_f1;
@@ -3209,11 +3219,11 @@ bb22:
     t73 = t72.as.ok;
 #line 85 "examples/interpreter/lex/scan.hero"
     t134 = h9_read;
-#line 3213 "main.c"
+#line 3223 "main.c"
     h_lexscan_Read_retain(&t73);
 #line 85 "examples/interpreter/lex/scan.hero"
     h9_read = t73;
-#line 3217 "main.c"
+#line 3227 "main.c"
     h_lexscan_Read_release(&t134);
 #line 86 "examples/interpreter/lex/scan.hero"
     t75 = h9_read;
@@ -3234,7 +3244,7 @@ bb23:
     t69 = h8_f1;
 #line 85 "examples/interpreter/lex/scan.hero"
     t70 = t69.as.err;
-#line 3238 "main.c"
+#line 3248 "main.c"
     hero_failure_retain(&t70);
 #line 85 "examples/interpreter/lex/scan.hero"
     t71 = (h_0opt_7f1de476){.tag = INT64_C(1), .as.err = t70};
@@ -3242,7 +3252,7 @@ bb23:
     t135 = h20_own20;
 #line 85 "examples/interpreter/lex/scan.hero"
     h20_own20 = t71;
-#line 3246 "main.c"
+#line 3256 "main.c"
     h_0opt_7f1de476_release(&t135);
 #line 85 "examples/interpreter/lex/scan.hero"
     h14_ret0 = t71;
@@ -3260,15 +3270,15 @@ bb24:
     t136 = h21_own21;
 #line 89 "examples/interpreter/lex/scan.hero"
     h21_own21 = t84;
-#line 3264 "main.c"
+#line 3274 "main.c"
     h_lexscan_Read_release(&t136);
 #line 89 "examples/interpreter/lex/scan.hero"
     t137 = h10_read;
-#line 3268 "main.c"
+#line 3278 "main.c"
     h_lexscan_Read_retain(&t84);
 #line 89 "examples/interpreter/lex/scan.hero"
     h10_read = t84;
-#line 3272 "main.c"
+#line 3282 "main.c"
     h_lexscan_Read_release(&t137);
 #line 90 "examples/interpreter/lex/scan.hero"
     t86 = h10_read;
@@ -3295,15 +3305,15 @@ bb25:
     t138 = h22_own22;
 #line 93 "examples/interpreter/lex/scan.hero"
     h22_own22 = t93;
-#line 3299 "main.c"
+#line 3309 "main.c"
     h_0opt_37811efc_release(&t138);
 #line 93 "examples/interpreter/lex/scan.hero"
     t139 = h11_f2;
-#line 3303 "main.c"
+#line 3313 "main.c"
     h_0opt_37811efc_retain(&t93);
 #line 93 "examples/interpreter/lex/scan.hero"
     h11_f2 = t93;
-#line 3307 "main.c"
+#line 3317 "main.c"
     h_0opt_37811efc_release(&t139);
 #line 93 "examples/interpreter/lex/scan.hero"
     t94 = h11_f2;
@@ -3323,11 +3333,11 @@ bb26:
     t102 = t101.as.ok;
 #line 93 "examples/interpreter/lex/scan.hero"
     t140 = h12_read;
-#line 3327 "main.c"
+#line 3337 "main.c"
     h_lexscan_Read_retain(&t102);
 #line 93 "examples/interpreter/lex/scan.hero"
     h12_read = t102;
-#line 3331 "main.c"
+#line 3341 "main.c"
     h_lexscan_Read_release(&t140);
 #line 94 "examples/interpreter/lex/scan.hero"
     t104 = h12_read;
@@ -3348,7 +3358,7 @@ bb27:
     t98 = h11_f2;
 #line 93 "examples/interpreter/lex/scan.hero"
     t99 = t98.as.err;
-#line 3352 "main.c"
+#line 3362 "main.c"
     hero_failure_retain(&t99);
 #line 93 "examples/interpreter/lex/scan.hero"
     t100 = (h_0opt_7f1de476){.tag = INT64_C(1), .as.err = t99};
@@ -3356,7 +3366,7 @@ bb27:
     t141 = h23_own23;
 #line 93 "examples/interpreter/lex/scan.hero"
     h23_own23 = t100;
-#line 3360 "main.c"
+#line 3370 "main.c"
     h_0opt_7f1de476_release(&t141);
 #line 93 "examples/interpreter/lex/scan.hero"
     h14_ret0 = t100;
@@ -3372,7 +3382,7 @@ bb28:
     t142 = h24_own24;
 #line 100 "examples/interpreter/lex/scan.hero"
     h24_own24 = t121;
-#line 3376 "main.c"
+#line 3386 "main.c"
     h_lextoken_Token_release(&t142);
 #line 100 "examples/interpreter/lex/scan.hero"
     t122 = hero_array_push(t120, &t121);
@@ -3380,7 +3390,7 @@ bb28:
     t143 = h25_own25;
 #line 100 "examples/interpreter/lex/scan.hero"
     h25_own25 = t122;
-#line 3384 "main.c"
+#line 3394 "main.c"
     hero_array_decref(t143);
     hero_array_incref(t122);
 #line 100 "examples/interpreter/lex/scan.hero"
@@ -3389,7 +3399,7 @@ bb28:
     t144 = h26_own26;
 #line 100 "examples/interpreter/lex/scan.hero"
     h26_own26 = t123;
-#line 3393 "main.c"
+#line 3403 "main.c"
     h_0opt_7f1de476_release(&t144);
 #line 100 "examples/interpreter/lex/scan.hero"
     h14_ret0 = t123;
@@ -3422,7 +3432,7 @@ bb31:
     t145 = h27_own27;
 #line 98 "examples/interpreter/lex/scan.hero"
     h27_own27 = t118;
-#line 3426 "main.c"
+#line 3436 "main.c"
     h_lextoken_Token_release(&t145);
 #line 98 "examples/interpreter/lex/scan.hero"
     hero_array_push_owned(&h1_out, &t118);
@@ -3434,7 +3444,7 @@ bb32:
     goto bb28;
 #line 98 "examples/interpreter/lex/scan.hero"
 bb33:
-#line 3438 "main.c"
+#line 3448 "main.c"
     t124 = h14_ret0;
     h_0opt_7f1de476_retain(&t124);
     hero_array_decref(h1_out);
@@ -3463,7 +3473,7 @@ bb33:
 
 #line 111 "examples/interpreter/lex/scan.hero"
 int64_t h_lexscan_line_end(HeroStr h0_source, int64_t h1_from) {
-#line 3467 "main.c"
+#line 3477 "main.c"
     int64_t h2_at;
     bool h3_b0;
     int64_t t1;
@@ -3542,12 +3552,12 @@ bb5:
     t11 = h3_b0;
 #line 114 "examples/interpreter/lex/scan.hero"
     if (t11) goto bb2; else goto bb3;
-#line 3546 "main.c"
+#line 3556 "main.c"
 }
 
 #line 122 "examples/interpreter/lex/scan.hero"
 int64_t h_lexscan_byte_at(HeroStr h0_source, int64_t h1_at) {
-#line 3551 "main.c"
+#line 3561 "main.c"
     bool h2_b0;
     h_0opt_e201354 h3_f0 = {0};
     int64_t h4_ret0;
@@ -3599,22 +3609,22 @@ bb1:
 #line 126 "examples/interpreter/lex/scan.hero"
     t13 = h1_at;
 #line 126 "examples/interpreter/lex/scan.hero"
-    t14 = hero_str_byte(t12, t13);
+    t14 = ((void)((t12.ptr == NULL || t13 < 0 || t13 >= t12.len) ? ((void)hero_str_byte(t12, t13), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t12.ptr[t13]);
 #line 126 "examples/interpreter/lex/scan.hero"
     t15 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t14};
 #line 126 "examples/interpreter/lex/scan.hero"
     t25 = h5_own5;
 #line 126 "examples/interpreter/lex/scan.hero"
     h5_own5 = t15;
-#line 3610 "main.c"
+#line 3620 "main.c"
     h_0opt_e201354_release(&t25);
 #line 126 "examples/interpreter/lex/scan.hero"
     t26 = h3_f0;
-#line 3614 "main.c"
+#line 3624 "main.c"
     h_0opt_e201354_retain(&t15);
 #line 126 "examples/interpreter/lex/scan.hero"
     h3_f0 = t15;
-#line 3618 "main.c"
+#line 3628 "main.c"
     h_0opt_e201354_release(&t26);
 #line 126 "examples/interpreter/lex/scan.hero"
     t16 = h3_f0;
@@ -3675,7 +3685,7 @@ bb7:
     t20 = h3_f0;
 #line 126 "examples/interpreter/lex/scan.hero"
     t21 = t20.as.err;
-#line 3679 "main.c"
+#line 3689 "main.c"
     hero_panic_must(t21);
     hero_unreachable();
 bb8:
@@ -3687,7 +3697,7 @@ bb8:
 
 #line 128 "examples/interpreter/lex/scan.hero"
 bool h_lexscan_ends_with_newline(HeroArrayHeader * h0_out) {
-#line 3691 "main.c"
+#line 3701 "main.c"
     bool h1_ret0;
     h_lextoken_Token h2_own2 = {0};
     HeroArrayHeader * t1;
@@ -3737,7 +3747,7 @@ bb1:
     t15 = h2_own2;
 #line 132 "examples/interpreter/lex/scan.hero"
     h2_own2 = t12;
-#line 3741 "main.c"
+#line 3751 "main.c"
     h_lextoken_Token_release(&t15);
 #line 132 "examples/interpreter/lex/scan.hero"
     t13 = h_lextoken_Token_eq(&t11, &t12);
@@ -3759,7 +3769,7 @@ bb3:
     goto bb1;
 #line 130 "examples/interpreter/lex/scan.hero"
 bb4:
-#line 3763 "main.c"
+#line 3773 "main.c"
     t14 = h1_ret0;
     h_lextoken_Token_release(&h2_own2);
     return t14;
@@ -3767,7 +3777,7 @@ bb4:
 
 #line 134 "examples/interpreter/lex/scan.hero"
 bool h_lexscan_is_digit(int64_t h0_b) {
-#line 3771 "main.c"
+#line 3781 "main.c"
     bool h1_b0;
     int64_t t1;
     int64_t t2;
@@ -3806,12 +3816,12 @@ bb2:
     t7 = h1_b0;
 #line 135 "examples/interpreter/lex/scan.hero"
     return t7;
-#line 3810 "main.c"
+#line 3820 "main.c"
 }
 
 #line 140 "examples/interpreter/lex/scan.hero"
 bool h_lexscan_is_word_start(int64_t h0_b) {
-#line 3815 "main.c"
+#line 3825 "main.c"
     bool h1_b0;
     bool h2_b1;
     bool h3_b2;
@@ -3925,12 +3935,12 @@ bb8:
     t19 = h1_b0;
 #line 141 "examples/interpreter/lex/scan.hero"
     return t19;
-#line 3929 "main.c"
+#line 3939 "main.c"
 }
 
 #line 143 "examples/interpreter/lex/scan.hero"
 bool h_lexscan_is_word_rest(int64_t h0_b) {
-#line 3934 "main.c"
+#line 3944 "main.c"
     bool h1_b0;
     int64_t t1;
     bool t2;
@@ -3963,12 +3973,12 @@ bb2:
     t5 = h1_b0;
 #line 144 "examples/interpreter/lex/scan.hero"
     return t5;
-#line 3967 "main.c"
+#line 3977 "main.c"
 }
 
 #line 149 "examples/interpreter/lex/scan.hero"
 h_0opt_37811efc h_lexscan_number_at(HeroStr h0_source, int64_t h1_from) {
-#line 3972 "main.c"
+#line 3982 "main.c"
     int64_t h2_value;
     int64_t h3_at;
     int64_t h4_digit;
@@ -4099,11 +4109,11 @@ bb3:
     t45 = h6_own6;
 #line 167 "examples/interpreter/lex/scan.hero"
     h6_own6 = t40;
-#line 4103 "main.c"
+#line 4113 "main.c"
     h_lextoken_Token_release(&t45);
 #line 167 "examples/interpreter/lex/scan.hero"
     t41 = h3_at;
-#line 4107 "main.c"
+#line 4117 "main.c"
     h_lextoken_Token_retain(&t40);
 #line 167 "examples/interpreter/lex/scan.hero"
     t42 = (h_lexscan_Read){.f_what = t40, .f_next = t41};
@@ -4111,7 +4121,7 @@ bb3:
     t46 = h7_own7;
 #line 167 "examples/interpreter/lex/scan.hero"
     h7_own7 = t42;
-#line 4115 "main.c"
+#line 4125 "main.c"
     h_lexscan_Read_release(&t46);
     h_lexscan_Read_retain(&t42);
 #line 167 "examples/interpreter/lex/scan.hero"
@@ -4120,7 +4130,7 @@ bb3:
     t47 = h8_own8;
 #line 167 "examples/interpreter/lex/scan.hero"
     h8_own8 = t43;
-#line 4124 "main.c"
+#line 4134 "main.c"
     h_0opt_37811efc_release(&t47);
 #line 167 "examples/interpreter/lex/scan.hero"
     h5_ret0 = t43;
@@ -4157,7 +4167,7 @@ bb5:
     t48 = h9_own9;
 #line 161 "examples/interpreter/lex/scan.hero"
     h9_own9 = t19;
-#line 4161 "main.c"
+#line 4171 "main.c"
     hero_str_decref(t48);
 #line 162 "examples/interpreter/lex/scan.hero"
     t20 = HERO_STR_LIT(hero_str_60);
@@ -4177,7 +4187,7 @@ bb5:
     t49 = h10_own10;
 #line 162 "examples/interpreter/lex/scan.hero"
     h10_own10 = t26;
-#line 4181 "main.c"
+#line 4191 "main.c"
     hero_str_decref(t49);
 #line 162 "examples/interpreter/lex/scan.hero"
     t27 = hero_str_concat(t20, t26);
@@ -4185,7 +4195,7 @@ bb5:
     t50 = h11_own11;
 #line 162 "examples/interpreter/lex/scan.hero"
     h11_own11 = t27;
-#line 4189 "main.c"
+#line 4199 "main.c"
     hero_str_decref(t50);
 #line 162 "examples/interpreter/lex/scan.hero"
     t28 = HERO_STR_LIT(hero_str_18dd8735);
@@ -4195,7 +4205,7 @@ bb5:
     t51 = h12_own12;
 #line 162 "examples/interpreter/lex/scan.hero"
     h12_own12 = t29;
-#line 4199 "main.c"
+#line 4209 "main.c"
     hero_str_decref(t51);
     hero_str_incref(t19);
     hero_str_incref(t29);
@@ -4205,7 +4215,7 @@ bb5:
     t52 = h13_own13;
 #line 160 "examples/interpreter/lex/scan.hero"
     h13_own13 = t30;
-#line 4209 "main.c"
+#line 4219 "main.c"
     h_0opt_37811efc_release(&t52);
 #line 160 "examples/interpreter/lex/scan.hero"
     h5_ret0 = t30;
@@ -4217,7 +4227,7 @@ bb6:
     goto bb4;
 #line 160 "examples/interpreter/lex/scan.hero"
 bb7:
-#line 4221 "main.c"
+#line 4231 "main.c"
     t44 = h5_ret0;
     h_0opt_37811efc_retain(&t44);
     h_lextoken_Token_release(&h6_own6);
@@ -4233,7 +4243,7 @@ bb7:
 
 #line 175 "examples/interpreter/lex/scan.hero"
 h_0opt_37811efc h_lexscan_text_at(HeroStr h0_source, int64_t h1_from) {
-#line 4237 "main.c"
+#line 4247 "main.c"
     HeroArrayHeader * h2_pieces = {0};
     int64_t h3_at;
     int64_t h4_run;
@@ -4380,15 +4390,15 @@ bb0:
     t108 = h8_own8;
 #line 176 "examples/interpreter/lex/scan.hero"
     h8_own8 = t1;
-#line 4384 "main.c"
+#line 4394 "main.c"
     hero_array_decref(t108);
 #line 176 "examples/interpreter/lex/scan.hero"
     t109 = h2_pieces;
-#line 4388 "main.c"
+#line 4398 "main.c"
     hero_array_incref(t1);
 #line 176 "examples/interpreter/lex/scan.hero"
     h2_pieces = t1;
-#line 4392 "main.c"
+#line 4402 "main.c"
     hero_array_decref(t109);
 #line 177 "examples/interpreter/lex/scan.hero"
     t2 = h1_from;
@@ -4441,11 +4451,11 @@ bb3:
     t110 = h9_own9;
 #line 221 "examples/interpreter/lex/scan.hero"
     h9_own9 = t104;
-#line 4445 "main.c"
+#line 4455 "main.c"
     hero_str_decref(t110);
 #line 221 "examples/interpreter/lex/scan.hero"
     t105 = HERO_STR_LIT(hero_str_2688018b);
-#line 4449 "main.c"
+#line 4459 "main.c"
     hero_str_incref(t104);
     hero_str_incref(t105);
 #line 221 "examples/interpreter/lex/scan.hero"
@@ -4454,7 +4464,7 @@ bb3:
     t111 = h10_own10;
 #line 221 "examples/interpreter/lex/scan.hero"
     h10_own10 = t106;
-#line 4458 "main.c"
+#line 4468 "main.c"
     h_0opt_37811efc_release(&t111);
 #line 221 "examples/interpreter/lex/scan.hero"
     h7_ret0 = t106;
@@ -4484,7 +4494,7 @@ bb5:
     t112 = h11_own11;
 #line 190 "examples/interpreter/lex/scan.hero"
     h11_own11 = t20;
-#line 4488 "main.c"
+#line 4498 "main.c"
     hero_str_decref(t112);
 #line 190 "examples/interpreter/lex/scan.hero"
     hero_array_push_owned(&h2_pieces, &t20);
@@ -4497,7 +4507,7 @@ bb5:
     t113 = h12_own12;
 #line 191 "examples/interpreter/lex/scan.hero"
     h12_own12 = t24;
-#line 4501 "main.c"
+#line 4511 "main.c"
     hero_str_decref(t113);
     hero_str_incref(t24);
 #line 191 "examples/interpreter/lex/scan.hero"
@@ -4506,7 +4516,7 @@ bb5:
     t114 = h13_own13;
 #line 191 "examples/interpreter/lex/scan.hero"
     h13_own13 = t25;
-#line 4510 "main.c"
+#line 4520 "main.c"
     h_lextoken_Token_release(&t114);
 #line 191 "examples/interpreter/lex/scan.hero"
     t26 = h3_at;
@@ -4514,7 +4524,7 @@ bb5:
     t27 = INT64_C(1);
 #line 191 "examples/interpreter/lex/scan.hero"
     if (__builtin_add_overflow(t26, t27, &t28)) hero_panic_overflow();
-#line 4518 "main.c"
+#line 4528 "main.c"
     h_lextoken_Token_retain(&t25);
 #line 191 "examples/interpreter/lex/scan.hero"
     t29 = (h_lexscan_Read){.f_what = t25, .f_next = t28};
@@ -4522,7 +4532,7 @@ bb5:
     t115 = h14_own14;
 #line 191 "examples/interpreter/lex/scan.hero"
     h14_own14 = t29;
-#line 4526 "main.c"
+#line 4536 "main.c"
     h_lexscan_Read_release(&t115);
     h_lexscan_Read_retain(&t29);
 #line 191 "examples/interpreter/lex/scan.hero"
@@ -4531,7 +4541,7 @@ bb5:
     t116 = h15_own15;
 #line 191 "examples/interpreter/lex/scan.hero"
     h15_own15 = t30;
-#line 4535 "main.c"
+#line 4545 "main.c"
     h_0opt_37811efc_release(&t116);
 #line 191 "examples/interpreter/lex/scan.hero"
     h7_ret0 = t30;
@@ -4559,11 +4569,11 @@ bb8:
     t117 = h16_own16;
 #line 194 "examples/interpreter/lex/scan.hero"
     h16_own16 = t34;
-#line 4563 "main.c"
+#line 4573 "main.c"
     hero_str_decref(t117);
 #line 194 "examples/interpreter/lex/scan.hero"
     t35 = HERO_STR_LIT(hero_str_2d750ad);
-#line 4567 "main.c"
+#line 4577 "main.c"
     hero_str_incref(t34);
     hero_str_incref(t35);
 #line 194 "examples/interpreter/lex/scan.hero"
@@ -4572,7 +4582,7 @@ bb8:
     t118 = h17_own17;
 #line 194 "examples/interpreter/lex/scan.hero"
     h17_own17 = t36;
-#line 4576 "main.c"
+#line 4586 "main.c"
     h_0opt_37811efc_release(&t118);
 #line 194 "examples/interpreter/lex/scan.hero"
     h7_ret0 = t36;
@@ -4600,7 +4610,7 @@ bb11:
     t119 = h18_own18;
 #line 197 "examples/interpreter/lex/scan.hero"
     h18_own18 = t44;
-#line 4604 "main.c"
+#line 4614 "main.c"
     hero_str_decref(t119);
 #line 197 "examples/interpreter/lex/scan.hero"
     hero_array_push_owned(&h2_pieces, &t44);
@@ -4657,11 +4667,11 @@ bb14:
     t120 = h19_own19;
 #line 201 "examples/interpreter/lex/scan.hero"
     h19_own19 = t56;
-#line 4661 "main.c"
+#line 4671 "main.c"
     hero_str_decref(t120);
 #line 201 "examples/interpreter/lex/scan.hero"
     t57 = HERO_STR_LIT(hero_str_2688018b);
-#line 4665 "main.c"
+#line 4675 "main.c"
     hero_str_incref(t56);
     hero_str_incref(t57);
 #line 201 "examples/interpreter/lex/scan.hero"
@@ -4670,7 +4680,7 @@ bb14:
     t121 = h20_own20;
 #line 201 "examples/interpreter/lex/scan.hero"
     h20_own20 = t58;
-#line 4674 "main.c"
+#line 4684 "main.c"
     h_0opt_37811efc_release(&t121);
 #line 201 "examples/interpreter/lex/scan.hero"
     h7_ret0 = t58;
@@ -4759,7 +4769,7 @@ bb24:
     t122 = h21_own21;
 #line 213 "examples/interpreter/lex/scan.hero"
     h21_own21 = t83;
-#line 4763 "main.c"
+#line 4773 "main.c"
     hero_str_decref(t122);
 #line 214 "examples/interpreter/lex/scan.hero"
     t84 = HERO_STR_LIT(hero_str_317c);
@@ -4783,7 +4793,7 @@ bb24:
     t123 = h22_own22;
 #line 214 "examples/interpreter/lex/scan.hero"
     h22_own22 = t92;
-#line 4787 "main.c"
+#line 4797 "main.c"
     hero_str_decref(t123);
 #line 214 "examples/interpreter/lex/scan.hero"
     t93 = hero_str_concat(t84, t92);
@@ -4791,7 +4801,7 @@ bb24:
     t124 = h23_own23;
 #line 214 "examples/interpreter/lex/scan.hero"
     h23_own23 = t93;
-#line 4795 "main.c"
+#line 4805 "main.c"
     hero_str_decref(t124);
 #line 214 "examples/interpreter/lex/scan.hero"
     t94 = HERO_STR_LIT(hero_str_4081c40c);
@@ -4801,7 +4811,7 @@ bb24:
     t125 = h24_own24;
 #line 214 "examples/interpreter/lex/scan.hero"
     h24_own24 = t95;
-#line 4805 "main.c"
+#line 4815 "main.c"
     hero_str_decref(t125);
     hero_str_incref(t83);
     hero_str_incref(t95);
@@ -4811,7 +4821,7 @@ bb24:
     t126 = h25_own25;
 #line 212 "examples/interpreter/lex/scan.hero"
     h25_own25 = t96;
-#line 4815 "main.c"
+#line 4825 "main.c"
     h_0opt_37811efc_release(&t126);
 #line 212 "examples/interpreter/lex/scan.hero"
     h7_ret0 = t96;
@@ -4819,7 +4829,7 @@ bb24:
     goto bb25;
 #line 212 "examples/interpreter/lex/scan.hero"
 bb25:
-#line 4823 "main.c"
+#line 4833 "main.c"
     t107 = h7_ret0;
     h_0opt_37811efc_retain(&t107);
     hero_array_decref(h2_pieces);
@@ -4846,7 +4856,7 @@ bb25:
 
 #line 226 "examples/interpreter/lex/scan.hero"
 h_lexscan_Read h_lexscan_word_at(HeroStr h0_source, int64_t h1_from) {
-#line 4850 "main.c"
+#line 4860 "main.c"
     int64_t h2_at;
     HeroStr h3_own3 = {0};
     h_lextoken_Token h4_own4 = {0};
@@ -4914,7 +4924,7 @@ bb3:
     t16 = h3_own3;
 #line 232 "examples/interpreter/lex/scan.hero"
     h3_own3 = t12;
-#line 4918 "main.c"
+#line 4928 "main.c"
     hero_str_decref(t16);
 #line 232 "examples/interpreter/lex/scan.hero"
     t13 = h_lextoken_worded(t12);
@@ -4922,11 +4932,11 @@ bb3:
     t17 = h4_own4;
 #line 232 "examples/interpreter/lex/scan.hero"
     h4_own4 = t13;
-#line 4926 "main.c"
+#line 4936 "main.c"
     h_lextoken_Token_release(&t17);
 #line 232 "examples/interpreter/lex/scan.hero"
     t14 = h2_at;
-#line 4930 "main.c"
+#line 4940 "main.c"
     h_lextoken_Token_retain(&t13);
 #line 232 "examples/interpreter/lex/scan.hero"
     t15 = (h_lexscan_Read){.f_what = t13, .f_next = t14};
@@ -4934,7 +4944,7 @@ bb3:
     t18 = h5_own5;
 #line 232 "examples/interpreter/lex/scan.hero"
     h5_own5 = t15;
-#line 4938 "main.c"
+#line 4948 "main.c"
     h_lexscan_Read_release(&t18);
     h_lexscan_Read_retain(&t15);
     hero_str_decref(h3_own3);
@@ -4945,7 +4955,7 @@ bb3:
 
 #line 237 "examples/interpreter/lex/scan.hero"
 h_0opt_37811efc h_lexscan_operator_at(HeroStr h0_source, int64_t h1_from) {
-#line 4949 "main.c"
+#line 4959 "main.c"
     int64_t h2_one;
     int64_t h3_two;
     bool h4_b0;
@@ -5184,7 +5194,7 @@ bb4:
     t112 = h14_own14;
 #line 242 "examples/interpreter/lex/scan.hero"
     h14_own14 = t16;
-#line 5188 "main.c"
+#line 5198 "main.c"
     h_lextoken_Token_release(&t112);
 #line 242 "examples/interpreter/lex/scan.hero"
     t17 = h1_from;
@@ -5192,7 +5202,7 @@ bb4:
     t18 = INT64_C(2);
 #line 242 "examples/interpreter/lex/scan.hero"
     if (__builtin_add_overflow(t17, t18, &t19)) hero_panic_overflow();
-#line 5196 "main.c"
+#line 5206 "main.c"
     h_lextoken_Token_retain(&t16);
 #line 242 "examples/interpreter/lex/scan.hero"
     t20 = (h_lexscan_Read){.f_what = t16, .f_next = t19};
@@ -5200,7 +5210,7 @@ bb4:
     t113 = h15_own15;
 #line 242 "examples/interpreter/lex/scan.hero"
     h15_own15 = t20;
-#line 5204 "main.c"
+#line 5214 "main.c"
     h_lexscan_Read_release(&t113);
     h_lexscan_Read_retain(&t20);
 #line 242 "examples/interpreter/lex/scan.hero"
@@ -5209,7 +5219,7 @@ bb4:
     t114 = h16_own16;
 #line 242 "examples/interpreter/lex/scan.hero"
     h16_own16 = t21;
-#line 5213 "main.c"
+#line 5223 "main.c"
     h_0opt_37811efc_release(&t114);
 #line 242 "examples/interpreter/lex/scan.hero"
     h13_ret0 = t21;
@@ -5256,7 +5266,7 @@ bb9:
     t115 = h17_own17;
 #line 245 "examples/interpreter/lex/scan.hero"
     h17_own17 = t29;
-#line 5260 "main.c"
+#line 5270 "main.c"
     h_lextoken_Token_release(&t115);
 #line 245 "examples/interpreter/lex/scan.hero"
     t30 = h1_from;
@@ -5264,7 +5274,7 @@ bb9:
     t31 = INT64_C(2);
 #line 245 "examples/interpreter/lex/scan.hero"
     if (__builtin_add_overflow(t30, t31, &t32)) hero_panic_overflow();
-#line 5268 "main.c"
+#line 5278 "main.c"
     h_lextoken_Token_retain(&t29);
 #line 245 "examples/interpreter/lex/scan.hero"
     t33 = (h_lexscan_Read){.f_what = t29, .f_next = t32};
@@ -5272,7 +5282,7 @@ bb9:
     t116 = h18_own18;
 #line 245 "examples/interpreter/lex/scan.hero"
     h18_own18 = t33;
-#line 5276 "main.c"
+#line 5286 "main.c"
     h_lexscan_Read_release(&t116);
     h_lexscan_Read_retain(&t33);
 #line 245 "examples/interpreter/lex/scan.hero"
@@ -5281,7 +5291,7 @@ bb9:
     t117 = h19_own19;
 #line 245 "examples/interpreter/lex/scan.hero"
     h19_own19 = t34;
-#line 5285 "main.c"
+#line 5295 "main.c"
     h_0opt_37811efc_release(&t117);
 #line 245 "examples/interpreter/lex/scan.hero"
     h13_ret0 = t34;
@@ -5328,7 +5338,7 @@ bb14:
     t118 = h20_own20;
 #line 248 "examples/interpreter/lex/scan.hero"
     h20_own20 = t42;
-#line 5332 "main.c"
+#line 5342 "main.c"
     h_lextoken_Token_release(&t118);
 #line 248 "examples/interpreter/lex/scan.hero"
     t43 = h1_from;
@@ -5336,7 +5346,7 @@ bb14:
     t44 = INT64_C(2);
 #line 248 "examples/interpreter/lex/scan.hero"
     if (__builtin_add_overflow(t43, t44, &t45)) hero_panic_overflow();
-#line 5340 "main.c"
+#line 5350 "main.c"
     h_lextoken_Token_retain(&t42);
 #line 248 "examples/interpreter/lex/scan.hero"
     t46 = (h_lexscan_Read){.f_what = t42, .f_next = t45};
@@ -5344,7 +5354,7 @@ bb14:
     t119 = h21_own21;
 #line 248 "examples/interpreter/lex/scan.hero"
     h21_own21 = t46;
-#line 5348 "main.c"
+#line 5358 "main.c"
     h_lexscan_Read_release(&t119);
     h_lexscan_Read_retain(&t46);
 #line 248 "examples/interpreter/lex/scan.hero"
@@ -5353,7 +5363,7 @@ bb14:
     t120 = h22_own22;
 #line 248 "examples/interpreter/lex/scan.hero"
     h22_own22 = t47;
-#line 5357 "main.c"
+#line 5367 "main.c"
     h_0opt_37811efc_release(&t120);
 #line 248 "examples/interpreter/lex/scan.hero"
     h13_ret0 = t47;
@@ -5400,7 +5410,7 @@ bb19:
     t121 = h23_own23;
 #line 251 "examples/interpreter/lex/scan.hero"
     h23_own23 = t55;
-#line 5404 "main.c"
+#line 5414 "main.c"
     h_lextoken_Token_release(&t121);
 #line 251 "examples/interpreter/lex/scan.hero"
     t56 = h1_from;
@@ -5408,7 +5418,7 @@ bb19:
     t57 = INT64_C(2);
 #line 251 "examples/interpreter/lex/scan.hero"
     if (__builtin_add_overflow(t56, t57, &t58)) hero_panic_overflow();
-#line 5412 "main.c"
+#line 5422 "main.c"
     h_lextoken_Token_retain(&t55);
 #line 251 "examples/interpreter/lex/scan.hero"
     t59 = (h_lexscan_Read){.f_what = t55, .f_next = t58};
@@ -5416,7 +5426,7 @@ bb19:
     t122 = h24_own24;
 #line 251 "examples/interpreter/lex/scan.hero"
     h24_own24 = t59;
-#line 5420 "main.c"
+#line 5430 "main.c"
     h_lexscan_Read_release(&t122);
     h_lexscan_Read_retain(&t59);
 #line 251 "examples/interpreter/lex/scan.hero"
@@ -5425,7 +5435,7 @@ bb19:
     t123 = h25_own25;
 #line 251 "examples/interpreter/lex/scan.hero"
     h25_own25 = t60;
-#line 5429 "main.c"
+#line 5439 "main.c"
     h_0opt_37811efc_release(&t123);
 #line 251 "examples/interpreter/lex/scan.hero"
     h13_ret0 = t60;
@@ -5472,7 +5482,7 @@ bb24:
     t124 = h26_own26;
 #line 254 "examples/interpreter/lex/scan.hero"
     h26_own26 = t68;
-#line 5476 "main.c"
+#line 5486 "main.c"
     h_lextoken_Token_release(&t124);
 #line 254 "examples/interpreter/lex/scan.hero"
     t69 = h1_from;
@@ -5480,7 +5490,7 @@ bb24:
     t70 = INT64_C(2);
 #line 254 "examples/interpreter/lex/scan.hero"
     if (__builtin_add_overflow(t69, t70, &t71)) hero_panic_overflow();
-#line 5484 "main.c"
+#line 5494 "main.c"
     h_lextoken_Token_retain(&t68);
 #line 254 "examples/interpreter/lex/scan.hero"
     t72 = (h_lexscan_Read){.f_what = t68, .f_next = t71};
@@ -5488,7 +5498,7 @@ bb24:
     t125 = h27_own27;
 #line 254 "examples/interpreter/lex/scan.hero"
     h27_own27 = t72;
-#line 5492 "main.c"
+#line 5502 "main.c"
     h_lexscan_Read_release(&t125);
     h_lexscan_Read_retain(&t72);
 #line 254 "examples/interpreter/lex/scan.hero"
@@ -5497,7 +5507,7 @@ bb24:
     t126 = h28_own28;
 #line 254 "examples/interpreter/lex/scan.hero"
     h28_own28 = t73;
-#line 5501 "main.c"
+#line 5511 "main.c"
     h_0opt_37811efc_release(&t126);
 #line 254 "examples/interpreter/lex/scan.hero"
     h13_ret0 = t73;
@@ -5517,25 +5527,25 @@ bb26:
     t127 = h29_own29;
 #line 258 "examples/interpreter/lex/scan.hero"
     h29_own29 = t88;
-#line 5521 "main.c"
+#line 5531 "main.c"
     h_0opt_3be6656d_release(&t127);
 #line 258 "examples/interpreter/lex/scan.hero"
     t128 = h10_single;
-#line 5525 "main.c"
+#line 5535 "main.c"
     h_0opt_3be6656d_retain(&t88);
 #line 258 "examples/interpreter/lex/scan.hero"
     h10_single = t88;
-#line 5529 "main.c"
+#line 5539 "main.c"
     h_0opt_3be6656d_release(&t128);
 #line 260 "examples/interpreter/lex/scan.hero"
     t89 = h10_single;
 #line 260 "examples/interpreter/lex/scan.hero"
     t129 = h11_f0;
-#line 5535 "main.c"
+#line 5545 "main.c"
     h_0opt_3be6656d_retain(&t89);
 #line 260 "examples/interpreter/lex/scan.hero"
     h11_f0 = t89;
-#line 5539 "main.c"
+#line 5549 "main.c"
     h_0opt_3be6656d_release(&t129);
 #line 260 "examples/interpreter/lex/scan.hero"
     t90 = h11_f0;
@@ -5572,7 +5582,7 @@ bb29:
     t130 = h30_own30;
 #line 257 "examples/interpreter/lex/scan.hero"
     h30_own30 = t81;
-#line 5576 "main.c"
+#line 5586 "main.c"
     h_lextoken_Token_release(&t130);
 #line 257 "examples/interpreter/lex/scan.hero"
     t82 = h1_from;
@@ -5580,7 +5590,7 @@ bb29:
     t83 = INT64_C(2);
 #line 257 "examples/interpreter/lex/scan.hero"
     if (__builtin_add_overflow(t82, t83, &t84)) hero_panic_overflow();
-#line 5584 "main.c"
+#line 5594 "main.c"
     h_lextoken_Token_retain(&t81);
 #line 257 "examples/interpreter/lex/scan.hero"
     t85 = (h_lexscan_Read){.f_what = t81, .f_next = t84};
@@ -5588,7 +5598,7 @@ bb29:
     t131 = h31_own31;
 #line 257 "examples/interpreter/lex/scan.hero"
     h31_own31 = t85;
-#line 5592 "main.c"
+#line 5602 "main.c"
     h_lexscan_Read_release(&t131);
     h_lexscan_Read_retain(&t85);
 #line 257 "examples/interpreter/lex/scan.hero"
@@ -5597,7 +5607,7 @@ bb29:
     t132 = h32_own32;
 #line 257 "examples/interpreter/lex/scan.hero"
     h32_own32 = t86;
-#line 5601 "main.c"
+#line 5611 "main.c"
     h_0opt_37811efc_release(&t132);
 #line 257 "examples/interpreter/lex/scan.hero"
     h13_ret0 = t86;
@@ -5613,11 +5623,11 @@ bb31:
     t97 = h10_single;
 #line 263 "examples/interpreter/lex/scan.hero"
     t133 = h12_f1;
-#line 5617 "main.c"
+#line 5627 "main.c"
     h_0opt_3be6656d_retain(&t97);
 #line 263 "examples/interpreter/lex/scan.hero"
     h12_f1 = t97;
-#line 5621 "main.c"
+#line 5631 "main.c"
     h_0opt_3be6656d_release(&t133);
 #line 263 "examples/interpreter/lex/scan.hero"
     t98 = h12_f1;
@@ -5641,7 +5651,7 @@ bb32:
     t134 = h33_own33;
 #line 261 "examples/interpreter/lex/scan.hero"
     h33_own33 = t96;
-#line 5645 "main.c"
+#line 5655 "main.c"
     h_0opt_37811efc_release(&t134);
 #line 261 "examples/interpreter/lex/scan.hero"
     h13_ret0 = t96;
@@ -5663,7 +5673,7 @@ bb34:
     t107 = INT64_C(1);
 #line 263 "examples/interpreter/lex/scan.hero"
     if (__builtin_add_overflow(t106, t107, &t108)) hero_panic_overflow();
-#line 5667 "main.c"
+#line 5677 "main.c"
     h_lextoken_Token_retain(&t105);
 #line 263 "examples/interpreter/lex/scan.hero"
     t109 = (h_lexscan_Read){.f_what = t105, .f_next = t108};
@@ -5671,7 +5681,7 @@ bb34:
     t135 = h34_own34;
 #line 263 "examples/interpreter/lex/scan.hero"
     h34_own34 = t109;
-#line 5675 "main.c"
+#line 5685 "main.c"
     h_lexscan_Read_release(&t135);
     h_lexscan_Read_retain(&t109);
 #line 263 "examples/interpreter/lex/scan.hero"
@@ -5680,7 +5690,7 @@ bb34:
     t136 = h35_own35;
 #line 263 "examples/interpreter/lex/scan.hero"
     h35_own35 = t110;
-#line 5684 "main.c"
+#line 5694 "main.c"
     h_0opt_37811efc_release(&t136);
 #line 263 "examples/interpreter/lex/scan.hero"
     h13_ret0 = t110;
@@ -5692,7 +5702,7 @@ bb35:
     t102 = h12_f1;
 #line 263 "examples/interpreter/lex/scan.hero"
     t103 = t102.as.err;
-#line 5696 "main.c"
+#line 5706 "main.c"
     hero_panic_must(t103);
     hero_unreachable();
 bb36:
@@ -5728,7 +5738,7 @@ bb36:
 
 #line 270 "examples/interpreter/lex/scan.hero"
 h_0opt_37811efc h_lexscan_unknown_byte(HeroStr h0_source, int64_t h1_at) {
-#line 5732 "main.c"
+#line 5742 "main.c"
     int64_t h2_stop;
     HeroStr h3_own3 = {0};
     HeroStr h4_own4 = {0};
@@ -5769,7 +5779,7 @@ bb0:
     t14 = h3_own3;
 #line 273 "examples/interpreter/lex/scan.hero"
     h3_own3 = t4;
-#line 5773 "main.c"
+#line 5783 "main.c"
     hero_str_decref(t14);
 #line 274 "examples/interpreter/lex/scan.hero"
     t5 = HERO_STR_LIT(hero_str_60);
@@ -5785,7 +5795,7 @@ bb0:
     t15 = h4_own4;
 #line 274 "examples/interpreter/lex/scan.hero"
     h4_own4 = t9;
-#line 5789 "main.c"
+#line 5799 "main.c"
     hero_str_decref(t15);
 #line 274 "examples/interpreter/lex/scan.hero"
     t10 = hero_str_concat(t5, t9);
@@ -5793,7 +5803,7 @@ bb0:
     t16 = h5_own5;
 #line 274 "examples/interpreter/lex/scan.hero"
     h5_own5 = t10;
-#line 5797 "main.c"
+#line 5807 "main.c"
     hero_str_decref(t16);
 #line 274 "examples/interpreter/lex/scan.hero"
     t11 = HERO_STR_LIT(hero_str_30fcd854);
@@ -5803,7 +5813,7 @@ bb0:
     t17 = h6_own6;
 #line 274 "examples/interpreter/lex/scan.hero"
     h6_own6 = t12;
-#line 5807 "main.c"
+#line 5817 "main.c"
     hero_str_decref(t17);
     hero_str_incref(t4);
     hero_str_incref(t12);
@@ -5813,7 +5823,7 @@ bb0:
     t18 = h7_own7;
 #line 272 "examples/interpreter/lex/scan.hero"
     h7_own7 = t13;
-#line 5817 "main.c"
+#line 5827 "main.c"
     h_0opt_37811efc_release(&t18);
     h_0opt_37811efc_retain(&t13);
     hero_str_decref(h3_own3);
@@ -5826,7 +5836,7 @@ bb0:
 
 #line 277 "examples/interpreter/lex/scan.hero"
 h_0opt_3be6656d h_lexscan_one_byte(int64_t h0_b) {
-#line 5830 "main.c"
+#line 5840 "main.c"
     h_0opt_3be6656d h1_ret0 = {0};
     h_lextoken_Token h2_own2 = {0};
     h_0opt_3be6656d h3_own3 = {0};
@@ -5972,7 +5982,7 @@ bb2:
     t65 = h2_own2;
 #line 279 "examples/interpreter/lex/scan.hero"
     h2_own2 = t4;
-#line 5976 "main.c"
+#line 5986 "main.c"
     h_lextoken_Token_release(&t65);
     h_lextoken_Token_retain(&t4);
 #line 279 "examples/interpreter/lex/scan.hero"
@@ -5981,7 +5991,7 @@ bb2:
     t66 = h3_own3;
 #line 279 "examples/interpreter/lex/scan.hero"
     h3_own3 = t5;
-#line 5985 "main.c"
+#line 5995 "main.c"
     h_0opt_3be6656d_release(&t66);
 #line 279 "examples/interpreter/lex/scan.hero"
     h1_ret0 = t5;
@@ -6009,7 +6019,7 @@ bb5:
     t67 = h4_own4;
 #line 282 "examples/interpreter/lex/scan.hero"
     h4_own4 = t9;
-#line 6013 "main.c"
+#line 6023 "main.c"
     h_lextoken_Token_release(&t67);
     h_lextoken_Token_retain(&t9);
 #line 282 "examples/interpreter/lex/scan.hero"
@@ -6018,7 +6028,7 @@ bb5:
     t68 = h5_own5;
 #line 282 "examples/interpreter/lex/scan.hero"
     h5_own5 = t10;
-#line 6022 "main.c"
+#line 6032 "main.c"
     h_0opt_3be6656d_release(&t68);
 #line 282 "examples/interpreter/lex/scan.hero"
     h1_ret0 = t10;
@@ -6046,7 +6056,7 @@ bb8:
     t69 = h6_own6;
 #line 285 "examples/interpreter/lex/scan.hero"
     h6_own6 = t14;
-#line 6050 "main.c"
+#line 6060 "main.c"
     h_lextoken_Token_release(&t69);
     h_lextoken_Token_retain(&t14);
 #line 285 "examples/interpreter/lex/scan.hero"
@@ -6055,7 +6065,7 @@ bb8:
     t70 = h7_own7;
 #line 285 "examples/interpreter/lex/scan.hero"
     h7_own7 = t15;
-#line 6059 "main.c"
+#line 6069 "main.c"
     h_0opt_3be6656d_release(&t70);
 #line 285 "examples/interpreter/lex/scan.hero"
     h1_ret0 = t15;
@@ -6083,7 +6093,7 @@ bb11:
     t71 = h8_own8;
 #line 288 "examples/interpreter/lex/scan.hero"
     h8_own8 = t19;
-#line 6087 "main.c"
+#line 6097 "main.c"
     h_lextoken_Token_release(&t71);
     h_lextoken_Token_retain(&t19);
 #line 288 "examples/interpreter/lex/scan.hero"
@@ -6092,7 +6102,7 @@ bb11:
     t72 = h9_own9;
 #line 288 "examples/interpreter/lex/scan.hero"
     h9_own9 = t20;
-#line 6096 "main.c"
+#line 6106 "main.c"
     h_0opt_3be6656d_release(&t72);
 #line 288 "examples/interpreter/lex/scan.hero"
     h1_ret0 = t20;
@@ -6120,7 +6130,7 @@ bb14:
     t73 = h10_own10;
 #line 291 "examples/interpreter/lex/scan.hero"
     h10_own10 = t24;
-#line 6124 "main.c"
+#line 6134 "main.c"
     h_lextoken_Token_release(&t73);
     h_lextoken_Token_retain(&t24);
 #line 291 "examples/interpreter/lex/scan.hero"
@@ -6129,7 +6139,7 @@ bb14:
     t74 = h11_own11;
 #line 291 "examples/interpreter/lex/scan.hero"
     h11_own11 = t25;
-#line 6133 "main.c"
+#line 6143 "main.c"
     h_0opt_3be6656d_release(&t74);
 #line 291 "examples/interpreter/lex/scan.hero"
     h1_ret0 = t25;
@@ -6157,7 +6167,7 @@ bb17:
     t75 = h12_own12;
 #line 294 "examples/interpreter/lex/scan.hero"
     h12_own12 = t29;
-#line 6161 "main.c"
+#line 6171 "main.c"
     h_lextoken_Token_release(&t75);
     h_lextoken_Token_retain(&t29);
 #line 294 "examples/interpreter/lex/scan.hero"
@@ -6166,7 +6176,7 @@ bb17:
     t76 = h13_own13;
 #line 294 "examples/interpreter/lex/scan.hero"
     h13_own13 = t30;
-#line 6170 "main.c"
+#line 6180 "main.c"
     h_0opt_3be6656d_release(&t76);
 #line 294 "examples/interpreter/lex/scan.hero"
     h1_ret0 = t30;
@@ -6194,7 +6204,7 @@ bb20:
     t77 = h14_own14;
 #line 297 "examples/interpreter/lex/scan.hero"
     h14_own14 = t34;
-#line 6198 "main.c"
+#line 6208 "main.c"
     h_lextoken_Token_release(&t77);
     h_lextoken_Token_retain(&t34);
 #line 297 "examples/interpreter/lex/scan.hero"
@@ -6203,7 +6213,7 @@ bb20:
     t78 = h15_own15;
 #line 297 "examples/interpreter/lex/scan.hero"
     h15_own15 = t35;
-#line 6207 "main.c"
+#line 6217 "main.c"
     h_0opt_3be6656d_release(&t78);
 #line 297 "examples/interpreter/lex/scan.hero"
     h1_ret0 = t35;
@@ -6231,7 +6241,7 @@ bb23:
     t79 = h16_own16;
 #line 300 "examples/interpreter/lex/scan.hero"
     h16_own16 = t39;
-#line 6235 "main.c"
+#line 6245 "main.c"
     h_lextoken_Token_release(&t79);
     h_lextoken_Token_retain(&t39);
 #line 300 "examples/interpreter/lex/scan.hero"
@@ -6240,7 +6250,7 @@ bb23:
     t80 = h17_own17;
 #line 300 "examples/interpreter/lex/scan.hero"
     h17_own17 = t40;
-#line 6244 "main.c"
+#line 6254 "main.c"
     h_0opt_3be6656d_release(&t80);
 #line 300 "examples/interpreter/lex/scan.hero"
     h1_ret0 = t40;
@@ -6268,7 +6278,7 @@ bb26:
     t81 = h18_own18;
 #line 303 "examples/interpreter/lex/scan.hero"
     h18_own18 = t44;
-#line 6272 "main.c"
+#line 6282 "main.c"
     h_lextoken_Token_release(&t81);
     h_lextoken_Token_retain(&t44);
 #line 303 "examples/interpreter/lex/scan.hero"
@@ -6277,7 +6287,7 @@ bb26:
     t82 = h19_own19;
 #line 303 "examples/interpreter/lex/scan.hero"
     h19_own19 = t45;
-#line 6281 "main.c"
+#line 6291 "main.c"
     h_0opt_3be6656d_release(&t82);
 #line 303 "examples/interpreter/lex/scan.hero"
     h1_ret0 = t45;
@@ -6305,7 +6315,7 @@ bb29:
     t83 = h20_own20;
 #line 306 "examples/interpreter/lex/scan.hero"
     h20_own20 = t49;
-#line 6309 "main.c"
+#line 6319 "main.c"
     h_lextoken_Token_release(&t83);
     h_lextoken_Token_retain(&t49);
 #line 306 "examples/interpreter/lex/scan.hero"
@@ -6314,7 +6324,7 @@ bb29:
     t84 = h21_own21;
 #line 306 "examples/interpreter/lex/scan.hero"
     h21_own21 = t50;
-#line 6318 "main.c"
+#line 6328 "main.c"
     h_0opt_3be6656d_release(&t84);
 #line 306 "examples/interpreter/lex/scan.hero"
     h1_ret0 = t50;
@@ -6342,7 +6352,7 @@ bb32:
     t85 = h22_own22;
 #line 309 "examples/interpreter/lex/scan.hero"
     h22_own22 = t54;
-#line 6346 "main.c"
+#line 6356 "main.c"
     h_lextoken_Token_release(&t85);
     h_lextoken_Token_retain(&t54);
 #line 309 "examples/interpreter/lex/scan.hero"
@@ -6351,7 +6361,7 @@ bb32:
     t86 = h23_own23;
 #line 309 "examples/interpreter/lex/scan.hero"
     h23_own23 = t55;
-#line 6355 "main.c"
+#line 6365 "main.c"
     h_0opt_3be6656d_release(&t86);
 #line 309 "examples/interpreter/lex/scan.hero"
     h1_ret0 = t55;
@@ -6369,11 +6379,11 @@ bb34:
     t87 = h24_own24;
 #line 314 "examples/interpreter/lex/scan.hero"
     h24_own24 = t61;
-#line 6373 "main.c"
+#line 6383 "main.c"
     hero_str_decref(t87);
 #line 314 "examples/interpreter/lex/scan.hero"
     t62 = HERO_STR_LIT(hero_str_6ec4b30c);
-#line 6377 "main.c"
+#line 6387 "main.c"
     hero_str_incref(t61);
     hero_str_incref(t62);
 #line 314 "examples/interpreter/lex/scan.hero"
@@ -6382,7 +6392,7 @@ bb34:
     t88 = h25_own25;
 #line 314 "examples/interpreter/lex/scan.hero"
     h25_own25 = t63;
-#line 6386 "main.c"
+#line 6396 "main.c"
     h_0opt_3be6656d_release(&t88);
 #line 314 "examples/interpreter/lex/scan.hero"
     h1_ret0 = t63;
@@ -6396,7 +6406,7 @@ bb35:
     t89 = h26_own26;
 #line 312 "examples/interpreter/lex/scan.hero"
     h26_own26 = t59;
-#line 6400 "main.c"
+#line 6410 "main.c"
     h_lextoken_Token_release(&t89);
     h_lextoken_Token_retain(&t59);
 #line 312 "examples/interpreter/lex/scan.hero"
@@ -6405,7 +6415,7 @@ bb35:
     t90 = h27_own27;
 #line 312 "examples/interpreter/lex/scan.hero"
     h27_own27 = t60;
-#line 6409 "main.c"
+#line 6419 "main.c"
     h_0opt_3be6656d_release(&t90);
 #line 312 "examples/interpreter/lex/scan.hero"
     h1_ret0 = t60;
@@ -6417,7 +6427,7 @@ bb36:
     goto bb34;
 #line 312 "examples/interpreter/lex/scan.hero"
 bb37:
-#line 6421 "main.c"
+#line 6431 "main.c"
     t64 = h1_ret0;
     h_0opt_3be6656d_retain(&t64);
     h_lextoken_Token_release(&h2_own2);
@@ -6451,7 +6461,7 @@ bb37:
 
 #line 318 "examples/interpreter/lex/scan.hero"
 HeroStr h_lexscan_refusal_of(h_0opt_7f1de476 h0_said) {
-#line 6455 "main.c"
+#line 6465 "main.c"
     h_0opt_7f1de476 h1_s0 = {0};
     HeroStr h2_r0 = {0};
     HeroFailure h3_e = {0};
@@ -6474,11 +6484,11 @@ bb0:
     t1 = h0_said;
 #line 319 "examples/interpreter/lex/scan.hero"
     t10 = h1_s0;
-#line 6478 "main.c"
+#line 6488 "main.c"
     h_0opt_7f1de476_retain(&t1);
 #line 319 "examples/interpreter/lex/scan.hero"
     h1_s0 = t1;
-#line 6482 "main.c"
+#line 6492 "main.c"
     h_0opt_7f1de476_release(&t10);
 #line 319 "examples/interpreter/lex/scan.hero"
     t2 = h1_s0;
@@ -6498,7 +6508,7 @@ bb0:
 bb1:
 #line 319 "examples/interpreter/lex/scan.hero"
     t9 = h2_r0;
-#line 6502 "main.c"
+#line 6512 "main.c"
     hero_str_incref(t9);
     h_0opt_7f1de476_release(&h1_s0);
     hero_str_decref(h2_r0);
@@ -6509,11 +6519,11 @@ bb2:
     t4 = HERO_STR_LIT(hero_str_16ecc41b);
 #line 319 "examples/interpreter/lex/scan.hero"
     t11 = h2_r0;
-#line 6513 "main.c"
+#line 6523 "main.c"
     hero_str_incref(t4);
 #line 319 "examples/interpreter/lex/scan.hero"
     h2_r0 = t4;
-#line 6517 "main.c"
+#line 6527 "main.c"
     hero_str_decref(t11);
     goto bb1;
 bb3:
@@ -6523,11 +6533,11 @@ bb3:
     t6 = t5.as.err;
 #line 321 "examples/interpreter/lex/scan.hero"
     t12 = h3_e;
-#line 6527 "main.c"
+#line 6537 "main.c"
     hero_failure_retain(&t6);
 #line 321 "examples/interpreter/lex/scan.hero"
     h3_e = t6;
-#line 6531 "main.c"
+#line 6541 "main.c"
     hero_failure_release(&t12);
 #line 321 "examples/interpreter/lex/scan.hero"
     t7 = h3_e;
@@ -6535,18 +6545,18 @@ bb3:
     t8 = t7.code;
 #line 319 "examples/interpreter/lex/scan.hero"
     t13 = h2_r0;
-#line 6539 "main.c"
+#line 6549 "main.c"
     hero_str_incref(t8);
 #line 319 "examples/interpreter/lex/scan.hero"
     h2_r0 = t8;
-#line 6543 "main.c"
+#line 6553 "main.c"
     hero_str_decref(t13);
     goto bb1;
 }
 
 #line 68 "examples/interpreter/lex/token.hero"
 h_lextoken_Token h_lextoken_worded(HeroStr h0_word) {
-#line 6550 "main.c"
+#line 6560 "main.c"
     h_lextoken_Token h1_ret0 = {0};
     h_lextoken_Token h2_own2 = {0};
     h_lextoken_Token h3_own3 = {0};
@@ -6647,7 +6657,7 @@ bb2:
     t48 = h2_own2;
 #line 70 "examples/interpreter/lex/token.hero"
     h2_own2 = t4;
-#line 6651 "main.c"
+#line 6661 "main.c"
     h_lextoken_Token_release(&t48);
 #line 70 "examples/interpreter/lex/token.hero"
     h1_ret0 = t4;
@@ -6675,7 +6685,7 @@ bb5:
     t49 = h3_own3;
 #line 73 "examples/interpreter/lex/token.hero"
     h3_own3 = t8;
-#line 6679 "main.c"
+#line 6689 "main.c"
     h_lextoken_Token_release(&t49);
 #line 73 "examples/interpreter/lex/token.hero"
     h1_ret0 = t8;
@@ -6703,7 +6713,7 @@ bb8:
     t50 = h4_own4;
 #line 76 "examples/interpreter/lex/token.hero"
     h4_own4 = t12;
-#line 6707 "main.c"
+#line 6717 "main.c"
     h_lextoken_Token_release(&t50);
 #line 76 "examples/interpreter/lex/token.hero"
     h1_ret0 = t12;
@@ -6731,7 +6741,7 @@ bb11:
     t51 = h5_own5;
 #line 79 "examples/interpreter/lex/token.hero"
     h5_own5 = t16;
-#line 6735 "main.c"
+#line 6745 "main.c"
     h_lextoken_Token_release(&t51);
 #line 79 "examples/interpreter/lex/token.hero"
     h1_ret0 = t16;
@@ -6759,7 +6769,7 @@ bb14:
     t52 = h6_own6;
 #line 82 "examples/interpreter/lex/token.hero"
     h6_own6 = t20;
-#line 6763 "main.c"
+#line 6773 "main.c"
     h_lextoken_Token_release(&t52);
 #line 82 "examples/interpreter/lex/token.hero"
     h1_ret0 = t20;
@@ -6787,7 +6797,7 @@ bb17:
     t53 = h7_own7;
 #line 85 "examples/interpreter/lex/token.hero"
     h7_own7 = t24;
-#line 6791 "main.c"
+#line 6801 "main.c"
     h_lextoken_Token_release(&t53);
 #line 85 "examples/interpreter/lex/token.hero"
     h1_ret0 = t24;
@@ -6815,7 +6825,7 @@ bb20:
     t54 = h8_own8;
 #line 88 "examples/interpreter/lex/token.hero"
     h8_own8 = t28;
-#line 6819 "main.c"
+#line 6829 "main.c"
     h_lextoken_Token_release(&t54);
 #line 88 "examples/interpreter/lex/token.hero"
     h1_ret0 = t28;
@@ -6843,7 +6853,7 @@ bb23:
     t55 = h9_own9;
 #line 91 "examples/interpreter/lex/token.hero"
     h9_own9 = t32;
-#line 6847 "main.c"
+#line 6857 "main.c"
     h_lextoken_Token_release(&t55);
 #line 91 "examples/interpreter/lex/token.hero"
     h1_ret0 = t32;
@@ -6871,7 +6881,7 @@ bb26:
     t56 = h10_own10;
 #line 94 "examples/interpreter/lex/token.hero"
     h10_own10 = t36;
-#line 6875 "main.c"
+#line 6885 "main.c"
     h_lextoken_Token_release(&t56);
 #line 94 "examples/interpreter/lex/token.hero"
     h1_ret0 = t36;
@@ -6899,7 +6909,7 @@ bb29:
     t57 = h11_own11;
 #line 97 "examples/interpreter/lex/token.hero"
     h11_own11 = t40;
-#line 6903 "main.c"
+#line 6913 "main.c"
     h_lextoken_Token_release(&t57);
 #line 97 "examples/interpreter/lex/token.hero"
     h1_ret0 = t40;
@@ -6913,7 +6923,7 @@ bb30:
 bb31:
 #line 102 "examples/interpreter/lex/token.hero"
     t45 = h0_word;
-#line 6917 "main.c"
+#line 6927 "main.c"
     hero_str_incref(t45);
 #line 102 "examples/interpreter/lex/token.hero"
     t46 = (h_lextoken_Token){.tag = h_lextoken_Token_tag_name, .as.c_name = {.f_value = t45}};
@@ -6921,7 +6931,7 @@ bb31:
     t58 = h12_own12;
 #line 102 "examples/interpreter/lex/token.hero"
     h12_own12 = t46;
-#line 6925 "main.c"
+#line 6935 "main.c"
     h_lextoken_Token_release(&t58);
 #line 102 "examples/interpreter/lex/token.hero"
     h1_ret0 = t46;
@@ -6935,7 +6945,7 @@ bb32:
     t59 = h13_own13;
 #line 100 "examples/interpreter/lex/token.hero"
     h13_own13 = t44;
-#line 6939 "main.c"
+#line 6949 "main.c"
     h_lextoken_Token_release(&t59);
 #line 100 "examples/interpreter/lex/token.hero"
     h1_ret0 = t44;
@@ -6947,7 +6957,7 @@ bb33:
     goto bb31;
 #line 100 "examples/interpreter/lex/token.hero"
 bb34:
-#line 6951 "main.c"
+#line 6961 "main.c"
     t47 = h1_ret0;
     h_lextoken_Token_retain(&t47);
     h_lextoken_Token_release(&h2_own2);
@@ -6967,7 +6977,7 @@ bb34:
 
 #line 107 "examples/interpreter/lex/token.hero"
 HeroStr h_lextoken_shown(h_lextoken_Token h0_t) {
-#line 6971 "main.c"
+#line 6981 "main.c"
     h_lextoken_Token h1_s0 = {0};
     HeroStr h2_r0 = {0};
     h_lextoken_Token_c_number h3_n;
@@ -7074,11 +7084,11 @@ bb0:
     t1 = h0_t;
 #line 108 "examples/interpreter/lex/token.hero"
     t53 = h1_s0;
-#line 7078 "main.c"
+#line 7088 "main.c"
     h_lextoken_Token_retain(&t1);
 #line 108 "examples/interpreter/lex/token.hero"
     h1_s0 = t1;
-#line 7082 "main.c"
+#line 7092 "main.c"
     h_lextoken_Token_release(&t53);
 #line 108 "examples/interpreter/lex/token.hero"
     t2 = h1_s0;
@@ -7162,7 +7172,7 @@ bb0:
 bb1:
 #line 108 "examples/interpreter/lex/token.hero"
     t52 = h2_r0;
-#line 7166 "main.c"
+#line 7176 "main.c"
     hero_str_incref(t52);
     h_lextoken_Token_release(&h1_s0);
     hero_str_decref(h2_r0);
@@ -7189,15 +7199,15 @@ bb2:
     t54 = h6_own6;
 #line 109 "examples/interpreter/lex/token.hero"
     h6_own6 = t8;
-#line 7193 "main.c"
+#line 7203 "main.c"
     hero_str_decref(t54);
 #line 108 "examples/interpreter/lex/token.hero"
     t55 = h2_r0;
-#line 7197 "main.c"
+#line 7207 "main.c"
     hero_str_incref(t8);
 #line 108 "examples/interpreter/lex/token.hero"
     h2_r0 = t8;
-#line 7201 "main.c"
+#line 7211 "main.c"
     hero_str_decref(t55);
     goto bb1;
 bb3:
@@ -7207,11 +7217,11 @@ bb3:
     t10 = t9.as.c_text;
 #line 110 "examples/interpreter/lex/token.hero"
     t56 = h4_x;
-#line 7211 "main.c"
+#line 7221 "main.c"
     h_lextoken_Token_c_text_retain(&t10);
 #line 110 "examples/interpreter/lex/token.hero"
     h4_x = t10;
-#line 7215 "main.c"
+#line 7225 "main.c"
     h_lextoken_Token_c_text_release(&t56);
 #line 110 "examples/interpreter/lex/token.hero"
     t11 = HERO_STR_LIT(hero_str_22);
@@ -7225,7 +7235,7 @@ bb3:
     t57 = h7_own7;
 #line 110 "examples/interpreter/lex/token.hero"
     h7_own7 = t14;
-#line 7229 "main.c"
+#line 7239 "main.c"
     hero_str_decref(t57);
 #line 110 "examples/interpreter/lex/token.hero"
     t15 = HERO_STR_LIT(hero_str_22);
@@ -7235,15 +7245,15 @@ bb3:
     t58 = h8_own8;
 #line 110 "examples/interpreter/lex/token.hero"
     h8_own8 = t16;
-#line 7239 "main.c"
+#line 7249 "main.c"
     hero_str_decref(t58);
 #line 108 "examples/interpreter/lex/token.hero"
     t59 = h2_r0;
-#line 7243 "main.c"
+#line 7253 "main.c"
     hero_str_incref(t16);
 #line 108 "examples/interpreter/lex/token.hero"
     h2_r0 = t16;
-#line 7247 "main.c"
+#line 7257 "main.c"
     hero_str_decref(t59);
     goto bb1;
 bb4:
@@ -7253,11 +7263,11 @@ bb4:
     t18 = t17.as.c_name;
 #line 111 "examples/interpreter/lex/token.hero"
     t60 = h5_n;
-#line 7257 "main.c"
+#line 7267 "main.c"
     h_lextoken_Token_c_name_retain(&t18);
 #line 111 "examples/interpreter/lex/token.hero"
     h5_n = t18;
-#line 7261 "main.c"
+#line 7271 "main.c"
     h_lextoken_Token_c_name_release(&t60);
 #line 111 "examples/interpreter/lex/token.hero"
     t19 = h5_n;
@@ -7265,11 +7275,11 @@ bb4:
     t20 = t19.f_value;
 #line 108 "examples/interpreter/lex/token.hero"
     t61 = h2_r0;
-#line 7269 "main.c"
+#line 7279 "main.c"
     hero_str_incref(t20);
 #line 108 "examples/interpreter/lex/token.hero"
     h2_r0 = t20;
-#line 7273 "main.c"
+#line 7283 "main.c"
     hero_str_decref(t61);
     goto bb1;
 bb5:
@@ -7277,11 +7287,11 @@ bb5:
     t21 = HERO_STR_LIT(hero_str_1c7bef);
 #line 108 "examples/interpreter/lex/token.hero"
     t62 = h2_r0;
-#line 7281 "main.c"
+#line 7291 "main.c"
     hero_str_incref(t21);
 #line 108 "examples/interpreter/lex/token.hero"
     h2_r0 = t21;
-#line 7285 "main.c"
+#line 7295 "main.c"
     hero_str_decref(t62);
     goto bb1;
 bb6:
@@ -7289,11 +7299,11 @@ bb6:
     t22 = HERO_STR_LIT(hero_str_3d6209f4);
 #line 108 "examples/interpreter/lex/token.hero"
     t63 = h2_r0;
-#line 7293 "main.c"
+#line 7303 "main.c"
     hero_str_incref(t22);
 #line 108 "examples/interpreter/lex/token.hero"
     h2_r0 = t22;
-#line 7297 "main.c"
+#line 7307 "main.c"
     hero_str_decref(t63);
     goto bb1;
 bb7:
@@ -7301,11 +7311,11 @@ bb7:
     t23 = HERO_STR_LIT(hero_str_3621);
 #line 108 "examples/interpreter/lex/token.hero"
     t64 = h2_r0;
-#line 7305 "main.c"
+#line 7315 "main.c"
     hero_str_incref(t23);
 #line 108 "examples/interpreter/lex/token.hero"
     h2_r0 = t23;
-#line 7309 "main.c"
+#line 7319 "main.c"
     hero_str_decref(t64);
     goto bb1;
 bb8:
@@ -7313,11 +7323,11 @@ bb8:
     t24 = HERO_STR_LIT(hero_str_da52131);
 #line 108 "examples/interpreter/lex/token.hero"
     t65 = h2_r0;
-#line 7317 "main.c"
+#line 7327 "main.c"
     hero_str_incref(t24);
 #line 108 "examples/interpreter/lex/token.hero"
     h2_r0 = t24;
-#line 7321 "main.c"
+#line 7331 "main.c"
     hero_str_decref(t65);
     goto bb1;
 bb9:
@@ -7325,11 +7335,11 @@ bb9:
     t25 = HERO_STR_LIT(hero_str_36eafd09);
 #line 108 "examples/interpreter/lex/token.hero"
     t66 = h2_r0;
-#line 7329 "main.c"
+#line 7339 "main.c"
     hero_str_incref(t25);
 #line 108 "examples/interpreter/lex/token.hero"
     h2_r0 = t25;
-#line 7333 "main.c"
+#line 7343 "main.c"
     hero_str_decref(t66);
     goto bb1;
 bb10:
@@ -7337,11 +7347,11 @@ bb10:
     t26 = HERO_STR_LIT(hero_str_34a0);
 #line 108 "examples/interpreter/lex/token.hero"
     t67 = h2_r0;
-#line 7341 "main.c"
+#line 7351 "main.c"
     hero_str_incref(t26);
 #line 108 "examples/interpreter/lex/token.hero"
     h2_r0 = t26;
-#line 7345 "main.c"
+#line 7355 "main.c"
     hero_str_decref(t67);
     goto bb1;
 bb11:
@@ -7349,11 +7359,11 @@ bb11:
     t27 = HERO_STR_LIT(hero_str_7d7c9755);
 #line 108 "examples/interpreter/lex/token.hero"
     t68 = h2_r0;
-#line 7353 "main.c"
+#line 7363 "main.c"
     hero_str_incref(t27);
 #line 108 "examples/interpreter/lex/token.hero"
     h2_r0 = t27;
-#line 7357 "main.c"
+#line 7367 "main.c"
     hero_str_decref(t68);
     goto bb1;
 bb12:
@@ -7361,11 +7371,11 @@ bb12:
     t28 = HERO_STR_LIT(hero_str_da8408e);
 #line 108 "examples/interpreter/lex/token.hero"
     t69 = h2_r0;
-#line 7365 "main.c"
+#line 7375 "main.c"
     hero_str_incref(t28);
 #line 108 "examples/interpreter/lex/token.hero"
     h2_r0 = t28;
-#line 7369 "main.c"
+#line 7379 "main.c"
     hero_str_decref(t69);
     goto bb1;
 bb13:
@@ -7373,11 +7383,11 @@ bb13:
     t29 = HERO_STR_LIT(hero_str_1aab3b);
 #line 108 "examples/interpreter/lex/token.hero"
     t70 = h2_r0;
-#line 7377 "main.c"
+#line 7387 "main.c"
     hero_str_incref(t29);
 #line 108 "examples/interpreter/lex/token.hero"
     h2_r0 = t29;
-#line 7381 "main.c"
+#line 7391 "main.c"
     hero_str_decref(t70);
     goto bb1;
 bb14:
@@ -7385,11 +7395,11 @@ bb14:
     t30 = HERO_STR_LIT(hero_str_fa94082);
 #line 108 "examples/interpreter/lex/token.hero"
     t71 = h2_r0;
-#line 7389 "main.c"
+#line 7399 "main.c"
     hero_str_incref(t30);
 #line 108 "examples/interpreter/lex/token.hero"
     h2_r0 = t30;
-#line 7393 "main.c"
+#line 7403 "main.c"
     hero_str_decref(t71);
     goto bb1;
 bb15:
@@ -7397,11 +7407,11 @@ bb15:
     t31 = HERO_STR_LIT(hero_str_b928f19);
 #line 108 "examples/interpreter/lex/token.hero"
     t72 = h2_r0;
-#line 7401 "main.c"
+#line 7411 "main.c"
     hero_str_incref(t31);
 #line 108 "examples/interpreter/lex/token.hero"
     h2_r0 = t31;
-#line 7405 "main.c"
+#line 7415 "main.c"
     hero_str_decref(t72);
     goto bb1;
 bb16:
@@ -7409,11 +7419,11 @@ bb16:
     t32 = HERO_STR_LIT(hero_str_2b);
 #line 108 "examples/interpreter/lex/token.hero"
     t73 = h2_r0;
-#line 7413 "main.c"
+#line 7423 "main.c"
     hero_str_incref(t32);
 #line 108 "examples/interpreter/lex/token.hero"
     h2_r0 = t32;
-#line 7417 "main.c"
+#line 7427 "main.c"
     hero_str_decref(t73);
     goto bb1;
 bb17:
@@ -7421,11 +7431,11 @@ bb17:
     t33 = HERO_STR_LIT(hero_str_2d);
 #line 108 "examples/interpreter/lex/token.hero"
     t74 = h2_r0;
-#line 7425 "main.c"
+#line 7435 "main.c"
     hero_str_incref(t33);
 #line 108 "examples/interpreter/lex/token.hero"
     h2_r0 = t33;
-#line 7429 "main.c"
+#line 7439 "main.c"
     hero_str_decref(t74);
     goto bb1;
 bb18:
@@ -7433,11 +7443,11 @@ bb18:
     t34 = HERO_STR_LIT(hero_str_2a);
 #line 108 "examples/interpreter/lex/token.hero"
     t75 = h2_r0;
-#line 7437 "main.c"
+#line 7447 "main.c"
     hero_str_incref(t34);
 #line 108 "examples/interpreter/lex/token.hero"
     h2_r0 = t34;
-#line 7441 "main.c"
+#line 7451 "main.c"
     hero_str_decref(t75);
     goto bb1;
 bb19:
@@ -7445,11 +7455,11 @@ bb19:
     t35 = HERO_STR_LIT(hero_str_2f);
 #line 108 "examples/interpreter/lex/token.hero"
     t76 = h2_r0;
-#line 7449 "main.c"
+#line 7459 "main.c"
     hero_str_incref(t35);
 #line 108 "examples/interpreter/lex/token.hero"
     h2_r0 = t35;
-#line 7453 "main.c"
+#line 7463 "main.c"
     hero_str_decref(t76);
     goto bb1;
 bb20:
@@ -7457,11 +7467,11 @@ bb20:
     t36 = HERO_STR_LIT(hero_str_25);
 #line 108 "examples/interpreter/lex/token.hero"
     t77 = h2_r0;
-#line 7461 "main.c"
+#line 7471 "main.c"
     hero_str_incref(t36);
 #line 108 "examples/interpreter/lex/token.hero"
     h2_r0 = t36;
-#line 7465 "main.c"
+#line 7475 "main.c"
     hero_str_decref(t77);
     goto bb1;
 bb21:
@@ -7469,11 +7479,11 @@ bb21:
     t37 = HERO_STR_LIT(hero_str_3d);
 #line 108 "examples/interpreter/lex/token.hero"
     t78 = h2_r0;
-#line 7473 "main.c"
+#line 7483 "main.c"
     hero_str_incref(t37);
 #line 108 "examples/interpreter/lex/token.hero"
     h2_r0 = t37;
-#line 7477 "main.c"
+#line 7487 "main.c"
     hero_str_decref(t78);
     goto bb1;
 bb22:
@@ -7481,11 +7491,11 @@ bb22:
     t38 = HERO_STR_LIT(hero_str_3c);
 #line 108 "examples/interpreter/lex/token.hero"
     t79 = h2_r0;
-#line 7485 "main.c"
+#line 7495 "main.c"
     hero_str_incref(t38);
 #line 108 "examples/interpreter/lex/token.hero"
     h2_r0 = t38;
-#line 7489 "main.c"
+#line 7499 "main.c"
     hero_str_decref(t79);
     goto bb1;
 bb23:
@@ -7493,11 +7503,11 @@ bb23:
     t39 = HERO_STR_LIT(hero_str_1ef1);
 #line 108 "examples/interpreter/lex/token.hero"
     t80 = h2_r0;
-#line 7497 "main.c"
+#line 7507 "main.c"
     hero_str_incref(t39);
 #line 108 "examples/interpreter/lex/token.hero"
     h2_r0 = t39;
-#line 7501 "main.c"
+#line 7511 "main.c"
     hero_str_decref(t80);
     goto bb1;
 bb24:
@@ -7505,11 +7515,11 @@ bb24:
     t40 = HERO_STR_LIT(hero_str_3e);
 #line 108 "examples/interpreter/lex/token.hero"
     t81 = h2_r0;
-#line 7509 "main.c"
+#line 7519 "main.c"
     hero_str_incref(t40);
 #line 108 "examples/interpreter/lex/token.hero"
     h2_r0 = t40;
-#line 7513 "main.c"
+#line 7523 "main.c"
     hero_str_decref(t81);
     goto bb1;
 bb25:
@@ -7517,11 +7527,11 @@ bb25:
     t41 = HERO_STR_LIT(hero_str_1ff7);
 #line 108 "examples/interpreter/lex/token.hero"
     t82 = h2_r0;
-#line 7521 "main.c"
+#line 7531 "main.c"
     hero_str_incref(t41);
 #line 108 "examples/interpreter/lex/token.hero"
     h2_r0 = t41;
-#line 7525 "main.c"
+#line 7535 "main.c"
     hero_str_decref(t82);
     goto bb1;
 bb26:
@@ -7529,11 +7539,11 @@ bb26:
     t42 = HERO_STR_LIT(hero_str_1f74);
 #line 108 "examples/interpreter/lex/token.hero"
     t83 = h2_r0;
-#line 7533 "main.c"
+#line 7543 "main.c"
     hero_str_incref(t42);
 #line 108 "examples/interpreter/lex/token.hero"
     h2_r0 = t42;
-#line 7537 "main.c"
+#line 7547 "main.c"
     hero_str_decref(t83);
     goto bb1;
 bb27:
@@ -7541,11 +7551,11 @@ bb27:
     t43 = HERO_STR_LIT(hero_str_1120);
 #line 108 "examples/interpreter/lex/token.hero"
     t84 = h2_r0;
-#line 7545 "main.c"
+#line 7555 "main.c"
     hero_str_incref(t43);
 #line 108 "examples/interpreter/lex/token.hero"
     h2_r0 = t43;
-#line 7549 "main.c"
+#line 7559 "main.c"
     hero_str_decref(t84);
     goto bb1;
 bb28:
@@ -7553,11 +7563,11 @@ bb28:
     t44 = HERO_STR_LIT(hero_str_21);
 #line 108 "examples/interpreter/lex/token.hero"
     t85 = h2_r0;
-#line 7557 "main.c"
+#line 7567 "main.c"
     hero_str_incref(t44);
 #line 108 "examples/interpreter/lex/token.hero"
     h2_r0 = t44;
-#line 7561 "main.c"
+#line 7571 "main.c"
     hero_str_decref(t85);
     goto bb1;
 bb29:
@@ -7565,11 +7575,11 @@ bb29:
     t45 = HERO_STR_LIT(hero_str_1398);
 #line 108 "examples/interpreter/lex/token.hero"
     t86 = h2_r0;
-#line 7569 "main.c"
+#line 7579 "main.c"
     hero_str_incref(t45);
 #line 108 "examples/interpreter/lex/token.hero"
     h2_r0 = t45;
-#line 7573 "main.c"
+#line 7583 "main.c"
     hero_str_decref(t86);
     goto bb1;
 bb30:
@@ -7577,11 +7587,11 @@ bb30:
     t46 = HERO_STR_LIT(hero_str_3ff0);
 #line 108 "examples/interpreter/lex/token.hero"
     t87 = h2_r0;
-#line 7581 "main.c"
+#line 7591 "main.c"
     hero_str_incref(t46);
 #line 108 "examples/interpreter/lex/token.hero"
     h2_r0 = t46;
-#line 7585 "main.c"
+#line 7595 "main.c"
     hero_str_decref(t87);
     goto bb1;
 bb31:
@@ -7589,11 +7599,11 @@ bb31:
     t47 = HERO_STR_LIT(hero_str_28);
 #line 108 "examples/interpreter/lex/token.hero"
     t88 = h2_r0;
-#line 7593 "main.c"
+#line 7603 "main.c"
     hero_str_incref(t47);
 #line 108 "examples/interpreter/lex/token.hero"
     h2_r0 = t47;
-#line 7597 "main.c"
+#line 7607 "main.c"
     hero_str_decref(t88);
     goto bb1;
 bb32:
@@ -7601,11 +7611,11 @@ bb32:
     t48 = HERO_STR_LIT(hero_str_29);
 #line 108 "examples/interpreter/lex/token.hero"
     t89 = h2_r0;
-#line 7605 "main.c"
+#line 7615 "main.c"
     hero_str_incref(t48);
 #line 108 "examples/interpreter/lex/token.hero"
     h2_r0 = t48;
-#line 7609 "main.c"
+#line 7619 "main.c"
     hero_str_decref(t89);
     goto bb1;
 bb33:
@@ -7613,11 +7623,11 @@ bb33:
     t49 = HERO_STR_LIT(hero_str_2c);
 #line 108 "examples/interpreter/lex/token.hero"
     t90 = h2_r0;
-#line 7617 "main.c"
+#line 7627 "main.c"
     hero_str_incref(t49);
 #line 108 "examples/interpreter/lex/token.hero"
     h2_r0 = t49;
-#line 7621 "main.c"
+#line 7631 "main.c"
     hero_str_decref(t90);
     goto bb1;
 bb34:
@@ -7625,11 +7635,11 @@ bb34:
     t50 = HERO_STR_LIT(hero_str_749f9455);
 #line 108 "examples/interpreter/lex/token.hero"
     t91 = h2_r0;
-#line 7629 "main.c"
+#line 7639 "main.c"
     hero_str_incref(t50);
 #line 108 "examples/interpreter/lex/token.hero"
     h2_r0 = t50;
-#line 7633 "main.c"
+#line 7643 "main.c"
     hero_str_decref(t91);
     goto bb1;
 bb35:
@@ -7637,18 +7647,18 @@ bb35:
     t51 = HERO_STR_LIT(hero_str_73d1c1ad);
 #line 108 "examples/interpreter/lex/token.hero"
     t92 = h2_r0;
-#line 7641 "main.c"
+#line 7651 "main.c"
     hero_str_incref(t51);
 #line 108 "examples/interpreter/lex/token.hero"
     h2_r0 = t51;
-#line 7645 "main.c"
+#line 7655 "main.c"
     hero_str_decref(t92);
     goto bb1;
 }
 
 #line 152 "examples/interpreter/lex/token.hero"
 bool h_lextoken_opens_a_value(h_lextoken_Token h0_t) {
-#line 7652 "main.c"
+#line 7662 "main.c"
     h_lextoken_Token h1_s0 = {0};
     bool h2_r0;
     h_lextoken_Token t1;
@@ -7670,11 +7680,11 @@ bb0:
     t1 = h0_t;
 #line 153 "examples/interpreter/lex/token.hero"
     t13 = h1_s0;
-#line 7674 "main.c"
+#line 7684 "main.c"
     h_lextoken_Token_retain(&t1);
 #line 153 "examples/interpreter/lex/token.hero"
     h1_s0 = t1;
-#line 7678 "main.c"
+#line 7688 "main.c"
     h_lextoken_Token_release(&t13);
 #line 153 "examples/interpreter/lex/token.hero"
     t2 = h1_s0;
@@ -7758,7 +7768,7 @@ bb0:
 bb1:
 #line 153 "examples/interpreter/lex/token.hero"
     t12 = h2_r0;
-#line 7762 "main.c"
+#line 7772 "main.c"
     h_lextoken_Token_release(&h1_s0);
     return t12;
 bb2:
@@ -7824,25 +7834,25 @@ bb9:
     h2_r0 = t11;
 #line 153 "examples/interpreter/lex/token.hero"
     goto bb1;
-#line 7828 "main.c"
+#line 7838 "main.c"
 }
 
 #line 25 "examples/interpreter/syn/cursor.hero"
 HeroStr h_syncursor_ERR_PARSE(void) {
-#line 7833 "main.c"
+#line 7843 "main.c"
     HeroStr t1;
     goto bb0;
 bb0:
 #line 26 "examples/interpreter/syn/cursor.hero"
     t1 = HERO_STR_LIT(hero_str_3b1d407a);
-#line 7839 "main.c"
+#line 7849 "main.c"
     hero_str_incref(t1);
     return t1;
 }
 
 #line 32 "examples/interpreter/syn/cursor.hero"
 h_syncursor_Cursor h_syncursor_over(HeroArrayHeader * h0_tokens) {
-#line 7846 "main.c"
+#line 7856 "main.c"
     h_syncursor_Cursor h1_own1 = {0};
     HeroArrayHeader * t1;
     int64_t t2;
@@ -7854,7 +7864,7 @@ bb0:
     t1 = h0_tokens;
 #line 33 "examples/interpreter/syn/cursor.hero"
     t2 = INT64_C(0);
-#line 7858 "main.c"
+#line 7868 "main.c"
     hero_array_incref(t1);
 #line 33 "examples/interpreter/syn/cursor.hero"
     t3 = (h_syncursor_Cursor){.f_tokens = t1, .f_at = t2};
@@ -7862,7 +7872,7 @@ bb0:
     t4 = h1_own1;
 #line 33 "examples/interpreter/syn/cursor.hero"
     h1_own1 = t3;
-#line 7866 "main.c"
+#line 7876 "main.c"
     h_syncursor_Cursor_release(&t4);
     h_syncursor_Cursor_retain(&t3);
     h_syncursor_Cursor_release(&h1_own1);
@@ -7871,7 +7881,7 @@ bb0:
 
 #line 37 "examples/interpreter/syn/cursor.hero"
 h_lextoken_Token h_syncursor_here(h_syncursor_Cursor h0_c) {
-#line 7875 "main.c"
+#line 7885 "main.c"
     h_lextoken_Token h1_ret0 = {0};
     h_lextoken_Token h2_own2 = {0};
     h_syncursor_Cursor t1;
@@ -7928,7 +7938,7 @@ bb2:
     t14 = h2_own2;
 #line 39 "examples/interpreter/syn/cursor.hero"
     h2_own2 = t7;
-#line 7932 "main.c"
+#line 7942 "main.c"
     h_lextoken_Token_release(&t14);
 #line 39 "examples/interpreter/syn/cursor.hero"
     h1_ret0 = t7;
@@ -7940,7 +7950,7 @@ bb3:
     goto bb1;
 #line 39 "examples/interpreter/syn/cursor.hero"
 bb4:
-#line 7944 "main.c"
+#line 7954 "main.c"
     t13 = h1_ret0;
     h_lextoken_Token_retain(&t13);
     h_lextoken_Token_release(&h2_own2);
@@ -7949,7 +7959,7 @@ bb4:
 
 #line 45 "examples/interpreter/syn/cursor.hero"
 h_lextoken_Token h_syncursor_after(h_syncursor_Cursor h0_c) {
-#line 7953 "main.c"
+#line 7963 "main.c"
     h_lextoken_Token h1_ret0 = {0};
     h_lextoken_Token h2_own2 = {0};
     h_syncursor_Cursor t1;
@@ -8018,7 +8028,7 @@ bb2:
     t18 = h2_own2;
 #line 47 "examples/interpreter/syn/cursor.hero"
     h2_own2 = t9;
-#line 8022 "main.c"
+#line 8032 "main.c"
     h_lextoken_Token_release(&t18);
 #line 47 "examples/interpreter/syn/cursor.hero"
     h1_ret0 = t9;
@@ -8030,7 +8040,7 @@ bb3:
     goto bb1;
 #line 47 "examples/interpreter/syn/cursor.hero"
 bb4:
-#line 8034 "main.c"
+#line 8044 "main.c"
     t17 = h1_ret0;
     h_lextoken_Token_retain(&t17);
     h_lextoken_Token_release(&h2_own2);
@@ -8039,7 +8049,7 @@ bb4:
 
 #line 52 "examples/interpreter/syn/cursor.hero"
 h_lextoken_Token h_syncursor_bump(h_syncursor_Cursor *ph0_c) {
-#line 8043 "main.c"
+#line 8053 "main.c"
     h_lextoken_Token h1_taken = {0};
     h_lextoken_Token h2_own2 = {0};
     h_lextoken_Token h3_own3 = {0};
@@ -8069,15 +8079,15 @@ bb0:
     t14 = h2_own2;
 #line 53 "examples/interpreter/syn/cursor.hero"
     h2_own2 = t2;
-#line 8073 "main.c"
+#line 8083 "main.c"
     h_lextoken_Token_release(&t14);
 #line 53 "examples/interpreter/syn/cursor.hero"
     t15 = h1_taken;
-#line 8077 "main.c"
+#line 8087 "main.c"
     h_lextoken_Token_retain(&t2);
 #line 53 "examples/interpreter/syn/cursor.hero"
     h1_taken = t2;
-#line 8081 "main.c"
+#line 8091 "main.c"
     h_lextoken_Token_release(&t15);
 #line 55 "examples/interpreter/syn/cursor.hero"
     t3 = (*ph0_c);
@@ -8097,13 +8107,13 @@ bb0:
 bb1:
 #line 58 "examples/interpreter/syn/cursor.hero"
     t13 = h1_taken;
-#line 8101 "main.c"
+#line 8111 "main.c"
     h_lextoken_Token_retain(&t13);
 #line 58 "examples/interpreter/syn/cursor.hero"
     t16 = h3_own3;
 #line 58 "examples/interpreter/syn/cursor.hero"
     h3_own3 = t13;
-#line 8107 "main.c"
+#line 8117 "main.c"
     h_lextoken_Token_release(&t16);
     h_lextoken_Token_retain(&t13);
     h_lextoken_Token_release(&h1_taken);
@@ -8127,12 +8137,12 @@ bb2:
 bb3:
 #line 56 "examples/interpreter/syn/cursor.hero"
     goto bb1;
-#line 8131 "main.c"
+#line 8141 "main.c"
 }
 
 #line 61 "examples/interpreter/syn/cursor.hero"
 bool h_syncursor_accepted(h_syncursor_Cursor *ph0_c, h_lextoken_Token h1_want) {
-#line 8136 "main.c"
+#line 8146 "main.c"
     bool h2_ret0;
     h_lextoken_Token h3_own3 = {0};
     h_lextoken_Token h4_own4 = {0};
@@ -8156,7 +8166,7 @@ bb0:
     t9 = h3_own3;
 #line 62 "examples/interpreter/syn/cursor.hero"
     h3_own3 = t2;
-#line 8160 "main.c"
+#line 8170 "main.c"
     h_lextoken_Token_release(&t9);
 #line 62 "examples/interpreter/syn/cursor.hero"
     t3 = h1_want;
@@ -8180,7 +8190,7 @@ bb2:
     t10 = h4_own4;
 #line 63 "examples/interpreter/syn/cursor.hero"
     h4_own4 = t5;
-#line 8184 "main.c"
+#line 8194 "main.c"
     h_lextoken_Token_release(&t10);
 #line 64 "examples/interpreter/syn/cursor.hero"
     t6 = true;
@@ -8194,7 +8204,7 @@ bb3:
     goto bb1;
 #line 64 "examples/interpreter/syn/cursor.hero"
 bb4:
-#line 8198 "main.c"
+#line 8208 "main.c"
     t8 = h2_ret0;
     h_lextoken_Token_release(&h3_own3);
     h_lextoken_Token_release(&h4_own4);
@@ -8203,7 +8213,7 @@ bb4:
 
 #line 69 "examples/interpreter/syn/cursor.hero"
 h_0opt_a8ea2 h_syncursor_expected(h_syncursor_Cursor *ph0_c, h_lextoken_Token h1_want) {
-#line 8207 "main.c"
+#line 8217 "main.c"
     h_0opt_a8ea2 h2_ret0 = {0};
     HeroStr h3_own3 = {0};
     HeroStr h4_own4 = {0};
@@ -8259,7 +8269,7 @@ bb1:
     t19 = h3_own3;
 #line 74 "examples/interpreter/syn/cursor.hero"
     h3_own3 = t4;
-#line 8263 "main.c"
+#line 8273 "main.c"
     hero_str_decref(t19);
 #line 75 "examples/interpreter/syn/cursor.hero"
     t5 = HERO_STR_LIT(hero_str_2dfda7a5);
@@ -8271,7 +8281,7 @@ bb1:
     t20 = h4_own4;
 #line 75 "examples/interpreter/syn/cursor.hero"
     h4_own4 = t7;
-#line 8275 "main.c"
+#line 8285 "main.c"
     hero_str_decref(t20);
 #line 75 "examples/interpreter/syn/cursor.hero"
     t8 = hero_str_concat(t5, t7);
@@ -8279,7 +8289,7 @@ bb1:
     t21 = h5_own5;
 #line 75 "examples/interpreter/syn/cursor.hero"
     h5_own5 = t8;
-#line 8283 "main.c"
+#line 8293 "main.c"
     hero_str_decref(t21);
 #line 75 "examples/interpreter/syn/cursor.hero"
     t9 = HERO_STR_LIT(hero_str_7a5d94f6);
@@ -8289,7 +8299,7 @@ bb1:
     t22 = h6_own6;
 #line 75 "examples/interpreter/syn/cursor.hero"
     h6_own6 = t10;
-#line 8293 "main.c"
+#line 8303 "main.c"
     hero_str_decref(t22);
 #line 75 "examples/interpreter/syn/cursor.hero"
     t11 = (*ph0_c);
@@ -8299,7 +8309,7 @@ bb1:
     t23 = h7_own7;
 #line 75 "examples/interpreter/syn/cursor.hero"
     h7_own7 = t12;
-#line 8303 "main.c"
+#line 8313 "main.c"
     h_lextoken_Token_release(&t23);
 #line 75 "examples/interpreter/syn/cursor.hero"
     t13 = h_lextoken_shown(t12);
@@ -8307,7 +8317,7 @@ bb1:
     t24 = h8_own8;
 #line 75 "examples/interpreter/syn/cursor.hero"
     h8_own8 = t13;
-#line 8311 "main.c"
+#line 8321 "main.c"
     hero_str_decref(t24);
 #line 75 "examples/interpreter/syn/cursor.hero"
     t14 = hero_str_concat(t10, t13);
@@ -8315,7 +8325,7 @@ bb1:
     t25 = h9_own9;
 #line 75 "examples/interpreter/syn/cursor.hero"
     h9_own9 = t14;
-#line 8319 "main.c"
+#line 8329 "main.c"
     hero_str_decref(t25);
 #line 75 "examples/interpreter/syn/cursor.hero"
     t15 = HERO_STR_LIT(hero_str_60);
@@ -8325,7 +8335,7 @@ bb1:
     t26 = h10_own10;
 #line 75 "examples/interpreter/syn/cursor.hero"
     h10_own10 = t16;
-#line 8329 "main.c"
+#line 8339 "main.c"
     hero_str_decref(t26);
     hero_str_incref(t4);
     hero_str_incref(t16);
@@ -8335,7 +8345,7 @@ bb1:
     t27 = h11_own11;
 #line 73 "examples/interpreter/syn/cursor.hero"
     h11_own11 = t17;
-#line 8339 "main.c"
+#line 8349 "main.c"
     h_0opt_a8ea2_release(&t27);
 #line 73 "examples/interpreter/syn/cursor.hero"
     h2_ret0 = t17;
@@ -8349,7 +8359,7 @@ bb2:
     t28 = h12_own12;
 #line 71 "examples/interpreter/syn/cursor.hero"
     h12_own12 = t3;
-#line 8353 "main.c"
+#line 8363 "main.c"
     h_0opt_a8ea2_release(&t28);
 #line 71 "examples/interpreter/syn/cursor.hero"
     h2_ret0 = t3;
@@ -8361,7 +8371,7 @@ bb3:
     goto bb1;
 #line 71 "examples/interpreter/syn/cursor.hero"
 bb4:
-#line 8365 "main.c"
+#line 8375 "main.c"
     t18 = h2_ret0;
     h_0opt_a8ea2_retain(&t18);
     hero_str_decref(h3_own3);
@@ -8379,7 +8389,7 @@ bb4:
 
 #line 79 "examples/interpreter/syn/cursor.hero"
 h_0opt_f87774a h_syncursor_name_here(h_syncursor_Cursor *ph0_c) {
-#line 8383 "main.c"
+#line 8393 "main.c"
     h_lextoken_Token h1_s0 = {0};
     h_0opt_f87774a h2_r0 = {0};
     h_lextoken_Token_c_number h3_n;
@@ -8525,15 +8535,15 @@ bb0:
     t58 = h6_own6;
 #line 80 "examples/interpreter/syn/cursor.hero"
     h6_own6 = t1;
-#line 8529 "main.c"
+#line 8539 "main.c"
     h_lextoken_Token_release(&t58);
 #line 80 "examples/interpreter/syn/cursor.hero"
     t59 = h1_s0;
-#line 8533 "main.c"
+#line 8543 "main.c"
     h_lextoken_Token_retain(&t1);
 #line 80 "examples/interpreter/syn/cursor.hero"
     h1_s0 = t1;
-#line 8537 "main.c"
+#line 8547 "main.c"
     h_lextoken_Token_release(&t59);
 #line 80 "examples/interpreter/syn/cursor.hero"
     t2 = h1_s0;
@@ -8617,13 +8627,13 @@ bb0:
 bb1:
 #line 80 "examples/interpreter/syn/cursor.hero"
     t57 = h2_r0;
-#line 8621 "main.c"
+#line 8631 "main.c"
     h_0opt_f87774a_retain(&t57);
 #line 80 "examples/interpreter/syn/cursor.hero"
     t60 = h7_own7;
 #line 80 "examples/interpreter/syn/cursor.hero"
     h7_own7 = t57;
-#line 8627 "main.c"
+#line 8637 "main.c"
     h_0opt_f87774a_release(&t60);
     h_0opt_f87774a_retain(&t57);
     h_lextoken_Token_release(&h1_s0);
@@ -8674,7 +8684,7 @@ bb2:
     t61 = h8_own8;
 #line 81 "examples/interpreter/syn/cursor.hero"
     h8_own8 = t6;
-#line 8678 "main.c"
+#line 8688 "main.c"
     hero_str_decref(t61);
 #line 81 "examples/interpreter/syn/cursor.hero"
     t7 = HERO_STR_LIT(hero_str_34e508eb);
@@ -8688,7 +8698,7 @@ bb2:
     t62 = h9_own9;
 #line 81 "examples/interpreter/syn/cursor.hero"
     h9_own9 = t10;
-#line 8692 "main.c"
+#line 8702 "main.c"
     hero_str_decref(t62);
 #line 81 "examples/interpreter/syn/cursor.hero"
     t11 = hero_str_concat(t7, t10);
@@ -8696,7 +8706,7 @@ bb2:
     t63 = h10_own10;
 #line 81 "examples/interpreter/syn/cursor.hero"
     h10_own10 = t11;
-#line 8700 "main.c"
+#line 8710 "main.c"
     hero_str_decref(t63);
 #line 81 "examples/interpreter/syn/cursor.hero"
     t12 = HERO_STR_LIT(hero_str_60);
@@ -8706,7 +8716,7 @@ bb2:
     t64 = h11_own11;
 #line 81 "examples/interpreter/syn/cursor.hero"
     h11_own11 = t13;
-#line 8710 "main.c"
+#line 8720 "main.c"
     hero_str_decref(t64);
     hero_str_incref(t6);
     hero_str_incref(t13);
@@ -8716,15 +8726,15 @@ bb2:
     t65 = h12_own12;
 #line 81 "examples/interpreter/syn/cursor.hero"
     h12_own12 = t14;
-#line 8720 "main.c"
+#line 8730 "main.c"
     h_0opt_f87774a_release(&t65);
 #line 80 "examples/interpreter/syn/cursor.hero"
     t66 = h2_r0;
-#line 8724 "main.c"
+#line 8734 "main.c"
     h_0opt_f87774a_retain(&t14);
 #line 80 "examples/interpreter/syn/cursor.hero"
     h2_r0 = t14;
-#line 8728 "main.c"
+#line 8738 "main.c"
     h_0opt_f87774a_release(&t66);
     goto bb1;
 bb3:
@@ -8734,11 +8744,11 @@ bb3:
     t16 = t15.as.c_text;
 #line 82 "examples/interpreter/syn/cursor.hero"
     t67 = h4_x;
-#line 8738 "main.c"
+#line 8748 "main.c"
     h_lextoken_Token_c_text_retain(&t16);
 #line 82 "examples/interpreter/syn/cursor.hero"
     h4_x = t16;
-#line 8742 "main.c"
+#line 8752 "main.c"
     h_lextoken_Token_c_text_release(&t67);
 #line 82 "examples/interpreter/syn/cursor.hero"
     t17 = h_syncursor_ERR_PARSE();
@@ -8746,7 +8756,7 @@ bb3:
     t68 = h13_own13;
 #line 82 "examples/interpreter/syn/cursor.hero"
     h13_own13 = t17;
-#line 8750 "main.c"
+#line 8760 "main.c"
     hero_str_decref(t68);
 #line 82 "examples/interpreter/syn/cursor.hero"
     t18 = HERO_STR_LIT(hero_str_3aedf865);
@@ -8760,7 +8770,7 @@ bb3:
     t69 = h14_own14;
 #line 82 "examples/interpreter/syn/cursor.hero"
     h14_own14 = t21;
-#line 8764 "main.c"
+#line 8774 "main.c"
     hero_str_decref(t69);
 #line 82 "examples/interpreter/syn/cursor.hero"
     t22 = HERO_STR_LIT(hero_str_60);
@@ -8770,7 +8780,7 @@ bb3:
     t70 = h15_own15;
 #line 82 "examples/interpreter/syn/cursor.hero"
     h15_own15 = t23;
-#line 8774 "main.c"
+#line 8784 "main.c"
     hero_str_decref(t70);
     hero_str_incref(t17);
     hero_str_incref(t23);
@@ -8780,15 +8790,15 @@ bb3:
     t71 = h16_own16;
 #line 82 "examples/interpreter/syn/cursor.hero"
     h16_own16 = t24;
-#line 8784 "main.c"
+#line 8794 "main.c"
     h_0opt_f87774a_release(&t71);
 #line 80 "examples/interpreter/syn/cursor.hero"
     t72 = h2_r0;
-#line 8788 "main.c"
+#line 8798 "main.c"
     h_0opt_f87774a_retain(&t24);
 #line 80 "examples/interpreter/syn/cursor.hero"
     h2_r0 = t24;
-#line 8792 "main.c"
+#line 8802 "main.c"
     h_0opt_f87774a_release(&t72);
     goto bb1;
 bb4:
@@ -8798,17 +8808,17 @@ bb4:
     t26 = t25.as.c_name;
 #line 83 "examples/interpreter/syn/cursor.hero"
     t73 = h5_n;
-#line 8802 "main.c"
+#line 8812 "main.c"
     h_lextoken_Token_c_name_retain(&t26);
 #line 83 "examples/interpreter/syn/cursor.hero"
     h5_n = t26;
-#line 8806 "main.c"
+#line 8816 "main.c"
     h_lextoken_Token_c_name_release(&t73);
 #line 83 "examples/interpreter/syn/cursor.hero"
     t27 = h5_n;
 #line 83 "examples/interpreter/syn/cursor.hero"
     t28 = t27.f_value;
-#line 8812 "main.c"
+#line 8822 "main.c"
     hero_str_incref(t28);
 #line 83 "examples/interpreter/syn/cursor.hero"
     t29 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t28};
@@ -8816,15 +8826,15 @@ bb4:
     t74 = h17_own17;
 #line 83 "examples/interpreter/syn/cursor.hero"
     h17_own17 = t29;
-#line 8820 "main.c"
+#line 8830 "main.c"
     h_0opt_f87774a_release(&t74);
 #line 80 "examples/interpreter/syn/cursor.hero"
     t75 = h2_r0;
-#line 8824 "main.c"
+#line 8834 "main.c"
     h_0opt_f87774a_retain(&t29);
 #line 80 "examples/interpreter/syn/cursor.hero"
     h2_r0 = t29;
-#line 8828 "main.c"
+#line 8838 "main.c"
     h_0opt_f87774a_release(&t75);
     goto bb1;
 bb5:
@@ -8834,7 +8844,7 @@ bb5:
     t76 = h18_own18;
 #line 84 "examples/interpreter/syn/cursor.hero"
     h18_own18 = t30;
-#line 8838 "main.c"
+#line 8848 "main.c"
     h_lextoken_Token_release(&t76);
 #line 84 "examples/interpreter/syn/cursor.hero"
     t31 = HERO_STR_LIT(hero_str_7441fe7c);
@@ -8844,15 +8854,15 @@ bb5:
     t77 = h19_own19;
 #line 84 "examples/interpreter/syn/cursor.hero"
     h19_own19 = t32;
-#line 8848 "main.c"
+#line 8858 "main.c"
     h_0opt_f87774a_release(&t77);
 #line 80 "examples/interpreter/syn/cursor.hero"
     t78 = h2_r0;
-#line 8852 "main.c"
+#line 8862 "main.c"
     h_0opt_f87774a_retain(&t32);
 #line 80 "examples/interpreter/syn/cursor.hero"
     h2_r0 = t32;
-#line 8856 "main.c"
+#line 8866 "main.c"
     h_0opt_f87774a_release(&t78);
     goto bb1;
 bb6:
@@ -8862,7 +8872,7 @@ bb6:
     t79 = h20_own20;
 #line 85 "examples/interpreter/syn/cursor.hero"
     h20_own20 = t33;
-#line 8866 "main.c"
+#line 8876 "main.c"
     h_lextoken_Token_release(&t79);
 #line 85 "examples/interpreter/syn/cursor.hero"
     t34 = HERO_STR_LIT(hero_str_7441fe7c);
@@ -8872,15 +8882,15 @@ bb6:
     t80 = h21_own21;
 #line 85 "examples/interpreter/syn/cursor.hero"
     h21_own21 = t35;
-#line 8876 "main.c"
+#line 8886 "main.c"
     h_0opt_f87774a_release(&t80);
 #line 80 "examples/interpreter/syn/cursor.hero"
     t81 = h2_r0;
-#line 8880 "main.c"
+#line 8890 "main.c"
     h_0opt_f87774a_retain(&t35);
 #line 80 "examples/interpreter/syn/cursor.hero"
     h2_r0 = t35;
-#line 8884 "main.c"
+#line 8894 "main.c"
     h_0opt_f87774a_release(&t81);
     goto bb1;
 bb7:
@@ -8890,7 +8900,7 @@ bb7:
     t82 = h22_own22;
 #line 86 "examples/interpreter/syn/cursor.hero"
     h22_own22 = t36;
-#line 8894 "main.c"
+#line 8904 "main.c"
     h_lextoken_Token_release(&t82);
 #line 86 "examples/interpreter/syn/cursor.hero"
     t37 = HERO_STR_LIT(hero_str_7441fe7c);
@@ -8900,15 +8910,15 @@ bb7:
     t83 = h23_own23;
 #line 86 "examples/interpreter/syn/cursor.hero"
     h23_own23 = t38;
-#line 8904 "main.c"
+#line 8914 "main.c"
     h_0opt_f87774a_release(&t83);
 #line 80 "examples/interpreter/syn/cursor.hero"
     t84 = h2_r0;
-#line 8908 "main.c"
+#line 8918 "main.c"
     h_0opt_f87774a_retain(&t38);
 #line 80 "examples/interpreter/syn/cursor.hero"
     h2_r0 = t38;
-#line 8912 "main.c"
+#line 8922 "main.c"
     h_0opt_f87774a_release(&t84);
     goto bb1;
 bb8:
@@ -8918,7 +8928,7 @@ bb8:
     t85 = h24_own24;
 #line 87 "examples/interpreter/syn/cursor.hero"
     h24_own24 = t39;
-#line 8922 "main.c"
+#line 8932 "main.c"
     h_lextoken_Token_release(&t85);
 #line 87 "examples/interpreter/syn/cursor.hero"
     t40 = HERO_STR_LIT(hero_str_42f055b4);
@@ -8928,15 +8938,15 @@ bb8:
     t86 = h25_own25;
 #line 87 "examples/interpreter/syn/cursor.hero"
     h25_own25 = t41;
-#line 8932 "main.c"
+#line 8942 "main.c"
     h_0opt_f87774a_release(&t86);
 #line 80 "examples/interpreter/syn/cursor.hero"
     t87 = h2_r0;
-#line 8936 "main.c"
+#line 8946 "main.c"
     h_0opt_f87774a_retain(&t41);
 #line 80 "examples/interpreter/syn/cursor.hero"
     h2_r0 = t41;
-#line 8940 "main.c"
+#line 8950 "main.c"
     h_0opt_f87774a_release(&t87);
     goto bb1;
 bb9:
@@ -8946,7 +8956,7 @@ bb9:
     t88 = h26_own26;
 #line 88 "examples/interpreter/syn/cursor.hero"
     h26_own26 = t42;
-#line 8950 "main.c"
+#line 8960 "main.c"
     h_lextoken_Token_release(&t88);
 #line 88 "examples/interpreter/syn/cursor.hero"
     t43 = HERO_STR_LIT(hero_str_42f055b4);
@@ -8956,15 +8966,15 @@ bb9:
     t89 = h27_own27;
 #line 88 "examples/interpreter/syn/cursor.hero"
     h27_own27 = t44;
-#line 8960 "main.c"
+#line 8970 "main.c"
     h_0opt_f87774a_release(&t89);
 #line 80 "examples/interpreter/syn/cursor.hero"
     t90 = h2_r0;
-#line 8964 "main.c"
+#line 8974 "main.c"
     h_0opt_f87774a_retain(&t44);
 #line 80 "examples/interpreter/syn/cursor.hero"
     h2_r0 = t44;
-#line 8968 "main.c"
+#line 8978 "main.c"
     h_0opt_f87774a_release(&t90);
     goto bb1;
 bb10:
@@ -8974,7 +8984,7 @@ bb10:
     t91 = h28_own28;
 #line 89 "examples/interpreter/syn/cursor.hero"
     h28_own28 = t45;
-#line 8978 "main.c"
+#line 8988 "main.c"
     h_lextoken_Token_release(&t91);
 #line 89 "examples/interpreter/syn/cursor.hero"
     t46 = HERO_STR_LIT(hero_str_42f055b4);
@@ -8984,15 +8994,15 @@ bb10:
     t92 = h29_own29;
 #line 89 "examples/interpreter/syn/cursor.hero"
     h29_own29 = t47;
-#line 8988 "main.c"
+#line 8998 "main.c"
     h_0opt_f87774a_release(&t92);
 #line 80 "examples/interpreter/syn/cursor.hero"
     t93 = h2_r0;
-#line 8992 "main.c"
+#line 9002 "main.c"
     h_0opt_f87774a_retain(&t47);
 #line 80 "examples/interpreter/syn/cursor.hero"
     h2_r0 = t47;
-#line 8996 "main.c"
+#line 9006 "main.c"
     h_0opt_f87774a_release(&t93);
     goto bb1;
 bb11:
@@ -9002,7 +9012,7 @@ bb11:
     t94 = h30_own30;
 #line 90 "examples/interpreter/syn/cursor.hero"
     h30_own30 = t48;
-#line 9006 "main.c"
+#line 9016 "main.c"
     h_lextoken_Token_release(&t94);
 #line 90 "examples/interpreter/syn/cursor.hero"
     t49 = HERO_STR_LIT(hero_str_6a58703d);
@@ -9012,15 +9022,15 @@ bb11:
     t95 = h31_own31;
 #line 90 "examples/interpreter/syn/cursor.hero"
     h31_own31 = t50;
-#line 9016 "main.c"
+#line 9026 "main.c"
     h_0opt_f87774a_release(&t95);
 #line 80 "examples/interpreter/syn/cursor.hero"
     t96 = h2_r0;
-#line 9020 "main.c"
+#line 9030 "main.c"
     h_0opt_f87774a_retain(&t50);
 #line 80 "examples/interpreter/syn/cursor.hero"
     h2_r0 = t50;
-#line 9024 "main.c"
+#line 9034 "main.c"
     h_0opt_f87774a_release(&t96);
     goto bb1;
 bb12:
@@ -9030,11 +9040,11 @@ bb12:
     t97 = h32_own32;
 #line 91 "examples/interpreter/syn/cursor.hero"
     h32_own32 = t51;
-#line 9034 "main.c"
+#line 9044 "main.c"
     hero_str_decref(t97);
 #line 91 "examples/interpreter/syn/cursor.hero"
     t52 = HERO_STR_LIT(hero_str_19b6ec3a);
-#line 9038 "main.c"
+#line 9048 "main.c"
     hero_str_incref(t51);
     hero_str_incref(t52);
 #line 91 "examples/interpreter/syn/cursor.hero"
@@ -9043,15 +9053,15 @@ bb12:
     t98 = h33_own33;
 #line 91 "examples/interpreter/syn/cursor.hero"
     h33_own33 = t53;
-#line 9047 "main.c"
+#line 9057 "main.c"
     h_0opt_f87774a_release(&t98);
 #line 80 "examples/interpreter/syn/cursor.hero"
     t99 = h2_r0;
-#line 9051 "main.c"
+#line 9061 "main.c"
     h_0opt_f87774a_retain(&t53);
 #line 80 "examples/interpreter/syn/cursor.hero"
     h2_r0 = t53;
-#line 9055 "main.c"
+#line 9065 "main.c"
     h_0opt_f87774a_release(&t99);
     goto bb1;
 bb13:
@@ -9061,11 +9071,11 @@ bb13:
     t100 = h34_own34;
 #line 92 "examples/interpreter/syn/cursor.hero"
     h34_own34 = t54;
-#line 9065 "main.c"
+#line 9075 "main.c"
     hero_str_decref(t100);
 #line 92 "examples/interpreter/syn/cursor.hero"
     t55 = HERO_STR_LIT(hero_str_18e91992);
-#line 9069 "main.c"
+#line 9079 "main.c"
     hero_str_incref(t54);
     hero_str_incref(t55);
 #line 92 "examples/interpreter/syn/cursor.hero"
@@ -9074,22 +9084,22 @@ bb13:
     t101 = h35_own35;
 #line 92 "examples/interpreter/syn/cursor.hero"
     h35_own35 = t56;
-#line 9078 "main.c"
+#line 9088 "main.c"
     h_0opt_f87774a_release(&t101);
 #line 80 "examples/interpreter/syn/cursor.hero"
     t102 = h2_r0;
-#line 9082 "main.c"
+#line 9092 "main.c"
     h_0opt_f87774a_retain(&t56);
 #line 80 "examples/interpreter/syn/cursor.hero"
     h2_r0 = t56;
-#line 9086 "main.c"
+#line 9096 "main.c"
     h_0opt_f87774a_release(&t102);
     goto bb1;
 }
 
 #line 98 "examples/interpreter/syn/cursor.hero"
 h_0opt_f87774a h_syncursor_keyword_taken(h_lextoken_Token h0_t, HeroStr h1_said) {
-#line 9093 "main.c"
+#line 9103 "main.c"
     HeroStr h2_own2 = {0};
     HeroStr h3_own3 = {0};
     h_0opt_f87774a h4_own4 = {0};
@@ -9109,7 +9119,7 @@ bb0:
     t7 = h2_own2;
 #line 100 "examples/interpreter/syn/cursor.hero"
     h2_own2 = t2;
-#line 9113 "main.c"
+#line 9123 "main.c"
     hero_str_decref(t7);
 #line 100 "examples/interpreter/syn/cursor.hero"
     t3 = HERO_STR_LIT(hero_str_868cc04);
@@ -9121,7 +9131,7 @@ bb0:
     t8 = h3_own3;
 #line 100 "examples/interpreter/syn/cursor.hero"
     h3_own3 = t5;
-#line 9125 "main.c"
+#line 9135 "main.c"
     hero_str_decref(t8);
     hero_str_incref(t2);
     hero_str_incref(t5);
@@ -9131,7 +9141,7 @@ bb0:
     t9 = h4_own4;
 #line 100 "examples/interpreter/syn/cursor.hero"
     h4_own4 = t6;
-#line 9135 "main.c"
+#line 9145 "main.c"
     h_0opt_f87774a_release(&t9);
     h_0opt_f87774a_retain(&t6);
     hero_str_decref(h2_own2);
@@ -9142,7 +9152,7 @@ bb0:
 
 #line 104 "examples/interpreter/syn/cursor.hero"
 void h_syncursor_skipped_lines(h_syncursor_Cursor *ph0_c) {
-#line 9146 "main.c"
+#line 9156 "main.c"
     h_lextoken_Token h1_own1 = {0};
     h_lextoken_Token h2_own2 = {0};
     h_lextoken_Token h3_own3 = {0};
@@ -9166,7 +9176,7 @@ bb1:
     t6 = h1_own1;
 #line 105 "examples/interpreter/syn/cursor.hero"
     h1_own1 = t2;
-#line 9170 "main.c"
+#line 9180 "main.c"
     h_lextoken_Token_release(&t6);
 #line 105 "examples/interpreter/syn/cursor.hero"
     t3 = (h_lextoken_Token){.tag = h_lextoken_Token_tag_newline};
@@ -9174,7 +9184,7 @@ bb1:
     t7 = h2_own2;
 #line 105 "examples/interpreter/syn/cursor.hero"
     h2_own2 = t3;
-#line 9178 "main.c"
+#line 9188 "main.c"
     h_lextoken_Token_release(&t7);
 #line 105 "examples/interpreter/syn/cursor.hero"
     t4 = h_lextoken_Token_eq(&t2, &t3);
@@ -9187,7 +9197,7 @@ bb2:
     t8 = h3_own3;
 #line 106 "examples/interpreter/syn/cursor.hero"
     h3_own3 = t5;
-#line 9191 "main.c"
+#line 9201 "main.c"
     h_lextoken_Token_release(&t8);
     goto bb1;
 bb3:
@@ -9199,7 +9209,7 @@ bb3:
 
 #line 109 "examples/interpreter/syn/cursor.hero"
 bool h_syncursor_done(h_syncursor_Cursor h0_c) {
-#line 9203 "main.c"
+#line 9213 "main.c"
     h_lextoken_Token h1_own1 = {0};
     h_lextoken_Token h2_own2 = {0};
     h_syncursor_Cursor t1;
@@ -9218,7 +9228,7 @@ bb0:
     t5 = h1_own1;
 #line 110 "examples/interpreter/syn/cursor.hero"
     h1_own1 = t2;
-#line 9222 "main.c"
+#line 9232 "main.c"
     h_lextoken_Token_release(&t5);
 #line 110 "examples/interpreter/syn/cursor.hero"
     t3 = (h_lextoken_Token){.tag = h_lextoken_Token_tag_finish};
@@ -9226,11 +9236,11 @@ bb0:
     t6 = h2_own2;
 #line 110 "examples/interpreter/syn/cursor.hero"
     h2_own2 = t3;
-#line 9230 "main.c"
+#line 9240 "main.c"
     h_lextoken_Token_release(&t6);
 #line 110 "examples/interpreter/syn/cursor.hero"
     t4 = h_lextoken_Token_eq(&t2, &t3);
-#line 9234 "main.c"
+#line 9244 "main.c"
     h_lextoken_Token_release(&h1_own1);
     h_lextoken_Token_release(&h2_own2);
     return t4;
@@ -9238,7 +9248,7 @@ bb0:
 
 #line 164 "examples/interpreter/syn/cursor.hero"
 HeroStr h_syncursor_refusal_message(h_0opt_a8ea2 h0_said) {
-#line 9242 "main.c"
+#line 9252 "main.c"
     h_0opt_a8ea2 h1_s0 = {0};
     HeroStr h2_r0 = {0};
     HeroFailure h3_e = {0};
@@ -9261,11 +9271,11 @@ bb0:
     t1 = h0_said;
 #line 165 "examples/interpreter/syn/cursor.hero"
     t10 = h1_s0;
-#line 9265 "main.c"
+#line 9275 "main.c"
     h_0opt_a8ea2_retain(&t1);
 #line 165 "examples/interpreter/syn/cursor.hero"
     h1_s0 = t1;
-#line 9269 "main.c"
+#line 9279 "main.c"
     h_0opt_a8ea2_release(&t10);
 #line 165 "examples/interpreter/syn/cursor.hero"
     t2 = h1_s0;
@@ -9285,7 +9295,7 @@ bb0:
 bb1:
 #line 165 "examples/interpreter/syn/cursor.hero"
     t9 = h2_r0;
-#line 9289 "main.c"
+#line 9299 "main.c"
     hero_str_incref(t9);
     h_0opt_a8ea2_release(&h1_s0);
     hero_str_decref(h2_r0);
@@ -9296,11 +9306,11 @@ bb2:
     t4 = HERO_STR_LIT(hero_str_16ecc41b);
 #line 165 "examples/interpreter/syn/cursor.hero"
     t11 = h2_r0;
-#line 9300 "main.c"
+#line 9310 "main.c"
     hero_str_incref(t4);
 #line 165 "examples/interpreter/syn/cursor.hero"
     h2_r0 = t4;
-#line 9304 "main.c"
+#line 9314 "main.c"
     hero_str_decref(t11);
     goto bb1;
 bb3:
@@ -9310,11 +9320,11 @@ bb3:
     t6 = t5.as.err;
 #line 167 "examples/interpreter/syn/cursor.hero"
     t12 = h3_e;
-#line 9314 "main.c"
+#line 9324 "main.c"
     hero_failure_retain(&t6);
 #line 167 "examples/interpreter/syn/cursor.hero"
     h3_e = t6;
-#line 9318 "main.c"
+#line 9328 "main.c"
     hero_failure_release(&t12);
 #line 167 "examples/interpreter/syn/cursor.hero"
     t7 = h3_e;
@@ -9322,18 +9332,18 @@ bb3:
     t8 = t7.msg;
 #line 165 "examples/interpreter/syn/cursor.hero"
     t13 = h2_r0;
-#line 9326 "main.c"
+#line 9336 "main.c"
     hero_str_incref(t8);
 #line 165 "examples/interpreter/syn/cursor.hero"
     h2_r0 = t8;
-#line 9330 "main.c"
+#line 9340 "main.c"
     hero_str_decref(t13);
     goto bb1;
 }
 
 #line 169 "examples/interpreter/syn/cursor.hero"
 HeroStr h_syncursor_refusal_message_of_name(h_0opt_f87774a h0_said) {
-#line 9337 "main.c"
+#line 9347 "main.c"
     h_0opt_f87774a h1_s0 = {0};
     HeroStr h2_r0 = {0};
     HeroFailure h3_e = {0};
@@ -9356,11 +9366,11 @@ bb0:
     t1 = h0_said;
 #line 170 "examples/interpreter/syn/cursor.hero"
     t10 = h1_s0;
-#line 9360 "main.c"
+#line 9370 "main.c"
     h_0opt_f87774a_retain(&t1);
 #line 170 "examples/interpreter/syn/cursor.hero"
     h1_s0 = t1;
-#line 9364 "main.c"
+#line 9374 "main.c"
     h_0opt_f87774a_release(&t10);
 #line 170 "examples/interpreter/syn/cursor.hero"
     t2 = h1_s0;
@@ -9380,7 +9390,7 @@ bb0:
 bb1:
 #line 170 "examples/interpreter/syn/cursor.hero"
     t9 = h2_r0;
-#line 9384 "main.c"
+#line 9394 "main.c"
     hero_str_incref(t9);
     h_0opt_f87774a_release(&h1_s0);
     hero_str_decref(h2_r0);
@@ -9391,11 +9401,11 @@ bb2:
     t4 = HERO_STR_LIT(hero_str_16ecc41b);
 #line 170 "examples/interpreter/syn/cursor.hero"
     t11 = h2_r0;
-#line 9395 "main.c"
+#line 9405 "main.c"
     hero_str_incref(t4);
 #line 170 "examples/interpreter/syn/cursor.hero"
     h2_r0 = t4;
-#line 9399 "main.c"
+#line 9409 "main.c"
     hero_str_decref(t11);
     goto bb1;
 bb3:
@@ -9405,11 +9415,11 @@ bb3:
     t6 = t5.as.err;
 #line 172 "examples/interpreter/syn/cursor.hero"
     t12 = h3_e;
-#line 9409 "main.c"
+#line 9419 "main.c"
     hero_failure_retain(&t6);
 #line 172 "examples/interpreter/syn/cursor.hero"
     h3_e = t6;
-#line 9413 "main.c"
+#line 9423 "main.c"
     hero_failure_release(&t12);
 #line 172 "examples/interpreter/syn/cursor.hero"
     t7 = h3_e;
@@ -9417,31 +9427,31 @@ bb3:
     t8 = t7.msg;
 #line 170 "examples/interpreter/syn/cursor.hero"
     t13 = h2_r0;
-#line 9421 "main.c"
+#line 9431 "main.c"
     hero_str_incref(t8);
 #line 170 "examples/interpreter/syn/cursor.hero"
     h2_r0 = t8;
-#line 9425 "main.c"
+#line 9435 "main.c"
     hero_str_decref(t13);
     goto bb1;
 }
 
 #line 32 "examples/interpreter/syn/expr.hero"
 HeroStr h_synexpr_ERR_PARSE(void) {
-#line 9432 "main.c"
+#line 9442 "main.c"
     HeroStr t1;
     goto bb0;
 bb0:
 #line 33 "examples/interpreter/syn/expr.hero"
     t1 = HERO_STR_LIT(hero_str_3b1d407a);
-#line 9438 "main.c"
+#line 9448 "main.c"
     hero_str_incref(t1);
     return t1;
 }
 
 #line 36 "examples/interpreter/syn/expr.hero"
 h_0opt_e201354 h_synexpr_parsed(h_syncursor_Cursor *ph0_c, h_syntree_Tree *ph1_t) {
-#line 9445 "main.c"
+#line 9455 "main.c"
     h_0opt_e201354 h2_own2 = {0};
     h_0opt_e201354 t1;
     h_0opt_e201354 t2;
@@ -9453,7 +9463,7 @@ bb0:
     t2 = h2_own2;
 #line 37 "examples/interpreter/syn/expr.hero"
     h2_own2 = t1;
-#line 9457 "main.c"
+#line 9467 "main.c"
     h_0opt_e201354_release(&t2);
     h_0opt_e201354_retain(&t1);
     h_0opt_e201354_release(&h2_own2);
@@ -9462,7 +9472,7 @@ bb0:
 
 #line 39 "examples/interpreter/syn/expr.hero"
 h_0opt_e201354 h_synexpr_either(h_syncursor_Cursor *ph0_c, h_syntree_Tree *ph1_t) {
-#line 9466 "main.c"
+#line 9476 "main.c"
     h_0opt_e201354 h2_f0 = {0};
     int64_t h3_left;
     h_0opt_e201354 h4_f1 = {0};
@@ -9529,15 +9539,15 @@ bb0:
     t34 = h7_own7;
 #line 40 "examples/interpreter/syn/expr.hero"
     h7_own7 = t1;
-#line 9533 "main.c"
+#line 9543 "main.c"
     h_0opt_e201354_release(&t34);
 #line 40 "examples/interpreter/syn/expr.hero"
     t35 = h2_f0;
-#line 9537 "main.c"
+#line 9547 "main.c"
     h_0opt_e201354_retain(&t1);
 #line 40 "examples/interpreter/syn/expr.hero"
     h2_f0 = t1;
-#line 9541 "main.c"
+#line 9551 "main.c"
     h_0opt_e201354_release(&t35);
 #line 40 "examples/interpreter/syn/expr.hero"
     t2 = h2_f0;
@@ -9565,7 +9575,7 @@ bb2:
     t6 = h2_f0;
 #line 40 "examples/interpreter/syn/expr.hero"
     t7 = t6.as.err;
-#line 9569 "main.c"
+#line 9579 "main.c"
     hero_failure_retain(&t7);
 #line 40 "examples/interpreter/syn/expr.hero"
     t8 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t7};
@@ -9573,7 +9583,7 @@ bb2:
     t36 = h8_own8;
 #line 40 "examples/interpreter/syn/expr.hero"
     h8_own8 = t8;
-#line 9577 "main.c"
+#line 9587 "main.c"
     h_0opt_e201354_release(&t36);
 #line 40 "examples/interpreter/syn/expr.hero"
     h6_ret0 = t8;
@@ -9589,7 +9599,7 @@ bb3:
     t37 = h9_own9;
 #line 42 "examples/interpreter/syn/expr.hero"
     h9_own9 = t12;
-#line 9593 "main.c"
+#line 9603 "main.c"
     h_lextoken_Token_release(&t37);
 #line 42 "examples/interpreter/syn/expr.hero"
     t13 = (h_lextoken_Token){.tag = h_lextoken_Token_tag_bars};
@@ -9597,7 +9607,7 @@ bb3:
     t38 = h10_own10;
 #line 42 "examples/interpreter/syn/expr.hero"
     h10_own10 = t13;
-#line 9601 "main.c"
+#line 9611 "main.c"
     h_lextoken_Token_release(&t38);
 #line 42 "examples/interpreter/syn/expr.hero"
     t14 = h_lextoken_Token_eq(&t12, &t13);
@@ -9610,7 +9620,7 @@ bb4:
     t39 = h11_own11;
 #line 43 "examples/interpreter/syn/expr.hero"
     h11_own11 = t15;
-#line 9614 "main.c"
+#line 9624 "main.c"
     h_lextoken_Token_release(&t39);
 #line 44 "examples/interpreter/syn/expr.hero"
     t16 = h_synexpr_both(&(*ph0_c), &(*ph1_t));
@@ -9618,15 +9628,15 @@ bb4:
     t40 = h12_own12;
 #line 44 "examples/interpreter/syn/expr.hero"
     h12_own12 = t16;
-#line 9622 "main.c"
+#line 9632 "main.c"
     h_0opt_e201354_release(&t40);
 #line 44 "examples/interpreter/syn/expr.hero"
     t41 = h4_f1;
-#line 9626 "main.c"
+#line 9636 "main.c"
     h_0opt_e201354_retain(&t16);
 #line 44 "examples/interpreter/syn/expr.hero"
     h4_f1 = t16;
-#line 9630 "main.c"
+#line 9640 "main.c"
     h_0opt_e201354_release(&t41);
 #line 44 "examples/interpreter/syn/expr.hero"
     t17 = h4_f1;
@@ -9648,7 +9658,7 @@ bb5:
     t42 = h13_own13;
 #line 47 "examples/interpreter/syn/expr.hero"
     h13_own13 = t32;
-#line 9652 "main.c"
+#line 9662 "main.c"
     h_0opt_e201354_release(&t42);
 #line 47 "examples/interpreter/syn/expr.hero"
     h6_ret0 = t32;
@@ -9673,7 +9683,7 @@ bb6:
     t43 = h14_own14;
 #line 45 "examples/interpreter/syn/expr.hero"
     h14_own14 = t29;
-#line 9677 "main.c"
+#line 9687 "main.c"
     h_syntree_Expr_release(&t43);
 #line 45 "examples/interpreter/syn/expr.hero"
     t30 = h_syntree_added_expr(&(*ph1_t), t29);
@@ -9687,7 +9697,7 @@ bb7:
     t21 = h4_f1;
 #line 44 "examples/interpreter/syn/expr.hero"
     t22 = t21.as.err;
-#line 9691 "main.c"
+#line 9701 "main.c"
     hero_failure_retain(&t22);
 #line 44 "examples/interpreter/syn/expr.hero"
     t23 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t22};
@@ -9695,7 +9705,7 @@ bb7:
     t44 = h15_own15;
 #line 44 "examples/interpreter/syn/expr.hero"
     h15_own15 = t23;
-#line 9699 "main.c"
+#line 9709 "main.c"
     h_0opt_e201354_release(&t44);
 #line 44 "examples/interpreter/syn/expr.hero"
     h6_ret0 = t23;
@@ -9703,7 +9713,7 @@ bb7:
     goto bb8;
 #line 44 "examples/interpreter/syn/expr.hero"
 bb8:
-#line 9707 "main.c"
+#line 9717 "main.c"
     t33 = h6_ret0;
     h_0opt_e201354_retain(&t33);
     h_0opt_e201354_release(&h2_f0);
@@ -9722,7 +9732,7 @@ bb8:
 
 #line 49 "examples/interpreter/syn/expr.hero"
 h_0opt_e201354 h_synexpr_both(h_syncursor_Cursor *ph0_c, h_syntree_Tree *ph1_t) {
-#line 9726 "main.c"
+#line 9736 "main.c"
     h_0opt_e201354 h2_f0 = {0};
     int64_t h3_left;
     h_0opt_e201354 h4_f1 = {0};
@@ -9789,15 +9799,15 @@ bb0:
     t34 = h7_own7;
 #line 50 "examples/interpreter/syn/expr.hero"
     h7_own7 = t1;
-#line 9793 "main.c"
+#line 9803 "main.c"
     h_0opt_e201354_release(&t34);
 #line 50 "examples/interpreter/syn/expr.hero"
     t35 = h2_f0;
-#line 9797 "main.c"
+#line 9807 "main.c"
     h_0opt_e201354_retain(&t1);
 #line 50 "examples/interpreter/syn/expr.hero"
     h2_f0 = t1;
-#line 9801 "main.c"
+#line 9811 "main.c"
     h_0opt_e201354_release(&t35);
 #line 50 "examples/interpreter/syn/expr.hero"
     t2 = h2_f0;
@@ -9825,7 +9835,7 @@ bb2:
     t6 = h2_f0;
 #line 50 "examples/interpreter/syn/expr.hero"
     t7 = t6.as.err;
-#line 9829 "main.c"
+#line 9839 "main.c"
     hero_failure_retain(&t7);
 #line 50 "examples/interpreter/syn/expr.hero"
     t8 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t7};
@@ -9833,7 +9843,7 @@ bb2:
     t36 = h8_own8;
 #line 50 "examples/interpreter/syn/expr.hero"
     h8_own8 = t8;
-#line 9837 "main.c"
+#line 9847 "main.c"
     h_0opt_e201354_release(&t36);
 #line 50 "examples/interpreter/syn/expr.hero"
     h6_ret0 = t8;
@@ -9849,7 +9859,7 @@ bb3:
     t37 = h9_own9;
 #line 52 "examples/interpreter/syn/expr.hero"
     h9_own9 = t12;
-#line 9853 "main.c"
+#line 9863 "main.c"
     h_lextoken_Token_release(&t37);
 #line 52 "examples/interpreter/syn/expr.hero"
     t13 = (h_lextoken_Token){.tag = h_lextoken_Token_tag_ampersands};
@@ -9857,7 +9867,7 @@ bb3:
     t38 = h10_own10;
 #line 52 "examples/interpreter/syn/expr.hero"
     h10_own10 = t13;
-#line 9861 "main.c"
+#line 9871 "main.c"
     h_lextoken_Token_release(&t38);
 #line 52 "examples/interpreter/syn/expr.hero"
     t14 = h_lextoken_Token_eq(&t12, &t13);
@@ -9870,7 +9880,7 @@ bb4:
     t39 = h11_own11;
 #line 53 "examples/interpreter/syn/expr.hero"
     h11_own11 = t15;
-#line 9874 "main.c"
+#line 9884 "main.c"
     h_lextoken_Token_release(&t39);
 #line 54 "examples/interpreter/syn/expr.hero"
     t16 = h_synexpr_compared(&(*ph0_c), &(*ph1_t));
@@ -9878,15 +9888,15 @@ bb4:
     t40 = h12_own12;
 #line 54 "examples/interpreter/syn/expr.hero"
     h12_own12 = t16;
-#line 9882 "main.c"
+#line 9892 "main.c"
     h_0opt_e201354_release(&t40);
 #line 54 "examples/interpreter/syn/expr.hero"
     t41 = h4_f1;
-#line 9886 "main.c"
+#line 9896 "main.c"
     h_0opt_e201354_retain(&t16);
 #line 54 "examples/interpreter/syn/expr.hero"
     h4_f1 = t16;
-#line 9890 "main.c"
+#line 9900 "main.c"
     h_0opt_e201354_release(&t41);
 #line 54 "examples/interpreter/syn/expr.hero"
     t17 = h4_f1;
@@ -9908,7 +9918,7 @@ bb5:
     t42 = h13_own13;
 #line 57 "examples/interpreter/syn/expr.hero"
     h13_own13 = t32;
-#line 9912 "main.c"
+#line 9922 "main.c"
     h_0opt_e201354_release(&t42);
 #line 57 "examples/interpreter/syn/expr.hero"
     h6_ret0 = t32;
@@ -9933,7 +9943,7 @@ bb6:
     t43 = h14_own14;
 #line 55 "examples/interpreter/syn/expr.hero"
     h14_own14 = t29;
-#line 9937 "main.c"
+#line 9947 "main.c"
     h_syntree_Expr_release(&t43);
 #line 55 "examples/interpreter/syn/expr.hero"
     t30 = h_syntree_added_expr(&(*ph1_t), t29);
@@ -9947,7 +9957,7 @@ bb7:
     t21 = h4_f1;
 #line 54 "examples/interpreter/syn/expr.hero"
     t22 = t21.as.err;
-#line 9951 "main.c"
+#line 9961 "main.c"
     hero_failure_retain(&t22);
 #line 54 "examples/interpreter/syn/expr.hero"
     t23 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t22};
@@ -9955,7 +9965,7 @@ bb7:
     t44 = h15_own15;
 #line 54 "examples/interpreter/syn/expr.hero"
     h15_own15 = t23;
-#line 9959 "main.c"
+#line 9969 "main.c"
     h_0opt_e201354_release(&t44);
 #line 54 "examples/interpreter/syn/expr.hero"
     h6_ret0 = t23;
@@ -9963,7 +9973,7 @@ bb7:
     goto bb8;
 #line 54 "examples/interpreter/syn/expr.hero"
 bb8:
-#line 9967 "main.c"
+#line 9977 "main.c"
     t33 = h6_ret0;
     h_0opt_e201354_retain(&t33);
     h_0opt_e201354_release(&h2_f0);
@@ -9982,7 +9992,7 @@ bb8:
 
 #line 64 "examples/interpreter/syn/expr.hero"
 h_0opt_e201354 h_synexpr_compared(h_syncursor_Cursor *ph0_c, h_syntree_Tree *ph1_t) {
-#line 9986 "main.c"
+#line 9996 "main.c"
     h_0opt_e201354 h2_f0 = {0};
     int64_t h3_left;
     h_0opt_3ce1b94c h4_op = {0};
@@ -10110,15 +10120,15 @@ bb0:
     t66 = h13_own13;
 #line 65 "examples/interpreter/syn/expr.hero"
     h13_own13 = t1;
-#line 10114 "main.c"
+#line 10124 "main.c"
     h_0opt_e201354_release(&t66);
 #line 65 "examples/interpreter/syn/expr.hero"
     t67 = h2_f0;
-#line 10118 "main.c"
+#line 10128 "main.c"
     h_0opt_e201354_retain(&t1);
 #line 65 "examples/interpreter/syn/expr.hero"
     h2_f0 = t1;
-#line 10122 "main.c"
+#line 10132 "main.c"
     h_0opt_e201354_release(&t67);
 #line 65 "examples/interpreter/syn/expr.hero"
     t2 = h2_f0;
@@ -10145,7 +10155,7 @@ bb1:
     t68 = h14_own14;
 #line 66 "examples/interpreter/syn/expr.hero"
     h14_own14 = t12;
-#line 10149 "main.c"
+#line 10159 "main.c"
     h_lextoken_Token_release(&t68);
 #line 66 "examples/interpreter/syn/expr.hero"
     t13 = h_synexpr_comparison_of(t12);
@@ -10153,25 +10163,25 @@ bb1:
     t69 = h15_own15;
 #line 66 "examples/interpreter/syn/expr.hero"
     h15_own15 = t13;
-#line 10157 "main.c"
+#line 10167 "main.c"
     h_0opt_3ce1b94c_release(&t69);
 #line 66 "examples/interpreter/syn/expr.hero"
     t70 = h4_op;
-#line 10161 "main.c"
+#line 10171 "main.c"
     h_0opt_3ce1b94c_retain(&t13);
 #line 66 "examples/interpreter/syn/expr.hero"
     h4_op = t13;
-#line 10165 "main.c"
+#line 10175 "main.c"
     h_0opt_3ce1b94c_release(&t70);
 #line 68 "examples/interpreter/syn/expr.hero"
     t14 = h4_op;
 #line 68 "examples/interpreter/syn/expr.hero"
     t71 = h5_f1;
-#line 10171 "main.c"
+#line 10181 "main.c"
     h_0opt_3ce1b94c_retain(&t14);
 #line 68 "examples/interpreter/syn/expr.hero"
     h5_f1 = t14;
-#line 10175 "main.c"
+#line 10185 "main.c"
     h_0opt_3ce1b94c_release(&t71);
 #line 68 "examples/interpreter/syn/expr.hero"
     t15 = h5_f1;
@@ -10189,7 +10199,7 @@ bb2:
     t6 = h2_f0;
 #line 65 "examples/interpreter/syn/expr.hero"
     t7 = t6.as.err;
-#line 10193 "main.c"
+#line 10203 "main.c"
     hero_failure_retain(&t7);
 #line 65 "examples/interpreter/syn/expr.hero"
     t8 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t7};
@@ -10197,7 +10207,7 @@ bb2:
     t72 = h16_own16;
 #line 65 "examples/interpreter/syn/expr.hero"
     h16_own16 = t8;
-#line 10201 "main.c"
+#line 10211 "main.c"
     h_0opt_e201354_release(&t72);
 #line 65 "examples/interpreter/syn/expr.hero"
     h12_ret0 = t8;
@@ -10211,7 +10221,7 @@ bb3:
     t73 = h17_own17;
 #line 70 "examples/interpreter/syn/expr.hero"
     h17_own17 = t21;
-#line 10215 "main.c"
+#line 10225 "main.c"
     h_lextoken_Token_release(&t73);
 #line 71 "examples/interpreter/syn/expr.hero"
     t22 = h_synexpr_summed(&(*ph0_c), &(*ph1_t));
@@ -10219,15 +10229,15 @@ bb3:
     t74 = h18_own18;
 #line 71 "examples/interpreter/syn/expr.hero"
     h18_own18 = t22;
-#line 10223 "main.c"
+#line 10233 "main.c"
     h_0opt_e201354_release(&t74);
 #line 71 "examples/interpreter/syn/expr.hero"
     t75 = h6_f2;
-#line 10227 "main.c"
+#line 10237 "main.c"
     h_0opt_e201354_retain(&t22);
 #line 71 "examples/interpreter/syn/expr.hero"
     h6_f2 = t22;
-#line 10231 "main.c"
+#line 10241 "main.c"
     h_0opt_e201354_release(&t75);
 #line 71 "examples/interpreter/syn/expr.hero"
     t23 = h6_f2;
@@ -10249,7 +10259,7 @@ bb4:
     t76 = h19_own19;
 #line 69 "examples/interpreter/syn/expr.hero"
     h19_own19 = t20;
-#line 10253 "main.c"
+#line 10263 "main.c"
     h_0opt_e201354_release(&t76);
 #line 69 "examples/interpreter/syn/expr.hero"
     h12_ret0 = t20;
@@ -10270,11 +10280,11 @@ bb6:
     t32 = h4_op;
 #line 72 "examples/interpreter/syn/expr.hero"
     t77 = h8_f3;
-#line 10274 "main.c"
+#line 10284 "main.c"
     h_0opt_3ce1b94c_retain(&t32);
 #line 72 "examples/interpreter/syn/expr.hero"
     h8_f3 = t32;
-#line 10278 "main.c"
+#line 10288 "main.c"
     h_0opt_3ce1b94c_release(&t77);
 #line 72 "examples/interpreter/syn/expr.hero"
     t33 = h8_f3;
@@ -10292,7 +10302,7 @@ bb7:
     t27 = h6_f2;
 #line 71 "examples/interpreter/syn/expr.hero"
     t28 = t27.as.err;
-#line 10296 "main.c"
+#line 10306 "main.c"
     hero_failure_retain(&t28);
 #line 71 "examples/interpreter/syn/expr.hero"
     t29 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t28};
@@ -10300,7 +10310,7 @@ bb7:
     t78 = h20_own20;
 #line 71 "examples/interpreter/syn/expr.hero"
     h20_own20 = t29;
-#line 10304 "main.c"
+#line 10314 "main.c"
     h_0opt_e201354_release(&t78);
 #line 71 "examples/interpreter/syn/expr.hero"
     h12_ret0 = t29;
@@ -10321,7 +10331,7 @@ bb8:
     t79 = h21_own21;
 #line 72 "examples/interpreter/syn/expr.hero"
     h21_own21 = t43;
-#line 10325 "main.c"
+#line 10335 "main.c"
     h_syntree_Expr_release(&t79);
 #line 72 "examples/interpreter/syn/expr.hero"
     t44 = h_syntree_added_expr(&(*ph1_t), t43);
@@ -10334,7 +10344,7 @@ bb8:
     t80 = h22_own22;
 #line 73 "examples/interpreter/syn/expr.hero"
     h22_own22 = t46;
-#line 10338 "main.c"
+#line 10348 "main.c"
     h_lextoken_Token_release(&t80);
 #line 73 "examples/interpreter/syn/expr.hero"
     t47 = h_synexpr_comparison_of(t46);
@@ -10342,25 +10352,25 @@ bb8:
     t81 = h23_own23;
 #line 73 "examples/interpreter/syn/expr.hero"
     h23_own23 = t47;
-#line 10346 "main.c"
+#line 10356 "main.c"
     h_0opt_3ce1b94c_release(&t81);
 #line 73 "examples/interpreter/syn/expr.hero"
     t82 = h10_second;
-#line 10350 "main.c"
+#line 10360 "main.c"
     h_0opt_3ce1b94c_retain(&t47);
 #line 73 "examples/interpreter/syn/expr.hero"
     h10_second = t47;
-#line 10354 "main.c"
+#line 10364 "main.c"
     h_0opt_3ce1b94c_release(&t82);
 #line 75 "examples/interpreter/syn/expr.hero"
     t48 = h10_second;
 #line 75 "examples/interpreter/syn/expr.hero"
     t83 = h11_f4;
-#line 10360 "main.c"
+#line 10370 "main.c"
     h_0opt_3ce1b94c_retain(&t48);
 #line 75 "examples/interpreter/syn/expr.hero"
     h11_f4 = t48;
-#line 10364 "main.c"
+#line 10374 "main.c"
     h_0opt_3ce1b94c_release(&t83);
 #line 75 "examples/interpreter/syn/expr.hero"
     t49 = h11_f4;
@@ -10380,7 +10390,7 @@ bb9:
     t37 = h8_f3;
 #line 72 "examples/interpreter/syn/expr.hero"
     t38 = t37.as.err;
-#line 10384 "main.c"
+#line 10394 "main.c"
     hero_panic_must(t38);
     hero_unreachable();
 bb10:
@@ -10392,7 +10402,7 @@ bb10:
     t84 = h24_own24;
 #line 81 "examples/interpreter/syn/expr.hero"
     h24_own24 = t64;
-#line 10396 "main.c"
+#line 10406 "main.c"
     h_0opt_e201354_release(&t84);
 #line 81 "examples/interpreter/syn/expr.hero"
     h12_ret0 = t64;
@@ -10406,7 +10416,7 @@ bb11:
     t85 = h25_own25;
 #line 77 "examples/interpreter/syn/expr.hero"
     h25_own25 = t54;
-#line 10410 "main.c"
+#line 10420 "main.c"
     hero_str_decref(t85);
 #line 78 "examples/interpreter/syn/expr.hero"
     t55 = HERO_STR_LIT(hero_str_60);
@@ -10418,7 +10428,7 @@ bb11:
     t86 = h26_own26;
 #line 78 "examples/interpreter/syn/expr.hero"
     h26_own26 = t57;
-#line 10422 "main.c"
+#line 10432 "main.c"
     h_lextoken_Token_release(&t86);
 #line 78 "examples/interpreter/syn/expr.hero"
     t58 = h_lextoken_shown(t57);
@@ -10426,7 +10436,7 @@ bb11:
     t87 = h27_own27;
 #line 78 "examples/interpreter/syn/expr.hero"
     h27_own27 = t58;
-#line 10430 "main.c"
+#line 10440 "main.c"
     hero_str_decref(t87);
 #line 78 "examples/interpreter/syn/expr.hero"
     t59 = hero_str_concat(t55, t58);
@@ -10434,7 +10444,7 @@ bb11:
     t88 = h28_own28;
 #line 78 "examples/interpreter/syn/expr.hero"
     h28_own28 = t59;
-#line 10438 "main.c"
+#line 10448 "main.c"
     hero_str_decref(t88);
 #line 78 "examples/interpreter/syn/expr.hero"
     t60 = HERO_STR_LIT(hero_str_887ad06);
@@ -10444,7 +10454,7 @@ bb11:
     t89 = h29_own29;
 #line 78 "examples/interpreter/syn/expr.hero"
     h29_own29 = t61;
-#line 10448 "main.c"
+#line 10458 "main.c"
     hero_str_decref(t89);
     hero_str_incref(t54);
     hero_str_incref(t61);
@@ -10454,7 +10464,7 @@ bb11:
     t90 = h30_own30;
 #line 76 "examples/interpreter/syn/expr.hero"
     h30_own30 = t62;
-#line 10458 "main.c"
+#line 10468 "main.c"
     h_0opt_e201354_release(&t90);
 #line 76 "examples/interpreter/syn/expr.hero"
     h12_ret0 = t62;
@@ -10466,7 +10476,7 @@ bb12:
     goto bb10;
 #line 76 "examples/interpreter/syn/expr.hero"
 bb13:
-#line 10470 "main.c"
+#line 10480 "main.c"
     t65 = h12_ret0;
     h_0opt_e201354_retain(&t65);
     h_0opt_e201354_release(&h2_f0);
@@ -10499,7 +10509,7 @@ bb13:
 
 #line 83 "examples/interpreter/syn/expr.hero"
 h_0opt_e201354 h_synexpr_summed(h_syncursor_Cursor *ph0_c, h_syntree_Tree *ph1_t) {
-#line 10503 "main.c"
+#line 10513 "main.c"
     h_0opt_e201354 h2_f0 = {0};
     int64_t h3_left;
     bool h4_b0;
@@ -10583,15 +10593,15 @@ bb0:
     t43 = h9_own9;
 #line 84 "examples/interpreter/syn/expr.hero"
     h9_own9 = t1;
-#line 10587 "main.c"
+#line 10597 "main.c"
     h_0opt_e201354_release(&t43);
 #line 84 "examples/interpreter/syn/expr.hero"
     t44 = h2_f0;
-#line 10591 "main.c"
+#line 10601 "main.c"
     h_0opt_e201354_retain(&t1);
 #line 84 "examples/interpreter/syn/expr.hero"
     h2_f0 = t1;
-#line 10595 "main.c"
+#line 10605 "main.c"
     h_0opt_e201354_release(&t44);
 #line 84 "examples/interpreter/syn/expr.hero"
     t2 = h2_f0;
@@ -10619,7 +10629,7 @@ bb2:
     t6 = h2_f0;
 #line 84 "examples/interpreter/syn/expr.hero"
     t7 = t6.as.err;
-#line 10623 "main.c"
+#line 10633 "main.c"
     hero_failure_retain(&t7);
 #line 84 "examples/interpreter/syn/expr.hero"
     t8 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t7};
@@ -10627,7 +10637,7 @@ bb2:
     t45 = h10_own10;
 #line 84 "examples/interpreter/syn/expr.hero"
     h10_own10 = t8;
-#line 10631 "main.c"
+#line 10641 "main.c"
     h_0opt_e201354_release(&t45);
 #line 84 "examples/interpreter/syn/expr.hero"
     h8_ret0 = t8;
@@ -10643,7 +10653,7 @@ bb3:
     t46 = h11_own11;
 #line 86 "examples/interpreter/syn/expr.hero"
     h11_own11 = t12;
-#line 10647 "main.c"
+#line 10657 "main.c"
     h_lextoken_Token_release(&t46);
 #line 86 "examples/interpreter/syn/expr.hero"
     t13 = (h_lextoken_Token){.tag = h_lextoken_Token_tag_plus};
@@ -10651,7 +10661,7 @@ bb3:
     t47 = h12_own12;
 #line 86 "examples/interpreter/syn/expr.hero"
     h12_own12 = t13;
-#line 10655 "main.c"
+#line 10665 "main.c"
     h_lextoken_Token_release(&t47);
 #line 86 "examples/interpreter/syn/expr.hero"
     t14 = h_lextoken_Token_eq(&t12, &t13);
@@ -10670,7 +10680,7 @@ bb4:
     t48 = h13_own13;
 #line 89 "examples/interpreter/syn/expr.hero"
     h13_own13 = t21;
-#line 10674 "main.c"
+#line 10684 "main.c"
     h_lextoken_Token_release(&t48);
 #line 89 "examples/interpreter/syn/expr.hero"
     t22 = (h_lextoken_Token){.tag = h_lextoken_Token_tag_minus};
@@ -10678,7 +10688,7 @@ bb4:
     t49 = h14_own14;
 #line 89 "examples/interpreter/syn/expr.hero"
     h14_own14 = t22;
-#line 10682 "main.c"
+#line 10692 "main.c"
     h_lextoken_Token_release(&t49);
 #line 89 "examples/interpreter/syn/expr.hero"
     t23 = h_lextoken_Token_eq(&t21, &t22);
@@ -10694,7 +10704,7 @@ bb5:
     t50 = h15_own15;
 #line 94 "examples/interpreter/syn/expr.hero"
     h15_own15 = t41;
-#line 10698 "main.c"
+#line 10708 "main.c"
     h_0opt_e201354_release(&t50);
 #line 94 "examples/interpreter/syn/expr.hero"
     h8_ret0 = t41;
@@ -10710,7 +10720,7 @@ bb6:
     t51 = h16_own16;
 #line 86 "examples/interpreter/syn/expr.hero"
     h16_own16 = t16;
-#line 10714 "main.c"
+#line 10724 "main.c"
     h_lextoken_Token_release(&t51);
 #line 86 "examples/interpreter/syn/expr.hero"
     t17 = (h_lextoken_Token){.tag = h_lextoken_Token_tag_minus};
@@ -10718,7 +10728,7 @@ bb6:
     t52 = h17_own17;
 #line 86 "examples/interpreter/syn/expr.hero"
     h17_own17 = t17;
-#line 10722 "main.c"
+#line 10732 "main.c"
     h_lextoken_Token_release(&t52);
 #line 86 "examples/interpreter/syn/expr.hero"
     t18 = h_lextoken_Token_eq(&t16, &t17);
@@ -10740,15 +10750,15 @@ bb8:
     t53 = h18_own18;
 #line 91 "examples/interpreter/syn/expr.hero"
     h18_own18 = t25;
-#line 10744 "main.c"
+#line 10754 "main.c"
     h_0opt_e201354_release(&t53);
 #line 91 "examples/interpreter/syn/expr.hero"
     t54 = h6_f1;
-#line 10748 "main.c"
+#line 10758 "main.c"
     h_0opt_e201354_retain(&t25);
 #line 91 "examples/interpreter/syn/expr.hero"
     h6_f1 = t25;
-#line 10752 "main.c"
+#line 10762 "main.c"
     h_0opt_e201354_release(&t54);
 #line 91 "examples/interpreter/syn/expr.hero"
     t26 = h6_f1;
@@ -10790,7 +10800,7 @@ bb11:
     t55 = h19_own19;
 #line 92 "examples/interpreter/syn/expr.hero"
     h19_own19 = t38;
-#line 10794 "main.c"
+#line 10804 "main.c"
     h_syntree_Expr_release(&t55);
 #line 92 "examples/interpreter/syn/expr.hero"
     t39 = h_syntree_added_expr(&(*ph1_t), t38);
@@ -10804,7 +10814,7 @@ bb12:
     t30 = h6_f1;
 #line 91 "examples/interpreter/syn/expr.hero"
     t31 = t30.as.err;
-#line 10808 "main.c"
+#line 10818 "main.c"
     hero_failure_retain(&t31);
 #line 91 "examples/interpreter/syn/expr.hero"
     t32 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t31};
@@ -10812,7 +10822,7 @@ bb12:
     t56 = h20_own20;
 #line 91 "examples/interpreter/syn/expr.hero"
     h20_own20 = t32;
-#line 10816 "main.c"
+#line 10826 "main.c"
     h_0opt_e201354_release(&t56);
 #line 91 "examples/interpreter/syn/expr.hero"
     h8_ret0 = t32;
@@ -10820,7 +10830,7 @@ bb12:
     goto bb13;
 #line 91 "examples/interpreter/syn/expr.hero"
 bb13:
-#line 10824 "main.c"
+#line 10834 "main.c"
     t42 = h8_ret0;
     h_0opt_e201354_retain(&t42);
     h_0opt_e201354_release(&h2_f0);
@@ -10842,7 +10852,7 @@ bb13:
 
 #line 96 "examples/interpreter/syn/expr.hero"
 h_0opt_e201354 h_synexpr_scaled(h_syncursor_Cursor *ph0_c, h_syntree_Tree *ph1_t) {
-#line 10846 "main.c"
+#line 10856 "main.c"
     h_0opt_e201354 h2_f0 = {0};
     int64_t h3_left;
     h_syntree_Op h4_op;
@@ -10922,15 +10932,15 @@ bb0:
     t42 = h9_own9;
 #line 97 "examples/interpreter/syn/expr.hero"
     h9_own9 = t1;
-#line 10926 "main.c"
+#line 10936 "main.c"
     h_0opt_e201354_release(&t42);
 #line 97 "examples/interpreter/syn/expr.hero"
     t43 = h2_f0;
-#line 10930 "main.c"
+#line 10940 "main.c"
     h_0opt_e201354_retain(&t1);
 #line 97 "examples/interpreter/syn/expr.hero"
     h2_f0 = t1;
-#line 10934 "main.c"
+#line 10944 "main.c"
     h_0opt_e201354_release(&t43);
 #line 97 "examples/interpreter/syn/expr.hero"
     t2 = h2_f0;
@@ -10958,7 +10968,7 @@ bb2:
     t6 = h2_f0;
 #line 97 "examples/interpreter/syn/expr.hero"
     t7 = t6.as.err;
-#line 10962 "main.c"
+#line 10972 "main.c"
     hero_failure_retain(&t7);
 #line 97 "examples/interpreter/syn/expr.hero"
     t8 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t7};
@@ -10966,7 +10976,7 @@ bb2:
     t44 = h10_own10;
 #line 97 "examples/interpreter/syn/expr.hero"
     h10_own10 = t8;
-#line 10970 "main.c"
+#line 10980 "main.c"
     h_0opt_e201354_release(&t44);
 #line 97 "examples/interpreter/syn/expr.hero"
     h8_ret0 = t8;
@@ -10982,7 +10992,7 @@ bb3:
     t45 = h11_own11;
 #line 99 "examples/interpreter/syn/expr.hero"
     h11_own11 = t12;
-#line 10986 "main.c"
+#line 10996 "main.c"
     h_lextoken_Token_release(&t45);
 #line 99 "examples/interpreter/syn/expr.hero"
     t13 = h_synexpr_is_scaling(t12);
@@ -10998,15 +11008,15 @@ bb4:
     t46 = h12_own12;
 #line 101 "examples/interpreter/syn/expr.hero"
     h12_own12 = t15;
-#line 11002 "main.c"
+#line 11012 "main.c"
     h_lextoken_Token_release(&t46);
 #line 101 "examples/interpreter/syn/expr.hero"
     t47 = h5_taken;
-#line 11006 "main.c"
+#line 11016 "main.c"
     h_lextoken_Token_retain(&t15);
 #line 101 "examples/interpreter/syn/expr.hero"
     h5_taken = t15;
-#line 11010 "main.c"
+#line 11020 "main.c"
     h_lextoken_Token_release(&t47);
 #line 103 "examples/interpreter/syn/expr.hero"
     t16 = h5_taken;
@@ -11016,7 +11026,7 @@ bb4:
     t48 = h13_own13;
 #line 103 "examples/interpreter/syn/expr.hero"
     h13_own13 = t17;
-#line 11020 "main.c"
+#line 11030 "main.c"
     h_lextoken_Token_release(&t48);
 #line 103 "examples/interpreter/syn/expr.hero"
     t18 = h_lextoken_Token_eq(&t16, &t17);
@@ -11032,7 +11042,7 @@ bb5:
     t49 = h14_own14;
 #line 111 "examples/interpreter/syn/expr.hero"
     h14_own14 = t40;
-#line 11036 "main.c"
+#line 11046 "main.c"
     h_0opt_e201354_release(&t49);
 #line 111 "examples/interpreter/syn/expr.hero"
     h8_ret0 = t40;
@@ -11048,7 +11058,7 @@ bb6:
     t50 = h15_own15;
 #line 106 "examples/interpreter/syn/expr.hero"
     h15_own15 = t21;
-#line 11052 "main.c"
+#line 11062 "main.c"
     h_lextoken_Token_release(&t50);
 #line 106 "examples/interpreter/syn/expr.hero"
     t22 = h_lextoken_Token_eq(&t20, &t21);
@@ -11074,15 +11084,15 @@ bb9:
     t51 = h16_own16;
 #line 108 "examples/interpreter/syn/expr.hero"
     h16_own16 = t24;
-#line 11078 "main.c"
+#line 11088 "main.c"
     h_0opt_e201354_release(&t51);
 #line 108 "examples/interpreter/syn/expr.hero"
     t52 = h6_f1;
-#line 11082 "main.c"
+#line 11092 "main.c"
     h_0opt_e201354_retain(&t24);
 #line 108 "examples/interpreter/syn/expr.hero"
     h6_f1 = t24;
-#line 11086 "main.c"
+#line 11096 "main.c"
     h_0opt_e201354_release(&t52);
 #line 108 "examples/interpreter/syn/expr.hero"
     t25 = h6_f1;
@@ -11124,7 +11134,7 @@ bb12:
     t53 = h17_own17;
 #line 109 "examples/interpreter/syn/expr.hero"
     h17_own17 = t37;
-#line 11128 "main.c"
+#line 11138 "main.c"
     h_syntree_Expr_release(&t53);
 #line 109 "examples/interpreter/syn/expr.hero"
     t38 = h_syntree_added_expr(&(*ph1_t), t37);
@@ -11138,7 +11148,7 @@ bb13:
     t29 = h6_f1;
 #line 108 "examples/interpreter/syn/expr.hero"
     t30 = t29.as.err;
-#line 11142 "main.c"
+#line 11152 "main.c"
     hero_failure_retain(&t30);
 #line 108 "examples/interpreter/syn/expr.hero"
     t31 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t30};
@@ -11146,7 +11156,7 @@ bb13:
     t54 = h18_own18;
 #line 108 "examples/interpreter/syn/expr.hero"
     h18_own18 = t31;
-#line 11150 "main.c"
+#line 11160 "main.c"
     h_0opt_e201354_release(&t54);
 #line 108 "examples/interpreter/syn/expr.hero"
     h8_ret0 = t31;
@@ -11154,7 +11164,7 @@ bb13:
     goto bb14;
 #line 108 "examples/interpreter/syn/expr.hero"
 bb14:
-#line 11158 "main.c"
+#line 11168 "main.c"
     t41 = h8_ret0;
     h_0opt_e201354_retain(&t41);
     h_0opt_e201354_release(&h2_f0);
@@ -11175,7 +11185,7 @@ bb14:
 
 #line 115 "examples/interpreter/syn/expr.hero"
 h_0opt_e201354 h_synexpr_unary(h_syncursor_Cursor *ph0_c, h_syntree_Tree *ph1_t) {
-#line 11179 "main.c"
+#line 11189 "main.c"
     h_0opt_e201354 h2_f0 = {0};
     int64_t h3_on;
     h_0opt_e201354 h4_f1 = {0};
@@ -11263,7 +11273,7 @@ bb0:
     t41 = h7_own7;
 #line 116 "examples/interpreter/syn/expr.hero"
     h7_own7 = t2;
-#line 11267 "main.c"
+#line 11277 "main.c"
     h_lextoken_Token_release(&t41);
 #line 116 "examples/interpreter/syn/expr.hero"
     t3 = (h_lextoken_Token){.tag = h_lextoken_Token_tag_minus};
@@ -11271,7 +11281,7 @@ bb0:
     t42 = h8_own8;
 #line 116 "examples/interpreter/syn/expr.hero"
     h8_own8 = t3;
-#line 11275 "main.c"
+#line 11285 "main.c"
     h_lextoken_Token_release(&t42);
 #line 116 "examples/interpreter/syn/expr.hero"
     t4 = h_lextoken_Token_eq(&t2, &t3);
@@ -11287,7 +11297,7 @@ bb1:
     t43 = h9_own9;
 #line 121 "examples/interpreter/syn/expr.hero"
     h9_own9 = t21;
-#line 11291 "main.c"
+#line 11301 "main.c"
     h_lextoken_Token_release(&t43);
 #line 121 "examples/interpreter/syn/expr.hero"
     t22 = (h_lextoken_Token){.tag = h_lextoken_Token_tag_bang};
@@ -11295,7 +11305,7 @@ bb1:
     t44 = h10_own10;
 #line 121 "examples/interpreter/syn/expr.hero"
     h10_own10 = t22;
-#line 11299 "main.c"
+#line 11309 "main.c"
     h_lextoken_Token_release(&t44);
 #line 121 "examples/interpreter/syn/expr.hero"
     t23 = h_lextoken_Token_eq(&t21, &t22);
@@ -11309,7 +11319,7 @@ bb2:
     t45 = h11_own11;
 #line 117 "examples/interpreter/syn/expr.hero"
     h11_own11 = t5;
-#line 11313 "main.c"
+#line 11323 "main.c"
     h_lextoken_Token_release(&t45);
 #line 118 "examples/interpreter/syn/expr.hero"
     t6 = h_synexpr_unary(&(*ph0_c), &(*ph1_t));
@@ -11317,15 +11327,15 @@ bb2:
     t46 = h12_own12;
 #line 118 "examples/interpreter/syn/expr.hero"
     h12_own12 = t6;
-#line 11321 "main.c"
+#line 11331 "main.c"
     h_0opt_e201354_release(&t46);
 #line 118 "examples/interpreter/syn/expr.hero"
     t47 = h2_f0;
-#line 11325 "main.c"
+#line 11335 "main.c"
     h_0opt_e201354_retain(&t6);
 #line 118 "examples/interpreter/syn/expr.hero"
     h2_f0 = t6;
-#line 11329 "main.c"
+#line 11339 "main.c"
     h_0opt_e201354_release(&t47);
 #line 118 "examples/interpreter/syn/expr.hero"
     t7 = h2_f0;
@@ -11356,7 +11366,7 @@ bb4:
     t48 = h13_own13;
 #line 119 "examples/interpreter/syn/expr.hero"
     h13_own13 = t17;
-#line 11360 "main.c"
+#line 11370 "main.c"
     h_syntree_Expr_release(&t48);
 #line 119 "examples/interpreter/syn/expr.hero"
     t18 = h_syntree_added_expr(&(*ph1_t), t17);
@@ -11366,7 +11376,7 @@ bb4:
     t49 = h14_own14;
 #line 119 "examples/interpreter/syn/expr.hero"
     h14_own14 = t19;
-#line 11370 "main.c"
+#line 11380 "main.c"
     h_0opt_e201354_release(&t49);
 #line 119 "examples/interpreter/syn/expr.hero"
     h6_ret0 = t19;
@@ -11378,7 +11388,7 @@ bb5:
     t11 = h2_f0;
 #line 118 "examples/interpreter/syn/expr.hero"
     t12 = t11.as.err;
-#line 11382 "main.c"
+#line 11392 "main.c"
     hero_failure_retain(&t12);
 #line 118 "examples/interpreter/syn/expr.hero"
     t13 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t12};
@@ -11386,7 +11396,7 @@ bb5:
     t50 = h15_own15;
 #line 118 "examples/interpreter/syn/expr.hero"
     h15_own15 = t13;
-#line 11390 "main.c"
+#line 11400 "main.c"
     h_0opt_e201354_release(&t50);
 #line 118 "examples/interpreter/syn/expr.hero"
     h6_ret0 = t13;
@@ -11400,7 +11410,7 @@ bb6:
     t51 = h16_own16;
 #line 126 "examples/interpreter/syn/expr.hero"
     h16_own16 = t39;
-#line 11404 "main.c"
+#line 11414 "main.c"
     h_0opt_e201354_release(&t51);
 #line 126 "examples/interpreter/syn/expr.hero"
     h6_ret0 = t39;
@@ -11414,7 +11424,7 @@ bb7:
     t52 = h17_own17;
 #line 122 "examples/interpreter/syn/expr.hero"
     h17_own17 = t24;
-#line 11418 "main.c"
+#line 11428 "main.c"
     h_lextoken_Token_release(&t52);
 #line 123 "examples/interpreter/syn/expr.hero"
     t25 = h_synexpr_unary(&(*ph0_c), &(*ph1_t));
@@ -11422,15 +11432,15 @@ bb7:
     t53 = h18_own18;
 #line 123 "examples/interpreter/syn/expr.hero"
     h18_own18 = t25;
-#line 11426 "main.c"
+#line 11436 "main.c"
     h_0opt_e201354_release(&t53);
 #line 123 "examples/interpreter/syn/expr.hero"
     t54 = h4_f1;
-#line 11430 "main.c"
+#line 11440 "main.c"
     h_0opt_e201354_retain(&t25);
 #line 123 "examples/interpreter/syn/expr.hero"
     h4_f1 = t25;
-#line 11434 "main.c"
+#line 11444 "main.c"
     h_0opt_e201354_release(&t54);
 #line 123 "examples/interpreter/syn/expr.hero"
     t26 = h4_f1;
@@ -11461,7 +11471,7 @@ bb9:
     t55 = h19_own19;
 #line 124 "examples/interpreter/syn/expr.hero"
     h19_own19 = t36;
-#line 11465 "main.c"
+#line 11475 "main.c"
     h_syntree_Expr_release(&t55);
 #line 124 "examples/interpreter/syn/expr.hero"
     t37 = h_syntree_added_expr(&(*ph1_t), t36);
@@ -11471,7 +11481,7 @@ bb9:
     t56 = h20_own20;
 #line 124 "examples/interpreter/syn/expr.hero"
     h20_own20 = t38;
-#line 11475 "main.c"
+#line 11485 "main.c"
     h_0opt_e201354_release(&t56);
 #line 124 "examples/interpreter/syn/expr.hero"
     h6_ret0 = t38;
@@ -11483,7 +11493,7 @@ bb10:
     t30 = h4_f1;
 #line 123 "examples/interpreter/syn/expr.hero"
     t31 = t30.as.err;
-#line 11487 "main.c"
+#line 11497 "main.c"
     hero_failure_retain(&t31);
 #line 123 "examples/interpreter/syn/expr.hero"
     t32 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t31};
@@ -11491,7 +11501,7 @@ bb10:
     t57 = h21_own21;
 #line 123 "examples/interpreter/syn/expr.hero"
     h21_own21 = t32;
-#line 11495 "main.c"
+#line 11505 "main.c"
     h_0opt_e201354_release(&t57);
 #line 123 "examples/interpreter/syn/expr.hero"
     h6_ret0 = t32;
@@ -11499,7 +11509,7 @@ bb10:
     goto bb11;
 #line 123 "examples/interpreter/syn/expr.hero"
 bb11:
-#line 11503 "main.c"
+#line 11513 "main.c"
     t40 = h6_ret0;
     h_0opt_e201354_retain(&t40);
     h_0opt_e201354_release(&h2_f0);
@@ -11524,7 +11534,7 @@ bb11:
 
 #line 134 "examples/interpreter/syn/expr.hero"
 h_0opt_e201354 h_synexpr_primary(h_syncursor_Cursor *ph0_c, h_syntree_Tree *ph1_t) {
-#line 11528 "main.c"
+#line 11538 "main.c"
     h_lextoken_Token h2_s0 = {0};
     h_0opt_e201354 h3_r0 = {0};
     h_lextoken_Token_c_number h4_n;
@@ -11653,15 +11663,15 @@ bb0:
     t53 = h7_own7;
 #line 135 "examples/interpreter/syn/expr.hero"
     h7_own7 = t1;
-#line 11657 "main.c"
+#line 11667 "main.c"
     h_lextoken_Token_release(&t53);
 #line 135 "examples/interpreter/syn/expr.hero"
     t54 = h2_s0;
-#line 11661 "main.c"
+#line 11671 "main.c"
     h_lextoken_Token_retain(&t1);
 #line 135 "examples/interpreter/syn/expr.hero"
     h2_s0 = t1;
-#line 11665 "main.c"
+#line 11675 "main.c"
     h_lextoken_Token_release(&t54);
 #line 135 "examples/interpreter/syn/expr.hero"
     t2 = h2_s0;
@@ -11745,13 +11755,13 @@ bb0:
 bb1:
 #line 135 "examples/interpreter/syn/expr.hero"
     t52 = h3_r0;
-#line 11749 "main.c"
+#line 11759 "main.c"
     h_0opt_e201354_retain(&t52);
 #line 135 "examples/interpreter/syn/expr.hero"
     t55 = h8_own8;
 #line 135 "examples/interpreter/syn/expr.hero"
     h8_own8 = t52;
-#line 11755 "main.c"
+#line 11765 "main.c"
     h_0opt_e201354_release(&t55);
     h_0opt_e201354_retain(&t52);
     h_lextoken_Token_release(&h2_s0);
@@ -11798,7 +11808,7 @@ bb2:
     t56 = h9_own9;
 #line 136 "examples/interpreter/syn/expr.hero"
     h9_own9 = t8;
-#line 11802 "main.c"
+#line 11812 "main.c"
     h_syntree_Expr_release(&t56);
 #line 136 "examples/interpreter/syn/expr.hero"
     t9 = h_syntree_added_expr(&(*ph1_t), t8);
@@ -11808,15 +11818,15 @@ bb2:
     t57 = h10_own10;
 #line 136 "examples/interpreter/syn/expr.hero"
     h10_own10 = t10;
-#line 11812 "main.c"
+#line 11822 "main.c"
     h_0opt_e201354_release(&t57);
 #line 135 "examples/interpreter/syn/expr.hero"
     t58 = h3_r0;
-#line 11816 "main.c"
+#line 11826 "main.c"
     h_0opt_e201354_retain(&t10);
 #line 135 "examples/interpreter/syn/expr.hero"
     h3_r0 = t10;
-#line 11820 "main.c"
+#line 11830 "main.c"
     h_0opt_e201354_release(&t58);
     goto bb1;
 bb3:
@@ -11826,17 +11836,17 @@ bb3:
     t12 = t11.as.c_text;
 #line 137 "examples/interpreter/syn/expr.hero"
     t59 = h5_x;
-#line 11830 "main.c"
+#line 11840 "main.c"
     h_lextoken_Token_c_text_retain(&t12);
 #line 137 "examples/interpreter/syn/expr.hero"
     h5_x = t12;
-#line 11834 "main.c"
+#line 11844 "main.c"
     h_lextoken_Token_c_text_release(&t59);
 #line 137 "examples/interpreter/syn/expr.hero"
     t13 = h5_x;
 #line 137 "examples/interpreter/syn/expr.hero"
     t14 = t13.f_value;
-#line 11840 "main.c"
+#line 11850 "main.c"
     hero_str_incref(t14);
 #line 137 "examples/interpreter/syn/expr.hero"
     t15 = (h_syntree_Expr){.tag = h_syntree_Expr_tag_text, .as.c_text = {.f_value = t14}};
@@ -11844,7 +11854,7 @@ bb3:
     t60 = h11_own11;
 #line 137 "examples/interpreter/syn/expr.hero"
     h11_own11 = t15;
-#line 11848 "main.c"
+#line 11858 "main.c"
     h_syntree_Expr_release(&t60);
 #line 137 "examples/interpreter/syn/expr.hero"
     t16 = h_syntree_added_expr(&(*ph1_t), t15);
@@ -11854,15 +11864,15 @@ bb3:
     t61 = h12_own12;
 #line 137 "examples/interpreter/syn/expr.hero"
     h12_own12 = t17;
-#line 11858 "main.c"
+#line 11868 "main.c"
     h_0opt_e201354_release(&t61);
 #line 135 "examples/interpreter/syn/expr.hero"
     t62 = h3_r0;
-#line 11862 "main.c"
+#line 11872 "main.c"
     h_0opt_e201354_retain(&t17);
 #line 135 "examples/interpreter/syn/expr.hero"
     h3_r0 = t17;
-#line 11866 "main.c"
+#line 11876 "main.c"
     h_0opt_e201354_release(&t62);
     goto bb1;
 bb4:
@@ -11874,7 +11884,7 @@ bb4:
     t63 = h13_own13;
 #line 138 "examples/interpreter/syn/expr.hero"
     h13_own13 = t19;
-#line 11878 "main.c"
+#line 11888 "main.c"
     h_syntree_Expr_release(&t63);
 #line 138 "examples/interpreter/syn/expr.hero"
     t20 = h_syntree_added_expr(&(*ph1_t), t19);
@@ -11884,15 +11894,15 @@ bb4:
     t64 = h14_own14;
 #line 138 "examples/interpreter/syn/expr.hero"
     h14_own14 = t21;
-#line 11888 "main.c"
+#line 11898 "main.c"
     h_0opt_e201354_release(&t64);
 #line 135 "examples/interpreter/syn/expr.hero"
     t65 = h3_r0;
-#line 11892 "main.c"
+#line 11902 "main.c"
     h_0opt_e201354_retain(&t21);
 #line 135 "examples/interpreter/syn/expr.hero"
     h3_r0 = t21;
-#line 11896 "main.c"
+#line 11906 "main.c"
     h_0opt_e201354_release(&t65);
     goto bb1;
 bb5:
@@ -11904,7 +11914,7 @@ bb5:
     t66 = h15_own15;
 #line 139 "examples/interpreter/syn/expr.hero"
     h15_own15 = t23;
-#line 11908 "main.c"
+#line 11918 "main.c"
     h_syntree_Expr_release(&t66);
 #line 139 "examples/interpreter/syn/expr.hero"
     t24 = h_syntree_added_expr(&(*ph1_t), t23);
@@ -11914,15 +11924,15 @@ bb5:
     t67 = h16_own16;
 #line 139 "examples/interpreter/syn/expr.hero"
     h16_own16 = t25;
-#line 11918 "main.c"
+#line 11928 "main.c"
     h_0opt_e201354_release(&t67);
 #line 135 "examples/interpreter/syn/expr.hero"
     t68 = h3_r0;
-#line 11922 "main.c"
+#line 11932 "main.c"
     h_0opt_e201354_retain(&t25);
 #line 135 "examples/interpreter/syn/expr.hero"
     h3_r0 = t25;
-#line 11926 "main.c"
+#line 11936 "main.c"
     h_0opt_e201354_release(&t68);
     goto bb1;
 bb6:
@@ -11932,11 +11942,11 @@ bb6:
     t27 = t26.as.c_name;
 #line 140 "examples/interpreter/syn/expr.hero"
     t69 = h6_n;
-#line 11936 "main.c"
+#line 11946 "main.c"
     h_lextoken_Token_c_name_retain(&t27);
 #line 140 "examples/interpreter/syn/expr.hero"
     h6_n = t27;
-#line 11940 "main.c"
+#line 11950 "main.c"
     h_lextoken_Token_c_name_release(&t69);
 #line 140 "examples/interpreter/syn/expr.hero"
     t28 = h6_n;
@@ -11948,15 +11958,15 @@ bb6:
     t70 = h17_own17;
 #line 140 "examples/interpreter/syn/expr.hero"
     h17_own17 = t30;
-#line 11952 "main.c"
+#line 11962 "main.c"
     h_0opt_e201354_release(&t70);
 #line 135 "examples/interpreter/syn/expr.hero"
     t71 = h3_r0;
-#line 11956 "main.c"
+#line 11966 "main.c"
     h_0opt_e201354_retain(&t30);
 #line 135 "examples/interpreter/syn/expr.hero"
     h3_r0 = t30;
-#line 11960 "main.c"
+#line 11970 "main.c"
     h_0opt_e201354_release(&t71);
     goto bb1;
 bb7:
@@ -11966,15 +11976,15 @@ bb7:
     t72 = h18_own18;
 #line 141 "examples/interpreter/syn/expr.hero"
     h18_own18 = t31;
-#line 11970 "main.c"
+#line 11980 "main.c"
     h_0opt_e201354_release(&t72);
 #line 135 "examples/interpreter/syn/expr.hero"
     t73 = h3_r0;
-#line 11974 "main.c"
+#line 11984 "main.c"
     h_0opt_e201354_retain(&t31);
 #line 135 "examples/interpreter/syn/expr.hero"
     h3_r0 = t31;
-#line 11978 "main.c"
+#line 11988 "main.c"
     h_0opt_e201354_release(&t73);
     goto bb1;
 bb8:
@@ -11986,15 +11996,15 @@ bb8:
     t74 = h19_own19;
 #line 142 "examples/interpreter/syn/expr.hero"
     h19_own19 = t33;
-#line 11990 "main.c"
+#line 12000 "main.c"
     h_0opt_e201354_release(&t74);
 #line 135 "examples/interpreter/syn/expr.hero"
     t75 = h3_r0;
-#line 11994 "main.c"
+#line 12004 "main.c"
     h_0opt_e201354_retain(&t33);
 #line 135 "examples/interpreter/syn/expr.hero"
     h3_r0 = t33;
-#line 11998 "main.c"
+#line 12008 "main.c"
     h_0opt_e201354_release(&t75);
     goto bb1;
 bb9:
@@ -12006,15 +12016,15 @@ bb9:
     t76 = h20_own20;
 #line 143 "examples/interpreter/syn/expr.hero"
     h20_own20 = t35;
-#line 12010 "main.c"
+#line 12020 "main.c"
     h_0opt_e201354_release(&t76);
 #line 135 "examples/interpreter/syn/expr.hero"
     t77 = h3_r0;
-#line 12014 "main.c"
+#line 12024 "main.c"
     h_0opt_e201354_retain(&t35);
 #line 135 "examples/interpreter/syn/expr.hero"
     h3_r0 = t35;
-#line 12018 "main.c"
+#line 12028 "main.c"
     h_0opt_e201354_release(&t77);
     goto bb1;
 bb10:
@@ -12026,15 +12036,15 @@ bb10:
     t78 = h21_own21;
 #line 144 "examples/interpreter/syn/expr.hero"
     h21_own21 = t37;
-#line 12030 "main.c"
+#line 12040 "main.c"
     h_0opt_e201354_release(&t78);
 #line 135 "examples/interpreter/syn/expr.hero"
     t79 = h3_r0;
-#line 12034 "main.c"
+#line 12044 "main.c"
     h_0opt_e201354_retain(&t37);
 #line 135 "examples/interpreter/syn/expr.hero"
     h3_r0 = t37;
-#line 12038 "main.c"
+#line 12048 "main.c"
     h_0opt_e201354_release(&t79);
     goto bb1;
 bb11:
@@ -12046,15 +12056,15 @@ bb11:
     t80 = h22_own22;
 #line 145 "examples/interpreter/syn/expr.hero"
     h22_own22 = t39;
-#line 12050 "main.c"
+#line 12060 "main.c"
     h_0opt_e201354_release(&t80);
 #line 135 "examples/interpreter/syn/expr.hero"
     t81 = h3_r0;
-#line 12054 "main.c"
+#line 12064 "main.c"
     h_0opt_e201354_retain(&t39);
 #line 135 "examples/interpreter/syn/expr.hero"
     h3_r0 = t39;
-#line 12058 "main.c"
+#line 12068 "main.c"
     h_0opt_e201354_release(&t81);
     goto bb1;
 bb12:
@@ -12066,15 +12076,15 @@ bb12:
     t82 = h23_own23;
 #line 148 "examples/interpreter/syn/expr.hero"
     h23_own23 = t41;
-#line 12070 "main.c"
+#line 12080 "main.c"
     h_0opt_e201354_release(&t82);
 #line 135 "examples/interpreter/syn/expr.hero"
     t83 = h3_r0;
-#line 12074 "main.c"
+#line 12084 "main.c"
     h_0opt_e201354_retain(&t41);
 #line 135 "examples/interpreter/syn/expr.hero"
     h3_r0 = t41;
-#line 12078 "main.c"
+#line 12088 "main.c"
     h_0opt_e201354_release(&t83);
     goto bb1;
 bb13:
@@ -12086,15 +12096,15 @@ bb13:
     t84 = h24_own24;
 #line 149 "examples/interpreter/syn/expr.hero"
     h24_own24 = t43;
-#line 12090 "main.c"
+#line 12100 "main.c"
     h_0opt_e201354_release(&t84);
 #line 135 "examples/interpreter/syn/expr.hero"
     t85 = h3_r0;
-#line 12094 "main.c"
+#line 12104 "main.c"
     h_0opt_e201354_retain(&t43);
 #line 135 "examples/interpreter/syn/expr.hero"
     h3_r0 = t43;
-#line 12098 "main.c"
+#line 12108 "main.c"
     h_0opt_e201354_release(&t85);
     goto bb1;
 bb14:
@@ -12106,15 +12116,15 @@ bb14:
     t86 = h25_own25;
 #line 150 "examples/interpreter/syn/expr.hero"
     h25_own25 = t45;
-#line 12110 "main.c"
+#line 12120 "main.c"
     h_0opt_e201354_release(&t86);
 #line 135 "examples/interpreter/syn/expr.hero"
     t87 = h3_r0;
-#line 12114 "main.c"
+#line 12124 "main.c"
     h_0opt_e201354_retain(&t45);
 #line 135 "examples/interpreter/syn/expr.hero"
     h3_r0 = t45;
-#line 12118 "main.c"
+#line 12128 "main.c"
     h_0opt_e201354_release(&t87);
     goto bb1;
 bb15:
@@ -12126,15 +12136,15 @@ bb15:
     t88 = h26_own26;
 #line 151 "examples/interpreter/syn/expr.hero"
     h26_own26 = t47;
-#line 12130 "main.c"
+#line 12140 "main.c"
     h_0opt_e201354_release(&t88);
 #line 135 "examples/interpreter/syn/expr.hero"
     t89 = h3_r0;
-#line 12134 "main.c"
+#line 12144 "main.c"
     h_0opt_e201354_retain(&t47);
 #line 135 "examples/interpreter/syn/expr.hero"
     h3_r0 = t47;
-#line 12138 "main.c"
+#line 12148 "main.c"
     h_0opt_e201354_release(&t89);
     goto bb1;
 bb16:
@@ -12146,15 +12156,15 @@ bb16:
     t90 = h27_own27;
 #line 152 "examples/interpreter/syn/expr.hero"
     h27_own27 = t49;
-#line 12150 "main.c"
+#line 12160 "main.c"
     h_0opt_e201354_release(&t90);
 #line 135 "examples/interpreter/syn/expr.hero"
     t91 = h3_r0;
-#line 12154 "main.c"
+#line 12164 "main.c"
     h_0opt_e201354_retain(&t49);
 #line 135 "examples/interpreter/syn/expr.hero"
     h3_r0 = t49;
-#line 12158 "main.c"
+#line 12168 "main.c"
     h_0opt_e201354_release(&t91);
     goto bb1;
 bb17:
@@ -12166,22 +12176,22 @@ bb17:
     t92 = h28_own28;
 #line 153 "examples/interpreter/syn/expr.hero"
     h28_own28 = t51;
-#line 12170 "main.c"
+#line 12180 "main.c"
     h_0opt_e201354_release(&t92);
 #line 135 "examples/interpreter/syn/expr.hero"
     t93 = h3_r0;
-#line 12174 "main.c"
+#line 12184 "main.c"
     h_0opt_e201354_retain(&t51);
 #line 135 "examples/interpreter/syn/expr.hero"
     h3_r0 = t51;
-#line 12178 "main.c"
+#line 12188 "main.c"
     h_0opt_e201354_release(&t93);
     goto bb1;
 }
 
 #line 155 "examples/interpreter/syn/expr.hero"
 h_0opt_e201354 h_synexpr_not_a_value(HeroStr h0_said) {
-#line 12185 "main.c"
+#line 12195 "main.c"
     HeroStr h1_own1 = {0};
     HeroStr h2_own2 = {0};
     h_0opt_e201354 h3_own3 = {0};
@@ -12201,7 +12211,7 @@ bb0:
     t6 = h1_own1;
 #line 156 "examples/interpreter/syn/expr.hero"
     h1_own1 = t1;
-#line 12205 "main.c"
+#line 12215 "main.c"
     hero_str_decref(t6);
 #line 156 "examples/interpreter/syn/expr.hero"
     t2 = HERO_STR_LIT(hero_str_19375826);
@@ -12213,7 +12223,7 @@ bb0:
     t7 = h2_own2;
 #line 156 "examples/interpreter/syn/expr.hero"
     h2_own2 = t4;
-#line 12217 "main.c"
+#line 12227 "main.c"
     hero_str_decref(t7);
     hero_str_incref(t1);
     hero_str_incref(t4);
@@ -12223,7 +12233,7 @@ bb0:
     t8 = h3_own3;
 #line 156 "examples/interpreter/syn/expr.hero"
     h3_own3 = t5;
-#line 12227 "main.c"
+#line 12237 "main.c"
     h_0opt_e201354_release(&t8);
     h_0opt_e201354_retain(&t5);
     hero_str_decref(h1_own1);
@@ -12234,7 +12244,7 @@ bb0:
 
 #line 160 "examples/interpreter/syn/expr.hero"
 h_0opt_e201354 h_synexpr_named(h_syncursor_Cursor *ph0_c, h_syntree_Tree *ph1_t, HeroStr h2_word) {
-#line 12238 "main.c"
+#line 12248 "main.c"
     HeroArrayHeader * h3_given = {0};
     h_0opt_e201354 h4_f0 = {0};
     h_0opt_e201354 h5_f1 = {0};
@@ -12353,7 +12363,7 @@ bb0:
     t64 = h8_own8;
 #line 161 "examples/interpreter/syn/expr.hero"
     h8_own8 = t2;
-#line 12357 "main.c"
+#line 12367 "main.c"
     h_lextoken_Token_release(&t64);
 #line 161 "examples/interpreter/syn/expr.hero"
     t3 = (h_lextoken_Token){.tag = h_lextoken_Token_tag_lparen};
@@ -12361,7 +12371,7 @@ bb0:
     t65 = h9_own9;
 #line 161 "examples/interpreter/syn/expr.hero"
     h9_own9 = t3;
-#line 12365 "main.c"
+#line 12375 "main.c"
     h_lextoken_Token_release(&t65);
 #line 161 "examples/interpreter/syn/expr.hero"
     t4 = !h_lextoken_Token_eq(&t2, &t3);
@@ -12375,7 +12385,7 @@ bb1:
     t66 = h10_own10;
 #line 163 "examples/interpreter/syn/expr.hero"
     h10_own10 = t9;
-#line 12379 "main.c"
+#line 12389 "main.c"
     h_lextoken_Token_release(&t66);
 #line 167 "examples/interpreter/syn/expr.hero"
     t10 = hero_array_new(&hero_desc_int, 1);
@@ -12383,15 +12393,15 @@ bb1:
     t67 = h11_own11;
 #line 167 "examples/interpreter/syn/expr.hero"
     h11_own11 = t10;
-#line 12387 "main.c"
+#line 12397 "main.c"
     hero_array_decref(t67);
 #line 167 "examples/interpreter/syn/expr.hero"
     t68 = h3_given;
-#line 12391 "main.c"
+#line 12401 "main.c"
     hero_array_incref(t10);
 #line 167 "examples/interpreter/syn/expr.hero"
     h3_given = t10;
-#line 12395 "main.c"
+#line 12405 "main.c"
     hero_array_decref(t68);
 #line 169 "examples/interpreter/syn/expr.hero"
     t11 = (*ph0_c);
@@ -12401,7 +12411,7 @@ bb1:
     t69 = h12_own12;
 #line 169 "examples/interpreter/syn/expr.hero"
     h12_own12 = t12;
-#line 12405 "main.c"
+#line 12415 "main.c"
     h_lextoken_Token_release(&t69);
 #line 169 "examples/interpreter/syn/expr.hero"
     t13 = (h_lextoken_Token){.tag = h_lextoken_Token_tag_rparen};
@@ -12409,7 +12419,7 @@ bb1:
     t70 = h13_own13;
 #line 169 "examples/interpreter/syn/expr.hero"
     h13_own13 = t13;
-#line 12413 "main.c"
+#line 12423 "main.c"
     h_lextoken_Token_release(&t70);
 #line 169 "examples/interpreter/syn/expr.hero"
     t14 = h_lextoken_Token_eq(&t12, &t13);
@@ -12419,7 +12429,7 @@ bb1:
 bb2:
 #line 162 "examples/interpreter/syn/expr.hero"
     t5 = h2_word;
-#line 12423 "main.c"
+#line 12433 "main.c"
     hero_str_incref(t5);
 #line 162 "examples/interpreter/syn/expr.hero"
     t6 = (h_syntree_Expr){.tag = h_syntree_Expr_tag_name, .as.c_name = {.f_value = t5}};
@@ -12427,7 +12437,7 @@ bb2:
     t71 = h14_own14;
 #line 162 "examples/interpreter/syn/expr.hero"
     h14_own14 = t6;
-#line 12431 "main.c"
+#line 12441 "main.c"
     h_syntree_Expr_release(&t71);
 #line 162 "examples/interpreter/syn/expr.hero"
     t7 = h_syntree_added_expr(&(*ph1_t), t6);
@@ -12437,7 +12447,7 @@ bb2:
     t72 = h15_own15;
 #line 162 "examples/interpreter/syn/expr.hero"
     h15_own15 = t8;
-#line 12441 "main.c"
+#line 12451 "main.c"
     h_0opt_e201354_release(&t72);
 #line 162 "examples/interpreter/syn/expr.hero"
     h7_ret0 = t8;
@@ -12455,15 +12465,15 @@ bb4:
     t73 = h16_own16;
 #line 178 "examples/interpreter/syn/expr.hero"
     h16_own16 = t22;
-#line 12459 "main.c"
+#line 12469 "main.c"
     h_0opt_e201354_release(&t73);
 #line 178 "examples/interpreter/syn/expr.hero"
     t74 = h4_f0;
-#line 12463 "main.c"
+#line 12473 "main.c"
     h_0opt_e201354_retain(&t22);
 #line 178 "examples/interpreter/syn/expr.hero"
     h4_f0 = t22;
-#line 12467 "main.c"
+#line 12477 "main.c"
     h_0opt_e201354_release(&t74);
 #line 178 "examples/interpreter/syn/expr.hero"
     t23 = h4_f0;
@@ -12483,13 +12493,13 @@ bb5:
     t75 = h17_own17;
 #line 170 "examples/interpreter/syn/expr.hero"
     h17_own17 = t15;
-#line 12487 "main.c"
+#line 12497 "main.c"
     h_lextoken_Token_release(&t75);
 #line 171 "examples/interpreter/syn/expr.hero"
     t16 = h2_word;
 #line 171 "examples/interpreter/syn/expr.hero"
     t17 = h3_given;
-#line 12493 "main.c"
+#line 12503 "main.c"
     hero_str_incref(t16);
     hero_array_incref(t17);
 #line 171 "examples/interpreter/syn/expr.hero"
@@ -12498,7 +12508,7 @@ bb5:
     t76 = h18_own18;
 #line 171 "examples/interpreter/syn/expr.hero"
     h18_own18 = t18;
-#line 12502 "main.c"
+#line 12512 "main.c"
     h_syntree_Expr_release(&t76);
 #line 171 "examples/interpreter/syn/expr.hero"
     t19 = h_syntree_added_expr(&(*ph1_t), t18);
@@ -12508,7 +12518,7 @@ bb5:
     t77 = h19_own19;
 #line 171 "examples/interpreter/syn/expr.hero"
     h19_own19 = t20;
-#line 12512 "main.c"
+#line 12522 "main.c"
     h_0opt_e201354_release(&t77);
 #line 171 "examples/interpreter/syn/expr.hero"
     h7_ret0 = t20;
@@ -12534,7 +12544,7 @@ bb8:
     t27 = h4_f0;
 #line 178 "examples/interpreter/syn/expr.hero"
     t28 = t27.as.err;
-#line 12538 "main.c"
+#line 12548 "main.c"
     hero_failure_retain(&t28);
 #line 178 "examples/interpreter/syn/expr.hero"
     t29 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t28};
@@ -12542,7 +12552,7 @@ bb8:
     t78 = h20_own20;
 #line 178 "examples/interpreter/syn/expr.hero"
     h20_own20 = t29;
-#line 12546 "main.c"
+#line 12556 "main.c"
     h_0opt_e201354_release(&t78);
 #line 178 "examples/interpreter/syn/expr.hero"
     h7_ret0 = t29;
@@ -12556,7 +12566,7 @@ bb9:
     t79 = h21_own21;
 #line 180 "examples/interpreter/syn/expr.hero"
     h21_own21 = t33;
-#line 12560 "main.c"
+#line 12570 "main.c"
     h_lextoken_Token_release(&t79);
 #line 180 "examples/interpreter/syn/expr.hero"
     t34 = h_syncursor_accepted(&(*ph0_c), t33);
@@ -12569,15 +12579,15 @@ bb10:
     t80 = h22_own22;
 #line 181 "examples/interpreter/syn/expr.hero"
     h22_own22 = t36;
-#line 12573 "main.c"
+#line 12583 "main.c"
     h_0opt_e201354_release(&t80);
 #line 181 "examples/interpreter/syn/expr.hero"
     t81 = h5_f1;
-#line 12577 "main.c"
+#line 12587 "main.c"
     h_0opt_e201354_retain(&t36);
 #line 181 "examples/interpreter/syn/expr.hero"
     h5_f1 = t36;
-#line 12581 "main.c"
+#line 12591 "main.c"
     h_0opt_e201354_release(&t81);
 #line 181 "examples/interpreter/syn/expr.hero"
     t37 = h5_f1;
@@ -12597,7 +12607,7 @@ bb11:
     t82 = h23_own23;
 #line 183 "examples/interpreter/syn/expr.hero"
     h23_own23 = t47;
-#line 12601 "main.c"
+#line 12611 "main.c"
     h_lextoken_Token_release(&t82);
 #line 183 "examples/interpreter/syn/expr.hero"
     t48 = h_syncursor_expected(&(*ph0_c), t47);
@@ -12605,15 +12615,15 @@ bb11:
     t83 = h24_own24;
 #line 183 "examples/interpreter/syn/expr.hero"
     h24_own24 = t48;
-#line 12609 "main.c"
+#line 12619 "main.c"
     h_0opt_a8ea2_release(&t83);
 #line 183 "examples/interpreter/syn/expr.hero"
     t84 = h6_f2;
-#line 12613 "main.c"
+#line 12623 "main.c"
     h_0opt_a8ea2_retain(&t48);
 #line 183 "examples/interpreter/syn/expr.hero"
     h6_f2 = t48;
-#line 12617 "main.c"
+#line 12627 "main.c"
     h_0opt_a8ea2_release(&t84);
 #line 183 "examples/interpreter/syn/expr.hero"
     t49 = h6_f2;
@@ -12641,7 +12651,7 @@ bb13:
     t41 = h5_f1;
 #line 181 "examples/interpreter/syn/expr.hero"
     t42 = t41.as.err;
-#line 12645 "main.c"
+#line 12655 "main.c"
     hero_failure_retain(&t42);
 #line 181 "examples/interpreter/syn/expr.hero"
     t43 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t42};
@@ -12649,7 +12659,7 @@ bb13:
     t85 = h25_own25;
 #line 181 "examples/interpreter/syn/expr.hero"
     h25_own25 = t43;
-#line 12653 "main.c"
+#line 12663 "main.c"
     h_0opt_e201354_release(&t85);
 #line 181 "examples/interpreter/syn/expr.hero"
     h7_ret0 = t43;
@@ -12661,7 +12671,7 @@ bb14:
     t58 = h2_word;
 #line 184 "examples/interpreter/syn/expr.hero"
     t59 = h3_given;
-#line 12665 "main.c"
+#line 12675 "main.c"
     hero_str_incref(t58);
     hero_array_incref(t59);
 #line 184 "examples/interpreter/syn/expr.hero"
@@ -12670,7 +12680,7 @@ bb14:
     t86 = h26_own26;
 #line 184 "examples/interpreter/syn/expr.hero"
     h26_own26 = t60;
-#line 12674 "main.c"
+#line 12684 "main.c"
     h_syntree_Expr_release(&t86);
 #line 184 "examples/interpreter/syn/expr.hero"
     t61 = h_syntree_added_expr(&(*ph1_t), t60);
@@ -12680,7 +12690,7 @@ bb14:
     t87 = h27_own27;
 #line 184 "examples/interpreter/syn/expr.hero"
     h27_own27 = t62;
-#line 12684 "main.c"
+#line 12694 "main.c"
     h_0opt_e201354_release(&t87);
 #line 184 "examples/interpreter/syn/expr.hero"
     h7_ret0 = t62;
@@ -12692,7 +12702,7 @@ bb15:
     t53 = h6_f2;
 #line 183 "examples/interpreter/syn/expr.hero"
     t54 = t53.as.err;
-#line 12696 "main.c"
+#line 12706 "main.c"
     hero_failure_retain(&t54);
 #line 183 "examples/interpreter/syn/expr.hero"
     t55 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t54};
@@ -12700,7 +12710,7 @@ bb15:
     t88 = h28_own28;
 #line 183 "examples/interpreter/syn/expr.hero"
     h28_own28 = t55;
-#line 12704 "main.c"
+#line 12714 "main.c"
     h_0opt_e201354_release(&t88);
 #line 183 "examples/interpreter/syn/expr.hero"
     h7_ret0 = t55;
@@ -12708,7 +12718,7 @@ bb15:
     goto bb16;
 #line 183 "examples/interpreter/syn/expr.hero"
 bb16:
-#line 12712 "main.c"
+#line 12722 "main.c"
     t63 = h7_ret0;
     h_0opt_e201354_retain(&t63);
     hero_array_decref(h3_given);
@@ -12741,7 +12751,7 @@ bb16:
 
 #line 186 "examples/interpreter/syn/expr.hero"
 h_0opt_e201354 h_synexpr_grouped(h_syncursor_Cursor *ph0_c, h_syntree_Tree *ph1_t) {
-#line 12745 "main.c"
+#line 12755 "main.c"
     h_0opt_e201354 h2_f0 = {0};
     int64_t h3_inside;
     h_0opt_a8ea2 h4_f1 = {0};
@@ -12790,15 +12800,15 @@ bb0:
     t25 = h6_own6;
 #line 187 "examples/interpreter/syn/expr.hero"
     h6_own6 = t1;
-#line 12794 "main.c"
+#line 12804 "main.c"
     h_0opt_e201354_release(&t25);
 #line 187 "examples/interpreter/syn/expr.hero"
     t26 = h2_f0;
-#line 12798 "main.c"
+#line 12808 "main.c"
     h_0opt_e201354_retain(&t1);
 #line 187 "examples/interpreter/syn/expr.hero"
     h2_f0 = t1;
-#line 12802 "main.c"
+#line 12812 "main.c"
     h_0opt_e201354_release(&t26);
 #line 187 "examples/interpreter/syn/expr.hero"
     t2 = h2_f0;
@@ -12823,7 +12833,7 @@ bb1:
     t27 = h7_own7;
 #line 188 "examples/interpreter/syn/expr.hero"
     h7_own7 = t11;
-#line 12827 "main.c"
+#line 12837 "main.c"
     h_lextoken_Token_release(&t27);
 #line 188 "examples/interpreter/syn/expr.hero"
     t12 = h_syncursor_expected(&(*ph0_c), t11);
@@ -12831,15 +12841,15 @@ bb1:
     t28 = h8_own8;
 #line 188 "examples/interpreter/syn/expr.hero"
     h8_own8 = t12;
-#line 12835 "main.c"
+#line 12845 "main.c"
     h_0opt_a8ea2_release(&t28);
 #line 188 "examples/interpreter/syn/expr.hero"
     t29 = h4_f1;
-#line 12839 "main.c"
+#line 12849 "main.c"
     h_0opt_a8ea2_retain(&t12);
 #line 188 "examples/interpreter/syn/expr.hero"
     h4_f1 = t12;
-#line 12843 "main.c"
+#line 12853 "main.c"
     h_0opt_a8ea2_release(&t29);
 #line 188 "examples/interpreter/syn/expr.hero"
     t13 = h4_f1;
@@ -12857,7 +12867,7 @@ bb2:
     t6 = h2_f0;
 #line 187 "examples/interpreter/syn/expr.hero"
     t7 = t6.as.err;
-#line 12861 "main.c"
+#line 12871 "main.c"
     hero_failure_retain(&t7);
 #line 187 "examples/interpreter/syn/expr.hero"
     t8 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t7};
@@ -12865,7 +12875,7 @@ bb2:
     t30 = h9_own9;
 #line 187 "examples/interpreter/syn/expr.hero"
     h9_own9 = t8;
-#line 12869 "main.c"
+#line 12879 "main.c"
     h_0opt_e201354_release(&t30);
 #line 187 "examples/interpreter/syn/expr.hero"
     h5_ret0 = t8;
@@ -12881,7 +12891,7 @@ bb3:
     t31 = h10_own10;
 #line 189 "examples/interpreter/syn/expr.hero"
     h10_own10 = t23;
-#line 12885 "main.c"
+#line 12895 "main.c"
     h_0opt_e201354_release(&t31);
 #line 189 "examples/interpreter/syn/expr.hero"
     h5_ret0 = t23;
@@ -12893,7 +12903,7 @@ bb4:
     t17 = h4_f1;
 #line 188 "examples/interpreter/syn/expr.hero"
     t18 = t17.as.err;
-#line 12897 "main.c"
+#line 12907 "main.c"
     hero_failure_retain(&t18);
 #line 188 "examples/interpreter/syn/expr.hero"
     t19 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t18};
@@ -12901,7 +12911,7 @@ bb4:
     t32 = h11_own11;
 #line 188 "examples/interpreter/syn/expr.hero"
     h11_own11 = t19;
-#line 12905 "main.c"
+#line 12915 "main.c"
     h_0opt_e201354_release(&t32);
 #line 188 "examples/interpreter/syn/expr.hero"
     h5_ret0 = t19;
@@ -12909,7 +12919,7 @@ bb4:
     goto bb5;
 #line 188 "examples/interpreter/syn/expr.hero"
 bb5:
-#line 12913 "main.c"
+#line 12923 "main.c"
     t24 = h5_ret0;
     h_0opt_e201354_retain(&t24);
     h_0opt_e201354_release(&h2_f0);
@@ -12925,7 +12935,7 @@ bb5:
 
 #line 191 "examples/interpreter/syn/expr.hero"
 bool h_synexpr_is_scaling(h_lextoken_Token h0_t) {
-#line 12929 "main.c"
+#line 12939 "main.c"
     bool h1_b0;
     bool h2_b1;
     h_lextoken_Token h3_own3 = {0};
@@ -12955,7 +12965,7 @@ bb0:
     t12 = h3_own3;
 #line 192 "examples/interpreter/syn/expr.hero"
     h3_own3 = t2;
-#line 12959 "main.c"
+#line 12969 "main.c"
     h_lextoken_Token_release(&t12);
 #line 192 "examples/interpreter/syn/expr.hero"
     t3 = h_lextoken_Token_eq(&t1, &t2);
@@ -12973,7 +12983,7 @@ bb1:
     t13 = h4_own4;
 #line 192 "examples/interpreter/syn/expr.hero"
     h4_own4 = t5;
-#line 12977 "main.c"
+#line 12987 "main.c"
     h_lextoken_Token_release(&t13);
 #line 192 "examples/interpreter/syn/expr.hero"
     t6 = h_lextoken_Token_eq(&t4, &t5);
@@ -12999,7 +13009,7 @@ bb3:
     t14 = h5_own5;
 #line 192 "examples/interpreter/syn/expr.hero"
     h5_own5 = t9;
-#line 13003 "main.c"
+#line 13013 "main.c"
     h_lextoken_Token_release(&t14);
 #line 192 "examples/interpreter/syn/expr.hero"
     t10 = h_lextoken_Token_eq(&t8, &t9);
@@ -13011,7 +13021,7 @@ bb3:
 bb4:
 #line 192 "examples/interpreter/syn/expr.hero"
     t11 = h1_b0;
-#line 13015 "main.c"
+#line 13025 "main.c"
     h_lextoken_Token_release(&h3_own3);
     h_lextoken_Token_release(&h4_own4);
     h_lextoken_Token_release(&h5_own5);
@@ -13020,7 +13030,7 @@ bb4:
 
 #line 197 "examples/interpreter/syn/expr.hero"
 h_0opt_3ce1b94c h_synexpr_comparison_of(h_lextoken_Token h0_t) {
-#line 13024 "main.c"
+#line 13034 "main.c"
     h_0opt_3ce1b94c h1_ret0 = {0};
     h_lextoken_Token h2_own2 = {0};
     h_lextoken_Token h3_own3 = {0};
@@ -13103,7 +13113,7 @@ bb0:
     t40 = h2_own2;
 #line 198 "examples/interpreter/syn/expr.hero"
     h2_own2 = t2;
-#line 13107 "main.c"
+#line 13117 "main.c"
     h_lextoken_Token_release(&t40);
 #line 198 "examples/interpreter/syn/expr.hero"
     t3 = h_lextoken_Token_eq(&t1, &t2);
@@ -13119,7 +13129,7 @@ bb1:
     t41 = h3_own3;
 #line 201 "examples/interpreter/syn/expr.hero"
     h3_own3 = t7;
-#line 13123 "main.c"
+#line 13133 "main.c"
     h_lextoken_Token_release(&t41);
 #line 201 "examples/interpreter/syn/expr.hero"
     t8 = h_lextoken_Token_eq(&t6, &t7);
@@ -13135,7 +13145,7 @@ bb2:
     t42 = h4_own4;
 #line 199 "examples/interpreter/syn/expr.hero"
     h4_own4 = t5;
-#line 13139 "main.c"
+#line 13149 "main.c"
     h_0opt_3ce1b94c_release(&t42);
 #line 199 "examples/interpreter/syn/expr.hero"
     h1_ret0 = t5;
@@ -13155,7 +13165,7 @@ bb4:
     t43 = h5_own5;
 #line 204 "examples/interpreter/syn/expr.hero"
     h5_own5 = t12;
-#line 13159 "main.c"
+#line 13169 "main.c"
     h_lextoken_Token_release(&t43);
 #line 204 "examples/interpreter/syn/expr.hero"
     t13 = h_lextoken_Token_eq(&t11, &t12);
@@ -13171,7 +13181,7 @@ bb5:
     t44 = h6_own6;
 #line 202 "examples/interpreter/syn/expr.hero"
     h6_own6 = t10;
-#line 13175 "main.c"
+#line 13185 "main.c"
     h_0opt_3ce1b94c_release(&t44);
 #line 202 "examples/interpreter/syn/expr.hero"
     h1_ret0 = t10;
@@ -13191,7 +13201,7 @@ bb7:
     t45 = h7_own7;
 #line 207 "examples/interpreter/syn/expr.hero"
     h7_own7 = t17;
-#line 13195 "main.c"
+#line 13205 "main.c"
     h_lextoken_Token_release(&t45);
 #line 207 "examples/interpreter/syn/expr.hero"
     t18 = h_lextoken_Token_eq(&t16, &t17);
@@ -13207,7 +13217,7 @@ bb8:
     t46 = h8_own8;
 #line 205 "examples/interpreter/syn/expr.hero"
     h8_own8 = t15;
-#line 13211 "main.c"
+#line 13221 "main.c"
     h_0opt_3ce1b94c_release(&t46);
 #line 205 "examples/interpreter/syn/expr.hero"
     h1_ret0 = t15;
@@ -13227,7 +13237,7 @@ bb10:
     t47 = h9_own9;
 #line 210 "examples/interpreter/syn/expr.hero"
     h9_own9 = t22;
-#line 13231 "main.c"
+#line 13241 "main.c"
     h_lextoken_Token_release(&t47);
 #line 210 "examples/interpreter/syn/expr.hero"
     t23 = h_lextoken_Token_eq(&t21, &t22);
@@ -13243,7 +13253,7 @@ bb11:
     t48 = h10_own10;
 #line 208 "examples/interpreter/syn/expr.hero"
     h10_own10 = t20;
-#line 13247 "main.c"
+#line 13257 "main.c"
     h_0opt_3ce1b94c_release(&t48);
 #line 208 "examples/interpreter/syn/expr.hero"
     h1_ret0 = t20;
@@ -13263,7 +13273,7 @@ bb13:
     t49 = h11_own11;
 #line 213 "examples/interpreter/syn/expr.hero"
     h11_own11 = t27;
-#line 13267 "main.c"
+#line 13277 "main.c"
     h_lextoken_Token_release(&t49);
 #line 213 "examples/interpreter/syn/expr.hero"
     t28 = h_lextoken_Token_eq(&t26, &t27);
@@ -13279,7 +13289,7 @@ bb14:
     t50 = h12_own12;
 #line 211 "examples/interpreter/syn/expr.hero"
     h12_own12 = t25;
-#line 13283 "main.c"
+#line 13293 "main.c"
     h_0opt_3ce1b94c_release(&t50);
 #line 211 "examples/interpreter/syn/expr.hero"
     h1_ret0 = t25;
@@ -13303,7 +13313,7 @@ bb16:
     t51 = h13_own13;
 #line 216 "examples/interpreter/syn/expr.hero"
     h13_own13 = t34;
-#line 13307 "main.c"
+#line 13317 "main.c"
     hero_str_decref(t51);
 #line 216 "examples/interpreter/syn/expr.hero"
     t35 = hero_str_concat(t32, t34);
@@ -13311,7 +13321,7 @@ bb16:
     t52 = h14_own14;
 #line 216 "examples/interpreter/syn/expr.hero"
     h14_own14 = t35;
-#line 13315 "main.c"
+#line 13325 "main.c"
     hero_str_decref(t52);
 #line 216 "examples/interpreter/syn/expr.hero"
     t36 = HERO_STR_LIT(hero_str_659f44c5);
@@ -13321,7 +13331,7 @@ bb16:
     t53 = h15_own15;
 #line 216 "examples/interpreter/syn/expr.hero"
     h15_own15 = t37;
-#line 13325 "main.c"
+#line 13335 "main.c"
     hero_str_decref(t53);
     hero_str_incref(t31);
     hero_str_incref(t37);
@@ -13331,7 +13341,7 @@ bb16:
     t54 = h16_own16;
 #line 216 "examples/interpreter/syn/expr.hero"
     h16_own16 = t38;
-#line 13335 "main.c"
+#line 13345 "main.c"
     h_0opt_3ce1b94c_release(&t54);
 #line 216 "examples/interpreter/syn/expr.hero"
     h1_ret0 = t38;
@@ -13347,7 +13357,7 @@ bb17:
     t55 = h17_own17;
 #line 214 "examples/interpreter/syn/expr.hero"
     h17_own17 = t30;
-#line 13351 "main.c"
+#line 13361 "main.c"
     h_0opt_3ce1b94c_release(&t55);
 #line 214 "examples/interpreter/syn/expr.hero"
     h1_ret0 = t30;
@@ -13359,7 +13369,7 @@ bb18:
     goto bb16;
 #line 214 "examples/interpreter/syn/expr.hero"
 bb19:
-#line 13363 "main.c"
+#line 13373 "main.c"
     t39 = h1_ret0;
     h_0opt_3ce1b94c_retain(&t39);
     h_lextoken_Token_release(&h2_own2);
@@ -13383,46 +13393,46 @@ bb19:
 
 #line 34 "examples/interpreter/run/eval.hero"
 HeroStr h_runeval_ERR_NAME(void) {
-#line 13387 "main.c"
+#line 13397 "main.c"
     HeroStr t1;
     goto bb0;
 bb0:
 #line 35 "examples/interpreter/run/eval.hero"
     t1 = HERO_STR_LIT(hero_str_7d34d37c);
-#line 13393 "main.c"
+#line 13403 "main.c"
     hero_str_incref(t1);
     return t1;
 }
 
 #line 37 "examples/interpreter/run/eval.hero"
 HeroStr h_runeval_ERR_ARITY(void) {
-#line 13400 "main.c"
+#line 13410 "main.c"
     HeroStr t1;
     goto bb0;
 bb0:
 #line 38 "examples/interpreter/run/eval.hero"
     t1 = HERO_STR_LIT(hero_str_36145e4a);
-#line 13406 "main.c"
+#line 13416 "main.c"
     hero_str_incref(t1);
     return t1;
 }
 
 #line 40 "examples/interpreter/run/eval.hero"
 HeroStr h_runeval_ERR_DEPTH(void) {
-#line 13413 "main.c"
+#line 13423 "main.c"
     HeroStr t1;
     goto bb0;
 bb0:
 #line 41 "examples/interpreter/run/eval.hero"
     t1 = HERO_STR_LIT(hero_str_1526a387);
-#line 13419 "main.c"
+#line 13429 "main.c"
     hero_str_incref(t1);
     return t1;
 }
 
 #line 72 "examples/interpreter/run/eval.hero"
 int64_t h_runeval_DEPTH(void) {
-#line 13426 "main.c"
+#line 13436 "main.c"
     int64_t t1;
     goto bb0;
 bb0:
@@ -13430,12 +13440,12 @@ bb0:
     t1 = INT64_C(38);
 #line 73 "examples/interpreter/run/eval.hero"
     return t1;
-#line 13434 "main.c"
+#line 13444 "main.c"
 }
 
 #line 76 "examples/interpreter/run/eval.hero"
 h_0opt_1be8f195 h_runeval_run(h_syntree_Tree h0_nodes) {
-#line 13439 "main.c"
+#line 13449 "main.c"
     h_runvalue_Frame h1_own1 = {0};
     h_0opt_1be8f195 h2_own2 = {0};
     h_syntree_Tree t1;
@@ -13459,7 +13469,7 @@ bb0:
     t6 = h1_own1;
 #line 77 "examples/interpreter/run/eval.hero"
     h1_own1 = t4;
-#line 13463 "main.c"
+#line 13473 "main.c"
     h_runvalue_Frame_release(&t6);
 #line 77 "examples/interpreter/run/eval.hero"
     t5 = h_runeval_body(t1, t3, t4);
@@ -13467,7 +13477,7 @@ bb0:
     t7 = h2_own2;
 #line 77 "examples/interpreter/run/eval.hero"
     h2_own2 = t5;
-#line 13471 "main.c"
+#line 13481 "main.c"
     h_0opt_1be8f195_release(&t7);
     h_0opt_1be8f195_retain(&t5);
     h_runvalue_Frame_release(&h1_own1);
@@ -13477,7 +13487,7 @@ bb0:
 
 #line 81 "examples/interpreter/run/eval.hero"
 h_0opt_1be8f195 h_runeval_body(h_syntree_Tree h0_nodes, HeroArrayHeader * h1_ids, h_runvalue_Frame h2_f) {
-#line 13481 "main.c"
+#line 13491 "main.c"
     h_runvalue_Frame h3_walking = {0};
     HeroArrayHeader * h4_xs0 = {0};
     int64_t h5_i0;
@@ -13539,21 +13549,21 @@ bb0:
     t1 = h2_f;
 #line 82 "examples/interpreter/run/eval.hero"
     t37 = h3_walking;
-#line 13543 "main.c"
+#line 13553 "main.c"
     h_runvalue_Frame_retain(&t1);
 #line 82 "examples/interpreter/run/eval.hero"
     h3_walking = t1;
-#line 13547 "main.c"
+#line 13557 "main.c"
     h_runvalue_Frame_release(&t37);
 #line 84 "examples/interpreter/run/eval.hero"
     t2 = h1_ids;
 #line 84 "examples/interpreter/run/eval.hero"
     t38 = h4_xs0;
-#line 13553 "main.c"
+#line 13563 "main.c"
     hero_array_incref(t2);
 #line 84 "examples/interpreter/run/eval.hero"
     h4_xs0 = t2;
-#line 13557 "main.c"
+#line 13567 "main.c"
     hero_array_decref(t38);
 #line 84 "examples/interpreter/run/eval.hero"
     t3 = INT64_C(0);
@@ -13606,7 +13616,7 @@ bb3:
 bb4:
 #line 89 "examples/interpreter/run/eval.hero"
     t34 = h3_walking;
-#line 13610 "main.c"
+#line 13620 "main.c"
     h_runvalue_Frame_retain(&t34);
 #line 89 "examples/interpreter/run/eval.hero"
     t35 = (h_0opt_1be8f195){.tag = INT64_C(0), .as.ok = t34};
@@ -13614,7 +13624,7 @@ bb4:
     t39 = h10_own10;
 #line 89 "examples/interpreter/run/eval.hero"
     h10_own10 = t35;
-#line 13618 "main.c"
+#line 13628 "main.c"
     h_0opt_1be8f195_release(&t39);
 #line 89 "examples/interpreter/run/eval.hero"
     h9_ret0 = t35;
@@ -13634,15 +13644,15 @@ bb5:
     t40 = h11_own11;
 #line 87 "examples/interpreter/run/eval.hero"
     h11_own11 = t21;
-#line 13638 "main.c"
+#line 13648 "main.c"
     h_0opt_1be8f195_release(&t40);
 #line 87 "examples/interpreter/run/eval.hero"
     t41 = h8_f0;
-#line 13642 "main.c"
+#line 13652 "main.c"
     h_0opt_1be8f195_retain(&t21);
 #line 87 "examples/interpreter/run/eval.hero"
     h8_f0 = t21;
-#line 13646 "main.c"
+#line 13656 "main.c"
     h_0opt_1be8f195_release(&t41);
 #line 87 "examples/interpreter/run/eval.hero"
     t22 = h8_f0;
@@ -13673,7 +13683,7 @@ bb7:
 #line 85 "examples/interpreter/run/eval.hero"
 bb8:
     t16 = h3_walking;
-#line 13677 "main.c"
+#line 13687 "main.c"
     h_runvalue_Frame_retain(&t16);
 #line 86 "examples/interpreter/run/eval.hero"
     t17 = (h_0opt_1be8f195){.tag = INT64_C(0), .as.ok = t16};
@@ -13681,7 +13691,7 @@ bb8:
     t42 = h12_own12;
 #line 86 "examples/interpreter/run/eval.hero"
     h12_own12 = t17;
-#line 13685 "main.c"
+#line 13695 "main.c"
     h_0opt_1be8f195_release(&t42);
 #line 86 "examples/interpreter/run/eval.hero"
     h9_ret0 = t17;
@@ -13698,11 +13708,11 @@ bb10:
     t30 = t29.as.ok;
 #line 87 "examples/interpreter/run/eval.hero"
     t43 = h3_walking;
-#line 13702 "main.c"
+#line 13712 "main.c"
     h_runvalue_Frame_retain(&t30);
 #line 87 "examples/interpreter/run/eval.hero"
     h3_walking = t30;
-#line 13706 "main.c"
+#line 13716 "main.c"
     h_runvalue_Frame_release(&t43);
     goto bb3;
 bb11:
@@ -13710,7 +13720,7 @@ bb11:
     t26 = h8_f0;
 #line 87 "examples/interpreter/run/eval.hero"
     t27 = t26.as.err;
-#line 13714 "main.c"
+#line 13724 "main.c"
     hero_failure_retain(&t27);
 #line 87 "examples/interpreter/run/eval.hero"
     t28 = (h_0opt_1be8f195){.tag = INT64_C(1), .as.err = t27};
@@ -13718,7 +13728,7 @@ bb11:
     t44 = h13_own13;
 #line 87 "examples/interpreter/run/eval.hero"
     h13_own13 = t28;
-#line 13722 "main.c"
+#line 13732 "main.c"
     h_0opt_1be8f195_release(&t44);
 #line 87 "examples/interpreter/run/eval.hero"
     h9_ret0 = t28;
@@ -13726,7 +13736,7 @@ bb11:
     goto bb12;
 #line 87 "examples/interpreter/run/eval.hero"
 bb12:
-#line 13730 "main.c"
+#line 13740 "main.c"
     t36 = h9_ret0;
     h_0opt_1be8f195_retain(&t36);
     h_runvalue_Frame_release(&h3_walking);
@@ -13741,7 +13751,7 @@ bb12:
 
 #line 91 "examples/interpreter/run/eval.hero"
 h_0opt_1be8f195 h_runeval_one(h_syntree_Tree h0_nodes, int64_t h1_id, h_runvalue_Frame h2_f) {
-#line 13745 "main.c"
+#line 13755 "main.c"
     h_syntree_Stmt h3_s0 = {0};
     h_0opt_1be8f195 h4_r0 = {0};
     h_syntree_Stmt_c_bind h5_b = {0};
@@ -13867,11 +13877,11 @@ bb0:
     t4 = ((void)((t2 == NULL || t3 < 0 || t3 >= t2->len) ? ((void)hero_array_at(t2, t3), hero_unreachable()) : (void)0), (void)(t2->elem->size != sizeof(h_syntree_Stmt) ? hero_unreachable() : (void)0), ((h_syntree_Stmt const *)(const void *)(t2 + 1))[t3]);
 #line 92 "examples/interpreter/run/eval.hero"
     t73 = h3_s0;
-#line 13871 "main.c"
+#line 13881 "main.c"
     h_syntree_Stmt_retain(&t4);
 #line 92 "examples/interpreter/run/eval.hero"
     h3_s0 = t4;
-#line 13875 "main.c"
+#line 13885 "main.c"
     h_syntree_Stmt_release(&t73);
 #line 92 "examples/interpreter/run/eval.hero"
     t5 = h3_s0;
@@ -13903,7 +13913,7 @@ bb0:
 bb1:
 #line 92 "examples/interpreter/run/eval.hero"
     t72 = h4_r0;
-#line 13907 "main.c"
+#line 13917 "main.c"
     h_0opt_1be8f195_retain(&t72);
     h_syntree_Stmt_release(&h3_s0);
     h_0opt_1be8f195_release(&h4_r0);
@@ -13928,11 +13938,11 @@ bb2:
     t8 = t7.as.c_bind;
 #line 93 "examples/interpreter/run/eval.hero"
     t74 = h5_b;
-#line 13932 "main.c"
+#line 13942 "main.c"
     h_syntree_Stmt_c_bind_retain(&t8);
 #line 93 "examples/interpreter/run/eval.hero"
     h5_b = t8;
-#line 13936 "main.c"
+#line 13946 "main.c"
     h_syntree_Stmt_c_bind_release(&t74);
 #line 93 "examples/interpreter/run/eval.hero"
     t9 = h0_nodes;
@@ -13952,15 +13962,15 @@ bb2:
     t75 = h13_own13;
 #line 93 "examples/interpreter/run/eval.hero"
     h13_own13 = t15;
-#line 13956 "main.c"
+#line 13966 "main.c"
     h_0opt_1be8f195_release(&t75);
 #line 92 "examples/interpreter/run/eval.hero"
     t76 = h4_r0;
-#line 13960 "main.c"
+#line 13970 "main.c"
     h_0opt_1be8f195_retain(&t15);
 #line 92 "examples/interpreter/run/eval.hero"
     h4_r0 = t15;
-#line 13964 "main.c"
+#line 13974 "main.c"
     h_0opt_1be8f195_release(&t76);
     goto bb1;
 bb3:
@@ -13984,15 +13994,15 @@ bb3:
     t77 = h14_own14;
 #line 94 "examples/interpreter/run/eval.hero"
     h14_own14 = t22;
-#line 13988 "main.c"
+#line 13998 "main.c"
     h_0opt_1be8f195_release(&t77);
 #line 92 "examples/interpreter/run/eval.hero"
     t78 = h4_r0;
-#line 13992 "main.c"
+#line 14002 "main.c"
     h_0opt_1be8f195_retain(&t22);
 #line 92 "examples/interpreter/run/eval.hero"
     h4_r0 = t22;
-#line 13996 "main.c"
+#line 14006 "main.c"
     h_0opt_1be8f195_release(&t78);
     goto bb1;
 bb4:
@@ -14002,11 +14012,11 @@ bb4:
     t24 = t23.as.c_when;
 #line 95 "examples/interpreter/run/eval.hero"
     t79 = h7_w;
-#line 14006 "main.c"
+#line 14016 "main.c"
     h_syntree_Stmt_c_when_retain(&t24);
 #line 95 "examples/interpreter/run/eval.hero"
     h7_w = t24;
-#line 14010 "main.c"
+#line 14020 "main.c"
     h_syntree_Stmt_c_when_release(&t79);
 #line 95 "examples/interpreter/run/eval.hero"
     t25 = h0_nodes;
@@ -14030,15 +14040,15 @@ bb4:
     t80 = h15_own15;
 #line 95 "examples/interpreter/run/eval.hero"
     h15_own15 = t33;
-#line 14034 "main.c"
+#line 14044 "main.c"
     h_0opt_1be8f195_release(&t80);
 #line 92 "examples/interpreter/run/eval.hero"
     t81 = h4_r0;
-#line 14038 "main.c"
+#line 14048 "main.c"
     h_0opt_1be8f195_retain(&t33);
 #line 92 "examples/interpreter/run/eval.hero"
     h4_r0 = t33;
-#line 14042 "main.c"
+#line 14052 "main.c"
     h_0opt_1be8f195_release(&t81);
     goto bb1;
 bb5:
@@ -14048,11 +14058,11 @@ bb5:
     t35 = t34.as.c_while_loop;
 #line 96 "examples/interpreter/run/eval.hero"
     t82 = h8_w;
-#line 14052 "main.c"
+#line 14062 "main.c"
     h_syntree_Stmt_c_while_loop_retain(&t35);
 #line 96 "examples/interpreter/run/eval.hero"
     h8_w = t35;
-#line 14056 "main.c"
+#line 14066 "main.c"
     h_syntree_Stmt_c_while_loop_release(&t82);
 #line 96 "examples/interpreter/run/eval.hero"
     t36 = h0_nodes;
@@ -14072,15 +14082,15 @@ bb5:
     t83 = h16_own16;
 #line 96 "examples/interpreter/run/eval.hero"
     h16_own16 = t42;
-#line 14076 "main.c"
+#line 14086 "main.c"
     h_0opt_1be8f195_release(&t83);
 #line 92 "examples/interpreter/run/eval.hero"
     t84 = h4_r0;
-#line 14080 "main.c"
+#line 14090 "main.c"
     h_0opt_1be8f195_retain(&t42);
 #line 92 "examples/interpreter/run/eval.hero"
     h4_r0 = t42;
-#line 14084 "main.c"
+#line 14094 "main.c"
     h_0opt_1be8f195_release(&t84);
     goto bb1;
 bb6:
@@ -14104,15 +14114,15 @@ bb6:
     t85 = h17_own17;
 #line 97 "examples/interpreter/run/eval.hero"
     h17_own17 = t49;
-#line 14108 "main.c"
+#line 14118 "main.c"
     h_0opt_1be8f195_release(&t85);
 #line 92 "examples/interpreter/run/eval.hero"
     t86 = h4_r0;
-#line 14112 "main.c"
+#line 14122 "main.c"
     h_0opt_1be8f195_retain(&t49);
 #line 92 "examples/interpreter/run/eval.hero"
     h4_r0 = t49;
-#line 14116 "main.c"
+#line 14126 "main.c"
     h_0opt_1be8f195_release(&t86);
     goto bb1;
 bb7:
@@ -14136,15 +14146,15 @@ bb7:
     t87 = h18_own18;
 #line 98 "examples/interpreter/run/eval.hero"
     h18_own18 = t56;
-#line 14140 "main.c"
+#line 14150 "main.c"
     h_0opt_1be8f195_release(&t87);
 #line 92 "examples/interpreter/run/eval.hero"
     t88 = h4_r0;
-#line 14144 "main.c"
+#line 14154 "main.c"
     h_0opt_1be8f195_retain(&t56);
 #line 92 "examples/interpreter/run/eval.hero"
     h4_r0 = t56;
-#line 14148 "main.c"
+#line 14158 "main.c"
     h_0opt_1be8f195_release(&t88);
     goto bb1;
 bb8:
@@ -14154,11 +14164,11 @@ bb8:
     t58 = t57.as.c_define;
 #line 99 "examples/interpreter/run/eval.hero"
     t89 = h11_d;
-#line 14158 "main.c"
+#line 14168 "main.c"
     h_syntree_Stmt_c_define_retain(&t58);
 #line 99 "examples/interpreter/run/eval.hero"
     h11_d = t58;
-#line 14162 "main.c"
+#line 14172 "main.c"
     h_syntree_Stmt_c_define_release(&t89);
 #line 99 "examples/interpreter/run/eval.hero"
     t59 = h2_f;
@@ -14174,7 +14184,7 @@ bb8:
     t90 = h19_own19;
 #line 99 "examples/interpreter/run/eval.hero"
     h19_own19 = t63;
-#line 14178 "main.c"
+#line 14188 "main.c"
     h_runvalue_Frame_release(&t90);
     h_runvalue_Frame_retain(&t63);
 #line 99 "examples/interpreter/run/eval.hero"
@@ -14183,15 +14193,15 @@ bb8:
     t91 = h20_own20;
 #line 99 "examples/interpreter/run/eval.hero"
     h20_own20 = t64;
-#line 14187 "main.c"
+#line 14197 "main.c"
     h_0opt_1be8f195_release(&t91);
 #line 92 "examples/interpreter/run/eval.hero"
     t92 = h4_r0;
-#line 14191 "main.c"
+#line 14201 "main.c"
     h_0opt_1be8f195_retain(&t64);
 #line 92 "examples/interpreter/run/eval.hero"
     h4_r0 = t64;
-#line 14195 "main.c"
+#line 14205 "main.c"
     h_0opt_1be8f195_release(&t92);
     goto bb1;
 bb9:
@@ -14215,22 +14225,22 @@ bb9:
     t93 = h21_own21;
 #line 100 "examples/interpreter/run/eval.hero"
     h21_own21 = t71;
-#line 14219 "main.c"
+#line 14229 "main.c"
     h_0opt_1be8f195_release(&t93);
 #line 92 "examples/interpreter/run/eval.hero"
     t94 = h4_r0;
-#line 14223 "main.c"
+#line 14233 "main.c"
     h_0opt_1be8f195_retain(&t71);
 #line 92 "examples/interpreter/run/eval.hero"
     h4_r0 = t71;
-#line 14227 "main.c"
+#line 14237 "main.c"
     h_0opt_1be8f195_release(&t94);
     goto bb1;
 }
 
 #line 102 "examples/interpreter/run/eval.hero"
 h_0opt_1be8f195 h_runeval_bound(h_syntree_Tree h0_nodes, HeroStr h1_name, int64_t h2_at, h_runvalue_Frame h3_f) {
-#line 14234 "main.c"
+#line 14244 "main.c"
     h_0opt_4d124e2a h4_f0 = {0};
     h_runexpr_Answer h5_step = {0};
     h_runvalue_Frame h6_home = {0};
@@ -14282,15 +14292,15 @@ bb0:
     t23 = h8_own8;
 #line 103 "examples/interpreter/run/eval.hero"
     h8_own8 = t5;
-#line 14286 "main.c"
+#line 14296 "main.c"
     h_0opt_4d124e2a_release(&t23);
 #line 103 "examples/interpreter/run/eval.hero"
     t24 = h4_f0;
-#line 14290 "main.c"
+#line 14300 "main.c"
     h_0opt_4d124e2a_retain(&t5);
 #line 103 "examples/interpreter/run/eval.hero"
     h4_f0 = t5;
-#line 14294 "main.c"
+#line 14304 "main.c"
     h_0opt_4d124e2a_release(&t24);
 #line 103 "examples/interpreter/run/eval.hero"
     t6 = h4_f0;
@@ -14310,11 +14320,11 @@ bb1:
     t14 = t13.as.ok;
 #line 103 "examples/interpreter/run/eval.hero"
     t25 = h5_step;
-#line 14314 "main.c"
+#line 14324 "main.c"
     h_runexpr_Answer_retain(&t14);
 #line 103 "examples/interpreter/run/eval.hero"
     h5_step = t14;
-#line 14318 "main.c"
+#line 14328 "main.c"
     h_runexpr_Answer_release(&t25);
 #line 104 "examples/interpreter/run/eval.hero"
     t15 = h5_step;
@@ -14322,11 +14332,11 @@ bb1:
     t16 = t15.f_frame;
 #line 104 "examples/interpreter/run/eval.hero"
     t26 = h6_home;
-#line 14326 "main.c"
+#line 14336 "main.c"
     h_runvalue_Frame_retain(&t16);
 #line 104 "examples/interpreter/run/eval.hero"
     h6_home = t16;
-#line 14330 "main.c"
+#line 14340 "main.c"
     h_runvalue_Frame_release(&t26);
 #line 105 "examples/interpreter/run/eval.hero"
     t17 = h1_name;
@@ -14334,12 +14344,12 @@ bb1:
     t18 = h5_step;
 #line 105 "examples/interpreter/run/eval.hero"
     t19 = t18.f_got;
-#line 14338 "main.c"
+#line 14348 "main.c"
     h_runvalue_Value_retain(&t19);
 #line 105 "examples/interpreter/run/eval.hero"
     hero_map_set(&(h6_home.f_vars), &t17, &t19);
     t20 = h6_home;
-#line 14343 "main.c"
+#line 14353 "main.c"
     h_runvalue_Frame_retain(&t20);
 #line 106 "examples/interpreter/run/eval.hero"
     t21 = (h_0opt_1be8f195){.tag = INT64_C(0), .as.ok = t20};
@@ -14347,7 +14357,7 @@ bb1:
     t27 = h9_own9;
 #line 106 "examples/interpreter/run/eval.hero"
     h9_own9 = t21;
-#line 14351 "main.c"
+#line 14361 "main.c"
     h_0opt_1be8f195_release(&t27);
 #line 106 "examples/interpreter/run/eval.hero"
     h7_ret0 = t21;
@@ -14359,7 +14369,7 @@ bb2:
     t10 = h4_f0;
 #line 103 "examples/interpreter/run/eval.hero"
     t11 = t10.as.err;
-#line 14363 "main.c"
+#line 14373 "main.c"
     hero_failure_retain(&t11);
 #line 103 "examples/interpreter/run/eval.hero"
     t12 = (h_0opt_1be8f195){.tag = INT64_C(1), .as.err = t11};
@@ -14367,7 +14377,7 @@ bb2:
     t28 = h10_own10;
 #line 103 "examples/interpreter/run/eval.hero"
     h10_own10 = t12;
-#line 14371 "main.c"
+#line 14381 "main.c"
     h_0opt_1be8f195_release(&t28);
 #line 103 "examples/interpreter/run/eval.hero"
     h7_ret0 = t12;
@@ -14375,7 +14385,7 @@ bb2:
     goto bb3;
 #line 103 "examples/interpreter/run/eval.hero"
 bb3:
-#line 14379 "main.c"
+#line 14389 "main.c"
     t22 = h7_ret0;
     h_0opt_1be8f195_retain(&t22);
     h_0opt_4d124e2a_release(&h4_f0);
@@ -14389,7 +14399,7 @@ bb3:
 
 #line 108 "examples/interpreter/run/eval.hero"
 h_0opt_1be8f195 h_runeval_said(h_syntree_Tree h0_nodes, int64_t h1_at, h_runvalue_Frame h2_f) {
-#line 14393 "main.c"
+#line 14403 "main.c"
     h_0opt_4d124e2a h3_f0 = {0};
     h_runexpr_Answer h4_step = {0};
     h_runvalue_Frame h5_home = {0};
@@ -14449,15 +14459,15 @@ bb0:
     t26 = h7_own7;
 #line 109 "examples/interpreter/run/eval.hero"
     h7_own7 = t5;
-#line 14453 "main.c"
+#line 14463 "main.c"
     h_0opt_4d124e2a_release(&t26);
 #line 109 "examples/interpreter/run/eval.hero"
     t27 = h3_f0;
-#line 14457 "main.c"
+#line 14467 "main.c"
     h_0opt_4d124e2a_retain(&t5);
 #line 109 "examples/interpreter/run/eval.hero"
     h3_f0 = t5;
-#line 14461 "main.c"
+#line 14471 "main.c"
     h_0opt_4d124e2a_release(&t27);
 #line 109 "examples/interpreter/run/eval.hero"
     t6 = h3_f0;
@@ -14477,11 +14487,11 @@ bb1:
     t14 = t13.as.ok;
 #line 109 "examples/interpreter/run/eval.hero"
     t28 = h4_step;
-#line 14481 "main.c"
+#line 14491 "main.c"
     h_runexpr_Answer_retain(&t14);
 #line 109 "examples/interpreter/run/eval.hero"
     h4_step = t14;
-#line 14485 "main.c"
+#line 14495 "main.c"
     h_runexpr_Answer_release(&t28);
 #line 110 "examples/interpreter/run/eval.hero"
     t15 = h4_step;
@@ -14489,11 +14499,11 @@ bb1:
     t16 = t15.f_frame;
 #line 110 "examples/interpreter/run/eval.hero"
     t29 = h5_home;
-#line 14493 "main.c"
+#line 14503 "main.c"
     h_runvalue_Frame_retain(&t16);
 #line 110 "examples/interpreter/run/eval.hero"
     h5_home = t16;
-#line 14497 "main.c"
+#line 14507 "main.c"
     h_runvalue_Frame_release(&t29);
 #line 111 "examples/interpreter/run/eval.hero"
     t17 = h5_home;
@@ -14509,7 +14519,7 @@ bb1:
     t30 = h8_own8;
 #line 111 "examples/interpreter/run/eval.hero"
     h8_own8 = t21;
-#line 14513 "main.c"
+#line 14523 "main.c"
     hero_str_decref(t30);
 #line 111 "examples/interpreter/run/eval.hero"
     t22 = hero_array_push(t18, &t21);
@@ -14517,19 +14527,19 @@ bb1:
     t31 = h9_own9;
 #line 111 "examples/interpreter/run/eval.hero"
     h9_own9 = t22;
-#line 14521 "main.c"
+#line 14531 "main.c"
     hero_array_decref(t31);
 #line 111 "examples/interpreter/run/eval.hero"
     t32 = h5_home.f_lines;
-#line 14525 "main.c"
+#line 14535 "main.c"
     hero_array_incref(t22);
 #line 111 "examples/interpreter/run/eval.hero"
     h5_home.f_lines = t22;
-#line 14529 "main.c"
+#line 14539 "main.c"
     hero_array_decref(t32);
 #line 112 "examples/interpreter/run/eval.hero"
     t23 = h5_home;
-#line 14533 "main.c"
+#line 14543 "main.c"
     h_runvalue_Frame_retain(&t23);
 #line 112 "examples/interpreter/run/eval.hero"
     t24 = (h_0opt_1be8f195){.tag = INT64_C(0), .as.ok = t23};
@@ -14537,7 +14547,7 @@ bb1:
     t33 = h10_own10;
 #line 112 "examples/interpreter/run/eval.hero"
     h10_own10 = t24;
-#line 14541 "main.c"
+#line 14551 "main.c"
     h_0opt_1be8f195_release(&t33);
 #line 112 "examples/interpreter/run/eval.hero"
     h6_ret0 = t24;
@@ -14549,7 +14559,7 @@ bb2:
     t10 = h3_f0;
 #line 109 "examples/interpreter/run/eval.hero"
     t11 = t10.as.err;
-#line 14553 "main.c"
+#line 14563 "main.c"
     hero_failure_retain(&t11);
 #line 109 "examples/interpreter/run/eval.hero"
     t12 = (h_0opt_1be8f195){.tag = INT64_C(1), .as.err = t11};
@@ -14557,7 +14567,7 @@ bb2:
     t34 = h11_own11;
 #line 109 "examples/interpreter/run/eval.hero"
     h11_own11 = t12;
-#line 14561 "main.c"
+#line 14571 "main.c"
     h_0opt_1be8f195_release(&t34);
 #line 109 "examples/interpreter/run/eval.hero"
     h6_ret0 = t12;
@@ -14565,7 +14575,7 @@ bb2:
     goto bb3;
 #line 109 "examples/interpreter/run/eval.hero"
 bb3:
-#line 14569 "main.c"
+#line 14579 "main.c"
     t25 = h6_ret0;
     h_0opt_1be8f195_retain(&t25);
     h_0opt_4d124e2a_release(&h3_f0);
@@ -14581,7 +14591,7 @@ bb3:
 
 #line 114 "examples/interpreter/run/eval.hero"
 h_0opt_1be8f195 h_runeval_chosen(h_syntree_Tree h0_nodes, int64_t h1_at, HeroArrayHeader * h2_then, HeroArrayHeader * h3_otherwise, h_runvalue_Frame h4_f) {
-#line 14585 "main.c"
+#line 14595 "main.c"
     h_0opt_4d124e2a h5_f0 = {0};
     h_runexpr_Answer h6_step = {0};
     h_0opt_473cb9ae h7_f1 = {0};
@@ -14654,15 +14664,15 @@ bb0:
     t38 = h9_own9;
 #line 115 "examples/interpreter/run/eval.hero"
     h9_own9 = t5;
-#line 14658 "main.c"
+#line 14668 "main.c"
     h_0opt_4d124e2a_release(&t38);
 #line 115 "examples/interpreter/run/eval.hero"
     t39 = h5_f0;
-#line 14662 "main.c"
+#line 14672 "main.c"
     h_0opt_4d124e2a_retain(&t5);
 #line 115 "examples/interpreter/run/eval.hero"
     h5_f0 = t5;
-#line 14666 "main.c"
+#line 14676 "main.c"
     h_0opt_4d124e2a_release(&t39);
 #line 115 "examples/interpreter/run/eval.hero"
     t6 = h5_f0;
@@ -14682,11 +14692,11 @@ bb1:
     t14 = t13.as.ok;
 #line 115 "examples/interpreter/run/eval.hero"
     t40 = h6_step;
-#line 14686 "main.c"
+#line 14696 "main.c"
     h_runexpr_Answer_retain(&t14);
 #line 115 "examples/interpreter/run/eval.hero"
     h6_step = t14;
-#line 14690 "main.c"
+#line 14700 "main.c"
     h_runexpr_Answer_release(&t40);
 #line 117 "examples/interpreter/run/eval.hero"
     t15 = h6_step;
@@ -14698,15 +14708,15 @@ bb1:
     t41 = h10_own10;
 #line 117 "examples/interpreter/run/eval.hero"
     h10_own10 = t17;
-#line 14702 "main.c"
+#line 14712 "main.c"
     h_0opt_473cb9ae_release(&t41);
 #line 117 "examples/interpreter/run/eval.hero"
     t42 = h7_f1;
-#line 14706 "main.c"
+#line 14716 "main.c"
     h_0opt_473cb9ae_retain(&t17);
 #line 117 "examples/interpreter/run/eval.hero"
     h7_f1 = t17;
-#line 14710 "main.c"
+#line 14720 "main.c"
     h_0opt_473cb9ae_release(&t42);
 #line 117 "examples/interpreter/run/eval.hero"
     t18 = h7_f1;
@@ -14724,7 +14734,7 @@ bb2:
     t10 = h5_f0;
 #line 115 "examples/interpreter/run/eval.hero"
     t11 = t10.as.err;
-#line 14728 "main.c"
+#line 14738 "main.c"
     hero_failure_retain(&t11);
 #line 115 "examples/interpreter/run/eval.hero"
     t12 = (h_0opt_1be8f195){.tag = INT64_C(1), .as.err = t11};
@@ -14732,7 +14742,7 @@ bb2:
     t43 = h11_own11;
 #line 115 "examples/interpreter/run/eval.hero"
     h11_own11 = t12;
-#line 14736 "main.c"
+#line 14746 "main.c"
     h_0opt_1be8f195_release(&t43);
 #line 115 "examples/interpreter/run/eval.hero"
     h8_ret0 = t12;
@@ -14754,7 +14764,7 @@ bb3:
     t44 = h12_own12;
 #line 120 "examples/interpreter/run/eval.hero"
     h12_own12 = t36;
-#line 14758 "main.c"
+#line 14768 "main.c"
     h_0opt_1be8f195_release(&t44);
 #line 120 "examples/interpreter/run/eval.hero"
     h8_ret0 = t36;
@@ -14774,7 +14784,7 @@ bb5:
     t22 = h7_f1;
 #line 117 "examples/interpreter/run/eval.hero"
     t23 = t22.as.err;
-#line 14778 "main.c"
+#line 14788 "main.c"
     hero_failure_retain(&t23);
 #line 117 "examples/interpreter/run/eval.hero"
     t24 = (h_0opt_1be8f195){.tag = INT64_C(1), .as.err = t23};
@@ -14782,7 +14792,7 @@ bb5:
     t45 = h13_own13;
 #line 117 "examples/interpreter/run/eval.hero"
     h13_own13 = t24;
-#line 14786 "main.c"
+#line 14796 "main.c"
     h_0opt_1be8f195_release(&t45);
 #line 117 "examples/interpreter/run/eval.hero"
     h8_ret0 = t24;
@@ -14803,7 +14813,7 @@ bb6:
     t46 = h14_own14;
 #line 118 "examples/interpreter/run/eval.hero"
     h14_own14 = t31;
-#line 14807 "main.c"
+#line 14817 "main.c"
     h_0opt_1be8f195_release(&t46);
 #line 118 "examples/interpreter/run/eval.hero"
     h8_ret0 = t31;
@@ -14815,7 +14825,7 @@ bb7:
     goto bb3;
 #line 118 "examples/interpreter/run/eval.hero"
 bb8:
-#line 14819 "main.c"
+#line 14829 "main.c"
     t37 = h8_ret0;
     h_0opt_1be8f195_retain(&t37);
     h_0opt_4d124e2a_release(&h5_f0);
@@ -14832,7 +14842,7 @@ bb8:
 
 #line 122 "examples/interpreter/run/eval.hero"
 h_0opt_1be8f195 h_runeval_looped(h_syntree_Tree h0_nodes, int64_t h1_at, HeroArrayHeader * h2_inside, h_runvalue_Frame h3_f) {
-#line 14836 "main.c"
+#line 14846 "main.c"
     h_runvalue_Frame h4_walking = {0};
     h_0opt_4d124e2a h5_f0 = {0};
     h_runexpr_Answer h6_step = {0};
@@ -14927,11 +14937,11 @@ bb0:
     t1 = h3_f;
 #line 123 "examples/interpreter/run/eval.hero"
     t57 = h4_walking;
-#line 14931 "main.c"
+#line 14941 "main.c"
     h_runvalue_Frame_retain(&t1);
 #line 123 "examples/interpreter/run/eval.hero"
     h4_walking = t1;
-#line 14935 "main.c"
+#line 14945 "main.c"
     h_runvalue_Frame_release(&t57);
     goto bb1;
 bb1:
@@ -14954,15 +14964,15 @@ bb2:
     t58 = h11_own11;
 #line 126 "examples/interpreter/run/eval.hero"
     h11_own11 = t7;
-#line 14958 "main.c"
+#line 14968 "main.c"
     h_0opt_4d124e2a_release(&t58);
 #line 126 "examples/interpreter/run/eval.hero"
     t59 = h5_f0;
-#line 14962 "main.c"
+#line 14972 "main.c"
     h_0opt_4d124e2a_retain(&t7);
 #line 126 "examples/interpreter/run/eval.hero"
     h5_f0 = t7;
-#line 14966 "main.c"
+#line 14976 "main.c"
     h_0opt_4d124e2a_release(&t59);
 #line 126 "examples/interpreter/run/eval.hero"
     t8 = h5_f0;
@@ -14978,7 +14988,7 @@ bb2:
 bb3:
 #line 136 "examples/interpreter/run/eval.hero"
     t54 = h4_walking;
-#line 14982 "main.c"
+#line 14992 "main.c"
     h_runvalue_Frame_retain(&t54);
 #line 136 "examples/interpreter/run/eval.hero"
     t55 = (h_0opt_1be8f195){.tag = INT64_C(0), .as.ok = t54};
@@ -14986,7 +14996,7 @@ bb3:
     t60 = h12_own12;
 #line 136 "examples/interpreter/run/eval.hero"
     h12_own12 = t55;
-#line 14990 "main.c"
+#line 15000 "main.c"
     h_0opt_1be8f195_release(&t60);
 #line 136 "examples/interpreter/run/eval.hero"
     h10_ret0 = t55;
@@ -15000,11 +15010,11 @@ bb4:
     t16 = t15.as.ok;
 #line 126 "examples/interpreter/run/eval.hero"
     t61 = h6_step;
-#line 15004 "main.c"
+#line 15014 "main.c"
     h_runexpr_Answer_retain(&t16);
 #line 126 "examples/interpreter/run/eval.hero"
     h6_step = t16;
-#line 15008 "main.c"
+#line 15018 "main.c"
     h_runexpr_Answer_release(&t61);
 #line 127 "examples/interpreter/run/eval.hero"
     t17 = h6_step;
@@ -15012,11 +15022,11 @@ bb4:
     t18 = t17.f_frame;
 #line 127 "examples/interpreter/run/eval.hero"
     t62 = h4_walking;
-#line 15016 "main.c"
+#line 15026 "main.c"
     h_runvalue_Frame_retain(&t18);
 #line 127 "examples/interpreter/run/eval.hero"
     h4_walking = t18;
-#line 15020 "main.c"
+#line 15030 "main.c"
     h_runvalue_Frame_release(&t62);
 #line 129 "examples/interpreter/run/eval.hero"
     t19 = h6_step;
@@ -15028,15 +15038,15 @@ bb4:
     t63 = h13_own13;
 #line 129 "examples/interpreter/run/eval.hero"
     h13_own13 = t21;
-#line 15032 "main.c"
+#line 15042 "main.c"
     h_0opt_473cb9ae_release(&t63);
 #line 129 "examples/interpreter/run/eval.hero"
     t64 = h7_f1;
-#line 15036 "main.c"
+#line 15046 "main.c"
     h_0opt_473cb9ae_retain(&t21);
 #line 129 "examples/interpreter/run/eval.hero"
     h7_f1 = t21;
-#line 15040 "main.c"
+#line 15050 "main.c"
     h_0opt_473cb9ae_release(&t64);
 #line 129 "examples/interpreter/run/eval.hero"
     t22 = h7_f1;
@@ -15054,7 +15064,7 @@ bb5:
     t12 = h5_f0;
 #line 126 "examples/interpreter/run/eval.hero"
     t13 = t12.as.err;
-#line 15058 "main.c"
+#line 15068 "main.c"
     hero_failure_retain(&t13);
 #line 126 "examples/interpreter/run/eval.hero"
     t14 = (h_0opt_1be8f195){.tag = INT64_C(1), .as.err = t13};
@@ -15062,7 +15072,7 @@ bb5:
     t65 = h14_own14;
 #line 126 "examples/interpreter/run/eval.hero"
     h14_own14 = t14;
-#line 15066 "main.c"
+#line 15076 "main.c"
     h_0opt_1be8f195_release(&t65);
 #line 126 "examples/interpreter/run/eval.hero"
     h10_ret0 = t14;
@@ -15082,15 +15092,15 @@ bb6:
     t66 = h15_own15;
 #line 131 "examples/interpreter/run/eval.hero"
     h15_own15 = t37;
-#line 15086 "main.c"
+#line 15096 "main.c"
     h_0opt_1be8f195_release(&t66);
 #line 131 "examples/interpreter/run/eval.hero"
     t67 = h8_f2;
-#line 15090 "main.c"
+#line 15100 "main.c"
     h_0opt_1be8f195_retain(&t37);
 #line 131 "examples/interpreter/run/eval.hero"
     h8_f2 = t37;
-#line 15094 "main.c"
+#line 15104 "main.c"
     h_0opt_1be8f195_release(&t67);
 #line 131 "examples/interpreter/run/eval.hero"
     t38 = h8_f2;
@@ -15118,7 +15128,7 @@ bb8:
     t26 = h7_f1;
 #line 129 "examples/interpreter/run/eval.hero"
     t27 = t26.as.err;
-#line 15122 "main.c"
+#line 15132 "main.c"
     hero_failure_retain(&t27);
 #line 129 "examples/interpreter/run/eval.hero"
     t28 = (h_0opt_1be8f195){.tag = INT64_C(1), .as.err = t27};
@@ -15126,7 +15136,7 @@ bb8:
     t68 = h16_own16;
 #line 129 "examples/interpreter/run/eval.hero"
     h16_own16 = t28;
-#line 15130 "main.c"
+#line 15140 "main.c"
     h_0opt_1be8f195_release(&t68);
 #line 129 "examples/interpreter/run/eval.hero"
     h10_ret0 = t28;
@@ -15135,7 +15145,7 @@ bb8:
 #line 129 "examples/interpreter/run/eval.hero"
 bb9:
     t32 = h4_walking;
-#line 15139 "main.c"
+#line 15149 "main.c"
     h_runvalue_Frame_retain(&t32);
 #line 130 "examples/interpreter/run/eval.hero"
     t33 = (h_0opt_1be8f195){.tag = INT64_C(0), .as.ok = t32};
@@ -15143,7 +15153,7 @@ bb9:
     t69 = h17_own17;
 #line 130 "examples/interpreter/run/eval.hero"
     h17_own17 = t33;
-#line 15147 "main.c"
+#line 15157 "main.c"
     h_0opt_1be8f195_release(&t69);
 #line 130 "examples/interpreter/run/eval.hero"
     h10_ret0 = t33;
@@ -15160,11 +15170,11 @@ bb11:
     t46 = t45.as.ok;
 #line 131 "examples/interpreter/run/eval.hero"
     t70 = h4_walking;
-#line 15164 "main.c"
+#line 15174 "main.c"
     h_runvalue_Frame_retain(&t46);
 #line 131 "examples/interpreter/run/eval.hero"
     h4_walking = t46;
-#line 15168 "main.c"
+#line 15178 "main.c"
     h_runvalue_Frame_release(&t70);
 #line 133 "examples/interpreter/run/eval.hero"
     t47 = h4_walking;
@@ -15180,7 +15190,7 @@ bb12:
     t42 = h8_f2;
 #line 131 "examples/interpreter/run/eval.hero"
     t43 = t42.as.err;
-#line 15184 "main.c"
+#line 15194 "main.c"
     hero_failure_retain(&t43);
 #line 131 "examples/interpreter/run/eval.hero"
     t44 = (h_0opt_1be8f195){.tag = INT64_C(1), .as.err = t43};
@@ -15188,7 +15198,7 @@ bb12:
     t71 = h18_own18;
 #line 131 "examples/interpreter/run/eval.hero"
     h18_own18 = t44;
-#line 15192 "main.c"
+#line 15202 "main.c"
     h_0opt_1be8f195_release(&t71);
 #line 131 "examples/interpreter/run/eval.hero"
     h10_ret0 = t44;
@@ -15217,7 +15227,7 @@ bb15:
 #line 133 "examples/interpreter/run/eval.hero"
 bb16:
     t52 = h4_walking;
-#line 15221 "main.c"
+#line 15231 "main.c"
     h_runvalue_Frame_retain(&t52);
 #line 134 "examples/interpreter/run/eval.hero"
     t53 = (h_0opt_1be8f195){.tag = INT64_C(0), .as.ok = t52};
@@ -15225,7 +15235,7 @@ bb16:
     t72 = h19_own19;
 #line 134 "examples/interpreter/run/eval.hero"
     h19_own19 = t53;
-#line 15229 "main.c"
+#line 15239 "main.c"
     h_0opt_1be8f195_release(&t72);
 #line 134 "examples/interpreter/run/eval.hero"
     h10_ret0 = t53;
@@ -15237,7 +15247,7 @@ bb17:
     goto bb13;
 #line 134 "examples/interpreter/run/eval.hero"
 bb18:
-#line 15241 "main.c"
+#line 15251 "main.c"
     t56 = h10_ret0;
     h_0opt_1be8f195_retain(&t56);
     h_runvalue_Frame_release(&h4_walking);
@@ -15259,7 +15269,7 @@ bb18:
 
 #line 138 "examples/interpreter/run/eval.hero"
 h_0opt_1be8f195 h_runeval_given_back(h_syntree_Tree h0_nodes, int64_t h1_at, h_runvalue_Frame h2_f) {
-#line 15263 "main.c"
+#line 15273 "main.c"
     h_0opt_4d124e2a h3_f0 = {0};
     h_runexpr_Answer h4_step = {0};
     h_runvalue_Frame h5_home = {0};
@@ -15312,15 +15322,15 @@ bb0:
     t23 = h7_own7;
 #line 139 "examples/interpreter/run/eval.hero"
     h7_own7 = t5;
-#line 15316 "main.c"
+#line 15326 "main.c"
     h_0opt_4d124e2a_release(&t23);
 #line 139 "examples/interpreter/run/eval.hero"
     t24 = h3_f0;
-#line 15320 "main.c"
+#line 15330 "main.c"
     h_0opt_4d124e2a_retain(&t5);
 #line 139 "examples/interpreter/run/eval.hero"
     h3_f0 = t5;
-#line 15324 "main.c"
+#line 15334 "main.c"
     h_0opt_4d124e2a_release(&t24);
 #line 139 "examples/interpreter/run/eval.hero"
     t6 = h3_f0;
@@ -15340,11 +15350,11 @@ bb1:
     t14 = t13.as.ok;
 #line 139 "examples/interpreter/run/eval.hero"
     t25 = h4_step;
-#line 15344 "main.c"
+#line 15354 "main.c"
     h_runexpr_Answer_retain(&t14);
 #line 139 "examples/interpreter/run/eval.hero"
     h4_step = t14;
-#line 15348 "main.c"
+#line 15358 "main.c"
     h_runexpr_Answer_release(&t25);
 #line 140 "examples/interpreter/run/eval.hero"
     t15 = h4_step;
@@ -15352,11 +15362,11 @@ bb1:
     t16 = t15.f_frame;
 #line 140 "examples/interpreter/run/eval.hero"
     t26 = h5_home;
-#line 15356 "main.c"
+#line 15366 "main.c"
     h_runvalue_Frame_retain(&t16);
 #line 140 "examples/interpreter/run/eval.hero"
     h5_home = t16;
-#line 15360 "main.c"
+#line 15370 "main.c"
     h_runvalue_Frame_release(&t26);
 #line 141 "examples/interpreter/run/eval.hero"
     t17 = true;
@@ -15367,15 +15377,15 @@ bb1:
     t19 = t18.f_got;
 #line 142 "examples/interpreter/run/eval.hero"
     t27 = h5_home.f_result;
-#line 15371 "main.c"
+#line 15381 "main.c"
     h_runvalue_Value_retain(&t19);
 #line 142 "examples/interpreter/run/eval.hero"
     h5_home.f_result = t19;
-#line 15375 "main.c"
+#line 15385 "main.c"
     h_runvalue_Value_release(&t27);
 #line 143 "examples/interpreter/run/eval.hero"
     t20 = h5_home;
-#line 15379 "main.c"
+#line 15389 "main.c"
     h_runvalue_Frame_retain(&t20);
 #line 143 "examples/interpreter/run/eval.hero"
     t21 = (h_0opt_1be8f195){.tag = INT64_C(0), .as.ok = t20};
@@ -15383,7 +15393,7 @@ bb1:
     t28 = h8_own8;
 #line 143 "examples/interpreter/run/eval.hero"
     h8_own8 = t21;
-#line 15387 "main.c"
+#line 15397 "main.c"
     h_0opt_1be8f195_release(&t28);
 #line 143 "examples/interpreter/run/eval.hero"
     h6_ret0 = t21;
@@ -15395,7 +15405,7 @@ bb2:
     t10 = h3_f0;
 #line 139 "examples/interpreter/run/eval.hero"
     t11 = t10.as.err;
-#line 15399 "main.c"
+#line 15409 "main.c"
     hero_failure_retain(&t11);
 #line 139 "examples/interpreter/run/eval.hero"
     t12 = (h_0opt_1be8f195){.tag = INT64_C(1), .as.err = t11};
@@ -15403,7 +15413,7 @@ bb2:
     t29 = h9_own9;
 #line 139 "examples/interpreter/run/eval.hero"
     h9_own9 = t12;
-#line 15407 "main.c"
+#line 15417 "main.c"
     h_0opt_1be8f195_release(&t29);
 #line 139 "examples/interpreter/run/eval.hero"
     h6_ret0 = t12;
@@ -15411,7 +15421,7 @@ bb2:
     goto bb3;
 #line 139 "examples/interpreter/run/eval.hero"
 bb3:
-#line 15415 "main.c"
+#line 15425 "main.c"
     t22 = h6_ret0;
     h_0opt_1be8f195_retain(&t22);
     h_0opt_4d124e2a_release(&h3_f0);
@@ -15425,7 +15435,7 @@ bb3:
 
 #line 145 "examples/interpreter/run/eval.hero"
 h_0opt_1be8f195 h_runeval_stopped(h_syntree_Tree h0_nodes, int64_t h1_at, h_runvalue_Frame h2_f) {
-#line 15429 "main.c"
+#line 15439 "main.c"
     h_0opt_4d124e2a h3_f0 = {0};
     h_runexpr_Answer h4_step = {0};
     h_runvalue_Frame h5_home = {0};
@@ -15493,15 +15503,15 @@ bb0:
     t33 = h8_own8;
 #line 146 "examples/interpreter/run/eval.hero"
     h8_own8 = t5;
-#line 15497 "main.c"
+#line 15507 "main.c"
     h_0opt_4d124e2a_release(&t33);
 #line 146 "examples/interpreter/run/eval.hero"
     t34 = h3_f0;
-#line 15501 "main.c"
+#line 15511 "main.c"
     h_0opt_4d124e2a_retain(&t5);
 #line 146 "examples/interpreter/run/eval.hero"
     h3_f0 = t5;
-#line 15505 "main.c"
+#line 15515 "main.c"
     h_0opt_4d124e2a_release(&t34);
 #line 146 "examples/interpreter/run/eval.hero"
     t6 = h3_f0;
@@ -15521,11 +15531,11 @@ bb1:
     t14 = t13.as.ok;
 #line 146 "examples/interpreter/run/eval.hero"
     t35 = h4_step;
-#line 15525 "main.c"
+#line 15535 "main.c"
     h_runexpr_Answer_retain(&t14);
 #line 146 "examples/interpreter/run/eval.hero"
     h4_step = t14;
-#line 15529 "main.c"
+#line 15539 "main.c"
     h_runexpr_Answer_release(&t35);
 #line 147 "examples/interpreter/run/eval.hero"
     t15 = h4_step;
@@ -15533,11 +15543,11 @@ bb1:
     t16 = t15.f_frame;
 #line 147 "examples/interpreter/run/eval.hero"
     t36 = h5_home;
-#line 15537 "main.c"
+#line 15547 "main.c"
     h_runvalue_Frame_retain(&t16);
 #line 147 "examples/interpreter/run/eval.hero"
     h5_home = t16;
-#line 15541 "main.c"
+#line 15551 "main.c"
     h_runvalue_Frame_release(&t36);
 #line 148 "examples/interpreter/run/eval.hero"
     t17 = true;
@@ -15552,15 +15562,15 @@ bb1:
     t37 = h9_own9;
 #line 149 "examples/interpreter/run/eval.hero"
     h9_own9 = t20;
-#line 15556 "main.c"
+#line 15566 "main.c"
     h_0opt_e201354_release(&t37);
 #line 149 "examples/interpreter/run/eval.hero"
     t38 = h6_f1;
-#line 15560 "main.c"
+#line 15570 "main.c"
     h_0opt_e201354_retain(&t20);
 #line 149 "examples/interpreter/run/eval.hero"
     h6_f1 = t20;
-#line 15564 "main.c"
+#line 15574 "main.c"
     h_0opt_e201354_release(&t38);
 #line 149 "examples/interpreter/run/eval.hero"
     t21 = h6_f1;
@@ -15578,7 +15588,7 @@ bb2:
     t10 = h3_f0;
 #line 146 "examples/interpreter/run/eval.hero"
     t11 = t10.as.err;
-#line 15582 "main.c"
+#line 15592 "main.c"
     hero_failure_retain(&t11);
 #line 146 "examples/interpreter/run/eval.hero"
     t12 = (h_0opt_1be8f195){.tag = INT64_C(1), .as.err = t11};
@@ -15586,7 +15596,7 @@ bb2:
     t39 = h10_own10;
 #line 146 "examples/interpreter/run/eval.hero"
     h10_own10 = t12;
-#line 15590 "main.c"
+#line 15600 "main.c"
     h_0opt_1be8f195_release(&t39);
 #line 146 "examples/interpreter/run/eval.hero"
     h7_ret0 = t12;
@@ -15601,7 +15611,7 @@ bb3:
 #line 149 "examples/interpreter/run/eval.hero"
     h5_home.f_code = t29;
     t30 = h5_home;
-#line 15605 "main.c"
+#line 15615 "main.c"
     h_runvalue_Frame_retain(&t30);
 #line 150 "examples/interpreter/run/eval.hero"
     t31 = (h_0opt_1be8f195){.tag = INT64_C(0), .as.ok = t30};
@@ -15609,7 +15619,7 @@ bb3:
     t40 = h11_own11;
 #line 150 "examples/interpreter/run/eval.hero"
     h11_own11 = t31;
-#line 15613 "main.c"
+#line 15623 "main.c"
     h_0opt_1be8f195_release(&t40);
 #line 150 "examples/interpreter/run/eval.hero"
     h7_ret0 = t31;
@@ -15621,7 +15631,7 @@ bb4:
     t25 = h6_f1;
 #line 149 "examples/interpreter/run/eval.hero"
     t26 = t25.as.err;
-#line 15625 "main.c"
+#line 15635 "main.c"
     hero_failure_retain(&t26);
 #line 149 "examples/interpreter/run/eval.hero"
     t27 = (h_0opt_1be8f195){.tag = INT64_C(1), .as.err = t26};
@@ -15629,7 +15639,7 @@ bb4:
     t41 = h12_own12;
 #line 149 "examples/interpreter/run/eval.hero"
     h12_own12 = t27;
-#line 15633 "main.c"
+#line 15643 "main.c"
     h_0opt_1be8f195_release(&t41);
 #line 149 "examples/interpreter/run/eval.hero"
     h7_ret0 = t27;
@@ -15637,7 +15647,7 @@ bb4:
     goto bb5;
 #line 149 "examples/interpreter/run/eval.hero"
 bb5:
-#line 15641 "main.c"
+#line 15651 "main.c"
     t32 = h7_ret0;
     h_0opt_1be8f195_retain(&t32);
     h_0opt_4d124e2a_release(&h3_f0);
@@ -15654,7 +15664,7 @@ bb5:
 
 #line 155 "examples/interpreter/run/eval.hero"
 h_0opt_1be8f195 h_runeval_spent(h_syntree_Tree h0_nodes, int64_t h1_at, h_runvalue_Frame h2_f) {
-#line 15658 "main.c"
+#line 15668 "main.c"
     h_0opt_4d124e2a h3_f0 = {0};
     h_runexpr_Answer h4_step = {0};
     h_0opt_1be8f195 h5_ret0 = {0};
@@ -15700,15 +15710,15 @@ bb0:
     t19 = h6_own6;
 #line 156 "examples/interpreter/run/eval.hero"
     h6_own6 = t5;
-#line 15704 "main.c"
+#line 15714 "main.c"
     h_0opt_4d124e2a_release(&t19);
 #line 156 "examples/interpreter/run/eval.hero"
     t20 = h3_f0;
-#line 15708 "main.c"
+#line 15718 "main.c"
     h_0opt_4d124e2a_retain(&t5);
 #line 156 "examples/interpreter/run/eval.hero"
     h3_f0 = t5;
-#line 15712 "main.c"
+#line 15722 "main.c"
     h_0opt_4d124e2a_release(&t20);
 #line 156 "examples/interpreter/run/eval.hero"
     t6 = h3_f0;
@@ -15728,17 +15738,17 @@ bb1:
     t14 = t13.as.ok;
 #line 156 "examples/interpreter/run/eval.hero"
     t21 = h4_step;
-#line 15732 "main.c"
+#line 15742 "main.c"
     h_runexpr_Answer_retain(&t14);
 #line 156 "examples/interpreter/run/eval.hero"
     h4_step = t14;
-#line 15736 "main.c"
+#line 15746 "main.c"
     h_runexpr_Answer_release(&t21);
 #line 157 "examples/interpreter/run/eval.hero"
     t15 = h4_step;
 #line 157 "examples/interpreter/run/eval.hero"
     t16 = t15.f_frame;
-#line 15742 "main.c"
+#line 15752 "main.c"
     h_runvalue_Frame_retain(&t16);
 #line 157 "examples/interpreter/run/eval.hero"
     t17 = (h_0opt_1be8f195){.tag = INT64_C(0), .as.ok = t16};
@@ -15746,7 +15756,7 @@ bb1:
     t22 = h7_own7;
 #line 157 "examples/interpreter/run/eval.hero"
     h7_own7 = t17;
-#line 15750 "main.c"
+#line 15760 "main.c"
     h_0opt_1be8f195_release(&t22);
 #line 157 "examples/interpreter/run/eval.hero"
     h5_ret0 = t17;
@@ -15758,7 +15768,7 @@ bb2:
     t10 = h3_f0;
 #line 156 "examples/interpreter/run/eval.hero"
     t11 = t10.as.err;
-#line 15762 "main.c"
+#line 15772 "main.c"
     hero_failure_retain(&t11);
 #line 156 "examples/interpreter/run/eval.hero"
     t12 = (h_0opt_1be8f195){.tag = INT64_C(1), .as.err = t11};
@@ -15766,7 +15776,7 @@ bb2:
     t23 = h8_own8;
 #line 156 "examples/interpreter/run/eval.hero"
     h8_own8 = t12;
-#line 15770 "main.c"
+#line 15780 "main.c"
     h_0opt_1be8f195_release(&t23);
 #line 156 "examples/interpreter/run/eval.hero"
     h5_ret0 = t12;
@@ -15774,7 +15784,7 @@ bb2:
     goto bb3;
 #line 156 "examples/interpreter/run/eval.hero"
 bb3:
-#line 15778 "main.c"
+#line 15788 "main.c"
     t18 = h5_ret0;
     h_0opt_1be8f195_retain(&t18);
     h_0opt_4d124e2a_release(&h3_f0);
@@ -15787,7 +15797,7 @@ bb3:
 
 #line 159 "examples/interpreter/run/eval.hero"
 h_runvalue_Frame h_runeval_with_function(h_runvalue_Frame h0_f, HeroStr h1_name, int64_t h2_at) {
-#line 15791 "main.c"
+#line 15801 "main.c"
     h_runvalue_Frame h3_home = {0};
     h_runvalue_Frame t1;
     HeroStr t2;
@@ -15800,11 +15810,11 @@ bb0:
     t1 = h0_f;
 #line 160 "examples/interpreter/run/eval.hero"
     t5 = h3_home;
-#line 15804 "main.c"
+#line 15814 "main.c"
     h_runvalue_Frame_retain(&t1);
 #line 160 "examples/interpreter/run/eval.hero"
     h3_home = t1;
-#line 15808 "main.c"
+#line 15818 "main.c"
     h_runvalue_Frame_release(&t5);
 #line 161 "examples/interpreter/run/eval.hero"
     t2 = h1_name;
@@ -15813,7 +15823,7 @@ bb0:
 #line 161 "examples/interpreter/run/eval.hero"
     hero_map_set(&(h3_home.f_fns), &t2, &t3);
     t4 = h3_home;
-#line 15817 "main.c"
+#line 15827 "main.c"
     h_runvalue_Frame_retain(&t4);
     h_runvalue_Frame_release(&h3_home);
     return t4;
@@ -15821,7 +15831,7 @@ bb0:
 
 #line 167 "examples/interpreter/run/eval.hero"
 h_0opt_1be8f195 h_runeval_called(h_runvalue_Request h0_r) {
-#line 15825 "main.c"
+#line 15835 "main.c"
     h_0opt_e201354 h1_where = {0};
     h_0opt_e201354 h2_f0 = {0};
     h_0opt_e201354 h3_f1 = {0};
@@ -15967,25 +15977,25 @@ bb0:
     t67 = h8_own8;
 #line 168 "examples/interpreter/run/eval.hero"
     h8_own8 = t6;
-#line 15971 "main.c"
+#line 15981 "main.c"
     h_0opt_e201354_release(&t67);
 #line 168 "examples/interpreter/run/eval.hero"
     t68 = h1_where;
-#line 15975 "main.c"
+#line 15985 "main.c"
     h_0opt_e201354_retain(&t6);
 #line 168 "examples/interpreter/run/eval.hero"
     h1_where = t6;
-#line 15979 "main.c"
+#line 15989 "main.c"
     h_0opt_e201354_release(&t68);
 #line 170 "examples/interpreter/run/eval.hero"
     t7 = h1_where;
 #line 170 "examples/interpreter/run/eval.hero"
     t69 = h2_f0;
-#line 15985 "main.c"
+#line 15995 "main.c"
     h_0opt_e201354_retain(&t7);
 #line 170 "examples/interpreter/run/eval.hero"
     h2_f0 = t7;
-#line 15989 "main.c"
+#line 15999 "main.c"
     h_0opt_e201354_release(&t69);
 #line 170 "examples/interpreter/run/eval.hero"
     t8 = h2_f0;
@@ -16019,7 +16029,7 @@ bb2:
     t70 = h9_own9;
 #line 171 "examples/interpreter/run/eval.hero"
     h9_own9 = t12;
-#line 16023 "main.c"
+#line 16033 "main.c"
     hero_str_decref(t70);
 #line 171 "examples/interpreter/run/eval.hero"
     t13 = HERO_STR_LIT(hero_str_58cbfee0);
@@ -16033,7 +16043,7 @@ bb2:
     t71 = h10_own10;
 #line 171 "examples/interpreter/run/eval.hero"
     h10_own10 = t16;
-#line 16037 "main.c"
+#line 16047 "main.c"
     hero_str_decref(t71);
 #line 171 "examples/interpreter/run/eval.hero"
     t17 = HERO_STR_LIT(hero_str_60);
@@ -16043,7 +16053,7 @@ bb2:
     t72 = h11_own11;
 #line 171 "examples/interpreter/run/eval.hero"
     h11_own11 = t18;
-#line 16047 "main.c"
+#line 16057 "main.c"
     hero_str_decref(t72);
     hero_str_incref(t12);
     hero_str_incref(t18);
@@ -16053,7 +16063,7 @@ bb2:
     t73 = h12_own12;
 #line 171 "examples/interpreter/run/eval.hero"
     h12_own12 = t19;
-#line 16057 "main.c"
+#line 16067 "main.c"
     h_0opt_1be8f195_release(&t73);
 #line 171 "examples/interpreter/run/eval.hero"
     h7_ret0 = t19;
@@ -16075,11 +16085,11 @@ bb4:
     t41 = h1_where;
 #line 179 "examples/interpreter/run/eval.hero"
     t74 = h3_f1;
-#line 16079 "main.c"
+#line 16089 "main.c"
     h_0opt_e201354_retain(&t41);
 #line 179 "examples/interpreter/run/eval.hero"
     h3_f1 = t41;
-#line 16083 "main.c"
+#line 16093 "main.c"
     h_0opt_e201354_release(&t74);
 #line 179 "examples/interpreter/run/eval.hero"
     t42 = h3_f1;
@@ -16099,7 +16109,7 @@ bb5:
     t75 = h13_own13;
 #line 175 "examples/interpreter/run/eval.hero"
     h13_own13 = t25;
-#line 16103 "main.c"
+#line 16113 "main.c"
     hero_str_decref(t75);
 #line 176 "examples/interpreter/run/eval.hero"
     t26 = HERO_STR_LIT(hero_str_60);
@@ -16113,7 +16123,7 @@ bb5:
     t76 = h14_own14;
 #line 176 "examples/interpreter/run/eval.hero"
     h14_own14 = t29;
-#line 16117 "main.c"
+#line 16127 "main.c"
     hero_str_decref(t76);
 #line 176 "examples/interpreter/run/eval.hero"
     t30 = HERO_STR_LIT(hero_str_1989cb77);
@@ -16123,7 +16133,7 @@ bb5:
     t77 = h15_own15;
 #line 176 "examples/interpreter/run/eval.hero"
     h15_own15 = t31;
-#line 16127 "main.c"
+#line 16137 "main.c"
     hero_str_decref(t77);
 #line 176 "examples/interpreter/run/eval.hero"
     t32 = h_runeval_DEPTH();
@@ -16133,7 +16143,7 @@ bb5:
     t78 = h16_own16;
 #line 176 "examples/interpreter/run/eval.hero"
     h16_own16 = t33;
-#line 16137 "main.c"
+#line 16147 "main.c"
     hero_str_decref(t78);
 #line 176 "examples/interpreter/run/eval.hero"
     t34 = hero_str_concat(t31, t33);
@@ -16141,7 +16151,7 @@ bb5:
     t79 = h17_own17;
 #line 176 "examples/interpreter/run/eval.hero"
     h17_own17 = t34;
-#line 16145 "main.c"
+#line 16155 "main.c"
     hero_str_decref(t79);
 #line 176 "examples/interpreter/run/eval.hero"
     t35 = HERO_STR_LIT(hero_str_15b0d318);
@@ -16151,7 +16161,7 @@ bb5:
     t80 = h18_own18;
 #line 176 "examples/interpreter/run/eval.hero"
     h18_own18 = t36;
-#line 16155 "main.c"
+#line 16165 "main.c"
     hero_str_decref(t80);
     hero_str_incref(t25);
     hero_str_incref(t36);
@@ -16161,7 +16171,7 @@ bb5:
     t81 = h19_own19;
 #line 174 "examples/interpreter/run/eval.hero"
     h19_own19 = t37;
-#line 16165 "main.c"
+#line 16175 "main.c"
     h_0opt_1be8f195_release(&t81);
 #line 174 "examples/interpreter/run/eval.hero"
     h7_ret0 = t37;
@@ -16181,11 +16191,11 @@ bb7:
     t50 = ((void)((t40 == NULL || t49 < 0 || t49 >= t40->len) ? ((void)hero_array_at(t40, t49), hero_unreachable()) : (void)0), (void)(t40->elem->size != sizeof(h_syntree_Stmt) ? hero_unreachable() : (void)0), ((h_syntree_Stmt const *)(const void *)(t40 + 1))[t49]);
 #line 179 "examples/interpreter/run/eval.hero"
     t82 = h4_s0;
-#line 16185 "main.c"
+#line 16195 "main.c"
     h_syntree_Stmt_retain(&t50);
 #line 179 "examples/interpreter/run/eval.hero"
     h4_s0 = t50;
-#line 16189 "main.c"
+#line 16199 "main.c"
     h_syntree_Stmt_release(&t82);
 #line 179 "examples/interpreter/run/eval.hero"
     t51 = h4_s0;
@@ -16219,7 +16229,7 @@ bb8:
     t46 = h3_f1;
 #line 179 "examples/interpreter/run/eval.hero"
     t47 = t46.as.err;
-#line 16223 "main.c"
+#line 16233 "main.c"
     hero_panic_must(t47);
     hero_unreachable();
 bb9:
@@ -16236,11 +16246,11 @@ bb10:
     t54 = t53.as.c_define;
 #line 180 "examples/interpreter/run/eval.hero"
     t83 = h6_d;
-#line 16240 "main.c"
+#line 16250 "main.c"
     h_syntree_Stmt_c_define_retain(&t54);
 #line 180 "examples/interpreter/run/eval.hero"
     h6_d = t54;
-#line 16244 "main.c"
+#line 16254 "main.c"
     h_syntree_Stmt_c_define_release(&t83);
 #line 180 "examples/interpreter/run/eval.hero"
     t55 = h0_r;
@@ -16258,15 +16268,15 @@ bb10:
     t84 = h20_own20;
 #line 180 "examples/interpreter/run/eval.hero"
     h20_own20 = t60;
-#line 16262 "main.c"
+#line 16272 "main.c"
     h_0opt_1be8f195_release(&t84);
 #line 179 "examples/interpreter/run/eval.hero"
     t85 = h5_r0;
-#line 16266 "main.c"
+#line 16276 "main.c"
     h_0opt_1be8f195_retain(&t60);
 #line 179 "examples/interpreter/run/eval.hero"
     h5_r0 = t60;
-#line 16270 "main.c"
+#line 16280 "main.c"
     h_0opt_1be8f195_release(&t85);
     goto bb9;
 bb11:
@@ -16278,15 +16288,15 @@ bb11:
     t86 = h21_own21;
 #line 181 "examples/interpreter/run/eval.hero"
     h21_own21 = t62;
-#line 16282 "main.c"
+#line 16292 "main.c"
     h_0opt_1be8f195_release(&t86);
 #line 179 "examples/interpreter/run/eval.hero"
     t87 = h5_r0;
-#line 16286 "main.c"
+#line 16296 "main.c"
     h_0opt_1be8f195_retain(&t62);
 #line 179 "examples/interpreter/run/eval.hero"
     h5_r0 = t62;
-#line 16290 "main.c"
+#line 16300 "main.c"
     h_0opt_1be8f195_release(&t87);
     goto bb9;
 bb12:
@@ -16298,15 +16308,15 @@ bb12:
     t88 = h22_own22;
 #line 182 "examples/interpreter/run/eval.hero"
     h22_own22 = t64;
-#line 16302 "main.c"
+#line 16312 "main.c"
     h_0opt_1be8f195_release(&t88);
 #line 179 "examples/interpreter/run/eval.hero"
     t89 = h5_r0;
-#line 16306 "main.c"
+#line 16316 "main.c"
     h_0opt_1be8f195_retain(&t64);
 #line 179 "examples/interpreter/run/eval.hero"
     h5_r0 = t64;
-#line 16310 "main.c"
+#line 16320 "main.c"
     h_0opt_1be8f195_release(&t89);
     goto bb9;
 bb13:
@@ -16338,7 +16348,7 @@ bb13:
 
 #line 184 "examples/interpreter/run/eval.hero"
 h_0opt_1be8f195 h_runeval_not_a_function(h_runvalue_Request h0_r) {
-#line 16342 "main.c"
+#line 16352 "main.c"
     HeroStr h1_own1 = {0};
     HeroStr h2_own2 = {0};
     HeroStr h3_own3 = {0};
@@ -16363,7 +16373,7 @@ bb0:
     t9 = h1_own1;
 #line 185 "examples/interpreter/run/eval.hero"
     h1_own1 = t1;
-#line 16367 "main.c"
+#line 16377 "main.c"
     hero_str_decref(t9);
 #line 185 "examples/interpreter/run/eval.hero"
     t2 = HERO_STR_LIT(hero_str_60);
@@ -16377,7 +16387,7 @@ bb0:
     t10 = h2_own2;
 #line 185 "examples/interpreter/run/eval.hero"
     h2_own2 = t5;
-#line 16381 "main.c"
+#line 16391 "main.c"
     hero_str_decref(t10);
 #line 185 "examples/interpreter/run/eval.hero"
     t6 = HERO_STR_LIT(hero_str_74a60873);
@@ -16387,7 +16397,7 @@ bb0:
     t11 = h3_own3;
 #line 185 "examples/interpreter/run/eval.hero"
     h3_own3 = t7;
-#line 16391 "main.c"
+#line 16401 "main.c"
     hero_str_decref(t11);
     hero_str_incref(t1);
     hero_str_incref(t7);
@@ -16397,7 +16407,7 @@ bb0:
     t12 = h4_own4;
 #line 185 "examples/interpreter/run/eval.hero"
     h4_own4 = t8;
-#line 16401 "main.c"
+#line 16411 "main.c"
     h_0opt_1be8f195_release(&t12);
     h_0opt_1be8f195_retain(&t8);
     hero_str_decref(h1_own1);
@@ -16409,7 +16419,7 @@ bb0:
 
 #line 189 "examples/interpreter/run/eval.hero"
 h_0opt_1be8f195 h_runeval_entered(h_runvalue_Request h0_r, HeroArrayHeader * h1_params, HeroArrayHeader * h2_inside) {
-#line 16413 "main.c"
+#line 16423 "main.c"
     h_runvalue_Frame h3_inner = {0};
     HeroMapHeader * h4_fresh_vars = {0};
     int64_t h5_i;
@@ -16565,11 +16575,11 @@ bb1:
     t37 = t36.f_frame;
 #line 195 "examples/interpreter/run/eval.hero"
     t84 = h3_inner;
-#line 16569 "main.c"
+#line 16579 "main.c"
     h_runvalue_Frame_retain(&t37);
 #line 195 "examples/interpreter/run/eval.hero"
     h3_inner = t37;
-#line 16573 "main.c"
+#line 16583 "main.c"
     h_runvalue_Frame_release(&t84);
 #line 196 "examples/interpreter/run/eval.hero"
     t38 = hero_map_new(&hero_desc_str, &h_runvalue_Value_desc, 0);
@@ -16577,15 +16587,15 @@ bb1:
     t85 = h10_own10;
 #line 196 "examples/interpreter/run/eval.hero"
     h10_own10 = t38;
-#line 16581 "main.c"
+#line 16591 "main.c"
     hero_map_decref(t85);
 #line 196 "examples/interpreter/run/eval.hero"
     t86 = h4_fresh_vars;
-#line 16585 "main.c"
+#line 16595 "main.c"
     hero_map_incref(t38);
 #line 196 "examples/interpreter/run/eval.hero"
     h4_fresh_vars = t38;
-#line 16589 "main.c"
+#line 16599 "main.c"
     hero_map_decref(t86);
 #line 197 "examples/interpreter/run/eval.hero"
     t39 = INT64_C(0);
@@ -16601,7 +16611,7 @@ bb2:
     t87 = h11_own11;
 #line 192 "examples/interpreter/run/eval.hero"
     h11_own11 = t7;
-#line 16605 "main.c"
+#line 16615 "main.c"
     hero_str_decref(t87);
 #line 193 "examples/interpreter/run/eval.hero"
     t8 = HERO_STR_LIT(hero_str_60);
@@ -16615,7 +16625,7 @@ bb2:
     t88 = h12_own12;
 #line 193 "examples/interpreter/run/eval.hero"
     h12_own12 = t11;
-#line 16619 "main.c"
+#line 16629 "main.c"
     hero_str_decref(t88);
 #line 193 "examples/interpreter/run/eval.hero"
     t12 = HERO_STR_LIT(hero_str_b55ab14);
@@ -16625,7 +16635,7 @@ bb2:
     t89 = h13_own13;
 #line 193 "examples/interpreter/run/eval.hero"
     h13_own13 = t13;
-#line 16629 "main.c"
+#line 16639 "main.c"
     hero_str_decref(t89);
 #line 193 "examples/interpreter/run/eval.hero"
     t14 = h1_params;
@@ -16637,7 +16647,7 @@ bb2:
     t90 = h14_own14;
 #line 193 "examples/interpreter/run/eval.hero"
     h14_own14 = t16;
-#line 16641 "main.c"
+#line 16651 "main.c"
     hero_str_decref(t90);
 #line 193 "examples/interpreter/run/eval.hero"
     t17 = hero_str_concat(t13, t16);
@@ -16645,7 +16655,7 @@ bb2:
     t91 = h15_own15;
 #line 193 "examples/interpreter/run/eval.hero"
     h15_own15 = t17;
-#line 16649 "main.c"
+#line 16659 "main.c"
     hero_str_decref(t91);
 #line 193 "examples/interpreter/run/eval.hero"
     t18 = HERO_STR_LIT(hero_str_dc17fd9);
@@ -16655,7 +16665,7 @@ bb2:
     t92 = h16_own16;
 #line 193 "examples/interpreter/run/eval.hero"
     h16_own16 = t19;
-#line 16659 "main.c"
+#line 16669 "main.c"
     hero_str_decref(t92);
 #line 193 "examples/interpreter/run/eval.hero"
     t20 = h0_r;
@@ -16669,7 +16679,7 @@ bb2:
     t93 = h17_own17;
 #line 193 "examples/interpreter/run/eval.hero"
     h17_own17 = t23;
-#line 16673 "main.c"
+#line 16683 "main.c"
     hero_str_decref(t93);
 #line 193 "examples/interpreter/run/eval.hero"
     t24 = hero_str_concat(t19, t23);
@@ -16677,7 +16687,7 @@ bb2:
     t94 = h18_own18;
 #line 193 "examples/interpreter/run/eval.hero"
     h18_own18 = t24;
-#line 16681 "main.c"
+#line 16691 "main.c"
     hero_str_decref(t94);
 #line 193 "examples/interpreter/run/eval.hero"
     t25 = HERO_STR_LIT(hero_str_f4092);
@@ -16687,7 +16697,7 @@ bb2:
     t95 = h19_own19;
 #line 193 "examples/interpreter/run/eval.hero"
     h19_own19 = t26;
-#line 16691 "main.c"
+#line 16701 "main.c"
     hero_str_decref(t95);
 #line 193 "examples/interpreter/run/eval.hero"
     t27 = h0_r;
@@ -16703,7 +16713,7 @@ bb2:
     t96 = h20_own20;
 #line 193 "examples/interpreter/run/eval.hero"
     h20_own20 = t31;
-#line 16707 "main.c"
+#line 16717 "main.c"
     hero_str_decref(t96);
 #line 193 "examples/interpreter/run/eval.hero"
     t32 = hero_str_concat(t26, t31);
@@ -16711,7 +16721,7 @@ bb2:
     t97 = h21_own21;
 #line 193 "examples/interpreter/run/eval.hero"
     h21_own21 = t32;
-#line 16715 "main.c"
+#line 16725 "main.c"
     hero_str_decref(t97);
 #line 193 "examples/interpreter/run/eval.hero"
     t33 = HERO_STR_LIT(hero_str_29);
@@ -16721,7 +16731,7 @@ bb2:
     t98 = h22_own22;
 #line 193 "examples/interpreter/run/eval.hero"
     h22_own22 = t34;
-#line 16725 "main.c"
+#line 16735 "main.c"
     hero_str_decref(t98);
     hero_str_incref(t7);
     hero_str_incref(t34);
@@ -16731,7 +16741,7 @@ bb2:
     t99 = h23_own23;
 #line 191 "examples/interpreter/run/eval.hero"
     h23_own23 = t35;
-#line 16735 "main.c"
+#line 16745 "main.c"
     h_0opt_1be8f195_release(&t99);
 #line 191 "examples/interpreter/run/eval.hero"
     h9_ret0 = t35;
@@ -16768,7 +16778,7 @@ bb5:
     t49 = h5_i;
 #line 200 "examples/interpreter/run/eval.hero"
     t50 = ((void)((t48 == NULL || t49 < 0 || t49 >= t48->len) ? ((void)hero_array_at(t48, t49), hero_unreachable()) : (void)0), (void)(t48->elem->size != sizeof(h_runvalue_Value) ? hero_unreachable() : (void)0), ((h_runvalue_Value const *)(const void *)(t48 + 1))[t49]);
-#line 16772 "main.c"
+#line 16782 "main.c"
     h_runvalue_Value_retain(&t50);
 #line 200 "examples/interpreter/run/eval.hero"
     hero_map_set(&(h4_fresh_vars), &t46, &t50);
@@ -16787,11 +16797,11 @@ bb6:
     t54 = h4_fresh_vars;
 #line 203 "examples/interpreter/run/eval.hero"
     t100 = h3_inner.f_vars;
-#line 16791 "main.c"
+#line 16801 "main.c"
     hero_map_incref(t54);
 #line 203 "examples/interpreter/run/eval.hero"
     h3_inner.f_vars = t54;
-#line 16795 "main.c"
+#line 16805 "main.c"
     hero_map_decref(t100);
 #line 204 "examples/interpreter/run/eval.hero"
     t55 = h0_r;
@@ -16818,15 +16828,15 @@ bb6:
     t101 = h24_own24;
 #line 205 "examples/interpreter/run/eval.hero"
     h24_own24 = t64;
-#line 16822 "main.c"
+#line 16832 "main.c"
     h_0opt_1be8f195_release(&t101);
 #line 205 "examples/interpreter/run/eval.hero"
     t102 = h6_f0;
-#line 16826 "main.c"
+#line 16836 "main.c"
     h_0opt_1be8f195_retain(&t64);
 #line 205 "examples/interpreter/run/eval.hero"
     h6_f0 = t64;
-#line 16830 "main.c"
+#line 16840 "main.c"
     h_0opt_1be8f195_release(&t102);
 #line 205 "examples/interpreter/run/eval.hero"
     t65 = h6_f0;
@@ -16846,21 +16856,21 @@ bb7:
     t73 = t72.as.ok;
 #line 205 "examples/interpreter/run/eval.hero"
     t103 = h7_after;
-#line 16850 "main.c"
+#line 16860 "main.c"
     h_runvalue_Frame_retain(&t73);
 #line 205 "examples/interpreter/run/eval.hero"
     h7_after = t73;
-#line 16854 "main.c"
+#line 16864 "main.c"
     h_runvalue_Frame_release(&t103);
 #line 206 "examples/interpreter/run/eval.hero"
     t74 = h7_after;
 #line 206 "examples/interpreter/run/eval.hero"
     t104 = h8_home;
-#line 16860 "main.c"
+#line 16870 "main.c"
     h_runvalue_Frame_retain(&t74);
 #line 206 "examples/interpreter/run/eval.hero"
     h8_home = t74;
-#line 16864 "main.c"
+#line 16874 "main.c"
     h_runvalue_Frame_release(&t104);
 #line 207 "examples/interpreter/run/eval.hero"
     t75 = h0_r;
@@ -16870,11 +16880,11 @@ bb7:
     t77 = t76.f_vars;
 #line 207 "examples/interpreter/run/eval.hero"
     t105 = h8_home.f_vars;
-#line 16874 "main.c"
+#line 16884 "main.c"
     hero_map_incref(t77);
 #line 207 "examples/interpreter/run/eval.hero"
     h8_home.f_vars = t77;
-#line 16878 "main.c"
+#line 16888 "main.c"
     hero_map_decref(t105);
 #line 208 "examples/interpreter/run/eval.hero"
     t78 = h0_r;
@@ -16885,7 +16895,7 @@ bb7:
 #line 208 "examples/interpreter/run/eval.hero"
     h8_home.f_depth = t80;
     t81 = h8_home;
-#line 16889 "main.c"
+#line 16899 "main.c"
     h_runvalue_Frame_retain(&t81);
 #line 209 "examples/interpreter/run/eval.hero"
     t82 = (h_0opt_1be8f195){.tag = INT64_C(0), .as.ok = t81};
@@ -16893,7 +16903,7 @@ bb7:
     t106 = h25_own25;
 #line 209 "examples/interpreter/run/eval.hero"
     h25_own25 = t82;
-#line 16897 "main.c"
+#line 16907 "main.c"
     h_0opt_1be8f195_release(&t106);
 #line 209 "examples/interpreter/run/eval.hero"
     h9_ret0 = t82;
@@ -16905,7 +16915,7 @@ bb8:
     t69 = h6_f0;
 #line 205 "examples/interpreter/run/eval.hero"
     t70 = t69.as.err;
-#line 16909 "main.c"
+#line 16919 "main.c"
     hero_failure_retain(&t70);
 #line 205 "examples/interpreter/run/eval.hero"
     t71 = (h_0opt_1be8f195){.tag = INT64_C(1), .as.err = t70};
@@ -16913,7 +16923,7 @@ bb8:
     t107 = h26_own26;
 #line 205 "examples/interpreter/run/eval.hero"
     h26_own26 = t71;
-#line 16917 "main.c"
+#line 16927 "main.c"
     h_0opt_1be8f195_release(&t107);
 #line 205 "examples/interpreter/run/eval.hero"
     h9_ret0 = t71;
@@ -16921,7 +16931,7 @@ bb8:
     goto bb9;
 #line 205 "examples/interpreter/run/eval.hero"
 bb9:
-#line 16925 "main.c"
+#line 16935 "main.c"
     t83 = h9_ret0;
     h_0opt_1be8f195_retain(&t83);
     h_runvalue_Frame_release(&h3_inner);
@@ -16951,46 +16961,46 @@ bb9:
 
 #line 35 "examples/interpreter/run/expr.hero"
 HeroStr h_runexpr_ERR_NAME(void) {
-#line 16955 "main.c"
+#line 16965 "main.c"
     HeroStr t1;
     goto bb0;
 bb0:
 #line 36 "examples/interpreter/run/expr.hero"
     t1 = HERO_STR_LIT(hero_str_7d34d37c);
-#line 16961 "main.c"
+#line 16971 "main.c"
     hero_str_incref(t1);
     return t1;
 }
 
 #line 38 "examples/interpreter/run/expr.hero"
 HeroStr h_runexpr_ERR_MATH(void) {
-#line 16968 "main.c"
+#line 16978 "main.c"
     HeroStr t1;
     goto bb0;
 bb0:
 #line 39 "examples/interpreter/run/expr.hero"
     t1 = HERO_STR_LIT(hero_str_dac94bd);
-#line 16974 "main.c"
+#line 16984 "main.c"
     hero_str_incref(t1);
     return t1;
 }
 
 #line 41 "examples/interpreter/run/expr.hero"
 HeroStr h_runexpr_ERR_TYPE(void) {
-#line 16981 "main.c"
+#line 16991 "main.c"
     HeroStr t1;
     goto bb0;
 bb0:
 #line 42 "examples/interpreter/run/expr.hero"
     t1 = HERO_STR_LIT(hero_str_fab1332);
-#line 16987 "main.c"
+#line 16997 "main.c"
     hero_str_incref(t1);
     return t1;
 }
 
 #line 44 "examples/interpreter/run/expr.hero"
 int64_t h_runexpr_MAX(void) {
-#line 16994 "main.c"
+#line 17004 "main.c"
     int64_t t1;
     goto bb0;
 bb0:
@@ -16998,12 +17008,12 @@ bb0:
     t1 = INT64_C(9223372036854775807);
 #line 45 "examples/interpreter/run/expr.hero"
     return t1;
-#line 17002 "main.c"
+#line 17012 "main.c"
 }
 
 #line 47 "examples/interpreter/run/expr.hero"
 int64_t h_runexpr_MIN(void) {
-#line 17007 "main.c"
+#line 17017 "main.c"
     int64_t t1;
     int64_t t2;
     int64_t t3;
@@ -17023,12 +17033,12 @@ bb0:
     if (__builtin_sub_overflow(t3, t4, &t5)) hero_panic_overflow();
 #line 48 "examples/interpreter/run/expr.hero"
     return t5;
-#line 17027 "main.c"
+#line 17037 "main.c"
 }
 
 #line 57 "examples/interpreter/run/expr.hero"
 h_0opt_4d124e2a h_runexpr_evaluated(h_syntree_Tree h0_nodes, int64_t h1_id, h_runvalue_Frame h2_f, h_0fn_64cad294 h3_call) {
-#line 17032 "main.c"
+#line 17042 "main.c"
     h_syntree_Expr h4_s0 = {0};
     h_0opt_4d124e2a h5_r0 = {0};
     h_syntree_Expr_c_number h6_n;
@@ -17166,11 +17176,11 @@ bb0:
     t4 = ((void)((t2 == NULL || t3 < 0 || t3 >= t2->len) ? ((void)hero_array_at(t2, t3), hero_unreachable()) : (void)0), (void)(t2->elem->size != sizeof(h_syntree_Expr) ? hero_unreachable() : (void)0), ((h_syntree_Expr const *)(const void *)(t2 + 1))[t3]);
 #line 58 "examples/interpreter/run/expr.hero"
     t76 = h4_s0;
-#line 17170 "main.c"
+#line 17180 "main.c"
     h_syntree_Expr_retain(&t4);
 #line 58 "examples/interpreter/run/expr.hero"
     h4_s0 = t4;
-#line 17174 "main.c"
+#line 17184 "main.c"
     h_syntree_Expr_release(&t76);
 #line 58 "examples/interpreter/run/expr.hero"
     t5 = h4_s0;
@@ -17202,7 +17212,7 @@ bb0:
 bb1:
 #line 58 "examples/interpreter/run/expr.hero"
     t75 = h5_r0;
-#line 17206 "main.c"
+#line 17216 "main.c"
     h_0opt_4d124e2a_retain(&t75);
     h_syntree_Expr_release(&h4_s0);
     h_0opt_4d124e2a_release(&h5_r0);
@@ -17243,7 +17253,7 @@ bb2:
     t77 = h14_own14;
 #line 59 "examples/interpreter/run/expr.hero"
     h14_own14 = t12;
-#line 17247 "main.c"
+#line 17257 "main.c"
     h_runvalue_Value_release(&t77);
     h_runvalue_Frame_retain(&t9);
     h_runvalue_Value_retain(&t12);
@@ -17253,7 +17263,7 @@ bb2:
     t78 = h15_own15;
 #line 59 "examples/interpreter/run/expr.hero"
     h15_own15 = t13;
-#line 17257 "main.c"
+#line 17267 "main.c"
     h_runexpr_Answer_release(&t78);
     h_runexpr_Answer_retain(&t13);
 #line 59 "examples/interpreter/run/expr.hero"
@@ -17262,15 +17272,15 @@ bb2:
     t79 = h16_own16;
 #line 59 "examples/interpreter/run/expr.hero"
     h16_own16 = t14;
-#line 17266 "main.c"
+#line 17276 "main.c"
     h_0opt_4d124e2a_release(&t79);
 #line 58 "examples/interpreter/run/expr.hero"
     t80 = h5_r0;
-#line 17270 "main.c"
+#line 17280 "main.c"
     h_0opt_4d124e2a_retain(&t14);
 #line 58 "examples/interpreter/run/expr.hero"
     h5_r0 = t14;
-#line 17274 "main.c"
+#line 17284 "main.c"
     h_0opt_4d124e2a_release(&t80);
     goto bb1;
 bb3:
@@ -17280,11 +17290,11 @@ bb3:
     t16 = t15.as.c_text;
 #line 60 "examples/interpreter/run/expr.hero"
     t81 = h7_x;
-#line 17284 "main.c"
+#line 17294 "main.c"
     h_syntree_Expr_c_text_retain(&t16);
 #line 60 "examples/interpreter/run/expr.hero"
     h7_x = t16;
-#line 17288 "main.c"
+#line 17298 "main.c"
     h_syntree_Expr_c_text_release(&t81);
 #line 60 "examples/interpreter/run/expr.hero"
     t17 = h2_f;
@@ -17292,7 +17302,7 @@ bb3:
     t18 = h7_x;
 #line 60 "examples/interpreter/run/expr.hero"
     t19 = t18.f_value;
-#line 17296 "main.c"
+#line 17306 "main.c"
     hero_str_incref(t19);
 #line 60 "examples/interpreter/run/expr.hero"
     t20 = (h_runvalue_Value){.tag = h_runvalue_Value_tag_text, .as.c_text = {.f_s = t19}};
@@ -17300,7 +17310,7 @@ bb3:
     t82 = h17_own17;
 #line 60 "examples/interpreter/run/expr.hero"
     h17_own17 = t20;
-#line 17304 "main.c"
+#line 17314 "main.c"
     h_runvalue_Value_release(&t82);
     h_runvalue_Frame_retain(&t17);
     h_runvalue_Value_retain(&t20);
@@ -17310,7 +17320,7 @@ bb3:
     t83 = h18_own18;
 #line 60 "examples/interpreter/run/expr.hero"
     h18_own18 = t21;
-#line 17314 "main.c"
+#line 17324 "main.c"
     h_runexpr_Answer_release(&t83);
     h_runexpr_Answer_retain(&t21);
 #line 60 "examples/interpreter/run/expr.hero"
@@ -17319,15 +17329,15 @@ bb3:
     t84 = h19_own19;
 #line 60 "examples/interpreter/run/expr.hero"
     h19_own19 = t22;
-#line 17323 "main.c"
+#line 17333 "main.c"
     h_0opt_4d124e2a_release(&t84);
 #line 58 "examples/interpreter/run/expr.hero"
     t85 = h5_r0;
-#line 17327 "main.c"
+#line 17337 "main.c"
     h_0opt_4d124e2a_retain(&t22);
 #line 58 "examples/interpreter/run/expr.hero"
     h5_r0 = t22;
-#line 17331 "main.c"
+#line 17341 "main.c"
     h_0opt_4d124e2a_release(&t85);
     goto bb1;
 bb4:
@@ -17349,7 +17359,7 @@ bb4:
     t86 = h20_own20;
 #line 61 "examples/interpreter/run/expr.hero"
     h20_own20 = t28;
-#line 17353 "main.c"
+#line 17363 "main.c"
     h_runvalue_Value_release(&t86);
     h_runvalue_Frame_retain(&t25);
     h_runvalue_Value_retain(&t28);
@@ -17359,7 +17369,7 @@ bb4:
     t87 = h21_own21;
 #line 61 "examples/interpreter/run/expr.hero"
     h21_own21 = t29;
-#line 17363 "main.c"
+#line 17373 "main.c"
     h_runexpr_Answer_release(&t87);
     h_runexpr_Answer_retain(&t29);
 #line 61 "examples/interpreter/run/expr.hero"
@@ -17368,15 +17378,15 @@ bb4:
     t88 = h22_own22;
 #line 61 "examples/interpreter/run/expr.hero"
     h22_own22 = t30;
-#line 17372 "main.c"
+#line 17382 "main.c"
     h_0opt_4d124e2a_release(&t88);
 #line 58 "examples/interpreter/run/expr.hero"
     t89 = h5_r0;
-#line 17376 "main.c"
+#line 17386 "main.c"
     h_0opt_4d124e2a_retain(&t30);
 #line 58 "examples/interpreter/run/expr.hero"
     h5_r0 = t30;
-#line 17380 "main.c"
+#line 17390 "main.c"
     h_0opt_4d124e2a_release(&t89);
     goto bb1;
 bb5:
@@ -17386,11 +17396,11 @@ bb5:
     t32 = t31.as.c_name;
 #line 62 "examples/interpreter/run/expr.hero"
     t90 = h9_n;
-#line 17390 "main.c"
+#line 17400 "main.c"
     h_syntree_Expr_c_name_retain(&t32);
 #line 62 "examples/interpreter/run/expr.hero"
     h9_n = t32;
-#line 17394 "main.c"
+#line 17404 "main.c"
     h_syntree_Expr_c_name_release(&t90);
 #line 62 "examples/interpreter/run/expr.hero"
     t33 = h2_f;
@@ -17404,15 +17414,15 @@ bb5:
     t91 = h23_own23;
 #line 62 "examples/interpreter/run/expr.hero"
     h23_own23 = t36;
-#line 17408 "main.c"
+#line 17418 "main.c"
     h_0opt_4d124e2a_release(&t91);
 #line 58 "examples/interpreter/run/expr.hero"
     t92 = h5_r0;
-#line 17412 "main.c"
+#line 17422 "main.c"
     h_0opt_4d124e2a_retain(&t36);
 #line 58 "examples/interpreter/run/expr.hero"
     h5_r0 = t36;
-#line 17416 "main.c"
+#line 17426 "main.c"
     h_0opt_4d124e2a_release(&t92);
     goto bb1;
 bb6:
@@ -17438,15 +17448,15 @@ bb6:
     t93 = h24_own24;
 #line 63 "examples/interpreter/run/expr.hero"
     h24_own24 = t44;
-#line 17442 "main.c"
+#line 17452 "main.c"
     h_0opt_4d124e2a_release(&t93);
 #line 58 "examples/interpreter/run/expr.hero"
     t94 = h5_r0;
-#line 17446 "main.c"
+#line 17456 "main.c"
     h_0opt_4d124e2a_retain(&t44);
 #line 58 "examples/interpreter/run/expr.hero"
     h5_r0 = t44;
-#line 17450 "main.c"
+#line 17460 "main.c"
     h_0opt_4d124e2a_release(&t94);
     goto bb1;
 bb7:
@@ -17472,15 +17482,15 @@ bb7:
     t95 = h25_own25;
 #line 64 "examples/interpreter/run/expr.hero"
     h25_own25 = t52;
-#line 17476 "main.c"
+#line 17486 "main.c"
     h_0opt_4d124e2a_release(&t95);
 #line 58 "examples/interpreter/run/expr.hero"
     t96 = h5_r0;
-#line 17480 "main.c"
+#line 17490 "main.c"
     h_0opt_4d124e2a_retain(&t52);
 #line 58 "examples/interpreter/run/expr.hero"
     h5_r0 = t52;
-#line 17484 "main.c"
+#line 17494 "main.c"
     h_0opt_4d124e2a_release(&t96);
     goto bb1;
 bb8:
@@ -17514,15 +17524,15 @@ bb8:
     t97 = h26_own26;
 #line 65 "examples/interpreter/run/expr.hero"
     h26_own26 = t64;
-#line 17518 "main.c"
+#line 17528 "main.c"
     h_0opt_4d124e2a_release(&t97);
 #line 58 "examples/interpreter/run/expr.hero"
     t98 = h5_r0;
-#line 17522 "main.c"
+#line 17532 "main.c"
     h_0opt_4d124e2a_retain(&t64);
 #line 58 "examples/interpreter/run/expr.hero"
     h5_r0 = t64;
-#line 17526 "main.c"
+#line 17536 "main.c"
     h_0opt_4d124e2a_release(&t98);
     goto bb1;
 bb9:
@@ -17532,11 +17542,11 @@ bb9:
     t66 = t65.as.c_call;
 #line 66 "examples/interpreter/run/expr.hero"
     t99 = h13_c;
-#line 17536 "main.c"
+#line 17546 "main.c"
     h_syntree_Expr_c_call_retain(&t66);
 #line 66 "examples/interpreter/run/expr.hero"
     h13_c = t66;
-#line 17540 "main.c"
+#line 17550 "main.c"
     h_syntree_Expr_c_call_release(&t99);
 #line 66 "examples/interpreter/run/expr.hero"
     t67 = h0_nodes;
@@ -17558,22 +17568,22 @@ bb9:
     t100 = h27_own27;
 #line 66 "examples/interpreter/run/expr.hero"
     h27_own27 = t74;
-#line 17562 "main.c"
+#line 17572 "main.c"
     h_0opt_4d124e2a_release(&t100);
 #line 58 "examples/interpreter/run/expr.hero"
     t101 = h5_r0;
-#line 17566 "main.c"
+#line 17576 "main.c"
     h_0opt_4d124e2a_retain(&t74);
 #line 58 "examples/interpreter/run/expr.hero"
     h5_r0 = t74;
-#line 17570 "main.c"
+#line 17580 "main.c"
     h_0opt_4d124e2a_release(&t101);
     goto bb1;
 }
 
 #line 68 "examples/interpreter/run/expr.hero"
 h_0opt_4d124e2a h_runexpr_looked_up(h_runvalue_Frame h0_f, HeroStr h1_word) {
-#line 17577 "main.c"
+#line 17587 "main.c"
     h_0opt_6dcd62e6 h2_held = {0};
     h_0opt_6dcd62e6 h3_f0 = {0};
     h_0opt_6dcd62e6 h4_f1 = {0};
@@ -17654,25 +17664,25 @@ bb0:
     t30 = h6_own6;
 #line 69 "examples/interpreter/run/expr.hero"
     h6_own6 = t4;
-#line 17658 "main.c"
+#line 17668 "main.c"
     h_0opt_6dcd62e6_release(&t30);
 #line 69 "examples/interpreter/run/expr.hero"
     t31 = h2_held;
-#line 17662 "main.c"
+#line 17672 "main.c"
     h_0opt_6dcd62e6_retain(&t4);
 #line 69 "examples/interpreter/run/expr.hero"
     h2_held = t4;
-#line 17666 "main.c"
+#line 17676 "main.c"
     h_0opt_6dcd62e6_release(&t31);
 #line 71 "examples/interpreter/run/expr.hero"
     t5 = h2_held;
 #line 71 "examples/interpreter/run/expr.hero"
     t32 = h3_f0;
-#line 17672 "main.c"
+#line 17682 "main.c"
     h_0opt_6dcd62e6_retain(&t5);
 #line 71 "examples/interpreter/run/expr.hero"
     h3_f0 = t5;
-#line 17676 "main.c"
+#line 17686 "main.c"
     h_0opt_6dcd62e6_release(&t32);
 #line 71 "examples/interpreter/run/expr.hero"
     t6 = h3_f0;
@@ -17692,11 +17702,11 @@ bb1:
     t18 = h2_held;
 #line 74 "examples/interpreter/run/expr.hero"
     t33 = h4_f1;
-#line 17696 "main.c"
+#line 17706 "main.c"
     h_0opt_6dcd62e6_retain(&t18);
 #line 74 "examples/interpreter/run/expr.hero"
     h4_f1 = t18;
-#line 17700 "main.c"
+#line 17710 "main.c"
     h_0opt_6dcd62e6_release(&t33);
 #line 74 "examples/interpreter/run/expr.hero"
     t19 = h4_f1;
@@ -17716,7 +17726,7 @@ bb2:
     t34 = h7_own7;
 #line 72 "examples/interpreter/run/expr.hero"
     h7_own7 = t10;
-#line 17720 "main.c"
+#line 17730 "main.c"
     hero_str_decref(t34);
 #line 72 "examples/interpreter/run/expr.hero"
     t11 = HERO_STR_LIT(hero_str_60);
@@ -17728,7 +17738,7 @@ bb2:
     t35 = h8_own8;
 #line 72 "examples/interpreter/run/expr.hero"
     h8_own8 = t13;
-#line 17732 "main.c"
+#line 17742 "main.c"
     hero_str_decref(t35);
 #line 72 "examples/interpreter/run/expr.hero"
     t14 = HERO_STR_LIT(hero_str_5ee985cf);
@@ -17738,7 +17748,7 @@ bb2:
     t36 = h9_own9;
 #line 72 "examples/interpreter/run/expr.hero"
     h9_own9 = t15;
-#line 17742 "main.c"
+#line 17752 "main.c"
     hero_str_decref(t36);
     hero_str_incref(t10);
     hero_str_incref(t15);
@@ -17748,7 +17758,7 @@ bb2:
     t37 = h10_own10;
 #line 72 "examples/interpreter/run/expr.hero"
     h10_own10 = t16;
-#line 17752 "main.c"
+#line 17762 "main.c"
     h_0opt_4d124e2a_release(&t37);
 #line 72 "examples/interpreter/run/expr.hero"
     h5_ret0 = t16;
@@ -17764,7 +17774,7 @@ bb4:
     t25 = h4_f1;
 #line 74 "examples/interpreter/run/expr.hero"
     t26 = t25.as.ok;
-#line 17768 "main.c"
+#line 17778 "main.c"
     h_runvalue_Frame_retain(&t17);
     h_runvalue_Value_retain(&t26);
 #line 74 "examples/interpreter/run/expr.hero"
@@ -17773,7 +17783,7 @@ bb4:
     t38 = h11_own11;
 #line 74 "examples/interpreter/run/expr.hero"
     h11_own11 = t27;
-#line 17777 "main.c"
+#line 17787 "main.c"
     h_runexpr_Answer_release(&t38);
     h_runexpr_Answer_retain(&t27);
 #line 74 "examples/interpreter/run/expr.hero"
@@ -17782,7 +17792,7 @@ bb4:
     t39 = h12_own12;
 #line 74 "examples/interpreter/run/expr.hero"
     h12_own12 = t28;
-#line 17786 "main.c"
+#line 17796 "main.c"
     h_0opt_4d124e2a_release(&t39);
 #line 74 "examples/interpreter/run/expr.hero"
     h5_ret0 = t28;
@@ -17794,7 +17804,7 @@ bb5:
     t23 = h4_f1;
 #line 74 "examples/interpreter/run/expr.hero"
     t24 = t23.as.err;
-#line 17798 "main.c"
+#line 17808 "main.c"
     hero_panic_must(t24);
     hero_unreachable();
 bb6:
@@ -17815,7 +17825,7 @@ bb6:
 
 #line 76 "examples/interpreter/run/expr.hero"
 h_0opt_4d124e2a h_runexpr_negated(h_syntree_Tree h0_nodes, int64_t h1_id, h_runvalue_Frame h2_f, h_0fn_64cad294 h3_call) {
-#line 17819 "main.c"
+#line 17829 "main.c"
     h_0opt_4d124e2a h4_f0 = {0};
     h_runexpr_Answer h5_inner = {0};
     h_0opt_e201354 h6_f1 = {0};
@@ -17899,15 +17909,15 @@ bb0:
     t42 = h9_own9;
 #line 77 "examples/interpreter/run/expr.hero"
     h9_own9 = t5;
-#line 17903 "main.c"
+#line 17913 "main.c"
     h_0opt_4d124e2a_release(&t42);
 #line 77 "examples/interpreter/run/expr.hero"
     t43 = h4_f0;
-#line 17907 "main.c"
+#line 17917 "main.c"
     h_0opt_4d124e2a_retain(&t5);
 #line 77 "examples/interpreter/run/expr.hero"
     h4_f0 = t5;
-#line 17911 "main.c"
+#line 17921 "main.c"
     h_0opt_4d124e2a_release(&t43);
 #line 77 "examples/interpreter/run/expr.hero"
     t6 = h4_f0;
@@ -17927,11 +17937,11 @@ bb1:
     t14 = t13.as.ok;
 #line 77 "examples/interpreter/run/expr.hero"
     t44 = h5_inner;
-#line 17931 "main.c"
+#line 17941 "main.c"
     h_runexpr_Answer_retain(&t14);
 #line 77 "examples/interpreter/run/expr.hero"
     h5_inner = t14;
-#line 17935 "main.c"
+#line 17945 "main.c"
     h_runexpr_Answer_release(&t44);
 #line 78 "examples/interpreter/run/expr.hero"
     t15 = h5_inner;
@@ -17943,15 +17953,15 @@ bb1:
     t45 = h10_own10;
 #line 78 "examples/interpreter/run/expr.hero"
     h10_own10 = t17;
-#line 17947 "main.c"
+#line 17957 "main.c"
     h_0opt_e201354_release(&t45);
 #line 78 "examples/interpreter/run/expr.hero"
     t46 = h6_f1;
-#line 17951 "main.c"
+#line 17961 "main.c"
     h_0opt_e201354_retain(&t17);
 #line 78 "examples/interpreter/run/expr.hero"
     h6_f1 = t17;
-#line 17955 "main.c"
+#line 17965 "main.c"
     h_0opt_e201354_release(&t46);
 #line 78 "examples/interpreter/run/expr.hero"
     t18 = h6_f1;
@@ -17969,7 +17979,7 @@ bb2:
     t10 = h4_f0;
 #line 77 "examples/interpreter/run/expr.hero"
     t11 = t10.as.err;
-#line 17973 "main.c"
+#line 17983 "main.c"
     hero_failure_retain(&t11);
 #line 77 "examples/interpreter/run/expr.hero"
     t12 = (h_0opt_4d124e2a){.tag = INT64_C(1), .as.err = t11};
@@ -17977,7 +17987,7 @@ bb2:
     t47 = h11_own11;
 #line 77 "examples/interpreter/run/expr.hero"
     h11_own11 = t12;
-#line 17981 "main.c"
+#line 17991 "main.c"
     h_0opt_4d124e2a_release(&t47);
 #line 77 "examples/interpreter/run/expr.hero"
     h8_ret0 = t12;
@@ -18004,7 +18014,7 @@ bb4:
     t22 = h6_f1;
 #line 78 "examples/interpreter/run/expr.hero"
     t23 = t22.as.err;
-#line 18008 "main.c"
+#line 18018 "main.c"
     hero_failure_retain(&t23);
 #line 78 "examples/interpreter/run/expr.hero"
     t24 = (h_0opt_4d124e2a){.tag = INT64_C(1), .as.err = t23};
@@ -18012,7 +18022,7 @@ bb4:
     t48 = h12_own12;
 #line 78 "examples/interpreter/run/expr.hero"
     h12_own12 = t24;
-#line 18016 "main.c"
+#line 18026 "main.c"
     h_0opt_4d124e2a_release(&t48);
 #line 78 "examples/interpreter/run/expr.hero"
     h8_ret0 = t24;
@@ -18036,7 +18046,7 @@ bb5:
     t49 = h13_own13;
 #line 83 "examples/interpreter/run/expr.hero"
     h13_own13 = t38;
-#line 18040 "main.c"
+#line 18050 "main.c"
     h_runvalue_Value_release(&t49);
     h_runvalue_Frame_retain(&t34);
     h_runvalue_Value_retain(&t38);
@@ -18046,7 +18056,7 @@ bb5:
     t50 = h14_own14;
 #line 83 "examples/interpreter/run/expr.hero"
     h14_own14 = t39;
-#line 18050 "main.c"
+#line 18060 "main.c"
     h_runexpr_Answer_release(&t50);
     h_runexpr_Answer_retain(&t39);
 #line 83 "examples/interpreter/run/expr.hero"
@@ -18055,7 +18065,7 @@ bb5:
     t51 = h15_own15;
 #line 83 "examples/interpreter/run/expr.hero"
     h15_own15 = t40;
-#line 18059 "main.c"
+#line 18069 "main.c"
     h_0opt_4d124e2a_release(&t51);
 #line 83 "examples/interpreter/run/expr.hero"
     h8_ret0 = t40;
@@ -18069,11 +18079,11 @@ bb6:
     t52 = h16_own16;
 #line 81 "examples/interpreter/run/expr.hero"
     h16_own16 = t30;
-#line 18073 "main.c"
+#line 18083 "main.c"
     hero_str_decref(t52);
 #line 81 "examples/interpreter/run/expr.hero"
     t31 = HERO_STR_LIT(hero_str_2ad7d3d8);
-#line 18077 "main.c"
+#line 18087 "main.c"
     hero_str_incref(t30);
     hero_str_incref(t31);
 #line 81 "examples/interpreter/run/expr.hero"
@@ -18082,7 +18092,7 @@ bb6:
     t53 = h17_own17;
 #line 81 "examples/interpreter/run/expr.hero"
     h17_own17 = t32;
-#line 18086 "main.c"
+#line 18096 "main.c"
     h_0opt_4d124e2a_release(&t53);
 #line 81 "examples/interpreter/run/expr.hero"
     h8_ret0 = t32;
@@ -18094,7 +18104,7 @@ bb7:
     goto bb5;
 #line 81 "examples/interpreter/run/expr.hero"
 bb8:
-#line 18098 "main.c"
+#line 18108 "main.c"
     t41 = h8_ret0;
     h_0opt_4d124e2a_retain(&t41);
     h_0opt_4d124e2a_release(&h4_f0);
@@ -18114,7 +18124,7 @@ bb8:
 
 #line 85 "examples/interpreter/run/expr.hero"
 h_0opt_4d124e2a h_runexpr_inverted(h_syntree_Tree h0_nodes, int64_t h1_id, h_runvalue_Frame h2_f, h_0fn_64cad294 h3_call) {
-#line 18118 "main.c"
+#line 18128 "main.c"
     h_0opt_4d124e2a h4_f0 = {0};
     h_runexpr_Answer h5_inner = {0};
     h_0opt_473cb9ae h6_f1 = {0};
@@ -18185,15 +18195,15 @@ bb0:
     t34 = h8_own8;
 #line 86 "examples/interpreter/run/expr.hero"
     h8_own8 = t5;
-#line 18189 "main.c"
+#line 18199 "main.c"
     h_0opt_4d124e2a_release(&t34);
 #line 86 "examples/interpreter/run/expr.hero"
     t35 = h4_f0;
-#line 18193 "main.c"
+#line 18203 "main.c"
     h_0opt_4d124e2a_retain(&t5);
 #line 86 "examples/interpreter/run/expr.hero"
     h4_f0 = t5;
-#line 18197 "main.c"
+#line 18207 "main.c"
     h_0opt_4d124e2a_release(&t35);
 #line 86 "examples/interpreter/run/expr.hero"
     t6 = h4_f0;
@@ -18213,11 +18223,11 @@ bb1:
     t14 = t13.as.ok;
 #line 86 "examples/interpreter/run/expr.hero"
     t36 = h5_inner;
-#line 18217 "main.c"
+#line 18227 "main.c"
     h_runexpr_Answer_retain(&t14);
 #line 86 "examples/interpreter/run/expr.hero"
     h5_inner = t14;
-#line 18221 "main.c"
+#line 18231 "main.c"
     h_runexpr_Answer_release(&t36);
 #line 87 "examples/interpreter/run/expr.hero"
     t15 = h5_inner;
@@ -18233,15 +18243,15 @@ bb1:
     t37 = h9_own9;
 #line 87 "examples/interpreter/run/expr.hero"
     h9_own9 = t19;
-#line 18237 "main.c"
+#line 18247 "main.c"
     h_0opt_473cb9ae_release(&t37);
 #line 87 "examples/interpreter/run/expr.hero"
     t38 = h6_f1;
-#line 18241 "main.c"
+#line 18251 "main.c"
     h_0opt_473cb9ae_retain(&t19);
 #line 87 "examples/interpreter/run/expr.hero"
     h6_f1 = t19;
-#line 18245 "main.c"
+#line 18255 "main.c"
     h_0opt_473cb9ae_release(&t38);
 #line 87 "examples/interpreter/run/expr.hero"
     t20 = h6_f1;
@@ -18259,7 +18269,7 @@ bb2:
     t10 = h4_f0;
 #line 86 "examples/interpreter/run/expr.hero"
     t11 = t10.as.err;
-#line 18263 "main.c"
+#line 18273 "main.c"
     hero_failure_retain(&t11);
 #line 86 "examples/interpreter/run/expr.hero"
     t12 = (h_0opt_4d124e2a){.tag = INT64_C(1), .as.err = t11};
@@ -18267,7 +18277,7 @@ bb2:
     t39 = h10_own10;
 #line 86 "examples/interpreter/run/expr.hero"
     h10_own10 = t12;
-#line 18271 "main.c"
+#line 18281 "main.c"
     h_0opt_4d124e2a_release(&t39);
 #line 86 "examples/interpreter/run/expr.hero"
     h7_ret0 = t12;
@@ -18286,7 +18296,7 @@ bb3:
     t40 = h11_own11;
 #line 87 "examples/interpreter/run/expr.hero"
     h11_own11 = t30;
-#line 18290 "main.c"
+#line 18300 "main.c"
     h_runvalue_Value_release(&t40);
     h_runvalue_Frame_retain(&t16);
     h_runvalue_Value_retain(&t30);
@@ -18296,7 +18306,7 @@ bb3:
     t41 = h12_own12;
 #line 87 "examples/interpreter/run/expr.hero"
     h12_own12 = t31;
-#line 18300 "main.c"
+#line 18310 "main.c"
     h_runexpr_Answer_release(&t41);
     h_runexpr_Answer_retain(&t31);
 #line 87 "examples/interpreter/run/expr.hero"
@@ -18305,7 +18315,7 @@ bb3:
     t42 = h13_own13;
 #line 87 "examples/interpreter/run/expr.hero"
     h13_own13 = t32;
-#line 18309 "main.c"
+#line 18319 "main.c"
     h_0opt_4d124e2a_release(&t42);
 #line 87 "examples/interpreter/run/expr.hero"
     h7_ret0 = t32;
@@ -18317,7 +18327,7 @@ bb4:
     t24 = h6_f1;
 #line 87 "examples/interpreter/run/expr.hero"
     t25 = t24.as.err;
-#line 18321 "main.c"
+#line 18331 "main.c"
     hero_failure_retain(&t25);
 #line 87 "examples/interpreter/run/expr.hero"
     t26 = (h_0opt_4d124e2a){.tag = INT64_C(1), .as.err = t25};
@@ -18325,7 +18335,7 @@ bb4:
     t43 = h14_own14;
 #line 87 "examples/interpreter/run/expr.hero"
     h14_own14 = t26;
-#line 18329 "main.c"
+#line 18339 "main.c"
     h_0opt_4d124e2a_release(&t43);
 #line 87 "examples/interpreter/run/expr.hero"
     h7_ret0 = t26;
@@ -18333,7 +18343,7 @@ bb4:
     goto bb5;
 #line 87 "examples/interpreter/run/expr.hero"
 bb5:
-#line 18337 "main.c"
+#line 18347 "main.c"
     t33 = h7_ret0;
     h_0opt_4d124e2a_retain(&t33);
     h_0opt_4d124e2a_release(&h4_f0);
@@ -18351,7 +18361,7 @@ bb5:
 
 #line 93 "examples/interpreter/run/expr.hero"
 h_0opt_4d124e2a h_runexpr_joined(h_syntree_Tree h0_nodes, h_syntree_Op h1_op, int64_t h2_left, int64_t h3_right, h_runvalue_Frame h4_f, h_0fn_64cad294 h5_call) {
-#line 18355 "main.c"
+#line 18365 "main.c"
     h_0opt_4d124e2a h6_f0 = {0};
     h_runexpr_Answer h7_first = {0};
     h_0opt_473cb9ae h8_f1 = {0};
@@ -18618,15 +18628,15 @@ bb0:
     t158 = h21_own21;
 #line 94 "examples/interpreter/run/expr.hero"
     h21_own21 = t5;
-#line 18622 "main.c"
+#line 18632 "main.c"
     h_0opt_4d124e2a_release(&t158);
 #line 94 "examples/interpreter/run/expr.hero"
     t159 = h6_f0;
-#line 18626 "main.c"
+#line 18636 "main.c"
     h_0opt_4d124e2a_retain(&t5);
 #line 94 "examples/interpreter/run/expr.hero"
     h6_f0 = t5;
-#line 18630 "main.c"
+#line 18640 "main.c"
     h_0opt_4d124e2a_release(&t159);
 #line 94 "examples/interpreter/run/expr.hero"
     t6 = h6_f0;
@@ -18646,11 +18656,11 @@ bb1:
     t14 = t13.as.ok;
 #line 94 "examples/interpreter/run/expr.hero"
     t160 = h7_first;
-#line 18650 "main.c"
+#line 18660 "main.c"
     h_runexpr_Answer_retain(&t14);
 #line 94 "examples/interpreter/run/expr.hero"
     h7_first = t14;
-#line 18654 "main.c"
+#line 18664 "main.c"
     h_runexpr_Answer_release(&t160);
 #line 96 "examples/interpreter/run/expr.hero"
     t15 = h1_op;
@@ -18666,7 +18676,7 @@ bb2:
     t10 = h6_f0;
 #line 94 "examples/interpreter/run/expr.hero"
     t11 = t10.as.err;
-#line 18670 "main.c"
+#line 18680 "main.c"
     hero_failure_retain(&t11);
 #line 94 "examples/interpreter/run/expr.hero"
     t12 = (h_0opt_4d124e2a){.tag = INT64_C(1), .as.err = t11};
@@ -18674,7 +18684,7 @@ bb2:
     t161 = h22_own22;
 #line 94 "examples/interpreter/run/expr.hero"
     h22_own22 = t12;
-#line 18678 "main.c"
+#line 18688 "main.c"
     h_0opt_4d124e2a_release(&t161);
 #line 94 "examples/interpreter/run/expr.hero"
     h20_ret0 = t12;
@@ -18702,15 +18712,15 @@ bb4:
     t162 = h23_own23;
 #line 97 "examples/interpreter/run/expr.hero"
     h23_own23 = t20;
-#line 18706 "main.c"
+#line 18716 "main.c"
     h_0opt_473cb9ae_release(&t162);
 #line 97 "examples/interpreter/run/expr.hero"
     t163 = h8_f1;
-#line 18710 "main.c"
+#line 18720 "main.c"
     h_0opt_473cb9ae_retain(&t20);
 #line 97 "examples/interpreter/run/expr.hero"
     h8_f1 = t20;
-#line 18714 "main.c"
+#line 18724 "main.c"
     h_0opt_473cb9ae_release(&t163);
 #line 97 "examples/interpreter/run/expr.hero"
     t21 = h8_f1;
@@ -18744,15 +18754,15 @@ bb6:
     t164 = h24_own24;
 #line 99 "examples/interpreter/run/expr.hero"
     h24_own24 = t42;
-#line 18748 "main.c"
+#line 18758 "main.c"
     h_0opt_4d124e2a_release(&t164);
 #line 99 "examples/interpreter/run/expr.hero"
     t165 = h9_f2;
-#line 18752 "main.c"
+#line 18762 "main.c"
     h_0opt_4d124e2a_retain(&t42);
 #line 99 "examples/interpreter/run/expr.hero"
     h9_f2 = t42;
-#line 18756 "main.c"
+#line 18766 "main.c"
     h_0opt_4d124e2a_release(&t165);
 #line 99 "examples/interpreter/run/expr.hero"
     t43 = h9_f2;
@@ -18780,7 +18790,7 @@ bb8:
     t25 = h8_f1;
 #line 97 "examples/interpreter/run/expr.hero"
     t26 = t25.as.err;
-#line 18784 "main.c"
+#line 18794 "main.c"
     hero_failure_retain(&t26);
 #line 97 "examples/interpreter/run/expr.hero"
     t27 = (h_0opt_4d124e2a){.tag = INT64_C(1), .as.err = t26};
@@ -18788,7 +18798,7 @@ bb8:
     t166 = h25_own25;
 #line 97 "examples/interpreter/run/expr.hero"
     h25_own25 = t27;
-#line 18792 "main.c"
+#line 18802 "main.c"
     h_0opt_4d124e2a_release(&t166);
 #line 97 "examples/interpreter/run/expr.hero"
     h20_ret0 = t27;
@@ -18807,7 +18817,7 @@ bb9:
     t167 = h26_own26;
 #line 98 "examples/interpreter/run/expr.hero"
     h26_own26 = t34;
-#line 18811 "main.c"
+#line 18821 "main.c"
     h_runvalue_Value_release(&t167);
     h_runvalue_Frame_retain(&t32);
     h_runvalue_Value_retain(&t34);
@@ -18817,7 +18827,7 @@ bb9:
     t168 = h27_own27;
 #line 98 "examples/interpreter/run/expr.hero"
     h27_own27 = t35;
-#line 18821 "main.c"
+#line 18831 "main.c"
     h_runexpr_Answer_release(&t168);
     h_runexpr_Answer_retain(&t35);
 #line 98 "examples/interpreter/run/expr.hero"
@@ -18826,7 +18836,7 @@ bb9:
     t169 = h28_own28;
 #line 98 "examples/interpreter/run/expr.hero"
     h28_own28 = t36;
-#line 18830 "main.c"
+#line 18840 "main.c"
     h_0opt_4d124e2a_release(&t169);
 #line 98 "examples/interpreter/run/expr.hero"
     h20_ret0 = t36;
@@ -18843,11 +18853,11 @@ bb11:
     t51 = t50.as.ok;
 #line 99 "examples/interpreter/run/expr.hero"
     t170 = h10_second;
-#line 18847 "main.c"
+#line 18857 "main.c"
     h_runexpr_Answer_retain(&t51);
 #line 99 "examples/interpreter/run/expr.hero"
     h10_second = t51;
-#line 18851 "main.c"
+#line 18861 "main.c"
     h_runexpr_Answer_release(&t170);
 #line 100 "examples/interpreter/run/expr.hero"
     t52 = h10_second;
@@ -18863,15 +18873,15 @@ bb11:
     t171 = h29_own29;
 #line 100 "examples/interpreter/run/expr.hero"
     h29_own29 = t56;
-#line 18867 "main.c"
+#line 18877 "main.c"
     h_0opt_473cb9ae_release(&t171);
 #line 100 "examples/interpreter/run/expr.hero"
     t172 = h11_f3;
-#line 18871 "main.c"
+#line 18881 "main.c"
     h_0opt_473cb9ae_retain(&t56);
 #line 100 "examples/interpreter/run/expr.hero"
     h11_f3 = t56;
-#line 18875 "main.c"
+#line 18885 "main.c"
     h_0opt_473cb9ae_release(&t172);
 #line 100 "examples/interpreter/run/expr.hero"
     t57 = h11_f3;
@@ -18889,7 +18899,7 @@ bb12:
     t47 = h9_f2;
 #line 99 "examples/interpreter/run/expr.hero"
     t48 = t47.as.err;
-#line 18893 "main.c"
+#line 18903 "main.c"
     hero_failure_retain(&t48);
 #line 99 "examples/interpreter/run/expr.hero"
     t49 = (h_0opt_4d124e2a){.tag = INT64_C(1), .as.err = t48};
@@ -18897,7 +18907,7 @@ bb12:
     t173 = h30_own30;
 #line 99 "examples/interpreter/run/expr.hero"
     h30_own30 = t49;
-#line 18901 "main.c"
+#line 18911 "main.c"
     h_0opt_4d124e2a_release(&t173);
 #line 99 "examples/interpreter/run/expr.hero"
     h20_ret0 = t49;
@@ -18914,7 +18924,7 @@ bb13:
     t174 = h31_own31;
 #line 100 "examples/interpreter/run/expr.hero"
     h31_own31 = t66;
-#line 18918 "main.c"
+#line 18928 "main.c"
     h_runvalue_Value_release(&t174);
     h_runvalue_Frame_retain(&t53);
     h_runvalue_Value_retain(&t66);
@@ -18924,7 +18934,7 @@ bb13:
     t175 = h32_own32;
 #line 100 "examples/interpreter/run/expr.hero"
     h32_own32 = t67;
-#line 18928 "main.c"
+#line 18938 "main.c"
     h_runexpr_Answer_release(&t175);
     h_runexpr_Answer_retain(&t67);
 #line 100 "examples/interpreter/run/expr.hero"
@@ -18933,7 +18943,7 @@ bb13:
     t176 = h33_own33;
 #line 100 "examples/interpreter/run/expr.hero"
     h33_own33 = t68;
-#line 18937 "main.c"
+#line 18947 "main.c"
     h_0opt_4d124e2a_release(&t176);
 #line 100 "examples/interpreter/run/expr.hero"
     h20_ret0 = t68;
@@ -18945,7 +18955,7 @@ bb14:
     t61 = h11_f3;
 #line 100 "examples/interpreter/run/expr.hero"
     t62 = t61.as.err;
-#line 18949 "main.c"
+#line 18959 "main.c"
     hero_failure_retain(&t62);
 #line 100 "examples/interpreter/run/expr.hero"
     t63 = (h_0opt_4d124e2a){.tag = INT64_C(1), .as.err = t62};
@@ -18953,7 +18963,7 @@ bb14:
     t177 = h34_own34;
 #line 100 "examples/interpreter/run/expr.hero"
     h34_own34 = t63;
-#line 18957 "main.c"
+#line 18967 "main.c"
     h_0opt_4d124e2a_release(&t177);
 #line 100 "examples/interpreter/run/expr.hero"
     h20_ret0 = t63;
@@ -18977,15 +18987,15 @@ bb15:
     t178 = h35_own35;
 #line 107 "examples/interpreter/run/expr.hero"
     h35_own35 = t127;
-#line 18981 "main.c"
+#line 18991 "main.c"
     h_0opt_4d124e2a_release(&t178);
 #line 107 "examples/interpreter/run/expr.hero"
     t179 = h16_f7;
-#line 18985 "main.c"
+#line 18995 "main.c"
     h_0opt_4d124e2a_retain(&t127);
 #line 107 "examples/interpreter/run/expr.hero"
     h16_f7 = t127;
-#line 18989 "main.c"
+#line 18999 "main.c"
     h_0opt_4d124e2a_release(&t179);
 #line 107 "examples/interpreter/run/expr.hero"
     t128 = h16_f7;
@@ -19009,15 +19019,15 @@ bb16:
     t180 = h36_own36;
 #line 103 "examples/interpreter/run/expr.hero"
     h36_own36 = t74;
-#line 19013 "main.c"
+#line 19023 "main.c"
     h_0opt_473cb9ae_release(&t180);
 #line 103 "examples/interpreter/run/expr.hero"
     t181 = h12_f4;
-#line 19017 "main.c"
+#line 19027 "main.c"
     h_0opt_473cb9ae_retain(&t74);
 #line 103 "examples/interpreter/run/expr.hero"
     h12_f4 = t74;
-#line 19021 "main.c"
+#line 19031 "main.c"
     h_0opt_473cb9ae_release(&t181);
 #line 103 "examples/interpreter/run/expr.hero"
     t75 = h12_f4;
@@ -19051,15 +19061,15 @@ bb18:
     t182 = h37_own37;
 #line 105 "examples/interpreter/run/expr.hero"
     h37_own37 = t95;
-#line 19055 "main.c"
+#line 19065 "main.c"
     h_0opt_4d124e2a_release(&t182);
 #line 105 "examples/interpreter/run/expr.hero"
     t183 = h13_f5;
-#line 19059 "main.c"
+#line 19069 "main.c"
     h_0opt_4d124e2a_retain(&t95);
 #line 105 "examples/interpreter/run/expr.hero"
     h13_f5 = t95;
-#line 19063 "main.c"
+#line 19073 "main.c"
     h_0opt_4d124e2a_release(&t183);
 #line 105 "examples/interpreter/run/expr.hero"
     t96 = h13_f5;
@@ -19085,7 +19095,7 @@ bb20:
     t79 = h12_f4;
 #line 103 "examples/interpreter/run/expr.hero"
     t80 = t79.as.err;
-#line 19089 "main.c"
+#line 19099 "main.c"
     hero_failure_retain(&t80);
 #line 103 "examples/interpreter/run/expr.hero"
     t81 = (h_0opt_4d124e2a){.tag = INT64_C(1), .as.err = t80};
@@ -19093,7 +19103,7 @@ bb20:
     t184 = h38_own38;
 #line 103 "examples/interpreter/run/expr.hero"
     h38_own38 = t81;
-#line 19097 "main.c"
+#line 19107 "main.c"
     h_0opt_4d124e2a_release(&t184);
 #line 103 "examples/interpreter/run/expr.hero"
     h20_ret0 = t81;
@@ -19112,7 +19122,7 @@ bb21:
     t185 = h39_own39;
 #line 104 "examples/interpreter/run/expr.hero"
     h39_own39 = t87;
-#line 19116 "main.c"
+#line 19126 "main.c"
     h_runvalue_Value_release(&t185);
     h_runvalue_Frame_retain(&t85);
     h_runvalue_Value_retain(&t87);
@@ -19122,7 +19132,7 @@ bb21:
     t186 = h40_own40;
 #line 104 "examples/interpreter/run/expr.hero"
     h40_own40 = t88;
-#line 19126 "main.c"
+#line 19136 "main.c"
     h_runexpr_Answer_release(&t186);
     h_runexpr_Answer_retain(&t88);
 #line 104 "examples/interpreter/run/expr.hero"
@@ -19131,7 +19141,7 @@ bb21:
     t187 = h41_own41;
 #line 104 "examples/interpreter/run/expr.hero"
     h41_own41 = t89;
-#line 19135 "main.c"
+#line 19145 "main.c"
     h_0opt_4d124e2a_release(&t187);
 #line 104 "examples/interpreter/run/expr.hero"
     h20_ret0 = t89;
@@ -19148,11 +19158,11 @@ bb23:
     t104 = t103.as.ok;
 #line 105 "examples/interpreter/run/expr.hero"
     t188 = h14_second;
-#line 19152 "main.c"
+#line 19162 "main.c"
     h_runexpr_Answer_retain(&t104);
 #line 105 "examples/interpreter/run/expr.hero"
     h14_second = t104;
-#line 19156 "main.c"
+#line 19166 "main.c"
     h_runexpr_Answer_release(&t188);
 #line 106 "examples/interpreter/run/expr.hero"
     t105 = h14_second;
@@ -19168,15 +19178,15 @@ bb23:
     t189 = h42_own42;
 #line 106 "examples/interpreter/run/expr.hero"
     h42_own42 = t109;
-#line 19172 "main.c"
+#line 19182 "main.c"
     h_0opt_473cb9ae_release(&t189);
 #line 106 "examples/interpreter/run/expr.hero"
     t190 = h15_f6;
-#line 19176 "main.c"
+#line 19186 "main.c"
     h_0opt_473cb9ae_retain(&t109);
 #line 106 "examples/interpreter/run/expr.hero"
     h15_f6 = t109;
-#line 19180 "main.c"
+#line 19190 "main.c"
     h_0opt_473cb9ae_release(&t190);
 #line 106 "examples/interpreter/run/expr.hero"
     t110 = h15_f6;
@@ -19194,7 +19204,7 @@ bb24:
     t100 = h13_f5;
 #line 105 "examples/interpreter/run/expr.hero"
     t101 = t100.as.err;
-#line 19198 "main.c"
+#line 19208 "main.c"
     hero_failure_retain(&t101);
 #line 105 "examples/interpreter/run/expr.hero"
     t102 = (h_0opt_4d124e2a){.tag = INT64_C(1), .as.err = t101};
@@ -19202,7 +19212,7 @@ bb24:
     t191 = h43_own43;
 #line 105 "examples/interpreter/run/expr.hero"
     h43_own43 = t102;
-#line 19206 "main.c"
+#line 19216 "main.c"
     h_0opt_4d124e2a_release(&t191);
 #line 105 "examples/interpreter/run/expr.hero"
     h20_ret0 = t102;
@@ -19219,7 +19229,7 @@ bb25:
     t192 = h44_own44;
 #line 106 "examples/interpreter/run/expr.hero"
     h44_own44 = t119;
-#line 19223 "main.c"
+#line 19233 "main.c"
     h_runvalue_Value_release(&t192);
     h_runvalue_Frame_retain(&t106);
     h_runvalue_Value_retain(&t119);
@@ -19229,7 +19239,7 @@ bb25:
     t193 = h45_own45;
 #line 106 "examples/interpreter/run/expr.hero"
     h45_own45 = t120;
-#line 19233 "main.c"
+#line 19243 "main.c"
     h_runexpr_Answer_release(&t193);
     h_runexpr_Answer_retain(&t120);
 #line 106 "examples/interpreter/run/expr.hero"
@@ -19238,7 +19248,7 @@ bb25:
     t194 = h46_own46;
 #line 106 "examples/interpreter/run/expr.hero"
     h46_own46 = t121;
-#line 19242 "main.c"
+#line 19252 "main.c"
     h_0opt_4d124e2a_release(&t194);
 #line 106 "examples/interpreter/run/expr.hero"
     h20_ret0 = t121;
@@ -19250,7 +19260,7 @@ bb26:
     t114 = h15_f6;
 #line 106 "examples/interpreter/run/expr.hero"
     t115 = t114.as.err;
-#line 19254 "main.c"
+#line 19264 "main.c"
     hero_failure_retain(&t115);
 #line 106 "examples/interpreter/run/expr.hero"
     t116 = (h_0opt_4d124e2a){.tag = INT64_C(1), .as.err = t115};
@@ -19258,7 +19268,7 @@ bb26:
     t195 = h47_own47;
 #line 106 "examples/interpreter/run/expr.hero"
     h47_own47 = t116;
-#line 19262 "main.c"
+#line 19272 "main.c"
     h_0opt_4d124e2a_release(&t195);
 #line 106 "examples/interpreter/run/expr.hero"
     h20_ret0 = t116;
@@ -19271,11 +19281,11 @@ bb27:
     t136 = t135.as.ok;
 #line 107 "examples/interpreter/run/expr.hero"
     t196 = h17_second;
-#line 19275 "main.c"
+#line 19285 "main.c"
     h_runexpr_Answer_retain(&t136);
 #line 107 "examples/interpreter/run/expr.hero"
     h17_second = t136;
-#line 19279 "main.c"
+#line 19289 "main.c"
     h_runexpr_Answer_release(&t196);
 #line 108 "examples/interpreter/run/expr.hero"
     t137 = h1_op;
@@ -19293,15 +19303,15 @@ bb27:
     t197 = h48_own48;
 #line 108 "examples/interpreter/run/expr.hero"
     h48_own48 = t142;
-#line 19297 "main.c"
+#line 19307 "main.c"
     h_0opt_6dcd62e6_release(&t197);
 #line 108 "examples/interpreter/run/expr.hero"
     t198 = h18_f8;
-#line 19301 "main.c"
+#line 19311 "main.c"
     h_0opt_6dcd62e6_retain(&t142);
 #line 108 "examples/interpreter/run/expr.hero"
     h18_f8 = t142;
-#line 19305 "main.c"
+#line 19315 "main.c"
     h_0opt_6dcd62e6_release(&t198);
 #line 108 "examples/interpreter/run/expr.hero"
     t143 = h18_f8;
@@ -19319,7 +19329,7 @@ bb28:
     t132 = h16_f7;
 #line 107 "examples/interpreter/run/expr.hero"
     t133 = t132.as.err;
-#line 19323 "main.c"
+#line 19333 "main.c"
     hero_failure_retain(&t133);
 #line 107 "examples/interpreter/run/expr.hero"
     t134 = (h_0opt_4d124e2a){.tag = INT64_C(1), .as.err = t133};
@@ -19327,7 +19337,7 @@ bb28:
     t199 = h49_own49;
 #line 107 "examples/interpreter/run/expr.hero"
     h49_own49 = t134;
-#line 19331 "main.c"
+#line 19341 "main.c"
     h_0opt_4d124e2a_release(&t199);
 #line 107 "examples/interpreter/run/expr.hero"
     h20_ret0 = t134;
@@ -19340,11 +19350,11 @@ bb29:
     t151 = t150.as.ok;
 #line 108 "examples/interpreter/run/expr.hero"
     t200 = h19_got;
-#line 19344 "main.c"
+#line 19354 "main.c"
     h_runvalue_Value_retain(&t151);
 #line 108 "examples/interpreter/run/expr.hero"
     h19_got = t151;
-#line 19348 "main.c"
+#line 19358 "main.c"
     h_runvalue_Value_release(&t200);
 #line 109 "examples/interpreter/run/expr.hero"
     t152 = h17_second;
@@ -19352,7 +19362,7 @@ bb29:
     t153 = t152.f_frame;
 #line 109 "examples/interpreter/run/expr.hero"
     t154 = h19_got;
-#line 19356 "main.c"
+#line 19366 "main.c"
     h_runvalue_Frame_retain(&t153);
     h_runvalue_Value_retain(&t154);
 #line 109 "examples/interpreter/run/expr.hero"
@@ -19361,7 +19371,7 @@ bb29:
     t201 = h50_own50;
 #line 109 "examples/interpreter/run/expr.hero"
     h50_own50 = t155;
-#line 19365 "main.c"
+#line 19375 "main.c"
     h_runexpr_Answer_release(&t201);
     h_runexpr_Answer_retain(&t155);
 #line 109 "examples/interpreter/run/expr.hero"
@@ -19370,7 +19380,7 @@ bb29:
     t202 = h51_own51;
 #line 109 "examples/interpreter/run/expr.hero"
     h51_own51 = t156;
-#line 19374 "main.c"
+#line 19384 "main.c"
     h_0opt_4d124e2a_release(&t202);
 #line 109 "examples/interpreter/run/expr.hero"
     h20_ret0 = t156;
@@ -19382,7 +19392,7 @@ bb30:
     t147 = h18_f8;
 #line 108 "examples/interpreter/run/expr.hero"
     t148 = t147.as.err;
-#line 19386 "main.c"
+#line 19396 "main.c"
     hero_failure_retain(&t148);
 #line 108 "examples/interpreter/run/expr.hero"
     t149 = (h_0opt_4d124e2a){.tag = INT64_C(1), .as.err = t148};
@@ -19390,7 +19400,7 @@ bb30:
     t203 = h52_own52;
 #line 108 "examples/interpreter/run/expr.hero"
     h52_own52 = t149;
-#line 19394 "main.c"
+#line 19404 "main.c"
     h_0opt_4d124e2a_release(&t203);
 #line 108 "examples/interpreter/run/expr.hero"
     h20_ret0 = t149;
@@ -19398,7 +19408,7 @@ bb30:
     goto bb31;
 #line 108 "examples/interpreter/run/expr.hero"
 bb31:
-#line 19402 "main.c"
+#line 19412 "main.c"
     t157 = h20_ret0;
     h_0opt_4d124e2a_retain(&t157);
     h_0opt_4d124e2a_release(&h6_f0);
@@ -19452,7 +19462,7 @@ bb31:
 
 #line 114 "examples/interpreter/run/expr.hero"
 h_0opt_6dcd62e6 h_runexpr_combined(h_syntree_Op h0_op, h_runvalue_Value h1_a, h_runvalue_Value h2_b) {
-#line 19456 "main.c"
+#line 19466 "main.c"
     bool h3_b0;
     h_0opt_f87774a h4_f0 = {0};
     h_0opt_f87774a h5_f1 = {0};
@@ -19905,15 +19915,15 @@ bb4:
     t257 = h24_own24;
 #line 119 "examples/interpreter/run/expr.hero"
     h24_own24 = t35;
-#line 19909 "main.c"
+#line 19919 "main.c"
     h_0opt_e201354_release(&t257);
 #line 119 "examples/interpreter/run/expr.hero"
     t258 = h6_f2;
-#line 19913 "main.c"
+#line 19923 "main.c"
     h_0opt_e201354_retain(&t35);
 #line 119 "examples/interpreter/run/expr.hero"
     h6_f2 = t35;
-#line 19917 "main.c"
+#line 19927 "main.c"
     h_0opt_e201354_release(&t258);
 #line 119 "examples/interpreter/run/expr.hero"
     t36 = h6_f2;
@@ -19950,15 +19960,15 @@ bb7:
     t259 = h25_own25;
 #line 117 "examples/interpreter/run/expr.hero"
     h25_own25 = t10;
-#line 19954 "main.c"
+#line 19964 "main.c"
     h_0opt_f87774a_release(&t259);
 #line 117 "examples/interpreter/run/expr.hero"
     t260 = h4_f0;
-#line 19958 "main.c"
+#line 19968 "main.c"
     h_0opt_f87774a_retain(&t10);
 #line 117 "examples/interpreter/run/expr.hero"
     h4_f0 = t10;
-#line 19962 "main.c"
+#line 19972 "main.c"
     h_0opt_f87774a_release(&t260);
 #line 117 "examples/interpreter/run/expr.hero"
     t11 = h4_f0;
@@ -19988,15 +19998,15 @@ bb9:
     t261 = h26_own26;
 #line 117 "examples/interpreter/run/expr.hero"
     h26_own26 = t21;
-#line 19992 "main.c"
+#line 20002 "main.c"
     h_0opt_f87774a_release(&t261);
 #line 117 "examples/interpreter/run/expr.hero"
     t262 = h5_f1;
-#line 19996 "main.c"
+#line 20006 "main.c"
     h_0opt_f87774a_retain(&t21);
 #line 117 "examples/interpreter/run/expr.hero"
     h5_f1 = t21;
-#line 20000 "main.c"
+#line 20010 "main.c"
     h_0opt_f87774a_release(&t262);
 #line 117 "examples/interpreter/run/expr.hero"
     t22 = h5_f1;
@@ -20014,7 +20024,7 @@ bb10:
     t15 = h4_f0;
 #line 117 "examples/interpreter/run/expr.hero"
     t16 = t15.as.err;
-#line 20018 "main.c"
+#line 20028 "main.c"
     hero_failure_retain(&t16);
 #line 117 "examples/interpreter/run/expr.hero"
     t17 = (h_0opt_6dcd62e6){.tag = INT64_C(1), .as.err = t16};
@@ -20022,7 +20032,7 @@ bb10:
     t263 = h27_own27;
 #line 117 "examples/interpreter/run/expr.hero"
     h27_own27 = t17;
-#line 20026 "main.c"
+#line 20036 "main.c"
     h_0opt_6dcd62e6_release(&t263);
 #line 117 "examples/interpreter/run/expr.hero"
     h23_ret0 = t17;
@@ -20040,7 +20050,7 @@ bb11:
     t264 = h28_own28;
 #line 117 "examples/interpreter/run/expr.hero"
     h28_own28 = t31;
-#line 20044 "main.c"
+#line 20054 "main.c"
     hero_str_decref(t264);
     hero_str_incref(t31);
 #line 117 "examples/interpreter/run/expr.hero"
@@ -20049,7 +20059,7 @@ bb11:
     t265 = h29_own29;
 #line 117 "examples/interpreter/run/expr.hero"
     h29_own29 = t32;
-#line 20053 "main.c"
+#line 20063 "main.c"
     h_runvalue_Value_release(&t265);
     h_runvalue_Value_retain(&t32);
 #line 117 "examples/interpreter/run/expr.hero"
@@ -20058,7 +20068,7 @@ bb11:
     t266 = h30_own30;
 #line 117 "examples/interpreter/run/expr.hero"
     h30_own30 = t33;
-#line 20062 "main.c"
+#line 20072 "main.c"
     h_0opt_6dcd62e6_release(&t266);
 #line 117 "examples/interpreter/run/expr.hero"
     h23_ret0 = t33;
@@ -20070,7 +20080,7 @@ bb12:
     t26 = h5_f1;
 #line 117 "examples/interpreter/run/expr.hero"
     t27 = t26.as.err;
-#line 20074 "main.c"
+#line 20084 "main.c"
     hero_failure_retain(&t27);
 #line 117 "examples/interpreter/run/expr.hero"
     t28 = (h_0opt_6dcd62e6){.tag = INT64_C(1), .as.err = t27};
@@ -20078,7 +20088,7 @@ bb12:
     t267 = h31_own31;
 #line 117 "examples/interpreter/run/expr.hero"
     h31_own31 = t28;
-#line 20082 "main.c"
+#line 20092 "main.c"
     h_0opt_6dcd62e6_release(&t267);
 #line 117 "examples/interpreter/run/expr.hero"
     h23_ret0 = t28;
@@ -20098,15 +20108,15 @@ bb13:
     t268 = h32_own32;
 #line 119 "examples/interpreter/run/expr.hero"
     h32_own32 = t46;
-#line 20102 "main.c"
+#line 20112 "main.c"
     h_0opt_e201354_release(&t268);
 #line 119 "examples/interpreter/run/expr.hero"
     t269 = h7_f3;
-#line 20106 "main.c"
+#line 20116 "main.c"
     h_0opt_e201354_retain(&t46);
 #line 119 "examples/interpreter/run/expr.hero"
     h7_f3 = t46;
-#line 20110 "main.c"
+#line 20120 "main.c"
     h_0opt_e201354_release(&t269);
 #line 119 "examples/interpreter/run/expr.hero"
     t47 = h7_f3;
@@ -20124,7 +20134,7 @@ bb14:
     t40 = h6_f2;
 #line 119 "examples/interpreter/run/expr.hero"
     t41 = t40.as.err;
-#line 20128 "main.c"
+#line 20138 "main.c"
     hero_failure_retain(&t41);
 #line 119 "examples/interpreter/run/expr.hero"
     t42 = (h_0opt_6dcd62e6){.tag = INT64_C(1), .as.err = t41};
@@ -20132,7 +20142,7 @@ bb14:
     t270 = h33_own33;
 #line 119 "examples/interpreter/run/expr.hero"
     h33_own33 = t42;
-#line 20136 "main.c"
+#line 20146 "main.c"
     h_0opt_6dcd62e6_release(&t270);
 #line 119 "examples/interpreter/run/expr.hero"
     h23_ret0 = t42;
@@ -20150,15 +20160,15 @@ bb15:
     t271 = h34_own34;
 #line 119 "examples/interpreter/run/expr.hero"
     h34_own34 = t56;
-#line 20154 "main.c"
+#line 20164 "main.c"
     h_0opt_e201354_release(&t271);
 #line 119 "examples/interpreter/run/expr.hero"
     t272 = h8_f4;
-#line 20158 "main.c"
+#line 20168 "main.c"
     h_0opt_e201354_retain(&t56);
 #line 119 "examples/interpreter/run/expr.hero"
     h8_f4 = t56;
-#line 20162 "main.c"
+#line 20172 "main.c"
     h_0opt_e201354_release(&t272);
 #line 119 "examples/interpreter/run/expr.hero"
     t57 = h8_f4;
@@ -20176,7 +20186,7 @@ bb16:
     t51 = h7_f3;
 #line 119 "examples/interpreter/run/expr.hero"
     t52 = t51.as.err;
-#line 20180 "main.c"
+#line 20190 "main.c"
     hero_failure_retain(&t52);
 #line 119 "examples/interpreter/run/expr.hero"
     t53 = (h_0opt_6dcd62e6){.tag = INT64_C(1), .as.err = t52};
@@ -20184,7 +20194,7 @@ bb16:
     t273 = h35_own35;
 #line 119 "examples/interpreter/run/expr.hero"
     h35_own35 = t53;
-#line 20188 "main.c"
+#line 20198 "main.c"
     h_0opt_6dcd62e6_release(&t273);
 #line 119 "examples/interpreter/run/expr.hero"
     h23_ret0 = t53;
@@ -20202,7 +20212,7 @@ bb17:
     t274 = h36_own36;
 #line 119 "examples/interpreter/run/expr.hero"
     h36_own36 = t66;
-#line 20206 "main.c"
+#line 20216 "main.c"
     h_runvalue_Value_release(&t274);
     h_runvalue_Value_retain(&t66);
 #line 119 "examples/interpreter/run/expr.hero"
@@ -20211,7 +20221,7 @@ bb17:
     t275 = h37_own37;
 #line 119 "examples/interpreter/run/expr.hero"
     h37_own37 = t67;
-#line 20215 "main.c"
+#line 20225 "main.c"
     h_0opt_6dcd62e6_release(&t275);
 #line 119 "examples/interpreter/run/expr.hero"
     h23_ret0 = t67;
@@ -20223,7 +20233,7 @@ bb18:
     t61 = h8_f4;
 #line 119 "examples/interpreter/run/expr.hero"
     t62 = t61.as.err;
-#line 20227 "main.c"
+#line 20237 "main.c"
     hero_failure_retain(&t62);
 #line 119 "examples/interpreter/run/expr.hero"
     t63 = (h_0opt_6dcd62e6){.tag = INT64_C(1), .as.err = t62};
@@ -20231,7 +20241,7 @@ bb18:
     t276 = h38_own38;
 #line 119 "examples/interpreter/run/expr.hero"
     h38_own38 = t63;
-#line 20235 "main.c"
+#line 20245 "main.c"
     h_0opt_6dcd62e6_release(&t276);
 #line 119 "examples/interpreter/run/expr.hero"
     h23_ret0 = t63;
@@ -20257,15 +20267,15 @@ bb20:
     t277 = h39_own39;
 #line 122 "examples/interpreter/run/expr.hero"
     h39_own39 = t72;
-#line 20261 "main.c"
+#line 20271 "main.c"
     h_0opt_e201354_release(&t277);
 #line 122 "examples/interpreter/run/expr.hero"
     t278 = h9_f5;
-#line 20265 "main.c"
+#line 20275 "main.c"
     h_0opt_e201354_retain(&t72);
 #line 122 "examples/interpreter/run/expr.hero"
     h9_f5 = t72;
-#line 20269 "main.c"
+#line 20279 "main.c"
     h_0opt_e201354_release(&t278);
 #line 122 "examples/interpreter/run/expr.hero"
     t73 = h9_f5;
@@ -20295,15 +20305,15 @@ bb22:
     t279 = h40_own40;
 #line 122 "examples/interpreter/run/expr.hero"
     h40_own40 = t83;
-#line 20299 "main.c"
+#line 20309 "main.c"
     h_0opt_e201354_release(&t279);
 #line 122 "examples/interpreter/run/expr.hero"
     t280 = h10_f6;
-#line 20303 "main.c"
+#line 20313 "main.c"
     h_0opt_e201354_retain(&t83);
 #line 122 "examples/interpreter/run/expr.hero"
     h10_f6 = t83;
-#line 20307 "main.c"
+#line 20317 "main.c"
     h_0opt_e201354_release(&t280);
 #line 122 "examples/interpreter/run/expr.hero"
     t84 = h10_f6;
@@ -20321,7 +20331,7 @@ bb23:
     t77 = h9_f5;
 #line 122 "examples/interpreter/run/expr.hero"
     t78 = t77.as.err;
-#line 20325 "main.c"
+#line 20335 "main.c"
     hero_failure_retain(&t78);
 #line 122 "examples/interpreter/run/expr.hero"
     t79 = (h_0opt_6dcd62e6){.tag = INT64_C(1), .as.err = t78};
@@ -20329,7 +20339,7 @@ bb23:
     t281 = h41_own41;
 #line 122 "examples/interpreter/run/expr.hero"
     h41_own41 = t79;
-#line 20333 "main.c"
+#line 20343 "main.c"
     h_0opt_6dcd62e6_release(&t281);
 #line 122 "examples/interpreter/run/expr.hero"
     h23_ret0 = t79;
@@ -20347,15 +20357,15 @@ bb24:
     t282 = h42_own42;
 #line 122 "examples/interpreter/run/expr.hero"
     h42_own42 = t93;
-#line 20351 "main.c"
+#line 20361 "main.c"
     h_0opt_e201354_release(&t282);
 #line 122 "examples/interpreter/run/expr.hero"
     t283 = h11_f7;
-#line 20355 "main.c"
+#line 20365 "main.c"
     h_0opt_e201354_retain(&t93);
 #line 122 "examples/interpreter/run/expr.hero"
     h11_f7 = t93;
-#line 20359 "main.c"
+#line 20369 "main.c"
     h_0opt_e201354_release(&t283);
 #line 122 "examples/interpreter/run/expr.hero"
     t94 = h11_f7;
@@ -20373,7 +20383,7 @@ bb25:
     t88 = h10_f6;
 #line 122 "examples/interpreter/run/expr.hero"
     t89 = t88.as.err;
-#line 20377 "main.c"
+#line 20387 "main.c"
     hero_failure_retain(&t89);
 #line 122 "examples/interpreter/run/expr.hero"
     t90 = (h_0opt_6dcd62e6){.tag = INT64_C(1), .as.err = t89};
@@ -20381,7 +20391,7 @@ bb25:
     t284 = h43_own43;
 #line 122 "examples/interpreter/run/expr.hero"
     h43_own43 = t90;
-#line 20385 "main.c"
+#line 20395 "main.c"
     h_0opt_6dcd62e6_release(&t284);
 #line 122 "examples/interpreter/run/expr.hero"
     h23_ret0 = t90;
@@ -20399,7 +20409,7 @@ bb26:
     t285 = h44_own44;
 #line 122 "examples/interpreter/run/expr.hero"
     h44_own44 = t103;
-#line 20403 "main.c"
+#line 20413 "main.c"
     h_runvalue_Value_release(&t285);
     h_runvalue_Value_retain(&t103);
 #line 122 "examples/interpreter/run/expr.hero"
@@ -20408,7 +20418,7 @@ bb26:
     t286 = h45_own45;
 #line 122 "examples/interpreter/run/expr.hero"
     h45_own45 = t104;
-#line 20412 "main.c"
+#line 20422 "main.c"
     h_0opt_6dcd62e6_release(&t286);
 #line 122 "examples/interpreter/run/expr.hero"
     h23_ret0 = t104;
@@ -20420,7 +20430,7 @@ bb27:
     t98 = h11_f7;
 #line 122 "examples/interpreter/run/expr.hero"
     t99 = t98.as.err;
-#line 20424 "main.c"
+#line 20434 "main.c"
     hero_failure_retain(&t99);
 #line 122 "examples/interpreter/run/expr.hero"
     t100 = (h_0opt_6dcd62e6){.tag = INT64_C(1), .as.err = t99};
@@ -20428,7 +20438,7 @@ bb27:
     t287 = h46_own46;
 #line 122 "examples/interpreter/run/expr.hero"
     h46_own46 = t100;
-#line 20432 "main.c"
+#line 20442 "main.c"
     h_0opt_6dcd62e6_release(&t287);
 #line 122 "examples/interpreter/run/expr.hero"
     h23_ret0 = t100;
@@ -20454,15 +20464,15 @@ bb29:
     t288 = h47_own47;
 #line 125 "examples/interpreter/run/expr.hero"
     h47_own47 = t109;
-#line 20458 "main.c"
+#line 20468 "main.c"
     h_0opt_e201354_release(&t288);
 #line 125 "examples/interpreter/run/expr.hero"
     t289 = h12_f8;
-#line 20462 "main.c"
+#line 20472 "main.c"
     h_0opt_e201354_retain(&t109);
 #line 125 "examples/interpreter/run/expr.hero"
     h12_f8 = t109;
-#line 20466 "main.c"
+#line 20476 "main.c"
     h_0opt_e201354_release(&t289);
 #line 125 "examples/interpreter/run/expr.hero"
     t110 = h12_f8;
@@ -20492,15 +20502,15 @@ bb31:
     t290 = h48_own48;
 #line 125 "examples/interpreter/run/expr.hero"
     h48_own48 = t120;
-#line 20496 "main.c"
+#line 20506 "main.c"
     h_0opt_e201354_release(&t290);
 #line 125 "examples/interpreter/run/expr.hero"
     t291 = h13_f9;
-#line 20500 "main.c"
+#line 20510 "main.c"
     h_0opt_e201354_retain(&t120);
 #line 125 "examples/interpreter/run/expr.hero"
     h13_f9 = t120;
-#line 20504 "main.c"
+#line 20514 "main.c"
     h_0opt_e201354_release(&t291);
 #line 125 "examples/interpreter/run/expr.hero"
     t121 = h13_f9;
@@ -20518,7 +20528,7 @@ bb32:
     t114 = h12_f8;
 #line 125 "examples/interpreter/run/expr.hero"
     t115 = t114.as.err;
-#line 20522 "main.c"
+#line 20532 "main.c"
     hero_failure_retain(&t115);
 #line 125 "examples/interpreter/run/expr.hero"
     t116 = (h_0opt_6dcd62e6){.tag = INT64_C(1), .as.err = t115};
@@ -20526,7 +20536,7 @@ bb32:
     t292 = h49_own49;
 #line 125 "examples/interpreter/run/expr.hero"
     h49_own49 = t116;
-#line 20530 "main.c"
+#line 20540 "main.c"
     h_0opt_6dcd62e6_release(&t292);
 #line 125 "examples/interpreter/run/expr.hero"
     h23_ret0 = t116;
@@ -20544,15 +20554,15 @@ bb33:
     t293 = h50_own50;
 #line 125 "examples/interpreter/run/expr.hero"
     h50_own50 = t130;
-#line 20548 "main.c"
+#line 20558 "main.c"
     h_0opt_e201354_release(&t293);
 #line 125 "examples/interpreter/run/expr.hero"
     t294 = h14_f10;
-#line 20552 "main.c"
+#line 20562 "main.c"
     h_0opt_e201354_retain(&t130);
 #line 125 "examples/interpreter/run/expr.hero"
     h14_f10 = t130;
-#line 20556 "main.c"
+#line 20566 "main.c"
     h_0opt_e201354_release(&t294);
 #line 125 "examples/interpreter/run/expr.hero"
     t131 = h14_f10;
@@ -20570,7 +20580,7 @@ bb34:
     t125 = h13_f9;
 #line 125 "examples/interpreter/run/expr.hero"
     t126 = t125.as.err;
-#line 20574 "main.c"
+#line 20584 "main.c"
     hero_failure_retain(&t126);
 #line 125 "examples/interpreter/run/expr.hero"
     t127 = (h_0opt_6dcd62e6){.tag = INT64_C(1), .as.err = t126};
@@ -20578,7 +20588,7 @@ bb34:
     t295 = h51_own51;
 #line 125 "examples/interpreter/run/expr.hero"
     h51_own51 = t127;
-#line 20582 "main.c"
+#line 20592 "main.c"
     h_0opt_6dcd62e6_release(&t295);
 #line 125 "examples/interpreter/run/expr.hero"
     h23_ret0 = t127;
@@ -20596,7 +20606,7 @@ bb35:
     t296 = h52_own52;
 #line 125 "examples/interpreter/run/expr.hero"
     h52_own52 = t140;
-#line 20600 "main.c"
+#line 20610 "main.c"
     h_runvalue_Value_release(&t296);
     h_runvalue_Value_retain(&t140);
 #line 125 "examples/interpreter/run/expr.hero"
@@ -20605,7 +20615,7 @@ bb35:
     t297 = h53_own53;
 #line 125 "examples/interpreter/run/expr.hero"
     h53_own53 = t141;
-#line 20609 "main.c"
+#line 20619 "main.c"
     h_0opt_6dcd62e6_release(&t297);
 #line 125 "examples/interpreter/run/expr.hero"
     h23_ret0 = t141;
@@ -20617,7 +20627,7 @@ bb36:
     t135 = h14_f10;
 #line 125 "examples/interpreter/run/expr.hero"
     t136 = t135.as.err;
-#line 20621 "main.c"
+#line 20631 "main.c"
     hero_failure_retain(&t136);
 #line 125 "examples/interpreter/run/expr.hero"
     t137 = (h_0opt_6dcd62e6){.tag = INT64_C(1), .as.err = t136};
@@ -20625,7 +20635,7 @@ bb36:
     t298 = h54_own54;
 #line 125 "examples/interpreter/run/expr.hero"
     h54_own54 = t137;
-#line 20629 "main.c"
+#line 20639 "main.c"
     h_0opt_6dcd62e6_release(&t298);
 #line 125 "examples/interpreter/run/expr.hero"
     h23_ret0 = t137;
@@ -20651,15 +20661,15 @@ bb38:
     t299 = h55_own55;
 #line 128 "examples/interpreter/run/expr.hero"
     h55_own55 = t146;
-#line 20655 "main.c"
+#line 20665 "main.c"
     h_0opt_e201354_release(&t299);
 #line 128 "examples/interpreter/run/expr.hero"
     t300 = h15_f11;
-#line 20659 "main.c"
+#line 20669 "main.c"
     h_0opt_e201354_retain(&t146);
 #line 128 "examples/interpreter/run/expr.hero"
     h15_f11 = t146;
-#line 20663 "main.c"
+#line 20673 "main.c"
     h_0opt_e201354_release(&t300);
 #line 128 "examples/interpreter/run/expr.hero"
     t147 = h15_f11;
@@ -20689,15 +20699,15 @@ bb40:
     t301 = h56_own56;
 #line 128 "examples/interpreter/run/expr.hero"
     h56_own56 = t157;
-#line 20693 "main.c"
+#line 20703 "main.c"
     h_0opt_e201354_release(&t301);
 #line 128 "examples/interpreter/run/expr.hero"
     t302 = h16_f12;
-#line 20697 "main.c"
+#line 20707 "main.c"
     h_0opt_e201354_retain(&t157);
 #line 128 "examples/interpreter/run/expr.hero"
     h16_f12 = t157;
-#line 20701 "main.c"
+#line 20711 "main.c"
     h_0opt_e201354_release(&t302);
 #line 128 "examples/interpreter/run/expr.hero"
     t158 = h16_f12;
@@ -20715,7 +20725,7 @@ bb41:
     t151 = h15_f11;
 #line 128 "examples/interpreter/run/expr.hero"
     t152 = t151.as.err;
-#line 20719 "main.c"
+#line 20729 "main.c"
     hero_failure_retain(&t152);
 #line 128 "examples/interpreter/run/expr.hero"
     t153 = (h_0opt_6dcd62e6){.tag = INT64_C(1), .as.err = t152};
@@ -20723,7 +20733,7 @@ bb41:
     t303 = h57_own57;
 #line 128 "examples/interpreter/run/expr.hero"
     h57_own57 = t153;
-#line 20727 "main.c"
+#line 20737 "main.c"
     h_0opt_6dcd62e6_release(&t303);
 #line 128 "examples/interpreter/run/expr.hero"
     h23_ret0 = t153;
@@ -20741,15 +20751,15 @@ bb42:
     t304 = h58_own58;
 #line 128 "examples/interpreter/run/expr.hero"
     h58_own58 = t167;
-#line 20745 "main.c"
+#line 20755 "main.c"
     h_0opt_e201354_release(&t304);
 #line 128 "examples/interpreter/run/expr.hero"
     t305 = h17_f13;
-#line 20749 "main.c"
+#line 20759 "main.c"
     h_0opt_e201354_retain(&t167);
 #line 128 "examples/interpreter/run/expr.hero"
     h17_f13 = t167;
-#line 20753 "main.c"
+#line 20763 "main.c"
     h_0opt_e201354_release(&t305);
 #line 128 "examples/interpreter/run/expr.hero"
     t168 = h17_f13;
@@ -20767,7 +20777,7 @@ bb43:
     t162 = h16_f12;
 #line 128 "examples/interpreter/run/expr.hero"
     t163 = t162.as.err;
-#line 20771 "main.c"
+#line 20781 "main.c"
     hero_failure_retain(&t163);
 #line 128 "examples/interpreter/run/expr.hero"
     t164 = (h_0opt_6dcd62e6){.tag = INT64_C(1), .as.err = t163};
@@ -20775,7 +20785,7 @@ bb43:
     t306 = h59_own59;
 #line 128 "examples/interpreter/run/expr.hero"
     h59_own59 = t164;
-#line 20779 "main.c"
+#line 20789 "main.c"
     h_0opt_6dcd62e6_release(&t306);
 #line 128 "examples/interpreter/run/expr.hero"
     h23_ret0 = t164;
@@ -20793,7 +20803,7 @@ bb44:
     t307 = h60_own60;
 #line 128 "examples/interpreter/run/expr.hero"
     h60_own60 = t177;
-#line 20797 "main.c"
+#line 20807 "main.c"
     h_runvalue_Value_release(&t307);
     h_runvalue_Value_retain(&t177);
 #line 128 "examples/interpreter/run/expr.hero"
@@ -20802,7 +20812,7 @@ bb44:
     t308 = h61_own61;
 #line 128 "examples/interpreter/run/expr.hero"
     h61_own61 = t178;
-#line 20806 "main.c"
+#line 20816 "main.c"
     h_0opt_6dcd62e6_release(&t308);
 #line 128 "examples/interpreter/run/expr.hero"
     h23_ret0 = t178;
@@ -20814,7 +20824,7 @@ bb45:
     t172 = h17_f13;
 #line 128 "examples/interpreter/run/expr.hero"
     t173 = t172.as.err;
-#line 20818 "main.c"
+#line 20828 "main.c"
     hero_failure_retain(&t173);
 #line 128 "examples/interpreter/run/expr.hero"
     t174 = (h_0opt_6dcd62e6){.tag = INT64_C(1), .as.err = t173};
@@ -20822,7 +20832,7 @@ bb45:
     t309 = h62_own62;
 #line 128 "examples/interpreter/run/expr.hero"
     h62_own62 = t174;
-#line 20826 "main.c"
+#line 20836 "main.c"
     h_0opt_6dcd62e6_release(&t309);
 #line 128 "examples/interpreter/run/expr.hero"
     h23_ret0 = t174;
@@ -20848,15 +20858,15 @@ bb47:
     t310 = h63_own63;
 #line 131 "examples/interpreter/run/expr.hero"
     h63_own63 = t183;
-#line 20852 "main.c"
+#line 20862 "main.c"
     h_0opt_e201354_release(&t310);
 #line 131 "examples/interpreter/run/expr.hero"
     t311 = h18_f14;
-#line 20856 "main.c"
+#line 20866 "main.c"
     h_0opt_e201354_retain(&t183);
 #line 131 "examples/interpreter/run/expr.hero"
     h18_f14 = t183;
-#line 20860 "main.c"
+#line 20870 "main.c"
     h_0opt_e201354_release(&t311);
 #line 131 "examples/interpreter/run/expr.hero"
     t184 = h18_f14;
@@ -20886,15 +20896,15 @@ bb49:
     t312 = h64_own64;
 #line 131 "examples/interpreter/run/expr.hero"
     h64_own64 = t194;
-#line 20890 "main.c"
+#line 20900 "main.c"
     h_0opt_e201354_release(&t312);
 #line 131 "examples/interpreter/run/expr.hero"
     t313 = h19_f15;
-#line 20894 "main.c"
+#line 20904 "main.c"
     h_0opt_e201354_retain(&t194);
 #line 131 "examples/interpreter/run/expr.hero"
     h19_f15 = t194;
-#line 20898 "main.c"
+#line 20908 "main.c"
     h_0opt_e201354_release(&t313);
 #line 131 "examples/interpreter/run/expr.hero"
     t195 = h19_f15;
@@ -20912,7 +20922,7 @@ bb50:
     t188 = h18_f14;
 #line 131 "examples/interpreter/run/expr.hero"
     t189 = t188.as.err;
-#line 20916 "main.c"
+#line 20926 "main.c"
     hero_failure_retain(&t189);
 #line 131 "examples/interpreter/run/expr.hero"
     t190 = (h_0opt_6dcd62e6){.tag = INT64_C(1), .as.err = t189};
@@ -20920,7 +20930,7 @@ bb50:
     t314 = h65_own65;
 #line 131 "examples/interpreter/run/expr.hero"
     h65_own65 = t190;
-#line 20924 "main.c"
+#line 20934 "main.c"
     h_0opt_6dcd62e6_release(&t314);
 #line 131 "examples/interpreter/run/expr.hero"
     h23_ret0 = t190;
@@ -20938,15 +20948,15 @@ bb51:
     t315 = h66_own66;
 #line 131 "examples/interpreter/run/expr.hero"
     h66_own66 = t204;
-#line 20942 "main.c"
+#line 20952 "main.c"
     h_0opt_e201354_release(&t315);
 #line 131 "examples/interpreter/run/expr.hero"
     t316 = h20_f16;
-#line 20946 "main.c"
+#line 20956 "main.c"
     h_0opt_e201354_retain(&t204);
 #line 131 "examples/interpreter/run/expr.hero"
     h20_f16 = t204;
-#line 20950 "main.c"
+#line 20960 "main.c"
     h_0opt_e201354_release(&t316);
 #line 131 "examples/interpreter/run/expr.hero"
     t205 = h20_f16;
@@ -20964,7 +20974,7 @@ bb52:
     t199 = h19_f15;
 #line 131 "examples/interpreter/run/expr.hero"
     t200 = t199.as.err;
-#line 20968 "main.c"
+#line 20978 "main.c"
     hero_failure_retain(&t200);
 #line 131 "examples/interpreter/run/expr.hero"
     t201 = (h_0opt_6dcd62e6){.tag = INT64_C(1), .as.err = t200};
@@ -20972,7 +20982,7 @@ bb52:
     t317 = h67_own67;
 #line 131 "examples/interpreter/run/expr.hero"
     h67_own67 = t201;
-#line 20976 "main.c"
+#line 20986 "main.c"
     h_0opt_6dcd62e6_release(&t317);
 #line 131 "examples/interpreter/run/expr.hero"
     h23_ret0 = t201;
@@ -20990,7 +21000,7 @@ bb53:
     t318 = h68_own68;
 #line 131 "examples/interpreter/run/expr.hero"
     h68_own68 = t214;
-#line 20994 "main.c"
+#line 21004 "main.c"
     h_runvalue_Value_release(&t318);
     h_runvalue_Value_retain(&t214);
 #line 131 "examples/interpreter/run/expr.hero"
@@ -20999,7 +21009,7 @@ bb53:
     t319 = h69_own69;
 #line 131 "examples/interpreter/run/expr.hero"
     h69_own69 = t215;
-#line 21003 "main.c"
+#line 21013 "main.c"
     h_0opt_6dcd62e6_release(&t319);
 #line 131 "examples/interpreter/run/expr.hero"
     h23_ret0 = t215;
@@ -21011,7 +21021,7 @@ bb54:
     t209 = h20_f16;
 #line 131 "examples/interpreter/run/expr.hero"
     t210 = t209.as.err;
-#line 21015 "main.c"
+#line 21025 "main.c"
     hero_failure_retain(&t210);
 #line 131 "examples/interpreter/run/expr.hero"
     t211 = (h_0opt_6dcd62e6){.tag = INT64_C(1), .as.err = t210};
@@ -21019,7 +21029,7 @@ bb54:
     t320 = h70_own70;
 #line 131 "examples/interpreter/run/expr.hero"
     h70_own70 = t211;
-#line 21023 "main.c"
+#line 21033 "main.c"
     h_0opt_6dcd62e6_release(&t320);
 #line 131 "examples/interpreter/run/expr.hero"
     h23_ret0 = t211;
@@ -21049,7 +21059,7 @@ bb56:
     t321 = h71_own71;
 #line 134 "examples/interpreter/run/expr.hero"
     h71_own71 = t222;
-#line 21053 "main.c"
+#line 21063 "main.c"
     h_runvalue_Value_release(&t321);
     h_runvalue_Value_retain(&t222);
 #line 134 "examples/interpreter/run/expr.hero"
@@ -21058,7 +21068,7 @@ bb56:
     t322 = h72_own72;
 #line 134 "examples/interpreter/run/expr.hero"
     h72_own72 = t223;
-#line 21062 "main.c"
+#line 21072 "main.c"
     h_0opt_6dcd62e6_release(&t322);
 #line 134 "examples/interpreter/run/expr.hero"
     h23_ret0 = t223;
@@ -21080,15 +21090,15 @@ bb58:
     t323 = h73_own73;
 #line 139 "examples/interpreter/run/expr.hero"
     h73_own73 = t234;
-#line 21084 "main.c"
+#line 21094 "main.c"
     h_0opt_e201354_release(&t323);
 #line 139 "examples/interpreter/run/expr.hero"
     t324 = h21_f17;
-#line 21088 "main.c"
+#line 21098 "main.c"
     h_0opt_e201354_retain(&t234);
 #line 139 "examples/interpreter/run/expr.hero"
     h21_f17 = t234;
-#line 21092 "main.c"
+#line 21102 "main.c"
     h_0opt_e201354_release(&t324);
 #line 139 "examples/interpreter/run/expr.hero"
     t235 = h21_f17;
@@ -21114,7 +21124,7 @@ bb59:
     t325 = h74_own74;
 #line 137 "examples/interpreter/run/expr.hero"
     h74_own74 = t230;
-#line 21118 "main.c"
+#line 21128 "main.c"
     h_runvalue_Value_release(&t325);
     h_runvalue_Value_retain(&t230);
 #line 137 "examples/interpreter/run/expr.hero"
@@ -21123,7 +21133,7 @@ bb59:
     t326 = h75_own75;
 #line 137 "examples/interpreter/run/expr.hero"
     h75_own75 = t231;
-#line 21127 "main.c"
+#line 21137 "main.c"
     h_0opt_6dcd62e6_release(&t326);
 #line 137 "examples/interpreter/run/expr.hero"
     h23_ret0 = t231;
@@ -21147,15 +21157,15 @@ bb61:
     t327 = h76_own76;
 #line 139 "examples/interpreter/run/expr.hero"
     h76_own76 = t245;
-#line 21151 "main.c"
+#line 21161 "main.c"
     h_0opt_e201354_release(&t327);
 #line 139 "examples/interpreter/run/expr.hero"
     t328 = h22_f18;
-#line 21155 "main.c"
+#line 21165 "main.c"
     h_0opt_e201354_retain(&t245);
 #line 139 "examples/interpreter/run/expr.hero"
     h22_f18 = t245;
-#line 21159 "main.c"
+#line 21169 "main.c"
     h_0opt_e201354_release(&t328);
 #line 139 "examples/interpreter/run/expr.hero"
     t246 = h22_f18;
@@ -21173,7 +21183,7 @@ bb62:
     t239 = h21_f17;
 #line 139 "examples/interpreter/run/expr.hero"
     t240 = t239.as.err;
-#line 21177 "main.c"
+#line 21187 "main.c"
     hero_failure_retain(&t240);
 #line 139 "examples/interpreter/run/expr.hero"
     t241 = (h_0opt_6dcd62e6){.tag = INT64_C(1), .as.err = t240};
@@ -21181,7 +21191,7 @@ bb62:
     t329 = h77_own77;
 #line 139 "examples/interpreter/run/expr.hero"
     h77_own77 = t241;
-#line 21185 "main.c"
+#line 21195 "main.c"
     h_0opt_6dcd62e6_release(&t329);
 #line 139 "examples/interpreter/run/expr.hero"
     h23_ret0 = t241;
@@ -21199,7 +21209,7 @@ bb63:
     t330 = h78_own78;
 #line 139 "examples/interpreter/run/expr.hero"
     h78_own78 = t255;
-#line 21203 "main.c"
+#line 21213 "main.c"
     h_0opt_6dcd62e6_release(&t330);
 #line 139 "examples/interpreter/run/expr.hero"
     h23_ret0 = t255;
@@ -21211,7 +21221,7 @@ bb64:
     t250 = h22_f18;
 #line 139 "examples/interpreter/run/expr.hero"
     t251 = t250.as.err;
-#line 21215 "main.c"
+#line 21225 "main.c"
     hero_failure_retain(&t251);
 #line 139 "examples/interpreter/run/expr.hero"
     t252 = (h_0opt_6dcd62e6){.tag = INT64_C(1), .as.err = t251};
@@ -21219,7 +21229,7 @@ bb64:
     t331 = h79_own79;
 #line 139 "examples/interpreter/run/expr.hero"
     h79_own79 = t252;
-#line 21223 "main.c"
+#line 21233 "main.c"
     h_0opt_6dcd62e6_release(&t331);
 #line 139 "examples/interpreter/run/expr.hero"
     h23_ret0 = t252;
@@ -21227,7 +21237,7 @@ bb64:
     goto bb65;
 #line 139 "examples/interpreter/run/expr.hero"
 bb65:
-#line 21231 "main.c"
+#line 21241 "main.c"
     t256 = h23_ret0;
     h_0opt_6dcd62e6_retain(&t256);
     h_0opt_f87774a_release(&h4_f0);
@@ -21310,7 +21320,7 @@ bb65:
 
 #line 141 "examples/interpreter/run/expr.hero"
 h_0opt_6dcd62e6 h_runexpr_ordered(h_syntree_Op h0_op, int64_t h1_a, int64_t h2_b) {
-#line 21314 "main.c"
+#line 21324 "main.c"
     h_0opt_6dcd62e6 h3_ret0 = {0};
     h_runvalue_Value h4_own4 = {0};
     h_0opt_6dcd62e6 h5_own5 = {0};
@@ -21413,7 +21423,7 @@ bb2:
     t42 = h4_own4;
 #line 143 "examples/interpreter/run/expr.hero"
     h4_own4 = t7;
-#line 21417 "main.c"
+#line 21427 "main.c"
     h_runvalue_Value_release(&t42);
     h_runvalue_Value_retain(&t7);
 #line 143 "examples/interpreter/run/expr.hero"
@@ -21422,7 +21432,7 @@ bb2:
     t43 = h5_own5;
 #line 143 "examples/interpreter/run/expr.hero"
     h5_own5 = t8;
-#line 21426 "main.c"
+#line 21436 "main.c"
     h_0opt_6dcd62e6_release(&t43);
 #line 143 "examples/interpreter/run/expr.hero"
     h3_ret0 = t8;
@@ -21456,7 +21466,7 @@ bb5:
     t44 = h6_own6;
 #line 146 "examples/interpreter/run/expr.hero"
     h6_own6 = t15;
-#line 21460 "main.c"
+#line 21470 "main.c"
     h_runvalue_Value_release(&t44);
     h_runvalue_Value_retain(&t15);
 #line 146 "examples/interpreter/run/expr.hero"
@@ -21465,7 +21475,7 @@ bb5:
     t45 = h7_own7;
 #line 146 "examples/interpreter/run/expr.hero"
     h7_own7 = t16;
-#line 21469 "main.c"
+#line 21479 "main.c"
     h_0opt_6dcd62e6_release(&t45);
 #line 146 "examples/interpreter/run/expr.hero"
     h3_ret0 = t16;
@@ -21499,7 +21509,7 @@ bb8:
     t46 = h8_own8;
 #line 149 "examples/interpreter/run/expr.hero"
     h8_own8 = t23;
-#line 21503 "main.c"
+#line 21513 "main.c"
     h_runvalue_Value_release(&t46);
     h_runvalue_Value_retain(&t23);
 #line 149 "examples/interpreter/run/expr.hero"
@@ -21508,7 +21518,7 @@ bb8:
     t47 = h9_own9;
 #line 149 "examples/interpreter/run/expr.hero"
     h9_own9 = t24;
-#line 21512 "main.c"
+#line 21522 "main.c"
     h_0opt_6dcd62e6_release(&t47);
 #line 149 "examples/interpreter/run/expr.hero"
     h3_ret0 = t24;
@@ -21526,7 +21536,7 @@ bb10:
     t48 = h10_own10;
 #line 154 "examples/interpreter/run/expr.hero"
     h10_own10 = t33;
-#line 21530 "main.c"
+#line 21540 "main.c"
     hero_str_decref(t48);
 #line 154 "examples/interpreter/run/expr.hero"
     t34 = HERO_STR_LIT(hero_str_60);
@@ -21538,7 +21548,7 @@ bb10:
     t49 = h11_own11;
 #line 154 "examples/interpreter/run/expr.hero"
     h11_own11 = t36;
-#line 21542 "main.c"
+#line 21552 "main.c"
     hero_str_decref(t49);
 #line 154 "examples/interpreter/run/expr.hero"
     t37 = hero_str_concat(t34, t36);
@@ -21546,7 +21556,7 @@ bb10:
     t50 = h12_own12;
 #line 154 "examples/interpreter/run/expr.hero"
     h12_own12 = t37;
-#line 21550 "main.c"
+#line 21560 "main.c"
     hero_str_decref(t50);
 #line 154 "examples/interpreter/run/expr.hero"
     t38 = HERO_STR_LIT(hero_str_546064ab);
@@ -21556,7 +21566,7 @@ bb10:
     t51 = h13_own13;
 #line 154 "examples/interpreter/run/expr.hero"
     h13_own13 = t39;
-#line 21560 "main.c"
+#line 21570 "main.c"
     hero_str_decref(t51);
     hero_str_incref(t33);
     hero_str_incref(t39);
@@ -21566,7 +21576,7 @@ bb10:
     t52 = h14_own14;
 #line 154 "examples/interpreter/run/expr.hero"
     h14_own14 = t40;
-#line 21570 "main.c"
+#line 21580 "main.c"
     h_0opt_6dcd62e6_release(&t52);
 #line 154 "examples/interpreter/run/expr.hero"
     h3_ret0 = t40;
@@ -21586,7 +21596,7 @@ bb11:
     t53 = h15_own15;
 #line 152 "examples/interpreter/run/expr.hero"
     h15_own15 = t31;
-#line 21590 "main.c"
+#line 21600 "main.c"
     h_runvalue_Value_release(&t53);
     h_runvalue_Value_retain(&t31);
 #line 152 "examples/interpreter/run/expr.hero"
@@ -21595,7 +21605,7 @@ bb11:
     t54 = h16_own16;
 #line 152 "examples/interpreter/run/expr.hero"
     h16_own16 = t32;
-#line 21599 "main.c"
+#line 21609 "main.c"
     h_0opt_6dcd62e6_release(&t54);
 #line 152 "examples/interpreter/run/expr.hero"
     h3_ret0 = t32;
@@ -21607,7 +21617,7 @@ bb12:
     goto bb10;
 #line 152 "examples/interpreter/run/expr.hero"
 bb13:
-#line 21611 "main.c"
+#line 21621 "main.c"
     t41 = h3_ret0;
     h_0opt_6dcd62e6_retain(&t41);
     h_runvalue_Value_release(&h4_own4);
@@ -21628,7 +21638,7 @@ bb13:
 
 #line 156 "examples/interpreter/run/expr.hero"
 bool h_runexpr_is_text(h_runvalue_Value h0_v) {
-#line 21632 "main.c"
+#line 21642 "main.c"
     h_runvalue_Value h1_s0 = {0};
     bool h2_r0;
     h_runvalue_Value t1;
@@ -21646,11 +21656,11 @@ bb0:
     t1 = h0_v;
 #line 157 "examples/interpreter/run/expr.hero"
     t9 = h1_s0;
-#line 21650 "main.c"
+#line 21660 "main.c"
     h_runvalue_Value_retain(&t1);
 #line 157 "examples/interpreter/run/expr.hero"
     h1_s0 = t1;
-#line 21654 "main.c"
+#line 21664 "main.c"
     h_runvalue_Value_release(&t9);
 #line 157 "examples/interpreter/run/expr.hero"
     t2 = h1_s0;
@@ -21674,7 +21684,7 @@ bb0:
 bb1:
 #line 157 "examples/interpreter/run/expr.hero"
     t8 = h2_r0;
-#line 21678 "main.c"
+#line 21688 "main.c"
     h_runvalue_Value_release(&h1_s0);
     return t8;
 bb2:
@@ -21708,12 +21718,12 @@ bb5:
     h2_r0 = t7;
 #line 157 "examples/interpreter/run/expr.hero"
     goto bb1;
-#line 21712 "main.c"
+#line 21722 "main.c"
 }
 
 #line 165 "examples/interpreter/run/expr.hero"
 h_0opt_e201354 h_runexpr_plus(int64_t h0_a, int64_t h1_b) {
-#line 21717 "main.c"
+#line 21727 "main.c"
     bool h2_b0;
     bool h3_b1;
     h_0opt_e201354 h4_ret0 = {0};
@@ -21813,7 +21823,7 @@ bb4:
     t32 = h5_own5;
 #line 167 "examples/interpreter/run/expr.hero"
     h5_own5 = t13;
-#line 21817 "main.c"
+#line 21827 "main.c"
     h_0opt_e201354_release(&t32);
 #line 167 "examples/interpreter/run/expr.hero"
     h4_ret0 = t13;
@@ -21837,7 +21847,7 @@ bb6:
     t33 = h6_own6;
 #line 172 "examples/interpreter/run/expr.hero"
     h6_own6 = t30;
-#line 21841 "main.c"
+#line 21851 "main.c"
     h_0opt_e201354_release(&t33);
 #line 172 "examples/interpreter/run/expr.hero"
     h4_ret0 = t30;
@@ -21878,7 +21888,7 @@ bb9:
     t34 = h7_own7;
 #line 170 "examples/interpreter/run/expr.hero"
     h7_own7 = t26;
-#line 21882 "main.c"
+#line 21892 "main.c"
     h_0opt_e201354_release(&t34);
 #line 170 "examples/interpreter/run/expr.hero"
     h4_ret0 = t26;
@@ -21890,7 +21900,7 @@ bb10:
     goto bb6;
 #line 170 "examples/interpreter/run/expr.hero"
 bb11:
-#line 21894 "main.c"
+#line 21904 "main.c"
     t31 = h4_ret0;
     h_0opt_e201354_retain(&t31);
     h_0opt_e201354_release(&h5_own5);
@@ -21901,7 +21911,7 @@ bb11:
 
 #line 174 "examples/interpreter/run/expr.hero"
 h_0opt_e201354 h_runexpr_minus(int64_t h0_a, int64_t h1_b) {
-#line 21905 "main.c"
+#line 21915 "main.c"
     bool h2_b0;
     bool h3_b1;
     h_0opt_e201354 h4_ret0 = {0};
@@ -22001,7 +22011,7 @@ bb4:
     t32 = h5_own5;
 #line 176 "examples/interpreter/run/expr.hero"
     h5_own5 = t13;
-#line 22005 "main.c"
+#line 22015 "main.c"
     h_0opt_e201354_release(&t32);
 #line 176 "examples/interpreter/run/expr.hero"
     h4_ret0 = t13;
@@ -22025,7 +22035,7 @@ bb6:
     t33 = h6_own6;
 #line 181 "examples/interpreter/run/expr.hero"
     h6_own6 = t30;
-#line 22029 "main.c"
+#line 22039 "main.c"
     h_0opt_e201354_release(&t33);
 #line 181 "examples/interpreter/run/expr.hero"
     h4_ret0 = t30;
@@ -22066,7 +22076,7 @@ bb9:
     t34 = h7_own7;
 #line 179 "examples/interpreter/run/expr.hero"
     h7_own7 = t26;
-#line 22070 "main.c"
+#line 22080 "main.c"
     h_0opt_e201354_release(&t34);
 #line 179 "examples/interpreter/run/expr.hero"
     h4_ret0 = t26;
@@ -22078,7 +22088,7 @@ bb10:
     goto bb6;
 #line 179 "examples/interpreter/run/expr.hero"
 bb11:
-#line 22082 "main.c"
+#line 22092 "main.c"
     t31 = h4_ret0;
     h_0opt_e201354_retain(&t31);
     h_0opt_e201354_release(&h5_own5);
@@ -22089,7 +22099,7 @@ bb11:
 
 #line 196 "examples/interpreter/run/expr.hero"
 h_0opt_e201354 h_runexpr_times(int64_t h0_a, int64_t h1_b) {
-#line 22093 "main.c"
+#line 22103 "main.c"
     bool h2_b0;
     bool h3_b1;
     int64_t h4_am;
@@ -22204,7 +22214,7 @@ bb4:
     t49 = h7_own7;
 #line 198 "examples/interpreter/run/expr.hero"
     h7_own7 = t9;
-#line 22208 "main.c"
+#line 22218 "main.c"
     h_0opt_e201354_release(&t49);
 #line 198 "examples/interpreter/run/expr.hero"
     h6_ret0 = t9;
@@ -22234,7 +22244,7 @@ bb7:
     t50 = h8_own8;
 #line 201 "examples/interpreter/run/expr.hero"
     h8_own8 = t14;
-#line 22238 "main.c"
+#line 22248 "main.c"
     h_0opt_e201354_release(&t50);
 #line 201 "examples/interpreter/run/expr.hero"
     h6_ret0 = t14;
@@ -22266,7 +22276,7 @@ bb10:
     t51 = h9_own9;
 #line 204 "examples/interpreter/run/expr.hero"
     h9_own9 = t19;
-#line 22270 "main.c"
+#line 22280 "main.c"
     h_0opt_e201354_release(&t51);
 #line 204 "examples/interpreter/run/expr.hero"
     h6_ret0 = t19;
@@ -22336,7 +22346,7 @@ bb15:
     t52 = h10_own10;
 #line 207 "examples/interpreter/run/expr.hero"
     h10_own10 = t30;
-#line 22340 "main.c"
+#line 22350 "main.c"
     h_0opt_e201354_release(&t52);
 #line 207 "examples/interpreter/run/expr.hero"
     h6_ret0 = t30;
@@ -22360,7 +22370,7 @@ bb17:
     t53 = h11_own11;
 #line 214 "examples/interpreter/run/expr.hero"
     h11_own11 = t47;
-#line 22364 "main.c"
+#line 22374 "main.c"
     h_0opt_e201354_release(&t53);
 #line 214 "examples/interpreter/run/expr.hero"
     h6_ret0 = t47;
@@ -22380,7 +22390,7 @@ bb18:
     t54 = h12_own12;
 #line 212 "examples/interpreter/run/expr.hero"
     h12_own12 = t43;
-#line 22384 "main.c"
+#line 22394 "main.c"
     h_0opt_e201354_release(&t54);
 #line 212 "examples/interpreter/run/expr.hero"
     h6_ret0 = t43;
@@ -22392,7 +22402,7 @@ bb19:
     goto bb17;
 #line 212 "examples/interpreter/run/expr.hero"
 bb20:
-#line 22396 "main.c"
+#line 22406 "main.c"
     t48 = h6_ret0;
     h_0opt_e201354_retain(&t48);
     h_0opt_e201354_release(&h7_own7);
@@ -22406,7 +22416,7 @@ bb20:
 
 #line 218 "examples/interpreter/run/expr.hero"
 int64_t h_runexpr_size_of(int64_t h0_n) {
-#line 22410 "main.c"
+#line 22420 "main.c"
     int64_t h1_ret0;
     int64_t t1;
     int64_t t2;
@@ -22452,14 +22462,14 @@ bb3:
     goto bb1;
 #line 220 "examples/interpreter/run/expr.hero"
 bb4:
-#line 22456 "main.c"
+#line 22466 "main.c"
     t8 = h1_ret0;
     return t8;
 }
 
 #line 224 "examples/interpreter/run/expr.hero"
 h_0opt_e201354 h_runexpr_over(int64_t h0_a, int64_t h1_b) {
-#line 22463 "main.c"
+#line 22473 "main.c"
     bool h2_b0;
     h_0opt_e201354 h3_ret0 = {0};
     HeroStr h4_own4 = {0};
@@ -22535,7 +22545,7 @@ bb2:
     t30 = h4_own4;
 #line 226 "examples/interpreter/run/expr.hero"
     h4_own4 = t4;
-#line 22539 "main.c"
+#line 22549 "main.c"
     hero_str_decref(t30);
 #line 226 "examples/interpreter/run/expr.hero"
     t5 = HERO_STR_LIT(hero_str_134788bc);
@@ -22547,7 +22557,7 @@ bb2:
     t31 = h5_own5;
 #line 226 "examples/interpreter/run/expr.hero"
     h5_own5 = t7;
-#line 22551 "main.c"
+#line 22561 "main.c"
     hero_str_decref(t31);
 #line 226 "examples/interpreter/run/expr.hero"
     t8 = hero_str_concat(t5, t7);
@@ -22555,7 +22565,7 @@ bb2:
     t32 = h6_own6;
 #line 226 "examples/interpreter/run/expr.hero"
     h6_own6 = t8;
-#line 22559 "main.c"
+#line 22569 "main.c"
     hero_str_decref(t32);
 #line 226 "examples/interpreter/run/expr.hero"
     t9 = HERO_STR_LIT(hero_str_68804162);
@@ -22565,7 +22575,7 @@ bb2:
     t33 = h7_own7;
 #line 226 "examples/interpreter/run/expr.hero"
     h7_own7 = t10;
-#line 22569 "main.c"
+#line 22579 "main.c"
     hero_str_decref(t33);
     hero_str_incref(t4);
     hero_str_incref(t10);
@@ -22575,7 +22585,7 @@ bb2:
     t34 = h8_own8;
 #line 226 "examples/interpreter/run/expr.hero"
     h8_own8 = t11;
-#line 22579 "main.c"
+#line 22589 "main.c"
     h_0opt_e201354_release(&t34);
 #line 226 "examples/interpreter/run/expr.hero"
     h3_ret0 = t11;
@@ -22603,7 +22613,7 @@ bb4:
     t35 = h9_own9;
 #line 233 "examples/interpreter/run/expr.hero"
     h9_own9 = t28;
-#line 22607 "main.c"
+#line 22617 "main.c"
     h_0opt_e201354_release(&t35);
 #line 233 "examples/interpreter/run/expr.hero"
     h3_ret0 = t28;
@@ -22644,7 +22654,7 @@ bb7:
     t36 = h10_own10;
 #line 231 "examples/interpreter/run/expr.hero"
     h10_own10 = t24;
-#line 22648 "main.c"
+#line 22658 "main.c"
     h_0opt_e201354_release(&t36);
 #line 231 "examples/interpreter/run/expr.hero"
     h3_ret0 = t24;
@@ -22656,7 +22666,7 @@ bb8:
     goto bb4;
 #line 231 "examples/interpreter/run/expr.hero"
 bb9:
-#line 22660 "main.c"
+#line 22670 "main.c"
     t29 = h3_ret0;
     h_0opt_e201354_retain(&t29);
     hero_str_decref(h4_own4);
@@ -22671,7 +22681,7 @@ bb9:
 
 #line 235 "examples/interpreter/run/expr.hero"
 h_0opt_e201354 h_runexpr_rest(int64_t h0_a, int64_t h1_b) {
-#line 22675 "main.c"
+#line 22685 "main.c"
     bool h2_b0;
     h_0opt_e201354 h3_ret0 = {0};
     HeroStr h4_own4 = {0};
@@ -22747,7 +22757,7 @@ bb2:
     t30 = h4_own4;
 #line 237 "examples/interpreter/run/expr.hero"
     h4_own4 = t4;
-#line 22751 "main.c"
+#line 22761 "main.c"
     hero_str_decref(t30);
 #line 237 "examples/interpreter/run/expr.hero"
     t5 = HERO_STR_LIT(hero_str_565a0551);
@@ -22759,7 +22769,7 @@ bb2:
     t31 = h5_own5;
 #line 237 "examples/interpreter/run/expr.hero"
     h5_own5 = t7;
-#line 22763 "main.c"
+#line 22773 "main.c"
     hero_str_decref(t31);
 #line 237 "examples/interpreter/run/expr.hero"
     t8 = hero_str_concat(t5, t7);
@@ -22767,7 +22777,7 @@ bb2:
     t32 = h6_own6;
 #line 237 "examples/interpreter/run/expr.hero"
     h6_own6 = t8;
-#line 22771 "main.c"
+#line 22781 "main.c"
     hero_str_decref(t32);
 #line 237 "examples/interpreter/run/expr.hero"
     t9 = HERO_STR_LIT(hero_str_68804162);
@@ -22777,7 +22787,7 @@ bb2:
     t33 = h7_own7;
 #line 237 "examples/interpreter/run/expr.hero"
     h7_own7 = t10;
-#line 22781 "main.c"
+#line 22791 "main.c"
     hero_str_decref(t33);
     hero_str_incref(t4);
     hero_str_incref(t10);
@@ -22787,7 +22797,7 @@ bb2:
     t34 = h8_own8;
 #line 237 "examples/interpreter/run/expr.hero"
     h8_own8 = t11;
-#line 22791 "main.c"
+#line 22801 "main.c"
     h_0opt_e201354_release(&t34);
 #line 237 "examples/interpreter/run/expr.hero"
     h3_ret0 = t11;
@@ -22815,7 +22825,7 @@ bb4:
     t35 = h9_own9;
 #line 242 "examples/interpreter/run/expr.hero"
     h9_own9 = t28;
-#line 22819 "main.c"
+#line 22829 "main.c"
     h_0opt_e201354_release(&t35);
 #line 242 "examples/interpreter/run/expr.hero"
     h3_ret0 = t28;
@@ -22856,7 +22866,7 @@ bb7:
     t36 = h10_own10;
 #line 240 "examples/interpreter/run/expr.hero"
     h10_own10 = t24;
-#line 22860 "main.c"
+#line 22870 "main.c"
     h_0opt_e201354_release(&t36);
 #line 240 "examples/interpreter/run/expr.hero"
     h3_ret0 = t24;
@@ -22868,7 +22878,7 @@ bb8:
     goto bb4;
 #line 240 "examples/interpreter/run/expr.hero"
 bb9:
-#line 22872 "main.c"
+#line 22882 "main.c"
     t29 = h3_ret0;
     h_0opt_e201354_retain(&t29);
     hero_str_decref(h4_own4);
@@ -22883,7 +22893,7 @@ bb9:
 
 #line 244 "examples/interpreter/run/expr.hero"
 h_0opt_e201354 h_runexpr_too_big(int64_t h0_a, int64_t h1_b, HeroStr h2_op) {
-#line 22887 "main.c"
+#line 22897 "main.c"
     HeroStr h3_own3 = {0};
     HeroStr h4_own4 = {0};
     HeroStr h5_own5 = {0};
@@ -22925,7 +22935,7 @@ bb0:
     t16 = h3_own3;
 #line 246 "examples/interpreter/run/expr.hero"
     h3_own3 = t1;
-#line 22929 "main.c"
+#line 22939 "main.c"
     hero_str_decref(t16);
 #line 247 "examples/interpreter/run/expr.hero"
     t2 = h0_a;
@@ -22935,7 +22945,7 @@ bb0:
     t17 = h4_own4;
 #line 247 "examples/interpreter/run/expr.hero"
     h4_own4 = t3;
-#line 22939 "main.c"
+#line 22949 "main.c"
     hero_str_decref(t17);
 #line 247 "examples/interpreter/run/expr.hero"
     t4 = HERO_STR_LIT(hero_str_20);
@@ -22945,7 +22955,7 @@ bb0:
     t18 = h5_own5;
 #line 247 "examples/interpreter/run/expr.hero"
     h5_own5 = t5;
-#line 22949 "main.c"
+#line 22959 "main.c"
     hero_str_decref(t18);
 #line 247 "examples/interpreter/run/expr.hero"
     t6 = h2_op;
@@ -22955,7 +22965,7 @@ bb0:
     t19 = h6_own6;
 #line 247 "examples/interpreter/run/expr.hero"
     h6_own6 = t7;
-#line 22959 "main.c"
+#line 22969 "main.c"
     hero_str_decref(t19);
 #line 247 "examples/interpreter/run/expr.hero"
     t8 = HERO_STR_LIT(hero_str_20);
@@ -22965,7 +22975,7 @@ bb0:
     t20 = h7_own7;
 #line 247 "examples/interpreter/run/expr.hero"
     h7_own7 = t9;
-#line 22969 "main.c"
+#line 22979 "main.c"
     hero_str_decref(t20);
 #line 247 "examples/interpreter/run/expr.hero"
     t10 = h1_b;
@@ -22975,7 +22985,7 @@ bb0:
     t21 = h8_own8;
 #line 247 "examples/interpreter/run/expr.hero"
     h8_own8 = t11;
-#line 22979 "main.c"
+#line 22989 "main.c"
     hero_str_decref(t21);
 #line 247 "examples/interpreter/run/expr.hero"
     t12 = hero_str_concat(t9, t11);
@@ -22983,7 +22993,7 @@ bb0:
     t22 = h9_own9;
 #line 247 "examples/interpreter/run/expr.hero"
     h9_own9 = t12;
-#line 22987 "main.c"
+#line 22997 "main.c"
     hero_str_decref(t22);
 #line 247 "examples/interpreter/run/expr.hero"
     t13 = HERO_STR_LIT(hero_str_5f18456e);
@@ -22993,7 +23003,7 @@ bb0:
     t23 = h10_own10;
 #line 247 "examples/interpreter/run/expr.hero"
     h10_own10 = t14;
-#line 22997 "main.c"
+#line 23007 "main.c"
     hero_str_decref(t23);
     hero_str_incref(t1);
     hero_str_incref(t14);
@@ -23003,7 +23013,7 @@ bb0:
     t24 = h11_own11;
 #line 245 "examples/interpreter/run/expr.hero"
     h11_own11 = t15;
-#line 23007 "main.c"
+#line 23017 "main.c"
     h_0opt_e201354_release(&t24);
     h_0opt_e201354_retain(&t15);
     hero_str_decref(h3_own3);
@@ -23020,7 +23030,7 @@ bb0:
 
 #line 252 "examples/interpreter/run/expr.hero"
 h_0opt_4d124e2a h_runexpr_applied(h_syntree_Tree h0_nodes, HeroStr h1_name, HeroArrayHeader * h2_ids, h_runvalue_Frame h3_f, h_0fn_64cad294 h4_call) {
-#line 23024 "main.c"
+#line 23034 "main.c"
     h_runvalue_Frame h5_walking = {0};
     HeroArrayHeader * h6_given = {0};
     HeroArrayHeader * h7_xs0 = {0};
@@ -23126,11 +23136,11 @@ bb0:
     t1 = h3_f;
 #line 253 "examples/interpreter/run/expr.hero"
     t61 = h5_walking;
-#line 23130 "main.c"
+#line 23140 "main.c"
     h_runvalue_Frame_retain(&t1);
 #line 253 "examples/interpreter/run/expr.hero"
     h5_walking = t1;
-#line 23134 "main.c"
+#line 23144 "main.c"
     h_runvalue_Frame_release(&t61);
 #line 254 "examples/interpreter/run/expr.hero"
     t2 = hero_array_new(&h_runvalue_Value_desc, 1);
@@ -23138,25 +23148,25 @@ bb0:
     t62 = h17_own17;
 #line 254 "examples/interpreter/run/expr.hero"
     h17_own17 = t2;
-#line 23142 "main.c"
+#line 23152 "main.c"
     hero_array_decref(t62);
 #line 254 "examples/interpreter/run/expr.hero"
     t63 = h6_given;
-#line 23146 "main.c"
+#line 23156 "main.c"
     hero_array_incref(t2);
 #line 254 "examples/interpreter/run/expr.hero"
     h6_given = t2;
-#line 23150 "main.c"
+#line 23160 "main.c"
     hero_array_decref(t63);
 #line 256 "examples/interpreter/run/expr.hero"
     t3 = h2_ids;
 #line 256 "examples/interpreter/run/expr.hero"
     t64 = h7_xs0;
-#line 23156 "main.c"
+#line 23166 "main.c"
     hero_array_incref(t3);
 #line 256 "examples/interpreter/run/expr.hero"
     h7_xs0 = t3;
-#line 23160 "main.c"
+#line 23170 "main.c"
     hero_array_decref(t64);
 #line 256 "examples/interpreter/run/expr.hero"
     t4 = INT64_C(0);
@@ -23199,15 +23209,15 @@ bb2:
     t65 = h18_own18;
 #line 257 "examples/interpreter/run/expr.hero"
     h18_own18 = t16;
-#line 23203 "main.c"
+#line 23213 "main.c"
     h_0opt_4d124e2a_release(&t65);
 #line 257 "examples/interpreter/run/expr.hero"
     t66 = h10_f0;
-#line 23207 "main.c"
+#line 23217 "main.c"
     h_0opt_4d124e2a_retain(&t16);
 #line 257 "examples/interpreter/run/expr.hero"
     h10_f0 = t16;
-#line 23211 "main.c"
+#line 23221 "main.c"
     h_0opt_4d124e2a_release(&t66);
 #line 257 "examples/interpreter/run/expr.hero"
     t17 = h10_f0;
@@ -23243,7 +23253,7 @@ bb4:
     t38 = h6_given;
 #line 261 "examples/interpreter/run/expr.hero"
     t39 = h5_walking;
-#line 23247 "main.c"
+#line 23257 "main.c"
     h_syntree_Tree_retain(&t36);
     hero_str_incref(t37);
     hero_array_incref(t38);
@@ -23254,7 +23264,7 @@ bb4:
     t67 = h19_own19;
 #line 261 "examples/interpreter/run/expr.hero"
     h19_own19 = t40;
-#line 23258 "main.c"
+#line 23268 "main.c"
     h_runvalue_Request_release(&t67);
 #line 261 "examples/interpreter/run/expr.hero"
     t41 = t35(t40);
@@ -23262,15 +23272,15 @@ bb4:
     t68 = h20_own20;
 #line 261 "examples/interpreter/run/expr.hero"
     h20_own20 = t41;
-#line 23266 "main.c"
+#line 23276 "main.c"
     h_0opt_1be8f195_release(&t68);
 #line 261 "examples/interpreter/run/expr.hero"
     t69 = h12_f1;
-#line 23270 "main.c"
+#line 23280 "main.c"
     h_0opt_1be8f195_retain(&t41);
 #line 261 "examples/interpreter/run/expr.hero"
     h12_f1 = t41;
-#line 23274 "main.c"
+#line 23284 "main.c"
     h_0opt_1be8f195_release(&t69);
 #line 261 "examples/interpreter/run/expr.hero"
     t42 = h12_f1;
@@ -23290,11 +23300,11 @@ bb5:
     t25 = t24.as.ok;
 #line 257 "examples/interpreter/run/expr.hero"
     t70 = h11_step;
-#line 23294 "main.c"
+#line 23304 "main.c"
     h_runexpr_Answer_retain(&t25);
 #line 257 "examples/interpreter/run/expr.hero"
     h11_step = t25;
-#line 23298 "main.c"
+#line 23308 "main.c"
     h_runexpr_Answer_release(&t70);
 #line 258 "examples/interpreter/run/expr.hero"
     t26 = h11_step;
@@ -23302,11 +23312,11 @@ bb5:
     t27 = t26.f_frame;
 #line 258 "examples/interpreter/run/expr.hero"
     t71 = h5_walking;
-#line 23306 "main.c"
+#line 23316 "main.c"
     h_runvalue_Frame_retain(&t27);
 #line 258 "examples/interpreter/run/expr.hero"
     h5_walking = t27;
-#line 23310 "main.c"
+#line 23320 "main.c"
     h_runvalue_Frame_release(&t71);
 #line 259 "examples/interpreter/run/expr.hero"
     t29 = h11_step;
@@ -23322,7 +23332,7 @@ bb6:
     t21 = h10_f0;
 #line 257 "examples/interpreter/run/expr.hero"
     t22 = t21.as.err;
-#line 23326 "main.c"
+#line 23336 "main.c"
     hero_failure_retain(&t22);
 #line 257 "examples/interpreter/run/expr.hero"
     t23 = (h_0opt_4d124e2a){.tag = INT64_C(1), .as.err = t22};
@@ -23330,7 +23340,7 @@ bb6:
     t72 = h21_own21;
 #line 257 "examples/interpreter/run/expr.hero"
     h21_own21 = t23;
-#line 23334 "main.c"
+#line 23344 "main.c"
     h_0opt_4d124e2a_release(&t72);
 #line 257 "examples/interpreter/run/expr.hero"
     h16_ret0 = t23;
@@ -23344,11 +23354,11 @@ bb7:
     t50 = t49.as.ok;
 #line 261 "examples/interpreter/run/expr.hero"
     t73 = h13_after;
-#line 23348 "main.c"
+#line 23358 "main.c"
     h_runvalue_Frame_retain(&t50);
 #line 261 "examples/interpreter/run/expr.hero"
     h13_after = t50;
-#line 23352 "main.c"
+#line 23362 "main.c"
     h_runvalue_Frame_release(&t73);
 #line 262 "examples/interpreter/run/expr.hero"
     t51 = h13_after;
@@ -23356,21 +23366,21 @@ bb7:
     t52 = t51.f_result;
 #line 262 "examples/interpreter/run/expr.hero"
     t74 = h14_result;
-#line 23360 "main.c"
+#line 23370 "main.c"
     h_runvalue_Value_retain(&t52);
 #line 262 "examples/interpreter/run/expr.hero"
     h14_result = t52;
-#line 23364 "main.c"
+#line 23374 "main.c"
     h_runvalue_Value_release(&t74);
 #line 263 "examples/interpreter/run/expr.hero"
     t53 = h13_after;
 #line 263 "examples/interpreter/run/expr.hero"
     t75 = h15_home;
-#line 23370 "main.c"
+#line 23380 "main.c"
     h_runvalue_Frame_retain(&t53);
 #line 263 "examples/interpreter/run/expr.hero"
     h15_home = t53;
-#line 23374 "main.c"
+#line 23384 "main.c"
     h_runvalue_Frame_release(&t75);
 #line 264 "examples/interpreter/run/expr.hero"
     t54 = false;
@@ -23381,21 +23391,21 @@ bb7:
     t76 = h22_own22;
 #line 265 "examples/interpreter/run/expr.hero"
     h22_own22 = t55;
-#line 23385 "main.c"
+#line 23395 "main.c"
     h_runvalue_Value_release(&t76);
 #line 265 "examples/interpreter/run/expr.hero"
     t77 = h15_home.f_result;
-#line 23389 "main.c"
+#line 23399 "main.c"
     h_runvalue_Value_retain(&t55);
 #line 265 "examples/interpreter/run/expr.hero"
     h15_home.f_result = t55;
-#line 23393 "main.c"
+#line 23403 "main.c"
     h_runvalue_Value_release(&t77);
 #line 266 "examples/interpreter/run/expr.hero"
     t56 = h15_home;
 #line 266 "examples/interpreter/run/expr.hero"
     t57 = h14_result;
-#line 23399 "main.c"
+#line 23409 "main.c"
     h_runvalue_Frame_retain(&t56);
     h_runvalue_Value_retain(&t57);
 #line 266 "examples/interpreter/run/expr.hero"
@@ -23404,7 +23414,7 @@ bb7:
     t78 = h23_own23;
 #line 266 "examples/interpreter/run/expr.hero"
     h23_own23 = t58;
-#line 23408 "main.c"
+#line 23418 "main.c"
     h_runexpr_Answer_release(&t78);
     h_runexpr_Answer_retain(&t58);
 #line 266 "examples/interpreter/run/expr.hero"
@@ -23413,7 +23423,7 @@ bb7:
     t79 = h24_own24;
 #line 266 "examples/interpreter/run/expr.hero"
     h24_own24 = t59;
-#line 23417 "main.c"
+#line 23427 "main.c"
     h_0opt_4d124e2a_release(&t79);
 #line 266 "examples/interpreter/run/expr.hero"
     h16_ret0 = t59;
@@ -23425,7 +23435,7 @@ bb8:
     t46 = h12_f1;
 #line 261 "examples/interpreter/run/expr.hero"
     t47 = t46.as.err;
-#line 23429 "main.c"
+#line 23439 "main.c"
     hero_failure_retain(&t47);
 #line 261 "examples/interpreter/run/expr.hero"
     t48 = (h_0opt_4d124e2a){.tag = INT64_C(1), .as.err = t47};
@@ -23433,7 +23443,7 @@ bb8:
     t80 = h25_own25;
 #line 261 "examples/interpreter/run/expr.hero"
     h25_own25 = t48;
-#line 23437 "main.c"
+#line 23447 "main.c"
     h_0opt_4d124e2a_release(&t80);
 #line 261 "examples/interpreter/run/expr.hero"
     h16_ret0 = t48;
@@ -23441,7 +23451,7 @@ bb8:
     goto bb9;
 #line 261 "examples/interpreter/run/expr.hero"
 bb9:
-#line 23445 "main.c"
+#line 23455 "main.c"
     t60 = h16_ret0;
     h_0opt_4d124e2a_retain(&t60);
     h_runvalue_Frame_release(&h5_walking);
@@ -23467,20 +23477,20 @@ bb9:
 
 #line 28 "examples/interpreter/run/value.hero"
 HeroStr h_runvalue_ERR_TYPE(void) {
-#line 23471 "main.c"
+#line 23481 "main.c"
     HeroStr t1;
     goto bb0;
 bb0:
 #line 29 "examples/interpreter/run/value.hero"
     t1 = HERO_STR_LIT(hero_str_fab1332);
-#line 23477 "main.c"
+#line 23487 "main.c"
     hero_str_incref(t1);
     return t1;
 }
 
 #line 59 "examples/interpreter/run/value.hero"
 h_runvalue_Frame h_runvalue_fresh(void) {
-#line 23484 "main.c"
+#line 23494 "main.c"
     HeroMapHeader * h0_vars = {0};
     HeroMapHeader * h1_fns = {0};
     HeroArrayHeader * h2_no_lines = {0};
@@ -23517,15 +23527,15 @@ bb0:
     t13 = h3_own3;
 #line 60 "examples/interpreter/run/value.hero"
     h3_own3 = t1;
-#line 23521 "main.c"
+#line 23531 "main.c"
     hero_map_decref(t13);
 #line 60 "examples/interpreter/run/value.hero"
     t14 = h0_vars;
-#line 23525 "main.c"
+#line 23535 "main.c"
     hero_map_incref(t1);
 #line 60 "examples/interpreter/run/value.hero"
     h0_vars = t1;
-#line 23529 "main.c"
+#line 23539 "main.c"
     hero_map_decref(t14);
 #line 61 "examples/interpreter/run/value.hero"
     t2 = hero_map_new(&hero_desc_str, &hero_desc_int, 0);
@@ -23533,15 +23543,15 @@ bb0:
     t15 = h4_own4;
 #line 61 "examples/interpreter/run/value.hero"
     h4_own4 = t2;
-#line 23537 "main.c"
+#line 23547 "main.c"
     hero_map_decref(t15);
 #line 61 "examples/interpreter/run/value.hero"
     t16 = h1_fns;
-#line 23541 "main.c"
+#line 23551 "main.c"
     hero_map_incref(t2);
 #line 61 "examples/interpreter/run/value.hero"
     h1_fns = t2;
-#line 23545 "main.c"
+#line 23555 "main.c"
     hero_map_decref(t16);
 #line 62 "examples/interpreter/run/value.hero"
     t3 = hero_array_new(&hero_desc_str, 1);
@@ -23549,15 +23559,15 @@ bb0:
     t17 = h5_own5;
 #line 62 "examples/interpreter/run/value.hero"
     h5_own5 = t3;
-#line 23553 "main.c"
+#line 23563 "main.c"
     hero_array_decref(t17);
 #line 62 "examples/interpreter/run/value.hero"
     t18 = h2_no_lines;
-#line 23557 "main.c"
+#line 23567 "main.c"
     hero_array_incref(t3);
 #line 62 "examples/interpreter/run/value.hero"
     h2_no_lines = t3;
-#line 23561 "main.c"
+#line 23571 "main.c"
     hero_array_decref(t18);
 #line 64 "examples/interpreter/run/value.hero"
     t4 = h0_vars;
@@ -23569,13 +23579,13 @@ bb0:
     t19 = h6_own6;
 #line 68 "examples/interpreter/run/value.hero"
     h6_own6 = t8;
-#line 23573 "main.c"
+#line 23583 "main.c"
     h_runvalue_Value_release(&t19);
 #line 69 "examples/interpreter/run/value.hero"
     t9 = false;
     t10 = INT64_C(0);
     t11 = INT64_C(0);
-#line 23579 "main.c"
+#line 23589 "main.c"
     hero_map_incref(t4);
     hero_array_incref(t5);
     hero_map_incref(t6);
@@ -23586,7 +23596,7 @@ bb0:
     t20 = h7_own7;
 #line 63 "examples/interpreter/run/value.hero"
     h7_own7 = t12;
-#line 23590 "main.c"
+#line 23600 "main.c"
     h_runvalue_Frame_release(&t20);
     h_runvalue_Frame_retain(&t12);
     hero_map_decref(h0_vars);
@@ -23602,7 +23612,7 @@ bb0:
 
 #line 91 "examples/interpreter/run/value.hero"
 HeroStr h_runvalue_shown(h_runvalue_Value h0_v) {
-#line 23606 "main.c"
+#line 23616 "main.c"
     h_runvalue_Value h1_s0 = {0};
     HeroStr h2_r0 = {0};
     h_runvalue_Value_c_number h3_n;
@@ -23643,11 +23653,11 @@ bb0:
     t1 = h0_v;
 #line 92 "examples/interpreter/run/value.hero"
     t20 = h1_s0;
-#line 23647 "main.c"
+#line 23657 "main.c"
     h_runvalue_Value_retain(&t1);
 #line 92 "examples/interpreter/run/value.hero"
     h1_s0 = t1;
-#line 23651 "main.c"
+#line 23661 "main.c"
     h_runvalue_Value_release(&t20);
 #line 92 "examples/interpreter/run/value.hero"
     t2 = h1_s0;
@@ -23671,7 +23681,7 @@ bb0:
 bb1:
 #line 92 "examples/interpreter/run/value.hero"
     t19 = h2_r0;
-#line 23675 "main.c"
+#line 23685 "main.c"
     hero_str_incref(t19);
     h_runvalue_Value_release(&h1_s0);
     hero_str_decref(h2_r0);
@@ -23696,15 +23706,15 @@ bb2:
     t21 = h6_own6;
 #line 93 "examples/interpreter/run/value.hero"
     h6_own6 = t8;
-#line 23700 "main.c"
+#line 23710 "main.c"
     hero_str_decref(t21);
 #line 92 "examples/interpreter/run/value.hero"
     t22 = h2_r0;
-#line 23704 "main.c"
+#line 23714 "main.c"
     hero_str_incref(t8);
 #line 92 "examples/interpreter/run/value.hero"
     h2_r0 = t8;
-#line 23708 "main.c"
+#line 23718 "main.c"
     hero_str_decref(t22);
     goto bb1;
 bb3:
@@ -23714,11 +23724,11 @@ bb3:
     t10 = t9.as.c_text;
 #line 94 "examples/interpreter/run/value.hero"
     t23 = h4_x;
-#line 23718 "main.c"
+#line 23728 "main.c"
     h_runvalue_Value_c_text_retain(&t10);
 #line 94 "examples/interpreter/run/value.hero"
     h4_x = t10;
-#line 23722 "main.c"
+#line 23732 "main.c"
     h_runvalue_Value_c_text_release(&t23);
 #line 94 "examples/interpreter/run/value.hero"
     t11 = h4_x;
@@ -23726,11 +23736,11 @@ bb3:
     t12 = t11.f_s;
 #line 92 "examples/interpreter/run/value.hero"
     t24 = h2_r0;
-#line 23730 "main.c"
+#line 23740 "main.c"
     hero_str_incref(t12);
 #line 92 "examples/interpreter/run/value.hero"
     h2_r0 = t12;
-#line 23734 "main.c"
+#line 23744 "main.c"
     hero_str_decref(t24);
     goto bb1;
 bb4:
@@ -23750,15 +23760,15 @@ bb4:
     t25 = h7_own7;
 #line 95 "examples/interpreter/run/value.hero"
     h7_own7 = t17;
-#line 23754 "main.c"
+#line 23764 "main.c"
     hero_str_decref(t25);
 #line 92 "examples/interpreter/run/value.hero"
     t26 = h2_r0;
-#line 23758 "main.c"
+#line 23768 "main.c"
     hero_str_incref(t17);
 #line 92 "examples/interpreter/run/value.hero"
     h2_r0 = t17;
-#line 23762 "main.c"
+#line 23772 "main.c"
     hero_str_decref(t26);
     goto bb1;
 bb5:
@@ -23766,18 +23776,18 @@ bb5:
     t18 = HERO_STR_LIT(hero_str_3561843e);
 #line 92 "examples/interpreter/run/value.hero"
     t27 = h2_r0;
-#line 23770 "main.c"
+#line 23780 "main.c"
     hero_str_incref(t18);
 #line 92 "examples/interpreter/run/value.hero"
     h2_r0 = t18;
-#line 23774 "main.c"
+#line 23784 "main.c"
     hero_str_decref(t27);
     goto bb1;
 }
 
 #line 99 "examples/interpreter/run/value.hero"
 HeroStr h_runvalue_kind_of(h_runvalue_Value h0_v) {
-#line 23781 "main.c"
+#line 23791 "main.c"
     h_runvalue_Value h1_s0 = {0};
     HeroStr h2_r0 = {0};
     h_runvalue_Value t1;
@@ -23799,11 +23809,11 @@ bb0:
     t1 = h0_v;
 #line 100 "examples/interpreter/run/value.hero"
     t9 = h1_s0;
-#line 23803 "main.c"
+#line 23813 "main.c"
     h_runvalue_Value_retain(&t1);
 #line 100 "examples/interpreter/run/value.hero"
     h1_s0 = t1;
-#line 23807 "main.c"
+#line 23817 "main.c"
     h_runvalue_Value_release(&t9);
 #line 100 "examples/interpreter/run/value.hero"
     t2 = h1_s0;
@@ -23827,7 +23837,7 @@ bb0:
 bb1:
 #line 100 "examples/interpreter/run/value.hero"
     t8 = h2_r0;
-#line 23831 "main.c"
+#line 23841 "main.c"
     hero_str_incref(t8);
     h_runvalue_Value_release(&h1_s0);
     hero_str_decref(h2_r0);
@@ -23837,11 +23847,11 @@ bb2:
     t4 = HERO_STR_LIT(hero_str_7cfc63e3);
 #line 100 "examples/interpreter/run/value.hero"
     t10 = h2_r0;
-#line 23841 "main.c"
+#line 23851 "main.c"
     hero_str_incref(t4);
 #line 100 "examples/interpreter/run/value.hero"
     h2_r0 = t4;
-#line 23845 "main.c"
+#line 23855 "main.c"
     hero_str_decref(t10);
     goto bb1;
 bb3:
@@ -23849,11 +23859,11 @@ bb3:
     t5 = HERO_STR_LIT(hero_str_55b18501);
 #line 100 "examples/interpreter/run/value.hero"
     t11 = h2_r0;
-#line 23853 "main.c"
+#line 23863 "main.c"
     hero_str_incref(t5);
 #line 100 "examples/interpreter/run/value.hero"
     h2_r0 = t5;
-#line 23857 "main.c"
+#line 23867 "main.c"
     hero_str_decref(t11);
     goto bb1;
 bb4:
@@ -23861,11 +23871,11 @@ bb4:
     t6 = HERO_STR_LIT(hero_str_3c200879);
 #line 100 "examples/interpreter/run/value.hero"
     t12 = h2_r0;
-#line 23865 "main.c"
+#line 23875 "main.c"
     hero_str_incref(t6);
 #line 100 "examples/interpreter/run/value.hero"
     h2_r0 = t6;
-#line 23869 "main.c"
+#line 23879 "main.c"
     hero_str_decref(t12);
     goto bb1;
 bb5:
@@ -23873,18 +23883,18 @@ bb5:
     t7 = HERO_STR_LIT(hero_str_3561843e);
 #line 100 "examples/interpreter/run/value.hero"
     t13 = h2_r0;
-#line 23877 "main.c"
+#line 23887 "main.c"
     hero_str_incref(t7);
 #line 100 "examples/interpreter/run/value.hero"
     h2_r0 = t7;
-#line 23881 "main.c"
+#line 23891 "main.c"
     hero_str_decref(t13);
     goto bb1;
 }
 
 #line 110 "examples/interpreter/run/value.hero"
 h_0opt_473cb9ae h_runvalue_condition_of(h_runvalue_Value h0_v) {
-#line 23888 "main.c"
+#line 23898 "main.c"
     h_runvalue_Value h1_s0 = {0};
     h_0opt_473cb9ae h2_r0 = {0};
     h_runvalue_Value_c_truth h3_t;
@@ -23922,11 +23932,11 @@ bb0:
     t1 = h0_v;
 #line 111 "examples/interpreter/run/value.hero"
     t16 = h1_s0;
-#line 23926 "main.c"
+#line 23936 "main.c"
     h_runvalue_Value_retain(&t1);
 #line 111 "examples/interpreter/run/value.hero"
     h1_s0 = t1;
-#line 23930 "main.c"
+#line 23940 "main.c"
     h_runvalue_Value_release(&t16);
 #line 111 "examples/interpreter/run/value.hero"
     t2 = h1_s0;
@@ -23950,7 +23960,7 @@ bb0:
 bb1:
 #line 111 "examples/interpreter/run/value.hero"
     t15 = h2_r0;
-#line 23954 "main.c"
+#line 23964 "main.c"
     h_0opt_473cb9ae_retain(&t15);
     h_runvalue_Value_release(&h1_s0);
     h_0opt_473cb9ae_release(&h2_r0);
@@ -23976,15 +23986,15 @@ bb2:
     t17 = h4_own4;
 #line 112 "examples/interpreter/run/value.hero"
     h4_own4 = t8;
-#line 23980 "main.c"
+#line 23990 "main.c"
     h_0opt_473cb9ae_release(&t17);
 #line 111 "examples/interpreter/run/value.hero"
     t18 = h2_r0;
-#line 23984 "main.c"
+#line 23994 "main.c"
     h_0opt_473cb9ae_retain(&t8);
 #line 111 "examples/interpreter/run/value.hero"
     h2_r0 = t8;
-#line 23988 "main.c"
+#line 23998 "main.c"
     h_0opt_473cb9ae_release(&t18);
     goto bb1;
 bb3:
@@ -23996,15 +24006,15 @@ bb3:
     t19 = h5_own5;
 #line 113 "examples/interpreter/run/value.hero"
     h5_own5 = t10;
-#line 24000 "main.c"
+#line 24010 "main.c"
     h_0opt_473cb9ae_release(&t19);
 #line 111 "examples/interpreter/run/value.hero"
     t20 = h2_r0;
-#line 24004 "main.c"
+#line 24014 "main.c"
     h_0opt_473cb9ae_retain(&t10);
 #line 111 "examples/interpreter/run/value.hero"
     h2_r0 = t10;
-#line 24008 "main.c"
+#line 24018 "main.c"
     h_0opt_473cb9ae_release(&t20);
     goto bb1;
 bb4:
@@ -24016,15 +24026,15 @@ bb4:
     t21 = h6_own6;
 #line 114 "examples/interpreter/run/value.hero"
     h6_own6 = t12;
-#line 24020 "main.c"
+#line 24030 "main.c"
     h_0opt_473cb9ae_release(&t21);
 #line 111 "examples/interpreter/run/value.hero"
     t22 = h2_r0;
-#line 24024 "main.c"
+#line 24034 "main.c"
     h_0opt_473cb9ae_retain(&t12);
 #line 111 "examples/interpreter/run/value.hero"
     h2_r0 = t12;
-#line 24028 "main.c"
+#line 24038 "main.c"
     h_0opt_473cb9ae_release(&t22);
     goto bb1;
 bb5:
@@ -24036,22 +24046,22 @@ bb5:
     t23 = h7_own7;
 #line 115 "examples/interpreter/run/value.hero"
     h7_own7 = t14;
-#line 24040 "main.c"
+#line 24050 "main.c"
     h_0opt_473cb9ae_release(&t23);
 #line 111 "examples/interpreter/run/value.hero"
     t24 = h2_r0;
-#line 24044 "main.c"
+#line 24054 "main.c"
     h_0opt_473cb9ae_retain(&t14);
 #line 111 "examples/interpreter/run/value.hero"
     h2_r0 = t14;
-#line 24048 "main.c"
+#line 24058 "main.c"
     h_0opt_473cb9ae_release(&t24);
     goto bb1;
 }
 
 #line 117 "examples/interpreter/run/value.hero"
 h_0opt_473cb9ae h_runvalue_not_a_condition(h_runvalue_Value h0_v) {
-#line 24055 "main.c"
+#line 24065 "main.c"
     HeroStr h1_own1 = {0};
     HeroStr h2_own2 = {0};
     HeroStr h3_own3 = {0};
@@ -24089,7 +24099,7 @@ bb0:
     t14 = h1_own1;
 #line 119 "examples/interpreter/run/value.hero"
     h1_own1 = t1;
-#line 24093 "main.c"
+#line 24103 "main.c"
     hero_str_decref(t14);
 #line 120 "examples/interpreter/run/value.hero"
     t2 = HERO_STR_LIT(hero_str_28f0d8cd);
@@ -24101,7 +24111,7 @@ bb0:
     t15 = h2_own2;
 #line 120 "examples/interpreter/run/value.hero"
     h2_own2 = t4;
-#line 24105 "main.c"
+#line 24115 "main.c"
     hero_str_decref(t15);
 #line 120 "examples/interpreter/run/value.hero"
     t5 = hero_str_concat(t2, t4);
@@ -24109,7 +24119,7 @@ bb0:
     t16 = h3_own3;
 #line 120 "examples/interpreter/run/value.hero"
     h3_own3 = t5;
-#line 24113 "main.c"
+#line 24123 "main.c"
     hero_str_decref(t16);
 #line 120 "examples/interpreter/run/value.hero"
     t6 = HERO_STR_LIT(hero_str_875f8);
@@ -24119,7 +24129,7 @@ bb0:
     t17 = h4_own4;
 #line 120 "examples/interpreter/run/value.hero"
     h4_own4 = t7;
-#line 24123 "main.c"
+#line 24133 "main.c"
     hero_str_decref(t17);
 #line 120 "examples/interpreter/run/value.hero"
     t8 = h0_v;
@@ -24129,7 +24139,7 @@ bb0:
     t18 = h5_own5;
 #line 120 "examples/interpreter/run/value.hero"
     h5_own5 = t9;
-#line 24133 "main.c"
+#line 24143 "main.c"
     hero_str_decref(t18);
 #line 120 "examples/interpreter/run/value.hero"
     t10 = hero_str_concat(t7, t9);
@@ -24137,7 +24147,7 @@ bb0:
     t19 = h6_own6;
 #line 120 "examples/interpreter/run/value.hero"
     h6_own6 = t10;
-#line 24141 "main.c"
+#line 24151 "main.c"
     hero_str_decref(t19);
 #line 120 "examples/interpreter/run/value.hero"
     t11 = HERO_STR_LIT(hero_str_3149);
@@ -24147,7 +24157,7 @@ bb0:
     t20 = h7_own7;
 #line 120 "examples/interpreter/run/value.hero"
     h7_own7 = t12;
-#line 24151 "main.c"
+#line 24161 "main.c"
     hero_str_decref(t20);
     hero_str_incref(t1);
     hero_str_incref(t12);
@@ -24157,7 +24167,7 @@ bb0:
     t21 = h8_own8;
 #line 118 "examples/interpreter/run/value.hero"
     h8_own8 = t13;
-#line 24161 "main.c"
+#line 24171 "main.c"
     h_0opt_473cb9ae_release(&t21);
     h_0opt_473cb9ae_retain(&t13);
     hero_str_decref(h1_own1);
@@ -24173,7 +24183,7 @@ bb0:
 
 #line 124 "examples/interpreter/run/value.hero"
 h_0opt_e201354 h_runvalue_number_of(h_runvalue_Value h0_v) {
-#line 24177 "main.c"
+#line 24187 "main.c"
     h_runvalue_Value h1_s0 = {0};
     h_0opt_e201354 h2_r0 = {0};
     h_runvalue_Value_c_number h3_n;
@@ -24214,11 +24224,11 @@ bb0:
     t1 = h0_v;
 #line 125 "examples/interpreter/run/value.hero"
     t19 = h1_s0;
-#line 24218 "main.c"
+#line 24228 "main.c"
     h_runvalue_Value_retain(&t1);
 #line 125 "examples/interpreter/run/value.hero"
     h1_s0 = t1;
-#line 24222 "main.c"
+#line 24232 "main.c"
     h_runvalue_Value_release(&t19);
 #line 125 "examples/interpreter/run/value.hero"
     t2 = h1_s0;
@@ -24242,7 +24252,7 @@ bb0:
 bb1:
 #line 125 "examples/interpreter/run/value.hero"
     t18 = h2_r0;
-#line 24246 "main.c"
+#line 24256 "main.c"
     h_0opt_e201354_retain(&t18);
     h_runvalue_Value_release(&h1_s0);
     h_0opt_e201354_release(&h2_r0);
@@ -24268,15 +24278,15 @@ bb2:
     t20 = h4_own4;
 #line 126 "examples/interpreter/run/value.hero"
     h4_own4 = t8;
-#line 24272 "main.c"
+#line 24282 "main.c"
     h_0opt_e201354_release(&t20);
 #line 125 "examples/interpreter/run/value.hero"
     t21 = h2_r0;
-#line 24276 "main.c"
+#line 24286 "main.c"
     h_0opt_e201354_retain(&t8);
 #line 125 "examples/interpreter/run/value.hero"
     h2_r0 = t8;
-#line 24280 "main.c"
+#line 24290 "main.c"
     h_0opt_e201354_release(&t21);
     goto bb1;
 bb3:
@@ -24290,15 +24300,15 @@ bb3:
     t22 = h5_own5;
 #line 127 "examples/interpreter/run/value.hero"
     h5_own5 = t11;
-#line 24294 "main.c"
+#line 24304 "main.c"
     h_0opt_e201354_release(&t22);
 #line 125 "examples/interpreter/run/value.hero"
     t23 = h2_r0;
-#line 24298 "main.c"
+#line 24308 "main.c"
     h_0opt_e201354_retain(&t11);
 #line 125 "examples/interpreter/run/value.hero"
     h2_r0 = t11;
-#line 24302 "main.c"
+#line 24312 "main.c"
     h_0opt_e201354_release(&t23);
     goto bb1;
 bb4:
@@ -24312,15 +24322,15 @@ bb4:
     t24 = h6_own6;
 #line 128 "examples/interpreter/run/value.hero"
     h6_own6 = t14;
-#line 24316 "main.c"
+#line 24326 "main.c"
     h_0opt_e201354_release(&t24);
 #line 125 "examples/interpreter/run/value.hero"
     t25 = h2_r0;
-#line 24320 "main.c"
+#line 24330 "main.c"
     h_0opt_e201354_retain(&t14);
 #line 125 "examples/interpreter/run/value.hero"
     h2_r0 = t14;
-#line 24324 "main.c"
+#line 24334 "main.c"
     h_0opt_e201354_release(&t25);
     goto bb1;
 bb5:
@@ -24334,22 +24344,22 @@ bb5:
     t26 = h7_own7;
 #line 129 "examples/interpreter/run/value.hero"
     h7_own7 = t17;
-#line 24338 "main.c"
+#line 24348 "main.c"
     h_0opt_e201354_release(&t26);
 #line 125 "examples/interpreter/run/value.hero"
     t27 = h2_r0;
-#line 24342 "main.c"
+#line 24352 "main.c"
     h_0opt_e201354_retain(&t17);
 #line 125 "examples/interpreter/run/value.hero"
     h2_r0 = t17;
-#line 24346 "main.c"
+#line 24356 "main.c"
     h_0opt_e201354_release(&t27);
     goto bb1;
 }
 
 #line 131 "examples/interpreter/run/value.hero"
 h_0opt_f87774a h_runvalue_text_of(h_runvalue_Value h0_v) {
-#line 24353 "main.c"
+#line 24363 "main.c"
     h_runvalue_Value h1_s0 = {0};
     h_0opt_f87774a h2_r0 = {0};
     h_runvalue_Value_c_text h3_x = {0};
@@ -24391,11 +24401,11 @@ bb0:
     t1 = h0_v;
 #line 132 "examples/interpreter/run/value.hero"
     t19 = h1_s0;
-#line 24395 "main.c"
+#line 24405 "main.c"
     h_runvalue_Value_retain(&t1);
 #line 132 "examples/interpreter/run/value.hero"
     h1_s0 = t1;
-#line 24399 "main.c"
+#line 24409 "main.c"
     h_runvalue_Value_release(&t19);
 #line 132 "examples/interpreter/run/value.hero"
     t2 = h1_s0;
@@ -24419,7 +24429,7 @@ bb0:
 bb1:
 #line 132 "examples/interpreter/run/value.hero"
     t18 = h2_r0;
-#line 24423 "main.c"
+#line 24433 "main.c"
     h_0opt_f87774a_retain(&t18);
     h_runvalue_Value_release(&h1_s0);
     h_0opt_f87774a_release(&h2_r0);
@@ -24436,17 +24446,17 @@ bb2:
     t5 = t4.as.c_text;
 #line 133 "examples/interpreter/run/value.hero"
     t20 = h3_x;
-#line 24440 "main.c"
+#line 24450 "main.c"
     h_runvalue_Value_c_text_retain(&t5);
 #line 133 "examples/interpreter/run/value.hero"
     h3_x = t5;
-#line 24444 "main.c"
+#line 24454 "main.c"
     h_runvalue_Value_c_text_release(&t20);
 #line 133 "examples/interpreter/run/value.hero"
     t6 = h3_x;
 #line 133 "examples/interpreter/run/value.hero"
     t7 = t6.f_s;
-#line 24450 "main.c"
+#line 24460 "main.c"
     hero_str_incref(t7);
 #line 133 "examples/interpreter/run/value.hero"
     t8 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t7};
@@ -24454,15 +24464,15 @@ bb2:
     t21 = h4_own4;
 #line 133 "examples/interpreter/run/value.hero"
     h4_own4 = t8;
-#line 24458 "main.c"
+#line 24468 "main.c"
     h_0opt_f87774a_release(&t21);
 #line 132 "examples/interpreter/run/value.hero"
     t22 = h2_r0;
-#line 24462 "main.c"
+#line 24472 "main.c"
     h_0opt_f87774a_retain(&t8);
 #line 132 "examples/interpreter/run/value.hero"
     h2_r0 = t8;
-#line 24466 "main.c"
+#line 24476 "main.c"
     h_0opt_f87774a_release(&t22);
     goto bb1;
 bb3:
@@ -24476,15 +24486,15 @@ bb3:
     t23 = h5_own5;
 #line 134 "examples/interpreter/run/value.hero"
     h5_own5 = t11;
-#line 24480 "main.c"
+#line 24490 "main.c"
     h_0opt_f87774a_release(&t23);
 #line 132 "examples/interpreter/run/value.hero"
     t24 = h2_r0;
-#line 24484 "main.c"
+#line 24494 "main.c"
     h_0opt_f87774a_retain(&t11);
 #line 132 "examples/interpreter/run/value.hero"
     h2_r0 = t11;
-#line 24488 "main.c"
+#line 24498 "main.c"
     h_0opt_f87774a_release(&t24);
     goto bb1;
 bb4:
@@ -24498,15 +24508,15 @@ bb4:
     t25 = h6_own6;
 #line 135 "examples/interpreter/run/value.hero"
     h6_own6 = t14;
-#line 24502 "main.c"
+#line 24512 "main.c"
     h_0opt_f87774a_release(&t25);
 #line 132 "examples/interpreter/run/value.hero"
     t26 = h2_r0;
-#line 24506 "main.c"
+#line 24516 "main.c"
     h_0opt_f87774a_retain(&t14);
 #line 132 "examples/interpreter/run/value.hero"
     h2_r0 = t14;
-#line 24510 "main.c"
+#line 24520 "main.c"
     h_0opt_f87774a_release(&t26);
     goto bb1;
 bb5:
@@ -24520,22 +24530,22 @@ bb5:
     t27 = h7_own7;
 #line 136 "examples/interpreter/run/value.hero"
     h7_own7 = t17;
-#line 24524 "main.c"
+#line 24534 "main.c"
     h_0opt_f87774a_release(&t27);
 #line 132 "examples/interpreter/run/value.hero"
     t28 = h2_r0;
-#line 24528 "main.c"
+#line 24538 "main.c"
     h_0opt_f87774a_retain(&t17);
 #line 132 "examples/interpreter/run/value.hero"
     h2_r0 = t17;
-#line 24532 "main.c"
+#line 24542 "main.c"
     h_0opt_f87774a_release(&t28);
     goto bb1;
 }
 
 #line 200 "examples/interpreter/run/value.hero"
 HeroStr h_runvalue_message_of_bool(h_0opt_473cb9ae h0_said) {
-#line 24539 "main.c"
+#line 24549 "main.c"
     h_0opt_473cb9ae h1_s0 = {0};
     HeroStr h2_r0 = {0};
     HeroFailure h3_e = {0};
@@ -24558,11 +24568,11 @@ bb0:
     t1 = h0_said;
 #line 201 "examples/interpreter/run/value.hero"
     t10 = h1_s0;
-#line 24562 "main.c"
+#line 24572 "main.c"
     h_0opt_473cb9ae_retain(&t1);
 #line 201 "examples/interpreter/run/value.hero"
     h1_s0 = t1;
-#line 24566 "main.c"
+#line 24576 "main.c"
     h_0opt_473cb9ae_release(&t10);
 #line 201 "examples/interpreter/run/value.hero"
     t2 = h1_s0;
@@ -24582,7 +24592,7 @@ bb0:
 bb1:
 #line 201 "examples/interpreter/run/value.hero"
     t9 = h2_r0;
-#line 24586 "main.c"
+#line 24596 "main.c"
     hero_str_incref(t9);
     h_0opt_473cb9ae_release(&h1_s0);
     hero_str_decref(h2_r0);
@@ -24593,11 +24603,11 @@ bb2:
     t4 = HERO_STR_LIT(hero_str_16ecc41b);
 #line 201 "examples/interpreter/run/value.hero"
     t11 = h2_r0;
-#line 24597 "main.c"
+#line 24607 "main.c"
     hero_str_incref(t4);
 #line 201 "examples/interpreter/run/value.hero"
     h2_r0 = t4;
-#line 24601 "main.c"
+#line 24611 "main.c"
     hero_str_decref(t11);
     goto bb1;
 bb3:
@@ -24607,11 +24617,11 @@ bb3:
     t6 = t5.as.err;
 #line 203 "examples/interpreter/run/value.hero"
     t12 = h3_e;
-#line 24611 "main.c"
+#line 24621 "main.c"
     hero_failure_retain(&t6);
 #line 203 "examples/interpreter/run/value.hero"
     h3_e = t6;
-#line 24615 "main.c"
+#line 24625 "main.c"
     hero_failure_release(&t12);
 #line 203 "examples/interpreter/run/value.hero"
     t7 = h3_e;
@@ -24619,31 +24629,31 @@ bb3:
     t8 = t7.msg;
 #line 201 "examples/interpreter/run/value.hero"
     t13 = h2_r0;
-#line 24623 "main.c"
+#line 24633 "main.c"
     hero_str_incref(t8);
 #line 201 "examples/interpreter/run/value.hero"
     h2_r0 = t8;
-#line 24627 "main.c"
+#line 24637 "main.c"
     hero_str_decref(t13);
     goto bb1;
 }
 
 #line 33 "examples/interpreter/syn/parse.hero"
 HeroStr h_synparse_ERR_PARSE(void) {
-#line 24634 "main.c"
+#line 24644 "main.c"
     HeroStr t1;
     goto bb0;
 bb0:
 #line 34 "examples/interpreter/syn/parse.hero"
     t1 = HERO_STR_LIT(hero_str_3b1d407a);
-#line 24640 "main.c"
+#line 24650 "main.c"
     hero_str_incref(t1);
     return t1;
 }
 
 #line 38 "examples/interpreter/syn/parse.hero"
 h_0opt_60498281 h_synparse_program(HeroStr h0_source) {
-#line 24647 "main.c"
+#line 24657 "main.c"
     h_0opt_7f1de476 h1_f0 = {0};
     HeroArrayHeader * h2_tokens = {0};
     h_syncursor_Cursor h3_c = {0};
@@ -24716,15 +24726,15 @@ bb0:
     t35 = h8_own8;
 #line 39 "examples/interpreter/syn/parse.hero"
     h8_own8 = t2;
-#line 24720 "main.c"
+#line 24730 "main.c"
     h_0opt_7f1de476_release(&t35);
 #line 39 "examples/interpreter/syn/parse.hero"
     t36 = h1_f0;
-#line 24724 "main.c"
+#line 24734 "main.c"
     h_0opt_7f1de476_retain(&t2);
 #line 39 "examples/interpreter/syn/parse.hero"
     h1_f0 = t2;
-#line 24728 "main.c"
+#line 24738 "main.c"
     h_0opt_7f1de476_release(&t36);
 #line 39 "examples/interpreter/syn/parse.hero"
     t3 = h1_f0;
@@ -24744,11 +24754,11 @@ bb1:
     t11 = t10.as.ok;
 #line 39 "examples/interpreter/syn/parse.hero"
     t37 = h2_tokens;
-#line 24748 "main.c"
+#line 24758 "main.c"
     hero_array_incref(t11);
 #line 39 "examples/interpreter/syn/parse.hero"
     h2_tokens = t11;
-#line 24752 "main.c"
+#line 24762 "main.c"
     hero_array_decref(t37);
 #line 40 "examples/interpreter/syn/parse.hero"
     t12 = h2_tokens;
@@ -24758,15 +24768,15 @@ bb1:
     t38 = h9_own9;
 #line 40 "examples/interpreter/syn/parse.hero"
     h9_own9 = t13;
-#line 24762 "main.c"
+#line 24772 "main.c"
     h_syncursor_Cursor_release(&t38);
 #line 40 "examples/interpreter/syn/parse.hero"
     t39 = h3_c;
-#line 24766 "main.c"
+#line 24776 "main.c"
     h_syncursor_Cursor_retain(&t13);
 #line 40 "examples/interpreter/syn/parse.hero"
     h3_c = t13;
-#line 24770 "main.c"
+#line 24780 "main.c"
     h_syncursor_Cursor_release(&t39);
 #line 41 "examples/interpreter/syn/parse.hero"
     t14 = h_syntree_empty();
@@ -24774,15 +24784,15 @@ bb1:
     t40 = h10_own10;
 #line 41 "examples/interpreter/syn/parse.hero"
     h10_own10 = t14;
-#line 24778 "main.c"
+#line 24788 "main.c"
     h_syntree_Tree_release(&t40);
 #line 41 "examples/interpreter/syn/parse.hero"
     t41 = h4_t;
-#line 24782 "main.c"
+#line 24792 "main.c"
     h_syntree_Tree_retain(&t14);
 #line 41 "examples/interpreter/syn/parse.hero"
     h4_t = t14;
-#line 24786 "main.c"
+#line 24796 "main.c"
     h_syntree_Tree_release(&t41);
 #line 42 "examples/interpreter/syn/parse.hero"
     t15 = hero_array_new(&hero_desc_int, 1);
@@ -24790,15 +24800,15 @@ bb1:
     t42 = h11_own11;
 #line 42 "examples/interpreter/syn/parse.hero"
     h11_own11 = t15;
-#line 24794 "main.c"
+#line 24804 "main.c"
     hero_array_decref(t42);
 #line 42 "examples/interpreter/syn/parse.hero"
     t43 = h5_top;
-#line 24798 "main.c"
+#line 24808 "main.c"
     hero_array_incref(t15);
 #line 42 "examples/interpreter/syn/parse.hero"
     h5_top = t15;
-#line 24802 "main.c"
+#line 24812 "main.c"
     hero_array_decref(t43);
 #line 43 "examples/interpreter/syn/parse.hero"
     h_syncursor_skipped_lines(&h3_c);
@@ -24810,7 +24820,7 @@ bb2:
     t7 = h1_f0;
 #line 39 "examples/interpreter/syn/parse.hero"
     t8 = t7.as.err;
-#line 24814 "main.c"
+#line 24824 "main.c"
     hero_failure_retain(&t8);
 #line 39 "examples/interpreter/syn/parse.hero"
     t9 = (h_0opt_60498281){.tag = INT64_C(1), .as.err = t8};
@@ -24818,7 +24828,7 @@ bb2:
     t44 = h12_own12;
 #line 39 "examples/interpreter/syn/parse.hero"
     h12_own12 = t9;
-#line 24822 "main.c"
+#line 24832 "main.c"
     h_0opt_60498281_release(&t44);
 #line 39 "examples/interpreter/syn/parse.hero"
     h7_ret0 = t9;
@@ -24841,15 +24851,15 @@ bb4:
     t45 = h13_own13;
 #line 46 "examples/interpreter/syn/parse.hero"
     h13_own13 = t20;
-#line 24845 "main.c"
+#line 24855 "main.c"
     h_0opt_e201354_release(&t45);
 #line 46 "examples/interpreter/syn/parse.hero"
     t46 = h6_f1;
-#line 24849 "main.c"
+#line 24859 "main.c"
     h_0opt_e201354_retain(&t20);
 #line 46 "examples/interpreter/syn/parse.hero"
     h6_f1 = t20;
-#line 24853 "main.c"
+#line 24863 "main.c"
     h_0opt_e201354_release(&t46);
 #line 46 "examples/interpreter/syn/parse.hero"
     t21 = h6_f1;
@@ -24867,15 +24877,15 @@ bb5:
     t31 = h5_top;
 #line 49 "examples/interpreter/syn/parse.hero"
     t47 = h4_t.f_top;
-#line 24871 "main.c"
+#line 24881 "main.c"
     hero_array_incref(t31);
 #line 49 "examples/interpreter/syn/parse.hero"
     h4_t.f_top = t31;
-#line 24875 "main.c"
+#line 24885 "main.c"
     hero_array_decref(t47);
 #line 50 "examples/interpreter/syn/parse.hero"
     t32 = h4_t;
-#line 24879 "main.c"
+#line 24889 "main.c"
     h_syntree_Tree_retain(&t32);
 #line 50 "examples/interpreter/syn/parse.hero"
     t33 = (h_0opt_60498281){.tag = INT64_C(0), .as.ok = t32};
@@ -24883,7 +24893,7 @@ bb5:
     t48 = h14_own14;
 #line 50 "examples/interpreter/syn/parse.hero"
     h14_own14 = t33;
-#line 24887 "main.c"
+#line 24897 "main.c"
     h_0opt_60498281_release(&t48);
 #line 50 "examples/interpreter/syn/parse.hero"
     h7_ret0 = t33;
@@ -24906,7 +24916,7 @@ bb7:
     t25 = h6_f1;
 #line 46 "examples/interpreter/syn/parse.hero"
     t26 = t25.as.err;
-#line 24910 "main.c"
+#line 24920 "main.c"
     hero_failure_retain(&t26);
 #line 46 "examples/interpreter/syn/parse.hero"
     t27 = (h_0opt_60498281){.tag = INT64_C(1), .as.err = t26};
@@ -24914,7 +24924,7 @@ bb7:
     t49 = h15_own15;
 #line 46 "examples/interpreter/syn/parse.hero"
     h15_own15 = t27;
-#line 24918 "main.c"
+#line 24928 "main.c"
     h_0opt_60498281_release(&t49);
 #line 46 "examples/interpreter/syn/parse.hero"
     h7_ret0 = t27;
@@ -24922,7 +24932,7 @@ bb7:
     goto bb8;
 #line 46 "examples/interpreter/syn/parse.hero"
 bb8:
-#line 24926 "main.c"
+#line 24936 "main.c"
     t34 = h7_ret0;
     h_0opt_60498281_retain(&t34);
     h_0opt_7f1de476_release(&h1_f0);
@@ -24944,7 +24954,7 @@ bb8:
 
 #line 55 "examples/interpreter/syn/parse.hero"
 h_0opt_e201354 h_synparse_statement(h_syncursor_Cursor *ph0_c, h_syntree_Tree *ph1_t) {
-#line 24948 "main.c"
+#line 24958 "main.c"
     h_0opt_e201354 h2_f0 = {0};
     int64_t h3_value;
     h_0opt_a8ea2 h4_f1 = {0};
@@ -25190,7 +25200,7 @@ bb0:
     t134 = h16_own16;
 #line 56 "examples/interpreter/syn/parse.hero"
     h16_own16 = t1;
-#line 25194 "main.c"
+#line 25204 "main.c"
     h_lextoken_Token_release(&t134);
 #line 56 "examples/interpreter/syn/parse.hero"
     t2 = h_syncursor_accepted(&(*ph0_c), t1);
@@ -25204,7 +25214,7 @@ bb1:
     t135 = h17_own17;
 #line 59 "examples/interpreter/syn/parse.hero"
     h17_own17 = t4;
-#line 25208 "main.c"
+#line 25218 "main.c"
     h_lextoken_Token_release(&t135);
 #line 59 "examples/interpreter/syn/parse.hero"
     t5 = h_syncursor_accepted(&(*ph0_c), t4);
@@ -25218,7 +25228,7 @@ bb2:
     t136 = h18_own18;
 #line 57 "examples/interpreter/syn/parse.hero"
     h18_own18 = t3;
-#line 25222 "main.c"
+#line 25232 "main.c"
     h_0opt_e201354_release(&t136);
 #line 57 "examples/interpreter/syn/parse.hero"
     h15_ret0 = t3;
@@ -25236,7 +25246,7 @@ bb4:
     t137 = h19_own19;
 #line 64 "examples/interpreter/syn/parse.hero"
     h19_own19 = t30;
-#line 25240 "main.c"
+#line 25250 "main.c"
     h_lextoken_Token_release(&t137);
 #line 64 "examples/interpreter/syn/parse.hero"
     t31 = h_syncursor_accepted(&(*ph0_c), t30);
@@ -25250,15 +25260,15 @@ bb5:
     t138 = h20_own20;
 #line 60 "examples/interpreter/syn/parse.hero"
     h20_own20 = t6;
-#line 25254 "main.c"
+#line 25264 "main.c"
     h_0opt_e201354_release(&t138);
 #line 60 "examples/interpreter/syn/parse.hero"
     t139 = h2_f0;
-#line 25258 "main.c"
+#line 25268 "main.c"
     h_0opt_e201354_retain(&t6);
 #line 60 "examples/interpreter/syn/parse.hero"
     h2_f0 = t6;
-#line 25262 "main.c"
+#line 25272 "main.c"
     h_0opt_e201354_release(&t139);
 #line 60 "examples/interpreter/syn/parse.hero"
     t7 = h2_f0;
@@ -25287,15 +25297,15 @@ bb7:
     t140 = h21_own21;
 #line 61 "examples/interpreter/syn/parse.hero"
     h21_own21 = t16;
-#line 25291 "main.c"
+#line 25301 "main.c"
     h_0opt_a8ea2_release(&t140);
 #line 61 "examples/interpreter/syn/parse.hero"
     t141 = h4_f1;
-#line 25295 "main.c"
+#line 25305 "main.c"
     h_0opt_a8ea2_retain(&t16);
 #line 61 "examples/interpreter/syn/parse.hero"
     h4_f1 = t16;
-#line 25299 "main.c"
+#line 25309 "main.c"
     h_0opt_a8ea2_release(&t141);
 #line 61 "examples/interpreter/syn/parse.hero"
     t17 = h4_f1;
@@ -25313,7 +25323,7 @@ bb8:
     t11 = h2_f0;
 #line 60 "examples/interpreter/syn/parse.hero"
     t12 = t11.as.err;
-#line 25317 "main.c"
+#line 25327 "main.c"
     hero_failure_retain(&t12);
 #line 60 "examples/interpreter/syn/parse.hero"
     t13 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t12};
@@ -25321,7 +25331,7 @@ bb8:
     t142 = h22_own22;
 #line 60 "examples/interpreter/syn/parse.hero"
     h22_own22 = t13;
-#line 25325 "main.c"
+#line 25335 "main.c"
     h_0opt_e201354_release(&t142);
 #line 60 "examples/interpreter/syn/parse.hero"
     h15_ret0 = t13;
@@ -25337,7 +25347,7 @@ bb9:
     t143 = h23_own23;
 #line 62 "examples/interpreter/syn/parse.hero"
     h23_own23 = t27;
-#line 25341 "main.c"
+#line 25351 "main.c"
     h_syntree_Stmt_release(&t143);
 #line 62 "examples/interpreter/syn/parse.hero"
     t28 = h_syntree_added_stmt(&(*ph1_t), t27);
@@ -25347,7 +25357,7 @@ bb9:
     t144 = h24_own24;
 #line 62 "examples/interpreter/syn/parse.hero"
     h24_own24 = t29;
-#line 25351 "main.c"
+#line 25361 "main.c"
     h_0opt_e201354_release(&t144);
 #line 62 "examples/interpreter/syn/parse.hero"
     h15_ret0 = t29;
@@ -25359,7 +25369,7 @@ bb10:
     t21 = h4_f1;
 #line 61 "examples/interpreter/syn/parse.hero"
     t22 = t21.as.err;
-#line 25363 "main.c"
+#line 25373 "main.c"
     hero_failure_retain(&t22);
 #line 61 "examples/interpreter/syn/parse.hero"
     t23 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t22};
@@ -25367,7 +25377,7 @@ bb10:
     t145 = h25_own25;
 #line 61 "examples/interpreter/syn/parse.hero"
     h25_own25 = t23;
-#line 25371 "main.c"
+#line 25381 "main.c"
     h_0opt_e201354_release(&t145);
 #line 61 "examples/interpreter/syn/parse.hero"
     h15_ret0 = t23;
@@ -25381,7 +25391,7 @@ bb11:
     t146 = h26_own26;
 #line 67 "examples/interpreter/syn/parse.hero"
     h26_own26 = t33;
-#line 25385 "main.c"
+#line 25395 "main.c"
     h_lextoken_Token_release(&t146);
 #line 67 "examples/interpreter/syn/parse.hero"
     t34 = h_syncursor_accepted(&(*ph0_c), t33);
@@ -25395,7 +25405,7 @@ bb12:
     t147 = h27_own27;
 #line 65 "examples/interpreter/syn/parse.hero"
     h27_own27 = t32;
-#line 25399 "main.c"
+#line 25409 "main.c"
     h_0opt_e201354_release(&t147);
 #line 65 "examples/interpreter/syn/parse.hero"
     h15_ret0 = t32;
@@ -25413,7 +25423,7 @@ bb14:
     t148 = h28_own28;
 #line 70 "examples/interpreter/syn/parse.hero"
     h28_own28 = t36;
-#line 25417 "main.c"
+#line 25427 "main.c"
     h_lextoken_Token_release(&t148);
 #line 70 "examples/interpreter/syn/parse.hero"
     t37 = h_syncursor_accepted(&(*ph0_c), t36);
@@ -25427,7 +25437,7 @@ bb15:
     t149 = h29_own29;
 #line 68 "examples/interpreter/syn/parse.hero"
     h29_own29 = t35;
-#line 25431 "main.c"
+#line 25441 "main.c"
     h_0opt_e201354_release(&t149);
 #line 68 "examples/interpreter/syn/parse.hero"
     h15_ret0 = t35;
@@ -25445,7 +25455,7 @@ bb17:
     t150 = h30_own30;
 #line 73 "examples/interpreter/syn/parse.hero"
     h30_own30 = t39;
-#line 25449 "main.c"
+#line 25459 "main.c"
     h_lextoken_Token_release(&t150);
 #line 73 "examples/interpreter/syn/parse.hero"
     t40 = h_syncursor_accepted(&(*ph0_c), t39);
@@ -25459,7 +25469,7 @@ bb18:
     t151 = h31_own31;
 #line 71 "examples/interpreter/syn/parse.hero"
     h31_own31 = t38;
-#line 25463 "main.c"
+#line 25473 "main.c"
     h_0opt_e201354_release(&t151);
 #line 71 "examples/interpreter/syn/parse.hero"
     h15_ret0 = t38;
@@ -25477,7 +25487,7 @@ bb20:
     t152 = h32_own32;
 #line 78 "examples/interpreter/syn/parse.hero"
     h32_own32 = t65;
-#line 25481 "main.c"
+#line 25491 "main.c"
     h_lextoken_Token_release(&t152);
 #line 78 "examples/interpreter/syn/parse.hero"
     t66 = h_syncursor_accepted(&(*ph0_c), t65);
@@ -25491,15 +25501,15 @@ bb21:
     t153 = h33_own33;
 #line 74 "examples/interpreter/syn/parse.hero"
     h33_own33 = t41;
-#line 25495 "main.c"
+#line 25505 "main.c"
     h_0opt_e201354_release(&t153);
 #line 74 "examples/interpreter/syn/parse.hero"
     t154 = h5_f2;
-#line 25499 "main.c"
+#line 25509 "main.c"
     h_0opt_e201354_retain(&t41);
 #line 74 "examples/interpreter/syn/parse.hero"
     h5_f2 = t41;
-#line 25503 "main.c"
+#line 25513 "main.c"
     h_0opt_e201354_release(&t154);
 #line 74 "examples/interpreter/syn/parse.hero"
     t42 = h5_f2;
@@ -25528,15 +25538,15 @@ bb23:
     t155 = h34_own34;
 #line 75 "examples/interpreter/syn/parse.hero"
     h34_own34 = t51;
-#line 25532 "main.c"
+#line 25542 "main.c"
     h_0opt_a8ea2_release(&t155);
 #line 75 "examples/interpreter/syn/parse.hero"
     t156 = h7_f3;
-#line 25536 "main.c"
+#line 25546 "main.c"
     h_0opt_a8ea2_retain(&t51);
 #line 75 "examples/interpreter/syn/parse.hero"
     h7_f3 = t51;
-#line 25540 "main.c"
+#line 25550 "main.c"
     h_0opt_a8ea2_release(&t156);
 #line 75 "examples/interpreter/syn/parse.hero"
     t52 = h7_f3;
@@ -25554,7 +25564,7 @@ bb24:
     t46 = h5_f2;
 #line 74 "examples/interpreter/syn/parse.hero"
     t47 = t46.as.err;
-#line 25558 "main.c"
+#line 25568 "main.c"
     hero_failure_retain(&t47);
 #line 74 "examples/interpreter/syn/parse.hero"
     t48 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t47};
@@ -25562,7 +25572,7 @@ bb24:
     t157 = h35_own35;
 #line 74 "examples/interpreter/syn/parse.hero"
     h35_own35 = t48;
-#line 25566 "main.c"
+#line 25576 "main.c"
     h_0opt_e201354_release(&t157);
 #line 74 "examples/interpreter/syn/parse.hero"
     h15_ret0 = t48;
@@ -25578,7 +25588,7 @@ bb25:
     t158 = h36_own36;
 #line 76 "examples/interpreter/syn/parse.hero"
     h36_own36 = t62;
-#line 25582 "main.c"
+#line 25592 "main.c"
     h_syntree_Stmt_release(&t158);
 #line 76 "examples/interpreter/syn/parse.hero"
     t63 = h_syntree_added_stmt(&(*ph1_t), t62);
@@ -25588,7 +25598,7 @@ bb25:
     t159 = h37_own37;
 #line 76 "examples/interpreter/syn/parse.hero"
     h37_own37 = t64;
-#line 25592 "main.c"
+#line 25602 "main.c"
     h_0opt_e201354_release(&t159);
 #line 76 "examples/interpreter/syn/parse.hero"
     h15_ret0 = t64;
@@ -25600,7 +25610,7 @@ bb26:
     t56 = h7_f3;
 #line 75 "examples/interpreter/syn/parse.hero"
     t57 = t56.as.err;
-#line 25604 "main.c"
+#line 25614 "main.c"
     hero_failure_retain(&t57);
 #line 75 "examples/interpreter/syn/parse.hero"
     t58 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t57};
@@ -25608,7 +25618,7 @@ bb26:
     t160 = h38_own38;
 #line 75 "examples/interpreter/syn/parse.hero"
     h38_own38 = t58;
-#line 25612 "main.c"
+#line 25622 "main.c"
     h_0opt_e201354_release(&t160);
 #line 75 "examples/interpreter/syn/parse.hero"
     h15_ret0 = t58;
@@ -25624,7 +25634,7 @@ bb27:
     t161 = h39_own39;
 #line 83 "examples/interpreter/syn/parse.hero"
     h39_own39 = t92;
-#line 25628 "main.c"
+#line 25638 "main.c"
     h_lextoken_Token_release(&t161);
 #line 83 "examples/interpreter/syn/parse.hero"
     t93 = (h_lextoken_Token){.tag = h_lextoken_Token_tag_kw_end};
@@ -25632,7 +25642,7 @@ bb27:
     t162 = h40_own40;
 #line 83 "examples/interpreter/syn/parse.hero"
     h40_own40 = t93;
-#line 25636 "main.c"
+#line 25646 "main.c"
     h_lextoken_Token_release(&t162);
 #line 83 "examples/interpreter/syn/parse.hero"
     t94 = h_lextoken_Token_eq(&t92, &t93);
@@ -25648,15 +25658,15 @@ bb28:
     t163 = h41_own41;
 #line 79 "examples/interpreter/syn/parse.hero"
     h41_own41 = t67;
-#line 25652 "main.c"
+#line 25662 "main.c"
     h_0opt_e201354_release(&t163);
 #line 79 "examples/interpreter/syn/parse.hero"
     t164 = h8_f4;
-#line 25656 "main.c"
+#line 25666 "main.c"
     h_0opt_e201354_retain(&t67);
 #line 79 "examples/interpreter/syn/parse.hero"
     h8_f4 = t67;
-#line 25660 "main.c"
+#line 25670 "main.c"
     h_0opt_e201354_release(&t164);
 #line 79 "examples/interpreter/syn/parse.hero"
     t68 = h8_f4;
@@ -25685,15 +25695,15 @@ bb30:
     t165 = h42_own42;
 #line 80 "examples/interpreter/syn/parse.hero"
     h42_own42 = t77;
-#line 25689 "main.c"
+#line 25699 "main.c"
     h_0opt_a8ea2_release(&t165);
 #line 80 "examples/interpreter/syn/parse.hero"
     t166 = h10_f5;
-#line 25693 "main.c"
+#line 25703 "main.c"
     h_0opt_a8ea2_retain(&t77);
 #line 80 "examples/interpreter/syn/parse.hero"
     h10_f5 = t77;
-#line 25697 "main.c"
+#line 25707 "main.c"
     h_0opt_a8ea2_release(&t166);
 #line 80 "examples/interpreter/syn/parse.hero"
     t78 = h10_f5;
@@ -25711,7 +25721,7 @@ bb31:
     t72 = h8_f4;
 #line 79 "examples/interpreter/syn/parse.hero"
     t73 = t72.as.err;
-#line 25715 "main.c"
+#line 25725 "main.c"
     hero_failure_retain(&t73);
 #line 79 "examples/interpreter/syn/parse.hero"
     t74 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t73};
@@ -25719,7 +25729,7 @@ bb31:
     t167 = h43_own43;
 #line 79 "examples/interpreter/syn/parse.hero"
     h43_own43 = t74;
-#line 25723 "main.c"
+#line 25733 "main.c"
     h_0opt_e201354_release(&t167);
 #line 79 "examples/interpreter/syn/parse.hero"
     h15_ret0 = t74;
@@ -25735,7 +25745,7 @@ bb32:
     t168 = h44_own44;
 #line 81 "examples/interpreter/syn/parse.hero"
     h44_own44 = t88;
-#line 25739 "main.c"
+#line 25749 "main.c"
     h_syntree_Stmt_release(&t168);
 #line 81 "examples/interpreter/syn/parse.hero"
     t89 = h_syntree_added_stmt(&(*ph1_t), t88);
@@ -25745,7 +25755,7 @@ bb32:
     t169 = h45_own45;
 #line 81 "examples/interpreter/syn/parse.hero"
     h45_own45 = t90;
-#line 25749 "main.c"
+#line 25759 "main.c"
     h_0opt_e201354_release(&t169);
 #line 81 "examples/interpreter/syn/parse.hero"
     h15_ret0 = t90;
@@ -25757,7 +25767,7 @@ bb33:
     t82 = h10_f5;
 #line 80 "examples/interpreter/syn/parse.hero"
     t83 = t82.as.err;
-#line 25761 "main.c"
+#line 25771 "main.c"
     hero_failure_retain(&t83);
 #line 80 "examples/interpreter/syn/parse.hero"
     t84 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t83};
@@ -25765,7 +25775,7 @@ bb33:
     t170 = h46_own46;
 #line 80 "examples/interpreter/syn/parse.hero"
     h46_own46 = t84;
-#line 25769 "main.c"
+#line 25779 "main.c"
     h_0opt_e201354_release(&t170);
 #line 80 "examples/interpreter/syn/parse.hero"
     h15_ret0 = t84;
@@ -25779,15 +25789,15 @@ bb34:
     t171 = h47_own47;
 #line 88 "examples/interpreter/syn/parse.hero"
     h47_own47 = t109;
-#line 25783 "main.c"
+#line 25793 "main.c"
     h_0opt_e201354_release(&t171);
 #line 88 "examples/interpreter/syn/parse.hero"
     t172 = h12_f6;
-#line 25787 "main.c"
+#line 25797 "main.c"
     h_0opt_e201354_retain(&t109);
 #line 88 "examples/interpreter/syn/parse.hero"
     h12_f6 = t109;
-#line 25791 "main.c"
+#line 25801 "main.c"
     h_0opt_e201354_release(&t172);
 #line 88 "examples/interpreter/syn/parse.hero"
     t110 = h12_f6;
@@ -25809,7 +25819,7 @@ bb35:
     t173 = h48_own48;
 #line 83 "examples/interpreter/syn/parse.hero"
     h48_own48 = t96;
-#line 25813 "main.c"
+#line 25823 "main.c"
     h_lextoken_Token_release(&t173);
 #line 83 "examples/interpreter/syn/parse.hero"
     t97 = (h_lextoken_Token){.tag = h_lextoken_Token_tag_kw_else};
@@ -25817,7 +25827,7 @@ bb35:
     t174 = h49_own49;
 #line 83 "examples/interpreter/syn/parse.hero"
     h49_own49 = t97;
-#line 25821 "main.c"
+#line 25831 "main.c"
     h_lextoken_Token_release(&t174);
 #line 83 "examples/interpreter/syn/parse.hero"
     t98 = h_lextoken_Token_eq(&t96, &t97);
@@ -25839,7 +25849,7 @@ bb37:
     t175 = h50_own50;
 #line 85 "examples/interpreter/syn/parse.hero"
     h50_own50 = t100;
-#line 25843 "main.c"
+#line 25853 "main.c"
     hero_str_decref(t175);
 #line 86 "examples/interpreter/syn/parse.hero"
     t101 = HERO_STR_LIT(hero_str_60);
@@ -25851,7 +25861,7 @@ bb37:
     t176 = h51_own51;
 #line 86 "examples/interpreter/syn/parse.hero"
     h51_own51 = t103;
-#line 25855 "main.c"
+#line 25865 "main.c"
     h_lextoken_Token_release(&t176);
 #line 86 "examples/interpreter/syn/parse.hero"
     t104 = h_lextoken_shown(t103);
@@ -25859,7 +25869,7 @@ bb37:
     t177 = h52_own52;
 #line 86 "examples/interpreter/syn/parse.hero"
     h52_own52 = t104;
-#line 25863 "main.c"
+#line 25873 "main.c"
     hero_str_decref(t177);
 #line 86 "examples/interpreter/syn/parse.hero"
     t105 = hero_str_concat(t101, t104);
@@ -25867,7 +25877,7 @@ bb37:
     t178 = h53_own53;
 #line 86 "examples/interpreter/syn/parse.hero"
     h53_own53 = t105;
-#line 25871 "main.c"
+#line 25881 "main.c"
     hero_str_decref(t178);
 #line 86 "examples/interpreter/syn/parse.hero"
     t106 = HERO_STR_LIT(hero_str_3ca42064);
@@ -25877,7 +25887,7 @@ bb37:
     t179 = h54_own54;
 #line 86 "examples/interpreter/syn/parse.hero"
     h54_own54 = t107;
-#line 25881 "main.c"
+#line 25891 "main.c"
     hero_str_decref(t179);
     hero_str_incref(t100);
     hero_str_incref(t107);
@@ -25887,7 +25897,7 @@ bb37:
     t180 = h55_own55;
 #line 84 "examples/interpreter/syn/parse.hero"
     h55_own55 = t108;
-#line 25891 "main.c"
+#line 25901 "main.c"
     h_0opt_e201354_release(&t180);
 #line 84 "examples/interpreter/syn/parse.hero"
     h15_ret0 = t108;
@@ -25910,15 +25920,15 @@ bb39:
     t181 = h56_own56;
 #line 89 "examples/interpreter/syn/parse.hero"
     h56_own56 = t119;
-#line 25914 "main.c"
+#line 25924 "main.c"
     h_0opt_a8ea2_release(&t181);
 #line 89 "examples/interpreter/syn/parse.hero"
     t182 = h14_f7;
-#line 25918 "main.c"
+#line 25928 "main.c"
     h_0opt_a8ea2_retain(&t119);
 #line 89 "examples/interpreter/syn/parse.hero"
     h14_f7 = t119;
-#line 25922 "main.c"
+#line 25932 "main.c"
     h_0opt_a8ea2_release(&t182);
 #line 89 "examples/interpreter/syn/parse.hero"
     t120 = h14_f7;
@@ -25936,7 +25946,7 @@ bb40:
     t114 = h12_f6;
 #line 88 "examples/interpreter/syn/parse.hero"
     t115 = t114.as.err;
-#line 25940 "main.c"
+#line 25950 "main.c"
     hero_failure_retain(&t115);
 #line 88 "examples/interpreter/syn/parse.hero"
     t116 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t115};
@@ -25944,7 +25954,7 @@ bb40:
     t183 = h57_own57;
 #line 88 "examples/interpreter/syn/parse.hero"
     h57_own57 = t116;
-#line 25948 "main.c"
+#line 25958 "main.c"
     h_0opt_e201354_release(&t183);
 #line 88 "examples/interpreter/syn/parse.hero"
     h15_ret0 = t116;
@@ -25960,7 +25970,7 @@ bb41:
     t184 = h58_own58;
 #line 90 "examples/interpreter/syn/parse.hero"
     h58_own58 = t130;
-#line 25964 "main.c"
+#line 25974 "main.c"
     h_syntree_Stmt_release(&t184);
 #line 90 "examples/interpreter/syn/parse.hero"
     t131 = h_syntree_added_stmt(&(*ph1_t), t130);
@@ -25970,7 +25980,7 @@ bb41:
     t185 = h59_own59;
 #line 90 "examples/interpreter/syn/parse.hero"
     h59_own59 = t132;
-#line 25974 "main.c"
+#line 25984 "main.c"
     h_0opt_e201354_release(&t185);
 #line 90 "examples/interpreter/syn/parse.hero"
     h15_ret0 = t132;
@@ -25982,7 +25992,7 @@ bb42:
     t124 = h14_f7;
 #line 89 "examples/interpreter/syn/parse.hero"
     t125 = t124.as.err;
-#line 25986 "main.c"
+#line 25996 "main.c"
     hero_failure_retain(&t125);
 #line 89 "examples/interpreter/syn/parse.hero"
     t126 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t125};
@@ -25990,7 +26000,7 @@ bb42:
     t186 = h60_own60;
 #line 89 "examples/interpreter/syn/parse.hero"
     h60_own60 = t126;
-#line 25994 "main.c"
+#line 26004 "main.c"
     h_0opt_e201354_release(&t186);
 #line 89 "examples/interpreter/syn/parse.hero"
     h15_ret0 = t126;
@@ -25998,7 +26008,7 @@ bb42:
     goto bb43;
 #line 89 "examples/interpreter/syn/parse.hero"
 bb43:
-#line 26002 "main.c"
+#line 26012 "main.c"
     t133 = h15_ret0;
     h_0opt_e201354_retain(&t133);
     h_0opt_e201354_release(&h2_f0);
@@ -26059,7 +26069,7 @@ bb43:
 
 #line 92 "examples/interpreter/syn/parse.hero"
 h_0opt_e201354 h_synparse_let_statement(h_syncursor_Cursor *ph0_c, h_syntree_Tree *ph1_t) {
-#line 26063 "main.c"
+#line 26073 "main.c"
     h_0opt_f87774a h2_f0 = {0};
     HeroStr h3_name = {0};
     h_0opt_a8ea2 h4_f1 = {0};
@@ -26145,15 +26155,15 @@ bb0:
     t48 = h9_own9;
 #line 93 "examples/interpreter/syn/parse.hero"
     h9_own9 = t1;
-#line 26149 "main.c"
+#line 26159 "main.c"
     h_0opt_f87774a_release(&t48);
 #line 93 "examples/interpreter/syn/parse.hero"
     t49 = h2_f0;
-#line 26153 "main.c"
+#line 26163 "main.c"
     h_0opt_f87774a_retain(&t1);
 #line 93 "examples/interpreter/syn/parse.hero"
     h2_f0 = t1;
-#line 26157 "main.c"
+#line 26167 "main.c"
     h_0opt_f87774a_release(&t49);
 #line 93 "examples/interpreter/syn/parse.hero"
     t2 = h2_f0;
@@ -26173,11 +26183,11 @@ bb1:
     t10 = t9.as.ok;
 #line 93 "examples/interpreter/syn/parse.hero"
     t50 = h3_name;
-#line 26177 "main.c"
+#line 26187 "main.c"
     hero_str_incref(t10);
 #line 93 "examples/interpreter/syn/parse.hero"
     h3_name = t10;
-#line 26181 "main.c"
+#line 26191 "main.c"
     hero_str_decref(t50);
 #line 94 "examples/interpreter/syn/parse.hero"
     t11 = (h_lextoken_Token){.tag = h_lextoken_Token_tag_equals};
@@ -26185,7 +26195,7 @@ bb1:
     t51 = h10_own10;
 #line 94 "examples/interpreter/syn/parse.hero"
     h10_own10 = t11;
-#line 26189 "main.c"
+#line 26199 "main.c"
     h_lextoken_Token_release(&t51);
 #line 94 "examples/interpreter/syn/parse.hero"
     t12 = h_syncursor_expected(&(*ph0_c), t11);
@@ -26193,15 +26203,15 @@ bb1:
     t52 = h11_own11;
 #line 94 "examples/interpreter/syn/parse.hero"
     h11_own11 = t12;
-#line 26197 "main.c"
+#line 26207 "main.c"
     h_0opt_a8ea2_release(&t52);
 #line 94 "examples/interpreter/syn/parse.hero"
     t53 = h4_f1;
-#line 26201 "main.c"
+#line 26211 "main.c"
     h_0opt_a8ea2_retain(&t12);
 #line 94 "examples/interpreter/syn/parse.hero"
     h4_f1 = t12;
-#line 26205 "main.c"
+#line 26215 "main.c"
     h_0opt_a8ea2_release(&t53);
 #line 94 "examples/interpreter/syn/parse.hero"
     t13 = h4_f1;
@@ -26219,7 +26229,7 @@ bb2:
     t6 = h2_f0;
 #line 93 "examples/interpreter/syn/parse.hero"
     t7 = t6.as.err;
-#line 26223 "main.c"
+#line 26233 "main.c"
     hero_failure_retain(&t7);
 #line 93 "examples/interpreter/syn/parse.hero"
     t8 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t7};
@@ -26227,7 +26237,7 @@ bb2:
     t54 = h12_own12;
 #line 93 "examples/interpreter/syn/parse.hero"
     h12_own12 = t8;
-#line 26231 "main.c"
+#line 26241 "main.c"
     h_0opt_e201354_release(&t54);
 #line 93 "examples/interpreter/syn/parse.hero"
     h8_ret0 = t8;
@@ -26241,15 +26251,15 @@ bb3:
     t55 = h13_own13;
 #line 95 "examples/interpreter/syn/parse.hero"
     h13_own13 = t22;
-#line 26245 "main.c"
+#line 26255 "main.c"
     h_0opt_e201354_release(&t55);
 #line 95 "examples/interpreter/syn/parse.hero"
     t56 = h5_f2;
-#line 26249 "main.c"
+#line 26259 "main.c"
     h_0opt_e201354_retain(&t22);
 #line 95 "examples/interpreter/syn/parse.hero"
     h5_f2 = t22;
-#line 26253 "main.c"
+#line 26263 "main.c"
     h_0opt_e201354_release(&t56);
 #line 95 "examples/interpreter/syn/parse.hero"
     t23 = h5_f2;
@@ -26267,7 +26277,7 @@ bb4:
     t17 = h4_f1;
 #line 94 "examples/interpreter/syn/parse.hero"
     t18 = t17.as.err;
-#line 26271 "main.c"
+#line 26281 "main.c"
     hero_failure_retain(&t18);
 #line 94 "examples/interpreter/syn/parse.hero"
     t19 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t18};
@@ -26275,7 +26285,7 @@ bb4:
     t57 = h14_own14;
 #line 94 "examples/interpreter/syn/parse.hero"
     h14_own14 = t19;
-#line 26279 "main.c"
+#line 26289 "main.c"
     h_0opt_e201354_release(&t57);
 #line 94 "examples/interpreter/syn/parse.hero"
     h8_ret0 = t19;
@@ -26293,15 +26303,15 @@ bb5:
     t58 = h15_own15;
 #line 96 "examples/interpreter/syn/parse.hero"
     h15_own15 = t32;
-#line 26297 "main.c"
+#line 26307 "main.c"
     h_0opt_a8ea2_release(&t58);
 #line 96 "examples/interpreter/syn/parse.hero"
     t59 = h7_f3;
-#line 26301 "main.c"
+#line 26311 "main.c"
     h_0opt_a8ea2_retain(&t32);
 #line 96 "examples/interpreter/syn/parse.hero"
     h7_f3 = t32;
-#line 26305 "main.c"
+#line 26315 "main.c"
     h_0opt_a8ea2_release(&t59);
 #line 96 "examples/interpreter/syn/parse.hero"
     t33 = h7_f3;
@@ -26319,7 +26329,7 @@ bb6:
     t27 = h5_f2;
 #line 95 "examples/interpreter/syn/parse.hero"
     t28 = t27.as.err;
-#line 26323 "main.c"
+#line 26333 "main.c"
     hero_failure_retain(&t28);
 #line 95 "examples/interpreter/syn/parse.hero"
     t29 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t28};
@@ -26327,7 +26337,7 @@ bb6:
     t60 = h16_own16;
 #line 95 "examples/interpreter/syn/parse.hero"
     h16_own16 = t29;
-#line 26331 "main.c"
+#line 26341 "main.c"
     h_0opt_e201354_release(&t60);
 #line 95 "examples/interpreter/syn/parse.hero"
     h8_ret0 = t29;
@@ -26339,7 +26349,7 @@ bb7:
     t42 = h3_name;
 #line 97 "examples/interpreter/syn/parse.hero"
     t43 = h6_value;
-#line 26343 "main.c"
+#line 26353 "main.c"
     hero_str_incref(t42);
 #line 97 "examples/interpreter/syn/parse.hero"
     t44 = (h_syntree_Stmt){.tag = h_syntree_Stmt_tag_bind, .as.c_bind = {.f_name = t42, .f_value = t43}};
@@ -26347,7 +26357,7 @@ bb7:
     t61 = h17_own17;
 #line 97 "examples/interpreter/syn/parse.hero"
     h17_own17 = t44;
-#line 26351 "main.c"
+#line 26361 "main.c"
     h_syntree_Stmt_release(&t61);
 #line 97 "examples/interpreter/syn/parse.hero"
     t45 = h_syntree_added_stmt(&(*ph1_t), t44);
@@ -26357,7 +26367,7 @@ bb7:
     t62 = h18_own18;
 #line 97 "examples/interpreter/syn/parse.hero"
     h18_own18 = t46;
-#line 26361 "main.c"
+#line 26371 "main.c"
     h_0opt_e201354_release(&t62);
 #line 97 "examples/interpreter/syn/parse.hero"
     h8_ret0 = t46;
@@ -26369,7 +26379,7 @@ bb8:
     t37 = h7_f3;
 #line 96 "examples/interpreter/syn/parse.hero"
     t38 = t37.as.err;
-#line 26373 "main.c"
+#line 26383 "main.c"
     hero_failure_retain(&t38);
 #line 96 "examples/interpreter/syn/parse.hero"
     t39 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t38};
@@ -26377,7 +26387,7 @@ bb8:
     t63 = h19_own19;
 #line 96 "examples/interpreter/syn/parse.hero"
     h19_own19 = t39;
-#line 26381 "main.c"
+#line 26391 "main.c"
     h_0opt_e201354_release(&t63);
 #line 96 "examples/interpreter/syn/parse.hero"
     h8_ret0 = t39;
@@ -26385,7 +26395,7 @@ bb8:
     goto bb9;
 #line 96 "examples/interpreter/syn/parse.hero"
 bb9:
-#line 26389 "main.c"
+#line 26399 "main.c"
     t47 = h8_ret0;
     h_0opt_e201354_retain(&t47);
     h_0opt_f87774a_release(&h2_f0);
@@ -26409,7 +26419,7 @@ bb9:
 
 #line 99 "examples/interpreter/syn/parse.hero"
 h_0opt_e201354 h_synparse_if_statement(h_syncursor_Cursor *ph0_c, h_syntree_Tree *ph1_t) {
-#line 26413 "main.c"
+#line 26423 "main.c"
     h_0opt_e201354 h2_f0 = {0};
     int64_t h3_condition;
     h_0opt_a8ea2 h4_f1 = {0};
@@ -26550,15 +26560,15 @@ bb0:
     t82 = h13_own13;
 #line 100 "examples/interpreter/syn/parse.hero"
     h13_own13 = t1;
-#line 26554 "main.c"
+#line 26564 "main.c"
     h_0opt_e201354_release(&t82);
 #line 100 "examples/interpreter/syn/parse.hero"
     t83 = h2_f0;
-#line 26558 "main.c"
+#line 26568 "main.c"
     h_0opt_e201354_retain(&t1);
 #line 100 "examples/interpreter/syn/parse.hero"
     h2_f0 = t1;
-#line 26562 "main.c"
+#line 26572 "main.c"
     h_0opt_e201354_release(&t83);
 #line 100 "examples/interpreter/syn/parse.hero"
     t2 = h2_f0;
@@ -26583,15 +26593,15 @@ bb1:
     t84 = h14_own14;
 #line 101 "examples/interpreter/syn/parse.hero"
     h14_own14 = t11;
-#line 26587 "main.c"
+#line 26597 "main.c"
     h_0opt_a8ea2_release(&t84);
 #line 101 "examples/interpreter/syn/parse.hero"
     t85 = h4_f1;
-#line 26591 "main.c"
+#line 26601 "main.c"
     h_0opt_a8ea2_retain(&t11);
 #line 101 "examples/interpreter/syn/parse.hero"
     h4_f1 = t11;
-#line 26595 "main.c"
+#line 26605 "main.c"
     h_0opt_a8ea2_release(&t85);
 #line 101 "examples/interpreter/syn/parse.hero"
     t12 = h4_f1;
@@ -26609,7 +26619,7 @@ bb2:
     t6 = h2_f0;
 #line 100 "examples/interpreter/syn/parse.hero"
     t7 = t6.as.err;
-#line 26613 "main.c"
+#line 26623 "main.c"
     hero_failure_retain(&t7);
 #line 100 "examples/interpreter/syn/parse.hero"
     t8 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t7};
@@ -26617,7 +26627,7 @@ bb2:
     t86 = h15_own15;
 #line 100 "examples/interpreter/syn/parse.hero"
     h15_own15 = t8;
-#line 26621 "main.c"
+#line 26631 "main.c"
     h_0opt_e201354_release(&t86);
 #line 100 "examples/interpreter/syn/parse.hero"
     h12_ret0 = t8;
@@ -26631,15 +26641,15 @@ bb3:
     t87 = h16_own16;
 #line 102 "examples/interpreter/syn/parse.hero"
     h16_own16 = t21;
-#line 26635 "main.c"
+#line 26645 "main.c"
     h_0opt_2270cbe7_release(&t87);
 #line 102 "examples/interpreter/syn/parse.hero"
     t88 = h5_f2;
-#line 26639 "main.c"
+#line 26649 "main.c"
     h_0opt_2270cbe7_retain(&t21);
 #line 102 "examples/interpreter/syn/parse.hero"
     h5_f2 = t21;
-#line 26643 "main.c"
+#line 26653 "main.c"
     h_0opt_2270cbe7_release(&t88);
 #line 102 "examples/interpreter/syn/parse.hero"
     t22 = h5_f2;
@@ -26657,7 +26667,7 @@ bb4:
     t16 = h4_f1;
 #line 101 "examples/interpreter/syn/parse.hero"
     t17 = t16.as.err;
-#line 26661 "main.c"
+#line 26671 "main.c"
     hero_failure_retain(&t17);
 #line 101 "examples/interpreter/syn/parse.hero"
     t18 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t17};
@@ -26665,7 +26675,7 @@ bb4:
     t89 = h17_own17;
 #line 101 "examples/interpreter/syn/parse.hero"
     h17_own17 = t18;
-#line 26669 "main.c"
+#line 26679 "main.c"
     h_0opt_e201354_release(&t89);
 #line 101 "examples/interpreter/syn/parse.hero"
     h12_ret0 = t18;
@@ -26678,11 +26688,11 @@ bb5:
     t30 = t29.as.ok;
 #line 102 "examples/interpreter/syn/parse.hero"
     t90 = h6_then;
-#line 26682 "main.c"
+#line 26692 "main.c"
     hero_array_incref(t30);
 #line 102 "examples/interpreter/syn/parse.hero"
     h6_then = t30;
-#line 26686 "main.c"
+#line 26696 "main.c"
     hero_array_decref(t90);
 #line 103 "examples/interpreter/syn/parse.hero"
     t31 = hero_array_new(&hero_desc_int, 1);
@@ -26690,15 +26700,15 @@ bb5:
     t91 = h18_own18;
 #line 103 "examples/interpreter/syn/parse.hero"
     h18_own18 = t31;
-#line 26694 "main.c"
+#line 26704 "main.c"
     hero_array_decref(t91);
 #line 103 "examples/interpreter/syn/parse.hero"
     t92 = h7_otherwise;
-#line 26698 "main.c"
+#line 26708 "main.c"
     hero_array_incref(t31);
 #line 103 "examples/interpreter/syn/parse.hero"
     h7_otherwise = t31;
-#line 26702 "main.c"
+#line 26712 "main.c"
     hero_array_decref(t92);
 #line 105 "examples/interpreter/syn/parse.hero"
     t32 = (h_lextoken_Token){.tag = h_lextoken_Token_tag_kw_else};
@@ -26706,7 +26716,7 @@ bb5:
     t93 = h19_own19;
 #line 105 "examples/interpreter/syn/parse.hero"
     h19_own19 = t32;
-#line 26710 "main.c"
+#line 26720 "main.c"
     h_lextoken_Token_release(&t93);
 #line 105 "examples/interpreter/syn/parse.hero"
     t33 = h_syncursor_accepted(&(*ph0_c), t32);
@@ -26718,7 +26728,7 @@ bb6:
     t26 = h5_f2;
 #line 102 "examples/interpreter/syn/parse.hero"
     t27 = t26.as.err;
-#line 26722 "main.c"
+#line 26732 "main.c"
     hero_failure_retain(&t27);
 #line 102 "examples/interpreter/syn/parse.hero"
     t28 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t27};
@@ -26726,7 +26736,7 @@ bb6:
     t94 = h20_own20;
 #line 102 "examples/interpreter/syn/parse.hero"
     h20_own20 = t28;
-#line 26730 "main.c"
+#line 26740 "main.c"
     h_0opt_e201354_release(&t94);
 #line 102 "examples/interpreter/syn/parse.hero"
     h12_ret0 = t28;
@@ -26740,7 +26750,7 @@ bb7:
     t95 = h21_own21;
 #line 108 "examples/interpreter/syn/parse.hero"
     h21_own21 = t54;
-#line 26744 "main.c"
+#line 26754 "main.c"
     h_lextoken_Token_release(&t95);
 #line 108 "examples/interpreter/syn/parse.hero"
     t55 = h_syncursor_expected(&(*ph0_c), t54);
@@ -26748,15 +26758,15 @@ bb7:
     t96 = h22_own22;
 #line 108 "examples/interpreter/syn/parse.hero"
     h22_own22 = t55;
-#line 26752 "main.c"
+#line 26762 "main.c"
     h_0opt_a8ea2_release(&t96);
 #line 108 "examples/interpreter/syn/parse.hero"
     t97 = h10_f5;
-#line 26756 "main.c"
+#line 26766 "main.c"
     h_0opt_a8ea2_retain(&t55);
 #line 108 "examples/interpreter/syn/parse.hero"
     h10_f5 = t55;
-#line 26760 "main.c"
+#line 26770 "main.c"
     h_0opt_a8ea2_release(&t97);
 #line 108 "examples/interpreter/syn/parse.hero"
     t56 = h10_f5;
@@ -26776,15 +26786,15 @@ bb8:
     t98 = h23_own23;
 #line 106 "examples/interpreter/syn/parse.hero"
     h23_own23 = t34;
-#line 26780 "main.c"
+#line 26790 "main.c"
     h_0opt_a8ea2_release(&t98);
 #line 106 "examples/interpreter/syn/parse.hero"
     t99 = h8_f3;
-#line 26784 "main.c"
+#line 26794 "main.c"
     h_0opt_a8ea2_retain(&t34);
 #line 106 "examples/interpreter/syn/parse.hero"
     h8_f3 = t34;
-#line 26788 "main.c"
+#line 26798 "main.c"
     h_0opt_a8ea2_release(&t99);
 #line 106 "examples/interpreter/syn/parse.hero"
     t35 = h8_f3;
@@ -26807,15 +26817,15 @@ bb10:
     t100 = h24_own24;
 #line 107 "examples/interpreter/syn/parse.hero"
     h24_own24 = t44;
-#line 26811 "main.c"
+#line 26821 "main.c"
     h_0opt_2270cbe7_release(&t100);
 #line 107 "examples/interpreter/syn/parse.hero"
     t101 = h9_f4;
-#line 26815 "main.c"
+#line 26825 "main.c"
     h_0opt_2270cbe7_retain(&t44);
 #line 107 "examples/interpreter/syn/parse.hero"
     h9_f4 = t44;
-#line 26819 "main.c"
+#line 26829 "main.c"
     h_0opt_2270cbe7_release(&t101);
 #line 107 "examples/interpreter/syn/parse.hero"
     t45 = h9_f4;
@@ -26833,7 +26843,7 @@ bb11:
     t39 = h8_f3;
 #line 106 "examples/interpreter/syn/parse.hero"
     t40 = t39.as.err;
-#line 26837 "main.c"
+#line 26847 "main.c"
     hero_failure_retain(&t40);
 #line 106 "examples/interpreter/syn/parse.hero"
     t41 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t40};
@@ -26841,7 +26851,7 @@ bb11:
     t102 = h25_own25;
 #line 106 "examples/interpreter/syn/parse.hero"
     h25_own25 = t41;
-#line 26845 "main.c"
+#line 26855 "main.c"
     h_0opt_e201354_release(&t102);
 #line 106 "examples/interpreter/syn/parse.hero"
     h12_ret0 = t41;
@@ -26854,11 +26864,11 @@ bb12:
     t53 = t52.as.ok;
 #line 107 "examples/interpreter/syn/parse.hero"
     t103 = h7_otherwise;
-#line 26858 "main.c"
+#line 26868 "main.c"
     hero_array_incref(t53);
 #line 107 "examples/interpreter/syn/parse.hero"
     h7_otherwise = t53;
-#line 26862 "main.c"
+#line 26872 "main.c"
     hero_array_decref(t103);
     goto bb7;
 bb13:
@@ -26866,7 +26876,7 @@ bb13:
     t49 = h9_f4;
 #line 107 "examples/interpreter/syn/parse.hero"
     t50 = t49.as.err;
-#line 26870 "main.c"
+#line 26880 "main.c"
     hero_failure_retain(&t50);
 #line 107 "examples/interpreter/syn/parse.hero"
     t51 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t50};
@@ -26874,7 +26884,7 @@ bb13:
     t104 = h26_own26;
 #line 107 "examples/interpreter/syn/parse.hero"
     h26_own26 = t51;
-#line 26878 "main.c"
+#line 26888 "main.c"
     h_0opt_e201354_release(&t104);
 #line 107 "examples/interpreter/syn/parse.hero"
     h12_ret0 = t51;
@@ -26888,15 +26898,15 @@ bb14:
     t105 = h27_own27;
 #line 109 "examples/interpreter/syn/parse.hero"
     h27_own27 = t65;
-#line 26892 "main.c"
+#line 26902 "main.c"
     h_0opt_a8ea2_release(&t105);
 #line 109 "examples/interpreter/syn/parse.hero"
     t106 = h11_f6;
-#line 26896 "main.c"
+#line 26906 "main.c"
     h_0opt_a8ea2_retain(&t65);
 #line 109 "examples/interpreter/syn/parse.hero"
     h11_f6 = t65;
-#line 26900 "main.c"
+#line 26910 "main.c"
     h_0opt_a8ea2_release(&t106);
 #line 109 "examples/interpreter/syn/parse.hero"
     t66 = h11_f6;
@@ -26914,7 +26924,7 @@ bb15:
     t60 = h10_f5;
 #line 108 "examples/interpreter/syn/parse.hero"
     t61 = t60.as.err;
-#line 26918 "main.c"
+#line 26928 "main.c"
     hero_failure_retain(&t61);
 #line 108 "examples/interpreter/syn/parse.hero"
     t62 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t61};
@@ -26922,7 +26932,7 @@ bb15:
     t107 = h28_own28;
 #line 108 "examples/interpreter/syn/parse.hero"
     h28_own28 = t62;
-#line 26926 "main.c"
+#line 26936 "main.c"
     h_0opt_e201354_release(&t107);
 #line 108 "examples/interpreter/syn/parse.hero"
     h12_ret0 = t62;
@@ -26936,7 +26946,7 @@ bb16:
     t76 = h6_then;
 #line 110 "examples/interpreter/syn/parse.hero"
     t77 = h7_otherwise;
-#line 26940 "main.c"
+#line 26950 "main.c"
     hero_array_incref(t76);
     hero_array_incref(t77);
 #line 110 "examples/interpreter/syn/parse.hero"
@@ -26945,7 +26955,7 @@ bb16:
     t108 = h29_own29;
 #line 110 "examples/interpreter/syn/parse.hero"
     h29_own29 = t78;
-#line 26949 "main.c"
+#line 26959 "main.c"
     h_syntree_Stmt_release(&t108);
 #line 110 "examples/interpreter/syn/parse.hero"
     t79 = h_syntree_added_stmt(&(*ph1_t), t78);
@@ -26955,7 +26965,7 @@ bb16:
     t109 = h30_own30;
 #line 110 "examples/interpreter/syn/parse.hero"
     h30_own30 = t80;
-#line 26959 "main.c"
+#line 26969 "main.c"
     h_0opt_e201354_release(&t109);
 #line 110 "examples/interpreter/syn/parse.hero"
     h12_ret0 = t80;
@@ -26967,7 +26977,7 @@ bb17:
     t70 = h11_f6;
 #line 109 "examples/interpreter/syn/parse.hero"
     t71 = t70.as.err;
-#line 26971 "main.c"
+#line 26981 "main.c"
     hero_failure_retain(&t71);
 #line 109 "examples/interpreter/syn/parse.hero"
     t72 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t71};
@@ -26975,7 +26985,7 @@ bb17:
     t110 = h31_own31;
 #line 109 "examples/interpreter/syn/parse.hero"
     h31_own31 = t72;
-#line 26979 "main.c"
+#line 26989 "main.c"
     h_0opt_e201354_release(&t110);
 #line 109 "examples/interpreter/syn/parse.hero"
     h12_ret0 = t72;
@@ -26983,7 +26993,7 @@ bb17:
     goto bb18;
 #line 109 "examples/interpreter/syn/parse.hero"
 bb18:
-#line 26987 "main.c"
+#line 26997 "main.c"
     t81 = h12_ret0;
     h_0opt_e201354_retain(&t81);
     h_0opt_e201354_release(&h2_f0);
@@ -27019,7 +27029,7 @@ bb18:
 
 #line 112 "examples/interpreter/syn/parse.hero"
 h_0opt_e201354 h_synparse_while_statement(h_syncursor_Cursor *ph0_c, h_syntree_Tree *ph1_t) {
-#line 27023 "main.c"
+#line 27033 "main.c"
     h_0opt_e201354 h2_f0 = {0};
     int64_t h3_condition;
     h_0opt_a8ea2 h4_f1 = {0};
@@ -27119,15 +27129,15 @@ bb0:
     t58 = h10_own10;
 #line 113 "examples/interpreter/syn/parse.hero"
     h10_own10 = t1;
-#line 27123 "main.c"
+#line 27133 "main.c"
     h_0opt_e201354_release(&t58);
 #line 113 "examples/interpreter/syn/parse.hero"
     t59 = h2_f0;
-#line 27127 "main.c"
+#line 27137 "main.c"
     h_0opt_e201354_retain(&t1);
 #line 113 "examples/interpreter/syn/parse.hero"
     h2_f0 = t1;
-#line 27131 "main.c"
+#line 27141 "main.c"
     h_0opt_e201354_release(&t59);
 #line 113 "examples/interpreter/syn/parse.hero"
     t2 = h2_f0;
@@ -27152,15 +27162,15 @@ bb1:
     t60 = h11_own11;
 #line 114 "examples/interpreter/syn/parse.hero"
     h11_own11 = t11;
-#line 27156 "main.c"
+#line 27166 "main.c"
     h_0opt_a8ea2_release(&t60);
 #line 114 "examples/interpreter/syn/parse.hero"
     t61 = h4_f1;
-#line 27160 "main.c"
+#line 27170 "main.c"
     h_0opt_a8ea2_retain(&t11);
 #line 114 "examples/interpreter/syn/parse.hero"
     h4_f1 = t11;
-#line 27164 "main.c"
+#line 27174 "main.c"
     h_0opt_a8ea2_release(&t61);
 #line 114 "examples/interpreter/syn/parse.hero"
     t12 = h4_f1;
@@ -27178,7 +27188,7 @@ bb2:
     t6 = h2_f0;
 #line 113 "examples/interpreter/syn/parse.hero"
     t7 = t6.as.err;
-#line 27182 "main.c"
+#line 27192 "main.c"
     hero_failure_retain(&t7);
 #line 113 "examples/interpreter/syn/parse.hero"
     t8 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t7};
@@ -27186,7 +27196,7 @@ bb2:
     t62 = h12_own12;
 #line 113 "examples/interpreter/syn/parse.hero"
     h12_own12 = t8;
-#line 27190 "main.c"
+#line 27200 "main.c"
     h_0opt_e201354_release(&t62);
 #line 113 "examples/interpreter/syn/parse.hero"
     h9_ret0 = t8;
@@ -27200,15 +27210,15 @@ bb3:
     t63 = h13_own13;
 #line 115 "examples/interpreter/syn/parse.hero"
     h13_own13 = t21;
-#line 27204 "main.c"
+#line 27214 "main.c"
     h_0opt_2270cbe7_release(&t63);
 #line 115 "examples/interpreter/syn/parse.hero"
     t64 = h5_f2;
-#line 27208 "main.c"
+#line 27218 "main.c"
     h_0opt_2270cbe7_retain(&t21);
 #line 115 "examples/interpreter/syn/parse.hero"
     h5_f2 = t21;
-#line 27212 "main.c"
+#line 27222 "main.c"
     h_0opt_2270cbe7_release(&t64);
 #line 115 "examples/interpreter/syn/parse.hero"
     t22 = h5_f2;
@@ -27226,7 +27236,7 @@ bb4:
     t16 = h4_f1;
 #line 114 "examples/interpreter/syn/parse.hero"
     t17 = t16.as.err;
-#line 27230 "main.c"
+#line 27240 "main.c"
     hero_failure_retain(&t17);
 #line 114 "examples/interpreter/syn/parse.hero"
     t18 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t17};
@@ -27234,7 +27244,7 @@ bb4:
     t65 = h14_own14;
 #line 114 "examples/interpreter/syn/parse.hero"
     h14_own14 = t18;
-#line 27238 "main.c"
+#line 27248 "main.c"
     h_0opt_e201354_release(&t65);
 #line 114 "examples/interpreter/syn/parse.hero"
     h9_ret0 = t18;
@@ -27247,11 +27257,11 @@ bb5:
     t30 = t29.as.ok;
 #line 115 "examples/interpreter/syn/parse.hero"
     t66 = h6_body;
-#line 27251 "main.c"
+#line 27261 "main.c"
     hero_array_incref(t30);
 #line 115 "examples/interpreter/syn/parse.hero"
     h6_body = t30;
-#line 27255 "main.c"
+#line 27265 "main.c"
     hero_array_decref(t66);
 #line 116 "examples/interpreter/syn/parse.hero"
     t31 = (h_lextoken_Token){.tag = h_lextoken_Token_tag_kw_end};
@@ -27259,7 +27269,7 @@ bb5:
     t67 = h15_own15;
 #line 116 "examples/interpreter/syn/parse.hero"
     h15_own15 = t31;
-#line 27263 "main.c"
+#line 27273 "main.c"
     h_lextoken_Token_release(&t67);
 #line 116 "examples/interpreter/syn/parse.hero"
     t32 = h_syncursor_expected(&(*ph0_c), t31);
@@ -27267,15 +27277,15 @@ bb5:
     t68 = h16_own16;
 #line 116 "examples/interpreter/syn/parse.hero"
     h16_own16 = t32;
-#line 27271 "main.c"
+#line 27281 "main.c"
     h_0opt_a8ea2_release(&t68);
 #line 116 "examples/interpreter/syn/parse.hero"
     t69 = h7_f3;
-#line 27275 "main.c"
+#line 27285 "main.c"
     h_0opt_a8ea2_retain(&t32);
 #line 116 "examples/interpreter/syn/parse.hero"
     h7_f3 = t32;
-#line 27279 "main.c"
+#line 27289 "main.c"
     h_0opt_a8ea2_release(&t69);
 #line 116 "examples/interpreter/syn/parse.hero"
     t33 = h7_f3;
@@ -27293,7 +27303,7 @@ bb6:
     t26 = h5_f2;
 #line 115 "examples/interpreter/syn/parse.hero"
     t27 = t26.as.err;
-#line 27297 "main.c"
+#line 27307 "main.c"
     hero_failure_retain(&t27);
 #line 115 "examples/interpreter/syn/parse.hero"
     t28 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t27};
@@ -27301,7 +27311,7 @@ bb6:
     t70 = h17_own17;
 #line 115 "examples/interpreter/syn/parse.hero"
     h17_own17 = t28;
-#line 27305 "main.c"
+#line 27315 "main.c"
     h_0opt_e201354_release(&t70);
 #line 115 "examples/interpreter/syn/parse.hero"
     h9_ret0 = t28;
@@ -27315,15 +27325,15 @@ bb7:
     t71 = h18_own18;
 #line 117 "examples/interpreter/syn/parse.hero"
     h18_own18 = t42;
-#line 27319 "main.c"
+#line 27329 "main.c"
     h_0opt_a8ea2_release(&t71);
 #line 117 "examples/interpreter/syn/parse.hero"
     t72 = h8_f4;
-#line 27323 "main.c"
+#line 27333 "main.c"
     h_0opt_a8ea2_retain(&t42);
 #line 117 "examples/interpreter/syn/parse.hero"
     h8_f4 = t42;
-#line 27327 "main.c"
+#line 27337 "main.c"
     h_0opt_a8ea2_release(&t72);
 #line 117 "examples/interpreter/syn/parse.hero"
     t43 = h8_f4;
@@ -27341,7 +27351,7 @@ bb8:
     t37 = h7_f3;
 #line 116 "examples/interpreter/syn/parse.hero"
     t38 = t37.as.err;
-#line 27345 "main.c"
+#line 27355 "main.c"
     hero_failure_retain(&t38);
 #line 116 "examples/interpreter/syn/parse.hero"
     t39 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t38};
@@ -27349,7 +27359,7 @@ bb8:
     t73 = h19_own19;
 #line 116 "examples/interpreter/syn/parse.hero"
     h19_own19 = t39;
-#line 27353 "main.c"
+#line 27363 "main.c"
     h_0opt_e201354_release(&t73);
 #line 116 "examples/interpreter/syn/parse.hero"
     h9_ret0 = t39;
@@ -27361,7 +27371,7 @@ bb9:
     t52 = h3_condition;
 #line 118 "examples/interpreter/syn/parse.hero"
     t53 = h6_body;
-#line 27365 "main.c"
+#line 27375 "main.c"
     hero_array_incref(t53);
 #line 118 "examples/interpreter/syn/parse.hero"
     t54 = (h_syntree_Stmt){.tag = h_syntree_Stmt_tag_while_loop, .as.c_while_loop = {.f_condition = t52, .f_body = t53}};
@@ -27369,7 +27379,7 @@ bb9:
     t74 = h20_own20;
 #line 118 "examples/interpreter/syn/parse.hero"
     h20_own20 = t54;
-#line 27373 "main.c"
+#line 27383 "main.c"
     h_syntree_Stmt_release(&t74);
 #line 118 "examples/interpreter/syn/parse.hero"
     t55 = h_syntree_added_stmt(&(*ph1_t), t54);
@@ -27379,7 +27389,7 @@ bb9:
     t75 = h21_own21;
 #line 118 "examples/interpreter/syn/parse.hero"
     h21_own21 = t56;
-#line 27383 "main.c"
+#line 27393 "main.c"
     h_0opt_e201354_release(&t75);
 #line 118 "examples/interpreter/syn/parse.hero"
     h9_ret0 = t56;
@@ -27391,7 +27401,7 @@ bb10:
     t47 = h8_f4;
 #line 117 "examples/interpreter/syn/parse.hero"
     t48 = t47.as.err;
-#line 27395 "main.c"
+#line 27405 "main.c"
     hero_failure_retain(&t48);
 #line 117 "examples/interpreter/syn/parse.hero"
     t49 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t48};
@@ -27399,7 +27409,7 @@ bb10:
     t76 = h22_own22;
 #line 117 "examples/interpreter/syn/parse.hero"
     h22_own22 = t49;
-#line 27403 "main.c"
+#line 27413 "main.c"
     h_0opt_e201354_release(&t76);
 #line 117 "examples/interpreter/syn/parse.hero"
     h9_ret0 = t49;
@@ -27407,7 +27417,7 @@ bb10:
     goto bb11;
 #line 117 "examples/interpreter/syn/parse.hero"
 bb11:
-#line 27411 "main.c"
+#line 27421 "main.c"
     t57 = h9_ret0;
     h_0opt_e201354_retain(&t57);
     h_0opt_e201354_release(&h2_f0);
@@ -27434,7 +27444,7 @@ bb11:
 
 #line 120 "examples/interpreter/syn/parse.hero"
 h_0opt_e201354 h_synparse_fn_statement(h_syncursor_Cursor *ph0_c, h_syntree_Tree *ph1_t) {
-#line 27438 "main.c"
+#line 27448 "main.c"
     h_0opt_f87774a h2_f0 = {0};
     HeroStr h3_name = {0};
     h_0opt_a8ea2 h4_f1 = {0};
@@ -27571,15 +27581,15 @@ bb0:
     t80 = h13_own13;
 #line 121 "examples/interpreter/syn/parse.hero"
     h13_own13 = t1;
-#line 27575 "main.c"
+#line 27585 "main.c"
     h_0opt_f87774a_release(&t80);
 #line 121 "examples/interpreter/syn/parse.hero"
     t81 = h2_f0;
-#line 27579 "main.c"
+#line 27589 "main.c"
     h_0opt_f87774a_retain(&t1);
 #line 121 "examples/interpreter/syn/parse.hero"
     h2_f0 = t1;
-#line 27583 "main.c"
+#line 27593 "main.c"
     h_0opt_f87774a_release(&t81);
 #line 121 "examples/interpreter/syn/parse.hero"
     t2 = h2_f0;
@@ -27599,11 +27609,11 @@ bb1:
     t10 = t9.as.ok;
 #line 121 "examples/interpreter/syn/parse.hero"
     t82 = h3_name;
-#line 27603 "main.c"
+#line 27613 "main.c"
     hero_str_incref(t10);
 #line 121 "examples/interpreter/syn/parse.hero"
     h3_name = t10;
-#line 27607 "main.c"
+#line 27617 "main.c"
     hero_str_decref(t82);
 #line 122 "examples/interpreter/syn/parse.hero"
     t11 = (h_lextoken_Token){.tag = h_lextoken_Token_tag_lparen};
@@ -27611,7 +27621,7 @@ bb1:
     t83 = h14_own14;
 #line 122 "examples/interpreter/syn/parse.hero"
     h14_own14 = t11;
-#line 27615 "main.c"
+#line 27625 "main.c"
     h_lextoken_Token_release(&t83);
 #line 122 "examples/interpreter/syn/parse.hero"
     t12 = h_syncursor_expected(&(*ph0_c), t11);
@@ -27619,15 +27629,15 @@ bb1:
     t84 = h15_own15;
 #line 122 "examples/interpreter/syn/parse.hero"
     h15_own15 = t12;
-#line 27623 "main.c"
+#line 27633 "main.c"
     h_0opt_a8ea2_release(&t84);
 #line 122 "examples/interpreter/syn/parse.hero"
     t85 = h4_f1;
-#line 27627 "main.c"
+#line 27637 "main.c"
     h_0opt_a8ea2_retain(&t12);
 #line 122 "examples/interpreter/syn/parse.hero"
     h4_f1 = t12;
-#line 27631 "main.c"
+#line 27641 "main.c"
     h_0opt_a8ea2_release(&t85);
 #line 122 "examples/interpreter/syn/parse.hero"
     t13 = h4_f1;
@@ -27645,7 +27655,7 @@ bb2:
     t6 = h2_f0;
 #line 121 "examples/interpreter/syn/parse.hero"
     t7 = t6.as.err;
-#line 27649 "main.c"
+#line 27659 "main.c"
     hero_failure_retain(&t7);
 #line 121 "examples/interpreter/syn/parse.hero"
     t8 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t7};
@@ -27653,7 +27663,7 @@ bb2:
     t86 = h16_own16;
 #line 121 "examples/interpreter/syn/parse.hero"
     h16_own16 = t8;
-#line 27657 "main.c"
+#line 27667 "main.c"
     h_0opt_e201354_release(&t86);
 #line 121 "examples/interpreter/syn/parse.hero"
     h12_ret0 = t8;
@@ -27667,15 +27677,15 @@ bb3:
     t87 = h17_own17;
 #line 123 "examples/interpreter/syn/parse.hero"
     h17_own17 = t22;
-#line 27671 "main.c"
+#line 27681 "main.c"
     h_0opt_5a58f2ca_release(&t87);
 #line 123 "examples/interpreter/syn/parse.hero"
     t88 = h5_f2;
-#line 27675 "main.c"
+#line 27685 "main.c"
     h_0opt_5a58f2ca_retain(&t22);
 #line 123 "examples/interpreter/syn/parse.hero"
     h5_f2 = t22;
-#line 27679 "main.c"
+#line 27689 "main.c"
     h_0opt_5a58f2ca_release(&t88);
 #line 123 "examples/interpreter/syn/parse.hero"
     t23 = h5_f2;
@@ -27693,7 +27703,7 @@ bb4:
     t17 = h4_f1;
 #line 122 "examples/interpreter/syn/parse.hero"
     t18 = t17.as.err;
-#line 27697 "main.c"
+#line 27707 "main.c"
     hero_failure_retain(&t18);
 #line 122 "examples/interpreter/syn/parse.hero"
     t19 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t18};
@@ -27701,7 +27711,7 @@ bb4:
     t89 = h18_own18;
 #line 122 "examples/interpreter/syn/parse.hero"
     h18_own18 = t19;
-#line 27705 "main.c"
+#line 27715 "main.c"
     h_0opt_e201354_release(&t89);
 #line 122 "examples/interpreter/syn/parse.hero"
     h12_ret0 = t19;
@@ -27714,11 +27724,11 @@ bb5:
     t31 = t30.as.ok;
 #line 123 "examples/interpreter/syn/parse.hero"
     t90 = h6_params;
-#line 27718 "main.c"
+#line 27728 "main.c"
     hero_array_incref(t31);
 #line 123 "examples/interpreter/syn/parse.hero"
     h6_params = t31;
-#line 27722 "main.c"
+#line 27732 "main.c"
     hero_array_decref(t90);
 #line 124 "examples/interpreter/syn/parse.hero"
     t32 = h_synparse_line_end(&(*ph0_c));
@@ -27726,15 +27736,15 @@ bb5:
     t91 = h19_own19;
 #line 124 "examples/interpreter/syn/parse.hero"
     h19_own19 = t32;
-#line 27730 "main.c"
+#line 27740 "main.c"
     h_0opt_a8ea2_release(&t91);
 #line 124 "examples/interpreter/syn/parse.hero"
     t92 = h7_f3;
-#line 27734 "main.c"
+#line 27744 "main.c"
     h_0opt_a8ea2_retain(&t32);
 #line 124 "examples/interpreter/syn/parse.hero"
     h7_f3 = t32;
-#line 27738 "main.c"
+#line 27748 "main.c"
     h_0opt_a8ea2_release(&t92);
 #line 124 "examples/interpreter/syn/parse.hero"
     t33 = h7_f3;
@@ -27752,7 +27762,7 @@ bb6:
     t27 = h5_f2;
 #line 123 "examples/interpreter/syn/parse.hero"
     t28 = t27.as.err;
-#line 27756 "main.c"
+#line 27766 "main.c"
     hero_failure_retain(&t28);
 #line 123 "examples/interpreter/syn/parse.hero"
     t29 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t28};
@@ -27760,7 +27770,7 @@ bb6:
     t93 = h20_own20;
 #line 123 "examples/interpreter/syn/parse.hero"
     h20_own20 = t29;
-#line 27764 "main.c"
+#line 27774 "main.c"
     h_0opt_e201354_release(&t93);
 #line 123 "examples/interpreter/syn/parse.hero"
     h12_ret0 = t29;
@@ -27774,15 +27784,15 @@ bb7:
     t94 = h21_own21;
 #line 125 "examples/interpreter/syn/parse.hero"
     h21_own21 = t42;
-#line 27778 "main.c"
+#line 27788 "main.c"
     h_0opt_2270cbe7_release(&t94);
 #line 125 "examples/interpreter/syn/parse.hero"
     t95 = h8_f4;
-#line 27782 "main.c"
+#line 27792 "main.c"
     h_0opt_2270cbe7_retain(&t42);
 #line 125 "examples/interpreter/syn/parse.hero"
     h8_f4 = t42;
-#line 27786 "main.c"
+#line 27796 "main.c"
     h_0opt_2270cbe7_release(&t95);
 #line 125 "examples/interpreter/syn/parse.hero"
     t43 = h8_f4;
@@ -27800,7 +27810,7 @@ bb8:
     t37 = h7_f3;
 #line 124 "examples/interpreter/syn/parse.hero"
     t38 = t37.as.err;
-#line 27804 "main.c"
+#line 27814 "main.c"
     hero_failure_retain(&t38);
 #line 124 "examples/interpreter/syn/parse.hero"
     t39 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t38};
@@ -27808,7 +27818,7 @@ bb8:
     t96 = h22_own22;
 #line 124 "examples/interpreter/syn/parse.hero"
     h22_own22 = t39;
-#line 27812 "main.c"
+#line 27822 "main.c"
     h_0opt_e201354_release(&t96);
 #line 124 "examples/interpreter/syn/parse.hero"
     h12_ret0 = t39;
@@ -27821,11 +27831,11 @@ bb9:
     t51 = t50.as.ok;
 #line 125 "examples/interpreter/syn/parse.hero"
     t97 = h9_body;
-#line 27825 "main.c"
+#line 27835 "main.c"
     hero_array_incref(t51);
 #line 125 "examples/interpreter/syn/parse.hero"
     h9_body = t51;
-#line 27829 "main.c"
+#line 27839 "main.c"
     hero_array_decref(t97);
 #line 126 "examples/interpreter/syn/parse.hero"
     t52 = (h_lextoken_Token){.tag = h_lextoken_Token_tag_kw_end};
@@ -27833,7 +27843,7 @@ bb9:
     t98 = h23_own23;
 #line 126 "examples/interpreter/syn/parse.hero"
     h23_own23 = t52;
-#line 27837 "main.c"
+#line 27847 "main.c"
     h_lextoken_Token_release(&t98);
 #line 126 "examples/interpreter/syn/parse.hero"
     t53 = h_syncursor_expected(&(*ph0_c), t52);
@@ -27841,15 +27851,15 @@ bb9:
     t99 = h24_own24;
 #line 126 "examples/interpreter/syn/parse.hero"
     h24_own24 = t53;
-#line 27845 "main.c"
+#line 27855 "main.c"
     h_0opt_a8ea2_release(&t99);
 #line 126 "examples/interpreter/syn/parse.hero"
     t100 = h10_f5;
-#line 27849 "main.c"
+#line 27859 "main.c"
     h_0opt_a8ea2_retain(&t53);
 #line 126 "examples/interpreter/syn/parse.hero"
     h10_f5 = t53;
-#line 27853 "main.c"
+#line 27863 "main.c"
     h_0opt_a8ea2_release(&t100);
 #line 126 "examples/interpreter/syn/parse.hero"
     t54 = h10_f5;
@@ -27867,7 +27877,7 @@ bb10:
     t47 = h8_f4;
 #line 125 "examples/interpreter/syn/parse.hero"
     t48 = t47.as.err;
-#line 27871 "main.c"
+#line 27881 "main.c"
     hero_failure_retain(&t48);
 #line 125 "examples/interpreter/syn/parse.hero"
     t49 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t48};
@@ -27875,7 +27885,7 @@ bb10:
     t101 = h25_own25;
 #line 125 "examples/interpreter/syn/parse.hero"
     h25_own25 = t49;
-#line 27879 "main.c"
+#line 27889 "main.c"
     h_0opt_e201354_release(&t101);
 #line 125 "examples/interpreter/syn/parse.hero"
     h12_ret0 = t49;
@@ -27889,15 +27899,15 @@ bb11:
     t102 = h26_own26;
 #line 127 "examples/interpreter/syn/parse.hero"
     h26_own26 = t63;
-#line 27893 "main.c"
+#line 27903 "main.c"
     h_0opt_a8ea2_release(&t102);
 #line 127 "examples/interpreter/syn/parse.hero"
     t103 = h11_f6;
-#line 27897 "main.c"
+#line 27907 "main.c"
     h_0opt_a8ea2_retain(&t63);
 #line 127 "examples/interpreter/syn/parse.hero"
     h11_f6 = t63;
-#line 27901 "main.c"
+#line 27911 "main.c"
     h_0opt_a8ea2_release(&t103);
 #line 127 "examples/interpreter/syn/parse.hero"
     t64 = h11_f6;
@@ -27915,7 +27925,7 @@ bb12:
     t58 = h10_f5;
 #line 126 "examples/interpreter/syn/parse.hero"
     t59 = t58.as.err;
-#line 27919 "main.c"
+#line 27929 "main.c"
     hero_failure_retain(&t59);
 #line 126 "examples/interpreter/syn/parse.hero"
     t60 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t59};
@@ -27923,7 +27933,7 @@ bb12:
     t104 = h27_own27;
 #line 126 "examples/interpreter/syn/parse.hero"
     h27_own27 = t60;
-#line 27927 "main.c"
+#line 27937 "main.c"
     h_0opt_e201354_release(&t104);
 #line 126 "examples/interpreter/syn/parse.hero"
     h12_ret0 = t60;
@@ -27937,7 +27947,7 @@ bb13:
     t74 = h6_params;
 #line 128 "examples/interpreter/syn/parse.hero"
     t75 = h9_body;
-#line 27941 "main.c"
+#line 27951 "main.c"
     hero_str_incref(t73);
     hero_array_incref(t74);
     hero_array_incref(t75);
@@ -27947,7 +27957,7 @@ bb13:
     t105 = h28_own28;
 #line 128 "examples/interpreter/syn/parse.hero"
     h28_own28 = t76;
-#line 27951 "main.c"
+#line 27961 "main.c"
     h_syntree_Stmt_release(&t105);
 #line 128 "examples/interpreter/syn/parse.hero"
     t77 = h_syntree_added_stmt(&(*ph1_t), t76);
@@ -27957,7 +27967,7 @@ bb13:
     t106 = h29_own29;
 #line 128 "examples/interpreter/syn/parse.hero"
     h29_own29 = t78;
-#line 27961 "main.c"
+#line 27971 "main.c"
     h_0opt_e201354_release(&t106);
 #line 128 "examples/interpreter/syn/parse.hero"
     h12_ret0 = t78;
@@ -27969,7 +27979,7 @@ bb14:
     t68 = h11_f6;
 #line 127 "examples/interpreter/syn/parse.hero"
     t69 = t68.as.err;
-#line 27973 "main.c"
+#line 27983 "main.c"
     hero_failure_retain(&t69);
 #line 127 "examples/interpreter/syn/parse.hero"
     t70 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t69};
@@ -27977,7 +27987,7 @@ bb14:
     t107 = h30_own30;
 #line 127 "examples/interpreter/syn/parse.hero"
     h30_own30 = t70;
-#line 27981 "main.c"
+#line 27991 "main.c"
     h_0opt_e201354_release(&t107);
 #line 127 "examples/interpreter/syn/parse.hero"
     h12_ret0 = t70;
@@ -27985,7 +27995,7 @@ bb14:
     goto bb15;
 #line 127 "examples/interpreter/syn/parse.hero"
 bb15:
-#line 27989 "main.c"
+#line 27999 "main.c"
     t79 = h12_ret0;
     h_0opt_e201354_retain(&t79);
     h_0opt_f87774a_release(&h2_f0);
@@ -28021,7 +28031,7 @@ bb15:
 
 #line 132 "examples/interpreter/syn/parse.hero"
 h_0opt_5a58f2ca h_synparse_parameters(h_syncursor_Cursor *ph0_c) {
-#line 28025 "main.c"
+#line 28035 "main.c"
     HeroArrayHeader * h1_names = {0};
     h_0opt_f87774a h2_f0 = {0};
     h_0opt_f87774a h3_f1 = {0};
@@ -28135,15 +28145,15 @@ bb0:
     t65 = h6_own6;
 #line 133 "examples/interpreter/syn/parse.hero"
     h6_own6 = t1;
-#line 28139 "main.c"
+#line 28149 "main.c"
     hero_array_decref(t65);
 #line 133 "examples/interpreter/syn/parse.hero"
     t66 = h1_names;
-#line 28143 "main.c"
+#line 28153 "main.c"
     hero_array_incref(t1);
 #line 133 "examples/interpreter/syn/parse.hero"
     h1_names = t1;
-#line 28147 "main.c"
+#line 28157 "main.c"
     hero_array_decref(t66);
 #line 135 "examples/interpreter/syn/parse.hero"
     t2 = (h_lextoken_Token){.tag = h_lextoken_Token_tag_rparen};
@@ -28151,7 +28161,7 @@ bb0:
     t67 = h7_own7;
 #line 135 "examples/interpreter/syn/parse.hero"
     h7_own7 = t2;
-#line 28155 "main.c"
+#line 28165 "main.c"
     h_lextoken_Token_release(&t67);
 #line 135 "examples/interpreter/syn/parse.hero"
     t3 = h_syncursor_accepted(&(*ph0_c), t2);
@@ -28165,15 +28175,15 @@ bb1:
     t68 = h8_own8;
 #line 137 "examples/interpreter/syn/parse.hero"
     h8_own8 = t7;
-#line 28169 "main.c"
+#line 28179 "main.c"
     h_0opt_f87774a_release(&t68);
 #line 137 "examples/interpreter/syn/parse.hero"
     t69 = h2_f0;
-#line 28173 "main.c"
+#line 28183 "main.c"
     h_0opt_f87774a_retain(&t7);
 #line 137 "examples/interpreter/syn/parse.hero"
     h2_f0 = t7;
-#line 28177 "main.c"
+#line 28187 "main.c"
     h_0opt_f87774a_release(&t69);
 #line 137 "examples/interpreter/syn/parse.hero"
     t8 = h2_f0;
@@ -28189,7 +28199,7 @@ bb1:
 bb2:
 #line 136 "examples/interpreter/syn/parse.hero"
     t4 = h1_names;
-#line 28193 "main.c"
+#line 28203 "main.c"
     hero_array_incref(t4);
 #line 136 "examples/interpreter/syn/parse.hero"
     t5 = (h_0opt_5a58f2ca){.tag = INT64_C(0), .as.ok = t4};
@@ -28197,7 +28207,7 @@ bb2:
     t70 = h9_own9;
 #line 136 "examples/interpreter/syn/parse.hero"
     h9_own9 = t5;
-#line 28201 "main.c"
+#line 28211 "main.c"
     h_0opt_5a58f2ca_release(&t70);
 #line 136 "examples/interpreter/syn/parse.hero"
     h5_ret0 = t5;
@@ -28222,7 +28232,7 @@ bb5:
     t12 = h2_f0;
 #line 137 "examples/interpreter/syn/parse.hero"
     t13 = t12.as.err;
-#line 28226 "main.c"
+#line 28236 "main.c"
     hero_failure_retain(&t13);
 #line 137 "examples/interpreter/syn/parse.hero"
     t14 = (h_0opt_5a58f2ca){.tag = INT64_C(1), .as.err = t13};
@@ -28230,7 +28240,7 @@ bb5:
     t71 = h10_own10;
 #line 137 "examples/interpreter/syn/parse.hero"
     h10_own10 = t14;
-#line 28234 "main.c"
+#line 28244 "main.c"
     h_0opt_5a58f2ca_release(&t71);
 #line 137 "examples/interpreter/syn/parse.hero"
     h5_ret0 = t14;
@@ -28244,7 +28254,7 @@ bb6:
     t72 = h11_own11;
 #line 139 "examples/interpreter/syn/parse.hero"
     h11_own11 = t18;
-#line 28248 "main.c"
+#line 28258 "main.c"
     h_lextoken_Token_release(&t72);
 #line 139 "examples/interpreter/syn/parse.hero"
     t19 = h_syncursor_accepted(&(*ph0_c), t18);
@@ -28257,15 +28267,15 @@ bb7:
     t73 = h12_own12;
 #line 140 "examples/interpreter/syn/parse.hero"
     h12_own12 = t21;
-#line 28261 "main.c"
+#line 28271 "main.c"
     h_0opt_f87774a_release(&t73);
 #line 140 "examples/interpreter/syn/parse.hero"
     t74 = h3_f1;
-#line 28265 "main.c"
+#line 28275 "main.c"
     h_0opt_f87774a_retain(&t21);
 #line 140 "examples/interpreter/syn/parse.hero"
     h3_f1 = t21;
-#line 28269 "main.c"
+#line 28279 "main.c"
     h_0opt_f87774a_release(&t74);
 #line 140 "examples/interpreter/syn/parse.hero"
     t22 = h3_f1;
@@ -28285,7 +28295,7 @@ bb8:
     t75 = h13_own13;
 #line 142 "examples/interpreter/syn/parse.hero"
     h13_own13 = t32;
-#line 28289 "main.c"
+#line 28299 "main.c"
     h_lextoken_Token_release(&t75);
 #line 142 "examples/interpreter/syn/parse.hero"
     t33 = h_syncursor_expected(&(*ph0_c), t32);
@@ -28293,15 +28303,15 @@ bb8:
     t76 = h14_own14;
 #line 142 "examples/interpreter/syn/parse.hero"
     h14_own14 = t33;
-#line 28297 "main.c"
+#line 28307 "main.c"
     h_0opt_a8ea2_release(&t76);
 #line 142 "examples/interpreter/syn/parse.hero"
     t77 = h4_f2;
-#line 28301 "main.c"
+#line 28311 "main.c"
     h_0opt_a8ea2_retain(&t33);
 #line 142 "examples/interpreter/syn/parse.hero"
     h4_f2 = t33;
-#line 28305 "main.c"
+#line 28315 "main.c"
     h_0opt_a8ea2_release(&t77);
 #line 142 "examples/interpreter/syn/parse.hero"
     t34 = h4_f2;
@@ -28329,7 +28339,7 @@ bb10:
     t26 = h3_f1;
 #line 140 "examples/interpreter/syn/parse.hero"
     t27 = t26.as.err;
-#line 28333 "main.c"
+#line 28343 "main.c"
     hero_failure_retain(&t27);
 #line 140 "examples/interpreter/syn/parse.hero"
     t28 = (h_0opt_5a58f2ca){.tag = INT64_C(1), .as.err = t27};
@@ -28337,7 +28347,7 @@ bb10:
     t78 = h15_own15;
 #line 140 "examples/interpreter/syn/parse.hero"
     h15_own15 = t28;
-#line 28341 "main.c"
+#line 28351 "main.c"
     h_0opt_5a58f2ca_release(&t78);
 #line 140 "examples/interpreter/syn/parse.hero"
     h5_ret0 = t28;
@@ -28357,7 +28367,7 @@ bb12:
     t38 = h4_f2;
 #line 142 "examples/interpreter/syn/parse.hero"
     t39 = t38.as.err;
-#line 28361 "main.c"
+#line 28371 "main.c"
     hero_failure_retain(&t39);
 #line 142 "examples/interpreter/syn/parse.hero"
     t40 = (h_0opt_5a58f2ca){.tag = INT64_C(1), .as.err = t39};
@@ -28365,7 +28375,7 @@ bb12:
     t79 = h16_own16;
 #line 142 "examples/interpreter/syn/parse.hero"
     h16_own16 = t40;
-#line 28369 "main.c"
+#line 28379 "main.c"
     h_0opt_5a58f2ca_release(&t79);
 #line 142 "examples/interpreter/syn/parse.hero"
     h5_ret0 = t40;
@@ -28391,7 +28401,7 @@ bb14:
     t80 = h17_own17;
 #line 146 "examples/interpreter/syn/parse.hero"
     h17_own17 = t45;
-#line 28395 "main.c"
+#line 28405 "main.c"
     hero_str_decref(t80);
 #line 147 "examples/interpreter/syn/parse.hero"
     t46 = HERO_STR_LIT(hero_str_37e62ccf);
@@ -28407,7 +28417,7 @@ bb14:
     t81 = h18_own18;
 #line 147 "examples/interpreter/syn/parse.hero"
     h18_own18 = t50;
-#line 28411 "main.c"
+#line 28421 "main.c"
     hero_str_decref(t81);
 #line 147 "examples/interpreter/syn/parse.hero"
     t51 = hero_str_concat(t46, t50);
@@ -28415,7 +28425,7 @@ bb14:
     t82 = h19_own19;
 #line 147 "examples/interpreter/syn/parse.hero"
     h19_own19 = t51;
-#line 28419 "main.c"
+#line 28429 "main.c"
     hero_str_decref(t82);
 #line 147 "examples/interpreter/syn/parse.hero"
     t52 = HERO_STR_LIT(hero_str_155b);
@@ -28425,7 +28435,7 @@ bb14:
     t83 = h20_own20;
 #line 147 "examples/interpreter/syn/parse.hero"
     h20_own20 = t53;
-#line 28429 "main.c"
+#line 28439 "main.c"
     hero_str_decref(t83);
     hero_str_incref(t45);
     hero_str_incref(t53);
@@ -28435,7 +28445,7 @@ bb14:
     t84 = h21_own21;
 #line 145 "examples/interpreter/syn/parse.hero"
     h21_own21 = t54;
-#line 28439 "main.c"
+#line 28449 "main.c"
     h_0opt_5a58f2ca_release(&t84);
 #line 145 "examples/interpreter/syn/parse.hero"
     h5_ret0 = t54;
@@ -28449,7 +28459,7 @@ bb15:
 bb16:
 #line 153 "examples/interpreter/syn/parse.hero"
     t62 = h1_names;
-#line 28453 "main.c"
+#line 28463 "main.c"
     hero_array_incref(t62);
 #line 153 "examples/interpreter/syn/parse.hero"
     t63 = (h_0opt_5a58f2ca){.tag = INT64_C(0), .as.ok = t62};
@@ -28457,7 +28467,7 @@ bb16:
     t85 = h22_own22;
 #line 153 "examples/interpreter/syn/parse.hero"
     h22_own22 = t63;
-#line 28461 "main.c"
+#line 28471 "main.c"
     h_0opt_5a58f2ca_release(&t85);
 #line 153 "examples/interpreter/syn/parse.hero"
     h5_ret0 = t63;
@@ -28471,11 +28481,11 @@ bb17:
     t86 = h23_own23;
 #line 151 "examples/interpreter/syn/parse.hero"
     h23_own23 = t59;
-#line 28475 "main.c"
+#line 28485 "main.c"
     hero_str_decref(t86);
 #line 151 "examples/interpreter/syn/parse.hero"
     t60 = HERO_STR_LIT(hero_str_126962da);
-#line 28479 "main.c"
+#line 28489 "main.c"
     hero_str_incref(t59);
     hero_str_incref(t60);
 #line 151 "examples/interpreter/syn/parse.hero"
@@ -28484,7 +28494,7 @@ bb17:
     t87 = h24_own24;
 #line 151 "examples/interpreter/syn/parse.hero"
     h24_own24 = t61;
-#line 28488 "main.c"
+#line 28498 "main.c"
     h_0opt_5a58f2ca_release(&t87);
 #line 151 "examples/interpreter/syn/parse.hero"
     h5_ret0 = t61;
@@ -28496,7 +28506,7 @@ bb18:
     goto bb16;
 #line 151 "examples/interpreter/syn/parse.hero"
 bb19:
-#line 28500 "main.c"
+#line 28510 "main.c"
     t64 = h5_ret0;
     h_0opt_5a58f2ca_retain(&t64);
     hero_array_decref(h1_names);
@@ -28527,7 +28537,7 @@ bb19:
 
 #line 158 "examples/interpreter/syn/parse.hero"
 h_0opt_2270cbe7 h_synparse_block(h_syncursor_Cursor *ph0_c, h_syntree_Tree *ph1_t) {
-#line 28531 "main.c"
+#line 28541 "main.c"
     HeroArrayHeader * h2_made = {0};
     h_0opt_e201354 h3_f0 = {0};
     h_0opt_2270cbe7 h4_ret0 = {0};
@@ -28578,15 +28588,15 @@ bb0:
     t26 = h5_own5;
 #line 159 "examples/interpreter/syn/parse.hero"
     h5_own5 = t1;
-#line 28582 "main.c"
+#line 28592 "main.c"
     hero_array_decref(t26);
 #line 159 "examples/interpreter/syn/parse.hero"
     t27 = h2_made;
-#line 28586 "main.c"
+#line 28596 "main.c"
     hero_array_incref(t1);
 #line 159 "examples/interpreter/syn/parse.hero"
     h2_made = t1;
-#line 28590 "main.c"
+#line 28600 "main.c"
     hero_array_decref(t27);
 #line 160 "examples/interpreter/syn/parse.hero"
     h_syncursor_skipped_lines(&(*ph0_c));
@@ -28602,7 +28612,7 @@ bb1:
     t28 = h6_own6;
 #line 162 "examples/interpreter/syn/parse.hero"
     h6_own6 = t3;
-#line 28606 "main.c"
+#line 28616 "main.c"
     h_lextoken_Token_release(&t28);
 #line 162 "examples/interpreter/syn/parse.hero"
     t4 = h_synparse_closes_a_block(t3);
@@ -28617,15 +28627,15 @@ bb2:
     t29 = h7_own7;
 #line 163 "examples/interpreter/syn/parse.hero"
     h7_own7 = t7;
-#line 28621 "main.c"
+#line 28631 "main.c"
     h_0opt_e201354_release(&t29);
 #line 163 "examples/interpreter/syn/parse.hero"
     t30 = h3_f0;
-#line 28625 "main.c"
+#line 28635 "main.c"
     h_0opt_e201354_retain(&t7);
 #line 163 "examples/interpreter/syn/parse.hero"
     h3_f0 = t7;
-#line 28629 "main.c"
+#line 28639 "main.c"
     h_0opt_e201354_release(&t30);
 #line 163 "examples/interpreter/syn/parse.hero"
     t8 = h3_f0;
@@ -28662,7 +28672,7 @@ bb5:
     t12 = h3_f0;
 #line 163 "examples/interpreter/syn/parse.hero"
     t13 = t12.as.err;
-#line 28666 "main.c"
+#line 28676 "main.c"
     hero_failure_retain(&t13);
 #line 163 "examples/interpreter/syn/parse.hero"
     t14 = (h_0opt_2270cbe7){.tag = INT64_C(1), .as.err = t13};
@@ -28670,7 +28680,7 @@ bb5:
     t31 = h8_own8;
 #line 163 "examples/interpreter/syn/parse.hero"
     h8_own8 = t14;
-#line 28674 "main.c"
+#line 28684 "main.c"
     h_0opt_2270cbe7_release(&t31);
 #line 163 "examples/interpreter/syn/parse.hero"
     h4_ret0 = t14;
@@ -28680,7 +28690,7 @@ bb5:
 bb6:
 #line 169 "examples/interpreter/syn/parse.hero"
     t23 = h2_made;
-#line 28684 "main.c"
+#line 28694 "main.c"
     hero_array_incref(t23);
 #line 169 "examples/interpreter/syn/parse.hero"
     t24 = (h_0opt_2270cbe7){.tag = INT64_C(0), .as.ok = t23};
@@ -28688,7 +28698,7 @@ bb6:
     t32 = h9_own9;
 #line 169 "examples/interpreter/syn/parse.hero"
     h9_own9 = t24;
-#line 28692 "main.c"
+#line 28702 "main.c"
     h_0opt_2270cbe7_release(&t32);
 #line 169 "examples/interpreter/syn/parse.hero"
     h4_ret0 = t24;
@@ -28702,11 +28712,11 @@ bb7:
     t33 = h10_own10;
 #line 167 "examples/interpreter/syn/parse.hero"
     h10_own10 = t20;
-#line 28706 "main.c"
+#line 28716 "main.c"
     hero_str_decref(t33);
 #line 167 "examples/interpreter/syn/parse.hero"
     t21 = HERO_STR_LIT(hero_str_737289bd);
-#line 28710 "main.c"
+#line 28720 "main.c"
     hero_str_incref(t20);
     hero_str_incref(t21);
 #line 167 "examples/interpreter/syn/parse.hero"
@@ -28715,7 +28725,7 @@ bb7:
     t34 = h11_own11;
 #line 167 "examples/interpreter/syn/parse.hero"
     h11_own11 = t22;
-#line 28719 "main.c"
+#line 28729 "main.c"
     h_0opt_2270cbe7_release(&t34);
 #line 167 "examples/interpreter/syn/parse.hero"
     h4_ret0 = t22;
@@ -28727,7 +28737,7 @@ bb8:
     goto bb6;
 #line 167 "examples/interpreter/syn/parse.hero"
 bb9:
-#line 28731 "main.c"
+#line 28741 "main.c"
     t25 = h4_ret0;
     h_0opt_2270cbe7_retain(&t25);
     hero_array_decref(h2_made);
@@ -28744,7 +28754,7 @@ bb9:
 
 #line 171 "examples/interpreter/syn/parse.hero"
 bool h_synparse_closes_a_block(h_lextoken_Token h0_t) {
-#line 28748 "main.c"
+#line 28758 "main.c"
     bool h1_b0;
     bool h2_b1;
     h_lextoken_Token h3_own3 = {0};
@@ -28774,7 +28784,7 @@ bb0:
     t12 = h3_own3;
 #line 172 "examples/interpreter/syn/parse.hero"
     h3_own3 = t2;
-#line 28778 "main.c"
+#line 28788 "main.c"
     h_lextoken_Token_release(&t12);
 #line 172 "examples/interpreter/syn/parse.hero"
     t3 = h_lextoken_Token_eq(&t1, &t2);
@@ -28792,7 +28802,7 @@ bb1:
     t13 = h4_own4;
 #line 172 "examples/interpreter/syn/parse.hero"
     h4_own4 = t5;
-#line 28796 "main.c"
+#line 28806 "main.c"
     h_lextoken_Token_release(&t13);
 #line 172 "examples/interpreter/syn/parse.hero"
     t6 = h_lextoken_Token_eq(&t4, &t5);
@@ -28818,7 +28828,7 @@ bb3:
     t14 = h5_own5;
 #line 172 "examples/interpreter/syn/parse.hero"
     h5_own5 = t9;
-#line 28822 "main.c"
+#line 28832 "main.c"
     h_lextoken_Token_release(&t14);
 #line 172 "examples/interpreter/syn/parse.hero"
     t10 = h_lextoken_Token_eq(&t8, &t9);
@@ -28830,7 +28840,7 @@ bb3:
 bb4:
 #line 172 "examples/interpreter/syn/parse.hero"
     t11 = h1_b0;
-#line 28834 "main.c"
+#line 28844 "main.c"
     h_lextoken_Token_release(&h3_own3);
     h_lextoken_Token_release(&h4_own4);
     h_lextoken_Token_release(&h5_own5);
@@ -28839,7 +28849,7 @@ bb4:
 
 #line 177 "examples/interpreter/syn/parse.hero"
 h_0opt_a8ea2 h_synparse_line_end(h_syncursor_Cursor *ph0_c) {
-#line 28843 "main.c"
+#line 28853 "main.c"
     h_0opt_a8ea2 h1_ret0 = {0};
     h_lextoken_Token h2_own2 = {0};
     h_lextoken_Token h3_own3 = {0};
@@ -28891,7 +28901,7 @@ bb0:
     t19 = h2_own2;
 #line 178 "examples/interpreter/syn/parse.hero"
     h2_own2 = t2;
-#line 28895 "main.c"
+#line 28905 "main.c"
     h_lextoken_Token_release(&t19);
 #line 178 "examples/interpreter/syn/parse.hero"
     t3 = (h_lextoken_Token){.tag = h_lextoken_Token_tag_finish};
@@ -28899,7 +28909,7 @@ bb0:
     t20 = h3_own3;
 #line 178 "examples/interpreter/syn/parse.hero"
     h3_own3 = t3;
-#line 28903 "main.c"
+#line 28913 "main.c"
     h_lextoken_Token_release(&t20);
 #line 178 "examples/interpreter/syn/parse.hero"
     t4 = h_lextoken_Token_eq(&t2, &t3);
@@ -28913,7 +28923,7 @@ bb1:
     t21 = h4_own4;
 #line 181 "examples/interpreter/syn/parse.hero"
     h4_own4 = t6;
-#line 28917 "main.c"
+#line 28927 "main.c"
     h_lextoken_Token_release(&t21);
 #line 181 "examples/interpreter/syn/parse.hero"
     t7 = h_syncursor_accepted(&(*ph0_c), t6);
@@ -28927,7 +28937,7 @@ bb2:
     t22 = h5_own5;
 #line 179 "examples/interpreter/syn/parse.hero"
     h5_own5 = t5;
-#line 28931 "main.c"
+#line 28941 "main.c"
     h_0opt_a8ea2_release(&t22);
 #line 179 "examples/interpreter/syn/parse.hero"
     h1_ret0 = t5;
@@ -28945,7 +28955,7 @@ bb4:
     t23 = h6_own6;
 #line 185 "examples/interpreter/syn/parse.hero"
     h6_own6 = t9;
-#line 28949 "main.c"
+#line 28959 "main.c"
     hero_str_decref(t23);
 #line 186 "examples/interpreter/syn/parse.hero"
     t10 = HERO_STR_LIT(hero_str_34631f9b);
@@ -28957,7 +28967,7 @@ bb4:
     t24 = h7_own7;
 #line 186 "examples/interpreter/syn/parse.hero"
     h7_own7 = t12;
-#line 28961 "main.c"
+#line 28971 "main.c"
     h_lextoken_Token_release(&t24);
 #line 186 "examples/interpreter/syn/parse.hero"
     t13 = h_lextoken_shown(t12);
@@ -28965,7 +28975,7 @@ bb4:
     t25 = h8_own8;
 #line 186 "examples/interpreter/syn/parse.hero"
     h8_own8 = t13;
-#line 28969 "main.c"
+#line 28979 "main.c"
     hero_str_decref(t25);
 #line 186 "examples/interpreter/syn/parse.hero"
     t14 = hero_str_concat(t10, t13);
@@ -28973,7 +28983,7 @@ bb4:
     t26 = h9_own9;
 #line 186 "examples/interpreter/syn/parse.hero"
     h9_own9 = t14;
-#line 28977 "main.c"
+#line 28987 "main.c"
     hero_str_decref(t26);
 #line 186 "examples/interpreter/syn/parse.hero"
     t15 = HERO_STR_LIT(hero_str_175d5b82);
@@ -28983,7 +28993,7 @@ bb4:
     t27 = h10_own10;
 #line 186 "examples/interpreter/syn/parse.hero"
     h10_own10 = t16;
-#line 28987 "main.c"
+#line 28997 "main.c"
     hero_str_decref(t27);
     hero_str_incref(t9);
     hero_str_incref(t16);
@@ -28993,7 +29003,7 @@ bb4:
     t28 = h11_own11;
 #line 184 "examples/interpreter/syn/parse.hero"
     h11_own11 = t17;
-#line 28997 "main.c"
+#line 29007 "main.c"
     h_0opt_a8ea2_release(&t28);
 #line 184 "examples/interpreter/syn/parse.hero"
     h1_ret0 = t17;
@@ -29007,7 +29017,7 @@ bb5:
     t29 = h12_own12;
 #line 182 "examples/interpreter/syn/parse.hero"
     h12_own12 = t8;
-#line 29011 "main.c"
+#line 29021 "main.c"
     h_0opt_a8ea2_release(&t29);
 #line 182 "examples/interpreter/syn/parse.hero"
     h1_ret0 = t8;
@@ -29019,7 +29029,7 @@ bb6:
     goto bb4;
 #line 182 "examples/interpreter/syn/parse.hero"
 bb7:
-#line 29023 "main.c"
+#line 29033 "main.c"
     t18 = h1_ret0;
     h_0opt_a8ea2_retain(&t18);
     h_lextoken_Token_release(&h2_own2);
@@ -29038,7 +29048,7 @@ bb7:
 
 #line 192 "examples/interpreter/syn/parse.hero"
 bool h_synparse_repeats(HeroArrayHeader * h0_names) {
-#line 29042 "main.c"
+#line 29052 "main.c"
     int64_t h1_i;
     int64_t h2_j;
     bool h3_ret0;
@@ -29176,14 +29186,14 @@ bb9:
     goto bb7;
 #line 200 "examples/interpreter/syn/parse.hero"
 bb10:
-#line 29180 "main.c"
+#line 29190 "main.c"
     t28 = h3_ret0;
     return t28;
 }
 
 #line 207 "examples/interpreter/syn/parse.hero"
 bool h_synparse_is_a_name(HeroStr h0_word) {
-#line 29187 "main.c"
+#line 29197 "main.c"
     HeroStr t1;
     int64_t t2;
     int64_t t3;
@@ -29200,25 +29210,25 @@ bb0:
     t4 = t2 > t3;
 #line 208 "examples/interpreter/syn/parse.hero"
     return t4;
-#line 29204 "main.c"
+#line 29214 "main.c"
 }
 
 #line 210 "examples/interpreter/syn/parse.hero"
 HeroStr h_synparse_itself(HeroStr h0_word) {
-#line 29209 "main.c"
+#line 29219 "main.c"
     HeroStr t1;
     goto bb0;
 bb0:
 #line 211 "examples/interpreter/syn/parse.hero"
     t1 = h0_word;
-#line 29215 "main.c"
+#line 29225 "main.c"
     hero_str_incref(t1);
     return t1;
 }
 
 #line 103 "examples/interpreter/syn/tree.hero"
 h_syntree_Tree h_syntree_empty(void) {
-#line 29222 "main.c"
+#line 29232 "main.c"
     HeroArrayHeader * h0_no_exprs = {0};
     HeroArrayHeader * h1_no_stmts = {0};
     HeroArrayHeader * h2_no_top = {0};
@@ -29248,15 +29258,15 @@ bb0:
     t8 = h3_own3;
 #line 104 "examples/interpreter/syn/tree.hero"
     h3_own3 = t1;
-#line 29252 "main.c"
+#line 29262 "main.c"
     hero_array_decref(t8);
 #line 104 "examples/interpreter/syn/tree.hero"
     t9 = h0_no_exprs;
-#line 29256 "main.c"
+#line 29266 "main.c"
     hero_array_incref(t1);
 #line 104 "examples/interpreter/syn/tree.hero"
     h0_no_exprs = t1;
-#line 29260 "main.c"
+#line 29270 "main.c"
     hero_array_decref(t9);
 #line 105 "examples/interpreter/syn/tree.hero"
     t2 = hero_array_new(&h_syntree_Stmt_desc, 1);
@@ -29264,15 +29274,15 @@ bb0:
     t10 = h4_own4;
 #line 105 "examples/interpreter/syn/tree.hero"
     h4_own4 = t2;
-#line 29268 "main.c"
+#line 29278 "main.c"
     hero_array_decref(t10);
 #line 105 "examples/interpreter/syn/tree.hero"
     t11 = h1_no_stmts;
-#line 29272 "main.c"
+#line 29282 "main.c"
     hero_array_incref(t2);
 #line 105 "examples/interpreter/syn/tree.hero"
     h1_no_stmts = t2;
-#line 29276 "main.c"
+#line 29286 "main.c"
     hero_array_decref(t11);
 #line 106 "examples/interpreter/syn/tree.hero"
     t3 = hero_array_new(&hero_desc_int, 1);
@@ -29280,15 +29290,15 @@ bb0:
     t12 = h5_own5;
 #line 106 "examples/interpreter/syn/tree.hero"
     h5_own5 = t3;
-#line 29284 "main.c"
+#line 29294 "main.c"
     hero_array_decref(t12);
 #line 106 "examples/interpreter/syn/tree.hero"
     t13 = h2_no_top;
-#line 29288 "main.c"
+#line 29298 "main.c"
     hero_array_incref(t3);
 #line 106 "examples/interpreter/syn/tree.hero"
     h2_no_top = t3;
-#line 29292 "main.c"
+#line 29302 "main.c"
     hero_array_decref(t13);
 #line 107 "examples/interpreter/syn/tree.hero"
     t4 = h0_no_exprs;
@@ -29296,7 +29306,7 @@ bb0:
     t5 = h1_no_stmts;
 #line 107 "examples/interpreter/syn/tree.hero"
     t6 = h2_no_top;
-#line 29300 "main.c"
+#line 29310 "main.c"
     hero_array_incref(t4);
     hero_array_incref(t5);
     hero_array_incref(t6);
@@ -29306,7 +29316,7 @@ bb0:
     t14 = h6_own6;
 #line 107 "examples/interpreter/syn/tree.hero"
     h6_own6 = t7;
-#line 29310 "main.c"
+#line 29320 "main.c"
     h_syntree_Tree_release(&t14);
     h_syntree_Tree_retain(&t7);
     hero_array_decref(h0_no_exprs);
@@ -29321,7 +29331,7 @@ bb0:
 
 #line 114 "examples/interpreter/syn/tree.hero"
 int64_t h_syntree_added_expr(h_syntree_Tree *ph0_t, h_syntree_Expr h1_e) {
-#line 29325 "main.c"
+#line 29335 "main.c"
     HeroArrayHeader * h2_own2 = {0};
     h_syntree_Tree t1;
     HeroArrayHeader * t2;
@@ -29348,15 +29358,15 @@ bb0:
     t10 = h2_own2;
 #line 115 "examples/interpreter/syn/tree.hero"
     h2_own2 = t4;
-#line 29352 "main.c"
+#line 29362 "main.c"
     hero_array_decref(t10);
 #line 115 "examples/interpreter/syn/tree.hero"
     t11 = (*ph0_t).f_exprs;
-#line 29356 "main.c"
+#line 29366 "main.c"
     hero_array_incref(t4);
 #line 115 "examples/interpreter/syn/tree.hero"
     (*ph0_t).f_exprs = t4;
-#line 29360 "main.c"
+#line 29370 "main.c"
     hero_array_decref(t11);
 #line 116 "examples/interpreter/syn/tree.hero"
     t5 = (*ph0_t);
@@ -29368,14 +29378,14 @@ bb0:
     t8 = INT64_C(1);
 #line 116 "examples/interpreter/syn/tree.hero"
     if (__builtin_sub_overflow(t7, t8, &t9)) hero_panic_overflow();
-#line 29372 "main.c"
+#line 29382 "main.c"
     hero_array_decref(h2_own2);
     return t9;
 }
 
 #line 118 "examples/interpreter/syn/tree.hero"
 int64_t h_syntree_added_stmt(h_syntree_Tree *ph0_t, h_syntree_Stmt h1_s) {
-#line 29379 "main.c"
+#line 29389 "main.c"
     HeroArrayHeader * h2_own2 = {0};
     h_syntree_Tree t1;
     HeroArrayHeader * t2;
@@ -29402,15 +29412,15 @@ bb0:
     t10 = h2_own2;
 #line 119 "examples/interpreter/syn/tree.hero"
     h2_own2 = t4;
-#line 29406 "main.c"
+#line 29416 "main.c"
     hero_array_decref(t10);
 #line 119 "examples/interpreter/syn/tree.hero"
     t11 = (*ph0_t).f_stmts;
-#line 29410 "main.c"
+#line 29420 "main.c"
     hero_array_incref(t4);
 #line 119 "examples/interpreter/syn/tree.hero"
     (*ph0_t).f_stmts = t4;
-#line 29414 "main.c"
+#line 29424 "main.c"
     hero_array_decref(t11);
 #line 120 "examples/interpreter/syn/tree.hero"
     t5 = (*ph0_t);
@@ -29422,14 +29432,14 @@ bb0:
     t8 = INT64_C(1);
 #line 120 "examples/interpreter/syn/tree.hero"
     if (__builtin_sub_overflow(t7, t8, &t9)) hero_panic_overflow();
-#line 29426 "main.c"
+#line 29436 "main.c"
     hero_array_decref(h2_own2);
     return t9;
 }
 
 #line 124 "examples/interpreter/syn/tree.hero"
 int64_t h_syntree_expr_depth(h_syntree_Tree h0_t, int64_t h1_id) {
-#line 29433 "main.c"
+#line 29443 "main.c"
     h_syntree_Expr h2_s0 = {0};
     int64_t h3_r0;
     h_syntree_Expr_c_negate h4_u;
@@ -29495,11 +29505,11 @@ bb0:
     t4 = ((void)((t2 == NULL || t3 < 0 || t3 >= t2->len) ? ((void)hero_array_at(t2, t3), hero_unreachable()) : (void)0), (void)(t2->elem->size != sizeof(h_syntree_Expr) ? hero_unreachable() : (void)0), ((h_syntree_Expr const *)(const void *)(t2 + 1))[t3]);
 #line 125 "examples/interpreter/syn/tree.hero"
     t46 = h2_s0;
-#line 29499 "main.c"
+#line 29509 "main.c"
     h_syntree_Expr_retain(&t4);
 #line 125 "examples/interpreter/syn/tree.hero"
     h2_s0 = t4;
-#line 29503 "main.c"
+#line 29513 "main.c"
     h_syntree_Expr_release(&t46);
 #line 125 "examples/interpreter/syn/tree.hero"
     t5 = h2_s0;
@@ -29531,7 +29541,7 @@ bb0:
 bb1:
 #line 125 "examples/interpreter/syn/tree.hero"
     t45 = h3_r0;
-#line 29535 "main.c"
+#line 29545 "main.c"
     h_syntree_Expr_release(&h2_s0);
     h_syntree_Expr_c_call_release(&h7_c);
     return t45;
@@ -29632,11 +29642,11 @@ bb6:
     t38 = t37.as.c_call;
 #line 130 "examples/interpreter/syn/tree.hero"
     t47 = h7_c;
-#line 29636 "main.c"
+#line 29646 "main.c"
     h_syntree_Expr_c_call_retain(&t38);
 #line 130 "examples/interpreter/syn/tree.hero"
     h7_c = t38;
-#line 29640 "main.c"
+#line 29650 "main.c"
     h_syntree_Expr_c_call_release(&t47);
 #line 130 "examples/interpreter/syn/tree.hero"
     t39 = INT64_C(1);
@@ -29654,12 +29664,12 @@ bb6:
     h3_r0 = t44;
 #line 125 "examples/interpreter/syn/tree.hero"
     goto bb1;
-#line 29658 "main.c"
+#line 29668 "main.c"
 }
 
 #line 132 "examples/interpreter/syn/tree.hero"
 int64_t h_syntree_deeper(int64_t h0_a, int64_t h1_b) {
-#line 29663 "main.c"
+#line 29673 "main.c"
     int64_t h2_ret0;
     int64_t t1;
     int64_t t2;
@@ -29699,14 +29709,14 @@ bb3:
     goto bb1;
 #line 134 "examples/interpreter/syn/tree.hero"
 bb4:
-#line 29703 "main.c"
+#line 29713 "main.c"
     t6 = h2_ret0;
     return t6;
 }
 
 #line 138 "examples/interpreter/syn/tree.hero"
 int64_t h_syntree_deepest_of(h_syntree_Tree h0_t, HeroArrayHeader * h1_ids) {
-#line 29710 "main.c"
+#line 29720 "main.c"
     int64_t h2_most;
     HeroArrayHeader * h3_xs0 = {0};
     int64_t h4_i0;
@@ -29741,11 +29751,11 @@ bb0:
     t2 = h1_ids;
 #line 141 "examples/interpreter/syn/tree.hero"
     t20 = h3_xs0;
-#line 29745 "main.c"
+#line 29755 "main.c"
     hero_array_incref(t2);
 #line 141 "examples/interpreter/syn/tree.hero"
     h3_xs0 = t2;
-#line 29749 "main.c"
+#line 29759 "main.c"
     hero_array_decref(t20);
 #line 141 "examples/interpreter/syn/tree.hero"
     t3 = INT64_C(0);
@@ -29804,14 +29814,14 @@ bb3:
 bb4:
 #line 144 "examples/interpreter/syn/tree.hero"
     t19 = h2_most;
-#line 29808 "main.c"
+#line 29818 "main.c"
     hero_array_decref(h3_xs0);
     return t19;
 }
 
 #line 150 "examples/interpreter/syn/tree.hero"
 HeroStr h_syntree_shown_op(h_syntree_Op h0_op) {
-#line 29815 "main.c"
+#line 29825 "main.c"
     h_syntree_Op h1_s0;
     HeroStr h2_r0 = {0};
     h_syntree_Op t1;
@@ -29890,7 +29900,7 @@ bb0:
 bb1:
 #line 151 "examples/interpreter/syn/tree.hero"
     t17 = h2_r0;
-#line 29894 "main.c"
+#line 29904 "main.c"
     hero_str_incref(t17);
     hero_str_decref(h2_r0);
     return t17;
@@ -29899,11 +29909,11 @@ bb2:
     t4 = HERO_STR_LIT(hero_str_2b);
 #line 151 "examples/interpreter/syn/tree.hero"
     t18 = h2_r0;
-#line 29903 "main.c"
+#line 29913 "main.c"
     hero_str_incref(t4);
 #line 151 "examples/interpreter/syn/tree.hero"
     h2_r0 = t4;
-#line 29907 "main.c"
+#line 29917 "main.c"
     hero_str_decref(t18);
     goto bb1;
 bb3:
@@ -29911,11 +29921,11 @@ bb3:
     t5 = HERO_STR_LIT(hero_str_2d);
 #line 151 "examples/interpreter/syn/tree.hero"
     t19 = h2_r0;
-#line 29915 "main.c"
+#line 29925 "main.c"
     hero_str_incref(t5);
 #line 151 "examples/interpreter/syn/tree.hero"
     h2_r0 = t5;
-#line 29919 "main.c"
+#line 29929 "main.c"
     hero_str_decref(t19);
     goto bb1;
 bb4:
@@ -29923,11 +29933,11 @@ bb4:
     t6 = HERO_STR_LIT(hero_str_2a);
 #line 151 "examples/interpreter/syn/tree.hero"
     t20 = h2_r0;
-#line 29927 "main.c"
+#line 29937 "main.c"
     hero_str_incref(t6);
 #line 151 "examples/interpreter/syn/tree.hero"
     h2_r0 = t6;
-#line 29931 "main.c"
+#line 29941 "main.c"
     hero_str_decref(t20);
     goto bb1;
 bb5:
@@ -29935,11 +29945,11 @@ bb5:
     t7 = HERO_STR_LIT(hero_str_2f);
 #line 151 "examples/interpreter/syn/tree.hero"
     t21 = h2_r0;
-#line 29939 "main.c"
+#line 29949 "main.c"
     hero_str_incref(t7);
 #line 151 "examples/interpreter/syn/tree.hero"
     h2_r0 = t7;
-#line 29943 "main.c"
+#line 29953 "main.c"
     hero_str_decref(t21);
     goto bb1;
 bb6:
@@ -29947,11 +29957,11 @@ bb6:
     t8 = HERO_STR_LIT(hero_str_25);
 #line 151 "examples/interpreter/syn/tree.hero"
     t22 = h2_r0;
-#line 29951 "main.c"
+#line 29961 "main.c"
     hero_str_incref(t8);
 #line 151 "examples/interpreter/syn/tree.hero"
     h2_r0 = t8;
-#line 29955 "main.c"
+#line 29965 "main.c"
     hero_str_decref(t22);
     goto bb1;
 bb7:
@@ -29959,11 +29969,11 @@ bb7:
     t9 = HERO_STR_LIT(hero_str_3c);
 #line 151 "examples/interpreter/syn/tree.hero"
     t23 = h2_r0;
-#line 29963 "main.c"
+#line 29973 "main.c"
     hero_str_incref(t9);
 #line 151 "examples/interpreter/syn/tree.hero"
     h2_r0 = t9;
-#line 29967 "main.c"
+#line 29977 "main.c"
     hero_str_decref(t23);
     goto bb1;
 bb8:
@@ -29971,11 +29981,11 @@ bb8:
     t10 = HERO_STR_LIT(hero_str_1ef1);
 #line 151 "examples/interpreter/syn/tree.hero"
     t24 = h2_r0;
-#line 29975 "main.c"
+#line 29985 "main.c"
     hero_str_incref(t10);
 #line 151 "examples/interpreter/syn/tree.hero"
     h2_r0 = t10;
-#line 29979 "main.c"
+#line 29989 "main.c"
     hero_str_decref(t24);
     goto bb1;
 bb9:
@@ -29983,11 +29993,11 @@ bb9:
     t11 = HERO_STR_LIT(hero_str_3e);
 #line 151 "examples/interpreter/syn/tree.hero"
     t25 = h2_r0;
-#line 29987 "main.c"
+#line 29997 "main.c"
     hero_str_incref(t11);
 #line 151 "examples/interpreter/syn/tree.hero"
     h2_r0 = t11;
-#line 29991 "main.c"
+#line 30001 "main.c"
     hero_str_decref(t25);
     goto bb1;
 bb10:
@@ -29995,11 +30005,11 @@ bb10:
     t12 = HERO_STR_LIT(hero_str_1ff7);
 #line 151 "examples/interpreter/syn/tree.hero"
     t26 = h2_r0;
-#line 29999 "main.c"
+#line 30009 "main.c"
     hero_str_incref(t12);
 #line 151 "examples/interpreter/syn/tree.hero"
     h2_r0 = t12;
-#line 30003 "main.c"
+#line 30013 "main.c"
     hero_str_decref(t26);
     goto bb1;
 bb11:
@@ -30007,11 +30017,11 @@ bb11:
     t13 = HERO_STR_LIT(hero_str_1f74);
 #line 151 "examples/interpreter/syn/tree.hero"
     t27 = h2_r0;
-#line 30011 "main.c"
+#line 30021 "main.c"
     hero_str_incref(t13);
 #line 151 "examples/interpreter/syn/tree.hero"
     h2_r0 = t13;
-#line 30015 "main.c"
+#line 30025 "main.c"
     hero_str_decref(t27);
     goto bb1;
 bb12:
@@ -30019,11 +30029,11 @@ bb12:
     t14 = HERO_STR_LIT(hero_str_1120);
 #line 151 "examples/interpreter/syn/tree.hero"
     t28 = h2_r0;
-#line 30023 "main.c"
+#line 30033 "main.c"
     hero_str_incref(t14);
 #line 151 "examples/interpreter/syn/tree.hero"
     h2_r0 = t14;
-#line 30027 "main.c"
+#line 30037 "main.c"
     hero_str_decref(t28);
     goto bb1;
 bb13:
@@ -30031,11 +30041,11 @@ bb13:
     t15 = HERO_STR_LIT(hero_str_1398);
 #line 151 "examples/interpreter/syn/tree.hero"
     t29 = h2_r0;
-#line 30035 "main.c"
+#line 30045 "main.c"
     hero_str_incref(t15);
 #line 151 "examples/interpreter/syn/tree.hero"
     h2_r0 = t15;
-#line 30039 "main.c"
+#line 30049 "main.c"
     hero_str_decref(t29);
     goto bb1;
 bb14:
@@ -30043,18 +30053,18 @@ bb14:
     t16 = HERO_STR_LIT(hero_str_3ff0);
 #line 151 "examples/interpreter/syn/tree.hero"
     t30 = h2_r0;
-#line 30047 "main.c"
+#line 30057 "main.c"
     hero_str_incref(t16);
 #line 151 "examples/interpreter/syn/tree.hero"
     h2_r0 = t16;
-#line 30051 "main.c"
+#line 30061 "main.c"
     hero_str_decref(t30);
     goto bb1;
 }
 
 #line 170 "examples/interpreter/syn/tree.hero"
 HeroStr h_syntree_shown_expr(h_syntree_Tree h0_t, int64_t h1_id) {
-#line 30058 "main.c"
+#line 30068 "main.c"
     h_syntree_Expr h2_s0 = {0};
     HeroStr h3_r0 = {0};
     h_syntree_Expr_c_number h4_n;
@@ -30220,11 +30230,11 @@ bb0:
     t4 = ((void)((t2 == NULL || t3 < 0 || t3 >= t2->len) ? ((void)hero_array_at(t2, t3), hero_unreachable()) : (void)0), (void)(t2->elem->size != sizeof(h_syntree_Expr) ? hero_unreachable() : (void)0), ((h_syntree_Expr const *)(const void *)(t2 + 1))[t3]);
 #line 171 "examples/interpreter/syn/tree.hero"
     t86 = h2_s0;
-#line 30224 "main.c"
+#line 30234 "main.c"
     h_syntree_Expr_retain(&t4);
 #line 171 "examples/interpreter/syn/tree.hero"
     h2_s0 = t4;
-#line 30228 "main.c"
+#line 30238 "main.c"
     h_syntree_Expr_release(&t86);
 #line 171 "examples/interpreter/syn/tree.hero"
     t5 = h2_s0;
@@ -30256,7 +30266,7 @@ bb0:
 bb1:
 #line 171 "examples/interpreter/syn/tree.hero"
     t85 = h3_r0;
-#line 30260 "main.c"
+#line 30270 "main.c"
     hero_str_incref(t85);
     h_syntree_Expr_release(&h2_s0);
     hero_str_decref(h3_r0);
@@ -30304,15 +30314,15 @@ bb2:
     t87 = h12_own12;
 #line 172 "examples/interpreter/syn/tree.hero"
     h12_own12 = t11;
-#line 30308 "main.c"
+#line 30318 "main.c"
     hero_str_decref(t87);
 #line 171 "examples/interpreter/syn/tree.hero"
     t88 = h3_r0;
-#line 30312 "main.c"
+#line 30322 "main.c"
     hero_str_incref(t11);
 #line 171 "examples/interpreter/syn/tree.hero"
     h3_r0 = t11;
-#line 30316 "main.c"
+#line 30326 "main.c"
     hero_str_decref(t88);
     goto bb1;
 bb3:
@@ -30322,11 +30332,11 @@ bb3:
     t13 = t12.as.c_text;
 #line 173 "examples/interpreter/syn/tree.hero"
     t89 = h5_x;
-#line 30326 "main.c"
+#line 30336 "main.c"
     h_syntree_Expr_c_text_retain(&t13);
 #line 173 "examples/interpreter/syn/tree.hero"
     h5_x = t13;
-#line 30330 "main.c"
+#line 30340 "main.c"
     h_syntree_Expr_c_text_release(&t89);
 #line 173 "examples/interpreter/syn/tree.hero"
     t14 = HERO_STR_LIT(hero_str_22);
@@ -30340,7 +30350,7 @@ bb3:
     t90 = h13_own13;
 #line 173 "examples/interpreter/syn/tree.hero"
     h13_own13 = t17;
-#line 30344 "main.c"
+#line 30354 "main.c"
     hero_str_decref(t90);
 #line 173 "examples/interpreter/syn/tree.hero"
     t18 = HERO_STR_LIT(hero_str_22);
@@ -30350,15 +30360,15 @@ bb3:
     t91 = h14_own14;
 #line 173 "examples/interpreter/syn/tree.hero"
     h14_own14 = t19;
-#line 30354 "main.c"
+#line 30364 "main.c"
     hero_str_decref(t91);
 #line 171 "examples/interpreter/syn/tree.hero"
     t92 = h3_r0;
-#line 30358 "main.c"
+#line 30368 "main.c"
     hero_str_incref(t19);
 #line 171 "examples/interpreter/syn/tree.hero"
     h3_r0 = t19;
-#line 30362 "main.c"
+#line 30372 "main.c"
     hero_str_decref(t92);
     goto bb1;
 bb4:
@@ -30378,15 +30388,15 @@ bb4:
     t93 = h15_own15;
 #line 174 "examples/interpreter/syn/tree.hero"
     h15_own15 = t24;
-#line 30382 "main.c"
+#line 30392 "main.c"
     hero_str_decref(t93);
 #line 171 "examples/interpreter/syn/tree.hero"
     t94 = h3_r0;
-#line 30386 "main.c"
+#line 30396 "main.c"
     hero_str_incref(t24);
 #line 171 "examples/interpreter/syn/tree.hero"
     h3_r0 = t24;
-#line 30390 "main.c"
+#line 30400 "main.c"
     hero_str_decref(t94);
     goto bb1;
 bb5:
@@ -30396,11 +30406,11 @@ bb5:
     t26 = t25.as.c_name;
 #line 175 "examples/interpreter/syn/tree.hero"
     t95 = h7_n;
-#line 30400 "main.c"
+#line 30410 "main.c"
     h_syntree_Expr_c_name_retain(&t26);
 #line 175 "examples/interpreter/syn/tree.hero"
     h7_n = t26;
-#line 30404 "main.c"
+#line 30414 "main.c"
     h_syntree_Expr_c_name_release(&t95);
 #line 175 "examples/interpreter/syn/tree.hero"
     t27 = h7_n;
@@ -30408,11 +30418,11 @@ bb5:
     t28 = t27.f_value;
 #line 171 "examples/interpreter/syn/tree.hero"
     t96 = h3_r0;
-#line 30412 "main.c"
+#line 30422 "main.c"
     hero_str_incref(t28);
 #line 171 "examples/interpreter/syn/tree.hero"
     h3_r0 = t28;
-#line 30416 "main.c"
+#line 30426 "main.c"
     hero_str_decref(t96);
     goto bb1;
 bb6:
@@ -30436,7 +30446,7 @@ bb6:
     t97 = h16_own16;
 #line 176 "examples/interpreter/syn/tree.hero"
     h16_own16 = t35;
-#line 30440 "main.c"
+#line 30450 "main.c"
     hero_str_decref(t97);
 #line 176 "examples/interpreter/syn/tree.hero"
     t36 = hero_str_concat(t31, t35);
@@ -30444,7 +30454,7 @@ bb6:
     t98 = h17_own17;
 #line 176 "examples/interpreter/syn/tree.hero"
     h17_own17 = t36;
-#line 30448 "main.c"
+#line 30458 "main.c"
     hero_str_decref(t98);
 #line 176 "examples/interpreter/syn/tree.hero"
     t37 = HERO_STR_LIT(hero_str_29);
@@ -30454,15 +30464,15 @@ bb6:
     t99 = h18_own18;
 #line 176 "examples/interpreter/syn/tree.hero"
     h18_own18 = t38;
-#line 30458 "main.c"
+#line 30468 "main.c"
     hero_str_decref(t99);
 #line 171 "examples/interpreter/syn/tree.hero"
     t100 = h3_r0;
-#line 30462 "main.c"
+#line 30472 "main.c"
     hero_str_incref(t38);
 #line 171 "examples/interpreter/syn/tree.hero"
     h3_r0 = t38;
-#line 30466 "main.c"
+#line 30476 "main.c"
     hero_str_decref(t100);
     goto bb1;
 bb7:
@@ -30486,7 +30496,7 @@ bb7:
     t101 = h19_own19;
 #line 177 "examples/interpreter/syn/tree.hero"
     h19_own19 = t45;
-#line 30490 "main.c"
+#line 30500 "main.c"
     hero_str_decref(t101);
 #line 177 "examples/interpreter/syn/tree.hero"
     t46 = hero_str_concat(t41, t45);
@@ -30494,7 +30504,7 @@ bb7:
     t102 = h20_own20;
 #line 177 "examples/interpreter/syn/tree.hero"
     h20_own20 = t46;
-#line 30498 "main.c"
+#line 30508 "main.c"
     hero_str_decref(t102);
 #line 177 "examples/interpreter/syn/tree.hero"
     t47 = HERO_STR_LIT(hero_str_29);
@@ -30504,15 +30514,15 @@ bb7:
     t103 = h21_own21;
 #line 177 "examples/interpreter/syn/tree.hero"
     h21_own21 = t48;
-#line 30508 "main.c"
+#line 30518 "main.c"
     hero_str_decref(t103);
 #line 171 "examples/interpreter/syn/tree.hero"
     t104 = h3_r0;
-#line 30512 "main.c"
+#line 30522 "main.c"
     hero_str_incref(t48);
 #line 171 "examples/interpreter/syn/tree.hero"
     h3_r0 = t48;
-#line 30516 "main.c"
+#line 30526 "main.c"
     hero_str_decref(t104);
     goto bb1;
 bb8:
@@ -30536,7 +30546,7 @@ bb8:
     t105 = h22_own22;
 #line 178 "examples/interpreter/syn/tree.hero"
     h22_own22 = t55;
-#line 30540 "main.c"
+#line 30550 "main.c"
     hero_str_decref(t105);
 #line 178 "examples/interpreter/syn/tree.hero"
     t56 = hero_str_concat(t51, t55);
@@ -30544,7 +30554,7 @@ bb8:
     t106 = h23_own23;
 #line 178 "examples/interpreter/syn/tree.hero"
     h23_own23 = t56;
-#line 30548 "main.c"
+#line 30558 "main.c"
     hero_str_decref(t106);
 #line 178 "examples/interpreter/syn/tree.hero"
     t57 = HERO_STR_LIT(hero_str_20);
@@ -30554,7 +30564,7 @@ bb8:
     t107 = h24_own24;
 #line 178 "examples/interpreter/syn/tree.hero"
     h24_own24 = t58;
-#line 30558 "main.c"
+#line 30568 "main.c"
     hero_str_decref(t107);
 #line 178 "examples/interpreter/syn/tree.hero"
     t59 = h10_b;
@@ -30566,7 +30576,7 @@ bb8:
     t108 = h25_own25;
 #line 178 "examples/interpreter/syn/tree.hero"
     h25_own25 = t61;
-#line 30570 "main.c"
+#line 30580 "main.c"
     hero_str_decref(t108);
 #line 178 "examples/interpreter/syn/tree.hero"
     t62 = hero_str_concat(t58, t61);
@@ -30574,7 +30584,7 @@ bb8:
     t109 = h26_own26;
 #line 178 "examples/interpreter/syn/tree.hero"
     h26_own26 = t62;
-#line 30578 "main.c"
+#line 30588 "main.c"
     hero_str_decref(t109);
 #line 178 "examples/interpreter/syn/tree.hero"
     t63 = HERO_STR_LIT(hero_str_20);
@@ -30584,7 +30594,7 @@ bb8:
     t110 = h27_own27;
 #line 178 "examples/interpreter/syn/tree.hero"
     h27_own27 = t64;
-#line 30588 "main.c"
+#line 30598 "main.c"
     hero_str_decref(t110);
 #line 178 "examples/interpreter/syn/tree.hero"
     t65 = h0_t;
@@ -30598,7 +30608,7 @@ bb8:
     t111 = h28_own28;
 #line 178 "examples/interpreter/syn/tree.hero"
     h28_own28 = t68;
-#line 30602 "main.c"
+#line 30612 "main.c"
     hero_str_decref(t111);
 #line 178 "examples/interpreter/syn/tree.hero"
     t69 = hero_str_concat(t64, t68);
@@ -30606,7 +30616,7 @@ bb8:
     t112 = h29_own29;
 #line 178 "examples/interpreter/syn/tree.hero"
     h29_own29 = t69;
-#line 30610 "main.c"
+#line 30620 "main.c"
     hero_str_decref(t112);
 #line 178 "examples/interpreter/syn/tree.hero"
     t70 = HERO_STR_LIT(hero_str_29);
@@ -30616,15 +30626,15 @@ bb8:
     t113 = h30_own30;
 #line 178 "examples/interpreter/syn/tree.hero"
     h30_own30 = t71;
-#line 30620 "main.c"
+#line 30630 "main.c"
     hero_str_decref(t113);
 #line 171 "examples/interpreter/syn/tree.hero"
     t114 = h3_r0;
-#line 30624 "main.c"
+#line 30634 "main.c"
     hero_str_incref(t71);
 #line 171 "examples/interpreter/syn/tree.hero"
     h3_r0 = t71;
-#line 30628 "main.c"
+#line 30638 "main.c"
     hero_str_decref(t114);
     goto bb1;
 bb9:
@@ -30634,11 +30644,11 @@ bb9:
     t73 = t72.as.c_call;
 #line 179 "examples/interpreter/syn/tree.hero"
     t115 = h11_c;
-#line 30638 "main.c"
+#line 30648 "main.c"
     h_syntree_Expr_c_call_retain(&t73);
 #line 179 "examples/interpreter/syn/tree.hero"
     h11_c = t73;
-#line 30642 "main.c"
+#line 30652 "main.c"
     h_syntree_Expr_c_call_release(&t115);
 #line 179 "examples/interpreter/syn/tree.hero"
     t74 = h11_c;
@@ -30652,7 +30662,7 @@ bb9:
     t116 = h31_own31;
 #line 179 "examples/interpreter/syn/tree.hero"
     h31_own31 = t77;
-#line 30656 "main.c"
+#line 30666 "main.c"
     hero_str_decref(t116);
 #line 179 "examples/interpreter/syn/tree.hero"
     t78 = h0_t;
@@ -30666,7 +30676,7 @@ bb9:
     t117 = h32_own32;
 #line 179 "examples/interpreter/syn/tree.hero"
     h32_own32 = t81;
-#line 30670 "main.c"
+#line 30680 "main.c"
     hero_str_decref(t117);
 #line 179 "examples/interpreter/syn/tree.hero"
     t82 = hero_str_concat(t77, t81);
@@ -30674,7 +30684,7 @@ bb9:
     t118 = h33_own33;
 #line 179 "examples/interpreter/syn/tree.hero"
     h33_own33 = t82;
-#line 30678 "main.c"
+#line 30688 "main.c"
     hero_str_decref(t118);
 #line 179 "examples/interpreter/syn/tree.hero"
     t83 = HERO_STR_LIT(hero_str_29);
@@ -30684,22 +30694,22 @@ bb9:
     t119 = h34_own34;
 #line 179 "examples/interpreter/syn/tree.hero"
     h34_own34 = t84;
-#line 30688 "main.c"
+#line 30698 "main.c"
     hero_str_decref(t119);
 #line 171 "examples/interpreter/syn/tree.hero"
     t120 = h3_r0;
-#line 30692 "main.c"
+#line 30702 "main.c"
     hero_str_incref(t84);
 #line 171 "examples/interpreter/syn/tree.hero"
     h3_r0 = t84;
-#line 30696 "main.c"
+#line 30706 "main.c"
     hero_str_decref(t120);
     goto bb1;
 }
 
 #line 181 "examples/interpreter/syn/tree.hero"
 HeroStr h_syntree_shown_args(h_syntree_Tree h0_t, HeroArrayHeader * h1_ids) {
-#line 30703 "main.c"
+#line 30713 "main.c"
     HeroArrayHeader * h2_pieces = {0};
     HeroArrayHeader * h3_xs0 = {0};
     int64_t h4_i0;
@@ -30739,25 +30749,25 @@ bb0:
     t22 = h6_own6;
 #line 182 "examples/interpreter/syn/tree.hero"
     h6_own6 = t1;
-#line 30743 "main.c"
+#line 30753 "main.c"
     hero_array_decref(t22);
 #line 182 "examples/interpreter/syn/tree.hero"
     t23 = h2_pieces;
-#line 30747 "main.c"
+#line 30757 "main.c"
     hero_array_incref(t1);
 #line 182 "examples/interpreter/syn/tree.hero"
     h2_pieces = t1;
-#line 30751 "main.c"
+#line 30761 "main.c"
     hero_array_decref(t23);
 #line 184 "examples/interpreter/syn/tree.hero"
     t2 = h1_ids;
 #line 184 "examples/interpreter/syn/tree.hero"
     t24 = h3_xs0;
-#line 30757 "main.c"
+#line 30767 "main.c"
     hero_array_incref(t2);
 #line 184 "examples/interpreter/syn/tree.hero"
     h3_xs0 = t2;
-#line 30761 "main.c"
+#line 30771 "main.c"
     hero_array_decref(t24);
 #line 184 "examples/interpreter/syn/tree.hero"
     t3 = INT64_C(0);
@@ -30796,7 +30806,7 @@ bb2:
     t25 = h7_own7;
 #line 185 "examples/interpreter/syn/tree.hero"
     h7_own7 = t14;
-#line 30800 "main.c"
+#line 30810 "main.c"
     hero_str_decref(t25);
 #line 185 "examples/interpreter/syn/tree.hero"
     hero_array_push_owned(&h2_pieces, &t14);
@@ -30826,7 +30836,7 @@ bb4:
     t26 = h8_own8;
 #line 187 "examples/interpreter/syn/tree.hero"
     h8_own8 = t21;
-#line 30830 "main.c"
+#line 30840 "main.c"
     hero_str_decref(t26);
     hero_str_incref(t21);
     hero_array_decref(h2_pieces);
@@ -30839,7 +30849,7 @@ bb4:
 
 #line 68 "examples/interpreter/util/each.hero"
 bool h_utileach_is_even(int64_t h0_n) {
-#line 30843 "main.c"
+#line 30853 "main.c"
     int64_t t1;
     int64_t t2;
     int64_t t3;
@@ -30863,12 +30873,12 @@ bb0:
     t5 = t3 == t4;
 #line 69 "examples/interpreter/util/each.hero"
     return t5;
-#line 30867 "main.c"
+#line 30877 "main.c"
 }
 
 #line 71 "examples/interpreter/util/each.hero"
 bool h_utileach_is_negative(int64_t h0_n) {
-#line 30872 "main.c"
+#line 30882 "main.c"
     int64_t t1;
     int64_t t2;
     bool t3;
@@ -30882,12 +30892,12 @@ bb0:
     t3 = t1 < t2;
 #line 72 "examples/interpreter/util/each.hero"
     return t3;
-#line 30886 "main.c"
+#line 30896 "main.c"
 }
 
 #line 74 "examples/interpreter/util/each.hero"
 HeroStr h_utileach_as_text(int64_t h0_n) {
-#line 30891 "main.c"
+#line 30901 "main.c"
     HeroStr h1_own1 = {0};
     int64_t t1;
     HeroStr t2;
@@ -30902,7 +30912,7 @@ bb0:
     t3 = h1_own1;
 #line 75 "examples/interpreter/util/each.hero"
     h1_own1 = t2;
-#line 30906 "main.c"
+#line 30916 "main.c"
     hero_str_decref(t3);
     hero_str_incref(t2);
     hero_str_decref(h1_own1);
@@ -30911,7 +30921,7 @@ bb0:
 
 #line 116 "examples/interpreter/util/each.hero"
 bool h_utileach_is_short(HeroStr h0_word) {
-#line 30915 "main.c"
+#line 30925 "main.c"
     HeroStr t1;
     int64_t t2;
     int64_t t3;
@@ -30928,49 +30938,49 @@ bb0:
     t4 = t2 < t3;
 #line 117 "examples/interpreter/util/each.hero"
     return t4;
-#line 30932 "main.c"
+#line 30942 "main.c"
 }
 
 #line 119 "examples/interpreter/util/each.hero"
 HeroStr h_utileach_itself(HeroStr h0_word) {
-#line 30937 "main.c"
+#line 30947 "main.c"
     HeroStr t1;
     goto bb0;
 bb0:
 #line 120 "examples/interpreter/util/each.hero"
     t1 = h0_word;
-#line 30943 "main.c"
+#line 30953 "main.c"
     hero_str_incref(t1);
     return t1;
 }
 
 #line 109 "<heroes library>"
 int64_t h_library_HERO_OS_OK(void) {
-#line 30950 "main.c"
+#line 30960 "main.c"
     return HERO_OS_OK;
 }
 
 #line 110 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_FOUND(void) {
-#line 30956 "main.c"
+#line 30966 "main.c"
     return HERO_OS_NOT_FOUND;
 }
 
 #line 111 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_TEXT(void) {
-#line 30962 "main.c"
+#line 30972 "main.c"
     return HERO_OS_NOT_TEXT;
 }
 
 #line 112 "<heroes library>"
 int64_t h_library_HERO_OS_BAD_NAME(void) {
-#line 30968 "main.c"
+#line 30978 "main.c"
     return HERO_OS_BAD_NAME;
 }
 
 #line 167 "<heroes library>"
 h_0opt_f87774a h_library_read_file(HeroStr h0_path) {
-#line 30974 "main.c"
+#line 30984 "main.c"
     int64_t *const hero_lend_h1_status = (int64_t *)hero_lend_local(sizeof(int64_t), "library.read_file", "status");
 #define h1_status (*hero_lend_h1_status)
     HeroStr h2_text = {0};
@@ -31049,15 +31059,15 @@ bb0:
     t39 = h4_own4;
 #line 169 "<heroes library>"
     h4_own4 = t3;
-#line 31053 "main.c"
+#line 31063 "main.c"
     hero_str_decref(t39);
 #line 169 "<heroes library>"
     t40 = h2_text;
-#line 31057 "main.c"
+#line 31067 "main.c"
     hero_str_incref(t3);
 #line 169 "<heroes library>"
     h2_text = t3;
-#line 31061 "main.c"
+#line 31071 "main.c"
     hero_str_decref(t40);
 #line 170 "<heroes library>"
     t4 = h1_status;
@@ -31081,7 +31091,7 @@ bb1:
 bb2:
 #line 171 "<heroes library>"
     t7 = h2_text;
-#line 31085 "main.c"
+#line 31095 "main.c"
     hero_str_incref(t7);
 #line 171 "<heroes library>"
     t8 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t7};
@@ -31089,7 +31099,7 @@ bb2:
     t41 = h5_own5;
 #line 171 "<heroes library>"
     h5_own5 = t8;
-#line 31093 "main.c"
+#line 31103 "main.c"
     h_0opt_f87774a_release(&t41);
 #line 171 "<heroes library>"
     h3_ret0 = t8;
@@ -31115,7 +31125,7 @@ bb5:
     t12 = HERO_STR_LIT(hero_str_3e46668);
 #line 175 "<heroes library>"
     t13 = HERO_STR_LIT(hero_str_75aeb685);
-#line 31119 "main.c"
+#line 31129 "main.c"
     hero_str_incref(t12);
     hero_str_incref(t13);
 #line 175 "<heroes library>"
@@ -31124,7 +31134,7 @@ bb5:
     t42 = h6_own6;
 #line 175 "<heroes library>"
     h6_own6 = t14;
-#line 31128 "main.c"
+#line 31138 "main.c"
     h_0opt_f87774a_release(&t42);
 #line 175 "<heroes library>"
     h3_ret0 = t14;
@@ -31158,7 +31168,7 @@ bb8:
     t43 = h7_own7;
 #line 177 "<heroes library>"
     h7_own7 = t21;
-#line 31162 "main.c"
+#line 31172 "main.c"
     hero_str_decref(t43);
     hero_str_incref(t18);
     hero_str_incref(t21);
@@ -31168,7 +31178,7 @@ bb8:
     t44 = h8_own8;
 #line 177 "<heroes library>"
     h8_own8 = t22;
-#line 31172 "main.c"
+#line 31182 "main.c"
     h_0opt_f87774a_release(&t44);
 #line 177 "<heroes library>"
     h3_ret0 = t22;
@@ -31192,7 +31202,7 @@ bb10:
     t45 = h9_own9;
 #line 183 "<heroes library>"
     h9_own9 = t36;
-#line 31196 "main.c"
+#line 31206 "main.c"
     hero_str_decref(t45);
     hero_str_incref(t33);
     hero_str_incref(t36);
@@ -31202,7 +31212,7 @@ bb10:
     t46 = h10_own10;
 #line 183 "<heroes library>"
     h10_own10 = t37;
-#line 31206 "main.c"
+#line 31216 "main.c"
     h_0opt_f87774a_release(&t46);
 #line 183 "<heroes library>"
     h3_ret0 = t37;
@@ -31222,7 +31232,7 @@ bb11:
     t47 = h11_own11;
 #line 182 "<heroes library>"
     h11_own11 = t29;
-#line 31226 "main.c"
+#line 31236 "main.c"
     hero_str_decref(t47);
 #line 182 "<heroes library>"
     t30 = HERO_STR_LIT(hero_str_612f4355);
@@ -31232,7 +31242,7 @@ bb11:
     t48 = h12_own12;
 #line 182 "<heroes library>"
     h12_own12 = t31;
-#line 31236 "main.c"
+#line 31246 "main.c"
     hero_str_decref(t48);
     hero_str_incref(t26);
     hero_str_incref(t31);
@@ -31242,7 +31252,7 @@ bb11:
     t49 = h13_own13;
 #line 182 "<heroes library>"
     h13_own13 = t32;
-#line 31246 "main.c"
+#line 31256 "main.c"
     h_0opt_f87774a_release(&t49);
 #line 182 "<heroes library>"
     h3_ret0 = t32;
@@ -31254,7 +31264,7 @@ bb12:
     goto bb10;
 #line 182 "<heroes library>"
 bb13:
-#line 31258 "main.c"
+#line 31268 "main.c"
     t38 = h3_ret0;
     h_0opt_f87774a_retain(&t38);
     hero_str_decref(h2_text);
@@ -31275,7 +31285,7 @@ bb13:
 
 #line 196 "<heroes library>"
 HeroArrayHeader * h_library_args(void) {
-#line 31279 "main.c"
+#line 31289 "main.c"
     HeroArrayHeader * h0_out = {0};
     int64_t h1_i;
     HeroArrayHeader * h2_own2 = {0};
@@ -31302,15 +31312,15 @@ bb0:
     t14 = h2_own2;
 #line 197 "<heroes library>"
     h2_own2 = t1;
-#line 31306 "main.c"
+#line 31316 "main.c"
     hero_array_decref(t14);
 #line 197 "<heroes library>"
     t15 = h0_out;
-#line 31310 "main.c"
+#line 31320 "main.c"
     hero_array_incref(t1);
 #line 197 "<heroes library>"
     h0_out = t1;
-#line 31314 "main.c"
+#line 31324 "main.c"
     hero_array_decref(t15);
 #line 198 "<heroes library>"
     t2 = INT64_C(0);
@@ -31336,7 +31346,7 @@ bb2:
     t16 = h3_own3;
 #line 200 "<heroes library>"
     h3_own3 = t8;
-#line 31340 "main.c"
+#line 31350 "main.c"
     hero_str_decref(t16);
 #line 200 "<heroes library>"
     hero_array_push_owned(&h0_out, &t8);
@@ -31352,7 +31362,7 @@ bb2:
 #line 201 "<heroes library>"
 bb3:
     t13 = h0_out;
-#line 31356 "main.c"
+#line 31366 "main.c"
     hero_array_incref(t13);
     hero_array_decref(h0_out);
     hero_array_decref(h2_own2);
@@ -31362,7 +31372,7 @@ bb3:
 
 #line 227 "<heroes library>"
 void h_library_exit(int64_t h0_code) {
-#line 31366 "main.c"
+#line 31376 "main.c"
     int64_t t1;
     goto bb0;
 bb0:
@@ -31372,14 +31382,14 @@ bb0:
     (void)hero_exit(t1);
 #line 228 "<heroes library>"
     return;
-#line 31376 "main.c"
+#line 31386 "main.c"
 }
 
 #line 24 "examples/interpreter/util/each.hero"
 /* counted<Token> */
 #line 24 "examples/interpreter/util/each.hero"
 HERO_TU_LOCAL int64_t h_utileach_counted_517bb1b4(HeroArrayHeader * h0_xs, h_0fn_516de6fc h1_fits) {
-#line 31383 "main.c"
+#line 31393 "main.c"
     int64_t h2_total;
     HeroArrayHeader * h3_xs0 = {0};
     int64_t h4_i0;
@@ -31416,11 +31426,11 @@ bb0:
     t2 = h0_xs;
 #line 27 "examples/interpreter/util/each.hero"
     t21 = h3_xs0;
-#line 31420 "main.c"
+#line 31430 "main.c"
     hero_array_incref(t2);
 #line 27 "examples/interpreter/util/each.hero"
     h3_xs0 = t2;
-#line 31424 "main.c"
+#line 31434 "main.c"
     hero_array_decref(t21);
 #line 27 "examples/interpreter/util/each.hero"
     t3 = INT64_C(0);
@@ -31450,11 +31460,11 @@ bb2:
     t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(h_lextoken_Token) ? hero_unreachable() : (void)0), ((h_lextoken_Token const *)(const void *)(t8 + 1))[t9]);
 #line 27 "examples/interpreter/util/each.hero"
     t22 = h5_one;
-#line 31454 "main.c"
+#line 31464 "main.c"
     h_lextoken_Token_retain(&t10);
 #line 27 "examples/interpreter/util/each.hero"
     h5_one = t10;
-#line 31458 "main.c"
+#line 31468 "main.c"
     h_lextoken_Token_release(&t22);
 #line 28 "examples/interpreter/util/each.hero"
     t11 = h1_fits;
@@ -31480,7 +31490,7 @@ bb3:
 bb4:
 #line 31 "examples/interpreter/util/each.hero"
     t20 = h2_total;
-#line 31484 "main.c"
+#line 31494 "main.c"
     hero_array_decref(h3_xs0);
     h_lextoken_Token_release(&h5_one);
     return t20;
@@ -31501,14 +31511,14 @@ bb6:
 bb7:
 #line 29 "examples/interpreter/util/each.hero"
     goto bb5;
-#line 31505 "main.c"
+#line 31515 "main.c"
 }
 
 #line 48 "examples/interpreter/util/each.hero"
 /* joined<Value> */
 #line 48 "examples/interpreter/util/each.hero"
 HERO_TU_LOCAL HeroStr h_utileach_joined_72b72b0c(HeroArrayHeader * h0_xs, h_0fn_23d647b0 h1_shown, HeroStr h2_sep) {
-#line 31512 "main.c"
+#line 31522 "main.c"
     HeroArrayHeader * h3_pieces = {0};
     HeroArrayHeader * h4_xs0 = {0};
     int64_t h5_i0;
@@ -31549,25 +31559,25 @@ bb0:
     t22 = h7_own7;
 #line 49 "examples/interpreter/util/each.hero"
     h7_own7 = t1;
-#line 31553 "main.c"
+#line 31563 "main.c"
     hero_array_decref(t22);
 #line 49 "examples/interpreter/util/each.hero"
     t23 = h3_pieces;
-#line 31557 "main.c"
+#line 31567 "main.c"
     hero_array_incref(t1);
 #line 49 "examples/interpreter/util/each.hero"
     h3_pieces = t1;
-#line 31561 "main.c"
+#line 31571 "main.c"
     hero_array_decref(t23);
 #line 51 "examples/interpreter/util/each.hero"
     t2 = h0_xs;
 #line 51 "examples/interpreter/util/each.hero"
     t24 = h4_xs0;
-#line 31567 "main.c"
+#line 31577 "main.c"
     hero_array_incref(t2);
 #line 51 "examples/interpreter/util/each.hero"
     h4_xs0 = t2;
-#line 31571 "main.c"
+#line 31581 "main.c"
     hero_array_decref(t24);
 #line 51 "examples/interpreter/util/each.hero"
     t3 = INT64_C(0);
@@ -31597,11 +31607,11 @@ bb2:
     t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(h_runvalue_Value) ? hero_unreachable() : (void)0), ((h_runvalue_Value const *)(const void *)(t8 + 1))[t9]);
 #line 51 "examples/interpreter/util/each.hero"
     t25 = h6_one;
-#line 31601 "main.c"
+#line 31611 "main.c"
     h_runvalue_Value_retain(&t10);
 #line 51 "examples/interpreter/util/each.hero"
     h6_one = t10;
-#line 31605 "main.c"
+#line 31615 "main.c"
     h_runvalue_Value_release(&t25);
 #line 52 "examples/interpreter/util/each.hero"
     t12 = h1_shown;
@@ -31613,7 +31623,7 @@ bb2:
     t26 = h8_own8;
 #line 52 "examples/interpreter/util/each.hero"
     h8_own8 = t14;
-#line 31617 "main.c"
+#line 31627 "main.c"
     hero_str_decref(t26);
 #line 52 "examples/interpreter/util/each.hero"
     hero_array_push_owned(&h3_pieces, &t14);
@@ -31643,7 +31653,7 @@ bb4:
     t27 = h9_own9;
 #line 54 "examples/interpreter/util/each.hero"
     h9_own9 = t21;
-#line 31647 "main.c"
+#line 31657 "main.c"
     hero_str_decref(t27);
     hero_str_incref(t21);
     hero_array_decref(h3_pieces);
@@ -31659,7 +31669,7 @@ bb4:
 /* wanted<i64> */
 #line 150 "examples/interpreter/run/value.hero"
 HERO_TU_LOCAL h_0opt_e201354 h_runvalue_wanted_1b9a87(HeroStr h0_what, h_runvalue_Value h1_v) {
-#line 31663 "main.c"
+#line 31673 "main.c"
     HeroStr h2_own2 = {0};
     HeroStr h3_own3 = {0};
     HeroStr h4_own4 = {0};
@@ -31705,7 +31715,7 @@ bb0:
     t18 = h2_own2;
 #line 151 "examples/interpreter/run/value.hero"
     h2_own2 = t1;
-#line 31709 "main.c"
+#line 31719 "main.c"
     hero_str_decref(t18);
 #line 151 "examples/interpreter/run/value.hero"
     t2 = HERO_STR_LIT(hero_str_73a616c5);
@@ -31717,7 +31727,7 @@ bb0:
     t19 = h3_own3;
 #line 151 "examples/interpreter/run/value.hero"
     h3_own3 = t4;
-#line 31721 "main.c"
+#line 31731 "main.c"
     hero_str_decref(t19);
 #line 151 "examples/interpreter/run/value.hero"
     t5 = HERO_STR_LIT(hero_str_7f933ce3);
@@ -31727,7 +31737,7 @@ bb0:
     t20 = h4_own4;
 #line 151 "examples/interpreter/run/value.hero"
     h4_own4 = t6;
-#line 31731 "main.c"
+#line 31741 "main.c"
     hero_str_decref(t20);
 #line 151 "examples/interpreter/run/value.hero"
     t7 = h1_v;
@@ -31737,7 +31747,7 @@ bb0:
     t21 = h5_own5;
 #line 151 "examples/interpreter/run/value.hero"
     h5_own5 = t8;
-#line 31741 "main.c"
+#line 31751 "main.c"
     hero_str_decref(t21);
 #line 151 "examples/interpreter/run/value.hero"
     t9 = hero_str_concat(t6, t8);
@@ -31745,7 +31755,7 @@ bb0:
     t22 = h6_own6;
 #line 151 "examples/interpreter/run/value.hero"
     h6_own6 = t9;
-#line 31749 "main.c"
+#line 31759 "main.c"
     hero_str_decref(t22);
 #line 151 "examples/interpreter/run/value.hero"
     t10 = HERO_STR_LIT(hero_str_875f8);
@@ -31755,7 +31765,7 @@ bb0:
     t23 = h7_own7;
 #line 151 "examples/interpreter/run/value.hero"
     h7_own7 = t11;
-#line 31759 "main.c"
+#line 31769 "main.c"
     hero_str_decref(t23);
 #line 151 "examples/interpreter/run/value.hero"
     t12 = h1_v;
@@ -31765,7 +31775,7 @@ bb0:
     t24 = h8_own8;
 #line 151 "examples/interpreter/run/value.hero"
     h8_own8 = t13;
-#line 31769 "main.c"
+#line 31779 "main.c"
     hero_str_decref(t24);
 #line 151 "examples/interpreter/run/value.hero"
     t14 = hero_str_concat(t11, t13);
@@ -31773,7 +31783,7 @@ bb0:
     t25 = h9_own9;
 #line 151 "examples/interpreter/run/value.hero"
     h9_own9 = t14;
-#line 31777 "main.c"
+#line 31787 "main.c"
     hero_str_decref(t25);
 #line 151 "examples/interpreter/run/value.hero"
     t15 = HERO_STR_LIT(hero_str_3149);
@@ -31783,7 +31793,7 @@ bb0:
     t26 = h10_own10;
 #line 151 "examples/interpreter/run/value.hero"
     h10_own10 = t16;
-#line 31787 "main.c"
+#line 31797 "main.c"
     hero_str_decref(t26);
     hero_str_incref(t1);
     hero_str_incref(t16);
@@ -31793,7 +31803,7 @@ bb0:
     t27 = h11_own11;
 #line 151 "examples/interpreter/run/value.hero"
     h11_own11 = t17;
-#line 31797 "main.c"
+#line 31807 "main.c"
     h_0opt_e201354_release(&t27);
     h_0opt_e201354_retain(&t17);
     hero_str_decref(h2_own2);
@@ -31813,7 +31823,7 @@ bb0:
 /* wanted<str> */
 #line 150 "examples/interpreter/run/value.hero"
 HERO_TU_LOCAL h_0opt_f87774a h_runvalue_wanted_1e58d9(HeroStr h0_what, h_runvalue_Value h1_v) {
-#line 31817 "main.c"
+#line 31827 "main.c"
     HeroStr h2_own2 = {0};
     HeroStr h3_own3 = {0};
     HeroStr h4_own4 = {0};
@@ -31859,7 +31869,7 @@ bb0:
     t18 = h2_own2;
 #line 151 "examples/interpreter/run/value.hero"
     h2_own2 = t1;
-#line 31863 "main.c"
+#line 31873 "main.c"
     hero_str_decref(t18);
 #line 151 "examples/interpreter/run/value.hero"
     t2 = HERO_STR_LIT(hero_str_73a616c5);
@@ -31871,7 +31881,7 @@ bb0:
     t19 = h3_own3;
 #line 151 "examples/interpreter/run/value.hero"
     h3_own3 = t4;
-#line 31875 "main.c"
+#line 31885 "main.c"
     hero_str_decref(t19);
 #line 151 "examples/interpreter/run/value.hero"
     t5 = HERO_STR_LIT(hero_str_7f933ce3);
@@ -31881,7 +31891,7 @@ bb0:
     t20 = h4_own4;
 #line 151 "examples/interpreter/run/value.hero"
     h4_own4 = t6;
-#line 31885 "main.c"
+#line 31895 "main.c"
     hero_str_decref(t20);
 #line 151 "examples/interpreter/run/value.hero"
     t7 = h1_v;
@@ -31891,7 +31901,7 @@ bb0:
     t21 = h5_own5;
 #line 151 "examples/interpreter/run/value.hero"
     h5_own5 = t8;
-#line 31895 "main.c"
+#line 31905 "main.c"
     hero_str_decref(t21);
 #line 151 "examples/interpreter/run/value.hero"
     t9 = hero_str_concat(t6, t8);
@@ -31899,7 +31909,7 @@ bb0:
     t22 = h6_own6;
 #line 151 "examples/interpreter/run/value.hero"
     h6_own6 = t9;
-#line 31903 "main.c"
+#line 31913 "main.c"
     hero_str_decref(t22);
 #line 151 "examples/interpreter/run/value.hero"
     t10 = HERO_STR_LIT(hero_str_875f8);
@@ -31909,7 +31919,7 @@ bb0:
     t23 = h7_own7;
 #line 151 "examples/interpreter/run/value.hero"
     h7_own7 = t11;
-#line 31913 "main.c"
+#line 31923 "main.c"
     hero_str_decref(t23);
 #line 151 "examples/interpreter/run/value.hero"
     t12 = h1_v;
@@ -31919,7 +31929,7 @@ bb0:
     t24 = h8_own8;
 #line 151 "examples/interpreter/run/value.hero"
     h8_own8 = t13;
-#line 31923 "main.c"
+#line 31933 "main.c"
     hero_str_decref(t24);
 #line 151 "examples/interpreter/run/value.hero"
     t14 = hero_str_concat(t11, t13);
@@ -31927,7 +31937,7 @@ bb0:
     t25 = h9_own9;
 #line 151 "examples/interpreter/run/value.hero"
     h9_own9 = t14;
-#line 31931 "main.c"
+#line 31941 "main.c"
     hero_str_decref(t25);
 #line 151 "examples/interpreter/run/value.hero"
     t15 = HERO_STR_LIT(hero_str_3149);
@@ -31937,7 +31947,7 @@ bb0:
     t26 = h10_own10;
 #line 151 "examples/interpreter/run/value.hero"
     h10_own10 = t16;
-#line 31941 "main.c"
+#line 31951 "main.c"
     hero_str_decref(t26);
     hero_str_incref(t1);
     hero_str_incref(t16);
@@ -31947,7 +31957,7 @@ bb0:
     t27 = h11_own11;
 #line 151 "examples/interpreter/run/value.hero"
     h11_own11 = t17;
-#line 31951 "main.c"
+#line 31961 "main.c"
     h_0opt_f87774a_release(&t27);
     h_0opt_f87774a_retain(&t17);
     hero_str_decref(h2_own2);
@@ -31967,7 +31977,7 @@ bb0:
 /* every<str> */
 #line 59 "examples/interpreter/util/each.hero"
 HERO_TU_LOCAL bool h_utileach_every_1e58d9(HeroArrayHeader * h0_xs, h_0fn_3126f763 h1_fits) {
-#line 31971 "main.c"
+#line 31981 "main.c"
     HeroArrayHeader * h2_xs0 = {0};
     int64_t h3_i0;
     HeroStr h4_one = {0};
@@ -31999,11 +32009,11 @@ bb0:
     t1 = h0_xs;
 #line 60 "examples/interpreter/util/each.hero"
     t20 = h2_xs0;
-#line 32003 "main.c"
+#line 32013 "main.c"
     hero_array_incref(t1);
 #line 60 "examples/interpreter/util/each.hero"
     h2_xs0 = t1;
-#line 32007 "main.c"
+#line 32017 "main.c"
     hero_array_decref(t20);
 #line 60 "examples/interpreter/util/each.hero"
     t2 = INT64_C(0);
@@ -32033,11 +32043,11 @@ bb2:
     t9 = ((void)((t7 == NULL || t8 < 0 || t8 >= t7->len) ? ((void)hero_array_at(t7, t8), hero_unreachable()) : (void)0), (void)(t7->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t7 + 1))[t8]);
 #line 60 "examples/interpreter/util/each.hero"
     t21 = h4_one;
-#line 32037 "main.c"
+#line 32047 "main.c"
     hero_str_incref(t9);
 #line 60 "examples/interpreter/util/each.hero"
     h4_one = t9;
-#line 32041 "main.c"
+#line 32051 "main.c"
     hero_str_decref(t21);
 #line 61 "examples/interpreter/util/each.hero"
     t10 = h1_fits;
@@ -32087,7 +32097,7 @@ bb7:
     goto bb5;
 #line 62 "examples/interpreter/util/each.hero"
 bb8:
-#line 32091 "main.c"
+#line 32101 "main.c"
     t19 = h5_ret0;
     hero_array_decref(h2_xs0);
     hero_str_decref(h4_one);
@@ -32098,7 +32108,7 @@ bb8:
 /* joined<str> */
 #line 48 "examples/interpreter/util/each.hero"
 HERO_TU_LOCAL HeroStr h_utileach_joined_1e58d9(HeroArrayHeader * h0_xs, h_0fn_6f1dc5d7 h1_shown, HeroStr h2_sep) {
-#line 32102 "main.c"
+#line 32112 "main.c"
     HeroArrayHeader * h3_pieces = {0};
     HeroArrayHeader * h4_xs0 = {0};
     int64_t h5_i0;
@@ -32139,25 +32149,25 @@ bb0:
     t22 = h7_own7;
 #line 49 "examples/interpreter/util/each.hero"
     h7_own7 = t1;
-#line 32143 "main.c"
+#line 32153 "main.c"
     hero_array_decref(t22);
 #line 49 "examples/interpreter/util/each.hero"
     t23 = h3_pieces;
-#line 32147 "main.c"
+#line 32157 "main.c"
     hero_array_incref(t1);
 #line 49 "examples/interpreter/util/each.hero"
     h3_pieces = t1;
-#line 32151 "main.c"
+#line 32161 "main.c"
     hero_array_decref(t23);
 #line 51 "examples/interpreter/util/each.hero"
     t2 = h0_xs;
 #line 51 "examples/interpreter/util/each.hero"
     t24 = h4_xs0;
-#line 32157 "main.c"
+#line 32167 "main.c"
     hero_array_incref(t2);
 #line 51 "examples/interpreter/util/each.hero"
     h4_xs0 = t2;
-#line 32161 "main.c"
+#line 32171 "main.c"
     hero_array_decref(t24);
 #line 51 "examples/interpreter/util/each.hero"
     t3 = INT64_C(0);
@@ -32187,11 +32197,11 @@ bb2:
     t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t8 + 1))[t9]);
 #line 51 "examples/interpreter/util/each.hero"
     t25 = h6_one;
-#line 32191 "main.c"
+#line 32201 "main.c"
     hero_str_incref(t10);
 #line 51 "examples/interpreter/util/each.hero"
     h6_one = t10;
-#line 32195 "main.c"
+#line 32205 "main.c"
     hero_str_decref(t25);
 #line 52 "examples/interpreter/util/each.hero"
     t12 = h1_shown;
@@ -32203,7 +32213,7 @@ bb2:
     t26 = h8_own8;
 #line 52 "examples/interpreter/util/each.hero"
     h8_own8 = t14;
-#line 32207 "main.c"
+#line 32217 "main.c"
     hero_str_decref(t26);
 #line 52 "examples/interpreter/util/each.hero"
     hero_array_push_owned(&h3_pieces, &t14);
@@ -32233,7 +32243,7 @@ bb4:
     t27 = h9_own9;
 #line 54 "examples/interpreter/util/each.hero"
     h9_own9 = t21;
-#line 32237 "main.c"
+#line 32247 "main.c"
     hero_str_decref(t27);
     hero_str_incref(t21);
     hero_array_decref(h3_pieces);
@@ -32249,7 +32259,7 @@ bb4:
 /* counted<i64> */
 #line 24 "examples/interpreter/util/each.hero"
 HERO_TU_LOCAL int64_t h_utileach_counted_1b9a87(HeroArrayHeader * h0_xs, h_0fn_3d242f50 h1_fits) {
-#line 32253 "main.c"
+#line 32263 "main.c"
     int64_t h2_total;
     HeroArrayHeader * h3_xs0 = {0};
     int64_t h4_i0;
@@ -32285,11 +32295,11 @@ bb0:
     t2 = h0_xs;
 #line 27 "examples/interpreter/util/each.hero"
     t21 = h3_xs0;
-#line 32289 "main.c"
+#line 32299 "main.c"
     hero_array_incref(t2);
 #line 27 "examples/interpreter/util/each.hero"
     h3_xs0 = t2;
-#line 32293 "main.c"
+#line 32303 "main.c"
     hero_array_decref(t21);
 #line 27 "examples/interpreter/util/each.hero"
     t3 = INT64_C(0);
@@ -32342,7 +32352,7 @@ bb3:
 bb4:
 #line 31 "examples/interpreter/util/each.hero"
     t20 = h2_total;
-#line 32346 "main.c"
+#line 32356 "main.c"
     hero_array_decref(h3_xs0);
     return t20;
 bb5:
@@ -32362,14 +32372,14 @@ bb6:
 bb7:
 #line 29 "examples/interpreter/util/each.hero"
     goto bb5;
-#line 32366 "main.c"
+#line 32376 "main.c"
 }
 
 #line 39 "examples/interpreter/util/each.hero"
 /* first_of<i64> */
 #line 39 "examples/interpreter/util/each.hero"
 HERO_TU_LOCAL int64_t h_utileach_first_of_1b9a87(HeroArrayHeader * h0_xs, h_0fn_3d242f50 h1_fits, int64_t h2_fallback) {
-#line 32373 "main.c"
+#line 32383 "main.c"
     HeroArrayHeader * h3_xs0 = {0};
     int64_t h4_i0;
     int64_t h5_one;
@@ -32399,11 +32409,11 @@ bb0:
     t1 = h0_xs;
 #line 40 "examples/interpreter/util/each.hero"
     t19 = h3_xs0;
-#line 32403 "main.c"
+#line 32413 "main.c"
     hero_array_incref(t1);
 #line 40 "examples/interpreter/util/each.hero"
     h3_xs0 = t1;
-#line 32407 "main.c"
+#line 32417 "main.c"
     hero_array_decref(t19);
 #line 40 "examples/interpreter/util/each.hero"
     t2 = INT64_C(0);
@@ -32478,7 +32488,7 @@ bb7:
     goto bb5;
 #line 42 "examples/interpreter/util/each.hero"
 bb8:
-#line 32482 "main.c"
+#line 32492 "main.c"
     t18 = h6_ret0;
     hero_array_decref(h3_xs0);
     return t18;
@@ -32488,7 +32498,7 @@ bb8:
 /* joined<i64> */
 #line 48 "examples/interpreter/util/each.hero"
 HERO_TU_LOCAL HeroStr h_utileach_joined_1b9a87(HeroArrayHeader * h0_xs, h_0fn_4a13fb08 h1_shown, HeroStr h2_sep) {
-#line 32492 "main.c"
+#line 32502 "main.c"
     HeroArrayHeader * h3_pieces = {0};
     HeroArrayHeader * h4_xs0 = {0};
     int64_t h5_i0;
@@ -32528,25 +32538,25 @@ bb0:
     t22 = h7_own7;
 #line 49 "examples/interpreter/util/each.hero"
     h7_own7 = t1;
-#line 32532 "main.c"
+#line 32542 "main.c"
     hero_array_decref(t22);
 #line 49 "examples/interpreter/util/each.hero"
     t23 = h3_pieces;
-#line 32536 "main.c"
+#line 32546 "main.c"
     hero_array_incref(t1);
 #line 49 "examples/interpreter/util/each.hero"
     h3_pieces = t1;
-#line 32540 "main.c"
+#line 32550 "main.c"
     hero_array_decref(t23);
 #line 51 "examples/interpreter/util/each.hero"
     t2 = h0_xs;
 #line 51 "examples/interpreter/util/each.hero"
     t24 = h4_xs0;
-#line 32546 "main.c"
+#line 32556 "main.c"
     hero_array_incref(t2);
 #line 51 "examples/interpreter/util/each.hero"
     h4_xs0 = t2;
-#line 32550 "main.c"
+#line 32560 "main.c"
     hero_array_decref(t24);
 #line 51 "examples/interpreter/util/each.hero"
     t3 = INT64_C(0);
@@ -32585,7 +32595,7 @@ bb2:
     t25 = h8_own8;
 #line 52 "examples/interpreter/util/each.hero"
     h8_own8 = t14;
-#line 32589 "main.c"
+#line 32599 "main.c"
     hero_str_decref(t25);
 #line 52 "examples/interpreter/util/each.hero"
     hero_array_push_owned(&h3_pieces, &t14);
@@ -32615,7 +32625,7 @@ bb4:
     t26 = h9_own9;
 #line 54 "examples/interpreter/util/each.hero"
     h9_own9 = t21;
-#line 32619 "main.c"
+#line 32629 "main.c"
     hero_str_decref(t26);
     hero_str_incref(t21);
     hero_array_decref(h3_pieces);
@@ -32630,7 +32640,7 @@ bb4:
 /* every<i64> */
 #line 59 "examples/interpreter/util/each.hero"
 HERO_TU_LOCAL bool h_utileach_every_1b9a87(HeroArrayHeader * h0_xs, h_0fn_3d242f50 h1_fits) {
-#line 32634 "main.c"
+#line 32644 "main.c"
     HeroArrayHeader * h2_xs0 = {0};
     int64_t h3_i0;
     int64_t h4_one;
@@ -32661,11 +32671,11 @@ bb0:
     t1 = h0_xs;
 #line 60 "examples/interpreter/util/each.hero"
     t20 = h2_xs0;
-#line 32665 "main.c"
+#line 32675 "main.c"
     hero_array_incref(t1);
 #line 60 "examples/interpreter/util/each.hero"
     h2_xs0 = t1;
-#line 32669 "main.c"
+#line 32679 "main.c"
     hero_array_decref(t20);
 #line 60 "examples/interpreter/util/each.hero"
     t2 = INT64_C(0);
@@ -32742,7 +32752,7 @@ bb7:
     goto bb5;
 #line 62 "examples/interpreter/util/each.hero"
 bb8:
-#line 32746 "main.c"
+#line 32756 "main.c"
     t19 = h5_ret0;
     hero_array_decref(h2_xs0);
     return t19;
@@ -32752,7 +32762,7 @@ bb8:
 /* counted<str> */
 #line 24 "examples/interpreter/util/each.hero"
 HERO_TU_LOCAL int64_t h_utileach_counted_1e58d9(HeroArrayHeader * h0_xs, h_0fn_3126f763 h1_fits) {
-#line 32756 "main.c"
+#line 32766 "main.c"
     int64_t h2_total;
     HeroArrayHeader * h3_xs0 = {0};
     int64_t h4_i0;
@@ -32789,11 +32799,11 @@ bb0:
     t2 = h0_xs;
 #line 27 "examples/interpreter/util/each.hero"
     t21 = h3_xs0;
-#line 32793 "main.c"
+#line 32803 "main.c"
     hero_array_incref(t2);
 #line 27 "examples/interpreter/util/each.hero"
     h3_xs0 = t2;
-#line 32797 "main.c"
+#line 32807 "main.c"
     hero_array_decref(t21);
 #line 27 "examples/interpreter/util/each.hero"
     t3 = INT64_C(0);
@@ -32823,11 +32833,11 @@ bb2:
     t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t8 + 1))[t9]);
 #line 27 "examples/interpreter/util/each.hero"
     t22 = h5_one;
-#line 32827 "main.c"
+#line 32837 "main.c"
     hero_str_incref(t10);
 #line 27 "examples/interpreter/util/each.hero"
     h5_one = t10;
-#line 32831 "main.c"
+#line 32841 "main.c"
     hero_str_decref(t22);
 #line 28 "examples/interpreter/util/each.hero"
     t11 = h1_fits;
@@ -32853,7 +32863,7 @@ bb3:
 bb4:
 #line 31 "examples/interpreter/util/each.hero"
     t20 = h2_total;
-#line 32857 "main.c"
+#line 32867 "main.c"
     hero_array_decref(h3_xs0);
     hero_str_decref(h5_one);
     return t20;
@@ -32874,14 +32884,14 @@ bb6:
 bb7:
 #line 29 "examples/interpreter/util/each.hero"
     goto bb5;
-#line 32878 "main.c"
+#line 32888 "main.c"
 }
 
 #line 39 "examples/interpreter/util/each.hero"
 /* first_of<str> */
 #line 39 "examples/interpreter/util/each.hero"
 HERO_TU_LOCAL HeroStr h_utileach_first_of_1e58d9(HeroArrayHeader * h0_xs, h_0fn_3126f763 h1_fits, HeroStr h2_fallback) {
-#line 32885 "main.c"
+#line 32895 "main.c"
     HeroArrayHeader * h3_xs0 = {0};
     int64_t h4_i0;
     HeroStr h5_one = {0};
@@ -32912,11 +32922,11 @@ bb0:
     t1 = h0_xs;
 #line 40 "examples/interpreter/util/each.hero"
     t19 = h3_xs0;
-#line 32916 "main.c"
+#line 32926 "main.c"
     hero_array_incref(t1);
 #line 40 "examples/interpreter/util/each.hero"
     h3_xs0 = t1;
-#line 32920 "main.c"
+#line 32930 "main.c"
     hero_array_decref(t19);
 #line 40 "examples/interpreter/util/each.hero"
     t2 = INT64_C(0);
@@ -32946,11 +32956,11 @@ bb2:
     t9 = ((void)((t7 == NULL || t8 < 0 || t8 >= t7->len) ? ((void)hero_array_at(t7, t8), hero_unreachable()) : (void)0), (void)(t7->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t7 + 1))[t8]);
 #line 40 "examples/interpreter/util/each.hero"
     t20 = h5_one;
-#line 32950 "main.c"
+#line 32960 "main.c"
     hero_str_incref(t9);
 #line 40 "examples/interpreter/util/each.hero"
     h5_one = t9;
-#line 32954 "main.c"
+#line 32964 "main.c"
     hero_str_decref(t20);
 #line 41 "examples/interpreter/util/each.hero"
     t10 = h1_fits;
@@ -32998,7 +33008,7 @@ bb7:
     goto bb5;
 #line 42 "examples/interpreter/util/each.hero"
 bb8:
-#line 33002 "main.c"
+#line 33012 "main.c"
     t18 = h6_ret0;
     hero_str_incref(t18);
     hero_array_decref(h3_xs0);
