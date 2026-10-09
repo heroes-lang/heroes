@@ -1,0 +1,5 @@
+use geom
+
+function main()
+    r = geom.Rect(corner: geom.Point(x: 0.0, y: 0.0), width: 3.0, height: 4.0)
+    print(geom.area(r: r).to_str())

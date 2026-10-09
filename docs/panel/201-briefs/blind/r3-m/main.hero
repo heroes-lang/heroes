@@ -1,0 +1,10 @@
+# Count down by turns, and say who reached zero.
+
+function ping(n: i64) -> str
+    return pong(n - 1)
+
+function pong(n: i64) -> str
+    return ping(n - 1)
+
+function main()
+    print(ping(10))

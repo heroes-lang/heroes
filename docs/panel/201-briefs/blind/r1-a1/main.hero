@@ -1,0 +1,12 @@
+# Apply a function to a value, and the identity.
+
+function ident<A>(x: A) -> A
+    return x
+
+function app<A>(f: (function(A) -> A), x: A) -> A
+    return f(x)
+
+function main()
+    ns = [1, 2, 3]
+    print(app(f: ident, x: 20).to_str())
+    print(ns.map(ident).len().to_str())
