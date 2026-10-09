@@ -37,6 +37,11 @@ neither file, measured). It is in force by the flag, by `rebase.autoStash` or
 `merge.autoStash` from any configuration git reads, `-c` and the environment
 included, and refused where the tree holds such a change; `--no-autostash`
 lifts it, and git then refuses over a change it would lose.
+
+**And what names its paths is read too** (defect 529, `overwrites.py`): a
+restore of the index, a checkout from a commit, a forced removal or move, a
+reset of the index alone, by its paths or of the whole index, are refused
+where a path they name holds a staged change they would throw away.
 """
 
 import os
@@ -46,12 +51,18 @@ import subprocess
 import commits
 import staged
 
+# `overwrites.py`, imported by `verdict` the first time a verb of its own is
+# read: every git command imports this module, and most name none of them.
+overwrites = None
+
 CONTRACT = "CLAUDE.md § Hard stops"
 ASSIGNMENT = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*=")
 # The verbs read here: the ones whose `--abort` or `--skip` ends an operation,
-# the reset, and the ones that may begin with an autostash.
+# the reset, the ones that may begin with an autostash, and the ones that
+# write over the paths they name (defect 529).
 ENDING = ("merge", "cherry-pick", "revert", "rebase", "am")
-VERBS = ENDING + ("reset", "checkout", "switch", "pull")
+NAMING = ("restore", "rm", "mv")
+VERBS = ENDING + ("reset", "checkout", "switch", "pull") + NAMING
 # The ends that put back every tracked file, an unstaged change as well.
 HARD = frozenset({"rebase"})
 # The words with which a rebase or a merge does not begin one, and so takes
@@ -351,22 +362,30 @@ def autostash(verb, words, where, options, env):
     )
 
 
-def verdict(verb, words, where, options=(), env=None):
+def verdict(verb, words, where, options=(), env=None, line=None):
     """A refusal for `git <options> <verb> <words>` run in `where`, or None.
     `options` are git's own before the verb, `-C` left out, `where` having
-    read it; `env` the environment the command runs with."""
+    read it; `env` the environment the command runs with; `line` the whole
+    command line, which a list of paths it writes is read against."""
+    global overwrites
     if where is None:
         return None
     env = dict(os.environ) if env is None else env
+    if overwrites is None and verb in ("reset", "checkout") + NAMING:
+        import overwrites as overwrites_module
+
+        overwrites = overwrites_module
     if verb == "reset":
         mode = reset_mode(words)
         if mode in ("--hard", "--merge"):
             return thrown_away(where, "git reset " + mode, hard=mode == "--hard")
-        return None
+        return overwrites.verdict(verb, words, where, options, env, line)
     if verb in ("checkout", "switch"):
         if forced(verb, words, where):
             return thrown_away(where, "git " + verb + " " + ("--discard-changes" if verb == "switch" else "-f"), hard=True)
-        return None
+        return overwrites.verdict(verb, words, where, options, env, line) if verb == "checkout" else None
+    if verb in NAMING:
+        return overwrites.verdict(verb, words, where, options, env, line)
     if verb in ENDING:
         how = ends(verb, words)
         if how is not None:
