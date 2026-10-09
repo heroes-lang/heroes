@@ -308,15 +308,19 @@ function type_closer(@c: cursor.Cursor, text: str, open: i64) -> token.Span
 #
 # And a `(` the parser told C's `for` header at, whose `)` left out is that
 # header's, which the report says to rewrite whole (defect 302).
+#
+# And an opener a report of `said` carries, the one edit it names closing it
+# too (defect 459, `diag.carried`).
 function withdrawn(lexed: [diag.Diagnostic], said: [diag.Diagnostic], text: str) -> [diag.Diagnostic]
     out: [diag.Diagnostic] @ []
+    carried = diag.carried(said)
 
     for d in lexed
         opener = cursor.slice_of(text, d.span)
         brace = opener == "{" && spoken_at(said, at: d.span.start, code: "")
         header = opener == "(" && spoken_at(said, at: d.span.start, code: "for_missing_in")
 
-        if !(d.code == "unclosed_bracket" && (brace || header))
+        if !(d.code == "unclosed_bracket" && (brace || header || !carried[d.span.start].is_err()))
             out @ out.push(d)
 
     return out
@@ -382,3 +386,24 @@ test "a closer of another kind is the one an opener is recovered past"
     recover_past_pair(@c, text, open: 1)
     assert c.tokens[c.pos].kind == .terminator
     assert c.pos == 5
+
+# Defect 459: the lexer's report of an opener is withdrawn where a report the
+# parser says carries it, and stands where none does, or where the one that
+# carries it was not said.
+test "a report that carries an opener withdraws the lexer's report of it, and only then"
+    text = "x = [[1, 2\nprint(x)\ny = 3 )\n"
+    outer = diag.new_diagnostic(code: "unclosed_bracket", message: "m", span: token.Span(start: 4, end: 5))
+    binding: diag.Diagnostic @ diag.new_diagnostic(
+        code: "expected_separator",
+        message: "m",
+        span: token.Span(start: 22, end: 23)
+    )
+    assert withdrawn(lexed: [outer], said: [binding], text: text).len() == 1
+    binding.carries @ [token.Span(start: 4, end: 5)]
+    assert withdrawn(lexed: [outer], said: [binding], text: text).len() == 0
+    none: [diag.Diagnostic] = []
+    assert withdrawn(lexed: [outer], said: none, text: text).len() == 1
+
+    # Another report at the same opener is never withdrawn by it.
+    other = diag.new_diagnostic(code: "unterminated_string", message: "m", span: token.Span(start: 4, end: 5))
+    assert withdrawn(lexed: [other], said: [binding], text: text).len() == 1
