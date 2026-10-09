@@ -9,6 +9,13 @@ honour:
   instruction 2026-09-03, four sentences, `docs/roadmap/scheduling.md`). A landing is
   measured on the Mac, the Linux image and the Windows box BEFORE its commit;
   a flag that hides what clang saw is not one of the options a sitting may choose.
+  **Excepted once, by the author, 2026-10-09**: `-Wno-infinite-recursion`,
+  panel 199's R3, put to the author after the ratification because the sitting
+  had not seen this rule. The checker's `endless_recursion` is its witness:
+  clang would warn only on a function that passed that check, one whose path
+  holds a call that may end the program, where its reading of the C cannot be
+  true or false by itself; and since defect 508's repair an endless recursion
+  aborts at every level instead of hanging. No other `-Wno-` flag.
 - **The clang floor is 18** (`selfhost/cli/clang_floor.hero`; panel 103, author
   leave): the CI's Ubuntu leg, and the oldest clang whose `-ast-dump=json` shape
   the pointee check was measured on. Raising it owes a measurement of what the
