@@ -106,8 +106,8 @@ function matching(found: [Case], only: str) -> [Case]
 #
 # The word is a shard only in the shape `<digits>/<digits>`, at most six digits
 # a side: no case name holds a `/` (a name is a file's stem), so the shape
-# takes no filter anybody could mean, and a path a filter of `layout` names
-# (`selfhost/g.hero`) is not in it. Where it is in the shape and out of range,
+# takes no filter anybody could mean, and a module's path, which a filter of
+# `layout` names, is not in it. Where it is in the shape and out of range,
 # `0/4`, `5/4`, `1/0`, it is refused by `main` with exit 2 rather than read
 # as a filter that selects nothing.
 record Shard
