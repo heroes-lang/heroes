@@ -1,0 +1,268 @@
+# Where `check/flow.hero` keeps its groups, one per local: in a tree of
+# nodes of 8, indexed by the local's number, the decimal a path's first
+# segment writes (`moved_calls.place_of`), so that a path's first change
+# copies the nodes on its way down and never every group (defect 530).
+#
+# Why a tree. Every path from a split goes on from one flow, its base, and a
+# value of this language is a copy: the first change a path makes copies
+# what it shares with the base along the way to the change. The groups were
+# one array, so that copy was every local's group, at each branch's first
+# change and at each join, as the code reads: 2,000 handles ended in both
+# branches of 2,000 `if`s read 10.77 billion instructions in `check` after
+# defect 511's repair, and 29.07 billion inside a loop (lane b16-compiler's
+# generator, measured again by lane b16-misc), 4.21 and 4.66 billion with
+# the tree and the clock of `check/flow_log.hero`. In a tree the copy is one
+# node a level, at most 8 slots, and a local's number below two million is
+# seven levels.
+# Of 8, 16 and 32, eight measured fastest by up to 1.2 per cent on every
+# shape but one, where the three stood within 0.1 per cent, the handles'
+# numbers past 30,000 included.
+#
+# **A change takes its group out and puts it back** (`taken`, `put`): with
+# its slot emptied the group taken is the only copy of its places this path
+# holds, so it grows in place, as defect 409's lend made it grow, and the
+# base, which still holds the old one, keeps its own.
+#
+# **Each group carries the clock of its last change, and each node the
+# latest below it** (`stamp`, `latest`): what changed after a split's clock
+# is found by going down only where a node's latest is later
+# (`check/flow_log.hero`), so a join reads the groups its paths changed and
+# no other.
+#
+# The knot: `put` and `taken` go down through `placed` and `took`, one
+# level a call, `get` and `each` read without changing.
+
+use token
+
+# One ended place, and the call that ended it: the diagnostic names both, and
+# `shown` is the argument as the program wrote it at that call.
+record Dead
+    path: [str]
+    shown: str
+    callee: str
+    at: token.Span
+
+# One local's places: those ended on every path to here, in the order they
+# were ended, and those a `retains` position or result added a reference to.
+# An end on one of those is not the end of its life: the count the runtime
+# keeps is above one, and only the run knows by how much (the ergonomist's
+# A3, panel 177's item 10). `stamp` is the clock of the path when it last
+# changed, 0 for a group no event named.
+record Held
+    local: str
+    dead: [Dead]
+    kept: [[str]]
+    stamp: i64
+
+# A node: below the leaves, its children; a leaf, its groups. `latest` is the
+# latest stamp of a group under it.
+record Node
+    kids: [Node]
+    held: [Held]
+    latest: i64
+
+record Groups
+    root: Node
+    # The levels above the leaves: the root is a leaf where it is 0, and the
+    # tree reaches the numbers below `FAN` to the power of one more.
+    levels: i64
+
+constant FAN: i64
+    8
+
+constant BITS: i64
+    3
+
+function none() -> Groups
+    return Groups(root: node(), levels: 0)
+
+function node() -> Node
+    kids: [Node] = []
+    held: [Held] = []
+    return Node(kids: kids, held: held, latest: 0)
+
+# The group of a local no event named.
+function empty(local: str) -> Held
+    dead: [Dead] = []
+    kept: [[str]] = []
+    return Held(local: local, dead: dead, kept: kept, stamp: 0)
+
+# A local's number. Both makers of a path write it in decimal from the
+# resolver's index, so anything else is a defect in its maker, stopped here
+# rather than read as some other local's.
+function number_of(local: str) -> i64
+    assert local.len() > 0
+    n: i64 @ 0
+    at: i64 @ 0
+
+    while at < local.len()
+        value = digit_value(local[at])
+        assert value >= 0
+        n @ n * 10 + value
+        at @ at + 1
+
+    return n
+
+# A decimal digit's value, -1 for any other byte: asked of every segment an
+# event names, so no conversion that could fail is made for it.
+function digit_value(b: u8) -> i64
+    return match b
+        '0' => 0
+        '1' => 1
+        '2' => 2
+        '3' => 3
+        '4' => 4
+        '5' => 5
+        '6' => 6
+        '7' => 7
+        '8' => 8
+        '9' => 9
+        _   => -1
+
+# Whether a tree of `levels` levels above its leaves reaches `number`.
+function reaches(levels: i64, number: i64) -> bool
+    return number >> BITS * (levels + 1) == 0
+
+function digit(number: i64, level: i64) -> i64
+    return number >> BITS * level & FAN - 1
+
+# The group of `local`, or an empty one where no event named it.
+function get(g: Groups, local: str) -> Held
+    number = number_of(local)
+
+    if !reaches(levels: g.levels, number: number)
+        return empty(local)
+    n: Node @ g.root
+    level: i64 @ g.levels
+
+    while level > 0
+        at = digit(number: number, level: level)
+
+        if at >= n.kids.len()
+            return empty(local)
+        n @ n.kids[at]
+        level @ level - 1
+
+    at = digit(number: number, level: 0)
+
+    if at >= n.held.len() || n.held[at].local != local
+        return empty(local)
+    return n.held[at]
+
+# The group of `local`, taken out: its slot is left empty, so the group
+# returned is the only copy of its places the tree held.
+function taken(@g: Groups, local: str) -> Held
+    number = number_of(local)
+
+    if !reaches(levels: g.levels, number: number)
+        return empty(local)
+    return took(@g.root, number: number, level: g.levels, local: local)
+
+function took(@n: Node, number: i64, level: i64, local: str) -> Held
+    at = digit(number: number, level: level)
+
+    if level > 0
+        if at >= n.kids.len()
+            return empty(local)
+        return took(@n.kids[at], number: number, level: level - 1, local: local)
+
+    if at >= n.held.len() || n.held[at].local != local
+        return empty(local)
+    out = n.held[at]
+    n.held[at] @ empty(local)
+    return out
+
+# `one` set as its local's group, the tree grown a level at a time until it
+# reaches the local's number.
+function put(@g: Groups, one: Held)
+    number = number_of(one.local)
+
+    while !reaches(levels: g.levels, number: number)
+        grown: Node @ node()
+        grown.latest @ g.root.latest
+        add_kid(@grown.kids, kid: g.root)
+        g.root @ grown
+        g.levels @ g.levels + 1
+
+    placed(@g.root, number: number, level: g.levels, one: one)
+
+function placed(@n: Node, number: i64, level: i64, one: Held)
+    at = digit(number: number, level: level)
+
+    if one.stamp > n.latest
+        n.latest @ one.stamp
+
+    if level > 0
+        while n.kids.len() <= at
+            add_kid(@n.kids, kid: node())
+
+        placed(@n.kids[at], number: number, level: level - 1, one: one)
+        return
+
+    while n.held.len() <= at
+        add_held(@n.held, one: empty(""))
+
+    n.held[at] @ one
+
+function add_kid(@kids: [Node], kid: Node)
+    kids @ kids.push(kid)
+
+function add_held(@held: [Held], one: Held)
+    held @ held.push(one)
+
+# Every group that holds a place, in the order of the locals' numbers.
+function each(g: Groups) -> [Held]
+    out: [Held] @ []
+    gathered(@out, n: g.root, level: g.levels)
+    return out
+
+function gathered(@out: [Held], n: Node, level: i64)
+    if level > 0
+        for kid in n.kids
+            gathered(@out, n: kid, level: level - 1)
+
+        return
+
+    for h in n.held
+        if h.dead.len() > 0 || h.kept.len() > 0
+            out @ out.push(h)
+
+## Tests
+
+function at_once(local: str, stamp: i64) -> Held
+    one: Held @ empty(local)
+    one.kept @ one.kept.push([local])
+    one.stamp @ stamp
+    return one
+
+test "a group is found where it was put, at every level, and missing ones are empty"
+    g: Groups @ none()
+    put(@g, one: at_once("3", stamp: 1))
+    assert g.levels == 0
+    put(@g, one: at_once("40", stamp: 2))
+    assert reaches(levels: g.levels, number: 40) && !reaches(levels: g.levels - 1, number: 40)
+    put(@g, one: at_once("70000", stamp: 3))
+    assert reaches(levels: g.levels, number: 70000) && !reaches(levels: g.levels - 1, number: 70000)
+    assert get(g, local: "3").stamp == 1
+    assert get(g, local: "40").kept == [["40"]]
+    assert get(g, local: "70000").stamp == 3
+    assert get(g, local: "4").stamp == 0
+    assert get(g, local: "4").local == "4"
+    assert get(g, local: "2000000").kept.len() == 0
+    assert g.root.latest == 3
+    assert each(g).len() == 3
+    assert each(g)[2].local == "70000"
+
+test "a group taken out leaves its slot empty, and a copy of the tree keeps its own"
+    g: Groups @ none()
+    put(@g, one: at_once("5", stamp: 1))
+    base = g
+    one: Held @ taken(@g, local: "5")
+    assert get(g, local: "5").kept.len() == 0
+    one.kept @ one.kept.push(["5", ".x"])
+    one.stamp @ 2
+    put(@g, one: one)
+    assert get(g, local: "5").kept.len() == 2
+    assert get(base, local: "5").kept.len() == 1
+    assert taken(@g, local: "6").stamp == 0
+    assert number_of("1234") == 1234
