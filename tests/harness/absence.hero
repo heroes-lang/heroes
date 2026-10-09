@@ -1685,6 +1685,51 @@ test "a package whose admitted word carries @<file> or -l:<file> is refused, nam
 
     assert !shell.remove_tree(scratch).is_err()
 
+# DEFECT 528, asked of the compiler itself: a package whose answer names a
+# library this machine does not have is told at the package's string,
+# `ffi_missing_library` as defect 224 tells a `link` group's, naming the
+# package and the word, where the build ended at exit 2 with the linker's text
+# (`package "libiodbc"` on this Mac). The answer is a `--libs` alone, one
+# beside a `-L` that holds no such library, and the split `-l <name>` the list
+# joins.
+test "a package whose -l this machine has no library for is told at its string (defect 528)"
+    if !shell.can_run_scripts()
+        return
+    scratch = shell.own_scratch()
+    compiler = shell.some_compiler().must()
+    dir = scratch + "/lacked528"
+    empty = dir + "/lib"
+    assert !shell.mkdir_all(empty).is_err()
+    asking = "extern \"stdlib.h\" package \"pkg528\"\n    function abs(n: i32) -> i32\n\nfunction main()\n    print(abs(-7))\n"
+    shapes = [
+        "-lheroes528absent"
+        "-L" + empty + " -lheroes528absent"
+        "-l heroes528absent"
+    ]
+    shape: i64 @ 0
+
+    for answer in shapes
+        stood = dir + "/bin-" + shape.to_str()
+        assert !answering(dir: stood, answer: answer + "\n").is_err()
+        path = dir + "/l-" + shape.to_str() + ".hero"
+        said = built_said(
+            scratch: scratch,
+            compiler: compiler,
+            path: path,
+            source: asking,
+            bin: stood,
+            alone: false
+        ).must()
+        assert strings.contains(
+            text: said,
+            needle: "error[ffi_missing_library]: this machine has no library called `heroes528absent` — the package `pkg528` answered with `-lheroes528absent`, and the linker looked\n  at " + path + ":1:27\n"
+        )
+        assert !strings.contains(text: said, needle: "internal error")
+        assert !shell.exists(path + ".out")
+        shape @ shape + 1
+
+    assert !shell.remove_tree(scratch).is_err()
+
 # The two answers are pkgconf's own, recorded by panel 188's ffi-pragmatist on
 # this Mac (3.0.7) and in the Linux image (1.8.1), 2026-10-03, for a package
 # named `zz9`.
