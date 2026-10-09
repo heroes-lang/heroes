@@ -97,17 +97,10 @@ void h_fixedbugs451abufferpastamebibytecwritesafteritscallreturnsisnamed_main(vo
 
 #line 15 "tests/golden/run/fixedbugs-451-a-buffer-past-a-mebibyte-c-writes-after-its-call-returns-is-named.hero"
 int64_t h_fixedbugs451abufferpastamebibytecwritesafteritscallreturnsisnamed_fill(void) {
-#line 101 "fixedbugs451abufferpastamebibytecwritesafteritscallreturnsisnamed.c"
-    HeroArrayHeader * h0_md = {0};
-    HeroArrayHeader * h1_own1 = {0};
-    HeroArrayHeader * t1;
-    HeroArrayHeader * t3;
-    int64_t t4;
-    HeroArrayHeader * t5;
-    HeroArrayHeader * t6;
-    goto bb0;
+#line 15 "tests/golden/run/fixedbugs-451-a-buffer-past-a-mebibyte-c-writes-after-its-call-returns-is-named.hero"
+    HeroArrayHeader * h0_md = {0}; HeroArrayHeader * h1_own1 = {0}; HeroArrayHeader * t1; HeroArrayHeader * t3; int64_t t4; HeroArrayHeader * t5; HeroArrayHeader * t6; goto bb0;
+#line 15 "tests/golden/run/fixedbugs-451-a-buffer-past-a-mebibyte-c-writes-after-its-call-returns-is-named.hero"
 bb0:
-#line 16 "tests/golden/run/fixedbugs-451-a-buffer-past-a-mebibyte-c-writes-after-its-call-returns-is-named.hero"
     t1 = hero_array_new(&hero_desc_u8, 1);
 #line 16 "tests/golden/run/fixedbugs-451-a-buffer-past-a-mebibyte-c-writes-after-its-call-returns-is-named.hero"
     t5 = h1_own1;
@@ -139,7 +132,7 @@ bb0:
     t3 = h0_md;
 #line 18 "tests/golden/run/fixedbugs-451-a-buffer-past-a-mebibyte-c-writes-after-its-call-returns-is-named.hero"
     t4 = ((void)(t3 == NULL ? ((void)hero_array_len(t3), hero_unreachable()) : (void)0), t3->len);
-#line 143 "fixedbugs451abufferpastamebibytecwritesafteritscallreturnsisnamed.c"
+#line 136 "fixedbugs451abufferpastamebibytecwritesafteritscallreturnsisnamed.c"
     hero_array_release_at(&h0_md);
     hero_array_release_at(&h1_own1);
     return t4;
@@ -147,12 +140,10 @@ bb0:
 
 #line 20 "tests/golden/run/fixedbugs-451-a-buffer-past-a-mebibyte-c-writes-after-its-call-returns-is-named.hero"
 void h_fixedbugs451abufferpastamebibytecwritesafteritscallreturnsisnamed_main(void) {
-#line 151 "fixedbugs451abufferpastamebibytecwritesafteritscallreturnsisnamed.c"
-    int64_t t1;
-    int64_t t2;
-    goto bb0;
+#line 20 "tests/golden/run/fixedbugs-451-a-buffer-past-a-mebibyte-c-writes-after-its-call-returns-is-named.hero"
+    int64_t t1; int64_t t2; goto bb0;
+#line 20 "tests/golden/run/fixedbugs-451-a-buffer-past-a-mebibyte-c-writes-after-its-call-returns-is-named.hero"
 bb0:
-#line 21 "tests/golden/run/fixedbugs-451-a-buffer-past-a-mebibyte-c-writes-after-its-call-returns-is-named.hero"
     t1 = h_fixedbugs451abufferpastamebibytecwritesafteritscallreturnsisnamed_fill();
 #line 21 "tests/golden/run/fixedbugs-451-a-buffer-past-a-mebibyte-c-writes-after-its-call-returns-is-named.hero"
     hero_print_int(t1);
@@ -165,7 +156,7 @@ bb0:
     hero_print_end();
 #line 22 "tests/golden/run/fixedbugs-451-a-buffer-past-a-mebibyte-c-writes-after-its-call-returns-is-named.hero"
     return;
-#line 169 "fixedbugs451abufferpastamebibytecwritesafteritscallreturnsisnamed.c"
+#line 160 "fixedbugs451abufferpastamebibytecwritesafteritscallreturnsisnamed.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

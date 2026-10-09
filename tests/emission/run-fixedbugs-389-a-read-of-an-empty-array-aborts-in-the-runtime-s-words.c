@@ -89,20 +89,10 @@ void h_fixedbugs389areadofanemptyarrayabortsintheruntimeswords_main(void);
 
 #line 5 "tests/golden/run/fixedbugs-389-a-read-of-an-empty-array-aborts-in-the-runtime-s-words.hero"
 void h_fixedbugs389areadofanemptyarrayabortsintheruntimeswords_main(void) {
-#line 93 "fixedbugs389areadofanemptyarrayabortsintheruntimeswords.c"
-    HeroArrayHeader * h0_empty = {0};
-    HeroArrayHeader * h1_own1 = {0};
-    HeroArrayHeader * t1;
-    HeroArrayHeader * t2;
-    int64_t t3;
-    HeroArrayHeader * t4;
-    int64_t t5;
-    int64_t t6;
-    HeroArrayHeader * t7;
-    HeroArrayHeader * t8;
-    goto bb0;
+#line 5 "tests/golden/run/fixedbugs-389-a-read-of-an-empty-array-aborts-in-the-runtime-s-words.hero"
+    HeroArrayHeader * h0_empty = {0}; HeroArrayHeader * h1_own1 = {0}; HeroArrayHeader * t1; HeroArrayHeader * t2; int64_t t3; HeroArrayHeader * t4; int64_t t5; int64_t t6; HeroArrayHeader * t7; HeroArrayHeader * t8; goto bb0;
+#line 5 "tests/golden/run/fixedbugs-389-a-read-of-an-empty-array-aborts-in-the-runtime-s-words.hero"
 bb0:
-#line 6 "tests/golden/run/fixedbugs-389-a-read-of-an-empty-array-aborts-in-the-runtime-s-words.hero"
     t1 = hero_array_new(&hero_desc_int, 1);
 #line 6 "tests/golden/run/fixedbugs-389-a-read-of-an-empty-array-aborts-in-the-runtime-s-words.hero"
     t7 = h1_own1;
@@ -134,7 +124,7 @@ bb0:
     hero_print_int(t6);
 #line 8 "tests/golden/run/fixedbugs-389-a-read-of-an-empty-array-aborts-in-the-runtime-s-words.hero"
     hero_print_end();
-#line 138 "fixedbugs389areadofanemptyarrayabortsintheruntimeswords.c"
+#line 128 "fixedbugs389areadofanemptyarrayabortsintheruntimeswords.c"
     hero_array_release_at(&h0_empty);
     hero_array_release_at(&h1_own1);
     return;

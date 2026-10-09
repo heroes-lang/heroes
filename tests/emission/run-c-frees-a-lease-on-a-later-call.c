@@ -98,18 +98,10 @@ void h_cfreesaleaseonalatercall_main(void);
 
 #line 11 "tests/golden/run/c-frees-a-lease-on-a-later-call.hero"
 void h_cfreesaleaseonalatercall_main(void) {
-#line 102 "cfreesaleaseonalatercall.c"
-    HeroStr h0_x = {0};
-    const char * h1_c;
-    HeroStr t1;
-    HeroStr t2;
-    const char * t3;
-    const char * t4;
-    int64_t t5;
-    HeroStr t6;
-    goto bb0;
+#line 11 "tests/golden/run/c-frees-a-lease-on-a-later-call.hero"
+    HeroStr h0_x = {0}; const char * h1_c; HeroStr t1; HeroStr t2; const char * t3; const char * t4; int64_t t5; HeroStr t6; goto bb0;
+#line 11 "tests/golden/run/c-frees-a-lease-on-a-later-call.hero"
 bb0:
-#line 12 "tests/golden/run/c-frees-a-lease-on-a-later-call.hero"
     t1 = HERO_STR_LIT(hero_str_35d9fe9b);
 #line 12 "tests/golden/run/c-frees-a-lease-on-a-later-call.hero"
     t6 = h0_x;
@@ -134,7 +126,7 @@ bb0:
     hero_print_end();
     (void)later_free();
     hero_held_release(&h1_c);
-#line 138 "cfreesaleaseonalatercall.c"
+#line 130 "cfreesaleaseonalatercall.c"
     hero_str_release_at(&h0_x);
     return;
 }

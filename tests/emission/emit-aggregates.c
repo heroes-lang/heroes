@@ -136,24 +136,10 @@ void h_aggregates_main(void);
 
 #line 37 "tests/golden/emit/aggregates.hero"
 int64_t h_aggregates_width(h_aggregates_Shape h0_s) {
-#line 140 "aggregates.c"
-    h_aggregates_Shape h1_s0 = {0};
-    int64_t h2_r0;
-    h_aggregates_Shape_c_line h3_l = {0};
-    h_aggregates_Shape t1;
-    h_aggregates_Shape t2;
-    int64_t t3;
-    int64_t t4;
-    h_aggregates_Shape t5;
-    h_aggregates_Shape_c_line t6;
-    h_aggregates_Shape_c_line t7;
-    int64_t t8;
-    int64_t t9;
-    h_aggregates_Shape t10;
-    h_aggregates_Shape_c_line t11;
-    goto bb0;
+#line 37 "tests/golden/emit/aggregates.hero"
+    h_aggregates_Shape h1_s0 = {0}; int64_t h2_r0; h_aggregates_Shape_c_line h3_l = {0}; h_aggregates_Shape t1; h_aggregates_Shape t2; int64_t t3; int64_t t4; h_aggregates_Shape t5; h_aggregates_Shape_c_line t6; h_aggregates_Shape_c_line t7; int64_t t8; int64_t t9; h_aggregates_Shape t10; h_aggregates_Shape_c_line t11; goto bb0;
+#line 37 "tests/golden/emit/aggregates.hero"
 bb0:
-#line 38 "tests/golden/emit/aggregates.hero"
     t1 = h0_s;
 #line 38 "tests/golden/emit/aggregates.hero"
     t10 = h1_s0;
@@ -181,7 +167,7 @@ bb0:
 bb1:
 #line 38 "tests/golden/emit/aggregates.hero"
     t9 = h2_r0;
-#line 185 "aggregates.c"
+#line 171 "aggregates.c"
     h_aggregates_Shape_release(hero_slot_escape(&h1_s0));
     h_aggregates_Shape_c_line_release(hero_slot_escape(&h3_l));
     return t9;
@@ -214,53 +200,15 @@ bb3:
     h2_r0 = t8;
 #line 38 "tests/golden/emit/aggregates.hero"
     goto bb1;
-#line 218 "aggregates.c"
+#line 204 "aggregates.c"
 }
 
 #line 42 "tests/golden/emit/aggregates.hero"
 void h_aggregates_main(void) {
-#line 223 "aggregates.c"
-    h_aggregates_Outer h0_o = {0};
-    HeroStr h1_own1 = {0};
-    h_aggregates_Inner h2_own2 = {0};
-    h_aggregates_Outer h3_own3 = {0};
-    h_aggregates_Inner h4_own4 = {0};
-    h_aggregates_Outer h5_own5 = {0};
-    h_aggregates_Shape h6_own6 = {0};
-    h_aggregates_Shape h7_own7 = {0};
-    HeroStr t1;
-    HeroStr t2;
-    HeroStr t3;
-    h_aggregates_Inner t4;
-    int64_t t5;
-    h_aggregates_Outer t6;
-    h_aggregates_Outer t7;
-    h_aggregates_Inner t8;
-    HeroStr t9;
-    h_aggregates_Outer t10;
-    HeroStr t11;
-    h_aggregates_Inner t12;
-    int64_t t13;
-    h_aggregates_Outer t14;
-    bool t15;
-    h_aggregates_Outer t16;
-    h_aggregates_Inner t17;
-    int64_t t18;
-    h_aggregates_Shape t19;
-    int64_t t20;
-    h_aggregates_Shape t21;
-    int64_t t22;
-    HeroStr t23;
-    h_aggregates_Inner t24;
-    h_aggregates_Outer t25;
-    h_aggregates_Outer t26;
-    h_aggregates_Inner t27;
-    h_aggregates_Outer t28;
-    h_aggregates_Shape t29;
-    h_aggregates_Shape t30;
-    goto bb0;
+#line 42 "tests/golden/emit/aggregates.hero"
+    h_aggregates_Outer h0_o = {0}; HeroStr h1_own1 = {0}; h_aggregates_Inner h2_own2 = {0}; h_aggregates_Outer h3_own3 = {0}; h_aggregates_Inner h4_own4 = {0}; h_aggregates_Outer h5_own5 = {0}; h_aggregates_Shape h6_own6 = {0}; h_aggregates_Shape h7_own7 = {0}; HeroStr t1; HeroStr t2; HeroStr t3; h_aggregates_Inner t4; int64_t t5; h_aggregates_Outer t6; h_aggregates_Outer t7; h_aggregates_Inner t8; HeroStr t9; h_aggregates_Outer t10; HeroStr t11; h_aggregates_Inner t12; int64_t t13; h_aggregates_Outer t14; bool t15; h_aggregates_Outer t16; h_aggregates_Inner t17; int64_t t18; h_aggregates_Shape t19; int64_t t20; h_aggregates_Shape t21; int64_t t22; HeroStr t23; h_aggregates_Inner t24; h_aggregates_Outer t25; h_aggregates_Outer t26; h_aggregates_Inner t27; h_aggregates_Outer t28; h_aggregates_Shape t29; h_aggregates_Shape t30; goto bb0;
+#line 42 "tests/golden/emit/aggregates.hero"
 bb0:
-#line 43 "tests/golden/emit/aggregates.hero"
     t1 = HERO_STR_LIT(hero_str_61);
 #line 43 "tests/golden/emit/aggregates.hero"
     t2 = HERO_STR_LIT(hero_str_62);
@@ -376,7 +324,7 @@ bb0:
     hero_print_int(t22);
 #line 47 "tests/golden/emit/aggregates.hero"
     hero_print_end();
-#line 380 "aggregates.c"
+#line 328 "aggregates.c"
     h_aggregates_Outer_release(hero_slot_escape(&h0_o));
     hero_str_release_at(&h1_own1);
     h_aggregates_Inner_release(hero_slot_escape(&h2_own2));

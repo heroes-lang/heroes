@@ -92,13 +92,10 @@ void h_indirectcall_main(void);
 
 #line 6 "tests/golden/ir/indirect-call.hero"
 int64_t h_indirectcall_double(int64_t h0_n) {
-#line 96 "indirectcall.c"
-    int64_t t1;
-    int64_t t2;
-    int64_t t3;
-    goto bb0;
+#line 6 "tests/golden/ir/indirect-call.hero"
+    int64_t t1; int64_t t2; int64_t t3; goto bb0;
+#line 6 "tests/golden/ir/indirect-call.hero"
 bb0:
-#line 7 "tests/golden/ir/indirect-call.hero"
     t1 = h0_n;
 #line 7 "tests/golden/ir/indirect-call.hero"
     t2 = INT64_C(2);
@@ -106,20 +103,15 @@ bb0:
     if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow();
 #line 7 "tests/golden/ir/indirect-call.hero"
     return t3;
-#line 110 "indirectcall.c"
+#line 107 "indirectcall.c"
 }
 
 #line 9 "tests/golden/ir/indirect-call.hero"
 int64_t h_indirectcall_apply_twice(int64_t h0_n, h_0fn_48ac9712 h1_f) {
-#line 115 "indirectcall.c"
-    h_0fn_48ac9712 t1;
-    h_0fn_48ac9712 t2;
-    int64_t t3;
-    int64_t t4;
-    int64_t t5;
-    goto bb0;
+#line 9 "tests/golden/ir/indirect-call.hero"
+    h_0fn_48ac9712 t1; h_0fn_48ac9712 t2; int64_t t3; int64_t t4; int64_t t5; goto bb0;
+#line 9 "tests/golden/ir/indirect-call.hero"
 bb0:
-#line 10 "tests/golden/ir/indirect-call.hero"
     t1 = h1_f;
 #line 10 "tests/golden/ir/indirect-call.hero"
     t2 = h1_f;
@@ -131,18 +123,15 @@ bb0:
     t5 = t1(t4);
 #line 10 "tests/golden/ir/indirect-call.hero"
     return t5;
-#line 135 "indirectcall.c"
+#line 127 "indirectcall.c"
 }
 
 #line 12 "tests/golden/ir/indirect-call.hero"
 void h_indirectcall_main(void) {
-#line 140 "indirectcall.c"
-    int64_t t1;
-    h_0fn_48ac9712 t2;
-    int64_t t3;
-    goto bb0;
+#line 12 "tests/golden/ir/indirect-call.hero"
+    int64_t t1; h_0fn_48ac9712 t2; int64_t t3; goto bb0;
+#line 12 "tests/golden/ir/indirect-call.hero"
 bb0:
-#line 13 "tests/golden/ir/indirect-call.hero"
     t1 = INT64_C(3);
 #line 13 "tests/golden/ir/indirect-call.hero"
     t2 = h_indirectcall_double;
@@ -154,7 +143,7 @@ bb0:
     hero_print_end();
 #line 13 "tests/golden/ir/indirect-call.hero"
     return;
-#line 158 "indirectcall.c"
+#line 147 "indirectcall.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

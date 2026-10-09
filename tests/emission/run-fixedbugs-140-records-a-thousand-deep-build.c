@@ -7116,31 +7116,10 @@ void h_fixedbugs140recordsathousanddeepbuild_main(void);
 
 #line 3016 "tests/golden/run/fixedbugs-140-records-a-thousand-deep-build.hero"
 void h_fixedbugs140recordsathousanddeepbuild_main(void) {
-#line 7120 "fixedbugs140recordsathousanddeepbuild.c"
-    HeroArrayHeader * h0_xs;
-    __builtin_memset(&h0_xs, 0, sizeof h0_xs);
-    HeroMapHeader * h1_m;
-    __builtin_memset(&h1_m, 0, sizeof h1_m);
-    HeroArrayHeader * h2_own2;
-    __builtin_memset(&h2_own2, 0, sizeof h2_own2);
-    HeroMapHeader * h3_own3;
-    __builtin_memset(&h3_own3, 0, sizeof h3_own3);
-    HeroArrayHeader * t1;
-    HeroArrayHeader * t2;
-    int64_t t3;
-    HeroArrayHeader * t4;
-    HeroArrayHeader * t5;
-    bool t6;
-    HeroMapHeader * t7;
-    HeroMapHeader * t8;
-    int64_t t9;
-    HeroArrayHeader * t10;
-    HeroArrayHeader * t11;
-    HeroMapHeader * t12;
-    HeroMapHeader * t13;
-    goto bb0;
+#line 3016 "tests/golden/run/fixedbugs-140-records-a-thousand-deep-build.hero"
+    HeroArrayHeader * h0_xs; __builtin_memset(&h0_xs, 0, sizeof h0_xs); HeroMapHeader * h1_m; __builtin_memset(&h1_m, 0, sizeof h1_m); HeroArrayHeader * h2_own2; __builtin_memset(&h2_own2, 0, sizeof h2_own2); HeroMapHeader * h3_own3; __builtin_memset(&h3_own3, 0, sizeof h3_own3); HeroArrayHeader * t1; HeroArrayHeader * t2; int64_t t3; HeroArrayHeader * t4; HeroArrayHeader * t5; bool t6; HeroMapHeader * t7; HeroMapHeader * t8; int64_t t9; HeroArrayHeader * t10; HeroArrayHeader * t11; HeroMapHeader * t12; HeroMapHeader * t13; goto bb0;
+#line 3016 "tests/golden/run/fixedbugs-140-records-a-thousand-deep-build.hero"
 bb0:
-#line 3017 "tests/golden/run/fixedbugs-140-records-a-thousand-deep-build.hero"
     t1 = hero_array_new(&h_fixedbugs140recordsathousanddeepbuild_R999_desc, 1);
 #line 3017 "tests/golden/run/fixedbugs-140-records-a-thousand-deep-build.hero"
     t10 = h2_own2;
@@ -7194,7 +7173,7 @@ bb0:
     hero_print_int(t9);
 #line 3021 "tests/golden/run/fixedbugs-140-records-a-thousand-deep-build.hero"
     hero_print_end();
-#line 7198 "fixedbugs140recordsathousanddeepbuild.c"
+#line 7177 "fixedbugs140recordsathousanddeepbuild.c"
     hero_array_release_at(&h0_xs);
     hero_map_release_at(&h1_m);
     hero_array_release_at(&h2_own2);

@@ -93,98 +93,10 @@ HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to);
 
 #line 18 "tests/golden/run/library-range.hero"
 void h_libraryrange_main(void) {
-#line 97 "libraryrange.c"
-    HeroArrayHeader * h0_xs = {0};
-    int64_t h1_total;
-    HeroArrayHeader * h2_xs0 = {0};
-    int64_t h3_i0;
-    int64_t h4_i;
-    HeroArrayHeader * h5_own5 = {0};
-    HeroArrayHeader * h6_own6 = {0};
-    HeroArrayHeader * h7_own7 = {0};
-    HeroArrayHeader * h8_own8 = {0};
-    HeroArrayHeader * h9_own9 = {0};
-    HeroArrayHeader * h10_own10 = {0};
-    HeroStr h11_own11 = {0};
-    HeroArrayHeader * h12_own12 = {0};
-    HeroArrayHeader * h13_own13 = {0};
-    HeroArrayHeader * h14_own14 = {0};
-    HeroArrayHeader * h15_own15 = {0};
-    int64_t t1;
-    int64_t t2;
-    HeroArrayHeader * t3;
-    HeroArrayHeader * t4;
-    int64_t t5;
-    HeroArrayHeader * t6;
-    int64_t t7;
-    int64_t t8;
-    HeroArrayHeader * t9;
-    int64_t t10;
-    int64_t t11;
-    int64_t t12;
-    int64_t t13;
-    int64_t t14;
-    HeroArrayHeader * t15;
-    int64_t t16;
-    int64_t t17;
-    HeroArrayHeader * t18;
-    int64_t t19;
-    bool t20;
-    HeroArrayHeader * t21;
-    int64_t t22;
-    int64_t t23;
-    int64_t t24;
-    int64_t t25;
-    int64_t t26;
-    int64_t t27;
-    int64_t t28;
-    int64_t t29;
-    int64_t t30;
-    int64_t t31;
-    int64_t t32;
-    HeroArrayHeader * t33;
-    int64_t t34;
-    int64_t t35;
-    int64_t t36;
-    HeroArrayHeader * t37;
-    int64_t t38;
-    int64_t t39;
-    int64_t t40;
-    int64_t t41;
-    int64_t t42;
-    HeroArrayHeader * t43;
-    HeroArrayHeader * t44;
-    HeroStr t45;
-    HeroStr t46;
-    int64_t t47;
-    int64_t t48;
-    HeroArrayHeader * t49;
-    HeroArrayHeader * t50;
-    int64_t t51;
-    int64_t t52;
-    int64_t t53;
-    int64_t t54;
-    HeroArrayHeader * t55;
-    int64_t t56;
-    int64_t t57;
-    HeroArrayHeader * t58;
-    int64_t t59;
-    HeroArrayHeader * t60;
-    HeroArrayHeader * t61;
-    HeroArrayHeader * t62;
-    HeroArrayHeader * t63;
-    HeroArrayHeader * t64;
-    HeroArrayHeader * t65;
-    HeroArrayHeader * t66;
-    HeroArrayHeader * t67;
-    HeroStr t68;
-    HeroArrayHeader * t69;
-    HeroArrayHeader * t70;
-    HeroArrayHeader * t71;
-    HeroArrayHeader * t72;
-    goto bb0;
+#line 18 "tests/golden/run/library-range.hero"
+    HeroArrayHeader * h0_xs = {0}; int64_t h1_total; HeroArrayHeader * h2_xs0 = {0}; int64_t h3_i0; int64_t h4_i; HeroArrayHeader * h5_own5 = {0}; HeroArrayHeader * h6_own6 = {0}; HeroArrayHeader * h7_own7 = {0}; HeroArrayHeader * h8_own8 = {0}; HeroArrayHeader * h9_own9 = {0}; HeroArrayHeader * h10_own10 = {0}; HeroStr h11_own11 = {0}; HeroArrayHeader * h12_own12 = {0}; HeroArrayHeader * h13_own13 = {0}; HeroArrayHeader * h14_own14 = {0}; HeroArrayHeader * h15_own15 = {0}; int64_t t1; int64_t t2; HeroArrayHeader * t3; HeroArrayHeader * t4; int64_t t5; HeroArrayHeader * t6; int64_t t7; int64_t t8; HeroArrayHeader * t9; int64_t t10; int64_t t11; int64_t t12; int64_t t13; int64_t t14; HeroArrayHeader * t15; int64_t t16; int64_t t17; HeroArrayHeader * t18; int64_t t19; bool t20; HeroArrayHeader * t21; int64_t t22; int64_t t23; int64_t t24; int64_t t25; int64_t t26; int64_t t27; int64_t t28; int64_t t29; int64_t t30; int64_t t31; int64_t t32; HeroArrayHeader * t33; int64_t t34; int64_t t35; int64_t t36; HeroArrayHeader * t37; int64_t t38; int64_t t39; int64_t t40; int64_t t41; int64_t t42; HeroArrayHeader * t43; HeroArrayHeader * t44; HeroStr t45; HeroStr t46; int64_t t47; int64_t t48; HeroArrayHeader * t49; HeroArrayHeader * t50; int64_t t51; int64_t t52; int64_t t53; int64_t t54; HeroArrayHeader * t55; int64_t t56; int64_t t57; HeroArrayHeader * t58; int64_t t59; HeroArrayHeader * t60; HeroArrayHeader * t61; HeroArrayHeader * t62; HeroArrayHeader * t63; HeroArrayHeader * t64; HeroArrayHeader * t65; HeroArrayHeader * t66; HeroArrayHeader * t67; HeroStr t68; HeroArrayHeader * t69; HeroArrayHeader * t70; HeroArrayHeader * t71; HeroArrayHeader * t72; goto bb0;
+#line 18 "tests/golden/run/library-range.hero"
 bb0:
-#line 19 "tests/golden/run/library-range.hero"
     t1 = INT64_C(0);
 #line 19 "tests/golden/run/library-range.hero"
     t2 = INT64_C(4);
@@ -436,7 +348,7 @@ bb4:
     hero_print_int(t59);
 #line 36 "tests/golden/run/library-range.hero"
     hero_print_end();
-#line 440 "libraryrange.c"
+#line 352 "libraryrange.c"
     hero_array_release_at(&h0_xs);
     hero_array_release_at(&h2_xs0);
     hero_array_release_at(&h5_own5);
@@ -455,36 +367,10 @@ bb4:
 
 #line 38 "tests/golden/run/library-range.hero"
 HeroArrayHeader * h_libraryrange_map_str(HeroArrayHeader * h0_xs) {
-#line 459 "libraryrange.c"
-    HeroArrayHeader * h1_out = {0};
-    HeroArrayHeader * h2_xs0 = {0};
-    int64_t h3_i0;
-    int64_t h4_x;
-    HeroArrayHeader * h5_own5 = {0};
-    HeroStr h6_own6 = {0};
-    HeroArrayHeader * t1;
-    HeroArrayHeader * t2;
-    int64_t t3;
-    int64_t t4;
-    HeroArrayHeader * t5;
-    int64_t t6;
-    bool t7;
-    HeroArrayHeader * t8;
-    int64_t t9;
-    int64_t t10;
-    int64_t t12;
-    HeroStr t13;
-    int64_t t15;
-    int64_t t16;
-    int64_t t17;
-    HeroArrayHeader * t18;
-    HeroArrayHeader * t19;
-    HeroArrayHeader * t20;
-    HeroArrayHeader * t21;
-    HeroStr t22;
-    goto bb0;
+#line 38 "tests/golden/run/library-range.hero"
+    HeroArrayHeader * h1_out = {0}; HeroArrayHeader * h2_xs0 = {0}; int64_t h3_i0; int64_t h4_x; HeroArrayHeader * h5_own5 = {0}; HeroStr h6_own6 = {0}; HeroArrayHeader * t1; HeroArrayHeader * t2; int64_t t3; int64_t t4; HeroArrayHeader * t5; int64_t t6; bool t7; HeroArrayHeader * t8; int64_t t9; int64_t t10; int64_t t12; HeroStr t13; int64_t t15; int64_t t16; int64_t t17; HeroArrayHeader * t18; HeroArrayHeader * t19; HeroArrayHeader * t20; HeroArrayHeader * t21; HeroStr t22; goto bb0;
+#line 38 "tests/golden/run/library-range.hero"
 bb0:
-#line 39 "tests/golden/run/library-range.hero"
     t1 = hero_array_new(&hero_desc_str, 1);
 #line 39 "tests/golden/run/library-range.hero"
     t19 = h5_own5;
@@ -567,7 +453,7 @@ bb3:
 bb4:
 #line 44 "tests/golden/run/library-range.hero"
     t18 = h1_out;
-#line 571 "libraryrange.c"
+#line 457 "libraryrange.c"
     hero_array_incref(t18);
     hero_array_release_at(&h1_out);
     hero_array_release_at(&h2_xs0);
@@ -578,25 +464,10 @@ bb4:
 
 #line 26 "<heroes library>"
 HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to) {
-#line 582 "libraryrange.c"
-    HeroArrayHeader * h2_out = {0};
-    int64_t h3_i;
-    HeroArrayHeader * h4_own4 = {0};
-    HeroArrayHeader * t1;
-    int64_t t2;
-    int64_t t3;
-    int64_t t4;
-    bool t5;
-    int64_t t7;
-    int64_t t9;
-    int64_t t10;
-    int64_t t11;
-    HeroArrayHeader * t12;
-    HeroArrayHeader * t13;
-    HeroArrayHeader * t14;
-    goto bb0;
+#line 26 "<heroes library>"
+    HeroArrayHeader * h2_out = {0}; int64_t h3_i; HeroArrayHeader * h4_own4 = {0}; HeroArrayHeader * t1; int64_t t2; int64_t t3; int64_t t4; bool t5; int64_t t7; int64_t t9; int64_t t10; int64_t t11; HeroArrayHeader * t12; HeroArrayHeader * t13; HeroArrayHeader * t14; goto bb0;
+#line 26 "<heroes library>"
 bb0:
-#line 27 "<heroes library>"
     t1 = hero_array_new(&hero_desc_int, 1);
 #line 27 "<heroes library>"
     t13 = h4_own4;
@@ -643,7 +514,7 @@ bb2:
 #line 31 "<heroes library>"
 bb3:
     t12 = h2_out;
-#line 647 "libraryrange.c"
+#line 518 "libraryrange.c"
     hero_array_incref(t12);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h4_own4);

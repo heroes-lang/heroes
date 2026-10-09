@@ -114,21 +114,10 @@ void h_fixedbugs151anarmaswideasapackedunioncompared_main(void);
 
 #line 13 "tests/golden/run/fixedbugs-151-an-arm-as-wide-as-a-packed-union-compared.hero"
 void h_fixedbugs151anarmaswideasapackedunioncompared_main(void) {
-#line 118 "fixedbugs151anarmaswideasapackedunioncompared.c"
-    uint8_t t1;
-    PK t2;
-    uint8_t t3;
-    PK t4;
-    bool t5;
-    HeroStr t6;
-    uint8_t t7;
-    PK t8;
-    uint8_t t9;
-    PK t10;
-    bool t11;
-    goto bb0;
+#line 13 "tests/golden/run/fixedbugs-151-an-arm-as-wide-as-a-packed-union-compared.hero"
+    uint8_t t1; PK t2; uint8_t t3; PK t4; bool t5; HeroStr t6; uint8_t t7; PK t8; uint8_t t9; PK t10; bool t11; goto bb0;
+#line 13 "tests/golden/run/fixedbugs-151-an-arm-as-wide-as-a-packed-union-compared.hero"
 bb0:
-#line 14 "tests/golden/run/fixedbugs-151-an-arm-as-wide-as-a-packed-union-compared.hero"
     t1 = UINT64_C(1);
 #line 14 "tests/golden/run/fixedbugs-151-an-arm-as-wide-as-a-packed-union-compared.hero"
     t2 = make_pk(t1);
@@ -160,7 +149,7 @@ bb0:
     hero_print_end();
 #line 14 "tests/golden/run/fixedbugs-151-an-arm-as-wide-as-a-packed-union-compared.hero"
     return;
-#line 164 "fixedbugs151anarmaswideasapackedunioncompared.c"
+#line 153 "fixedbugs151anarmaswideasapackedunioncompared.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs151anarmaswideasapackedunioncompared_PK_eq(const PK *a, const PK *b) {
     if (!(a->k == b->k)) return false;

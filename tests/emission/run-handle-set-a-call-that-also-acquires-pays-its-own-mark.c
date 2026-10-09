@@ -106,21 +106,10 @@ void h_handlesetacallthatalsoacquirespaysitsownmark_main(void);
 
 #line 13 "tests/golden/run/handle-set-a-call-that-also-acquires-pays-its-own-mark.hero"
 void h_handlesetacallthatalsoacquirespaysitsownmark_main(void) {
-#line 110 "handlesetacallthatalsoacquirespaysitsownmark.c"
-    hh * h0_a;
-    hh * h1_b;
-    int64_t t1;
-    hh * t2;
-    hh * t3;
-    int64_t t4;
-    hh * t5;
-    hh * t6;
-    int64_t t7;
-    hh * t8;
-    HeroStr t9;
-    goto bb0;
+#line 13 "tests/golden/run/handle-set-a-call-that-also-acquires-pays-its-own-mark.hero"
+    hh * h0_a; hh * h1_b; int64_t t1; hh * t2; hh * t3; int64_t t4; hh * t5; hh * t6; int64_t t7; hh * t8; HeroStr t9; goto bb0;
+#line 13 "tests/golden/run/handle-set-a-call-that-also-acquires-pays-its-own-mark.hero"
 bb0:
-#line 14 "tests/golden/run/handle-set-a-call-that-also-acquires-pays-its-own-mark.hero"
     t1 = INT64_C(3);
 #line 14 "tests/golden/run/handle-set-a-call-that-also-acquires-pays-its-own-mark.hero"
     t2 = h_open(t1);
@@ -176,7 +165,7 @@ bb0:
     hero_print_end();
 #line 18 "tests/golden/run/handle-set-a-call-that-also-acquires-pays-its-own-mark.hero"
     return;
-#line 180 "handlesetacallthatalsoacquirespaysitsownmark.c"
+#line 169 "handlesetacallthatalsoacquirespaysitsownmark.c"
 }
 HERO_TU_LOCAL bool h_handlesetacallthatalsoacquirespaysitsownmark_H_eq(hh * const *a, hh * const *b) {
     return hero_handle_eq(*a, *b);

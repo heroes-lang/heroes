@@ -92,53 +92,10 @@ void h_adversarialstrselfassign_main(void);
 
 #line 12 "tests/golden/run/adversarial-str-self-assign.hero"
 void h_adversarialstrselfassign_main(void) {
-#line 96 "adversarialstrselfassign.c"
-    HeroStr h0_s = {0};
-    HeroStr h1_out = {0};
-    int64_t h2_i;
-    HeroStr h3_own3 = {0};
-    HeroStr h4_own4 = {0};
-    HeroStr h5_own5 = {0};
-    HeroStr h6_own6 = {0};
-    HeroStr t1;
-    HeroStr t2;
-    HeroStr t3;
-    HeroStr t4;
-    HeroStr t5;
-    HeroStr t6;
-    HeroStr t7;
-    HeroStr t8;
-    int64_t t9;
-    int64_t t10;
-    int64_t t11;
-    bool t12;
-    HeroStr t13;
-    int64_t t14;
-    int64_t t15;
-    int64_t t16;
-    HeroStr t17;
-    HeroStr t18;
-    int64_t t19;
-    int64_t t20;
-    int64_t t21;
-    HeroStr t22;
-    int64_t t23;
-    HeroStr t24;
-    int64_t t25;
-    int64_t t26;
-    HeroStr t27;
-    HeroStr t28;
-    HeroStr t29;
-    HeroStr t30;
-    HeroStr t31;
-    HeroStr t32;
-    HeroStr t33;
-    HeroStr t34;
-    HeroStr t35;
-    HeroStr t36;
-    goto bb0;
+#line 12 "tests/golden/run/adversarial-str-self-assign.hero"
+    HeroStr h0_s = {0}; HeroStr h1_out = {0}; int64_t h2_i; HeroStr h3_own3 = {0}; HeroStr h4_own4 = {0}; HeroStr h5_own5 = {0}; HeroStr h6_own6 = {0}; HeroStr t1; HeroStr t2; HeroStr t3; HeroStr t4; HeroStr t5; HeroStr t6; HeroStr t7; HeroStr t8; int64_t t9; int64_t t10; int64_t t11; bool t12; HeroStr t13; int64_t t14; int64_t t15; int64_t t16; HeroStr t17; HeroStr t18; int64_t t19; int64_t t20; int64_t t21; HeroStr t22; int64_t t23; HeroStr t24; int64_t t25; int64_t t26; HeroStr t27; HeroStr t28; HeroStr t29; HeroStr t30; HeroStr t31; HeroStr t32; HeroStr t33; HeroStr t34; HeroStr t35; HeroStr t36; goto bb0;
+#line 12 "tests/golden/run/adversarial-str-self-assign.hero"
 bb0:
-#line 13 "tests/golden/run/adversarial-str-self-assign.hero"
     t1 = HERO_STR_LIT(hero_str_3205);
 #line 13 "tests/golden/run/adversarial-str-self-assign.hero"
     t28 = h0_s;
@@ -283,7 +240,7 @@ bb3:
     hero_print_str(t27);
 #line 26 "tests/golden/run/adversarial-str-self-assign.hero"
     hero_print_end();
-#line 287 "adversarialstrselfassign.c"
+#line 244 "adversarialstrselfassign.c"
     hero_str_release_at(&h0_s);
     hero_str_release_at(&h1_out);
     hero_str_release_at(&h3_own3);

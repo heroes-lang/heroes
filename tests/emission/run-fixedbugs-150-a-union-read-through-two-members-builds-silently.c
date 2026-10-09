@@ -102,16 +102,10 @@ void h_fixedbugs150aunionreadthroughtwomembersbuildssilently_main(void);
 
 #line 20 "tests/golden/run/fixedbugs-150-a-union-read-through-two-members-builds-silently.hero"
 void h_fixedbugs150aunionreadthroughtwomembersbuildssilently_main(void) {
-#line 106 "fixedbugs150aunionreadthroughtwomembersbuildssilently.c"
-    W h0_w;
-    W t1;
-    W t2;
-    int32_t t3;
-    W t4;
-    uint32_t t5;
-    goto bb0;
+#line 20 "tests/golden/run/fixedbugs-150-a-union-read-through-two-members-builds-silently.hero"
+    W h0_w; W t1; W t2; int32_t t3; W t4; uint32_t t5; goto bb0;
+#line 20 "tests/golden/run/fixedbugs-150-a-union-read-through-two-members-builds-silently.hero"
 bb0:
-#line 21 "tests/golden/run/fixedbugs-150-a-union-read-through-two-members-builds-silently.hero"
     t1 = make_w();
 #line 21 "tests/golden/run/fixedbugs-150-a-union-read-through-two-members-builds-silently.hero"
     h0_w = t1;
@@ -131,7 +125,7 @@ bb0:
     hero_print_end();
 #line 23 "tests/golden/run/fixedbugs-150-a-union-read-through-two-members-builds-silently.hero"
     return;
-#line 135 "fixedbugs150aunionreadthroughtwomembersbuildssilently.c"
+#line 129 "fixedbugs150aunionreadthroughtwomembersbuildssilently.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs150aunionreadthroughtwomembersbuildssilently_W_eq(const W *a, const W *b) {
     if (!(a->i == b->i)) return false;

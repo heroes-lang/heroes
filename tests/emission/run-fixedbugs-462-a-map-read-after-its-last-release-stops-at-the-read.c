@@ -97,13 +97,10 @@ void h_fixedbugs462amapreadafteritslastreleasestopsattheread_main(void);
 
 #line 17 "tests/golden/run/fixedbugs-462-a-map-read-after-its-last-release-stops-at-the-read.hero"
 void h_fixedbugs462amapreadafteritslastreleasestopsattheread_main(void) {
-#line 101 "fixedbugs462amapreadafteritslastreleasestopsattheread.c"
-    HeroStr t1;
-    int64_t t2;
-    int64_t t3;
-    goto bb0;
+#line 17 "tests/golden/run/fixedbugs-462-a-map-read-after-its-last-release-stops-at-the-read.hero"
+    HeroStr t1; int64_t t2; int64_t t3; goto bb0;
+#line 17 "tests/golden/run/fixedbugs-462-a-map-read-after-its-last-release-stops-at-the-read.hero"
 bb0:
-#line 18 "tests/golden/run/fixedbugs-462-a-map-read-after-its-last-release-stops-at-the-read.hero"
     t1 = HERO_STR_LIT(hero_str_4242160);
 #line 18 "tests/golden/run/fixedbugs-462-a-map-read-after-its-last-release-stops-at-the-read.hero"
     hero_print_str(t1);
@@ -118,7 +115,7 @@ bb0:
     hero_print_end();
 #line 19 "tests/golden/run/fixedbugs-462-a-map-read-after-its-last-release-stops-at-the-read.hero"
     return;
-#line 122 "fixedbugs462amapreadafteritslastreleasestopsattheread.c"
+#line 119 "fixedbugs462amapreadafteritslastreleasestopsattheread.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

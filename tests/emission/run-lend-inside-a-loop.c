@@ -97,33 +97,10 @@ void h_lendinsidealoop_main(void);
 
 #line 12 "tests/golden/run/lend-inside-a-loop.hero"
 void h_lendinsidealoop_main(void) {
-#line 101 "lendinsidealoop.c"
-    int64_t h0_at;
-    uint64_t h1_total;
-    HeroStr h2_own2 = {0};
-    HeroStr h3_own3 = {0};
-    int64_t t1;
-    uint64_t t2;
-    int64_t t3;
-    int64_t t4;
-    bool t5;
-    uint64_t t6;
-    HeroStr t7;
-    int64_t t8;
-    HeroStr t9;
-    HeroStr t10;
-    const char * t11;
-    uint64_t t12;
-    uint64_t t13;
-    int64_t t14;
-    int64_t t15;
-    int64_t t16;
-    uint64_t t17;
-    HeroStr t18;
-    HeroStr t19;
-    goto bb0;
+#line 12 "tests/golden/run/lend-inside-a-loop.hero"
+    int64_t h0_at; uint64_t h1_total; HeroStr h2_own2 = {0}; HeroStr h3_own3 = {0}; int64_t t1; uint64_t t2; int64_t t3; int64_t t4; bool t5; uint64_t t6; HeroStr t7; int64_t t8; HeroStr t9; HeroStr t10; const char * t11; uint64_t t12; uint64_t t13; int64_t t14; int64_t t15; int64_t t16; uint64_t t17; HeroStr t18; HeroStr t19; goto bb0;
+#line 12 "tests/golden/run/lend-inside-a-loop.hero"
 bb0:
-#line 13 "tests/golden/run/lend-inside-a-loop.hero"
     t1 = INT64_C(0);
 #line 13 "tests/golden/run/lend-inside-a-loop.hero"
     h0_at = t1;
@@ -190,7 +167,7 @@ bb3:
     hero_print_uint(t17);
 #line 20 "tests/golden/run/lend-inside-a-loop.hero"
     hero_print_end();
-#line 194 "lendinsidealoop.c"
+#line 171 "lendinsidealoop.c"
     hero_str_release_at(&h2_own2);
     hero_str_release_at(&h3_own3);
     return;

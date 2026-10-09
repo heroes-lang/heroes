@@ -122,17 +122,9 @@ int64_t h_fficonstant_SEEK_END(void) {
 
 #line 52 "tests/golden/run/ffi-constant.hero"
 void h_fficonstant_main(void) {
-#line 126 "fficonstant.c"
-    double t1;
-    double t2;
-    double t3;
-    double t4;
-    double t5;
-    int64_t t6;
-    int64_t t7;
-    int64_t t8;
-    int64_t t9;
-    goto bb0;
+#line 52 "tests/golden/run/ffi-constant.hero"
+    double t1; double t2; double t3; double t4; double t5; int64_t t6; int64_t t7; int64_t t8; int64_t t9; goto bb0;
+#line 52 "tests/golden/run/ffi-constant.hero"
 bb0:
 #line 54 "tests/golden/run/ffi-constant.hero"
     t1 = h_fficonstant_M_PI();
@@ -168,7 +160,7 @@ bb0:
     hero_print_end();
 #line 59 "tests/golden/run/ffi-constant.hero"
     return;
-#line 172 "fficonstant.c"
+#line 164 "fficonstant.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

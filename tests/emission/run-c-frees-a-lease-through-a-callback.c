@@ -104,19 +104,10 @@ __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
 
 #line 12 "tests/golden/run/c-frees-a-lease-through-a-callback.hero"
 void h_cfreesaleasethroughacallback_main(void) {
-#line 108 "cfreesaleasethroughacallback.c"
-    HeroStr h0_x = {0};
-    const char * h1_c;
-    HeroStr t1;
-    HeroStr t2;
-    const char * t3;
-    int64_t t4;
-    const char * t5;
-    h_0fn_2b4640ec t6;
-    HeroStr t7;
-    goto bb0;
+#line 12 "tests/golden/run/c-frees-a-lease-through-a-callback.hero"
+    HeroStr h0_x = {0}; const char * h1_c; HeroStr t1; HeroStr t2; const char * t3; int64_t t4; const char * t5; h_0fn_2b4640ec t6; HeroStr t7; goto bb0;
+#line 12 "tests/golden/run/c-frees-a-lease-through-a-callback.hero"
 bb0:
-#line 13 "tests/golden/run/c-frees-a-lease-through-a-callback.hero"
     t1 = HERO_STR_LIT(hero_str_35d9fe9b);
 #line 13 "tests/golden/run/c-frees-a-lease-through-a-callback.hero"
     t7 = h0_x;
@@ -142,7 +133,7 @@ bb0:
 #line 16 "tests/golden/run/c-frees-a-lease-through-a-callback.hero"
     (void)take_cb(hero_cstr_nonnull(t5), (h_0fn_2b4640ec)hero_callback_of((void (*)(void))t6));
     hero_held_release(&h1_c);
-#line 146 "cfreesaleasethroughacallback.c"
+#line 137 "cfreesaleasethroughacallback.c"
     hero_str_release_at(&h0_x);
     return;
 }

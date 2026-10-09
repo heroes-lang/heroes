@@ -142,30 +142,12 @@ void h_deadaddresscopyinsideafalliblevalue_main(void);
 
 #line 16 "tests/golden/run/dead-address-copy-inside-a-fallible-value.hero"
 h_0opt_77d4f5ff h_deadaddresscopyinsideafalliblevalue_opened(void) {
-#line 146 "deadaddresscopyinsideafalliblevalue.c"
-    cdb * *const hero_lend_h0_db = (cdb * *)hero_lend_local(sizeof(cdb *), "deadaddresscopyinsideafalliblevalue.opened", "db");
+#line 16 "tests/golden/run/dead-address-copy-inside-a-fallible-value.hero"
 #define h0_db (*hero_lend_h0_db)
-    h_0opt_77d4f5ff h1_ret0 = {0};
-    h_0opt_77d4f5ff h2_own2 = {0};
-    h_0opt_77d4f5ff h3_own3 = {0};
-    cdb * t1;
-    HeroStr t2;
-    const char * t3;
-    int64_t t4;
-    int64_t t5;
-    bool t6;
-    HeroStr t7;
-    HeroStr t8;
-    h_0opt_77d4f5ff t9;
-    cdb * t10;
-    h_deadaddresscopyinsideafalliblevalue_Db t11;
-    h_0opt_77d4f5ff t12;
-    h_0opt_77d4f5ff t13;
-    h_0opt_77d4f5ff t14;
-    h_0opt_77d4f5ff t15;
-    goto bb0;
+#line 16 "tests/golden/run/dead-address-copy-inside-a-fallible-value.hero"
+    cdb * *const hero_lend_h0_db = (cdb * *)hero_lend_local(sizeof(cdb *), "deadaddresscopyinsideafalliblevalue.opened", "db"); h_0opt_77d4f5ff h1_ret0 = {0}; h_0opt_77d4f5ff h2_own2 = {0}; h_0opt_77d4f5ff h3_own3 = {0}; cdb * t1; HeroStr t2; const char * t3; int64_t t4; int64_t t5; bool t6; HeroStr t7; HeroStr t8; h_0opt_77d4f5ff t9; cdb * t10; h_deadaddresscopyinsideafalliblevalue_Db t11; h_0opt_77d4f5ff t12; h_0opt_77d4f5ff t13; h_0opt_77d4f5ff t14; h_0opt_77d4f5ff t15; goto bb0;
+#line 16 "tests/golden/run/dead-address-copy-inside-a-fallible-value.hero"
 bb0:
-#line 17 "tests/golden/run/dead-address-copy-inside-a-fallible-value.hero"
     t1 = ((void *)0);
 #line 17 "tests/golden/run/dead-address-copy-inside-a-fallible-value.hero"
     h0_db = t1;
@@ -231,7 +213,7 @@ bb3:
     goto bb1;
 #line 20 "tests/golden/run/dead-address-copy-inside-a-fallible-value.hero"
 bb4:
-#line 235 "deadaddresscopyinsideafalliblevalue.c"
+#line 217 "deadaddresscopyinsideafalliblevalue.c"
     t13 = h1_ret0;
     h_0opt_77d4f5ff_retain(&t13);
     h_0opt_77d4f5ff_release(hero_slot_escape(&h2_own2));
@@ -243,13 +225,10 @@ bb4:
 
 #line 23 "tests/golden/run/dead-address-copy-inside-a-fallible-value.hero"
 int64_t h_deadaddresscopyinsideafalliblevalue_closed(h_deadaddresscopyinsideafalliblevalue_Db *ph0_db) {
-#line 247 "deadaddresscopyinsideafalliblevalue.c"
-    h_deadaddresscopyinsideafalliblevalue_Db t1;
-    cdb * t2;
-    int64_t t3;
-    goto bb0;
+#line 23 "tests/golden/run/dead-address-copy-inside-a-fallible-value.hero"
+    h_deadaddresscopyinsideafalliblevalue_Db t1; cdb * t2; int64_t t3; goto bb0;
+#line 23 "tests/golden/run/dead-address-copy-inside-a-fallible-value.hero"
 bb0:
-#line 24 "tests/golden/run/dead-address-copy-inside-a-fallible-value.hero"
     t1 = (*ph0_db);
 #line 24 "tests/golden/run/dead-address-copy-inside-a-fallible-value.hero"
     t2 = t1.f_handle;
@@ -267,45 +246,15 @@ bb0:
     }
 #line 24 "tests/golden/run/dead-address-copy-inside-a-fallible-value.hero"
     return t3;
-#line 271 "deadaddresscopyinsideafalliblevalue.c"
+#line 250 "deadaddresscopyinsideafalliblevalue.c"
 }
 
 #line 26 "tests/golden/run/dead-address-copy-inside-a-fallible-value.hero"
 void h_deadaddresscopyinsideafalliblevalue_main(void) {
-#line 276 "deadaddresscopyinsideafalliblevalue.c"
-    h_0opt_77d4f5ff h0_result = {0};
-    h_0opt_77d4f5ff h1_f0 = {0};
-    __attribute__((unused)) h_deadaddresscopyinsideafalliblevalue_Db h2_db;
-    h_0opt_77d4f5ff h3_f1 = {0};
-    h_0opt_77d4f5ff h4_own4 = {0};
-    h_0opt_77d4f5ff t1;
-    h_0opt_77d4f5ff t2;
-    h_0opt_77d4f5ff t3;
-    int64_t t4;
-    int64_t t5;
-    bool t6;
-    h_0opt_77d4f5ff t7;
-    HeroFailure t8;
-    h_0opt_77d4f5ff t9;
-    h_deadaddresscopyinsideafalliblevalue_Db t10;
-    h_0opt_77d4f5ff t12;
-    h_0opt_77d4f5ff t13;
-    int64_t t14;
-    int64_t t15;
-    bool t16;
-    h_0opt_77d4f5ff t17;
-    HeroFailure t18;
-    h_0opt_77d4f5ff t19;
-    h_deadaddresscopyinsideafalliblevalue_Db t20;
-    cdb * t21;
-    int32_t t22;
-    h_0opt_77d4f5ff t23;
-    h_0opt_77d4f5ff t24;
-    h_0opt_77d4f5ff t25;
-    h_0opt_77d4f5ff t26;
-    goto bb0;
+#line 26 "tests/golden/run/dead-address-copy-inside-a-fallible-value.hero"
+    h_0opt_77d4f5ff h0_result = {0}; h_0opt_77d4f5ff h1_f0 = {0}; __attribute__((unused)) h_deadaddresscopyinsideafalliblevalue_Db h2_db; h_0opt_77d4f5ff h3_f1 = {0}; h_0opt_77d4f5ff h4_own4 = {0}; h_0opt_77d4f5ff t1; h_0opt_77d4f5ff t2; h_0opt_77d4f5ff t3; int64_t t4; int64_t t5; bool t6; h_0opt_77d4f5ff t7; HeroFailure t8; h_0opt_77d4f5ff t9; h_deadaddresscopyinsideafalliblevalue_Db t10; h_0opt_77d4f5ff t12; h_0opt_77d4f5ff t13; int64_t t14; int64_t t15; bool t16; h_0opt_77d4f5ff t17; HeroFailure t18; h_0opt_77d4f5ff t19; h_deadaddresscopyinsideafalliblevalue_Db t20; cdb * t21; int32_t t22; h_0opt_77d4f5ff t23; h_0opt_77d4f5ff t24; h_0opt_77d4f5ff t25; h_0opt_77d4f5ff t26; goto bb0;
+#line 26 "tests/golden/run/dead-address-copy-inside-a-fallible-value.hero"
 bb0:
-#line 27 "tests/golden/run/dead-address-copy-inside-a-fallible-value.hero"
     t1 = h_deadaddresscopyinsideafalliblevalue_opened();
 #line 27 "tests/golden/run/dead-address-copy-inside-a-fallible-value.hero"
     t23 = h4_own4;
@@ -374,7 +323,7 @@ bb2:
     t7 = h1_f0;
 #line 28 "tests/golden/run/dead-address-copy-inside-a-fallible-value.hero"
     t8 = t7.as.err;
-#line 378 "deadaddresscopyinsideafalliblevalue.c"
+#line 327 "deadaddresscopyinsideafalliblevalue.c"
     hero_panic_must(t8);
     hero_unreachable();
 bb3:
@@ -392,7 +341,7 @@ bb3:
     hero_print_int(t22);
 #line 30 "tests/golden/run/dead-address-copy-inside-a-fallible-value.hero"
     hero_print_end();
-#line 396 "deadaddresscopyinsideafalliblevalue.c"
+#line 345 "deadaddresscopyinsideafalliblevalue.c"
     h_0opt_77d4f5ff_release(hero_slot_escape(&h0_result));
     h_0opt_77d4f5ff_release(hero_slot_escape(&h1_f0));
     h_0opt_77d4f5ff_release(hero_slot_escape(&h3_f1));
@@ -403,7 +352,7 @@ bb4:
     t17 = h3_f1;
 #line 30 "tests/golden/run/dead-address-copy-inside-a-fallible-value.hero"
     t18 = t17.as.err;
-#line 407 "deadaddresscopyinsideafalliblevalue.c"
+#line 356 "deadaddresscopyinsideafalliblevalue.c"
     hero_panic_must(t18);
     hero_unreachable();
 }

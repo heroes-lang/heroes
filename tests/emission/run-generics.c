@@ -106,18 +106,10 @@ HERO_TU_LOCAL HeroArrayHeader * h_generics_first_4ce7463f(HeroArrayHeader * h0_x
 
 #line 31 "tests/golden/run/generics.hero"
 HeroStr h_generics_label(int64_t h0_n) {
-#line 110 "generics.c"
-    HeroStr h1_own1 = {0};
-    HeroStr h2_own2 = {0};
-    HeroStr t1;
-    int64_t t2;
-    HeroStr t3;
-    HeroStr t4;
-    HeroStr t5;
-    HeroStr t6;
-    goto bb0;
+#line 31 "tests/golden/run/generics.hero"
+    HeroStr h1_own1 = {0}; HeroStr h2_own2 = {0}; HeroStr t1; int64_t t2; HeroStr t3; HeroStr t4; HeroStr t5; HeroStr t6; goto bb0;
+#line 31 "tests/golden/run/generics.hero"
 bb0:
-#line 32 "tests/golden/run/generics.hero"
     t1 = HERO_STR_LIT(hero_str_23);
 #line 32 "tests/golden/run/generics.hero"
     t2 = h0_n;
@@ -137,7 +129,7 @@ bb0:
     h2_own2 = t4;
 #line 32 "tests/golden/run/generics.hero"
     hero_str_decref(t6);
-#line 141 "generics.c"
+#line 133 "generics.c"
     hero_str_incref(t4);
     hero_str_release_at(&h1_own1);
     hero_str_release_at(&h2_own2);
@@ -146,93 +138,9 @@ bb0:
 
 #line 34 "tests/golden/run/generics.hero"
 void h_generics_main(void) {
-#line 150 "generics.c"
-    HeroArrayHeader * h0_rows = {0};
-    HeroArrayHeader * h1_own1 = {0};
-    HeroStr h2_own2 = {0};
-    HeroArrayHeader * h3_own3 = {0};
-    HeroArrayHeader * h4_own4 = {0};
-    HeroStr h5_own5 = {0};
-    HeroArrayHeader * h6_own6 = {0};
-    HeroArrayHeader * h7_own7 = {0};
-    HeroArrayHeader * h8_own8 = {0};
-    HeroStr h9_own9 = {0};
-    HeroArrayHeader * h10_own10 = {0};
-    HeroArrayHeader * h11_own11 = {0};
-    HeroArrayHeader * h12_own12 = {0};
-    HeroArrayHeader * h13_own13 = {0};
-    HeroArrayHeader * h14_own14 = {0};
-    HeroArrayHeader * h15_own15 = {0};
-    HeroArrayHeader * h16_own16 = {0};
-    HeroStr h17_own17 = {0};
-    HeroStr t1;
-    HeroStr t2;
-    HeroArrayHeader * t3;
-    HeroStr t4;
-    HeroStr t5;
-    int64_t t6;
-    int64_t t7;
-    int64_t t8;
-    HeroArrayHeader * t9;
-    int64_t t10;
-    HeroStr t11;
-    HeroStr t12;
-    HeroArrayHeader * t13;
-    HeroStr t14;
-    HeroStr t15;
-    int64_t t16;
-    int64_t t17;
-    int64_t t18;
-    HeroArrayHeader * t19;
-    int64_t t20;
-    int64_t t21;
-    int64_t t22;
-    int64_t t23;
-    HeroArrayHeader * t24;
-    h_0fn_4a13fb08 t25;
-    HeroArrayHeader * t26;
-    HeroStr t27;
-    HeroStr t28;
-    int64_t t29;
-    int64_t t30;
-    HeroArrayHeader * t31;
-    int64_t t32;
-    int64_t t33;
-    int64_t t34;
-    HeroArrayHeader * t35;
-    int64_t t36;
-    HeroStr t37;
-    HeroStr t38;
-    HeroArrayHeader * t39;
-    HeroStr t40;
-    HeroArrayHeader * t41;
-    HeroArrayHeader * t42;
-    HeroArrayHeader * t43;
-    HeroArrayHeader * t44;
-    int64_t t45;
-    HeroStr t46;
-    HeroArrayHeader * t47;
-    HeroArrayHeader * t48;
-    HeroStr t49;
-    HeroArrayHeader * t50;
-    HeroStr t51;
-    HeroArrayHeader * t52;
-    HeroArrayHeader * t53;
-    HeroStr t54;
-    HeroArrayHeader * t55;
-    HeroArrayHeader * t56;
-    HeroArrayHeader * t57;
-    HeroStr t58;
-    HeroArrayHeader * t59;
-    HeroArrayHeader * t60;
-    HeroArrayHeader * t61;
-    HeroArrayHeader * t62;
-    HeroArrayHeader * t63;
-    HeroArrayHeader * t64;
-    HeroArrayHeader * t65;
-    HeroArrayHeader * t66;
-    HeroStr t67;
-    goto bb0;
+#line 34 "tests/golden/run/generics.hero"
+    HeroArrayHeader * h0_rows = {0}; HeroArrayHeader * h1_own1 = {0}; HeroStr h2_own2 = {0}; HeroArrayHeader * h3_own3 = {0}; HeroArrayHeader * h4_own4 = {0}; HeroStr h5_own5 = {0}; HeroArrayHeader * h6_own6 = {0}; HeroArrayHeader * h7_own7 = {0}; HeroArrayHeader * h8_own8 = {0}; HeroStr h9_own9 = {0}; HeroArrayHeader * h10_own10 = {0}; HeroArrayHeader * h11_own11 = {0}; HeroArrayHeader * h12_own12 = {0}; HeroArrayHeader * h13_own13 = {0}; HeroArrayHeader * h14_own14 = {0}; HeroArrayHeader * h15_own15 = {0}; HeroArrayHeader * h16_own16 = {0}; HeroStr h17_own17 = {0}; HeroStr t1; HeroStr t2; HeroArrayHeader * t3; HeroStr t4; HeroStr t5; int64_t t6; int64_t t7; int64_t t8; HeroArrayHeader * t9; int64_t t10; HeroStr t11; HeroStr t12; HeroArrayHeader * t13; HeroStr t14; HeroStr t15; int64_t t16; int64_t t17; int64_t t18; HeroArrayHeader * t19; int64_t t20; int64_t t21; int64_t t22; int64_t t23; HeroArrayHeader * t24; h_0fn_4a13fb08 t25; HeroArrayHeader * t26; HeroStr t27; HeroStr t28; int64_t t29; int64_t t30; HeroArrayHeader * t31; int64_t t32; int64_t t33; int64_t t34; HeroArrayHeader * t35; int64_t t36; HeroStr t37; HeroStr t38; HeroArrayHeader * t39; HeroStr t40; HeroArrayHeader * t41; HeroArrayHeader * t42; HeroArrayHeader * t43; HeroArrayHeader * t44; int64_t t45; HeroStr t46; HeroArrayHeader * t47; HeroArrayHeader * t48; HeroStr t49; HeroArrayHeader * t50; HeroStr t51; HeroArrayHeader * t52; HeroArrayHeader * t53; HeroStr t54; HeroArrayHeader * t55; HeroArrayHeader * t56; HeroArrayHeader * t57; HeroStr t58; HeroArrayHeader * t59; HeroArrayHeader * t60; HeroArrayHeader * t61; HeroArrayHeader * t62; HeroArrayHeader * t63; HeroArrayHeader * t64; HeroArrayHeader * t65; HeroArrayHeader * t66; HeroStr t67; goto bb0;
+#line 34 "tests/golden/run/generics.hero"
 bb0:
 #line 36 "tests/golden/run/generics.hero"
     t1 = HERO_STR_LIT(hero_str_6bb5e50a);
@@ -518,7 +426,7 @@ bb0:
     hero_print_str(t49);
 #line 48 "tests/golden/run/generics.hero"
     hero_print_end();
-#line 522 "generics.c"
+#line 430 "generics.c"
     hero_array_release_at(&h0_rows);
     hero_array_release_at(&h1_own1);
     hero_str_release_at(&h2_own2);
@@ -544,19 +452,16 @@ bb0:
 /* first<str> */
 #line 16 "tests/golden/run/generics.hero"
 HERO_TU_LOCAL HeroStr h_generics_first_1e58d9(HeroArrayHeader * h0_xs) {
-#line 548 "generics.c"
-    HeroArrayHeader * t1;
-    int64_t t2;
-    HeroStr t3;
-    goto bb0;
+#line 16 "tests/golden/run/generics.hero"
+    HeroArrayHeader * t1; int64_t t2; HeroStr t3; goto bb0;
+#line 16 "tests/golden/run/generics.hero"
 bb0:
-#line 17 "tests/golden/run/generics.hero"
     t1 = h0_xs;
 #line 17 "tests/golden/run/generics.hero"
     t2 = INT64_C(0);
 #line 17 "tests/golden/run/generics.hero"
     t3 = ((void)((t1 == NULL || t2 < 0 || t2 >= t1->len) ? ((void)hero_array_at(t1, t2), hero_unreachable()) : (void)0), (void)(t1->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t1 + 1))[t2]);
-#line 560 "generics.c"
+#line 465 "generics.c"
     hero_str_incref(t3);
     return t3;
 }
@@ -565,13 +470,10 @@ bb0:
 /* first<i64> */
 #line 16 "tests/golden/run/generics.hero"
 HERO_TU_LOCAL int64_t h_generics_first_1b9a87(HeroArrayHeader * h0_xs) {
-#line 569 "generics.c"
-    HeroArrayHeader * t1;
-    int64_t t2;
-    int64_t t3;
-    goto bb0;
+#line 16 "tests/golden/run/generics.hero"
+    HeroArrayHeader * t1; int64_t t2; int64_t t3; goto bb0;
+#line 16 "tests/golden/run/generics.hero"
 bb0:
-#line 17 "tests/golden/run/generics.hero"
     t1 = h0_xs;
 #line 17 "tests/golden/run/generics.hero"
     t2 = INT64_C(0);
@@ -579,23 +481,17 @@ bb0:
     t3 = ((void)((t1 == NULL || t2 < 0 || t2 >= t1->len) ? ((void)hero_array_at(t1, t2), hero_unreachable()) : (void)0), (void)(t1->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t1 + 1))[t2]);
 #line 17 "tests/golden/run/generics.hero"
     return t3;
-#line 583 "generics.c"
+#line 485 "generics.c"
 }
 
 #line 19 "tests/golden/run/generics.hero"
 /* last<str> */
 #line 19 "tests/golden/run/generics.hero"
 HERO_TU_LOCAL HeroStr h_generics_last_1e58d9(HeroArrayHeader * h0_xs) {
-#line 590 "generics.c"
-    HeroArrayHeader * t1;
-    HeroArrayHeader * t2;
-    int64_t t3;
-    int64_t t4;
-    int64_t t5;
-    HeroStr t6;
-    goto bb0;
+#line 19 "tests/golden/run/generics.hero"
+    HeroArrayHeader * t1; HeroArrayHeader * t2; int64_t t3; int64_t t4; int64_t t5; HeroStr t6; goto bb0;
+#line 19 "tests/golden/run/generics.hero"
 bb0:
-#line 20 "tests/golden/run/generics.hero"
     t1 = h0_xs;
 #line 20 "tests/golden/run/generics.hero"
     t2 = h0_xs;
@@ -607,7 +503,7 @@ bb0:
     if (__builtin_sub_overflow(t3, t4, &t5)) hero_panic_overflow();
 #line 20 "tests/golden/run/generics.hero"
     t6 = ((void)((t1 == NULL || t5 < 0 || t5 >= t1->len) ? ((void)hero_array_at(t1, t5), hero_unreachable()) : (void)0), (void)(t1->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t1 + 1))[t5]);
-#line 611 "generics.c"
+#line 507 "generics.c"
     hero_str_incref(t6);
     return t6;
 }
@@ -616,16 +512,10 @@ bb0:
 /* last<i64> */
 #line 19 "tests/golden/run/generics.hero"
 HERO_TU_LOCAL int64_t h_generics_last_1b9a87(HeroArrayHeader * h0_xs) {
-#line 620 "generics.c"
-    HeroArrayHeader * t1;
-    HeroArrayHeader * t2;
-    int64_t t3;
-    int64_t t4;
-    int64_t t5;
-    int64_t t6;
-    goto bb0;
+#line 19 "tests/golden/run/generics.hero"
+    HeroArrayHeader * t1; HeroArrayHeader * t2; int64_t t3; int64_t t4; int64_t t5; int64_t t6; goto bb0;
+#line 19 "tests/golden/run/generics.hero"
 bb0:
-#line 20 "tests/golden/run/generics.hero"
     t1 = h0_xs;
 #line 20 "tests/golden/run/generics.hero"
     t2 = h0_xs;
@@ -639,44 +529,17 @@ bb0:
     t6 = ((void)((t1 == NULL || t5 < 0 || t5 >= t1->len) ? ((void)hero_array_at(t1, t5), hero_unreachable()) : (void)0), (void)(t1->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t1 + 1))[t5]);
 #line 20 "tests/golden/run/generics.hero"
     return t6;
-#line 643 "generics.c"
+#line 533 "generics.c"
 }
 
 #line 23 "tests/golden/run/generics.hero"
 /* convert<i64, str> */
 #line 23 "tests/golden/run/generics.hero"
 HERO_TU_LOCAL HeroArrayHeader * h_generics_convert_37fb3fcc(HeroArrayHeader * h0_xs, h_0fn_4a13fb08 h1_f) {
-#line 650 "generics.c"
-    HeroArrayHeader * h2_out = {0};
-    HeroArrayHeader * h3_xs0 = {0};
-    int64_t h4_i0;
-    int64_t h5_x;
-    HeroArrayHeader * h6_own6 = {0};
-    HeroStr h7_own7 = {0};
-    HeroArrayHeader * t1;
-    HeroArrayHeader * t2;
-    int64_t t3;
-    int64_t t4;
-    HeroArrayHeader * t5;
-    int64_t t6;
-    bool t7;
-    HeroArrayHeader * t8;
-    int64_t t9;
-    int64_t t10;
-    h_0fn_4a13fb08 t12;
-    int64_t t13;
-    HeroStr t14;
-    int64_t t16;
-    int64_t t17;
-    int64_t t18;
-    HeroArrayHeader * t19;
-    HeroArrayHeader * t20;
-    HeroArrayHeader * t21;
-    HeroArrayHeader * t22;
-    HeroStr t23;
-    goto bb0;
+#line 23 "tests/golden/run/generics.hero"
+    HeroArrayHeader * h2_out = {0}; HeroArrayHeader * h3_xs0 = {0}; int64_t h4_i0; int64_t h5_x; HeroArrayHeader * h6_own6 = {0}; HeroStr h7_own7 = {0}; HeroArrayHeader * t1; HeroArrayHeader * t2; int64_t t3; int64_t t4; HeroArrayHeader * t5; int64_t t6; bool t7; HeroArrayHeader * t8; int64_t t9; int64_t t10; h_0fn_4a13fb08 t12; int64_t t13; HeroStr t14; int64_t t16; int64_t t17; int64_t t18; HeroArrayHeader * t19; HeroArrayHeader * t20; HeroArrayHeader * t21; HeroArrayHeader * t22; HeroStr t23; goto bb0;
+#line 23 "tests/golden/run/generics.hero"
 bb0:
-#line 24 "tests/golden/run/generics.hero"
     t1 = hero_array_new(&hero_desc_str, 1);
 #line 24 "tests/golden/run/generics.hero"
     t20 = h6_own6;
@@ -761,7 +624,7 @@ bb3:
 bb4:
 #line 29 "tests/golden/run/generics.hero"
     t19 = h2_out;
-#line 765 "generics.c"
+#line 628 "generics.c"
     hero_array_incref(t19);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h3_xs0);
@@ -774,19 +637,16 @@ bb4:
 /* first<[str]> */
 #line 16 "tests/golden/run/generics.hero"
 HERO_TU_LOCAL HeroArrayHeader * h_generics_first_4ce7463f(HeroArrayHeader * h0_xs) {
-#line 778 "generics.c"
-    HeroArrayHeader * t1;
-    int64_t t2;
-    HeroArrayHeader * t3;
-    goto bb0;
+#line 16 "tests/golden/run/generics.hero"
+    HeroArrayHeader * t1; int64_t t2; HeroArrayHeader * t3; goto bb0;
+#line 16 "tests/golden/run/generics.hero"
 bb0:
-#line 17 "tests/golden/run/generics.hero"
     t1 = h0_xs;
 #line 17 "tests/golden/run/generics.hero"
     t2 = INT64_C(0);
 #line 17 "tests/golden/run/generics.hero"
     t3 = ((void)((t1 == NULL || t2 < 0 || t2 >= t1->len) ? ((void)hero_array_at(t1, t2), hero_unreachable()) : (void)0), (void)(t1->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t1 + 1))[t2]);
-#line 790 "generics.c"
+#line 650 "generics.c"
     hero_array_incref(t3);
     return t3;
 }

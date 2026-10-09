@@ -93,120 +93,10 @@ void h_fixedbugsequalitywasdecidedbyanaddress_main(void);
 
 #line 47 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
 void h_fixedbugsequalitywasdecidedbyanaddress_main(void) {
-#line 97 "fixedbugsequalitywasdecidedbyanaddress.c"
-    double h0_n;
-    HeroArrayHeader * h1_a = {0};
-    HeroArrayHeader * h2_b = {0};
-    HeroArrayHeader * h3_c = {0};
-    HeroMapHeader * h4_ma = {0};
-    HeroMapHeader * h5_mb = {0};
-    HeroMapHeader * h6_mc = {0};
-    HeroArrayHeader * h7_xs = {0};
-    HeroArrayHeader * h8_ys = {0};
-    HeroArrayHeader * h9_zs = {0};
-    HeroMapHeader * h10_ns = {0};
-    HeroMapHeader * h11_os = {0};
-    HeroMapHeader * h12_ps = {0};
-    HeroArrayHeader * h13_own13 = {0};
-    HeroArrayHeader * h14_own14 = {0};
-    HeroMapHeader * h15_own15 = {0};
-    HeroMapHeader * h16_own16 = {0};
-    HeroArrayHeader * h17_own17 = {0};
-    HeroArrayHeader * h18_own18 = {0};
-    HeroMapHeader * h19_own19 = {0};
-    HeroMapHeader * h20_own20 = {0};
-    HeroArrayHeader * h21_own21 = {0};
-    HeroArrayHeader * h22_own22 = {0};
-    double t1;
-    double t2;
-    double t3;
-    double t4;
-    HeroArrayHeader * t5;
-    HeroArrayHeader * t6;
-    double t7;
-    HeroArrayHeader * t8;
-    HeroArrayHeader * t9;
-    HeroArrayHeader * t10;
-    bool t11;
-    HeroStr t12;
-    HeroArrayHeader * t13;
-    HeroArrayHeader * t14;
-    bool t15;
-    HeroStr t16;
-    double t17;
-    HeroMapHeader * t18;
-    HeroMapHeader * t19;
-    HeroStr t20;
-    double t21;
-    HeroMapHeader * t22;
-    HeroMapHeader * t23;
-    HeroMapHeader * t24;
-    bool t25;
-    HeroStr t26;
-    HeroMapHeader * t27;
-    HeroMapHeader * t28;
-    bool t29;
-    double t30;
-    double t31;
-    double t32;
-    HeroArrayHeader * t33;
-    HeroArrayHeader * t34;
-    double t35;
-    double t36;
-    double t37;
-    HeroArrayHeader * t38;
-    HeroArrayHeader * t39;
-    HeroArrayHeader * t40;
-    bool t41;
-    HeroStr t42;
-    HeroArrayHeader * t43;
-    HeroArrayHeader * t44;
-    bool t45;
-    HeroStr t46;
-    int64_t t47;
-    HeroMapHeader * t48;
-    HeroMapHeader * t49;
-    HeroStr t50;
-    int64_t t51;
-    HeroMapHeader * t52;
-    HeroMapHeader * t53;
-    HeroMapHeader * t54;
-    bool t55;
-    HeroStr t56;
-    HeroMapHeader * t57;
-    HeroMapHeader * t58;
-    bool t59;
-    double t60;
-    HeroArrayHeader * t61;
-    double t62;
-    double t63;
-    HeroArrayHeader * t64;
-    bool t65;
-    HeroArrayHeader * t66;
-    HeroArrayHeader * t67;
-    HeroArrayHeader * t68;
-    HeroArrayHeader * t69;
-    HeroArrayHeader * t70;
-    HeroMapHeader * t71;
-    HeroMapHeader * t72;
-    HeroMapHeader * t73;
-    HeroMapHeader * t74;
-    HeroMapHeader * t75;
-    HeroArrayHeader * t76;
-    HeroArrayHeader * t77;
-    HeroArrayHeader * t78;
-    HeroArrayHeader * t79;
-    HeroArrayHeader * t80;
-    HeroMapHeader * t81;
-    HeroMapHeader * t82;
-    HeroMapHeader * t83;
-    HeroMapHeader * t84;
-    HeroMapHeader * t85;
-    HeroArrayHeader * t86;
-    HeroArrayHeader * t87;
-    goto bb0;
+#line 47 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
+    double h0_n; HeroArrayHeader * h1_a = {0}; HeroArrayHeader * h2_b = {0}; HeroArrayHeader * h3_c = {0}; HeroMapHeader * h4_ma = {0}; HeroMapHeader * h5_mb = {0}; HeroMapHeader * h6_mc = {0}; HeroArrayHeader * h7_xs = {0}; HeroArrayHeader * h8_ys = {0}; HeroArrayHeader * h9_zs = {0}; HeroMapHeader * h10_ns = {0}; HeroMapHeader * h11_os = {0}; HeroMapHeader * h12_ps = {0}; HeroArrayHeader * h13_own13 = {0}; HeroArrayHeader * h14_own14 = {0}; HeroMapHeader * h15_own15 = {0}; HeroMapHeader * h16_own16 = {0}; HeroArrayHeader * h17_own17 = {0}; HeroArrayHeader * h18_own18 = {0}; HeroMapHeader * h19_own19 = {0}; HeroMapHeader * h20_own20 = {0}; HeroArrayHeader * h21_own21 = {0}; HeroArrayHeader * h22_own22 = {0}; double t1; double t2; double t3; double t4; HeroArrayHeader * t5; HeroArrayHeader * t6; double t7; HeroArrayHeader * t8; HeroArrayHeader * t9; HeroArrayHeader * t10; bool t11; HeroStr t12; HeroArrayHeader * t13; HeroArrayHeader * t14; bool t15; HeroStr t16; double t17; HeroMapHeader * t18; HeroMapHeader * t19; HeroStr t20; double t21; HeroMapHeader * t22; HeroMapHeader * t23; HeroMapHeader * t24; bool t25; HeroStr t26; HeroMapHeader * t27; HeroMapHeader * t28; bool t29; double t30; double t31; double t32; HeroArrayHeader * t33; HeroArrayHeader * t34; double t35; double t36; double t37; HeroArrayHeader * t38; HeroArrayHeader * t39; HeroArrayHeader * t40; bool t41; HeroStr t42; HeroArrayHeader * t43; HeroArrayHeader * t44; bool t45; HeroStr t46; int64_t t47; HeroMapHeader * t48; HeroMapHeader * t49; HeroStr t50; int64_t t51; HeroMapHeader * t52; HeroMapHeader * t53; HeroMapHeader * t54; bool t55; HeroStr t56; HeroMapHeader * t57; HeroMapHeader * t58; bool t59; double t60; HeroArrayHeader * t61; double t62; double t63; HeroArrayHeader * t64; bool t65; HeroArrayHeader * t66; HeroArrayHeader * t67; HeroArrayHeader * t68; HeroArrayHeader * t69; HeroArrayHeader * t70; HeroMapHeader * t71; HeroMapHeader * t72; HeroMapHeader * t73; HeroMapHeader * t74; HeroMapHeader * t75; HeroArrayHeader * t76; HeroArrayHeader * t77; HeroArrayHeader * t78; HeroArrayHeader * t79; HeroArrayHeader * t80; HeroMapHeader * t81; HeroMapHeader * t82; HeroMapHeader * t83; HeroMapHeader * t84; HeroMapHeader * t85; HeroArrayHeader * t86; HeroArrayHeader * t87; goto bb0;
+#line 47 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
 bb0:
-#line 48 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
     t1 = 0x0p+0;
 #line 48 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
     t2 = 0x0p+0;
@@ -548,7 +438,7 @@ bb0:
     hero_print_bool(t65);
 #line 79 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
     hero_print_end();
-#line 552 "fixedbugsequalitywasdecidedbyanaddress.c"
+#line 442 "fixedbugsequalitywasdecidedbyanaddress.c"
     hero_array_release_at(&h1_a);
     hero_array_release_at(&h2_b);
     hero_array_release_at(&h3_c);

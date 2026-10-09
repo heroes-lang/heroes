@@ -92,15 +92,10 @@ void h_library_exit(int64_t h0_code);
 
 #line 9 "tests/golden/run/fixedbugs-507-a-loop-ended-by-a-callee-s-exit-builds-silently.hero"
 void h_fixedbugs507aloopendedbyacalleesexitbuildssilently_work(int64_t h0_n) {
-#line 96 "fixedbugs507aloopendedbyacalleesexitbuildssilently.c"
-    int64_t t1;
-    int64_t t2;
-    bool t3;
-    int64_t t4;
-    int64_t t5;
-    goto bb0;
+#line 9 "tests/golden/run/fixedbugs-507-a-loop-ended-by-a-callee-s-exit-builds-silently.hero"
+    int64_t t1; int64_t t2; bool t3; int64_t t4; int64_t t5; goto bb0;
+#line 9 "tests/golden/run/fixedbugs-507-a-loop-ended-by-a-callee-s-exit-builds-silently.hero"
 bb0:
-#line 10 "tests/golden/run/fixedbugs-507-a-loop-ended-by-a-callee-s-exit-builds-silently.hero"
     t1 = h0_n;
 #line 10 "tests/golden/run/fixedbugs-507-a-loop-ended-by-a-callee-s-exit-builds-silently.hero"
     t2 = INT64_C(2);
@@ -132,19 +127,15 @@ bb2:
 bb3:
 #line 11 "tests/golden/run/fixedbugs-507-a-loop-ended-by-a-callee-s-exit-builds-silently.hero"
     goto bb1;
-#line 136 "fixedbugs507aloopendedbyacalleesexitbuildssilently.c"
+#line 131 "fixedbugs507aloopendedbyacalleesexitbuildssilently.c"
 }
 
 #line 14 "tests/golden/run/fixedbugs-507-a-loop-ended-by-a-callee-s-exit-builds-silently.hero"
 void h_fixedbugs507aloopendedbyacalleesexitbuildssilently_turn(int64_t h0_n) {
-#line 141 "fixedbugs507aloopendedbyacalleesexitbuildssilently.c"
-    int64_t t1;
-    int64_t t2;
-    int64_t t3;
-    int64_t t4;
-    goto bb0;
+#line 14 "tests/golden/run/fixedbugs-507-a-loop-ended-by-a-callee-s-exit-builds-silently.hero"
+    int64_t t1; int64_t t2; int64_t t3; int64_t t4; goto bb0;
+#line 14 "tests/golden/run/fixedbugs-507-a-loop-ended-by-a-callee-s-exit-builds-silently.hero"
 bb0:
-#line 15 "tests/golden/run/fixedbugs-507-a-loop-ended-by-a-callee-s-exit-builds-silently.hero"
     t1 = h0_n;
 #line 15 "tests/golden/run/fixedbugs-507-a-loop-ended-by-a-callee-s-exit-builds-silently.hero"
     h_fixedbugs507aloopendedbyacalleesexitbuildssilently_work(t1);
@@ -157,37 +148,35 @@ bb0:
     h_fixedbugs507aloopendedbyacalleesexitbuildssilently_turn(t4);
 #line 16 "tests/golden/run/fixedbugs-507-a-loop-ended-by-a-callee-s-exit-builds-silently.hero"
     return;
-#line 161 "fixedbugs507aloopendedbyacalleesexitbuildssilently.c"
+#line 152 "fixedbugs507aloopendedbyacalleesexitbuildssilently.c"
 }
 
 #line 18 "tests/golden/run/fixedbugs-507-a-loop-ended-by-a-callee-s-exit-builds-silently.hero"
 void h_fixedbugs507aloopendedbyacalleesexitbuildssilently_main(void) {
-#line 166 "fixedbugs507aloopendedbyacalleesexitbuildssilently.c"
-    int64_t t1;
-    goto bb0;
+#line 18 "tests/golden/run/fixedbugs-507-a-loop-ended-by-a-callee-s-exit-builds-silently.hero"
+    int64_t t1; goto bb0;
+#line 18 "tests/golden/run/fixedbugs-507-a-loop-ended-by-a-callee-s-exit-builds-silently.hero"
 bb0:
-#line 19 "tests/golden/run/fixedbugs-507-a-loop-ended-by-a-callee-s-exit-builds-silently.hero"
     t1 = INT64_C(0);
 #line 19 "tests/golden/run/fixedbugs-507-a-loop-ended-by-a-callee-s-exit-builds-silently.hero"
     h_fixedbugs507aloopendedbyacalleesexitbuildssilently_turn(t1);
 #line 19 "tests/golden/run/fixedbugs-507-a-loop-ended-by-a-callee-s-exit-builds-silently.hero"
     return;
-#line 176 "fixedbugs507aloopendedbyacalleesexitbuildssilently.c"
+#line 166 "fixedbugs507aloopendedbyacalleesexitbuildssilently.c"
 }
 
 #line 227 "<heroes library>"
 void h_library_exit(int64_t h0_code) {
-#line 181 "fixedbugs507aloopendedbyacalleesexitbuildssilently.c"
-    int64_t t1;
-    goto bb0;
+#line 227 "<heroes library>"
+    int64_t t1; goto bb0;
+#line 227 "<heroes library>"
 bb0:
-#line 228 "<heroes library>"
     t1 = h0_code;
 #line 228 "<heroes library>"
     (void)hero_exit(t1);
 #line 228 "<heroes library>"
     return;
-#line 191 "fixedbugs507aloopendedbyacalleesexitbuildssilently.c"
+#line 180 "fixedbugs507aloopendedbyacalleesexitbuildssilently.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

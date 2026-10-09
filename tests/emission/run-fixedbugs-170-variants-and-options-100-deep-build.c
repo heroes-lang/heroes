@@ -5062,22 +5062,10 @@ void h_fixedbugs170variantsandoptions100deepbuild_main(void);
 
 #line 526 "tests/golden/run/fixedbugs-170-variants-and-options-100-deep-build.hero"
 void h_fixedbugs170variantsandoptions100deepbuild_main(void) {
-#line 5066 "fixedbugs170variantsandoptions100deepbuild.c"
-    HeroArrayHeader * h0_xs;
-    __builtin_memset(&h0_xs, 0, sizeof h0_xs);
-    HeroArrayHeader * h1_own1;
-    __builtin_memset(&h1_own1, 0, sizeof h1_own1);
-    HeroArrayHeader * t1;
-    HeroArrayHeader * t2;
-    int64_t t3;
-    HeroArrayHeader * t4;
-    HeroArrayHeader * t5;
-    bool t6;
-    HeroArrayHeader * t7;
-    HeroArrayHeader * t8;
-    goto bb0;
+#line 526 "tests/golden/run/fixedbugs-170-variants-and-options-100-deep-build.hero"
+    HeroArrayHeader * h0_xs; __builtin_memset(&h0_xs, 0, sizeof h0_xs); HeroArrayHeader * h1_own1; __builtin_memset(&h1_own1, 0, sizeof h1_own1); HeroArrayHeader * t1; HeroArrayHeader * t2; int64_t t3; HeroArrayHeader * t4; HeroArrayHeader * t5; bool t6; HeroArrayHeader * t7; HeroArrayHeader * t8; goto bb0;
+#line 526 "tests/golden/run/fixedbugs-170-variants-and-options-100-deep-build.hero"
 bb0:
-#line 527 "tests/golden/run/fixedbugs-170-variants-and-options-100-deep-build.hero"
     t1 = hero_array_new(&h_fixedbugs170variantsandoptions100deepbuild_R99_desc, 1);
 #line 527 "tests/golden/run/fixedbugs-170-variants-and-options-100-deep-build.hero"
     t7 = h1_own1;
@@ -5109,7 +5097,7 @@ bb0:
     hero_print_bool(t6);
 #line 529 "tests/golden/run/fixedbugs-170-variants-and-options-100-deep-build.hero"
     hero_print_end();
-#line 5113 "fixedbugs170variantsandoptions100deepbuild.c"
+#line 5101 "fixedbugs170variantsandoptions100deepbuild.c"
     hero_array_release_at(&h0_xs);
     hero_array_release_at(&h1_own1);
     return;

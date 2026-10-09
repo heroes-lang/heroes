@@ -107,38 +107,10 @@ void h_handletransferintoanullresultisnotmade_main(void);
 
 #line 14 "tests/golden/run/handle-transfer-into-a-null-result-is-not-made.hero"
 void h_handletransferintoanullresultisnotmade_main(void) {
-#line 111 "handletransferintoanullresultisnotmade.c"
-    mem * h0_p;
-    mem * h1_q;
-    mem * h2_r;
-    mem * h3_t;
-    int64_t t1;
-    mem * t2;
-    mem * t3;
-    int64_t t4;
-    mem * t5;
-    mem * t6;
-    mem * t7;
-    bool t8;
-    HeroStr t9;
-    mem * t10;
-    int64_t t11;
-    mem * t12;
-    int64_t t13;
-    mem * t14;
-    mem * t15;
-    int64_t t16;
-    mem * t17;
-    mem * t18;
-    mem * t19;
-    bool t20;
-    HeroStr t21;
-    mem * t22;
-    int64_t t23;
-    mem * t24;
-    goto bb0;
+#line 14 "tests/golden/run/handle-transfer-into-a-null-result-is-not-made.hero"
+    mem * h0_p; mem * h1_q; mem * h2_r; mem * h3_t; int64_t t1; mem * t2; mem * t3; int64_t t4; mem * t5; mem * t6; mem * t7; bool t8; HeroStr t9; mem * t10; int64_t t11; mem * t12; int64_t t13; mem * t14; mem * t15; int64_t t16; mem * t17; mem * t18; mem * t19; bool t20; HeroStr t21; mem * t22; int64_t t23; mem * t24; goto bb0;
+#line 14 "tests/golden/run/handle-transfer-into-a-null-result-is-not-made.hero"
 bb0:
-#line 15 "tests/golden/run/handle-transfer-into-a-null-result-is-not-made.hero"
     t1 = INT64_C(8);
 #line 15 "tests/golden/run/handle-transfer-into-a-null-result-is-not-made.hero"
     t2 = mem_new(t1);
@@ -300,7 +272,7 @@ bb5:
 bb6:
 #line 26 "tests/golden/run/handle-transfer-into-a-null-result-is-not-made.hero"
     goto bb4;
-#line 304 "handletransferintoanullresultisnotmade.c"
+#line 276 "handletransferintoanullresultisnotmade.c"
 }
 HERO_TU_LOCAL bool h_handletransferintoanullresultisnotmade_Mem_eq(mem * const *a, mem * const *b) {
     return hero_handle_eq(*a, *b);

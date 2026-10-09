@@ -89,37 +89,10 @@ int64_t h_adversarialcontinuesteps_evens_in(HeroArrayHeader * h0_xs);
 
 #line 7 "tests/golden/ir/adversarial-continue-steps.hero"
 int64_t h_adversarialcontinuesteps_evens_in(HeroArrayHeader * h0_xs) {
-#line 93 "adversarialcontinuesteps.c"
-    int64_t h1_count;
-    HeroArrayHeader * h2_xs0 = {0};
-    int64_t h3_i0;
-    int64_t h4_x;
-    int64_t t1;
-    HeroArrayHeader * t2;
-    int64_t t3;
-    int64_t t4;
-    HeroArrayHeader * t5;
-    int64_t t6;
-    bool t7;
-    HeroArrayHeader * t8;
-    int64_t t9;
-    int64_t t10;
-    int64_t t11;
-    int64_t t12;
-    int64_t t13;
-    int64_t t14;
-    bool t15;
-    int64_t t16;
-    int64_t t17;
-    int64_t t18;
-    int64_t t19;
-    int64_t t20;
-    int64_t t21;
-    int64_t t22;
-    HeroArrayHeader * t23;
-    goto bb0;
+#line 7 "tests/golden/ir/adversarial-continue-steps.hero"
+    int64_t h1_count; HeroArrayHeader * h2_xs0 = {0}; int64_t h3_i0; int64_t h4_x; int64_t t1; HeroArrayHeader * t2; int64_t t3; int64_t t4; HeroArrayHeader * t5; int64_t t6; bool t7; HeroArrayHeader * t8; int64_t t9; int64_t t10; int64_t t11; int64_t t12; int64_t t13; int64_t t14; bool t15; int64_t t16; int64_t t17; int64_t t18; int64_t t19; int64_t t20; int64_t t21; int64_t t22; HeroArrayHeader * t23; goto bb0;
+#line 7 "tests/golden/ir/adversarial-continue-steps.hero"
 bb0:
-#line 8 "tests/golden/ir/adversarial-continue-steps.hero"
     t1 = INT64_C(0);
 #line 8 "tests/golden/ir/adversarial-continue-steps.hero"
     h1_count = t1;
@@ -192,7 +165,7 @@ bb3:
 bb4:
 #line 15 "tests/golden/ir/adversarial-continue-steps.hero"
     t22 = h1_count;
-#line 196 "adversarialcontinuesteps.c"
+#line 169 "adversarialcontinuesteps.c"
     hero_array_release_at(&h2_xs0);
     return t22;
 bb5:
@@ -214,7 +187,7 @@ bb6:
 bb7:
 #line 13 "tests/golden/ir/adversarial-continue-steps.hero"
     goto bb5;
-#line 218 "adversarialcontinuesteps.c"
+#line 191 "adversarialcontinuesteps.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

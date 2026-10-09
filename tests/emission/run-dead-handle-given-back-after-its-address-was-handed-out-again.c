@@ -105,11 +105,10 @@ void h_deadhandlegivenbackafteritsaddresswashandedoutagain_main(void);
 
 #line 20 "tests/golden/run/dead-handle-given-back-after-its-address-was-handed-out-again.hero"
 void h_deadhandlegivenbackafteritsaddresswashandedoutagain_closed(node * *ph0_n) {
-#line 109 "deadhandlegivenbackafteritsaddresswashandedoutagain.c"
-    node * t1;
-    goto bb0;
+#line 20 "tests/golden/run/dead-handle-given-back-after-its-address-was-handed-out-again.hero"
+    node * t1; goto bb0;
+#line 20 "tests/golden/run/dead-handle-given-back-after-its-address-was-handed-out-again.hero"
 bb0:
-#line 21 "tests/golden/run/dead-handle-given-back-after-its-address-was-handed-out-again.hero"
     t1 = (*ph0_n);
 #line 21 "tests/golden/run/dead-handle-given-back-after-its-address-was-handed-out-again.hero"
     {
@@ -125,25 +124,15 @@ bb0:
     }
 #line 21 "tests/golden/run/dead-handle-given-back-after-its-address-was-handed-out-again.hero"
     return;
-#line 129 "deadhandlegivenbackafteritsaddresswashandedoutagain.c"
+#line 128 "deadhandlegivenbackafteritsaddresswashandedoutagain.c"
 }
 
 #line 23 "tests/golden/run/dead-handle-given-back-after-its-address-was-handed-out-again.hero"
 void h_deadhandlegivenbackafteritsaddresswashandedoutagain_main(void) {
-#line 134 "deadhandlegivenbackafteritsaddresswashandedoutagain.c"
-    node * h0_a;
-    node * h1_b;
-    node * t1;
-    node * t2;
-    HeroStr t3;
-    node * t4;
-    int64_t t5;
-    node * t6;
-    HeroStr t7;
-    node * t8;
-    goto bb0;
+#line 23 "tests/golden/run/dead-handle-given-back-after-its-address-was-handed-out-again.hero"
+    node * h0_a; node * h1_b; node * t1; node * t2; HeroStr t3; node * t4; int64_t t5; node * t6; HeroStr t7; node * t8; goto bb0;
+#line 23 "tests/golden/run/dead-handle-given-back-after-its-address-was-handed-out-again.hero"
 bb0:
-#line 24 "tests/golden/run/dead-handle-given-back-after-its-address-was-handed-out-again.hero"
     t1 = node_new();
 #line 24 "tests/golden/run/dead-handle-given-back-after-its-address-was-handed-out-again.hero"
     hero_handle_acquired(t1, "node_free");
@@ -201,7 +190,7 @@ bb0:
     }
 #line 30 "tests/golden/run/dead-handle-given-back-after-its-address-was-handed-out-again.hero"
     return;
-#line 205 "deadhandlegivenbackafteritsaddresswashandedoutagain.c"
+#line 194 "deadhandlegivenbackafteritsaddresswashandedoutagain.c"
 }
 HERO_TU_LOCAL bool h_deadhandlegivenbackafteritsaddresswashandedoutagain_Node_eq(node * const *a, node * const *b) {
     return hero_handle_eq(*a, *b);

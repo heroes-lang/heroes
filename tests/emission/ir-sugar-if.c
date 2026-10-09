@@ -89,25 +89,10 @@ int64_t h_sugarif_sign_of(int64_t h0_n);
 
 #line 4 "tests/golden/ir/sugar-if.hero"
 int64_t h_sugarif_sign_of(int64_t h0_n) {
-#line 93 "sugarif.c"
-    int64_t h1_r0;
-    int64_t h2_kind;
-    int64_t t1;
-    int64_t t2;
-    bool t3;
-    int64_t t4;
-    int64_t t5;
-    int64_t t6;
-    int64_t t7;
-    int64_t t8;
-    bool t9;
-    int64_t t10;
-    int64_t t11;
-    int64_t t12;
-    int64_t t13;
-    goto bb0;
+#line 4 "tests/golden/ir/sugar-if.hero"
+    int64_t h1_r0; int64_t h2_kind; int64_t t1; int64_t t2; bool t3; int64_t t4; int64_t t5; int64_t t6; int64_t t7; int64_t t8; bool t9; int64_t t10; int64_t t11; int64_t t12; int64_t t13; goto bb0;
+#line 4 "tests/golden/ir/sugar-if.hero"
 bb0:
-#line 5 "tests/golden/ir/sugar-if.hero"
     t1 = h0_n;
 #line 5 "tests/golden/ir/sugar-if.hero"
     t2 = INT64_C(0);
@@ -162,7 +147,7 @@ bb5:
     h1_r0 = t11;
 #line 5 "tests/golden/ir/sugar-if.hero"
     goto bb1;
-#line 166 "sugarif.c"
+#line 151 "sugarif.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

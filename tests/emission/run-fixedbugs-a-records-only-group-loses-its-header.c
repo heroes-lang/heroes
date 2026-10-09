@@ -108,20 +108,10 @@ void h_fixedbugsarecordsonlygrouplosesitsheader_main(void);
 
 #line 28 "tests/golden/run/fixedbugs-a-records-only-group-loses-its-header.hero"
 void h_fixedbugsarecordsonlygrouplosesitsheader_main(void) {
-#line 112 "fixedbugsarecordsonlygrouplosesitsheader.c"
-    Color h0_red;
-    uint8_t t1;
-    uint8_t t2;
-    uint8_t t3;
-    uint8_t t4;
-    Color t5;
-    Color t6;
-    uint8_t t7;
-    Color t8;
-    uint8_t t9;
-    goto bb0;
+#line 28 "tests/golden/run/fixedbugs-a-records-only-group-loses-its-header.hero"
+    Color h0_red; uint8_t t1; uint8_t t2; uint8_t t3; uint8_t t4; Color t5; Color t6; uint8_t t7; Color t8; uint8_t t9; goto bb0;
+#line 28 "tests/golden/run/fixedbugs-a-records-only-group-loses-its-header.hero"
 bb0:
-#line 29 "tests/golden/run/fixedbugs-a-records-only-group-loses-its-header.hero"
     t1 = UINT64_C(255);
 #line 29 "tests/golden/run/fixedbugs-a-records-only-group-loses-its-header.hero"
     t2 = UINT64_C(0);
@@ -149,7 +139,7 @@ bb0:
     hero_print_end();
 #line 31 "tests/golden/run/fixedbugs-a-records-only-group-loses-its-header.hero"
     return;
-#line 153 "fixedbugsarecordsonlygrouplosesitsheader.c"
+#line 143 "fixedbugsarecordsonlygrouplosesitsheader.c"
 }
 HERO_TU_LOCAL bool h_fixedbugsarecordsonlygrouplosesitsheader_Color_eq(const Color *a, const Color *b) {
     if (!(a->r == b->r)) return false;

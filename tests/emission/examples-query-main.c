@@ -624,144 +624,22 @@ void h_library_exit(int64_t h0_code);
 
 #line 45 "examples/query/main.hero"
 HeroStr h_main_DEFAULT_PATH(void) {
-#line 628 "main.c"
-    HeroStr t1;
-    goto bb0;
+#line 45 "examples/query/main.hero"
+    HeroStr t1; goto bb0;
+#line 45 "examples/query/main.hero"
 bb0:
-#line 46 "examples/query/main.hero"
     t1 = HERO_STR_LIT(hero_str_302728d8);
-#line 634 "main.c"
+#line 633 "main.c"
     hero_str_incref(t1);
     return t1;
 }
 
 #line 48 "examples/query/main.hero"
 void h_main_main(void) {
-#line 641 "main.c"
-    HeroArrayHeader * h0_given = {0};
-    HeroStr h1_path = {0};
-    HeroArrayHeader * h2_made = {0};
-    h_0opt_a8ea2 h3_s0 = {0};
-    HeroFailure h4_e = {0};
-    h_0opt_f87774a h5_text = {0};
-    h_0opt_f87774a h6_f0 = {0};
-    h_0opt_f87774a h7_f1 = {0};
-    h_0opt_40ab612a h8_rows = {0};
-    h_0opt_40ab612a h9_f2 = {0};
-    h_0opt_40ab612a h10_f3 = {0};
-    HeroArrayHeader * h11_back = {0};
-    HeroArrayHeader * h12_own12 = {0};
-    HeroStr h13_own13 = {0};
-    HeroArrayHeader * h14_own14 = {0};
-    HeroStr h15_own15 = {0};
-    h_0opt_a8ea2 h16_own16 = {0};
-    h_0opt_f87774a h17_own17 = {0};
-    HeroStr h18_own18 = {0};
-    h_0opt_40ab612a h19_own19 = {0};
-    HeroStr h20_own20 = {0};
-    HeroArrayHeader * t1;
-    HeroStr t2;
-    HeroArrayHeader * t3;
-    int64_t t4;
-    int64_t t5;
-    bool t6;
-    HeroArrayHeader * t7;
-    int64_t t8;
-    HeroStr t9;
-    int64_t t10;
-    HeroArrayHeader * t11;
-    HeroStr t12;
-    HeroArrayHeader * t13;
-    HeroStr t14;
-    h_0opt_a8ea2 t15;
-    h_0opt_a8ea2 t16;
-    int64_t t17;
-    HeroStr t18;
-    HeroArrayHeader * t19;
-    int64_t t20;
-    HeroStr t21;
-    HeroStr t22;
-    HeroStr t23;
-    h_0opt_a8ea2 t24;
-    HeroFailure t25;
-    HeroStr t26;
-    HeroStr t27;
-    HeroStr t28;
-    HeroFailure t29;
-    HeroStr t30;
-    HeroStr t31;
-    h_0opt_f87774a t32;
-    h_0opt_f87774a t33;
-    h_0opt_f87774a t34;
-    int64_t t35;
-    int64_t t36;
-    bool t37;
-    HeroStr t38;
-    HeroStr t39;
-    int64_t t40;
-    h_0opt_f87774a t41;
-    h_0opt_f87774a t42;
-    int64_t t43;
-    int64_t t44;
-    bool t45;
-    h_0opt_f87774a t46;
-    HeroFailure t47;
-    h_0opt_f87774a t48;
-    HeroStr t49;
-    h_0opt_40ab612a t50;
-    h_0opt_40ab612a t51;
-    h_0opt_40ab612a t52;
-    int64_t t53;
-    int64_t t54;
-    bool t55;
-    HeroStr t56;
-    int64_t t57;
-    h_0opt_40ab612a t58;
-    h_0opt_40ab612a t59;
-    int64_t t60;
-    int64_t t61;
-    bool t62;
-    h_0opt_40ab612a t63;
-    HeroFailure t64;
-    h_0opt_40ab612a t65;
-    HeroArrayHeader * t66;
-    HeroStr t67;
-    HeroArrayHeader * t68;
-    int64_t t69;
-    HeroStr t70;
-    HeroStr t71;
-    HeroArrayHeader * t72;
-    HeroArrayHeader * t73;
-    bool t74;
-    HeroStr t75;
-    int64_t t76;
-    HeroStr t77;
-    HeroArrayHeader * t78;
-    HeroArrayHeader * t79;
-    HeroArrayHeader * t80;
-    HeroStr t81;
-    HeroStr t82;
-    HeroArrayHeader * t83;
-    HeroArrayHeader * t84;
-    HeroStr t85;
-    h_0opt_a8ea2 t86;
-    h_0opt_a8ea2 t87;
-    HeroStr t88;
-    h_0opt_f87774a t89;
-    h_0opt_f87774a t90;
-    h_0opt_f87774a t91;
-    HeroStr t92;
-    HeroFailure t93;
-    h_0opt_f87774a t94;
-    h_0opt_40ab612a t95;
-    h_0opt_40ab612a t96;
-    h_0opt_40ab612a t97;
-    h_0opt_40ab612a t98;
-    HeroArrayHeader * t99;
-    HeroStr t100;
-    goto bb0;
+#line 48 "examples/query/main.hero"
+    HeroArrayHeader * h0_given = {0}; HeroStr h1_path = {0}; HeroArrayHeader * h2_made = {0}; h_0opt_a8ea2 h3_s0 = {0}; HeroFailure h4_e = {0}; h_0opt_f87774a h5_text = {0}; h_0opt_f87774a h6_f0 = {0}; h_0opt_f87774a h7_f1 = {0}; h_0opt_40ab612a h8_rows = {0}; h_0opt_40ab612a h9_f2 = {0}; h_0opt_40ab612a h10_f3 = {0}; HeroArrayHeader * h11_back = {0}; HeroArrayHeader * h12_own12 = {0}; HeroStr h13_own13 = {0}; HeroArrayHeader * h14_own14 = {0}; HeroStr h15_own15 = {0}; h_0opt_a8ea2 h16_own16 = {0}; h_0opt_f87774a h17_own17 = {0}; HeroStr h18_own18 = {0}; h_0opt_40ab612a h19_own19 = {0}; HeroStr h20_own20 = {0}; HeroArrayHeader * t1; HeroStr t2; HeroArrayHeader * t3; int64_t t4; int64_t t5; bool t6; HeroArrayHeader * t7; int64_t t8; HeroStr t9; int64_t t10; HeroArrayHeader * t11; HeroStr t12; HeroArrayHeader * t13; HeroStr t14; h_0opt_a8ea2 t15; h_0opt_a8ea2 t16; int64_t t17; HeroStr t18; HeroArrayHeader * t19; int64_t t20; HeroStr t21; HeroStr t22; HeroStr t23; h_0opt_a8ea2 t24; HeroFailure t25; HeroStr t26; HeroStr t27; HeroStr t28; HeroFailure t29; HeroStr t30; HeroStr t31; h_0opt_f87774a t32; h_0opt_f87774a t33; h_0opt_f87774a t34; int64_t t35; int64_t t36; bool t37; HeroStr t38; HeroStr t39; int64_t t40; h_0opt_f87774a t41; h_0opt_f87774a t42; int64_t t43; int64_t t44; bool t45; h_0opt_f87774a t46; HeroFailure t47; h_0opt_f87774a t48; HeroStr t49; h_0opt_40ab612a t50; h_0opt_40ab612a t51; h_0opt_40ab612a t52; int64_t t53; int64_t t54; bool t55; HeroStr t56; int64_t t57; h_0opt_40ab612a t58; h_0opt_40ab612a t59; int64_t t60; int64_t t61; bool t62; h_0opt_40ab612a t63; HeroFailure t64; h_0opt_40ab612a t65; HeroArrayHeader * t66; HeroStr t67; HeroArrayHeader * t68; int64_t t69; HeroStr t70; HeroStr t71; HeroArrayHeader * t72; HeroArrayHeader * t73; bool t74; HeroStr t75; int64_t t76; HeroStr t77; HeroArrayHeader * t78; HeroArrayHeader * t79; HeroArrayHeader * t80; HeroStr t81; HeroStr t82; HeroArrayHeader * t83; HeroArrayHeader * t84; HeroStr t85; h_0opt_a8ea2 t86; h_0opt_a8ea2 t87; HeroStr t88; h_0opt_f87774a t89; h_0opt_f87774a t90; h_0opt_f87774a t91; HeroStr t92; HeroFailure t93; h_0opt_f87774a t94; h_0opt_40ab612a t95; h_0opt_40ab612a t96; h_0opt_40ab612a t97; h_0opt_40ab612a t98; HeroArrayHeader * t99; HeroStr t100; goto bb0;
+#line 48 "examples/query/main.hero"
 bb0:
-#line 49 "examples/query/main.hero"
     t1 = h_library_args();
 #line 49 "examples/query/main.hero"
     t79 = h12_own12;
@@ -1085,7 +963,7 @@ bb11:
     t46 = h7_f1;
 #line 65 "examples/query/main.hero"
     t47 = t46.as.err;
-#line 1089 "main.c"
+#line 967 "main.c"
     hero_panic_must(t47);
     hero_unreachable();
 bb12:
@@ -1178,7 +1056,7 @@ bb16:
     t63 = h10_f3;
 #line 70 "examples/query/main.hero"
     t64 = t63.as.err;
-#line 1182 "main.c"
+#line 1060 "main.c"
     hero_panic_must(t64);
     hero_unreachable();
 bb17:
@@ -1191,7 +1069,7 @@ bb17:
     t78 = h11_back;
 #line 80 "examples/query/main.hero"
     h_main_report_of(t78);
-#line 1195 "main.c"
+#line 1073 "main.c"
     hero_array_release_at(&h0_given);
     hero_str_release_at(&h1_path);
     hero_array_release_at(&h2_made);
@@ -1232,208 +1110,14 @@ bb18:
 bb19:
 #line 78 "examples/query/main.hero"
     goto bb17;
-#line 1236 "main.c"
+#line 1114 "main.c"
 }
 
 #line 85 "examples/query/main.hero"
 void h_main_report_of(HeroArrayHeader * h0_rows) {
-#line 1241 "main.c"
-    HeroArrayHeader * h1_top = {0};
-    HeroArrayHeader * h2_columns = {0};
-    HeroArrayHeader * h3_both = {0};
-    HeroArrayHeader * h4_argo = {0};
-    HeroArrayHeader * h5_by_name = {0};
-    HeroMapHeader * h6_groups = {0};
-    HeroArrayHeader * h7_xs0 = {0};
-    int64_t h8_i0;
-    h_queryplan_Group h9_key = {0};
-    h_0opt_79a32868 h10_f0 = {0};
-    int64_t h11_counted;
-    int64_t h12_summed;
-    HeroArrayHeader * h13_xs1 = {0};
-    int64_t h14_i1;
-    h_datarow_Row h15_r = {0};
-    bool h16_b0;
-    HeroArrayHeader * h17_own17 = {0};
-    HeroArrayHeader * h18_own18 = {0};
-    HeroArrayHeader * h19_own19 = {0};
-    HeroArrayHeader * h20_own20 = {0};
-    HeroArrayHeader * h21_own21 = {0};
-    HeroStr h22_own22 = {0};
-    h_queryplan_Where h23_own23 = {0};
-    h_queryplan_Where h24_own24 = {0};
-    HeroArrayHeader * h25_own25 = {0};
-    h_queryplan_Where h26_own26 = {0};
-    HeroArrayHeader * h27_own27 = {0};
-    HeroArrayHeader * h28_own28 = {0};
-    HeroArrayHeader * h29_own29 = {0};
-    HeroArrayHeader * h30_own30 = {0};
-    HeroStr h31_own31 = {0};
-    HeroStr h32_own32 = {0};
-    HeroMapHeader * h33_own33 = {0};
-    HeroArrayHeader * h34_own34 = {0};
-    h_0opt_79a32868 h35_own35 = {0};
-    HeroStr h36_own36 = {0};
-    HeroStr h37_own37 = {0};
-    HeroStr h38_own38 = {0};
-    HeroStr h39_own39 = {0};
-    HeroStr h40_own40 = {0};
-    HeroStr t1;
-    HeroArrayHeader * t2;
-    h_queryplan_Order t3;
-    HeroArrayHeader * t4;
-    int64_t t5;
-    HeroArrayHeader * t6;
-    h_queryplan_Column t7;
-    h_queryplan_Column t8;
-    h_queryplan_Column t9;
-    h_queryplan_Column t10;
-    HeroArrayHeader * t11;
-    HeroArrayHeader * t12;
-    HeroArrayHeader * t13;
-    HeroArrayHeader * t14;
-    HeroArrayHeader * t15;
-    HeroStr t16;
-    HeroStr t17;
-    HeroStr t18;
-    HeroStr t19;
-    h_queryplan_Where t20;
-    bool t21;
-    h_queryplan_Where t22;
-    HeroArrayHeader * t23;
-    HeroArrayHeader * t24;
-    HeroArrayHeader * t25;
-    h_queryplan_Where t26;
-    HeroArrayHeader * t27;
-    h_queryplan_Order t28;
-    HeroArrayHeader * t29;
-    int64_t t30;
-    HeroArrayHeader * t31;
-    h_queryplan_Column t32;
-    h_queryplan_Column t33;
-    h_queryplan_Column t34;
-    HeroArrayHeader * t35;
-    HeroArrayHeader * t36;
-    HeroArrayHeader * t37;
-    HeroStr t38;
-    HeroStr t39;
-    HeroStr t40;
-    HeroStr t41;
-    HeroArrayHeader * t42;
-    HeroMapHeader * t43;
-    HeroMapHeader * t44;
-    HeroArrayHeader * t45;
-    int64_t t46;
-    int64_t t47;
-    HeroArrayHeader * t48;
-    int64_t t49;
-    bool t50;
-    HeroArrayHeader * t51;
-    int64_t t52;
-    h_queryplan_Group t53;
-    h_queryplan_Group t54;
-    HeroMapHeader * t55;
-    h_queryplan_Group t56;
-    h_0opt_79a32868 t57;
-    h_0opt_79a32868 t58;
-    int64_t t59;
-    int64_t t60;
-    bool t61;
-    h_0opt_79a32868 t62;
-    HeroFailure t63;
-    h_0opt_79a32868 t64;
-    h_queryplan_Summary t65;
-    HeroStr t66;
-    int64_t t67;
-    int64_t t68;
-    int64_t t69;
-    HeroStr t70;
-    HeroStr t71;
-    HeroStr t72;
-    HeroArrayHeader * t73;
-    h_queryplan_Aggregate t74;
-    int64_t t75;
-    HeroStr t76;
-    HeroStr t77;
-    HeroArrayHeader * t78;
-    h_queryplan_Aggregate t79;
-    int64_t t80;
-    HeroStr t81;
-    HeroStr t82;
-    HeroArrayHeader * t83;
-    h_queryplan_Aggregate t84;
-    int64_t t85;
-    HeroStr t86;
-    int64_t t87;
-    int64_t t88;
-    HeroArrayHeader * t89;
-    int64_t t90;
-    int64_t t91;
-    HeroArrayHeader * t92;
-    int64_t t93;
-    bool t94;
-    HeroArrayHeader * t95;
-    int64_t t96;
-    h_datarow_Row t97;
-    int64_t t98;
-    int64_t t99;
-    int64_t t100;
-    int64_t t101;
-    h_datarow_Row t102;
-    int64_t t103;
-    int64_t t104;
-    int64_t t105;
-    int64_t t106;
-    int64_t t107;
-    HeroStr t108;
-    int64_t t109;
-    HeroArrayHeader * t110;
-    h_queryplan_Aggregate t111;
-    int64_t t112;
-    bool t113;
-    int64_t t114;
-    HeroArrayHeader * t115;
-    h_queryplan_Aggregate t116;
-    int64_t t117;
-    bool t118;
-    bool t119;
-    HeroStr t120;
-    HeroArrayHeader * t121;
-    HeroArrayHeader * t122;
-    HeroArrayHeader * t123;
-    HeroArrayHeader * t124;
-    HeroArrayHeader * t125;
-    HeroArrayHeader * t126;
-    HeroArrayHeader * t127;
-    HeroStr t128;
-    h_queryplan_Where t129;
-    h_queryplan_Where t130;
-    HeroArrayHeader * t131;
-    HeroArrayHeader * t132;
-    h_queryplan_Where t133;
-    HeroArrayHeader * t134;
-    HeroArrayHeader * t135;
-    HeroArrayHeader * t136;
-    HeroArrayHeader * t137;
-    HeroArrayHeader * t138;
-    HeroArrayHeader * t139;
-    HeroStr t140;
-    HeroStr t141;
-    HeroMapHeader * t142;
-    HeroMapHeader * t143;
-    HeroArrayHeader * t144;
-    HeroArrayHeader * t145;
-    h_queryplan_Group t146;
-    h_0opt_79a32868 t147;
-    h_0opt_79a32868 t148;
-    HeroStr t149;
-    HeroStr t150;
-    HeroStr t151;
-    HeroArrayHeader * t152;
-    HeroStr t153;
-    h_datarow_Row t154;
-    HeroStr t155;
-    goto bb0;
+#line 85 "examples/query/main.hero"
+    HeroArrayHeader * h1_top = {0}; HeroArrayHeader * h2_columns = {0}; HeroArrayHeader * h3_both = {0}; HeroArrayHeader * h4_argo = {0}; HeroArrayHeader * h5_by_name = {0}; HeroMapHeader * h6_groups = {0}; HeroArrayHeader * h7_xs0 = {0}; int64_t h8_i0; h_queryplan_Group h9_key = {0}; h_0opt_79a32868 h10_f0 = {0}; int64_t h11_counted; int64_t h12_summed; HeroArrayHeader * h13_xs1 = {0}; int64_t h14_i1; h_datarow_Row h15_r = {0}; bool h16_b0; HeroArrayHeader * h17_own17 = {0}; HeroArrayHeader * h18_own18 = {0}; HeroArrayHeader * h19_own19 = {0}; HeroArrayHeader * h20_own20 = {0}; HeroArrayHeader * h21_own21 = {0}; HeroStr h22_own22 = {0}; h_queryplan_Where h23_own23 = {0}; h_queryplan_Where h24_own24 = {0}; HeroArrayHeader * h25_own25 = {0}; h_queryplan_Where h26_own26 = {0}; HeroArrayHeader * h27_own27 = {0}; HeroArrayHeader * h28_own28 = {0}; HeroArrayHeader * h29_own29 = {0}; HeroArrayHeader * h30_own30 = {0}; HeroStr h31_own31 = {0}; HeroStr h32_own32 = {0}; HeroMapHeader * h33_own33 = {0}; HeroArrayHeader * h34_own34 = {0}; h_0opt_79a32868 h35_own35 = {0}; HeroStr h36_own36 = {0}; HeroStr h37_own37 = {0}; HeroStr h38_own38 = {0}; HeroStr h39_own39 = {0}; HeroStr h40_own40 = {0}; HeroStr t1; HeroArrayHeader * t2; h_queryplan_Order t3; HeroArrayHeader * t4; int64_t t5; HeroArrayHeader * t6; h_queryplan_Column t7; h_queryplan_Column t8; h_queryplan_Column t9; h_queryplan_Column t10; HeroArrayHeader * t11; HeroArrayHeader * t12; HeroArrayHeader * t13; HeroArrayHeader * t14; HeroArrayHeader * t15; HeroStr t16; HeroStr t17; HeroStr t18; HeroStr t19; h_queryplan_Where t20; bool t21; h_queryplan_Where t22; HeroArrayHeader * t23; HeroArrayHeader * t24; HeroArrayHeader * t25; h_queryplan_Where t26; HeroArrayHeader * t27; h_queryplan_Order t28; HeroArrayHeader * t29; int64_t t30; HeroArrayHeader * t31; h_queryplan_Column t32; h_queryplan_Column t33; h_queryplan_Column t34; HeroArrayHeader * t35; HeroArrayHeader * t36; HeroArrayHeader * t37; HeroStr t38; HeroStr t39; HeroStr t40; HeroStr t41; HeroArrayHeader * t42; HeroMapHeader * t43; HeroMapHeader * t44; HeroArrayHeader * t45; int64_t t46; int64_t t47; HeroArrayHeader * t48; int64_t t49; bool t50; HeroArrayHeader * t51; int64_t t52; h_queryplan_Group t53; h_queryplan_Group t54; HeroMapHeader * t55; h_queryplan_Group t56; h_0opt_79a32868 t57; h_0opt_79a32868 t58; int64_t t59; int64_t t60; bool t61; h_0opt_79a32868 t62; HeroFailure t63; h_0opt_79a32868 t64; h_queryplan_Summary t65; HeroStr t66; int64_t t67; int64_t t68; int64_t t69; HeroStr t70; HeroStr t71; HeroStr t72; HeroArrayHeader * t73; h_queryplan_Aggregate t74; int64_t t75; HeroStr t76; HeroStr t77; HeroArrayHeader * t78; h_queryplan_Aggregate t79; int64_t t80; HeroStr t81; HeroStr t82; HeroArrayHeader * t83; h_queryplan_Aggregate t84; int64_t t85; HeroStr t86; int64_t t87; int64_t t88; HeroArrayHeader * t89; int64_t t90; int64_t t91; HeroArrayHeader * t92; int64_t t93; bool t94; HeroArrayHeader * t95; int64_t t96; h_datarow_Row t97; int64_t t98; int64_t t99; int64_t t100; int64_t t101; h_datarow_Row t102; int64_t t103; int64_t t104; int64_t t105; int64_t t106; int64_t t107; HeroStr t108; int64_t t109; HeroArrayHeader * t110; h_queryplan_Aggregate t111; int64_t t112; bool t113; int64_t t114; HeroArrayHeader * t115; h_queryplan_Aggregate t116; int64_t t117; bool t118; bool t119; HeroStr t120; HeroArrayHeader * t121; HeroArrayHeader * t122; HeroArrayHeader * t123; HeroArrayHeader * t124; HeroArrayHeader * t125; HeroArrayHeader * t126; HeroArrayHeader * t127; HeroStr t128; h_queryplan_Where t129; h_queryplan_Where t130; HeroArrayHeader * t131; HeroArrayHeader * t132; h_queryplan_Where t133; HeroArrayHeader * t134; HeroArrayHeader * t135; HeroArrayHeader * t136; HeroArrayHeader * t137; HeroArrayHeader * t138; HeroArrayHeader * t139; HeroStr t140; HeroStr t141; HeroMapHeader * t142; HeroMapHeader * t143; HeroArrayHeader * t144; HeroArrayHeader * t145; h_queryplan_Group t146; h_0opt_79a32868 t147; h_0opt_79a32868 t148; HeroStr t149; HeroStr t150; HeroStr t151; HeroArrayHeader * t152; HeroStr t153; h_datarow_Row t154; HeroStr t155; goto bb0;
+#line 85 "examples/query/main.hero"
 bb0:
 #line 87 "examples/query/main.hero"
     t1 = HERO_STR_LIT(hero_str_64477070);
@@ -1951,7 +1635,7 @@ bb6:
     t62 = h10_f0;
 #line 107 "examples/query/main.hero"
     t63 = t62.as.err;
-#line 1955 "main.c"
+#line 1639 "main.c"
     hero_panic_must(t63);
     hero_unreachable();
 bb7:
@@ -2062,7 +1746,7 @@ bb12:
     hero_print_str(t120);
 #line 125 "examples/query/main.hero"
     hero_print_end();
-#line 2066 "main.c"
+#line 1750 "main.c"
     hero_array_release_at(&h1_top);
     hero_array_release_at(&h2_columns);
     hero_array_release_at(&h3_both);
@@ -2103,15 +1787,10 @@ bb12:
 
 #line 132 "examples/query/main.hero"
 HeroStr h_main_agreement(bool h0_holds) {
-#line 2107 "main.c"
-    HeroStr h1_ret0 = {0};
-    bool t1;
-    HeroStr t2;
-    HeroStr t3;
-    HeroStr t4;
-    goto bb0;
+#line 132 "examples/query/main.hero"
+    HeroStr h1_ret0 = {0}; bool t1; HeroStr t2; HeroStr t3; HeroStr t4; goto bb0;
+#line 132 "examples/query/main.hero"
 bb0:
-#line 133 "examples/query/main.hero"
     t1 = h0_holds;
 #line 133 "examples/query/main.hero"
     if (t1) goto bb2; else goto bb3;
@@ -2137,7 +1816,7 @@ bb3:
     goto bb1;
 #line 134 "examples/query/main.hero"
 bb4:
-#line 2141 "main.c"
+#line 1820 "main.c"
     t4 = h1_ret0;
     hero_str_incref(t4);
     return t4;
@@ -2145,67 +1824,62 @@ bb4:
 
 #line 25 "examples/query/data/row.hero"
 int64_t h_datarow_MULTIPLIER(void) {
-#line 2149 "main.c"
-    int64_t t1;
-    goto bb0;
+#line 25 "examples/query/data/row.hero"
+    int64_t t1; goto bb0;
+#line 25 "examples/query/data/row.hero"
 bb0:
-#line 26 "examples/query/data/row.hero"
     t1 = INT64_C(1103515245);
 #line 26 "examples/query/data/row.hero"
     return t1;
-#line 2157 "main.c"
+#line 1835 "main.c"
 }
 
 #line 28 "examples/query/data/row.hero"
 int64_t h_datarow_INCREMENT(void) {
-#line 2162 "main.c"
-    int64_t t1;
-    goto bb0;
+#line 28 "examples/query/data/row.hero"
+    int64_t t1; goto bb0;
+#line 28 "examples/query/data/row.hero"
 bb0:
-#line 29 "examples/query/data/row.hero"
     t1 = INT64_C(12345);
 #line 29 "examples/query/data/row.hero"
     return t1;
-#line 2170 "main.c"
+#line 1847 "main.c"
 }
 
 #line 31 "examples/query/data/row.hero"
 int64_t h_datarow_MODULUS(void) {
-#line 2175 "main.c"
-    int64_t t1;
-    goto bb0;
+#line 31 "examples/query/data/row.hero"
+    int64_t t1; goto bb0;
+#line 31 "examples/query/data/row.hero"
 bb0:
-#line 32 "examples/query/data/row.hero"
     t1 = INT64_C(2147483648);
 #line 32 "examples/query/data/row.hero"
     return t1;
-#line 2183 "main.c"
+#line 1859 "main.c"
 }
 
 #line 36 "examples/query/data/row.hero"
 int64_t h_datarow_SEED(void) {
-#line 2188 "main.c"
-    int64_t t1;
-    goto bb0;
+#line 36 "examples/query/data/row.hero"
+    int64_t t1; goto bb0;
+#line 36 "examples/query/data/row.hero"
 bb0:
-#line 37 "examples/query/data/row.hero"
     t1 = INT64_C(20260903);
 #line 37 "examples/query/data/row.hero"
     return t1;
-#line 2196 "main.c"
+#line 1871 "main.c"
 }
 
 #line 42 "examples/query/data/row.hero"
 int64_t h_datarow_ROWS(void) {
-#line 2201 "main.c"
-    int64_t t1;
-    goto bb0;
+#line 42 "examples/query/data/row.hero"
+    int64_t t1; goto bb0;
+#line 42 "examples/query/data/row.hero"
 bb0:
-#line 43 "examples/query/data/row.hero"
     t1 = INT64_C(5000);
 #line 43 "examples/query/data/row.hero"
     return t1;
-#line 2209 "main.c"
+#line 1883 "main.c"
 }
 
 #if HERO_STATIC_CONSTANTS
@@ -2213,26 +1887,16 @@ bb0:
 HERO_ARRAY_STATIC(hero_constant_h_datarow_TEAMS_9, HeroStr, &hero_desc_str, 8, HERO_STR_LIT(hero_str_d1d76e1), HERO_STR_LIT(hero_str_473d7f56), HERO_STR_LIT(hero_str_5774ba52), HERO_STR_LIT(hero_str_69005961), HERO_STR_LIT(hero_str_7be5121f), HERO_STR_LIT(hero_str_b94e7e5), HERO_STR_LIT(hero_str_1dab0563), HERO_STR_LIT(hero_str_e092514));
 #line 60 "examples/query/data/row.hero"
 HeroArrayHeader * h_datarow_TEAMS(void) {
-#line 2217 "main.c"
+#line 1891 "main.c"
     return HERO_ARRAY_LIT(hero_constant_h_datarow_TEAMS_9);
 }
 #else
 
 #line 60 "examples/query/data/row.hero"
 HeroArrayHeader * h_datarow_TEAMS(void) {
-#line 2224 "main.c"
-    HeroArrayHeader * h0_own0 = {0};
-    HeroStr t1;
-    HeroStr t2;
-    HeroStr t3;
-    HeroStr t4;
-    HeroStr t5;
-    HeroStr t6;
-    HeroStr t7;
-    HeroStr t8;
-    HeroArrayHeader * t9;
-    HeroArrayHeader * t10;
-    goto bb0;
+#line 60 "examples/query/data/row.hero"
+    HeroArrayHeader * h0_own0 = {0}; HeroStr t1; HeroStr t2; HeroStr t3; HeroStr t4; HeroStr t5; HeroStr t6; HeroStr t7; HeroStr t8; HeroArrayHeader * t9; HeroArrayHeader * t10; goto bb0;
+#line 60 "examples/query/data/row.hero"
 bb0:
 #line 62 "examples/query/data/row.hero"
     t1 = HERO_STR_LIT(hero_str_d1d76e1);
@@ -2267,7 +1931,7 @@ bb0:
     h0_own0 = t9;
 #line 61 "examples/query/data/row.hero"
     hero_array_decref(t10);
-#line 2271 "main.c"
+#line 1935 "main.c"
     hero_array_incref(t9);
     hero_array_release_at(&h0_own0);
     return t9;
@@ -2279,26 +1943,16 @@ bb0:
 HERO_ARRAY_STATIC(hero_constant_h_datarow_REGIONS_9, HeroStr, &hero_desc_str, 8, HERO_STR_LIT(hero_str_19e212d8), HERO_STR_LIT(hero_str_19e212d8), HERO_STR_LIT(hero_str_71a76b88), HERO_STR_LIT(hero_str_71a76b88), HERO_STR_LIT(hero_str_da23fdd), HERO_STR_LIT(hero_str_da23fdd), HERO_STR_LIT(hero_str_100cc0e7), HERO_STR_LIT(hero_str_100cc0e7));
 #line 72 "examples/query/data/row.hero"
 HeroArrayHeader * h_datarow_REGIONS(void) {
-#line 2283 "main.c"
+#line 1947 "main.c"
     return HERO_ARRAY_LIT(hero_constant_h_datarow_REGIONS_9);
 }
 #else
 
 #line 72 "examples/query/data/row.hero"
 HeroArrayHeader * h_datarow_REGIONS(void) {
-#line 2290 "main.c"
-    HeroArrayHeader * h0_own0 = {0};
-    HeroStr t1;
-    HeroStr t2;
-    HeroStr t3;
-    HeroStr t4;
-    HeroStr t5;
-    HeroStr t6;
-    HeroStr t7;
-    HeroStr t8;
-    HeroArrayHeader * t9;
-    HeroArrayHeader * t10;
-    goto bb0;
+#line 72 "examples/query/data/row.hero"
+    HeroArrayHeader * h0_own0 = {0}; HeroStr t1; HeroStr t2; HeroStr t3; HeroStr t4; HeroStr t5; HeroStr t6; HeroStr t7; HeroStr t8; HeroArrayHeader * t9; HeroArrayHeader * t10; goto bb0;
+#line 72 "examples/query/data/row.hero"
 bb0:
 #line 74 "examples/query/data/row.hero"
     t1 = HERO_STR_LIT(hero_str_19e212d8);
@@ -2333,7 +1987,7 @@ bb0:
     h0_own0 = t9;
 #line 73 "examples/query/data/row.hero"
     hero_array_decref(t10);
-#line 2337 "main.c"
+#line 1991 "main.c"
     hero_array_incref(t9);
     hero_array_release_at(&h0_own0);
     return t9;
@@ -2342,40 +1996,10 @@ bb0:
 
 #line 86 "examples/query/data/row.hero"
 HeroArrayHeader * h_datarow_teams(void) {
-#line 2346 "main.c"
-    HeroArrayHeader * h0_out = {0};
-    int64_t h1_at;
-    HeroArrayHeader * h2_own2 = {0};
-    HeroArrayHeader * h3_own3 = {0};
-    HeroArrayHeader * h4_own4 = {0};
-    HeroArrayHeader * h5_own5 = {0};
-    h_datarow_Team h6_own6 = {0};
-    HeroArrayHeader * t1;
-    int64_t t2;
-    int64_t t3;
-    HeroArrayHeader * t4;
-    int64_t t5;
-    bool t6;
-    HeroArrayHeader * t8;
-    int64_t t9;
-    HeroStr t10;
-    HeroArrayHeader * t11;
-    int64_t t12;
-    HeroStr t13;
-    h_datarow_Team t14;
-    int64_t t16;
-    int64_t t17;
-    int64_t t18;
-    HeroArrayHeader * t19;
-    HeroArrayHeader * t20;
-    HeroArrayHeader * t21;
-    HeroArrayHeader * t22;
-    HeroArrayHeader * t23;
-    HeroArrayHeader * t24;
-    h_datarow_Team t25;
-    goto bb0;
+#line 86 "examples/query/data/row.hero"
+    HeroArrayHeader * h0_out = {0}; int64_t h1_at; HeroArrayHeader * h2_own2 = {0}; HeroArrayHeader * h3_own3 = {0}; HeroArrayHeader * h4_own4 = {0}; HeroArrayHeader * h5_own5 = {0}; h_datarow_Team h6_own6 = {0}; HeroArrayHeader * t1; int64_t t2; int64_t t3; HeroArrayHeader * t4; int64_t t5; bool t6; HeroArrayHeader * t8; int64_t t9; HeroStr t10; HeroArrayHeader * t11; int64_t t12; HeroStr t13; h_datarow_Team t14; int64_t t16; int64_t t17; int64_t t18; HeroArrayHeader * t19; HeroArrayHeader * t20; HeroArrayHeader * t21; HeroArrayHeader * t22; HeroArrayHeader * t23; HeroArrayHeader * t24; h_datarow_Team t25; goto bb0;
+#line 86 "examples/query/data/row.hero"
 bb0:
-#line 87 "examples/query/data/row.hero"
     t1 = hero_array_new(&h_datarow_Team_desc, 1);
 #line 87 "examples/query/data/row.hero"
     t20 = h2_own2;
@@ -2466,7 +2090,7 @@ bb2:
 bb3:
 #line 94 "examples/query/data/row.hero"
     t19 = h0_out;
-#line 2470 "main.c"
+#line 2094 "main.c"
     hero_array_incref(t19);
     hero_array_release_at(&h0_out);
     hero_array_release_at(&h2_own2);
@@ -2479,17 +2103,10 @@ bb3:
 
 #line 99 "examples/query/data/row.hero"
 int64_t h_datarow_stepped(int64_t h0_seed) {
-#line 2483 "main.c"
-    int64_t t1;
-    int64_t t2;
-    int64_t t3;
-    int64_t t4;
-    int64_t t5;
-    int64_t t6;
-    int64_t t7;
-    goto bb0;
+#line 99 "examples/query/data/row.hero"
+    int64_t t1; int64_t t2; int64_t t3; int64_t t4; int64_t t5; int64_t t6; int64_t t7; goto bb0;
+#line 99 "examples/query/data/row.hero"
 bb0:
-#line 100 "examples/query/data/row.hero"
     t1 = h_datarow_MULTIPLIER();
 #line 100 "examples/query/data/row.hero"
     t2 = h0_seed;
@@ -2509,18 +2126,15 @@ bb0:
     t7 = t5 % t6;
 #line 100 "examples/query/data/row.hero"
     return t7;
-#line 2513 "main.c"
+#line 2130 "main.c"
 }
 
 #line 111 "examples/query/data/row.hero"
 int64_t h_datarow_spread(int64_t h0_seed) {
-#line 2518 "main.c"
-    int64_t t1;
-    int64_t t2;
-    int64_t t3;
-    goto bb0;
+#line 111 "examples/query/data/row.hero"
+    int64_t t1; int64_t t2; int64_t t3; goto bb0;
+#line 111 "examples/query/data/row.hero"
 bb0:
-#line 112 "examples/query/data/row.hero"
     t1 = h0_seed;
 #line 112 "examples/query/data/row.hero"
     t2 = INT64_C(16);
@@ -2530,88 +2144,15 @@ bb0:
     t3 = (t1 < 0) ? ~(int64_t)((~(uint64_t)t1) >> (uint64_t)t2) : (int64_t)((uint64_t)t1 >> (uint64_t)t2);
 #line 112 "examples/query/data/row.hero"
     return t3;
-#line 2534 "main.c"
+#line 2148 "main.c"
 }
 
 #line 118 "examples/query/data/row.hero"
 HeroArrayHeader * h_datarow_generated(int64_t h0_rows) {
-#line 2539 "main.c"
-    HeroArrayHeader * h1_out = {0};
-    int64_t h2_seed;
-    int64_t h3_id;
-    HeroStr h4_team = {0};
-    int64_t h5_score;
-    bool h6_active;
-    double h7_rate;
-    HeroArrayHeader * h8_own8 = {0};
-    HeroArrayHeader * h9_own9 = {0};
-    HeroArrayHeader * h10_own10 = {0};
-    HeroStr h11_own11 = {0};
-    HeroStr h12_own12 = {0};
-    h_datarow_Row h13_own13 = {0};
-    HeroArrayHeader * t1;
-    int64_t t2;
-    int64_t t3;
-    int64_t t4;
-    int64_t t5;
-    bool t6;
-    int64_t t7;
-    int64_t t8;
-    HeroArrayHeader * t9;
-    int64_t t10;
-    int64_t t11;
-    HeroArrayHeader * t12;
-    int64_t t13;
-    int64_t t14;
-    HeroStr t15;
-    int64_t t16;
-    int64_t t17;
-    int64_t t18;
-    int64_t t19;
-    int64_t t20;
-    int64_t t21;
-    int64_t t22;
-    int64_t t23;
-    int64_t t24;
-    int64_t t25;
-    int64_t t26;
-    int64_t t27;
-    int64_t t28;
-    bool t29;
-    int64_t t30;
-    int64_t t31;
-    int64_t t32;
-    int64_t t33;
-    int64_t t34;
-    int64_t t35;
-    double t36;
-    double t37;
-    double t38;
-    int64_t t40;
-    HeroStr t41;
-    HeroStr t42;
-    int64_t t43;
-    HeroStr t44;
-    HeroStr t45;
-    bool t46;
-    int64_t t47;
-    double t48;
-    h_datarow_Row t49;
-    int64_t t51;
-    int64_t t52;
-    int64_t t53;
-    HeroArrayHeader * t54;
-    HeroArrayHeader * t55;
-    HeroArrayHeader * t56;
-    HeroArrayHeader * t57;
-    HeroArrayHeader * t58;
-    HeroStr t59;
-    HeroStr t60;
-    HeroStr t61;
-    h_datarow_Row t62;
-    goto bb0;
+#line 118 "examples/query/data/row.hero"
+    HeroArrayHeader * h1_out = {0}; int64_t h2_seed; int64_t h3_id; HeroStr h4_team = {0}; int64_t h5_score; bool h6_active; double h7_rate; HeroArrayHeader * h8_own8 = {0}; HeroArrayHeader * h9_own9 = {0}; HeroArrayHeader * h10_own10 = {0}; HeroStr h11_own11 = {0}; HeroStr h12_own12 = {0}; h_datarow_Row h13_own13 = {0}; HeroArrayHeader * t1; int64_t t2; int64_t t3; int64_t t4; int64_t t5; bool t6; int64_t t7; int64_t t8; HeroArrayHeader * t9; int64_t t10; int64_t t11; HeroArrayHeader * t12; int64_t t13; int64_t t14; HeroStr t15; int64_t t16; int64_t t17; int64_t t18; int64_t t19; int64_t t20; int64_t t21; int64_t t22; int64_t t23; int64_t t24; int64_t t25; int64_t t26; int64_t t27; int64_t t28; bool t29; int64_t t30; int64_t t31; int64_t t32; int64_t t33; int64_t t34; int64_t t35; double t36; double t37; double t38; int64_t t40; HeroStr t41; HeroStr t42; int64_t t43; HeroStr t44; HeroStr t45; bool t46; int64_t t47; double t48; h_datarow_Row t49; int64_t t51; int64_t t52; int64_t t53; HeroArrayHeader * t54; HeroArrayHeader * t55; HeroArrayHeader * t56; HeroArrayHeader * t57; HeroArrayHeader * t58; HeroStr t59; HeroStr t60; HeroStr t61; h_datarow_Row t62; goto bb0;
+#line 118 "examples/query/data/row.hero"
 bb0:
-#line 119 "examples/query/data/row.hero"
     t1 = hero_array_new(&h_datarow_Row_desc, 1);
 #line 119 "examples/query/data/row.hero"
     t55 = h8_own8;
@@ -2811,7 +2352,7 @@ bb2:
 bb3:
 #line 137 "examples/query/data/row.hero"
     t54 = h1_out;
-#line 2815 "main.c"
+#line 2356 "main.c"
     hero_array_incref(t54);
     hero_array_release_at(&h1_out);
     hero_str_release_at(&h4_team);
@@ -2826,42 +2367,9 @@ bb3:
 
 #line 144 "examples/query/data/row.hero"
 HeroStr h_datarow_line_of(h_datarow_Row h0_r) {
-#line 2830 "main.c"
-    HeroArrayHeader * h1_fields = {0};
-    HeroStr h2_own2 = {0};
-    HeroStr h3_own3 = {0};
-    HeroStr h4_own4 = {0};
-    HeroStr h5_own5 = {0};
-    HeroArrayHeader * h6_own6 = {0};
-    HeroStr h7_own7 = {0};
-    h_datarow_Row t1;
-    int64_t t2;
-    HeroStr t3;
-    h_datarow_Row t4;
-    HeroStr t5;
-    h_datarow_Row t6;
-    HeroStr t7;
-    h_datarow_Row t8;
-    bool t9;
-    HeroStr t10;
-    h_datarow_Row t11;
-    int64_t t12;
-    HeroStr t13;
-    h_datarow_Row t14;
-    double t15;
-    HeroStr t16;
-    HeroArrayHeader * t17;
-    HeroArrayHeader * t18;
-    HeroStr t19;
-    HeroStr t20;
-    HeroStr t21;
-    HeroStr t22;
-    HeroStr t23;
-    HeroStr t24;
-    HeroArrayHeader * t25;
-    HeroArrayHeader * t26;
-    HeroStr t27;
-    goto bb0;
+#line 144 "examples/query/data/row.hero"
+    HeroArrayHeader * h1_fields = {0}; HeroStr h2_own2 = {0}; HeroStr h3_own3 = {0}; HeroStr h4_own4 = {0}; HeroStr h5_own5 = {0}; HeroArrayHeader * h6_own6 = {0}; HeroStr h7_own7 = {0}; h_datarow_Row t1; int64_t t2; HeroStr t3; h_datarow_Row t4; HeroStr t5; h_datarow_Row t6; HeroStr t7; h_datarow_Row t8; bool t9; HeroStr t10; h_datarow_Row t11; int64_t t12; HeroStr t13; h_datarow_Row t14; double t15; HeroStr t16; HeroArrayHeader * t17; HeroArrayHeader * t18; HeroStr t19; HeroStr t20; HeroStr t21; HeroStr t22; HeroStr t23; HeroStr t24; HeroArrayHeader * t25; HeroArrayHeader * t26; HeroStr t27; goto bb0;
+#line 144 "examples/query/data/row.hero"
 bb0:
 #line 146 "examples/query/data/row.hero"
     t1 = h0_r;
@@ -2954,7 +2462,7 @@ bb0:
     h7_own7 = t20;
 #line 153 "examples/query/data/row.hero"
     hero_str_decref(t27);
-#line 2958 "main.c"
+#line 2466 "main.c"
     hero_str_incref(t20);
     hero_array_release_at(&h1_fields);
     hero_str_release_at(&h2_own2);
@@ -2968,15 +2476,10 @@ bb0:
 
 #line 157 "examples/query/data/row.hero"
 HeroStr h_datarow_bool_text(bool h0_b) {
-#line 2972 "main.c"
-    HeroStr h1_ret0 = {0};
-    bool t1;
-    HeroStr t2;
-    HeroStr t3;
-    HeroStr t4;
-    goto bb0;
+#line 157 "examples/query/data/row.hero"
+    HeroStr h1_ret0 = {0}; bool t1; HeroStr t2; HeroStr t3; HeroStr t4; goto bb0;
+#line 157 "examples/query/data/row.hero"
 bb0:
-#line 158 "examples/query/data/row.hero"
     t1 = h0_b;
 #line 158 "examples/query/data/row.hero"
     if (t1) goto bb2; else goto bb3;
@@ -3002,7 +2505,7 @@ bb3:
     goto bb1;
 #line 159 "examples/query/data/row.hero"
 bb4:
-#line 3006 "main.c"
+#line 2509 "main.c"
     t4 = h1_ret0;
     hero_str_incref(t4);
     return t4;
@@ -3010,61 +2513,22 @@ bb4:
 
 #line 162 "examples/query/data/row.hero"
 HeroStr h_datarow_HEADER(void) {
-#line 3014 "main.c"
-    HeroStr t1;
-    goto bb0;
+#line 162 "examples/query/data/row.hero"
+    HeroStr t1; goto bb0;
+#line 162 "examples/query/data/row.hero"
 bb0:
-#line 163 "examples/query/data/row.hero"
     t1 = HERO_STR_LIT(hero_str_58ed5d19);
-#line 3020 "main.c"
+#line 2522 "main.c"
     hero_str_incref(t1);
     return t1;
 }
 
 #line 168 "examples/query/data/row.hero"
 HeroStr h_datarow_written(HeroArrayHeader * h0_rows) {
-#line 3027 "main.c"
-    HeroArrayHeader * h1_lines = {0};
-    HeroArrayHeader * h2_xs0 = {0};
-    int64_t h3_i0;
-    h_datarow_Row h4_r = {0};
-    HeroStr h5_own5 = {0};
-    HeroArrayHeader * h6_own6 = {0};
-    HeroStr h7_own7 = {0};
-    HeroStr h8_own8 = {0};
-    HeroStr h9_own9 = {0};
-    HeroStr t1;
-    HeroArrayHeader * t2;
-    HeroArrayHeader * t3;
-    int64_t t4;
-    int64_t t5;
-    HeroArrayHeader * t6;
-    int64_t t7;
-    bool t8;
-    HeroArrayHeader * t9;
-    int64_t t10;
-    h_datarow_Row t11;
-    h_datarow_Row t13;
-    HeroStr t14;
-    int64_t t16;
-    int64_t t17;
-    int64_t t18;
-    HeroArrayHeader * t19;
-    HeroStr t20;
-    HeroStr t21;
-    HeroStr t22;
-    HeroStr t23;
-    HeroStr t24;
-    HeroArrayHeader * t25;
-    HeroArrayHeader * t26;
-    HeroArrayHeader * t27;
-    h_datarow_Row t28;
-    HeroStr t29;
-    HeroStr t30;
-    HeroStr t31;
-    goto bb0;
+#line 168 "examples/query/data/row.hero"
+    HeroArrayHeader * h1_lines = {0}; HeroArrayHeader * h2_xs0 = {0}; int64_t h3_i0; h_datarow_Row h4_r = {0}; HeroStr h5_own5 = {0}; HeroArrayHeader * h6_own6 = {0}; HeroStr h7_own7 = {0}; HeroStr h8_own8 = {0}; HeroStr h9_own9 = {0}; HeroStr t1; HeroArrayHeader * t2; HeroArrayHeader * t3; int64_t t4; int64_t t5; HeroArrayHeader * t6; int64_t t7; bool t8; HeroArrayHeader * t9; int64_t t10; h_datarow_Row t11; h_datarow_Row t13; HeroStr t14; int64_t t16; int64_t t17; int64_t t18; HeroArrayHeader * t19; HeroStr t20; HeroStr t21; HeroStr t22; HeroStr t23; HeroStr t24; HeroArrayHeader * t25; HeroArrayHeader * t26; HeroArrayHeader * t27; h_datarow_Row t28; HeroStr t29; HeroStr t30; HeroStr t31; goto bb0;
+#line 168 "examples/query/data/row.hero"
 bb0:
-#line 169 "examples/query/data/row.hero"
     t1 = h_datarow_HEADER();
 #line 169 "examples/query/data/row.hero"
     t24 = h5_own5;
@@ -3183,7 +2647,7 @@ bb4:
     h9_own9 = t23;
 #line 174 "examples/query/data/row.hero"
     hero_str_decref(t31);
-#line 3187 "main.c"
+#line 2651 "main.c"
     hero_str_incref(t23);
     hero_array_release_at(&h1_lines);
     hero_array_release_at(&h2_xs0);
@@ -3198,83 +2662,70 @@ bb4:
 
 #line 21 "examples/query/data/table.hero"
 HeroStr h_datatable_ERR_HEADER(void) {
-#line 3202 "main.c"
-    HeroStr t1;
-    goto bb0;
+#line 21 "examples/query/data/table.hero"
+    HeroStr t1; goto bb0;
+#line 21 "examples/query/data/table.hero"
 bb0:
-#line 22 "examples/query/data/table.hero"
     t1 = HERO_STR_LIT(hero_str_1513c20b);
-#line 3208 "main.c"
+#line 2671 "main.c"
     hero_str_incref(t1);
     return t1;
 }
 
 #line 24 "examples/query/data/table.hero"
 HeroStr h_datatable_ERR_FIELDS(void) {
-#line 3215 "main.c"
-    HeroStr t1;
-    goto bb0;
+#line 24 "examples/query/data/table.hero"
+    HeroStr t1; goto bb0;
+#line 24 "examples/query/data/table.hero"
 bb0:
-#line 25 "examples/query/data/table.hero"
     t1 = HERO_STR_LIT(hero_str_671efbdd);
-#line 3221 "main.c"
+#line 2683 "main.c"
     hero_str_incref(t1);
     return t1;
 }
 
 #line 27 "examples/query/data/table.hero"
 HeroStr h_datatable_ERR_NUMBER(void) {
-#line 3228 "main.c"
-    HeroStr t1;
-    goto bb0;
+#line 27 "examples/query/data/table.hero"
+    HeroStr t1; goto bb0;
+#line 27 "examples/query/data/table.hero"
 bb0:
-#line 28 "examples/query/data/table.hero"
     t1 = HERO_STR_LIT(hero_str_14a4096d);
-#line 3234 "main.c"
+#line 2695 "main.c"
     hero_str_incref(t1);
     return t1;
 }
 
 #line 30 "examples/query/data/table.hero"
 HeroStr h_datatable_ERR_BOOL(void) {
-#line 3241 "main.c"
-    HeroStr t1;
-    goto bb0;
+#line 30 "examples/query/data/table.hero"
+    HeroStr t1; goto bb0;
+#line 30 "examples/query/data/table.hero"
 bb0:
-#line 31 "examples/query/data/table.hero"
     t1 = HERO_STR_LIT(hero_str_7ef43895);
-#line 3247 "main.c"
+#line 2707 "main.c"
     hero_str_incref(t1);
     return t1;
 }
 
 #line 33 "examples/query/data/table.hero"
 HeroStr h_datatable_ERR_EMPTY(void) {
-#line 3254 "main.c"
-    HeroStr t1;
-    goto bb0;
+#line 33 "examples/query/data/table.hero"
+    HeroStr t1; goto bb0;
+#line 33 "examples/query/data/table.hero"
 bb0:
-#line 34 "examples/query/data/table.hero"
     t1 = HERO_STR_LIT(hero_str_4d710d48);
-#line 3260 "main.c"
+#line 2719 "main.c"
     hero_str_incref(t1);
     return t1;
 }
 
 #line 38 "examples/query/data/table.hero"
 int64_t h_datatable_columns(void) {
-#line 3267 "main.c"
-    HeroStr h0_own0 = {0};
-    HeroArrayHeader * h1_own1 = {0};
-    HeroStr t1;
-    uint8_t t2;
-    HeroArrayHeader * t3;
-    int64_t t4;
-    HeroStr t5;
-    HeroArrayHeader * t6;
-    goto bb0;
+#line 38 "examples/query/data/table.hero"
+    HeroStr h0_own0 = {0}; HeroArrayHeader * h1_own1 = {0}; HeroStr t1; uint8_t t2; HeroArrayHeader * t3; int64_t t4; HeroStr t5; HeroArrayHeader * t6; goto bb0;
+#line 38 "examples/query/data/table.hero"
 bb0:
-#line 39 "examples/query/data/table.hero"
     t1 = h_datarow_HEADER();
 #line 39 "examples/query/data/table.hero"
     t5 = h0_own0;
@@ -3294,7 +2745,7 @@ bb0:
     hero_array_decref(t6);
 #line 39 "examples/query/data/table.hero"
     t4 = ((void)(t3 == NULL ? ((void)hero_array_len(t3), hero_unreachable()) : (void)0), t3->len);
-#line 3298 "main.c"
+#line 2749 "main.c"
     hero_str_release_at(&h0_own0);
     hero_array_release_at(&h1_own1);
     return t4;
@@ -3302,48 +2753,10 @@ bb0:
 
 #line 44 "examples/query/data/table.hero"
 HeroArrayHeader * h_datatable_split(HeroStr h0_text, uint8_t h1_at) {
-#line 3306 "main.c"
-    HeroArrayHeader * h2_out = {0};
-    int64_t h3_start;
-    int64_t h4_index;
-    HeroArrayHeader * h5_own5 = {0};
-    HeroStr h6_own6 = {0};
-    HeroStr h7_own7 = {0};
-    HeroArrayHeader * t1;
-    int64_t t2;
-    int64_t t3;
-    int64_t t4;
-    HeroStr t5;
-    int64_t t6;
-    bool t7;
-    HeroStr t8;
-    int64_t t9;
-    uint8_t t10;
-    uint8_t t11;
-    bool t12;
-    HeroStr t14;
-    int64_t t15;
-    int64_t t16;
-    HeroStr t17;
-    int64_t t19;
-    int64_t t20;
-    int64_t t21;
-    int64_t t22;
-    int64_t t23;
-    int64_t t24;
-    HeroStr t26;
-    int64_t t27;
-    HeroStr t28;
-    int64_t t29;
-    HeroStr t30;
-    HeroArrayHeader * t32;
-    HeroArrayHeader * t33;
-    HeroArrayHeader * t34;
-    HeroStr t35;
-    HeroStr t36;
-    goto bb0;
+#line 44 "examples/query/data/table.hero"
+    HeroArrayHeader * h2_out = {0}; int64_t h3_start; int64_t h4_index; HeroArrayHeader * h5_own5 = {0}; HeroStr h6_own6 = {0}; HeroStr h7_own7 = {0}; HeroArrayHeader * t1; int64_t t2; int64_t t3; int64_t t4; HeroStr t5; int64_t t6; bool t7; HeroStr t8; int64_t t9; uint8_t t10; uint8_t t11; bool t12; HeroStr t14; int64_t t15; int64_t t16; HeroStr t17; int64_t t19; int64_t t20; int64_t t21; int64_t t22; int64_t t23; int64_t t24; HeroStr t26; int64_t t27; HeroStr t28; int64_t t29; HeroStr t30; HeroArrayHeader * t32; HeroArrayHeader * t33; HeroArrayHeader * t34; HeroStr t35; HeroStr t36; goto bb0;
+#line 44 "examples/query/data/table.hero"
 bb0:
-#line 45 "examples/query/data/table.hero"
     t1 = hero_array_new(&hero_desc_str, 1);
 #line 45 "examples/query/data/table.hero"
     t33 = h5_own5;
@@ -3413,7 +2826,7 @@ bb3:
 #line 55 "examples/query/data/table.hero"
     hero_array_push_owned(&h2_out, &t30);
     t32 = h2_out;
-#line 3417 "main.c"
+#line 2830 "main.c"
     hero_array_incref(t32);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h5_own5);
@@ -3462,48 +2875,15 @@ bb5:
 bb6:
 #line 52 "examples/query/data/table.hero"
     goto bb4;
-#line 3466 "main.c"
+#line 2879 "main.c"
 }
 
 #line 59 "examples/query/data/table.hero"
 HeroArrayHeader * h_datatable_lines_of(HeroStr h0_text) {
-#line 3471 "main.c"
-    HeroArrayHeader * h1_all_lines = {0};
-    bool h2_b0;
-    HeroArrayHeader * h3_ret0 = {0};
-    HeroArrayHeader * h4_own4 = {0};
-    HeroArrayHeader * h5_own5 = {0};
-    HeroStr t1;
-    uint8_t t2;
-    HeroArrayHeader * t3;
-    HeroArrayHeader * t4;
-    int64_t t5;
-    int64_t t6;
-    bool t7;
-    HeroArrayHeader * t8;
-    HeroArrayHeader * t9;
-    int64_t t10;
-    int64_t t11;
-    int64_t t12;
-    HeroStr t13;
-    HeroStr t14;
-    bool t15;
-    bool t16;
-    HeroArrayHeader * t17;
-    int64_t t18;
-    HeroArrayHeader * t19;
-    int64_t t20;
-    int64_t t21;
-    int64_t t22;
-    HeroArrayHeader * t23;
-    HeroArrayHeader * t24;
-    HeroArrayHeader * t25;
-    HeroArrayHeader * t26;
-    HeroArrayHeader * t27;
-    HeroArrayHeader * t28;
-    goto bb0;
+#line 59 "examples/query/data/table.hero"
+    HeroArrayHeader * h1_all_lines = {0}; bool h2_b0; HeroArrayHeader * h3_ret0 = {0}; HeroArrayHeader * h4_own4 = {0}; HeroArrayHeader * h5_own5 = {0}; HeroStr t1; uint8_t t2; HeroArrayHeader * t3; HeroArrayHeader * t4; int64_t t5; int64_t t6; bool t7; HeroArrayHeader * t8; HeroArrayHeader * t9; int64_t t10; int64_t t11; int64_t t12; HeroStr t13; HeroStr t14; bool t15; bool t16; HeroArrayHeader * t17; int64_t t18; HeroArrayHeader * t19; int64_t t20; int64_t t21; int64_t t22; HeroArrayHeader * t23; HeroArrayHeader * t24; HeroArrayHeader * t25; HeroArrayHeader * t26; HeroArrayHeader * t27; HeroArrayHeader * t28; goto bb0;
+#line 59 "examples/query/data/table.hero"
 bb0:
-#line 60 "examples/query/data/table.hero"
     t1 = h0_text;
 #line 60 "examples/query/data/table.hero"
     t2 = UINT64_C(10);
@@ -3602,7 +2982,7 @@ bb5:
     goto bb1;
 #line 63 "examples/query/data/table.hero"
 bb6:
-#line 3606 "main.c"
+#line 2986 "main.c"
     t25 = h3_ret0;
     hero_array_incref(t25);
     hero_array_release_at(&h1_all_lines);
@@ -3613,52 +2993,10 @@ bb6:
 
 #line 69 "examples/query/data/table.hero"
 h_0opt_473cb9ae h_datatable_bool_of(HeroStr h0_text, int64_t h1_line) {
-#line 3617 "main.c"
-    h_0opt_473cb9ae h2_ret0 = {0};
-    h_0opt_473cb9ae h3_own3 = {0};
-    HeroStr h4_own4 = {0};
-    HeroStr h5_own5 = {0};
-    HeroStr h6_own6 = {0};
-    HeroStr h7_own7 = {0};
-    HeroStr h8_own8 = {0};
-    HeroStr h9_own9 = {0};
-    h_0opt_473cb9ae h10_own10 = {0};
-    h_0opt_473cb9ae h11_own11 = {0};
-    HeroStr t1;
-    HeroStr t2;
-    bool t3;
-    bool t4;
-    h_0opt_473cb9ae t5;
-    HeroStr t6;
-    HeroStr t7;
-    bool t8;
-    bool t9;
-    h_0opt_473cb9ae t10;
-    HeroStr t11;
-    HeroStr t12;
-    int64_t t13;
-    HeroStr t14;
-    HeroStr t15;
-    HeroStr t16;
-    HeroStr t17;
-    HeroStr t18;
-    HeroStr t19;
-    HeroStr t20;
-    HeroStr t21;
-    h_0opt_473cb9ae t22;
-    h_0opt_473cb9ae t23;
-    h_0opt_473cb9ae t24;
-    HeroStr t25;
-    HeroStr t26;
-    HeroStr t27;
-    HeroStr t28;
-    HeroStr t29;
-    HeroStr t30;
-    h_0opt_473cb9ae t31;
-    h_0opt_473cb9ae t32;
-    goto bb0;
+#line 69 "examples/query/data/table.hero"
+    h_0opt_473cb9ae h2_ret0 = {0}; h_0opt_473cb9ae h3_own3 = {0}; HeroStr h4_own4 = {0}; HeroStr h5_own5 = {0}; HeroStr h6_own6 = {0}; HeroStr h7_own7 = {0}; HeroStr h8_own8 = {0}; HeroStr h9_own9 = {0}; h_0opt_473cb9ae h10_own10 = {0}; h_0opt_473cb9ae h11_own11 = {0}; HeroStr t1; HeroStr t2; bool t3; bool t4; h_0opt_473cb9ae t5; HeroStr t6; HeroStr t7; bool t8; bool t9; h_0opt_473cb9ae t10; HeroStr t11; HeroStr t12; int64_t t13; HeroStr t14; HeroStr t15; HeroStr t16; HeroStr t17; HeroStr t18; HeroStr t19; HeroStr t20; HeroStr t21; h_0opt_473cb9ae t22; h_0opt_473cb9ae t23; h_0opt_473cb9ae t24; HeroStr t25; HeroStr t26; HeroStr t27; HeroStr t28; HeroStr t29; HeroStr t30; h_0opt_473cb9ae t31; h_0opt_473cb9ae t32; goto bb0;
+#line 69 "examples/query/data/table.hero"
 bb0:
-#line 70 "examples/query/data/table.hero"
     t1 = h0_text;
 #line 70 "examples/query/data/table.hero"
     t2 = HERO_STR_LIT(hero_str_fa94082);
@@ -3794,7 +3132,7 @@ bb6:
     goto bb4;
 #line 74 "examples/query/data/table.hero"
 bb7:
-#line 3798 "main.c"
+#line 3136 "main.c"
     t23 = h2_ret0;
     h_0opt_473cb9ae_retain(&t23);
     h_0opt_473cb9ae_release(hero_slot_escape(&h3_own3));
@@ -3811,145 +3149,10 @@ bb7:
 
 #line 81 "examples/query/data/table.hero"
 h_0opt_e201354 h_datatable_int_of(HeroStr h0_text, int64_t h1_line) {
-#line 3815 "main.c"
-    bool h2_negative;
-    int64_t h3_start;
-    int64_t h4_total;
-    int64_t h5_at;
-    uint8_t h6_digit;
-    bool h7_b0;
-    h_0opt_e201354 h8_f0 = {0};
-    h_0opt_e201354 h9_ret0 = {0};
-    HeroStr h10_own10 = {0};
-    HeroStr h11_own11 = {0};
-    HeroStr h12_own12 = {0};
-    HeroStr h13_own13 = {0};
-    h_0opt_e201354 h14_own14 = {0};
-    HeroStr h15_own15 = {0};
-    HeroStr h16_own16 = {0};
-    HeroStr h17_own17 = {0};
-    HeroStr h18_own18 = {0};
-    h_0opt_e201354 h19_own19 = {0};
-    h_0opt_e201354 h20_own20 = {0};
-    HeroStr h21_own21 = {0};
-    HeroStr h22_own22 = {0};
-    HeroStr h23_own23 = {0};
-    HeroStr h24_own24 = {0};
-    HeroStr h25_own25 = {0};
-    HeroStr h26_own26 = {0};
-    h_0opt_e201354 h27_own27 = {0};
-    h_0opt_e201354 h28_own28 = {0};
-    h_0opt_e201354 h29_own29 = {0};
-    HeroStr t1;
-    int64_t t2;
-    int64_t t3;
-    bool t4;
-    HeroStr t5;
-    HeroStr t6;
-    int64_t t7;
-    HeroStr t8;
-    HeroStr t9;
-    HeroStr t10;
-    HeroStr t11;
-    h_0opt_e201354 t12;
-    HeroStr t13;
-    int64_t t14;
-    uint8_t t15;
-    uint8_t t16;
-    bool t17;
-    int64_t t18;
-    bool t19;
-    int64_t t20;
-    HeroStr t21;
-    int64_t t22;
-    int64_t t23;
-    bool t24;
-    HeroStr t25;
-    HeroStr t26;
-    int64_t t27;
-    HeroStr t28;
-    HeroStr t29;
-    HeroStr t30;
-    HeroStr t31;
-    h_0opt_e201354 t32;
-    int64_t t33;
-    int64_t t34;
-    int64_t t35;
-    HeroStr t36;
-    int64_t t37;
-    bool t38;
-    HeroStr t39;
-    int64_t t40;
-    uint8_t t41;
-    uint8_t t42;
-    uint8_t t43;
-    bool t44;
-    uint8_t t45;
-    uint8_t t46;
-    bool t47;
-    bool t48;
-    HeroStr t49;
-    HeroStr t50;
-    int64_t t51;
-    HeroStr t52;
-    HeroStr t53;
-    HeroStr t54;
-    HeroStr t55;
-    HeroStr t56;
-    HeroStr t57;
-    HeroStr t58;
-    HeroStr t59;
-    h_0opt_e201354 t60;
-    int64_t t61;
-    int64_t t62;
-    int64_t t63;
-    uint8_t t64;
-    uint8_t t65;
-    uint8_t t66;
-    h_0opt_e201354 t67;
-    h_0opt_e201354 t68;
-    int64_t t69;
-    int64_t t70;
-    bool t71;
-    h_0opt_e201354 t72;
-    HeroFailure t73;
-    h_0opt_e201354 t74;
-    int64_t t75;
-    int64_t t76;
-    int64_t t77;
-    int64_t t78;
-    int64_t t79;
-    bool t80;
-    int64_t t81;
-    int64_t t82;
-    h_0opt_e201354 t83;
-    int64_t t84;
-    h_0opt_e201354 t85;
-    h_0opt_e201354 t86;
-    HeroStr t87;
-    HeroStr t88;
-    HeroStr t89;
-    HeroStr t90;
-    h_0opt_e201354 t91;
-    HeroStr t92;
-    HeroStr t93;
-    HeroStr t94;
-    HeroStr t95;
-    h_0opt_e201354 t96;
-    h_0opt_e201354 t97;
-    h_0opt_e201354 t98;
-    HeroStr t99;
-    HeroStr t100;
-    HeroStr t101;
-    HeroStr t102;
-    HeroStr t103;
-    HeroStr t104;
-    h_0opt_e201354 t105;
-    h_0opt_e201354 t106;
-    h_0opt_e201354 t107;
-    goto bb0;
+#line 81 "examples/query/data/table.hero"
+    bool h2_negative; int64_t h3_start; int64_t h4_total; int64_t h5_at; uint8_t h6_digit; bool h7_b0; h_0opt_e201354 h8_f0 = {0}; h_0opt_e201354 h9_ret0 = {0}; HeroStr h10_own10 = {0}; HeroStr h11_own11 = {0}; HeroStr h12_own12 = {0}; HeroStr h13_own13 = {0}; h_0opt_e201354 h14_own14 = {0}; HeroStr h15_own15 = {0}; HeroStr h16_own16 = {0}; HeroStr h17_own17 = {0}; HeroStr h18_own18 = {0}; h_0opt_e201354 h19_own19 = {0}; h_0opt_e201354 h20_own20 = {0}; HeroStr h21_own21 = {0}; HeroStr h22_own22 = {0}; HeroStr h23_own23 = {0}; HeroStr h24_own24 = {0}; HeroStr h25_own25 = {0}; HeroStr h26_own26 = {0}; h_0opt_e201354 h27_own27 = {0}; h_0opt_e201354 h28_own28 = {0}; h_0opt_e201354 h29_own29 = {0}; HeroStr t1; int64_t t2; int64_t t3; bool t4; HeroStr t5; HeroStr t6; int64_t t7; HeroStr t8; HeroStr t9; HeroStr t10; HeroStr t11; h_0opt_e201354 t12; HeroStr t13; int64_t t14; uint8_t t15; uint8_t t16; bool t17; int64_t t18; bool t19; int64_t t20; HeroStr t21; int64_t t22; int64_t t23; bool t24; HeroStr t25; HeroStr t26; int64_t t27; HeroStr t28; HeroStr t29; HeroStr t30; HeroStr t31; h_0opt_e201354 t32; int64_t t33; int64_t t34; int64_t t35; HeroStr t36; int64_t t37; bool t38; HeroStr t39; int64_t t40; uint8_t t41; uint8_t t42; uint8_t t43; bool t44; uint8_t t45; uint8_t t46; bool t47; bool t48; HeroStr t49; HeroStr t50; int64_t t51; HeroStr t52; HeroStr t53; HeroStr t54; HeroStr t55; HeroStr t56; HeroStr t57; HeroStr t58; HeroStr t59; h_0opt_e201354 t60; int64_t t61; int64_t t62; int64_t t63; uint8_t t64; uint8_t t65; uint8_t t66; h_0opt_e201354 t67; h_0opt_e201354 t68; int64_t t69; int64_t t70; bool t71; h_0opt_e201354 t72; HeroFailure t73; h_0opt_e201354 t74; int64_t t75; int64_t t76; int64_t t77; int64_t t78; int64_t t79; bool t80; int64_t t81; int64_t t82; h_0opt_e201354 t83; int64_t t84; h_0opt_e201354 t85; h_0opt_e201354 t86; HeroStr t87; HeroStr t88; HeroStr t89; HeroStr t90; h_0opt_e201354 t91; HeroStr t92; HeroStr t93; HeroStr t94; HeroStr t95; h_0opt_e201354 t96; h_0opt_e201354 t97; h_0opt_e201354 t98; HeroStr t99; HeroStr t100; HeroStr t101; HeroStr t102; HeroStr t103; HeroStr t104; h_0opt_e201354 t105; h_0opt_e201354 t106; h_0opt_e201354 t107; goto bb0;
+#line 81 "examples/query/data/table.hero"
 bb0:
-#line 82 "examples/query/data/table.hero"
     t1 = h0_text;
 #line 82 "examples/query/data/table.hero"
     t2 = hero_str_len(t1);
@@ -4332,7 +3535,7 @@ bb19:
     t72 = h8_f0;
 #line 100 "examples/query/data/table.hero"
     t73 = t72.as.err;
-#line 4336 "main.c"
+#line 3539 "main.c"
     hero_panic_must(t73);
     hero_unreachable();
 bb20:
@@ -4374,7 +3577,7 @@ bb22:
     goto bb20;
 #line 104 "examples/query/data/table.hero"
 bb23:
-#line 4378 "main.c"
+#line 3581 "main.c"
     t86 = h9_ret0;
     h_0opt_e201354_retain(&t86);
     h_0opt_e201354_release(hero_slot_escape(&h8_f0));
@@ -4403,292 +3606,22 @@ bb23:
 
 #line 123 "examples/query/data/table.hero"
 int64_t h_datatable_MOST_DIGITS(void) {
-#line 4407 "main.c"
-    int64_t t1;
-    goto bb0;
+#line 123 "examples/query/data/table.hero"
+    int64_t t1; goto bb0;
+#line 123 "examples/query/data/table.hero"
 bb0:
-#line 124 "examples/query/data/table.hero"
     t1 = INT64_C(18);
 #line 124 "examples/query/data/table.hero"
     return t1;
-#line 4415 "main.c"
+#line 3617 "main.c"
 }
 
 #line 126 "examples/query/data/table.hero"
 h_0opt_db92a83 h_datatable_float_of(HeroStr h0_text, int64_t h1_line) {
-#line 4420 "main.c"
-    HeroArrayHeader * h2_halves = {0};
-    bool h3_b0;
-    bool h4_negative;
-    h_0opt_f87774a h5_f0 = {0};
-    HeroStr h6_whole_digits = {0};
-    HeroStr h7_fraction_digits = {0};
-    HeroStr h8_all_digits = {0};
-    int64_t h9_scaled;
-    int64_t h10_at;
-    uint8_t h11_digit;
-    bool h12_b1;
-    h_0opt_e201354 h13_f1 = {0};
-    double h14_scale;
-    int64_t h15_left;
-    double h16_value;
-    h_0opt_db92a83 h17_ret0 = {0};
-    HeroArrayHeader * h18_own18 = {0};
-    HeroStr h19_own19 = {0};
-    HeroStr h20_own20 = {0};
-    HeroStr h21_own21 = {0};
-    HeroStr h22_own22 = {0};
-    HeroStr h23_own23 = {0};
-    HeroStr h24_own24 = {0};
-    h_0opt_db92a83 h25_own25 = {0};
-    h_0opt_f87774a h26_own26 = {0};
-    h_0opt_db92a83 h27_own27 = {0};
-    HeroStr h28_own28 = {0};
-    HeroStr h29_own29 = {0};
-    HeroStr h30_own30 = {0};
-    HeroStr h31_own31 = {0};
-    HeroStr h32_own32 = {0};
-    HeroStr h33_own33 = {0};
-    HeroStr h34_own34 = {0};
-    h_0opt_db92a83 h35_own35 = {0};
-    HeroStr h36_own36 = {0};
-    HeroStr h37_own37 = {0};
-    HeroStr h38_own38 = {0};
-    HeroStr h39_own39 = {0};
-    HeroStr h40_own40 = {0};
-    HeroStr h41_own41 = {0};
-    HeroStr h42_own42 = {0};
-    HeroStr h43_own43 = {0};
-    HeroStr h44_own44 = {0};
-    HeroStr h45_own45 = {0};
-    HeroStr h46_own46 = {0};
-    h_0opt_db92a83 h47_own47 = {0};
-    h_0opt_e201354 h48_own48 = {0};
-    HeroStr h49_own49 = {0};
-    HeroStr h50_own50 = {0};
-    HeroStr h51_own51 = {0};
-    HeroStr h52_own52 = {0};
-    HeroStr h53_own53 = {0};
-    HeroStr h54_own54 = {0};
-    h_0opt_db92a83 h55_own55 = {0};
-    h_0opt_db92a83 h56_own56 = {0};
-    h_0opt_db92a83 h57_own57 = {0};
-    HeroStr t1;
-    uint8_t t2;
-    HeroArrayHeader * t3;
-    HeroArrayHeader * t4;
-    int64_t t5;
-    int64_t t6;
-    bool t7;
-    HeroStr t8;
-    HeroStr t9;
-    int64_t t10;
-    HeroStr t11;
-    HeroStr t12;
-    HeroStr t13;
-    HeroStr t14;
-    HeroStr t15;
-    HeroStr t16;
-    HeroStr t17;
-    HeroStr t18;
-    h_0opt_db92a83 t19;
-    HeroStr t20;
-    int64_t t21;
-    int64_t t22;
-    bool t23;
-    HeroStr t24;
-    int64_t t25;
-    uint8_t t26;
-    uint8_t t27;
-    bool t28;
-    bool t29;
-    HeroArrayHeader * t30;
-    int64_t t31;
-    HeroStr t32;
-    int64_t t33;
-    bool t34;
-    h_0opt_f87774a t35;
-    h_0opt_f87774a t36;
-    int64_t t37;
-    int64_t t38;
-    bool t39;
-    h_0opt_f87774a t40;
-    HeroFailure t41;
-    h_0opt_db92a83 t42;
-    h_0opt_f87774a t43;
-    HeroStr t44;
-    HeroStr t45;
-    HeroArrayHeader * t46;
-    int64_t t47;
-    int64_t t48;
-    bool t49;
-    HeroArrayHeader * t50;
-    int64_t t51;
-    HeroStr t52;
-    HeroStr t53;
-    int64_t t54;
-    int64_t t55;
-    bool t56;
-    HeroStr t57;
-    HeroStr t58;
-    int64_t t59;
-    HeroStr t60;
-    HeroStr t61;
-    HeroStr t62;
-    HeroStr t63;
-    HeroStr t64;
-    HeroStr t65;
-    HeroStr t66;
-    HeroStr t67;
-    h_0opt_db92a83 t68;
-    HeroStr t69;
-    HeroStr t70;
-    HeroStr t71;
-    HeroStr t72;
-    int64_t t73;
-    int64_t t74;
-    bool t75;
-    HeroStr t76;
-    HeroStr t77;
-    int64_t t78;
-    HeroStr t79;
-    HeroStr t80;
-    HeroStr t81;
-    HeroStr t82;
-    HeroStr t83;
-    HeroStr t84;
-    HeroStr t85;
-    HeroStr t86;
-    HeroStr t87;
-    int64_t t88;
-    HeroStr t89;
-    HeroStr t90;
-    HeroStr t91;
-    HeroStr t92;
-    int64_t t93;
-    HeroStr t94;
-    HeroStr t95;
-    h_0opt_db92a83 t96;
-    int64_t t97;
-    int64_t t98;
-    int64_t t99;
-    HeroStr t100;
-    int64_t t101;
-    bool t102;
-    HeroStr t103;
-    int64_t t104;
-    uint8_t t105;
-    uint8_t t106;
-    uint8_t t107;
-    bool t108;
-    uint8_t t109;
-    uint8_t t110;
-    bool t111;
-    bool t112;
-    HeroStr t113;
-    HeroStr t114;
-    int64_t t115;
-    HeroStr t116;
-    HeroStr t117;
-    HeroStr t118;
-    HeroStr t119;
-    HeroStr t120;
-    HeroStr t121;
-    HeroStr t122;
-    HeroStr t123;
-    h_0opt_db92a83 t124;
-    int64_t t125;
-    int64_t t126;
-    int64_t t127;
-    uint8_t t128;
-    uint8_t t129;
-    uint8_t t130;
-    h_0opt_e201354 t131;
-    h_0opt_e201354 t132;
-    int64_t t133;
-    int64_t t134;
-    bool t135;
-    h_0opt_e201354 t136;
-    HeroFailure t137;
-    h_0opt_e201354 t138;
-    int64_t t139;
-    int64_t t140;
-    int64_t t141;
-    int64_t t142;
-    int64_t t143;
-    double t144;
-    HeroStr t145;
-    int64_t t146;
-    int64_t t147;
-    int64_t t148;
-    bool t149;
-    double t150;
-    double t151;
-    double t152;
-    int64_t t153;
-    int64_t t154;
-    int64_t t155;
-    int64_t t156;
-    double t157;
-    double t158;
-    double t159;
-    bool t160;
-    double t161;
-    double t162;
-    h_0opt_db92a83 t163;
-    double t164;
-    h_0opt_db92a83 t165;
-    h_0opt_db92a83 t166;
-    HeroArrayHeader * t167;
-    HeroArrayHeader * t168;
-    HeroStr t169;
-    HeroStr t170;
-    HeroStr t171;
-    HeroStr t172;
-    HeroStr t173;
-    HeroStr t174;
-    h_0opt_db92a83 t175;
-    h_0opt_f87774a t176;
-    h_0opt_f87774a t177;
-    HeroStr t178;
-    HeroStr t179;
-    h_0opt_db92a83 t180;
-    HeroStr t181;
-    HeroStr t182;
-    HeroStr t183;
-    HeroStr t184;
-    HeroStr t185;
-    HeroStr t186;
-    HeroStr t187;
-    HeroStr t188;
-    HeroStr t189;
-    h_0opt_db92a83 t190;
-    HeroStr t191;
-    HeroStr t192;
-    HeroStr t193;
-    HeroStr t194;
-    HeroStr t195;
-    HeroStr t196;
-    HeroStr t197;
-    HeroStr t198;
-    HeroStr t199;
-    HeroStr t200;
-    HeroStr t201;
-    h_0opt_db92a83 t202;
-    h_0opt_e201354 t203;
-    h_0opt_e201354 t204;
-    HeroStr t205;
-    HeroStr t206;
-    HeroStr t207;
-    HeroStr t208;
-    HeroStr t209;
-    HeroStr t210;
-    h_0opt_db92a83 t211;
-    h_0opt_db92a83 t212;
-    h_0opt_db92a83 t213;
-    goto bb0;
+#line 126 "examples/query/data/table.hero"
+    HeroArrayHeader * h2_halves = {0}; bool h3_b0; bool h4_negative; h_0opt_f87774a h5_f0 = {0}; HeroStr h6_whole_digits = {0}; HeroStr h7_fraction_digits = {0}; HeroStr h8_all_digits = {0}; int64_t h9_scaled; int64_t h10_at; uint8_t h11_digit; bool h12_b1; h_0opt_e201354 h13_f1 = {0}; double h14_scale; int64_t h15_left; double h16_value; h_0opt_db92a83 h17_ret0 = {0}; HeroArrayHeader * h18_own18 = {0}; HeroStr h19_own19 = {0}; HeroStr h20_own20 = {0}; HeroStr h21_own21 = {0}; HeroStr h22_own22 = {0}; HeroStr h23_own23 = {0}; HeroStr h24_own24 = {0}; h_0opt_db92a83 h25_own25 = {0}; h_0opt_f87774a h26_own26 = {0}; h_0opt_db92a83 h27_own27 = {0}; HeroStr h28_own28 = {0}; HeroStr h29_own29 = {0}; HeroStr h30_own30 = {0}; HeroStr h31_own31 = {0}; HeroStr h32_own32 = {0}; HeroStr h33_own33 = {0}; HeroStr h34_own34 = {0}; h_0opt_db92a83 h35_own35 = {0}; HeroStr h36_own36 = {0}; HeroStr h37_own37 = {0}; HeroStr h38_own38 = {0}; HeroStr h39_own39 = {0}; HeroStr h40_own40 = {0}; HeroStr h41_own41 = {0}; HeroStr h42_own42 = {0}; HeroStr h43_own43 = {0}; HeroStr h44_own44 = {0}; HeroStr h45_own45 = {0}; HeroStr h46_own46 = {0}; h_0opt_db92a83 h47_own47 = {0}; h_0opt_e201354 h48_own48 = {0}; HeroStr h49_own49 = {0}; HeroStr h50_own50 = {0}; HeroStr h51_own51 = {0}; HeroStr h52_own52 = {0}; HeroStr h53_own53 = {0}; HeroStr h54_own54 = {0}; h_0opt_db92a83 h55_own55 = {0}; h_0opt_db92a83 h56_own56 = {0}; h_0opt_db92a83 h57_own57 = {0}; HeroStr t1; uint8_t t2; HeroArrayHeader * t3; HeroArrayHeader * t4; int64_t t5; int64_t t6; bool t7; HeroStr t8; HeroStr t9; int64_t t10; HeroStr t11; HeroStr t12; HeroStr t13; HeroStr t14; HeroStr t15; HeroStr t16; HeroStr t17; HeroStr t18; h_0opt_db92a83 t19; HeroStr t20; int64_t t21; int64_t t22; bool t23; HeroStr t24; int64_t t25; uint8_t t26; uint8_t t27; bool t28; bool t29; HeroArrayHeader * t30; int64_t t31; HeroStr t32; int64_t t33; bool t34; h_0opt_f87774a t35; h_0opt_f87774a t36; int64_t t37; int64_t t38; bool t39; h_0opt_f87774a t40; HeroFailure t41; h_0opt_db92a83 t42; h_0opt_f87774a t43; HeroStr t44; HeroStr t45; HeroArrayHeader * t46; int64_t t47; int64_t t48; bool t49; HeroArrayHeader * t50; int64_t t51; HeroStr t52; HeroStr t53; int64_t t54; int64_t t55; bool t56; HeroStr t57; HeroStr t58; int64_t t59; HeroStr t60; HeroStr t61; HeroStr t62; HeroStr t63; HeroStr t64; HeroStr t65; HeroStr t66; HeroStr t67; h_0opt_db92a83 t68; HeroStr t69; HeroStr t70; HeroStr t71; HeroStr t72; int64_t t73; int64_t t74; bool t75; HeroStr t76; HeroStr t77; int64_t t78; HeroStr t79; HeroStr t80; HeroStr t81; HeroStr t82; HeroStr t83; HeroStr t84; HeroStr t85; HeroStr t86; HeroStr t87; int64_t t88; HeroStr t89; HeroStr t90; HeroStr t91; HeroStr t92; int64_t t93; HeroStr t94; HeroStr t95; h_0opt_db92a83 t96; int64_t t97; int64_t t98; int64_t t99; HeroStr t100; int64_t t101; bool t102; HeroStr t103; int64_t t104; uint8_t t105; uint8_t t106; uint8_t t107; bool t108; uint8_t t109; uint8_t t110; bool t111; bool t112; HeroStr t113; HeroStr t114; int64_t t115; HeroStr t116; HeroStr t117; HeroStr t118; HeroStr t119; HeroStr t120; HeroStr t121; HeroStr t122; HeroStr t123; h_0opt_db92a83 t124; int64_t t125; int64_t t126; int64_t t127; uint8_t t128; uint8_t t129; uint8_t t130; h_0opt_e201354 t131; h_0opt_e201354 t132; int64_t t133; int64_t t134; bool t135; h_0opt_e201354 t136; HeroFailure t137; h_0opt_e201354 t138; int64_t t139; int64_t t140; int64_t t141; int64_t t142; int64_t t143; double t144; HeroStr t145; int64_t t146; int64_t t147; int64_t t148; bool t149; double t150; double t151; double t152; int64_t t153; int64_t t154; int64_t t155; int64_t t156; double t157; double t158; double t159; bool t160; double t161; double t162; h_0opt_db92a83 t163; double t164; h_0opt_db92a83 t165; h_0opt_db92a83 t166; HeroArrayHeader * t167; HeroArrayHeader * t168; HeroStr t169; HeroStr t170; HeroStr t171; HeroStr t172; HeroStr t173; HeroStr t174; h_0opt_db92a83 t175; h_0opt_f87774a t176; h_0opt_f87774a t177; HeroStr t178; HeroStr t179; h_0opt_db92a83 t180; HeroStr t181; HeroStr t182; HeroStr t183; HeroStr t184; HeroStr t185; HeroStr t186; HeroStr t187; HeroStr t188; HeroStr t189; h_0opt_db92a83 t190; HeroStr t191; HeroStr t192; HeroStr t193; HeroStr t194; HeroStr t195; HeroStr t196; HeroStr t197; HeroStr t198; HeroStr t199; HeroStr t200; HeroStr t201; h_0opt_db92a83 t202; h_0opt_e201354 t203; h_0opt_e201354 t204; HeroStr t205; HeroStr t206; HeroStr t207; HeroStr t208; HeroStr t209; HeroStr t210; h_0opt_db92a83 t211; h_0opt_db92a83 t212; h_0opt_db92a83 t213; goto bb0;
+#line 126 "examples/query/data/table.hero"
 bb0:
-#line 127 "examples/query/data/table.hero"
     t1 = h0_text;
 #line 127 "examples/query/data/table.hero"
     t2 = UINT64_C(46);
@@ -5409,7 +4342,7 @@ bb26:
     t136 = h13_f1;
 #line 155 "examples/query/data/table.hero"
     t137 = t136.as.err;
-#line 5413 "main.c"
+#line 4346 "main.c"
     hero_panic_must(t137);
     hero_unreachable();
 bb27:
@@ -5495,7 +4428,7 @@ bb32:
     goto bb30;
 #line 168 "examples/query/data/table.hero"
 bb33:
-#line 5499 "main.c"
+#line 4432 "main.c"
     t166 = h17_ret0;
     h_0opt_db92a83_retain(&t166);
     hero_array_release_at(&h2_halves);
@@ -5549,71 +4482,10 @@ bb33:
 
 #line 174 "examples/query/data/table.hero"
 h_0opt_f87774a h_datatable_digits_of(HeroStr h0_text, int64_t h1_line, bool h2_negative) {
-#line 5553 "main.c"
-    h_0opt_f87774a h3_ret0 = {0};
-    HeroStr h4_own4 = {0};
-    HeroStr h5_own5 = {0};
-    HeroStr h6_own6 = {0};
-    HeroStr h7_own7 = {0};
-    h_0opt_f87774a h8_own8 = {0};
-    h_0opt_f87774a h9_own9 = {0};
-    HeroStr h10_own10 = {0};
-    h_0opt_f87774a h11_own11 = {0};
-    HeroStr h12_own12 = {0};
-    HeroStr h13_own13 = {0};
-    HeroStr h14_own14 = {0};
-    HeroStr h15_own15 = {0};
-    h_0opt_f87774a h16_own16 = {0};
-    HeroStr t1;
-    int64_t t2;
-    int64_t t3;
-    bool t4;
-    HeroStr t5;
-    HeroStr t6;
-    int64_t t7;
-    HeroStr t8;
-    HeroStr t9;
-    HeroStr t10;
-    HeroStr t11;
-    h_0opt_f87774a t12;
-    bool t13;
-    HeroStr t14;
-    int64_t t15;
-    int64_t t16;
-    bool t17;
-    HeroStr t18;
-    HeroStr t19;
-    int64_t t20;
-    HeroStr t21;
-    HeroStr t22;
-    HeroStr t23;
-    HeroStr t24;
-    h_0opt_f87774a t25;
-    HeroStr t26;
-    int64_t t27;
-    HeroStr t28;
-    int64_t t29;
-    HeroStr t30;
-    h_0opt_f87774a t31;
-    HeroStr t32;
-    h_0opt_f87774a t33;
-    h_0opt_f87774a t34;
-    HeroStr t35;
-    HeroStr t36;
-    HeroStr t37;
-    HeroStr t38;
-    h_0opt_f87774a t39;
-    h_0opt_f87774a t40;
-    HeroStr t41;
-    h_0opt_f87774a t42;
-    HeroStr t43;
-    HeroStr t44;
-    HeroStr t45;
-    HeroStr t46;
-    h_0opt_f87774a t47;
-    goto bb0;
+#line 174 "examples/query/data/table.hero"
+    h_0opt_f87774a h3_ret0 = {0}; HeroStr h4_own4 = {0}; HeroStr h5_own5 = {0}; HeroStr h6_own6 = {0}; HeroStr h7_own7 = {0}; h_0opt_f87774a h8_own8 = {0}; h_0opt_f87774a h9_own9 = {0}; HeroStr h10_own10 = {0}; h_0opt_f87774a h11_own11 = {0}; HeroStr h12_own12 = {0}; HeroStr h13_own13 = {0}; HeroStr h14_own14 = {0}; HeroStr h15_own15 = {0}; h_0opt_f87774a h16_own16 = {0}; HeroStr t1; int64_t t2; int64_t t3; bool t4; HeroStr t5; HeroStr t6; int64_t t7; HeroStr t8; HeroStr t9; HeroStr t10; HeroStr t11; h_0opt_f87774a t12; bool t13; HeroStr t14; int64_t t15; int64_t t16; bool t17; HeroStr t18; HeroStr t19; int64_t t20; HeroStr t21; HeroStr t22; HeroStr t23; HeroStr t24; h_0opt_f87774a t25; HeroStr t26; int64_t t27; HeroStr t28; int64_t t29; HeroStr t30; h_0opt_f87774a t31; HeroStr t32; h_0opt_f87774a t33; h_0opt_f87774a t34; HeroStr t35; HeroStr t36; HeroStr t37; HeroStr t38; h_0opt_f87774a t39; h_0opt_f87774a t40; HeroStr t41; h_0opt_f87774a t42; HeroStr t43; HeroStr t44; HeroStr t45; HeroStr t46; h_0opt_f87774a t47; goto bb0;
+#line 174 "examples/query/data/table.hero"
 bb0:
-#line 175 "examples/query/data/table.hero"
     t1 = h0_text;
 #line 175 "examples/query/data/table.hero"
     t2 = hero_str_len(t1);
@@ -5817,7 +4689,7 @@ bb9:
     goto bb7;
 #line 180 "examples/query/data/table.hero"
 bb10:
-#line 5821 "main.c"
+#line 4693 "main.c"
     t34 = h3_ret0;
     h_0opt_f87774a_retain(&t34);
     hero_str_release_at(&h4_own4);
@@ -5838,239 +4710,10 @@ bb10:
 
 #line 187 "examples/query/data/table.hero"
 h_0opt_40ab612a h_datatable_read(HeroStr h0_text) {
-#line 5842 "main.c"
-    HeroArrayHeader * h1_all_lines = {0};
-    HeroArrayHeader * h2_out = {0};
-    int64_t h3_number;
-    int64_t h4_wanted;
-    HeroArrayHeader * h5_xs0 = {0};
-    int64_t h6_i0;
-    HeroStr h7_one = {0};
-    HeroArrayHeader * h8_fields = {0};
-    h_0opt_e201354 h9_f0 = {0};
-    h_0opt_473cb9ae h10_f1 = {0};
-    h_0opt_e201354 h11_f2 = {0};
-    h_0opt_db92a83 h12_f3 = {0};
-    h_0opt_40ab612a h13_ret0 = {0};
-    HeroArrayHeader * h14_own14 = {0};
-    HeroStr h15_own15 = {0};
-    HeroStr h16_own16 = {0};
-    h_0opt_40ab612a h17_own17 = {0};
-    HeroArrayHeader * h18_own18 = {0};
-    HeroArrayHeader * h19_own19 = {0};
-    HeroStr h20_own20 = {0};
-    HeroStr h21_own21 = {0};
-    HeroStr h22_own22 = {0};
-    HeroStr h23_own23 = {0};
-    HeroStr h24_own24 = {0};
-    HeroStr h25_own25 = {0};
-    h_0opt_40ab612a h26_own26 = {0};
-    HeroArrayHeader * h27_own27 = {0};
-    h_0opt_40ab612a h28_own28 = {0};
-    h_0opt_e201354 h29_own29 = {0};
-    HeroStr h30_own30 = {0};
-    HeroStr h31_own31 = {0};
-    HeroStr h32_own32 = {0};
-    HeroStr h33_own33 = {0};
-    HeroStr h34_own34 = {0};
-    HeroStr h35_own35 = {0};
-    HeroStr h36_own36 = {0};
-    HeroStr h37_own37 = {0};
-    HeroStr h38_own38 = {0};
-    h_0opt_40ab612a h39_own39 = {0};
-    h_0opt_473cb9ae h40_own40 = {0};
-    h_0opt_40ab612a h41_own41 = {0};
-    h_0opt_e201354 h42_own42 = {0};
-    h_0opt_40ab612a h43_own43 = {0};
-    h_0opt_db92a83 h44_own44 = {0};
-    h_0opt_40ab612a h45_own45 = {0};
-    h_datarow_Row h46_own46 = {0};
-    h_0opt_40ab612a h47_own47 = {0};
-    HeroStr t1;
-    HeroArrayHeader * t2;
-    HeroArrayHeader * t3;
-    int64_t t4;
-    int64_t t5;
-    bool t6;
-    HeroStr t7;
-    HeroStr t8;
-    h_0opt_40ab612a t9;
-    HeroArrayHeader * t10;
-    int64_t t11;
-    HeroStr t12;
-    HeroStr t13;
-    bool t14;
-    HeroStr t15;
-    HeroStr t16;
-    HeroArrayHeader * t17;
-    int64_t t18;
-    HeroStr t19;
-    HeroStr t20;
-    HeroStr t21;
-    HeroStr t22;
-    HeroStr t23;
-    HeroStr t24;
-    HeroStr t25;
-    HeroStr t26;
-    h_0opt_40ab612a t27;
-    HeroArrayHeader * t28;
-    int64_t t29;
-    int64_t t30;
-    HeroArrayHeader * t31;
-    int64_t t32;
-    HeroArrayHeader * t33;
-    int64_t t34;
-    HeroArrayHeader * t35;
-    int64_t t36;
-    int64_t t37;
-    HeroArrayHeader * t38;
-    int64_t t39;
-    bool t40;
-    HeroArrayHeader * t41;
-    int64_t t42;
-    HeroStr t43;
-    int64_t t44;
-    int64_t t45;
-    int64_t t46;
-    HeroStr t47;
-    uint8_t t48;
-    HeroArrayHeader * t49;
-    HeroArrayHeader * t50;
-    int64_t t51;
-    int64_t t52;
-    bool t53;
-    HeroStr t54;
-    HeroStr t55;
-    int64_t t56;
-    HeroStr t57;
-    HeroStr t58;
-    HeroStr t59;
-    HeroStr t60;
-    HeroArrayHeader * t61;
-    int64_t t62;
-    HeroStr t63;
-    HeroStr t64;
-    HeroStr t65;
-    HeroStr t66;
-    int64_t t67;
-    HeroStr t68;
-    HeroStr t69;
-    h_0opt_40ab612a t70;
-    HeroArrayHeader * t72;
-    int64_t t73;
-    HeroStr t74;
-    int64_t t75;
-    h_0opt_e201354 t76;
-    h_0opt_e201354 t77;
-    int64_t t78;
-    int64_t t79;
-    bool t80;
-    h_0opt_e201354 t81;
-    HeroFailure t82;
-    h_0opt_40ab612a t83;
-    h_0opt_e201354 t84;
-    int64_t t85;
-    HeroArrayHeader * t86;
-    int64_t t87;
-    HeroStr t88;
-    HeroArrayHeader * t89;
-    int64_t t90;
-    HeroStr t91;
-    HeroArrayHeader * t92;
-    int64_t t93;
-    HeroStr t94;
-    int64_t t95;
-    h_0opt_473cb9ae t96;
-    h_0opt_473cb9ae t97;
-    int64_t t98;
-    int64_t t99;
-    bool t100;
-    h_0opt_473cb9ae t101;
-    HeroFailure t102;
-    h_0opt_40ab612a t103;
-    h_0opt_473cb9ae t104;
-    bool t105;
-    HeroArrayHeader * t106;
-    int64_t t107;
-    HeroStr t108;
-    int64_t t109;
-    h_0opt_e201354 t110;
-    h_0opt_e201354 t111;
-    int64_t t112;
-    int64_t t113;
-    bool t114;
-    h_0opt_e201354 t115;
-    HeroFailure t116;
-    h_0opt_40ab612a t117;
-    h_0opt_e201354 t118;
-    int64_t t119;
-    HeroArrayHeader * t120;
-    int64_t t121;
-    HeroStr t122;
-    int64_t t123;
-    h_0opt_db92a83 t124;
-    h_0opt_db92a83 t125;
-    int64_t t126;
-    int64_t t127;
-    bool t128;
-    h_0opt_db92a83 t129;
-    HeroFailure t130;
-    h_0opt_40ab612a t131;
-    h_0opt_db92a83 t132;
-    double t133;
-    h_datarow_Row t134;
-    int64_t t136;
-    int64_t t137;
-    int64_t t138;
-    HeroArrayHeader * t139;
-    h_0opt_40ab612a t140;
-    h_0opt_40ab612a t141;
-    HeroArrayHeader * t142;
-    HeroArrayHeader * t143;
-    HeroStr t144;
-    HeroStr t145;
-    h_0opt_40ab612a t146;
-    HeroArrayHeader * t147;
-    HeroArrayHeader * t148;
-    HeroArrayHeader * t149;
-    HeroArrayHeader * t150;
-    HeroStr t151;
-    HeroStr t152;
-    HeroStr t153;
-    HeroStr t154;
-    HeroStr t155;
-    HeroStr t156;
-    h_0opt_40ab612a t157;
-    HeroStr t158;
-    HeroArrayHeader * t159;
-    HeroArrayHeader * t160;
-    h_0opt_40ab612a t161;
-    h_0opt_e201354 t162;
-    h_0opt_e201354 t163;
-    HeroStr t164;
-    HeroStr t165;
-    HeroStr t166;
-    HeroStr t167;
-    HeroStr t168;
-    HeroStr t169;
-    HeroStr t170;
-    HeroStr t171;
-    HeroStr t172;
-    h_0opt_40ab612a t173;
-    h_0opt_473cb9ae t174;
-    h_0opt_473cb9ae t175;
-    h_0opt_40ab612a t176;
-    h_0opt_e201354 t177;
-    h_0opt_e201354 t178;
-    h_0opt_40ab612a t179;
-    h_0opt_db92a83 t180;
-    h_0opt_db92a83 t181;
-    h_0opt_40ab612a t182;
-    h_datarow_Row t183;
-    h_0opt_40ab612a t184;
-    goto bb0;
+#line 187 "examples/query/data/table.hero"
+    HeroArrayHeader * h1_all_lines = {0}; HeroArrayHeader * h2_out = {0}; int64_t h3_number; int64_t h4_wanted; HeroArrayHeader * h5_xs0 = {0}; int64_t h6_i0; HeroStr h7_one = {0}; HeroArrayHeader * h8_fields = {0}; h_0opt_e201354 h9_f0 = {0}; h_0opt_473cb9ae h10_f1 = {0}; h_0opt_e201354 h11_f2 = {0}; h_0opt_db92a83 h12_f3 = {0}; h_0opt_40ab612a h13_ret0 = {0}; HeroArrayHeader * h14_own14 = {0}; HeroStr h15_own15 = {0}; HeroStr h16_own16 = {0}; h_0opt_40ab612a h17_own17 = {0}; HeroArrayHeader * h18_own18 = {0}; HeroArrayHeader * h19_own19 = {0}; HeroStr h20_own20 = {0}; HeroStr h21_own21 = {0}; HeroStr h22_own22 = {0}; HeroStr h23_own23 = {0}; HeroStr h24_own24 = {0}; HeroStr h25_own25 = {0}; h_0opt_40ab612a h26_own26 = {0}; HeroArrayHeader * h27_own27 = {0}; h_0opt_40ab612a h28_own28 = {0}; h_0opt_e201354 h29_own29 = {0}; HeroStr h30_own30 = {0}; HeroStr h31_own31 = {0}; HeroStr h32_own32 = {0}; HeroStr h33_own33 = {0}; HeroStr h34_own34 = {0}; HeroStr h35_own35 = {0}; HeroStr h36_own36 = {0}; HeroStr h37_own37 = {0}; HeroStr h38_own38 = {0}; h_0opt_40ab612a h39_own39 = {0}; h_0opt_473cb9ae h40_own40 = {0}; h_0opt_40ab612a h41_own41 = {0}; h_0opt_e201354 h42_own42 = {0}; h_0opt_40ab612a h43_own43 = {0}; h_0opt_db92a83 h44_own44 = {0}; h_0opt_40ab612a h45_own45 = {0}; h_datarow_Row h46_own46 = {0}; h_0opt_40ab612a h47_own47 = {0}; HeroStr t1; HeroArrayHeader * t2; HeroArrayHeader * t3; int64_t t4; int64_t t5; bool t6; HeroStr t7; HeroStr t8; h_0opt_40ab612a t9; HeroArrayHeader * t10; int64_t t11; HeroStr t12; HeroStr t13; bool t14; HeroStr t15; HeroStr t16; HeroArrayHeader * t17; int64_t t18; HeroStr t19; HeroStr t20; HeroStr t21; HeroStr t22; HeroStr t23; HeroStr t24; HeroStr t25; HeroStr t26; h_0opt_40ab612a t27; HeroArrayHeader * t28; int64_t t29; int64_t t30; HeroArrayHeader * t31; int64_t t32; HeroArrayHeader * t33; int64_t t34; HeroArrayHeader * t35; int64_t t36; int64_t t37; HeroArrayHeader * t38; int64_t t39; bool t40; HeroArrayHeader * t41; int64_t t42; HeroStr t43; int64_t t44; int64_t t45; int64_t t46; HeroStr t47; uint8_t t48; HeroArrayHeader * t49; HeroArrayHeader * t50; int64_t t51; int64_t t52; bool t53; HeroStr t54; HeroStr t55; int64_t t56; HeroStr t57; HeroStr t58; HeroStr t59; HeroStr t60; HeroArrayHeader * t61; int64_t t62; HeroStr t63; HeroStr t64; HeroStr t65; HeroStr t66; int64_t t67; HeroStr t68; HeroStr t69; h_0opt_40ab612a t70; HeroArrayHeader * t72; int64_t t73; HeroStr t74; int64_t t75; h_0opt_e201354 t76; h_0opt_e201354 t77; int64_t t78; int64_t t79; bool t80; h_0opt_e201354 t81; HeroFailure t82; h_0opt_40ab612a t83; h_0opt_e201354 t84; int64_t t85; HeroArrayHeader * t86; int64_t t87; HeroStr t88; HeroArrayHeader * t89; int64_t t90; HeroStr t91; HeroArrayHeader * t92; int64_t t93; HeroStr t94; int64_t t95; h_0opt_473cb9ae t96; h_0opt_473cb9ae t97; int64_t t98; int64_t t99; bool t100; h_0opt_473cb9ae t101; HeroFailure t102; h_0opt_40ab612a t103; h_0opt_473cb9ae t104; bool t105; HeroArrayHeader * t106; int64_t t107; HeroStr t108; int64_t t109; h_0opt_e201354 t110; h_0opt_e201354 t111; int64_t t112; int64_t t113; bool t114; h_0opt_e201354 t115; HeroFailure t116; h_0opt_40ab612a t117; h_0opt_e201354 t118; int64_t t119; HeroArrayHeader * t120; int64_t t121; HeroStr t122; int64_t t123; h_0opt_db92a83 t124; h_0opt_db92a83 t125; int64_t t126; int64_t t127; bool t128; h_0opt_db92a83 t129; HeroFailure t130; h_0opt_40ab612a t131; h_0opt_db92a83 t132; double t133; h_datarow_Row t134; int64_t t136; int64_t t137; int64_t t138; HeroArrayHeader * t139; h_0opt_40ab612a t140; h_0opt_40ab612a t141; HeroArrayHeader * t142; HeroArrayHeader * t143; HeroStr t144; HeroStr t145; h_0opt_40ab612a t146; HeroArrayHeader * t147; HeroArrayHeader * t148; HeroArrayHeader * t149; HeroArrayHeader * t150; HeroStr t151; HeroStr t152; HeroStr t153; HeroStr t154; HeroStr t155; HeroStr t156; h_0opt_40ab612a t157; HeroStr t158; HeroArrayHeader * t159; HeroArrayHeader * t160; h_0opt_40ab612a t161; h_0opt_e201354 t162; h_0opt_e201354 t163; HeroStr t164; HeroStr t165; HeroStr t166; HeroStr t167; HeroStr t168; HeroStr t169; HeroStr t170; HeroStr t171; HeroStr t172; h_0opt_40ab612a t173; h_0opt_473cb9ae t174; h_0opt_473cb9ae t175; h_0opt_40ab612a t176; h_0opt_e201354 t177; h_0opt_e201354 t178; h_0opt_40ab612a t179; h_0opt_db92a83 t180; h_0opt_db92a83 t181; h_0opt_40ab612a t182; h_datarow_Row t183; h_0opt_40ab612a t184; goto bb0;
+#line 187 "examples/query/data/table.hero"
 bb0:
-#line 188 "examples/query/data/table.hero"
     t1 = h0_text;
 #line 188 "examples/query/data/table.hero"
     t2 = h_datatable_lines_of(t1);
@@ -6757,7 +5400,7 @@ bb21:
     goto bb22;
 #line 212 "examples/query/data/table.hero"
 bb22:
-#line 6761 "main.c"
+#line 5404 "main.c"
     t141 = h13_ret0;
     h_0opt_40ab612a_retain(&t141);
     hero_array_release_at(&h1_all_lines);
@@ -6808,35 +5451,10 @@ bb22:
 
 #line 260 "examples/query/data/table.hero"
 h_datatable_Trouble h_datatable_why(h_0opt_40ab612a h0_got) {
-#line 6812 "main.c"
-    h_0opt_40ab612a h1_s0 = {0};
-    h_datatable_Trouble h2_r0 = {0};
-    HeroFailure h3_e = {0};
-    h_datatable_Trouble h4_own4 = {0};
-    h_datatable_Trouble h5_own5 = {0};
-    h_0opt_40ab612a t1;
-    h_0opt_40ab612a t2;
-    int64_t t3;
-    HeroStr t4;
-    HeroStr t5;
-    h_datatable_Trouble t6;
-    h_0opt_40ab612a t7;
-    HeroFailure t8;
-    HeroFailure t9;
-    HeroStr t10;
-    HeroFailure t11;
-    HeroStr t12;
-    h_datatable_Trouble t13;
-    h_datatable_Trouble t14;
-    h_0opt_40ab612a t15;
-    h_datatable_Trouble t16;
-    h_datatable_Trouble t17;
-    HeroFailure t18;
-    h_datatable_Trouble t19;
-    h_datatable_Trouble t20;
-    goto bb0;
+#line 260 "examples/query/data/table.hero"
+    h_0opt_40ab612a h1_s0 = {0}; h_datatable_Trouble h2_r0 = {0}; HeroFailure h3_e = {0}; h_datatable_Trouble h4_own4 = {0}; h_datatable_Trouble h5_own5 = {0}; h_0opt_40ab612a t1; h_0opt_40ab612a t2; int64_t t3; HeroStr t4; HeroStr t5; h_datatable_Trouble t6; h_0opt_40ab612a t7; HeroFailure t8; HeroFailure t9; HeroStr t10; HeroFailure t11; HeroStr t12; h_datatable_Trouble t13; h_datatable_Trouble t14; h_0opt_40ab612a t15; h_datatable_Trouble t16; h_datatable_Trouble t17; HeroFailure t18; h_datatable_Trouble t19; h_datatable_Trouble t20; goto bb0;
+#line 260 "examples/query/data/table.hero"
 bb0:
-#line 261 "examples/query/data/table.hero"
     t1 = h0_got;
 #line 261 "examples/query/data/table.hero"
     t15 = h1_s0;
@@ -6864,7 +5482,7 @@ bb0:
 bb1:
 #line 261 "examples/query/data/table.hero"
     t14 = h2_r0;
-#line 6868 "main.c"
+#line 5486 "main.c"
     h_datatable_Trouble_retain(&t14);
     h_0opt_40ab612a_release(hero_slot_escape(&h1_s0));
     h_datatable_Trouble_release(hero_slot_escape(&h2_r0));
@@ -6943,48 +5561,15 @@ bb3:
     h_datatable_Trouble_release(&t20);
 #line 261 "examples/query/data/table.hero"
     goto bb1;
-#line 6947 "main.c"
+#line 5565 "main.c"
 }
 
 #line 270 "examples/query/data/table.hero"
 bool h_datatable_holds(HeroStr h0_text, HeroStr h1_needle) {
-#line 6952 "main.c"
-    int64_t h2_at;
-    bool h3_ret0;
-    HeroStr h4_own4 = {0};
-    HeroStr t1;
-    int64_t t2;
-    HeroStr t3;
-    int64_t t4;
-    bool t5;
-    bool t6;
-    int64_t t7;
-    int64_t t8;
-    HeroStr t9;
-    int64_t t10;
-    int64_t t11;
-    HeroStr t12;
-    int64_t t13;
-    bool t14;
-    HeroStr t15;
-    int64_t t16;
-    int64_t t17;
-    HeroStr t18;
-    int64_t t19;
-    int64_t t20;
-    HeroStr t21;
-    HeroStr t22;
-    bool t23;
-    bool t24;
-    int64_t t25;
-    int64_t t26;
-    int64_t t27;
-    bool t28;
-    bool t29;
-    HeroStr t30;
-    goto bb0;
+#line 270 "examples/query/data/table.hero"
+    int64_t h2_at; bool h3_ret0; HeroStr h4_own4 = {0}; HeroStr t1; int64_t t2; HeroStr t3; int64_t t4; bool t5; bool t6; int64_t t7; int64_t t8; HeroStr t9; int64_t t10; int64_t t11; HeroStr t12; int64_t t13; bool t14; HeroStr t15; int64_t t16; int64_t t17; HeroStr t18; int64_t t19; int64_t t20; HeroStr t21; HeroStr t22; bool t23; bool t24; int64_t t25; int64_t t26; int64_t t27; bool t28; bool t29; HeroStr t30; goto bb0;
+#line 270 "examples/query/data/table.hero"
 bb0:
-#line 271 "examples/query/data/table.hero"
     t1 = h1_needle;
 #line 271 "examples/query/data/table.hero"
     t2 = hero_str_len(t1);
@@ -7095,7 +5680,7 @@ bb9:
     goto bb7;
 #line 277 "examples/query/data/table.hero"
 bb10:
-#line 7099 "main.c"
+#line 5684 "main.c"
     t29 = h3_ret0;
     hero_str_release_at(&h4_own4);
     return t29;
@@ -7103,60 +5688,10 @@ bb10:
 
 #line 30 "examples/query/fmt/report.hero"
 HeroStr h_fmtreport_padded(HeroArrayHeader * h0_cells, HeroArrayHeader * h1_widths) {
-#line 7107 "main.c"
-    HeroStr h2_out = {0};
-    int64_t h3_at;
-    HeroStr h4_own4 = {0};
-    HeroStr h5_own5 = {0};
-    HeroStr h6_own6 = {0};
-    HeroStr h7_own7 = {0};
-    HeroStr t1;
-    int64_t t2;
-    int64_t t3;
-    HeroArrayHeader * t4;
-    int64_t t5;
-    bool t6;
-    int64_t t7;
-    int64_t t8;
-    bool t9;
-    HeroStr t10;
-    HeroStr t11;
-    HeroStr t12;
-    int64_t t13;
-    HeroArrayHeader * t14;
-    int64_t t15;
-    int64_t t16;
-    int64_t t17;
-    bool t18;
-    HeroStr t19;
-    HeroArrayHeader * t20;
-    int64_t t21;
-    HeroStr t22;
-    HeroStr t23;
-    HeroStr t24;
-    HeroArrayHeader * t25;
-    int64_t t26;
-    HeroStr t27;
-    HeroArrayHeader * t28;
-    int64_t t29;
-    int64_t t30;
-    HeroStr t31;
-    HeroStr t32;
-    int64_t t33;
-    int64_t t34;
-    int64_t t35;
-    HeroStr t36;
-    HeroStr t37;
-    HeroStr t38;
-    HeroStr t39;
-    HeroStr t40;
-    HeroStr t41;
-    HeroStr t42;
-    HeroStr t43;
-    HeroStr t44;
-    goto bb0;
+#line 30 "examples/query/fmt/report.hero"
+    HeroStr h2_out = {0}; int64_t h3_at; HeroStr h4_own4 = {0}; HeroStr h5_own5 = {0}; HeroStr h6_own6 = {0}; HeroStr h7_own7 = {0}; HeroStr t1; int64_t t2; int64_t t3; HeroArrayHeader * t4; int64_t t5; bool t6; int64_t t7; int64_t t8; bool t9; HeroStr t10; HeroStr t11; HeroStr t12; int64_t t13; HeroArrayHeader * t14; int64_t t15; int64_t t16; int64_t t17; bool t18; HeroStr t19; HeroArrayHeader * t20; int64_t t21; HeroStr t22; HeroStr t23; HeroStr t24; HeroArrayHeader * t25; int64_t t26; HeroStr t27; HeroArrayHeader * t28; int64_t t29; int64_t t30; HeroStr t31; HeroStr t32; int64_t t33; int64_t t34; int64_t t35; HeroStr t36; HeroStr t37; HeroStr t38; HeroStr t39; HeroStr t40; HeroStr t41; HeroStr t42; HeroStr t43; HeroStr t44; goto bb0;
+#line 30 "examples/query/fmt/report.hero"
 bb0:
-#line 31 "examples/query/fmt/report.hero"
     t1 = HERO_STR_LIT(hero_str_0);
 #line 31 "examples/query/fmt/report.hero"
     t37 = h2_out;
@@ -7196,7 +5731,7 @@ bb2:
 bb3:
 #line 44 "examples/query/fmt/report.hero"
     t36 = h2_out;
-#line 7200 "main.c"
+#line 5735 "main.c"
     hero_str_incref(t36);
     hero_str_release_at(&h2_out);
     hero_str_release_at(&h4_own4);
@@ -7329,47 +5864,15 @@ bb9:
     hero_str_decref(t44);
 #line 41 "examples/query/fmt/report.hero"
     goto bb7;
-#line 7333 "main.c"
+#line 5868 "main.c"
 }
 
 #line 48 "examples/query/fmt/report.hero"
 HeroStr h_fmtreport_wide(HeroStr h0_text, int64_t h1_to) {
-#line 7338 "main.c"
-    h_0opt_fbbb698 h2_f0 = {0};
-    HeroStr h3_ret0 = {0};
-    h_0opt_fbbb698 h4_own4 = {0};
-    HeroStr h5_own5 = {0};
-    HeroStr h6_own6 = {0};
-    HeroStr t1;
-    int64_t t2;
-    int64_t t3;
-    bool t4;
-    HeroStr t5;
-    HeroStr t6;
-    HeroStr t7;
-    int64_t t8;
-    HeroStr t9;
-    int64_t t10;
-    int64_t t11;
-    h_0opt_fbbb698 t12;
-    h_0opt_fbbb698 t13;
-    int64_t t14;
-    int64_t t15;
-    bool t16;
-    h_0opt_fbbb698 t17;
-    HeroFailure t18;
-    h_0opt_fbbb698 t19;
-    uint64_t t20;
-    HeroStr t21;
-    HeroStr t22;
-    HeroStr t23;
-    h_0opt_fbbb698 t24;
-    h_0opt_fbbb698 t25;
-    HeroStr t26;
-    HeroStr t27;
-    goto bb0;
+#line 48 "examples/query/fmt/report.hero"
+    h_0opt_fbbb698 h2_f0 = {0}; HeroStr h3_ret0 = {0}; h_0opt_fbbb698 h4_own4 = {0}; HeroStr h5_own5 = {0}; HeroStr h6_own6 = {0}; HeroStr t1; int64_t t2; int64_t t3; bool t4; HeroStr t5; HeroStr t6; HeroStr t7; int64_t t8; HeroStr t9; int64_t t10; int64_t t11; h_0opt_fbbb698 t12; h_0opt_fbbb698 t13; int64_t t14; int64_t t15; bool t16; h_0opt_fbbb698 t17; HeroFailure t18; h_0opt_fbbb698 t19; uint64_t t20; HeroStr t21; HeroStr t22; HeroStr t23; h_0opt_fbbb698 t24; h_0opt_fbbb698 t25; HeroStr t26; HeroStr t27; goto bb0;
+#line 48 "examples/query/fmt/report.hero"
 bb0:
-#line 49 "examples/query/fmt/report.hero"
     t1 = h0_text;
 #line 49 "examples/query/fmt/report.hero"
     t2 = hero_str_len(t1);
@@ -7470,7 +5973,7 @@ bb5:
     t17 = h2_f0;
 #line 51 "examples/query/fmt/report.hero"
     t18 = t17.as.err;
-#line 7474 "main.c"
+#line 5977 "main.c"
     hero_panic_must(t18);
     hero_unreachable();
 bb6:
@@ -7485,67 +5988,10 @@ bb6:
 
 #line 54 "examples/query/fmt/report.hero"
 HeroArrayHeader * h_fmtreport_widths_for(HeroArrayHeader * h0_columns, HeroArrayHeader * h1_rows) {
-#line 7489 "main.c"
-    HeroArrayHeader * h2_out = {0};
-    HeroArrayHeader * h3_xs0 = {0};
-    int64_t h4_i0;
-    h_queryplan_Column h5_c;
-    int64_t h6_widest;
-    HeroArrayHeader * h7_xs1 = {0};
-    int64_t h8_i1;
-    h_datarow_Row h9_r = {0};
-    int64_t h10_here;
-    HeroArrayHeader * h11_own11 = {0};
-    HeroStr h12_own12 = {0};
-    HeroStr h13_own13 = {0};
-    HeroArrayHeader * t1;
-    HeroArrayHeader * t2;
-    int64_t t3;
-    int64_t t4;
-    HeroArrayHeader * t5;
-    int64_t t6;
-    bool t7;
-    HeroArrayHeader * t8;
-    int64_t t9;
-    h_queryplan_Column t10;
-    h_queryplan_Column t11;
-    HeroStr t12;
-    int64_t t13;
-    HeroArrayHeader * t14;
-    int64_t t15;
-    int64_t t16;
-    HeroArrayHeader * t17;
-    int64_t t18;
-    bool t19;
-    HeroArrayHeader * t20;
-    int64_t t21;
-    h_datarow_Row t22;
-    h_queryplan_Column t23;
-    h_datarow_Row t24;
-    HeroStr t25;
-    int64_t t26;
-    int64_t t27;
-    int64_t t28;
-    bool t29;
-    int64_t t30;
-    int64_t t31;
-    int64_t t32;
-    int64_t t33;
-    int64_t t35;
-    int64_t t37;
-    int64_t t38;
-    int64_t t39;
-    HeroArrayHeader * t40;
-    HeroArrayHeader * t41;
-    HeroArrayHeader * t42;
-    HeroArrayHeader * t43;
-    HeroStr t44;
-    HeroArrayHeader * t45;
-    h_datarow_Row t46;
-    HeroStr t47;
-    goto bb0;
+#line 54 "examples/query/fmt/report.hero"
+    HeroArrayHeader * h2_out = {0}; HeroArrayHeader * h3_xs0 = {0}; int64_t h4_i0; h_queryplan_Column h5_c; int64_t h6_widest; HeroArrayHeader * h7_xs1 = {0}; int64_t h8_i1; h_datarow_Row h9_r = {0}; int64_t h10_here; HeroArrayHeader * h11_own11 = {0}; HeroStr h12_own12 = {0}; HeroStr h13_own13 = {0}; HeroArrayHeader * t1; HeroArrayHeader * t2; int64_t t3; int64_t t4; HeroArrayHeader * t5; int64_t t6; bool t7; HeroArrayHeader * t8; int64_t t9; h_queryplan_Column t10; h_queryplan_Column t11; HeroStr t12; int64_t t13; HeroArrayHeader * t14; int64_t t15; int64_t t16; HeroArrayHeader * t17; int64_t t18; bool t19; HeroArrayHeader * t20; int64_t t21; h_datarow_Row t22; h_queryplan_Column t23; h_datarow_Row t24; HeroStr t25; int64_t t26; int64_t t27; int64_t t28; bool t29; int64_t t30; int64_t t31; int64_t t32; int64_t t33; int64_t t35; int64_t t37; int64_t t38; int64_t t39; HeroArrayHeader * t40; HeroArrayHeader * t41; HeroArrayHeader * t42; HeroArrayHeader * t43; HeroStr t44; HeroArrayHeader * t45; h_datarow_Row t46; HeroStr t47; goto bb0;
+#line 54 "examples/query/fmt/report.hero"
 bb0:
-#line 55 "examples/query/fmt/report.hero"
     t1 = hero_array_new(&hero_desc_int, 1);
 #line 55 "examples/query/fmt/report.hero"
     t41 = h11_own11;
@@ -7644,7 +6090,7 @@ bb3:
 bb4:
 #line 68 "examples/query/fmt/report.hero"
     t40 = h2_out;
-#line 7648 "main.c"
+#line 6094 "main.c"
     hero_array_incref(t40);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h3_xs0);
@@ -7740,110 +6186,15 @@ bb10:
 bb11:
 #line 64 "examples/query/fmt/report.hero"
     goto bb9;
-#line 7744 "main.c"
+#line 6190 "main.c"
 }
 
 #line 71 "examples/query/fmt/report.hero"
 HeroStr h_fmtreport_table(HeroArrayHeader * h0_columns, HeroArrayHeader * h1_rows) {
-#line 7749 "main.c"
-    HeroArrayHeader * h2_widths = {0};
-    HeroArrayHeader * h3_headings = {0};
-    HeroArrayHeader * h4_xs0 = {0};
-    int64_t h5_i0;
-    h_queryplan_Column h6_c;
-    HeroArrayHeader * h7_lines = {0};
-    HeroArrayHeader * h8_xs1 = {0};
-    int64_t h9_i1;
-    h_datarow_Row h10_r = {0};
-    HeroArrayHeader * h11_cells = {0};
-    HeroArrayHeader * h12_xs2 = {0};
-    int64_t h13_i2;
-    h_queryplan_Column h14_c;
-    HeroArrayHeader * h15_own15 = {0};
-    HeroArrayHeader * h16_own16 = {0};
-    HeroStr h17_own17 = {0};
-    HeroStr h18_own18 = {0};
-    HeroArrayHeader * h19_own19 = {0};
-    HeroArrayHeader * h20_own20 = {0};
-    HeroStr h21_own21 = {0};
-    HeroStr h22_own22 = {0};
-    HeroStr h23_own23 = {0};
-    HeroArrayHeader * t1;
-    HeroArrayHeader * t2;
-    HeroArrayHeader * t3;
-    HeroArrayHeader * t4;
-    HeroArrayHeader * t5;
-    int64_t t6;
-    int64_t t7;
-    HeroArrayHeader * t8;
-    int64_t t9;
-    bool t10;
-    HeroArrayHeader * t11;
-    int64_t t12;
-    h_queryplan_Column t13;
-    h_queryplan_Column t15;
-    HeroStr t16;
-    int64_t t18;
-    int64_t t19;
-    int64_t t20;
-    HeroArrayHeader * t21;
-    HeroArrayHeader * t22;
-    HeroStr t23;
-    HeroArrayHeader * t24;
-    HeroArrayHeader * t25;
-    int64_t t26;
-    int64_t t27;
-    HeroArrayHeader * t28;
-    int64_t t29;
-    bool t30;
-    HeroArrayHeader * t31;
-    int64_t t32;
-    h_datarow_Row t33;
-    HeroArrayHeader * t34;
-    HeroArrayHeader * t35;
-    int64_t t36;
-    int64_t t37;
-    HeroArrayHeader * t38;
-    int64_t t39;
-    bool t40;
-    HeroArrayHeader * t41;
-    int64_t t42;
-    h_queryplan_Column t43;
-    h_queryplan_Column t45;
-    h_datarow_Row t46;
-    HeroStr t47;
-    int64_t t49;
-    int64_t t50;
-    int64_t t51;
-    HeroArrayHeader * t53;
-    HeroArrayHeader * t54;
-    HeroStr t55;
-    int64_t t57;
-    int64_t t58;
-    int64_t t59;
-    HeroArrayHeader * t60;
-    HeroStr t61;
-    HeroStr t62;
-    HeroArrayHeader * t63;
-    HeroArrayHeader * t64;
-    HeroArrayHeader * t65;
-    HeroArrayHeader * t66;
-    HeroArrayHeader * t67;
-    HeroStr t68;
-    HeroStr t69;
-    HeroArrayHeader * t70;
-    HeroArrayHeader * t71;
-    HeroArrayHeader * t72;
-    h_datarow_Row t73;
-    HeroArrayHeader * t74;
-    HeroArrayHeader * t75;
-    HeroArrayHeader * t76;
-    HeroStr t77;
-    HeroStr t78;
-    HeroStr t79;
-    goto bb0;
+#line 71 "examples/query/fmt/report.hero"
+    HeroArrayHeader * h2_widths = {0}; HeroArrayHeader * h3_headings = {0}; HeroArrayHeader * h4_xs0 = {0}; int64_t h5_i0; h_queryplan_Column h6_c; HeroArrayHeader * h7_lines = {0}; HeroArrayHeader * h8_xs1 = {0}; int64_t h9_i1; h_datarow_Row h10_r = {0}; HeroArrayHeader * h11_cells = {0}; HeroArrayHeader * h12_xs2 = {0}; int64_t h13_i2; h_queryplan_Column h14_c; HeroArrayHeader * h15_own15 = {0}; HeroArrayHeader * h16_own16 = {0}; HeroStr h17_own17 = {0}; HeroStr h18_own18 = {0}; HeroArrayHeader * h19_own19 = {0}; HeroArrayHeader * h20_own20 = {0}; HeroStr h21_own21 = {0}; HeroStr h22_own22 = {0}; HeroStr h23_own23 = {0}; HeroArrayHeader * t1; HeroArrayHeader * t2; HeroArrayHeader * t3; HeroArrayHeader * t4; HeroArrayHeader * t5; int64_t t6; int64_t t7; HeroArrayHeader * t8; int64_t t9; bool t10; HeroArrayHeader * t11; int64_t t12; h_queryplan_Column t13; h_queryplan_Column t15; HeroStr t16; int64_t t18; int64_t t19; int64_t t20; HeroArrayHeader * t21; HeroArrayHeader * t22; HeroStr t23; HeroArrayHeader * t24; HeroArrayHeader * t25; int64_t t26; int64_t t27; HeroArrayHeader * t28; int64_t t29; bool t30; HeroArrayHeader * t31; int64_t t32; h_datarow_Row t33; HeroArrayHeader * t34; HeroArrayHeader * t35; int64_t t36; int64_t t37; HeroArrayHeader * t38; int64_t t39; bool t40; HeroArrayHeader * t41; int64_t t42; h_queryplan_Column t43; h_queryplan_Column t45; h_datarow_Row t46; HeroStr t47; int64_t t49; int64_t t50; int64_t t51; HeroArrayHeader * t53; HeroArrayHeader * t54; HeroStr t55; int64_t t57; int64_t t58; int64_t t59; HeroArrayHeader * t60; HeroStr t61; HeroStr t62; HeroArrayHeader * t63; HeroArrayHeader * t64; HeroArrayHeader * t65; HeroArrayHeader * t66; HeroArrayHeader * t67; HeroStr t68; HeroStr t69; HeroArrayHeader * t70; HeroArrayHeader * t71; HeroArrayHeader * t72; h_datarow_Row t73; HeroArrayHeader * t74; HeroArrayHeader * t75; HeroArrayHeader * t76; HeroStr t77; HeroStr t78; HeroStr t79; goto bb0;
+#line 71 "examples/query/fmt/report.hero"
 bb0:
-#line 72 "examples/query/fmt/report.hero"
     t1 = h0_columns;
 #line 72 "examples/query/fmt/report.hero"
     t2 = h1_rows;
@@ -8074,7 +6425,7 @@ bb8:
     h21_own21 = t62;
 #line 88 "examples/query/fmt/report.hero"
     hero_str_decref(t77);
-#line 8078 "main.c"
+#line 6429 "main.c"
     hero_str_incref(t62);
     hero_array_release_at(&h2_widths);
     hero_array_release_at(&h3_headings);
@@ -8160,145 +6511,15 @@ bb12:
     hero_array_push_owned(&h7_lines, &t55);
 #line 86 "examples/query/fmt/report.hero"
     goto bb7;
-#line 8164 "main.c"
+#line 6515 "main.c"
 }
 
 #line 91 "examples/query/fmt/report.hero"
 HeroStr h_fmtreport_joined_table(HeroArrayHeader * h0_columns, HeroArrayHeader * h1_rows) {
-#line 8169 "main.c"
-    HeroArrayHeader * h2_plain = {0};
-    HeroArrayHeader * h3_xs0 = {0};
-    int64_t h4_i0;
-    h_queryplan_Joined h5_j = {0};
-    HeroArrayHeader * h6_widths = {0};
-    HeroArrayHeader * h7_headings = {0};
-    HeroArrayHeader * h8_xs1 = {0};
-    int64_t h9_i1;
-    h_queryplan_Column h10_c;
-    HeroArrayHeader * h11_with_region = {0};
-    HeroArrayHeader * h12_lines = {0};
-    HeroArrayHeader * h13_xs2 = {0};
-    int64_t h14_i2;
-    h_queryplan_Joined h15_j = {0};
-    HeroArrayHeader * h16_cells = {0};
-    HeroArrayHeader * h17_xs3 = {0};
-    int64_t h18_i3;
-    h_queryplan_Column h19_c;
-    HeroArrayHeader * h20_own20 = {0};
-    HeroArrayHeader * h21_own21 = {0};
-    HeroArrayHeader * h22_own22 = {0};
-    HeroStr h23_own23 = {0};
-    HeroArrayHeader * h24_own24 = {0};
-    HeroStr h25_own25 = {0};
-    HeroArrayHeader * h26_own26 = {0};
-    HeroArrayHeader * h27_own27 = {0};
-    HeroStr h28_own28 = {0};
-    HeroStr h29_own29 = {0};
-    HeroStr h30_own30 = {0};
-    HeroArrayHeader * t1;
-    HeroArrayHeader * t2;
-    int64_t t3;
-    int64_t t4;
-    HeroArrayHeader * t5;
-    int64_t t6;
-    bool t7;
-    HeroArrayHeader * t8;
-    int64_t t9;
-    h_queryplan_Joined t10;
-    h_queryplan_Joined t12;
-    h_datarow_Row t13;
-    int64_t t15;
-    int64_t t16;
-    int64_t t17;
-    HeroArrayHeader * t18;
-    HeroArrayHeader * t19;
-    HeroArrayHeader * t20;
-    HeroArrayHeader * t21;
-    HeroArrayHeader * t22;
-    int64_t t23;
-    int64_t t24;
-    HeroArrayHeader * t25;
-    int64_t t26;
-    bool t27;
-    HeroArrayHeader * t28;
-    int64_t t29;
-    h_queryplan_Column t30;
-    h_queryplan_Column t32;
-    HeroStr t33;
-    int64_t t35;
-    int64_t t36;
-    int64_t t37;
-    HeroStr t39;
-    HeroArrayHeader * t41;
-    int64_t t42;
-    HeroArrayHeader * t43;
-    HeroArrayHeader * t44;
-    HeroArrayHeader * t45;
-    HeroStr t46;
-    HeroArrayHeader * t47;
-    HeroArrayHeader * t48;
-    int64_t t49;
-    int64_t t50;
-    HeroArrayHeader * t51;
-    int64_t t52;
-    bool t53;
-    HeroArrayHeader * t54;
-    int64_t t55;
-    h_queryplan_Joined t56;
-    HeroArrayHeader * t57;
-    HeroArrayHeader * t58;
-    int64_t t59;
-    int64_t t60;
-    HeroArrayHeader * t61;
-    int64_t t62;
-    bool t63;
-    HeroArrayHeader * t64;
-    int64_t t65;
-    h_queryplan_Column t66;
-    h_queryplan_Column t68;
-    h_queryplan_Joined t69;
-    h_datarow_Row t70;
-    HeroStr t71;
-    int64_t t73;
-    int64_t t74;
-    int64_t t75;
-    h_queryplan_Joined t77;
-    HeroStr t78;
-    HeroArrayHeader * t81;
-    HeroArrayHeader * t82;
-    HeroStr t83;
-    int64_t t85;
-    int64_t t86;
-    int64_t t87;
-    HeroArrayHeader * t88;
-    HeroStr t89;
-    HeroStr t90;
-    HeroArrayHeader * t91;
-    HeroArrayHeader * t92;
-    HeroArrayHeader * t93;
-    h_queryplan_Joined t94;
-    HeroArrayHeader * t95;
-    HeroArrayHeader * t96;
-    HeroArrayHeader * t97;
-    HeroArrayHeader * t98;
-    HeroArrayHeader * t99;
-    HeroStr t100;
-    HeroArrayHeader * t101;
-    HeroArrayHeader * t102;
-    HeroStr t103;
-    HeroArrayHeader * t104;
-    HeroArrayHeader * t105;
-    HeroArrayHeader * t106;
-    h_queryplan_Joined t107;
-    HeroArrayHeader * t108;
-    HeroArrayHeader * t109;
-    HeroArrayHeader * t110;
-    HeroStr t111;
-    HeroStr t112;
-    HeroStr t113;
-    goto bb0;
+#line 91 "examples/query/fmt/report.hero"
+    HeroArrayHeader * h2_plain = {0}; HeroArrayHeader * h3_xs0 = {0}; int64_t h4_i0; h_queryplan_Joined h5_j = {0}; HeroArrayHeader * h6_widths = {0}; HeroArrayHeader * h7_headings = {0}; HeroArrayHeader * h8_xs1 = {0}; int64_t h9_i1; h_queryplan_Column h10_c; HeroArrayHeader * h11_with_region = {0}; HeroArrayHeader * h12_lines = {0}; HeroArrayHeader * h13_xs2 = {0}; int64_t h14_i2; h_queryplan_Joined h15_j = {0}; HeroArrayHeader * h16_cells = {0}; HeroArrayHeader * h17_xs3 = {0}; int64_t h18_i3; h_queryplan_Column h19_c; HeroArrayHeader * h20_own20 = {0}; HeroArrayHeader * h21_own21 = {0}; HeroArrayHeader * h22_own22 = {0}; HeroStr h23_own23 = {0}; HeroArrayHeader * h24_own24 = {0}; HeroStr h25_own25 = {0}; HeroArrayHeader * h26_own26 = {0}; HeroArrayHeader * h27_own27 = {0}; HeroStr h28_own28 = {0}; HeroStr h29_own29 = {0}; HeroStr h30_own30 = {0}; HeroArrayHeader * t1; HeroArrayHeader * t2; int64_t t3; int64_t t4; HeroArrayHeader * t5; int64_t t6; bool t7; HeroArrayHeader * t8; int64_t t9; h_queryplan_Joined t10; h_queryplan_Joined t12; h_datarow_Row t13; int64_t t15; int64_t t16; int64_t t17; HeroArrayHeader * t18; HeroArrayHeader * t19; HeroArrayHeader * t20; HeroArrayHeader * t21; HeroArrayHeader * t22; int64_t t23; int64_t t24; HeroArrayHeader * t25; int64_t t26; bool t27; HeroArrayHeader * t28; int64_t t29; h_queryplan_Column t30; h_queryplan_Column t32; HeroStr t33; int64_t t35; int64_t t36; int64_t t37; HeroStr t39; HeroArrayHeader * t41; int64_t t42; HeroArrayHeader * t43; HeroArrayHeader * t44; HeroArrayHeader * t45; HeroStr t46; HeroArrayHeader * t47; HeroArrayHeader * t48; int64_t t49; int64_t t50; HeroArrayHeader * t51; int64_t t52; bool t53; HeroArrayHeader * t54; int64_t t55; h_queryplan_Joined t56; HeroArrayHeader * t57; HeroArrayHeader * t58; int64_t t59; int64_t t60; HeroArrayHeader * t61; int64_t t62; bool t63; HeroArrayHeader * t64; int64_t t65; h_queryplan_Column t66; h_queryplan_Column t68; h_queryplan_Joined t69; h_datarow_Row t70; HeroStr t71; int64_t t73; int64_t t74; int64_t t75; h_queryplan_Joined t77; HeroStr t78; HeroArrayHeader * t81; HeroArrayHeader * t82; HeroStr t83; int64_t t85; int64_t t86; int64_t t87; HeroArrayHeader * t88; HeroStr t89; HeroStr t90; HeroArrayHeader * t91; HeroArrayHeader * t92; HeroArrayHeader * t93; h_queryplan_Joined t94; HeroArrayHeader * t95; HeroArrayHeader * t96; HeroArrayHeader * t97; HeroArrayHeader * t98; HeroArrayHeader * t99; HeroStr t100; HeroArrayHeader * t101; HeroArrayHeader * t102; HeroStr t103; HeroArrayHeader * t104; HeroArrayHeader * t105; HeroArrayHeader * t106; h_queryplan_Joined t107; HeroArrayHeader * t108; HeroArrayHeader * t109; HeroArrayHeader * t110; HeroStr t111; HeroStr t112; HeroStr t113; goto bb0;
+#line 91 "examples/query/fmt/report.hero"
 bb0:
-#line 92 "examples/query/fmt/report.hero"
     t1 = hero_array_new(&h_datarow_Row_desc, 1);
 #line 92 "examples/query/fmt/report.hero"
     t91 = h20_own20;
@@ -8632,7 +6853,7 @@ bb12:
     h28_own28 = t90;
 #line 116 "examples/query/fmt/report.hero"
     hero_str_decref(t111);
-#line 8636 "main.c"
+#line 6857 "main.c"
     hero_str_incref(t90);
     hero_array_release_at(&h2_plain);
     hero_array_release_at(&h3_xs0);
@@ -8731,125 +6952,15 @@ bb16:
     hero_array_push_owned(&h12_lines, &t83);
 #line 114 "examples/query/fmt/report.hero"
     goto bb11;
-#line 8735 "main.c"
+#line 6956 "main.c"
 }
 
 #line 122 "examples/query/fmt/report.hero"
 HeroStr h_fmtreport_group_line(h_queryplan_Group h0_g, h_queryplan_Summary h1_s) {
-#line 8740 "main.c"
-    h_0opt_db92a83 h2_mean = {0};
-    HeroStr h3_shown = {0};
-    h_0opt_db92a83 h4_f0 = {0};
-    h_0opt_db92a83 h5_f1 = {0};
-    h_0opt_db92a83 h6_own6 = {0};
-    HeroStr h7_own7 = {0};
-    HeroStr h8_own8 = {0};
-    HeroStr h9_own9 = {0};
-    HeroStr h10_own10 = {0};
-    HeroStr h11_own11 = {0};
-    HeroStr h12_own12 = {0};
-    HeroStr h13_own13 = {0};
-    HeroStr h14_own14 = {0};
-    HeroStr h15_own15 = {0};
-    HeroStr h16_own16 = {0};
-    HeroStr h17_own17 = {0};
-    HeroStr h18_own18 = {0};
-    HeroStr h19_own19 = {0};
-    HeroStr h20_own20 = {0};
-    HeroStr h21_own21 = {0};
-    HeroStr h22_own22 = {0};
-    HeroStr h23_own23 = {0};
-    HeroStr h24_own24 = {0};
-    HeroStr h25_own25 = {0};
-    HeroStr h26_own26 = {0};
-    h_queryplan_Summary t1;
-    h_0opt_db92a83 t2;
-    HeroStr t3;
-    h_0opt_db92a83 t4;
-    h_0opt_db92a83 t5;
-    int64_t t6;
-    int64_t t7;
-    bool t8;
-    bool t9;
-    h_0opt_db92a83 t10;
-    h_0opt_db92a83 t11;
-    int64_t t12;
-    int64_t t13;
-    bool t14;
-    h_0opt_db92a83 t15;
-    HeroFailure t16;
-    h_0opt_db92a83 t17;
-    double t18;
-    HeroStr t19;
-    h_queryplan_Group t20;
-    HeroStr t21;
-    int64_t t22;
-    HeroStr t23;
-    HeroStr t24;
-    HeroStr t25;
-    h_queryplan_Group t26;
-    bool t27;
-    HeroStr t28;
-    int64_t t29;
-    HeroStr t30;
-    HeroStr t31;
-    HeroStr t32;
-    HeroStr t33;
-    h_queryplan_Summary t34;
-    int64_t t35;
-    HeroStr t36;
-    int64_t t37;
-    HeroStr t38;
-    HeroStr t39;
-    HeroStr t40;
-    HeroStr t41;
-    h_queryplan_Summary t42;
-    int64_t t43;
-    HeroStr t44;
-    int64_t t45;
-    HeroStr t46;
-    HeroStr t47;
-    HeroStr t48;
-    HeroStr t49;
-    h_queryplan_Summary t50;
-    int64_t t51;
-    HeroStr t52;
-    int64_t t53;
-    HeroStr t54;
-    HeroStr t55;
-    HeroStr t56;
-    HeroStr t57;
-    HeroStr t58;
-    HeroStr t59;
-    h_0opt_db92a83 t60;
-    h_0opt_db92a83 t61;
-    HeroStr t62;
-    h_0opt_db92a83 t63;
-    HeroStr t64;
-    HeroStr t65;
-    HeroStr t66;
-    HeroStr t67;
-    HeroStr t68;
-    HeroStr t69;
-    HeroStr t70;
-    HeroStr t71;
-    HeroStr t72;
-    HeroStr t73;
-    HeroStr t74;
-    HeroStr t75;
-    HeroStr t76;
-    HeroStr t77;
-    HeroStr t78;
-    HeroStr t79;
-    HeroStr t80;
-    HeroStr t81;
-    HeroStr t82;
-    h_0opt_db92a83 t83;
-    HeroStr t84;
-    HeroStr t85;
-    goto bb0;
+#line 122 "examples/query/fmt/report.hero"
+    h_0opt_db92a83 h2_mean = {0}; HeroStr h3_shown = {0}; h_0opt_db92a83 h4_f0 = {0}; h_0opt_db92a83 h5_f1 = {0}; h_0opt_db92a83 h6_own6 = {0}; HeroStr h7_own7 = {0}; HeroStr h8_own8 = {0}; HeroStr h9_own9 = {0}; HeroStr h10_own10 = {0}; HeroStr h11_own11 = {0}; HeroStr h12_own12 = {0}; HeroStr h13_own13 = {0}; HeroStr h14_own14 = {0}; HeroStr h15_own15 = {0}; HeroStr h16_own16 = {0}; HeroStr h17_own17 = {0}; HeroStr h18_own18 = {0}; HeroStr h19_own19 = {0}; HeroStr h20_own20 = {0}; HeroStr h21_own21 = {0}; HeroStr h22_own22 = {0}; HeroStr h23_own23 = {0}; HeroStr h24_own24 = {0}; HeroStr h25_own25 = {0}; HeroStr h26_own26 = {0}; h_queryplan_Summary t1; h_0opt_db92a83 t2; HeroStr t3; h_0opt_db92a83 t4; h_0opt_db92a83 t5; int64_t t6; int64_t t7; bool t8; bool t9; h_0opt_db92a83 t10; h_0opt_db92a83 t11; int64_t t12; int64_t t13; bool t14; h_0opt_db92a83 t15; HeroFailure t16; h_0opt_db92a83 t17; double t18; HeroStr t19; h_queryplan_Group t20; HeroStr t21; int64_t t22; HeroStr t23; HeroStr t24; HeroStr t25; h_queryplan_Group t26; bool t27; HeroStr t28; int64_t t29; HeroStr t30; HeroStr t31; HeroStr t32; HeroStr t33; h_queryplan_Summary t34; int64_t t35; HeroStr t36; int64_t t37; HeroStr t38; HeroStr t39; HeroStr t40; HeroStr t41; h_queryplan_Summary t42; int64_t t43; HeroStr t44; int64_t t45; HeroStr t46; HeroStr t47; HeroStr t48; HeroStr t49; h_queryplan_Summary t50; int64_t t51; HeroStr t52; int64_t t53; HeroStr t54; HeroStr t55; HeroStr t56; HeroStr t57; HeroStr t58; HeroStr t59; h_0opt_db92a83 t60; h_0opt_db92a83 t61; HeroStr t62; h_0opt_db92a83 t63; HeroStr t64; HeroStr t65; HeroStr t66; HeroStr t67; HeroStr t68; HeroStr t69; HeroStr t70; HeroStr t71; HeroStr t72; HeroStr t73; HeroStr t74; HeroStr t75; HeroStr t76; HeroStr t77; HeroStr t78; HeroStr t79; HeroStr t80; HeroStr t81; HeroStr t82; h_0opt_db92a83 t83; HeroStr t84; HeroStr t85; goto bb0;
+#line 122 "examples/query/fmt/report.hero"
 bb0:
-#line 123 "examples/query/fmt/report.hero"
     t1 = h1_s;
 #line 123 "examples/query/fmt/report.hero"
     t2 = h_queryplan_mean_of(t1);
@@ -9094,7 +7205,7 @@ bb1:
     h25_own25 = t59;
 #line 128 "examples/query/fmt/report.hero"
     hero_str_decref(t82);
-#line 9098 "main.c"
+#line 7209 "main.c"
     hero_str_incref(t59);
     h_0opt_db92a83_release(hero_slot_escape(&h2_mean));
     hero_str_release_at(&h3_shown);
@@ -9177,22 +7288,17 @@ bb5:
     t15 = h5_f1;
 #line 127 "examples/query/fmt/report.hero"
     t16 = t15.as.err;
-#line 9181 "main.c"
+#line 7292 "main.c"
     hero_panic_must(t16);
     hero_unreachable();
 }
 
 #line 130 "examples/query/fmt/report.hero"
 HeroStr h_fmtreport_active_text(bool h0_active) {
-#line 9188 "main.c"
-    HeroStr h1_ret0 = {0};
-    bool t1;
-    HeroStr t2;
-    HeroStr t3;
-    HeroStr t4;
-    goto bb0;
+#line 130 "examples/query/fmt/report.hero"
+    HeroStr h1_ret0 = {0}; bool t1; HeroStr t2; HeroStr t3; HeroStr t4; goto bb0;
+#line 130 "examples/query/fmt/report.hero"
 bb0:
-#line 131 "examples/query/fmt/report.hero"
     t1 = h0_active;
 #line 131 "examples/query/fmt/report.hero"
     if (t1) goto bb2; else goto bb3;
@@ -9218,7 +7324,7 @@ bb3:
     goto bb1;
 #line 132 "examples/query/fmt/report.hero"
 bb4:
-#line 9222 "main.c"
+#line 7328 "main.c"
     t4 = h1_ret0;
     hero_str_incref(t4);
     return t4;
@@ -9226,64 +7332,10 @@ bb4:
 
 #line 148 "examples/query/fmt/report.hero"
 HeroStr h_fmtreport_rounded(double h0_v) {
-#line 9230 "main.c"
-    h_0opt_e201354 h1_f0 = {0};
-    int64_t h2_hundredths;
-    int64_t h3_whole;
-    int64_t h4_rest;
-    HeroStr h5_tail = {0};
-    h_0opt_e201354 h6_own6 = {0};
-    HeroStr h7_own7 = {0};
-    HeroStr h8_own8 = {0};
-    HeroStr h9_own9 = {0};
-    HeroStr h10_own10 = {0};
-    HeroStr h11_own11 = {0};
-    double t1;
-    double t2;
-    double t3;
-    double t4;
-    double t5;
-    h_0opt_e201354 t6;
-    h_0opt_e201354 t7;
-    int64_t t8;
-    int64_t t9;
-    bool t10;
-    h_0opt_e201354 t11;
-    HeroFailure t12;
-    h_0opt_e201354 t13;
-    int64_t t14;
-    int64_t t15;
-    int64_t t16;
-    int64_t t17;
-    int64_t t18;
-    int64_t t19;
-    int64_t t20;
-    int64_t t21;
-    HeroStr t22;
-    int64_t t23;
-    int64_t t24;
-    bool t25;
-    HeroStr t26;
-    HeroStr t27;
-    HeroStr t28;
-    int64_t t29;
-    HeroStr t30;
-    HeroStr t31;
-    HeroStr t32;
-    HeroStr t33;
-    HeroStr t34;
-    h_0opt_e201354 t35;
-    h_0opt_e201354 t36;
-    HeroStr t37;
-    HeroStr t38;
-    HeroStr t39;
-    HeroStr t40;
-    HeroStr t41;
-    HeroStr t42;
-    HeroStr t43;
-    goto bb0;
+#line 148 "examples/query/fmt/report.hero"
+    h_0opt_e201354 h1_f0 = {0}; int64_t h2_hundredths; int64_t h3_whole; int64_t h4_rest; HeroStr h5_tail = {0}; h_0opt_e201354 h6_own6 = {0}; HeroStr h7_own7 = {0}; HeroStr h8_own8 = {0}; HeroStr h9_own9 = {0}; HeroStr h10_own10 = {0}; HeroStr h11_own11 = {0}; double t1; double t2; double t3; double t4; double t5; h_0opt_e201354 t6; h_0opt_e201354 t7; int64_t t8; int64_t t9; bool t10; h_0opt_e201354 t11; HeroFailure t12; h_0opt_e201354 t13; int64_t t14; int64_t t15; int64_t t16; int64_t t17; int64_t t18; int64_t t19; int64_t t20; int64_t t21; HeroStr t22; int64_t t23; int64_t t24; bool t25; HeroStr t26; HeroStr t27; HeroStr t28; int64_t t29; HeroStr t30; HeroStr t31; HeroStr t32; HeroStr t33; HeroStr t34; h_0opt_e201354 t35; h_0opt_e201354 t36; HeroStr t37; HeroStr t38; HeroStr t39; HeroStr t40; HeroStr t41; HeroStr t42; HeroStr t43; goto bb0;
+#line 148 "examples/query/fmt/report.hero"
 bb0:
-#line 149 "examples/query/fmt/report.hero"
     t1 = h0_v;
 #line 149 "examples/query/fmt/report.hero"
     t2 = 0x1.9p+6;
@@ -9388,7 +7440,7 @@ bb2:
     t11 = h1_f0;
 #line 149 "examples/query/fmt/report.hero"
     t12 = t11.as.err;
-#line 9392 "main.c"
+#line 7444 "main.c"
     hero_panic_must(t12);
     hero_unreachable();
 bb3:
@@ -9422,7 +7474,7 @@ bb3:
     h10_own10 = t34;
 #line 156 "examples/query/fmt/report.hero"
     hero_str_decref(t41);
-#line 9426 "main.c"
+#line 7478 "main.c"
     hero_str_incref(t34);
     h_0opt_e201354_release(hero_slot_escape(&h1_f0));
     hero_str_release_at(&h5_tail);
@@ -9460,66 +7512,27 @@ bb4:
 bb5:
 #line 155 "examples/query/fmt/report.hero"
     goto bb3;
-#line 9464 "main.c"
+#line 7516 "main.c"
 }
 
 #line 158 "examples/query/fmt/report.hero"
 HeroStr h_fmtreport_GROUP_HEADING(void) {
-#line 9469 "main.c"
-    HeroStr t1;
-    goto bb0;
+#line 158 "examples/query/fmt/report.hero"
+    HeroStr t1; goto bb0;
+#line 158 "examples/query/fmt/report.hero"
 bb0:
-#line 159 "examples/query/fmt/report.hero"
     t1 = HERO_STR_LIT(hero_str_51fe21b);
-#line 9475 "main.c"
+#line 7526 "main.c"
     hero_str_incref(t1);
     return t1;
 }
 
 #line 207 "examples/query/fmt/report.hero"
 HeroArrayHeader * h_fmtreport_split_lines(HeroStr h0_text) {
-#line 9482 "main.c"
-    HeroArrayHeader * h1_out = {0};
-    int64_t h2_start;
-    int64_t h3_at;
-    HeroArrayHeader * h4_own4 = {0};
-    HeroStr h5_own5 = {0};
-    HeroStr h6_own6 = {0};
-    HeroArrayHeader * t1;
-    int64_t t2;
-    int64_t t3;
-    int64_t t4;
-    HeroStr t5;
-    int64_t t6;
-    bool t7;
-    HeroStr t8;
-    int64_t t9;
-    uint8_t t10;
-    uint8_t t11;
-    bool t12;
-    HeroStr t14;
-    int64_t t15;
-    int64_t t16;
-    HeroStr t17;
-    int64_t t19;
-    int64_t t20;
-    int64_t t21;
-    int64_t t22;
-    int64_t t23;
-    int64_t t24;
-    HeroStr t26;
-    int64_t t27;
-    HeroStr t28;
-    int64_t t29;
-    HeroStr t30;
-    HeroArrayHeader * t32;
-    HeroArrayHeader * t33;
-    HeroArrayHeader * t34;
-    HeroStr t35;
-    HeroStr t36;
-    goto bb0;
+#line 207 "examples/query/fmt/report.hero"
+    HeroArrayHeader * h1_out = {0}; int64_t h2_start; int64_t h3_at; HeroArrayHeader * h4_own4 = {0}; HeroStr h5_own5 = {0}; HeroStr h6_own6 = {0}; HeroArrayHeader * t1; int64_t t2; int64_t t3; int64_t t4; HeroStr t5; int64_t t6; bool t7; HeroStr t8; int64_t t9; uint8_t t10; uint8_t t11; bool t12; HeroStr t14; int64_t t15; int64_t t16; HeroStr t17; int64_t t19; int64_t t20; int64_t t21; int64_t t22; int64_t t23; int64_t t24; HeroStr t26; int64_t t27; HeroStr t28; int64_t t29; HeroStr t30; HeroArrayHeader * t32; HeroArrayHeader * t33; HeroArrayHeader * t34; HeroStr t35; HeroStr t36; goto bb0;
+#line 207 "examples/query/fmt/report.hero"
 bb0:
-#line 208 "examples/query/fmt/report.hero"
     t1 = hero_array_new(&hero_desc_str, 1);
 #line 208 "examples/query/fmt/report.hero"
     t33 = h4_own4;
@@ -9589,7 +7602,7 @@ bb3:
 #line 218 "examples/query/fmt/report.hero"
     hero_array_push_owned(&h1_out, &t30);
     t32 = h1_out;
-#line 9593 "main.c"
+#line 7606 "main.c"
     hero_array_incref(t32);
     hero_array_release_at(&h1_out);
     hero_array_release_at(&h4_own4);
@@ -9638,48 +7651,15 @@ bb5:
 bb6:
 #line 215 "examples/query/fmt/report.hero"
     goto bb4;
-#line 9642 "main.c"
+#line 7655 "main.c"
 }
 
 #line 221 "examples/query/fmt/report.hero"
 bool h_fmtreport_holds(HeroStr h0_text, HeroStr h1_needle) {
-#line 9647 "main.c"
-    int64_t h2_at;
-    bool h3_ret0;
-    HeroStr h4_own4 = {0};
-    HeroStr t1;
-    int64_t t2;
-    HeroStr t3;
-    int64_t t4;
-    bool t5;
-    bool t6;
-    int64_t t7;
-    int64_t t8;
-    HeroStr t9;
-    int64_t t10;
-    int64_t t11;
-    HeroStr t12;
-    int64_t t13;
-    bool t14;
-    HeroStr t15;
-    int64_t t16;
-    int64_t t17;
-    HeroStr t18;
-    int64_t t19;
-    int64_t t20;
-    HeroStr t21;
-    HeroStr t22;
-    bool t23;
-    bool t24;
-    int64_t t25;
-    int64_t t26;
-    int64_t t27;
-    bool t28;
-    bool t29;
-    HeroStr t30;
-    goto bb0;
+#line 221 "examples/query/fmt/report.hero"
+    int64_t h2_at; bool h3_ret0; HeroStr h4_own4 = {0}; HeroStr t1; int64_t t2; HeroStr t3; int64_t t4; bool t5; bool t6; int64_t t7; int64_t t8; HeroStr t9; int64_t t10; int64_t t11; HeroStr t12; int64_t t13; bool t14; HeroStr t15; int64_t t16; int64_t t17; HeroStr t18; int64_t t19; int64_t t20; HeroStr t21; HeroStr t22; bool t23; bool t24; int64_t t25; int64_t t26; int64_t t27; bool t28; bool t29; HeroStr t30; goto bb0;
+#line 221 "examples/query/fmt/report.hero"
 bb0:
-#line 222 "examples/query/fmt/report.hero"
     t1 = h1_needle;
 #line 222 "examples/query/fmt/report.hero"
     t2 = hero_str_len(t1);
@@ -9790,7 +7770,7 @@ bb9:
     goto bb7;
 #line 228 "examples/query/fmt/report.hero"
 bb10:
-#line 9794 "main.c"
+#line 7774 "main.c"
     t29 = h3_ret0;
     hero_str_release_at(&h4_own4);
     return t29;
@@ -9798,15 +7778,10 @@ bb10:
 
 #line 98 "examples/query/query/plan.hero"
 h_queryplan_Summary h_queryplan_nothing_yet(void) {
-#line 9802 "main.c"
-    int64_t t1;
-    int64_t t2;
-    int64_t t3;
-    double t4;
-    h_queryplan_Summary t5;
-    goto bb0;
+#line 98 "examples/query/query/plan.hero"
+    int64_t t1; int64_t t2; int64_t t3; double t4; h_queryplan_Summary t5; goto bb0;
+#line 98 "examples/query/query/plan.hero"
 bb0:
-#line 99 "examples/query/query/plan.hero"
     t1 = INT64_C(0);
 #line 99 "examples/query/query/plan.hero"
     t2 = INT64_C(0);
@@ -9818,40 +7793,15 @@ bb0:
     t5 = (h_queryplan_Summary){.f_rows = t1, .f_total = t2, .f_best = t3, .f_rate_sum = t4};
 #line 99 "examples/query/query/plan.hero"
     return t5;
-#line 9822 "main.c"
+#line 7797 "main.c"
 }
 
 #line 102 "examples/query/query/plan.hero"
 h_queryplan_Summary h_queryplan_with_row(h_queryplan_Summary h0_s, h_datarow_Row h1_r) {
-#line 9827 "main.c"
-    int64_t h2_highest;
-    h_queryplan_Summary t1;
-    int64_t t2;
-    h_datarow_Row t3;
-    int64_t t4;
-    int64_t t5;
-    bool t6;
-    h_datarow_Row t7;
-    int64_t t8;
-    h_queryplan_Summary t9;
-    int64_t t10;
-    int64_t t11;
-    int64_t t12;
-    h_queryplan_Summary t13;
-    int64_t t14;
-    h_datarow_Row t15;
-    int64_t t16;
-    int64_t t17;
-    int64_t t18;
-    h_queryplan_Summary t19;
-    double t20;
-    h_datarow_Row t21;
-    double t22;
-    double t23;
-    h_queryplan_Summary t24;
-    goto bb0;
+#line 102 "examples/query/query/plan.hero"
+    int64_t h2_highest; h_queryplan_Summary t1; int64_t t2; h_datarow_Row t3; int64_t t4; int64_t t5; bool t6; h_datarow_Row t7; int64_t t8; h_queryplan_Summary t9; int64_t t10; int64_t t11; int64_t t12; h_queryplan_Summary t13; int64_t t14; h_datarow_Row t15; int64_t t16; int64_t t17; int64_t t18; h_queryplan_Summary t19; double t20; h_datarow_Row t21; double t22; double t23; h_queryplan_Summary t24; goto bb0;
+#line 102 "examples/query/query/plan.hero"
 bb0:
-#line 103 "examples/query/query/plan.hero"
     t1 = h0_s;
 #line 103 "examples/query/query/plan.hero"
     t2 = t1.f_best;
@@ -9917,35 +7867,15 @@ bb2:
 bb3:
 #line 106 "examples/query/query/plan.hero"
     goto bb1;
-#line 9921 "main.c"
+#line 7871 "main.c"
 }
 
 #line 112 "examples/query/query/plan.hero"
 h_0opt_db92a83 h_queryplan_mean_of(h_queryplan_Summary h0_s) {
-#line 9926 "main.c"
-    h_0opt_db92a83 h1_ret0 = {0};
-    h_0opt_db92a83 h2_own2 = {0};
-    h_0opt_db92a83 h3_own3 = {0};
-    h_queryplan_Summary t1;
-    int64_t t2;
-    int64_t t3;
-    bool t4;
-    HeroStr t5;
-    HeroStr t6;
-    h_0opt_db92a83 t7;
-    h_queryplan_Summary t8;
-    double t9;
-    h_queryplan_Summary t10;
-    int64_t t11;
-    double t12;
-    double t13;
-    h_0opt_db92a83 t14;
-    h_0opt_db92a83 t15;
-    h_0opt_db92a83 t16;
-    h_0opt_db92a83 t17;
-    goto bb0;
+#line 112 "examples/query/query/plan.hero"
+    h_0opt_db92a83 h1_ret0 = {0}; h_0opt_db92a83 h2_own2 = {0}; h_0opt_db92a83 h3_own3 = {0}; h_queryplan_Summary t1; int64_t t2; int64_t t3; bool t4; HeroStr t5; HeroStr t6; h_0opt_db92a83 t7; h_queryplan_Summary t8; double t9; h_queryplan_Summary t10; int64_t t11; double t12; double t13; h_0opt_db92a83 t14; h_0opt_db92a83 t15; h_0opt_db92a83 t16; h_0opt_db92a83 t17; goto bb0;
+#line 112 "examples/query/query/plan.hero"
 bb0:
-#line 113 "examples/query/query/plan.hero"
     t1 = h0_s;
 #line 113 "examples/query/query/plan.hero"
     t2 = t1.f_rows;
@@ -10009,7 +7939,7 @@ bb3:
     goto bb1;
 #line 114 "examples/query/query/plan.hero"
 bb4:
-#line 10013 "main.c"
+#line 7943 "main.c"
     t15 = h1_ret0;
     h_0opt_db92a83_retain(&t15);
     h_0opt_db92a83_release(hero_slot_escape(&h2_own2));
@@ -10019,81 +7949,10 @@ bb4:
 
 #line 121 "examples/query/query/plan.hero"
 bool h_queryplan_kept(h_queryplan_Where h0_w, h_datarow_Row h1_r) {
-#line 10023 "main.c"
-    h_queryplan_Where h2_s0 = {0};
-    bool h3_r0;
-    h_queryplan_Where_c_team_is h4_t = {0};
-    h_queryplan_Where_c_active_is h5_a;
-    h_queryplan_Where_c_score_at_least h6_s;
-    h_queryplan_Where_c_rate_below h7_l;
-    h_queryplan_Where_c_both h8_b = {0};
-    HeroArrayHeader * h9_xs0 = {0};
-    int64_t h10_i0;
-    h_queryplan_Where h11_one = {0};
-    bool h12_ret0;
-    h_queryplan_Where t1;
-    h_queryplan_Where t2;
-    int64_t t3;
-    bool t4;
-    h_queryplan_Where t5;
-    h_queryplan_Where_c_team_is t6;
-    h_datarow_Row t7;
-    HeroStr t8;
-    h_queryplan_Where_c_team_is t9;
-    HeroStr t10;
-    bool t11;
-    h_queryplan_Where t12;
-    h_queryplan_Where_c_active_is t13;
-    h_datarow_Row t14;
-    bool t15;
-    h_queryplan_Where_c_active_is t16;
-    bool t17;
-    bool t18;
-    h_queryplan_Where t19;
-    h_queryplan_Where_c_score_at_least t20;
-    h_datarow_Row t21;
-    int64_t t22;
-    h_queryplan_Where_c_score_at_least t23;
-    int64_t t24;
-    bool t25;
-    h_queryplan_Where t26;
-    h_queryplan_Where_c_rate_below t27;
-    h_datarow_Row t28;
-    double t29;
-    h_queryplan_Where_c_rate_below t30;
-    double t31;
-    bool t32;
-    h_queryplan_Where t33;
-    h_queryplan_Where_c_both t34;
-    h_queryplan_Where_c_both t35;
-    HeroArrayHeader * t36;
-    int64_t t37;
-    int64_t t38;
-    HeroArrayHeader * t39;
-    int64_t t40;
-    bool t41;
-    HeroArrayHeader * t42;
-    int64_t t43;
-    h_queryplan_Where t44;
-    h_queryplan_Where t45;
-    h_datarow_Row t46;
-    bool t47;
-    bool t48;
-    bool t49;
-    int64_t t50;
-    int64_t t51;
-    int64_t t52;
-    bool t53;
-    bool t54;
-    bool t55;
-    h_queryplan_Where t56;
-    h_queryplan_Where_c_team_is t57;
-    h_queryplan_Where_c_both t58;
-    HeroArrayHeader * t59;
-    h_queryplan_Where t60;
-    goto bb0;
+#line 121 "examples/query/query/plan.hero"
+    h_queryplan_Where h2_s0 = {0}; bool h3_r0; h_queryplan_Where_c_team_is h4_t = {0}; h_queryplan_Where_c_active_is h5_a; h_queryplan_Where_c_score_at_least h6_s; h_queryplan_Where_c_rate_below h7_l; h_queryplan_Where_c_both h8_b = {0}; HeroArrayHeader * h9_xs0 = {0}; int64_t h10_i0; h_queryplan_Where h11_one = {0}; bool h12_ret0; h_queryplan_Where t1; h_queryplan_Where t2; int64_t t3; bool t4; h_queryplan_Where t5; h_queryplan_Where_c_team_is t6; h_datarow_Row t7; HeroStr t8; h_queryplan_Where_c_team_is t9; HeroStr t10; bool t11; h_queryplan_Where t12; h_queryplan_Where_c_active_is t13; h_datarow_Row t14; bool t15; h_queryplan_Where_c_active_is t16; bool t17; bool t18; h_queryplan_Where t19; h_queryplan_Where_c_score_at_least t20; h_datarow_Row t21; int64_t t22; h_queryplan_Where_c_score_at_least t23; int64_t t24; bool t25; h_queryplan_Where t26; h_queryplan_Where_c_rate_below t27; h_datarow_Row t28; double t29; h_queryplan_Where_c_rate_below t30; double t31; bool t32; h_queryplan_Where t33; h_queryplan_Where_c_both t34; h_queryplan_Where_c_both t35; HeroArrayHeader * t36; int64_t t37; int64_t t38; HeroArrayHeader * t39; int64_t t40; bool t41; HeroArrayHeader * t42; int64_t t43; h_queryplan_Where t44; h_queryplan_Where t45; h_datarow_Row t46; bool t47; bool t48; bool t49; int64_t t50; int64_t t51; int64_t t52; bool t53; bool t54; bool t55; h_queryplan_Where t56; h_queryplan_Where_c_team_is t57; h_queryplan_Where_c_both t58; HeroArrayHeader * t59; h_queryplan_Where t60; goto bb0;
+#line 121 "examples/query/query/plan.hero"
 bb0:
-#line 122 "examples/query/query/plan.hero"
     t1 = h0_w;
 #line 122 "examples/query/query/plan.hero"
     t56 = h2_s0;
@@ -10342,7 +8201,7 @@ bb14:
     goto bb12;
 #line 131 "examples/query/query/plan.hero"
 bb15:
-#line 10346 "main.c"
+#line 8205 "main.c"
     t55 = h12_ret0;
     h_queryplan_Where_release(hero_slot_escape(&h2_s0));
     h_queryplan_Where_c_team_is_release(hero_slot_escape(&h4_t));
@@ -10354,46 +8213,10 @@ bb15:
 
 #line 138 "examples/query/query/plan.hero"
 HeroStr h_queryplan_text_at(h_queryplan_Column h0_c, h_datarow_Row h1_r) {
-#line 10358 "main.c"
-    h_queryplan_Column h2_s0;
-    HeroStr h3_r0 = {0};
-    HeroStr h4_own4 = {0};
-    HeroStr h5_own5 = {0};
-    HeroStr h6_own6 = {0};
-    HeroStr h7_own7 = {0};
-    h_queryplan_Column t1;
-    h_queryplan_Column t2;
-    int64_t t3;
-    h_datarow_Row t4;
-    int64_t t5;
-    HeroStr t6;
-    h_datarow_Row t7;
-    HeroStr t8;
-    h_datarow_Row t9;
-    HeroStr t10;
-    h_datarow_Row t11;
-    bool t12;
-    HeroStr t13;
-    h_datarow_Row t14;
-    int64_t t15;
-    HeroStr t16;
-    h_datarow_Row t17;
-    double t18;
-    HeroStr t19;
-    HeroStr t20;
-    HeroStr t21;
-    HeroStr t22;
-    HeroStr t23;
-    HeroStr t24;
-    HeroStr t25;
-    HeroStr t26;
-    HeroStr t27;
-    HeroStr t28;
-    HeroStr t29;
-    HeroStr t30;
-    goto bb0;
+#line 138 "examples/query/query/plan.hero"
+    h_queryplan_Column h2_s0; HeroStr h3_r0 = {0}; HeroStr h4_own4 = {0}; HeroStr h5_own5 = {0}; HeroStr h6_own6 = {0}; HeroStr h7_own7 = {0}; h_queryplan_Column t1; h_queryplan_Column t2; int64_t t3; h_datarow_Row t4; int64_t t5; HeroStr t6; h_datarow_Row t7; HeroStr t8; h_datarow_Row t9; HeroStr t10; h_datarow_Row t11; bool t12; HeroStr t13; h_datarow_Row t14; int64_t t15; HeroStr t16; h_datarow_Row t17; double t18; HeroStr t19; HeroStr t20; HeroStr t21; HeroStr t22; HeroStr t23; HeroStr t24; HeroStr t25; HeroStr t26; HeroStr t27; HeroStr t28; HeroStr t29; HeroStr t30; goto bb0;
+#line 138 "examples/query/query/plan.hero"
 bb0:
-#line 139 "examples/query/query/plan.hero"
     t1 = h0_c;
 #line 139 "examples/query/query/plan.hero"
     h2_s0 = t1;
@@ -10423,7 +8246,7 @@ bb0:
 bb1:
 #line 139 "examples/query/query/plan.hero"
     t20 = h3_r0;
-#line 10427 "main.c"
+#line 8250 "main.c"
     hero_str_incref(t20);
     hero_str_release_at(&h3_r0);
     hero_str_release_at(&h4_own4);
@@ -10558,20 +8381,15 @@ bb7:
     hero_str_decref(t30);
 #line 139 "examples/query/query/plan.hero"
     goto bb1;
-#line 10562 "main.c"
+#line 8385 "main.c"
 }
 
 #line 147 "examples/query/query/plan.hero"
 HeroStr h_queryplan_bool_text(bool h0_b) {
-#line 10567 "main.c"
-    HeroStr h1_ret0 = {0};
-    bool t1;
-    HeroStr t2;
-    HeroStr t3;
-    HeroStr t4;
-    goto bb0;
+#line 147 "examples/query/query/plan.hero"
+    HeroStr h1_ret0 = {0}; bool t1; HeroStr t2; HeroStr t3; HeroStr t4; goto bb0;
+#line 147 "examples/query/query/plan.hero"
 bb0:
-#line 148 "examples/query/query/plan.hero"
     t1 = h0_b;
 #line 148 "examples/query/query/plan.hero"
     if (t1) goto bb2; else goto bb3;
@@ -10597,7 +8415,7 @@ bb3:
     goto bb1;
 #line 149 "examples/query/query/plan.hero"
 bb4:
-#line 10601 "main.c"
+#line 8419 "main.c"
     t4 = h1_ret0;
     hero_str_incref(t4);
     return t4;
@@ -10605,28 +8423,10 @@ bb4:
 
 #line 155 "examples/query/query/plan.hero"
 HeroStr h_queryplan_heading(h_queryplan_Column h0_c) {
-#line 10609 "main.c"
-    h_queryplan_Column h1_s0;
-    HeroStr h2_r0 = {0};
-    h_queryplan_Column t1;
-    h_queryplan_Column t2;
-    int64_t t3;
-    HeroStr t4;
-    HeroStr t5;
-    HeroStr t6;
-    HeroStr t7;
-    HeroStr t8;
-    HeroStr t9;
-    HeroStr t10;
-    HeroStr t11;
-    HeroStr t12;
-    HeroStr t13;
-    HeroStr t14;
-    HeroStr t15;
-    HeroStr t16;
-    goto bb0;
+#line 155 "examples/query/query/plan.hero"
+    h_queryplan_Column h1_s0; HeroStr h2_r0 = {0}; h_queryplan_Column t1; h_queryplan_Column t2; int64_t t3; HeroStr t4; HeroStr t5; HeroStr t6; HeroStr t7; HeroStr t8; HeroStr t9; HeroStr t10; HeroStr t11; HeroStr t12; HeroStr t13; HeroStr t14; HeroStr t15; HeroStr t16; goto bb0;
+#line 155 "examples/query/query/plan.hero"
 bb0:
-#line 156 "examples/query/query/plan.hero"
     t1 = h0_c;
 #line 156 "examples/query/query/plan.hero"
     h1_s0 = t1;
@@ -10656,7 +8456,7 @@ bb0:
 bb1:
 #line 156 "examples/query/query/plan.hero"
     t10 = h2_r0;
-#line 10660 "main.c"
+#line 8460 "main.c"
     hero_str_incref(t10);
     hero_str_release_at(&h2_r0);
     return t10;
@@ -10743,42 +8543,15 @@ bb7:
     hero_str_decref(t16);
 #line 156 "examples/query/query/plan.hero"
     goto bb1;
-#line 10747 "main.c"
+#line 8547 "main.c"
 }
 
 #line 31 "examples/query/run/engine.hero"
 HeroArrayHeader * h_runengine_filtered(HeroArrayHeader * h0_rows, h_queryplan_Where h1_keep) {
-#line 10752 "main.c"
-    HeroArrayHeader * h2_out = {0};
-    HeroArrayHeader * h3_xs0 = {0};
-    int64_t h4_i0;
-    h_datarow_Row h5_r = {0};
-    HeroArrayHeader * h6_own6 = {0};
-    HeroArrayHeader * t1;
-    HeroArrayHeader * t2;
-    int64_t t3;
-    int64_t t4;
-    HeroArrayHeader * t5;
-    int64_t t6;
-    bool t7;
-    HeroArrayHeader * t8;
-    int64_t t9;
-    h_datarow_Row t10;
-    h_queryplan_Where t11;
-    h_datarow_Row t12;
-    bool t13;
-    h_datarow_Row t15;
-    int64_t t17;
-    int64_t t18;
-    int64_t t19;
-    HeroArrayHeader * t20;
-    HeroArrayHeader * t21;
-    HeroArrayHeader * t22;
-    HeroArrayHeader * t23;
-    h_datarow_Row t24;
-    goto bb0;
+#line 31 "examples/query/run/engine.hero"
+    HeroArrayHeader * h2_out = {0}; HeroArrayHeader * h3_xs0 = {0}; int64_t h4_i0; h_datarow_Row h5_r = {0}; HeroArrayHeader * h6_own6 = {0}; HeroArrayHeader * t1; HeroArrayHeader * t2; int64_t t3; int64_t t4; HeroArrayHeader * t5; int64_t t6; bool t7; HeroArrayHeader * t8; int64_t t9; h_datarow_Row t10; h_queryplan_Where t11; h_datarow_Row t12; bool t13; h_datarow_Row t15; int64_t t17; int64_t t18; int64_t t19; HeroArrayHeader * t20; HeroArrayHeader * t21; HeroArrayHeader * t22; HeroArrayHeader * t23; h_datarow_Row t24; goto bb0;
+#line 31 "examples/query/run/engine.hero"
 bb0:
-#line 32 "examples/query/run/engine.hero"
     t1 = hero_array_new(&h_datarow_Row_desc, 1);
 #line 32 "examples/query/run/engine.hero"
     t21 = h6_own6;
@@ -10861,7 +8634,7 @@ bb3:
 bb4:
 #line 38 "examples/query/run/engine.hero"
     t20 = h2_out;
-#line 10865 "main.c"
+#line 8638 "main.c"
     hero_array_incref(t20);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h3_xs0);
@@ -10881,42 +8654,15 @@ bb6:
 bb7:
 #line 36 "examples/query/run/engine.hero"
     goto bb5;
-#line 10885 "main.c"
+#line 8658 "main.c"
 }
 
 #line 43 "examples/query/run/engine.hero"
 HeroMapHeader * h_runengine_regions_of(HeroArrayHeader * h0_teams) {
-#line 10890 "main.c"
-    HeroMapHeader * h1_m = {0};
-    HeroArrayHeader * h2_xs0 = {0};
-    int64_t h3_i0;
-    h_datarow_Team h4_t = {0};
-    HeroMapHeader * h5_own5 = {0};
-    HeroMapHeader * t1;
-    HeroArrayHeader * t2;
-    int64_t t3;
-    int64_t t4;
-    HeroArrayHeader * t5;
-    int64_t t6;
-    bool t7;
-    HeroArrayHeader * t8;
-    int64_t t9;
-    h_datarow_Team t10;
-    h_datarow_Team t11;
-    HeroStr t12;
-    h_datarow_Team t13;
-    HeroStr t14;
-    int64_t t15;
-    int64_t t16;
-    int64_t t17;
-    HeroMapHeader * t18;
-    HeroMapHeader * t19;
-    HeroMapHeader * t20;
-    HeroArrayHeader * t21;
-    h_datarow_Team t22;
-    goto bb0;
+#line 43 "examples/query/run/engine.hero"
+    HeroMapHeader * h1_m = {0}; HeroArrayHeader * h2_xs0 = {0}; int64_t h3_i0; h_datarow_Team h4_t = {0}; HeroMapHeader * h5_own5 = {0}; HeroMapHeader * t1; HeroArrayHeader * t2; int64_t t3; int64_t t4; HeroArrayHeader * t5; int64_t t6; bool t7; HeroArrayHeader * t8; int64_t t9; h_datarow_Team t10; h_datarow_Team t11; HeroStr t12; h_datarow_Team t13; HeroStr t14; int64_t t15; int64_t t16; int64_t t17; HeroMapHeader * t18; HeroMapHeader * t19; HeroMapHeader * t20; HeroArrayHeader * t21; h_datarow_Team t22; goto bb0;
+#line 43 "examples/query/run/engine.hero"
 bb0:
-#line 44 "examples/query/run/engine.hero"
     t1 = hero_map_new(&hero_desc_str, &hero_desc_str, 0);
 #line 44 "examples/query/run/engine.hero"
     t19 = h5_own5;
@@ -11005,7 +8751,7 @@ bb3:
 bb4:
 #line 49 "examples/query/run/engine.hero"
     t18 = h1_m;
-#line 11009 "main.c"
+#line 8755 "main.c"
     hero_map_incref(t18);
     hero_map_release_at(&h1_m);
     hero_array_release_at(&h2_xs0);
@@ -11016,70 +8762,10 @@ bb4:
 
 #line 54 "examples/query/run/engine.hero"
 HeroArrayHeader * h_runengine_joined_with(HeroArrayHeader * h0_rows, HeroArrayHeader * h1_teams) {
-#line 11020 "main.c"
-    HeroMapHeader * h2_lookup = {0};
-    HeroArrayHeader * h3_out = {0};
-    HeroArrayHeader * h4_xs0 = {0};
-    int64_t h5_i0;
-    h_datarow_Row h6_r = {0};
-    h_0opt_f87774a h7_found = {0};
-    h_0opt_f87774a h8_f0 = {0};
-    h_0opt_f87774a h9_f1 = {0};
-    HeroMapHeader * h10_own10 = {0};
-    HeroArrayHeader * h11_own11 = {0};
-    h_0opt_f87774a h12_own12 = {0};
-    h_queryplan_Joined h13_own13 = {0};
-    HeroArrayHeader * t1;
-    HeroMapHeader * t2;
-    HeroArrayHeader * t3;
-    HeroArrayHeader * t4;
-    int64_t t5;
-    int64_t t6;
-    HeroArrayHeader * t7;
-    int64_t t8;
-    bool t9;
-    HeroArrayHeader * t10;
-    int64_t t11;
-    h_datarow_Row t12;
-    HeroMapHeader * t13;
-    h_datarow_Row t14;
-    HeroStr t15;
-    h_0opt_f87774a t16;
-    h_0opt_f87774a t17;
-    h_0opt_f87774a t18;
-    int64_t t19;
-    int64_t t20;
-    bool t21;
-    bool t22;
-    h_datarow_Row t24;
-    h_0opt_f87774a t25;
-    h_0opt_f87774a t26;
-    int64_t t27;
-    int64_t t28;
-    bool t29;
-    h_0opt_f87774a t30;
-    HeroFailure t31;
-    h_0opt_f87774a t32;
-    HeroStr t33;
-    h_queryplan_Joined t34;
-    int64_t t36;
-    int64_t t37;
-    int64_t t38;
-    HeroArrayHeader * t39;
-    HeroMapHeader * t40;
-    HeroMapHeader * t41;
-    HeroArrayHeader * t42;
-    HeroArrayHeader * t43;
-    HeroArrayHeader * t44;
-    h_datarow_Row t45;
-    h_0opt_f87774a t46;
-    h_0opt_f87774a t47;
-    h_0opt_f87774a t48;
-    h_0opt_f87774a t49;
-    h_queryplan_Joined t50;
-    goto bb0;
+#line 54 "examples/query/run/engine.hero"
+    HeroMapHeader * h2_lookup = {0}; HeroArrayHeader * h3_out = {0}; HeroArrayHeader * h4_xs0 = {0}; int64_t h5_i0; h_datarow_Row h6_r = {0}; h_0opt_f87774a h7_found = {0}; h_0opt_f87774a h8_f0 = {0}; h_0opt_f87774a h9_f1 = {0}; HeroMapHeader * h10_own10 = {0}; HeroArrayHeader * h11_own11 = {0}; h_0opt_f87774a h12_own12 = {0}; h_queryplan_Joined h13_own13 = {0}; HeroArrayHeader * t1; HeroMapHeader * t2; HeroArrayHeader * t3; HeroArrayHeader * t4; int64_t t5; int64_t t6; HeroArrayHeader * t7; int64_t t8; bool t9; HeroArrayHeader * t10; int64_t t11; h_datarow_Row t12; HeroMapHeader * t13; h_datarow_Row t14; HeroStr t15; h_0opt_f87774a t16; h_0opt_f87774a t17; h_0opt_f87774a t18; int64_t t19; int64_t t20; bool t21; bool t22; h_datarow_Row t24; h_0opt_f87774a t25; h_0opt_f87774a t26; int64_t t27; int64_t t28; bool t29; h_0opt_f87774a t30; HeroFailure t31; h_0opt_f87774a t32; HeroStr t33; h_queryplan_Joined t34; int64_t t36; int64_t t37; int64_t t38; HeroArrayHeader * t39; HeroMapHeader * t40; HeroMapHeader * t41; HeroArrayHeader * t42; HeroArrayHeader * t43; HeroArrayHeader * t44; h_datarow_Row t45; h_0opt_f87774a t46; h_0opt_f87774a t47; h_0opt_f87774a t48; h_0opt_f87774a t49; h_queryplan_Joined t50; goto bb0;
+#line 54 "examples/query/run/engine.hero"
 bb0:
-#line 55 "examples/query/run/engine.hero"
     t1 = h1_teams;
 #line 55 "examples/query/run/engine.hero"
     t2 = h_runengine_regions_of(t1);
@@ -11231,7 +8917,7 @@ bb3:
 bb4:
 #line 64 "examples/query/run/engine.hero"
     t39 = h3_out;
-#line 11235 "main.c"
+#line 8921 "main.c"
     hero_array_incref(t39);
     hero_map_release_at(&h2_lookup);
     hero_array_release_at(&h3_out);
@@ -11302,81 +8988,17 @@ bb9:
     t30 = h9_f1;
 #line 62 "examples/query/run/engine.hero"
     t31 = t30.as.err;
-#line 11306 "main.c"
+#line 8992 "main.c"
     hero_panic_must(t31);
     hero_unreachable();
 }
 
 #line 69 "examples/query/run/engine.hero"
 bool h_runengine_before(h_queryplan_Order h0_o, h_datarow_Row h1_a, h_datarow_Row h2_b) {
-#line 11313 "main.c"
-    h_queryplan_Order h3_s0;
-    bool h4_r0;
-    bool h5_r1;
-    bool h6_r2;
-    bool h7_r3;
-    h_queryplan_Order t1;
-    h_queryplan_Order t2;
-    int64_t t3;
-    h_datarow_Row t4;
-    int64_t t5;
-    h_datarow_Row t6;
-    int64_t t7;
-    bool t8;
-    h_datarow_Row t9;
-    int64_t t10;
-    h_datarow_Row t11;
-    int64_t t12;
-    bool t13;
-    h_datarow_Row t14;
-    int64_t t15;
-    h_datarow_Row t16;
-    int64_t t17;
-    bool t18;
-    h_datarow_Row t19;
-    int64_t t20;
-    h_datarow_Row t21;
-    int64_t t22;
-    bool t23;
-    h_datarow_Row t24;
-    int64_t t25;
-    h_datarow_Row t26;
-    int64_t t27;
-    bool t28;
-    bool t29;
-    h_datarow_Row t30;
-    HeroStr t31;
-    h_datarow_Row t32;
-    HeroStr t33;
-    bool t34;
-    h_datarow_Row t35;
-    HeroStr t36;
-    h_datarow_Row t37;
-    HeroStr t38;
-    bool t39;
-    h_datarow_Row t40;
-    int64_t t41;
-    h_datarow_Row t42;
-    int64_t t43;
-    bool t44;
-    bool t45;
-    h_datarow_Row t46;
-    bool t47;
-    h_datarow_Row t48;
-    bool t49;
-    bool t50;
-    h_datarow_Row t51;
-    bool t52;
-    h_datarow_Row t53;
-    int64_t t54;
-    h_datarow_Row t55;
-    int64_t t56;
-    bool t57;
-    bool t58;
-    bool t59;
-    goto bb0;
+#line 69 "examples/query/run/engine.hero"
+    h_queryplan_Order h3_s0; bool h4_r0; bool h5_r1; bool h6_r2; bool h7_r3; h_queryplan_Order t1; h_queryplan_Order t2; int64_t t3; h_datarow_Row t4; int64_t t5; h_datarow_Row t6; int64_t t7; bool t8; h_datarow_Row t9; int64_t t10; h_datarow_Row t11; int64_t t12; bool t13; h_datarow_Row t14; int64_t t15; h_datarow_Row t16; int64_t t17; bool t18; h_datarow_Row t19; int64_t t20; h_datarow_Row t21; int64_t t22; bool t23; h_datarow_Row t24; int64_t t25; h_datarow_Row t26; int64_t t27; bool t28; bool t29; h_datarow_Row t30; HeroStr t31; h_datarow_Row t32; HeroStr t33; bool t34; h_datarow_Row t35; HeroStr t36; h_datarow_Row t37; HeroStr t38; bool t39; h_datarow_Row t40; int64_t t41; h_datarow_Row t42; int64_t t43; bool t44; bool t45; h_datarow_Row t46; bool t47; h_datarow_Row t48; bool t49; bool t50; h_datarow_Row t51; bool t52; h_datarow_Row t53; int64_t t54; h_datarow_Row t55; int64_t t56; bool t57; bool t58; bool t59; goto bb0;
+#line 69 "examples/query/run/engine.hero"
 bb0:
-#line 70 "examples/query/run/engine.hero"
     t1 = h0_o;
 #line 70 "examples/query/run/engine.hero"
     h3_s0 = t1;
@@ -11593,53 +9215,15 @@ bb15:
     h7_r3 = t57;
 #line 84 "examples/query/run/engine.hero"
     goto bb13;
-#line 11597 "main.c"
+#line 9219 "main.c"
 }
 
 #line 98 "examples/query/run/engine.hero"
 bool h_runengine_text_before(HeroStr h0_a, HeroStr h1_b) {
-#line 11602 "main.c"
-    int64_t h2_shortest;
-    int64_t h3_at;
-    bool h4_ret0;
-    HeroStr t1;
-    int64_t t2;
-    HeroStr t3;
-    int64_t t4;
-    int64_t t5;
-    bool t6;
-    HeroStr t7;
-    int64_t t8;
-    int64_t t9;
-    int64_t t10;
-    int64_t t11;
-    bool t12;
-    HeroStr t13;
-    int64_t t14;
-    uint8_t t15;
-    HeroStr t16;
-    int64_t t17;
-    uint8_t t18;
-    bool t19;
-    HeroStr t20;
-    int64_t t21;
-    uint8_t t22;
-    HeroStr t23;
-    int64_t t24;
-    uint8_t t25;
-    bool t26;
-    int64_t t27;
-    int64_t t28;
-    int64_t t29;
-    HeroStr t30;
-    int64_t t31;
-    HeroStr t32;
-    int64_t t33;
-    bool t34;
-    bool t35;
-    goto bb0;
+#line 98 "examples/query/run/engine.hero"
+    int64_t h2_shortest; int64_t h3_at; bool h4_ret0; HeroStr t1; int64_t t2; HeroStr t3; int64_t t4; int64_t t5; bool t6; HeroStr t7; int64_t t8; int64_t t9; int64_t t10; int64_t t11; bool t12; HeroStr t13; int64_t t14; uint8_t t15; HeroStr t16; int64_t t17; uint8_t t18; bool t19; HeroStr t20; int64_t t21; uint8_t t22; HeroStr t23; int64_t t24; uint8_t t25; bool t26; int64_t t27; int64_t t28; int64_t t29; HeroStr t30; int64_t t31; HeroStr t32; int64_t t33; bool t34; bool t35; goto bb0;
+#line 98 "examples/query/run/engine.hero"
 bb0:
-#line 99 "examples/query/run/engine.hero"
     t1 = h0_a;
 #line 99 "examples/query/run/engine.hero"
     t2 = hero_str_len(t1);
@@ -11758,77 +9342,17 @@ bb9:
     goto bb7;
 #line 107 "examples/query/run/engine.hero"
 bb10:
-#line 11762 "main.c"
+#line 9346 "main.c"
     t35 = h4_ret0;
     return t35;
 }
 
 #line 114 "examples/query/run/engine.hero"
 HeroArrayHeader * h_runengine_merged(HeroArrayHeader * h0_left, HeroArrayHeader * h1_right, h_queryplan_Order h2_o) {
-#line 11769 "main.c"
-    HeroArrayHeader * h3_out = {0};
-    int64_t h4_at_left;
-    int64_t h5_at_right;
-    bool h6_b0;
-    HeroArrayHeader * h7_own7 = {0};
-    HeroArrayHeader * t1;
-    int64_t t2;
-    int64_t t3;
-    int64_t t4;
-    HeroArrayHeader * t5;
-    int64_t t6;
-    bool t7;
-    int64_t t8;
-    HeroArrayHeader * t9;
-    int64_t t10;
-    bool t11;
-    bool t12;
-    h_queryplan_Order t13;
-    HeroArrayHeader * t14;
-    int64_t t15;
-    h_datarow_Row t16;
-    HeroArrayHeader * t17;
-    int64_t t18;
-    h_datarow_Row t19;
-    bool t20;
-    HeroArrayHeader * t22;
-    int64_t t23;
-    h_datarow_Row t24;
-    int64_t t26;
-    int64_t t27;
-    int64_t t28;
-    HeroArrayHeader * t30;
-    int64_t t31;
-    h_datarow_Row t32;
-    int64_t t34;
-    int64_t t35;
-    int64_t t36;
-    int64_t t37;
-    HeroArrayHeader * t38;
-    int64_t t39;
-    bool t40;
-    HeroArrayHeader * t42;
-    int64_t t43;
-    h_datarow_Row t44;
-    int64_t t46;
-    int64_t t47;
-    int64_t t48;
-    int64_t t49;
-    HeroArrayHeader * t50;
-    int64_t t51;
-    bool t52;
-    HeroArrayHeader * t54;
-    int64_t t55;
-    h_datarow_Row t56;
-    int64_t t58;
-    int64_t t59;
-    int64_t t60;
-    HeroArrayHeader * t61;
-    HeroArrayHeader * t62;
-    HeroArrayHeader * t63;
-    goto bb0;
+#line 114 "examples/query/run/engine.hero"
+    HeroArrayHeader * h3_out = {0}; int64_t h4_at_left; int64_t h5_at_right; bool h6_b0; HeroArrayHeader * h7_own7 = {0}; HeroArrayHeader * t1; int64_t t2; int64_t t3; int64_t t4; HeroArrayHeader * t5; int64_t t6; bool t7; int64_t t8; HeroArrayHeader * t9; int64_t t10; bool t11; bool t12; h_queryplan_Order t13; HeroArrayHeader * t14; int64_t t15; h_datarow_Row t16; HeroArrayHeader * t17; int64_t t18; h_datarow_Row t19; bool t20; HeroArrayHeader * t22; int64_t t23; h_datarow_Row t24; int64_t t26; int64_t t27; int64_t t28; HeroArrayHeader * t30; int64_t t31; h_datarow_Row t32; int64_t t34; int64_t t35; int64_t t36; int64_t t37; HeroArrayHeader * t38; int64_t t39; bool t40; HeroArrayHeader * t42; int64_t t43; h_datarow_Row t44; int64_t t46; int64_t t47; int64_t t48; int64_t t49; HeroArrayHeader * t50; int64_t t51; bool t52; HeroArrayHeader * t54; int64_t t55; h_datarow_Row t56; int64_t t58; int64_t t59; int64_t t60; HeroArrayHeader * t61; HeroArrayHeader * t62; HeroArrayHeader * t63; goto bb0;
+#line 114 "examples/query/run/engine.hero"
 bb0:
-#line 115 "examples/query/run/engine.hero"
     t1 = hero_array_new(&h_datarow_Row_desc, 1);
 #line 115 "examples/query/run/engine.hero"
     t62 = h7_own7;
@@ -12019,7 +9543,7 @@ bb13:
 bb14:
 #line 135 "examples/query/run/engine.hero"
     t61 = h3_out;
-#line 12023 "main.c"
+#line 9547 "main.c"
     hero_array_incref(t61);
     hero_array_release_at(&h3_out);
     hero_array_release_at(&h7_own7);
@@ -12028,47 +9552,10 @@ bb14:
 
 #line 140 "examples/query/run/engine.hero"
 HeroArrayHeader * h_runengine_ordered(HeroArrayHeader * h0_rows, h_queryplan_Order h1_o) {
-#line 12032 "main.c"
-    int64_t h2_middle;
-    HeroArrayHeader * h3_ret0 = {0};
-    HeroArrayHeader * h4_own4 = {0};
-    HeroArrayHeader * h5_own5 = {0};
-    HeroArrayHeader * h6_own6 = {0};
-    HeroArrayHeader * h7_own7 = {0};
-    HeroArrayHeader * h8_own8 = {0};
-    HeroArrayHeader * t1;
-    int64_t t2;
-    int64_t t3;
-    bool t4;
-    HeroArrayHeader * t5;
-    HeroArrayHeader * t6;
-    int64_t t7;
-    int64_t t8;
-    int64_t t9;
-    HeroArrayHeader * t10;
-    int64_t t11;
-    int64_t t12;
-    HeroArrayHeader * t13;
-    h_queryplan_Order t14;
-    HeroArrayHeader * t15;
-    HeroArrayHeader * t16;
-    int64_t t17;
-    HeroArrayHeader * t18;
-    int64_t t19;
-    HeroArrayHeader * t20;
-    h_queryplan_Order t21;
-    HeroArrayHeader * t22;
-    h_queryplan_Order t23;
-    HeroArrayHeader * t24;
-    HeroArrayHeader * t25;
-    HeroArrayHeader * t26;
-    HeroArrayHeader * t27;
-    HeroArrayHeader * t28;
-    HeroArrayHeader * t29;
-    HeroArrayHeader * t30;
-    goto bb0;
+#line 140 "examples/query/run/engine.hero"
+    int64_t h2_middle; HeroArrayHeader * h3_ret0 = {0}; HeroArrayHeader * h4_own4 = {0}; HeroArrayHeader * h5_own5 = {0}; HeroArrayHeader * h6_own6 = {0}; HeroArrayHeader * h7_own7 = {0}; HeroArrayHeader * h8_own8 = {0}; HeroArrayHeader * t1; int64_t t2; int64_t t3; bool t4; HeroArrayHeader * t5; HeroArrayHeader * t6; int64_t t7; int64_t t8; int64_t t9; HeroArrayHeader * t10; int64_t t11; int64_t t12; HeroArrayHeader * t13; h_queryplan_Order t14; HeroArrayHeader * t15; HeroArrayHeader * t16; int64_t t17; HeroArrayHeader * t18; int64_t t19; HeroArrayHeader * t20; h_queryplan_Order t21; HeroArrayHeader * t22; h_queryplan_Order t23; HeroArrayHeader * t24; HeroArrayHeader * t25; HeroArrayHeader * t26; HeroArrayHeader * t27; HeroArrayHeader * t28; HeroArrayHeader * t29; HeroArrayHeader * t30; goto bb0;
+#line 140 "examples/query/run/engine.hero"
 bb0:
-#line 141 "examples/query/run/engine.hero"
     t1 = h0_rows;
 #line 141 "examples/query/run/engine.hero"
     t2 = ((void)(t1 == NULL ? ((void)hero_array_len(t1), hero_unreachable()) : (void)0), t1->len);
@@ -12170,7 +9657,7 @@ bb3:
     goto bb1;
 #line 142 "examples/query/run/engine.hero"
 bb4:
-#line 12174 "main.c"
+#line 9661 "main.c"
     t25 = h3_ret0;
     hero_array_incref(t25);
     hero_array_release_at(&h4_own4);
@@ -12183,28 +9670,10 @@ bb4:
 
 #line 152 "examples/query/run/engine.hero"
 HeroArrayHeader * h_runengine_limited(HeroArrayHeader * h0_rows, int64_t h1_n) {
-#line 12187 "main.c"
-    bool h2_b0;
-    HeroArrayHeader * h3_ret0 = {0};
-    HeroArrayHeader * h4_own4 = {0};
-    int64_t t1;
-    int64_t t2;
-    bool t3;
-    int64_t t4;
-    HeroArrayHeader * t5;
-    int64_t t6;
-    bool t7;
-    bool t8;
-    HeroArrayHeader * t9;
-    HeroArrayHeader * t10;
-    int64_t t11;
-    int64_t t12;
-    HeroArrayHeader * t13;
-    HeroArrayHeader * t14;
-    HeroArrayHeader * t15;
-    goto bb0;
+#line 152 "examples/query/run/engine.hero"
+    bool h2_b0; HeroArrayHeader * h3_ret0 = {0}; HeroArrayHeader * h4_own4 = {0}; int64_t t1; int64_t t2; bool t3; int64_t t4; HeroArrayHeader * t5; int64_t t6; bool t7; bool t8; HeroArrayHeader * t9; HeroArrayHeader * t10; int64_t t11; int64_t t12; HeroArrayHeader * t13; HeroArrayHeader * t14; HeroArrayHeader * t15; goto bb0;
+#line 152 "examples/query/run/engine.hero"
 bb0:
-#line 153 "examples/query/run/engine.hero"
     t1 = h1_n;
 #line 153 "examples/query/run/engine.hero"
     t2 = INT64_C(0);
@@ -12267,7 +9736,7 @@ bb5:
     goto bb1;
 #line 154 "examples/query/run/engine.hero"
 bb6:
-#line 12271 "main.c"
+#line 9740 "main.c"
     t14 = h3_ret0;
     hero_array_incref(t14);
     hero_array_release_at(&h4_own4);
@@ -12276,46 +9745,10 @@ bb6:
 
 #line 160 "examples/query/run/engine.hero"
 int64_t h_runengine_aggregate(HeroArrayHeader * h0_rows, h_queryplan_Aggregate h1_what) {
-#line 12280 "main.c"
-    h_queryplan_Summary h2_s;
-    HeroArrayHeader * h3_xs0 = {0};
-    int64_t h4_i0;
-    h_datarow_Row h5_r = {0};
-    h_queryplan_Aggregate h6_s0;
-    int64_t h7_r0;
-    h_queryplan_Summary t1;
-    HeroArrayHeader * t2;
-    int64_t t3;
-    int64_t t4;
-    HeroArrayHeader * t5;
-    int64_t t6;
-    bool t7;
-    HeroArrayHeader * t8;
-    int64_t t9;
-    h_datarow_Row t10;
-    h_queryplan_Summary t11;
-    h_datarow_Row t12;
-    h_queryplan_Summary t13;
-    int64_t t14;
-    int64_t t15;
-    int64_t t16;
-    h_queryplan_Aggregate t17;
-    h_queryplan_Aggregate t18;
-    int64_t t19;
-    h_queryplan_Summary t20;
-    int64_t t21;
-    h_queryplan_Summary t22;
-    int64_t t23;
-    h_queryplan_Summary t24;
-    int64_t t25;
-    h_queryplan_Summary t26;
-    int64_t t27;
-    int64_t t28;
-    HeroArrayHeader * t29;
-    h_datarow_Row t30;
-    goto bb0;
+#line 160 "examples/query/run/engine.hero"
+    h_queryplan_Summary h2_s; HeroArrayHeader * h3_xs0 = {0}; int64_t h4_i0; h_datarow_Row h5_r = {0}; h_queryplan_Aggregate h6_s0; int64_t h7_r0; h_queryplan_Summary t1; HeroArrayHeader * t2; int64_t t3; int64_t t4; HeroArrayHeader * t5; int64_t t6; bool t7; HeroArrayHeader * t8; int64_t t9; h_datarow_Row t10; h_queryplan_Summary t11; h_datarow_Row t12; h_queryplan_Summary t13; int64_t t14; int64_t t15; int64_t t16; h_queryplan_Aggregate t17; h_queryplan_Aggregate t18; int64_t t19; h_queryplan_Summary t20; int64_t t21; h_queryplan_Summary t22; int64_t t23; h_queryplan_Summary t24; int64_t t25; h_queryplan_Summary t26; int64_t t27; int64_t t28; HeroArrayHeader * t29; h_datarow_Row t30; goto bb0;
+#line 160 "examples/query/run/engine.hero"
 bb0:
-#line 161 "examples/query/run/engine.hero"
     t1 = h_queryplan_nothing_yet();
 #line 161 "examples/query/run/engine.hero"
     h2_s = t1;
@@ -12412,7 +9845,7 @@ bb4:
 bb5:
 #line 166 "examples/query/run/engine.hero"
     t28 = h7_r0;
-#line 12416 "main.c"
+#line 9849 "main.c"
     hero_array_release_at(&h3_xs0);
     h_datarow_Row_release(hero_slot_escape(&h5_r));
     return t28;
@@ -12455,79 +9888,15 @@ bb9:
     h7_r0 = t27;
 #line 166 "examples/query/run/engine.hero"
     goto bb5;
-#line 12459 "main.c"
+#line 9892 "main.c"
 }
 
 #line 175 "examples/query/run/engine.hero"
 HeroMapHeader * h_runengine_grouped(HeroArrayHeader * h0_rows) {
-#line 12464 "main.c"
-    HeroMapHeader * h1_out = {0};
-    HeroArrayHeader * h2_xs0 = {0};
-    int64_t h3_i0;
-    h_datarow_Row h4_r = {0};
-    h_queryplan_Group h5_key = {0};
-    h_0opt_79a32868 h6_so_far = {0};
-    h_0opt_79a32868 h7_f0 = {0};
-    h_0opt_79a32868 h8_f1 = {0};
-    HeroMapHeader * h9_own9 = {0};
-    h_queryplan_Group h10_own10 = {0};
-    h_0opt_79a32868 h11_own11 = {0};
-    HeroMapHeader * t1;
-    HeroArrayHeader * t2;
-    int64_t t3;
-    int64_t t4;
-    HeroArrayHeader * t5;
-    int64_t t6;
-    bool t7;
-    HeroArrayHeader * t8;
-    int64_t t9;
-    h_datarow_Row t10;
-    h_datarow_Row t11;
-    HeroStr t12;
-    h_datarow_Row t13;
-    bool t14;
-    h_queryplan_Group t15;
-    HeroMapHeader * t16;
-    h_queryplan_Group t17;
-    h_0opt_79a32868 t18;
-    h_0opt_79a32868 t19;
-    h_0opt_79a32868 t20;
-    int64_t t21;
-    int64_t t22;
-    bool t23;
-    h_queryplan_Group t24;
-    h_queryplan_Summary t25;
-    h_datarow_Row t26;
-    h_queryplan_Summary t27;
-    h_queryplan_Group t28;
-    h_0opt_79a32868 t29;
-    h_0opt_79a32868 t30;
-    int64_t t31;
-    int64_t t32;
-    bool t33;
-    h_0opt_79a32868 t34;
-    HeroFailure t35;
-    h_0opt_79a32868 t36;
-    h_queryplan_Summary t37;
-    h_datarow_Row t38;
-    h_queryplan_Summary t39;
-    int64_t t40;
-    int64_t t41;
-    int64_t t42;
-    HeroMapHeader * t43;
-    HeroMapHeader * t44;
-    HeroMapHeader * t45;
-    HeroArrayHeader * t46;
-    h_datarow_Row t47;
-    h_queryplan_Group t48;
-    h_queryplan_Group t49;
-    h_0opt_79a32868 t50;
-    h_0opt_79a32868 t51;
-    h_0opt_79a32868 t52;
-    h_0opt_79a32868 t53;
-    goto bb0;
+#line 175 "examples/query/run/engine.hero"
+    HeroMapHeader * h1_out = {0}; HeroArrayHeader * h2_xs0 = {0}; int64_t h3_i0; h_datarow_Row h4_r = {0}; h_queryplan_Group h5_key = {0}; h_0opt_79a32868 h6_so_far = {0}; h_0opt_79a32868 h7_f0 = {0}; h_0opt_79a32868 h8_f1 = {0}; HeroMapHeader * h9_own9 = {0}; h_queryplan_Group h10_own10 = {0}; h_0opt_79a32868 h11_own11 = {0}; HeroMapHeader * t1; HeroArrayHeader * t2; int64_t t3; int64_t t4; HeroArrayHeader * t5; int64_t t6; bool t7; HeroArrayHeader * t8; int64_t t9; h_datarow_Row t10; h_datarow_Row t11; HeroStr t12; h_datarow_Row t13; bool t14; h_queryplan_Group t15; HeroMapHeader * t16; h_queryplan_Group t17; h_0opt_79a32868 t18; h_0opt_79a32868 t19; h_0opt_79a32868 t20; int64_t t21; int64_t t22; bool t23; h_queryplan_Group t24; h_queryplan_Summary t25; h_datarow_Row t26; h_queryplan_Summary t27; h_queryplan_Group t28; h_0opt_79a32868 t29; h_0opt_79a32868 t30; int64_t t31; int64_t t32; bool t33; h_0opt_79a32868 t34; HeroFailure t35; h_0opt_79a32868 t36; h_queryplan_Summary t37; h_datarow_Row t38; h_queryplan_Summary t39; int64_t t40; int64_t t41; int64_t t42; HeroMapHeader * t43; HeroMapHeader * t44; HeroMapHeader * t45; HeroArrayHeader * t46; h_datarow_Row t47; h_queryplan_Group t48; h_queryplan_Group t49; h_0opt_79a32868 t50; h_0opt_79a32868 t51; h_0opt_79a32868 t52; h_0opt_79a32868 t53; goto bb0;
+#line 175 "examples/query/run/engine.hero"
 bb0:
-#line 176 "examples/query/run/engine.hero"
     t1 = hero_map_new(&h_queryplan_Group_desc, &h_queryplan_Summary_desc, 0);
 #line 176 "examples/query/run/engine.hero"
     t44 = h9_own9;
@@ -12683,7 +10052,7 @@ bb3:
 bb4:
 #line 187 "examples/query/run/engine.hero"
     t43 = h1_out;
-#line 12687 "main.c"
+#line 10056 "main.c"
     hero_map_incref(t43);
     hero_map_release_at(&h1_out);
     hero_array_release_at(&h2_xs0);
@@ -12755,76 +10124,17 @@ bb9:
     t34 = h8_f1;
 #line 185 "examples/query/run/engine.hero"
     t35 = t34.as.err;
-#line 12759 "main.c"
+#line 10128 "main.c"
     hero_panic_must(t35);
     hero_unreachable();
 }
 
 #line 195 "examples/query/run/engine.hero"
 HeroArrayHeader * h_runengine_group_order(HeroMapHeader * h0_m) {
-#line 12766 "main.c"
-    HeroArrayHeader * h1_labels = {0};
-    HeroArrayHeader * h2_xs0 = {0};
-    int64_t h3_i0;
-    h_queryplan_Group h4_k = {0};
-    HeroArrayHeader * h5_out = {0};
-    HeroArrayHeader * h6_xs1 = {0};
-    int64_t h7_i1;
-    HeroStr h8_one = {0};
-    HeroArrayHeader * h9_own9 = {0};
-    HeroArrayHeader * h10_own10 = {0};
-    HeroStr h11_own11 = {0};
-    HeroArrayHeader * h12_own12 = {0};
-    HeroArrayHeader * h13_own13 = {0};
-    h_queryplan_Group h14_own14 = {0};
-    HeroArrayHeader * t1;
-    HeroMapHeader * t2;
-    HeroArrayHeader * t3;
-    int64_t t4;
-    int64_t t5;
-    HeroArrayHeader * t6;
-    int64_t t7;
-    bool t8;
-    HeroArrayHeader * t9;
-    int64_t t10;
-    h_queryplan_Group t11;
-    h_queryplan_Group t13;
-    HeroStr t14;
-    int64_t t16;
-    int64_t t17;
-    int64_t t18;
-    HeroArrayHeader * t19;
-    HeroArrayHeader * t20;
-    HeroArrayHeader * t21;
-    int64_t t22;
-    int64_t t23;
-    HeroArrayHeader * t24;
-    int64_t t25;
-    bool t26;
-    HeroArrayHeader * t27;
-    int64_t t28;
-    HeroStr t29;
-    HeroStr t31;
-    h_queryplan_Group t32;
-    int64_t t34;
-    int64_t t35;
-    int64_t t36;
-    HeroArrayHeader * t37;
-    HeroArrayHeader * t38;
-    HeroArrayHeader * t39;
-    HeroArrayHeader * t40;
-    HeroArrayHeader * t41;
-    h_queryplan_Group t42;
-    HeroStr t43;
-    HeroArrayHeader * t44;
-    HeroArrayHeader * t45;
-    HeroArrayHeader * t46;
-    HeroArrayHeader * t47;
-    HeroStr t48;
-    h_queryplan_Group t49;
-    goto bb0;
+#line 195 "examples/query/run/engine.hero"
+    HeroArrayHeader * h1_labels = {0}; HeroArrayHeader * h2_xs0 = {0}; int64_t h3_i0; h_queryplan_Group h4_k = {0}; HeroArrayHeader * h5_out = {0}; HeroArrayHeader * h6_xs1 = {0}; int64_t h7_i1; HeroStr h8_one = {0}; HeroArrayHeader * h9_own9 = {0}; HeroArrayHeader * h10_own10 = {0}; HeroStr h11_own11 = {0}; HeroArrayHeader * h12_own12 = {0}; HeroArrayHeader * h13_own13 = {0}; h_queryplan_Group h14_own14 = {0}; HeroArrayHeader * t1; HeroMapHeader * t2; HeroArrayHeader * t3; int64_t t4; int64_t t5; HeroArrayHeader * t6; int64_t t7; bool t8; HeroArrayHeader * t9; int64_t t10; h_queryplan_Group t11; h_queryplan_Group t13; HeroStr t14; int64_t t16; int64_t t17; int64_t t18; HeroArrayHeader * t19; HeroArrayHeader * t20; HeroArrayHeader * t21; int64_t t22; int64_t t23; HeroArrayHeader * t24; int64_t t25; bool t26; HeroArrayHeader * t27; int64_t t28; HeroStr t29; HeroStr t31; h_queryplan_Group t32; int64_t t34; int64_t t35; int64_t t36; HeroArrayHeader * t37; HeroArrayHeader * t38; HeroArrayHeader * t39; HeroArrayHeader * t40; HeroArrayHeader * t41; h_queryplan_Group t42; HeroStr t43; HeroArrayHeader * t44; HeroArrayHeader * t45; HeroArrayHeader * t46; HeroArrayHeader * t47; HeroStr t48; h_queryplan_Group t49; goto bb0;
+#line 195 "examples/query/run/engine.hero"
 bb0:
-#line 196 "examples/query/run/engine.hero"
     t1 = hero_array_new(&hero_desc_str, 1);
 #line 196 "examples/query/run/engine.hero"
     t38 = h9_own9;
@@ -13016,7 +10326,7 @@ bb7:
 bb8:
 #line 206 "examples/query/run/engine.hero"
     t37 = h5_out;
-#line 13020 "main.c"
+#line 10330 "main.c"
     hero_array_incref(t37);
     hero_array_release_at(&h1_labels);
     hero_array_release_at(&h2_xs0);
@@ -13035,26 +10345,10 @@ bb8:
 
 #line 212 "examples/query/run/engine.hero"
 HeroStr h_runengine_label_of(h_queryplan_Group h0_g) {
-#line 13039 "main.c"
-    HeroStr h1_ret0 = {0};
-    HeroStr h2_own2 = {0};
-    HeroStr h3_own3 = {0};
-    h_queryplan_Group t1;
-    bool t2;
-    h_queryplan_Group t3;
-    HeroStr t4;
-    HeroStr t5;
-    HeroStr t6;
-    h_queryplan_Group t7;
-    HeroStr t8;
-    HeroStr t9;
-    HeroStr t10;
-    HeroStr t11;
-    HeroStr t12;
-    HeroStr t13;
-    goto bb0;
+#line 212 "examples/query/run/engine.hero"
+    HeroStr h1_ret0 = {0}; HeroStr h2_own2 = {0}; HeroStr h3_own3 = {0}; h_queryplan_Group t1; bool t2; h_queryplan_Group t3; HeroStr t4; HeroStr t5; HeroStr t6; h_queryplan_Group t7; HeroStr t8; HeroStr t9; HeroStr t10; HeroStr t11; HeroStr t12; HeroStr t13; goto bb0;
+#line 212 "examples/query/run/engine.hero"
 bb0:
-#line 213 "examples/query/run/engine.hero"
     t1 = h0_g;
 #line 213 "examples/query/run/engine.hero"
     t2 = t1.f_active;
@@ -13106,7 +10400,7 @@ bb3:
     goto bb1;
 #line 214 "examples/query/run/engine.hero"
 bb4:
-#line 13110 "main.c"
+#line 10404 "main.c"
     t11 = h1_ret0;
     hero_str_incref(t11);
     hero_str_release_at(&h2_own2);
@@ -13116,32 +10410,10 @@ bb4:
 
 #line 217 "examples/query/run/engine.hero"
 h_queryplan_Group h_runengine_group_of(HeroStr h0_label) {
-#line 13120 "main.c"
-    int64_t h1_cut;
-    HeroStr h2_own2 = {0};
-    h_queryplan_Group h3_own3 = {0};
-    HeroStr t1;
-    int64_t t2;
-    int64_t t3;
-    int64_t t4;
-    HeroStr t5;
-    int64_t t6;
-    int64_t t7;
-    HeroStr t8;
-    HeroStr t9;
-    HeroStr t10;
-    int64_t t11;
-    int64_t t12;
-    int64_t t13;
-    uint8_t t14;
-    uint8_t t15;
-    bool t16;
-    h_queryplan_Group t17;
-    HeroStr t18;
-    h_queryplan_Group t19;
-    goto bb0;
+#line 217 "examples/query/run/engine.hero"
+    int64_t h1_cut; HeroStr h2_own2 = {0}; h_queryplan_Group h3_own3 = {0}; HeroStr t1; int64_t t2; int64_t t3; int64_t t4; HeroStr t5; int64_t t6; int64_t t7; HeroStr t8; HeroStr t9; HeroStr t10; int64_t t11; int64_t t12; int64_t t13; uint8_t t14; uint8_t t15; bool t16; h_queryplan_Group t17; HeroStr t18; h_queryplan_Group t19; goto bb0;
+#line 217 "examples/query/run/engine.hero"
 bb0:
-#line 218 "examples/query/run/engine.hero"
     t1 = h0_label;
 #line 218 "examples/query/run/engine.hero"
     t2 = hero_str_len(t1);
@@ -13190,7 +10462,7 @@ bb0:
     h3_own3 = t17;
 #line 219 "examples/query/run/engine.hero"
     h_queryplan_Group_release(&t19);
-#line 13194 "main.c"
+#line 10466 "main.c"
     h_queryplan_Group_retain(&t17);
     hero_str_release_at(&h2_own2);
     h_queryplan_Group_release(hero_slot_escape(&h3_own3));
@@ -13199,97 +10471,36 @@ bb0:
 
 #line 109 "<heroes library>"
 int64_t h_library_HERO_OS_OK(void) {
-#line 13203 "main.c"
+#line 10475 "main.c"
     return HERO_OS_OK;
 }
 
 #line 110 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_FOUND(void) {
-#line 13209 "main.c"
+#line 10481 "main.c"
     return HERO_OS_NOT_FOUND;
 }
 
 #line 111 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_TEXT(void) {
-#line 13215 "main.c"
+#line 10487 "main.c"
     return HERO_OS_NOT_TEXT;
 }
 
 #line 112 "<heroes library>"
 int64_t h_library_HERO_OS_BAD_NAME(void) {
-#line 13221 "main.c"
+#line 10493 "main.c"
     return HERO_OS_BAD_NAME;
 }
 
 #line 167 "<heroes library>"
 h_0opt_f87774a h_library_read_file(HeroStr h0_path) {
-#line 13227 "main.c"
-    int64_t *const hero_lend_h1_status = (int64_t *)hero_lend_local(sizeof(int64_t), "library.read_file", "status");
+#line 167 "<heroes library>"
 #define h1_status (*hero_lend_h1_status)
-    HeroStr h2_text = {0};
-    h_0opt_f87774a h3_ret0 = {0};
-    HeroStr h4_own4 = {0};
-    h_0opt_f87774a h5_own5 = {0};
-    h_0opt_f87774a h6_own6 = {0};
-    HeroStr h7_own7 = {0};
-    h_0opt_f87774a h8_own8 = {0};
-    HeroStr h9_own9 = {0};
-    h_0opt_f87774a h10_own10 = {0};
-    HeroStr h11_own11 = {0};
-    HeroStr h12_own12 = {0};
-    h_0opt_f87774a h13_own13 = {0};
-    int64_t t1;
-    HeroStr t2;
-    HeroStr t3;
-    int64_t t4;
-    int64_t t5;
-    bool t6;
-    HeroStr t7;
-    h_0opt_f87774a t8;
-    int64_t t9;
-    int64_t t10;
-    bool t11;
-    HeroStr t12;
-    HeroStr t13;
-    h_0opt_f87774a t14;
-    int64_t t15;
-    int64_t t16;
-    bool t17;
-    HeroStr t18;
-    HeroStr t19;
-    HeroStr t20;
-    HeroStr t21;
-    h_0opt_f87774a t22;
-    int64_t t23;
-    int64_t t24;
-    bool t25;
-    HeroStr t26;
-    HeroStr t27;
-    HeroStr t28;
-    HeroStr t29;
-    HeroStr t30;
-    HeroStr t31;
-    h_0opt_f87774a t32;
-    HeroStr t33;
-    HeroStr t34;
-    HeroStr t35;
-    HeroStr t36;
-    h_0opt_f87774a t37;
-    h_0opt_f87774a t38;
-    HeroStr t39;
-    HeroStr t40;
-    h_0opt_f87774a t41;
-    h_0opt_f87774a t42;
-    HeroStr t43;
-    h_0opt_f87774a t44;
-    HeroStr t45;
-    h_0opt_f87774a t46;
-    HeroStr t47;
-    HeroStr t48;
-    h_0opt_f87774a t49;
-    goto bb0;
+#line 167 "<heroes library>"
+    int64_t *const hero_lend_h1_status = (int64_t *)hero_lend_local(sizeof(int64_t), "library.read_file", "status"); HeroStr h2_text = {0}; h_0opt_f87774a h3_ret0 = {0}; HeroStr h4_own4 = {0}; h_0opt_f87774a h5_own5 = {0}; h_0opt_f87774a h6_own6 = {0}; HeroStr h7_own7 = {0}; h_0opt_f87774a h8_own8 = {0}; HeroStr h9_own9 = {0}; h_0opt_f87774a h10_own10 = {0}; HeroStr h11_own11 = {0}; HeroStr h12_own12 = {0}; h_0opt_f87774a h13_own13 = {0}; int64_t t1; HeroStr t2; HeroStr t3; int64_t t4; int64_t t5; bool t6; HeroStr t7; h_0opt_f87774a t8; int64_t t9; int64_t t10; bool t11; HeroStr t12; HeroStr t13; h_0opt_f87774a t14; int64_t t15; int64_t t16; bool t17; HeroStr t18; HeroStr t19; HeroStr t20; HeroStr t21; h_0opt_f87774a t22; int64_t t23; int64_t t24; bool t25; HeroStr t26; HeroStr t27; HeroStr t28; HeroStr t29; HeroStr t30; HeroStr t31; h_0opt_f87774a t32; HeroStr t33; HeroStr t34; HeroStr t35; HeroStr t36; h_0opt_f87774a t37; h_0opt_f87774a t38; HeroStr t39; HeroStr t40; h_0opt_f87774a t41; h_0opt_f87774a t42; HeroStr t43; h_0opt_f87774a t44; HeroStr t45; h_0opt_f87774a t46; HeroStr t47; HeroStr t48; h_0opt_f87774a t49; goto bb0;
+#line 167 "<heroes library>"
 bb0:
-#line 168 "<heroes library>"
     t1 = INT64_C(0);
 #line 168 "<heroes library>"
     h1_status = t1;
@@ -13513,7 +10724,7 @@ bb12:
     goto bb10;
 #line 182 "<heroes library>"
 bb13:
-#line 13517 "main.c"
+#line 10728 "main.c"
     t38 = h3_ret0;
     h_0opt_f87774a_retain(&t38);
     hero_str_release_at(&h2_text);
@@ -13534,39 +10745,10 @@ bb13:
 
 #line 186 "<heroes library>"
 h_0opt_a8ea2 h_library_write_file(HeroStr h0_path, HeroStr h1_text) {
-#line 13538 "main.c"
-    int64_t h2_wrote;
-    h_0opt_a8ea2 h3_ret0 = {0};
-    h_0opt_a8ea2 h4_own4 = {0};
-    HeroStr h5_own5 = {0};
-    h_0opt_a8ea2 h6_own6 = {0};
-    h_0opt_a8ea2 h7_own7 = {0};
-    HeroStr t1;
-    HeroStr t2;
-    int64_t t3;
-    int64_t t4;
-    int64_t t5;
-    bool t6;
-    h_0opt_a8ea2 t7;
-    int64_t t8;
-    int64_t t9;
-    bool t10;
-    HeroStr t11;
-    HeroStr t12;
-    h_0opt_a8ea2 t13;
-    HeroStr t14;
-    HeroStr t15;
-    HeroStr t16;
-    HeroStr t17;
-    h_0opt_a8ea2 t18;
-    h_0opt_a8ea2 t19;
-    h_0opt_a8ea2 t20;
-    HeroStr t21;
-    h_0opt_a8ea2 t22;
-    h_0opt_a8ea2 t23;
-    goto bb0;
+#line 186 "<heroes library>"
+    int64_t h2_wrote; h_0opt_a8ea2 h3_ret0 = {0}; h_0opt_a8ea2 h4_own4 = {0}; HeroStr h5_own5 = {0}; h_0opt_a8ea2 h6_own6 = {0}; h_0opt_a8ea2 h7_own7 = {0}; HeroStr t1; HeroStr t2; int64_t t3; int64_t t4; int64_t t5; bool t6; h_0opt_a8ea2 t7; int64_t t8; int64_t t9; bool t10; HeroStr t11; HeroStr t12; h_0opt_a8ea2 t13; HeroStr t14; HeroStr t15; HeroStr t16; HeroStr t17; h_0opt_a8ea2 t18; h_0opt_a8ea2 t19; h_0opt_a8ea2 t20; HeroStr t21; h_0opt_a8ea2 t22; h_0opt_a8ea2 t23; goto bb0;
+#line 186 "<heroes library>"
 bb0:
-#line 187 "<heroes library>"
     t1 = h0_path;
 #line 187 "<heroes library>"
     t2 = h1_text;
@@ -13669,7 +10851,7 @@ bb6:
     goto bb4;
 #line 191 "<heroes library>"
 bb7:
-#line 13673 "main.c"
+#line 10855 "main.c"
     t19 = h3_ret0;
     h_0opt_a8ea2_retain(&t19);
     h_0opt_a8ea2_release(hero_slot_escape(&h4_own4));
@@ -13681,28 +10863,10 @@ bb7:
 
 #line 196 "<heroes library>"
 HeroArrayHeader * h_library_args(void) {
-#line 13685 "main.c"
-    HeroArrayHeader * h0_out = {0};
-    int64_t h1_i;
-    HeroArrayHeader * h2_own2 = {0};
-    HeroStr h3_own3 = {0};
-    HeroArrayHeader * t1;
-    int64_t t2;
-    int64_t t3;
-    int64_t t4;
-    bool t5;
-    int64_t t7;
-    HeroStr t8;
-    int64_t t10;
-    int64_t t11;
-    int64_t t12;
-    HeroArrayHeader * t13;
-    HeroArrayHeader * t14;
-    HeroArrayHeader * t15;
-    HeroStr t16;
-    goto bb0;
+#line 196 "<heroes library>"
+    HeroArrayHeader * h0_out = {0}; int64_t h1_i; HeroArrayHeader * h2_own2 = {0}; HeroStr h3_own3 = {0}; HeroArrayHeader * t1; int64_t t2; int64_t t3; int64_t t4; bool t5; int64_t t7; HeroStr t8; int64_t t10; int64_t t11; int64_t t12; HeroArrayHeader * t13; HeroArrayHeader * t14; HeroArrayHeader * t15; HeroStr t16; goto bb0;
+#line 196 "<heroes library>"
 bb0:
-#line 197 "<heroes library>"
     t1 = hero_array_new(&hero_desc_str, 1);
 #line 197 "<heroes library>"
     t14 = h2_own2;
@@ -13757,7 +10921,7 @@ bb2:
 #line 201 "<heroes library>"
 bb3:
     t13 = h0_out;
-#line 13761 "main.c"
+#line 10925 "main.c"
     hero_array_incref(t13);
     hero_array_release_at(&h0_out);
     hero_array_release_at(&h2_own2);
@@ -13767,17 +10931,16 @@ bb3:
 
 #line 227 "<heroes library>"
 void h_library_exit(int64_t h0_code) {
-#line 13771 "main.c"
-    int64_t t1;
-    goto bb0;
+#line 227 "<heroes library>"
+    int64_t t1; goto bb0;
+#line 227 "<heroes library>"
 bb0:
-#line 228 "<heroes library>"
     t1 = h0_code;
 #line 228 "<heroes library>"
     (void)hero_exit(t1);
 #line 228 "<heroes library>"
     return;
-#line 13781 "main.c"
+#line 10944 "main.c"
 }
 HERO_TU_LOCAL void h_datarow_Row_retain(const h_datarow_Row *v) {
     hero_str_incref(v->f_team);

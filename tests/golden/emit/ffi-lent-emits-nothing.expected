@@ -97,13 +97,10 @@ void h_ffilentemitsnothing_main(void);
 
 #line 14 "tests/golden/emit/ffi-lent-emits-nothing.hero"
 void h_ffilentemitsnothing_main(void) {
-#line 101 "ffilentemitsnothing.c"
-    HeroStr t1;
-    const char * t2;
-    uint64_t t3;
-    goto bb0;
+#line 14 "tests/golden/emit/ffi-lent-emits-nothing.hero"
+    HeroStr t1; const char * t2; uint64_t t3; goto bb0;
+#line 14 "tests/golden/emit/ffi-lent-emits-nothing.hero"
 bb0:
-#line 15 "tests/golden/emit/ffi-lent-emits-nothing.hero"
     t1 = HERO_STR_LIT(hero_str_2f372e9c);
 #line 15 "tests/golden/emit/ffi-lent-emits-nothing.hero"
     t2 = hero_str_lend(t1);
@@ -115,7 +112,7 @@ bb0:
     hero_print_end();
 #line 15 "tests/golden/emit/ffi-lent-emits-nothing.hero"
     return;
-#line 119 "ffilentemitsnothing.c"
+#line 116 "ffilentemitsnothing.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

@@ -94,47 +94,10 @@ void h_interpolationdesugar_main(void);
 
 #line 8 "tests/golden/ir/interpolation-desugar.hero"
 void h_interpolationdesugar_main(void) {
-#line 98 "interpolationdesugar.c"
-    int64_t h0_n;
-    HeroStr h1_word = {0};
-    HeroStr h2_s = {0};
-    HeroStr h3_own3 = {0};
-    HeroStr h4_own4 = {0};
-    HeroStr h5_own5 = {0};
-    HeroStr h6_own6 = {0};
-    HeroStr h7_own7 = {0};
-    HeroStr h8_own8 = {0};
-    HeroStr h9_own9 = {0};
-    int64_t t1;
-    HeroStr t2;
-    int64_t t3;
-    HeroStr t4;
-    int64_t t5;
-    int64_t t6;
-    int64_t t7;
-    HeroStr t8;
-    HeroStr t9;
-    HeroStr t10;
-    HeroStr t11;
-    HeroStr t12;
-    HeroStr t13;
-    HeroStr t14;
-    HeroStr t15;
-    HeroStr t16;
-    HeroStr t17;
-    HeroStr t18;
-    HeroStr t19;
-    HeroStr t20;
-    HeroStr t21;
-    HeroStr t22;
-    HeroStr t23;
-    HeroStr t24;
-    HeroStr t25;
-    HeroStr t26;
-    HeroStr t27;
-    goto bb0;
+#line 8 "tests/golden/ir/interpolation-desugar.hero"
+    int64_t h0_n; HeroStr h1_word = {0}; HeroStr h2_s = {0}; HeroStr h3_own3 = {0}; HeroStr h4_own4 = {0}; HeroStr h5_own5 = {0}; HeroStr h6_own6 = {0}; HeroStr h7_own7 = {0}; HeroStr h8_own8 = {0}; HeroStr h9_own9 = {0}; int64_t t1; HeroStr t2; int64_t t3; HeroStr t4; int64_t t5; int64_t t6; int64_t t7; HeroStr t8; HeroStr t9; HeroStr t10; HeroStr t11; HeroStr t12; HeroStr t13; HeroStr t14; HeroStr t15; HeroStr t16; HeroStr t17; HeroStr t18; HeroStr t19; HeroStr t20; HeroStr t21; HeroStr t22; HeroStr t23; HeroStr t24; HeroStr t25; HeroStr t26; HeroStr t27; goto bb0;
+#line 8 "tests/golden/ir/interpolation-desugar.hero"
 bb0:
-#line 9 "tests/golden/ir/interpolation-desugar.hero"
     t1 = INT64_C(3);
 #line 9 "tests/golden/ir/interpolation-desugar.hero"
     h0_n = t1;
@@ -231,7 +194,7 @@ bb0:
     hero_print_str(t18);
 #line 12 "tests/golden/ir/interpolation-desugar.hero"
     hero_print_end();
-#line 235 "interpolationdesugar.c"
+#line 198 "interpolationdesugar.c"
     hero_str_release_at(&h1_word);
     hero_str_release_at(&h2_s);
     hero_str_release_at(&h3_own3);

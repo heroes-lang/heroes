@@ -124,40 +124,10 @@ int64_t h_ffialentfieldcountedbyaconstant_SL_NAME_LEN(void) {
 
 #line 30 "tests/golden/run/ffi-a-lent-field-counted-by-a-constant.hero"
 void h_ffialentfieldcountedbyaconstant_main(void) {
-#line 128 "ffialentfieldcountedbyaconstant.c"
-    Sl h0_s;
-    int64_t h1_k;
-    __attribute__((unused)) Both h2_b;
-    Sl t1;
-    void * t4;
-    int64_t t5;
-    int64_t t6;
-    void * t9;
-    int64_t t10;
-    int64_t t11;
-    void * t14;
-    int64_t t15;
-    int64_t t16;
-    int64_t t17;
-    int64_t t18;
-    int64_t t19;
-    void * t22;
-    int64_t t23;
-    int64_t t24;
-    void * t27;
-    int64_t t28;
-    void * t31;
-    int64_t t32;
-    int64_t t33;
-    Sl t34;
-    int64_t t35;
-    Both t36;
-    const void * t39;
-    int64_t t40;
-    int64_t t41;
-    goto bb0;
+#line 30 "tests/golden/run/ffi-a-lent-field-counted-by-a-constant.hero"
+    Sl h0_s; int64_t h1_k; __attribute__((unused)) Both h2_b; Sl t1; void * t4; int64_t t5; int64_t t6; void * t9; int64_t t10; int64_t t11; void * t14; int64_t t15; int64_t t16; int64_t t17; int64_t t18; int64_t t19; void * t22; int64_t t23; int64_t t24; void * t27; int64_t t28; void * t31; int64_t t32; int64_t t33; Sl t34; int64_t t35; Both t36; const void * t39; int64_t t40; int64_t t41; goto bb0;
+#line 30 "tests/golden/run/ffi-a-lent-field-counted-by-a-constant.hero"
 bb0:
-#line 31 "tests/golden/run/ffi-a-lent-field-counted-by-a-constant.hero"
     t1 = sl_make();
 #line 31 "tests/golden/run/ffi-a-lent-field-counted-by-a-constant.hero"
     h0_s = t1;
@@ -269,7 +239,7 @@ bb0:
     hero_print_end();
 #line 49 "tests/golden/run/ffi-a-lent-field-counted-by-a-constant.hero"
     return;
-#line 273 "ffialentfieldcountedbyaconstant.c"
+#line 243 "ffialentfieldcountedbyaconstant.c"
 }
 HERO_TU_LOCAL bool h_ffialentfieldcountedbyaconstant_Sl_eq(const Sl *a, const Sl *b) {
     if (!((a->name[0] == b->name[0] && a->name[1] == b->name[1] && a->name[2] == b->name[2] && a->name[3] == b->name[3] && a->name[4] == b->name[4] && a->name[5] == b->name[5] && a->name[6] == b->name[6] && a->name[7] == b->name[7]))) return false;

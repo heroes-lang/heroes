@@ -134,187 +134,10 @@ void h_fixedbugs429amapindexliteraltakesthekeytype_main(void);
 
 #line 21 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
 void h_fixedbugs429amapindexliteraltakesthekeytype_main(void) {
-#line 138 "fixedbugs429amapindexliteraltakesthekeytype.c"
-    HeroMapHeader * h0_names = {0};
-    h_0opt_f87774a h1_f0 = {0};
-    h_0opt_f87774a h2_f1 = {0};
-    h_0opt_f87774a h3_f2 = {0};
-    HeroStr h4_r0 = {0};
-    HeroMapHeader * h5_low = {0};
-    h_0opt_f87774a h6_f3 = {0};
-    h_fixedbugs429amapindexliteraltakesthekeytype_Holder h7_h = {0};
-    h_0opt_f87774a h8_f4 = {0};
-    HeroMapHeader * h9_ops = {0};
-    h_0opt_f87774a h10_f5 = {0};
-    h_0opt_f87774a h11_f6 = {0};
-    HeroMapHeader * h12_wide = {0};
-    h_0opt_f87774a h13_f7 = {0};
-    HeroArrayHeader * h14_xs = {0};
-    HeroStr h15_s = {0};
-    HeroMapHeader * h16_own16 = {0};
-    h_0opt_f87774a h17_own17 = {0};
-    h_0opt_f87774a h18_own18 = {0};
-    h_0opt_f87774a h19_own19 = {0};
-    HeroMapHeader * h20_own20 = {0};
-    h_0opt_f87774a h21_own21 = {0};
-    HeroMapHeader * h22_own22 = {0};
-    h_fixedbugs429amapindexliteraltakesthekeytype_Holder h23_own23 = {0};
-    h_0opt_f87774a h24_own24 = {0};
-    HeroMapHeader * h25_own25 = {0};
-    h_0opt_f87774a h26_own26 = {0};
-    h_0opt_f87774a h27_own27 = {0};
-    HeroMapHeader * h28_own28 = {0};
-    h_0opt_f87774a h29_own29 = {0};
-    HeroArrayHeader * h30_own30 = {0};
-    uint8_t t1;
-    HeroStr t2;
-    HeroMapHeader * t3;
-    HeroMapHeader * t4;
-    uint8_t t5;
-    h_0opt_f87774a t6;
-    h_0opt_f87774a t7;
-    int64_t t8;
-    int64_t t9;
-    bool t10;
-    h_0opt_f87774a t11;
-    HeroFailure t12;
-    h_0opt_f87774a t13;
-    HeroStr t14;
-    uint8_t t15;
-    HeroStr t16;
-    HeroMapHeader * t17;
-    uint8_t t18;
-    h_0opt_f87774a t19;
-    h_0opt_f87774a t20;
-    int64_t t21;
-    int64_t t22;
-    bool t23;
-    h_0opt_f87774a t24;
-    HeroFailure t25;
-    h_0opt_f87774a t26;
-    HeroStr t27;
-    HeroMapHeader * t28;
-    uint8_t t29;
-    h_0opt_f87774a t30;
-    h_0opt_f87774a t31;
-    int64_t t32;
-    int64_t t33;
-    bool t34;
-    h_0opt_f87774a t35;
-    HeroStr t36;
-    HeroStr t37;
-    HeroStr t38;
-    int8_t t39;
-    HeroStr t40;
-    HeroMapHeader * t41;
-    HeroMapHeader * t42;
-    int8_t t43;
-    h_0opt_f87774a t44;
-    h_0opt_f87774a t45;
-    int64_t t46;
-    int64_t t47;
-    bool t48;
-    h_0opt_f87774a t49;
-    HeroFailure t50;
-    h_0opt_f87774a t51;
-    HeroStr t52;
-    uint16_t t53;
-    HeroStr t54;
-    HeroMapHeader * t55;
-    h_fixedbugs429amapindexliteraltakesthekeytype_Holder t56;
-    h_fixedbugs429amapindexliteraltakesthekeytype_Holder t57;
-    HeroMapHeader * t58;
-    uint16_t t59;
-    h_0opt_f87774a t60;
-    h_0opt_f87774a t61;
-    int64_t t62;
-    int64_t t63;
-    bool t64;
-    h_0opt_f87774a t65;
-    HeroFailure t66;
-    h_0opt_f87774a t67;
-    HeroStr t68;
-    h_fixedbugs429amapindexliteraltakesthekeytype_Op t69;
-    HeroStr t70;
-    HeroMapHeader * t71;
-    HeroMapHeader * t72;
-    h_fixedbugs429amapindexliteraltakesthekeytype_Op t73;
-    h_0opt_f87774a t74;
-    h_0opt_f87774a t75;
-    int64_t t76;
-    int64_t t77;
-    bool t78;
-    h_0opt_f87774a t79;
-    HeroFailure t80;
-    h_0opt_f87774a t81;
-    HeroStr t82;
-    HeroMapHeader * t83;
-    h_fixedbugs429amapindexliteraltakesthekeytype_Op t84;
-    h_0opt_f87774a t85;
-    h_0opt_f87774a t86;
-    int64_t t87;
-    int64_t t88;
-    bool t89;
-    int64_t t90;
-    HeroStr t91;
-    HeroMapHeader * t92;
-    HeroMapHeader * t93;
-    int64_t t94;
-    h_0opt_f87774a t95;
-    h_0opt_f87774a t96;
-    int64_t t97;
-    int64_t t98;
-    bool t99;
-    h_0opt_f87774a t100;
-    HeroFailure t101;
-    h_0opt_f87774a t102;
-    HeroStr t103;
-    uint8_t t104;
-    uint8_t t105;
-    uint8_t t106;
-    HeroArrayHeader * t107;
-    HeroArrayHeader * t108;
-    int64_t t109;
-    uint8_t t110;
-    HeroStr t111;
-    HeroStr t112;
-    int64_t t113;
-    uint8_t t114;
-    HeroMapHeader * t115;
-    HeroMapHeader * t116;
-    h_0opt_f87774a t117;
-    h_0opt_f87774a t118;
-    h_0opt_f87774a t119;
-    h_0opt_f87774a t120;
-    h_0opt_f87774a t121;
-    h_0opt_f87774a t122;
-    HeroStr t123;
-    HeroStr t124;
-    HeroMapHeader * t125;
-    HeroMapHeader * t126;
-    h_0opt_f87774a t127;
-    h_0opt_f87774a t128;
-    HeroMapHeader * t129;
-    h_fixedbugs429amapindexliteraltakesthekeytype_Holder t130;
-    h_fixedbugs429amapindexliteraltakesthekeytype_Holder t131;
-    h_0opt_f87774a t132;
-    h_0opt_f87774a t133;
-    HeroMapHeader * t134;
-    HeroMapHeader * t135;
-    h_0opt_f87774a t136;
-    h_0opt_f87774a t137;
-    h_0opt_f87774a t138;
-    h_0opt_f87774a t139;
-    HeroMapHeader * t140;
-    HeroMapHeader * t141;
-    h_0opt_f87774a t142;
-    h_0opt_f87774a t143;
-    HeroArrayHeader * t144;
-    HeroArrayHeader * t145;
-    HeroStr t146;
-    goto bb0;
+#line 21 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
+    HeroMapHeader * h0_names = {0}; h_0opt_f87774a h1_f0 = {0}; h_0opt_f87774a h2_f1 = {0}; h_0opt_f87774a h3_f2 = {0}; HeroStr h4_r0 = {0}; HeroMapHeader * h5_low = {0}; h_0opt_f87774a h6_f3 = {0}; h_fixedbugs429amapindexliteraltakesthekeytype_Holder h7_h = {0}; h_0opt_f87774a h8_f4 = {0}; HeroMapHeader * h9_ops = {0}; h_0opt_f87774a h10_f5 = {0}; h_0opt_f87774a h11_f6 = {0}; HeroMapHeader * h12_wide = {0}; h_0opt_f87774a h13_f7 = {0}; HeroArrayHeader * h14_xs = {0}; HeroStr h15_s = {0}; HeroMapHeader * h16_own16 = {0}; h_0opt_f87774a h17_own17 = {0}; h_0opt_f87774a h18_own18 = {0}; h_0opt_f87774a h19_own19 = {0}; HeroMapHeader * h20_own20 = {0}; h_0opt_f87774a h21_own21 = {0}; HeroMapHeader * h22_own22 = {0}; h_fixedbugs429amapindexliteraltakesthekeytype_Holder h23_own23 = {0}; h_0opt_f87774a h24_own24 = {0}; HeroMapHeader * h25_own25 = {0}; h_0opt_f87774a h26_own26 = {0}; h_0opt_f87774a h27_own27 = {0}; HeroMapHeader * h28_own28 = {0}; h_0opt_f87774a h29_own29 = {0}; HeroArrayHeader * h30_own30 = {0}; uint8_t t1; HeroStr t2; HeroMapHeader * t3; HeroMapHeader * t4; uint8_t t5; h_0opt_f87774a t6; h_0opt_f87774a t7; int64_t t8; int64_t t9; bool t10; h_0opt_f87774a t11; HeroFailure t12; h_0opt_f87774a t13; HeroStr t14; uint8_t t15; HeroStr t16; HeroMapHeader * t17; uint8_t t18; h_0opt_f87774a t19; h_0opt_f87774a t20; int64_t t21; int64_t t22; bool t23; h_0opt_f87774a t24; HeroFailure t25; h_0opt_f87774a t26; HeroStr t27; HeroMapHeader * t28; uint8_t t29; h_0opt_f87774a t30; h_0opt_f87774a t31; int64_t t32; int64_t t33; bool t34; h_0opt_f87774a t35; HeroStr t36; HeroStr t37; HeroStr t38; int8_t t39; HeroStr t40; HeroMapHeader * t41; HeroMapHeader * t42; int8_t t43; h_0opt_f87774a t44; h_0opt_f87774a t45; int64_t t46; int64_t t47; bool t48; h_0opt_f87774a t49; HeroFailure t50; h_0opt_f87774a t51; HeroStr t52; uint16_t t53; HeroStr t54; HeroMapHeader * t55; h_fixedbugs429amapindexliteraltakesthekeytype_Holder t56; h_fixedbugs429amapindexliteraltakesthekeytype_Holder t57; HeroMapHeader * t58; uint16_t t59; h_0opt_f87774a t60; h_0opt_f87774a t61; int64_t t62; int64_t t63; bool t64; h_0opt_f87774a t65; HeroFailure t66; h_0opt_f87774a t67; HeroStr t68; h_fixedbugs429amapindexliteraltakesthekeytype_Op t69; HeroStr t70; HeroMapHeader * t71; HeroMapHeader * t72; h_fixedbugs429amapindexliteraltakesthekeytype_Op t73; h_0opt_f87774a t74; h_0opt_f87774a t75; int64_t t76; int64_t t77; bool t78; h_0opt_f87774a t79; HeroFailure t80; h_0opt_f87774a t81; HeroStr t82; HeroMapHeader * t83; h_fixedbugs429amapindexliteraltakesthekeytype_Op t84; h_0opt_f87774a t85; h_0opt_f87774a t86; int64_t t87; int64_t t88; bool t89; int64_t t90; HeroStr t91; HeroMapHeader * t92; HeroMapHeader * t93; int64_t t94; h_0opt_f87774a t95; h_0opt_f87774a t96; int64_t t97; int64_t t98; bool t99; h_0opt_f87774a t100; HeroFailure t101; h_0opt_f87774a t102; HeroStr t103; uint8_t t104; uint8_t t105; uint8_t t106; HeroArrayHeader * t107; HeroArrayHeader * t108; int64_t t109; uint8_t t110; HeroStr t111; HeroStr t112; int64_t t113; uint8_t t114; HeroMapHeader * t115; HeroMapHeader * t116; h_0opt_f87774a t117; h_0opt_f87774a t118; h_0opt_f87774a t119; h_0opt_f87774a t120; h_0opt_f87774a t121; h_0opt_f87774a t122; HeroStr t123; HeroStr t124; HeroMapHeader * t125; HeroMapHeader * t126; h_0opt_f87774a t127; h_0opt_f87774a t128; HeroMapHeader * t129; h_fixedbugs429amapindexliteraltakesthekeytype_Holder t130; h_fixedbugs429amapindexliteraltakesthekeytype_Holder t131; h_0opt_f87774a t132; h_0opt_f87774a t133; HeroMapHeader * t134; HeroMapHeader * t135; h_0opt_f87774a t136; h_0opt_f87774a t137; h_0opt_f87774a t138; h_0opt_f87774a t139; HeroMapHeader * t140; HeroMapHeader * t141; h_0opt_f87774a t142; h_0opt_f87774a t143; HeroArrayHeader * t144; HeroArrayHeader * t145; HeroStr t146; goto bb0;
+#line 21 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
 bb0:
-#line 22 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
     t1 = UINT64_C(11);
 #line 22 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
     t2 = HERO_STR_LIT(hero_str_30a26e1a);
@@ -449,7 +272,7 @@ bb2:
     t11 = h1_f0;
 #line 23 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
     t12 = t11.as.err;
-#line 453 "fixedbugs429amapindexliteraltakesthekeytype.c"
+#line 276 "fixedbugs429amapindexliteraltakesthekeytype.c"
     hero_panic_must(t12);
     hero_unreachable();
 bb3:
@@ -512,7 +335,7 @@ bb4:
     t24 = h2_f1;
 #line 25 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
     t25 = t24.as.err;
-#line 516 "fixedbugs429amapindexliteraltakesthekeytype.c"
+#line 339 "fixedbugs429amapindexliteraltakesthekeytype.c"
     hero_panic_must(t25);
     hero_unreachable();
 bb5:
@@ -712,7 +535,7 @@ bb9:
     t49 = h6_f3;
 #line 28 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
     t50 = t49.as.err;
-#line 716 "fixedbugs429amapindexliteraltakesthekeytype.c"
+#line 539 "fixedbugs429amapindexliteraltakesthekeytype.c"
     hero_panic_must(t50);
     hero_unreachable();
 bb10:
@@ -796,7 +619,7 @@ bb11:
     t65 = h8_f4;
 #line 30 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
     t66 = t65.as.err;
-#line 800 "fixedbugs429amapindexliteraltakesthekeytype.c"
+#line 623 "fixedbugs429amapindexliteraltakesthekeytype.c"
     hero_panic_must(t66);
     hero_unreachable();
 bb12:
@@ -927,7 +750,7 @@ bb13:
     t79 = h10_f5;
 #line 32 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
     t80 = t79.as.err;
-#line 931 "fixedbugs429amapindexliteraltakesthekeytype.c"
+#line 754 "fixedbugs429amapindexliteraltakesthekeytype.c"
     hero_panic_must(t80);
     hero_unreachable();
 bb14:
@@ -993,7 +816,7 @@ bb14:
     hero_print_int(t114);
 #line 39 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
     hero_print_end();
-#line 997 "fixedbugs429amapindexliteraltakesthekeytype.c"
+#line 820 "fixedbugs429amapindexliteraltakesthekeytype.c"
     hero_map_release_at(&h0_names);
     h_0opt_f87774a_release(hero_slot_escape(&h1_f0));
     h_0opt_f87774a_release(hero_slot_escape(&h2_f1));
@@ -1031,7 +854,7 @@ bb15:
     t100 = h13_f7;
 #line 35 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
     t101 = t100.as.err;
-#line 1035 "fixedbugs429amapindexliteraltakesthekeytype.c"
+#line 858 "fixedbugs429amapindexliteraltakesthekeytype.c"
     hero_panic_must(t101);
     hero_unreachable();
 }

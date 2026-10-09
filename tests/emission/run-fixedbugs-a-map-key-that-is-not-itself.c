@@ -105,46 +105,9 @@ HERO_TU_LOCAL bool h_fixedbugsamapkeythatisnotitself_same_1ad16c(HeroArrayHeader
 
 #line 73 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
 void h_fixedbugsamapkeythatisnotitself_main(void) {
-#line 109 "fixedbugsamapkeythatisnotitself.c"
-    HeroArrayHeader * h0_ks = {0};
-    HeroArrayHeader * h1_vs = {0};
-    HeroArrayHeader * h2_own2 = {0};
-    HeroArrayHeader * h3_own3 = {0};
-    double t1;
-    double t2;
-    double t3;
-    double t4;
-    double t5;
-    double t6;
-    double t7;
-    HeroArrayHeader * t8;
-    int64_t t9;
-    int64_t t10;
-    int64_t t11;
-    HeroArrayHeader * t12;
-    HeroArrayHeader * t13;
-    HeroArrayHeader * t14;
-    int64_t t15;
-    HeroArrayHeader * t16;
-    HeroArrayHeader * t17;
-    double t18;
-    int64_t t19;
-    HeroArrayHeader * t20;
-    HeroArrayHeader * t21;
-    double t22;
-    int64_t t23;
-    HeroArrayHeader * t24;
-    HeroArrayHeader * t25;
-    double t26;
-    bool t27;
-    HeroArrayHeader * t28;
-    HeroArrayHeader * t29;
-    bool t30;
-    HeroArrayHeader * t31;
-    HeroArrayHeader * t32;
-    HeroArrayHeader * t33;
-    HeroArrayHeader * t34;
-    goto bb0;
+#line 73 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+    HeroArrayHeader * h0_ks = {0}; HeroArrayHeader * h1_vs = {0}; HeroArrayHeader * h2_own2 = {0}; HeroArrayHeader * h3_own3 = {0}; double t1; double t2; double t3; double t4; double t5; double t6; double t7; HeroArrayHeader * t8; int64_t t9; int64_t t10; int64_t t11; HeroArrayHeader * t12; HeroArrayHeader * t13; HeroArrayHeader * t14; int64_t t15; HeroArrayHeader * t16; HeroArrayHeader * t17; double t18; int64_t t19; HeroArrayHeader * t20; HeroArrayHeader * t21; double t22; int64_t t23; HeroArrayHeader * t24; HeroArrayHeader * t25; double t26; bool t27; HeroArrayHeader * t28; HeroArrayHeader * t29; bool t30; HeroArrayHeader * t31; HeroArrayHeader * t32; HeroArrayHeader * t33; HeroArrayHeader * t34; goto bb0;
+#line 73 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
 bb0:
 #line 88 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t1 = 0x1.8p+0;
@@ -262,7 +225,7 @@ bb0:
     hero_print_bool(t30);
 #line 100 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     hero_print_end();
-#line 266 "fixedbugsamapkeythatisnotitself.c"
+#line 229 "fixedbugsamapkeythatisnotitself.c"
     hero_array_release_at(&h0_ks);
     hero_array_release_at(&h1_vs);
     hero_array_release_at(&h2_own2);
@@ -274,32 +237,10 @@ bb0:
 /* keyed<f64> */
 #line 31 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
 HERO_TU_LOCAL int64_t h_fixedbugsamapkeythatisnotitself_keyed_1ad16c(HeroArrayHeader * h0_ks, HeroArrayHeader * h1_vs) {
-#line 278 "fixedbugsamapkeythatisnotitself.c"
-    HeroMapHeader * h2_m = {0};
-    int64_t h3_i;
-    HeroMapHeader * h4_own4 = {0};
-    HeroMapHeader * t1;
-    int64_t t2;
-    int64_t t3;
-    HeroArrayHeader * t4;
-    int64_t t5;
-    bool t6;
-    HeroArrayHeader * t7;
-    int64_t t8;
-    double t9;
-    HeroArrayHeader * t10;
-    int64_t t11;
-    int64_t t12;
-    int64_t t13;
-    int64_t t14;
-    int64_t t15;
-    HeroMapHeader * t16;
-    int64_t t17;
-    HeroMapHeader * t18;
-    HeroMapHeader * t19;
-    goto bb0;
+#line 31 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+    HeroMapHeader * h2_m = {0}; int64_t h3_i; HeroMapHeader * h4_own4 = {0}; HeroMapHeader * t1; int64_t t2; int64_t t3; HeroArrayHeader * t4; int64_t t5; bool t6; HeroArrayHeader * t7; int64_t t8; double t9; HeroArrayHeader * t10; int64_t t11; int64_t t12; int64_t t13; int64_t t14; int64_t t15; HeroMapHeader * t16; int64_t t17; HeroMapHeader * t18; HeroMapHeader * t19; goto bb0;
+#line 31 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
 bb0:
-#line 32 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t1 = hero_map_new(&hero_desc_f64, &hero_desc_int, 0);
 #line 32 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t18 = h4_own4;
@@ -362,7 +303,7 @@ bb3:
     t16 = h2_m;
 #line 39 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t17 = hero_map_len(t16);
-#line 366 "fixedbugsamapkeythatisnotitself.c"
+#line 307 "fixedbugsamapkeythatisnotitself.c"
     hero_map_release_at(&h2_m);
     hero_map_release_at(&h4_own4);
     return t17;
@@ -372,46 +313,10 @@ bb3:
 /* found<f64> */
 #line 41 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
 HERO_TU_LOCAL int64_t h_fixedbugsamapkeythatisnotitself_found_1ad16c(HeroArrayHeader * h0_ks, HeroArrayHeader * h1_vs, double h2_want) {
-#line 376 "fixedbugsamapkeythatisnotitself.c"
-    HeroMapHeader * h3_m = {0};
-    int64_t h4_i;
-    h_0opt_e201354 h5_f0 = {0};
-    int64_t h6_r0;
-    HeroMapHeader * h7_own7 = {0};
-    h_0opt_e201354 h8_own8 = {0};
-    HeroMapHeader * t1;
-    int64_t t2;
-    int64_t t3;
-    HeroArrayHeader * t4;
-    int64_t t5;
-    bool t6;
-    HeroArrayHeader * t7;
-    int64_t t8;
-    double t9;
-    HeroArrayHeader * t10;
-    int64_t t11;
-    int64_t t12;
-    int64_t t13;
-    int64_t t14;
-    int64_t t15;
-    HeroMapHeader * t16;
-    double t17;
-    h_0opt_e201354 t18;
-    h_0opt_e201354 t19;
-    int64_t t20;
-    int64_t t21;
-    bool t22;
-    h_0opt_e201354 t23;
-    int64_t t24;
-    int64_t t25;
-    int64_t t26;
-    HeroMapHeader * t27;
-    HeroMapHeader * t28;
-    h_0opt_e201354 t29;
-    h_0opt_e201354 t30;
-    goto bb0;
+#line 41 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+    HeroMapHeader * h3_m = {0}; int64_t h4_i; h_0opt_e201354 h5_f0 = {0}; int64_t h6_r0; HeroMapHeader * h7_own7 = {0}; h_0opt_e201354 h8_own8 = {0}; HeroMapHeader * t1; int64_t t2; int64_t t3; HeroArrayHeader * t4; int64_t t5; bool t6; HeroArrayHeader * t7; int64_t t8; double t9; HeroArrayHeader * t10; int64_t t11; int64_t t12; int64_t t13; int64_t t14; int64_t t15; HeroMapHeader * t16; double t17; h_0opt_e201354 t18; h_0opt_e201354 t19; int64_t t20; int64_t t21; bool t22; h_0opt_e201354 t23; int64_t t24; int64_t t25; int64_t t26; HeroMapHeader * t27; HeroMapHeader * t28; h_0opt_e201354 t29; h_0opt_e201354 t30; goto bb0;
+#line 41 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
 bb0:
-#line 42 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t1 = hero_map_new(&hero_desc_f64, &hero_desc_int, 0);
 #line 42 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t27 = h7_own7;
@@ -538,7 +443,7 @@ bb5:
 bb6:
 #line 49 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t26 = h6_r0;
-#line 542 "fixedbugsamapkeythatisnotitself.c"
+#line 447 "fixedbugsamapkeythatisnotitself.c"
     hero_map_release_at(&h3_m);
     h_0opt_e201354_release(hero_slot_escape(&h5_f0));
     hero_map_release_at(&h7_own7);
@@ -550,41 +455,10 @@ bb6:
 /* missing<f64> */
 #line 51 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
 HERO_TU_LOCAL bool h_fixedbugsamapkeythatisnotitself_missing_1ad16c(HeroArrayHeader * h0_ks, HeroArrayHeader * h1_vs, double h2_want) {
-#line 554 "fixedbugsamapkeythatisnotitself.c"
-    HeroMapHeader * h3_m = {0};
-    int64_t h4_i;
-    h_0opt_e201354 h5_f0 = {0};
-    HeroMapHeader * h6_own6 = {0};
-    h_0opt_e201354 h7_own7 = {0};
-    HeroMapHeader * t1;
-    int64_t t2;
-    int64_t t3;
-    HeroArrayHeader * t4;
-    int64_t t5;
-    bool t6;
-    HeroArrayHeader * t7;
-    int64_t t8;
-    double t9;
-    HeroArrayHeader * t10;
-    int64_t t11;
-    int64_t t12;
-    int64_t t13;
-    int64_t t14;
-    int64_t t15;
-    HeroMapHeader * t16;
-    double t17;
-    h_0opt_e201354 t18;
-    h_0opt_e201354 t19;
-    int64_t t20;
-    int64_t t21;
-    bool t22;
-    HeroMapHeader * t23;
-    HeroMapHeader * t24;
-    h_0opt_e201354 t25;
-    h_0opt_e201354 t26;
-    goto bb0;
+#line 51 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+    HeroMapHeader * h3_m = {0}; int64_t h4_i; h_0opt_e201354 h5_f0 = {0}; HeroMapHeader * h6_own6 = {0}; h_0opt_e201354 h7_own7 = {0}; HeroMapHeader * t1; int64_t t2; int64_t t3; HeroArrayHeader * t4; int64_t t5; bool t6; HeroArrayHeader * t7; int64_t t8; double t9; HeroArrayHeader * t10; int64_t t11; int64_t t12; int64_t t13; int64_t t14; int64_t t15; HeroMapHeader * t16; double t17; h_0opt_e201354 t18; h_0opt_e201354 t19; int64_t t20; int64_t t21; bool t22; HeroMapHeader * t23; HeroMapHeader * t24; h_0opt_e201354 t25; h_0opt_e201354 t26; goto bb0;
+#line 51 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
 bb0:
-#line 52 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t1 = hero_map_new(&hero_desc_f64, &hero_desc_int, 0);
 #line 52 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t23 = h6_own6;
@@ -687,7 +561,7 @@ bb3:
     t21 = INT64_C(1);
 #line 59 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t22 = t20 == t21;
-#line 691 "fixedbugsamapkeythatisnotitself.c"
+#line 565 "fixedbugsamapkeythatisnotitself.c"
     hero_map_release_at(&h3_m);
     h_0opt_e201354_release(hero_slot_escape(&h5_f0));
     hero_map_release_at(&h6_own6);
@@ -699,44 +573,10 @@ bb3:
 /* same<f64> */
 #line 61 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
 HERO_TU_LOCAL bool h_fixedbugsamapkeythatisnotitself_same_1ad16c(HeroArrayHeader * h0_ks, HeroArrayHeader * h1_vs) {
-#line 703 "fixedbugsamapkeythatisnotitself.c"
-    HeroMapHeader * h2_a = {0};
-    HeroMapHeader * h3_b = {0};
-    int64_t h4_i;
-    HeroMapHeader * h5_own5 = {0};
-    HeroMapHeader * h6_own6 = {0};
-    HeroMapHeader * t1;
-    HeroMapHeader * t2;
-    int64_t t3;
-    int64_t t4;
-    HeroArrayHeader * t5;
-    int64_t t6;
-    bool t7;
-    HeroArrayHeader * t8;
-    int64_t t9;
-    double t10;
-    HeroArrayHeader * t11;
-    int64_t t12;
-    int64_t t13;
-    HeroArrayHeader * t14;
-    int64_t t15;
-    double t16;
-    HeroArrayHeader * t17;
-    int64_t t18;
-    int64_t t19;
-    int64_t t20;
-    int64_t t21;
-    int64_t t22;
-    HeroMapHeader * t23;
-    HeroMapHeader * t24;
-    bool t25;
-    HeroMapHeader * t26;
-    HeroMapHeader * t27;
-    HeroMapHeader * t28;
-    HeroMapHeader * t29;
-    goto bb0;
+#line 61 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
+    HeroMapHeader * h2_a = {0}; HeroMapHeader * h3_b = {0}; int64_t h4_i; HeroMapHeader * h5_own5 = {0}; HeroMapHeader * h6_own6 = {0}; HeroMapHeader * t1; HeroMapHeader * t2; int64_t t3; int64_t t4; HeroArrayHeader * t5; int64_t t6; bool t7; HeroArrayHeader * t8; int64_t t9; double t10; HeroArrayHeader * t11; int64_t t12; int64_t t13; HeroArrayHeader * t14; int64_t t15; double t16; HeroArrayHeader * t17; int64_t t18; int64_t t19; int64_t t20; int64_t t21; int64_t t22; HeroMapHeader * t23; HeroMapHeader * t24; bool t25; HeroMapHeader * t26; HeroMapHeader * t27; HeroMapHeader * t28; HeroMapHeader * t29; goto bb0;
+#line 61 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
 bb0:
-#line 62 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t1 = hero_map_new(&hero_desc_f64, &hero_desc_int, 0);
 #line 62 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t26 = h5_own5;
@@ -829,7 +669,7 @@ bb3:
     t24 = h3_b;
 #line 71 "tests/golden/run/fixedbugs-a-map-key-that-is-not-itself.hero"
     t25 = hero_map_eq(t23, t24);
-#line 833 "fixedbugsamapkeythatisnotitself.c"
+#line 673 "fixedbugsamapkeythatisnotitself.c"
     hero_map_release_at(&h2_a);
     hero_map_release_at(&h3_b);
     hero_map_release_at(&h5_own5);

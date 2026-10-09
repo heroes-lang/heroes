@@ -103,17 +103,10 @@ void h_ffiaconstructionnamesonememberofauniontype_main(void);
 
 #line 16 "tests/golden/run/ffi-a-construction-names-one-member-of-a-union-type.hero"
 void h_ffiaconstructionnamesonememberofauniontype_main(void) {
-#line 107 "ffiaconstructionnamesonememberofauniontype.c"
-    UT h0_u;
-    float t1;
-    UT t2;
-    UT t3;
-    int32_t t4;
-    UT t5;
-    int32_t t6;
-    goto bb0;
+#line 16 "tests/golden/run/ffi-a-construction-names-one-member-of-a-union-type.hero"
+    UT h0_u; float t1; UT t2; UT t3; int32_t t4; UT t5; int32_t t6; goto bb0;
+#line 16 "tests/golden/run/ffi-a-construction-names-one-member-of-a-union-type.hero"
 bb0:
-#line 17 "tests/golden/run/ffi-a-construction-names-one-member-of-a-union-type.hero"
     t1 = 0x1.8p+0;
 #line 17 "tests/golden/run/ffi-a-construction-names-one-member-of-a-union-type.hero"
     t2 = (UT){.f = t1};
@@ -135,7 +128,7 @@ bb0:
     hero_print_end();
 #line 19 "tests/golden/run/ffi-a-construction-names-one-member-of-a-union-type.hero"
     return;
-#line 139 "ffiaconstructionnamesonememberofauniontype.c"
+#line 132 "ffiaconstructionnamesonememberofauniontype.c"
 }
 HERO_TU_LOCAL bool h_ffiaconstructionnamesonememberofauniontype_UT_eq(const UT *a, const UT *b) {
     if (!(a->i == b->i)) return false;

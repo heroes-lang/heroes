@@ -105,23 +105,10 @@ void h_handlealiveafteranendinonearm_main(void);
 
 #line 15 "tests/golden/run/handle-alive-after-an-end-in-one-arm.hero"
 void h_handlealiveafteranendinonearm_main(void) {
-#line 109 "handlealiveafteranendinonearm.c"
-    node * h0_n;
-    int64_t t1;
-    node * t2;
-    node * t3;
-    int64_t t4;
-    int64_t t5;
-    bool t6;
-    node * t7;
-    HeroStr t8;
-    HeroStr t9;
-    node * t10;
-    int64_t t11;
-    node * t12;
-    goto bb0;
+#line 15 "tests/golden/run/handle-alive-after-an-end-in-one-arm.hero"
+    node * h0_n; int64_t t1; node * t2; node * t3; int64_t t4; int64_t t5; bool t6; node * t7; HeroStr t8; HeroStr t9; node * t10; int64_t t11; node * t12; goto bb0;
+#line 15 "tests/golden/run/handle-alive-after-an-end-in-one-arm.hero"
 bb0:
-#line 16 "tests/golden/run/handle-alive-after-an-end-in-one-arm.hero"
     t1 = INT64_C(7);
 #line 16 "tests/golden/run/handle-alive-after-an-end-in-one-arm.hero"
     t2 = node_new(t1);
@@ -199,7 +186,7 @@ bb2:
 bb3:
 #line 20 "tests/golden/run/handle-alive-after-an-end-in-one-arm.hero"
     goto bb1;
-#line 203 "handlealiveafteranendinonearm.c"
+#line 190 "handlealiveafteranendinonearm.c"
 }
 HERO_TU_LOCAL bool h_handlealiveafteranendinonearm_Node_eq(node * const *a, node * const *b) {
     return hero_handle_eq(*a, *b);

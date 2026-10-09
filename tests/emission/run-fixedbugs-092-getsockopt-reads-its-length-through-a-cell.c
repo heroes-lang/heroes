@@ -157,82 +157,14 @@ int64_t h_fixedbugs092getsockoptreadsitslengththroughacell_SO_LINGER(void) {
 
 #line 20 "tests/golden/run/fixedbugs-092-getsockopt-reads-its-length-through-a-cell.hero"
 void h_fixedbugs092getsockoptreadsitslengththroughacell_main(void) {
-#line 161 "fixedbugs092getsockoptreadsitslengththroughacell.c"
-    h_0opt_e1f4933 h0_f0 = {0};
-    h_0opt_e1f4933 h1_f1 = {0};
-    int32_t h2_fd;
-    struct linger *const hero_lend_h3_l = (struct linger *)hero_lend_local(sizeof(struct linger), "fixedbugs092getsockoptreadsitslengththroughacell.main", "l");
+#line 20 "tests/golden/run/fixedbugs-092-getsockopt-reads-its-length-through-a-cell.hero"
 #define h3_l (*hero_lend_h3_l)
-    uint32_t *const hero_lend_h4_n = (uint32_t *)hero_lend_local(sizeof(uint32_t), "fixedbugs092getsockoptreadsitslengththroughacell.main", "n");
+#line 20 "tests/golden/run/fixedbugs-092-getsockopt-reads-its-length-through-a-cell.hero"
 #define h4_n (*hero_lend_h4_n)
-    h_0opt_e1f4933 h5_f2 = {0};
-    h_0opt_e1f4933 h6_f3 = {0};
-    h_0opt_e1f4933 h7_own7 = {0};
-    h_0opt_e1f4933 h8_own8 = {0};
-    h_0opt_e1f4933 h9_own9 = {0};
-    h_0opt_e1f4933 h10_own10 = {0};
-    int64_t t1;
-    h_0opt_e1f4933 t2;
-    h_0opt_e1f4933 t3;
-    int64_t t4;
-    int64_t t5;
-    bool t6;
-    h_0opt_e1f4933 t7;
-    HeroFailure t8;
-    h_0opt_e1f4933 t9;
-    int32_t t10;
-    int64_t t11;
-    h_0opt_e1f4933 t12;
-    h_0opt_e1f4933 t13;
-    int64_t t14;
-    int64_t t15;
-    bool t16;
-    h_0opt_e1f4933 t17;
-    HeroFailure t18;
-    h_0opt_e1f4933 t19;
-    int32_t t20;
-    int32_t t21;
-    int32_t t22;
-    int32_t t23;
-    int32_t t24;
-    struct linger t25;
-    uint32_t t26;
-    int32_t t27;
-    int64_t t28;
-    h_0opt_e1f4933 t29;
-    h_0opt_e1f4933 t30;
-    int64_t t31;
-    int64_t t32;
-    bool t33;
-    h_0opt_e1f4933 t34;
-    HeroFailure t35;
-    h_0opt_e1f4933 t36;
-    int32_t t37;
-    int64_t t38;
-    h_0opt_e1f4933 t39;
-    h_0opt_e1f4933 t40;
-    int64_t t41;
-    int64_t t42;
-    bool t43;
-    h_0opt_e1f4933 t44;
-    HeroFailure t45;
-    h_0opt_e1f4933 t46;
-    int32_t t47;
-    int32_t t48;
-    struct linger t49;
-    int32_t t50;
-    uint32_t t51;
-    h_0opt_e1f4933 t52;
-    h_0opt_e1f4933 t53;
-    h_0opt_e1f4933 t54;
-    h_0opt_e1f4933 t55;
-    h_0opt_e1f4933 t56;
-    h_0opt_e1f4933 t57;
-    h_0opt_e1f4933 t58;
-    h_0opt_e1f4933 t59;
-    goto bb0;
+#line 20 "tests/golden/run/fixedbugs-092-getsockopt-reads-its-length-through-a-cell.hero"
+    h_0opt_e1f4933 h0_f0 = {0}; h_0opt_e1f4933 h1_f1 = {0}; int32_t h2_fd; struct linger *const hero_lend_h3_l = (struct linger *)hero_lend_local(sizeof(struct linger), "fixedbugs092getsockoptreadsitslengththroughacell.main", "l"); uint32_t *const hero_lend_h4_n = (uint32_t *)hero_lend_local(sizeof(uint32_t), "fixedbugs092getsockoptreadsitslengththroughacell.main", "n"); h_0opt_e1f4933 h5_f2 = {0}; h_0opt_e1f4933 h6_f3 = {0}; h_0opt_e1f4933 h7_own7 = {0}; h_0opt_e1f4933 h8_own8 = {0}; h_0opt_e1f4933 h9_own9 = {0}; h_0opt_e1f4933 h10_own10 = {0}; int64_t t1; h_0opt_e1f4933 t2; h_0opt_e1f4933 t3; int64_t t4; int64_t t5; bool t6; h_0opt_e1f4933 t7; HeroFailure t8; h_0opt_e1f4933 t9; int32_t t10; int64_t t11; h_0opt_e1f4933 t12; h_0opt_e1f4933 t13; int64_t t14; int64_t t15; bool t16; h_0opt_e1f4933 t17; HeroFailure t18; h_0opt_e1f4933 t19; int32_t t20; int32_t t21; int32_t t22; int32_t t23; int32_t t24; struct linger t25; uint32_t t26; int32_t t27; int64_t t28; h_0opt_e1f4933 t29; h_0opt_e1f4933 t30; int64_t t31; int64_t t32; bool t33; h_0opt_e1f4933 t34; HeroFailure t35; h_0opt_e1f4933 t36; int32_t t37; int64_t t38; h_0opt_e1f4933 t39; h_0opt_e1f4933 t40; int64_t t41; int64_t t42; bool t43; h_0opt_e1f4933 t44; HeroFailure t45; h_0opt_e1f4933 t46; int32_t t47; int32_t t48; struct linger t49; int32_t t50; uint32_t t51; h_0opt_e1f4933 t52; h_0opt_e1f4933 t53; h_0opt_e1f4933 t54; h_0opt_e1f4933 t55; h_0opt_e1f4933 t56; h_0opt_e1f4933 t57; h_0opt_e1f4933 t58; h_0opt_e1f4933 t59; goto bb0;
+#line 20 "tests/golden/run/fixedbugs-092-getsockopt-reads-its-length-through-a-cell.hero"
 bb0:
-#line 21 "tests/golden/run/fixedbugs-092-getsockopt-reads-its-length-through-a-cell.hero"
     t1 = h_fixedbugs092getsockoptreadsitslengththroughacell_AF_UNIX();
 #line 21 "tests/golden/run/fixedbugs-092-getsockopt-reads-its-length-through-a-cell.hero"
     if (t1 >= -2147483648LL && t1 <= 2147483647LL) {
@@ -316,7 +248,7 @@ bb2:
     t7 = h0_f0;
 #line 21 "tests/golden/run/fixedbugs-092-getsockopt-reads-its-length-through-a-cell.hero"
     t8 = t7.as.err;
-#line 320 "fixedbugs092getsockoptreadsitslengththroughacell.c"
+#line 252 "fixedbugs092getsockoptreadsitslengththroughacell.c"
     hero_panic_must(t8);
     hero_unreachable();
 bb3:
@@ -383,7 +315,7 @@ bb4:
     t17 = h1_f1;
 #line 21 "tests/golden/run/fixedbugs-092-getsockopt-reads-its-length-through-a-cell.hero"
     t18 = t17.as.err;
-#line 387 "fixedbugs092getsockoptreadsitslengththroughacell.c"
+#line 319 "fixedbugs092getsockoptreadsitslengththroughacell.c"
     hero_panic_must(t18);
     hero_unreachable();
 bb5:
@@ -433,7 +365,7 @@ bb6:
     t34 = h5_f2;
 #line 24 "tests/golden/run/fixedbugs-092-getsockopt-reads-its-length-through-a-cell.hero"
     t35 = t34.as.err;
-#line 437 "fixedbugs092getsockoptreadsitslengththroughacell.c"
+#line 369 "fixedbugs092getsockoptreadsitslengththroughacell.c"
     hero_panic_must(t35);
     hero_unreachable();
 bb7:
@@ -465,7 +397,7 @@ bb7:
     hero_print_int(t51);
 #line 26 "tests/golden/run/fixedbugs-092-getsockopt-reads-its-length-through-a-cell.hero"
     hero_print_end();
-#line 469 "fixedbugs092getsockoptreadsitslengththroughacell.c"
+#line 401 "fixedbugs092getsockoptreadsitslengththroughacell.c"
     h_0opt_e1f4933_release(hero_slot_escape(&h0_f0));
     h_0opt_e1f4933_release(hero_slot_escape(&h1_f1));
     h_0opt_e1f4933_release(hero_slot_escape(&h5_f2));
@@ -482,7 +414,7 @@ bb8:
     t44 = h6_f3;
 #line 24 "tests/golden/run/fixedbugs-092-getsockopt-reads-its-length-through-a-cell.hero"
     t45 = t44.as.err;
-#line 486 "fixedbugs092getsockoptreadsitslengththroughacell.c"
+#line 418 "fixedbugs092getsockoptreadsitslengththroughacell.c"
     hero_panic_must(t45);
     hero_unreachable();
 }

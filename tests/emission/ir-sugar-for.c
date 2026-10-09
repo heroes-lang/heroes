@@ -89,32 +89,10 @@ int64_t h_sugarfor_total_of(HeroArrayHeader * h0_xs);
 
 #line 4 "tests/golden/ir/sugar-for.hero"
 int64_t h_sugarfor_total_of(HeroArrayHeader * h0_xs) {
-#line 93 "sugarfor.c"
-    int64_t h1_sum;
-    HeroArrayHeader * h2_xs0 = {0};
-    int64_t h3_i0;
-    int64_t h4_x;
-    int64_t t1;
-    HeroArrayHeader * t2;
-    int64_t t3;
-    int64_t t4;
-    HeroArrayHeader * t5;
-    int64_t t6;
-    bool t7;
-    HeroArrayHeader * t8;
-    int64_t t9;
-    int64_t t10;
-    int64_t t11;
-    int64_t t12;
-    int64_t t13;
-    int64_t t14;
-    int64_t t15;
-    int64_t t16;
-    int64_t t17;
-    HeroArrayHeader * t18;
-    goto bb0;
+#line 4 "tests/golden/ir/sugar-for.hero"
+    int64_t h1_sum; HeroArrayHeader * h2_xs0 = {0}; int64_t h3_i0; int64_t h4_x; int64_t t1; HeroArrayHeader * t2; int64_t t3; int64_t t4; HeroArrayHeader * t5; int64_t t6; bool t7; HeroArrayHeader * t8; int64_t t9; int64_t t10; int64_t t11; int64_t t12; int64_t t13; int64_t t14; int64_t t15; int64_t t16; int64_t t17; HeroArrayHeader * t18; goto bb0;
+#line 4 "tests/golden/ir/sugar-for.hero"
 bb0:
-#line 5 "tests/golden/ir/sugar-for.hero"
     t1 = INT64_C(0);
 #line 5 "tests/golden/ir/sugar-for.hero"
     h1_sum = t1;
@@ -181,7 +159,7 @@ bb3:
 bb4:
 #line 10 "tests/golden/ir/sugar-for.hero"
     t17 = h1_sum;
-#line 185 "sugarfor.c"
+#line 163 "sugarfor.c"
     hero_array_release_at(&h2_xs0);
     return t17;
 }

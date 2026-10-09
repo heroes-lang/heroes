@@ -94,37 +94,10 @@ HeroStr h_coreblocks_named(int64_t h0_n);
 
 #line 5 "tests/golden/ir/core-blocks.hero"
 int64_t h_coreblocks_first_even_after(HeroArrayHeader * h0_xs, int64_t h1_floor) {
-#line 98 "coreblocks.c"
-    int64_t h2_i;
-    int64_t h3_v;
-    int64_t h4_ret0;
-    int64_t t1;
-    int64_t t2;
-    HeroArrayHeader * t3;
-    int64_t t4;
-    bool t5;
-    HeroArrayHeader * t6;
-    int64_t t7;
-    int64_t t8;
-    int64_t t9;
-    int64_t t10;
-    int64_t t11;
-    int64_t t12;
-    int64_t t13;
-    bool t14;
-    int64_t t15;
-    int64_t t16;
-    int64_t t17;
-    int64_t t18;
-    bool t19;
-    int64_t t20;
-    int64_t t21;
-    int64_t t22;
-    int64_t t23;
-    int64_t t24;
-    goto bb0;
+#line 5 "tests/golden/ir/core-blocks.hero"
+    int64_t h2_i; int64_t h3_v; int64_t h4_ret0; int64_t t1; int64_t t2; HeroArrayHeader * t3; int64_t t4; bool t5; HeroArrayHeader * t6; int64_t t7; int64_t t8; int64_t t9; int64_t t10; int64_t t11; int64_t t12; int64_t t13; bool t14; int64_t t15; int64_t t16; int64_t t17; int64_t t18; bool t19; int64_t t20; int64_t t21; int64_t t22; int64_t t23; int64_t t24; goto bb0;
+#line 5 "tests/golden/ir/core-blocks.hero"
 bb0:
-#line 6 "tests/golden/ir/core-blocks.hero"
     t1 = INT64_C(0);
 #line 6 "tests/golden/ir/core-blocks.hero"
     h2_i = t1;
@@ -221,33 +194,17 @@ bb9:
     goto bb7;
 #line 16 "tests/golden/ir/core-blocks.hero"
 bb10:
-#line 225 "coreblocks.c"
+#line 198 "coreblocks.c"
     t24 = h4_ret0;
     return t24;
 }
 
 #line 21 "tests/golden/ir/core-blocks.hero"
 HeroStr h_coreblocks_named(int64_t h0_n) {
-#line 232 "coreblocks.c"
-    int64_t h1_s0;
-    HeroStr h2_r0 = {0};
-    int64_t t1;
-    int64_t t2;
-    int64_t t3;
-    bool t4;
-    int64_t t5;
-    int64_t t6;
-    bool t7;
-    HeroStr t8;
-    HeroStr t9;
-    HeroStr t10;
-    HeroStr t11;
-    HeroStr t12;
-    HeroStr t13;
-    HeroStr t14;
-    goto bb0;
+#line 21 "tests/golden/ir/core-blocks.hero"
+    int64_t h1_s0; HeroStr h2_r0 = {0}; int64_t t1; int64_t t2; int64_t t3; bool t4; int64_t t5; int64_t t6; bool t7; HeroStr t8; HeroStr t9; HeroStr t10; HeroStr t11; HeroStr t12; HeroStr t13; HeroStr t14; goto bb0;
+#line 21 "tests/golden/ir/core-blocks.hero"
 bb0:
-#line 22 "tests/golden/ir/core-blocks.hero"
     t1 = h0_n;
 #line 22 "tests/golden/ir/core-blocks.hero"
     h1_s0 = t1;
@@ -262,7 +219,7 @@ bb0:
 bb1:
 #line 22 "tests/golden/ir/core-blocks.hero"
     t11 = h2_r0;
-#line 266 "coreblocks.c"
+#line 223 "coreblocks.c"
     hero_str_incref(t11);
     hero_str_release_at(&h2_r0);
     return t11;
@@ -321,7 +278,7 @@ bb6:
     hero_str_decref(t14);
 #line 22 "tests/golden/ir/core-blocks.hero"
     goto bb1;
-#line 325 "coreblocks.c"
+#line 282 "coreblocks.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

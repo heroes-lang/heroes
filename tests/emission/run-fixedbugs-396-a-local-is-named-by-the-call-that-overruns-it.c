@@ -99,17 +99,12 @@ void h_fixedbugs396alocalisnamedbythecallthatoverrunsit_main(void);
 
 #line 10 "tests/golden/run/fixedbugs-396-a-local-is-named-by-the-call-that-overruns-it.hero"
 void h_fixedbugs396alocalisnamedbythecallthatoverrunsit_main(void) {
-#line 103 "fixedbugs396alocalisnamedbythecallthatoverrunsit.c"
-    int32_t *const hero_lend_h0_x = (int32_t *)hero_lend_local(sizeof(int32_t), "fixedbugs396alocalisnamedbythecallthatoverrunsit.main", "x");
+#line 10 "tests/golden/run/fixedbugs-396-a-local-is-named-by-the-call-that-overruns-it.hero"
 #define h0_x (*hero_lend_h0_x)
-    int32_t t1;
-    int32_t t2;
-    int32_t t3;
-    HeroStr t4;
-    int32_t t5;
-    goto bb0;
+#line 10 "tests/golden/run/fixedbugs-396-a-local-is-named-by-the-call-that-overruns-it.hero"
+    int32_t *const hero_lend_h0_x = (int32_t *)hero_lend_local(sizeof(int32_t), "fixedbugs396alocalisnamedbythecallthatoverrunsit.main", "x"); int32_t t1; int32_t t2; int32_t t3; HeroStr t4; int32_t t5; goto bb0;
+#line 10 "tests/golden/run/fixedbugs-396-a-local-is-named-by-the-call-that-overruns-it.hero"
 bb0:
-#line 11 "tests/golden/run/fixedbugs-396-a-local-is-named-by-the-call-that-overruns-it.hero"
     t1 = INT64_C(0);
 #line 11 "tests/golden/run/fixedbugs-396-a-local-is-named-by-the-call-that-overruns-it.hero"
     h0_x = t1;
@@ -139,7 +134,7 @@ bb0:
     hero_lend_local_give(hero_lend_h0_x);
 #line 15 "tests/golden/run/fixedbugs-396-a-local-is-named-by-the-call-that-overruns-it.hero"
     return;
-#line 143 "fixedbugs396alocalisnamedbythecallthatoverrunsit.c"
+#line 138 "fixedbugs396alocalisnamedbythecallthatoverrunsit.c"
 }
 #undef h0_x
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {

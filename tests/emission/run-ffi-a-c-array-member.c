@@ -167,43 +167,9 @@ void h_ffiacarraymember_main(void);
 
 #line 81 "tests/golden/run/ffi-a-c-array-member.hero"
 void h_ffiacarraymember_main(void) {
-#line 171 "ffiacarraymember.c"
-    VrDeviceInfo h0_device;
-    VrStereoConfig h1_config;
-    int32_t t1;
-    int32_t t2;
-    float t3;
-    float t4;
-    float t5;
-    float t6;
-    float t7;
-    float t8;
-    float t9;
-    float t10;
-    float t11;
-    float t13;
-    float t14;
-    float t15;
-    float t16;
-    float t17;
-    VrDeviceInfo t19;
-    VrDeviceInfo t20;
-    int64_t t22;
-    float t23;
-    VrDeviceInfo t24;
-    VrStereoConfig t25;
-    VrStereoConfig t26;
-    int64_t t28;
-    float t29;
-    float t30;
-    bool t31;
-    VrStereoConfig t32;
-    int64_t t34;
-    float t35;
-    float t36;
-    bool t37;
-    VrStereoConfig t38;
-    goto bb0;
+#line 81 "tests/golden/run/ffi-a-c-array-member.hero"
+    VrDeviceInfo h0_device; VrStereoConfig h1_config; int32_t t1; int32_t t2; float t3; float t4; float t5; float t6; float t7; float t8; float t9; float t10; float t11; float t13; float t14; float t15; float t16; float t17; VrDeviceInfo t19; VrDeviceInfo t20; int64_t t22; float t23; VrDeviceInfo t24; VrStereoConfig t25; VrStereoConfig t26; int64_t t28; float t29; float t30; bool t31; VrStereoConfig t32; int64_t t34; float t35; float t36; bool t37; VrStereoConfig t38; goto bb0;
+#line 81 "tests/golden/run/ffi-a-c-array-member.hero"
 bb0:
 #line 85 "tests/golden/run/ffi-a-c-array-member.hero"
     t1 = INT64_C(2160);
@@ -284,7 +250,7 @@ bb0:
     (void)UnloadVrStereoConfig(t38);
 #line 101 "tests/golden/run/ffi-a-c-array-member.hero"
     return;
-#line 288 "ffiacarraymember.c"
+#line 254 "ffiacarraymember.c"
 }
 HERO_TU_LOCAL bool h_ffiacarraymember_Matrix_eq(const Matrix *a, const Matrix *b) {
     if (!(a->m0 == b->m0)) return false;

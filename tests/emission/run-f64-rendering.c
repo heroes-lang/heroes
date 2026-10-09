@@ -89,28 +89,10 @@ void h_f64rendering_main(void);
 
 #line 19 "tests/golden/run/f64-rendering.hero"
 void h_f64rendering_main(void) {
-#line 93 "f64rendering.c"
-    HeroStr h0_own0 = {0};
-    double t1;
-    double t2;
-    double t3;
-    double t4;
-    double t5;
-    double t6;
-    double t7;
-    double t8;
-    double t9;
-    double t10;
-    double t11;
-    double t12;
-    double t13;
-    double t14;
-    double t15;
-    HeroStr t16;
-    HeroStr t17;
-    goto bb0;
+#line 19 "tests/golden/run/f64-rendering.hero"
+    HeroStr h0_own0 = {0}; double t1; double t2; double t3; double t4; double t5; double t6; double t7; double t8; double t9; double t10; double t11; double t12; double t13; double t14; double t15; HeroStr t16; HeroStr t17; goto bb0;
+#line 19 "tests/golden/run/f64-rendering.hero"
 bb0:
-#line 20 "tests/golden/run/f64-rendering.hero"
     t1 = 0x1.999999999999ap-4;
 #line 20 "tests/golden/run/f64-rendering.hero"
     hero_print_f64(t1);
@@ -170,7 +152,7 @@ bb0:
     hero_print_str(t16);
 #line 26 "tests/golden/run/f64-rendering.hero"
     hero_print_end();
-#line 174 "f64rendering.c"
+#line 156 "f64rendering.c"
     hero_str_release_at(&h0_own0);
     return;
 }

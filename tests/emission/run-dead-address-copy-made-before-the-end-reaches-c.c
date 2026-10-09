@@ -101,17 +101,10 @@ void h_deadaddresscopymadebeforetheendreachesc_main(void);
 
 #line 21 "tests/golden/run/dead-address-copy-made-before-the-end-reaches-c.hero"
 void h_deadaddresscopymadebeforetheendreachesc_main(void) {
-#line 105 "deadaddresscopymadebeforetheendreachesc.c"
-    node * h0_a;
-    node * h1_keep;
-    node * t1;
-    node * t2;
-    node * t3;
-    node * t4;
-    int64_t t5;
-    goto bb0;
+#line 21 "tests/golden/run/dead-address-copy-made-before-the-end-reaches-c.hero"
+    node * h0_a; node * h1_keep; node * t1; node * t2; node * t3; node * t4; int64_t t5; goto bb0;
+#line 21 "tests/golden/run/dead-address-copy-made-before-the-end-reaches-c.hero"
 bb0:
-#line 22 "tests/golden/run/dead-address-copy-made-before-the-end-reaches-c.hero"
     t1 = node_new();
 #line 22 "tests/golden/run/dead-address-copy-made-before-the-end-reaches-c.hero"
     hero_handle_acquired(t1, "node_free");
@@ -144,7 +137,7 @@ bb0:
     hero_print_end();
 #line 25 "tests/golden/run/dead-address-copy-made-before-the-end-reaches-c.hero"
     return;
-#line 148 "deadaddresscopymadebeforetheendreachesc.c"
+#line 141 "deadaddresscopymadebeforetheendreachesc.c"
 }
 HERO_TU_LOCAL bool h_deadaddresscopymadebeforetheendreachesc_Node_eq(node * const *a, node * const *b) {
     return hero_handle_eq(*a, *b);

@@ -105,26 +105,10 @@ int64_t h_mapaccess_both(HeroMapHeader * h0_scores, HeroArrayHeader * h1_xs);
 
 #line 5 "tests/golden/ir/map-access.hero"
 int64_t h_mapaccess_score_of(HeroMapHeader * h0_scores, HeroStr h1_name) {
-#line 109 "mapaccess.c"
-    h_0opt_e201354 h2_f0 = {0};
-    int64_t h3_r0;
-    h_0opt_e201354 h4_own4 = {0};
-    HeroMapHeader * t1;
-    HeroStr t2;
-    h_0opt_e201354 t3;
-    h_0opt_e201354 t4;
-    int64_t t5;
-    int64_t t6;
-    bool t7;
-    h_0opt_e201354 t8;
-    int64_t t9;
-    int64_t t10;
-    int64_t t11;
-    h_0opt_e201354 t12;
-    h_0opt_e201354 t13;
-    goto bb0;
+#line 5 "tests/golden/ir/map-access.hero"
+    h_0opt_e201354 h2_f0 = {0}; int64_t h3_r0; h_0opt_e201354 h4_own4 = {0}; HeroMapHeader * t1; HeroStr t2; h_0opt_e201354 t3; h_0opt_e201354 t4; int64_t t5; int64_t t6; bool t7; h_0opt_e201354 t8; int64_t t9; int64_t t10; int64_t t11; h_0opt_e201354 t12; h_0opt_e201354 t13; goto bb0;
+#line 5 "tests/golden/ir/map-access.hero"
 bb0:
-#line 6 "tests/golden/ir/map-access.hero"
     t1 = h0_scores;
 #line 6 "tests/golden/ir/map-access.hero"
     t2 = h1_name;
@@ -192,7 +176,7 @@ bb2:
 bb3:
 #line 6 "tests/golden/ir/map-access.hero"
     t11 = h3_r0;
-#line 196 "mapaccess.c"
+#line 180 "mapaccess.c"
     h_0opt_e201354_release(hero_slot_escape(&h2_f0));
     h_0opt_e201354_release(hero_slot_escape(&h4_own4));
     return t11;
@@ -200,13 +184,10 @@ bb3:
 
 #line 8 "tests/golden/ir/map-access.hero"
 int64_t h_mapaccess_first_of(HeroArrayHeader * h0_xs) {
-#line 204 "mapaccess.c"
-    HeroArrayHeader * t1;
-    int64_t t2;
-    int64_t t3;
-    goto bb0;
+#line 8 "tests/golden/ir/map-access.hero"
+    HeroArrayHeader * t1; int64_t t2; int64_t t3; goto bb0;
+#line 8 "tests/golden/ir/map-access.hero"
 bb0:
-#line 9 "tests/golden/ir/map-access.hero"
     t1 = h0_xs;
 #line 9 "tests/golden/ir/map-access.hero"
     t2 = INT64_C(0);
@@ -214,21 +195,15 @@ bb0:
     t3 = ((void)((t1 == NULL || t2 < 0 || t2 >= t1->len) ? ((void)hero_array_at(t1, t2), hero_unreachable()) : (void)0), (void)(t1->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t1 + 1))[t2]);
 #line 9 "tests/golden/ir/map-access.hero"
     return t3;
-#line 218 "mapaccess.c"
+#line 199 "mapaccess.c"
 }
 
 #line 11 "tests/golden/ir/map-access.hero"
 int64_t h_mapaccess_both(HeroMapHeader * h0_scores, HeroArrayHeader * h1_xs) {
-#line 223 "mapaccess.c"
-    HeroMapHeader * t1;
-    HeroStr t2;
-    int64_t t3;
-    HeroArrayHeader * t4;
-    int64_t t5;
-    int64_t t6;
-    goto bb0;
+#line 11 "tests/golden/ir/map-access.hero"
+    HeroMapHeader * t1; HeroStr t2; int64_t t3; HeroArrayHeader * t4; int64_t t5; int64_t t6; goto bb0;
+#line 11 "tests/golden/ir/map-access.hero"
 bb0:
-#line 12 "tests/golden/ir/map-access.hero"
     t1 = h0_scores;
 #line 12 "tests/golden/ir/map-access.hero"
     t2 = HERO_STR_LIT(hero_str_1999f6);
@@ -242,7 +217,7 @@ bb0:
     if (__builtin_add_overflow(t3, t5, &t6)) hero_panic_overflow();
 #line 12 "tests/golden/ir/map-access.hero"
     return t6;
-#line 246 "mapaccess.c"
+#line 221 "mapaccess.c"
 }
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
     if (v->tag == INT64_C(0)) {

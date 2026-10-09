@@ -122,168 +122,10 @@ void h_main_main(void);
 
 #line 22 "examples/template/main.hero"
 h_0opt_f87774a h_main_render(HeroStr h0_template, HeroMapHeader * h1_values) {
-#line 126 "main.c"
-    HeroStr h2_out = {0};
-    HeroStr h3_key = {0};
-    bool h4_inside;
-    bool h5_pending;
-    bool h6_closing;
-    HeroArrayHeader * h7_xs0 = {0};
-    int64_t h8_i0;
-    HeroStr h9_ch = {0};
-    h_0opt_f87774a h10_found = {0};
-    h_0opt_f87774a h11_f0 = {0};
-    h_0opt_f87774a h12_f1 = {0};
-    bool h13_b0;
-    h_0opt_f87774a h14_ret0 = {0};
-    HeroArrayHeader * h15_own15 = {0};
-    HeroStr h16_own16 = {0};
-    HeroStr h17_own17 = {0};
-    h_0opt_f87774a h18_own18 = {0};
-    h_0opt_f87774a h19_own19 = {0};
-    HeroStr h20_own20 = {0};
-    HeroStr h21_own21 = {0};
-    h_0opt_f87774a h22_own22 = {0};
-    HeroStr h23_own23 = {0};
-    HeroStr h24_own24 = {0};
-    HeroStr h25_own25 = {0};
-    h_0opt_f87774a h26_own26 = {0};
-    h_0opt_f87774a h27_own27 = {0};
-    h_0opt_f87774a h28_own28 = {0};
-    h_0opt_f87774a h29_own29 = {0};
-    HeroStr t1;
-    HeroStr t2;
-    bool t3;
-    bool t4;
-    bool t5;
-    HeroStr t6;
-    HeroArrayHeader * t7;
-    int64_t t8;
-    int64_t t9;
-    HeroArrayHeader * t10;
-    int64_t t11;
-    bool t12;
-    HeroArrayHeader * t13;
-    int64_t t14;
-    HeroStr t15;
-    bool t16;
-    bool t17;
-    HeroStr t18;
-    HeroStr t19;
-    bool t20;
-    HeroStr t21;
-    HeroStr t22;
-    HeroStr t23;
-    bool t24;
-    HeroStr t25;
-    bool t26;
-    HeroStr t27;
-    HeroStr t28;
-    bool t29;
-    bool t30;
-    HeroStr t31;
-    int64_t t32;
-    int64_t t33;
-    bool t34;
-    HeroStr t35;
-    HeroStr t36;
-    h_0opt_f87774a t37;
-    HeroMapHeader * t38;
-    HeroStr t39;
-    h_0opt_f87774a t40;
-    h_0opt_f87774a t41;
-    h_0opt_f87774a t42;
-    int64_t t43;
-    int64_t t44;
-    bool t45;
-    HeroStr t46;
-    HeroStr t47;
-    HeroStr t48;
-    HeroStr t49;
-    HeroStr t50;
-    HeroStr t51;
-    h_0opt_f87774a t52;
-    HeroStr t53;
-    h_0opt_f87774a t54;
-    h_0opt_f87774a t55;
-    int64_t t56;
-    int64_t t57;
-    bool t58;
-    h_0opt_f87774a t59;
-    HeroFailure t60;
-    h_0opt_f87774a t61;
-    HeroStr t62;
-    HeroStr t63;
-    HeroStr t64;
-    HeroStr t65;
-    HeroStr t66;
-    HeroStr t67;
-    HeroStr t68;
-    bool t69;
-    bool t70;
-    HeroStr t71;
-    HeroStr t72;
-    bool t73;
-    bool t74;
-    bool t75;
-    HeroStr t76;
-    HeroStr t77;
-    HeroStr t78;
-    bool t79;
-    bool t80;
-    HeroStr t81;
-    HeroStr t82;
-    h_0opt_f87774a t83;
-    HeroStr t84;
-    HeroStr t85;
-    HeroStr t86;
-    int64_t t87;
-    int64_t t88;
-    int64_t t89;
-    bool t90;
-    HeroStr t91;
-    HeroStr t92;
-    h_0opt_f87774a t93;
-    bool t94;
-    bool t95;
-    bool t96;
-    HeroStr t97;
-    HeroStr t98;
-    h_0opt_f87774a t99;
-    HeroStr t100;
-    h_0opt_f87774a t101;
-    h_0opt_f87774a t102;
-    HeroStr t103;
-    HeroStr t104;
-    HeroArrayHeader * t105;
-    HeroArrayHeader * t106;
-    HeroStr t107;
-    HeroStr t108;
-    HeroStr t109;
-    HeroStr t110;
-    HeroStr t111;
-    HeroStr t112;
-    h_0opt_f87774a t113;
-    h_0opt_f87774a t114;
-    h_0opt_f87774a t115;
-    h_0opt_f87774a t116;
-    h_0opt_f87774a t117;
-    HeroStr t118;
-    HeroStr t119;
-    h_0opt_f87774a t120;
-    HeroStr t121;
-    HeroStr t122;
-    HeroStr t123;
-    HeroStr t124;
-    HeroStr t125;
-    HeroStr t126;
-    h_0opt_f87774a t127;
-    h_0opt_f87774a t128;
-    h_0opt_f87774a t129;
-    h_0opt_f87774a t130;
-    goto bb0;
+#line 22 "examples/template/main.hero"
+    HeroStr h2_out = {0}; HeroStr h3_key = {0}; bool h4_inside; bool h5_pending; bool h6_closing; HeroArrayHeader * h7_xs0 = {0}; int64_t h8_i0; HeroStr h9_ch = {0}; h_0opt_f87774a h10_found = {0}; h_0opt_f87774a h11_f0 = {0}; h_0opt_f87774a h12_f1 = {0}; bool h13_b0; h_0opt_f87774a h14_ret0 = {0}; HeroArrayHeader * h15_own15 = {0}; HeroStr h16_own16 = {0}; HeroStr h17_own17 = {0}; h_0opt_f87774a h18_own18 = {0}; h_0opt_f87774a h19_own19 = {0}; HeroStr h20_own20 = {0}; HeroStr h21_own21 = {0}; h_0opt_f87774a h22_own22 = {0}; HeroStr h23_own23 = {0}; HeroStr h24_own24 = {0}; HeroStr h25_own25 = {0}; h_0opt_f87774a h26_own26 = {0}; h_0opt_f87774a h27_own27 = {0}; h_0opt_f87774a h28_own28 = {0}; h_0opt_f87774a h29_own29 = {0}; HeroStr t1; HeroStr t2; bool t3; bool t4; bool t5; HeroStr t6; HeroArrayHeader * t7; int64_t t8; int64_t t9; HeroArrayHeader * t10; int64_t t11; bool t12; HeroArrayHeader * t13; int64_t t14; HeroStr t15; bool t16; bool t17; HeroStr t18; HeroStr t19; bool t20; HeroStr t21; HeroStr t22; HeroStr t23; bool t24; HeroStr t25; bool t26; HeroStr t27; HeroStr t28; bool t29; bool t30; HeroStr t31; int64_t t32; int64_t t33; bool t34; HeroStr t35; HeroStr t36; h_0opt_f87774a t37; HeroMapHeader * t38; HeroStr t39; h_0opt_f87774a t40; h_0opt_f87774a t41; h_0opt_f87774a t42; int64_t t43; int64_t t44; bool t45; HeroStr t46; HeroStr t47; HeroStr t48; HeroStr t49; HeroStr t50; HeroStr t51; h_0opt_f87774a t52; HeroStr t53; h_0opt_f87774a t54; h_0opt_f87774a t55; int64_t t56; int64_t t57; bool t58; h_0opt_f87774a t59; HeroFailure t60; h_0opt_f87774a t61; HeroStr t62; HeroStr t63; HeroStr t64; HeroStr t65; HeroStr t66; HeroStr t67; HeroStr t68; bool t69; bool t70; HeroStr t71; HeroStr t72; bool t73; bool t74; bool t75; HeroStr t76; HeroStr t77; HeroStr t78; bool t79; bool t80; HeroStr t81; HeroStr t82; h_0opt_f87774a t83; HeroStr t84; HeroStr t85; HeroStr t86; int64_t t87; int64_t t88; int64_t t89; bool t90; HeroStr t91; HeroStr t92; h_0opt_f87774a t93; bool t94; bool t95; bool t96; HeroStr t97; HeroStr t98; h_0opt_f87774a t99; HeroStr t100; h_0opt_f87774a t101; h_0opt_f87774a t102; HeroStr t103; HeroStr t104; HeroArrayHeader * t105; HeroArrayHeader * t106; HeroStr t107; HeroStr t108; HeroStr t109; HeroStr t110; HeroStr t111; HeroStr t112; h_0opt_f87774a t113; h_0opt_f87774a t114; h_0opt_f87774a t115; h_0opt_f87774a t116; h_0opt_f87774a t117; HeroStr t118; HeroStr t119; h_0opt_f87774a t120; HeroStr t121; HeroStr t122; HeroStr t123; HeroStr t124; HeroStr t125; HeroStr t126; h_0opt_f87774a t127; h_0opt_f87774a t128; h_0opt_f87774a t129; h_0opt_f87774a t130; goto bb0;
+#line 22 "examples/template/main.hero"
 bb0:
-#line 23 "examples/template/main.hero"
     t1 = HERO_STR_LIT(hero_str_0);
 #line 23 "examples/template/main.hero"
     t103 = h2_out;
@@ -703,7 +545,7 @@ bb24:
     t59 = h12_f1;
 #line 53 "examples/template/main.hero"
     t60 = t59.as.err;
-#line 707 "main.c"
+#line 549 "main.c"
     hero_panic_must(t60);
     hero_unreachable();
 bb25:
@@ -925,7 +767,7 @@ bb44:
     goto bb40;
 #line 83 "examples/template/main.hero"
 bb45:
-#line 929 "main.c"
+#line 771 "main.c"
     t102 = h14_ret0;
     h_0opt_f87774a_retain(&t102);
     hero_str_release_at(&h2_out);
@@ -955,51 +797,10 @@ bb45:
 
 #line 90 "examples/template/main.hero"
 h_0opt_f87774a h_main_render_or(HeroStr h0_template, HeroMapHeader * h1_values, HeroStr h2_missing) {
-#line 959 "main.c"
-    HeroMapHeader * h3_filled = {0};
-    HeroArrayHeader * h4_xs0 = {0};
-    int64_t h5_i0;
-    HeroStr h6_key = {0};
-    h_0opt_f87774a h7_f0 = {0};
-    HeroArrayHeader * h8_own8 = {0};
-    h_0opt_f87774a h9_own9 = {0};
-    h_0opt_f87774a h10_own10 = {0};
-    HeroMapHeader * t1;
-    HeroStr t2;
-    HeroArrayHeader * t3;
-    int64_t t4;
-    int64_t t5;
-    HeroArrayHeader * t6;
-    int64_t t7;
-    bool t8;
-    HeroArrayHeader * t9;
-    int64_t t10;
-    HeroStr t11;
-    HeroMapHeader * t12;
-    HeroStr t13;
-    h_0opt_f87774a t14;
-    h_0opt_f87774a t15;
-    int64_t t16;
-    int64_t t17;
-    bool t18;
-    HeroStr t19;
-    HeroStr t20;
-    int64_t t21;
-    int64_t t22;
-    int64_t t23;
-    HeroStr t24;
-    HeroMapHeader * t25;
-    h_0opt_f87774a t26;
-    HeroMapHeader * t27;
-    HeroArrayHeader * t28;
-    HeroArrayHeader * t29;
-    HeroStr t30;
-    h_0opt_f87774a t31;
-    h_0opt_f87774a t32;
-    h_0opt_f87774a t33;
-    goto bb0;
+#line 90 "examples/template/main.hero"
+    HeroMapHeader * h3_filled = {0}; HeroArrayHeader * h4_xs0 = {0}; int64_t h5_i0; HeroStr h6_key = {0}; h_0opt_f87774a h7_f0 = {0}; HeroArrayHeader * h8_own8 = {0}; h_0opt_f87774a h9_own9 = {0}; h_0opt_f87774a h10_own10 = {0}; HeroMapHeader * t1; HeroStr t2; HeroArrayHeader * t3; int64_t t4; int64_t t5; HeroArrayHeader * t6; int64_t t7; bool t8; HeroArrayHeader * t9; int64_t t10; HeroStr t11; HeroMapHeader * t12; HeroStr t13; h_0opt_f87774a t14; h_0opt_f87774a t15; int64_t t16; int64_t t17; bool t18; HeroStr t19; HeroStr t20; int64_t t21; int64_t t22; int64_t t23; HeroStr t24; HeroMapHeader * t25; h_0opt_f87774a t26; HeroMapHeader * t27; HeroArrayHeader * t28; HeroArrayHeader * t29; HeroStr t30; h_0opt_f87774a t31; h_0opt_f87774a t32; h_0opt_f87774a t33; goto bb0;
+#line 90 "examples/template/main.hero"
 bb0:
-#line 91 "examples/template/main.hero"
     t1 = h1_values;
 #line 91 "examples/template/main.hero"
     t27 = h3_filled;
@@ -1132,7 +933,7 @@ bb4:
     h10_own10 = t26;
 #line 97 "examples/template/main.hero"
     h_0opt_f87774a_release(&t33);
-#line 1136 "main.c"
+#line 937 "main.c"
     h_0opt_f87774a_retain(&t26);
     hero_map_release_at(&h3_filled);
     hero_array_release_at(&h4_xs0);
@@ -1159,76 +960,15 @@ bb6:
 bb7:
 #line 95 "examples/template/main.hero"
     goto bb5;
-#line 1163 "main.c"
+#line 964 "main.c"
 }
 
 #line 106 "examples/template/main.hero"
 HeroArrayHeader * h_main_needed(HeroStr h0_template) {
-#line 1168 "main.c"
-    HeroArrayHeader * h1_out = {0};
-    HeroStr h2_key = {0};
-    bool h3_inside;
-    bool h4_pending;
-    HeroArrayHeader * h5_xs0 = {0};
-    int64_t h6_i0;
-    HeroStr h7_ch = {0};
-    HeroArrayHeader * h8_own8 = {0};
-    HeroArrayHeader * h9_own9 = {0};
-    HeroStr h10_own10 = {0};
-    HeroArrayHeader * t1;
-    HeroStr t2;
-    bool t3;
-    bool t4;
-    HeroStr t5;
-    HeroArrayHeader * t6;
-    int64_t t7;
-    int64_t t8;
-    HeroArrayHeader * t9;
-    int64_t t10;
-    bool t11;
-    HeroArrayHeader * t12;
-    int64_t t13;
-    HeroStr t14;
-    bool t15;
-    bool t16;
-    HeroStr t17;
-    HeroStr t18;
-    bool t19;
-    bool t20;
-    HeroStr t21;
-    bool t22;
-    HeroStr t23;
-    HeroStr t24;
-    bool t25;
-    bool t26;
-    HeroStr t27;
-    int64_t t28;
-    int64_t t29;
-    bool t30;
-    HeroStr t32;
-    HeroStr t34;
-    HeroStr t35;
-    HeroStr t36;
-    HeroStr t37;
-    HeroStr t38;
-    bool t39;
-    bool t40;
-    int64_t t41;
-    int64_t t42;
-    int64_t t43;
-    HeroArrayHeader * t44;
-    HeroArrayHeader * t45;
-    HeroArrayHeader * t46;
-    HeroStr t47;
-    HeroArrayHeader * t48;
-    HeroArrayHeader * t49;
-    HeroStr t50;
-    HeroStr t51;
-    HeroStr t52;
-    HeroStr t53;
-    goto bb0;
+#line 106 "examples/template/main.hero"
+    HeroArrayHeader * h1_out = {0}; HeroStr h2_key = {0}; bool h3_inside; bool h4_pending; HeroArrayHeader * h5_xs0 = {0}; int64_t h6_i0; HeroStr h7_ch = {0}; HeroArrayHeader * h8_own8 = {0}; HeroArrayHeader * h9_own9 = {0}; HeroStr h10_own10 = {0}; HeroArrayHeader * t1; HeroStr t2; bool t3; bool t4; HeroStr t5; HeroArrayHeader * t6; int64_t t7; int64_t t8; HeroArrayHeader * t9; int64_t t10; bool t11; HeroArrayHeader * t12; int64_t t13; HeroStr t14; bool t15; bool t16; HeroStr t17; HeroStr t18; bool t19; bool t20; HeroStr t21; bool t22; HeroStr t23; HeroStr t24; bool t25; bool t26; HeroStr t27; int64_t t28; int64_t t29; bool t30; HeroStr t32; HeroStr t34; HeroStr t35; HeroStr t36; HeroStr t37; HeroStr t38; bool t39; bool t40; int64_t t41; int64_t t42; int64_t t43; HeroArrayHeader * t44; HeroArrayHeader * t45; HeroArrayHeader * t46; HeroStr t47; HeroArrayHeader * t48; HeroArrayHeader * t49; HeroStr t50; HeroStr t51; HeroStr t52; HeroStr t53; goto bb0;
+#line 106 "examples/template/main.hero"
 bb0:
-#line 107 "examples/template/main.hero"
     t1 = hero_array_new(&hero_desc_str, 1);
 #line 107 "examples/template/main.hero"
     t45 = h8_own8;
@@ -1330,7 +1070,7 @@ bb3:
 bb4:
 #line 134 "examples/template/main.hero"
     t44 = h1_out;
-#line 1334 "main.c"
+#line 1074 "main.c"
     hero_array_incref(t44);
     hero_array_release_at(&h1_out);
     hero_str_release_at(&h2_key);
@@ -1487,25 +1227,15 @@ bb21:
 bb22:
 #line 132 "examples/template/main.hero"
     goto bb20;
-#line 1491 "main.c"
+#line 1231 "main.c"
 }
 
 #line 136 "examples/template/main.hero"
 HeroMapHeader * h_main_sample_values(void) {
-#line 1496 "main.c"
-    HeroMapHeader * h0_values = {0};
-    HeroMapHeader * h1_own1 = {0};
-    HeroMapHeader * t1;
-    HeroStr t2;
-    HeroStr t3;
-    HeroStr t4;
-    HeroStr t5;
-    HeroMapHeader * t6;
-    HeroMapHeader * t7;
-    HeroMapHeader * t8;
-    goto bb0;
+#line 136 "examples/template/main.hero"
+    HeroMapHeader * h0_values = {0}; HeroMapHeader * h1_own1 = {0}; HeroMapHeader * t1; HeroStr t2; HeroStr t3; HeroStr t4; HeroStr t5; HeroMapHeader * t6; HeroMapHeader * t7; HeroMapHeader * t8; goto bb0;
+#line 136 "examples/template/main.hero"
 bb0:
-#line 137 "examples/template/main.hero"
     t1 = hero_map_new(&hero_desc_str, &hero_desc_str, 0);
 #line 137 "examples/template/main.hero"
     t7 = h1_own1;
@@ -1536,7 +1266,7 @@ bb0:
 #line 139 "examples/template/main.hero"
     hero_map_set(&(h0_values), &t4, &t5);
     t6 = h0_values;
-#line 1540 "main.c"
+#line 1270 "main.c"
     hero_map_incref(t6);
     hero_map_release_at(&h0_values);
     hero_map_release_at(&h1_own1);
@@ -1545,158 +1275,10 @@ bb0:
 
 #line 142 "examples/template/main.hero"
 void h_main_main(void) {
-#line 1549 "main.c"
-    HeroMapHeader * h0_values = {0};
-    h_0opt_f87774a h1_f0 = {0};
-    h_0opt_f87774a h2_f1 = {0};
-    h_0opt_f87774a h3_f2 = {0};
-    h_0opt_f87774a h4_f3 = {0};
-    h_0opt_f87774a h5_f4 = {0};
-    h_0opt_f87774a h6_f5 = {0};
-    h_0opt_f87774a h7_f6 = {0};
-    h_0opt_f87774a h8_f7 = {0};
-    h_0opt_f87774a h9_f8 = {0};
-    h_0opt_f87774a h10_f9 = {0};
-    HeroMapHeader * h11_own11 = {0};
-    h_0opt_f87774a h12_own12 = {0};
-    h_0opt_f87774a h13_own13 = {0};
-    h_0opt_f87774a h14_own14 = {0};
-    h_0opt_f87774a h15_own15 = {0};
-    h_0opt_f87774a h16_own16 = {0};
-    HeroArrayHeader * h17_own17 = {0};
-    HeroStr h18_own18 = {0};
-    h_0opt_f87774a h19_own19 = {0};
-    h_0opt_f87774a h20_own20 = {0};
-    h_0opt_f87774a h21_own21 = {0};
-    h_0opt_f87774a h22_own22 = {0};
-    h_0opt_f87774a h23_own23 = {0};
-    HeroMapHeader * t1;
-    HeroStr t2;
-    HeroMapHeader * t3;
-    h_0opt_f87774a t4;
-    h_0opt_f87774a t5;
-    int64_t t6;
-    int64_t t7;
-    bool t8;
-    h_0opt_f87774a t9;
-    HeroFailure t10;
-    h_0opt_f87774a t11;
-    HeroStr t12;
-    HeroStr t13;
-    HeroMapHeader * t14;
-    h_0opt_f87774a t15;
-    h_0opt_f87774a t16;
-    int64_t t17;
-    int64_t t18;
-    bool t19;
-    h_0opt_f87774a t20;
-    HeroFailure t21;
-    h_0opt_f87774a t22;
-    HeroStr t23;
-    HeroStr t24;
-    HeroMapHeader * t25;
-    h_0opt_f87774a t26;
-    h_0opt_f87774a t27;
-    int64_t t28;
-    int64_t t29;
-    bool t30;
-    h_0opt_f87774a t31;
-    HeroFailure t32;
-    h_0opt_f87774a t33;
-    HeroStr t34;
-    HeroStr t35;
-    HeroMapHeader * t36;
-    h_0opt_f87774a t37;
-    h_0opt_f87774a t38;
-    int64_t t39;
-    int64_t t40;
-    bool t41;
-    h_0opt_f87774a t42;
-    HeroFailure t43;
-    h_0opt_f87774a t44;
-    HeroStr t45;
-    HeroStr t46;
-    HeroMapHeader * t47;
-    h_0opt_f87774a t48;
-    h_0opt_f87774a t49;
-    int64_t t50;
-    int64_t t51;
-    bool t52;
-    h_0opt_f87774a t53;
-    HeroFailure t54;
-    h_0opt_f87774a t55;
-    HeroStr t56;
-    HeroStr t57;
-    HeroArrayHeader * t58;
-    HeroStr t59;
-    HeroStr t60;
-    HeroStr t61;
-    HeroMapHeader * t62;
-    h_0opt_f87774a t63;
-    h_0opt_f87774a t64;
-    int64_t t65;
-    int64_t t66;
-    bool t67;
-    HeroStr t68;
-    HeroMapHeader * t69;
-    h_0opt_f87774a t70;
-    h_0opt_f87774a t71;
-    int64_t t72;
-    int64_t t73;
-    bool t74;
-    HeroStr t75;
-    HeroMapHeader * t76;
-    h_0opt_f87774a t77;
-    h_0opt_f87774a t78;
-    int64_t t79;
-    int64_t t80;
-    bool t81;
-    HeroStr t82;
-    HeroMapHeader * t83;
-    h_0opt_f87774a t84;
-    h_0opt_f87774a t85;
-    int64_t t86;
-    int64_t t87;
-    bool t88;
-    HeroStr t89;
-    HeroMapHeader * t90;
-    HeroStr t91;
-    h_0opt_f87774a t92;
-    h_0opt_f87774a t93;
-    int64_t t94;
-    int64_t t95;
-    bool t96;
-    h_0opt_f87774a t97;
-    HeroFailure t98;
-    h_0opt_f87774a t99;
-    HeroStr t100;
-    HeroMapHeader * t101;
-    HeroMapHeader * t102;
-    h_0opt_f87774a t103;
-    h_0opt_f87774a t104;
-    h_0opt_f87774a t105;
-    h_0opt_f87774a t106;
-    h_0opt_f87774a t107;
-    h_0opt_f87774a t108;
-    h_0opt_f87774a t109;
-    h_0opt_f87774a t110;
-    h_0opt_f87774a t111;
-    h_0opt_f87774a t112;
-    HeroArrayHeader * t113;
-    HeroStr t114;
-    h_0opt_f87774a t115;
-    h_0opt_f87774a t116;
-    h_0opt_f87774a t117;
-    h_0opt_f87774a t118;
-    h_0opt_f87774a t119;
-    h_0opt_f87774a t120;
-    h_0opt_f87774a t121;
-    h_0opt_f87774a t122;
-    h_0opt_f87774a t123;
-    h_0opt_f87774a t124;
-    goto bb0;
+#line 142 "examples/template/main.hero"
+    HeroMapHeader * h0_values = {0}; h_0opt_f87774a h1_f0 = {0}; h_0opt_f87774a h2_f1 = {0}; h_0opt_f87774a h3_f2 = {0}; h_0opt_f87774a h4_f3 = {0}; h_0opt_f87774a h5_f4 = {0}; h_0opt_f87774a h6_f5 = {0}; h_0opt_f87774a h7_f6 = {0}; h_0opt_f87774a h8_f7 = {0}; h_0opt_f87774a h9_f8 = {0}; h_0opt_f87774a h10_f9 = {0}; HeroMapHeader * h11_own11 = {0}; h_0opt_f87774a h12_own12 = {0}; h_0opt_f87774a h13_own13 = {0}; h_0opt_f87774a h14_own14 = {0}; h_0opt_f87774a h15_own15 = {0}; h_0opt_f87774a h16_own16 = {0}; HeroArrayHeader * h17_own17 = {0}; HeroStr h18_own18 = {0}; h_0opt_f87774a h19_own19 = {0}; h_0opt_f87774a h20_own20 = {0}; h_0opt_f87774a h21_own21 = {0}; h_0opt_f87774a h22_own22 = {0}; h_0opt_f87774a h23_own23 = {0}; HeroMapHeader * t1; HeroStr t2; HeroMapHeader * t3; h_0opt_f87774a t4; h_0opt_f87774a t5; int64_t t6; int64_t t7; bool t8; h_0opt_f87774a t9; HeroFailure t10; h_0opt_f87774a t11; HeroStr t12; HeroStr t13; HeroMapHeader * t14; h_0opt_f87774a t15; h_0opt_f87774a t16; int64_t t17; int64_t t18; bool t19; h_0opt_f87774a t20; HeroFailure t21; h_0opt_f87774a t22; HeroStr t23; HeroStr t24; HeroMapHeader * t25; h_0opt_f87774a t26; h_0opt_f87774a t27; int64_t t28; int64_t t29; bool t30; h_0opt_f87774a t31; HeroFailure t32; h_0opt_f87774a t33; HeroStr t34; HeroStr t35; HeroMapHeader * t36; h_0opt_f87774a t37; h_0opt_f87774a t38; int64_t t39; int64_t t40; bool t41; h_0opt_f87774a t42; HeroFailure t43; h_0opt_f87774a t44; HeroStr t45; HeroStr t46; HeroMapHeader * t47; h_0opt_f87774a t48; h_0opt_f87774a t49; int64_t t50; int64_t t51; bool t52; h_0opt_f87774a t53; HeroFailure t54; h_0opt_f87774a t55; HeroStr t56; HeroStr t57; HeroArrayHeader * t58; HeroStr t59; HeroStr t60; HeroStr t61; HeroMapHeader * t62; h_0opt_f87774a t63; h_0opt_f87774a t64; int64_t t65; int64_t t66; bool t67; HeroStr t68; HeroMapHeader * t69; h_0opt_f87774a t70; h_0opt_f87774a t71; int64_t t72; int64_t t73; bool t74; HeroStr t75; HeroMapHeader * t76; h_0opt_f87774a t77; h_0opt_f87774a t78; int64_t t79; int64_t t80; bool t81; HeroStr t82; HeroMapHeader * t83; h_0opt_f87774a t84; h_0opt_f87774a t85; int64_t t86; int64_t t87; bool t88; HeroStr t89; HeroMapHeader * t90; HeroStr t91; h_0opt_f87774a t92; h_0opt_f87774a t93; int64_t t94; int64_t t95; bool t96; h_0opt_f87774a t97; HeroFailure t98; h_0opt_f87774a t99; HeroStr t100; HeroMapHeader * t101; HeroMapHeader * t102; h_0opt_f87774a t103; h_0opt_f87774a t104; h_0opt_f87774a t105; h_0opt_f87774a t106; h_0opt_f87774a t107; h_0opt_f87774a t108; h_0opt_f87774a t109; h_0opt_f87774a t110; h_0opt_f87774a t111; h_0opt_f87774a t112; HeroArrayHeader * t113; HeroStr t114; h_0opt_f87774a t115; h_0opt_f87774a t116; h_0opt_f87774a t117; h_0opt_f87774a t118; h_0opt_f87774a t119; h_0opt_f87774a t120; h_0opt_f87774a t121; h_0opt_f87774a t122; h_0opt_f87774a t123; h_0opt_f87774a t124; goto bb0;
+#line 142 "examples/template/main.hero"
 bb0:
-#line 143 "examples/template/main.hero"
     t1 = h_main_sample_values();
 #line 143 "examples/template/main.hero"
     t101 = h11_own11;
@@ -1787,7 +1369,7 @@ bb2:
     t9 = h1_f0;
 #line 145 "examples/template/main.hero"
     t10 = t9.as.err;
-#line 1791 "main.c"
+#line 1373 "main.c"
     hero_panic_must(t10);
     hero_unreachable();
 bb3:
@@ -1834,7 +1416,7 @@ bb4:
     t20 = h2_f1;
 #line 146 "examples/template/main.hero"
     t21 = t20.as.err;
-#line 1838 "main.c"
+#line 1420 "main.c"
     hero_panic_must(t21);
     hero_unreachable();
 bb5:
@@ -1881,7 +1463,7 @@ bb6:
     t31 = h3_f2;
 #line 147 "examples/template/main.hero"
     t32 = t31.as.err;
-#line 1885 "main.c"
+#line 1467 "main.c"
     hero_panic_must(t32);
     hero_unreachable();
 bb7:
@@ -1928,7 +1510,7 @@ bb8:
     t42 = h4_f3;
 #line 148 "examples/template/main.hero"
     t43 = t42.as.err;
-#line 1932 "main.c"
+#line 1514 "main.c"
     hero_panic_must(t43);
     hero_unreachable();
 bb9:
@@ -2126,7 +1708,7 @@ bb10:
     t53 = h5_f4;
 #line 149 "examples/template/main.hero"
     t54 = t53.as.err;
-#line 2130 "main.c"
+#line 1712 "main.c"
     hero_panic_must(t54);
     hero_unreachable();
 bb11:
@@ -2138,7 +1720,7 @@ bb11:
     hero_print_str(t100);
 #line 159 "examples/template/main.hero"
     hero_print_end();
-#line 2142 "main.c"
+#line 1724 "main.c"
     hero_map_release_at(&h0_values);
     h_0opt_f87774a_release(hero_slot_escape(&h1_f0));
     h_0opt_f87774a_release(hero_slot_escape(&h2_f1));
@@ -2169,7 +1751,7 @@ bb12:
     t97 = h10_f9;
 #line 159 "examples/template/main.hero"
     t98 = t97.as.err;
-#line 2173 "main.c"
+#line 1755 "main.c"
     hero_panic_must(t98);
     hero_unreachable();
 }

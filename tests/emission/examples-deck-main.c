@@ -106,123 +106,10 @@ HERO_TU_LOCAL HeroArrayHeader * h_main_riffle_1b9a87(HeroArrayHeader * h0_left, 
 
 #line 101 "examples/deck/main.hero"
 void h_main_main(void) {
-#line 110 "main.c"
-    HeroArrayHeader * h0_cards = {0};
-    HeroArrayHeader * h1_numbers = {0};
-    HeroArrayHeader * h2_own2 = {0};
-    HeroArrayHeader * h3_own3 = {0};
-    HeroArrayHeader * h4_own4 = {0};
-    HeroStr h5_own5 = {0};
-    HeroArrayHeader * h6_own6 = {0};
-    HeroStr h7_own7 = {0};
-    HeroArrayHeader * h8_own8 = {0};
-    HeroStr h9_own9 = {0};
-    HeroArrayHeader * h10_own10 = {0};
-    HeroStr h11_own11 = {0};
-    HeroArrayHeader * h12_own12 = {0};
-    HeroArrayHeader * h13_own13 = {0};
-    HeroArrayHeader * h14_own14 = {0};
-    HeroStr h15_own15 = {0};
-    HeroArrayHeader * h16_own16 = {0};
-    HeroArrayHeader * h17_own17 = {0};
-    HeroArrayHeader * h18_own18 = {0};
-    HeroArrayHeader * h19_own19 = {0};
-    HeroArrayHeader * h20_own20 = {0};
-    HeroArrayHeader * h21_own21 = {0};
-    HeroArrayHeader * h22_own22 = {0};
-    HeroStr t1;
-    HeroStr t2;
-    HeroStr t3;
-    HeroStr t4;
-    HeroStr t5;
-    HeroArrayHeader * t6;
-    int64_t t7;
-    int64_t t8;
-    int64_t t9;
-    int64_t t10;
-    int64_t t11;
-    HeroArrayHeader * t12;
-    HeroArrayHeader * t13;
-    int64_t t14;
-    HeroArrayHeader * t15;
-    HeroStr t16;
-    HeroStr t17;
-    HeroArrayHeader * t18;
-    int64_t t19;
-    HeroArrayHeader * t20;
-    HeroStr t21;
-    HeroStr t22;
-    HeroArrayHeader * t23;
-    int64_t t24;
-    HeroArrayHeader * t25;
-    HeroStr t26;
-    HeroStr t27;
-    HeroArrayHeader * t28;
-    HeroArrayHeader * t29;
-    HeroStr t30;
-    HeroStr t31;
-    HeroStr t32;
-    HeroStr t33;
-    HeroArrayHeader * t34;
-    HeroStr t35;
-    HeroStr t36;
-    HeroStr t37;
-    HeroArrayHeader * t38;
-    HeroArrayHeader * t39;
-    HeroStr t40;
-    HeroStr t41;
-    HeroArrayHeader * t42;
-    int64_t t43;
-    HeroArrayHeader * t44;
-    int64_t t45;
-    HeroArrayHeader * t46;
-    int64_t t47;
-    HeroArrayHeader * t48;
-    int64_t t49;
-    HeroArrayHeader * t50;
-    int64_t t51;
-    HeroArrayHeader * t52;
-    int64_t t53;
-    int64_t t54;
-    HeroArrayHeader * t55;
-    HeroArrayHeader * t56;
-    int64_t t57;
-    int64_t t58;
-    int64_t t59;
-    int64_t t60;
-    HeroArrayHeader * t61;
-    int64_t t62;
-    int64_t t63;
-    int64_t t64;
-    HeroArrayHeader * t65;
-    HeroArrayHeader * t66;
-    int64_t t67;
-    HeroArrayHeader * t68;
-    HeroArrayHeader * t69;
-    HeroArrayHeader * t70;
-    HeroArrayHeader * t71;
-    HeroArrayHeader * t72;
-    HeroStr t73;
-    HeroArrayHeader * t74;
-    HeroStr t75;
-    HeroArrayHeader * t76;
-    HeroStr t77;
-    HeroArrayHeader * t78;
-    HeroStr t79;
-    HeroArrayHeader * t80;
-    HeroArrayHeader * t81;
-    HeroArrayHeader * t82;
-    HeroStr t83;
-    HeroArrayHeader * t84;
-    HeroArrayHeader * t85;
-    HeroArrayHeader * t86;
-    HeroArrayHeader * t87;
-    HeroArrayHeader * t88;
-    HeroArrayHeader * t89;
-    HeroArrayHeader * t90;
-    goto bb0;
+#line 101 "examples/deck/main.hero"
+    HeroArrayHeader * h0_cards = {0}; HeroArrayHeader * h1_numbers = {0}; HeroArrayHeader * h2_own2 = {0}; HeroArrayHeader * h3_own3 = {0}; HeroArrayHeader * h4_own4 = {0}; HeroStr h5_own5 = {0}; HeroArrayHeader * h6_own6 = {0}; HeroStr h7_own7 = {0}; HeroArrayHeader * h8_own8 = {0}; HeroStr h9_own9 = {0}; HeroArrayHeader * h10_own10 = {0}; HeroStr h11_own11 = {0}; HeroArrayHeader * h12_own12 = {0}; HeroArrayHeader * h13_own13 = {0}; HeroArrayHeader * h14_own14 = {0}; HeroStr h15_own15 = {0}; HeroArrayHeader * h16_own16 = {0}; HeroArrayHeader * h17_own17 = {0}; HeroArrayHeader * h18_own18 = {0}; HeroArrayHeader * h19_own19 = {0}; HeroArrayHeader * h20_own20 = {0}; HeroArrayHeader * h21_own21 = {0}; HeroArrayHeader * h22_own22 = {0}; HeroStr t1; HeroStr t2; HeroStr t3; HeroStr t4; HeroStr t5; HeroArrayHeader * t6; int64_t t7; int64_t t8; int64_t t9; int64_t t10; int64_t t11; HeroArrayHeader * t12; HeroArrayHeader * t13; int64_t t14; HeroArrayHeader * t15; HeroStr t16; HeroStr t17; HeroArrayHeader * t18; int64_t t19; HeroArrayHeader * t20; HeroStr t21; HeroStr t22; HeroArrayHeader * t23; int64_t t24; HeroArrayHeader * t25; HeroStr t26; HeroStr t27; HeroArrayHeader * t28; HeroArrayHeader * t29; HeroStr t30; HeroStr t31; HeroStr t32; HeroStr t33; HeroArrayHeader * t34; HeroStr t35; HeroStr t36; HeroStr t37; HeroArrayHeader * t38; HeroArrayHeader * t39; HeroStr t40; HeroStr t41; HeroArrayHeader * t42; int64_t t43; HeroArrayHeader * t44; int64_t t45; HeroArrayHeader * t46; int64_t t47; HeroArrayHeader * t48; int64_t t49; HeroArrayHeader * t50; int64_t t51; HeroArrayHeader * t52; int64_t t53; int64_t t54; HeroArrayHeader * t55; HeroArrayHeader * t56; int64_t t57; int64_t t58; int64_t t59; int64_t t60; HeroArrayHeader * t61; int64_t t62; int64_t t63; int64_t t64; HeroArrayHeader * t65; HeroArrayHeader * t66; int64_t t67; HeroArrayHeader * t68; HeroArrayHeader * t69; HeroArrayHeader * t70; HeroArrayHeader * t71; HeroArrayHeader * t72; HeroStr t73; HeroArrayHeader * t74; HeroStr t75; HeroArrayHeader * t76; HeroStr t77; HeroArrayHeader * t78; HeroStr t79; HeroArrayHeader * t80; HeroArrayHeader * t81; HeroArrayHeader * t82; HeroStr t83; HeroArrayHeader * t84; HeroArrayHeader * t85; HeroArrayHeader * t86; HeroArrayHeader * t87; HeroArrayHeader * t88; HeroArrayHeader * t89; HeroArrayHeader * t90; goto bb0;
+#line 101 "examples/deck/main.hero"
 bb0:
-#line 102 "examples/deck/main.hero"
     t1 = HERO_STR_LIT(hero_str_41);
 #line 102 "examples/deck/main.hero"
     t2 = HERO_STR_LIT(hero_str_4b);
@@ -570,7 +457,7 @@ bb0:
     hero_print_int(t67);
 #line 118 "examples/deck/main.hero"
     hero_print_end();
-#line 574 "main.c"
+#line 461 "main.c"
     hero_array_release_at(&h0_cards);
     hero_array_release_at(&h1_numbers);
     hero_array_release_at(&h2_own2);
@@ -601,33 +488,10 @@ bb0:
 /* dealt<str> */
 #line 33 "examples/deck/main.hero"
 HERO_TU_LOCAL HeroArrayHeader * h_main_dealt_1e58d9(HeroArrayHeader * h0_deck, int64_t h1_count) {
-#line 605 "main.c"
-    HeroArrayHeader * h2_out = {0};
-    int64_t h3_i;
-    bool h4_b0;
-    HeroArrayHeader * h5_own5 = {0};
-    HeroArrayHeader * t1;
-    int64_t t2;
-    int64_t t3;
-    HeroArrayHeader * t4;
-    int64_t t5;
-    bool t6;
-    int64_t t7;
-    int64_t t8;
-    bool t9;
-    bool t10;
-    HeroArrayHeader * t12;
-    int64_t t13;
-    HeroStr t14;
-    int64_t t16;
-    int64_t t17;
-    int64_t t18;
-    HeroArrayHeader * t19;
-    HeroArrayHeader * t20;
-    HeroArrayHeader * t21;
-    goto bb0;
+#line 33 "examples/deck/main.hero"
+    HeroArrayHeader * h2_out = {0}; int64_t h3_i; bool h4_b0; HeroArrayHeader * h5_own5 = {0}; HeroArrayHeader * t1; int64_t t2; int64_t t3; HeroArrayHeader * t4; int64_t t5; bool t6; int64_t t7; int64_t t8; bool t9; bool t10; HeroArrayHeader * t12; int64_t t13; HeroStr t14; int64_t t16; int64_t t17; int64_t t18; HeroArrayHeader * t19; HeroArrayHeader * t20; HeroArrayHeader * t21; goto bb0;
+#line 33 "examples/deck/main.hero"
 bb0:
-#line 34 "examples/deck/main.hero"
     t1 = hero_array_new(&hero_desc_str, 1);
 #line 34 "examples/deck/main.hero"
     t20 = h5_own5;
@@ -684,7 +548,7 @@ bb2:
 bb3:
 #line 41 "examples/deck/main.hero"
     t19 = h2_out;
-#line 688 "main.c"
+#line 552 "main.c"
     hero_array_incref(t19);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h5_own5);
@@ -706,38 +570,17 @@ bb5:
     t10 = h4_b0;
 #line 37 "examples/deck/main.hero"
     if (t10) goto bb2; else goto bb3;
-#line 710 "main.c"
+#line 574 "main.c"
 }
 
 #line 43 "examples/deck/main.hero"
 /* kept<str> */
 #line 43 "examples/deck/main.hero"
 HERO_TU_LOCAL HeroArrayHeader * h_main_kept_1e58d9(HeroArrayHeader * h0_deck, int64_t h1_count) {
-#line 717 "main.c"
-    HeroArrayHeader * h2_out = {0};
-    int64_t h3_i;
-    HeroArrayHeader * h4_own4 = {0};
-    HeroArrayHeader * t1;
-    int64_t t2;
-    int64_t t3;
-    HeroArrayHeader * t4;
-    int64_t t5;
-    bool t6;
-    int64_t t7;
-    int64_t t8;
-    bool t9;
-    HeroArrayHeader * t11;
-    int64_t t12;
-    HeroStr t13;
-    int64_t t15;
-    int64_t t16;
-    int64_t t17;
-    HeroArrayHeader * t18;
-    HeroArrayHeader * t19;
-    HeroArrayHeader * t20;
-    goto bb0;
+#line 43 "examples/deck/main.hero"
+    HeroArrayHeader * h2_out = {0}; int64_t h3_i; HeroArrayHeader * h4_own4 = {0}; HeroArrayHeader * t1; int64_t t2; int64_t t3; HeroArrayHeader * t4; int64_t t5; bool t6; int64_t t7; int64_t t8; bool t9; HeroArrayHeader * t11; int64_t t12; HeroStr t13; int64_t t15; int64_t t16; int64_t t17; HeroArrayHeader * t18; HeroArrayHeader * t19; HeroArrayHeader * t20; goto bb0;
+#line 43 "examples/deck/main.hero"
 bb0:
-#line 44 "examples/deck/main.hero"
     t1 = hero_array_new(&hero_desc_str, 1);
 #line 44 "examples/deck/main.hero"
     t19 = h4_own4;
@@ -783,7 +626,7 @@ bb2:
 bb3:
 #line 52 "examples/deck/main.hero"
     t18 = h2_out;
-#line 787 "main.c"
+#line 630 "main.c"
     hero_array_incref(t18);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h4_own4);
@@ -815,58 +658,17 @@ bb5:
 bb6:
 #line 49 "examples/deck/main.hero"
     goto bb4;
-#line 819 "main.c"
+#line 662 "main.c"
 }
 
 #line 56 "examples/deck/main.hero"
 /* cut<str> */
 #line 56 "examples/deck/main.hero"
 HERO_TU_LOCAL HeroArrayHeader * h_main_cut_1e58d9(HeroArrayHeader * h0_deck, int64_t h1_at) {
-#line 826 "main.c"
-    bool h2_b0;
-    HeroArrayHeader * h3_out = {0};
-    int64_t h4_i;
-    int64_t h5_j;
-    HeroArrayHeader * h6_ret0 = {0};
-    HeroArrayHeader * h7_own7 = {0};
-    int64_t t1;
-    int64_t t2;
-    bool t3;
-    int64_t t4;
-    HeroArrayHeader * t5;
-    int64_t t6;
-    bool t7;
-    bool t8;
-    HeroArrayHeader * t9;
-    HeroArrayHeader * t10;
-    int64_t t11;
-    int64_t t12;
-    HeroArrayHeader * t13;
-    int64_t t14;
-    bool t15;
-    HeroArrayHeader * t17;
-    int64_t t18;
-    HeroStr t19;
-    int64_t t21;
-    int64_t t22;
-    int64_t t23;
-    int64_t t24;
-    int64_t t25;
-    int64_t t26;
-    bool t27;
-    HeroArrayHeader * t29;
-    int64_t t30;
-    HeroStr t31;
-    int64_t t33;
-    int64_t t34;
-    int64_t t35;
-    HeroArrayHeader * t36;
-    HeroArrayHeader * t37;
-    HeroArrayHeader * t38;
-    HeroArrayHeader * t39;
-    goto bb0;
+#line 56 "examples/deck/main.hero"
+    bool h2_b0; HeroArrayHeader * h3_out = {0}; int64_t h4_i; int64_t h5_j; HeroArrayHeader * h6_ret0 = {0}; HeroArrayHeader * h7_own7 = {0}; int64_t t1; int64_t t2; bool t3; int64_t t4; HeroArrayHeader * t5; int64_t t6; bool t7; bool t8; HeroArrayHeader * t9; HeroArrayHeader * t10; int64_t t11; int64_t t12; HeroArrayHeader * t13; int64_t t14; bool t15; HeroArrayHeader * t17; int64_t t18; HeroStr t19; int64_t t21; int64_t t22; int64_t t23; int64_t t24; int64_t t25; int64_t t26; bool t27; HeroArrayHeader * t29; int64_t t30; HeroStr t31; int64_t t33; int64_t t34; int64_t t35; HeroArrayHeader * t36; HeroArrayHeader * t37; HeroArrayHeader * t38; HeroArrayHeader * t39; goto bb0;
+#line 56 "examples/deck/main.hero"
 bb0:
-#line 57 "examples/deck/main.hero"
     t1 = h1_at;
 #line 57 "examples/deck/main.hero"
     t2 = INT64_C(0);
@@ -1006,7 +808,7 @@ bb11:
     goto bb12;
 #line 72 "examples/deck/main.hero"
 bb12:
-#line 1010 "main.c"
+#line 812 "main.c"
     t37 = h6_ret0;
     hero_array_incref(t37);
     hero_array_release_at(&h3_out);
@@ -1018,30 +820,10 @@ bb12:
 /* reversed<str> */
 #line 74 "examples/deck/main.hero"
 HERO_TU_LOCAL HeroArrayHeader * h_main_reversed_1e58d9(HeroArrayHeader * h0_deck) {
-#line 1022 "main.c"
-    HeroArrayHeader * h1_out = {0};
-    int64_t h2_i;
-    HeroArrayHeader * h3_own3 = {0};
-    HeroArrayHeader * t1;
-    HeroArrayHeader * t2;
-    int64_t t3;
-    int64_t t4;
-    int64_t t5;
-    int64_t t6;
-    int64_t t7;
-    bool t8;
-    HeroArrayHeader * t10;
-    int64_t t11;
-    HeroStr t12;
-    int64_t t14;
-    int64_t t15;
-    int64_t t16;
-    HeroArrayHeader * t17;
-    HeroArrayHeader * t18;
-    HeroArrayHeader * t19;
-    goto bb0;
+#line 74 "examples/deck/main.hero"
+    HeroArrayHeader * h1_out = {0}; int64_t h2_i; HeroArrayHeader * h3_own3 = {0}; HeroArrayHeader * t1; HeroArrayHeader * t2; int64_t t3; int64_t t4; int64_t t5; int64_t t6; int64_t t7; bool t8; HeroArrayHeader * t10; int64_t t11; HeroStr t12; int64_t t14; int64_t t15; int64_t t16; HeroArrayHeader * t17; HeroArrayHeader * t18; HeroArrayHeader * t19; goto bb0;
+#line 74 "examples/deck/main.hero"
 bb0:
-#line 75 "examples/deck/main.hero"
     t1 = hero_array_new(&hero_desc_str, 1);
 #line 75 "examples/deck/main.hero"
     t18 = h3_own3;
@@ -1100,7 +882,7 @@ bb2:
 bb3:
 #line 82 "examples/deck/main.hero"
     t17 = h1_out;
-#line 1104 "main.c"
+#line 886 "main.c"
     hero_array_incref(t17);
     hero_array_release_at(&h1_out);
     hero_array_release_at(&h3_own3);
@@ -1111,45 +893,10 @@ bb3:
 /* riffle<str> */
 #line 87 "examples/deck/main.hero"
 HERO_TU_LOCAL HeroArrayHeader * h_main_riffle_1e58d9(HeroArrayHeader * h0_left, HeroArrayHeader * h1_right) {
-#line 1115 "main.c"
-    HeroArrayHeader * h2_out = {0};
-    int64_t h3_i;
-    bool h4_b0;
-    HeroArrayHeader * h5_own5 = {0};
-    HeroArrayHeader * t1;
-    int64_t t2;
-    int64_t t3;
-    HeroArrayHeader * t4;
-    int64_t t5;
-    bool t6;
-    int64_t t7;
-    HeroArrayHeader * t8;
-    int64_t t9;
-    bool t10;
-    bool t11;
-    int64_t t12;
-    HeroArrayHeader * t13;
-    int64_t t14;
-    bool t15;
-    HeroArrayHeader * t17;
-    int64_t t18;
-    HeroStr t19;
-    int64_t t21;
-    HeroArrayHeader * t22;
-    int64_t t23;
-    bool t24;
-    HeroArrayHeader * t26;
-    int64_t t27;
-    HeroStr t28;
-    int64_t t30;
-    int64_t t31;
-    int64_t t32;
-    HeroArrayHeader * t33;
-    HeroArrayHeader * t34;
-    HeroArrayHeader * t35;
-    goto bb0;
+#line 87 "examples/deck/main.hero"
+    HeroArrayHeader * h2_out = {0}; int64_t h3_i; bool h4_b0; HeroArrayHeader * h5_own5 = {0}; HeroArrayHeader * t1; int64_t t2; int64_t t3; HeroArrayHeader * t4; int64_t t5; bool t6; int64_t t7; HeroArrayHeader * t8; int64_t t9; bool t10; bool t11; int64_t t12; HeroArrayHeader * t13; int64_t t14; bool t15; HeroArrayHeader * t17; int64_t t18; HeroStr t19; int64_t t21; HeroArrayHeader * t22; int64_t t23; bool t24; HeroArrayHeader * t26; int64_t t27; HeroStr t28; int64_t t30; int64_t t31; int64_t t32; HeroArrayHeader * t33; HeroArrayHeader * t34; HeroArrayHeader * t35; goto bb0;
+#line 87 "examples/deck/main.hero"
 bb0:
-#line 88 "examples/deck/main.hero"
     t1 = hero_array_new(&hero_desc_str, 1);
 #line 88 "examples/deck/main.hero"
     t34 = h5_own5;
@@ -1199,7 +946,7 @@ bb2:
 bb3:
 #line 99 "examples/deck/main.hero"
     t33 = h2_out;
-#line 1203 "main.c"
+#line 950 "main.c"
     hero_array_incref(t33);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h5_own5);
@@ -1279,40 +1026,17 @@ bb10:
 bb11:
 #line 96 "examples/deck/main.hero"
     goto bb9;
-#line 1283 "main.c"
+#line 1030 "main.c"
 }
 
 #line 33 "examples/deck/main.hero"
 /* dealt<i64> */
 #line 33 "examples/deck/main.hero"
 HERO_TU_LOCAL HeroArrayHeader * h_main_dealt_1b9a87(HeroArrayHeader * h0_deck, int64_t h1_count) {
-#line 1290 "main.c"
-    HeroArrayHeader * h2_out = {0};
-    int64_t h3_i;
-    bool h4_b0;
-    HeroArrayHeader * h5_own5 = {0};
-    HeroArrayHeader * t1;
-    int64_t t2;
-    int64_t t3;
-    HeroArrayHeader * t4;
-    int64_t t5;
-    bool t6;
-    int64_t t7;
-    int64_t t8;
-    bool t9;
-    bool t10;
-    HeroArrayHeader * t12;
-    int64_t t13;
-    int64_t t14;
-    int64_t t16;
-    int64_t t17;
-    int64_t t18;
-    HeroArrayHeader * t19;
-    HeroArrayHeader * t20;
-    HeroArrayHeader * t21;
-    goto bb0;
+#line 33 "examples/deck/main.hero"
+    HeroArrayHeader * h2_out = {0}; int64_t h3_i; bool h4_b0; HeroArrayHeader * h5_own5 = {0}; HeroArrayHeader * t1; int64_t t2; int64_t t3; HeroArrayHeader * t4; int64_t t5; bool t6; int64_t t7; int64_t t8; bool t9; bool t10; HeroArrayHeader * t12; int64_t t13; int64_t t14; int64_t t16; int64_t t17; int64_t t18; HeroArrayHeader * t19; HeroArrayHeader * t20; HeroArrayHeader * t21; goto bb0;
+#line 33 "examples/deck/main.hero"
 bb0:
-#line 34 "examples/deck/main.hero"
     t1 = hero_array_new(&hero_desc_int, 1);
 #line 34 "examples/deck/main.hero"
     t20 = h5_own5;
@@ -1369,7 +1093,7 @@ bb2:
 bb3:
 #line 41 "examples/deck/main.hero"
     t19 = h2_out;
-#line 1373 "main.c"
+#line 1097 "main.c"
     hero_array_incref(t19);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h5_own5);
@@ -1391,38 +1115,17 @@ bb5:
     t10 = h4_b0;
 #line 37 "examples/deck/main.hero"
     if (t10) goto bb2; else goto bb3;
-#line 1395 "main.c"
+#line 1119 "main.c"
 }
 
 #line 43 "examples/deck/main.hero"
 /* kept<i64> */
 #line 43 "examples/deck/main.hero"
 HERO_TU_LOCAL HeroArrayHeader * h_main_kept_1b9a87(HeroArrayHeader * h0_deck, int64_t h1_count) {
-#line 1402 "main.c"
-    HeroArrayHeader * h2_out = {0};
-    int64_t h3_i;
-    HeroArrayHeader * h4_own4 = {0};
-    HeroArrayHeader * t1;
-    int64_t t2;
-    int64_t t3;
-    HeroArrayHeader * t4;
-    int64_t t5;
-    bool t6;
-    int64_t t7;
-    int64_t t8;
-    bool t9;
-    HeroArrayHeader * t11;
-    int64_t t12;
-    int64_t t13;
-    int64_t t15;
-    int64_t t16;
-    int64_t t17;
-    HeroArrayHeader * t18;
-    HeroArrayHeader * t19;
-    HeroArrayHeader * t20;
-    goto bb0;
+#line 43 "examples/deck/main.hero"
+    HeroArrayHeader * h2_out = {0}; int64_t h3_i; HeroArrayHeader * h4_own4 = {0}; HeroArrayHeader * t1; int64_t t2; int64_t t3; HeroArrayHeader * t4; int64_t t5; bool t6; int64_t t7; int64_t t8; bool t9; HeroArrayHeader * t11; int64_t t12; int64_t t13; int64_t t15; int64_t t16; int64_t t17; HeroArrayHeader * t18; HeroArrayHeader * t19; HeroArrayHeader * t20; goto bb0;
+#line 43 "examples/deck/main.hero"
 bb0:
-#line 44 "examples/deck/main.hero"
     t1 = hero_array_new(&hero_desc_int, 1);
 #line 44 "examples/deck/main.hero"
     t19 = h4_own4;
@@ -1468,7 +1171,7 @@ bb2:
 bb3:
 #line 52 "examples/deck/main.hero"
     t18 = h2_out;
-#line 1472 "main.c"
+#line 1175 "main.c"
     hero_array_incref(t18);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h4_own4);
@@ -1500,58 +1203,17 @@ bb5:
 bb6:
 #line 49 "examples/deck/main.hero"
     goto bb4;
-#line 1504 "main.c"
+#line 1207 "main.c"
 }
 
 #line 56 "examples/deck/main.hero"
 /* cut<i64> */
 #line 56 "examples/deck/main.hero"
 HERO_TU_LOCAL HeroArrayHeader * h_main_cut_1b9a87(HeroArrayHeader * h0_deck, int64_t h1_at) {
-#line 1511 "main.c"
-    bool h2_b0;
-    HeroArrayHeader * h3_out = {0};
-    int64_t h4_i;
-    int64_t h5_j;
-    HeroArrayHeader * h6_ret0 = {0};
-    HeroArrayHeader * h7_own7 = {0};
-    int64_t t1;
-    int64_t t2;
-    bool t3;
-    int64_t t4;
-    HeroArrayHeader * t5;
-    int64_t t6;
-    bool t7;
-    bool t8;
-    HeroArrayHeader * t9;
-    HeroArrayHeader * t10;
-    int64_t t11;
-    int64_t t12;
-    HeroArrayHeader * t13;
-    int64_t t14;
-    bool t15;
-    HeroArrayHeader * t17;
-    int64_t t18;
-    int64_t t19;
-    int64_t t21;
-    int64_t t22;
-    int64_t t23;
-    int64_t t24;
-    int64_t t25;
-    int64_t t26;
-    bool t27;
-    HeroArrayHeader * t29;
-    int64_t t30;
-    int64_t t31;
-    int64_t t33;
-    int64_t t34;
-    int64_t t35;
-    HeroArrayHeader * t36;
-    HeroArrayHeader * t37;
-    HeroArrayHeader * t38;
-    HeroArrayHeader * t39;
-    goto bb0;
+#line 56 "examples/deck/main.hero"
+    bool h2_b0; HeroArrayHeader * h3_out = {0}; int64_t h4_i; int64_t h5_j; HeroArrayHeader * h6_ret0 = {0}; HeroArrayHeader * h7_own7 = {0}; int64_t t1; int64_t t2; bool t3; int64_t t4; HeroArrayHeader * t5; int64_t t6; bool t7; bool t8; HeroArrayHeader * t9; HeroArrayHeader * t10; int64_t t11; int64_t t12; HeroArrayHeader * t13; int64_t t14; bool t15; HeroArrayHeader * t17; int64_t t18; int64_t t19; int64_t t21; int64_t t22; int64_t t23; int64_t t24; int64_t t25; int64_t t26; bool t27; HeroArrayHeader * t29; int64_t t30; int64_t t31; int64_t t33; int64_t t34; int64_t t35; HeroArrayHeader * t36; HeroArrayHeader * t37; HeroArrayHeader * t38; HeroArrayHeader * t39; goto bb0;
+#line 56 "examples/deck/main.hero"
 bb0:
-#line 57 "examples/deck/main.hero"
     t1 = h1_at;
 #line 57 "examples/deck/main.hero"
     t2 = INT64_C(0);
@@ -1691,7 +1353,7 @@ bb11:
     goto bb12;
 #line 72 "examples/deck/main.hero"
 bb12:
-#line 1695 "main.c"
+#line 1357 "main.c"
     t37 = h6_ret0;
     hero_array_incref(t37);
     hero_array_release_at(&h3_out);
@@ -1703,30 +1365,10 @@ bb12:
 /* reversed<i64> */
 #line 74 "examples/deck/main.hero"
 HERO_TU_LOCAL HeroArrayHeader * h_main_reversed_1b9a87(HeroArrayHeader * h0_deck) {
-#line 1707 "main.c"
-    HeroArrayHeader * h1_out = {0};
-    int64_t h2_i;
-    HeroArrayHeader * h3_own3 = {0};
-    HeroArrayHeader * t1;
-    HeroArrayHeader * t2;
-    int64_t t3;
-    int64_t t4;
-    int64_t t5;
-    int64_t t6;
-    int64_t t7;
-    bool t8;
-    HeroArrayHeader * t10;
-    int64_t t11;
-    int64_t t12;
-    int64_t t14;
-    int64_t t15;
-    int64_t t16;
-    HeroArrayHeader * t17;
-    HeroArrayHeader * t18;
-    HeroArrayHeader * t19;
-    goto bb0;
+#line 74 "examples/deck/main.hero"
+    HeroArrayHeader * h1_out = {0}; int64_t h2_i; HeroArrayHeader * h3_own3 = {0}; HeroArrayHeader * t1; HeroArrayHeader * t2; int64_t t3; int64_t t4; int64_t t5; int64_t t6; int64_t t7; bool t8; HeroArrayHeader * t10; int64_t t11; int64_t t12; int64_t t14; int64_t t15; int64_t t16; HeroArrayHeader * t17; HeroArrayHeader * t18; HeroArrayHeader * t19; goto bb0;
+#line 74 "examples/deck/main.hero"
 bb0:
-#line 75 "examples/deck/main.hero"
     t1 = hero_array_new(&hero_desc_int, 1);
 #line 75 "examples/deck/main.hero"
     t18 = h3_own3;
@@ -1785,7 +1427,7 @@ bb2:
 bb3:
 #line 82 "examples/deck/main.hero"
     t17 = h1_out;
-#line 1789 "main.c"
+#line 1431 "main.c"
     hero_array_incref(t17);
     hero_array_release_at(&h1_out);
     hero_array_release_at(&h3_own3);
@@ -1796,45 +1438,10 @@ bb3:
 /* riffle<i64> */
 #line 87 "examples/deck/main.hero"
 HERO_TU_LOCAL HeroArrayHeader * h_main_riffle_1b9a87(HeroArrayHeader * h0_left, HeroArrayHeader * h1_right) {
-#line 1800 "main.c"
-    HeroArrayHeader * h2_out = {0};
-    int64_t h3_i;
-    bool h4_b0;
-    HeroArrayHeader * h5_own5 = {0};
-    HeroArrayHeader * t1;
-    int64_t t2;
-    int64_t t3;
-    HeroArrayHeader * t4;
-    int64_t t5;
-    bool t6;
-    int64_t t7;
-    HeroArrayHeader * t8;
-    int64_t t9;
-    bool t10;
-    bool t11;
-    int64_t t12;
-    HeroArrayHeader * t13;
-    int64_t t14;
-    bool t15;
-    HeroArrayHeader * t17;
-    int64_t t18;
-    int64_t t19;
-    int64_t t21;
-    HeroArrayHeader * t22;
-    int64_t t23;
-    bool t24;
-    HeroArrayHeader * t26;
-    int64_t t27;
-    int64_t t28;
-    int64_t t30;
-    int64_t t31;
-    int64_t t32;
-    HeroArrayHeader * t33;
-    HeroArrayHeader * t34;
-    HeroArrayHeader * t35;
-    goto bb0;
+#line 87 "examples/deck/main.hero"
+    HeroArrayHeader * h2_out = {0}; int64_t h3_i; bool h4_b0; HeroArrayHeader * h5_own5 = {0}; HeroArrayHeader * t1; int64_t t2; int64_t t3; HeroArrayHeader * t4; int64_t t5; bool t6; int64_t t7; HeroArrayHeader * t8; int64_t t9; bool t10; bool t11; int64_t t12; HeroArrayHeader * t13; int64_t t14; bool t15; HeroArrayHeader * t17; int64_t t18; int64_t t19; int64_t t21; HeroArrayHeader * t22; int64_t t23; bool t24; HeroArrayHeader * t26; int64_t t27; int64_t t28; int64_t t30; int64_t t31; int64_t t32; HeroArrayHeader * t33; HeroArrayHeader * t34; HeroArrayHeader * t35; goto bb0;
+#line 87 "examples/deck/main.hero"
 bb0:
-#line 88 "examples/deck/main.hero"
     t1 = hero_array_new(&hero_desc_int, 1);
 #line 88 "examples/deck/main.hero"
     t34 = h5_own5;
@@ -1884,7 +1491,7 @@ bb2:
 bb3:
 #line 99 "examples/deck/main.hero"
     t33 = h2_out;
-#line 1888 "main.c"
+#line 1495 "main.c"
     hero_array_incref(t33);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h5_own5);
@@ -1964,7 +1571,7 @@ bb10:
 bb11:
 #line 96 "examples/deck/main.hero"
     goto bb9;
-#line 1968 "main.c"
+#line 1575 "main.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

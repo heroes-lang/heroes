@@ -122,133 +122,10 @@ void h_fixedbugs275afailuremessagekeepsitslastletter_main(void);
 
 #line 10 "tests/golden/run/fixedbugs-275-a-failure-message-keeps-its-last-letter.hero"
 void h_fixedbugs275afailuremessagekeepsitslastletter_main(void) {
-#line 126 "fixedbugs275afailuremessagekeepsitslastletter.c"
-    HeroArrayHeader * h0_b = {0};
-    h_0opt_f87774a h1_s0 = {0};
-    HeroStr h2_s = {0};
-    HeroFailure h3_e = {0};
-    int64_t h4_big;
-    h_0opt_1b9b98 h5_s1 = {0};
-    int8_t h6_n;
-    HeroFailure h7_e = {0};
-    HeroMapHeader * h8_m = {0};
-    h_0opt_e201354 h9_s2 = {0};
-    int64_t h10_n;
-    HeroFailure h11_e = {0};
-    HeroArrayHeader * h12_own12 = {0};
-    h_0opt_f87774a h13_own13 = {0};
-    h_0opt_1b9b98 h14_own14 = {0};
-    HeroMapHeader * h15_own15 = {0};
-    h_0opt_e201354 h16_own16 = {0};
-    HeroStr h17_own17 = {0};
-    HeroStr h18_own18 = {0};
-    HeroStr h19_own19 = {0};
-    HeroStr h20_own20 = {0};
-    uint8_t t1;
-    uint8_t t2;
-    uint8_t t3;
-    uint8_t t4;
-    HeroArrayHeader * t5;
-    HeroArrayHeader * t6;
-    h_0opt_f87774a t7;
-    h_0opt_f87774a t8;
-    int64_t t9;
-    h_0opt_f87774a t10;
-    HeroStr t11;
-    HeroStr t12;
-    HeroStr t13;
-    h_0opt_f87774a t14;
-    HeroFailure t15;
-    HeroFailure t16;
-    HeroStr t17;
-    HeroStr t18;
-    HeroFailure t19;
-    HeroStr t20;
-    HeroStr t21;
-    HeroFailure t22;
-    HeroStr t23;
-    int64_t t24;
-    HeroStr t25;
-    int64_t t26;
-    int64_t t27;
-    h_0opt_1b9b98 t28;
-    h_0opt_1b9b98 t29;
-    int64_t t30;
-    h_0opt_1b9b98 t31;
-    int8_t t32;
-    HeroStr t33;
-    int8_t t34;
-    h_0opt_1b9b98 t35;
-    HeroFailure t36;
-    HeroFailure t37;
-    HeroStr t38;
-    HeroStr t39;
-    HeroFailure t40;
-    HeroStr t41;
-    HeroStr t42;
-    HeroFailure t43;
-    HeroStr t44;
-    int64_t t45;
-    HeroStr t46;
-    HeroMapHeader * t47;
-    HeroStr t48;
-    int64_t t49;
-    HeroMapHeader * t50;
-    HeroStr t51;
-    h_0opt_e201354 t52;
-    h_0opt_e201354 t53;
-    int64_t t54;
-    h_0opt_e201354 t55;
-    int64_t t56;
-    HeroStr t57;
-    int64_t t58;
-    h_0opt_e201354 t59;
-    HeroFailure t60;
-    HeroFailure t61;
-    HeroStr t62;
-    HeroStr t63;
-    HeroFailure t64;
-    HeroStr t65;
-    HeroStr t66;
-    HeroFailure t67;
-    HeroStr t68;
-    int64_t t69;
-    HeroStr t70;
-    bool t71;
-    HeroStr t72;
-    HeroStr t73;
-    bool t74;
-    HeroStr t75;
-    int64_t t76;
-    HeroStr t77;
-    bool t78;
-    HeroStr t79;
-    HeroStr t80;
-    bool t81;
-    HeroStr t82;
-    int64_t t83;
-    HeroStr t84;
-    HeroArrayHeader * t85;
-    HeroArrayHeader * t86;
-    h_0opt_f87774a t87;
-    h_0opt_f87774a t88;
-    h_0opt_1b9b98 t89;
-    h_0opt_1b9b98 t90;
-    HeroStr t91;
-    HeroFailure t92;
-    HeroMapHeader * t93;
-    HeroMapHeader * t94;
-    h_0opt_e201354 t95;
-    h_0opt_e201354 t96;
-    HeroFailure t97;
-    HeroStr t98;
-    HeroStr t99;
-    HeroStr t100;
-    HeroStr t101;
-    HeroFailure t102;
-    goto bb0;
+#line 10 "tests/golden/run/fixedbugs-275-a-failure-message-keeps-its-last-letter.hero"
+    HeroArrayHeader * h0_b = {0}; h_0opt_f87774a h1_s0 = {0}; HeroStr h2_s = {0}; HeroFailure h3_e = {0}; int64_t h4_big; h_0opt_1b9b98 h5_s1 = {0}; int8_t h6_n; HeroFailure h7_e = {0}; HeroMapHeader * h8_m = {0}; h_0opt_e201354 h9_s2 = {0}; int64_t h10_n; HeroFailure h11_e = {0}; HeroArrayHeader * h12_own12 = {0}; h_0opt_f87774a h13_own13 = {0}; h_0opt_1b9b98 h14_own14 = {0}; HeroMapHeader * h15_own15 = {0}; h_0opt_e201354 h16_own16 = {0}; HeroStr h17_own17 = {0}; HeroStr h18_own18 = {0}; HeroStr h19_own19 = {0}; HeroStr h20_own20 = {0}; uint8_t t1; uint8_t t2; uint8_t t3; uint8_t t4; HeroArrayHeader * t5; HeroArrayHeader * t6; h_0opt_f87774a t7; h_0opt_f87774a t8; int64_t t9; h_0opt_f87774a t10; HeroStr t11; HeroStr t12; HeroStr t13; h_0opt_f87774a t14; HeroFailure t15; HeroFailure t16; HeroStr t17; HeroStr t18; HeroFailure t19; HeroStr t20; HeroStr t21; HeroFailure t22; HeroStr t23; int64_t t24; HeroStr t25; int64_t t26; int64_t t27; h_0opt_1b9b98 t28; h_0opt_1b9b98 t29; int64_t t30; h_0opt_1b9b98 t31; int8_t t32; HeroStr t33; int8_t t34; h_0opt_1b9b98 t35; HeroFailure t36; HeroFailure t37; HeroStr t38; HeroStr t39; HeroFailure t40; HeroStr t41; HeroStr t42; HeroFailure t43; HeroStr t44; int64_t t45; HeroStr t46; HeroMapHeader * t47; HeroStr t48; int64_t t49; HeroMapHeader * t50; HeroStr t51; h_0opt_e201354 t52; h_0opt_e201354 t53; int64_t t54; h_0opt_e201354 t55; int64_t t56; HeroStr t57; int64_t t58; h_0opt_e201354 t59; HeroFailure t60; HeroFailure t61; HeroStr t62; HeroStr t63; HeroFailure t64; HeroStr t65; HeroStr t66; HeroFailure t67; HeroStr t68; int64_t t69; HeroStr t70; bool t71; HeroStr t72; HeroStr t73; bool t74; HeroStr t75; int64_t t76; HeroStr t77; bool t78; HeroStr t79; HeroStr t80; bool t81; HeroStr t82; int64_t t83; HeroStr t84; HeroArrayHeader * t85; HeroArrayHeader * t86; h_0opt_f87774a t87; h_0opt_f87774a t88; h_0opt_1b9b98 t89; h_0opt_1b9b98 t90; HeroStr t91; HeroFailure t92; HeroMapHeader * t93; HeroMapHeader * t94; h_0opt_e201354 t95; h_0opt_e201354 t96; HeroFailure t97; HeroStr t98; HeroStr t99; HeroStr t100; HeroStr t101; HeroFailure t102; goto bb0;
+#line 10 "tests/golden/run/fixedbugs-275-a-failure-message-keeps-its-last-letter.hero"
 bb0:
-#line 11 "tests/golden/run/fixedbugs-275-a-failure-message-keeps-its-last-letter.hero"
     t1 = UINT64_C(99);
 #line 11 "tests/golden/run/fixedbugs-275-a-failure-message-keeps-its-last-letter.hero"
     t2 = UINT64_C(97);
@@ -664,7 +541,7 @@ bb7:
     hero_print_str(t84);
 #line 31 "tests/golden/run/fixedbugs-275-a-failure-message-keeps-its-last-letter.hero"
     hero_print_end();
-#line 668 "fixedbugs275afailuremessagekeepsitslastletter.c"
+#line 545 "fixedbugs275afailuremessagekeepsitslastletter.c"
     hero_array_release_at(&h0_b);
     h_0opt_f87774a_release(hero_slot_escape(&h1_s0));
     hero_str_release_at(&h2_s);
@@ -752,7 +629,7 @@ bb9:
     hero_print_end();
 #line 28 "tests/golden/run/fixedbugs-275-a-failure-message-keeps-its-last-letter.hero"
     goto bb7;
-#line 756 "fixedbugs275afailuremessagekeepsitslastletter.c"
+#line 633 "fixedbugs275afailuremessagekeepsitslastletter.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

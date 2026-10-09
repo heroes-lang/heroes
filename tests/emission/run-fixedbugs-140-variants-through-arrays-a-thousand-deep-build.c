@@ -24103,27 +24103,10 @@ void h_fixedbugs140variantsthrougharraysathousanddeepbuild_main(void);
 
 #line 5027 "tests/golden/run/fixedbugs-140-variants-through-arrays-a-thousand-deep-build.hero"
 void h_fixedbugs140variantsthrougharraysathousanddeepbuild_main(void) {
-#line 24107 "fixedbugs140variantsthrougharraysathousanddeepbuild.c"
-    HeroArrayHeader * h0_xs = {0};
-    HeroMapHeader * h1_m = {0};
-    HeroArrayHeader * h2_own2 = {0};
-    HeroMapHeader * h3_own3 = {0};
-    HeroArrayHeader * t1;
-    HeroArrayHeader * t2;
-    int64_t t3;
-    HeroArrayHeader * t4;
-    HeroArrayHeader * t5;
-    bool t6;
-    HeroMapHeader * t7;
-    HeroMapHeader * t8;
-    int64_t t9;
-    HeroArrayHeader * t10;
-    HeroArrayHeader * t11;
-    HeroMapHeader * t12;
-    HeroMapHeader * t13;
-    goto bb0;
+#line 5027 "tests/golden/run/fixedbugs-140-variants-through-arrays-a-thousand-deep-build.hero"
+    HeroArrayHeader * h0_xs = {0}; HeroMapHeader * h1_m = {0}; HeroArrayHeader * h2_own2 = {0}; HeroMapHeader * h3_own3 = {0}; HeroArrayHeader * t1; HeroArrayHeader * t2; int64_t t3; HeroArrayHeader * t4; HeroArrayHeader * t5; bool t6; HeroMapHeader * t7; HeroMapHeader * t8; int64_t t9; HeroArrayHeader * t10; HeroArrayHeader * t11; HeroMapHeader * t12; HeroMapHeader * t13; goto bb0;
+#line 5027 "tests/golden/run/fixedbugs-140-variants-through-arrays-a-thousand-deep-build.hero"
 bb0:
-#line 5028 "tests/golden/run/fixedbugs-140-variants-through-arrays-a-thousand-deep-build.hero"
     t1 = hero_array_new(&h_fixedbugs140variantsthrougharraysathousanddeepbuild_R999_desc, 1);
 #line 5028 "tests/golden/run/fixedbugs-140-variants-through-arrays-a-thousand-deep-build.hero"
     t10 = h2_own2;
@@ -24177,7 +24160,7 @@ bb0:
     hero_print_int(t9);
 #line 5032 "tests/golden/run/fixedbugs-140-variants-through-arrays-a-thousand-deep-build.hero"
     hero_print_end();
-#line 24181 "fixedbugs140variantsthrougharraysathousanddeepbuild.c"
+#line 24164 "fixedbugs140variantsthrougharraysathousanddeepbuild.c"
     hero_array_release_at(&h0_xs);
     hero_map_release_at(&h1_m);
     hero_array_release_at(&h2_own2);

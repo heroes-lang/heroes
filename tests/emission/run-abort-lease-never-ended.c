@@ -97,15 +97,10 @@ void h_abortleaseneverended_main(void);
 
 #line 11 "tests/golden/run/abort-lease-never-ended.hero"
 void h_abortleaseneverended_main(void) {
-#line 101 "abortleaseneverended.c"
-    const char * h0_c;
-    HeroStr t1;
-    const char * t2;
-    const char * t3;
-    uint64_t t4;
-    goto bb0;
+#line 11 "tests/golden/run/abort-lease-never-ended.hero"
+    const char * h0_c; HeroStr t1; const char * t2; const char * t3; uint64_t t4; goto bb0;
+#line 11 "tests/golden/run/abort-lease-never-ended.hero"
 bb0:
-#line 12 "tests/golden/run/abort-lease-never-ended.hero"
     t1 = HERO_STR_LIT(hero_str_642cda73);
 #line 12 "tests/golden/run/abort-lease-never-ended.hero"
     t2 = hero_str_held(t1);
@@ -120,7 +115,7 @@ bb0:
     hero_print_end();
 #line 13 "tests/golden/run/abort-lease-never-ended.hero"
     return;
-#line 124 "abortleaseneverended.c"
+#line 119 "abortleaseneverended.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

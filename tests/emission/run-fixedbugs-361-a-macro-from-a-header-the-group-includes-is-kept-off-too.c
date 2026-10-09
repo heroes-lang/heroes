@@ -97,19 +97,10 @@ void h_fixedbugs361amacrofromaheaderthegroupincludesiskeptofftoo_main(void);
 
 #line 15 "tests/golden/run/fixedbugs-361-a-macro-from-a-header-the-group-includes-is-kept-off-too.hero"
 void h_fixedbugs361amacrofromaheaderthegroupincludesiskeptofftoo_main(void) {
-#line 101 "fixedbugs361amacrofromaheaderthegroupincludesiskeptofftoo.c"
-    bool h0_flag;
-    int64_t t1;
-    int64_t t2;
-    int64_t t3;
-    int64_t t4;
-    int64_t t5;
-    bool t6;
-    bool t7;
-    HeroStr t8;
-    goto bb0;
+#line 15 "tests/golden/run/fixedbugs-361-a-macro-from-a-header-the-group-includes-is-kept-off-too.hero"
+    bool h0_flag; int64_t t1; int64_t t2; int64_t t3; int64_t t4; int64_t t5; bool t6; bool t7; HeroStr t8; goto bb0;
+#line 15 "tests/golden/run/fixedbugs-361-a-macro-from-a-header-the-group-includes-is-kept-off-too.hero"
 bb0:
-#line 16 "tests/golden/run/fixedbugs-361-a-macro-from-a-header-the-group-includes-is-kept-off-too.hero"
     t1 = INT64_C(14);
 #line 16 "tests/golden/run/fixedbugs-361-a-macro-from-a-header-the-group-includes-is-kept-off-too.hero"
     t2 = thrice(t1);
@@ -138,7 +129,7 @@ bb0:
     hero_print_end();
 #line 19 "tests/golden/run/fixedbugs-361-a-macro-from-a-header-the-group-includes-is-kept-off-too.hero"
     return;
-#line 142 "fixedbugs361amacrofromaheaderthegroupincludesiskeptofftoo.c"
+#line 133 "fixedbugs361amacrofromaheaderthegroupincludesiskeptofftoo.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

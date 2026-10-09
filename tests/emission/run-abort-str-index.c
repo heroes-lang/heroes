@@ -91,19 +91,10 @@ void h_abortstrindex_main(void);
 
 #line 7 "tests/golden/run/abort-str-index.hero"
 void h_abortstrindex_main(void) {
-#line 95 "abortstrindex.c"
-    HeroStr h0_s = {0};
-    HeroStr t1;
-    HeroStr t2;
-    int64_t t3;
-    uint8_t t4;
-    HeroStr t5;
-    int64_t t6;
-    uint8_t t7;
-    HeroStr t8;
-    goto bb0;
+#line 7 "tests/golden/run/abort-str-index.hero"
+    HeroStr h0_s = {0}; HeroStr t1; HeroStr t2; int64_t t3; uint8_t t4; HeroStr t5; int64_t t6; uint8_t t7; HeroStr t8; goto bb0;
+#line 7 "tests/golden/run/abort-str-index.hero"
 bb0:
-#line 8 "tests/golden/run/abort-str-index.hero"
     t1 = HERO_STR_LIT(hero_str_1998f2);
 #line 8 "tests/golden/run/abort-str-index.hero"
     t8 = h0_s;
@@ -131,7 +122,7 @@ bb0:
     hero_print_int(t7);
 #line 10 "tests/golden/run/abort-str-index.hero"
     hero_print_end();
-#line 135 "abortstrindex.c"
+#line 126 "abortstrindex.c"
     hero_str_release_at(&h0_s);
     return;
 }

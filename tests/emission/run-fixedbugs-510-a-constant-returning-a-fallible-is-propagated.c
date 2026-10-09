@@ -108,28 +108,10 @@ void h_fixedbugs510aconstantreturningafallibleispropagated_main(void);
 
 #line 6 "tests/golden/run/fixedbugs-510-a-constant-returning-a-fallible-is-propagated.hero"
 h_0opt_e201354 h_fixedbugs510aconstantreturningafallibleispropagated_half(int64_t h0_n) {
-#line 112 "fixedbugs510aconstantreturningafallibleispropagated.c"
-    h_0opt_e201354 h1_ret0 = {0};
-    h_0opt_e201354 h2_own2 = {0};
-    h_0opt_e201354 h3_own3 = {0};
-    int64_t t1;
-    int64_t t2;
-    int64_t t3;
-    int64_t t4;
-    bool t5;
-    HeroStr t6;
-    HeroStr t7;
-    h_0opt_e201354 t8;
-    int64_t t9;
-    int64_t t10;
-    int64_t t11;
-    h_0opt_e201354 t12;
-    h_0opt_e201354 t13;
-    h_0opt_e201354 t14;
-    h_0opt_e201354 t15;
-    goto bb0;
+#line 6 "tests/golden/run/fixedbugs-510-a-constant-returning-a-fallible-is-propagated.hero"
+    h_0opt_e201354 h1_ret0 = {0}; h_0opt_e201354 h2_own2 = {0}; h_0opt_e201354 h3_own3 = {0}; int64_t t1; int64_t t2; int64_t t3; int64_t t4; bool t5; HeroStr t6; HeroStr t7; h_0opt_e201354 t8; int64_t t9; int64_t t10; int64_t t11; h_0opt_e201354 t12; h_0opt_e201354 t13; h_0opt_e201354 t14; h_0opt_e201354 t15; goto bb0;
+#line 6 "tests/golden/run/fixedbugs-510-a-constant-returning-a-fallible-is-propagated.hero"
 bb0:
-#line 7 "tests/golden/run/fixedbugs-510-a-constant-returning-a-fallible-is-propagated.hero"
     t1 = h0_n;
 #line 7 "tests/golden/run/fixedbugs-510-a-constant-returning-a-fallible-is-propagated.hero"
     t2 = INT64_C(2);
@@ -197,7 +179,7 @@ bb3:
     goto bb1;
 #line 8 "tests/golden/run/fixedbugs-510-a-constant-returning-a-fallible-is-propagated.hero"
 bb4:
-#line 201 "fixedbugs510aconstantreturningafallibleispropagated.c"
+#line 183 "fixedbugs510aconstantreturningafallibleispropagated.c"
     t13 = h1_ret0;
     h_0opt_e201354_retain(&t13);
     h_0opt_e201354_release(hero_slot_escape(&h2_own2));
@@ -207,63 +189,22 @@ bb4:
 
 #line 11 "tests/golden/run/fixedbugs-510-a-constant-returning-a-fallible-is-propagated.hero"
 h_0fn_305159eb h_fixedbugs510aconstantreturningafallibleispropagated_HALF(void) {
-#line 211 "fixedbugs510aconstantreturningafallibleispropagated.c"
-    h_0fn_305159eb t1;
-    goto bb0;
+#line 11 "tests/golden/run/fixedbugs-510-a-constant-returning-a-fallible-is-propagated.hero"
+    h_0fn_305159eb t1; goto bb0;
+#line 11 "tests/golden/run/fixedbugs-510-a-constant-returning-a-fallible-is-propagated.hero"
 bb0:
-#line 12 "tests/golden/run/fixedbugs-510-a-constant-returning-a-fallible-is-propagated.hero"
     t1 = h_fixedbugs510aconstantreturningafallibleispropagated_half;
 #line 12 "tests/golden/run/fixedbugs-510-a-constant-returning-a-fallible-is-propagated.hero"
     return t1;
-#line 219 "fixedbugs510aconstantreturningafallibleispropagated.c"
+#line 200 "fixedbugs510aconstantreturningafallibleispropagated.c"
 }
 
 #line 14 "tests/golden/run/fixedbugs-510-a-constant-returning-a-fallible-is-propagated.hero"
 h_0opt_e201354 h_fixedbugs510aconstantreturningafallibleispropagated_quarter(int64_t h0_n) {
-#line 224 "fixedbugs510aconstantreturningafallibleispropagated.c"
-    h_0opt_e201354 h1_f0 = {0};
-    h_0opt_e201354 h2_f1 = {0};
-    h_0opt_e201354 h3_ret0 = {0};
-    h_0opt_e201354 h4_own4 = {0};
-    h_0opt_e201354 h5_own5 = {0};
-    h_0opt_e201354 h6_own6 = {0};
-    h_0opt_e201354 h7_own7 = {0};
-    h_0opt_e201354 h8_own8 = {0};
-    h_0fn_305159eb t1;
-    h_0fn_305159eb t2;
-    int64_t t3;
-    h_0opt_e201354 t4;
-    h_0opt_e201354 t5;
-    int64_t t6;
-    int64_t t7;
-    bool t8;
-    h_0opt_e201354 t9;
-    HeroFailure t10;
-    h_0opt_e201354 t11;
-    h_0opt_e201354 t12;
-    int64_t t13;
-    h_0opt_e201354 t14;
-    h_0opt_e201354 t15;
-    int64_t t16;
-    int64_t t17;
-    bool t18;
-    h_0opt_e201354 t19;
-    HeroFailure t20;
-    h_0opt_e201354 t21;
-    h_0opt_e201354 t22;
-    int64_t t23;
-    h_0opt_e201354 t24;
-    h_0opt_e201354 t25;
-    h_0opt_e201354 t26;
-    h_0opt_e201354 t27;
-    h_0opt_e201354 t28;
-    h_0opt_e201354 t29;
-    h_0opt_e201354 t30;
-    h_0opt_e201354 t31;
-    h_0opt_e201354 t32;
-    goto bb0;
+#line 14 "tests/golden/run/fixedbugs-510-a-constant-returning-a-fallible-is-propagated.hero"
+    h_0opt_e201354 h1_f0 = {0}; h_0opt_e201354 h2_f1 = {0}; h_0opt_e201354 h3_ret0 = {0}; h_0opt_e201354 h4_own4 = {0}; h_0opt_e201354 h5_own5 = {0}; h_0opt_e201354 h6_own6 = {0}; h_0opt_e201354 h7_own7 = {0}; h_0opt_e201354 h8_own8 = {0}; h_0fn_305159eb t1; h_0fn_305159eb t2; int64_t t3; h_0opt_e201354 t4; h_0opt_e201354 t5; int64_t t6; int64_t t7; bool t8; h_0opt_e201354 t9; HeroFailure t10; h_0opt_e201354 t11; h_0opt_e201354 t12; int64_t t13; h_0opt_e201354 t14; h_0opt_e201354 t15; int64_t t16; int64_t t17; bool t18; h_0opt_e201354 t19; HeroFailure t20; h_0opt_e201354 t21; h_0opt_e201354 t22; int64_t t23; h_0opt_e201354 t24; h_0opt_e201354 t25; h_0opt_e201354 t26; h_0opt_e201354 t27; h_0opt_e201354 t28; h_0opt_e201354 t29; h_0opt_e201354 t30; h_0opt_e201354 t31; h_0opt_e201354 t32; goto bb0;
+#line 14 "tests/golden/run/fixedbugs-510-a-constant-returning-a-fallible-is-propagated.hero"
 bb0:
-#line 15 "tests/golden/run/fixedbugs-510-a-constant-returning-a-fallible-is-propagated.hero"
     t1 = h_fixedbugs510aconstantreturningafallibleispropagated_HALF();
 #line 15 "tests/golden/run/fixedbugs-510-a-constant-returning-a-fallible-is-propagated.hero"
     t2 = h_fixedbugs510aconstantreturningafallibleispropagated_HALF();
@@ -387,7 +328,7 @@ bb4:
     goto bb5;
 #line 15 "tests/golden/run/fixedbugs-510-a-constant-returning-a-fallible-is-propagated.hero"
 bb5:
-#line 391 "fixedbugs510aconstantreturningafallibleispropagated.c"
+#line 332 "fixedbugs510aconstantreturningafallibleispropagated.c"
     t25 = h3_ret0;
     h_0opt_e201354_retain(&t25);
     h_0opt_e201354_release(hero_slot_escape(&h1_f0));
@@ -402,53 +343,10 @@ bb5:
 
 #line 17 "tests/golden/run/fixedbugs-510-a-constant-returning-a-fallible-is-propagated.hero"
 void h_fixedbugs510aconstantreturningafallibleispropagated_main(void) {
-#line 406 "fixedbugs510aconstantreturningafallibleispropagated.c"
-    h_0opt_e201354 h0_f0 = {0};
-    h_0opt_e201354 h1_f1 = {0};
-    h_0opt_e201354 h2_s0 = {0};
-    int64_t h3_q;
-    HeroFailure h4_e = {0};
-    h_0opt_e201354 h5_own5 = {0};
-    h_0opt_e201354 h6_own6 = {0};
-    h_0opt_e201354 h7_own7 = {0};
-    int64_t t1;
-    h_0opt_e201354 t2;
-    h_0opt_e201354 t3;
-    int64_t t4;
-    int64_t t5;
-    bool t6;
-    h_0opt_e201354 t7;
-    HeroFailure t8;
-    h_0opt_e201354 t9;
-    int64_t t10;
-    h_0fn_305159eb t11;
-    int64_t t12;
-    h_0opt_e201354 t13;
-    h_0opt_e201354 t14;
-    int64_t t15;
-    int64_t t16;
-    bool t17;
-    int64_t t18;
-    h_0opt_e201354 t19;
-    h_0opt_e201354 t20;
-    int64_t t21;
-    h_0opt_e201354 t22;
-    int64_t t23;
-    int64_t t24;
-    h_0opt_e201354 t25;
-    HeroFailure t26;
-    HeroFailure t27;
-    HeroStr t28;
-    h_0opt_e201354 t29;
-    h_0opt_e201354 t30;
-    h_0opt_e201354 t31;
-    h_0opt_e201354 t32;
-    h_0opt_e201354 t33;
-    h_0opt_e201354 t34;
-    HeroFailure t35;
-    goto bb0;
+#line 17 "tests/golden/run/fixedbugs-510-a-constant-returning-a-fallible-is-propagated.hero"
+    h_0opt_e201354 h0_f0 = {0}; h_0opt_e201354 h1_f1 = {0}; h_0opt_e201354 h2_s0 = {0}; int64_t h3_q; HeroFailure h4_e = {0}; h_0opt_e201354 h5_own5 = {0}; h_0opt_e201354 h6_own6 = {0}; h_0opt_e201354 h7_own7 = {0}; int64_t t1; h_0opt_e201354 t2; h_0opt_e201354 t3; int64_t t4; int64_t t5; bool t6; h_0opt_e201354 t7; HeroFailure t8; h_0opt_e201354 t9; int64_t t10; h_0fn_305159eb t11; int64_t t12; h_0opt_e201354 t13; h_0opt_e201354 t14; int64_t t15; int64_t t16; bool t17; int64_t t18; h_0opt_e201354 t19; h_0opt_e201354 t20; int64_t t21; h_0opt_e201354 t22; int64_t t23; int64_t t24; h_0opt_e201354 t25; HeroFailure t26; HeroFailure t27; HeroStr t28; h_0opt_e201354 t29; h_0opt_e201354 t30; h_0opt_e201354 t31; h_0opt_e201354 t32; h_0opt_e201354 t33; h_0opt_e201354 t34; HeroFailure t35; goto bb0;
+#line 17 "tests/golden/run/fixedbugs-510-a-constant-returning-a-fallible-is-propagated.hero"
 bb0:
-#line 18 "tests/golden/run/fixedbugs-510-a-constant-returning-a-fallible-is-propagated.hero"
     t1 = INT64_C(8);
 #line 18 "tests/golden/run/fixedbugs-510-a-constant-returning-a-fallible-is-propagated.hero"
     t2 = h_fixedbugs510aconstantreturningafallibleispropagated_quarter(t1);
@@ -555,7 +453,7 @@ bb2:
     t7 = h0_f0;
 #line 18 "tests/golden/run/fixedbugs-510-a-constant-returning-a-fallible-is-propagated.hero"
     t8 = t7.as.err;
-#line 559 "fixedbugs510aconstantreturningafallibleispropagated.c"
+#line 457 "fixedbugs510aconstantreturningafallibleispropagated.c"
     hero_panic_must(t8);
     hero_unreachable();
 bb3:
@@ -605,7 +503,7 @@ bb5:
     hero_print_end();
 #line 23 "tests/golden/run/fixedbugs-510-a-constant-returning-a-fallible-is-propagated.hero"
     goto bb3;
-#line 609 "fixedbugs510aconstantreturningafallibleispropagated.c"
+#line 507 "fixedbugs510aconstantreturningafallibleispropagated.c"
 }
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
     if (v->tag == INT64_C(0)) {

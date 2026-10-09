@@ -89,24 +89,10 @@ void h_abortarrayindex_main(void);
 
 #line 4 "tests/golden/run/abort-array-index.hero"
 void h_abortarrayindex_main(void) {
-#line 93 "abortarrayindex.c"
-    HeroArrayHeader * h0_xs = {0};
-    HeroArrayHeader * h1_own1 = {0};
-    int64_t t1;
-    int64_t t2;
-    int64_t t3;
-    HeroArrayHeader * t4;
-    HeroArrayHeader * t5;
-    int64_t t6;
-    int64_t t7;
-    HeroArrayHeader * t8;
-    int64_t t9;
-    int64_t t10;
-    HeroArrayHeader * t11;
-    HeroArrayHeader * t12;
-    goto bb0;
+#line 4 "tests/golden/run/abort-array-index.hero"
+    HeroArrayHeader * h0_xs = {0}; HeroArrayHeader * h1_own1 = {0}; int64_t t1; int64_t t2; int64_t t3; HeroArrayHeader * t4; HeroArrayHeader * t5; int64_t t6; int64_t t7; HeroArrayHeader * t8; int64_t t9; int64_t t10; HeroArrayHeader * t11; HeroArrayHeader * t12; goto bb0;
+#line 4 "tests/golden/run/abort-array-index.hero"
 bb0:
-#line 5 "tests/golden/run/abort-array-index.hero"
     t1 = INT64_C(10);
 #line 5 "tests/golden/run/abort-array-index.hero"
     t2 = INT64_C(20);
@@ -152,7 +138,7 @@ bb0:
     hero_print_int(t10);
 #line 7 "tests/golden/run/abort-array-index.hero"
     hero_print_end();
-#line 156 "abortarrayindex.c"
+#line 142 "abortarrayindex.c"
     hero_array_release_at(&h0_xs);
     hero_array_release_at(&h1_own1);
     return;

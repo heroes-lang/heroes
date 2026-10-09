@@ -125,38 +125,10 @@ HeroStr h_nestedmatch_describe(h_nestedmatch_Shape h0_s, h_nestedmatch_Colour h1
 
 #line 21 "tests/golden/ir/nested-match.hero"
 HeroStr h_nestedmatch_describe(h_nestedmatch_Shape h0_s, h_nestedmatch_Colour h1_c) {
-#line 129 "nestedmatch.c"
-    h_nestedmatch_Shape h2_s0;
-    HeroStr h3_r0 = {0};
-    h_nestedmatch_Colour h4_s1;
-    HeroStr h5_r1 = {0};
-    h_nestedmatch_Colour h6_s2;
-    HeroStr h7_r2 = {0};
-    h_nestedmatch_Shape t1;
-    h_nestedmatch_Shape t2;
-    int64_t t3;
-    h_nestedmatch_Colour t4;
-    h_nestedmatch_Colour t5;
-    int64_t t6;
-    HeroStr t7;
-    HeroStr t8;
-    HeroStr t9;
-    h_nestedmatch_Colour t10;
-    h_nestedmatch_Colour t11;
-    int64_t t12;
-    HeroStr t13;
-    HeroStr t14;
-    HeroStr t15;
-    HeroStr t16;
-    HeroStr t17;
-    HeroStr t18;
-    HeroStr t19;
-    HeroStr t20;
-    HeroStr t21;
-    HeroStr t22;
-    goto bb0;
+#line 21 "tests/golden/ir/nested-match.hero"
+    h_nestedmatch_Shape h2_s0; HeroStr h3_r0 = {0}; h_nestedmatch_Colour h4_s1; HeroStr h5_r1 = {0}; h_nestedmatch_Colour h6_s2; HeroStr h7_r2 = {0}; h_nestedmatch_Shape t1; h_nestedmatch_Shape t2; int64_t t3; h_nestedmatch_Colour t4; h_nestedmatch_Colour t5; int64_t t6; HeroStr t7; HeroStr t8; HeroStr t9; h_nestedmatch_Colour t10; h_nestedmatch_Colour t11; int64_t t12; HeroStr t13; HeroStr t14; HeroStr t15; HeroStr t16; HeroStr t17; HeroStr t18; HeroStr t19; HeroStr t20; HeroStr t21; HeroStr t22; goto bb0;
+#line 21 "tests/golden/ir/nested-match.hero"
 bb0:
-#line 22 "tests/golden/ir/nested-match.hero"
     t1 = h0_s;
 #line 22 "tests/golden/ir/nested-match.hero"
     h2_s0 = t1;
@@ -178,7 +150,7 @@ bb0:
 bb1:
 #line 22 "tests/golden/ir/nested-match.hero"
     t16 = h3_r0;
-#line 182 "nestedmatch.c"
+#line 154 "nestedmatch.c"
     hero_str_incref(t16);
     hero_str_release_at(&h3_r0);
     hero_str_release_at(&h5_r1);
@@ -307,7 +279,7 @@ bb9:
     hero_str_decref(t22);
 #line 28 "tests/golden/ir/nested-match.hero"
     goto bb7;
-#line 311 "nestedmatch.c"
+#line 283 "nestedmatch.c"
 }
 HERO_TU_LOCAL bool h_nestedmatch_Shape_c_line_eq(const h_nestedmatch_Shape_c_line *a, const h_nestedmatch_Shape_c_line *b) {
     if (!(a->f_length == b->f_length)) return false;

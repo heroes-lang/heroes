@@ -89,28 +89,10 @@ void h_abortnaninanordering_main(void);
 
 #line 43 "tests/golden/run/abort-nan-in-an-ordering.hero"
 void h_abortnaninanordering_main(void) {
-#line 93 "abortnaninanordering.c"
-    double h0_zero;
-    double h1_n;
-    double t1;
-    double t2;
-    double t3;
-    double t4;
-    double t5;
-    double t6;
-    bool t7;
-    double t8;
-    double t9;
-    bool t10;
-    double t11;
-    double t12;
-    bool t13;
-    double t14;
-    double t15;
-    bool t16;
-    goto bb0;
+#line 43 "tests/golden/run/abort-nan-in-an-ordering.hero"
+    double h0_zero; double h1_n; double t1; double t2; double t3; double t4; double t5; double t6; bool t7; double t8; double t9; bool t10; double t11; double t12; bool t13; double t14; double t15; bool t16; goto bb0;
+#line 43 "tests/golden/run/abort-nan-in-an-ordering.hero"
 bb0:
-#line 44 "tests/golden/run/abort-nan-in-an-ordering.hero"
     t1 = 0x0p+0;
 #line 44 "tests/golden/run/abort-nan-in-an-ordering.hero"
     h0_zero = t1;
@@ -163,7 +145,7 @@ bb0:
     hero_print_end();
 #line 49 "tests/golden/run/abort-nan-in-an-ordering.hero"
     return;
-#line 167 "abortnaninanordering.c"
+#line 149 "abortnaninanordering.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

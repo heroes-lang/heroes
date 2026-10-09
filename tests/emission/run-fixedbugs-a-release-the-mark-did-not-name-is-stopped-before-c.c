@@ -104,15 +104,10 @@ void h_fixedbugsareleasethemarkdidnotnameisstoppedbeforec_main(void);
 
 #line 16 "tests/golden/run/fixedbugs-a-release-the-mark-did-not-name-is-stopped-before-c.hero"
 void h_fixedbugsareleasethemarkdidnotnameisstoppedbeforec_main(void) {
-#line 108 "fixedbugsareleasethemarkdidnotnameisstoppedbeforec.c"
-    hh * h0_a;
-    hh * t1;
-    HeroStr t2;
-    hh * t3;
-    HeroStr t4;
-    goto bb0;
+#line 16 "tests/golden/run/fixedbugs-a-release-the-mark-did-not-name-is-stopped-before-c.hero"
+    hh * h0_a; hh * t1; HeroStr t2; hh * t3; HeroStr t4; goto bb0;
+#line 16 "tests/golden/run/fixedbugs-a-release-the-mark-did-not-name-is-stopped-before-c.hero"
 bb0:
-#line 17 "tests/golden/run/fixedbugs-a-release-the-mark-did-not-name-is-stopped-before-c.hero"
     t1 = p_open();
 #line 17 "tests/golden/run/fixedbugs-a-release-the-mark-did-not-name-is-stopped-before-c.hero"
     hero_handle_acquired(t1, "p_close");
@@ -143,7 +138,7 @@ bb0:
     hero_print_end();
 #line 20 "tests/golden/run/fixedbugs-a-release-the-mark-did-not-name-is-stopped-before-c.hero"
     return;
-#line 147 "fixedbugsareleasethemarkdidnotnameisstoppedbeforec.c"
+#line 142 "fixedbugsareleasethemarkdidnotnameisstoppedbeforec.c"
 }
 HERO_TU_LOCAL bool h_fixedbugsareleasethemarkdidnotnameisstoppedbeforec_H_eq(hh * const *a, hh * const *b) {
     return hero_handle_eq(*a, *b);

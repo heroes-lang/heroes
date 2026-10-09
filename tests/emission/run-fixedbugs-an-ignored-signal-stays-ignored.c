@@ -96,22 +96,10 @@ void h_fixedbugsanignoredsignalstaysignored_main(void);
 
 #line 15 "tests/golden/run/fixedbugs-an-ignored-signal-stays-ignored.hero"
 void h_fixedbugsanignoredsignalstaysignored_main(void) {
-#line 100 "fixedbugsanignoredsignalstaysignored.c"
-    HeroStr h0_word = {0};
-    __attribute__((unused)) const char * h1_held;
-    HeroStr h2_own2 = {0};
-    HeroStr t1;
-    uint64_t t2;
-    HeroStr t3;
-    HeroStr t4;
-    const char * t5;
-    HeroStr t6;
-    int32_t t7;
-    HeroStr t8;
-    HeroStr t9;
-    goto bb0;
+#line 15 "tests/golden/run/fixedbugs-an-ignored-signal-stays-ignored.hero"
+    HeroStr h0_word = {0}; __attribute__((unused)) const char * h1_held; HeroStr h2_own2 = {0}; HeroStr t1; uint64_t t2; HeroStr t3; HeroStr t4; const char * t5; HeroStr t6; int32_t t7; HeroStr t8; HeroStr t9; goto bb0;
+#line 15 "tests/golden/run/fixedbugs-an-ignored-signal-stays-ignored.hero"
 bb0:
-#line 16 "tests/golden/run/fixedbugs-an-ignored-signal-stays-ignored.hero"
     t1 = HERO_STR_LIT(hero_str_3205);
 #line 16 "tests/golden/run/fixedbugs-an-ignored-signal-stays-ignored.hero"
     t2 = UINT64_C(4);
@@ -146,7 +134,7 @@ bb0:
 #line 18 "tests/golden/run/fixedbugs-an-ignored-signal-stays-ignored.hero"
     hero_print_end();
     hero_held_release(&h1_held);
-#line 150 "fixedbugsanignoredsignalstaysignored.c"
+#line 138 "fixedbugsanignoredsignalstaysignored.c"
     hero_str_release_at(&h0_word);
     hero_str_release_at(&h2_own2);
     return;

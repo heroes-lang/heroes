@@ -98,15 +98,10 @@ void h_fixedbugscgivesapointerbacktwiceandtheruntimesaysso_main(void);
 
 #line 25 "tests/golden/run/fixedbugs-c-gives-a-pointer-back-twice-and-the-runtime-says-so.hero"
 void h_fixedbugscgivesapointerbacktwiceandtheruntimesaysso_main(void) {
-#line 102 "fixedbugscgivesapointerbacktwiceandtheruntimesaysso.c"
-    void * h0_p;
-    void * t1;
-    void * t2;
-    void * t3;
-    HeroStr t4;
-    goto bb0;
+#line 25 "tests/golden/run/fixedbugs-c-gives-a-pointer-back-twice-and-the-runtime-says-so.hero"
+    void * h0_p; void * t1; void * t2; void * t3; HeroStr t4; goto bb0;
+#line 25 "tests/golden/run/fixedbugs-c-gives-a-pointer-back-twice-and-the-runtime-says-so.hero"
 bb0:
-#line 26 "tests/golden/run/fixedbugs-c-gives-a-pointer-back-twice-and-the-runtime-says-so.hero"
     t1 = (void *)make();
 #line 26 "tests/golden/run/fixedbugs-c-gives-a-pointer-back-twice-and-the-runtime-says-so.hero"
     h0_p = t1;
@@ -123,7 +118,7 @@ bb0:
     hero_print_end();
 #line 29 "tests/golden/run/fixedbugs-c-gives-a-pointer-back-twice-and-the-runtime-says-so.hero"
     return;
-#line 127 "fixedbugscgivesapointerbacktwiceandtheruntimesaysso.c"
+#line 122 "fixedbugscgivesapointerbacktwiceandtheruntimesaysso.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

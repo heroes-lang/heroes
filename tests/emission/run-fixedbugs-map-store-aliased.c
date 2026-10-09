@@ -104,42 +104,10 @@ void h_fixedbugsmapstorealiased_main(void);
 
 #line 31 "tests/golden/run/fixedbugs-map-store-aliased.hero"
 void h_fixedbugsmapstorealiased_main(void) {
-#line 108 "fixedbugsmapstorealiased.c"
-    HeroMapHeader * h0_m = {0};
-    HeroMapHeader * h1_n = {0};
-    h_0opt_e201354 h2_f0 = {0};
-    int64_t h3_r0;
-    HeroMapHeader * h4_own4 = {0};
-    h_0opt_e201354 h5_own5 = {0};
-    HeroMapHeader * t1;
-    HeroStr t2;
-    int64_t t3;
-    HeroMapHeader * t4;
-    HeroStr t5;
-    int64_t t6;
-    HeroMapHeader * t7;
-    int64_t t8;
-    HeroMapHeader * t9;
-    int64_t t10;
-    HeroMapHeader * t11;
-    HeroStr t12;
-    h_0opt_e201354 t13;
-    h_0opt_e201354 t14;
-    int64_t t15;
-    int64_t t16;
-    bool t17;
-    h_0opt_e201354 t18;
-    int64_t t19;
-    int64_t t20;
-    int64_t t21;
-    HeroMapHeader * t22;
-    HeroMapHeader * t23;
-    HeroMapHeader * t24;
-    h_0opt_e201354 t25;
-    h_0opt_e201354 t26;
-    goto bb0;
+#line 31 "tests/golden/run/fixedbugs-map-store-aliased.hero"
+    HeroMapHeader * h0_m = {0}; HeroMapHeader * h1_n = {0}; h_0opt_e201354 h2_f0 = {0}; int64_t h3_r0; HeroMapHeader * h4_own4 = {0}; h_0opt_e201354 h5_own5 = {0}; HeroMapHeader * t1; HeroStr t2; int64_t t3; HeroMapHeader * t4; HeroStr t5; int64_t t6; HeroMapHeader * t7; int64_t t8; HeroMapHeader * t9; int64_t t10; HeroMapHeader * t11; HeroStr t12; h_0opt_e201354 t13; h_0opt_e201354 t14; int64_t t15; int64_t t16; bool t17; h_0opt_e201354 t18; int64_t t19; int64_t t20; int64_t t21; HeroMapHeader * t22; HeroMapHeader * t23; HeroMapHeader * t24; h_0opt_e201354 t25; h_0opt_e201354 t26; goto bb0;
+#line 31 "tests/golden/run/fixedbugs-map-store-aliased.hero"
 bb0:
-#line 32 "tests/golden/run/fixedbugs-map-store-aliased.hero"
     t1 = hero_map_new(&hero_desc_str, &hero_desc_int, 0);
 #line 32 "tests/golden/run/fixedbugs-map-store-aliased.hero"
     t22 = h4_own4;
@@ -259,7 +227,7 @@ bb3:
     hero_print_int(t21);
 #line 38 "tests/golden/run/fixedbugs-map-store-aliased.hero"
     hero_print_end();
-#line 263 "fixedbugsmapstorealiased.c"
+#line 231 "fixedbugsmapstorealiased.c"
     hero_map_release_at(&h0_m);
     hero_map_release_at(&h1_n);
     h_0opt_e201354_release(hero_slot_escape(&h2_f0));

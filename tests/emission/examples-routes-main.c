@@ -144,50 +144,10 @@ void h_main_main(void);
 
 #line 23 "examples/routes/main.hero"
 HeroMapHeader * h_main_network(void) {
-#line 148 "main.c"
-    HeroMapHeader * h0_lines = {0};
-    HeroMapHeader * h1_own1 = {0};
-    HeroArrayHeader * h2_own2 = {0};
-    HeroArrayHeader * h3_own3 = {0};
-    HeroArrayHeader * h4_own4 = {0};
-    HeroArrayHeader * h5_own5 = {0};
-    HeroArrayHeader * h6_own6 = {0};
-    HeroArrayHeader * h7_own7 = {0};
-    HeroMapHeader * t1;
-    HeroStr t2;
-    HeroStr t3;
-    HeroStr t4;
-    HeroArrayHeader * t5;
-    HeroStr t6;
-    HeroStr t7;
-    HeroStr t8;
-    HeroArrayHeader * t9;
-    HeroStr t10;
-    HeroStr t11;
-    HeroStr t12;
-    HeroArrayHeader * t13;
-    HeroStr t14;
-    HeroStr t15;
-    HeroStr t16;
-    HeroArrayHeader * t17;
-    HeroStr t18;
-    HeroStr t19;
-    HeroStr t20;
-    HeroArrayHeader * t21;
-    HeroStr t22;
-    HeroArrayHeader * t23;
-    HeroMapHeader * t24;
-    HeroMapHeader * t25;
-    HeroMapHeader * t26;
-    HeroArrayHeader * t27;
-    HeroArrayHeader * t28;
-    HeroArrayHeader * t29;
-    HeroArrayHeader * t30;
-    HeroArrayHeader * t31;
-    HeroArrayHeader * t32;
-    goto bb0;
+#line 23 "examples/routes/main.hero"
+    HeroMapHeader * h0_lines = {0}; HeroMapHeader * h1_own1 = {0}; HeroArrayHeader * h2_own2 = {0}; HeroArrayHeader * h3_own3 = {0}; HeroArrayHeader * h4_own4 = {0}; HeroArrayHeader * h5_own5 = {0}; HeroArrayHeader * h6_own6 = {0}; HeroArrayHeader * h7_own7 = {0}; HeroMapHeader * t1; HeroStr t2; HeroStr t3; HeroStr t4; HeroArrayHeader * t5; HeroStr t6; HeroStr t7; HeroStr t8; HeroArrayHeader * t9; HeroStr t10; HeroStr t11; HeroStr t12; HeroArrayHeader * t13; HeroStr t14; HeroStr t15; HeroStr t16; HeroArrayHeader * t17; HeroStr t18; HeroStr t19; HeroStr t20; HeroArrayHeader * t21; HeroStr t22; HeroArrayHeader * t23; HeroMapHeader * t24; HeroMapHeader * t25; HeroMapHeader * t26; HeroArrayHeader * t27; HeroArrayHeader * t28; HeroArrayHeader * t29; HeroArrayHeader * t30; HeroArrayHeader * t31; HeroArrayHeader * t32; goto bb0;
+#line 23 "examples/routes/main.hero"
 bb0:
-#line 24 "examples/routes/main.hero"
     t1 = hero_map_new(&hero_desc_str, &hero_desc_array, 0);
 #line 24 "examples/routes/main.hero"
     t25 = h1_own1;
@@ -322,7 +282,7 @@ bb0:
 #line 30 "examples/routes/main.hero"
     hero_map_set(&(h0_lines), &t22, &t23);
     t24 = h0_lines;
-#line 326 "main.c"
+#line 286 "main.c"
     hero_map_incref(t24);
     hero_map_release_at(&h0_lines);
     hero_map_release_at(&h1_own1);
@@ -337,33 +297,10 @@ bb0:
 
 #line 33 "examples/routes/main.hero"
 HeroArrayHeader * h_main_neighbours(HeroMapHeader * h0_lines, HeroStr h1_station) {
-#line 341 "main.c"
-    HeroArrayHeader * h2_empty = {0};
-    h_0opt_5a58f2ca h3_f0 = {0};
-    HeroArrayHeader * h4_r0 = {0};
-    HeroArrayHeader * h5_own5 = {0};
-    h_0opt_5a58f2ca h6_own6 = {0};
-    HeroArrayHeader * t1;
-    HeroMapHeader * t2;
-    HeroStr t3;
-    h_0opt_5a58f2ca t4;
-    h_0opt_5a58f2ca t5;
-    int64_t t6;
-    int64_t t7;
-    bool t8;
-    h_0opt_5a58f2ca t9;
-    HeroArrayHeader * t10;
-    HeroArrayHeader * t11;
-    HeroArrayHeader * t12;
-    HeroArrayHeader * t13;
-    HeroArrayHeader * t14;
-    h_0opt_5a58f2ca t15;
-    h_0opt_5a58f2ca t16;
-    HeroArrayHeader * t17;
-    HeroArrayHeader * t18;
-    goto bb0;
+#line 33 "examples/routes/main.hero"
+    HeroArrayHeader * h2_empty = {0}; h_0opt_5a58f2ca h3_f0 = {0}; HeroArrayHeader * h4_r0 = {0}; HeroArrayHeader * h5_own5 = {0}; h_0opt_5a58f2ca h6_own6 = {0}; HeroArrayHeader * t1; HeroMapHeader * t2; HeroStr t3; h_0opt_5a58f2ca t4; h_0opt_5a58f2ca t5; int64_t t6; int64_t t7; bool t8; h_0opt_5a58f2ca t9; HeroArrayHeader * t10; HeroArrayHeader * t11; HeroArrayHeader * t12; HeroArrayHeader * t13; HeroArrayHeader * t14; h_0opt_5a58f2ca t15; h_0opt_5a58f2ca t16; HeroArrayHeader * t17; HeroArrayHeader * t18; goto bb0;
+#line 33 "examples/routes/main.hero"
 bb0:
-#line 34 "examples/routes/main.hero"
     t1 = hero_array_new(&hero_desc_str, 1);
 #line 34 "examples/routes/main.hero"
     t13 = h5_own5;
@@ -458,7 +395,7 @@ bb2:
 bb3:
 #line 35 "examples/routes/main.hero"
     t12 = h4_r0;
-#line 462 "main.c"
+#line 399 "main.c"
     hero_array_incref(t12);
     hero_array_release_at(&h2_empty);
     h_0opt_5a58f2ca_release(hero_slot_escape(&h3_f0));
@@ -470,154 +407,10 @@ bb3:
 
 #line 40 "examples/routes/main.hero"
 h_0opt_5a58f2ca h_main_route(HeroMapHeader * h0_lines, HeroStr h1_from, HeroStr h2_to) {
-#line 474 "main.c"
-    bool h3_b0;
-    h_0opt_5a58f2ca h4_f0 = {0};
-    h_0opt_5a58f2ca h5_f1 = {0};
-    HeroArrayHeader * h6_frontier = {0};
-    HeroMapHeader * h7_came_from = {0};
-    HeroMapHeader * h8_seen = {0};
-    int64_t h9_at;
-    HeroStr h10_here = {0};
-    HeroArrayHeader * h11_xs0 = {0};
-    int64_t h12_i0;
-    HeroStr h13_next = {0};
-    h_0opt_473cb9ae h14_f2 = {0};
-    bool h15_r0;
-    h_0opt_5a58f2ca h16_ret0 = {0};
-    h_0opt_5a58f2ca h17_own17 = {0};
-    h_0opt_5a58f2ca h18_own18 = {0};
-    h_0opt_5a58f2ca h19_own19 = {0};
-    HeroArrayHeader * h20_own20 = {0};
-    HeroMapHeader * h21_own21 = {0};
-    HeroMapHeader * h22_own22 = {0};
-    HeroArrayHeader * h23_own23 = {0};
-    h_0opt_5a58f2ca h24_own24 = {0};
-    HeroArrayHeader * h25_own25 = {0};
-    HeroStr h26_own26 = {0};
-    HeroStr h27_own27 = {0};
-    HeroStr h28_own28 = {0};
-    h_0opt_5a58f2ca h29_own29 = {0};
-    h_0opt_473cb9ae h30_own30 = {0};
-    HeroArrayHeader * h31_own31 = {0};
-    h_0opt_5a58f2ca h32_own32 = {0};
-    HeroMapHeader * t1;
-    HeroStr t2;
-    h_0opt_5a58f2ca t3;
-    h_0opt_5a58f2ca t4;
-    int64_t t5;
-    int64_t t6;
-    bool t7;
-    HeroMapHeader * t8;
-    HeroStr t9;
-    h_0opt_5a58f2ca t10;
-    h_0opt_5a58f2ca t11;
-    int64_t t12;
-    int64_t t13;
-    bool t14;
-    bool t15;
-    HeroStr t16;
-    HeroStr t17;
-    h_0opt_5a58f2ca t18;
-    HeroStr t19;
-    HeroStr t20;
-    bool t21;
-    HeroStr t22;
-    HeroArrayHeader * t23;
-    h_0opt_5a58f2ca t24;
-    HeroStr t25;
-    HeroArrayHeader * t26;
-    HeroMapHeader * t27;
-    HeroMapHeader * t28;
-    HeroStr t29;
-    bool t30;
-    int64_t t31;
-    int64_t t32;
-    HeroArrayHeader * t33;
-    int64_t t34;
-    bool t35;
-    HeroArrayHeader * t36;
-    int64_t t37;
-    HeroStr t38;
-    int64_t t39;
-    int64_t t40;
-    int64_t t41;
-    HeroMapHeader * t42;
-    HeroStr t43;
-    HeroArrayHeader * t44;
-    int64_t t45;
-    int64_t t46;
-    HeroArrayHeader * t47;
-    int64_t t48;
-    bool t49;
-    HeroArrayHeader * t50;
-    int64_t t51;
-    HeroStr t52;
-    HeroMapHeader * t53;
-    HeroStr t54;
-    h_0opt_473cb9ae t55;
-    h_0opt_473cb9ae t56;
-    int64_t t57;
-    int64_t t58;
-    bool t59;
-    h_0opt_473cb9ae t60;
-    bool t61;
-    bool t62;
-    bool t63;
-    HeroStr t64;
-    bool t65;
-    HeroStr t66;
-    HeroStr t67;
-    HeroStr t68;
-    HeroStr t69;
-    bool t70;
-    HeroMapHeader * t71;
-    HeroStr t72;
-    HeroStr t73;
-    HeroArrayHeader * t74;
-    h_0opt_5a58f2ca t75;
-    HeroStr t77;
-    int64_t t79;
-    int64_t t80;
-    int64_t t81;
-    HeroStr t82;
-    HeroStr t83;
-    HeroStr t84;
-    HeroStr t85;
-    HeroStr t86;
-    HeroStr t87;
-    HeroStr t88;
-    HeroStr t89;
-    h_0opt_5a58f2ca t90;
-    h_0opt_5a58f2ca t91;
-    h_0opt_5a58f2ca t92;
-    h_0opt_5a58f2ca t93;
-    h_0opt_5a58f2ca t94;
-    h_0opt_5a58f2ca t95;
-    h_0opt_5a58f2ca t96;
-    HeroArrayHeader * t97;
-    HeroArrayHeader * t98;
-    HeroMapHeader * t99;
-    HeroMapHeader * t100;
-    HeroMapHeader * t101;
-    HeroMapHeader * t102;
-    HeroArrayHeader * t103;
-    h_0opt_5a58f2ca t104;
-    HeroStr t105;
-    HeroArrayHeader * t106;
-    HeroArrayHeader * t107;
-    HeroStr t108;
-    HeroStr t109;
-    HeroStr t110;
-    h_0opt_5a58f2ca t111;
-    HeroStr t112;
-    h_0opt_473cb9ae t113;
-    h_0opt_473cb9ae t114;
-    HeroArrayHeader * t115;
-    h_0opt_5a58f2ca t116;
-    goto bb0;
+#line 40 "examples/routes/main.hero"
+    bool h3_b0; h_0opt_5a58f2ca h4_f0 = {0}; h_0opt_5a58f2ca h5_f1 = {0}; HeroArrayHeader * h6_frontier = {0}; HeroMapHeader * h7_came_from = {0}; HeroMapHeader * h8_seen = {0}; int64_t h9_at; HeroStr h10_here = {0}; HeroArrayHeader * h11_xs0 = {0}; int64_t h12_i0; HeroStr h13_next = {0}; h_0opt_473cb9ae h14_f2 = {0}; bool h15_r0; h_0opt_5a58f2ca h16_ret0 = {0}; h_0opt_5a58f2ca h17_own17 = {0}; h_0opt_5a58f2ca h18_own18 = {0}; h_0opt_5a58f2ca h19_own19 = {0}; HeroArrayHeader * h20_own20 = {0}; HeroMapHeader * h21_own21 = {0}; HeroMapHeader * h22_own22 = {0}; HeroArrayHeader * h23_own23 = {0}; h_0opt_5a58f2ca h24_own24 = {0}; HeroArrayHeader * h25_own25 = {0}; HeroStr h26_own26 = {0}; HeroStr h27_own27 = {0}; HeroStr h28_own28 = {0}; h_0opt_5a58f2ca h29_own29 = {0}; h_0opt_473cb9ae h30_own30 = {0}; HeroArrayHeader * h31_own31 = {0}; h_0opt_5a58f2ca h32_own32 = {0}; HeroMapHeader * t1; HeroStr t2; h_0opt_5a58f2ca t3; h_0opt_5a58f2ca t4; int64_t t5; int64_t t6; bool t7; HeroMapHeader * t8; HeroStr t9; h_0opt_5a58f2ca t10; h_0opt_5a58f2ca t11; int64_t t12; int64_t t13; bool t14; bool t15; HeroStr t16; HeroStr t17; h_0opt_5a58f2ca t18; HeroStr t19; HeroStr t20; bool t21; HeroStr t22; HeroArrayHeader * t23; h_0opt_5a58f2ca t24; HeroStr t25; HeroArrayHeader * t26; HeroMapHeader * t27; HeroMapHeader * t28; HeroStr t29; bool t30; int64_t t31; int64_t t32; HeroArrayHeader * t33; int64_t t34; bool t35; HeroArrayHeader * t36; int64_t t37; HeroStr t38; int64_t t39; int64_t t40; int64_t t41; HeroMapHeader * t42; HeroStr t43; HeroArrayHeader * t44; int64_t t45; int64_t t46; HeroArrayHeader * t47; int64_t t48; bool t49; HeroArrayHeader * t50; int64_t t51; HeroStr t52; HeroMapHeader * t53; HeroStr t54; h_0opt_473cb9ae t55; h_0opt_473cb9ae t56; int64_t t57; int64_t t58; bool t59; h_0opt_473cb9ae t60; bool t61; bool t62; bool t63; HeroStr t64; bool t65; HeroStr t66; HeroStr t67; HeroStr t68; HeroStr t69; bool t70; HeroMapHeader * t71; HeroStr t72; HeroStr t73; HeroArrayHeader * t74; h_0opt_5a58f2ca t75; HeroStr t77; int64_t t79; int64_t t80; int64_t t81; HeroStr t82; HeroStr t83; HeroStr t84; HeroStr t85; HeroStr t86; HeroStr t87; HeroStr t88; HeroStr t89; h_0opt_5a58f2ca t90; h_0opt_5a58f2ca t91; h_0opt_5a58f2ca t92; h_0opt_5a58f2ca t93; h_0opt_5a58f2ca t94; h_0opt_5a58f2ca t95; h_0opt_5a58f2ca t96; HeroArrayHeader * t97; HeroArrayHeader * t98; HeroMapHeader * t99; HeroMapHeader * t100; HeroMapHeader * t101; HeroMapHeader * t102; HeroArrayHeader * t103; h_0opt_5a58f2ca t104; HeroStr t105; HeroArrayHeader * t106; HeroArrayHeader * t107; HeroStr t108; HeroStr t109; HeroStr t110; h_0opt_5a58f2ca t111; HeroStr t112; h_0opt_473cb9ae t113; h_0opt_473cb9ae t114; HeroArrayHeader * t115; h_0opt_5a58f2ca t116; goto bb0;
+#line 40 "examples/routes/main.hero"
 bb0:
-#line 41 "examples/routes/main.hero"
     t1 = h0_lines;
 #line 41 "examples/routes/main.hero"
     t2 = h1_from;
@@ -1150,7 +943,7 @@ bb24:
     goto bb22;
 #line 63 "examples/routes/main.hero"
 bb25:
-#line 1154 "main.c"
+#line 947 "main.c"
     t91 = h16_ret0;
     h_0opt_5a58f2ca_retain(&t91);
     h_0opt_5a58f2ca_release(hero_slot_escape(&h4_f0));
@@ -1183,65 +976,10 @@ bb25:
 
 #line 72 "examples/routes/main.hero"
 HeroArrayHeader * h_main_walked_back(HeroMapHeader * h0_came_from, HeroStr h1_from, HeroStr h2_to) {
-#line 1187 "main.c"
-    HeroArrayHeader * h3_backwards = {0};
-    HeroStr h4_here = {0};
-    h_0opt_f87774a h5_f0 = {0};
-    HeroStr h6_r0 = {0};
-    HeroStr h7_previous = {0};
-    HeroArrayHeader * h8_forwards = {0};
-    int64_t h9_i;
-    HeroArrayHeader * h10_own10 = {0};
-    h_0opt_f87774a h11_own11 = {0};
-    HeroArrayHeader * h12_own12 = {0};
-    HeroStr t1;
-    HeroArrayHeader * t2;
-    HeroStr t3;
-    HeroStr t4;
-    HeroStr t5;
-    bool t6;
-    HeroMapHeader * t7;
-    HeroStr t8;
-    h_0opt_f87774a t9;
-    h_0opt_f87774a t10;
-    int64_t t11;
-    int64_t t12;
-    bool t13;
-    h_0opt_f87774a t14;
-    HeroStr t15;
-    HeroStr t16;
-    HeroStr t17;
-    HeroStr t19;
-    HeroStr t21;
-    HeroArrayHeader * t22;
-    HeroArrayHeader * t23;
-    int64_t t24;
-    int64_t t25;
-    int64_t t26;
-    int64_t t27;
-    int64_t t28;
-    bool t29;
-    HeroArrayHeader * t31;
-    int64_t t32;
-    HeroStr t33;
-    int64_t t35;
-    int64_t t36;
-    int64_t t37;
-    HeroArrayHeader * t38;
-    HeroArrayHeader * t39;
-    HeroArrayHeader * t40;
-    HeroStr t41;
-    h_0opt_f87774a t42;
-    h_0opt_f87774a t43;
-    HeroArrayHeader * t44;
-    HeroArrayHeader * t45;
-    HeroStr t46;
-    HeroStr t47;
-    HeroStr t48;
-    HeroStr t49;
-    goto bb0;
+#line 72 "examples/routes/main.hero"
+    HeroArrayHeader * h3_backwards = {0}; HeroStr h4_here = {0}; h_0opt_f87774a h5_f0 = {0}; HeroStr h6_r0 = {0}; HeroStr h7_previous = {0}; HeroArrayHeader * h8_forwards = {0}; int64_t h9_i; HeroArrayHeader * h10_own10 = {0}; h_0opt_f87774a h11_own11 = {0}; HeroArrayHeader * h12_own12 = {0}; HeroStr t1; HeroArrayHeader * t2; HeroStr t3; HeroStr t4; HeroStr t5; bool t6; HeroMapHeader * t7; HeroStr t8; h_0opt_f87774a t9; h_0opt_f87774a t10; int64_t t11; int64_t t12; bool t13; h_0opt_f87774a t14; HeroStr t15; HeroStr t16; HeroStr t17; HeroStr t19; HeroStr t21; HeroArrayHeader * t22; HeroArrayHeader * t23; int64_t t24; int64_t t25; int64_t t26; int64_t t27; int64_t t28; bool t29; HeroArrayHeader * t31; int64_t t32; HeroStr t33; int64_t t35; int64_t t36; int64_t t37; HeroArrayHeader * t38; HeroArrayHeader * t39; HeroArrayHeader * t40; HeroStr t41; h_0opt_f87774a t42; h_0opt_f87774a t43; HeroArrayHeader * t44; HeroArrayHeader * t45; HeroStr t46; HeroStr t47; HeroStr t48; HeroStr t49; goto bb0;
+#line 72 "examples/routes/main.hero"
 bb0:
-#line 73 "examples/routes/main.hero"
     t1 = h2_to;
 #line 73 "examples/routes/main.hero"
     t2 = hero_array_new(&hero_desc_str, 1);
@@ -1446,7 +1184,7 @@ bb8:
 bb9:
 #line 88 "examples/routes/main.hero"
     t38 = h8_forwards;
-#line 1450 "main.c"
+#line 1188 "main.c"
     hero_array_incref(t38);
     hero_array_release_at(&h3_backwards);
     hero_str_release_at(&h4_here);
@@ -1462,37 +1200,10 @@ bb9:
 
 #line 90 "examples/routes/main.hero"
 h_0opt_e201354 h_main_stops(HeroMapHeader * h0_lines, HeroStr h1_from, HeroStr h2_to) {
-#line 1466 "main.c"
-    h_0opt_5a58f2ca h3_f0 = {0};
-    h_0opt_e201354 h4_ret0 = {0};
-    h_0opt_5a58f2ca h5_own5 = {0};
-    h_0opt_e201354 h6_own6 = {0};
-    h_0opt_e201354 h7_own7 = {0};
-    HeroMapHeader * t1;
-    HeroStr t2;
-    HeroStr t3;
-    h_0opt_5a58f2ca t4;
-    h_0opt_5a58f2ca t5;
-    int64_t t6;
-    int64_t t7;
-    bool t8;
-    h_0opt_5a58f2ca t9;
-    HeroFailure t10;
-    h_0opt_e201354 t11;
-    h_0opt_5a58f2ca t12;
-    HeroArrayHeader * t13;
-    int64_t t14;
-    int64_t t15;
-    int64_t t16;
-    h_0opt_e201354 t17;
-    h_0opt_e201354 t18;
-    h_0opt_5a58f2ca t19;
-    h_0opt_5a58f2ca t20;
-    h_0opt_e201354 t21;
-    h_0opt_e201354 t22;
-    goto bb0;
+#line 90 "examples/routes/main.hero"
+    h_0opt_5a58f2ca h3_f0 = {0}; h_0opt_e201354 h4_ret0 = {0}; h_0opt_5a58f2ca h5_own5 = {0}; h_0opt_e201354 h6_own6 = {0}; h_0opt_e201354 h7_own7 = {0}; HeroMapHeader * t1; HeroStr t2; HeroStr t3; h_0opt_5a58f2ca t4; h_0opt_5a58f2ca t5; int64_t t6; int64_t t7; bool t8; h_0opt_5a58f2ca t9; HeroFailure t10; h_0opt_e201354 t11; h_0opt_5a58f2ca t12; HeroArrayHeader * t13; int64_t t14; int64_t t15; int64_t t16; h_0opt_e201354 t17; h_0opt_e201354 t18; h_0opt_5a58f2ca t19; h_0opt_5a58f2ca t20; h_0opt_e201354 t21; h_0opt_e201354 t22; goto bb0;
+#line 90 "examples/routes/main.hero"
 bb0:
-#line 91 "examples/routes/main.hero"
     t1 = h0_lines;
 #line 91 "examples/routes/main.hero"
     t2 = h1_from;
@@ -1570,7 +1281,7 @@ bb2:
     goto bb3;
 #line 91 "examples/routes/main.hero"
 bb3:
-#line 1574 "main.c"
+#line 1285 "main.c"
     t18 = h4_ret0;
     h_0opt_e201354_retain(&t18);
     h_0opt_5a58f2ca_release(hero_slot_escape(&h3_f0));
@@ -1582,131 +1293,10 @@ bb3:
 
 #line 93 "examples/routes/main.hero"
 void h_main_main(void) {
-#line 1586 "main.c"
-    HeroMapHeader * h0_lines = {0};
-    h_0opt_5a58f2ca h1_f0 = {0};
-    h_0opt_e201354 h2_f1 = {0};
-    h_0opt_5a58f2ca h3_f2 = {0};
-    h_0opt_5a58f2ca h4_f3 = {0};
-    h_0opt_e201354 h5_f4 = {0};
-    h_0opt_5a58f2ca h6_f5 = {0};
-    h_0opt_5a58f2ca h7_f6 = {0};
-    HeroMapHeader * h8_own8 = {0};
-    h_0opt_5a58f2ca h9_own9 = {0};
-    HeroStr h10_own10 = {0};
-    h_0opt_e201354 h11_own11 = {0};
-    h_0opt_5a58f2ca h12_own12 = {0};
-    HeroStr h13_own13 = {0};
-    h_0opt_5a58f2ca h14_own14 = {0};
-    HeroStr h15_own15 = {0};
-    h_0opt_e201354 h16_own16 = {0};
-    h_0opt_5a58f2ca h17_own17 = {0};
-    h_0opt_5a58f2ca h18_own18 = {0};
-    HeroMapHeader * t1;
-    HeroMapHeader * t2;
-    HeroStr t3;
-    HeroStr t4;
-    h_0opt_5a58f2ca t5;
-    h_0opt_5a58f2ca t6;
-    int64_t t7;
-    int64_t t8;
-    bool t9;
-    h_0opt_5a58f2ca t10;
-    HeroFailure t11;
-    h_0opt_5a58f2ca t12;
-    HeroArrayHeader * t13;
-    HeroStr t14;
-    HeroStr t15;
-    HeroMapHeader * t16;
-    HeroStr t17;
-    HeroStr t18;
-    h_0opt_e201354 t19;
-    h_0opt_e201354 t20;
-    int64_t t21;
-    int64_t t22;
-    bool t23;
-    h_0opt_e201354 t24;
-    HeroFailure t25;
-    h_0opt_e201354 t26;
-    int64_t t27;
-    HeroMapHeader * t28;
-    HeroStr t29;
-    HeroStr t30;
-    h_0opt_5a58f2ca t31;
-    h_0opt_5a58f2ca t32;
-    int64_t t33;
-    int64_t t34;
-    bool t35;
-    h_0opt_5a58f2ca t36;
-    HeroFailure t37;
-    h_0opt_5a58f2ca t38;
-    HeroArrayHeader * t39;
-    HeroStr t40;
-    HeroStr t41;
-    HeroMapHeader * t42;
-    HeroStr t43;
-    HeroStr t44;
-    h_0opt_5a58f2ca t45;
-    h_0opt_5a58f2ca t46;
-    int64_t t47;
-    int64_t t48;
-    bool t49;
-    h_0opt_5a58f2ca t50;
-    HeroFailure t51;
-    h_0opt_5a58f2ca t52;
-    HeroArrayHeader * t53;
-    HeroStr t54;
-    HeroStr t55;
-    HeroMapHeader * t56;
-    HeroStr t57;
-    HeroStr t58;
-    h_0opt_e201354 t59;
-    h_0opt_e201354 t60;
-    int64_t t61;
-    int64_t t62;
-    bool t63;
-    h_0opt_e201354 t64;
-    HeroFailure t65;
-    h_0opt_e201354 t66;
-    int64_t t67;
-    HeroMapHeader * t68;
-    HeroStr t69;
-    HeroStr t70;
-    h_0opt_5a58f2ca t71;
-    h_0opt_5a58f2ca t72;
-    int64_t t73;
-    int64_t t74;
-    bool t75;
-    HeroMapHeader * t76;
-    HeroStr t77;
-    HeroStr t78;
-    h_0opt_5a58f2ca t79;
-    h_0opt_5a58f2ca t80;
-    int64_t t81;
-    int64_t t82;
-    bool t83;
-    HeroMapHeader * t84;
-    HeroMapHeader * t85;
-    h_0opt_5a58f2ca t86;
-    h_0opt_5a58f2ca t87;
-    HeroStr t88;
-    h_0opt_e201354 t89;
-    h_0opt_e201354 t90;
-    h_0opt_5a58f2ca t91;
-    h_0opt_5a58f2ca t92;
-    HeroStr t93;
-    h_0opt_5a58f2ca t94;
-    h_0opt_5a58f2ca t95;
-    HeroStr t96;
-    h_0opt_e201354 t97;
-    h_0opt_e201354 t98;
-    h_0opt_5a58f2ca t99;
-    h_0opt_5a58f2ca t100;
-    h_0opt_5a58f2ca t101;
-    h_0opt_5a58f2ca t102;
-    goto bb0;
+#line 93 "examples/routes/main.hero"
+    HeroMapHeader * h0_lines = {0}; h_0opt_5a58f2ca h1_f0 = {0}; h_0opt_e201354 h2_f1 = {0}; h_0opt_5a58f2ca h3_f2 = {0}; h_0opt_5a58f2ca h4_f3 = {0}; h_0opt_e201354 h5_f4 = {0}; h_0opt_5a58f2ca h6_f5 = {0}; h_0opt_5a58f2ca h7_f6 = {0}; HeroMapHeader * h8_own8 = {0}; h_0opt_5a58f2ca h9_own9 = {0}; HeroStr h10_own10 = {0}; h_0opt_e201354 h11_own11 = {0}; h_0opt_5a58f2ca h12_own12 = {0}; HeroStr h13_own13 = {0}; h_0opt_5a58f2ca h14_own14 = {0}; HeroStr h15_own15 = {0}; h_0opt_e201354 h16_own16 = {0}; h_0opt_5a58f2ca h17_own17 = {0}; h_0opt_5a58f2ca h18_own18 = {0}; HeroMapHeader * t1; HeroMapHeader * t2; HeroStr t3; HeroStr t4; h_0opt_5a58f2ca t5; h_0opt_5a58f2ca t6; int64_t t7; int64_t t8; bool t9; h_0opt_5a58f2ca t10; HeroFailure t11; h_0opt_5a58f2ca t12; HeroArrayHeader * t13; HeroStr t14; HeroStr t15; HeroMapHeader * t16; HeroStr t17; HeroStr t18; h_0opt_e201354 t19; h_0opt_e201354 t20; int64_t t21; int64_t t22; bool t23; h_0opt_e201354 t24; HeroFailure t25; h_0opt_e201354 t26; int64_t t27; HeroMapHeader * t28; HeroStr t29; HeroStr t30; h_0opt_5a58f2ca t31; h_0opt_5a58f2ca t32; int64_t t33; int64_t t34; bool t35; h_0opt_5a58f2ca t36; HeroFailure t37; h_0opt_5a58f2ca t38; HeroArrayHeader * t39; HeroStr t40; HeroStr t41; HeroMapHeader * t42; HeroStr t43; HeroStr t44; h_0opt_5a58f2ca t45; h_0opt_5a58f2ca t46; int64_t t47; int64_t t48; bool t49; h_0opt_5a58f2ca t50; HeroFailure t51; h_0opt_5a58f2ca t52; HeroArrayHeader * t53; HeroStr t54; HeroStr t55; HeroMapHeader * t56; HeroStr t57; HeroStr t58; h_0opt_e201354 t59; h_0opt_e201354 t60; int64_t t61; int64_t t62; bool t63; h_0opt_e201354 t64; HeroFailure t65; h_0opt_e201354 t66; int64_t t67; HeroMapHeader * t68; HeroStr t69; HeroStr t70; h_0opt_5a58f2ca t71; h_0opt_5a58f2ca t72; int64_t t73; int64_t t74; bool t75; HeroMapHeader * t76; HeroStr t77; HeroStr t78; h_0opt_5a58f2ca t79; h_0opt_5a58f2ca t80; int64_t t81; int64_t t82; bool t83; HeroMapHeader * t84; HeroMapHeader * t85; h_0opt_5a58f2ca t86; h_0opt_5a58f2ca t87; HeroStr t88; h_0opt_e201354 t89; h_0opt_e201354 t90; h_0opt_5a58f2ca t91; h_0opt_5a58f2ca t92; HeroStr t93; h_0opt_5a58f2ca t94; h_0opt_5a58f2ca t95; HeroStr t96; h_0opt_e201354 t97; h_0opt_e201354 t98; h_0opt_5a58f2ca t99; h_0opt_5a58f2ca t100; h_0opt_5a58f2ca t101; h_0opt_5a58f2ca t102; goto bb0;
+#line 93 "examples/routes/main.hero"
 bb0:
-#line 94 "examples/routes/main.hero"
     t1 = h_main_network();
 #line 94 "examples/routes/main.hero"
     t84 = h8_own8;
@@ -1811,7 +1401,7 @@ bb2:
     t10 = h1_f0;
 #line 96 "examples/routes/main.hero"
     t11 = t10.as.err;
-#line 1815 "main.c"
+#line 1405 "main.c"
     hero_panic_must(t11);
     hero_unreachable();
 bb3:
@@ -1861,7 +1451,7 @@ bb4:
     t24 = h2_f1;
 #line 97 "examples/routes/main.hero"
     t25 = t24.as.err;
-#line 1865 "main.c"
+#line 1455 "main.c"
     hero_panic_must(t25);
     hero_unreachable();
 bb5:
@@ -1921,7 +1511,7 @@ bb6:
     t36 = h3_f2;
 #line 102 "examples/routes/main.hero"
     t37 = t36.as.err;
-#line 1925 "main.c"
+#line 1515 "main.c"
     hero_panic_must(t37);
     hero_unreachable();
 bb7:
@@ -1980,7 +1570,7 @@ bb8:
     t50 = h4_f3;
 #line 104 "examples/routes/main.hero"
     t51 = t50.as.err;
-#line 1984 "main.c"
+#line 1574 "main.c"
     hero_panic_must(t51);
     hero_unreachable();
 bb9:
@@ -2059,7 +1649,7 @@ bb9:
     hero_print_bool(t83);
 #line 109 "examples/routes/main.hero"
     hero_print_end();
-#line 2063 "main.c"
+#line 1653 "main.c"
     hero_map_release_at(&h0_lines);
     h_0opt_5a58f2ca_release(hero_slot_escape(&h1_f0));
     h_0opt_e201354_release(hero_slot_escape(&h2_f1));
@@ -2085,7 +1675,7 @@ bb10:
     t64 = h5_f4;
 #line 105 "examples/routes/main.hero"
     t65 = t64.as.err;
-#line 2089 "main.c"
+#line 1679 "main.c"
     hero_panic_must(t65);
     hero_unreachable();
 }

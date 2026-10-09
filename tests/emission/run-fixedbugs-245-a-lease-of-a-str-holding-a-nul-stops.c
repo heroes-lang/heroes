@@ -137,88 +137,22 @@ h_0opt_f87774a h_library_read_file(HeroStr h0_path);
 
 #line 18 "tests/golden/run/fixedbugs-245-a-lease-of-a-str-holding-a-nul-stops.hero"
 HeroStr h_fixedbugs245aleaseofastrholdinganulstops_HELD(void) {
-#line 141 "fixedbugs245aleaseofastrholdinganulstops.c"
-    HeroStr t1;
-    goto bb0;
+#line 18 "tests/golden/run/fixedbugs-245-a-lease-of-a-str-holding-a-nul-stops.hero"
+    HeroStr t1; goto bb0;
+#line 18 "tests/golden/run/fixedbugs-245-a-lease-of-a-str-holding-a-nul-stops.hero"
 bb0:
-#line 19 "tests/golden/run/fixedbugs-245-a-lease-of-a-str-holding-a-nul-stops.hero"
     t1 = HERO_STR_LIT(hero_str_6107d0b4);
-#line 147 "fixedbugs245aleaseofastrholdinganulstops.c"
+#line 146 "fixedbugs245aleaseofastrholdinganulstops.c"
     hero_str_incref(t1);
     return t1;
 }
 
 #line 21 "tests/golden/run/fixedbugs-245-a-lease-of-a-str-holding-a-nul-stops.hero"
 HeroStr h_fixedbugs245aleaseofastrholdinganulstops_held(void) {
-#line 154 "fixedbugs245aleaseofastrholdinganulstops.c"
-    void * h0_handle;
-    HeroArrayHeader * h1_xs0 = {0};
-    int64_t h2_i0;
-    int64_t h3_b;
-    h_0opt_e1f4933 h4_f0 = {0};
-    h_0opt_f87774a h5_f1 = {0};
-    HeroStr h6_own6 = {0};
-    HeroArrayHeader * h7_own7 = {0};
-    h_0opt_e1f4933 h8_own8 = {0};
-    HeroStr h9_own9 = {0};
-    h_0opt_f87774a h10_own10 = {0};
-    HeroStr t1;
-    const char * t2;
-    HeroStr t3;
-    const char * t4;
-    void * t5;
-    HeroStr t6;
-    void * t7;
-    void * t8;
-    bool t9;
-    int64_t t10;
-    int64_t t11;
-    int64_t t12;
-    HeroArrayHeader * t13;
-    int64_t t14;
-    int64_t t15;
-    HeroArrayHeader * t16;
-    int64_t t17;
-    bool t18;
-    HeroArrayHeader * t19;
-    int64_t t20;
-    int64_t t21;
-    int64_t t22;
-    h_0opt_e1f4933 t23;
-    h_0opt_e1f4933 t24;
-    int64_t t25;
-    int64_t t26;
-    bool t27;
-    h_0opt_e1f4933 t28;
-    HeroFailure t29;
-    h_0opt_e1f4933 t30;
-    int32_t t31;
-    void * t32;
-    int64_t t34;
-    int64_t t35;
-    int64_t t36;
-    void * t37;
-    HeroStr t39;
-    h_0opt_f87774a t40;
-    h_0opt_f87774a t41;
-    int64_t t42;
-    int64_t t43;
-    bool t44;
-    h_0opt_f87774a t45;
-    HeroFailure t46;
-    h_0opt_f87774a t47;
-    HeroStr t48;
-    HeroStr t49;
-    HeroArrayHeader * t50;
-    HeroArrayHeader * t51;
-    h_0opt_e1f4933 t52;
-    h_0opt_e1f4933 t53;
-    HeroStr t54;
-    h_0opt_f87774a t55;
-    h_0opt_f87774a t56;
-    goto bb0;
+#line 21 "tests/golden/run/fixedbugs-245-a-lease-of-a-str-holding-a-nul-stops.hero"
+    void * h0_handle; HeroArrayHeader * h1_xs0 = {0}; int64_t h2_i0; int64_t h3_b; h_0opt_e1f4933 h4_f0 = {0}; h_0opt_f87774a h5_f1 = {0}; HeroStr h6_own6 = {0}; HeroArrayHeader * h7_own7 = {0}; h_0opt_e1f4933 h8_own8 = {0}; HeroStr h9_own9 = {0}; h_0opt_f87774a h10_own10 = {0}; HeroStr t1; const char * t2; HeroStr t3; const char * t4; void * t5; HeroStr t6; void * t7; void * t8; bool t9; int64_t t10; int64_t t11; int64_t t12; HeroArrayHeader * t13; int64_t t14; int64_t t15; HeroArrayHeader * t16; int64_t t17; bool t18; HeroArrayHeader * t19; int64_t t20; int64_t t21; int64_t t22; h_0opt_e1f4933 t23; h_0opt_e1f4933 t24; int64_t t25; int64_t t26; bool t27; h_0opt_e1f4933 t28; HeroFailure t29; h_0opt_e1f4933 t30; int32_t t31; void * t32; int64_t t34; int64_t t35; int64_t t36; void * t37; HeroStr t39; h_0opt_f87774a t40; h_0opt_f87774a t41; int64_t t42; int64_t t43; bool t44; h_0opt_f87774a t45; HeroFailure t46; h_0opt_f87774a t47; HeroStr t48; HeroStr t49; HeroArrayHeader * t50; HeroArrayHeader * t51; h_0opt_e1f4933 t52; h_0opt_e1f4933 t53; HeroStr t54; h_0opt_f87774a t55; h_0opt_f87774a t56; goto bb0;
+#line 21 "tests/golden/run/fixedbugs-245-a-lease-of-a-str-holding-a-nul-stops.hero"
 bb0:
-#line 22 "tests/golden/run/fixedbugs-245-a-lease-of-a-str-holding-a-nul-stops.hero"
     t1 = h_fixedbugs245aleaseofastrholdinganulstops_HELD();
 #line 22 "tests/golden/run/fixedbugs-245-a-lease-of-a-str-holding-a-nul-stops.hero"
     t49 = h6_own6;
@@ -283,7 +217,7 @@ bb1:
     goto bb3;
 #line 25 "tests/golden/run/fixedbugs-245-a-lease-of-a-str-holding-a-nul-stops.hero"
 bb2:
-#line 287 "fixedbugs245aleaseofastrholdinganulstops.c"
+#line 221 "fixedbugs245aleaseofastrholdinganulstops.c"
     (void)t7;
     (void)t8;
     hero_panic_assert(t6);
@@ -413,7 +347,7 @@ bb8:
     t28 = h4_f0;
 #line 26 "tests/golden/run/fixedbugs-245-a-lease-of-a-str-holding-a-nul-stops.hero"
     t29 = t28.as.err;
-#line 417 "fixedbugs245aleaseofastrholdinganulstops.c"
+#line 351 "fixedbugs245aleaseofastrholdinganulstops.c"
     hero_panic_must(t29);
     hero_unreachable();
 bb9:
@@ -421,7 +355,7 @@ bb9:
     t47 = h5_f1;
 #line 29 "tests/golden/run/fixedbugs-245-a-lease-of-a-str-holding-a-nul-stops.hero"
     t48 = t47.as.ok;
-#line 425 "fixedbugs245aleaseofastrholdinganulstops.c"
+#line 359 "fixedbugs245aleaseofastrholdinganulstops.c"
     hero_str_incref(t48);
     hero_array_release_at(&h1_xs0);
     h_0opt_e1f4933_release(hero_slot_escape(&h4_f0));
@@ -437,32 +371,17 @@ bb10:
     t45 = h5_f1;
 #line 29 "tests/golden/run/fixedbugs-245-a-lease-of-a-str-holding-a-nul-stops.hero"
     t46 = t45.as.err;
-#line 441 "fixedbugs245aleaseofastrholdinganulstops.c"
+#line 375 "fixedbugs245aleaseofastrholdinganulstops.c"
     hero_panic_must(t46);
     hero_unreachable();
 }
 
 #line 31 "tests/golden/run/fixedbugs-245-a-lease-of-a-str-holding-a-nul-stops.hero"
 void h_fixedbugs245aleaseofastrholdinganulstops_main(void) {
-#line 448 "fixedbugs245aleaseofastrholdinganulstops.c"
-    HeroStr h0_s = {0};
-    const char * h1_c;
-    HeroStr h2_own2 = {0};
-    HeroStr t1;
-    HeroStr t2;
-    HeroStr t3;
-    int64_t t4;
-    HeroStr t5;
-    HeroStr t6;
-    const char * t7;
-    HeroStr t8;
-    const char * t9;
-    uint64_t t10;
-    HeroStr t11;
-    HeroStr t12;
-    goto bb0;
+#line 31 "tests/golden/run/fixedbugs-245-a-lease-of-a-str-holding-a-nul-stops.hero"
+    HeroStr h0_s = {0}; const char * h1_c; HeroStr h2_own2 = {0}; HeroStr t1; HeroStr t2; HeroStr t3; int64_t t4; HeroStr t5; HeroStr t6; const char * t7; HeroStr t8; const char * t9; uint64_t t10; HeroStr t11; HeroStr t12; goto bb0;
+#line 31 "tests/golden/run/fixedbugs-245-a-lease-of-a-str-holding-a-nul-stops.hero"
 bb0:
-#line 32 "tests/golden/run/fixedbugs-245-a-lease-of-a-str-holding-a-nul-stops.hero"
     t1 = h_fixedbugs245aleaseofastrholdinganulstops_held();
 #line 32 "tests/golden/run/fixedbugs-245-a-lease-of-a-str-holding-a-nul-stops.hero"
     t11 = h2_own2;
@@ -510,7 +429,7 @@ bb0:
 #line 35 "tests/golden/run/fixedbugs-245-a-lease-of-a-str-holding-a-nul-stops.hero"
     hero_print_end();
     hero_held_release(&h1_c);
-#line 514 "fixedbugs245aleaseofastrholdinganulstops.c"
+#line 433 "fixedbugs245aleaseofastrholdinganulstops.c"
     hero_str_release_at(&h0_s);
     hero_str_release_at(&h2_own2);
     return;
@@ -518,97 +437,36 @@ bb0:
 
 #line 109 "<heroes library>"
 int64_t h_library_HERO_OS_OK(void) {
-#line 522 "fixedbugs245aleaseofastrholdinganulstops.c"
+#line 441 "fixedbugs245aleaseofastrholdinganulstops.c"
     return HERO_OS_OK;
 }
 
 #line 110 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_FOUND(void) {
-#line 528 "fixedbugs245aleaseofastrholdinganulstops.c"
+#line 447 "fixedbugs245aleaseofastrholdinganulstops.c"
     return HERO_OS_NOT_FOUND;
 }
 
 #line 111 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_TEXT(void) {
-#line 534 "fixedbugs245aleaseofastrholdinganulstops.c"
+#line 453 "fixedbugs245aleaseofastrholdinganulstops.c"
     return HERO_OS_NOT_TEXT;
 }
 
 #line 112 "<heroes library>"
 int64_t h_library_HERO_OS_BAD_NAME(void) {
-#line 540 "fixedbugs245aleaseofastrholdinganulstops.c"
+#line 459 "fixedbugs245aleaseofastrholdinganulstops.c"
     return HERO_OS_BAD_NAME;
 }
 
 #line 167 "<heroes library>"
 h_0opt_f87774a h_library_read_file(HeroStr h0_path) {
-#line 546 "fixedbugs245aleaseofastrholdinganulstops.c"
-    int64_t *const hero_lend_h1_status = (int64_t *)hero_lend_local(sizeof(int64_t), "library.read_file", "status");
+#line 167 "<heroes library>"
 #define h1_status (*hero_lend_h1_status)
-    HeroStr h2_text = {0};
-    h_0opt_f87774a h3_ret0 = {0};
-    HeroStr h4_own4 = {0};
-    h_0opt_f87774a h5_own5 = {0};
-    h_0opt_f87774a h6_own6 = {0};
-    HeroStr h7_own7 = {0};
-    h_0opt_f87774a h8_own8 = {0};
-    HeroStr h9_own9 = {0};
-    h_0opt_f87774a h10_own10 = {0};
-    HeroStr h11_own11 = {0};
-    HeroStr h12_own12 = {0};
-    h_0opt_f87774a h13_own13 = {0};
-    int64_t t1;
-    HeroStr t2;
-    HeroStr t3;
-    int64_t t4;
-    int64_t t5;
-    bool t6;
-    HeroStr t7;
-    h_0opt_f87774a t8;
-    int64_t t9;
-    int64_t t10;
-    bool t11;
-    HeroStr t12;
-    HeroStr t13;
-    h_0opt_f87774a t14;
-    int64_t t15;
-    int64_t t16;
-    bool t17;
-    HeroStr t18;
-    HeroStr t19;
-    HeroStr t20;
-    HeroStr t21;
-    h_0opt_f87774a t22;
-    int64_t t23;
-    int64_t t24;
-    bool t25;
-    HeroStr t26;
-    HeroStr t27;
-    HeroStr t28;
-    HeroStr t29;
-    HeroStr t30;
-    HeroStr t31;
-    h_0opt_f87774a t32;
-    HeroStr t33;
-    HeroStr t34;
-    HeroStr t35;
-    HeroStr t36;
-    h_0opt_f87774a t37;
-    h_0opt_f87774a t38;
-    HeroStr t39;
-    HeroStr t40;
-    h_0opt_f87774a t41;
-    h_0opt_f87774a t42;
-    HeroStr t43;
-    h_0opt_f87774a t44;
-    HeroStr t45;
-    h_0opt_f87774a t46;
-    HeroStr t47;
-    HeroStr t48;
-    h_0opt_f87774a t49;
-    goto bb0;
+#line 167 "<heroes library>"
+    int64_t *const hero_lend_h1_status = (int64_t *)hero_lend_local(sizeof(int64_t), "library.read_file", "status"); HeroStr h2_text = {0}; h_0opt_f87774a h3_ret0 = {0}; HeroStr h4_own4 = {0}; h_0opt_f87774a h5_own5 = {0}; h_0opt_f87774a h6_own6 = {0}; HeroStr h7_own7 = {0}; h_0opt_f87774a h8_own8 = {0}; HeroStr h9_own9 = {0}; h_0opt_f87774a h10_own10 = {0}; HeroStr h11_own11 = {0}; HeroStr h12_own12 = {0}; h_0opt_f87774a h13_own13 = {0}; int64_t t1; HeroStr t2; HeroStr t3; int64_t t4; int64_t t5; bool t6; HeroStr t7; h_0opt_f87774a t8; int64_t t9; int64_t t10; bool t11; HeroStr t12; HeroStr t13; h_0opt_f87774a t14; int64_t t15; int64_t t16; bool t17; HeroStr t18; HeroStr t19; HeroStr t20; HeroStr t21; h_0opt_f87774a t22; int64_t t23; int64_t t24; bool t25; HeroStr t26; HeroStr t27; HeroStr t28; HeroStr t29; HeroStr t30; HeroStr t31; h_0opt_f87774a t32; HeroStr t33; HeroStr t34; HeroStr t35; HeroStr t36; h_0opt_f87774a t37; h_0opt_f87774a t38; HeroStr t39; HeroStr t40; h_0opt_f87774a t41; h_0opt_f87774a t42; HeroStr t43; h_0opt_f87774a t44; HeroStr t45; h_0opt_f87774a t46; HeroStr t47; HeroStr t48; h_0opt_f87774a t49; goto bb0;
+#line 167 "<heroes library>"
 bb0:
-#line 168 "<heroes library>"
     t1 = INT64_C(0);
 #line 168 "<heroes library>"
     h1_status = t1;
@@ -832,7 +690,7 @@ bb12:
     goto bb10;
 #line 182 "<heroes library>"
 bb13:
-#line 836 "fixedbugs245aleaseofastrholdinganulstops.c"
+#line 694 "fixedbugs245aleaseofastrholdinganulstops.c"
     t38 = h3_ret0;
     h_0opt_f87774a_retain(&t38);
     hero_str_release_at(&h2_text);

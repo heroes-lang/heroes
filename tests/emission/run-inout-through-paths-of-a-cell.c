@@ -132,17 +132,10 @@ void h_inoutthroughpathsofacell_main(void);
 
 #line 27 "tests/golden/run/inout-through-paths-of-a-cell.hero"
 void h_inoutthroughpathsofacell_add(h_inoutthroughpathsofacell_Bag *ph0_b, HeroStr h1_s) {
-#line 136 "inoutthroughpathsofacell.c"
-    HeroArrayHeader * h2_own2 = {0};
-    h_inoutthroughpathsofacell_Bag t1;
-    HeroArrayHeader * t2;
-    HeroStr t3;
-    HeroArrayHeader * t4;
-    HeroArrayHeader * t5;
-    HeroArrayHeader * t6;
-    goto bb0;
+#line 27 "tests/golden/run/inout-through-paths-of-a-cell.hero"
+    HeroArrayHeader * h2_own2 = {0}; h_inoutthroughpathsofacell_Bag t1; HeroArrayHeader * t2; HeroStr t3; HeroArrayHeader * t4; HeroArrayHeader * t5; HeroArrayHeader * t6; goto bb0;
+#line 27 "tests/golden/run/inout-through-paths-of-a-cell.hero"
 bb0:
-#line 28 "tests/golden/run/inout-through-paths-of-a-cell.hero"
     t1 = (*ph0_b);
 #line 28 "tests/golden/run/inout-through-paths-of-a-cell.hero"
     t2 = t1.f_items;
@@ -164,39 +157,31 @@ bb0:
     (*ph0_b).f_items = t4;
 #line 28 "tests/golden/run/inout-through-paths-of-a-cell.hero"
     hero_array_decref(t6);
-#line 168 "inoutthroughpathsofacell.c"
+#line 161 "inoutthroughpathsofacell.c"
     hero_array_release_at(&h2_own2);
     return;
 }
 
 #line 30 "tests/golden/run/inout-through-paths-of-a-cell.hero"
 void h_inoutthroughpathsofacell_add_items(HeroArrayHeader * *ph0_xs, HeroStr h1_s) {
-#line 175 "inoutthroughpathsofacell.c"
-    HeroStr t2;
-    goto bb0;
+#line 30 "tests/golden/run/inout-through-paths-of-a-cell.hero"
+    HeroStr t2; goto bb0;
+#line 30 "tests/golden/run/inout-through-paths-of-a-cell.hero"
 bb0:
-#line 31 "tests/golden/run/inout-through-paths-of-a-cell.hero"
     t2 = h1_s;
 #line 31 "tests/golden/run/inout-through-paths-of-a-cell.hero"
     hero_array_push_owned(&(*ph0_xs), &t2);
 #line 31 "tests/golden/run/inout-through-paths-of-a-cell.hero"
     return;
-#line 185 "inoutthroughpathsofacell.c"
+#line 177 "inoutthroughpathsofacell.c"
 }
 
 #line 33 "tests/golden/run/inout-through-paths-of-a-cell.hero"
 void h_inoutthroughpathsofacell_swap(h_inoutthroughpathsofacell_Bag *ph0_a, h_inoutthroughpathsofacell_Bag *ph1_b) {
-#line 190 "inoutthroughpathsofacell.c"
-    h_inoutthroughpathsofacell_Bag h2_held = {0};
-    h_inoutthroughpathsofacell_Bag t1;
-    h_inoutthroughpathsofacell_Bag t2;
-    h_inoutthroughpathsofacell_Bag t3;
-    h_inoutthroughpathsofacell_Bag t4;
-    h_inoutthroughpathsofacell_Bag t5;
-    h_inoutthroughpathsofacell_Bag t6;
-    goto bb0;
+#line 33 "tests/golden/run/inout-through-paths-of-a-cell.hero"
+    h_inoutthroughpathsofacell_Bag h2_held = {0}; h_inoutthroughpathsofacell_Bag t1; h_inoutthroughpathsofacell_Bag t2; h_inoutthroughpathsofacell_Bag t3; h_inoutthroughpathsofacell_Bag t4; h_inoutthroughpathsofacell_Bag t5; h_inoutthroughpathsofacell_Bag t6; goto bb0;
+#line 33 "tests/golden/run/inout-through-paths-of-a-cell.hero"
 bb0:
-#line 34 "tests/golden/run/inout-through-paths-of-a-cell.hero"
     t1 = (*ph0_a);
 #line 34 "tests/golden/run/inout-through-paths-of-a-cell.hero"
     t4 = h2_held;
@@ -224,19 +209,17 @@ bb0:
     (*ph1_b) = t3;
 #line 36 "tests/golden/run/inout-through-paths-of-a-cell.hero"
     h_inoutthroughpathsofacell_Bag_release(&t6);
-#line 228 "inoutthroughpathsofacell.c"
+#line 213 "inoutthroughpathsofacell.c"
     h_inoutthroughpathsofacell_Bag_release(hero_slot_escape(&h2_held));
     return;
 }
 
 #line 38 "tests/golden/run/inout-through-paths-of-a-cell.hero"
 int64_t h_inoutthroughpathsofacell_pick(void) {
-#line 235 "inoutthroughpathsofacell.c"
-    HeroStr t1;
-    int64_t t2;
-    goto bb0;
+#line 38 "tests/golden/run/inout-through-paths-of-a-cell.hero"
+    HeroStr t1; int64_t t2; goto bb0;
+#line 38 "tests/golden/run/inout-through-paths-of-a-cell.hero"
 bb0:
-#line 39 "tests/golden/run/inout-through-paths-of-a-cell.hero"
     t1 = HERO_STR_LIT(hero_str_f1da595);
 #line 39 "tests/golden/run/inout-through-paths-of-a-cell.hero"
     hero_print_str(t1);
@@ -245,96 +228,15 @@ bb0:
     t2 = INT64_C(0);
 #line 40 "tests/golden/run/inout-through-paths-of-a-cell.hero"
     return t2;
-#line 249 "inoutthroughpathsofacell.c"
+#line 232 "inoutthroughpathsofacell.c"
 }
 
 #line 42 "tests/golden/run/inout-through-paths-of-a-cell.hero"
 void h_inoutthroughpathsofacell_main(void) {
-#line 254 "inoutthroughpathsofacell.c"
-    h_inoutthroughpathsofacell_Bag h0_b = {0};
-    HeroArrayHeader * h1_bs = {0};
-    HeroArrayHeader * h2_cs = {0};
-    HeroArrayHeader * h3_own3 = {0};
-    h_inoutthroughpathsofacell_Bag h4_own4 = {0};
-    HeroArrayHeader * h5_own5 = {0};
-    h_inoutthroughpathsofacell_Bag h6_own6 = {0};
-    HeroArrayHeader * h7_own7 = {0};
-    h_inoutthroughpathsofacell_Bag h8_own8 = {0};
-    HeroArrayHeader * h9_own9 = {0};
-    HeroArrayHeader * h10_own10 = {0};
-    h_inoutthroughpathsofacell_Bag h11_own11 = {0};
-    HeroArrayHeader * h12_own12 = {0};
-    HeroStr t1;
-    HeroArrayHeader * t2;
-    h_inoutthroughpathsofacell_Bag t3;
-    HeroStr t4;
-    h_inoutthroughpathsofacell_Bag t5;
-    HeroArrayHeader * t6;
-    int64_t t7;
-    HeroStr t8;
-    HeroArrayHeader * t9;
-    h_inoutthroughpathsofacell_Bag t10;
-    HeroStr t11;
-    HeroStr t12;
-    HeroArrayHeader * t13;
-    h_inoutthroughpathsofacell_Bag t14;
-    HeroArrayHeader * t15;
-    int64_t t16;
-    HeroStr t17;
-    HeroArrayHeader * t18;
-    int64_t t19;
-    h_inoutthroughpathsofacell_Bag t20;
-    HeroArrayHeader * t21;
-    int64_t t22;
-    int64_t t23;
-    HeroStr t24;
-    HeroArrayHeader * t25;
-    int64_t t26;
-    h_inoutthroughpathsofacell_Bag t27;
-    HeroArrayHeader * t28;
-    int64_t t29;
-    HeroStr t30;
-    HeroStr t31;
-    HeroStr t32;
-    HeroStr t33;
-    HeroArrayHeader * t34;
-    h_inoutthroughpathsofacell_Bag t35;
-    HeroArrayHeader * t36;
-    int64_t t37;
-    int64_t t38;
-    HeroArrayHeader * t39;
-    int64_t t40;
-    h_inoutthroughpathsofacell_Bag t41;
-    HeroArrayHeader * t42;
-    int64_t t43;
-    HeroArrayHeader * t44;
-    int64_t t45;
-    h_inoutthroughpathsofacell_Bag t46;
-    HeroArrayHeader * t47;
-    int64_t t48;
-    int64_t t49;
-    HeroStr t50;
-    HeroArrayHeader * t51;
-    int64_t t52;
-    h_inoutthroughpathsofacell_Bag t53;
-    HeroArrayHeader * t54;
-    int64_t t55;
-    HeroArrayHeader * t56;
-    h_inoutthroughpathsofacell_Bag t57;
-    h_inoutthroughpathsofacell_Bag t58;
-    HeroArrayHeader * t59;
-    h_inoutthroughpathsofacell_Bag t60;
-    HeroArrayHeader * t61;
-    h_inoutthroughpathsofacell_Bag t62;
-    HeroArrayHeader * t63;
-    HeroArrayHeader * t64;
-    HeroArrayHeader * t65;
-    h_inoutthroughpathsofacell_Bag t66;
-    HeroArrayHeader * t67;
-    HeroArrayHeader * t68;
-    goto bb0;
+#line 42 "tests/golden/run/inout-through-paths-of-a-cell.hero"
+    h_inoutthroughpathsofacell_Bag h0_b = {0}; HeroArrayHeader * h1_bs = {0}; HeroArrayHeader * h2_cs = {0}; HeroArrayHeader * h3_own3 = {0}; h_inoutthroughpathsofacell_Bag h4_own4 = {0}; HeroArrayHeader * h5_own5 = {0}; h_inoutthroughpathsofacell_Bag h6_own6 = {0}; HeroArrayHeader * h7_own7 = {0}; h_inoutthroughpathsofacell_Bag h8_own8 = {0}; HeroArrayHeader * h9_own9 = {0}; HeroArrayHeader * h10_own10 = {0}; h_inoutthroughpathsofacell_Bag h11_own11 = {0}; HeroArrayHeader * h12_own12 = {0}; HeroStr t1; HeroArrayHeader * t2; h_inoutthroughpathsofacell_Bag t3; HeroStr t4; h_inoutthroughpathsofacell_Bag t5; HeroArrayHeader * t6; int64_t t7; HeroStr t8; HeroArrayHeader * t9; h_inoutthroughpathsofacell_Bag t10; HeroStr t11; HeroStr t12; HeroArrayHeader * t13; h_inoutthroughpathsofacell_Bag t14; HeroArrayHeader * t15; int64_t t16; HeroStr t17; HeroArrayHeader * t18; int64_t t19; h_inoutthroughpathsofacell_Bag t20; HeroArrayHeader * t21; int64_t t22; int64_t t23; HeroStr t24; HeroArrayHeader * t25; int64_t t26; h_inoutthroughpathsofacell_Bag t27; HeroArrayHeader * t28; int64_t t29; HeroStr t30; HeroStr t31; HeroStr t32; HeroStr t33; HeroArrayHeader * t34; h_inoutthroughpathsofacell_Bag t35; HeroArrayHeader * t36; int64_t t37; int64_t t38; HeroArrayHeader * t39; int64_t t40; h_inoutthroughpathsofacell_Bag t41; HeroArrayHeader * t42; int64_t t43; HeroArrayHeader * t44; int64_t t45; h_inoutthroughpathsofacell_Bag t46; HeroArrayHeader * t47; int64_t t48; int64_t t49; HeroStr t50; HeroArrayHeader * t51; int64_t t52; h_inoutthroughpathsofacell_Bag t53; HeroArrayHeader * t54; int64_t t55; HeroArrayHeader * t56; h_inoutthroughpathsofacell_Bag t57; h_inoutthroughpathsofacell_Bag t58; HeroArrayHeader * t59; h_inoutthroughpathsofacell_Bag t60; HeroArrayHeader * t61; h_inoutthroughpathsofacell_Bag t62; HeroArrayHeader * t63; HeroArrayHeader * t64; HeroArrayHeader * t65; h_inoutthroughpathsofacell_Bag t66; HeroArrayHeader * t67; HeroArrayHeader * t68; goto bb0;
+#line 42 "tests/golden/run/inout-through-paths-of-a-cell.hero"
 bb0:
-#line 43 "tests/golden/run/inout-through-paths-of-a-cell.hero"
     t1 = HERO_STR_LIT(hero_str_61);
 #line 43 "tests/golden/run/inout-through-paths-of-a-cell.hero"
     t2 = hero_array_new(&hero_desc_str, 1);
@@ -589,7 +491,7 @@ bb0:
     hero_print_int(t55);
 #line 56 "tests/golden/run/inout-through-paths-of-a-cell.hero"
     hero_print_end();
-#line 593 "inoutthroughpathsofacell.c"
+#line 495 "inoutthroughpathsofacell.c"
     h_inoutthroughpathsofacell_Bag_release(hero_slot_escape(&h0_b));
     hero_array_release_at(&h1_bs);
     hero_array_release_at(&h2_cs);

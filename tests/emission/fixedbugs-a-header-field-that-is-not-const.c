@@ -104,24 +104,9 @@ void h_aheaderfieldthatisnotconst_main(void);
 
 #line 46 "tests/golden/fixedbugs/a-header-field-that-is-not-const.hero"
 void h_aheaderfieldthatisnotconst_main(void) {
-#line 108 "aheaderfieldthatisnotconst.c"
-    struct passwd h0_empty;
-    struct passwd h1_filled;
-    const char * t1;
-    const char * t2;
-    struct passwd t3;
-    struct passwd t4;
-    const char * t5;
-    const char * t6;
-    bool t7;
-    const char * t8;
-    const char * t9;
-    struct passwd t10;
-    struct passwd t11;
-    const char * t12;
-    const char * t13;
-    bool t14;
-    goto bb0;
+#line 46 "tests/golden/fixedbugs/a-header-field-that-is-not-const.hero"
+    struct passwd h0_empty; struct passwd h1_filled; const char * t1; const char * t2; struct passwd t3; struct passwd t4; const char * t5; const char * t6; bool t7; const char * t8; const char * t9; struct passwd t10; struct passwd t11; const char * t12; const char * t13; bool t14; goto bb0;
+#line 46 "tests/golden/fixedbugs/a-header-field-that-is-not-const.hero"
 bb0:
 #line 59 "tests/golden/fixedbugs/a-header-field-that-is-not-const.hero"
     t1 = ((void *)0);
@@ -162,7 +147,7 @@ bb0:
     hero_print_end();
 #line 62 "tests/golden/fixedbugs/a-header-field-that-is-not-const.hero"
     return;
-#line 166 "aheaderfieldthatisnotconst.c"
+#line 151 "aheaderfieldthatisnotconst.c"
 }
 HERO_TU_LOCAL bool h_aheaderfieldthatisnotconst_Passwd_eq(const struct passwd *a, const struct passwd *b) {
     hero_panic("h_aheaderfieldthatisnotconst_Passwd_eq: a partial record has no structural equality");

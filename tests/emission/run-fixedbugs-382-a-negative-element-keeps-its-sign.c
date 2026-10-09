@@ -105,18 +105,10 @@ HeroArrayHeader * h_fixedbugs382anegativeelementkeepsitssign_NEG(void) {
 
 #line 7 "tests/golden/run/fixedbugs-382-a-negative-element-keeps-its-sign.hero"
 HeroArrayHeader * h_fixedbugs382anegativeelementkeepsitssign_NEG(void) {
-#line 109 "fixedbugs382anegativeelementkeepsitssign.c"
-    HeroArrayHeader * h0_own0 = {0};
-    int64_t t1;
-    int64_t t2;
-    int64_t t3;
-    int64_t t4;
-    int64_t t5;
-    HeroArrayHeader * t6;
-    HeroArrayHeader * t7;
-    goto bb0;
+#line 7 "tests/golden/run/fixedbugs-382-a-negative-element-keeps-its-sign.hero"
+    HeroArrayHeader * h0_own0 = {0}; int64_t t1; int64_t t2; int64_t t3; int64_t t4; int64_t t5; HeroArrayHeader * t6; HeroArrayHeader * t7; goto bb0;
+#line 7 "tests/golden/run/fixedbugs-382-a-negative-element-keeps-its-sign.hero"
 bb0:
-#line 8 "tests/golden/run/fixedbugs-382-a-negative-element-keeps-its-sign.hero"
     t1 = INT64_C(3);
 #line 8 "tests/golden/run/fixedbugs-382-a-negative-element-keeps-its-sign.hero"
     t2 = INT64_C(-1);
@@ -144,7 +136,7 @@ bb0:
     h0_own0 = t6;
 #line 8 "tests/golden/run/fixedbugs-382-a-negative-element-keeps-its-sign.hero"
     hero_array_decref(t7);
-#line 148 "fixedbugs382anegativeelementkeepsitssign.c"
+#line 140 "fixedbugs382anegativeelementkeepsitssign.c"
     hero_array_incref(t6);
     hero_array_release_at(&h0_own0);
     return t6;
@@ -156,23 +148,17 @@ bb0:
 HERO_ARRAY_STATIC(hero_constant_h_fixedbugs382anegativeelementkeepsitssign_NARROW_4, int8_t, &hero_desc_i8, 3, INT64_C(-128), INT64_C(127), INT64_C(-1));
 #line 10 "tests/golden/run/fixedbugs-382-a-negative-element-keeps-its-sign.hero"
 HeroArrayHeader * h_fixedbugs382anegativeelementkeepsitssign_NARROW(void) {
-#line 160 "fixedbugs382anegativeelementkeepsitssign.c"
+#line 152 "fixedbugs382anegativeelementkeepsitssign.c"
     return HERO_ARRAY_LIT(hero_constant_h_fixedbugs382anegativeelementkeepsitssign_NARROW_4);
 }
 #else
 
 #line 10 "tests/golden/run/fixedbugs-382-a-negative-element-keeps-its-sign.hero"
 HeroArrayHeader * h_fixedbugs382anegativeelementkeepsitssign_NARROW(void) {
-#line 167 "fixedbugs382anegativeelementkeepsitssign.c"
-    HeroArrayHeader * h0_own0 = {0};
-    int8_t t1;
-    int8_t t2;
-    int8_t t3;
-    HeroArrayHeader * t4;
-    HeroArrayHeader * t5;
-    goto bb0;
+#line 10 "tests/golden/run/fixedbugs-382-a-negative-element-keeps-its-sign.hero"
+    HeroArrayHeader * h0_own0 = {0}; int8_t t1; int8_t t2; int8_t t3; HeroArrayHeader * t4; HeroArrayHeader * t5; goto bb0;
+#line 10 "tests/golden/run/fixedbugs-382-a-negative-element-keeps-its-sign.hero"
 bb0:
-#line 11 "tests/golden/run/fixedbugs-382-a-negative-element-keeps-its-sign.hero"
     t1 = INT64_C(-128);
 #line 11 "tests/golden/run/fixedbugs-382-a-negative-element-keeps-its-sign.hero"
     t2 = INT64_C(127);
@@ -192,7 +178,7 @@ bb0:
     h0_own0 = t4;
 #line 11 "tests/golden/run/fixedbugs-382-a-negative-element-keeps-its-sign.hero"
     hero_array_decref(t5);
-#line 196 "fixedbugs382anegativeelementkeepsitssign.c"
+#line 182 "fixedbugs382anegativeelementkeepsitssign.c"
     hero_array_incref(t4);
     hero_array_release_at(&h0_own0);
     return t4;
@@ -204,22 +190,17 @@ bb0:
 HERO_ARRAY_STATIC(hero_constant_h_fixedbugs382anegativeelementkeepsitssign_WIDER_3, int16_t, &hero_desc_i16, 2, INT64_C(-32768), INT64_C(32767));
 #line 13 "tests/golden/run/fixedbugs-382-a-negative-element-keeps-its-sign.hero"
 HeroArrayHeader * h_fixedbugs382anegativeelementkeepsitssign_WIDER(void) {
-#line 208 "fixedbugs382anegativeelementkeepsitssign.c"
+#line 194 "fixedbugs382anegativeelementkeepsitssign.c"
     return HERO_ARRAY_LIT(hero_constant_h_fixedbugs382anegativeelementkeepsitssign_WIDER_3);
 }
 #else
 
 #line 13 "tests/golden/run/fixedbugs-382-a-negative-element-keeps-its-sign.hero"
 HeroArrayHeader * h_fixedbugs382anegativeelementkeepsitssign_WIDER(void) {
-#line 215 "fixedbugs382anegativeelementkeepsitssign.c"
-    HeroArrayHeader * h0_own0 = {0};
-    int16_t t1;
-    int16_t t2;
-    HeroArrayHeader * t3;
-    HeroArrayHeader * t4;
-    goto bb0;
+#line 13 "tests/golden/run/fixedbugs-382-a-negative-element-keeps-its-sign.hero"
+    HeroArrayHeader * h0_own0 = {0}; int16_t t1; int16_t t2; HeroArrayHeader * t3; HeroArrayHeader * t4; goto bb0;
+#line 13 "tests/golden/run/fixedbugs-382-a-negative-element-keeps-its-sign.hero"
 bb0:
-#line 14 "tests/golden/run/fixedbugs-382-a-negative-element-keeps-its-sign.hero"
     t1 = INT64_C(-32768);
 #line 14 "tests/golden/run/fixedbugs-382-a-negative-element-keeps-its-sign.hero"
     t2 = INT64_C(32767);
@@ -235,7 +216,7 @@ bb0:
     h0_own0 = t3;
 #line 14 "tests/golden/run/fixedbugs-382-a-negative-element-keeps-its-sign.hero"
     hero_array_decref(t4);
-#line 239 "fixedbugs382anegativeelementkeepsitssign.c"
+#line 220 "fixedbugs382anegativeelementkeepsitssign.c"
     hero_array_incref(t3);
     hero_array_release_at(&h0_own0);
     return t3;
@@ -247,22 +228,17 @@ bb0:
 HERO_ARRAY_STATIC(hero_constant_h_fixedbugs382anegativeelementkeepsitssign_WIDEST_3, int32_t, &hero_desc_i32, 2, INT64_C(-2147483648), INT64_C(2147483647));
 #line 16 "tests/golden/run/fixedbugs-382-a-negative-element-keeps-its-sign.hero"
 HeroArrayHeader * h_fixedbugs382anegativeelementkeepsitssign_WIDEST(void) {
-#line 251 "fixedbugs382anegativeelementkeepsitssign.c"
+#line 232 "fixedbugs382anegativeelementkeepsitssign.c"
     return HERO_ARRAY_LIT(hero_constant_h_fixedbugs382anegativeelementkeepsitssign_WIDEST_3);
 }
 #else
 
 #line 16 "tests/golden/run/fixedbugs-382-a-negative-element-keeps-its-sign.hero"
 HeroArrayHeader * h_fixedbugs382anegativeelementkeepsitssign_WIDEST(void) {
-#line 258 "fixedbugs382anegativeelementkeepsitssign.c"
-    HeroArrayHeader * h0_own0 = {0};
-    int32_t t1;
-    int32_t t2;
-    HeroArrayHeader * t3;
-    HeroArrayHeader * t4;
-    goto bb0;
+#line 16 "tests/golden/run/fixedbugs-382-a-negative-element-keeps-its-sign.hero"
+    HeroArrayHeader * h0_own0 = {0}; int32_t t1; int32_t t2; HeroArrayHeader * t3; HeroArrayHeader * t4; goto bb0;
+#line 16 "tests/golden/run/fixedbugs-382-a-negative-element-keeps-its-sign.hero"
 bb0:
-#line 17 "tests/golden/run/fixedbugs-382-a-negative-element-keeps-its-sign.hero"
     t1 = INT64_C(-2147483648);
 #line 17 "tests/golden/run/fixedbugs-382-a-negative-element-keeps-its-sign.hero"
     t2 = INT64_C(2147483647);
@@ -278,7 +254,7 @@ bb0:
     h0_own0 = t3;
 #line 17 "tests/golden/run/fixedbugs-382-a-negative-element-keeps-its-sign.hero"
     hero_array_decref(t4);
-#line 282 "fixedbugs382anegativeelementkeepsitssign.c"
+#line 258 "fixedbugs382anegativeelementkeepsitssign.c"
     hero_array_incref(t3);
     hero_array_release_at(&h0_own0);
     return t3;
@@ -287,110 +263,10 @@ bb0:
 
 #line 19 "tests/golden/run/fixedbugs-382-a-negative-element-keeps-its-sign.hero"
 void h_fixedbugs382anegativeelementkeepsitssign_main(void) {
-#line 291 "fixedbugs382anegativeelementkeepsitssign.c"
-    int64_t h0_total;
-    int64_t h1_at;
-    HeroArrayHeader * h2_own2 = {0};
-    HeroArrayHeader * h3_own3 = {0};
-    HeroArrayHeader * h4_own4 = {0};
-    HeroArrayHeader * h5_own5 = {0};
-    HeroArrayHeader * h6_own6 = {0};
-    HeroArrayHeader * h7_own7 = {0};
-    HeroArrayHeader * h8_own8 = {0};
-    HeroArrayHeader * h9_own9 = {0};
-    HeroArrayHeader * h10_own10 = {0};
-    HeroArrayHeader * h11_own11 = {0};
-    HeroArrayHeader * h12_own12 = {0};
-    HeroArrayHeader * h13_own13 = {0};
-    HeroArrayHeader * h14_own14 = {0};
-    HeroArrayHeader * h15_own15 = {0};
-    HeroArrayHeader * h16_own16 = {0};
-    HeroArrayHeader * h17_own17 = {0};
-    int64_t t1;
-    int64_t t2;
-    int64_t t3;
-    int64_t t4;
-    bool t5;
-    int64_t t6;
-    HeroArrayHeader * t7;
-    int64_t t8;
-    int64_t t9;
-    int64_t t10;
-    int64_t t11;
-    int64_t t12;
-    int64_t t13;
-    int64_t t14;
-    HeroStr t15;
-    HeroArrayHeader * t16;
-    int64_t t17;
-    int64_t t18;
-    HeroStr t19;
-    HeroArrayHeader * t20;
-    int64_t t21;
-    int64_t t22;
-    HeroStr t23;
-    HeroArrayHeader * t24;
-    int64_t t25;
-    int64_t t26;
-    HeroArrayHeader * t27;
-    int64_t t28;
-    int64_t t29;
-    bool t30;
-    HeroArrayHeader * t31;
-    int64_t t32;
-    int8_t t33;
-    HeroStr t34;
-    HeroArrayHeader * t35;
-    int64_t t36;
-    int8_t t37;
-    HeroStr t38;
-    HeroArrayHeader * t39;
-    int64_t t40;
-    int8_t t41;
-    HeroStr t42;
-    HeroArrayHeader * t43;
-    int64_t t44;
-    int16_t t45;
-    HeroStr t46;
-    HeroArrayHeader * t47;
-    int64_t t48;
-    int16_t t49;
-    HeroStr t50;
-    HeroArrayHeader * t51;
-    int64_t t52;
-    int32_t t53;
-    HeroStr t54;
-    HeroArrayHeader * t55;
-    int64_t t56;
-    int32_t t57;
-    HeroArrayHeader * t58;
-    HeroArrayHeader * t59;
-    int64_t t60;
-    int64_t t61;
-    HeroStr t62;
-    HeroArrayHeader * t63;
-    HeroArrayHeader * t64;
-    int64_t t65;
-    int8_t t66;
-    HeroArrayHeader * t67;
-    HeroArrayHeader * t68;
-    HeroArrayHeader * t69;
-    HeroArrayHeader * t70;
-    HeroArrayHeader * t71;
-    HeroArrayHeader * t72;
-    HeroArrayHeader * t73;
-    HeroArrayHeader * t74;
-    HeroArrayHeader * t75;
-    HeroArrayHeader * t76;
-    HeroArrayHeader * t77;
-    HeroArrayHeader * t78;
-    HeroArrayHeader * t79;
-    HeroArrayHeader * t80;
-    HeroArrayHeader * t81;
-    HeroArrayHeader * t82;
-    goto bb0;
+#line 19 "tests/golden/run/fixedbugs-382-a-negative-element-keeps-its-sign.hero"
+    int64_t h0_total; int64_t h1_at; HeroArrayHeader * h2_own2 = {0}; HeroArrayHeader * h3_own3 = {0}; HeroArrayHeader * h4_own4 = {0}; HeroArrayHeader * h5_own5 = {0}; HeroArrayHeader * h6_own6 = {0}; HeroArrayHeader * h7_own7 = {0}; HeroArrayHeader * h8_own8 = {0}; HeroArrayHeader * h9_own9 = {0}; HeroArrayHeader * h10_own10 = {0}; HeroArrayHeader * h11_own11 = {0}; HeroArrayHeader * h12_own12 = {0}; HeroArrayHeader * h13_own13 = {0}; HeroArrayHeader * h14_own14 = {0}; HeroArrayHeader * h15_own15 = {0}; HeroArrayHeader * h16_own16 = {0}; HeroArrayHeader * h17_own17 = {0}; int64_t t1; int64_t t2; int64_t t3; int64_t t4; bool t5; int64_t t6; HeroArrayHeader * t7; int64_t t8; int64_t t9; int64_t t10; int64_t t11; int64_t t12; int64_t t13; int64_t t14; HeroStr t15; HeroArrayHeader * t16; int64_t t17; int64_t t18; HeroStr t19; HeroArrayHeader * t20; int64_t t21; int64_t t22; HeroStr t23; HeroArrayHeader * t24; int64_t t25; int64_t t26; HeroArrayHeader * t27; int64_t t28; int64_t t29; bool t30; HeroArrayHeader * t31; int64_t t32; int8_t t33; HeroStr t34; HeroArrayHeader * t35; int64_t t36; int8_t t37; HeroStr t38; HeroArrayHeader * t39; int64_t t40; int8_t t41; HeroStr t42; HeroArrayHeader * t43; int64_t t44; int16_t t45; HeroStr t46; HeroArrayHeader * t47; int64_t t48; int16_t t49; HeroStr t50; HeroArrayHeader * t51; int64_t t52; int32_t t53; HeroStr t54; HeroArrayHeader * t55; int64_t t56; int32_t t57; HeroArrayHeader * t58; HeroArrayHeader * t59; int64_t t60; int64_t t61; HeroStr t62; HeroArrayHeader * t63; HeroArrayHeader * t64; int64_t t65; int8_t t66; HeroArrayHeader * t67; HeroArrayHeader * t68; HeroArrayHeader * t69; HeroArrayHeader * t70; HeroArrayHeader * t71; HeroArrayHeader * t72; HeroArrayHeader * t73; HeroArrayHeader * t74; HeroArrayHeader * t75; HeroArrayHeader * t76; HeroArrayHeader * t77; HeroArrayHeader * t78; HeroArrayHeader * t79; HeroArrayHeader * t80; HeroArrayHeader * t81; HeroArrayHeader * t82; goto bb0;
+#line 19 "tests/golden/run/fixedbugs-382-a-negative-element-keeps-its-sign.hero"
 bb0:
-#line 20 "tests/golden/run/fixedbugs-382-a-negative-element-keeps-its-sign.hero"
     t1 = INT64_C(0);
 #line 20 "tests/golden/run/fixedbugs-382-a-negative-element-keeps-its-sign.hero"
     h0_total = t1;
@@ -685,7 +561,7 @@ bb3:
     hero_print_int(t66);
 #line 29 "tests/golden/run/fixedbugs-382-a-negative-element-keeps-its-sign.hero"
     hero_print_end();
-#line 689 "fixedbugs382anegativeelementkeepsitssign.c"
+#line 565 "fixedbugs382anegativeelementkeepsitssign.c"
     hero_array_release_at(&h2_own2);
     hero_array_release_at(&h3_own3);
     hero_array_release_at(&h4_own4);

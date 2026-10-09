@@ -98,16 +98,10 @@ void h_fixedbugs171aloaderspointerssetthencalled_main(void);
 
 #line 15 "tests/golden/run/fixedbugs-171-a-loaders-pointers-set-then-called.hero"
 void h_fixedbugs171aloaderspointerssetthencalled_main(void) {
-#line 102 "fixedbugs171aloaderspointerssetthencalled.c"
-    int32_t t1;
-    int32_t t2;
-    int32_t t3;
-    int32_t t4;
-    int32_t t5;
-    int32_t t6;
-    goto bb0;
+#line 15 "tests/golden/run/fixedbugs-171-a-loaders-pointers-set-then-called.hero"
+    int32_t t1; int32_t t2; int32_t t3; int32_t t4; int32_t t5; int32_t t6; goto bb0;
+#line 15 "tests/golden/run/fixedbugs-171-a-loaders-pointers-set-then-called.hero"
 bb0:
-#line 16 "tests/golden/run/fixedbugs-171-a-loaders-pointers-set-then-called.hero"
     (void)load_all();
     t1 = INT64_C(2);
 #line 17 "tests/golden/run/fixedbugs-171-a-loaders-pointers-set-then-called.hero"
@@ -129,7 +123,7 @@ bb0:
     hero_print_end();
 #line 18 "tests/golden/run/fixedbugs-171-a-loaders-pointers-set-then-called.hero"
     return;
-#line 133 "fixedbugs171aloaderspointerssetthencalled.c"
+#line 127 "fixedbugs171aloaderspointerssetthencalled.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

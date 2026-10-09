@@ -100,23 +100,10 @@ void h_ffilibm_main(void);
 
 #line 32 "tests/golden/run/ffi-libm.hero"
 void h_ffilibm_main(void) {
-#line 104 "ffilibm.c"
-    double t1;
-    double t2;
-    double t3;
-    double t4;
-    double t5;
-    int64_t t6;
-    int64_t t7;
-    int64_t t8;
-    int64_t t9;
-    double t10;
-    double t11;
-    double t12;
-    double t13;
-    goto bb0;
+#line 32 "tests/golden/run/ffi-libm.hero"
+    double t1; double t2; double t3; double t4; double t5; int64_t t6; int64_t t7; int64_t t8; int64_t t9; double t10; double t11; double t12; double t13; goto bb0;
+#line 32 "tests/golden/run/ffi-libm.hero"
 bb0:
-#line 33 "tests/golden/run/ffi-libm.hero"
     t1 = 0x1p+4;
 #line 33 "tests/golden/run/ffi-libm.hero"
     t2 = sqrt(t1);
@@ -158,7 +145,7 @@ bb0:
     hero_print_end();
 #line 39 "tests/golden/run/ffi-libm.hero"
     return;
-#line 162 "ffilibm.c"
+#line 149 "ffilibm.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

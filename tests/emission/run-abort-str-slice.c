@@ -91,25 +91,10 @@ void h_abortstrslice_main(void);
 
 #line 6 "tests/golden/run/abort-str-slice.hero"
 void h_abortstrslice_main(void) {
-#line 95 "abortstrslice.c"
-    HeroStr h0_s = {0};
-    HeroStr h1_own1 = {0};
-    HeroStr h2_own2 = {0};
-    HeroStr t1;
-    HeroStr t2;
-    int64_t t3;
-    int64_t t4;
-    HeroStr t5;
-    HeroStr t6;
-    int64_t t7;
-    int64_t t8;
-    HeroStr t9;
-    HeroStr t10;
-    HeroStr t11;
-    HeroStr t12;
-    goto bb0;
+#line 6 "tests/golden/run/abort-str-slice.hero"
+    HeroStr h0_s = {0}; HeroStr h1_own1 = {0}; HeroStr h2_own2 = {0}; HeroStr t1; HeroStr t2; int64_t t3; int64_t t4; HeroStr t5; HeroStr t6; int64_t t7; int64_t t8; HeroStr t9; HeroStr t10; HeroStr t11; HeroStr t12; goto bb0;
+#line 6 "tests/golden/run/abort-str-slice.hero"
 bb0:
-#line 7 "tests/golden/run/abort-str-slice.hero"
     t1 = HERO_STR_LIT(hero_str_33edea20);
 #line 7 "tests/golden/run/abort-str-slice.hero"
     t10 = h0_s;
@@ -153,7 +138,7 @@ bb0:
     hero_print_str(t9);
 #line 9 "tests/golden/run/abort-str-slice.hero"
     hero_print_end();
-#line 157 "abortstrslice.c"
+#line 142 "abortstrslice.c"
     hero_str_release_at(&h0_s);
     hero_str_release_at(&h1_own1);
     hero_str_release_at(&h2_own2);

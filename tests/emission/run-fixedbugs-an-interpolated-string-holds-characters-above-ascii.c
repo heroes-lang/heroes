@@ -134,22 +134,10 @@ void h_fixedbugsaninterpolatedstringholdscharactersaboveascii_main(void);
 
 #line 16 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
 HeroStr h_fixedbugsaninterpolatedstringholdscharactersaboveascii_label(int64_t h0_n) {
-#line 138 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
-    HeroStr h1_own1 = {0};
-    HeroStr h2_own2 = {0};
-    HeroStr h3_own3 = {0};
-    int64_t t1;
-    HeroStr t2;
-    HeroStr t3;
-    HeroStr t4;
-    HeroStr t5;
-    HeroStr t6;
-    HeroStr t7;
-    HeroStr t8;
-    HeroStr t9;
-    goto bb0;
+#line 16 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
+    HeroStr h1_own1 = {0}; HeroStr h2_own2 = {0}; HeroStr h3_own3 = {0}; int64_t t1; HeroStr t2; HeroStr t3; HeroStr t4; HeroStr t5; HeroStr t6; HeroStr t7; HeroStr t8; HeroStr t9; goto bb0;
+#line 16 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
 bb0:
-#line 17 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     t1 = h0_n;
 #line 17 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     t2 = HERO_STR_LIT(hero_str_63f1);
@@ -179,7 +167,7 @@ bb0:
     h3_own3 = t6;
 #line 17 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     hero_str_decref(t9);
-#line 183 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 171 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_incref(t6);
     hero_str_release_at(&h1_own1);
     hero_str_release_at(&h2_own2);
@@ -189,282 +177,10 @@ bb0:
 
 #line 19 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
 void h_fixedbugsaninterpolatedstringholdscharactersaboveascii_main(void) {
-#line 193 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
-    int64_t h0_x;
-    HeroStr h1_word = {0};
-    HeroMapHeader * h2_m = {0};
-    h_0opt_e201354 h3_f0 = {0};
-    h_0opt_e201354 h4_f1 = {0};
-    HeroStr h5_own5 = {0};
-    HeroStr h6_own6 = {0};
-    HeroStr h7_own7 = {0};
-    HeroStr h8_own8 = {0};
-    HeroStr h9_own9 = {0};
-    HeroStr h10_own10 = {0};
-    HeroStr h11_own11 = {0};
-    HeroStr h12_own12 = {0};
-    HeroStr h13_own13 = {0};
-    HeroStr h14_own14 = {0};
-    HeroStr h15_own15 = {0};
-    HeroStr h16_own16 = {0};
-    HeroStr h17_own17 = {0};
-    HeroStr h18_own18 = {0};
-    HeroStr h19_own19 = {0};
-    HeroStr h20_own20 = {0};
-    HeroStr h21_own21 = {0};
-    HeroStr h22_own22 = {0};
-    HeroStr h23_own23 = {0};
-    HeroStr h24_own24 = {0};
-    HeroStr h25_own25 = {0};
-    HeroStr h26_own26 = {0};
-    HeroStr h27_own27 = {0};
-    HeroStr h28_own28 = {0};
-    HeroStr h29_own29 = {0};
-    HeroStr h30_own30 = {0};
-    HeroStr h31_own31 = {0};
-    HeroStr h32_own32 = {0};
-    HeroStr h33_own33 = {0};
-    HeroStr h34_own34 = {0};
-    HeroStr h35_own35 = {0};
-    HeroStr h36_own36 = {0};
-    HeroStr h37_own37 = {0};
-    HeroStr h38_own38 = {0};
-    HeroStr h39_own39 = {0};
-    HeroStr h40_own40 = {0};
-    HeroStr h41_own41 = {0};
-    HeroStr h42_own42 = {0};
-    HeroStr h43_own43 = {0};
-    HeroStr h44_own44 = {0};
-    HeroStr h45_own45 = {0};
-    HeroStr h46_own46 = {0};
-    HeroStr h47_own47 = {0};
-    HeroStr h48_own48 = {0};
-    HeroStr h49_own49 = {0};
-    HeroMapHeader * h50_own50 = {0};
-    HeroStr h51_own51 = {0};
-    HeroStr h52_own52 = {0};
-    HeroStr h53_own53 = {0};
-    HeroStr h54_own54 = {0};
-    HeroStr h55_own55 = {0};
-    HeroStr h56_own56 = {0};
-    h_0opt_e201354 h57_own57 = {0};
-    HeroStr h58_own58 = {0};
-    HeroStr h59_own59 = {0};
-    h_0opt_e201354 h60_own60 = {0};
-    HeroStr h61_own61 = {0};
-    HeroStr h62_own62 = {0};
-    HeroStr h63_own63 = {0};
-    HeroStr h64_own64 = {0};
-    HeroStr h65_own65 = {0};
-    HeroStr h66_own66 = {0};
-    int64_t t1;
-    HeroStr t2;
-    int64_t t3;
-    HeroStr t4;
-    HeroStr t5;
-    HeroStr t6;
-    int64_t t7;
-    HeroStr t8;
-    HeroStr t9;
-    HeroStr t10;
-    int64_t t11;
-    HeroStr t12;
-    int64_t t13;
-    HeroStr t14;
-    HeroStr t15;
-    HeroStr t16;
-    HeroStr t17;
-    HeroStr t18;
-    HeroStr t19;
-    HeroStr t20;
-    HeroStr t21;
-    HeroStr t22;
-    HeroStr t23;
-    HeroStr t24;
-    HeroStr t25;
-    int64_t t26;
-    int64_t t27;
-    HeroStr t28;
-    HeroStr t29;
-    HeroStr t30;
-    HeroStr t31;
-    HeroStr t32;
-    HeroStr t33;
-    HeroStr t34;
-    HeroStr t35;
-    HeroStr t36;
-    int64_t t37;
-    HeroStr t38;
-    HeroStr t39;
-    HeroStr t40;
-    HeroStr t41;
-    HeroStr t42;
-    int64_t t43;
-    HeroStr t44;
-    HeroStr t45;
-    HeroStr t46;
-    HeroStr t47;
-    HeroStr t48;
-    int64_t t49;
-    HeroStr t50;
-    HeroStr t51;
-    HeroStr t52;
-    HeroStr t53;
-    HeroStr t54;
-    int64_t t55;
-    HeroStr t56;
-    HeroStr t57;
-    HeroStr t58;
-    HeroStr t59;
-    HeroStr t60;
-    int64_t t61;
-    HeroStr t62;
-    HeroStr t63;
-    HeroStr t64;
-    HeroStr t65;
-    HeroStr t66;
-    int64_t t67;
-    int64_t t68;
-    HeroStr t69;
-    HeroStr t70;
-    HeroStr t71;
-    HeroStr t72;
-    HeroStr t73;
-    int64_t t74;
-    HeroStr t75;
-    HeroStr t76;
-    HeroStr t77;
-    HeroStr t78;
-    HeroStr t79;
-    int64_t t80;
-    HeroStr t81;
-    HeroStr t82;
-    HeroStr t83;
-    HeroStr t84;
-    HeroStr t85;
-    HeroStr t86;
-    HeroStr t87;
-    HeroStr t88;
-    HeroStr t89;
-    HeroMapHeader * t90;
-    int64_t t91;
-    HeroStr t92;
-    HeroStr t93;
-    HeroStr t94;
-    int64_t t95;
-    int64_t t96;
-    HeroStr t97;
-    HeroStr t98;
-    HeroStr t99;
-    int64_t t100;
-    HeroMapHeader * t101;
-    int64_t t102;
-    HeroStr t103;
-    HeroStr t104;
-    HeroStr t105;
-    h_0opt_e201354 t106;
-    h_0opt_e201354 t107;
-    int64_t t108;
-    int64_t t109;
-    bool t110;
-    h_0opt_e201354 t111;
-    HeroFailure t112;
-    h_0opt_e201354 t113;
-    int64_t t114;
-    HeroMapHeader * t115;
-    int64_t t116;
-    HeroStr t117;
-    HeroStr t118;
-    HeroStr t119;
-    h_0opt_e201354 t120;
-    h_0opt_e201354 t121;
-    int64_t t122;
-    int64_t t123;
-    bool t124;
-    h_0opt_e201354 t125;
-    HeroFailure t126;
-    h_0opt_e201354 t127;
-    int64_t t128;
-    HeroStr t129;
-    HeroStr t130;
-    HeroStr t131;
-    HeroStr t132;
-    HeroStr t133;
-    HeroStr t134;
-    HeroStr t135;
-    HeroStr t136;
-    HeroStr t137;
-    HeroStr t138;
-    HeroStr t139;
-    HeroStr t140;
-    HeroStr t141;
-    HeroStr t142;
-    HeroStr t143;
-    HeroStr t144;
-    HeroStr t145;
-    HeroStr t146;
-    HeroStr t147;
-    HeroStr t148;
-    HeroStr t149;
-    HeroStr t150;
-    HeroStr t151;
-    HeroStr t152;
-    HeroStr t153;
-    HeroStr t154;
-    HeroStr t155;
-    HeroStr t156;
-    HeroStr t157;
-    HeroStr t158;
-    HeroStr t159;
-    HeroStr t160;
-    HeroStr t161;
-    HeroStr t162;
-    HeroStr t163;
-    HeroStr t164;
-    HeroStr t165;
-    HeroStr t166;
-    HeroStr t167;
-    HeroStr t168;
-    HeroStr t169;
-    HeroStr t170;
-    HeroStr t171;
-    HeroStr t172;
-    HeroStr t173;
-    HeroStr t174;
-    HeroStr t175;
-    HeroStr t176;
-    HeroStr t177;
-    HeroStr t178;
-    HeroStr t179;
-    HeroStr t180;
-    HeroStr t181;
-    HeroStr t182;
-    HeroStr t183;
-    HeroStr t184;
-    HeroStr t185;
-    HeroMapHeader * t186;
-    HeroMapHeader * t187;
-    HeroStr t188;
-    HeroStr t189;
-    HeroStr t190;
-    HeroStr t191;
-    HeroStr t192;
-    HeroStr t193;
-    h_0opt_e201354 t194;
-    h_0opt_e201354 t195;
-    HeroStr t196;
-    HeroStr t197;
-    h_0opt_e201354 t198;
-    h_0opt_e201354 t199;
-    HeroStr t200;
-    HeroStr t201;
-    HeroStr t202;
-    HeroStr t203;
-    HeroStr t204;
-    HeroStr t205;
-    goto bb0;
+#line 19 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
+    int64_t h0_x; HeroStr h1_word = {0}; HeroMapHeader * h2_m = {0}; h_0opt_e201354 h3_f0 = {0}; h_0opt_e201354 h4_f1 = {0}; HeroStr h5_own5 = {0}; HeroStr h6_own6 = {0}; HeroStr h7_own7 = {0}; HeroStr h8_own8 = {0}; HeroStr h9_own9 = {0}; HeroStr h10_own10 = {0}; HeroStr h11_own11 = {0}; HeroStr h12_own12 = {0}; HeroStr h13_own13 = {0}; HeroStr h14_own14 = {0}; HeroStr h15_own15 = {0}; HeroStr h16_own16 = {0}; HeroStr h17_own17 = {0}; HeroStr h18_own18 = {0}; HeroStr h19_own19 = {0}; HeroStr h20_own20 = {0}; HeroStr h21_own21 = {0}; HeroStr h22_own22 = {0}; HeroStr h23_own23 = {0}; HeroStr h24_own24 = {0}; HeroStr h25_own25 = {0}; HeroStr h26_own26 = {0}; HeroStr h27_own27 = {0}; HeroStr h28_own28 = {0}; HeroStr h29_own29 = {0}; HeroStr h30_own30 = {0}; HeroStr h31_own31 = {0}; HeroStr h32_own32 = {0}; HeroStr h33_own33 = {0}; HeroStr h34_own34 = {0}; HeroStr h35_own35 = {0}; HeroStr h36_own36 = {0}; HeroStr h37_own37 = {0}; HeroStr h38_own38 = {0}; HeroStr h39_own39 = {0}; HeroStr h40_own40 = {0}; HeroStr h41_own41 = {0}; HeroStr h42_own42 = {0}; HeroStr h43_own43 = {0}; HeroStr h44_own44 = {0}; HeroStr h45_own45 = {0}; HeroStr h46_own46 = {0}; HeroStr h47_own47 = {0}; HeroStr h48_own48 = {0}; HeroStr h49_own49 = {0}; HeroMapHeader * h50_own50 = {0}; HeroStr h51_own51 = {0}; HeroStr h52_own52 = {0}; HeroStr h53_own53 = {0}; HeroStr h54_own54 = {0}; HeroStr h55_own55 = {0}; HeroStr h56_own56 = {0}; h_0opt_e201354 h57_own57 = {0}; HeroStr h58_own58 = {0}; HeroStr h59_own59 = {0}; h_0opt_e201354 h60_own60 = {0}; HeroStr h61_own61 = {0}; HeroStr h62_own62 = {0}; HeroStr h63_own63 = {0}; HeroStr h64_own64 = {0}; HeroStr h65_own65 = {0}; HeroStr h66_own66 = {0}; int64_t t1; HeroStr t2; int64_t t3; HeroStr t4; HeroStr t5; HeroStr t6; int64_t t7; HeroStr t8; HeroStr t9; HeroStr t10; int64_t t11; HeroStr t12; int64_t t13; HeroStr t14; HeroStr t15; HeroStr t16; HeroStr t17; HeroStr t18; HeroStr t19; HeroStr t20; HeroStr t21; HeroStr t22; HeroStr t23; HeroStr t24; HeroStr t25; int64_t t26; int64_t t27; HeroStr t28; HeroStr t29; HeroStr t30; HeroStr t31; HeroStr t32; HeroStr t33; HeroStr t34; HeroStr t35; HeroStr t36; int64_t t37; HeroStr t38; HeroStr t39; HeroStr t40; HeroStr t41; HeroStr t42; int64_t t43; HeroStr t44; HeroStr t45; HeroStr t46; HeroStr t47; HeroStr t48; int64_t t49; HeroStr t50; HeroStr t51; HeroStr t52; HeroStr t53; HeroStr t54; int64_t t55; HeroStr t56; HeroStr t57; HeroStr t58; HeroStr t59; HeroStr t60; int64_t t61; HeroStr t62; HeroStr t63; HeroStr t64; HeroStr t65; HeroStr t66; int64_t t67; int64_t t68; HeroStr t69; HeroStr t70; HeroStr t71; HeroStr t72; HeroStr t73; int64_t t74; HeroStr t75; HeroStr t76; HeroStr t77; HeroStr t78; HeroStr t79; int64_t t80; HeroStr t81; HeroStr t82; HeroStr t83; HeroStr t84; HeroStr t85; HeroStr t86; HeroStr t87; HeroStr t88; HeroStr t89; HeroMapHeader * t90; int64_t t91; HeroStr t92; HeroStr t93; HeroStr t94; int64_t t95; int64_t t96; HeroStr t97; HeroStr t98; HeroStr t99; int64_t t100; HeroMapHeader * t101; int64_t t102; HeroStr t103; HeroStr t104; HeroStr t105; h_0opt_e201354 t106; h_0opt_e201354 t107; int64_t t108; int64_t t109; bool t110; h_0opt_e201354 t111; HeroFailure t112; h_0opt_e201354 t113; int64_t t114; HeroMapHeader * t115; int64_t t116; HeroStr t117; HeroStr t118; HeroStr t119; h_0opt_e201354 t120; h_0opt_e201354 t121; int64_t t122; int64_t t123; bool t124; h_0opt_e201354 t125; HeroFailure t126; h_0opt_e201354 t127; int64_t t128; HeroStr t129; HeroStr t130; HeroStr t131; HeroStr t132; HeroStr t133; HeroStr t134; HeroStr t135; HeroStr t136; HeroStr t137; HeroStr t138; HeroStr t139; HeroStr t140; HeroStr t141; HeroStr t142; HeroStr t143; HeroStr t144; HeroStr t145; HeroStr t146; HeroStr t147; HeroStr t148; HeroStr t149; HeroStr t150; HeroStr t151; HeroStr t152; HeroStr t153; HeroStr t154; HeroStr t155; HeroStr t156; HeroStr t157; HeroStr t158; HeroStr t159; HeroStr t160; HeroStr t161; HeroStr t162; HeroStr t163; HeroStr t164; HeroStr t165; HeroStr t166; HeroStr t167; HeroStr t168; HeroStr t169; HeroStr t170; HeroStr t171; HeroStr t172; HeroStr t173; HeroStr t174; HeroStr t175; HeroStr t176; HeroStr t177; HeroStr t178; HeroStr t179; HeroStr t180; HeroStr t181; HeroStr t182; HeroStr t183; HeroStr t184; HeroStr t185; HeroMapHeader * t186; HeroMapHeader * t187; HeroStr t188; HeroStr t189; HeroStr t190; HeroStr t191; HeroStr t192; HeroStr t193; h_0opt_e201354 t194; h_0opt_e201354 t195; HeroStr t196; HeroStr t197; h_0opt_e201354 t198; h_0opt_e201354 t199; HeroStr t200; HeroStr t201; HeroStr t202; HeroStr t203; HeroStr t204; HeroStr t205; goto bb0;
+#line 19 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
 bb0:
-#line 20 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     t1 = INT64_C(7);
 #line 20 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     h0_x = t1;
@@ -1157,7 +873,7 @@ bb2:
     t111 = h3_f0;
 #line 37 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     t112 = t111.as.err;
-#line 1161 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 877 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_panic_must(t112);
     hero_unreachable();
 bb3:
@@ -1233,7 +949,7 @@ bb3:
     hero_print_str(t139);
 #line 39 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     hero_print_end();
-#line 1237 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 953 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_release_at(&h1_word);
     hero_map_release_at(&h2_m);
     h_0opt_e201354_release(hero_slot_escape(&h3_f0));
@@ -1306,7 +1022,7 @@ bb4:
     t125 = h4_f1;
 #line 37 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     t126 = t125.as.err;
-#line 1310 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
+#line 1026 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_panic_must(t126);
     hero_unreachable();
 }

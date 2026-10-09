@@ -167,119 +167,10 @@ void h_fixedbugsafieldstoredbehindanindex_main(void);
 
 #line 33 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
 void h_fixedbugsafieldstoredbehindanindex_main(void) {
-#line 171 "fixedbugsafieldstoredbehindanindex.c"
-    HeroArrayHeader * h0_rows = {0};
-    HeroArrayHeader * h1_kept = {0};
-    HeroMapHeader * h2_m = {0};
-    h_0opt_e201354 h3_f0 = {0};
-    h_fixedbugsafieldstoredbehindanindex_Cell h4_own4 = {0};
-    HeroArrayHeader * h5_own5 = {0};
-    h_fixedbugsafieldstoredbehindanindex_Row h6_own6 = {0};
-    HeroArrayHeader * h7_own7 = {0};
-    HeroStr h8_own8 = {0};
-    HeroStr h9_own9 = {0};
-    h_fixedbugsafieldstoredbehindanindex_Cell h10_own10 = {0};
-    HeroMapHeader * h11_own11 = {0};
-    h_0opt_e201354 h12_own12 = {0};
-    int64_t t1;
-    HeroStr t2;
-    h_fixedbugsafieldstoredbehindanindex_Cell t3;
-    HeroArrayHeader * t4;
-    HeroStr t5;
-    h_fixedbugsafieldstoredbehindanindex_Row t6;
-    HeroArrayHeader * t7;
-    int64_t t8;
-    HeroStr t9;
-    int64_t t10;
-    int64_t t11;
-    int64_t t12;
-    int64_t t13;
-    int64_t t14;
-    HeroStr t15;
-    HeroStr t16;
-    HeroStr t17;
-    int64_t t18;
-    int64_t t19;
-    HeroStr t20;
-    HeroStr t21;
-    HeroStr t22;
-    HeroArrayHeader * t23;
-    int64_t t24;
-    int64_t t25;
-    int64_t t26;
-    HeroStr t27;
-    HeroArrayHeader * t28;
-    int64_t t29;
-    h_fixedbugsafieldstoredbehindanindex_Row t30;
-    HeroArrayHeader * t31;
-    int64_t t32;
-    h_fixedbugsafieldstoredbehindanindex_Cell t33;
-    int64_t t34;
-    int64_t t35;
-    bool t36;
-    HeroStr t37;
-    HeroArrayHeader * t38;
-    int64_t t39;
-    h_fixedbugsafieldstoredbehindanindex_Row t40;
-    HeroArrayHeader * t41;
-    int64_t t42;
-    h_fixedbugsafieldstoredbehindanindex_Cell t43;
-    int64_t t44;
-    int64_t t45;
-    bool t46;
-    int64_t t47;
-    int64_t t48;
-    int64_t t49;
-    HeroStr t50;
-    h_fixedbugsafieldstoredbehindanindex_Cell t51;
-    HeroMapHeader * t52;
-    HeroStr t53;
-    int64_t t54;
-    HeroArrayHeader * t55;
-    int64_t t56;
-    h_fixedbugsafieldstoredbehindanindex_Row t57;
-    HeroStr t58;
-    HeroArrayHeader * t59;
-    int64_t t60;
-    h_fixedbugsafieldstoredbehindanindex_Row t61;
-    HeroArrayHeader * t62;
-    int64_t t63;
-    h_fixedbugsafieldstoredbehindanindex_Cell t64;
-    int64_t t65;
-    HeroArrayHeader * t66;
-    int64_t t67;
-    h_fixedbugsafieldstoredbehindanindex_Row t68;
-    HeroArrayHeader * t69;
-    int64_t t70;
-    h_fixedbugsafieldstoredbehindanindex_Cell t71;
-    HeroStr t72;
-    HeroMapHeader * t73;
-    HeroStr t74;
-    h_0opt_e201354 t75;
-    h_0opt_e201354 t76;
-    int64_t t77;
-    int64_t t78;
-    bool t79;
-    h_0opt_e201354 t80;
-    HeroFailure t81;
-    h_0opt_e201354 t82;
-    int64_t t83;
-    h_fixedbugsafieldstoredbehindanindex_Cell t84;
-    HeroArrayHeader * t85;
-    h_fixedbugsafieldstoredbehindanindex_Row t86;
-    HeroArrayHeader * t87;
-    HeroArrayHeader * t88;
-    HeroStr t89;
-    HeroStr t90;
-    HeroArrayHeader * t91;
-    h_fixedbugsafieldstoredbehindanindex_Cell t92;
-    HeroMapHeader * t93;
-    HeroMapHeader * t94;
-    h_0opt_e201354 t95;
-    h_0opt_e201354 t96;
-    goto bb0;
+#line 33 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
+    HeroArrayHeader * h0_rows = {0}; HeroArrayHeader * h1_kept = {0}; HeroMapHeader * h2_m = {0}; h_0opt_e201354 h3_f0 = {0}; h_fixedbugsafieldstoredbehindanindex_Cell h4_own4 = {0}; HeroArrayHeader * h5_own5 = {0}; h_fixedbugsafieldstoredbehindanindex_Row h6_own6 = {0}; HeroArrayHeader * h7_own7 = {0}; HeroStr h8_own8 = {0}; HeroStr h9_own9 = {0}; h_fixedbugsafieldstoredbehindanindex_Cell h10_own10 = {0}; HeroMapHeader * h11_own11 = {0}; h_0opt_e201354 h12_own12 = {0}; int64_t t1; HeroStr t2; h_fixedbugsafieldstoredbehindanindex_Cell t3; HeroArrayHeader * t4; HeroStr t5; h_fixedbugsafieldstoredbehindanindex_Row t6; HeroArrayHeader * t7; int64_t t8; HeroStr t9; int64_t t10; int64_t t11; int64_t t12; int64_t t13; int64_t t14; HeroStr t15; HeroStr t16; HeroStr t17; int64_t t18; int64_t t19; HeroStr t20; HeroStr t21; HeroStr t22; HeroArrayHeader * t23; int64_t t24; int64_t t25; int64_t t26; HeroStr t27; HeroArrayHeader * t28; int64_t t29; h_fixedbugsafieldstoredbehindanindex_Row t30; HeroArrayHeader * t31; int64_t t32; h_fixedbugsafieldstoredbehindanindex_Cell t33; int64_t t34; int64_t t35; bool t36; HeroStr t37; HeroArrayHeader * t38; int64_t t39; h_fixedbugsafieldstoredbehindanindex_Row t40; HeroArrayHeader * t41; int64_t t42; h_fixedbugsafieldstoredbehindanindex_Cell t43; int64_t t44; int64_t t45; bool t46; int64_t t47; int64_t t48; int64_t t49; HeroStr t50; h_fixedbugsafieldstoredbehindanindex_Cell t51; HeroMapHeader * t52; HeroStr t53; int64_t t54; HeroArrayHeader * t55; int64_t t56; h_fixedbugsafieldstoredbehindanindex_Row t57; HeroStr t58; HeroArrayHeader * t59; int64_t t60; h_fixedbugsafieldstoredbehindanindex_Row t61; HeroArrayHeader * t62; int64_t t63; h_fixedbugsafieldstoredbehindanindex_Cell t64; int64_t t65; HeroArrayHeader * t66; int64_t t67; h_fixedbugsafieldstoredbehindanindex_Row t68; HeroArrayHeader * t69; int64_t t70; h_fixedbugsafieldstoredbehindanindex_Cell t71; HeroStr t72; HeroMapHeader * t73; HeroStr t74; h_0opt_e201354 t75; h_0opt_e201354 t76; int64_t t77; int64_t t78; bool t79; h_0opt_e201354 t80; HeroFailure t81; h_0opt_e201354 t82; int64_t t83; h_fixedbugsafieldstoredbehindanindex_Cell t84; HeroArrayHeader * t85; h_fixedbugsafieldstoredbehindanindex_Row t86; HeroArrayHeader * t87; HeroArrayHeader * t88; HeroStr t89; HeroStr t90; HeroArrayHeader * t91; h_fixedbugsafieldstoredbehindanindex_Cell t92; HeroMapHeader * t93; HeroMapHeader * t94; h_0opt_e201354 t95; h_0opt_e201354 t96; goto bb0;
+#line 33 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
 bb0:
-#line 34 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
     t1 = INT64_C(1);
 #line 34 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
     t2 = HERO_STR_LIT(hero_str_78);
@@ -476,7 +367,7 @@ bb1:
     if (t46) goto bb3; else goto bb4;
 #line 49 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
 bb2:
-#line 480 "fixedbugsafieldstoredbehindanindex.c"
+#line 371 "fixedbugsafieldstoredbehindanindex.c"
     hero_panic_assert_sides(t27, hero_int_to_str(t34), hero_int_to_str(t35));
     hero_unreachable();
 bb3:
@@ -607,7 +498,7 @@ bb3:
     if (t79) goto bb5; else goto bb6;
 #line 55 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
 bb4:
-#line 611 "fixedbugsafieldstoredbehindanindex.c"
+#line 502 "fixedbugsafieldstoredbehindanindex.c"
     hero_panic_assert_sides(t37, hero_int_to_str(t44), hero_int_to_str(t45));
     hero_unreachable();
 bb5:
@@ -625,7 +516,7 @@ bb5:
     hero_print_int(t83);
 #line 55 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
     hero_print_end();
-#line 629 "fixedbugsafieldstoredbehindanindex.c"
+#line 520 "fixedbugsafieldstoredbehindanindex.c"
     hero_array_release_at(&h0_rows);
     hero_array_release_at(&h1_kept);
     hero_map_release_at(&h2_m);
@@ -645,7 +536,7 @@ bb6:
     t80 = h3_f0;
 #line 55 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
     t81 = t80.as.err;
-#line 649 "fixedbugsafieldstoredbehindanindex.c"
+#line 540 "fixedbugsafieldstoredbehindanindex.c"
     hero_panic_must(t81);
     hero_unreachable();
 }

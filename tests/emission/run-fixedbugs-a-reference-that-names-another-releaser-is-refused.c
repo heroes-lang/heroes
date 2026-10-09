@@ -106,19 +106,10 @@ void h_fixedbugsareferencethatnamesanotherreleaserisrefused_main(void);
 
 #line 13 "tests/golden/run/fixedbugs-a-reference-that-names-another-releaser-is-refused.hero"
 void h_fixedbugsareferencethatnamesanotherreleaserisrefused_main(void) {
-#line 110 "fixedbugsareferencethatnamesanotherreleaserisrefused.c"
-    ob * h0_a;
-    ob * h1_b;
-    ob * t1;
-    HeroStr t2;
-    ob * t3;
-    ob * t4;
-    ob * t5;
-    ob * t6;
-    HeroStr t7;
-    goto bb0;
+#line 13 "tests/golden/run/fixedbugs-a-reference-that-names-another-releaser-is-refused.hero"
+    ob * h0_a; ob * h1_b; ob * t1; HeroStr t2; ob * t3; ob * t4; ob * t5; ob * t6; HeroStr t7; goto bb0;
+#line 13 "tests/golden/run/fixedbugs-a-reference-that-names-another-releaser-is-refused.hero"
 bb0:
-#line 14 "tests/golden/run/fixedbugs-a-reference-that-names-another-releaser-is-refused.hero"
     t1 = ob_new();
 #line 14 "tests/golden/run/fixedbugs-a-reference-that-names-another-releaser-is-refused.hero"
     hero_handle_acquired(t1, "ob_put");
@@ -171,7 +162,7 @@ bb0:
     hero_print_end();
 #line 19 "tests/golden/run/fixedbugs-a-reference-that-names-another-releaser-is-refused.hero"
     return;
-#line 175 "fixedbugsareferencethatnamesanotherreleaserisrefused.c"
+#line 166 "fixedbugsareferencethatnamesanotherreleaserisrefused.c"
 }
 HERO_TU_LOCAL bool h_fixedbugsareferencethatnamesanotherreleaserisrefused_Ob_eq(ob * const *a, ob * const *b) {
     return hero_handle_eq(*a, *b);

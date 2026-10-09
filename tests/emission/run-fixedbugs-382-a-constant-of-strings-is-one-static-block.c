@@ -112,20 +112,10 @@ HeroArrayHeader * h_fixedbugs382aconstantofstringsisonestaticblock_WORDS(void) {
 
 #line 8 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
 HeroArrayHeader * h_fixedbugs382aconstantofstringsisonestaticblock_WORDS(void) {
-#line 116 "fixedbugs382aconstantofstringsisonestaticblock.c"
-    HeroArrayHeader * h0_own0 = {0};
-    HeroStr t1;
-    HeroStr t2;
-    HeroStr t3;
-    HeroStr t4;
-    HeroStr t5;
-    HeroStr t6;
-    HeroStr t7;
-    HeroArrayHeader * t8;
-    HeroArrayHeader * t9;
-    goto bb0;
+#line 8 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
+    HeroArrayHeader * h0_own0 = {0}; HeroStr t1; HeroStr t2; HeroStr t3; HeroStr t4; HeroStr t5; HeroStr t6; HeroStr t7; HeroArrayHeader * t8; HeroArrayHeader * t9; goto bb0;
+#line 8 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
 bb0:
-#line 9 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
     t1 = HERO_STR_LIT(hero_str_6bb5e50a);
 #line 9 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
     t2 = HERO_STR_LIT(hero_str_0);
@@ -161,7 +151,7 @@ bb0:
     h0_own0 = t8;
 #line 9 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
     hero_array_decref(t9);
-#line 165 "fixedbugs382aconstantofstringsisonestaticblock.c"
+#line 155 "fixedbugs382aconstantofstringsisonestaticblock.c"
     hero_array_incref(t8);
     hero_array_release_at(&h0_own0);
     return t8;
@@ -170,128 +160,10 @@ bb0:
 
 #line 11 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
 void h_fixedbugs382aconstantofstringsisonestaticblock_main(void) {
-#line 174 "fixedbugs382aconstantofstringsisonestaticblock.c"
-    int64_t h0_letters;
-    int64_t h1_at;
-    HeroArrayHeader * h2_xs = {0};
-    HeroArrayHeader * h3_own3 = {0};
-    HeroArrayHeader * h4_own4 = {0};
-    HeroArrayHeader * h5_own5 = {0};
-    HeroArrayHeader * h6_own6 = {0};
-    HeroArrayHeader * h7_own7 = {0};
-    HeroArrayHeader * h8_own8 = {0};
-    HeroStr h9_own9 = {0};
-    HeroArrayHeader * h10_own10 = {0};
-    HeroArrayHeader * h11_own11 = {0};
-    HeroStr h12_own12 = {0};
-    HeroArrayHeader * h13_own13 = {0};
-    HeroArrayHeader * h14_own14 = {0};
-    HeroStr h15_own15 = {0};
-    HeroArrayHeader * h16_own16 = {0};
-    HeroArrayHeader * h17_own17 = {0};
-    HeroArrayHeader * h18_own18 = {0};
-    HeroArrayHeader * h19_own19 = {0};
-    HeroArrayHeader * h20_own20 = {0};
-    HeroStr h21_own21 = {0};
-    HeroArrayHeader * h22_own22 = {0};
-    HeroArrayHeader * h23_own23 = {0};
-    int64_t t1;
-    int64_t t2;
-    int64_t t3;
-    int64_t t4;
-    bool t5;
-    int64_t t6;
-    HeroArrayHeader * t7;
-    int64_t t8;
-    int64_t t9;
-    int64_t t10;
-    HeroStr t11;
-    int64_t t12;
-    int64_t t13;
-    int64_t t14;
-    int64_t t15;
-    int64_t t16;
-    int64_t t17;
-    HeroStr t18;
-    HeroArrayHeader * t19;
-    int64_t t20;
-    HeroStr t21;
-    HeroArrayHeader * t22;
-    int64_t t23;
-    HeroStr t24;
-    int64_t t25;
-    HeroStr t26;
-    HeroArrayHeader * t27;
-    int64_t t28;
-    HeroStr t29;
-    HeroArrayHeader * t30;
-    int64_t t31;
-    HeroStr t32;
-    bool t33;
-    HeroArrayHeader * t34;
-    HeroStr t35;
-    HeroStr t36;
-    HeroArrayHeader * t37;
-    HeroArrayHeader * t38;
-    HeroStr t39;
-    HeroStr t40;
-    HeroArrayHeader * t41;
-    int64_t t42;
-    HeroStr t43;
-    HeroArrayHeader * t44;
-    int64_t t45;
-    HeroStr t46;
-    HeroStr t47;
-    HeroStr t48;
-    HeroArrayHeader * t49;
-    int64_t t50;
-    HeroStr t51;
-    HeroArrayHeader * t52;
-    int64_t t53;
-    HeroStr t54;
-    HeroArrayHeader * t55;
-    HeroArrayHeader * t56;
-    bool t57;
-    HeroArrayHeader * t58;
-    int64_t t59;
-    HeroStr t60;
-    HeroStr t62;
-    HeroArrayHeader * t64;
-    HeroStr t65;
-    HeroStr t66;
-    HeroStr t67;
-    HeroArrayHeader * t68;
-    int64_t t69;
-    HeroStr t70;
-    int64_t t71;
-    HeroStr t72;
-    HeroArrayHeader * t73;
-    int64_t t74;
-    HeroArrayHeader * t75;
-    HeroArrayHeader * t76;
-    HeroArrayHeader * t77;
-    HeroArrayHeader * t78;
-    HeroArrayHeader * t79;
-    HeroArrayHeader * t80;
-    HeroStr t81;
-    HeroArrayHeader * t82;
-    HeroArrayHeader * t83;
-    HeroStr t84;
-    HeroArrayHeader * t85;
-    HeroArrayHeader * t86;
-    HeroStr t87;
-    HeroArrayHeader * t88;
-    HeroArrayHeader * t89;
-    HeroArrayHeader * t90;
-    HeroArrayHeader * t91;
-    HeroArrayHeader * t92;
-    HeroArrayHeader * t93;
-    HeroStr t94;
-    HeroArrayHeader * t95;
-    HeroArrayHeader * t96;
-    goto bb0;
+#line 11 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
+    int64_t h0_letters; int64_t h1_at; HeroArrayHeader * h2_xs = {0}; HeroArrayHeader * h3_own3 = {0}; HeroArrayHeader * h4_own4 = {0}; HeroArrayHeader * h5_own5 = {0}; HeroArrayHeader * h6_own6 = {0}; HeroArrayHeader * h7_own7 = {0}; HeroArrayHeader * h8_own8 = {0}; HeroStr h9_own9 = {0}; HeroArrayHeader * h10_own10 = {0}; HeroArrayHeader * h11_own11 = {0}; HeroStr h12_own12 = {0}; HeroArrayHeader * h13_own13 = {0}; HeroArrayHeader * h14_own14 = {0}; HeroStr h15_own15 = {0}; HeroArrayHeader * h16_own16 = {0}; HeroArrayHeader * h17_own17 = {0}; HeroArrayHeader * h18_own18 = {0}; HeroArrayHeader * h19_own19 = {0}; HeroArrayHeader * h20_own20 = {0}; HeroStr h21_own21 = {0}; HeroArrayHeader * h22_own22 = {0}; HeroArrayHeader * h23_own23 = {0}; int64_t t1; int64_t t2; int64_t t3; int64_t t4; bool t5; int64_t t6; HeroArrayHeader * t7; int64_t t8; int64_t t9; int64_t t10; HeroStr t11; int64_t t12; int64_t t13; int64_t t14; int64_t t15; int64_t t16; int64_t t17; HeroStr t18; HeroArrayHeader * t19; int64_t t20; HeroStr t21; HeroArrayHeader * t22; int64_t t23; HeroStr t24; int64_t t25; HeroStr t26; HeroArrayHeader * t27; int64_t t28; HeroStr t29; HeroArrayHeader * t30; int64_t t31; HeroStr t32; bool t33; HeroArrayHeader * t34; HeroStr t35; HeroStr t36; HeroArrayHeader * t37; HeroArrayHeader * t38; HeroStr t39; HeroStr t40; HeroArrayHeader * t41; int64_t t42; HeroStr t43; HeroArrayHeader * t44; int64_t t45; HeroStr t46; HeroStr t47; HeroStr t48; HeroArrayHeader * t49; int64_t t50; HeroStr t51; HeroArrayHeader * t52; int64_t t53; HeroStr t54; HeroArrayHeader * t55; HeroArrayHeader * t56; bool t57; HeroArrayHeader * t58; int64_t t59; HeroStr t60; HeroStr t62; HeroArrayHeader * t64; HeroStr t65; HeroStr t66; HeroStr t67; HeroArrayHeader * t68; int64_t t69; HeroStr t70; int64_t t71; HeroStr t72; HeroArrayHeader * t73; int64_t t74; HeroArrayHeader * t75; HeroArrayHeader * t76; HeroArrayHeader * t77; HeroArrayHeader * t78; HeroArrayHeader * t79; HeroArrayHeader * t80; HeroStr t81; HeroArrayHeader * t82; HeroArrayHeader * t83; HeroStr t84; HeroArrayHeader * t85; HeroArrayHeader * t86; HeroStr t87; HeroArrayHeader * t88; HeroArrayHeader * t89; HeroArrayHeader * t90; HeroArrayHeader * t91; HeroArrayHeader * t92; HeroArrayHeader * t93; HeroStr t94; HeroArrayHeader * t95; HeroArrayHeader * t96; goto bb0;
+#line 11 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
 bb0:
-#line 12 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
     t1 = INT64_C(0);
 #line 12 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
     h0_letters = t1;
@@ -637,7 +509,7 @@ bb3:
     hero_print_int(t74);
 #line 26 "tests/golden/run/fixedbugs-382-a-constant-of-strings-is-one-static-block.hero"
     hero_print_end();
-#line 641 "fixedbugs382aconstantofstringsisonestaticblock.c"
+#line 513 "fixedbugs382aconstantofstringsisonestaticblock.c"
     hero_array_release_at(&h2_xs);
     hero_array_release_at(&h3_own3);
     hero_array_release_at(&h4_own4);

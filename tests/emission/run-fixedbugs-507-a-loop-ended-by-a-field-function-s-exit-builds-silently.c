@@ -99,15 +99,10 @@ void h_library_exit(int64_t h0_code);
 
 #line 11 "tests/golden/run/fixedbugs-507-a-loop-ended-by-a-field-function-s-exit-builds-silently.hero"
 void h_fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently_stop_at_three(int64_t h0_n) {
-#line 103 "fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently.c"
-    int64_t t1;
-    int64_t t2;
-    bool t3;
-    int64_t t4;
-    int64_t t5;
-    goto bb0;
+#line 11 "tests/golden/run/fixedbugs-507-a-loop-ended-by-a-field-function-s-exit-builds-silently.hero"
+    int64_t t1; int64_t t2; bool t3; int64_t t4; int64_t t5; goto bb0;
+#line 11 "tests/golden/run/fixedbugs-507-a-loop-ended-by-a-field-function-s-exit-builds-silently.hero"
 bb0:
-#line 12 "tests/golden/run/fixedbugs-507-a-loop-ended-by-a-field-function-s-exit-builds-silently.hero"
     t1 = h0_n;
 #line 12 "tests/golden/run/fixedbugs-507-a-loop-ended-by-a-field-function-s-exit-builds-silently.hero"
     t2 = INT64_C(2);
@@ -139,22 +134,15 @@ bb2:
 bb3:
 #line 13 "tests/golden/run/fixedbugs-507-a-loop-ended-by-a-field-function-s-exit-builds-silently.hero"
     goto bb1;
-#line 143 "fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently.c"
+#line 138 "fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently.c"
 }
 
 #line 16 "tests/golden/run/fixedbugs-507-a-loop-ended-by-a-field-function-s-exit-builds-silently.hero"
 void h_fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently_turn(int64_t h0_n, h_fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently_Hooks h1_h) {
-#line 148 "fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently.c"
-    h_fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently_Hooks t1;
-    h_0fn_47d100e5 t2;
-    int64_t t3;
-    int64_t t4;
-    int64_t t5;
-    int64_t t6;
-    h_fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently_Hooks t7;
-    goto bb0;
+#line 16 "tests/golden/run/fixedbugs-507-a-loop-ended-by-a-field-function-s-exit-builds-silently.hero"
+    h_fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently_Hooks t1; h_0fn_47d100e5 t2; int64_t t3; int64_t t4; int64_t t5; int64_t t6; h_fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently_Hooks t7; goto bb0;
+#line 16 "tests/golden/run/fixedbugs-507-a-loop-ended-by-a-field-function-s-exit-builds-silently.hero"
 bb0:
-#line 17 "tests/golden/run/fixedbugs-507-a-loop-ended-by-a-field-function-s-exit-builds-silently.hero"
     t1 = h1_h;
 #line 17 "tests/golden/run/fixedbugs-507-a-loop-ended-by-a-field-function-s-exit-builds-silently.hero"
     t2 = t1.f_act;
@@ -173,18 +161,15 @@ bb0:
     h_fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently_turn(t6, t7);
 #line 18 "tests/golden/run/fixedbugs-507-a-loop-ended-by-a-field-function-s-exit-builds-silently.hero"
     return;
-#line 177 "fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently.c"
+#line 165 "fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently.c"
 }
 
 #line 20 "tests/golden/run/fixedbugs-507-a-loop-ended-by-a-field-function-s-exit-builds-silently.hero"
 void h_fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently_main(void) {
-#line 182 "fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently.c"
-    int64_t t1;
-    h_0fn_47d100e5 t2;
-    h_fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently_Hooks t3;
-    goto bb0;
+#line 20 "tests/golden/run/fixedbugs-507-a-loop-ended-by-a-field-function-s-exit-builds-silently.hero"
+    int64_t t1; h_0fn_47d100e5 t2; h_fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently_Hooks t3; goto bb0;
+#line 20 "tests/golden/run/fixedbugs-507-a-loop-ended-by-a-field-function-s-exit-builds-silently.hero"
 bb0:
-#line 21 "tests/golden/run/fixedbugs-507-a-loop-ended-by-a-field-function-s-exit-builds-silently.hero"
     t1 = INT64_C(0);
 #line 21 "tests/golden/run/fixedbugs-507-a-loop-ended-by-a-field-function-s-exit-builds-silently.hero"
     t2 = h_fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently_stop_at_three;
@@ -194,22 +179,21 @@ bb0:
     h_fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently_turn(t1, t3);
 #line 21 "tests/golden/run/fixedbugs-507-a-loop-ended-by-a-field-function-s-exit-builds-silently.hero"
     return;
-#line 198 "fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently.c"
+#line 183 "fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently.c"
 }
 
 #line 227 "<heroes library>"
 void h_library_exit(int64_t h0_code) {
-#line 203 "fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently.c"
-    int64_t t1;
-    goto bb0;
+#line 227 "<heroes library>"
+    int64_t t1; goto bb0;
+#line 227 "<heroes library>"
 bb0:
-#line 228 "<heroes library>"
     t1 = h0_code;
 #line 228 "<heroes library>"
     (void)hero_exit(t1);
 #line 228 "<heroes library>"
     return;
-#line 213 "fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently.c"
+#line 197 "fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently_Hooks_eq(const h_fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently_Hooks *a, const h_fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently_Hooks *b) {
     if (!(a->f_act == b->f_act)) return false;

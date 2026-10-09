@@ -142,92 +142,10 @@ void h_fixedbugsahandlecomparesasanaddress_main(void);
 
 #line 61 "tests/golden/run/fixedbugs-a-handle-compares-as-an-address.hero"
 void h_fixedbugsahandlecomparesasanaddress_main(void) {
-#line 146 "fixedbugsahandlecomparesasanaddress.c"
-    Chunk * h0_a;
-    Chunk * h1_b;
-    Chunk * h2_n;
-    h_0opt_2e1eec0d h3_oa = {0};
-    h_0opt_2e1eec0d h4_ob = {0};
-    h_fixedbugsahandlecomparesasanaddress_Held h5_own5 = {0};
-    h_fixedbugsahandlecomparesasanaddress_Held h6_own6 = {0};
-    h_fixedbugsahandlecomparesasanaddress_Held h7_own7 = {0};
-    h_fixedbugsahandlecomparesasanaddress_Held h8_own8 = {0};
-    HeroArrayHeader * h9_own9 = {0};
-    HeroArrayHeader * h10_own10 = {0};
-    HeroArrayHeader * h11_own11 = {0};
-    HeroArrayHeader * h12_own12 = {0};
-    h_0opt_2e1eec0d h13_own13 = {0};
-    h_0opt_2e1eec0d h14_own14 = {0};
-    int64_t t1;
-    Chunk * t2;
-    int64_t t3;
-    Chunk * t4;
-    Chunk * t5;
-    Chunk * t6;
-    int64_t t7;
-    Chunk * t8;
-    int64_t t9;
-    Chunk * t10;
-    Chunk * t11;
-    bool t12;
-    Chunk * t13;
-    Chunk * t14;
-    bool t15;
-    Chunk * t16;
-    Chunk * t17;
-    bool t18;
-    Chunk * t19;
-    Chunk * t20;
-    bool t21;
-    Chunk * t22;
-    Chunk * t23;
-    bool t24;
-    Chunk * t25;
-    HeroStr t26;
-    h_fixedbugsahandlecomparesasanaddress_Held t27;
-    Chunk * t28;
-    HeroStr t29;
-    h_fixedbugsahandlecomparesasanaddress_Held t30;
-    bool t31;
-    Chunk * t32;
-    HeroStr t33;
-    h_fixedbugsahandlecomparesasanaddress_Held t34;
-    Chunk * t35;
-    HeroStr t36;
-    h_fixedbugsahandlecomparesasanaddress_Held t37;
-    bool t38;
-    Chunk * t39;
-    HeroArrayHeader * t40;
-    Chunk * t41;
-    HeroArrayHeader * t42;
-    bool t43;
-    Chunk * t44;
-    HeroArrayHeader * t45;
-    Chunk * t46;
-    HeroArrayHeader * t47;
-    bool t48;
-    Chunk * t49;
-    h_0opt_2e1eec0d t50;
-    Chunk * t51;
-    h_0opt_2e1eec0d t52;
-    h_0opt_2e1eec0d t53;
-    h_0opt_2e1eec0d t54;
-    bool t55;
-    h_fixedbugsahandlecomparesasanaddress_Held t56;
-    h_fixedbugsahandlecomparesasanaddress_Held t57;
-    h_fixedbugsahandlecomparesasanaddress_Held t58;
-    h_fixedbugsahandlecomparesasanaddress_Held t59;
-    HeroArrayHeader * t60;
-    HeroArrayHeader * t61;
-    HeroArrayHeader * t62;
-    HeroArrayHeader * t63;
-    h_0opt_2e1eec0d t64;
-    h_0opt_2e1eec0d t65;
-    h_0opt_2e1eec0d t66;
-    h_0opt_2e1eec0d t67;
-    goto bb0;
+#line 61 "tests/golden/run/fixedbugs-a-handle-compares-as-an-address.hero"
+    Chunk * h0_a; Chunk * h1_b; Chunk * h2_n; h_0opt_2e1eec0d h3_oa = {0}; h_0opt_2e1eec0d h4_ob = {0}; h_fixedbugsahandlecomparesasanaddress_Held h5_own5 = {0}; h_fixedbugsahandlecomparesasanaddress_Held h6_own6 = {0}; h_fixedbugsahandlecomparesasanaddress_Held h7_own7 = {0}; h_fixedbugsahandlecomparesasanaddress_Held h8_own8 = {0}; HeroArrayHeader * h9_own9 = {0}; HeroArrayHeader * h10_own10 = {0}; HeroArrayHeader * h11_own11 = {0}; HeroArrayHeader * h12_own12 = {0}; h_0opt_2e1eec0d h13_own13 = {0}; h_0opt_2e1eec0d h14_own14 = {0}; int64_t t1; Chunk * t2; int64_t t3; Chunk * t4; Chunk * t5; Chunk * t6; int64_t t7; Chunk * t8; int64_t t9; Chunk * t10; Chunk * t11; bool t12; Chunk * t13; Chunk * t14; bool t15; Chunk * t16; Chunk * t17; bool t18; Chunk * t19; Chunk * t20; bool t21; Chunk * t22; Chunk * t23; bool t24; Chunk * t25; HeroStr t26; h_fixedbugsahandlecomparesasanaddress_Held t27; Chunk * t28; HeroStr t29; h_fixedbugsahandlecomparesasanaddress_Held t30; bool t31; Chunk * t32; HeroStr t33; h_fixedbugsahandlecomparesasanaddress_Held t34; Chunk * t35; HeroStr t36; h_fixedbugsahandlecomparesasanaddress_Held t37; bool t38; Chunk * t39; HeroArrayHeader * t40; Chunk * t41; HeroArrayHeader * t42; bool t43; Chunk * t44; HeroArrayHeader * t45; Chunk * t46; HeroArrayHeader * t47; bool t48; Chunk * t49; h_0opt_2e1eec0d t50; Chunk * t51; h_0opt_2e1eec0d t52; h_0opt_2e1eec0d t53; h_0opt_2e1eec0d t54; bool t55; h_fixedbugsahandlecomparesasanaddress_Held t56; h_fixedbugsahandlecomparesasanaddress_Held t57; h_fixedbugsahandlecomparesasanaddress_Held t58; h_fixedbugsahandlecomparesasanaddress_Held t59; HeroArrayHeader * t60; HeroArrayHeader * t61; HeroArrayHeader * t62; HeroArrayHeader * t63; h_0opt_2e1eec0d t64; h_0opt_2e1eec0d t65; h_0opt_2e1eec0d t66; h_0opt_2e1eec0d t67; goto bb0;
+#line 61 "tests/golden/run/fixedbugs-a-handle-compares-as-an-address.hero"
 bb0:
-#line 62 "tests/golden/run/fixedbugs-a-handle-compares-as-an-address.hero"
     t1 = INT64_C(0);
 #line 62 "tests/golden/run/fixedbugs-a-handle-compares-as-an-address.hero"
     t2 = chunk_at(t1);
@@ -474,7 +392,7 @@ bb0:
     hero_print_bool(t55);
 #line 86 "tests/golden/run/fixedbugs-a-handle-compares-as-an-address.hero"
     hero_print_end();
-#line 478 "fixedbugsahandlecomparesasanaddress.c"
+#line 396 "fixedbugsahandlecomparesasanaddress.c"
     h_0opt_2e1eec0d_release(hero_slot_escape(&h3_oa));
     h_0opt_2e1eec0d_release(hero_slot_escape(&h4_ob));
     h_fixedbugsahandlecomparesasanaddress_Held_release(hero_slot_escape(&h5_own5));

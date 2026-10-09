@@ -108,29 +108,12 @@ void h_fixedbugs396sha256finalpastsixteenaborts_main(void);
 
 #line 14 "tests/golden/run/fixedbugs-396-sha256-final-past-sixteen-aborts.hero"
 void h_fixedbugs396sha256finalpastsixteenaborts_main(void) {
-#line 112 "fixedbugs396sha256finalpastsixteenaborts.c"
-    struct SHA256state_st *const hero_lend_h0_c = (struct SHA256state_st *)hero_lend_local(sizeof(struct SHA256state_st), "fixedbugs396sha256finalpastsixteenaborts.main", "c");
+#line 14 "tests/golden/run/fixedbugs-396-sha256-final-past-sixteen-aborts.hero"
 #define h0_c (*hero_lend_h0_c)
-    HeroArrayHeader * h1_md = {0};
-    HeroArrayHeader * h2_own2 = {0};
-    uint32_t t1;
-    struct SHA256state_st t2;
-    HeroArrayHeader * t3;
-    int32_t t4;
-    HeroStr t5;
-    HeroStr t6;
-    const char * t7;
-    uint64_t t8;
-    int32_t t9;
-    int32_t t10;
-    HeroStr t11;
-    HeroArrayHeader * t12;
-    int64_t t13;
-    HeroArrayHeader * t14;
-    HeroArrayHeader * t15;
-    goto bb0;
+#line 14 "tests/golden/run/fixedbugs-396-sha256-final-past-sixteen-aborts.hero"
+    struct SHA256state_st *const hero_lend_h0_c = (struct SHA256state_st *)hero_lend_local(sizeof(struct SHA256state_st), "fixedbugs396sha256finalpastsixteenaborts.main", "c"); HeroArrayHeader * h1_md = {0}; HeroArrayHeader * h2_own2 = {0}; uint32_t t1; struct SHA256state_st t2; HeroArrayHeader * t3; int32_t t4; HeroStr t5; HeroStr t6; const char * t7; uint64_t t8; int32_t t9; int32_t t10; HeroStr t11; HeroArrayHeader * t12; int64_t t13; HeroArrayHeader * t14; HeroArrayHeader * t15; goto bb0;
+#line 14 "tests/golden/run/fixedbugs-396-sha256-final-past-sixteen-aborts.hero"
 bb0:
-#line 15 "tests/golden/run/fixedbugs-396-sha256-final-past-sixteen-aborts.hero"
     t1 = UINT64_C(0);
 #line 15 "tests/golden/run/fixedbugs-396-sha256-final-past-sixteen-aborts.hero"
     t2 = (struct SHA256state_st){.num = t1};
@@ -204,7 +187,7 @@ bb0:
     hero_print_int(t13);
 #line 19 "tests/golden/run/fixedbugs-396-sha256-final-past-sixteen-aborts.hero"
     hero_print_end();
-#line 208 "fixedbugs396sha256finalpastsixteenaborts.c"
+#line 191 "fixedbugs396sha256finalpastsixteenaborts.c"
     hero_array_release_at(&h1_md);
     hero_array_release_at(&h2_own2);
     hero_lend_local_give(hero_lend_h0_c);

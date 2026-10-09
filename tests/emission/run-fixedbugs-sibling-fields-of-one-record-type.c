@@ -117,28 +117,10 @@ void h_fixedbugssiblingfieldsofonerecordtype_main(void);
 
 #line 42 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
 void h_fixedbugssiblingfieldsofonerecordtype_main(void) {
-#line 121 "fixedbugssiblingfieldsofonerecordtype.c"
-    Pair h0_p;
-    int64_t t1;
-    Pair t2;
-    Pair t3;
-    Inner t4;
-    Slot * t5;
-    int64_t t6;
-    Pair t7;
-    Inner t8;
-    Slot * t9;
-    int64_t t10;
-    Pair t11;
-    Inner t12;
-    Slot * t13;
-    Pair t14;
-    Inner t15;
-    Slot * t16;
-    HeroStr t17;
-    goto bb0;
+#line 42 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
+    Pair h0_p; int64_t t1; Pair t2; Pair t3; Inner t4; Slot * t5; int64_t t6; Pair t7; Inner t8; Slot * t9; int64_t t10; Pair t11; Inner t12; Slot * t13; Pair t14; Inner t15; Slot * t16; HeroStr t17; goto bb0;
+#line 42 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
 bb0:
-#line 43 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
     t1 = INT64_C(7);
 #line 43 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
     t2 = pair_open(t1);
@@ -215,7 +197,7 @@ bb0:
     hero_print_end();
 #line 48 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
     return;
-#line 219 "fixedbugssiblingfieldsofonerecordtype.c"
+#line 201 "fixedbugssiblingfieldsofonerecordtype.c"
 }
 HERO_TU_LOCAL bool h_fixedbugssiblingfieldsofonerecordtype_Slot_eq(Slot * const *a, Slot * const *b) {
     return hero_handle_eq(*a, *b);

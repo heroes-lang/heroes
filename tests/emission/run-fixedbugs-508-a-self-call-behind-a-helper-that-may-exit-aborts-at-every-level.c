@@ -92,17 +92,10 @@ void h_library_exit(int64_t h0_code);
 
 #line 16 "tests/golden/run/fixedbugs-508-a-self-call-behind-a-helper-that-may-exit-aborts-at-every-level.hero"
 int64_t h_fixedbugs508aselfcallbehindahelperthatmayexitabortsateverylevel_helper(int64_t h0_n) {
-#line 96 "fixedbugs508aselfcallbehindahelperthatmayexitabortsateverylevel.c"
-    int64_t t1;
-    int64_t t2;
-    bool t3;
-    int64_t t4;
-    int64_t t5;
-    int64_t t6;
-    int64_t t7;
-    goto bb0;
+#line 16 "tests/golden/run/fixedbugs-508-a-self-call-behind-a-helper-that-may-exit-aborts-at-every-level.hero"
+    int64_t t1; int64_t t2; bool t3; int64_t t4; int64_t t5; int64_t t6; int64_t t7; goto bb0;
+#line 16 "tests/golden/run/fixedbugs-508-a-self-call-behind-a-helper-that-may-exit-aborts-at-every-level.hero"
 bb0:
-#line 17 "tests/golden/run/fixedbugs-508-a-self-call-behind-a-helper-that-may-exit-aborts-at-every-level.hero"
     t1 = h0_n;
 #line 17 "tests/golden/run/fixedbugs-508-a-self-call-behind-a-helper-that-may-exit-aborts-at-every-level.hero"
     t2 = INT64_C(0);
@@ -134,18 +127,15 @@ bb2:
 bb3:
 #line 18 "tests/golden/run/fixedbugs-508-a-self-call-behind-a-helper-that-may-exit-aborts-at-every-level.hero"
     goto bb1;
-#line 138 "fixedbugs508aselfcallbehindahelperthatmayexitabortsateverylevel.c"
+#line 131 "fixedbugs508aselfcallbehindahelperthatmayexitabortsateverylevel.c"
 }
 
 #line 21 "tests/golden/run/fixedbugs-508-a-self-call-behind-a-helper-that-may-exit-aborts-at-every-level.hero"
 int64_t h_fixedbugs508aselfcallbehindahelperthatmayexitabortsateverylevel_climbs(int64_t h0_n) {
-#line 143 "fixedbugs508aselfcallbehindahelperthatmayexitabortsateverylevel.c"
-    int64_t t1;
-    int64_t t2;
-    int64_t t3;
-    goto bb0;
+#line 21 "tests/golden/run/fixedbugs-508-a-self-call-behind-a-helper-that-may-exit-aborts-at-every-level.hero"
+    int64_t t1; int64_t t2; int64_t t3; goto bb0;
+#line 21 "tests/golden/run/fixedbugs-508-a-self-call-behind-a-helper-that-may-exit-aborts-at-every-level.hero"
 bb0:
-#line 22 "tests/golden/run/fixedbugs-508-a-self-call-behind-a-helper-that-may-exit-aborts-at-every-level.hero"
     t1 = h0_n;
 #line 22 "tests/golden/run/fixedbugs-508-a-self-call-behind-a-helper-that-may-exit-aborts-at-every-level.hero"
     t2 = h_fixedbugs508aselfcallbehindahelperthatmayexitabortsateverylevel_helper(t1);
@@ -153,17 +143,15 @@ bb0:
     t3 = h_fixedbugs508aselfcallbehindahelperthatmayexitabortsateverylevel_climbs(t2);
 #line 22 "tests/golden/run/fixedbugs-508-a-self-call-behind-a-helper-that-may-exit-aborts-at-every-level.hero"
     return t3;
-#line 157 "fixedbugs508aselfcallbehindahelperthatmayexitabortsateverylevel.c"
+#line 147 "fixedbugs508aselfcallbehindahelperthatmayexitabortsateverylevel.c"
 }
 
 #line 24 "tests/golden/run/fixedbugs-508-a-self-call-behind-a-helper-that-may-exit-aborts-at-every-level.hero"
 void h_fixedbugs508aselfcallbehindahelperthatmayexitabortsateverylevel_main(void) {
-#line 162 "fixedbugs508aselfcallbehindahelperthatmayexitabortsateverylevel.c"
-    int64_t t1;
-    int64_t t2;
-    goto bb0;
+#line 24 "tests/golden/run/fixedbugs-508-a-self-call-behind-a-helper-that-may-exit-aborts-at-every-level.hero"
+    int64_t t1; int64_t t2; goto bb0;
+#line 24 "tests/golden/run/fixedbugs-508-a-self-call-behind-a-helper-that-may-exit-aborts-at-every-level.hero"
 bb0:
-#line 25 "tests/golden/run/fixedbugs-508-a-self-call-behind-a-helper-that-may-exit-aborts-at-every-level.hero"
     t1 = INT64_C(1);
 #line 25 "tests/golden/run/fixedbugs-508-a-self-call-behind-a-helper-that-may-exit-aborts-at-every-level.hero"
     t2 = h_fixedbugs508aselfcallbehindahelperthatmayexitabortsateverylevel_climbs(t1);
@@ -173,22 +161,21 @@ bb0:
     hero_print_end();
 #line 25 "tests/golden/run/fixedbugs-508-a-self-call-behind-a-helper-that-may-exit-aborts-at-every-level.hero"
     return;
-#line 177 "fixedbugs508aselfcallbehindahelperthatmayexitabortsateverylevel.c"
+#line 165 "fixedbugs508aselfcallbehindahelperthatmayexitabortsateverylevel.c"
 }
 
 #line 227 "<heroes library>"
 void h_library_exit(int64_t h0_code) {
-#line 182 "fixedbugs508aselfcallbehindahelperthatmayexitabortsateverylevel.c"
-    int64_t t1;
-    goto bb0;
+#line 227 "<heroes library>"
+    int64_t t1; goto bb0;
+#line 227 "<heroes library>"
 bb0:
-#line 228 "<heroes library>"
     t1 = h0_code;
 #line 228 "<heroes library>"
     (void)hero_exit(t1);
 #line 228 "<heroes library>"
     return;
-#line 192 "fixedbugs508aselfcallbehindahelperthatmayexitabortsateverylevel.c"
+#line 179 "fixedbugs508aselfcallbehindahelperthatmayexitabortsateverylevel.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

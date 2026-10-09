@@ -95,48 +95,10 @@ void h_strings_main(void);
 
 #line 5 "tests/golden/run/strings.hero"
 void h_strings_main(void) {
-#line 99 "strings.c"
-    HeroStr h0_greeting = {0};
-    HeroStr h1_own1 = {0};
-    HeroStr h2_own2 = {0};
-    HeroStr h3_own3 = {0};
-    HeroStr h4_own4 = {0};
-    HeroStr h5_own5 = {0};
-    HeroStr t1;
-    HeroStr t2;
-    HeroStr t3;
-    HeroStr t4;
-    HeroStr t5;
-    HeroStr t6;
-    HeroStr t7;
-    HeroStr t8;
-    int64_t t9;
-    HeroStr t10;
-    int64_t t11;
-    uint8_t t12;
-    HeroStr t13;
-    int64_t t14;
-    int64_t t15;
-    HeroStr t16;
-    HeroStr t17;
-    HeroStr t18;
-    bool t19;
-    HeroStr t20;
-    HeroStr t21;
-    bool t22;
-    int64_t t23;
-    HeroStr t24;
-    bool t25;
-    HeroStr t26;
-    HeroStr t27;
-    HeroStr t28;
-    HeroStr t29;
-    HeroStr t30;
-    HeroStr t31;
-    HeroStr t32;
-    goto bb0;
+#line 5 "tests/golden/run/strings.hero"
+    HeroStr h0_greeting = {0}; HeroStr h1_own1 = {0}; HeroStr h2_own2 = {0}; HeroStr h3_own3 = {0}; HeroStr h4_own4 = {0}; HeroStr h5_own5 = {0}; HeroStr t1; HeroStr t2; HeroStr t3; HeroStr t4; HeroStr t5; HeroStr t6; HeroStr t7; HeroStr t8; int64_t t9; HeroStr t10; int64_t t11; uint8_t t12; HeroStr t13; int64_t t14; int64_t t15; HeroStr t16; HeroStr t17; HeroStr t18; bool t19; HeroStr t20; HeroStr t21; bool t22; int64_t t23; HeroStr t24; bool t25; HeroStr t26; HeroStr t27; HeroStr t28; HeroStr t29; HeroStr t30; HeroStr t31; HeroStr t32; goto bb0;
+#line 5 "tests/golden/run/strings.hero"
 bb0:
-#line 6 "tests/golden/run/strings.hero"
     t1 = HERO_STR_LIT(hero_str_2f372e9c);
 #line 6 "tests/golden/run/strings.hero"
     t27 = h0_greeting;
@@ -251,7 +213,7 @@ bb0:
     hero_print_str(t26);
 #line 13 "tests/golden/run/strings.hero"
     hero_print_end();
-#line 255 "strings.c"
+#line 217 "strings.c"
     hero_str_release_at(&h0_greeting);
     hero_str_release_at(&h1_own1);
     hero_str_release_at(&h2_own2);

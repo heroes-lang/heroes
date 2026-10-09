@@ -105,37 +105,10 @@ void h_handlealiveafteraloopthatendsonbreak_main(void);
 
 #line 13 "tests/golden/run/handle-alive-after-a-loop-that-ends-on-break.hero"
 void h_handlealiveafteraloopthatendsonbreak_main(void) {
-#line 109 "handlealiveafteraloopthatendsonbreak.c"
-    node * h0_n;
-    bool h1_ended;
-    int64_t h2_k;
-    int64_t t1;
-    node * t2;
-    bool t3;
-    int64_t t4;
-    int64_t t5;
-    int64_t t6;
-    bool t7;
-    node * t8;
-    int64_t t9;
-    int64_t t10;
-    bool t11;
-    node * t12;
-    bool t13;
-    int64_t t14;
-    int64_t t15;
-    int64_t t16;
-    bool t17;
-    bool t18;
-    HeroStr t19;
-    int64_t t20;
-    HeroStr t21;
-    node * t22;
-    int64_t t23;
-    node * t24;
-    goto bb0;
+#line 13 "tests/golden/run/handle-alive-after-a-loop-that-ends-on-break.hero"
+    node * h0_n; bool h1_ended; int64_t h2_k; int64_t t1; node * t2; bool t3; int64_t t4; int64_t t5; int64_t t6; bool t7; node * t8; int64_t t9; int64_t t10; bool t11; node * t12; bool t13; int64_t t14; int64_t t15; int64_t t16; bool t17; bool t18; HeroStr t19; int64_t t20; HeroStr t21; node * t22; int64_t t23; node * t24; goto bb0;
+#line 13 "tests/golden/run/handle-alive-after-a-loop-that-ends-on-break.hero"
 bb0:
-#line 14 "tests/golden/run/handle-alive-after-a-loop-that-ends-on-break.hero"
     t1 = INT64_C(3);
 #line 14 "tests/golden/run/handle-alive-after-a-loop-that-ends-on-break.hero"
     t2 = node_new(t1);
@@ -266,7 +239,7 @@ bb8:
 bb9:
 #line 27 "tests/golden/run/handle-alive-after-a-loop-that-ends-on-break.hero"
     goto bb7;
-#line 270 "handlealiveafteraloopthatendsonbreak.c"
+#line 243 "handlealiveafteraloopthatendsonbreak.c"
 }
 HERO_TU_LOCAL bool h_handlealiveafteraloopthatendsonbreak_Node_eq(node * const *a, node * const *b) {
     return hero_handle_eq(*a, *b);

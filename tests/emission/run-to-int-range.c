@@ -101,90 +101,10 @@ void h_tointrange_main(void);
 
 #line 19 "tests/golden/run/to-int-range.hero"
 void h_tointrange_main(void) {
-#line 105 "tointrange.c"
-    h_0opt_e201354 h0_f0 = {0};
-    h_0opt_e201354 h1_f1 = {0};
-    h_0opt_e201354 h2_f2 = {0};
-    h_0opt_e201354 h3_f3 = {0};
-    h_0opt_e201354 h4_f4 = {0};
-    h_0opt_e201354 h5_f5 = {0};
-    h_0opt_e201354 h6_own6 = {0};
-    h_0opt_e201354 h7_own7 = {0};
-    h_0opt_e201354 h8_own8 = {0};
-    h_0opt_e201354 h9_own9 = {0};
-    h_0opt_e201354 h10_own10 = {0};
-    h_0opt_e201354 h11_own11 = {0};
-    double t1;
-    h_0opt_e201354 t2;
-    h_0opt_e201354 t3;
-    int64_t t4;
-    int64_t t5;
-    bool t6;
-    h_0opt_e201354 t7;
-    HeroFailure t8;
-    h_0opt_e201354 t9;
-    int64_t t10;
-    double t11;
-    double t12;
-    h_0opt_e201354 t13;
-    h_0opt_e201354 t14;
-    int64_t t15;
-    int64_t t16;
-    bool t17;
-    h_0opt_e201354 t18;
-    HeroFailure t19;
-    h_0opt_e201354 t20;
-    int64_t t21;
-    double t22;
-    h_0opt_e201354 t23;
-    h_0opt_e201354 t24;
-    int64_t t25;
-    int64_t t26;
-    bool t27;
-    h_0opt_e201354 t28;
-    HeroFailure t29;
-    h_0opt_e201354 t30;
-    int64_t t31;
-    double t32;
-    h_0opt_e201354 t33;
-    h_0opt_e201354 t34;
-    int64_t t35;
-    int64_t t36;
-    bool t37;
-    double t38;
-    double t39;
-    h_0opt_e201354 t40;
-    h_0opt_e201354 t41;
-    int64_t t42;
-    int64_t t43;
-    bool t44;
-    h_0opt_e201354 t45;
-    HeroFailure t46;
-    h_0opt_e201354 t47;
-    int64_t t48;
-    double t49;
-    double t50;
-    double t51;
-    h_0opt_e201354 t52;
-    h_0opt_e201354 t53;
-    int64_t t54;
-    int64_t t55;
-    bool t56;
-    h_0opt_e201354 t57;
-    h_0opt_e201354 t58;
-    h_0opt_e201354 t59;
-    h_0opt_e201354 t60;
-    h_0opt_e201354 t61;
-    h_0opt_e201354 t62;
-    h_0opt_e201354 t63;
-    h_0opt_e201354 t64;
-    h_0opt_e201354 t65;
-    h_0opt_e201354 t66;
-    h_0opt_e201354 t67;
-    h_0opt_e201354 t68;
-    goto bb0;
+#line 19 "tests/golden/run/to-int-range.hero"
+    h_0opt_e201354 h0_f0 = {0}; h_0opt_e201354 h1_f1 = {0}; h_0opt_e201354 h2_f2 = {0}; h_0opt_e201354 h3_f3 = {0}; h_0opt_e201354 h4_f4 = {0}; h_0opt_e201354 h5_f5 = {0}; h_0opt_e201354 h6_own6 = {0}; h_0opt_e201354 h7_own7 = {0}; h_0opt_e201354 h8_own8 = {0}; h_0opt_e201354 h9_own9 = {0}; h_0opt_e201354 h10_own10 = {0}; h_0opt_e201354 h11_own11 = {0}; double t1; h_0opt_e201354 t2; h_0opt_e201354 t3; int64_t t4; int64_t t5; bool t6; h_0opt_e201354 t7; HeroFailure t8; h_0opt_e201354 t9; int64_t t10; double t11; double t12; h_0opt_e201354 t13; h_0opt_e201354 t14; int64_t t15; int64_t t16; bool t17; h_0opt_e201354 t18; HeroFailure t19; h_0opt_e201354 t20; int64_t t21; double t22; h_0opt_e201354 t23; h_0opt_e201354 t24; int64_t t25; int64_t t26; bool t27; h_0opt_e201354 t28; HeroFailure t29; h_0opt_e201354 t30; int64_t t31; double t32; h_0opt_e201354 t33; h_0opt_e201354 t34; int64_t t35; int64_t t36; bool t37; double t38; double t39; h_0opt_e201354 t40; h_0opt_e201354 t41; int64_t t42; int64_t t43; bool t44; h_0opt_e201354 t45; HeroFailure t46; h_0opt_e201354 t47; int64_t t48; double t49; double t50; double t51; h_0opt_e201354 t52; h_0opt_e201354 t53; int64_t t54; int64_t t55; bool t56; h_0opt_e201354 t57; h_0opt_e201354 t58; h_0opt_e201354 t59; h_0opt_e201354 t60; h_0opt_e201354 t61; h_0opt_e201354 t62; h_0opt_e201354 t63; h_0opt_e201354 t64; h_0opt_e201354 t65; h_0opt_e201354 t66; h_0opt_e201354 t67; h_0opt_e201354 t68; goto bb0;
+#line 19 "tests/golden/run/to-int-range.hero"
 bb0:
-#line 20 "tests/golden/run/to-int-range.hero"
     t1 = 0x1.8p+0;
 #line 20 "tests/golden/run/to-int-range.hero"
     if (hero_f64_fits_int(t1)) {
@@ -273,7 +193,7 @@ bb2:
     t7 = h0_f0;
 #line 20 "tests/golden/run/to-int-range.hero"
     t8 = t7.as.err;
-#line 277 "tointrange.c"
+#line 197 "tointrange.c"
     hero_panic_must(t8);
     hero_unreachable();
 bb3:
@@ -326,7 +246,7 @@ bb4:
     t18 = h1_f1;
 #line 21 "tests/golden/run/to-int-range.hero"
     t19 = t18.as.err;
-#line 330 "tointrange.c"
+#line 250 "tointrange.c"
     hero_panic_must(t19);
     hero_unreachable();
 bb5:
@@ -418,7 +338,7 @@ bb6:
     t28 = h2_f2;
 #line 22 "tests/golden/run/to-int-range.hero"
     t29 = t28.as.err;
-#line 422 "tointrange.c"
+#line 342 "tointrange.c"
     hero_panic_must(t29);
     hero_unreachable();
 bb7:
@@ -471,7 +391,7 @@ bb7:
     hero_print_bool(t56);
 #line 25 "tests/golden/run/to-int-range.hero"
     hero_print_end();
-#line 475 "tointrange.c"
+#line 395 "tointrange.c"
     h_0opt_e201354_release(hero_slot_escape(&h0_f0));
     h_0opt_e201354_release(hero_slot_escape(&h1_f1));
     h_0opt_e201354_release(hero_slot_escape(&h2_f2));
@@ -490,7 +410,7 @@ bb8:
     t45 = h4_f4;
 #line 24 "tests/golden/run/to-int-range.hero"
     t46 = t45.as.err;
-#line 494 "tointrange.c"
+#line 414 "tointrange.c"
     hero_panic_must(t46);
     hero_unreachable();
 }

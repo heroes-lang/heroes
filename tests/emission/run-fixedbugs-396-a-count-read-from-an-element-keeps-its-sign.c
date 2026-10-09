@@ -98,34 +98,10 @@ void h_fixedbugs396acountreadfromanelementkeepsitssign_main(void);
 
 #line 11 "tests/golden/run/fixedbugs-396-a-count-read-from-an-element-keeps-its-sign.hero"
 void h_fixedbugs396acountreadfromanelementkeepsitssign_main(void) {
-#line 102 "fixedbugs396acountreadfromanelementkeepsitssign.c"
-    HeroArrayHeader * h0_counts = {0};
-    HeroArrayHeader * h1_buf = {0};
-    HeroArrayHeader * h2_own2 = {0};
-    HeroArrayHeader * h3_own3 = {0};
-    int32_t t1;
-    int32_t t2;
-    HeroArrayHeader * t3;
-    HeroArrayHeader * t4;
-    int64_t t5;
-    int64_t t6;
-    HeroStr t7;
-    HeroArrayHeader * t8;
-    int64_t t9;
-    HeroStr t10;
-    HeroArrayHeader * t11;
-    int64_t t12;
-    uint8_t t13;
-    int64_t t14;
-    int64_t t15;
-    HeroStr t16;
-    HeroArrayHeader * t17;
-    HeroArrayHeader * t18;
-    HeroArrayHeader * t19;
-    HeroArrayHeader * t20;
-    goto bb0;
+#line 11 "tests/golden/run/fixedbugs-396-a-count-read-from-an-element-keeps-its-sign.hero"
+    HeroArrayHeader * h0_counts = {0}; HeroArrayHeader * h1_buf = {0}; HeroArrayHeader * h2_own2 = {0}; HeroArrayHeader * h3_own3 = {0}; int32_t t1; int32_t t2; HeroArrayHeader * t3; HeroArrayHeader * t4; int64_t t5; int64_t t6; HeroStr t7; HeroArrayHeader * t8; int64_t t9; HeroStr t10; HeroArrayHeader * t11; int64_t t12; uint8_t t13; int64_t t14; int64_t t15; HeroStr t16; HeroArrayHeader * t17; HeroArrayHeader * t18; HeroArrayHeader * t19; HeroArrayHeader * t20; goto bb0;
+#line 11 "tests/golden/run/fixedbugs-396-a-count-read-from-an-element-keeps-its-sign.hero"
 bb0:
-#line 12 "tests/golden/run/fixedbugs-396-a-count-read-from-an-element-keeps-its-sign.hero"
     t1 = INT64_C(3);
 #line 12 "tests/golden/run/fixedbugs-396-a-count-read-from-an-element-keeps-its-sign.hero"
     t2 = INT64_C(-1);
@@ -233,7 +209,7 @@ bb0:
     hero_print_str(t16);
 #line 16 "tests/golden/run/fixedbugs-396-a-count-read-from-an-element-keeps-its-sign.hero"
     hero_print_end();
-#line 237 "fixedbugs396acountreadfromanelementkeepsitssign.c"
+#line 213 "fixedbugs396acountreadfromanelementkeepsitssign.c"
     hero_array_release_at(&h0_counts);
     hero_array_release_at(&h1_buf);
     hero_array_release_at(&h2_own2);

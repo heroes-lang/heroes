@@ -100,12 +100,10 @@ void h_fixedbugs151aunionholdingananonymousstructboundbyitswidearm_main(void);
 
 #line 17 "tests/golden/run/fixedbugs-151-a-union-holding-an-anonymous-struct-bound-by-its-wide-arm.hero"
 void h_fixedbugs151aunionholdingananonymousstructboundbyitswidearm_main(void) {
-#line 104 "fixedbugs151aunionholdingananonymousstructboundbyitswidearm.c"
-    UAS t1;
-    int64_t t2;
-    goto bb0;
+#line 17 "tests/golden/run/fixedbugs-151-a-union-holding-an-anonymous-struct-bound-by-its-wide-arm.hero"
+    UAS t1; int64_t t2; goto bb0;
+#line 17 "tests/golden/run/fixedbugs-151-a-union-holding-an-anonymous-struct-bound-by-its-wide-arm.hero"
 bb0:
-#line 18 "tests/golden/run/fixedbugs-151-a-union-holding-an-anonymous-struct-bound-by-its-wide-arm.hero"
     t1 = make_uas();
 #line 18 "tests/golden/run/fixedbugs-151-a-union-holding-an-anonymous-struct-bound-by-its-wide-arm.hero"
     t2 = t1.q;
@@ -115,7 +113,7 @@ bb0:
     hero_print_end();
 #line 18 "tests/golden/run/fixedbugs-151-a-union-holding-an-anonymous-struct-bound-by-its-wide-arm.hero"
     return;
-#line 119 "fixedbugs151aunionholdingananonymousstructboundbyitswidearm.c"
+#line 117 "fixedbugs151aunionholdingananonymousstructboundbyitswidearm.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs151aunionholdingananonymousstructboundbyitswidearm_UAS_eq(const UAS *a, const UAS *b) {
     if (!(a->kind == b->kind)) return false;

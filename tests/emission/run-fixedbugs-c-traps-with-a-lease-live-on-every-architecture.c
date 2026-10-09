@@ -98,22 +98,10 @@ void h_fixedbugsctrapswithaleaseliveoneveryarchitecture_main(void);
 
 #line 14 "tests/golden/run/fixedbugs-c-traps-with-a-lease-live-on-every-architecture.hero"
 void h_fixedbugsctrapswithaleaseliveoneveryarchitecture_main(void) {
-#line 102 "fixedbugsctrapswithaleaseliveoneveryarchitecture.c"
-    HeroStr h0_word = {0};
-    const char * h1_held;
-    HeroStr h2_own2 = {0};
-    HeroStr t1;
-    uint64_t t2;
-    HeroStr t3;
-    HeroStr t4;
-    const char * t5;
-    const char * t6;
-    HeroStr t7;
-    HeroStr t8;
-    HeroStr t9;
-    goto bb0;
+#line 14 "tests/golden/run/fixedbugs-c-traps-with-a-lease-live-on-every-architecture.hero"
+    HeroStr h0_word = {0}; const char * h1_held; HeroStr h2_own2 = {0}; HeroStr t1; uint64_t t2; HeroStr t3; HeroStr t4; const char * t5; const char * t6; HeroStr t7; HeroStr t8; HeroStr t9; goto bb0;
+#line 14 "tests/golden/run/fixedbugs-c-traps-with-a-lease-live-on-every-architecture.hero"
 bb0:
-#line 15 "tests/golden/run/fixedbugs-c-traps-with-a-lease-live-on-every-architecture.hero"
     t1 = HERO_STR_LIT(hero_str_3205);
 #line 15 "tests/golden/run/fixedbugs-c-traps-with-a-lease-live-on-every-architecture.hero"
     t2 = UINT64_C(4);
@@ -147,7 +135,7 @@ bb0:
     hero_print_str(t7);
 #line 19 "tests/golden/run/fixedbugs-c-traps-with-a-lease-live-on-every-architecture.hero"
     hero_print_end();
-#line 151 "fixedbugsctrapswithaleaseliveoneveryarchitecture.c"
+#line 139 "fixedbugsctrapswithaleaseliveoneveryarchitecture.c"
     hero_str_release_at(&h0_word);
     hero_str_release_at(&h2_own2);
     return;

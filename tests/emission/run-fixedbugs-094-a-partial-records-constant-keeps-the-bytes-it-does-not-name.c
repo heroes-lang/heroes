@@ -120,16 +120,10 @@ struct big h_fixedbugs094apartialrecordsconstantkeepsthebytesitdoesnotname_BIG_I
 
 #line 14 "tests/golden/run/fixedbugs-094-a-partial-records-constant-keeps-the-bytes-it-does-not-name.hero"
 void h_fixedbugs094apartialrecordsconstantkeepsthebytesitdoesnotname_main(void) {
-#line 124 "fixedbugs094apartialrecordsconstantkeepsthebytesitdoesnotname.c"
-    struct big h0_b;
-    struct big t1;
-    struct big t2;
-    int64_t t3;
-    struct big t4;
-    int64_t t5;
-    goto bb0;
+#line 14 "tests/golden/run/fixedbugs-094-a-partial-records-constant-keeps-the-bytes-it-does-not-name.hero"
+    struct big h0_b; struct big t1; struct big t2; int64_t t3; struct big t4; int64_t t5; goto bb0;
+#line 14 "tests/golden/run/fixedbugs-094-a-partial-records-constant-keeps-the-bytes-it-does-not-name.hero"
 bb0:
-#line 15 "tests/golden/run/fixedbugs-094-a-partial-records-constant-keeps-the-bytes-it-does-not-name.hero"
     t1 = h_fixedbugs094apartialrecordsconstantkeepsthebytesitdoesnotname_BIG_INIT();
 #line 15 "tests/golden/run/fixedbugs-094-a-partial-records-constant-keeps-the-bytes-it-does-not-name.hero"
     h0_b = t1;
@@ -149,7 +143,7 @@ bb0:
     hero_print_end();
 #line 17 "tests/golden/run/fixedbugs-094-a-partial-records-constant-keeps-the-bytes-it-does-not-name.hero"
     return;
-#line 153 "fixedbugs094apartialrecordsconstantkeepsthebytesitdoesnotname.c"
+#line 147 "fixedbugs094apartialrecordsconstantkeepsthebytesitdoesnotname.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs094apartialrecordsconstantkeepsthebytesitdoesnotname_Big_eq(const struct big *a, const struct big *b) {
     hero_panic("h_fixedbugs094apartialrecordsconstantkeepsthebytesitdoesnotname_Big_eq: a partial record has no structural equality");

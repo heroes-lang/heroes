@@ -91,60 +91,10 @@ void h_placestorec4_main(void);
 
 #line 15 "tests/golden/run/place-store-c4.hero"
 void h_placestorec4_main(void) {
-#line 95 "placestorec4.c"
-    HeroArrayHeader * h0_xs = {0};
-    int64_t h1_i;
-    int64_t h2_total;
-    HeroArrayHeader * h3_xs0 = {0};
-    int64_t h4_i0;
-    int64_t h5_v;
-    HeroArrayHeader * h6_own6 = {0};
-    HeroArrayHeader * t1;
-    int64_t t2;
-    int64_t t3;
-    int64_t t4;
-    bool t5;
-    int64_t t7;
-    int64_t t9;
-    int64_t t10;
-    int64_t t11;
-    HeroArrayHeader * t12;
-    int64_t t13;
-    HeroArrayHeader * t14;
-    int64_t t15;
-    int64_t t16;
-    HeroStr t17;
-    HeroArrayHeader * t18;
-    int64_t t19;
-    int64_t t20;
-    HeroArrayHeader * t22;
-    int64_t t23;
-    HeroArrayHeader * t25;
-    int64_t t26;
-    int64_t t27;
-    int64_t t28;
-    HeroArrayHeader * t29;
-    int64_t t30;
-    int64_t t31;
-    HeroArrayHeader * t32;
-    int64_t t33;
-    bool t34;
-    HeroArrayHeader * t35;
-    int64_t t36;
-    int64_t t37;
-    int64_t t38;
-    int64_t t39;
-    int64_t t40;
-    int64_t t41;
-    int64_t t42;
-    int64_t t43;
-    int64_t t44;
-    HeroArrayHeader * t45;
-    HeroArrayHeader * t46;
-    HeroArrayHeader * t47;
-    goto bb0;
+#line 15 "tests/golden/run/place-store-c4.hero"
+    HeroArrayHeader * h0_xs = {0}; int64_t h1_i; int64_t h2_total; HeroArrayHeader * h3_xs0 = {0}; int64_t h4_i0; int64_t h5_v; HeroArrayHeader * h6_own6 = {0}; HeroArrayHeader * t1; int64_t t2; int64_t t3; int64_t t4; bool t5; int64_t t7; int64_t t9; int64_t t10; int64_t t11; HeroArrayHeader * t12; int64_t t13; HeroArrayHeader * t14; int64_t t15; int64_t t16; HeroStr t17; HeroArrayHeader * t18; int64_t t19; int64_t t20; HeroArrayHeader * t22; int64_t t23; HeroArrayHeader * t25; int64_t t26; int64_t t27; int64_t t28; HeroArrayHeader * t29; int64_t t30; int64_t t31; HeroArrayHeader * t32; int64_t t33; bool t34; HeroArrayHeader * t35; int64_t t36; int64_t t37; int64_t t38; int64_t t39; int64_t t40; int64_t t41; int64_t t42; int64_t t43; int64_t t44; HeroArrayHeader * t45; HeroArrayHeader * t46; HeroArrayHeader * t47; goto bb0;
+#line 15 "tests/golden/run/place-store-c4.hero"
 bb0:
-#line 16 "tests/golden/run/place-store-c4.hero"
     t1 = hero_array_new(&hero_desc_int, 1);
 #line 16 "tests/golden/run/place-store-c4.hero"
     t45 = h6_own6;
@@ -305,7 +255,7 @@ bb7:
     hero_print_int(t44);
 #line 35 "tests/golden/run/place-store-c4.hero"
     hero_print_end();
-#line 309 "placestorec4.c"
+#line 259 "placestorec4.c"
     hero_array_release_at(&h0_xs);
     hero_array_release_at(&h3_xs0);
     hero_array_release_at(&h6_own6);

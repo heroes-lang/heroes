@@ -102,16 +102,10 @@ void h_aborthandleborrowsthatgivesaway_main(void);
 
 #line 24 "tests/golden/run/abort-handle-borrows-that-gives-away.hero"
 void h_aborthandleborrowsthatgivesaway_main(void) {
-#line 106 "aborthandleborrowsthatgivesaway.c"
-    Slot * h0_a;
-    int64_t t1;
-    Slot * t2;
-    Slot * t3;
-    int64_t t4;
-    Slot * t5;
-    goto bb0;
+#line 24 "tests/golden/run/abort-handle-borrows-that-gives-away.hero"
+    Slot * h0_a; int64_t t1; Slot * t2; Slot * t3; int64_t t4; Slot * t5; goto bb0;
+#line 24 "tests/golden/run/abort-handle-borrows-that-gives-away.hero"
 bb0:
-#line 25 "tests/golden/run/abort-handle-borrows-that-gives-away.hero"
     t1 = INT64_C(7);
 #line 25 "tests/golden/run/abort-handle-borrows-that-gives-away.hero"
     t2 = slot_open(t1);
@@ -143,7 +137,7 @@ bb0:
     }
 #line 27 "tests/golden/run/abort-handle-borrows-that-gives-away.hero"
     return;
-#line 147 "aborthandleborrowsthatgivesaway.c"
+#line 141 "aborthandleborrowsthatgivesaway.c"
 }
 HERO_TU_LOCAL bool h_aborthandleborrowsthatgivesaway_Slot_eq(Slot * const *a, Slot * const *b) {
     return hero_handle_eq(*a, *b);

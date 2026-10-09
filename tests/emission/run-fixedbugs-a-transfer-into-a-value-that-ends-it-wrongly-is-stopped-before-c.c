@@ -110,18 +110,10 @@ void h_fixedbugsatransferintoavaluethatendsitwronglyisstoppedbeforec_main(void);
 
 #line 16 "tests/golden/run/fixedbugs-a-transfer-into-a-value-that-ends-it-wrongly-is-stopped-before-c.hero"
 void h_fixedbugsatransferintoavaluethatendsitwronglyisstoppedbeforec_main(void) {
-#line 114 "fixedbugsatransferintoavaluethatendsitwronglyisstoppedbeforec.c"
-    st * h0_s;
-    wr * h1_w;
-    st * t1;
-    HeroStr t2;
-    st * t3;
-    wr * t4;
-    wr * t5;
-    HeroStr t6;
-    goto bb0;
+#line 16 "tests/golden/run/fixedbugs-a-transfer-into-a-value-that-ends-it-wrongly-is-stopped-before-c.hero"
+    st * h0_s; wr * h1_w; st * t1; HeroStr t2; st * t3; wr * t4; wr * t5; HeroStr t6; goto bb0;
+#line 16 "tests/golden/run/fixedbugs-a-transfer-into-a-value-that-ends-it-wrongly-is-stopped-before-c.hero"
 bb0:
-#line 17 "tests/golden/run/fixedbugs-a-transfer-into-a-value-that-ends-it-wrongly-is-stopped-before-c.hero"
     t1 = st_popen();
 #line 17 "tests/golden/run/fixedbugs-a-transfer-into-a-value-that-ends-it-wrongly-is-stopped-before-c.hero"
     hero_handle_acquired(t1, "st_pclose");
@@ -177,7 +169,7 @@ bb0:
     hero_print_end();
 #line 21 "tests/golden/run/fixedbugs-a-transfer-into-a-value-that-ends-it-wrongly-is-stopped-before-c.hero"
     return;
-#line 181 "fixedbugsatransferintoavaluethatendsitwronglyisstoppedbeforec.c"
+#line 173 "fixedbugsatransferintoavaluethatendsitwronglyisstoppedbeforec.c"
 }
 HERO_TU_LOCAL bool h_fixedbugsatransferintoavaluethatendsitwronglyisstoppedbeforec_Stream_eq(st * const *a, st * const *b) {
     return hero_handle_eq(*a, *b);

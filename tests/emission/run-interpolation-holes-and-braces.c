@@ -113,125 +113,10 @@ void h_interpolationholesandbraces_main(void);
 
 #line 14 "tests/golden/run/interpolation-holes-and-braces.hero"
 void h_interpolationholesandbraces_main(void) {
-#line 117 "interpolationholesandbraces.c"
-    int64_t h0_n;
-    HeroStr h1_word = {0};
-    HeroMapHeader * h2_m = {0};
-    h_0opt_e201354 h3_f0 = {0};
-    double h4_x;
-    bool h5_flag;
-    HeroStr h6_own6 = {0};
-    HeroStr h7_own7 = {0};
-    HeroStr h8_own8 = {0};
-    HeroStr h9_own9 = {0};
-    HeroStr h10_own10 = {0};
-    HeroStr h11_own11 = {0};
-    HeroStr h12_own12 = {0};
-    HeroStr h13_own13 = {0};
-    HeroMapHeader * h14_own14 = {0};
-    h_0opt_e201354 h15_own15 = {0};
-    HeroStr h16_own16 = {0};
-    HeroStr h17_own17 = {0};
-    HeroStr h18_own18 = {0};
-    HeroStr h19_own19 = {0};
-    HeroStr h20_own20 = {0};
-    HeroStr h21_own21 = {0};
-    HeroStr h22_own22 = {0};
-    HeroStr h23_own23 = {0};
-    HeroStr h24_own24 = {0};
-    HeroStr h25_own25 = {0};
-    HeroStr h26_own26 = {0};
-    HeroStr h27_own27 = {0};
-    HeroStr h28_own28 = {0};
-    int64_t t1;
-    HeroStr t2;
-    int64_t t3;
-    HeroStr t4;
-    HeroStr t5;
-    HeroStr t6;
-    HeroStr t7;
-    HeroStr t8;
-    HeroStr t9;
-    HeroStr t10;
-    int64_t t11;
-    int64_t t12;
-    int64_t t13;
-    HeroStr t14;
-    int64_t t15;
-    HeroStr t16;
-    HeroStr t17;
-    HeroStr t18;
-    HeroStr t19;
-    HeroStr t20;
-    HeroStr t21;
-    HeroStr t22;
-    HeroStr t23;
-    int64_t t24;
-    HeroMapHeader * t25;
-    HeroMapHeader * t26;
-    HeroStr t27;
-    h_0opt_e201354 t28;
-    h_0opt_e201354 t29;
-    int64_t t30;
-    int64_t t31;
-    bool t32;
-    h_0opt_e201354 t33;
-    HeroFailure t34;
-    h_0opt_e201354 t35;
-    int64_t t36;
-    int64_t t37;
-    HeroStr t38;
-    HeroStr t39;
-    HeroStr t40;
-    HeroStr t41;
-    HeroStr t42;
-    HeroStr t43;
-    HeroStr t44;
-    HeroStr t45;
-    HeroStr t46;
-    double t47;
-    bool t48;
-    double t49;
-    bool t50;
-    int64_t t51;
-    HeroStr t52;
-    HeroStr t53;
-    HeroStr t54;
-    HeroStr t55;
-    HeroStr t56;
-    HeroStr t57;
-    HeroStr t58;
-    HeroStr t59;
-    HeroStr t60;
-    HeroStr t61;
-    HeroStr t62;
-    HeroStr t63;
-    HeroStr t64;
-    HeroStr t65;
-    HeroStr t66;
-    HeroStr t67;
-    HeroStr t68;
-    HeroStr t69;
-    HeroMapHeader * t70;
-    HeroMapHeader * t71;
-    h_0opt_e201354 t72;
-    h_0opt_e201354 t73;
-    HeroStr t74;
-    HeroStr t75;
-    HeroStr t76;
-    HeroStr t77;
-    HeroStr t78;
-    HeroStr t79;
-    HeroStr t80;
-    HeroStr t81;
-    HeroStr t82;
-    HeroStr t83;
-    HeroStr t84;
-    HeroStr t85;
-    HeroStr t86;
-    goto bb0;
+#line 14 "tests/golden/run/interpolation-holes-and-braces.hero"
+    int64_t h0_n; HeroStr h1_word = {0}; HeroMapHeader * h2_m = {0}; h_0opt_e201354 h3_f0 = {0}; double h4_x; bool h5_flag; HeroStr h6_own6 = {0}; HeroStr h7_own7 = {0}; HeroStr h8_own8 = {0}; HeroStr h9_own9 = {0}; HeroStr h10_own10 = {0}; HeroStr h11_own11 = {0}; HeroStr h12_own12 = {0}; HeroStr h13_own13 = {0}; HeroMapHeader * h14_own14 = {0}; h_0opt_e201354 h15_own15 = {0}; HeroStr h16_own16 = {0}; HeroStr h17_own17 = {0}; HeroStr h18_own18 = {0}; HeroStr h19_own19 = {0}; HeroStr h20_own20 = {0}; HeroStr h21_own21 = {0}; HeroStr h22_own22 = {0}; HeroStr h23_own23 = {0}; HeroStr h24_own24 = {0}; HeroStr h25_own25 = {0}; HeroStr h26_own26 = {0}; HeroStr h27_own27 = {0}; HeroStr h28_own28 = {0}; int64_t t1; HeroStr t2; int64_t t3; HeroStr t4; HeroStr t5; HeroStr t6; HeroStr t7; HeroStr t8; HeroStr t9; HeroStr t10; int64_t t11; int64_t t12; int64_t t13; HeroStr t14; int64_t t15; HeroStr t16; HeroStr t17; HeroStr t18; HeroStr t19; HeroStr t20; HeroStr t21; HeroStr t22; HeroStr t23; int64_t t24; HeroMapHeader * t25; HeroMapHeader * t26; HeroStr t27; h_0opt_e201354 t28; h_0opt_e201354 t29; int64_t t30; int64_t t31; bool t32; h_0opt_e201354 t33; HeroFailure t34; h_0opt_e201354 t35; int64_t t36; int64_t t37; HeroStr t38; HeroStr t39; HeroStr t40; HeroStr t41; HeroStr t42; HeroStr t43; HeroStr t44; HeroStr t45; HeroStr t46; double t47; bool t48; double t49; bool t50; int64_t t51; HeroStr t52; HeroStr t53; HeroStr t54; HeroStr t55; HeroStr t56; HeroStr t57; HeroStr t58; HeroStr t59; HeroStr t60; HeroStr t61; HeroStr t62; HeroStr t63; HeroStr t64; HeroStr t65; HeroStr t66; HeroStr t67; HeroStr t68; HeroStr t69; HeroMapHeader * t70; HeroMapHeader * t71; h_0opt_e201354 t72; h_0opt_e201354 t73; HeroStr t74; HeroStr t75; HeroStr t76; HeroStr t77; HeroStr t78; HeroStr t79; HeroStr t80; HeroStr t81; HeroStr t82; HeroStr t83; HeroStr t84; HeroStr t85; HeroStr t86; goto bb0;
+#line 14 "tests/golden/run/interpolation-holes-and-braces.hero"
 bb0:
-#line 15 "tests/golden/run/interpolation-holes-and-braces.hero"
     t1 = INT64_C(3);
 #line 15 "tests/golden/run/interpolation-holes-and-braces.hero"
     h0_n = t1;
@@ -551,7 +436,7 @@ bb1:
     hero_print_str(t60);
 #line 25 "tests/golden/run/interpolation-holes-and-braces.hero"
     hero_print_end();
-#line 555 "interpolationholesandbraces.c"
+#line 440 "interpolationholesandbraces.c"
     hero_str_release_at(&h1_word);
     hero_map_release_at(&h2_m);
     h_0opt_e201354_release(hero_slot_escape(&h3_f0));
@@ -584,7 +469,7 @@ bb2:
     t33 = h3_f0;
 #line 22 "tests/golden/run/interpolation-holes-and-braces.hero"
     t34 = t33.as.err;
-#line 588 "interpolationholesandbraces.c"
+#line 473 "interpolationholesandbraces.c"
     hero_panic_must(t34);
     hero_unreachable();
 }

@@ -110,23 +110,10 @@ void h_fixedbugsatagthatneedsstruct_main(void);
 
 #line 38 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
 void h_fixedbugsatagthatneedsstruct_main(void) {
-#line 114 "fixedbugsatagthatneedsstruct.c"
-    struct probe * h0_p;
-    struct gauge * h1_g;
-    int64_t t1;
-    struct probe * t2;
-    int64_t t3;
-    struct gauge * t4;
-    struct probe * t5;
-    int64_t t6;
-    struct gauge * t7;
-    int64_t t8;
-    int64_t t9;
-    struct probe * t10;
-    struct gauge * t11;
-    goto bb0;
+#line 38 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
+    struct probe * h0_p; struct gauge * h1_g; int64_t t1; struct probe * t2; int64_t t3; struct gauge * t4; struct probe * t5; int64_t t6; struct gauge * t7; int64_t t8; int64_t t9; struct probe * t10; struct gauge * t11; goto bb0;
+#line 38 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
 bb0:
-#line 39 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
     t1 = INT64_C(7);
 #line 39 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
     t2 = probe_open(t1);
@@ -186,7 +173,7 @@ bb0:
     }
 #line 43 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
     return;
-#line 190 "fixedbugsatagthatneedsstruct.c"
+#line 177 "fixedbugsatagthatneedsstruct.c"
 }
 HERO_TU_LOCAL bool h_fixedbugsatagthatneedsstruct_Probe_eq(struct probe * const *a, struct probe * const *b) {
     return hero_handle_eq(*a, *b);

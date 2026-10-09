@@ -188,69 +188,10 @@ void h_fixedbugs151armsaswideastheirunionscompared_main(void);
 
 #line 33 "tests/golden/run/fixedbugs-151-arms-as-wide-as-their-unions-compared.hero"
 void h_fixedbugs151armsaswideastheirunionscompared_main(void) {
-#line 192 "fixedbugs151armsaswideastheirunionscompared.c"
-    HeroMapHeader * h0_seen = {0};
-    HeroMapHeader * h1_own1 = {0};
-    int32_t t1;
-    SA t2;
-    h_fixedbugs151armsaswideastheirunionscompared_Box t3;
-    int32_t t4;
-    SA t5;
-    h_fixedbugs151armsaswideastheirunionscompared_Box t6;
-    bool t7;
-    HeroStr t8;
-    int32_t t9;
-    SA t10;
-    h_fixedbugs151armsaswideastheirunionscompared_Box t11;
-    int32_t t12;
-    SA t13;
-    h_fixedbugs151armsaswideastheirunionscompared_Box t14;
-    bool t15;
-    HeroMapHeader * t16;
-    int32_t t17;
-    SA t18;
-    int64_t t19;
-    int32_t t20;
-    SA t21;
-    int64_t t22;
-    int32_t t23;
-    SA t24;
-    int64_t t25;
-    HeroMapHeader * t26;
-    int64_t t27;
-    int64_t t28;
-    SB t29;
-    int64_t t30;
-    SB t31;
-    bool t32;
-    HeroStr t33;
-    uint32_t t34;
-    SARR t35;
-    uint32_t t36;
-    SARR t37;
-    bool t38;
-    HeroStr t39;
-    int64_t t40;
-    SPTR t41;
-    int64_t t42;
-    SPTR t43;
-    bool t44;
-    int64_t t45;
-    SB t46;
-    int64_t t47;
-    SB t48;
-    bool t49;
-    HeroStr t50;
-    uint32_t t51;
-    SARR t52;
-    uint32_t t53;
-    SARR t54;
-    bool t55;
-    HeroMapHeader * t56;
-    HeroMapHeader * t57;
-    goto bb0;
+#line 33 "tests/golden/run/fixedbugs-151-arms-as-wide-as-their-unions-compared.hero"
+    HeroMapHeader * h0_seen = {0}; HeroMapHeader * h1_own1 = {0}; int32_t t1; SA t2; h_fixedbugs151armsaswideastheirunionscompared_Box t3; int32_t t4; SA t5; h_fixedbugs151armsaswideastheirunionscompared_Box t6; bool t7; HeroStr t8; int32_t t9; SA t10; h_fixedbugs151armsaswideastheirunionscompared_Box t11; int32_t t12; SA t13; h_fixedbugs151armsaswideastheirunionscompared_Box t14; bool t15; HeroMapHeader * t16; int32_t t17; SA t18; int64_t t19; int32_t t20; SA t21; int64_t t22; int32_t t23; SA t24; int64_t t25; HeroMapHeader * t26; int64_t t27; int64_t t28; SB t29; int64_t t30; SB t31; bool t32; HeroStr t33; uint32_t t34; SARR t35; uint32_t t36; SARR t37; bool t38; HeroStr t39; int64_t t40; SPTR t41; int64_t t42; SPTR t43; bool t44; int64_t t45; SB t46; int64_t t47; SB t48; bool t49; HeroStr t50; uint32_t t51; SARR t52; uint32_t t53; SARR t54; bool t55; HeroMapHeader * t56; HeroMapHeader * t57; goto bb0;
+#line 33 "tests/golden/run/fixedbugs-151-arms-as-wide-as-their-unions-compared.hero"
 bb0:
-#line 34 "tests/golden/run/fixedbugs-151-arms-as-wide-as-their-unions-compared.hero"
     t1 = INT64_C(5);
 #line 34 "tests/golden/run/fixedbugs-151-arms-as-wide-as-their-unions-compared.hero"
     t2 = make_sa(t1);
@@ -403,7 +344,7 @@ bb0:
     hero_print_bool(t55);
 #line 47 "tests/golden/run/fixedbugs-151-arms-as-wide-as-their-unions-compared.hero"
     hero_print_end();
-#line 407 "fixedbugs151armsaswideastheirunionscompared.c"
+#line 348 "fixedbugs151armsaswideastheirunionscompared.c"
     hero_map_release_at(&h0_seen);
     hero_map_release_at(&h1_own1);
     return;

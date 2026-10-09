@@ -170,173 +170,10 @@ int32_t h_fixedbugs396posixfillsitsbuffers_POLLOUT(void) {
 
 #line 29 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
 void h_fixedbugs396posixfillsitsbuffers_main(void) {
-#line 174 "fixedbugs396posixfillsitsbuffers.c"
-    HeroArrayHeader * h0_fds = {0};
-    h_0opt_e1ec52d h1_f0 = {0};
-    h_0opt_e1ec52d h2_f1 = {0};
-    HeroArrayHeader * h3_watched = {0};
-    h_0opt_e1ec52d h4_f2 = {0};
-    h_0opt_e1ec52d h5_f3 = {0};
-    HeroArrayHeader * h6_buf = {0};
-    HeroArrayHeader * h7_name = {0};
-    HeroArrayHeader * h8_own8 = {0};
-    h_0opt_e1ec52d h9_own9 = {0};
-    h_0opt_e1ec52d h10_own10 = {0};
-    HeroArrayHeader * h11_own11 = {0};
-    h_0opt_e1ec52d h12_own12 = {0};
-    h_0opt_e1ec52d h13_own13 = {0};
-    HeroArrayHeader * h14_own14 = {0};
-    HeroArrayHeader * h15_own15 = {0};
-    HeroArrayHeader * t1;
-    int32_t t2;
-    HeroStr t3;
-    HeroArrayHeader * t4;
-    int64_t t5;
-    HeroStr t6;
-    HeroArrayHeader * t7;
-    int64_t t8;
-    int32_t t9;
-    HeroArrayHeader * t10;
-    int64_t t11;
-    int32_t t12;
-    bool t13;
-    HeroArrayHeader * t14;
-    int64_t t15;
-    int32_t t16;
-    HeroStr t17;
-    const char * t18;
-    uint64_t t19;
-    int64_t t20;
-    HeroArrayHeader * t21;
-    int64_t t22;
-    int32_t t23;
-    int32_t t24;
-    h_0opt_e1ec52d t25;
-    h_0opt_e1ec52d t26;
-    int64_t t27;
-    int64_t t28;
-    bool t29;
-    h_0opt_e1ec52d t30;
-    HeroFailure t31;
-    h_0opt_e1ec52d t32;
-    int16_t t33;
-    int16_t t34;
-    struct pollfd t35;
-    HeroArrayHeader * t36;
-    int64_t t37;
-    int32_t t38;
-    int32_t t39;
-    h_0opt_e1ec52d t40;
-    h_0opt_e1ec52d t41;
-    int64_t t42;
-    int64_t t43;
-    bool t44;
-    h_0opt_e1ec52d t45;
-    HeroFailure t46;
-    h_0opt_e1ec52d t47;
-    int16_t t48;
-    int16_t t49;
-    struct pollfd t50;
-    HeroArrayHeader * t51;
-    uint32_t t52;
-    int32_t t53;
-    int32_t t54;
-    HeroStr t55;
-    HeroArrayHeader * t56;
-    int64_t t57;
-    HeroStr t58;
-    HeroArrayHeader * t59;
-    int64_t t60;
-    struct pollfd t61;
-    int16_t t62;
-    int32_t t63;
-    h_0opt_e1ec52d t64;
-    h_0opt_e1ec52d t65;
-    int64_t t66;
-    int64_t t67;
-    bool t68;
-    h_0opt_e1ec52d t69;
-    HeroFailure t70;
-    h_0opt_e1ec52d t71;
-    int16_t t72;
-    bool t73;
-    HeroStr t74;
-    HeroArrayHeader * t75;
-    int64_t t76;
-    struct pollfd t77;
-    int16_t t78;
-    int32_t t79;
-    h_0opt_e1ec52d t80;
-    h_0opt_e1ec52d t81;
-    int64_t t82;
-    int64_t t83;
-    bool t84;
-    h_0opt_e1ec52d t85;
-    HeroFailure t86;
-    h_0opt_e1ec52d t87;
-    int16_t t88;
-    bool t89;
-    HeroArrayHeader * t90;
-    HeroArrayHeader * t91;
-    int64_t t92;
-    int32_t t93;
-    uint64_t t94;
-    int64_t t95;
-    HeroStr t96;
-    HeroArrayHeader * t97;
-    int64_t t98;
-    HeroStr t99;
-    HeroArrayHeader * t100;
-    int64_t t101;
-    uint8_t t102;
-    HeroStr t103;
-    HeroArrayHeader * t104;
-    int64_t t105;
-    uint8_t t106;
-    HeroStr t107;
-    HeroArrayHeader * t108;
-    int64_t t109;
-    uint8_t t110;
-    HeroArrayHeader * t111;
-    int64_t t112;
-    int32_t t113;
-    int32_t t114;
-    HeroStr t115;
-    HeroArrayHeader * t116;
-    int64_t t117;
-    int32_t t118;
-    int32_t t119;
-    HeroArrayHeader * t120;
-    uint64_t t121;
-    int32_t t122;
-    HeroStr t123;
-    HeroArrayHeader * t124;
-    int64_t t125;
-    HeroStr t126;
-    HeroArrayHeader * t127;
-    int64_t t128;
-    int8_t t129;
-    int8_t t130;
-    bool t131;
-    HeroArrayHeader * t132;
-    HeroArrayHeader * t133;
-    h_0opt_e1ec52d t134;
-    h_0opt_e1ec52d t135;
-    h_0opt_e1ec52d t136;
-    h_0opt_e1ec52d t137;
-    HeroArrayHeader * t138;
-    HeroArrayHeader * t139;
-    h_0opt_e1ec52d t140;
-    h_0opt_e1ec52d t141;
-    h_0opt_e1ec52d t142;
-    h_0opt_e1ec52d t143;
-    HeroArrayHeader * t144;
-    HeroArrayHeader * t145;
-    HeroArrayHeader * t146;
-    HeroArrayHeader * t147;
-    goto bb0;
+#line 29 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
+    HeroArrayHeader * h0_fds = {0}; h_0opt_e1ec52d h1_f0 = {0}; h_0opt_e1ec52d h2_f1 = {0}; HeroArrayHeader * h3_watched = {0}; h_0opt_e1ec52d h4_f2 = {0}; h_0opt_e1ec52d h5_f3 = {0}; HeroArrayHeader * h6_buf = {0}; HeroArrayHeader * h7_name = {0}; HeroArrayHeader * h8_own8 = {0}; h_0opt_e1ec52d h9_own9 = {0}; h_0opt_e1ec52d h10_own10 = {0}; HeroArrayHeader * h11_own11 = {0}; h_0opt_e1ec52d h12_own12 = {0}; h_0opt_e1ec52d h13_own13 = {0}; HeroArrayHeader * h14_own14 = {0}; HeroArrayHeader * h15_own15 = {0}; HeroArrayHeader * t1; int32_t t2; HeroStr t3; HeroArrayHeader * t4; int64_t t5; HeroStr t6; HeroArrayHeader * t7; int64_t t8; int32_t t9; HeroArrayHeader * t10; int64_t t11; int32_t t12; bool t13; HeroArrayHeader * t14; int64_t t15; int32_t t16; HeroStr t17; const char * t18; uint64_t t19; int64_t t20; HeroArrayHeader * t21; int64_t t22; int32_t t23; int32_t t24; h_0opt_e1ec52d t25; h_0opt_e1ec52d t26; int64_t t27; int64_t t28; bool t29; h_0opt_e1ec52d t30; HeroFailure t31; h_0opt_e1ec52d t32; int16_t t33; int16_t t34; struct pollfd t35; HeroArrayHeader * t36; int64_t t37; int32_t t38; int32_t t39; h_0opt_e1ec52d t40; h_0opt_e1ec52d t41; int64_t t42; int64_t t43; bool t44; h_0opt_e1ec52d t45; HeroFailure t46; h_0opt_e1ec52d t47; int16_t t48; int16_t t49; struct pollfd t50; HeroArrayHeader * t51; uint32_t t52; int32_t t53; int32_t t54; HeroStr t55; HeroArrayHeader * t56; int64_t t57; HeroStr t58; HeroArrayHeader * t59; int64_t t60; struct pollfd t61; int16_t t62; int32_t t63; h_0opt_e1ec52d t64; h_0opt_e1ec52d t65; int64_t t66; int64_t t67; bool t68; h_0opt_e1ec52d t69; HeroFailure t70; h_0opt_e1ec52d t71; int16_t t72; bool t73; HeroStr t74; HeroArrayHeader * t75; int64_t t76; struct pollfd t77; int16_t t78; int32_t t79; h_0opt_e1ec52d t80; h_0opt_e1ec52d t81; int64_t t82; int64_t t83; bool t84; h_0opt_e1ec52d t85; HeroFailure t86; h_0opt_e1ec52d t87; int16_t t88; bool t89; HeroArrayHeader * t90; HeroArrayHeader * t91; int64_t t92; int32_t t93; uint64_t t94; int64_t t95; HeroStr t96; HeroArrayHeader * t97; int64_t t98; HeroStr t99; HeroArrayHeader * t100; int64_t t101; uint8_t t102; HeroStr t103; HeroArrayHeader * t104; int64_t t105; uint8_t t106; HeroStr t107; HeroArrayHeader * t108; int64_t t109; uint8_t t110; HeroArrayHeader * t111; int64_t t112; int32_t t113; int32_t t114; HeroStr t115; HeroArrayHeader * t116; int64_t t117; int32_t t118; int32_t t119; HeroArrayHeader * t120; uint64_t t121; int32_t t122; HeroStr t123; HeroArrayHeader * t124; int64_t t125; HeroStr t126; HeroArrayHeader * t127; int64_t t128; int8_t t129; int8_t t130; bool t131; HeroArrayHeader * t132; HeroArrayHeader * t133; h_0opt_e1ec52d t134; h_0opt_e1ec52d t135; h_0opt_e1ec52d t136; h_0opt_e1ec52d t137; HeroArrayHeader * t138; HeroArrayHeader * t139; h_0opt_e1ec52d t140; h_0opt_e1ec52d t141; h_0opt_e1ec52d t142; h_0opt_e1ec52d t143; HeroArrayHeader * t144; HeroArrayHeader * t145; HeroArrayHeader * t146; HeroArrayHeader * t147; goto bb0;
+#line 29 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
 bb0:
-#line 30 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t1 = hero_array_new(&hero_desc_i32, 1);
 #line 30 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t132 = h8_own8;
@@ -515,7 +352,7 @@ bb2:
     t30 = h1_f0;
 #line 34 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t31 = t30.as.err;
-#line 519 "fixedbugs396posixfillsitsbuffers.c"
+#line 356 "fixedbugs396posixfillsitsbuffers.c"
     hero_panic_must(t31);
     hero_unreachable();
 bb3:
@@ -619,7 +456,7 @@ bb4:
     t45 = h2_f1;
 #line 35 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t46 = t45.as.err;
-#line 623 "fixedbugs396posixfillsitsbuffers.c"
+#line 460 "fixedbugs396posixfillsitsbuffers.c"
     hero_panic_must(t46);
     hero_unreachable();
 bb5:
@@ -679,7 +516,7 @@ bb6:
     t69 = h4_f2;
 #line 42 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t70 = t69.as.err;
-#line 683 "fixedbugs396posixfillsitsbuffers.c"
+#line 520 "fixedbugs396posixfillsitsbuffers.c"
     hero_panic_must(t70);
     hero_unreachable();
 bb7:
@@ -877,7 +714,7 @@ bb7:
     hero_print_bool(t131);
 #line 50 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     hero_print_end();
-#line 881 "fixedbugs396posixfillsitsbuffers.c"
+#line 718 "fixedbugs396posixfillsitsbuffers.c"
     hero_array_release_at(&h0_fds);
     h_0opt_e1ec52d_release(hero_slot_escape(&h1_f0));
     h_0opt_e1ec52d_release(hero_slot_escape(&h2_f1));
@@ -900,7 +737,7 @@ bb8:
     t85 = h5_f3;
 #line 44 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t86 = t85.as.err;
-#line 904 "fixedbugs396posixfillsitsbuffers.c"
+#line 741 "fixedbugs396posixfillsitsbuffers.c"
     hero_panic_must(t86);
     hero_unreachable();
 }

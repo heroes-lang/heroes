@@ -105,21 +105,10 @@ void h_fixedbugsafixedarrayelementiswritteninplace_main(void);
 
 #line 26 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-in-place.hero"
 void h_fixedbugsafixedarrayelementiswritteninplace_main(void) {
-#line 109 "fixedbugsafixedarrayelementiswritteninplace.c"
-    struct nums h0_n;
-    int64_t t1;
-    int64_t t2;
-    int64_t t3;
-    int64_t t4;
-    struct nums t6;
-    int64_t t7;
-    int64_t t8;
-    HeroStr t9;
-    struct nums t10;
-    int64_t t11;
-    goto bb0;
+#line 26 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-in-place.hero"
+    struct nums h0_n; int64_t t1; int64_t t2; int64_t t3; int64_t t4; struct nums t6; int64_t t7; int64_t t8; HeroStr t9; struct nums t10; int64_t t11; goto bb0;
+#line 26 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-in-place.hero"
 bb0:
-#line 27 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-in-place.hero"
     t1 = INT64_C(1);
 #line 27 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-in-place.hero"
     t2 = INT64_C(2);
@@ -149,7 +138,7 @@ bb0:
     hero_print_end();
 #line 29 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-in-place.hero"
     return;
-#line 153 "fixedbugsafixedarrayelementiswritteninplace.c"
+#line 142 "fixedbugsafixedarrayelementiswritteninplace.c"
 }
 HERO_TU_LOCAL bool h_fixedbugsafixedarrayelementiswritteninplace_Nums_eq(const struct nums *a, const struct nums *b) {
     if (!((a->a[0] == b->a[0] && a->a[1] == b->a[1] && a->a[2] == b->a[2] && a->a[3] == b->a[3]))) return false;

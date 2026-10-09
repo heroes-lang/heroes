@@ -108,75 +108,10 @@ h_0opt_f87774a h_library_validated(const char * h0_c);
 
 #line 43 "tests/golden/run/ffi-read-back-a-cstr.hero"
 void h_ffireadbackacstr_main(void) {
-#line 112 "ffireadbackacstr.c"
-    h_0opt_f87774a h0_f0 = {0};
-    HeroStr h1_first = {0};
-    h_0opt_f87774a h2_f1 = {0};
-    HeroStr h3_second = {0};
-    const char * h4_absent;
-    h_0opt_f87774a h5_s0 = {0};
-    HeroStr h6_text = {0};
-    HeroFailure h7_e = {0};
-    h_0opt_f87774a h8_own8 = {0};
-    h_0opt_f87774a h9_own9 = {0};
-    h_0opt_f87774a h10_own10 = {0};
-    int32_t t1;
-    const char * t2;
-    h_0opt_f87774a t3;
-    h_0opt_f87774a t4;
-    int64_t t5;
-    int64_t t6;
-    bool t7;
-    h_0opt_f87774a t8;
-    HeroFailure t9;
-    h_0opt_f87774a t10;
-    HeroStr t11;
-    int32_t t12;
-    const char * t13;
-    h_0opt_f87774a t14;
-    h_0opt_f87774a t15;
-    int64_t t16;
-    int64_t t17;
-    bool t18;
-    h_0opt_f87774a t19;
-    HeroFailure t20;
-    h_0opt_f87774a t21;
-    HeroStr t22;
-    HeroStr t23;
-    HeroStr t24;
-    bool t25;
-    HeroStr t26;
-    int64_t t27;
-    int64_t t28;
-    bool t29;
-    HeroStr t30;
-    const char * t31;
-    const char * t32;
-    const char * t33;
-    h_0opt_f87774a t34;
-    h_0opt_f87774a t35;
-    int64_t t36;
-    h_0opt_f87774a t37;
-    HeroStr t38;
-    HeroStr t39;
-    h_0opt_f87774a t40;
-    HeroFailure t41;
-    HeroStr t42;
-    HeroFailure t43;
-    HeroStr t44;
-    h_0opt_f87774a t45;
-    h_0opt_f87774a t46;
-    HeroStr t47;
-    h_0opt_f87774a t48;
-    h_0opt_f87774a t49;
-    HeroStr t50;
-    h_0opt_f87774a t51;
-    h_0opt_f87774a t52;
-    HeroStr t53;
-    HeroFailure t54;
-    goto bb0;
+#line 43 "tests/golden/run/ffi-read-back-a-cstr.hero"
+    h_0opt_f87774a h0_f0 = {0}; HeroStr h1_first = {0}; h_0opt_f87774a h2_f1 = {0}; HeroStr h3_second = {0}; const char * h4_absent; h_0opt_f87774a h5_s0 = {0}; HeroStr h6_text = {0}; HeroFailure h7_e = {0}; h_0opt_f87774a h8_own8 = {0}; h_0opt_f87774a h9_own9 = {0}; h_0opt_f87774a h10_own10 = {0}; int32_t t1; const char * t2; h_0opt_f87774a t3; h_0opt_f87774a t4; int64_t t5; int64_t t6; bool t7; h_0opt_f87774a t8; HeroFailure t9; h_0opt_f87774a t10; HeroStr t11; int32_t t12; const char * t13; h_0opt_f87774a t14; h_0opt_f87774a t15; int64_t t16; int64_t t17; bool t18; h_0opt_f87774a t19; HeroFailure t20; h_0opt_f87774a t21; HeroStr t22; HeroStr t23; HeroStr t24; bool t25; HeroStr t26; int64_t t27; int64_t t28; bool t29; HeroStr t30; const char * t31; const char * t32; const char * t33; h_0opt_f87774a t34; h_0opt_f87774a t35; int64_t t36; h_0opt_f87774a t37; HeroStr t38; HeroStr t39; h_0opt_f87774a t40; HeroFailure t41; HeroStr t42; HeroFailure t43; HeroStr t44; h_0opt_f87774a t45; h_0opt_f87774a t46; HeroStr t47; h_0opt_f87774a t48; h_0opt_f87774a t49; HeroStr t50; h_0opt_f87774a t51; h_0opt_f87774a t52; HeroStr t53; HeroFailure t54; goto bb0;
+#line 43 "tests/golden/run/ffi-read-back-a-cstr.hero"
 bb0:
-#line 44 "tests/golden/run/ffi-read-back-a-cstr.hero"
     t1 = INT64_C(1);
 #line 44 "tests/golden/run/ffi-read-back-a-cstr.hero"
     t2 = (const char *)strerror(t1);
@@ -255,7 +190,7 @@ bb2:
     t8 = h0_f0;
 #line 44 "tests/golden/run/ffi-read-back-a-cstr.hero"
     t9 = t8.as.err;
-#line 259 "ffireadbackacstr.c"
+#line 194 "ffireadbackacstr.c"
     hero_panic_must(t9);
     hero_unreachable();
 bb3:
@@ -338,7 +273,7 @@ bb4:
     t19 = h2_f1;
 #line 45 "tests/golden/run/ffi-read-back-a-cstr.hero"
     t20 = t19.as.err;
-#line 342 "ffireadbackacstr.c"
+#line 277 "ffireadbackacstr.c"
     hero_panic_must(t20);
     hero_unreachable();
 bb5:
@@ -401,52 +336,23 @@ bb7:
     hero_print_end();
 #line 60 "tests/golden/run/ffi-read-back-a-cstr.hero"
     goto bb5;
-#line 405 "ffireadbackacstr.c"
+#line 340 "ffireadbackacstr.c"
 }
 
 #line 123 "<heroes library>"
 int64_t h_library_HERO_STR_OK(void) {
-#line 410 "ffireadbackacstr.c"
+#line 345 "ffireadbackacstr.c"
     return HERO_STR_OK;
 }
 
 #line 153 "<heroes library>"
 h_0opt_f87774a h_library_validated(const char * h0_c) {
-#line 416 "ffireadbackacstr.c"
-    int64_t *const hero_lend_h1_status = (int64_t *)hero_lend_local(sizeof(int64_t), "library.validated", "status");
+#line 153 "<heroes library>"
 #define h1_status (*hero_lend_h1_status)
-    HeroStr h2_text = {0};
-    h_0opt_f87774a h3_ret0 = {0};
-    HeroStr h4_own4 = {0};
-    h_0opt_f87774a h5_own5 = {0};
-    h_0opt_f87774a h6_own6 = {0};
-    h_0opt_f87774a h7_own7 = {0};
-    const char * t1;
-    const char * t2;
-    bool t3;
-    HeroStr t4;
-    HeroStr t5;
-    h_0opt_f87774a t6;
-    int64_t t7;
-    const char * t8;
-    HeroStr t9;
-    int64_t t10;
-    int64_t t11;
-    bool t12;
-    HeroStr t13;
-    h_0opt_f87774a t14;
-    HeroStr t15;
-    HeroStr t16;
-    h_0opt_f87774a t17;
-    h_0opt_f87774a t18;
-    HeroStr t19;
-    HeroStr t20;
-    h_0opt_f87774a t21;
-    h_0opt_f87774a t22;
-    h_0opt_f87774a t23;
-    goto bb0;
+#line 153 "<heroes library>"
+    int64_t *const hero_lend_h1_status = (int64_t *)hero_lend_local(sizeof(int64_t), "library.validated", "status"); HeroStr h2_text = {0}; h_0opt_f87774a h3_ret0 = {0}; HeroStr h4_own4 = {0}; h_0opt_f87774a h5_own5 = {0}; h_0opt_f87774a h6_own6 = {0}; h_0opt_f87774a h7_own7 = {0}; const char * t1; const char * t2; bool t3; HeroStr t4; HeroStr t5; h_0opt_f87774a t6; int64_t t7; const char * t8; HeroStr t9; int64_t t10; int64_t t11; bool t12; HeroStr t13; h_0opt_f87774a t14; HeroStr t15; HeroStr t16; h_0opt_f87774a t17; h_0opt_f87774a t18; HeroStr t19; HeroStr t20; h_0opt_f87774a t21; h_0opt_f87774a t22; h_0opt_f87774a t23; goto bb0;
+#line 153 "<heroes library>"
 bb0:
-#line 154 "<heroes library>"
     t1 = h0_c;
 #line 154 "<heroes library>"
     t2 = ((void *)0);
@@ -558,7 +464,7 @@ bb6:
     goto bb4;
 #line 159 "<heroes library>"
 bb7:
-#line 562 "ffireadbackacstr.c"
+#line 468 "ffireadbackacstr.c"
     t18 = h3_ret0;
     h_0opt_f87774a_retain(&t18);
     hero_str_release_at(&h2_text);

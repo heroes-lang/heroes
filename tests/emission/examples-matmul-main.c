@@ -114,45 +114,34 @@ __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
 
 #line 20 "examples/matmul/main.hero"
 int64_t h_main_SIZE(void) {
-#line 118 "main.c"
-    int64_t t1;
-    goto bb0;
+#line 20 "examples/matmul/main.hero"
+    int64_t t1; goto bb0;
+#line 20 "examples/matmul/main.hero"
 bb0:
-#line 21 "examples/matmul/main.hero"
     t1 = INT64_C(48);
 #line 21 "examples/matmul/main.hero"
     return t1;
-#line 126 "main.c"
+#line 125 "main.c"
 }
 
 #line 23 "examples/matmul/main.hero"
 int64_t h_main_BANDS(void) {
-#line 131 "main.c"
-    int64_t t1;
-    goto bb0;
+#line 23 "examples/matmul/main.hero"
+    int64_t t1; goto bb0;
+#line 23 "examples/matmul/main.hero"
 bb0:
-#line 24 "examples/matmul/main.hero"
     t1 = INT64_C(6);
 #line 24 "examples/matmul/main.hero"
     return t1;
-#line 139 "main.c"
+#line 137 "main.c"
 }
 
 #line 27 "examples/matmul/main.hero"
 int64_t h_main_left_at(int64_t h0_row, int64_t h1_col) {
-#line 144 "main.c"
-    int64_t t1;
-    int64_t t2;
-    int64_t t3;
-    int64_t t4;
-    int64_t t5;
-    int64_t t6;
-    int64_t t7;
-    int64_t t8;
-    int64_t t9;
-    goto bb0;
+#line 27 "examples/matmul/main.hero"
+    int64_t t1; int64_t t2; int64_t t3; int64_t t4; int64_t t5; int64_t t6; int64_t t7; int64_t t8; int64_t t9; goto bb0;
+#line 27 "examples/matmul/main.hero"
 bb0:
-#line 28 "examples/matmul/main.hero"
     t1 = h0_row;
 #line 28 "examples/matmul/main.hero"
     t2 = INT64_C(7);
@@ -176,24 +165,15 @@ bb0:
     t9 = t7 % t8;
 #line 28 "examples/matmul/main.hero"
     return t9;
-#line 180 "main.c"
+#line 169 "main.c"
 }
 
 #line 30 "examples/matmul/main.hero"
 int64_t h_main_right_at(int64_t h0_row, int64_t h1_col) {
-#line 185 "main.c"
-    int64_t t1;
-    int64_t t2;
-    int64_t t3;
-    int64_t t4;
-    int64_t t5;
-    int64_t t6;
-    int64_t t7;
-    int64_t t8;
-    int64_t t9;
-    goto bb0;
+#line 30 "examples/matmul/main.hero"
+    int64_t t1; int64_t t2; int64_t t3; int64_t t4; int64_t t5; int64_t t6; int64_t t7; int64_t t8; int64_t t9; goto bb0;
+#line 30 "examples/matmul/main.hero"
 bb0:
-#line 31 "examples/matmul/main.hero"
     t1 = h0_row;
 #line 31 "examples/matmul/main.hero"
     t2 = INT64_C(5);
@@ -217,49 +197,15 @@ bb0:
     t9 = t7 % t8;
 #line 31 "examples/matmul/main.hero"
     return t9;
-#line 221 "main.c"
+#line 201 "main.c"
 }
 
 #line 34 "examples/matmul/main.hero"
 HeroArrayHeader * h_main_product_row(int64_t h0_row) {
-#line 226 "main.c"
-    HeroArrayHeader * h1_out = {0};
-    int64_t h2_col;
-    int64_t h3_total;
-    int64_t h4_k;
-    HeroArrayHeader * h5_own5 = {0};
-    HeroArrayHeader * t1;
-    int64_t t2;
-    int64_t t3;
-    int64_t t4;
-    bool t5;
-    int64_t t6;
-    int64_t t7;
-    int64_t t8;
-    int64_t t9;
-    bool t10;
-    int64_t t11;
-    int64_t t12;
-    int64_t t13;
-    int64_t t14;
-    int64_t t15;
-    int64_t t16;
-    int64_t t17;
-    int64_t t18;
-    int64_t t19;
-    int64_t t20;
-    int64_t t21;
-    int64_t t22;
-    int64_t t24;
-    int64_t t26;
-    int64_t t27;
-    int64_t t28;
-    HeroArrayHeader * t29;
-    HeroArrayHeader * t30;
-    HeroArrayHeader * t31;
-    goto bb0;
+#line 34 "examples/matmul/main.hero"
+    HeroArrayHeader * h1_out = {0}; int64_t h2_col; int64_t h3_total; int64_t h4_k; HeroArrayHeader * h5_own5 = {0}; HeroArrayHeader * t1; int64_t t2; int64_t t3; int64_t t4; bool t5; int64_t t6; int64_t t7; int64_t t8; int64_t t9; bool t10; int64_t t11; int64_t t12; int64_t t13; int64_t t14; int64_t t15; int64_t t16; int64_t t17; int64_t t18; int64_t t19; int64_t t20; int64_t t21; int64_t t22; int64_t t24; int64_t t26; int64_t t27; int64_t t28; HeroArrayHeader * t29; HeroArrayHeader * t30; HeroArrayHeader * t31; goto bb0;
+#line 34 "examples/matmul/main.hero"
 bb0:
-#line 35 "examples/matmul/main.hero"
     t1 = hero_array_new(&hero_desc_int, 1);
 #line 35 "examples/matmul/main.hero"
     t30 = h5_own5;
@@ -304,7 +250,7 @@ bb2:
 bb3:
 #line 49 "examples/matmul/main.hero"
     t29 = h1_out;
-#line 308 "main.c"
+#line 254 "main.c"
     hero_array_incref(t29);
     hero_array_release_at(&h1_out);
     hero_array_release_at(&h5_own5);
@@ -363,84 +309,15 @@ bb6:
     h2_col = t28;
 #line 47 "examples/matmul/main.hero"
     goto bb1;
-#line 367 "main.c"
+#line 313 "main.c"
 }
 
 #line 53 "examples/matmul/main.hero"
 int64_t h_main_band(int64_t h0_index) {
-#line 372 "main.c"
-    hero_thread_guard("main.band");
-    HeroArrayHeader * h1_rows = {0};
-    int64_t h2_row;
-    int64_t h3_total;
-    HeroArrayHeader * h4_xs0 = {0};
-    int64_t h5_i0;
-    HeroArrayHeader * h6_r = {0};
-    HeroArrayHeader * h7_xs1 = {0};
-    int64_t h8_i1;
-    int64_t h9_v;
-    HeroArrayHeader * h10_own10 = {0};
-    HeroArrayHeader * h11_own11 = {0};
-    HeroArrayHeader * t1;
-    int64_t t2;
-    int64_t t3;
-    int64_t t4;
-    int64_t t5;
-    int64_t t6;
-    int64_t t7;
-    int64_t t8;
-    int64_t t9;
-    int64_t t10;
-    int64_t t11;
-    int64_t t12;
-    int64_t t13;
-    int64_t t14;
-    int64_t t15;
-    int64_t t16;
-    bool t17;
-    int64_t t19;
-    HeroArrayHeader * t20;
-    int64_t t22;
-    int64_t t23;
-    int64_t t24;
-    int64_t t25;
-    HeroArrayHeader * t26;
-    int64_t t27;
-    int64_t t28;
-    HeroArrayHeader * t29;
-    int64_t t30;
-    bool t31;
-    HeroArrayHeader * t32;
-    int64_t t33;
-    HeroArrayHeader * t34;
-    HeroArrayHeader * t35;
-    int64_t t36;
-    int64_t t37;
-    HeroArrayHeader * t38;
-    int64_t t39;
-    bool t40;
-    HeroArrayHeader * t41;
-    int64_t t42;
-    int64_t t43;
-    int64_t t44;
-    int64_t t45;
-    int64_t t46;
-    int64_t t47;
-    int64_t t48;
-    int64_t t49;
-    int64_t t50;
-    int64_t t51;
-    int64_t t52;
-    int64_t t53;
-    HeroArrayHeader * t54;
-    HeroArrayHeader * t55;
-    HeroArrayHeader * t56;
-    HeroArrayHeader * t57;
-    HeroArrayHeader * t58;
-    HeroArrayHeader * t59;
-    goto bb0;
+#line 53 "examples/matmul/main.hero"
+    hero_thread_guard("main.band"); HeroArrayHeader * h1_rows = {0}; int64_t h2_row; int64_t h3_total; HeroArrayHeader * h4_xs0 = {0}; int64_t h5_i0; HeroArrayHeader * h6_r = {0}; HeroArrayHeader * h7_xs1 = {0}; int64_t h8_i1; int64_t h9_v; HeroArrayHeader * h10_own10 = {0}; HeroArrayHeader * h11_own11 = {0}; HeroArrayHeader * t1; int64_t t2; int64_t t3; int64_t t4; int64_t t5; int64_t t6; int64_t t7; int64_t t8; int64_t t9; int64_t t10; int64_t t11; int64_t t12; int64_t t13; int64_t t14; int64_t t15; int64_t t16; bool t17; int64_t t19; HeroArrayHeader * t20; int64_t t22; int64_t t23; int64_t t24; int64_t t25; HeroArrayHeader * t26; int64_t t27; int64_t t28; HeroArrayHeader * t29; int64_t t30; bool t31; HeroArrayHeader * t32; int64_t t33; HeroArrayHeader * t34; HeroArrayHeader * t35; int64_t t36; int64_t t37; HeroArrayHeader * t38; int64_t t39; bool t40; HeroArrayHeader * t41; int64_t t42; int64_t t43; int64_t t44; int64_t t45; int64_t t46; int64_t t47; int64_t t48; int64_t t49; int64_t t50; int64_t t51; int64_t t52; int64_t t53; HeroArrayHeader * t54; HeroArrayHeader * t55; HeroArrayHeader * t56; HeroArrayHeader * t57; HeroArrayHeader * t58; HeroArrayHeader * t59; goto bb0;
+#line 53 "examples/matmul/main.hero"
 bb0:
-#line 54 "examples/matmul/main.hero"
     t1 = hero_array_new(&hero_desc_array, 1);
 #line 54 "examples/matmul/main.hero"
     t54 = h10_own10;
@@ -610,7 +487,7 @@ bb6:
 bb7:
 #line 67 "examples/matmul/main.hero"
     t53 = h3_total;
-#line 614 "main.c"
+#line 491 "main.c"
     hero_array_release_at(&h1_rows);
     hero_array_release_at(&h4_xs0);
     hero_array_release_at(&h6_r);
@@ -664,7 +541,7 @@ bb10:
 bb11:
 #line 64 "examples/matmul/main.hero"
     goto bb6;
-#line 668 "main.c"
+#line 545 "main.c"
 }
 
 int64_t h_0cb_main_band(int64_t h0_index) {
@@ -674,49 +551,10 @@ int64_t h_0cb_main_band(int64_t h0_index) {
 
 #line 69 "examples/matmul/main.hero"
 int64_t h_main_together(void) {
-#line 678 "main.c"
-    HeroArrayHeader * h0_handles = {0};
-    int64_t h1_i;
-    int64_t h2_total;
-    HeroArrayHeader * h3_xs0 = {0};
-    int64_t h4_i0;
-    int64_t h5_h;
-    HeroArrayHeader * h6_own6 = {0};
-    HeroArrayHeader * t1;
-    int64_t t2;
-    int64_t t3;
-    int64_t t4;
-    bool t5;
-    h_0fn_48ac9712 t7;
-    int64_t t8;
-    int64_t t9;
-    int64_t t11;
-    int64_t t12;
-    int64_t t13;
-    int64_t t14;
-    HeroArrayHeader * t15;
-    int64_t t16;
-    int64_t t17;
-    HeroArrayHeader * t18;
-    int64_t t19;
-    bool t20;
-    HeroArrayHeader * t21;
-    int64_t t22;
-    int64_t t23;
-    int64_t t24;
-    int64_t t25;
-    int64_t t26;
-    int64_t t27;
-    int64_t t28;
-    int64_t t29;
-    int64_t t30;
-    int64_t t31;
-    HeroArrayHeader * t32;
-    HeroArrayHeader * t33;
-    HeroArrayHeader * t34;
-    goto bb0;
+#line 69 "examples/matmul/main.hero"
+    HeroArrayHeader * h0_handles = {0}; int64_t h1_i; int64_t h2_total; HeroArrayHeader * h3_xs0 = {0}; int64_t h4_i0; int64_t h5_h; HeroArrayHeader * h6_own6 = {0}; HeroArrayHeader * t1; int64_t t2; int64_t t3; int64_t t4; bool t5; h_0fn_48ac9712 t7; int64_t t8; int64_t t9; int64_t t11; int64_t t12; int64_t t13; int64_t t14; HeroArrayHeader * t15; int64_t t16; int64_t t17; HeroArrayHeader * t18; int64_t t19; bool t20; HeroArrayHeader * t21; int64_t t22; int64_t t23; int64_t t24; int64_t t25; int64_t t26; int64_t t27; int64_t t28; int64_t t29; int64_t t30; int64_t t31; HeroArrayHeader * t32; HeroArrayHeader * t33; HeroArrayHeader * t34; goto bb0;
+#line 69 "examples/matmul/main.hero"
 bb0:
-#line 70 "examples/matmul/main.hero"
     t1 = hero_array_new(&hero_desc_int, 1);
 #line 70 "examples/matmul/main.hero"
     t32 = h6_own6;
@@ -836,7 +674,7 @@ bb6:
 bb7:
 #line 82 "examples/matmul/main.hero"
     t31 = h2_total;
-#line 840 "main.c"
+#line 678 "main.c"
     hero_array_release_at(&h0_handles);
     hero_array_release_at(&h3_xs0);
     hero_array_release_at(&h6_own6);
@@ -845,43 +683,10 @@ bb7:
 
 #line 84 "examples/matmul/main.hero"
 int64_t h_main_alone(void) {
-#line 849 "main.c"
-    int64_t h0_total;
-    int64_t h1_row;
-    HeroArrayHeader * h2_xs0 = {0};
-    int64_t h3_i0;
-    int64_t h4_v;
-    HeroArrayHeader * h5_own5 = {0};
-    int64_t t1;
-    int64_t t2;
-    int64_t t3;
-    int64_t t4;
-    bool t5;
-    int64_t t6;
-    HeroArrayHeader * t7;
-    int64_t t8;
-    int64_t t9;
-    HeroArrayHeader * t10;
-    int64_t t11;
-    bool t12;
-    HeroArrayHeader * t13;
-    int64_t t14;
-    int64_t t15;
-    int64_t t16;
-    int64_t t17;
-    int64_t t18;
-    int64_t t19;
-    int64_t t20;
-    int64_t t21;
-    int64_t t22;
-    int64_t t23;
-    int64_t t24;
-    int64_t t25;
-    HeroArrayHeader * t26;
-    HeroArrayHeader * t27;
-    goto bb0;
+#line 84 "examples/matmul/main.hero"
+    int64_t h0_total; int64_t h1_row; HeroArrayHeader * h2_xs0 = {0}; int64_t h3_i0; int64_t h4_v; HeroArrayHeader * h5_own5 = {0}; int64_t t1; int64_t t2; int64_t t3; int64_t t4; bool t5; int64_t t6; HeroArrayHeader * t7; int64_t t8; int64_t t9; HeroArrayHeader * t10; int64_t t11; bool t12; HeroArrayHeader * t13; int64_t t14; int64_t t15; int64_t t16; int64_t t17; int64_t t18; int64_t t19; int64_t t20; int64_t t21; int64_t t22; int64_t t23; int64_t t24; int64_t t25; HeroArrayHeader * t26; HeroArrayHeader * t27; goto bb0;
+#line 84 "examples/matmul/main.hero"
 bb0:
-#line 85 "examples/matmul/main.hero"
     t1 = INT64_C(0);
 #line 85 "examples/matmul/main.hero"
     h0_total = t1;
@@ -929,7 +734,7 @@ bb2:
 bb3:
 #line 94 "examples/matmul/main.hero"
     t25 = h0_total;
-#line 933 "main.c"
+#line 738 "main.c"
     hero_array_release_at(&h2_xs0);
     hero_array_release_at(&h5_own5);
     return t25;
@@ -987,21 +792,15 @@ bb7:
     h1_row = t24;
 #line 92 "examples/matmul/main.hero"
     goto bb1;
-#line 991 "main.c"
+#line 796 "main.c"
 }
 
 #line 96 "examples/matmul/main.hero"
 void h_main_main(void) {
-#line 996 "main.c"
-    HeroStr t1;
-    int64_t t2;
-    HeroStr t3;
-    int64_t t4;
-    HeroStr t5;
-    int64_t t6;
-    goto bb0;
+#line 96 "examples/matmul/main.hero"
+    HeroStr t1; int64_t t2; HeroStr t3; int64_t t4; HeroStr t5; int64_t t6; goto bb0;
+#line 96 "examples/matmul/main.hero"
 bb0:
-#line 97 "examples/matmul/main.hero"
     t1 = HERO_STR_LIT(hero_str_75fe0b7e);
 #line 97 "examples/matmul/main.hero"
     t2 = h_main_SIZE();
@@ -1029,7 +828,7 @@ bb0:
     hero_print_end();
 #line 97 "examples/matmul/main.hero"
     return;
-#line 1033 "main.c"
+#line 832 "main.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

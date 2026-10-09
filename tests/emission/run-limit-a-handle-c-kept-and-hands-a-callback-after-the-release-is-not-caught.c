@@ -117,13 +117,10 @@ __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
 
 #line 24 "tests/golden/run/limit-a-handle-c-kept-and-hands-a-callback-after-the-release-is-not-caught.hero"
 int64_t h_limitahandleckeptandhandsacallbackafterthereleaseisnotcaught_seen(node * h0_n) {
-#line 121 "limitahandleckeptandhandsacallbackafterthereleaseisnotcaught.c"
-    hero_thread_guard("limitahandleckeptandhandsacallbackafterthereleaseisnotcaught.seen");
-    node * t1;
-    int64_t t2;
-    goto bb0;
+#line 24 "tests/golden/run/limit-a-handle-c-kept-and-hands-a-callback-after-the-release-is-not-caught.hero"
+    hero_thread_guard("limitahandleckeptandhandsacallbackafterthereleaseisnotcaught.seen"); node * t1; int64_t t2; goto bb0;
+#line 24 "tests/golden/run/limit-a-handle-c-kept-and-hands-a-callback-after-the-release-is-not-caught.hero"
 bb0:
-#line 25 "tests/golden/run/limit-a-handle-c-kept-and-hands-a-callback-after-the-release-is-not-caught.hero"
     t1 = h0_n;
 #line 25 "tests/golden/run/limit-a-handle-c-kept-and-hands-a-callback-after-the-release-is-not-caught.hero"
     hero_handle_alive(t1, "the argument `n` of `node_value`");
@@ -131,7 +128,7 @@ bb0:
     t2 = node_value(t1);
 #line 25 "tests/golden/run/limit-a-handle-c-kept-and-hands-a-callback-after-the-release-is-not-caught.hero"
     return t2;
-#line 135 "limitahandleckeptandhandsacallbackafterthereleaseisnotcaught.c"
+#line 132 "limitahandleckeptandhandsacallbackafterthereleaseisnotcaught.c"
 }
 
 int64_t h_0cb_limitahandleckeptandhandsacallbackafterthereleaseisnotcaught_seen(node * h0_n) {
@@ -142,17 +139,10 @@ int64_t h_0cb_limitahandleckeptandhandsacallbackafterthereleaseisnotcaught_seen(
 
 #line 27 "tests/golden/run/limit-a-handle-c-kept-and-hands-a-callback-after-the-release-is-not-caught.hero"
 void h_limitahandleckeptandhandsacallbackafterthereleaseisnotcaught_main(void) {
-#line 146 "limitahandleckeptandhandsacallbackafterthereleaseisnotcaught.c"
-    node * h0_a;
-    node * t1;
-    h_0fn_7a996e48 t2;
-    node * t3;
-    node * t4;
-    HeroStr t5;
-    int64_t t6;
-    goto bb0;
+#line 27 "tests/golden/run/limit-a-handle-c-kept-and-hands-a-callback-after-the-release-is-not-caught.hero"
+    node * h0_a; node * t1; h_0fn_7a996e48 t2; node * t3; node * t4; HeroStr t5; int64_t t6; goto bb0;
+#line 27 "tests/golden/run/limit-a-handle-c-kept-and-hands-a-callback-after-the-release-is-not-caught.hero"
 bb0:
-#line 28 "tests/golden/run/limit-a-handle-c-kept-and-hands-a-callback-after-the-release-is-not-caught.hero"
     t1 = node_new();
 #line 28 "tests/golden/run/limit-a-handle-c-kept-and-hands-a-callback-after-the-release-is-not-caught.hero"
     hero_handle_acquired(t1, "node_free");
@@ -190,7 +180,7 @@ bb0:
     hero_print_end();
 #line 32 "tests/golden/run/limit-a-handle-c-kept-and-hands-a-callback-after-the-release-is-not-caught.hero"
     return;
-#line 194 "limitahandleckeptandhandsacallbackafterthereleaseisnotcaught.c"
+#line 184 "limitahandleckeptandhandsacallbackafterthereleaseisnotcaught.c"
 }
 HERO_TU_LOCAL bool h_limitahandleckeptandhandsacallbackafterthereleaseisnotcaught_Node_eq(node * const *a, node * const *b) {
     return hero_handle_eq(*a, *b);

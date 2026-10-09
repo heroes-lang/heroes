@@ -108,26 +108,10 @@ void h_handlealivethroughareferencereleasedtwice_main(void);
 
 #line 15 "tests/golden/run/handle-alive-through-a-reference-released-twice.hero"
 void h_handlealivethroughareferencereleasedtwice_main(void) {
-#line 112 "handlealivethroughareferencereleasedtwice.c"
-    x509 * h0_cert;
-    int32_t h1_rc;
-    x509 * t1;
-    x509 * t2;
-    int32_t t3;
-    HeroStr t4;
-    int32_t t5;
-    HeroStr t6;
-    x509 * t7;
-    int64_t t8;
-    x509 * t9;
-    HeroStr t10;
-    x509 * t11;
-    int64_t t12;
-    x509 * t13;
-    HeroStr t14;
-    goto bb0;
+#line 15 "tests/golden/run/handle-alive-through-a-reference-released-twice.hero"
+    x509 * h0_cert; int32_t h1_rc; x509 * t1; x509 * t2; int32_t t3; HeroStr t4; int32_t t5; HeroStr t6; x509 * t7; int64_t t8; x509 * t9; HeroStr t10; x509 * t11; int64_t t12; x509 * t13; HeroStr t14; goto bb0;
+#line 15 "tests/golden/run/handle-alive-through-a-reference-released-twice.hero"
 bb0:
-#line 16 "tests/golden/run/handle-alive-through-a-reference-released-twice.hero"
     t1 = cert_new();
 #line 16 "tests/golden/run/handle-alive-through-a-reference-released-twice.hero"
     hero_handle_acquired(t1, "cert_free");
@@ -215,7 +199,7 @@ bb0:
     hero_print_end();
 #line 22 "tests/golden/run/handle-alive-through-a-reference-released-twice.hero"
     return;
-#line 219 "handlealivethroughareferencereleasedtwice.c"
+#line 203 "handlealivethroughareferencereleasedtwice.c"
 }
 HERO_TU_LOCAL bool h_handlealivethroughareferencereleasedtwice_Cert_eq(x509 * const *a, x509 * const *b) {
     return hero_handle_eq(*a, *b);

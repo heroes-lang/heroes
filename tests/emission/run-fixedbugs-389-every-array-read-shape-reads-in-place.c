@@ -106,13 +106,10 @@ void h_fixedbugs389everyarrayreadshapereadsinplace_main(void);
 
 #line 13 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
 void h_fixedbugs389everyarrayreadshapereadsinplace_bump(int64_t *ph0_n) {
-#line 110 "fixedbugs389everyarrayreadshapereadsinplace.c"
-    int64_t t1;
-    int64_t t2;
-    int64_t t3;
-    goto bb0;
+#line 13 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
+    int64_t t1; int64_t t2; int64_t t3; goto bb0;
+#line 13 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
 bb0:
-#line 14 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
     t1 = (*ph0_n);
 #line 14 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
     t2 = INT64_C(1);
@@ -122,37 +119,15 @@ bb0:
     (*ph0_n) = t3;
 #line 14 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
     return;
-#line 126 "fixedbugs389everyarrayreadshapereadsinplace.c"
+#line 123 "fixedbugs389everyarrayreadshapereadsinplace.c"
 }
 
 #line 16 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
 int64_t h_fixedbugs389everyarrayreadshapereadsinplace_total(HeroArrayHeader * h0_xs) {
-#line 131 "fixedbugs389everyarrayreadshapereadsinplace.c"
-    int64_t h1_sum;
-    HeroArrayHeader * h2_xs0 = {0};
-    int64_t h3_i0;
-    int64_t h4_x;
-    int64_t t1;
-    HeroArrayHeader * t2;
-    int64_t t3;
-    int64_t t4;
-    HeroArrayHeader * t5;
-    int64_t t6;
-    bool t7;
-    HeroArrayHeader * t8;
-    int64_t t9;
-    int64_t t10;
-    int64_t t11;
-    int64_t t12;
-    int64_t t13;
-    int64_t t14;
-    int64_t t15;
-    int64_t t16;
-    int64_t t17;
-    HeroArrayHeader * t18;
-    goto bb0;
+#line 16 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
+    int64_t h1_sum; HeroArrayHeader * h2_xs0 = {0}; int64_t h3_i0; int64_t h4_x; int64_t t1; HeroArrayHeader * t2; int64_t t3; int64_t t4; HeroArrayHeader * t5; int64_t t6; bool t7; HeroArrayHeader * t8; int64_t t9; int64_t t10; int64_t t11; int64_t t12; int64_t t13; int64_t t14; int64_t t15; int64_t t16; int64_t t17; HeroArrayHeader * t18; goto bb0;
+#line 16 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
 bb0:
-#line 17 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
     t1 = INT64_C(0);
 #line 17 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
     h1_sum = t1;
@@ -219,125 +194,17 @@ bb3:
 bb4:
 #line 22 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
     t17 = h1_sum;
-#line 223 "fixedbugs389everyarrayreadshapereadsinplace.c"
+#line 198 "fixedbugs389everyarrayreadshapereadsinplace.c"
     hero_array_release_at(&h2_xs0);
     return t17;
 }
 
 #line 24 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
 void h_fixedbugs389everyarrayreadshapereadsinplace_main(void) {
-#line 230 "fixedbugs389everyarrayreadshapereadsinplace.c"
-    HeroArrayHeader * h0_xs = {0};
-    HeroArrayHeader * h1_grid = {0};
-    h_fixedbugs389everyarrayreadshapereadsinplace_Bag h2_bag = {0};
-    HeroArrayHeader * h3_words = {0};
-    HeroArrayHeader * h4_flags = {0};
-    HeroArrayHeader * h5_small = {0};
-    HeroArrayHeader * h6_empty = {0};
-    HeroArrayHeader * h7_own7 = {0};
-    HeroArrayHeader * h8_own8 = {0};
-    HeroArrayHeader * h9_own9 = {0};
-    HeroArrayHeader * h10_own10 = {0};
-    HeroArrayHeader * h11_own11 = {0};
-    h_fixedbugs389everyarrayreadshapereadsinplace_Bag h12_own12 = {0};
-    HeroArrayHeader * h13_own13 = {0};
-    HeroArrayHeader * h14_own14 = {0};
-    HeroArrayHeader * h15_own15 = {0};
-    HeroArrayHeader * h16_own16 = {0};
-    int64_t t1;
-    int64_t t2;
-    int64_t t3;
-    int64_t t4;
-    int64_t t5;
-    HeroArrayHeader * t6;
-    HeroArrayHeader * t7;
-    int64_t t8;
-    int64_t t9;
-    HeroArrayHeader * t10;
-    int64_t t11;
-    int64_t t12;
-    HeroArrayHeader * t13;
-    int64_t t14;
-    int64_t t15;
-    bool t16;
-    HeroStr t17;
-    int64_t t18;
-    int64_t t19;
-    HeroArrayHeader * t20;
-    int64_t t21;
-    int64_t t22;
-    HeroArrayHeader * t23;
-    HeroArrayHeader * t24;
-    HeroArrayHeader * t25;
-    int64_t t26;
-    HeroArrayHeader * t27;
-    int64_t t28;
-    int64_t t29;
-    int64_t t30;
-    int64_t t31;
-    int64_t t32;
-    HeroArrayHeader * t33;
-    HeroStr t34;
-    h_fixedbugs389everyarrayreadshapereadsinplace_Bag t35;
-    h_fixedbugs389everyarrayreadshapereadsinplace_Bag t36;
-    HeroArrayHeader * t37;
-    int64_t t38;
-    int64_t t39;
-    h_fixedbugs389everyarrayreadshapereadsinplace_Bag t40;
-    HeroStr t41;
-    int64_t t42;
-    HeroArrayHeader * t43;
-    int64_t t44;
-    int64_t t45;
-    HeroArrayHeader * t46;
-    int64_t t47;
-    HeroStr t48;
-    HeroArrayHeader * t49;
-    int64_t t50;
-    HeroStr t51;
-    HeroArrayHeader * t52;
-    int64_t t53;
-    HeroStr t54;
-    HeroStr t55;
-    HeroArrayHeader * t56;
-    HeroArrayHeader * t57;
-    int64_t t58;
-    HeroStr t59;
-    bool t60;
-    bool t61;
-    HeroArrayHeader * t62;
-    HeroArrayHeader * t63;
-    int64_t t64;
-    bool t65;
-    uint8_t t66;
-    uint8_t t67;
-    HeroArrayHeader * t68;
-    HeroArrayHeader * t69;
-    int64_t t70;
-    uint8_t t71;
-    HeroArrayHeader * t72;
-    HeroArrayHeader * t73;
-    int64_t t74;
-    HeroArrayHeader * t75;
-    HeroArrayHeader * t76;
-    HeroArrayHeader * t77;
-    HeroArrayHeader * t78;
-    HeroArrayHeader * t79;
-    HeroArrayHeader * t80;
-    HeroArrayHeader * t81;
-    h_fixedbugs389everyarrayreadshapereadsinplace_Bag t82;
-    h_fixedbugs389everyarrayreadshapereadsinplace_Bag t83;
-    HeroArrayHeader * t84;
-    HeroArrayHeader * t85;
-    HeroArrayHeader * t86;
-    HeroArrayHeader * t87;
-    HeroArrayHeader * t88;
-    HeroArrayHeader * t89;
-    HeroArrayHeader * t90;
-    HeroArrayHeader * t91;
-    goto bb0;
+#line 24 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
+    HeroArrayHeader * h0_xs = {0}; HeroArrayHeader * h1_grid = {0}; h_fixedbugs389everyarrayreadshapereadsinplace_Bag h2_bag = {0}; HeroArrayHeader * h3_words = {0}; HeroArrayHeader * h4_flags = {0}; HeroArrayHeader * h5_small = {0}; HeroArrayHeader * h6_empty = {0}; HeroArrayHeader * h7_own7 = {0}; HeroArrayHeader * h8_own8 = {0}; HeroArrayHeader * h9_own9 = {0}; HeroArrayHeader * h10_own10 = {0}; HeroArrayHeader * h11_own11 = {0}; h_fixedbugs389everyarrayreadshapereadsinplace_Bag h12_own12 = {0}; HeroArrayHeader * h13_own13 = {0}; HeroArrayHeader * h14_own14 = {0}; HeroArrayHeader * h15_own15 = {0}; HeroArrayHeader * h16_own16 = {0}; int64_t t1; int64_t t2; int64_t t3; int64_t t4; int64_t t5; HeroArrayHeader * t6; HeroArrayHeader * t7; int64_t t8; int64_t t9; HeroArrayHeader * t10; int64_t t11; int64_t t12; HeroArrayHeader * t13; int64_t t14; int64_t t15; bool t16; HeroStr t17; int64_t t18; int64_t t19; HeroArrayHeader * t20; int64_t t21; int64_t t22; HeroArrayHeader * t23; HeroArrayHeader * t24; HeroArrayHeader * t25; int64_t t26; HeroArrayHeader * t27; int64_t t28; int64_t t29; int64_t t30; int64_t t31; int64_t t32; HeroArrayHeader * t33; HeroStr t34; h_fixedbugs389everyarrayreadshapereadsinplace_Bag t35; h_fixedbugs389everyarrayreadshapereadsinplace_Bag t36; HeroArrayHeader * t37; int64_t t38; int64_t t39; h_fixedbugs389everyarrayreadshapereadsinplace_Bag t40; HeroStr t41; int64_t t42; HeroArrayHeader * t43; int64_t t44; int64_t t45; HeroArrayHeader * t46; int64_t t47; HeroStr t48; HeroArrayHeader * t49; int64_t t50; HeroStr t51; HeroArrayHeader * t52; int64_t t53; HeroStr t54; HeroStr t55; HeroArrayHeader * t56; HeroArrayHeader * t57; int64_t t58; HeroStr t59; bool t60; bool t61; HeroArrayHeader * t62; HeroArrayHeader * t63; int64_t t64; bool t65; uint8_t t66; uint8_t t67; HeroArrayHeader * t68; HeroArrayHeader * t69; int64_t t70; uint8_t t71; HeroArrayHeader * t72; HeroArrayHeader * t73; int64_t t74; HeroArrayHeader * t75; HeroArrayHeader * t76; HeroArrayHeader * t77; HeroArrayHeader * t78; HeroArrayHeader * t79; HeroArrayHeader * t80; HeroArrayHeader * t81; h_fixedbugs389everyarrayreadshapereadsinplace_Bag t82; h_fixedbugs389everyarrayreadshapereadsinplace_Bag t83; HeroArrayHeader * t84; HeroArrayHeader * t85; HeroArrayHeader * t86; HeroArrayHeader * t87; HeroArrayHeader * t88; HeroArrayHeader * t89; HeroArrayHeader * t90; HeroArrayHeader * t91; goto bb0;
+#line 24 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
 bb0:
-#line 25 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
     t1 = INT64_C(3);
 #line 25 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
     t2 = INT64_C(1);
@@ -686,7 +553,7 @@ bb1:
     hero_print_int(t74);
 #line 54 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
     hero_print_end();
-#line 690 "fixedbugs389everyarrayreadshapereadsinplace.c"
+#line 557 "fixedbugs389everyarrayreadshapereadsinplace.c"
     hero_array_release_at(&h0_xs);
     hero_array_release_at(&h1_grid);
     h_fixedbugs389everyarrayreadshapereadsinplace_Bag_release(hero_slot_escape(&h2_bag));
@@ -718,7 +585,7 @@ bb2:
 bb3:
 #line 31 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
     goto bb1;
-#line 722 "fixedbugs389everyarrayreadshapereadsinplace.c"
+#line 589 "fixedbugs389everyarrayreadshapereadsinplace.c"
 }
 HERO_TU_LOCAL void h_fixedbugs389everyarrayreadshapereadsinplace_Bag_retain(const h_fixedbugs389everyarrayreadshapereadsinplace_Bag *v) {
     hero_array_incref(v->f_items);
