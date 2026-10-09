@@ -40,3 +40,9 @@ function main()
 
 function h()
     args_checked @ 1  #~ no_mutable_globals
+
+# Corrected 2026-10-09, defect 501, written here so the lines above keep
+# their numbers: `validated` is no longer left free. The emitter's own
+# function of that name is `bytes_text.emit`, and a program's `validated`
+# is refused as `args_checked` is
+# (`fixedbugs-501-a-program-s-own-validated-is-refused-everywhere`).

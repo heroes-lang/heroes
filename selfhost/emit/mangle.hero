@@ -75,10 +75,10 @@ function hex(number: i64) -> str
 # `validated` and `args_checked` (this said until 2026-10-07 that it
 # declared nothing else, defect 480): each is spelled by the module that
 # declares it, which for the library's own is the library, so it reaches
-# the same `h_<library>_` name by the second route, and a program's own
-# `validated`, the one such name a program may declare (`inventory.hero`
-# says why), keeps its own module. The test below names the two, so a
-# third makes it fail.
+# the same `h_<library>_` name by the second route; no program declares
+# either, the resolver refusing both (`resolve/builtin_names.hero`; until
+# defect 501, 2026-10-09, a program's own `validated` was allowed and kept
+# its own module). The test below names the two, so a third makes it fail.
 function function_name(module: str, name: str) -> str
     if !inventory.index_of(name).is_err()
         return "h_" + source.LIBRARY_MODULE + "_" + name
@@ -263,4 +263,3 @@ test "the library declares two names the inventory lacks, each spelled by its mo
     assert sort(outside) == ["args_checked", "validated"]
     assert function_name(module: source.LIBRARY_MODULE, name: "validated") == "h_" + source.LIBRARY_MODULE + "_validated"
     assert function_name(module: source.LIBRARY_MODULE, name: "args_checked") == "h_" + source.LIBRARY_MODULE + "_args_checked"
-    assert function_name(module: "geom", name: "validated") == "h_geom_validated"
