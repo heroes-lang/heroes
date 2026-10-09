@@ -1,0 +1,11 @@
+error[expected_separator]: expected `,` or a new line between one element and the next, found `=` — a binding is no element: the `[` still open 2 lines above, at column 10, and the `[` it stands in, close on a line above, so write `]]` there
+  at tests/golden/full/fixedbugs-459-one-message-names-both-openers-and-the-one-edit.hero:12:7
+     |
+  12 |     y = 3 )  #~ expected_separator expected_end_of_line
+     |       ^
+
+error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+  at tests/golden/full/fixedbugs-459-one-message-names-both-openers-and-the-one-edit.hero:12:11
+     |
+  12 |     y = 3 )  #~ expected_separator expected_end_of_line
+     |           ^

@@ -1,0 +1,55 @@
+# Defect 459, 2026-10-09 (lane b17-fix), filed from lane b14-parse's reading of
+# defect 313: an outer `[` never closed around an inner list the lexer closed
+# with a closer of another kind further down, `x = [[1, 2` over `print(x)`
+# over `y = 3 )`, was told twice for one `]]` edit, the lexer naming the outer
+# `[` never closed and the binding's report naming the inner one. The binding
+# is no item of either, so both close on a line above, and since this repair
+# its report names every opener the inner one stands in on its line, the ones
+# the lexer named never closed too, with the closers the one edit writes, and
+# carries the lexer's report of each, which is withdrawn where it is said
+# (`bracket_head.carried`, `unclosed.withdrawn`). The shapes: a list in a
+# list, a list in a map, a map in a list, two lists around one, the outer on
+# the line above; and, beside them, a closer of another kind where a
+# separator goes with no binding below, whose message offers an edit on its
+# own line too, which closes no opener the lexer named, so the outer keeps
+# its own report.
+
+function a_list_in_a_list()
+    x = [[1, 2
+    print(x)
+    y = 3 )  #~ expected_separator expected_end_of_line
+    print(y)
+
+function a_list_in_a_map()
+    m = {1: [2, 3
+    print(m)
+    y = 3 )  #~ expected_separator expected_end_of_line
+    print(y)
+
+function a_map_in_a_list()
+    x = [{1: 2
+    print(x)
+    y = 3 )  #~ expected_map_entry_colon expected_end_of_line
+    print(y)
+
+function two_lists_around()
+    x = [[[1, 2
+    print(x)
+    y = 3 )  #~ expected_separator expected_end_of_line
+    print(y)
+
+function on_the_line_above()
+    x = [
+        [1, 2
+    print(x)
+    y = 3 )  #~ expected_separator expected_end_of_line
+    print(y)
+
+function no_binding_below()
+    x = [[1, 2  #~ unclosed_bracket
+    print(x) )  #~ expected_separator
+    y = 3
+    print(y)
+
+function main()
+    a_list_in_a_list()

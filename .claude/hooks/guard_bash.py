@@ -33,7 +33,7 @@ import trees
 
 # The modules only a git command needs, imported by `git_rules` the first time
 # one is read.
-commits = discards = staged = unseen = None
+commits = discards = staged = unseen = runs = None
 
 CONTRACT = "CLAUDE.md § Hard stops"
 LAST_JUDGE = "`.claude/rules/verification.md` § A suite is the last judge (CL-079)"
@@ -125,12 +125,25 @@ def segments(command):
     passing, and it fired the day a rule started watching `git commit`, which
     documentation and test scripts write all the time. Same lesson as
     `without_heredocs` above, one level up: data is not a command line.
+
+    **A backslash outside quotes is read as the shell reads it, since
+    2026-10-09** (defect 534): it makes the next character a word's, so the
+    `\\;` that ends a `find -exec` ends no command (until that day the split cut
+    there and the `git` the `-exec` runs was read as a word of `find`), and a
+    backslash before a newline joins the two lines, as a shell's continuation
+    does (a `git commit \\` with its `-- <paths>` on the next line was read as
+    a commit with no `--`).
     """
     text = without_heredocs(command)
     out, buf, quote = [], [], None
     i = 0
     while i < len(text):
         c = text[i]
+        if not quote and c == "\\" and i + 1 < len(text):
+            if text[i + 1] != "\n":
+                buf.append(text[i:i + 2])
+            i += 2
+            continue
         if quote:
             buf.append(c)
             # Inside double quotes a backslash escapes the next character;
@@ -178,18 +191,47 @@ WRAPPERS = {
     "nice": frozenset({"-n"}),
     "caffeinate": frozenset({"-w", "-t"}),
     "timeout": frozenset({"-s", "--signal", "-k", "--kill-after"}),
-    "xargs": frozenset({"-P", "-n", "-I", "-L", "-s", "-E", "-d", "-a"}),
+    # BSD's `-J`, `-R` and `-S` and GNU's long names take a value too: read as
+    # options without one, `xargs -J % git rm -f %` ran `%` (defect 534).
+    "xargs": frozenset({"-P", "-n", "-I", "-L", "-s", "-E", "-d", "-a", "-J", "-R", "-S",
+                        "--max-procs", "--max-args", "--max-chars", "--arg-file", "--delimiter",
+                        "--process-slot-var"}),
 }
 ASSIGNMENT = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*=")
 # The shells whose `-c` script is a command line of its own, and `eval`.
 SHELLS = frozenset({"bash", "sh", "zsh", "dash", "ksh"})
+# The shell's reserved words a command may follow in its segment, so that
+# `if git ...`, `then git ...`, `do git ...` and `{ git ...` run that git
+# (defect 534's shape beside it: each was read by its first word, and `if true;
+# then git add -A; fi` passed).
+RESERVED = frozenset({"if", "then", "else", "elif", "do", "while", "until", "!", "{"})
 
 
 def command_words(w):
-    """`w` from the command it runs: the assignments before it and the
-    wrappers it runs through, with their options, left out."""
+    """`w` from the command it runs: the reserved words, a function's header,
+    a `case` arm's pattern, the assignments before it and the wrappers it runs
+    through, with their options, left out."""
     i = 0
+    if w and w[0] == "case" and "in" in w:
+        i = w.index("in") + 1
     while i < len(w):
+        if w[i] in RESERVED:
+            i += 1
+            continue
+        # A function's header, `f()`, `f ()` or `function f`, before its body.
+        if w[i].endswith("()") and len(w[i]) > 2:
+            i += 1
+            continue
+        if i + 1 < len(w) and w[i + 1] == "()":
+            i += 2
+            continue
+        if w[i] == "function" and i + 1 < len(w):
+            i += 2
+            continue
+        # A `case` arm's pattern, `a)` or `(a)`, before the command it runs.
+        if w[i].endswith(")") and not w[i].endswith("()") and i + 1 < len(w) and "(" not in w[i][:-1].lstrip("("):
+            i += 1
+            continue
         if ASSIGNMENT.match(w[i]):
             i += 1
             continue
@@ -239,22 +281,38 @@ def words(segment):
         return segment.split()
 
 
+def what_runs():
+    """`runs.py`, imported the first time a command line holds a substitution
+    or a `find` or a git command is read (defect 534): kept out of this file,
+    which Python compiles before every Bash call."""
+    global runs
+    if runs is None:
+        if HOOKS not in sys.path:
+            sys.path.insert(0, HOOKS)
+        import runs as runs_module
+
+        runs = runs_module
+    return runs
+
+
 def git_rules():
-    """Import `commits`, `discards`, `staged` and `unseen`, which only the git
-    rules use. This guard runs before every Bash call and most are not git:
-    imported at the top, the three of 2026-10-07 and what they import took an
-    `ls` from 235.6 to 251.8 million instructions (measured that day, the
-    guard's own process)."""
-    global commits, discards, staged, unseen
+    """Import `commits`, `discards`, `staged`, `unseen` and `runs`, which only
+    the git rules use, `runs` for a `find` too. This guard runs before every
+    Bash call and most are not git: imported at the top, the three of
+    2026-10-07 and what they import took an `ls` from 235.6 to 251.8 million
+    instructions (measured that day, the guard's own process)."""
+    global commits, discards, staged, unseen, runs
     if commits is None:
         if HOOKS not in sys.path:
             sys.path.insert(0, HOOKS)
         import commits as commits_module
         import discards as discards_module
         import staged as staged_module
+        import runs as runs_module
         import unseen as unseen_module
 
         commits, discards, staged, unseen = commits_module, discards_module, staged_module, unseen_module
+        runs = runs_module
 
 
 def git_dir(w, here):
@@ -431,17 +489,56 @@ def stale_compiler(w, here):
     )
 
 
-def verdict(command, cwd=None):
-    """Return a refusal string, or None to stay out of the way."""
+def commands_in(raw, here, seen=frozenset()):
+    """Every command the segment `raw`, run in `here`, runs: the one its words
+    name, wrappers left out, and each one it runs that its first word does not
+    say, a command a `find` runs for its files and what a git alias stands for
+    (defect 534, `runs.py`), recursively. Each is (its words as written, its
+    words with the wrappers left out, the directory it runs in, the aliases
+    expanded to reach it, None); a shell command line an alias stands for is
+    (None, None, its directory, the aliases, the line), `verdict`'s to read,
+    as a shell's `-c` is (`script_of`). `seen` ends an alias that runs itself."""
+    w = command_words(bare(raw))
+    out = [(raw, w, here, seen, None)]
+    base = os.path.basename(w[0]) if w else ""
+    if base not in ("find", "git"):
+        return out
+    if base == "find":
+        for inner, there in what_runs().executed(w, here):
+            out += commands_in(inner, there, seen)
+        return out
+    git_rules()
+    verb, _at = runs.verb_of(w)
+    if verb is None or verb in seen:
+        return out
+    got = runs.alias(w, git_dir(w, here), discards.git_options(w), discards.environment(bare(raw)))
+    if got is None:
+        return out
+    if got[0] == "script":
+        return out + [(None, None, got[2], seen | {got[3]}, got[1])]
+    expanded = bare(raw)[: len(bare(raw)) - len(w)] + got[1]
+    return out + commands_in(expanded, here, seen | {got[2]})
+
+
+def verdict(command, cwd=None, seen=frozenset()):
+    """Return a refusal string, or None to stay out of the way. `seen`: the
+    git aliases expanded to reach `command`, so that one running itself ends."""
     cwd = cwd or os.getcwd()
     parsed = [words(s) for s in segments(command)]
     parsed = [w for w in parsed if w]
+    steps = placed(command, cwd)
 
     # **A gate and a commit never share a command line** (2026-09-29, CL-079).
     # Twice in one week a commit went past a red `records` because the chain
     # read the exit status of the pipe's last command (journal 061, `f22c8baf`,
-    # `efaf5564`). The gate's line is read, then the commit is its own command.
-    if any(is_gate(w) for w in parsed) and any(git_args(command_words(bare(w)), "commit") is not None for w in parsed):
+    # `efaf5564`). The gate's line is read, then the commit is its own command,
+    # a `find` running it or an alias standing for it read too (defect 534).
+    if any(is_gate(w) for w in parsed) and any(
+        git_args(ran, "commit") is not None
+        for raw, here, _segment in steps
+        for _raw, ran, _there, _seen, _script in commands_in(raw, here, seen)
+        if ran is not None
+    ):
         return (
             "refused: a gate and a `git commit` on one command line, so the commit "
             "cannot wait for the gate's line to be read. Run the gate, read its "
@@ -458,212 +555,228 @@ def verdict(command, cwd=None):
             "whole file, or read the terminal as it is. " + LAST_JUDGE
         )
 
-    steps = placed(command, cwd)
     for w, here, _segment in steps:
         stale = stale_compiler(w, here)
         if stale is not None:
             return stale
 
+    # Each segment, and each command it runs that its first word does not say
+    # (defect 534), judged as one command.
     for raw, here, segment in steps:
-        # **A bare dump** is read before the wrappers are left out, `env`
-        # being one of them (its rule is below, with its story).
-        if raw[0] in DUMPERS and len(raw) == 1:
-            return (
-                "refused: a bare `" + raw[0] + "` prints every variable in the "
-                "environment, the live keys included. Name the one you want. "
-                "`.env.example`"
-            )
-        w = command_words(bare(raw))
-        if not w:
-            continue
-
-        script = script_of(w)
-        if script is not None:
-            inner = verdict(script, here or cwd)
-            if inner is not None:
-                return inner
-            continue
-        where = git_dir(w, here)
-        is_git = bool(w) and os.path.basename(w[0]) == "git"
-        if is_git:
-            git_rules()
-
-        # **A message is read for what its reader cannot see** (defect 378): the
-        # list is the `unseen` suite's, read from the tree the command stands in.
-        for verb in unseen.VERBS if is_git else ():
-            more = git_args(w, verb)
-            if more is not None:
-                tree = trees.tree_of(where) if where is not None else None
-                said = unseen.verdict(more, verb, where, heredoc_bodies(command), unseen.runs(tree or trees.tree_of(cwd)))
+        if "$(" in segment or "`" in segment:
+            for inner in what_runs().substitutions(segment):
+                said = verdict(inner, here or cwd, seen)
                 if said is not None:
                     return said
-
-        rest = git_args(w, "add")
-        if rest is not None:
-            if {"-A", "--all", "-u", "--update"} & set(rest):
-                return (
-                    "refused: `git add` with -A, --all or -u stages every "
-                    "session's work in this shared checkout. Name each file "
-                    "this conversation touched. " + CONTRACT
-                )
-            if "." in rest:
-                return (
-                    "refused: `git add .` stages every session's work in this "
-                    "shared checkout. Name each file this conversation "
-                    "touched. " + CONTRACT
-                )
-
-        rest = git_args(w, "commit")
-        if rest is not None and ("a" in short_flags(rest) or "--all" in rest):
-            return (
-                "refused: `git commit -a` stages files this conversation may "
-                "not have read. Stage by name, then commit. " + CONTRACT
-            )
-
-        # **A bare `git commit` takes the whole index, and naming the paths to
-        # `git add` limits nothing.** Measured on 2026-09-08, by doing it: a
-        # commit that named fourteen paths carried sixteen, the two extra being
-        # files a parallel session had staged in this shared checkout, and the
-        # commit body said in so many words that they were not in it
-        # (docs/records/contract/case-law.md CL-070). The rule above it, CL-041, asks
-        # for exactly what this prevents and its own procedure could not deliver
-        # it. The pathspec is the only thing that limits a commit, so this guard
-        # asks for the pathspec rather than for care.
-        #
-        # **One route takes no pathspec, and it is checked by its index**
-        # (defect 403, 2026-10-07): a merge, a cherry-pick or a revert that
-        # stopped on a conflict is concluded with the whole index, git refusing
-        # a partial commit while it stands, so a bare commit then is allowed
-        # when the index holds no file the operation did not bring
-        # (`commits.concluded`). A rebase or an am takes a pathspec, so a bare
-        # commit while one stands keeps this refusal (defect 487).
-        if rest is not None and "--" not in rest:
-            sequence = commits.concluded(where, None)
-            if sequence:
-                return sequence
-            if sequence is None:
-                return (
-                    "refused: `git commit` with no `--` takes the WHOLE index, "
-                    "including whatever a parallel session has staged in this "
-                    "shared checkout. Naming the paths to `git add` does not limit "
-                    "the commit; only the pathspec does. Write "
-                    "`git commit -- <paths>`. " + CONTRACT + " (CL-070)"
-                )
-        if rest is not None:
-            said = commits.pathspec(rest, where)
+        for ran_raw, ran, there, ran_seen, script in commands_in(raw, here, seen):
+            if script is not None:
+                said = verdict(script, there or cwd, ran_seen)
+            else:
+                said = judged(ran_raw, ran, there, segment, command, cwd, ran_seen)
             if said is not None:
                 return said
-        # A rebase and an am are concluded the same way, and `--cont` is
-        # `--continue` to git (defect 487, `commits.continues`).
-        for name in commits.CONCLUDED_BY if is_git else ():
-            more = git_args(w, name)
-            if more is not None and commits.continues(name, more):
-                said = commits.concluded(where, name)
-                if said:
-                    return said
-                rest = more
-        if rest is not None:
-            offences = staged.offences(where, commits.paths_of(git_args(w, "commit")))
-            if offences:
+    return None
+
+
+def judged(raw, w, here, segment, command, cwd, seen=frozenset()):
+    """The refusal of one command, or None: `raw` its words as written, `w`
+    with the wrappers left out, run in `here`, inside the segment `segment` of
+    the command line `command`, given in `cwd`."""
+    # **A bare dump** is read before the wrappers are left out, `env`
+    # being one of them (its rule is below, with its story).
+    if raw[0] in DUMPERS and len(raw) == 1:
+        return (
+            "refused: a bare `" + raw[0] + "` prints every variable in the "
+            "environment, the live keys included. Name the one you want. "
+            "`.env.example`"
+        )
+
+    if not w:
+        return None
+    script = script_of(w)
+    if script is not None:
+        return verdict(script, here or cwd, seen)
+    where = git_dir(w, here)
+    is_git = bool(w) and os.path.basename(w[0]) == "git"
+    if is_git:
+        git_rules()
+
+    # **A message is read for what its reader cannot see** (defect 378): the
+    # list is the `unseen` suite's, read from the tree the command stands in.
+    for verb in unseen.VERBS if is_git else ():
+        more = git_args(w, verb)
+        if more is not None:
+            tree = trees.tree_of(where) if where is not None else None
+            said = unseen.verdict(more, verb, where, heredoc_bodies(command), unseen.runs(tree or trees.tree_of(cwd)))
+            if said is not None:
+                return said
+
+    rest = git_args(w, "add")
+    if rest is not None:
+        if {"-A", "--all", "-u", "--update"} & set(rest):
+            return (
+                "refused: `git add` with -A, --all or -u stages every "
+                "session's work in this shared checkout. Name each file "
+                "this conversation touched. " + CONTRACT
+            )
+        if "." in rest:
+            return (
+                "refused: `git add .` stages every session's work in this "
+                "shared checkout. Name each file this conversation "
+                "touched. " + CONTRACT
+            )
+
+    rest = git_args(w, "commit")
+    if rest is not None and ("a" in short_flags(rest) or "--all" in rest):
+        return (
+            "refused: `git commit -a` stages files this conversation may "
+            "not have read. Stage by name, then commit. " + CONTRACT
+        )
+
+    # **A bare `git commit` takes the whole index, and naming the paths to
+    # `git add` limits nothing.** Measured on 2026-09-08, by doing it: a
+    # commit that named fourteen paths carried sixteen, the two extra being
+    # files a parallel session had staged in this shared checkout, and the
+    # commit body said in so many words that they were not in it
+    # (docs/records/contract/case-law.md CL-070). The rule above it, CL-041, asks
+    # for exactly what this prevents and its own procedure could not deliver
+    # it. The pathspec is the only thing that limits a commit, so this guard
+    # asks for the pathspec rather than for care.
+    #
+    # **One route takes no pathspec, and it is checked by its index**
+    # (defect 403, 2026-10-07): a merge, a cherry-pick or a revert that
+    # stopped on a conflict is concluded with the whole index, git refusing
+    # a partial commit while it stands, so a bare commit then is allowed
+    # when the index holds no file the operation did not bring
+    # (`commits.concluded`). A rebase or an am takes a pathspec, so a bare
+    # commit while one stands keeps this refusal (defect 487).
+    if rest is not None and "--" not in rest:
+        sequence = commits.concluded(where, None)
+        if sequence:
+            return sequence
+        if sequence is None:
+            return (
+                "refused: `git commit` with no `--` takes the WHOLE index, "
+                "including whatever a parallel session has staged in this "
+                "shared checkout. Naming the paths to `git add` does not limit "
+                "the commit; only the pathspec does. Write "
+                "`git commit -- <paths>`. " + CONTRACT + " (CL-070)"
+            )
+    if rest is not None:
+        said = commits.pathspec(rest, where)
+        if said is not None:
+            return said
+    # A rebase and an am are concluded the same way, and `--cont` is
+    # `--continue` to git (defect 487, `commits.continues`).
+    for name in commits.CONCLUDED_BY if is_git else ():
+        more = git_args(w, name)
+        if more is not None and commits.continues(name, more):
+            said = commits.concluded(where, name)
+            if said:
+                return said
+            rest = more
+    if rest is not None:
+        offences = staged.offences(where, commits.paths_of(git_args(w, "commit")))
+        if offences:
+            return (
+                "refused: a `.hero` file this commit carries would reach the suites with "
+                "what a hook can see now:\n    " + "\n    ".join(offences) + "\n" + LAST_JUDGE
+            )
+
+    rest = git_args(w, "stash")
+    if rest is not None:
+        # Reading the stash is harmless; taking it is what breaks a peer.
+        if not ({"list", "show"} & set(rest)):
+            return (
+                "refused: `git stash` takes every session's changes, not "
+                "this one's. " + CONTRACT
+            )
+
+    # What throws work away is read as what commits it (defect 514,
+    # `discards.py`): an abort, a skip, a hard or merge reset, an autostash;
+    # and what writes over the paths it names (defect 529, `overwrites.py`).
+    for verb in discards.VERBS if is_git else ():
+        more = git_args(w, verb)
+        if more is not None:
+            runs_through = bare(raw)[: len(bare(raw)) - len(w)]
+            appended = any(os.path.basename(word) == "xargs" for word in runs_through)
+            said = discards.verdict(verb, more, where, discards.git_options(w), discards.environment(bare(raw)), command, appended)
+            if said is not None:
+                return said
+
+    rest = git_args(w, "push")
+    if rest is not None and ({"-f", "--force"} & set(rest)):
+        return (
+            "refused: a force push rewrites what other sessions and CI "
+            "have already read. " + CONTRACT
+        )
+
+    # An ASSIGNMENT, not the bare word: `grep -rn UPDATE_GOLDEN .` is how
+    # somebody checks the rule still holds, and refusing that would be a
+    # guard that punishes reading.
+    if any(t.startswith("UPDATE_GOLDEN=") for t in raw):
+        return (
+            "refused: UPDATE_GOLDEN does not exist and must not; a red "
+            "golden is read and repaired, never regenerated. " + CONTRACT
+        )
+
+    # **The Anthropic key counts tokens and does nothing else** (author
+    # instruction 2026-09-09, the hour the key was put in `.env`). It was
+    # added for one job: `spec/heroes-spec.md` is budgeted against two
+    # VENDORED tokenisers and one of them, `cl100k_base`, is OpenAI's, so the
+    # binding number was never the one the reader's tokeniser gives. Counting
+    # is a read. Inference is spending somebody's money from a shell that
+    # also has the deploy token, and it is not why the key is here.
+    #
+    # It fires only when the segment's own COMMAND is a client that can make
+    # the request. `grep -rn api.anthropic.com .claude/` is how somebody
+    # checks this rule still holds, and a guard that refuses reading is the
+    # failure `without_heredocs` above was written for.
+    if w[0] in CLIENTS and "api.anthropic.com" in segment:
+        if COUNT_TOKENS not in segment:
+            return (
+                "refused: the Anthropic key is for `" + COUNT_TOKENS + "` "
+                "and nothing else. Inference, agents and the organisation "
+                "endpoints are not why it is in `.env`. "
+                "`.env.example` § Anthropic"
+            )
+
+    # **A secret in a transcript is a leaked secret**, and the transcript is
+    # written whether anybody rereads it or not. `${#VAR}` is a length and
+    # `source .env` is how the key is loaded, so neither is touched; what is
+    # refused is expanding the VALUE into output, and reading `.env` itself.
+    # `.env.example` stays legal because it carries no value, which is the
+    # whole reason that file exists.
+    if w[0] in PRINTERS:
+        for token in w:
+            if any(secret in token for secret in SECRETS):
                 return (
-                    "refused: a `.hero` file this commit carries would reach the suites with "
-                    "what a hook can see now:\n    " + "\n    ".join(offences) + "\n" + LAST_JUDGE
+                    "refused: that expands a secret into the transcript. "
+                    "Test it without printing it, or print `${#VAR}`. "
+                    "`.env.example`"
                 )
 
-        rest = git_args(w, "stash")
-        if rest is not None:
-            # Reading the stash is harmless; taking it is what breaks a peer.
-            if not ({"list", "show"} & set(rest)):
-                return (
-                    "refused: `git stash` takes every session's changes, not "
-                    "this one's. " + CONTRACT
-                )
+    # **A bare dump names no secret and prints every one of them**, which is
+    # the hole the rule above had on its first hour: it read the words for a
+    # secret's name, and `env` on its own has no words. Found by the author
+    # asking what the guard actually costs, 2026-09-09. A dump with
+    # ARGUMENTS is somebody's legitimate `env FOO=1 cmd` prefix or
+    # `printenv PATH`, so only the bare form goes.
+    # Performed at the top of this loop, on the words as written, since
+    # `env` is also a wrapper the words above are read through.
+    if w[0] in READERS and any(t == ".env" or t.endswith("/.env") for t in w):
+        return (
+            "refused: `.env` holds the live keys. `.env.example` is the "
+            "shape and carries no value. `.env.example`"
+        )
 
-        # What throws work away is read as what commits it (defect 514,
-        # `discards.py`): an abort, a skip, a hard or merge reset, an autostash;
-        # and what writes over the paths it names (defect 529, `overwrites.py`).
-        for verb in discards.VERBS if is_git else ():
-            more = git_args(w, verb)
-            if more is not None:
-                runs_through = bare(raw)[: len(bare(raw)) - len(w)]
-                appended = any(os.path.basename(word) == "xargs" for word in runs_through)
-                said = discards.verdict(verb, more, where, discards.git_options(w), discards.environment(bare(raw)), command, appended)
-                if said is not None:
-                    return said
-
-        rest = git_args(w, "push")
-        if rest is not None and ({"-f", "--force"} & set(rest)):
-            return (
-                "refused: a force push rewrites what other sessions and CI "
-                "have already read. " + CONTRACT
-            )
-
-        # An ASSIGNMENT, not the bare word: `grep -rn UPDATE_GOLDEN .` is how
-        # somebody checks the rule still holds, and refusing that would be a
-        # guard that punishes reading.
-        if any(t.startswith("UPDATE_GOLDEN=") for t in raw):
-            return (
-                "refused: UPDATE_GOLDEN does not exist and must not; a red "
-                "golden is read and repaired, never regenerated. " + CONTRACT
-            )
-
-        # **The Anthropic key counts tokens and does nothing else** (author
-        # instruction 2026-09-09, the hour the key was put in `.env`). It was
-        # added for one job: `spec/heroes-spec.md` is budgeted against two
-        # VENDORED tokenisers and one of them, `cl100k_base`, is OpenAI's, so the
-        # binding number was never the one the reader's tokeniser gives. Counting
-        # is a read. Inference is spending somebody's money from a shell that
-        # also has the deploy token, and it is not why the key is here.
-        #
-        # It fires only when the segment's own COMMAND is a client that can make
-        # the request. `grep -rn api.anthropic.com .claude/` is how somebody
-        # checks this rule still holds, and a guard that refuses reading is the
-        # failure `without_heredocs` above was written for.
-        if w[0] in CLIENTS and "api.anthropic.com" in segment:
-            if COUNT_TOKENS not in segment:
-                return (
-                    "refused: the Anthropic key is for `" + COUNT_TOKENS + "` "
-                    "and nothing else. Inference, agents and the organisation "
-                    "endpoints are not why it is in `.env`. "
-                    "`.env.example` § Anthropic"
-                )
-
-        # **A secret in a transcript is a leaked secret**, and the transcript is
-        # written whether anybody rereads it or not. `${#VAR}` is a length and
-        # `source .env` is how the key is loaded, so neither is touched; what is
-        # refused is expanding the VALUE into output, and reading `.env` itself.
-        # `.env.example` stays legal because it carries no value, which is the
-        # whole reason that file exists.
-        if w[0] in PRINTERS:
-            for token in w:
-                if any(secret in token for secret in SECRETS):
-                    return (
-                        "refused: that expands a secret into the transcript. "
-                        "Test it without printing it, or print `${#VAR}`. "
-                        "`.env.example`"
-                    )
-
-        # **A bare dump names no secret and prints every one of them**, which is
-        # the hole the rule above had on its first hour: it read the words for a
-        # secret's name, and `env` on its own has no words. Found by the author
-        # asking what the guard actually costs, 2026-09-09. A dump with
-        # ARGUMENTS is somebody's legitimate `env FOO=1 cmd` prefix or
-        # `printenv PATH`, so only the bare form goes.
-        # Performed at the top of this loop, on the words as written, since
-        # `env` is also a wrapper the words above are read through.
-        if w[0] in READERS and any(t == ".env" or t.endswith("/.env") for t in w):
-            return (
-                "refused: `.env` holds the live keys. `.env.example` is the "
-                "shape and carries no value. `.env.example`"
-            )
-
-        # Only when it is being PASSED to the compiler, for the same reason.
-        if "--no-line" in w and "heroes" in w[0]:
-            return (
-                "refused: `--no-line` is not on the tool surface; emitter "
-                "debugging is the test helper's job. "
-                "`.claude/rules/cli-surface.md`"
-            )
+    # Only when it is being PASSED to the compiler, for the same reason.
+    if "--no-line" in w and "heroes" in w[0]:
+        return (
+            "refused: `--no-line` is not on the tool surface; emitter "
+            "debugging is the test helper's job. "
+            "`.claude/rules/cli-surface.md`"
+        )
 
     return None
 
