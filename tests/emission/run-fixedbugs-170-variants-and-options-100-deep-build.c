@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -5111,8 +5111,8 @@ bb0:
 #line 529 "tests/golden/run/fixedbugs-170-variants-and-options-100-deep-build.hero"
     hero_print_end();
 #line 5114 "fixedbugs170variantsandoptions100deepbuild.c"
-    hero_array_decref(h0_xs);
-    hero_array_decref(h1_own1);
+    hero_array_release_at(&h0_xs);
+    hero_array_release_at(&h1_own1);
     return;
 }
 HERO_TU_LOCAL bool h_fixedbugs170variantsandoptions100deepbuild_R0_c_a_eq(const h_fixedbugs170variantsandoptions100deepbuild_R0_c_a *a, const h_fixedbugs170variantsandoptions100deepbuild_R0_c_a *b) {

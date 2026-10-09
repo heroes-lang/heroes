@@ -8,7 +8,7 @@
 #include <poll.h>
 #include "heroes_guard_close.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -881,22 +881,22 @@ bb7:
 #line 50 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     hero_print_end();
 #line 884 "fixedbugs396posixfillsitsbuffers.c"
-    hero_array_decref(h0_fds);
-    h_0opt_e1ec52d_release(&h1_f0);
-    h_0opt_e1ec52d_release(&h2_f1);
-    hero_array_decref(h3_watched);
-    h_0opt_e1ec52d_release(&h4_f2);
-    h_0opt_e1ec52d_release(&h5_f3);
-    hero_array_decref(h6_buf);
-    hero_array_decref(h7_name);
-    hero_array_decref(h8_own8);
-    h_0opt_e1ec52d_release(&h9_own9);
-    h_0opt_e1ec52d_release(&h10_own10);
-    hero_array_decref(h11_own11);
-    h_0opt_e1ec52d_release(&h12_own12);
-    h_0opt_e1ec52d_release(&h13_own13);
-    hero_array_decref(h14_own14);
-    hero_array_decref(h15_own15);
+    hero_array_release_at(&h0_fds);
+    h_0opt_e1ec52d_release(hero_slot_escape(&h1_f0));
+    h_0opt_e1ec52d_release(hero_slot_escape(&h2_f1));
+    hero_array_release_at(&h3_watched);
+    h_0opt_e1ec52d_release(hero_slot_escape(&h4_f2));
+    h_0opt_e1ec52d_release(hero_slot_escape(&h5_f3));
+    hero_array_release_at(&h6_buf);
+    hero_array_release_at(&h7_name);
+    hero_array_release_at(&h8_own8);
+    h_0opt_e1ec52d_release(hero_slot_escape(&h9_own9));
+    h_0opt_e1ec52d_release(hero_slot_escape(&h10_own10));
+    hero_array_release_at(&h11_own11);
+    h_0opt_e1ec52d_release(hero_slot_escape(&h12_own12));
+    h_0opt_e1ec52d_release(hero_slot_escape(&h13_own13));
+    hero_array_release_at(&h14_own14);
+    hero_array_release_at(&h15_own15);
     return;
 bb8:
 #line 44 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"

@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -2413,17 +2413,17 @@ bb8:
 #line 423 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
     hero_print_end();
 #line 2416 "fixedbugs393alongliteralisformattedinonepass.c"
-    hero_array_decref(h0_xs);
-    hero_map_decref(h1_m);
-    hero_array_decref(h5_xs0);
-    hero_array_decref(h9_xs1);
-    h_0opt_e201354_release(&h12_f0);
-    hero_array_decref(h13_own13);
-    hero_map_decref(h14_own14);
-    hero_array_decref(h15_own15);
-    hero_str_decref(h16_own16);
-    hero_str_decref(h17_own17);
-    h_0opt_e201354_release(&h18_own18);
+    hero_array_release_at(&h0_xs);
+    hero_map_release_at(&h1_m);
+    hero_array_release_at(&h5_xs0);
+    hero_array_release_at(&h9_xs1);
+    h_0opt_e201354_release(hero_slot_escape(&h12_f0));
+    hero_array_release_at(&h13_own13);
+    hero_map_release_at(&h14_own14);
+    hero_array_release_at(&h15_own15);
+    hero_str_release_at(&h16_own16);
+    hero_str_release_at(&h17_own17);
+    h_0opt_e201354_release(hero_slot_escape(&h18_own18));
     return;
 bb9:
 #line 421 "tests/golden/run/fixedbugs-393-a-long-literal-is-formatted-in-one-pass.hero"
@@ -2525,8 +2525,8 @@ bb3:
     t12 = h2_out;
 #line 2527 "fixedbugs393alongliteralisformattedinonepass.c"
     hero_array_incref(t12);
-    hero_array_decref(h2_out);
-    hero_array_decref(h4_own4);
+    hero_array_release_at(&h2_out);
+    hero_array_release_at(&h4_own4);
     return t12;
 }
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {

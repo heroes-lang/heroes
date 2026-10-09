@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -247,8 +247,8 @@ bb4:
 #line 248 "orderoptionsandfntypedefs.c"
     t13 = h1_ret0;
     h_0opt_e201354_retain(&t13);
-    h_0opt_e201354_release(&h2_own2);
-    h_0opt_e201354_release(&h3_own3);
+    h_0opt_e201354_release(hero_slot_escape(&h2_own2));
+    h_0opt_e201354_release(hero_slot_escape(&h3_own3));
     return t13;
 }
 
@@ -327,8 +327,8 @@ bb4:
 #line 328 "orderoptionsandfntypedefs.c"
     t9 = h1_ret0;
     h_0opt_f87774a_retain(&t9);
-    h_0opt_f87774a_release(&h2_own2);
-    h_0opt_f87774a_release(&h3_own3);
+    h_0opt_f87774a_release(hero_slot_escape(&h2_own2));
+    h_0opt_f87774a_release(hero_slot_escape(&h3_own3));
     return t9;
 }
 
@@ -405,8 +405,8 @@ bb4:
 #line 406 "orderoptionsandfntypedefs.c"
     t9 = h1_ret0;
     h_0opt_de89a9a_retain(&t9);
-    h_0opt_de89a9a_release(&h2_own2);
-    h_0opt_de89a9a_release(&h3_own3);
+    h_0opt_de89a9a_release(hero_slot_escape(&h2_own2));
+    h_0opt_de89a9a_release(hero_slot_escape(&h3_own3));
     return t9;
 }
 
@@ -756,15 +756,15 @@ bb6:
 #line 49 "tests/golden/emit/order-options-and-fn-typedefs.hero"
     h_orderoptionsandfntypedefs_twice(t42);
 #line 759 "orderoptionsandfntypedefs.c"
-    hero_array_decref(h0_points);
-    h_0opt_e201354_release(&h1_f0);
-    h_0opt_f87774a_release(&h3_f1);
-    hero_str_decref(h4_r1);
-    h_0opt_de89a9a_release(&h5_f2);
-    hero_array_decref(h6_own6);
-    h_0opt_e201354_release(&h7_own7);
-    h_0opt_f87774a_release(&h8_own8);
-    h_0opt_de89a9a_release(&h9_own9);
+    hero_array_release_at(&h0_points);
+    h_0opt_e201354_release(hero_slot_escape(&h1_f0));
+    h_0opt_f87774a_release(hero_slot_escape(&h3_f1));
+    hero_str_release_at(&h4_r1);
+    h_0opt_de89a9a_release(hero_slot_escape(&h5_f2));
+    hero_array_release_at(&h6_own6);
+    h_0opt_e201354_release(hero_slot_escape(&h7_own7));
+    h_0opt_f87774a_release(hero_slot_escape(&h8_own8));
+    h_0opt_de89a9a_release(hero_slot_escape(&h9_own9));
     return;
 }
 HERO_TU_LOCAL bool h_orderoptionsandfntypedefs_Point_eq(const h_orderoptionsandfntypedefs_Point *a, const h_orderoptionsandfntypedefs_Point *b) {

@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -187,8 +187,8 @@ bb1:
 #line 20 "tests/golden/run/variants.hero"
     t14 = h2_r0;
 #line 190 "variants.c"
-    h_variants_Token_release(&h1_s0);
-    h_variants_Token_c_word_release(&h4_w);
+    h_variants_Token_release(hero_slot_escape(&h1_s0));
+    h_variants_Token_c_word_release(hero_slot_escape(&h4_w));
     return t14;
 bb2:
 #line 21 "tests/golden/run/variants.hero"
@@ -299,10 +299,10 @@ bb1:
     t12 = h2_r0;
 #line 301 "variants.c"
     hero_str_incref(t12);
-    h_variants_Token_release(&h1_s0);
-    hero_str_decref(h2_r0);
-    h_variants_Token_c_word_release(&h3_w);
-    hero_str_decref(h4_own4);
+    h_variants_Token_release(hero_slot_escape(&h1_s0));
+    hero_str_release_at(&h2_r0);
+    h_variants_Token_c_word_release(hero_slot_escape(&h3_w));
+    hero_str_release_at(&h4_own4);
     return t12;
 bb2:
 #line 27 "tests/golden/run/variants.hero"
@@ -720,27 +720,27 @@ bb0:
 #line 52 "tests/golden/run/variants.hero"
     hero_print_end();
 #line 723 "variants.c"
-    h_variants_Token_release(&h0_a);
-    h_variants_Token_release(&h1_b);
-    h_variants_Token_release(&h2_c);
-    h_variants_Token_release(&h3_d);
-    h_variants_Token_release(&h4_w1);
-    h_variants_Token_release(&h5_w2);
-    h_variants_Token_release(&h6_own6);
-    h_variants_Token_release(&h7_own7);
-    h_variants_Token_release(&h8_own8);
-    hero_str_decref(h9_own9);
-    h_variants_Token_release(&h10_own10);
-    hero_str_decref(h11_own11);
-    h_variants_Token_release(&h12_own12);
-    hero_str_decref(h13_own13);
-    h_variants_Token_release(&h14_own14);
-    h_variants_Token_release(&h15_own15);
-    h_variants_Token_release(&h16_own16);
-    h_variants_Token_release(&h17_own17);
-    h_variants_Token_release(&h18_own18);
-    hero_str_decref(h19_own19);
-    h_variants_Token_release(&h20_own20);
+    h_variants_Token_release(hero_slot_escape(&h0_a));
+    h_variants_Token_release(hero_slot_escape(&h1_b));
+    h_variants_Token_release(hero_slot_escape(&h2_c));
+    h_variants_Token_release(hero_slot_escape(&h3_d));
+    h_variants_Token_release(hero_slot_escape(&h4_w1));
+    h_variants_Token_release(hero_slot_escape(&h5_w2));
+    h_variants_Token_release(hero_slot_escape(&h6_own6));
+    h_variants_Token_release(hero_slot_escape(&h7_own7));
+    h_variants_Token_release(hero_slot_escape(&h8_own8));
+    hero_str_release_at(&h9_own9);
+    h_variants_Token_release(hero_slot_escape(&h10_own10));
+    hero_str_release_at(&h11_own11);
+    h_variants_Token_release(hero_slot_escape(&h12_own12));
+    hero_str_release_at(&h13_own13);
+    h_variants_Token_release(hero_slot_escape(&h14_own14));
+    h_variants_Token_release(hero_slot_escape(&h15_own15));
+    h_variants_Token_release(hero_slot_escape(&h16_own16));
+    h_variants_Token_release(hero_slot_escape(&h17_own17));
+    h_variants_Token_release(hero_slot_escape(&h18_own18));
+    hero_str_release_at(&h19_own19);
+    h_variants_Token_release(hero_slot_escape(&h20_own20));
     return;
 }
 HERO_TU_LOCAL bool h_variants_Token_c_num_eq(const h_variants_Token_c_num *a, const h_variants_Token_c_num *b) {

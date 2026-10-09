@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -199,7 +199,7 @@ bb0:
 #line 200 "functiontypedfieldnevercalledthrough.c"
     hero_str_decref(t4);
     hero_str_incref(t3);
-    hero_str_decref(h1_own1);
+    hero_str_release_at(&h1_own1);
     return t3;
 }
 
@@ -306,11 +306,11 @@ bb0:
 #line 73 "tests/golden/fixedbugs/function-typed-field-never-called-through.hero"
     hero_print_end();
 #line 309 "functiontypedfieldnevercalledthrough.c"
-    h_functiontypedfieldnevercalledthrough_Outer_release(&h1_outer);
-    h_functiontypedfieldnevercalledthrough_Held_release(&h2_held);
-    h_functiontypedfieldnevercalledthrough_Outer_release(&h4_own4);
-    hero_array_decref(h5_own5);
-    h_functiontypedfieldnevercalledthrough_Held_release(&h6_own6);
+    h_functiontypedfieldnevercalledthrough_Outer_release(hero_slot_escape(&h1_outer));
+    h_functiontypedfieldnevercalledthrough_Held_release(hero_slot_escape(&h2_held));
+    h_functiontypedfieldnevercalledthrough_Outer_release(hero_slot_escape(&h4_own4));
+    hero_array_release_at(&h5_own5);
+    h_functiontypedfieldnevercalledthrough_Held_release(hero_slot_escape(&h6_own6));
     return;
 }
 HERO_TU_LOCAL bool h_functiontypedfieldnevercalledthrough_Direct_eq(const h_functiontypedfieldnevercalledthrough_Direct *a, const h_functiontypedfieldnevercalledthrough_Direct *b) {

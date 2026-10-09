@@ -7,7 +7,7 @@
 #include <string.h>
 #include "heroes_guard_close.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -272,12 +272,12 @@ bb4:
     t25 = h1_out;
 #line 274 "fixedbugs354abytearraybecomeseverybyteitholds.c"
     hero_str_incref(t25);
-    hero_str_decref(h1_out);
-    hero_array_decref(h2_xs0);
-    hero_array_decref(h5_own5);
-    hero_str_decref(h6_own6);
-    hero_str_decref(h7_own7);
-    hero_str_decref(h8_own8);
+    hero_str_release_at(&h1_out);
+    hero_array_release_at(&h2_xs0);
+    hero_array_release_at(&h5_own5);
+    hero_str_release_at(&h6_own6);
+    hero_str_release_at(&h7_own7);
+    hero_str_release_at(&h8_own8);
     return t25;
 }
 
@@ -366,11 +366,11 @@ bb0:
 #line 26 "tests/golden/run/fixedbugs-354-a-byte-array-becomes-every-byte-it-holds.hero"
 bb1:
 #line 369 "fixedbugs354abytearraybecomeseverybyteitholds.c"
-    h_0opt_f87774a_release(&h2_s0);
-    hero_str_decref(h3_s);
+    h_0opt_f87774a_release(hero_slot_escape(&h2_s0));
+    hero_str_release_at(&h3_s);
     hero_failure_release(&h4_e);
-    h_0opt_f87774a_release(&h5_own5);
-    hero_str_decref(h6_own6);
+    h_0opt_f87774a_release(hero_slot_escape(&h5_own5));
+    hero_str_release_at(&h6_own6);
     return;
 bb2:
 #line 27 "tests/golden/run/fixedbugs-354-a-byte-array-becomes-every-byte-it-holds.hero"
@@ -732,17 +732,17 @@ bb1:
 #line 39 "tests/golden/run/fixedbugs-354-a-byte-array-becomes-every-byte-it-holds.hero"
     hero_print_end();
 #line 735 "fixedbugs354abytearraybecomeseverybyteitholds.c"
-    hero_array_decref(h0_held);
-    h_0opt_f87774a_release(&h1_f0);
-    hero_str_decref(h2_s);
-    hero_array_decref(h3_own3);
-    hero_array_decref(h4_own4);
-    hero_array_decref(h5_own5);
-    hero_array_decref(h6_own6);
-    hero_array_decref(h7_own7);
-    hero_array_decref(h8_own8);
-    hero_array_decref(h9_own9);
-    h_0opt_f87774a_release(&h10_own10);
+    hero_array_release_at(&h0_held);
+    h_0opt_f87774a_release(hero_slot_escape(&h1_f0));
+    hero_str_release_at(&h2_s);
+    hero_array_release_at(&h3_own3);
+    hero_array_release_at(&h4_own4);
+    hero_array_release_at(&h5_own5);
+    hero_array_release_at(&h6_own6);
+    hero_array_release_at(&h7_own7);
+    hero_array_release_at(&h8_own8);
+    hero_array_release_at(&h9_own9);
+    h_0opt_f87774a_release(hero_slot_escape(&h10_own10));
     return;
 bb2:
 #line 38 "tests/golden/run/fixedbugs-354-a-byte-array-becomes-every-byte-it-holds.hero"
@@ -824,8 +824,8 @@ bb3:
     t12 = h2_out;
 #line 826 "fixedbugs354abytearraybecomeseverybyteitholds.c"
     hero_array_incref(t12);
-    hero_array_decref(h2_out);
-    hero_array_decref(h4_own4);
+    hero_array_release_at(&h2_out);
+    hero_array_release_at(&h4_own4);
     return t12;
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {

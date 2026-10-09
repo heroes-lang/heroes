@@ -8,7 +8,7 @@
 #include <string.h>
 #include "heroes_guard_close.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -163,8 +163,8 @@ bb0:
 #line 16 "tests/golden/run/fixedbugs-245-a-str-c-copies-holding-a-nul-stops.hero"
     hero_print_end();
 #line 166 "fixedbugs245astrccopiesholdinganulstops.c"
-    hero_str_decref(h0_made);
-    hero_str_decref(h1_own1);
+    hero_str_release_at(&h0_made);
+    hero_str_release_at(&h1_own1);
     return;
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {

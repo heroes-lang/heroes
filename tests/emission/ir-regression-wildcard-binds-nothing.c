@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -246,7 +246,7 @@ bb4:
 #line 24 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
     t14 = h1_n;
 #line 249 "regressionwildcardbindsnothing.c"
-    hero_array_decref(h2_xs0);
+    hero_array_release_at(&h2_xs0);
     return t14;
 }
 HERO_TU_LOCAL bool h_regressionwildcardbindsnothing_Token_c_num_eq(const h_regressionwildcardbindsnothing_Token_c_num *a, const h_regressionwildcardbindsnothing_Token_c_num *b) {

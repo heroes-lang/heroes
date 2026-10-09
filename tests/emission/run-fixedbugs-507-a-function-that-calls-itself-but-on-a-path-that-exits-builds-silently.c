@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -340,7 +340,7 @@ bb1:
 #line 50 "tests/golden/run/fixedbugs-507-a-function-that-calls-itself-but-on-a-path-that-exits-builds-silently.hero"
     h_fixedbugs507afunctionthatcallsitselfbutonapaththatexitsbuildssilently_in_an_arm(t9);
 #line 343 "fixedbugs507afunctionthatcallsitselfbutonapaththatexitsbuildssilently.c"
-    hero_array_decref(h0_own0);
+    hero_array_release_at(&h0_own0);
     return;
 bb2:
 #line 48 "tests/golden/run/fixedbugs-507-a-function-that-calls-itself-but-on-a-path-that-exits-builds-silently.hero"
@@ -440,9 +440,9 @@ bb3:
     t13 = h0_out;
 #line 442 "fixedbugs507afunctionthatcallsitselfbutonapaththatexitsbuildssilently.c"
     hero_array_incref(t13);
-    hero_array_decref(h0_out);
-    hero_array_decref(h2_own2);
-    hero_str_decref(h3_own3);
+    hero_array_release_at(&h0_out);
+    hero_array_release_at(&h2_own2);
+    hero_str_release_at(&h3_own3);
     return t13;
 }
 

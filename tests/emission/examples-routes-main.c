@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -319,14 +319,14 @@ bb0:
     t24 = h0_lines;
 #line 321 "main.c"
     hero_map_incref(t24);
-    hero_map_decref(h0_lines);
-    hero_map_decref(h1_own1);
-    hero_array_decref(h2_own2);
-    hero_array_decref(h3_own3);
-    hero_array_decref(h4_own4);
-    hero_array_decref(h5_own5);
-    hero_array_decref(h6_own6);
-    hero_array_decref(h7_own7);
+    hero_map_release_at(&h0_lines);
+    hero_map_release_at(&h1_own1);
+    hero_array_release_at(&h2_own2);
+    hero_array_release_at(&h3_own3);
+    hero_array_release_at(&h4_own4);
+    hero_array_release_at(&h5_own5);
+    hero_array_release_at(&h6_own6);
+    hero_array_release_at(&h7_own7);
     return t24;
 }
 
@@ -452,11 +452,11 @@ bb3:
     t12 = h4_r0;
 #line 454 "main.c"
     hero_array_incref(t12);
-    hero_array_decref(h2_empty);
-    h_0opt_5a58f2ca_release(&h3_f0);
-    hero_array_decref(h4_r0);
-    hero_array_decref(h5_own5);
-    h_0opt_5a58f2ca_release(&h6_own6);
+    hero_array_release_at(&h2_empty);
+    h_0opt_5a58f2ca_release(hero_slot_escape(&h3_f0));
+    hero_array_release_at(&h4_r0);
+    hero_array_release_at(&h5_own5);
+    h_0opt_5a58f2ca_release(hero_slot_escape(&h6_own6));
     return t12;
 }
 
@@ -1145,31 +1145,31 @@ bb25:
 #line 1146 "main.c"
     t91 = h16_ret0;
     h_0opt_5a58f2ca_retain(&t91);
-    h_0opt_5a58f2ca_release(&h4_f0);
-    h_0opt_5a58f2ca_release(&h5_f1);
-    hero_array_decref(h6_frontier);
-    hero_map_decref(h7_came_from);
-    hero_map_decref(h8_seen);
-    hero_str_decref(h10_here);
-    hero_array_decref(h11_xs0);
-    hero_str_decref(h13_next);
-    h_0opt_473cb9ae_release(&h14_f2);
-    h_0opt_5a58f2ca_release(&h17_own17);
-    h_0opt_5a58f2ca_release(&h18_own18);
-    h_0opt_5a58f2ca_release(&h19_own19);
-    hero_array_decref(h20_own20);
-    hero_map_decref(h21_own21);
-    hero_map_decref(h22_own22);
-    hero_array_decref(h23_own23);
-    h_0opt_5a58f2ca_release(&h24_own24);
-    hero_array_decref(h25_own25);
-    hero_str_decref(h26_own26);
-    hero_str_decref(h27_own27);
-    hero_str_decref(h28_own28);
-    h_0opt_5a58f2ca_release(&h29_own29);
-    h_0opt_473cb9ae_release(&h30_own30);
-    hero_array_decref(h31_own31);
-    h_0opt_5a58f2ca_release(&h32_own32);
+    h_0opt_5a58f2ca_release(hero_slot_escape(&h4_f0));
+    h_0opt_5a58f2ca_release(hero_slot_escape(&h5_f1));
+    hero_array_release_at(&h6_frontier);
+    hero_map_release_at(&h7_came_from);
+    hero_map_release_at(&h8_seen);
+    hero_str_release_at(&h10_here);
+    hero_array_release_at(&h11_xs0);
+    hero_str_release_at(&h13_next);
+    h_0opt_473cb9ae_release(hero_slot_escape(&h14_f2));
+    h_0opt_5a58f2ca_release(hero_slot_escape(&h17_own17));
+    h_0opt_5a58f2ca_release(hero_slot_escape(&h18_own18));
+    h_0opt_5a58f2ca_release(hero_slot_escape(&h19_own19));
+    hero_array_release_at(&h20_own20);
+    hero_map_release_at(&h21_own21);
+    hero_map_release_at(&h22_own22);
+    hero_array_release_at(&h23_own23);
+    h_0opt_5a58f2ca_release(hero_slot_escape(&h24_own24));
+    hero_array_release_at(&h25_own25);
+    hero_str_release_at(&h26_own26);
+    hero_str_release_at(&h27_own27);
+    hero_str_release_at(&h28_own28);
+    h_0opt_5a58f2ca_release(hero_slot_escape(&h29_own29));
+    h_0opt_473cb9ae_release(hero_slot_escape(&h30_own30));
+    hero_array_release_at(&h31_own31);
+    h_0opt_5a58f2ca_release(hero_slot_escape(&h32_own32));
     return t91;
 }
 
@@ -1435,15 +1435,15 @@ bb9:
     t38 = h8_forwards;
 #line 1437 "main.c"
     hero_array_incref(t38);
-    hero_array_decref(h3_backwards);
-    hero_str_decref(h4_here);
-    h_0opt_f87774a_release(&h5_f0);
-    hero_str_decref(h6_r0);
-    hero_str_decref(h7_previous);
-    hero_array_decref(h8_forwards);
-    hero_array_decref(h10_own10);
-    h_0opt_f87774a_release(&h11_own11);
-    hero_array_decref(h12_own12);
+    hero_array_release_at(&h3_backwards);
+    hero_str_release_at(&h4_here);
+    h_0opt_f87774a_release(hero_slot_escape(&h5_f0));
+    hero_str_release_at(&h6_r0);
+    hero_str_release_at(&h7_previous);
+    hero_array_release_at(&h8_forwards);
+    hero_array_release_at(&h10_own10);
+    h_0opt_f87774a_release(hero_slot_escape(&h11_own11));
+    hero_array_release_at(&h12_own12);
     return t38;
 }
 
@@ -1560,10 +1560,10 @@ bb3:
 #line 1561 "main.c"
     t18 = h4_ret0;
     h_0opt_e201354_retain(&t18);
-    h_0opt_5a58f2ca_release(&h3_f0);
-    h_0opt_5a58f2ca_release(&h5_own5);
-    h_0opt_e201354_release(&h6_own6);
-    h_0opt_e201354_release(&h7_own7);
+    h_0opt_5a58f2ca_release(hero_slot_escape(&h3_f0));
+    h_0opt_5a58f2ca_release(hero_slot_escape(&h5_own5));
+    h_0opt_e201354_release(hero_slot_escape(&h6_own6));
+    h_0opt_e201354_release(hero_slot_escape(&h7_own7));
     return t18;
 }
 
@@ -2047,25 +2047,25 @@ bb9:
 #line 109 "examples/routes/main.hero"
     hero_print_end();
 #line 2050 "main.c"
-    hero_map_decref(h0_lines);
-    h_0opt_5a58f2ca_release(&h1_f0);
-    h_0opt_e201354_release(&h2_f1);
-    h_0opt_5a58f2ca_release(&h3_f2);
-    h_0opt_5a58f2ca_release(&h4_f3);
-    h_0opt_e201354_release(&h5_f4);
-    h_0opt_5a58f2ca_release(&h6_f5);
-    h_0opt_5a58f2ca_release(&h7_f6);
-    hero_map_decref(h8_own8);
-    h_0opt_5a58f2ca_release(&h9_own9);
-    hero_str_decref(h10_own10);
-    h_0opt_e201354_release(&h11_own11);
-    h_0opt_5a58f2ca_release(&h12_own12);
-    hero_str_decref(h13_own13);
-    h_0opt_5a58f2ca_release(&h14_own14);
-    hero_str_decref(h15_own15);
-    h_0opt_e201354_release(&h16_own16);
-    h_0opt_5a58f2ca_release(&h17_own17);
-    h_0opt_5a58f2ca_release(&h18_own18);
+    hero_map_release_at(&h0_lines);
+    h_0opt_5a58f2ca_release(hero_slot_escape(&h1_f0));
+    h_0opt_e201354_release(hero_slot_escape(&h2_f1));
+    h_0opt_5a58f2ca_release(hero_slot_escape(&h3_f2));
+    h_0opt_5a58f2ca_release(hero_slot_escape(&h4_f3));
+    h_0opt_e201354_release(hero_slot_escape(&h5_f4));
+    h_0opt_5a58f2ca_release(hero_slot_escape(&h6_f5));
+    h_0opt_5a58f2ca_release(hero_slot_escape(&h7_f6));
+    hero_map_release_at(&h8_own8);
+    h_0opt_5a58f2ca_release(hero_slot_escape(&h9_own9));
+    hero_str_release_at(&h10_own10);
+    h_0opt_e201354_release(hero_slot_escape(&h11_own11));
+    h_0opt_5a58f2ca_release(hero_slot_escape(&h12_own12));
+    hero_str_release_at(&h13_own13);
+    h_0opt_5a58f2ca_release(hero_slot_escape(&h14_own14));
+    hero_str_release_at(&h15_own15);
+    h_0opt_e201354_release(hero_slot_escape(&h16_own16));
+    h_0opt_5a58f2ca_release(hero_slot_escape(&h17_own17));
+    h_0opt_5a58f2ca_release(hero_slot_escape(&h18_own18));
     return;
 bb10:
 #line 105 "examples/routes/main.hero"

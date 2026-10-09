@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -279,8 +279,8 @@ bb4:
 #line 280 "fixedbugsdescriptorforwhattheemitternames.c"
     t8 = h1_ret0;
     h_0opt_786b106a_retain(&t8);
-    h_0opt_786b106a_release(&h2_own2);
-    h_0opt_786b106a_release(&h3_own3);
+    h_0opt_786b106a_release(hero_slot_escape(&h2_own2));
+    h_0opt_786b106a_release(hero_slot_escape(&h3_own3));
     return t8;
 }
 
@@ -354,8 +354,8 @@ bb4:
 #line 355 "fixedbugsdescriptorforwhattheemitternames.c"
     t8 = h1_ret0;
     h_0opt_538f2d82_retain(&t8);
-    h_0opt_538f2d82_release(&h2_own2);
-    h_0opt_538f2d82_release(&h3_own3);
+    h_0opt_538f2d82_release(hero_slot_escape(&h2_own2));
+    h_0opt_538f2d82_release(hero_slot_escape(&h3_own3));
     return t8;
 }
 
@@ -486,8 +486,8 @@ bb1:
 #line 48 "tests/golden/run/fixedbugs-descriptor-for-what-the-emitter-names.hero"
     t12 = h2_r0;
 #line 489 "fixedbugsdescriptorforwhattheemitternames.c"
-    h_0opt_538f2d82_release(&h1_s0);
-    h_0opt_538f2d82_release(&h4_own4);
+    h_0opt_538f2d82_release(hero_slot_escape(&h1_s0));
+    h_0opt_538f2d82_release(hero_slot_escape(&h4_own4));
     return t12;
 bb2:
 #line 49 "tests/golden/run/fixedbugs-descriptor-for-what-the-emitter-names.hero"
@@ -658,12 +658,12 @@ bb1:
 #line 57 "tests/golden/run/fixedbugs-descriptor-for-what-the-emitter-names.hero"
     hero_print_end();
 #line 661 "fixedbugsdescriptorforwhattheemitternames.c"
-    h_0opt_786b106a_release(&h0_f0);
-    h_0opt_786b106a_release(&h1_f1);
-    hero_array_decref(h2_ys);
-    h_0opt_786b106a_release(&h3_own3);
-    h_0opt_786b106a_release(&h4_own4);
-    hero_array_decref(h5_own5);
+    h_0opt_786b106a_release(hero_slot_escape(&h0_f0));
+    h_0opt_786b106a_release(hero_slot_escape(&h1_f1));
+    hero_array_release_at(&h2_ys);
+    h_0opt_786b106a_release(hero_slot_escape(&h3_own3));
+    h_0opt_786b106a_release(hero_slot_escape(&h4_own4));
+    hero_array_release_at(&h5_own5);
     return;
 bb2:
 #line 53 "tests/golden/run/fixedbugs-descriptor-for-what-the-emitter-names.hero"

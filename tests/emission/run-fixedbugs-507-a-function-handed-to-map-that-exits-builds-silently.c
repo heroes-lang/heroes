@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -212,9 +212,9 @@ bb0:
 #line 19 "tests/golden/run/fixedbugs-507-a-function-handed-to-map-that-exits-builds-silently.hero"
     t7 = h_fixedbugs507afunctionhandedtomapthatexitsbuildssilently_turn(t6);
 #line 215 "fixedbugs507afunctionhandedtomapthatexitsbuildssilently.c"
-    hero_array_decref(h1_ys);
-    hero_array_decref(h2_own2);
-    hero_array_decref(h3_own3);
+    hero_array_release_at(&h1_ys);
+    hero_array_release_at(&h2_own2);
+    hero_array_release_at(&h3_own3);
     return t7;
 }
 
@@ -247,7 +247,7 @@ bb0:
 #line 22 "tests/golden/run/fixedbugs-507-a-function-handed-to-map-that-exits-builds-silently.hero"
     hero_print_end();
 #line 250 "fixedbugs507afunctionhandedtomapthatexitsbuildssilently.c"
-    hero_array_decref(h0_own0);
+    hero_array_release_at(&h0_own0);
     return;
 }
 
@@ -379,9 +379,9 @@ bb4:
     t19 = h2_out;
 #line 381 "fixedbugs507afunctionhandedtomapthatexitsbuildssilently.c"
     hero_array_incref(t19);
-    hero_array_decref(h2_out);
-    hero_array_decref(h3_xs0);
-    hero_array_decref(h6_own6);
+    hero_array_release_at(&h2_out);
+    hero_array_release_at(&h3_xs0);
+    hero_array_release_at(&h6_own6);
     return t19;
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {

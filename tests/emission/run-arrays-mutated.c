@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -870,32 +870,32 @@ bb0:
 #line 53 "tests/golden/run/arrays-mutated.hero"
     hero_print_end();
 #line 873 "arraysmutated.c"
-    hero_array_decref(h0_ns);
-    hero_array_decref(h1_ws);
-    hero_array_decref(h2_ps);
-    hero_array_decref(h3_hs);
-    hero_array_decref(h4_gs);
-    hero_array_decref(h5_own5);
-    hero_str_decref(h6_own6);
-    hero_str_decref(h7_own7);
-    hero_array_decref(h8_own8);
-    hero_str_decref(h9_own9);
-    hero_str_decref(h10_own10);
-    hero_array_decref(h11_own11);
-    hero_str_decref(h12_own12);
-    h_arraysmutated_Holder_release(&h13_own13);
-    hero_str_decref(h14_own14);
-    h_arraysmutated_Holder_release(&h15_own15);
-    hero_array_decref(h16_own16);
-    hero_str_decref(h17_own17);
-    h_arraysmutated_Holder_release(&h18_own18);
-    hero_str_decref(h19_own19);
-    h_arraysmutated_Holder_release(&h20_own20);
-    hero_array_decref(h21_own21);
-    hero_array_decref(h22_own22);
-    hero_array_decref(h23_own23);
-    hero_array_decref(h24_own24);
-    hero_array_decref(h25_own25);
+    hero_array_release_at(&h0_ns);
+    hero_array_release_at(&h1_ws);
+    hero_array_release_at(&h2_ps);
+    hero_array_release_at(&h3_hs);
+    hero_array_release_at(&h4_gs);
+    hero_array_release_at(&h5_own5);
+    hero_str_release_at(&h6_own6);
+    hero_str_release_at(&h7_own7);
+    hero_array_release_at(&h8_own8);
+    hero_str_release_at(&h9_own9);
+    hero_str_release_at(&h10_own10);
+    hero_array_release_at(&h11_own11);
+    hero_str_release_at(&h12_own12);
+    h_arraysmutated_Holder_release(hero_slot_escape(&h13_own13));
+    hero_str_release_at(&h14_own14);
+    h_arraysmutated_Holder_release(hero_slot_escape(&h15_own15));
+    hero_array_release_at(&h16_own16);
+    hero_str_release_at(&h17_own17);
+    h_arraysmutated_Holder_release(hero_slot_escape(&h18_own18));
+    hero_str_release_at(&h19_own19);
+    h_arraysmutated_Holder_release(hero_slot_escape(&h20_own20));
+    hero_array_release_at(&h21_own21);
+    hero_array_release_at(&h22_own22);
+    hero_array_release_at(&h23_own23);
+    hero_array_release_at(&h24_own24);
+    hero_array_release_at(&h25_own25);
     return;
 }
 HERO_TU_LOCAL bool h_arraysmutated_Point_eq(const h_arraysmutated_Point *a, const h_arraysmutated_Point *b) {

@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -264,14 +264,14 @@ bb2:
     hero_panic_must(t13);
     hero_unreachable();
 bb3:
-    hero_array_decref(h0_b);
-    h_0opt_f87774a_release(&h1_f0);
-    hero_str_decref(h2_x);
-    hero_str_decref(h3_assert0);
-    hero_str_decref(h4_assert1);
-    hero_array_decref(h5_own5);
-    h_0opt_f87774a_release(&h6_own6);
-    hero_str_decref(h7_own7);
+    hero_array_release_at(&h0_b);
+    h_0opt_f87774a_release(hero_slot_escape(&h1_f0));
+    hero_str_release_at(&h2_x);
+    hero_str_release_at(&h3_assert0);
+    hero_str_release_at(&h4_assert1);
+    hero_array_release_at(&h5_own5);
+    h_0opt_f87774a_release(hero_slot_escape(&h6_own6));
+    hero_str_release_at(&h7_own7);
     return;
 bb4:
 #line 10 "tests/golden/run/fixedbugs-355-an-assert-writes-its-sides-whole-and-by-their-code.hero"

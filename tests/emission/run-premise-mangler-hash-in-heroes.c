@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -265,10 +265,10 @@ bb4:
 #line 30 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
     t35 = h1_h;
 #line 268 "premisemanglerhashinheroes.c"
-    hero_array_decref(h2_xs0);
-    h_0opt_e201354_release(&h5_f0);
-    hero_array_decref(h6_own6);
-    h_0opt_e201354_release(&h7_own7);
+    hero_array_release_at(&h2_xs0);
+    h_0opt_e201354_release(hero_slot_escape(&h5_f0));
+    hero_array_release_at(&h6_own6);
+    h_0opt_e201354_release(hero_slot_escape(&h7_own7));
     return t35;
 bb5:
 #line 28 "tests/golden/run/premise-mangler-hash-in-heroes.hero"
@@ -418,8 +418,8 @@ bb3:
     t12 = h2_out;
 #line 420 "premisemanglerhashinheroes.c"
     hero_array_incref(t12);
-    hero_array_decref(h2_out);
-    hero_array_decref(h4_own4);
+    hero_array_release_at(&h2_out);
+    hero_array_release_at(&h4_own4);
     return t12;
 }
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {

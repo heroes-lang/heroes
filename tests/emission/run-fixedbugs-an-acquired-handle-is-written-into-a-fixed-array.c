@@ -8,7 +8,7 @@
 #pragma push_macro("a")
 #include "heroes_guard_close.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -387,10 +387,10 @@ bb8:
 #line 42 "tests/golden/run/fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.hero"
     hero_print_end();
 #line 390 "fixedbugsanacquiredhandleiswrittenintoafixedarray.c"
-    hero_array_decref(h2_xs0);
-    hero_array_decref(h5_xs1);
-    hero_array_decref(h8_own8);
-    hero_array_decref(h9_own9);
+    hero_array_release_at(&h2_xs0);
+    hero_array_release_at(&h5_xs1);
+    hero_array_release_at(&h8_own8);
+    hero_array_release_at(&h9_own9);
     return;
 }
 
@@ -464,8 +464,8 @@ bb3:
     t12 = h2_out;
 #line 466 "fixedbugsanacquiredhandleiswrittenintoafixedarray.c"
     hero_array_incref(t12);
-    hero_array_decref(h2_out);
-    hero_array_decref(h4_own4);
+    hero_array_release_at(&h2_out);
+    hero_array_release_at(&h4_own4);
     return t12;
 }
 HERO_TU_LOCAL bool h_fixedbugsanacquiredhandleiswrittenintoafixedarray_Ob_eq(ob * const *a, ob * const *b) {

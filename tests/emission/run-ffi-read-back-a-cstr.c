@@ -8,7 +8,7 @@
 #include <stdlib.h>
 #include "heroes_guard_close.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -343,16 +343,16 @@ bb4:
     hero_panic_must(t20);
     hero_unreachable();
 bb5:
-    h_0opt_f87774a_release(&h0_f0);
-    hero_str_decref(h1_first);
-    h_0opt_f87774a_release(&h2_f1);
-    hero_str_decref(h3_second);
-    h_0opt_f87774a_release(&h5_s0);
-    hero_str_decref(h6_text);
+    h_0opt_f87774a_release(hero_slot_escape(&h0_f0));
+    hero_str_release_at(&h1_first);
+    h_0opt_f87774a_release(hero_slot_escape(&h2_f1));
+    hero_str_release_at(&h3_second);
+    h_0opt_f87774a_release(hero_slot_escape(&h5_s0));
+    hero_str_release_at(&h6_text);
     hero_failure_release(&h7_e);
-    h_0opt_f87774a_release(&h8_own8);
-    h_0opt_f87774a_release(&h9_own9);
-    h_0opt_f87774a_release(&h10_own10);
+    h_0opt_f87774a_release(hero_slot_escape(&h8_own8));
+    h_0opt_f87774a_release(hero_slot_escape(&h9_own9));
+    h_0opt_f87774a_release(hero_slot_escape(&h10_own10));
     return;
 bb6:
 #line 59 "tests/golden/run/ffi-read-back-a-cstr.hero"
@@ -561,11 +561,11 @@ bb7:
 #line 562 "ffireadbackacstr.c"
     t18 = h3_ret0;
     h_0opt_f87774a_retain(&t18);
-    hero_str_decref(h2_text);
-    hero_str_decref(h4_own4);
-    h_0opt_f87774a_release(&h5_own5);
-    h_0opt_f87774a_release(&h6_own6);
-    h_0opt_f87774a_release(&h7_own7);
+    hero_str_release_at(&h2_text);
+    hero_str_release_at(&h4_own4);
+    h_0opt_f87774a_release(hero_slot_escape(&h5_own5));
+    h_0opt_f87774a_release(hero_slot_escape(&h6_own6));
+    h_0opt_f87774a_release(hero_slot_escape(&h7_own7));
     hero_lend_local_give(hero_lend_h1_status);
     return t18;
 }

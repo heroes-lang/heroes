@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -168,7 +168,7 @@ bb0:
 #line 169 "fixedbugs382aconstantmapisbuiltateachread.c"
     hero_map_decref(t6);
     hero_map_incref(t5);
-    hero_map_decref(h0_own0);
+    hero_map_release_at(&h0_own0);
     return t5;
 }
 
@@ -211,7 +211,7 @@ bb0:
 #line 212 "fixedbugs382aconstantmapisbuiltateachread.c"
     hero_map_decref(t8);
     hero_map_incref(t7);
-    hero_map_decref(h0_own0);
+    hero_map_release_at(&h0_own0);
     return t7;
 }
 
@@ -274,9 +274,9 @@ bb0:
 #line 275 "fixedbugs382aconstantmapisbuiltateachread.c"
     hero_map_decref(t10);
     hero_map_incref(t7);
-    hero_array_decref(h0_own0);
-    hero_array_decref(h1_own1);
-    hero_map_decref(h2_own2);
+    hero_array_release_at(&h0_own0);
+    hero_array_release_at(&h1_own1);
+    hero_map_release_at(&h2_own2);
     return t7;
 }
 
@@ -1115,34 +1115,34 @@ bb21:
 #line 31 "tests/golden/run/fixedbugs-382-a-constant-map-is-built-at-each-read.hero"
     hero_print_end();
 #line 1118 "fixedbugs382aconstantmapisbuiltateachread.c"
-    h_0opt_e201354_release(&h2_f0);
-    h_0opt_e201354_release(&h4_f1);
-    h_0opt_2270cbe7_release(&h6_f2);
-    h_0opt_e201354_release(&h7_f3);
-    hero_map_decref(h9_copy);
-    h_0opt_e201354_release(&h10_f4);
-    h_0opt_e201354_release(&h12_f5);
-    h_0opt_2270cbe7_release(&h14_f6);
-    hero_map_decref(h15_own15);
-    h_0opt_e201354_release(&h16_own16);
-    hero_map_decref(h17_own17);
-    h_0opt_e201354_release(&h18_own18);
-    hero_map_decref(h19_own19);
-    h_0opt_e201354_release(&h20_own20);
-    hero_map_decref(h21_own21);
-    h_0opt_2270cbe7_release(&h22_own22);
-    hero_map_decref(h23_own23);
-    hero_map_decref(h24_own24);
-    hero_map_decref(h25_own25);
-    hero_array_decref(h26_own26);
-    hero_array_decref(h27_own27);
-    hero_str_decref(h28_own28);
-    hero_map_decref(h29_own29);
-    h_0opt_e201354_release(&h30_own30);
-    hero_map_decref(h31_own31);
-    h_0opt_e201354_release(&h32_own32);
-    hero_map_decref(h33_own33);
-    h_0opt_2270cbe7_release(&h34_own34);
+    h_0opt_e201354_release(hero_slot_escape(&h2_f0));
+    h_0opt_e201354_release(hero_slot_escape(&h4_f1));
+    h_0opt_2270cbe7_release(hero_slot_escape(&h6_f2));
+    h_0opt_e201354_release(hero_slot_escape(&h7_f3));
+    hero_map_release_at(&h9_copy);
+    h_0opt_e201354_release(hero_slot_escape(&h10_f4));
+    h_0opt_e201354_release(hero_slot_escape(&h12_f5));
+    h_0opt_2270cbe7_release(hero_slot_escape(&h14_f6));
+    hero_map_release_at(&h15_own15);
+    h_0opt_e201354_release(hero_slot_escape(&h16_own16));
+    hero_map_release_at(&h17_own17);
+    h_0opt_e201354_release(hero_slot_escape(&h18_own18));
+    hero_map_release_at(&h19_own19);
+    h_0opt_e201354_release(hero_slot_escape(&h20_own20));
+    hero_map_release_at(&h21_own21);
+    h_0opt_2270cbe7_release(hero_slot_escape(&h22_own22));
+    hero_map_release_at(&h23_own23);
+    hero_map_release_at(&h24_own24);
+    hero_map_release_at(&h25_own25);
+    hero_array_release_at(&h26_own26);
+    hero_array_release_at(&h27_own27);
+    hero_str_release_at(&h28_own28);
+    hero_map_release_at(&h29_own29);
+    h_0opt_e201354_release(hero_slot_escape(&h30_own30));
+    hero_map_release_at(&h31_own31);
+    h_0opt_e201354_release(hero_slot_escape(&h32_own32));
+    hero_map_release_at(&h33_own33);
+    h_0opt_2270cbe7_release(hero_slot_escape(&h34_own34));
     return;
 bb22:
 #line 31 "tests/golden/run/fixedbugs-382-a-constant-map-is-built-at-each-read.hero"

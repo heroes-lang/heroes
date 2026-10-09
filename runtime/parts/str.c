@@ -219,6 +219,12 @@ void hero_str_decref(HeroStr s) {
     hero_release_block(h);
 }
 
+/* The exit's release through the slot (defect 470; `heroes_runtime.h` says
+ * why), and the identity a unit's own release is reached through. */
+void hero_str_release_at(const HeroStr *slot) { hero_str_decref(*slot); }
+
+void *hero_slot_escape(void *slot) { return slot; }
+
 /* **`repeat(s, n)` — one allocation where a loop makes n** (panel 054; design.md
  * §4.20, CLAUDE.md §12).
  *

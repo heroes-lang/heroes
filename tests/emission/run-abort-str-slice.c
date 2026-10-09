@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -155,9 +155,9 @@ bb0:
 #line 9 "tests/golden/run/abort-str-slice.hero"
     hero_print_end();
 #line 158 "abortstrslice.c"
-    hero_str_decref(h0_s);
-    hero_str_decref(h1_own1);
-    hero_str_decref(h2_own2);
+    hero_str_release_at(&h0_s);
+    hero_str_release_at(&h1_own1);
+    hero_str_release_at(&h2_own2);
     return;
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {

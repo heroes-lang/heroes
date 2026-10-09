@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -177,7 +177,7 @@ bb4:
 bb5:
 #line 179 "fixedbugs207astringthatwouldspellatrigraphbuildswithoutawarning.c"
     t7 = h2_ret0;
-    hero_str_decref(h1_s0);
+    hero_str_release_at(&h1_s0);
     return t7;
 }
 
@@ -390,14 +390,14 @@ bb1:
 #line 37 "tests/golden/run/fixedbugs-207-a-string-that-would-spell-a-trigraph-builds-without-a-warning.hero"
     hero_print_end();
 #line 393 "fixedbugs207astringthatwouldspellatrigraphbuildswithoutawarning.c"
-    hero_map_decref(h1_m);
-    h_0opt_e201354_release(&h2_f0);
-    hero_str_decref(h3_own3);
-    hero_str_decref(h4_own4);
-    hero_str_decref(h5_own5);
-    hero_str_decref(h6_own6);
-    hero_map_decref(h7_own7);
-    h_0opt_e201354_release(&h8_own8);
+    hero_map_release_at(&h1_m);
+    h_0opt_e201354_release(hero_slot_escape(&h2_f0));
+    hero_str_release_at(&h3_own3);
+    hero_str_release_at(&h4_own4);
+    hero_str_release_at(&h5_own5);
+    hero_str_release_at(&h6_own6);
+    hero_map_release_at(&h7_own7);
+    h_0opt_e201354_release(hero_slot_escape(&h8_own8));
     return;
 bb2:
 #line 37 "tests/golden/run/fixedbugs-207-a-string-that-would-spell-a-trigraph-builds-without-a-warning.hero"

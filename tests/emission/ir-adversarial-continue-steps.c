@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -193,7 +193,7 @@ bb4:
 #line 15 "tests/golden/ir/adversarial-continue-steps.hero"
     t22 = h1_count;
 #line 196 "adversarialcontinuesteps.c"
-    hero_array_decref(h2_xs0);
+    hero_array_release_at(&h2_xs0);
     return t22;
 bb5:
 #line 13 "tests/golden/ir/adversarial-continue-steps.hero"

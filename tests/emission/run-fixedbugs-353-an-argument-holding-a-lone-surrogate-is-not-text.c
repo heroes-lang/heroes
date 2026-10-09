@@ -7,7 +7,7 @@
 #include <fixedbugs-353-an-argument-holding-a-lone-surrogate-is-not-text.h>
 #include "heroes_guard_close.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -380,12 +380,12 @@ bb9:
 #line 30 "tests/golden/run/fixedbugs-353-an-argument-holding-a-lone-surrogate-is-not-text.hero"
 bb10:
 #line 383 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
-    hero_array_decref(h0_given);
-    h_0opt_f87774a_release(&h1_s0);
-    hero_str_decref(h2_word);
+    hero_array_release_at(&h0_given);
+    h_0opt_f87774a_release(hero_slot_escape(&h1_s0));
+    hero_str_release_at(&h2_word);
     hero_failure_release(&h3_e);
-    hero_array_decref(h4_own4);
-    hero_array_decref(h5_own5);
+    hero_array_release_at(&h4_own4);
+    hero_array_release_at(&h5_own5);
     return;
 }
 
@@ -545,11 +545,11 @@ bb7:
 #line 546 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
     t18 = h3_ret0;
     h_0opt_f87774a_retain(&t18);
-    hero_str_decref(h2_text);
-    hero_str_decref(h4_own4);
-    h_0opt_f87774a_release(&h5_own5);
-    h_0opt_f87774a_release(&h6_own6);
-    h_0opt_f87774a_release(&h7_own7);
+    hero_str_release_at(&h2_text);
+    hero_str_release_at(&h4_own4);
+    h_0opt_f87774a_release(hero_slot_escape(&h5_own5));
+    h_0opt_f87774a_release(hero_slot_escape(&h6_own6));
+    h_0opt_f87774a_release(hero_slot_escape(&h7_own7));
     hero_lend_local_give(hero_lend_h1_status);
     return t18;
 }
@@ -636,9 +636,9 @@ bb3:
     t13 = h0_out;
 #line 638 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
     hero_array_incref(t13);
-    hero_array_decref(h0_out);
-    hero_array_decref(h2_own2);
-    hero_str_decref(h3_own3);
+    hero_array_release_at(&h0_out);
+    hero_array_release_at(&h2_own2);
+    hero_str_release_at(&h3_own3);
     return t13;
 }
 
@@ -726,9 +726,9 @@ bb3:
     t14 = h0_out;
 #line 728 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
     hero_array_incref(t14);
-    hero_array_decref(h0_out);
-    hero_array_decref(h2_own2);
-    h_0opt_f87774a_release(&h3_own3);
+    hero_array_release_at(&h0_out);
+    hero_array_release_at(&h2_own2);
+    h_0opt_f87774a_release(hero_slot_escape(&h3_own3));
     return t14;
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {

@@ -7,7 +7,7 @@
 #include <curl/curl.h>
 #include "heroes_guard_close.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -676,21 +676,21 @@ bb18:
 #line 92 "examples/curl/main.hero"
     }
 #line 679 "main.c"
-    h_0opt_f87774a_release(&h0_f0);
-    hero_str_decref(h1_r0);
-    h_0opt_fbaec77_release(&h4_f1);
-    h_0opt_fbaec77_release(&h6_f2);
-    h_0opt_f87774a_release(&h7_f3);
-    hero_str_decref(h8_r1);
-    h_0opt_fbaec77_release(&h9_f4);
-    h_0opt_f87774a_release(&h10_f5);
-    hero_str_decref(h11_r2);
-    h_0opt_f87774a_release(&h12_own12);
-    h_0opt_fbaec77_release(&h13_own13);
-    h_0opt_fbaec77_release(&h14_own14);
-    h_0opt_fbaec77_release(&h15_own15);
-    h_0opt_f87774a_release(&h16_own16);
-    h_0opt_f87774a_release(&h17_own17);
+    h_0opt_f87774a_release(hero_slot_escape(&h0_f0));
+    hero_str_release_at(&h1_r0);
+    h_0opt_fbaec77_release(hero_slot_escape(&h4_f1));
+    h_0opt_fbaec77_release(hero_slot_escape(&h6_f2));
+    h_0opt_f87774a_release(hero_slot_escape(&h7_f3));
+    hero_str_release_at(&h8_r1);
+    h_0opt_fbaec77_release(hero_slot_escape(&h9_f4));
+    h_0opt_f87774a_release(hero_slot_escape(&h10_f5));
+    hero_str_release_at(&h11_r2);
+    h_0opt_f87774a_release(hero_slot_escape(&h12_own12));
+    h_0opt_fbaec77_release(hero_slot_escape(&h13_own13));
+    h_0opt_fbaec77_release(hero_slot_escape(&h14_own14));
+    h_0opt_fbaec77_release(hero_slot_escape(&h15_own15));
+    h_0opt_f87774a_release(hero_slot_escape(&h16_own16));
+    h_0opt_f87774a_release(hero_slot_escape(&h17_own17));
     return;
 }
 
@@ -850,11 +850,11 @@ bb7:
 #line 851 "main.c"
     t18 = h3_ret0;
     h_0opt_f87774a_retain(&t18);
-    hero_str_decref(h2_text);
-    hero_str_decref(h4_own4);
-    h_0opt_f87774a_release(&h5_own5);
-    h_0opt_f87774a_release(&h6_own6);
-    h_0opt_f87774a_release(&h7_own7);
+    hero_str_release_at(&h2_text);
+    hero_str_release_at(&h4_own4);
+    h_0opt_f87774a_release(hero_slot_escape(&h5_own5));
+    h_0opt_f87774a_release(hero_slot_escape(&h6_own6));
+    h_0opt_f87774a_release(hero_slot_escape(&h7_own7));
     hero_lend_local_give(hero_lend_h1_status);
     return t18;
 }

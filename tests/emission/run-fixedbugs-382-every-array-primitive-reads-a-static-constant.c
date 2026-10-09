@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -208,7 +208,7 @@ bb0:
 #line 209 "fixedbugs382everyarrayprimitivereadsastaticconstant.c"
     hero_array_decref(t10);
     hero_array_incref(t9);
-    hero_array_decref(h0_own0);
+    hero_array_release_at(&h0_own0);
     return t9;
 }
 #endif
@@ -245,7 +245,7 @@ bb0:
 #line 246 "fixedbugs382everyarrayprimitivereadsastaticconstant.c"
     hero_array_decref(t3);
     hero_array_incref(t2);
-    hero_array_decref(h0_own0);
+    hero_array_release_at(&h0_own0);
     return t2;
 }
 #endif
@@ -368,7 +368,7 @@ bb0:
 #line 369 "fixedbugs382everyarrayprimitivereadsastaticconstant.c"
     hero_array_decref(t2);
     hero_array_incref(t1);
-    hero_array_decref(h0_own0);
+    hero_array_release_at(&h0_own0);
     return t1;
 }
 
@@ -1819,69 +1819,69 @@ bb13:
 #line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
     hero_print_end();
 #line 1822 "fixedbugs382everyarrayprimitivereadsastaticconstant.c"
-    hero_array_decref(h1_xs0);
-    h_0opt_e201354_release(&h4_f0);
-    hero_array_decref(h5_xs);
-    hero_array_decref(h6_ys);
-    h_fixedbugs382everyarrayprimitivereadsastaticconstant_Holder_release(&h7_h);
-    hero_array_decref(h8_both);
-    hero_map_decref(h9_seen);
-    hero_map_decref(h10_named);
-    h_0opt_e201354_release(&h11_f1);
-    h_0opt_e201354_release(&h13_f2);
-    h_0opt_2270cbe7_release(&h15_f3);
-    hero_array_decref(h16_own16);
-    hero_array_decref(h17_own17);
-    hero_array_decref(h18_own18);
-    hero_array_decref(h19_own19);
-    hero_array_decref(h20_own20);
-    hero_array_decref(h21_own21);
-    hero_array_decref(h22_own22);
-    hero_array_decref(h23_own23);
-    hero_array_decref(h24_own24);
-    hero_array_decref(h25_own25);
-    hero_array_decref(h26_own26);
-    hero_array_decref(h27_own27);
-    hero_array_decref(h28_own28);
-    hero_array_decref(h29_own29);
-    hero_array_decref(h30_own30);
-    hero_array_decref(h31_own31);
-    hero_array_decref(h32_own32);
-    hero_array_decref(h33_own33);
-    hero_array_decref(h34_own34);
-    hero_array_decref(h35_own35);
-    hero_array_decref(h36_own36);
-    hero_array_decref(h37_own37);
-    hero_array_decref(h38_own38);
-    hero_array_decref(h39_own39);
-    hero_array_decref(h40_own40);
-    hero_array_decref(h41_own41);
-    hero_array_decref(h42_own42);
-    h_0opt_e201354_release(&h43_own43);
-    hero_array_decref(h44_own44);
-    hero_array_decref(h45_own45);
-    hero_array_decref(h46_own46);
-    hero_array_decref(h47_own47);
-    hero_array_decref(h48_own48);
-    hero_array_decref(h49_own49);
-    hero_array_decref(h50_own50);
-    hero_array_decref(h51_own51);
-    h_fixedbugs382everyarrayprimitivereadsastaticconstant_Holder_release(&h52_own52);
-    hero_array_decref(h53_own53);
-    hero_array_decref(h54_own54);
-    hero_array_decref(h55_own55);
-    hero_array_decref(h56_own56);
-    hero_array_decref(h57_own57);
-    hero_map_decref(h58_own58);
-    hero_array_decref(h59_own59);
-    hero_array_decref(h60_own60);
-    hero_map_decref(h61_own61);
-    hero_array_decref(h62_own62);
-    hero_array_decref(h63_own63);
-    h_0opt_e201354_release(&h64_own64);
-    hero_array_decref(h65_own65);
-    h_0opt_e201354_release(&h66_own66);
-    h_0opt_2270cbe7_release(&h67_own67);
+    hero_array_release_at(&h1_xs0);
+    h_0opt_e201354_release(hero_slot_escape(&h4_f0));
+    hero_array_release_at(&h5_xs);
+    hero_array_release_at(&h6_ys);
+    h_fixedbugs382everyarrayprimitivereadsastaticconstant_Holder_release(hero_slot_escape(&h7_h));
+    hero_array_release_at(&h8_both);
+    hero_map_release_at(&h9_seen);
+    hero_map_release_at(&h10_named);
+    h_0opt_e201354_release(hero_slot_escape(&h11_f1));
+    h_0opt_e201354_release(hero_slot_escape(&h13_f2));
+    h_0opt_2270cbe7_release(hero_slot_escape(&h15_f3));
+    hero_array_release_at(&h16_own16);
+    hero_array_release_at(&h17_own17);
+    hero_array_release_at(&h18_own18);
+    hero_array_release_at(&h19_own19);
+    hero_array_release_at(&h20_own20);
+    hero_array_release_at(&h21_own21);
+    hero_array_release_at(&h22_own22);
+    hero_array_release_at(&h23_own23);
+    hero_array_release_at(&h24_own24);
+    hero_array_release_at(&h25_own25);
+    hero_array_release_at(&h26_own26);
+    hero_array_release_at(&h27_own27);
+    hero_array_release_at(&h28_own28);
+    hero_array_release_at(&h29_own29);
+    hero_array_release_at(&h30_own30);
+    hero_array_release_at(&h31_own31);
+    hero_array_release_at(&h32_own32);
+    hero_array_release_at(&h33_own33);
+    hero_array_release_at(&h34_own34);
+    hero_array_release_at(&h35_own35);
+    hero_array_release_at(&h36_own36);
+    hero_array_release_at(&h37_own37);
+    hero_array_release_at(&h38_own38);
+    hero_array_release_at(&h39_own39);
+    hero_array_release_at(&h40_own40);
+    hero_array_release_at(&h41_own41);
+    hero_array_release_at(&h42_own42);
+    h_0opt_e201354_release(hero_slot_escape(&h43_own43));
+    hero_array_release_at(&h44_own44);
+    hero_array_release_at(&h45_own45);
+    hero_array_release_at(&h46_own46);
+    hero_array_release_at(&h47_own47);
+    hero_array_release_at(&h48_own48);
+    hero_array_release_at(&h49_own49);
+    hero_array_release_at(&h50_own50);
+    hero_array_release_at(&h51_own51);
+    h_fixedbugs382everyarrayprimitivereadsastaticconstant_Holder_release(hero_slot_escape(&h52_own52));
+    hero_array_release_at(&h53_own53);
+    hero_array_release_at(&h54_own54);
+    hero_array_release_at(&h55_own55);
+    hero_array_release_at(&h56_own56);
+    hero_array_release_at(&h57_own57);
+    hero_map_release_at(&h58_own58);
+    hero_array_release_at(&h59_own59);
+    hero_array_release_at(&h60_own60);
+    hero_map_release_at(&h61_own61);
+    hero_array_release_at(&h62_own62);
+    hero_array_release_at(&h63_own63);
+    h_0opt_e201354_release(hero_slot_escape(&h64_own64));
+    hero_array_release_at(&h65_own65);
+    h_0opt_e201354_release(hero_slot_escape(&h66_own66));
+    h_0opt_2270cbe7_release(hero_slot_escape(&h67_own67));
     return;
 bb14:
 #line 71 "tests/golden/run/fixedbugs-382-every-array-primitive-reads-a-static-constant.hero"
@@ -2006,9 +2006,9 @@ bb4:
     t19 = h2_out;
 #line 2008 "fixedbugs382everyarrayprimitivereadsastaticconstant.c"
     hero_array_incref(t19);
-    hero_array_decref(h2_out);
-    hero_array_decref(h3_xs0);
-    hero_array_decref(h6_own6);
+    hero_array_release_at(&h2_out);
+    hero_array_release_at(&h3_xs0);
+    hero_array_release_at(&h6_own6);
     return t19;
 }
 
@@ -2124,9 +2124,9 @@ bb4:
     t20 = h2_out;
 #line 2126 "fixedbugs382everyarrayprimitivereadsastaticconstant.c"
     hero_array_incref(t20);
-    hero_array_decref(h2_out);
-    hero_array_decref(h3_xs0);
-    hero_array_decref(h6_own6);
+    hero_array_release_at(&h2_out);
+    hero_array_release_at(&h3_xs0);
+    hero_array_release_at(&h6_own6);
     return t20;
 bb5:
     goto bb3;
@@ -2243,7 +2243,7 @@ bb4:
 #line 62 "<heroes library>"
     t18 = h3_total;
 #line 2246 "fixedbugs382everyarrayprimitivereadsastaticconstant.c"
-    hero_array_decref(h4_xs0);
+    hero_array_release_at(&h4_xs0);
     return t18;
 }
 
@@ -2391,9 +2391,9 @@ bb8:
 #line 2392 "fixedbugs382everyarrayprimitivereadsastaticconstant.c"
     t21 = h5_ret0;
     h_0opt_e201354_retain(&t21);
-    hero_array_decref(h2_xs0);
-    h_0opt_e201354_release(&h6_own6);
-    h_0opt_e201354_release(&h7_own7);
+    hero_array_release_at(&h2_xs0);
+    h_0opt_e201354_release(hero_slot_escape(&h6_own6));
+    h_0opt_e201354_release(hero_slot_escape(&h7_own7));
     return t21;
 }
 
@@ -2512,7 +2512,7 @@ bb7:
 bb8:
 #line 2514 "fixedbugs382everyarrayprimitivereadsastaticconstant.c"
     t18 = h5_ret0;
-    hero_array_decref(h2_xs0);
+    hero_array_release_at(&h2_xs0);
     return t18;
 }
 
@@ -2634,7 +2634,7 @@ bb7:
 bb8:
 #line 2636 "fixedbugs382everyarrayprimitivereadsastaticconstant.c"
     t19 = h5_ret0;
-    hero_array_decref(h2_xs0);
+    hero_array_release_at(&h2_xs0);
     return t19;
 }
 HERO_TU_LOCAL void h_fixedbugs382everyarrayprimitivereadsastaticconstant_Holder_retain(const h_fixedbugs382everyarrayprimitivereadsastaticconstant_Holder *v) {

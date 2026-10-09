@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -202,7 +202,7 @@ bb4:
 #line 21 "tests/golden/ir/adversarial-diverging-arms.hero"
     t17 = h1_seen;
 #line 205 "adversarialdivergingarms.c"
-    hero_array_decref(h2_xs0);
+    hero_array_release_at(&h2_xs0);
     return t17;
 bb6:
     goto bb4;

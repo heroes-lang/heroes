@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -158,7 +158,7 @@ bb1:
     t30 = h2_r0;
 #line 160 "aliteralarmtakesthewidthitmatches.c"
     hero_str_incref(t30);
-    hero_str_decref(h2_r0);
+    hero_str_release_at(&h2_r0);
     return t30;
 bb2:
 #line 13 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
@@ -917,15 +917,15 @@ bb4:
 #line 55 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
     hero_print_end();
 #line 920 "aliteralarmtakesthewidthitmatches.c"
-    hero_str_decref(h0_text);
-    hero_array_decref(h1_classes);
-    hero_array_decref(h2_xs0);
-    hero_array_decref(h5_own5);
-    hero_array_decref(h6_own6);
-    hero_str_decref(h7_own7);
-    hero_str_decref(h8_own8);
-    hero_str_decref(h9_own9);
-    hero_str_decref(h10_own10);
+    hero_str_release_at(&h0_text);
+    hero_array_release_at(&h1_classes);
+    hero_array_release_at(&h2_xs0);
+    hero_array_release_at(&h5_own5);
+    hero_array_release_at(&h6_own6);
+    hero_str_release_at(&h7_own7);
+    hero_str_release_at(&h8_own8);
+    hero_str_release_at(&h9_own9);
+    hero_str_release_at(&h10_own10);
     return;
 }
 
@@ -999,8 +999,8 @@ bb3:
     t12 = h2_out;
 #line 1001 "aliteralarmtakesthewidthitmatches.c"
     hero_array_incref(t12);
-    hero_array_decref(h2_out);
-    hero_array_decref(h4_own4);
+    hero_array_release_at(&h2_out);
+    hero_array_release_at(&h4_own4);
     return t12;
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {

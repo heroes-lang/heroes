@@ -8,7 +8,7 @@
 #include <hero_compiler.h>
 #include "heroes_guard_close.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -396,9 +396,9 @@ bb9:
     hero_unreachable();
 bb10:
     t37 = h7_ret0;
-    hero_array_decref(h3_xs0);
-    h_0opt_e1f4933_release(&h6_f0);
-    h_0opt_e1f4933_release(&h8_own8);
+    hero_array_release_at(&h3_xs0);
+    h_0opt_e1f4933_release(hero_slot_escape(&h6_f0));
+    h_0opt_e1f4933_release(hero_slot_escape(&h8_own8));
     return t37;
 }
 
@@ -610,13 +610,13 @@ bb4:
 #line 611 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
     hero_str_decref(t56);
     hero_str_incref(t49);
-    hero_array_decref(h4_xs0);
-    h_0opt_e201354_release(&h7_f0);
-    hero_array_decref(h9_own9);
-    h_0opt_e201354_release(&h10_own10);
-    hero_str_decref(h11_own11);
-    hero_str_decref(h12_own12);
-    hero_str_decref(h13_own13);
+    hero_array_release_at(&h4_xs0);
+    h_0opt_e201354_release(hero_slot_escape(&h7_f0));
+    hero_array_release_at(&h9_own9);
+    h_0opt_e201354_release(hero_slot_escape(&h10_own10));
+    hero_str_release_at(&h11_own11);
+    hero_str_release_at(&h12_own12);
+    hero_str_release_at(&h13_own13);
     return t49;
 bb5:
 #line 56 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
@@ -868,12 +868,12 @@ bb4:
     t29 = h2_out;
 #line 870 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
     hero_str_incref(t29);
-    hero_str_decref(h1_ds);
-    hero_str_decref(h2_out);
-    hero_array_decref(h4_xs0);
-    hero_array_decref(h7_own7);
-    hero_str_decref(h8_own8);
-    hero_str_decref(h9_own9);
+    hero_str_release_at(&h1_ds);
+    hero_str_release_at(&h2_out);
+    hero_array_release_at(&h4_xs0);
+    hero_array_release_at(&h7_own7);
+    hero_str_release_at(&h8_own8);
+    hero_str_release_at(&h9_own9);
     return t29;
 }
 
@@ -1018,12 +1018,12 @@ bb4:
 #line 1019 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
     t18 = h4_ret0;
     hero_str_incref(t18);
-    hero_str_decref(h3_got);
-    hero_str_decref(h5_own5);
-    hero_str_decref(h6_own6);
-    hero_str_decref(h7_own7);
-    hero_str_decref(h8_own8);
-    hero_str_decref(h9_own9);
+    hero_str_release_at(&h3_got);
+    hero_str_release_at(&h5_own5);
+    hero_str_release_at(&h6_own6);
+    hero_str_release_at(&h7_own7);
+    hero_str_release_at(&h8_own8);
+    hero_str_release_at(&h9_own9);
     hero_lend_local_give(hero_lend_h2_marks);
     hero_lend_local_give(hero_lend_h1_status);
     return t18;
@@ -1191,12 +1191,12 @@ bb3:
 #line 86 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
 bb4:
 #line 1194 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
-    hero_str_decref(h3_key);
-    hero_str_decref(h4_own4);
-    hero_str_decref(h5_own5);
-    hero_str_decref(h6_own6);
-    hero_str_decref(h7_own7);
-    hero_str_decref(h8_own8);
+    hero_str_release_at(&h3_key);
+    hero_str_release_at(&h4_own4);
+    hero_str_release_at(&h5_own5);
+    hero_str_release_at(&h6_own6);
+    hero_str_release_at(&h7_own7);
+    hero_str_release_at(&h8_own8);
     hero_lend_local_give(hero_lend_h2_status);
     return;
 }
@@ -1638,18 +1638,18 @@ bb4:
 #line 110 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     hero_print_end();
 #line 1641 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
-    hero_array_decref(h0_every);
-    hero_array_decref(h1_xs0);
-    hero_str_decref(h5_missing);
-    hero_array_decref(h6_own6);
-    hero_array_decref(h7_own7);
-    hero_array_decref(h8_own8);
-    hero_array_decref(h9_own9);
-    hero_array_decref(h10_own10);
-    hero_array_decref(h11_own11);
-    hero_array_decref(h12_own12);
-    hero_array_decref(h13_own13);
-    hero_str_decref(h14_own14);
+    hero_array_release_at(&h0_every);
+    hero_array_release_at(&h1_xs0);
+    hero_str_release_at(&h5_missing);
+    hero_array_release_at(&h6_own6);
+    hero_array_release_at(&h7_own7);
+    hero_array_release_at(&h8_own8);
+    hero_array_release_at(&h9_own9);
+    hero_array_release_at(&h10_own10);
+    hero_array_release_at(&h11_own11);
+    hero_array_release_at(&h12_own12);
+    hero_array_release_at(&h13_own13);
+    hero_str_release_at(&h14_own14);
     hero_lend_local_give(hero_lend_h4_status);
     return;
 }
@@ -1725,8 +1725,8 @@ bb3:
     t12 = h2_out;
 #line 1727 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
     hero_array_incref(t12);
-    hero_array_decref(h2_out);
-    hero_array_decref(h4_own4);
+    hero_array_release_at(&h2_out);
+    hero_array_release_at(&h4_own4);
     return t12;
 }
 HERO_TU_LOCAL void h_0opt_e1f4933_retain(const h_0opt_e1f4933 *v) {

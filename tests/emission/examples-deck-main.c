@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -572,29 +572,29 @@ bb0:
 #line 118 "examples/deck/main.hero"
     hero_print_end();
 #line 575 "main.c"
-    hero_array_decref(h0_cards);
-    hero_array_decref(h1_numbers);
-    hero_array_decref(h2_own2);
-    hero_array_decref(h3_own3);
-    hero_array_decref(h4_own4);
-    hero_str_decref(h5_own5);
-    hero_array_decref(h6_own6);
-    hero_str_decref(h7_own7);
-    hero_array_decref(h8_own8);
-    hero_str_decref(h9_own9);
-    hero_array_decref(h10_own10);
-    hero_str_decref(h11_own11);
-    hero_array_decref(h12_own12);
-    hero_array_decref(h13_own13);
-    hero_array_decref(h14_own14);
-    hero_str_decref(h15_own15);
-    hero_array_decref(h16_own16);
-    hero_array_decref(h17_own17);
-    hero_array_decref(h18_own18);
-    hero_array_decref(h19_own19);
-    hero_array_decref(h20_own20);
-    hero_array_decref(h21_own21);
-    hero_array_decref(h22_own22);
+    hero_array_release_at(&h0_cards);
+    hero_array_release_at(&h1_numbers);
+    hero_array_release_at(&h2_own2);
+    hero_array_release_at(&h3_own3);
+    hero_array_release_at(&h4_own4);
+    hero_str_release_at(&h5_own5);
+    hero_array_release_at(&h6_own6);
+    hero_str_release_at(&h7_own7);
+    hero_array_release_at(&h8_own8);
+    hero_str_release_at(&h9_own9);
+    hero_array_release_at(&h10_own10);
+    hero_str_release_at(&h11_own11);
+    hero_array_release_at(&h12_own12);
+    hero_array_release_at(&h13_own13);
+    hero_array_release_at(&h14_own14);
+    hero_str_release_at(&h15_own15);
+    hero_array_release_at(&h16_own16);
+    hero_array_release_at(&h17_own17);
+    hero_array_release_at(&h18_own18);
+    hero_array_release_at(&h19_own19);
+    hero_array_release_at(&h20_own20);
+    hero_array_release_at(&h21_own21);
+    hero_array_release_at(&h22_own22);
     return;
 }
 
@@ -688,8 +688,8 @@ bb3:
     t19 = h2_out;
 #line 690 "main.c"
     hero_array_incref(t19);
-    hero_array_decref(h2_out);
-    hero_array_decref(h5_own5);
+    hero_array_release_at(&h2_out);
+    hero_array_release_at(&h5_own5);
     return t19;
 bb4:
 #line 37 "examples/deck/main.hero"
@@ -788,8 +788,8 @@ bb3:
     t18 = h2_out;
 #line 790 "main.c"
     hero_array_incref(t18);
-    hero_array_decref(h2_out);
-    hero_array_decref(h4_own4);
+    hero_array_release_at(&h2_out);
+    hero_array_release_at(&h4_own4);
     return t18;
 bb4:
 #line 50 "examples/deck/main.hero"
@@ -1013,8 +1013,8 @@ bb12:
 #line 1014 "main.c"
     t37 = h6_ret0;
     hero_array_incref(t37);
-    hero_array_decref(h3_out);
-    hero_array_decref(h7_own7);
+    hero_array_release_at(&h3_out);
+    hero_array_release_at(&h7_own7);
     return t37;
 }
 
@@ -1107,8 +1107,8 @@ bb3:
     t17 = h1_out;
 #line 1109 "main.c"
     hero_array_incref(t17);
-    hero_array_decref(h1_out);
-    hero_array_decref(h3_own3);
+    hero_array_release_at(&h1_out);
+    hero_array_release_at(&h3_own3);
     return t17;
 }
 
@@ -1207,8 +1207,8 @@ bb3:
     t33 = h2_out;
 #line 1209 "main.c"
     hero_array_incref(t33);
-    hero_array_decref(h2_out);
-    hero_array_decref(h5_own5);
+    hero_array_release_at(&h2_out);
+    hero_array_release_at(&h5_own5);
     return t33;
 bb4:
 #line 91 "examples/deck/main.hero"
@@ -1378,8 +1378,8 @@ bb3:
     t19 = h2_out;
 #line 1380 "main.c"
     hero_array_incref(t19);
-    hero_array_decref(h2_out);
-    hero_array_decref(h5_own5);
+    hero_array_release_at(&h2_out);
+    hero_array_release_at(&h5_own5);
     return t19;
 bb4:
 #line 37 "examples/deck/main.hero"
@@ -1478,8 +1478,8 @@ bb3:
     t18 = h2_out;
 #line 1480 "main.c"
     hero_array_incref(t18);
-    hero_array_decref(h2_out);
-    hero_array_decref(h4_own4);
+    hero_array_release_at(&h2_out);
+    hero_array_release_at(&h4_own4);
     return t18;
 bb4:
 #line 50 "examples/deck/main.hero"
@@ -1703,8 +1703,8 @@ bb12:
 #line 1704 "main.c"
     t37 = h6_ret0;
     hero_array_incref(t37);
-    hero_array_decref(h3_out);
-    hero_array_decref(h7_own7);
+    hero_array_release_at(&h3_out);
+    hero_array_release_at(&h7_own7);
     return t37;
 }
 
@@ -1797,8 +1797,8 @@ bb3:
     t17 = h1_out;
 #line 1799 "main.c"
     hero_array_incref(t17);
-    hero_array_decref(h1_out);
-    hero_array_decref(h3_own3);
+    hero_array_release_at(&h1_out);
+    hero_array_release_at(&h3_own3);
     return t17;
 }
 
@@ -1897,8 +1897,8 @@ bb3:
     t33 = h2_out;
 #line 1899 "main.c"
     hero_array_incref(t33);
-    hero_array_decref(h2_out);
-    hero_array_decref(h5_own5);
+    hero_array_release_at(&h2_out);
+    hero_array_release_at(&h5_own5);
     return t33;
 bb4:
 #line 91 "examples/deck/main.hero"

@@ -7,7 +7,7 @@
 #include <dead-address-copy-reaching-a-callback-called-by-name.h>
 #include "heroes_guard_close.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -243,8 +243,8 @@ bb0:
 #line 26 "tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero"
     hero_print_end();
 #line 246 "deadaddresscopyreachingacallbackcalledbyname.c"
-    hero_array_decref(h1_keep);
-    hero_array_decref(h2_own2);
+    hero_array_release_at(&h1_keep);
+    hero_array_release_at(&h2_own2);
     return;
 }
 HERO_TU_LOCAL bool h_deadaddresscopyreachingacallbackcalledbyname_Node_eq(node * const *a, node * const *b) {

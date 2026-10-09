@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -396,11 +396,11 @@ bb4:
 #line 31 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
     t28 = h1_sum;
 #line 399 "fixedbugs415amapliteraltakesthetypesitscontextasksfor.c"
-    hero_array_decref(h2_xs0);
-    hero_str_decref(h4_k);
-    h_0opt_1ec004_release(&h5_f0);
-    hero_array_decref(h6_own6);
-    h_0opt_1ec004_release(&h7_own7);
+    hero_array_release_at(&h2_xs0);
+    hero_str_release_at(&h4_k);
+    h_0opt_1ec004_release(hero_slot_escape(&h5_f0));
+    hero_array_release_at(&h6_own6);
+    h_0opt_1ec004_release(hero_slot_escape(&h7_own7));
     return t28;
 bb5:
 #line 29 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
@@ -449,7 +449,7 @@ bb0:
 #line 450 "fixedbugs415amapliteraltakesthetypesitscontextasksfor.c"
     hero_map_decref(t4);
     hero_map_incref(t3);
-    hero_map_decref(h0_own0);
+    hero_map_release_at(&h0_own0);
     return t3;
 }
 
@@ -490,8 +490,8 @@ bb0:
 #line 491 "fixedbugs415amapliteraltakesthetypesitscontextasksfor.c"
     h_0opt_74e50e7b_release(&t6);
     h_0opt_74e50e7b_retain(&t4);
-    hero_map_decref(h0_own0);
-    h_0opt_74e50e7b_release(&h1_own1);
+    hero_map_release_at(&h0_own0);
+    h_0opt_74e50e7b_release(hero_slot_escape(&h1_own1));
     return t4;
 }
 
@@ -1962,58 +1962,58 @@ bb28:
 #line 69 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"
     hero_print_end();
 #line 1965 "fixedbugs415amapliteraltakesthetypesitscontextasksfor.c"
-    hero_map_decref(h0_m);
-    h_0opt_1ec004_release(&h1_f0);
-    hero_map_decref(h2_cell);
-    h_0opt_1ec004_release(&h3_f1);
-    h_fixedbugs415amapliteraltakesthetypesitscontextasksfor_Holder_release(&h4_h);
-    h_0opt_1ec004_release(&h5_f2);
-    h_0opt_1ec004_release(&h6_f3);
-    h_0opt_74e50e7b_release(&h7_f4);
-    h_0opt_1ec004_release(&h8_f5);
-    hero_map_decref(h9_nested);
-    h_0opt_4d1c207c_release(&h10_f6);
-    h_0opt_4d1c207c_release(&h11_f7);
-    hero_map_decref(h12_names);
-    h_0opt_f87774a_release(&h14_f8);
-    hero_map_decref(h15_ops);
-    h_0opt_78ca30ae_release(&h16_f9);
-    hero_map_decref(h18_halves);
-    h_0opt_db86062_release(&h19_f10);
-    hero_map_decref(h20_calls);
-    h_0opt_30514ebf_release(&h21_f11);
-    hero_map_decref(h22_none);
-    hero_map_decref(h23_plain);
-    h_0opt_e201354_release(&h24_f12);
-    hero_map_decref(h25_own25);
-    h_0opt_1ec004_release(&h26_own26);
-    hero_map_decref(h27_own27);
-    hero_map_decref(h28_own28);
-    h_0opt_1ec004_release(&h29_own29);
-    hero_map_decref(h30_own30);
-    hero_map_decref(h31_own31);
-    h_fixedbugs415amapliteraltakesthetypesitscontextasksfor_Holder_release(&h32_own32);
-    h_0opt_1ec004_release(&h33_own33);
-    hero_map_decref(h34_own34);
-    h_0opt_1ec004_release(&h35_own35);
-    h_0opt_74e50e7b_release(&h36_own36);
-    h_0opt_1ec004_release(&h37_own37);
-    hero_array_decref(h38_own38);
-    hero_array_decref(h39_own39);
-    hero_map_decref(h40_own40);
-    h_0opt_4d1c207c_release(&h41_own41);
-    h_0opt_4d1c207c_release(&h42_own42);
-    hero_map_decref(h43_own43);
-    h_0opt_f87774a_release(&h44_own44);
-    hero_map_decref(h45_own45);
-    h_0opt_78ca30ae_release(&h46_own46);
-    hero_map_decref(h47_own47);
-    h_0opt_db86062_release(&h48_own48);
-    hero_map_decref(h49_own49);
-    h_0opt_30514ebf_release(&h50_own50);
-    hero_map_decref(h51_own51);
-    hero_map_decref(h52_own52);
-    h_0opt_e201354_release(&h53_own53);
+    hero_map_release_at(&h0_m);
+    h_0opt_1ec004_release(hero_slot_escape(&h1_f0));
+    hero_map_release_at(&h2_cell);
+    h_0opt_1ec004_release(hero_slot_escape(&h3_f1));
+    h_fixedbugs415amapliteraltakesthetypesitscontextasksfor_Holder_release(hero_slot_escape(&h4_h));
+    h_0opt_1ec004_release(hero_slot_escape(&h5_f2));
+    h_0opt_1ec004_release(hero_slot_escape(&h6_f3));
+    h_0opt_74e50e7b_release(hero_slot_escape(&h7_f4));
+    h_0opt_1ec004_release(hero_slot_escape(&h8_f5));
+    hero_map_release_at(&h9_nested);
+    h_0opt_4d1c207c_release(hero_slot_escape(&h10_f6));
+    h_0opt_4d1c207c_release(hero_slot_escape(&h11_f7));
+    hero_map_release_at(&h12_names);
+    h_0opt_f87774a_release(hero_slot_escape(&h14_f8));
+    hero_map_release_at(&h15_ops);
+    h_0opt_78ca30ae_release(hero_slot_escape(&h16_f9));
+    hero_map_release_at(&h18_halves);
+    h_0opt_db86062_release(hero_slot_escape(&h19_f10));
+    hero_map_release_at(&h20_calls);
+    h_0opt_30514ebf_release(hero_slot_escape(&h21_f11));
+    hero_map_release_at(&h22_none);
+    hero_map_release_at(&h23_plain);
+    h_0opt_e201354_release(hero_slot_escape(&h24_f12));
+    hero_map_release_at(&h25_own25);
+    h_0opt_1ec004_release(hero_slot_escape(&h26_own26));
+    hero_map_release_at(&h27_own27);
+    hero_map_release_at(&h28_own28);
+    h_0opt_1ec004_release(hero_slot_escape(&h29_own29));
+    hero_map_release_at(&h30_own30);
+    hero_map_release_at(&h31_own31);
+    h_fixedbugs415amapliteraltakesthetypesitscontextasksfor_Holder_release(hero_slot_escape(&h32_own32));
+    h_0opt_1ec004_release(hero_slot_escape(&h33_own33));
+    hero_map_release_at(&h34_own34);
+    h_0opt_1ec004_release(hero_slot_escape(&h35_own35));
+    h_0opt_74e50e7b_release(hero_slot_escape(&h36_own36));
+    h_0opt_1ec004_release(hero_slot_escape(&h37_own37));
+    hero_array_release_at(&h38_own38);
+    hero_array_release_at(&h39_own39);
+    hero_map_release_at(&h40_own40);
+    h_0opt_4d1c207c_release(hero_slot_escape(&h41_own41));
+    h_0opt_4d1c207c_release(hero_slot_escape(&h42_own42));
+    hero_map_release_at(&h43_own43);
+    h_0opt_f87774a_release(hero_slot_escape(&h44_own44));
+    hero_map_release_at(&h45_own45);
+    h_0opt_78ca30ae_release(hero_slot_escape(&h46_own46));
+    hero_map_release_at(&h47_own47);
+    h_0opt_db86062_release(hero_slot_escape(&h48_own48));
+    hero_map_release_at(&h49_own49);
+    h_0opt_30514ebf_release(hero_slot_escape(&h50_own50));
+    hero_map_release_at(&h51_own51);
+    hero_map_release_at(&h52_own52);
+    h_0opt_e201354_release(hero_slot_escape(&h53_own53));
     return;
 bb29:
 #line 69 "tests/golden/run/fixedbugs-415-a-map-literal-takes-the-types-its-context-asks-for.hero"

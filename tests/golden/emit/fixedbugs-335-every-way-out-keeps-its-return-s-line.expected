@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -239,8 +239,8 @@ bb7:
 #line 240 "fixedbugs335everywayoutkeepsitsreturnsline.c"
     t19 = h3_ret0;
     hero_str_incref(t19);
-    hero_str_decref(h2_found);
-    hero_str_decref(h4_own4);
+    hero_str_release_at(&h2_found);
+    hero_str_release_at(&h4_own4);
     return t19;
 }
 
@@ -337,8 +337,8 @@ bb4:
 #line 338 "fixedbugs335everywayoutkeepsitsreturnsline.c"
     t13 = h1_ret0;
     h_0opt_e201354_retain(&t13);
-    h_0opt_e201354_release(&h2_own2);
-    h_0opt_e201354_release(&h3_own3);
+    h_0opt_e201354_release(hero_slot_escape(&h2_own2));
+    h_0opt_e201354_release(hero_slot_escape(&h3_own3));
     return t13;
 }
 
@@ -458,10 +458,10 @@ bb3:
 #line 459 "fixedbugs335everywayoutkeepsitsreturnsline.c"
     t18 = h4_ret0;
     h_0opt_e201354_retain(&t18);
-    h_0opt_e201354_release(&h2_f0);
-    h_0opt_e201354_release(&h5_own5);
-    h_0opt_e201354_release(&h6_own6);
-    h_0opt_e201354_release(&h7_own7);
+    h_0opt_e201354_release(hero_slot_escape(&h2_f0));
+    h_0opt_e201354_release(hero_slot_escape(&h5_own5));
+    h_0opt_e201354_release(hero_slot_escape(&h6_own6));
+    h_0opt_e201354_release(hero_slot_escape(&h7_own7));
     return t18;
 }
 
@@ -540,8 +540,8 @@ bb3:
 #line 42 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
 bb4:
 #line 543 "fixedbugs335everywayoutkeepsitsreturnsline.c"
-    hero_str_decref(h2_shout);
-    hero_str_decref(h3_own3);
+    hero_str_release_at(&h2_shout);
+    hero_str_release_at(&h3_own3);
     return;
 }
 
@@ -595,8 +595,8 @@ bb0:
 #line 46 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
     (*ph0_t).f_n = t8;
 #line 598 "fixedbugs335everywayoutkeepsitsreturnsline.c"
-    hero_str_decref(h2_shout);
-    hero_str_decref(h3_own3);
+    hero_str_release_at(&h2_shout);
+    hero_str_release_at(&h3_own3);
     return;
 }
 
@@ -636,7 +636,7 @@ bb0:
 #line 637 "fixedbugs335everywayoutkeepsitsreturnsline.c"
     hero_str_decref(t8);
     hero_str_incref(t7);
-    hero_str_decref(h2_own2);
+    hero_str_release_at(&h2_own2);
     return t7;
 }
 
@@ -876,14 +876,14 @@ bb6:
 #line 59 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
     hero_print_end();
 #line 879 "fixedbugs335everywayoutkeepsitsreturnsline.c"
-    h_0opt_e201354_release(&h1_f0);
-    h_0opt_e201354_release(&h3_f1);
-    hero_str_decref(h5_own5);
-    hero_str_decref(h6_own6);
-    hero_str_decref(h7_own7);
-    h_0opt_e201354_release(&h8_own8);
-    h_0opt_e201354_release(&h9_own9);
-    hero_str_decref(h10_own10);
+    h_0opt_e201354_release(hero_slot_escape(&h1_f0));
+    h_0opt_e201354_release(hero_slot_escape(&h3_f1));
+    hero_str_release_at(&h5_own5);
+    hero_str_release_at(&h6_own6);
+    hero_str_release_at(&h7_own7);
+    h_0opt_e201354_release(hero_slot_escape(&h8_own8));
+    h_0opt_e201354_release(hero_slot_escape(&h9_own9));
+    hero_str_release_at(&h10_own10);
     return;
 }
 HERO_TU_LOCAL bool h_fixedbugs335everywayoutkeepsitsreturnsline_Tally_eq(const h_fixedbugs335everywayoutkeepsitsreturnsline_Tally *a, const h_fixedbugs335everywayoutkeepsitsreturnsline_Tally *b) {

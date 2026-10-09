@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -170,7 +170,7 @@ bb0:
 #line 171 "fixedbugs417everyfunctionvalueisnamedbeforeciswritten.c"
     hero_array_decref(t4);
     hero_array_incref(t3);
-    hero_array_decref(h0_own0);
+    hero_array_release_at(&h0_own0);
     return t3;
 }
 
@@ -553,16 +553,16 @@ bb1:
 #line 69 "tests/golden/run/fixedbugs-417-every-function-value-is-named-before-c-is-written.hero"
     hero_print_end();
 #line 556 "fixedbugs417everyfunctionvalueisnamedbeforeciswritten.c"
-    hero_map_decref(h5_m);
-    h_0opt_30514ebf_release(&h6_f0);
-    hero_str_decref(h8_own8);
-    hero_str_decref(h9_own9);
-    hero_str_decref(h10_own10);
-    hero_str_decref(h11_own11);
-    hero_map_decref(h12_own12);
-    h_0opt_30514ebf_release(&h13_own13);
-    hero_array_decref(h14_own14);
-    hero_array_decref(h15_own15);
+    hero_map_release_at(&h5_m);
+    h_0opt_30514ebf_release(hero_slot_escape(&h6_f0));
+    hero_str_release_at(&h8_own8);
+    hero_str_release_at(&h9_own9);
+    hero_str_release_at(&h10_own10);
+    hero_str_release_at(&h11_own11);
+    hero_map_release_at(&h12_own12);
+    h_0opt_30514ebf_release(hero_slot_escape(&h13_own13));
+    hero_array_release_at(&h14_own14);
+    hero_array_release_at(&h15_own15);
     return;
 bb2:
 #line 66 "tests/golden/run/fixedbugs-417-every-function-value-is-named-before-c-is-written.hero"
@@ -658,7 +658,7 @@ bb0:
 #line 659 "fixedbugs417everyfunctionvalueisnamedbeforeciswritten.c"
     hero_str_decref(t5);
     hero_str_incref(t4);
-    hero_str_decref(h2_own2);
+    hero_str_release_at(&h2_own2);
     return t4;
 }
 
@@ -818,7 +818,7 @@ bb4:
 #line 819 "fixedbugs417everyfunctionvalueisnamedbeforeciswritten.c"
     t12 = h3_ret0;
     hero_str_incref(t12);
-    hero_str_decref(h4_own4);
+    hero_str_release_at(&h4_own4);
     return t12;
 }
 

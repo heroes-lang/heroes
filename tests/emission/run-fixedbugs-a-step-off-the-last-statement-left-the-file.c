@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -154,8 +154,8 @@ bb0:
     t4 = h1_loud;
 #line 156 "fixedbugsastepoffthelaststatementleftthefile.c"
     hero_str_incref(t4);
-    hero_str_decref(h1_loud);
-    hero_str_decref(h2_own2);
+    hero_str_release_at(&h1_loud);
+    hero_str_release_at(&h2_own2);
     return t4;
 }
 
@@ -259,9 +259,9 @@ bb0:
 #line 38 "tests/golden/run/fixedbugs-a-step-off-the-last-statement-left-the-file.hero"
     hero_print_end();
 #line 262 "fixedbugsastepoffthelaststatementleftthefile.c"
-    hero_array_decref(h0_xs);
-    hero_array_decref(h1_own1);
-    hero_str_decref(h2_own2);
+    hero_array_release_at(&h0_xs);
+    hero_array_release_at(&h1_own1);
+    hero_str_release_at(&h2_own2);
     return;
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {

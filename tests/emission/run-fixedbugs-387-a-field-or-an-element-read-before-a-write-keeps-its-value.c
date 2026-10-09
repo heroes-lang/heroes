@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -212,8 +212,8 @@ bb4:
 #line 213 "fixedbugs387afieldoranelementreadbeforeawritekeepsitsvalue.c"
     t13 = h1_ret0;
     h_0opt_e201354_retain(&t13);
-    h_0opt_e201354_release(&h2_own2);
-    h_0opt_e201354_release(&h3_own3);
+    h_0opt_e201354_release(hero_slot_escape(&h2_own2));
+    h_0opt_e201354_release(hero_slot_escape(&h3_own3));
     return t13;
 }
 
@@ -303,7 +303,7 @@ bb0:
 #line 29 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
     t5 = hero_str_len(t4);
 #line 306 "fixedbugs387afieldoranelementreadbeforeawritekeepsitsvalue.c"
-    hero_str_decref(h1_own1);
+    hero_str_release_at(&h1_own1);
     return t5;
 }
 
@@ -341,8 +341,8 @@ bb0:
 #line 342 "fixedbugs387afieldoranelementreadbeforeawritekeepsitsvalue.c"
     hero_str_decref(t6);
     hero_str_incref(t4);
-    hero_str_decref(h2_own2);
-    hero_str_decref(h3_own3);
+    hero_str_release_at(&h2_own2);
+    hero_str_release_at(&h3_own3);
     return t4;
 }
 
@@ -933,35 +933,35 @@ bb5:
 #line 52 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"
     hero_print_end();
 #line 936 "fixedbugs387afieldoranelementreadbeforeawritekeepsitsvalue.c"
-    h_fixedbugs387afieldoranelementreadbeforeawritekeepsitsvalue_Bag_release(&h0_b);
-    hero_array_decref(h1_held);
-    h_0opt_e201354_release(&h2_f0);
-    h_fixedbugs387afieldoranelementreadbeforeawritekeepsitsvalue_Bag_release(&h3_c);
-    h_0opt_e201354_release(&h4_f1);
-    hero_array_decref(h5_g);
-    hero_array_decref(h6_row);
-    h_0opt_e201354_release(&h7_f2);
-    hero_array_decref(h8_own8);
-    h_fixedbugs387afieldoranelementreadbeforeawritekeepsitsvalue_Bag_release(&h9_own9);
-    hero_array_decref(h10_own10);
-    hero_array_decref(h11_own11);
-    h_fixedbugs387afieldoranelementreadbeforeawritekeepsitsvalue_Bag_release(&h12_own12);
-    h_fixedbugs387afieldoranelementreadbeforeawritekeepsitsvalue_Bag_release(&h13_own13);
-    h_0opt_e201354_release(&h14_own14);
-    hero_array_decref(h15_own15);
-    h_fixedbugs387afieldoranelementreadbeforeawritekeepsitsvalue_Bag_release(&h16_own16);
-    hero_str_decref(h17_own17);
-    h_fixedbugs387afieldoranelementreadbeforeawritekeepsitsvalue_Bag_release(&h18_own18);
-    hero_str_decref(h19_own19);
-    h_fixedbugs387afieldoranelementreadbeforeawritekeepsitsvalue_Bag_release(&h20_own20);
-    h_0opt_e201354_release(&h21_own21);
-    hero_str_decref(h22_own22);
-    hero_array_decref(h23_own23);
-    hero_array_decref(h24_own24);
-    hero_array_decref(h25_own25);
-    hero_array_decref(h26_own26);
-    hero_array_decref(h27_own27);
-    h_0opt_e201354_release(&h28_own28);
+    h_fixedbugs387afieldoranelementreadbeforeawritekeepsitsvalue_Bag_release(hero_slot_escape(&h0_b));
+    hero_array_release_at(&h1_held);
+    h_0opt_e201354_release(hero_slot_escape(&h2_f0));
+    h_fixedbugs387afieldoranelementreadbeforeawritekeepsitsvalue_Bag_release(hero_slot_escape(&h3_c));
+    h_0opt_e201354_release(hero_slot_escape(&h4_f1));
+    hero_array_release_at(&h5_g);
+    hero_array_release_at(&h6_row);
+    h_0opt_e201354_release(hero_slot_escape(&h7_f2));
+    hero_array_release_at(&h8_own8);
+    h_fixedbugs387afieldoranelementreadbeforeawritekeepsitsvalue_Bag_release(hero_slot_escape(&h9_own9));
+    hero_array_release_at(&h10_own10);
+    hero_array_release_at(&h11_own11);
+    h_fixedbugs387afieldoranelementreadbeforeawritekeepsitsvalue_Bag_release(hero_slot_escape(&h12_own12));
+    h_fixedbugs387afieldoranelementreadbeforeawritekeepsitsvalue_Bag_release(hero_slot_escape(&h13_own13));
+    h_0opt_e201354_release(hero_slot_escape(&h14_own14));
+    hero_array_release_at(&h15_own15);
+    h_fixedbugs387afieldoranelementreadbeforeawritekeepsitsvalue_Bag_release(hero_slot_escape(&h16_own16));
+    hero_str_release_at(&h17_own17);
+    h_fixedbugs387afieldoranelementreadbeforeawritekeepsitsvalue_Bag_release(hero_slot_escape(&h18_own18));
+    hero_str_release_at(&h19_own19);
+    h_fixedbugs387afieldoranelementreadbeforeawritekeepsitsvalue_Bag_release(hero_slot_escape(&h20_own20));
+    h_0opt_e201354_release(hero_slot_escape(&h21_own21));
+    hero_str_release_at(&h22_own22);
+    hero_array_release_at(&h23_own23);
+    hero_array_release_at(&h24_own24);
+    hero_array_release_at(&h25_own25);
+    hero_array_release_at(&h26_own26);
+    hero_array_release_at(&h27_own27);
+    h_0opt_e201354_release(hero_slot_escape(&h28_own28));
     return;
 bb6:
 #line 52 "tests/golden/run/fixedbugs-387-a-field-or-an-element-read-before-a-write-keeps-its-value.hero"

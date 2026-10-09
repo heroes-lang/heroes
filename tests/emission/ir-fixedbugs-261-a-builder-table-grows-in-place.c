@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -427,13 +427,13 @@ bb0:
 #line 51 "tests/golden/ir/fixedbugs-261-a-builder-table-grows-in-place.hero"
     hero_array_set(&((*((void)(((*ph0_g).f_rows == NULL || t17 < 0 || t17 >= (*ph0_g).f_rows->len) ? ((void)hero_array_at_mut((*ph0_g).f_rows, t17), hero_unreachable()) : (void)0), (void)((*ph0_g).f_rows->elem->size != sizeof(h_fixedbugs261abuildertablegrowsinplace_Row) ? hero_unreachable() : (void)0), (h_fixedbugs261abuildertablegrowsinplace_Row *)(void *)((*ph0_g).f_rows + 1) + t17)).f_cells), t18, &t20);
 #line 430 "fixedbugs261abuildertablegrowsinplace.c"
-    hero_str_decref(h5_s0);
-    hero_str_decref(h6_s1);
-    hero_str_decref(h7_s2);
-    hero_str_decref(h8_own8);
-    hero_str_decref(h9_own9);
-    hero_str_decref(h10_own10);
-    hero_str_decref(h11_own11);
+    hero_str_release_at(&h5_s0);
+    hero_str_release_at(&h6_s1);
+    hero_str_release_at(&h7_s2);
+    hero_str_release_at(&h8_own8);
+    hero_str_release_at(&h9_own9);
+    hero_str_release_at(&h10_own10);
+    hero_str_release_at(&h11_own11);
     return;
 }
 
@@ -617,14 +617,14 @@ bb0:
 #line 59 "tests/golden/ir/fixedbugs-261-a-builder-table-grows-in-place.hero"
     hero_print_end();
 #line 620 "fixedbugs261abuildertablegrowsinplace.c"
-    h_fixedbugs261abuildertablegrowsinplace_Grid_release(&h0_g);
-    hero_str_decref(h1_x);
-    hero_str_decref(h2_y);
-    hero_str_decref(h3_z);
-    hero_array_decref(h4_own4);
-    h_fixedbugs261abuildertablegrowsinplace_Row_release(&h5_own5);
-    hero_array_decref(h6_own6);
-    h_fixedbugs261abuildertablegrowsinplace_Grid_release(&h7_own7);
+    h_fixedbugs261abuildertablegrowsinplace_Grid_release(hero_slot_escape(&h0_g));
+    hero_str_release_at(&h1_x);
+    hero_str_release_at(&h2_y);
+    hero_str_release_at(&h3_z);
+    hero_array_release_at(&h4_own4);
+    h_fixedbugs261abuildertablegrowsinplace_Row_release(hero_slot_escape(&h5_own5));
+    hero_array_release_at(&h6_own6);
+    h_fixedbugs261abuildertablegrowsinplace_Grid_release(hero_slot_escape(&h7_own7));
     return;
 }
 HERO_TU_LOCAL void h_fixedbugs261abuildertablegrowsinplace_Row_retain(const h_fixedbugs261abuildertablegrowsinplace_Row *v) {

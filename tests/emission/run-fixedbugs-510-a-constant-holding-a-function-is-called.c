@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -139,7 +139,7 @@ bb0:
 #line 140 "fixedbugs510aconstantholdingafunctioniscalled.c"
     hero_str_decref(t4);
     hero_str_incref(t3);
-    hero_str_decref(h2_own2);
+    hero_str_release_at(&h2_own2);
     return t3;
 }
 
@@ -242,7 +242,7 @@ bb0:
 #line 28 "tests/golden/run/fixedbugs-510-a-constant-holding-a-function-is-called.hero"
     hero_print_end();
 #line 245 "fixedbugs510aconstantholdingafunctioniscalled.c"
-    hero_str_decref(h0_own0);
+    hero_str_release_at(&h0_own0);
     return;
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {

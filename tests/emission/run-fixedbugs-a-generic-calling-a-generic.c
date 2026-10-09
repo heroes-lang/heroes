@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -297,12 +297,12 @@ bb0:
 #line 56 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     hero_print_end();
 #line 300 "fixedbugsagenericcallingageneric.c"
-    hero_array_decref(h1_own1);
-    hero_array_decref(h2_own2);
-    hero_str_decref(h3_own3);
-    hero_array_decref(h4_own4);
-    hero_array_decref(h5_own5);
-    hero_array_decref(h6_own6);
+    hero_array_release_at(&h1_own1);
+    hero_array_release_at(&h2_own2);
+    hero_str_release_at(&h3_own3);
+    hero_array_release_at(&h4_own4);
+    hero_array_release_at(&h5_own5);
+    hero_array_release_at(&h6_own6);
     return;
 }
 
@@ -346,7 +346,7 @@ bb0:
 #line 347 "fixedbugsagenericcallingageneric.c"
     hero_str_decref(t3);
     hero_str_incref(t2);
-    hero_str_decref(h1_own1);
+    hero_str_release_at(&h1_own1);
     return t2;
 }
 
@@ -407,7 +407,7 @@ bb0:
 #line 46 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     if (__builtin_add_overflow(t2, t6, &t7)) hero_panic_overflow();
 #line 410 "fixedbugsagenericcallingageneric.c"
-    hero_array_decref(h1_own1);
+    hero_array_release_at(&h1_own1);
     return t7;
 }
 
@@ -458,8 +458,8 @@ bb0:
 #line 46 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
     if (__builtin_add_overflow(t2, t6, &t7)) hero_panic_overflow();
 #line 461 "fixedbugsagenericcallingageneric.c"
-    hero_str_decref(h1_own1);
-    hero_array_decref(h2_own2);
+    hero_str_release_at(&h1_own1);
+    hero_array_release_at(&h2_own2);
     return t7;
 }
 
@@ -503,7 +503,7 @@ bb0:
 #line 504 "fixedbugsagenericcallingageneric.c"
     hero_str_decref(t3);
     hero_str_incref(t2);
-    hero_str_decref(h1_own1);
+    hero_str_release_at(&h1_own1);
     return t2;
 }
 

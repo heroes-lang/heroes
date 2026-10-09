@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -201,8 +201,8 @@ bb4:
 #line 202 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
     t13 = h1_ret0;
     h_0opt_e201354_retain(&t13);
-    h_0opt_e201354_release(&h2_own2);
-    h_0opt_e201354_release(&h3_own3);
+    h_0opt_e201354_release(hero_slot_escape(&h2_own2));
+    h_0opt_e201354_release(hero_slot_escape(&h3_own3));
     return t13;
 }
 
@@ -270,7 +270,7 @@ bb0:
 #line 20 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
     t5 = INT64_C(0);
 #line 273 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
-    hero_array_decref(h1_own1);
+    hero_array_release_at(&h1_own1);
     return t5;
 }
 
@@ -873,28 +873,28 @@ bb10:
 #line 45 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
     hero_print_end();
 #line 876 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
-    hero_array_decref(h0_a);
-    h_0opt_e201354_release(&h1_f0);
-    hero_array_decref(h2_b);
-    h_0opt_e201354_release(&h3_f1);
-    hero_array_decref(h4_c);
-    h_0opt_e201354_release(&h5_f2);
-    hero_array_decref(h6_d);
-    hero_array_decref(h8_xs0);
-    h_0opt_e201354_release(&h11_f3);
-    hero_array_decref(h12_own12);
-    hero_array_decref(h13_own13);
-    h_0opt_e201354_release(&h14_own14);
-    hero_array_decref(h15_own15);
-    hero_array_decref(h16_own16);
-    h_0opt_e201354_release(&h17_own17);
-    hero_array_decref(h18_own18);
-    hero_array_decref(h19_own19);
-    h_0opt_e201354_release(&h20_own20);
-    hero_array_decref(h21_own21);
-    hero_array_decref(h22_own22);
-    hero_array_decref(h23_own23);
-    h_0opt_e201354_release(&h24_own24);
+    hero_array_release_at(&h0_a);
+    h_0opt_e201354_release(hero_slot_escape(&h1_f0));
+    hero_array_release_at(&h2_b);
+    h_0opt_e201354_release(hero_slot_escape(&h3_f1));
+    hero_array_release_at(&h4_c);
+    h_0opt_e201354_release(hero_slot_escape(&h5_f2));
+    hero_array_release_at(&h6_d);
+    hero_array_release_at(&h8_xs0);
+    h_0opt_e201354_release(hero_slot_escape(&h11_f3));
+    hero_array_release_at(&h12_own12);
+    hero_array_release_at(&h13_own13);
+    h_0opt_e201354_release(hero_slot_escape(&h14_own14));
+    hero_array_release_at(&h15_own15);
+    hero_array_release_at(&h16_own16);
+    h_0opt_e201354_release(hero_slot_escape(&h17_own17));
+    hero_array_release_at(&h18_own18);
+    hero_array_release_at(&h19_own19);
+    h_0opt_e201354_release(hero_slot_escape(&h20_own20));
+    hero_array_release_at(&h21_own21);
+    hero_array_release_at(&h22_own22);
+    hero_array_release_at(&h23_own23);
+    h_0opt_e201354_release(hero_slot_escape(&h24_own24));
     return;
 bb11:
 #line 43 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
@@ -994,8 +994,8 @@ bb3:
     t12 = h2_out;
 #line 996 "fixedbugs387awritebyastoreanestedcallorinaloopaftertheread.c"
     hero_array_incref(t12);
-    hero_array_decref(h2_out);
-    hero_array_decref(h4_own4);
+    hero_array_release_at(&h2_out);
+    hero_array_release_at(&h4_own4);
     return t12;
 }
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
