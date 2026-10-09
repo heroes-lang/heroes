@@ -38,7 +38,7 @@ use brace_layout
 function ends_at(@l: state.LexState, text: str, spaces: i64) -> bool
     margin = l.level * 4
     word = next_line.ends_a_reach(text, at: l.pos, spaces: spaces, margin: margin)
-    header = !word && below_a_header(l, text)
+    header = !word && below_a_header(@l, text)
 
     if !word && !header && !a_name_after_a_kept_end(l, text, spaces: spaces, margin: margin)
         return false
@@ -76,15 +76,15 @@ function a_name_after_a_kept_end(l: state.LexState, text: str, spaces: i64, marg
 # it did not open is no clause of the header: the body below it, or the next
 # statement, which the `)` left out took in (defect 302). A line that holds
 # one is the header split over lines, as C allows, its `)` below.
-function below_a_header(l: state.LexState, text: str) -> bool
-    return a_header_open(l, text) && !a_clause(text, at: l.pos)
+function below_a_header(@l: state.LexState, text: str) -> bool
+    return a_header_open(@l, text) && !a_clause(text, at: l.pos)
 
 # The same `(` at a `{` at `at` that ends its line, the body's brace C's
 # header opens, `for (i = 0; i < 3; i++ {`: its reach ends there, named, so
 # the brace is read as a body's (`brace_layout.hero`) and the `(` withdrawn
 # where the parser tells the header (`parse/unclosed.withdrawn`).
 function ended_by_a_brace(@l: state.LexState, text: str, at: i64) -> bool
-    if !a_header_open(l, text) || !brace_layout.ends_its_line(text, from: at + 1)
+    if !a_header_open(@l, text) || !brace_layout.ends_its_line(text, from: at + 1)
         return false
     end_the_reach(@l, text, name: false, header: true)
     state.push_offset(@l.closes, at: at)
@@ -93,8 +93,8 @@ function ended_by_a_brace(@l: state.LexState, text: str, at: i64) -> bool
 # Whether a bracket open is the `(` of C's `for` header (`loop_headers.for_header`)
 # holding a `;` the lexer left to the parser, in it or in a bracket it holds,
 # a call or a list left open there (defect 366).
-function a_header_open(l: state.LexState, text: str) -> bool
-    k = loop_headers.for_header(l, text)
+function a_header_open(@l: state.LexState, text: str) -> bool
+    k = loop_headers.for_header(@l, text)
 
     if k < 0
         return false
