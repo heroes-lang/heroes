@@ -11,6 +11,23 @@ use source
 use diag
 use check/flow
 
+# What a read of `path` is told where a place it reaches has ended on every
+# path here: the value read again, or handed to C whole with a dead part
+# inside (`crossing`). Nothing where no path reaches the read.
+function refusal(f: flow.Flow, s: source.Source, read: token.Span, path: [str], crossing: bool) -> diag.Diagnostic?
+    if !f.live
+        return fail(code: "none", msg: "unreachable")
+
+    found = if crossing
+        flow.dead_crossing(f, path: path)
+    else
+        flow.dead_read(f, path: path)
+
+    if found.is_err()
+        return fail(code: "none", msg: "alive")
+    whole = found.must().path.len() > path.len()
+    return ok(used_after_end(s, read: read, shown: source.span_text(s, read), ended: found.must(), whole: whole))
+
 function used_after_end(s: source.Source, read: token.Span, shown: str, ended: flow.Dead, whole: bool) -> diag.Diagnostic
     where = where_it_ended(s, read: read, ended: ended)
 

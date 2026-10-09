@@ -1,0 +1,6 @@
+tests/golden/check/fixedbugs-511-handles-ended-then-three-hundred-ifs-meet-what-changed.hero:1524:16: error[handle_used_after_end]: `a0` was given to `f_close` at line 23, which ended its life, and this reads it again
+tests/golden/check/fixedbugs-511-handles-ended-then-three-hundred-ifs-meet-what-changed.hero:1525:16: error[handle_used_after_end]: `a299` was given to `f_close` at line 621, which ended its life, and this reads it again
+tests/golden/check/fixedbugs-511-handles-ended-then-three-hundred-ifs-meet-what-changed.hero:1542:16: error[handle_used_after_end]: `x` was given to `f_close` at line 1533, which ended its life, and this reads it again
+tests/golden/check/fixedbugs-511-handles-ended-then-three-hundred-ifs-meet-what-changed.hero:1543:16: error[handle_used_after_end]: `y` was given to `f_close` at line 1536, which ended its life, and this reads it again
+tests/golden/check/fixedbugs-511-handles-ended-then-three-hundred-ifs-meet-what-changed.hero:1555:16: error[handle_used_after_end]: `m` was given to `f_close` at line 1551, which ended its life, and this reads it again
+tests/golden/check/fixedbugs-511-handles-ended-then-three-hundred-ifs-meet-what-changed.hero:1564:20: error[handle_used_after_end]: `r` was given to `f_close` at line 1561, which ended its life, and this reads it again

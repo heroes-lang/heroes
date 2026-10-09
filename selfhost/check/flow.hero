@@ -33,8 +33,15 @@
 # without what it revived: ending 2,000 handles cost 26.8 billion
 # instructions, the square of the handles. A group grows in place, lent
 # (defect 409), and is rebuilt only where an event takes a place out of it.
+#
+# **Where paths meet, only the locals they changed are met** (defect 511):
+# the walk splits a flow where control splits, every path goes on from that
+# flow, and `meet` starts from it and meets the locals the paths logged
+# (`check/flow_log.hero`), so a join costs what the paths did and not what
+# the body holds.
 
 use token
+use check/flow_log
 
 # One ended place, and the call that ended it: the diagnostic names both, and
 # `shown` is the argument as the program wrote it at that call.
@@ -62,11 +69,13 @@ record Flow
     # so nothing read here is refused, and it contributes nothing where paths
     # meet.
     live: bool
+    # The locals an event changed since control split, which a join meets.
+    log: flow_log.Log
 
 function start() -> Flow
     held: [Held] = []
     at: {str: i64} = {}
-    return Flow(held: held, at: at, live: true)
+    return Flow(held: held, at: at, live: true, log: flow_log.none())
 
 function unreachable() -> Flow
     f: Flow @ start()
@@ -96,42 +105,76 @@ function group(@f: Flow, path: [str]) -> i64
 function add_group(@held: [Held], one: Held)
     held @ held.push(one)
 
-# Where two paths meet: dead on both, or alive; kept on either, or not. A
-# local's group meets its twin, and a local with no twin keeps only its
-# kept places.
-function meet(one: Flow, two: Flow) -> Flow
+# Where control splits: the paths from here go on from this flow, which is
+# their base when `meet` meets them.
+function split(f: Flow) -> Flow
+    out: Flow @ f
+    out.log @ flow_log.opened(f.log)
+    return out
+
+# Where two paths that went on from `base` meet: dead on both, or alive;
+# kept on either, or not. A local neither path logged holds on both what it
+# held at the base, and met with itself it is itself, so the base answers
+# for it and only the logged locals are met with their twins.
+function meet(base: Flow, one: Flow, two: Flow) -> Flow
     if !one.live
         return two
 
     if !two.live
         return one
-    out: Flow @ start()
+    out: Flow @ base
 
-    for mine in one.held
-        both: [Dead] @ []
-        kept: [[str]] @ mine.kept
-        twin = two.at[mine.local]
-
-        if !twin.is_err()
-            theirs = two.held[twin.must()]
-
-            for d in mine.dead
-                if holds(theirs.dead, path: d.path)
-                    both @ both.push(d)
-
-            for k in theirs.kept
-                if !listed(kept, path: k)
-                    kept @ kept.push(k)
-
-        if both.len() > 0 || kept.len() > 0
-            joined(@out, Held(local: mine.local, dead: both, kept: kept))
-
-    for theirs in two.held
-        if one.at[theirs.local].is_err() && theirs.kept.len() > 0
-            none: [Dead] = []
-            joined(@out, Held(local: theirs.local, dead: none, kept: theirs.kept))
+    for local in flow_log.since(one: one.log, two: two.log, from: base.log.since)
+        put(@out, one: met(mine: group_of(one, local: local), theirs: group_of(two, local: local)))
+        flow_log.mark(@out.log, local: local)
 
     return out
+
+# Where a construct that split ends: the flow goes on under the split open
+# before it.
+function closed(outer: Flow, inner: Flow) -> Flow
+    out: Flow @ inner
+    out.log @ flow_log.closed(outer: outer.log, inner: inner.log)
+    return out
+
+# One local's group, empty where an event never named the local.
+function group_of(f: Flow, local: str) -> Held
+    found = f.at[local]
+
+    if !found.is_err()
+        return f.held[found.must()]
+    dead: [Dead] = []
+    kept: [[str]] = []
+    return Held(local: local, dead: dead, kept: kept)
+
+# A local's group met with its twin: dead on both, in `mine`'s order; kept on
+# either.
+function met(mine: Held, theirs: Held) -> Held
+    both: [Dead] @ []
+    kept: [[str]] @ mine.kept
+
+    for d in mine.dead
+        if holds(theirs.dead, path: d.path)
+            both @ both.push(d)
+
+    for k in theirs.kept
+        if !listed(kept, path: k)
+            kept @ kept.push(k)
+
+    return Held(local: mine.local, dead: both, kept: kept)
+
+# A local's group set to `one`: in place where the local has one, added where
+# it has none and `one` holds anything.
+function put(@f: Flow, one: Held)
+    found = f.at[one.local]
+
+    if !found.is_err()
+        replace_group(@f.held, at: found.must(), one: one)
+    else if one.dead.len() > 0 || one.kept.len() > 0
+        joined(@f, one)
+
+function replace_group(@held: [Held], at: i64, one: Held)
+    held[at] @ one
 
 function joined(@f: Flow, one: Held)
     f.at[one.local] @ f.held.len()
@@ -223,6 +266,7 @@ function ended(@f: Flow, path: [str], shown: str, callee: str, at: token.Span)
         ended_again(@f.held[g].dead, last: one)
     else
         add_dead(@f.held[g].dead, one: one)
+    flow_log.mark(@f.log, local: local_of(path))
 
 function add_dead(@dead: [Dead], one: Dead)
     dead @ dead.push(one)
@@ -242,7 +286,12 @@ function written(@f: Flow, path: [str])
 
     if !found.is_err()
         g = found.must()
+        before = f.held[g].dead.len() + f.held[g].kept.len()
         revived(@f.held[g], path: path)
+
+        # A write only takes places out, so a group it changed is shorter.
+        if f.held[g].dead.len() + f.held[g].kept.len() < before
+            flow_log.mark(@f.log, local: local_of(path))
 
 function revived(@h: Held, path: [str])
     if reaches_dead(h.dead, path: path)
@@ -282,6 +331,7 @@ function retained(@f: Flow, path: [str])
 
     if !listed(f.held[g].kept, path: path)
         add_kept(@f.held[g].kept, path: path)
+        flow_log.mark(@f.log, local: local_of(path))
 
 function add_kept(@kept: [[str]], path: [str])
     kept @ kept.push(path)
@@ -355,26 +405,53 @@ test "a write revives what it could reach, and a reference keeps a place alive"
     assert !dead_read(f, path: ["7"]).is_err()
 
 test "where paths meet a place is dead only on both, and kept on either"
-    one: Flow @ start()
-    two: Flow @ start()
+    base = split(start())
+    one: Flow @ base
+    two: Flow @ base
     ended(@one, path: ["1"], shown: "a", callee: "close", at: span_at(0))
     ended(@one, path: ["2"], shown: "b", callee: "close", at: span_at(1))
     ended(@two, path: ["2"], shown: "b", callee: "close", at: span_at(2))
     retained(@two, path: ["3"])
-    both = meet(one: one, two: two)
+    both = meet(base: base, one: one, two: two)
     assert both.live
     assert every_dead(both).len() == 1
     assert every_dead(both)[0].shown == "b"
     assert every_dead(both)[0].at.start == 1
     assert every_kept(both) == [["3"]]
-    assert every_dead(meet(one: unreachable(), two: one)).len() == 2
-    assert every_dead(meet(one: one, two: unreachable())).len() == 2
-    assert !meet(one: unreachable(), two: unreachable()).live
+    assert every_dead(meet(base: base, one: unreachable(), two: one)).len() == 2
+    assert every_dead(meet(base: base, one: one, two: unreachable())).len() == 2
+    assert !meet(base: base, one: unreachable(), two: unreachable()).live
+
+# Defect 511: a join starts from the split and meets what the paths logged,
+# a split inside another included, even where the inner one never closed (a
+# `break` takes the flow as it stands); a local nothing logged is the base's.
+test "a join meets only what its paths changed since the split, under splits inside splits"
+    f: Flow @ start()
+    ended(@f, path: ["1"], shown: "a", callee: "close", at: span_at(0))
+    ended(@f, path: ["4"], shown: "d", callee: "close", at: span_at(1))
+    assert f.log.changed.len() == 0
+    outer = split(f)
+    one: Flow @ outer
+    ended(@one, path: ["2"], shown: "b", callee: "close", at: span_at(2))
+    deep: Flow @ split(one)
+    ended(@deep, path: ["3"], shown: "c", callee: "close", at: span_at(3))
+    written(@deep, path: ["1"])
+    two: Flow @ outer
+    ended(@two, path: ["3"], shown: "c", callee: "close", at: span_at(4))
+    ended(@two, path: ["2"], shown: "b", callee: "close", at: span_at(5))
+    both = meet(base: outer, one: deep, two: two)
+    assert dead_read(both, path: ["1"]).is_err()
+    assert dead_read(both, path: ["2"]).must().at.start == 2
+    assert dead_read(both, path: ["3"]).must().at.start == 3
+    assert dead_read(both, path: ["4"]).must().at.start == 1
+    after = closed(outer: f, inner: both)
+    assert after.log.changed.len() == 0
+    assert after.log.since == -1
 
 # Defect 499: each local's places are its own group. An end of one place
 # again moves it last on its local, and the first place a read finds is the
 # earliest ended that covers it; a write to one local leaves every other
-# local's places dead; and a meet keeps each local's order.
+# local's places dead; and a join keeps each local's order.
 test "each local's places are one group, kept in the order they were ended"
     f: Flow @ start()
     ended(@f, path: ["4", ".a"], shown: "x.a", callee: "close", at: span_at(0))
@@ -402,6 +479,8 @@ test "each local's places are one group, kept in the order they were ended"
         k @ k + 1
 
     assert many.held.len() == 300
-    again = meet(one: many, two: many)
+    base = split(many)
+    again = meet(base: base, one: base, two: base)
     assert every_dead(again).len() == 300
     assert every_dead(again)[299].at.start == 299
+    assert again.log.changed.len() == 0
