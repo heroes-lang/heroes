@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -130,7 +130,7 @@ bb0:
 #line 131 "fixedbugsunaryminusisnotaliteral.c"
     h_0opt_e201354_release(&t4);
     h_0opt_e201354_retain(&t3);
-    h_0opt_e201354_release(&h1_own1);
+    h_0opt_e201354_release(hero_slot_escape(&h1_own1));
     return t3;
 }
 
@@ -326,8 +326,8 @@ bb1:
 #line 55 "tests/golden/run/fixedbugs-unary-minus-is-not-a-literal.hero"
     hero_print_end();
 #line 329 "fixedbugsunaryminusisnotaliteral.c"
-    h_0opt_e201354_release(&h3_f0);
-    h_0opt_e201354_release(&h4_own4);
+    h_0opt_e201354_release(hero_slot_escape(&h3_f0));
+    h_0opt_e201354_release(hero_slot_escape(&h4_own4));
     return;
 bb2:
 #line 52 "tests/golden/run/fixedbugs-unary-minus-is-not-a-literal.hero"

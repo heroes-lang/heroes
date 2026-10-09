@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -229,8 +229,8 @@ bb6:
     t37 = h1_flags;
 #line 231 "main.c"
     hero_array_incref(t37);
-    hero_array_decref(h1_flags);
-    hero_array_decref(h5_own5);
+    hero_array_release_at(&h1_flags);
+    hero_array_release_at(&h5_own5);
     return t37;
 bb7:
 #line 42 "examples/sieve/main.hero"
@@ -475,12 +475,12 @@ bb10:
 #line 476 "main.c"
     t26 = h5_ret0;
     hero_array_incref(t26);
-    hero_array_decref(h1_empty);
-    hero_array_decref(h2_flags);
-    hero_array_decref(h3_out);
-    hero_array_decref(h6_own6);
-    hero_array_decref(h7_own7);
-    hero_array_decref(h8_own8);
+    hero_array_release_at(&h1_empty);
+    hero_array_release_at(&h2_flags);
+    hero_array_release_at(&h3_out);
+    hero_array_release_at(&h6_own6);
+    hero_array_release_at(&h7_own7);
+    hero_array_release_at(&h8_own8);
     return t26;
 }
 
@@ -545,7 +545,7 @@ bb3:
 bb4:
 #line 547 "main.c"
     t9 = h1_ret0;
-    hero_array_decref(h2_own2);
+    hero_array_release_at(&h2_own2);
     return t9;
 }
 
@@ -672,10 +672,10 @@ bb3:
     t23 = h2_out;
 #line 674 "main.c"
     hero_array_incref(t23);
-    hero_array_decref(h1_found);
-    hero_array_decref(h2_out);
-    hero_array_decref(h4_own4);
-    hero_array_decref(h5_own5);
+    hero_array_release_at(&h1_found);
+    hero_array_release_at(&h2_out);
+    hero_array_release_at(&h4_own4);
+    hero_array_release_at(&h5_own5);
     return t23;
 }
 
@@ -887,16 +887,16 @@ bb0:
 #line 91 "examples/sieve/main.hero"
     hero_print_end();
 #line 890 "main.c"
-    hero_array_decref(h0_own0);
-    hero_array_decref(h1_own1);
-    hero_array_decref(h2_own2);
-    hero_str_decref(h3_own3);
-    hero_array_decref(h4_own4);
-    hero_array_decref(h5_own5);
-    hero_array_decref(h6_own6);
-    hero_array_decref(h7_own7);
-    hero_array_decref(h8_own8);
-    hero_str_decref(h9_own9);
+    hero_array_release_at(&h0_own0);
+    hero_array_release_at(&h1_own1);
+    hero_array_release_at(&h2_own2);
+    hero_str_release_at(&h3_own3);
+    hero_array_release_at(&h4_own4);
+    hero_array_release_at(&h5_own5);
+    hero_array_release_at(&h6_own6);
+    hero_array_release_at(&h7_own7);
+    hero_array_release_at(&h8_own8);
+    hero_str_release_at(&h9_own9);
     return;
 }
 
@@ -1016,10 +1016,10 @@ bb4:
     t18 = h1_out;
 #line 1018 "main.c"
     hero_array_incref(t18);
-    hero_array_decref(h1_out);
-    hero_array_decref(h2_xs0);
-    hero_array_decref(h5_own5);
-    hero_str_decref(h6_own6);
+    hero_array_release_at(&h1_out);
+    hero_array_release_at(&h2_xs0);
+    hero_array_release_at(&h5_own5);
+    hero_str_release_at(&h6_own6);
     return t18;
 }
 

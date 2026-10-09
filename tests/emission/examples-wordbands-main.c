@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -294,11 +294,11 @@ bb3:
 #line 295 "main.c"
     hero_str_decref(t43);
     hero_str_incref(t40);
-    hero_array_decref(h1_pieces);
-    hero_str_decref(h5_r0);
-    hero_str_decref(h6_word);
-    hero_array_decref(h7_own7);
-    hero_str_decref(h8_own8);
+    hero_array_release_at(&h1_pieces);
+    hero_str_release_at(&h5_r0);
+    hero_str_release_at(&h6_word);
+    hero_array_release_at(&h7_own7);
+    hero_str_release_at(&h8_own8);
     return t40;
 bb4:
 #line 42 "examples/wordbands/main.hero"
@@ -795,21 +795,21 @@ bb11:
 #line 70 "examples/wordbands/main.hero"
     t63 = h8_seen;
 #line 798 "main.c"
-    hero_map_decref(h1_counts);
-    hero_array_decref(h2_xs0);
-    hero_str_decref(h4_word);
-    h_0opt_e201354_release(&h5_f0);
-    hero_str_decref(h7_best);
-    hero_array_decref(h9_xs1);
-    hero_str_decref(h11_key);
-    h_0opt_e201354_release(&h12_f1);
-    hero_map_decref(h14_own14);
-    hero_str_decref(h15_own15);
-    hero_array_decref(h16_own16);
-    h_0opt_e201354_release(&h17_own17);
-    hero_array_decref(h18_own18);
-    hero_array_decref(h19_own19);
-    h_0opt_e201354_release(&h20_own20);
+    hero_map_release_at(&h1_counts);
+    hero_array_release_at(&h2_xs0);
+    hero_str_release_at(&h4_word);
+    h_0opt_e201354_release(hero_slot_escape(&h5_f0));
+    hero_str_release_at(&h7_best);
+    hero_array_release_at(&h9_xs1);
+    hero_str_release_at(&h11_key);
+    h_0opt_e201354_release(hero_slot_escape(&h12_f1));
+    hero_map_release_at(&h14_own14);
+    hero_str_release_at(&h15_own15);
+    hero_array_release_at(&h16_own16);
+    h_0opt_e201354_release(hero_slot_escape(&h17_own17));
+    hero_array_release_at(&h18_own18);
+    hero_array_release_at(&h19_own19);
+    h_0opt_e201354_release(hero_slot_escape(&h20_own20));
     return t63;
 bb12:
     goto bb10;
@@ -1153,16 +1153,16 @@ bb11:
     t41 = h1_out;
 #line 1155 "main.c"
     hero_array_incref(t41);
-    hero_array_decref(h1_out);
-    hero_array_decref(h2_current);
-    hero_array_decref(h3_xs0);
-    hero_str_decref(h5_ch);
-    hero_array_decref(h6_own6);
-    hero_array_decref(h7_own7);
-    hero_array_decref(h8_own8);
-    hero_str_decref(h9_own9);
-    hero_array_decref(h10_own10);
-    hero_str_decref(h11_own11);
+    hero_array_release_at(&h1_out);
+    hero_array_release_at(&h2_current);
+    hero_array_release_at(&h3_xs0);
+    hero_str_release_at(&h5_ch);
+    hero_array_release_at(&h6_own6);
+    hero_array_release_at(&h7_own7);
+    hero_array_release_at(&h8_own8);
+    hero_str_release_at(&h9_own9);
+    hero_array_release_at(&h10_own10);
+    hero_str_release_at(&h11_own11);
     return t41;
 bb12:
 #line 87 "examples/wordbands/main.hero"
@@ -1354,9 +1354,9 @@ bb7:
 #line 104 "examples/wordbands/main.hero"
     t31 = h2_total;
 #line 1357 "main.c"
-    hero_array_decref(h0_handles);
-    hero_array_decref(h3_xs0);
-    hero_array_decref(h6_own6);
+    hero_array_release_at(&h0_handles);
+    hero_array_release_at(&h3_xs0);
+    hero_array_release_at(&h6_own6);
     return t31;
 }
 

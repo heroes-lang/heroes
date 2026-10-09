@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -438,19 +438,19 @@ bb4:
 #line 36 "tests/golden/run/library-range.hero"
     hero_print_end();
 #line 441 "libraryrange.c"
-    hero_array_decref(h0_xs);
-    hero_array_decref(h2_xs0);
-    hero_array_decref(h5_own5);
-    hero_array_decref(h6_own6);
-    hero_array_decref(h7_own7);
-    hero_array_decref(h8_own8);
-    hero_array_decref(h9_own9);
-    hero_array_decref(h10_own10);
-    hero_str_decref(h11_own11);
-    hero_array_decref(h12_own12);
-    hero_array_decref(h13_own13);
-    hero_array_decref(h14_own14);
-    hero_array_decref(h15_own15);
+    hero_array_release_at(&h0_xs);
+    hero_array_release_at(&h2_xs0);
+    hero_array_release_at(&h5_own5);
+    hero_array_release_at(&h6_own6);
+    hero_array_release_at(&h7_own7);
+    hero_array_release_at(&h8_own8);
+    hero_array_release_at(&h9_own9);
+    hero_array_release_at(&h10_own10);
+    hero_str_release_at(&h11_own11);
+    hero_array_release_at(&h12_own12);
+    hero_array_release_at(&h13_own13);
+    hero_array_release_at(&h14_own14);
+    hero_array_release_at(&h15_own15);
     return;
 }
 
@@ -570,10 +570,10 @@ bb4:
     t18 = h1_out;
 #line 572 "libraryrange.c"
     hero_array_incref(t18);
-    hero_array_decref(h1_out);
-    hero_array_decref(h2_xs0);
-    hero_array_decref(h5_own5);
-    hero_str_decref(h6_own6);
+    hero_array_release_at(&h1_out);
+    hero_array_release_at(&h2_xs0);
+    hero_array_release_at(&h5_own5);
+    hero_str_release_at(&h6_own6);
     return t18;
 }
 
@@ -647,8 +647,8 @@ bb3:
     t12 = h2_out;
 #line 649 "libraryrange.c"
     hero_array_incref(t12);
-    hero_array_decref(h2_out);
-    hero_array_decref(h4_own4);
+    hero_array_release_at(&h2_out);
+    hero_array_release_at(&h4_own4);
     return t12;
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {

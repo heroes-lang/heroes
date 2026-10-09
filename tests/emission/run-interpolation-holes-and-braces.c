@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -554,32 +554,32 @@ bb1:
 #line 25 "tests/golden/run/interpolation-holes-and-braces.hero"
     hero_print_end();
 #line 557 "interpolationholesandbraces.c"
-    hero_str_decref(h1_word);
-    hero_map_decref(h2_m);
-    h_0opt_e201354_release(&h3_f0);
-    hero_str_decref(h6_own6);
-    hero_str_decref(h7_own7);
-    hero_str_decref(h8_own8);
-    hero_str_decref(h9_own9);
-    hero_str_decref(h10_own10);
-    hero_str_decref(h11_own11);
-    hero_str_decref(h12_own12);
-    hero_str_decref(h13_own13);
-    hero_map_decref(h14_own14);
-    h_0opt_e201354_release(&h15_own15);
-    hero_str_decref(h16_own16);
-    hero_str_decref(h17_own17);
-    hero_str_decref(h18_own18);
-    hero_str_decref(h19_own19);
-    hero_str_decref(h20_own20);
-    hero_str_decref(h21_own21);
-    hero_str_decref(h22_own22);
-    hero_str_decref(h23_own23);
-    hero_str_decref(h24_own24);
-    hero_str_decref(h25_own25);
-    hero_str_decref(h26_own26);
-    hero_str_decref(h27_own27);
-    hero_str_decref(h28_own28);
+    hero_str_release_at(&h1_word);
+    hero_map_release_at(&h2_m);
+    h_0opt_e201354_release(hero_slot_escape(&h3_f0));
+    hero_str_release_at(&h6_own6);
+    hero_str_release_at(&h7_own7);
+    hero_str_release_at(&h8_own8);
+    hero_str_release_at(&h9_own9);
+    hero_str_release_at(&h10_own10);
+    hero_str_release_at(&h11_own11);
+    hero_str_release_at(&h12_own12);
+    hero_str_release_at(&h13_own13);
+    hero_map_release_at(&h14_own14);
+    h_0opt_e201354_release(hero_slot_escape(&h15_own15));
+    hero_str_release_at(&h16_own16);
+    hero_str_release_at(&h17_own17);
+    hero_str_release_at(&h18_own18);
+    hero_str_release_at(&h19_own19);
+    hero_str_release_at(&h20_own20);
+    hero_str_release_at(&h21_own21);
+    hero_str_release_at(&h22_own22);
+    hero_str_release_at(&h23_own23);
+    hero_str_release_at(&h24_own24);
+    hero_str_release_at(&h25_own25);
+    hero_str_release_at(&h26_own26);
+    hero_str_release_at(&h27_own27);
+    hero_str_release_at(&h28_own28);
     return;
 bb2:
 #line 22 "tests/golden/run/interpolation-holes-and-braces.hero"

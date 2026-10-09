@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -185,8 +185,8 @@ bb4:
 #line 186 "fixedbugsadiscardedtemporarywarnsinc.c"
     t11 = h1_ret0;
     h_0opt_e201354_retain(&t11);
-    h_0opt_e201354_release(&h2_own2);
-    h_0opt_e201354_release(&h3_own3);
+    h_0opt_e201354_release(hero_slot_escape(&h2_own2));
+    h_0opt_e201354_release(hero_slot_escape(&h3_own3));
     return t11;
 }
 
@@ -260,8 +260,8 @@ bb4:
 #line 261 "fixedbugsadiscardedtemporarywarnsinc.c"
     t8 = h1_ret0;
     h_0opt_a8ea2_retain(&t8);
-    h_0opt_a8ea2_release(&h2_own2);
-    h_0opt_a8ea2_release(&h3_own3);
+    h_0opt_a8ea2_release(hero_slot_escape(&h2_own2));
+    h_0opt_a8ea2_release(hero_slot_escape(&h3_own3));
     return t8;
 }
 
@@ -482,16 +482,16 @@ bb0:
 #line 66 "tests/golden/run/fixedbugs-a-discarded-temporary-warns-in-c.hero"
 bb1:
 #line 485 "fixedbugsadiscardedtemporarywarnsinc.c"
-    h_0opt_e201354_release(&h0_f0);
-    h_0opt_a8ea2_release(&h1_f1);
-    hero_str_decref(h2_a);
-    hero_str_decref(h3_b);
-    hero_array_decref(h4_xs);
-    hero_array_decref(h5_ys);
-    h_0opt_e201354_release(&h6_own6);
-    h_0opt_a8ea2_release(&h7_own7);
-    hero_array_decref(h8_own8);
-    hero_array_decref(h9_own9);
+    h_0opt_e201354_release(hero_slot_escape(&h0_f0));
+    h_0opt_a8ea2_release(hero_slot_escape(&h1_f1));
+    hero_str_release_at(&h2_a);
+    hero_str_release_at(&h3_b);
+    hero_array_release_at(&h4_xs);
+    hero_array_release_at(&h5_ys);
+    h_0opt_e201354_release(hero_slot_escape(&h6_own6));
+    h_0opt_a8ea2_release(hero_slot_escape(&h7_own7));
+    hero_array_release_at(&h8_own8);
+    hero_array_release_at(&h9_own9);
     return;
 bb2:
 #line 67 "tests/golden/run/fixedbugs-a-discarded-temporary-warns-in-c.hero"

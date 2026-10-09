@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -289,12 +289,12 @@ bb3:
 #line 26 "tests/golden/run/adversarial-str-self-assign.hero"
     hero_print_end();
 #line 292 "adversarialstrselfassign.c"
-    hero_str_decref(h0_s);
-    hero_str_decref(h1_out);
-    hero_str_decref(h3_own3);
-    hero_str_decref(h4_own4);
-    hero_str_decref(h5_own5);
-    hero_str_decref(h6_own6);
+    hero_str_release_at(&h0_s);
+    hero_str_release_at(&h1_out);
+    hero_str_release_at(&h3_own3);
+    hero_str_release_at(&h4_own4);
+    hero_str_release_at(&h5_own5);
+    hero_str_release_at(&h6_own6);
     return;
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {

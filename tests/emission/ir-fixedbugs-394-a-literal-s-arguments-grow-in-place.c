@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -277,7 +277,7 @@ bb0:
 #line 278 "fixedbugs394aliteralsargumentsgrowinplace.c"
     hero_array_decref(t34);
     hero_array_incref(t33);
-    hero_array_decref(h0_own0);
+    hero_array_release_at(&h0_own0);
     return t33;
 }
 #endif
@@ -347,7 +347,7 @@ bb0:
 #line 348 "fixedbugs394aliteralsargumentsgrowinplace.c"
     hero_map_decref(t14);
     hero_map_incref(t13);
-    hero_map_decref(h0_own0);
+    hero_map_release_at(&h0_own0);
     return t13;
 }
 
@@ -534,11 +534,11 @@ bb3:
 #line 64 "tests/golden/ir/fixedbugs-394-a-literal-s-arguments-grow-in-place.hero"
     hero_print_end();
 #line 537 "fixedbugs394aliteralsargumentsgrowinplace.c"
-    h_0opt_e201354_release(&h1_f0);
-    hero_array_decref(h3_own3);
-    hero_array_decref(h4_own4);
-    hero_map_decref(h5_own5);
-    h_0opt_e201354_release(&h6_own6);
+    h_0opt_e201354_release(hero_slot_escape(&h1_f0));
+    hero_array_release_at(&h3_own3);
+    hero_array_release_at(&h4_own4);
+    hero_map_release_at(&h5_own5);
+    h_0opt_e201354_release(hero_slot_escape(&h6_own6));
     return;
 }
 HERO_TU_LOCAL bool h_fixedbugs394aliteralsargumentsgrowinplace_Wide_eq(const h_fixedbugs394aliteralsargumentsgrowinplace_Wide *a, const h_fixedbugs394aliteralsargumentsgrowinplace_Wide *b) {

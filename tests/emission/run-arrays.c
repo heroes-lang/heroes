@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -212,7 +212,7 @@ bb4:
 #line 31 "tests/golden/run/arrays.hero"
     t17 = h1_sum;
 #line 215 "arrays.c"
-    hero_array_decref(h2_xs0);
+    hero_array_release_at(&h2_xs0);
     return t17;
 }
 
@@ -734,26 +734,26 @@ bb0:
 #line 56 "tests/golden/run/arrays.hero"
     hero_print_end();
 #line 737 "arrays.c"
-    hero_array_decref(h0_xs);
-    hero_array_decref(h1_words);
-    hero_array_decref(h2_ps);
-    hero_array_decref(h3_grid);
-    hero_array_decref(h4_more);
-    hero_array_decref(h5_own5);
-    hero_str_decref(h6_own6);
-    hero_str_decref(h7_own7);
-    hero_array_decref(h8_own8);
-    hero_array_decref(h9_own9);
-    hero_array_decref(h10_own10);
-    hero_array_decref(h11_own11);
-    hero_array_decref(h12_own12);
-    hero_array_decref(h13_own13);
-    hero_array_decref(h14_own14);
-    hero_array_decref(h15_own15);
-    hero_array_decref(h16_own16);
-    hero_array_decref(h17_own17);
-    hero_array_decref(h18_own18);
-    hero_array_decref(h19_own19);
+    hero_array_release_at(&h0_xs);
+    hero_array_release_at(&h1_words);
+    hero_array_release_at(&h2_ps);
+    hero_array_release_at(&h3_grid);
+    hero_array_release_at(&h4_more);
+    hero_array_release_at(&h5_own5);
+    hero_str_release_at(&h6_own6);
+    hero_str_release_at(&h7_own7);
+    hero_array_release_at(&h8_own8);
+    hero_array_release_at(&h9_own9);
+    hero_array_release_at(&h10_own10);
+    hero_array_release_at(&h11_own11);
+    hero_array_release_at(&h12_own12);
+    hero_array_release_at(&h13_own13);
+    hero_array_release_at(&h14_own14);
+    hero_array_release_at(&h15_own15);
+    hero_array_release_at(&h16_own16);
+    hero_array_release_at(&h17_own17);
+    hero_array_release_at(&h18_own18);
+    hero_array_release_at(&h19_own19);
     return;
 }
 HERO_TU_LOCAL bool h_arrays_Point_eq(const h_arrays_Point *a, const h_arrays_Point *b) {

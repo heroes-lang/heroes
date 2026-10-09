@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -682,30 +682,30 @@ bb0:
 #line 67 "tests/golden/run/place-store-c5.hero"
     hero_print_end();
 #line 685 "placestorec5.c"
-    hero_array_decref(h0_xs);
-    hero_array_decref(h1_ys);
-    hero_array_decref(h2_zs);
-    hero_array_decref(h3_hs);
-    h_placestorec5_Node_release(&h4_root);
-    h_placestorec5_Node_release(&h5_holder);
-    hero_array_decref(h6_ws);
-    hero_array_decref(h7_qs);
-    hero_array_decref(h8_own8);
-    hero_array_decref(h9_own9);
-    hero_array_decref(h10_own10);
-    hero_array_decref(h11_own11);
-    h_placestorec5_Node_release(&h12_own12);
-    h_placestorec5_Node_release(&h13_own13);
-    hero_array_decref(h14_own14);
-    h_placestorec5_Node_release(&h15_own15);
-    hero_array_decref(h16_own16);
-    h_placestorec5_Node_release(&h17_own17);
-    hero_array_decref(h18_own18);
-    hero_array_decref(h19_own19);
-    hero_array_decref(h20_own20);
-    hero_array_decref(h21_own21);
-    hero_array_decref(h22_own22);
-    hero_array_decref(h23_own23);
+    hero_array_release_at(&h0_xs);
+    hero_array_release_at(&h1_ys);
+    hero_array_release_at(&h2_zs);
+    hero_array_release_at(&h3_hs);
+    h_placestorec5_Node_release(hero_slot_escape(&h4_root));
+    h_placestorec5_Node_release(hero_slot_escape(&h5_holder));
+    hero_array_release_at(&h6_ws);
+    hero_array_release_at(&h7_qs);
+    hero_array_release_at(&h8_own8);
+    hero_array_release_at(&h9_own9);
+    hero_array_release_at(&h10_own10);
+    hero_array_release_at(&h11_own11);
+    h_placestorec5_Node_release(hero_slot_escape(&h12_own12));
+    h_placestorec5_Node_release(hero_slot_escape(&h13_own13));
+    hero_array_release_at(&h14_own14);
+    h_placestorec5_Node_release(hero_slot_escape(&h15_own15));
+    hero_array_release_at(&h16_own16);
+    h_placestorec5_Node_release(hero_slot_escape(&h17_own17));
+    hero_array_release_at(&h18_own18);
+    hero_array_release_at(&h19_own19);
+    hero_array_release_at(&h20_own20);
+    hero_array_release_at(&h21_own21);
+    hero_array_release_at(&h22_own22);
+    hero_array_release_at(&h23_own23);
     return;
 }
 HERO_TU_LOCAL void h_placestorec5_Node_retain(const h_placestorec5_Node *v) {

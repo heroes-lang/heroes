@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -243,17 +243,17 @@ bb0:
 #line 244 "fixedbugs263areleaseafterareleasewritesnodeadline.c"
     hero_str_decref(t28);
     hero_str_incref(t17);
-    hero_str_decref(h1_a);
-    hero_str_decref(h2_b);
-    hero_str_decref(h3_c);
-    hero_str_decref(h4_own4);
-    hero_str_decref(h5_own5);
-    hero_str_decref(h6_own6);
-    hero_str_decref(h7_own7);
-    hero_str_decref(h8_own8);
-    hero_str_decref(h9_own9);
-    hero_str_decref(h10_own10);
-    hero_str_decref(h11_own11);
+    hero_str_release_at(&h1_a);
+    hero_str_release_at(&h2_b);
+    hero_str_release_at(&h3_c);
+    hero_str_release_at(&h4_own4);
+    hero_str_release_at(&h5_own5);
+    hero_str_release_at(&h6_own6);
+    hero_str_release_at(&h7_own7);
+    hero_str_release_at(&h8_own8);
+    hero_str_release_at(&h9_own9);
+    hero_str_release_at(&h10_own10);
+    hero_str_release_at(&h11_own11);
     return t17;
 }
 
@@ -281,7 +281,7 @@ bb0:
 #line 18 "tests/golden/run/fixedbugs-263-a-release-after-a-release-writes-no-dead-line.hero"
     hero_print_end();
 #line 284 "fixedbugs263areleaseafterareleasewritesnodeadline.c"
-    hero_str_decref(h0_own0);
+    hero_str_release_at(&h0_own0);
     return;
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {

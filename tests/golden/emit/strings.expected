@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -137,8 +137,8 @@ bb1:
 #line 138 "strings.c"
     hero_str_decref(t8);
     hero_str_incref(t6);
-    hero_str_decref(h2_prefix);
-    hero_str_decref(h3_own3);
+    hero_str_release_at(&h2_prefix);
+    hero_str_release_at(&h3_own3);
     return t6;
 bb2:
 #line 11 "tests/golden/emit/strings.hero"
@@ -183,7 +183,7 @@ bb0:
 #line 15 "tests/golden/emit/strings.hero"
     hero_print_end();
 #line 186 "strings.c"
-    hero_str_decref(h0_own0);
+    hero_str_release_at(&h0_own0);
     return;
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {

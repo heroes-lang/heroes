@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -271,14 +271,14 @@ bb0:
 #line 26 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
     hero_print_end();
 #line 274 "fixedbugsanemptyresultboundbyitscontext.c"
-    hero_array_decref(h0_xs);
-    hero_array_decref(h1_fs);
-    hero_map_decref(h2_m);
-    hero_array_decref(h3_ys);
-    hero_array_decref(h4_gs);
-    hero_array_decref(h5_own5);
-    hero_array_decref(h6_own6);
-    hero_map_decref(h7_own7);
+    hero_array_release_at(&h0_xs);
+    hero_array_release_at(&h1_fs);
+    hero_map_release_at(&h2_m);
+    hero_array_release_at(&h3_ys);
+    hero_array_release_at(&h4_gs);
+    hero_array_release_at(&h5_own5);
+    hero_array_release_at(&h6_own6);
+    hero_map_release_at(&h7_own7);
     return;
 }
 
@@ -307,7 +307,7 @@ bb0:
 #line 308 "fixedbugsanemptyresultboundbyitscontext.c"
     hero_array_decref(t3);
     hero_array_incref(t2);
-    hero_array_decref(h1_own1);
+    hero_array_release_at(&h1_own1);
     return t2;
 }
 
@@ -336,7 +336,7 @@ bb0:
 #line 337 "fixedbugsanemptyresultboundbyitscontext.c"
     hero_array_decref(t3);
     hero_array_incref(t2);
-    hero_array_decref(h1_own1);
+    hero_array_release_at(&h1_own1);
     return t2;
 }
 
@@ -365,7 +365,7 @@ bb0:
 #line 366 "fixedbugsanemptyresultboundbyitscontext.c"
     hero_map_decref(t3);
     hero_map_incref(t2);
-    hero_map_decref(h1_own1);
+    hero_map_release_at(&h1_own1);
     return t2;
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {

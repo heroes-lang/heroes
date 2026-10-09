@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -122,7 +122,7 @@ bb0:
 #line 17 "tests/golden/run/fixedbugs-a-library-function-as-a-value.hero"
     t5 = ((void)(t4 == NULL ? ((void)hero_array_len(t4), hero_unreachable()) : (void)0), t4->len);
 #line 125 "fixedbugsalibraryfunctionasavalue.c"
-    hero_array_decref(h1_own1);
+    hero_array_release_at(&h1_own1);
     return t5;
 }
 
@@ -266,8 +266,8 @@ bb3:
     t12 = h2_out;
 #line 268 "fixedbugsalibraryfunctionasavalue.c"
     hero_array_incref(t12);
-    hero_array_decref(h2_out);
-    hero_array_decref(h4_own4);
+    hero_array_release_at(&h2_out);
+    hero_array_release_at(&h4_own4);
     return t12;
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {

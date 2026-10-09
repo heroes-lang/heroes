@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -370,14 +370,14 @@ bb5:
 #line 34 "tests/golden/run/fixedbugs-a-narrow-float-converted-to-ok-zero.hero"
     hero_print_end();
 #line 373 "fixedbugsanarrowfloatconvertedtookzero.c"
-    h_0opt_e201354_release(&h1_f0);
-    h_0opt_e201354_release(&h3_f1);
-    h_0opt_e201354_release(&h5_f2);
-    h_0opt_e201354_release(&h7_f3);
-    h_0opt_e201354_release(&h8_own8);
-    h_0opt_e201354_release(&h9_own9);
-    h_0opt_e201354_release(&h10_own10);
-    h_0opt_e201354_release(&h11_own11);
+    h_0opt_e201354_release(hero_slot_escape(&h1_f0));
+    h_0opt_e201354_release(hero_slot_escape(&h3_f1));
+    h_0opt_e201354_release(hero_slot_escape(&h5_f2));
+    h_0opt_e201354_release(hero_slot_escape(&h7_f3));
+    h_0opt_e201354_release(hero_slot_escape(&h8_own8));
+    h_0opt_e201354_release(hero_slot_escape(&h9_own9));
+    h_0opt_e201354_release(hero_slot_escape(&h10_own10));
+    h_0opt_e201354_release(hero_slot_escape(&h11_own11));
     return;
 bb6:
 #line 34 "tests/golden/run/fixedbugs-a-narrow-float-converted-to-ok-zero.hero"

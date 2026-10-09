@@ -8,7 +8,7 @@
 #pragma push_macro("a")
 #include "heroes_guard_close.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -448,9 +448,9 @@ bb4:
 #line 35 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
     hero_print_end();
 #line 451 "fixedbugsafixedarrayelementiswrittenatacomputedindex.c"
-    hero_array_decref(h1_xs0);
-    hero_array_decref(h5_own5);
-    hero_array_decref(h6_own6);
+    hero_array_release_at(&h1_xs0);
+    hero_array_release_at(&h5_own5);
+    hero_array_release_at(&h6_own6);
     return;
 }
 
@@ -524,8 +524,8 @@ bb3:
     t12 = h2_out;
 #line 526 "fixedbugsafixedarrayelementiswrittenatacomputedindex.c"
     hero_array_incref(t12);
-    hero_array_decref(h2_out);
-    hero_array_decref(h4_own4);
+    hero_array_release_at(&h2_out);
+    hero_array_release_at(&h4_own4);
     return t12;
 }
 
@@ -610,9 +610,9 @@ bb3:
     t13 = h0_out;
 #line 612 "fixedbugsafixedarrayelementiswrittenatacomputedindex.c"
     hero_array_incref(t13);
-    hero_array_decref(h0_out);
-    hero_array_decref(h2_own2);
-    hero_str_decref(h3_own3);
+    hero_array_release_at(&h0_out);
+    hero_array_release_at(&h2_own2);
+    hero_str_release_at(&h3_own3);
     return t13;
 }
 HERO_TU_LOCAL bool h_fixedbugsafixedarrayelementiswrittenatacomputedindex_Quad_eq(const struct quad *a, const struct quad *b) {

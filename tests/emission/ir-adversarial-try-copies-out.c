@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -188,8 +188,8 @@ bb4:
 #line 189 "adversarialtrycopiesout.c"
     t11 = h1_ret0;
     h_0opt_e201354_retain(&t11);
-    h_0opt_e201354_release(&h2_own2);
-    h_0opt_e201354_release(&h3_own3);
+    h_0opt_e201354_release(hero_slot_escape(&h2_own2));
+    h_0opt_e201354_release(hero_slot_escape(&h3_own3));
     return t11;
 }
 
@@ -347,11 +347,11 @@ bb6:
 #line 348 "adversarialtrycopiesout.c"
     t23 = h4_ret0;
     h_0opt_e201354_retain(&t23);
-    h_0opt_e201354_release(&h2_f0);
-    h_0opt_e201354_release(&h5_own5);
-    h_0opt_e201354_release(&h6_own6);
-    h_0opt_e201354_release(&h7_own7);
-    h_0opt_e201354_release(&h8_own8);
+    h_0opt_e201354_release(hero_slot_escape(&h2_f0));
+    h_0opt_e201354_release(hero_slot_escape(&h5_own5));
+    h_0opt_e201354_release(hero_slot_escape(&h6_own6));
+    h_0opt_e201354_release(hero_slot_escape(&h7_own7));
+    h_0opt_e201354_release(hero_slot_escape(&h8_own8));
     return t23;
 }
 HERO_TU_LOCAL bool h_adversarialtrycopiesout_Reader_eq(const h_adversarialtrycopiesout_Reader *a, const h_adversarialtrycopiesout_Reader *b) {

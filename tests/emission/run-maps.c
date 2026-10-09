@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -1902,62 +1902,62 @@ bb31:
 #line 89 "tests/golden/run/maps.hero"
     hero_print_end();
 #line 1905 "maps.c"
-    hero_map_decref(h0_m);
-    h_0opt_e201354_release(&h1_f0);
-    h_0opt_e201354_release(&h2_f1);
-    h_0opt_e201354_release(&h3_f2);
-    h_0opt_e201354_release(&h5_f3);
-    h_0opt_e201354_release(&h7_f4);
-    hero_map_decref(h8_d);
-    h_0opt_e201354_release(&h9_f5);
-    hero_map_decref(h11_ns);
-    h_0opt_f87774a_release(&h12_f6);
-    hero_str_decref(h13_r3);
-    h_0opt_f87774a_release(&h14_f7);
-    hero_str_decref(h15_r4);
-    hero_map_decref(h16_ps);
-    h_0opt_23a6fed9_release(&h17_got);
-    h_0opt_23a6fed9_release(&h18_f8);
-    hero_map_decref(h20_e);
-    h_0opt_e201354_release(&h21_f9);
-    hero_map_decref(h22_w);
-    h_0opt_e201354_release(&h23_f10);
-    h_0opt_e201354_release(&h25_f11);
-    hero_map_decref(h27_big);
-    hero_array_decref(h30_xs0);
-    hero_str_decref(h32_k);
-    h_0opt_e201354_release(&h33_f12);
-    hero_map_decref(h35_own35);
-    h_0opt_e201354_release(&h36_own36);
-    h_0opt_e201354_release(&h37_own37);
-    h_0opt_e201354_release(&h38_own38);
-    h_0opt_e201354_release(&h39_own39);
-    h_0opt_e201354_release(&h40_own40);
-    hero_map_decref(h41_own41);
-    hero_map_decref(h42_own42);
-    hero_map_decref(h43_own43);
-    hero_map_decref(h44_own44);
-    h_0opt_e201354_release(&h45_own45);
-    hero_str_decref(h46_own46);
-    hero_str_decref(h47_own47);
-    hero_map_decref(h48_own48);
-    h_0opt_f87774a_release(&h49_own49);
-    h_0opt_f87774a_release(&h50_own50);
-    hero_map_decref(h51_own51);
-    h_0opt_23a6fed9_release(&h52_own52);
-    hero_map_decref(h53_own53);
-    hero_map_decref(h54_own54);
-    h_0opt_e201354_release(&h55_own55);
-    hero_map_decref(h56_own56);
-    hero_map_decref(h57_own57);
-    h_0opt_e201354_release(&h58_own58);
-    h_0opt_e201354_release(&h59_own59);
-    hero_map_decref(h60_own60);
-    hero_str_decref(h61_own61);
-    hero_str_decref(h62_own62);
-    hero_array_decref(h63_own63);
-    h_0opt_e201354_release(&h64_own64);
-    hero_array_decref(h65_own65);
+    hero_map_release_at(&h0_m);
+    h_0opt_e201354_release(hero_slot_escape(&h1_f0));
+    h_0opt_e201354_release(hero_slot_escape(&h2_f1));
+    h_0opt_e201354_release(hero_slot_escape(&h3_f2));
+    h_0opt_e201354_release(hero_slot_escape(&h5_f3));
+    h_0opt_e201354_release(hero_slot_escape(&h7_f4));
+    hero_map_release_at(&h8_d);
+    h_0opt_e201354_release(hero_slot_escape(&h9_f5));
+    hero_map_release_at(&h11_ns);
+    h_0opt_f87774a_release(hero_slot_escape(&h12_f6));
+    hero_str_release_at(&h13_r3);
+    h_0opt_f87774a_release(hero_slot_escape(&h14_f7));
+    hero_str_release_at(&h15_r4);
+    hero_map_release_at(&h16_ps);
+    h_0opt_23a6fed9_release(hero_slot_escape(&h17_got));
+    h_0opt_23a6fed9_release(hero_slot_escape(&h18_f8));
+    hero_map_release_at(&h20_e);
+    h_0opt_e201354_release(hero_slot_escape(&h21_f9));
+    hero_map_release_at(&h22_w);
+    h_0opt_e201354_release(hero_slot_escape(&h23_f10));
+    h_0opt_e201354_release(hero_slot_escape(&h25_f11));
+    hero_map_release_at(&h27_big);
+    hero_array_release_at(&h30_xs0);
+    hero_str_release_at(&h32_k);
+    h_0opt_e201354_release(hero_slot_escape(&h33_f12));
+    hero_map_release_at(&h35_own35);
+    h_0opt_e201354_release(hero_slot_escape(&h36_own36));
+    h_0opt_e201354_release(hero_slot_escape(&h37_own37));
+    h_0opt_e201354_release(hero_slot_escape(&h38_own38));
+    h_0opt_e201354_release(hero_slot_escape(&h39_own39));
+    h_0opt_e201354_release(hero_slot_escape(&h40_own40));
+    hero_map_release_at(&h41_own41);
+    hero_map_release_at(&h42_own42);
+    hero_map_release_at(&h43_own43);
+    hero_map_release_at(&h44_own44);
+    h_0opt_e201354_release(hero_slot_escape(&h45_own45));
+    hero_str_release_at(&h46_own46);
+    hero_str_release_at(&h47_own47);
+    hero_map_release_at(&h48_own48);
+    h_0opt_f87774a_release(hero_slot_escape(&h49_own49));
+    h_0opt_f87774a_release(hero_slot_escape(&h50_own50));
+    hero_map_release_at(&h51_own51);
+    h_0opt_23a6fed9_release(hero_slot_escape(&h52_own52));
+    hero_map_release_at(&h53_own53);
+    hero_map_release_at(&h54_own54);
+    h_0opt_e201354_release(hero_slot_escape(&h55_own55));
+    hero_map_release_at(&h56_own56);
+    hero_map_release_at(&h57_own57);
+    h_0opt_e201354_release(hero_slot_escape(&h58_own58));
+    h_0opt_e201354_release(hero_slot_escape(&h59_own59));
+    hero_map_release_at(&h60_own60);
+    hero_str_release_at(&h61_own61);
+    hero_str_release_at(&h62_own62);
+    hero_array_release_at(&h63_own63);
+    h_0opt_e201354_release(hero_slot_escape(&h64_own64));
+    hero_array_release_at(&h65_own65);
     return;
 bb32:
 #line 87 "tests/golden/run/maps.hero"

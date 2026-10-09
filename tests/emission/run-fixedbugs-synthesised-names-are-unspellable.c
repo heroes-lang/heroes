@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -249,8 +249,8 @@ bb4:
 #line 250 "fixedbugssynthesisednamesareunspellable.c"
     t13 = h1_ret0;
     h_0opt_e201354_retain(&t13);
-    h_0opt_e201354_release(&h2_own2);
-    h_0opt_e201354_release(&h3_own3);
+    h_0opt_e201354_release(hero_slot_escape(&h2_own2));
+    h_0opt_e201354_release(hero_slot_escape(&h3_own3));
     return t13;
 }
 
@@ -362,8 +362,8 @@ bb3:
 #line 37 "tests/golden/run/fixedbugs-synthesised-names-are-unspellable.hero"
     hero_print_end();
 #line 365 "fixedbugssynthesisednamesareunspellable.c"
-    h_0opt_e201354_release(&h0_f0);
-    h_0opt_e201354_release(&h2_own2);
+    h_0opt_e201354_release(hero_slot_escape(&h0_f0));
+    h_0opt_e201354_release(hero_slot_escape(&h2_own2));
     return;
 }
 HERO_TU_LOCAL bool h_fixedbugssynthesisednamesareunspellable_opt0_eq(const h_fixedbugssynthesisednamesareunspellable_opt0 *a, const h_fixedbugssynthesisednamesareunspellable_opt0 *b) {

@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -436,22 +436,22 @@ bb0:
 #line 43 "tests/golden/run/fixedbugs-option-payload-descriptor.hero"
     hero_print_end();
 #line 439 "fixedbugsoptionpayloaddescriptor.c"
-    h_fixedbugsoptionpayloaddescriptor_Node_release(&h0_a);
-    h_fixedbugsoptionpayloaddescriptor_Node_release(&h1_b);
-    h_fixedbugsoptionpayloaddescriptor_Held_release(&h2_h);
-    h_fixedbugsoptionpayloaddescriptor_Held_release(&h3_g);
-    h_fixedbugsoptionpayloaddescriptor_Node_release(&h4_c);
-    h_fixedbugsoptionpayloaddescriptor_Node_release(&h5_d);
-    h_fixedbugsoptionpayloaddescriptor_Node_release(&h6_own6);
-    h_fixedbugsoptionpayloaddescriptor_Node_release(&h7_own7);
-    h_0opt_4dbf93f0_release(&h8_own8);
-    h_fixedbugsoptionpayloaddescriptor_Held_release(&h9_own9);
-    h_0opt_4dbf93f0_release(&h10_own10);
-    h_fixedbugsoptionpayloaddescriptor_Held_release(&h11_own11);
-    h_0opt_4dbf93f0_release(&h12_own12);
-    h_fixedbugsoptionpayloaddescriptor_Node_release(&h13_own13);
-    h_0opt_4dbf93f0_release(&h14_own14);
-    h_fixedbugsoptionpayloaddescriptor_Node_release(&h15_own15);
+    h_fixedbugsoptionpayloaddescriptor_Node_release(hero_slot_escape(&h0_a));
+    h_fixedbugsoptionpayloaddescriptor_Node_release(hero_slot_escape(&h1_b));
+    h_fixedbugsoptionpayloaddescriptor_Held_release(hero_slot_escape(&h2_h));
+    h_fixedbugsoptionpayloaddescriptor_Held_release(hero_slot_escape(&h3_g));
+    h_fixedbugsoptionpayloaddescriptor_Node_release(hero_slot_escape(&h4_c));
+    h_fixedbugsoptionpayloaddescriptor_Node_release(hero_slot_escape(&h5_d));
+    h_fixedbugsoptionpayloaddescriptor_Node_release(hero_slot_escape(&h6_own6));
+    h_fixedbugsoptionpayloaddescriptor_Node_release(hero_slot_escape(&h7_own7));
+    h_0opt_4dbf93f0_release(hero_slot_escape(&h8_own8));
+    h_fixedbugsoptionpayloaddescriptor_Held_release(hero_slot_escape(&h9_own9));
+    h_0opt_4dbf93f0_release(hero_slot_escape(&h10_own10));
+    h_fixedbugsoptionpayloaddescriptor_Held_release(hero_slot_escape(&h11_own11));
+    h_0opt_4dbf93f0_release(hero_slot_escape(&h12_own12));
+    h_fixedbugsoptionpayloaddescriptor_Node_release(hero_slot_escape(&h13_own13));
+    h_0opt_4dbf93f0_release(hero_slot_escape(&h14_own14));
+    h_fixedbugsoptionpayloaddescriptor_Node_release(hero_slot_escape(&h15_own15));
     return;
 }
 HERO_TU_LOCAL bool h_fixedbugsoptionpayloaddescriptor_Block_eq(const h_fixedbugsoptionpayloaddescriptor_Block *a, const h_fixedbugsoptionpayloaddescriptor_Block *b) {

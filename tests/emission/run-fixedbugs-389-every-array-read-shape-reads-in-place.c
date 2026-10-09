@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -220,7 +220,7 @@ bb4:
 #line 22 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
     t17 = h1_sum;
 #line 223 "fixedbugs389everyarrayreadshapereadsinplace.c"
-    hero_array_decref(h2_xs0);
+    hero_array_release_at(&h2_xs0);
     return t17;
 }
 
@@ -692,23 +692,23 @@ bb1:
 #line 54 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"
     hero_print_end();
 #line 695 "fixedbugs389everyarrayreadshapereadsinplace.c"
-    hero_array_decref(h0_xs);
-    hero_array_decref(h1_grid);
-    h_fixedbugs389everyarrayreadshapereadsinplace_Bag_release(&h2_bag);
-    hero_array_decref(h3_words);
-    hero_array_decref(h4_flags);
-    hero_array_decref(h5_small);
-    hero_array_decref(h6_empty);
-    hero_array_decref(h7_own7);
-    hero_array_decref(h8_own8);
-    hero_array_decref(h9_own9);
-    hero_array_decref(h10_own10);
-    hero_array_decref(h11_own11);
-    h_fixedbugs389everyarrayreadshapereadsinplace_Bag_release(&h12_own12);
-    hero_array_decref(h13_own13);
-    hero_array_decref(h14_own14);
-    hero_array_decref(h15_own15);
-    hero_array_decref(h16_own16);
+    hero_array_release_at(&h0_xs);
+    hero_array_release_at(&h1_grid);
+    h_fixedbugs389everyarrayreadshapereadsinplace_Bag_release(hero_slot_escape(&h2_bag));
+    hero_array_release_at(&h3_words);
+    hero_array_release_at(&h4_flags);
+    hero_array_release_at(&h5_small);
+    hero_array_release_at(&h6_empty);
+    hero_array_release_at(&h7_own7);
+    hero_array_release_at(&h8_own8);
+    hero_array_release_at(&h9_own9);
+    hero_array_release_at(&h10_own10);
+    hero_array_release_at(&h11_own11);
+    h_fixedbugs389everyarrayreadshapereadsinplace_Bag_release(hero_slot_escape(&h12_own12));
+    hero_array_release_at(&h13_own13);
+    hero_array_release_at(&h14_own14);
+    hero_array_release_at(&h15_own15);
+    hero_array_release_at(&h16_own16);
     return;
 bb2:
 #line 31 "tests/golden/run/fixedbugs-389-every-array-read-shape-reads-in-place.hero"

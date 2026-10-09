@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -280,8 +280,8 @@ bb1:
 #line 45 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
     if (__builtin_add_overflow(t17, t20, &t21)) hero_panic_overflow();
 #line 283 "fixedbugs147onestatementonanarmsline.c"
-    hero_array_decref(h3_ys);
-    hero_array_decref(h5_own5);
+    hero_array_release_at(&h3_ys);
+    hero_array_release_at(&h5_own5);
     return t21;
 bb2:
 #line 41 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
@@ -383,8 +383,8 @@ bb1:
 #line 58 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
     t32 = h1_n;
 #line 386 "fixedbugs147onestatementonanarmsline.c"
-    hero_array_decref(h3_xs0);
-    hero_array_decref(h6_own6);
+    hero_array_release_at(&h3_xs0);
+    hero_array_release_at(&h6_own6);
     return t32;
 bb2:
     goto bb5;
@@ -810,8 +810,8 @@ bb22:
 bb23:
 #line 812 "fixedbugs147onestatementonanarmsline.c"
     t51 = h8_ret0;
-    hero_array_decref(h2_xs0);
-    hero_array_decref(h9_own9);
+    hero_array_release_at(&h2_xs0);
+    hero_array_release_at(&h9_own9);
     return t51;
 }
 
@@ -1419,8 +1419,8 @@ bb3:
     t12 = h2_out;
 #line 1421 "fixedbugs147onestatementonanarmsline.c"
     hero_array_incref(t12);
-    hero_array_decref(h2_out);
-    hero_array_decref(h4_own4);
+    hero_array_release_at(&h2_out);
+    hero_array_release_at(&h4_own4);
     return t12;
 }
 HERO_TU_LOCAL bool h_fixedbugs147onestatementonanarmsline_Color_eq(const h_fixedbugs147onestatementonanarmsline_Color *a, const h_fixedbugs147onestatementonanarmsline_Color *b) {

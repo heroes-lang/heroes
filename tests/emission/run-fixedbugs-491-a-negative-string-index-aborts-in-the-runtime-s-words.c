@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -144,7 +144,7 @@ bb0:
 #line 9 "tests/golden/run/fixedbugs-491-a-negative-string-index-aborts-in-the-runtime-s-words.hero"
     hero_print_end();
 #line 147 "fixedbugs491anegativestringindexabortsintheruntimeswords.c"
-    hero_str_decref(h0_text);
+    hero_str_release_at(&h0_text);
     return;
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {

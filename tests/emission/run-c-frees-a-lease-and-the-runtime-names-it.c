@@ -7,7 +7,7 @@
 #include <c-frees-a-lease-and-the-runtime-names-it.h>
 #include "heroes_guard_close.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -134,7 +134,7 @@ bb0:
     (void)eat(hero_cstr_nonnull(t5));
     hero_held_release(&h1_c);
 #line 137 "cfreesaleaseandtheruntimenamesit.c"
-    hero_str_decref(h0_x);
+    hero_str_release_at(&h0_x);
     return;
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {

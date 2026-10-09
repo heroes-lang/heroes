@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -229,10 +229,10 @@ bb1:
     t11 = h2_r0;
 #line 231 "fixedbugsatypeparameteronlyintheresult.c"
     h_0opt_e201354_retain(&t11);
-    h_fixedbugsatypeparameteronlyintheresult_Value_release(&h1_s0);
-    h_0opt_e201354_release(&h2_r0);
-    h_0opt_e201354_release(&h4_own4);
-    h_0opt_e201354_release(&h5_own5);
+    h_fixedbugsatypeparameteronlyintheresult_Value_release(hero_slot_escape(&h1_s0));
+    h_0opt_e201354_release(hero_slot_escape(&h2_r0));
+    h_0opt_e201354_release(hero_slot_escape(&h4_own4));
+    h_0opt_e201354_release(hero_slot_escape(&h5_own5));
     return t11;
 bb2:
 #line 20 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
@@ -341,11 +341,11 @@ bb1:
     t11 = h2_r0;
 #line 343 "fixedbugsatypeparameteronlyintheresult.c"
     h_0opt_f87774a_retain(&t11);
-    h_fixedbugsatypeparameteronlyintheresult_Value_release(&h1_s0);
-    h_0opt_f87774a_release(&h2_r0);
-    h_fixedbugsatypeparameteronlyintheresult_Value_c_text_release(&h3_t);
-    h_0opt_f87774a_release(&h4_own4);
-    h_0opt_f87774a_release(&h5_own5);
+    h_fixedbugsatypeparameteronlyintheresult_Value_release(hero_slot_escape(&h1_s0));
+    h_0opt_f87774a_release(hero_slot_escape(&h2_r0));
+    h_fixedbugsatypeparameteronlyintheresult_Value_c_text_release(hero_slot_escape(&h3_t));
+    h_0opt_f87774a_release(hero_slot_escape(&h4_own4));
+    h_0opt_f87774a_release(hero_slot_escape(&h5_own5));
     return t11;
 bb2:
 #line 25 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
@@ -466,8 +466,8 @@ bb4:
 #line 467 "fixedbugsatypeparameteronlyintheresult.c"
     t6 = h1_ret0;
     h_0opt_e201354_retain(&t6);
-    h_0opt_e201354_release(&h2_own2);
-    h_0opt_e201354_release(&h3_own3);
+    h_0opt_e201354_release(hero_slot_escape(&h2_own2));
+    h_0opt_e201354_release(hero_slot_escape(&h3_own3));
     return t6;
 }
 
@@ -491,7 +491,7 @@ bb0:
 #line 492 "fixedbugsatypeparameteronlyintheresult.c"
     h_0opt_473cb9ae_release(&t3);
     h_0opt_473cb9ae_retain(&t2);
-    h_0opt_473cb9ae_release(&h0_own0);
+    h_0opt_473cb9ae_release(hero_slot_escape(&h0_own0));
     return t2;
 }
 
@@ -922,26 +922,26 @@ bb6:
 #line 49 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
     hero_print_end();
 #line 925 "fixedbugsatypeparameteronlyintheresult.c"
-    h_0opt_e201354_release(&h0_f0);
-    h_0opt_e201354_release(&h1_s0);
+    h_0opt_e201354_release(hero_slot_escape(&h0_f0));
+    h_0opt_e201354_release(hero_slot_escape(&h1_s0));
     hero_failure_release(&h2_e);
-    h_0opt_f87774a_release(&h3_f1);
-    h_0opt_f87774a_release(&h4_f2);
-    h_0opt_e201354_release(&h5_f3);
-    h_0opt_db92a83_release(&h6_annotated);
-    h_0opt_db92a83_release(&h7_f4);
-    h_0opt_473cb9ae_release(&h8_f5);
-    h_fixedbugsatypeparameteronlyintheresult_Value_release(&h9_own9);
-    h_0opt_e201354_release(&h10_own10);
-    h_fixedbugsatypeparameteronlyintheresult_Value_release(&h11_own11);
-    h_0opt_e201354_release(&h12_own12);
-    h_fixedbugsatypeparameteronlyintheresult_Value_release(&h13_own13);
-    h_0opt_f87774a_release(&h14_own14);
-    h_fixedbugsatypeparameteronlyintheresult_Value_release(&h15_own15);
-    h_0opt_f87774a_release(&h16_own16);
-    h_0opt_e201354_release(&h17_own17);
-    h_0opt_db92a83_release(&h18_own18);
-    h_0opt_473cb9ae_release(&h19_own19);
+    h_0opt_f87774a_release(hero_slot_escape(&h3_f1));
+    h_0opt_f87774a_release(hero_slot_escape(&h4_f2));
+    h_0opt_e201354_release(hero_slot_escape(&h5_f3));
+    h_0opt_db92a83_release(hero_slot_escape(&h6_annotated));
+    h_0opt_db92a83_release(hero_slot_escape(&h7_f4));
+    h_0opt_473cb9ae_release(hero_slot_escape(&h8_f5));
+    h_fixedbugsatypeparameteronlyintheresult_Value_release(hero_slot_escape(&h9_own9));
+    h_0opt_e201354_release(hero_slot_escape(&h10_own10));
+    h_fixedbugsatypeparameteronlyintheresult_Value_release(hero_slot_escape(&h11_own11));
+    h_0opt_e201354_release(hero_slot_escape(&h12_own12));
+    h_fixedbugsatypeparameteronlyintheresult_Value_release(hero_slot_escape(&h13_own13));
+    h_0opt_f87774a_release(hero_slot_escape(&h14_own14));
+    h_fixedbugsatypeparameteronlyintheresult_Value_release(hero_slot_escape(&h15_own15));
+    h_0opt_f87774a_release(hero_slot_escape(&h16_own16));
+    h_0opt_e201354_release(hero_slot_escape(&h17_own17));
+    h_0opt_db92a83_release(hero_slot_escape(&h18_own18));
+    h_0opt_473cb9ae_release(hero_slot_escape(&h19_own19));
     return;
 bb7:
 #line 44 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
@@ -981,7 +981,7 @@ bb0:
 #line 982 "fixedbugsatypeparameteronlyintheresult.c"
     h_0opt_e201354_release(&t4);
     h_0opt_e201354_retain(&t3);
-    h_0opt_e201354_release(&h1_own1);
+    h_0opt_e201354_release(hero_slot_escape(&h1_own1));
     return t3;
 }
 
@@ -1013,7 +1013,7 @@ bb0:
 #line 1014 "fixedbugsatypeparameteronlyintheresult.c"
     h_0opt_f87774a_release(&t4);
     h_0opt_f87774a_retain(&t3);
-    h_0opt_f87774a_release(&h1_own1);
+    h_0opt_f87774a_release(hero_slot_escape(&h1_own1));
     return t3;
 }
 
@@ -1045,7 +1045,7 @@ bb0:
 #line 1046 "fixedbugsatypeparameteronlyintheresult.c"
     h_0opt_473cb9ae_release(&t4);
     h_0opt_473cb9ae_retain(&t3);
-    h_0opt_473cb9ae_release(&h1_own1);
+    h_0opt_473cb9ae_release(hero_slot_escape(&h1_own1));
     return t3;
 }
 
@@ -1077,7 +1077,7 @@ bb0:
 #line 1078 "fixedbugsatypeparameteronlyintheresult.c"
     h_0opt_db92a83_release(&t4);
     h_0opt_db92a83_retain(&t3);
-    h_0opt_db92a83_release(&h1_own1);
+    h_0opt_db92a83_release(hero_slot_escape(&h1_own1));
     return t3;
 }
 HERO_TU_LOCAL bool h_fixedbugsatypeparameteronlyintheresult_Value_c_number_eq(const h_fixedbugsatypeparameteronlyintheresult_Value_c_number *a, const h_fixedbugsatypeparameteronlyintheresult_Value_c_number *b) {

@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -196,8 +196,8 @@ bb4:
 #line 197 "fallible.c"
     t13 = h1_ret0;
     h_0opt_e201354_retain(&t13);
-    h_0opt_e201354_release(&h2_own2);
-    h_0opt_e201354_release(&h3_own3);
+    h_0opt_e201354_release(hero_slot_escape(&h2_own2));
+    h_0opt_e201354_release(hero_slot_escape(&h3_own3));
     return t13;
 }
 
@@ -477,19 +477,19 @@ bb4:
 #line 38 "tests/golden/run/fallible.hero"
     hero_print_end();
 #line 480 "fallible.c"
-    h_0opt_e201354_release(&h0_f0);
-    h_0opt_e201354_release(&h3_f1);
-    h_0opt_e201354_release(&h4_s0);
+    h_0opt_e201354_release(hero_slot_escape(&h0_f0));
+    h_0opt_e201354_release(hero_slot_escape(&h3_f1));
+    h_0opt_e201354_release(hero_slot_escape(&h4_s0));
     hero_failure_release(&h6_e);
-    h_0opt_e201354_release(&h7_own7);
-    h_0opt_e201354_release(&h8_own8);
-    h_0opt_e201354_release(&h9_own9);
-    h_0opt_e201354_release(&h10_own10);
-    h_0opt_e201354_release(&h11_own11);
-    h_0opt_e201354_release(&h12_own12);
-    h_0opt_e201354_release(&h13_own13);
-    h_0opt_e201354_release(&h14_own14);
-    h_0opt_e201354_release(&h15_own15);
+    h_0opt_e201354_release(hero_slot_escape(&h7_own7));
+    h_0opt_e201354_release(hero_slot_escape(&h8_own8));
+    h_0opt_e201354_release(hero_slot_escape(&h9_own9));
+    h_0opt_e201354_release(hero_slot_escape(&h10_own10));
+    h_0opt_e201354_release(hero_slot_escape(&h11_own11));
+    h_0opt_e201354_release(hero_slot_escape(&h12_own12));
+    h_0opt_e201354_release(hero_slot_escape(&h13_own13));
+    h_0opt_e201354_release(hero_slot_escape(&h14_own14));
+    h_0opt_e201354_release(hero_slot_escape(&h15_own15));
     return;
 bb5:
 #line 31 "tests/golden/run/fallible.hero"

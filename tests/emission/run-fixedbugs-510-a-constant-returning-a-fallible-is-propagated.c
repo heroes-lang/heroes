@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -199,8 +199,8 @@ bb4:
 #line 200 "fixedbugs510aconstantreturningafallibleispropagated.c"
     t13 = h1_ret0;
     h_0opt_e201354_retain(&t13);
-    h_0opt_e201354_release(&h2_own2);
-    h_0opt_e201354_release(&h3_own3);
+    h_0opt_e201354_release(hero_slot_escape(&h2_own2));
+    h_0opt_e201354_release(hero_slot_escape(&h3_own3));
     return t13;
 }
 
@@ -389,13 +389,13 @@ bb5:
 #line 390 "fixedbugs510aconstantreturningafallibleispropagated.c"
     t25 = h3_ret0;
     h_0opt_e201354_retain(&t25);
-    h_0opt_e201354_release(&h1_f0);
-    h_0opt_e201354_release(&h2_f1);
-    h_0opt_e201354_release(&h4_own4);
-    h_0opt_e201354_release(&h5_own5);
-    h_0opt_e201354_release(&h6_own6);
-    h_0opt_e201354_release(&h7_own7);
-    h_0opt_e201354_release(&h8_own8);
+    h_0opt_e201354_release(hero_slot_escape(&h1_f0));
+    h_0opt_e201354_release(hero_slot_escape(&h2_f1));
+    h_0opt_e201354_release(hero_slot_escape(&h4_own4));
+    h_0opt_e201354_release(hero_slot_escape(&h5_own5));
+    h_0opt_e201354_release(hero_slot_escape(&h6_own6));
+    h_0opt_e201354_release(hero_slot_escape(&h7_own7));
+    h_0opt_e201354_release(hero_slot_escape(&h8_own8));
     return t25;
 }
 
@@ -558,13 +558,13 @@ bb2:
     hero_panic_must(t8);
     hero_unreachable();
 bb3:
-    h_0opt_e201354_release(&h0_f0);
-    h_0opt_e201354_release(&h1_f1);
-    h_0opt_e201354_release(&h2_s0);
+    h_0opt_e201354_release(hero_slot_escape(&h0_f0));
+    h_0opt_e201354_release(hero_slot_escape(&h1_f1));
+    h_0opt_e201354_release(hero_slot_escape(&h2_s0));
     hero_failure_release(&h4_e);
-    h_0opt_e201354_release(&h5_own5);
-    h_0opt_e201354_release(&h6_own6);
-    h_0opt_e201354_release(&h7_own7);
+    h_0opt_e201354_release(hero_slot_escape(&h5_own5));
+    h_0opt_e201354_release(hero_slot_escape(&h6_own6));
+    h_0opt_e201354_release(hero_slot_escape(&h7_own7));
     return;
 bb4:
 #line 22 "tests/golden/run/fixedbugs-510-a-constant-returning-a-fallible-is-propagated.hero"

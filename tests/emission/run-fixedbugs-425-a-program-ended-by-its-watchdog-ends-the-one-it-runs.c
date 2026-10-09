@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -174,7 +174,7 @@ bb0:
 #line 175 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
     hero_str_decref(t4);
     hero_str_incref(t3);
-    hero_str_decref(h2_own2);
+    hero_str_release_at(&h2_own2);
     hero_lend_local_give(hero_lend_h1_marks);
     hero_lend_local_give(hero_lend_h0_status);
     return t3;
@@ -342,10 +342,10 @@ bb4:
     (void)hero_run_reset();
     t27 = h7_code;
 #line 345 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
-    hero_str_decref(h2_program);
-    hero_array_decref(h3_xs0);
-    hero_str_decref(h5_word);
-    hero_str_decref(h8_own8);
+    hero_str_release_at(&h2_program);
+    hero_array_release_at(&h3_xs0);
+    hero_str_release_at(&h5_word);
+    hero_str_release_at(&h8_own8);
     hero_lend_local_give(hero_lend_h6_status);
     return t27;
 }
@@ -440,11 +440,11 @@ bb2:
 #line 67 "tests/golden/run/fixedbugs-425-a-program-ended-by-its-watchdog-ends-the-one-it-runs.hero"
 bb3:
 #line 443 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
-    h_0opt_a8ea2_release(&h3_f0);
-    hero_str_decref(h4_own4);
-    hero_str_decref(h5_own5);
-    hero_str_decref(h6_own6);
-    h_0opt_a8ea2_release(&h7_own7);
+    h_0opt_a8ea2_release(hero_slot_escape(&h3_f0));
+    hero_str_release_at(&h4_own4);
+    hero_str_release_at(&h5_own5);
+    hero_str_release_at(&h6_own6);
+    h_0opt_a8ea2_release(hero_slot_escape(&h7_own7));
     return;
 bb4:
     goto bb1;
@@ -770,11 +770,11 @@ bb1:
 #line 107 "tests/golden/run/fixedbugs-425-a-program-ended-by-its-watchdog-ends-the-one-it-runs.hero"
     (void)hero_dir_remove_tree(hero_cstr_nonnull(t31));
 #line 773 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
-    hero_str_decref(h0_dir);
-    hero_str_decref(h2_own2);
-    hero_str_decref(h3_own3);
-    hero_array_decref(h4_own4);
-    hero_array_decref(h5_own5);
+    hero_str_release_at(&h0_dir);
+    hero_str_release_at(&h2_own2);
+    hero_str_release_at(&h3_own3);
+    hero_array_release_at(&h4_own4);
+    hero_array_release_at(&h5_own5);
     return;
 bb2:
 #line 99 "tests/golden/run/fixedbugs-425-a-program-ended-by-its-watchdog-ends-the-one-it-runs.hero"
@@ -906,9 +906,9 @@ bb0:
 #line 112 "tests/golden/run/fixedbugs-425-a-program-ended-by-its-watchdog-ends-the-one-it-runs.hero"
 bb1:
 #line 909 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
-    hero_array_decref(h0_words);
-    hero_array_decref(h1_own1);
-    hero_array_decref(h2_own2);
+    hero_array_release_at(&h0_words);
+    hero_array_release_at(&h1_own1);
+    hero_array_release_at(&h2_own2);
     return;
 bb2:
 #line 113 "tests/golden/run/fixedbugs-425-a-program-ended-by-its-watchdog-ends-the-one-it-runs.hero"
@@ -1149,10 +1149,10 @@ bb7:
 #line 1150 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
     t19 = h3_ret0;
     h_0opt_a8ea2_retain(&t19);
-    h_0opt_a8ea2_release(&h4_own4);
-    hero_str_decref(h5_own5);
-    h_0opt_a8ea2_release(&h6_own6);
-    h_0opt_a8ea2_release(&h7_own7);
+    h_0opt_a8ea2_release(hero_slot_escape(&h4_own4));
+    hero_str_release_at(&h5_own5);
+    h_0opt_a8ea2_release(hero_slot_escape(&h6_own6));
+    h_0opt_a8ea2_release(hero_slot_escape(&h7_own7));
     return t19;
 }
 
@@ -1237,9 +1237,9 @@ bb3:
     t13 = h0_out;
 #line 1239 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
     hero_array_incref(t13);
-    hero_array_decref(h0_out);
-    hero_array_decref(h2_own2);
-    hero_str_decref(h3_own3);
+    hero_array_release_at(&h0_out);
+    hero_array_release_at(&h2_own2);
+    hero_str_release_at(&h3_own3);
     return t13;
 }
 HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {

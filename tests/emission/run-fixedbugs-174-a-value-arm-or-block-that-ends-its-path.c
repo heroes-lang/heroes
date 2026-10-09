@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -972,8 +972,8 @@ bb1:
     t8 = h3_s;
 #line 974 "fixedbugs174avaluearmorblockthatendsitspath.c"
     hero_str_incref(t8);
-    hero_str_decref(h2_r0);
-    hero_str_decref(h3_s);
+    hero_str_release_at(&h2_r0);
+    hero_str_release_at(&h3_s);
     return t8;
 bb2:
 #line 117 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
@@ -1049,9 +1049,9 @@ bb1:
 #line 131 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
     t13 = h4_x;
 #line 1052 "fixedbugs174avaluearmorblockthatendsitspath.c"
-    hero_str_decref(h3_t);
-    hero_str_decref(h5_own5);
-    hero_str_decref(h6_own6);
+    hero_str_release_at(&h3_t);
+    hero_str_release_at(&h5_own5);
+    hero_str_release_at(&h6_own6);
     return t13;
 bb2:
 #line 126 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
@@ -1224,7 +1224,7 @@ bb2:
 #line 1225 "fixedbugs174avaluearmorblockthatendsitspath.c"
     h_0opt_e201354_release(&t12);
     h_0opt_e201354_retain(&t9);
-    h_0opt_e201354_release(&h1_own1);
+    h_0opt_e201354_release(hero_slot_escape(&h1_own1));
     return t9;
 bb3:
     goto bb1;
@@ -1628,11 +1628,11 @@ bb1:
 #line 190 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
     hero_print_end();
 #line 1631 "fixedbugs174avaluearmorblockthatendsitspath.c"
-    h_0opt_e201354_release(&h1_f0);
-    hero_str_decref(h3_own3);
-    hero_array_decref(h4_own4);
-    h_0opt_e201354_release(&h5_own5);
-    hero_str_decref(h6_own6);
+    h_0opt_e201354_release(hero_slot_escape(&h1_f0));
+    hero_str_release_at(&h3_own3);
+    hero_array_release_at(&h4_own4);
+    h_0opt_e201354_release(hero_slot_escape(&h5_own5));
+    hero_str_release_at(&h6_own6);
     return;
 bb2:
 #line 187 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"

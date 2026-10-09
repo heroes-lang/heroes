@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -224,7 +224,7 @@ bb1:
     t6 = h2_r0;
 #line 226 "variantarms.c"
     hero_str_incref(t6);
-    hero_str_decref(h2_r0);
+    hero_str_release_at(&h2_r0);
     return t6;
 bb2:
 #line 38 "tests/golden/run/variant-arms.hero"
@@ -306,8 +306,8 @@ bb1:
     t7 = h3_m;
 #line 308 "variantarms.c"
     hero_str_incref(t7);
-    hero_str_decref(h2_r0);
-    hero_str_decref(h3_m);
+    hero_str_release_at(&h2_r0);
+    hero_str_release_at(&h3_m);
     return t7;
 bb2:
 #line 43 "tests/golden/run/variant-arms.hero"
@@ -517,10 +517,10 @@ bb1:
 #line 68 "tests/golden/run/variant-arms.hero"
     hero_print_end();
 #line 520 "variantarms.c"
-    hero_str_decref(h4_own4);
-    hero_str_decref(h5_own5);
-    hero_str_decref(h6_own6);
-    hero_str_decref(h7_own7);
+    hero_str_release_at(&h4_own4);
+    hero_str_release_at(&h5_own5);
+    hero_str_release_at(&h6_own6);
+    hero_str_release_at(&h7_own7);
     return;
 bb2:
 #line 56 "tests/golden/run/variant-arms.hero"

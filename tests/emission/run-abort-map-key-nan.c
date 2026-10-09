@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -177,8 +177,8 @@ bb0:
 #line 40 "tests/golden/run/abort-map-key-nan.hero"
     hero_print_end();
 #line 180 "abortmapkeynan.c"
-    hero_array_decref(h0_own0);
-    hero_array_decref(h1_own1);
+    hero_array_release_at(&h0_own0);
+    hero_array_release_at(&h1_own1);
     return;
 }
 
@@ -294,9 +294,9 @@ bb4:
 #line 33 "tests/golden/run/abort-map-key-nan.hero"
     t17 = hero_map_len(t16);
 #line 297 "abortmapkeynan.c"
-    hero_map_decref(h1_m);
-    hero_array_decref(h2_xs0);
-    hero_map_decref(h5_own5);
+    hero_map_release_at(&h1_m);
+    hero_array_release_at(&h2_xs0);
+    hero_map_release_at(&h5_own5);
     return t17;
 }
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {

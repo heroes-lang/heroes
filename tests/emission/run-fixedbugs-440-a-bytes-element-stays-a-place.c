@@ -7,7 +7,7 @@
 #include <fixedbugs-440-bytes.h>
 #include "heroes_guard_close.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -188,7 +188,7 @@ bb0:
     (*ph0_s) = t3;
 #line 190 "fixedbugs440abyteselementstaysaplace.c"
     hero_str_decref(t5);
-    hero_str_decref(h1_own1);
+    hero_str_release_at(&h1_own1);
     return;
 }
 
@@ -419,14 +419,14 @@ bb0:
 #line 37 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
     hero_print_end();
 #line 422 "fixedbugs440abyteselementstaysaplace.c"
-    hero_array_decref(h0_bs);
-    h_fixedbugs440abyteselementstaysaplace_Packet_release(&h2_p);
-    hero_str_decref(h3_s);
-    hero_array_decref(h4_xs);
-    hero_array_decref(h5_own5);
-    hero_array_decref(h6_own6);
-    h_fixedbugs440abyteselementstaysaplace_Packet_release(&h7_own7);
-    hero_array_decref(h8_own8);
+    hero_array_release_at(&h0_bs);
+    h_fixedbugs440abyteselementstaysaplace_Packet_release(hero_slot_escape(&h2_p));
+    hero_str_release_at(&h3_s);
+    hero_array_release_at(&h4_xs);
+    hero_array_release_at(&h5_own5);
+    hero_array_release_at(&h6_own6);
+    h_fixedbugs440abyteselementstaysaplace_Packet_release(hero_slot_escape(&h7_own7));
+    hero_array_release_at(&h8_own8);
     return;
 }
 HERO_TU_LOCAL void h_fixedbugs440abyteselementstaysaplace_Packet_retain(const h_fixedbugs440abyteselementstaysaplace_Packet *v) {

@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -785,27 +785,27 @@ bb0:
 #line 80 "tests/golden/run/adversarial-cow-per-step.hero"
     hero_print_end();
 #line 788 "adversarialcowperstep.c"
-    h_adversarialcowperstep_Grid_release(&h0_g);
-    h_adversarialcowperstep_Grid_release(&h1_h);
-    h_adversarialcowperstep_Node_release(&h2_n);
-    h_adversarialcowperstep_Grid_release(&h3_m);
-    hero_array_decref(h4_xs);
-    hero_array_decref(h5_ys);
-    hero_array_decref(h6_own6);
-    h_adversarialcowperstep_Row_release(&h7_own7);
-    hero_array_decref(h8_own8);
-    h_adversarialcowperstep_Grid_release(&h9_own9);
-    hero_array_decref(h10_own10);
-    h_adversarialcowperstep_Node_release(&h11_own11);
-    hero_array_decref(h12_own12);
-    h_adversarialcowperstep_Node_release(&h13_own13);
-    hero_array_decref(h14_own14);
-    h_adversarialcowperstep_Row_release(&h15_own15);
-    hero_array_decref(h16_own16);
-    h_adversarialcowperstep_Row_release(&h17_own17);
-    hero_array_decref(h18_own18);
-    h_adversarialcowperstep_Grid_release(&h19_own19);
-    hero_array_decref(h20_own20);
+    h_adversarialcowperstep_Grid_release(hero_slot_escape(&h0_g));
+    h_adversarialcowperstep_Grid_release(hero_slot_escape(&h1_h));
+    h_adversarialcowperstep_Node_release(hero_slot_escape(&h2_n));
+    h_adversarialcowperstep_Grid_release(hero_slot_escape(&h3_m));
+    hero_array_release_at(&h4_xs);
+    hero_array_release_at(&h5_ys);
+    hero_array_release_at(&h6_own6);
+    h_adversarialcowperstep_Row_release(hero_slot_escape(&h7_own7));
+    hero_array_release_at(&h8_own8);
+    h_adversarialcowperstep_Grid_release(hero_slot_escape(&h9_own9));
+    hero_array_release_at(&h10_own10);
+    h_adversarialcowperstep_Node_release(hero_slot_escape(&h11_own11));
+    hero_array_release_at(&h12_own12);
+    h_adversarialcowperstep_Node_release(hero_slot_escape(&h13_own13));
+    hero_array_release_at(&h14_own14);
+    h_adversarialcowperstep_Row_release(hero_slot_escape(&h15_own15));
+    hero_array_release_at(&h16_own16);
+    h_adversarialcowperstep_Row_release(hero_slot_escape(&h17_own17));
+    hero_array_release_at(&h18_own18);
+    h_adversarialcowperstep_Grid_release(hero_slot_escape(&h19_own19));
+    hero_array_release_at(&h20_own20);
     return;
 }
 HERO_TU_LOCAL void h_adversarialcowperstep_Row_retain(const h_adversarialcowperstep_Row *v) {

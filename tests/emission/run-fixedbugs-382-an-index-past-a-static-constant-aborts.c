@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -131,7 +131,7 @@ bb0:
 #line 132 "fixedbugs382anindexpastastaticconstantaborts.c"
     hero_array_decref(t5);
     hero_array_incref(t4);
-    hero_array_decref(h0_own0);
+    hero_array_release_at(&h0_own0);
     return t4;
 }
 #endif
@@ -159,7 +159,7 @@ bb0:
 #line 11 "tests/golden/run/fixedbugs-382-an-index-past-a-static-constant-aborts.hero"
     t3 = ((void)((t1 == NULL || t2 < 0 || t2 >= t1->len) ? ((void)hero_array_at(t1, t2), hero_unreachable()) : (void)0), (void)(t1->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t1 + 1))[t2]);
 #line 162 "fixedbugs382anindexpastastaticconstantaborts.c"
-    hero_array_decref(h1_own1);
+    hero_array_release_at(&h1_own1);
     return t3;
 }
 

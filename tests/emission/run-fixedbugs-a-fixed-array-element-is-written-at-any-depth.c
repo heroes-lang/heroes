@@ -9,7 +9,7 @@
 #pragma push_macro("v")
 #include "heroes_guard_close.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -611,10 +611,10 @@ bb0:
 #line 55 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
     hero_print_end();
 #line 614 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
-    hero_array_decref(h3_xs);
-    hero_array_decref(h4_ys);
-    hero_array_decref(h5_own5);
-    hero_array_decref(h6_own6);
+    hero_array_release_at(&h3_xs);
+    hero_array_release_at(&h4_ys);
+    hero_array_release_at(&h5_own5);
+    hero_array_release_at(&h6_own6);
     return;
 }
 
@@ -699,9 +699,9 @@ bb3:
     t13 = h0_out;
 #line 701 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
     hero_array_incref(t13);
-    hero_array_decref(h0_out);
-    hero_array_decref(h2_own2);
-    hero_str_decref(h3_own3);
+    hero_array_release_at(&h0_out);
+    hero_array_release_at(&h2_own2);
+    hero_str_release_at(&h3_own3);
     return t13;
 }
 HERO_TU_LOCAL bool h_fixedbugsafixedarrayelementiswrittenatanydepth_Row_eq(const struct row *a, const struct row *b) {

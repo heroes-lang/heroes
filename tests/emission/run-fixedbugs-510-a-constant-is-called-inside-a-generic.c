@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -180,8 +180,8 @@ bb0:
 #line 22 "tests/golden/run/fixedbugs-510-a-constant-is-called-inside-a-generic.hero"
     hero_print_end();
 #line 183 "fixedbugs510aconstantiscalledinsideageneric.c"
-    hero_array_decref(h0_own0);
-    hero_array_decref(h1_own1);
+    hero_array_release_at(&h0_own0);
+    hero_array_release_at(&h1_own1);
     return;
 }
 
@@ -255,8 +255,8 @@ bb3:
     t12 = h2_out;
 #line 257 "fixedbugs510aconstantiscalledinsideageneric.c"
     hero_array_incref(t12);
-    hero_array_decref(h2_out);
-    hero_array_decref(h4_own4);
+    hero_array_release_at(&h2_out);
+    hero_array_release_at(&h4_own4);
     return t12;
 }
 
@@ -375,10 +375,10 @@ bb4:
     t18 = h2_out;
 #line 377 "fixedbugs510aconstantiscalledinsideageneric.c"
     hero_array_incref(t18);
-    hero_array_decref(h2_out);
-    hero_array_decref(h3_xs0);
-    hero_array_decref(h5_own5);
-    hero_array_decref(h6_own6);
+    hero_array_release_at(&h2_out);
+    hero_array_release_at(&h3_xs0);
+    hero_array_release_at(&h5_own5);
+    hero_array_release_at(&h6_own6);
     return t18;
 }
 
@@ -497,10 +497,10 @@ bb4:
     t18 = h2_out;
 #line 499 "fixedbugs510aconstantiscalledinsideageneric.c"
     hero_array_incref(t18);
-    hero_array_decref(h2_out);
-    hero_array_decref(h3_xs0);
-    hero_array_decref(h5_own5);
-    hero_array_decref(h6_own6);
+    hero_array_release_at(&h2_out);
+    hero_array_release_at(&h3_xs0);
+    hero_array_release_at(&h5_own5);
+    hero_array_release_at(&h6_own6);
     return t18;
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {

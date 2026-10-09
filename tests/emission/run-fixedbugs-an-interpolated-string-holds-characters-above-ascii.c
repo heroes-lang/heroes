@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -180,9 +180,9 @@ bb0:
 #line 181 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
     hero_str_decref(t9);
     hero_str_incref(t6);
-    hero_str_decref(h1_own1);
-    hero_str_decref(h2_own2);
-    hero_str_decref(h3_own3);
+    hero_str_release_at(&h1_own1);
+    hero_str_release_at(&h2_own2);
+    hero_str_release_at(&h3_own3);
     return t6;
 }
 
@@ -1235,72 +1235,72 @@ bb3:
 #line 39 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"
     hero_print_end();
 #line 1238 "fixedbugsaninterpolatedstringholdscharactersaboveascii.c"
-    hero_str_decref(h1_word);
-    hero_map_decref(h2_m);
-    h_0opt_e201354_release(&h3_f0);
-    h_0opt_e201354_release(&h4_f1);
-    hero_str_decref(h5_own5);
-    hero_str_decref(h6_own6);
-    hero_str_decref(h7_own7);
-    hero_str_decref(h8_own8);
-    hero_str_decref(h9_own9);
-    hero_str_decref(h10_own10);
-    hero_str_decref(h11_own11);
-    hero_str_decref(h12_own12);
-    hero_str_decref(h13_own13);
-    hero_str_decref(h14_own14);
-    hero_str_decref(h15_own15);
-    hero_str_decref(h16_own16);
-    hero_str_decref(h17_own17);
-    hero_str_decref(h18_own18);
-    hero_str_decref(h19_own19);
-    hero_str_decref(h20_own20);
-    hero_str_decref(h21_own21);
-    hero_str_decref(h22_own22);
-    hero_str_decref(h23_own23);
-    hero_str_decref(h24_own24);
-    hero_str_decref(h25_own25);
-    hero_str_decref(h26_own26);
-    hero_str_decref(h27_own27);
-    hero_str_decref(h28_own28);
-    hero_str_decref(h29_own29);
-    hero_str_decref(h30_own30);
-    hero_str_decref(h31_own31);
-    hero_str_decref(h32_own32);
-    hero_str_decref(h33_own33);
-    hero_str_decref(h34_own34);
-    hero_str_decref(h35_own35);
-    hero_str_decref(h36_own36);
-    hero_str_decref(h37_own37);
-    hero_str_decref(h38_own38);
-    hero_str_decref(h39_own39);
-    hero_str_decref(h40_own40);
-    hero_str_decref(h41_own41);
-    hero_str_decref(h42_own42);
-    hero_str_decref(h43_own43);
-    hero_str_decref(h44_own44);
-    hero_str_decref(h45_own45);
-    hero_str_decref(h46_own46);
-    hero_str_decref(h47_own47);
-    hero_str_decref(h48_own48);
-    hero_str_decref(h49_own49);
-    hero_map_decref(h50_own50);
-    hero_str_decref(h51_own51);
-    hero_str_decref(h52_own52);
-    hero_str_decref(h53_own53);
-    hero_str_decref(h54_own54);
-    hero_str_decref(h55_own55);
-    hero_str_decref(h56_own56);
-    h_0opt_e201354_release(&h57_own57);
-    hero_str_decref(h58_own58);
-    hero_str_decref(h59_own59);
-    h_0opt_e201354_release(&h60_own60);
-    hero_str_decref(h61_own61);
-    hero_str_decref(h62_own62);
-    hero_str_decref(h63_own63);
-    hero_str_decref(h64_own64);
-    hero_str_decref(h65_own65);
-    hero_str_decref(h66_own66);
+    hero_str_release_at(&h1_word);
+    hero_map_release_at(&h2_m);
+    h_0opt_e201354_release(hero_slot_escape(&h3_f0));
+    h_0opt_e201354_release(hero_slot_escape(&h4_f1));
+    hero_str_release_at(&h5_own5);
+    hero_str_release_at(&h6_own6);
+    hero_str_release_at(&h7_own7);
+    hero_str_release_at(&h8_own8);
+    hero_str_release_at(&h9_own9);
+    hero_str_release_at(&h10_own10);
+    hero_str_release_at(&h11_own11);
+    hero_str_release_at(&h12_own12);
+    hero_str_release_at(&h13_own13);
+    hero_str_release_at(&h14_own14);
+    hero_str_release_at(&h15_own15);
+    hero_str_release_at(&h16_own16);
+    hero_str_release_at(&h17_own17);
+    hero_str_release_at(&h18_own18);
+    hero_str_release_at(&h19_own19);
+    hero_str_release_at(&h20_own20);
+    hero_str_release_at(&h21_own21);
+    hero_str_release_at(&h22_own22);
+    hero_str_release_at(&h23_own23);
+    hero_str_release_at(&h24_own24);
+    hero_str_release_at(&h25_own25);
+    hero_str_release_at(&h26_own26);
+    hero_str_release_at(&h27_own27);
+    hero_str_release_at(&h28_own28);
+    hero_str_release_at(&h29_own29);
+    hero_str_release_at(&h30_own30);
+    hero_str_release_at(&h31_own31);
+    hero_str_release_at(&h32_own32);
+    hero_str_release_at(&h33_own33);
+    hero_str_release_at(&h34_own34);
+    hero_str_release_at(&h35_own35);
+    hero_str_release_at(&h36_own36);
+    hero_str_release_at(&h37_own37);
+    hero_str_release_at(&h38_own38);
+    hero_str_release_at(&h39_own39);
+    hero_str_release_at(&h40_own40);
+    hero_str_release_at(&h41_own41);
+    hero_str_release_at(&h42_own42);
+    hero_str_release_at(&h43_own43);
+    hero_str_release_at(&h44_own44);
+    hero_str_release_at(&h45_own45);
+    hero_str_release_at(&h46_own46);
+    hero_str_release_at(&h47_own47);
+    hero_str_release_at(&h48_own48);
+    hero_str_release_at(&h49_own49);
+    hero_map_release_at(&h50_own50);
+    hero_str_release_at(&h51_own51);
+    hero_str_release_at(&h52_own52);
+    hero_str_release_at(&h53_own53);
+    hero_str_release_at(&h54_own54);
+    hero_str_release_at(&h55_own55);
+    hero_str_release_at(&h56_own56);
+    h_0opt_e201354_release(hero_slot_escape(&h57_own57));
+    hero_str_release_at(&h58_own58);
+    hero_str_release_at(&h59_own59);
+    h_0opt_e201354_release(hero_slot_escape(&h60_own60));
+    hero_str_release_at(&h61_own61);
+    hero_str_release_at(&h62_own62);
+    hero_str_release_at(&h63_own63);
+    hero_str_release_at(&h64_own64);
+    hero_str_release_at(&h65_own65);
+    hero_str_release_at(&h66_own66);
     return;
 bb4:
 #line 37 "tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero"

@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -137,7 +137,7 @@ bb0:
 #line 138 "recordsownstrings.c"
     hero_str_decref(t5);
     hero_str_incref(t4);
-    hero_str_decref(h1_own1);
+    hero_str_release_at(&h1_own1);
     return t4;
 }
 
@@ -397,15 +397,15 @@ bb0:
 #line 44 "tests/golden/run/records-own-strings.hero"
     hero_print_end();
 #line 400 "recordsownstrings.c"
-    h_recordsownstrings_Person_release(&h0_p);
-    h_recordsownstrings_Person_release(&h1_q);
-    h_recordsownstrings_Pair_release(&h2_both);
-    hero_str_decref(h3_own3);
-    h_recordsownstrings_Person_release(&h4_own4);
-    hero_str_decref(h5_own5);
-    h_recordsownstrings_Person_release(&h6_own6);
-    h_recordsownstrings_Pair_release(&h7_own7);
-    h_recordsownstrings_Pair_release(&h8_own8);
+    h_recordsownstrings_Person_release(hero_slot_escape(&h0_p));
+    h_recordsownstrings_Person_release(hero_slot_escape(&h1_q));
+    h_recordsownstrings_Pair_release(hero_slot_escape(&h2_both));
+    hero_str_release_at(&h3_own3);
+    h_recordsownstrings_Person_release(hero_slot_escape(&h4_own4));
+    hero_str_release_at(&h5_own5);
+    h_recordsownstrings_Person_release(hero_slot_escape(&h6_own6));
+    h_recordsownstrings_Pair_release(hero_slot_escape(&h7_own7));
+    h_recordsownstrings_Pair_release(hero_slot_escape(&h8_own8));
     return;
 }
 HERO_TU_LOCAL void h_recordsownstrings_Person_retain(const h_recordsownstrings_Person *v) {

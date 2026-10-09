@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -493,20 +493,20 @@ bb0:
 #line 50 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
     hero_print_end();
 #line 496 "fixedbugsfieldpathstoreleaked.c"
-    h_fixedbugsfieldpathstoreleaked_Row_release(&h0_p);
-    h_fixedbugsfieldpathstoreleaked_Pair_release(&h1_q);
-    hero_array_decref(h2_own2);
-    h_fixedbugsfieldpathstoreleaked_Row_release(&h3_own3);
-    hero_array_decref(h4_own4);
-    hero_array_decref(h5_own5);
-    hero_array_decref(h6_own6);
-    hero_array_decref(h7_own7);
-    h_fixedbugsfieldpathstoreleaked_Row_release(&h8_own8);
-    hero_array_decref(h9_own9);
-    h_fixedbugsfieldpathstoreleaked_Row_release(&h10_own10);
-    h_fixedbugsfieldpathstoreleaked_Pair_release(&h11_own11);
-    hero_array_decref(h12_own12);
-    h_fixedbugsfieldpathstoreleaked_Row_release(&h13_own13);
+    h_fixedbugsfieldpathstoreleaked_Row_release(hero_slot_escape(&h0_p));
+    h_fixedbugsfieldpathstoreleaked_Pair_release(hero_slot_escape(&h1_q));
+    hero_array_release_at(&h2_own2);
+    h_fixedbugsfieldpathstoreleaked_Row_release(hero_slot_escape(&h3_own3));
+    hero_array_release_at(&h4_own4);
+    hero_array_release_at(&h5_own5);
+    hero_array_release_at(&h6_own6);
+    hero_array_release_at(&h7_own7);
+    h_fixedbugsfieldpathstoreleaked_Row_release(hero_slot_escape(&h8_own8));
+    hero_array_release_at(&h9_own9);
+    h_fixedbugsfieldpathstoreleaked_Row_release(hero_slot_escape(&h10_own10));
+    h_fixedbugsfieldpathstoreleaked_Pair_release(hero_slot_escape(&h11_own11));
+    hero_array_release_at(&h12_own12);
+    h_fixedbugsfieldpathstoreleaked_Row_release(hero_slot_escape(&h13_own13));
     return;
 }
 HERO_TU_LOCAL void h_fixedbugsfieldpathstoreleaked_Row_retain(const h_fixedbugsfieldpathstoreleaked_Row *v) {

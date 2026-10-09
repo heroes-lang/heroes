@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -472,18 +472,18 @@ bb7:
 #line 25 "tests/golden/run/to-int-range.hero"
     hero_print_end();
 #line 475 "tointrange.c"
-    h_0opt_e201354_release(&h0_f0);
-    h_0opt_e201354_release(&h1_f1);
-    h_0opt_e201354_release(&h2_f2);
-    h_0opt_e201354_release(&h3_f3);
-    h_0opt_e201354_release(&h4_f4);
-    h_0opt_e201354_release(&h5_f5);
-    h_0opt_e201354_release(&h6_own6);
-    h_0opt_e201354_release(&h7_own7);
-    h_0opt_e201354_release(&h8_own8);
-    h_0opt_e201354_release(&h9_own9);
-    h_0opt_e201354_release(&h10_own10);
-    h_0opt_e201354_release(&h11_own11);
+    h_0opt_e201354_release(hero_slot_escape(&h0_f0));
+    h_0opt_e201354_release(hero_slot_escape(&h1_f1));
+    h_0opt_e201354_release(hero_slot_escape(&h2_f2));
+    h_0opt_e201354_release(hero_slot_escape(&h3_f3));
+    h_0opt_e201354_release(hero_slot_escape(&h4_f4));
+    h_0opt_e201354_release(hero_slot_escape(&h5_f5));
+    h_0opt_e201354_release(hero_slot_escape(&h6_own6));
+    h_0opt_e201354_release(hero_slot_escape(&h7_own7));
+    h_0opt_e201354_release(hero_slot_escape(&h8_own8));
+    h_0opt_e201354_release(hero_slot_escape(&h9_own9));
+    h_0opt_e201354_release(hero_slot_escape(&h10_own10));
+    h_0opt_e201354_release(hero_slot_escape(&h11_own11));
     return;
 bb8:
 #line 24 "tests/golden/run/to-int-range.hero"

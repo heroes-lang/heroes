@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -624,19 +624,19 @@ bb5:
 #line 55 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
     hero_print_end();
 #line 627 "fixedbugsafieldstoredbehindanindex.c"
-    hero_array_decref(h0_rows);
-    hero_array_decref(h1_kept);
-    hero_map_decref(h2_m);
-    h_0opt_e201354_release(&h3_f0);
-    h_fixedbugsafieldstoredbehindanindex_Cell_release(&h4_own4);
-    hero_array_decref(h5_own5);
-    h_fixedbugsafieldstoredbehindanindex_Row_release(&h6_own6);
-    hero_array_decref(h7_own7);
-    hero_str_decref(h8_own8);
-    hero_str_decref(h9_own9);
-    h_fixedbugsafieldstoredbehindanindex_Cell_release(&h10_own10);
-    hero_map_decref(h11_own11);
-    h_0opt_e201354_release(&h12_own12);
+    hero_array_release_at(&h0_rows);
+    hero_array_release_at(&h1_kept);
+    hero_map_release_at(&h2_m);
+    h_0opt_e201354_release(hero_slot_escape(&h3_f0));
+    h_fixedbugsafieldstoredbehindanindex_Cell_release(hero_slot_escape(&h4_own4));
+    hero_array_release_at(&h5_own5);
+    h_fixedbugsafieldstoredbehindanindex_Row_release(hero_slot_escape(&h6_own6));
+    hero_array_release_at(&h7_own7);
+    hero_str_release_at(&h8_own8);
+    hero_str_release_at(&h9_own9);
+    h_fixedbugsafieldstoredbehindanindex_Cell_release(hero_slot_escape(&h10_own10));
+    hero_map_release_at(&h11_own11);
+    h_0opt_e201354_release(hero_slot_escape(&h12_own12));
     return;
 bb6:
 #line 55 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"

@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -272,13 +272,13 @@ bb3:
 #line 23 "tests/golden/run/fixedbugs-map-store-leaked.hero"
     hero_print_end();
 #line 275 "fixedbugsmapstoreleaked.c"
-    hero_map_decref(h0_m);
-    h_0opt_f87774a_release(&h1_f0);
-    hero_str_decref(h2_r0);
-    hero_map_decref(h3_own3);
-    hero_str_decref(h4_own4);
-    hero_str_decref(h5_own5);
-    h_0opt_f87774a_release(&h6_own6);
+    hero_map_release_at(&h0_m);
+    h_0opt_f87774a_release(hero_slot_escape(&h1_f0));
+    hero_str_release_at(&h2_r0);
+    hero_map_release_at(&h3_own3);
+    hero_str_release_at(&h4_own4);
+    hero_str_release_at(&h5_own5);
+    h_0opt_f87774a_release(hero_slot_escape(&h6_own6));
     return;
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {

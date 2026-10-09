@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -238,11 +238,11 @@ bb3:
     t15 = h2_n;
 #line 240 "fixedbugsadeepvaluecompareswithoutastack.c"
     h_fixedbugsadeepvaluecompareswithoutastack_Node_retain(&t15);
-    h_fixedbugsadeepvaluecompareswithoutastack_Node_release(&h2_n);
-    hero_array_decref(h4_own4);
-    h_fixedbugsadeepvaluecompareswithoutastack_Node_release(&h5_own5);
-    hero_array_decref(h6_own6);
-    h_fixedbugsadeepvaluecompareswithoutastack_Node_release(&h7_own7);
+    h_fixedbugsadeepvaluecompareswithoutastack_Node_release(hero_slot_escape(&h2_n));
+    hero_array_release_at(&h4_own4);
+    h_fixedbugsadeepvaluecompareswithoutastack_Node_release(hero_slot_escape(&h5_own5));
+    hero_array_release_at(&h6_own6);
+    h_fixedbugsadeepvaluecompareswithoutastack_Node_release(hero_slot_escape(&h7_own7));
     return t15;
 }
 
@@ -578,24 +578,24 @@ bb0:
 #line 54 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
     hero_print_end();
 #line 581 "fixedbugsadeepvaluecompareswithoutastack.c"
-    h_fixedbugsadeepvaluecompareswithoutastack_Node_release(&h0_a);
-    h_fixedbugsadeepvaluecompareswithoutastack_Node_release(&h1_b);
-    h_fixedbugsadeepvaluecompareswithoutastack_Node_release(&h2_c);
-    h_fixedbugsadeepvaluecompareswithoutastack_Node_release(&h3_own3);
-    h_fixedbugsadeepvaluecompareswithoutastack_Node_release(&h4_own4);
-    h_fixedbugsadeepvaluecompareswithoutastack_Node_release(&h5_own5);
-    hero_array_decref(h6_own6);
-    hero_array_decref(h7_own7);
-    hero_array_decref(h8_own8);
-    hero_array_decref(h9_own9);
-    hero_array_decref(h10_own10);
-    hero_array_decref(h11_own11);
-    hero_array_decref(h12_own12);
-    hero_array_decref(h13_own13);
-    hero_array_decref(h14_own14);
-    hero_array_decref(h15_own15);
-    hero_array_decref(h16_own16);
-    hero_array_decref(h17_own17);
+    h_fixedbugsadeepvaluecompareswithoutastack_Node_release(hero_slot_escape(&h0_a));
+    h_fixedbugsadeepvaluecompareswithoutastack_Node_release(hero_slot_escape(&h1_b));
+    h_fixedbugsadeepvaluecompareswithoutastack_Node_release(hero_slot_escape(&h2_c));
+    h_fixedbugsadeepvaluecompareswithoutastack_Node_release(hero_slot_escape(&h3_own3));
+    h_fixedbugsadeepvaluecompareswithoutastack_Node_release(hero_slot_escape(&h4_own4));
+    h_fixedbugsadeepvaluecompareswithoutastack_Node_release(hero_slot_escape(&h5_own5));
+    hero_array_release_at(&h6_own6);
+    hero_array_release_at(&h7_own7);
+    hero_array_release_at(&h8_own8);
+    hero_array_release_at(&h9_own9);
+    hero_array_release_at(&h10_own10);
+    hero_array_release_at(&h11_own11);
+    hero_array_release_at(&h12_own12);
+    hero_array_release_at(&h13_own13);
+    hero_array_release_at(&h14_own14);
+    hero_array_release_at(&h15_own15);
+    hero_array_release_at(&h16_own16);
+    hero_array_release_at(&h17_own17);
     return;
 }
 HERO_TU_LOCAL void h_fixedbugsadeepvaluecompareswithoutastack_Node_retain(const h_fixedbugsadeepvaluecompareswithoutastack_Node *v) {

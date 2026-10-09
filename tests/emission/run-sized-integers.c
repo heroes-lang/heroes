@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -572,15 +572,15 @@ bb3:
 #line 44 "tests/golden/run/sized-integers.hero"
     hero_print_end();
 #line 575 "sizedintegers.c"
-    h_0opt_e201354_release(&h7_f0);
-    h_0opt_1ec004_release(&h8_f1);
-    h_0opt_1ec004_release(&h9_f2);
-    h_0opt_1ec004_release(&h10_f3);
-    hero_str_decref(h11_text);
-    h_0opt_e201354_release(&h12_own12);
-    h_0opt_1ec004_release(&h13_own13);
-    h_0opt_1ec004_release(&h14_own14);
-    h_0opt_1ec004_release(&h15_own15);
+    h_0opt_e201354_release(hero_slot_escape(&h7_f0));
+    h_0opt_1ec004_release(hero_slot_escape(&h8_f1));
+    h_0opt_1ec004_release(hero_slot_escape(&h9_f2));
+    h_0opt_1ec004_release(hero_slot_escape(&h10_f3));
+    hero_str_release_at(&h11_text);
+    h_0opt_e201354_release(hero_slot_escape(&h12_own12));
+    h_0opt_1ec004_release(hero_slot_escape(&h13_own13));
+    h_0opt_1ec004_release(hero_slot_escape(&h14_own14));
+    h_0opt_1ec004_release(hero_slot_escape(&h15_own15));
     return;
 bb4:
 #line 40 "tests/golden/run/sized-integers.hero"

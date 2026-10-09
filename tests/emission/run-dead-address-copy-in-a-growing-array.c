@@ -7,7 +7,7 @@
 #include <dead-address-copy-in-a-growing-array.h>
 #include "heroes_guard_close.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -250,8 +250,8 @@ bb4:
 #line 251 "deadaddresscopyinagrowingarray.c"
     t13 = h1_ret0;
     h_0opt_5553b083_retain(&t13);
-    h_0opt_5553b083_release(&h2_own2);
-    h_0opt_5553b083_release(&h3_own3);
+    h_0opt_5553b083_release(hero_slot_escape(&h2_own2));
+    h_0opt_5553b083_release(hero_slot_escape(&h3_own3));
     hero_lend_local_give(hero_lend_h0_db);
     return t13;
 }
@@ -387,10 +387,10 @@ bb1:
 #line 30 "tests/golden/run/dead-address-copy-in-a-growing-array.hero"
     hero_print_end();
 #line 390 "deadaddresscopyinagrowingarray.c"
-    h_0opt_5553b083_release(&h0_f0);
-    hero_array_decref(h2_handles);
-    h_0opt_5553b083_release(&h3_own3);
-    hero_array_decref(h4_own4);
+    h_0opt_5553b083_release(hero_slot_escape(&h0_f0));
+    hero_array_release_at(&h2_handles);
+    h_0opt_5553b083_release(hero_slot_escape(&h3_own3));
+    hero_array_release_at(&h4_own4);
     return;
 bb2:
 #line 27 "tests/golden/run/dead-address-copy-in-a-growing-array.hero"
