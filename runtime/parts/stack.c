@@ -20,7 +20,8 @@
  *
  * WHAT THIS IS. A guard-page handler, installed once from `hero_args_set` — so
  * the emitted `main` and the ABI stamp do not change — that turns the fault
- * into `panic: stack exhausted in <module.function>`, exit 134, on the same
+ * into `panic: stack exhausted in <module.function>`, with the recursion it
+ * found on the walk where that is another function (defect 521), exit 134, on the same
  * path every other abort in the language takes. Zero cost per call: the
  * kernel delivers the fault, and until it does no instruction runs here.
  *
@@ -473,6 +474,76 @@ static void hero_stack_pass_on(int signum, siginfo_t *si, void *ctx) {
     sigaction(signum, &dfl, NULL);
 }
 
+/* THE RECURSION, NOT ONLY THE FRAME THAT RAN OUT (defect 521, panel 199's
+ * route (M), 2026-10-09). `climbs(helper(n))` ran out in `helper`, the frame
+ * being entered when `sp` crossed the guard, and the line named `helper`
+ * alone, where the recursion is `climbs`. What the handler can know cheaply
+ * is the walk `hero_stack_blame` already makes: the Heroes functions on the
+ * interrupted stack, callee first, and a function the walk meets twice is a
+ * recursion by definition, every function between the two its cycle. So the
+ * walk is made again, up to `HERO_STACK_SEEN` names, and the first name met
+ * twice closes the cycle; where none repeats, nothing is added, and a cycle
+ * of the frame already named says nothing the first sentence does not.
+ *
+ * The link register is the leaf's caller only where it is not the first
+ * frame record's own return address, which a function that saved its frame
+ * holds twice: counted twice, a caller would read as a cycle of one. On
+ * x86-64 the faulting function's caller is never on the chain, and a
+ * recursion repeats all the same. Windows has no walk (below), so its line is
+ * the first sentence alone. */
+#define HERO_STACK_SEEN 64
+
+static int hero_stack_names(uintptr_t pc, uintptr_t fp, uintptr_t lr, const char **out) {
+    Dl_info info;
+    int n = 0;
+    uintptr_t first_ret = 0;
+    if (dladdr((void *)pc, &info) != 0 && hero_stack_is_heroes(info.dli_sname)) out[n++] = info.dli_sname;
+    if (fp >= hero_stack_lo - HERO_STACK_WINDOW && fp + 16 <= hero_stack_hi && (fp & 7) == 0) first_ret = *(uintptr_t *)(fp + 8);
+    if (lr != 0 && lr != first_ret && dladdr((void *)(lr - 1), &info) != 0 && hero_stack_is_heroes(info.dli_sname)) out[n++] = info.dli_sname;
+    for (int i = 0; i < 64 && n < HERO_STACK_SEEN; i++) {
+        if (fp < hero_stack_lo - HERO_STACK_WINDOW || fp + 16 > hero_stack_hi || (fp & 7) != 0) break;
+        uintptr_t next_fp = *(uintptr_t *)fp;
+        uintptr_t ret = *(uintptr_t *)(fp + 8);
+        if (ret == 0) break;
+        if (dladdr((void *)(ret - 1), &info) != 0 && hero_stack_is_heroes(info.dli_sname)) out[n++] = info.dli_sname;
+        if (next_fp <= fp) break;
+        fp = next_fp;
+    }
+    return n;
+}
+
+/* `, inside the recursion of a, b and c`, in the order they call one another
+ * from the cycle's first name by `strcmp`, so a mutual recursion reads the
+ * same whichever of its functions ran out; nothing where no name repeats or
+ * the cycle is `who` alone. */
+static void hero_stack_say_recursion(uintptr_t pc, uintptr_t fp, uintptr_t lr, const char *who) {
+    const char *names[HERO_STACK_SEEN];
+    int n = hero_stack_names(pc, fp, lr, names);
+    int start = -1, len = 0;
+    for (int j = 1; j < n && start < 0; j++) {
+        for (int k = 0; k < j; k++) {
+            if (strcmp(names[k], names[j]) == 0) {
+                start = k;
+                len = j - k;
+                break;
+            }
+        }
+    }
+    if (start < 0 || (len == 1 && strcmp(names[start], who) == 0)) return;
+    const char **cycle = names + start;
+    int least = 0;
+    for (int i = 1; i < len; i++) {
+        if (strcmp(cycle[i], cycle[least]) < 0) least = i;
+    }
+    hero_stack_say(", inside the recursion of ");
+    /* Callee first on the walk, so the call order runs down the indices. */
+    for (int step = 0; step < len; step++) {
+        int at = ((least - step) % len + len) % len;
+        if (step > 0) hero_stack_say(step == len - 1 ? " and " : ", ");
+        hero_stack_say_heroes_name(cycle[at]);
+    }
+}
+
 static void hero_stack_handler(int signum, siginfo_t *si, void *ctx) {
     uintptr_t addr = (uintptr_t)si->si_addr;
     uintptr_t pc, fp, sp, lr;
@@ -499,6 +570,7 @@ static void hero_stack_handler(int signum, siginfo_t *si, void *ctx) {
         if (who != NULL) {
             hero_stack_say(" in ");
             hero_stack_say_heroes_name(who);
+            hero_stack_say_recursion(pc, fp, lr, who);
         }
         hero_stack_say("\n");
         hero_abort();
