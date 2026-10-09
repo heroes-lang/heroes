@@ -109,7 +109,16 @@ function answered_struct(asked: ffi_asked.Asked, tags: [str]) -> [str]
 function asked_with(types: {str: str}) -> ffi_asked.Asked
     none: {str: bool} = {}
     untyped: {str: ffi_asked.Typed} = {}
-    return ffi_asked.Asked(said: "", values: none, macros: none, types: types, results: untyped)
+    unsized: {str: i64} = {}
+    return ffi_asked.Asked(
+        said: "",
+        values: none,
+        macros: none,
+        types: types,
+        results: untyped,
+        fields: untyped,
+        widths: unsized
+    )
 
 test "a bare tag the header answers as a struct's is learned, and no other answer is (defect 400)"
     types: {str: str} @ {}

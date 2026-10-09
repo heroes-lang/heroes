@@ -1,0 +1,14 @@
+# Defect 510's shape beside it, 2026-10-09: a constant holding a function
+# that returns nothing, called as a statement, `SHOUT("hi")`. The lowering
+# called the accessor with the argument as it did for a value-returning
+# one, and clang refused the C at exit 2; it now reads the constant and
+# calls what it holds.
+function shout(s: str)
+    print(s)
+
+constant SHOUT: (function(str) -> ())
+    shout
+
+function main()
+    SHOUT("hi")
+    SHOUT("there")

@@ -1,0 +1,11 @@
+# Defect 510's module (lane b16-compiler, 2026-10-09): the constants
+# `main.hero` and `wrong.hero` call qualified, one holding a function and
+# one holding a number.
+function twice(n: i64) -> i64
+    return n * 2
+
+constant DOUBLE: (function(i64) -> i64)
+    twice
+
+constant LIMIT: i64
+    4
