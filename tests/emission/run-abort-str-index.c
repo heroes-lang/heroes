@@ -107,13 +107,12 @@ bb0:
     t1 = HERO_STR_LIT(hero_str_1998f2);
 #line 8 "tests/golden/run/abort-str-index.hero"
     t8 = h0_s;
-#line 111 "abortstrindex.c"
+#line 8 "tests/golden/run/abort-str-index.hero"
     hero_str_incref(t1);
 #line 8 "tests/golden/run/abort-str-index.hero"
     h0_s = t1;
-#line 115 "abortstrindex.c"
+#line 8 "tests/golden/run/abort-str-index.hero"
     hero_str_decref(t8);
-#line 9 "tests/golden/run/abort-str-index.hero"
     t2 = h0_s;
 #line 9 "tests/golden/run/abort-str-index.hero"
     t3 = INT64_C(2);
@@ -132,7 +131,7 @@ bb0:
     hero_print_int(t7);
 #line 10 "tests/golden/run/abort-str-index.hero"
     hero_print_end();
-#line 136 "abortstrindex.c"
+#line 135 "abortstrindex.c"
     hero_str_release_at(&h0_s);
     return;
 }

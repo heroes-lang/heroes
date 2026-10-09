@@ -168,27 +168,25 @@ bb0:
     t37 = h3_own3;
 #line 28 "tests/golden/run/fixedbugs-427-a-cstr-to-const-unsigned-bytes-builds-with-no-warning.hero"
     h3_own3 = t3;
-#line 172 "fixedbugs427acstrtoconstunsignedbytesbuildswithnowarning.c"
+#line 28 "tests/golden/run/fixedbugs-427-a-cstr-to-const-unsigned-bytes-builds-with-no-warning.hero"
     hero_str_decref(t37);
 #line 28 "tests/golden/run/fixedbugs-427-a-cstr-to-const-unsigned-bytes-builds-with-no-warning.hero"
     t38 = h0_s;
-#line 176 "fixedbugs427acstrtoconstunsignedbytesbuildswithnowarning.c"
+#line 28 "tests/golden/run/fixedbugs-427-a-cstr-to-const-unsigned-bytes-builds-with-no-warning.hero"
     hero_str_incref(t3);
 #line 28 "tests/golden/run/fixedbugs-427-a-cstr-to-const-unsigned-bytes-builds-with-no-warning.hero"
     h0_s = t3;
-#line 180 "fixedbugs427acstrtoconstunsignedbytesbuildswithnowarning.c"
+#line 28 "tests/golden/run/fixedbugs-427-a-cstr-to-const-unsigned-bytes-builds-with-no-warning.hero"
     hero_str_decref(t38);
-#line 29 "tests/golden/run/fixedbugs-427-a-cstr-to-const-unsigned-bytes-builds-with-no-warning.hero"
     t4 = h0_s;
 #line 29 "tests/golden/run/fixedbugs-427-a-cstr-to-const-unsigned-bytes-builds-with-no-warning.hero"
     t39 = h1_t;
-#line 186 "fixedbugs427acstrtoconstunsignedbytesbuildswithnowarning.c"
+#line 29 "tests/golden/run/fixedbugs-427-a-cstr-to-const-unsigned-bytes-builds-with-no-warning.hero"
     hero_str_incref(t4);
 #line 29 "tests/golden/run/fixedbugs-427-a-cstr-to-const-unsigned-bytes-builds-with-no-warning.hero"
     h1_t = t4;
-#line 190 "fixedbugs427acstrtoconstunsignedbytesbuildswithnowarning.c"
+#line 29 "tests/golden/run/fixedbugs-427-a-cstr-to-const-unsigned-bytes-builds-with-no-warning.hero"
     hero_str_decref(t39);
-#line 30 "tests/golden/run/fixedbugs-427-a-cstr-to-const-unsigned-bytes-builds-with-no-warning.hero"
     t5 = h0_s;
 #line 30 "tests/golden/run/fixedbugs-427-a-cstr-to-const-unsigned-bytes-builds-with-no-warning.hero"
     t6 = hero_str_lend(t5);
@@ -288,7 +286,7 @@ bb0:
     hero_print_str(t36);
 #line 42 "tests/golden/run/fixedbugs-427-a-cstr-to-const-unsigned-bytes-builds-with-no-warning.hero"
     hero_print_end();
-#line 292 "fixedbugs427acstrtoconstunsignedbytesbuildswithnowarning.c"
+#line 290 "fixedbugs427acstrtoconstunsignedbytesbuildswithnowarning.c"
     hero_str_release_at(&h0_s);
     hero_str_release_at(&h1_t);
     hero_str_release_at(&h3_own3);

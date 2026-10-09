@@ -181,7 +181,7 @@ bb0:
     t30 = h2_own2;
 #line 26 "tests/golden/run/fixedbugs-a-borrowed-handle-is-written-into-a-fixed-array.hero"
     h2_own2 = t13;
-#line 185 "fixedbugsaborrowedhandleiswrittenintoafixedarray.c"
+#line 26 "tests/golden/run/fixedbugs-a-borrowed-handle-is-written-into-a-fixed-array.hero"
     hero_array_decref(t30);
 #line 26 "tests/golden/run/fixedbugs-a-borrowed-handle-is-written-into-a-fixed-array.hero"
     t14 = ((void)(t13 == NULL ? ((void)hero_array_len(t13), hero_unreachable()) : (void)0), t13->len);
@@ -269,17 +269,16 @@ bb0:
     t14 = h2_own2;
 #line 197 "<heroes library>"
     h2_own2 = t1;
-#line 273 "fixedbugsaborrowedhandleiswrittenintoafixedarray.c"
+#line 197 "<heroes library>"
     hero_array_decref(t14);
 #line 197 "<heroes library>"
     t15 = h0_out;
-#line 277 "fixedbugsaborrowedhandleiswrittenintoafixedarray.c"
+#line 197 "<heroes library>"
     hero_array_incref(t1);
 #line 197 "<heroes library>"
     h0_out = t1;
-#line 281 "fixedbugsaborrowedhandleiswrittenintoafixedarray.c"
+#line 197 "<heroes library>"
     hero_array_decref(t15);
-#line 198 "<heroes library>"
     t2 = INT64_C(0);
 #line 198 "<heroes library>"
     h1_i = t2;
@@ -303,7 +302,7 @@ bb2:
     t16 = h3_own3;
 #line 200 "<heroes library>"
     h3_own3 = t8;
-#line 307 "fixedbugsaborrowedhandleiswrittenintoafixedarray.c"
+#line 200 "<heroes library>"
     hero_str_decref(t16);
 #line 200 "<heroes library>"
     hero_array_push_owned(&h0_out, &t8);
@@ -319,7 +318,7 @@ bb2:
 #line 201 "<heroes library>"
 bb3:
     t13 = h0_out;
-#line 323 "fixedbugsaborrowedhandleiswrittenintoafixedarray.c"
+#line 322 "fixedbugsaborrowedhandleiswrittenintoafixedarray.c"
     hero_array_incref(t13);
     hero_array_release_at(&h0_out);
     hero_array_release_at(&h2_own2);

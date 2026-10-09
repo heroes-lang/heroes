@@ -293,17 +293,16 @@ bb0:
     t56 = h1_own1;
 #line 35 "tests/golden/run/fixedbugs-151-arms-as-wide-as-their-unions-compared.hero"
     h1_own1 = t16;
-#line 297 "fixedbugs151armsaswideastheirunionscompared.c"
+#line 35 "tests/golden/run/fixedbugs-151-arms-as-wide-as-their-unions-compared.hero"
     hero_map_decref(t56);
 #line 35 "tests/golden/run/fixedbugs-151-arms-as-wide-as-their-unions-compared.hero"
     t57 = h0_seen;
-#line 301 "fixedbugs151armsaswideastheirunionscompared.c"
+#line 35 "tests/golden/run/fixedbugs-151-arms-as-wide-as-their-unions-compared.hero"
     hero_map_incref(t16);
 #line 35 "tests/golden/run/fixedbugs-151-arms-as-wide-as-their-unions-compared.hero"
     h0_seen = t16;
-#line 305 "fixedbugs151armsaswideastheirunionscompared.c"
+#line 35 "tests/golden/run/fixedbugs-151-arms-as-wide-as-their-unions-compared.hero"
     hero_map_decref(t57);
-#line 36 "tests/golden/run/fixedbugs-151-arms-as-wide-as-their-unions-compared.hero"
     t17 = INT64_C(5);
 #line 36 "tests/golden/run/fixedbugs-151-arms-as-wide-as-their-unions-compared.hero"
     t18 = make_sa(t17);
@@ -404,7 +403,7 @@ bb0:
     hero_print_bool(t55);
 #line 47 "tests/golden/run/fixedbugs-151-arms-as-wide-as-their-unions-compared.hero"
     hero_print_end();
-#line 408 "fixedbugs151armsaswideastheirunionscompared.c"
+#line 407 "fixedbugs151armsaswideastheirunionscompared.c"
     hero_map_release_at(&h0_seen);
     hero_map_release_at(&h1_own1);
     return;

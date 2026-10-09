@@ -118,17 +118,16 @@ bb0:
     t8 = h1_own1;
 #line 10 "tests/golden/run/fixedbugs-396-an-extent-above-a-page-aborts.hero"
     h1_own1 = t1;
-#line 122 "fixedbugs396anextentaboveapageaborts.c"
+#line 10 "tests/golden/run/fixedbugs-396-an-extent-above-a-page-aborts.hero"
     hero_array_decref(t8);
 #line 10 "tests/golden/run/fixedbugs-396-an-extent-above-a-page-aborts.hero"
     t9 = h0_buf;
-#line 126 "fixedbugs396anextentaboveapageaborts.c"
+#line 10 "tests/golden/run/fixedbugs-396-an-extent-above-a-page-aborts.hero"
     hero_array_incref(t1);
 #line 10 "tests/golden/run/fixedbugs-396-an-extent-above-a-page-aborts.hero"
     h0_buf = t1;
-#line 130 "fixedbugs396anextentaboveapageaborts.c"
+#line 10 "tests/golden/run/fixedbugs-396-an-extent-above-a-page-aborts.hero"
     hero_array_decref(t9);
-#line 11 "tests/golden/run/fixedbugs-396-an-extent-above-a-page-aborts.hero"
     t2 = HERO_STR_LIT(hero_str_43560e4d);
 #line 11 "tests/golden/run/fixedbugs-396-an-extent-above-a-page-aborts.hero"
     hero_print_str(t2);
@@ -164,7 +163,7 @@ bb0:
     hero_print_int(t7);
 #line 13 "tests/golden/run/fixedbugs-396-an-extent-above-a-page-aborts.hero"
     hero_print_end();
-#line 168 "fixedbugs396anextentaboveapageaborts.c"
+#line 167 "fixedbugs396anextentaboveapageaborts.c"
     hero_array_release_at(&h0_buf);
     hero_array_release_at(&h1_own1);
     return;

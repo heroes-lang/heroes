@@ -384,15 +384,15 @@ bb2:
     t27 = h5_own5;
 #line 52 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
     h5_own5 = t5;
-#line 388 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
+#line 52 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
     hero_array_decref(t27);
 #line 52 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
     t28 = h2_xs0;
-#line 392 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
+#line 52 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
     hero_array_incref(t5);
 #line 52 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
     h2_xs0 = t5;
-#line 396 "fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks.c"
+#line 52 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
     hero_array_decref(t28);
 #line 52 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
     t6 = INT64_C(0);

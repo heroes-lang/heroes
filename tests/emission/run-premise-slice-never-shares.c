@@ -173,17 +173,16 @@ bb0:
     t40 = h5_own5;
 #line 23 "tests/golden/run/premise-slice-never-shares.hero"
     h5_own5 = t5;
-#line 177 "premiseslicenevershares.c"
+#line 23 "tests/golden/run/premise-slice-never-shares.hero"
     hero_array_decref(t40);
 #line 23 "tests/golden/run/premise-slice-never-shares.hero"
     t41 = h0_xs;
-#line 181 "premiseslicenevershares.c"
+#line 23 "tests/golden/run/premise-slice-never-shares.hero"
     hero_array_incref(t5);
 #line 23 "tests/golden/run/premise-slice-never-shares.hero"
     h0_xs = t5;
-#line 185 "premiseslicenevershares.c"
+#line 23 "tests/golden/run/premise-slice-never-shares.hero"
     hero_array_decref(t41);
-#line 24 "tests/golden/run/premise-slice-never-shares.hero"
     t6 = h0_xs;
 #line 24 "tests/golden/run/premise-slice-never-shares.hero"
     t7 = INT64_C(1);
@@ -195,17 +194,16 @@ bb0:
     t42 = h6_own6;
 #line 24 "tests/golden/run/premise-slice-never-shares.hero"
     h6_own6 = t9;
-#line 199 "premiseslicenevershares.c"
+#line 24 "tests/golden/run/premise-slice-never-shares.hero"
     hero_array_decref(t42);
 #line 24 "tests/golden/run/premise-slice-never-shares.hero"
     t43 = h1_part;
-#line 203 "premiseslicenevershares.c"
+#line 24 "tests/golden/run/premise-slice-never-shares.hero"
     hero_array_incref(t9);
 #line 24 "tests/golden/run/premise-slice-never-shares.hero"
     h1_part = t9;
-#line 207 "premiseslicenevershares.c"
+#line 24 "tests/golden/run/premise-slice-never-shares.hero"
     hero_array_decref(t43);
-#line 25 "tests/golden/run/premise-slice-never-shares.hero"
     t10 = INT64_C(1);
 #line 25 "tests/golden/run/premise-slice-never-shares.hero"
     t11 = INT64_C(99);
@@ -262,13 +260,12 @@ bb0:
     t29 = HERO_STR_LIT(hero_str_12becefb);
 #line 36 "tests/golden/run/premise-slice-never-shares.hero"
     t44 = h2_s;
-#line 266 "premiseslicenevershares.c"
+#line 36 "tests/golden/run/premise-slice-never-shares.hero"
     hero_str_incref(t29);
 #line 36 "tests/golden/run/premise-slice-never-shares.hero"
     h2_s = t29;
-#line 270 "premiseslicenevershares.c"
+#line 36 "tests/golden/run/premise-slice-never-shares.hero"
     hero_str_decref(t44);
-#line 37 "tests/golden/run/premise-slice-never-shares.hero"
     t30 = h2_s;
 #line 37 "tests/golden/run/premise-slice-never-shares.hero"
     t31 = INT64_C(2);
@@ -280,17 +277,16 @@ bb0:
     t45 = h7_own7;
 #line 37 "tests/golden/run/premise-slice-never-shares.hero"
     h7_own7 = t33;
-#line 284 "premiseslicenevershares.c"
+#line 37 "tests/golden/run/premise-slice-never-shares.hero"
     hero_str_decref(t45);
 #line 37 "tests/golden/run/premise-slice-never-shares.hero"
     t46 = h3_mid;
-#line 288 "premiseslicenevershares.c"
+#line 37 "tests/golden/run/premise-slice-never-shares.hero"
     hero_str_incref(t33);
 #line 37 "tests/golden/run/premise-slice-never-shares.hero"
     h3_mid = t33;
-#line 292 "premiseslicenevershares.c"
+#line 37 "tests/golden/run/premise-slice-never-shares.hero"
     hero_str_decref(t46);
-#line 38 "tests/golden/run/premise-slice-never-shares.hero"
     t34 = h2_s;
 #line 38 "tests/golden/run/premise-slice-never-shares.hero"
     t35 = HERO_STR_LIT(hero_str_21);
@@ -300,17 +296,16 @@ bb0:
     t47 = h8_own8;
 #line 38 "tests/golden/run/premise-slice-never-shares.hero"
     h8_own8 = t36;
-#line 304 "premiseslicenevershares.c"
+#line 38 "tests/golden/run/premise-slice-never-shares.hero"
     hero_str_decref(t47);
 #line 38 "tests/golden/run/premise-slice-never-shares.hero"
     t48 = h4_joined;
-#line 308 "premiseslicenevershares.c"
+#line 38 "tests/golden/run/premise-slice-never-shares.hero"
     hero_str_incref(t36);
 #line 38 "tests/golden/run/premise-slice-never-shares.hero"
     h4_joined = t36;
-#line 312 "premiseslicenevershares.c"
+#line 38 "tests/golden/run/premise-slice-never-shares.hero"
     hero_str_decref(t48);
-#line 39 "tests/golden/run/premise-slice-never-shares.hero"
     t37 = h3_mid;
 #line 39 "tests/golden/run/premise-slice-never-shares.hero"
     t38 = HERO_STR_LIT(hero_str_20);
@@ -324,7 +319,7 @@ bb0:
     hero_print_str(t39);
 #line 39 "tests/golden/run/premise-slice-never-shares.hero"
     hero_print_end();
-#line 328 "premiseslicenevershares.c"
+#line 323 "premiseslicenevershares.c"
     hero_array_release_at(&h0_xs);
     hero_array_release_at(&h1_part);
     hero_str_release_at(&h2_s);

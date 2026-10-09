@@ -329,17 +329,16 @@ bb0:
     t71 = h10_own10;
 #line 51 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     h10_own10 = t24;
-#line 333 "fixedbugsagrouprecordineverycontainer.c"
+#line 51 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     hero_array_decref(t71);
 #line 51 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     t72 = h3_xs;
-#line 337 "fixedbugsagrouprecordineverycontainer.c"
+#line 51 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     hero_array_incref(t24);
 #line 51 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     h3_xs = t24;
-#line 341 "fixedbugsagrouprecordineverycontainer.c"
+#line 51 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     hero_array_decref(t72);
-#line 52 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     t25 = h3_xs;
 #line 52 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     t26 = ((void)(t25 == NULL ? ((void)hero_array_len(t25), hero_unreachable()) : (void)0), t25->len);
@@ -366,17 +365,16 @@ bb0:
     t73 = h11_own11;
 #line 56 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     h11_own11 = t32;
-#line 370 "fixedbugsagrouprecordineverycontainer.c"
+#line 56 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     hero_map_decref(t73);
 #line 56 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     t74 = h4_m;
-#line 374 "fixedbugsagrouprecordineverycontainer.c"
+#line 56 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     hero_map_incref(t32);
 #line 56 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     h4_m = t32;
-#line 378 "fixedbugsagrouprecordineverycontainer.c"
+#line 56 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     hero_map_decref(t74);
-#line 57 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     t33 = INT64_C(1);
 #line 57 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     t34 = h0_a;
@@ -407,15 +405,15 @@ bb0:
     t75 = h12_own12;
 #line 58 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     h12_own12 = t37;
-#line 411 "fixedbugsagrouprecordineverycontainer.c"
+#line 58 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     h_0opt_31fbd75_release(&t75);
 #line 58 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     t76 = h5_f0;
-#line 415 "fixedbugsagrouprecordineverycontainer.c"
+#line 58 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     h_0opt_31fbd75_retain(&t37);
 #line 58 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     h5_f0 = t37;
-#line 419 "fixedbugsagrouprecordineverycontainer.c"
+#line 58 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     h_0opt_31fbd75_release(&t76);
 #line 58 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     t38 = h5_f0;
@@ -446,17 +444,16 @@ bb1:
     t77 = h13_own13;
 #line 59 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     h13_own13 = t48;
-#line 450 "fixedbugsagrouprecordineverycontainer.c"
+#line 59 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     hero_map_decref(t77);
 #line 59 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     t78 = h6_keyed;
-#line 454 "fixedbugsagrouprecordineverycontainer.c"
+#line 59 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     hero_map_incref(t48);
 #line 59 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     h6_keyed = t48;
-#line 458 "fixedbugsagrouprecordineverycontainer.c"
+#line 59 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     hero_map_decref(t78);
-#line 60 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     t49 = h0_a;
 #line 60 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     t50 = INT64_C(7);
@@ -487,15 +484,15 @@ bb1:
     t79 = h14_own14;
 #line 61 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     h14_own14 = t53;
-#line 491 "fixedbugsagrouprecordineverycontainer.c"
+#line 61 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     h_0opt_e201354_release(&t79);
 #line 61 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     t80 = h7_f1;
-#line 495 "fixedbugsagrouprecordineverycontainer.c"
+#line 61 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     h_0opt_e201354_retain(&t53);
 #line 61 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     h7_f1 = t53;
-#line 499 "fixedbugsagrouprecordineverycontainer.c"
+#line 61 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     h_0opt_e201354_release(&t80);
 #line 61 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     t54 = h7_f1;
@@ -513,7 +510,7 @@ bb2:
     t42 = h5_f0;
 #line 58 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     t43 = t42.as.err;
-#line 517 "fixedbugsagrouprecordineverycontainer.c"
+#line 514 "fixedbugsagrouprecordineverycontainer.c"
     hero_panic_must(t43);
     hero_unreachable();
 bb3:
@@ -533,25 +530,24 @@ bb3:
     t81 = h15_own15;
 #line 64 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     h15_own15 = t63;
-#line 537 "fixedbugsagrouprecordineverycontainer.c"
+#line 64 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     h_0opt_31fbd75_release(&t81);
 #line 64 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     t82 = h8_maybe;
-#line 541 "fixedbugsagrouprecordineverycontainer.c"
+#line 64 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     h_0opt_31fbd75_retain(&t63);
 #line 64 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     h8_maybe = t63;
-#line 545 "fixedbugsagrouprecordineverycontainer.c"
+#line 64 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     h_0opt_31fbd75_release(&t82);
-#line 65 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     t64 = h8_maybe;
 #line 65 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     t83 = h9_f2;
-#line 551 "fixedbugsagrouprecordineverycontainer.c"
+#line 65 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     h_0opt_31fbd75_retain(&t64);
 #line 65 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     h9_f2 = t64;
-#line 555 "fixedbugsagrouprecordineverycontainer.c"
+#line 65 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     h_0opt_31fbd75_release(&t83);
 #line 65 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     t65 = h9_f2;
@@ -573,7 +569,7 @@ bb3:
     hero_print_int(t70);
 #line 68 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     hero_print_end();
-#line 577 "fixedbugsagrouprecordineverycontainer.c"
+#line 573 "fixedbugsagrouprecordineverycontainer.c"
     hero_array_release_at(&h3_xs);
     hero_map_release_at(&h4_m);
     h_0opt_31fbd75_release(hero_slot_escape(&h5_f0));
@@ -593,7 +589,7 @@ bb4:
     t58 = h7_f1;
 #line 61 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     t59 = t58.as.err;
-#line 597 "fixedbugsagrouprecordineverycontainer.c"
+#line 593 "fixedbugsagrouprecordineverycontainer.c"
     hero_panic_must(t59);
     hero_unreachable();
 }

@@ -287,17 +287,16 @@ bb0:
     t50 = h15_own15;
 #line 36 "tests/golden/run/fixedbugs-413-zlib-knows-a-stream-by-its-address.hero"
     h15_own15 = t15;
-#line 291 "fixedbugs413zlibknowsastreambyitsaddress.c"
+#line 36 "tests/golden/run/fixedbugs-413-zlib-knows-a-stream-by-its-address.hero"
     hero_array_decref(t50);
 #line 36 "tests/golden/run/fixedbugs-413-zlib-knows-a-stream-by-its-address.hero"
     t51 = h4_zs;
-#line 295 "fixedbugs413zlibknowsastreambyitsaddress.c"
+#line 36 "tests/golden/run/fixedbugs-413-zlib-knows-a-stream-by-its-address.hero"
     hero_array_incref(t15);
 #line 36 "tests/golden/run/fixedbugs-413-zlib-knows-a-stream-by-its-address.hero"
     h4_zs = t15;
-#line 299 "fixedbugs413zlibknowsastreambyitsaddress.c"
+#line 36 "tests/golden/run/fixedbugs-413-zlib-knows-a-stream-by-its-address.hero"
     hero_array_decref(t51);
-#line 37 "tests/golden/run/fixedbugs-413-zlib-knows-a-stream-by-its-address.hero"
     t16 = INT64_C(0);
 #line 37 "tests/golden/run/fixedbugs-413-zlib-knows-a-stream-by-its-address.hero"
     t17 = INT64_C(-1);
@@ -427,7 +426,7 @@ bb0:
     hero_print_int(t49);
 #line 49 "tests/golden/run/fixedbugs-413-zlib-knows-a-stream-by-its-address.hero"
     hero_print_end();
-#line 431 "fixedbugs413zlibknowsastreambyitsaddress.c"
+#line 430 "fixedbugs413zlibknowsastreambyitsaddress.c"
     hero_array_release_at(&h4_zs);
     hero_array_release_at(&h15_own15);
     hero_lend_local_give(hero_lend_h8_t);

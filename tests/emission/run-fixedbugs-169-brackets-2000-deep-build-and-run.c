@@ -6133,8 +6133,9 @@ bb0:
     t3 = h0_own0;
 #line 25 "tests/golden/run/fixedbugs-169-brackets-2000-deep-build-and-run.hero"
     h0_own0 = t2;
-#line 6137 "fixedbugs169brackets2000deepbuildandrun.c"
+#line 25 "tests/golden/run/fixedbugs-169-brackets-2000-deep-build-and-run.hero"
     hero_str_decref(t3);
+#line 6139 "fixedbugs169brackets2000deepbuildandrun.c"
     hero_str_incref(t2);
     hero_str_release_at(&h0_own0);
     return t2;
@@ -6142,7 +6143,7 @@ bb0:
 
 #line 27 "tests/golden/run/fixedbugs-169-brackets-2000-deep-build-and-run.hero"
 void h_fixedbugs169brackets2000deepbuildandrun_main(void) {
-#line 6146 "fixedbugs169brackets2000deepbuildandrun.c"
+#line 6147 "fixedbugs169brackets2000deepbuildandrun.c"
     HeroStr h0_own0 = {0};
     int64_t t1;
     HeroStr t2;
@@ -6160,13 +6161,13 @@ bb0:
     t3 = h0_own0;
 #line 29 "tests/golden/run/fixedbugs-169-brackets-2000-deep-build-and-run.hero"
     h0_own0 = t2;
-#line 6164 "fixedbugs169brackets2000deepbuildandrun.c"
+#line 29 "tests/golden/run/fixedbugs-169-brackets-2000-deep-build-and-run.hero"
     hero_str_decref(t3);
 #line 29 "tests/golden/run/fixedbugs-169-brackets-2000-deep-build-and-run.hero"
     hero_print_str(t2);
 #line 29 "tests/golden/run/fixedbugs-169-brackets-2000-deep-build-and-run.hero"
     hero_print_end();
-#line 6170 "fixedbugs169brackets2000deepbuildandrun.c"
+#line 6171 "fixedbugs169brackets2000deepbuildandrun.c"
     hero_str_release_at(&h0_own0);
     return;
 }

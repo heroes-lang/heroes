@@ -308,17 +308,16 @@ bb0:
     t44 = h3_own3;
 #line 59 "tests/golden/run/function-values.hero"
     h3_own3 = t19;
-#line 312 "functionvalues.c"
+#line 59 "tests/golden/run/function-values.hero"
     hero_array_decref(t44);
 #line 59 "tests/golden/run/function-values.hero"
     t45 = h1_ops;
-#line 316 "functionvalues.c"
+#line 59 "tests/golden/run/function-values.hero"
     hero_array_incref(t19);
 #line 59 "tests/golden/run/function-values.hero"
     h1_ops = t19;
-#line 320 "functionvalues.c"
+#line 59 "tests/golden/run/function-values.hero"
     hero_array_decref(t45);
-#line 60 "tests/golden/run/function-values.hero"
     t20 = h1_ops;
 #line 60 "tests/golden/run/function-values.hero"
     t21 = INT64_C(0);
@@ -387,7 +386,7 @@ bb0:
     hero_print_bool(t43);
 #line 64 "tests/golden/run/function-values.hero"
     hero_print_end();
-#line 391 "functionvalues.c"
+#line 390 "functionvalues.c"
     hero_array_release_at(&h1_ops);
     hero_array_release_at(&h3_own3);
     return;

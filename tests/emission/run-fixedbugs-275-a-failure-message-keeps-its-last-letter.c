@@ -270,15 +270,15 @@ bb0:
     t85 = h12_own12;
 #line 11 "tests/golden/run/fixedbugs-275-a-failure-message-keeps-its-last-letter.hero"
     h12_own12 = t5;
-#line 274 "fixedbugs275afailuremessagekeepsitslastletter.c"
+#line 11 "tests/golden/run/fixedbugs-275-a-failure-message-keeps-its-last-letter.hero"
     hero_array_decref(t85);
 #line 11 "tests/golden/run/fixedbugs-275-a-failure-message-keeps-its-last-letter.hero"
     t86 = h0_b;
-#line 278 "fixedbugs275afailuremessagekeepsitslastletter.c"
+#line 11 "tests/golden/run/fixedbugs-275-a-failure-message-keeps-its-last-letter.hero"
     hero_array_incref(t5);
 #line 11 "tests/golden/run/fixedbugs-275-a-failure-message-keeps-its-last-letter.hero"
     h0_b = t5;
-#line 282 "fixedbugs275afailuremessagekeepsitslastletter.c"
+#line 11 "tests/golden/run/fixedbugs-275-a-failure-message-keeps-its-last-letter.hero"
     hero_array_decref(t86);
 #line 13 "tests/golden/run/fixedbugs-275-a-failure-message-keeps-its-last-letter.hero"
     t6 = h0_b;
@@ -304,15 +304,15 @@ bb0:
     t87 = h13_own13;
 #line 13 "tests/golden/run/fixedbugs-275-a-failure-message-keeps-its-last-letter.hero"
     h13_own13 = t7;
-#line 308 "fixedbugs275afailuremessagekeepsitslastletter.c"
+#line 13 "tests/golden/run/fixedbugs-275-a-failure-message-keeps-its-last-letter.hero"
     h_0opt_f87774a_release(&t87);
 #line 13 "tests/golden/run/fixedbugs-275-a-failure-message-keeps-its-last-letter.hero"
     t88 = h1_s0;
-#line 312 "fixedbugs275afailuremessagekeepsitslastletter.c"
+#line 13 "tests/golden/run/fixedbugs-275-a-failure-message-keeps-its-last-letter.hero"
     h_0opt_f87774a_retain(&t7);
 #line 13 "tests/golden/run/fixedbugs-275-a-failure-message-keeps-its-last-letter.hero"
     h1_s0 = t7;
-#line 316 "fixedbugs275afailuremessagekeepsitslastletter.c"
+#line 13 "tests/golden/run/fixedbugs-275-a-failure-message-keeps-its-last-letter.hero"
     h_0opt_f87774a_release(&t88);
 #line 13 "tests/golden/run/fixedbugs-275-a-failure-message-keeps-its-last-letter.hero"
     t8 = h1_s0;
@@ -350,15 +350,15 @@ bb1:
     t89 = h14_own14;
 #line 19 "tests/golden/run/fixedbugs-275-a-failure-message-keeps-its-last-letter.hero"
     h14_own14 = t28;
-#line 354 "fixedbugs275afailuremessagekeepsitslastletter.c"
+#line 19 "tests/golden/run/fixedbugs-275-a-failure-message-keeps-its-last-letter.hero"
     h_0opt_1b9b98_release(&t89);
 #line 19 "tests/golden/run/fixedbugs-275-a-failure-message-keeps-its-last-letter.hero"
     t90 = h5_s1;
-#line 358 "fixedbugs275afailuremessagekeepsitslastletter.c"
+#line 19 "tests/golden/run/fixedbugs-275-a-failure-message-keeps-its-last-letter.hero"
     h_0opt_1b9b98_retain(&t28);
 #line 19 "tests/golden/run/fixedbugs-275-a-failure-message-keeps-its-last-letter.hero"
     h5_s1 = t28;
-#line 362 "fixedbugs275afailuremessagekeepsitslastletter.c"
+#line 19 "tests/golden/run/fixedbugs-275-a-failure-message-keeps-its-last-letter.hero"
     h_0opt_1b9b98_release(&t90);
 #line 19 "tests/golden/run/fixedbugs-275-a-failure-message-keeps-its-last-letter.hero"
     t29 = h5_s1;
@@ -382,11 +382,11 @@ bb2:
     t11 = t10.as.ok;
 #line 14 "tests/golden/run/fixedbugs-275-a-failure-message-keeps-its-last-letter.hero"
     t91 = h2_s;
-#line 386 "fixedbugs275afailuremessagekeepsitslastletter.c"
+#line 14 "tests/golden/run/fixedbugs-275-a-failure-message-keeps-its-last-letter.hero"
     hero_str_incref(t11);
 #line 14 "tests/golden/run/fixedbugs-275-a-failure-message-keeps-its-last-letter.hero"
     h2_s = t11;
-#line 390 "fixedbugs275afailuremessagekeepsitslastletter.c"
+#line 14 "tests/golden/run/fixedbugs-275-a-failure-message-keeps-its-last-letter.hero"
     hero_str_decref(t91);
 #line 14 "tests/golden/run/fixedbugs-275-a-failure-message-keeps-its-last-letter.hero"
     t12 = HERO_STR_LIT(hero_str_7aec4445);
@@ -407,11 +407,11 @@ bb3:
     t15 = t14.as.err;
 #line 15 "tests/golden/run/fixedbugs-275-a-failure-message-keeps-its-last-letter.hero"
     t92 = h3_e;
-#line 411 "fixedbugs275afailuremessagekeepsitslastletter.c"
+#line 15 "tests/golden/run/fixedbugs-275-a-failure-message-keeps-its-last-letter.hero"
     hero_failure_retain(&t15);
 #line 15 "tests/golden/run/fixedbugs-275-a-failure-message-keeps-its-last-letter.hero"
     h3_e = t15;
-#line 415 "fixedbugs275afailuremessagekeepsitslastletter.c"
+#line 15 "tests/golden/run/fixedbugs-275-a-failure-message-keeps-its-last-letter.hero"
     hero_failure_release(&t92);
 #line 15 "tests/golden/run/fixedbugs-275-a-failure-message-keeps-its-last-letter.hero"
     t16 = h3_e;
@@ -457,17 +457,16 @@ bb4:
     t93 = h15_own15;
 #line 23 "tests/golden/run/fixedbugs-275-a-failure-message-keeps-its-last-letter.hero"
     h15_own15 = t47;
-#line 461 "fixedbugs275afailuremessagekeepsitslastletter.c"
+#line 23 "tests/golden/run/fixedbugs-275-a-failure-message-keeps-its-last-letter.hero"
     hero_map_decref(t93);
 #line 23 "tests/golden/run/fixedbugs-275-a-failure-message-keeps-its-last-letter.hero"
     t94 = h8_m;
-#line 465 "fixedbugs275afailuremessagekeepsitslastletter.c"
+#line 23 "tests/golden/run/fixedbugs-275-a-failure-message-keeps-its-last-letter.hero"
     hero_map_incref(t47);
 #line 23 "tests/golden/run/fixedbugs-275-a-failure-message-keeps-its-last-letter.hero"
     h8_m = t47;
-#line 469 "fixedbugs275afailuremessagekeepsitslastletter.c"
+#line 23 "tests/golden/run/fixedbugs-275-a-failure-message-keeps-its-last-letter.hero"
     hero_map_decref(t94);
-#line 24 "tests/golden/run/fixedbugs-275-a-failure-message-keeps-its-last-letter.hero"
     t48 = HERO_STR_LIT(hero_str_61);
 #line 24 "tests/golden/run/fixedbugs-275-a-failure-message-keeps-its-last-letter.hero"
     t49 = INT64_C(1);
@@ -499,15 +498,15 @@ bb4:
     t95 = h16_own16;
 #line 26 "tests/golden/run/fixedbugs-275-a-failure-message-keeps-its-last-letter.hero"
     h16_own16 = t52;
-#line 503 "fixedbugs275afailuremessagekeepsitslastletter.c"
+#line 26 "tests/golden/run/fixedbugs-275-a-failure-message-keeps-its-last-letter.hero"
     h_0opt_e201354_release(&t95);
 #line 26 "tests/golden/run/fixedbugs-275-a-failure-message-keeps-its-last-letter.hero"
     t96 = h9_s2;
-#line 507 "fixedbugs275afailuremessagekeepsitslastletter.c"
+#line 26 "tests/golden/run/fixedbugs-275-a-failure-message-keeps-its-last-letter.hero"
     h_0opt_e201354_retain(&t52);
 #line 26 "tests/golden/run/fixedbugs-275-a-failure-message-keeps-its-last-letter.hero"
     h9_s2 = t52;
-#line 511 "fixedbugs275afailuremessagekeepsitslastletter.c"
+#line 26 "tests/golden/run/fixedbugs-275-a-failure-message-keeps-its-last-letter.hero"
     h_0opt_e201354_release(&t96);
 #line 26 "tests/golden/run/fixedbugs-275-a-failure-message-keeps-its-last-letter.hero"
     t53 = h9_s2;
@@ -550,11 +549,11 @@ bb6:
     t36 = t35.as.err;
 #line 21 "tests/golden/run/fixedbugs-275-a-failure-message-keeps-its-last-letter.hero"
     t97 = h7_e;
-#line 554 "fixedbugs275afailuremessagekeepsitslastletter.c"
+#line 21 "tests/golden/run/fixedbugs-275-a-failure-message-keeps-its-last-letter.hero"
     hero_failure_retain(&t36);
 #line 21 "tests/golden/run/fixedbugs-275-a-failure-message-keeps-its-last-letter.hero"
     h7_e = t36;
-#line 558 "fixedbugs275afailuremessagekeepsitslastletter.c"
+#line 21 "tests/golden/run/fixedbugs-275-a-failure-message-keeps-its-last-letter.hero"
     hero_failure_release(&t97);
 #line 21 "tests/golden/run/fixedbugs-275-a-failure-message-keeps-its-last-letter.hero"
     t37 = h7_e;
@@ -602,7 +601,7 @@ bb7:
     t98 = h17_own17;
 #line 30 "tests/golden/run/fixedbugs-275-a-failure-message-keeps-its-last-letter.hero"
     h17_own17 = t72;
-#line 606 "fixedbugs275afailuremessagekeepsitslastletter.c"
+#line 30 "tests/golden/run/fixedbugs-275-a-failure-message-keeps-its-last-letter.hero"
     hero_str_decref(t98);
 #line 30 "tests/golden/run/fixedbugs-275-a-failure-message-keeps-its-last-letter.hero"
     t73 = HERO_STR_LIT(hero_str_1088);
@@ -614,7 +613,7 @@ bb7:
     t99 = h18_own18;
 #line 30 "tests/golden/run/fixedbugs-275-a-failure-message-keeps-its-last-letter.hero"
     h18_own18 = t75;
-#line 618 "fixedbugs275afailuremessagekeepsitslastletter.c"
+#line 30 "tests/golden/run/fixedbugs-275-a-failure-message-keeps-its-last-letter.hero"
     hero_str_decref(t99);
 #line 30 "tests/golden/run/fixedbugs-275-a-failure-message-keeps-its-last-letter.hero"
     t76 = hero_str_len(t75);
@@ -637,7 +636,7 @@ bb7:
     t100 = h19_own19;
 #line 31 "tests/golden/run/fixedbugs-275-a-failure-message-keeps-its-last-letter.hero"
     h19_own19 = t79;
-#line 641 "fixedbugs275afailuremessagekeepsitslastletter.c"
+#line 31 "tests/golden/run/fixedbugs-275-a-failure-message-keeps-its-last-letter.hero"
     hero_str_decref(t100);
 #line 31 "tests/golden/run/fixedbugs-275-a-failure-message-keeps-its-last-letter.hero"
     t80 = HERO_STR_LIT(hero_str_1088);
@@ -649,7 +648,7 @@ bb7:
     t101 = h20_own20;
 #line 31 "tests/golden/run/fixedbugs-275-a-failure-message-keeps-its-last-letter.hero"
     h20_own20 = t82;
-#line 653 "fixedbugs275afailuremessagekeepsitslastletter.c"
+#line 31 "tests/golden/run/fixedbugs-275-a-failure-message-keeps-its-last-letter.hero"
     hero_str_decref(t101);
 #line 31 "tests/golden/run/fixedbugs-275-a-failure-message-keeps-its-last-letter.hero"
     t83 = hero_str_len(t82);
@@ -665,7 +664,7 @@ bb7:
     hero_print_str(t84);
 #line 31 "tests/golden/run/fixedbugs-275-a-failure-message-keeps-its-last-letter.hero"
     hero_print_end();
-#line 669 "fixedbugs275afailuremessagekeepsitslastletter.c"
+#line 668 "fixedbugs275afailuremessagekeepsitslastletter.c"
     hero_array_release_at(&h0_b);
     h_0opt_f87774a_release(hero_slot_escape(&h1_s0));
     hero_str_release_at(&h2_s);
@@ -711,11 +710,11 @@ bb9:
     t60 = t59.as.err;
 #line 28 "tests/golden/run/fixedbugs-275-a-failure-message-keeps-its-last-letter.hero"
     t102 = h11_e;
-#line 715 "fixedbugs275afailuremessagekeepsitslastletter.c"
+#line 28 "tests/golden/run/fixedbugs-275-a-failure-message-keeps-its-last-letter.hero"
     hero_failure_retain(&t60);
 #line 28 "tests/golden/run/fixedbugs-275-a-failure-message-keeps-its-last-letter.hero"
     h11_e = t60;
-#line 719 "fixedbugs275afailuremessagekeepsitslastletter.c"
+#line 28 "tests/golden/run/fixedbugs-275-a-failure-message-keeps-its-last-letter.hero"
     hero_failure_release(&t102);
 #line 28 "tests/golden/run/fixedbugs-275-a-failure-message-keeps-its-last-letter.hero"
     t61 = h11_e;
@@ -753,7 +752,7 @@ bb9:
     hero_print_end();
 #line 28 "tests/golden/run/fixedbugs-275-a-failure-message-keeps-its-last-letter.hero"
     goto bb7;
-#line 757 "fixedbugs275afailuremessagekeepsitslastletter.c"
+#line 756 "fixedbugs275afailuremessagekeepsitslastletter.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

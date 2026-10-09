@@ -140,13 +140,12 @@ bb0:
     t1 = HERO_STR_LIT(hero_str_2f372e9c);
 #line 6 "tests/golden/run/strings.hero"
     t27 = h0_greeting;
-#line 144 "strings.c"
+#line 6 "tests/golden/run/strings.hero"
     hero_str_incref(t1);
 #line 6 "tests/golden/run/strings.hero"
     h0_greeting = t1;
-#line 148 "strings.c"
+#line 6 "tests/golden/run/strings.hero"
     hero_str_decref(t27);
-#line 7 "tests/golden/run/strings.hero"
     t2 = h0_greeting;
 #line 7 "tests/golden/run/strings.hero"
     hero_print_str(t2);
@@ -161,7 +160,7 @@ bb0:
     t28 = h1_own1;
 #line 8 "tests/golden/run/strings.hero"
     h1_own1 = t5;
-#line 165 "strings.c"
+#line 8 "tests/golden/run/strings.hero"
     hero_str_decref(t28);
 #line 8 "tests/golden/run/strings.hero"
     t6 = HERO_STR_LIT(hero_str_37dd7796);
@@ -171,7 +170,7 @@ bb0:
     t29 = h2_own2;
 #line 8 "tests/golden/run/strings.hero"
     h2_own2 = t7;
-#line 175 "strings.c"
+#line 8 "tests/golden/run/strings.hero"
     hero_str_decref(t29);
 #line 8 "tests/golden/run/strings.hero"
     hero_print_str(t7);
@@ -204,7 +203,7 @@ bb0:
     t30 = h3_own3;
 #line 11 "tests/golden/run/strings.hero"
     h3_own3 = t16;
-#line 208 "strings.c"
+#line 11 "tests/golden/run/strings.hero"
     hero_str_decref(t30);
 #line 11 "tests/golden/run/strings.hero"
     hero_print_str(t16);
@@ -234,7 +233,7 @@ bb0:
     t31 = h4_own4;
 #line 13 "tests/golden/run/strings.hero"
     h4_own4 = t24;
-#line 238 "strings.c"
+#line 13 "tests/golden/run/strings.hero"
     hero_str_decref(t31);
 #line 13 "tests/golden/run/strings.hero"
     t25 = true;
@@ -244,7 +243,7 @@ bb0:
     t32 = h5_own5;
 #line 13 "tests/golden/run/strings.hero"
     h5_own5 = t26;
-#line 248 "strings.c"
+#line 13 "tests/golden/run/strings.hero"
     hero_str_decref(t32);
 #line 13 "tests/golden/run/strings.hero"
     hero_print_str(t24);
@@ -252,7 +251,7 @@ bb0:
     hero_print_str(t26);
 #line 13 "tests/golden/run/strings.hero"
     hero_print_end();
-#line 256 "strings.c"
+#line 255 "strings.c"
     hero_str_release_at(&h0_greeting);
     hero_str_release_at(&h1_own1);
     hero_str_release_at(&h2_own2);

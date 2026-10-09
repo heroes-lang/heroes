@@ -148,17 +148,16 @@ bb0:
     t38 = h5_own5;
 #line 23 "examples/sieve/main.hero"
     h5_own5 = t1;
-#line 152 "main.c"
+#line 23 "examples/sieve/main.hero"
     hero_array_decref(t38);
 #line 23 "examples/sieve/main.hero"
     t39 = h1_flags;
-#line 156 "main.c"
+#line 23 "examples/sieve/main.hero"
     hero_array_incref(t1);
 #line 23 "examples/sieve/main.hero"
     h1_flags = t1;
-#line 160 "main.c"
+#line 23 "examples/sieve/main.hero"
     hero_array_decref(t39);
-#line 24 "examples/sieve/main.hero"
     t2 = INT64_C(0);
 #line 24 "examples/sieve/main.hero"
     h2_i = t2;
@@ -227,7 +226,7 @@ bb5:
 bb6:
 #line 44 "examples/sieve/main.hero"
     t37 = h1_flags;
-#line 231 "main.c"
+#line 230 "main.c"
     hero_array_incref(t37);
     hero_array_release_at(&h1_flags);
     hero_array_release_at(&h5_own5);
@@ -289,12 +288,12 @@ bb11:
 bb12:
 #line 41 "examples/sieve/main.hero"
     goto bb7;
-#line 293 "main.c"
+#line 292 "main.c"
 }
 
 #line 46 "examples/sieve/main.hero"
 HeroArrayHeader * h_main_primes_below(int64_t h0_limit) {
-#line 298 "main.c"
+#line 297 "main.c"
     HeroArrayHeader * h1_empty = {0};
     HeroArrayHeader * h2_flags = {0};
     HeroArrayHeader * h3_out = {0};
@@ -357,33 +356,31 @@ bb1:
     t27 = h6_own6;
 #line 50 "examples/sieve/main.hero"
     h6_own6 = t9;
-#line 361 "main.c"
+#line 50 "examples/sieve/main.hero"
     hero_array_decref(t27);
 #line 50 "examples/sieve/main.hero"
     t28 = h2_flags;
-#line 365 "main.c"
+#line 50 "examples/sieve/main.hero"
     hero_array_incref(t9);
 #line 50 "examples/sieve/main.hero"
     h2_flags = t9;
-#line 369 "main.c"
+#line 50 "examples/sieve/main.hero"
     hero_array_decref(t28);
-#line 51 "examples/sieve/main.hero"
     t10 = hero_array_new(&hero_desc_int, 1);
 #line 51 "examples/sieve/main.hero"
     t29 = h7_own7;
 #line 51 "examples/sieve/main.hero"
     h7_own7 = t10;
-#line 377 "main.c"
+#line 51 "examples/sieve/main.hero"
     hero_array_decref(t29);
 #line 51 "examples/sieve/main.hero"
     t30 = h3_out;
-#line 381 "main.c"
+#line 51 "examples/sieve/main.hero"
     hero_array_incref(t10);
 #line 51 "examples/sieve/main.hero"
     h3_out = t10;
-#line 385 "main.c"
+#line 51 "examples/sieve/main.hero"
     hero_array_decref(t30);
-#line 52 "examples/sieve/main.hero"
     t11 = INT64_C(0);
 #line 52 "examples/sieve/main.hero"
     h4_i = t11;
@@ -397,17 +394,16 @@ bb2:
     t31 = h8_own8;
 #line 48 "examples/sieve/main.hero"
     h8_own8 = t4;
-#line 401 "main.c"
+#line 48 "examples/sieve/main.hero"
     hero_array_decref(t31);
 #line 48 "examples/sieve/main.hero"
     t32 = h1_empty;
-#line 405 "main.c"
+#line 48 "examples/sieve/main.hero"
     hero_array_incref(t4);
 #line 48 "examples/sieve/main.hero"
     h1_empty = t4;
-#line 409 "main.c"
+#line 48 "examples/sieve/main.hero"
     hero_array_decref(t32);
-#line 49 "examples/sieve/main.hero"
     t5 = h1_empty;
 #line 49 "examples/sieve/main.hero"
     h5_ret0 = t5;
@@ -472,7 +468,7 @@ bb9:
     goto bb7;
 #line 56 "examples/sieve/main.hero"
 bb10:
-#line 476 "main.c"
+#line 472 "main.c"
     t26 = h5_ret0;
     hero_array_incref(t26);
     hero_array_release_at(&h1_empty);
@@ -486,7 +482,7 @@ bb10:
 
 #line 61 "examples/sieve/main.hero"
 bool h_main_is_prime(int64_t h0_n) {
-#line 490 "main.c"
+#line 486 "main.c"
     bool h1_ret0;
     HeroArrayHeader * h2_own2 = {0};
     int64_t t1;
@@ -519,7 +515,7 @@ bb1:
     t10 = h2_own2;
 #line 65 "examples/sieve/main.hero"
     h2_own2 = t6;
-#line 523 "main.c"
+#line 65 "examples/sieve/main.hero"
     hero_array_decref(t10);
 #line 65 "examples/sieve/main.hero"
     t7 = h0_n;
@@ -543,7 +539,7 @@ bb3:
     goto bb1;
 #line 63 "examples/sieve/main.hero"
 bb4:
-#line 547 "main.c"
+#line 543 "main.c"
     t9 = h1_ret0;
     hero_array_release_at(&h2_own2);
     return t9;
@@ -551,7 +547,7 @@ bb4:
 
 #line 69 "examples/sieve/main.hero"
 HeroArrayHeader * h_main_gaps(int64_t h0_limit) {
-#line 555 "main.c"
+#line 551 "main.c"
     HeroArrayHeader * h1_found = {0};
     HeroArrayHeader * h2_out = {0};
     int64_t h3_i;
@@ -592,33 +588,31 @@ bb0:
     t24 = h4_own4;
 #line 70 "examples/sieve/main.hero"
     h4_own4 = t2;
-#line 596 "main.c"
+#line 70 "examples/sieve/main.hero"
     hero_array_decref(t24);
 #line 70 "examples/sieve/main.hero"
     t25 = h1_found;
-#line 600 "main.c"
+#line 70 "examples/sieve/main.hero"
     hero_array_incref(t2);
 #line 70 "examples/sieve/main.hero"
     h1_found = t2;
-#line 604 "main.c"
+#line 70 "examples/sieve/main.hero"
     hero_array_decref(t25);
-#line 71 "examples/sieve/main.hero"
     t3 = hero_array_new(&hero_desc_int, 1);
 #line 71 "examples/sieve/main.hero"
     t26 = h5_own5;
 #line 71 "examples/sieve/main.hero"
     h5_own5 = t3;
-#line 612 "main.c"
+#line 71 "examples/sieve/main.hero"
     hero_array_decref(t26);
 #line 71 "examples/sieve/main.hero"
     t27 = h2_out;
-#line 616 "main.c"
+#line 71 "examples/sieve/main.hero"
     hero_array_incref(t3);
 #line 71 "examples/sieve/main.hero"
     h2_out = t3;
-#line 620 "main.c"
+#line 71 "examples/sieve/main.hero"
     hero_array_decref(t27);
-#line 72 "examples/sieve/main.hero"
     t4 = INT64_C(1);
 #line 72 "examples/sieve/main.hero"
     h3_i = t4;
@@ -670,7 +664,7 @@ bb2:
 bb3:
 #line 78 "examples/sieve/main.hero"
     t23 = h2_out;
-#line 674 "main.c"
+#line 668 "main.c"
     hero_array_incref(t23);
     hero_array_release_at(&h1_found);
     hero_array_release_at(&h2_out);
@@ -681,7 +675,7 @@ bb3:
 
 #line 80 "examples/sieve/main.hero"
 void h_main_main(void) {
-#line 685 "main.c"
+#line 679 "main.c"
     HeroArrayHeader * h0_own0 = {0};
     HeroArrayHeader * h1_own1 = {0};
     HeroArrayHeader * h2_own2 = {0};
@@ -742,7 +736,7 @@ bb0:
     t31 = h0_own0;
 #line 81 "examples/sieve/main.hero"
     h0_own0 = t2;
-#line 746 "main.c"
+#line 81 "examples/sieve/main.hero"
     hero_array_decref(t31);
 #line 81 "examples/sieve/main.hero"
     t3 = ((void)(t2 == NULL ? ((void)hero_array_len(t2), hero_unreachable()) : (void)0), t2->len);
@@ -757,7 +751,7 @@ bb0:
     t32 = h1_own1;
 #line 82 "examples/sieve/main.hero"
     h1_own1 = t5;
-#line 761 "main.c"
+#line 82 "examples/sieve/main.hero"
     hero_array_decref(t32);
 #line 82 "examples/sieve/main.hero"
     t6 = h_main_shown(t5);
@@ -765,7 +759,7 @@ bb0:
     t33 = h2_own2;
 #line 82 "examples/sieve/main.hero"
     h2_own2 = t6;
-#line 769 "main.c"
+#line 82 "examples/sieve/main.hero"
     hero_array_decref(t33);
 #line 82 "examples/sieve/main.hero"
     t7 = HERO_STR_LIT(hero_str_20);
@@ -775,7 +769,7 @@ bb0:
     t34 = h3_own3;
 #line 82 "examples/sieve/main.hero"
     h3_own3 = t8;
-#line 779 "main.c"
+#line 82 "examples/sieve/main.hero"
     hero_str_decref(t34);
 #line 82 "examples/sieve/main.hero"
     hero_print_str(t8);
@@ -788,7 +782,7 @@ bb0:
     t35 = h4_own4;
 #line 83 "examples/sieve/main.hero"
     h4_own4 = t10;
-#line 792 "main.c"
+#line 83 "examples/sieve/main.hero"
     hero_array_decref(t35);
 #line 83 "examples/sieve/main.hero"
     t11 = ((void)(t10 == NULL ? ((void)hero_array_len(t10), hero_unreachable()) : (void)0), t10->len);
@@ -803,7 +797,7 @@ bb0:
     t36 = h5_own5;
 #line 84 "examples/sieve/main.hero"
     h5_own5 = t13;
-#line 807 "main.c"
+#line 84 "examples/sieve/main.hero"
     hero_array_decref(t36);
 #line 84 "examples/sieve/main.hero"
     t14 = ((void)(t13 == NULL ? ((void)hero_array_len(t13), hero_unreachable()) : (void)0), t13->len);
@@ -818,7 +812,7 @@ bb0:
     t37 = h6_own6;
 #line 85 "examples/sieve/main.hero"
     h6_own6 = t16;
-#line 822 "main.c"
+#line 85 "examples/sieve/main.hero"
     hero_array_decref(t37);
 #line 85 "examples/sieve/main.hero"
     t17 = ((void)(t16 == NULL ? ((void)hero_array_len(t16), hero_unreachable()) : (void)0), t16->len);
@@ -834,7 +828,7 @@ bb0:
     t38 = h7_own7;
 #line 87 "examples/sieve/main.hero"
     h7_own7 = t19;
-#line 838 "main.c"
+#line 87 "examples/sieve/main.hero"
     hero_array_decref(t38);
 #line 87 "examples/sieve/main.hero"
     t20 = h_main_shown(t19);
@@ -842,7 +836,7 @@ bb0:
     t39 = h8_own8;
 #line 87 "examples/sieve/main.hero"
     h8_own8 = t20;
-#line 846 "main.c"
+#line 87 "examples/sieve/main.hero"
     hero_array_decref(t39);
 #line 87 "examples/sieve/main.hero"
     t21 = HERO_STR_LIT(hero_str_20);
@@ -852,7 +846,7 @@ bb0:
     t40 = h9_own9;
 #line 87 "examples/sieve/main.hero"
     h9_own9 = t22;
-#line 856 "main.c"
+#line 87 "examples/sieve/main.hero"
     hero_str_decref(t40);
 #line 87 "examples/sieve/main.hero"
     hero_print_str(t22);
@@ -886,7 +880,7 @@ bb0:
     hero_print_bool(t30);
 #line 91 "examples/sieve/main.hero"
     hero_print_end();
-#line 890 "main.c"
+#line 884 "main.c"
     hero_array_release_at(&h0_own0);
     hero_array_release_at(&h1_own1);
     hero_array_release_at(&h2_own2);
@@ -902,7 +896,7 @@ bb0:
 
 #line 93 "examples/sieve/main.hero"
 HeroArrayHeader * h_main_shown(HeroArrayHeader * h0_numbers) {
-#line 906 "main.c"
+#line 900 "main.c"
     HeroArrayHeader * h1_out = {0};
     HeroArrayHeader * h2_xs0 = {0};
     int64_t h3_i0;
@@ -937,25 +931,25 @@ bb0:
     t19 = h5_own5;
 #line 94 "examples/sieve/main.hero"
     h5_own5 = t1;
-#line 941 "main.c"
+#line 94 "examples/sieve/main.hero"
     hero_array_decref(t19);
 #line 94 "examples/sieve/main.hero"
     t20 = h1_out;
-#line 945 "main.c"
+#line 94 "examples/sieve/main.hero"
     hero_array_incref(t1);
 #line 94 "examples/sieve/main.hero"
     h1_out = t1;
-#line 949 "main.c"
+#line 94 "examples/sieve/main.hero"
     hero_array_decref(t20);
 #line 96 "examples/sieve/main.hero"
     t2 = h0_numbers;
 #line 96 "examples/sieve/main.hero"
     t21 = h2_xs0;
-#line 955 "main.c"
+#line 96 "examples/sieve/main.hero"
     hero_array_incref(t2);
 #line 96 "examples/sieve/main.hero"
     h2_xs0 = t2;
-#line 959 "main.c"
+#line 96 "examples/sieve/main.hero"
     hero_array_decref(t21);
 #line 96 "examples/sieve/main.hero"
     t3 = INT64_C(0);
@@ -992,7 +986,7 @@ bb2:
     t22 = h6_own6;
 #line 97 "examples/sieve/main.hero"
     h6_own6 = t13;
-#line 996 "main.c"
+#line 97 "examples/sieve/main.hero"
     hero_str_decref(t22);
 #line 97 "examples/sieve/main.hero"
     hero_array_push_owned(&h1_out, &t13);
@@ -1014,7 +1008,7 @@ bb3:
 bb4:
 #line 99 "examples/sieve/main.hero"
     t18 = h1_out;
-#line 1018 "main.c"
+#line 1012 "main.c"
     hero_array_incref(t18);
     hero_array_release_at(&h1_out);
     hero_array_release_at(&h2_xs0);
@@ -1025,7 +1019,7 @@ bb4:
 
 #line 175 "examples/sieve/main.hero"
 bool h_main_by_division(int64_t h0_n) {
-#line 1029 "main.c"
+#line 1023 "main.c"
     int64_t h1_d;
     bool h2_ret0;
     int64_t t1;
@@ -1144,7 +1138,7 @@ bb9:
     goto bb7;
 #line 182 "examples/sieve/main.hero"
 bb10:
-#line 1148 "main.c"
+#line 1142 "main.c"
     t21 = h2_ret0;
     return t21;
 }

@@ -123,17 +123,16 @@ bb0:
     t10 = h1_own1;
 #line 14 "tests/golden/run/fixedbugs-245-a-str-c-lays-out-holding-a-nul-stops.hero"
     h1_own1 = t1;
-#line 127 "fixedbugs245astrclaysoutholdinganulstops.c"
+#line 14 "tests/golden/run/fixedbugs-245-a-str-c-lays-out-holding-a-nul-stops.hero"
     hero_str_decref(t10);
 #line 14 "tests/golden/run/fixedbugs-245-a-str-c-lays-out-holding-a-nul-stops.hero"
     t11 = h0_laid;
-#line 131 "fixedbugs245astrclaysoutholdinganulstops.c"
+#line 14 "tests/golden/run/fixedbugs-245-a-str-c-lays-out-holding-a-nul-stops.hero"
     hero_str_incref(t1);
 #line 14 "tests/golden/run/fixedbugs-245-a-str-c-lays-out-holding-a-nul-stops.hero"
     h0_laid = t1;
-#line 135 "fixedbugs245astrclaysoutholdinganulstops.c"
+#line 14 "tests/golden/run/fixedbugs-245-a-str-c-lays-out-holding-a-nul-stops.hero"
     hero_str_decref(t11);
-#line 15 "tests/golden/run/fixedbugs-245-a-str-c-lays-out-holding-a-nul-stops.hero"
     t2 = HERO_STR_LIT(hero_str_10e4fea3);
 #line 15 "tests/golden/run/fixedbugs-245-a-str-c-lays-out-holding-a-nul-stops.hero"
     t3 = h0_laid;
@@ -162,7 +161,7 @@ bb0:
     hero_print_uint(t9);
 #line 16 "tests/golden/run/fixedbugs-245-a-str-c-lays-out-holding-a-nul-stops.hero"
     hero_print_end();
-#line 166 "fixedbugs245astrclaysoutholdinganulstops.c"
+#line 165 "fixedbugs245astrclaysoutholdinganulstops.c"
     hero_str_release_at(&h0_laid);
     hero_str_release_at(&h1_own1);
     return;

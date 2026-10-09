@@ -132,17 +132,16 @@ bb0:
     t15 = h1_own1;
 #line 6 "tests/golden/run/abort-array-slice.hero"
     h1_own1 = t4;
-#line 136 "abortarrayslice.c"
+#line 6 "tests/golden/run/abort-array-slice.hero"
     hero_array_decref(t15);
 #line 6 "tests/golden/run/abort-array-slice.hero"
     t16 = h0_xs;
-#line 140 "abortarrayslice.c"
+#line 6 "tests/golden/run/abort-array-slice.hero"
     hero_array_incref(t4);
 #line 6 "tests/golden/run/abort-array-slice.hero"
     h0_xs = t4;
-#line 144 "abortarrayslice.c"
+#line 6 "tests/golden/run/abort-array-slice.hero"
     hero_array_decref(t16);
-#line 7 "tests/golden/run/abort-array-slice.hero"
     t5 = h0_xs;
 #line 7 "tests/golden/run/abort-array-slice.hero"
     t6 = INT64_C(1);
@@ -154,7 +153,7 @@ bb0:
     t17 = h2_own2;
 #line 7 "tests/golden/run/abort-array-slice.hero"
     h2_own2 = t8;
-#line 158 "abortarrayslice.c"
+#line 7 "tests/golden/run/abort-array-slice.hero"
     hero_array_decref(t17);
 #line 7 "tests/golden/run/abort-array-slice.hero"
     t9 = ((void)(t8 == NULL ? ((void)hero_array_len(t8), hero_unreachable()) : (void)0), t8->len);
@@ -173,7 +172,7 @@ bb0:
     t18 = h3_own3;
 #line 8 "tests/golden/run/abort-array-slice.hero"
     h3_own3 = t13;
-#line 177 "abortarrayslice.c"
+#line 8 "tests/golden/run/abort-array-slice.hero"
     hero_array_decref(t18);
 #line 8 "tests/golden/run/abort-array-slice.hero"
     t14 = ((void)(t13 == NULL ? ((void)hero_array_len(t13), hero_unreachable()) : (void)0), t13->len);
@@ -181,7 +180,7 @@ bb0:
     hero_print_int(t14);
 #line 8 "tests/golden/run/abort-array-slice.hero"
     hero_print_end();
-#line 185 "abortarrayslice.c"
+#line 184 "abortarrayslice.c"
     hero_array_release_at(&h0_xs);
     hero_array_release_at(&h1_own1);
     hero_array_release_at(&h2_own2);

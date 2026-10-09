@@ -7146,17 +7146,16 @@ bb0:
     t10 = h2_own2;
 #line 3017 "tests/golden/run/fixedbugs-140-records-a-thousand-deep-build.hero"
     h2_own2 = t1;
-#line 7150 "fixedbugs140recordsathousanddeepbuild.c"
+#line 3017 "tests/golden/run/fixedbugs-140-records-a-thousand-deep-build.hero"
     hero_array_decref(t10);
 #line 3017 "tests/golden/run/fixedbugs-140-records-a-thousand-deep-build.hero"
     t11 = h0_xs;
-#line 7154 "fixedbugs140recordsathousanddeepbuild.c"
+#line 3017 "tests/golden/run/fixedbugs-140-records-a-thousand-deep-build.hero"
     hero_array_incref(t1);
 #line 3017 "tests/golden/run/fixedbugs-140-records-a-thousand-deep-build.hero"
     h0_xs = t1;
-#line 7158 "fixedbugs140recordsathousanddeepbuild.c"
+#line 3017 "tests/golden/run/fixedbugs-140-records-a-thousand-deep-build.hero"
     hero_array_decref(t11);
-#line 3018 "tests/golden/run/fixedbugs-140-records-a-thousand-deep-build.hero"
     t2 = h0_xs;
 #line 3018 "tests/golden/run/fixedbugs-140-records-a-thousand-deep-build.hero"
     t3 = ((void)(t2 == NULL ? ((void)hero_array_len(t2), hero_unreachable()) : (void)0), t2->len);
@@ -7178,17 +7177,16 @@ bb0:
     t12 = h3_own3;
 #line 3020 "tests/golden/run/fixedbugs-140-records-a-thousand-deep-build.hero"
     h3_own3 = t7;
-#line 7182 "fixedbugs140recordsathousanddeepbuild.c"
+#line 3020 "tests/golden/run/fixedbugs-140-records-a-thousand-deep-build.hero"
     hero_map_decref(t12);
 #line 3020 "tests/golden/run/fixedbugs-140-records-a-thousand-deep-build.hero"
     t13 = h1_m;
-#line 7186 "fixedbugs140recordsathousanddeepbuild.c"
+#line 3020 "tests/golden/run/fixedbugs-140-records-a-thousand-deep-build.hero"
     hero_map_incref(t7);
 #line 3020 "tests/golden/run/fixedbugs-140-records-a-thousand-deep-build.hero"
     h1_m = t7;
-#line 7190 "fixedbugs140recordsathousanddeepbuild.c"
+#line 3020 "tests/golden/run/fixedbugs-140-records-a-thousand-deep-build.hero"
     hero_map_decref(t13);
-#line 3021 "tests/golden/run/fixedbugs-140-records-a-thousand-deep-build.hero"
     t8 = h1_m;
 #line 3021 "tests/golden/run/fixedbugs-140-records-a-thousand-deep-build.hero"
     t9 = hero_map_len(t8);
@@ -7196,7 +7194,7 @@ bb0:
     hero_print_int(t9);
 #line 3021 "tests/golden/run/fixedbugs-140-records-a-thousand-deep-build.hero"
     hero_print_end();
-#line 7200 "fixedbugs140recordsathousanddeepbuild.c"
+#line 7198 "fixedbugs140recordsathousanddeepbuild.c"
     hero_array_release_at(&h0_xs);
     hero_map_release_at(&h1_m);
     hero_array_release_at(&h2_own2);

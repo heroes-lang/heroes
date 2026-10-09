@@ -163,27 +163,25 @@ bb0:
     t34 = h3_own3;
 #line 24 "tests/golden/run/fixedbugs-411-read-only-pointers-take-every-lend.hero"
     h3_own3 = t3;
-#line 167 "fixedbugs411readonlypointerstakeeverylend.c"
+#line 24 "tests/golden/run/fixedbugs-411-read-only-pointers-take-every-lend.hero"
     hero_str_decref(t34);
 #line 24 "tests/golden/run/fixedbugs-411-read-only-pointers-take-every-lend.hero"
     t35 = h0_s;
-#line 171 "fixedbugs411readonlypointerstakeeverylend.c"
+#line 24 "tests/golden/run/fixedbugs-411-read-only-pointers-take-every-lend.hero"
     hero_str_incref(t3);
 #line 24 "tests/golden/run/fixedbugs-411-read-only-pointers-take-every-lend.hero"
     h0_s = t3;
-#line 175 "fixedbugs411readonlypointerstakeeverylend.c"
+#line 24 "tests/golden/run/fixedbugs-411-read-only-pointers-take-every-lend.hero"
     hero_str_decref(t35);
-#line 25 "tests/golden/run/fixedbugs-411-read-only-pointers-take-every-lend.hero"
     t4 = h0_s;
 #line 25 "tests/golden/run/fixedbugs-411-read-only-pointers-take-every-lend.hero"
     t36 = h1_t;
-#line 181 "fixedbugs411readonlypointerstakeeverylend.c"
+#line 25 "tests/golden/run/fixedbugs-411-read-only-pointers-take-every-lend.hero"
     hero_str_incref(t4);
 #line 25 "tests/golden/run/fixedbugs-411-read-only-pointers-take-every-lend.hero"
     h1_t = t4;
-#line 185 "fixedbugs411readonlypointerstakeeverylend.c"
+#line 25 "tests/golden/run/fixedbugs-411-read-only-pointers-take-every-lend.hero"
     hero_str_decref(t36);
-#line 26 "tests/golden/run/fixedbugs-411-read-only-pointers-take-every-lend.hero"
     t5 = h0_s;
 #line 26 "tests/golden/run/fixedbugs-411-read-only-pointers-take-every-lend.hero"
     t6 = hero_str_lend(t5);
@@ -274,7 +272,7 @@ bb0:
     hero_print_str(t33);
 #line 37 "tests/golden/run/fixedbugs-411-read-only-pointers-take-every-lend.hero"
     hero_print_end();
-#line 278 "fixedbugs411readonlypointerstakeeverylend.c"
+#line 276 "fixedbugs411readonlypointerstakeeverylend.c"
     hero_str_release_at(&h0_s);
     hero_str_release_at(&h1_t);
     hero_str_release_at(&h3_own3);

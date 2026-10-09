@@ -143,7 +143,7 @@ bb0:
     t18 = h2_own2;
 #line 17 "tests/golden/run/abort-sort-nan.hero"
     h2_own2 = t7;
-#line 147 "abortsortnan.c"
+#line 17 "tests/golden/run/abort-sort-nan.hero"
     hero_array_decref(t18);
 #line 17 "tests/golden/run/abort-sort-nan.hero"
     t8 = hero_array_sort(t7);
@@ -151,7 +151,7 @@ bb0:
     t19 = h3_own3;
 #line 17 "tests/golden/run/abort-sort-nan.hero"
     h3_own3 = t8;
-#line 155 "abortsortnan.c"
+#line 17 "tests/golden/run/abort-sort-nan.hero"
     hero_array_decref(t19);
 #line 17 "tests/golden/run/abort-sort-nan.hero"
     t9 = INT64_C(0);
@@ -178,7 +178,7 @@ bb0:
     t20 = h4_own4;
 #line 18 "tests/golden/run/abort-sort-nan.hero"
     h4_own4 = t14;
-#line 182 "abortsortnan.c"
+#line 18 "tests/golden/run/abort-sort-nan.hero"
     hero_array_decref(t20);
 #line 18 "tests/golden/run/abort-sort-nan.hero"
     t15 = hero_array_sort(t14);
@@ -186,7 +186,7 @@ bb0:
     t21 = h5_own5;
 #line 18 "tests/golden/run/abort-sort-nan.hero"
     h5_own5 = t15;
-#line 190 "abortsortnan.c"
+#line 18 "tests/golden/run/abort-sort-nan.hero"
     hero_array_decref(t21);
 #line 18 "tests/golden/run/abort-sort-nan.hero"
     t16 = INT64_C(0);

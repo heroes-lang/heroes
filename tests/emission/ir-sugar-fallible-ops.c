@@ -140,11 +140,11 @@ bb0:
     t1 = h0_v;
 #line 5 "tests/golden/ir/sugar-fallible-ops.hero"
     t25 = h1_f0;
-#line 144 "sugarfallibleops.c"
+#line 5 "tests/golden/ir/sugar-fallible-ops.hero"
     h_0opt_e201354_retain(&t1);
 #line 5 "tests/golden/ir/sugar-fallible-ops.hero"
     h1_f0 = t1;
-#line 148 "sugarfallibleops.c"
+#line 5 "tests/golden/ir/sugar-fallible-ops.hero"
     h_0opt_e201354_release(&t25);
 #line 5 "tests/golden/ir/sugar-fallible-ops.hero"
     t2 = h1_f0;
@@ -162,11 +162,11 @@ bb1:
     t15 = h0_v;
 #line 7 "tests/golden/ir/sugar-fallible-ops.hero"
     t26 = h4_f2;
-#line 166 "sugarfallibleops.c"
+#line 7 "tests/golden/ir/sugar-fallible-ops.hero"
     h_0opt_e201354_retain(&t15);
 #line 7 "tests/golden/ir/sugar-fallible-ops.hero"
     h4_f2 = t15;
-#line 170 "sugarfallibleops.c"
+#line 7 "tests/golden/ir/sugar-fallible-ops.hero"
     h_0opt_e201354_release(&t26);
 #line 7 "tests/golden/ir/sugar-fallible-ops.hero"
     t16 = h4_f2;
@@ -184,11 +184,11 @@ bb2:
     t6 = h0_v;
 #line 6 "tests/golden/ir/sugar-fallible-ops.hero"
     t27 = h2_f1;
-#line 188 "sugarfallibleops.c"
+#line 6 "tests/golden/ir/sugar-fallible-ops.hero"
     h_0opt_e201354_retain(&t6);
 #line 6 "tests/golden/ir/sugar-fallible-ops.hero"
     h2_f1 = t6;
-#line 192 "sugarfallibleops.c"
+#line 6 "tests/golden/ir/sugar-fallible-ops.hero"
     h_0opt_e201354_release(&t27);
 #line 6 "tests/golden/ir/sugar-fallible-ops.hero"
     t7 = h2_f1;

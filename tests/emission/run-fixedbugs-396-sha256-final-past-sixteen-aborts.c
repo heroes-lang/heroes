@@ -141,17 +141,16 @@ bb0:
     t14 = h2_own2;
 #line 16 "tests/golden/run/fixedbugs-396-sha256-final-past-sixteen-aborts.hero"
     h2_own2 = t3;
-#line 145 "fixedbugs396sha256finalpastsixteenaborts.c"
+#line 16 "tests/golden/run/fixedbugs-396-sha256-final-past-sixteen-aborts.hero"
     hero_array_decref(t14);
 #line 16 "tests/golden/run/fixedbugs-396-sha256-final-past-sixteen-aborts.hero"
     t15 = h1_md;
-#line 149 "fixedbugs396sha256finalpastsixteenaborts.c"
+#line 16 "tests/golden/run/fixedbugs-396-sha256-final-past-sixteen-aborts.hero"
     hero_array_incref(t3);
 #line 16 "tests/golden/run/fixedbugs-396-sha256-final-past-sixteen-aborts.hero"
     h1_md = t3;
-#line 153 "fixedbugs396sha256finalpastsixteenaborts.c"
+#line 16 "tests/golden/run/fixedbugs-396-sha256-final-past-sixteen-aborts.hero"
     hero_array_decref(t15);
-#line 17 "tests/golden/run/fixedbugs-396-sha256-final-past-sixteen-aborts.hero"
     hero_lend_local_name(hero_lend_h0_c, "SHA256_Init", "c");
 #line 17 "tests/golden/run/fixedbugs-396-sha256-final-past-sixteen-aborts.hero"
     t4 = SHA256_Init(&h0_c);
@@ -205,7 +204,7 @@ bb0:
     hero_print_int(t13);
 #line 19 "tests/golden/run/fixedbugs-396-sha256-final-past-sixteen-aborts.hero"
     hero_print_end();
-#line 209 "fixedbugs396sha256finalpastsixteenaborts.c"
+#line 208 "fixedbugs396sha256finalpastsixteenaborts.c"
     hero_array_release_at(&h1_md);
     hero_array_release_at(&h2_own2);
     hero_lend_local_give(hero_lend_h0_c);

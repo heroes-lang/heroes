@@ -188,11 +188,11 @@ bb0:
     t1 = h0_n;
 #line 31 "tests/golden/run/aggregates-nested.hero"
     t21 = h1_s0;
-#line 192 "aggregatesnested.c"
+#line 31 "tests/golden/run/aggregates-nested.hero"
     h_aggregatesnested_Node_retain(&t1);
 #line 31 "tests/golden/run/aggregates-nested.hero"
     h1_s0 = t1;
-#line 196 "aggregatesnested.c"
+#line 31 "tests/golden/run/aggregates-nested.hero"
     h_aggregatesnested_Node_release(&t21);
 #line 31 "tests/golden/run/aggregates-nested.hero"
     t2 = h1_s0;
@@ -228,11 +228,11 @@ bb2:
     t5 = t4.as.c_leaf;
 #line 32 "tests/golden/run/aggregates-nested.hero"
     t22 = h3_l;
-#line 232 "aggregatesnested.c"
+#line 32 "tests/golden/run/aggregates-nested.hero"
     h_aggregatesnested_Node_c_leaf_retain(&t5);
 #line 32 "tests/golden/run/aggregates-nested.hero"
     h3_l = t5;
-#line 236 "aggregatesnested.c"
+#line 32 "tests/golden/run/aggregates-nested.hero"
     h_aggregatesnested_Node_c_leaf_release(&t22);
 #line 32 "tests/golden/run/aggregates-nested.hero"
     t6 = h3_l;
@@ -242,13 +242,15 @@ bb2:
     t8 = t7.f_text;
 #line 31 "tests/golden/run/aggregates-nested.hero"
     t23 = h2_r0;
-#line 246 "aggregatesnested.c"
+#line 31 "tests/golden/run/aggregates-nested.hero"
     hero_str_incref(t8);
 #line 31 "tests/golden/run/aggregates-nested.hero"
     h2_r0 = t8;
-#line 250 "aggregatesnested.c"
+#line 31 "tests/golden/run/aggregates-nested.hero"
     hero_str_decref(t23);
+#line 31 "tests/golden/run/aggregates-nested.hero"
     goto bb1;
+#line 31 "tests/golden/run/aggregates-nested.hero"
 bb3:
 #line 33 "tests/golden/run/aggregates-nested.hero"
     t9 = h1_s0;
@@ -256,11 +258,11 @@ bb3:
     t10 = t9.as.c_pair;
 #line 33 "tests/golden/run/aggregates-nested.hero"
     t24 = h4_p;
-#line 260 "aggregatesnested.c"
+#line 33 "tests/golden/run/aggregates-nested.hero"
     h_aggregatesnested_Node_c_pair_retain(&t10);
 #line 33 "tests/golden/run/aggregates-nested.hero"
     h4_p = t10;
-#line 264 "aggregatesnested.c"
+#line 33 "tests/golden/run/aggregates-nested.hero"
     h_aggregatesnested_Node_c_pair_release(&t24);
 #line 33 "tests/golden/run/aggregates-nested.hero"
     t11 = h4_p;
@@ -276,7 +278,7 @@ bb3:
     t25 = h5_own5;
 #line 33 "tests/golden/run/aggregates-nested.hero"
     h5_own5 = t15;
-#line 280 "aggregatesnested.c"
+#line 33 "tests/golden/run/aggregates-nested.hero"
     hero_str_decref(t25);
 #line 33 "tests/golden/run/aggregates-nested.hero"
     t16 = h4_p;
@@ -290,22 +292,24 @@ bb3:
     t26 = h6_own6;
 #line 33 "tests/golden/run/aggregates-nested.hero"
     h6_own6 = t19;
-#line 294 "aggregatesnested.c"
+#line 33 "tests/golden/run/aggregates-nested.hero"
     hero_str_decref(t26);
 #line 31 "tests/golden/run/aggregates-nested.hero"
     t27 = h2_r0;
-#line 298 "aggregatesnested.c"
+#line 31 "tests/golden/run/aggregates-nested.hero"
     hero_str_incref(t19);
 #line 31 "tests/golden/run/aggregates-nested.hero"
     h2_r0 = t19;
-#line 302 "aggregatesnested.c"
+#line 31 "tests/golden/run/aggregates-nested.hero"
     hero_str_decref(t27);
+#line 31 "tests/golden/run/aggregates-nested.hero"
     goto bb1;
+#line 308 "aggregatesnested.c"
 }
 
 #line 35 "tests/golden/run/aggregates-nested.hero"
 void h_aggregatesnested_bump(h_aggregatesnested_Holder *ph0_h) {
-#line 309 "aggregatesnested.c"
+#line 313 "aggregatesnested.c"
     h_aggregatesnested_Holder h1_own1 = {0};
     h_aggregatesnested_Holder t1;
     h_aggregatesnested_Node t2;
@@ -330,7 +334,7 @@ bb0:
     t5 = INT64_C(1);
 #line 36 "tests/golden/run/aggregates-nested.hero"
     if (__builtin_add_overflow(t4, t5, &t6)) hero_panic_overflow();
-#line 334 "aggregatesnested.c"
+#line 36 "tests/golden/run/aggregates-nested.hero"
     h_aggregatesnested_Node_retain(&t2);
 #line 36 "tests/golden/run/aggregates-nested.hero"
     t7 = (h_aggregatesnested_Holder){.f_node = t2, .f_count = t6};
@@ -338,23 +342,24 @@ bb0:
     t8 = h1_own1;
 #line 36 "tests/golden/run/aggregates-nested.hero"
     h1_own1 = t7;
-#line 342 "aggregatesnested.c"
+#line 36 "tests/golden/run/aggregates-nested.hero"
     h_aggregatesnested_Holder_release(&t8);
 #line 36 "tests/golden/run/aggregates-nested.hero"
     t9 = (*ph0_h);
-#line 346 "aggregatesnested.c"
+#line 36 "tests/golden/run/aggregates-nested.hero"
     h_aggregatesnested_Holder_retain(&t7);
 #line 36 "tests/golden/run/aggregates-nested.hero"
     (*ph0_h) = t7;
-#line 350 "aggregatesnested.c"
+#line 36 "tests/golden/run/aggregates-nested.hero"
     h_aggregatesnested_Holder_release(&t9);
+#line 356 "aggregatesnested.c"
     h_aggregatesnested_Holder_release(hero_slot_escape(&h1_own1));
     return;
 }
 
 #line 38 "tests/golden/run/aggregates-nested.hero"
 void h_aggregatesnested_main(void) {
-#line 358 "aggregatesnested.c"
+#line 363 "aggregatesnested.c"
     h_aggregatesnested_Node h0_n = {0};
     h_aggregatesnested_Holder h1_h = {0};
     HeroStr h2_own2 = {0};
@@ -413,8 +418,9 @@ bb0:
     t25 = h2_own2;
 #line 39 "tests/golden/run/aggregates-nested.hero"
     h2_own2 = t3;
-#line 417 "aggregatesnested.c"
+#line 39 "tests/golden/run/aggregates-nested.hero"
     hero_str_decref(t25);
+#line 39 "tests/golden/run/aggregates-nested.hero"
     hero_str_incref(t3);
 #line 39 "tests/golden/run/aggregates-nested.hero"
     t4 = (h_aggregatesnested_Name){.f_text = t3};
@@ -422,7 +428,7 @@ bb0:
     t26 = h3_own3;
 #line 39 "tests/golden/run/aggregates-nested.hero"
     h3_own3 = t4;
-#line 426 "aggregatesnested.c"
+#line 39 "tests/golden/run/aggregates-nested.hero"
     h_aggregatesnested_Name_release(&t26);
 #line 39 "tests/golden/run/aggregates-nested.hero"
     t5 = HERO_STR_LIT(hero_str_79);
@@ -434,8 +440,9 @@ bb0:
     t27 = h4_own4;
 #line 39 "tests/golden/run/aggregates-nested.hero"
     h4_own4 = t7;
-#line 438 "aggregatesnested.c"
+#line 39 "tests/golden/run/aggregates-nested.hero"
     hero_str_decref(t27);
+#line 39 "tests/golden/run/aggregates-nested.hero"
     hero_str_incref(t7);
 #line 39 "tests/golden/run/aggregates-nested.hero"
     t8 = (h_aggregatesnested_Name){.f_text = t7};
@@ -443,9 +450,11 @@ bb0:
     t28 = h5_own5;
 #line 39 "tests/golden/run/aggregates-nested.hero"
     h5_own5 = t8;
-#line 447 "aggregatesnested.c"
+#line 39 "tests/golden/run/aggregates-nested.hero"
     h_aggregatesnested_Name_release(&t28);
+#line 39 "tests/golden/run/aggregates-nested.hero"
     h_aggregatesnested_Name_retain(&t4);
+#line 39 "tests/golden/run/aggregates-nested.hero"
     h_aggregatesnested_Name_retain(&t8);
 #line 39 "tests/golden/run/aggregates-nested.hero"
     t9 = (h_aggregatesnested_Node){.tag = h_aggregatesnested_Node_tag_pair, .as.c_pair = {.f_a = t4, .f_b = t8}};
@@ -453,17 +462,16 @@ bb0:
     t29 = h6_own6;
 #line 39 "tests/golden/run/aggregates-nested.hero"
     h6_own6 = t9;
-#line 457 "aggregatesnested.c"
+#line 39 "tests/golden/run/aggregates-nested.hero"
     h_aggregatesnested_Node_release(&t29);
 #line 39 "tests/golden/run/aggregates-nested.hero"
     t30 = h0_n;
-#line 461 "aggregatesnested.c"
+#line 39 "tests/golden/run/aggregates-nested.hero"
     h_aggregatesnested_Node_retain(&t9);
 #line 39 "tests/golden/run/aggregates-nested.hero"
     h0_n = t9;
-#line 465 "aggregatesnested.c"
+#line 39 "tests/golden/run/aggregates-nested.hero"
     h_aggregatesnested_Node_release(&t30);
-#line 40 "tests/golden/run/aggregates-nested.hero"
     t10 = h0_n;
 #line 40 "tests/golden/run/aggregates-nested.hero"
     t11 = h_aggregatesnested_label_of(t10);
@@ -471,7 +479,7 @@ bb0:
     t31 = h7_own7;
 #line 40 "tests/golden/run/aggregates-nested.hero"
     h7_own7 = t11;
-#line 475 "aggregatesnested.c"
+#line 40 "tests/golden/run/aggregates-nested.hero"
     hero_str_decref(t31);
 #line 40 "tests/golden/run/aggregates-nested.hero"
     hero_print_str(t11);
@@ -480,7 +488,7 @@ bb0:
     t12 = h0_n;
 #line 41 "tests/golden/run/aggregates-nested.hero"
     t13 = INT64_C(0);
-#line 484 "aggregatesnested.c"
+#line 41 "tests/golden/run/aggregates-nested.hero"
     h_aggregatesnested_Node_retain(&t12);
 #line 41 "tests/golden/run/aggregates-nested.hero"
     t14 = (h_aggregatesnested_Holder){.f_node = t12, .f_count = t13};
@@ -488,17 +496,16 @@ bb0:
     t32 = h8_own8;
 #line 41 "tests/golden/run/aggregates-nested.hero"
     h8_own8 = t14;
-#line 492 "aggregatesnested.c"
+#line 41 "tests/golden/run/aggregates-nested.hero"
     h_aggregatesnested_Holder_release(&t32);
 #line 41 "tests/golden/run/aggregates-nested.hero"
     t33 = h1_h;
-#line 496 "aggregatesnested.c"
+#line 41 "tests/golden/run/aggregates-nested.hero"
     h_aggregatesnested_Holder_retain(&t14);
 #line 41 "tests/golden/run/aggregates-nested.hero"
     h1_h = t14;
-#line 500 "aggregatesnested.c"
+#line 41 "tests/golden/run/aggregates-nested.hero"
     h_aggregatesnested_Holder_release(&t33);
-#line 42 "tests/golden/run/aggregates-nested.hero"
     h_aggregatesnested_bump(&h1_h);
     h_aggregatesnested_bump(&h1_h);
     t15 = h1_h;
@@ -517,7 +524,7 @@ bb0:
     t34 = h9_own9;
 #line 45 "tests/golden/run/aggregates-nested.hero"
     h9_own9 = t19;
-#line 521 "aggregatesnested.c"
+#line 45 "tests/golden/run/aggregates-nested.hero"
     hero_str_decref(t34);
 #line 45 "tests/golden/run/aggregates-nested.hero"
     hero_print_str(t19);
@@ -528,7 +535,7 @@ bb0:
     t21 = h0_n;
 #line 46 "tests/golden/run/aggregates-nested.hero"
     t22 = INT64_C(2);
-#line 532 "aggregatesnested.c"
+#line 46 "tests/golden/run/aggregates-nested.hero"
     h_aggregatesnested_Node_retain(&t21);
 #line 46 "tests/golden/run/aggregates-nested.hero"
     t23 = (h_aggregatesnested_Holder){.f_node = t21, .f_count = t22};
@@ -536,7 +543,7 @@ bb0:
     t35 = h10_own10;
 #line 46 "tests/golden/run/aggregates-nested.hero"
     h10_own10 = t23;
-#line 540 "aggregatesnested.c"
+#line 46 "tests/golden/run/aggregates-nested.hero"
     h_aggregatesnested_Holder_release(&t35);
 #line 46 "tests/golden/run/aggregates-nested.hero"
     t24 = h_aggregatesnested_Holder_eq(&t20, &t23);
@@ -544,7 +551,7 @@ bb0:
     hero_print_bool(t24);
 #line 46 "tests/golden/run/aggregates-nested.hero"
     hero_print_end();
-#line 548 "aggregatesnested.c"
+#line 555 "aggregatesnested.c"
     h_aggregatesnested_Node_release(hero_slot_escape(&h0_n));
     h_aggregatesnested_Holder_release(hero_slot_escape(&h1_h));
     hero_str_release_at(&h2_own2);

@@ -94,6 +94,23 @@ function loads_return_slot(f: containers.Function, op: ir.OpKind) -> bool
 
     return false
 
+# Whether `op` is the retain of what a returning block hands back, rule 4 of
+# `ir/own.hero`, which runs after the way out's own work and before the
+# sweep: the exit's housekeeping, under the generated file with the sweep and
+# the merged exit's load (defect 540). Every other retain and release is part
+# of the line whose instruction it is.
+function retains_returned(op: ir.OpKind, term: ir.Term) -> bool
+    match term
+        .return_term ret =>
+            match op
+                .incref rc => return !ret.value.is_err() && rc.value == ret.value.must()
+                .lit | .load | .store | .push_owned | .unary | .binary | .cast | .call | .construct => return false
+                .field | .index | .map_get | .len_of | .tag_of | .payload => return false
+                .func_ref | .copy_out | .abort_op | .decref | .decref_slot | .hole | .missing => return false
+        .jump | .branch | .switch_term | .unreachable | .open => return false
+
+    return false
+
 ## Tests
 
 test "both branch edges are written, and a switch carries C's default"
@@ -153,3 +170,13 @@ test "returning the unit value is a bare return"
     w: writer.Writer @ writer.new_writer("t")
     emit(@w, f, c, term: .return_term(value: ok(0)), released: [])
     assert writer.finish(w) == "    return;\n"
+
+test "only the retain of what a way out returns is the exit's, never a release inside a line (defect 540)"
+    back: ir.Term = .return_term(value: ok(3))
+    bare: ir.Term = .return_term(value: fail(code: "none", msg: "bare"))
+    on: ir.Term = .jump(to: 2)
+    assert retains_returned(.incref(value: 3), term: back)
+    assert !retains_returned(.incref(value: 4), term: back)
+    assert !retains_returned(.decref(value: 3), term: back)
+    assert !retains_returned(.incref(value: 3), term: bare)
+    assert !retains_returned(.incref(value: 3), term: on)

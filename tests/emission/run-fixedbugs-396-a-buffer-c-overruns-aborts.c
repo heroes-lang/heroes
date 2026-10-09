@@ -117,17 +117,16 @@ bb0:
     t7 = h1_own1;
 #line 12 "tests/golden/run/fixedbugs-396-a-buffer-c-overruns-aborts.hero"
     h1_own1 = t1;
-#line 121 "fixedbugs396abuffercoverrunsaborts.c"
+#line 12 "tests/golden/run/fixedbugs-396-a-buffer-c-overruns-aborts.hero"
     hero_array_decref(t7);
 #line 12 "tests/golden/run/fixedbugs-396-a-buffer-c-overruns-aborts.hero"
     t8 = h0_md;
-#line 125 "fixedbugs396abuffercoverrunsaborts.c"
+#line 12 "tests/golden/run/fixedbugs-396-a-buffer-c-overruns-aborts.hero"
     hero_array_incref(t1);
 #line 12 "tests/golden/run/fixedbugs-396-a-buffer-c-overruns-aborts.hero"
     h0_md = t1;
-#line 129 "fixedbugs396abuffercoverrunsaborts.c"
+#line 12 "tests/golden/run/fixedbugs-396-a-buffer-c-overruns-aborts.hero"
     hero_array_decref(t8);
-#line 13 "tests/golden/run/fixedbugs-396-a-buffer-c-overruns-aborts.hero"
     t2 = HERO_STR_LIT(hero_str_43560e4d);
 #line 13 "tests/golden/run/fixedbugs-396-a-buffer-c-overruns-aborts.hero"
     hero_print_str(t2);
@@ -161,7 +160,7 @@ bb0:
     hero_print_int(t6);
 #line 15 "tests/golden/run/fixedbugs-396-a-buffer-c-overruns-aborts.hero"
     hero_print_end();
-#line 165 "fixedbugs396abuffercoverrunsaborts.c"
+#line 164 "fixedbugs396abuffercoverrunsaborts.c"
     hero_array_release_at(&h0_md);
     hero_array_release_at(&h1_own1);
     return;

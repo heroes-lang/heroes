@@ -5083,17 +5083,16 @@ bb0:
     t7 = h1_own1;
 #line 527 "tests/golden/run/fixedbugs-170-variants-and-options-100-deep-build.hero"
     h1_own1 = t1;
-#line 5087 "fixedbugs170variantsandoptions100deepbuild.c"
+#line 527 "tests/golden/run/fixedbugs-170-variants-and-options-100-deep-build.hero"
     hero_array_decref(t7);
 #line 527 "tests/golden/run/fixedbugs-170-variants-and-options-100-deep-build.hero"
     t8 = h0_xs;
-#line 5091 "fixedbugs170variantsandoptions100deepbuild.c"
+#line 527 "tests/golden/run/fixedbugs-170-variants-and-options-100-deep-build.hero"
     hero_array_incref(t1);
 #line 527 "tests/golden/run/fixedbugs-170-variants-and-options-100-deep-build.hero"
     h0_xs = t1;
-#line 5095 "fixedbugs170variantsandoptions100deepbuild.c"
+#line 527 "tests/golden/run/fixedbugs-170-variants-and-options-100-deep-build.hero"
     hero_array_decref(t8);
-#line 528 "tests/golden/run/fixedbugs-170-variants-and-options-100-deep-build.hero"
     t2 = h0_xs;
 #line 528 "tests/golden/run/fixedbugs-170-variants-and-options-100-deep-build.hero"
     t3 = ((void)(t2 == NULL ? ((void)hero_array_len(t2), hero_unreachable()) : (void)0), t2->len);
@@ -5110,7 +5109,7 @@ bb0:
     hero_print_bool(t6);
 #line 529 "tests/golden/run/fixedbugs-170-variants-and-options-100-deep-build.hero"
     hero_print_end();
-#line 5114 "fixedbugs170variantsandoptions100deepbuild.c"
+#line 5113 "fixedbugs170variantsandoptions100deepbuild.c"
     hero_array_release_at(&h0_xs);
     hero_array_release_at(&h1_own1);
     return;

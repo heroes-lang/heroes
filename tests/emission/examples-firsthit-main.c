@@ -395,17 +395,16 @@ bb0:
     t34 = h7_own7;
 #line 58 "examples/firsthit/main.hero"
     h7_own7 = t1;
-#line 399 "main.c"
+#line 58 "examples/firsthit/main.hero"
     hero_array_decref(t34);
 #line 58 "examples/firsthit/main.hero"
     t35 = h0_handles;
-#line 403 "main.c"
+#line 58 "examples/firsthit/main.hero"
     hero_array_incref(t1);
 #line 58 "examples/firsthit/main.hero"
     h0_handles = t1;
-#line 407 "main.c"
+#line 58 "examples/firsthit/main.hero"
     hero_array_decref(t35);
-#line 59 "examples/firsthit/main.hero"
     t2 = INT64_C(0);
 #line 59 "examples/firsthit/main.hero"
     h1_i = t2;
@@ -449,11 +448,11 @@ bb3:
     t15 = h0_handles;
 #line 67 "examples/firsthit/main.hero"
     t36 = h3_xs0;
-#line 453 "main.c"
+#line 67 "examples/firsthit/main.hero"
     hero_array_incref(t15);
 #line 67 "examples/firsthit/main.hero"
     h3_xs0 = t15;
-#line 457 "main.c"
+#line 67 "examples/firsthit/main.hero"
     hero_array_decref(t36);
 #line 67 "examples/firsthit/main.hero"
     t16 = INT64_C(0);
@@ -512,7 +511,7 @@ bb6:
 bb7:
 #line 73 "examples/firsthit/main.hero"
     t33 = h2_best;
-#line 516 "main.c"
+#line 515 "main.c"
     hero_array_release_at(&h0_handles);
     hero_array_release_at(&h3_xs0);
     hero_array_release_at(&h7_own7);
@@ -530,12 +529,12 @@ bb9:
 bb10:
 #line 71 "examples/firsthit/main.hero"
     goto bb8;
-#line 534 "main.c"
+#line 533 "main.c"
 }
 
 #line 75 "examples/firsthit/main.hero"
 int64_t h_main_first_alone(void) {
-#line 539 "main.c"
+#line 538 "main.c"
     int64_t h0_at;
     int64_t h1_ret0;
     int64_t t1;
@@ -615,14 +614,14 @@ bb6:
     goto bb4;
 #line 80 "examples/firsthit/main.hero"
 bb7:
-#line 619 "main.c"
+#line 618 "main.c"
     t14 = h1_ret0;
     return t14;
 }
 
 #line 85 "examples/firsthit/main.hero"
 void h_main_main(void) {
-#line 626 "main.c"
+#line 625 "main.c"
     HeroStr t1;
     int64_t t2;
     goto bb0;
@@ -639,7 +638,7 @@ bb0:
     hero_print_end();
 #line 86 "examples/firsthit/main.hero"
     return;
-#line 643 "main.c"
+#line 642 "main.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

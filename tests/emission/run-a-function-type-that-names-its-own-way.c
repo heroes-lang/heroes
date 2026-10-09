@@ -117,8 +117,9 @@ bb0:
     t5 = h1_own1;
 #line 25 "tests/golden/run/a-function-type-that-names-its-own-way.hero"
     h1_own1 = t4;
-#line 121 "afunctiontypethatnamesitsownway.c"
+#line 25 "tests/golden/run/a-function-type-that-names-its-own-way.hero"
     hero_str_decref(t5);
+#line 123 "afunctiontypethatnamesitsownway.c"
     hero_str_incref(t4);
     hero_str_release_at(&h1_own1);
     return t4;
@@ -126,7 +127,7 @@ bb0:
 
 #line 27 "tests/golden/run/a-function-type-that-names-its-own-way.hero"
 void h_afunctiontypethatnamesitsownway_main(void) {
-#line 130 "afunctiontypethatnamesitsownway.c"
+#line 131 "afunctiontypethatnamesitsownway.c"
     HeroStr h0_own0 = {0};
     h_0fn_1fb9aa18 t1;
     HeroStr t2;
@@ -141,20 +142,20 @@ bb0:
     t3 = h0_own0;
 #line 28 "tests/golden/run/a-function-type-that-names-its-own-way.hero"
     h0_own0 = t2;
-#line 145 "afunctiontypethatnamesitsownway.c"
+#line 28 "tests/golden/run/a-function-type-that-names-its-own-way.hero"
     hero_str_decref(t3);
 #line 28 "tests/golden/run/a-function-type-that-names-its-own-way.hero"
     hero_print_str(t2);
 #line 28 "tests/golden/run/a-function-type-that-names-its-own-way.hero"
     hero_print_end();
-#line 151 "afunctiontypethatnamesitsownway.c"
+#line 152 "afunctiontypethatnamesitsownway.c"
     hero_str_release_at(&h0_own0);
     return;
 }
 
 #line 30 "tests/golden/run/a-function-type-that-names-its-own-way.hero"
 HeroStr h_afunctiontypethatnamesitsownway_pair(HeroStr h0_code, int64_t h1_at) {
-#line 158 "afunctiontypethatnamesitsownway.c"
+#line 159 "afunctiontypethatnamesitsownway.c"
     HeroStr h2_own2 = {0};
     HeroStr h3_own3 = {0};
     HeroStr h4_own4 = {0};
@@ -179,7 +180,7 @@ bb0:
     t7 = h2_own2;
 #line 31 "tests/golden/run/a-function-type-that-names-its-own-way.hero"
     h2_own2 = t3;
-#line 183 "afunctiontypethatnamesitsownway.c"
+#line 31 "tests/golden/run/a-function-type-that-names-its-own-way.hero"
     hero_str_decref(t7);
 #line 31 "tests/golden/run/a-function-type-that-names-its-own-way.hero"
     t4 = h1_at;
@@ -189,7 +190,7 @@ bb0:
     t8 = h3_own3;
 #line 31 "tests/golden/run/a-function-type-that-names-its-own-way.hero"
     h3_own3 = t5;
-#line 193 "afunctiontypethatnamesitsownway.c"
+#line 31 "tests/golden/run/a-function-type-that-names-its-own-way.hero"
     hero_str_decref(t8);
 #line 31 "tests/golden/run/a-function-type-that-names-its-own-way.hero"
     t6 = hero_str_concat(t3, t5);
@@ -197,8 +198,9 @@ bb0:
     t9 = h4_own4;
 #line 31 "tests/golden/run/a-function-type-that-names-its-own-way.hero"
     h4_own4 = t6;
-#line 201 "afunctiontypethatnamesitsownway.c"
+#line 31 "tests/golden/run/a-function-type-that-names-its-own-way.hero"
     hero_str_decref(t9);
+#line 204 "afunctiontypethatnamesitsownway.c"
     hero_str_incref(t6);
     hero_str_release_at(&h2_own2);
     hero_str_release_at(&h3_own3);

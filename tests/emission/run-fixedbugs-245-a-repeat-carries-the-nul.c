@@ -224,7 +224,7 @@ bb0:
     t49 = h6_own6;
 #line 20 "tests/golden/run/fixedbugs-245-a-repeat-carries-the-nul.hero"
     h6_own6 = t1;
-#line 228 "fixedbugs245arepeatcarriesthenul.c"
+#line 20 "tests/golden/run/fixedbugs-245-a-repeat-carries-the-nul.hero"
     hero_str_decref(t49);
 #line 20 "tests/golden/run/fixedbugs-245-a-repeat-carries-the-nul.hero"
     t2 = hero_str_lend(t1);
@@ -265,15 +265,15 @@ bb1:
     t50 = h7_own7;
 #line 23 "tests/golden/run/fixedbugs-245-a-repeat-carries-the-nul.hero"
     h7_own7 = t13;
-#line 269 "fixedbugs245arepeatcarriesthenul.c"
+#line 23 "tests/golden/run/fixedbugs-245-a-repeat-carries-the-nul.hero"
     hero_array_decref(t50);
 #line 23 "tests/golden/run/fixedbugs-245-a-repeat-carries-the-nul.hero"
     t51 = h1_xs0;
-#line 273 "fixedbugs245arepeatcarriesthenul.c"
+#line 23 "tests/golden/run/fixedbugs-245-a-repeat-carries-the-nul.hero"
     hero_array_incref(t13);
 #line 23 "tests/golden/run/fixedbugs-245-a-repeat-carries-the-nul.hero"
     h1_xs0 = t13;
-#line 277 "fixedbugs245arepeatcarriesthenul.c"
+#line 23 "tests/golden/run/fixedbugs-245-a-repeat-carries-the-nul.hero"
     hero_array_decref(t51);
 #line 23 "tests/golden/run/fixedbugs-245-a-repeat-carries-the-nul.hero"
     t14 = INT64_C(0);
@@ -324,15 +324,15 @@ bb4:
     t52 = h8_own8;
 #line 24 "tests/golden/run/fixedbugs-245-a-repeat-carries-the-nul.hero"
     h8_own8 = t23;
-#line 328 "fixedbugs245arepeatcarriesthenul.c"
+#line 24 "tests/golden/run/fixedbugs-245-a-repeat-carries-the-nul.hero"
     h_0opt_e1f4933_release(&t52);
 #line 24 "tests/golden/run/fixedbugs-245-a-repeat-carries-the-nul.hero"
     t53 = h4_f0;
-#line 332 "fixedbugs245arepeatcarriesthenul.c"
+#line 24 "tests/golden/run/fixedbugs-245-a-repeat-carries-the-nul.hero"
     h_0opt_e1f4933_retain(&t23);
 #line 24 "tests/golden/run/fixedbugs-245-a-repeat-carries-the-nul.hero"
     h4_f0 = t23;
-#line 336 "fixedbugs245arepeatcarriesthenul.c"
+#line 24 "tests/golden/run/fixedbugs-245-a-repeat-carries-the-nul.hero"
     h_0opt_e1f4933_release(&t53);
 #line 24 "tests/golden/run/fixedbugs-245-a-repeat-carries-the-nul.hero"
     t24 = h4_f0;
@@ -367,7 +367,7 @@ bb6:
     t54 = h9_own9;
 #line 27 "tests/golden/run/fixedbugs-245-a-repeat-carries-the-nul.hero"
     h9_own9 = t39;
-#line 371 "fixedbugs245arepeatcarriesthenul.c"
+#line 27 "tests/golden/run/fixedbugs-245-a-repeat-carries-the-nul.hero"
     hero_str_decref(t54);
 #line 27 "tests/golden/run/fixedbugs-245-a-repeat-carries-the-nul.hero"
     t40 = h_library_read_file(t39);
@@ -375,15 +375,15 @@ bb6:
     t55 = h10_own10;
 #line 27 "tests/golden/run/fixedbugs-245-a-repeat-carries-the-nul.hero"
     h10_own10 = t40;
-#line 379 "fixedbugs245arepeatcarriesthenul.c"
+#line 27 "tests/golden/run/fixedbugs-245-a-repeat-carries-the-nul.hero"
     h_0opt_f87774a_release(&t55);
 #line 27 "tests/golden/run/fixedbugs-245-a-repeat-carries-the-nul.hero"
     t56 = h5_f1;
-#line 383 "fixedbugs245arepeatcarriesthenul.c"
+#line 27 "tests/golden/run/fixedbugs-245-a-repeat-carries-the-nul.hero"
     h_0opt_f87774a_retain(&t40);
 #line 27 "tests/golden/run/fixedbugs-245-a-repeat-carries-the-nul.hero"
     h5_f1 = t40;
-#line 387 "fixedbugs245arepeatcarriesthenul.c"
+#line 27 "tests/golden/run/fixedbugs-245-a-repeat-carries-the-nul.hero"
     h_0opt_f87774a_release(&t56);
 #line 27 "tests/golden/run/fixedbugs-245-a-repeat-carries-the-nul.hero"
     t41 = h5_f1;
@@ -473,17 +473,16 @@ bb0:
     t13 = h2_own2;
 #line 30 "tests/golden/run/fixedbugs-245-a-repeat-carries-the-nul.hero"
     h2_own2 = t1;
-#line 477 "fixedbugs245arepeatcarriesthenul.c"
+#line 30 "tests/golden/run/fixedbugs-245-a-repeat-carries-the-nul.hero"
     hero_str_decref(t13);
 #line 30 "tests/golden/run/fixedbugs-245-a-repeat-carries-the-nul.hero"
     t14 = h0_s;
-#line 481 "fixedbugs245arepeatcarriesthenul.c"
+#line 30 "tests/golden/run/fixedbugs-245-a-repeat-carries-the-nul.hero"
     hero_str_incref(t1);
 #line 30 "tests/golden/run/fixedbugs-245-a-repeat-carries-the-nul.hero"
     h0_s = t1;
-#line 485 "fixedbugs245arepeatcarriesthenul.c"
+#line 30 "tests/golden/run/fixedbugs-245-a-repeat-carries-the-nul.hero"
     hero_str_decref(t14);
-#line 31 "tests/golden/run/fixedbugs-245-a-repeat-carries-the-nul.hero"
     t2 = h0_s;
 #line 31 "tests/golden/run/fixedbugs-245-a-repeat-carries-the-nul.hero"
     t3 = UINT64_C(2);
@@ -493,17 +492,16 @@ bb0:
     t15 = h3_own3;
 #line 31 "tests/golden/run/fixedbugs-245-a-repeat-carries-the-nul.hero"
     h3_own3 = t4;
-#line 497 "fixedbugs245arepeatcarriesthenul.c"
+#line 31 "tests/golden/run/fixedbugs-245-a-repeat-carries-the-nul.hero"
     hero_str_decref(t15);
 #line 31 "tests/golden/run/fixedbugs-245-a-repeat-carries-the-nul.hero"
     t16 = h1_made;
-#line 501 "fixedbugs245arepeatcarriesthenul.c"
+#line 31 "tests/golden/run/fixedbugs-245-a-repeat-carries-the-nul.hero"
     hero_str_incref(t4);
 #line 31 "tests/golden/run/fixedbugs-245-a-repeat-carries-the-nul.hero"
     h1_made = t4;
-#line 505 "fixedbugs245arepeatcarriesthenul.c"
+#line 31 "tests/golden/run/fixedbugs-245-a-repeat-carries-the-nul.hero"
     hero_str_decref(t16);
-#line 32 "tests/golden/run/fixedbugs-245-a-repeat-carries-the-nul.hero"
     t5 = HERO_STR_LIT(hero_str_41d10789);
 #line 32 "tests/golden/run/fixedbugs-245-a-repeat-carries-the-nul.hero"
     t6 = h1_made;
@@ -532,7 +530,7 @@ bb0:
     hero_print_uint(t12);
 #line 33 "tests/golden/run/fixedbugs-245-a-repeat-carries-the-nul.hero"
     hero_print_end();
-#line 536 "fixedbugs245arepeatcarriesthenul.c"
+#line 534 "fixedbugs245arepeatcarriesthenul.c"
     hero_str_release_at(&h0_s);
     hero_str_release_at(&h1_made);
     hero_str_release_at(&h2_own2);
@@ -542,31 +540,31 @@ bb0:
 
 #line 109 "<heroes library>"
 int64_t h_library_HERO_OS_OK(void) {
-#line 546 "fixedbugs245arepeatcarriesthenul.c"
+#line 544 "fixedbugs245arepeatcarriesthenul.c"
     return HERO_OS_OK;
 }
 
 #line 110 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_FOUND(void) {
-#line 552 "fixedbugs245arepeatcarriesthenul.c"
+#line 550 "fixedbugs245arepeatcarriesthenul.c"
     return HERO_OS_NOT_FOUND;
 }
 
 #line 111 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_TEXT(void) {
-#line 558 "fixedbugs245arepeatcarriesthenul.c"
+#line 556 "fixedbugs245arepeatcarriesthenul.c"
     return HERO_OS_NOT_TEXT;
 }
 
 #line 112 "<heroes library>"
 int64_t h_library_HERO_OS_BAD_NAME(void) {
-#line 564 "fixedbugs245arepeatcarriesthenul.c"
+#line 562 "fixedbugs245arepeatcarriesthenul.c"
     return HERO_OS_BAD_NAME;
 }
 
 #line 167 "<heroes library>"
 h_0opt_f87774a h_library_read_file(HeroStr h0_path) {
-#line 570 "fixedbugs245arepeatcarriesthenul.c"
+#line 568 "fixedbugs245arepeatcarriesthenul.c"
     int64_t *const hero_lend_h1_status = (int64_t *)hero_lend_local(sizeof(int64_t), "library.read_file", "status");
 #define h1_status (*hero_lend_h1_status)
     HeroStr h2_text = {0};
@@ -645,17 +643,16 @@ bb0:
     t39 = h4_own4;
 #line 169 "<heroes library>"
     h4_own4 = t3;
-#line 649 "fixedbugs245arepeatcarriesthenul.c"
+#line 169 "<heroes library>"
     hero_str_decref(t39);
 #line 169 "<heroes library>"
     t40 = h2_text;
-#line 653 "fixedbugs245arepeatcarriesthenul.c"
+#line 169 "<heroes library>"
     hero_str_incref(t3);
 #line 169 "<heroes library>"
     h2_text = t3;
-#line 657 "fixedbugs245arepeatcarriesthenul.c"
+#line 169 "<heroes library>"
     hero_str_decref(t40);
-#line 170 "<heroes library>"
     t4 = h1_status;
 #line 170 "<heroes library>"
     t5 = h_library_HERO_OS_OK();
@@ -677,7 +674,7 @@ bb1:
 bb2:
 #line 171 "<heroes library>"
     t7 = h2_text;
-#line 681 "fixedbugs245arepeatcarriesthenul.c"
+#line 171 "<heroes library>"
     hero_str_incref(t7);
 #line 171 "<heroes library>"
     t8 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t7};
@@ -685,7 +682,7 @@ bb2:
     t41 = h5_own5;
 #line 171 "<heroes library>"
     h5_own5 = t8;
-#line 689 "fixedbugs245arepeatcarriesthenul.c"
+#line 171 "<heroes library>"
     h_0opt_f87774a_release(&t41);
 #line 171 "<heroes library>"
     h3_ret0 = t8;
@@ -711,8 +708,9 @@ bb5:
     t12 = HERO_STR_LIT(hero_str_3e46668);
 #line 175 "<heroes library>"
     t13 = HERO_STR_LIT(hero_str_75aeb685);
-#line 715 "fixedbugs245arepeatcarriesthenul.c"
+#line 175 "<heroes library>"
     hero_str_incref(t12);
+#line 175 "<heroes library>"
     hero_str_incref(t13);
 #line 175 "<heroes library>"
     t14 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t12, .msg = t13}};
@@ -720,7 +718,7 @@ bb5:
     t42 = h6_own6;
 #line 175 "<heroes library>"
     h6_own6 = t14;
-#line 724 "fixedbugs245arepeatcarriesthenul.c"
+#line 175 "<heroes library>"
     h_0opt_f87774a_release(&t42);
 #line 175 "<heroes library>"
     h3_ret0 = t14;
@@ -754,9 +752,11 @@ bb8:
     t43 = h7_own7;
 #line 177 "<heroes library>"
     h7_own7 = t21;
-#line 758 "fixedbugs245arepeatcarriesthenul.c"
+#line 177 "<heroes library>"
     hero_str_decref(t43);
+#line 177 "<heroes library>"
     hero_str_incref(t18);
+#line 177 "<heroes library>"
     hero_str_incref(t21);
 #line 177 "<heroes library>"
     t22 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t18, .msg = t21}};
@@ -764,7 +764,7 @@ bb8:
     t44 = h8_own8;
 #line 177 "<heroes library>"
     h8_own8 = t22;
-#line 768 "fixedbugs245arepeatcarriesthenul.c"
+#line 177 "<heroes library>"
     h_0opt_f87774a_release(&t44);
 #line 177 "<heroes library>"
     h3_ret0 = t22;
@@ -788,9 +788,11 @@ bb10:
     t45 = h9_own9;
 #line 183 "<heroes library>"
     h9_own9 = t36;
-#line 792 "fixedbugs245arepeatcarriesthenul.c"
+#line 183 "<heroes library>"
     hero_str_decref(t45);
+#line 183 "<heroes library>"
     hero_str_incref(t33);
+#line 183 "<heroes library>"
     hero_str_incref(t36);
 #line 183 "<heroes library>"
     t37 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t33, .msg = t36}};
@@ -798,7 +800,7 @@ bb10:
     t46 = h10_own10;
 #line 183 "<heroes library>"
     h10_own10 = t37;
-#line 802 "fixedbugs245arepeatcarriesthenul.c"
+#line 183 "<heroes library>"
     h_0opt_f87774a_release(&t46);
 #line 183 "<heroes library>"
     h3_ret0 = t37;
@@ -818,7 +820,7 @@ bb11:
     t47 = h11_own11;
 #line 182 "<heroes library>"
     h11_own11 = t29;
-#line 822 "fixedbugs245arepeatcarriesthenul.c"
+#line 182 "<heroes library>"
     hero_str_decref(t47);
 #line 182 "<heroes library>"
     t30 = HERO_STR_LIT(hero_str_612f4355);
@@ -828,9 +830,11 @@ bb11:
     t48 = h12_own12;
 #line 182 "<heroes library>"
     h12_own12 = t31;
-#line 832 "fixedbugs245arepeatcarriesthenul.c"
+#line 182 "<heroes library>"
     hero_str_decref(t48);
+#line 182 "<heroes library>"
     hero_str_incref(t26);
+#line 182 "<heroes library>"
     hero_str_incref(t31);
 #line 182 "<heroes library>"
     t32 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t26, .msg = t31}};
@@ -838,7 +842,7 @@ bb11:
     t49 = h13_own13;
 #line 182 "<heroes library>"
     h13_own13 = t32;
-#line 842 "fixedbugs245arepeatcarriesthenul.c"
+#line 182 "<heroes library>"
     h_0opt_f87774a_release(&t49);
 #line 182 "<heroes library>"
     h3_ret0 = t32;
@@ -850,7 +854,7 @@ bb12:
     goto bb10;
 #line 182 "<heroes library>"
 bb13:
-#line 854 "fixedbugs245arepeatcarriesthenul.c"
+#line 858 "fixedbugs245arepeatcarriesthenul.c"
     t38 = h3_ret0;
     h_0opt_f87774a_retain(&t38);
     hero_str_release_at(&h2_text);

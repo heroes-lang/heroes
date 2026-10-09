@@ -112,13 +112,12 @@ bb0:
     t1 = HERO_STR_LIT(hero_str_35d9fe9b);
 #line 27 "tests/golden/run/c-frees-a-lease-and-the-runtime-names-it.hero"
     t6 = h0_x;
-#line 116 "cfreesaleaseandtheruntimenamesit.c"
+#line 27 "tests/golden/run/c-frees-a-lease-and-the-runtime-names-it.hero"
     hero_str_incref(t1);
 #line 27 "tests/golden/run/c-frees-a-lease-and-the-runtime-names-it.hero"
     h0_x = t1;
-#line 120 "cfreesaleaseandtheruntimenamesit.c"
+#line 27 "tests/golden/run/c-frees-a-lease-and-the-runtime-names-it.hero"
     hero_str_decref(t6);
-#line 28 "tests/golden/run/c-frees-a-lease-and-the-runtime-names-it.hero"
     t2 = h0_x;
 #line 28 "tests/golden/run/c-frees-a-lease-and-the-runtime-names-it.hero"
     t3 = hero_str_held(t2);
@@ -133,7 +132,7 @@ bb0:
 #line 30 "tests/golden/run/c-frees-a-lease-and-the-runtime-names-it.hero"
     (void)eat(hero_cstr_nonnull(t5));
     hero_held_release(&h1_c);
-#line 137 "cfreesaleaseandtheruntimenamesit.c"
+#line 136 "cfreesaleaseandtheruntimenamesit.c"
     hero_str_release_at(&h0_x);
     return;
 }

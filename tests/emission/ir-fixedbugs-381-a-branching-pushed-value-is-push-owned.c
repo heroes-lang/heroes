@@ -163,8 +163,9 @@ bb1:
     t10 = HERO_STR_LIT(hero_str_1d4477);
 #line 13 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     t11 = HERO_STR_LIT(hero_str_1d4477);
-#line 167 "fixedbugs381abranchingpushedvalueispushowned.c"
+#line 13 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     hero_str_incref(t10);
+#line 13 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     hero_str_incref(t11);
 #line 13 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     t12 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t10, .msg = t11}};
@@ -172,7 +173,7 @@ bb1:
     t14 = h2_own2;
 #line 13 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     h2_own2 = t12;
-#line 176 "fixedbugs381abranchingpushedvalueispushowned.c"
+#line 13 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     h_0opt_e201354_release(&t14);
 #line 13 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     h1_ret0 = t12;
@@ -196,7 +197,7 @@ bb2:
     t15 = h3_own3;
 #line 12 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     h3_own3 = t9;
-#line 200 "fixedbugs381abranchingpushedvalueispushowned.c"
+#line 12 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     h_0opt_e201354_release(&t15);
 #line 12 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     h1_ret0 = t9;
@@ -208,7 +209,7 @@ bb3:
     goto bb1;
 #line 12 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
 bb4:
-#line 212 "fixedbugs381abranchingpushedvalueispushowned.c"
+#line 213 "fixedbugs381abranchingpushedvalueispushowned.c"
     t13 = h1_ret0;
     h_0opt_e201354_retain(&t13);
     h_0opt_e201354_release(hero_slot_escape(&h2_own2));
@@ -218,7 +219,7 @@ bb4:
 
 #line 15 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
 int64_t h_fixedbugs381abranchingpushedvalueispushowned_bump(HeroArrayHeader * *ph0_xs) {
-#line 222 "fixedbugs381abranchingpushedvalueispushowned.c"
+#line 223 "fixedbugs381abranchingpushedvalueispushowned.c"
     int64_t t2;
     HeroArrayHeader * t4;
     int64_t t5;
@@ -233,12 +234,12 @@ bb0:
     t5 = ((void)(t4 == NULL ? ((void)hero_array_len(t4), hero_unreachable()) : (void)0), t4->len);
 #line 17 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     return t5;
-#line 237 "fixedbugs381abranchingpushedvalueispushowned.c"
+#line 238 "fixedbugs381abranchingpushedvalueispushowned.c"
 }
 
 #line 19 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
 h_0opt_2270cbe7 h_fixedbugs381abranchingpushedvalueispushowned_grown(int64_t h0_n) {
-#line 242 "fixedbugs381abranchingpushedvalueispushowned.c"
+#line 243 "fixedbugs381abranchingpushedvalueispushowned.c"
     HeroArrayHeader * h1_out = {0};
     h_0opt_e201354 h2_f0 = {0};
     h_0opt_e201354 h3_f1 = {0};
@@ -304,17 +305,16 @@ bb0:
     t42 = h7_own7;
 #line 20 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     h7_own7 = t1;
-#line 308 "fixedbugs381abranchingpushedvalueispushowned.c"
+#line 20 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     hero_array_decref(t42);
 #line 20 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     t43 = h1_out;
-#line 312 "fixedbugs381abranchingpushedvalueispushowned.c"
+#line 20 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     hero_array_incref(t1);
 #line 20 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     h1_out = t1;
-#line 316 "fixedbugs381abranchingpushedvalueispushowned.c"
+#line 20 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     hero_array_decref(t43);
-#line 21 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     t3 = h0_n;
 #line 21 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     t4 = h_fixedbugs381abranchingpushedvalueispushowned_half(t3);
@@ -322,15 +322,15 @@ bb0:
     t44 = h8_own8;
 #line 21 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     h8_own8 = t4;
-#line 326 "fixedbugs381abranchingpushedvalueispushowned.c"
+#line 21 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     h_0opt_e201354_release(&t44);
 #line 21 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     t45 = h2_f0;
-#line 330 "fixedbugs381abranchingpushedvalueispushowned.c"
+#line 21 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     h_0opt_e201354_retain(&t4);
 #line 21 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     h2_f0 = t4;
-#line 334 "fixedbugs381abranchingpushedvalueispushowned.c"
+#line 21 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     h_0opt_e201354_release(&t45);
 #line 21 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     t5 = h2_f0;
@@ -357,15 +357,15 @@ bb1:
     t46 = h9_own9;
 #line 22 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     h9_own9 = t16;
-#line 361 "fixedbugs381abranchingpushedvalueispushowned.c"
+#line 22 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     h_0opt_e201354_release(&t46);
 #line 22 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     t47 = h3_f1;
-#line 365 "fixedbugs381abranchingpushedvalueispushowned.c"
+#line 22 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     h_0opt_e201354_retain(&t16);
 #line 22 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     h3_f1 = t16;
-#line 369 "fixedbugs381abranchingpushedvalueispushowned.c"
+#line 22 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     h_0opt_e201354_release(&t47);
 #line 22 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     t17 = h3_f1;
@@ -416,15 +416,15 @@ bb5:
     t48 = h10_own10;
 #line 23 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     h10_own10 = t28;
-#line 420 "fixedbugs381abranchingpushedvalueispushowned.c"
+#line 23 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     h_0opt_e201354_release(&t48);
 #line 23 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     t49 = h5_f2;
-#line 424 "fixedbugs381abranchingpushedvalueispushowned.c"
+#line 23 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     h_0opt_e201354_retain(&t28);
 #line 23 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     h5_f2 = t28;
-#line 428 "fixedbugs381abranchingpushedvalueispushowned.c"
+#line 23 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     h_0opt_e201354_release(&t49);
 #line 23 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     t29 = h5_f2;
@@ -445,7 +445,7 @@ bb6:
 #line 23 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     hero_array_push_owned(&h1_out, &t37);
     t39 = h1_out;
-#line 449 "fixedbugs381abranchingpushedvalueispushowned.c"
+#line 24 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     hero_array_incref(t39);
 #line 24 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     t40 = (h_0opt_2270cbe7){.tag = INT64_C(0), .as.ok = t39};
@@ -453,7 +453,7 @@ bb6:
     t50 = h11_own11;
 #line 24 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     h11_own11 = t40;
-#line 457 "fixedbugs381abranchingpushedvalueispushowned.c"
+#line 24 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     h_0opt_2270cbe7_release(&t50);
 #line 24 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     h6_ret0 = t40;
@@ -465,7 +465,7 @@ bb7:
     t33 = h5_f2;
 #line 23 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     t34 = t33.as.err;
-#line 469 "fixedbugs381abranchingpushedvalueispushowned.c"
+#line 23 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     hero_failure_retain(&t34);
 #line 23 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     t35 = (h_0opt_2270cbe7){.tag = INT64_C(1), .as.err = t34};
@@ -473,7 +473,7 @@ bb7:
     t51 = h12_own12;
 #line 23 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     h12_own12 = t35;
-#line 477 "fixedbugs381abranchingpushedvalueispushowned.c"
+#line 23 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     h_0opt_2270cbe7_release(&t51);
 #line 23 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     h6_ret0 = t35;
@@ -530,17 +530,16 @@ bb0:
     t21 = h4_own4;
 #line 27 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     h4_own4 = t1;
-#line 534 "fixedbugs381abranchingpushedvalueispushowned.c"
+#line 27 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     hero_array_decref(t21);
 #line 27 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     t22 = h1_out;
-#line 538 "fixedbugs381abranchingpushedvalueispushowned.c"
+#line 27 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     hero_array_incref(t1);
 #line 27 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     h1_out = t1;
-#line 542 "fixedbugs381abranchingpushedvalueispushowned.c"
+#line 27 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     hero_array_decref(t22);
-#line 28 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     t3 = h0_n;
 #line 28 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     t4 = INT64_C(1);
@@ -596,7 +595,7 @@ bb4:
 #line 29 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     hero_array_push_owned(&h1_out, &t18);
     t20 = h1_out;
-#line 600 "fixedbugs381abranchingpushedvalueispushowned.c"
+#line 599 "fixedbugs381abranchingpushedvalueispushowned.c"
     hero_array_incref(t20);
     hero_array_release_at(&h1_out);
     hero_array_release_at(&h4_own4);
@@ -605,7 +604,7 @@ bb4:
 
 #line 32 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
 HeroArrayHeader * h_fixedbugs381abranchingpushedvalueispushowned_kept_classic(void) {
-#line 609 "fixedbugs381abranchingpushedvalueispushowned.c"
+#line 608 "fixedbugs381abranchingpushedvalueispushowned.c"
     HeroArrayHeader * h0_out = {0};
     HeroArrayHeader * h1_kept = {0};
     h_0opt_e201354 h2_f0 = {0};
@@ -653,35 +652,33 @@ bb0:
     t21 = h3_own3;
 #line 33 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     h3_own3 = t2;
-#line 657 "fixedbugs381abranchingpushedvalueispushowned.c"
+#line 33 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     hero_array_decref(t21);
 #line 33 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     t22 = h0_out;
-#line 661 "fixedbugs381abranchingpushedvalueispushowned.c"
+#line 33 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     hero_array_incref(t2);
 #line 33 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     h0_out = t2;
-#line 665 "fixedbugs381abranchingpushedvalueispushowned.c"
+#line 33 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     hero_array_decref(t22);
-#line 34 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     t3 = h0_out;
 #line 34 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     t23 = h1_kept;
-#line 671 "fixedbugs381abranchingpushedvalueispushowned.c"
+#line 34 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     hero_array_incref(t3);
 #line 34 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     h1_kept = t3;
-#line 675 "fixedbugs381abranchingpushedvalueispushowned.c"
+#line 34 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     hero_array_decref(t23);
-#line 35 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     t4 = h0_out;
-#line 679 "fixedbugs381abranchingpushedvalueispushowned.c"
+#line 35 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     hero_array_incref(t4);
 #line 35 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     t24 = h4_own4;
 #line 35 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     h4_own4 = t4;
-#line 685 "fixedbugs381abranchingpushedvalueispushowned.c"
+#line 35 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     hero_array_decref(t24);
 #line 35 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     t5 = INT64_C(2);
@@ -691,15 +688,15 @@ bb0:
     t25 = h5_own5;
 #line 35 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     h5_own5 = t6;
-#line 695 "fixedbugs381abranchingpushedvalueispushowned.c"
+#line 35 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     h_0opt_e201354_release(&t25);
 #line 35 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     t26 = h2_f0;
-#line 699 "fixedbugs381abranchingpushedvalueispushowned.c"
+#line 35 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     h_0opt_e201354_retain(&t6);
 #line 35 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     h2_f0 = t6;
-#line 703 "fixedbugs381abranchingpushedvalueispushowned.c"
+#line 35 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     h_0opt_e201354_release(&t26);
 #line 35 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     t7 = h2_f0;
@@ -727,17 +724,16 @@ bb1:
     t27 = h6_own6;
 #line 35 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     h6_own6 = t17;
-#line 731 "fixedbugs381abranchingpushedvalueispushowned.c"
+#line 35 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     hero_array_decref(t27);
 #line 35 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     t28 = h0_out;
-#line 735 "fixedbugs381abranchingpushedvalueispushowned.c"
+#line 35 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     hero_array_incref(t17);
 #line 35 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     h0_out = t17;
-#line 739 "fixedbugs381abranchingpushedvalueispushowned.c"
+#line 35 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     hero_array_decref(t28);
-#line 36 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     t18 = h1_kept;
 #line 36 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     t19 = ((void)(t18 == NULL ? ((void)hero_array_len(t18), hero_unreachable()) : (void)0), t18->len);
@@ -746,7 +742,7 @@ bb1:
 #line 36 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     hero_print_end();
     t20 = h0_out;
-#line 750 "fixedbugs381abranchingpushedvalueispushowned.c"
+#line 746 "fixedbugs381abranchingpushedvalueispushowned.c"
     hero_array_incref(t20);
     hero_array_release_at(&h0_out);
     hero_array_release_at(&h1_kept);
@@ -761,14 +757,14 @@ bb2:
     t11 = h2_f0;
 #line 35 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     t12 = t11.as.err;
-#line 765 "fixedbugs381abranchingpushedvalueispushowned.c"
+#line 761 "fixedbugs381abranchingpushedvalueispushowned.c"
     hero_panic_must(t12);
     hero_unreachable();
 }
 
 #line 39 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
 void h_fixedbugs381abranchingpushedvalueispushowned_main(void) {
-#line 772 "fixedbugs381abranchingpushedvalueispushowned.c"
+#line 768 "fixedbugs381abranchingpushedvalueispushowned.c"
     h_0opt_2270cbe7 h0_f0 = {0};
     h_0opt_2270cbe7 h1_own1 = {0};
     HeroArrayHeader * h2_own2 = {0};
@@ -803,15 +799,15 @@ bb0:
     t17 = h1_own1;
 #line 40 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     h1_own1 = t2;
-#line 807 "fixedbugs381abranchingpushedvalueispushowned.c"
+#line 40 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     h_0opt_2270cbe7_release(&t17);
 #line 40 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     t18 = h0_f0;
-#line 811 "fixedbugs381abranchingpushedvalueispushowned.c"
+#line 40 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     h_0opt_2270cbe7_retain(&t2);
 #line 40 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     h0_f0 = t2;
-#line 815 "fixedbugs381abranchingpushedvalueispushowned.c"
+#line 40 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     h_0opt_2270cbe7_release(&t18);
 #line 40 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     t3 = h0_f0;
@@ -839,7 +835,7 @@ bb1:
     t19 = h2_own2;
 #line 40 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     h2_own2 = t13;
-#line 843 "fixedbugs381abranchingpushedvalueispushowned.c"
+#line 40 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     hero_array_decref(t19);
 #line 40 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     t14 = ((void)(t13 == NULL ? ((void)hero_array_len(t13), hero_unreachable()) : (void)0), t13->len);
@@ -849,7 +845,7 @@ bb1:
     t20 = h3_own3;
 #line 40 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     h3_own3 = t15;
-#line 853 "fixedbugs381abranchingpushedvalueispushowned.c"
+#line 40 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     hero_array_decref(t20);
 #line 40 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     t16 = ((void)(t15 == NULL ? ((void)hero_array_len(t15), hero_unreachable()) : (void)0), t15->len);
@@ -861,7 +857,7 @@ bb1:
     hero_print_int(t16);
 #line 40 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     hero_print_end();
-#line 865 "fixedbugs381abranchingpushedvalueispushowned.c"
+#line 861 "fixedbugs381abranchingpushedvalueispushowned.c"
     h_0opt_2270cbe7_release(hero_slot_escape(&h0_f0));
     h_0opt_2270cbe7_release(hero_slot_escape(&h1_own1));
     hero_array_release_at(&h2_own2);
@@ -872,7 +868,7 @@ bb2:
     t7 = h0_f0;
 #line 40 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     t8 = t7.as.err;
-#line 876 "fixedbugs381abranchingpushedvalueispushowned.c"
+#line 872 "fixedbugs381abranchingpushedvalueispushowned.c"
     hero_panic_must(t8);
     hero_unreachable();
 }

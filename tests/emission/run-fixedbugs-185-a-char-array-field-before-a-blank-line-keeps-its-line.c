@@ -210,15 +210,15 @@ bb0:
     t34 = h3_own3;
 #line 19 "tests/golden/run/fixedbugs-185-a-char-array-field-before-a-blank-line-keeps-its-line.hero"
     h3_own3 = t14;
-#line 214 "fixedbugs185achararrayfieldbeforeablanklinekeepsitsline.c"
+#line 19 "tests/golden/run/fixedbugs-185-a-char-array-field-before-a-blank-line-keeps-its-line.hero"
     h_0opt_f87774a_release(&t34);
 #line 19 "tests/golden/run/fixedbugs-185-a-char-array-field-before-a-blank-line-keeps-its-line.hero"
     t35 = h1_f0;
-#line 218 "fixedbugs185achararrayfieldbeforeablanklinekeepsitsline.c"
+#line 19 "tests/golden/run/fixedbugs-185-a-char-array-field-before-a-blank-line-keeps-its-line.hero"
     h_0opt_f87774a_retain(&t14);
 #line 19 "tests/golden/run/fixedbugs-185-a-char-array-field-before-a-blank-line-keeps-its-line.hero"
     h1_f0 = t14;
-#line 222 "fixedbugs185achararrayfieldbeforeablanklinekeepsitsline.c"
+#line 19 "tests/golden/run/fixedbugs-185-a-char-array-field-before-a-blank-line-keeps-its-line.hero"
     h_0opt_f87774a_release(&t35);
 #line 19 "tests/golden/run/fixedbugs-185-a-char-array-field-before-a-blank-line-keeps-its-line.hero"
     t15 = h1_f0;
@@ -249,15 +249,15 @@ bb1:
     t36 = h4_own4;
 #line 20 "tests/golden/run/fixedbugs-185-a-char-array-field-before-a-blank-line-keeps-its-line.hero"
     h4_own4 = t25;
-#line 253 "fixedbugs185achararrayfieldbeforeablanklinekeepsitsline.c"
+#line 20 "tests/golden/run/fixedbugs-185-a-char-array-field-before-a-blank-line-keeps-its-line.hero"
     h_0opt_e201354_release(&t36);
 #line 20 "tests/golden/run/fixedbugs-185-a-char-array-field-before-a-blank-line-keeps-its-line.hero"
     t37 = h2_f1;
-#line 257 "fixedbugs185achararrayfieldbeforeablanklinekeepsitsline.c"
+#line 20 "tests/golden/run/fixedbugs-185-a-char-array-field-before-a-blank-line-keeps-its-line.hero"
     h_0opt_e201354_retain(&t25);
 #line 20 "tests/golden/run/fixedbugs-185-a-char-array-field-before-a-blank-line-keeps-its-line.hero"
     h2_f1 = t25;
-#line 261 "fixedbugs185achararrayfieldbeforeablanklinekeepsitsline.c"
+#line 20 "tests/golden/run/fixedbugs-185-a-char-array-field-before-a-blank-line-keeps-its-line.hero"
     h_0opt_e201354_release(&t37);
 #line 20 "tests/golden/run/fixedbugs-185-a-char-array-field-before-a-blank-line-keeps-its-line.hero"
     t26 = h2_f1;

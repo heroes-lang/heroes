@@ -120,13 +120,12 @@ bb0:
     t1 = HERO_STR_LIT(hero_str_35d9fe9b);
 #line 13 "tests/golden/run/c-frees-a-lease-through-a-callback.hero"
     t7 = h0_x;
-#line 124 "cfreesaleasethroughacallback.c"
+#line 13 "tests/golden/run/c-frees-a-lease-through-a-callback.hero"
     hero_str_incref(t1);
 #line 13 "tests/golden/run/c-frees-a-lease-through-a-callback.hero"
     h0_x = t1;
-#line 128 "cfreesaleasethroughacallback.c"
+#line 13 "tests/golden/run/c-frees-a-lease-through-a-callback.hero"
     hero_str_decref(t7);
-#line 14 "tests/golden/run/c-frees-a-lease-through-a-callback.hero"
     t2 = h0_x;
 #line 14 "tests/golden/run/c-frees-a-lease-through-a-callback.hero"
     t3 = hero_str_held(t2);
@@ -143,7 +142,7 @@ bb0:
 #line 16 "tests/golden/run/c-frees-a-lease-through-a-callback.hero"
     (void)take_cb(hero_cstr_nonnull(t5), (h_0fn_2b4640ec)hero_callback_of((void (*)(void))t6));
     hero_held_release(&h1_c);
-#line 147 "cfreesaleasethroughacallback.c"
+#line 146 "cfreesaleasethroughacallback.c"
     hero_str_release_at(&h0_x);
     return;
 }

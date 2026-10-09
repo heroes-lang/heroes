@@ -207,11 +207,11 @@ bb0:
     t1 = h0_f;
 #line 38 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
     t15 = h1_s0;
-#line 211 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
+#line 38 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
     h_0opt_30514ebf_retain(&t1);
 #line 38 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
     h1_s0 = t1;
-#line 215 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
+#line 38 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
     h_0opt_30514ebf_release(&t15);
 #line 38 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
     t2 = h1_s0;
@@ -251,11 +251,11 @@ bb3:
     t10 = t9.as.err;
 #line 40 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
     t16 = h3_e;
-#line 255 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
+#line 40 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
     hero_failure_retain(&t10);
 #line 40 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
     h3_e = t10;
-#line 259 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
+#line 40 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
     hero_failure_release(&t16);
 #line 40 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
     t11 = h3_e;
@@ -429,7 +429,7 @@ bb0:
     t85 = h11_own11;
 #line 56 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
     h11_own11 = t11;
-#line 433 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
+#line 56 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
     hero_str_decref(t85);
 #line 56 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
     hero_print_str(t11);
@@ -464,17 +464,16 @@ bb0:
     t86 = h12_own12;
 #line 59 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
     h12_own12 = t20;
-#line 468 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
+#line 59 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
     hero_array_decref(t86);
 #line 59 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
     t87 = h3_fs;
-#line 472 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
+#line 59 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
     hero_array_incref(t20);
 #line 59 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
     h3_fs = t20;
-#line 476 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
+#line 59 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
     hero_array_decref(t87);
-#line 60 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
     t21 = h3_fs;
 #line 60 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
     t22 = INT64_C(0);
@@ -513,17 +512,16 @@ bb0:
     t88 = h13_own13;
 #line 61 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
     h13_own13 = t34;
-#line 517 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
+#line 61 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
     hero_array_decref(t88);
 #line 61 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
     t89 = h4_mixed;
-#line 521 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
+#line 61 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
     hero_array_incref(t34);
 #line 61 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
     h4_mixed = t34;
-#line 525 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
+#line 61 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
     hero_array_decref(t89);
-#line 62 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
     t35 = h4_mixed;
 #line 62 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
     t36 = INT64_C(1);
@@ -542,17 +540,16 @@ bb0:
     t90 = h14_own14;
 #line 63 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
     h14_own14 = t40;
-#line 546 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
+#line 63 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
     hero_array_decref(t90);
 #line 63 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
     t91 = h5_grown;
-#line 550 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
+#line 63 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
     hero_array_incref(t40);
 #line 63 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
     h5_grown = t40;
-#line 554 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
+#line 63 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
     hero_array_decref(t91);
-#line 64 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
     t42 = h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_ident_1b9a87;
 #line 64 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
     hero_array_push_owned(&h5_grown, &t42);
@@ -590,7 +587,7 @@ bb0:
     t92 = h15_own15;
 #line 70 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
     h15_own15 = t54;
-#line 594 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
+#line 70 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
     hero_array_decref(t92);
 #line 70 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
     t55 = ((void)(t54 == NULL ? ((void)hero_array_len(t54), hero_unreachable()) : (void)0), t54->len);
@@ -623,7 +620,7 @@ bb1:
     t93 = h16_own16;
 #line 75 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
     h16_own16 = t65;
-#line 627 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
+#line 75 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
     h_0opt_30514ebf_release(&t93);
 #line 75 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
     t66 = h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_wrapped(t65);
@@ -659,7 +656,7 @@ bb1:
     t94 = h17_own17;
 #line 79 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
     h17_own17 = t76;
-#line 663 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
+#line 79 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
     hero_str_decref(t94);
 #line 79 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
     hero_print_str(t76);
@@ -679,7 +676,7 @@ bb1:
     t95 = h18_own18;
 #line 81 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
     h18_own18 = t80;
-#line 683 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
+#line 81 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
     hero_str_decref(t95);
 #line 81 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
     hero_print_str(t80);
@@ -699,13 +696,13 @@ bb1:
     t96 = h19_own19;
 #line 83 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
     h19_own19 = t84;
-#line 703 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
+#line 83 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
     hero_str_decref(t96);
 #line 83 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
     hero_print_str(t84);
 #line 83 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
     hero_print_end();
-#line 709 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
+#line 706 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
     hero_array_release_at(&h3_fs);
     hero_array_release_at(&h4_mixed);
     hero_array_release_at(&h5_grown);
@@ -734,12 +731,12 @@ bb3:
     h7_r0 = t59;
 #line 70 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
     goto bb1;
-#line 738 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
+#line 735 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
 }
 
 #line 196 "<heroes library>"
 HeroArrayHeader * h_library_args(void) {
-#line 743 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
+#line 740 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
     HeroArrayHeader * h0_out = {0};
     int64_t h1_i;
     HeroArrayHeader * h2_own2 = {0};
@@ -766,17 +763,16 @@ bb0:
     t14 = h2_own2;
 #line 197 "<heroes library>"
     h2_own2 = t1;
-#line 770 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
+#line 197 "<heroes library>"
     hero_array_decref(t14);
 #line 197 "<heroes library>"
     t15 = h0_out;
-#line 774 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
+#line 197 "<heroes library>"
     hero_array_incref(t1);
 #line 197 "<heroes library>"
     h0_out = t1;
-#line 778 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
+#line 197 "<heroes library>"
     hero_array_decref(t15);
-#line 198 "<heroes library>"
     t2 = INT64_C(0);
 #line 198 "<heroes library>"
     h1_i = t2;
@@ -800,7 +796,7 @@ bb2:
     t16 = h3_own3;
 #line 200 "<heroes library>"
     h3_own3 = t8;
-#line 804 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
+#line 200 "<heroes library>"
     hero_str_decref(t16);
 #line 200 "<heroes library>"
     hero_array_push_owned(&h0_out, &t8);
@@ -816,7 +812,7 @@ bb2:
 #line 201 "<heroes library>"
 bb3:
     t13 = h0_out;
-#line 820 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
+#line 816 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
     hero_array_incref(t13);
     hero_array_release_at(&h0_out);
     hero_array_release_at(&h2_own2);
@@ -828,13 +824,13 @@ bb3:
 /* ident<str> */
 #line 20 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
 HERO_TU_LOCAL HeroStr h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_ident_1e58d9(HeroStr h0_x) {
-#line 832 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
+#line 828 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
     HeroStr t1;
     goto bb0;
 bb0:
 #line 21 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
     t1 = h0_x;
-#line 838 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
+#line 834 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -843,7 +839,7 @@ bb0:
 /* ident<i64> */
 #line 20 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
 HERO_TU_LOCAL int64_t h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_ident_1b9a87(int64_t h0_x) {
-#line 847 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
+#line 843 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
     int64_t t1;
     goto bb0;
 bb0:
@@ -851,14 +847,14 @@ bb0:
     t1 = h0_x;
 #line 21 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
     return t1;
-#line 855 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
+#line 851 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
 }
 
 #line 26 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
 /* first<i64, i64> */
 #line 26 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
 HERO_TU_LOCAL int64_t h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_first_37f8817a(int64_t h0_x, int64_t h1_y) {
-#line 862 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
+#line 858 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
     HeroArrayHeader * h2_kept = {0};
     HeroArrayHeader * h3_own3 = {0};
     int64_t t1;
@@ -883,17 +879,16 @@ bb0:
     t9 = h3_own3;
 #line 27 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
     h3_own3 = t2;
-#line 887 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
+#line 27 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
     hero_array_decref(t9);
 #line 27 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
     t10 = h2_kept;
-#line 891 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
+#line 27 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
     hero_array_incref(t2);
 #line 27 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
     h2_kept = t2;
-#line 895 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
+#line 27 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
     hero_array_decref(t10);
-#line 28 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
     t3 = HERO_STR_LIT(hero_str_4bb496f);
 #line 28 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
     t4 = h2_kept;
@@ -908,7 +903,7 @@ bb0:
 #line 28 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
 bb1:
     t8 = h0_x;
-#line 912 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
+#line 907 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
     hero_array_release_at(&h2_kept);
     hero_array_release_at(&h3_own3);
     return t8;
@@ -921,7 +916,7 @@ bb2:
 /* first<str, i64> */
 #line 26 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
 HERO_TU_LOCAL HeroStr h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_first_f6f4f7b(HeroStr h0_x, int64_t h1_y) {
-#line 925 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
+#line 920 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
     HeroArrayHeader * h2_kept = {0};
     HeroArrayHeader * h3_own3 = {0};
     int64_t t1;
@@ -946,17 +941,16 @@ bb0:
     t9 = h3_own3;
 #line 27 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
     h3_own3 = t2;
-#line 950 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
+#line 27 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
     hero_array_decref(t9);
 #line 27 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
     t10 = h2_kept;
-#line 954 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
+#line 27 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
     hero_array_incref(t2);
 #line 27 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
     h2_kept = t2;
-#line 958 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
+#line 27 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
     hero_array_decref(t10);
-#line 28 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
     t3 = HERO_STR_LIT(hero_str_4bb496f);
 #line 28 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
     t4 = h2_kept;
@@ -971,7 +965,7 @@ bb0:
 #line 28 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
 bb1:
     t8 = h0_x;
-#line 975 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
+#line 969 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
     hero_str_incref(t8);
     hero_array_release_at(&h2_kept);
     hero_array_release_at(&h3_own3);
@@ -985,7 +979,7 @@ bb2:
 /* counted<str> */
 #line 42 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
 HERO_TU_LOCAL HeroStr h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_counted_1e58d9(HeroStr h0_x) {
-#line 989 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
+#line 983 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
     h_0fn_48ac9712 h1_f;
     h_0fn_48ac9712 t1;
     h_0fn_48ac9712 t2;
@@ -1008,7 +1002,7 @@ bb0:
 #line 44 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
     hero_print_end();
     t5 = h0_x;
-#line 1012 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
+#line 1006 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
     hero_str_incref(t5);
     return t5;
 }
@@ -1017,7 +1011,7 @@ bb0:
 /* outer<i64> */
 #line 47 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
 HERO_TU_LOCAL int64_t h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_outer_1b9a87(int64_t h0_x) {
-#line 1021 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
+#line 1015 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
     h_0fn_48ac9712 h1_f;
     h_0fn_48ac9712 t1;
     h_0fn_48ac9712 t2;
@@ -1036,14 +1030,14 @@ bb0:
     t4 = t2(t3);
 #line 49 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
     return t4;
-#line 1040 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
+#line 1034 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
 }
 
 #line 47 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
 /* outer<str> */
 #line 47 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
 HERO_TU_LOCAL HeroStr h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_outer_1e58d9(HeroStr h0_x) {
-#line 1047 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
+#line 1041 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
     h_0fn_6f1dc5d7 h1_f;
     HeroStr h2_own2 = {0};
     h_0fn_6f1dc5d7 t1;
@@ -1066,8 +1060,9 @@ bb0:
     t5 = h2_own2;
 #line 49 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
     h2_own2 = t4;
-#line 1070 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
+#line 49 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
     hero_str_decref(t5);
+#line 1066 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
     hero_str_incref(t4);
     hero_str_release_at(&h2_own2);
     return t4;

@@ -121,17 +121,16 @@ bb0:
     t8 = h2_own2;
 #line 16 "tests/golden/run/fixedbugs-an-ignored-signal-stays-ignored.hero"
     h2_own2 = t3;
-#line 125 "fixedbugsanignoredsignalstaysignored.c"
+#line 16 "tests/golden/run/fixedbugs-an-ignored-signal-stays-ignored.hero"
     hero_str_decref(t8);
 #line 16 "tests/golden/run/fixedbugs-an-ignored-signal-stays-ignored.hero"
     t9 = h0_word;
-#line 129 "fixedbugsanignoredsignalstaysignored.c"
+#line 16 "tests/golden/run/fixedbugs-an-ignored-signal-stays-ignored.hero"
     hero_str_incref(t3);
 #line 16 "tests/golden/run/fixedbugs-an-ignored-signal-stays-ignored.hero"
     h0_word = t3;
-#line 133 "fixedbugsanignoredsignalstaysignored.c"
+#line 16 "tests/golden/run/fixedbugs-an-ignored-signal-stays-ignored.hero"
     hero_str_decref(t9);
-#line 17 "tests/golden/run/fixedbugs-an-ignored-signal-stays-ignored.hero"
     t4 = h0_word;
 #line 17 "tests/golden/run/fixedbugs-an-ignored-signal-stays-ignored.hero"
     t5 = hero_str_held(t4);
@@ -147,7 +146,7 @@ bb0:
 #line 18 "tests/golden/run/fixedbugs-an-ignored-signal-stays-ignored.hero"
     hero_print_end();
     hero_held_release(&h1_held);
-#line 151 "fixedbugsanignoredsignalstaysignored.c"
+#line 150 "fixedbugsanignoredsignalstaysignored.c"
     hero_str_release_at(&h0_word);
     hero_str_release_at(&h2_own2);
     return;

@@ -132,11 +132,11 @@ bb0:
     t3 = HERO_STR_LIT(hero_str_6bb5e50a);
 #line 38 "tests/golden/run/fixedbugs-a-discarded-binding-warns-in-c.hero"
     t10 = h1_s;
-#line 136 "fixedbugsadiscardedbindingwarnsinc.c"
+#line 38 "tests/golden/run/fixedbugs-a-discarded-binding-warns-in-c.hero"
     hero_str_incref(t3);
 #line 38 "tests/golden/run/fixedbugs-a-discarded-binding-warns-in-c.hero"
     h1_s = t3;
-#line 140 "fixedbugsadiscardedbindingwarnsinc.c"
+#line 38 "tests/golden/run/fixedbugs-a-discarded-binding-warns-in-c.hero"
     hero_str_decref(t10);
 #line 42 "tests/golden/run/fixedbugs-a-discarded-binding-warns-in-c.hero"
     t5 = INT64_C(3);

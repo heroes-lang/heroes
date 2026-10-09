@@ -278,17 +278,16 @@ bb0:
     t96 = h8_own8;
 #line 32 "tests/golden/run/place-store-c5.hero"
     h8_own8 = t1;
-#line 282 "placestorec5.c"
+#line 32 "tests/golden/run/place-store-c5.hero"
     hero_array_decref(t96);
 #line 32 "tests/golden/run/place-store-c5.hero"
     t97 = h0_xs;
-#line 286 "placestorec5.c"
+#line 32 "tests/golden/run/place-store-c5.hero"
     hero_array_incref(t1);
 #line 32 "tests/golden/run/place-store-c5.hero"
     h0_xs = t1;
-#line 290 "placestorec5.c"
+#line 32 "tests/golden/run/place-store-c5.hero"
     hero_array_decref(t97);
-#line 33 "tests/golden/run/place-store-c5.hero"
     t3 = INT64_C(1);
 #line 33 "tests/golden/run/place-store-c5.hero"
     hero_array_push_owned(&h0_xs, &t3);
@@ -298,13 +297,12 @@ bb0:
     t8 = h0_xs;
 #line 35 "tests/golden/run/place-store-c5.hero"
     t98 = h1_ys;
-#line 302 "placestorec5.c"
+#line 35 "tests/golden/run/place-store-c5.hero"
     hero_array_incref(t8);
 #line 35 "tests/golden/run/place-store-c5.hero"
     h1_ys = t8;
-#line 306 "placestorec5.c"
+#line 35 "tests/golden/run/place-store-c5.hero"
     hero_array_decref(t98);
-#line 36 "tests/golden/run/place-store-c5.hero"
     t10 = INT64_C(3);
 #line 36 "tests/golden/run/place-store-c5.hero"
     hero_array_push_owned(&h0_xs, &t10);
@@ -335,17 +333,16 @@ bb0:
     t99 = h9_own9;
 #line 40 "tests/golden/run/place-store-c5.hero"
     h9_own9 = t19;
-#line 339 "placestorec5.c"
+#line 40 "tests/golden/run/place-store-c5.hero"
     hero_array_decref(t99);
 #line 40 "tests/golden/run/place-store-c5.hero"
     t100 = h2_zs;
-#line 343 "placestorec5.c"
+#line 40 "tests/golden/run/place-store-c5.hero"
     hero_array_incref(t19);
 #line 40 "tests/golden/run/place-store-c5.hero"
     h2_zs = t19;
-#line 347 "placestorec5.c"
+#line 40 "tests/golden/run/place-store-c5.hero"
     hero_array_decref(t100);
-#line 41 "tests/golden/run/place-store-c5.hero"
     t20 = h0_xs;
 #line 41 "tests/golden/run/place-store-c5.hero"
     t21 = ((void)(t20 == NULL ? ((void)hero_array_len(t20), hero_unreachable()) : (void)0), t20->len);
@@ -369,24 +366,24 @@ bb0:
     t101 = h10_own10;
 #line 44 "tests/golden/run/place-store-c5.hero"
     h10_own10 = t25;
-#line 373 "placestorec5.c"
+#line 44 "tests/golden/run/place-store-c5.hero"
     hero_array_decref(t101);
 #line 44 "tests/golden/run/place-store-c5.hero"
     t102 = h3_hs;
-#line 377 "placestorec5.c"
+#line 44 "tests/golden/run/place-store-c5.hero"
     hero_array_incref(t25);
 #line 44 "tests/golden/run/place-store-c5.hero"
     h3_hs = t25;
-#line 381 "placestorec5.c"
+#line 44 "tests/golden/run/place-store-c5.hero"
     hero_array_decref(t102);
-#line 45 "tests/golden/run/place-store-c5.hero"
     t27 = hero_array_new(&h_placestorec5_Node_desc, 1);
 #line 45 "tests/golden/run/place-store-c5.hero"
     t103 = h11_own11;
 #line 45 "tests/golden/run/place-store-c5.hero"
     h11_own11 = t27;
-#line 389 "placestorec5.c"
+#line 45 "tests/golden/run/place-store-c5.hero"
     hero_array_decref(t103);
+#line 45 "tests/golden/run/place-store-c5.hero"
     hero_array_incref(t27);
 #line 45 "tests/golden/run/place-store-c5.hero"
     t28 = (h_placestorec5_Node){.f_kids = t27};
@@ -394,12 +391,12 @@ bb0:
     t104 = h12_own12;
 #line 45 "tests/golden/run/place-store-c5.hero"
     h12_own12 = t28;
-#line 398 "placestorec5.c"
+#line 45 "tests/golden/run/place-store-c5.hero"
     h_placestorec5_Node_release(&t104);
 #line 45 "tests/golden/run/place-store-c5.hero"
     hero_array_push_owned(&h3_hs, &t28);
     t30 = h3_hs;
-#line 403 "placestorec5.c"
+#line 46 "tests/golden/run/place-store-c5.hero"
     hero_array_incref(t30);
 #line 46 "tests/golden/run/place-store-c5.hero"
     t31 = (h_placestorec5_Node){.f_kids = t30};
@@ -407,17 +404,16 @@ bb0:
     t105 = h13_own13;
 #line 46 "tests/golden/run/place-store-c5.hero"
     h13_own13 = t31;
-#line 411 "placestorec5.c"
+#line 46 "tests/golden/run/place-store-c5.hero"
     h_placestorec5_Node_release(&t105);
 #line 46 "tests/golden/run/place-store-c5.hero"
     t106 = h4_root;
-#line 415 "placestorec5.c"
+#line 46 "tests/golden/run/place-store-c5.hero"
     h_placestorec5_Node_retain(&t31);
 #line 46 "tests/golden/run/place-store-c5.hero"
     h4_root = t31;
-#line 419 "placestorec5.c"
+#line 46 "tests/golden/run/place-store-c5.hero"
     h_placestorec5_Node_release(&t106);
-#line 47 "tests/golden/run/place-store-c5.hero"
     t33 = h4_root;
 #line 47 "tests/golden/run/place-store-c5.hero"
     hero_array_push_owned(&h3_hs, &t33);
@@ -462,8 +458,9 @@ bb0:
     t107 = h14_own14;
 #line 52 "tests/golden/run/place-store-c5.hero"
     h14_own14 = t47;
-#line 466 "placestorec5.c"
+#line 52 "tests/golden/run/place-store-c5.hero"
     hero_array_decref(t107);
+#line 52 "tests/golden/run/place-store-c5.hero"
     hero_array_incref(t47);
 #line 52 "tests/golden/run/place-store-c5.hero"
     t48 = (h_placestorec5_Node){.f_kids = t47};
@@ -471,17 +468,16 @@ bb0:
     t108 = h15_own15;
 #line 52 "tests/golden/run/place-store-c5.hero"
     h15_own15 = t48;
-#line 475 "placestorec5.c"
+#line 52 "tests/golden/run/place-store-c5.hero"
     h_placestorec5_Node_release(&t108);
 #line 52 "tests/golden/run/place-store-c5.hero"
     t109 = h5_holder;
-#line 479 "placestorec5.c"
+#line 52 "tests/golden/run/place-store-c5.hero"
     h_placestorec5_Node_retain(&t48);
 #line 52 "tests/golden/run/place-store-c5.hero"
     h5_holder = t48;
-#line 483 "placestorec5.c"
+#line 52 "tests/golden/run/place-store-c5.hero"
     h_placestorec5_Node_release(&t109);
-#line 53 "tests/golden/run/place-store-c5.hero"
     t49 = h5_holder;
 #line 53 "tests/golden/run/place-store-c5.hero"
     t50 = t49.f_kids;
@@ -491,8 +487,9 @@ bb0:
     t110 = h16_own16;
 #line 53 "tests/golden/run/place-store-c5.hero"
     h16_own16 = t51;
-#line 495 "placestorec5.c"
+#line 53 "tests/golden/run/place-store-c5.hero"
     hero_array_decref(t110);
+#line 53 "tests/golden/run/place-store-c5.hero"
     hero_array_incref(t51);
 #line 53 "tests/golden/run/place-store-c5.hero"
     t52 = (h_placestorec5_Node){.f_kids = t51};
@@ -500,7 +497,7 @@ bb0:
     t111 = h17_own17;
 #line 53 "tests/golden/run/place-store-c5.hero"
     h17_own17 = t52;
-#line 504 "placestorec5.c"
+#line 53 "tests/golden/run/place-store-c5.hero"
     h_placestorec5_Node_release(&t111);
 #line 53 "tests/golden/run/place-store-c5.hero"
     t53 = hero_array_push(t50, &t52);
@@ -508,17 +505,16 @@ bb0:
     t112 = h18_own18;
 #line 53 "tests/golden/run/place-store-c5.hero"
     h18_own18 = t53;
-#line 512 "placestorec5.c"
+#line 53 "tests/golden/run/place-store-c5.hero"
     hero_array_decref(t112);
 #line 53 "tests/golden/run/place-store-c5.hero"
     t113 = h5_holder.f_kids;
-#line 516 "placestorec5.c"
+#line 53 "tests/golden/run/place-store-c5.hero"
     hero_array_incref(t53);
 #line 53 "tests/golden/run/place-store-c5.hero"
     h5_holder.f_kids = t53;
-#line 520 "placestorec5.c"
+#line 53 "tests/golden/run/place-store-c5.hero"
     hero_array_decref(t113);
-#line 54 "tests/golden/run/place-store-c5.hero"
     t54 = h5_holder;
 #line 54 "tests/golden/run/place-store-c5.hero"
     t55 = t54.f_kids;
@@ -530,17 +526,16 @@ bb0:
     t114 = h19_own19;
 #line 54 "tests/golden/run/place-store-c5.hero"
     h19_own19 = t57;
-#line 534 "placestorec5.c"
+#line 54 "tests/golden/run/place-store-c5.hero"
     hero_array_decref(t114);
 #line 54 "tests/golden/run/place-store-c5.hero"
     t115 = h5_holder.f_kids;
-#line 538 "placestorec5.c"
+#line 54 "tests/golden/run/place-store-c5.hero"
     hero_array_incref(t57);
 #line 54 "tests/golden/run/place-store-c5.hero"
     h5_holder.f_kids = t57;
-#line 542 "placestorec5.c"
+#line 54 "tests/golden/run/place-store-c5.hero"
     hero_array_decref(t115);
-#line 55 "tests/golden/run/place-store-c5.hero"
     t58 = h5_holder;
 #line 55 "tests/golden/run/place-store-c5.hero"
     t59 = t58.f_kids;
@@ -574,17 +569,16 @@ bb0:
     t116 = h20_own20;
 #line 58 "tests/golden/run/place-store-c5.hero"
     h20_own20 = t68;
-#line 578 "placestorec5.c"
+#line 58 "tests/golden/run/place-store-c5.hero"
     hero_array_decref(t116);
 #line 58 "tests/golden/run/place-store-c5.hero"
     t117 = h6_ws;
-#line 582 "placestorec5.c"
+#line 58 "tests/golden/run/place-store-c5.hero"
     hero_array_incref(t68);
 #line 58 "tests/golden/run/place-store-c5.hero"
     h6_ws = t68;
-#line 586 "placestorec5.c"
+#line 58 "tests/golden/run/place-store-c5.hero"
     hero_array_decref(t117);
-#line 59 "tests/golden/run/place-store-c5.hero"
     t70 = HERO_STR_LIT(hero_str_61);
 #line 59 "tests/golden/run/place-store-c5.hero"
     hero_array_push_owned(&h6_ws, &t70);
@@ -620,28 +614,27 @@ bb0:
     t118 = h21_own21;
 #line 64 "tests/golden/run/place-store-c5.hero"
     h21_own21 = t83;
-#line 624 "placestorec5.c"
+#line 64 "tests/golden/run/place-store-c5.hero"
     hero_array_decref(t118);
 #line 64 "tests/golden/run/place-store-c5.hero"
     t119 = h7_qs;
-#line 628 "placestorec5.c"
+#line 64 "tests/golden/run/place-store-c5.hero"
     hero_array_incref(t83);
 #line 64 "tests/golden/run/place-store-c5.hero"
     h7_qs = t83;
-#line 632 "placestorec5.c"
+#line 64 "tests/golden/run/place-store-c5.hero"
     hero_array_decref(t119);
-#line 65 "tests/golden/run/place-store-c5.hero"
     t85 = INT64_C(1);
 #line 65 "tests/golden/run/place-store-c5.hero"
     hero_array_push_owned(&h7_qs, &t85);
     t87 = h7_qs;
-#line 639 "placestorec5.c"
+#line 66 "tests/golden/run/place-store-c5.hero"
     hero_array_incref(t87);
 #line 66 "tests/golden/run/place-store-c5.hero"
     t120 = h22_own22;
 #line 66 "tests/golden/run/place-store-c5.hero"
     h22_own22 = t87;
-#line 645 "placestorec5.c"
+#line 66 "tests/golden/run/place-store-c5.hero"
     hero_array_decref(t120);
 #line 66 "tests/golden/run/place-store-c5.hero"
     t88 = h_placestorec5_bump(&h7_qs);
@@ -651,17 +644,16 @@ bb0:
     t121 = h23_own23;
 #line 66 "tests/golden/run/place-store-c5.hero"
     h23_own23 = t89;
-#line 655 "placestorec5.c"
+#line 66 "tests/golden/run/place-store-c5.hero"
     hero_array_decref(t121);
 #line 66 "tests/golden/run/place-store-c5.hero"
     t122 = h7_qs;
-#line 659 "placestorec5.c"
+#line 66 "tests/golden/run/place-store-c5.hero"
     hero_array_incref(t89);
 #line 66 "tests/golden/run/place-store-c5.hero"
     h7_qs = t89;
-#line 663 "placestorec5.c"
+#line 66 "tests/golden/run/place-store-c5.hero"
     hero_array_decref(t122);
-#line 67 "tests/golden/run/place-store-c5.hero"
     t90 = h7_qs;
 #line 67 "tests/golden/run/place-store-c5.hero"
     t91 = ((void)(t90 == NULL ? ((void)hero_array_len(t90), hero_unreachable()) : (void)0), t90->len);
@@ -681,7 +673,7 @@ bb0:
     hero_print_int(t95);
 #line 67 "tests/golden/run/place-store-c5.hero"
     hero_print_end();
-#line 685 "placestorec5.c"
+#line 677 "placestorec5.c"
     hero_array_release_at(&h0_xs);
     hero_array_release_at(&h1_ys);
     hero_array_release_at(&h2_zs);

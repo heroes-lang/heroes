@@ -125,8 +125,9 @@ bb0:
     t6 = h0_own0;
 #line 9 "tests/golden/ir/adversarial-for-evaluates-once.hero"
     h0_own0 = t5;
-#line 129 "adversarialforevaluatesonce.c"
+#line 9 "tests/golden/ir/adversarial-for-evaluates-once.hero"
     hero_array_decref(t6);
+#line 131 "adversarialforevaluatesonce.c"
     hero_array_incref(t5);
     hero_array_release_at(&h0_own0);
     return t5;
@@ -134,7 +135,7 @@ bb0:
 
 #line 11 "tests/golden/ir/adversarial-for-evaluates-once.hero"
 int64_t h_adversarialforevaluatesonce_total(void) {
-#line 138 "adversarialforevaluatesonce.c"
+#line 139 "adversarialforevaluatesonce.c"
     int64_t h0_sum;
     HeroArrayHeader * h1_xs0 = {0};
     int64_t h2_i0;
@@ -171,15 +172,15 @@ bb0:
     t18 = h4_own4;
 #line 14 "tests/golden/ir/adversarial-for-evaluates-once.hero"
     h4_own4 = t2;
-#line 175 "adversarialforevaluatesonce.c"
+#line 14 "tests/golden/ir/adversarial-for-evaluates-once.hero"
     hero_array_decref(t18);
 #line 14 "tests/golden/ir/adversarial-for-evaluates-once.hero"
     t19 = h1_xs0;
-#line 179 "adversarialforevaluatesonce.c"
+#line 14 "tests/golden/ir/adversarial-for-evaluates-once.hero"
     hero_array_incref(t2);
 #line 14 "tests/golden/ir/adversarial-for-evaluates-once.hero"
     h1_xs0 = t2;
-#line 183 "adversarialforevaluatesonce.c"
+#line 14 "tests/golden/ir/adversarial-for-evaluates-once.hero"
     hero_array_decref(t19);
 #line 14 "tests/golden/ir/adversarial-for-evaluates-once.hero"
     t3 = INT64_C(0);
@@ -234,7 +235,7 @@ bb3:
 bb4:
 #line 17 "tests/golden/ir/adversarial-for-evaluates-once.hero"
     t17 = h0_sum;
-#line 238 "adversarialforevaluatesonce.c"
+#line 239 "adversarialforevaluatesonce.c"
     hero_array_release_at(&h1_xs0);
     hero_array_release_at(&h4_own4);
     return t17;

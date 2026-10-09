@@ -403,17 +403,16 @@ bb0:
     t32 = h6_own6;
 #line 50 "examples/histogram/main.hero"
     h6_own6 = t1;
-#line 407 "main.c"
+#line 50 "examples/histogram/main.hero"
     hero_array_decref(t32);
 #line 50 "examples/histogram/main.hero"
     t33 = h0_handles;
-#line 411 "main.c"
+#line 50 "examples/histogram/main.hero"
     hero_array_incref(t1);
 #line 50 "examples/histogram/main.hero"
     h0_handles = t1;
-#line 415 "main.c"
+#line 50 "examples/histogram/main.hero"
     hero_array_decref(t33);
-#line 51 "examples/histogram/main.hero"
     t2 = INT64_C(0);
 #line 51 "examples/histogram/main.hero"
     h1_d = t2;
@@ -455,25 +454,25 @@ bb3:
     t34 = h7_own7;
 #line 57 "examples/histogram/main.hero"
     h7_own7 = t14;
-#line 459 "main.c"
+#line 57 "examples/histogram/main.hero"
     hero_array_decref(t34);
 #line 57 "examples/histogram/main.hero"
     t35 = h2_out;
-#line 463 "main.c"
+#line 57 "examples/histogram/main.hero"
     hero_array_incref(t14);
 #line 57 "examples/histogram/main.hero"
     h2_out = t14;
-#line 467 "main.c"
+#line 57 "examples/histogram/main.hero"
     hero_array_decref(t35);
 #line 59 "examples/histogram/main.hero"
     t15 = h0_handles;
 #line 59 "examples/histogram/main.hero"
     t36 = h3_xs0;
-#line 473 "main.c"
+#line 59 "examples/histogram/main.hero"
     hero_array_incref(t15);
 #line 59 "examples/histogram/main.hero"
     h3_xs0 = t15;
-#line 477 "main.c"
+#line 59 "examples/histogram/main.hero"
     hero_array_decref(t36);
 #line 59 "examples/histogram/main.hero"
     t16 = INT64_C(0);
@@ -526,7 +525,7 @@ bb6:
 bb7:
 #line 62 "examples/histogram/main.hero"
     t31 = h2_out;
-#line 530 "main.c"
+#line 529 "main.c"
     hero_array_incref(t31);
     hero_array_release_at(&h0_handles);
     hero_array_release_at(&h2_out);
@@ -538,7 +537,7 @@ bb7:
 
 #line 64 "examples/histogram/main.hero"
 void h_main_main(void) {
-#line 542 "main.c"
+#line 541 "main.c"
     HeroArrayHeader * h0_found = {0};
     int64_t h1_d;
     HeroArrayHeader * h2_own2 = {0};
@@ -566,17 +565,16 @@ bb0:
     t15 = h2_own2;
 #line 65 "examples/histogram/main.hero"
     h2_own2 = t1;
-#line 570 "main.c"
+#line 65 "examples/histogram/main.hero"
     hero_array_decref(t15);
 #line 65 "examples/histogram/main.hero"
     t16 = h0_found;
-#line 574 "main.c"
+#line 65 "examples/histogram/main.hero"
     hero_array_incref(t1);
 #line 65 "examples/histogram/main.hero"
     h0_found = t1;
-#line 578 "main.c"
+#line 65 "examples/histogram/main.hero"
     hero_array_decref(t16);
-#line 66 "examples/histogram/main.hero"
     t2 = INT64_C(0);
 #line 66 "examples/histogram/main.hero"
     h1_d = t2;
@@ -626,7 +624,7 @@ bb2:
     goto bb1;
 #line 70 "examples/histogram/main.hero"
 bb3:
-#line 630 "main.c"
+#line 628 "main.c"
     hero_array_release_at(&h0_found);
     hero_array_release_at(&h2_own2);
     return;

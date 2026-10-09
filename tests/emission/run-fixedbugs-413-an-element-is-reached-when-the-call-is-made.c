@@ -187,17 +187,16 @@ bb0:
     t14 = h2_own2;
 #line 25 "tests/golden/run/fixedbugs-413-an-element-is-reached-when-the-call-is-made.hero"
     h2_own2 = t2;
-#line 191 "fixedbugs413anelementisreachedwhenthecallismade.c"
+#line 25 "tests/golden/run/fixedbugs-413-an-element-is-reached-when-the-call-is-made.hero"
     hero_array_decref(t14);
 #line 25 "tests/golden/run/fixedbugs-413-an-element-is-reached-when-the-call-is-made.hero"
     t15 = h0_xs;
-#line 195 "fixedbugs413anelementisreachedwhenthecallismade.c"
+#line 25 "tests/golden/run/fixedbugs-413-an-element-is-reached-when-the-call-is-made.hero"
     hero_array_incref(t2);
 #line 25 "tests/golden/run/fixedbugs-413-an-element-is-reached-when-the-call-is-made.hero"
     h0_xs = t2;
-#line 199 "fixedbugs413anelementisreachedwhenthecallismade.c"
+#line 25 "tests/golden/run/fixedbugs-413-an-element-is-reached-when-the-call-is-made.hero"
     hero_array_decref(t15);
-#line 26 "tests/golden/run/fixedbugs-413-an-element-is-reached-when-the-call-is-made.hero"
     t3 = INT64_C(0);
 #line 26 "tests/golden/run/fixedbugs-413-an-element-is-reached-when-the-call-is-made.hero"
     t4 = h_fixedbugs413anelementisreachedwhenthecallismade_grow(&h0_xs);
@@ -235,7 +234,7 @@ bb0:
     hero_print_int(t13);
 #line 30 "tests/golden/run/fixedbugs-413-an-element-is-reached-when-the-call-is-made.hero"
     hero_print_end();
-#line 239 "fixedbugs413anelementisreachedwhenthecallismade.c"
+#line 238 "fixedbugs413anelementisreachedwhenthecallismade.c"
     hero_array_release_at(&h0_xs);
     hero_array_release_at(&h2_own2);
     return;

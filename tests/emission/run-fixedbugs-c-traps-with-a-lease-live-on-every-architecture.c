@@ -123,17 +123,16 @@ bb0:
     t8 = h2_own2;
 #line 15 "tests/golden/run/fixedbugs-c-traps-with-a-lease-live-on-every-architecture.hero"
     h2_own2 = t3;
-#line 127 "fixedbugsctrapswithaleaseliveoneveryarchitecture.c"
+#line 15 "tests/golden/run/fixedbugs-c-traps-with-a-lease-live-on-every-architecture.hero"
     hero_str_decref(t8);
 #line 15 "tests/golden/run/fixedbugs-c-traps-with-a-lease-live-on-every-architecture.hero"
     t9 = h0_word;
-#line 131 "fixedbugsctrapswithaleaseliveoneveryarchitecture.c"
+#line 15 "tests/golden/run/fixedbugs-c-traps-with-a-lease-live-on-every-architecture.hero"
     hero_str_incref(t3);
 #line 15 "tests/golden/run/fixedbugs-c-traps-with-a-lease-live-on-every-architecture.hero"
     h0_word = t3;
-#line 135 "fixedbugsctrapswithaleaseliveoneveryarchitecture.c"
+#line 15 "tests/golden/run/fixedbugs-c-traps-with-a-lease-live-on-every-architecture.hero"
     hero_str_decref(t9);
-#line 16 "tests/golden/run/fixedbugs-c-traps-with-a-lease-live-on-every-architecture.hero"
     t4 = h0_word;
 #line 16 "tests/golden/run/fixedbugs-c-traps-with-a-lease-live-on-every-architecture.hero"
     t5 = hero_str_held(t4);
@@ -148,7 +147,7 @@ bb0:
     hero_print_str(t7);
 #line 19 "tests/golden/run/fixedbugs-c-traps-with-a-lease-live-on-every-architecture.hero"
     hero_print_end();
-#line 152 "fixedbugsctrapswithaleaseliveoneveryarchitecture.c"
+#line 151 "fixedbugsctrapswithaleaseliveoneveryarchitecture.c"
     hero_str_release_at(&h0_word);
     hero_str_release_at(&h2_own2);
     return;

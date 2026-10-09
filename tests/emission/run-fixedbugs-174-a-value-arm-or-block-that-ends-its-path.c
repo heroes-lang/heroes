@@ -962,11 +962,11 @@ bb1:
     t7 = h2_r0;
 #line 116 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
     t9 = h3_s;
-#line 966 "fixedbugs174avaluearmorblockthatendsitspath.c"
+#line 116 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
     hero_str_incref(t7);
 #line 116 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
     h3_s = t7;
-#line 970 "fixedbugs174avaluearmorblockthatendsitspath.c"
+#line 116 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
     hero_str_decref(t9);
 #line 120 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
     t8 = h3_s;
@@ -993,18 +993,20 @@ bb4:
     t6 = HERO_STR_LIT(hero_str_eb4aa2b);
 #line 116 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
     t10 = h2_r0;
-#line 997 "fixedbugs174avaluearmorblockthatendsitspath.c"
+#line 116 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
     hero_str_incref(t6);
 #line 116 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
     h2_r0 = t6;
-#line 1001 "fixedbugs174avaluearmorblockthatendsitspath.c"
+#line 116 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
     hero_str_decref(t10);
+#line 116 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
     goto bb1;
+#line 1005 "fixedbugs174avaluearmorblockthatendsitspath.c"
 }
 
 #line 123 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
 int64_t h_fixedbugs174avaluearmorblockthatendsitspath_counted_then_exit(int64_t h0_k) {
-#line 1008 "fixedbugs174avaluearmorblockthatendsitspath.c"
+#line 1010 "fixedbugs174avaluearmorblockthatendsitspath.c"
     int64_t h1_s0;
     int64_t h2_r0;
     HeroStr h3_t = {0};
@@ -1048,7 +1050,7 @@ bb1:
     h4_x = t12;
 #line 131 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
     t13 = h4_x;
-#line 1052 "fixedbugs174avaluearmorblockthatendsitspath.c"
+#line 1054 "fixedbugs174avaluearmorblockthatendsitspath.c"
     hero_str_release_at(&h3_t);
     hero_str_release_at(&h5_own5);
     hero_str_release_at(&h6_own6);
@@ -1064,7 +1066,7 @@ bb2:
     t14 = h5_own5;
 #line 126 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
     h5_own5 = t7;
-#line 1068 "fixedbugs174avaluearmorblockthatendsitspath.c"
+#line 126 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
     hero_str_decref(t14);
 #line 126 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
     t8 = hero_str_concat(t5, t7);
@@ -1072,17 +1074,16 @@ bb2:
     t15 = h6_own6;
 #line 126 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
     h6_own6 = t8;
-#line 1076 "fixedbugs174avaluearmorblockthatendsitspath.c"
+#line 126 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
     hero_str_decref(t15);
 #line 126 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
     t16 = h3_t;
-#line 1080 "fixedbugs174avaluearmorblockthatendsitspath.c"
+#line 126 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
     hero_str_incref(t8);
 #line 126 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
     h3_t = t8;
-#line 1084 "fixedbugs174avaluearmorblockthatendsitspath.c"
+#line 126 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
     hero_str_decref(t16);
-#line 127 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
     t9 = h3_t;
 #line 127 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
     hero_print_str(t9);
@@ -1106,12 +1107,12 @@ bb4:
     h2_r0 = t11;
 #line 124 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
     goto bb1;
-#line 1110 "fixedbugs174avaluearmorblockthatendsitspath.c"
+#line 1111 "fixedbugs174avaluearmorblockthatendsitspath.c"
 }
 
 #line 139 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
 int64_t h_fixedbugs174avaluearmorblockthatendsitspath_bump(int64_t *ph0_n) {
-#line 1115 "fixedbugs174avaluearmorblockthatendsitspath.c"
+#line 1116 "fixedbugs174avaluearmorblockthatendsitspath.c"
     int64_t t1;
     int64_t t2;
     int64_t t3;
@@ -1158,12 +1159,12 @@ bb2:
 bb3:
 #line 143 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
     goto bb1;
-#line 1162 "fixedbugs174avaluearmorblockthatendsitspath.c"
+#line 1163 "fixedbugs174avaluearmorblockthatendsitspath.c"
 }
 
 #line 151 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
 h_0opt_e201354 h_fixedbugs174avaluearmorblockthatendsitspath_half(int64_t h0_k) {
-#line 1167 "fixedbugs174avaluearmorblockthatendsitspath.c"
+#line 1168 "fixedbugs174avaluearmorblockthatendsitspath.c"
     h_0opt_e201354 h1_own1 = {0};
     int64_t t1;
     int64_t t2;
@@ -1221,8 +1222,9 @@ bb2:
     t12 = h1_own1;
 #line 153 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
     h1_own1 = t9;
-#line 1225 "fixedbugs174avaluearmorblockthatendsitspath.c"
+#line 153 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
     h_0opt_e201354_release(&t12);
+#line 1228 "fixedbugs174avaluearmorblockthatendsitspath.c"
     h_0opt_e201354_retain(&t9);
     h_0opt_e201354_release(hero_slot_escape(&h1_own1));
     return t9;
@@ -1237,7 +1239,7 @@ bb5:
 
 #line 156 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
 HeroStr h_fixedbugs174avaluearmorblockthatendsitspath_named(int64_t h0_k) {
-#line 1241 "fixedbugs174avaluearmorblockthatendsitspath.c"
+#line 1243 "fixedbugs174avaluearmorblockthatendsitspath.c"
     int64_t t1;
     int64_t t2;
     bool t3;
@@ -1267,7 +1269,7 @@ bb1:
 bb2:
 #line 158 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
     t4 = HERO_STR_LIT(hero_str_1073a930);
-#line 1271 "fixedbugs174avaluearmorblockthatendsitspath.c"
+#line 1273 "fixedbugs174avaluearmorblockthatendsitspath.c"
     hero_str_incref(t4);
     return t4;
 bb3:
@@ -1276,7 +1278,7 @@ bb3:
 
 #line 161 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
 h_fixedbugs174avaluearmorblockthatendsitspath_P h_fixedbugs174avaluearmorblockthatendsitspath_located(int64_t h0_n) {
-#line 1280 "fixedbugs174avaluearmorblockthatendsitspath.c"
+#line 1282 "fixedbugs174avaluearmorblockthatendsitspath.c"
     int64_t h1_i;
     int64_t t1;
     bool t2;
@@ -1348,12 +1350,12 @@ bb5:
 bb6:
 #line 166 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
     goto bb4;
-#line 1352 "fixedbugs174avaluearmorblockthatendsitspath.c"
+#line 1354 "fixedbugs174avaluearmorblockthatendsitspath.c"
 }
 
 #line 169 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
 void h_fixedbugs174avaluearmorblockthatendsitspath_main(void) {
-#line 1357 "fixedbugs174avaluearmorblockthatendsitspath.c"
+#line 1359 "fixedbugs174avaluearmorblockthatendsitspath.c"
     int64_t h0_v;
     h_0opt_e201354 h1_f0 = {0};
     h_fixedbugs174avaluearmorblockthatendsitspath_P h2_p;
@@ -1508,7 +1510,7 @@ bb0:
     t54 = h3_own3;
 #line 181 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
     h3_own3 = t25;
-#line 1512 "fixedbugs174avaluearmorblockthatendsitspath.c"
+#line 181 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
     hero_str_decref(t54);
 #line 181 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
     hero_print_str(t25);
@@ -1547,7 +1549,7 @@ bb0:
     t55 = h4_own4;
 #line 186 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
     h4_own4 = t33;
-#line 1551 "fixedbugs174avaluearmorblockthatendsitspath.c"
+#line 186 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
     hero_array_decref(t55);
 #line 186 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
     t34 = h_fixedbugs174avaluearmorblockthatendsitspath_first_1b9a87(t33);
@@ -1562,15 +1564,15 @@ bb0:
     t56 = h5_own5;
 #line 187 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
     h5_own5 = t36;
-#line 1566 "fixedbugs174avaluearmorblockthatendsitspath.c"
+#line 187 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
     h_0opt_e201354_release(&t56);
 #line 187 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
     t57 = h1_f0;
-#line 1570 "fixedbugs174avaluearmorblockthatendsitspath.c"
+#line 187 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
     h_0opt_e201354_retain(&t36);
 #line 187 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
     h1_f0 = t36;
-#line 1574 "fixedbugs174avaluearmorblockthatendsitspath.c"
+#line 187 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
     h_0opt_e201354_release(&t57);
 #line 187 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
     t37 = h1_f0;
@@ -1599,7 +1601,7 @@ bb1:
     t58 = h6_own6;
 #line 188 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
     h6_own6 = t46;
-#line 1603 "fixedbugs174avaluearmorblockthatendsitspath.c"
+#line 188 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
     hero_str_decref(t58);
 #line 188 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
     hero_print_str(t46);
@@ -1627,7 +1629,7 @@ bb1:
     hero_print_int(t53);
 #line 190 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
     hero_print_end();
-#line 1631 "fixedbugs174avaluearmorblockthatendsitspath.c"
+#line 1633 "fixedbugs174avaluearmorblockthatendsitspath.c"
     h_0opt_e201354_release(hero_slot_escape(&h1_f0));
     hero_str_release_at(&h3_own3);
     hero_array_release_at(&h4_own4);
@@ -1639,14 +1641,14 @@ bb2:
     t41 = h1_f0;
 #line 187 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
     t42 = t41.as.err;
-#line 1643 "fixedbugs174avaluearmorblockthatendsitspath.c"
+#line 1645 "fixedbugs174avaluearmorblockthatendsitspath.c"
     hero_panic_must(t42);
     hero_unreachable();
 }
 
 #line 227 "<heroes library>"
 void h_library_exit(int64_t h0_code) {
-#line 1650 "fixedbugs174avaluearmorblockthatendsitspath.c"
+#line 1652 "fixedbugs174avaluearmorblockthatendsitspath.c"
     int64_t t1;
     goto bb0;
 bb0:
@@ -1656,14 +1658,14 @@ bb0:
     (void)hero_exit(t1);
 #line 228 "<heroes library>"
     return;
-#line 1660 "fixedbugs174avaluearmorblockthatendsitspath.c"
+#line 1662 "fixedbugs174avaluearmorblockthatendsitspath.c"
 }
 
 #line 146 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
 /* first<i64> */
 #line 146 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
 HERO_TU_LOCAL int64_t h_fixedbugs174avaluearmorblockthatendsitspath_first_1b9a87(HeroArrayHeader * h0_xs) {
-#line 1667 "fixedbugs174avaluearmorblockthatendsitspath.c"
+#line 1669 "fixedbugs174avaluearmorblockthatendsitspath.c"
     HeroArrayHeader * t1;
     int64_t t2;
     int64_t t3;
@@ -1708,7 +1710,7 @@ bb2:
 bb3:
 #line 148 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
     goto bb1;
-#line 1712 "fixedbugs174avaluearmorblockthatendsitspath.c"
+#line 1714 "fixedbugs174avaluearmorblockthatendsitspath.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs174avaluearmorblockthatendsitspath_Color_eq(const h_fixedbugs174avaluearmorblockthatendsitspath_Color *a, const h_fixedbugs174avaluearmorblockthatendsitspath_Color *b) {
     if (a->tag != b->tag) return false;

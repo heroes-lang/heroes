@@ -145,17 +145,16 @@ bb0:
     t22 = h4_own4;
 #line 32 "tests/golden/run/fixedbugs-map-store-aliased.hero"
     h4_own4 = t1;
-#line 149 "fixedbugsmapstorealiased.c"
+#line 32 "tests/golden/run/fixedbugs-map-store-aliased.hero"
     hero_map_decref(t22);
 #line 32 "tests/golden/run/fixedbugs-map-store-aliased.hero"
     t23 = h0_m;
-#line 153 "fixedbugsmapstorealiased.c"
+#line 32 "tests/golden/run/fixedbugs-map-store-aliased.hero"
     hero_map_incref(t1);
 #line 32 "tests/golden/run/fixedbugs-map-store-aliased.hero"
     h0_m = t1;
-#line 157 "fixedbugsmapstorealiased.c"
+#line 32 "tests/golden/run/fixedbugs-map-store-aliased.hero"
     hero_map_decref(t23);
-#line 33 "tests/golden/run/fixedbugs-map-store-aliased.hero"
     t2 = HERO_STR_LIT(hero_str_61);
 #line 33 "tests/golden/run/fixedbugs-map-store-aliased.hero"
     t3 = INT64_C(1);
@@ -164,13 +163,12 @@ bb0:
     t4 = h0_m;
 #line 34 "tests/golden/run/fixedbugs-map-store-aliased.hero"
     t24 = h1_n;
-#line 168 "fixedbugsmapstorealiased.c"
+#line 34 "tests/golden/run/fixedbugs-map-store-aliased.hero"
     hero_map_incref(t4);
 #line 34 "tests/golden/run/fixedbugs-map-store-aliased.hero"
     h1_n = t4;
-#line 172 "fixedbugsmapstorealiased.c"
+#line 34 "tests/golden/run/fixedbugs-map-store-aliased.hero"
     hero_map_decref(t24);
-#line 35 "tests/golden/run/fixedbugs-map-store-aliased.hero"
     t5 = HERO_STR_LIT(hero_str_62);
 #line 35 "tests/golden/run/fixedbugs-map-store-aliased.hero"
     t6 = INT64_C(2);
@@ -215,15 +213,15 @@ bb0:
     t25 = h5_own5;
 #line 38 "tests/golden/run/fixedbugs-map-store-aliased.hero"
     h5_own5 = t13;
-#line 219 "fixedbugsmapstorealiased.c"
+#line 38 "tests/golden/run/fixedbugs-map-store-aliased.hero"
     h_0opt_e201354_release(&t25);
 #line 38 "tests/golden/run/fixedbugs-map-store-aliased.hero"
     t26 = h2_f0;
-#line 223 "fixedbugsmapstorealiased.c"
+#line 38 "tests/golden/run/fixedbugs-map-store-aliased.hero"
     h_0opt_e201354_retain(&t13);
 #line 38 "tests/golden/run/fixedbugs-map-store-aliased.hero"
     h2_f0 = t13;
-#line 227 "fixedbugsmapstorealiased.c"
+#line 38 "tests/golden/run/fixedbugs-map-store-aliased.hero"
     h_0opt_e201354_release(&t26);
 #line 38 "tests/golden/run/fixedbugs-map-store-aliased.hero"
     t14 = h2_f0;
@@ -261,7 +259,7 @@ bb3:
     hero_print_int(t21);
 #line 38 "tests/golden/run/fixedbugs-map-store-aliased.hero"
     hero_print_end();
-#line 265 "fixedbugsmapstorealiased.c"
+#line 263 "fixedbugsmapstorealiased.c"
     hero_map_release_at(&h0_m);
     hero_map_release_at(&h1_n);
     h_0opt_e201354_release(hero_slot_escape(&h2_f0));

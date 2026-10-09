@@ -292,15 +292,15 @@ bb0:
     t76 = h4_own4;
 #line 56 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
     h4_own4 = t40;
-#line 296 "ffiabytefieldcrossestoc.c"
+#line 56 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
     h_0opt_e201354_release(&t76);
 #line 56 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
     t77 = h1_f0;
-#line 300 "ffiabytefieldcrossestoc.c"
+#line 56 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
     h_0opt_e201354_retain(&t40);
 #line 56 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
     h1_f0 = t40;
-#line 304 "ffiabytefieldcrossestoc.c"
+#line 56 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
     h_0opt_e201354_release(&t77);
 #line 56 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
     t41 = h1_f0;
@@ -375,15 +375,15 @@ bb1:
     t78 = h5_own5;
 #line 61 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
     h5_own5 = t67;
-#line 379 "ffiabytefieldcrossestoc.c"
+#line 61 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
     h_0opt_f87774a_release(&t78);
 #line 61 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
     t79 = h3_f1;
-#line 383 "ffiabytefieldcrossestoc.c"
+#line 61 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
     h_0opt_f87774a_retain(&t67);
 #line 61 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
     h3_f1 = t67;
-#line 387 "ffiabytefieldcrossestoc.c"
+#line 61 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
     h_0opt_f87774a_release(&t79);
 #line 61 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
     t68 = h3_f1;

@@ -117,7 +117,7 @@ bb0:
     t6 = h1_own1;
 #line 17 "tests/golden/run/fixedbugs-a-library-function-as-a-value.hero"
     h1_own1 = t4;
-#line 121 "fixedbugsalibraryfunctionasavalue.c"
+#line 17 "tests/golden/run/fixedbugs-a-library-function-as-a-value.hero"
     hero_array_decref(t6);
 #line 17 "tests/golden/run/fixedbugs-a-library-function-as-a-value.hero"
     t5 = ((void)(t4 == NULL ? ((void)hero_array_len(t4), hero_unreachable()) : (void)0), t4->len);
@@ -222,17 +222,16 @@ bb0:
     t13 = h4_own4;
 #line 27 "<heroes library>"
     h4_own4 = t1;
-#line 226 "fixedbugsalibraryfunctionasavalue.c"
+#line 27 "<heroes library>"
     hero_array_decref(t13);
 #line 27 "<heroes library>"
     t14 = h2_out;
-#line 230 "fixedbugsalibraryfunctionasavalue.c"
+#line 27 "<heroes library>"
     hero_array_incref(t1);
 #line 27 "<heroes library>"
     h2_out = t1;
-#line 234 "fixedbugsalibraryfunctionasavalue.c"
+#line 27 "<heroes library>"
     hero_array_decref(t14);
-#line 28 "<heroes library>"
     t2 = h0_from;
 #line 28 "<heroes library>"
     h3_i = t2;
@@ -264,7 +263,7 @@ bb2:
 #line 31 "<heroes library>"
 bb3:
     t12 = h2_out;
-#line 268 "fixedbugsalibraryfunctionasavalue.c"
+#line 267 "fixedbugsalibraryfunctionasavalue.c"
     hero_array_incref(t12);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h4_own4);

@@ -204,15 +204,15 @@ bb0:
     t44 = h4_own4;
 #line 43 "tests/golden/run/ffi-a-char-array-member.hero"
     h4_own4 = t10;
-#line 208 "ffiachararraymember.c"
+#line 43 "tests/golden/run/ffi-a-char-array-member.hero"
     h_0opt_e201354_release(&t44);
 #line 43 "tests/golden/run/ffi-a-char-array-member.hero"
     t45 = h1_f0;
-#line 212 "ffiachararraymember.c"
+#line 43 "tests/golden/run/ffi-a-char-array-member.hero"
     h_0opt_e201354_retain(&t10);
 #line 43 "tests/golden/run/ffi-a-char-array-member.hero"
     h1_f0 = t10;
-#line 216 "ffiachararraymember.c"
+#line 43 "tests/golden/run/ffi-a-char-array-member.hero"
     h_0opt_e201354_release(&t45);
 #line 43 "tests/golden/run/ffi-a-char-array-member.hero"
     t11 = h1_f0;
@@ -245,15 +245,15 @@ bb1:
     t46 = h5_own5;
 #line 44 "tests/golden/run/ffi-a-char-array-member.hero"
     h5_own5 = t23;
-#line 249 "ffiachararraymember.c"
+#line 44 "tests/golden/run/ffi-a-char-array-member.hero"
     h_0opt_e201354_release(&t46);
 #line 44 "tests/golden/run/ffi-a-char-array-member.hero"
     t47 = h2_f1;
-#line 253 "ffiachararraymember.c"
+#line 44 "tests/golden/run/ffi-a-char-array-member.hero"
     h_0opt_e201354_retain(&t23);
 #line 44 "tests/golden/run/ffi-a-char-array-member.hero"
     h2_f1 = t23;
-#line 257 "ffiachararraymember.c"
+#line 44 "tests/golden/run/ffi-a-char-array-member.hero"
     h_0opt_e201354_release(&t47);
 #line 44 "tests/golden/run/ffi-a-char-array-member.hero"
     t24 = h2_f1;
@@ -291,15 +291,15 @@ bb3:
     t48 = h6_own6;
 #line 44 "tests/golden/run/ffi-a-char-array-member.hero"
     h6_own6 = t35;
-#line 295 "ffiachararraymember.c"
+#line 44 "tests/golden/run/ffi-a-char-array-member.hero"
     h_0opt_e201354_release(&t48);
 #line 44 "tests/golden/run/ffi-a-char-array-member.hero"
     t49 = h3_f2;
-#line 299 "ffiachararraymember.c"
+#line 44 "tests/golden/run/ffi-a-char-array-member.hero"
     h_0opt_e201354_retain(&t35);
 #line 44 "tests/golden/run/ffi-a-char-array-member.hero"
     h3_f2 = t35;
-#line 303 "ffiachararraymember.c"
+#line 44 "tests/golden/run/ffi-a-char-array-member.hero"
     h_0opt_e201354_release(&t49);
 #line 44 "tests/golden/run/ffi-a-char-array-member.hero"
     t36 = h3_f2;

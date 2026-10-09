@@ -133,7 +133,7 @@ bb0:
     t6 = h0_own0;
 #line 8 "tests/golden/ir/sugar-ufcs.hero"
     h0_own0 = t3;
-#line 137 "sugarufcs.c"
+#line 8 "tests/golden/ir/sugar-ufcs.hero"
     hero_array_decref(t6);
 #line 8 "tests/golden/ir/sugar-ufcs.hero"
     t4 = ((void)(t3 == NULL ? ((void)hero_array_len(t3), hero_unreachable()) : (void)0), t3->len);

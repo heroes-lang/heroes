@@ -112,11 +112,11 @@ bb0:
     t1 = HERO_STR_LIT(hero_str_1b7183);
 #line 8 "tests/golden/emit/strings.hero"
     t7 = h2_prefix;
-#line 116 "strings.c"
+#line 8 "tests/golden/emit/strings.hero"
     hero_str_incref(t1);
 #line 8 "tests/golden/emit/strings.hero"
     h2_prefix = t1;
-#line 120 "strings.c"
+#line 8 "tests/golden/emit/strings.hero"
     hero_str_decref(t7);
 #line 10 "tests/golden/emit/strings.hero"
     t2 = h1_formal;
@@ -134,8 +134,9 @@ bb1:
     t8 = h3_own3;
 #line 12 "tests/golden/emit/strings.hero"
     h3_own3 = t6;
-#line 138 "strings.c"
+#line 12 "tests/golden/emit/strings.hero"
     hero_str_decref(t8);
+#line 140 "strings.c"
     hero_str_incref(t6);
     hero_str_release_at(&h2_prefix);
     hero_str_release_at(&h3_own3);
@@ -145,20 +146,24 @@ bb2:
     t3 = HERO_STR_LIT(hero_str_2d678ad8);
 #line 11 "tests/golden/emit/strings.hero"
     t9 = h2_prefix;
-#line 149 "strings.c"
+#line 11 "tests/golden/emit/strings.hero"
     hero_str_incref(t3);
 #line 11 "tests/golden/emit/strings.hero"
     h2_prefix = t3;
-#line 153 "strings.c"
+#line 11 "tests/golden/emit/strings.hero"
     hero_str_decref(t9);
+#line 11 "tests/golden/emit/strings.hero"
     goto bb1;
+#line 11 "tests/golden/emit/strings.hero"
 bb3:
+#line 11 "tests/golden/emit/strings.hero"
     goto bb1;
+#line 162 "strings.c"
 }
 
 #line 14 "tests/golden/emit/strings.hero"
 void h_strings_main(void) {
-#line 162 "strings.c"
+#line 167 "strings.c"
     HeroStr h0_own0 = {0};
     HeroStr t1;
     bool t2;
@@ -176,13 +181,13 @@ bb0:
     t4 = h0_own0;
 #line 15 "tests/golden/emit/strings.hero"
     h0_own0 = t3;
-#line 180 "strings.c"
+#line 15 "tests/golden/emit/strings.hero"
     hero_str_decref(t4);
 #line 15 "tests/golden/emit/strings.hero"
     hero_print_str(t3);
 #line 15 "tests/golden/emit/strings.hero"
     hero_print_end();
-#line 186 "strings.c"
+#line 191 "strings.c"
     hero_str_release_at(&h0_own0);
     return;
 }

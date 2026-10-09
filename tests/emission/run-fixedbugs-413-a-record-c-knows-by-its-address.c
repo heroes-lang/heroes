@@ -298,15 +298,15 @@ bb0:
     t25 = h5_own5;
 #line 48 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     h5_own5 = t5;
-#line 302 "fixedbugs413arecordcknowsbyitsaddress.c"
+#line 48 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     hero_array_decref(t25);
 #line 48 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     t26 = h2_xs0;
-#line 306 "fixedbugs413arecordcknowsbyitsaddress.c"
+#line 48 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     hero_array_incref(t5);
 #line 48 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     h2_xs0 = t5;
-#line 310 "fixedbugs413arecordcknowsbyitsaddress.c"
+#line 48 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     hero_array_decref(t26);
 #line 48 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     t6 = INT64_C(0);
@@ -545,17 +545,16 @@ bb0:
     t88 = h9_own9;
 #line 57 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     h9_own9 = t8;
-#line 549 "fixedbugs413arecordcknowsbyitsaddress.c"
+#line 57 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     hero_array_decref(t88);
 #line 57 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     t89 = h1_ks;
-#line 553 "fixedbugs413arecordcknowsbyitsaddress.c"
+#line 57 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     hero_array_incref(t8);
 #line 57 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     h1_ks = t8;
-#line 557 "fixedbugs413arecordcknowsbyitsaddress.c"
+#line 57 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     hero_array_decref(t89);
-#line 58 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     t9 = INT64_C(1);
 #line 58 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     hero_array_unshare(&(h1_ks));
@@ -602,17 +601,16 @@ bb0:
     t90 = h10_own10;
 #line 59 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     h10_own10 = t20;
-#line 606 "fixedbugs413arecordcknowsbyitsaddress.c"
+#line 59 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     hero_array_decref(t90);
 #line 59 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     t91 = h2_ws;
-#line 610 "fixedbugs413arecordcknowsbyitsaddress.c"
+#line 59 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     hero_array_incref(t20);
 #line 59 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     h2_ws = t20;
-#line 614 "fixedbugs413arecordcknowsbyitsaddress.c"
+#line 59 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     hero_array_decref(t91);
-#line 60 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     t21 = INT64_C(1);
 #line 60 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     hero_array_unshare(&(h2_ws));
@@ -873,7 +871,7 @@ bb0:
     hero_print_int(t87);
 #line 75 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     hero_print_end();
-#line 877 "fixedbugs413arecordcknowsbyitsaddress.c"
+#line 875 "fixedbugs413arecordcknowsbyitsaddress.c"
     hero_array_release_at(&h1_ks);
     hero_array_release_at(&h2_ws);
     hero_array_release_at(&h9_own9);
@@ -893,7 +891,7 @@ bb0:
 
 #line 26 "<heroes library>"
 HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to) {
-#line 897 "fixedbugs413arecordcknowsbyitsaddress.c"
+#line 895 "fixedbugs413arecordcknowsbyitsaddress.c"
     HeroArrayHeader * h2_out = {0};
     int64_t h3_i;
     HeroArrayHeader * h4_own4 = {0};
@@ -917,17 +915,16 @@ bb0:
     t13 = h4_own4;
 #line 27 "<heroes library>"
     h4_own4 = t1;
-#line 921 "fixedbugs413arecordcknowsbyitsaddress.c"
+#line 27 "<heroes library>"
     hero_array_decref(t13);
 #line 27 "<heroes library>"
     t14 = h2_out;
-#line 925 "fixedbugs413arecordcknowsbyitsaddress.c"
+#line 27 "<heroes library>"
     hero_array_incref(t1);
 #line 27 "<heroes library>"
     h2_out = t1;
-#line 929 "fixedbugs413arecordcknowsbyitsaddress.c"
+#line 27 "<heroes library>"
     hero_array_decref(t14);
-#line 28 "<heroes library>"
     t2 = h0_from;
 #line 28 "<heroes library>"
     h3_i = t2;
@@ -959,7 +956,7 @@ bb2:
 #line 31 "<heroes library>"
 bb3:
     t12 = h2_out;
-#line 963 "fixedbugs413arecordcknowsbyitsaddress.c"
+#line 960 "fixedbugs413arecordcknowsbyitsaddress.c"
     hero_array_incref(t12);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h4_own4);

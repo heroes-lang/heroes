@@ -547,7 +547,7 @@ h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R31 h_fixedbugs53
 bb0:
 #line 107 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     t1 = h0_t;
-#line 551 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 107 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     hero_str_incref(t1);
 #line 107 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     t2 = (h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R0){.f_s = t1};
@@ -555,19 +555,18 @@ bb0:
     t66 = h33_own33;
 #line 107 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h33_own33 = t2;
-#line 559 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 107 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R0_release(&t66);
 #line 107 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     t67 = h1_v0;
-#line 563 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 107 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R0_retain(&t2);
 #line 107 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h1_v0 = t2;
-#line 567 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 107 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R0_release(&t67);
-#line 108 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     t3 = h1_v0;
-#line 571 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 108 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R0_retain(&t3);
 #line 108 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     t4 = (h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R1){.f_inner = t3};
@@ -575,19 +574,18 @@ bb0:
     t68 = h34_own34;
 #line 108 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h34_own34 = t4;
-#line 579 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 108 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R1_release(&t68);
 #line 108 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     t69 = h2_v1;
-#line 583 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 108 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R1_retain(&t4);
 #line 108 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h2_v1 = t4;
-#line 587 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 108 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R1_release(&t69);
-#line 109 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     t5 = h2_v1;
-#line 591 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 109 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R1_retain(&t5);
 #line 109 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     t6 = (h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R2){.f_inner = t5};
@@ -595,19 +593,18 @@ bb0:
     t70 = h35_own35;
 #line 109 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h35_own35 = t6;
-#line 599 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 109 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R2_release(&t70);
 #line 109 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     t71 = h3_v2;
-#line 603 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 109 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R2_retain(&t6);
 #line 109 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h3_v2 = t6;
-#line 607 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 109 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R2_release(&t71);
-#line 110 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     t7 = h3_v2;
-#line 611 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 110 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R2_retain(&t7);
 #line 110 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     t8 = (h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R3){.f_inner = t7};
@@ -615,19 +612,18 @@ bb0:
     t72 = h36_own36;
 #line 110 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h36_own36 = t8;
-#line 619 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 110 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R3_release(&t72);
 #line 110 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     t73 = h4_v3;
-#line 623 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 110 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R3_retain(&t8);
 #line 110 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h4_v3 = t8;
-#line 627 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 110 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R3_release(&t73);
-#line 111 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     t9 = h4_v3;
-#line 631 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 111 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R3_retain(&t9);
 #line 111 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     t10 = (h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R4){.f_inner = t9};
@@ -635,19 +631,18 @@ bb0:
     t74 = h37_own37;
 #line 111 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h37_own37 = t10;
-#line 639 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 111 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R4_release(&t74);
 #line 111 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     t75 = h5_v4;
-#line 643 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 111 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R4_retain(&t10);
 #line 111 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h5_v4 = t10;
-#line 647 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 111 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R4_release(&t75);
-#line 112 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     t11 = h5_v4;
-#line 651 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 112 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R4_retain(&t11);
 #line 112 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     t12 = (h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R5){.f_inner = t11};
@@ -655,19 +650,18 @@ bb0:
     t76 = h38_own38;
 #line 112 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h38_own38 = t12;
-#line 659 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 112 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R5_release(&t76);
 #line 112 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     t77 = h6_v5;
-#line 663 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 112 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R5_retain(&t12);
 #line 112 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h6_v5 = t12;
-#line 667 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 112 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R5_release(&t77);
-#line 113 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     t13 = h6_v5;
-#line 671 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 113 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R5_retain(&t13);
 #line 113 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     t14 = (h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R6){.f_inner = t13};
@@ -675,19 +669,18 @@ bb0:
     t78 = h39_own39;
 #line 113 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h39_own39 = t14;
-#line 679 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 113 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R6_release(&t78);
 #line 113 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     t79 = h7_v6;
-#line 683 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 113 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R6_retain(&t14);
 #line 113 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h7_v6 = t14;
-#line 687 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 113 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R6_release(&t79);
-#line 114 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     t15 = h7_v6;
-#line 691 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 114 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R6_retain(&t15);
 #line 114 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     t16 = (h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R7){.f_inner = t15};
@@ -695,19 +688,18 @@ bb0:
     t80 = h40_own40;
 #line 114 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h40_own40 = t16;
-#line 699 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 114 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R7_release(&t80);
 #line 114 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     t81 = h8_v7;
-#line 703 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 114 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R7_retain(&t16);
 #line 114 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h8_v7 = t16;
-#line 707 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 114 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R7_release(&t81);
-#line 115 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     t17 = h8_v7;
-#line 711 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 115 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R7_retain(&t17);
 #line 115 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     t18 = (h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R8){.f_inner = t17};
@@ -715,19 +707,18 @@ bb0:
     t82 = h41_own41;
 #line 115 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h41_own41 = t18;
-#line 719 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 115 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R8_release(&t82);
 #line 115 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     t83 = h9_v8;
-#line 723 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 115 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R8_retain(&t18);
 #line 115 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h9_v8 = t18;
-#line 727 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 115 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R8_release(&t83);
-#line 116 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     t19 = h9_v8;
-#line 731 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 116 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R8_retain(&t19);
 #line 116 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     t20 = (h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R9){.f_inner = t19};
@@ -735,19 +726,18 @@ bb0:
     t84 = h42_own42;
 #line 116 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h42_own42 = t20;
-#line 739 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 116 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R9_release(&t84);
 #line 116 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     t85 = h10_v9;
-#line 743 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 116 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R9_retain(&t20);
 #line 116 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h10_v9 = t20;
-#line 747 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 116 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R9_release(&t85);
-#line 117 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     t21 = h10_v9;
-#line 751 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 117 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R9_retain(&t21);
 #line 117 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     t22 = (h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R10){.f_inner = t21};
@@ -755,19 +745,18 @@ bb0:
     t86 = h43_own43;
 #line 117 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h43_own43 = t22;
-#line 759 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 117 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R10_release(&t86);
 #line 117 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     t87 = h11_v10;
-#line 763 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 117 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R10_retain(&t22);
 #line 117 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h11_v10 = t22;
-#line 767 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 117 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R10_release(&t87);
-#line 118 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     t23 = h11_v10;
-#line 771 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 118 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R10_retain(&t23);
 #line 118 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     t24 = (h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R11){.f_inner = t23};
@@ -775,19 +764,18 @@ bb0:
     t88 = h44_own44;
 #line 118 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h44_own44 = t24;
-#line 779 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 118 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R11_release(&t88);
 #line 118 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     t89 = h12_v11;
-#line 783 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 118 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R11_retain(&t24);
 #line 118 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h12_v11 = t24;
-#line 787 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 118 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R11_release(&t89);
-#line 119 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     t25 = h12_v11;
-#line 791 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 119 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R11_retain(&t25);
 #line 119 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     t26 = (h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R12){.f_inner = t25};
@@ -795,19 +783,18 @@ bb0:
     t90 = h45_own45;
 #line 119 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h45_own45 = t26;
-#line 799 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 119 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R12_release(&t90);
 #line 119 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     t91 = h13_v12;
-#line 803 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 119 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R12_retain(&t26);
 #line 119 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h13_v12 = t26;
-#line 807 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 119 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R12_release(&t91);
-#line 120 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     t27 = h13_v12;
-#line 811 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 120 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R12_retain(&t27);
 #line 120 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     t28 = (h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R13){.f_inner = t27};
@@ -815,19 +802,18 @@ bb0:
     t92 = h46_own46;
 #line 120 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h46_own46 = t28;
-#line 819 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 120 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R13_release(&t92);
 #line 120 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     t93 = h14_v13;
-#line 823 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 120 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R13_retain(&t28);
 #line 120 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h14_v13 = t28;
-#line 827 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 120 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R13_release(&t93);
-#line 121 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     t29 = h14_v13;
-#line 831 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 121 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R13_retain(&t29);
 #line 121 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     t30 = (h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R14){.f_inner = t29};
@@ -835,19 +821,18 @@ bb0:
     t94 = h47_own47;
 #line 121 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h47_own47 = t30;
-#line 839 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 121 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R14_release(&t94);
 #line 121 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     t95 = h15_v14;
-#line 843 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 121 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R14_retain(&t30);
 #line 121 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h15_v14 = t30;
-#line 847 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 121 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R14_release(&t95);
-#line 122 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     t31 = h15_v14;
-#line 851 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 122 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R14_retain(&t31);
 #line 122 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     t32 = (h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R15){.f_inner = t31};
@@ -855,19 +840,18 @@ bb0:
     t96 = h48_own48;
 #line 122 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h48_own48 = t32;
-#line 859 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 122 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R15_release(&t96);
 #line 122 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     t97 = h16_v15;
-#line 863 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 122 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R15_retain(&t32);
 #line 122 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h16_v15 = t32;
-#line 867 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 122 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R15_release(&t97);
-#line 123 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     t33 = h16_v15;
-#line 871 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 123 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R15_retain(&t33);
 #line 123 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     t34 = (h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R16){.f_inner = t33};
@@ -875,19 +859,18 @@ bb0:
     t98 = h49_own49;
 #line 123 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h49_own49 = t34;
-#line 879 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 123 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R16_release(&t98);
 #line 123 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     t99 = h17_v16;
-#line 883 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 123 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R16_retain(&t34);
 #line 123 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h17_v16 = t34;
-#line 887 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 123 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R16_release(&t99);
-#line 124 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     t35 = h17_v16;
-#line 891 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 124 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R16_retain(&t35);
 #line 124 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     t36 = (h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R17){.f_inner = t35};
@@ -895,19 +878,18 @@ bb0:
     t100 = h50_own50;
 #line 124 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h50_own50 = t36;
-#line 899 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 124 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R17_release(&t100);
 #line 124 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     t101 = h18_v17;
-#line 903 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 124 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R17_retain(&t36);
 #line 124 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h18_v17 = t36;
-#line 907 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 124 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R17_release(&t101);
-#line 125 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     t37 = h18_v17;
-#line 911 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 125 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R17_retain(&t37);
 #line 125 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     t38 = (h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R18){.f_inner = t37};
@@ -915,19 +897,18 @@ bb0:
     t102 = h51_own51;
 #line 125 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h51_own51 = t38;
-#line 919 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 125 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R18_release(&t102);
 #line 125 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     t103 = h19_v18;
-#line 923 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 125 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R18_retain(&t38);
 #line 125 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h19_v18 = t38;
-#line 927 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 125 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R18_release(&t103);
-#line 126 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     t39 = h19_v18;
-#line 931 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 126 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R18_retain(&t39);
 #line 126 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     t40 = (h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R19){.f_inner = t39};
@@ -935,19 +916,18 @@ bb0:
     t104 = h52_own52;
 #line 126 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h52_own52 = t40;
-#line 939 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 126 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R19_release(&t104);
 #line 126 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     t105 = h20_v19;
-#line 943 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 126 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R19_retain(&t40);
 #line 126 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h20_v19 = t40;
-#line 947 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 126 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R19_release(&t105);
-#line 127 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     t41 = h20_v19;
-#line 951 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 127 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R19_retain(&t41);
 #line 127 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     t42 = (h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R20){.f_inner = t41};
@@ -955,19 +935,18 @@ bb0:
     t106 = h53_own53;
 #line 127 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h53_own53 = t42;
-#line 959 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 127 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R20_release(&t106);
 #line 127 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     t107 = h21_v20;
-#line 963 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 127 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R20_retain(&t42);
 #line 127 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h21_v20 = t42;
-#line 967 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 127 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R20_release(&t107);
-#line 128 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     t43 = h21_v20;
-#line 971 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 128 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R20_retain(&t43);
 #line 128 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     t44 = (h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R21){.f_inner = t43};
@@ -975,19 +954,18 @@ bb0:
     t108 = h54_own54;
 #line 128 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h54_own54 = t44;
-#line 979 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 128 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R21_release(&t108);
 #line 128 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     t109 = h22_v21;
-#line 983 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 128 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R21_retain(&t44);
 #line 128 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h22_v21 = t44;
-#line 987 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 128 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R21_release(&t109);
-#line 129 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     t45 = h22_v21;
-#line 991 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 129 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R21_retain(&t45);
 #line 129 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     t46 = (h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R22){.f_inner = t45};
@@ -995,19 +973,18 @@ bb0:
     t110 = h55_own55;
 #line 129 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h55_own55 = t46;
-#line 999 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 129 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R22_release(&t110);
 #line 129 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     t111 = h23_v22;
-#line 1003 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 129 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R22_retain(&t46);
 #line 129 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h23_v22 = t46;
-#line 1007 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 129 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R22_release(&t111);
-#line 130 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     t47 = h23_v22;
-#line 1011 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 130 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R22_retain(&t47);
 #line 130 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     t48 = (h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R23){.f_inner = t47};
@@ -1015,19 +992,18 @@ bb0:
     t112 = h56_own56;
 #line 130 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h56_own56 = t48;
-#line 1019 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 130 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R23_release(&t112);
 #line 130 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     t113 = h24_v23;
-#line 1023 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 130 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R23_retain(&t48);
 #line 130 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h24_v23 = t48;
-#line 1027 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 130 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R23_release(&t113);
-#line 131 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     t49 = h24_v23;
-#line 1031 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 131 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R23_retain(&t49);
 #line 131 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     t50 = (h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R24){.f_inner = t49};
@@ -1035,19 +1011,18 @@ bb0:
     t114 = h57_own57;
 #line 131 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h57_own57 = t50;
-#line 1039 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 131 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R24_release(&t114);
 #line 131 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     t115 = h25_v24;
-#line 1043 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 131 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R24_retain(&t50);
 #line 131 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h25_v24 = t50;
-#line 1047 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 131 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R24_release(&t115);
-#line 132 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     t51 = h25_v24;
-#line 1051 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 132 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R24_retain(&t51);
 #line 132 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     t52 = (h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R25){.f_inner = t51};
@@ -1055,19 +1030,18 @@ bb0:
     t116 = h58_own58;
 #line 132 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h58_own58 = t52;
-#line 1059 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 132 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R25_release(&t116);
 #line 132 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     t117 = h26_v25;
-#line 1063 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 132 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R25_retain(&t52);
 #line 132 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h26_v25 = t52;
-#line 1067 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 132 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R25_release(&t117);
-#line 133 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     t53 = h26_v25;
-#line 1071 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 133 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R25_retain(&t53);
 #line 133 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     t54 = (h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R26){.f_inner = t53};
@@ -1075,19 +1049,18 @@ bb0:
     t118 = h59_own59;
 #line 133 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h59_own59 = t54;
-#line 1079 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 133 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R26_release(&t118);
 #line 133 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     t119 = h27_v26;
-#line 1083 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 133 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R26_retain(&t54);
 #line 133 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h27_v26 = t54;
-#line 1087 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 133 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R26_release(&t119);
-#line 134 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     t55 = h27_v26;
-#line 1091 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 134 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R26_retain(&t55);
 #line 134 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     t56 = (h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R27){.f_inner = t55};
@@ -1095,19 +1068,18 @@ bb0:
     t120 = h60_own60;
 #line 134 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h60_own60 = t56;
-#line 1099 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 134 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R27_release(&t120);
 #line 134 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     t121 = h28_v27;
-#line 1103 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 134 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R27_retain(&t56);
 #line 134 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h28_v27 = t56;
-#line 1107 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 134 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R27_release(&t121);
-#line 135 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     t57 = h28_v27;
-#line 1111 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 135 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R27_retain(&t57);
 #line 135 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     t58 = (h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R28){.f_inner = t57};
@@ -1115,19 +1087,18 @@ bb0:
     t122 = h61_own61;
 #line 135 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h61_own61 = t58;
-#line 1119 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 135 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R28_release(&t122);
 #line 135 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     t123 = h29_v28;
-#line 1123 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 135 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R28_retain(&t58);
 #line 135 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h29_v28 = t58;
-#line 1127 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 135 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R28_release(&t123);
-#line 136 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     t59 = h29_v28;
-#line 1131 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 136 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R28_retain(&t59);
 #line 136 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     t60 = (h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R29){.f_inner = t59};
@@ -1135,19 +1106,18 @@ bb0:
     t124 = h62_own62;
 #line 136 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h62_own62 = t60;
-#line 1139 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 136 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R29_release(&t124);
 #line 136 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     t125 = h30_v29;
-#line 1143 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 136 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R29_retain(&t60);
 #line 136 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h30_v29 = t60;
-#line 1147 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 136 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R29_release(&t125);
-#line 137 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     t61 = h30_v29;
-#line 1151 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 137 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R29_retain(&t61);
 #line 137 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     t62 = (h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R30){.f_inner = t61};
@@ -1155,19 +1125,18 @@ bb0:
     t126 = h63_own63;
 #line 137 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h63_own63 = t62;
-#line 1159 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 137 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R30_release(&t126);
 #line 137 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     t127 = h31_v30;
-#line 1163 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 137 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R30_retain(&t62);
 #line 137 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h31_v30 = t62;
-#line 1167 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 137 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R30_release(&t127);
-#line 138 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     t63 = h31_v30;
-#line 1171 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 138 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R30_retain(&t63);
 #line 138 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     t64 = (h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R31){.f_inner = t63};
@@ -1175,19 +1144,18 @@ bb0:
     t128 = h64_own64;
 #line 138 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h64_own64 = t64;
-#line 1179 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 138 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R31_release(&t128);
 #line 138 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     t129 = h32_v31;
-#line 1183 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 138 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R31_retain(&t64);
 #line 138 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h32_v31 = t64;
-#line 1187 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 138 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R31_release(&t129);
-#line 139 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     t65 = h32_v31;
-#line 1191 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 1159 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R31_retain(&t65);
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R0_release(hero_slot_escape(&h1_v0));
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R1_release(hero_slot_escape(&h2_v1));
@@ -1258,7 +1226,7 @@ bb0:
 
 #line 141 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
 void h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_main(void) {
-#line 1262 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 1230 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R31 h0_kept = {0};
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R31 h1_own1 = {0};
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R31 h2_own2 = {0};
@@ -1346,15 +1314,15 @@ bb0:
     t71 = h1_own1;
 #line 142 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h1_own1 = t2;
-#line 1350 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 142 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R31_release(&t71);
 #line 142 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     t72 = h0_kept;
-#line 1354 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 142 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R31_retain(&t2);
 #line 142 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h0_kept = t2;
-#line 1358 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 142 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R31_release(&t72);
 #line 144 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     t3 = h0_kept;
@@ -1434,15 +1402,15 @@ bb0:
     t73 = h2_own2;
 #line 146 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h2_own2 = t37;
-#line 1438 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 146 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R31_release(&t73);
 #line 146 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     t74 = h0_kept;
-#line 1442 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 146 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R31_retain(&t37);
 #line 146 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h0_kept = t37;
-#line 1446 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 146 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R31_release(&t74);
 #line 148 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     t38 = h0_kept;
@@ -1514,7 +1482,7 @@ bb0:
     hero_print_str(t70);
 #line 147 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     hero_print_end();
-#line 1518 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
+#line 1486 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R31_release(hero_slot_escape(&h0_kept));
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R31_release(hero_slot_escape(&h1_own1));
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R31_release(hero_slot_escape(&h2_own2));

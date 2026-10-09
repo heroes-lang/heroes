@@ -384,7 +384,7 @@ bb0:
     t13 = h1_own1;
 #line 44 "tests/golden/run/fixedbugs-173-a-regular-expression-gets-the-bytes-its-author-wrote.hero"
     h1_own1 = t7;
-#line 388 "fixedbugs173aregularexpressiongetsthebytesitsauthorwrote.c"
+#line 44 "tests/golden/run/fixedbugs-173-a-regular-expression-gets-the-bytes-its-author-wrote.hero"
     hero_str_decref(t13);
 #line 44 "tests/golden/run/fixedbugs-173-a-regular-expression-gets-the-bytes-its-author-wrote.hero"
     t8 = HERO_STR_LIT(hero_str_401b);
@@ -394,7 +394,7 @@ bb0:
     t14 = h2_own2;
 #line 44 "tests/golden/run/fixedbugs-173-a-regular-expression-gets-the-bytes-its-author-wrote.hero"
     h2_own2 = t9;
-#line 398 "fixedbugs173aregularexpressiongetsthebytesitsauthorwrote.c"
+#line 44 "tests/golden/run/fixedbugs-173-a-regular-expression-gets-the-bytes-its-author-wrote.hero"
     hero_str_decref(t14);
 #line 44 "tests/golden/run/fixedbugs-173-a-regular-expression-gets-the-bytes-its-author-wrote.hero"
     t10 = hero_str_concat(t9, t8);
@@ -402,7 +402,7 @@ bb0:
     t15 = h3_own3;
 #line 44 "tests/golden/run/fixedbugs-173-a-regular-expression-gets-the-bytes-its-author-wrote.hero"
     h3_own3 = t10;
-#line 406 "fixedbugs173aregularexpressiongetsthebytesitsauthorwrote.c"
+#line 44 "tests/golden/run/fixedbugs-173-a-regular-expression-gets-the-bytes-its-author-wrote.hero"
     hero_str_decref(t15);
 #line 44 "tests/golden/run/fixedbugs-173-a-regular-expression-gets-the-bytes-its-author-wrote.hero"
     t11 = HERO_STR_LIT(hero_str_dfc31);

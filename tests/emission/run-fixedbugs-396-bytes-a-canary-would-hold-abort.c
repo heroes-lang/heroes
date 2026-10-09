@@ -117,17 +117,16 @@ bb0:
     t7 = h1_own1;
 #line 11 "tests/golden/run/fixedbugs-396-bytes-a-canary-would-hold-abort.hero"
     h1_own1 = t1;
-#line 121 "fixedbugs396bytesacanarywouldholdabort.c"
+#line 11 "tests/golden/run/fixedbugs-396-bytes-a-canary-would-hold-abort.hero"
     hero_array_decref(t7);
 #line 11 "tests/golden/run/fixedbugs-396-bytes-a-canary-would-hold-abort.hero"
     t8 = h0_s;
-#line 125 "fixedbugs396bytesacanarywouldholdabort.c"
+#line 11 "tests/golden/run/fixedbugs-396-bytes-a-canary-would-hold-abort.hero"
     hero_array_incref(t1);
 #line 11 "tests/golden/run/fixedbugs-396-bytes-a-canary-would-hold-abort.hero"
     h0_s = t1;
-#line 129 "fixedbugs396bytesacanarywouldholdabort.c"
+#line 11 "tests/golden/run/fixedbugs-396-bytes-a-canary-would-hold-abort.hero"
     hero_array_decref(t8);
-#line 12 "tests/golden/run/fixedbugs-396-bytes-a-canary-would-hold-abort.hero"
     t2 = HERO_STR_LIT(hero_str_43560e4d);
 #line 12 "tests/golden/run/fixedbugs-396-bytes-a-canary-would-hold-abort.hero"
     hero_print_str(t2);
@@ -159,7 +158,7 @@ bb0:
     hero_print_int(t6);
 #line 14 "tests/golden/run/fixedbugs-396-bytes-a-canary-would-hold-abort.hero"
     hero_print_end();
-#line 163 "fixedbugs396bytesacanarywouldholdabort.c"
+#line 162 "fixedbugs396bytesacanarywouldholdabort.c"
     hero_array_release_at(&h0_s);
     hero_array_release_at(&h1_own1);
     return;

@@ -415,17 +415,16 @@ bb0:
     t40 = h6_own6;
 #line 59 "examples/montecarlo/main.hero"
     h6_own6 = t1;
-#line 419 "main.c"
+#line 59 "examples/montecarlo/main.hero"
     hero_array_decref(t40);
 #line 59 "examples/montecarlo/main.hero"
     t41 = h0_handles;
-#line 423 "main.c"
+#line 59 "examples/montecarlo/main.hero"
     hero_array_incref(t1);
 #line 59 "examples/montecarlo/main.hero"
     h0_handles = t1;
-#line 427 "main.c"
+#line 59 "examples/montecarlo/main.hero"
     hero_array_decref(t41);
-#line 60 "examples/montecarlo/main.hero"
     t2 = INT64_C(0);
 #line 60 "examples/montecarlo/main.hero"
     h1_i = t2;
@@ -469,11 +468,11 @@ bb3:
     t15 = h0_handles;
 #line 68 "examples/montecarlo/main.hero"
     t42 = h3_xs0;
-#line 473 "main.c"
+#line 68 "examples/montecarlo/main.hero"
     hero_array_incref(t15);
 #line 68 "examples/montecarlo/main.hero"
     h3_xs0 = t15;
-#line 477 "main.c"
+#line 68 "examples/montecarlo/main.hero"
     hero_array_decref(t42);
 #line 68 "examples/montecarlo/main.hero"
     t16 = INT64_C(0);
@@ -546,7 +545,7 @@ bb7:
     t38 = hero_int_to_f64(t37);
 #line 71 "examples/montecarlo/main.hero"
     t39 = t34 / t38;
-#line 550 "main.c"
+#line 549 "main.c"
     hero_array_release_at(&h0_handles);
     hero_array_release_at(&h3_xs0);
     hero_array_release_at(&h6_own6);
@@ -555,7 +554,7 @@ bb7:
 
 #line 73 "examples/montecarlo/main.hero"
 void h_main_main(void) {
-#line 559 "main.c"
+#line 558 "main.c"
     HeroStr t1;
     int64_t t2;
     int64_t t3;
@@ -598,7 +597,7 @@ bb0:
     hero_print_end();
 #line 74 "examples/montecarlo/main.hero"
     return;
-#line 602 "main.c"
+#line 601 "main.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

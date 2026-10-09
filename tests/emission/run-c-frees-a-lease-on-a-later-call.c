@@ -113,13 +113,12 @@ bb0:
     t1 = HERO_STR_LIT(hero_str_35d9fe9b);
 #line 12 "tests/golden/run/c-frees-a-lease-on-a-later-call.hero"
     t6 = h0_x;
-#line 117 "cfreesaleaseonalatercall.c"
+#line 12 "tests/golden/run/c-frees-a-lease-on-a-later-call.hero"
     hero_str_incref(t1);
 #line 12 "tests/golden/run/c-frees-a-lease-on-a-later-call.hero"
     h0_x = t1;
-#line 121 "cfreesaleaseonalatercall.c"
+#line 12 "tests/golden/run/c-frees-a-lease-on-a-later-call.hero"
     hero_str_decref(t6);
-#line 13 "tests/golden/run/c-frees-a-lease-on-a-later-call.hero"
     t2 = h0_x;
 #line 13 "tests/golden/run/c-frees-a-lease-on-a-later-call.hero"
     t3 = hero_str_held(t2);
@@ -135,7 +134,7 @@ bb0:
     hero_print_end();
     (void)later_free();
     hero_held_release(&h1_c);
-#line 139 "cfreesaleaseonalatercall.c"
+#line 138 "cfreesaleaseonalatercall.c"
     hero_str_release_at(&h0_x);
     return;
 }

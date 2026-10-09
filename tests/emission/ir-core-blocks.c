@@ -271,13 +271,15 @@ bb2:
     t8 = HERO_STR_LIT(hero_str_1073a930);
 #line 22 "tests/golden/ir/core-blocks.hero"
     t12 = h2_r0;
-#line 275 "coreblocks.c"
+#line 22 "tests/golden/ir/core-blocks.hero"
     hero_str_incref(t8);
 #line 22 "tests/golden/ir/core-blocks.hero"
     h2_r0 = t8;
-#line 279 "coreblocks.c"
+#line 22 "tests/golden/ir/core-blocks.hero"
     hero_str_decref(t12);
+#line 22 "tests/golden/ir/core-blocks.hero"
     goto bb1;
+#line 22 "tests/golden/ir/core-blocks.hero"
 bb3:
 #line 22 "tests/golden/ir/core-blocks.hero"
     t5 = h1_s0;
@@ -293,27 +295,33 @@ bb4:
     t9 = HERO_STR_LIT(hero_str_1d4996);
 #line 22 "tests/golden/ir/core-blocks.hero"
     t13 = h2_r0;
-#line 297 "coreblocks.c"
+#line 22 "tests/golden/ir/core-blocks.hero"
     hero_str_incref(t9);
 #line 22 "tests/golden/ir/core-blocks.hero"
     h2_r0 = t9;
-#line 301 "coreblocks.c"
+#line 22 "tests/golden/ir/core-blocks.hero"
     hero_str_decref(t13);
+#line 22 "tests/golden/ir/core-blocks.hero"
     goto bb1;
+#line 22 "tests/golden/ir/core-blocks.hero"
 bb5:
+#line 22 "tests/golden/ir/core-blocks.hero"
     goto bb6;
+#line 22 "tests/golden/ir/core-blocks.hero"
 bb6:
 #line 25 "tests/golden/ir/core-blocks.hero"
     t10 = HERO_STR_LIT(hero_str_eb4aa2b);
 #line 22 "tests/golden/ir/core-blocks.hero"
     t14 = h2_r0;
-#line 311 "coreblocks.c"
+#line 22 "tests/golden/ir/core-blocks.hero"
     hero_str_incref(t10);
 #line 22 "tests/golden/ir/core-blocks.hero"
     h2_r0 = t10;
-#line 315 "coreblocks.c"
+#line 22 "tests/golden/ir/core-blocks.hero"
     hero_str_decref(t14);
+#line 22 "tests/golden/ir/core-blocks.hero"
     goto bb1;
+#line 325 "coreblocks.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

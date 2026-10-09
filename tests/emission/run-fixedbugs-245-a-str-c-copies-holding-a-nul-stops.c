@@ -123,17 +123,16 @@ bb0:
     t10 = h1_own1;
 #line 14 "tests/golden/run/fixedbugs-245-a-str-c-copies-holding-a-nul-stops.hero"
     h1_own1 = t1;
-#line 127 "fixedbugs245astrccopiesholdinganulstops.c"
+#line 14 "tests/golden/run/fixedbugs-245-a-str-c-copies-holding-a-nul-stops.hero"
     hero_str_decref(t10);
 #line 14 "tests/golden/run/fixedbugs-245-a-str-c-copies-holding-a-nul-stops.hero"
     t11 = h0_made;
-#line 131 "fixedbugs245astrccopiesholdinganulstops.c"
+#line 14 "tests/golden/run/fixedbugs-245-a-str-c-copies-holding-a-nul-stops.hero"
     hero_str_incref(t1);
 #line 14 "tests/golden/run/fixedbugs-245-a-str-c-copies-holding-a-nul-stops.hero"
     h0_made = t1;
-#line 135 "fixedbugs245astrccopiesholdinganulstops.c"
+#line 14 "tests/golden/run/fixedbugs-245-a-str-c-copies-holding-a-nul-stops.hero"
     hero_str_decref(t11);
-#line 15 "tests/golden/run/fixedbugs-245-a-str-c-copies-holding-a-nul-stops.hero"
     t2 = HERO_STR_LIT(hero_str_41bb0df2);
 #line 15 "tests/golden/run/fixedbugs-245-a-str-c-copies-holding-a-nul-stops.hero"
     t3 = h0_made;
@@ -162,7 +161,7 @@ bb0:
     hero_print_uint(t9);
 #line 16 "tests/golden/run/fixedbugs-245-a-str-c-copies-holding-a-nul-stops.hero"
     hero_print_end();
-#line 166 "fixedbugs245astrccopiesholdinganulstops.c"
+#line 165 "fixedbugs245astrccopiesholdinganulstops.c"
     hero_str_release_at(&h0_made);
     hero_str_release_at(&h1_own1);
     return;

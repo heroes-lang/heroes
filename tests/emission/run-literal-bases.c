@@ -236,7 +236,7 @@ bb0:
     t41 = h0_own0;
 #line 35 "tests/golden/run/literal-bases.hero"
     h0_own0 = t23;
-#line 240 "literalbases.c"
+#line 35 "tests/golden/run/literal-bases.hero"
     hero_str_decref(t41);
 #line 35 "tests/golden/run/literal-bases.hero"
     hero_print_str(t21);

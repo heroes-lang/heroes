@@ -182,15 +182,15 @@ bb0:
     t36 = h4_own4;
 #line 26 "tests/golden/run/abort-a-fixed-array-element-written-past-its-length.hero"
     h4_own4 = t10;
-#line 186 "abortafixedarrayelementwrittenpastitslength.c"
+#line 26 "tests/golden/run/abort-a-fixed-array-element-written-past-its-length.hero"
     hero_array_decref(t36);
 #line 26 "tests/golden/run/abort-a-fixed-array-element-written-past-its-length.hero"
     t37 = h1_xs0;
-#line 190 "abortafixedarrayelementwrittenpastitslength.c"
+#line 26 "tests/golden/run/abort-a-fixed-array-element-written-past-its-length.hero"
     hero_array_incref(t10);
 #line 26 "tests/golden/run/abort-a-fixed-array-element-written-past-its-length.hero"
     h1_xs0 = t10;
-#line 194 "abortafixedarrayelementwrittenpastitslength.c"
+#line 26 "tests/golden/run/abort-a-fixed-array-element-written-past-its-length.hero"
     hero_array_decref(t37);
 #line 26 "tests/golden/run/abort-a-fixed-array-element-written-past-its-length.hero"
     t11 = INT64_C(0);
@@ -310,17 +310,16 @@ bb0:
     t13 = h4_own4;
 #line 27 "<heroes library>"
     h4_own4 = t1;
-#line 314 "abortafixedarrayelementwrittenpastitslength.c"
+#line 27 "<heroes library>"
     hero_array_decref(t13);
 #line 27 "<heroes library>"
     t14 = h2_out;
-#line 318 "abortafixedarrayelementwrittenpastitslength.c"
+#line 27 "<heroes library>"
     hero_array_incref(t1);
 #line 27 "<heroes library>"
     h2_out = t1;
-#line 322 "abortafixedarrayelementwrittenpastitslength.c"
+#line 27 "<heroes library>"
     hero_array_decref(t14);
-#line 28 "<heroes library>"
     t2 = h0_from;
 #line 28 "<heroes library>"
     h3_i = t2;
@@ -352,7 +351,7 @@ bb2:
 #line 31 "<heroes library>"
 bb3:
     t12 = h2_out;
-#line 356 "abortafixedarrayelementwrittenpastitslength.c"
+#line 355 "abortafixedarrayelementwrittenpastitslength.c"
     hero_array_incref(t12);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h4_own4);

@@ -120,17 +120,16 @@ bb0:
     t7 = h1_own1;
 #line 31 "tests/golden/run/fixedbugs-c-writes-over-a-strings-header.hero"
     h1_own1 = t3;
-#line 124 "fixedbugscwritesoverastringsheader.c"
+#line 31 "tests/golden/run/fixedbugs-c-writes-over-a-strings-header.hero"
     hero_str_decref(t7);
 #line 31 "tests/golden/run/fixedbugs-c-writes-over-a-strings-header.hero"
     t8 = h0_word;
-#line 128 "fixedbugscwritesoverastringsheader.c"
+#line 31 "tests/golden/run/fixedbugs-c-writes-over-a-strings-header.hero"
     hero_str_incref(t3);
 #line 31 "tests/golden/run/fixedbugs-c-writes-over-a-strings-header.hero"
     h0_word = t3;
-#line 132 "fixedbugscwritesoverastringsheader.c"
+#line 31 "tests/golden/run/fixedbugs-c-writes-over-a-strings-header.hero"
     hero_str_decref(t8);
-#line 32 "tests/golden/run/fixedbugs-c-writes-over-a-strings-header.hero"
     t4 = h0_word;
 #line 32 "tests/golden/run/fixedbugs-c-writes-over-a-strings-header.hero"
     t5 = hero_str_lend(t4);
@@ -141,7 +140,7 @@ bb0:
     hero_print_str(t6);
 #line 33 "tests/golden/run/fixedbugs-c-writes-over-a-strings-header.hero"
     hero_print_end();
-#line 145 "fixedbugscwritesoverastringsheader.c"
+#line 144 "fixedbugscwritesoverastringsheader.c"
     hero_str_release_at(&h0_word);
     hero_str_release_at(&h1_own1);
     return;
