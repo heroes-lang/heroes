@@ -1,0 +1,1 @@
+tests/golden/permissive/fixedbugs-457-the-control-arm-drops-the-endless-recursion-and-keeps-a-type-error.hero:10:12: error[type_mismatch]: expected `i64`, found `str`

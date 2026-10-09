@@ -1,0 +1,271 @@
+# Defect 457, 2026-10-07 (lane b14-resolve), and panel 199's R1, ratified
+# 2026-10-09: a function whose every path calls the function itself before it
+# returns passed `check` and ran until the stack ended at `-O0`, or for ever
+# at `-O2`. The shape a model meets is a UFCS call on a name it believes is a
+# method: inside `function bytes`, `s.bytes()` is `bytes(s)`, the function
+# itself. Now the call is refused, `endless_recursion`, told once per function
+# at the first such call. What a way out is: a `return`, a `?`, the end of a
+# body, `exit(code:)`, `assert false`, a `while true` with no `break` of its
+# own, and a call that may end the program: through a function value (a
+# constant's included) or a field, or to a function that may, followed through
+# what it calls and what it is handed (reading R4). A helper that only
+# computes is no way out, and an overflow or an index out of bounds is none
+# either. A call is made once its arguments are, so a self-call among them
+# comes first; and a function handed to the function itself is no way out by
+# being handed (the landing's shapes, below the sitting's).
+
+variant Way
+    left
+    right
+
+record Hooks
+    act: (function(i64) -> ())
+
+record Plain
+    n: i64
+
+constant LIMIT: i64
+    5
+
+constant HANDLER: (function(i64) -> ())
+    stop_at_three
+
+# --- refused: every path calls the function itself
+
+function every_arm(w: Way) -> i64
+    match w
+        .left  => return every_arm(w: .right)  #~ endless_recursion
+        .right => return every_arm(w: .left)
+
+function bytes(s: str) -> [u8]
+    return s.bytes()  #~ endless_recursion
+
+function count(xs: [i64]) -> i64
+    return xs.count()  #~ endless_recursion
+
+function same<T>(x: T) -> T
+    return same(x)  #~ endless_recursion
+
+function forever(n: i64) -> i64
+    return forever(n)  #~ endless_recursion
+
+function fact(n: i64) -> i64
+    return n * fact(n - 1)  #~ endless_recursion
+
+function spins(n: i64) -> i64
+    while true
+        return spins(n: n)  #~ endless_recursion
+
+function in_condition(n: i64) -> i64
+    if in_condition(n: n) > 0  #~ endless_recursion
+        return 1
+    return 0
+
+function unit_loop()
+    unit_loop()  #~ endless_recursion
+
+function both_arms_of_an_if(c: bool, n: i64) -> i64
+    if c
+        return both_arms_of_an_if(c: !c, n: n)  #~ endless_recursion
+    else
+        return both_arms_of_an_if(c: !c, n: n)
+
+function in_every_arm_of_a_value_match(w: Way) -> i64
+    x = match w
+        .left  => in_every_arm_of_a_value_match(w: .right)  #~ endless_recursion
+        .right => in_every_arm_of_a_value_match(w: .left)
+
+    return x
+
+# A print is no way out, and an `@` first parameter takes the call by name.
+function yes(s: str)
+    print(s)
+    yes(s)  #~ endless_recursion
+
+function climb(@n: i64) -> i64
+    return climb(@n)  #~ endless_recursion
+
+# A helper that only computes, called or handed to the library, is no way out
+# (the sitting's critic, second pass).
+function evens(xs: [i64]) -> i64
+    return xs.filter(is_even).evens()  #~ endless_recursion
+
+function is_even(x: i64) -> bool
+    return x % 2 == 0
+
+function total(xs: [i64]) -> i64
+    return xs.map(twice).total()  #~ endless_recursion
+
+function twice(x: i64) -> i64
+    return x * 2
+
+function factorial(n: i64) -> i64
+    return n * factorial(pred(n))  #~ endless_recursion
+
+function pred(n: i64) -> i64
+    return n - 1
+
+function helped(n: i64) -> i64
+    return helped(helper(n))  #~ endless_recursion
+
+function helper(n: i64) -> i64
+    return n + 1
+
+# The landing's: a call among the arguments is made first, so `stop` cannot
+# end anything before the self-call; a function value or a function handed to
+# the function itself reaches this same body; a constant that holds no
+# function is a value.
+function stopped_after(n: i64) -> i64
+    return stop_or_pass(stopped_after(n))  #~ endless_recursion
+
+function handing_on(n: i64, act: (function(i64) -> ())) -> i64
+    return 1 + handing_on(n: n, act: act)  #~ endless_recursion
+
+function handing_a_stop(n: i64, act: (function(i64) -> ())) -> i64
+    x = handing_a_stop(n: n, act: stop_at_three)  #~ endless_recursion
+    act(x)
+    return x
+
+function by_a_constant(n: i64) -> i64
+    return by_a_constant(n + LIMIT)  #~ endless_recursion
+
+function stop_or_pass(n: i64) -> i64
+    if n > 3
+        exit(code: 0)
+    return n
+
+# --- legal: a path returns, ends, or calls something that may end the program
+
+function behind_if(n: i64) -> i64
+    if n > 0
+        return 1
+    return behind_if(n: n - 1)
+
+function countdown(n: i64)
+    if n > 0
+        countdown(n: n - 1)
+
+function after_try(n: i64) -> i64?
+    text = read_file(path: n.to_str())?
+    return ok(after_try(n: text.len()).must())
+
+function serve(n: i64) -> i64
+    if n > 3
+        exit(code: 0)
+    print(n)
+    return serve(n + 1)
+
+function ends_on_assert(n: i64) -> i64
+    if n > 3
+        assert false
+    return ends_on_assert(n: n + 1)
+
+function and_right(n: i64) -> bool
+    return n > 0 && and_right(n: n - 1)
+
+function or_right(n: i64) -> bool
+    return n > 0 || or_right(n: n - 1)
+
+function for_body(xs: [i64]) -> i64
+    for x in xs
+        print(for_body(xs: [x]))
+
+    return 0
+
+function while_body(n: i64) -> i64
+    while n > 0
+        print(while_body(n: n - 1))
+        break
+
+    return 0
+
+function loop_with_a_way_out(n: i64) -> i64
+    while true
+        if n > 3
+            return n
+        print(loop_with_a_way_out(n: n + 1))
+
+    return 0
+
+function loop_breaks_before_the_call(n: i64) -> i64
+    while true
+        if n > 3
+            break
+        print(loop_breaks_before_the_call(n: n + 1))
+
+    return 0
+
+# A loop that ends by `exit` in a callee, a callback or a field's function: a
+# correct program, which prints 0 1 2 and exits 0.
+function stop_at_three(n: i64)
+    if n > 2
+        exit(code: 0)
+    print(n)
+
+function turn(n: i64)
+    stop_at_three(n: n)
+    turn(n: n + 1)
+
+function turn_with(n: i64, act: (function(i64) -> ()))
+    act(n)
+    turn_with(n: n + 1, act: act)
+
+function turn_in(n: i64, h: Hooks)
+    h.act(n)
+    turn_in(n: n + 1, h: h)
+
+# The landing's: a call that may end among the self-call's own arguments, a
+# constant holding a function, a callback the body calls before it hands it
+# on, a callback handed to another function, and a function that may end
+# handed to the library's `map`.
+function stopping_first(n: i64) -> i64
+    return stopping_first(stop_or_pass(n + 1))
+
+function by_a_handler(n: i64)
+    HANDLER(n)
+    by_a_handler(n: n + 1)
+
+function visiting(n: i64, visit: (function(i64) -> ()))
+    visit(n)
+    visiting(n: n + 1, visit: visit)
+
+function apply(f: (function(i64) -> ()), n: i64)
+    f(n)
+
+function applying(n: i64, act: (function(i64) -> ()))
+    apply(act, n)
+    applying(n: n + 1, act: act)
+
+function mapping(xs: [i64]) -> i64
+    return mapping(xs.map(stop_or_pass))
+
+# The spec-warden's `hidden2`: the callee ends the program on one path only.
+function stop_after(n: i64)
+    if n > 3
+        exit(code: 0)
+
+function serve_after(n: i64) -> i64
+    stop_after(n)
+    print(n)
+    return serve_after(n + 1)
+
+# What the rule leaves to the run, said here so it is not mistaken for a hole in
+# a test: a self-call through a function value, and mutual recursion.
+function through_a_value(n: i64) -> i64
+    f = through_a_value
+    return f(n)
+
+function pong(n: i64) -> i64
+    return ping(n)
+
+function ping(n: i64) -> i64
+    return pong(n)
+
+# A variant case named like the function is the case, never a call.
+function left(n: i64) -> Way
+    x = Plain(n: n)
+    print(x.n)
+    return .left
+
+function main()
+    print(every_arm(w: .left))
