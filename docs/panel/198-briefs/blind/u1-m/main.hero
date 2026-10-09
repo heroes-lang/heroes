@@ -1,0 +1,54 @@
+extern "SDL3/SDL.h" package "sdl3"
+    record SDL_KeyboardEvent
+        type: u32
+        reserved: u32
+        timestamp: u64
+        windowID: u32
+        which: u32
+        scancode: u32
+        key: u32
+        mod: u16
+        raw: u16
+        down: bool
+        repeat: bool
+    record SDL_UserEvent
+        type: u32
+        reserved: u32
+        timestamp: u64
+        windowID: u32
+        code: i32
+        data1: ptr
+        data2: ptr
+    record SDL_Event
+        type: u32
+        key: SDL_KeyboardEvent
+        user: SDL_UserEvent
+    function SDL_Init(flags: u32) -> bool
+    function SDL_PushEvent(@event: SDL_Event) -> bool
+    function SDL_PollEvent(@event: SDL_Event) -> bool
+    function SDL_Quit()
+
+function main()
+    print(SDL_Init(flags: 0x4000))
+    sent: SDL_Event @ SDL_Event(
+        user: SDL_UserEvent(type: 0x8000, reserved: 0, timestamp: 0, windowID: 0, code: 42, data1: nullptr, data2: nullptr)
+    )
+    print(SDL_PushEvent(@sent))
+    found: bool @ false
+    code: i32 @ 0
+    keyed: u32 @ 0
+    tries: i64 @ 0
+
+    while !found && tries < 64
+        got: SDL_Event @ SDL_Event(type: 0)
+
+        if SDL_PollEvent(@got) && got.type == 0x8000
+            found @ true
+            code @ got.user.code
+            keyed @ got.key.type
+        tries @ tries + 1
+
+    print(found)
+    print(code)
+    print(keyed == 0x8000)
+    SDL_Quit()

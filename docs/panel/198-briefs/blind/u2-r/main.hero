@@ -1,0 +1,5 @@
+extern "curl/curl.h" package "libcurl"
+    function curl_version() -> cstr
+
+function main()
+    print(validated(c: curl_version()).default("<unnamed>"))
