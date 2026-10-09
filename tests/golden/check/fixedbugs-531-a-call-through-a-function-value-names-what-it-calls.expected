@@ -1,0 +1,10 @@
+tests/golden/check/fixedbugs-531-a-call-through-a-function-value-names-what-it-calls.hero:26:12: error[wrong_arity]: `g` takes 1 argument(s), found 2
+tests/golden/check/fixedbugs-531-a-call-through-a-function-value-names-what-it-calls.hero:30:11: error[wrong_arity]: `f` takes 1 argument(s), found 2
+tests/golden/check/fixedbugs-531-a-call-through-a-function-value-names-what-it-calls.hero:32:11: error[wrong_arity]: `r.op` takes 1 argument(s), found 2
+tests/golden/check/fixedbugs-531-a-call-through-a-function-value-names-what-it-calls.hero:33:11: error[wrong_arity]: `TWICE` takes 1 argument(s), found 2
+tests/golden/check/fixedbugs-531-a-call-through-a-function-value-names-what-it-calls.hero:35:11: error[wrong_arity]: `fs[0]` takes 1 argument(s), found 0
+tests/golden/check/fixedbugs-531-a-call-through-a-function-value-names-what-it-calls.hero:36:11: error[wrong_arity]: `pick()` takes 1 argument(s), found 2
+tests/golden/check/fixedbugs-531-a-call-through-a-function-value-names-what-it-calls.hero:38:9: error[wrong_arity]: `fs[ 0]` takes 1 argument(s), found 2
+tests/golden/check/fixedbugs-531-a-call-through-a-function-value-names-what-it-calls.hero:47:16: error[needs_label]: two of `move`'s parameters are `str`, so every one of them is named at the call site — this one is `from` in the order written, or `to` in the other order
+tests/golden/check/fixedbugs-531-a-call-through-a-function-value-names-what-it-calls.hero:47:21: error[needs_label]: two of `move`'s parameters are `str`, so every one of them is named at the call site — this one is `to` in the order written, or `from` in the other order
+tests/golden/check/fixedbugs-531-a-call-through-a-function-value-names-what-it-calls.hero:48:27: error[wrong_label]: `move` has nothing called `too` at this position — it is `to`
