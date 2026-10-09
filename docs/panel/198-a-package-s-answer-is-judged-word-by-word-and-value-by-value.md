@@ -178,7 +178,7 @@ second pass.
   sentence, and the resolution writes none; a word of the list is not a form of
   the language and costs no spec token, so Principle 0 does not bar K.
 
-## The resolution, provisional: author ratification pending
+## The resolution, ratified by the author (below)
 
 The most robust and complete route at every disagreement (CLAUDE.md § 4,
 CL-040); what conservative would have been is below the list.
@@ -260,4 +260,11 @@ would need ld64's reading of such a value measured first.
 
 ## Author's verdict
 
-Pending. The ratification is its own issue, `issues/2026-10/09/2026-10-09-1130-panel-198-ratify-amend-or-overturn-r1-to-r9-a-package-s.md`.
+**RATIFIED, 2026-10-09**, R1 to R9 as written above, the author answering
+through the question widget between 11:30 and 11:38 by the clocks read before
+the question and after the answer, choosing *ratify R1-R9* over the
+conservative alternative, over K without `-isystem` and over *I want to read
+it first*, on the coordinator's summary of the route and its price. Recorded
+as a reading (CLAUDE.md § 4). The author may overturn it. The ratification
+issue is
+`issues/2026-10/09/2026-10-09-1130-panel-198-ratify-amend-or-overturn-r1-to-r9-a-package-s.md`.
