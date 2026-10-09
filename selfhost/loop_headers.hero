@@ -19,6 +19,7 @@ use state
 use closers
 use separator_runs
 use word_place
+use lex_asked
 
 # The index in `l.open_brackets` of the `(` right after a `for`, C's
 # three-clause header `for (i = 0; i < n; i++)`, whose `;` are its own and
@@ -30,33 +31,43 @@ use word_place
 # a hole opened inside it is the hole's, `for (f"{a; b}")` (defect 312). An
 # `in` past it makes it an iteration written in parentheses, `for (x in
 # xs)`, and no C header.
-function for_header(l: state.LexState, text: str) -> i64
-    return opened_by(l, text: text, word: "for")
+function for_header(@l: state.LexState, text: str) -> i64
+    return opened_by(@l, text: text, word: "for")
 
 # The index in `l.open_brackets` of the innermost `(` above the innermost
 # hole whose line has `word` the word before it, or -1; for `for`, -1 where
-# an `in` stands past it (`for_header`).
-function opened_by(l: state.LexState, text: str, word: str) -> i64
+# an `in` stands past it (`for_header`). That no `(` stands after the word
+# is remembered until an opener is pushed (`lex_asked.hero`), since a stack
+# with no push since is a prefix of the one read: 4,000 `(` over 4,000
+# lines read the stack at every line (defect 495).
+function opened_by(@l: state.LexState, text: str, word: str) -> i64
     floor: i64 @ 0
 
     if l.holes.len() > 0
         floor @ l.holes[l.holes.len() - 1]
+    slot: i64 @ -1
+
+    if word == "for"
+        slot @ 0
+    else if word == "while"
+        slot @ 1
+
+    if slot >= 0 && l.asked[lex_asked.OPENED_AT + slot] == l.asked[lex_asked.PUSHES] && floor >= l.asked[lex_asked.OPENED_FLOOR + slot]
+        return -1
     k: i64 @ l.open_brackets.len() - 1
 
     while k >= floor
         open = l.open_brackets[k].start
 
         if text[open] == '(' && word_place.word_ending(text, at: word_place.significant_before(text, at: open, floor: 0) + 1) == word
-            i: i64 @ l.tokens.len() - 1
-
-            while word == "for" && i > 0 && l.tokens[i].span.start > open
-                if l.tokens[i].kind == .kw_in
-                    return -1
-                i @ i - 1
-
+            if word == "for" && in_past(@l, open: open)
+                return -1
             return k
         k @ k - 1
 
+    if slot >= 0
+        l.asked[lex_asked.OPENED_AT + slot] @ l.asked[lex_asked.PUSHES]
+        l.asked[lex_asked.OPENED_FLOOR + slot] @ floor
     return -1
 
 # A `;` of C's `for` header at `at`, left to the parser's one report of it:
@@ -69,15 +80,15 @@ function opened_by(l: state.LexState, text: str, word: str) -> i64
 # asks no line below to go on, and the body below is read as one. True
 # where the `;` was taken so.
 function header_semicolon(@l: state.LexState, text: str, at: i64) -> bool
-    header = for_header(l, text)
+    header = for_header(@l, text)
 
-    if header >= 0 && (header == l.open_brackets.len() - 1 || semicolons(text, from: l.open_brackets[header].start, at: at) <= 2)
+    if header >= 0 && (header == l.open_brackets.len() - 1 || semicolons_of(@l, text, from: l.open_brackets[header].start, at: at) <= 2)
         state.error_token_at(@l, at)
         return true
 
     # C's step written in a `while`, `while (i < 3; i++)` or bare, told once
     # at its first `;`, its clauses taken with it (defect 365).
-    if opened_by(l, text: text, word: "while") >= 0
+    if opened_by(@l, text: text, word: "while") >= 0
         l.pos @ clauses_end(text, from: l.pos)
         in_a_while(@l, at: at)
         return true
@@ -85,12 +96,12 @@ function header_semicolon(@l: state.LexState, text: str, at: i64) -> bool
     if l.open_brackets.len() > 0 || l.holes.len() > 0
         return false
 
-    if begun_by(l, text, at: at, keyword: .kw_while) && !separator_runs.ends_its_line(text, at: l.pos)
+    if begun_by(@l, text, at: at, keyword: .kw_while) && !separator_runs.ends_its_line(text, at: l.pos)
         l.pos @ header_end(text, from: l.pos)
         in_a_while(@l, at: at)
         return true
 
-    if !begun_by(l, text, at: at, keyword: .kw_for)
+    if !begun_by(@l, text, at: at, keyword: .kw_for)
         return false
     l.pos @ header_end(text, from: l.pos)
     state.error_token_at(@l, at)
@@ -135,6 +146,32 @@ function clauses_end(text: str, from: i64) -> i64
 
     return last
 
+# `semicolons`, remembered for the line it was asked on: asked again for the
+# same `(` on the same line, the count is the same, where it read the
+# header from its `(` again for every `;` (defect 495).
+function semicolons_of(@l: state.LexState, text: str, from: i64, at: i64) -> i64
+    last = l.asked[lex_asked.SEMI_AT]
+
+    if l.asked[lex_asked.SEMI_FROM] == from && last >= 0 && last <= at && !line_end_in(text, from: last, to: at)
+        l.asked[lex_asked.SEMI_AT] @ at
+        return l.asked[lex_asked.SEMI_COUNT]
+    count = semicolons(text, from: from, at: at)
+    l.asked[lex_asked.SEMI_FROM] @ from
+    l.asked[lex_asked.SEMI_AT] @ at
+    l.asked[lex_asked.SEMI_COUNT] @ count
+    return count
+
+# Whether a line end stands from `from` up to `to`.
+function line_end_in(text: str, from: i64, to: i64) -> bool
+    i: i64 @ from
+
+    while i < to
+        if text[i] == '\n'
+            return true
+        i @ i + 1
+
+    return false
+
 # How many `;` stand from the header's `(` at `from` to the end of the line
 # that holds the offset `at`, strings and comments left out.
 function semicolons(text: str, from: i64, at: i64) -> i64
@@ -158,24 +195,105 @@ function semicolons(text: str, from: i64, at: i64) -> i64
 
 # Whether the line of offset `at` begins with `keyword`, `for` or `while`,
 # and holds no `in` before it, the iteration's own word, which C's header
-# never writes.
-function begun_by(l: state.LexState, text: str, at: i64, keyword: token.TokenKind) -> bool
+# never writes. The line's tokens are read once and read on as they come
+# (`lex_asked.hero`), where a line of `x; ` a thousand times read them again
+# for every `;` (defect 495). Read as the walk it replaces read them: back
+# from the last token to the first standing before the line, its first word
+# the earliest that is no comment and no line end.
+function begun_by(@l: state.LexState, text: str, at: i64, keyword: token.TokenKind) -> bool
+    start = line_from(@l, text, at: at)
+    seen = l.asked[lex_asked.LINE_SEEN]
+
+    if l.asked[lex_asked.LINE] != start || seen < 0 || seen > l.tokens.len()
+        head: i64 @ -1
+        held: bool @ false
+        i: i64 @ l.tokens.len() - 1
+
+        while i >= 0 && l.tokens[i].span.start >= start
+            if l.tokens[i].kind == .kw_in
+                held @ true
+
+            if l.tokens[i].kind != .comment && !token.is_line_end(l.tokens[i].kind)
+                head @ i
+            i @ i - 1
+
+        l.asked[lex_asked.LINE] @ start
+        l.asked[lex_asked.LINE_FIRST] @ head
+        l.asked[lex_asked.LINE_IN] @ 0
+
+        if held
+            l.asked[lex_asked.LINE_IN] @ 1
+    else
+        j: i64 @ seen
+
+        while j < l.tokens.len()
+            if l.tokens[j].span.start < start
+                l.asked[lex_asked.LINE_FIRST] @ -1
+                l.asked[lex_asked.LINE_IN] @ 0
+            else
+                if l.tokens[j].kind == .kw_in
+                    l.asked[lex_asked.LINE_IN] @ 1
+
+                if l.asked[lex_asked.LINE_FIRST] < 0 && l.tokens[j].kind != .comment && !token.is_line_end(l.tokens[j].kind)
+                    l.asked[lex_asked.LINE_FIRST] @ j
+            j @ j + 1
+    l.asked[lex_asked.LINE_SEEN] @ l.tokens.len()
+    first = l.asked[lex_asked.LINE_FIRST]
+    return l.asked[lex_asked.LINE_IN] == 0 && first >= 0 && l.tokens[first].kind == keyword
+
+# The first byte of the line holding `at`: found from the last question's
+# line where that question stood before `at`, the bytes between read once,
+# else read back from `at`.
+function line_from(@l: state.LexState, text: str, at: i64) -> i64
+    from: i64 @ l.asked[lex_asked.LINE_AT]
     start: i64 @ at
-    first: i64 @ -1
-    i: i64 @ l.tokens.len() - 1
 
-    while start > 0 && text[start - 1] != '\n'
-        start @ start - 1
+    if from >= 0 && from <= at
+        start @ l.asked[lex_asked.LINE_FROM]
 
-    while i >= 0 && l.tokens[i].span.start >= start
-        if l.tokens[i].kind == .kw_in
-            return false
+        while from < at
+            if text[from] == '\n'
+                start @ from + 1
+            from @ from + 1
+    else
+        while start > 0 && text[start - 1] != '\n'
+            start @ start - 1
+    l.asked[lex_asked.LINE_AT] @ at
+    l.asked[lex_asked.LINE_FROM] @ start
+    return start
 
-        if l.tokens[i].kind != .comment && !token.is_line_end(l.tokens[i].kind)
-            first @ i
-        i @ i - 1
+# Whether an `in` stands among the tokens past the offset `open`, a `for`
+# header's `(`: read once as the walk it replaces read them, back from the
+# last token to the first standing at or before `open` (the stream's first
+# never asked), and read on as the header's tokens come.
+function in_past(@l: state.LexState, open: i64) -> bool
+    seen = l.asked[lex_asked.FOR_SEEN]
 
-    return first >= 0 && l.tokens[first].kind == keyword
+    if l.asked[lex_asked.FOR_OPEN] != open || seen < 0 || seen > l.tokens.len()
+        held: bool @ false
+        i: i64 @ l.tokens.len() - 1
+
+        while i > 0 && l.tokens[i].span.start > open
+            if l.tokens[i].kind == .kw_in
+                held @ true
+            i @ i - 1
+
+        l.asked[lex_asked.FOR_OPEN] @ open
+        l.asked[lex_asked.FOR_IN] @ 0
+
+        if held
+            l.asked[lex_asked.FOR_IN] @ 1
+    else
+        j: i64 @ seen
+
+        while j < l.tokens.len()
+            if l.tokens[j].span.start <= open
+                l.asked[lex_asked.FOR_IN] @ 0
+            else if l.tokens[j].kind == .kw_in
+                l.asked[lex_asked.FOR_IN] @ 1
+            j @ j + 1
+    l.asked[lex_asked.FOR_SEEN] @ l.tokens.len()
+    return l.asked[lex_asked.FOR_IN] == 1
 
 # Past the rest of a line's code from `from`, its strings whole, before a
 # comment, the line's end, or a `{` that ends the line, a body's, which the
@@ -205,3 +323,34 @@ test "a header holds two semicolons, its brackets' among them"
     assert semicolons("for (i = f(1; 2); i < 3; i++)\n", from: 4, at: 12) == 3
     assert semicolons("for (i = 0;\n     i < 3; i++)\n", from: 4, at: 22) == 2
     assert semicolons("for (s = \";\"; s < 3)\n", from: 4, at: 12) == 1
+
+# Defect 495: what a line's `;` ask of its tokens is read once and read on,
+# and read again where the tokens were rewritten (`lex_asked.forget`), the
+# premise `lex_asked.hero` rests on, which this asks.
+test "a line's first word and its `in` are read once, read on, and read again past a rewrite"
+    text = "x = 1\nfor i; j; k\n"
+    l: state.LexState @ state.new_state()
+
+    for t in [token.made(.ident, start: 0, end: 1), token.made(.eq, start: 2, end: 3), token.made(.int_lit, start: 4, end: 5), token.made(.terminator, start: 5, end: 5), token.made(.kw_for, start: 6, end: 9), token.made(.ident, start: 10, end: 11)]
+        state.push_token(@l.tokens, t)
+
+    assert begun_by(@l, text, at: 11, keyword: .kw_for)
+    assert !begun_by(@l, text, at: 11, keyword: .kw_while)
+    state.push_token(@l.tokens, token.made(.error, start: 11, end: 12))
+    state.push_token(@l.tokens, token.made(.ident, start: 13, end: 14))
+    assert begun_by(@l, text, at: 14, keyword: .kw_for)
+
+    # An `in` comes: no header; the same count of tokens rewritten without
+    # it is read again only where it is forgotten.
+    state.push_token(@l.tokens, token.made(.kw_in, start: 15, end: 16))
+    assert !begun_by(@l, text, at: 16, keyword: .kw_for)
+    l.tokens @ l.tokens.slice(from: 0, to: 8)
+    state.push_token(@l.tokens, token.made(.ident, start: 15, end: 16))
+    lex_asked.forget(@l.asked)
+    assert begun_by(@l, text, at: 16, keyword: .kw_for)
+
+    # The `;` a header holds, asked again on its line, and on the next.
+    two = "for (i = f(1; 2; 3\n; 4)\n"
+    assert semicolons_of(@l, two, from: 4, at: 12) == 2
+    assert semicolons_of(@l, two, from: 4, at: 15) == 2
+    assert semicolons_of(@l, two, from: 4, at: 19) == 3

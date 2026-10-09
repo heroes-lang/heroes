@@ -1,0 +1,28 @@
+# Fixed defect 495, 2026-10-09 (lane b15-parse; filed from lane b14-text's
+# report). A cost, not a message: every `;` of a line asked whether the line
+# begins with `for` or `while`, and walked the line's tokens back to its
+# first and its text back to its start to answer; inside a `for (` header
+# each `;` walked the tokens past the `(` for an `in`, and in a bracket the
+# header holds counted the header's `;` from its `(`; and every line inside
+# brackets asked the stack for a `(` after `for`. 1,333 `x; ` on a line cost
+# `check` 6.35 billion instructions at 4,000 bytes, a `for (` header of them
+# 3.62. Repair: the line's first word and its `in`, the header's `in` and
+# count, and a stack that holds no `(` after the word are read once and read
+# on (`lex_asked.hero`, `loop_headers.hero`), and the parser's spill asks of
+# a long head line once what it asked of every token (`parse/swallowed`).
+# The messages are the base's, byte for byte: below, a line of statements
+# each ended by a `;`, a `for (` header of them, the same in a call the
+# header holds, and a `while` with a step.
+
+function f(a: i64) -> i64
+    return a
+
+function main()
+    x = 1
+    x; x; x; x; x; x; x; x; x; x; x; x;  #~ unexpected_character unexpected_character unexpected_character unexpected_character unexpected_character unexpected_character unexpected_character unexpected_character unexpected_character
+    for (x; x; x; x; x; x; x; x; x; x; x; x; )  #~ for_missing_in
+        print(1)
+    for (i = f(1; 1; 1; 1; 1; 1; 1; 1; 1; 1  #~ unclosed_bracket for_missing_in
+        print(2)
+    while x < 3; x @ x + 1; x @ x + 1  #~ unexpected_character
+        print(3)
