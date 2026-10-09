@@ -35,6 +35,14 @@
 # +14.6%, of this compiler +4.0% (32 MB of objects). A check of the header and
 # the length would cost almost nothing, and pass a block zeroed in the middle,
 # which on the base linked and ran.
+#
+# **Since defect 484 the key is made in C over the bytes** (`key_of`,
+# `runtime/parts/key.c`), the same sixteen characters, and the text the
+# Heroes route built for it is not built. Measured 2026-10-09 on this Mac,
+# instructions retired by a warm build against the compiler before it:
+# `print(1)` 2.53e9 to 0.55e9, `examples/interpreter` 8.76e9 to 5.99e9, this
+# compiler 418e9 to 379e9: the key was not the seal's alone, every header and
+# runtime file a build reads is keyed by it too.
 
 use cli/io
 use cli/kept

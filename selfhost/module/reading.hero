@@ -32,6 +32,12 @@ extern "hero_os.h"
     constant HERO_OS_NOT_FOUND: i64
     constant HERO_OS_NOT_TEXT: i64
 
+# The key of a file's bytes, made in C (defect 484): `runtime/parts/key.c`,
+# declared in `runtime/hero_compiler.h`, the compiler's own doors. `status` is
+# the shown read's.
+extern "hero_compiler.h"
+    function hero_file_key(path: cstr lent, @status: i64) -> str
+
 # A file as the compilation holds it: its own text where it is UTF-8; where it
 # is not, the text with each byte that is not part of a well-formed sequence
 # shown as one U+FFFD, and those bytes, `at` in this text (the file's own
@@ -80,9 +86,24 @@ record Keyed
 # first character `n`, which `digest` never writes. Keyed as a TEXT, a line
 # saying so and that answer, a header of text spelling the line shared the
 # key, and the ffi-pragmatist's case 5 linked the stale object at exit 0.
+#
+# **Made in C since defect 484**, where `keyed` makes it from a text: the key
+# is asked of the file's bytes where they lie (`hero_file_key`), and the text
+# the Heroes route built for it, the shown read and `cli/digest`'s loop over it
+# at `-O0`, about 1,158 instructions a byte, is not built. The two make one key
+# for one file, and the test *the key made in C is the key made in Heroes*
+# holds them to it over files of every shape: a seal written by the one is
+# read by the other whenever a `build/` outlives a compiler.
 function key_of(path: str) -> str?
-    read = keyed(path)?
-    return ok(read.key)
+    status: i64 @ 0
+    got = hero_file_key(path: path.cstr(), status: @status)
+
+    if status == HERO_OS_NOT_FOUND
+        return fail(code: "file_not_found", msg: "no file at " + path)
+
+    if status != HERO_OS_OK && status != HERO_OS_NOT_TEXT
+        return fail(code: "read_failed", msg: "could not read " + path)
+    return ok(got)
 
 function keyed(path: str) -> Keyed?
     status: i64 @ 0
@@ -266,6 +287,18 @@ test "a file of text keys as its text's digest, and a missing file fails as read
     match key_of("build/selftest-reading-no-such-header.h")
         .ok _  => assert false
         .err e => assert e.code == "file_not_found"
+
+# Defect 484: the key made in C, over the bytes, is the key `keyed` makes from
+# the text, for a file of every shape: none, text holding a U+FFFD, Latin-1, NUL
+# among Latin-1, UTF-16 with no mark, a binary, and the compiler's own sources.
+test "the key made in C is the key made in Heroes, for a file of every shape"
+    made = ["build/selftest-reading-empty.h", "build/selftest-reading-held.h"]
+    assert !write_file(path: made[0], text: "").is_err()
+    assert !write_file(path: made[1], text: "a�b\n").is_err()
+    fixtures = "tests/golden/surface-fixtures/"
+
+    for path in [made[0], made[1], fixtures + "notext227/latin1.h", fixtures + "notext227/utf16le-e-acute.txt", fixtures + "notext227/utf16be-e-acute.txt", fixtures + "notext227/nul-and-latin1.txt", fixtures + "notext241/answer-latin1.txt", "site/public/favicon.ico", "runtime/heroes_runtime.h", "selfhost/module/reading.hero"]
+        assert key_of(path).must() == keyed(path).must().key
 
 # Panel 189's R6 at the key: a header holding the byte 0xE9, committed as
 # bytes, keys apart from every file of text, the one spelling what the route
