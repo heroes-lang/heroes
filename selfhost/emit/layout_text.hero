@@ -316,11 +316,9 @@ function union_sizes(rows: [str]) -> {str: i64}
 
     return out
 
-# The text after the last ` at ` of an anonymous record's type, or "".
-# Asked of the bytes (`bytes.rfind`, defect 452): the walk back sliced four
-# bytes at each offset, so a header whose name or path held a character
-# above ASCII split it, and `heroes build` aborted, exit 134, on a correct
-# binding of a record holding an anonymous union.
+# The text after the last ` at ` of an anonymous record's type, or "",
+# found in its bytes: a walk of four-byte slices split a header's name above
+# ASCII and aborted a correct build, exit 134 (defect 452).
 function place_of(type_text: str) -> str
     at = bytes.rfind(text: type_text, needle: " at ")
 

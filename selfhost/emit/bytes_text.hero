@@ -46,8 +46,9 @@ use emit/storageless
 use ast
 use source
 
-# Emit `into = validated_bytes(value)`.
-function validated(@w: writer.Writer, c: state.Checked, s: source.Source, decls: [ast.Decl], names: ctype.Names, f: containers.Function, run: ir.Run, arguments: [str], into: str)
+# Emit `into = validated_bytes(value)`. Named `validated` until defect 501
+# reserved that name (`resolve/builtin_names.hero`).
+function emit(@w: writer.Writer, c: state.Checked, s: source.Source, decls: [ast.Decl], names: ctype.Names, f: containers.Function, run: ir.Run, arguments: [str], into: str)
     given = containers.args_of(f, run)
     source_value: i64 @ 0 - 1
 

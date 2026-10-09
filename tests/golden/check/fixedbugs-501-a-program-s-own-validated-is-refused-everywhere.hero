@@ -1,0 +1,61 @@
+# fixedbugs, defect 501, lane b15-emit, 2026-10-09, filed by the
+# coordinator from lane b14-resolve's report.
+#
+# SYMPTOM, as filed: a program's own `validated` replaced the library's in
+# silence. Panel 162 moved `validated` among the built-ins, and
+# `resolve/builtin_names.hero` still left it free, the one name the
+# library declares that a program could declare again: a top-level
+# `validated(text: str) -> str?` was accepted and its call printed the
+# program's `mine: x`, exit 0, and a parameter or a local of the name
+# took its scope in silence. On the base this file is told nothing at
+# line 31, the constant is told `declared_twice`, each binding that it
+# shadows line 31, and the type parameter's uses that line 31 is no type.
+#
+# CAUSE: the emitter had a function of its own named `validated`
+# (`emit/bytes_text.hero`), and the compiler is a Heroes program the
+# check judges, so reserving the name refused the compiler itself.
+#
+# FIX: the emitter's function is `bytes_text.emit` and the exception is
+# gone, so `validated` is refused where `args_checked` is (defect 455):
+# a top-level function, a constant, a parameter, a type parameter, a
+# local, a loop variable and a match binding. A record's field and a
+# variant's case named `validated` stay legal, as for every built-in:
+# they are read through their value, never alone.
+
+record Holder
+    validated: i64
+
+variant Shape
+    validated
+
+function validated(text: str) -> str?  #~ builtin_name_taken
+    return ok("mine: " + text)
+
+constant validated: i64  #~ builtin_name_taken
+    3
+
+function f(validated: i64) -> i64  #~ builtin_name_taken
+    return validated
+
+function g<validated>(x: validated) -> validated  #~ builtin_name_taken
+    return x
+
+function loop() -> i64
+    total: i64 @ 0
+
+    for validated in [1, 2]  #~ builtin_name_taken
+        total @ total + validated
+
+    return total
+
+function binding(m: i64?) -> i64
+    return match m
+        .ok validated => validated  #~ builtin_name_taken
+        .err          => 0
+
+function main()
+    validated = 2  #~ builtin_name_taken
+    h = Holder(validated: validated)
+    s: Shape = .validated
+    print(f(validated: h.validated), g(1), loop(), binding(ok(4)))
+    print(s == .validated)
