@@ -405,6 +405,74 @@ test "an unoptimised unit describes its locals to a debugger, and an optimised o
         assert first_at(text: assembly, needle: "heroes_debug_probe") >= 0
         assert first_at(text: assembly, needle: "heroes_seen_local") >= 0 == (level == "-O0")
 
+# **THE COLUMN IS KEPT, A MEASURED REFUSAL** (defect 471, panel 197's R7,
+# route (K) `-gno-column-info`; measured 2026-10-09 by lane b16-compiler, a
+# compiler with the word added to both levels' debug words against one
+# without, on this Mac, Linux arm64 (Debian clang 22.1.8) and the Windows box
+# (clang 23.1.1)). A statement under `#line N "x.hero"` carries the column of
+# the C file's own text, never a `.hero` one: lldb stops at `dbg.hero:2:8` and
+# draws its caret under the eighth character of `    total: i64 @ 0`, and
+# Linux's AddressSanitizer names `uaf.hero:9:10`. With the word those columns
+# go and nothing else a tool shows about a file and a line moves: lldb's
+# breakpoints, stops and backtraces read the same functions, offsets, files
+# and lines, ASan's three stacks the same frames and lines on both POSIX
+# platforms (macOS's prints no column either way), and on Windows the word
+# changes no line of the assembly but the object's own name and no row of
+# the `.pdb`'s line tables, CodeView writing column 0 with it and without.
+#
+# **What goes with the false column is a TRUE one**, which is why the word is
+# refused: code the program did not write stands outside every `#line`, and
+# under the word its column goes too: a binding's header (`bind.h:15:24` in
+# lldb, `bind.h:15:12` in ASan's report and its SUMMARY line), the runtime
+# (`panic.c:49:60`) and the emitted C (`uaf.c:78:5`, `dbg.c:63:23`). UBSan's
+# column is the front end's and stays (`bind.h:19:14` under both), so one
+# `--sanitize` run would name a column in one report and none in the other.
+# The gain on a function of 100, 200 and 400 `return`s at `-O0`: objects of
+# 68,984, 132,616 and 260,616 bytes 9.4% to 9.5% smaller, and clang's compile
+# 3.0%, 3.8% and 4.6% fewer instructions retired (the median of three).
+#
+# The test asks the platform's own clang, under each level's words, for the
+# column of one statement written twice, in the file and under a `#line`: the
+# two are the same column, the C file's, and where the debug format has
+# columns it is not 0. It goes red the day the word joins the level's words.
+test "the level's words keep a unit's columns, and a `#line` carries the C file's (defect 471)"
+    assert !process.mkdir_all("build/selftest-columns").is_err()
+    unit = "build/selftest-columns/probe.c"
+    text = "#include <stdint.h>\n\nint64_t outside(int64_t a, int64_t b) {\n    return a * b + 1;\n}\n\nint64_t inside(int64_t a, int64_t b) {\n#line 7 \"probe.hero\"\n    return a * b + 1;\n}\n"
+    assert !write_file(path: unit, text: text).is_err()
+
+    for level in ["-O0", "-O2"]
+        said = "build/selftest-columns/probe" + level + ".s"
+        words: [str] @ ["clang"]
+
+        for word in level_words(level: level, sanitize: false)
+            words @ words.push(word)
+
+        for word in ["-fverbose-asm", "-S", unit, "-o", said]
+            words @ words.push(word)
+
+        assert process.run(program: "clang", words: words, out: process.discard(), err: process.discard()).code == 0
+        assembly = read_file(said).must()
+        columns: [i64] @ []
+
+        # clang's comment on a location directive: `probe.c:4:12`, the column
+        # left out where it is 0 (DWARF) or written as 0 (CodeView).
+        for place in ["probe.c:4:", "probe.hero:7:"]
+            at = first_at(text: assembly, needle: place)
+            a_column_is_written = at >= 0
+            assert a_column_is_written
+            column: i64 @ 0
+            next: i64 @ at + place.len()
+
+            while next < assembly.len() && assembly[next] >= '0' && assembly[next] <= '9'
+                column @ column * 10 + (assembly[next] - '0').to_i64().must()
+                next @ next + 1
+
+            columns @ columns.push(column)
+
+        assert columns[0] == columns[1]
+        assert columns[0] == 0 == (process.exe_suffix() == ".exe")
+
 test "the link flags are one platform's, and the platform is asked not assumed"
     # On this machine the answer is whatever `exe_suffix()` says, so the case
     # asserts the RULE rather than a number it cannot know: exactly one flag on
