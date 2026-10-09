@@ -460,7 +460,11 @@ filed and repaired in a later batch. So, from batch 16:
    `tests/harness/floors.hero` checks a floor from both sides on purpose (a
    floor gone slack let a walk miss cases, measured 2026-09-12), and a plain
    minimum, which the coordinator first described to the author, would drop
-   that half.
+   that half. **Repaired 2026-10-09 by defect 536**: a floor the tree has
+   outgrown is told, `FLOOR <label>` with the number to write, and counted on
+   the suite's line, never a red; a count below its floor stays red; and **a
+   batch's closing commit raises every floor its gate told `FLOOR`**, so the
+   high side stays a ratchet a person moves on purpose.
 
 What it gives up, said once: a CI red in public where a local leg would have
 seen it first (505 and 509 were found by the CI when the box's leg had been

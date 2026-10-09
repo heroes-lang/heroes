@@ -1,0 +1,14 @@
+---
+kind: defect
+area: check
+milestone: none
+filed: 2026-10-09
+commit: none
+github: none
+---
+
+- [ ] **554 — a generic function of two labelled parameters given a function type is told twice** | `g: (function(B, B) -> B) = pick`, `pick` generic with two labelled parameters, gets both `needs_parameter_names` and a label `type_mismatch` for one mistake, on the base as well (lane b17-check) | `selfhost/check/function_value.hero` · **class: adjacent**
+
+    **Origin:** filed by the coordinator at 22:35 on 2026-10-09 from lane b17-check's final report (its notes `.claude/worktrees/scratch-b15/b17-check/notes.txt`, ignored by git); the lane's measurement, not re-run by the coordinator.
+
+    **Class: adjacent**, 2026-10-09 (`.claude/rules/verification.md` § Bounded discovery): a second message for one mistake.
