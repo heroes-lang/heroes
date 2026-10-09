@@ -1,0 +1,80 @@
+# Whether the line below a head's bracket is a body spilled into it (design.md
+# §4.17; defect 496, 2026-10-08; the reading itself is `parse/swallowed`'s,
+# defect 130's class).
+#
+# `function f(a: i64` over `print(a) )` is one `)` left out and one too many:
+# the head's list refused the line below's first word, and the `)` that ends
+# that line closes the head's bracket, so the lines to it are the head's body
+# and the `)` its junk (`parse/swallowed.spilled`). The same two facts hold of
+# `function f(a: (` over `bool), b: bool)`, a parameter's type broken after
+# its `(`, where the line below is the head's own: read as a body, it was told
+# four messages for the one mistake the type's reader had already told. What
+# tells them apart is asked of the tokens:
+#
+# - the refusal stands at a token no bracket opened after the head's opener
+#   holds, the opener's own reader having refused it, where in a type's `(`
+#   it is the type's reader's;
+# - and the closer ends its line, a comment aside, where the head's list goes
+#   on after one that is the head's own, `, b: bool)`.
+#
+# A leaf: it reads the tokens and nothing that reads the parser.
+#
+# | entry | called by |
+# |---|---|
+# | `is_a_body_line` | `parse/swallowed.spilled` |
+
+use token
+use cursor
+
+# Whether the line below the opener at token `open`, its first token `start`,
+# is a body line that the closer at `close` ends, one too many, closing the
+# head's own bracket.
+function is_a_body_line(c: cursor.Cursor, open: i64, start: i64, close: i64) -> bool
+    return ends_its_line(c, at: close) && !inside_a_nested_bracket(c, open: open, at: start)
+
+# Whether the token at `at` is the last of its line, the comments after it
+# aside.
+function ends_its_line(c: cursor.Cursor, at: i64) -> bool
+    i: i64 @ at + 1
+
+    while i < c.tokens.len() - 1 && c.tokens[i].kind == .comment
+        i @ i + 1
+
+    return token.ends_a_line(c.tokens[i].kind)
+
+# Whether the token at `at` stands inside a bracket opened after the one at
+# `open`: the report on it is that bracket's own.
+function inside_a_nested_bracket(c: cursor.Cursor, open: i64, at: i64) -> bool
+    depth: i64 @ 0
+    i: i64 @ open + 1
+
+    while i < at
+        k = c.tokens[i].kind
+
+        if k == .lparen || k == .lbracket || k == .lbrace
+            depth @ depth + 1
+        else if token.is_closer(k) && depth > 0
+            depth @ depth - 1
+        i @ i + 1
+
+    return depth > 0
+
+## Tests
+
+test "a type broken after its paren is the head's own line, and a statement over a stray closer is a body's"
+    # function f(a: (  /  bool), b: bool)
+    broken = cursor.new_cursor(
+        [token.made(.kw_function, start: 0, end: 8), token.made(.ident, start: 9, end: 10), token.made(.lparen, start: 10, end: 11), token.made(.ident, start: 11, end: 12), token.made(.colon, start: 12, end: 13), token.made(.lparen, start: 14, end: 15), token.made(.ident, start: 24, end: 28), token.made(.rparen, start: 28, end: 29), token.made(.comma, start: 29, end: 30), token.made(.ident, start: 31, end: 32), token.made(.colon, start: 32, end: 33), token.made(.ident, start: 34, end: 38), token.made(.rparen, start: 38, end: 39), token.made(.terminator, start: 39, end: 39), token.made(.eof, start: 40, end: 40)]
+    )
+
+    # The list's `(` at 2: the refusal at `bool`, 6, stands in the type's `(`.
+    assert !is_a_body_line(broken, open: 2, start: 6, close: 12)
+
+    # The type's own `(` at 5: its closer at 7 is followed by the list's `,`.
+    assert !is_a_body_line(broken, open: 5, start: 6, close: 7)
+
+    # function f(a: i64  /  print(a) )  # a remark
+    spill = cursor.new_cursor(
+        [token.made(.kw_function, start: 0, end: 8), token.made(.ident, start: 9, end: 10), token.made(.lparen, start: 10, end: 11), token.made(.ident, start: 11, end: 12), token.made(.colon, start: 12, end: 13), token.made(.ident, start: 14, end: 17), token.made(.ident, start: 22, end: 27), token.made(.lparen, start: 27, end: 28), token.made(.ident, start: 28, end: 29), token.made(.rparen, start: 29, end: 30), token.made(.rparen, start: 31, end: 32), token.made(.comment, start: 34, end: 44), token.made(.terminator, start: 44, end: 44), token.made(.eof, start: 45, end: 45)]
+    )
+    assert is_a_body_line(spill, open: 2, start: 6, close: 10)

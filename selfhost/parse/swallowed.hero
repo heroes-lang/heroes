@@ -31,6 +31,7 @@ use next_line
 use text_lines
 use word_place
 use pairing
+use spill_reading
 use parse/unclosed
 use parse/line_end
 
@@ -105,7 +106,8 @@ record Spilled
 # openers took in, the closer that paired it standing on a line below: the
 # head refused the first word of the line below, which is deeper than the
 # head's and opens a statement, a report said since `said` standing on it;
-# and the closer ends a line of code, not one of its own.
+# and the closer ends a line of code, not one of its own (`spill_reading`,
+# which tells it from a parameter's type broken after its `(`, defect 496).
 # `function f(a: i64` over `print(a) )`: one `)` left out
 # and one too many, the second told only once the first was written (the
 # audit's row 130-34d, lane recovery-b8).
@@ -120,7 +122,7 @@ function spilled(c: cursor.Cursor, text: str, from: i64, said: i64) -> Spilled
             close = pairing.paired_closer(c, text, open: i)
             start = first_below(c, text, open: i)
 
-            if close > i && start < close && line_end.said_at(c, at: start, said: said) && text_lines.margin_width(text, at: c.tokens[start].span.start) > text_lines.line_margin(text, at: c.tokens[from].span.start) && opens_a_statement(c, at: start) && text_lines.margin_width(text, at: c.tokens[close].span.start) < 0
+            if close > i && start < close && line_end.said_at(c, at: start, said: said) && text_lines.margin_width(text, at: c.tokens[start].span.start) > text_lines.line_margin(text, at: c.tokens[from].span.start) && opens_a_statement(c, at: start) && text_lines.margin_width(text, at: c.tokens[close].span.start) < 0 && spill_reading.is_a_body_line(c, open: i, start: start, close: close)
                 return Spilled(start: start, close: close + 1)
         i @ i + 1
 

@@ -1,0 +1,32 @@
+# Fixed defect 496, 2026-10-09 (lane b15-parse; filed from lane b14-text's
+# report beside defect 456). Symptom: a parameter's type broken after its
+# `(`, `function f(a: (` over `bool), b: bool)`, was told four messages for
+# the one mistake its type's reader told: the head's recovery read the line
+# below as a body a closer one too many had spilled into the head's list
+# (`parse/swallowed.spilled`), and refused its `)`, its `b: bool)` as a
+# binding and the true body below as a declaration; two such types were
+# told six. Cause: the line below began with the word the type's reader
+# refused, which the spill took for the list refusing it, and the closer
+# that ended that line closed the list. Repair: a line below is a spilled
+# body only where the refusal stands in no bracket opened after the list's,
+# and the closer ends its line (`spill_reading`). Below: the type broken in
+# the first parameter, over a body and before a declaration; in both; and,
+# beside them, a list whose `)` is left out over a closer one too many and
+# the result's `->`, read as the head's list to its `->`, where the spill's
+# reading told the `->` as a declaration.
+
+function first(a: (  #~v expected_function_type
+        bool), b: bool)
+    print(1)
+
+function both(a: (  #~v expected_function_type
+        bool), b: (  #~v expected_function_type
+        bool))
+    print(2)
+
+function arrow(a: i64
+    print(a) ) -> i64  #~ expected_params_close
+    return 1
+
+function main()
+    print(3)
