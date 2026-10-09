@@ -142,6 +142,16 @@ def pathspec(rest, where):
     return None
 
 
+def paths_of(rest):
+    """The paths the words after `git commit`, `rest`, name after their `--`,
+    as written: the files a pathspec commit takes from the working tree, which
+    the staged-file check judges too (defect 515); an expansion is the shell's
+    and is left out. None of them where `rest` is None or holds no `--`."""
+    if rest is None or "--" not in rest:
+        return []
+    return literal(rest[rest.index("--") + 1:])
+
+
 def whole_tree(path, where):
     """Whether the pathspec `path`, read in `where`, names the worktree's root
     or above it."""
