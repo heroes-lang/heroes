@@ -898,6 +898,24 @@ HeroStr hero_env_shown(const char *name, int64_t *status, int64_t *marks) {
 #endif
 }
 
+/* `name` set to `value` in this process's own environment (`hero_compiler.h`,
+ * defect 509), which a child started afterwards inherits: on Windows the
+ * process's block, wide, which `CreateProcessA` passes on when it is given
+ * none and which `hero_env_shown` reads back; elsewhere `setenv`. The CRT's
+ * narrow copy on Windows is not updated, and nothing here reads it. */
+int64_t hero_env_put(const char *name, const char *value) {
+#if defined(_WIN32)
+    wchar_t *wide_name = hero_win_wide(name, NULL);
+    wchar_t *wide_value = wide_name != NULL ? hero_win_wide(value, NULL) : NULL;
+    BOOL set = wide_name != NULL && wide_value != NULL && SetEnvironmentVariableW(wide_name, wide_value);
+    if (wide_name != NULL) hero_release(wide_name);
+    if (wide_value != NULL) hero_release(wide_value);
+    return set ? HERO_OS_OK : HERO_OS_FAILED;
+#else
+    return setenv(name, value, 1) == 0 ? HERO_OS_OK : HERO_OS_FAILED;
+#endif
+}
+
 /* One argument as the shown read gives a file (defect 281): HERO_OS_OK and the
  * argument where it is UTF-8; HERO_OS_NOT_TEXT, the marks and the shown text
  * where it is not, so a message can name its bytes, where the compiler could

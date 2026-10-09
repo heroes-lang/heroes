@@ -37,11 +37,14 @@
  *     takes no new name (no write permission there, a private name past what a
  *     path may hold); a rename refused (a sticky directory, a Darwin ACL that
  *     denies the file's deletion);
- *   - on Windows, any file already there. The stage there carries the
- *     attributes and not the owner, the explicit ACL entries or the named
- *     streams (a downloaded file's mark of the web is one), and no call this
- *     runtime links can ask a file whether it has them, so only a name that is
- *     not taken yet goes through a private name there.
+ *   - on Windows until defect 461, any file already there: the stage there
+ *     carried the attributes and not the owner, the explicit ACL entries or
+ *     the named streams (a downloaded file's mark of the web is one). Since
+ *     then the stage is created under the file's own owner, group and DACL
+ *     and put in its place by `ReplaceFileW`, which keeps the DACL, the
+ *     streams and the attributes (`parts/replace.c`, measured on the box), so
+ *     a file there goes through a private name as on POSIX, and an owner this
+ *     process may not give writes in place.
  *
  * A symbolic link is followed to the file its chain names (`hero_fs_landing`),
  * and THAT file is replaced, the link staying a link; the kernel's own answer
@@ -128,11 +131,26 @@ static int hero_write_landing(const char *path, char *landing) {
 }
 
 #if defined(_WIN32)
+/* The POSIX arm's questions, asked as Windows answers them: the landing is
+ * the kernel's own final path for a link (`hero_fs_landing`), a file with a
+ * second name or one this process could not open for writing goes in place,
+ * and since defect 461 a file already there goes through a private name too,
+ * the stage made under its descriptor and put in its place by `ReplaceFileW`
+ * (`parts/replace.c`). Until then any file already there went in place,
+ * because the rename lost its owner, its explicit ACEs and its streams. */
 static int hero_write_route(const char *path, char *landing) {
     int64_t kind = hero_fs_kind(path);
     if (kind == HERO_FS_ABSENT) return hero_write_copy(path, landing) ? HERO_WRITE_CREATE : HERO_WRITE_IN_PLACE;
-    if (kind != HERO_FS_LINK || !hero_write_landing(path, landing)) return HERO_WRITE_IN_PLACE;
-    return hero_fs_kind(landing) == HERO_FS_ABSENT ? HERO_WRITE_CREATE : HERO_WRITE_IN_PLACE;
+    if (kind == HERO_FS_LINK) {
+        if (!hero_write_landing(path, landing)) return HERO_WRITE_IN_PLACE;
+        int64_t through = hero_fs_kind(landing);
+        if (through == HERO_FS_ABSENT) return HERO_WRITE_CREATE;
+        if (through != HERO_FS_FILE) return HERO_WRITE_IN_PLACE;
+    } else if (kind != HERO_FS_FILE || !hero_write_copy(path, landing)) {
+        return HERO_WRITE_IN_PLACE;
+    }
+    if (hero_fs_links(landing) != 1) return HERO_WRITE_IN_PLACE;
+    return hero_fs_writable(landing) ? HERO_WRITE_REPLACE : HERO_WRITE_IN_PLACE;
 }
 #else
 static int hero_write_route(const char *path, char *landing) {
