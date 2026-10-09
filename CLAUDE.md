@@ -298,7 +298,7 @@ CL-060.
 - **A repair is gated by its own cases alone; a ROUND of lanes is gated once,
   on this Mac alone** (author instructions 2026-10-02): the lanes merged, the
   seed and its fixpoint, the compiler's own tests, the net's own tests, the
-  full net, the census; red is bisected by lane, then commit. A batch is
+  full net, the census after the push; red is bisected by lane, then commit. A batch is
   sixteen to sixty-four defects, one lane per cluster of shared files (author
   instructions 2026-10-03 and 2026-10-05; CL-063, CL-079). Which form a change's cases live in is
   `.claude/rules/verification.md` (CL-072).
@@ -330,9 +330,9 @@ CL-060.
   exists, so the exception is named rather than the rule weakened. The executor
   is `records/tagged` and it reads the newest `m-*` tag's own commit, so an open
   defect mid-milestone stays legal and a tag over one does not.
-- **A platform fact is run on a platform or it is an inference**; Linux arm64
-  and Windows before the push, x86-64 the CI's (author instruction
-  2026-10-02), a C-boundary defect closed only after them:
+- **A platform fact is run on a platform or it is an inference**; the
+  platforms are the CI's legs after the push, a red one filing a defect
+  (author instruction 2026-10-09, the optimistic chain):
   `.claude/rules/platforms.md` (CL-048, CL-049, CL-050, CL-055, CL-079).
 
 ## Commands

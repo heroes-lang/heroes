@@ -63,6 +63,14 @@ Twenty-two files on 2026-09-03, and they are all in the checkout:
   §11: a count in prose expires in silence while the sentence around it goes on
   reading as correct). Shipping `runtime.c` alone does not link.
 
+**Corrected 2026-10-09**, at batch 16's regeneration (lane b16-runtime found
+it): the list above is short. `heroes.c` includes `heroes_runtime.h`,
+`heroes_guard_open.h` and `heroes_guard_close.h` (`grep '^#include "'
+seed/heroes.c`); `runtime.c` includes those three, `hero_os.h` and
+`hero_compiler.h`, and twenty-six files under `runtime/parts/` (`grep -c
+'#include "parts/' runtime/runtime.c`). The two commands are the list; the
+counts are that day's.
+
 And at **run** time the compiler needs `runtime/` again — it compiles it — which
 it finds under the working directory, or wherever `$HEROES_RUNTIME` says.
 
