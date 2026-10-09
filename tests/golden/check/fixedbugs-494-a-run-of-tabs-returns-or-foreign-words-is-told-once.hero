@@ -1,0 +1,37 @@
+# Defect 494, 2026-10-08 (lane b15-parse). A mistake told once per
+# character: 4,000 stray carriage returns were 4,000 messages, 4,000 tabs
+# 4,001 and a line of 1,333 foreign words 1,333, past defect 282's bound,
+# which gathered only a run of one character that cannot be seen. Now a run
+# of tabs, of carriage returns, and of one foreign word with the spaces
+# between them is told once, at its first, a note counting it, and each of
+# the three kinds is told eight times a text, the rest counted in a note on
+# the kind's last, in its own words, as `refused_runs` counts a character.
+# Below: a run of each on one line, which is one of the eight of its kind;
+# nine of each on lines of their own, of which seven are told beside the
+# run and two counted; and a foreign word's runs on two lines, each told,
+# the word at the head of its line told as it was. This file holds tabs
+# and carriage returns on purpose.
+
+function main()
+    a = 1												+ 2  #~ tab_in_line
+    b = 1+ 2  #~ stray_carriage_return
+    t0 = 0	+ 1  #~ tab_in_line
+    t1 = 1	+ 1  #~ tab_in_line
+    t2 = 2	+ 1  #~ tab_in_line
+    t3 = 3	+ 1  #~ tab_in_line
+    t4 = 4	+ 1  #~ tab_in_line
+    t5 = 5	+ 1  #~ tab_in_line
+    t6 = 6	+ 1  #~ tab_in_line
+    t7 = 7	+ 1
+    t8 = 8	+ 1
+    c0 = 0+ 1  #~ stray_carriage_return
+    c1 = 1+ 1  #~ stray_carriage_return
+    c2 = 2+ 1  #~ stray_carriage_return
+    c3 = 3+ 1  #~ stray_carriage_return
+    c4 = 4+ 1  #~ stray_carriage_return
+    c5 = 5+ 1  #~ stray_carriage_return
+    c6 = 6+ 1  #~ stray_carriage_return
+    c7 = 7+ 1
+    c8 = 8+ 1
+    fn fn fn fn  #~ reserved_word reserved_word
+    fn fn fn fn  #~ reserved_word reserved_word

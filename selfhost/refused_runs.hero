@@ -22,6 +22,17 @@
 # comment habits) keeps every message, since a message dropped is a repair
 # `--apply` would no longer make.
 #
+# **And three more refusals, each a kind of its own** (defect 494, where
+# 4,000 carriage returns in a row were 4,000 messages, 4,000 tabs 4,000 and
+# 1,333 foreign words 1,333): a tab between tokens and a carriage return
+# outside a line ending, a run of each next to one another told once and
+# each kind `TOLD` times a text, its own count in its own words; and a
+# foreign word with no fix, a run of the same message through the spaces
+# between them told once, each run told, a word being a place its author
+# edits. Each kind keeps its own run and its own count, so a tab between
+# two control characters ends neither's run, and a text's characters are
+# counted as they were.
+#
 # **A refused break names its diagnostic by its place** among its text's
 # (`state.Break`), which `parse/apart` reads; a message counted rather than
 # told moves the places after it, so `told_once` says where each one went and
@@ -42,67 +53,129 @@ constant TOLD: i64
 constant SAID: str
     " is not part of the language's syntax"
 
+# The kinds of refusal gathered (`kind_of`), each with its own runs and its
+# own count: a character the syntax does not have, a tab between tokens, a
+# carriage return outside a line ending, a foreign word.
+constant CHARACTER: i64
+    0
+
+constant TAB: i64
+    1
+
+constant RETURN: i64
+    2
+
+constant WORD: i64
+    3
+
+# What the note on a kind's last told says of those counted past `TOLD`, by
+# kind; a word is never counted.
+constant COUNTED: [str]
+    [
+        " more characters of this file are not part of the language's syntax either, not told one by one"
+        " more tabs of this file are a compile error too, not told one by one"
+        " more carriage returns of this file stand outside a line ending too, not told one by one"
+        ""
+    ]
+
 # A text's diagnostics as told, and where each one given stands among them:
 # its place, or -1 for one counted rather than told.
 record Told
     diagnostics: [diag.Diagnostic]
     at: [i64]
 
-# The diagnostics of one text, its refused characters told once a run and at
-# most `TOLD` times, everything else as it was, in the order it was.
+# The diagnostics of one text, its refusals of each kind told once a run and
+# at most `TOLD` times, a word's every run, everything else as it was, in the
+# order it was.
 function told_once(diagnostics: [diag.Diagnostic], text: str) -> Told
     out: [diag.Diagnostic] @ []
     at: [i64] @ []
-    first: i64 @ -1
-    last_kept: i64 @ -1
-    run: i64 @ 0
-    run_end: i64 @ -1
-    run_said: str @ ""
-    run_unseen: bool @ false
-    kept: i64 @ 0
-    unsaid: i64 @ 0
+
+    # By kind (`kind_of`): where its run's first stands in `out`, -1 for one
+    # counted rather than told; the run's length, its end and its words, and
+    # whether its character is unseen; how many of the kind were told, the
+    # last of them, and how many characters were counted.
+    first: [i64] @ [-1, -1, -1, -1]
+    run: [i64] @ [0, 0, 0, 0]
+    run_end: [i64] @ [-1, -1, -1, -1]
+    run_said: [str] @ ["", "", "", ""]
+    run_unseen: [bool] @ [false, false, false, false]
+    kept: [i64] @ [0, 0, 0, 0]
+    last_kept: [i64] @ [-1, -1, -1, -1]
+    unsaid: [i64] @ [0, 0, 0, 0]
 
     for d in diagnostics
         if !gathered(d)
             out @ out.push(d)
             at @ at.push(out.len() - 1)
             continue
+        k = kind_of(d)
 
-        # One more of the run: the same character, unseen, right after the last.
+        # One more of the run: the same words, right after the last (`goes_on`).
         # The same message is the same character, so whether it is unseen is
         # asked once a run, at its first.
-        if run > 0 && run_unseen && d.span.start == run_end && d.message == run_said
-            run @ run + 1
-            run_end @ d.span.end
+        if run[k] > 0 && d.message == run_said[k] && goes_on(kind: k, hidden: run_unseen[k], text, from: run_end[k], to: d.span.start)
+            run[k] @ run[k] + 1
+            run_end[k] @ d.span.end
             at @ at.push(-1)
 
-            if first < 0
-                unsaid @ unsaid + 1
+            if first[k] < 0
+                unsaid[k] @ unsaid[k] + 1
             continue
-        out @ noted(out, at: first, run: run)
-        run @ 1
-        run_end @ d.span.end
-        run_said @ d.message
-        run_unseen @ unseen(d, text: text)
+        out @ noted(out, at: first[k], run: run[k])
+        run[k] @ 1
+        run_end[k] @ d.span.end
+        run_said[k] @ d.message
+        run_unseen[k] @ unseen(d, text: text)
 
-        if kept == TOLD
-            first @ -1
-            unsaid @ unsaid + characters(d, text: text)
+        if kept[k] == TOLD && k != WORD
+            first[k] @ -1
+            unsaid[k] @ unsaid[k] + characters(d, text: text)
             at @ at.push(-1)
             continue
         out @ out.push(d)
-        first @ out.len() - 1
-        at @ at.push(first)
-        last_kept @ first
-        kept @ kept + 1
+        first[k] @ out.len() - 1
+        at @ at.push(first[k])
+        last_kept[k] @ first[k]
+        kept[k] @ kept[k] + 1
 
-    out @ noted(out, at: first, run: run)
+    for k in range(from: CHARACTER, to: WORD + 1)
+        out @ noted(out, at: first[k], run: run[k])
 
-    if unsaid > 0
-        out[last_kept].notes @ out[last_kept].notes.push(
-            unsaid.to_str() + " more characters of this file are not part of the language's syntax either, not told one by one"
-        )
+        if unsaid[k] > 0
+            out[last_kept[k]].notes @ out[last_kept[k]].notes.push(unsaid[k].to_str() + COUNTED[k])
+
     return Told(diagnostics: out, at: at)
+
+# The kind of refusal a gathered `d` is (`told_once`).
+function kind_of(d: diag.Diagnostic) -> i64
+    if d.code == "tab_in_line"
+        return TAB
+
+    if d.code == "stray_carriage_return"
+        return RETURN
+
+    if d.code == "reserved_word"
+        return WORD
+    return CHARACTER
+
+# Whether a refusal of the kind `kind` that begins at `to` goes on a run that
+# ends at `from`: right after it, for a character only where it is unseen,
+# `hidden`; and for a word through the spaces between, on its line.
+function goes_on(kind: i64, hidden: bool, text: str, from: i64, to: i64) -> bool
+    if kind == CHARACTER
+        return hidden && to == from
+
+    if kind != WORD || to <= from
+        return to == from
+    i: i64 @ from
+
+    while i < to && i < text.len()
+        if text[i] != ' '
+            return false
+        i @ i + 1
+
+    return true
 
 # The diagnostics of one text but those `dropped` marks, a message another
 # reader tells instead (`heads_told.told_by_heads`, defect 250), with where
@@ -153,14 +226,18 @@ function renumbered(breaks: [state.Break], at: [i64]) -> [state.Break]
 # Whether `d` is the scanner's plain refusal of one character, or of a
 # stretch told once (`refused_stretch`, defect 391): a run, in the same
 # words, or a string in backticks, whose fix is a guess `--apply` never
-# writes, so that a flood of them is bounded as one of characters is.
+# writes, so that a flood of them is bounded as one of characters is; or a
+# tab, a carriage return or a foreign word with no fix (defect 494).
 function gathered(d: diag.Diagnostic) -> bool
     if backtick_strings.is_template(d)
         return true
 
-    if d.code != "unexpected_character" || d.fixes.len() > 0 || d.notes.len() > 0
+    if d.fixes.len() > 0 || d.notes.len() > 0
         return false
-    return d.message.len() >= SAID.len() && d.message.slice(from: d.message.len() - SAID.len(), to: d.message.len()) == SAID
+
+    if d.code == "tab_in_line" || d.code == "stray_carriage_return" || d.code == "reserved_word"
+        return true
+    return d.code == "unexpected_character" && d.message.len() >= SAID.len() && d.message.slice(from: d.message.len() - SAID.len(), to: d.message.len()) == SAID
 
 # How many characters a refusal counted rather than told stands for, so the
 # note's count stays one of characters: one for the scanner's own, and a
@@ -285,3 +362,51 @@ test "past eight refused characters the rest are counted on the last told, and a
     # Two `;` side by side are seen, and each keeps its message (panel 187).
     semis = told_once([refused(start: 0, said: "`;`"), refused(start: 1, said: "`;`")], text: ";;")
     assert semis.diagnostics.len() == 2
+
+# Defect 494: a run of tabs, of carriage returns or of one foreign word is
+# told once, each kind on its own count, and a tab between two control
+# characters ends neither's run.
+test "tabs, carriage returns and foreign words are told once a run, each kind on its own count"
+    tab = "a tab is a compile error — use spaces"
+    told: [diag.Diagnostic] @ []
+
+    for k in range(from: 0, to: 3)
+        told @ told.push(diag.new_diagnostic(code: "tab_in_line", message: tab, span: token_at(k)))
+
+    got = told_once(told, text: "\t\t\t").diagnostics
+    assert got.len() == 1
+    assert got[0].notes == ["the first of 3 in a row"]
+
+    # A word's run goes through the spaces between, and ends at another word.
+    said = "`fn` is not a word in this language, and a name cannot be one: choose another name"
+    words: [diag.Diagnostic] @ []
+
+    for k in [0, 3, 7, 12]
+        words @ words.push(
+            diag.new_diagnostic(code: "reserved_word", message: said, span: token.Span(start: k, end: k + 2))
+        )
+
+    run = told_once(words, text: "fn fn  fn x fn")
+    assert run.diagnostics.len() == 2
+    assert run.diagnostics[0].notes == ["the first of 3 in a row"]
+    assert run.at == [0, -1, -1, 1]
+
+    # Twelve carriage returns apart: eight told and four counted, in their own
+    # words; the control characters around a tab keep their run.
+    returns: [diag.Diagnostic] @ []
+    cr = "a carriage return that is not part of a line ending — delete it, or end the line"
+
+    for k in range(from: 0, to: 12)
+        returns @ returns.push(diag.new_diagnostic(code: "stray_carriage_return", message: cr, span: token_at(k * 2)))
+
+    counted = told_once(returns, text: "\r ".repeat(12)).diagnostics
+    assert counted.len() == 8
+    assert counted[7].notes == ["4 more carriage returns of this file stand outside a line ending too, not told one by one"]
+    one = "the control character U+0001"
+    around: [u8] = [1, 1, 32, 32, 32, 9]
+    mixed = told_once(
+        [refused(start: 0, said: one), diag.new_diagnostic(code: "tab_in_line", message: tab, span: token_at(5)), refused(start: 1, said: one)],
+        text: around.validated_bytes().must()
+    )
+    assert mixed.diagnostics.len() == 2
+    assert mixed.diagnostics[0].notes == ["the first of 2 in a row"]

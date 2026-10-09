@@ -212,7 +212,9 @@ constant NO_FLAGS: [str]
 # 407's template over lines, 405's nested fixed array, 408's `rest: zero`.
 # **18 on 2026-10-07**, at the merges of lanes zero401, tmpl407 and fixed405:
 # defect 401's binding named `zero`, 412's `@` in a construction, 414's open
-# backtick, 424's result.
+# backtick, 424's result. **23 on 2026-10-09**, as the suite asked at defect
+# 494's case, the notes of a run told once, beside 270's name bound nowhere,
+# 294's two windows and 489's chain of records, added in batch 15.
 function shape_full() -> Shape
     return Shape(
         name: "full",
@@ -221,7 +223,7 @@ function shape_full() -> Shape
         flags: NO_FLAGS,
         on_stderr: true,
         want_code: 1,
-        least: 18,
+        least: 23,
         watched: true,
         silent_stdout: false,
         library_skip: false
