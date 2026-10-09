@@ -115,7 +115,7 @@ function value_of(a: ast.Ast, s: source.Source, id: i64) -> str?
 
 # `.case name` — records the case as covered and hands back what the
 # payload binding is worth.
-function case_pattern(@c: state.Checker, s: source.Source, decls: [ast.Decl], subject: i64, name: token.Span, span: token.Span, @covered: [i64]) -> i64
+function case_pattern(@c: state.Checker, s: source.Source, decls: [ast.Decl], subject: i64, name: token.Span, span: token.Span, @covered: {i64: bool}) -> i64
     case_name = source.span_text(s, name)
 
     if table.poisoned(c.out.types, subject)
@@ -125,13 +125,7 @@ function case_pattern(@c: state.Checker, s: source.Source, decls: [ast.Decl], su
         .named n =>
             match decls[n.decl].kind
                 .variant_decl v =>
-                    at: i64 @ -1
-                    index: i64 @ 0
-
-                    for one_case in v.cases
-                        if source.span_text(s, one_case.name) == case_name
-                            at @ index
-                        index @ index + 1
+                    at = case_named(@c, s, decl: n.decl, cases: v.cases, name: case_name)
 
                     if at < 0
                         known: [str] @ []
@@ -146,9 +140,9 @@ function case_pattern(@c: state.Checker, s: source.Source, decls: [ast.Decl], su
                         )
                         return state.error_ty_of(c)
 
-                    if listed(covered, at)
+                    if !covered[at].is_err()
                         state.push_diagnostic(@c, data_errors.duplicate_arm(case_name, span))
-                    covered @ covered.push(at)
+                    covered[at] @ true
                     return table.intern(@c.out.types, .case_ty(decl: n.decl, at: at))
                 .constant_decl | .function_decl | .record_decl | .test_decl =>
                     got = state.show(c, s, decls, subject)
@@ -164,9 +158,9 @@ function case_pattern(@c: state.Checker, s: source.Source, decls: [ast.Decl], su
                     at @ 1
 
                 # Named twice, as a variant's case is (defect 128).
-                if listed(covered, at)
+                if !covered[at].is_err()
                     state.push_diagnostic(@c, data_errors.duplicate_arm(case_name, span))
-                covered @ covered.push(at)
+                covered[at] @ true
 
                 if at == 0
                     return o.payload
@@ -208,7 +202,7 @@ function wildcard_pattern(@c: state.Checker, s: source.Source, decls: [ast.Decl]
 
 # The rule the language is built around: every case named, or the
 # compiler names the ones that are missing.
-function exhaustive(@c: state.Checker, s: source.Source, decls: [ast.Decl], subject: i64, covered: [i64], wildcard_seen: bool, span: token.Span)
+function exhaustive(@c: state.Checker, s: source.Source, decls: [ast.Decl], subject: i64, covered: {i64: bool}, wildcard_seen: bool, span: token.Span)
     if wildcard_seen || table.poisoned(c.out.types, subject)
         return
 
@@ -220,7 +214,7 @@ function exhaustive(@c: state.Checker, s: source.Source, decls: [ast.Decl], subj
                     index: i64 @ 0
 
                     for one_case in v.cases
-                        if !listed(covered, index)
+                        if covered[index].is_err()
                             missing @ missing.push("." + source.span_text(s, one_case.name))
                         index @ index + 1
 
@@ -230,10 +224,10 @@ function exhaustive(@c: state.Checker, s: source.Source, decls: [ast.Decl], subj
         .fallible =>
             missing: [str] @ []
 
-            if !listed(covered, 0)
+            if covered[0].is_err()
                 missing @ missing.push(".ok")
 
-            if !listed(covered, 1)
+            if covered[1].is_err()
                 missing @ missing.push(".err")
 
             if missing.len() > 0
@@ -245,9 +239,23 @@ function exhaustive(@c: state.Checker, s: source.Source, decls: [ast.Decl], subj
         .float_ty | .bool | .ptr | .cstr | .unit | .array => return
         .fixed | .map | .function_ty | .case_ty | .failure | .generic | .error => return
 
-function listed(xs: [i64], x: i64) -> bool
-    for one in xs
-        if one == x
-            return true
+# A variant's case by name: its index, or -1 where it has none of that name.
+# The names are read into a table the first time a case of the variant is
+# named, the last case of a name winning as the walk over them did, so every
+# later arm and construction asks the table (defects 512 and 513).
+function case_named(@c: state.Checker, s: source.Source, decl: i64, cases: [ast.Case], name: str) -> i64
+    found = c.cases[decl]
+    names: {str: i64} @ {}
 
-    return false
+    if !found.is_err()
+        names @ found.must()
+    else
+        at: i64 @ 0
+
+        for one in cases
+            names[source.span_text(s, one.name)] @ at
+            at @ at + 1
+
+        c.cases[decl] @ names
+
+    return names[name].default(-1)

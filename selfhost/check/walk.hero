@@ -1079,7 +1079,7 @@ function valued_expression(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, 
 # stand in a `match` used as a value.
 function arms(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], match_arms: [ast.Arm], subject: i64, want: Want, span: token.Span) -> [join.Branch]
     branches: [join.Branch] @ []
-    covered: [i64] @ []
+    covered: {i64: bool} @ {}
     wildcard_seen: bool @ false
     seen: reach.Seen @ reach.none()
 
