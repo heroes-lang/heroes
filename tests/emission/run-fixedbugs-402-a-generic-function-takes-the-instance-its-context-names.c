@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -271,7 +271,7 @@ bb3:
 bb4:
 #line 273 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
     t14 = h4_ret0;
-    h_0opt_30514ebf_release(&h1_s0);
+    h_0opt_30514ebf_release(hero_slot_escape(&h1_s0));
     hero_failure_release(&h3_e);
     return t14;
 }
@@ -706,18 +706,18 @@ bb1:
 #line 83 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
     hero_print_end();
 #line 709 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
-    hero_array_decref(h3_fs);
-    hero_array_decref(h4_mixed);
-    hero_array_decref(h5_grown);
-    hero_str_decref(h11_own11);
-    hero_array_decref(h12_own12);
-    hero_array_decref(h13_own13);
-    hero_array_decref(h14_own14);
-    hero_array_decref(h15_own15);
-    h_0opt_30514ebf_release(&h16_own16);
-    hero_str_decref(h17_own17);
-    hero_str_decref(h18_own18);
-    hero_str_decref(h19_own19);
+    hero_array_release_at(&h3_fs);
+    hero_array_release_at(&h4_mixed);
+    hero_array_release_at(&h5_grown);
+    hero_str_release_at(&h11_own11);
+    hero_array_release_at(&h12_own12);
+    hero_array_release_at(&h13_own13);
+    hero_array_release_at(&h14_own14);
+    hero_array_release_at(&h15_own15);
+    h_0opt_30514ebf_release(hero_slot_escape(&h16_own16));
+    hero_str_release_at(&h17_own17);
+    hero_str_release_at(&h18_own18);
+    hero_str_release_at(&h19_own19);
     return;
 bb2:
 #line 71 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
@@ -818,9 +818,9 @@ bb3:
     t13 = h0_out;
 #line 820 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
     hero_array_incref(t13);
-    hero_array_decref(h0_out);
-    hero_array_decref(h2_own2);
-    hero_str_decref(h3_own3);
+    hero_array_release_at(&h0_out);
+    hero_array_release_at(&h2_own2);
+    hero_str_release_at(&h3_own3);
     return t13;
 }
 
@@ -909,8 +909,8 @@ bb0:
 bb1:
     t8 = h0_x;
 #line 912 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
-    hero_array_decref(h2_kept);
-    hero_array_decref(h3_own3);
+    hero_array_release_at(&h2_kept);
+    hero_array_release_at(&h3_own3);
     return t8;
 bb2:
     hero_panic_assert_sides(t3, hero_int_to_str(t5), hero_int_to_str(t6));
@@ -973,8 +973,8 @@ bb1:
     t8 = h0_x;
 #line 975 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
     hero_str_incref(t8);
-    hero_array_decref(h2_kept);
-    hero_array_decref(h3_own3);
+    hero_array_release_at(&h2_kept);
+    hero_array_release_at(&h3_own3);
     return t8;
 bb2:
     hero_panic_assert_sides(t3, hero_int_to_str(t5), hero_int_to_str(t6));
@@ -1069,7 +1069,7 @@ bb0:
 #line 1070 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
     hero_str_decref(t5);
     hero_str_incref(t4);
-    hero_str_decref(h2_own2);
+    hero_str_release_at(&h2_own2);
     return t4;
 }
 HERO_TU_LOCAL bool h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_Holder_eq(const h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_Holder *a, const h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_Holder *b) {

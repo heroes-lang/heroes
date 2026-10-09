@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -1111,46 +1111,46 @@ bb5:
 #line 59 "tests/golden/run/builtins.hero"
     hero_print_end();
 #line 1114 "builtins.c"
-    hero_array_decref(h0_xs);
-    hero_array_decref(h1_sorted);
-    hero_array_decref(h2_names);
-    hero_array_decref(h3_fs);
-    hero_array_decref(h4_flags);
-    hero_array_decref(h5_ordered);
-    hero_array_decref(h6_tail);
-    hero_array_decref(h7_empty);
-    hero_str_decref(h8_word);
-    h_0opt_e201354_release(&h9_f0);
-    h_0opt_e201354_release(&h10_f1);
-    h_0opt_e201354_release(&h11_f2);
-    hero_array_decref(h12_own12);
-    hero_array_decref(h13_own13);
-    hero_array_decref(h14_own14);
-    hero_array_decref(h15_own15);
-    hero_str_decref(h16_own16);
-    hero_array_decref(h17_own17);
-    hero_array_decref(h18_own18);
-    hero_array_decref(h19_own19);
-    hero_array_decref(h20_own20);
-    hero_array_decref(h21_own21);
-    hero_array_decref(h22_own22);
-    hero_str_decref(h23_own23);
-    hero_array_decref(h24_own24);
-    hero_array_decref(h25_own25);
-    hero_array_decref(h26_own26);
-    hero_str_decref(h27_own27);
-    hero_array_decref(h28_own28);
-    hero_str_decref(h29_own29);
-    hero_array_decref(h30_own30);
-    hero_array_decref(h31_own31);
-    hero_str_decref(h32_own32);
-    hero_array_decref(h33_own33);
-    hero_str_decref(h34_own34);
-    hero_array_decref(h35_own35);
-    hero_str_decref(h36_own36);
-    h_0opt_e201354_release(&h37_own37);
-    h_0opt_e201354_release(&h38_own38);
-    h_0opt_e201354_release(&h39_own39);
+    hero_array_release_at(&h0_xs);
+    hero_array_release_at(&h1_sorted);
+    hero_array_release_at(&h2_names);
+    hero_array_release_at(&h3_fs);
+    hero_array_release_at(&h4_flags);
+    hero_array_release_at(&h5_ordered);
+    hero_array_release_at(&h6_tail);
+    hero_array_release_at(&h7_empty);
+    hero_str_release_at(&h8_word);
+    h_0opt_e201354_release(hero_slot_escape(&h9_f0));
+    h_0opt_e201354_release(hero_slot_escape(&h10_f1));
+    h_0opt_e201354_release(hero_slot_escape(&h11_f2));
+    hero_array_release_at(&h12_own12);
+    hero_array_release_at(&h13_own13);
+    hero_array_release_at(&h14_own14);
+    hero_array_release_at(&h15_own15);
+    hero_str_release_at(&h16_own16);
+    hero_array_release_at(&h17_own17);
+    hero_array_release_at(&h18_own18);
+    hero_array_release_at(&h19_own19);
+    hero_array_release_at(&h20_own20);
+    hero_array_release_at(&h21_own21);
+    hero_array_release_at(&h22_own22);
+    hero_str_release_at(&h23_own23);
+    hero_array_release_at(&h24_own24);
+    hero_array_release_at(&h25_own25);
+    hero_array_release_at(&h26_own26);
+    hero_str_release_at(&h27_own27);
+    hero_array_release_at(&h28_own28);
+    hero_str_release_at(&h29_own29);
+    hero_array_release_at(&h30_own30);
+    hero_array_release_at(&h31_own31);
+    hero_str_release_at(&h32_own32);
+    hero_array_release_at(&h33_own33);
+    hero_str_release_at(&h34_own34);
+    hero_array_release_at(&h35_own35);
+    hero_str_release_at(&h36_own36);
+    h_0opt_e201354_release(hero_slot_escape(&h37_own37));
+    h_0opt_e201354_release(hero_slot_escape(&h38_own38));
+    h_0opt_e201354_release(hero_slot_escape(&h39_own39));
     return;
 bb6:
 #line 58 "tests/golden/run/builtins.hero"

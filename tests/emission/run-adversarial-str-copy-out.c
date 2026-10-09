@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -186,7 +186,7 @@ bb6:
 #line 20 "tests/golden/run/adversarial-str-copy-out.hero"
 bb7:
 #line 189 "adversarialstrcopyout.c"
-    hero_str_decref(h3_own3);
+    hero_str_release_at(&h3_own3);
     return;
 }
 
@@ -261,8 +261,8 @@ bb0:
 #line 31 "tests/golden/run/adversarial-str-copy-out.hero"
     hero_print_end();
 #line 264 "adversarialstrcopyout.c"
-    hero_str_decref(h0_a);
-    hero_str_decref(h1_b);
+    hero_str_release_at(&h0_a);
+    hero_str_release_at(&h1_b);
     return;
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {

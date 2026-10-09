@@ -7,7 +7,7 @@
 #include <fixedbugs-413-keepers.h>
 #include "heroes_guard_close.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -364,8 +364,8 @@ bb4:
 #line 52 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     t24 = h1_refused;
 #line 367 "fixedbugs413arecordcknowsbyitsaddress.c"
-    hero_array_decref(h2_xs0);
-    hero_array_decref(h5_own5);
+    hero_array_release_at(&h2_xs0);
+    hero_array_release_at(&h5_own5);
     return t24;
 bb5:
     goto bb3;
@@ -874,10 +874,10 @@ bb0:
 #line 75 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     hero_print_end();
 #line 877 "fixedbugs413arecordcknowsbyitsaddress.c"
-    hero_array_decref(h1_ks);
-    hero_array_decref(h2_ws);
-    hero_array_decref(h9_own9);
-    hero_array_decref(h10_own10);
+    hero_array_release_at(&h1_ks);
+    hero_array_release_at(&h2_ws);
+    hero_array_release_at(&h9_own9);
+    hero_array_release_at(&h10_own10);
     hero_lend_local_give(hero_lend_h8_copy);
     hero_lend_local_give(hero_lend_h7_d);
     hero_lend_local_give(hero_lend_h6_b);
@@ -961,8 +961,8 @@ bb3:
     t12 = h2_out;
 #line 963 "fixedbugs413arecordcknowsbyitsaddress.c"
     hero_array_incref(t12);
-    hero_array_decref(h2_out);
-    hero_array_decref(h4_own4);
+    hero_array_release_at(&h2_out);
+    hero_array_release_at(&h4_own4);
     return t12;
 }
 HERO_TU_LOCAL bool h_fixedbugs413arecordcknowsbyitsaddress_Keeper_eq(const struct keeper *a, const struct keeper *b) {

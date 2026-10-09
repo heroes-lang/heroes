@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -159,8 +159,8 @@ bb0:
 #line 160 "afieldnamecomesfromthefield.c"
     hero_str_decref(t7);
     hero_str_incref(t5);
-    hero_str_decref(h1_own1);
-    hero_str_decref(h2_own2);
+    hero_str_release_at(&h1_own1);
+    hero_str_release_at(&h2_own2);
     return t5;
 }
 
@@ -223,10 +223,10 @@ bb0:
 #line 224 "afieldnamecomesfromthefield.c"
     hero_str_decref(t11);
     hero_str_incref(t7);
-    hero_str_decref(h2_own2);
-    hero_str_decref(h3_own3);
-    hero_str_decref(h4_own4);
-    hero_str_decref(h5_own5);
+    hero_str_release_at(&h2_own2);
+    hero_str_release_at(&h3_own3);
+    hero_str_release_at(&h4_own4);
+    hero_str_release_at(&h5_own5);
     return t7;
 }
 
@@ -289,10 +289,10 @@ bb0:
 #line 290 "afieldnamecomesfromthefield.c"
     hero_str_decref(t11);
     hero_str_incref(t7);
-    hero_str_decref(h2_own2);
-    hero_str_decref(h3_own3);
-    hero_str_decref(h4_own4);
-    hero_str_decref(h5_own5);
+    hero_str_release_at(&h2_own2);
+    hero_str_release_at(&h3_own3);
+    hero_str_release_at(&h4_own4);
+    hero_str_release_at(&h5_own5);
     return t7;
 }
 
@@ -412,13 +412,13 @@ bb0:
 #line 413 "afieldnamecomesfromthefield.c"
     hero_str_decref(t23);
     hero_str_incref(t16);
-    hero_array_decref(h1_parts);
-    hero_str_decref(h2_own2);
-    hero_str_decref(h3_own3);
-    hero_array_decref(h4_own4);
-    hero_str_decref(h5_own5);
-    hero_str_decref(h6_own6);
-    hero_str_decref(h7_own7);
+    hero_array_release_at(&h1_parts);
+    hero_str_release_at(&h2_own2);
+    hero_str_release_at(&h3_own3);
+    hero_array_release_at(&h4_own4);
+    hero_str_release_at(&h5_own5);
+    hero_str_release_at(&h6_own6);
+    hero_str_release_at(&h7_own7);
     return t16;
 }
 
@@ -607,18 +607,18 @@ bb0:
 #line 608 "afieldnamecomesfromthefield.c"
     hero_str_decref(t37);
     hero_str_incref(t25);
-    hero_array_decref(h1_parts);
-    hero_str_decref(h2_own2);
-    hero_str_decref(h3_own3);
-    hero_str_decref(h4_own4);
-    hero_str_decref(h5_own5);
-    hero_str_decref(h6_own6);
-    hero_str_decref(h7_own7);
-    hero_array_decref(h8_own8);
-    hero_array_decref(h9_own9);
-    hero_str_decref(h10_own10);
-    hero_str_decref(h11_own11);
-    hero_str_decref(h12_own12);
+    hero_array_release_at(&h1_parts);
+    hero_str_release_at(&h2_own2);
+    hero_str_release_at(&h3_own3);
+    hero_str_release_at(&h4_own4);
+    hero_str_release_at(&h5_own5);
+    hero_str_release_at(&h6_own6);
+    hero_str_release_at(&h7_own7);
+    hero_array_release_at(&h8_own8);
+    hero_array_release_at(&h9_own9);
+    hero_str_release_at(&h10_own10);
+    hero_str_release_at(&h11_own11);
+    hero_str_release_at(&h12_own12);
     return t25;
 }
 
@@ -765,13 +765,13 @@ bb0:
 #line 55 "tests/golden/run/a-field-name-comes-from-the-field.hero"
     hero_print_end();
 #line 768 "afieldnamecomesfromthefield.c"
-    h_afieldnamecomesfromthefield_Room_release(&h0_r);
-    hero_array_decref(h1_names);
-    h_afieldnamecomesfromthefield_Room_release(&h2_own2);
-    hero_str_decref(h3_own3);
-    hero_array_decref(h4_own4);
-    hero_array_decref(h5_own5);
-    hero_str_decref(h6_own6);
+    h_afieldnamecomesfromthefield_Room_release(hero_slot_escape(&h0_r));
+    hero_array_release_at(&h1_names);
+    h_afieldnamecomesfromthefield_Room_release(hero_slot_escape(&h2_own2));
+    hero_str_release_at(&h3_own3);
+    hero_array_release_at(&h4_own4);
+    hero_array_release_at(&h5_own5);
+    hero_str_release_at(&h6_own6);
     return;
 }
 HERO_TU_LOCAL bool h_afieldnamecomesfromthefield_Point_eq(const h_afieldnamecomesfromthefield_Point *a, const h_afieldnamecomesfromthefield_Point *b) {

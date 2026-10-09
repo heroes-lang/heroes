@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -666,24 +666,24 @@ bb7:
 #line 31 "tests/golden/run/fixedbugs-275-a-failure-message-keeps-its-last-letter.hero"
     hero_print_end();
 #line 669 "fixedbugs275afailuremessagekeepsitslastletter.c"
-    hero_array_decref(h0_b);
-    h_0opt_f87774a_release(&h1_s0);
-    hero_str_decref(h2_s);
+    hero_array_release_at(&h0_b);
+    h_0opt_f87774a_release(hero_slot_escape(&h1_s0));
+    hero_str_release_at(&h2_s);
     hero_failure_release(&h3_e);
-    h_0opt_1b9b98_release(&h5_s1);
+    h_0opt_1b9b98_release(hero_slot_escape(&h5_s1));
     hero_failure_release(&h7_e);
-    hero_map_decref(h8_m);
-    h_0opt_e201354_release(&h9_s2);
+    hero_map_release_at(&h8_m);
+    h_0opt_e201354_release(hero_slot_escape(&h9_s2));
     hero_failure_release(&h11_e);
-    hero_array_decref(h12_own12);
-    h_0opt_f87774a_release(&h13_own13);
-    h_0opt_1b9b98_release(&h14_own14);
-    hero_map_decref(h15_own15);
-    h_0opt_e201354_release(&h16_own16);
-    hero_str_decref(h17_own17);
-    hero_str_decref(h18_own18);
-    hero_str_decref(h19_own19);
-    hero_str_decref(h20_own20);
+    hero_array_release_at(&h12_own12);
+    h_0opt_f87774a_release(hero_slot_escape(&h13_own13));
+    h_0opt_1b9b98_release(hero_slot_escape(&h14_own14));
+    hero_map_release_at(&h15_own15);
+    h_0opt_e201354_release(hero_slot_escape(&h16_own16));
+    hero_str_release_at(&h17_own17);
+    hero_str_release_at(&h18_own18);
+    hero_str_release_at(&h19_own19);
+    hero_str_release_at(&h20_own20);
     return;
 bb8:
 #line 27 "tests/golden/run/fixedbugs-275-a-failure-message-keeps-its-last-letter.hero"

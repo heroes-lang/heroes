@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -197,10 +197,10 @@ bb0:
 #line 18 "tests/golden/run/abort-sort-nan.hero"
     hero_print_end();
 #line 200 "abortsortnan.c"
-    hero_array_decref(h2_own2);
-    hero_array_decref(h3_own3);
-    hero_array_decref(h4_own4);
-    hero_array_decref(h5_own5);
+    hero_array_release_at(&h2_own2);
+    hero_array_release_at(&h3_own3);
+    hero_array_release_at(&h4_own4);
+    hero_array_release_at(&h5_own5);
     return;
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {

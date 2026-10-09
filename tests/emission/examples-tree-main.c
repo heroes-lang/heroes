@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -645,27 +645,27 @@ bb0:
 #line 46 "examples/tree/main.hero"
     hero_print_end();
 #line 648 "main.c"
-    h_node_Tree_release(&h0_t);
-    h_node_Tree_release(&h9_u);
-    h_node_Tree_release(&h10_v);
-    h_node_Node_release(&h11_absent);
-    h_node_Tree_release(&h12_own12);
-    h_node_Node_release(&h13_own13);
-    h_node_Node_release(&h14_own14);
-    h_node_Node_release(&h15_own15);
-    h_node_Node_release(&h16_own16);
-    h_node_Node_release(&h17_own17);
-    h_node_Node_release(&h18_own18);
-    h_node_Node_release(&h19_own19);
-    h_node_Node_release(&h20_own20);
-    hero_str_decref(h21_own21);
-    h_node_Tree_release(&h22_own22);
-    h_node_Node_release(&h23_own23);
-    h_node_Tree_release(&h24_own24);
-    h_node_Node_release(&h25_own25);
-    h_node_Node_release(&h26_own26);
-    h_node_Node_release(&h27_own27);
-    h_node_Node_release(&h28_own28);
+    h_node_Tree_release(hero_slot_escape(&h0_t));
+    h_node_Tree_release(hero_slot_escape(&h9_u));
+    h_node_Tree_release(hero_slot_escape(&h10_v));
+    h_node_Node_release(hero_slot_escape(&h11_absent));
+    h_node_Tree_release(hero_slot_escape(&h12_own12));
+    h_node_Node_release(hero_slot_escape(&h13_own13));
+    h_node_Node_release(hero_slot_escape(&h14_own14));
+    h_node_Node_release(hero_slot_escape(&h15_own15));
+    h_node_Node_release(hero_slot_escape(&h16_own16));
+    h_node_Node_release(hero_slot_escape(&h17_own17));
+    h_node_Node_release(hero_slot_escape(&h18_own18));
+    h_node_Node_release(hero_slot_escape(&h19_own19));
+    h_node_Node_release(hero_slot_escape(&h20_own20));
+    hero_str_release_at(&h21_own21);
+    h_node_Tree_release(hero_slot_escape(&h22_own22));
+    h_node_Node_release(hero_slot_escape(&h23_own23));
+    h_node_Tree_release(hero_slot_escape(&h24_own24));
+    h_node_Node_release(hero_slot_escape(&h25_own25));
+    h_node_Node_release(hero_slot_escape(&h26_own26));
+    h_node_Node_release(hero_slot_escape(&h27_own27));
+    h_node_Node_release(hero_slot_escape(&h28_own28));
     return;
 }
 
@@ -712,9 +712,9 @@ bb0:
 #line 713 "main.c"
     h_node_Tree_release(&t6);
     h_node_Tree_retain(&t3);
-    hero_array_decref(h0_nodes);
-    hero_array_decref(h1_own1);
-    h_node_Tree_release(&h2_own2);
+    hero_array_release_at(&h0_nodes);
+    hero_array_release_at(&h1_own1);
+    h_node_Tree_release(hero_slot_escape(&h2_own2));
     return t3;
 }
 
@@ -768,7 +768,7 @@ bb0:
 #line 62 "examples/tree/node.hero"
     if (__builtin_sub_overflow(t7, t8, &t9)) hero_panic_overflow();
 #line 771 "main.c"
-    hero_array_decref(h2_own2);
+    hero_array_release_at(&h2_own2);
     return t9;
 }
 
@@ -876,8 +876,8 @@ bb1:
 #line 70 "examples/tree/node.hero"
     t47 = h3_r0;
 #line 879 "main.c"
-    h_node_Node_release(&h2_s0);
-    h_node_Node_c_annotated_release(&h8_a);
+    h_node_Node_release(hero_slot_escape(&h2_s0));
+    h_node_Node_c_annotated_release(hero_slot_escape(&h8_a));
     return t47;
 bb2:
 #line 71 "examples/tree/node.hero"
@@ -1120,8 +1120,8 @@ bb1:
 #line 80 "examples/tree/node.hero"
     t51 = h3_r0;
 #line 1123 "main.c"
-    h_node_Node_release(&h2_s0);
-    h_node_Node_c_annotated_release(&h7_a);
+    h_node_Node_release(hero_slot_escape(&h2_s0));
+    h_node_Node_c_annotated_release(hero_slot_escape(&h7_a));
     return t51;
 bb2:
 #line 81 "examples/tree/node.hero"
@@ -1467,25 +1467,25 @@ bb1:
     t61 = h3_r0;
 #line 1469 "main.c"
     hero_str_incref(t61);
-    h_node_Node_release(&h2_s0);
-    hero_str_decref(h3_r0);
-    h_node_Node_c_annotated_release(&h8_a);
-    hero_str_decref(h9_own9);
-    hero_str_decref(h10_own10);
-    hero_str_decref(h11_own11);
-    hero_str_decref(h12_own12);
-    hero_str_decref(h13_own13);
-    hero_str_decref(h14_own14);
-    hero_str_decref(h15_own15);
-    hero_str_decref(h16_own16);
-    hero_str_decref(h17_own17);
-    hero_str_decref(h18_own18);
-    hero_str_decref(h19_own19);
-    hero_str_decref(h20_own20);
-    hero_str_decref(h21_own21);
-    hero_str_decref(h22_own22);
-    hero_str_decref(h23_own23);
-    hero_str_decref(h24_own24);
+    h_node_Node_release(hero_slot_escape(&h2_s0));
+    hero_str_release_at(&h3_r0);
+    h_node_Node_c_annotated_release(hero_slot_escape(&h8_a));
+    hero_str_release_at(&h9_own9);
+    hero_str_release_at(&h10_own10);
+    hero_str_release_at(&h11_own11);
+    hero_str_release_at(&h12_own12);
+    hero_str_release_at(&h13_own13);
+    hero_str_release_at(&h14_own14);
+    hero_str_release_at(&h15_own15);
+    hero_str_release_at(&h16_own16);
+    hero_str_release_at(&h17_own17);
+    hero_str_release_at(&h18_own18);
+    hero_str_release_at(&h19_own19);
+    hero_str_release_at(&h20_own20);
+    hero_str_release_at(&h21_own21);
+    hero_str_release_at(&h22_own22);
+    hero_str_release_at(&h23_own23);
+    hero_str_release_at(&h24_own24);
     return t61;
 bb2:
 #line 97 "examples/tree/node.hero"

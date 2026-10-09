@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -439,7 +439,7 @@ bb9:
 bb10:
 #line 441 "main.c"
     t26 = h4_ret0;
-    hero_array_decref(h3_deeper);
+    hero_array_release_at(&h3_deeper);
     return t26;
 }
 
@@ -482,8 +482,8 @@ bb0:
 #line 61 "examples/nqueens/main.hero"
     t4 = h_main_solutions_from(t3);
 #line 485 "main.c"
-    hero_array_decref(h1_start);
-    hero_array_decref(h2_own2);
+    hero_array_release_at(&h1_start);
+    hero_array_release_at(&h2_own2);
     return t4;
 }
 
@@ -658,9 +658,9 @@ bb7:
 #line 76 "examples/nqueens/main.hero"
     t31 = h2_found;
 #line 661 "main.c"
-    hero_array_decref(h0_handles);
-    hero_array_decref(h3_xs0);
-    hero_array_decref(h6_own6);
+    hero_array_release_at(&h0_handles);
+    hero_array_release_at(&h3_xs0);
+    hero_array_release_at(&h6_own6);
     return t31;
 }
 
@@ -697,8 +697,8 @@ bb0:
 #line 80 "examples/nqueens/main.hero"
     t3 = h_main_solutions_from(t2);
 #line 700 "main.c"
-    hero_array_decref(h0_empty);
-    hero_array_decref(h1_own1);
+    hero_array_release_at(&h0_empty);
+    hero_array_release_at(&h1_own1);
     return t3;
 }
 

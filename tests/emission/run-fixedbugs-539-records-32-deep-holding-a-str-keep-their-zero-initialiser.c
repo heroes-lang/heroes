@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -1189,70 +1189,70 @@ bb0:
     t65 = h32_v31;
 #line 1191 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
     h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R31_retain(&t65);
-    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R0_release(&h1_v0);
-    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R1_release(&h2_v1);
-    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R2_release(&h3_v2);
-    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R3_release(&h4_v3);
-    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R4_release(&h5_v4);
-    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R5_release(&h6_v5);
-    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R6_release(&h7_v6);
-    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R7_release(&h8_v7);
-    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R8_release(&h9_v8);
-    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R9_release(&h10_v9);
-    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R10_release(&h11_v10);
-    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R11_release(&h12_v11);
-    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R12_release(&h13_v12);
-    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R13_release(&h14_v13);
-    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R14_release(&h15_v14);
-    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R15_release(&h16_v15);
-    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R16_release(&h17_v16);
-    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R17_release(&h18_v17);
-    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R18_release(&h19_v18);
-    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R19_release(&h20_v19);
-    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R20_release(&h21_v20);
-    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R21_release(&h22_v21);
-    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R22_release(&h23_v22);
-    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R23_release(&h24_v23);
-    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R24_release(&h25_v24);
-    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R25_release(&h26_v25);
-    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R26_release(&h27_v26);
-    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R27_release(&h28_v27);
-    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R28_release(&h29_v28);
-    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R29_release(&h30_v29);
-    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R30_release(&h31_v30);
-    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R31_release(&h32_v31);
-    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R0_release(&h33_own33);
-    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R1_release(&h34_own34);
-    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R2_release(&h35_own35);
-    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R3_release(&h36_own36);
-    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R4_release(&h37_own37);
-    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R5_release(&h38_own38);
-    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R6_release(&h39_own39);
-    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R7_release(&h40_own40);
-    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R8_release(&h41_own41);
-    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R9_release(&h42_own42);
-    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R10_release(&h43_own43);
-    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R11_release(&h44_own44);
-    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R12_release(&h45_own45);
-    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R13_release(&h46_own46);
-    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R14_release(&h47_own47);
-    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R15_release(&h48_own48);
-    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R16_release(&h49_own49);
-    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R17_release(&h50_own50);
-    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R18_release(&h51_own51);
-    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R19_release(&h52_own52);
-    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R20_release(&h53_own53);
-    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R21_release(&h54_own54);
-    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R22_release(&h55_own55);
-    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R23_release(&h56_own56);
-    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R24_release(&h57_own57);
-    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R25_release(&h58_own58);
-    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R26_release(&h59_own59);
-    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R27_release(&h60_own60);
-    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R28_release(&h61_own61);
-    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R29_release(&h62_own62);
-    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R30_release(&h63_own63);
-    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R31_release(&h64_own64);
+    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R0_release(hero_slot_escape(&h1_v0));
+    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R1_release(hero_slot_escape(&h2_v1));
+    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R2_release(hero_slot_escape(&h3_v2));
+    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R3_release(hero_slot_escape(&h4_v3));
+    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R4_release(hero_slot_escape(&h5_v4));
+    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R5_release(hero_slot_escape(&h6_v5));
+    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R6_release(hero_slot_escape(&h7_v6));
+    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R7_release(hero_slot_escape(&h8_v7));
+    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R8_release(hero_slot_escape(&h9_v8));
+    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R9_release(hero_slot_escape(&h10_v9));
+    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R10_release(hero_slot_escape(&h11_v10));
+    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R11_release(hero_slot_escape(&h12_v11));
+    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R12_release(hero_slot_escape(&h13_v12));
+    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R13_release(hero_slot_escape(&h14_v13));
+    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R14_release(hero_slot_escape(&h15_v14));
+    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R15_release(hero_slot_escape(&h16_v15));
+    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R16_release(hero_slot_escape(&h17_v16));
+    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R17_release(hero_slot_escape(&h18_v17));
+    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R18_release(hero_slot_escape(&h19_v18));
+    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R19_release(hero_slot_escape(&h20_v19));
+    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R20_release(hero_slot_escape(&h21_v20));
+    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R21_release(hero_slot_escape(&h22_v21));
+    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R22_release(hero_slot_escape(&h23_v22));
+    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R23_release(hero_slot_escape(&h24_v23));
+    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R24_release(hero_slot_escape(&h25_v24));
+    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R25_release(hero_slot_escape(&h26_v25));
+    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R26_release(hero_slot_escape(&h27_v26));
+    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R27_release(hero_slot_escape(&h28_v27));
+    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R28_release(hero_slot_escape(&h29_v28));
+    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R29_release(hero_slot_escape(&h30_v29));
+    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R30_release(hero_slot_escape(&h31_v30));
+    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R31_release(hero_slot_escape(&h32_v31));
+    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R0_release(hero_slot_escape(&h33_own33));
+    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R1_release(hero_slot_escape(&h34_own34));
+    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R2_release(hero_slot_escape(&h35_own35));
+    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R3_release(hero_slot_escape(&h36_own36));
+    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R4_release(hero_slot_escape(&h37_own37));
+    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R5_release(hero_slot_escape(&h38_own38));
+    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R6_release(hero_slot_escape(&h39_own39));
+    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R7_release(hero_slot_escape(&h40_own40));
+    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R8_release(hero_slot_escape(&h41_own41));
+    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R9_release(hero_slot_escape(&h42_own42));
+    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R10_release(hero_slot_escape(&h43_own43));
+    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R11_release(hero_slot_escape(&h44_own44));
+    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R12_release(hero_slot_escape(&h45_own45));
+    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R13_release(hero_slot_escape(&h46_own46));
+    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R14_release(hero_slot_escape(&h47_own47));
+    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R15_release(hero_slot_escape(&h48_own48));
+    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R16_release(hero_slot_escape(&h49_own49));
+    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R17_release(hero_slot_escape(&h50_own50));
+    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R18_release(hero_slot_escape(&h51_own51));
+    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R19_release(hero_slot_escape(&h52_own52));
+    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R20_release(hero_slot_escape(&h53_own53));
+    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R21_release(hero_slot_escape(&h54_own54));
+    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R22_release(hero_slot_escape(&h55_own55));
+    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R23_release(hero_slot_escape(&h56_own56));
+    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R24_release(hero_slot_escape(&h57_own57));
+    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R25_release(hero_slot_escape(&h58_own58));
+    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R26_release(hero_slot_escape(&h59_own59));
+    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R27_release(hero_slot_escape(&h60_own60));
+    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R28_release(hero_slot_escape(&h61_own61));
+    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R29_release(hero_slot_escape(&h62_own62));
+    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R30_release(hero_slot_escape(&h63_own63));
+    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R31_release(hero_slot_escape(&h64_own64));
     return t65;
 }
 
@@ -1515,9 +1515,9 @@ bb0:
 #line 147 "tests/golden/run/fixedbugs-539-records-32-deep-holding-a-str-keep-their-zero-initialiser.hero"
     hero_print_end();
 #line 1518 "fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser.c"
-    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R31_release(&h0_kept);
-    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R31_release(&h1_own1);
-    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R31_release(&h2_own2);
+    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R31_release(hero_slot_escape(&h0_kept));
+    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R31_release(hero_slot_escape(&h1_own1));
+    h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R31_release(hero_slot_escape(&h2_own2));
     return;
 }
 HERO_TU_LOCAL void h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R0_retain(const h_fixedbugs539records32deepholdingastrkeeptheirzeroinitialiser_R0 *v) {

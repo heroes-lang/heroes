@@ -55,7 +55,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#define HERO_RUNTIME_ABI 29
+#define HERO_RUNTIME_ABI 30
 
 _Noreturn void hero_panic(const char *msg);
 _Noreturn void hero_panic_overflow(void);
@@ -209,6 +209,18 @@ HeroStr hero_str_empty(void); /* "" — non-NULL ptr, static block */
 
 void hero_str_incref(HeroStr s);
 void hero_str_decref(HeroStr s); /* no-op on the NULL non-value */
+
+/* **A function's exit releases a counted slot through its address** (defect
+ * 470, panel 200's R3): a slot read by value is one value per way into the
+ * one exit once the optimiser keeps it in a register, which cost clang 3.46 GB
+ * at 800 returns (2026-10-09); through an address this unit does not see
+ * into, the slot stays in memory. Each is its type's decref of `*slot`. The
+ * premise is that this runtime is its own unit: LTO or a unity build would
+ * undo it.
+ * `hero_slot_escape` returns its argument, for a slot a function of the
+ * program's own unit releases. */
+void hero_str_release_at(const HeroStr *slot);
+void *hero_slot_escape(void *slot);
 
 HeroStr hero_str_concat(HeroStr a, HeroStr b);
 bool hero_str_eq(HeroStr a, HeroStr b);
@@ -481,6 +493,7 @@ typedef struct HeroArrayHeader {
 HeroArrayHeader *hero_array_new(const HeroDesc *elem, int64_t cap);
 void hero_array_incref(HeroArrayHeader *a);
 void hero_array_decref(HeroArrayHeader *a); /* no-op on NULL */
+void hero_array_release_at(HeroArrayHeader *const *slot); /* defect 470 */
 int64_t hero_array_len(const HeroArrayHeader *a);
 
 /* A CONSTANT'S ARRAY IS A STATIC BLOCK, laid out by clang the way
@@ -708,6 +721,7 @@ extern const HeroDesc hero_desc_map;
 HeroMapHeader *hero_map_new(const HeroDesc *key, const HeroDesc *val, int64_t entries);
 void hero_map_incref(HeroMapHeader *m);
 void hero_map_decref(HeroMapHeader *m); /* no-op on NULL */
+void hero_map_release_at(HeroMapHeader *const *slot); /* defect 470 */
 int64_t hero_map_len(const HeroMapHeader *m);
 
 /* Used only by the literal builder. It COPIES both key and value through their

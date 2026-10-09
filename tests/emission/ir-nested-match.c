@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -180,9 +180,9 @@ bb1:
     t16 = h3_r0;
 #line 182 "nestedmatch.c"
     hero_str_incref(t16);
-    hero_str_decref(h3_r0);
-    hero_str_decref(h5_r1);
-    hero_str_decref(h7_r2);
+    hero_str_release_at(&h3_r0);
+    hero_str_release_at(&h5_r1);
+    hero_str_release_at(&h7_r2);
     return t16;
 bb2:
 #line 24 "tests/golden/ir/nested-match.hero"

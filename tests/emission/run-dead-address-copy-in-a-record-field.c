@@ -7,7 +7,7 @@
 #include <dead-address-copy-in-a-record-field.h>
 #include "heroes_guard_close.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -233,8 +233,8 @@ bb4:
 #line 234 "deadaddresscopyinarecordfield.c"
     t13 = h1_ret0;
     h_0opt_1946b540_retain(&t13);
-    h_0opt_1946b540_release(&h2_own2);
-    h_0opt_1946b540_release(&h3_own3);
+    h_0opt_1946b540_release(hero_slot_escape(&h2_own2));
+    h_0opt_1946b540_release(hero_slot_escape(&h3_own3));
     hero_lend_local_give(hero_lend_h0_db);
     return t13;
 }
@@ -343,8 +343,8 @@ bb1:
 #line 32 "tests/golden/run/dead-address-copy-in-a-record-field.hero"
     hero_print_end();
 #line 346 "deadaddresscopyinarecordfield.c"
-    h_0opt_1946b540_release(&h0_f0);
-    h_0opt_1946b540_release(&h3_own3);
+    h_0opt_1946b540_release(hero_slot_escape(&h0_f0));
+    h_0opt_1946b540_release(hero_slot_escape(&h3_own3));
     return;
 bb2:
 #line 29 "tests/golden/run/dead-address-copy-in-a-record-field.hero"

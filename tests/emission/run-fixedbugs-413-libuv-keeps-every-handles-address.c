@@ -7,7 +7,7 @@
 #include <uv.h>
 #include "heroes_guard_close.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -309,8 +309,8 @@ bb0:
 #line 44 "tests/golden/run/fixedbugs-413-libuv-keeps-every-handles-address.hero"
     (void)uv_walk(t19, (h_0fn_7d30c22)hero_callback_of((void (*)(void))t20), t21);
 #line 312 "fixedbugs413libuvkeepseveryhandlesaddress.c"
-    hero_array_decref(h2_ts);
-    hero_array_decref(h3_own3);
+    hero_array_release_at(&h2_ts);
+    hero_array_release_at(&h3_own3);
     hero_lend_local_give(hero_lend_h1_a);
     return;
 }

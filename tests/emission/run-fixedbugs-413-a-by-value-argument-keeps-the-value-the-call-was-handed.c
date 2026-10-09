@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -161,7 +161,7 @@ bb0:
 #line 34 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
     t4 = ((void)((t2 == NULL || t3 < 0 || t3 >= t2->len) ? ((void)hero_array_at(t2, t3), hero_unreachable()) : (void)0), (void)(t2->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t2 + 1))[t3]);
 #line 164 "fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded.c"
-    hero_array_decref(h2_own2);
+    hero_array_release_at(&h2_own2);
     return t4;
 }
 
@@ -200,7 +200,7 @@ bb0:
 #line 38 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
     t6 = ((void)((t4 == NULL || t5 < 0 || t5 >= t4->len) ? ((void)hero_array_at(t4, t5), hero_unreachable()) : (void)0), (void)(t4->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t4 + 1))[t5]);
 #line 203 "fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded.c"
-    h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_B_release(&h2_own2);
+    h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_B_release(hero_slot_escape(&h2_own2));
     return t6;
 }
 
@@ -236,7 +236,7 @@ bb0:
 #line 42 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
     t5 = ((void)((t3 == NULL || t4 < 0 || t4 >= t3->len) ? ((void)hero_array_at(t3, t4), hero_unreachable()) : (void)0), (void)(t3->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t3 + 1))[t4]);
 #line 239 "fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded.c"
-    hero_array_decref(h2_own2);
+    hero_array_release_at(&h2_own2);
     return t5;
 }
 
@@ -297,7 +297,7 @@ bb0:
 #line 46 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
     if (__builtin_add_overflow(t6, t9, &t10)) hero_panic_overflow();
 #line 300 "fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded.c"
-    hero_array_decref(h2_own2);
+    hero_array_release_at(&h2_own2);
     return t10;
 }
 
@@ -727,19 +727,19 @@ bb0:
 #line 70 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
     hero_print_end();
 #line 730 "fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded.c"
-    hero_array_decref(h1_xs);
-    h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_B_release(&h2_f);
-    h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_B_release(&h3_r);
-    h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_B_release(&h4_z);
-    hero_array_decref(h5_ws);
-    hero_array_decref(h6_own6);
-    hero_array_decref(h7_own7);
-    h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_B_release(&h8_own8);
-    hero_array_decref(h9_own9);
-    h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_B_release(&h10_own10);
-    hero_array_decref(h11_own11);
-    h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_B_release(&h12_own12);
-    hero_array_decref(h13_own13);
+    hero_array_release_at(&h1_xs);
+    h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_B_release(hero_slot_escape(&h2_f));
+    h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_B_release(hero_slot_escape(&h3_r));
+    h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_B_release(hero_slot_escape(&h4_z));
+    hero_array_release_at(&h5_ws);
+    hero_array_release_at(&h6_own6);
+    hero_array_release_at(&h7_own7);
+    h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_B_release(hero_slot_escape(&h8_own8));
+    hero_array_release_at(&h9_own9);
+    h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_B_release(hero_slot_escape(&h10_own10));
+    hero_array_release_at(&h11_own11);
+    h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_B_release(hero_slot_escape(&h12_own12));
+    hero_array_release_at(&h13_own13);
     return;
 }
 HERO_TU_LOCAL void h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_B_retain(const h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_B *v) {

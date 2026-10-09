@@ -7,7 +7,7 @@
 #include <fixedbugs-396-buffers.h>
 #include "heroes_guard_close.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -398,10 +398,10 @@ bb7:
     hero_unreachable();
 bb8:
     t32 = h5_ret0;
-    h_0opt_e1f4933_release(&h2_f0);
-    h_0opt_e201354_release(&h4_f1);
-    h_0opt_e1f4933_release(&h6_own6);
-    h_0opt_e201354_release(&h7_own7);
+    h_0opt_e1f4933_release(hero_slot_escape(&h2_f0));
+    h_0opt_e201354_release(hero_slot_escape(&h4_f1));
+    h_0opt_e1f4933_release(hero_slot_escape(&h6_own6));
+    h_0opt_e201354_release(hero_slot_escape(&h7_own7));
     hero_lend_local_give(hero_lend_h1_x);
     return t32;
 }
@@ -597,10 +597,10 @@ bb3:
 #line 59 "tests/golden/run/fixedbugs-396-a-local-lent-in-place-is-guarded.hero"
     t21 = t20.as.ok;
 #line 600 "fixedbugs396alocallentinplaceisguarded.c"
-    h_0opt_e1f4933_release(&h2_f0);
-    h_0opt_e201354_release(&h3_f1);
-    h_0opt_e1f4933_release(&h4_own4);
-    h_0opt_e201354_release(&h5_own5);
+    h_0opt_e1f4933_release(hero_slot_escape(&h2_f0));
+    h_0opt_e201354_release(hero_slot_escape(&h3_f1));
+    h_0opt_e1f4933_release(hero_slot_escape(&h4_own4));
+    h_0opt_e201354_release(hero_slot_escape(&h5_own5));
     hero_lend_local_give(hero_lend_h1_x);
     return t21;
 bb4:
@@ -1002,10 +1002,10 @@ bb4:
 #line 96 "tests/golden/run/fixedbugs-396-a-local-lent-in-place-is-guarded.hero"
     hero_print_end();
 #line 1005 "fixedbugs396alocallentinplaceisguarded.c"
-    hero_array_decref(h5_md);
-    h_0opt_e1f4933_release(&h7_f0);
-    hero_array_decref(h9_own9);
-    h_0opt_e1f4933_release(&h10_own10);
+    hero_array_release_at(&h5_md);
+    h_0opt_e1f4933_release(hero_slot_escape(&h7_f0));
+    hero_array_release_at(&h9_own9);
+    h_0opt_e1f4933_release(hero_slot_escape(&h10_own10));
     hero_lend_local_give(hero_lend_h8_w);
     hero_lend_local_give(hero_lend_h6_m);
     hero_lend_local_give(hero_lend_h3_late);

@@ -8,7 +8,7 @@
 #include <string.h>
 #include "heroes_guard_close.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -434,14 +434,14 @@ bb9:
     t48 = t47.as.ok;
 #line 436 "fixedbugs245astrmadewithoutitsnulislent.c"
     hero_str_incref(t48);
-    hero_array_decref(h1_xs0);
-    h_0opt_e1f4933_release(&h4_f0);
-    h_0opt_f87774a_release(&h5_f1);
-    hero_str_decref(h6_own6);
-    hero_array_decref(h7_own7);
-    h_0opt_e1f4933_release(&h8_own8);
-    hero_str_decref(h9_own9);
-    h_0opt_f87774a_release(&h10_own10);
+    hero_array_release_at(&h1_xs0);
+    h_0opt_e1f4933_release(hero_slot_escape(&h4_f0));
+    h_0opt_f87774a_release(hero_slot_escape(&h5_f1));
+    hero_str_release_at(&h6_own6);
+    hero_array_release_at(&h7_own7);
+    h_0opt_e1f4933_release(hero_slot_escape(&h8_own8));
+    hero_str_release_at(&h9_own9);
+    h_0opt_f87774a_release(hero_slot_escape(&h10_own10));
     return t48;
 bb10:
 #line 29 "tests/golden/run/fixedbugs-245-a-str-made-without-its-nul-is-lent.hero"
@@ -679,15 +679,15 @@ bb0:
 #line 42 "tests/golden/run/fixedbugs-245-a-str-made-without-its-nul-is-lent.hero"
     h_fixedbugs245astrmadewithoutitsnulislent_lent(t27, t30);
 #line 682 "fixedbugs245astrmadewithoutitsnulislent.c"
-    hero_str_decref(h0_s);
-    hero_str_decref(h1_own1);
-    hero_str_decref(h2_own2);
-    hero_str_decref(h3_own3);
-    hero_array_decref(h4_own4);
-    hero_array_decref(h5_own5);
-    hero_str_decref(h6_own6);
-    hero_str_decref(h7_own7);
-    hero_str_decref(h8_own8);
+    hero_str_release_at(&h0_s);
+    hero_str_release_at(&h1_own1);
+    hero_str_release_at(&h2_own2);
+    hero_str_release_at(&h3_own3);
+    hero_array_release_at(&h4_own4);
+    hero_array_release_at(&h5_own5);
+    hero_str_release_at(&h6_own6);
+    hero_str_release_at(&h7_own7);
+    hero_str_release_at(&h8_own8);
     return;
 }
 
@@ -1004,17 +1004,17 @@ bb13:
 #line 1005 "fixedbugs245astrmadewithoutitsnulislent.c"
     t38 = h3_ret0;
     h_0opt_f87774a_retain(&t38);
-    hero_str_decref(h2_text);
-    hero_str_decref(h4_own4);
-    h_0opt_f87774a_release(&h5_own5);
-    h_0opt_f87774a_release(&h6_own6);
-    hero_str_decref(h7_own7);
-    h_0opt_f87774a_release(&h8_own8);
-    hero_str_decref(h9_own9);
-    h_0opt_f87774a_release(&h10_own10);
-    hero_str_decref(h11_own11);
-    hero_str_decref(h12_own12);
-    h_0opt_f87774a_release(&h13_own13);
+    hero_str_release_at(&h2_text);
+    hero_str_release_at(&h4_own4);
+    h_0opt_f87774a_release(hero_slot_escape(&h5_own5));
+    h_0opt_f87774a_release(hero_slot_escape(&h6_own6));
+    hero_str_release_at(&h7_own7);
+    h_0opt_f87774a_release(hero_slot_escape(&h8_own8));
+    hero_str_release_at(&h9_own9);
+    h_0opt_f87774a_release(hero_slot_escape(&h10_own10));
+    hero_str_release_at(&h11_own11);
+    hero_str_release_at(&h12_own12);
+    h_0opt_f87774a_release(hero_slot_escape(&h13_own13));
     hero_lend_local_give(hero_lend_h1_status);
     return t38;
 }

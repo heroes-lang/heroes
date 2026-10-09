@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -307,8 +307,8 @@ bb3:
     t29 = h1_out;
 #line 309 "main.c"
     hero_array_incref(t29);
-    hero_array_decref(h1_out);
-    hero_array_decref(h5_own5);
+    hero_array_release_at(&h1_out);
+    hero_array_release_at(&h5_own5);
     return t29;
 bb4:
 #line 42 "examples/matmul/main.hero"
@@ -614,12 +614,12 @@ bb7:
 #line 67 "examples/matmul/main.hero"
     t53 = h3_total;
 #line 617 "main.c"
-    hero_array_decref(h1_rows);
-    hero_array_decref(h4_xs0);
-    hero_array_decref(h6_r);
-    hero_array_decref(h7_xs1);
-    hero_array_decref(h10_own10);
-    hero_array_decref(h11_own11);
+    hero_array_release_at(&h1_rows);
+    hero_array_release_at(&h4_xs0);
+    hero_array_release_at(&h6_r);
+    hero_array_release_at(&h7_xs1);
+    hero_array_release_at(&h10_own10);
+    hero_array_release_at(&h11_own11);
     return t53;
 bb8:
 #line 64 "examples/matmul/main.hero"
@@ -841,9 +841,9 @@ bb7:
 #line 82 "examples/matmul/main.hero"
     t31 = h2_total;
 #line 844 "main.c"
-    hero_array_decref(h0_handles);
-    hero_array_decref(h3_xs0);
-    hero_array_decref(h6_own6);
+    hero_array_release_at(&h0_handles);
+    hero_array_release_at(&h3_xs0);
+    hero_array_release_at(&h6_own6);
     return t31;
 }
 
@@ -934,8 +934,8 @@ bb3:
 #line 94 "examples/matmul/main.hero"
     t25 = h0_total;
 #line 937 "main.c"
-    hero_array_decref(h2_xs0);
-    hero_array_decref(h5_own5);
+    hero_array_release_at(&h2_xs0);
+    hero_array_release_at(&h5_own5);
     return t25;
 bb4:
 #line 89 "examples/matmul/main.hero"

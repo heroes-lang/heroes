@@ -39,6 +39,7 @@ use emit/term
 use emit/unread
 use emit/writer
 use emit/byte_copy
+use emit/release
 use token
 use check/contextual
 use parse
@@ -173,17 +174,11 @@ function emit(@w: writer.Writer, p: instances.Held, c: state.Checked, names: cty
         # emit a load into a fresh temporary and then a decref of it; the
         # temporary was address-taken, so clang pinned it to the frame for
         # the function's whole life, and 58.5% of every declared frame was
-        # those pairs. Now the release names the slot.
+        # those pairs. Now the release names the slot, and since defect 470
+        # hands it over by its address (`emit/release.hero` says why).
 
-        .decref_slot ds => reference_named(
-            @w,
-            c,
-            names,
-            ty: f.slots[ds.slot].ty,
-            name: places.slot_lvalue(f, ds.slot),
-            keep: false
-        )
-        .unary u => operator.unary(@w, f, c, op: u.op, operand: u.operand, target: target)
+        .decref_slot ds => release.slot(@w, c, names, ty: f.slots[ds.slot].ty, name: places.slot_lvalue(f, ds.slot))
+        .unary u        => operator.unary(@w, f, c, op: u.op, operand: u.operand, target: target)
         .binary bin => operator.binary(
             @w,
             c,
@@ -325,54 +320,7 @@ function emit(@w: writer.Writer, p: instances.Held, c: state.Checked, names: cty
 # The refcount line for one value, dispatched by type with the
 # aggregate fallback.
 function reference(@w: writer.Writer, c: state.Checked, names: ctype.Names, f: containers.Function, value: i64, keep: bool)
-    reference_named(@w, c, names, ty: containers.value_type(f, value), name: mangle.value(value), keep: keep)
-
-# The refcount call over a name the caller has already rendered. **One
-# table of spellings, reached two ways** — a temporary's name, and since
-# panel 106 a slot's — because a second copy of this match is a second
-# place that can learn a type and disagree about `hero_str_decref` versus
-# `_release(&…)`. `reference` above is the value door; `release_slot`
-# below is the slot door; the C they write comes from here.
-function reference_named(@w: writer.Writer, c: state.Checked, names: ctype.Names, ty: i64, name: str, keep: bool)
-    writer.at_generated(@w)
-    line: str @ ""
-
-    match table.get(c.types, ty)
-        .str =>
-            if keep
-                line @ "    hero_str_incref(" + name + ");"
-            else
-                line @ "    hero_str_decref(" + name + ");"
-        .array =>
-            if keep
-                line @ "    hero_array_incref(" + name + ");"
-            else
-                line @ "    hero_array_decref(" + name + ");"
-        .map =>
-            if keep
-                line @ "    hero_map_incref(" + name + ");"
-            else
-                line @ "    hero_map_decref(" + name + ");"
-        # A T? and a failure are by value: reached by address, their own
-        # function decides which side of the union is live.
-
-        .failure =>
-            if keep
-                line @ "    hero_failure_retain(&" + name + ");"
-            else
-                line @ "    hero_failure_release(&" + name + ");"
-        .int_ty | .float_ty | .bool | .ptr | .cstr | .unit    => line @ line
-        .fixed | .function_ty | .named | .case_ty | .fallible => line @ line
-        .generic | .error                                     => line @ line
-
-    if line == ""
-        found = aggregate.retain_named(c, names, ty: ty, name: name, keep: keep)
-
-        if found.is_err()
-            line @ "    hero_unreachable(); /* the gate refuses this type */"
-        else
-            line @ "    " + found.must() + ";"
-    writer.line(@w, text: line)
+    release.named(@w, c, names, ty: containers.value_type(f, value), name: mangle.value(value), keep: keep)
 
 ## Tests
 

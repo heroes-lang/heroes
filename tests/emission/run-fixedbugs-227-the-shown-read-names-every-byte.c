@@ -7,7 +7,7 @@
 #include <stdio.h>
 #include "heroes_guard_close.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -385,9 +385,9 @@ bb9:
     hero_unreachable();
 bb10:
     t37 = h7_ret0;
-    hero_array_decref(h3_xs0);
-    h_0opt_e1f4933_release(&h6_f0);
-    h_0opt_e1f4933_release(&h8_own8);
+    hero_array_release_at(&h3_xs0);
+    h_0opt_e1f4933_release(hero_slot_escape(&h6_f0));
+    h_0opt_e1f4933_release(hero_slot_escape(&h8_own8));
     return t37;
 }
 
@@ -578,10 +578,10 @@ bb0:
 #line 47 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
     hero_print_end();
 #line 581 "fixedbugs227theshownreadnameseverybyte.c"
-    hero_str_decref(h3_got);
-    hero_str_decref(h4_own4);
-    hero_str_decref(h5_own5);
-    hero_str_decref(h6_own6);
+    hero_str_release_at(&h3_got);
+    hero_str_release_at(&h4_own4);
+    hero_str_release_at(&h5_own5);
+    hero_str_release_at(&h6_own6);
     hero_lend_local_give(hero_lend_h2_marks);
     hero_lend_local_give(hero_lend_h1_status);
     return;
@@ -788,12 +788,12 @@ bb6:
 #line 60 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
 bb7:
 #line 791 "fixedbugs227theshownreadnameseverybyte.c"
-    hero_str_decref(h0_own0);
-    hero_array_decref(h1_own1);
-    hero_str_decref(h2_own2);
-    hero_str_decref(h3_own3);
-    hero_array_decref(h4_own4);
-    hero_str_decref(h5_own5);
+    hero_str_release_at(&h0_own0);
+    hero_array_release_at(&h1_own1);
+    hero_str_release_at(&h2_own2);
+    hero_str_release_at(&h3_own3);
+    hero_array_release_at(&h4_own4);
+    hero_str_release_at(&h5_own5);
     return;
 }
 HERO_TU_LOCAL void h_0opt_e1f4933_retain(const h_0opt_e1f4933 *v) {

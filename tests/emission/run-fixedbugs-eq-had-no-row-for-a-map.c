@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -582,24 +582,24 @@ bb6:
 #line 38 "tests/golden/run/fixedbugs-eq-had-no-row-for-a-map.hero"
     hero_print_end();
 #line 585 "fixedbugseqhadnorowforamap.c"
-    h_fixedbugseqhadnorowforamap_Box_release(&h0_a);
-    h_fixedbugseqhadnorowforamap_Box_release(&h1_b);
-    h_fixedbugseqhadnorowforamap_Box_release(&h2_c);
-    hero_map_decref(h3_seen);
-    h_0opt_e201354_release(&h4_f0);
-    h_0opt_e201354_release(&h6_f1);
-    hero_map_decref(h8_own8);
-    h_0opt_e201354_release(&h9_own9);
-    h_fixedbugseqhadnorowforamap_Box_release(&h10_own10);
-    hero_map_decref(h11_own11);
-    h_0opt_e201354_release(&h12_own12);
-    h_fixedbugseqhadnorowforamap_Box_release(&h13_own13);
-    hero_map_decref(h14_own14);
-    h_0opt_e201354_release(&h15_own15);
-    h_fixedbugseqhadnorowforamap_Box_release(&h16_own16);
-    hero_map_decref(h17_own17);
-    h_0opt_e201354_release(&h18_own18);
-    h_0opt_e201354_release(&h19_own19);
+    h_fixedbugseqhadnorowforamap_Box_release(hero_slot_escape(&h0_a));
+    h_fixedbugseqhadnorowforamap_Box_release(hero_slot_escape(&h1_b));
+    h_fixedbugseqhadnorowforamap_Box_release(hero_slot_escape(&h2_c));
+    hero_map_release_at(&h3_seen);
+    h_0opt_e201354_release(hero_slot_escape(&h4_f0));
+    h_0opt_e201354_release(hero_slot_escape(&h6_f1));
+    hero_map_release_at(&h8_own8);
+    h_0opt_e201354_release(hero_slot_escape(&h9_own9));
+    h_fixedbugseqhadnorowforamap_Box_release(hero_slot_escape(&h10_own10));
+    hero_map_release_at(&h11_own11);
+    h_0opt_e201354_release(hero_slot_escape(&h12_own12));
+    h_fixedbugseqhadnorowforamap_Box_release(hero_slot_escape(&h13_own13));
+    hero_map_release_at(&h14_own14);
+    h_0opt_e201354_release(hero_slot_escape(&h15_own15));
+    h_fixedbugseqhadnorowforamap_Box_release(hero_slot_escape(&h16_own16));
+    hero_map_release_at(&h17_own17);
+    h_0opt_e201354_release(hero_slot_escape(&h18_own18));
+    h_0opt_e201354_release(hero_slot_escape(&h19_own19));
     return;
 }
 HERO_TU_LOCAL void h_fixedbugseqhadnorowforamap_Box_retain(const h_fixedbugseqhadnorowforamap_Box *v) {

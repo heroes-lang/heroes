@@ -7,7 +7,7 @@
 #include <dead-address-copy-inside-a-fallible-value.h>
 #include "heroes_guard_close.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -233,8 +233,8 @@ bb4:
 #line 234 "deadaddresscopyinsideafalliblevalue.c"
     t13 = h1_ret0;
     h_0opt_77d4f5ff_retain(&t13);
-    h_0opt_77d4f5ff_release(&h2_own2);
-    h_0opt_77d4f5ff_release(&h3_own3);
+    h_0opt_77d4f5ff_release(hero_slot_escape(&h2_own2));
+    h_0opt_77d4f5ff_release(hero_slot_escape(&h3_own3));
     hero_lend_local_give(hero_lend_h0_db);
     return t13;
 }
@@ -393,10 +393,10 @@ bb3:
 #line 30 "tests/golden/run/dead-address-copy-inside-a-fallible-value.hero"
     hero_print_end();
 #line 396 "deadaddresscopyinsideafalliblevalue.c"
-    h_0opt_77d4f5ff_release(&h0_result);
-    h_0opt_77d4f5ff_release(&h1_f0);
-    h_0opt_77d4f5ff_release(&h3_f1);
-    h_0opt_77d4f5ff_release(&h4_own4);
+    h_0opt_77d4f5ff_release(hero_slot_escape(&h0_result));
+    h_0opt_77d4f5ff_release(hero_slot_escape(&h1_f0));
+    h_0opt_77d4f5ff_release(hero_slot_escape(&h3_f1));
+    h_0opt_77d4f5ff_release(hero_slot_escape(&h4_own4));
     return;
 bb4:
 #line 30 "tests/golden/run/dead-address-copy-inside-a-fallible-value.hero"

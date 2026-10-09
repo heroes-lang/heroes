@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -236,8 +236,8 @@ bb0:
 #line 30 "tests/golden/run/fixedbugs-413-an-element-is-reached-when-the-call-is-made.hero"
     hero_print_end();
 #line 239 "fixedbugs413anelementisreachedwhenthecallismade.c"
-    hero_array_decref(h0_xs);
-    hero_array_decref(h2_own2);
+    hero_array_release_at(&h0_xs);
+    hero_array_release_at(&h2_own2);
     return;
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {

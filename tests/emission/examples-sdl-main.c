@@ -7,7 +7,7 @@
 #include <SDL3/SDL.h>
 #include "heroes_guard_close.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -219,9 +219,9 @@ bb3:
 #line 61 "examples/sdl/main.hero"
     hero_print_end();
 #line 222 "main.c"
-    h_0opt_f87774a_release(&h0_f0);
-    hero_str_decref(h1_r0);
-    h_0opt_f87774a_release(&h2_own2);
+    h_0opt_f87774a_release(hero_slot_escape(&h0_f0));
+    hero_str_release_at(&h1_r0);
+    h_0opt_f87774a_release(hero_slot_escape(&h2_own2));
     return;
 }
 
@@ -381,11 +381,11 @@ bb7:
 #line 382 "main.c"
     t18 = h3_ret0;
     h_0opt_f87774a_retain(&t18);
-    hero_str_decref(h2_text);
-    hero_str_decref(h4_own4);
-    h_0opt_f87774a_release(&h5_own5);
-    h_0opt_f87774a_release(&h6_own6);
-    h_0opt_f87774a_release(&h7_own7);
+    hero_str_release_at(&h2_text);
+    hero_str_release_at(&h4_own4);
+    h_0opt_f87774a_release(hero_slot_escape(&h5_own5));
+    h_0opt_f87774a_release(hero_slot_escape(&h6_own6));
+    h_0opt_f87774a_release(hero_slot_escape(&h7_own7));
     hero_lend_local_give(hero_lend_h1_status);
     return t18;
 }

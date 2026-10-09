@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -204,8 +204,8 @@ bb4:
 #line 205 "fixedbugs387areceiverandarraysofstringsandofarrayskeepwhatwasread.c"
     t13 = h1_ret0;
     h_0opt_e201354_retain(&t13);
-    h_0opt_e201354_release(&h2_own2);
-    h_0opt_e201354_release(&h3_own3);
+    h_0opt_e201354_release(hero_slot_escape(&h2_own2));
+    h_0opt_e201354_release(hero_slot_escape(&h3_own3));
     return t13;
 }
 
@@ -312,9 +312,9 @@ bb0:
 #line 313 "fixedbugs387areceiverandarraysofstringsandofarrayskeepwhatwasread.c"
     hero_str_decref(t14);
     hero_str_incref(t11);
-    hero_str_decref(h2_own2);
-    hero_str_decref(h3_own3);
-    hero_str_decref(h4_own4);
+    hero_str_release_at(&h2_own2);
+    hero_str_release_at(&h3_own3);
+    hero_str_release_at(&h4_own4);
     return t11;
 }
 
@@ -347,7 +347,7 @@ bb0:
 #line 26 "tests/golden/run/fixedbugs-387-a-receiver-and-arrays-of-strings-and-of-arrays-keep-what-was-read.hero"
     t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len);
 #line 350 "fixedbugs387areceiverandarraysofstringsandofarrayskeepwhatwasread.c"
-    hero_array_decref(h1_own1);
+    hero_array_release_at(&h1_own1);
     return t6;
 }
 
@@ -796,24 +796,24 @@ bb5:
 #line 41 "tests/golden/run/fixedbugs-387-a-receiver-and-arrays-of-strings-and-of-arrays-keep-what-was-read.hero"
     hero_print_end();
 #line 799 "fixedbugs387areceiverandarraysofstringsandofarrayskeepwhatwasread.c"
-    hero_array_decref(h0_out);
-    h_0opt_e201354_release(&h1_f0);
-    hero_array_decref(h2_ws);
-    h_0opt_e201354_release(&h3_f1);
-    hero_array_decref(h4_g);
-    h_0opt_e201354_release(&h5_f2);
-    hero_array_decref(h6_own6);
-    hero_array_decref(h7_own7);
-    h_0opt_e201354_release(&h8_own8);
-    hero_array_decref(h9_own9);
-    hero_array_decref(h10_own10);
-    hero_array_decref(h11_own11);
-    h_0opt_e201354_release(&h12_own12);
-    hero_str_decref(h13_own13);
-    hero_array_decref(h14_own14);
-    hero_array_decref(h15_own15);
-    hero_array_decref(h16_own16);
-    h_0opt_e201354_release(&h17_own17);
+    hero_array_release_at(&h0_out);
+    h_0opt_e201354_release(hero_slot_escape(&h1_f0));
+    hero_array_release_at(&h2_ws);
+    h_0opt_e201354_release(hero_slot_escape(&h3_f1));
+    hero_array_release_at(&h4_g);
+    h_0opt_e201354_release(hero_slot_escape(&h5_f2));
+    hero_array_release_at(&h6_own6);
+    hero_array_release_at(&h7_own7);
+    h_0opt_e201354_release(hero_slot_escape(&h8_own8));
+    hero_array_release_at(&h9_own9);
+    hero_array_release_at(&h10_own10);
+    hero_array_release_at(&h11_own11);
+    h_0opt_e201354_release(hero_slot_escape(&h12_own12));
+    hero_str_release_at(&h13_own13);
+    hero_array_release_at(&h14_own14);
+    hero_array_release_at(&h15_own15);
+    hero_array_release_at(&h16_own16);
+    h_0opt_e201354_release(hero_slot_escape(&h17_own17));
     return;
 bb6:
 #line 41 "tests/golden/run/fixedbugs-387-a-receiver-and-arrays-of-strings-and-of-arrays-keep-what-was-read.hero"

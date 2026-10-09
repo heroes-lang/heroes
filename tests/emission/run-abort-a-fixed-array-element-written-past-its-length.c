@@ -8,7 +8,7 @@
 #pragma push_macro("a")
 #include "heroes_guard_close.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -279,8 +279,8 @@ bb4:
 #line 30 "tests/golden/run/abort-a-fixed-array-element-written-past-its-length.hero"
     hero_print_end();
 #line 282 "abortafixedarrayelementwrittenpastitslength.c"
-    hero_array_decref(h1_xs0);
-    hero_array_decref(h4_own4);
+    hero_array_release_at(&h1_xs0);
+    hero_array_release_at(&h4_own4);
     return;
 }
 
@@ -354,8 +354,8 @@ bb3:
     t12 = h2_out;
 #line 356 "abortafixedarrayelementwrittenpastitslength.c"
     hero_array_incref(t12);
-    hero_array_decref(h2_out);
-    hero_array_decref(h4_own4);
+    hero_array_release_at(&h2_out);
+    hero_array_release_at(&h4_own4);
     return t12;
 }
 HERO_TU_LOCAL bool h_abortafixedarrayelementwrittenpastitslength_Nums_eq(const struct nums *a, const struct nums *b) {

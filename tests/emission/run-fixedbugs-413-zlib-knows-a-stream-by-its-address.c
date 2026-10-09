@@ -7,7 +7,7 @@
 #include <zlib.h>
 #include "heroes_guard_close.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -428,8 +428,8 @@ bb0:
 #line 49 "tests/golden/run/fixedbugs-413-zlib-knows-a-stream-by-its-address.hero"
     hero_print_end();
 #line 431 "fixedbugs413zlibknowsastreambyitsaddress.c"
-    hero_array_decref(h4_zs);
-    hero_array_decref(h15_own15);
+    hero_array_release_at(&h4_zs);
+    hero_array_release_at(&h15_own15);
     hero_lend_local_give(hero_lend_h8_t);
     hero_lend_local_give(hero_lend_h0_s);
     return;

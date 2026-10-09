@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -173,9 +173,9 @@ bb0:
 #line 174 "fixedbugs173aclosingbracewrittentwiceisonebrace.c"
     hero_str_decref(t9);
     hero_str_incref(t6);
-    hero_str_decref(h1_own1);
-    hero_str_decref(h2_own2);
-    hero_str_decref(h3_own3);
+    hero_str_release_at(&h1_own1);
+    hero_str_release_at(&h2_own2);
+    hero_str_release_at(&h3_own3);
     return t6;
 }
 
@@ -571,27 +571,27 @@ bb1:
 #line 33 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"
     hero_print_end();
 #line 574 "fixedbugs173aclosingbracewrittentwiceisonebrace.c"
-    hero_str_decref(h1_word);
-    hero_map_decref(h2_m);
-    h_0opt_e201354_release(&h3_f0);
-    hero_str_decref(h4_own4);
-    hero_str_decref(h5_own5);
-    hero_str_decref(h6_own6);
-    hero_str_decref(h7_own7);
-    hero_str_decref(h8_own8);
-    hero_str_decref(h9_own9);
-    hero_str_decref(h10_own10);
-    hero_str_decref(h11_own11);
-    hero_str_decref(h12_own12);
-    hero_str_decref(h13_own13);
-    hero_str_decref(h14_own14);
-    hero_str_decref(h15_own15);
-    hero_str_decref(h16_own16);
-    hero_str_decref(h17_own17);
-    hero_str_decref(h18_own18);
-    hero_str_decref(h19_own19);
-    hero_map_decref(h20_own20);
-    h_0opt_e201354_release(&h21_own21);
+    hero_str_release_at(&h1_word);
+    hero_map_release_at(&h2_m);
+    h_0opt_e201354_release(hero_slot_escape(&h3_f0));
+    hero_str_release_at(&h4_own4);
+    hero_str_release_at(&h5_own5);
+    hero_str_release_at(&h6_own6);
+    hero_str_release_at(&h7_own7);
+    hero_str_release_at(&h8_own8);
+    hero_str_release_at(&h9_own9);
+    hero_str_release_at(&h10_own10);
+    hero_str_release_at(&h11_own11);
+    hero_str_release_at(&h12_own12);
+    hero_str_release_at(&h13_own13);
+    hero_str_release_at(&h14_own14);
+    hero_str_release_at(&h15_own15);
+    hero_str_release_at(&h16_own16);
+    hero_str_release_at(&h17_own17);
+    hero_str_release_at(&h18_own18);
+    hero_str_release_at(&h19_own19);
+    hero_map_release_at(&h20_own20);
+    h_0opt_e201354_release(hero_slot_escape(&h21_own21));
     return;
 bb2:
 #line 32 "tests/golden/run/fixedbugs-173-a-closing-brace-written-twice-is-one-brace.hero"

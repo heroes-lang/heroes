@@ -175,6 +175,9 @@ void hero_map_decref(HeroMapHeader *m) {
     hero_drop_running = false;
 }
 
+/* The exit's release through the slot (defect 470). */
+void hero_map_release_at(HeroMapHeader *const *slot) { hero_map_decref(*slot); }
+
 /* `hero_array_release_contents`' counterpart — see `drop.c`. */
 static void hero_map_release_contents(HeroMapHeader *m) {
     const unsigned char *states = hero_map_states_const(m);

@@ -8,7 +8,7 @@
 #pragma push_macro("v")
 #include "heroes_guard_close.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -4146,8 +4146,8 @@ bb0:
 #line 2025 "tests/golden/run/fixedbugs-140-extern-records-a-thousand-deep-build.hero"
     hero_print_end();
 #line 4149 "fixedbugs140externrecordsathousanddeepbuild.c"
-    hero_array_decref(h0_xs);
-    hero_array_decref(h1_own1);
+    hero_array_release_at(&h0_xs);
+    hero_array_release_at(&h1_own1);
     return;
 }
 HERO_TU_LOCAL bool h_fixedbugs140externrecordsathousanddeepbuild_G0_eq(const G0 *a, const G0 *b) {

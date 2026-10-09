@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -808,32 +808,32 @@ bb37:
 #line 809 "fixedbugs231everywayoutofmanyistaken.c"
     t89 = h13_ret0;
     hero_str_incref(t89);
-    hero_str_decref(h1_s0);
-    hero_str_decref(h2_s1);
-    hero_str_decref(h3_s2);
-    hero_str_decref(h4_s3);
-    hero_str_decref(h5_s4);
-    hero_str_decref(h6_s5);
-    hero_str_decref(h7_s6);
-    hero_str_decref(h8_s7);
-    hero_str_decref(h9_s8);
-    hero_str_decref(h10_s9);
-    hero_str_decref(h11_s10);
-    hero_str_decref(h12_s11);
-    hero_str_decref(h14_own14);
-    hero_str_decref(h15_own15);
-    hero_str_decref(h16_own16);
-    hero_str_decref(h17_own17);
-    hero_str_decref(h18_own18);
-    hero_str_decref(h19_own19);
-    hero_str_decref(h20_own20);
-    hero_str_decref(h21_own21);
-    hero_str_decref(h22_own22);
-    hero_str_decref(h23_own23);
-    hero_str_decref(h24_own24);
-    hero_str_decref(h25_own25);
-    hero_str_decref(h26_own26);
-    hero_str_decref(h27_own27);
+    hero_str_release_at(&h1_s0);
+    hero_str_release_at(&h2_s1);
+    hero_str_release_at(&h3_s2);
+    hero_str_release_at(&h4_s3);
+    hero_str_release_at(&h5_s4);
+    hero_str_release_at(&h6_s5);
+    hero_str_release_at(&h7_s6);
+    hero_str_release_at(&h8_s7);
+    hero_str_release_at(&h9_s8);
+    hero_str_release_at(&h10_s9);
+    hero_str_release_at(&h11_s10);
+    hero_str_release_at(&h12_s11);
+    hero_str_release_at(&h14_own14);
+    hero_str_release_at(&h15_own15);
+    hero_str_release_at(&h16_own16);
+    hero_str_release_at(&h17_own17);
+    hero_str_release_at(&h18_own18);
+    hero_str_release_at(&h19_own19);
+    hero_str_release_at(&h20_own20);
+    hero_str_release_at(&h21_own21);
+    hero_str_release_at(&h22_own22);
+    hero_str_release_at(&h23_own23);
+    hero_str_release_at(&h24_own24);
+    hero_str_release_at(&h25_own25);
+    hero_str_release_at(&h26_own26);
+    hero_str_release_at(&h27_own27);
     return t89;
 }
 
@@ -1518,38 +1518,38 @@ bb24:
 #line 1519 "fixedbugs231everywayoutofmanyistaken.c"
     t88 = h11_ret0;
     h_0opt_f87774a_retain(&t88);
-    hero_str_decref(h2_s0);
-    hero_str_decref(h3_s1);
-    hero_str_decref(h4_s2);
-    hero_str_decref(h5_s3);
-    h_0opt_e201354_release(&h6_f0);
-    hero_str_decref(h8_s4);
-    hero_str_decref(h9_s5);
-    hero_str_decref(h10_s6);
-    hero_str_decref(h12_own12);
-    hero_str_decref(h13_own13);
-    hero_str_decref(h14_own14);
-    h_0opt_f87774a_release(&h15_own15);
-    hero_str_decref(h16_own16);
-    h_0opt_f87774a_release(&h17_own17);
-    hero_str_decref(h18_own18);
-    h_0opt_f87774a_release(&h19_own19);
-    h_0opt_e201354_release(&h20_own20);
-    hero_str_decref(h21_own21);
-    h_0opt_f87774a_release(&h22_own22);
-    hero_str_decref(h23_own23);
-    hero_str_decref(h24_own24);
-    h_0opt_f87774a_release(&h25_own25);
-    hero_str_decref(h26_own26);
-    h_0opt_f87774a_release(&h27_own27);
-    hero_array_decref(h28_own28);
-    hero_str_decref(h29_own29);
-    hero_str_decref(h30_own30);
-    h_0opt_f87774a_release(&h31_own31);
-    hero_str_decref(h32_own32);
-    hero_str_decref(h33_own33);
-    h_0opt_f87774a_release(&h34_own34);
-    h_0opt_f87774a_release(&h35_own35);
+    hero_str_release_at(&h2_s0);
+    hero_str_release_at(&h3_s1);
+    hero_str_release_at(&h4_s2);
+    hero_str_release_at(&h5_s3);
+    h_0opt_e201354_release(hero_slot_escape(&h6_f0));
+    hero_str_release_at(&h8_s4);
+    hero_str_release_at(&h9_s5);
+    hero_str_release_at(&h10_s6);
+    hero_str_release_at(&h12_own12);
+    hero_str_release_at(&h13_own13);
+    hero_str_release_at(&h14_own14);
+    h_0opt_f87774a_release(hero_slot_escape(&h15_own15));
+    hero_str_release_at(&h16_own16);
+    h_0opt_f87774a_release(hero_slot_escape(&h17_own17));
+    hero_str_release_at(&h18_own18);
+    h_0opt_f87774a_release(hero_slot_escape(&h19_own19));
+    h_0opt_e201354_release(hero_slot_escape(&h20_own20));
+    hero_str_release_at(&h21_own21);
+    h_0opt_f87774a_release(hero_slot_escape(&h22_own22));
+    hero_str_release_at(&h23_own23);
+    hero_str_release_at(&h24_own24);
+    h_0opt_f87774a_release(hero_slot_escape(&h25_own25));
+    hero_str_release_at(&h26_own26);
+    h_0opt_f87774a_release(hero_slot_escape(&h27_own27));
+    hero_array_release_at(&h28_own28);
+    hero_str_release_at(&h29_own29);
+    hero_str_release_at(&h30_own30);
+    h_0opt_f87774a_release(hero_slot_escape(&h31_own31));
+    hero_str_release_at(&h32_own32);
+    hero_str_release_at(&h33_own33);
+    h_0opt_f87774a_release(hero_slot_escape(&h34_own34));
+    h_0opt_f87774a_release(hero_slot_escape(&h35_own35));
     return t88;
 }
 
@@ -1632,8 +1632,8 @@ bb4:
 #line 1633 "fixedbugs231everywayoutofmanyistaken.c"
     t11 = h1_ret0;
     h_0opt_e201354_retain(&t11);
-    h_0opt_e201354_release(&h2_own2);
-    h_0opt_e201354_release(&h3_own3);
+    h_0opt_e201354_release(hero_slot_escape(&h2_own2));
+    h_0opt_e201354_release(hero_slot_escape(&h3_own3));
     return t11;
 }
 
@@ -1937,14 +1937,14 @@ bb6:
 #line 137 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     hero_print_end();
 #line 1940 "fixedbugs231everywayoutofmanyistaken.c"
-    hero_array_decref(h2_seen);
-    h_0opt_f87774a_release(&h3_s0);
-    hero_str_decref(h4_s);
+    hero_array_release_at(&h2_seen);
+    h_0opt_f87774a_release(hero_slot_escape(&h3_s0));
+    hero_str_release_at(&h4_s);
     hero_failure_release(&h5_e);
-    hero_str_decref(h6_own6);
-    hero_array_decref(h7_own7);
-    h_0opt_f87774a_release(&h8_own8);
-    hero_str_decref(h9_own9);
+    hero_str_release_at(&h6_own6);
+    hero_array_release_at(&h7_own7);
+    h_0opt_f87774a_release(hero_slot_escape(&h8_own8));
+    hero_str_release_at(&h9_own9);
     return;
 bb7:
 #line 134 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"

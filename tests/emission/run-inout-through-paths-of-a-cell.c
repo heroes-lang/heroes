@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -164,7 +164,7 @@ bb0:
     (*ph0_b).f_items = t4;
 #line 166 "inoutthroughpathsofacell.c"
     hero_array_decref(t6);
-    hero_array_decref(h2_own2);
+    hero_array_release_at(&h2_own2);
     return;
 }
 
@@ -225,7 +225,7 @@ bb0:
     (*ph1_b) = t3;
 #line 227 "inoutthroughpathsofacell.c"
     h_inoutthroughpathsofacell_Bag_release(&t6);
-    h_inoutthroughpathsofacell_Bag_release(&h2_held);
+    h_inoutthroughpathsofacell_Bag_release(hero_slot_escape(&h2_held));
     return;
 }
 
@@ -589,19 +589,19 @@ bb0:
 #line 56 "tests/golden/run/inout-through-paths-of-a-cell.hero"
     hero_print_end();
 #line 592 "inoutthroughpathsofacell.c"
-    h_inoutthroughpathsofacell_Bag_release(&h0_b);
-    hero_array_decref(h1_bs);
-    hero_array_decref(h2_cs);
-    hero_array_decref(h3_own3);
-    h_inoutthroughpathsofacell_Bag_release(&h4_own4);
-    hero_array_decref(h5_own5);
-    h_inoutthroughpathsofacell_Bag_release(&h6_own6);
-    hero_array_decref(h7_own7);
-    h_inoutthroughpathsofacell_Bag_release(&h8_own8);
-    hero_array_decref(h9_own9);
-    hero_array_decref(h10_own10);
-    h_inoutthroughpathsofacell_Bag_release(&h11_own11);
-    hero_array_decref(h12_own12);
+    h_inoutthroughpathsofacell_Bag_release(hero_slot_escape(&h0_b));
+    hero_array_release_at(&h1_bs);
+    hero_array_release_at(&h2_cs);
+    hero_array_release_at(&h3_own3);
+    h_inoutthroughpathsofacell_Bag_release(hero_slot_escape(&h4_own4));
+    hero_array_release_at(&h5_own5);
+    h_inoutthroughpathsofacell_Bag_release(hero_slot_escape(&h6_own6));
+    hero_array_release_at(&h7_own7);
+    h_inoutthroughpathsofacell_Bag_release(hero_slot_escape(&h8_own8));
+    hero_array_release_at(&h9_own9);
+    hero_array_release_at(&h10_own10);
+    h_inoutthroughpathsofacell_Bag_release(hero_slot_escape(&h11_own11));
+    hero_array_release_at(&h12_own12);
     return;
 }
 HERO_TU_LOCAL void h_inoutthroughpathsofacell_Bag_retain(const h_inoutthroughpathsofacell_Bag *v) {

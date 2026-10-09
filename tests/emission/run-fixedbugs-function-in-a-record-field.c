@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -307,9 +307,9 @@ bb0:
 #line 60 "tests/golden/run/fixedbugs-function-in-a-record-field.hero"
 bb1:
 #line 310 "fixedbugsfunctioninarecordfield.c"
-    h_fixedbugsfunctioninarecordfield_Holder_release(&h0_h);
-    h_fixedbugsfunctioninarecordfield_Holder_release(&h1_k);
-    h_fixedbugsfunctioninarecordfield_Holder_release(&h6_own6);
+    h_fixedbugsfunctioninarecordfield_Holder_release(hero_slot_escape(&h0_h));
+    h_fixedbugsfunctioninarecordfield_Holder_release(hero_slot_escape(&h1_k));
+    h_fixedbugsfunctioninarecordfield_Holder_release(hero_slot_escape(&h6_own6));
     return;
 bb2:
 #line 61 "tests/golden/run/fixedbugs-function-in-a-record-field.hero"

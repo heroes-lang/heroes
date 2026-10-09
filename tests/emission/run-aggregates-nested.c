@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -214,12 +214,12 @@ bb1:
     t20 = h2_r0;
 #line 216 "aggregatesnested.c"
     hero_str_incref(t20);
-    h_aggregatesnested_Node_release(&h1_s0);
-    hero_str_decref(h2_r0);
-    h_aggregatesnested_Node_c_leaf_release(&h3_l);
-    h_aggregatesnested_Node_c_pair_release(&h4_p);
-    hero_str_decref(h5_own5);
-    hero_str_decref(h6_own6);
+    h_aggregatesnested_Node_release(hero_slot_escape(&h1_s0));
+    hero_str_release_at(&h2_r0);
+    h_aggregatesnested_Node_c_leaf_release(hero_slot_escape(&h3_l));
+    h_aggregatesnested_Node_c_pair_release(hero_slot_escape(&h4_p));
+    hero_str_release_at(&h5_own5);
+    hero_str_release_at(&h6_own6);
     return t20;
 bb2:
 #line 32 "tests/golden/run/aggregates-nested.hero"
@@ -348,7 +348,7 @@ bb0:
     (*ph0_h) = t7;
 #line 350 "aggregatesnested.c"
     h_aggregatesnested_Holder_release(&t9);
-    h_aggregatesnested_Holder_release(&h1_own1);
+    h_aggregatesnested_Holder_release(hero_slot_escape(&h1_own1));
     return;
 }
 
@@ -545,17 +545,17 @@ bb0:
 #line 46 "tests/golden/run/aggregates-nested.hero"
     hero_print_end();
 #line 548 "aggregatesnested.c"
-    h_aggregatesnested_Node_release(&h0_n);
-    h_aggregatesnested_Holder_release(&h1_h);
-    hero_str_decref(h2_own2);
-    h_aggregatesnested_Name_release(&h3_own3);
-    hero_str_decref(h4_own4);
-    h_aggregatesnested_Name_release(&h5_own5);
-    h_aggregatesnested_Node_release(&h6_own6);
-    hero_str_decref(h7_own7);
-    h_aggregatesnested_Holder_release(&h8_own8);
-    hero_str_decref(h9_own9);
-    h_aggregatesnested_Holder_release(&h10_own10);
+    h_aggregatesnested_Node_release(hero_slot_escape(&h0_n));
+    h_aggregatesnested_Holder_release(hero_slot_escape(&h1_h));
+    hero_str_release_at(&h2_own2);
+    h_aggregatesnested_Name_release(hero_slot_escape(&h3_own3));
+    hero_str_release_at(&h4_own4);
+    h_aggregatesnested_Name_release(hero_slot_escape(&h5_own5));
+    h_aggregatesnested_Node_release(hero_slot_escape(&h6_own6));
+    hero_str_release_at(&h7_own7);
+    h_aggregatesnested_Holder_release(hero_slot_escape(&h8_own8));
+    hero_str_release_at(&h9_own9);
+    h_aggregatesnested_Holder_release(hero_slot_escape(&h10_own10));
     return;
 }
 HERO_TU_LOCAL void h_aggregatesnested_Name_retain(const h_aggregatesnested_Name *v) {

@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -1609,25 +1609,25 @@ bb22:
 #line 62 "examples/interpreter/main.hero"
 bb23:
 #line 1612 "main.c"
-    hero_array_decref(h0_given);
-    h_0opt_f87774a_release(&h1_source);
-    h_0opt_f87774a_release(&h2_f0);
-    h_0opt_f87774a_release(&h3_f1);
-    h_0opt_60498281_release(&h4_nodes);
-    h_0opt_60498281_release(&h5_f2);
-    h_0opt_60498281_release(&h6_f3);
-    h_0opt_1be8f195_release(&h7_said);
-    h_0opt_1be8f195_release(&h8_f4);
-    h_0opt_1be8f195_release(&h9_f5);
-    h_runvalue_Frame_release(&h10_f);
-    hero_array_decref(h11_xs0);
-    hero_str_decref(h13_line);
-    hero_array_decref(h14_own14);
-    h_0opt_f87774a_release(&h15_own15);
-    h_0opt_60498281_release(&h16_own16);
-    hero_str_decref(h17_own17);
-    h_0opt_1be8f195_release(&h18_own18);
-    hero_str_decref(h19_own19);
+    hero_array_release_at(&h0_given);
+    h_0opt_f87774a_release(hero_slot_escape(&h1_source));
+    h_0opt_f87774a_release(hero_slot_escape(&h2_f0));
+    h_0opt_f87774a_release(hero_slot_escape(&h3_f1));
+    h_0opt_60498281_release(hero_slot_escape(&h4_nodes));
+    h_0opt_60498281_release(hero_slot_escape(&h5_f2));
+    h_0opt_60498281_release(hero_slot_escape(&h6_f3));
+    h_0opt_1be8f195_release(hero_slot_escape(&h7_said));
+    h_0opt_1be8f195_release(hero_slot_escape(&h8_f4));
+    h_0opt_1be8f195_release(hero_slot_escape(&h9_f5));
+    h_runvalue_Frame_release(hero_slot_escape(&h10_f));
+    hero_array_release_at(&h11_xs0);
+    hero_str_release_at(&h13_line);
+    hero_array_release_at(&h14_own14);
+    h_0opt_f87774a_release(hero_slot_escape(&h15_own15));
+    h_0opt_60498281_release(hero_slot_escape(&h16_own16));
+    hero_str_release_at(&h17_own17);
+    h_0opt_1be8f195_release(hero_slot_escape(&h18_own18));
+    hero_str_release_at(&h19_own19);
     return;
 bb24:
 #line 63 "examples/interpreter/main.hero"
@@ -1711,12 +1711,12 @@ bb1:
     t16 = h2_r0;
 #line 1713 "main.c"
     hero_str_incref(t16);
-    h_0opt_60498281_release(&h1_s0);
-    hero_str_decref(h2_r0);
+    h_0opt_60498281_release(hero_slot_escape(&h1_s0));
+    hero_str_release_at(&h2_r0);
     hero_failure_release(&h3_e);
-    hero_str_decref(h4_own4);
-    hero_str_decref(h5_own5);
-    hero_str_decref(h6_own6);
+    hero_str_release_at(&h4_own4);
+    hero_str_release_at(&h5_own5);
+    hero_str_release_at(&h6_own6);
     return t16;
 bb2:
 #line 68 "examples/interpreter/main.hero"
@@ -1854,12 +1854,12 @@ bb1:
     t16 = h2_r0;
 #line 1856 "main.c"
     hero_str_incref(t16);
-    h_0opt_1be8f195_release(&h1_s0);
-    hero_str_decref(h2_r0);
+    h_0opt_1be8f195_release(hero_slot_escape(&h1_s0));
+    hero_str_release_at(&h2_r0);
     hero_failure_release(&h3_e);
-    hero_str_decref(h4_own4);
-    hero_str_decref(h5_own5);
-    hero_str_decref(h6_own6);
+    hero_str_release_at(&h4_own4);
+    hero_str_release_at(&h5_own5);
+    hero_str_release_at(&h6_own6);
     return t16;
 bb2:
 #line 73 "examples/interpreter/main.hero"
@@ -2092,13 +2092,13 @@ bb5:
 bb6:
     t21 = h4_ret0;
     hero_str_incref(t21);
-    h_0opt_60498281_release(&h1_nodes);
-    h_0opt_60498281_release(&h2_f0);
-    h_0opt_60498281_release(&h3_f1);
-    h_0opt_60498281_release(&h5_own5);
-    hero_str_decref(h6_own6);
-    h_0opt_1be8f195_release(&h7_own7);
-    hero_str_decref(h8_own8);
+    h_0opt_60498281_release(hero_slot_escape(&h1_nodes));
+    h_0opt_60498281_release(hero_slot_escape(&h2_f0));
+    h_0opt_60498281_release(hero_slot_escape(&h3_f1));
+    h_0opt_60498281_release(hero_slot_escape(&h5_own5));
+    hero_str_release_at(&h6_own6);
+    h_0opt_1be8f195_release(hero_slot_escape(&h7_own7));
+    hero_str_release_at(&h8_own8);
     return t21;
 }
 
@@ -2153,8 +2153,8 @@ bb1:
     t9 = h2_r0;
 #line 2155 "main.c"
     hero_str_incref(t9);
-    h_0opt_60498281_release(&h1_s0);
-    hero_str_decref(h2_r0);
+    h_0opt_60498281_release(hero_slot_escape(&h1_s0));
+    hero_str_release_at(&h2_r0);
     hero_failure_release(&h3_e);
     return t9;
 bb2:
@@ -2248,8 +2248,8 @@ bb1:
     t9 = h2_r0;
 #line 2250 "main.c"
     hero_str_incref(t9);
-    h_0opt_1be8f195_release(&h1_s0);
-    hero_str_decref(h2_r0);
+    h_0opt_1be8f195_release(hero_slot_escape(&h1_s0));
+    hero_str_release_at(&h2_r0);
     hero_failure_release(&h3_e);
     return t9;
 bb2:
@@ -2442,13 +2442,13 @@ bb3:
 #line 2443 "main.c"
     hero_str_decref(t31);
     hero_str_incref(t24);
-    h_0opt_60498281_release(&h1_f0);
-    h_syntree_Tree_release(&h2_nodes);
-    h_0opt_1be8f195_release(&h3_f1);
-    h_runvalue_Frame_release(&h4_f);
-    h_0opt_60498281_release(&h5_own5);
-    h_0opt_1be8f195_release(&h6_own6);
-    hero_str_decref(h7_own7);
+    h_0opt_60498281_release(hero_slot_escape(&h1_f0));
+    h_syntree_Tree_release(hero_slot_escape(&h2_nodes));
+    h_0opt_1be8f195_release(hero_slot_escape(&h3_f1));
+    h_runvalue_Frame_release(hero_slot_escape(&h4_f));
+    h_0opt_60498281_release(hero_slot_escape(&h5_own5));
+    h_0opt_1be8f195_release(hero_slot_escape(&h6_own6));
+    hero_str_release_at(&h7_own7);
     return t24;
 bb4:
 #line 288 "examples/interpreter/main.hero"
@@ -2641,16 +2641,16 @@ bb3:
 #line 2642 "main.c"
     hero_str_decref(t35);
     hero_str_incref(t25);
-    h_0opt_7f1de476_release(&h1_f0);
-    hero_array_decref(h2_tokens);
-    h_syncursor_Cursor_release(&h3_c);
-    h_syntree_Tree_release(&h4_t);
-    h_0opt_e201354_release(&h5_f1);
-    h_0opt_7f1de476_release(&h7_own7);
-    h_syncursor_Cursor_release(&h8_own8);
-    h_syntree_Tree_release(&h9_own9);
-    h_0opt_e201354_release(&h10_own10);
-    hero_str_decref(h11_own11);
+    h_0opt_7f1de476_release(hero_slot_escape(&h1_f0));
+    hero_array_release_at(&h2_tokens);
+    h_syncursor_Cursor_release(hero_slot_escape(&h3_c));
+    h_syntree_Tree_release(hero_slot_escape(&h4_t));
+    h_0opt_e201354_release(hero_slot_escape(&h5_f1));
+    h_0opt_7f1de476_release(hero_slot_escape(&h7_own7));
+    h_syncursor_Cursor_release(hero_slot_escape(&h8_own8));
+    h_syntree_Tree_release(hero_slot_escape(&h9_own9));
+    h_0opt_e201354_release(hero_slot_escape(&h10_own10));
+    hero_str_release_at(&h11_own11);
     return t25;
 bb4:
 #line 297 "examples/interpreter/main.hero"
@@ -3447,27 +3447,27 @@ bb33:
 #line 3448 "main.c"
     t124 = h14_ret0;
     h_0opt_7f1de476_retain(&t124);
-    hero_array_decref(h1_out);
-    h_0opt_37811efc_release(&h6_f0);
-    h_lexscan_Read_release(&h7_read);
-    h_0opt_37811efc_release(&h8_f1);
-    h_lexscan_Read_release(&h9_read);
-    h_lexscan_Read_release(&h10_read);
-    h_0opt_37811efc_release(&h11_f2);
-    h_lexscan_Read_release(&h12_read);
-    hero_array_decref(h15_own15);
-    h_lextoken_Token_release(&h16_own16);
-    h_0opt_37811efc_release(&h17_own17);
-    h_0opt_7f1de476_release(&h18_own18);
-    h_0opt_37811efc_release(&h19_own19);
-    h_0opt_7f1de476_release(&h20_own20);
-    h_lexscan_Read_release(&h21_own21);
-    h_0opt_37811efc_release(&h22_own22);
-    h_0opt_7f1de476_release(&h23_own23);
-    h_lextoken_Token_release(&h24_own24);
-    hero_array_decref(h25_own25);
-    h_0opt_7f1de476_release(&h26_own26);
-    h_lextoken_Token_release(&h27_own27);
+    hero_array_release_at(&h1_out);
+    h_0opt_37811efc_release(hero_slot_escape(&h6_f0));
+    h_lexscan_Read_release(hero_slot_escape(&h7_read));
+    h_0opt_37811efc_release(hero_slot_escape(&h8_f1));
+    h_lexscan_Read_release(hero_slot_escape(&h9_read));
+    h_lexscan_Read_release(hero_slot_escape(&h10_read));
+    h_0opt_37811efc_release(hero_slot_escape(&h11_f2));
+    h_lexscan_Read_release(hero_slot_escape(&h12_read));
+    hero_array_release_at(&h15_own15);
+    h_lextoken_Token_release(hero_slot_escape(&h16_own16));
+    h_0opt_37811efc_release(hero_slot_escape(&h17_own17));
+    h_0opt_7f1de476_release(hero_slot_escape(&h18_own18));
+    h_0opt_37811efc_release(hero_slot_escape(&h19_own19));
+    h_0opt_7f1de476_release(hero_slot_escape(&h20_own20));
+    h_lexscan_Read_release(hero_slot_escape(&h21_own21));
+    h_0opt_37811efc_release(hero_slot_escape(&h22_own22));
+    h_0opt_7f1de476_release(hero_slot_escape(&h23_own23));
+    h_lextoken_Token_release(hero_slot_escape(&h24_own24));
+    hero_array_release_at(&h25_own25);
+    h_0opt_7f1de476_release(hero_slot_escape(&h26_own26));
+    h_lextoken_Token_release(hero_slot_escape(&h27_own27));
     return t124;
 }
 
@@ -3690,8 +3690,8 @@ bb7:
     hero_unreachable();
 bb8:
     t24 = h4_ret0;
-    h_0opt_e201354_release(&h3_f0);
-    h_0opt_e201354_release(&h5_own5);
+    h_0opt_e201354_release(hero_slot_escape(&h3_f0));
+    h_0opt_e201354_release(hero_slot_escape(&h5_own5));
     return t24;
 }
 
@@ -3771,7 +3771,7 @@ bb3:
 bb4:
 #line 3773 "main.c"
     t14 = h1_ret0;
-    h_lextoken_Token_release(&h2_own2);
+    h_lextoken_Token_release(hero_slot_escape(&h2_own2));
     return t14;
 }
 
@@ -4230,14 +4230,14 @@ bb7:
 #line 4231 "main.c"
     t44 = h5_ret0;
     h_0opt_37811efc_retain(&t44);
-    h_lextoken_Token_release(&h6_own6);
-    h_lexscan_Read_release(&h7_own7);
-    h_0opt_37811efc_release(&h8_own8);
-    hero_str_decref(h9_own9);
-    hero_str_decref(h10_own10);
-    hero_str_decref(h11_own11);
-    hero_str_decref(h12_own12);
-    h_0opt_37811efc_release(&h13_own13);
+    h_lextoken_Token_release(hero_slot_escape(&h6_own6));
+    h_lexscan_Read_release(hero_slot_escape(&h7_own7));
+    h_0opt_37811efc_release(hero_slot_escape(&h8_own8));
+    hero_str_release_at(&h9_own9);
+    hero_str_release_at(&h10_own10);
+    hero_str_release_at(&h11_own11);
+    hero_str_release_at(&h12_own12);
+    h_0opt_37811efc_release(hero_slot_escape(&h13_own13));
     return t44;
 }
 
@@ -4832,25 +4832,25 @@ bb25:
 #line 4833 "main.c"
     t107 = h7_ret0;
     h_0opt_37811efc_retain(&t107);
-    hero_array_decref(h2_pieces);
-    hero_array_decref(h8_own8);
-    hero_str_decref(h9_own9);
-    h_0opt_37811efc_release(&h10_own10);
-    hero_str_decref(h11_own11);
-    hero_str_decref(h12_own12);
-    h_lextoken_Token_release(&h13_own13);
-    h_lexscan_Read_release(&h14_own14);
-    h_0opt_37811efc_release(&h15_own15);
-    hero_str_decref(h16_own16);
-    h_0opt_37811efc_release(&h17_own17);
-    hero_str_decref(h18_own18);
-    hero_str_decref(h19_own19);
-    h_0opt_37811efc_release(&h20_own20);
-    hero_str_decref(h21_own21);
-    hero_str_decref(h22_own22);
-    hero_str_decref(h23_own23);
-    hero_str_decref(h24_own24);
-    h_0opt_37811efc_release(&h25_own25);
+    hero_array_release_at(&h2_pieces);
+    hero_array_release_at(&h8_own8);
+    hero_str_release_at(&h9_own9);
+    h_0opt_37811efc_release(hero_slot_escape(&h10_own10));
+    hero_str_release_at(&h11_own11);
+    hero_str_release_at(&h12_own12);
+    h_lextoken_Token_release(hero_slot_escape(&h13_own13));
+    h_lexscan_Read_release(hero_slot_escape(&h14_own14));
+    h_0opt_37811efc_release(hero_slot_escape(&h15_own15));
+    hero_str_release_at(&h16_own16);
+    h_0opt_37811efc_release(hero_slot_escape(&h17_own17));
+    hero_str_release_at(&h18_own18);
+    hero_str_release_at(&h19_own19);
+    h_0opt_37811efc_release(hero_slot_escape(&h20_own20));
+    hero_str_release_at(&h21_own21);
+    hero_str_release_at(&h22_own22);
+    hero_str_release_at(&h23_own23);
+    hero_str_release_at(&h24_own24);
+    h_0opt_37811efc_release(hero_slot_escape(&h25_own25));
     return t107;
 }
 
@@ -4947,9 +4947,9 @@ bb3:
 #line 4948 "main.c"
     h_lexscan_Read_release(&t18);
     h_lexscan_Read_retain(&t15);
-    hero_str_decref(h3_own3);
-    h_lextoken_Token_release(&h4_own4);
-    h_lexscan_Read_release(&h5_own5);
+    hero_str_release_at(&h3_own3);
+    h_lextoken_Token_release(hero_slot_escape(&h4_own4));
+    h_lexscan_Read_release(hero_slot_escape(&h5_own5));
     return t15;
 }
 
@@ -5708,31 +5708,31 @@ bb35:
 bb36:
     t111 = h13_ret0;
     h_0opt_37811efc_retain(&t111);
-    h_0opt_3be6656d_release(&h10_single);
-    h_0opt_3be6656d_release(&h11_f0);
-    h_0opt_3be6656d_release(&h12_f1);
-    h_lextoken_Token_release(&h14_own14);
-    h_lexscan_Read_release(&h15_own15);
-    h_0opt_37811efc_release(&h16_own16);
-    h_lextoken_Token_release(&h17_own17);
-    h_lexscan_Read_release(&h18_own18);
-    h_0opt_37811efc_release(&h19_own19);
-    h_lextoken_Token_release(&h20_own20);
-    h_lexscan_Read_release(&h21_own21);
-    h_0opt_37811efc_release(&h22_own22);
-    h_lextoken_Token_release(&h23_own23);
-    h_lexscan_Read_release(&h24_own24);
-    h_0opt_37811efc_release(&h25_own25);
-    h_lextoken_Token_release(&h26_own26);
-    h_lexscan_Read_release(&h27_own27);
-    h_0opt_37811efc_release(&h28_own28);
-    h_0opt_3be6656d_release(&h29_own29);
-    h_lextoken_Token_release(&h30_own30);
-    h_lexscan_Read_release(&h31_own31);
-    h_0opt_37811efc_release(&h32_own32);
-    h_0opt_37811efc_release(&h33_own33);
-    h_lexscan_Read_release(&h34_own34);
-    h_0opt_37811efc_release(&h35_own35);
+    h_0opt_3be6656d_release(hero_slot_escape(&h10_single));
+    h_0opt_3be6656d_release(hero_slot_escape(&h11_f0));
+    h_0opt_3be6656d_release(hero_slot_escape(&h12_f1));
+    h_lextoken_Token_release(hero_slot_escape(&h14_own14));
+    h_lexscan_Read_release(hero_slot_escape(&h15_own15));
+    h_0opt_37811efc_release(hero_slot_escape(&h16_own16));
+    h_lextoken_Token_release(hero_slot_escape(&h17_own17));
+    h_lexscan_Read_release(hero_slot_escape(&h18_own18));
+    h_0opt_37811efc_release(hero_slot_escape(&h19_own19));
+    h_lextoken_Token_release(hero_slot_escape(&h20_own20));
+    h_lexscan_Read_release(hero_slot_escape(&h21_own21));
+    h_0opt_37811efc_release(hero_slot_escape(&h22_own22));
+    h_lextoken_Token_release(hero_slot_escape(&h23_own23));
+    h_lexscan_Read_release(hero_slot_escape(&h24_own24));
+    h_0opt_37811efc_release(hero_slot_escape(&h25_own25));
+    h_lextoken_Token_release(hero_slot_escape(&h26_own26));
+    h_lexscan_Read_release(hero_slot_escape(&h27_own27));
+    h_0opt_37811efc_release(hero_slot_escape(&h28_own28));
+    h_0opt_3be6656d_release(hero_slot_escape(&h29_own29));
+    h_lextoken_Token_release(hero_slot_escape(&h30_own30));
+    h_lexscan_Read_release(hero_slot_escape(&h31_own31));
+    h_0opt_37811efc_release(hero_slot_escape(&h32_own32));
+    h_0opt_37811efc_release(hero_slot_escape(&h33_own33));
+    h_lexscan_Read_release(hero_slot_escape(&h34_own34));
+    h_0opt_37811efc_release(hero_slot_escape(&h35_own35));
     return t111;
 }
 
@@ -5826,11 +5826,11 @@ bb0:
 #line 5827 "main.c"
     h_0opt_37811efc_release(&t18);
     h_0opt_37811efc_retain(&t13);
-    hero_str_decref(h3_own3);
-    hero_str_decref(h4_own4);
-    hero_str_decref(h5_own5);
-    hero_str_decref(h6_own6);
-    h_0opt_37811efc_release(&h7_own7);
+    hero_str_release_at(&h3_own3);
+    hero_str_release_at(&h4_own4);
+    hero_str_release_at(&h5_own5);
+    hero_str_release_at(&h6_own6);
+    h_0opt_37811efc_release(hero_slot_escape(&h7_own7));
     return t13;
 }
 
@@ -6430,32 +6430,32 @@ bb37:
 #line 6431 "main.c"
     t64 = h1_ret0;
     h_0opt_3be6656d_retain(&t64);
-    h_lextoken_Token_release(&h2_own2);
-    h_0opt_3be6656d_release(&h3_own3);
-    h_lextoken_Token_release(&h4_own4);
-    h_0opt_3be6656d_release(&h5_own5);
-    h_lextoken_Token_release(&h6_own6);
-    h_0opt_3be6656d_release(&h7_own7);
-    h_lextoken_Token_release(&h8_own8);
-    h_0opt_3be6656d_release(&h9_own9);
-    h_lextoken_Token_release(&h10_own10);
-    h_0opt_3be6656d_release(&h11_own11);
-    h_lextoken_Token_release(&h12_own12);
-    h_0opt_3be6656d_release(&h13_own13);
-    h_lextoken_Token_release(&h14_own14);
-    h_0opt_3be6656d_release(&h15_own15);
-    h_lextoken_Token_release(&h16_own16);
-    h_0opt_3be6656d_release(&h17_own17);
-    h_lextoken_Token_release(&h18_own18);
-    h_0opt_3be6656d_release(&h19_own19);
-    h_lextoken_Token_release(&h20_own20);
-    h_0opt_3be6656d_release(&h21_own21);
-    h_lextoken_Token_release(&h22_own22);
-    h_0opt_3be6656d_release(&h23_own23);
-    hero_str_decref(h24_own24);
-    h_0opt_3be6656d_release(&h25_own25);
-    h_lextoken_Token_release(&h26_own26);
-    h_0opt_3be6656d_release(&h27_own27);
+    h_lextoken_Token_release(hero_slot_escape(&h2_own2));
+    h_0opt_3be6656d_release(hero_slot_escape(&h3_own3));
+    h_lextoken_Token_release(hero_slot_escape(&h4_own4));
+    h_0opt_3be6656d_release(hero_slot_escape(&h5_own5));
+    h_lextoken_Token_release(hero_slot_escape(&h6_own6));
+    h_0opt_3be6656d_release(hero_slot_escape(&h7_own7));
+    h_lextoken_Token_release(hero_slot_escape(&h8_own8));
+    h_0opt_3be6656d_release(hero_slot_escape(&h9_own9));
+    h_lextoken_Token_release(hero_slot_escape(&h10_own10));
+    h_0opt_3be6656d_release(hero_slot_escape(&h11_own11));
+    h_lextoken_Token_release(hero_slot_escape(&h12_own12));
+    h_0opt_3be6656d_release(hero_slot_escape(&h13_own13));
+    h_lextoken_Token_release(hero_slot_escape(&h14_own14));
+    h_0opt_3be6656d_release(hero_slot_escape(&h15_own15));
+    h_lextoken_Token_release(hero_slot_escape(&h16_own16));
+    h_0opt_3be6656d_release(hero_slot_escape(&h17_own17));
+    h_lextoken_Token_release(hero_slot_escape(&h18_own18));
+    h_0opt_3be6656d_release(hero_slot_escape(&h19_own19));
+    h_lextoken_Token_release(hero_slot_escape(&h20_own20));
+    h_0opt_3be6656d_release(hero_slot_escape(&h21_own21));
+    h_lextoken_Token_release(hero_slot_escape(&h22_own22));
+    h_0opt_3be6656d_release(hero_slot_escape(&h23_own23));
+    hero_str_release_at(&h24_own24);
+    h_0opt_3be6656d_release(hero_slot_escape(&h25_own25));
+    h_lextoken_Token_release(hero_slot_escape(&h26_own26));
+    h_0opt_3be6656d_release(hero_slot_escape(&h27_own27));
     return t64;
 }
 
@@ -6510,8 +6510,8 @@ bb1:
     t9 = h2_r0;
 #line 6512 "main.c"
     hero_str_incref(t9);
-    h_0opt_7f1de476_release(&h1_s0);
-    hero_str_decref(h2_r0);
+    h_0opt_7f1de476_release(hero_slot_escape(&h1_s0));
+    hero_str_release_at(&h2_r0);
     hero_failure_release(&h3_e);
     return t9;
 bb2:
@@ -6960,18 +6960,18 @@ bb34:
 #line 6961 "main.c"
     t47 = h1_ret0;
     h_lextoken_Token_retain(&t47);
-    h_lextoken_Token_release(&h2_own2);
-    h_lextoken_Token_release(&h3_own3);
-    h_lextoken_Token_release(&h4_own4);
-    h_lextoken_Token_release(&h5_own5);
-    h_lextoken_Token_release(&h6_own6);
-    h_lextoken_Token_release(&h7_own7);
-    h_lextoken_Token_release(&h8_own8);
-    h_lextoken_Token_release(&h9_own9);
-    h_lextoken_Token_release(&h10_own10);
-    h_lextoken_Token_release(&h11_own11);
-    h_lextoken_Token_release(&h12_own12);
-    h_lextoken_Token_release(&h13_own13);
+    h_lextoken_Token_release(hero_slot_escape(&h2_own2));
+    h_lextoken_Token_release(hero_slot_escape(&h3_own3));
+    h_lextoken_Token_release(hero_slot_escape(&h4_own4));
+    h_lextoken_Token_release(hero_slot_escape(&h5_own5));
+    h_lextoken_Token_release(hero_slot_escape(&h6_own6));
+    h_lextoken_Token_release(hero_slot_escape(&h7_own7));
+    h_lextoken_Token_release(hero_slot_escape(&h8_own8));
+    h_lextoken_Token_release(hero_slot_escape(&h9_own9));
+    h_lextoken_Token_release(hero_slot_escape(&h10_own10));
+    h_lextoken_Token_release(hero_slot_escape(&h11_own11));
+    h_lextoken_Token_release(hero_slot_escape(&h12_own12));
+    h_lextoken_Token_release(hero_slot_escape(&h13_own13));
     return t47;
 }
 
@@ -7174,13 +7174,13 @@ bb1:
     t52 = h2_r0;
 #line 7176 "main.c"
     hero_str_incref(t52);
-    h_lextoken_Token_release(&h1_s0);
-    hero_str_decref(h2_r0);
-    h_lextoken_Token_c_text_release(&h4_x);
-    h_lextoken_Token_c_name_release(&h5_n);
-    hero_str_decref(h6_own6);
-    hero_str_decref(h7_own7);
-    hero_str_decref(h8_own8);
+    h_lextoken_Token_release(hero_slot_escape(&h1_s0));
+    hero_str_release_at(&h2_r0);
+    h_lextoken_Token_c_text_release(hero_slot_escape(&h4_x));
+    h_lextoken_Token_c_name_release(hero_slot_escape(&h5_n));
+    hero_str_release_at(&h6_own6);
+    hero_str_release_at(&h7_own7);
+    hero_str_release_at(&h8_own8);
     return t52;
 bb2:
 #line 109 "examples/interpreter/lex/token.hero"
@@ -7769,7 +7769,7 @@ bb1:
 #line 153 "examples/interpreter/lex/token.hero"
     t12 = h2_r0;
 #line 7772 "main.c"
-    h_lextoken_Token_release(&h1_s0);
+    h_lextoken_Token_release(hero_slot_escape(&h1_s0));
     return t12;
 bb2:
 #line 154 "examples/interpreter/lex/token.hero"
@@ -7875,7 +7875,7 @@ bb0:
 #line 7876 "main.c"
     h_syncursor_Cursor_release(&t4);
     h_syncursor_Cursor_retain(&t3);
-    h_syncursor_Cursor_release(&h1_own1);
+    h_syncursor_Cursor_release(hero_slot_escape(&h1_own1));
     return t3;
 }
 
@@ -7953,7 +7953,7 @@ bb4:
 #line 7954 "main.c"
     t13 = h1_ret0;
     h_lextoken_Token_retain(&t13);
-    h_lextoken_Token_release(&h2_own2);
+    h_lextoken_Token_release(hero_slot_escape(&h2_own2));
     return t13;
 }
 
@@ -8043,7 +8043,7 @@ bb4:
 #line 8044 "main.c"
     t17 = h1_ret0;
     h_lextoken_Token_retain(&t17);
-    h_lextoken_Token_release(&h2_own2);
+    h_lextoken_Token_release(hero_slot_escape(&h2_own2));
     return t17;
 }
 
@@ -8116,9 +8116,9 @@ bb1:
 #line 8117 "main.c"
     h_lextoken_Token_release(&t16);
     h_lextoken_Token_retain(&t13);
-    h_lextoken_Token_release(&h1_taken);
-    h_lextoken_Token_release(&h2_own2);
-    h_lextoken_Token_release(&h3_own3);
+    h_lextoken_Token_release(hero_slot_escape(&h1_taken));
+    h_lextoken_Token_release(hero_slot_escape(&h2_own2));
+    h_lextoken_Token_release(hero_slot_escape(&h3_own3));
     return t13;
 bb2:
 #line 56 "examples/interpreter/syn/cursor.hero"
@@ -8206,8 +8206,8 @@ bb3:
 bb4:
 #line 8208 "main.c"
     t8 = h2_ret0;
-    h_lextoken_Token_release(&h3_own3);
-    h_lextoken_Token_release(&h4_own4);
+    h_lextoken_Token_release(hero_slot_escape(&h3_own3));
+    h_lextoken_Token_release(hero_slot_escape(&h4_own4));
     return t8;
 }
 
@@ -8374,16 +8374,16 @@ bb4:
 #line 8375 "main.c"
     t18 = h2_ret0;
     h_0opt_a8ea2_retain(&t18);
-    hero_str_decref(h3_own3);
-    hero_str_decref(h4_own4);
-    hero_str_decref(h5_own5);
-    hero_str_decref(h6_own6);
-    h_lextoken_Token_release(&h7_own7);
-    hero_str_decref(h8_own8);
-    hero_str_decref(h9_own9);
-    hero_str_decref(h10_own10);
-    h_0opt_a8ea2_release(&h11_own11);
-    h_0opt_a8ea2_release(&h12_own12);
+    hero_str_release_at(&h3_own3);
+    hero_str_release_at(&h4_own4);
+    hero_str_release_at(&h5_own5);
+    hero_str_release_at(&h6_own6);
+    h_lextoken_Token_release(hero_slot_escape(&h7_own7));
+    hero_str_release_at(&h8_own8);
+    hero_str_release_at(&h9_own9);
+    hero_str_release_at(&h10_own10);
+    h_0opt_a8ea2_release(hero_slot_escape(&h11_own11));
+    h_0opt_a8ea2_release(hero_slot_escape(&h12_own12));
     return t18;
 }
 
@@ -8636,40 +8636,40 @@ bb1:
 #line 8637 "main.c"
     h_0opt_f87774a_release(&t60);
     h_0opt_f87774a_retain(&t57);
-    h_lextoken_Token_release(&h1_s0);
-    h_0opt_f87774a_release(&h2_r0);
-    h_lextoken_Token_c_text_release(&h4_x);
-    h_lextoken_Token_c_name_release(&h5_n);
-    h_lextoken_Token_release(&h6_own6);
-    h_0opt_f87774a_release(&h7_own7);
-    hero_str_decref(h8_own8);
-    hero_str_decref(h9_own9);
-    hero_str_decref(h10_own10);
-    hero_str_decref(h11_own11);
-    h_0opt_f87774a_release(&h12_own12);
-    hero_str_decref(h13_own13);
-    hero_str_decref(h14_own14);
-    hero_str_decref(h15_own15);
-    h_0opt_f87774a_release(&h16_own16);
-    h_0opt_f87774a_release(&h17_own17);
-    h_lextoken_Token_release(&h18_own18);
-    h_0opt_f87774a_release(&h19_own19);
-    h_lextoken_Token_release(&h20_own20);
-    h_0opt_f87774a_release(&h21_own21);
-    h_lextoken_Token_release(&h22_own22);
-    h_0opt_f87774a_release(&h23_own23);
-    h_lextoken_Token_release(&h24_own24);
-    h_0opt_f87774a_release(&h25_own25);
-    h_lextoken_Token_release(&h26_own26);
-    h_0opt_f87774a_release(&h27_own27);
-    h_lextoken_Token_release(&h28_own28);
-    h_0opt_f87774a_release(&h29_own29);
-    h_lextoken_Token_release(&h30_own30);
-    h_0opt_f87774a_release(&h31_own31);
-    hero_str_decref(h32_own32);
-    h_0opt_f87774a_release(&h33_own33);
-    hero_str_decref(h34_own34);
-    h_0opt_f87774a_release(&h35_own35);
+    h_lextoken_Token_release(hero_slot_escape(&h1_s0));
+    h_0opt_f87774a_release(hero_slot_escape(&h2_r0));
+    h_lextoken_Token_c_text_release(hero_slot_escape(&h4_x));
+    h_lextoken_Token_c_name_release(hero_slot_escape(&h5_n));
+    h_lextoken_Token_release(hero_slot_escape(&h6_own6));
+    h_0opt_f87774a_release(hero_slot_escape(&h7_own7));
+    hero_str_release_at(&h8_own8);
+    hero_str_release_at(&h9_own9);
+    hero_str_release_at(&h10_own10);
+    hero_str_release_at(&h11_own11);
+    h_0opt_f87774a_release(hero_slot_escape(&h12_own12));
+    hero_str_release_at(&h13_own13);
+    hero_str_release_at(&h14_own14);
+    hero_str_release_at(&h15_own15);
+    h_0opt_f87774a_release(hero_slot_escape(&h16_own16));
+    h_0opt_f87774a_release(hero_slot_escape(&h17_own17));
+    h_lextoken_Token_release(hero_slot_escape(&h18_own18));
+    h_0opt_f87774a_release(hero_slot_escape(&h19_own19));
+    h_lextoken_Token_release(hero_slot_escape(&h20_own20));
+    h_0opt_f87774a_release(hero_slot_escape(&h21_own21));
+    h_lextoken_Token_release(hero_slot_escape(&h22_own22));
+    h_0opt_f87774a_release(hero_slot_escape(&h23_own23));
+    h_lextoken_Token_release(hero_slot_escape(&h24_own24));
+    h_0opt_f87774a_release(hero_slot_escape(&h25_own25));
+    h_lextoken_Token_release(hero_slot_escape(&h26_own26));
+    h_0opt_f87774a_release(hero_slot_escape(&h27_own27));
+    h_lextoken_Token_release(hero_slot_escape(&h28_own28));
+    h_0opt_f87774a_release(hero_slot_escape(&h29_own29));
+    h_lextoken_Token_release(hero_slot_escape(&h30_own30));
+    h_0opt_f87774a_release(hero_slot_escape(&h31_own31));
+    hero_str_release_at(&h32_own32);
+    h_0opt_f87774a_release(hero_slot_escape(&h33_own33));
+    hero_str_release_at(&h34_own34);
+    h_0opt_f87774a_release(hero_slot_escape(&h35_own35));
     return t57;
 bb2:
 #line 81 "examples/interpreter/syn/cursor.hero"
@@ -9144,9 +9144,9 @@ bb0:
 #line 9145 "main.c"
     h_0opt_f87774a_release(&t9);
     h_0opt_f87774a_retain(&t6);
-    hero_str_decref(h2_own2);
-    hero_str_decref(h3_own3);
-    h_0opt_f87774a_release(&h4_own4);
+    hero_str_release_at(&h2_own2);
+    hero_str_release_at(&h3_own3);
+    h_0opt_f87774a_release(hero_slot_escape(&h4_own4));
     return t6;
 }
 
@@ -9201,9 +9201,9 @@ bb2:
     h_lextoken_Token_release(&t8);
     goto bb1;
 bb3:
-    h_lextoken_Token_release(&h1_own1);
-    h_lextoken_Token_release(&h2_own2);
-    h_lextoken_Token_release(&h3_own3);
+    h_lextoken_Token_release(hero_slot_escape(&h1_own1));
+    h_lextoken_Token_release(hero_slot_escape(&h2_own2));
+    h_lextoken_Token_release(hero_slot_escape(&h3_own3));
     return;
 }
 
@@ -9241,8 +9241,8 @@ bb0:
 #line 110 "examples/interpreter/syn/cursor.hero"
     t4 = h_lextoken_Token_eq(&t2, &t3);
 #line 9244 "main.c"
-    h_lextoken_Token_release(&h1_own1);
-    h_lextoken_Token_release(&h2_own2);
+    h_lextoken_Token_release(hero_slot_escape(&h1_own1));
+    h_lextoken_Token_release(hero_slot_escape(&h2_own2));
     return t4;
 }
 
@@ -9297,8 +9297,8 @@ bb1:
     t9 = h2_r0;
 #line 9299 "main.c"
     hero_str_incref(t9);
-    h_0opt_a8ea2_release(&h1_s0);
-    hero_str_decref(h2_r0);
+    h_0opt_a8ea2_release(hero_slot_escape(&h1_s0));
+    hero_str_release_at(&h2_r0);
     hero_failure_release(&h3_e);
     return t9;
 bb2:
@@ -9392,8 +9392,8 @@ bb1:
     t9 = h2_r0;
 #line 9394 "main.c"
     hero_str_incref(t9);
-    h_0opt_f87774a_release(&h1_s0);
-    hero_str_decref(h2_r0);
+    h_0opt_f87774a_release(hero_slot_escape(&h1_s0));
+    hero_str_release_at(&h2_r0);
     hero_failure_release(&h3_e);
     return t9;
 bb2:
@@ -9466,7 +9466,7 @@ bb0:
 #line 9467 "main.c"
     h_0opt_e201354_release(&t2);
     h_0opt_e201354_retain(&t1);
-    h_0opt_e201354_release(&h2_own2);
+    h_0opt_e201354_release(hero_slot_escape(&h2_own2));
     return t1;
 }
 
@@ -9716,17 +9716,17 @@ bb8:
 #line 9717 "main.c"
     t33 = h6_ret0;
     h_0opt_e201354_retain(&t33);
-    h_0opt_e201354_release(&h2_f0);
-    h_0opt_e201354_release(&h4_f1);
-    h_0opt_e201354_release(&h7_own7);
-    h_0opt_e201354_release(&h8_own8);
-    h_lextoken_Token_release(&h9_own9);
-    h_lextoken_Token_release(&h10_own10);
-    h_lextoken_Token_release(&h11_own11);
-    h_0opt_e201354_release(&h12_own12);
-    h_0opt_e201354_release(&h13_own13);
-    h_syntree_Expr_release(&h14_own14);
-    h_0opt_e201354_release(&h15_own15);
+    h_0opt_e201354_release(hero_slot_escape(&h2_f0));
+    h_0opt_e201354_release(hero_slot_escape(&h4_f1));
+    h_0opt_e201354_release(hero_slot_escape(&h7_own7));
+    h_0opt_e201354_release(hero_slot_escape(&h8_own8));
+    h_lextoken_Token_release(hero_slot_escape(&h9_own9));
+    h_lextoken_Token_release(hero_slot_escape(&h10_own10));
+    h_lextoken_Token_release(hero_slot_escape(&h11_own11));
+    h_0opt_e201354_release(hero_slot_escape(&h12_own12));
+    h_0opt_e201354_release(hero_slot_escape(&h13_own13));
+    h_syntree_Expr_release(hero_slot_escape(&h14_own14));
+    h_0opt_e201354_release(hero_slot_escape(&h15_own15));
     return t33;
 }
 
@@ -9976,17 +9976,17 @@ bb8:
 #line 9977 "main.c"
     t33 = h6_ret0;
     h_0opt_e201354_retain(&t33);
-    h_0opt_e201354_release(&h2_f0);
-    h_0opt_e201354_release(&h4_f1);
-    h_0opt_e201354_release(&h7_own7);
-    h_0opt_e201354_release(&h8_own8);
-    h_lextoken_Token_release(&h9_own9);
-    h_lextoken_Token_release(&h10_own10);
-    h_lextoken_Token_release(&h11_own11);
-    h_0opt_e201354_release(&h12_own12);
-    h_0opt_e201354_release(&h13_own13);
-    h_syntree_Expr_release(&h14_own14);
-    h_0opt_e201354_release(&h15_own15);
+    h_0opt_e201354_release(hero_slot_escape(&h2_f0));
+    h_0opt_e201354_release(hero_slot_escape(&h4_f1));
+    h_0opt_e201354_release(hero_slot_escape(&h7_own7));
+    h_0opt_e201354_release(hero_slot_escape(&h8_own8));
+    h_lextoken_Token_release(hero_slot_escape(&h9_own9));
+    h_lextoken_Token_release(hero_slot_escape(&h10_own10));
+    h_lextoken_Token_release(hero_slot_escape(&h11_own11));
+    h_0opt_e201354_release(hero_slot_escape(&h12_own12));
+    h_0opt_e201354_release(hero_slot_escape(&h13_own13));
+    h_syntree_Expr_release(hero_slot_escape(&h14_own14));
+    h_0opt_e201354_release(hero_slot_escape(&h15_own15));
     return t33;
 }
 
@@ -10479,31 +10479,31 @@ bb13:
 #line 10480 "main.c"
     t65 = h12_ret0;
     h_0opt_e201354_retain(&t65);
-    h_0opt_e201354_release(&h2_f0);
-    h_0opt_3ce1b94c_release(&h4_op);
-    h_0opt_3ce1b94c_release(&h5_f1);
-    h_0opt_e201354_release(&h6_f2);
-    h_0opt_3ce1b94c_release(&h8_f3);
-    h_0opt_3ce1b94c_release(&h10_second);
-    h_0opt_3ce1b94c_release(&h11_f4);
-    h_0opt_e201354_release(&h13_own13);
-    h_lextoken_Token_release(&h14_own14);
-    h_0opt_3ce1b94c_release(&h15_own15);
-    h_0opt_e201354_release(&h16_own16);
-    h_lextoken_Token_release(&h17_own17);
-    h_0opt_e201354_release(&h18_own18);
-    h_0opt_e201354_release(&h19_own19);
-    h_0opt_e201354_release(&h20_own20);
-    h_syntree_Expr_release(&h21_own21);
-    h_lextoken_Token_release(&h22_own22);
-    h_0opt_3ce1b94c_release(&h23_own23);
-    h_0opt_e201354_release(&h24_own24);
-    hero_str_decref(h25_own25);
-    h_lextoken_Token_release(&h26_own26);
-    hero_str_decref(h27_own27);
-    hero_str_decref(h28_own28);
-    hero_str_decref(h29_own29);
-    h_0opt_e201354_release(&h30_own30);
+    h_0opt_e201354_release(hero_slot_escape(&h2_f0));
+    h_0opt_3ce1b94c_release(hero_slot_escape(&h4_op));
+    h_0opt_3ce1b94c_release(hero_slot_escape(&h5_f1));
+    h_0opt_e201354_release(hero_slot_escape(&h6_f2));
+    h_0opt_3ce1b94c_release(hero_slot_escape(&h8_f3));
+    h_0opt_3ce1b94c_release(hero_slot_escape(&h10_second));
+    h_0opt_3ce1b94c_release(hero_slot_escape(&h11_f4));
+    h_0opt_e201354_release(hero_slot_escape(&h13_own13));
+    h_lextoken_Token_release(hero_slot_escape(&h14_own14));
+    h_0opt_3ce1b94c_release(hero_slot_escape(&h15_own15));
+    h_0opt_e201354_release(hero_slot_escape(&h16_own16));
+    h_lextoken_Token_release(hero_slot_escape(&h17_own17));
+    h_0opt_e201354_release(hero_slot_escape(&h18_own18));
+    h_0opt_e201354_release(hero_slot_escape(&h19_own19));
+    h_0opt_e201354_release(hero_slot_escape(&h20_own20));
+    h_syntree_Expr_release(hero_slot_escape(&h21_own21));
+    h_lextoken_Token_release(hero_slot_escape(&h22_own22));
+    h_0opt_3ce1b94c_release(hero_slot_escape(&h23_own23));
+    h_0opt_e201354_release(hero_slot_escape(&h24_own24));
+    hero_str_release_at(&h25_own25);
+    h_lextoken_Token_release(hero_slot_escape(&h26_own26));
+    hero_str_release_at(&h27_own27);
+    hero_str_release_at(&h28_own28);
+    hero_str_release_at(&h29_own29);
+    h_0opt_e201354_release(hero_slot_escape(&h30_own30));
     return t65;
 }
 
@@ -10833,20 +10833,20 @@ bb13:
 #line 10834 "main.c"
     t42 = h8_ret0;
     h_0opt_e201354_retain(&t42);
-    h_0opt_e201354_release(&h2_f0);
-    h_0opt_e201354_release(&h6_f1);
-    h_0opt_e201354_release(&h9_own9);
-    h_0opt_e201354_release(&h10_own10);
-    h_lextoken_Token_release(&h11_own11);
-    h_lextoken_Token_release(&h12_own12);
-    h_lextoken_Token_release(&h13_own13);
-    h_lextoken_Token_release(&h14_own14);
-    h_0opt_e201354_release(&h15_own15);
-    h_lextoken_Token_release(&h16_own16);
-    h_lextoken_Token_release(&h17_own17);
-    h_0opt_e201354_release(&h18_own18);
-    h_syntree_Expr_release(&h19_own19);
-    h_0opt_e201354_release(&h20_own20);
+    h_0opt_e201354_release(hero_slot_escape(&h2_f0));
+    h_0opt_e201354_release(hero_slot_escape(&h6_f1));
+    h_0opt_e201354_release(hero_slot_escape(&h9_own9));
+    h_0opt_e201354_release(hero_slot_escape(&h10_own10));
+    h_lextoken_Token_release(hero_slot_escape(&h11_own11));
+    h_lextoken_Token_release(hero_slot_escape(&h12_own12));
+    h_lextoken_Token_release(hero_slot_escape(&h13_own13));
+    h_lextoken_Token_release(hero_slot_escape(&h14_own14));
+    h_0opt_e201354_release(hero_slot_escape(&h15_own15));
+    h_lextoken_Token_release(hero_slot_escape(&h16_own16));
+    h_lextoken_Token_release(hero_slot_escape(&h17_own17));
+    h_0opt_e201354_release(hero_slot_escape(&h18_own18));
+    h_syntree_Expr_release(hero_slot_escape(&h19_own19));
+    h_0opt_e201354_release(hero_slot_escape(&h20_own20));
     return t42;
 }
 
@@ -11167,19 +11167,19 @@ bb14:
 #line 11168 "main.c"
     t41 = h8_ret0;
     h_0opt_e201354_retain(&t41);
-    h_0opt_e201354_release(&h2_f0);
-    h_lextoken_Token_release(&h5_taken);
-    h_0opt_e201354_release(&h6_f1);
-    h_0opt_e201354_release(&h9_own9);
-    h_0opt_e201354_release(&h10_own10);
-    h_lextoken_Token_release(&h11_own11);
-    h_lextoken_Token_release(&h12_own12);
-    h_lextoken_Token_release(&h13_own13);
-    h_0opt_e201354_release(&h14_own14);
-    h_lextoken_Token_release(&h15_own15);
-    h_0opt_e201354_release(&h16_own16);
-    h_syntree_Expr_release(&h17_own17);
-    h_0opt_e201354_release(&h18_own18);
+    h_0opt_e201354_release(hero_slot_escape(&h2_f0));
+    h_lextoken_Token_release(hero_slot_escape(&h5_taken));
+    h_0opt_e201354_release(hero_slot_escape(&h6_f1));
+    h_0opt_e201354_release(hero_slot_escape(&h9_own9));
+    h_0opt_e201354_release(hero_slot_escape(&h10_own10));
+    h_lextoken_Token_release(hero_slot_escape(&h11_own11));
+    h_lextoken_Token_release(hero_slot_escape(&h12_own12));
+    h_lextoken_Token_release(hero_slot_escape(&h13_own13));
+    h_0opt_e201354_release(hero_slot_escape(&h14_own14));
+    h_lextoken_Token_release(hero_slot_escape(&h15_own15));
+    h_0opt_e201354_release(hero_slot_escape(&h16_own16));
+    h_syntree_Expr_release(hero_slot_escape(&h17_own17));
+    h_0opt_e201354_release(hero_slot_escape(&h18_own18));
     return t41;
 }
 
@@ -11512,23 +11512,23 @@ bb11:
 #line 11513 "main.c"
     t40 = h6_ret0;
     h_0opt_e201354_retain(&t40);
-    h_0opt_e201354_release(&h2_f0);
-    h_0opt_e201354_release(&h4_f1);
-    h_lextoken_Token_release(&h7_own7);
-    h_lextoken_Token_release(&h8_own8);
-    h_lextoken_Token_release(&h9_own9);
-    h_lextoken_Token_release(&h10_own10);
-    h_lextoken_Token_release(&h11_own11);
-    h_0opt_e201354_release(&h12_own12);
-    h_syntree_Expr_release(&h13_own13);
-    h_0opt_e201354_release(&h14_own14);
-    h_0opt_e201354_release(&h15_own15);
-    h_0opt_e201354_release(&h16_own16);
-    h_lextoken_Token_release(&h17_own17);
-    h_0opt_e201354_release(&h18_own18);
-    h_syntree_Expr_release(&h19_own19);
-    h_0opt_e201354_release(&h20_own20);
-    h_0opt_e201354_release(&h21_own21);
+    h_0opt_e201354_release(hero_slot_escape(&h2_f0));
+    h_0opt_e201354_release(hero_slot_escape(&h4_f1));
+    h_lextoken_Token_release(hero_slot_escape(&h7_own7));
+    h_lextoken_Token_release(hero_slot_escape(&h8_own8));
+    h_lextoken_Token_release(hero_slot_escape(&h9_own9));
+    h_lextoken_Token_release(hero_slot_escape(&h10_own10));
+    h_lextoken_Token_release(hero_slot_escape(&h11_own11));
+    h_0opt_e201354_release(hero_slot_escape(&h12_own12));
+    h_syntree_Expr_release(hero_slot_escape(&h13_own13));
+    h_0opt_e201354_release(hero_slot_escape(&h14_own14));
+    h_0opt_e201354_release(hero_slot_escape(&h15_own15));
+    h_0opt_e201354_release(hero_slot_escape(&h16_own16));
+    h_lextoken_Token_release(hero_slot_escape(&h17_own17));
+    h_0opt_e201354_release(hero_slot_escape(&h18_own18));
+    h_syntree_Expr_release(hero_slot_escape(&h19_own19));
+    h_0opt_e201354_release(hero_slot_escape(&h20_own20));
+    h_0opt_e201354_release(hero_slot_escape(&h21_own21));
     return t40;
 }
 
@@ -11764,32 +11764,32 @@ bb1:
 #line 11765 "main.c"
     h_0opt_e201354_release(&t55);
     h_0opt_e201354_retain(&t52);
-    h_lextoken_Token_release(&h2_s0);
-    h_0opt_e201354_release(&h3_r0);
-    h_lextoken_Token_c_text_release(&h5_x);
-    h_lextoken_Token_c_name_release(&h6_n);
-    h_lextoken_Token_release(&h7_own7);
-    h_0opt_e201354_release(&h8_own8);
-    h_syntree_Expr_release(&h9_own9);
-    h_0opt_e201354_release(&h10_own10);
-    h_syntree_Expr_release(&h11_own11);
-    h_0opt_e201354_release(&h12_own12);
-    h_syntree_Expr_release(&h13_own13);
-    h_0opt_e201354_release(&h14_own14);
-    h_syntree_Expr_release(&h15_own15);
-    h_0opt_e201354_release(&h16_own16);
-    h_0opt_e201354_release(&h17_own17);
-    h_0opt_e201354_release(&h18_own18);
-    h_0opt_e201354_release(&h19_own19);
-    h_0opt_e201354_release(&h20_own20);
-    h_0opt_e201354_release(&h21_own21);
-    h_0opt_e201354_release(&h22_own22);
-    h_0opt_e201354_release(&h23_own23);
-    h_0opt_e201354_release(&h24_own24);
-    h_0opt_e201354_release(&h25_own25);
-    h_0opt_e201354_release(&h26_own26);
-    h_0opt_e201354_release(&h27_own27);
-    h_0opt_e201354_release(&h28_own28);
+    h_lextoken_Token_release(hero_slot_escape(&h2_s0));
+    h_0opt_e201354_release(hero_slot_escape(&h3_r0));
+    h_lextoken_Token_c_text_release(hero_slot_escape(&h5_x));
+    h_lextoken_Token_c_name_release(hero_slot_escape(&h6_n));
+    h_lextoken_Token_release(hero_slot_escape(&h7_own7));
+    h_0opt_e201354_release(hero_slot_escape(&h8_own8));
+    h_syntree_Expr_release(hero_slot_escape(&h9_own9));
+    h_0opt_e201354_release(hero_slot_escape(&h10_own10));
+    h_syntree_Expr_release(hero_slot_escape(&h11_own11));
+    h_0opt_e201354_release(hero_slot_escape(&h12_own12));
+    h_syntree_Expr_release(hero_slot_escape(&h13_own13));
+    h_0opt_e201354_release(hero_slot_escape(&h14_own14));
+    h_syntree_Expr_release(hero_slot_escape(&h15_own15));
+    h_0opt_e201354_release(hero_slot_escape(&h16_own16));
+    h_0opt_e201354_release(hero_slot_escape(&h17_own17));
+    h_0opt_e201354_release(hero_slot_escape(&h18_own18));
+    h_0opt_e201354_release(hero_slot_escape(&h19_own19));
+    h_0opt_e201354_release(hero_slot_escape(&h20_own20));
+    h_0opt_e201354_release(hero_slot_escape(&h21_own21));
+    h_0opt_e201354_release(hero_slot_escape(&h22_own22));
+    h_0opt_e201354_release(hero_slot_escape(&h23_own23));
+    h_0opt_e201354_release(hero_slot_escape(&h24_own24));
+    h_0opt_e201354_release(hero_slot_escape(&h25_own25));
+    h_0opt_e201354_release(hero_slot_escape(&h26_own26));
+    h_0opt_e201354_release(hero_slot_escape(&h27_own27));
+    h_0opt_e201354_release(hero_slot_escape(&h28_own28));
     return t52;
 bb2:
 #line 136 "examples/interpreter/syn/expr.hero"
@@ -12236,9 +12236,9 @@ bb0:
 #line 12237 "main.c"
     h_0opt_e201354_release(&t8);
     h_0opt_e201354_retain(&t5);
-    hero_str_decref(h1_own1);
-    hero_str_decref(h2_own2);
-    h_0opt_e201354_release(&h3_own3);
+    hero_str_release_at(&h1_own1);
+    hero_str_release_at(&h2_own2);
+    h_0opt_e201354_release(hero_slot_escape(&h3_own3));
     return t5;
 }
 
@@ -12721,31 +12721,31 @@ bb16:
 #line 12722 "main.c"
     t63 = h7_ret0;
     h_0opt_e201354_retain(&t63);
-    hero_array_decref(h3_given);
-    h_0opt_e201354_release(&h4_f0);
-    h_0opt_e201354_release(&h5_f1);
-    h_0opt_a8ea2_release(&h6_f2);
-    h_lextoken_Token_release(&h8_own8);
-    h_lextoken_Token_release(&h9_own9);
-    h_lextoken_Token_release(&h10_own10);
-    hero_array_decref(h11_own11);
-    h_lextoken_Token_release(&h12_own12);
-    h_lextoken_Token_release(&h13_own13);
-    h_syntree_Expr_release(&h14_own14);
-    h_0opt_e201354_release(&h15_own15);
-    h_0opt_e201354_release(&h16_own16);
-    h_lextoken_Token_release(&h17_own17);
-    h_syntree_Expr_release(&h18_own18);
-    h_0opt_e201354_release(&h19_own19);
-    h_0opt_e201354_release(&h20_own20);
-    h_lextoken_Token_release(&h21_own21);
-    h_0opt_e201354_release(&h22_own22);
-    h_lextoken_Token_release(&h23_own23);
-    h_0opt_a8ea2_release(&h24_own24);
-    h_0opt_e201354_release(&h25_own25);
-    h_syntree_Expr_release(&h26_own26);
-    h_0opt_e201354_release(&h27_own27);
-    h_0opt_e201354_release(&h28_own28);
+    hero_array_release_at(&h3_given);
+    h_0opt_e201354_release(hero_slot_escape(&h4_f0));
+    h_0opt_e201354_release(hero_slot_escape(&h5_f1));
+    h_0opt_a8ea2_release(hero_slot_escape(&h6_f2));
+    h_lextoken_Token_release(hero_slot_escape(&h8_own8));
+    h_lextoken_Token_release(hero_slot_escape(&h9_own9));
+    h_lextoken_Token_release(hero_slot_escape(&h10_own10));
+    hero_array_release_at(&h11_own11);
+    h_lextoken_Token_release(hero_slot_escape(&h12_own12));
+    h_lextoken_Token_release(hero_slot_escape(&h13_own13));
+    h_syntree_Expr_release(hero_slot_escape(&h14_own14));
+    h_0opt_e201354_release(hero_slot_escape(&h15_own15));
+    h_0opt_e201354_release(hero_slot_escape(&h16_own16));
+    h_lextoken_Token_release(hero_slot_escape(&h17_own17));
+    h_syntree_Expr_release(hero_slot_escape(&h18_own18));
+    h_0opt_e201354_release(hero_slot_escape(&h19_own19));
+    h_0opt_e201354_release(hero_slot_escape(&h20_own20));
+    h_lextoken_Token_release(hero_slot_escape(&h21_own21));
+    h_0opt_e201354_release(hero_slot_escape(&h22_own22));
+    h_lextoken_Token_release(hero_slot_escape(&h23_own23));
+    h_0opt_a8ea2_release(hero_slot_escape(&h24_own24));
+    h_0opt_e201354_release(hero_slot_escape(&h25_own25));
+    h_syntree_Expr_release(hero_slot_escape(&h26_own26));
+    h_0opt_e201354_release(hero_slot_escape(&h27_own27));
+    h_0opt_e201354_release(hero_slot_escape(&h28_own28));
     return t63;
 }
 
@@ -12922,14 +12922,14 @@ bb5:
 #line 12923 "main.c"
     t24 = h5_ret0;
     h_0opt_e201354_retain(&t24);
-    h_0opt_e201354_release(&h2_f0);
-    h_0opt_a8ea2_release(&h4_f1);
-    h_0opt_e201354_release(&h6_own6);
-    h_lextoken_Token_release(&h7_own7);
-    h_0opt_a8ea2_release(&h8_own8);
-    h_0opt_e201354_release(&h9_own9);
-    h_0opt_e201354_release(&h10_own10);
-    h_0opt_e201354_release(&h11_own11);
+    h_0opt_e201354_release(hero_slot_escape(&h2_f0));
+    h_0opt_a8ea2_release(hero_slot_escape(&h4_f1));
+    h_0opt_e201354_release(hero_slot_escape(&h6_own6));
+    h_lextoken_Token_release(hero_slot_escape(&h7_own7));
+    h_0opt_a8ea2_release(hero_slot_escape(&h8_own8));
+    h_0opt_e201354_release(hero_slot_escape(&h9_own9));
+    h_0opt_e201354_release(hero_slot_escape(&h10_own10));
+    h_0opt_e201354_release(hero_slot_escape(&h11_own11));
     return t24;
 }
 
@@ -13022,9 +13022,9 @@ bb4:
 #line 192 "examples/interpreter/syn/expr.hero"
     t11 = h1_b0;
 #line 13025 "main.c"
-    h_lextoken_Token_release(&h3_own3);
-    h_lextoken_Token_release(&h4_own4);
-    h_lextoken_Token_release(&h5_own5);
+    h_lextoken_Token_release(hero_slot_escape(&h3_own3));
+    h_lextoken_Token_release(hero_slot_escape(&h4_own4));
+    h_lextoken_Token_release(hero_slot_escape(&h5_own5));
     return t11;
 }
 
@@ -13372,22 +13372,22 @@ bb19:
 #line 13373 "main.c"
     t39 = h1_ret0;
     h_0opt_3ce1b94c_retain(&t39);
-    h_lextoken_Token_release(&h2_own2);
-    h_lextoken_Token_release(&h3_own3);
-    h_0opt_3ce1b94c_release(&h4_own4);
-    h_lextoken_Token_release(&h5_own5);
-    h_0opt_3ce1b94c_release(&h6_own6);
-    h_lextoken_Token_release(&h7_own7);
-    h_0opt_3ce1b94c_release(&h8_own8);
-    h_lextoken_Token_release(&h9_own9);
-    h_0opt_3ce1b94c_release(&h10_own10);
-    h_lextoken_Token_release(&h11_own11);
-    h_0opt_3ce1b94c_release(&h12_own12);
-    hero_str_decref(h13_own13);
-    hero_str_decref(h14_own14);
-    hero_str_decref(h15_own15);
-    h_0opt_3ce1b94c_release(&h16_own16);
-    h_0opt_3ce1b94c_release(&h17_own17);
+    h_lextoken_Token_release(hero_slot_escape(&h2_own2));
+    h_lextoken_Token_release(hero_slot_escape(&h3_own3));
+    h_0opt_3ce1b94c_release(hero_slot_escape(&h4_own4));
+    h_lextoken_Token_release(hero_slot_escape(&h5_own5));
+    h_0opt_3ce1b94c_release(hero_slot_escape(&h6_own6));
+    h_lextoken_Token_release(hero_slot_escape(&h7_own7));
+    h_0opt_3ce1b94c_release(hero_slot_escape(&h8_own8));
+    h_lextoken_Token_release(hero_slot_escape(&h9_own9));
+    h_0opt_3ce1b94c_release(hero_slot_escape(&h10_own10));
+    h_lextoken_Token_release(hero_slot_escape(&h11_own11));
+    h_0opt_3ce1b94c_release(hero_slot_escape(&h12_own12));
+    hero_str_release_at(&h13_own13);
+    hero_str_release_at(&h14_own14);
+    hero_str_release_at(&h15_own15);
+    h_0opt_3ce1b94c_release(hero_slot_escape(&h16_own16));
+    h_0opt_3ce1b94c_release(hero_slot_escape(&h17_own17));
     return t39;
 }
 
@@ -13480,8 +13480,8 @@ bb0:
 #line 13481 "main.c"
     h_0opt_1be8f195_release(&t7);
     h_0opt_1be8f195_retain(&t5);
-    h_runvalue_Frame_release(&h1_own1);
-    h_0opt_1be8f195_release(&h2_own2);
+    h_runvalue_Frame_release(hero_slot_escape(&h1_own1));
+    h_0opt_1be8f195_release(hero_slot_escape(&h2_own2));
     return t5;
 }
 
@@ -13739,13 +13739,13 @@ bb12:
 #line 13740 "main.c"
     t36 = h9_ret0;
     h_0opt_1be8f195_retain(&t36);
-    h_runvalue_Frame_release(&h3_walking);
-    hero_array_decref(h4_xs0);
-    h_0opt_1be8f195_release(&h8_f0);
-    h_0opt_1be8f195_release(&h10_own10);
-    h_0opt_1be8f195_release(&h11_own11);
-    h_0opt_1be8f195_release(&h12_own12);
-    h_0opt_1be8f195_release(&h13_own13);
+    h_runvalue_Frame_release(hero_slot_escape(&h3_walking));
+    hero_array_release_at(&h4_xs0);
+    h_0opt_1be8f195_release(hero_slot_escape(&h8_f0));
+    h_0opt_1be8f195_release(hero_slot_escape(&h10_own10));
+    h_0opt_1be8f195_release(hero_slot_escape(&h11_own11));
+    h_0opt_1be8f195_release(hero_slot_escape(&h12_own12));
+    h_0opt_1be8f195_release(hero_slot_escape(&h13_own13));
     return t36;
 }
 
@@ -13915,21 +13915,21 @@ bb1:
     t72 = h4_r0;
 #line 13917 "main.c"
     h_0opt_1be8f195_retain(&t72);
-    h_syntree_Stmt_release(&h3_s0);
-    h_0opt_1be8f195_release(&h4_r0);
-    h_syntree_Stmt_c_bind_release(&h5_b);
-    h_syntree_Stmt_c_when_release(&h7_w);
-    h_syntree_Stmt_c_while_loop_release(&h8_w);
-    h_syntree_Stmt_c_define_release(&h11_d);
-    h_0opt_1be8f195_release(&h13_own13);
-    h_0opt_1be8f195_release(&h14_own14);
-    h_0opt_1be8f195_release(&h15_own15);
-    h_0opt_1be8f195_release(&h16_own16);
-    h_0opt_1be8f195_release(&h17_own17);
-    h_0opt_1be8f195_release(&h18_own18);
-    h_runvalue_Frame_release(&h19_own19);
-    h_0opt_1be8f195_release(&h20_own20);
-    h_0opt_1be8f195_release(&h21_own21);
+    h_syntree_Stmt_release(hero_slot_escape(&h3_s0));
+    h_0opt_1be8f195_release(hero_slot_escape(&h4_r0));
+    h_syntree_Stmt_c_bind_release(hero_slot_escape(&h5_b));
+    h_syntree_Stmt_c_when_release(hero_slot_escape(&h7_w));
+    h_syntree_Stmt_c_while_loop_release(hero_slot_escape(&h8_w));
+    h_syntree_Stmt_c_define_release(hero_slot_escape(&h11_d));
+    h_0opt_1be8f195_release(hero_slot_escape(&h13_own13));
+    h_0opt_1be8f195_release(hero_slot_escape(&h14_own14));
+    h_0opt_1be8f195_release(hero_slot_escape(&h15_own15));
+    h_0opt_1be8f195_release(hero_slot_escape(&h16_own16));
+    h_0opt_1be8f195_release(hero_slot_escape(&h17_own17));
+    h_0opt_1be8f195_release(hero_slot_escape(&h18_own18));
+    h_runvalue_Frame_release(hero_slot_escape(&h19_own19));
+    h_0opt_1be8f195_release(hero_slot_escape(&h20_own20));
+    h_0opt_1be8f195_release(hero_slot_escape(&h21_own21));
     return t72;
 bb2:
 #line 93 "examples/interpreter/run/eval.hero"
@@ -14388,12 +14388,12 @@ bb3:
 #line 14389 "main.c"
     t22 = h7_ret0;
     h_0opt_1be8f195_retain(&t22);
-    h_0opt_4d124e2a_release(&h4_f0);
-    h_runexpr_Answer_release(&h5_step);
-    h_runvalue_Frame_release(&h6_home);
-    h_0opt_4d124e2a_release(&h8_own8);
-    h_0opt_1be8f195_release(&h9_own9);
-    h_0opt_1be8f195_release(&h10_own10);
+    h_0opt_4d124e2a_release(hero_slot_escape(&h4_f0));
+    h_runexpr_Answer_release(hero_slot_escape(&h5_step));
+    h_runvalue_Frame_release(hero_slot_escape(&h6_home));
+    h_0opt_4d124e2a_release(hero_slot_escape(&h8_own8));
+    h_0opt_1be8f195_release(hero_slot_escape(&h9_own9));
+    h_0opt_1be8f195_release(hero_slot_escape(&h10_own10));
     return t22;
 }
 
@@ -14578,14 +14578,14 @@ bb3:
 #line 14579 "main.c"
     t25 = h6_ret0;
     h_0opt_1be8f195_retain(&t25);
-    h_0opt_4d124e2a_release(&h3_f0);
-    h_runexpr_Answer_release(&h4_step);
-    h_runvalue_Frame_release(&h5_home);
-    h_0opt_4d124e2a_release(&h7_own7);
-    hero_str_decref(h8_own8);
-    hero_array_decref(h9_own9);
-    h_0opt_1be8f195_release(&h10_own10);
-    h_0opt_1be8f195_release(&h11_own11);
+    h_0opt_4d124e2a_release(hero_slot_escape(&h3_f0));
+    h_runexpr_Answer_release(hero_slot_escape(&h4_step));
+    h_runvalue_Frame_release(hero_slot_escape(&h5_home));
+    h_0opt_4d124e2a_release(hero_slot_escape(&h7_own7));
+    hero_str_release_at(&h8_own8);
+    hero_array_release_at(&h9_own9);
+    h_0opt_1be8f195_release(hero_slot_escape(&h10_own10));
+    h_0opt_1be8f195_release(hero_slot_escape(&h11_own11));
     return t25;
 }
 
@@ -14828,15 +14828,15 @@ bb8:
 #line 14829 "main.c"
     t37 = h8_ret0;
     h_0opt_1be8f195_retain(&t37);
-    h_0opt_4d124e2a_release(&h5_f0);
-    h_runexpr_Answer_release(&h6_step);
-    h_0opt_473cb9ae_release(&h7_f1);
-    h_0opt_4d124e2a_release(&h9_own9);
-    h_0opt_473cb9ae_release(&h10_own10);
-    h_0opt_1be8f195_release(&h11_own11);
-    h_0opt_1be8f195_release(&h12_own12);
-    h_0opt_1be8f195_release(&h13_own13);
-    h_0opt_1be8f195_release(&h14_own14);
+    h_0opt_4d124e2a_release(hero_slot_escape(&h5_f0));
+    h_runexpr_Answer_release(hero_slot_escape(&h6_step));
+    h_0opt_473cb9ae_release(hero_slot_escape(&h7_f1));
+    h_0opt_4d124e2a_release(hero_slot_escape(&h9_own9));
+    h_0opt_473cb9ae_release(hero_slot_escape(&h10_own10));
+    h_0opt_1be8f195_release(hero_slot_escape(&h11_own11));
+    h_0opt_1be8f195_release(hero_slot_escape(&h12_own12));
+    h_0opt_1be8f195_release(hero_slot_escape(&h13_own13));
+    h_0opt_1be8f195_release(hero_slot_escape(&h14_own14));
     return t37;
 }
 
@@ -15250,20 +15250,20 @@ bb18:
 #line 15251 "main.c"
     t56 = h10_ret0;
     h_0opt_1be8f195_retain(&t56);
-    h_runvalue_Frame_release(&h4_walking);
-    h_0opt_4d124e2a_release(&h5_f0);
-    h_runexpr_Answer_release(&h6_step);
-    h_0opt_473cb9ae_release(&h7_f1);
-    h_0opt_1be8f195_release(&h8_f2);
-    h_0opt_4d124e2a_release(&h11_own11);
-    h_0opt_1be8f195_release(&h12_own12);
-    h_0opt_473cb9ae_release(&h13_own13);
-    h_0opt_1be8f195_release(&h14_own14);
-    h_0opt_1be8f195_release(&h15_own15);
-    h_0opt_1be8f195_release(&h16_own16);
-    h_0opt_1be8f195_release(&h17_own17);
-    h_0opt_1be8f195_release(&h18_own18);
-    h_0opt_1be8f195_release(&h19_own19);
+    h_runvalue_Frame_release(hero_slot_escape(&h4_walking));
+    h_0opt_4d124e2a_release(hero_slot_escape(&h5_f0));
+    h_runexpr_Answer_release(hero_slot_escape(&h6_step));
+    h_0opt_473cb9ae_release(hero_slot_escape(&h7_f1));
+    h_0opt_1be8f195_release(hero_slot_escape(&h8_f2));
+    h_0opt_4d124e2a_release(hero_slot_escape(&h11_own11));
+    h_0opt_1be8f195_release(hero_slot_escape(&h12_own12));
+    h_0opt_473cb9ae_release(hero_slot_escape(&h13_own13));
+    h_0opt_1be8f195_release(hero_slot_escape(&h14_own14));
+    h_0opt_1be8f195_release(hero_slot_escape(&h15_own15));
+    h_0opt_1be8f195_release(hero_slot_escape(&h16_own16));
+    h_0opt_1be8f195_release(hero_slot_escape(&h17_own17));
+    h_0opt_1be8f195_release(hero_slot_escape(&h18_own18));
+    h_0opt_1be8f195_release(hero_slot_escape(&h19_own19));
     return t56;
 }
 
@@ -15424,12 +15424,12 @@ bb3:
 #line 15425 "main.c"
     t22 = h6_ret0;
     h_0opt_1be8f195_retain(&t22);
-    h_0opt_4d124e2a_release(&h3_f0);
-    h_runexpr_Answer_release(&h4_step);
-    h_runvalue_Frame_release(&h5_home);
-    h_0opt_4d124e2a_release(&h7_own7);
-    h_0opt_1be8f195_release(&h8_own8);
-    h_0opt_1be8f195_release(&h9_own9);
+    h_0opt_4d124e2a_release(hero_slot_escape(&h3_f0));
+    h_runexpr_Answer_release(hero_slot_escape(&h4_step));
+    h_runvalue_Frame_release(hero_slot_escape(&h5_home));
+    h_0opt_4d124e2a_release(hero_slot_escape(&h7_own7));
+    h_0opt_1be8f195_release(hero_slot_escape(&h8_own8));
+    h_0opt_1be8f195_release(hero_slot_escape(&h9_own9));
     return t22;
 }
 
@@ -15650,15 +15650,15 @@ bb5:
 #line 15651 "main.c"
     t32 = h7_ret0;
     h_0opt_1be8f195_retain(&t32);
-    h_0opt_4d124e2a_release(&h3_f0);
-    h_runexpr_Answer_release(&h4_step);
-    h_runvalue_Frame_release(&h5_home);
-    h_0opt_e201354_release(&h6_f1);
-    h_0opt_4d124e2a_release(&h8_own8);
-    h_0opt_e201354_release(&h9_own9);
-    h_0opt_1be8f195_release(&h10_own10);
-    h_0opt_1be8f195_release(&h11_own11);
-    h_0opt_1be8f195_release(&h12_own12);
+    h_0opt_4d124e2a_release(hero_slot_escape(&h3_f0));
+    h_runexpr_Answer_release(hero_slot_escape(&h4_step));
+    h_runvalue_Frame_release(hero_slot_escape(&h5_home));
+    h_0opt_e201354_release(hero_slot_escape(&h6_f1));
+    h_0opt_4d124e2a_release(hero_slot_escape(&h8_own8));
+    h_0opt_e201354_release(hero_slot_escape(&h9_own9));
+    h_0opt_1be8f195_release(hero_slot_escape(&h10_own10));
+    h_0opt_1be8f195_release(hero_slot_escape(&h11_own11));
+    h_0opt_1be8f195_release(hero_slot_escape(&h12_own12));
     return t32;
 }
 
@@ -15787,11 +15787,11 @@ bb3:
 #line 15788 "main.c"
     t18 = h5_ret0;
     h_0opt_1be8f195_retain(&t18);
-    h_0opt_4d124e2a_release(&h3_f0);
-    h_runexpr_Answer_release(&h4_step);
-    h_0opt_4d124e2a_release(&h6_own6);
-    h_0opt_1be8f195_release(&h7_own7);
-    h_0opt_1be8f195_release(&h8_own8);
+    h_0opt_4d124e2a_release(hero_slot_escape(&h3_f0));
+    h_runexpr_Answer_release(hero_slot_escape(&h4_step));
+    h_0opt_4d124e2a_release(hero_slot_escape(&h6_own6));
+    h_0opt_1be8f195_release(hero_slot_escape(&h7_own7));
+    h_0opt_1be8f195_release(hero_slot_escape(&h8_own8));
     return t18;
 }
 
@@ -15825,7 +15825,7 @@ bb0:
     t4 = h3_home;
 #line 15827 "main.c"
     h_runvalue_Frame_retain(&t4);
-    h_runvalue_Frame_release(&h3_home);
+    h_runvalue_Frame_release(hero_slot_escape(&h3_home));
     return t4;
 }
 
@@ -16322,27 +16322,27 @@ bb12:
 bb13:
     t66 = h7_ret0;
     h_0opt_1be8f195_retain(&t66);
-    h_0opt_e201354_release(&h1_where);
-    h_0opt_e201354_release(&h2_f0);
-    h_0opt_e201354_release(&h3_f1);
-    h_syntree_Stmt_release(&h4_s0);
-    h_0opt_1be8f195_release(&h5_r0);
-    h_syntree_Stmt_c_define_release(&h6_d);
-    h_0opt_e201354_release(&h8_own8);
-    hero_str_decref(h9_own9);
-    hero_str_decref(h10_own10);
-    hero_str_decref(h11_own11);
-    h_0opt_1be8f195_release(&h12_own12);
-    hero_str_decref(h13_own13);
-    hero_str_decref(h14_own14);
-    hero_str_decref(h15_own15);
-    hero_str_decref(h16_own16);
-    hero_str_decref(h17_own17);
-    hero_str_decref(h18_own18);
-    h_0opt_1be8f195_release(&h19_own19);
-    h_0opt_1be8f195_release(&h20_own20);
-    h_0opt_1be8f195_release(&h21_own21);
-    h_0opt_1be8f195_release(&h22_own22);
+    h_0opt_e201354_release(hero_slot_escape(&h1_where));
+    h_0opt_e201354_release(hero_slot_escape(&h2_f0));
+    h_0opt_e201354_release(hero_slot_escape(&h3_f1));
+    h_syntree_Stmt_release(hero_slot_escape(&h4_s0));
+    h_0opt_1be8f195_release(hero_slot_escape(&h5_r0));
+    h_syntree_Stmt_c_define_release(hero_slot_escape(&h6_d));
+    h_0opt_e201354_release(hero_slot_escape(&h8_own8));
+    hero_str_release_at(&h9_own9);
+    hero_str_release_at(&h10_own10);
+    hero_str_release_at(&h11_own11);
+    h_0opt_1be8f195_release(hero_slot_escape(&h12_own12));
+    hero_str_release_at(&h13_own13);
+    hero_str_release_at(&h14_own14);
+    hero_str_release_at(&h15_own15);
+    hero_str_release_at(&h16_own16);
+    hero_str_release_at(&h17_own17);
+    hero_str_release_at(&h18_own18);
+    h_0opt_1be8f195_release(hero_slot_escape(&h19_own19));
+    h_0opt_1be8f195_release(hero_slot_escape(&h20_own20));
+    h_0opt_1be8f195_release(hero_slot_escape(&h21_own21));
+    h_0opt_1be8f195_release(hero_slot_escape(&h22_own22));
     return t66;
 }
 
@@ -16410,10 +16410,10 @@ bb0:
 #line 16411 "main.c"
     h_0opt_1be8f195_release(&t12);
     h_0opt_1be8f195_retain(&t8);
-    hero_str_decref(h1_own1);
-    hero_str_decref(h2_own2);
-    hero_str_decref(h3_own3);
-    h_0opt_1be8f195_release(&h4_own4);
+    hero_str_release_at(&h1_own1);
+    hero_str_release_at(&h2_own2);
+    hero_str_release_at(&h3_own3);
+    h_0opt_1be8f195_release(hero_slot_escape(&h4_own4));
     return t8;
 }
 
@@ -16934,28 +16934,28 @@ bb9:
 #line 16935 "main.c"
     t83 = h9_ret0;
     h_0opt_1be8f195_retain(&t83);
-    h_runvalue_Frame_release(&h3_inner);
-    hero_map_decref(h4_fresh_vars);
-    h_0opt_1be8f195_release(&h6_f0);
-    h_runvalue_Frame_release(&h7_after);
-    h_runvalue_Frame_release(&h8_home);
-    hero_map_decref(h10_own10);
-    hero_str_decref(h11_own11);
-    hero_str_decref(h12_own12);
-    hero_str_decref(h13_own13);
-    hero_str_decref(h14_own14);
-    hero_str_decref(h15_own15);
-    hero_str_decref(h16_own16);
-    hero_str_decref(h17_own17);
-    hero_str_decref(h18_own18);
-    hero_str_decref(h19_own19);
-    hero_str_decref(h20_own20);
-    hero_str_decref(h21_own21);
-    hero_str_decref(h22_own22);
-    h_0opt_1be8f195_release(&h23_own23);
-    h_0opt_1be8f195_release(&h24_own24);
-    h_0opt_1be8f195_release(&h25_own25);
-    h_0opt_1be8f195_release(&h26_own26);
+    h_runvalue_Frame_release(hero_slot_escape(&h3_inner));
+    hero_map_release_at(&h4_fresh_vars);
+    h_0opt_1be8f195_release(hero_slot_escape(&h6_f0));
+    h_runvalue_Frame_release(hero_slot_escape(&h7_after));
+    h_runvalue_Frame_release(hero_slot_escape(&h8_home));
+    hero_map_release_at(&h10_own10);
+    hero_str_release_at(&h11_own11);
+    hero_str_release_at(&h12_own12);
+    hero_str_release_at(&h13_own13);
+    hero_str_release_at(&h14_own14);
+    hero_str_release_at(&h15_own15);
+    hero_str_release_at(&h16_own16);
+    hero_str_release_at(&h17_own17);
+    hero_str_release_at(&h18_own18);
+    hero_str_release_at(&h19_own19);
+    hero_str_release_at(&h20_own20);
+    hero_str_release_at(&h21_own21);
+    hero_str_release_at(&h22_own22);
+    h_0opt_1be8f195_release(hero_slot_escape(&h23_own23));
+    h_0opt_1be8f195_release(hero_slot_escape(&h24_own24));
+    h_0opt_1be8f195_release(hero_slot_escape(&h25_own25));
+    h_0opt_1be8f195_release(hero_slot_escape(&h26_own26));
     return t83;
 }
 
@@ -17214,25 +17214,25 @@ bb1:
     t75 = h5_r0;
 #line 17216 "main.c"
     h_0opt_4d124e2a_retain(&t75);
-    h_syntree_Expr_release(&h4_s0);
-    h_0opt_4d124e2a_release(&h5_r0);
-    h_syntree_Expr_c_text_release(&h7_x);
-    h_syntree_Expr_c_name_release(&h9_n);
-    h_syntree_Expr_c_call_release(&h13_c);
-    h_runvalue_Value_release(&h14_own14);
-    h_runexpr_Answer_release(&h15_own15);
-    h_0opt_4d124e2a_release(&h16_own16);
-    h_runvalue_Value_release(&h17_own17);
-    h_runexpr_Answer_release(&h18_own18);
-    h_0opt_4d124e2a_release(&h19_own19);
-    h_runvalue_Value_release(&h20_own20);
-    h_runexpr_Answer_release(&h21_own21);
-    h_0opt_4d124e2a_release(&h22_own22);
-    h_0opt_4d124e2a_release(&h23_own23);
-    h_0opt_4d124e2a_release(&h24_own24);
-    h_0opt_4d124e2a_release(&h25_own25);
-    h_0opt_4d124e2a_release(&h26_own26);
-    h_0opt_4d124e2a_release(&h27_own27);
+    h_syntree_Expr_release(hero_slot_escape(&h4_s0));
+    h_0opt_4d124e2a_release(hero_slot_escape(&h5_r0));
+    h_syntree_Expr_c_text_release(hero_slot_escape(&h7_x));
+    h_syntree_Expr_c_name_release(hero_slot_escape(&h9_n));
+    h_syntree_Expr_c_call_release(hero_slot_escape(&h13_c));
+    h_runvalue_Value_release(hero_slot_escape(&h14_own14));
+    h_runexpr_Answer_release(hero_slot_escape(&h15_own15));
+    h_0opt_4d124e2a_release(hero_slot_escape(&h16_own16));
+    h_runvalue_Value_release(hero_slot_escape(&h17_own17));
+    h_runexpr_Answer_release(hero_slot_escape(&h18_own18));
+    h_0opt_4d124e2a_release(hero_slot_escape(&h19_own19));
+    h_runvalue_Value_release(hero_slot_escape(&h20_own20));
+    h_runexpr_Answer_release(hero_slot_escape(&h21_own21));
+    h_0opt_4d124e2a_release(hero_slot_escape(&h22_own22));
+    h_0opt_4d124e2a_release(hero_slot_escape(&h23_own23));
+    h_0opt_4d124e2a_release(hero_slot_escape(&h24_own24));
+    h_0opt_4d124e2a_release(hero_slot_escape(&h25_own25));
+    h_0opt_4d124e2a_release(hero_slot_escape(&h26_own26));
+    h_0opt_4d124e2a_release(hero_slot_escape(&h27_own27));
     return t75;
 bb2:
 #line 59 "examples/interpreter/run/expr.hero"
@@ -17810,16 +17810,16 @@ bb5:
 bb6:
     t29 = h5_ret0;
     h_0opt_4d124e2a_retain(&t29);
-    h_0opt_6dcd62e6_release(&h2_held);
-    h_0opt_6dcd62e6_release(&h3_f0);
-    h_0opt_6dcd62e6_release(&h4_f1);
-    h_0opt_6dcd62e6_release(&h6_own6);
-    hero_str_decref(h7_own7);
-    hero_str_decref(h8_own8);
-    hero_str_decref(h9_own9);
-    h_0opt_4d124e2a_release(&h10_own10);
-    h_runexpr_Answer_release(&h11_own11);
-    h_0opt_4d124e2a_release(&h12_own12);
+    h_0opt_6dcd62e6_release(hero_slot_escape(&h2_held));
+    h_0opt_6dcd62e6_release(hero_slot_escape(&h3_f0));
+    h_0opt_6dcd62e6_release(hero_slot_escape(&h4_f1));
+    h_0opt_6dcd62e6_release(hero_slot_escape(&h6_own6));
+    hero_str_release_at(&h7_own7);
+    hero_str_release_at(&h8_own8);
+    hero_str_release_at(&h9_own9);
+    h_0opt_4d124e2a_release(hero_slot_escape(&h10_own10));
+    h_runexpr_Answer_release(hero_slot_escape(&h11_own11));
+    h_0opt_4d124e2a_release(hero_slot_escape(&h12_own12));
     return t29;
 }
 
@@ -18107,18 +18107,18 @@ bb8:
 #line 18108 "main.c"
     t41 = h8_ret0;
     h_0opt_4d124e2a_retain(&t41);
-    h_0opt_4d124e2a_release(&h4_f0);
-    h_runexpr_Answer_release(&h5_inner);
-    h_0opt_e201354_release(&h6_f1);
-    h_0opt_4d124e2a_release(&h9_own9);
-    h_0opt_e201354_release(&h10_own10);
-    h_0opt_4d124e2a_release(&h11_own11);
-    h_0opt_4d124e2a_release(&h12_own12);
-    h_runvalue_Value_release(&h13_own13);
-    h_runexpr_Answer_release(&h14_own14);
-    h_0opt_4d124e2a_release(&h15_own15);
-    hero_str_decref(h16_own16);
-    h_0opt_4d124e2a_release(&h17_own17);
+    h_0opt_4d124e2a_release(hero_slot_escape(&h4_f0));
+    h_runexpr_Answer_release(hero_slot_escape(&h5_inner));
+    h_0opt_e201354_release(hero_slot_escape(&h6_f1));
+    h_0opt_4d124e2a_release(hero_slot_escape(&h9_own9));
+    h_0opt_e201354_release(hero_slot_escape(&h10_own10));
+    h_0opt_4d124e2a_release(hero_slot_escape(&h11_own11));
+    h_0opt_4d124e2a_release(hero_slot_escape(&h12_own12));
+    h_runvalue_Value_release(hero_slot_escape(&h13_own13));
+    h_runexpr_Answer_release(hero_slot_escape(&h14_own14));
+    h_0opt_4d124e2a_release(hero_slot_escape(&h15_own15));
+    hero_str_release_at(&h16_own16);
+    h_0opt_4d124e2a_release(hero_slot_escape(&h17_own17));
     return t41;
 }
 
@@ -18346,16 +18346,16 @@ bb5:
 #line 18347 "main.c"
     t33 = h7_ret0;
     h_0opt_4d124e2a_retain(&t33);
-    h_0opt_4d124e2a_release(&h4_f0);
-    h_runexpr_Answer_release(&h5_inner);
-    h_0opt_473cb9ae_release(&h6_f1);
-    h_0opt_4d124e2a_release(&h8_own8);
-    h_0opt_473cb9ae_release(&h9_own9);
-    h_0opt_4d124e2a_release(&h10_own10);
-    h_runvalue_Value_release(&h11_own11);
-    h_runexpr_Answer_release(&h12_own12);
-    h_0opt_4d124e2a_release(&h13_own13);
-    h_0opt_4d124e2a_release(&h14_own14);
+    h_0opt_4d124e2a_release(hero_slot_escape(&h4_f0));
+    h_runexpr_Answer_release(hero_slot_escape(&h5_inner));
+    h_0opt_473cb9ae_release(hero_slot_escape(&h6_f1));
+    h_0opt_4d124e2a_release(hero_slot_escape(&h8_own8));
+    h_0opt_473cb9ae_release(hero_slot_escape(&h9_own9));
+    h_0opt_4d124e2a_release(hero_slot_escape(&h10_own10));
+    h_runvalue_Value_release(hero_slot_escape(&h11_own11));
+    h_runexpr_Answer_release(hero_slot_escape(&h12_own12));
+    h_0opt_4d124e2a_release(hero_slot_escape(&h13_own13));
+    h_0opt_4d124e2a_release(hero_slot_escape(&h14_own14));
     return t33;
 }
 
@@ -19411,52 +19411,52 @@ bb31:
 #line 19412 "main.c"
     t157 = h20_ret0;
     h_0opt_4d124e2a_retain(&t157);
-    h_0opt_4d124e2a_release(&h6_f0);
-    h_runexpr_Answer_release(&h7_first);
-    h_0opt_473cb9ae_release(&h8_f1);
-    h_0opt_4d124e2a_release(&h9_f2);
-    h_runexpr_Answer_release(&h10_second);
-    h_0opt_473cb9ae_release(&h11_f3);
-    h_0opt_473cb9ae_release(&h12_f4);
-    h_0opt_4d124e2a_release(&h13_f5);
-    h_runexpr_Answer_release(&h14_second);
-    h_0opt_473cb9ae_release(&h15_f6);
-    h_0opt_4d124e2a_release(&h16_f7);
-    h_runexpr_Answer_release(&h17_second);
-    h_0opt_6dcd62e6_release(&h18_f8);
-    h_runvalue_Value_release(&h19_got);
-    h_0opt_4d124e2a_release(&h21_own21);
-    h_0opt_4d124e2a_release(&h22_own22);
-    h_0opt_473cb9ae_release(&h23_own23);
-    h_0opt_4d124e2a_release(&h24_own24);
-    h_0opt_4d124e2a_release(&h25_own25);
-    h_runvalue_Value_release(&h26_own26);
-    h_runexpr_Answer_release(&h27_own27);
-    h_0opt_4d124e2a_release(&h28_own28);
-    h_0opt_473cb9ae_release(&h29_own29);
-    h_0opt_4d124e2a_release(&h30_own30);
-    h_runvalue_Value_release(&h31_own31);
-    h_runexpr_Answer_release(&h32_own32);
-    h_0opt_4d124e2a_release(&h33_own33);
-    h_0opt_4d124e2a_release(&h34_own34);
-    h_0opt_4d124e2a_release(&h35_own35);
-    h_0opt_473cb9ae_release(&h36_own36);
-    h_0opt_4d124e2a_release(&h37_own37);
-    h_0opt_4d124e2a_release(&h38_own38);
-    h_runvalue_Value_release(&h39_own39);
-    h_runexpr_Answer_release(&h40_own40);
-    h_0opt_4d124e2a_release(&h41_own41);
-    h_0opt_473cb9ae_release(&h42_own42);
-    h_0opt_4d124e2a_release(&h43_own43);
-    h_runvalue_Value_release(&h44_own44);
-    h_runexpr_Answer_release(&h45_own45);
-    h_0opt_4d124e2a_release(&h46_own46);
-    h_0opt_4d124e2a_release(&h47_own47);
-    h_0opt_6dcd62e6_release(&h48_own48);
-    h_0opt_4d124e2a_release(&h49_own49);
-    h_runexpr_Answer_release(&h50_own50);
-    h_0opt_4d124e2a_release(&h51_own51);
-    h_0opt_4d124e2a_release(&h52_own52);
+    h_0opt_4d124e2a_release(hero_slot_escape(&h6_f0));
+    h_runexpr_Answer_release(hero_slot_escape(&h7_first));
+    h_0opt_473cb9ae_release(hero_slot_escape(&h8_f1));
+    h_0opt_4d124e2a_release(hero_slot_escape(&h9_f2));
+    h_runexpr_Answer_release(hero_slot_escape(&h10_second));
+    h_0opt_473cb9ae_release(hero_slot_escape(&h11_f3));
+    h_0opt_473cb9ae_release(hero_slot_escape(&h12_f4));
+    h_0opt_4d124e2a_release(hero_slot_escape(&h13_f5));
+    h_runexpr_Answer_release(hero_slot_escape(&h14_second));
+    h_0opt_473cb9ae_release(hero_slot_escape(&h15_f6));
+    h_0opt_4d124e2a_release(hero_slot_escape(&h16_f7));
+    h_runexpr_Answer_release(hero_slot_escape(&h17_second));
+    h_0opt_6dcd62e6_release(hero_slot_escape(&h18_f8));
+    h_runvalue_Value_release(hero_slot_escape(&h19_got));
+    h_0opt_4d124e2a_release(hero_slot_escape(&h21_own21));
+    h_0opt_4d124e2a_release(hero_slot_escape(&h22_own22));
+    h_0opt_473cb9ae_release(hero_slot_escape(&h23_own23));
+    h_0opt_4d124e2a_release(hero_slot_escape(&h24_own24));
+    h_0opt_4d124e2a_release(hero_slot_escape(&h25_own25));
+    h_runvalue_Value_release(hero_slot_escape(&h26_own26));
+    h_runexpr_Answer_release(hero_slot_escape(&h27_own27));
+    h_0opt_4d124e2a_release(hero_slot_escape(&h28_own28));
+    h_0opt_473cb9ae_release(hero_slot_escape(&h29_own29));
+    h_0opt_4d124e2a_release(hero_slot_escape(&h30_own30));
+    h_runvalue_Value_release(hero_slot_escape(&h31_own31));
+    h_runexpr_Answer_release(hero_slot_escape(&h32_own32));
+    h_0opt_4d124e2a_release(hero_slot_escape(&h33_own33));
+    h_0opt_4d124e2a_release(hero_slot_escape(&h34_own34));
+    h_0opt_4d124e2a_release(hero_slot_escape(&h35_own35));
+    h_0opt_473cb9ae_release(hero_slot_escape(&h36_own36));
+    h_0opt_4d124e2a_release(hero_slot_escape(&h37_own37));
+    h_0opt_4d124e2a_release(hero_slot_escape(&h38_own38));
+    h_runvalue_Value_release(hero_slot_escape(&h39_own39));
+    h_runexpr_Answer_release(hero_slot_escape(&h40_own40));
+    h_0opt_4d124e2a_release(hero_slot_escape(&h41_own41));
+    h_0opt_473cb9ae_release(hero_slot_escape(&h42_own42));
+    h_0opt_4d124e2a_release(hero_slot_escape(&h43_own43));
+    h_runvalue_Value_release(hero_slot_escape(&h44_own44));
+    h_runexpr_Answer_release(hero_slot_escape(&h45_own45));
+    h_0opt_4d124e2a_release(hero_slot_escape(&h46_own46));
+    h_0opt_4d124e2a_release(hero_slot_escape(&h47_own47));
+    h_0opt_6dcd62e6_release(hero_slot_escape(&h48_own48));
+    h_0opt_4d124e2a_release(hero_slot_escape(&h49_own49));
+    h_runexpr_Answer_release(hero_slot_escape(&h50_own50));
+    h_0opt_4d124e2a_release(hero_slot_escape(&h51_own51));
+    h_0opt_4d124e2a_release(hero_slot_escape(&h52_own52));
     return t157;
 }
 
@@ -21240,81 +21240,81 @@ bb65:
 #line 21241 "main.c"
     t256 = h23_ret0;
     h_0opt_6dcd62e6_retain(&t256);
-    h_0opt_f87774a_release(&h4_f0);
-    h_0opt_f87774a_release(&h5_f1);
-    h_0opt_e201354_release(&h6_f2);
-    h_0opt_e201354_release(&h7_f3);
-    h_0opt_e201354_release(&h8_f4);
-    h_0opt_e201354_release(&h9_f5);
-    h_0opt_e201354_release(&h10_f6);
-    h_0opt_e201354_release(&h11_f7);
-    h_0opt_e201354_release(&h12_f8);
-    h_0opt_e201354_release(&h13_f9);
-    h_0opt_e201354_release(&h14_f10);
-    h_0opt_e201354_release(&h15_f11);
-    h_0opt_e201354_release(&h16_f12);
-    h_0opt_e201354_release(&h17_f13);
-    h_0opt_e201354_release(&h18_f14);
-    h_0opt_e201354_release(&h19_f15);
-    h_0opt_e201354_release(&h20_f16);
-    h_0opt_e201354_release(&h21_f17);
-    h_0opt_e201354_release(&h22_f18);
-    h_0opt_e201354_release(&h24_own24);
-    h_0opt_f87774a_release(&h25_own25);
-    h_0opt_f87774a_release(&h26_own26);
-    h_0opt_6dcd62e6_release(&h27_own27);
-    hero_str_decref(h28_own28);
-    h_runvalue_Value_release(&h29_own29);
-    h_0opt_6dcd62e6_release(&h30_own30);
-    h_0opt_6dcd62e6_release(&h31_own31);
-    h_0opt_e201354_release(&h32_own32);
-    h_0opt_6dcd62e6_release(&h33_own33);
-    h_0opt_e201354_release(&h34_own34);
-    h_0opt_6dcd62e6_release(&h35_own35);
-    h_runvalue_Value_release(&h36_own36);
-    h_0opt_6dcd62e6_release(&h37_own37);
-    h_0opt_6dcd62e6_release(&h38_own38);
-    h_0opt_e201354_release(&h39_own39);
-    h_0opt_e201354_release(&h40_own40);
-    h_0opt_6dcd62e6_release(&h41_own41);
-    h_0opt_e201354_release(&h42_own42);
-    h_0opt_6dcd62e6_release(&h43_own43);
-    h_runvalue_Value_release(&h44_own44);
-    h_0opt_6dcd62e6_release(&h45_own45);
-    h_0opt_6dcd62e6_release(&h46_own46);
-    h_0opt_e201354_release(&h47_own47);
-    h_0opt_e201354_release(&h48_own48);
-    h_0opt_6dcd62e6_release(&h49_own49);
-    h_0opt_e201354_release(&h50_own50);
-    h_0opt_6dcd62e6_release(&h51_own51);
-    h_runvalue_Value_release(&h52_own52);
-    h_0opt_6dcd62e6_release(&h53_own53);
-    h_0opt_6dcd62e6_release(&h54_own54);
-    h_0opt_e201354_release(&h55_own55);
-    h_0opt_e201354_release(&h56_own56);
-    h_0opt_6dcd62e6_release(&h57_own57);
-    h_0opt_e201354_release(&h58_own58);
-    h_0opt_6dcd62e6_release(&h59_own59);
-    h_runvalue_Value_release(&h60_own60);
-    h_0opt_6dcd62e6_release(&h61_own61);
-    h_0opt_6dcd62e6_release(&h62_own62);
-    h_0opt_e201354_release(&h63_own63);
-    h_0opt_e201354_release(&h64_own64);
-    h_0opt_6dcd62e6_release(&h65_own65);
-    h_0opt_e201354_release(&h66_own66);
-    h_0opt_6dcd62e6_release(&h67_own67);
-    h_runvalue_Value_release(&h68_own68);
-    h_0opt_6dcd62e6_release(&h69_own69);
-    h_0opt_6dcd62e6_release(&h70_own70);
-    h_runvalue_Value_release(&h71_own71);
-    h_0opt_6dcd62e6_release(&h72_own72);
-    h_0opt_e201354_release(&h73_own73);
-    h_runvalue_Value_release(&h74_own74);
-    h_0opt_6dcd62e6_release(&h75_own75);
-    h_0opt_e201354_release(&h76_own76);
-    h_0opt_6dcd62e6_release(&h77_own77);
-    h_0opt_6dcd62e6_release(&h78_own78);
-    h_0opt_6dcd62e6_release(&h79_own79);
+    h_0opt_f87774a_release(hero_slot_escape(&h4_f0));
+    h_0opt_f87774a_release(hero_slot_escape(&h5_f1));
+    h_0opt_e201354_release(hero_slot_escape(&h6_f2));
+    h_0opt_e201354_release(hero_slot_escape(&h7_f3));
+    h_0opt_e201354_release(hero_slot_escape(&h8_f4));
+    h_0opt_e201354_release(hero_slot_escape(&h9_f5));
+    h_0opt_e201354_release(hero_slot_escape(&h10_f6));
+    h_0opt_e201354_release(hero_slot_escape(&h11_f7));
+    h_0opt_e201354_release(hero_slot_escape(&h12_f8));
+    h_0opt_e201354_release(hero_slot_escape(&h13_f9));
+    h_0opt_e201354_release(hero_slot_escape(&h14_f10));
+    h_0opt_e201354_release(hero_slot_escape(&h15_f11));
+    h_0opt_e201354_release(hero_slot_escape(&h16_f12));
+    h_0opt_e201354_release(hero_slot_escape(&h17_f13));
+    h_0opt_e201354_release(hero_slot_escape(&h18_f14));
+    h_0opt_e201354_release(hero_slot_escape(&h19_f15));
+    h_0opt_e201354_release(hero_slot_escape(&h20_f16));
+    h_0opt_e201354_release(hero_slot_escape(&h21_f17));
+    h_0opt_e201354_release(hero_slot_escape(&h22_f18));
+    h_0opt_e201354_release(hero_slot_escape(&h24_own24));
+    h_0opt_f87774a_release(hero_slot_escape(&h25_own25));
+    h_0opt_f87774a_release(hero_slot_escape(&h26_own26));
+    h_0opt_6dcd62e6_release(hero_slot_escape(&h27_own27));
+    hero_str_release_at(&h28_own28);
+    h_runvalue_Value_release(hero_slot_escape(&h29_own29));
+    h_0opt_6dcd62e6_release(hero_slot_escape(&h30_own30));
+    h_0opt_6dcd62e6_release(hero_slot_escape(&h31_own31));
+    h_0opt_e201354_release(hero_slot_escape(&h32_own32));
+    h_0opt_6dcd62e6_release(hero_slot_escape(&h33_own33));
+    h_0opt_e201354_release(hero_slot_escape(&h34_own34));
+    h_0opt_6dcd62e6_release(hero_slot_escape(&h35_own35));
+    h_runvalue_Value_release(hero_slot_escape(&h36_own36));
+    h_0opt_6dcd62e6_release(hero_slot_escape(&h37_own37));
+    h_0opt_6dcd62e6_release(hero_slot_escape(&h38_own38));
+    h_0opt_e201354_release(hero_slot_escape(&h39_own39));
+    h_0opt_e201354_release(hero_slot_escape(&h40_own40));
+    h_0opt_6dcd62e6_release(hero_slot_escape(&h41_own41));
+    h_0opt_e201354_release(hero_slot_escape(&h42_own42));
+    h_0opt_6dcd62e6_release(hero_slot_escape(&h43_own43));
+    h_runvalue_Value_release(hero_slot_escape(&h44_own44));
+    h_0opt_6dcd62e6_release(hero_slot_escape(&h45_own45));
+    h_0opt_6dcd62e6_release(hero_slot_escape(&h46_own46));
+    h_0opt_e201354_release(hero_slot_escape(&h47_own47));
+    h_0opt_e201354_release(hero_slot_escape(&h48_own48));
+    h_0opt_6dcd62e6_release(hero_slot_escape(&h49_own49));
+    h_0opt_e201354_release(hero_slot_escape(&h50_own50));
+    h_0opt_6dcd62e6_release(hero_slot_escape(&h51_own51));
+    h_runvalue_Value_release(hero_slot_escape(&h52_own52));
+    h_0opt_6dcd62e6_release(hero_slot_escape(&h53_own53));
+    h_0opt_6dcd62e6_release(hero_slot_escape(&h54_own54));
+    h_0opt_e201354_release(hero_slot_escape(&h55_own55));
+    h_0opt_e201354_release(hero_slot_escape(&h56_own56));
+    h_0opt_6dcd62e6_release(hero_slot_escape(&h57_own57));
+    h_0opt_e201354_release(hero_slot_escape(&h58_own58));
+    h_0opt_6dcd62e6_release(hero_slot_escape(&h59_own59));
+    h_runvalue_Value_release(hero_slot_escape(&h60_own60));
+    h_0opt_6dcd62e6_release(hero_slot_escape(&h61_own61));
+    h_0opt_6dcd62e6_release(hero_slot_escape(&h62_own62));
+    h_0opt_e201354_release(hero_slot_escape(&h63_own63));
+    h_0opt_e201354_release(hero_slot_escape(&h64_own64));
+    h_0opt_6dcd62e6_release(hero_slot_escape(&h65_own65));
+    h_0opt_e201354_release(hero_slot_escape(&h66_own66));
+    h_0opt_6dcd62e6_release(hero_slot_escape(&h67_own67));
+    h_runvalue_Value_release(hero_slot_escape(&h68_own68));
+    h_0opt_6dcd62e6_release(hero_slot_escape(&h69_own69));
+    h_0opt_6dcd62e6_release(hero_slot_escape(&h70_own70));
+    h_runvalue_Value_release(hero_slot_escape(&h71_own71));
+    h_0opt_6dcd62e6_release(hero_slot_escape(&h72_own72));
+    h_0opt_e201354_release(hero_slot_escape(&h73_own73));
+    h_runvalue_Value_release(hero_slot_escape(&h74_own74));
+    h_0opt_6dcd62e6_release(hero_slot_escape(&h75_own75));
+    h_0opt_e201354_release(hero_slot_escape(&h76_own76));
+    h_0opt_6dcd62e6_release(hero_slot_escape(&h77_own77));
+    h_0opt_6dcd62e6_release(hero_slot_escape(&h78_own78));
+    h_0opt_6dcd62e6_release(hero_slot_escape(&h79_own79));
     return t256;
 }
 
@@ -21620,19 +21620,19 @@ bb13:
 #line 21621 "main.c"
     t41 = h3_ret0;
     h_0opt_6dcd62e6_retain(&t41);
-    h_runvalue_Value_release(&h4_own4);
-    h_0opt_6dcd62e6_release(&h5_own5);
-    h_runvalue_Value_release(&h6_own6);
-    h_0opt_6dcd62e6_release(&h7_own7);
-    h_runvalue_Value_release(&h8_own8);
-    h_0opt_6dcd62e6_release(&h9_own9);
-    hero_str_decref(h10_own10);
-    hero_str_decref(h11_own11);
-    hero_str_decref(h12_own12);
-    hero_str_decref(h13_own13);
-    h_0opt_6dcd62e6_release(&h14_own14);
-    h_runvalue_Value_release(&h15_own15);
-    h_0opt_6dcd62e6_release(&h16_own16);
+    h_runvalue_Value_release(hero_slot_escape(&h4_own4));
+    h_0opt_6dcd62e6_release(hero_slot_escape(&h5_own5));
+    h_runvalue_Value_release(hero_slot_escape(&h6_own6));
+    h_0opt_6dcd62e6_release(hero_slot_escape(&h7_own7));
+    h_runvalue_Value_release(hero_slot_escape(&h8_own8));
+    h_0opt_6dcd62e6_release(hero_slot_escape(&h9_own9));
+    hero_str_release_at(&h10_own10);
+    hero_str_release_at(&h11_own11);
+    hero_str_release_at(&h12_own12);
+    hero_str_release_at(&h13_own13);
+    h_0opt_6dcd62e6_release(hero_slot_escape(&h14_own14));
+    h_runvalue_Value_release(hero_slot_escape(&h15_own15));
+    h_0opt_6dcd62e6_release(hero_slot_escape(&h16_own16));
     return t41;
 }
 
@@ -21685,7 +21685,7 @@ bb1:
 #line 157 "examples/interpreter/run/expr.hero"
     t8 = h2_r0;
 #line 21688 "main.c"
-    h_runvalue_Value_release(&h1_s0);
+    h_runvalue_Value_release(hero_slot_escape(&h1_s0));
     return t8;
 bb2:
 #line 158 "examples/interpreter/run/expr.hero"
@@ -21903,9 +21903,9 @@ bb11:
 #line 21904 "main.c"
     t31 = h4_ret0;
     h_0opt_e201354_retain(&t31);
-    h_0opt_e201354_release(&h5_own5);
-    h_0opt_e201354_release(&h6_own6);
-    h_0opt_e201354_release(&h7_own7);
+    h_0opt_e201354_release(hero_slot_escape(&h5_own5));
+    h_0opt_e201354_release(hero_slot_escape(&h6_own6));
+    h_0opt_e201354_release(hero_slot_escape(&h7_own7));
     return t31;
 }
 
@@ -22091,9 +22091,9 @@ bb11:
 #line 22092 "main.c"
     t31 = h4_ret0;
     h_0opt_e201354_retain(&t31);
-    h_0opt_e201354_release(&h5_own5);
-    h_0opt_e201354_release(&h6_own6);
-    h_0opt_e201354_release(&h7_own7);
+    h_0opt_e201354_release(hero_slot_escape(&h5_own5));
+    h_0opt_e201354_release(hero_slot_escape(&h6_own6));
+    h_0opt_e201354_release(hero_slot_escape(&h7_own7));
     return t31;
 }
 
@@ -22405,12 +22405,12 @@ bb20:
 #line 22406 "main.c"
     t48 = h6_ret0;
     h_0opt_e201354_retain(&t48);
-    h_0opt_e201354_release(&h7_own7);
-    h_0opt_e201354_release(&h8_own8);
-    h_0opt_e201354_release(&h9_own9);
-    h_0opt_e201354_release(&h10_own10);
-    h_0opt_e201354_release(&h11_own11);
-    h_0opt_e201354_release(&h12_own12);
+    h_0opt_e201354_release(hero_slot_escape(&h7_own7));
+    h_0opt_e201354_release(hero_slot_escape(&h8_own8));
+    h_0opt_e201354_release(hero_slot_escape(&h9_own9));
+    h_0opt_e201354_release(hero_slot_escape(&h10_own10));
+    h_0opt_e201354_release(hero_slot_escape(&h11_own11));
+    h_0opt_e201354_release(hero_slot_escape(&h12_own12));
     return t48;
 }
 
@@ -22669,13 +22669,13 @@ bb9:
 #line 22670 "main.c"
     t29 = h3_ret0;
     h_0opt_e201354_retain(&t29);
-    hero_str_decref(h4_own4);
-    hero_str_decref(h5_own5);
-    hero_str_decref(h6_own6);
-    hero_str_decref(h7_own7);
-    h_0opt_e201354_release(&h8_own8);
-    h_0opt_e201354_release(&h9_own9);
-    h_0opt_e201354_release(&h10_own10);
+    hero_str_release_at(&h4_own4);
+    hero_str_release_at(&h5_own5);
+    hero_str_release_at(&h6_own6);
+    hero_str_release_at(&h7_own7);
+    h_0opt_e201354_release(hero_slot_escape(&h8_own8));
+    h_0opt_e201354_release(hero_slot_escape(&h9_own9));
+    h_0opt_e201354_release(hero_slot_escape(&h10_own10));
     return t29;
 }
 
@@ -22881,13 +22881,13 @@ bb9:
 #line 22882 "main.c"
     t29 = h3_ret0;
     h_0opt_e201354_retain(&t29);
-    hero_str_decref(h4_own4);
-    hero_str_decref(h5_own5);
-    hero_str_decref(h6_own6);
-    hero_str_decref(h7_own7);
-    h_0opt_e201354_release(&h8_own8);
-    h_0opt_e201354_release(&h9_own9);
-    h_0opt_e201354_release(&h10_own10);
+    hero_str_release_at(&h4_own4);
+    hero_str_release_at(&h5_own5);
+    hero_str_release_at(&h6_own6);
+    hero_str_release_at(&h7_own7);
+    h_0opt_e201354_release(hero_slot_escape(&h8_own8));
+    h_0opt_e201354_release(hero_slot_escape(&h9_own9));
+    h_0opt_e201354_release(hero_slot_escape(&h10_own10));
     return t29;
 }
 
@@ -23016,15 +23016,15 @@ bb0:
 #line 23017 "main.c"
     h_0opt_e201354_release(&t24);
     h_0opt_e201354_retain(&t15);
-    hero_str_decref(h3_own3);
-    hero_str_decref(h4_own4);
-    hero_str_decref(h5_own5);
-    hero_str_decref(h6_own6);
-    hero_str_decref(h7_own7);
-    hero_str_decref(h8_own8);
-    hero_str_decref(h9_own9);
-    hero_str_decref(h10_own10);
-    h_0opt_e201354_release(&h11_own11);
+    hero_str_release_at(&h3_own3);
+    hero_str_release_at(&h4_own4);
+    hero_str_release_at(&h5_own5);
+    hero_str_release_at(&h6_own6);
+    hero_str_release_at(&h7_own7);
+    hero_str_release_at(&h8_own8);
+    hero_str_release_at(&h9_own9);
+    hero_str_release_at(&h10_own10);
+    h_0opt_e201354_release(hero_slot_escape(&h11_own11));
     return t15;
 }
 
@@ -23454,24 +23454,24 @@ bb9:
 #line 23455 "main.c"
     t60 = h16_ret0;
     h_0opt_4d124e2a_retain(&t60);
-    h_runvalue_Frame_release(&h5_walking);
-    hero_array_decref(h6_given);
-    hero_array_decref(h7_xs0);
-    h_0opt_4d124e2a_release(&h10_f0);
-    h_runexpr_Answer_release(&h11_step);
-    h_0opt_1be8f195_release(&h12_f1);
-    h_runvalue_Frame_release(&h13_after);
-    h_runvalue_Value_release(&h14_result);
-    h_runvalue_Frame_release(&h15_home);
-    hero_array_decref(h17_own17);
-    h_0opt_4d124e2a_release(&h18_own18);
-    h_runvalue_Request_release(&h19_own19);
-    h_0opt_1be8f195_release(&h20_own20);
-    h_0opt_4d124e2a_release(&h21_own21);
-    h_runvalue_Value_release(&h22_own22);
-    h_runexpr_Answer_release(&h23_own23);
-    h_0opt_4d124e2a_release(&h24_own24);
-    h_0opt_4d124e2a_release(&h25_own25);
+    h_runvalue_Frame_release(hero_slot_escape(&h5_walking));
+    hero_array_release_at(&h6_given);
+    hero_array_release_at(&h7_xs0);
+    h_0opt_4d124e2a_release(hero_slot_escape(&h10_f0));
+    h_runexpr_Answer_release(hero_slot_escape(&h11_step));
+    h_0opt_1be8f195_release(hero_slot_escape(&h12_f1));
+    h_runvalue_Frame_release(hero_slot_escape(&h13_after));
+    h_runvalue_Value_release(hero_slot_escape(&h14_result));
+    h_runvalue_Frame_release(hero_slot_escape(&h15_home));
+    hero_array_release_at(&h17_own17);
+    h_0opt_4d124e2a_release(hero_slot_escape(&h18_own18));
+    h_runvalue_Request_release(hero_slot_escape(&h19_own19));
+    h_0opt_1be8f195_release(hero_slot_escape(&h20_own20));
+    h_0opt_4d124e2a_release(hero_slot_escape(&h21_own21));
+    h_runvalue_Value_release(hero_slot_escape(&h22_own22));
+    h_runexpr_Answer_release(hero_slot_escape(&h23_own23));
+    h_0opt_4d124e2a_release(hero_slot_escape(&h24_own24));
+    h_0opt_4d124e2a_release(hero_slot_escape(&h25_own25));
     return t60;
 }
 
@@ -23599,14 +23599,14 @@ bb0:
 #line 23600 "main.c"
     h_runvalue_Frame_release(&t20);
     h_runvalue_Frame_retain(&t12);
-    hero_map_decref(h0_vars);
-    hero_map_decref(h1_fns);
-    hero_array_decref(h2_no_lines);
-    hero_map_decref(h3_own3);
-    hero_map_decref(h4_own4);
-    hero_array_decref(h5_own5);
-    h_runvalue_Value_release(&h6_own6);
-    h_runvalue_Frame_release(&h7_own7);
+    hero_map_release_at(&h0_vars);
+    hero_map_release_at(&h1_fns);
+    hero_array_release_at(&h2_no_lines);
+    hero_map_release_at(&h3_own3);
+    hero_map_release_at(&h4_own4);
+    hero_array_release_at(&h5_own5);
+    h_runvalue_Value_release(hero_slot_escape(&h6_own6));
+    h_runvalue_Frame_release(hero_slot_escape(&h7_own7));
     return t12;
 }
 
@@ -23683,11 +23683,11 @@ bb1:
     t19 = h2_r0;
 #line 23685 "main.c"
     hero_str_incref(t19);
-    h_runvalue_Value_release(&h1_s0);
-    hero_str_decref(h2_r0);
-    h_runvalue_Value_c_text_release(&h4_x);
-    hero_str_decref(h6_own6);
-    hero_str_decref(h7_own7);
+    h_runvalue_Value_release(hero_slot_escape(&h1_s0));
+    hero_str_release_at(&h2_r0);
+    h_runvalue_Value_c_text_release(hero_slot_escape(&h4_x));
+    hero_str_release_at(&h6_own6);
+    hero_str_release_at(&h7_own7);
     return t19;
 bb2:
 #line 93 "examples/interpreter/run/value.hero"
@@ -23839,8 +23839,8 @@ bb1:
     t8 = h2_r0;
 #line 23841 "main.c"
     hero_str_incref(t8);
-    h_runvalue_Value_release(&h1_s0);
-    hero_str_decref(h2_r0);
+    h_runvalue_Value_release(hero_slot_escape(&h1_s0));
+    hero_str_release_at(&h2_r0);
     return t8;
 bb2:
 #line 101 "examples/interpreter/run/value.hero"
@@ -23962,12 +23962,12 @@ bb1:
     t15 = h2_r0;
 #line 23964 "main.c"
     h_0opt_473cb9ae_retain(&t15);
-    h_runvalue_Value_release(&h1_s0);
-    h_0opt_473cb9ae_release(&h2_r0);
-    h_0opt_473cb9ae_release(&h4_own4);
-    h_0opt_473cb9ae_release(&h5_own5);
-    h_0opt_473cb9ae_release(&h6_own6);
-    h_0opt_473cb9ae_release(&h7_own7);
+    h_runvalue_Value_release(hero_slot_escape(&h1_s0));
+    h_0opt_473cb9ae_release(hero_slot_escape(&h2_r0));
+    h_0opt_473cb9ae_release(hero_slot_escape(&h4_own4));
+    h_0opt_473cb9ae_release(hero_slot_escape(&h5_own5));
+    h_0opt_473cb9ae_release(hero_slot_escape(&h6_own6));
+    h_0opt_473cb9ae_release(hero_slot_escape(&h7_own7));
     return t15;
 bb2:
 #line 112 "examples/interpreter/run/value.hero"
@@ -24170,14 +24170,14 @@ bb0:
 #line 24171 "main.c"
     h_0opt_473cb9ae_release(&t21);
     h_0opt_473cb9ae_retain(&t13);
-    hero_str_decref(h1_own1);
-    hero_str_decref(h2_own2);
-    hero_str_decref(h3_own3);
-    hero_str_decref(h4_own4);
-    hero_str_decref(h5_own5);
-    hero_str_decref(h6_own6);
-    hero_str_decref(h7_own7);
-    h_0opt_473cb9ae_release(&h8_own8);
+    hero_str_release_at(&h1_own1);
+    hero_str_release_at(&h2_own2);
+    hero_str_release_at(&h3_own3);
+    hero_str_release_at(&h4_own4);
+    hero_str_release_at(&h5_own5);
+    hero_str_release_at(&h6_own6);
+    hero_str_release_at(&h7_own7);
+    h_0opt_473cb9ae_release(hero_slot_escape(&h8_own8));
     return t13;
 }
 
@@ -24254,12 +24254,12 @@ bb1:
     t18 = h2_r0;
 #line 24256 "main.c"
     h_0opt_e201354_retain(&t18);
-    h_runvalue_Value_release(&h1_s0);
-    h_0opt_e201354_release(&h2_r0);
-    h_0opt_e201354_release(&h4_own4);
-    h_0opt_e201354_release(&h5_own5);
-    h_0opt_e201354_release(&h6_own6);
-    h_0opt_e201354_release(&h7_own7);
+    h_runvalue_Value_release(hero_slot_escape(&h1_s0));
+    h_0opt_e201354_release(hero_slot_escape(&h2_r0));
+    h_0opt_e201354_release(hero_slot_escape(&h4_own4));
+    h_0opt_e201354_release(hero_slot_escape(&h5_own5));
+    h_0opt_e201354_release(hero_slot_escape(&h6_own6));
+    h_0opt_e201354_release(hero_slot_escape(&h7_own7));
     return t18;
 bb2:
 #line 126 "examples/interpreter/run/value.hero"
@@ -24431,13 +24431,13 @@ bb1:
     t18 = h2_r0;
 #line 24433 "main.c"
     h_0opt_f87774a_retain(&t18);
-    h_runvalue_Value_release(&h1_s0);
-    h_0opt_f87774a_release(&h2_r0);
-    h_runvalue_Value_c_text_release(&h3_x);
-    h_0opt_f87774a_release(&h4_own4);
-    h_0opt_f87774a_release(&h5_own5);
-    h_0opt_f87774a_release(&h6_own6);
-    h_0opt_f87774a_release(&h7_own7);
+    h_runvalue_Value_release(hero_slot_escape(&h1_s0));
+    h_0opt_f87774a_release(hero_slot_escape(&h2_r0));
+    h_runvalue_Value_c_text_release(hero_slot_escape(&h3_x));
+    h_0opt_f87774a_release(hero_slot_escape(&h4_own4));
+    h_0opt_f87774a_release(hero_slot_escape(&h5_own5));
+    h_0opt_f87774a_release(hero_slot_escape(&h6_own6));
+    h_0opt_f87774a_release(hero_slot_escape(&h7_own7));
     return t18;
 bb2:
 #line 133 "examples/interpreter/run/value.hero"
@@ -24594,8 +24594,8 @@ bb1:
     t9 = h2_r0;
 #line 24596 "main.c"
     hero_str_incref(t9);
-    h_0opt_473cb9ae_release(&h1_s0);
-    hero_str_decref(h2_r0);
+    h_0opt_473cb9ae_release(hero_slot_escape(&h1_s0));
+    hero_str_release_at(&h2_r0);
     hero_failure_release(&h3_e);
     return t9;
 bb2:
@@ -24935,20 +24935,20 @@ bb8:
 #line 24936 "main.c"
     t34 = h7_ret0;
     h_0opt_60498281_retain(&t34);
-    h_0opt_7f1de476_release(&h1_f0);
-    hero_array_decref(h2_tokens);
-    h_syncursor_Cursor_release(&h3_c);
-    h_syntree_Tree_release(&h4_t);
-    hero_array_decref(h5_top);
-    h_0opt_e201354_release(&h6_f1);
-    h_0opt_7f1de476_release(&h8_own8);
-    h_syncursor_Cursor_release(&h9_own9);
-    h_syntree_Tree_release(&h10_own10);
-    hero_array_decref(h11_own11);
-    h_0opt_60498281_release(&h12_own12);
-    h_0opt_e201354_release(&h13_own13);
-    h_0opt_60498281_release(&h14_own14);
-    h_0opt_60498281_release(&h15_own15);
+    h_0opt_7f1de476_release(hero_slot_escape(&h1_f0));
+    hero_array_release_at(&h2_tokens);
+    h_syncursor_Cursor_release(hero_slot_escape(&h3_c));
+    h_syntree_Tree_release(hero_slot_escape(&h4_t));
+    hero_array_release_at(&h5_top);
+    h_0opt_e201354_release(hero_slot_escape(&h6_f1));
+    h_0opt_7f1de476_release(hero_slot_escape(&h8_own8));
+    h_syncursor_Cursor_release(hero_slot_escape(&h9_own9));
+    h_syntree_Tree_release(hero_slot_escape(&h10_own10));
+    hero_array_release_at(&h11_own11);
+    h_0opt_60498281_release(hero_slot_escape(&h12_own12));
+    h_0opt_e201354_release(hero_slot_escape(&h13_own13));
+    h_0opt_60498281_release(hero_slot_escape(&h14_own14));
+    h_0opt_60498281_release(hero_slot_escape(&h15_own15));
     return t34;
 }
 
@@ -26011,59 +26011,59 @@ bb43:
 #line 26012 "main.c"
     t133 = h15_ret0;
     h_0opt_e201354_retain(&t133);
-    h_0opt_e201354_release(&h2_f0);
-    h_0opt_a8ea2_release(&h4_f1);
-    h_0opt_e201354_release(&h5_f2);
-    h_0opt_a8ea2_release(&h7_f3);
-    h_0opt_e201354_release(&h8_f4);
-    h_0opt_a8ea2_release(&h10_f5);
-    h_0opt_e201354_release(&h12_f6);
-    h_0opt_a8ea2_release(&h14_f7);
-    h_lextoken_Token_release(&h16_own16);
-    h_lextoken_Token_release(&h17_own17);
-    h_0opt_e201354_release(&h18_own18);
-    h_lextoken_Token_release(&h19_own19);
-    h_0opt_e201354_release(&h20_own20);
-    h_0opt_a8ea2_release(&h21_own21);
-    h_0opt_e201354_release(&h22_own22);
-    h_syntree_Stmt_release(&h23_own23);
-    h_0opt_e201354_release(&h24_own24);
-    h_0opt_e201354_release(&h25_own25);
-    h_lextoken_Token_release(&h26_own26);
-    h_0opt_e201354_release(&h27_own27);
-    h_lextoken_Token_release(&h28_own28);
-    h_0opt_e201354_release(&h29_own29);
-    h_lextoken_Token_release(&h30_own30);
-    h_0opt_e201354_release(&h31_own31);
-    h_lextoken_Token_release(&h32_own32);
-    h_0opt_e201354_release(&h33_own33);
-    h_0opt_a8ea2_release(&h34_own34);
-    h_0opt_e201354_release(&h35_own35);
-    h_syntree_Stmt_release(&h36_own36);
-    h_0opt_e201354_release(&h37_own37);
-    h_0opt_e201354_release(&h38_own38);
-    h_lextoken_Token_release(&h39_own39);
-    h_lextoken_Token_release(&h40_own40);
-    h_0opt_e201354_release(&h41_own41);
-    h_0opt_a8ea2_release(&h42_own42);
-    h_0opt_e201354_release(&h43_own43);
-    h_syntree_Stmt_release(&h44_own44);
-    h_0opt_e201354_release(&h45_own45);
-    h_0opt_e201354_release(&h46_own46);
-    h_0opt_e201354_release(&h47_own47);
-    h_lextoken_Token_release(&h48_own48);
-    h_lextoken_Token_release(&h49_own49);
-    hero_str_decref(h50_own50);
-    h_lextoken_Token_release(&h51_own51);
-    hero_str_decref(h52_own52);
-    hero_str_decref(h53_own53);
-    hero_str_decref(h54_own54);
-    h_0opt_e201354_release(&h55_own55);
-    h_0opt_a8ea2_release(&h56_own56);
-    h_0opt_e201354_release(&h57_own57);
-    h_syntree_Stmt_release(&h58_own58);
-    h_0opt_e201354_release(&h59_own59);
-    h_0opt_e201354_release(&h60_own60);
+    h_0opt_e201354_release(hero_slot_escape(&h2_f0));
+    h_0opt_a8ea2_release(hero_slot_escape(&h4_f1));
+    h_0opt_e201354_release(hero_slot_escape(&h5_f2));
+    h_0opt_a8ea2_release(hero_slot_escape(&h7_f3));
+    h_0opt_e201354_release(hero_slot_escape(&h8_f4));
+    h_0opt_a8ea2_release(hero_slot_escape(&h10_f5));
+    h_0opt_e201354_release(hero_slot_escape(&h12_f6));
+    h_0opt_a8ea2_release(hero_slot_escape(&h14_f7));
+    h_lextoken_Token_release(hero_slot_escape(&h16_own16));
+    h_lextoken_Token_release(hero_slot_escape(&h17_own17));
+    h_0opt_e201354_release(hero_slot_escape(&h18_own18));
+    h_lextoken_Token_release(hero_slot_escape(&h19_own19));
+    h_0opt_e201354_release(hero_slot_escape(&h20_own20));
+    h_0opt_a8ea2_release(hero_slot_escape(&h21_own21));
+    h_0opt_e201354_release(hero_slot_escape(&h22_own22));
+    h_syntree_Stmt_release(hero_slot_escape(&h23_own23));
+    h_0opt_e201354_release(hero_slot_escape(&h24_own24));
+    h_0opt_e201354_release(hero_slot_escape(&h25_own25));
+    h_lextoken_Token_release(hero_slot_escape(&h26_own26));
+    h_0opt_e201354_release(hero_slot_escape(&h27_own27));
+    h_lextoken_Token_release(hero_slot_escape(&h28_own28));
+    h_0opt_e201354_release(hero_slot_escape(&h29_own29));
+    h_lextoken_Token_release(hero_slot_escape(&h30_own30));
+    h_0opt_e201354_release(hero_slot_escape(&h31_own31));
+    h_lextoken_Token_release(hero_slot_escape(&h32_own32));
+    h_0opt_e201354_release(hero_slot_escape(&h33_own33));
+    h_0opt_a8ea2_release(hero_slot_escape(&h34_own34));
+    h_0opt_e201354_release(hero_slot_escape(&h35_own35));
+    h_syntree_Stmt_release(hero_slot_escape(&h36_own36));
+    h_0opt_e201354_release(hero_slot_escape(&h37_own37));
+    h_0opt_e201354_release(hero_slot_escape(&h38_own38));
+    h_lextoken_Token_release(hero_slot_escape(&h39_own39));
+    h_lextoken_Token_release(hero_slot_escape(&h40_own40));
+    h_0opt_e201354_release(hero_slot_escape(&h41_own41));
+    h_0opt_a8ea2_release(hero_slot_escape(&h42_own42));
+    h_0opt_e201354_release(hero_slot_escape(&h43_own43));
+    h_syntree_Stmt_release(hero_slot_escape(&h44_own44));
+    h_0opt_e201354_release(hero_slot_escape(&h45_own45));
+    h_0opt_e201354_release(hero_slot_escape(&h46_own46));
+    h_0opt_e201354_release(hero_slot_escape(&h47_own47));
+    h_lextoken_Token_release(hero_slot_escape(&h48_own48));
+    h_lextoken_Token_release(hero_slot_escape(&h49_own49));
+    hero_str_release_at(&h50_own50);
+    h_lextoken_Token_release(hero_slot_escape(&h51_own51));
+    hero_str_release_at(&h52_own52);
+    hero_str_release_at(&h53_own53);
+    hero_str_release_at(&h54_own54);
+    h_0opt_e201354_release(hero_slot_escape(&h55_own55));
+    h_0opt_a8ea2_release(hero_slot_escape(&h56_own56));
+    h_0opt_e201354_release(hero_slot_escape(&h57_own57));
+    h_syntree_Stmt_release(hero_slot_escape(&h58_own58));
+    h_0opt_e201354_release(hero_slot_escape(&h59_own59));
+    h_0opt_e201354_release(hero_slot_escape(&h60_own60));
     return t133;
 }
 
@@ -26398,22 +26398,22 @@ bb9:
 #line 26399 "main.c"
     t47 = h8_ret0;
     h_0opt_e201354_retain(&t47);
-    h_0opt_f87774a_release(&h2_f0);
-    hero_str_decref(h3_name);
-    h_0opt_a8ea2_release(&h4_f1);
-    h_0opt_e201354_release(&h5_f2);
-    h_0opt_a8ea2_release(&h7_f3);
-    h_0opt_f87774a_release(&h9_own9);
-    h_lextoken_Token_release(&h10_own10);
-    h_0opt_a8ea2_release(&h11_own11);
-    h_0opt_e201354_release(&h12_own12);
-    h_0opt_e201354_release(&h13_own13);
-    h_0opt_e201354_release(&h14_own14);
-    h_0opt_a8ea2_release(&h15_own15);
-    h_0opt_e201354_release(&h16_own16);
-    h_syntree_Stmt_release(&h17_own17);
-    h_0opt_e201354_release(&h18_own18);
-    h_0opt_e201354_release(&h19_own19);
+    h_0opt_f87774a_release(hero_slot_escape(&h2_f0));
+    hero_str_release_at(&h3_name);
+    h_0opt_a8ea2_release(hero_slot_escape(&h4_f1));
+    h_0opt_e201354_release(hero_slot_escape(&h5_f2));
+    h_0opt_a8ea2_release(hero_slot_escape(&h7_f3));
+    h_0opt_f87774a_release(hero_slot_escape(&h9_own9));
+    h_lextoken_Token_release(hero_slot_escape(&h10_own10));
+    h_0opt_a8ea2_release(hero_slot_escape(&h11_own11));
+    h_0opt_e201354_release(hero_slot_escape(&h12_own12));
+    h_0opt_e201354_release(hero_slot_escape(&h13_own13));
+    h_0opt_e201354_release(hero_slot_escape(&h14_own14));
+    h_0opt_a8ea2_release(hero_slot_escape(&h15_own15));
+    h_0opt_e201354_release(hero_slot_escape(&h16_own16));
+    h_syntree_Stmt_release(hero_slot_escape(&h17_own17));
+    h_0opt_e201354_release(hero_slot_escape(&h18_own18));
+    h_0opt_e201354_release(hero_slot_escape(&h19_own19));
     return t47;
 }
 
@@ -26996,34 +26996,34 @@ bb18:
 #line 26997 "main.c"
     t81 = h12_ret0;
     h_0opt_e201354_retain(&t81);
-    h_0opt_e201354_release(&h2_f0);
-    h_0opt_a8ea2_release(&h4_f1);
-    h_0opt_2270cbe7_release(&h5_f2);
-    hero_array_decref(h6_then);
-    hero_array_decref(h7_otherwise);
-    h_0opt_a8ea2_release(&h8_f3);
-    h_0opt_2270cbe7_release(&h9_f4);
-    h_0opt_a8ea2_release(&h10_f5);
-    h_0opt_a8ea2_release(&h11_f6);
-    h_0opt_e201354_release(&h13_own13);
-    h_0opt_a8ea2_release(&h14_own14);
-    h_0opt_e201354_release(&h15_own15);
-    h_0opt_2270cbe7_release(&h16_own16);
-    h_0opt_e201354_release(&h17_own17);
-    hero_array_decref(h18_own18);
-    h_lextoken_Token_release(&h19_own19);
-    h_0opt_e201354_release(&h20_own20);
-    h_lextoken_Token_release(&h21_own21);
-    h_0opt_a8ea2_release(&h22_own22);
-    h_0opt_a8ea2_release(&h23_own23);
-    h_0opt_2270cbe7_release(&h24_own24);
-    h_0opt_e201354_release(&h25_own25);
-    h_0opt_e201354_release(&h26_own26);
-    h_0opt_a8ea2_release(&h27_own27);
-    h_0opt_e201354_release(&h28_own28);
-    h_syntree_Stmt_release(&h29_own29);
-    h_0opt_e201354_release(&h30_own30);
-    h_0opt_e201354_release(&h31_own31);
+    h_0opt_e201354_release(hero_slot_escape(&h2_f0));
+    h_0opt_a8ea2_release(hero_slot_escape(&h4_f1));
+    h_0opt_2270cbe7_release(hero_slot_escape(&h5_f2));
+    hero_array_release_at(&h6_then);
+    hero_array_release_at(&h7_otherwise);
+    h_0opt_a8ea2_release(hero_slot_escape(&h8_f3));
+    h_0opt_2270cbe7_release(hero_slot_escape(&h9_f4));
+    h_0opt_a8ea2_release(hero_slot_escape(&h10_f5));
+    h_0opt_a8ea2_release(hero_slot_escape(&h11_f6));
+    h_0opt_e201354_release(hero_slot_escape(&h13_own13));
+    h_0opt_a8ea2_release(hero_slot_escape(&h14_own14));
+    h_0opt_e201354_release(hero_slot_escape(&h15_own15));
+    h_0opt_2270cbe7_release(hero_slot_escape(&h16_own16));
+    h_0opt_e201354_release(hero_slot_escape(&h17_own17));
+    hero_array_release_at(&h18_own18);
+    h_lextoken_Token_release(hero_slot_escape(&h19_own19));
+    h_0opt_e201354_release(hero_slot_escape(&h20_own20));
+    h_lextoken_Token_release(hero_slot_escape(&h21_own21));
+    h_0opt_a8ea2_release(hero_slot_escape(&h22_own22));
+    h_0opt_a8ea2_release(hero_slot_escape(&h23_own23));
+    h_0opt_2270cbe7_release(hero_slot_escape(&h24_own24));
+    h_0opt_e201354_release(hero_slot_escape(&h25_own25));
+    h_0opt_e201354_release(hero_slot_escape(&h26_own26));
+    h_0opt_a8ea2_release(hero_slot_escape(&h27_own27));
+    h_0opt_e201354_release(hero_slot_escape(&h28_own28));
+    h_syntree_Stmt_release(hero_slot_escape(&h29_own29));
+    h_0opt_e201354_release(hero_slot_escape(&h30_own30));
+    h_0opt_e201354_release(hero_slot_escape(&h31_own31));
     return t81;
 }
 
@@ -27420,25 +27420,25 @@ bb11:
 #line 27421 "main.c"
     t57 = h9_ret0;
     h_0opt_e201354_retain(&t57);
-    h_0opt_e201354_release(&h2_f0);
-    h_0opt_a8ea2_release(&h4_f1);
-    h_0opt_2270cbe7_release(&h5_f2);
-    hero_array_decref(h6_body);
-    h_0opt_a8ea2_release(&h7_f3);
-    h_0opt_a8ea2_release(&h8_f4);
-    h_0opt_e201354_release(&h10_own10);
-    h_0opt_a8ea2_release(&h11_own11);
-    h_0opt_e201354_release(&h12_own12);
-    h_0opt_2270cbe7_release(&h13_own13);
-    h_0opt_e201354_release(&h14_own14);
-    h_lextoken_Token_release(&h15_own15);
-    h_0opt_a8ea2_release(&h16_own16);
-    h_0opt_e201354_release(&h17_own17);
-    h_0opt_a8ea2_release(&h18_own18);
-    h_0opt_e201354_release(&h19_own19);
-    h_syntree_Stmt_release(&h20_own20);
-    h_0opt_e201354_release(&h21_own21);
-    h_0opt_e201354_release(&h22_own22);
+    h_0opt_e201354_release(hero_slot_escape(&h2_f0));
+    h_0opt_a8ea2_release(hero_slot_escape(&h4_f1));
+    h_0opt_2270cbe7_release(hero_slot_escape(&h5_f2));
+    hero_array_release_at(&h6_body);
+    h_0opt_a8ea2_release(hero_slot_escape(&h7_f3));
+    h_0opt_a8ea2_release(hero_slot_escape(&h8_f4));
+    h_0opt_e201354_release(hero_slot_escape(&h10_own10));
+    h_0opt_a8ea2_release(hero_slot_escape(&h11_own11));
+    h_0opt_e201354_release(hero_slot_escape(&h12_own12));
+    h_0opt_2270cbe7_release(hero_slot_escape(&h13_own13));
+    h_0opt_e201354_release(hero_slot_escape(&h14_own14));
+    h_lextoken_Token_release(hero_slot_escape(&h15_own15));
+    h_0opt_a8ea2_release(hero_slot_escape(&h16_own16));
+    h_0opt_e201354_release(hero_slot_escape(&h17_own17));
+    h_0opt_a8ea2_release(hero_slot_escape(&h18_own18));
+    h_0opt_e201354_release(hero_slot_escape(&h19_own19));
+    h_syntree_Stmt_release(hero_slot_escape(&h20_own20));
+    h_0opt_e201354_release(hero_slot_escape(&h21_own21));
+    h_0opt_e201354_release(hero_slot_escape(&h22_own22));
     return t57;
 }
 
@@ -27998,34 +27998,34 @@ bb15:
 #line 27999 "main.c"
     t79 = h12_ret0;
     h_0opt_e201354_retain(&t79);
-    h_0opt_f87774a_release(&h2_f0);
-    hero_str_decref(h3_name);
-    h_0opt_a8ea2_release(&h4_f1);
-    h_0opt_5a58f2ca_release(&h5_f2);
-    hero_array_decref(h6_params);
-    h_0opt_a8ea2_release(&h7_f3);
-    h_0opt_2270cbe7_release(&h8_f4);
-    hero_array_decref(h9_body);
-    h_0opt_a8ea2_release(&h10_f5);
-    h_0opt_a8ea2_release(&h11_f6);
-    h_0opt_f87774a_release(&h13_own13);
-    h_lextoken_Token_release(&h14_own14);
-    h_0opt_a8ea2_release(&h15_own15);
-    h_0opt_e201354_release(&h16_own16);
-    h_0opt_5a58f2ca_release(&h17_own17);
-    h_0opt_e201354_release(&h18_own18);
-    h_0opt_a8ea2_release(&h19_own19);
-    h_0opt_e201354_release(&h20_own20);
-    h_0opt_2270cbe7_release(&h21_own21);
-    h_0opt_e201354_release(&h22_own22);
-    h_lextoken_Token_release(&h23_own23);
-    h_0opt_a8ea2_release(&h24_own24);
-    h_0opt_e201354_release(&h25_own25);
-    h_0opt_a8ea2_release(&h26_own26);
-    h_0opt_e201354_release(&h27_own27);
-    h_syntree_Stmt_release(&h28_own28);
-    h_0opt_e201354_release(&h29_own29);
-    h_0opt_e201354_release(&h30_own30);
+    h_0opt_f87774a_release(hero_slot_escape(&h2_f0));
+    hero_str_release_at(&h3_name);
+    h_0opt_a8ea2_release(hero_slot_escape(&h4_f1));
+    h_0opt_5a58f2ca_release(hero_slot_escape(&h5_f2));
+    hero_array_release_at(&h6_params);
+    h_0opt_a8ea2_release(hero_slot_escape(&h7_f3));
+    h_0opt_2270cbe7_release(hero_slot_escape(&h8_f4));
+    hero_array_release_at(&h9_body);
+    h_0opt_a8ea2_release(hero_slot_escape(&h10_f5));
+    h_0opt_a8ea2_release(hero_slot_escape(&h11_f6));
+    h_0opt_f87774a_release(hero_slot_escape(&h13_own13));
+    h_lextoken_Token_release(hero_slot_escape(&h14_own14));
+    h_0opt_a8ea2_release(hero_slot_escape(&h15_own15));
+    h_0opt_e201354_release(hero_slot_escape(&h16_own16));
+    h_0opt_5a58f2ca_release(hero_slot_escape(&h17_own17));
+    h_0opt_e201354_release(hero_slot_escape(&h18_own18));
+    h_0opt_a8ea2_release(hero_slot_escape(&h19_own19));
+    h_0opt_e201354_release(hero_slot_escape(&h20_own20));
+    h_0opt_2270cbe7_release(hero_slot_escape(&h21_own21));
+    h_0opt_e201354_release(hero_slot_escape(&h22_own22));
+    h_lextoken_Token_release(hero_slot_escape(&h23_own23));
+    h_0opt_a8ea2_release(hero_slot_escape(&h24_own24));
+    h_0opt_e201354_release(hero_slot_escape(&h25_own25));
+    h_0opt_a8ea2_release(hero_slot_escape(&h26_own26));
+    h_0opt_e201354_release(hero_slot_escape(&h27_own27));
+    h_syntree_Stmt_release(hero_slot_escape(&h28_own28));
+    h_0opt_e201354_release(hero_slot_escape(&h29_own29));
+    h_0opt_e201354_release(hero_slot_escape(&h30_own30));
     return t79;
 }
 
@@ -28509,29 +28509,29 @@ bb19:
 #line 28510 "main.c"
     t64 = h5_ret0;
     h_0opt_5a58f2ca_retain(&t64);
-    hero_array_decref(h1_names);
-    h_0opt_f87774a_release(&h2_f0);
-    h_0opt_f87774a_release(&h3_f1);
-    h_0opt_a8ea2_release(&h4_f2);
-    hero_array_decref(h6_own6);
-    h_lextoken_Token_release(&h7_own7);
-    h_0opt_f87774a_release(&h8_own8);
-    h_0opt_5a58f2ca_release(&h9_own9);
-    h_0opt_5a58f2ca_release(&h10_own10);
-    h_lextoken_Token_release(&h11_own11);
-    h_0opt_f87774a_release(&h12_own12);
-    h_lextoken_Token_release(&h13_own13);
-    h_0opt_a8ea2_release(&h14_own14);
-    h_0opt_5a58f2ca_release(&h15_own15);
-    h_0opt_5a58f2ca_release(&h16_own16);
-    hero_str_decref(h17_own17);
-    hero_str_decref(h18_own18);
-    hero_str_decref(h19_own19);
-    hero_str_decref(h20_own20);
-    h_0opt_5a58f2ca_release(&h21_own21);
-    h_0opt_5a58f2ca_release(&h22_own22);
-    hero_str_decref(h23_own23);
-    h_0opt_5a58f2ca_release(&h24_own24);
+    hero_array_release_at(&h1_names);
+    h_0opt_f87774a_release(hero_slot_escape(&h2_f0));
+    h_0opt_f87774a_release(hero_slot_escape(&h3_f1));
+    h_0opt_a8ea2_release(hero_slot_escape(&h4_f2));
+    hero_array_release_at(&h6_own6);
+    h_lextoken_Token_release(hero_slot_escape(&h7_own7));
+    h_0opt_f87774a_release(hero_slot_escape(&h8_own8));
+    h_0opt_5a58f2ca_release(hero_slot_escape(&h9_own9));
+    h_0opt_5a58f2ca_release(hero_slot_escape(&h10_own10));
+    h_lextoken_Token_release(hero_slot_escape(&h11_own11));
+    h_0opt_f87774a_release(hero_slot_escape(&h12_own12));
+    h_lextoken_Token_release(hero_slot_escape(&h13_own13));
+    h_0opt_a8ea2_release(hero_slot_escape(&h14_own14));
+    h_0opt_5a58f2ca_release(hero_slot_escape(&h15_own15));
+    h_0opt_5a58f2ca_release(hero_slot_escape(&h16_own16));
+    hero_str_release_at(&h17_own17);
+    hero_str_release_at(&h18_own18);
+    hero_str_release_at(&h19_own19);
+    hero_str_release_at(&h20_own20);
+    h_0opt_5a58f2ca_release(hero_slot_escape(&h21_own21));
+    h_0opt_5a58f2ca_release(hero_slot_escape(&h22_own22));
+    hero_str_release_at(&h23_own23);
+    h_0opt_5a58f2ca_release(hero_slot_escape(&h24_own24));
     return t64;
 }
 
@@ -28740,15 +28740,15 @@ bb9:
 #line 28741 "main.c"
     t25 = h4_ret0;
     h_0opt_2270cbe7_retain(&t25);
-    hero_array_decref(h2_made);
-    h_0opt_e201354_release(&h3_f0);
-    hero_array_decref(h5_own5);
-    h_lextoken_Token_release(&h6_own6);
-    h_0opt_e201354_release(&h7_own7);
-    h_0opt_2270cbe7_release(&h8_own8);
-    h_0opt_2270cbe7_release(&h9_own9);
-    hero_str_decref(h10_own10);
-    h_0opt_2270cbe7_release(&h11_own11);
+    hero_array_release_at(&h2_made);
+    h_0opt_e201354_release(hero_slot_escape(&h3_f0));
+    hero_array_release_at(&h5_own5);
+    h_lextoken_Token_release(hero_slot_escape(&h6_own6));
+    h_0opt_e201354_release(hero_slot_escape(&h7_own7));
+    h_0opt_2270cbe7_release(hero_slot_escape(&h8_own8));
+    h_0opt_2270cbe7_release(hero_slot_escape(&h9_own9));
+    hero_str_release_at(&h10_own10);
+    h_0opt_2270cbe7_release(hero_slot_escape(&h11_own11));
     return t25;
 }
 
@@ -28841,9 +28841,9 @@ bb4:
 #line 172 "examples/interpreter/syn/parse.hero"
     t11 = h1_b0;
 #line 28844 "main.c"
-    h_lextoken_Token_release(&h3_own3);
-    h_lextoken_Token_release(&h4_own4);
-    h_lextoken_Token_release(&h5_own5);
+    h_lextoken_Token_release(hero_slot_escape(&h3_own3));
+    h_lextoken_Token_release(hero_slot_escape(&h4_own4));
+    h_lextoken_Token_release(hero_slot_escape(&h5_own5));
     return t11;
 }
 
@@ -29032,17 +29032,17 @@ bb7:
 #line 29033 "main.c"
     t18 = h1_ret0;
     h_0opt_a8ea2_retain(&t18);
-    h_lextoken_Token_release(&h2_own2);
-    h_lextoken_Token_release(&h3_own3);
-    h_lextoken_Token_release(&h4_own4);
-    h_0opt_a8ea2_release(&h5_own5);
-    hero_str_decref(h6_own6);
-    h_lextoken_Token_release(&h7_own7);
-    hero_str_decref(h8_own8);
-    hero_str_decref(h9_own9);
-    hero_str_decref(h10_own10);
-    h_0opt_a8ea2_release(&h11_own11);
-    h_0opt_a8ea2_release(&h12_own12);
+    h_lextoken_Token_release(hero_slot_escape(&h2_own2));
+    h_lextoken_Token_release(hero_slot_escape(&h3_own3));
+    h_lextoken_Token_release(hero_slot_escape(&h4_own4));
+    h_0opt_a8ea2_release(hero_slot_escape(&h5_own5));
+    hero_str_release_at(&h6_own6);
+    h_lextoken_Token_release(hero_slot_escape(&h7_own7));
+    hero_str_release_at(&h8_own8);
+    hero_str_release_at(&h9_own9);
+    hero_str_release_at(&h10_own10);
+    h_0opt_a8ea2_release(hero_slot_escape(&h11_own11));
+    h_0opt_a8ea2_release(hero_slot_escape(&h12_own12));
     return t18;
 }
 
@@ -29319,13 +29319,13 @@ bb0:
 #line 29320 "main.c"
     h_syntree_Tree_release(&t14);
     h_syntree_Tree_retain(&t7);
-    hero_array_decref(h0_no_exprs);
-    hero_array_decref(h1_no_stmts);
-    hero_array_decref(h2_no_top);
-    hero_array_decref(h3_own3);
-    hero_array_decref(h4_own4);
-    hero_array_decref(h5_own5);
-    h_syntree_Tree_release(&h6_own6);
+    hero_array_release_at(&h0_no_exprs);
+    hero_array_release_at(&h1_no_stmts);
+    hero_array_release_at(&h2_no_top);
+    hero_array_release_at(&h3_own3);
+    hero_array_release_at(&h4_own4);
+    hero_array_release_at(&h5_own5);
+    h_syntree_Tree_release(hero_slot_escape(&h6_own6));
     return t7;
 }
 
@@ -29379,7 +29379,7 @@ bb0:
 #line 116 "examples/interpreter/syn/tree.hero"
     if (__builtin_sub_overflow(t7, t8, &t9)) hero_panic_overflow();
 #line 29382 "main.c"
-    hero_array_decref(h2_own2);
+    hero_array_release_at(&h2_own2);
     return t9;
 }
 
@@ -29433,7 +29433,7 @@ bb0:
 #line 120 "examples/interpreter/syn/tree.hero"
     if (__builtin_sub_overflow(t7, t8, &t9)) hero_panic_overflow();
 #line 29436 "main.c"
-    hero_array_decref(h2_own2);
+    hero_array_release_at(&h2_own2);
     return t9;
 }
 
@@ -29542,8 +29542,8 @@ bb1:
 #line 125 "examples/interpreter/syn/tree.hero"
     t45 = h3_r0;
 #line 29545 "main.c"
-    h_syntree_Expr_release(&h2_s0);
-    h_syntree_Expr_c_call_release(&h7_c);
+    h_syntree_Expr_release(hero_slot_escape(&h2_s0));
+    h_syntree_Expr_c_call_release(hero_slot_escape(&h7_c));
     return t45;
 bb2:
 #line 126 "examples/interpreter/syn/tree.hero"
@@ -29815,7 +29815,7 @@ bb4:
 #line 144 "examples/interpreter/syn/tree.hero"
     t19 = h2_most;
 #line 29818 "main.c"
-    hero_array_decref(h3_xs0);
+    hero_array_release_at(&h3_xs0);
     return t19;
 }
 
@@ -29902,7 +29902,7 @@ bb1:
     t17 = h2_r0;
 #line 29904 "main.c"
     hero_str_incref(t17);
-    hero_str_decref(h2_r0);
+    hero_str_release_at(&h2_r0);
     return t17;
 bb2:
 #line 152 "examples/interpreter/syn/tree.hero"
@@ -30268,34 +30268,34 @@ bb1:
     t85 = h3_r0;
 #line 30270 "main.c"
     hero_str_incref(t85);
-    h_syntree_Expr_release(&h2_s0);
-    hero_str_decref(h3_r0);
-    h_syntree_Expr_c_text_release(&h5_x);
-    h_syntree_Expr_c_name_release(&h7_n);
-    h_syntree_Expr_c_call_release(&h11_c);
-    hero_str_decref(h12_own12);
-    hero_str_decref(h13_own13);
-    hero_str_decref(h14_own14);
-    hero_str_decref(h15_own15);
-    hero_str_decref(h16_own16);
-    hero_str_decref(h17_own17);
-    hero_str_decref(h18_own18);
-    hero_str_decref(h19_own19);
-    hero_str_decref(h20_own20);
-    hero_str_decref(h21_own21);
-    hero_str_decref(h22_own22);
-    hero_str_decref(h23_own23);
-    hero_str_decref(h24_own24);
-    hero_str_decref(h25_own25);
-    hero_str_decref(h26_own26);
-    hero_str_decref(h27_own27);
-    hero_str_decref(h28_own28);
-    hero_str_decref(h29_own29);
-    hero_str_decref(h30_own30);
-    hero_str_decref(h31_own31);
-    hero_str_decref(h32_own32);
-    hero_str_decref(h33_own33);
-    hero_str_decref(h34_own34);
+    h_syntree_Expr_release(hero_slot_escape(&h2_s0));
+    hero_str_release_at(&h3_r0);
+    h_syntree_Expr_c_text_release(hero_slot_escape(&h5_x));
+    h_syntree_Expr_c_name_release(hero_slot_escape(&h7_n));
+    h_syntree_Expr_c_call_release(hero_slot_escape(&h11_c));
+    hero_str_release_at(&h12_own12);
+    hero_str_release_at(&h13_own13);
+    hero_str_release_at(&h14_own14);
+    hero_str_release_at(&h15_own15);
+    hero_str_release_at(&h16_own16);
+    hero_str_release_at(&h17_own17);
+    hero_str_release_at(&h18_own18);
+    hero_str_release_at(&h19_own19);
+    hero_str_release_at(&h20_own20);
+    hero_str_release_at(&h21_own21);
+    hero_str_release_at(&h22_own22);
+    hero_str_release_at(&h23_own23);
+    hero_str_release_at(&h24_own24);
+    hero_str_release_at(&h25_own25);
+    hero_str_release_at(&h26_own26);
+    hero_str_release_at(&h27_own27);
+    hero_str_release_at(&h28_own28);
+    hero_str_release_at(&h29_own29);
+    hero_str_release_at(&h30_own30);
+    hero_str_release_at(&h31_own31);
+    hero_str_release_at(&h32_own32);
+    hero_str_release_at(&h33_own33);
+    hero_str_release_at(&h34_own34);
     return t85;
 bb2:
 #line 172 "examples/interpreter/syn/tree.hero"
@@ -30839,11 +30839,11 @@ bb4:
 #line 30840 "main.c"
     hero_str_decref(t26);
     hero_str_incref(t21);
-    hero_array_decref(h2_pieces);
-    hero_array_decref(h3_xs0);
-    hero_array_decref(h6_own6);
-    hero_str_decref(h7_own7);
-    hero_str_decref(h8_own8);
+    hero_array_release_at(&h2_pieces);
+    hero_array_release_at(&h3_xs0);
+    hero_array_release_at(&h6_own6);
+    hero_str_release_at(&h7_own7);
+    hero_str_release_at(&h8_own8);
     return t21;
 }
 
@@ -30915,7 +30915,7 @@ bb0:
 #line 30916 "main.c"
     hero_str_decref(t3);
     hero_str_incref(t2);
-    hero_str_decref(h1_own1);
+    hero_str_release_at(&h1_own1);
     return t2;
 }
 
@@ -31267,17 +31267,17 @@ bb13:
 #line 31268 "main.c"
     t38 = h3_ret0;
     h_0opt_f87774a_retain(&t38);
-    hero_str_decref(h2_text);
-    hero_str_decref(h4_own4);
-    h_0opt_f87774a_release(&h5_own5);
-    h_0opt_f87774a_release(&h6_own6);
-    hero_str_decref(h7_own7);
-    h_0opt_f87774a_release(&h8_own8);
-    hero_str_decref(h9_own9);
-    h_0opt_f87774a_release(&h10_own10);
-    hero_str_decref(h11_own11);
-    hero_str_decref(h12_own12);
-    h_0opt_f87774a_release(&h13_own13);
+    hero_str_release_at(&h2_text);
+    hero_str_release_at(&h4_own4);
+    h_0opt_f87774a_release(hero_slot_escape(&h5_own5));
+    h_0opt_f87774a_release(hero_slot_escape(&h6_own6));
+    hero_str_release_at(&h7_own7);
+    h_0opt_f87774a_release(hero_slot_escape(&h8_own8));
+    hero_str_release_at(&h9_own9);
+    h_0opt_f87774a_release(hero_slot_escape(&h10_own10));
+    hero_str_release_at(&h11_own11);
+    hero_str_release_at(&h12_own12);
+    h_0opt_f87774a_release(hero_slot_escape(&h13_own13));
     hero_lend_local_give(hero_lend_h1_status);
     return t38;
 }
@@ -31364,9 +31364,9 @@ bb3:
     t13 = h0_out;
 #line 31366 "main.c"
     hero_array_incref(t13);
-    hero_array_decref(h0_out);
-    hero_array_decref(h2_own2);
-    hero_str_decref(h3_own3);
+    hero_array_release_at(&h0_out);
+    hero_array_release_at(&h2_own2);
+    hero_str_release_at(&h3_own3);
     return t13;
 }
 
@@ -31491,8 +31491,8 @@ bb4:
 #line 31 "examples/interpreter/util/each.hero"
     t20 = h2_total;
 #line 31494 "main.c"
-    hero_array_decref(h3_xs0);
-    h_lextoken_Token_release(&h5_one);
+    hero_array_release_at(&h3_xs0);
+    h_lextoken_Token_release(hero_slot_escape(&h5_one));
     return t20;
 bb5:
     goto bb3;
@@ -31656,12 +31656,12 @@ bb4:
 #line 31657 "main.c"
     hero_str_decref(t27);
     hero_str_incref(t21);
-    hero_array_decref(h3_pieces);
-    hero_array_decref(h4_xs0);
-    h_runvalue_Value_release(&h6_one);
-    hero_array_decref(h7_own7);
-    hero_str_decref(h8_own8);
-    hero_str_decref(h9_own9);
+    hero_array_release_at(&h3_pieces);
+    hero_array_release_at(&h4_xs0);
+    h_runvalue_Value_release(hero_slot_escape(&h6_one));
+    hero_array_release_at(&h7_own7);
+    hero_str_release_at(&h8_own8);
+    hero_str_release_at(&h9_own9);
     return t21;
 }
 
@@ -31806,16 +31806,16 @@ bb0:
 #line 31807 "main.c"
     h_0opt_e201354_release(&t27);
     h_0opt_e201354_retain(&t17);
-    hero_str_decref(h2_own2);
-    hero_str_decref(h3_own3);
-    hero_str_decref(h4_own4);
-    hero_str_decref(h5_own5);
-    hero_str_decref(h6_own6);
-    hero_str_decref(h7_own7);
-    hero_str_decref(h8_own8);
-    hero_str_decref(h9_own9);
-    hero_str_decref(h10_own10);
-    h_0opt_e201354_release(&h11_own11);
+    hero_str_release_at(&h2_own2);
+    hero_str_release_at(&h3_own3);
+    hero_str_release_at(&h4_own4);
+    hero_str_release_at(&h5_own5);
+    hero_str_release_at(&h6_own6);
+    hero_str_release_at(&h7_own7);
+    hero_str_release_at(&h8_own8);
+    hero_str_release_at(&h9_own9);
+    hero_str_release_at(&h10_own10);
+    h_0opt_e201354_release(hero_slot_escape(&h11_own11));
     return t17;
 }
 
@@ -31960,16 +31960,16 @@ bb0:
 #line 31961 "main.c"
     h_0opt_f87774a_release(&t27);
     h_0opt_f87774a_retain(&t17);
-    hero_str_decref(h2_own2);
-    hero_str_decref(h3_own3);
-    hero_str_decref(h4_own4);
-    hero_str_decref(h5_own5);
-    hero_str_decref(h6_own6);
-    hero_str_decref(h7_own7);
-    hero_str_decref(h8_own8);
-    hero_str_decref(h9_own9);
-    hero_str_decref(h10_own10);
-    h_0opt_f87774a_release(&h11_own11);
+    hero_str_release_at(&h2_own2);
+    hero_str_release_at(&h3_own3);
+    hero_str_release_at(&h4_own4);
+    hero_str_release_at(&h5_own5);
+    hero_str_release_at(&h6_own6);
+    hero_str_release_at(&h7_own7);
+    hero_str_release_at(&h8_own8);
+    hero_str_release_at(&h9_own9);
+    hero_str_release_at(&h10_own10);
+    h_0opt_f87774a_release(hero_slot_escape(&h11_own11));
     return t17;
 }
 
@@ -32099,8 +32099,8 @@ bb7:
 bb8:
 #line 32101 "main.c"
     t19 = h5_ret0;
-    hero_array_decref(h2_xs0);
-    hero_str_decref(h4_one);
+    hero_array_release_at(&h2_xs0);
+    hero_str_release_at(&h4_one);
     return t19;
 }
 
@@ -32246,12 +32246,12 @@ bb4:
 #line 32247 "main.c"
     hero_str_decref(t27);
     hero_str_incref(t21);
-    hero_array_decref(h3_pieces);
-    hero_array_decref(h4_xs0);
-    hero_str_decref(h6_one);
-    hero_array_decref(h7_own7);
-    hero_str_decref(h8_own8);
-    hero_str_decref(h9_own9);
+    hero_array_release_at(&h3_pieces);
+    hero_array_release_at(&h4_xs0);
+    hero_str_release_at(&h6_one);
+    hero_array_release_at(&h7_own7);
+    hero_str_release_at(&h8_own8);
+    hero_str_release_at(&h9_own9);
     return t21;
 }
 
@@ -32353,7 +32353,7 @@ bb4:
 #line 31 "examples/interpreter/util/each.hero"
     t20 = h2_total;
 #line 32356 "main.c"
-    hero_array_decref(h3_xs0);
+    hero_array_release_at(&h3_xs0);
     return t20;
 bb5:
     goto bb3;
@@ -32490,7 +32490,7 @@ bb7:
 bb8:
 #line 32492 "main.c"
     t18 = h6_ret0;
-    hero_array_decref(h3_xs0);
+    hero_array_release_at(&h3_xs0);
     return t18;
 }
 
@@ -32628,11 +32628,11 @@ bb4:
 #line 32629 "main.c"
     hero_str_decref(t26);
     hero_str_incref(t21);
-    hero_array_decref(h3_pieces);
-    hero_array_decref(h4_xs0);
-    hero_array_decref(h7_own7);
-    hero_str_decref(h8_own8);
-    hero_str_decref(h9_own9);
+    hero_array_release_at(&h3_pieces);
+    hero_array_release_at(&h4_xs0);
+    hero_array_release_at(&h7_own7);
+    hero_str_release_at(&h8_own8);
+    hero_str_release_at(&h9_own9);
     return t21;
 }
 
@@ -32754,7 +32754,7 @@ bb7:
 bb8:
 #line 32756 "main.c"
     t19 = h5_ret0;
-    hero_array_decref(h2_xs0);
+    hero_array_release_at(&h2_xs0);
     return t19;
 }
 
@@ -32864,8 +32864,8 @@ bb4:
 #line 31 "examples/interpreter/util/each.hero"
     t20 = h2_total;
 #line 32867 "main.c"
-    hero_array_decref(h3_xs0);
-    hero_str_decref(h5_one);
+    hero_array_release_at(&h3_xs0);
+    hero_str_release_at(&h5_one);
     return t20;
 bb5:
     goto bb3;
@@ -33011,8 +33011,8 @@ bb8:
 #line 33012 "main.c"
     t18 = h6_ret0;
     hero_str_incref(t18);
-    hero_array_decref(h3_xs0);
-    hero_str_decref(h5_one);
+    hero_array_release_at(&h3_xs0);
+    hero_str_release_at(&h5_one);
     return t18;
 }
 HERO_TU_LOCAL bool h_lextoken_Token_c_number_eq(const h_lextoken_Token_c_number *a, const h_lextoken_Token_c_number *b) {

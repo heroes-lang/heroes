@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -187,7 +187,7 @@ bb0:
 #line 188 "fixedbugs382aconstantnaminganotherisbuiltateachread.c"
     hero_array_decref(t4);
     hero_array_incref(t3);
-    hero_array_decref(h0_own0);
+    hero_array_release_at(&h0_own0);
     return t3;
 }
 #endif
@@ -235,9 +235,9 @@ bb0:
 #line 236 "fixedbugs382aconstantnaminganotherisbuiltateachread.c"
     hero_array_decref(t6);
     hero_array_incref(t3);
-    hero_array_decref(h0_own0);
-    hero_array_decref(h1_own1);
-    hero_array_decref(h2_own2);
+    hero_array_release_at(&h0_own0);
+    hero_array_release_at(&h1_own1);
+    hero_array_release_at(&h2_own2);
     return t3;
 }
 
@@ -258,7 +258,7 @@ bb0:
 #line 259 "fixedbugs382aconstantnaminganotherisbuiltateachread.c"
     hero_array_decref(t2);
     hero_array_incref(t1);
-    hero_array_decref(h0_own0);
+    hero_array_release_at(&h0_own0);
     return t1;
 }
 
@@ -289,7 +289,7 @@ bb0:
 #line 290 "fixedbugs382aconstantnaminganotherisbuiltateachread.c"
     hero_array_decref(t4);
     hero_array_incref(t3);
-    hero_array_decref(h0_own0);
+    hero_array_release_at(&h0_own0);
     return t3;
 }
 
@@ -335,9 +335,9 @@ bb0:
 #line 336 "fixedbugs382aconstantnaminganotherisbuiltateachread.c"
     hero_array_decref(t6);
     hero_array_incref(t3);
-    hero_array_decref(h0_own0);
-    h_fixedbugs382aconstantnaminganotherisbuiltateachread_Shape_release(&h1_own1);
-    hero_array_decref(h2_own2);
+    hero_array_release_at(&h0_own0);
+    h_fixedbugs382aconstantnaminganotherisbuiltateachread_Shape_release(hero_slot_escape(&h1_own1));
+    hero_array_release_at(&h2_own2);
     return t3;
 }
 
@@ -377,9 +377,9 @@ bb1:
     t10 = h0_r0;
 #line 379 "fixedbugs382aconstantnaminganotherisbuiltateachread.c"
     hero_array_incref(t10);
-    hero_array_decref(h0_r0);
-    hero_array_decref(h1_own1);
-    hero_array_decref(h2_own2);
+    hero_array_release_at(&h0_r0);
+    hero_array_release_at(&h1_own1);
+    hero_array_release_at(&h2_own2);
     return t10;
 bb2:
 #line 34 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
@@ -897,24 +897,24 @@ bb4:
 #line 53 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"
     hero_print_end();
 #line 900 "fixedbugs382aconstantnaminganotherisbuiltateachread.c"
-    h_fixedbugs382aconstantnaminganotherisbuiltateachread_Shape_release(&h2_s0);
-    h_fixedbugs382aconstantnaminganotherisbuiltateachread_Shape_c_line_release(&h3_l);
-    hero_array_decref(h4_copy);
-    hero_array_decref(h5_own5);
-    hero_array_decref(h6_own6);
-    hero_array_decref(h7_own7);
-    hero_array_decref(h8_own8);
-    hero_array_decref(h9_own9);
-    hero_array_decref(h10_own10);
-    hero_array_decref(h11_own11);
-    hero_array_decref(h12_own12);
-    hero_array_decref(h13_own13);
-    hero_array_decref(h14_own14);
-    hero_array_decref(h15_own15);
-    hero_array_decref(h16_own16);
-    hero_array_decref(h17_own17);
-    hero_array_decref(h18_own18);
-    hero_array_decref(h19_own19);
+    h_fixedbugs382aconstantnaminganotherisbuiltateachread_Shape_release(hero_slot_escape(&h2_s0));
+    h_fixedbugs382aconstantnaminganotherisbuiltateachread_Shape_c_line_release(hero_slot_escape(&h3_l));
+    hero_array_release_at(&h4_copy);
+    hero_array_release_at(&h5_own5);
+    hero_array_release_at(&h6_own6);
+    hero_array_release_at(&h7_own7);
+    hero_array_release_at(&h8_own8);
+    hero_array_release_at(&h9_own9);
+    hero_array_release_at(&h10_own10);
+    hero_array_release_at(&h11_own11);
+    hero_array_release_at(&h12_own12);
+    hero_array_release_at(&h13_own13);
+    hero_array_release_at(&h14_own14);
+    hero_array_release_at(&h15_own15);
+    hero_array_release_at(&h16_own16);
+    hero_array_release_at(&h17_own17);
+    hero_array_release_at(&h18_own18);
+    hero_array_release_at(&h19_own19);
     return;
 bb5:
 #line 49 "tests/golden/run/fixedbugs-382-a-constant-naming-another-is-built-at-each-read.hero"

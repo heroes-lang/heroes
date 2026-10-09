@@ -7,7 +7,7 @@
 #include <fixedbugs-419-a-handle-over-a-union-compares-as-an-address.h>
 #include "heroes_guard_close.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -404,14 +404,14 @@ bb0:
 #line 50 "tests/golden/run/fixedbugs-419-a-handle-over-a-union-compares-as-an-address.hero"
     hero_print_end();
 #line 407 "fixedbugs419ahandleoveraunioncomparesasanaddress.c"
-    h_fixedbugs419ahandleoveraunioncomparesasanaddress_Held_release(&h3_own3);
-    h_fixedbugs419ahandleoveraunioncomparesasanaddress_Held_release(&h4_own4);
-    h_fixedbugs419ahandleoveraunioncomparesasanaddress_Held_release(&h5_own5);
-    h_fixedbugs419ahandleoveraunioncomparesasanaddress_Held_release(&h6_own6);
-    hero_array_decref(h7_own7);
-    hero_array_decref(h8_own8);
-    hero_array_decref(h9_own9);
-    hero_array_decref(h10_own10);
+    h_fixedbugs419ahandleoveraunioncomparesasanaddress_Held_release(hero_slot_escape(&h3_own3));
+    h_fixedbugs419ahandleoveraunioncomparesasanaddress_Held_release(hero_slot_escape(&h4_own4));
+    h_fixedbugs419ahandleoveraunioncomparesasanaddress_Held_release(hero_slot_escape(&h5_own5));
+    h_fixedbugs419ahandleoveraunioncomparesasanaddress_Held_release(hero_slot_escape(&h6_own6));
+    hero_array_release_at(&h7_own7);
+    hero_array_release_at(&h8_own8);
+    hero_array_release_at(&h9_own9);
+    hero_array_release_at(&h10_own10);
     return;
 }
 HERO_TU_LOCAL bool h_fixedbugs419ahandleoveraunioncomparesasanaddress_Cell_eq(Cell * const *a, Cell * const *b) {

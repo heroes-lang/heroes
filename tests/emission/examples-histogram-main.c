@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -528,11 +528,11 @@ bb7:
     t31 = h2_out;
 #line 530 "main.c"
     hero_array_incref(t31);
-    hero_array_decref(h0_handles);
-    hero_array_decref(h2_out);
-    hero_array_decref(h3_xs0);
-    hero_array_decref(h6_own6);
-    hero_array_decref(h7_own7);
+    hero_array_release_at(&h0_handles);
+    hero_array_release_at(&h2_out);
+    hero_array_release_at(&h3_xs0);
+    hero_array_release_at(&h6_own6);
+    hero_array_release_at(&h7_own7);
     return t31;
 }
 
@@ -627,8 +627,8 @@ bb2:
 #line 70 "examples/histogram/main.hero"
 bb3:
 #line 630 "main.c"
-    hero_array_decref(h0_found);
-    hero_array_decref(h2_own2);
+    hero_array_release_at(&h0_found);
+    hero_array_release_at(&h2_own2);
     return;
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {

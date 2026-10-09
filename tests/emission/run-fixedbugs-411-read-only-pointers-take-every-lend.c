@@ -7,7 +7,7 @@
 #include <fixedbugs-411-read-only-pointers.h>
 #include "heroes_guard_close.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -275,9 +275,9 @@ bb0:
 #line 37 "tests/golden/run/fixedbugs-411-read-only-pointers-take-every-lend.hero"
     hero_print_end();
 #line 278 "fixedbugs411readonlypointerstakeeverylend.c"
-    hero_str_decref(h0_s);
-    hero_str_decref(h1_t);
-    hero_str_decref(h3_own3);
+    hero_str_release_at(&h0_s);
+    hero_str_release_at(&h1_t);
+    hero_str_release_at(&h3_own3);
     return;
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {

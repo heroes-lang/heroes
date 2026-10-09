@@ -151,6 +151,9 @@ void hero_array_decref(HeroArrayHeader *a) {
     hero_drop_running = false;
 }
 
+/* The exit's release through the slot (defect 470). */
+void hero_array_release_at(HeroArrayHeader *const *slot) { hero_array_decref(*slot); }
+
 /* The walk `drop.c`'s drainer calls. Releases the elements and then the block,
  * and never recurses: an element that is itself a container sees
  * `hero_drop_running` raised and defers. */

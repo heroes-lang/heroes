@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -134,7 +134,7 @@ bb0:
 #line 135 "fixedbugs382anarrayliteralisoneblock.c"
     hero_array_decref(t5);
     hero_array_incref(t4);
-    hero_array_decref(h0_own0);
+    hero_array_release_at(&h0_own0);
     return t4;
 }
 #endif
@@ -176,7 +176,7 @@ bb0:
 #line 177 "fixedbugs382anarrayliteralisoneblock.c"
     hero_array_decref(t4);
     hero_array_incref(t3);
-    hero_array_decref(h0_own0);
+    hero_array_release_at(&h0_own0);
     return t3;
 }
 #endif
@@ -274,10 +274,10 @@ bb0:
 #line 23 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
     hero_print_end();
 #line 277 "fixedbugs382anarrayliteralisoneblock.c"
-    hero_array_decref(h0_pair);
-    hero_array_decref(h1_own1);
-    hero_array_decref(h2_own2);
-    hero_array_decref(h3_own3);
+    hero_array_release_at(&h0_pair);
+    hero_array_release_at(&h1_own1);
+    hero_array_release_at(&h2_own2);
+    hero_array_release_at(&h3_own3);
     return;
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {

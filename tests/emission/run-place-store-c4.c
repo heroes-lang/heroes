@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -307,9 +307,9 @@ bb7:
 #line 35 "tests/golden/run/place-store-c4.hero"
     hero_print_end();
 #line 310 "placestorec4.c"
-    hero_array_decref(h0_xs);
-    hero_array_decref(h3_xs0);
-    hero_array_decref(h6_own6);
+    hero_array_release_at(&h0_xs);
+    hero_array_release_at(&h3_xs0);
+    hero_array_release_at(&h6_own6);
     return;
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {

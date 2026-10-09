@@ -8,7 +8,7 @@
 #pragma push_macro("name")
 #include "heroes_guard_close.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -789,20 +789,20 @@ bb12:
 #line 75 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
     hero_print_end();
 #line 792 "ffiacharfieldbecomestext.c"
-    h_0opt_f87774a_release(&h1_f0);
-    h_0opt_f87774a_release(&h2_f1);
-    h_0opt_f87774a_release(&h4_f2);
-    h_0opt_f87774a_release(&h5_f3);
-    h_0opt_f87774a_release(&h7_s0);
-    hero_str_decref(h8_text);
+    h_0opt_f87774a_release(hero_slot_escape(&h1_f0));
+    h_0opt_f87774a_release(hero_slot_escape(&h2_f1));
+    h_0opt_f87774a_release(hero_slot_escape(&h4_f2));
+    h_0opt_f87774a_release(hero_slot_escape(&h5_f3));
+    h_0opt_f87774a_release(hero_slot_escape(&h7_s0));
+    hero_str_release_at(&h8_text);
     hero_failure_release(&h9_e);
-    h_0opt_e201354_release(&h10_f4);
-    h_0opt_f87774a_release(&h11_own11);
-    h_0opt_f87774a_release(&h12_own12);
-    h_0opt_f87774a_release(&h13_own13);
-    h_0opt_f87774a_release(&h14_own14);
-    h_0opt_f87774a_release(&h15_own15);
-    h_0opt_e201354_release(&h16_own16);
+    h_0opt_e201354_release(hero_slot_escape(&h10_f4));
+    h_0opt_f87774a_release(hero_slot_escape(&h11_own11));
+    h_0opt_f87774a_release(hero_slot_escape(&h12_own12));
+    h_0opt_f87774a_release(hero_slot_escape(&h13_own13));
+    h_0opt_f87774a_release(hero_slot_escape(&h14_own14));
+    h_0opt_f87774a_release(hero_slot_escape(&h15_own15));
+    h_0opt_e201354_release(hero_slot_escape(&h16_own16));
     return;
 bb13:
 #line 75 "tests/golden/run/ffi-a-char-field-becomes-text.hero"

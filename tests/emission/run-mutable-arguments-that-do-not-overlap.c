@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -519,11 +519,11 @@ bb0:
 #line 72 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
     hero_print_end();
 #line 522 "mutableargumentsthatdonotoverlap.c"
-    hero_array_decref(h2_xs);
-    hero_array_decref(h3_ys);
-    hero_array_decref(h5_ps);
-    hero_array_decref(h8_own8);
-    hero_array_decref(h9_own9);
+    hero_array_release_at(&h2_xs);
+    hero_array_release_at(&h3_ys);
+    hero_array_release_at(&h5_ps);
+    hero_array_release_at(&h8_own8);
+    hero_array_release_at(&h9_own9);
     return;
 }
 HERO_TU_LOCAL bool h_mutableargumentsthatdonotoverlap_P_eq(const h_mutableargumentsthatdonotoverlap_P *a, const h_mutableargumentsthatdonotoverlap_P *b) {

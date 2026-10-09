@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -561,28 +561,28 @@ bb0:
 #line 79 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
     hero_print_end();
 #line 564 "fixedbugsequalitywasdecidedbyanaddress.c"
-    hero_array_decref(h1_a);
-    hero_array_decref(h2_b);
-    hero_array_decref(h3_c);
-    hero_map_decref(h4_ma);
-    hero_map_decref(h5_mb);
-    hero_map_decref(h6_mc);
-    hero_array_decref(h7_xs);
-    hero_array_decref(h8_ys);
-    hero_array_decref(h9_zs);
-    hero_map_decref(h10_ns);
-    hero_map_decref(h11_os);
-    hero_map_decref(h12_ps);
-    hero_array_decref(h13_own13);
-    hero_array_decref(h14_own14);
-    hero_map_decref(h15_own15);
-    hero_map_decref(h16_own16);
-    hero_array_decref(h17_own17);
-    hero_array_decref(h18_own18);
-    hero_map_decref(h19_own19);
-    hero_map_decref(h20_own20);
-    hero_array_decref(h21_own21);
-    hero_array_decref(h22_own22);
+    hero_array_release_at(&h1_a);
+    hero_array_release_at(&h2_b);
+    hero_array_release_at(&h3_c);
+    hero_map_release_at(&h4_ma);
+    hero_map_release_at(&h5_mb);
+    hero_map_release_at(&h6_mc);
+    hero_array_release_at(&h7_xs);
+    hero_array_release_at(&h8_ys);
+    hero_array_release_at(&h9_zs);
+    hero_map_release_at(&h10_ns);
+    hero_map_release_at(&h11_os);
+    hero_map_release_at(&h12_ps);
+    hero_array_release_at(&h13_own13);
+    hero_array_release_at(&h14_own14);
+    hero_map_release_at(&h15_own15);
+    hero_map_release_at(&h16_own16);
+    hero_array_release_at(&h17_own17);
+    hero_array_release_at(&h18_own18);
+    hero_map_release_at(&h19_own19);
+    hero_map_release_at(&h20_own20);
+    hero_array_release_at(&h21_own21);
+    hero_array_release_at(&h22_own22);
     return;
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {

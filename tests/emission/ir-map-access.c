@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -193,8 +193,8 @@ bb3:
 #line 6 "tests/golden/ir/map-access.hero"
     t11 = h3_r0;
 #line 196 "mapaccess.c"
-    h_0opt_e201354_release(&h2_f0);
-    h_0opt_e201354_release(&h4_own4);
+    h_0opt_e201354_release(hero_slot_escape(&h2_f0));
+    h_0opt_e201354_release(hero_slot_escape(&h4_own4));
     return t11;
 }
 

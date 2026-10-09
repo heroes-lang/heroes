@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -301,8 +301,8 @@ bb3:
     t31 = h1_out;
 #line 303 "main.c"
     hero_array_incref(t31);
-    hero_array_decref(h1_out);
-    hero_array_decref(h5_own5);
+    hero_array_release_at(&h1_out);
+    hero_array_release_at(&h5_own5);
     return t31;
 bb4:
 #line 69 "examples/spectral/main.hero"
@@ -454,8 +454,8 @@ bb3:
     t31 = h1_out;
 #line 456 "main.c"
     hero_array_incref(t31);
-    hero_array_decref(h1_out);
-    hero_array_decref(h5_own5);
+    hero_array_release_at(&h1_out);
+    hero_array_release_at(&h5_own5);
     return t31;
 bb4:
 #line 88 "examples/spectral/main.hero"
@@ -547,8 +547,8 @@ bb0:
 #line 548 "main.c"
     hero_array_decref(t5);
     hero_array_incref(t3);
-    hero_array_decref(h1_own1);
-    hero_array_decref(h2_own2);
+    hero_array_release_at(&h1_own1);
+    hero_array_release_at(&h2_own2);
     return t3;
 }
 
@@ -624,8 +624,8 @@ bb3:
     t12 = h1_out;
 #line 626 "main.c"
     hero_array_incref(t12);
-    hero_array_decref(h1_out);
-    hero_array_decref(h3_own3);
+    hero_array_release_at(&h1_out);
+    hero_array_release_at(&h3_own3);
     return t12;
 }
 
@@ -881,12 +881,12 @@ bb6:
 #line 135 "examples/spectral/main.hero"
     t46 = sqrt(t45);
 #line 884 "main.c"
-    hero_array_decref(h1_u);
-    hero_array_decref(h2_v);
-    hero_array_decref(h7_own7);
-    hero_array_decref(h8_own8);
-    hero_array_decref(h9_own9);
-    hero_array_decref(h10_own10);
+    hero_array_release_at(&h1_u);
+    hero_array_release_at(&h2_v);
+    hero_array_release_at(&h7_own7);
+    hero_array_release_at(&h8_own8);
+    hero_array_release_at(&h9_own9);
+    hero_array_release_at(&h10_own10);
     return t46;
 }
 
@@ -917,7 +917,7 @@ bb0:
 #line 138 "examples/spectral/main.hero"
     hero_print_end();
 #line 920 "main.c"
-    hero_str_decref(h0_own0);
+    hero_str_release_at(&h0_own0);
     return;
 }
 
@@ -1199,14 +1199,14 @@ bb9:
 #line 1200 "main.c"
     t40 = h8_ret0;
     hero_str_incref(t40);
-    h_0opt_e201354_release(&h3_f0);
-    hero_str_decref(h7_text);
-    h_0opt_e201354_release(&h9_own9);
-    hero_str_decref(h10_own10);
-    hero_str_decref(h11_own11);
-    hero_str_decref(h12_own12);
-    hero_str_decref(h13_own13);
-    hero_str_decref(h14_own14);
+    h_0opt_e201354_release(hero_slot_escape(&h3_f0));
+    hero_str_release_at(&h7_text);
+    h_0opt_e201354_release(hero_slot_escape(&h9_own9));
+    hero_str_release_at(&h10_own10);
+    hero_str_release_at(&h11_own11);
+    hero_str_release_at(&h12_own12);
+    hero_str_release_at(&h13_own13);
+    hero_str_release_at(&h14_own14);
     return t40;
 }
 
@@ -1289,9 +1289,9 @@ bb3:
     t10 = h1_digits;
 #line 1291 "main.c"
     hero_str_incref(t10);
-    hero_str_decref(h1_digits);
-    hero_str_decref(h2_own2);
-    hero_str_decref(h3_own3);
+    hero_str_release_at(&h1_digits);
+    hero_str_release_at(&h2_own2);
+    hero_str_release_at(&h3_own3);
     return t10;
 }
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {

@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -120,7 +120,7 @@ bb0:
 #line 121 "afunctiontypethatnamesitsownway.c"
     hero_str_decref(t5);
     hero_str_incref(t4);
-    hero_str_decref(h1_own1);
+    hero_str_release_at(&h1_own1);
     return t4;
 }
 
@@ -148,7 +148,7 @@ bb0:
 #line 28 "tests/golden/run/a-function-type-that-names-its-own-way.hero"
     hero_print_end();
 #line 151 "afunctiontypethatnamesitsownway.c"
-    hero_str_decref(h0_own0);
+    hero_str_release_at(&h0_own0);
     return;
 }
 
@@ -200,9 +200,9 @@ bb0:
 #line 201 "afunctiontypethatnamesitsownway.c"
     hero_str_decref(t9);
     hero_str_incref(t6);
-    hero_str_decref(h2_own2);
-    hero_str_decref(h3_own3);
-    hero_str_decref(h4_own4);
+    hero_str_release_at(&h2_own2);
+    hero_str_release_at(&h3_own3);
+    hero_str_release_at(&h4_own4);
     return t6;
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
