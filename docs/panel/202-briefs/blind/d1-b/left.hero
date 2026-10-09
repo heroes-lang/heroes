@@ -1,0 +1,5 @@
+extern "a.h"
+    function twice(x: i64) -> i64
+
+function left(x: i64) -> i64
+    return twice(x: x)

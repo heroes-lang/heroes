@@ -1,0 +1,9 @@
+$ heroes build main.hero -o main
+error[endless_recursion]: every path through `step` calls `step` again before it returns, so no call to it can return
+  at main.hero:5:12
+    |
+  5 |     return go(n: n, f: step)
+    |            ^^^^^^^^^^^^^^^^^
+  note: `go` calls its parameter `f` on every path before it returns, and this call hands it `step`, so the call is `step` calling itself; a path in `go` that returns before it calls `f` is a way out too
+  note: a call to `step` gives nothing back until the call it makes does, and that one makes another: give `step` a path that returns before the call, or ends on `exit(code:)`, `assert false` or a `while true` with no `break` of its own; an overflow or an index out of bounds stops the program and is no such path
+(exit 1)

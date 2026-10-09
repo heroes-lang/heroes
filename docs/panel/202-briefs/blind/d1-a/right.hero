@@ -1,0 +1,5 @@
+extern "b.h"
+    function twice(x: i32) -> i32
+
+function right(x: i32) -> i32
+    return twice(x: x)

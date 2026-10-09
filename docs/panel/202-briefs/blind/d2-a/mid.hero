@@ -1,0 +1,5 @@
+extern "c.h"
+    function twice(x: i64) -> i64
+
+function mid(x: i64) -> i64
+    return twice(x: x)
