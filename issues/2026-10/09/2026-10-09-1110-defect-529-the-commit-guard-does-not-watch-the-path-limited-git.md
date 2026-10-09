@@ -3,7 +3,7 @@ kind: defect
 area: process
 milestone: none
 filed: 2026-10-09
-commit: none
+commit: cc1a0385b572117721abf164591e1e83af442155
 github: none
 ---
 
@@ -12,3 +12,5 @@ github: none
     **Origin:** filed by the coordinator at 11:10 on 2026-10-09 from lane b16-tools's notes (`.claude/worktrees/scratch-b15/tools/notes.txt`, ignored by git); the lane's measurement, not re-run by the coordinator.
 
     **Class: adjacent**, 2026-10-09 (`.claude/rules/verification.md` § Bounded discovery): an instrument's reach over a peer's work in the shared checkout the hard stops name.
+
+    Repaired at `cc1a0385`, 2026-10-09 (lane b16-misc), gated by its cases and the hooks' own tests; the net is owed at the batch's close. `.claude/hooks/overwrites.py`, called from `discards.py`, refuses `git restore --staged` (with `--worktree` or alone), `git checkout <commit> -- <paths>`, `git rm -f` and `git rm --cached -f`, `git mv -f` and `git reset` by its paths or of the whole index by `--mixed` or `--keep`, where a path it names holds a staged change it would leave nowhere, git asked which by `git diff --cached` under the command's own pathspec; a file an operation standing brought is exempt, as defect 514 reads it. Measured beside the card in scratch repositories, git 2.56.0: an index-only restore or reset loses the staged version of a path changed again after it was staged, a `git reset` of the whole index included, which 514's probe, holding no such path, read as keeping everything; `git mv -f` over a staged destination loses it too. The unstaged-only `git restore [--worktree] [--source=<commit>] -- <paths>` and `git checkout [-f] -- <paths>` kept every staged version in the index, so they stay the hard stops' *asked for* and are not refused; `-m` and `--conflict` re-create only the conflict of a path an operation brought. 14 tests in `test_hooks.py`'s `Overwrites`, 11 red on the base; the hooks' own tests 125 run, OK.
