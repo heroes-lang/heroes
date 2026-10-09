@@ -33,7 +33,7 @@ import trees
 
 # The modules only a git command needs, imported by `git_rules` the first time
 # one is read.
-commits = staged = unseen = None
+commits = discards = staged = unseen = None
 
 CONTRACT = "CLAUDE.md § Hard stops"
 LAST_JUDGE = "`.claude/rules/verification.md` § A suite is the last judge (CL-079)"
@@ -240,19 +240,21 @@ def words(segment):
 
 
 def git_rules():
-    """Import `commits`, `staged` and `unseen`, which only the git rules use.
-    This guard runs before every Bash call and most are not git: imported at
-    the top, the three and what they import took an `ls` from 235.6 to 251.8
-    million instructions (measured 2026-10-07, the guard's own process)."""
-    global commits, staged, unseen
+    """Import `commits`, `discards`, `staged` and `unseen`, which only the git
+    rules use. This guard runs before every Bash call and most are not git:
+    imported at the top, the three of 2026-10-07 and what they import took an
+    `ls` from 235.6 to 251.8 million instructions (measured that day, the
+    guard's own process)."""
+    global commits, discards, staged, unseen
     if commits is None:
         if HOOKS not in sys.path:
             sys.path.insert(0, HOOKS)
         import commits as commits_module
+        import discards as discards_module
         import staged as staged_module
         import unseen as unseen_module
 
-        commits, staged, unseen = commits_module, staged_module, unseen_module
+        commits, discards, staged, unseen = commits_module, discards_module, staged_module, unseen_module
 
 
 def git_dir(w, here):
@@ -576,6 +578,15 @@ def verdict(command, cwd=None):
                     "refused: `git stash` takes every session's changes, not "
                     "this one's. " + CONTRACT
                 )
+
+        # What throws work away is read as what commits it (defect 514,
+        # `discards.py`): an abort, a skip, a hard or merge reset, an autostash.
+        for verb in discards.VERBS if is_git else ():
+            more = git_args(w, verb)
+            if more is not None:
+                said = discards.verdict(verb, more, where, discards.git_options(w), discards.environment(bare(raw)))
+                if said is not None:
+                    return said
 
         rest = git_args(w, "push")
         if rest is not None and ({"-f", "--force"} & set(rest)):
