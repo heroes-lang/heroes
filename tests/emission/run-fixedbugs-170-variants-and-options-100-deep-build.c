@@ -5063,8 +5063,10 @@ void h_fixedbugs170variantsandoptions100deepbuild_main(void);
 #line 526 "tests/golden/run/fixedbugs-170-variants-and-options-100-deep-build.hero"
 void h_fixedbugs170variantsandoptions100deepbuild_main(void) {
 #line 5066 "fixedbugs170variantsandoptions100deepbuild.c"
-    HeroArrayHeader * h0_xs = {0};
-    HeroArrayHeader * h1_own1 = {0};
+    HeroArrayHeader * h0_xs;
+    __builtin_memset(&h0_xs, 0, sizeof h0_xs);
+    HeroArrayHeader * h1_own1;
+    __builtin_memset(&h1_own1, 0, sizeof h1_own1);
     HeroArrayHeader * t1;
     HeroArrayHeader * t2;
     int64_t t3;
@@ -5081,15 +5083,15 @@ bb0:
     t7 = h1_own1;
 #line 527 "tests/golden/run/fixedbugs-170-variants-and-options-100-deep-build.hero"
     h1_own1 = t1;
-#line 5085 "fixedbugs170variantsandoptions100deepbuild.c"
+#line 5087 "fixedbugs170variantsandoptions100deepbuild.c"
     hero_array_decref(t7);
 #line 527 "tests/golden/run/fixedbugs-170-variants-and-options-100-deep-build.hero"
     t8 = h0_xs;
-#line 5089 "fixedbugs170variantsandoptions100deepbuild.c"
+#line 5091 "fixedbugs170variantsandoptions100deepbuild.c"
     hero_array_incref(t1);
 #line 527 "tests/golden/run/fixedbugs-170-variants-and-options-100-deep-build.hero"
     h0_xs = t1;
-#line 5093 "fixedbugs170variantsandoptions100deepbuild.c"
+#line 5095 "fixedbugs170variantsandoptions100deepbuild.c"
     hero_array_decref(t8);
 #line 528 "tests/golden/run/fixedbugs-170-variants-and-options-100-deep-build.hero"
     t2 = h0_xs;
@@ -5108,7 +5110,7 @@ bb0:
     hero_print_bool(t6);
 #line 529 "tests/golden/run/fixedbugs-170-variants-and-options-100-deep-build.hero"
     hero_print_end();
-#line 5112 "fixedbugs170variantsandoptions100deepbuild.c"
+#line 5114 "fixedbugs170variantsandoptions100deepbuild.c"
     hero_array_decref(h0_xs);
     hero_array_decref(h1_own1);
     return;

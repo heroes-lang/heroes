@@ -45,6 +45,8 @@ use emit/ffi_lookup
 use emit/externs as emit_externs
 use cli/strings
 use cli/read_back
+use cli/headers_together
+use cli/clang_excerpt
 use emit/ffi_build
 use parse
 use resolve
@@ -120,6 +122,16 @@ function refused(stderr: str, s: source.Source, decls: [ast.Decl], runtime: str,
         if compilers(path: note.path, runtime: runtime, build: build)
             return none
 
+    # A note in ANOTHER group's header: the two are refused together, and
+    # neither alone (defect 538, `cli/headers_together.hero`).
+    for note in notes
+        beside = group_of(s, decls, path: note.path)
+
+        if !beside.is_err() && beside.must().header != group.must().header
+            return [
+                pair(s, rows, first: first, steps: steps, at: at, group: group.must(), beside: beside.must(), note: note, notes: notes)
+            ]
+
     return [told(rows, first: first, steps: steps, at: at, group: group.must(), notes: notes)]
 
 # The first row clang wrote as an error with a place, `path:row:col: error:`
@@ -164,6 +176,7 @@ record Attached
     path: str
     row: i64
     text: str
+    index: i64
 
 # The notes clang wrote under the error, up to the next diagnostic that is
 # not a note, the next include stack, or clang's count of what it reported.
@@ -182,7 +195,7 @@ function attached(rows: [str], after: i64) -> [Attached]
             if !place.is_err()
                 at = clang_place.offset_of(text: line, needle: NOTE).must()
                 out @ out.push(
-                    Attached(path: place.must().path, row: place.must().row, text: line.slice(from: at + NOTE.len(), to: line.len()))
+                    Attached(path: place.must().path, row: place.must().row, text: line.slice(from: at + NOTE.len(), to: line.len()), index: index)
                 )
         index @ index + 1
 
@@ -248,7 +261,7 @@ function told(rows: [str], first: First, steps: [clang_place.Place], at: i64, gr
         message: head + " at line " + first.place.row.to_str() + ": " + first.message,
         span: group.span
     )
-    quoted = excerpt(rows, after: first.row)
+    quoted = clang_excerpt.of(rows, after: first.row)
 
     if !quoted.is_err()
         d.notes @ d.notes.push(
@@ -281,25 +294,38 @@ function told(rows: [str], first: First, steps: [clang_place.Place], at: i64, gr
     )
     return d
 
-# The line clang quoted under the error, `  3 | int broken = ;`, as written
-# after its gutter; none where the row under the error is not that.
-function excerpt(rows: [str], after: i64) -> str?
-    if after + 1 >= rows.len()
-        return fail(code: "none", msg: "no row under the error")
-    line = clang_place.without_return(rows[after + 1])
-    index: i64 @ 0
+# The two headers clang refused together, `group`'s where its first error
+# lies and `beside`'s where `note` points (defect 538): told in the headers'
+# own order, never the `use` lines'.
+function pair(s: source.Source, rows: [str], first: First, steps: [clang_place.Place], at: i64, group: Group, beside: Group, note: Attached, notes: [Attached]) -> diag.Diagnostic
+    directory = clang_place.found_in(path: steps[at].path, spelled: group.header)
+    refused_file: str @ group.header
 
-    while index < line.len() && line[index] == ' '
-        index @ index + 1
+    if at < steps.len() - 1
+        refused_file @ clang_place.shown(path: first.place.path, directory: directory)
+    one = headers_together.Side(
+        span: group.span,
+        header: group.header,
+        file: refused_file,
+        row: first.place.row,
+        quoted: clang_excerpt.of(rows, after: first.row)
+    )
+    other = headers_together.Side(
+        span: beside.span,
+        header: beside.header,
+        file: beside.header,
+        row: note.row,
+        quoted: clang_excerpt.of(rows, after: note.index)
+    )
+    added: [str] @ []
 
-    digits: i64 @ index
+    for each in notes
+        if each.index != note.index
+            added @ added.push(
+                "clang adds, at `" + clang_place.shown(path: each.path, directory: directory) + "` line " + each.row.to_str() + ": " + each.text
+            )
 
-    while index < line.len() && line[index] >= '0' && line[index] <= '9'
-        index @ index + 1
-
-    if index == digits || !clang_place.same_bytes(text: line, from: index, part: " | ")
-        return fail(code: "none", msg: "not clang's excerpt")
-    return ok(line.slice(from: index + 3, to: line.len()))
+    return headers_together.told(s, one: one, other: other, message: first.message, added: added)
 
 ## Tests
 
@@ -415,3 +441,27 @@ function has(notes: [str], needle: str) -> bool
             return true
 
     return false
+
+# Two groups whose headers each declare `twice` another way, as clang 21 on
+# this Mac refused them in one unit in both orders (defect 538): told the same
+# words whichever is included first, on the group whose header sorts first.
+test "two headers clang refuses together are both told, whichever the program includes first (defect 538)"
+    text = "extern \"a.h\"\n    function twice(x: i64) -> i64\n\nextern \"b.h\"\n    function twice2(x: i32) -> i32\n\nfunction main()\n    print(twice(x: 3))\n"
+    s = source.new_source(name: "p.hero", text: text)
+    parsed = parse.parse(text)
+    a_first = "In file included from build/tu-1/p.c:8:\n./b.h:1:19: error: conflicting types for 'twice'\n    1 | static inline int twice(int x) { return x + x; }\n      |                   ^\n./a.h:1:20: note: previous definition is here\n    1 | static inline long twice(long x) { return 2 * x; }\n      |                    ^\n1 error generated.\n"
+    b_first = "In file included from build/tu-1/p.c:8:\n./a.h:1:20: error: conflicting types for 'twice'\n    1 | static inline long twice(long x) { return 2 * x; }\n      |                    ^\n./b.h:1:19: note: previous definition is here\n    1 | static inline int twice(int x) { return x + x; }\n      |                   ^\n1 error generated.\n"
+    one = refused(stderr: a_first, s: s, decls: parsed.decls, runtime: "runtime", build: "build")
+    two = refused(stderr: b_first, s: s, decls: parsed.decls, runtime: "runtime", build: "build")
+    assert one.len() == 1
+    assert one[0].code == "ffi_header_refused"
+    assert source.span_text(s, one[0].span) == "\"a.h\""
+    assert one[0].message == "`a.h` and `b.h`, the headers two groups name, cannot be compiled in one unit: clang refuses them together, at `a.h` line 1 and `b.h` line 1: conflicting types for 'twice'"
+    assert one[0].notes[0] == "`a.h` line 1 reads `static inline long twice(long x) { return 2 * x; }`"
+    assert one[0].notes[1] == "`b.h` line 1 reads `static inline int twice(int x) { return x + x; }`"
+    assert one[0].notes[2] == "the other group names `b.h` at line 4"
+    assert one[0].notes.len() == 4
+    assert two.len() == 1
+    assert two[0].message == one[0].message
+    assert two[0].notes == one[0].notes
+    assert two[0].span.start == one[0].span.start

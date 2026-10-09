@@ -221,10 +221,20 @@ function prologue(@w: writer.Writer, c: state.Checked, names: ctype.Names, f: co
 
         if !spelled.is_err()
             initialiser: str @ ""
+            name = mangle.slot(index: index, name: slot.name)
+            by_bytes: bool @ false
 
-            # Refcounted (the header above says why).
+            # Refcounted (the header above says why). Past `typeorder`'s
+            # depth the zero is written by bytes (defect 539): `{0}` sends
+            # clang down the struct by brace elision, a recursion as deep as
+            # the chain, which died between 750 and 875 records holding a
+            # `str` (Apple clang 21, arm64 macOS), where the memset builds at
+            # 1,000. Below it a unit's C is what it was, byte for byte.
             if layout.is_refcounted(c, slot.ty)
-                initialiser @ " = {0}"
+                if w.copies_bytes
+                    by_bytes @ true
+                else
+                    initialiser @ " = {0}"
 
             # A slot that is written and never read is told to C that the
             # silence is deliberate. **This comment said `_ = v` was the
@@ -243,8 +253,11 @@ function prologue(@w: writer.Writer, c: state.Checked, names: ctype.Names, f: co
                 deliberate @ "__attribute__((unused)) "
             writer.line(
                 @w,
-                text: "    " + deliberate + spelled.must() + " " + mangle.slot(index: index, name: slot.name) + initialiser + ";"
+                text: "    " + deliberate + spelled.must() + " " + name + initialiser + ";"
             )
+
+            if by_bytes
+                writer.line(@w, text: "    __builtin_memset(&" + name + ", 0, sizeof " + name + ");")
         index @ index + 1
 
     value_at: i64 @ 0

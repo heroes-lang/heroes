@@ -1,0 +1,17 @@
+# fixedbugs, defect 538, lane b17-emit, 2026-10-09 (panel 200's R1).
+#
+# `fixedbugs-538-two-headers-refused-together-are-both-told` with its two
+# groups swapped: clang now refuses `fixedbugs-538-long.h` and points at
+# `fixedbugs-538-int.h`, and until 2026-10-09 the message blamed
+# `fixedbugs-538-long.h` alone, on its own group. The diagnostic is the same
+# words as the case beside, on the same group's string.
+
+extern "fixedbugs-538-int.h"  #~ ffi_header_refused
+    function thrice(x: i32) -> i32
+
+extern "fixedbugs-538-long.h"
+    function twice(x: i64) -> i64
+
+function main()
+    print(twice(x: 3))
+    print(thrice(x: 4))

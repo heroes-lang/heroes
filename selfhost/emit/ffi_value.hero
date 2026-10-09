@@ -41,6 +41,7 @@ use emit/clang_place
 use emit/clang_name
 use emit/record_constant
 use cli/header_refused
+use cli/clang_excerpt
 use parse
 use resolve
 use checker
@@ -169,7 +170,7 @@ function spelled_at(rows: [str], line: str, name: str) -> Spelled?
 
             if !place.is_err() && !clang_place.offset_of(text: row, needle: wanted).is_err()
                 return ok(
-                    Spelled(path: place.must().path, row: place.must().row, quoted: header_refused.excerpt(rows, after: index))
+                    Spelled(path: place.must().path, row: place.must().row, quoted: clang_excerpt.of(rows, after: index))
                 )
         index @ index + 1
 

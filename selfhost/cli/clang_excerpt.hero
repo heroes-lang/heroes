@@ -1,0 +1,27 @@
+# The line clang quoted under one of its diagnostics, `  3 | int broken = ;`,
+# as written after its gutter (design.md §4.17: a message carries the line it
+# is about). Split out of `cli/header_refused.hero` on 2026-10-09 (defect
+# 538), when the two headers told together took that file to its ceiling;
+# `emit/ffi_value.hero` reads a macro's line the same way.
+
+use emit/clang_place
+
+# The line clang quoted under the error, `  3 | int broken = ;`, as written
+# after its gutter; none where the row under the error is not that.
+function of(rows: [str], after: i64) -> str?
+    if after + 1 >= rows.len()
+        return fail(code: "none", msg: "no row under the error")
+    line = clang_place.without_return(rows[after + 1])
+    index: i64 @ 0
+
+    while index < line.len() && line[index] == ' '
+        index @ index + 1
+
+    digits: i64 @ index
+
+    while index < line.len() && line[index] >= '0' && line[index] <= '9'
+        index @ index + 1
+
+    if index == digits || !clang_place.same_bytes(text: line, from: index, part: " | ")
+        return fail(code: "none", msg: "not clang's excerpt")
+    return ok(line.slice(from: index + 3, to: line.len()))
