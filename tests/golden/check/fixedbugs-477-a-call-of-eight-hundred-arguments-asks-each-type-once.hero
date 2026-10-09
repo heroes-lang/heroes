@@ -834,8 +834,13 @@ function main()
     )
     g: (function(a: i64, b: i64) -> i64) @ pair
     print(g(a: 1, 2))  #~ needs_label
-    h: (function(i64, i64) -> i64) @ pair  #~ needs_parameter_names type_mismatch
+    h: (function(i64, i64) -> i64) @ pair  #~ needs_parameter_names
     print(h(1, 2))
     p = Point(x: 1, z: 2)  #~ wrong_label
     q = Point(1, y: 2)  #~ missing_label
     print(p.x + q.y)
+
+# Corrected 2026-10-09, defect 554: the written type left unnamed is told
+# `needs_parameter_names` alone; the `type_mismatch` against `pair`, which
+# differs from it by its names alone, was that refusal's shadow and is quiet
+# now (`type_fit.unnamed_shadow`).

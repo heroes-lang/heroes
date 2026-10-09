@@ -83,7 +83,7 @@ function a_context_that_disagrees_with_the_result()
     print(f(1))
 
 function a_context_that_names_no_parameter()
-    f: (function(i64, i64) -> i64) = first  #~ needs_parameter_names type_mismatch
+    f: (function(i64, i64) -> i64) = first  #~ needs_parameter_names
     print(f(1, 2))
 
 function main()
@@ -100,3 +100,8 @@ function main()
     a_context_that_binds_one_letter_of_two()
     a_context_that_disagrees_with_the_result()
     a_context_that_names_no_parameter()
+
+# Corrected 2026-10-09, defect 554: `a_context_that_names_no_parameter` is
+# told `needs_parameter_names` alone. The `type_mismatch` beside it, the
+# instance's names against a type that writes none, was that refusal's
+# shadow and is quiet now (`type_fit.unnamed_shadow`).

@@ -1,0 +1,2 @@
+tests/golden/check/fixedbugs-554-a-nameless-type-a-generic-made-is-still-told.hero:24:11: error[type_mismatch]: expected `(function(i64, i64) -> i64)`, found `(function(a: i64, b: i64) -> i64)`
+tests/golden/check/fixedbugs-554-a-nameless-type-a-generic-made-is-still-told.hero:25:25: error[type_mismatch]: expected `(function(i64, i64) -> i64)`, found `(function(a: i64, b: i64) -> i64)`

@@ -13,10 +13,15 @@
 # **It asks the value, never the world** (`.claude/rules/module-shape.md`):
 # the argument's own kind says which form it is, and only a `cannot_infer`
 # said at exactly its span is told again. A form nested inside an argument,
-# `[ok(1)]`, stands in a position of its own (an array's first element) and
-# keeps its message; a generic function used as a value (defect 402) and a
-# generic call whose result is all it has (`wanted(…)`) already say *this
-# position asks for none*, and are none of these forms.
+# `[ok(1)]` or `{"a": .plus}`, is told the same way since defect 552: an
+# array literal the walk synthesises reads its type from its first element,
+# a map literal from its first key and value, every later one checked
+# against them, so those positions ask for none either, and the argument's
+# literals are followed down that chain alone (`places`). Until then such a
+# form kept the message that advised passing it where a `T?` is expected,
+# which the program had done. A generic function used as a value (defect
+# 402) and a generic call whose result is all it has (`wanted(…)`) already
+# say *this position asks for none*, and are none of these forms.
 #
 # Nothing is held on the checker: its record is copied at every frame of the
 # walk, and a field widens every copy (`check/state.hero`, panel 185's R5).
@@ -30,13 +35,12 @@ use inventory
 use check/state
 use check/render
 use check/generics as check_generics
+use parse
 
 # Tells again what the walk said, since `from`, of the argument `id` written
 # for parameter `at` of the function declared at `decl`.
 function retell(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], from: i64, id: i64, decl: i64, at: i64)
-    form = form_of(a, r, s, id)
-
-    if form == "" || from >= c.out.diagnostics.len()
+    if from >= c.out.diagnostics.len()
         return
 
     match decls[decl].kind
@@ -44,11 +48,11 @@ function retell(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.S
             told_at(
                 @c,
                 a,
+                r,
                 s,
                 decls,
                 from: from,
                 id: id,
-                form: form,
                 callee: source.span_text(s, decls[decl].name),
                 fd: fd.value,
                 at: at,
@@ -63,9 +67,7 @@ function retell(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.S
 # program had done. Told only where the call names a function of the
 # program with a first parameter, whose type the fix then writes.
 function retell_receiver(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], from: i64, id: i64, at: i64)
-    form = form_of(a, r, s, id)
-
-    if form == "" || from >= c.out.diagnostics.len()
+    if from >= c.out.diagnostics.len()
         return
 
     match r.uses[at]
@@ -76,11 +78,11 @@ function retell_receiver(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s:
                         told_at(
                             @c,
                             a,
+                            r,
                             s,
                             decls,
                             from: from,
                             id: id,
-                            form: form,
                             callee: source.span_text(s, decls[t.at].name),
                             fd: fd.value,
                             at: 0,
@@ -89,9 +91,10 @@ function retell_receiver(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s:
                 .constant_decl | .record_decl | .variant_decl | .test_decl => return
         .local | .builtin | .module | .unresolved => return
 
-function told_at(@c: state.Checker, a: ast.Ast, s: source.Source, decls: [ast.Decl], from: i64, id: i64, form: str, callee: str, fd: ast.FunctionDecl, at: i64, receiver: bool)
+function told_at(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], from: i64, id: i64, callee: str, fd: ast.FunctionDecl, at: i64, receiver: bool)
     span = a.exprs[id].span
     parameter = fd.params[at]
+    found = places(a, id)
     letters: [str] @ []
 
     for g in fd.generics
@@ -116,20 +119,61 @@ function told_at(@c: state.Checker, a: ast.Ast, s: source.Source, decls: [ast.De
     while k < c.out.diagnostics.len()
         d = c.out.diagnostics[k]
 
-        if d.code == "cannot_infer" && d.span.start == span.start && d.span.end == span.end
-            replace(
-                @c.out.diagnostics,
-                at: k,
-                d: told(form: form, callee: callee, parameter: source.span_text(s, parameter.name), written: written, text: source.span_text(s, span), span: span)
-            )
+        for p in found
+            form = form_of(a, r, s, p.id)
+            place = a.exprs[p.id].span
 
-            if receiver
+            if form != "" && d.code == "cannot_infer" && d.span.start == place.start && d.span.end == place.end
                 replace(
                     @c.out.diagnostics,
                     at: k,
-                    d: receiver_told(form: form, callee: callee, written: written, text: source.span_text(s, span), span: span)
+                    d: told(form: form, callee: callee, parameter: source.span_text(s, parameter.name), written: written, text: source.span_text(s, span), span: place, where: p.where)
                 )
+
+                if receiver
+                    replace(
+                        @c.out.diagnostics,
+                        at: k,
+                        d: receiver_told(form: form, callee: callee, written: written, text: source.span_text(s, span), span: place, where: p.where)
+                    )
+
         k @ k + 1
+
+# A position inside an argument that the walk synthesises with nothing to ask
+# of it: `where` is "" for the argument itself, else the word for what it is
+# of the literal around it, `element`, `key` or `value`.
+record Place
+    id: i64
+    where: str
+
+# The argument `id`, then down its array and map literals the positions the
+# walk synthesises to read a literal's type (`check/walk.hero`'s `synth`): an
+# array's first element, a map's first key and first value, every later one
+# checked against them and so given a type. A worklist rather than a
+# recursion, so a literal nested ten thousand deep costs its depth and no
+# stack. A call or any other form ends the chain: what it holds is asked by
+# the rule of its own position (a generic call's arguments by its own
+# `retell`).
+function places(a: ast.Ast, id: i64) -> [Place]
+    out: [Place] @ [Place(id: id, where: "")]
+    k: i64 @ 0
+
+    while k < out.len()
+        match a.exprs[out[k].id].kind
+            .array items =>
+                if items.elements.len() > 0
+                    out @ out.push(Place(id: items.elements[0], where: "element"))
+            .map entries =>
+                if entries.entries.len() > 0
+                    out @ out.push(Place(id: entries.entries[0].key, where: "key"))
+                    out @ out.push(Place(id: entries.entries[0].value, where: "value"))
+            .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit | .null_ptr => k @ k
+            .name | .hole | .unary | .binary | .field | .field_name | .index | .call       => k @ k
+            .method | .variant_case | .try_expr | .if_expr | .match_expr | .error          => k @ k
+
+        k @ k + 1
+
+    return out
 
 # Lent, so the list is written in place (defect 350's shape).
 function replace(@said: [diag.Diagnostic], at: i64, d: diag.Diagnostic)
@@ -164,30 +208,33 @@ function form_of(a: ast.Ast, r: resolved.Resolved, s: source.Source, id: i64) ->
     return ""
 
 # The message: what the form takes its type from, and that this parameter
-# gives none; the fix binds it first with the parameter's own type where the
-# signature writes one, `<type>` where it holds a type parameter.
-function told(form: str, callee: str, parameter: str, written: str, text: str, span: token.Span) -> diag.Diagnostic
-    d: diag.Diagnostic @ diag.new_diagnostic(
-        code: "cannot_infer",
-        message: "`" + form + "` takes its type from the type the context asks for, and a generic function's parameter asks for none, `" + parameter + "` of `" + callee + "` included",
-        span: span
-    )
-    d.fixes @ d.fixes.push(
-        diag.Fix(title: "bind it first, `v: " + written + " = " + text + "`, and pass `v`", replacement: "", span: span, certainty: .guess)
-    )
+# gives none, and for a form inside the argument (`where`), that the literal
+# written there takes its type from it; the fix binds the whole argument
+# first with the parameter's own type where the signature writes one,
+# `<type>` where it holds a type parameter.
+function told(form: str, callee: str, parameter: str, written: str, text: str, span: token.Span, where: str) -> diag.Diagnostic
+    message: str @ "`" + form + "` takes its type from the type the context asks for, and a generic function's parameter asks for none, `" + parameter + "` of `" + callee + "` included"
+    title: str @ "bind it first, `v: " + written + " = " + text + "`, and pass `v`"
+
+    if where != ""
+        message @ message + ", nor the literal written there, which takes its type from this " + where
+        title @ "bind the argument first, `v: " + written + " = " + text + "`, and pass `v`"
+    d: diag.Diagnostic @ diag.new_diagnostic(code: "cannot_infer", message: message, span: span)
+    d.fixes @ d.fixes.push(diag.Fix(title: title, replacement: "", span: span, certainty: .guess))
     return d
 
 # The receiver's message: what the form takes its type from, that the value
-# written before the call's name gives none, and the fix that binds it first.
-function receiver_told(form: str, callee: str, written: str, text: str, span: token.Span) -> diag.Diagnostic
-    d: diag.Diagnostic @ diag.new_diagnostic(
-        code: "cannot_infer",
-        message: "`" + form + "` takes its type from the type the context asks for, and the value written before `." + callee + "(…)` asks for none: its type is read first, to know what the call names",
-        span: span
-    )
-    d.fixes @ d.fixes.push(
-        diag.Fix(title: "bind it first, `v: " + written + " = " + text + "`, and call `v." + callee + "(…)`", replacement: "", span: span, certainty: .guess)
-    )
+# written before the call's name gives none, for a form inside it that it
+# takes its type from this one, and the fix that binds the value first.
+function receiver_told(form: str, callee: str, written: str, text: str, span: token.Span, where: str) -> diag.Diagnostic
+    message: str @ "`" + form + "` takes its type from the type the context asks for, and the value written before `." + callee + "(…)` asks for none: its type is read first, to know what the call names"
+    title: str @ "bind it first, `v: " + written + " = " + text + "`, and call `v." + callee + "(…)`"
+
+    if where != ""
+        message @ message + ", and it takes its type from this " + where
+        title @ "bind the value first, `v: " + written + " = " + text + "`, and call `v." + callee + "(…)`"
+    d: diag.Diagnostic @ diag.new_diagnostic(code: "cannot_infer", message: message, span: span)
+    d.fixes @ d.fixes.push(diag.Fix(title: title, replacement: "", span: span, certainty: .guess))
     return d
 
 ## Tests
@@ -199,9 +246,50 @@ test "the parameter is named, and the fix binds the program's own text first"
         parameter: "n",
         written: "i64?",
         text: "ok(2)",
-        span: token.Span(start: 0, end: 5)
+        span: token.Span(start: 0, end: 5),
+        where: ""
     )
     assert d.code == "cannot_infer"
     assert d.message == "`ok(…)` takes its type from the type the context asks for, and a generic function's parameter asks for none, `n` of `g` included"
     assert d.fixes[0].title == "bind it first, `v: i64? = ok(2)`, and pass `v`"
     assert d.fixes[0].certainty == .guess
+
+test "a form inside the argument names the literal it gives its type to, and the fix binds the whole argument"
+    d = told(
+        form: "ok(…)",
+        callee: "g",
+        parameter: "ns",
+        written: "[i64?]",
+        text: "[ok(1)]",
+        span: token.Span(start: 1, end: 6),
+        where: "element"
+    )
+    assert d.message == "`ok(…)` takes its type from the type the context asks for, and a generic function's parameter asks for none, `ns` of `g` included, nor the literal written there, which takes its type from this element"
+    assert d.fixes[0].title == "bind the argument first, `v: [i64?] = [ok(1)]`, and pass `v`"
+    on = receiver_told(
+        form: "ok(…)",
+        callee: "h",
+        written: "[i64?]",
+        text: "[ok(1)]",
+        span: token.Span(start: 1, end: 6),
+        where: "element"
+    )
+    assert on.message == "`ok(…)` takes its type from the type the context asks for, and the value written before `.h(…)` asks for none: its type is read first, to know what the call names, and it takes its type from this element"
+    assert on.fixes[0].title == "bind the value first, `v: [i64?] = [ok(1)]`, and call `v.h(…)`"
+
+test "the chain follows an array's first element and a map's first key and value, and stops at a call"
+    p = parse.parse("function main()\n    print(g(x: [[ok(1)], [2]], m: {.a: [3]}, f: h(ok(4))))\n")
+    shown: [str] @ []
+
+    for e in p.tree.exprs
+        match e.kind
+            .call cl =>
+                if cl.args.len() == 3
+                    for arg in cl.args
+                        for one in places(p.tree, arg.value)
+                            shown @ shown.push(one.where + ":" + p.tree.exprs[one.id].span.start.to_str())
+            .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit | .null_ptr => shown @ shown
+            .name | .hole | .unary | .binary | .field | .field_name | .index | .method     => shown @ shown
+            .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error    => shown @ shown
+
+    assert shown == [":31", "element:32", "element:33", ":50", "key:51", "value:55", "element:56", ":64"]
