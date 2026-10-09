@@ -328,14 +328,12 @@ jobs:
       # initialises SDL's events alone, the example asks SDL's revision and
       # counts the video drivers compiled in, so X11 and Wayland are left out
       # and the build is the same whatever headers the runner carries.
-      # `SDL_RPATH=OFF` is not taste: with it on, `sdl3.pc` answered
-      # `-Wl,-rpath,/usr/local/lib -Wl,--enable-new-dtags`, and the compiler
-      # refused the second word, `ffi_package`, so both programs failed to
-      # build; `ldconfig` finds the library instead. Measured that day in
-      # `ubuntu:24.04` on arm64 with these lines: `pkg-config` answered
-      # `-I/usr/local/include -L/usr/local/lib -lSDL3`, and both programs gave
-      # their `.expected` at the `run` suite's three configurations,
-      # `--sanitize` quiet. The x86-64 leg is unrun with it.
+      # `SDL_RPATH` stays at its default (panel 198's R6, 2026-10-09): `sdl3.pc`
+      # then answers `-Wl,-rpath,/usr/local/lib -Wl,--enable-new-dtags`, the
+      # answer defect 444 was refused on, so the Linux legs' `run` over the case
+      # measures the list's whole-word reading on native runners, the x86-64 one
+      # a toolchain the sitting never ran, and the net's own test *an admitted
+      # -Wl,-rpath leaves a RUNPATH* the premise its left-out word rests on.
       - name: Build SDL3 from its source, the release the Linux image carries
         if: runner.os == 'Linux'
         run: |
@@ -344,7 +342,7 @@ jobs:
           test "$(git -C "$sdl3/src" rev-parse HEAD)" = 877399b2b2cf21e67554ed9046410f268ce1d1b2 \
             || { echo '::error::the tag release-3.2.10 of libsdl-org/SDL no longer names 877399b2, the commit this step was measured on'; exit 1; }
           cmake -S "$sdl3/src" -B "$sdl3/build" -DCMAKE_BUILD_TYPE=Release -DSDL_TESTS=OFF -DSDL_EXAMPLES=OFF -DSDL_STATIC=OFF \
-            -DSDL_UNIX_CONSOLE_BUILD=ON -DSDL_X11=OFF -DSDL_WAYLAND=OFF -DSDL_RPATH=OFF
+            -DSDL_UNIX_CONSOLE_BUILD=ON -DSDL_X11=OFF -DSDL_WAYLAND=OFF
           cmake --build "$sdl3/build" --parallel
           sudo cmake --install "$sdl3/build"
           sudo ldconfig
