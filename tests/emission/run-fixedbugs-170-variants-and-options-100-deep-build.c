@@ -3240,7 +3240,7 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 static void h_fixedbugs170variantsandoptions100deepbuild_R0_desc_copy(void *dst, const void *src) {
-    *(h_fixedbugs170variantsandoptions100deepbuild_R0 *)dst = *(const h_fixedbugs170variantsandoptions100deepbuild_R0 *)src;
+    __builtin_memmove(dst, src, sizeof(h_fixedbugs170variantsandoptions100deepbuild_R0));
 }
 static void h_fixedbugs170variantsandoptions100deepbuild_R0_desc_drop(void *elem) {
     (void)elem;
@@ -3257,7 +3257,7 @@ HERO_TU_QUIET static const HeroDesc h_fixedbugs170variantsandoptions100deepbuild
 };
 
 static void h_0opt_5edba2ea_desc_copy(void *dst, const void *src) {
-    *(h_0opt_5edba2ea *)dst = *(const h_0opt_5edba2ea *)src;
+    __builtin_memmove(dst, src, sizeof(h_0opt_5edba2ea));
     h_0opt_5edba2ea_retain((const h_0opt_5edba2ea *)dst);
 }
 static void h_0opt_5edba2ea_desc_drop(void *elem) {
@@ -3275,7 +3275,7 @@ HERO_TU_QUIET static const HeroDesc h_0opt_5edba2ea_desc = {
 };
 
 static void h_fixedbugs170variantsandoptions100deepbuild_R2_desc_copy(void *dst, const void *src) {
-    *(h_fixedbugs170variantsandoptions100deepbuild_R2 *)dst = *(const h_fixedbugs170variantsandoptions100deepbuild_R2 *)src;
+    __builtin_memmove(dst, src, sizeof(h_fixedbugs170variantsandoptions100deepbuild_R2));
     h_fixedbugs170variantsandoptions100deepbuild_R2_retain((const h_fixedbugs170variantsandoptions100deepbuild_R2 *)dst);
 }
 static void h_fixedbugs170variantsandoptions100deepbuild_R2_desc_drop(void *elem) {
@@ -3293,7 +3293,7 @@ HERO_TU_QUIET static const HeroDesc h_fixedbugs170variantsandoptions100deepbuild
 };
 
 static void h_0opt_4099fa43_desc_copy(void *dst, const void *src) {
-    *(h_0opt_4099fa43 *)dst = *(const h_0opt_4099fa43 *)src;
+    __builtin_memmove(dst, src, sizeof(h_0opt_4099fa43));
     h_0opt_4099fa43_retain((const h_0opt_4099fa43 *)dst);
 }
 static void h_0opt_4099fa43_desc_drop(void *elem) {
@@ -3311,7 +3311,7 @@ HERO_TU_QUIET static const HeroDesc h_0opt_4099fa43_desc = {
 };
 
 static void h_fixedbugs170variantsandoptions100deepbuild_R4_desc_copy(void *dst, const void *src) {
-    *(h_fixedbugs170variantsandoptions100deepbuild_R4 *)dst = *(const h_fixedbugs170variantsandoptions100deepbuild_R4 *)src;
+    __builtin_memmove(dst, src, sizeof(h_fixedbugs170variantsandoptions100deepbuild_R4));
     h_fixedbugs170variantsandoptions100deepbuild_R4_retain((const h_fixedbugs170variantsandoptions100deepbuild_R4 *)dst);
 }
 static void h_fixedbugs170variantsandoptions100deepbuild_R4_desc_drop(void *elem) {
@@ -3329,7 +3329,7 @@ HERO_TU_QUIET static const HeroDesc h_fixedbugs170variantsandoptions100deepbuild
 };
 
 static void h_0opt_2258519c_desc_copy(void *dst, const void *src) {
-    *(h_0opt_2258519c *)dst = *(const h_0opt_2258519c *)src;
+    __builtin_memmove(dst, src, sizeof(h_0opt_2258519c));
     h_0opt_2258519c_retain((const h_0opt_2258519c *)dst);
 }
 static void h_0opt_2258519c_desc_drop(void *elem) {
@@ -3347,7 +3347,7 @@ HERO_TU_QUIET static const HeroDesc h_0opt_2258519c_desc = {
 };
 
 static void h_fixedbugs170variantsandoptions100deepbuild_R6_desc_copy(void *dst, const void *src) {
-    *(h_fixedbugs170variantsandoptions100deepbuild_R6 *)dst = *(const h_fixedbugs170variantsandoptions100deepbuild_R6 *)src;
+    __builtin_memmove(dst, src, sizeof(h_fixedbugs170variantsandoptions100deepbuild_R6));
     h_fixedbugs170variantsandoptions100deepbuild_R6_retain((const h_fixedbugs170variantsandoptions100deepbuild_R6 *)dst);
 }
 static void h_fixedbugs170variantsandoptions100deepbuild_R6_desc_drop(void *elem) {
@@ -3365,7 +3365,7 @@ HERO_TU_QUIET static const HeroDesc h_fixedbugs170variantsandoptions100deepbuild
 };
 
 static void h_0opt_416a8f5_desc_copy(void *dst, const void *src) {
-    *(h_0opt_416a8f5 *)dst = *(const h_0opt_416a8f5 *)src;
+    __builtin_memmove(dst, src, sizeof(h_0opt_416a8f5));
     h_0opt_416a8f5_retain((const h_0opt_416a8f5 *)dst);
 }
 static void h_0opt_416a8f5_desc_drop(void *elem) {
@@ -3383,7 +3383,7 @@ HERO_TU_QUIET static const HeroDesc h_0opt_416a8f5_desc = {
 };
 
 static void h_fixedbugs170variantsandoptions100deepbuild_R8_desc_copy(void *dst, const void *src) {
-    *(h_fixedbugs170variantsandoptions100deepbuild_R8 *)dst = *(const h_fixedbugs170variantsandoptions100deepbuild_R8 *)src;
+    __builtin_memmove(dst, src, sizeof(h_fixedbugs170variantsandoptions100deepbuild_R8));
     h_fixedbugs170variantsandoptions100deepbuild_R8_retain((const h_fixedbugs170variantsandoptions100deepbuild_R8 *)dst);
 }
 static void h_fixedbugs170variantsandoptions100deepbuild_R8_desc_drop(void *elem) {
@@ -3401,7 +3401,7 @@ HERO_TU_QUIET static const HeroDesc h_fixedbugs170variantsandoptions100deepbuild
 };
 
 static void h_0opt_65d5004d_desc_copy(void *dst, const void *src) {
-    *(h_0opt_65d5004d *)dst = *(const h_0opt_65d5004d *)src;
+    __builtin_memmove(dst, src, sizeof(h_0opt_65d5004d));
     h_0opt_65d5004d_retain((const h_0opt_65d5004d *)dst);
 }
 static void h_0opt_65d5004d_desc_drop(void *elem) {
@@ -3419,7 +3419,7 @@ HERO_TU_QUIET static const HeroDesc h_0opt_65d5004d_desc = {
 };
 
 static void h_fixedbugs170variantsandoptions100deepbuild_R10_desc_copy(void *dst, const void *src) {
-    *(h_fixedbugs170variantsandoptions100deepbuild_R10 *)dst = *(const h_fixedbugs170variantsandoptions100deepbuild_R10 *)src;
+    __builtin_memmove(dst, src, sizeof(h_fixedbugs170variantsandoptions100deepbuild_R10));
     h_fixedbugs170variantsandoptions100deepbuild_R10_retain((const h_fixedbugs170variantsandoptions100deepbuild_R10 *)dst);
 }
 static void h_fixedbugs170variantsandoptions100deepbuild_R10_desc_drop(void *elem) {
@@ -3437,7 +3437,7 @@ HERO_TU_QUIET static const HeroDesc h_fixedbugs170variantsandoptions100deepbuild
 };
 
 static void h_0opt_2ae91c55_desc_copy(void *dst, const void *src) {
-    *(h_0opt_2ae91c55 *)dst = *(const h_0opt_2ae91c55 *)src;
+    __builtin_memmove(dst, src, sizeof(h_0opt_2ae91c55));
     h_0opt_2ae91c55_retain((const h_0opt_2ae91c55 *)dst);
 }
 static void h_0opt_2ae91c55_desc_drop(void *elem) {
@@ -3455,7 +3455,7 @@ HERO_TU_QUIET static const HeroDesc h_0opt_2ae91c55_desc = {
 };
 
 static void h_fixedbugs170variantsandoptions100deepbuild_R12_desc_copy(void *dst, const void *src) {
-    *(h_fixedbugs170variantsandoptions100deepbuild_R12 *)dst = *(const h_fixedbugs170variantsandoptions100deepbuild_R12 *)src;
+    __builtin_memmove(dst, src, sizeof(h_fixedbugs170variantsandoptions100deepbuild_R12));
     h_fixedbugs170variantsandoptions100deepbuild_R12_retain((const h_fixedbugs170variantsandoptions100deepbuild_R12 *)dst);
 }
 static void h_fixedbugs170variantsandoptions100deepbuild_R12_desc_drop(void *elem) {
@@ -3473,7 +3473,7 @@ HERO_TU_QUIET static const HeroDesc h_fixedbugs170variantsandoptions100deepbuild
 };
 
 static void h_0opt_2f4fcdbd_desc_copy(void *dst, const void *src) {
-    *(h_0opt_2f4fcdbd *)dst = *(const h_0opt_2f4fcdbd *)src;
+    __builtin_memmove(dst, src, sizeof(h_0opt_2f4fcdbd));
     h_0opt_2f4fcdbd_retain((const h_0opt_2f4fcdbd *)dst);
 }
 static void h_0opt_2f4fcdbd_desc_drop(void *elem) {
@@ -3491,7 +3491,7 @@ HERO_TU_QUIET static const HeroDesc h_0opt_2f4fcdbd_desc = {
 };
 
 static void h_fixedbugs170variantsandoptions100deepbuild_R14_desc_copy(void *dst, const void *src) {
-    *(h_fixedbugs170variantsandoptions100deepbuild_R14 *)dst = *(const h_fixedbugs170variantsandoptions100deepbuild_R14 *)src;
+    __builtin_memmove(dst, src, sizeof(h_fixedbugs170variantsandoptions100deepbuild_R14));
     h_fixedbugs170variantsandoptions100deepbuild_R14_retain((const h_fixedbugs170variantsandoptions100deepbuild_R14 *)dst);
 }
 static void h_fixedbugs170variantsandoptions100deepbuild_R14_desc_drop(void *elem) {
@@ -3509,7 +3509,7 @@ HERO_TU_QUIET static const HeroDesc h_fixedbugs170variantsandoptions100deepbuild
 };
 
 static void h_0opt_33b67f25_desc_copy(void *dst, const void *src) {
-    *(h_0opt_33b67f25 *)dst = *(const h_0opt_33b67f25 *)src;
+    __builtin_memmove(dst, src, sizeof(h_0opt_33b67f25));
     h_0opt_33b67f25_retain((const h_0opt_33b67f25 *)dst);
 }
 static void h_0opt_33b67f25_desc_drop(void *elem) {
@@ -3527,7 +3527,7 @@ HERO_TU_QUIET static const HeroDesc h_0opt_33b67f25_desc = {
 };
 
 static void h_fixedbugs170variantsandoptions100deepbuild_R16_desc_copy(void *dst, const void *src) {
-    *(h_fixedbugs170variantsandoptions100deepbuild_R16 *)dst = *(const h_fixedbugs170variantsandoptions100deepbuild_R16 *)src;
+    __builtin_memmove(dst, src, sizeof(h_fixedbugs170variantsandoptions100deepbuild_R16));
     h_fixedbugs170variantsandoptions100deepbuild_R16_retain((const h_fixedbugs170variantsandoptions100deepbuild_R16 *)dst);
 }
 static void h_fixedbugs170variantsandoptions100deepbuild_R16_desc_drop(void *elem) {
@@ -3545,7 +3545,7 @@ HERO_TU_QUIET static const HeroDesc h_fixedbugs170variantsandoptions100deepbuild
 };
 
 static void h_0opt_381d308d_desc_copy(void *dst, const void *src) {
-    *(h_0opt_381d308d *)dst = *(const h_0opt_381d308d *)src;
+    __builtin_memmove(dst, src, sizeof(h_0opt_381d308d));
     h_0opt_381d308d_retain((const h_0opt_381d308d *)dst);
 }
 static void h_0opt_381d308d_desc_drop(void *elem) {
@@ -3563,7 +3563,7 @@ HERO_TU_QUIET static const HeroDesc h_0opt_381d308d_desc = {
 };
 
 static void h_fixedbugs170variantsandoptions100deepbuild_R18_desc_copy(void *dst, const void *src) {
-    *(h_fixedbugs170variantsandoptions100deepbuild_R18 *)dst = *(const h_fixedbugs170variantsandoptions100deepbuild_R18 *)src;
+    __builtin_memmove(dst, src, sizeof(h_fixedbugs170variantsandoptions100deepbuild_R18));
     h_fixedbugs170variantsandoptions100deepbuild_R18_retain((const h_fixedbugs170variantsandoptions100deepbuild_R18 *)dst);
 }
 static void h_fixedbugs170variantsandoptions100deepbuild_R18_desc_drop(void *elem) {
@@ -3581,7 +3581,7 @@ HERO_TU_QUIET static const HeroDesc h_fixedbugs170variantsandoptions100deepbuild
 };
 
 static void h_0opt_3c83e1f5_desc_copy(void *dst, const void *src) {
-    *(h_0opt_3c83e1f5 *)dst = *(const h_0opt_3c83e1f5 *)src;
+    __builtin_memmove(dst, src, sizeof(h_0opt_3c83e1f5));
     h_0opt_3c83e1f5_retain((const h_0opt_3c83e1f5 *)dst);
 }
 static void h_0opt_3c83e1f5_desc_drop(void *elem) {
@@ -3599,7 +3599,7 @@ HERO_TU_QUIET static const HeroDesc h_0opt_3c83e1f5_desc = {
 };
 
 static void h_fixedbugs170variantsandoptions100deepbuild_R20_desc_copy(void *dst, const void *src) {
-    *(h_fixedbugs170variantsandoptions100deepbuild_R20 *)dst = *(const h_fixedbugs170variantsandoptions100deepbuild_R20 *)src;
+    __builtin_memmove(dst, src, sizeof(h_fixedbugs170variantsandoptions100deepbuild_R20));
     h_fixedbugs170variantsandoptions100deepbuild_R20_retain((const h_fixedbugs170variantsandoptions100deepbuild_R20 *)dst);
 }
 static void h_fixedbugs170variantsandoptions100deepbuild_R20_desc_drop(void *elem) {
@@ -3617,7 +3617,7 @@ HERO_TU_QUIET static const HeroDesc h_fixedbugs170variantsandoptions100deepbuild
 };
 
 static void h_0opt_4b2f8073_desc_copy(void *dst, const void *src) {
-    *(h_0opt_4b2f8073 *)dst = *(const h_0opt_4b2f8073 *)src;
+    __builtin_memmove(dst, src, sizeof(h_0opt_4b2f8073));
     h_0opt_4b2f8073_retain((const h_0opt_4b2f8073 *)dst);
 }
 static void h_0opt_4b2f8073_desc_drop(void *elem) {
@@ -3635,7 +3635,7 @@ HERO_TU_QUIET static const HeroDesc h_0opt_4b2f8073_desc = {
 };
 
 static void h_fixedbugs170variantsandoptions100deepbuild_R22_desc_copy(void *dst, const void *src) {
-    *(h_fixedbugs170variantsandoptions100deepbuild_R22 *)dst = *(const h_fixedbugs170variantsandoptions100deepbuild_R22 *)src;
+    __builtin_memmove(dst, src, sizeof(h_fixedbugs170variantsandoptions100deepbuild_R22));
     h_fixedbugs170variantsandoptions100deepbuild_R22_retain((const h_fixedbugs170variantsandoptions100deepbuild_R22 *)dst);
 }
 static void h_fixedbugs170variantsandoptions100deepbuild_R22_desc_drop(void *elem) {
@@ -3653,7 +3653,7 @@ HERO_TU_QUIET static const HeroDesc h_fixedbugs170variantsandoptions100deepbuild
 };
 
 static void h_0opt_4f9631db_desc_copy(void *dst, const void *src) {
-    *(h_0opt_4f9631db *)dst = *(const h_0opt_4f9631db *)src;
+    __builtin_memmove(dst, src, sizeof(h_0opt_4f9631db));
     h_0opt_4f9631db_retain((const h_0opt_4f9631db *)dst);
 }
 static void h_0opt_4f9631db_desc_drop(void *elem) {
@@ -3671,7 +3671,7 @@ HERO_TU_QUIET static const HeroDesc h_0opt_4f9631db_desc = {
 };
 
 static void h_fixedbugs170variantsandoptions100deepbuild_R24_desc_copy(void *dst, const void *src) {
-    *(h_fixedbugs170variantsandoptions100deepbuild_R24 *)dst = *(const h_fixedbugs170variantsandoptions100deepbuild_R24 *)src;
+    __builtin_memmove(dst, src, sizeof(h_fixedbugs170variantsandoptions100deepbuild_R24));
     h_fixedbugs170variantsandoptions100deepbuild_R24_retain((const h_fixedbugs170variantsandoptions100deepbuild_R24 *)dst);
 }
 static void h_fixedbugs170variantsandoptions100deepbuild_R24_desc_drop(void *elem) {
@@ -3689,7 +3689,7 @@ HERO_TU_QUIET static const HeroDesc h_fixedbugs170variantsandoptions100deepbuild
 };
 
 static void h_0opt_53fce343_desc_copy(void *dst, const void *src) {
-    *(h_0opt_53fce343 *)dst = *(const h_0opt_53fce343 *)src;
+    __builtin_memmove(dst, src, sizeof(h_0opt_53fce343));
     h_0opt_53fce343_retain((const h_0opt_53fce343 *)dst);
 }
 static void h_0opt_53fce343_desc_drop(void *elem) {
@@ -3707,7 +3707,7 @@ HERO_TU_QUIET static const HeroDesc h_0opt_53fce343_desc = {
 };
 
 static void h_fixedbugs170variantsandoptions100deepbuild_R26_desc_copy(void *dst, const void *src) {
-    *(h_fixedbugs170variantsandoptions100deepbuild_R26 *)dst = *(const h_fixedbugs170variantsandoptions100deepbuild_R26 *)src;
+    __builtin_memmove(dst, src, sizeof(h_fixedbugs170variantsandoptions100deepbuild_R26));
     h_fixedbugs170variantsandoptions100deepbuild_R26_retain((const h_fixedbugs170variantsandoptions100deepbuild_R26 *)dst);
 }
 static void h_fixedbugs170variantsandoptions100deepbuild_R26_desc_drop(void *elem) {
@@ -3725,7 +3725,7 @@ HERO_TU_QUIET static const HeroDesc h_fixedbugs170variantsandoptions100deepbuild
 };
 
 static void h_0opt_586394ab_desc_copy(void *dst, const void *src) {
-    *(h_0opt_586394ab *)dst = *(const h_0opt_586394ab *)src;
+    __builtin_memmove(dst, src, sizeof(h_0opt_586394ab));
     h_0opt_586394ab_retain((const h_0opt_586394ab *)dst);
 }
 static void h_0opt_586394ab_desc_drop(void *elem) {
@@ -3743,7 +3743,7 @@ HERO_TU_QUIET static const HeroDesc h_0opt_586394ab_desc = {
 };
 
 static void h_fixedbugs170variantsandoptions100deepbuild_R28_desc_copy(void *dst, const void *src) {
-    *(h_fixedbugs170variantsandoptions100deepbuild_R28 *)dst = *(const h_fixedbugs170variantsandoptions100deepbuild_R28 *)src;
+    __builtin_memmove(dst, src, sizeof(h_fixedbugs170variantsandoptions100deepbuild_R28));
     h_fixedbugs170variantsandoptions100deepbuild_R28_retain((const h_fixedbugs170variantsandoptions100deepbuild_R28 *)dst);
 }
 static void h_fixedbugs170variantsandoptions100deepbuild_R28_desc_drop(void *elem) {
@@ -3761,7 +3761,7 @@ HERO_TU_QUIET static const HeroDesc h_fixedbugs170variantsandoptions100deepbuild
 };
 
 static void h_0opt_5cca4613_desc_copy(void *dst, const void *src) {
-    *(h_0opt_5cca4613 *)dst = *(const h_0opt_5cca4613 *)src;
+    __builtin_memmove(dst, src, sizeof(h_0opt_5cca4613));
     h_0opt_5cca4613_retain((const h_0opt_5cca4613 *)dst);
 }
 static void h_0opt_5cca4613_desc_drop(void *elem) {
@@ -3779,7 +3779,7 @@ HERO_TU_QUIET static const HeroDesc h_0opt_5cca4613_desc = {
 };
 
 static void h_fixedbugs170variantsandoptions100deepbuild_R30_desc_copy(void *dst, const void *src) {
-    *(h_fixedbugs170variantsandoptions100deepbuild_R30 *)dst = *(const h_fixedbugs170variantsandoptions100deepbuild_R30 *)src;
+    __builtin_memmove(dst, src, sizeof(h_fixedbugs170variantsandoptions100deepbuild_R30));
     h_fixedbugs170variantsandoptions100deepbuild_R30_retain((const h_fixedbugs170variantsandoptions100deepbuild_R30 *)dst);
 }
 static void h_fixedbugs170variantsandoptions100deepbuild_R30_desc_drop(void *elem) {
@@ -3797,7 +3797,7 @@ HERO_TU_QUIET static const HeroDesc h_fixedbugs170variantsandoptions100deepbuild
 };
 
 static void h_0opt_6b75e491_desc_copy(void *dst, const void *src) {
-    *(h_0opt_6b75e491 *)dst = *(const h_0opt_6b75e491 *)src;
+    __builtin_memmove(dst, src, sizeof(h_0opt_6b75e491));
     h_0opt_6b75e491_retain((const h_0opt_6b75e491 *)dst);
 }
 static void h_0opt_6b75e491_desc_drop(void *elem) {
@@ -3815,7 +3815,7 @@ HERO_TU_QUIET static const HeroDesc h_0opt_6b75e491_desc = {
 };
 
 static void h_fixedbugs170variantsandoptions100deepbuild_R32_desc_copy(void *dst, const void *src) {
-    *(h_fixedbugs170variantsandoptions100deepbuild_R32 *)dst = *(const h_fixedbugs170variantsandoptions100deepbuild_R32 *)src;
+    __builtin_memmove(dst, src, sizeof(h_fixedbugs170variantsandoptions100deepbuild_R32));
     h_fixedbugs170variantsandoptions100deepbuild_R32_retain((const h_fixedbugs170variantsandoptions100deepbuild_R32 *)dst);
 }
 static void h_fixedbugs170variantsandoptions100deepbuild_R32_desc_drop(void *elem) {
@@ -3833,7 +3833,7 @@ HERO_TU_QUIET static const HeroDesc h_fixedbugs170variantsandoptions100deepbuild
 };
 
 static void h_0opt_6fdc95f9_desc_copy(void *dst, const void *src) {
-    *(h_0opt_6fdc95f9 *)dst = *(const h_0opt_6fdc95f9 *)src;
+    __builtin_memmove(dst, src, sizeof(h_0opt_6fdc95f9));
     h_0opt_6fdc95f9_retain((const h_0opt_6fdc95f9 *)dst);
 }
 static void h_0opt_6fdc95f9_desc_drop(void *elem) {
@@ -3851,7 +3851,7 @@ HERO_TU_QUIET static const HeroDesc h_0opt_6fdc95f9_desc = {
 };
 
 static void h_fixedbugs170variantsandoptions100deepbuild_R34_desc_copy(void *dst, const void *src) {
-    *(h_fixedbugs170variantsandoptions100deepbuild_R34 *)dst = *(const h_fixedbugs170variantsandoptions100deepbuild_R34 *)src;
+    __builtin_memmove(dst, src, sizeof(h_fixedbugs170variantsandoptions100deepbuild_R34));
     h_fixedbugs170variantsandoptions100deepbuild_R34_retain((const h_fixedbugs170variantsandoptions100deepbuild_R34 *)dst);
 }
 static void h_fixedbugs170variantsandoptions100deepbuild_R34_desc_drop(void *elem) {
@@ -3869,7 +3869,7 @@ HERO_TU_QUIET static const HeroDesc h_fixedbugs170variantsandoptions100deepbuild
 };
 
 static void h_0opt_74434761_desc_copy(void *dst, const void *src) {
-    *(h_0opt_74434761 *)dst = *(const h_0opt_74434761 *)src;
+    __builtin_memmove(dst, src, sizeof(h_0opt_74434761));
     h_0opt_74434761_retain((const h_0opt_74434761 *)dst);
 }
 static void h_0opt_74434761_desc_drop(void *elem) {
@@ -3887,7 +3887,7 @@ HERO_TU_QUIET static const HeroDesc h_0opt_74434761_desc = {
 };
 
 static void h_fixedbugs170variantsandoptions100deepbuild_R36_desc_copy(void *dst, const void *src) {
-    *(h_fixedbugs170variantsandoptions100deepbuild_R36 *)dst = *(const h_fixedbugs170variantsandoptions100deepbuild_R36 *)src;
+    __builtin_memmove(dst, src, sizeof(h_fixedbugs170variantsandoptions100deepbuild_R36));
     h_fixedbugs170variantsandoptions100deepbuild_R36_retain((const h_fixedbugs170variantsandoptions100deepbuild_R36 *)dst);
 }
 static void h_fixedbugs170variantsandoptions100deepbuild_R36_desc_drop(void *elem) {
@@ -3905,7 +3905,7 @@ HERO_TU_QUIET static const HeroDesc h_fixedbugs170variantsandoptions100deepbuild
 };
 
 static void h_0opt_78a9f8c9_desc_copy(void *dst, const void *src) {
-    *(h_0opt_78a9f8c9 *)dst = *(const h_0opt_78a9f8c9 *)src;
+    __builtin_memmove(dst, src, sizeof(h_0opt_78a9f8c9));
     h_0opt_78a9f8c9_retain((const h_0opt_78a9f8c9 *)dst);
 }
 static void h_0opt_78a9f8c9_desc_drop(void *elem) {
@@ -3923,7 +3923,7 @@ HERO_TU_QUIET static const HeroDesc h_0opt_78a9f8c9_desc = {
 };
 
 static void h_fixedbugs170variantsandoptions100deepbuild_R38_desc_copy(void *dst, const void *src) {
-    *(h_fixedbugs170variantsandoptions100deepbuild_R38 *)dst = *(const h_fixedbugs170variantsandoptions100deepbuild_R38 *)src;
+    __builtin_memmove(dst, src, sizeof(h_fixedbugs170variantsandoptions100deepbuild_R38));
     h_fixedbugs170variantsandoptions100deepbuild_R38_retain((const h_fixedbugs170variantsandoptions100deepbuild_R38 *)dst);
 }
 static void h_fixedbugs170variantsandoptions100deepbuild_R38_desc_drop(void *elem) {
@@ -3941,7 +3941,7 @@ HERO_TU_QUIET static const HeroDesc h_fixedbugs170variantsandoptions100deepbuild
 };
 
 static void h_0opt_7d10aa31_desc_copy(void *dst, const void *src) {
-    *(h_0opt_7d10aa31 *)dst = *(const h_0opt_7d10aa31 *)src;
+    __builtin_memmove(dst, src, sizeof(h_0opt_7d10aa31));
     h_0opt_7d10aa31_retain((const h_0opt_7d10aa31 *)dst);
 }
 static void h_0opt_7d10aa31_desc_drop(void *elem) {
@@ -3959,7 +3959,7 @@ HERO_TU_QUIET static const HeroDesc h_0opt_7d10aa31_desc = {
 };
 
 static void h_fixedbugs170variantsandoptions100deepbuild_R40_desc_copy(void *dst, const void *src) {
-    *(h_fixedbugs170variantsandoptions100deepbuild_R40 *)dst = *(const h_fixedbugs170variantsandoptions100deepbuild_R40 *)src;
+    __builtin_memmove(dst, src, sizeof(h_fixedbugs170variantsandoptions100deepbuild_R40));
     h_fixedbugs170variantsandoptions100deepbuild_R40_retain((const h_fixedbugs170variantsandoptions100deepbuild_R40 *)dst);
 }
 static void h_fixedbugs170variantsandoptions100deepbuild_R40_desc_drop(void *elem) {
@@ -3977,7 +3977,7 @@ HERO_TU_QUIET static const HeroDesc h_fixedbugs170variantsandoptions100deepbuild
 };
 
 static void h_0opt_bbc48b0_desc_copy(void *dst, const void *src) {
-    *(h_0opt_bbc48b0 *)dst = *(const h_0opt_bbc48b0 *)src;
+    __builtin_memmove(dst, src, sizeof(h_0opt_bbc48b0));
     h_0opt_bbc48b0_retain((const h_0opt_bbc48b0 *)dst);
 }
 static void h_0opt_bbc48b0_desc_drop(void *elem) {
@@ -3995,7 +3995,7 @@ HERO_TU_QUIET static const HeroDesc h_0opt_bbc48b0_desc = {
 };
 
 static void h_fixedbugs170variantsandoptions100deepbuild_R42_desc_copy(void *dst, const void *src) {
-    *(h_fixedbugs170variantsandoptions100deepbuild_R42 *)dst = *(const h_fixedbugs170variantsandoptions100deepbuild_R42 *)src;
+    __builtin_memmove(dst, src, sizeof(h_fixedbugs170variantsandoptions100deepbuild_R42));
     h_fixedbugs170variantsandoptions100deepbuild_R42_retain((const h_fixedbugs170variantsandoptions100deepbuild_R42 *)dst);
 }
 static void h_fixedbugs170variantsandoptions100deepbuild_R42_desc_drop(void *elem) {
@@ -4013,7 +4013,7 @@ HERO_TU_QUIET static const HeroDesc h_fixedbugs170variantsandoptions100deepbuild
 };
 
 static void h_0opt_1022fa18_desc_copy(void *dst, const void *src) {
-    *(h_0opt_1022fa18 *)dst = *(const h_0opt_1022fa18 *)src;
+    __builtin_memmove(dst, src, sizeof(h_0opt_1022fa18));
     h_0opt_1022fa18_retain((const h_0opt_1022fa18 *)dst);
 }
 static void h_0opt_1022fa18_desc_drop(void *elem) {
@@ -4031,7 +4031,7 @@ HERO_TU_QUIET static const HeroDesc h_0opt_1022fa18_desc = {
 };
 
 static void h_fixedbugs170variantsandoptions100deepbuild_R44_desc_copy(void *dst, const void *src) {
-    *(h_fixedbugs170variantsandoptions100deepbuild_R44 *)dst = *(const h_fixedbugs170variantsandoptions100deepbuild_R44 *)src;
+    __builtin_memmove(dst, src, sizeof(h_fixedbugs170variantsandoptions100deepbuild_R44));
     h_fixedbugs170variantsandoptions100deepbuild_R44_retain((const h_fixedbugs170variantsandoptions100deepbuild_R44 *)dst);
 }
 static void h_fixedbugs170variantsandoptions100deepbuild_R44_desc_drop(void *elem) {
@@ -4049,7 +4049,7 @@ HERO_TU_QUIET static const HeroDesc h_fixedbugs170variantsandoptions100deepbuild
 };
 
 static void h_0opt_1489ab80_desc_copy(void *dst, const void *src) {
-    *(h_0opt_1489ab80 *)dst = *(const h_0opt_1489ab80 *)src;
+    __builtin_memmove(dst, src, sizeof(h_0opt_1489ab80));
     h_0opt_1489ab80_retain((const h_0opt_1489ab80 *)dst);
 }
 static void h_0opt_1489ab80_desc_drop(void *elem) {
@@ -4067,7 +4067,7 @@ HERO_TU_QUIET static const HeroDesc h_0opt_1489ab80_desc = {
 };
 
 static void h_fixedbugs170variantsandoptions100deepbuild_R46_desc_copy(void *dst, const void *src) {
-    *(h_fixedbugs170variantsandoptions100deepbuild_R46 *)dst = *(const h_fixedbugs170variantsandoptions100deepbuild_R46 *)src;
+    __builtin_memmove(dst, src, sizeof(h_fixedbugs170variantsandoptions100deepbuild_R46));
     h_fixedbugs170variantsandoptions100deepbuild_R46_retain((const h_fixedbugs170variantsandoptions100deepbuild_R46 *)dst);
 }
 static void h_fixedbugs170variantsandoptions100deepbuild_R46_desc_drop(void *elem) {
@@ -4085,7 +4085,7 @@ HERO_TU_QUIET static const HeroDesc h_fixedbugs170variantsandoptions100deepbuild
 };
 
 static void h_0opt_18f05ce8_desc_copy(void *dst, const void *src) {
-    *(h_0opt_18f05ce8 *)dst = *(const h_0opt_18f05ce8 *)src;
+    __builtin_memmove(dst, src, sizeof(h_0opt_18f05ce8));
     h_0opt_18f05ce8_retain((const h_0opt_18f05ce8 *)dst);
 }
 static void h_0opt_18f05ce8_desc_drop(void *elem) {
@@ -4103,7 +4103,7 @@ HERO_TU_QUIET static const HeroDesc h_0opt_18f05ce8_desc = {
 };
 
 static void h_fixedbugs170variantsandoptions100deepbuild_R48_desc_copy(void *dst, const void *src) {
-    *(h_fixedbugs170variantsandoptions100deepbuild_R48 *)dst = *(const h_fixedbugs170variantsandoptions100deepbuild_R48 *)src;
+    __builtin_memmove(dst, src, sizeof(h_fixedbugs170variantsandoptions100deepbuild_R48));
     h_fixedbugs170variantsandoptions100deepbuild_R48_retain((const h_fixedbugs170variantsandoptions100deepbuild_R48 *)dst);
 }
 static void h_fixedbugs170variantsandoptions100deepbuild_R48_desc_drop(void *elem) {
@@ -4121,7 +4121,7 @@ HERO_TU_QUIET static const HeroDesc h_fixedbugs170variantsandoptions100deepbuild
 };
 
 static void h_0opt_1d570e50_desc_copy(void *dst, const void *src) {
-    *(h_0opt_1d570e50 *)dst = *(const h_0opt_1d570e50 *)src;
+    __builtin_memmove(dst, src, sizeof(h_0opt_1d570e50));
     h_0opt_1d570e50_retain((const h_0opt_1d570e50 *)dst);
 }
 static void h_0opt_1d570e50_desc_drop(void *elem) {
@@ -4139,7 +4139,7 @@ HERO_TU_QUIET static const HeroDesc h_0opt_1d570e50_desc = {
 };
 
 static void h_fixedbugs170variantsandoptions100deepbuild_R50_desc_copy(void *dst, const void *src) {
-    *(h_fixedbugs170variantsandoptions100deepbuild_R50 *)dst = *(const h_fixedbugs170variantsandoptions100deepbuild_R50 *)src;
+    __builtin_memmove(dst, src, sizeof(h_fixedbugs170variantsandoptions100deepbuild_R50));
     h_fixedbugs170variantsandoptions100deepbuild_R50_retain((const h_fixedbugs170variantsandoptions100deepbuild_R50 *)dst);
 }
 static void h_fixedbugs170variantsandoptions100deepbuild_R50_desc_drop(void *elem) {
@@ -4157,7 +4157,7 @@ HERO_TU_QUIET static const HeroDesc h_fixedbugs170variantsandoptions100deepbuild
 };
 
 static void h_0opt_2c02acce_desc_copy(void *dst, const void *src) {
-    *(h_0opt_2c02acce *)dst = *(const h_0opt_2c02acce *)src;
+    __builtin_memmove(dst, src, sizeof(h_0opt_2c02acce));
     h_0opt_2c02acce_retain((const h_0opt_2c02acce *)dst);
 }
 static void h_0opt_2c02acce_desc_drop(void *elem) {
@@ -4175,7 +4175,7 @@ HERO_TU_QUIET static const HeroDesc h_0opt_2c02acce_desc = {
 };
 
 static void h_fixedbugs170variantsandoptions100deepbuild_R52_desc_copy(void *dst, const void *src) {
-    *(h_fixedbugs170variantsandoptions100deepbuild_R52 *)dst = *(const h_fixedbugs170variantsandoptions100deepbuild_R52 *)src;
+    __builtin_memmove(dst, src, sizeof(h_fixedbugs170variantsandoptions100deepbuild_R52));
     h_fixedbugs170variantsandoptions100deepbuild_R52_retain((const h_fixedbugs170variantsandoptions100deepbuild_R52 *)dst);
 }
 static void h_fixedbugs170variantsandoptions100deepbuild_R52_desc_drop(void *elem) {
@@ -4193,7 +4193,7 @@ HERO_TU_QUIET static const HeroDesc h_fixedbugs170variantsandoptions100deepbuild
 };
 
 static void h_0opt_30695e36_desc_copy(void *dst, const void *src) {
-    *(h_0opt_30695e36 *)dst = *(const h_0opt_30695e36 *)src;
+    __builtin_memmove(dst, src, sizeof(h_0opt_30695e36));
     h_0opt_30695e36_retain((const h_0opt_30695e36 *)dst);
 }
 static void h_0opt_30695e36_desc_drop(void *elem) {
@@ -4211,7 +4211,7 @@ HERO_TU_QUIET static const HeroDesc h_0opt_30695e36_desc = {
 };
 
 static void h_fixedbugs170variantsandoptions100deepbuild_R54_desc_copy(void *dst, const void *src) {
-    *(h_fixedbugs170variantsandoptions100deepbuild_R54 *)dst = *(const h_fixedbugs170variantsandoptions100deepbuild_R54 *)src;
+    __builtin_memmove(dst, src, sizeof(h_fixedbugs170variantsandoptions100deepbuild_R54));
     h_fixedbugs170variantsandoptions100deepbuild_R54_retain((const h_fixedbugs170variantsandoptions100deepbuild_R54 *)dst);
 }
 static void h_fixedbugs170variantsandoptions100deepbuild_R54_desc_drop(void *elem) {
@@ -4229,7 +4229,7 @@ HERO_TU_QUIET static const HeroDesc h_fixedbugs170variantsandoptions100deepbuild
 };
 
 static void h_0opt_34d00f9e_desc_copy(void *dst, const void *src) {
-    *(h_0opt_34d00f9e *)dst = *(const h_0opt_34d00f9e *)src;
+    __builtin_memmove(dst, src, sizeof(h_0opt_34d00f9e));
     h_0opt_34d00f9e_retain((const h_0opt_34d00f9e *)dst);
 }
 static void h_0opt_34d00f9e_desc_drop(void *elem) {
@@ -4247,7 +4247,7 @@ HERO_TU_QUIET static const HeroDesc h_0opt_34d00f9e_desc = {
 };
 
 static void h_fixedbugs170variantsandoptions100deepbuild_R56_desc_copy(void *dst, const void *src) {
-    *(h_fixedbugs170variantsandoptions100deepbuild_R56 *)dst = *(const h_fixedbugs170variantsandoptions100deepbuild_R56 *)src;
+    __builtin_memmove(dst, src, sizeof(h_fixedbugs170variantsandoptions100deepbuild_R56));
     h_fixedbugs170variantsandoptions100deepbuild_R56_retain((const h_fixedbugs170variantsandoptions100deepbuild_R56 *)dst);
 }
 static void h_fixedbugs170variantsandoptions100deepbuild_R56_desc_drop(void *elem) {
@@ -4265,7 +4265,7 @@ HERO_TU_QUIET static const HeroDesc h_fixedbugs170variantsandoptions100deepbuild
 };
 
 static void h_0opt_3936c106_desc_copy(void *dst, const void *src) {
-    *(h_0opt_3936c106 *)dst = *(const h_0opt_3936c106 *)src;
+    __builtin_memmove(dst, src, sizeof(h_0opt_3936c106));
     h_0opt_3936c106_retain((const h_0opt_3936c106 *)dst);
 }
 static void h_0opt_3936c106_desc_drop(void *elem) {
@@ -4283,7 +4283,7 @@ HERO_TU_QUIET static const HeroDesc h_0opt_3936c106_desc = {
 };
 
 static void h_fixedbugs170variantsandoptions100deepbuild_R58_desc_copy(void *dst, const void *src) {
-    *(h_fixedbugs170variantsandoptions100deepbuild_R58 *)dst = *(const h_fixedbugs170variantsandoptions100deepbuild_R58 *)src;
+    __builtin_memmove(dst, src, sizeof(h_fixedbugs170variantsandoptions100deepbuild_R58));
     h_fixedbugs170variantsandoptions100deepbuild_R58_retain((const h_fixedbugs170variantsandoptions100deepbuild_R58 *)dst);
 }
 static void h_fixedbugs170variantsandoptions100deepbuild_R58_desc_drop(void *elem) {
@@ -4301,7 +4301,7 @@ HERO_TU_QUIET static const HeroDesc h_fixedbugs170variantsandoptions100deepbuild
 };
 
 static void h_0opt_3d9d726e_desc_copy(void *dst, const void *src) {
-    *(h_0opt_3d9d726e *)dst = *(const h_0opt_3d9d726e *)src;
+    __builtin_memmove(dst, src, sizeof(h_0opt_3d9d726e));
     h_0opt_3d9d726e_retain((const h_0opt_3d9d726e *)dst);
 }
 static void h_0opt_3d9d726e_desc_drop(void *elem) {
@@ -4319,7 +4319,7 @@ HERO_TU_QUIET static const HeroDesc h_0opt_3d9d726e_desc = {
 };
 
 static void h_fixedbugs170variantsandoptions100deepbuild_R60_desc_copy(void *dst, const void *src) {
-    *(h_fixedbugs170variantsandoptions100deepbuild_R60 *)dst = *(const h_fixedbugs170variantsandoptions100deepbuild_R60 *)src;
+    __builtin_memmove(dst, src, sizeof(h_fixedbugs170variantsandoptions100deepbuild_R60));
     h_fixedbugs170variantsandoptions100deepbuild_R60_retain((const h_fixedbugs170variantsandoptions100deepbuild_R60 *)dst);
 }
 static void h_fixedbugs170variantsandoptions100deepbuild_R60_desc_drop(void *elem) {
@@ -4337,7 +4337,7 @@ HERO_TU_QUIET static const HeroDesc h_fixedbugs170variantsandoptions100deepbuild
 };
 
 static void h_0opt_4c4910ec_desc_copy(void *dst, const void *src) {
-    *(h_0opt_4c4910ec *)dst = *(const h_0opt_4c4910ec *)src;
+    __builtin_memmove(dst, src, sizeof(h_0opt_4c4910ec));
     h_0opt_4c4910ec_retain((const h_0opt_4c4910ec *)dst);
 }
 static void h_0opt_4c4910ec_desc_drop(void *elem) {
@@ -4355,7 +4355,7 @@ HERO_TU_QUIET static const HeroDesc h_0opt_4c4910ec_desc = {
 };
 
 static void h_fixedbugs170variantsandoptions100deepbuild_R62_desc_copy(void *dst, const void *src) {
-    *(h_fixedbugs170variantsandoptions100deepbuild_R62 *)dst = *(const h_fixedbugs170variantsandoptions100deepbuild_R62 *)src;
+    __builtin_memmove(dst, src, sizeof(h_fixedbugs170variantsandoptions100deepbuild_R62));
     h_fixedbugs170variantsandoptions100deepbuild_R62_retain((const h_fixedbugs170variantsandoptions100deepbuild_R62 *)dst);
 }
 static void h_fixedbugs170variantsandoptions100deepbuild_R62_desc_drop(void *elem) {
@@ -4373,7 +4373,7 @@ HERO_TU_QUIET static const HeroDesc h_fixedbugs170variantsandoptions100deepbuild
 };
 
 static void h_0opt_50afc254_desc_copy(void *dst, const void *src) {
-    *(h_0opt_50afc254 *)dst = *(const h_0opt_50afc254 *)src;
+    __builtin_memmove(dst, src, sizeof(h_0opt_50afc254));
     h_0opt_50afc254_retain((const h_0opt_50afc254 *)dst);
 }
 static void h_0opt_50afc254_desc_drop(void *elem) {
@@ -4391,7 +4391,7 @@ HERO_TU_QUIET static const HeroDesc h_0opt_50afc254_desc = {
 };
 
 static void h_fixedbugs170variantsandoptions100deepbuild_R64_desc_copy(void *dst, const void *src) {
-    *(h_fixedbugs170variantsandoptions100deepbuild_R64 *)dst = *(const h_fixedbugs170variantsandoptions100deepbuild_R64 *)src;
+    __builtin_memmove(dst, src, sizeof(h_fixedbugs170variantsandoptions100deepbuild_R64));
     h_fixedbugs170variantsandoptions100deepbuild_R64_retain((const h_fixedbugs170variantsandoptions100deepbuild_R64 *)dst);
 }
 static void h_fixedbugs170variantsandoptions100deepbuild_R64_desc_drop(void *elem) {
@@ -4409,7 +4409,7 @@ HERO_TU_QUIET static const HeroDesc h_fixedbugs170variantsandoptions100deepbuild
 };
 
 static void h_0opt_551673bc_desc_copy(void *dst, const void *src) {
-    *(h_0opt_551673bc *)dst = *(const h_0opt_551673bc *)src;
+    __builtin_memmove(dst, src, sizeof(h_0opt_551673bc));
     h_0opt_551673bc_retain((const h_0opt_551673bc *)dst);
 }
 static void h_0opt_551673bc_desc_drop(void *elem) {
@@ -4427,7 +4427,7 @@ HERO_TU_QUIET static const HeroDesc h_0opt_551673bc_desc = {
 };
 
 static void h_fixedbugs170variantsandoptions100deepbuild_R66_desc_copy(void *dst, const void *src) {
-    *(h_fixedbugs170variantsandoptions100deepbuild_R66 *)dst = *(const h_fixedbugs170variantsandoptions100deepbuild_R66 *)src;
+    __builtin_memmove(dst, src, sizeof(h_fixedbugs170variantsandoptions100deepbuild_R66));
     h_fixedbugs170variantsandoptions100deepbuild_R66_retain((const h_fixedbugs170variantsandoptions100deepbuild_R66 *)dst);
 }
 static void h_fixedbugs170variantsandoptions100deepbuild_R66_desc_drop(void *elem) {
@@ -4445,7 +4445,7 @@ HERO_TU_QUIET static const HeroDesc h_fixedbugs170variantsandoptions100deepbuild
 };
 
 static void h_0opt_597d2524_desc_copy(void *dst, const void *src) {
-    *(h_0opt_597d2524 *)dst = *(const h_0opt_597d2524 *)src;
+    __builtin_memmove(dst, src, sizeof(h_0opt_597d2524));
     h_0opt_597d2524_retain((const h_0opt_597d2524 *)dst);
 }
 static void h_0opt_597d2524_desc_drop(void *elem) {
@@ -4463,7 +4463,7 @@ HERO_TU_QUIET static const HeroDesc h_0opt_597d2524_desc = {
 };
 
 static void h_fixedbugs170variantsandoptions100deepbuild_R68_desc_copy(void *dst, const void *src) {
-    *(h_fixedbugs170variantsandoptions100deepbuild_R68 *)dst = *(const h_fixedbugs170variantsandoptions100deepbuild_R68 *)src;
+    __builtin_memmove(dst, src, sizeof(h_fixedbugs170variantsandoptions100deepbuild_R68));
     h_fixedbugs170variantsandoptions100deepbuild_R68_retain((const h_fixedbugs170variantsandoptions100deepbuild_R68 *)dst);
 }
 static void h_fixedbugs170variantsandoptions100deepbuild_R68_desc_drop(void *elem) {
@@ -4481,7 +4481,7 @@ HERO_TU_QUIET static const HeroDesc h_fixedbugs170variantsandoptions100deepbuild
 };
 
 static void h_0opt_5de3d68c_desc_copy(void *dst, const void *src) {
-    *(h_0opt_5de3d68c *)dst = *(const h_0opt_5de3d68c *)src;
+    __builtin_memmove(dst, src, sizeof(h_0opt_5de3d68c));
     h_0opt_5de3d68c_retain((const h_0opt_5de3d68c *)dst);
 }
 static void h_0opt_5de3d68c_desc_drop(void *elem) {
@@ -4499,7 +4499,7 @@ HERO_TU_QUIET static const HeroDesc h_0opt_5de3d68c_desc = {
 };
 
 static void h_fixedbugs170variantsandoptions100deepbuild_R70_desc_copy(void *dst, const void *src) {
-    *(h_fixedbugs170variantsandoptions100deepbuild_R70 *)dst = *(const h_fixedbugs170variantsandoptions100deepbuild_R70 *)src;
+    __builtin_memmove(dst, src, sizeof(h_fixedbugs170variantsandoptions100deepbuild_R70));
     h_fixedbugs170variantsandoptions100deepbuild_R70_retain((const h_fixedbugs170variantsandoptions100deepbuild_R70 *)dst);
 }
 static void h_fixedbugs170variantsandoptions100deepbuild_R70_desc_drop(void *elem) {
@@ -4517,7 +4517,7 @@ HERO_TU_QUIET static const HeroDesc h_fixedbugs170variantsandoptions100deepbuild
 };
 
 static void h_0opt_6c8f750a_desc_copy(void *dst, const void *src) {
-    *(h_0opt_6c8f750a *)dst = *(const h_0opt_6c8f750a *)src;
+    __builtin_memmove(dst, src, sizeof(h_0opt_6c8f750a));
     h_0opt_6c8f750a_retain((const h_0opt_6c8f750a *)dst);
 }
 static void h_0opt_6c8f750a_desc_drop(void *elem) {
@@ -4535,7 +4535,7 @@ HERO_TU_QUIET static const HeroDesc h_0opt_6c8f750a_desc = {
 };
 
 static void h_fixedbugs170variantsandoptions100deepbuild_R72_desc_copy(void *dst, const void *src) {
-    *(h_fixedbugs170variantsandoptions100deepbuild_R72 *)dst = *(const h_fixedbugs170variantsandoptions100deepbuild_R72 *)src;
+    __builtin_memmove(dst, src, sizeof(h_fixedbugs170variantsandoptions100deepbuild_R72));
     h_fixedbugs170variantsandoptions100deepbuild_R72_retain((const h_fixedbugs170variantsandoptions100deepbuild_R72 *)dst);
 }
 static void h_fixedbugs170variantsandoptions100deepbuild_R72_desc_drop(void *elem) {
@@ -4553,7 +4553,7 @@ HERO_TU_QUIET static const HeroDesc h_fixedbugs170variantsandoptions100deepbuild
 };
 
 static void h_0opt_70f62672_desc_copy(void *dst, const void *src) {
-    *(h_0opt_70f62672 *)dst = *(const h_0opt_70f62672 *)src;
+    __builtin_memmove(dst, src, sizeof(h_0opt_70f62672));
     h_0opt_70f62672_retain((const h_0opt_70f62672 *)dst);
 }
 static void h_0opt_70f62672_desc_drop(void *elem) {
@@ -4571,7 +4571,7 @@ HERO_TU_QUIET static const HeroDesc h_0opt_70f62672_desc = {
 };
 
 static void h_fixedbugs170variantsandoptions100deepbuild_R74_desc_copy(void *dst, const void *src) {
-    *(h_fixedbugs170variantsandoptions100deepbuild_R74 *)dst = *(const h_fixedbugs170variantsandoptions100deepbuild_R74 *)src;
+    __builtin_memmove(dst, src, sizeof(h_fixedbugs170variantsandoptions100deepbuild_R74));
     h_fixedbugs170variantsandoptions100deepbuild_R74_retain((const h_fixedbugs170variantsandoptions100deepbuild_R74 *)dst);
 }
 static void h_fixedbugs170variantsandoptions100deepbuild_R74_desc_drop(void *elem) {
@@ -4589,7 +4589,7 @@ HERO_TU_QUIET static const HeroDesc h_fixedbugs170variantsandoptions100deepbuild
 };
 
 static void h_0opt_755cd7da_desc_copy(void *dst, const void *src) {
-    *(h_0opt_755cd7da *)dst = *(const h_0opt_755cd7da *)src;
+    __builtin_memmove(dst, src, sizeof(h_0opt_755cd7da));
     h_0opt_755cd7da_retain((const h_0opt_755cd7da *)dst);
 }
 static void h_0opt_755cd7da_desc_drop(void *elem) {
@@ -4607,7 +4607,7 @@ HERO_TU_QUIET static const HeroDesc h_0opt_755cd7da_desc = {
 };
 
 static void h_fixedbugs170variantsandoptions100deepbuild_R76_desc_copy(void *dst, const void *src) {
-    *(h_fixedbugs170variantsandoptions100deepbuild_R76 *)dst = *(const h_fixedbugs170variantsandoptions100deepbuild_R76 *)src;
+    __builtin_memmove(dst, src, sizeof(h_fixedbugs170variantsandoptions100deepbuild_R76));
     h_fixedbugs170variantsandoptions100deepbuild_R76_retain((const h_fixedbugs170variantsandoptions100deepbuild_R76 *)dst);
 }
 static void h_fixedbugs170variantsandoptions100deepbuild_R76_desc_drop(void *elem) {
@@ -4625,7 +4625,7 @@ HERO_TU_QUIET static const HeroDesc h_fixedbugs170variantsandoptions100deepbuild
 };
 
 static void h_0opt_79c38942_desc_copy(void *dst, const void *src) {
-    *(h_0opt_79c38942 *)dst = *(const h_0opt_79c38942 *)src;
+    __builtin_memmove(dst, src, sizeof(h_0opt_79c38942));
     h_0opt_79c38942_retain((const h_0opt_79c38942 *)dst);
 }
 static void h_0opt_79c38942_desc_drop(void *elem) {
@@ -4643,7 +4643,7 @@ HERO_TU_QUIET static const HeroDesc h_0opt_79c38942_desc = {
 };
 
 static void h_fixedbugs170variantsandoptions100deepbuild_R78_desc_copy(void *dst, const void *src) {
-    *(h_fixedbugs170variantsandoptions100deepbuild_R78 *)dst = *(const h_fixedbugs170variantsandoptions100deepbuild_R78 *)src;
+    __builtin_memmove(dst, src, sizeof(h_fixedbugs170variantsandoptions100deepbuild_R78));
     h_fixedbugs170variantsandoptions100deepbuild_R78_retain((const h_fixedbugs170variantsandoptions100deepbuild_R78 *)dst);
 }
 static void h_fixedbugs170variantsandoptions100deepbuild_R78_desc_drop(void *elem) {
@@ -4661,7 +4661,7 @@ HERO_TU_QUIET static const HeroDesc h_fixedbugs170variantsandoptions100deepbuild
 };
 
 static void h_0opt_7e2a3aaa_desc_copy(void *dst, const void *src) {
-    *(h_0opt_7e2a3aaa *)dst = *(const h_0opt_7e2a3aaa *)src;
+    __builtin_memmove(dst, src, sizeof(h_0opt_7e2a3aaa));
     h_0opt_7e2a3aaa_retain((const h_0opt_7e2a3aaa *)dst);
 }
 static void h_0opt_7e2a3aaa_desc_drop(void *elem) {
@@ -4679,7 +4679,7 @@ HERO_TU_QUIET static const HeroDesc h_0opt_7e2a3aaa_desc = {
 };
 
 static void h_fixedbugs170variantsandoptions100deepbuild_R80_desc_copy(void *dst, const void *src) {
-    *(h_fixedbugs170variantsandoptions100deepbuild_R80 *)dst = *(const h_fixedbugs170variantsandoptions100deepbuild_R80 *)src;
+    __builtin_memmove(dst, src, sizeof(h_fixedbugs170variantsandoptions100deepbuild_R80));
     h_fixedbugs170variantsandoptions100deepbuild_R80_retain((const h_fixedbugs170variantsandoptions100deepbuild_R80 *)dst);
 }
 static void h_fixedbugs170variantsandoptions100deepbuild_R80_desc_drop(void *elem) {
@@ -4697,7 +4697,7 @@ HERO_TU_QUIET static const HeroDesc h_fixedbugs170variantsandoptions100deepbuild
 };
 
 static void h_0opt_cd5d929_desc_copy(void *dst, const void *src) {
-    *(h_0opt_cd5d929 *)dst = *(const h_0opt_cd5d929 *)src;
+    __builtin_memmove(dst, src, sizeof(h_0opt_cd5d929));
     h_0opt_cd5d929_retain((const h_0opt_cd5d929 *)dst);
 }
 static void h_0opt_cd5d929_desc_drop(void *elem) {
@@ -4715,7 +4715,7 @@ HERO_TU_QUIET static const HeroDesc h_0opt_cd5d929_desc = {
 };
 
 static void h_fixedbugs170variantsandoptions100deepbuild_R82_desc_copy(void *dst, const void *src) {
-    *(h_fixedbugs170variantsandoptions100deepbuild_R82 *)dst = *(const h_fixedbugs170variantsandoptions100deepbuild_R82 *)src;
+    __builtin_memmove(dst, src, sizeof(h_fixedbugs170variantsandoptions100deepbuild_R82));
     h_fixedbugs170variantsandoptions100deepbuild_R82_retain((const h_fixedbugs170variantsandoptions100deepbuild_R82 *)dst);
 }
 static void h_fixedbugs170variantsandoptions100deepbuild_R82_desc_drop(void *elem) {
@@ -4733,7 +4733,7 @@ HERO_TU_QUIET static const HeroDesc h_fixedbugs170variantsandoptions100deepbuild
 };
 
 static void h_0opt_113c8a91_desc_copy(void *dst, const void *src) {
-    *(h_0opt_113c8a91 *)dst = *(const h_0opt_113c8a91 *)src;
+    __builtin_memmove(dst, src, sizeof(h_0opt_113c8a91));
     h_0opt_113c8a91_retain((const h_0opt_113c8a91 *)dst);
 }
 static void h_0opt_113c8a91_desc_drop(void *elem) {
@@ -4751,7 +4751,7 @@ HERO_TU_QUIET static const HeroDesc h_0opt_113c8a91_desc = {
 };
 
 static void h_fixedbugs170variantsandoptions100deepbuild_R84_desc_copy(void *dst, const void *src) {
-    *(h_fixedbugs170variantsandoptions100deepbuild_R84 *)dst = *(const h_fixedbugs170variantsandoptions100deepbuild_R84 *)src;
+    __builtin_memmove(dst, src, sizeof(h_fixedbugs170variantsandoptions100deepbuild_R84));
     h_fixedbugs170variantsandoptions100deepbuild_R84_retain((const h_fixedbugs170variantsandoptions100deepbuild_R84 *)dst);
 }
 static void h_fixedbugs170variantsandoptions100deepbuild_R84_desc_drop(void *elem) {
@@ -4769,7 +4769,7 @@ HERO_TU_QUIET static const HeroDesc h_fixedbugs170variantsandoptions100deepbuild
 };
 
 static void h_0opt_15a33bf9_desc_copy(void *dst, const void *src) {
-    *(h_0opt_15a33bf9 *)dst = *(const h_0opt_15a33bf9 *)src;
+    __builtin_memmove(dst, src, sizeof(h_0opt_15a33bf9));
     h_0opt_15a33bf9_retain((const h_0opt_15a33bf9 *)dst);
 }
 static void h_0opt_15a33bf9_desc_drop(void *elem) {
@@ -4787,7 +4787,7 @@ HERO_TU_QUIET static const HeroDesc h_0opt_15a33bf9_desc = {
 };
 
 static void h_fixedbugs170variantsandoptions100deepbuild_R86_desc_copy(void *dst, const void *src) {
-    *(h_fixedbugs170variantsandoptions100deepbuild_R86 *)dst = *(const h_fixedbugs170variantsandoptions100deepbuild_R86 *)src;
+    __builtin_memmove(dst, src, sizeof(h_fixedbugs170variantsandoptions100deepbuild_R86));
     h_fixedbugs170variantsandoptions100deepbuild_R86_retain((const h_fixedbugs170variantsandoptions100deepbuild_R86 *)dst);
 }
 static void h_fixedbugs170variantsandoptions100deepbuild_R86_desc_drop(void *elem) {
@@ -4805,7 +4805,7 @@ HERO_TU_QUIET static const HeroDesc h_fixedbugs170variantsandoptions100deepbuild
 };
 
 static void h_0opt_1a09ed61_desc_copy(void *dst, const void *src) {
-    *(h_0opt_1a09ed61 *)dst = *(const h_0opt_1a09ed61 *)src;
+    __builtin_memmove(dst, src, sizeof(h_0opt_1a09ed61));
     h_0opt_1a09ed61_retain((const h_0opt_1a09ed61 *)dst);
 }
 static void h_0opt_1a09ed61_desc_drop(void *elem) {
@@ -4823,7 +4823,7 @@ HERO_TU_QUIET static const HeroDesc h_0opt_1a09ed61_desc = {
 };
 
 static void h_fixedbugs170variantsandoptions100deepbuild_R88_desc_copy(void *dst, const void *src) {
-    *(h_fixedbugs170variantsandoptions100deepbuild_R88 *)dst = *(const h_fixedbugs170variantsandoptions100deepbuild_R88 *)src;
+    __builtin_memmove(dst, src, sizeof(h_fixedbugs170variantsandoptions100deepbuild_R88));
     h_fixedbugs170variantsandoptions100deepbuild_R88_retain((const h_fixedbugs170variantsandoptions100deepbuild_R88 *)dst);
 }
 static void h_fixedbugs170variantsandoptions100deepbuild_R88_desc_drop(void *elem) {
@@ -4841,7 +4841,7 @@ HERO_TU_QUIET static const HeroDesc h_fixedbugs170variantsandoptions100deepbuild
 };
 
 static void h_0opt_1e709ec9_desc_copy(void *dst, const void *src) {
-    *(h_0opt_1e709ec9 *)dst = *(const h_0opt_1e709ec9 *)src;
+    __builtin_memmove(dst, src, sizeof(h_0opt_1e709ec9));
     h_0opt_1e709ec9_retain((const h_0opt_1e709ec9 *)dst);
 }
 static void h_0opt_1e709ec9_desc_drop(void *elem) {
@@ -4859,7 +4859,7 @@ HERO_TU_QUIET static const HeroDesc h_0opt_1e709ec9_desc = {
 };
 
 static void h_fixedbugs170variantsandoptions100deepbuild_R90_desc_copy(void *dst, const void *src) {
-    *(h_fixedbugs170variantsandoptions100deepbuild_R90 *)dst = *(const h_fixedbugs170variantsandoptions100deepbuild_R90 *)src;
+    __builtin_memmove(dst, src, sizeof(h_fixedbugs170variantsandoptions100deepbuild_R90));
     h_fixedbugs170variantsandoptions100deepbuild_R90_retain((const h_fixedbugs170variantsandoptions100deepbuild_R90 *)dst);
 }
 static void h_fixedbugs170variantsandoptions100deepbuild_R90_desc_drop(void *elem) {
@@ -4877,7 +4877,7 @@ HERO_TU_QUIET static const HeroDesc h_fixedbugs170variantsandoptions100deepbuild
 };
 
 static void h_0opt_2d1c3d47_desc_copy(void *dst, const void *src) {
-    *(h_0opt_2d1c3d47 *)dst = *(const h_0opt_2d1c3d47 *)src;
+    __builtin_memmove(dst, src, sizeof(h_0opt_2d1c3d47));
     h_0opt_2d1c3d47_retain((const h_0opt_2d1c3d47 *)dst);
 }
 static void h_0opt_2d1c3d47_desc_drop(void *elem) {
@@ -4895,7 +4895,7 @@ HERO_TU_QUIET static const HeroDesc h_0opt_2d1c3d47_desc = {
 };
 
 static void h_fixedbugs170variantsandoptions100deepbuild_R92_desc_copy(void *dst, const void *src) {
-    *(h_fixedbugs170variantsandoptions100deepbuild_R92 *)dst = *(const h_fixedbugs170variantsandoptions100deepbuild_R92 *)src;
+    __builtin_memmove(dst, src, sizeof(h_fixedbugs170variantsandoptions100deepbuild_R92));
     h_fixedbugs170variantsandoptions100deepbuild_R92_retain((const h_fixedbugs170variantsandoptions100deepbuild_R92 *)dst);
 }
 static void h_fixedbugs170variantsandoptions100deepbuild_R92_desc_drop(void *elem) {
@@ -4913,7 +4913,7 @@ HERO_TU_QUIET static const HeroDesc h_fixedbugs170variantsandoptions100deepbuild
 };
 
 static void h_0opt_3182eeaf_desc_copy(void *dst, const void *src) {
-    *(h_0opt_3182eeaf *)dst = *(const h_0opt_3182eeaf *)src;
+    __builtin_memmove(dst, src, sizeof(h_0opt_3182eeaf));
     h_0opt_3182eeaf_retain((const h_0opt_3182eeaf *)dst);
 }
 static void h_0opt_3182eeaf_desc_drop(void *elem) {
@@ -4931,7 +4931,7 @@ HERO_TU_QUIET static const HeroDesc h_0opt_3182eeaf_desc = {
 };
 
 static void h_fixedbugs170variantsandoptions100deepbuild_R94_desc_copy(void *dst, const void *src) {
-    *(h_fixedbugs170variantsandoptions100deepbuild_R94 *)dst = *(const h_fixedbugs170variantsandoptions100deepbuild_R94 *)src;
+    __builtin_memmove(dst, src, sizeof(h_fixedbugs170variantsandoptions100deepbuild_R94));
     h_fixedbugs170variantsandoptions100deepbuild_R94_retain((const h_fixedbugs170variantsandoptions100deepbuild_R94 *)dst);
 }
 static void h_fixedbugs170variantsandoptions100deepbuild_R94_desc_drop(void *elem) {
@@ -4949,7 +4949,7 @@ HERO_TU_QUIET static const HeroDesc h_fixedbugs170variantsandoptions100deepbuild
 };
 
 static void h_0opt_35e9a017_desc_copy(void *dst, const void *src) {
-    *(h_0opt_35e9a017 *)dst = *(const h_0opt_35e9a017 *)src;
+    __builtin_memmove(dst, src, sizeof(h_0opt_35e9a017));
     h_0opt_35e9a017_retain((const h_0opt_35e9a017 *)dst);
 }
 static void h_0opt_35e9a017_desc_drop(void *elem) {
@@ -4967,7 +4967,7 @@ HERO_TU_QUIET static const HeroDesc h_0opt_35e9a017_desc = {
 };
 
 static void h_fixedbugs170variantsandoptions100deepbuild_R96_desc_copy(void *dst, const void *src) {
-    *(h_fixedbugs170variantsandoptions100deepbuild_R96 *)dst = *(const h_fixedbugs170variantsandoptions100deepbuild_R96 *)src;
+    __builtin_memmove(dst, src, sizeof(h_fixedbugs170variantsandoptions100deepbuild_R96));
     h_fixedbugs170variantsandoptions100deepbuild_R96_retain((const h_fixedbugs170variantsandoptions100deepbuild_R96 *)dst);
 }
 static void h_fixedbugs170variantsandoptions100deepbuild_R96_desc_drop(void *elem) {
@@ -4985,7 +4985,7 @@ HERO_TU_QUIET static const HeroDesc h_fixedbugs170variantsandoptions100deepbuild
 };
 
 static void h_0opt_3a50517f_desc_copy(void *dst, const void *src) {
-    *(h_0opt_3a50517f *)dst = *(const h_0opt_3a50517f *)src;
+    __builtin_memmove(dst, src, sizeof(h_0opt_3a50517f));
     h_0opt_3a50517f_retain((const h_0opt_3a50517f *)dst);
 }
 static void h_0opt_3a50517f_desc_drop(void *elem) {
@@ -5003,7 +5003,7 @@ HERO_TU_QUIET static const HeroDesc h_0opt_3a50517f_desc = {
 };
 
 static void h_fixedbugs170variantsandoptions100deepbuild_R98_desc_copy(void *dst, const void *src) {
-    *(h_fixedbugs170variantsandoptions100deepbuild_R98 *)dst = *(const h_fixedbugs170variantsandoptions100deepbuild_R98 *)src;
+    __builtin_memmove(dst, src, sizeof(h_fixedbugs170variantsandoptions100deepbuild_R98));
     h_fixedbugs170variantsandoptions100deepbuild_R98_retain((const h_fixedbugs170variantsandoptions100deepbuild_R98 *)dst);
 }
 static void h_fixedbugs170variantsandoptions100deepbuild_R98_desc_drop(void *elem) {
@@ -5021,7 +5021,7 @@ HERO_TU_QUIET static const HeroDesc h_fixedbugs170variantsandoptions100deepbuild
 };
 
 static void h_0opt_3eb702e7_desc_copy(void *dst, const void *src) {
-    *(h_0opt_3eb702e7 *)dst = *(const h_0opt_3eb702e7 *)src;
+    __builtin_memmove(dst, src, sizeof(h_0opt_3eb702e7));
     h_0opt_3eb702e7_retain((const h_0opt_3eb702e7 *)dst);
 }
 static void h_0opt_3eb702e7_desc_drop(void *elem) {
@@ -5039,7 +5039,7 @@ HERO_TU_QUIET static const HeroDesc h_0opt_3eb702e7_desc = {
 };
 
 static void h_fixedbugs170variantsandoptions100deepbuild_R99_desc_copy(void *dst, const void *src) {
-    *(h_fixedbugs170variantsandoptions100deepbuild_R99 *)dst = *(const h_fixedbugs170variantsandoptions100deepbuild_R99 *)src;
+    __builtin_memmove(dst, src, sizeof(h_fixedbugs170variantsandoptions100deepbuild_R99));
     h_fixedbugs170variantsandoptions100deepbuild_R99_retain((const h_fixedbugs170variantsandoptions100deepbuild_R99 *)dst);
 }
 static void h_fixedbugs170variantsandoptions100deepbuild_R99_desc_drop(void *elem) {

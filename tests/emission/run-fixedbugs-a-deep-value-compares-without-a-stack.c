@@ -95,7 +95,7 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 static void h_fixedbugsadeepvaluecompareswithoutastack_Node_desc_copy(void *dst, const void *src) {
-    *(h_fixedbugsadeepvaluecompareswithoutastack_Node *)dst = *(const h_fixedbugsadeepvaluecompareswithoutastack_Node *)src;
+    __builtin_memmove(dst, src, sizeof(h_fixedbugsadeepvaluecompareswithoutastack_Node));
     h_fixedbugsadeepvaluecompareswithoutastack_Node_retain((const h_fixedbugsadeepvaluecompareswithoutastack_Node *)dst);
 }
 static void h_fixedbugsadeepvaluecompareswithoutastack_Node_desc_drop(void *elem) {

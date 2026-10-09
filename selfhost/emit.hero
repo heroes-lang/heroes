@@ -314,3 +314,30 @@ test "one program, one unit: prelude, order, shim — and the same bytes twice"
     assert !entry_point(p).is_err()
     assert got.link.len() == 0
     assert got.packages.len() == 0
+
+test "a descriptor copies its element as bytes, never by an assignment of the struct (defect 469)"
+    text = "record Box\n    name: str\n    v: i64?\n\nfunction main()\n    xs = [Box(name: \"a\", v: ok(1))]\n    ys: [i64?] = [ok(2)]\n    print(xs.len() + ys.len())\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    c: state.Checked @ checker.check(parsed.tree, out, s, parsed.decls)
+    assert c.diagnostics.len() == 0
+    low = lower.lower(parsed.tree, out, c, s, parsed.decls)
+    p: containers.Program @ low.program
+    cc: state.Checked @ c
+    assert mono.run(@p, @cc, s, parsed.decls).len() == 0
+    place_store.run(@p)
+    own.run(@p, cc)
+    got = emit_for(target: .program_build, p: p, c: cc, s: s, decls: parsed.decls, version: "0.0.0-test")
+    assert got.diagnostics.len() == 0
+
+    # A record's and an option's, each counted, so the retain follows.
+    assert has(
+        text: got.c,
+        needle: "__builtin_memmove(dst, src, sizeof(h_t_Box));\n    h_t_Box_retain((const h_t_Box *)dst);"
+    )
+    assert has(
+        text: got.c,
+        needle: "_desc_copy(void *dst, const void *src) {\n    __builtin_memmove(dst, src, sizeof(h_0opt_"
+    )
+    assert !has(text: got.c, needle: " *)dst = *(")

@@ -111,7 +111,7 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 static void h_adversarialcowperstep_Row_desc_copy(void *dst, const void *src) {
-    *(h_adversarialcowperstep_Row *)dst = *(const h_adversarialcowperstep_Row *)src;
+    __builtin_memmove(dst, src, sizeof(h_adversarialcowperstep_Row));
     h_adversarialcowperstep_Row_retain((const h_adversarialcowperstep_Row *)dst);
 }
 static void h_adversarialcowperstep_Row_desc_drop(void *elem) {
@@ -129,7 +129,7 @@ HERO_TU_QUIET static const HeroDesc h_adversarialcowperstep_Row_desc = {
 };
 
 static void h_adversarialcowperstep_Node_desc_copy(void *dst, const void *src) {
-    *(h_adversarialcowperstep_Node *)dst = *(const h_adversarialcowperstep_Node *)src;
+    __builtin_memmove(dst, src, sizeof(h_adversarialcowperstep_Node));
     h_adversarialcowperstep_Node_retain((const h_adversarialcowperstep_Node *)dst);
 }
 static void h_adversarialcowperstep_Node_desc_drop(void *elem) {

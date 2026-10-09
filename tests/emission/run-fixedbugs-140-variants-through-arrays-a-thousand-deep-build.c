@@ -24082,7 +24082,7 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 static void h_fixedbugs140variantsthrougharraysathousanddeepbuild_R999_desc_copy(void *dst, const void *src) {
-    *(h_fixedbugs140variantsthrougharraysathousanddeepbuild_R999 *)dst = *(const h_fixedbugs140variantsthrougharraysathousanddeepbuild_R999 *)src;
+    __builtin_memmove(dst, src, sizeof(h_fixedbugs140variantsthrougharraysathousanddeepbuild_R999));
     h_fixedbugs140variantsthrougharraysathousanddeepbuild_R999_retain((const h_fixedbugs140variantsthrougharraysathousanddeepbuild_R999 *)dst);
 }
 static void h_fixedbugs140variantsthrougharraysathousanddeepbuild_R999_desc_drop(void *elem) {
