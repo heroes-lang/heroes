@@ -1,0 +1,48 @@
+# Fixed defect 546, 2026-10-09 (panel 201's compiler-engineer and critic).
+# Symptom: two messages printed a placeholder where the program's own text
+# belongs. `needs_parameter_names` on `(function(A, A) -> ())` in a generic
+# function's signature printed *a type parameter* for `A`, and
+# `first(a: ident, b: double)`, `ident` generic, added *expected `?`, found
+# `(function(i64) -> i64)`* to the message `ident` already had. Cause: the
+# walk over function types runs after every declaration, where the checker
+# holds no function's letters; and a letter the first argument left poisoned
+# was compared with the second argument's type, printing the poison. Repair:
+# the walk renders a type with the letters of the function that holds it
+# (`check/type_labels.hero`), and a poisoned letter takes the next
+# argument's type in silence, being the first mistake's shadow (§4.5,
+# `check/generics.hero`).
+# The shapes: a signature's function type, a body's annotation, and the
+# poisoned letter met by a later argument and by an array's element.
+
+function each<A>(x: A, f: (function(A, A) -> ())) -> A  #~ needs_parameter_names
+    f(x, x)
+    return x
+
+function also<B>(x: B) -> B
+    gs: [(function(B, B) -> B)] = []  #~ needs_parameter_names
+    _ = gs.len()
+    return x
+
+function pick<C>(a: C, b: C) -> C
+    _ = b
+    return a
+
+function ident<A>(x: A) -> A
+    return x
+
+function double(x: i64) -> i64
+    return x * 2
+
+function first<A>(a: A, b: A) -> A
+    _ = b
+    return a
+
+function firsts<A>(a: [A], b: A) -> A
+    _ = a
+    return b
+
+function main()
+    f = first(a: ident, b: double)  #~ cannot_infer
+    print(f(2))
+    h = firsts(a: [ident], b: double)  #~ cannot_infer
+    print(h(3))

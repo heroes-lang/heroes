@@ -1,0 +1,45 @@
+# Fixed defect 544, 2026-10-09 (panel 201's spec-warden). Symptom: `g(x: 1,
+# n: ok(2))`, `n: i64?` a parameter of the generic `g`, was refused
+# `cannot_infer` telling the program to *pass it where a `T?` is expected*,
+# which it had done. Cause: a generic function's arguments are synthesised
+# (design.md §4.12, panel 105), so its parameter, a concrete one included,
+# asks for no type (spec § 9, panel 201's N1f), and a form that takes its
+# type from the context alone was told the message of a position that asks
+# for none at all. Repair: the message said at the whole argument is told
+# again, naming the rule and the parameter, and the fix binds the program's
+# own text first with the parameter's own type, `<type>` where it holds a
+# type parameter (`check/generic_argument.hero`).
+# The shapes: `ok(…)` at a concrete `T?`, at a type parameter, and as a UFCS
+# call's argument; `fail(…)`; a bare case; an empty array and an empty map.
+# A form inside an argument keeps its own message, which this case does not
+# pin.
+
+variant Op
+    plus
+    minus
+
+function g<A>(x: A, n: i64?) -> A
+    _ = n.is_err()
+    return x
+
+function first<A>(a: A, b: A) -> A
+    _ = b
+    return a
+
+function pick<A>(x: A, o: Op) -> A
+    _ = o
+    return x
+
+function rows<A>(x: A, ys: [i64], m: {str: i64}) -> A
+    _ = ys.len() + m.len()
+    return x
+
+function main()
+    print(g(x: 1, n: ok(2)))  #~ cannot_infer
+    y: i64? = ok(1)
+    print(first(a: y, b: ok(2)).must())  #~ cannot_infer
+    print(1.g(ok(2)))  #~ cannot_infer
+    print(g(x: 1, n: fail(code: 1, msg: "no")))  #~ cannot_infer
+    print(pick(x: 1, o: .plus))  #~ cannot_infer
+    print(rows(x: 1, ys: [], m: {"a": 1}))  #~ cannot_infer
+    print(rows(x: 1, ys: [2], m: {}))  #~ cannot_infer

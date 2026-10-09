@@ -85,8 +85,12 @@ function file(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Sou
                 # `main` produces nothing, and that is ENFORCED rather than
                 # assumed: `main() -> i64?` returning fail(…) compiled,
                 # printed nothing and exited 0 — the only failure in this
-                # language with no instrument at all (panel 035).
-                is_main = source.is_root(s, decl.name.start) && source.span_text(s, decl.name) == "main"
+                # language with no instrument at all (panel 035). Of every
+                # module's `main`, a used one's too: the rule asked only the
+                # file compiled, so one file was refused checked alone and
+                # accepted through `use` (defect 543; spec § 1 says it of
+                # `main`, never of the root's alone).
+                is_main = !source.is_library(s, decl.name.start) && source.span_text(s, decl.name) == "main"
 
                 if is_main && result != table.unit_ty(c.out.types)
                     want = state.show(c, s, decls, result)
@@ -355,6 +359,23 @@ test "main produces nothing, and the promise line takes the caret"
     c = checked_file("function main() -> i64\n    return 3\n")
     assert c.out.diagnostics.len() == 1
     assert c.out.diagnostics[0].code == "main_returns"
+
+test "a used module's main is held to the rules as the root's is, one file one verdict (defect 543)"
+    files: [source.InputFile] = [
+        source.InputFile(name: "prog.hero", module: "prog", text: "use geom\n\nfunction main()\n    print(geom.area(w: 3))\n", is_library: false)
+        source.InputFile(name: "geom.hero", module: "geom", text: "function main(n: i64) -> i64\n    return n\n\nfunction area(w: i64) -> i64\n    return w * w\n", is_library: false)
+    ]
+    s = source.from_files(files)
+    p = parse.parse(s.text)
+    out = resolve.resolve(p.tree, s, p.decls, p.uses)
+    c: state.Checker @ state.new_checker(out_of: out, expr_count: p.tree.exprs.len())
+    file(@c, p.tree, out, s, p.decls)
+    codes: [str] @ []
+
+    for d in c.out.diagnostics
+        codes @ codes.push(d.code)
+
+    assert codes == ["main_returns", "main_parameters"]
 
 test "a path off the end is held back, not yet reported"
     c = checked_file("function sign(n: i64) -> i64\n    if n > 0\n        return 1\n")
