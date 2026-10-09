@@ -1424,6 +1424,112 @@ class Runs(unittest.TestCase):
             self.assertIn(name, listed, name)
 
 
+class Plumbing(unittest.TestCase):
+    """Defect 535: `git read-tree` and `git update-index` write over a staged
+    version as a reset of the index and a forced removal do, and are refused
+    where one would be left nowhere, as `overwrites.py` reads those; each
+    witnessed against what git does."""
+
+    def setUp(self):
+        self.top = fresh("hooks-535-")
+        self.tree = make_tree(os.path.join(self.top, "tree"), repo=True)
+        isolated = mock.patch.dict(os.environ, {"GIT_CONFIG_GLOBAL": os.devnull, "GIT_CONFIG_NOSYSTEM": "1"})
+        isolated.start()
+        self.addCleanup(isolated.stop)
+        every_state(self.tree)
+        # A staged new file the disk no longer holds, the state `-m` and
+        # `--remove` write over.
+        staged(self.tree, "x.txt", "x.txt staged\n")
+        os.remove(os.path.join(self.tree, "x.txt"))
+        self.blob = git(self.tree, "rev-parse", "HEAD:a.txt").stdout.strip()
+
+    def refused(self, command, cwd=None):
+        said = guard_bash.verdict(command, cwd or self.tree)
+        self.assertIsNotNone(said, command)
+        return said
+
+    def passed(self, command, cwd=None):
+        said = guard_bash.verdict(command, cwd or self.tree)
+        self.assertIsNone(said, command)
+
+    def test_a_read_tree_writes_its_trees_over_the_index(self):
+        for command in ("git read-tree HEAD", "git read-tree other", "git read-tree --reset HEAD", "git read-tree --empty",
+                        "git read-tree", "git read-tree HEAD other", "git read-tree -q HEAD", "git read-tree -v HEAD",
+                        "git read-tree --reset other", "git -C " + self.tree + " read-tree HEAD"):
+            said = self.refused(command, cwd=self.top if " -C " in command else None)
+            self.assertIn("defect 535", said, command)
+            for rel in ("f.txt", "g.txt", "x.txt"):
+                self.assertIn(rel, said, command)
+            for rel in ("c.txt", "d.txt", "h.txt"):
+                self.assertNotIn(rel, said, command)
+
+    def test_a_read_tree_merging_one_tree_writes_over_what_the_disk_no_longer_holds(self):
+        said = self.refused("git read-tree -m HEAD")
+        self.assertIn("x.txt", said)
+        self.assertIn("git checkout --", said)
+        for rel in ("f.txt", "g.txt", "c.txt"):
+            self.assertNotIn(rel, said)
+        said = self.refused("git read-tree -m -u HEAD")
+        for rel in ("c.txt", "d.txt", "x.txt"):
+            self.assertIn(rel, said)
+        said = self.refused("git read-tree --reset -u HEAD")
+        self.assertIn("e.txt", said)
+        self.assertIn("defect 514", said)
+
+    def test_a_read_tree_that_loses_nothing_or_that_git_refuses_passes(self):
+        for command in ("git read-tree -n HEAD", "git read-tree --index-output=alt HEAD", "git read-tree --prefix=p/ HEAD",
+                        "git read-tree -m HEAD other", "git read-tree -m HEAD HEAD other", "git read-tree --reset HEAD other",
+                        "git read-tree -u HEAD", "git read-tree -m --reset HEAD", "git read-tree --nonsense HEAD",
+                        "git read-tree --empty HEAD", "git read-tree -m", "git read-tree --reset -u"):
+            self.passed(command)
+
+    def test_an_update_index_is_read_in_order(self):
+        said = self.refused("git update-index --force-remove -- c.txt d.txt f.txt g.txt x.txt")
+        for rel in ("f.txt", "g.txt", "x.txt"):
+            self.assertIn(rel, said)
+        for rel in ("c.txt", "d.txt"):
+            self.assertNotIn(rel, said)
+        self.assertNotIn("f.txt", self.refused("git update-index f.txt --force-remove g.txt"))
+        for command in ("git update-index --force-rem g.txt", "git update-index --add --force-remove -- g.txt",
+                        "printf 'a.txt\\n' | git update-index --force-remove --stdin", "git update-index --force-remove -z --stdin",
+                        "find . -name g.txt -exec git update-index --force-remove {} +", "xargs git update-index --force-remove"):
+            self.refused(command)
+        said = self.refused("git update-index --remove -- x.txt f.txt g.txt")
+        self.assertIn("x.txt", said)
+        self.assertNotIn("f.txt", said)
+        for command in ("git update-index --cacheinfo 100644," + self.blob + ",f.txt", "git update-index --cacheinfo 100644 " + self.blob + " f.txt",
+                        "git update-index --cacheinfo=100644," + self.blob + ",g.txt", "git update-index --index-info"):
+            self.refused(command)
+        for command in ("git update-index --force-remove --no-force-remove g.txt", "git update-index -- f.txt g.txt",
+                        "git update-index --add -- f.txt", "git update-index --force-remove -- c.txt d.txt h.txt",
+                        "git update-index --remove -- f.txt", "git update-index --again", "git update-index -g --remove",
+                        "git update-index --cacheinfo 100644," + self.blob + ",d.txt", "git update-index --refresh",
+                        "git update-index --chmod=+x f.txt", "git update-index --nonsense g.txt", "git update-index --force-remove",
+                        "printf 'a.txt\\n' | git update-index --stdin"):
+            self.passed(command)
+
+    def test_the_refused_plumbing_is_what_loses_the_change(self):
+        cases = (
+            ("git read-tree HEAD", "f.txt"), ("git read-tree -m HEAD", "x.txt"), ("git read-tree --empty", "g.txt"),
+            ("git update-index --force-remove g.txt", "g.txt"), ("git update-index --remove x.txt", "x.txt"),
+            ("git update-index --cacheinfo 100644," + self.blob + ",f.txt", "f.txt"),
+        )
+        for at, (command, rel) in enumerate(cases):
+            tree = make_tree(os.path.join(self.top, "witness-" + str(at)), repo=True)
+            every_state(tree)
+            staged(tree, "x.txt", "x.txt staged\n")
+            os.remove(os.path.join(tree, "x.txt"))
+            if " -m " in command:
+                # git refuses `-m` over a path the working tree holds otherwise
+                # (`f.txt`, `g.txt`), and writes over the one it no longer holds.
+                git(tree, "restore", "--staged", "--worktree", "--", "f.txt")
+                git(tree, "rm", "-q", "--cached", "-f", "--", "g.txt")
+            self.refused(command, cwd=tree)
+            subprocess.run(command, shell=True, cwd=tree, env=GIT_ENV, capture_output=True, check=True)
+            self.assertNotEqual(index_holds(tree, rel), rel + " staged\n", command)
+            self.assertNotEqual(read(os.path.join(tree, rel)), rel + " staged\n", command)
+
+
 REPO = os.path.dirname(os.path.dirname(HOOKS))
 ZWSP = chr(0x200B)
 RLO = chr(0x202E)
