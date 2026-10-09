@@ -3,7 +3,7 @@ kind: defect
 area: process
 milestone: none
 filed: 2026-10-09
-commit: cdd3b65e2918cce5b3b65346426efbc29afdbf92
+commit: 09a6a5a1976ae364f6b48f1f1cd399ffafe53c79
 github: none
 ---
 
@@ -14,3 +14,5 @@ github: none
     **Class: adjacent**, 2026-10-09 (`.claude/rules/verification.md` § Bounded discovery): an instrument's reach over a peer's work in the shared checkout the hard stops name.
 
     Repaired at `cdd3b65e`, 2026-10-09 (lane b16-tools, batch 16), gated by its cases and the hooks' own tests; the net is owed at the batch's close. `.claude/hooks/discards.py`: an abort or a skip of a merge, a pick, a revert, a rebase or an am, and `reset --merge` and `--hard`, are refused where the tree holds a change they would throw away in a file the operation standing did not bring, a rebase's and `reset --hard` counting an unstaged change too, as measured; a rebase, a merge or a pull begun with an autostash (flag, `-c`, environment or configuration) where the tree holds a tracked change. 16 cases, 14 red on the base; the hooks' own tests 102 run and 2 failed, the two `Place` tests the base fails the same way with its temporary folder inside the repository.
+
+    Repaired at `09a6a5a1` too, 2026-10-09, the same cause found by the lane's probe beside it: `git checkout -f` of the whole tree and `git switch -f` and `--discard-changes` throw away staged and unstaged changes as `reset --hard` does, and are read as it is; a checkout naming a path is left. The class 17 cases, the hooks' own tests 111 run and the same 2 failed.
