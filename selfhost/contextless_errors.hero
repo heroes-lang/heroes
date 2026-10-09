@@ -15,14 +15,23 @@ use token
 use diag
 use digits
 
-function cannot_infer_empty(what: str, span: token.Span) -> diag.Diagnostic
+# An empty literal with nothing to type it. The guess shows an annotation of
+# the literal's own kind: until defect 553 one example served both, and an
+# empty map was offered `xs: [i64] = []`, an array's.
+function empty_array_literal(span: token.Span) -> diag.Diagnostic
+    return cannot_infer_empty(what: "array literal", example: "xs: [i64] = []", span: span)
+
+function empty_map_literal(span: token.Span) -> diag.Diagnostic
+    return cannot_infer_empty(what: "map literal", example: "m: {str: i64} = {}", span: span)
+
+function cannot_infer_empty(what: str, example: str, span: token.Span) -> diag.Diagnostic
     d: diag.Diagnostic @ diag.new_diagnostic(
         code: "cannot_infer",
         message: "the " + what + " is empty, so there is nothing to infer its type from — write the annotation",
         span: span
     )
     d.fixes @ d.fixes.push(
-        diag.Fix(title: "annotate the binding: `xs: [i64] = []`", replacement: "", span: span, certainty: .guess)
+        diag.Fix(title: "annotate the binding: `" + example + "`", replacement: "", span: span, certainty: .guess)
     )
     return d
 
@@ -148,9 +157,13 @@ function int_out_of_range(text: str, span: token.Span) -> diag.Diagnostic
 
 test "a contextless form says where the missing half should come from"
     span = token.Span(start: 0, end: 4)
-    empty = cannot_infer_empty(what: "array literal", span: span)
+    empty = empty_array_literal(span)
     assert empty.message == "the array literal is empty, so there is nothing to infer its type from — write the annotation"
     assert empty.fixes[0].certainty == .guess
+    assert empty.fixes[0].title == "annotate the binding: `xs: [i64] = []`"
+    no_entry = empty_map_literal(span)
+    assert no_entry.message == "the map literal is empty, so there is nothing to infer its type from — write the annotation"
+    assert no_entry.fixes[0].title == "annotate the binding: `m: {str: i64} = {}`"
     case_alone = cannot_infer_case("plus", span)
     assert case_alone.message == "`.plus` does not say which variant it belongs to — the type has to come from the context (a signature, an annotation, or the value being returned)"
     ok_alone = constructor_needs_context("ok", span)
