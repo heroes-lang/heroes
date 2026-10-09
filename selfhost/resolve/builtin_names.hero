@@ -12,13 +12,16 @@
 # inventory, and a function the library gains is taken the day it lands.
 #
 # An extern of the library is not taken: no module reaches one across its
-# boundary (panel 033 R5), so it names nothing a program can call. And one
-# declaration stays free, by a decision written where it was made
-# (`inventory.hero`, at panel 162's landing): `validated`, which the `owned`
-# machinery calls by name AND origin (`ir/owned_release.hero`), and which a
-# program may declare for its own, the compiler among them
-# (`emit/bytes_text.hero`). `FREE` holds it, and a test holds `FREE` to what
-# the library declares, so the exception cannot outlive its name.
+# boundary (panel 033 R5), so it names nothing a program can call.
+#
+# **`validated` was left free until defect 501** (2026-10-09), by a decision
+# written at panel 162's landing: a program could declare its own, and in its
+# module that one took every call in silence, the shadowing design.md §4.4
+# forbids, of the one name panel 162's resolution moves into the built-in
+# table. It is taken now like every other declaration of the library. What it
+# cost was the compiler's own function of that name, renamed
+# (`bytes_text.emit`); the `owned` machinery still asks for the
+# library's by name and origin (`ir/owned_release.hero`).
 
 use ast
 use source
@@ -26,24 +29,18 @@ use inventory
 use parse
 use library_source
 
-constant FREE: [str]
-    ["validated"]
-
 # Whether no program may declare `name`: a built-in's, or one of the
 # names `library` holds (`of_library`).
 function taken(library: {str: bool}, name: str) -> bool
     return !inventory.index_of(name).is_err() || !library[name].is_err()
 
-# Every name the library declares, but an extern's and `FREE`'s.
+# Every name the library declares, but an extern's.
 function of_library(s: source.Source, decls: [ast.Decl]) -> {str: bool}
     names: {str: bool} @ {}
 
     for d in decls
         if source.is_library(s, d.name.start) && names_one(d)
-            name = source.span_text(s, d.name)
-
-            if !is_free(name)
-                names[name] @ true
+            names[source.span_text(s, d.name)] @ true
 
     return names
 
@@ -56,13 +53,6 @@ function names_one(d: ast.Decl) -> bool
         .record_decl rd   => return rd.header.is_err()
         .variant_decl     => return true
         .test_decl        => return false
-
-function is_free(name: str) -> bool
-    for one in FREE
-        if one == name
-            return true
-
-    return false
 
 ## Tests
 
@@ -77,30 +67,16 @@ function library_beside() -> source.Source
         library: library_source.text()
     )
 
-test "what the library declares is taken, but its externs and validated"
+test "what the library declares is taken, `validated` with it, but its externs"
     s = library_beside()
     names = of_library(s, with_library().decls)
     assert taken(names, "args_checked")
     assert taken(names, "args")
     assert taken(names, "range")
     assert taken(names, "print")
-    assert !taken(names, "validated")
+
+    # Defect 501: the one name left free until 2026-10-09.
+    assert taken(names, "validated")
     assert !taken(names, "hero_exit")
     assert !taken(names, "HERO_OS_OK")
     assert !taken(names, "main")
-
-# The premise `FREE` rests on, where it can die: each name it holds is one
-# the library declares, not as an extern, and no built-in of the inventory.
-test "every name left free is a declaration of the library"
-    s = library_beside()
-    decls = with_library().decls
-
-    for one in FREE
-        found: bool @ false
-
-        for d in decls
-            if source.is_library(s, d.name.start) && names_one(d) && source.span_text(s, d.name) == one
-                found @ true
-
-        assert found
-        assert inventory.index_of(one).is_err()

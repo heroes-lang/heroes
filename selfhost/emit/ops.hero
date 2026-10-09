@@ -88,7 +88,7 @@ function call(@w: writer.Writer, p: instances.Held, f: containers.Function, c: s
             # a T? generated for its result type, so the call and the union are
             # written together (panel 162).
             if builtin_name == "validated_bytes" && !target.is_err()
-                bytes_text.validated(@w, c, s, decls, names, f, run: run, arguments: arguments, into: target.must())
+                bytes_text.emit(@w, c, s, decls, names, f, run: run, arguments: arguments, into: target.must())
                 return
 
             # `ptr` is not a call either, and for the same reason one boundary

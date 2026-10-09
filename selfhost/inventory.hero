@@ -56,9 +56,16 @@ record Builtin
 # It is a THIRD name beside `validated` rather than that name widened, and the
 # reason is `ir/owned_release.hero`: the `owned` machinery finds the LIBRARY's
 # `validated` declaration by name and origin and synthesises calls to it, and
-# that module's own comment says a program is free to declare its own
+# that module's own comment said a program is free to declare its own
 # `validated`. Reserving that name would have broken a shipped feature to save a
 # word, which is what panel 162's resolution assumed could be done and could not.
+#
+# **Corrected 2026-10-09, defect 501**: the name is reserved since that day,
+# as panel 162's resolution asked, and the shipped feature it broke was the
+# compiler's own function named `validated`, renamed; a program's own had
+# taken every call in its module in silence. The third name stands on the
+# sitting's own correction: the language has no overloading, so one
+# `validated` cannot take both a `cstr` and a fixed run of bytes.
 #
 # **The names are also a constant, `NAMES` below, and a lookup reads that**
 # (defect 264). `table()` is a function, so every call builds its forty-one
