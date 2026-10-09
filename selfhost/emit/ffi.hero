@@ -185,7 +185,15 @@ function explain(stderr: str, s: source.Source, tree: ast.Ast, decls: [ast.Decl]
 
         if !const_f.is_err()
             found @ ffi_lookup.add_once(found, d: const_f.must())
-        field = ffi_field.field_type(s, tree, decls, line: line)
+        field = ffi_field.field_type(
+            s,
+            tree,
+            decls,
+            line: line,
+            fields: asked.fields,
+            widths: asked.widths,
+            word_bits: word_bits
+        )
 
         if !field.is_err()
             found @ ffi_lookup.add_once(found, d: field.must())

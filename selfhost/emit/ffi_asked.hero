@@ -75,6 +75,9 @@
 # hero_ask_result' with an expression of incompatible type 'int64_t' (aka
 # 'long long')*, or `'void'`. A question that does not compile, a callback's
 # parameter spelled by a typedef this unit lacks, answers nothing.
+#
+# **And each group record field's type, with its width and sign** (defect
+# 517): `emit/field_asked.hero` writes those questions and reads the width.
 
 use ast
 use source
@@ -85,6 +88,7 @@ use emit/externs as emit_externs
 use emit/c_text
 use emit/extern_assert
 use emit/ffi_lookup
+use emit/field_asked
 use parse
 use resolve
 use checker
@@ -118,22 +122,23 @@ record Typed
 # What the run answered: clang's lines about what was said again, each at a
 # declaration's line, for the readers to read beside the round's own; the
 # names the header holds as a value; the names it defines as a macro; what
-# each record's tag is, `type`, `tag` or `neither`; and the type the header
-# gives each function's result and each constant.
+# each record's tag is, `type`, `tag` or `neither`; the type the header
+# gives each function's result and each constant; and each group record
+# field's, `<record> <field>`, with its width as `field_asked`'s number.
 record Asked
     said: str
     values: {str: bool}
     macros: {str: bool}
     types: {str: str}
     results: {str: Typed}
+    fields: {str: Typed}
+    widths: {str: i64}
 
 # The answer of a run that was not made: nothing said, nothing a value or a
 # macro, no tag or type answered.
 function nothing() -> Asked
     none: {str: bool} = {}
-    unasked: {str: str} = {}
-    untyped: {str: Typed} = {}
-    return Asked(said: "", values: none, macros: none, types: unasked, results: untyped)
+    return Asked(said: "", values: none, macros: none, types: {}, results: {}, fields: {}, widths: {})
 
 # The unit's C: the program's headers, then what is said again and asked of
 # each `extern` function its own files declare. A library extern is not asked
@@ -226,6 +231,9 @@ function unit(p: containers.Program, s: source.Source, decls: [ast.Decl], c: sta
                         index @ index + 1
             .constant_decl | .function_decl | .variant_decl | .test_decl => continue
 
+    for line in field_asked.questions(names, s, decls)
+        typings @ typings.push(line)
+
     for line in typings
         out @ out.push(line)
 
@@ -245,6 +253,8 @@ function read(stderr: str) -> Asked
     reached: {str: bool} @ {}
     refused: {str: str} @ {}
     results: {str: Typed} @ {}
+    fields: {str: Typed} @ {}
+    widths: {str: i64} @ {}
 
     for row in ffi_lookup.lines(text: stderr)
         if !begins(text: row, prefix: ASK)
@@ -256,6 +266,14 @@ function read(stderr: str) -> Asked
 
             if !given.is_err()
                 results[asked_name(row: row, prefix: RESULT)] @ given.must()
+
+        if begins(text: row, prefix: field_asked.FIELD) && !typed_in(row).is_err()
+            fields[asked_name(row: row, prefix: field_asked.FIELD)] @ typed_in(row).must()
+
+        if begins(text: row, prefix: field_asked.WIDTH) && !typed_in(row).is_err()
+            widths[asked_name(row: row, prefix: field_asked.WIDTH)] @ field_asked.bracketed(
+                typed_in(row).must().spelled
+            )
 
         if begins(text: row, prefix: VALUE) && ffi_lookup.has(text: row, needle: ffi_lookup.FAILED)
             values[asked_name(row: row, prefix: VALUE)] @ true
@@ -282,7 +300,15 @@ function read(stderr: str) -> Asked
     for name in keys(reached)
         types[name] @ refused[name].default("type")
 
-    return Asked(said: said.join("\n"), values: values, macros: macros, types: types, results: results)
+    return Asked(
+        said: said.join("\n"),
+        values: values,
+        macros: macros,
+        types: types,
+        results: results,
+        fields: fields,
+        widths: widths
+    )
 
 # The type clang's refusal of an initialiser names, and the canonical one
 # after it where it gives one; absent from any other line.
@@ -385,6 +411,20 @@ test "a record's tag is asked whether it is a type name, and `void` is not asked
         needle: "#line 1 \"hero-ask-type only_tagg\"\ntypedef only_tagg hero_q_0;\n_Static_assert(sizeof(hero_q_0 *) == 0, \"hero-ask\");\n"
     )
     assert !ffi_lookup.has(text: got, needle: "typedef void")
+
+    # Each field's type and its width, by the record's C spelling (defect 517).
+    assert ffi_lookup.has(
+        text: got,
+        needle: "#line 1 \"hero-ask-field Q a\"\n__attribute__((unused)) static void hero_ask_f_1(void) { struct hero_ask_result hero_r = (("
+    )
+    assert ffi_lookup.has(text: got, needle: " *)0)->a; (void)hero_r; }\n")
+    assert ffi_lookup.has(text: got, needle: "#line 1 \"hero-ask-width Q a\"\n")
+    answered = read(
+        "hero-ask-field Q a:1:81: error: initializing 'struct hero_ask_result' with an expression of incompatible type 'ev_kind'\nhero-ask-width Q a:1:81: error: initializing 'struct hero_ask_result' with an expression of incompatible type 'char (*)[34]'\nhero-ask-width Q b:1:95: error: no member named 'b' in 'only_tagg'\n"
+    )
+    assert answered.fields["Q a"].must() == Typed(spelled: "ev_kind", canonical: "ev_kind")
+    assert answered.widths["Q a"].must() == 34
+    assert answered.widths["Q b"].is_err()
 
 test "an answer is read from the question's file name, and only a failed assertion is a value"
     stderr = "t.hero:2:67: error: called object type 'int' is not a function or function pointer\nhero-ask-value BUFSIZ:1:16: error: static assertion failed due to requirement '!__builtin_constant_p(1024)': hero-ask\nhero-ask-value nosuch:1:38: error: use of undeclared identifier 'nosuch'\nhero-ask-macro WEXITSTATUS:2:2: warning: hero-ask [-W#warnings]\n2 errors generated."

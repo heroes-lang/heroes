@@ -180,6 +180,9 @@ function shape_emit() -> Shape
 # 2026-10-06**: lane cli12's cases for defects 337 and 360 and lane ffi13's
 # six `fixedbugs-094-` cases took the directory past 118 by more than a
 # quarter, and the suite asked for 150 on this Mac and on Linux arm64 alike.
+# **188 at batch 16's lane compiler, 2026-10-09**: defect 517's case took the
+# directory from 187 to 188, past 150 by more than a quarter, and the suite
+# asked for 188.
 function shape_unsupported() -> Shape
     return Shape(
         name: "unsupported",
@@ -188,7 +191,7 @@ function shape_unsupported() -> Shape
         flags: NO_FLAGS,
         on_stderr: true,
         want_code: 1,
-        least: 150,
+        least: 188,
         watched: true,
         silent_stdout: true,
         library_skip: true
