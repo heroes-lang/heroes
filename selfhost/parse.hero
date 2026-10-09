@@ -19,6 +19,7 @@ use wrap_break
 use parse/unclosed
 use pairing
 use unclosed_runs
+use closer_runs
 
 record ParseOutput
     decls: [ast.Decl]
@@ -131,10 +132,10 @@ function parse_source(s: source.Source) -> ParseOutput
         text: s.text
     )
 
-    for d in normal
+    for d in closer_runs.told_once(normal, text: s.text)
         diagnostics @ diagnostics.push(d)
 
-    for d in controlled
+    for d in closer_runs.told_once(controlled, text: s.text)
         control @ control.push(d)
 
     return ParseOutput(
@@ -186,10 +187,10 @@ function parse_bounded(text: str, root_end: i64) -> ParseOutput
         text: text
     )
 
-    for d in said.normal
+    for d in closer_runs.told_once(said.normal, text: text)
         diagnostics @ diagnostics.push(d)
 
-    for d in said.control
+    for d in closer_runs.told_once(said.control, text: text)
         control @ control.push(d)
 
     return ParseOutput(

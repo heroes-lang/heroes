@@ -66,6 +66,7 @@ use parse/swap_reading
 use text_lines
 use parse/head_lines
 use parse/brace_habit
+use stray_closers
 use parse/unclosed
 use parse/swallowed
 
@@ -218,7 +219,7 @@ function junk(@c: cursor.Cursor, text: str, missing: Missing)
         return
     cursor.say(
         @c,
-        diag.new_diagnostic(code: "expected_end_of_line", message: "expected the end of the line, found " + brace_habit.found_run(c, text: text, found: swap_reading.found(c, text)) + " — " + missing.owner + "'s " + missing.members + " on the lines below its head, one level deeper", span: brace_habit.stray_run(c, text, at: c.pos))
+        diag.new_diagnostic(code: "expected_end_of_line", message: "expected the end of the line, found " + stray_closers.found_run(c, text: text, found: swap_reading.found(c, text)) + " — " + missing.owner + "'s " + missing.members + " on the lines below its head, one level deeper", span: stray_closers.stray_run(c, text, at: c.pos))
     )
 
 # Whether a body stands below the line under the cursor: where dropping the

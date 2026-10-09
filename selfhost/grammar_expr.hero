@@ -82,6 +82,7 @@ use parse/broken_arm
 use parse/operator_arm
 use parse/headless
 use parse/brace_habit
+use stray_closers
 use parse/unclosed
 use parse/swallowed
 use parse/loop_habit
@@ -444,8 +445,8 @@ function primary(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
         found: str @ cursor.found(c, text)
 
         if token.is_closer(k) && cursor.at_fresh_line(c)
-            run @ brace_habit.stray_run(c, text, at: c.pos)
-            found @ brace_habit.found_run(c, text: text, found: found)
+            run @ stray_closers.stray_run(c, text, at: c.pos)
+            found @ stray_closers.found_run(c, text: text, found: found)
 
         if !cursor.at_reported_error(c) && !line_end.said_here(c)
             cursor.error(
