@@ -1,0 +1,11 @@
+error[expected_args_close]: expected `)`, or `,` and another argument, found a name (`print`) — the line below a call's arguments is none of them: the `[` still open on the line above, at column 14, and the `(` it stands in, close on a line above, so write `])` there
+  at tests/golden/full/fixedbugs-548-one-message-for-a-call-left-open-over-a-list.hero:12:5
+     |
+  12 |     print(x)  #~ expected_args_close
+     |     ^^^^^
+
+error[expected_end_of_line]: expected the end of the line, found `)` — one statement per line, no semicolons
+  at tests/golden/full/fixedbugs-548-one-message-for-a-call-left-open-over-a-list.hero:13:11
+     |
+  13 |     y = 3 )  #~ expected_end_of_line
+     |           ^

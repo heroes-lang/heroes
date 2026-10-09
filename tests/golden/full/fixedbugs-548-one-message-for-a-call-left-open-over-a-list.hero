@@ -1,0 +1,14 @@
+# Defect 548, 2026-10-09 (lane b17-fix): the whole form of the one message a
+# call's argument list left open over a list never closed now gets, `x = g(1,
+# [2, 3` over `print(x)` over `y = 3 )`, where until this repair the lexer
+# named the `[` at its own place, with its own excerpt, and the call's reader
+# named the `)` owed at `print` (`check/fixedbugs-548-*` holds the shapes).
+
+function g(a: i64, b: [i64]) -> i64
+    return 1
+
+function main()
+    x = g(1, [2, 3
+    print(x)  #~ expected_args_close
+    y = 3 )  #~ expected_end_of_line
+    print(y)
