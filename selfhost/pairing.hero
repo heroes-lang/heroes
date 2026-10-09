@@ -262,6 +262,16 @@ function close_after(c: cursor.Cursor, at: i64) -> i64
         return c.closes[next]
     return -1
 
+# The closer written for the opener written `opener`, as a message names the
+# edit (`parse/bracket_head.openers_around`, which held it until defect 459).
+function closer_written(opener: str) -> str
+    if opener == "("
+        return ")"
+
+    if opener == "["
+        return "]"
+    return "}"
+
 ## Tests
 
 # The recovery batches' C3: a closer of another kind than the innermost

@@ -58,6 +58,11 @@ record Diagnostic
     span: token.Span
     fixes: [Fix]
     notes: [str]
+    # The openers the lexer named never closed whose closer this report names
+    # with its own edit, one `]]` for two, so the lexer's report of each is
+    # withdrawn where this one is said and stands where it is not (defect
+    # 459, `parse/unclosed.withdrawn`). Empty for every other report.
+    carries: [token.Span]
 
 # A diagnostic the parser held back because the lexer joined the line it
 # is about into a block's head (`parse/opening`, defect 131): `cause` spans
@@ -76,7 +81,28 @@ record Held
 function new_diagnostic(code: str, message: str, span: token.Span) -> Diagnostic
     fixes: [Fix] = []
     notes: [str] = []
-    return Diagnostic(kind: .error_kind, code: code, message: message, span: span, fixes: fixes, notes: notes)
+    carries: [token.Span] = []
+    return Diagnostic(
+        kind: .error_kind,
+        code: code,
+        message: message,
+        span: span,
+        fixes: fixes,
+        notes: notes,
+        carries: carries
+    )
+
+# Where the openers the reports of `said` carry begin (defect 459): the
+# lexer's report of each is then withdrawn. A map, asked once per report, so
+# a file of many reports costs their sum and never their product.
+function carried(said: [Diagnostic]) -> {i64: bool}
+    starts: {i64: bool} @ {}
+
+    for d in said
+        for span in d.carries
+            starts[span.start] @ true
+
+    return starts
 
 # A form the backend cannot emit yet. The message names the CAPABILITY
 # and never the milestone (§4.17: everything needed without opening
@@ -89,7 +115,16 @@ function new_diagnostic(code: str, message: str, span: token.Span) -> Diagnostic
 function new_unsupported(code: str, message: str, span: token.Span) -> Diagnostic
     fixes: [Fix] = []
     notes: [str] = []
-    return Diagnostic(kind: .unsupported_kind, code: code, message: message, span: span, fixes: fixes, notes: notes)
+    carries: [token.Span] = []
+    return Diagnostic(
+        kind: .unsupported_kind,
+        code: code,
+        message: message,
+        span: span,
+        fixes: fixes,
+        notes: notes,
+        carries: carries
+    )
 
 # Whether this code is one of the rules the THESIS adds, as opposed to
 # a rule without which the program has no meaning. check --permissive

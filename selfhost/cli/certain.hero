@@ -277,13 +277,15 @@ function listed(names: [str], name: str) -> bool
 function fixing(start: i64, end: i64, text: str) -> diag.Diagnostic
     fix = diag.Fix(title: "t", replacement: text, span: token.Span(start: start, end: end), certainty: .certain)
     none: [str] = []
+    carried: [token.Span] = []
     return diag.Diagnostic(
         kind: .error_kind,
         code: "c",
         message: "m",
         span: token.Span(start: start, end: end),
         fixes: [fix],
-        notes: none
+        notes: none,
+        carries: carried
     )
 
 # The text "abcdefghij", fixed.
