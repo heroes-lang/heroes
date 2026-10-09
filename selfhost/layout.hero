@@ -30,6 +30,7 @@ use closers
 use bracket_reach
 use lost_quote
 use comment_habit
+use openers
 
 ## The carriage return
 
@@ -91,7 +92,7 @@ function line_start(@l: state.LexState, text: str)
     # whose first word no bracket holds, or a name after a kept line end
     # inside a `(`, is where a mistake left them open (`bracket_reach`): they
     # are named there, and the line is laid out as what it begins.
-    if l.open_brackets.len() > 0 && !bracket_reach.ends_at(@l, text, spaces: spaces)
+    if openers.depth(l.open_brackets) > 0 && !bracket_reach.ends_at(@l, text, spaces: spaces)
         if habit
             indent_runs.quiet(@l, text, m, line: ws_start, blank: blank_at(text, at: l.pos))
         return
@@ -122,7 +123,7 @@ function line_start(@l: state.LexState, text: str)
             indent_runs.quiet(@l, text, m, line: ws_start, blank: false)
         brace_layout.ended(@l, text, at: l.pos, level: (spaces + 2) / 4)
         return
-    alone = b == '{' && map_alone.opens_a_body(l.tokens, open: l.open_brackets.len() + l.holes.len(), text, at: l.pos)
+    alone = b == '{' && map_alone.opens_a_body(l.tokens, open: openers.depth(l.open_brackets) + l.holes.len(), text, at: l.pos)
 
     if alone && habit
         indent_runs.quiet(@l, text, m, line: ws_start, blank: false)
@@ -215,11 +216,10 @@ function blank_at(text: str, at: i64) -> bool
 # stray closer further down closed it, the opener never named and the lines'
 # own mistakes never told, they are named by `bracket_reach`.
 function close_brackets(@l: state.LexState, text: str)
-    for span in l.open_brackets
+    for span in openers.live(l.open_brackets)
         state.push_diagnostic(@l.diagnostics, closers.never_closed(text, span))
 
-    none: [token.Span] = []
-    l.open_brackets @ none
+    openers.clear(@l.open_brackets)
 
 ## The invisible semicolon
 
@@ -242,7 +242,7 @@ function maybe_terminator(@l: state.LexState, text: str)
     # brackets it goes on, unless a value ends it and one begins the next line,
     # where the line end is what separates them.
     if l.backslash >= 0
-        if l.open_brackets.len() == 0
+        if openers.depth(l.open_brackets) == 0
             open_line.left_open(@l)
             return
         below = backslash.word_below(l, text)
@@ -267,7 +267,7 @@ function maybe_terminator(@l: state.LexState, text: str)
         state.push_token(@l.tokens, token.Token(kind: .terminator, span: token.Span(start: l.pos, end: l.pos)))
         return
 
-    if l.open_brackets.len() == 0
+    if openers.depth(l.open_brackets) == 0
         # An `error` token ends a line at depth zero (panel 181): the lexer has
         # spoken there, and a line glued on below it went into the recovery
         # that drops the rest of the statement, so the next line's own mistake

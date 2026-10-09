@@ -28,6 +28,7 @@ use indent_runs
 use next_line
 use closers
 use layout
+use openers
 
 # Before the token `kind` at `start` is emitted: a `->` inside a function
 # type's parameters whose `)` was left out has that `)` written where it
@@ -38,7 +39,7 @@ function close(@l: state.LexState, text: str, kind: token.TokenKind, start: i64)
     found: str @ "`)`, or `,` and another parameter type, found `->` — a function type closes its parameters before its `->`, `function(i64) -> i64`"
 
     # Right after the `(`, no parameter stands (defect 309's wording).
-    if l.tokens[last_word(l)].span.start == l.open_brackets[l.open_brackets.len() - 1].start
+    if l.tokens[last_word(l)].span.start == openers.top(l.open_brackets).start
         found @ "a parameter type or `)`, found `->` — a function type closes its parameters before its `->`, `function() -> i64`"
     d: diag.Diagnostic @ diag.new_diagnostic(
         code: "expected_function_type_params_close",
@@ -59,13 +60,13 @@ function close(@l: state.LexState, text: str, kind: token.TokenKind, start: i64)
 # result arrow of a function type written in them without its parentheses,
 # `function(function(i64) -> i64 -> i64)`, whose own `)` it follows.
 function in_the_parameters(l: state.LexState, text: str) -> bool
-    n = l.open_brackets.len()
+    n = openers.depth(l.open_brackets)
 
-    if n == 0 || text[l.open_brackets[n - 1].start] != '('
+    if n == 0 || text[openers.top(l.open_brackets).start] != '('
         return false
     open: i64 @ l.tokens.len() - 1
 
-    while open > 0 && l.tokens[open].span.start > l.open_brackets[n - 1].start
+    while open > 0 && l.tokens[open].span.start > openers.top(l.open_brackets).start
         open @ open - 1
 
     if open < 1 || l.tokens[open].kind != .lparen || l.tokens[open - 1].kind != .kw_function
@@ -117,7 +118,7 @@ function opener_of(l: state.LexState, closer: i64, floor: i64) -> i64
 function short(l: state.LexState, text: str, from: i64) -> bool
     stack: [u8] @ []
 
-    for span in l.open_brackets
+    for span in openers.live(l.open_brackets)
         stack @ stack.push(text[span.start])
 
     open: i64 @ stack.len()
@@ -228,7 +229,9 @@ function reach_ends(l: state.LexState, text: str, line: i64, inner: u8, kept: bo
 test "the brackets open at a `->` are short where its `)` was left out, and close where it was written past the result"
     text = "function f(g: (function(i64 -> i64)) -> i64\n    return 1\n"
     l: state.LexState @ state.new_state()
-    l.open_brackets @ [token.Span(start: 10, end: 11), token.Span(start: 14, end: 15), token.Span(start: 23, end: 24)]
+    l.open_brackets @ openers.of(
+        [token.Span(start: 10, end: 11), token.Span(start: 14, end: 15), token.Span(start: 23, end: 24)]
+    )
     assert short(l, text, from: 30)
     assert !short(l, "function f(g: (function(i64 -> i64))) -> i64\n    return 1\n", from: 30)
 
@@ -239,7 +242,7 @@ test "the brackets open at a `->` are short where its `)` was left out, and clos
     # A binding's, at a name after a line that kept its end (R2).
     b: state.LexState @ state.new_state()
     b.level @ 1
-    b.open_brackets @ [token.Span(start: 7, end: 8), token.Span(start: 16, end: 17)]
+    b.open_brackets @ openers.of([token.Span(start: 7, end: 8), token.Span(start: 16, end: 17)])
     assert short(b, "    g: (function(i64 -> i64) @ d\n    print(1))\n", from: 23)
 
 test "a closer closes the nearest opener of its kind, or the innermost where none is open"

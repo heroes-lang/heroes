@@ -20,6 +20,7 @@ use closers
 use separator_runs
 use word_place
 use lex_asked
+use openers
 
 # The index in `l.open_brackets` of the `(` right after a `for`, C's
 # three-clause header `for (i = 0; i < n; i++)`, whose `;` are its own and
@@ -54,10 +55,10 @@ function opened_by(@l: state.LexState, text: str, word: str) -> i64
 
     if slot >= 0 && l.asked[lex_asked.OPENED_AT + slot] == l.asked[lex_asked.PUSHES] && floor >= l.asked[lex_asked.OPENED_FLOOR + slot]
         return -1
-    k: i64 @ l.open_brackets.len() - 1
+    k: i64 @ openers.depth(l.open_brackets) - 1
 
     while k >= floor
-        open = l.open_brackets[k].start
+        open = openers.opener(l.open_brackets, k).start
 
         if text[open] == '(' && word_place.word_ending(text, at: word_place.significant_before(text, at: open, floor: 0) + 1) == word
             if word == "for" && in_past(@l, open: open)
@@ -82,7 +83,7 @@ function opened_by(@l: state.LexState, text: str, word: str) -> i64
 function header_semicolon(@l: state.LexState, text: str, at: i64) -> bool
     header = for_header(@l, text)
 
-    if header >= 0 && (header == l.open_brackets.len() - 1 || semicolons_of(@l, text, from: l.open_brackets[header].start, at: at) <= 2)
+    if header >= 0 && (header == openers.depth(l.open_brackets) - 1 || semicolons_of(@l, text, from: openers.opener(l.open_brackets, header).start, at: at) <= 2)
         state.error_token_at(@l, at)
         return true
 
@@ -93,7 +94,7 @@ function header_semicolon(@l: state.LexState, text: str, at: i64) -> bool
         in_a_while(@l, at: at)
         return true
 
-    if l.open_brackets.len() > 0 || l.holes.len() > 0
+    if openers.depth(l.open_brackets) > 0 || l.holes.len() > 0
         return false
 
     if begun_by(@l, text, at: at, keyword: .kw_while) && !separator_runs.ends_its_line(text, at: l.pos)

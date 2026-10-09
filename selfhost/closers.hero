@@ -31,15 +31,16 @@ use token
 use diag
 use state
 use lex_asked
+use openers
 
 # Before the token `kind` at `start` is emitted: a closer of another kind
 # than the innermost closes the opener of its own kind where one is open
 # below it (`close_to_its_kind`); a closer of the innermost's own kind, every
 # one of a program that compiles, asks nothing more.
 function before(@l: state.LexState, text: str, kind: token.TokenKind, start: i64)
-    n = l.open_brackets.len()
+    n = openers.depth(l.open_brackets)
 
-    if n > 0 && (kind == .rparen || kind == .rbracket || kind == .rbrace) && text[l.open_brackets[n - 1].start] != opener_of(kind)
+    if n > 0 && (kind == .rparen || kind == .rbracket || kind == .rbrace) && text[openers.top(l.open_brackets).start] != opener_of(kind)
         close_to_its_kind(@l, text, kind, start: start)
 
 # Before the closer `kind` at `start` closes the innermost opener: where that
@@ -47,10 +48,10 @@ function before(@l: state.LexState, text: str, kind: token.TokenKind, start: i64
 # innermost hole, the openers above that one are named never closed and
 # taken off the stack, so the closer closes its own.
 function close_to_its_kind(@l: state.LexState, text: str, kind: token.TokenKind, start: i64)
-    n = l.open_brackets.len()
+    n = openers.depth(l.open_brackets)
     want = opener_of(kind)
 
-    if n == 0 || text[l.open_brackets[n - 1].start] == want
+    if n == 0 || text[openers.top(l.open_brackets).start] == want
         return
     floor: i64 @ 0
 
@@ -65,7 +66,7 @@ function close_to_its_kind(@l: state.LexState, text: str, kind: token.TokenKind,
         return
     at: i64 @ n - 2
 
-    while at >= floor && text[l.open_brackets[at].start] != want
+    while at >= floor && text[openers.opener(l.open_brackets, at).start] != want
         at @ at - 1
 
     if at < floor
@@ -73,13 +74,13 @@ function close_to_its_kind(@l: state.LexState, text: str, kind: token.TokenKind,
         l.asked[lex_asked.NONE_FLOOR + seen] @ floor
         return
 
-    if !closes_its_own(text, brackets: l.open_brackets, at: at, from: start + 1)
+    if !closes_its_own(text, brackets: openers.live(l.open_brackets), at: at, from: start + 1)
         return
 
-    for span in l.open_brackets.slice(from: at + 1, to: n)
+    for span in openers.live(l.open_brackets).slice(from: at + 1, to: n)
         state.push_diagnostic(@l.diagnostics, never_closed(text, span))
 
-    l.open_brackets @ l.open_brackets.slice(from: 0, to: at + 1)
+    openers.cut(@l.open_brackets, to: at + 1)
     state.push_offset(@l.closes, at: start)
 
 # Whether the closer before `from` reads better as the closer of the opener
@@ -235,9 +236,9 @@ function run_of(first: diag.Diagnostic, text: str, more: i64) -> diag.Diagnostic
 test "a closer of another kind closes the opener of its own kind below, and names the ones above"
     text = "f(a, [b, c)"
     l: state.LexState @ state.new_state()
-    l.open_brackets @ [token.Span(start: 1, end: 2), token.Span(start: 5, end: 6)]
+    l.open_brackets @ openers.of([token.Span(start: 1, end: 2), token.Span(start: 5, end: 6)])
     close_to_its_kind(@l, text, .rparen, start: 10)
-    assert l.open_brackets.len() == 1
+    assert openers.depth(l.open_brackets) == 1
     assert l.diagnostics.len() == 1
     assert l.diagnostics[0].code == "unclosed_bracket"
     assert l.diagnostics[0].span.start == 5
@@ -247,24 +248,24 @@ test "a closer of another kind closes the opener of its own kind below, and name
     # wrong kind, since the line below closes the call.
     typo = "f(a, [b, c)\n)\n"
     t: state.LexState @ state.new_state()
-    t.open_brackets @ [token.Span(start: 1, end: 2), token.Span(start: 5, end: 6)]
+    t.open_brackets @ openers.of([token.Span(start: 1, end: 2), token.Span(start: 5, end: 6)])
     close_to_its_kind(@t, typo, .rparen, start: 10)
-    assert t.open_brackets.len() == 2
+    assert openers.depth(t.open_brackets) == 2
     assert t.diagnostics.len() == 0
 
     # `print(2]`: no `[` is open, so the `]` closes the `(` as the innermost.
     stray: state.LexState @ state.new_state()
-    stray.open_brackets @ [token.Span(start: 5, end: 6)]
+    stray.open_brackets @ openers.of([token.Span(start: 5, end: 6)])
     close_to_its_kind(@stray, "print(2]", .rbracket, start: 7)
-    assert stray.open_brackets.len() == 1
+    assert openers.depth(stray.open_brackets) == 1
     assert stray.diagnostics.len() == 0
 
     # Inside a hole, the openers below the hole's are the string's outside it.
     hole: state.LexState @ state.new_state()
-    hole.open_brackets @ [token.Span(start: 0, end: 1), token.Span(start: 5, end: 6)]
+    hole.open_brackets @ openers.of([token.Span(start: 0, end: 1), token.Span(start: 5, end: 6)])
     hole.holes @ [1]
     close_to_its_kind(@hole, "(f\"${[x)}\"", .rparen, start: 7)
-    assert hole.open_brackets.len() == 2
+    assert openers.depth(hole.open_brackets) == 2
     assert hole.diagnostics.len() == 0
 
 # Defect 482: a closer of a kind no opener open shares is read against the
@@ -285,7 +286,7 @@ test "a closer no opener of its kind answers is remembered until an opener is pu
 
     # Asked again, the answer stands, and the stack is as it was.
     before(@l, text, .rbracket, start: 5)
-    assert l.open_brackets.len() == 3
+    assert openers.depth(l.open_brackets) == 3
     assert l.diagnostics.len() == 0
 
     # A `[` pushed: the memory no longer stands, and the closer closes it,
@@ -296,5 +297,5 @@ test "a closer no opener of its kind answers is remembered until an opener is pu
     state.emit(@l, .lparen, 5)
     assert l.asked[lex_asked.NONE_AT + 1] != l.asked[lex_asked.PUSHES]
     before(@l, "(((x[(]", .rbracket, start: 6)
-    assert l.open_brackets.len() == 4
+    assert openers.depth(l.open_brackets) == 4
     assert l.diagnostics.len() == 1

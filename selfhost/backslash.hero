@@ -37,6 +37,7 @@ use diag
 use state
 use bytes
 use join_fix
+use openers
 
 ## At the `\`
 
@@ -63,7 +64,7 @@ function asked(@l: state.LexState, text: str)
 
     if l.holes.len() > 0
         rule @ "a literal and its holes stand on one line"
-    else if l.open_brackets.len() > 0
+    else if openers.depth(l.open_brackets) > 0
         rule @ "inside brackets a line goes on below with nothing at its end"
     d: diag.Diagnostic @ diag.new_diagnostic(
         code: "unexpected_character",
