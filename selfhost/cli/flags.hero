@@ -30,11 +30,8 @@
 #   flag by passing `(void *)&x` for an `@` argument it has checked
 #   itself (ops.hero, extern_probe.hero), so a correct binding compiles
 #   clean under it on every clang. Never a -Wno- flag (author
-#   instruction, the same day): a flag that hides what clang saw is no
-#   sitting's to choose. **One stands since 2026-10-09**, panel 199's R3
-#   below, which the author ratified by name (*clang's -Winfinite-recursion
-#   no longer passed on once the rule lands*), the checker the witness of
-#   what the warning could tell.
+#   instruction, the same day), **but one since 2026-10-09**: panel 199's R3
+#   below, which the author ratified by name.
 # - -fno-delete-null-pointer-checks is panel 154's (2026-09-15, defect 045):
 #   the standard lets clang assume a pointer it dereferences is non-null and
 #   delete every check downstream, so a program that handed a null handle to a
@@ -89,44 +86,24 @@
 #   was rebuilt under this flag on that leg to settle it. The Linux kernel took
 #   the mirror flag, `-funsigned-char`, in 6.2 for the reason Torvalds gave:
 #   making the language rules stricter to avoid differences is a good thing.
-# - **-fno-optimize-sibling-calls is panel 199's R2** (2026-10-09, defect 508,
-#   ratified with *unbounded recursion is an abort*): spec `:280` says
-#   recursion too deep aborts, and at `-O2`, where `heroes run` compiles,
-#   clang turned a call in tail position into a jump, so a function whose
-#   every path called itself, `ping` and `pong` calling each other, or a
-#   self-call through a function value ran until `timeout` stopped it (exit
-#   124) where `-O0` printed `panic: stack exhausted` (134). With the flag a
-#   call stays a call and every such program aborts at every level (Apple
-#   clang 21.0.0 and 22.1.8, the sitting's compiler-engineer; the landing's
-#   run goldens `fixedbugs-508-*`). It is every level's and not `-O2`'s: at
-#   `-O0` clang turns no call into a jump today, and the objects of the
-#   runtime and of two programs are byte-identical with the flag and without
-#   (Apple clang 21, 2026-10-09), so the word costs `-O0` nothing and the
-#   promise no longer rests on what clang does at `-O0`. The price, measured
-#   by the sitting: a correct tail recursion ten million deep, which printed
-#   its sum at `-O2` and aborted at `-O0`, aborts at both; a hundred thousand
-#   deep prints at both, as `fixedbugs-508-a-tail-recursion-...` asks. And
-#   it moves every unit's key and the runtime's once, since the key names
-#   this list (`toolchain.toolchain_at`).
-# - **-Wno-infinite-recursion is panel 199's R3** (2026-10-09, defect 507,
-#   ratified by the author): clang's *all paths through this function will
-#   call itself* was false on correct programs, a recursion ending on an
-#   `exit` inside a callee that otherwise returns (the spec-warden's
-#   `hidden2`) or inside a function handed to `map`, where no mark on the
-#   emitted `exit` reaches, and it reached the author in C words over the
-#   generated file. Since panel 199's R1 (`check/self_call.hero`) the checker
-#   refuses, in the program's words, a function every path of which calls
-#   itself, so what this drops is clang's warning where it cannot tell true
-#   from false (a call that may end the program before the self-call) or
-#   where clang says nothing anyway (mutual recursion, a self-call through a
-#   function value): nothing the checker could have told. Its last place in
-#   the list is load-bearing, after `-Wall`, since a later word wins.
-#   Measured 2026-10-09 at both levels: on Apple clang 21.0.0 (this Mac) the
-#   two false warnings before and none after; in the Linux arm64 container
-#   (Debian clang 22.1.8) none after on the same programs, and the true one
-#   on `climbs(helper(n))` before and none after
-#   (`tests/golden/run/fixedbugs-507-*`, held to no clang warning by the
-#   `warnings` suite).
+# - **-fno-optimize-sibling-calls is panel 199's R2** (defect 508, ratified
+#   2026-10-09 with *unbounded recursion is an abort*): at `-O2` clang made a
+#   call in tail position a jump, so `ping` and `pong` calling each other or
+#   a self-call through a function value ran until `timeout` stopped them,
+#   where spec `:280` promises the abort `-O0` gave. Every level's word: at
+#   `-O0` the objects are byte-identical with it (Apple clang 21), so the
+#   promise rests on no reading of clang there. The price: a tail recursion
+#   ten million deep aborts at `-O2` too, and a hundred thousand still
+#   returns (`surface-fixtures/deeptail`). The key names this list, so every
+#   unit's and the runtime's key moved once.
+# - **-Wno-infinite-recursion is panel 199's R3** (defect 507, ratified
+#   2026-10-09): clang's *all paths through this function will call itself*
+#   was false on correct programs ending on an `exit` inside a callee that
+#   otherwise returns, or inside a function handed to `map`. The checker
+#   refuses the true case in the program's words since R1
+#   (`check/self_call.hero`); what this drops is where clang cannot tell
+#   true from false, or is silent. Last, after `-Wall`, since a later word
+#   wins (`tests/golden/run/fixedbugs-507-*`).
 use cli/process
 
 function flags() -> [str]
