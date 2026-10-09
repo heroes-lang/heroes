@@ -359,9 +359,19 @@ function written(path: str, lines: [str]) -> ()?
 test "a checkout, a folder that holds something and a tree that is not there are refused before anything is cut"
     assert cut(compiler: "heroes", tree: "no/such/tree", out: "build/selftest-cut-none").is_err()
 
-    match cut(compiler: "heroes", tree: ".", out: "build/selftest-cut-checkout")
-        .ok _  => assert false
-        .err e => assert e.code == "checkout"
+    # Two checkouts of the test's own, a clone's `.git` a directory and a
+    # worktree's a file, so the test asks nothing of the folder it runs in:
+    # it asked `.`, and a copy of the tree is no checkout (defect 519).
+    clone = "build/selftest-cut-clone"
+    assert !process.mkdir_all(clone + "/.git").is_err()
+    worktree = "build/selftest-cut-worktree"
+    assert !process.mkdir_all(worktree).is_err()
+    assert !write_file(path: worktree + "/.git", text: "gitdir: elsewhere\n").is_err()
+
+    for tree in [clone, worktree]
+        match cut(compiler: "heroes", tree: tree, out: "build/selftest-cut-checkout")
+            .ok _  => assert false
+            .err e => assert e.code == "checkout"
 
     dir = "build/selftest-cut-taken"
     assert !process.mkdir_all(dir).is_err()
