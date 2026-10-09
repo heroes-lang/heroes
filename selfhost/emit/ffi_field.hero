@@ -16,6 +16,8 @@ use source
 use diag
 use emit/externs as emit_externs
 use emit/extern_field
+use emit/ffi_asked
+use emit/ffi_field_told
 use emit/ffi_lookup
 use emit/ffi_site
 use parse
@@ -29,7 +31,9 @@ use type_text
 # because that is the token the author must change — and it is why
 # extern_record puts its #line on the field rather than the
 # declaration.
-function field_type(s: source.Source, tree: ast.Ast, decls: [ast.Decl], line: str) -> diag.Diagnostic?
+# Where the refused round asked the header, the message says its type, width
+# and sign (defect 517, `emit/ffi_field_told.hero`).
+function field_type(s: source.Source, tree: ast.Ast, decls: [ast.Decl], line: str, fields: {str: ffi_asked.Typed}, widths: {str: i64}, word_bits: i64) -> diag.Diagnostic?
     if !ffi_lookup.has(text: line, needle: ffi_lookup.FAILED)
         return fail(code: "none", msg: "not an assertion failure")
     rest = ffi_lookup.after(text: line, marker: extern_field.FIELD_ASSERTION)
@@ -46,26 +50,36 @@ function field_type(s: source.Source, tree: ast.Ast, decls: [ast.Decl], line: st
 
     if found.is_err()
         return fail(code: "none", msg: "no group record has this field")
+    declared = found.must().declared
+    typed = fields[type_name + " " + member]
+    code = widths[type_name + " " + member].default(0)
+    message: str @ "`" + type_name + "." + member + "` is not `" + declared + "` in `" + found.must().header + "`"
+
+    if !typed.is_err()
+        message @ "`" + type_name + "." + member + "` is " + ffi_field_told.described(typed.must(), word_bits: word_bits) + " in `" + found.must().header + "`" + ffi_field_told.measured(code) + ", not `" + declared + "`"
     d: diag.Diagnostic @ diag.new_diagnostic(
         code: "ffi_field_type",
-        message: "`" + type_name + "." + member + "` is not `" + found.must().declared + "` in `" + found.must().header + "` — clang read the header's struct and the field disagrees",
+        message: message + " — clang read the header's struct and the field disagrees",
         span: found.must().field_span
     )
     d.notes @ d.notes.push(
         "a group's `record` IS the header's struct (§4.19), so every field is at the header's own width and sign: correct `" + member + "`, or name the header that spells `" + type_name + "` this way"
     )
-    declared = found.must().declared
+
+    if !typed.is_err()
+        return ok(
+            ffi_field_told.offered(d, s, decls, typed: typed.must(), code: code, word_bits: word_bits, member: member, declared: declared, written: found.must().type_span)
+        )
+    written = found.must().type_span
 
     # C's `char` is `i8` in every build (`-fsigned-char`, `cli/flags.hero`),
     # and `u8` is what 22 of panel 178's 50 readers wrote for it first (panel
     # 194's K0). Asked of the type the author wrote, `u8` or an array of it,
     # never of a name that merely begins so; the fix is a `guess`, since the
-    # header may as well write a type wider than a byte.
+    # header may as well write a type wider than a byte. A round that asked
+    # the header says its type instead (`ffi_field_told.offered`).
     if declared == "u8" || declared.len() > 2 && declared.slice(from: 0, to: 3) == "u8["
-        written = found.must().type_span
-        d.notes @ d.notes.push(
-            "where the header writes `char`, the field is `i8`: C's `char` is signed in every build, which passes `-fsigned-char`"
-        )
+        d.notes @ d.notes.push(ffi_field_told.SIGNED_CHAR)
         d.fixes @ d.fixes.push(
             diag.Fix(title: "declare `" + member + "` with `i8`", replacement: "i8", span: token.Span(start: written.start, end: written.start + 2), certainty: .guess)
         )
@@ -351,6 +365,14 @@ test "a const member is blamed on the field, and anybody else's stays the compil
     # A line that is not this class at all.
     assert const_member(s, parsed.decls, line: "t.hero:9:5: error: missing field 'b' initializer").is_err()
 
+function unasked() -> {str: ffi_asked.Typed}
+    none: {str: ffi_asked.Typed} = {}
+    return none
+
+function unsized() -> {str: i64}
+    none: {str: i64} = {}
+    return none
+
 test "field_type and flex read their markers and point at the field"
     text = "extern \"m.h\"\n    record Color\n        r: u8\n        data: i8[4]\n\nfunction touch(c: Color)\n    _ = c\n\nfunction main()\n    print(1)\n"
     parsed = parse.parse(text)
@@ -359,7 +381,7 @@ test "field_type and flex read their markers and point at the field"
     c = checker.check(parsed.tree, out, s, parsed.decls)
     assert c.diagnostics.len() == 0
     line = "t.hero:3:9: error: static assertion failed due to requirement 'x': heroes-ffi-field Color r"
-    d = field_type(s, parsed.tree, parsed.decls, line: line)
+    d = field_type(s, parsed.tree, parsed.decls, line: line, fields: unasked(), widths: unsized(), word_bits: 64)
     assert d.must().code == "ffi_field_type"
     assert d.must().message == "`Color.r` is not `u8` in `m.h` — clang read the header's struct and the field disagrees"
     flex = "t.hero:4:9: error: static assertion failed due to requirement 'y': heroes-ffi-flex Color data"
@@ -369,7 +391,15 @@ test "field_type and flex read their markers and point at the field"
 
     # A record nobody declared in a group stays the compiler's.
     ghost = "e: static assertion failed: heroes-ffi-field Ghost r"
-    assert field_type(s, parsed.tree, parsed.decls, line: ghost).is_err()
+    assert field_type(
+        s,
+        parsed.tree,
+        parsed.decls,
+        line: ghost,
+        fields: unasked(),
+        widths: unsized(),
+        word_bits: 64
+    ).is_err()
 
 test "a `u8` field clang refuses is told C's `char` is `i8`, and nothing else is (panel 194's K0)"
     text = "extern \"k.h\"\n    record u8pair tag pair\n        a: i32\n    record Uts tag utsname\n        sysname: u8[256]\n        id: u8\n        u8x: i32\n        p: u8pair\n\nfunction touch(u: Uts)\n    _ = u\n\nfunction main()\n    print(1)\n"
@@ -379,23 +409,113 @@ test "a `u8` field clang refuses is told C's `char` is `i8`, and nothing else is
     c = checker.check(parsed.tree, out, s, parsed.decls)
     assert c.diagnostics.len() == 0
     failed = "t.hero:5:9: error: static assertion failed due to requirement 'x': heroes-ffi-field Uts "
-    array = field_type(s, parsed.tree, parsed.decls, line: failed + "sysname").must()
+    array = field_type(
+        s,
+        parsed.tree,
+        parsed.decls,
+        line: failed + "sysname",
+        fields: unasked(),
+        widths: unsized(),
+        word_bits: 64
+    ).must()
     assert array.notes.len() == 2
     assert array.fixes.len() == 1
     assert array.fixes[0].replacement == "i8"
     assert source.span_text(s, array.fixes[0].span) == "u8"
     assert array.fixes[0].certainty == .guess
-    scalar = field_type(s, parsed.tree, parsed.decls, line: failed + "id").must()
+    scalar = field_type(
+        s,
+        parsed.tree,
+        parsed.decls,
+        line: failed + "id",
+        fields: unasked(),
+        widths: unsized(),
+        word_bits: 64
+    ).must()
     assert scalar.fixes.len() == 1
 
     # An `i32` field, and one whose record's name begins with `u8`, are told
     # their width and sign alone.
-    wide = field_type(s, parsed.tree, parsed.decls, line: failed + "u8x").must()
+    wide = field_type(
+        s,
+        parsed.tree,
+        parsed.decls,
+        line: failed + "u8x",
+        fields: unasked(),
+        widths: unsized(),
+        word_bits: 64
+    ).must()
     assert wide.notes.len() == 1
     assert wide.fixes.len() == 0
-    named = field_type(s, parsed.tree, parsed.decls, line: failed + "p").must()
+    named = field_type(
+        s,
+        parsed.tree,
+        parsed.decls,
+        line: failed + "p",
+        fields: unasked(),
+        widths: unsized(),
+        word_bits: 64
+    ).must()
     assert named.notes.len() == 1
     assert named.fixes.len() == 0
+
+# Defect 517: where the refused round asked the header, the message names its
+# type, width and sign, and the guess declares the field so over the whole type
+# written; an enumeration's answer carries the note that it is this machine's.
+test "a field the header was asked about is told the header's type, width and sign"
+    text = "extern \"k.h\"\n    record Ev tag ev\n        name: u8[8]\n        kind: i32\n        n: i64\n\nfunction touch(e: Ev)\n    _ = e\n\nfunction main()\n    print(1)\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    c = checker.check(parsed.tree, out, s, parsed.decls)
+    assert c.diagnostics.len() == 0
+    fields: {str: ffi_asked.Typed} @ {}
+    widths: {str: i64} @ {}
+    fields["Ev name"] @ ffi_asked.Typed(spelled: "char[8]", canonical: "char[8]")
+    widths["Ev name"] @ 64
+    fields["Ev kind"] @ ffi_asked.Typed(spelled: "ev_kind", canonical: "ev_kind")
+    widths["Ev kind"] @ 34
+    fields["Ev n"] @ ffi_asked.Typed(spelled: "int", canonical: "int")
+    widths["Ev n"] @ 33
+    failed = "t.hero:3:9: error: static assertion failed due to requirement 'x': heroes-ffi-field Ev "
+    name = field_type(
+        s,
+        parsed.tree,
+        parsed.decls,
+        line: failed + "name",
+        fields: fields,
+        widths: widths,
+        word_bits: 64
+    ).must()
+    assert name.message == "`Ev.name` is `char[8]` in `k.h`, not `u8[8]` — clang read the header's struct and the field disagrees"
+    assert name.notes.len() == 2
+    assert name.fixes[0].replacement == "i8[8]"
+    assert source.span_text(s, name.fixes[0].span) == "u8[8]"
+    kind = field_type(
+        s,
+        parsed.tree,
+        parsed.decls,
+        line: failed + "kind",
+        fields: fields,
+        widths: widths,
+        word_bits: 64
+    ).must()
+    assert kind.message == "`Ev.kind` is `ev_kind` in `k.h`, an unsigned 32-bit integer, not `i32` — clang read the header's struct and the field disagrees"
+    assert kind.notes.len() == 2
+    assert kind.fixes[0].replacement == "u32"
+    assert kind.fixes[0].certainty == .guess
+    n = field_type(
+        s,
+        parsed.tree,
+        parsed.decls,
+        line: failed + "n",
+        fields: fields,
+        widths: widths,
+        word_bits: 64
+    ).must()
+    assert n.message == "`Ev.n` is `int` in `k.h`, a signed 32-bit integer, not `i64` — clang read the header's struct and the field disagrees"
+    assert n.notes.len() == 1
+    assert n.fixes[0].replacement == "i32"
 
 test "unknown_field reads clang's own wording and lands on the field token"
     text = "extern \"raylib.h\"\n    record Color\n        red: u8\n\nfunction touch(c: Color)\n    _ = c\n\nfunction main()\n    print(1)\n"

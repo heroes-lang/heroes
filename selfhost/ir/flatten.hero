@@ -513,7 +513,7 @@ function call(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Che
         .hole | .unary | .binary | .field | .field_name | .index | .call | .method     => is_name @ is_name
         .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error    => is_name @ is_name
 
-    if is_name
+    if is_name && !questions.names_a_constant(r, decls, callee)
         match r.uses[callee]
             .top t =>
                 # Record construction IS a call with named arguments
@@ -562,6 +562,11 @@ function call(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Che
 
             .module | .local | .unresolved => is_name @ is_name
     target = expr(@b, a, r, c, s, decls, id: callee)
+    return value_call(@b, a, r, c, s, decls, target: target, given: given, ty: ty, span: span)
+
+# A call through a function value already in hand: no declaration is
+# known, so no parameter's mark is read, and the call is indirect.
+function value_call(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl], target: i64, given: [ast.Arg], ty: i64, span: token.Span) -> i64
     handed = lower_args(@b, a, r, c, s, decls, given: given, callee: fail(code: "none", msg: "a function value"))
     return emissions.emit_call(@b, target: .indirect(value: target), given: handed, variadic: false, ty: ty, span: span)
 
@@ -570,7 +575,7 @@ function call(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Che
 function case_construct(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl], name: token.Span, given: [ast.Arg], ty: i64, span: token.Span) -> i64
     match table.get(c.types, ty)
         .named n =>
-            found = layout.case_index(decls, s, decl: n.decl, name: name)
+            found = layout.case_index(@b.cases, decls, s, decl: n.decl, name: name)
 
             if found.is_err()
                 return build.emit(@b, op: .missing, ty: ty, span: span)
@@ -667,6 +672,10 @@ function method(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.C
     if is_qualified
         match r.uses[at]
             .top t =>
+                # `geom.DOUBLE(4)` reads the constant, then calls the value.
+                if questions.is_constant(decls, t.at)
+                    target = emissions.constant_value(@b, r, c, decls, at: at, span: name)
+                    return value_call(@b, a, r, c, s, decls, target: target, given: given, ty: ty, span: span)
                 handed = lower_args(@b, a, r, c, s, decls, given: given, callee: ok(t.at))
 
                 # A record is constructed, not called — the same split
@@ -786,17 +795,7 @@ function field_call(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: sta
         target @ build.emit(@b, op: .missing, ty: function_ty, span: span)
     else
         target @ build.emit(@b, op: .field(base: base, at: found.must()), ty: function_ty, span: span)
-    handed = lower_args(
-        @b,
-        a,
-        r,
-        c,
-        s,
-        decls,
-        given: given,
-        callee: fail(code: "none", msg: "a field holding a function value")
-    )
-    return emissions.emit_call(@b, target: .indirect(value: target), given: handed, variadic: false, ty: ty, span: span)
+    return value_call(@b, a, r, c, s, decls, target: target, given: given, ty: ty, span: span)
 
 ## assert — the source expression and both sides (§4.18, spec § 12 Tests and holes)
 

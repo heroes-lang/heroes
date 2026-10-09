@@ -1079,7 +1079,7 @@ function valued_expression(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, 
 # stand in a `match` used as a value.
 function arms(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], match_arms: [ast.Arm], subject: i64, want: Want, span: token.Span) -> [join.Branch]
     branches: [join.Branch] @ []
-    covered: [i64] @ []
+    covered: {i64: bool} @ {}
     wildcard_seen: bool @ false
     seen: reach.Seen @ reach.none()
 
@@ -1416,7 +1416,22 @@ function method(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.S
                         span: span,
                         expected: expected
                     )
-                    .constant_decl | .variant_decl | .test_decl => return state.error_ty_of(c)
+                    # `geom.DOUBLE(4)`: a constant is a value, so the call
+                    # is through it, as `named_call` sends `DOUBLE(4)`. This
+                    # arm answered the error type and no diagnostic, and the
+                    # verifier refused the program at exit 2 (defect 510).
+                    .constant_decl k => return indirect_call(
+                        @c,
+                        a,
+                        r,
+                        s,
+                        decls,
+                        callee_ty: lower.lower_ty(@c, a, r, k.ty),
+                        given: given,
+                        receiver: fail(code: "absent", msg: "no receiver"),
+                        span: span
+                    )
+                    .variant_decl | .test_decl => return state.error_ty_of(c)
             # The resolver already said what is wrong with it.
 
             .unresolved | .local | .builtin | .module => return state.error_ty_of(c)
@@ -1828,13 +1843,7 @@ function case_construct(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: 
     match decls[decl].kind
         .variant_decl v =>
             holder = source.span_text(s, decls[decl].name)
-            found: i64 @ -1
-            index: i64 @ 0
-
-            for one_case in v.cases
-                if source.span_text(s, one_case.name) == name
-                    found @ index
-                index @ index + 1
+            found = reach.case_named(@c, s, decl: decl, cases: v.cases, name: name)
 
             if found < 0
                 known: [str] @ []

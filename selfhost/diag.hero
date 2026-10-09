@@ -96,11 +96,17 @@ function new_unsupported(code: str, message: str, span: token.Span) -> Diagnosti
 # drops exactly these, which is what makes it the control arm Part 11
 # needs: the same compiler with §1 switched off. Every code traces to
 # a panel; machine_locked_path joined by panel 055's test — nothing
-# about the types is wrong, and C would take the program on exactly
-# one machine. hole_without_f joined by panel 184's (1b) amended, which
-# panel 185's R7 is (decided 2026-10-02, defect 176): without it a plain
-# literal whose braces name what is bound still means its text, braces
-# and all, which is the silent reading the rule refuses.
+# about the types is wrong, and without the rule the tools still read the
+# name where one machine's files decide what it names: clang opens a rooted
+# header as written and `pkg-config` a `.pc` from the directory it runs in
+# (both run 2026-10-09, defect 516), Windows a stream of a file (defect
+# 446). A rooted `link` is not one: ld64, GNU ld and lld-link each read it
+# as another path, never the one written (measured by defect 446), so it is
+# unwritable_name, told before this rule. hole_without_f joined by panel
+# 184's (1b) amended, which panel 185's R7 is (decided 2026-10-02, defect
+# 176): without it a plain literal whose braces name what is bound still
+# means its text, braces and all, which is the silent reading the rule
+# refuses.
 # spaced_minus_element joined by panel 180 (2026-09-27, the
 # coordinator's ruling on a question the sitting did not ask): without it
 # `[a` / `- b]` still has a meaning, two elements, which is the silent

@@ -19,13 +19,15 @@ use check/moved_calls as calls
 use check/moved_errors as errors
 
 record Frame
+    base: flow.Flow
     breaks: flow.Flow
     continues: flow.Flow
 
 record Pass
+    base: flow.Flow
     head: flow.Flow
-    flow: flow.Flow
-    continues: flow.Flow
+    # The end of the body met with every `continue`: what a turn leaves.
+    turned: flow.Flow
     breaks: flow.Flow
 
 record Walk
@@ -69,12 +71,12 @@ function statement(@w: Walk, a: ast.Ast, r: resolved.Resolved, s: source.Source,
         .break_stmt =>
             if w.frames.len() > 0
                 top = w.frames.len() - 1
-                w.frames[top].breaks @ flow.meet(one: w.frames[top].breaks, two: w.flow)
+                w.frames[top].breaks @ flow.meet(base: w.frames[top].base, one: w.frames[top].breaks, two: w.flow)
             w.flow @ flow.unreachable()
         .continue_stmt =>
             if w.frames.len() > 0
                 top = w.frames.len() - 1
-                w.frames[top].continues @ flow.meet(one: w.frames[top].continues, two: w.flow)
+                w.frames[top].continues @ flow.meet(base: w.frames[top].base, one: w.frames[top].continues, two: w.flow)
             w.flow @ flow.unreachable()
         .while_stmt l => looped(
             @w,
@@ -101,22 +103,26 @@ function looped(@w: Walk, a: ast.Ast, r: resolved.Resolved, s: source.Source, de
     w.loud @ false
     once = pass(@w, a, r, s, decls, cond: cond, body: body, bound: bound)
     w.loud @ loud
-    w.flow @ flow.meet(one: entry, two: flow.meet(one: once.flow, two: once.continues))
+    w.flow @ flow.closed(outer: entry, inner: flow.meet(base: once.base, one: once.base, two: once.turned))
     last = pass(@w, a, r, s, decls, cond: cond, body: body, bound: bound)
-    w.flow @ flow.meet(one: last.head, two: last.breaks)
+    w.flow @ flow.closed(outer: entry, inner: flow.meet(base: last.base, one: last.head, two: last.breaks))
 
 function pass(@w: Walk, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], cond: i64?, body: ast.Block, bound: token.Span?) -> Pass
+    base = flow.split(w.flow)
+    w.flow @ base
+
     if !cond.is_err()
         expr(@w, a, r, s, decls, id: cond.must())
 
     if !bound.is_err()
         revive(@w, name: bound.must())
     head = w.flow
-    w.frames @ w.frames.push(Frame(breaks: flow.unreachable(), continues: flow.unreachable()))
+    w.frames @ w.frames.push(Frame(base: base, breaks: flow.unreachable(), continues: flow.unreachable()))
     block(@w, a, r, s, decls, body: body)
     top = w.frames[w.frames.len() - 1]
     w.frames @ w.frames.slice(from: 0, to: w.frames.len() - 1)
-    return Pass(head: head, flow: w.flow, continues: top.continues, breaks: top.breaks)
+    turned = flow.meet(base: base, one: w.flow, two: top.continues)
+    return Pass(base: base, head: head, turned: turned, breaks: top.breaks)
 
 # A binding declared here holds a new value: on a loop's next turn, the one
 # it held before is gone.
@@ -147,17 +153,16 @@ function expr(@w: Walk, a: ast.Ast, r: resolved.Resolved, s: source.Source, decl
         .unary u => expr(@w, a, r, s, decls, id: u.operand)
         .binary b =>
             expr(@w, a, r, s, decls, id: b.left)
-            before = w.flow
-            expr(@w, a, r, s, decls, id: b.right)
 
             # The right side of `&&` and `||` runs on one path and not the other.
-            match b.op
-                .and | .or                                                           => w.flow @ flow.meet(
-                    one: before,
-                    two: w.flow
-                )
-                .add | .sub | .mul | .div | .rem | .eq | .ne | .lt | .le | .gt | .ge => return
-                .bit_and | .bit_or | .bit_xor | .shl | .shr                          => return
+            if b.op == .and || b.op == .or
+                before = w.flow
+                base = flow.split(before)
+                w.flow @ base
+                expr(@w, a, r, s, decls, id: b.right)
+                w.flow @ flow.closed(outer: before, inner: flow.meet(base: base, one: base, two: w.flow))
+            else
+                expr(@w, a, r, s, decls, id: b.right)
         .call c         => call(@w, a, r, s, decls, id: id, callee: c.callee, given: c.args)
         .method m       => method(@w, a, r, s, decls, id: id, receiver: m.receiver, given: m.args)
         .variant_case v => arguments(@w, a, r, s, decls, given: v.args)
@@ -208,22 +213,12 @@ function indices(@w: Walk, a: ast.Ast, r: resolved.Resolved, s: source.Source, d
         .try_expr | .if_expr | .match_expr                                                            => return
 
 function refuse_if_dead(@w: Walk, a: ast.Ast, s: source.Source, id: i64, path: [str], crossing: bool)
-    if !w.loud || !w.flow.live
+    if !w.loud
         return
+    told = errors.refusal(w.flow, s, read: a.exprs[id].span, path: path, crossing: crossing)
 
-    found = if crossing
-        flow.dead_crossing(w.flow, path: path)
-    else
-        flow.dead_read(w.flow, path: path)
-
-    if found.is_err()
-        return
-    span = a.exprs[id].span
-    whole = found.must().path.len() > path.len()
-    state.append_diagnostic(
-        @w.found,
-        errors.used_after_end(s, read: span, shown: source.span_text(s, span), ended: found.must(), whole: whole)
-    )
+    if !told.is_err()
+        state.append_diagnostic(@w.found, told.must())
 
 function arguments(@w: Walk, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], given: [ast.Arg])
     for arg in given
@@ -307,26 +302,30 @@ function crossed(@w: Walk, a: ast.Ast, r: resolved.Resolved, s: source.Source, d
 ## Where control splits
 
 function branches(@w: Walk, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], arms: [ast.Branch], otherwise: ast.Block?)
+    entry = w.flow
+    base = flow.split(entry)
+    w.flow @ base
     out: flow.Flow @ flow.unreachable()
 
     for one in arms
         expr(@w, a, r, s, decls, id: one.cond)
         tested = w.flow
         block(@w, a, r, s, decls, body: one.block)
-        out @ flow.meet(one: out, two: w.flow)
+        out @ flow.meet(base: base, one: out, two: w.flow)
         w.flow @ tested
 
     if !otherwise.is_err()
         block(@w, a, r, s, decls, body: otherwise.must())
-    w.flow @ flow.meet(one: out, two: w.flow)
+    w.flow @ flow.closed(outer: entry, inner: flow.meet(base: base, one: out, two: w.flow))
 
 function matched(@w: Walk, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], scrutinee: i64, arms: [ast.Arm])
     expr(@w, a, r, s, decls, id: scrutinee)
     entry = w.flow
+    base = flow.split(entry)
     out: flow.Flow @ flow.unreachable()
 
     for arm in arms
-        w.flow @ entry
+        w.flow @ base
 
         for pattern in arm.patterns
             match pattern.kind
@@ -340,6 +339,6 @@ function matched(@w: Walk, a: ast.Ast, r: resolved.Resolved, s: source.Source, d
             .one_stmt one => statement(@w, a, r, s, decls, id: one.at)
             .block bb     => block(@w, a, r, s, decls, body: bb.block)
 
-        out @ flow.meet(one: out, two: w.flow)
+        out @ flow.meet(base: base, one: out, two: w.flow)
 
-    w.flow @ out
+    w.flow @ flow.closed(outer: entry, inner: out)

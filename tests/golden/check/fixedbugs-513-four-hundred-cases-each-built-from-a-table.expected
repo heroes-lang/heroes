@@ -1,0 +1,1 @@
+tests/golden/check/fixedbugs-513-four-hundred-cases-each-built-from-a-table.hero:822:10: error[no_such_case]: `Shape` has no case `.square` — it has `.dot`, `.line`

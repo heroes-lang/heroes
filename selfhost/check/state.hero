@@ -173,6 +173,10 @@ record Checker
     # R4). Each loop sets it false over its body and gives the enclosing
     # one's back after, so a `break` of an inner loop is that loop's.
     broke: bool
+    # Each variant's cases by name, keyed by its declaration: built the first
+    # time a case of it is named, where a walk over the names at every arm
+    # and every construction cost the square of the cases (defects 512, 513).
+    cases: {i64: {str: i64}}
 
 function new_checker(out_of: resolved.Resolved, expr_count: i64) -> Checker
     types = table.new_types()
@@ -224,6 +228,7 @@ function new_checker(out_of: resolved.Resolved, expr_count: i64) -> Checker
 
     generic_names: [str] = []
     missing_returns: [diag.Diagnostic] = []
+    cases: {i64: {str: i64}} = {}
     return Checker(
         out: out,
         result: 0,
@@ -234,7 +239,8 @@ function new_checker(out_of: resolved.Resolved, expr_count: i64) -> Checker
         fallible: false,
         tail: false,
         in_test: false,
-        broke: false
+        broke: false,
+        cases: cases
     )
 
 function error_ty_of(c: Checker) -> i64

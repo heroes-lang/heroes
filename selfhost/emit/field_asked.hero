@@ -1,0 +1,91 @@
+# What a refused round asks the header about each group record field, and
+# how its width is read back (design.md §4.17, §4.19; defect 517, 2026-10-09).
+#
+# A refused field assertion says only that the program's type is wrong
+# (`emit/ffi_field.hero`), so `ffi_field_type` said *is not `u32`* and never
+# what the header has. Two questions per field join the refused round's unit
+# (`emit/ffi_asked.hero`), each under a `#line` naming it, as every question
+# there is:
+#
+# - the field initialises the unit's own struct, and clang's refusal names
+#   its type as the header spells it, the canonical one after it;
+# - an array sized by the field, its bytes times eight plus its kind, does the
+#   same, and the size is the answer: an enumeration's width and sign are its
+#   platform's choice (C11 6.7.2.2) and its name says neither, so no table of
+#   spellings can answer for it. Measured the day it was written: an
+#   enumeration of 1 and 2 answers `char (*)[34]`, unsigned, on this Mac and
+#   Linux arm64, and `char (*)[33]`, signed, on the Windows box.
+#
+# A field the header lacks, or a bit-field, which `sizeof` refuses, answers
+# nothing, and the field's diagnostic says what it always said.
+
+use ast
+use source
+use emit/ctype
+use emit/c_text
+use emit/mangle
+
+constant FIELD: str
+    "hero-ask-field "
+
+constant WIDTH: str
+    "hero-ask-width "
+
+# The two questions of every field of a group record of the program's own
+# files, each named `<record> <field>` after its prefix.
+function questions(names: ctype.Names, s: source.Source, decls: [ast.Decl]) -> [str]
+    out: [str] @ []
+    at: i64 @ 0
+
+    for decl in decls
+        match decl.kind
+            .record_decl rec =>
+                if !rec.header.is_err() && !source.is_library(s, decl.name.start)
+                    for field in rec.fields
+                        member = mangle.field_of(foreign: true, name: source.span_text(s, field.name))
+                        place = "((" + ctype.of(names, decl: at) + " *)0)->" + member
+                        asked = source.span_text(s, decl.name) + " " + member
+                        out @ out.push(c_text.line_directive(at: 1, file: FIELD + asked))
+                        out @ out.push(typing(given: place, n: out.len()))
+                        out @ out.push(c_text.line_directive(at: 1, file: WIDTH + asked))
+                        out @ out.push(typing(given: "(char (*)[" + sizing(place) + "])0", n: out.len()))
+            .constant_decl | .function_decl | .variant_decl | .test_decl => at @ at
+
+        at @ at + 1
+
+    return out
+
+# A question whose answer is the type clang names for `given`.
+function typing(given: str, n: i64) -> str
+    return "__attribute__((unused)) static void hero_ask_f_" + n.to_str() + "(void) { struct hero_ask_result hero_r = " + given + "; (void)hero_r; }"
+
+# A field's bytes times eight plus its kind: 1 a signed integer, `char`
+# under `-fsigned-char` included, 2 an unsigned one, 3 a float, 4 C's `bool`,
+# 0 anything else. `_Generic` matches an enumeration by the integer type it
+# is compatible with, which is the platform's choice.
+function sizing(place: str) -> str
+    kinds = "char: 1, signed char: 1, short: 1, int: 1, long: 1, long long: 1, unsigned char: 2, unsigned short: 2, unsigned int: 2, unsigned long: 2, unsigned long long: 2, float: 3, double: 3, long double: 3, _Bool: 4, default: 0"
+    return "sizeof(" + place + ") * 8 + _Generic(" + place + ", " + kinds + ")"
+
+# The number inside clang's `char (*)[N]`, 0 where there is none.
+function bracketed(spelled: str) -> i64
+    n: i64 @ 0
+    at: i64 @ 0
+    inside: bool @ false
+
+    while at < spelled.len()
+        b = spelled[at]
+
+        if b == '['
+            inside @ true
+        else if inside && b >= '0' && b <= '9'
+            n @ n * 10 + (b - '0').to_i64().must()
+        at @ at + 1
+
+    return n
+
+test "a width is read out of the array clang names"
+    assert bracketed("char (*)[33]") == 33
+    assert bracketed("char (*)[264]") == 264
+    assert bracketed("int") == 0
+    assert sizing("p") == "sizeof(p) * 8 + _Generic(p, char: 1, signed char: 1, short: 1, int: 1, long: 1, long long: 1, unsigned char: 2, unsigned short: 2, unsigned int: 2, unsigned long: 2, unsigned long long: 2, float: 3, double: 3, long double: 3, _Bool: 4, default: 0)"
