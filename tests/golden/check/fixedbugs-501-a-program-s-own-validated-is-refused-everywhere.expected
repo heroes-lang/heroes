@@ -1,0 +1,7 @@
+tests/golden/check/fixedbugs-501-a-program-s-own-validated-is-refused-everywhere.hero:31:10: error[builtin_name_taken]: `validated` is a built-in of the language, so the name is taken everywhere — pick another name
+tests/golden/check/fixedbugs-501-a-program-s-own-validated-is-refused-everywhere.hero:34:10: error[builtin_name_taken]: `validated` is a built-in of the language, so the name is taken everywhere — pick another name
+tests/golden/check/fixedbugs-501-a-program-s-own-validated-is-refused-everywhere.hero:37:12: error[builtin_name_taken]: `validated` is a built-in of the language, so the name is taken everywhere — pick another name
+tests/golden/check/fixedbugs-501-a-program-s-own-validated-is-refused-everywhere.hero:40:12: error[builtin_name_taken]: `validated` is a built-in of the language, so the name is taken everywhere — pick another name
+tests/golden/check/fixedbugs-501-a-program-s-own-validated-is-refused-everywhere.hero:46:9: error[builtin_name_taken]: `validated` is a built-in of the language, so the name is taken everywhere — pick another name
+tests/golden/check/fixedbugs-501-a-program-s-own-validated-is-refused-everywhere.hero:53:13: error[builtin_name_taken]: `validated` is a built-in of the language, so the name is taken everywhere — pick another name
+tests/golden/check/fixedbugs-501-a-program-s-own-validated-is-refused-everywhere.hero:57:5: error[builtin_name_taken]: `validated` is a built-in of the language, so the name is taken everywhere — pick another name

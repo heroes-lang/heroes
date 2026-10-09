@@ -56,9 +56,10 @@ function extern_named(decls: [ast.Decl], s: source.Source, name: str) -> i64?
     return fail(code: "absent", msg: "no extern is declared under that name")
 
 # The library's `validated`, which is what copies the bytes out (§4.19,
-# `selfhost/library_source.hero`). **Asked for by name AND by origin**: a
-# program is free to declare its own `validated`, and calling that one instead
-# would hand the release a function the compiler knows nothing about.
+# `selfhost/library_source.hero`). **Asked for by name AND by origin**: no
+# program may declare a `validated` since defect 501
+# (`resolve/builtin_names.hero`), and the origin is asked all the same, so the
+# release can call nothing but the library's.
 function library_validated(decls: [ast.Decl], s: source.Source) -> i64?
     at: i64 @ 0
 
