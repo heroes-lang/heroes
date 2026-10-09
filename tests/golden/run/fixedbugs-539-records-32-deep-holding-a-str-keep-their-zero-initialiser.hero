@@ -1,0 +1,149 @@
+# Fixed 2026-10-09, defect 539, lane b17-emit: the premise's witness.
+# The prologue zeroes a refcounted slot by bytes only past 32 structs held by
+# value (`typeorder.IN_ORDER_FROM`, `emit/body.hero`), and below it keeps
+# `= {0}`, which clang reaches by brace elision, a recursion as deep as the
+# chain: it died between 750 and 875 records holding a `str` (Apple clang 21,
+# arm64 macOS). This case is a chain of 32 records holding a `str` at its
+# bottom, its slot zeroed by `{0}` WITHOUT the help, on every platform the net
+# runs on, so the first clang that cannot goes red here.
+
+record R0
+    s: str
+
+record R1
+    inner: R0
+
+record R2
+    inner: R1
+
+record R3
+    inner: R2
+
+record R4
+    inner: R3
+
+record R5
+    inner: R4
+
+record R6
+    inner: R5
+
+record R7
+    inner: R6
+
+record R8
+    inner: R7
+
+record R9
+    inner: R8
+
+record R10
+    inner: R9
+
+record R11
+    inner: R10
+
+record R12
+    inner: R11
+
+record R13
+    inner: R12
+
+record R14
+    inner: R13
+
+record R15
+    inner: R14
+
+record R16
+    inner: R15
+
+record R17
+    inner: R16
+
+record R18
+    inner: R17
+
+record R19
+    inner: R18
+
+record R20
+    inner: R19
+
+record R21
+    inner: R20
+
+record R22
+    inner: R21
+
+record R23
+    inner: R22
+
+record R24
+    inner: R23
+
+record R25
+    inner: R24
+
+record R26
+    inner: R25
+
+record R27
+    inner: R26
+
+record R28
+    inner: R27
+
+record R29
+    inner: R28
+
+record R30
+    inner: R29
+
+record R31
+    inner: R30
+
+function top(t: str) -> R31
+    v0 = R0(s: t)
+    v1 = R1(inner: v0)
+    v2 = R2(inner: v1)
+    v3 = R3(inner: v2)
+    v4 = R4(inner: v3)
+    v5 = R5(inner: v4)
+    v6 = R6(inner: v5)
+    v7 = R7(inner: v6)
+    v8 = R8(inner: v7)
+    v9 = R9(inner: v8)
+    v10 = R10(inner: v9)
+    v11 = R11(inner: v10)
+    v12 = R12(inner: v11)
+    v13 = R13(inner: v12)
+    v14 = R14(inner: v13)
+    v15 = R15(inner: v14)
+    v16 = R16(inner: v15)
+    v17 = R17(inner: v16)
+    v18 = R18(inner: v17)
+    v19 = R19(inner: v18)
+    v20 = R20(inner: v19)
+    v21 = R21(inner: v20)
+    v22 = R22(inner: v21)
+    v23 = R23(inner: v22)
+    v24 = R24(inner: v23)
+    v25 = R25(inner: v24)
+    v26 = R26(inner: v25)
+    v27 = R27(inner: v26)
+    v28 = R28(inner: v27)
+    v29 = R29(inner: v28)
+    v30 = R30(inner: v29)
+    v31 = R31(inner: v30)
+    return v31
+
+function main()
+    kept: R31 @ top("x")
+    print(
+        kept.inner.inner.inner.inner.inner.inner.inner.inner.inner.inner.inner.inner.inner.inner.inner.inner.inner.inner.inner.inner.inner.inner.inner.inner.inner.inner.inner.inner.inner.inner.inner.s
+    )
+    kept @ top("yz")
+    print(
+        kept.inner.inner.inner.inner.inner.inner.inner.inner.inner.inner.inner.inner.inner.inner.inner.inner.inner.inner.inner.inner.inner.inner.inner.inner.inner.inner.inner.inner.inner.inner.inner.s
+    )
