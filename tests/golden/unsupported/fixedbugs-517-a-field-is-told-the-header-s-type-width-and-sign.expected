@@ -1,0 +1,24 @@
+error[ffi_field_type]: `Ev.kind` is `ev_kind` in `fixedbugs-517-a-field-is-told-the-header-s-type-width-and-sign.h`, a signed 32-bit integer, not `u32` — clang read the header's struct and the field disagrees
+  at tests/golden/unsupported/fixedbugs-517-a-field-is-told-the-header-s-type-width-and-sign.hero:14:9
+     |
+  14 |         kind: u32  #~ ffi_field_type
+     |         ^^^^
+  note: a group's `record` IS the header's struct (§4.19), so every field is at the header's own width and sign: correct `kind`, or name the header that spells `Ev` this way
+  note: `ev_kind` names no width of its own, as an enumeration's is each platform's choice: this is its width and sign on this machine, and a field is declared at the header's own on every platform the program builds for
+  fix (guess): declare `kind` with `i32`
+
+error[ffi_field_type]: `Ev.stamp` is `Uint32` (`unsigned int`) in `fixedbugs-517-a-field-is-told-the-header-s-type-width-and-sign.h`, an unsigned 32-bit integer, not `i32` — clang read the header's struct and the field disagrees
+  at tests/golden/unsupported/fixedbugs-517-a-field-is-told-the-header-s-type-width-and-sign.hero:15:9
+     |
+  15 |         stamp: i32  #~ ffi_field_type
+     |         ^^^^^
+  note: a group's `record` IS the header's struct (§4.19), so every field is at the header's own width and sign: correct `stamp`, or name the header that spells `Ev` this way
+  fix (guess): declare `stamp` with `u32`
+
+error[ffi_field_type]: `Ev.next` is `struct ev *` in `fixedbugs-517-a-field-is-told-the-header-s-type-width-and-sign.h`, not `i64` — clang read the header's struct and the field disagrees
+  at tests/golden/unsupported/fixedbugs-517-a-field-is-told-the-header-s-type-width-and-sign.hero:16:9
+     |
+  16 |         next: i64  #~ ffi_field_type
+     |         ^^^^
+  note: a group's `record` IS the header's struct (§4.19), so every field is at the header's own width and sign: correct `next`, or name the header that spells `Ev` this way
+  fix (guess): declare `next` with `ptr`

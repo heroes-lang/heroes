@@ -1,0 +1,221 @@
+# The type a header gives a group record's field, told beside the type the
+# program wrote (design.md §4.17, §4.19; defect 517, 2026-10-09).
+#
+# `ffi_field_type` reads the field assertion this emitter writes, whose
+# marker carries the record and the field and never the header's type, so it
+# said *is not `u32`* and nothing of what the header has: the gap an author
+# met when SDL's `type` and `scancode` were `int` on Windows and
+# `unsigned int` on macOS and Debian. A refused round asks clang the field's
+# type and its width and sign (`emit/ffi_asked.hero`), and this module says
+# them and offers the type that declares the field at the header's own width
+# and sign, as `ffi_parameter_type` does for a parameter.
+#
+# **The width and sign are asked, not looked up**: an enumeration's are its
+# platform's choice (C11 6.7.2.2), and its name says neither, so the table
+# of C's spellings (`emit/c_spellings.hero`) cannot answer for it. The offer
+# is a guess, as every offer of a type is: the header may be the wrong one.
+
+use token
+use ast
+use source
+use diag
+use emit/c_spellings
+use emit/ffi_asked
+use emit/ffi_result
+
+# The header's type of a field: its spelling, and the type clang gives after
+# it where that is another and not a word of the table.
+function described(typed: ffi_asked.Typed, word_bits: i64) -> str
+    return "`" + typed.spelled + "`" + ffi_result.also(typed, word_bits: word_bits)
+
+# Its width and sign, read from the asked number (`ffi_asked.sizing`), as a
+# phrase after a comma; nothing for a field that is no number.
+function measured(code: i64) -> str
+    bits = code / 8 * 8
+    kind = code % 8
+
+    if kind == 1
+        return ", a signed " + bits.to_str() + "-bit integer"
+
+    if kind == 2
+        return ", an unsigned " + bits.to_str() + "-bit integer"
+
+    if kind == 3
+        return ", a " + bits.to_str() + "-bit float"
+    return ""
+
+# The type that declares a field of `typed`: a number at the asked width and
+# sign, C's `bool`, an array of a number by the table's word for its element,
+# a record of the program's own groups by value, a handle by its pointer,
+# `cstr` or `ptr` for any other pointer; absent for a type the language has
+# no word for. A field is held to the header's own width, so a platform's
+# word keeps its caveat (spec § 13).
+function declaring(s: source.Source, decls: [ast.Decl], typed: ffi_asked.Typed, code: i64, word_bits: i64) -> c_spellings.Spelling?
+    none: str? = fail(code: "none", msg: "no caveat")
+    bits = code / 8 * 8
+    kind = code % 8
+    numeric = bits == 8 || bits == 16 || bits == 32 || bits == 64
+
+    if (kind == 1 || kind == 2) && numeric
+        sign: str @ "i"
+
+        if kind == 2
+            sign @ "u"
+        return ok(c_spellings.Spelling(heroes: sign + bits.to_str(), caveat: caveat(typed, word_bits: word_bits)))
+
+    if kind == 3 && (bits == 32 || bits == 64)
+        return ok(c_spellings.Spelling(heroes: "f" + bits.to_str(), caveat: none))
+
+    if kind == 4
+        return ok(c_spellings.Spelling(heroes: "bool", caveat: none))
+    c_type = typed.canonical
+
+    # A pointer to a function or to an array, before an array's brackets.
+    if has(text: c_type, needle: "(*)")
+        return ok(c_spellings.Spelling(heroes: "ptr", caveat: none))
+    open = last_bracket(c_type)
+
+    if open > 0 && c_type[c_type.len() - 1] == ']'
+        row = c_spellings.spelling(c_type: c_type.slice(from: 0, to: open), word_bits: word_bits)
+
+        if row.is_err()
+            return fail(code: "none", msg: "no word for this element")
+        return ok(
+            c_spellings.Spelling(heroes: row.must().heroes + c_type.slice(from: open, to: c_type.len()), caveat: row.must().caveat)
+        )
+
+    if c_type == "char *" || c_type == "const char *"
+        return ok(c_spellings.Spelling(heroes: "cstr", caveat: none))
+    pointer = c_type.len() > 0 && c_type[c_type.len() - 1] == '*'
+
+    for word in [typed.spelled, typed.canonical]
+        found = group_record(s, decls, tag: ffi_result.tag_of(word), handle: pointer)
+
+        if !found.is_err()
+            return ok(c_spellings.Spelling(heroes: found.must(), caveat: none))
+
+    if pointer
+        return ok(c_spellings.Spelling(heroes: "ptr", caveat: none))
+    return fail(code: "none", msg: "no word for this C type")
+
+# A record of the program's own groups named or tagged `tag`: one with fields
+# where the field holds the struct, a handle, a tag and no fields, where it
+# holds a pointer to it.
+function group_record(s: source.Source, decls: [ast.Decl], tag: str, handle: bool) -> str?
+    for decl in decls
+        match decl.kind
+            .record_decl rec =>
+                if !rec.header.is_err() && (rec.fields.len() == 0 && !rec.tag.is_err()) == handle
+                    named = source.span_text(s, decl.name) == tag
+                    tagged = !rec.tag.is_err() && source.span_text(s, rec.tag.must()) == tag
+
+                    if tag.len() > 0 && (named || tagged)
+                        return ok(source.span_text(s, decl.name))
+            .constant_decl | .function_decl | .variant_decl | .test_decl => continue
+
+    return fail(code: "none", msg: "no group record holds it so")
+
+constant SIGNED_CHAR: str
+    "where the header writes `char`, the field is `i8`: C's `char` is signed in every build, which passes `-fsigned-char`"
+
+# The field's diagnostic with what the header's type owes: why `char` is
+# `i8`, a platform's width, and the guess that declares the field at the
+# header's own width and sign over the whole type `written`, where there is
+# one and it is not the one `declared`.
+function offered(given: diag.Diagnostic, s: source.Source, decls: [ast.Decl], typed: ffi_asked.Typed, code: i64, word_bits: i64, member: str, declared: str, written: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @ given
+    open = last_bracket(typed.canonical)
+    element: str @ typed.canonical
+
+    if open > 0
+        element @ typed.canonical.slice(from: 0, to: open)
+
+    if element == "char"
+        d.notes @ d.notes.push(SIGNED_CHAR)
+    word = declaring(s, decls, typed: typed, code: code, word_bits: word_bits)
+
+    if word.is_err() || word.must().heroes == declared
+        return d
+
+    if !word.must().caveat.is_err()
+        d.notes @ d.notes.push(word.must().caveat.must())
+    d.fixes @ d.fixes.push(
+        diag.Fix(title: "declare `" + member + "` with `" + word.must().heroes + "`", replacement: word.must().heroes, span: written, certainty: .guess)
+    )
+    return d
+
+# What the answer owes where the header's type names no width of its own: a
+# platform's word says so through the table, and a name the table lacks, an
+# enumeration's, is this machine's answer and another platform may differ.
+function caveat(typed: ffi_asked.Typed, word_bits: i64) -> str?
+    for word in [typed.spelled, typed.canonical]
+        row = c_spellings.spelling(c_type: word, word_bits: word_bits)
+
+        if !row.is_err()
+            return row.must().caveat
+
+    return ok(
+        "`" + typed.spelled + "` names no width of its own, as an enumeration's is each platform's choice: this is its width and sign on this machine, and a field is declared at the header's own on every platform the program builds for"
+    )
+
+function has(text: str, needle: str) -> bool
+    at: i64 @ 0
+
+    while at + needle.len() <= text.len()
+        if text.slice(from: at, to: at + needle.len()) == needle
+            return true
+        at @ at + 1
+
+    return false
+
+# Where `[` last opens in `text`, -1 where it never does.
+function last_bracket(text: str) -> i64
+    at: i64 @ text.len() - 1
+
+    while at >= 0
+        if text[at] == '['
+            return at
+        at @ at - 1
+
+    return -1
+
+## Tests
+
+function as_typed(spelled: str, canonical: str) -> ffi_asked.Typed
+    return ffi_asked.Typed(spelled: spelled, canonical: canonical)
+
+test "a field's header type is said with the width and sign clang gave"
+    assert described(as_typed(spelled: "int", canonical: "int"), word_bits: 64) == "`int`"
+    assert described(as_typed(spelled: "Uint32", canonical: "unsigned int"), word_bits: 64) == "`Uint32` (`unsigned int`)"
+    assert measured(33) == ", a signed 32-bit integer"
+    assert measured(34) == ", an unsigned 32-bit integer"
+    assert measured(67) == ", a 64-bit float"
+    assert measured(32) == ""
+
+test "a field is offered the type at the header's width and sign, an enumeration's with its caveat"
+    no_decls: [ast.Decl] = []
+    s = source.new_source(name: "t.hero", text: "")
+    assert declaring(s, no_decls, typed: as_typed(spelled: "int", canonical: "int"), code: 33, word_bits: 64).must().heroes == "i32"
+    assert declaring(s, no_decls, typed: as_typed(spelled: "int", canonical: "int"), code: 33, word_bits: 64).must().caveat.is_err()
+    kind = declaring(
+        s,
+        no_decls,
+        typed: as_typed(spelled: "SDL_EventType", canonical: "SDL_EventType"),
+        code: 34,
+        word_bits: 64
+    ).must()
+    assert kind.heroes == "u32"
+    assert !kind.caveat.is_err()
+    assert declaring(s, no_decls, typed: as_typed(spelled: "long", canonical: "long"), code: 65, word_bits: 64).must().heroes == "i64"
+    assert !declaring(s, no_decls, typed: as_typed(spelled: "long", canonical: "long"), code: 65, word_bits: 64).must().caveat.is_err()
+    assert declaring(s, no_decls, typed: as_typed(spelled: "char[8]", canonical: "char[8]"), code: 64, word_bits: 64).must().heroes == "i8[8]"
+    assert declaring(s, no_decls, typed: as_typed(spelled: "bool", canonical: "_Bool"), code: 12, word_bits: 64).must().heroes == "bool"
+    assert declaring(s, no_decls, typed: as_typed(spelled: "const char *", canonical: "const char *"), code: 64, word_bits: 64).must().heroes == "cstr"
+    assert declaring(s, no_decls, typed: as_typed(spelled: "void (*)(int)", canonical: "void (*)(int)"), code: 64, word_bits: 64).must().heroes == "ptr"
+    assert declaring(
+        s,
+        no_decls,
+        typed: as_typed(spelled: "long double", canonical: "long double"),
+        code: 131,
+        word_bits: 64
+    ).is_err()

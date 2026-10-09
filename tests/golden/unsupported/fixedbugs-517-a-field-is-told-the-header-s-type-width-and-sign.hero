@@ -1,0 +1,21 @@
+# Defect 517, 2026-10-09 (lane b16-compiler): a field clang refused was told
+# *is not `u32`* and nothing of what the header has, the gap an author met
+# when SDL's `type` and `scancode`, enumerations, were `int` on Windows and
+# `unsigned int` on macOS and Debian. A refused round now asks clang each
+# group field's type, and its width and sign as a number an array is sized
+# by, since an enumeration's are its platform's and its name says neither;
+# the message says them, an enumeration's with a note that the answer is
+# this machine's, and a guess offers the type at the header's own width and
+# sign, `ptr` for a pointer to a struct with fields. Each line below was
+# told *is not `<type>`* alone before.
+
+extern "fixedbugs-517-a-field-is-told-the-header-s-type-width-and-sign.h"
+    record Ev tag ev
+        kind: u32  #~ ffi_field_type
+        stamp: i32  #~ ffi_field_type
+        next: i64  #~ ffi_field_type
+        n: i32
+
+function main()
+    e = Ev(kind: 1, stamp: 2, next: 4, n: 5)
+    print(e.n)

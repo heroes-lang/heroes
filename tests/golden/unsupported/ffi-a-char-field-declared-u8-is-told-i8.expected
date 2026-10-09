@@ -1,13 +1,13 @@
-error[ffi_field_type]: `Named.name` is not `u8[8]` in `ffi-a-char-field-declared-u8-is-told-i8.h` — clang read the header's struct and the field disagrees
+error[ffi_field_type]: `Named.name` is `char[8]` in `ffi-a-char-field-declared-u8-is-told-i8.h`, not `u8[8]` — clang read the header's struct and the field disagrees
   at tests/golden/unsupported/ffi-a-char-field-declared-u8-is-told-i8.hero:11:9
      |
   11 |         name: u8[8]  #~ ffi_field_type
      |         ^^^^
   note: a group's `record` IS the header's struct (§4.19), so every field is at the header's own width and sign: correct `name`, or name the header that spells `Named` this way
   note: where the header writes `char`, the field is `i8`: C's `char` is signed in every build, which passes `-fsigned-char`
-  fix (guess): declare `name` with `i8`
+  fix (guess): declare `name` with `i8[8]`
 
-error[ffi_field_type]: `Named.flag` is not `u8` in `ffi-a-char-field-declared-u8-is-told-i8.h` — clang read the header's struct and the field disagrees
+error[ffi_field_type]: `Named.flag` is `char` in `ffi-a-char-field-declared-u8-is-told-i8.h`, a signed 8-bit integer, not `u8` — clang read the header's struct and the field disagrees
   at tests/golden/unsupported/ffi-a-char-field-declared-u8-is-told-i8.hero:12:9
      |
   12 |         flag: u8  #~ ffi_field_type
