@@ -693,8 +693,9 @@ function compare(@c: state.Checker, s: source.Source, decls: [ast.Decl], expecte
         return
 
     # `type_fit.fits` is an id comparison with one exception, a parameter the
-    # declaration called `_` (defect 026, panel 129's ffi seat).
-    if type_fit.fits(@c.out.types, wanted: expected, got: got)
+    # declaration called `_` (defect 026, panel 129's ffi seat); a nameless
+    # written type refused already is quiet here (defect 554).
+    if type_fit.fits(@c.out.types, wanted: expected, got: got) || type_fit.unnamed_shadow(c.out.types, c.out.written_types, a: expected, b: got)
         return
     a_text = state.show(c, s, decls, expected)
     b_text = state.show(c, s, decls, got)
@@ -1743,7 +1744,7 @@ function bind_argument(@c: state.Checker, s: source.Source, decls: [ast.Decl], @
         check_generics.bind(@c, s, decls, @bindings, param: param, got: got, span: span)
         return
 
-    if param != got && !type_fit.fits(@c.out.types, wanted: param, got: got) && !table.poisoned(c.out.types, param) && !table.poisoned(c.out.types, got)
+    if param != got && !type_fit.fits(@c.out.types, wanted: param, got: got) && !table.poisoned(c.out.types, param) && !table.poisoned(c.out.types, got) && !type_fit.unnamed_shadow(c.out.types, c.out.written_types, a: param, b: got)
         a_text = state.show(c, s, decls, param)
         b_text = state.show(c, s, decls, got)
         state.push_diagnostic(@c, value_errors.mismatch(expected: a_text, got: b_text, span: span))
