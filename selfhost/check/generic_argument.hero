@@ -1,0 +1,153 @@
+# A form that takes its type from the context, written as a generic
+# function's argument (defect 544; spec § 9, panel 201's R1; design.md §4.12,
+# panel 105: a generic callee's arguments are synthesised).
+#
+# A generic function's parameter asks for no type, its concrete ones
+# included, so `ok(…)`, `fail(…)`, a bare `.case`, an empty `[]` or `{}`
+# written there finds none, and the walk refuses it where it stands with its
+# own message. Those messages advise the positions that DO ask, and one of
+# them is *pass it where a `T?` is expected*, which `g(x: 1, n: ok(2))` with
+# `n: i64?` had done. So once the argument is synthesised, the message said
+# at its whole span is told again, naming the parameter and the rule.
+#
+# **It asks the value, never the world** (`.claude/rules/module-shape.md`):
+# the argument's own kind says which form it is, and only a `cannot_infer`
+# said at exactly its span is told again. A form nested inside an argument,
+# `[ok(1)]`, stands in a position of its own (an array's first element) and
+# keeps its message; a generic function used as a value (defect 402) and a
+# generic call whose result is all it has (`wanted(…)`) already say *this
+# position asks for none*, and are none of these forms.
+#
+# Nothing is held on the checker: its record is copied at every frame of the
+# walk, and a field widens every copy (`check/state.hero`, panel 185's R5).
+
+use token
+use diag
+use ast
+use source
+use resolved
+use inventory
+use check/state
+use check/render
+use check/generics as check_generics
+
+# Tells again what the walk said, since `from`, of the argument `id` written
+# for parameter `at` of the function declared at `decl`.
+function retell(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], from: i64, id: i64, decl: i64, at: i64)
+    form = form_of(a, r, s, id)
+
+    if form == "" || from >= c.out.diagnostics.len()
+        return
+
+    match decls[decl].kind
+        .function_decl fd =>
+            told_at(
+                @c,
+                a,
+                s,
+                decls,
+                from: from,
+                id: id,
+                form: form,
+                callee: source.span_text(s, decls[decl].name),
+                fd: fd.value,
+                at: at
+            )
+        .constant_decl | .record_decl | .variant_decl | .test_decl => return
+
+function told_at(@c: state.Checker, a: ast.Ast, s: source.Source, decls: [ast.Decl], from: i64, id: i64, form: str, callee: str, fd: ast.FunctionDecl, at: i64)
+    span = a.exprs[id].span
+    parameter = fd.params[at]
+    letters: [str] @ []
+
+    for g in fd.generics
+        letters @ letters.push(source.span_text(s, g))
+
+    # The parameter's own type where its signature writes one the reader can
+    # write too; `<type>` where it holds a type parameter of the callee.
+    written: str @ "<type>"
+    ty = state.written_type(c.out, parameter.ty)
+
+    if !ty.is_err()
+        written @ render.render_ty(c.out.types, s, decls, ty.must(), letters)
+        n: i64 @ 0
+
+        while n < letters.len()
+            if check_generics.mentions(c, ty: ty.must(), at: n)
+                written @ "<type>"
+            n @ n + 1
+
+    k: i64 @ from
+
+    while k < c.out.diagnostics.len()
+        d = c.out.diagnostics[k]
+
+        if d.code == "cannot_infer" && d.span.start == span.start && d.span.end == span.end
+            replace(
+                @c.out.diagnostics,
+                at: k,
+                d: told(form: form, callee: callee, parameter: source.span_text(s, parameter.name), written: written, text: source.span_text(s, span), span: span)
+            )
+        k @ k + 1
+
+# Lent, so the list is written in place (defect 350's shape).
+function replace(@said: [diag.Diagnostic], at: i64, d: diag.Diagnostic)
+    said[at] @ d
+
+# The form an argument is, as its message names it, or "" where it is none
+# that takes its type from the context alone.
+function form_of(a: ast.Ast, r: resolved.Resolved, s: source.Source, id: i64) -> str
+    match a.exprs[id].kind
+        .call cl =>
+            match r.uses[cl.callee]
+                .builtin b =>
+                    name = inventory.name_of(b.at)
+
+                    if name == "ok" || name == "fail"
+                        return name + "(…)"
+                    return ""
+                .top | .local | .module | .unresolved => return ""
+        .variant_case vc => return "." + source.span_text(s, vc.name)
+        .array items =>
+            if items.elements.len() == 0
+                return "[]"
+            return ""
+        .map entries =>
+            if entries.entries.len() == 0
+                return "{}"
+            return ""
+        .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit | .null_ptr => return ""
+        .name | .hole | .unary | .binary | .field | .field_name | .index | .method     => return ""
+        .try_expr | .if_expr | .match_expr | .error                                    => return ""
+
+    return ""
+
+# The message: what the form takes its type from, and that this parameter
+# gives none; the fix binds it first with the parameter's own type where the
+# signature writes one, `<type>` where it holds a type parameter.
+function told(form: str, callee: str, parameter: str, written: str, text: str, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "cannot_infer",
+        message: "`" + form + "` takes its type from the type the context asks for, and a generic function's parameter asks for none, `" + parameter + "` of `" + callee + "` included",
+        span: span
+    )
+    d.fixes @ d.fixes.push(
+        diag.Fix(title: "bind it first, `v: " + written + " = " + text + "`, and pass `v`", replacement: "", span: span, certainty: .guess)
+    )
+    return d
+
+## Tests
+
+test "the parameter is named, and the fix binds the program's own text first"
+    d = told(
+        form: "ok(…)",
+        callee: "g",
+        parameter: "n",
+        written: "i64?",
+        text: "ok(2)",
+        span: token.Span(start: 0, end: 5)
+    )
+    assert d.code == "cannot_infer"
+    assert d.message == "`ok(…)` takes its type from the type the context asks for, and a generic function's parameter asks for none, `n` of `g` included"
+    assert d.fixes[0].title == "bind it first, `v: i64? = ok(2)`, and pass `v`"
+    assert d.fixes[0].certainty == .guess
