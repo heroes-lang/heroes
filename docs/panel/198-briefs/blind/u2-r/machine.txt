@@ -1,0 +1,4 @@
+Debian GNU/Linux 13 (trixie) on arm64 (aarch64), clang 22.1.8.
+libcurl's development files were installed with the system's package manager.
+`pkg-config --cflags --libs libcurl` prints:
+-I/usr/include/aarch64-linux-gnu -isystem /usr/include/mit-krb5 -I/usr/include/p11-kit-1 -lcurl

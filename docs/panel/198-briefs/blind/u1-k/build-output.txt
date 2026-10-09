@@ -1,0 +1,7 @@
+error[ffi_package]: the package `sdl3` answered with `-Wl,--enable-new-dtags`, which this compiler does not pass on
+  at main.hero:1:29
+    |
+  1 | extern "SDL3/SDL.h" package "sdl3"
+    |                             ^^^^^^
+  note: only `-D`, `-U`, `-I`, `-L`, `-l` and `-F`, each with its value joined or as the next word, `-framework <name>`, and `-Wl,-framework,<name>` and `-Wl,-rpath,<dir>`, in one word or split as `-Wl,-rpath -Wl,<dir>`, are accepted: everything else is a flag a package file could use to run code during the build (Go's CVE-2018-6574)
+  note: name the library directly: `link "SDL3"` in place of `package "sdl3"`, built with `--include /usr/local/include --library /usr/local/lib`; `link` writes no rpath, so the loader must find `/usr/local/lib` when the program runs
