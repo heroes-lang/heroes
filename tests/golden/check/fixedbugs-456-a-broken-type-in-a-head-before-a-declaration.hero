@@ -2,9 +2,16 @@
 # body. `check` stopped at exit 134; told now, and the declaration after it
 # read as its own.
 
-function f(a: (  #~v expected_function_type expected_end_of_line expected_binding_symbol
+function f(a: (  #~v expected_function_type
         bool), b: bool)
-    print(1)  #~ expected_declaration
+    print(1)
 
 function main()
     f(a: true, b: true)
+
+# Moved 2026-10-09 with defect 496's repair (lane b15-parse): the line
+# below a type broken after its `(` is the head's own, no body a closer one
+# too many spilled into it (`spill_reading`), so the head is read to its
+# end and each broken type is told once, its body read as the body; the
+# reports past the type, `expected_end_of_line`, `expected_binding_symbol`
+# and the body's `expected_declaration`, are gone.

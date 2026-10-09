@@ -1,0 +1,4 @@
+tests/golden/check/fixedbugs-496-a-type-broken-after-its-paren-in-a-head-is-told-once.hero:19:9: error[expected_function_type]: expected `function` — in a type, `(` opens either `()` or a function type, `(function(A) -> B)`, found a name (`bool`)
+tests/golden/check/fixedbugs-496-a-type-broken-after-its-paren-in-a-head-is-told-once.hero:23:9: error[expected_function_type]: expected `function` — in a type, `(` opens either `()` or a function type, `(function(A) -> B)`, found a name (`bool`)
+tests/golden/check/fixedbugs-496-a-type-broken-after-its-paren-in-a-head-is-told-once.hero:24:9: error[expected_function_type]: expected `function` — in a type, `(` opens either `()` or a function type, `(function(A) -> B)`, found a name (`bool`)
+tests/golden/check/fixedbugs-496-a-type-broken-after-its-paren-in-a-head-is-told-once.hero:28:5: error[expected_params_close]: expected `)`, or `,` and another parameter, found a name (`print`)
