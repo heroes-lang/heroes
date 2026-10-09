@@ -50,6 +50,7 @@ import re
 import subprocess
 
 import commits
+import runs
 import staged
 
 CONTRACT = "CLAUDE.md § Hard stops"
@@ -58,6 +59,10 @@ UNREAD = object()
 # What stands for the words `xargs` adds to the command it runs, which the
 # text does not hold.
 XARGS = "the words `xargs` adds"
+# And the paths a `find` gives the command it runs (`runs.py`, defect 534),
+# read as `XARGS` is: each a word the text does not hold.
+FOUND = runs.FOUND
+GIVEN = (XARGS, FOUND)
 # A brace expansion the shell makes before git reads the word: `{a,e}.txt`.
 BRACES = re.compile(r"\{[^{}]*(,|\.\.)[^{}]*\}")
 
@@ -205,7 +210,7 @@ def unreadable(word):
     """Whether the shell makes `word` into something else before git reads
     it: an expansion, a brace expansion, a home directory; or `xargs` gives
     it."""
-    return commits.expansion(word) or bool(BRACES.search(word)) or word.startswith("~") or XARGS in word
+    return commits.expansion(word) or bool(BRACES.search(word)) or word.startswith("~") or any(given in word for given in GIVEN)
 
 
 def readable(words):
@@ -336,12 +341,12 @@ def judged(verb, words, where, opts, env, line, appended=False):
         if verb == "checkout":
             if head is None:
                 return None
-            shape = ("git checkout " + ("<commit>" if head == XARGS else head) + " --", source, False, got.get("overlay") is not False, False)
+            shape = ("git checkout " + ("<commit>" if head in GIVEN else head) + " --", source, False, got.get("overlay") is not False, False)
         else:
             mode = [m for m in MODES if got.get(m) is True]
             if mode and mode[-1] in ("soft", "hard", "merge"):
                 return None
-            shape = ("git reset" + (" --keep" if "keep" in mode else "") + (" " + head if head and head != XARGS else ""), source, True, False, False)
+            shape = ("git reset" + (" --keep" if "keep" in mode else "") + (" " + head if head and head not in GIVEN else ""), source, True, False, False)
     from_file = got.get("pathspec-from-file")
     unread = []
     if isinstance(from_file, str):
@@ -375,8 +380,8 @@ def tree_and_paths(verb, got, plain, after, where, opts, env):
         paths = after
     elif plain and (len(plain) > 1 or listing) and (unreadable(plain[0]) or tree_ish(where, opts, env, plain[0])):
         head, paths = plain[0], plain[1:]
-    elif plain and plain[0] == XARGS:
-        head, paths = XARGS, plain
+    elif plain and plain[0] in GIVEN:
+        head, paths = plain[0], plain
     elif verb == "reset" and plain and tree_ish(where, opts, env, plain[0]):
         head, paths = plain[0], []
     else:
@@ -440,8 +445,8 @@ def refusal(said, extra, source, index_alone, removing, overlay, standing, unrea
                 + " put back as " + whence + " has it, a staged deletion undone")
     blind = ""
     if unread:
-        blind = (" This guard cannot read which paths " + ", ".join(word if word == XARGS else "`" + word + "`" for word in unread)
-                 + " name" + ("" if len(unread) > 1 or unread[0] == XARGS else "s") + ", so it read the command as naming every path.")
+        blind = (" This guard cannot read which paths " + ", ".join(word if word in GIVEN else "`" + word + "`" for word in unread)
+                 + " name" + ("" if len(unread) > 1 or unread[0] in GIVEN else "s") + ", so it read the command as naming every path.")
     if source is UNREAD:
         blind += " This guard cannot read that commit, so it read it as unlike every staged version."
     if index_alone:
