@@ -1,0 +1,1 @@
+tests/golden/check/fixedbugs-508-two-functions-calling-each-other-for-ever-abort-at-every-level.hero:16:12: error[endless_recursion]: `ping` and `pong` call each other for ever: every path through `ping` calls `pong` and every path through `pong` calls `ping`, before it can return, so no call to either returns

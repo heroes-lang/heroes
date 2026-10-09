@@ -1,0 +1,18 @@
+# Defect 520, 2026-10-09, panel 201's R3, ratified: the witness that replaced
+# `fixedbugs-508-two-functions-calling-each-other-for-ever-abort-at-every-level`
+# once `check` refuses a cycle of functions with no way out (that case is in
+# `check/` since). `ping` returns when `n` is 0, a way out by syntax, so the
+# rule lets the cycle through; called with 1 it never takes it, and the two
+# call each other until the stack is exhausted, an abort at every level
+# (panel 199's R2: unbounded recursion is an abort). Under the sanitiser the
+# runtime's guard yields to ASan, which says `stack-overflow`.
+function ping(n: i64) -> i64
+    if n == 0
+        return 0
+    return pong(n)
+
+function pong(n: i64) -> i64
+    return ping(n)
+
+function main()
+    print(ping(1))

@@ -41,8 +41,8 @@ use check/self_walk
 
 ## The rule
 
-function walked(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], at: i64, body: ast.Block, collect: bool) -> self_walk.Walk
-    w: self_walk.Walk @ self_walk.start(at: at, collect: collect)
+function walked(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], at: i64, body: ast.Block, collect: bool, members: [bool]) -> self_walk.Walk
+    w: self_walk.Walk @ self_walk.start(at: at, collect: collect, members: members)
     block(@w, @c, a, r, s, decls, body: body)
 
     # The end of the body returns, from a function with no result; from one
@@ -108,8 +108,7 @@ function looped(@w: self_walk.Walk, @c: state.Checker, a: ast.Ast, r: resolved.R
         return
 
     if path_end.forever(a, s, cond: cond.must(), broken: top.broke)
-        if turns.live && !turns.called
-            w.escaped @ true
+        self_walk.escape_at(@w, flow: turns)
         w.flow @ self_walk.dead()
         return
 
@@ -128,12 +127,12 @@ function expr(@w: self_walk.Walk, @c: state.Checker, a: ast.Ast, r: resolved.Res
             match r.uses[id]
                 .top t =>
                     if may_end.constant_function(c, decls, at: t.at, id: id)
-                        self_walk.may_leave(@w)
+                        self_walk.may_leave_named(@w)
                     else
                         self_walk.other_call(@w, decls, at: t.at)
                 .local l =>
                     if w.flow.live && !w.flow.called && may_end.holds_a_function(c, at: l.at)
-                        self_walk.may_leave(@w)
+                        self_walk.may_leave_named(@w)
                 .builtin | .module | .unresolved => return
         .interp ip =>
             for h in ip.holes
@@ -191,12 +190,21 @@ function call(@w: self_walk.Walk, @c: state.Checker, a: ast.Ast, r: resolved.Res
         arguments(@w, @c, a, r, s, decls, given: given, own: false)
         self_walk.may_leave(@w)
         return
-    own = names_itself(r, w, at: callee, ufcs: false, decls: decls)
+    known = known_callee(a, r, decls, at: callee)
+    own = names_itself(r, w, at: callee, ufcs: false, decls: decls) || known >= 0 && self_walk.among(w, at: known)
     arguments(@w, @c, a, r, s, decls, given: given, own: own)
-    expr(@w, @c, a, r, s, decls, id: callee)
+    to: i64 @ top_at(r, at: callee)
+
+    # A value bound once to a function the program writes, `f = go`, is that
+    # function where it is called (panel 201, defect 520).
+    if known >= 0
+        to @ known
+        self_walk.other_call(@w, decls, at: known)
+    else
+        expr(@w, @c, a, r, s, decls, id: callee)
 
     if own
-        self_walk.hit(@w, id: id)
+        self_walk.hit(@w, id: id, to: to)
 
 # `m.f(x)` names another module's `f` or this one's, by the resolver's
 # answer; `x.f(y)` calls a field of `x` holding a function where one is named
@@ -214,7 +222,7 @@ function method(@w: self_walk.Walk, @c: state.Checker, a: ast.Ast, r: resolved.R
     if field
         self_walk.may_leave(@w)
     else if own
-        self_walk.hit(@w, id: id)
+        self_walk.hit(@w, id: id, to: top_at(r, at: id))
     else
         match r.uses[id]
             .top t                                    => self_walk.other_call(@w, decls, at: t.at)
@@ -225,8 +233,40 @@ function method(@w: self_walk.Walk, @c: state.Checker, a: ast.Ast, r: resolved.R
 # parameter takes no UFCS, `ufcs_on_mutable`).
 function names_itself(r: resolved.Resolved, w: self_walk.Walk, at: i64, ufcs: bool, decls: [ast.Decl]) -> bool
     match r.uses[at]
-        .top t => return t.at == w.decl && (!ufcs || !walk.ufcs_hides_the_marker(decls, decl: t.at))
+        .top t => return self_walk.among(w, at: t.at) && (!ufcs || !walk.ufcs_hides_the_marker(decls, decl: t.at))
         .local | .builtin | .module | .unresolved => return false
+
+# The declaration the name at `at` resolves to, -1 where it is none.
+function top_at(r: resolved.Resolved, at: i64) -> i64
+    match r.uses[at]
+        .top t                                    => return t.at
+        .local | .builtin | .module | .unresolved => return -1
+
+    return -1
+
+# The function a call through the name at `at` reaches, where the checker knows
+# it: a local bound once, never written, to a function's name; -1 otherwise.
+function known_callee(a: ast.Ast, r: resolved.Resolved, decls: [ast.Decl], at: i64) -> i64
+    match r.uses[at]
+        .local l =>
+            held = r.locals[l.at]
+
+            if held.kind != .bind || held.mutable || held.writes > 0 || held.value.is_err()
+                return -1
+            value = held.value.must()
+
+            if a.exprs[value].kind != .name
+                return -1
+
+            match r.uses[value]
+                .top t =>
+                    match decls[t.at].kind
+                        .function_decl _                                           => return t.at
+                        .constant_decl | .record_decl | .variant_decl | .test_decl => return -1
+                .local | .builtin | .module | .unresolved => return -1
+        .top | .builtin | .module | .unresolved => return -1
+
+    return -1
 
 ## Where control splits
 

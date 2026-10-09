@@ -12,6 +12,7 @@ use resolved
 use check/state
 use check/self_call
 use check/may_end
+use check/endless_cycle
 use flow_errors
 
 # Every function the program writes, with a body, after the types are
@@ -19,25 +20,58 @@ use flow_errors
 function every_path_calls_itself(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl])
     at: i64 @ 0
     ends: [bool] @ []
+    asked: [bool] @ []
+    none: [bool] = []
+
+    # The functions each one names on a path before its own call, one after
+    # another, `edges[starts[i] .. starts[i + 1]]` for the declaration at `i`:
+    # the call graph the cycles are sought in (panel 201, defect 520), read
+    # off the one walk each function already takes.
+    starts: [i64] @ []
+    edges: [i64] @ []
 
     for decl in decls
+        starts @ starts.push(edges.len())
+
         match decl.kind
             .function_decl fd =>
                 if !fd.value.is_extern && !fd.value.body.is_err() && !source.is_library(s, decl.name.start)
-                    w = self_call.walked(@c, a, r, s, decls, at: at, body: fd.value.body.must(), collect: false)
-                    named: [i64] @ []
+                    w = self_call.walked(
+                        @c,
+                        a,
+                        r,
+                        s,
+                        decls,
+                        at: at,
+                        body: fd.value.body.must(),
+                        collect: true,
+                        members: none
+                    )
 
-                    if !w.escaped && w.witness >= 0 && w.saw
-                        named @ self_call.walked(@c, a, r, s, decls, at: at, body: fd.value.body.must(), collect: true).named
+                    for named in w.named
+                        edges @ edges.push(named)
 
-                        if ends.len() == 0
-                            ends @ may_end.answers(@c, a, r, s, decls)
+                    if !w.escaped && w.witness >= 0 && w.saw && ends.len() == 0
+                        ends @ may_end.answers(@c, a, r, s, decls)
 
-                    if !w.escaped && w.witness >= 0 && !may_end.any_of(ends, names: named)
+                    refused = !w.escaped && w.witness >= 0 && !(w.saw && may_end.any_of(ends, names: w.named))
+
+                    # Asked again in a cycle unless settled alone: refused, or
+                    # free, a way out no cycle can close (`self_walk.Walk.free`).
+                    asked @ asked.push(!refused && !w.free)
+
+                    if refused
                         state.push_diagnostic(
                             @c,
                             flow_errors.endless_recursion_at(a, r, s, decls, at: at, site: w.witness)
                         )
-            .constant_decl | .record_decl | .variant_decl | .test_decl => at @ at
+                else
+                    asked @ asked.push(false)
+            .constant_decl | .record_decl | .variant_decl | .test_decl => asked @ asked.push(false)
 
         at @ at + 1
+
+    starts @ starts.push(edges.len())
+
+    # And a cycle of them (panel 201, defect 520).
+    endless_cycle.every_cycle(@c, a, r, s, decls, asked: asked, starts: starts, edges: edges)

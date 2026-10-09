@@ -1,0 +1,367 @@
+# Panel 199's rule widened from one function to a cycle of them (panel 201,
+# defect 520; design.md §4.7, §4.17): functions every path of each of which
+# calls another of them before it can return or end are refused, once, at
+# the first one's call. None of them gives anything back: a call to one
+# returns only once the call it makes has, and that one is to another of
+# them.
+#
+# **Which functions**: the greatest set of the program's functions, those
+# panel 199's rule refused alone left out, such that every path through each
+# reaches a call to one of the set before a way out (`check/self_call.hero`'s
+# walk, a call to any member counting as a call to itself, and a function it
+# calls on the way that may end the program being a way out, as there).
+# Whatever stays never returns, whatever set it is, by the argument above.
+#
+# **How it is found**: a call to a member is a call the function's own walk
+# saw (`check/endless.hero` keeps them, the call graph), so the set is
+# settled one strongly connected part of that graph at a time, sinks first
+# (`check/endless_parts.hero`), the members of the parts settled before it
+# staying members. A part of one function calling no member is that
+# function's own walk again, and is not walked. Inside a part, by a
+# worklist: each function is walked once, and walked again only where a
+# member its last walk counted as one has left (`self_walk.Walk.deps`),
+# since nothing else its walk asks of the set can change.
+#
+# **What is told**: following each member's first call (its witness) from
+# any member reaches a cycle; the cycle, with every member its members call
+# first on some path (`self_walk.Walk.firsts`), is told once, at the call of
+# its first function by declaration, each function named with every member
+# its paths call first. A cycle a module boundary splits cannot exist, `use`
+# cycles being refused (`modules.hero`), so every call named sits in one
+# file.
+
+use ast
+use diag
+use source
+use resolved
+use check/state
+use check/self_call
+use check/self_walk
+use check/may_end
+use check/endless_parts
+
+# Where the set stands: who is a member, and for each member what its last
+# walk found, its witness and the member that calls, and its first calls,
+# `firsts[first_from[i] .. first_to[i]]`.
+record Settled
+    members: [bool]
+    witness: [i64]
+    reached: [i64]
+    firsts: [i64]
+    first_from: [i64]
+    first_to: [i64]
+
+# `asked`: the program's functions that panel 199's rule did not settle
+# alone (`check/endless.hero`), the calls of the function at `i` being
+# `edges[starts[i] .. starts[i + 1]]`.
+function every_cycle(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], asked: [bool], starts: [i64], edges: [i64])
+    members: [bool] @ []
+    minus: [i64] @ []
+    zero: [i64] @ []
+
+    for _ in decls
+        members @ members.push(false)
+        minus @ minus.push(-1)
+        zero @ zero.push(0)
+
+    parts = endless_parts.components(asked, starts: starts, edges: edges)
+    none: [i64] = []
+    set: Settled @ Settled(
+        members: members,
+        witness: minus,
+        reached: minus,
+        firsts: none,
+        first_from: zero,
+        first_to: zero
+    )
+
+    # Who waits on whom: for each function, the walks that counted it a
+    # member, a list threaded through `waiting` and `after`.
+    wait: Waits @ Waits(first: minus, who: none, after: none, queued: members)
+
+    # Whether a member's last walk named a function that may end the program:
+    # asked of `check/may_end.hero`, a reading of the whole program, only of
+    # the members still standing once the walks settle, since a way out
+    # found later only takes members away, as an escape does.
+    saw: [bool] @ members
+    ends: [bool] @ []
+    from: i64 @ 0
+
+    for to in parts.ends
+        if to - from >= 2 || calls_a_member(set.members, starts: starts, edges: edges, at: parts.nodes[from])
+            queue: [i64] @ parts.nodes.slice(from: from, to: to)
+
+            for v in queue
+                set.members[v] @ true
+                wait.queued[v] @ true
+
+            next: i64 @ 0
+            settling: bool @ true
+
+            while settling
+                while next < queue.len()
+                    v = queue[next]
+                    next @ next + 1
+                    wait.queued[v] @ false
+
+                    if set.members[v]
+                        w = walk_one(@c, a, r, s, decls, at: v, members: set.members)
+
+                        if !w.escaped && w.witness >= 0
+                            settle(@set, w: w, at: v)
+                            saw[v] @ w.saw
+
+                            for d in w.deps
+                                self_walk.append(@wait.who, at: v)
+                                self_walk.append(@wait.after, at: wait.first[d])
+                                wait.first[d] @ wait.who.len() - 1
+                        else
+                            leave_set(@set.members, @wait, @queue, at: v)
+
+                settling @ false
+                k: i64 @ from
+
+                while k < to
+                    v = parts.nodes[k]
+
+                    if set.members[v] && saw[v] && !wait.queued[v]
+                        if ends.len() == 0
+                            ends @ may_end.answers(@c, a, r, s, decls)
+                        w = walk_one(@c, a, r, s, decls, at: v, members: set.members)
+
+                        if may_end.any_of(ends, names: w.named)
+                            leave_set(@set.members, @wait, @queue, at: v)
+                            settling @ true
+                    k @ k + 1
+
+        from @ to
+
+    tell(@c, a, s, decls, set: set)
+
+# Who waits on whom: for each function, the first of the walks that counted
+# it a member, each walk's function in `who` and the next walk in `after`;
+# and which functions wait in the queue.
+record Waits
+    first: [i64]
+    who: [i64]
+    after: [i64]
+    queued: [bool]
+
+# The member at `at` leaves the set, and every member whose last walk
+# counted it one is walked again.
+function leave_set(@members: [bool], @wait: Waits, @queue: [i64], at: i64)
+    members[at] @ false
+    p: i64 @ wait.first[at]
+
+    while p >= 0
+        y = wait.who[p]
+
+        if members[y] && !wait.queued[y]
+            wait.queued[y] @ true
+            self_walk.append(@queue, at: y)
+        p @ wait.after[p]
+
+    wait.first[at] @ -1
+
+# A member's walk kept: its witness and its first calls, lent so the list
+# grows in place (defect 409).
+function settle(@set: Settled, w: self_walk.Walk, at: i64)
+    set.witness[at] @ w.witness
+    set.reached[at] @ w.reached
+    set.first_from[at] @ set.firsts.len()
+
+    for t in w.firsts
+        self_walk.append(@set.firsts, at: t)
+
+    set.first_to[at] @ set.firsts.len()
+
+# Whether the function at `at` calls a member: a part of one function that
+# calls none walks as it walked alone, and is not walked again.
+function calls_a_member(members: [bool], starts: [i64], edges: [i64], at: i64) -> bool
+    e: i64 @ starts[at]
+
+    while e < starts[at + 1]
+        if members[edges[e]]
+            return true
+        e @ e + 1
+
+    return false
+
+# From each member not yet reached, its witnesses followed to a cycle; the
+# cycle and the members its members call first, told once.
+function tell(@c: state.Checker, a: ast.Ast, s: source.Source, decls: [ast.Decl], set: Settled)
+    stamp: [i64] @ []
+    told: [bool] @ []
+
+    for _ in decls
+        stamp @ stamp.push(-1)
+        told @ told.push(false)
+
+    i: i64 @ 0
+
+    while i < decls.len()
+        if set.members[i] && stamp[i] < 0
+            v: i64 @ i
+
+            while v >= 0 && set.members[v] && stamp[v] < 0
+                stamp[v] @ i
+                v @ set.reached[v]
+
+            if v >= 0 && set.members[v] && stamp[v] == i && !told[v]
+                group: [i64] @ [v]
+                told[v] @ true
+                g: i64 @ 0
+
+                while g < group.len()
+                    for t in targets(set, at: group[g])
+                        if !told[t]
+                            told[t] @ true
+                            group @ group.push(t)
+
+                    g @ g + 1
+
+                if group.len() >= 2
+                    state.push_diagnostic(
+                        @c,
+                        refusal(a, s, decls, group: group.sort(), set: set, each_other: mutual(set, group: group, to: v))
+                    )
+        i @ i + 1
+
+# Whether every member of the group reaches `to`, the first of its cycle,
+# through the members each calls first: then they call each other, and
+# otherwise some only lead into a cycle they are not part of (the headline
+# says so rather than claim they call each other).
+function mutual(set: Settled, group: [i64], to: i64) -> bool
+    for from in group
+        seen: [i64] @ [from]
+        k: i64 @ 0
+        found: bool @ from == to
+
+        while k < seen.len() && !found
+            for t in targets(set, at: seen[k])
+                if t == to
+                    found @ true
+
+                if !among(seen, t)
+                    seen @ seen.push(t)
+
+            k @ k + 1
+
+        if !found
+            return false
+
+    return true
+
+function among(seen: [i64], t: i64) -> bool
+    for x in seen
+        if x == t
+            return true
+
+    return false
+
+# The members the paths through the member at `at` call first, by
+# declaration, each once.
+function targets(set: Settled, at: i64) -> [i64]
+    found: [i64] @ []
+    k: i64 @ set.first_from[at]
+
+    while k < set.first_to[at]
+        t = set.firsts[k]
+
+        if t >= 0 && t < set.members.len() && set.members[t]
+            found @ found.push(t)
+        k @ k + 1
+
+    sorted = found.sort()
+    once: [i64] @ []
+
+    for t in sorted
+        if once.len() == 0 || once[once.len() - 1] != t
+            once @ once.push(t)
+
+    return once
+
+function walk_one(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], at: i64, members: [bool]) -> self_walk.Walk
+    match decls[at].kind
+        .function_decl fd => return self_call.walked(
+            @c,
+            a,
+            r,
+            s,
+            decls,
+            at: at,
+            body: fd.value.body.must(),
+            collect: true,
+            members: members
+        )
+        .constant_decl | .record_decl | .variant_decl | .test_decl => return self_walk.start(
+            at: at,
+            collect: false,
+            members: members
+        )
+
+    return self_walk.start(at: at, collect: false, members: members)
+
+# One message for the group, at its first function's call, every function
+# named with every member its paths call first, and each other one's first
+# call and where.
+function refusal(a: ast.Ast, s: source.Source, decls: [ast.Decl], group: [i64], set: Settled, each_other: bool) -> diag.Diagnostic
+    names: [str] @ []
+    steps: [str] @ []
+
+    for at in group
+        names @ names.push(named(s, decls, at: at))
+        called: [str] @ []
+
+        for t in targets(set, at: at)
+            called @ called.push(named(s, decls, at: t))
+
+        steps @ steps.push("every path through " + named(s, decls, at: at) + " calls " + spoken(called, last: " or "))
+
+    either = if group.len() == 2
+        "either"
+    else
+        "any of them"
+    span = a.exprs[set.witness[group[0]]].span
+
+    how = if each_other
+        " call each other for ever: "
+    else
+        " never return: "
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "endless_recursion",
+        message: spoken(names, last: " and ") + how + spoken(steps, last: " and ") + ", before it can return, so no call to " + either + " returns",
+        span: span
+    )
+    i: i64 @ 1
+
+    while i < group.len()
+        there = a.exprs[set.witness[group[i]]].span
+        d.notes @ d.notes.push(
+            names[i] + " calls " + named(s, decls, at: set.reached[group[i]]) + " at " + source.elsewhere(s, here: span.start, there: there.start) + ": `" + source.span_text(s, there) + "`"
+        )
+        i @ i + 1
+
+    d.notes @ d.notes.push(
+        "a call to " + either + " gives nothing back until the call it makes does, and that one makes another: give one of them a path that returns before its call, or ends on `exit(code:)`, `assert false` or a `while true` with no `break` of its own; an overflow or an index out of bounds stops the program and is no such path"
+    )
+    return d
+
+function named(s: source.Source, decls: [ast.Decl], at: i64) -> str
+    return "`" + source.span_text(s, decls[at].name) + "`"
+
+# `a` and `b`, `a`, `b` and `c`, or `a or b` with ` or ` for `last`: as a
+# sentence names them.
+function spoken(parts: [str], last: str) -> str
+    if parts.len() < 2
+        return parts.join("")
+    return parts.slice(from: 0, to: parts.len() - 1).join(", ") + last + parts[parts.len() - 1]
+
+## Tests
+
+test "the parts are named as a sentence names them"
+    two: [str] = ["`ping`", "`pong`"]
+    three: [str] = ["`a`", "`b`", "`c`"]
+    assert spoken(two, last: " and ") == "`ping` and `pong`"
+    assert spoken(three, last: " and ") == "`a`, `b` and `c`"
+    assert spoken(three, last: " or ") == "`a`, `b` or `c`"

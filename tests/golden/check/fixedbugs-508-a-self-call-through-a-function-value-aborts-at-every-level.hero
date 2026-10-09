@@ -6,9 +6,13 @@
 # it through: a call through a function value is not the function, to
 # `endless_recursion` (panel 199's R7, filed apart). Under the sanitiser the
 # runtime's guard yields to ASan, which says `stack-overflow`.
+# Corrected 2026-10-09, defect 520 and panel 201's R3, ratified: `check`
+# refuses it now, `endless_recursion`, and the case moved from `run/` to
+# `check/`; what aborts at every level since is a cycle with a way out it
+# never takes, `run/fixedbugs-520-...`, the witness that replaced this one.
 function go(n: i64) -> i64
     f = go
-    return f(n)
+    return f(n)  #~ endless_recursion
 
 function main()
     print(go(1))
