@@ -48,7 +48,7 @@ variant Place
 # Where the word at `span` stands in `text`, whose outline `outline` holds
 # or is read into, the first time a word that opens its line asks.
 function place_of(text: str, span: token.Span, @outline: text_outline.Outline) -> Place
-    begins = line_start(text, at: span.start)
+    begins = text_outline.line_start(@outline, text, at: span.start)
 
     if only_margin(text, from: begins, to: span.start)
         text_outline.read(@outline, text)

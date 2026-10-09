@@ -11,9 +11,14 @@
 # a head that failed over more than one line holds that report back
 # (`parse/opening.body_follows`'s `silent`), as on one line it is told, a
 # defect apart. This note stands above, so the head stays last in its file.
+#
+# Moved again 2026-10-09 with defect 524's repair (lane b16-compiler): the
+# report is held back only where the head went on to a line at its body's
+# margin, and this head's second line stands deeper, so its missing body is
+# told at the end of the file, as on one line.
 
 function main()
     print(1)
 
 function f(a: (  #~v expected_function_type
-        bool), b: bool)
+        bool), b: bool)  #~v missing_body

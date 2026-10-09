@@ -17,7 +17,7 @@
 # |---|---|---|---|
 # | refused nothing, and its line ends | none | parsed | named missing at the next line |
 # | refused nothing, and its line goes on | named as junk, then dropped | parsed | the body named missing, found the junk |
-# | refused something | dropped, as debris | parsed | named missing at the next line, unless the head crossed a line inside brackets or refused that very token |
+# | refused something | dropped, as debris | parsed | named missing at the next line, unless the head crossed inside brackets to a line at its body's margin or refused that very token |
 # | any, a closer one too many past where it stopped or past its junk | told, `if f(1 +) )`, `function f(): i64 )` (defects 198, 199) | as above | as above |
 # | any, over a line the lexer joined | as above | parsed | held back (`diag.Held`) |
 # | any, its line ending with `{` or over a `{` alone | as above, up to the `{` | the `{` named missing, the braces parsed | — |
@@ -36,7 +36,8 @@
 # **A line crossed silences an absent body**, because the head's own recovery
 # can run past its line: `if (n > 0` over `y = 3 )` is a group the body's `)`
 # closes, and the body's absence is then the recovery's doing, not the
-# author's. The line is read in the text, since inside brackets a line break
+# author's; only where the head went on to its body's margin (`body_margin`,
+# defect 524). The line is read in the text, since inside brackets a line break
 # carries no line end token. **Not a line the lexer joined outside brackets**:
 # `if` over `print(1 +)` failed on the joined line, and the `if` still has no
 # body, which was never said (lane Y's finding, 2026-09-29); it is held back
@@ -65,6 +66,7 @@ use cursor
 use parse/swap_reading
 use text_lines
 use parse/head_lines
+use body_margin
 use parse/brace_habit
 use stray_closers
 use parse/unclosed
@@ -180,8 +182,8 @@ function body_follows(@c: cursor.Cursor, text: str, head: Mark, failed: bool, mi
         absent(@c, text, head: head, silent: unclosed.swallows_the_body(c, text, from: head.pos), missing: missing)
         return .none
     else
-        # A line crossed, or lines inside a bracket the head left open.
-        silent = failed && crossed && !head_lines.joined_outside_brackets(c, text, from: head.pos)
+        # A line crossed to the body's margin, or lines inside a bracket the head left open.
+        silent = failed && crossed && body_margin.crossed(c, text, from: head.pos) && !head_lines.joined_outside_brackets(c, text, from: head.pos)
         absent(
             @c,
             text,

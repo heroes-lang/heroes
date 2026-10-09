@@ -1,9 +1,7 @@
-tests/golden/check/fixedbugs-482-a-run-of-closers-of-the-wrong-kind-is-told-once.hero:20:13: error[expected_group_close]: expected `)` to close the group, found `]`
-tests/golden/check/fixedbugs-482-a-run-of-closers-of-the-wrong-kind-is-told-once.hero:22:16: error[expected_args_close]: expected `)`, or `,` and another argument, found `]`
-tests/golden/check/fixedbugs-482-a-run-of-closers-of-the-wrong-kind-is-told-once.hero:24:13: error[expected_group_close]: expected `)` to close the group, found `]`
-tests/golden/check/fixedbugs-482-a-run-of-closers-of-the-wrong-kind-is-told-once.hero:26:13: error[expected_separator]: expected `,` or a new line between one element and the next, found `)` — the `[` still open at column 11 of this line: write `]` for this `)`
-tests/golden/check/fixedbugs-482-a-run-of-closers-of-the-wrong-kind-is-told-once.hero:26:14: error[expected_separator]: expected `,` or a new line between one element and the next, found `)` — the `[` still open at column 10 of this line: write `]` for this `)`
-tests/golden/check/fixedbugs-482-a-run-of-closers-of-the-wrong-kind-is-told-once.hero:26:15: error[expected_separator]: expected `,` or a new line between one element and the next, found `)` — the `[` still open at column 9 of this line: write `]` for this `)`
-tests/golden/check/fixedbugs-482-a-run-of-closers-of-the-wrong-kind-is-told-once.hero:29:5: error[expected_group_close]: expected `)` to close the group, found `]`
-tests/golden/check/fixedbugs-482-a-run-of-closers-of-the-wrong-kind-is-told-once.hero:30:5: error[expected_group_close]: expected `)` to close the group, found `]`
-tests/golden/check/fixedbugs-482-a-run-of-closers-of-the-wrong-kind-is-told-once.hero:31:5: error[expected_group_close]: expected `)` to close the group, found `]`
+tests/golden/check/fixedbugs-482-a-run-of-closers-of-the-wrong-kind-is-told-once.hero:25:13: error[expected_group_close]: expected `)` to close the group, found `]`
+tests/golden/check/fixedbugs-482-a-run-of-closers-of-the-wrong-kind-is-told-once.hero:27:16: error[expected_args_close]: expected `)`, or `,` and another argument, found `]`
+tests/golden/check/fixedbugs-482-a-run-of-closers-of-the-wrong-kind-is-told-once.hero:29:13: error[expected_group_close]: expected `)` to close the group, found `]`
+tests/golden/check/fixedbugs-482-a-run-of-closers-of-the-wrong-kind-is-told-once.hero:31:13: error[expected_separator]: expected `,` or a new line between one element and the next, found `)` — the `[` still open at column 11 of this line: write `]` for this `)`
+tests/golden/check/fixedbugs-482-a-run-of-closers-of-the-wrong-kind-is-told-once.hero:34:5: error[expected_group_close]: expected `)` to close the group, found `]`
+tests/golden/check/fixedbugs-482-a-run-of-closers-of-the-wrong-kind-is-told-once.hero:35:5: error[expected_group_close]: expected `)` to close the group, found `]`
+tests/golden/check/fixedbugs-482-a-run-of-closers-of-the-wrong-kind-is-told-once.hero:36:5: error[expected_group_close]: expected `)` to close the group, found `]`

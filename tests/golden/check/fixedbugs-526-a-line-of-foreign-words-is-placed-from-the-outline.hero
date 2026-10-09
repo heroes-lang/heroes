@@ -1,0 +1,19 @@
+# Fixed 2026-10-09, defect 526, lane b16-compiler (class improvement).
+# Symptom: a line of foreign words cost the lexer the square of its length:
+# `fn` written 1,333 to 10,666 times on one line, 1.04, 3.63, 13.62 and 52.79
+# billion instructions of `check` at 4,000, 8,000, 16,000 and 32,000
+# characters, 97% of it the walk back to the line's start.
+# Cause: `word_place.place_of` and `foreign_at.holder_of` walked back from
+# every word to its line's start. The text's outline keeps the line the last
+# word asked about, so the words of one line walk to its start once.
+# This case: a line of 600 foreign words in a body, told as one run, and a
+# foreign word heading a member line of a record, whose holder is read from
+# the outline's start of its line.
+
+record Point
+    x: i64
+    fn norm()  #~ reserved_word
+
+function main()
+    fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn fn  #~ reserved_word reserved_word
+    print(1)

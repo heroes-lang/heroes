@@ -1,0 +1,3 @@
+tests/golden/check/fixedbugs-526-a-line-of-foreign-words-is-placed-from-the-outline.hero:15:5: error[reserved_word]: `fn` is not a word in this language — a `record` holds only its fields, and a `function` in it is declared at the top level of the file, taking the record as a parameter
+tests/golden/check/fixedbugs-526-a-line-of-foreign-words-is-placed-from-the-outline.hero:18:5: error[reserved_word]: `fn` is not a word in this language — a `function` is declared at the top level of a file, never inside a body or another declaration
+tests/golden/check/fixedbugs-526-a-line-of-foreign-words-is-placed-from-the-outline.hero:18:8: error[reserved_word]: `fn` is not a word in this language, and a name cannot be one: choose another name
