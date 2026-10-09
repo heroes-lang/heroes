@@ -1,0 +1,7 @@
+error[ffi_package]: the package `libcurl` answered with `-isystem`, which this compiler does not pass on
+  at main.hero:1:30
+    |
+  1 | extern "curl/curl.h" package "libcurl"
+    |                              ^^^^^^^^^
+  note: only `-D`, `-U`, `-I`, `-L`, `-l` and `-F`, each with its value joined or as the next word, `-framework <name>`, and `-Wl,-framework,<name>` and `-Wl,-rpath,<dir>`, in one word or split as `-Wl,-rpath -Wl,<dir>`, are accepted: everything else is a flag a package file could use to run code during the build (Go's CVE-2018-6574)
+  note: name the library directly: `link "curl"` in place of `package "libcurl"`, built with `--include /usr/include/aarch64-linux-gnu --include /usr/include/mit-krb5 --include /usr/include/p11-kit-1`
