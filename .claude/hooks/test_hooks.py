@@ -1253,6 +1253,13 @@ class Overwrites(unittest.TestCase):
             self.assertIn("cannot read", self.refused(command))
         for command in ("git checkout $rev -- a.txt", "git checkout $rev", "git reset $rev -- d.txt"):
             self.passed(command)
+        self.assertIn("cannot read that commit", self.refused('git restore -S -W --source="$rev" -- d.txt'))
+        # The words `xargs` adds are not in the text either.
+        for command in ("printf 'a.txt\\n' | xargs git rm -f", "xargs -0 git restore -S -W --", "xargs git checkout HEAD --",
+                        "xargs git reset", "xargs -I{} git rm -f {}", "xargs git mv -f a.txt"):
+            self.assertIn("the words `xargs` adds", self.refused(command), command)
+        for command in ("xargs git checkout --", "xargs git rm", "xargs git restore --", "xargs git rm -n -f"):
+            self.passed(command)
         write(os.path.join(self.tree, "list"), "a.txt\nd.txt\n")
         self.assertIn("d.txt", self.refused("git restore -S -W --pathspec-from-file=list"))
         self.assertIn("d.txt", self.refused("git checkout --pathspec-from-file list HEAD"))

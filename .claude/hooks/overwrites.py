@@ -38,8 +38,9 @@ is: `git diff --cached` under the command's own pathspec, read in the
 directory it runs in with git's own options and environment, against its
 source and, for the index alone, against the working tree. Words the text
 cannot read, an expansion, a list from standard input or one the same
-command line writes, are read as naming every path; a source it cannot read
-as differing from every staged version. Where git refuses the words (an
+command line writes, or the words `xargs` adds to the command it runs, are
+read as naming every path; a source it cannot read as differing from every
+staged version. Where git refuses the words (an
 option it does not know or cannot tell, measured from `git <verb> -h`) or
 cannot say, this gives no opinion.
 """
@@ -54,6 +55,9 @@ import staged
 CONTRACT = "CLAUDE.md § Hard stops"
 WHOLE = ":/"
 UNREAD = object()
+# What stands for the words `xargs` adds to the command it runs, which the
+# text does not hold.
+XARGS = "the words `xargs` adds"
 # A brace expansion the shell makes before git reads the word: `{a,e}.txt`.
 BRACES = re.compile(r"\{[^{}]*(,|\.\.)[^{}]*\}")
 
@@ -199,8 +203,9 @@ def options(rows, words):
 
 def unreadable(word):
     """Whether the shell makes `word` into something else before git reads
-    it: an expansion, a brace expansion, a home directory."""
-    return commits.expansion(word) or bool(BRACES.search(word)) or word.startswith("~")
+    it: an expansion, a brace expansion, a home directory; or `xargs` gives
+    it."""
+    return commits.expansion(word) or bool(BRACES.search(word)) or word.startswith("~") or XARGS in word
 
 
 def readable(words):
@@ -289,12 +294,13 @@ def lost(where, opts, env, spec, source, index_alone, overlay=False, removing=Fa
     return held
 
 
-def judged(verb, words, where, opts, env, line):
+def judged(verb, words, where, opts, env, line, appended=False):
     """What `git <verb> <words>` would write over, read in `where`: (how it
     is said, its pathspec or None for every path, its source, whether it
     writes the index alone, overlay, removing, the words it cannot read), or
-    None where it writes over no staged version or git refuses it."""
-    read = options(TABLES[verb], words)
+    None where it writes over no staged version or git refuses it.
+    `appended`: `xargs` runs it, adding words the text does not hold."""
+    read = options(TABLES[verb], list(words) + ([XARGS] if appended else []))
     if read is None:
         return None
     got, plain, after = read
@@ -306,6 +312,8 @@ def judged(verb, words, where, opts, env, line):
         if got.get("staged") is not True:
             return None
         source = got.get("source") if isinstance(got.get("source"), str) else None
+        if source is not None and unreadable(source):
+            source = UNREAD
         said = "git restore --staged" + (" --worktree" if got.get("worktree") is True else "")
         shape = (said, source, got.get("worktree") is not True, got.get("overlay") is True, False)
     elif verb == "rm":
@@ -328,12 +336,12 @@ def judged(verb, words, where, opts, env, line):
         if verb == "checkout":
             if head is None:
                 return None
-            shape = ("git checkout " + head + " --", source, False, got.get("overlay") is not False, False)
+            shape = ("git checkout " + ("<commit>" if head == XARGS else head) + " --", source, False, got.get("overlay") is not False, False)
         else:
             mode = [m for m in MODES if got.get(m) is True]
             if mode and mode[-1] in ("soft", "hard", "merge"):
                 return None
-            shape = ("git reset" + (" --keep" if "keep" in mode else "") + (" " + head if head else ""), source, True, False, False)
+            shape = ("git reset" + (" --keep" if "keep" in mode else "") + (" " + head if head and head != XARGS else ""), source, True, False, False)
     from_file = got.get("pathspec-from-file")
     unread = []
     if isinstance(from_file, str):
@@ -367,6 +375,8 @@ def tree_and_paths(verb, got, plain, after, where, opts, env):
         paths = after
     elif plain and (len(plain) > 1 or listing) and (unreadable(plain[0]) or tree_ish(where, opts, env, plain[0])):
         head, paths = plain[0], plain[1:]
+    elif plain and plain[0] == XARGS:
+        head, paths = XARGS, plain
     elif verb == "reset" and plain and tree_ish(where, opts, env, plain[0]):
         head, paths = plain[0], []
     else:
@@ -378,14 +388,14 @@ def tree_and_paths(verb, got, plain, after, where, opts, env):
     return head, paths
 
 
-def verdict(verb, words, where, opts=(), env=None, line=None):
+def verdict(verb, words, where, opts=(), env=None, line=None, appended=False):
     """A refusal for `git <opts> <verb> <words>` run in `where`, or None.
     `line` is the whole command line, which a pathspec file it writes is read
-    against."""
+    against; `appended`, that `xargs` runs it and adds words of its own."""
     if where is None or verb not in TABLES or not os.path.isdir(where):
         return None
     env = dict(os.environ) if env is None else env
-    shape = judged(verb, words, where, opts, env, line)
+    shape = judged(verb, words, where, opts, env, line, appended)
     if shape is None:
         return None
     said, source, index_alone, overlay, removing, spec, unread = shape
@@ -411,7 +421,7 @@ def verdict(verb, words, where, opts=(), env=None, line=None):
 def refusal(said, extra, source, index_alone, removing, overlay, standing, unread):
     """The refusal's words: what `said` writes over, the paths it would
     leave without their staged version, and what keeps them."""
-    whence = "HEAD" if source is None else ("the commit the shell gives it" if source is UNREAD else "`" + source + "`")
+    whence = "HEAD" if source is None else ("a commit the text does not hold" if source is UNREAD else "`" + source + "`")
     beside = (" that the " + " and the ".join(standing) + " standing did not bring") if standing else ""
     shown = ", ".join(extra[:12]) + ("" if len(extra) <= 12 else ", ...")
     count = str(len(extra)) + (" paths" if len(extra) > 1 else " path") + beside + (" hold" if len(extra) > 1 else " holds")
@@ -430,8 +440,8 @@ def refusal(said, extra, source, index_alone, removing, overlay, standing, unrea
                 + " put back as " + whence + " has it, a staged deletion undone")
     blind = ""
     if unread:
-        blind = (" This guard cannot read which paths " + ", ".join("`" + word + "`" for word in unread)
-                 + " name" + ("" if len(unread) > 1 else "s") + ", so it read the command as naming every path.")
+        blind = (" This guard cannot read which paths " + ", ".join(word if word == XARGS else "`" + word + "`" for word in unread)
+                 + " name" + ("" if len(unread) > 1 or unread[0] == XARGS else "s") + ", so it read the command as naming every path.")
     if source is UNREAD:
         blind += " This guard cannot read that commit, so it read it as unlike every staged version."
     if index_alone:
