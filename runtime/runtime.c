@@ -213,6 +213,12 @@
 #include "hero_compiler.h"
 #include "parts/os.c"
 
+/* The key of a file's bytes, for the compiler's build cache (defect 484): what
+ * `module/reading.hero` binds from `hero_compiler.h` instead of building a
+ * text to hash. After `os.c`, whose file read and shown-read walk it shares,
+ * and `str.c`'s one judge of a sequence; nothing needs it. */
+#include "parts/key.c"
+
 /* The filesystem and the process, added at M-argv-execution. They are last
  * because they need `str`, `hero_alloc` and the panic path, and nothing needs
  * them. They are also the only two files here that are allowed to know what
