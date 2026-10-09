@@ -1541,6 +1541,95 @@ test "fixedbugs: what the compiler writes for a library a machine lacks is read 
     assert notes_in(unasked) == [NOTE + TOOL_WAY]
     assert !shell.remove_tree(scratch).is_err()
 
+# PANEL 198, asked of the compiler itself: a package that ANSWERS with the words
+# the list holds builds and runs on every POSIX machine, whichever linker it has.
+# The stand-in on the compiler's PATH answers with `-isystem <dir>` and
+# `-isystem<dir>` (the headers the program binds reach through them alone),
+# `-pthread` and the two linker words the compiler's own link line already says;
+# Apple's `ld` stops at those two words (*ld: unknown options*), so a build that
+# passes there is one where they never reached a linker. The words beside them
+# stay refused, and the refusal names the whole word: the one that moves a tag,
+# a comma that carries a second option, a position-dependent word, a warning flag.
+test "a package answering words the list holds builds and runs, and the words beside them stay refused (panel 198)"
+    if !shell.can_run_scripts()
+        return
+    scratch = shell.own_scratch()
+    compiler = shell.some_compiler().must()
+    dir = scratch + "/said198"
+    inc = dir + "/inc"
+    sys = dir + "/sys"
+    joined = dir + "/joined"
+    assert !shell.mkdir_all(inc).is_err()
+    assert !shell.mkdir_all(sys).is_err()
+    assert !shell.mkdir_all(joined).is_err()
+    assert !write_file(path: inc + "/pkgcase198.h", text: "#include \"pkgcase198_sys.h\"\n#include \"pkgcase198_joined.h\"\nstatic inline int seven198(void) { return SEVEN198 + NOUGHT198; }\n").is_err()
+    assert !write_file(path: sys + "/pkgcase198_sys.h", text: "#define SEVEN198 7\n").is_err()
+    assert !write_file(path: joined + "/pkgcase198_joined.h", text: "#define NOUGHT198 0\n").is_err()
+    asking = "extern \"pkgcase198.h\" package \"pkgcase198\"\n    function seven198() -> i32\n\nfunction main()\n    print(seven198())\n"
+    bin = dir + "/bin-ok"
+    admitted = "-I" + inc + " -isystem " + sys + " -isystem" + joined + " -pthread -Wl,--enable-new-dtags -Wl,--export-dynamic\n"
+    assert !answering(dir: bin, answer: admitted).is_err()
+    path = dir + "/ok.hero"
+    err = built_said(scratch: scratch, compiler: compiler, path: path, source: asking, bin: bin, alone: false).must()
+    assert !strings.contains(text: err, needle: "does not pass on")
+    ran = shell.run(scratch: scratch, program: path + ".out", words: [path + ".out"]).must()
+    assert ran.code == 0
+    assert ran.out == "7\n"
+
+    for word in ["-Wl,--disable-new-dtags", "-Wl,--enable-new-dtags,--plugin,x.so", "-Wl,--whole-archive", "-Wno-error"]
+        stood = dir + "/bin-" + word.len().to_str()
+        assert !answering(dir: stood, answer: "-I" + inc + " " + word + "\n").is_err()
+        said = built_said(
+            scratch: scratch,
+            compiler: compiler,
+            path: dir + "/refused-" + word.len().to_str() + ".hero",
+            source: asking,
+            bin: stood,
+            alone: false
+        ).must()
+        assert strings.contains(
+            text: said,
+            needle: "answered with `" + word + "`, which this compiler does not pass on"
+        )
+
+    assert !shell.remove_tree(scratch).is_err()
+
+# PANEL 198's premise, asked where it can be: `-Wl,--enable-new-dtags` is left out
+# of a package's answer because it restates the tag a linker writes beside the
+# admitted `-Wl,-rpath`, RUNPATH, on every ELF toolchain measured (GNU ld 2.42 and
+# 2.44, LLD 22.1.8, aarch64 and x86-64). That is a claim about the world, so the
+# day a toolchain writes the other tag (`--disable-new-dtags` is the word that
+# moves it, and upstream GNU ld's own default) this fires, naming what depends on
+# it: `selfhost/cli/package_words.hero`'s `restates`. Where no `readelf` reads
+# the binary, as on macOS, there is nothing to ask and the case returns.
+test "an admitted -Wl,-rpath leaves a RUNPATH where readelf reads the binary, the tag the left-out word restates (panel 198)"
+    if !shell.can_run_scripts()
+        return
+    scratch = shell.own_scratch()
+    compiler = shell.some_compiler().must()
+    dir = scratch + "/tag198"
+    inc = dir + "/inc"
+    assert !shell.mkdir_all(inc).is_err()
+    assert !write_file(path: inc + "/pkgtag198.h", text: "static inline int seven198(void) { return 7; }\n").is_err()
+    asking = "extern \"pkgtag198.h\" package \"pkgtag198\"\n    function seven198() -> i32\n\nfunction main()\n    print(seven198())\n"
+    bin = dir + "/bin"
+    assert !answering(dir: bin, answer: "-I" + inc + " -Wl,-rpath,/opt/heroes-198-rpath\n").is_err()
+    path = dir + "/tag.hero"
+    err = built_said(scratch: scratch, compiler: compiler, path: path, source: asking, bin: bin, alone: false).must()
+    assert !strings.contains(text: err, needle: "does not pass on")
+    read = shell.run(scratch: scratch, program: "readelf", words: ["readelf", "-d", path + ".out"])
+
+    if read.is_err()
+        return
+    dynamic = read.must()
+
+    if dynamic.code != 0
+        return
+    assert strings.contains(text: dynamic.out, needle: "/opt/heroes-198-rpath")
+    assert strings.contains(text: dynamic.out, needle: "(RUNPATH)")
+    assert !strings.contains(text: dynamic.out, needle: "(RPATH)")
+    assert !shell.remove_tree(scratch).is_err()
+
 # The two answers are pkgconf's own, recorded by panel 188's ffi-pragmatist on
 # this Mac (3.0.7) and in the Linux image (1.8.1), 2026-10-03, for a package
 # named `zz9`.
@@ -1745,6 +1834,21 @@ function stand_in(dir: str, answer: str, installed: bool) -> ()?
         reads @ "echo 1.0; exit 0"
     tool = dir + "/pkg-config"
     write_file(path: tool, text: "#!/bin/sh\ncase \"$1\" in\n    --version) echo 0.29.2; exit 0 ;;\n    --variable=pc_path) exit 0 ;;\n    --cflags) cat \"" + dir + "/answer.txt\" 1>&2; exit 1 ;;\n    --modversion|--maximum-traverse-depth=1) " + reads + " ;;\nesac\nexit 1\n")?
+    made = shell.run(scratch: dir, program: "chmod", words: ["chmod", "+x", tool])?
+
+    if made.code != 0
+        return fail(code: "cannot_run", msg: "cannot make " + tool + " executable")
+    return ok()
+
+# A stand-in `pkg-config` in `dir` that ANSWERS every package's flags with
+# `answer` on stdout, where `stand_in` refuses them: the compiler asks
+# `--cflags --libs` once and reads the one reply; it reads every package
+# installed, as `stand_in` does where `installed`.
+function answering(dir: str, answer: str) -> ()?
+    shell.mkdir_all(dir)?
+    write_file(path: dir + "/answer.txt", text: answer)?
+    tool = dir + "/pkg-config"
+    write_file(path: tool, text: "#!/bin/sh\ncase \"$1\" in\n    --version) echo 0.29.2; exit 0 ;;\n    --variable=pc_path) exit 0 ;;\n    --cflags) cat \"" + dir + "/answer.txt\"; exit 0 ;;\n    --modversion|--maximum-traverse-depth=1) echo 1.0; exit 0 ;;\nesac\nexit 1\n")?
     made = shell.run(scratch: dir, program: "chmod", words: ["chmod", "+x", tool])?
 
     if made.code != 0
