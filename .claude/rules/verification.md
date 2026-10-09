@@ -758,7 +758,15 @@ could.* Measured on the trunk's compiler the same day, `real` equal to `user`:
   `--hard`, a forced checkout or switch of the whole tree), and so is an
   autostash that would take one (defect 514); and a commit is judged on what it
   carries, a path named after `--` as the working tree holds it, staged or not
-  (defect 515).
+  (defect 515). And a command that would leave a path's staged change nowhere
+  is refused by the paths it names (defect 529): `git restore -S -W` in every
+  spelling and `restore -S` alone, `git checkout <commit> -- <paths>`, `git rm
+  -f` and `rm --cached -f`, `git mv -f` over a staged destination, `git reset`
+  by its paths and of the whole index where a staged path was changed again
+  after staging; paths given by an expansion, by stdin or through `xargs` read
+  as every path. The unstaged-only `git restore -- <paths>` and `git checkout
+  -- <paths>` keep every staged version and stay the hard stops' *destructive
+  operations are asked for*.
 - **Layer 2, per repair**: the form that holds its cases and the compiler's own
   tests.
 - **Layer 3, per batch**: the seed, the fixpoint, the full net, the census.
