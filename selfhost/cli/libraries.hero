@@ -477,20 +477,21 @@ test "a package's -pthread, -isystem and its own link line's words (panel 198)"
 test "the refusal's note names the list word for word, and the list admits every word it names (panel 198)"
     refusal = filter_words(package: "n", said: "-fplugin=x.so")
     note: str @ ""
+    empty: [str] = []
 
     match refusal
         .ok => assert false
         .err e =>
-            row: str @ ""
+            row: [str] @ []
 
             for ch in e.msg.chars()
-                if ch == "\n" && strings.starts_with(text: row, prefix: "  only ")
-                    note @ row
-
-                if ch == "\n"
-                    row @ ""
+                if ch != "\n"
+                    row @ row.push(ch)
                     continue
-                row @ row + ch
+
+                if strings.starts_with(text: row.join(""), prefix: "  only ")
+                    note @ row.join("")
+                row @ empty
 
     # The reason clause, true of every word refused (the spec-warden's finding:
     # it said *a flag a package file could use to run code*, false of
@@ -501,12 +502,12 @@ test "the refusal's note names the list word for word, and the list admits every
     listed = note.slice(from: 0, to: note.len() - reason.len())
     spans: [str] @ []
     open: bool @ false
-    span: str @ ""
+    span: [str] @ []
 
     for ch in listed.chars()
         if ch == "`" && open
-            spans @ spans.push(span)
-            span @ ""
+            spans @ spans.push(span.join(""))
+            span @ empty
             open @ false
             continue
 
@@ -515,7 +516,7 @@ test "the refusal's note names the list word for word, and the list admits every
             continue
 
         if open
-            span @ span + ch
+            span @ span.push(ch)
 
     # Sixteen spans on the day (2026-10-09): a read finding another number is
     # not reading the note, or the note gained a word this test must be shown.
