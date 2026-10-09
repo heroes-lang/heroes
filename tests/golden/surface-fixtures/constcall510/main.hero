@@ -1,0 +1,11 @@
+# Defect 510's qualified spelling (lane b16-compiler, 2026-10-09): a constant
+# of another module holding a function, called by its qualified name,
+# `helper.DOUBLE(4)`. The checker's qualified arm answered the error type with
+# no diagnostic, and the build stopped at exit 2, *monomorphisation produced
+# an ill-formed program*; the call now reads the constant and calls what it
+# holds, as `f = helper.DOUBLE` then `f(4)` always did.
+use helper
+
+function main()
+    print(helper.DOUBLE(4))
+    print(helper.DOUBLE(helper.LIMIT) + 1)

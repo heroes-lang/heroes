@@ -1,0 +1,10 @@
+# Beside defect 510 (lane b16-compiler, 2026-10-09): the qualified calls the
+# checker answered with the error type and no diagnostic, so `check` passed
+# them and the build stopped at exit 2. Each is now told what the same call
+# by an unqualified name is told.
+use helper
+
+function main()
+    print(helper.DOUBLE(4, 5))  #~ wrong_arity
+    print(helper.LIMIT(4))  #~ not_callable
+    print(helper.DOUBLE("x"))  #~ type_mismatch
