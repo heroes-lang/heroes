@@ -1,0 +1,94 @@
+# A type written as a generic function's type argument at a call (defect
+# 545; spec § 9: a type parameter is never written at the call site).
+#
+# `ident<i64>(3)` parses as two comparisons, `ident < i64 > (3)`, the form
+# `heroes fmt` writes it in, so the type stands where a value does and was
+# told *nothing named `i64` is in scope*, a true sentence that never names
+# the rule the program broke. A type word read as a name, standing between a
+# `<` that follows a name and the `>` that closes the list, alone or inside
+# `[…]` or `{…: …}` or before `?`, is told by its rule instead, and so is a
+# record's or a variant's name standing there: asked of the
+# program's own text around the name, never of the world. `a < i64` closes
+# no list, and `f(a: x < i64, b: 2)` closes it with `)`, so both keep the
+# message of an unknown name.
+
+use token
+use diag
+use ast
+use source
+use resolve/vocab
+
+# Whether the name `text` at `span` is a type word written as a type
+# argument: the text before it back to a `<` after a name, and after it on
+# to a `>`, holds nothing but the words and marks of a list of types.
+function written(s: source.Source, text: str, span: token.Span) -> bool
+    return !vocab.primitive(text).is_err() && in_list(s, span)
+
+# Whether a declaration names a type, as a record and a variant do: one of
+# them read as a name inside such a list is a type argument too.
+function declares_a_type(decl: ast.Decl) -> bool
+    match decl.kind
+        .record_decl | .variant_decl                 => return true
+        .function_decl | .constant_decl | .test_decl => return false
+
+    return false
+
+# Whether the name at `span` stands in a list of types written after a name.
+function in_list(s: source.Source, span: token.Span) -> bool
+    after: i64 @ span.end
+
+    while after < s.text.len() && argument_byte(s.text[after])
+        after @ after + 1
+
+    if after >= s.text.len() || s.text[after] != '>'
+        return false
+    at: i64 @ span.start - 1
+
+    while at > 0 && argument_byte(s.text[at])
+        at @ at - 1
+
+    if at <= 0 || s.text[at] != '<'
+        return false
+    at @ at - 1
+
+    while at > 0 && s.text[at] == ' '
+        at @ at - 1
+
+    return name_byte(s.text[at])
+
+function argument_byte(b: u8) -> bool
+    return name_byte(b) || b == ' ' || b == ',' || b == '?' || b == '[' || b == ']' || b == '{' || b == '}' || b == ':'
+
+function name_byte(b: u8) -> bool
+    return b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z' || b >= '0' && b <= '9' || b == '_'
+
+function told(text: str, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "unknown_name",
+        message: "`" + text + "` is a type, written where a value stands: a generic function's type arguments are never written at a call, each is taken from the arguments or from the type the context asks for, so this `<` reads as less-than",
+        span: span
+    )
+    d.fixes @ d.fixes.push(
+        diag.Fix(title: "write the call without its `<…>`", replacement: "", span: span, certainty: .guess)
+    )
+    return d
+
+## Tests
+
+test "a type word inside `<…>` after a name is a type argument, spaced or not, and nowhere else"
+    s = source.new_source(
+        name: "t.hero",
+        text: "x = ident<i64>(3) + ns.map<str, i64>(f) + a < i64 + g<[u8]>(x) + h<{str: bool}>(m) + k(a: i64)\n"
+    )
+    assert written(s, "i64", token.Span(start: 10, end: 13))
+    assert written(s, "str", token.Span(start: 27, end: 30))
+    assert written(s, "i64", token.Span(start: 32, end: 35))
+    assert !written(s, "i64", token.Span(start: 46, end: 49))
+    assert !written(s, "ident", token.Span(start: 4, end: 9))
+    assert written(s, "u8", token.Span(start: 55, end: 57))
+    assert written(s, "str", token.Span(start: 68, end: 71))
+    assert written(s, "bool", token.Span(start: 73, end: 77))
+    assert !written(s, "i64", token.Span(start: 90, end: 93))
+    spaced = source.new_source(name: "t.hero", text: "x = ident < i64 > (3) + f(a: x < i64, b: 2)\n")
+    assert written(spaced, "i64", token.Span(start: 12, end: 15))
+    assert !written(spaced, "i64", token.Span(start: 33, end: 36))

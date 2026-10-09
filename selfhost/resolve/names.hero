@@ -25,6 +25,7 @@ use resolve/did_you_mean
 use resolve/offered
 use resolve/errors
 use resolve/qualified
+use resolve/type_argument
 use module/diagnostics
 use keywords
 
@@ -42,6 +43,11 @@ function bare_name(@r: state.Resolver, a: ast.Ast, s: source.Source, decls: [ast
 
     if !top.is_err()
         decl = top.must()
+
+        # A record or a variant written as a type argument (defect 545).
+        if type_argument.declares_a_type(decls[decl]) && type_argument.in_list(s, span)
+            state.push_diagnostic(@r, type_argument.told(text, span))
+            return
 
         # A variant names a type, never a value: its cases are the values,
         # written `.case` (§4.5's ⇐ mode).
@@ -108,6 +114,11 @@ function bare_name(@r: state.Resolver, a: ast.Ast, s: source.Source, decls: [ast
     if resolved.is_used_module(r.out, from: r.module, module: text)
         state.keyed_add(@r.module_reads, module: r.module, name: text)
         state.push_diagnostic(@r, diagnostics.module_is_not_a_value(text, span: span))
+        return
+
+    # A type written as a type argument, `ident<i64>(3)` (defect 545).
+    if type_argument.written(s, text, span)
+        state.push_diagnostic(@r, type_argument.told(text, span))
         return
     elsewhere = qualified.name_declared_elsewhere(@r, text, span)
 
