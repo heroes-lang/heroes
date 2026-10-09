@@ -1,0 +1,1 @@
+tests/golden/check/fixedbugs-473-a-deep-nest-of-brackets-is-lexed-in-place.hero:12:12: error[unused_binding]: the parameter `a` is never read — remove it from the signature, or write `???` in the body while the function is unfinished

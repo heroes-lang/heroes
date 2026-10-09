@@ -15,6 +15,7 @@
 
 use token
 use state
+use lex_asked
 use diag
 use keywords
 use join_fix
@@ -129,6 +130,7 @@ function rejoined(@l: state.LexState, text: str, first: i64) -> i64
         kept @ kept.push(t)
 
     l.tokens @ kept
+    lex_asked.forget(@l.asked)
     return head
 
 ## Tests

@@ -162,7 +162,18 @@ function definitions(@w: writer.Writer, c: state.Checked, names: ctype.Names, de
         counted = layout.is_refcounted(c, ty)
         writer.at_generated(@w)
         writer.line(@w, text: "static void " + prefix + "_desc_copy(void *dst, const void *src) {")
-        writer.line(@w, text: "    *(" + c_type + " *)dst = *(" + handles.const_pointer(c_type) + ")src;")
+
+        # The copy is of bytes, never an assignment of the struct (defect
+        # 469): clang asks of every assignment whether its struct holds a
+        # const field, by a walk of every struct it holds by value that
+        # costs the square of their number (`RecordType::hasConstFields`,
+        # 98% of a sample), so a chain whose every level has a descriptor,
+        # a chain through options, cost the cube of its depth: 3.6, 19.2,
+        # 134.9 billion instructions of front end at 500, 1,000 and 2,000
+        # levels, and 1.6, 2.9, 5.7 so. The two sides are a void pointer
+        # each, so the casts the assignment wrote type-checked nothing, and
+        # memmove is defined where a slot is copied onto itself.
+        writer.line(@w, text: "    __builtin_memmove(dst, src, sizeof(" + c_type + "));")
 
         if counted
             # Shallow plus incref, never deep (panel 022): copy-on-write

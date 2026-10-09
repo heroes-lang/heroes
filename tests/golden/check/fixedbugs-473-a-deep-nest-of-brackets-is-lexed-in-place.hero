@@ -1,0 +1,17 @@
+# Fixed defect 473, 2026-10-09 (lane b15-parse; filed from lane b14-check's
+# report). A cost, not a message: the lexer's stack of openers was an array
+# whose pop was a slice to its length less one, a copy of every opener below,
+# at every closer (`state.emit`), and the parser's pairing popped its own
+# stack the same way (`pairing.table`): a nest of 4,000 brackets copied
+# millions of spans and cost `check` 1.93 billion instructions. Repair: the
+# lexer's stack is its slots and how many are open (`openers.hero`), the
+# pairing's a count over its array, a pop a number. The messages are the
+# base's, byte for byte: below, a list nested 200 deep in a value and a type
+# nested 200 deep in a signature, whose parameter nothing reads.
+
+function f(a: [[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[i64]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]) -> i64  #~ unused_binding
+    return 1
+
+function main()
+    x = [[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[1]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]
+    print(x.len() + f(a: []))

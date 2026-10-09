@@ -1,0 +1,104 @@
+# The stack of openers the lexer holds open, kept where it grows (design.md
+# §4.15; defect 473, 2026-10-09).
+#
+# The lexer keeps every opener not yet closed, `(` `[` `{`, innermost last
+# (`state.LexState.open_brackets`), and a closer pops one. Arrays have no
+# `pop`, and until 2026-10-09 the stack was an array whose pop was a `slice`
+# to its length less one, a copy of every opener below: `[` 4,000 times and
+# `]` 4,000 times copied 8 million spans, the lexing's square. So the stack
+# is its slots and how many of them are open: a push writes the next slot
+# in place or grows the array by its bare place, and a pop or a cut to a
+# prefix is a number. **Only the first `depth` slots are open**, and nothing
+# outside this module reads a slot: `depth`, `opener`, `top` and `live` are
+# the readers, the stack being a record so that a reader of the array it was
+# does not compile.
+#
+# | entry | called by |
+# |---|---|
+# | `empty`, `of` | `state.new_state`, the lexer's tests |
+# | `opened`, `closed`, `cut`, `clear` | `state.emit`, `closers`, `literals`, `lost_quote`, `bracket_reach`, `layout` |
+# | `depth`, `opener`, `top`, `live` | the lexer's readers of what is open |
+
+use token
+
+record Openers
+    slots: [token.Span]
+    depth: i64
+
+function empty() -> Openers
+    none: [token.Span] = []
+    return Openers(slots: none, depth: 0)
+
+# A stack holding `spans`, innermost last.
+function of(spans: [token.Span]) -> Openers
+    return Openers(slots: spans, depth: spans.len())
+
+# How many openers are open.
+function depth(o: Openers) -> i64
+    return o.depth
+
+# The opener open at `k`, 0 the outermost: a slot past the open ones is no
+# opener, and asking for it aborts rather than reads one closed.
+function opener(o: Openers, k: i64) -> token.Span
+    assert k >= 0 && k < o.depth
+    return o.slots[k]
+
+# The innermost opener open.
+function top(o: Openers) -> token.Span
+    return opener(o, o.depth - 1)
+
+# The openers open, outermost first, as an array of their own.
+function live(o: Openers) -> [token.Span]
+    return o.slots.slice(from: 0, to: o.depth)
+
+function opened(@o: Openers, span: token.Span)
+    if o.depth < o.slots.len()
+        put(@o.slots, slot: o.depth, span: span)
+    else
+        grow(@o.slots, span)
+    o.depth @ o.depth + 1
+
+# The innermost opener closed, where one is open: a stray closer pops none.
+function closed(@o: Openers)
+    if o.depth > 0
+        o.depth @ o.depth - 1
+
+# The openers from `to` on closed, the first `to` kept.
+function cut(@o: Openers, to: i64)
+    if to < o.depth
+        o.depth @ to
+
+function clear(@o: Openers)
+    o.depth @ 0
+
+# The slot written in place, and the array grown, the array being the
+# parameter: through the field every opener copied every one open below it,
+# and 8,000 lines of `x = f([1` cost the square of their openers (defect 344;
+# `state.push_token` says why).
+function put(@slots: [token.Span], slot: i64, span: token.Span)
+    slots[slot] @ span
+
+function grow(@slots: [token.Span], span: token.Span)
+    slots @ slots.push(span)
+
+## Tests
+
+test "a stack of openers pops and cuts in place, and reads only what is open"
+    o: Openers @ empty()
+    opened(@o, token.Span(start: 0, end: 1))
+    opened(@o, token.Span(start: 3, end: 4))
+    opened(@o, token.Span(start: 5, end: 6))
+    assert depth(o) == 3
+    assert top(o).start == 5
+    closed(@o)
+    assert depth(o) == 2 && top(o).start == 3
+
+    # A push after a pop writes the slot the pop left, where it stood.
+    opened(@o, token.Span(start: 9, end: 10))
+    assert top(o).start == 9 && o.slots.len() == 3
+    cut(@o, to: 1)
+    assert live(o) == [token.Span(start: 0, end: 1)]
+    clear(@o)
+    closed(@o)
+    assert depth(o) == 0 && live(o).len() == 0
+    assert depth(of([token.Span(start: 2, end: 3)])) == 1

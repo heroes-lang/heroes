@@ -1,0 +1,13 @@
+# Defect 482, 2026-10-09 (lane b15-parse): the note a run of closers told
+# alike is told with, which the brief form does not show: the closers after
+# the first on its line, how many, and which; and one after it in the
+# singular.
+
+function f(a: i64) -> i64
+    return a
+
+function main()
+    x = (((1]]]  #~ expected_group_close
+    print(x)
+    y = f(f(1]]  #~ expected_args_close
+    print(y)

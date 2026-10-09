@@ -1,24 +1,20 @@
 # Owned lexing state — position, layout, output — and the two ways a token
-# enters the stream. Port of the LexState half of archive/bootstrap-rs/heroes/src/lexer/mod.rs;
-# the drive loop (`lex`, `lex_one`) arrives with the scanners that feed it.
+# enters the stream. Port of the LexState half of archive/bootstrap-rs/heroes/src/lexer/mod.rs.
 #
 # The source text is a parameter everywhere and never a field (the Cyclone
 # rule, kept across the port: tokens point into the source by byte offset).
 #
-# Port notes:
-# - Rust's `last_significant: Option<TokenKind>` is a `TokenKind?` field: the
-#   "no significant token yet" state is the fail value, and the reader asks
-#   `.is_err()` where Rust asked `.is_some()`.
-# - Arrays have no `pop`: the saturating pop on a stray closer is a `slice`
-#   to len-1 behind a length test — same recovery, the emptiness check now
-#   visible at the site.
-# - `push` is a built-in name and cannot be redeclared, so the token-emitting
-#   half of Rust's `push` is `emit` here.
+# Port notes: `last_significant` is a `TokenKind?`, the fail value being "no
+# significant token yet"; arrays have no `pop`, so the saturating pop on a
+# stray closer is a `slice` to len-1 behind a length test; and `push` being a
+# built-in name, the token-emitting half of Rust's `push` is `emit` here.
 
 use token
 use diag
 use text_outline
 use swap_words
+use lex_asked
+use openers
 
 ## Error codes
 
@@ -98,9 +94,9 @@ record LexState
     pos: i64
     # Current indentation level (one level == 4 spaces).
     level: i64
-    # Spans of the openers ( [ { not yet closed; its length is the bracket
-    # depth. Inside brackets, indentation is not structural (panel 007).
-    open_brackets: [token.Span]
+    # The openers ( [ { not yet closed (`openers.hero`); how many is the
+    # bracket depth. Inside brackets, indentation is not structural (panel 007).
+    open_brackets: openers.Openers
     # One entry per interpolation hole still open, holding `open_brackets`'s
     # length at the moment the hole opened: a `}` closes the hole only when the
     # depth is back to that number, which is how a map literal or a nested
@@ -174,9 +170,11 @@ record LexState
     # a file of `print(x` lines its square.
     counted_to: i64
     line_ends: i64
+    # What the scanners ask again and again, remembered (`lex_asked.hero`):
+    # one pointer in the state, as `run` is.
+    asked: [i64]
 
 function new_state() -> LexState
-    brackets: [token.Span] = []
     holes: [i64] = []
     tokens: [token.Token] = []
     diagnostics: [diag.Diagnostic] = []
@@ -190,7 +188,7 @@ function new_state() -> LexState
     return LexState(
         pos: 0,
         level: 0,
-        open_brackets: brackets,
+        open_brackets: openers.empty(),
         holes: holes,
         tokens: tokens,
         diagnostics: diagnostics,
@@ -212,7 +210,8 @@ function new_state() -> LexState
         run: runs,
         braced: braced,
         counted_to: 0,
-        line_ends: 0
+        line_ends: 0,
+        asked: lex_asked.fresh()
     )
 
 # The 1-based line of the text that holds the offset `at`. The lexer asks in
@@ -251,13 +250,13 @@ function emit(@l: LexState, kind: token.TokenKind, start: i64)
     span = token.Span(start: start, end: l.pos)
 
     if kind == .lparen || kind == .lbracket || kind == .lbrace
-        push_bracket(@l.open_brackets, span)
+        openers.opened(@l.open_brackets, span)
+        l.asked[lex_asked.PUSHES] @ l.asked[lex_asked.PUSHES] + 1
 
     if kind == .rparen || kind == .rbracket || kind == .rbrace
         # Saturating pop: a stray closer never corrupts the following layout;
         # the parser reports it.
-        if l.open_brackets.len() > 0
-            l.open_brackets @ l.open_brackets.slice(from: 0, to: l.open_brackets.len() - 1)
+        openers.closed(@l.open_brackets)
     push_token(@l.tokens, token.Token(kind: kind, span: span))
     l.last_significant @ ok(kind)
 
@@ -281,13 +280,6 @@ function push_token(@tokens: [token.Token], t: token.Token)
 # every module for the other spelling.
 function push_diagnostic(@diagnostics: [diag.Diagnostic], d: diag.Diagnostic)
     diagnostics @ diagnostics.push(d)
-
-# And for the brackets open, a file of brackets left open being as many of
-# them as its lines: through the field, every opener copied every one open
-# below it, and 8,000 lines of `x = f([1` cost the square of their openers
-# (defect 344).
-function push_bracket(@brackets: [token.Span], span: token.Span)
-    brackets @ brackets.push(span)
 
 # The same spelling for the refused breaks, a file of broken lines being a
 # file of many of them: a break as the lexer records it, before `line_joins`
@@ -334,10 +326,10 @@ test "emit tracks bracket depth and the last significant token"
     assert l.last_significant.is_err()
     l.pos @ 1
     emit(@l, .lparen, 0)
-    assert l.open_brackets.len() == 1
+    assert openers.depth(l.open_brackets) == 1
     l.pos @ 2
     emit(@l, .rparen, 1)
-    assert l.open_brackets.len() == 0
+    assert openers.depth(l.open_brackets) == 0
     assert l.last_significant.must() == .rparen
     assert l.tokens.len() == 2
 
@@ -345,7 +337,7 @@ test "a stray closer saturates instead of corrupting"
     l: LexState @ new_state()
     l.pos @ 1
     emit(@l, .rbrace, 0)
-    assert l.open_brackets.len() == 0
+    assert openers.depth(l.open_brackets) == 0
     assert l.tokens[0].kind == .rbrace
 
 test "error recovery records why and keeps lexing"

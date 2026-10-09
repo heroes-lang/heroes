@@ -165,7 +165,7 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 static void h_main_Config_desc_copy(void *dst, const void *src) {
-    *(h_main_Config *)dst = *(const h_main_Config *)src;
+    __builtin_memmove(dst, src, sizeof(h_main_Config));
     h_main_Config_retain((const h_main_Config *)dst);
 }
 static void h_main_Config_desc_drop(void *elem) {

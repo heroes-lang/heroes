@@ -1,0 +1,69 @@
+error[tab_in_line]: a tab is a compile error — use spaces
+  at tests/golden/full/fixedbugs-494-the-notes-of-a-run-told-once.hero:8:10
+    |
+  8 |     a = 1			+ 2  #~ tab_in_line
+    |          ^
+  note: the first of 3 in a row
+
+error[tab_in_line]: a tab is a compile error — use spaces
+  at tests/golden/full/fixedbugs-494-the-notes-of-a-run-told-once.hero:9:11
+    |
+  9 |     t0 = 0	+ 1  #~ tab_in_line
+    |           ^
+
+error[tab_in_line]: a tab is a compile error — use spaces
+  at tests/golden/full/fixedbugs-494-the-notes-of-a-run-told-once.hero:10:11
+     |
+  10 |     t1 = 1	+ 1  #~ tab_in_line
+     |           ^
+
+error[tab_in_line]: a tab is a compile error — use spaces
+  at tests/golden/full/fixedbugs-494-the-notes-of-a-run-told-once.hero:11:11
+     |
+  11 |     t2 = 2	+ 1  #~ tab_in_line
+     |           ^
+
+error[tab_in_line]: a tab is a compile error — use spaces
+  at tests/golden/full/fixedbugs-494-the-notes-of-a-run-told-once.hero:12:11
+     |
+  12 |     t3 = 3	+ 1  #~ tab_in_line
+     |           ^
+
+error[tab_in_line]: a tab is a compile error — use spaces
+  at tests/golden/full/fixedbugs-494-the-notes-of-a-run-told-once.hero:13:11
+     |
+  13 |     t4 = 4	+ 1  #~ tab_in_line
+     |           ^
+
+error[tab_in_line]: a tab is a compile error — use spaces
+  at tests/golden/full/fixedbugs-494-the-notes-of-a-run-told-once.hero:14:11
+     |
+  14 |     t5 = 5	+ 1  #~ tab_in_line
+     |           ^
+
+error[tab_in_line]: a tab is a compile error — use spaces
+  at tests/golden/full/fixedbugs-494-the-notes-of-a-run-told-once.hero:15:11
+     |
+  15 |     t6 = 6	+ 1  #~ tab_in_line
+     |           ^
+  note: 3 more tabs of this file are a compile error too, not told one by one
+
+error[stray_carriage_return]: a carriage return that is not part of a line ending — delete it, or end the line
+  at tests/golden/full/fixedbugs-494-the-notes-of-a-run-told-once.hero:19:10
+     |
+  19 |     b = 1<U+000D><U+000D><U+000D>+ 2  #~ stray_carriage_return
+     |          ^^^^^^^^
+  note: the first of 3 in a row
+
+error[reserved_word]: `fn` is not a word in this language — a `function` is declared at the top level of a file, never inside a body or another declaration
+  at tests/golden/full/fixedbugs-494-the-notes-of-a-run-told-once.hero:20:5
+     |
+  20 |     fn fn fn  #~ reserved_word reserved_word
+     |     ^^
+
+error[reserved_word]: `fn` is not a word in this language, and a name cannot be one: choose another name
+  at tests/golden/full/fixedbugs-494-the-notes-of-a-run-told-once.hero:20:8
+     |
+  20 |     fn fn fn  #~ reserved_word reserved_word
+     |        ^^
+  note: the first of 2 in a row

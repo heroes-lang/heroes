@@ -1,0 +1,20 @@
+tests/golden/check/fixedbugs-494-a-run-of-tabs-returns-or-foreign-words-is-told-once.hero:16:10: error[tab_in_line]: a tab is a compile error — use spaces
+tests/golden/check/fixedbugs-494-a-run-of-tabs-returns-or-foreign-words-is-told-once.hero:17:10: error[stray_carriage_return]: a carriage return that is not part of a line ending — delete it, or end the line
+tests/golden/check/fixedbugs-494-a-run-of-tabs-returns-or-foreign-words-is-told-once.hero:18:11: error[tab_in_line]: a tab is a compile error — use spaces
+tests/golden/check/fixedbugs-494-a-run-of-tabs-returns-or-foreign-words-is-told-once.hero:19:11: error[tab_in_line]: a tab is a compile error — use spaces
+tests/golden/check/fixedbugs-494-a-run-of-tabs-returns-or-foreign-words-is-told-once.hero:20:11: error[tab_in_line]: a tab is a compile error — use spaces
+tests/golden/check/fixedbugs-494-a-run-of-tabs-returns-or-foreign-words-is-told-once.hero:21:11: error[tab_in_line]: a tab is a compile error — use spaces
+tests/golden/check/fixedbugs-494-a-run-of-tabs-returns-or-foreign-words-is-told-once.hero:22:11: error[tab_in_line]: a tab is a compile error — use spaces
+tests/golden/check/fixedbugs-494-a-run-of-tabs-returns-or-foreign-words-is-told-once.hero:23:11: error[tab_in_line]: a tab is a compile error — use spaces
+tests/golden/check/fixedbugs-494-a-run-of-tabs-returns-or-foreign-words-is-told-once.hero:24:11: error[tab_in_line]: a tab is a compile error — use spaces
+tests/golden/check/fixedbugs-494-a-run-of-tabs-returns-or-foreign-words-is-told-once.hero:27:11: error[stray_carriage_return]: a carriage return that is not part of a line ending — delete it, or end the line
+tests/golden/check/fixedbugs-494-a-run-of-tabs-returns-or-foreign-words-is-told-once.hero:28:11: error[stray_carriage_return]: a carriage return that is not part of a line ending — delete it, or end the line
+tests/golden/check/fixedbugs-494-a-run-of-tabs-returns-or-foreign-words-is-told-once.hero:29:11: error[stray_carriage_return]: a carriage return that is not part of a line ending — delete it, or end the line
+tests/golden/check/fixedbugs-494-a-run-of-tabs-returns-or-foreign-words-is-told-once.hero:30:11: error[stray_carriage_return]: a carriage return that is not part of a line ending — delete it, or end the line
+tests/golden/check/fixedbugs-494-a-run-of-tabs-returns-or-foreign-words-is-told-once.hero:31:11: error[stray_carriage_return]: a carriage return that is not part of a line ending — delete it, or end the line
+tests/golden/check/fixedbugs-494-a-run-of-tabs-returns-or-foreign-words-is-told-once.hero:32:11: error[stray_carriage_return]: a carriage return that is not part of a line ending — delete it, or end the line
+tests/golden/check/fixedbugs-494-a-run-of-tabs-returns-or-foreign-words-is-told-once.hero:33:11: error[stray_carriage_return]: a carriage return that is not part of a line ending — delete it, or end the line
+tests/golden/check/fixedbugs-494-a-run-of-tabs-returns-or-foreign-words-is-told-once.hero:36:5: error[reserved_word]: `fn` is not a word in this language — a `function` is declared at the top level of a file, never inside a body or another declaration
+tests/golden/check/fixedbugs-494-a-run-of-tabs-returns-or-foreign-words-is-told-once.hero:36:8: error[reserved_word]: `fn` is not a word in this language, and a name cannot be one: choose another name
+tests/golden/check/fixedbugs-494-a-run-of-tabs-returns-or-foreign-words-is-told-once.hero:37:5: error[reserved_word]: `fn` is not a word in this language — a `function` is declared at the top level of a file, never inside a body or another declaration
+tests/golden/check/fixedbugs-494-a-run-of-tabs-returns-or-foreign-words-is-told-once.hero:37:8: error[reserved_word]: `fn` is not a word in this language, and a name cannot be one: choose another name

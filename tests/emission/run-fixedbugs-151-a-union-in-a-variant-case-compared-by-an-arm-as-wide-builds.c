@@ -137,7 +137,7 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 static void h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_V_desc_copy(void *dst, const void *src) {
-    *(h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_V *)dst = *(const h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_V *)src;
+    __builtin_memmove(dst, src, sizeof(h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_V));
 }
 static void h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_V_desc_drop(void *elem) {
     (void)elem;

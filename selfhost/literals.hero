@@ -19,6 +19,7 @@ use escape_report
 use code_escape
 use raw_chars
 use raw_refusal
+use openers
 
 ## The escape validator
 
@@ -305,8 +306,8 @@ function closers_taken(text: str, span: token.Span) -> i64
 function swallow(@l: state.LexState, text: str, start: i64)
     left: i64 @ unmatched_closers(text.slice(from: start, to: l.pos))
 
-    while left > 0 && l.open_brackets.len() > 0
-        l.open_brackets @ l.open_brackets.slice(from: 0, to: l.open_brackets.len() - 1)
+    while left > 0 && openers.depth(l.open_brackets) > 0
+        openers.closed(@l.open_brackets)
         left @ left - 1
 
     l.swallowed @ true

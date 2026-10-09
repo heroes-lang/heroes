@@ -3,7 +3,7 @@ kind: defect
 area: parse
 milestone: none
 filed: 2026-10-07
-commit: none
+commit: be205ad0ae9e8a1172891ee2378e3626298b3929
 github: none
 ---
 
@@ -12,3 +12,5 @@ github: none
     **Origin:** filed by the coordinator at 23:34 on 2026-10-07 from lane b14-text's final report; the lane's measurement, not re-run by the coordinator.
 
     **Class: adjacent**, 2026-10-07 (`.claude/rules/verification.md` § Bounded discovery): a mistake told four times.
+
+    Repaired at `be205ad0`, 2026-10-09 (lane b15-parse), gated by its cases and the compiler's own tests; the net is owed at the batch's close. The line below a parameter's type broken after its `(` is the head's own and no spilled body: a spill's refused word stands in no bracket opened after the head's list, and its closer ends its line (`spill_reading.hero`); the broken-type head told 4 messages to 1, two such types 6 to 2 (the second's twice at 8:9 gone), defect 456's four cases moved and read, the new case 13 to 4.

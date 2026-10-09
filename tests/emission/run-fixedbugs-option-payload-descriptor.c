@@ -139,7 +139,7 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 static void h_fixedbugsoptionpayloaddescriptor_Block_desc_copy(void *dst, const void *src) {
-    *(h_fixedbugsoptionpayloaddescriptor_Block *)dst = *(const h_fixedbugsoptionpayloaddescriptor_Block *)src;
+    __builtin_memmove(dst, src, sizeof(h_fixedbugsoptionpayloaddescriptor_Block));
 }
 static void h_fixedbugsoptionpayloaddescriptor_Block_desc_drop(void *elem) {
     (void)elem;
@@ -156,7 +156,7 @@ HERO_TU_QUIET static const HeroDesc h_fixedbugsoptionpayloaddescriptor_Block_des
 };
 
 static void h_0opt_4dbf93f0_desc_copy(void *dst, const void *src) {
-    *(h_0opt_4dbf93f0 *)dst = *(const h_0opt_4dbf93f0 *)src;
+    __builtin_memmove(dst, src, sizeof(h_0opt_4dbf93f0));
     h_0opt_4dbf93f0_retain((const h_0opt_4dbf93f0 *)dst);
 }
 static void h_0opt_4dbf93f0_desc_drop(void *elem) {

@@ -1,0 +1,13 @@
+tests/golden/check/fixedbugs-495-a-line-of-semicolons-is-read-once.hero:22:6: error[unexpected_character]: `;` is not part of the language's syntax
+tests/golden/check/fixedbugs-495-a-line-of-semicolons-is-read-once.hero:22:9: error[unexpected_character]: `;` is not part of the language's syntax
+tests/golden/check/fixedbugs-495-a-line-of-semicolons-is-read-once.hero:22:12: error[unexpected_character]: `;` is not part of the language's syntax
+tests/golden/check/fixedbugs-495-a-line-of-semicolons-is-read-once.hero:22:15: error[unexpected_character]: `;` is not part of the language's syntax
+tests/golden/check/fixedbugs-495-a-line-of-semicolons-is-read-once.hero:22:18: error[unexpected_character]: `;` is not part of the language's syntax
+tests/golden/check/fixedbugs-495-a-line-of-semicolons-is-read-once.hero:22:21: error[unexpected_character]: `;` is not part of the language's syntax
+tests/golden/check/fixedbugs-495-a-line-of-semicolons-is-read-once.hero:22:24: error[unexpected_character]: `;` is not part of the language's syntax
+tests/golden/check/fixedbugs-495-a-line-of-semicolons-is-read-once.hero:22:27: error[unexpected_character]: `;` is not part of the language's syntax
+tests/golden/check/fixedbugs-495-a-line-of-semicolons-is-read-once.hero:22:39: error[unexpected_character]: `;` is not part of the language's syntax — a line's end ends what the line holds, a statement, a field or a case, and no `;` ends one
+tests/golden/check/fixedbugs-495-a-line-of-semicolons-is-read-once.hero:25:15: error[unclosed_bracket]: `(` opened here is still open at line 26, where C's `for` header it stands in is over
+tests/golden/check/fixedbugs-495-a-line-of-semicolons-is-read-once.hero:27:16: error[unexpected_character]: `;` is not part of the language's syntax — a `while` holds its condition alone, `while i < 3`, and a step goes last in its body, `i @ i + 1`
+tests/golden/check/fixedbugs-495-a-line-of-semicolons-is-read-once.hero:23:9: error[for_missing_in]: `for` iterates — `for x in xs`; found `(` — C's three-clause header is no loop here: count with `for i in range(from: a, to: b)`, and loop on a condition with `while`
+tests/golden/check/fixedbugs-495-a-line-of-semicolons-is-read-once.hero:25:9: error[for_missing_in]: `for` iterates — `for x in xs`; found `(` — C's three-clause header is no loop here: count with `for i in range(from: a, to: b)`, and loop on a condition with `while`

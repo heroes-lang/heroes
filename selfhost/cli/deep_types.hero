@@ -60,17 +60,48 @@ function note(code: str, decls: [ast.Decl], c: state.Checked, s: source.Source) 
     return "\n  note: this program's types nest " + found.depth.to_str() + " deep by value, `" + name + "` holding a type that holds another, and so on down: a C compiler walks such a type with a recursion as deep as the chain, on a stack of its own, and where that stack ends is the C compiler's limit, not this language's\n  note: one level held through an array, `[T]` where a field says `T`, ends the chain there"
 
 # The deepest chain of declared types held by value, through any options and
-# fixed arrays between them. A stack of its own and not the machine's, since
-# the chain is exactly what it measures (defect 140's lesson): a recursion
-# here would die where the C compiler did.
+# fixed arrays between them: what each declaration holds, found first
+# (`held_graph`), then walked as data (`deepest_of`).
 function deepest(c: state.Checked, decls: [ast.Decl]) -> Deepest
+    roots = types.aggregates(c, decls)
+    return deepest_of(roots, graph: held_graph(c, decls, roots: roots))
+
+# What each declaration reachable from `roots` holds by value, found by a
+# queue, so no stack grows with the chain.
+function held_graph(c: state.Checked, decls: [ast.Decl], roots: [i64]) -> {i64: [i64]}
+    found: {i64: [i64]} @ {}
+    queue: [i64] @ roots
+    next: i64 @ 0
+
+    while next < queue.len()
+        decl = queue[next]
+        next @ next + 1
+
+        if found[decl].is_err()
+            held = holds(c, decls, decl: decl)
+            found[decl] @ held
+
+            for one in held
+                if found[one].is_err()
+                    queue @ queue.push(one)
+
+    return found
+
+# The deepest chain `graph` holds from any of `roots`, each declaration's
+# depth the deepest it holds plus one. A stack of its own and not the
+# machine's, since the chain is exactly what it measures (defect 140's
+# lesson): a recursion here would die where the C compiler did. Taken as data
+# so that a chain no program reaches holds it to that, which a recursion
+# survives no more than a C compiler (defect 490, as 189 held `typeorder`).
+function deepest_of(roots: [i64], graph: {i64: [i64]}) -> Deepest
+    none: [i64] = []
     depth: {i64: i64} @ {}
     best: Deepest @ Deepest(depth: 0, top: -1)
 
-    for root in types.aggregates(c, decls)
+    for root in roots
         if !depth[root].is_err()
             continue
-        frames: [Frame] @ [Frame(decl: root, holds: holds(c, decls, decl: root), next: 0)]
+        frames: [Frame] @ [Frame(decl: root, holds: graph[root].default(none), next: 0)]
         live: i64 @ 1
 
         while live > 0
@@ -81,7 +112,7 @@ function deepest(c: state.Checked, decls: [ast.Decl]) -> Deepest
                 frames[live - 1].next @ top.next + 1
 
                 if depth[held].is_err()
-                    entered = Frame(decl: held, holds: holds(c, decls, decl: held), next: 0)
+                    entered = Frame(decl: held, holds: graph[held].default(none), next: 0)
 
                     if live < frames.len()
                         frames[live] @ entered
@@ -175,6 +206,34 @@ test "the note names the deepest chain past the depth the emitter helps from, an
     assert note(code: "clang", decls: deep.decls, c: deep.c, s: deep.s) == ""
     shallow = chained(n: 32)
     assert note(code: "crashed", decls: shallow.decls, c: shallow.c, s: shallow.s) == ""
+
+# Defect 490: the walk is held to a chain a hundred thousand deep given as
+# data, which no program reaches (the front end costs the square of a chain
+# of records, 17 billion instructions at 5,000, defect 189's reading) and no
+# recursion of the walk survives: one dies between 6,000 and 7,000 deep on
+# this Mac's 8 MiB stack at `-O0` (`panic: stack exhausted`, defect 189's
+# probe). The mutant restoring the recursion fails here and passes the test
+# above.
+test "the deepest chain is walked with a stack of its own, a hundred thousand deep (defect 490)"
+    n: i64 = 100000
+    graph: {i64: [i64]} @ {}
+    graph[0] @ []
+
+    for i in range(from: 1, to: n)
+        graph[i] @ [i - 1]
+
+    found = deepest_of([n - 1, 3], graph: graph)
+    assert found.depth == n
+    assert found.top == n - 1
+
+    # Two chains below one: the deeper counts, and each is measured once.
+    fork: {i64: [i64]} @ {}
+    fork[0] @ []
+    fork[1] @ [0]
+    fork[2] @ [1]
+    fork[3] @ [0, 2]
+    assert deepest_of([3], graph: fork).depth == 4
+    assert deepest_of([], graph: fork).top == -1
 
 # **The debug information is handed a chain from its bottom** (defect 219,
 # panel 197's R1). Clang keeps the type of every explicit cast in a list

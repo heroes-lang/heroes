@@ -253,7 +253,7 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 static void h_whole_Token_desc_copy(void *dst, const void *src) {
-    *(h_whole_Token *)dst = *(const h_whole_Token *)src;
+    __builtin_memmove(dst, src, sizeof(h_whole_Token));
     h_whole_Token_retain((const h_whole_Token *)dst);
 }
 static void h_whole_Token_desc_drop(void *elem) {
@@ -271,7 +271,7 @@ HERO_TU_QUIET static const HeroDesc h_whole_Token_desc = {
 };
 
 static void h_whole_Expr_desc_copy(void *dst, const void *src) {
-    *(h_whole_Expr *)dst = *(const h_whole_Expr *)src;
+    __builtin_memmove(dst, src, sizeof(h_whole_Expr));
     h_whole_Expr_retain((const h_whole_Expr *)dst);
 }
 static void h_whole_Expr_desc_drop(void *elem) {
