@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -221,7 +221,7 @@ bb3:
 #line 90 "examples/fannkuch/main.hero"
     t33 = h2_done;
 #line 224 "main.c"
-    hero_array_decref(h1_work);
+    hero_array_release_at(&h1_work);
     return t33;
 bb4:
 #line 81 "examples/fannkuch/main.hero"
@@ -405,11 +405,11 @@ bb3:
 #line 406 "main.c"
     h_main_Walk_release(&t25);
     h_main_Walk_retain(&t20);
-    hero_array_decref(h1_order);
-    hero_array_decref(h2_left);
-    hero_array_decref(h4_own4);
-    hero_array_decref(h5_own5);
-    h_main_Walk_release(&h6_own6);
+    hero_array_release_at(&h1_order);
+    hero_array_release_at(&h2_left);
+    hero_array_release_at(&h4_own4);
+    hero_array_release_at(&h5_own5);
+    h_main_Walk_release(hero_slot_escape(&h6_own6));
     return t20;
 }
 
@@ -815,8 +815,8 @@ bb3:
 #line 160 "examples/fannkuch/main.hero"
     t33 = (h_main_Fannkuch){.f_checksum = t30, .f_max_flips = t31, .f_visited = t32};
 #line 818 "main.c"
-    h_main_Walk_release(&h1_w);
-    h_main_Walk_release(&h6_own6);
+    h_main_Walk_release(hero_slot_escape(&h1_w));
+    h_main_Walk_release(hero_slot_escape(&h6_own6));
     return t33;
 bb4:
 #line 153 "examples/fannkuch/main.hero"
@@ -1125,10 +1125,10 @@ bb4:
     t18 = h1_out;
 #line 1127 "main.c"
     hero_array_incref(t18);
-    hero_array_decref(h1_out);
-    hero_array_decref(h2_xs0);
-    hero_array_decref(h5_own5);
-    hero_str_decref(h6_own6);
+    hero_array_release_at(&h1_out);
+    hero_array_release_at(&h2_xs0);
+    hero_array_release_at(&h5_own5);
+    hero_str_release_at(&h6_own6);
     return t18;
 }
 HERO_TU_LOCAL bool h_main_Fannkuch_eq(const h_main_Fannkuch *a, const h_main_Fannkuch *b) {

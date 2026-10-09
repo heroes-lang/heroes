@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -344,16 +344,16 @@ bb3:
 #line 20 "tests/golden/run/fixedbugs-a-context-bound-str-is-released.hero"
     hero_print_end();
 #line 347 "fixedbugsacontextboundstrisreleased.c"
-    h_0opt_f87774a_release(&h0_s);
-    h_0opt_f87774a_release(&h1_f0);
-    h_0opt_f87774a_release(&h2_cell);
-    h_0opt_f87774a_release(&h3_f1);
-    h_0opt_f87774a_release(&h4_f2);
-    h_0opt_f87774a_release(&h5_f3);
-    h_0opt_f87774a_release(&h6_own6);
-    h_0opt_f87774a_release(&h7_own7);
-    h_0opt_f87774a_release(&h8_own8);
-    h_0opt_f87774a_release(&h9_own9);
+    h_0opt_f87774a_release(hero_slot_escape(&h0_s));
+    h_0opt_f87774a_release(hero_slot_escape(&h1_f0));
+    h_0opt_f87774a_release(hero_slot_escape(&h2_cell));
+    h_0opt_f87774a_release(hero_slot_escape(&h3_f1));
+    h_0opt_f87774a_release(hero_slot_escape(&h4_f2));
+    h_0opt_f87774a_release(hero_slot_escape(&h5_f3));
+    h_0opt_f87774a_release(hero_slot_escape(&h6_own6));
+    h_0opt_f87774a_release(hero_slot_escape(&h7_own7));
+    h_0opt_f87774a_release(hero_slot_escape(&h8_own8));
+    h_0opt_f87774a_release(hero_slot_escape(&h9_own9));
     return;
 bb4:
 #line 20 "tests/golden/run/fixedbugs-a-context-bound-str-is-released.hero"
@@ -406,8 +406,8 @@ bb0:
 #line 407 "fixedbugsacontextboundstrisreleased.c"
     h_0opt_f87774a_release(&t7);
     h_0opt_f87774a_retain(&t5);
-    hero_str_decref(h1_own1);
-    h_0opt_f87774a_release(&h2_own2);
+    hero_str_release_at(&h1_own1);
+    h_0opt_f87774a_release(hero_slot_escape(&h2_own2));
     return t5;
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {

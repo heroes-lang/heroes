@@ -7,7 +7,7 @@
 #include <a-panic-with-a-live-lease-says-one-thing.h>
 #include "heroes_guard_close.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -187,10 +187,10 @@ bb0:
     hero_print_end();
     hero_held_release(&h1_c);
 #line 190 "apanicwithaliveleasesaysonething.c"
-    hero_str_decref(h0_x);
-    hero_array_decref(h2_a);
-    hero_array_decref(h3_own3);
-    hero_str_decref(h4_own4);
+    hero_str_release_at(&h0_x);
+    hero_array_release_at(&h2_a);
+    hero_array_release_at(&h3_own3);
+    hero_str_release_at(&h4_own4);
     return;
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {

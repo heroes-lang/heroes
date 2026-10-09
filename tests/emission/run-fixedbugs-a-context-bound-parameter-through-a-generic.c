@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -401,22 +401,22 @@ bb4:
     hero_panic_must(t22);
     hero_unreachable();
 bb5:
-    h_0opt_e201354_release(&h0_f0);
-    h_0opt_f87774a_release(&h1_f1);
-    hero_array_decref(h2_none);
-    h_0opt_e201354_release(&h3_f2);
-    hero_array_decref(h4_words);
-    h_0opt_f87774a_release(&h5_s0);
-    hero_str_decref(h6_w);
+    h_0opt_e201354_release(hero_slot_escape(&h0_f0));
+    h_0opt_f87774a_release(hero_slot_escape(&h1_f1));
+    hero_array_release_at(&h2_none);
+    h_0opt_e201354_release(hero_slot_escape(&h3_f2));
+    hero_array_release_at(&h4_words);
+    h_0opt_f87774a_release(hero_slot_escape(&h5_s0));
+    hero_str_release_at(&h6_w);
     hero_failure_release(&h7_e);
-    hero_array_decref(h8_own8);
-    h_0opt_e201354_release(&h9_own9);
-    hero_array_decref(h10_own10);
-    h_0opt_f87774a_release(&h11_own11);
-    hero_array_decref(h12_own12);
-    h_0opt_e201354_release(&h13_own13);
-    hero_array_decref(h14_own14);
-    h_0opt_f87774a_release(&h15_own15);
+    hero_array_release_at(&h8_own8);
+    h_0opt_e201354_release(hero_slot_escape(&h9_own9));
+    hero_array_release_at(&h10_own10);
+    h_0opt_f87774a_release(hero_slot_escape(&h11_own11));
+    hero_array_release_at(&h12_own12);
+    h_0opt_e201354_release(hero_slot_escape(&h13_own13));
+    hero_array_release_at(&h14_own14);
+    h_0opt_f87774a_release(hero_slot_escape(&h15_own15));
     return;
 bb6:
 #line 24 "tests/golden/run/fixedbugs-a-context-bound-parameter-through-a-generic.hero"
@@ -543,8 +543,8 @@ bb4:
 #line 544 "fixedbugsacontextboundparameterthroughageneric.c"
     t11 = h1_ret0;
     h_0opt_e201354_retain(&t11);
-    h_0opt_e201354_release(&h2_own2);
-    h_0opt_e201354_release(&h3_own3);
+    h_0opt_e201354_release(hero_slot_escape(&h2_own2));
+    h_0opt_e201354_release(hero_slot_escape(&h3_own3));
     return t11;
 }
 
@@ -628,8 +628,8 @@ bb4:
 #line 629 "fixedbugsacontextboundparameterthroughageneric.c"
     t11 = h1_ret0;
     h_0opt_f87774a_retain(&t11);
-    h_0opt_f87774a_release(&h2_own2);
-    h_0opt_f87774a_release(&h3_own3);
+    h_0opt_f87774a_release(hero_slot_escape(&h2_own2));
+    h_0opt_f87774a_release(hero_slot_escape(&h3_own3));
     return t11;
 }
 
@@ -661,7 +661,7 @@ bb0:
 #line 662 "fixedbugsacontextboundparameterthroughageneric.c"
     h_0opt_e201354_release(&t4);
     h_0opt_e201354_retain(&t3);
-    h_0opt_e201354_release(&h1_own1);
+    h_0opt_e201354_release(hero_slot_escape(&h1_own1));
     return t3;
 }
 
@@ -693,7 +693,7 @@ bb0:
 #line 694 "fixedbugsacontextboundparameterthroughageneric.c"
     h_0opt_f87774a_release(&t4);
     h_0opt_f87774a_retain(&t3);
-    h_0opt_f87774a_release(&h1_own1);
+    h_0opt_f87774a_release(hero_slot_escape(&h1_own1));
     return t3;
 }
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {

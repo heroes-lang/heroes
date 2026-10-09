@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -176,7 +176,7 @@ bb0:
 #line 177 "fixedbugs382aliteralconstantisonestaticblock.c"
     hero_array_decref(t5);
     hero_array_incref(t4);
-    hero_array_decref(h0_own0);
+    hero_array_release_at(&h0_own0);
     return t4;
 }
 #endif
@@ -218,7 +218,7 @@ bb0:
 #line 219 "fixedbugs382aliteralconstantisonestaticblock.c"
     hero_array_decref(t4);
     hero_array_incref(t3);
-    hero_array_decref(h0_own0);
+    hero_array_release_at(&h0_own0);
     return t3;
 }
 #endif
@@ -290,9 +290,9 @@ bb0:
 #line 291 "fixedbugs382aliteralconstantisonestaticblock.c"
     hero_array_decref(t8);
     hero_array_incref(t5);
-    hero_array_decref(h0_own0);
-    hero_array_decref(h1_own1);
-    hero_array_decref(h2_own2);
+    hero_array_release_at(&h0_own0);
+    hero_array_release_at(&h1_own1);
+    hero_array_release_at(&h2_own2);
     return t5;
 }
 #endif
@@ -337,7 +337,7 @@ bb0:
 #line 338 "fixedbugs382aliteralconstantisonestaticblock.c"
     hero_array_decref(t5);
     hero_array_incref(t4);
-    hero_array_decref(h0_own0);
+    hero_array_release_at(&h0_own0);
     return t4;
 }
 #endif
@@ -403,10 +403,10 @@ bb0:
 #line 404 "fixedbugs382aliteralconstantisonestaticblock.c"
     hero_array_decref(t11);
     hero_array_incref(t7);
-    hero_array_decref(h0_own0);
-    hero_str_decref(h1_own1);
-    hero_str_decref(h2_own2);
-    hero_array_decref(h3_own3);
+    hero_array_release_at(&h0_own0);
+    hero_str_release_at(&h1_own1);
+    hero_str_release_at(&h2_own2);
+    hero_array_release_at(&h3_own3);
     return t7;
 }
 
@@ -536,11 +536,11 @@ bb0:
 #line 32 "tests/golden/emit/fixedbugs-382-a-literal-constant-is-one-static-block.hero"
     hero_print_end();
 #line 539 "fixedbugs382aliteralconstantisonestaticblock.c"
-    hero_array_decref(h0_own0);
-    hero_array_decref(h1_own1);
-    hero_array_decref(h2_own2);
-    hero_array_decref(h3_own3);
-    hero_array_decref(h4_own4);
+    hero_array_release_at(&h0_own0);
+    hero_array_release_at(&h1_own1);
+    hero_array_release_at(&h2_own2);
+    hero_array_release_at(&h3_own3);
+    hero_array_release_at(&h4_own4);
     return;
 }
 HERO_TU_LOCAL bool h_fixedbugs382aliteralconstantisonestaticblock_Mark_c_count_eq(const h_fixedbugs382aliteralconstantisonestaticblock_Mark_c_count *a, const h_fixedbugs382aliteralconstantisonestaticblock_Mark_c_count *b) {

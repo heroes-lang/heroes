@@ -9,7 +9,7 @@
 #pragma push_macro("b")
 #include "heroes_guard_close.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -574,19 +574,19 @@ bb3:
 #line 68 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     hero_print_end();
 #line 577 "fixedbugsagrouprecordineverycontainer.c"
-    hero_array_decref(h3_xs);
-    hero_map_decref(h4_m);
-    h_0opt_31fbd75_release(&h5_f0);
-    hero_map_decref(h6_keyed);
-    h_0opt_e201354_release(&h7_f1);
-    h_0opt_31fbd75_release(&h8_maybe);
-    h_0opt_31fbd75_release(&h9_f2);
-    hero_array_decref(h10_own10);
-    hero_map_decref(h11_own11);
-    h_0opt_31fbd75_release(&h12_own12);
-    hero_map_decref(h13_own13);
-    h_0opt_e201354_release(&h14_own14);
-    h_0opt_31fbd75_release(&h15_own15);
+    hero_array_release_at(&h3_xs);
+    hero_map_release_at(&h4_m);
+    h_0opt_31fbd75_release(hero_slot_escape(&h5_f0));
+    hero_map_release_at(&h6_keyed);
+    h_0opt_e201354_release(hero_slot_escape(&h7_f1));
+    h_0opt_31fbd75_release(hero_slot_escape(&h8_maybe));
+    h_0opt_31fbd75_release(hero_slot_escape(&h9_f2));
+    hero_array_release_at(&h10_own10);
+    hero_map_release_at(&h11_own11);
+    h_0opt_31fbd75_release(hero_slot_escape(&h12_own12));
+    hero_map_release_at(&h13_own13);
+    h_0opt_e201354_release(hero_slot_escape(&h14_own14));
+    h_0opt_31fbd75_release(hero_slot_escape(&h15_own15));
     return;
 bb4:
 #line 61 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"

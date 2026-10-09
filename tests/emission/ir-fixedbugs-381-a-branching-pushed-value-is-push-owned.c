@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -211,8 +211,8 @@ bb4:
 #line 212 "fixedbugs381abranchingpushedvalueispushowned.c"
     t13 = h1_ret0;
     h_0opt_e201354_retain(&t13);
-    h_0opt_e201354_release(&h2_own2);
-    h_0opt_e201354_release(&h3_own3);
+    h_0opt_e201354_release(hero_slot_escape(&h2_own2));
+    h_0opt_e201354_release(hero_slot_escape(&h3_own3));
     return t13;
 }
 
@@ -484,16 +484,16 @@ bb8:
 #line 485 "fixedbugs381abranchingpushedvalueispushowned.c"
     t41 = h6_ret0;
     h_0opt_2270cbe7_retain(&t41);
-    hero_array_decref(h1_out);
-    h_0opt_e201354_release(&h2_f0);
-    h_0opt_e201354_release(&h3_f1);
-    h_0opt_e201354_release(&h5_f2);
-    hero_array_decref(h7_own7);
-    h_0opt_e201354_release(&h8_own8);
-    h_0opt_e201354_release(&h9_own9);
-    h_0opt_e201354_release(&h10_own10);
-    h_0opt_2270cbe7_release(&h11_own11);
-    h_0opt_2270cbe7_release(&h12_own12);
+    hero_array_release_at(&h1_out);
+    h_0opt_e201354_release(hero_slot_escape(&h2_f0));
+    h_0opt_e201354_release(hero_slot_escape(&h3_f1));
+    h_0opt_e201354_release(hero_slot_escape(&h5_f2));
+    hero_array_release_at(&h7_own7);
+    h_0opt_e201354_release(hero_slot_escape(&h8_own8));
+    h_0opt_e201354_release(hero_slot_escape(&h9_own9));
+    h_0opt_e201354_release(hero_slot_escape(&h10_own10));
+    h_0opt_2270cbe7_release(hero_slot_escape(&h11_own11));
+    h_0opt_2270cbe7_release(hero_slot_escape(&h12_own12));
     return t41;
 }
 
@@ -598,8 +598,8 @@ bb4:
     t20 = h1_out;
 #line 600 "fixedbugs381abranchingpushedvalueispushowned.c"
     hero_array_incref(t20);
-    hero_array_decref(h1_out);
-    hero_array_decref(h4_own4);
+    hero_array_release_at(&h1_out);
+    hero_array_release_at(&h4_own4);
     return t20;
 }
 
@@ -748,13 +748,13 @@ bb1:
     t20 = h0_out;
 #line 750 "fixedbugs381abranchingpushedvalueispushowned.c"
     hero_array_incref(t20);
-    hero_array_decref(h0_out);
-    hero_array_decref(h1_kept);
-    h_0opt_e201354_release(&h2_f0);
-    hero_array_decref(h3_own3);
-    hero_array_decref(h4_own4);
-    h_0opt_e201354_release(&h5_own5);
-    hero_array_decref(h6_own6);
+    hero_array_release_at(&h0_out);
+    hero_array_release_at(&h1_kept);
+    h_0opt_e201354_release(hero_slot_escape(&h2_f0));
+    hero_array_release_at(&h3_own3);
+    hero_array_release_at(&h4_own4);
+    h_0opt_e201354_release(hero_slot_escape(&h5_own5));
+    hero_array_release_at(&h6_own6);
     return t20;
 bb2:
 #line 35 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
@@ -862,10 +862,10 @@ bb1:
 #line 40 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
     hero_print_end();
 #line 865 "fixedbugs381abranchingpushedvalueispushowned.c"
-    h_0opt_2270cbe7_release(&h0_f0);
-    h_0opt_2270cbe7_release(&h1_own1);
-    hero_array_decref(h2_own2);
-    hero_array_decref(h3_own3);
+    h_0opt_2270cbe7_release(hero_slot_escape(&h0_f0));
+    h_0opt_2270cbe7_release(hero_slot_escape(&h1_own1));
+    hero_array_release_at(&h2_own2);
+    hero_array_release_at(&h3_own3);
     return;
 bb2:
 #line 40 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"

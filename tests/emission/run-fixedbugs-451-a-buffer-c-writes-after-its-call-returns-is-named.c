@@ -7,7 +7,7 @@
 #include <fixedbugs-451-keepers.h>
 #include "heroes_guard_close.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -141,8 +141,8 @@ bb0:
 #line 19 "tests/golden/run/fixedbugs-451-a-buffer-c-writes-after-its-call-returns-is-named.hero"
     t4 = ((void)(t3 == NULL ? ((void)hero_array_len(t3), hero_unreachable()) : (void)0), t3->len);
 #line 144 "fixedbugs451abuffercwritesafteritscallreturnsisnamed.c"
-    hero_array_decref(h0_md);
-    hero_array_decref(h1_own1);
+    hero_array_release_at(&h0_md);
+    hero_array_release_at(&h1_own1);
     return t4;
 }
 

@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -283,11 +283,11 @@ bb4:
 #line 284 "main.c"
     t15 = h1_ret0;
     h_main_Tree_retain(&t15);
-    h_main_Tree_release(&h2_own2);
-    h_main_Tree_release(&h3_own3);
-    hero_array_decref(h4_own4);
-    h_main_Tree_release(&h5_own5);
-    h_main_Tree_release(&h6_own6);
+    h_main_Tree_release(hero_slot_escape(&h2_own2));
+    h_main_Tree_release(hero_slot_escape(&h3_own3));
+    hero_array_release_at(&h4_own4);
+    h_main_Tree_release(hero_slot_escape(&h5_own5));
+    h_main_Tree_release(hero_slot_escape(&h6_own6));
     return t15;
 }
 
@@ -350,8 +350,8 @@ bb1:
 #line 85 "examples/binarytrees/main.hero"
     t20 = h2_r0;
 #line 353 "main.c"
-    h_main_Tree_release(&h1_s0);
-    h_main_Tree_c_branch_release(&h3_b);
+    h_main_Tree_release(hero_slot_escape(&h1_s0));
+    h_main_Tree_c_branch_release(hero_slot_escape(&h3_b));
     return t20;
 bb2:
 #line 86 "examples/binarytrees/main.hero"
@@ -460,8 +460,8 @@ bb1:
 #line 92 "examples/binarytrees/main.hero"
     t14 = h2_r0;
 #line 463 "main.c"
-    h_main_Tree_release(&h1_s0);
-    h_main_Tree_c_branch_release(&h3_b);
+    h_main_Tree_release(hero_slot_escape(&h1_s0));
+    h_main_Tree_c_branch_release(hero_slot_escape(&h3_b));
     return t14;
 bb2:
 #line 93 "examples/binarytrees/main.hero"
@@ -576,8 +576,8 @@ bb1:
 #line 102 "examples/binarytrees/main.hero"
     t30 = h2_r0;
 #line 579 "main.c"
-    h_main_Tree_release(&h1_s0);
-    h_main_Tree_c_branch_release(&h3_b);
+    h_main_Tree_release(hero_slot_escape(&h1_s0));
+    h_main_Tree_c_branch_release(hero_slot_escape(&h3_b));
     return t30;
 bb2:
 #line 103 "examples/binarytrees/main.hero"
@@ -864,10 +864,10 @@ bb3:
 #line 134 "examples/binarytrees/main.hero"
     hero_print_end();
 #line 867 "main.c"
-    h_main_Tree_release(&h0_long_lived);
-    h_main_Tree_release(&h5_own5);
-    h_main_Tree_release(&h6_own6);
-    h_main_Tree_release(&h7_own7);
+    h_main_Tree_release(hero_slot_escape(&h0_long_lived));
+    h_main_Tree_release(hero_slot_escape(&h5_own5));
+    h_main_Tree_release(hero_slot_escape(&h6_own6));
+    h_main_Tree_release(hero_slot_escape(&h7_own7));
     return;
 bb4:
 #line 127 "examples/binarytrees/main.hero"

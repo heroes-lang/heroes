@@ -8,7 +8,7 @@
 #include <ffi-owned-cell-is-freed.h>
 #include "heroes_guard_close.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -766,29 +766,29 @@ bb18:
 #line 66 "tests/golden/run/ffi-owned-cell-is-freed.hero"
 bb19:
 #line 769 "ffiownedcellisfreed.c"
-    h_0opt_f87774a_release(&h0_first);
-    h_0opt_f87774a_release(&h3_owned1);
-    h_0opt_f87774a_release(&h4_f0);
-    hero_str_decref(h5_r0);
-    h_0opt_f87774a_release(&h6_second);
-    h_0opt_f87774a_release(&h9_owned3);
-    h_0opt_f87774a_release(&h10_f1);
-    hero_str_decref(h11_r1);
-    h_0opt_f87774a_release(&h12_f2);
-    hero_str_decref(h13_r2);
-    h_0opt_f87774a_release(&h14_f3);
-    hero_str_decref(h15_r3);
-    h_0opt_f87774a_release(&h16_quiet);
-    h_0opt_f87774a_release(&h19_owned5);
-    h_0opt_f87774a_release(&h20_s0);
-    hero_str_decref(h21_text);
+    h_0opt_f87774a_release(hero_slot_escape(&h0_first));
+    h_0opt_f87774a_release(hero_slot_escape(&h3_owned1));
+    h_0opt_f87774a_release(hero_slot_escape(&h4_f0));
+    hero_str_release_at(&h5_r0);
+    h_0opt_f87774a_release(hero_slot_escape(&h6_second));
+    h_0opt_f87774a_release(hero_slot_escape(&h9_owned3));
+    h_0opt_f87774a_release(hero_slot_escape(&h10_f1));
+    hero_str_release_at(&h11_r1);
+    h_0opt_f87774a_release(hero_slot_escape(&h12_f2));
+    hero_str_release_at(&h13_r2);
+    h_0opt_f87774a_release(hero_slot_escape(&h14_f3));
+    hero_str_release_at(&h15_r3);
+    h_0opt_f87774a_release(hero_slot_escape(&h16_quiet));
+    h_0opt_f87774a_release(hero_slot_escape(&h19_owned5));
+    h_0opt_f87774a_release(hero_slot_escape(&h20_s0));
+    hero_str_release_at(&h21_text);
     hero_failure_release(&h22_e);
-    h_0opt_f87774a_release(&h23_own23);
-    h_0opt_f87774a_release(&h24_own24);
-    h_0opt_f87774a_release(&h25_own25);
-    h_0opt_f87774a_release(&h26_own26);
-    h_0opt_f87774a_release(&h27_own27);
-    h_0opt_f87774a_release(&h28_own28);
+    h_0opt_f87774a_release(hero_slot_escape(&h23_own23));
+    h_0opt_f87774a_release(hero_slot_escape(&h24_own24));
+    h_0opt_f87774a_release(hero_slot_escape(&h25_own25));
+    h_0opt_f87774a_release(hero_slot_escape(&h26_own26));
+    h_0opt_f87774a_release(hero_slot_escape(&h27_own27));
+    h_0opt_f87774a_release(hero_slot_escape(&h28_own28));
     hero_lend_local_give(hero_lend_h17_cell2);
     hero_lend_local_give(hero_lend_h7_cell1);
     hero_lend_local_give(hero_lend_h1_cell0);
@@ -1007,11 +1007,11 @@ bb7:
 #line 1008 "ffiownedcellisfreed.c"
     t18 = h3_ret0;
     h_0opt_f87774a_retain(&t18);
-    hero_str_decref(h2_text);
-    hero_str_decref(h4_own4);
-    h_0opt_f87774a_release(&h5_own5);
-    h_0opt_f87774a_release(&h6_own6);
-    h_0opt_f87774a_release(&h7_own7);
+    hero_str_release_at(&h2_text);
+    hero_str_release_at(&h4_own4);
+    h_0opt_f87774a_release(hero_slot_escape(&h5_own5));
+    h_0opt_f87774a_release(hero_slot_escape(&h6_own6));
+    h_0opt_f87774a_release(hero_slot_escape(&h7_own7));
     hero_lend_local_give(hero_lend_h1_status);
     return t18;
 }

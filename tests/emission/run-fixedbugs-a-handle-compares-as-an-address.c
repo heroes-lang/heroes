@@ -7,7 +7,7 @@
 #include <fixedbugs-a-handle-compares-as-an-address.h>
 #include "heroes_guard_close.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -477,18 +477,18 @@ bb0:
 #line 86 "tests/golden/run/fixedbugs-a-handle-compares-as-an-address.hero"
     hero_print_end();
 #line 480 "fixedbugsahandlecomparesasanaddress.c"
-    h_0opt_2e1eec0d_release(&h3_oa);
-    h_0opt_2e1eec0d_release(&h4_ob);
-    h_fixedbugsahandlecomparesasanaddress_Held_release(&h5_own5);
-    h_fixedbugsahandlecomparesasanaddress_Held_release(&h6_own6);
-    h_fixedbugsahandlecomparesasanaddress_Held_release(&h7_own7);
-    h_fixedbugsahandlecomparesasanaddress_Held_release(&h8_own8);
-    hero_array_decref(h9_own9);
-    hero_array_decref(h10_own10);
-    hero_array_decref(h11_own11);
-    hero_array_decref(h12_own12);
-    h_0opt_2e1eec0d_release(&h13_own13);
-    h_0opt_2e1eec0d_release(&h14_own14);
+    h_0opt_2e1eec0d_release(hero_slot_escape(&h3_oa));
+    h_0opt_2e1eec0d_release(hero_slot_escape(&h4_ob));
+    h_fixedbugsahandlecomparesasanaddress_Held_release(hero_slot_escape(&h5_own5));
+    h_fixedbugsahandlecomparesasanaddress_Held_release(hero_slot_escape(&h6_own6));
+    h_fixedbugsahandlecomparesasanaddress_Held_release(hero_slot_escape(&h7_own7));
+    h_fixedbugsahandlecomparesasanaddress_Held_release(hero_slot_escape(&h8_own8));
+    hero_array_release_at(&h9_own9);
+    hero_array_release_at(&h10_own10);
+    hero_array_release_at(&h11_own11);
+    hero_array_release_at(&h12_own12);
+    h_0opt_2e1eec0d_release(hero_slot_escape(&h13_own13));
+    h_0opt_2e1eec0d_release(hero_slot_escape(&h14_own14));
     return;
 }
 HERO_TU_LOCAL bool h_fixedbugsahandlecomparesasanaddress_Chunk_eq(Chunk * const *a, Chunk * const *b) {

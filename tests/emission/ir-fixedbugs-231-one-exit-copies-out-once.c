@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -194,9 +194,9 @@ bb4:
 #line 195 "fixedbugs231oneexitcopiesoutonce.c"
     t11 = h1_ret0;
     h_0opt_f87774a_retain(&t11);
-    hero_str_decref(h2_own2);
-    h_0opt_f87774a_release(&h3_own3);
-    h_0opt_f87774a_release(&h4_own4);
+    hero_str_release_at(&h2_own2);
+    h_0opt_f87774a_release(hero_slot_escape(&h3_own3));
+    h_0opt_f87774a_release(hero_slot_escape(&h4_own4));
     return t11;
 }
 
@@ -390,12 +390,12 @@ bb6:
 #line 391 "fixedbugs231oneexitcopiesoutonce.c"
     t31 = h3_ret0;
     h_0opt_f87774a_retain(&t31);
-    hero_str_decref(h1_word);
-    h_0opt_f87774a_release(&h2_f0);
-    h_0opt_f87774a_release(&h4_own4);
-    h_0opt_f87774a_release(&h5_own5);
-    h_0opt_f87774a_release(&h6_own6);
-    h_0opt_f87774a_release(&h7_own7);
+    hero_str_release_at(&h1_word);
+    h_0opt_f87774a_release(hero_slot_escape(&h2_f0));
+    h_0opt_f87774a_release(hero_slot_escape(&h4_own4));
+    h_0opt_f87774a_release(hero_slot_escape(&h5_own5));
+    h_0opt_f87774a_release(hero_slot_escape(&h6_own6));
+    h_0opt_f87774a_release(hero_slot_escape(&h7_own7));
     return t31;
 }
 
@@ -684,18 +684,18 @@ bb9:
 #line 28 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
     hero_print_end();
 #line 687 "fixedbugs231oneexitcopiesoutonce.c"
-    h_fixedbugs231oneexitcopiesoutonce_Reader_release(&h0_r);
-    h_0opt_f87774a_release(&h1_f0);
-    hero_str_decref(h2_r0);
-    h_0opt_f87774a_release(&h3_f1);
-    hero_str_decref(h4_r1);
-    h_0opt_f87774a_release(&h5_f2);
-    hero_str_decref(h6_r2);
-    hero_array_decref(h7_own7);
-    h_fixedbugs231oneexitcopiesoutonce_Reader_release(&h8_own8);
-    h_0opt_f87774a_release(&h9_own9);
-    h_0opt_f87774a_release(&h10_own10);
-    h_0opt_f87774a_release(&h11_own11);
+    h_fixedbugs231oneexitcopiesoutonce_Reader_release(hero_slot_escape(&h0_r));
+    h_0opt_f87774a_release(hero_slot_escape(&h1_f0));
+    hero_str_release_at(&h2_r0);
+    h_0opt_f87774a_release(hero_slot_escape(&h3_f1));
+    hero_str_release_at(&h4_r1);
+    h_0opt_f87774a_release(hero_slot_escape(&h5_f2));
+    hero_str_release_at(&h6_r2);
+    hero_array_release_at(&h7_own7);
+    h_fixedbugs231oneexitcopiesoutonce_Reader_release(hero_slot_escape(&h8_own8));
+    h_0opt_f87774a_release(hero_slot_escape(&h9_own9));
+    h_0opt_f87774a_release(hero_slot_escape(&h10_own10));
+    h_0opt_f87774a_release(hero_slot_escape(&h11_own11));
     return;
 }
 HERO_TU_LOCAL void h_fixedbugs231oneexitcopiesoutonce_Reader_retain(const h_fixedbugs231oneexitcopiesoutonce_Reader *v) {

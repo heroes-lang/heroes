@@ -8,7 +8,7 @@
 #include <string.h>
 #include "heroes_guard_close.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -237,10 +237,10 @@ bb5:
     t19 = h4_r0;
 #line 239 "ownedrelease.c"
     hero_str_incref(t19);
-    h_0opt_f87774a_release(&h2_owned1);
-    h_0opt_f87774a_release(&h3_f0);
-    hero_str_decref(h4_r0);
-    h_0opt_f87774a_release(&h5_own5);
+    h_0opt_f87774a_release(hero_slot_escape(&h2_owned1));
+    h_0opt_f87774a_release(hero_slot_escape(&h3_f0));
+    hero_str_release_at(&h4_r0);
+    h_0opt_f87774a_release(hero_slot_escape(&h5_own5));
     return t19;
 }
 
@@ -400,11 +400,11 @@ bb7:
 #line 401 "ownedrelease.c"
     t18 = h3_ret0;
     h_0opt_f87774a_retain(&t18);
-    hero_str_decref(h2_text);
-    hero_str_decref(h4_own4);
-    h_0opt_f87774a_release(&h5_own5);
-    h_0opt_f87774a_release(&h6_own6);
-    h_0opt_f87774a_release(&h7_own7);
+    hero_str_release_at(&h2_text);
+    hero_str_release_at(&h4_own4);
+    h_0opt_f87774a_release(hero_slot_escape(&h5_own5));
+    h_0opt_f87774a_release(hero_slot_escape(&h6_own6));
+    h_0opt_f87774a_release(hero_slot_escape(&h7_own7));
     hero_lend_local_give(hero_lend_h1_status);
     return t18;
 }

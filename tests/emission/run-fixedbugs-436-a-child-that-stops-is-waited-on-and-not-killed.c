@@ -8,7 +8,7 @@
 #include <unistd.h>
 #include "heroes_guard_close.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -154,7 +154,7 @@ bb0:
 #line 155 "fixedbugs436achildthatstopsiswaitedonandnotkilled.c"
     hero_str_decref(t4);
     hero_str_incref(t3);
-    hero_str_decref(h2_own2);
+    hero_str_release_at(&h2_own2);
     hero_lend_local_give(hero_lend_h1_marks);
     hero_lend_local_give(hero_lend_h0_status);
     return t3;
@@ -302,9 +302,9 @@ bb3:
 #line 42 "tests/golden/run/fixedbugs-436-a-child-that-stops-is-waited-on-and-not-killed.hero"
 bb4:
 #line 305 "fixedbugs436achildthatstopsiswaitedonandnotkilled.c"
-    hero_str_decref(h0_program);
-    hero_array_decref(h3_own3);
-    hero_str_decref(h4_own4);
+    hero_str_release_at(&h0_program);
+    hero_array_release_at(&h3_own3);
+    hero_str_release_at(&h4_own4);
     hero_lend_local_give(hero_lend_h1_status);
     return;
 }
@@ -391,9 +391,9 @@ bb3:
     t13 = h0_out;
 #line 393 "fixedbugs436achildthatstopsiswaitedonandnotkilled.c"
     hero_array_incref(t13);
-    hero_array_decref(h0_out);
-    hero_array_decref(h2_own2);
-    hero_str_decref(h3_own3);
+    hero_array_release_at(&h0_out);
+    hero_array_release_at(&h2_own2);
+    hero_str_release_at(&h3_own3);
     return t13;
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {

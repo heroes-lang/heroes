@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -250,9 +250,9 @@ bb8:
     hero_unreachable();
 bb9:
     t24 = h5_ret0;
-    h_0opt_e201354_release(&h1_f0);
-    h_0opt_e201354_release(&h2_f1);
-    h_0opt_e201354_release(&h4_f2);
+    h_0opt_e201354_release(hero_slot_escape(&h1_f0));
+    h_0opt_e201354_release(hero_slot_escape(&h2_f1));
+    h_0opt_e201354_release(hero_slot_escape(&h4_f2));
     return t24;
 }
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {

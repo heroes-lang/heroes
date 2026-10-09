@@ -9,7 +9,7 @@
 #pragma push_macro("slot")
 #include "heroes_guard_close.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -283,10 +283,10 @@ bb3:
 #line 48 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
     hero_print_end();
 #line 286 "ffiafilledrecordisaskedfor.c"
-    h_0opt_e201354_release(&h1_f0);
-    h_0opt_f87774a_release(&h2_f1);
-    h_0opt_e201354_release(&h3_own3);
-    h_0opt_f87774a_release(&h4_own4);
+    h_0opt_e201354_release(hero_slot_escape(&h1_f0));
+    h_0opt_f87774a_release(hero_slot_escape(&h2_f1));
+    h_0opt_e201354_release(hero_slot_escape(&h3_own3));
+    h_0opt_f87774a_release(hero_slot_escape(&h4_own4));
     hero_lend_local_give(hero_lend_h0_s);
     return;
 bb4:

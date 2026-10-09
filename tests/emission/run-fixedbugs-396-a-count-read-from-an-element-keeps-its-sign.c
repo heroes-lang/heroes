@@ -7,7 +7,7 @@
 #include <fixedbugs-396-buffers.h>
 #include "heroes_guard_close.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -236,10 +236,10 @@ bb0:
 #line 16 "tests/golden/run/fixedbugs-396-a-count-read-from-an-element-keeps-its-sign.hero"
     hero_print_end();
 #line 239 "fixedbugs396acountreadfromanelementkeepsitssign.c"
-    hero_array_decref(h0_counts);
-    hero_array_decref(h1_buf);
-    hero_array_decref(h2_own2);
-    hero_array_decref(h3_own3);
+    hero_array_release_at(&h0_counts);
+    hero_array_release_at(&h1_buf);
+    hero_array_release_at(&h2_own2);
+    hero_array_release_at(&h3_own3);
     return;
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {

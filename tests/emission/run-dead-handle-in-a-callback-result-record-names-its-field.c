@@ -9,7 +9,7 @@
 #pragma push_macro("b")
 #include "heroes_guard_close.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -213,8 +213,8 @@ bb1:
 #line 24 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
     t18 = h1_p;
 #line 216 "deadhandleinacallbackresultrecordnamesitsfield.c"
-    h_0opt_e201354_release(&h2_f0);
-    h_0opt_e201354_release(&h3_own3);
+    h_0opt_e201354_release(hero_slot_escape(&h2_f0));
+    h_0opt_e201354_release(hero_slot_escape(&h3_own3));
     return t18;
 bb2:
 #line 22 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"

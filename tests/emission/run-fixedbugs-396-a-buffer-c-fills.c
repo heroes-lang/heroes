@@ -9,7 +9,7 @@
 #pragma push_macro("b")
 #include "heroes_guard_close.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -234,8 +234,8 @@ bb0:
 #line 40 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     hero_print_end();
 #line 237 "fixedbugs396abuffercfills.c"
-    hero_array_decref(h0_other);
-    hero_array_decref(h1_own1);
+    hero_array_release_at(&h0_other);
+    hero_array_release_at(&h1_own1);
     return;
 }
 
@@ -1361,32 +1361,32 @@ bb0:
 #line 113 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     hero_print_end();
 #line 1364 "fixedbugs396abuffercfills.c"
-    hero_array_decref(h0_md);
-    hero_array_decref(h1_before);
-    hero_array_decref(h2_named);
-    hero_array_decref(h3_bytes);
-    hero_array_decref(h4_ints);
-    hero_array_decref(h5_pairs);
-    hero_array_decref(h6_reals);
-    hero_array_decref(h7_small);
-    h_fixedbugs396abuffercfills_Holder_release(&h8_h);
-    hero_array_decref(h9_rows);
-    hero_array_decref(h10_late);
-    hero_array_decref(h11_big);
-    hero_array_decref(h12_own12);
-    hero_array_decref(h13_own13);
-    hero_array_decref(h14_own14);
-    hero_array_decref(h15_own15);
-    hero_array_decref(h16_own16);
-    hero_array_decref(h17_own17);
-    hero_array_decref(h18_own18);
-    hero_array_decref(h19_own19);
-    h_fixedbugs396abuffercfills_Holder_release(&h20_own20);
-    hero_array_decref(h21_own21);
-    hero_array_decref(h22_own22);
-    hero_array_decref(h23_own23);
-    hero_array_decref(h24_own24);
-    hero_array_decref(h25_own25);
+    hero_array_release_at(&h0_md);
+    hero_array_release_at(&h1_before);
+    hero_array_release_at(&h2_named);
+    hero_array_release_at(&h3_bytes);
+    hero_array_release_at(&h4_ints);
+    hero_array_release_at(&h5_pairs);
+    hero_array_release_at(&h6_reals);
+    hero_array_release_at(&h7_small);
+    h_fixedbugs396abuffercfills_Holder_release(hero_slot_escape(&h8_h));
+    hero_array_release_at(&h9_rows);
+    hero_array_release_at(&h10_late);
+    hero_array_release_at(&h11_big);
+    hero_array_release_at(&h12_own12);
+    hero_array_release_at(&h13_own13);
+    hero_array_release_at(&h14_own14);
+    hero_array_release_at(&h15_own15);
+    hero_array_release_at(&h16_own16);
+    hero_array_release_at(&h17_own17);
+    hero_array_release_at(&h18_own18);
+    hero_array_release_at(&h19_own19);
+    h_fixedbugs396abuffercfills_Holder_release(hero_slot_escape(&h20_own20));
+    hero_array_release_at(&h21_own21);
+    hero_array_release_at(&h22_own22);
+    hero_array_release_at(&h23_own23);
+    hero_array_release_at(&h24_own24);
+    hero_array_release_at(&h25_own25);
     return;
 }
 HERO_TU_LOCAL bool h_fixedbugs396abuffercfills_Pair_eq(const struct pair *a, const struct pair *b) {

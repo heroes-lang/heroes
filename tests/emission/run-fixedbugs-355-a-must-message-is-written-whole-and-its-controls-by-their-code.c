@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -285,14 +285,14 @@ bb3:
 #line 11 "tests/golden/run/fixedbugs-355-a-must-message-is-written-whole-and-its-controls-by-their-code.hero"
     hero_print_end();
 #line 288 "fixedbugs355amustmessageiswrittenwholeanditscontrolsbytheircode.c"
-    hero_array_decref(h0_b);
-    h_0opt_f87774a_release(&h1_f0);
-    h_0opt_f87774a_release(&h2_r);
-    h_0opt_f87774a_release(&h3_f1);
-    hero_array_decref(h4_own4);
-    h_0opt_f87774a_release(&h5_own5);
-    hero_str_decref(h6_own6);
-    h_0opt_f87774a_release(&h7_own7);
+    hero_array_release_at(&h0_b);
+    h_0opt_f87774a_release(hero_slot_escape(&h1_f0));
+    h_0opt_f87774a_release(hero_slot_escape(&h2_r));
+    h_0opt_f87774a_release(hero_slot_escape(&h3_f1));
+    hero_array_release_at(&h4_own4);
+    h_0opt_f87774a_release(hero_slot_escape(&h5_own5));
+    hero_str_release_at(&h6_own6);
+    h_0opt_f87774a_release(hero_slot_escape(&h7_own7));
     return;
 bb4:
 #line 11 "tests/golden/run/fixedbugs-355-a-must-message-is-written-whole-and-its-controls-by-their-code.hero"

@@ -7,7 +7,7 @@
 #include <dead-handle-field-of-a-cell-ended-through-a-helper.h>
 #include "heroes_guard_close.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -233,8 +233,8 @@ bb4:
 #line 234 "deadhandlefieldofacellendedthroughahelper.c"
     t13 = h1_ret0;
     h_0opt_2436b697_retain(&t13);
-    h_0opt_2436b697_release(&h2_own2);
-    h_0opt_2436b697_release(&h3_own3);
+    h_0opt_2436b697_release(hero_slot_escape(&h2_own2));
+    h_0opt_2436b697_release(hero_slot_escape(&h3_own3));
     hero_lend_local_give(hero_lend_h0_db);
     return t13;
 }
@@ -338,8 +338,8 @@ bb1:
 #line 33 "tests/golden/run/dead-handle-field-of-a-cell-ended-through-a-helper.hero"
     hero_print_end();
 #line 341 "deadhandlefieldofacellendedthroughahelper.c"
-    h_0opt_2436b697_release(&h0_f0);
-    h_0opt_2436b697_release(&h2_own2);
+    h_0opt_2436b697_release(hero_slot_escape(&h0_f0));
+    h_0opt_2436b697_release(hero_slot_escape(&h2_own2));
     return;
 bb2:
 #line 31 "tests/golden/run/dead-handle-field-of-a-cell-ended-through-a-helper.hero"

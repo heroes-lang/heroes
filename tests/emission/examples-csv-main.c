@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -796,21 +796,21 @@ bb38:
 #line 797 "main.c"
     t93 = h13_ret0;
     h_0opt_755e4b59_retain(&t93);
-    hero_array_decref(h1_rows);
-    hero_array_decref(h2_row);
-    hero_str_decref(h3_field);
-    hero_array_decref(h7_xs0);
-    hero_str_decref(h9_ch);
-    hero_array_decref(h14_own14);
-    hero_array_decref(h15_own15);
-    hero_array_decref(h16_own16);
-    hero_str_decref(h17_own17);
-    hero_str_decref(h18_own18);
-    hero_str_decref(h19_own19);
-    hero_array_decref(h20_own20);
-    h_0opt_755e4b59_release(&h21_own21);
-    h_main_Table_release(&h22_own22);
-    h_0opt_755e4b59_release(&h23_own23);
+    hero_array_release_at(&h1_rows);
+    hero_array_release_at(&h2_row);
+    hero_str_release_at(&h3_field);
+    hero_array_release_at(&h7_xs0);
+    hero_str_release_at(&h9_ch);
+    hero_array_release_at(&h14_own14);
+    hero_array_release_at(&h15_own15);
+    hero_array_release_at(&h16_own16);
+    hero_str_release_at(&h17_own17);
+    hero_str_release_at(&h18_own18);
+    hero_str_release_at(&h19_own19);
+    hero_array_release_at(&h20_own20);
+    h_0opt_755e4b59_release(hero_slot_escape(&h21_own21));
+    h_main_Table_release(hero_slot_escape(&h22_own22));
+    h_0opt_755e4b59_release(hero_slot_escape(&h23_own23));
     return t93;
 }
 
@@ -1006,8 +1006,8 @@ bb7:
 bb8:
 #line 1008 "main.c"
     t21 = h4_ret0;
-    hero_array_decref(h1_xs0);
-    hero_array_decref(h3_one);
+    hero_array_release_at(&h1_xs0);
+    hero_array_release_at(&h3_one);
     return t21;
 }
 
@@ -1249,12 +1249,12 @@ bb13:
 #line 1250 "main.c"
     t37 = h7_ret0;
     h_0opt_5a58f2ca_retain(&t37);
-    hero_array_decref(h3_out);
-    hero_array_decref(h4_xs0);
-    hero_array_decref(h6_one);
-    hero_array_decref(h8_own8);
-    h_0opt_5a58f2ca_release(&h9_own9);
-    h_0opt_5a58f2ca_release(&h10_own10);
+    hero_array_release_at(&h3_out);
+    hero_array_release_at(&h4_xs0);
+    hero_array_release_at(&h6_one);
+    hero_array_release_at(&h8_own8);
+    h_0opt_5a58f2ca_release(hero_slot_escape(&h9_own9));
+    h_0opt_5a58f2ca_release(hero_slot_escape(&h10_own10));
     return t37;
 }
 
@@ -1656,21 +1656,21 @@ bb5:
 #line 125 "examples/csv/main.hero"
     hero_print_end();
 #line 1659 "main.c"
-    h_0opt_755e4b59_release(&h0_f0);
-    h_main_Table_release(&h1_table);
-    h_0opt_5a58f2ca_release(&h2_f1);
-    h_0opt_5a58f2ca_release(&h3_f2);
-    h_0opt_755e4b59_release(&h4_f3);
-    h_0opt_755e4b59_release(&h5_f4);
-    hero_str_decref(h6_own6);
-    h_0opt_755e4b59_release(&h7_own7);
-    hero_str_decref(h8_own8);
-    hero_str_decref(h9_own9);
-    h_0opt_5a58f2ca_release(&h10_own10);
-    hero_str_decref(h11_own11);
-    h_0opt_5a58f2ca_release(&h12_own12);
-    h_0opt_755e4b59_release(&h13_own13);
-    h_0opt_755e4b59_release(&h14_own14);
+    h_0opt_755e4b59_release(hero_slot_escape(&h0_f0));
+    h_main_Table_release(hero_slot_escape(&h1_table));
+    h_0opt_5a58f2ca_release(hero_slot_escape(&h2_f1));
+    h_0opt_5a58f2ca_release(hero_slot_escape(&h3_f2));
+    h_0opt_755e4b59_release(hero_slot_escape(&h4_f3));
+    h_0opt_755e4b59_release(hero_slot_escape(&h5_f4));
+    hero_str_release_at(&h6_own6);
+    h_0opt_755e4b59_release(hero_slot_escape(&h7_own7));
+    hero_str_release_at(&h8_own8);
+    hero_str_release_at(&h9_own9);
+    h_0opt_5a58f2ca_release(hero_slot_escape(&h10_own10));
+    hero_str_release_at(&h11_own11);
+    h_0opt_5a58f2ca_release(hero_slot_escape(&h12_own12));
+    h_0opt_755e4b59_release(hero_slot_escape(&h13_own13));
+    h_0opt_755e4b59_release(hero_slot_escape(&h14_own14));
     return;
 bb6:
 #line 125 "examples/csv/main.hero"

@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -280,13 +280,13 @@ bb3:
 #line 14 "tests/golden/run/fixedbugs-273-read-file-on-a-directory-is-an-error.hero"
 bb4:
 #line 283 "fixedbugs273readfileonadirectoryisanerror.c"
-    h_0opt_f87774a_release(&h0_s0);
-    hero_str_decref(h1_text);
+    h_0opt_f87774a_release(hero_slot_escape(&h0_s0));
+    hero_str_release_at(&h1_text);
     hero_failure_release(&h2_e);
-    h_0opt_f87774a_release(&h3_s1);
+    h_0opt_f87774a_release(hero_slot_escape(&h3_s1));
     hero_failure_release(&h4_e);
-    h_0opt_f87774a_release(&h5_own5);
-    h_0opt_f87774a_release(&h6_own6);
+    h_0opt_f87774a_release(hero_slot_escape(&h5_own5));
+    h_0opt_f87774a_release(hero_slot_escape(&h6_own6));
     return;
 bb5:
 #line 17 "tests/golden/run/fixedbugs-273-read-file-on-a-directory-is-an-error.hero"
@@ -640,17 +640,17 @@ bb13:
 #line 641 "fixedbugs273readfileonadirectoryisanerror.c"
     t38 = h3_ret0;
     h_0opt_f87774a_retain(&t38);
-    hero_str_decref(h2_text);
-    hero_str_decref(h4_own4);
-    h_0opt_f87774a_release(&h5_own5);
-    h_0opt_f87774a_release(&h6_own6);
-    hero_str_decref(h7_own7);
-    h_0opt_f87774a_release(&h8_own8);
-    hero_str_decref(h9_own9);
-    h_0opt_f87774a_release(&h10_own10);
-    hero_str_decref(h11_own11);
-    hero_str_decref(h12_own12);
-    h_0opt_f87774a_release(&h13_own13);
+    hero_str_release_at(&h2_text);
+    hero_str_release_at(&h4_own4);
+    h_0opt_f87774a_release(hero_slot_escape(&h5_own5));
+    h_0opt_f87774a_release(hero_slot_escape(&h6_own6));
+    hero_str_release_at(&h7_own7);
+    h_0opt_f87774a_release(hero_slot_escape(&h8_own8));
+    hero_str_release_at(&h9_own9);
+    h_0opt_f87774a_release(hero_slot_escape(&h10_own10));
+    hero_str_release_at(&h11_own11);
+    hero_str_release_at(&h12_own12);
+    h_0opt_f87774a_release(hero_slot_escape(&h13_own13));
     hero_lend_local_give(hero_lend_h1_status);
     return t38;
 }

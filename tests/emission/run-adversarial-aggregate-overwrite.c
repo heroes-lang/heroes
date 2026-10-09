@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -738,32 +738,32 @@ bb13:
 #line 71 "tests/golden/run/adversarial-aggregate-overwrite.hero"
     hero_print_end();
 #line 741 "adversarialaggregateoverwrite.c"
-    h_adversarialaggregateoverwrite_Cell_release(&h0_c);
-    h_adversarialaggregateoverwrite_Slot_release(&h2_s);
-    h_adversarialaggregateoverwrite_Slot_release(&h4_s0);
-    hero_str_decref(h5_r0);
-    h_adversarialaggregateoverwrite_Slot_c_full_release(&h6_f);
-    hero_str_decref(h7_tag1);
-    h_adversarialaggregateoverwrite_Slot_release(&h8_s1);
-    hero_str_decref(h9_r1);
-    h_adversarialaggregateoverwrite_Slot_c_full_release(&h10_f);
-    hero_str_decref(h11_tag2);
-    h_adversarialaggregateoverwrite_Slot_release(&h12_s2);
-    h_adversarialaggregateoverwrite_Slot_c_full_release(&h14_f);
-    h_adversarialaggregateoverwrite_Cell_release(&h16_own16);
-    hero_str_decref(h17_own17);
-    hero_str_decref(h18_own18);
-    h_adversarialaggregateoverwrite_Cell_release(&h19_own19);
-    h_adversarialaggregateoverwrite_Slot_release(&h20_own20);
-    hero_str_decref(h21_own21);
-    hero_str_decref(h22_own22);
-    h_adversarialaggregateoverwrite_Cell_release(&h23_own23);
-    h_adversarialaggregateoverwrite_Slot_release(&h24_own24);
-    h_adversarialaggregateoverwrite_Slot_release(&h25_own25);
-    hero_str_decref(h26_own26);
-    hero_str_decref(h27_own27);
-    h_adversarialaggregateoverwrite_Cell_release(&h28_own28);
-    h_adversarialaggregateoverwrite_Slot_release(&h29_own29);
+    h_adversarialaggregateoverwrite_Cell_release(hero_slot_escape(&h0_c));
+    h_adversarialaggregateoverwrite_Slot_release(hero_slot_escape(&h2_s));
+    h_adversarialaggregateoverwrite_Slot_release(hero_slot_escape(&h4_s0));
+    hero_str_release_at(&h5_r0);
+    h_adversarialaggregateoverwrite_Slot_c_full_release(hero_slot_escape(&h6_f));
+    hero_str_release_at(&h7_tag1);
+    h_adversarialaggregateoverwrite_Slot_release(hero_slot_escape(&h8_s1));
+    hero_str_release_at(&h9_r1);
+    h_adversarialaggregateoverwrite_Slot_c_full_release(hero_slot_escape(&h10_f));
+    hero_str_release_at(&h11_tag2);
+    h_adversarialaggregateoverwrite_Slot_release(hero_slot_escape(&h12_s2));
+    h_adversarialaggregateoverwrite_Slot_c_full_release(hero_slot_escape(&h14_f));
+    h_adversarialaggregateoverwrite_Cell_release(hero_slot_escape(&h16_own16));
+    hero_str_release_at(&h17_own17);
+    hero_str_release_at(&h18_own18);
+    h_adversarialaggregateoverwrite_Cell_release(hero_slot_escape(&h19_own19));
+    h_adversarialaggregateoverwrite_Slot_release(hero_slot_escape(&h20_own20));
+    hero_str_release_at(&h21_own21);
+    hero_str_release_at(&h22_own22);
+    h_adversarialaggregateoverwrite_Cell_release(hero_slot_escape(&h23_own23));
+    h_adversarialaggregateoverwrite_Slot_release(hero_slot_escape(&h24_own24));
+    h_adversarialaggregateoverwrite_Slot_release(hero_slot_escape(&h25_own25));
+    hero_str_release_at(&h26_own26);
+    hero_str_release_at(&h27_own27);
+    h_adversarialaggregateoverwrite_Cell_release(hero_slot_escape(&h28_own28));
+    h_adversarialaggregateoverwrite_Slot_release(hero_slot_escape(&h29_own29));
     return;
 bb14:
 #line 68 "tests/golden/run/adversarial-aggregate-overwrite.hero"

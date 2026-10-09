@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -515,22 +515,22 @@ bb17:
 #line 516 "main.c"
     hero_str_decref(t73);
     hero_str_incref(t57);
-    h_readsource_Reader_release(&h1_r);
-    h_writesource_Sink_release(&h2_s);
-    hero_str_decref(h5_heading);
-    h_0opt_f87774a_release(&h6_one);
-    h_0opt_f87774a_release(&h7_f0);
-    h_0opt_f87774a_release(&h8_f1);
-    hero_str_decref(h9_row);
-    h_readsource_Reader_release(&h11_own11);
-    h_writesource_Sink_release(&h12_own12);
-    h_0opt_f87774a_release(&h13_own13);
-    hero_str_decref(h14_own14);
-    hero_str_decref(h15_own15);
-    hero_str_decref(h16_own16);
-    hero_str_decref(h17_own17);
-    hero_str_decref(h18_own18);
-    hero_str_decref(h19_own19);
+    h_readsource_Reader_release(hero_slot_escape(&h1_r));
+    h_writesource_Sink_release(hero_slot_escape(&h2_s));
+    hero_str_release_at(&h5_heading);
+    h_0opt_f87774a_release(hero_slot_escape(&h6_one));
+    h_0opt_f87774a_release(hero_slot_escape(&h7_f0));
+    h_0opt_f87774a_release(hero_slot_escape(&h8_f1));
+    hero_str_release_at(&h9_row);
+    h_readsource_Reader_release(hero_slot_escape(&h11_own11));
+    h_writesource_Sink_release(hero_slot_escape(&h12_own12));
+    h_0opt_f87774a_release(hero_slot_escape(&h13_own13));
+    hero_str_release_at(&h14_own14);
+    hero_str_release_at(&h15_own15);
+    hero_str_release_at(&h16_own16);
+    hero_str_release_at(&h17_own17);
+    hero_str_release_at(&h18_own18);
+    hero_str_release_at(&h19_own19);
     return t57;
 bb18:
 #line 60 "examples/pipeline/main.hero"
@@ -745,10 +745,10 @@ bb10:
     goto bb8;
 bb11:
     t28 = h5_ret0;
-    hero_str_decref(h1_first);
-    hero_array_decref(h2_xs0);
-    hero_str_decref(h4_ch);
-    hero_array_decref(h6_own6);
+    hero_str_release_at(&h1_first);
+    hero_array_release_at(&h2_xs0);
+    hero_str_release_at(&h4_ch);
+    hero_array_release_at(&h6_own6);
     return t28;
 }
 
@@ -814,9 +814,9 @@ bb0:
 #line 87 "examples/pipeline/main.hero"
     hero_print_end();
 #line 817 "main.c"
-    hero_str_decref(h0_own0);
-    hero_str_decref(h1_own1);
-    hero_str_decref(h2_own2);
+    hero_str_release_at(&h0_own0);
+    hero_str_release_at(&h1_own1);
+    hero_str_release_at(&h2_own2);
     return;
 }
 
@@ -1043,14 +1043,14 @@ bb8:
 #line 1044 "main.c"
     h_readsource_Reader_release(&t45);
     h_readsource_Reader_retain(&t35);
-    hero_array_decref(h1_rows);
-    hero_str_decref(h2_piece);
-    hero_array_decref(h3_xs0);
-    hero_str_decref(h5_ch);
-    hero_array_decref(h6_own6);
-    hero_array_decref(h7_own7);
-    hero_str_decref(h8_own8);
-    h_readsource_Reader_release(&h9_own9);
+    hero_array_release_at(&h1_rows);
+    hero_str_release_at(&h2_piece);
+    hero_array_release_at(&h3_xs0);
+    hero_str_release_at(&h5_ch);
+    hero_array_release_at(&h6_own6);
+    hero_array_release_at(&h7_own7);
+    hero_str_release_at(&h8_own8);
+    h_readsource_Reader_release(hero_slot_escape(&h9_own9));
     return t35;
 bb9:
 #line 24 "examples/pipeline/read/source.hero"
@@ -1188,9 +1188,9 @@ bb4:
 #line 1189 "main.c"
     t21 = h2_ret0;
     h_0opt_f87774a_retain(&t21);
-    hero_str_decref(h1_one);
-    h_0opt_f87774a_release(&h3_own3);
-    h_0opt_f87774a_release(&h4_own4);
+    hero_str_release_at(&h1_one);
+    h_0opt_f87774a_release(hero_slot_escape(&h3_own3));
+    h_0opt_f87774a_release(hero_slot_escape(&h4_own4));
     return t21;
 }
 
@@ -1265,9 +1265,9 @@ bb0:
 #line 1266 "main.c"
     h_writesource_Sink_release(&t6);
     h_writesource_Sink_retain(&t3);
-    hero_array_decref(h0_empty);
-    hero_array_decref(h1_own1);
-    h_writesource_Sink_release(&h2_own2);
+    hero_array_release_at(&h0_empty);
+    hero_array_release_at(&h1_own1);
+    h_writesource_Sink_release(hero_slot_escape(&h2_own2));
     return t3;
 }
 
@@ -1305,7 +1305,7 @@ bb0:
     (*ph0_s).f_rows = t4;
 #line 1307 "main.c"
     hero_array_decref(t6);
-    hero_array_decref(h2_own2);
+    hero_array_release_at(&h2_own2);
     return;
 }
 
@@ -1335,7 +1335,7 @@ bb0:
 #line 1336 "main.c"
     hero_str_decref(t5);
     hero_str_incref(t4);
-    hero_str_decref(h1_own1);
+    hero_str_release_at(&h1_own1);
     return t4;
 }
 

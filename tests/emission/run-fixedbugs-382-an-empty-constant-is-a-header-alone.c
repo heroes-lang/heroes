@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -122,7 +122,7 @@ bb0:
 #line 123 "fixedbugs382anemptyconstantisaheaderalone.c"
     hero_array_decref(t2);
     hero_array_incref(t1);
-    hero_array_decref(h0_own0);
+    hero_array_release_at(&h0_own0);
     return t1;
 }
 #endif
@@ -154,7 +154,7 @@ bb0:
 #line 155 "fixedbugs382anemptyconstantisaheaderalone.c"
     hero_array_decref(t2);
     hero_array_incref(t1);
-    hero_array_decref(h0_own0);
+    hero_array_release_at(&h0_own0);
     return t1;
 }
 #endif
@@ -201,8 +201,8 @@ bb0:
 #line 202 "fixedbugs382anemptyconstantisaheaderalone.c"
     hero_array_decref(t4);
     hero_array_incref(t2);
-    hero_array_decref(h0_own0);
-    hero_array_decref(h1_own1);
+    hero_array_release_at(&h0_own0);
+    hero_array_release_at(&h1_own1);
     return t2;
 }
 #endif
@@ -717,28 +717,28 @@ bb4:
 #line 30 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     hero_print_end();
 #line 720 "fixedbugs382anemptyconstantisaheaderalone.c"
-    hero_array_decref(h1_xs0);
-    hero_array_decref(h4_xs);
-    hero_array_decref(h5_words);
-    hero_array_decref(h6_deep);
-    hero_array_decref(h7_own7);
-    hero_array_decref(h8_own8);
-    hero_array_decref(h9_own9);
-    hero_array_decref(h10_own10);
-    hero_array_decref(h11_own11);
-    hero_array_decref(h12_own12);
-    hero_array_decref(h13_own13);
-    hero_array_decref(h14_own14);
-    hero_str_decref(h15_own15);
-    hero_array_decref(h16_own16);
-    hero_array_decref(h17_own17);
-    hero_array_decref(h18_own18);
-    hero_array_decref(h19_own19);
-    hero_array_decref(h20_own20);
-    hero_array_decref(h21_own21);
-    hero_array_decref(h22_own22);
-    hero_array_decref(h23_own23);
-    hero_array_decref(h24_own24);
+    hero_array_release_at(&h1_xs0);
+    hero_array_release_at(&h4_xs);
+    hero_array_release_at(&h5_words);
+    hero_array_release_at(&h6_deep);
+    hero_array_release_at(&h7_own7);
+    hero_array_release_at(&h8_own8);
+    hero_array_release_at(&h9_own9);
+    hero_array_release_at(&h10_own10);
+    hero_array_release_at(&h11_own11);
+    hero_array_release_at(&h12_own12);
+    hero_array_release_at(&h13_own13);
+    hero_array_release_at(&h14_own14);
+    hero_str_release_at(&h15_own15);
+    hero_array_release_at(&h16_own16);
+    hero_array_release_at(&h17_own17);
+    hero_array_release_at(&h18_own18);
+    hero_array_release_at(&h19_own19);
+    hero_array_release_at(&h20_own20);
+    hero_array_release_at(&h21_own21);
+    hero_array_release_at(&h22_own22);
+    hero_array_release_at(&h23_own23);
+    hero_array_release_at(&h24_own24);
     return;
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {

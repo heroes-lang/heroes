@@ -10,7 +10,7 @@
 #pragma push_macro("p")
 #include "heroes_guard_close.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -405,8 +405,8 @@ bb0:
 #line 47 "tests/golden/run/fixedbugs-151-arms-as-wide-as-their-unions-compared.hero"
     hero_print_end();
 #line 408 "fixedbugs151armsaswideastheirunionscompared.c"
-    hero_map_decref(h0_seen);
-    hero_map_decref(h1_own1);
+    hero_map_release_at(&h0_seen);
+    hero_map_release_at(&h1_own1);
     return;
 }
 HERO_TU_LOCAL bool h_fixedbugs151armsaswideastheirunionscompared_SA_eq(const SA *a, const SA *b) {

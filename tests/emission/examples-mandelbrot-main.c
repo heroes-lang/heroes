@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -778,9 +778,9 @@ bb7:
 #line 89 "examples/mandelbrot/main.hero"
     t33 = h2_total;
 #line 781 "main.c"
-    hero_array_decref(h0_handles);
-    hero_array_decref(h3_xs0);
-    hero_array_decref(h6_own6);
+    hero_array_release_at(&h0_handles);
+    hero_array_release_at(&h3_xs0);
+    hero_array_release_at(&h6_own6);
     return t33;
 }
 

@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -511,7 +511,7 @@ bb4:
 #line 54 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
     t23 = h1_found;
 #line 514 "fixedbugs139valuearmsthatjumporgiveavalue.c"
-    hero_array_decref(h2_xs0);
+    hero_array_release_at(&h2_xs0);
     return t23;
 bb5:
 #line 47 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
@@ -1162,7 +1162,7 @@ bb0:
 #line 124 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
     hero_print_end();
 #line 1165 "fixedbugs139valuearmsthatjumporgiveavalue.c"
-    hero_array_decref(h0_own0);
+    hero_array_release_at(&h0_own0);
     return;
 }
 HERO_TU_LOCAL bool h_fixedbugs139valuearmsthatjumporgiveavalue_Color_eq(const h_fixedbugs139valuearmsthatjumporgiveavalue_Color *a, const h_fixedbugs139valuearmsthatjumporgiveavalue_Color *b) {

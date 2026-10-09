@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -182,8 +182,8 @@ bb1:
 #line 38 "tests/golden/emit/aggregates.hero"
     t9 = h2_r0;
 #line 185 "aggregates.c"
-    h_aggregates_Shape_release(&h1_s0);
-    h_aggregates_Shape_c_line_release(&h3_l);
+    h_aggregates_Shape_release(hero_slot_escape(&h1_s0));
+    h_aggregates_Shape_c_line_release(hero_slot_escape(&h3_l));
     return t9;
 bb2:
 #line 39 "tests/golden/emit/aggregates.hero"
@@ -377,14 +377,14 @@ bb0:
 #line 47 "tests/golden/emit/aggregates.hero"
     hero_print_end();
 #line 380 "aggregates.c"
-    h_aggregates_Outer_release(&h0_o);
-    hero_str_decref(h1_own1);
-    h_aggregates_Inner_release(&h2_own2);
-    h_aggregates_Outer_release(&h3_own3);
-    h_aggregates_Inner_release(&h4_own4);
-    h_aggregates_Outer_release(&h5_own5);
-    h_aggregates_Shape_release(&h6_own6);
-    h_aggregates_Shape_release(&h7_own7);
+    h_aggregates_Outer_release(hero_slot_escape(&h0_o));
+    hero_str_release_at(&h1_own1);
+    h_aggregates_Inner_release(hero_slot_escape(&h2_own2));
+    h_aggregates_Outer_release(hero_slot_escape(&h3_own3));
+    h_aggregates_Inner_release(hero_slot_escape(&h4_own4));
+    h_aggregates_Outer_release(hero_slot_escape(&h5_own5));
+    h_aggregates_Shape_release(hero_slot_escape(&h6_own6));
+    h_aggregates_Shape_release(hero_slot_escape(&h7_own7));
     return;
 }
 HERO_TU_LOCAL void h_aggregates_Inner_retain(const h_aggregates_Inner *v) {

@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -221,8 +221,8 @@ bb4:
 #line 222 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     t13 = h1_ret0;
     h_0opt_e201354_retain(&t13);
-    h_0opt_e201354_release(&h2_own2);
-    h_0opt_e201354_release(&h3_own3);
+    h_0opt_e201354_release(hero_slot_escape(&h2_own2));
+    h_0opt_e201354_release(hero_slot_escape(&h3_own3));
     return t13;
 }
 
@@ -332,10 +332,10 @@ bb3:
     t23 = h1_out;
 #line 334 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_incref(t23);
-    hero_array_decref(h1_out);
-    h_0opt_e201354_release(&h3_f0);
-    hero_array_decref(h4_own4);
-    h_0opt_e201354_release(&h5_own5);
+    hero_array_release_at(&h1_out);
+    h_0opt_e201354_release(hero_slot_escape(&h3_f0));
+    hero_array_release_at(&h4_own4);
+    h_0opt_e201354_release(hero_slot_escape(&h5_own5));
     return t23;
 bb4:
 #line 23 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
@@ -521,12 +521,12 @@ bb4:
     t30 = h1_out;
 #line 523 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_incref(t30);
-    hero_array_decref(h1_out);
-    hero_array_decref(h2_xs0);
-    h_0opt_e201354_release(&h5_f0);
-    hero_array_decref(h7_own7);
-    hero_array_decref(h8_own8);
-    h_0opt_e201354_release(&h9_own9);
+    hero_array_release_at(&h1_out);
+    hero_array_release_at(&h2_xs0);
+    h_0opt_e201354_release(hero_slot_escape(&h5_f0));
+    hero_array_release_at(&h7_own7);
+    hero_array_release_at(&h8_own8);
+    h_0opt_e201354_release(hero_slot_escape(&h9_own9));
     return t30;
 bb5:
 #line 32 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
@@ -775,14 +775,14 @@ bb7:
 #line 776 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     t33 = h6_ret0;
     h_0opt_2270cbe7_retain(&t33);
-    hero_array_decref(h1_out);
-    hero_array_decref(h2_xs0);
-    h_0opt_e201354_release(&h5_f0);
-    hero_array_decref(h7_own7);
-    hero_array_decref(h8_own8);
-    h_0opt_e201354_release(&h9_own9);
-    h_0opt_2270cbe7_release(&h10_own10);
-    h_0opt_2270cbe7_release(&h11_own11);
+    hero_array_release_at(&h1_out);
+    hero_array_release_at(&h2_xs0);
+    h_0opt_e201354_release(hero_slot_escape(&h5_f0));
+    hero_array_release_at(&h7_own7);
+    hero_array_release_at(&h8_own8);
+    h_0opt_e201354_release(hero_slot_escape(&h9_own9));
+    h_0opt_2270cbe7_release(hero_slot_escape(&h10_own10));
+    h_0opt_2270cbe7_release(hero_slot_escape(&h11_own11));
     return t33;
 }
 
@@ -995,14 +995,14 @@ bb7:
 #line 996 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     t31 = h6_ret0;
     h_0opt_2270cbe7_retain(&t31);
-    hero_array_decref(h1_out);
-    hero_array_decref(h2_xs0);
-    h_0opt_e201354_release(&h5_f0);
-    hero_array_decref(h7_own7);
-    hero_array_decref(h8_own8);
-    h_0opt_e201354_release(&h9_own9);
-    h_0opt_2270cbe7_release(&h10_own10);
-    h_0opt_2270cbe7_release(&h11_own11);
+    hero_array_release_at(&h1_out);
+    hero_array_release_at(&h2_xs0);
+    h_0opt_e201354_release(hero_slot_escape(&h5_f0));
+    hero_array_release_at(&h7_own7);
+    hero_array_release_at(&h8_own8);
+    h_0opt_e201354_release(hero_slot_escape(&h9_own9));
+    h_0opt_2270cbe7_release(hero_slot_escape(&h10_own10));
+    h_0opt_2270cbe7_release(hero_slot_escape(&h11_own11));
     return t31;
 }
 
@@ -1136,10 +1136,10 @@ bb4:
     t25 = h1_out;
 #line 1138 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_incref(t25);
-    hero_array_decref(h1_out);
-    hero_array_decref(h2_xs0);
-    hero_array_decref(h6_own6);
-    hero_array_decref(h7_own7);
+    hero_array_release_at(&h1_out);
+    hero_array_release_at(&h2_xs0);
+    hero_array_release_at(&h6_own6);
+    hero_array_release_at(&h7_own7);
     return t25;
 bb5:
 #line 56 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
@@ -1293,10 +1293,10 @@ bb4:
     t25 = h1_out;
 #line 1295 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_incref(t25);
-    hero_array_decref(h1_out);
-    hero_array_decref(h2_xs0);
-    hero_array_decref(h6_own6);
-    hero_array_decref(h7_own7);
+    hero_array_release_at(&h1_out);
+    hero_array_release_at(&h2_xs0);
+    hero_array_release_at(&h6_own6);
+    hero_array_release_at(&h7_own7);
     return t25;
 bb5:
 #line 64 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
@@ -1496,14 +1496,14 @@ bb4:
     t41 = h1_out;
 #line 1498 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_incref(t41);
-    hero_array_decref(h1_out);
-    hero_array_decref(h2_xs0);
-    h_0opt_e201354_release(&h5_f0);
-    h_0opt_e201354_release(&h6_f1);
-    hero_array_decref(h8_own8);
-    hero_array_decref(h9_own9);
-    h_0opt_e201354_release(&h10_own10);
-    h_0opt_e201354_release(&h11_own11);
+    hero_array_release_at(&h1_out);
+    hero_array_release_at(&h2_xs0);
+    h_0opt_e201354_release(hero_slot_escape(&h5_f0));
+    h_0opt_e201354_release(hero_slot_escape(&h6_f1));
+    hero_array_release_at(&h8_own8);
+    hero_array_release_at(&h9_own9);
+    h_0opt_e201354_release(hero_slot_escape(&h10_own10));
+    h_0opt_e201354_release(hero_slot_escape(&h11_own11));
     return t41;
 bb5:
 #line 72 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
@@ -1740,13 +1740,13 @@ bb4:
     t31 = h1_out;
 #line 1742 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_incref(t31);
-    hero_array_decref(h1_out);
-    hero_array_decref(h2_xs0);
-    h_0opt_e201354_release(&h5_f0);
-    hero_array_decref(h6_own6);
-    hero_array_decref(h7_own7);
-    h_0opt_e201354_release(&h8_own8);
-    hero_str_decref(h9_own9);
+    hero_array_release_at(&h1_out);
+    hero_array_release_at(&h2_xs0);
+    h_0opt_e201354_release(hero_slot_escape(&h5_f0));
+    hero_array_release_at(&h6_own6);
+    hero_array_release_at(&h7_own7);
+    h_0opt_e201354_release(hero_slot_escape(&h8_own8));
+    hero_str_release_at(&h9_own9);
     return t31;
 bb5:
 #line 80 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
@@ -1905,11 +1905,11 @@ bb4:
 #line 1906 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_str_decref(t25);
     hero_str_incref(t20);
-    hero_array_decref(h1_parts);
-    hero_array_decref(h2_xs0);
-    hero_array_decref(h5_own5);
-    hero_str_decref(h6_own6);
-    hero_str_decref(h7_own7);
+    hero_array_release_at(&h1_parts);
+    hero_array_release_at(&h2_xs0);
+    hero_array_release_at(&h5_own5);
+    hero_str_release_at(&h6_own6);
+    hero_str_release_at(&h7_own7);
     return t20;
 }
 
@@ -2042,11 +2042,11 @@ bb4:
 #line 2043 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_str_decref(t25);
     hero_str_incref(t20);
-    hero_array_decref(h1_parts);
-    hero_array_decref(h2_xs0);
-    hero_array_decref(h5_own5);
-    hero_str_decref(h6_own6);
-    hero_str_decref(h7_own7);
+    hero_array_release_at(&h1_parts);
+    hero_array_release_at(&h2_xs0);
+    hero_array_release_at(&h5_own5);
+    hero_str_release_at(&h6_own6);
+    hero_str_release_at(&h7_own7);
     return t20;
 }
 
@@ -2355,25 +2355,25 @@ bb3:
 #line 112 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     hero_print_end();
 #line 2358 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
-    h_0opt_2270cbe7_release(&h0_f0);
-    h_0opt_2270cbe7_release(&h1_s0);
-    hero_array_decref(h2_xs);
+    h_0opt_2270cbe7_release(hero_slot_escape(&h0_f0));
+    h_0opt_2270cbe7_release(hero_slot_escape(&h1_s0));
+    hero_array_release_at(&h2_xs);
     hero_failure_release(&h3_e);
-    hero_array_decref(h4_own4);
-    hero_str_decref(h5_own5);
-    hero_array_decref(h6_own6);
-    hero_str_decref(h7_own7);
-    h_0opt_2270cbe7_release(&h8_own8);
-    hero_str_decref(h9_own9);
-    h_0opt_2270cbe7_release(&h10_own10);
-    hero_array_decref(h11_own11);
-    hero_str_decref(h12_own12);
-    hero_array_decref(h13_own13);
-    hero_str_decref(h14_own14);
-    hero_array_decref(h15_own15);
-    hero_str_decref(h16_own16);
-    hero_array_decref(h17_own17);
-    hero_str_decref(h18_own18);
+    hero_array_release_at(&h4_own4);
+    hero_str_release_at(&h5_own5);
+    hero_array_release_at(&h6_own6);
+    hero_str_release_at(&h7_own7);
+    h_0opt_2270cbe7_release(hero_slot_escape(&h8_own8));
+    hero_str_release_at(&h9_own9);
+    h_0opt_2270cbe7_release(hero_slot_escape(&h10_own10));
+    hero_array_release_at(&h11_own11);
+    hero_str_release_at(&h12_own12);
+    hero_array_release_at(&h13_own13);
+    hero_str_release_at(&h14_own14);
+    hero_array_release_at(&h15_own15);
+    hero_str_release_at(&h16_own16);
+    hero_array_release_at(&h17_own17);
+    hero_str_release_at(&h18_own18);
     return;
 bb4:
 #line 106 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
@@ -2502,8 +2502,8 @@ bb3:
     t12 = h2_out;
 #line 2504 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_incref(t12);
-    hero_array_decref(h2_out);
-    hero_array_decref(h4_own4);
+    hero_array_release_at(&h2_out);
+    hero_array_release_at(&h4_own4);
     return t12;
 }
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {

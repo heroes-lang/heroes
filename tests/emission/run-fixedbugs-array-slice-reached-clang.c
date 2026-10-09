@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -218,11 +218,11 @@ bb0:
 #line 40 "tests/golden/run/fixedbugs-array-slice-reached-clang.hero"
     hero_print_end();
 #line 221 "fixedbugsarrayslicereachedclang.c"
-    hero_array_decref(h0_xs);
-    hero_array_decref(h1_ys);
-    hero_array_decref(h2_own2);
-    hero_array_decref(h3_own3);
-    hero_str_decref(h4_own4);
+    hero_array_release_at(&h0_xs);
+    hero_array_release_at(&h1_ys);
+    hero_array_release_at(&h2_own2);
+    hero_array_release_at(&h3_own3);
+    hero_str_release_at(&h4_own4);
     return;
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {

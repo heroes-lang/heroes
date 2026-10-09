@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -126,7 +126,7 @@ bb0:
 #line 127 "acallbacknamedthelibraryway.c"
     hero_str_decref(t4);
     hero_str_incref(t3);
-    hero_str_decref(h2_own2);
+    hero_str_release_at(&h2_own2);
     return t3;
 }
 
@@ -183,8 +183,8 @@ bb0:
 #line 184 "acallbacknamedthelibraryway.c"
     hero_str_decref(t6);
     hero_str_incref(t4);
-    hero_str_decref(h2_own2);
-    hero_str_decref(h3_own3);
+    hero_str_release_at(&h2_own2);
+    hero_str_release_at(&h3_own3);
     return t4;
 }
 
@@ -328,12 +328,12 @@ bb0:
 #line 34 "tests/golden/run/a-callback-named-the-library-way.hero"
     hero_print_end();
 #line 331 "acallbacknamedthelibraryway.c"
-    hero_array_decref(h0_words);
-    hero_array_decref(h1_ns);
-    hero_array_decref(h2_own2);
-    hero_str_decref(h3_own3);
-    hero_array_decref(h4_own4);
-    hero_str_decref(h5_own5);
+    hero_array_release_at(&h0_words);
+    hero_array_release_at(&h1_ns);
+    hero_array_release_at(&h2_own2);
+    hero_str_release_at(&h3_own3);
+    hero_array_release_at(&h4_own4);
+    hero_str_release_at(&h5_own5);
     return;
 }
 
@@ -466,10 +466,10 @@ bb4:
     t18 = h3_total;
 #line 468 "acallbacknamedthelibraryway.c"
     hero_str_incref(t18);
-    hero_str_decref(h3_total);
-    hero_array_decref(h4_xs0);
-    hero_str_decref(h6_x);
-    hero_str_decref(h7_own7);
+    hero_str_release_at(&h3_total);
+    hero_array_release_at(&h4_xs0);
+    hero_str_release_at(&h6_x);
+    hero_str_release_at(&h7_own7);
     return t18;
 }
 
@@ -572,7 +572,7 @@ bb4:
 #line 62 "<heroes library>"
     t18 = h3_total;
 #line 575 "acallbacknamedthelibraryway.c"
-    hero_array_decref(h4_xs0);
+    hero_array_release_at(&h4_xs0);
     return t18;
 }
 
@@ -697,9 +697,9 @@ bb4:
     t18 = h3_total;
 #line 699 "acallbacknamedthelibraryway.c"
     hero_str_incref(t18);
-    hero_str_decref(h3_total);
-    hero_array_decref(h4_xs0);
-    hero_str_decref(h7_own7);
+    hero_str_release_at(&h3_total);
+    hero_array_release_at(&h4_xs0);
+    hero_str_release_at(&h7_own7);
     return t18;
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {

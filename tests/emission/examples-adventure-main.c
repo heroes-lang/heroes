@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -442,12 +442,12 @@ bb6:
 #line 34 "examples/adventure/main.hero"
 bb7:
 #line 445 "main.c"
-    hero_array_decref(h0_given);
-    h_0opt_f87774a_release(&h1_s0);
+    hero_array_release_at(&h0_given);
+    h_0opt_f87774a_release(hero_slot_escape(&h1_s0));
     hero_failure_release(&h2_e);
-    hero_str_decref(h3_script);
-    hero_array_decref(h4_own4);
-    h_0opt_f87774a_release(&h5_own5);
+    hero_str_release_at(&h3_script);
+    hero_array_release_at(&h4_own4);
+    h_0opt_f87774a_release(hero_slot_escape(&h5_own5));
     return;
 }
 
@@ -659,15 +659,15 @@ bb4:
 #line 45 "examples/adventure/main.hero"
     hero_print_end();
 #line 662 "main.c"
-    h_world_World_release(&h1_w);
-    hero_array_decref(h2_lines);
-    h_game_Turn_release(&h3_turn);
-    hero_array_decref(h4_xs0);
-    hero_str_decref(h6_said);
-    h_world_World_release(&h7_own7);
-    hero_array_decref(h8_own8);
-    h_game_Turn_release(&h9_own9);
-    hero_str_decref(h10_own10);
+    h_world_World_release(hero_slot_escape(&h1_w));
+    hero_array_release_at(&h2_lines);
+    h_game_Turn_release(hero_slot_escape(&h3_turn));
+    hero_array_release_at(&h4_xs0);
+    hero_str_release_at(&h6_said);
+    h_world_World_release(hero_slot_escape(&h7_own7));
+    hero_array_release_at(&h8_own8);
+    h_game_Turn_release(hero_slot_escape(&h9_own9));
+    hero_str_release_at(&h10_own10);
     return;
 }
 
@@ -878,13 +878,13 @@ bb4:
     t29 = h1_out;
 #line 880 "main.c"
     hero_array_incref(t29);
-    hero_array_decref(h1_out);
-    hero_array_decref(h2_xs0);
-    hero_str_decref(h4_line);
-    hero_str_decref(h5_head);
-    hero_array_decref(h7_own7);
-    hero_array_decref(h8_own8);
-    hero_str_decref(h9_own9);
+    hero_array_release_at(&h1_out);
+    hero_array_release_at(&h2_xs0);
+    hero_str_release_at(&h4_line);
+    hero_str_release_at(&h5_head);
+    hero_array_release_at(&h7_own7);
+    hero_array_release_at(&h8_own8);
+    hero_str_release_at(&h9_own9);
     return t29;
 bb5:
 #line 63 "examples/adventure/main.hero"
@@ -1139,7 +1139,7 @@ bb8:
 #line 1140 "main.c"
     hero_str_decref(t33);
     hero_str_incref(t32);
-    hero_str_decref(h5_own5);
+    hero_str_release_at(&h5_own5);
     return t32;
 bb9:
 #line 78 "examples/adventure/main.hero"
@@ -1325,10 +1325,10 @@ bb7:
     t36 = h1_out;
 #line 1327 "main.c"
     hero_array_incref(t36);
-    hero_array_decref(h1_out);
-    hero_array_decref(h4_own4);
-    hero_str_decref(h5_own5);
-    hero_str_decref(h6_own6);
+    hero_array_release_at(&h1_out);
+    hero_array_release_at(&h4_own4);
+    hero_str_release_at(&h5_own5);
+    hero_str_release_at(&h6_own6);
     return t36;
 bb8:
 #line 95 "examples/adventure/main.hero"
@@ -1413,9 +1413,9 @@ bb0:
 #line 1414 "main.c"
     h_game_Game_release(&t10);
     h_game_Game_retain(&t7);
-    hero_array_decref(h1_own1);
-    hero_map_decref(h2_own2);
-    h_game_Game_release(&h3_own3);
+    hero_array_release_at(&h1_own1);
+    hero_map_release_at(&h2_own2);
+    h_game_Game_release(hero_slot_escape(&h3_own3));
     return t7;
 }
 
@@ -1632,7 +1632,7 @@ bb8:
 #line 1633 "main.c"
     hero_str_decref(t33);
     hero_str_incref(t32);
-    hero_str_decref(h5_own5);
+    hero_str_release_at(&h5_own5);
     return t32;
 bb9:
 #line 37 "examples/adventure/game.hero"
@@ -1735,7 +1735,7 @@ bb3:
 #line 1736 "main.c"
     hero_str_decref(t19);
     hero_str_incref(t18);
-    hero_str_decref(h3_own3);
+    hero_str_release_at(&h3_own3);
     return t18;
 bb4:
 #line 45 "examples/adventure/game.hero"
@@ -1846,8 +1846,8 @@ bb4:
 #line 1847 "main.c"
     t14 = h2_ret0;
     hero_str_incref(t14);
-    hero_str_decref(h3_own3);
-    hero_str_decref(h4_own4);
+    hero_str_release_at(&h3_own3);
+    hero_str_release_at(&h4_own4);
     return t14;
 }
 
@@ -1975,8 +1975,8 @@ bb7:
 bb8:
 #line 1977 "main.c"
     t19 = h5_ret0;
-    hero_array_decref(h2_xs0);
-    hero_str_decref(h4_one);
+    hero_array_release_at(&h2_xs0);
+    hero_str_release_at(&h4_one);
     return t19;
 }
 
@@ -2402,25 +2402,25 @@ bb19:
 #line 2403 "main.c"
     t55 = h5_ret0;
     h_game_Turn_retain(&t55);
-    hero_str_decref(h3_command);
-    hero_str_decref(h4_verb);
-    hero_str_decref(h6_own6);
-    hero_str_decref(h7_own7);
-    hero_array_decref(h8_own8);
-    h_game_Turn_release(&h9_own9);
-    hero_str_decref(h10_own10);
-    h_game_Turn_release(&h11_own11);
-    h_game_Turn_release(&h12_own12);
-    hero_str_decref(h13_own13);
-    hero_array_decref(h14_own14);
-    h_game_Turn_release(&h15_own15);
-    h_game_Turn_release(&h16_own16);
-    hero_str_decref(h17_own17);
-    hero_str_decref(h18_own18);
-    hero_array_decref(h19_own19);
-    h_game_Turn_release(&h20_own20);
-    hero_array_decref(h21_own21);
-    h_game_Turn_release(&h22_own22);
+    hero_str_release_at(&h3_command);
+    hero_str_release_at(&h4_verb);
+    hero_str_release_at(&h6_own6);
+    hero_str_release_at(&h7_own7);
+    hero_array_release_at(&h8_own8);
+    h_game_Turn_release(hero_slot_escape(&h9_own9));
+    hero_str_release_at(&h10_own10);
+    h_game_Turn_release(hero_slot_escape(&h11_own11));
+    h_game_Turn_release(hero_slot_escape(&h12_own12));
+    hero_str_release_at(&h13_own13);
+    hero_array_release_at(&h14_own14);
+    h_game_Turn_release(hero_slot_escape(&h15_own15));
+    h_game_Turn_release(hero_slot_escape(&h16_own16));
+    hero_str_release_at(&h17_own17);
+    hero_str_release_at(&h18_own18);
+    hero_array_release_at(&h19_own19);
+    h_game_Turn_release(hero_slot_escape(&h20_own20));
+    hero_array_release_at(&h21_own21);
+    h_game_Turn_release(hero_slot_escape(&h22_own22));
     return t55;
 }
 
@@ -2450,7 +2450,7 @@ bb0:
 #line 2451 "main.c"
     h_game_Turn_release(&t4);
     h_game_Turn_retain(&t3);
-    h_game_Turn_release(&h2_own2);
+    h_game_Turn_release(hero_slot_escape(&h2_own2));
     return t3;
 }
 
@@ -2722,16 +2722,16 @@ bb9:
 #line 2723 "main.c"
     t37 = h7_ret0;
     hero_array_incref(t37);
-    h_0opt_5e724113_release(&h2_s0);
-    h_world_Room_release(&h3_room);
-    hero_array_decref(h4_lines);
-    h_0opt_473cb9ae_release(&h6_f0);
-    h_0opt_5e724113_release(&h8_own8);
-    hero_array_decref(h9_own9);
-    hero_array_decref(h10_own10);
-    h_0opt_473cb9ae_release(&h11_own11);
-    hero_str_decref(h12_own12);
-    hero_str_decref(h13_own13);
+    h_0opt_5e724113_release(hero_slot_escape(&h2_s0));
+    h_world_Room_release(hero_slot_escape(&h3_room));
+    hero_array_release_at(&h4_lines);
+    h_0opt_473cb9ae_release(hero_slot_escape(&h6_f0));
+    h_0opt_5e724113_release(hero_slot_escape(&h8_own8));
+    hero_array_release_at(&h9_own9);
+    hero_array_release_at(&h10_own10);
+    h_0opt_473cb9ae_release(hero_slot_escape(&h11_own11));
+    hero_str_release_at(&h12_own12);
+    hero_str_release_at(&h13_own13);
     return t37;
 }
 
@@ -3013,18 +3013,18 @@ bb7:
 #line 3014 "main.c"
     t41 = h7_ret0;
     h_game_Turn_retain(&t41);
-    h_0opt_f87774a_release(&h3_s0);
+    h_0opt_f87774a_release(hero_slot_escape(&h3_s0));
     hero_failure_release(&h4_e);
-    hero_str_decref(h5_there);
-    h_game_Game_release(&h6_moved);
-    h_0opt_f87774a_release(&h8_own8);
-    hero_array_decref(h9_own9);
-    h_game_Turn_release(&h10_own10);
-    hero_array_decref(h11_own11);
-    h_game_Turn_release(&h12_own12);
-    h_game_Game_release(&h13_own13);
-    hero_array_decref(h14_own14);
-    h_game_Turn_release(&h15_own15);
+    hero_str_release_at(&h5_there);
+    h_game_Game_release(hero_slot_escape(&h6_moved));
+    h_0opt_f87774a_release(hero_slot_escape(&h8_own8));
+    hero_array_release_at(&h9_own9);
+    h_game_Turn_release(hero_slot_escape(&h10_own10));
+    hero_array_release_at(&h11_own11);
+    h_game_Turn_release(hero_slot_escape(&h12_own12));
+    h_game_Game_release(hero_slot_escape(&h13_own13));
+    hero_array_release_at(&h14_own14);
+    h_game_Turn_release(hero_slot_escape(&h15_own15));
     return t41;
 }
 
@@ -3434,23 +3434,23 @@ bb9:
 #line 3435 "main.c"
     t60 = h7_ret0;
     h_game_Turn_retain(&t60);
-    h_0opt_5e724113_release(&h2_s0);
-    h_world_Room_release(&h3_room);
-    h_0opt_473cb9ae_release(&h5_f0);
-    h_game_Game_release(&h6_picked);
-    h_0opt_5e724113_release(&h8_own8);
-    hero_array_decref(h9_own9);
-    h_game_Turn_release(&h10_own10);
-    hero_array_decref(h11_own11);
-    hero_map_decref(h12_own12);
-    h_game_Game_release(&h13_own13);
-    hero_str_decref(h14_own14);
-    hero_str_decref(h15_own15);
-    hero_array_decref(h16_own16);
-    h_game_Turn_release(&h17_own17);
-    h_0opt_473cb9ae_release(&h18_own18);
-    hero_array_decref(h19_own19);
-    h_game_Turn_release(&h20_own20);
+    h_0opt_5e724113_release(hero_slot_escape(&h2_s0));
+    h_world_Room_release(hero_slot_escape(&h3_room));
+    h_0opt_473cb9ae_release(hero_slot_escape(&h5_f0));
+    h_game_Game_release(hero_slot_escape(&h6_picked));
+    h_0opt_5e724113_release(hero_slot_escape(&h8_own8));
+    hero_array_release_at(&h9_own9);
+    h_game_Turn_release(hero_slot_escape(&h10_own10));
+    hero_array_release_at(&h11_own11);
+    hero_map_release_at(&h12_own12);
+    h_game_Game_release(hero_slot_escape(&h13_own13));
+    hero_str_release_at(&h14_own14);
+    hero_str_release_at(&h15_own15);
+    hero_array_release_at(&h16_own16);
+    h_game_Turn_release(hero_slot_escape(&h17_own17));
+    h_0opt_473cb9ae_release(hero_slot_escape(&h18_own18));
+    hero_array_release_at(&h19_own19);
+    h_game_Turn_release(hero_slot_escape(&h20_own20));
     return t60;
 }
 
@@ -3484,7 +3484,7 @@ bb0:
     t4 = h2_out;
 #line 3486 "main.c"
     hero_map_incref(t4);
-    hero_map_decref(h2_out);
+    hero_map_release_at(&h2_out);
     return t4;
 }
 
@@ -3595,10 +3595,10 @@ bb4:
 #line 3596 "main.c"
     t16 = h1_ret0;
     hero_str_incref(t16);
-    hero_array_decref(h2_own2);
-    hero_str_decref(h3_own3);
-    hero_str_decref(h4_own4);
-    hero_str_decref(h5_own5);
+    hero_array_release_at(&h2_own2);
+    hero_str_release_at(&h3_own3);
+    hero_str_release_at(&h4_own4);
+    hero_str_release_at(&h5_own5);
     return t16;
 }
 
@@ -3817,14 +3817,14 @@ bb7:
 #line 3818 "main.c"
     t33 = h2_ret0;
     h_game_Turn_retain(&t33);
-    h_game_Game_release(&h1_won);
-    hero_array_decref(h3_own3);
-    h_game_Turn_release(&h4_own4);
-    h_game_Game_release(&h5_own5);
-    hero_array_decref(h6_own6);
-    h_game_Turn_release(&h7_own7);
-    hero_array_decref(h8_own8);
-    h_game_Turn_release(&h9_own9);
+    h_game_Game_release(hero_slot_escape(&h1_won));
+    hero_array_release_at(&h3_own3);
+    h_game_Turn_release(hero_slot_escape(&h4_own4));
+    h_game_Game_release(hero_slot_escape(&h5_own5));
+    hero_array_release_at(&h6_own6);
+    h_game_Turn_release(hero_slot_escape(&h7_own7));
+    hero_array_release_at(&h8_own8);
+    h_game_Turn_release(hero_slot_escape(&h9_own9));
     return t33;
 }
 
@@ -4044,17 +4044,17 @@ bb4:
 #line 4045 "main.c"
     h_game_Turn_release(&t50);
     h_game_Turn_retain(&t40);
-    h_game_Game_release(&h2_g);
-    hero_array_decref(h3_said);
-    hero_array_decref(h4_xs0);
-    hero_str_decref(h6_line);
-    h_game_Turn_release(&h7_turn);
-    hero_array_decref(h8_xs1);
-    hero_str_decref(h10_one);
-    h_game_Game_release(&h11_own11);
-    hero_array_decref(h12_own12);
-    h_game_Turn_release(&h13_own13);
-    h_game_Turn_release(&h14_own14);
+    h_game_Game_release(hero_slot_escape(&h2_g));
+    hero_array_release_at(&h3_said);
+    hero_array_release_at(&h4_xs0);
+    hero_str_release_at(&h6_line);
+    h_game_Turn_release(hero_slot_escape(&h7_turn));
+    hero_array_release_at(&h8_xs1);
+    hero_str_release_at(&h10_one);
+    h_game_Game_release(hero_slot_escape(&h11_own11));
+    hero_array_release_at(&h12_own12);
+    h_game_Turn_release(hero_slot_escape(&h13_own13));
+    h_game_Turn_release(hero_slot_escape(&h14_own14));
     return t40;
 bb5:
 #line 167 "examples/adventure/game.hero"
@@ -4437,19 +4437,19 @@ bb0:
 #line 4438 "main.c"
     h_world_World_release(&t63);
     h_world_World_retain(&t50);
-    hero_map_decref(h0_rooms);
-    hero_map_decref(h1_own1);
-    hero_map_decref(h2_own2);
-    h_world_Room_release(&h3_own3);
-    hero_map_decref(h4_own4);
-    h_world_Room_release(&h5_own5);
-    hero_map_decref(h6_own6);
-    h_world_Room_release(&h7_own7);
-    hero_map_decref(h8_own8);
-    h_world_Room_release(&h9_own9);
-    hero_map_decref(h10_own10);
-    h_world_Room_release(&h11_own11);
-    h_world_World_release(&h12_own12);
+    hero_map_release_at(&h0_rooms);
+    hero_map_release_at(&h1_own1);
+    hero_map_release_at(&h2_own2);
+    h_world_Room_release(hero_slot_escape(&h3_own3));
+    hero_map_release_at(&h4_own4);
+    h_world_Room_release(hero_slot_escape(&h5_own5));
+    hero_map_release_at(&h6_own6);
+    h_world_Room_release(hero_slot_escape(&h7_own7));
+    hero_map_release_at(&h8_own8);
+    h_world_Room_release(hero_slot_escape(&h9_own9));
+    hero_map_release_at(&h10_own10);
+    h_world_Room_release(hero_slot_escape(&h11_own11));
+    h_world_World_release(hero_slot_escape(&h12_own12));
     return t50;
 }
 
@@ -4495,7 +4495,7 @@ bb0:
 #line 4496 "main.c"
     h_0opt_5e724113_release(&t5);
     h_0opt_5e724113_retain(&t4);
-    h_0opt_5e724113_release(&h2_own2);
+    h_0opt_5e724113_release(hero_slot_escape(&h2_own2));
     return t4;
 }
 
@@ -4809,22 +4809,22 @@ bb6:
 #line 4810 "main.c"
     t37 = h7_ret0;
     h_0opt_f87774a_retain(&t37);
-    h_0opt_5e724113_release(&h3_f0);
-    h_world_Room_release(&h4_room);
-    h_0opt_f87774a_release(&h5_s0);
-    hero_str_decref(h6_there);
-    h_0opt_5e724113_release(&h8_own8);
-    h_0opt_f87774a_release(&h9_own9);
-    h_0opt_f87774a_release(&h10_own10);
-    h_0opt_f87774a_release(&h11_own11);
-    hero_str_decref(h12_own12);
-    hero_str_decref(h13_own13);
-    hero_str_decref(h14_own14);
-    hero_array_decref(h15_own15);
-    hero_array_decref(h16_own16);
-    hero_str_decref(h17_own17);
-    hero_str_decref(h18_own18);
-    h_0opt_f87774a_release(&h19_own19);
+    h_0opt_5e724113_release(hero_slot_escape(&h3_f0));
+    h_world_Room_release(hero_slot_escape(&h4_room));
+    h_0opt_f87774a_release(hero_slot_escape(&h5_s0));
+    hero_str_release_at(&h6_there);
+    h_0opt_5e724113_release(hero_slot_escape(&h8_own8));
+    h_0opt_f87774a_release(hero_slot_escape(&h9_own9));
+    h_0opt_f87774a_release(hero_slot_escape(&h10_own10));
+    h_0opt_f87774a_release(hero_slot_escape(&h11_own11));
+    hero_str_release_at(&h12_own12);
+    hero_str_release_at(&h13_own13);
+    hero_str_release_at(&h14_own14);
+    hero_array_release_at(&h15_own15);
+    hero_array_release_at(&h16_own16);
+    hero_str_release_at(&h17_own17);
+    hero_str_release_at(&h18_own18);
+    h_0opt_f87774a_release(hero_slot_escape(&h19_own19));
     return t37;
 }
 
@@ -5079,25 +5079,25 @@ bb3:
 #line 5080 "main.c"
     hero_array_decref(t76);
     hero_array_incref(t67);
-    hero_map_decref(h1_seen);
-    hero_array_decref(h2_queue);
-    hero_str_decref(h4_here);
-    h_0opt_5e724113_release(&h5_s0);
-    h_world_Room_release(&h6_room);
-    hero_array_decref(h7_xs0);
-    hero_str_decref(h9_direction);
-    h_0opt_f87774a_release(&h10_f0);
-    hero_str_decref(h11_there);
-    h_0opt_473cb9ae_release(&h12_f1);
-    hero_map_decref(h13_own13);
-    hero_array_decref(h14_own14);
-    h_0opt_5e724113_release(&h15_own15);
-    hero_array_decref(h16_own16);
-    hero_array_decref(h17_own17);
-    hero_array_decref(h18_own18);
-    hero_array_decref(h19_own19);
-    h_0opt_f87774a_release(&h20_own20);
-    h_0opt_473cb9ae_release(&h21_own21);
+    hero_map_release_at(&h1_seen);
+    hero_array_release_at(&h2_queue);
+    hero_str_release_at(&h4_here);
+    h_0opt_5e724113_release(hero_slot_escape(&h5_s0));
+    h_world_Room_release(hero_slot_escape(&h6_room));
+    hero_array_release_at(&h7_xs0);
+    hero_str_release_at(&h9_direction);
+    h_0opt_f87774a_release(hero_slot_escape(&h10_f0));
+    hero_str_release_at(&h11_there);
+    h_0opt_473cb9ae_release(hero_slot_escape(&h12_f1));
+    hero_map_release_at(&h13_own13);
+    hero_array_release_at(&h14_own14);
+    h_0opt_5e724113_release(hero_slot_escape(&h15_own15));
+    hero_array_release_at(&h16_own16);
+    hero_array_release_at(&h17_own17);
+    hero_array_release_at(&h18_own18);
+    hero_array_release_at(&h19_own19);
+    h_0opt_f87774a_release(hero_slot_escape(&h20_own20));
+    h_0opt_473cb9ae_release(hero_slot_escape(&h21_own21));
     return t67;
 bb4:
     goto bb1;
@@ -5644,17 +5644,17 @@ bb13:
 #line 5645 "main.c"
     t38 = h3_ret0;
     h_0opt_f87774a_retain(&t38);
-    hero_str_decref(h2_text);
-    hero_str_decref(h4_own4);
-    h_0opt_f87774a_release(&h5_own5);
-    h_0opt_f87774a_release(&h6_own6);
-    hero_str_decref(h7_own7);
-    h_0opt_f87774a_release(&h8_own8);
-    hero_str_decref(h9_own9);
-    h_0opt_f87774a_release(&h10_own10);
-    hero_str_decref(h11_own11);
-    hero_str_decref(h12_own12);
-    h_0opt_f87774a_release(&h13_own13);
+    hero_str_release_at(&h2_text);
+    hero_str_release_at(&h4_own4);
+    h_0opt_f87774a_release(hero_slot_escape(&h5_own5));
+    h_0opt_f87774a_release(hero_slot_escape(&h6_own6));
+    hero_str_release_at(&h7_own7);
+    h_0opt_f87774a_release(hero_slot_escape(&h8_own8));
+    hero_str_release_at(&h9_own9);
+    h_0opt_f87774a_release(hero_slot_escape(&h10_own10));
+    hero_str_release_at(&h11_own11);
+    hero_str_release_at(&h12_own12);
+    h_0opt_f87774a_release(hero_slot_escape(&h13_own13));
     hero_lend_local_give(hero_lend_h1_status);
     return t38;
 }
@@ -5741,9 +5741,9 @@ bb3:
     t13 = h0_out;
 #line 5743 "main.c"
     hero_array_incref(t13);
-    hero_array_decref(h0_out);
-    hero_array_decref(h2_own2);
-    hero_str_decref(h3_own3);
+    hero_array_release_at(&h0_out);
+    hero_array_release_at(&h2_own2);
+    hero_str_release_at(&h3_own3);
     return t13;
 }
 HERO_TU_LOCAL void h_game_Game_retain(const h_game_Game *v) {

@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -301,8 +301,8 @@ bb0:
 #line 49 "examples/widths/main.hero"
     t7 = !t6;
 #line 304 "main.c"
-    h_0opt_1ec004_release(&h1_f0);
-    h_0opt_1ec004_release(&h2_own2);
+    h_0opt_1ec004_release(hero_slot_escape(&h1_f0));
+    h_0opt_1ec004_release(hero_slot_escape(&h2_own2));
     return t7;
 }
 
@@ -470,12 +470,12 @@ bb4:
 bb5:
     t23 = h4_ret0;
     h_0opt_e201354_retain(&t23);
-    h_0opt_1ec004_release(&h1_f0);
-    h_0opt_e201354_release(&h3_f1);
-    h_0opt_1ec004_release(&h5_own5);
-    h_0opt_e201354_release(&h6_own6);
-    h_0opt_e201354_release(&h7_own7);
-    h_0opt_e201354_release(&h8_own8);
+    h_0opt_1ec004_release(hero_slot_escape(&h1_f0));
+    h_0opt_e201354_release(hero_slot_escape(&h3_f1));
+    h_0opt_1ec004_release(hero_slot_escape(&h5_own5));
+    h_0opt_e201354_release(hero_slot_escape(&h6_own6));
+    h_0opt_e201354_release(hero_slot_escape(&h7_own7));
+    h_0opt_e201354_release(hero_slot_escape(&h8_own8));
     return t23;
 }
 
@@ -541,8 +541,8 @@ bb1:
 #line 65 "examples/widths/main.hero"
     t10 = t9.as.ok;
 #line 544 "main.c"
-    h_0opt_e201354_release(&h1_f0);
-    h_0opt_e201354_release(&h2_own2);
+    h_0opt_e201354_release(hero_slot_escape(&h1_f0));
+    h_0opt_e201354_release(hero_slot_escape(&h2_own2));
     return t10;
 bb2:
 #line 65 "examples/widths/main.hero"
@@ -1077,23 +1077,23 @@ bb1:
 #line 108 "examples/widths/main.hero"
     hero_print_end();
 #line 1080 "main.c"
-    h_0opt_e201354_release(&h0_f0);
-    h_0opt_e201354_release(&h1_f1);
-    h_0opt_1b9b98_release(&h2_f2);
-    h_0opt_1b9b98_release(&h3_f3);
-    h_0opt_1b9b98_release(&h4_f4);
-    h_0opt_1b9b98_release(&h5_f5);
-    h_0opt_e201354_release(&h9_f6);
-    h_0opt_e201354_release(&h11_own11);
-    h_0opt_e201354_release(&h12_own12);
-    h_0opt_1b9b98_release(&h13_own13);
-    h_0opt_1b9b98_release(&h14_own14);
-    h_0opt_1b9b98_release(&h15_own15);
-    h_0opt_1b9b98_release(&h16_own16);
-    h_0opt_e201354_release(&h17_own17);
-    hero_str_decref(h18_own18);
-    hero_str_decref(h19_own19);
-    hero_str_decref(h20_own20);
+    h_0opt_e201354_release(hero_slot_escape(&h0_f0));
+    h_0opt_e201354_release(hero_slot_escape(&h1_f1));
+    h_0opt_1b9b98_release(hero_slot_escape(&h2_f2));
+    h_0opt_1b9b98_release(hero_slot_escape(&h3_f3));
+    h_0opt_1b9b98_release(hero_slot_escape(&h4_f4));
+    h_0opt_1b9b98_release(hero_slot_escape(&h5_f5));
+    h_0opt_e201354_release(hero_slot_escape(&h9_f6));
+    h_0opt_e201354_release(hero_slot_escape(&h11_own11));
+    h_0opt_e201354_release(hero_slot_escape(&h12_own12));
+    h_0opt_1b9b98_release(hero_slot_escape(&h13_own13));
+    h_0opt_1b9b98_release(hero_slot_escape(&h14_own14));
+    h_0opt_1b9b98_release(hero_slot_escape(&h15_own15));
+    h_0opt_1b9b98_release(hero_slot_escape(&h16_own16));
+    h_0opt_e201354_release(hero_slot_escape(&h17_own17));
+    hero_str_release_at(&h18_own18);
+    hero_str_release_at(&h19_own19);
+    hero_str_release_at(&h20_own20);
     return;
 bb2:
 #line 76 "examples/widths/main.hero"

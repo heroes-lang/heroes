@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -185,7 +185,7 @@ bb0:
 #line 186 "fixedbugsaufcschaingavetwocallsonekey.c"
     hero_str_decref(t4);
     hero_str_incref(t3);
-    hero_str_decref(h1_own1);
+    hero_str_release_at(&h1_own1);
     return t3;
 }
 
@@ -231,7 +231,7 @@ bb0:
 #line 232 "fixedbugsaufcschaingavetwocallsonekey.c"
     hero_str_decref(t4);
     hero_str_incref(t3);
-    hero_str_decref(h2_own2);
+    hero_str_release_at(&h2_own2);
     return t3;
 }
 
@@ -493,17 +493,17 @@ bb0:
 #line 85 "tests/golden/run/fixedbugs-a-ufcs-chain-gave-two-calls-one-key.hero"
     hero_print_end();
 #line 496 "fixedbugsaufcschaingavetwocallsonekey.c"
-    hero_array_decref(h0_xs);
-    hero_array_decref(h1_ns);
-    hero_array_decref(h2_own2);
-    hero_array_decref(h3_own3);
-    hero_array_decref(h4_own4);
-    hero_str_decref(h5_own5);
-    hero_array_decref(h6_own6);
-    hero_array_decref(h7_own7);
-    hero_array_decref(h8_own8);
-    hero_array_decref(h9_own9);
-    hero_array_decref(h10_own10);
+    hero_array_release_at(&h0_xs);
+    hero_array_release_at(&h1_ns);
+    hero_array_release_at(&h2_own2);
+    hero_array_release_at(&h3_own3);
+    hero_array_release_at(&h4_own4);
+    hero_str_release_at(&h5_own5);
+    hero_array_release_at(&h6_own6);
+    hero_array_release_at(&h7_own7);
+    hero_array_release_at(&h8_own8);
+    hero_array_release_at(&h9_own9);
+    hero_array_release_at(&h10_own10);
     return;
 }
 
@@ -620,9 +620,9 @@ bb4:
     t19 = h2_out;
 #line 622 "fixedbugsaufcschaingavetwocallsonekey.c"
     hero_array_incref(t19);
-    hero_array_decref(h2_out);
-    hero_array_decref(h3_xs0);
-    hero_array_decref(h6_own6);
+    hero_array_release_at(&h2_out);
+    hero_array_release_at(&h3_xs0);
+    hero_array_release_at(&h6_own6);
     return t19;
 }
 
@@ -725,7 +725,7 @@ bb4:
 #line 62 "<heroes library>"
     t18 = h3_total;
 #line 728 "fixedbugsaufcschaingavetwocallsonekey.c"
-    hero_array_decref(h4_xs0);
+    hero_array_release_at(&h4_xs0);
     return t18;
 }
 
@@ -850,10 +850,10 @@ bb4:
     t19 = h2_out;
 #line 852 "fixedbugsaufcschaingavetwocallsonekey.c"
     hero_array_incref(t19);
-    hero_array_decref(h2_out);
-    hero_array_decref(h3_xs0);
-    hero_array_decref(h6_own6);
-    hero_str_decref(h7_own7);
+    hero_array_release_at(&h2_out);
+    hero_array_release_at(&h3_xs0);
+    hero_array_release_at(&h6_own6);
+    hero_str_release_at(&h7_own7);
     return t19;
 }
 
@@ -986,10 +986,10 @@ bb4:
     t18 = h3_total;
 #line 988 "fixedbugsaufcschaingavetwocallsonekey.c"
     hero_str_incref(t18);
-    hero_str_decref(h3_total);
-    hero_array_decref(h4_xs0);
-    hero_str_decref(h6_x);
-    hero_str_decref(h7_own7);
+    hero_str_release_at(&h3_total);
+    hero_array_release_at(&h4_xs0);
+    hero_str_release_at(&h6_x);
+    hero_str_release_at(&h7_own7);
     return t18;
 }
 
@@ -1106,9 +1106,9 @@ bb4:
     t19 = h2_out;
 #line 1108 "fixedbugsaufcschaingavetwocallsonekey.c"
     hero_array_incref(t19);
-    hero_array_decref(h2_out);
-    hero_array_decref(h3_xs0);
-    hero_array_decref(h6_own6);
+    hero_array_release_at(&h2_out);
+    hero_array_release_at(&h3_xs0);
+    hero_array_release_at(&h6_own6);
     return t19;
 }
 HERO_TU_LOCAL bool h_fixedbugsaufcschaingavetwocallsonekey_R_eq(const h_fixedbugsaufcschaingavetwocallsonekey_R *a, const h_fixedbugsaufcschaingavetwocallsonekey_R *b) {

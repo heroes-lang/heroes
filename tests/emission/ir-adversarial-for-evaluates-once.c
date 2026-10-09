@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -128,7 +128,7 @@ bb0:
 #line 129 "adversarialforevaluatesonce.c"
     hero_array_decref(t6);
     hero_array_incref(t5);
-    hero_array_decref(h0_own0);
+    hero_array_release_at(&h0_own0);
     return t5;
 }
 
@@ -235,8 +235,8 @@ bb4:
 #line 17 "tests/golden/ir/adversarial-for-evaluates-once.hero"
     t17 = h0_sum;
 #line 238 "adversarialforevaluatesonce.c"
-    hero_array_decref(h1_xs0);
-    hero_array_decref(h4_own4);
+    hero_array_release_at(&h1_xs0);
+    hero_array_release_at(&h4_own4);
     return t17;
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {

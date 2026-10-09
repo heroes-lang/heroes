@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -154,7 +154,7 @@ bb0:
 #line 46 "tests/golden/run/fixedbugs-a-discarded-binding-warns-in-c.hero"
     hero_print_end();
 #line 157 "fixedbugsadiscardedbindingwarnsinc.c"
-    hero_str_decref(h1_s);
+    hero_str_release_at(&h1_s);
     return;
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {

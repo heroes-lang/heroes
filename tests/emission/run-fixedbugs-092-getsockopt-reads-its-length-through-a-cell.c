@@ -7,7 +7,7 @@
 #include <sys/socket.h>
 #include "heroes_guard_close.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -466,14 +466,14 @@ bb7:
 #line 26 "tests/golden/run/fixedbugs-092-getsockopt-reads-its-length-through-a-cell.hero"
     hero_print_end();
 #line 469 "fixedbugs092getsockoptreadsitslengththroughacell.c"
-    h_0opt_e1f4933_release(&h0_f0);
-    h_0opt_e1f4933_release(&h1_f1);
-    h_0opt_e1f4933_release(&h5_f2);
-    h_0opt_e1f4933_release(&h6_f3);
-    h_0opt_e1f4933_release(&h7_own7);
-    h_0opt_e1f4933_release(&h8_own8);
-    h_0opt_e1f4933_release(&h9_own9);
-    h_0opt_e1f4933_release(&h10_own10);
+    h_0opt_e1f4933_release(hero_slot_escape(&h0_f0));
+    h_0opt_e1f4933_release(hero_slot_escape(&h1_f1));
+    h_0opt_e1f4933_release(hero_slot_escape(&h5_f2));
+    h_0opt_e1f4933_release(hero_slot_escape(&h6_f3));
+    h_0opt_e1f4933_release(hero_slot_escape(&h7_own7));
+    h_0opt_e1f4933_release(hero_slot_escape(&h8_own8));
+    h_0opt_e1f4933_release(hero_slot_escape(&h9_own9));
+    h_0opt_e1f4933_release(hero_slot_escape(&h10_own10));
     hero_lend_local_give(hero_lend_h4_n);
     hero_lend_local_give(hero_lend_h3_l);
     return;

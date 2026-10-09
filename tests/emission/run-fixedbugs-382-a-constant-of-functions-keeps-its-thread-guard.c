@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -139,7 +139,7 @@ bb0:
 #line 140 "fixedbugs382aconstantoffunctionskeepsitsthreadguard.c"
     hero_array_decref(t4);
     hero_array_incref(t3);
-    hero_array_decref(h0_own0);
+    hero_array_release_at(&h0_own0);
     return t3;
 }
 
@@ -303,8 +303,8 @@ bb4:
 #line 28 "tests/golden/run/fixedbugs-382-a-constant-of-functions-keeps-its-thread-guard.hero"
     t19 = h1_total;
 #line 306 "fixedbugs382aconstantoffunctionskeepsitsthreadguard.c"
-    hero_array_decref(h2_xs0);
-    hero_array_decref(h5_own5);
+    hero_array_release_at(&h2_xs0);
+    hero_array_release_at(&h5_own5);
     return t19;
 }
 
@@ -404,8 +404,8 @@ bb0:
 #line 32 "tests/golden/run/fixedbugs-382-a-constant-of-functions-keeps-its-thread-guard.hero"
     hero_print_end();
 #line 407 "fixedbugs382aconstantoffunctionskeepsitsthreadguard.c"
-    hero_array_decref(h1_own1);
-    hero_array_decref(h2_own2);
+    hero_array_release_at(&h1_own1);
+    hero_array_release_at(&h2_own2);
     return;
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {

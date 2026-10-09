@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -934,7 +934,7 @@ bb4:
 #line 123 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
     t26 = h1_total;
 #line 937 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
-    hero_array_decref(h2_xs0);
+    hero_array_release_at(&h2_xs0);
     return t26;
 bb5:
 #line 113 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
@@ -1492,7 +1492,7 @@ bb10:
 #line 1493 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
     t16 = h3_ret0;
     hero_str_incref(t16);
-    hero_str_decref(h2_r0);
+    hero_str_release_at(&h2_r0);
     return t16;
 }
 
@@ -2599,8 +2599,8 @@ bb0:
 #line 296 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
     hero_print_end();
 #line 2602 "fixedbugs175avalueblockwhoselastiformatchleaves.c"
-    hero_array_decref(h1_own1);
-    hero_str_decref(h2_own2);
+    hero_array_release_at(&h1_own1);
+    hero_str_release_at(&h2_own2);
     return;
 }
 

@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -179,8 +179,8 @@ bb0:
 #line 180 "fixedbugscasepayloadleaked.c"
     h_fixedbugscasepayloadleaked_Token_release(&t7);
     h_fixedbugscasepayloadleaked_Token_retain(&t5);
-    hero_str_decref(h3_own3);
-    h_fixedbugscasepayloadleaked_Token_release(&h4_own4);
+    hero_str_release_at(&h3_own3);
+    h_fixedbugscasepayloadleaked_Token_release(hero_slot_escape(&h4_own4));
     return t5;
 }
 
@@ -367,14 +367,14 @@ bb0:
 #line 53 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
     hero_print_end();
 #line 370 "fixedbugscasepayloadleaked.c"
-    hero_array_decref(h0_out);
-    hero_array_decref(h1_copy);
-    hero_array_decref(h2_own2);
-    h_fixedbugscasepayloadleaked_Token_release(&h3_own3);
-    h_fixedbugscasepayloadleaked_Token_release(&h4_own4);
-    h_fixedbugscasepayloadleaked_Token_release(&h5_own5);
-    h_fixedbugscasepayloadleaked_Token_release(&h6_own6);
-    h_fixedbugscasepayloadleaked_Token_release(&h7_own7);
+    hero_array_release_at(&h0_out);
+    hero_array_release_at(&h1_copy);
+    hero_array_release_at(&h2_own2);
+    h_fixedbugscasepayloadleaked_Token_release(hero_slot_escape(&h3_own3));
+    h_fixedbugscasepayloadleaked_Token_release(hero_slot_escape(&h4_own4));
+    h_fixedbugscasepayloadleaked_Token_release(hero_slot_escape(&h5_own5));
+    h_fixedbugscasepayloadleaked_Token_release(hero_slot_escape(&h6_own6));
+    h_fixedbugscasepayloadleaked_Token_release(hero_slot_escape(&h7_own7));
     return;
 }
 HERO_TU_LOCAL bool h_fixedbugscasepayloadleaked_Token_c_num_eq(const h_fixedbugscasepayloadleaked_Token_c_num *a, const h_fixedbugscasepayloadleaked_Token_c_num *b) {

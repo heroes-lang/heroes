@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -392,14 +392,14 @@ bb1:
 #line 46 "tests/golden/run/f32-the-narrow-float.hero"
     hero_print_end();
 #line 395 "f32thenarrowfloat.c"
-    hero_array_decref(h5_xs);
-    hero_array_decref(h6_sorted);
-    hero_map_decref(h7_m);
-    h_0opt_db86062_release(&h8_f0);
-    hero_array_decref(h9_own9);
-    hero_array_decref(h10_own10);
-    hero_map_decref(h11_own11);
-    h_0opt_db86062_release(&h12_own12);
+    hero_array_release_at(&h5_xs);
+    hero_array_release_at(&h6_sorted);
+    hero_map_release_at(&h7_m);
+    h_0opt_db86062_release(hero_slot_escape(&h8_f0));
+    hero_array_release_at(&h9_own9);
+    hero_array_release_at(&h10_own10);
+    hero_map_release_at(&h11_own11);
+    h_0opt_db86062_release(hero_slot_escape(&h12_own12));
     return;
 bb2:
 #line 45 "tests/golden/run/f32-the-narrow-float.hero"

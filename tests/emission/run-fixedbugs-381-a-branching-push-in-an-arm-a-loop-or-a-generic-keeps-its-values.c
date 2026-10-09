@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -258,8 +258,8 @@ bb4:
 #line 259 "fixedbugs381abranchingpushinanarmalooporagenerickeepsitsvalues.c"
     t13 = h1_ret0;
     h_0opt_e201354_retain(&t13);
-    h_0opt_e201354_release(&h2_own2);
-    h_0opt_e201354_release(&h3_own3);
+    h_0opt_e201354_release(hero_slot_escape(&h2_own2));
+    h_0opt_e201354_release(hero_slot_escape(&h3_own3));
     return t13;
 }
 
@@ -457,17 +457,17 @@ bb4:
     t54 = h1_out;
 #line 459 "fixedbugs381abranchingpushinanarmalooporagenerickeepsitsvalues.c"
     hero_array_incref(t54);
-    hero_array_decref(h1_out);
-    hero_array_decref(h2_xs0);
-    h_0opt_e201354_release(&h5_s0);
-    h_0opt_e201354_release(&h7_f0);
+    hero_array_release_at(&h1_out);
+    hero_array_release_at(&h2_xs0);
+    h_0opt_e201354_release(hero_slot_escape(&h5_s0));
+    h_0opt_e201354_release(hero_slot_escape(&h7_f0));
     hero_failure_release(&h8_e);
-    h_0opt_e201354_release(&h9_f1);
-    hero_array_decref(h11_own11);
-    hero_array_decref(h12_own12);
-    h_0opt_e201354_release(&h13_own13);
-    h_0opt_e201354_release(&h14_own14);
-    h_0opt_e201354_release(&h15_own15);
+    h_0opt_e201354_release(hero_slot_escape(&h9_f1));
+    hero_array_release_at(&h11_own11);
+    hero_array_release_at(&h12_own12);
+    h_0opt_e201354_release(hero_slot_escape(&h13_own13));
+    h_0opt_e201354_release(hero_slot_escape(&h14_own14));
+    h_0opt_e201354_release(hero_slot_escape(&h15_own15));
     return t54;
 bb5:
     goto bb3;
@@ -761,13 +761,13 @@ bb4:
     t40 = h1_out;
 #line 763 "fixedbugs381abranchingpushinanarmalooporagenerickeepsitsvalues.c"
     hero_array_incref(t40);
-    hero_array_decref(h1_out);
-    hero_array_decref(h2_xs0);
-    hero_array_decref(h4_row);
-    hero_array_decref(h5_xs1);
-    h_0opt_e201354_release(&h8_f0);
-    hero_array_decref(h10_own10);
-    h_0opt_e201354_release(&h11_own11);
+    hero_array_release_at(&h1_out);
+    hero_array_release_at(&h2_xs0);
+    hero_array_release_at(&h4_row);
+    hero_array_release_at(&h5_xs1);
+    h_0opt_e201354_release(hero_slot_escape(&h8_f0));
+    hero_array_release_at(&h10_own10);
+    h_0opt_e201354_release(hero_slot_escape(&h11_own11));
     return t40;
 bb5:
 #line 29 "tests/golden/run/fixedbugs-381-a-branching-push-in-an-arm-a-loop-or-a-generic-keeps-its-values.hero"
@@ -1027,14 +1027,14 @@ bb4:
     t31 = h1_out;
 #line 1029 "fixedbugs381abranchingpushinanarmalooporagenerickeepsitsvalues.c"
     hero_array_incref(t31);
-    hero_array_decref(h1_out);
-    hero_array_decref(h2_xs0);
-    h_0opt_e201354_release(&h5_f0);
-    hero_array_decref(h7_own7);
-    hero_array_decref(h8_own8);
-    h_0opt_e201354_release(&h9_own9);
-    hero_str_decref(h10_own10);
-    hero_str_decref(h11_own11);
+    hero_array_release_at(&h1_out);
+    hero_array_release_at(&h2_xs0);
+    h_0opt_e201354_release(hero_slot_escape(&h5_f0));
+    hero_array_release_at(&h7_own7);
+    hero_array_release_at(&h8_own8);
+    h_0opt_e201354_release(hero_slot_escape(&h9_own9));
+    hero_str_release_at(&h10_own10);
+    hero_str_release_at(&h11_own11);
     return t31;
 bb5:
 #line 46 "tests/golden/run/fixedbugs-381-a-branching-push-in-an-arm-a-loop-or-a-generic-keeps-its-values.hero"
@@ -1274,14 +1274,14 @@ bb4:
     t33 = h1_out;
 #line 1276 "fixedbugs381abranchingpushinanarmalooporagenerickeepsitsvalues.c"
     hero_array_incref(t33);
-    hero_array_decref(h1_out);
-    hero_array_decref(h2_xs0);
-    h_0opt_2270cbe7_release(&h5_row);
-    h_0opt_2270cbe7_release(&h6_f0);
-    hero_array_decref(h7_own7);
-    hero_array_decref(h8_own8);
-    hero_array_decref(h9_own9);
-    h_0opt_2270cbe7_release(&h10_own10);
+    hero_array_release_at(&h1_out);
+    hero_array_release_at(&h2_xs0);
+    h_0opt_2270cbe7_release(hero_slot_escape(&h5_row));
+    h_0opt_2270cbe7_release(hero_slot_escape(&h6_f0));
+    hero_array_release_at(&h7_own7);
+    hero_array_release_at(&h8_own8);
+    hero_array_release_at(&h9_own9);
+    h_0opt_2270cbe7_release(hero_slot_escape(&h10_own10));
     return t33;
 bb5:
 #line 55 "tests/golden/run/fixedbugs-381-a-branching-push-in-an-arm-a-loop-or-a-generic-keeps-its-values.hero"
@@ -1476,12 +1476,12 @@ bb4:
     t35 = h1_out;
 #line 1478 "fixedbugs381abranchingpushinanarmalooporagenerickeepsitsvalues.c"
     hero_array_incref(t35);
-    hero_array_decref(h1_out);
-    hero_array_decref(h2_xs0);
-    h_0opt_e201354_release(&h5_f0);
-    hero_array_decref(h6_own6);
-    hero_array_decref(h7_own7);
-    h_0opt_e201354_release(&h8_own8);
+    hero_array_release_at(&h1_out);
+    hero_array_release_at(&h2_xs0);
+    h_0opt_e201354_release(hero_slot_escape(&h5_f0));
+    hero_array_release_at(&h6_own6);
+    hero_array_release_at(&h7_own7);
+    h_0opt_e201354_release(hero_slot_escape(&h8_own8));
     return t35;
 bb5:
 #line 63 "tests/golden/run/fixedbugs-381-a-branching-push-in-an-arm-a-loop-or-a-generic-keeps-its-values.hero"
@@ -1634,11 +1634,11 @@ bb4:
 #line 1635 "fixedbugs381abranchingpushinanarmalooporagenerickeepsitsvalues.c"
     hero_str_decref(t25);
     hero_str_incref(t20);
-    hero_array_decref(h1_parts);
-    hero_array_decref(h2_xs0);
-    hero_array_decref(h5_own5);
-    hero_str_decref(h6_own6);
-    hero_str_decref(h7_own7);
+    hero_array_release_at(&h1_parts);
+    hero_array_release_at(&h2_xs0);
+    hero_array_release_at(&h5_own5);
+    hero_str_release_at(&h6_own6);
+    hero_str_release_at(&h7_own7);
     return t20;
 }
 
@@ -2055,33 +2055,33 @@ bb0:
 #line 85 "tests/golden/run/fixedbugs-381-a-branching-push-in-an-arm-a-loop-or-a-generic-keeps-its-values.hero"
     hero_print_end();
 #line 2058 "fixedbugs381abranchingpushinanarmalooporagenerickeepsitsvalues.c"
-    hero_array_decref(h0_given);
-    hero_array_decref(h1_named);
-    hero_array_decref(h2_grid);
-    hero_array_decref(h3_own3);
-    hero_str_decref(h4_own4);
-    hero_array_decref(h5_own5);
-    hero_array_decref(h6_own6);
-    hero_array_decref(h7_own7);
-    hero_array_decref(h8_own8);
-    hero_array_decref(h9_own9);
-    hero_str_decref(h10_own10);
-    h_0opt_e201354_release(&h11_own11);
-    h_0opt_e201354_release(&h12_own12);
-    hero_array_decref(h13_own13);
-    hero_array_decref(h14_own14);
-    hero_str_decref(h15_own15);
-    h_0opt_f87774a_release(&h16_own16);
-    h_0opt_f87774a_release(&h17_own17);
-    hero_array_decref(h18_own18);
-    hero_array_decref(h19_own19);
-    hero_str_decref(h20_own20);
-    hero_array_decref(h21_own21);
-    hero_str_decref(h22_own22);
-    hero_array_decref(h23_own23);
-    hero_str_decref(h24_own24);
-    hero_array_decref(h25_own25);
-    hero_str_decref(h26_own26);
+    hero_array_release_at(&h0_given);
+    hero_array_release_at(&h1_named);
+    hero_array_release_at(&h2_grid);
+    hero_array_release_at(&h3_own3);
+    hero_str_release_at(&h4_own4);
+    hero_array_release_at(&h5_own5);
+    hero_array_release_at(&h6_own6);
+    hero_array_release_at(&h7_own7);
+    hero_array_release_at(&h8_own8);
+    hero_array_release_at(&h9_own9);
+    hero_str_release_at(&h10_own10);
+    h_0opt_e201354_release(hero_slot_escape(&h11_own11));
+    h_0opt_e201354_release(hero_slot_escape(&h12_own12));
+    hero_array_release_at(&h13_own13);
+    hero_array_release_at(&h14_own14);
+    hero_str_release_at(&h15_own15);
+    h_0opt_f87774a_release(hero_slot_escape(&h16_own16));
+    h_0opt_f87774a_release(hero_slot_escape(&h17_own17));
+    hero_array_release_at(&h18_own18);
+    hero_array_release_at(&h19_own19);
+    hero_str_release_at(&h20_own20);
+    hero_array_release_at(&h21_own21);
+    hero_str_release_at(&h22_own22);
+    hero_array_release_at(&h23_own23);
+    hero_str_release_at(&h24_own24);
+    hero_array_release_at(&h25_own25);
+    hero_str_release_at(&h26_own26);
     return;
 }
 
@@ -2155,8 +2155,8 @@ bb3:
     t12 = h2_out;
 #line 2157 "fixedbugs381abranchingpushinanarmalooporagenerickeepsitsvalues.c"
     hero_array_incref(t12);
-    hero_array_decref(h2_out);
-    hero_array_decref(h4_own4);
+    hero_array_release_at(&h2_out);
+    hero_array_release_at(&h4_own4);
     return t12;
 }
 
@@ -2299,11 +2299,11 @@ bb4:
     t25 = h1_out;
 #line 2301 "fixedbugs381abranchingpushinanarmalooporagenerickeepsitsvalues.c"
     hero_array_incref(t25);
-    hero_array_decref(h1_out);
-    hero_array_decref(h2_xs0);
-    h_0opt_e201354_release(&h4_x);
-    h_0opt_e201354_release(&h5_f0);
-    hero_array_decref(h6_own6);
+    hero_array_release_at(&h1_out);
+    hero_array_release_at(&h2_xs0);
+    h_0opt_e201354_release(hero_slot_escape(&h4_x));
+    h_0opt_e201354_release(hero_slot_escape(&h5_f0));
+    hero_array_release_at(&h6_own6);
     return t25;
 bb5:
 #line 38 "tests/golden/run/fixedbugs-381-a-branching-push-in-an-arm-a-loop-or-a-generic-keeps-its-values.hero"
@@ -2464,11 +2464,11 @@ bb4:
     t25 = h1_out;
 #line 2466 "fixedbugs381abranchingpushinanarmalooporagenerickeepsitsvalues.c"
     hero_array_incref(t25);
-    hero_array_decref(h1_out);
-    hero_array_decref(h2_xs0);
-    h_0opt_f87774a_release(&h4_x);
-    h_0opt_f87774a_release(&h5_f0);
-    hero_array_decref(h6_own6);
+    hero_array_release_at(&h1_out);
+    hero_array_release_at(&h2_xs0);
+    h_0opt_f87774a_release(hero_slot_escape(&h4_x));
+    h_0opt_f87774a_release(hero_slot_escape(&h5_f0));
+    hero_array_release_at(&h6_own6);
     return t25;
 bb5:
 #line 38 "tests/golden/run/fixedbugs-381-a-branching-push-in-an-arm-a-loop-or-a-generic-keeps-its-values.hero"

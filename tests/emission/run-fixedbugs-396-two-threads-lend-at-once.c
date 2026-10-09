@@ -7,7 +7,7 @@
 #include <fixedbugs-396-buffers.h>
 #include "heroes_guard_close.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -230,8 +230,8 @@ bb1:
 #line 15 "tests/golden/run/fixedbugs-396-two-threads-lend-at-once.hero"
     t20 = t19.as.ok;
 #line 233 "fixedbugs396twothreadslendatonce.c"
-    h_0opt_1ec004_release(&h2_f0);
-    h_0opt_1ec004_release(&h3_own3);
+    h_0opt_1ec004_release(hero_slot_escape(&h2_f0));
+    h_0opt_1ec004_release(hero_slot_escape(&h3_own3));
     return t20;
 bb2:
 #line 15 "tests/golden/run/fixedbugs-396-two-threads-lend-at-once.hero"
@@ -374,10 +374,10 @@ bb3:
 #line 33 "tests/golden/run/fixedbugs-396-two-threads-lend-at-once.hero"
     t37 = h1_wrong;
 #line 377 "fixedbugs396twothreadslendatonce.c"
-    hero_array_decref(h3_md);
-    h_0opt_fbbb698_release(&h4_f0);
-    hero_array_decref(h6_own6);
-    h_0opt_fbbb698_release(&h7_own7);
+    hero_array_release_at(&h3_md);
+    h_0opt_fbbb698_release(hero_slot_escape(&h4_f0));
+    hero_array_release_at(&h6_own6);
+    h_0opt_fbbb698_release(hero_slot_escape(&h7_own7));
     return t37;
 bb4:
 #line 23 "tests/golden/run/fixedbugs-396-two-threads-lend-at-once.hero"

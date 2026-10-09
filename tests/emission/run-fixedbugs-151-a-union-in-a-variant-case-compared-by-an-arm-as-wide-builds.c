@@ -8,7 +8,7 @@
 #pragma push_macro("i")
 #include "heroes_guard_close.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -254,8 +254,8 @@ bb0:
 #line 25 "tests/golden/run/fixedbugs-151-a-union-in-a-variant-case-compared-by-an-arm-as-wide-builds.hero"
     hero_print_end();
 #line 257 "fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds.c"
-    hero_map_decref(h2_m);
-    hero_map_decref(h3_own3);
+    hero_map_release_at(&h2_m);
+    hero_map_release_at(&h3_own3);
     return;
 }
 HERO_TU_LOCAL bool h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_W_eq(const W *a, const W *b) {

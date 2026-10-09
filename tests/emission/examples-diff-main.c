@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -405,10 +405,10 @@ bb9:
     t87 = h2_same;
 #line 407 "main.c"
     hero_array_incref(t87);
-    hero_array_decref(h2_same);
-    hero_array_decref(h4_row);
-    hero_array_decref(h10_own10);
-    hero_array_decref(h11_own11);
+    hero_array_release_at(&h2_same);
+    hero_array_release_at(&h4_row);
+    hero_array_release_at(&h10_own10);
+    hero_array_release_at(&h11_own11);
     return t87;
 bb10:
 #line 58 "examples/diff/main.hero"
@@ -1104,15 +1104,15 @@ bb22:
     t110 = h11_out;
 #line 1106 "main.c"
     hero_array_incref(t110);
-    hero_array_decref(h2_same);
-    hero_array_decref(h3_backwards);
-    hero_array_decref(h11_out);
-    hero_array_decref(h13_own13);
-    hero_array_decref(h14_own14);
-    hero_array_decref(h15_own15);
-    h_main_Edit_release(&h16_own16);
-    h_main_Edit_release(&h17_own17);
-    h_main_Edit_release(&h18_own18);
+    hero_array_release_at(&h2_same);
+    hero_array_release_at(&h3_backwards);
+    hero_array_release_at(&h11_out);
+    hero_array_release_at(&h13_own13);
+    hero_array_release_at(&h14_own14);
+    hero_array_release_at(&h15_own15);
+    h_main_Edit_release(hero_slot_escape(&h16_own16));
+    h_main_Edit_release(hero_slot_escape(&h17_own17));
+    h_main_Edit_release(hero_slot_escape(&h18_own18));
     return t110;
 }
 
@@ -1157,7 +1157,7 @@ bb0:
 #line 112 "examples/diff/main.hero"
     t9 = ((void)((t6 == NULL || t8 < 0 || t8 >= t6->len) ? ((void)hero_array_at(t6, t8), hero_unreachable()) : (void)0), (void)(t6->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t6 + 1))[t8]);
 #line 1160 "main.c"
-    hero_array_decref(h2_own2);
+    hero_array_release_at(&h2_own2);
     return t9;
 }
 
@@ -1238,14 +1238,14 @@ bb1:
     t22 = h2_r0;
 #line 1240 "main.c"
     hero_str_incref(t22);
-    h_main_Edit_release(&h1_s0);
-    hero_str_decref(h2_r0);
-    h_main_Edit_c_kept_release(&h3_k);
-    h_main_Edit_c_added_release(&h4_a);
-    h_main_Edit_c_removed_release(&h5_r);
-    hero_str_decref(h6_own6);
-    hero_str_decref(h7_own7);
-    hero_str_decref(h8_own8);
+    h_main_Edit_release(hero_slot_escape(&h1_s0));
+    hero_str_release_at(&h2_r0);
+    h_main_Edit_c_kept_release(hero_slot_escape(&h3_k));
+    h_main_Edit_c_added_release(hero_slot_escape(&h4_a));
+    h_main_Edit_c_removed_release(hero_slot_escape(&h5_r));
+    hero_str_release_at(&h6_own6);
+    hero_str_release_at(&h7_own7);
+    hero_str_release_at(&h8_own8);
     return t22;
 bb2:
 #line 116 "examples/diff/main.hero"
@@ -1508,13 +1508,13 @@ bb4:
 #line 1509 "main.c"
     hero_str_decref(t29);
     hero_str_incref(t22);
-    hero_array_decref(h2_rows);
-    hero_array_decref(h3_xs0);
-    h_main_Edit_release(&h5_one);
-    hero_array_decref(h6_own6);
-    hero_array_decref(h7_own7);
-    hero_str_decref(h8_own8);
-    hero_str_decref(h9_own9);
+    hero_array_release_at(&h2_rows);
+    hero_array_release_at(&h3_xs0);
+    h_main_Edit_release(hero_slot_escape(&h5_one));
+    hero_array_release_at(&h6_own6);
+    hero_array_release_at(&h7_own7);
+    hero_str_release_at(&h8_own8);
+    hero_str_release_at(&h9_own9);
     return t22;
 }
 
@@ -1647,10 +1647,10 @@ bb4:
 #line 135 "examples/diff/main.hero"
     t23 = h3_total;
 #line 1650 "main.c"
-    hero_array_decref(h4_xs0);
-    h_main_Edit_release(&h6_one);
-    hero_array_decref(h7_own7);
-    hero_str_decref(h8_own8);
+    hero_array_release_at(&h4_xs0);
+    h_main_Edit_release(hero_slot_escape(&h6_one));
+    hero_array_release_at(&h7_own7);
+    hero_str_release_at(&h8_own8);
     return t23;
 bb5:
     goto bb3;
@@ -1722,8 +1722,8 @@ bb1:
     t7 = h2_r0;
 #line 1724 "main.c"
     hero_str_incref(t7);
-    h_main_Edit_release(&h1_s0);
-    hero_str_decref(h2_r0);
+    h_main_Edit_release(hero_slot_escape(&h1_s0));
+    hero_str_release_at(&h2_r0);
     return t7;
 bb2:
 #line 139 "examples/diff/main.hero"
@@ -2178,24 +2178,24 @@ bb0:
 #line 159 "examples/diff/main.hero"
     hero_print_end();
 #line 2181 "main.c"
-    hero_array_decref(h0_before);
-    hero_array_decref(h1_after);
-    hero_array_decref(h2_empty);
-    hero_array_decref(h3_own3);
-    hero_array_decref(h4_own4);
-    hero_str_decref(h5_own5);
-    hero_array_decref(h6_own6);
-    hero_array_decref(h7_own7);
-    hero_str_decref(h8_own8);
-    hero_array_decref(h9_own9);
-    hero_array_decref(h10_own10);
-    hero_array_decref(h11_own11);
-    hero_array_decref(h12_own12);
-    hero_array_decref(h13_own13);
-    hero_array_decref(h14_own14);
-    hero_str_decref(h15_own15);
-    hero_array_decref(h16_own16);
-    hero_str_decref(h17_own17);
+    hero_array_release_at(&h0_before);
+    hero_array_release_at(&h1_after);
+    hero_array_release_at(&h2_empty);
+    hero_array_release_at(&h3_own3);
+    hero_array_release_at(&h4_own4);
+    hero_str_release_at(&h5_own5);
+    hero_array_release_at(&h6_own6);
+    hero_array_release_at(&h7_own7);
+    hero_str_release_at(&h8_own8);
+    hero_array_release_at(&h9_own9);
+    hero_array_release_at(&h10_own10);
+    hero_array_release_at(&h11_own11);
+    hero_array_release_at(&h12_own12);
+    hero_array_release_at(&h13_own13);
+    hero_array_release_at(&h14_own14);
+    hero_str_release_at(&h15_own15);
+    hero_array_release_at(&h16_own16);
+    hero_str_release_at(&h17_own17);
     return;
 }
 HERO_TU_LOCAL void h_main_Edit_c_kept_retain(const h_main_Edit_c_kept *v) {

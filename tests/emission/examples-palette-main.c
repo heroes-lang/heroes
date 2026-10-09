@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -620,10 +620,10 @@ bb3:
     t25 = h2_out;
 #line 622 "main.c"
     hero_str_incref(t25);
-    hero_str_decref(h1_digits);
-    hero_str_decref(h2_out);
-    hero_str_decref(h5_own5);
-    hero_str_decref(h6_own6);
+    hero_str_release_at(&h1_digits);
+    hero_str_release_at(&h2_out);
+    hero_str_release_at(&h5_own5);
+    hero_str_release_at(&h6_own6);
     return t25;
 }
 
@@ -845,8 +845,8 @@ bb0:
 #line 143 "examples/palette/main.hero"
     hero_print_end();
 #line 848 "main.c"
-    hero_str_decref(h1_own1);
-    hero_str_decref(h2_own2);
+    hero_str_release_at(&h1_own1);
+    hero_str_release_at(&h2_own2);
     return;
 }
 HERO_TU_LOCAL bool h_main_Colour_eq(const h_main_Colour *a, const h_main_Colour *b) {

@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -233,7 +233,7 @@ bb0:
 #line 234 "libraryhigherorder.c"
     hero_str_decref(t3);
     hero_str_incref(t2);
-    hero_str_decref(h1_own1);
+    hero_str_release_at(&h1_own1);
     return t2;
 }
 
@@ -279,7 +279,7 @@ bb0:
 #line 280 "libraryhigherorder.c"
     hero_str_decref(t4);
     hero_str_incref(t3);
-    hero_str_decref(h2_own2);
+    hero_str_release_at(&h2_own2);
     return t3;
 }
 
@@ -802,24 +802,24 @@ bb6:
 #line 61 "tests/golden/run/library-higher-order.hero"
     hero_print_end();
 #line 805 "libraryhigherorder.c"
-    hero_array_decref(h0_xs);
-    h_0opt_e201354_release(&h1_f0);
-    h_0opt_e201354_release(&h3_f1);
-    hero_array_decref(h5_empty);
-    h_0opt_e201354_release(&h6_f2);
-    hero_array_decref(h7_own7);
-    hero_array_decref(h8_own8);
-    hero_str_decref(h9_own9);
-    hero_array_decref(h10_own10);
-    hero_array_decref(h11_own11);
-    hero_str_decref(h12_own12);
-    hero_array_decref(h13_own13);
-    hero_str_decref(h14_own14);
-    h_0opt_e201354_release(&h15_own15);
-    h_0opt_e201354_release(&h16_own16);
-    hero_array_decref(h17_own17);
-    hero_array_decref(h18_own18);
-    h_0opt_e201354_release(&h19_own19);
+    hero_array_release_at(&h0_xs);
+    h_0opt_e201354_release(hero_slot_escape(&h1_f0));
+    h_0opt_e201354_release(hero_slot_escape(&h3_f1));
+    hero_array_release_at(&h5_empty);
+    h_0opt_e201354_release(hero_slot_escape(&h6_f2));
+    hero_array_release_at(&h7_own7);
+    hero_array_release_at(&h8_own8);
+    hero_str_release_at(&h9_own9);
+    hero_array_release_at(&h10_own10);
+    hero_array_release_at(&h11_own11);
+    hero_str_release_at(&h12_own12);
+    hero_array_release_at(&h13_own13);
+    hero_str_release_at(&h14_own14);
+    h_0opt_e201354_release(hero_slot_escape(&h15_own15));
+    h_0opt_e201354_release(hero_slot_escape(&h16_own16));
+    hero_array_release_at(&h17_own17);
+    hero_array_release_at(&h18_own18);
+    h_0opt_e201354_release(hero_slot_escape(&h19_own19));
     return;
 }
 
@@ -944,10 +944,10 @@ bb4:
     t19 = h2_out;
 #line 946 "libraryhigherorder.c"
     hero_array_incref(t19);
-    hero_array_decref(h2_out);
-    hero_array_decref(h3_xs0);
-    hero_array_decref(h6_own6);
-    hero_str_decref(h7_own7);
+    hero_array_release_at(&h2_out);
+    hero_array_release_at(&h3_xs0);
+    hero_array_release_at(&h6_own6);
+    hero_str_release_at(&h7_own7);
     return t19;
 }
 
@@ -1063,9 +1063,9 @@ bb4:
     t20 = h2_out;
 #line 1065 "libraryhigherorder.c"
     hero_array_incref(t20);
-    hero_array_decref(h2_out);
-    hero_array_decref(h3_xs0);
-    hero_array_decref(h6_own6);
+    hero_array_release_at(&h2_out);
+    hero_array_release_at(&h3_xs0);
+    hero_array_release_at(&h6_own6);
     return t20;
 bb5:
     goto bb3;
@@ -1182,7 +1182,7 @@ bb4:
 #line 62 "<heroes library>"
     t18 = h3_total;
 #line 1185 "libraryhigherorder.c"
-    hero_array_decref(h4_xs0);
+    hero_array_release_at(&h4_xs0);
     return t18;
 }
 
@@ -1315,10 +1315,10 @@ bb4:
     t18 = h3_total;
 #line 1317 "libraryhigherorder.c"
     hero_str_incref(t18);
-    hero_str_decref(h3_total);
-    hero_array_decref(h4_xs0);
-    hero_str_decref(h6_x);
-    hero_str_decref(h7_own7);
+    hero_str_release_at(&h3_total);
+    hero_array_release_at(&h4_xs0);
+    hero_str_release_at(&h6_x);
+    hero_str_release_at(&h7_own7);
     return t18;
 }
 
@@ -1466,9 +1466,9 @@ bb8:
 #line 1467 "libraryhigherorder.c"
     t21 = h5_ret0;
     h_0opt_e201354_retain(&t21);
-    hero_array_decref(h2_xs0);
-    h_0opt_e201354_release(&h6_own6);
-    h_0opt_e201354_release(&h7_own7);
+    hero_array_release_at(&h2_xs0);
+    h_0opt_e201354_release(hero_slot_escape(&h6_own6));
+    h_0opt_e201354_release(hero_slot_escape(&h7_own7));
     return t21;
 }
 
@@ -1587,7 +1587,7 @@ bb7:
 bb8:
 #line 1589 "libraryhigherorder.c"
     t18 = h5_ret0;
-    hero_array_decref(h2_xs0);
+    hero_array_release_at(&h2_xs0);
     return t18;
 }
 
@@ -1709,7 +1709,7 @@ bb7:
 bb8:
 #line 1711 "libraryhigherorder.c"
     t19 = h5_ret0;
-    hero_array_decref(h2_xs0);
+    hero_array_release_at(&h2_xs0);
     return t19;
 }
 
@@ -1826,9 +1826,9 @@ bb4:
     t19 = h2_out;
 #line 1828 "libraryhigherorder.c"
     hero_array_incref(t19);
-    hero_array_decref(h2_out);
-    hero_array_decref(h3_xs0);
-    hero_array_decref(h6_own6);
+    hero_array_release_at(&h2_out);
+    hero_array_release_at(&h3_xs0);
+    hero_array_release_at(&h6_own6);
     return t19;
 }
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {

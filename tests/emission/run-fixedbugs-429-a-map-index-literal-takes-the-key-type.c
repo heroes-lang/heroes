@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -996,37 +996,37 @@ bb14:
 #line 39 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
     hero_print_end();
 #line 999 "fixedbugs429amapindexliteraltakesthekeytype.c"
-    hero_map_decref(h0_names);
-    h_0opt_f87774a_release(&h1_f0);
-    h_0opt_f87774a_release(&h2_f1);
-    h_0opt_f87774a_release(&h3_f2);
-    hero_str_decref(h4_r0);
-    hero_map_decref(h5_low);
-    h_0opt_f87774a_release(&h6_f3);
-    h_fixedbugs429amapindexliteraltakesthekeytype_Holder_release(&h7_h);
-    h_0opt_f87774a_release(&h8_f4);
-    hero_map_decref(h9_ops);
-    h_0opt_f87774a_release(&h10_f5);
-    h_0opt_f87774a_release(&h11_f6);
-    hero_map_decref(h12_wide);
-    h_0opt_f87774a_release(&h13_f7);
-    hero_array_decref(h14_xs);
-    hero_str_decref(h15_s);
-    hero_map_decref(h16_own16);
-    h_0opt_f87774a_release(&h17_own17);
-    h_0opt_f87774a_release(&h18_own18);
-    h_0opt_f87774a_release(&h19_own19);
-    hero_map_decref(h20_own20);
-    h_0opt_f87774a_release(&h21_own21);
-    hero_map_decref(h22_own22);
-    h_fixedbugs429amapindexliteraltakesthekeytype_Holder_release(&h23_own23);
-    h_0opt_f87774a_release(&h24_own24);
-    hero_map_decref(h25_own25);
-    h_0opt_f87774a_release(&h26_own26);
-    h_0opt_f87774a_release(&h27_own27);
-    hero_map_decref(h28_own28);
-    h_0opt_f87774a_release(&h29_own29);
-    hero_array_decref(h30_own30);
+    hero_map_release_at(&h0_names);
+    h_0opt_f87774a_release(hero_slot_escape(&h1_f0));
+    h_0opt_f87774a_release(hero_slot_escape(&h2_f1));
+    h_0opt_f87774a_release(hero_slot_escape(&h3_f2));
+    hero_str_release_at(&h4_r0);
+    hero_map_release_at(&h5_low);
+    h_0opt_f87774a_release(hero_slot_escape(&h6_f3));
+    h_fixedbugs429amapindexliteraltakesthekeytype_Holder_release(hero_slot_escape(&h7_h));
+    h_0opt_f87774a_release(hero_slot_escape(&h8_f4));
+    hero_map_release_at(&h9_ops);
+    h_0opt_f87774a_release(hero_slot_escape(&h10_f5));
+    h_0opt_f87774a_release(hero_slot_escape(&h11_f6));
+    hero_map_release_at(&h12_wide);
+    h_0opt_f87774a_release(hero_slot_escape(&h13_f7));
+    hero_array_release_at(&h14_xs);
+    hero_str_release_at(&h15_s);
+    hero_map_release_at(&h16_own16);
+    h_0opt_f87774a_release(hero_slot_escape(&h17_own17));
+    h_0opt_f87774a_release(hero_slot_escape(&h18_own18));
+    h_0opt_f87774a_release(hero_slot_escape(&h19_own19));
+    hero_map_release_at(&h20_own20);
+    h_0opt_f87774a_release(hero_slot_escape(&h21_own21));
+    hero_map_release_at(&h22_own22);
+    h_fixedbugs429amapindexliteraltakesthekeytype_Holder_release(hero_slot_escape(&h23_own23));
+    h_0opt_f87774a_release(hero_slot_escape(&h24_own24));
+    hero_map_release_at(&h25_own25);
+    h_0opt_f87774a_release(hero_slot_escape(&h26_own26));
+    h_0opt_f87774a_release(hero_slot_escape(&h27_own27));
+    hero_map_release_at(&h28_own28);
+    h_0opt_f87774a_release(hero_slot_escape(&h29_own29));
+    hero_array_release_at(&h30_own30);
     return;
 bb15:
 #line 35 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"

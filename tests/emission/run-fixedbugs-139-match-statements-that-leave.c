@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -969,7 +969,7 @@ bb10:
 bb11:
 #line 971 "fixedbugs139matchstatementsthatleave.c"
     t26 = h6_ret0;
-    hero_array_decref(h2_xs0);
+    hero_array_release_at(&h2_xs0);
     return t26;
 }
 
@@ -1745,8 +1745,8 @@ bb0:
 #line 184 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
     hero_print_end();
 #line 1748 "fixedbugs139matchstatementsthatleave.c"
-    hero_array_decref(h0_own0);
-    hero_array_decref(h1_own1);
+    hero_array_release_at(&h0_own0);
+    hero_array_release_at(&h1_own1);
     return;
 }
 HERO_TU_LOCAL bool h_fixedbugs139matchstatementsthatleave_Color_eq(const h_fixedbugs139matchstatementsthatleave_Color *a, const h_fixedbugs139matchstatementsthatleave_Color *b) {

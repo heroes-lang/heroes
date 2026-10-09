@@ -258,6 +258,15 @@ function retain_named(c: state.Checked, names: ctype.Names, ty: i64, name: str, 
         verb @ "retain"
     return ok(found.must() + "_" + verb + "(&" + name + ")")
 
+# The release of a value of this unit's type through `address`, an
+# expression of the value's pointer type (`emit/release.hero`, defect 470).
+function released_through(c: state.Checked, names: ctype.Names, ty: i64, address: str) -> str?
+    found = ctype.satellite_name(names, c, ty: ty)
+
+    if found.is_err()
+        return fail(code: "none", msg: "no generated release")
+    return ok(found.must() + "_release(" + address + ")")
+
 ## Tests
 
 record Setup

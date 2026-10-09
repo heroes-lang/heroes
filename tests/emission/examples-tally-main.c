@@ -7,7 +7,7 @@
 #include <stdio.h>
 #include "heroes_guard_close.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -420,15 +420,15 @@ bb14:
 #line 421 "main.c"
     t38 = h5_ret0;
     h_0opt_f87774a_retain(&t38);
-    hero_array_decref(h0_bytes);
-    h_0opt_e201354_release(&h2_f0);
-    hero_array_decref(h6_own6);
-    h_0opt_e201354_release(&h7_own7);
-    h_0opt_f87774a_release(&h8_own8);
-    hero_str_decref(h9_own9);
-    hero_str_decref(h10_own10);
-    hero_str_decref(h11_own11);
-    h_0opt_f87774a_release(&h12_own12);
+    hero_array_release_at(&h0_bytes);
+    h_0opt_e201354_release(hero_slot_escape(&h2_f0));
+    hero_array_release_at(&h6_own6);
+    h_0opt_e201354_release(hero_slot_escape(&h7_own7));
+    h_0opt_f87774a_release(hero_slot_escape(&h8_own8));
+    hero_str_release_at(&h9_own9);
+    hero_str_release_at(&h10_own10);
+    hero_str_release_at(&h11_own11);
+    h_0opt_f87774a_release(hero_slot_escape(&h12_own12));
     return t38;
 }
 
@@ -662,15 +662,15 @@ bb8:
 #line 663 "main.c"
     t31 = h5_ret0;
     h_0opt_f87774a_retain(&t31);
-    hero_str_decref(h1_out);
-    hero_array_decref(h2_xs0);
-    h_0opt_f87774a_release(&h6_own6);
-    hero_str_decref(h7_own7);
-    hero_str_decref(h8_own8);
-    hero_str_decref(h9_own9);
-    hero_str_decref(h10_own10);
-    hero_str_decref(h11_own11);
-    h_0opt_f87774a_release(&h12_own12);
+    hero_str_release_at(&h1_out);
+    hero_array_release_at(&h2_xs0);
+    h_0opt_f87774a_release(hero_slot_escape(&h6_own6));
+    hero_str_release_at(&h7_own7);
+    hero_str_release_at(&h8_own8);
+    hero_str_release_at(&h9_own9);
+    hero_str_release_at(&h10_own10);
+    hero_str_release_at(&h11_own11);
+    h_0opt_f87774a_release(hero_slot_escape(&h12_own12));
     return t31;
 }
 
@@ -858,8 +858,8 @@ bb15:
 #line 859 "main.c"
     t29 = h2_ret0;
     hero_str_incref(t29);
-    hero_str_decref(h3_own3);
-    hero_str_decref(h4_own4);
+    hero_str_release_at(&h3_own3);
+    hero_str_release_at(&h4_own4);
     return t29;
 }
 
@@ -1258,13 +1258,13 @@ bb0:
 #line 1259 "main.c"
     hero_str_decref(t22);
     hero_str_incref(t15);
-    hero_str_decref(h1_own1);
-    hero_str_decref(h2_own2);
-    hero_str_decref(h3_own3);
-    hero_str_decref(h4_own4);
-    hero_str_decref(h5_own5);
-    hero_str_decref(h6_own6);
-    hero_str_decref(h7_own7);
+    hero_str_release_at(&h1_own1);
+    hero_str_release_at(&h2_own2);
+    hero_str_release_at(&h3_own3);
+    hero_str_release_at(&h4_own4);
+    hero_str_release_at(&h5_own5);
+    hero_str_release_at(&h6_own6);
+    hero_str_release_at(&h7_own7);
     return t15;
 }
 
@@ -1437,13 +1437,13 @@ bb4:
 #line 161 "examples/tally/main.hero"
     hero_print_end();
 #line 1440 "main.c"
-    h_0opt_f87774a_release(&h0_text);
-    h_0opt_f87774a_release(&h1_f0);
-    h_0opt_f87774a_release(&h2_f1);
-    hero_str_decref(h3_body);
-    h_0opt_f87774a_release(&h4_own4);
-    hero_str_decref(h5_own5);
-    hero_str_decref(h6_own6);
+    h_0opt_f87774a_release(hero_slot_escape(&h0_text));
+    h_0opt_f87774a_release(hero_slot_escape(&h1_f0));
+    h_0opt_f87774a_release(hero_slot_escape(&h2_f1));
+    hero_str_release_at(&h3_body);
+    h_0opt_f87774a_release(hero_slot_escape(&h4_own4));
+    hero_str_release_at(&h5_own5);
+    hero_str_release_at(&h6_own6);
     return;
 bb5:
 #line 159 "examples/tally/main.hero"

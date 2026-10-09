@@ -7,7 +7,7 @@
 #include <fixedbugs-396-openssl.h>
 #include "heroes_guard_close.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -493,11 +493,11 @@ bb0:
 #line 47 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
     }
 #line 496 "fixedbugs396sha256finalfillsitsdigest.c"
-    hero_array_decref(h1_md);
-    hero_array_decref(h2_kept);
-    hero_array_decref(h4_out);
-    hero_array_decref(h6_own6);
-    hero_array_decref(h7_own7);
+    hero_array_release_at(&h1_md);
+    hero_array_release_at(&h2_kept);
+    hero_array_release_at(&h4_out);
+    hero_array_release_at(&h6_own6);
+    hero_array_release_at(&h7_own7);
     hero_lend_local_give(hero_lend_h5_s);
     hero_lend_local_give(hero_lend_h0_c);
     return;

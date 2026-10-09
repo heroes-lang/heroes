@@ -1,0 +1,148 @@
+# A refcount line of one named value, as C (design.md §3.1; panels 021, 106;
+# defect 470, panel 200's R3). Split out of `emit/inst.hero` on 2026-10-09,
+# when the exit sweep's release by address took that file past its ceiling.
+#
+# **One table of spellings, reached two ways**: a temporary's name
+# (`inst.reference`) and, since panel 106, a slot's, because a second copy of
+# this match is a second place that can learn a type and disagree about
+# `hero_str_decref` against `_release(&...)`.
+#
+# **The exit sweep releases a counted slot through its ADDRESS** (defect 470,
+# panel 200's R3). A function has one exit, and its sweep releases every
+# counted slot whichever way led there; read by value, each slot is one value
+# per way into the exit once clang promotes it to a register at `-O2`, so the
+# merge grew as slots times returns: a function of 800 returns of a growing
+# string cost clang 2,486.9 billion instructions and 3.46 GB at `-O2` on this
+# Mac (2026-10-09). Handed to the runtime by address,
+# `hero_str_release_at(&slot)` and its array and map siblings, the slot stays
+# in memory and no way out carries it: 37.6 billion and 96 MB. A record, an
+# option or a case is released by a function of this unit, which clang
+# inlines, and inlined the address escapes nowhere; so its slot reaches that
+# function through `hero_slot_escape`, the runtime's identity, and the escape
+# survives: a record of 800 returns, 3,090.5 billion and 3.40 GB before, 65.6
+# billion and 512 MB after.
+#
+# **The premise, written as one**: the runtime is compiled as a unit of its
+# own and linked, so clang compiling this unit cannot see that
+# `hero_str_release_at` only reads the slot, nor that `hero_slot_escape`
+# returns its argument. Link-time optimisation, or a unity build compiling
+# the runtime into the program's unit, would let it see both and undo this
+# repair in silence (`grep -rn flto selfhost runtime` found none,
+# 2026-10-09). The last test below goes red the day a compile or a link word
+# asks for LTO; a unity build would be a change to how `cli/` compiles a
+# program, which no test here sees, and defect 470's measurement, a string
+# returned 800 ways at `-O2`, is the shape that would show it.
+
+use check/table
+use check/state
+use emit/ctype
+use emit/aggregate
+use emit/writer
+use cli/flags
+use cli/strings
+use source
+use parse
+use resolve
+use checker
+
+# The incref or decref of a value named `name`, dispatched by type with the
+# aggregate fallback.
+function named(@w: writer.Writer, c: state.Checked, names: ctype.Names, ty: i64, name: str, keep: bool)
+    writer.at_generated(@w)
+    line: str @ ""
+
+    match table.get(c.types, ty)
+        .str =>
+            if keep
+                line @ "    hero_str_incref(" + name + ");"
+            else
+                line @ "    hero_str_decref(" + name + ");"
+        .array =>
+            if keep
+                line @ "    hero_array_incref(" + name + ");"
+            else
+                line @ "    hero_array_decref(" + name + ");"
+        .map =>
+            if keep
+                line @ "    hero_map_incref(" + name + ");"
+            else
+                line @ "    hero_map_decref(" + name + ");"
+        # A T? and a failure are by value: reached by address, their own
+        # function decides which side of the union is live.
+
+        .failure =>
+            if keep
+                line @ "    hero_failure_retain(&" + name + ");"
+            else
+                line @ "    hero_failure_release(&" + name + ");"
+        .int_ty | .float_ty | .bool | .ptr | .cstr | .unit    => line @ line
+        .fixed | .function_ty | .named | .case_ty | .fallible => line @ line
+        .generic | .error                                     => line @ line
+
+    if line == ""
+        found = aggregate.retain_named(c, names, ty: ty, name: name, keep: keep)
+
+        if found.is_err()
+            line @ "    hero_unreachable(); /* the gate refuses this type */"
+        else
+            line @ "    " + found.must() + ";"
+    writer.line(@w, text: line)
+
+# The exit sweep's release of the slot named `name`, through its address
+# (the header above says why): a string, an array or a map by the runtime's
+# `_release_at`, a type this unit releases by its own function through
+# `hero_slot_escape`, and a failure by its own function, which already takes
+# the address and is the runtime's.
+function slot(@w: writer.Writer, c: state.Checked, names: ctype.Names, ty: i64, name: str)
+    line: str @ ""
+
+    match table.get(c.types, ty)
+        .str                                                  => line @ "    hero_str_release_at(&" + name + ");"
+        .array                                                => line @ "    hero_array_release_at(&" + name + ");"
+        .map                                                  => line @ "    hero_map_release_at(&" + name + ");"
+        .failure                                              => line @ "    hero_failure_release(&" + name + ");"
+        .int_ty | .float_ty | .bool | .ptr | .cstr | .unit    => line @ line
+        .fixed | .function_ty | .named | .case_ty | .fallible => line @ line
+        .generic | .error                                     => line @ line
+
+    if line == ""
+        # C converts the `void *` to the release's own pointer type with no
+        # cast (C11 6.3.2.3p1); the slot is of that type by construction, the
+        # one `named` releases by `&name`.
+        escaped = "hero_slot_escape(&" + name + ")"
+        found = aggregate.released_through(c, names, ty: ty, address: escaped)
+
+        if found.is_err()
+            named(@w, c, names, ty: ty, name: name, keep: false)
+            return
+        line @ "    " + found.must() + ";"
+    writer.at_generated(@w)
+    writer.line(@w, text: line)
+
+## Tests
+
+test "the exit sweep hands a counted slot over by its address, a unit's own type through the escape (defect 470)"
+    text = "record P\n    s: str\n\nfunction main()\n    p = P(s: \"x\")\n    print(p.s)\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    c: state.Checked @ checker.check(parsed.tree, out, s, parsed.decls)
+    assert c.diagnostics.len() == 0
+    names = ctype.new_names(s, parsed.decls)
+    w: writer.Writer @ writer.new_writer("t")
+    slot(@w, c, names, ty: table.str_ty(c.types), name: "h0_s")
+    slot(@w, c, names, ty: table.lookup(c.types, .named(decl: 0)).must(), name: "h1_p")
+    named(@w, c, names, ty: table.str_ty(c.types), name: "t3", keep: false)
+    got = writer.finish(w)
+    assert strings.holds(text: got, needle: "    hero_str_release_at(&h0_s);")
+    assert strings.holds(text: got, needle: "_release(hero_slot_escape(&h1_p));")
+    assert strings.holds(text: got, needle: "    hero_str_decref(t3);")
+
+# The premise above, held: no word a unit's compile or the link is given
+# lets clang read the runtime while it compiles a program's unit.
+test "no word of a compile or a link lets clang see into the runtime (defect 470's premise)"
+    for level in ["-O0", "-O2"]
+        compiled = strings.with_all(list: flags.flags(), more: flags.level_words(level, sanitize: false))
+
+        for word in strings.with_all(list: compiled, more: flags.link_flags())
+            assert !strings.starts_with(text: word, prefix: "-flto")

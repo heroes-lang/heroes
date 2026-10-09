@@ -7,7 +7,7 @@
 #include <fixedbugs-396-buffers.h>
 #include "heroes_guard_close.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -162,8 +162,8 @@ bb0:
 #line 15 "tests/golden/run/fixedbugs-396-a-buffer-c-overruns-aborts.hero"
     hero_print_end();
 #line 165 "fixedbugs396abuffercoverrunsaborts.c"
-    hero_array_decref(h0_md);
-    hero_array_decref(h1_own1);
+    hero_array_release_at(&h0_md);
+    hero_array_release_at(&h1_own1);
     return;
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {

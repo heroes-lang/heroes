@@ -4,7 +4,7 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -309,7 +309,7 @@ bb7:
 bb8:
 #line 311 "fixedbugs142everyrepairthenotenames.c"
     t18 = h5_ret0;
-    hero_array_decref(h2_xs0);
+    hero_array_release_at(&h2_xs0);
     return t18;
 }
 
@@ -762,8 +762,8 @@ bb0:
 #line 88 "tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero"
     hero_print_end();
 #line 765 "fixedbugs142everyrepairthenotenames.c"
-    hero_array_decref(h0_own0);
-    hero_array_decref(h1_own1);
+    hero_array_release_at(&h0_own0);
+    hero_array_release_at(&h1_own1);
     return;
 }
 

@@ -7,7 +7,7 @@
 #include <unistd.h>
 #include "heroes_guard_close.h"
 
-_Static_assert(HERO_RUNTIME_ABI == 29, "heroes_runtime.h is from another compiler");
+_Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 
@@ -324,10 +324,10 @@ bb3:
     t19 = h3_out;
 #line 326 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
     hero_array_incref(t19);
-    hero_array_decref(h1_buf);
-    hero_array_decref(h3_out);
-    hero_array_decref(h5_own5);
-    hero_array_decref(h6_own6);
+    hero_array_release_at(&h1_buf);
+    hero_array_release_at(&h3_out);
+    hero_array_release_at(&h5_own5);
+    hero_array_release_at(&h6_own6);
     return t19;
 }
 
@@ -448,10 +448,10 @@ bb3:
     t24 = h1_out;
 #line 450 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
     hero_array_incref(t24);
-    hero_array_decref(h1_out);
-    h_0opt_1b9b98_release(&h3_f0);
-    hero_array_decref(h4_own4);
-    h_0opt_1b9b98_release(&h5_own5);
+    hero_array_release_at(&h1_out);
+    h_0opt_1b9b98_release(hero_slot_escape(&h3_f0));
+    hero_array_release_at(&h4_own4);
+    h_0opt_1b9b98_release(hero_slot_escape(&h5_own5));
     return t24;
 bb4:
 #line 50 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
@@ -575,10 +575,10 @@ bb3:
 #line 56 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
     t12 = hero_str_eq(t10, t11);
 #line 578 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
-    h_0opt_f87774a_release(&h1_f0);
-    hero_str_decref(h2_r0);
-    h_0opt_f87774a_release(&h3_own3);
-    hero_str_decref(h4_own4);
+    h_0opt_f87774a_release(hero_slot_escape(&h1_f0));
+    hero_str_release_at(&h2_r0);
+    h_0opt_f87774a_release(hero_slot_escape(&h3_own3));
+    hero_str_release_at(&h4_own4);
     return t12;
 }
 
@@ -994,17 +994,17 @@ bb9:
 #line 73 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
 bb10:
 #line 997 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
-    hero_str_decref(h1_file);
-    hero_str_decref(h2_link);
-    h_0opt_a8ea2_release(&h5_f0);
-    h_0opt_a8ea2_release(&h7_f1);
-    hero_str_decref(h10_own10);
-    hero_str_decref(h11_own11);
-    h_0opt_a8ea2_release(&h12_own12);
-    hero_str_decref(h13_own13);
-    h_0opt_a8ea2_release(&h14_own14);
-    hero_array_decref(h15_own15);
-    hero_array_decref(h16_own16);
+    hero_str_release_at(&h1_file);
+    hero_str_release_at(&h2_link);
+    h_0opt_a8ea2_release(hero_slot_escape(&h5_f0));
+    h_0opt_a8ea2_release(hero_slot_escape(&h7_f1));
+    hero_str_release_at(&h10_own10);
+    hero_str_release_at(&h11_own11);
+    h_0opt_a8ea2_release(hero_slot_escape(&h12_own12));
+    hero_str_release_at(&h13_own13);
+    h_0opt_a8ea2_release(hero_slot_escape(&h14_own14));
+    hero_array_release_at(&h15_own15);
+    hero_array_release_at(&h16_own16);
     return;
 }
 
@@ -1270,15 +1270,15 @@ bb5:
 #line 94 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
 bb6:
 #line 1273 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
-    hero_str_decref(h1_link);
-    hero_str_decref(h2_named);
-    h_0opt_a8ea2_release(&h3_f0);
-    hero_str_decref(h6_own6);
-    hero_str_decref(h7_own7);
-    hero_str_decref(h8_own8);
-    h_0opt_a8ea2_release(&h9_own9);
-    hero_array_decref(h10_own10);
-    hero_array_decref(h11_own11);
+    hero_str_release_at(&h1_link);
+    hero_str_release_at(&h2_named);
+    h_0opt_a8ea2_release(hero_slot_escape(&h3_f0));
+    hero_str_release_at(&h6_own6);
+    hero_str_release_at(&h7_own7);
+    hero_str_release_at(&h8_own8);
+    h_0opt_a8ea2_release(hero_slot_escape(&h9_own9));
+    hero_array_release_at(&h10_own10);
+    hero_array_release_at(&h11_own11);
     return;
 }
 
@@ -1469,13 +1469,13 @@ bb5:
 #line 111 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
 bb6:
 #line 1472 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
-    hero_str_decref(h0_root);
-    hero_str_decref(h1_one);
-    hero_str_decref(h2_two);
-    hero_str_decref(h4_own4);
-    hero_str_decref(h5_own5);
-    hero_str_decref(h6_own6);
-    hero_str_decref(h7_own7);
+    hero_str_release_at(&h0_root);
+    hero_str_release_at(&h1_one);
+    hero_str_release_at(&h2_two);
+    hero_str_release_at(&h4_own4);
+    hero_str_release_at(&h5_own5);
+    hero_str_release_at(&h6_own6);
+    hero_str_release_at(&h7_own7);
     return;
 }
 
@@ -1792,17 +1792,17 @@ bb13:
 #line 1793 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
     t38 = h3_ret0;
     h_0opt_f87774a_retain(&t38);
-    hero_str_decref(h2_text);
-    hero_str_decref(h4_own4);
-    h_0opt_f87774a_release(&h5_own5);
-    h_0opt_f87774a_release(&h6_own6);
-    hero_str_decref(h7_own7);
-    h_0opt_f87774a_release(&h8_own8);
-    hero_str_decref(h9_own9);
-    h_0opt_f87774a_release(&h10_own10);
-    hero_str_decref(h11_own11);
-    hero_str_decref(h12_own12);
-    h_0opt_f87774a_release(&h13_own13);
+    hero_str_release_at(&h2_text);
+    hero_str_release_at(&h4_own4);
+    h_0opt_f87774a_release(hero_slot_escape(&h5_own5));
+    h_0opt_f87774a_release(hero_slot_escape(&h6_own6));
+    hero_str_release_at(&h7_own7);
+    h_0opt_f87774a_release(hero_slot_escape(&h8_own8));
+    hero_str_release_at(&h9_own9);
+    h_0opt_f87774a_release(hero_slot_escape(&h10_own10));
+    hero_str_release_at(&h11_own11);
+    hero_str_release_at(&h12_own12);
+    h_0opt_f87774a_release(hero_slot_escape(&h13_own13));
     hero_lend_local_give(hero_lend_h1_status);
     return t38;
 }
@@ -1945,10 +1945,10 @@ bb7:
 #line 1946 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
     t19 = h3_ret0;
     h_0opt_a8ea2_retain(&t19);
-    h_0opt_a8ea2_release(&h4_own4);
-    hero_str_decref(h5_own5);
-    h_0opt_a8ea2_release(&h6_own6);
-    h_0opt_a8ea2_release(&h7_own7);
+    h_0opt_a8ea2_release(hero_slot_escape(&h4_own4));
+    hero_str_release_at(&h5_own5);
+    h_0opt_a8ea2_release(hero_slot_escape(&h6_own6));
+    h_0opt_a8ea2_release(hero_slot_escape(&h7_own7));
     return t19;
 }
 HERO_TU_LOCAL void h_0opt_1b9b98_retain(const h_0opt_1b9b98 *v) {
