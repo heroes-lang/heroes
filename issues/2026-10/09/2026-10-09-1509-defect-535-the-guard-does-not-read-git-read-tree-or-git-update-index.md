@@ -3,7 +3,7 @@ kind: defect
 area: process
 milestone: none
 filed: 2026-10-09
-commit: none
+commit: 59e6ca86a326534180974b7b12814f41864ffc0d
 github: none
 ---
 
@@ -12,3 +12,5 @@ github: none
     **Origin:** filed by the coordinator at 15:09 on 2026-10-09 from lane b16-misc's final report (its notes `.claude/worktrees/scratch-b15/misc/notes.txt`, ignored by git); the lane's measurement, not re-run by the coordinator.
 
     **Class: improvement**, 2026-10-09 (`.claude/rules/verification.md` § Bounded discovery): hardening against commands no session here runs.
+
+    Repaired at `59e6ca86`, 2026-10-09 (lane b17-fix, batch 17), gated by its cases and the hooks' own tests; the net is owed at the batch's close. `overwrites.py` reads `git read-tree` (one tree or several, `--reset`, `--empty` and no tree at all over the index; `-m` of one tree over a path the disk no longer holds; `-m -u` over the working tree too; `--reset -u` of one tree a hard reset, read in `discards.py`) and `git update-index` in order (`--force-remove` and `--remove` binding the paths after them, `--cacheinfo` and `--index-info` writing an entry over the staged one, `--stdin` every path), each refused where a staged version would be nowhere, as measured on git 2.56.0; two or three trees, `--prefix`, `--index-output`, `-n` and `--again` lose nothing and pass. 5 tests, 4 red on the base; the hooks' own tests 140, all passed.
