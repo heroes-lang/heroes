@@ -64,6 +64,7 @@ use handles
 use check/markers
 use check/function_value
 use check/generics as check_generics
+use check/generic_argument
 use check/discard
 use value_errors
 use discard_errors
@@ -1644,7 +1645,9 @@ function user_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: sourc
                 if generics == 0
                     check(@c, a, r, s, decls, id: arg.value, expected: param)
                 else
+                    said = c.out.diagnostics.len()
                     got = synth(@c, a, r, s, decls, arg.value)
+                    generic_argument.retell(@c, a, r, s, decls, from: said, id: arg.value, decl: decl, at: position)
 
                     # A poisoned argument is a mistake already reported, and
                     # whatever it left unbound is that mistake's shadow, not a
