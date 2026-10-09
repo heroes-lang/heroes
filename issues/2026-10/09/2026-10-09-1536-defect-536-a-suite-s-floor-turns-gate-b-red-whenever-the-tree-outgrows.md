@@ -3,7 +3,7 @@ kind: defect
 area: harness
 milestone: none
 filed: 2026-10-09
-commit: none
+commit: 511a8f063732914a00075c9160393a225e057c7d
 github: none
 ---
 
@@ -12,3 +12,5 @@ github: none
     **Origin:** filed by the coordinator at 15:36 on 2026-10-09 under the optimistic chain the author asked for that day (`.claude/rules/verification.md` § The optimistic chain), from batch 16's closing gate (its logs in `.claude/worktrees/scratch-b15/gate16/`, ignored by git) and the record of batches 8 to 15 read that day.
 
     **Class: improvement**, 2026-10-09 (`.claude/rules/verification.md` § Bounded discovery): an instrument that reds on growth, the gate's most frequent red.
+
+    Repaired at `511a8f06`, 2026-10-09 (lane b17-fix, batch 17), gated by its cases and the net's own tests; the net is owed at the batch's close. `tests/harness/floors.hero`: a count below its floor stays a failure; a count past it by more than `SLACK` is a pass and the floor is told, `FLOOR <label>` with the number to write, printed beside the skips (`report.keep_outgrown`) and counted on the suite's line and the verdict's as `, N floor(s) outgrown` (`report.counted`), so it moves no exit and no gate. Two tests moved or added (`floors.hero`'s outgrown test, `report.hero`'s told-and-counted test), the new assertion red on the base's floors module (1 failed of 9); the net's own tests 323, all passed.
