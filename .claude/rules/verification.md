@@ -113,7 +113,7 @@ which pins a diagnostic's notes and excerpts (defect 289).
 | `docs/**`, `issues/**`, `.claude/**` | `records` `unseen` |
 | `CLAUDE.md`, `docs/ROADMAP.md`, `docs/measurements/010-spec-budget-ledger.md` | `records` `unseen` **`spec`** (the contract's ceiling, the headings a `§` citation names, the spec's ledger) |
 | `editors/**` | `spec` (the editor's grammar, held to the language's words) |
-| `.claude/hooks/**` | **the hooks' own tests**, `python3 -I -m unittest discover -s .claude/hooks -t .claude/hooks`, plus what `.claude/**` already gets |
+| `.claude/hooks/**` | **the hooks' own tests**, `python3 -I -m unittest discover -s .claude/hooks -t .claude/hooks`, plus what `.claude/**` already gets; their temporary folders, made and removed by the tests themselves in the system's temporary directory, are the author's one exception (2026-10-09) to CLAUDE.md § Hard stops' *no file outside this repository's root*, since two tests ask how a file outside every tree is judged |
 | `tests/harness/**` | **the net's own tests**, `heroes test tests/harness/main.hero`, and `canonical`, plus what `tests/**` gets |
 | a file `site/src/lib/claims.ts` names at its top (`selfhost/cli/table.hero`, `selfhost/cli/doctor.hero`, `selfhost/parse/decl.hero`, `tests/harness/suite_spec.hero`, `.claude/agents/`, `.github/workflows/ci.yml`, and the rest it lists), or `site/**` | **the site's build**, `npm run build` in `site/`, before the push; and `spec` for `site/README.md`, whose headings a `§` citation names |
 
@@ -751,7 +751,14 @@ could.* Measured on the trunk's compiler the same day, `real` equal to `user`:
   And a commit's, a merge's or a tag's message, `-m` or `-F` and the heredoc
   `-F -` reads, is refused where it holds a character the `unseen` suite
   refuses in a document, named by its code point, line and column, the list
-  being that suite's `REFUSED`, read from it (defect 378).
+  being that suite's `REFUSED`, read from it (defect 378). **Since 2026-10-09**
+  a command that discards staged work is refused where the tree holds a change
+  the operation in progress did not bring (a merge's, a cherry-pick's, a
+  revert's, a rebase's or an am's `--abort` and `--skip`, `reset --merge` and
+  `--hard`, a forced checkout or switch of the whole tree), and so is an
+  autostash that would take one (defect 514); and a commit is judged on what it
+  carries, a path named after `--` as the working tree holds it, staged or not
+  (defect 515).
 - **Layer 2, per repair**: the form that holds its cases and the compiler's own
   tests.
 - **Layer 3, per batch**: the seed, the fixpoint, the full net, the census.
