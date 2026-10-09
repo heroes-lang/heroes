@@ -2217,6 +2217,8 @@ __attribute__((used)) static void hero_tu_type_order(void *at) {
 #undef HERO_TU_LOCAL
 #define HERO_TU_LOCAL __attribute__((unused, used)) static
 
+#define HERO_COPY(dst, src) do { _Static_assert(__builtin_types_compatible_p(__typeof__(dst), __typeof__(src)), "heroes-copy"); __builtin_memmove(&(dst), &(src), sizeof(dst)); } while (0)
+
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wdouble-promotion"
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
@@ -2231,7 +2233,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 2235 "fixedbugs170variantsandoptions100deepbuild.c"
+#line 2237 "fixedbugs170variantsandoptions100deepbuild.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs170variantsandoptions100deepbuild_R0_c_a_eq(const h_fixedbugs170variantsandoptions100deepbuild_R0_c_a *a, const h_fixedbugs170variantsandoptions100deepbuild_R0_c_a *b);
@@ -5060,7 +5062,7 @@ void h_fixedbugs170variantsandoptions100deepbuild_main(void);
 
 #line 526 "tests/golden/run/fixedbugs-170-variants-and-options-100-deep-build.hero"
 void h_fixedbugs170variantsandoptions100deepbuild_main(void) {
-#line 5064 "fixedbugs170variantsandoptions100deepbuild.c"
+#line 5066 "fixedbugs170variantsandoptions100deepbuild.c"
     HeroArrayHeader * h0_xs = {0};
     HeroArrayHeader * h1_own1 = {0};
     HeroArrayHeader * t1;
@@ -5079,15 +5081,15 @@ bb0:
     t7 = h1_own1;
 #line 527 "tests/golden/run/fixedbugs-170-variants-and-options-100-deep-build.hero"
     h1_own1 = t1;
-#line 5083 "fixedbugs170variantsandoptions100deepbuild.c"
+#line 5085 "fixedbugs170variantsandoptions100deepbuild.c"
     hero_array_decref(t7);
 #line 527 "tests/golden/run/fixedbugs-170-variants-and-options-100-deep-build.hero"
     t8 = h0_xs;
-#line 5087 "fixedbugs170variantsandoptions100deepbuild.c"
+#line 5089 "fixedbugs170variantsandoptions100deepbuild.c"
     hero_array_incref(t1);
 #line 527 "tests/golden/run/fixedbugs-170-variants-and-options-100-deep-build.hero"
     h0_xs = t1;
-#line 5091 "fixedbugs170variantsandoptions100deepbuild.c"
+#line 5093 "fixedbugs170variantsandoptions100deepbuild.c"
     hero_array_decref(t8);
 #line 528 "tests/golden/run/fixedbugs-170-variants-and-options-100-deep-build.hero"
     t2 = h0_xs;
@@ -5106,7 +5108,7 @@ bb0:
     hero_print_bool(t6);
 #line 529 "tests/golden/run/fixedbugs-170-variants-and-options-100-deep-build.hero"
     hero_print_end();
-#line 5110 "fixedbugs170variantsandoptions100deepbuild.c"
+#line 5112 "fixedbugs170variantsandoptions100deepbuild.c"
     hero_array_decref(h0_xs);
     hero_array_decref(h1_own1);
     return;

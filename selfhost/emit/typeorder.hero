@@ -29,6 +29,7 @@ use emit/ctype
 use emit/types
 use emit/synth
 use emit/writer
+use emit/byte_copy
 use parse
 use resolve
 use checker
@@ -113,6 +114,9 @@ function definitions(@w: writer.Writer, c: state.Checked, names: ctype.Names, s:
     if deepest(c, names, decls, out: out, graph: graph) > IN_ORDER_FROM
         in_order(@w, c, names, decls, out: out)
         eager(@w)
+        writer.line(@w, text: byte_copy.DEFINITION)
+        writer.blank(@w)
+        w.copies_bytes @ true
 
 # Past the same depth every per-type function is emitted WHERE IT IS DEFINED
 # (defect 468). clang emits a `static` function the first time an emitted
@@ -371,6 +375,15 @@ test "past 32 structs held by value the per-type functions are emitted where the
     order_at = ffi_lookup.char_index_of(text: past, needle: "hero_tu_type_order")
     assert !eager_at.is_err()
     assert order_at.must() < eager_at.must()
+
+test "past 32 structs held by value the unit copies its own structs as bytes, and at 32 it does not (defect 522)"
+    definition = byte_copy.DEFINITION + "\n"
+    assert ffi_lookup.char_index_of(text: chain_text(n: 32), needle: definition).is_err()
+    past = chain_text(n: 33)
+    defined_at = ffi_lookup.char_index_of(text: past, needle: definition)
+    eager_at = ffi_lookup.char_index_of(text: past, needle: "#define HERO_TU_LOCAL")
+    assert !defined_at.is_err()
+    assert eager_at.must() < defined_at.must()
 
 test "the walk writes each item after its needs, in the order they are listed, where it is first reached"
     # Two seeds, 5 then 4. From 5: 3 needs 2, written, then 3; 1 needs 2,

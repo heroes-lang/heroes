@@ -38,6 +38,7 @@ use emit/places
 use emit/term
 use emit/unread
 use emit/writer
+use emit/byte_copy
 use token
 use check/contextual
 use parse
@@ -118,7 +119,7 @@ function emit(@w: writer.Writer, p: instances.Held, c: state.Checked, names: cty
             if !target.is_err()
                 writer.line(
                     @w,
-                    text: "    " + target.must() + " = " + aggregate.place(c, s, decls, f, at: ld.place) + ";"
+                    text: "    " + byte_copy.assignment(w, c, decls, ty: inst.ty, target: target.must(), value: aggregate.place(c, s, decls, f, at: ld.place))
                 )
         .store st =>
             # A store whose place ends in an index is copy-on-write, and
@@ -149,7 +150,7 @@ function emit(@w: writer.Writer, p: instances.Held, c: state.Checked, names: cty
                 if !ctype.is_unit(c, ty: containers.value_type(f, st.value))
                     writer.line(
                         @w,
-                        text: "    " + aggregate.place(c, s, decls, f, at: st.place) + " = " + mangle.value(st.value) + ";"
+                        text: "    " + byte_copy.assignment(w, c, decls, ty: containers.value_type(f, st.value), target: aggregate.place(c, s, decls, f, at: st.place), value: mangle.value(st.value))
                     )
         # Housekeeping the author did not write. Dispatched by TYPE: a
         # str owns one block, so the runtime counts it; an aggregate
