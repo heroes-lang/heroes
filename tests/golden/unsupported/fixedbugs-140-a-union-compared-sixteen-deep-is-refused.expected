@@ -1,4 +1,4 @@
-error[ffi_union_field]: `U` is a `union` in `fixedbugs-140-a-union-compared-sixteen-deep-is-refused.h`, and `f` is a `f32`, which is not compared bit for bit, so comparing a `U` or using one as a map key can call two different values equal
+error[ffi_union_field]: `U` is a `union` in `fixedbugs-140-a-union-compared-sixteen-deep-is-refused.h`, and `f` is declared `f32`, which is not compared bit for bit, so comparing `U` values or using one as a map key can call two different values equal
   at tests/golden/unsupported/fixedbugs-140-a-union-compared-sixteen-deep-is-refused.hero:26:12
      |
   26 |     record U  #~ ffi_union_field

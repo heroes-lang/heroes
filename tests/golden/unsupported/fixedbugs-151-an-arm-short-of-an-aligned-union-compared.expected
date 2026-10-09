@@ -1,6 +1,6 @@
-error[ffi_union_field]: `AL` holds `q` in a union of `fixedbugs-151-unions.h`, and `q` is narrower than that union, so comparing a `AL` or using one as a map key would compare only part of its bytes
+error[ffi_union_field]: `AL` holds `q` in a union of `fixedbugs-151-unions.h`, and `q` is narrower than that union, so comparing `AL` values or using one as a map key would compare only part of its bytes
   at tests/golden/unsupported/fixedbugs-151-an-arm-short-of-an-aligned-union-compared.hero:11:12
      |
   11 |     record AL  #~ ffi_union_field
      |            ^^
-  note: only an integer, a pointer or an array of them as wide as the union compares a union's bytes: to compare a `AL`, name that member; reading `q` and building a `AL` that names it stay legal
+  note: only an integer, a pointer or an array of them as wide as the union compares a union's bytes: to compare `AL` values, name that member; reading `q` and building any `AL` that names it stay legal

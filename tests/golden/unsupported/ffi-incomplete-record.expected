@@ -3,4 +3,4 @@ error[ffi_incomplete_record]: `Color` does not name `a`, and `raylib.h` says the
      |
   55 |     record Color            #~ ffi_incomplete_record
      |            ^^^^^
-  note: the assertions above check every field you DO name and cannot see one you leave out: a `Color` built here would carry a zero `a` into C, which is a value rather than a crash
+  note: the assertions above check every field you DO name and cannot see one you leave out: every `Color` built here would carry a zero `a` into C, which is a value rather than a crash
