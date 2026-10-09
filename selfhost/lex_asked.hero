@@ -1,0 +1,53 @@
+# What the lexer asks of its own state again and again, remembered so that a
+# long line does not pay for it once a token (design.md §4.15; defect 482).
+# A question here walked the stack of openers afresh at every closer, a cost
+# that grew with the line's square: 4,000 `(` and as many `]` on one line,
+# 4.6 billion instructions to lex.
+#
+# **One array of numbers, in `LexState.asked`**, a state every lexing call
+# copies in and out holding one pointer for them all (`state.hero`). An answer
+# remembered is a fact about the state it was read from, so each entry says
+# which: the count of openers pushed so far (`PUSHES`, added to at the one
+# place a push is made, `state.emit`). **The premise that makes a remembered
+# answer stand is falsifiable, and `closers.hero`'s test asks it**: the stack
+# changes only by a push (counted), a pop, a cut to a prefix or a clear, so a
+# stack with no push since an answer is a prefix of the one it was read from.
+#
+# | entry | called by |
+# |---|---|
+# | `fresh` | `state.new_state` |
+# | the indexes | `closers.close_to_its_kind`, `state.emit` |
+
+# The openers pushed on the bracket stack so far.
+constant PUSHES: i64
+    0
+
+# Per opener kind, `(` `[` `{` as 0 to 2: the `PUSHES` count at which no
+# opener of the kind stood in the stack from the floor to its top, or -1, and
+# that floor (`closers.close_to_its_kind`).
+constant NONE_AT: i64
+    1
+
+constant NONE_FLOOR: i64
+    4
+
+constant SIZE: i64
+    7
+
+# Nothing remembered.
+function fresh() -> [i64]
+    out: [i64] @ []
+
+    for _ in range(from: 0, to: SIZE)
+        out @ out.push(-1)
+
+    out[PUSHES] @ 0
+    return out
+
+## Tests
+
+test "a fresh memory holds nothing"
+    asked = fresh()
+    assert asked.len() == SIZE
+    assert asked[PUSHES] == 0
+    assert asked[NONE_AT] == -1 && asked[NONE_AT + 2] == -1 && asked[NONE_FLOOR + 1] == -1

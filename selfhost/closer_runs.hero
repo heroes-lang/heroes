@@ -1,0 +1,101 @@
+# A run of closers the parser told alike, told once (design.md §4.17: one
+# mistake is one edit its author owes; defect 482, after 410's openers).
+#
+# `x = (((1]]]` is three groups each closed by the wrong kind, and the parser
+# said so three times at three adjacent bytes, `expected_group_close` found
+# `]`, a message a closer, and `f(f(f(1]]]` the same as `expected_args_close`:
+# 4,000 of each was 4,000 reports, a line copied under every one. A run of
+# closers one line holds, each report of the same code in the same words at
+# one closer byte and nothing between them but closers and spaces, is one
+# report at the first, a note saying how many stand after it. A report that
+# names the closer's own place in its words, `expected_separator`'s *the `[`
+# still open at column 11*, differs from the next and is told apart, as is
+# one with a fix or a note of its own: dropped, it would no longer be read.
+#
+# | entry | called by |
+# |---|---|
+# | `told_once` | `parse.parse_source`, `parse.parse_bounded` |
+
+use token
+use diag
+
+# `said`, the parser's reports in the order it said them, each run of closers
+# told alike told once, at its first.
+function told_once(said: [diag.Diagnostic], text: str) -> [diag.Diagnostic]
+    out: [diag.Diagnostic] @ []
+    i: i64 @ 0
+
+    while i < said.len()
+        j: i64 @ i + 1
+
+        while j < said.len() && follows(first: said[j - 1], next: said[j], text: text)
+            j @ j + 1
+
+        if j - i > 1
+            told: diag.Diagnostic @ said[i]
+            told.notes @ told.notes.push(
+                after(more: j - i - 1) + ", `" + text.slice(from: said[i + 1].span.start, to: said[j - 1].span.end) + "`"
+            )
+            out @ out.push(told)
+        else
+            out @ out.push(said[i])
+        i @ j
+
+    return out
+
+# What a run's note says of the `more` closers after its first.
+function after(more: i64) -> str
+    if more == 1
+        return "the same stands at the closer after it on its line"
+    return "the same stands at the " + more.to_str() + " closers after it on its line"
+
+# Whether `next` is a report in the same words as `first`, neither with a fix
+# or a note, at a closer right after it on its line.
+function follows(first: diag.Diagnostic, next: diag.Diagnostic, text: str) -> bool
+    if first.code != next.code || first.message != next.message || first.fixes.len() > 0 || first.notes.len() > 0 || next.fixes.len() > 0 || next.notes.len() > 0
+        return false
+
+    if !closer_at(text, first.span) || !closer_at(text, next.span) || next.span.start < first.span.end
+        return false
+    i: i64 @ first.span.end
+
+    while i < next.span.start
+        if text[i] != ' ' && !closer_byte(text[i])
+            return false
+        i @ i + 1
+
+    return true
+
+# Whether `span` is one closer byte of `text`.
+function closer_at(text: str, span: token.Span) -> bool
+    return span.end == span.start + 1 && span.end <= text.len() && closer_byte(text[span.start])
+
+function closer_byte(b: u8) -> bool
+    return b == ')' || b == ']' || b == '}'
+
+## Tests
+
+function said_at(at: i64, message: str) -> diag.Diagnostic
+    return diag.new_diagnostic(code: "expected_group_close", message: message, span: token.Span(start: at, end: at + 1))
+
+test "closers told alike one after another are told once, at the first"
+    text = "x = (((1]]]\n"
+    told = told_once([said_at(8, "m"), said_at(9, "m"), said_at(10, "m")], text: text)
+    assert told.len() == 1
+    assert told[0].span.start == 8
+    assert told[0].notes == ["the same stands at the 2 closers after it on its line, `]]`"]
+
+    # Words that differ, a byte that is no closer between, a line end between
+    # and a report with a note of its own keep a report each.
+    assert told_once([said_at(8, "a"), said_at(9, "b")], text: text).len() == 2
+    assert told_once([said_at(8, "m"), said_at(10, "m")], text: "x = (((1]x]\n").len() == 2
+    assert told_once([said_at(1, "m"), said_at(5, "m")], text: "x]\n  ]\n").len() == 2
+    owned: diag.Diagnostic @ said_at(9, "m")
+    owned.notes @ owned.notes.push("n")
+    assert told_once([said_at(8, "m"), owned], text: text).len() == 2
+
+    # Closers spaced apart on one line are a run too, and one after the first
+    # is named so.
+    spaced = told_once([said_at(0, "m"), said_at(3, "m")], text: "]  ]\n")
+    assert spaced.len() == 1
+    assert spaced[0].notes == ["the same stands at the closer after it on its line, `]`"]

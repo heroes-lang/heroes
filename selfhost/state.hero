@@ -1,24 +1,19 @@
 # Owned lexing state — position, layout, output — and the two ways a token
-# enters the stream. Port of the LexState half of archive/bootstrap-rs/heroes/src/lexer/mod.rs;
-# the drive loop (`lex`, `lex_one`) arrives with the scanners that feed it.
+# enters the stream. Port of the LexState half of archive/bootstrap-rs/heroes/src/lexer/mod.rs.
 #
 # The source text is a parameter everywhere and never a field (the Cyclone
 # rule, kept across the port: tokens point into the source by byte offset).
 #
-# Port notes:
-# - Rust's `last_significant: Option<TokenKind>` is a `TokenKind?` field: the
-#   "no significant token yet" state is the fail value, and the reader asks
-#   `.is_err()` where Rust asked `.is_some()`.
-# - Arrays have no `pop`: the saturating pop on a stray closer is a `slice`
-#   to len-1 behind a length test — same recovery, the emptiness check now
-#   visible at the site.
-# - `push` is a built-in name and cannot be redeclared, so the token-emitting
-#   half of Rust's `push` is `emit` here.
+# Port notes: `last_significant` is a `TokenKind?`, the fail value being "no
+# significant token yet"; arrays have no `pop`, so the saturating pop on a
+# stray closer is a `slice` to len-1 behind a length test; and `push` being a
+# built-in name, the token-emitting half of Rust's `push` is `emit` here.
 
 use token
 use diag
 use text_outline
 use swap_words
+use lex_asked
 
 ## Error codes
 
@@ -174,6 +169,9 @@ record LexState
     # a file of `print(x` lines its square.
     counted_to: i64
     line_ends: i64
+    # What the scanners ask again and again, remembered (`lex_asked.hero`):
+    # one pointer in the state, as `run` is.
+    asked: [i64]
 
 function new_state() -> LexState
     brackets: [token.Span] = []
@@ -212,7 +210,8 @@ function new_state() -> LexState
         run: runs,
         braced: braced,
         counted_to: 0,
-        line_ends: 0
+        line_ends: 0,
+        asked: lex_asked.fresh()
     )
 
 # The 1-based line of the text that holds the offset `at`. The lexer asks in
@@ -252,6 +251,7 @@ function emit(@l: LexState, kind: token.TokenKind, start: i64)
 
     if kind == .lparen || kind == .lbracket || kind == .lbrace
         push_bracket(@l.open_brackets, span)
+        l.asked[lex_asked.PUSHES] @ l.asked[lex_asked.PUSHES] + 1
 
     if kind == .rparen || kind == .rbracket || kind == .rbrace
         # Saturating pop: a stray closer never corrupts the following layout;

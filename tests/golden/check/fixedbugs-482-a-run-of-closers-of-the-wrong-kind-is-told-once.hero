@@ -1,0 +1,32 @@
+# Fixed defect 482, 2026-10-09 (lane b15-parse; filed from lane b14-parse's
+# report). Symptom: `(` N times then `]` N times on one line was told N
+# `expected_group_close`, one at each `]`, and cost the square of N twice:
+# the lexer walked its whole stack of openers at every closer of the wrong
+# kind looking for one of its own (`closers.close_to_its_kind`), and the
+# parser's drop of the failed line walked and copied its own stack at every
+# closer (`parse/brace_habit.a_closer_too_many`); 4,000 of each cost `check`
+# 14.4 billion instructions. Repair: a closer no opener of its kind answers
+# is remembered until an opener is pushed (`lex_asked.hero`), the drop's
+# stack is counted, and a run of closers told alike is one report at its
+# first, how many after it noted (`closer_runs.hero`). Below: a run of
+# groups, of calls, of groups through spaces, each told once; and, told as
+# before, closers on lines of their own, one a line, and a run of lists
+# closed by `)`, each told with its own `[`'s column, a message of its own.
+
+function f(a: i64) -> i64
+    return a
+
+function main()
+    x = (((1]]]  #~ expected_group_close
+    print(x)
+    y = f(f(f(1]]]  #~ expected_args_close
+    print(y)
+    z = (((1] ] ]  #~ expected_group_close
+    print(z)
+    w = [[[1)))  #~ expected_separator expected_separator expected_separator
+    print(w)
+    v = (((1
+    ]  #~ expected_group_close
+    ]  #~ expected_group_close
+    ]  #~ expected_group_close
+    print(v)

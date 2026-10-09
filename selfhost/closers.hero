@@ -30,6 +30,7 @@
 use token
 use diag
 use state
+use lex_asked
 
 # Before the token `kind` at `start` is emitted: a closer of another kind
 # than the innermost closes the opener of its own kind where one is open
@@ -55,12 +56,24 @@ function close_to_its_kind(@l: state.LexState, text: str, kind: token.TokenKind,
 
     if l.holes.len() > 0
         floor @ l.holes[l.holes.len() - 1]
+    seen = kind_index(want)
+
+    # No opener of this kind stands below, as read for an earlier closer of
+    # it, and nothing pushed since, so the stack is a prefix of that one
+    # (`lex_asked.hero`): `(` N times and `]` N times read the stack N times.
+    if l.asked[lex_asked.NONE_AT + seen] == l.asked[lex_asked.PUSHES] && floor >= l.asked[lex_asked.NONE_FLOOR + seen]
+        return
     at: i64 @ n - 2
 
     while at >= floor && text[l.open_brackets[at].start] != want
         at @ at - 1
 
-    if at < floor || !closes_its_own(text, brackets: l.open_brackets, at: at, from: start + 1)
+    if at < floor
+        l.asked[lex_asked.NONE_AT + seen] @ l.asked[lex_asked.PUSHES]
+        l.asked[lex_asked.NONE_FLOOR + seen] @ floor
+        return
+
+    if !closes_its_own(text, brackets: l.open_brackets, at: at, from: start + 1)
         return
 
     for span in l.open_brackets.slice(from: at + 1, to: n)
@@ -144,6 +157,15 @@ function past_literal(text: str, from: i64) -> i64
             i @ i + 1
 
     return i
+
+# Which of the three kinds an opener's byte is, `(` `[` `{` as 0 to 2.
+function kind_index(opener: u8) -> i64
+    if opener == '('
+        return 0
+
+    if opener == '['
+        return 1
+    return 2
 
 # The byte of the opener the closer `kind` closes.
 function opener_of(kind: token.TokenKind) -> u8
@@ -244,3 +266,35 @@ test "a closer of another kind closes the opener of its own kind below, and name
     close_to_its_kind(@hole, "(f\"${[x)}\"", .rparen, start: 7)
     assert hole.open_brackets.len() == 2
     assert hole.diagnostics.len() == 0
+
+# Defect 482: a closer of a kind no opener open shares is read against the
+# stack once, and again only where an opener was pushed since, the premise
+# `lex_asked.hero` rests on, which this asks.
+test "a closer no opener of its kind answers is remembered until an opener is pushed"
+    text = "(((x]]]"
+    l: state.LexState @ state.new_state()
+
+    for k in range(from: 0, to: 3)
+        l.pos @ k + 1
+        state.emit(@l, .lparen, k)
+
+    l.pos @ 5
+    before(@l, text, .rbracket, start: 4)
+    assert l.asked[lex_asked.NONE_AT + 1] == l.asked[lex_asked.PUSHES]
+    assert l.diagnostics.len() == 0
+
+    # Asked again, the answer stands, and the stack is as it was.
+    before(@l, text, .rbracket, start: 5)
+    assert l.open_brackets.len() == 3
+    assert l.diagnostics.len() == 0
+
+    # A `[` pushed: the memory no longer stands, and the closer closes it,
+    # naming the `(` above it never closed.
+    l.pos @ 5
+    state.emit(@l, .lbracket, 4)
+    l.pos @ 6
+    state.emit(@l, .lparen, 5)
+    assert l.asked[lex_asked.NONE_AT + 1] != l.asked[lex_asked.PUSHES]
+    before(@l, "(((x[(]", .rbracket, start: 6)
+    assert l.open_brackets.len() == 4
+    assert l.diagnostics.len() == 1
