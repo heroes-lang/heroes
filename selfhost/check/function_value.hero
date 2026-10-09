@@ -172,6 +172,11 @@ function instance(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source
         if type_fit.fits(@c.out.types, wanted: expected, got: got)
             c.out.instantiations[span.end] @ bound
             return got
+
+        # A nameless written type was refused where it is written (defect
+        # 554), and the names this instance carries are that mistake's shadow.
+        if type_fit.unnamed_shadow(c.out.types, c.out.written_types, a: expected, b: got)
+            return state.error_ty_of(c)
         shown @ state.show(c, s, decls, got)
     state.push_diagnostic(
         @c,
