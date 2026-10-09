@@ -1,0 +1,16 @@
+# Defect 457 and panel 199's R1, ratified 2026-10-09: the message the blind
+# seat read, whole. A call written `x.f()` is told that `x.f(y)` is `f(x, y)`,
+# which is how the author meets the shape (defect 455's `bytes`); every
+# refusal names the ways out a path may take before the call, and says that
+# an abort nobody wrote is none of them. No fix: which path should return,
+# and what, are the author's to say.
+
+function bytes(s: str) -> [u8]
+    return s.bytes()  #~ endless_recursion
+
+function fact(n: i64) -> i64
+    return n * fact(n - 1)  #~ endless_recursion
+
+function main()
+    print(bytes("hi").len())
+    print(fact(5))

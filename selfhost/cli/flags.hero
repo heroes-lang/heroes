@@ -9,9 +9,9 @@
 # corrected — a count in prose is the premise §11 says expires in
 # silence. The reasons ride each flag below; the array is the fact.
 
-# The fifteen — the bootstrap's thirteen in their order but `-g`, then panel
-# 103's, then panel 154's, then panel 161's; the debug word is the level's
-# since panel 197 (`debug_words` below):
+# The seventeen — the bootstrap's thirteen in their order but `-g`, then
+# panel 103's, then panel 154's, then panel 161's, then panel 199's two; the
+# debug word is the level's since panel 197 (`debug_words` below):
 # - gnu11 not c11: one predefined macro apart (__STRICT_ANSI__), whose
 #   only effect on glibc is to hide M_PI, strdup, fileno and most of
 #   what §1.11 says a program binds (panel 047, ratified).
@@ -30,7 +30,8 @@
 #   flag by passing `(void *)&x` for an `@` argument it has checked
 #   itself (ops.hero, extern_probe.hero), so a correct binding compiles
 #   clean under it on every clang. Never a -Wno- flag (author
-#   instruction, the same day).
+#   instruction, the same day), **but one since 2026-10-09**: panel 199's R3
+#   below, which the author ratified by name.
 # - -fno-delete-null-pointer-checks is panel 154's (2026-09-15, defect 045):
 #   the standard lets clang assume a pointer it dereferences is non-null and
 #   delete every check downstream, so a program that handed a null handle to a
@@ -85,6 +86,24 @@
 #   was rebuilt under this flag on that leg to settle it. The Linux kernel took
 #   the mirror flag, `-funsigned-char`, in 6.2 for the reason Torvalds gave:
 #   making the language rules stricter to avoid differences is a good thing.
+# - **-fno-optimize-sibling-calls is panel 199's R2** (defect 508, ratified
+#   2026-10-09 with *unbounded recursion is an abort*): at `-O2` clang made a
+#   call in tail position a jump, so `ping` and `pong` calling each other or
+#   a self-call through a function value ran until `timeout` stopped them,
+#   where spec `:280` promises the abort `-O0` gave. Every level's word: at
+#   `-O0` the objects are byte-identical with it (Apple clang 21), so the
+#   promise rests on no reading of clang there. The price: a tail recursion
+#   ten million deep aborts at `-O2` too, and a hundred thousand still
+#   returns (`surface-fixtures/deeptail`). The key names this list, so every
+#   unit's and the runtime's key moved once.
+# - **-Wno-infinite-recursion is panel 199's R3** (defect 507, ratified
+#   2026-10-09): clang's *all paths through this function will call itself*
+#   was false on correct programs ending on an `exit` inside a callee that
+#   otherwise returns, or inside a function handed to `map`. The checker
+#   refuses the true case in the program's words since R1
+#   (`check/self_call.hero`); what this drops is where clang cannot tell
+#   true from false, or is silent. Last, after `-Wall`, since a later word
+#   wins (`tests/golden/run/fixedbugs-507-*`).
 use cli/process
 
 function flags() -> [str]
@@ -104,6 +123,8 @@ function flags() -> [str]
         "-Werror=incompatible-pointer-types-discards-qualifiers"
         "-Werror=incompatible-pointer-types"
         "-fsigned-char"
+        "-fno-optimize-sibling-calls"
+        "-Wno-infinite-recursion"
     ]
 
 # **THE DEBUG WORD IS THE LEVEL'S** (panel 197, defects 219 and 322,
@@ -246,9 +267,9 @@ function sanitizers(sanitize: bool) -> [str]
 
 ## Tests
 
-test "the array is the fact: fifteen flags, gnu11 named first and the char sign last"
+test "the array is the fact: seventeen flags, gnu11 named first and panel 199's two last"
     got = flags()
-    assert got.len() == 15
+    assert got.len() == 17
     assert got[0] == "-std=gnu11"
     assert got[9] == "-fno-delete-null-pointer-checks"
     assert got[12] == "-Werror=incompatible-pointer-types-discards-qualifiers"
@@ -259,6 +280,15 @@ test "the array is the fact: fifteen flags, gnu11 named first and the char sign 
     # this one is the difference between a plain `char` meaning the same
     # thing on four legs and meaning two things on four legs.
     assert got[14] == "-fsigned-char"
+
+    # Panel 199's, by name for the same reason: spec `:280`'s abort at `-O2`
+    # is this word (defect 508).
+    assert got[15] == "-fno-optimize-sibling-calls"
+
+    # And its R3, after `-Wall`, which would turn the warning back on were it
+    # later in the list (defect 507).
+    assert got[16] == "-Wno-infinite-recursion"
+    assert got[3] == "-Wall"
     assert sanitizers(sanitize: true).len() == 1
     assert sanitizers(sanitize: false).len() == 0
 
@@ -269,11 +299,79 @@ test "the array is the fact: fifteen flags, gnu11 named first and the char sign 
     assert debug_words("-O0") == ["-g"]
     assert debug_words("-O2") == ["-gline-tables-only"]
     o2 = level_words(level: "-O2", sanitize: true)
-    assert o2.len() == 18
-    assert o2[15] == "-O2"
-    assert o2[16] == "-gline-tables-only"
-    assert o2[17] == "-fsanitize=address,undefined"
+    assert o2.len() == 20
+    assert o2[17] == "-O2"
+    assert o2[18] == "-gline-tables-only"
+    assert o2[19] == "-fsanitize=address,undefined"
     assert level_words(level: "-O0", sanitize: false) == flags().push("-O0").push("-g")
+
+    # A call stays a call at every level (panel 199's R2), the words each
+    # level hands a unit, the runtime and the link.
+    for level in ["-O0", "-O2"]
+        kept: i64 @ 0
+
+        for word in level_words(level: level, sanitize: false)
+            if word == "-fno-optimize-sibling-calls"
+                kept @ kept + 1
+
+        assert kept == 1
+
+# **What the optimised build does with a call in tail position, asked of the
+# platform's own clang** (panel 199's R2, defect 508): a function that calls
+# itself last, compiled under the optimised build's words, still names
+# itself in its assembly as the callee of a call; under the same words less
+# panel 199's, the call becomes a jump to a label inside the function, and
+# the name stands fewer times. Counted rather than matched, so no one
+# platform's spelling of a call (`bl`, `call`, `callq`) is assumed; the
+# program-level witness is `tests/golden/run/fixedbugs-508-*`, which abort
+# at both levels where `-O2` ran until `timeout` stopped it.
+test "the optimised build keeps a call in tail position a call (panel 199's R2)"
+    assert !process.mkdir_all("build/selftest-sibling-calls").is_err()
+    unit = "build/selftest-sibling-calls/unit.c"
+    text = "void heroes_sibling_sink(int seen);\nint heroes_sibling_probe(int n);\nint heroes_sibling_probe(int n) {\n    if (n == 0) {\n        return 0;\n    }\n    heroes_sibling_sink(n);\n    return heroes_sibling_probe(n - 1);\n}\n"
+    assert !write_file(path: unit, text: text).is_err()
+    counts: [i64] @ []
+
+    for keep in [true, false]
+        said = "build/selftest-sibling-calls/unit-" + keep.to_str() + ".s"
+        words: [str] @ ["clang"]
+
+        for word in level_words(level: "-O2", sanitize: false)
+            if keep || word != "-fno-optimize-sibling-calls"
+                words @ words.push(word)
+
+        for word in ["-S", unit, "-o", said]
+            words @ words.push(word)
+
+        assert process.run(program: "clang", words: words, out: process.discard(), err: process.discard()).code == 0
+        counts @ counts.push(times(text: read_file(said).must(), needle: "heroes_sibling_probe"))
+
+    assert counts[0] > counts[1]
+
+# **What clang says of a function that only calls itself, asked of the
+# platform's own clang** (panel 199's R3, defect 507): under the words a unit
+# compiles with, nothing; under the same words less panel 199's R3, its
+# `-Winfinite-recursion`, so the case is not blind. The checker says it
+# instead, in the program's words (`tests/golden/check/fixedbugs-457-*`).
+test "clang's word on a function that can only call itself is not passed on (panel 199's R3)"
+    assert !process.mkdir_all("build/selftest-endless").is_err()
+    unit = "build/selftest-endless/unit.c"
+    said = "build/selftest-endless/said.txt"
+    text = "int heroes_endless_probe(int n);\nint heroes_endless_probe(int n) {\n    return heroes_endless_probe(n);\n}\n"
+    assert !write_file(path: unit, text: text).is_err()
+
+    for keep in [true, false]
+        words: [str] @ ["clang"]
+
+        for word in level_words(level: "-O0", sanitize: false)
+            if keep || word != "-Wno-infinite-recursion"
+                words @ words.push(word)
+
+        for word in ["-fsyntax-only", unit]
+            words @ words.push(word)
+
+        assert process.run(program: "clang", words: words, out: process.discard(), err: said).code == 0
+        assert first_at(text: read_file(said).must(), needle: "-Winfinite-recursion") >= 0 == !keep
 
 # **What a debugger is handed, asked of the platform's own clang** (panel
 # 197's R2): a unit compiled under the unoptimised build's words describes its
@@ -361,6 +459,28 @@ test "every macro flags() defines is the runtime header's own on Windows, before
             defined @ defined + 1
 
     assert defined > 0
+
+# How many times `needle` stands in `text`, none overlapping, compared byte
+# by byte as `first_at` compares.
+function times(text: str, needle: str) -> i64
+    count: i64 @ 0
+    at: i64 @ 0
+
+    while at + needle.len() <= text.len()
+        same: bool @ true
+        k: i64 @ 0
+
+        while same && k < needle.len()
+            same @ text[at + k] == needle[k]
+            k @ k + 1
+
+        if same
+            count @ count + 1
+            at @ at + needle.len()
+        else
+            at @ at + 1
+
+    return count
 
 # Where `needle` first stands in `text`, compared byte by byte, so a text
 # holding a longer character is never sliced through one; or -1.

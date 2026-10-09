@@ -1,0 +1,18 @@
+# Defect 508, 2026-10-08 (panel 199's completeness critic), and panel 199's
+# R2, ratified 2026-10-09 with *unbounded recursion is an abort*: spec `:280`
+# says recursion too deep aborts, and at `-O2`, where `heroes run` compiles,
+# clang turned the call in tail position into a jump, so `ping` and `pong`
+# called each other until `timeout` stopped them (exit 124) where `-O0`
+# printed `panic: stack exhausted` (134). The `-O2` words keep a call a call
+# (`-fno-optimize-sibling-calls`, `selfhost/cli/flags.hero`), and the program
+# aborts at every level. `check` lets it through: mutual recursion is no
+# shape `endless_recursion` reads (panel 199's R7, filed apart). Under the
+# sanitiser the runtime's guard yields to ASan, which says `stack-overflow`.
+function ping(n: i64) -> i64
+    return pong(n)
+
+function pong(n: i64) -> i64
+    return ping(n)
+
+function main()
+    print(ping(1))

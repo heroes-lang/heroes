@@ -3,7 +3,7 @@ kind: defect
 area: check
 milestone: none
 filed: 2026-10-07
-commit: none
+commit: 167d196b34c891b7ec6511355f5d2e0209b136bc
 github: none
 ---
 
@@ -12,3 +12,5 @@ github: none
     **Origin:** filed by the coordinator at 18:37 on 2026-10-07 from lane b14-resolve's final report; the lane's measurement, not re-run by the coordinator. Its `bytes` form reproduced by the coordinator before filing defect 455.
 
     **Class: systemic**, 2026-10-07 (`.claude/rules/verification.md` § Bounded discovery): a wrong program accepted and a clang warning in C words reaching the author (`blocking` by the letter), whose repair is a new checker rule or a new reading of clang's warning: a ruling no rule reaches, a sitting's (CLAUDE.md § 4).
+
+    Repaired at `167d196b`, 2026-10-09 (lane land199, panel 199's R1 under reading R4, ratified the same day), gated by its cases and the compiler's own tests; the net is owed at the batch's close. `check` refuses, as `endless_recursion` (a thesis rule, no fix), a function every path of whose body reaches a call of itself before it returns, a call before it a way out only where its callee may end the program; the compiler-engineer's modules landed with four changes the landing found (a call's arguments walked before its callee, a function handed to the self-call no way out, a constant holding a function read as a function value, which spared a correct program R4 as built refused, the grown lists lent). The check case's 21 marks and the full case's 2 are red on the base, the permissive case pins the control arm; `check` of the harness root costs +1.47% in instructions, of the compiler +1.08%. Its misses, for filing apart (panel 199's R7): mutual recursion (`ping` and `pong`) and a self-call through a function value, both aborting at every level since defect 508's repair; and beside them, `stack exhausted in mixed.helper` names the frame that ran out and not the recursion (`adjacent`).
