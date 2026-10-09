@@ -1,0 +1,27 @@
+# Fixed defect 545, 2026-10-09 (panel 201's spec-warden). Symptom:
+# `ident<i64>(3)` was told *nothing named `i64` is in scope*, a true
+# sentence that never names the rule the program broke: a generic
+# function's type arguments are never written at the call (spec § 9). Cause:
+# the call parses as two comparisons, `ident < i64 > (3)`, so the type
+# stands where a value does and the resolver told it as an unknown name.
+# Repair: a type word read as a name, standing in `<…>` written right after
+# a name, alone or inside `[…]`, `{…: …}` or before `?`, is told by its
+# rule (`resolve/type_argument.hero`); the code stays `unknown_name`.
+# The shapes: one type argument, two after a UFCS call, an array's, a map's
+# two, a spaced `< i64 >`; and `a < i64`, a comparison, keeps its message.
+
+function ident<A>(x: A) -> A
+    return x
+
+function double(x: i64) -> i64
+    return x * 2
+
+function main()
+    ns: [i64] = [1, 2]
+    a: i64 = 2
+    print(ident < i64 > 3)  #~ unknown_name
+    print(ns.map < i64, i64 > double.len())  #~ unknown_name unknown_name
+    print(ident < [i64] > ns.len())  #~ unknown_name
+    print(ident < {str: bool} > {"a": true}.len())  #~ unknown_name unknown_name
+    print(ident < i64 > 3)  #~ unknown_name
+    print(a < i64)  #~ unknown_name
