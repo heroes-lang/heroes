@@ -1,1 +1,2 @@
-tests/golden/check/fixedbugs-456-a-broken-type-in-a-head-last-in-its-file.hero:19:9: error[expected_function_type]: expected `function` — in a type, `(` opens either `()` or a function type, `(function(A) -> B)`, found a name (`bool`)
+tests/golden/check/fixedbugs-456-a-broken-type-in-a-head-last-in-its-file.hero:24:9: error[expected_function_type]: expected `function` — in a type, `(` opens either `()` or a function type, `(function(A) -> B)`, found a name (`bool`)
+tests/golden/check/fixedbugs-456-a-broken-type-in-a-head-last-in-its-file.hero:25:1: error[missing_body]: the `function` `f` needs an indented body — one level deeper, exactly 4 spaces (found end of file)

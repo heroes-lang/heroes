@@ -1,0 +1,68 @@
+# Whether a head that failed over several lines went on to its body's margin
+# (design.md §4.17; defect 524, 2026-10-09).
+#
+# `parse/opening.body_follows` holds back the report that a failed head's
+# body is missing where the head crossed a line inside its brackets, since
+# its recovery can read the body's own line there: `function f(` over
+# `    y = 3 )`, or `function f(a: i64` over `print(a)` over `)`. It held it
+# back for every head that crossed a line, so `function f(a: i64,` over
+# `        b: 5)` over no body was told the `5` alone, where on one line it is
+# told its body too. A line at the body's margin, one level below the head's,
+# is where a body would stand, and only a head that went on to such a line
+# holds the report back; one whose every line past its first stands at
+# another margin is its own over them. A leaf over the tokens and the text,
+# outside `parse/` for that directory's budget.
+
+use token
+use cursor
+use text_lines
+
+# Whether the head begun at token `from`, read to the cursor, went on to a
+# line whose margin is one level below its own.
+function crossed(c: cursor.Cursor, text: str, from: i64) -> bool
+    body = text_lines.line_margin(text, at: c.tokens[from].span.start) + 4
+    i: i64 @ from + 1
+
+    while i < c.pos
+        start = c.tokens[i].span.start
+
+        if text_lines.newlines_between(text, from: c.tokens[i - 1].span.end, to: start) > 0 && text_lines.line_margin(text, at: start) == body
+            return true
+        i @ i + 1
+
+    return false
+
+test "a head went on to its body's margin only where a line past its first stands one level below it"
+    # function f(  /      y = 3 ): the second line at the body's margin.
+    swallowed = "function f(\n    y = 3 )\n"
+    tokens = [
+        token.made(.kw_function, start: 0, end: 8)
+        token.made(.ident, start: 9, end: 10)
+        token.made(.lparen, start: 10, end: 11)
+        token.made(.ident, start: 16, end: 17)
+        token.made(.eq, start: 18, end: 19)
+        token.made(.int_lit, start: 20, end: 21)
+        token.made(.rparen, start: 22, end: 23)
+        token.made(.terminator, start: 23, end: 23)
+        token.made(.eof, start: 24, end: 24)
+    ]
+    c: cursor.Cursor @ cursor.new_cursor(tokens)
+    c.pos @ 7
+    assert crossed(c, swallowed, from: 0)
+
+    # function f(a,  /          b): the second line deeper than a body.
+    aligned = "function f(a,\n        b)\n"
+    deeper = [
+        token.made(.kw_function, start: 0, end: 8)
+        token.made(.ident, start: 9, end: 10)
+        token.made(.lparen, start: 10, end: 11)
+        token.made(.ident, start: 11, end: 12)
+        token.made(.comma, start: 12, end: 13)
+        token.made(.ident, start: 22, end: 23)
+        token.made(.rparen, start: 23, end: 24)
+        token.made(.terminator, start: 24, end: 24)
+        token.made(.eof, start: 25, end: 25)
+    ]
+    d: cursor.Cursor @ cursor.new_cursor(deeper)
+    d.pos @ 7
+    assert !crossed(d, aligned, from: 0)
