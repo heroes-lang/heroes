@@ -17,7 +17,7 @@ variant Handle
         p: ptr
 
 function main()
-    h: Handle @ .live(p: malloc(size: 8))
+    h: Handle = .live(p: malloc(size: 8))
     by_handle: {Handle: i64} @ {}  #~ pointer_element
     by_handle[h] @ 1
     print(len(by_handle))

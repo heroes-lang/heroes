@@ -399,7 +399,7 @@ test "a comment after a block's last item is that block's where owners gives it 
     h: Fmt @ Fmt(printed: sheet.empty(), next_comment: 3, last_line: 7, dropped: 0, moved: 0, lines: lines)
     block_end(@h, s, parsed.comments, indent: 0)
     assert whole(h) == ""
-    trailed: Fmt @ Fmt(printed: sheet.empty(), next_comment: 4, last_line: 8, dropped: 0, moved: 0, lines: lines)
+    trailed: Fmt = Fmt(printed: sheet.empty(), next_comment: 4, last_line: 8, dropped: 0, moved: 0, lines: lines)
     assert !after_a_comment(trailed, s, parsed.comments)
 
 # The regression of defect 096's first repair (the skeptic seat's

@@ -120,7 +120,7 @@ test "the error channel takes every shape a diagnostic arrives in"
     eprint(text: "eprint says hello during the suite — this line is the test")
     eprint(text: "multi-byte: ziggy ★ stardust — 3-byte and 4-byte: 𝅘𝅥𝅮")
     eprint_raw(text: "already ends with its own newline\n")
-    long: str @ "buffer-crossing ".repeat(count: 512)
+    long: str = "buffer-crossing ".repeat(count: 512)
     eprint_raw(text: long + "\n")
 
     # The bytes are what the channel is measured in, not the characters

@@ -9,7 +9,7 @@
 # This case: `i16`, -32768 / -1.
 
 function main()
-    x: i16 @ -32768
-    y: i16 @ -1
+    x: i16 = -32768
+    y: i16 = -1
     print(x / 7)
     print(x / y)

@@ -9,7 +9,7 @@
 # This case: an `i8` quotient that fits first, then -128 / -1.
 
 function main()
-    x: i8 @ -128
-    y: i8 @ -1
+    x: i8 = -128
+    y: i8 = -1
     print(x / 2)
     print(x / y)

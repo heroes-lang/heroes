@@ -128,7 +128,7 @@ test "the line names the file and the one rule it is read by (defect 583)"
 # end as well; on Windows the backslash is the separator, and a name under it.
 function hard_names(windows: bool) -> [str]
     accent: [u8] = [195, 169]
-    names: [str] @ [
+    names: [str] = [
         "sp ace.o"
         "apo'st.o"
         "caf" + accent.validated_bytes().must() + ".o"

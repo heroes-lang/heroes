@@ -1,0 +1,15 @@
+# M-inferred-cell step 1, the shape panel 209's blind readers predicted
+# would cost two messages: a cell whose only re-binding misspells its name.
+# The sweep already keeps a name it offered as a repair out of the unused
+# rule (`suggested`), and the never-re-bound rule reads the same table, so
+# `total` is not told a second time; the mutation of the unknown name
+# carries, beside the rename, the note that says how a cell is declared
+# (R9), since a bare `name @ value` never declares.
+function total_of(xs: [i64]) -> i64
+    total: i64 @ 0
+    for x in xs
+        total @ total + x     #~ unknown_name
+    return total
+
+function main()
+    print(total_of([1, 2, 3]))

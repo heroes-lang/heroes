@@ -1,0 +1,8 @@
+# M-inferred-cell step 1: a cell written and never read is told by the
+# unused rule, `unused_binding`, and not by the never-re-bound rule, which
+# asks only of a cell that IS read; so one cell gets one message whichever
+# half of its life is missing.
+function main()
+    v: i64 @ 5           #~ unused_binding
+    v @ 6
+    print(1)

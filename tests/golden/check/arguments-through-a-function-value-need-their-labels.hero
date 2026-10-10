@@ -25,5 +25,5 @@ function copy_text(from: str, to: str) -> str
     return from + " -> " + to
 
 function main()
-    move: (function(from: str, to: str) -> str) @ copy_text
+    move: (function(from: str, to: str) -> str) = copy_text
     print(move("a", "b"))  #~ needs_label needs_label

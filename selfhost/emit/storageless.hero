@@ -141,7 +141,7 @@ test "a fixed literal renders braced at the use site, a field read stays an lval
     p = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
     out = resolve.resolve(p.tree, s, p.decls, p.uses)
-    c: state.Checked @ checker.check(p.tree, out, s, p.decls)
+    c: state.Checked = checker.check(p.tree, out, s, p.decls)
     assert c.diagnostics.len() == 0
     f32_id = table.lookup(c.types, .float_ty(kind: .f32)).must()
     fixed = table.lookup(c.types, .fixed(element: f32_id, length: 2)).must()

@@ -252,7 +252,7 @@ function op_name(op: ast.BinaryOp) -> str
 ## Tests
 
 function bare_checker() -> state.Checker
-    r: resolved.Resolved @ resolved.new_resolved()
+    r: resolved.Resolved = resolved.new_resolved()
     return state.new_checker(out_of: r, expr_count: 0)
 
 function no_decls() -> [ast.Decl]
@@ -304,7 +304,7 @@ test "equality wants one type, ordering wants a number, logic wants bool"
 test "a partial record refuses == transitively, with the record named"
     p = parse.parse("extern \"s.h\"\n    record Font partial\n        size: i64\n")
     s = source.new_source(name: "t.hero", text: "extern \"s.h\"\n    record Font partial\n        size: i64\n")
-    r: resolved.Resolved @ resolved.new_resolved()
+    r: resolved.Resolved = resolved.new_resolved()
     c: state.Checker @ state.new_checker(out_of: r, expr_count: 0)
     font = table.intern(@c.out.types, .named(decl: 0))
     xs = table.intern(@c.out.types, .array(element: font))

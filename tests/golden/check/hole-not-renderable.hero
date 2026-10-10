@@ -14,7 +14,7 @@ record P
 function main()
     p = P(x: 1)
     xs: [i64] = [1, 2]
-    m: {str: i64} @ {"k": 7}
+    m: {str: i64} = {"k": 7}
     print(f"a record {p} has no text")  #~ hole_not_renderable
     print(f"nor does {xs}")  #~ hole_not_renderable
     print(f"nor a maybe {m["k"]}")  #~ hole_not_renderable

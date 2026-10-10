@@ -8,5 +8,5 @@
 
 function main()
     n = 3
-    x: i64 @ "a"  #~ type_mismatch
+    x: i64 = "a"  #~ type_mismatch
     print(x)

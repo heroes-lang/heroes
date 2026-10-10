@@ -16,7 +16,7 @@ extern "dead-handle-returned-by-a-callback-is-checked.h"
     function ask(cb: (function(i32) -> Node)) -> i64
 
 function give(k: i32) -> Node
-    m: Node @ node_new()
+    m: Node = node_new()
 
     if k > 2
         node_free(n: m)

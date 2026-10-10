@@ -16,5 +16,5 @@ function report(code: str, at: i64) -> str
     return code + "/" + at.to_str()
 
 function main()
-    f: (function(str, i64) -> str) @ report
+    f: (function(str, i64) -> str) = report
     print(f(nonsense: "a", rubbish: 2))  #~ label_on_function_value label_on_function_value

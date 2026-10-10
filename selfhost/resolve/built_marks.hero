@@ -47,6 +47,7 @@ use handles
 use inventory
 use label_errors
 use resolve/state
+use resolve/meant
 
 # The arguments of a call whose callee, the node at `callee` (the method node
 # itself for a qualified name or UFCS), the walk has just resolved, each `@`
@@ -54,6 +55,14 @@ use resolve/state
 # the checker's `marker_mismatch` for anything else. `receiver` says a UFCS
 # receiver is the first parameter, so the arguments begin at the second.
 function of_a_call(@r: state.Resolver, a: ast.Ast, s: source.Source, decls: [ast.Decl], callee: i64, receiver: bool, given: [ast.Arg]) -> [ast.Arg]
+    # What the callee's signature says the author meant to write is read
+    # before the marks are, marked or not (panel 209's R1b,
+    # `resolve/meant.hero`): a cell handed bare to an `@` parameter is one
+    # the checker will mark with a certain fix, and a cell handed `@` where
+    # none is taken is one the checker, or `unmarked` below, will refuse;
+    # neither is told a second time as a cell nothing re-binds.
+    meant.meant_by_signature(@r, a, s, takes_at(r, decls, callee), first: first_position(receiver), given: given)
+
     if !any_marked(given)
         return given
 
@@ -68,12 +77,7 @@ function of_a_call(@r: state.Resolver, a: ast.Ast, s: source.Source, decls: [ast
                     tell = !handles.is_handle(decls[t.at])
                     return unmarked(@r, a, s, built: built, what: "a `record`", tell: tell, given: given)
                 .function_decl fd =>
-                    writes: [bool] @ []
-
-                    for p in fd.value.params
-                        writes @ writes.push(p.mutable)
-
-                    return beside(writes, first: first_position(receiver), given: given)
+                    return beside(param_writes(fd.value.params), first: first_position(receiver), given: given)
                 # No function: told as what it is, a constant or a variant
                 # called; a test has no name a call can write.
                 .constant_decl | .variant_decl | .test_decl => return set_aside(given)
@@ -94,9 +98,35 @@ function of_a_call(@r: state.Resolver, a: ast.Ast, s: source.Source, decls: [ast
         # module called is told as no value. None is known to write back.
         .local | .unresolved | .module => return set_aside(given)
 
+# Which parameter of the callee takes an `@`, in order: a function's own
+# marks, `end_lease`'s one, and none for every other callee (a construction,
+# a constant called, a function value, a built-in that changes nothing).
+function takes_at(r: state.Resolver, decls: [ast.Decl], callee: i64) -> [bool]
+    match r.out.uses[callee]
+        .top t =>
+            match decls[t.at].kind
+                .function_decl fd                                          => return param_writes(fd.value.params)
+                .record_decl | .constant_decl | .variant_decl | .test_decl => return NO_WRITES
+        .builtin b =>
+            if inventory.name_of(b.at) == "end_lease"
+                return END_LEASE_WRITES
+            return NO_WRITES
+        .local | .unresolved | .module => return NO_WRITES
+
+function param_writes(params: [ast.Param]) -> [bool]
+    writes: [bool] @ []
+
+    for p in params
+        writes @ writes.push(p.mutable)
+
+    return writes
+
 # The arguments of a variant case, `name` its case: all of them, since a case
 # is always built.
 function of_a_case(@r: state.Resolver, a: ast.Ast, s: source.Source, name: token.Span, given: [ast.Arg]) -> [ast.Arg]
+    # A case takes no `@`, so every one given names a cell the author meant
+    # to write (panel 209's R1b, as `of_a_call` reads a callee's marks).
+    meant.meant_by_signature(@r, a, s, NO_WRITES, first: 0, given: given)
     built = "." + source.span_text(s, name)
     return unmarked(@r, a, s, built: built, what: "a case of a `variant`", tell: true, given: given)
 
@@ -113,6 +143,11 @@ function any_marked(given: [ast.Arg]) -> bool
 # `end_lease`'s one parameter, the cell it frees, which takes an `@`.
 constant END_LEASE_WRITES: [bool]
     [true]
+
+# A callee no parameter of which takes an `@`: a value called, a built-in
+# other than `end_lease`.
+constant NO_WRITES: [bool]
+    []
 
 # Where the written arguments begin among the parameters: at the second
 # where a UFCS receiver is the first.

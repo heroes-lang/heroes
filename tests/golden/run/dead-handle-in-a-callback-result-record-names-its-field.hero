@@ -17,7 +17,7 @@ extern "dead-handle-in-a-callback-result-record-names-its-field.h"
     function one() -> i64
 
 function give(k: i32) -> Pair
-    p: Pair @ Pair(a: node_new(), b: node_new())
+    p: Pair = Pair(a: node_new(), b: node_new())
 
     if one() == k.to_i64().must()
         node_free(n: p.b)

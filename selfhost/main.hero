@@ -219,7 +219,7 @@ function command(_: i64) -> i64
     if read.is_err()
         io.eprint(text: "error: " + message_of_source(read))
         exit(code: 2)
-    s: source.Source @ read.must()
+    s: source.Source = read.must()
     verdict: cli_table.Exit @ .ok_exit
 
     match inv.tag

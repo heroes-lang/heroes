@@ -28,6 +28,10 @@ function report(@r: state.Resolver, s: source.Source)
 
     for local in r.out.locals
         if local.reads > 0
+            if rebound_nowhere(r, s, local)
+                gathered @ gathered.push(
+                    errors.never_rebound(source.span_text(s, local.name), span: local.name, symbol: local.symbol)
+                )
             continue
         module = source.module_at(s, local.name.start)
 
@@ -56,6 +60,19 @@ function report(@r: state.Resolver, s: source.Source)
 
     for d in gathered
         state.push_diagnostic(@r, d)
+
+# R1b (panel 209): a cell with no write after its birth, a write through an
+# `@` argument counted (`writes.inout_root`), outside a hole's module, and
+# not offered as the repair for a name that resolved to nothing, where the
+# one message is the `unknown_name`'s (`totl @ total + x`).
+function rebound_nowhere(r: state.Resolver, s: source.Source, local: resolved.Local) -> bool
+    if local.kind != .cell || local.writes > 0
+        return false
+    module = source.module_at(s, local.name.start)
+
+    if resolved.hole_covers(r.out, module)
+        return false
+    return !state.keyed_has(r.suggested, module: module, name: source.span_text(s, local.name))
 
 ## Tests
 

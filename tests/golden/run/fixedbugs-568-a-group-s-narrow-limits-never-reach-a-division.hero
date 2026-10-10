@@ -17,14 +17,14 @@ extern "fixedbugs-568-a-group-s-narrow-limits-never-reach-a-division.h"
     function narrow_limits_answer() -> i32
 
 function main()
-    a: i8 @ 0
-    b: i8 @ -1
+    a: i8 = 0
+    b: i8 = -1
     print(a / b)
-    c: i16 @ 0
-    d: i16 @ -1
+    c: i16 = 0
+    d: i16 = -1
     print(c / d)
-    e: i32 @ 0
-    f: i32 @ -1
+    e: i32 = 0
+    f: i32 = -1
     print(e / f, narrow_limits_answer())
-    x: i32 @ -2147483648
+    x: i32 = -2147483648
     print(x / f)

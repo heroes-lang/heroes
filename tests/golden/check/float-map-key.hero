@@ -38,7 +38,7 @@ variant Reading
 
 function main()
     # The key IS a float — the type is the whole answer.
-    direct: {f64: i64} @ {}              #~ float_map_key
+    direct: {f64: i64} = {}              #~ float_map_key
     print(len(direct))
 
     # A literal, where no annotation exists to point at: the span is the first
@@ -48,27 +48,27 @@ function main()
 
     # Through a record's field, named so the reader is not left comparing a type
     # name against a rule.
-    through: {Point: i64} @ {}           #~ float_map_key
+    through: {Point: i64} = {}           #~ float_map_key
     print(len(through))
 
     # Two levels down, and through a variant's payload — the route a list of
     # container kinds would miss, because a case payload is not a container.
-    nested: {Wrapper: i64} @ {}          #~ float_map_key
+    nested: {Wrapper: i64} = {}          #~ float_map_key
     print(len(nested))
-    cased: {Reading: i64} @ {}           #~ float_map_key
+    cased: {Reading: i64} = {}           #~ float_map_key
     print(len(cased))
 
     # And a fixed array of floats, which is a C struct member and still a float.
     # This one is here because `Ty::Fixed` is a separate variant from `Ty::Array`
     # and a walk that forgot it would be silent.
-    fixed: {f32: i64} @ {}               #~ float_map_key
+    fixed: {f32: i64} = {}               #~ float_map_key
     print(len(fixed))
 
     # THE CONTROLS. A float as a VALUE is untouched — that is the whole point of
     # refusing only the key — and so is an ordinary key. If either of these grows
     # a diagnostic, the rule has spread past what the sitting adopted and every
     # program holding a measurement is broken.
-    values: {str: f64} @ {"pi": 3.14}
+    values: {str: f64} = {"pi": 3.14}
     print(values["pi"].default(0.0))
-    ints: {i64: f64} @ {1: 2.5}
+    ints: {i64: f64} = {1: 2.5}
     print(ints[1].default(0.0))

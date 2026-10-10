@@ -59,11 +59,11 @@ function main()
     t: Shape = .dot(c: b)
     print(s == t)                       #~ ffi_partial_operation
     # …and as a map key, which fires on no operator the author wrote.
-    keyed: {Color: i64} @ {}            #~ ffi_partial_operation
+    keyed: {Color: i64} = {}            #~ ffi_partial_operation
     print(len(keyed))
     literal = {a: 1}                    #~ ffi_partial_operation
     print(len(literal))
 
     # Permitted: a map VALUE never reaches `hash`.
-    fine: {i64: Color} @ {}
+    fine: {i64: Color} = {}
     print(len(fine))

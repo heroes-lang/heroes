@@ -298,7 +298,7 @@ test "a comment never rests under the cursor but is kept"
         token.Token(kind: .kw_function, span: token.Span(start: 7, end: 15))
         token.Token(kind: .eof, span: token.Span(start: 15, end: 15))
     ]
-    c: Cursor @ new_cursor(tokens)
+    c: Cursor = new_cursor(tokens)
     assert current_kind(c) == .kw_function
     assert c.comments.len() == 1
     assert c.pos == 1
@@ -346,7 +346,7 @@ test "peek sees what the grammar sees, skipping comments"
         token.Token(kind: .colon, span: token.Span(start: 6, end: 7))
         token.Token(kind: .eof, span: token.Span(start: 7, end: 7))
     ]
-    c: Cursor @ new_cursor(tokens)
+    c: Cursor = new_cursor(tokens)
     assert peek(c, 0) == .ident
     assert peek(c, 1) == .colon
 
@@ -579,7 +579,7 @@ test "fixedbugs: past the boundary, the fallback is what the caret gets"
     keyword = token.Span(start: 0, end: 8)
 
     # Unbounded: the current token answers, whatever it is.
-    plain: Cursor @ new_cursor(tokens)
+    plain: Cursor = new_cursor(tokens)
     assert here_or(plain, keyword).start == current_span(plain).start
 
     # Bounded: a token at or past the author's end yields the fallback.

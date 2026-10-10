@@ -55,7 +55,7 @@ function main()
 
     # The original is untouched — a record is a value (§4.10).
     print(h.f(21))
-    s: Step @ .apply(g: double)
+    s: Step = .apply(g: double)
 
     match s
         .apply a =>

@@ -370,10 +370,10 @@ test "a digit moves by one, and the top digit of the base goes down"
     assert neighbouring_digit("").is_err()
 
 test "a code literal is read without its quotes, and an escape is skipped"
-    s: source.Source @ source.new_source(name: "x.hero", text: "\"unknown_char\"")
+    s: source.Source = source.new_source(name: "x.hero", text: "\"unknown_char\"")
     whole = token.Span(start: 0, end: 14)
     assert code_text(s: s, span: whole).default("") == "unknown_char"
-    escaped: source.Source @ source.new_source(name: "x.hero", text: "\"a\\nb\"")
+    escaped: source.Source = source.new_source(name: "x.hero", text: "\"a\\nb\"")
     assert code_text(s: escaped, span: token.Span(start: 0, end: 6)).is_err()
-    short: source.Source @ source.new_source(name: "x.hero", text: "\"ab\"")
+    short: source.Source = source.new_source(name: "x.hero", text: "\"ab\"")
     assert code_text(s: short, span: token.Span(start: 0, end: 4)).is_err()

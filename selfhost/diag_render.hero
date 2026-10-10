@@ -212,7 +212,7 @@ test "the excerpt writes a control character by its code, and the caret stands u
     text = "function main()\n    x = 1 " + esc + "[31mred\n"
     s = source.new_source(name: "t.hero", text: text)
     at = token.Span(start: 26, end: 27)
-    d: diag.Diagnostic @ diag.new_diagnostic(code: "unexpected_character", message: "m", span: at)
+    d: diag.Diagnostic = diag.new_diagnostic(code: "unexpected_character", message: "m", span: at)
     got = render(d, s)
     assert diag_has(text: got, needle: "  2 |     x = 1 <U+001B>[31mred\n")
     assert diag_has(text: got, needle: "    |           ^^^^^^^^\n")

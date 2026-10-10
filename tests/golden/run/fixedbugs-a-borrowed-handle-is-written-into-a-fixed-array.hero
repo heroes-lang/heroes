@@ -23,6 +23,6 @@ function main()
     f: Four @ Four(a: [nullptr, nullptr, nullptr, nullptr])
     f.a[0] @ ob_new(n: 1)
     f.a[3] @ ob_new(n: 20)
-    k: i64 @ len(args()) + 2
+    k: i64 = len(args()) + 2
     f.a[k] @ ob_new(n: 300)
     print("sum: ", four_sum(f: f), " unwritten: ", f.a[1] == nullptr)

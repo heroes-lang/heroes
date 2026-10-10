@@ -1,0 +1,1 @@
+tests/golden/check/never-rebound-beside-a-refused-marker.hero:12:16: error[marker_mismatch]: `One(…)` builds a `record`, which keeps a copy of each value: the `@` in `x: @n` says `n` is changed and written back, and only a function's `@` parameter does that (§4.8)

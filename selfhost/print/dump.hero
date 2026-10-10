@@ -166,7 +166,7 @@ function extern_prefix(s: source.Source, header: token.Span?, library: ast.Libra
     return out + " "
 
 function signature(tree: ast.Ast, s: source.Source, name: str, f: ast.FunctionDecl) -> str
-    out: str @ extern_prefix(s, header: f.header, library: f.library) + "function " + name + sig.generics_text(s, f.generics)
+    out: str = extern_prefix(s, header: f.header, library: f.library) + "function " + name + sig.generics_text(s, f.generics)
     rendered: [str] @ []
 
     for param in f.params

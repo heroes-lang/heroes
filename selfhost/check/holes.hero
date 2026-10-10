@@ -268,7 +268,7 @@ test "a hole reports the expected type, the scope, the fields and the makers"
     parsed = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
     out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
-    c: state.Checked @ checker.check(parsed.tree, out, s, parsed.decls)
+    c: state.Checked = checker.check(parsed.tree, out, s, parsed.decls)
     assert c.diagnostics.len() == 0
     assert c.holes.len() == 1
     got = report(parsed.tree, out, c, s, parsed.decls)

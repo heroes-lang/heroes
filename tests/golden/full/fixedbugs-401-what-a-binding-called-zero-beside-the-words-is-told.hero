@@ -28,7 +28,7 @@ function first(xs: [i32]) -> i32
     return total
 
 function main()
-    zero: i64 @ 2
+    zero: i64 = 2
     print(zero, first([1]))
     h = Hr(a: 1, rest: zero)  #~ rest_outside_a_group
     s: Shape = .ring(r: 2, rest: zero)  #~ rest_outside_a_group

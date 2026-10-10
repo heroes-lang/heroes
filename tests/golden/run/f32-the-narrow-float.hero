@@ -19,19 +19,19 @@ function main()
     print(a)
 
     # The width shows itself: 2^24+1 has no binary32 representation.
-    edge: f32 @ 16777217.0
+    edge: f32 = 16777217.0
     print(edge)
 
     # Rendering stops at the width's own shortest round-trip; widening reveals
     # what was actually stored.
-    tenth: f32 @ 0.1
+    tenth: f32 = 0.1
     print(tenth)
     print(to_f64(tenth))
 
     # Infallible in both directions, and `inf` is an answer rather than an error.
-    big: f64 @ 340282350000000000000000000000000000000.0
+    big: f64 = 340282350000000000000000000000000000000.0
     print(to_f32(big))
-    huge: f64 @ 3402823500000000000000000000000000000000.0
+    huge: f64 = 3402823500000000000000000000000000000000.0
     print(to_f32(huge))
 
     # An `f32` is an ordinary value: it has a descriptor, so it lives in a

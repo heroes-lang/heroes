@@ -23,8 +23,8 @@
 # width now has to answer there, and answering wrongly is a Rust compile error.
 
 function main()
-    n: u64 @ 18446744073709551615
+    n: u64 = 18446744073709551615
     print(n)
     print(n.to_str())
-    small: u64 @ 42
+    small: u64 = 42
     print(small.to_str())

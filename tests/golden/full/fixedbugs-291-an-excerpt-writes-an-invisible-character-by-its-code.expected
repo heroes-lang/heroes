@@ -1,17 +1,17 @@
 error[type_mismatch]: expected `i64`, found `str`
   at tests/golden/full/fixedbugs-291-an-excerpt-writes-an-invisible-character-by-its-code.hero:10:14
      |
-  10 |     a: i64 @ "a<U+00A0>b<U+200B>c"  #~ type_mismatch
+  10 |     a: i64 = "a<U+00A0>b<U+200B>c"  #~ type_mismatch
      |              ^^^^^^^^^^^^^^^^^^^^^
 
 error[type_mismatch]: expected `i64`, found `str`
   at tests/golden/full/fixedbugs-291-an-excerpt-writes-an-invisible-character-by-its-code.hero:11:14
      |
-  11 |     b: i64 @ "<U+FEFF>d"  #~ type_mismatch
+  11 |     b: i64 = "<U+FEFF>d"  #~ type_mismatch
      |              ^^^^^^^^^^^
 
 error[type_mismatch]: expected `i64`, found `str`
   at tests/golden/full/fixedbugs-291-an-excerpt-writes-an-invisible-character-by-its-code.hero:12:14
      |
-  12 |     c: i64 @ "café €"  #~ type_mismatch
+  12 |     c: i64 = "café €"  #~ type_mismatch
      |              ^^^^^^^^

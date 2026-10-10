@@ -1,0 +1,13 @@
+# M-inferred-cell step 1: a write into an element or a field of a cell
+# re-binds the cell (spec § 5, *or a field or element inside one*), so a
+# cell written only through its parts is a cell.
+record Pair
+    a: i64
+    b: i64
+
+function main()
+    xs: [i64] @ [1, 2]
+    xs[0] @ 7
+    p: Pair @ Pair(a: 1, b: 2)
+    p.b @ 9
+    print(xs[0] + p.b)

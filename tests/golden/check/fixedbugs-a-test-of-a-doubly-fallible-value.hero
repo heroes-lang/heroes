@@ -44,7 +44,7 @@ function main()
         print("the stored value failed")
 
     # The second door: no map, a library generic, the same silence.
-    xs: [i64?] @ [ok(1)]
+    xs: [i64?] = [ok(1)]
     hit = find(xs, failed)
 
     #~v nested_read
@@ -54,7 +54,7 @@ function main()
     # And the neighbours the refusal must not reach. A single-level fallible
     # answers `bool` as it always did; the two ways to ask a nested one both
     # stand, and each names the level it asks about.
-    n: i64? @ ok(1)
+    n: i64? = ok(1)
     print(f"{n.is_err()}")
 
     match m["a"]

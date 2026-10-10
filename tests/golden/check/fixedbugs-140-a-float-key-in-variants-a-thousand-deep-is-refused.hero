@@ -5014,5 +5014,5 @@ variant R999
     b
 
 function main()
-    m: {R999: i64} @ {}  #~ float_map_key
+    m: {R999: i64} = {}  #~ float_map_key
     print(len(m))

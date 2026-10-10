@@ -374,7 +374,7 @@ test "a field the dump does not show puts the record's every question under the 
     tree = "         0 | struct hero_ly_0\n         0 |   S3 v\n         0 |     int32_t a\n         4 |     int32_t b\n         8 |     int32_t c\n           | [sizeof=12, align=4]\n"
     rows = layout_rows.rows_of(tree)
     read = layout_text.members(rows: rows, from: layout_text.heads(rows)[0].must()).must()
-    no_sizes: {str: i64} @ {}
+    no_sizes: {str: i64} = {}
     got = record_lines(
         layout_text.asked(s, parsed.decls)[0],
         hero_name: "S3",

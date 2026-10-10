@@ -58,7 +58,7 @@ function marked(length: i64) -> diag.Diagnostic
 # The one message for a text in UTF-16 with no mark, where every other byte
 # is NUL, at the first NUL; none for any other text.
 function utf16_told(text: str) -> [diag.Diagnostic]
-    out: [diag.Diagnostic] @ []
+    out: [diag.Diagnostic] = []
     order = byte_evidence.utf16_order(text)
 
     if order.len() == 0

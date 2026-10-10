@@ -18,7 +18,7 @@ function main()
     s = "abc"
     c: cstr @ s.lease()
     g = c  #~ lease_escapes
-    h: cstr @ c  #~ lease_escapes
+    h: cstr = c  #~ lease_escapes
     print(strlen(s: g))
     print(strlen(s: h))
     end_lease(@c)

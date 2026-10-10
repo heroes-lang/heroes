@@ -229,7 +229,7 @@ test "a field named after a header macro that names no member is told on the fie
     assert source.span_text(s, d.must().span) == "size"
 
     # Not a macro, or an assertion of this compiler's at the line: another reader's.
-    none: {str: bool} @ {}
+    none: {str: bool} = {}
     assert macro_field(s, parsed.decls, line: "t.hero:4:52: error: expected identifier", macros: none).is_err()
     assert macro_field(
         s,

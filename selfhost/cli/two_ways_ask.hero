@@ -92,7 +92,7 @@ function listing(dir: str, text: str, words: [str]) -> str?
 # everything the answer depends on: the words, the unit's own text, and what
 # the headers resolve to and hold (`compiling.reads`).
 function answers(t: toolchain.Toolchain, probe: compiling.Probe, names: [str]) -> {str: Answer}
-    out: {str: Answer} @ {}
+    out: {str: Answer} = {}
 
     if names.len() == 0
         return out

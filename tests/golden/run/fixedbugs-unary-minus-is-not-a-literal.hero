@@ -37,7 +37,7 @@ function scaled(v: f64) -> f64
 
 function main()
     # A negative literal, at a width where the sign is what makes it fit.
-    small: i8 @ -128
+    small: i8 = -128
     print("literal ", small)
 
     # The sign on a name, on both numeric types.

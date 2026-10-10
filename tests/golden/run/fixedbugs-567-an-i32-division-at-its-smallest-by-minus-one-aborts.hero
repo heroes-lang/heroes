@@ -9,7 +9,7 @@
 # This case: `i32`, -2147483648 / -1, where C's own quotient is undefined.
 
 function main()
-    x: i32 @ -2147483648
-    y: i32 @ -1
+    x: i32 = -2147483648
+    y: i32 = -1
     print(x / 9)
     print(x / y)

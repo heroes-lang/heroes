@@ -1,0 +1,1 @@
+tests/golden/check/never-rebound-never-read-is-unused.hero:6:5: error[unused_binding]: `v` is written and never read — a cell nothing reads is a value nobody uses

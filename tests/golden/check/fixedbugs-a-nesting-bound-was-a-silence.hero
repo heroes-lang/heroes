@@ -146,12 +146,12 @@ record P17
 
 function main()
     # 17 levels deep: `check` 0 before the repair, and it ran and aborted.
-    deep: {F17: i64} @ {}  #~ float_map_key
+    deep: {F17: i64} = {}  #~ float_map_key
     print(len(deep))
-    a: P17 @ P17(
+    a: P17 = P17(
         inner: P16(inner: P15(inner: P14(inner: P13(inner: P12(inner: P11(inner: P10(inner: P9(inner: P8(inner: P7(inner: P6(inner: P5(inner: P4(inner: P3(inner: P2(inner: P1(inner: P0(inner: FileStat(st_size: 0))))))))))))))))))
     )
-    b: P17 @ P17(
+    b: P17 = P17(
         inner: P16(inner: P15(inner: P14(inner: P13(inner: P12(inner: P11(inner: P10(inner: P9(inner: P8(inner: P7(inner: P6(inner: P5(inner: P4(inner: P3(inner: P2(inner: P1(inner: P0(inner: FileStat(st_size: 0))))))))))))))))))
     )
     print(a == b)  #~ ffi_partial_operation
@@ -159,8 +159,8 @@ function main()
     # THE CONTROL, one level down from nothing: the same two rules at depth 1,
     # which were the only depths that ever worked. If either stops firing the
     # repair has traded one hole for another.
-    shallow: {F0: i64} @ {}  #~ float_map_key
+    shallow: {F0: i64} = {}  #~ float_map_key
     print(len(shallow))
-    c: P0 @ P0(inner: FileStat(st_size: 0))
-    d: P0 @ P0(inner: FileStat(st_size: 0))
+    c: P0 = P0(inner: FileStat(st_size: 0))
+    d: P0 = P0(inner: FileStat(st_size: 0))
     print(c == d)  #~ ffi_partial_operation

@@ -210,7 +210,7 @@ function read_back(stderr: str) -> [diag.Diagnostic]
     parsed = parse.parse(TEXT)
     s = source.new_source(name: "t.hero", text: TEXT)
     out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
-    c: state.Checked @ checker.check(parsed.tree, out, s, parsed.decls)
+    c: state.Checked = checker.check(parsed.tree, out, s, parsed.decls)
     assert c.diagnostics.len() == 0
     low = lower.lower(parsed.tree, out, c, s, parsed.decls)
     names = ctype.new_names(s, parsed.decls)

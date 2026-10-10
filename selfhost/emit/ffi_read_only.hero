@@ -296,7 +296,7 @@ test "the header's answer names the parameter and the type the call hands it to 
     parsed = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
     out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
-    c: state.Checked @ checker.check(parsed.tree, out, s, parsed.decls)
+    c: state.Checked = checker.check(parsed.tree, out, s, parsed.decls)
     assert c.diagnostics.len() == 0
     low = lower.lower(parsed.tree, out, c, s, parsed.decls)
     line = "t.hero:2:1: error: static assertion failed due to requirement '__builtin_types_compatible_p(unsigned char *, const unsigned char *)': heroes-ffi-writable SHA256_Final md unsigned char *restrict"
@@ -414,7 +414,7 @@ test "a function the header declares with no prototype is asked so, and told on 
     parsed = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
     out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
-    c: state.Checked @ checker.check(parsed.tree, out, s, parsed.decls)
+    c: state.Checked = checker.check(parsed.tree, out, s, parsed.decls)
     assert c.diagnostics.len() == 0
     low = lower.lower(parsed.tree, out, c, s, parsed.decls)
     line = "t.hero:2:1: error: static assertion failed due to requirement '!__builtin_types_compatible_p(int (), int (void *))': heroes-ffi-no-prototype kr_write 1"
@@ -453,7 +453,7 @@ test "a lend that crosses cast is asked for a byte, and a pointer to none is tol
     parsed = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
     out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
-    c: state.Checked @ checker.check(parsed.tree, out, s, parsed.decls)
+    c: state.Checked = checker.check(parsed.tree, out, s, parsed.decls)
     assert c.diagnostics.len() == 0
     low = lower.lower(parsed.tree, out, c, s, parsed.decls)
     line = "t.hero:2:1: error: static assertion failed due to requirement 'x': heroes-ffi-bytes f p const int *"

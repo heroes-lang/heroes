@@ -449,7 +449,7 @@ function named_up(text: str) -> Names
     p = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
     out = resolve.resolve(p.tree, s, p.decls, p.uses)
-    c: state.Checked @ checker.check(p.tree, out, s, p.decls)
+    c: state.Checked = checker.check(p.tree, out, s, p.decls)
     assert c.diagnostics.len() == 0
     low = lower.lower(p.tree, out, c, s, p.decls)
     names = new_names(s, p.decls)
@@ -489,7 +489,7 @@ test "the unit rule: no C type for unit or fixed, void only as a result"
     p = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
     out = resolve.resolve(p.tree, s, p.decls, p.uses)
-    c: state.Checked @ checker.check(p.tree, out, s, p.decls)
+    c: state.Checked = checker.check(p.tree, out, s, p.decls)
     names = new_names(s, p.decls)
     unit_id = table.unit_ty(c.types)
     assert c_type(names, c: c, ty: unit_id).is_err()
@@ -523,7 +523,7 @@ test "a container walked once per seen set finds the function types a fresh walk
     p = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
     out = resolve.resolve(p.tree, s, p.decls, p.uses)
-    c: state.Checked @ checker.check(p.tree, out, s, p.decls)
+    c: state.Checked = checker.check(p.tree, out, s, p.decls)
     assert c.diagnostics.len() == 0
     alone: {i64: bool} @ {}
     shared: {i64: bool} @ {}

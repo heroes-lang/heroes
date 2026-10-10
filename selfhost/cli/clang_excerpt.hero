@@ -17,7 +17,7 @@ function of(rows: [str], after: i64) -> str?
     while index < line.len() && line[index] == ' '
         index @ index + 1
 
-    digits: i64 @ index
+    digits: i64 = index
 
     while index < line.len() && line[index] >= '0' && line[index] <= '9'
         index @ index + 1

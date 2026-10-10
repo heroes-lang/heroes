@@ -21,7 +21,7 @@
 # Bulk regression case.
 
 function wrap<T>(x: T) -> [T]
-    out: [T] @ []
+    out: [T] = []
     return out.push(x)
 
 function depth<T>(x: T, n: i64) -> i64

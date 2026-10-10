@@ -119,7 +119,7 @@ test "a construction asks for each field it leaves out, and for two it names in 
     groups["i"] @ 1
     groups["f"] @ 1
     groups["x"] @ -1
-    none: {str: bool} @ {}
+    none: {str: bool} = {}
     short = site_lines(u.sites[0], t: "SA", hero_name: "SA", order: order, group_of: groups, unsized: none, s: s)
 
     # `i` and `x` are left out, each asked against `kind` and `f` at line 9.

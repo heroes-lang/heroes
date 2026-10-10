@@ -211,7 +211,7 @@ test "the worklist reaches an element, a payload, and expands as it drains"
     p = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
     out = resolve.resolve(p.tree, s, p.decls, p.uses)
-    c: state.Checked @ checker.check(p.tree, out, s, p.decls)
+    c: state.Checked = checker.check(p.tree, out, s, p.decls)
     assert c.diagnostics.len() == 0
 
     # Reachable: everything the program's own types mention — built the
@@ -279,7 +279,7 @@ test "an array a signature interned and nobody builds gets no descriptor"
     p = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
     out = resolve.resolve(p.tree, s, p.decls, p.uses)
-    c: state.Checked @ checker.check(p.tree, out, s, p.decls)
+    c: state.Checked = checker.check(p.tree, out, s, p.decls)
     assert c.diagnostics.len() == 0
     reachable: {i64: bool} @ {}
     count_types = table.len_of(c.types)
@@ -290,7 +290,7 @@ test "an array a signature interned and nobody builds gets no descriptor"
         id @ id + 1
 
     # Nothing constructed: the empty map is the whole point of the case.
-    nothing: {i64: bool} @ {}
+    nothing: {i64: bool} = {}
     assert generated(c, p.decls, reachable: reachable, constructed: nothing, want: synth.everything(), kinds: phases.type_kinds(c)).len() == 0
 
     # And the same program WITH the array built asks for Row's

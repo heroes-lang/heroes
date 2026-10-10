@@ -274,5 +274,5 @@ test "the author's parentheses around a comment the one-line text breaks at are 
     printed = aligned.lexed("ys[a]")
     matched = aligned.aligned(c, text: "ys[a]", written: written, printed: printed)
     assert matched == [0, 1, -1, 2, -1, 3]
-    f: page.Fmt @ page.blank_page()
+    f: page.Fmt = page.blank_page()
     assert restored(f, c, text: "ys[a]", written: written, printed: printed, matched: matched, to: 65) == "ys[(a)]"

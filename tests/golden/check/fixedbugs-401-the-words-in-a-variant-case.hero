@@ -31,7 +31,7 @@ function a_binding_and_a_field_called_rest() -> Shape
     return .ring(r: 2, rest: zero)  #~ rest_outside_a_group
 
 function a_binding_read_elsewhere() -> Shape
-    zero: i64 @ 3
+    zero: i64 = 3
     print(zero)
     return .ring(r: 2, rest: zero)  #~ rest_outside_a_group
 

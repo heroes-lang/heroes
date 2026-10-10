@@ -6,7 +6,7 @@
 # holds every shape). Not canonical on purpose, as that case says.
 
 function main()
-    a: i8 @ -(-128)  #~ int_out_of_range
+    a: i8 = -(-128)  #~ int_out_of_range
     print(a)
     e: bool = (1 + 2) * 3  #~ type_mismatch
     print(e)

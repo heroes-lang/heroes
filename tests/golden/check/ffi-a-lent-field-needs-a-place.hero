@@ -41,7 +41,7 @@ extern "ffi-a-lent-field-needs-a-place.h"
     function slot_make() -> Slot
 
 function kept(s: Slot) -> i64
-    k: ptr @ s.b.ptr()  #~ field_lend_escapes
+    k: ptr = s.b.ptr()  #~ field_lend_escapes
     return slot_sum(p: k, n: 4)
 
 function unheld() -> i64

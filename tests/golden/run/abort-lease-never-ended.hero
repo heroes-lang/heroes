@@ -9,5 +9,5 @@ extern "string.h"
     function strlen(s: cstr) -> u64
 
 function main()
-    c: cstr @ "twelve bytes".lease()
+    c: cstr = "twelve bytes".lease()
     print(strlen(s: c))

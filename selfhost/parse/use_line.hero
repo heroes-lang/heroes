@@ -181,7 +181,7 @@ function climbs(@c: cursor.Cursor, text: str, keyword: token.Span)
 # separator, which is the character that made the line a path.
 function part_missing(@c: cursor.Cursor, text: str, name: token.Span, slash: token.Span)
     written = cursor.slice_of(text, name)
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic = diag.new_diagnostic(
         code: "module_path_wants_a_part",
         message: "a `/` in a `use` joins two names with nothing between them — `use " + written + "/decl` names one module, and `use " + written + "` names another",
         span: slash

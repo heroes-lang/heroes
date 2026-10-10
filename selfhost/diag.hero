@@ -182,6 +182,7 @@ function new_unsupported(code: str, message: str, span: token.Span) -> Diagnosti
 function is_thesis_rule(d: Diagnostic) -> bool
     codes = [
         "unused_binding"
+        "never_rebound"
         "hole_without_f"
         "shadowed_binding"
         "builtin_name_taken"

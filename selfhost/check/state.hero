@@ -286,10 +286,10 @@ function record_expr(@c: Checker, at: i64, ty: i64) -> i64
 test "a local is typed by the position of its name, not by walk order"
     r: resolved.Resolved @ resolved.new_resolved()
     r.locals @ r.locals.push(
-        resolved.Local(name: token.Span(start: 10, end: 11), kind: .bind, mutable: false, owner: 0, depth: 0, ty: fail(code: "absent", msg: "inferred"), value: fail(code: "absent", msg: "none"), reads: 1, writes: 0)
+        resolved.Local(name: token.Span(start: 10, end: 11), kind: .bind, mutable: false, owner: 0, depth: 0, ty: fail(code: "absent", msg: "inferred"), value: fail(code: "absent", msg: "none"), reads: 1, writes: 0, symbol: token.Span(start: 0, end: 0))
     )
     r.locals @ r.locals.push(
-        resolved.Local(name: token.Span(start: 30, end: 31), kind: .cell, mutable: true, owner: 0, depth: 0, ty: fail(code: "absent", msg: "x"), value: fail(code: "absent", msg: "x"), reads: 1, writes: 1)
+        resolved.Local(name: token.Span(start: 30, end: 31), kind: .cell, mutable: true, owner: 0, depth: 0, ty: fail(code: "absent", msg: "x"), value: fail(code: "absent", msg: "x"), reads: 1, writes: 1, symbol: token.Span(start: 32, end: 33))
     )
     c: Checker @ new_checker(out_of: r, expr_count: 2)
     bind_local(@c, token.Span(start: 30, end: 31), table.str_ty(c.out.types))
@@ -300,7 +300,7 @@ test "a local is typed by the position of its name, not by walk order"
     bind_local(@c, token.Span(start: 99, end: 100), 4)
 
 test "an expression's type is recorded dense, error until someone says"
-    r: resolved.Resolved @ resolved.new_resolved()
+    r: resolved.Resolved = resolved.new_resolved()
     c: Checker @ new_checker(out_of: r, expr_count: 3)
     assert c.out.expr_types.len() == 3
     assert c.out.expr_types[1] == table.error_ty(c.out.types)

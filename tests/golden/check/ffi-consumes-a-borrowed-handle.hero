@@ -31,7 +31,7 @@ function closed(h: Holder)
 # A local is not borrowed from anybody, so consuming one is the ordinary case
 # and is left alone.
 function fine()
-    p: Block @ malloc(size: 8)
+    p: Block = malloc(size: 8)
     free(p)
 
 # An `@` parameter says on the signature that the value does not survive, which

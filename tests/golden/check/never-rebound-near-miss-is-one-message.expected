@@ -1,0 +1,1 @@
+tests/golden/check/never-rebound-near-miss-is-one-message.hero:11:9: error[unknown_name]: nothing named `totl` is in scope — did you mean `total`?

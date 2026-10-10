@@ -57,5 +57,5 @@ function main()
 
     # The other direction is untouched and still copies: a terminated run of
     # the same kind of field is text.
-    t: Slot @ Slot(nsap: [72, 105, 0, 0, 0, 0, 0, 0], tag: [0, 0, 0, 0], id: 1)
+    t: Slot = Slot(nsap: [72, 105, 0, 0, 0, 0, 0, 0], tag: [0, 0, 0, 0], id: 1)
     print(t.nsap.validated_bytes().must())

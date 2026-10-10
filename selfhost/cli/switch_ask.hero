@@ -106,7 +106,7 @@ function questions(names: [str]) -> str
 
 # The names whose question clang reached and called nothing undeclared in.
 function declared(t: toolchain.Toolchain, under: compiling.Compiling, text: str) -> [str]
-    out: [str] @ []
+    out: [str] = []
     path = publish.private_name(t.build + "/switch-ask") + ".c"
     err = publish.private_name(t.build + "/switch-ask-stderr.txt")
 

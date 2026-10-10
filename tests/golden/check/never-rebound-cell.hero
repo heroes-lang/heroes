@@ -1,0 +1,10 @@
+# M-inferred-cell step 1, panel 209's R1b (spec § 5): a cell nothing
+# re-binds is a binding written with the wrong symbol. The one message
+# stands at the cell's name, and its certain fix writes `=` where the `@`
+# is, the annotation kept; the program then means what it meant, since
+# nothing ever wrote the cell. Measured on the tree the day the rule
+# landed: 156 such cells in the compiler, 18 in the examples, 5 in the
+# harness, 212 in the goldens, every one read a `=` in disguise.
+function main()
+    v: i64 @ 5           #~ never_rebound
+    print(v)

@@ -23,13 +23,13 @@ function main()
     # Both comparisons are legal, and neither was before.
     if v == nullptr
         print("unset")
-    p: ptr @ nullptr
+    p: ptr = nullptr
 
     if p == nullptr
         print("also fine")
 
     # And the refusals stay refusals.
-    s: str @ nullptr  #~ type_mismatch
-    n: i64 @ nullptr  #~ type_mismatch
+    s: str = nullptr  #~ type_mismatch
+    n: i64 = nullptr  #~ type_mismatch
     print(s)
     print(n)

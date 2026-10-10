@@ -22,10 +22,10 @@
 
 function main()
     print(repeat("-", 40))
-    good: u64 @ 3
+    good: u64 = 3
     print(repeat("ab", good))
     print(repeat("-", 0 - 1))
-    n: i64 @ 0 - 1
+    n: i64 = 0 - 1
     print(repeat("-", n))  #~ type_mismatch
 
 # Corrected 2026-10-10, defect 564 (panel 203 R3), below the program so every

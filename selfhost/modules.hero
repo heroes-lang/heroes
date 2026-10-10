@@ -219,7 +219,7 @@ function unknown_modules(s: source.Source, uses: [ast.Use], found: [diag.Diagnos
 
         if present
             continue
-        d: diag.Diagnostic @ diag.new_diagnostic(
+        d: diag.Diagnostic = diag.new_diagnostic(
             code: "unknown_module",
             message: "there is no module `" + name + "` — `use " + name + "` reads `" + base + name + ".hero`, from the directory of `" + s.name + "`, the file you compile, and that file is not there",
             span: used.name

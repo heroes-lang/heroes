@@ -56,7 +56,7 @@ function run(s: source.Source, inv: argv.Invocation) -> cli_table.Exit
 
     if !stop_r.is_err()
         return stop_r.must()
-    c: state.Checked @ checker.check(parsed.tree, out, s, parsed.decls)
+    c: state.Checked = checker.check(parsed.tree, out, s, parsed.decls)
     stop_c = report(c.diagnostics, s, inv, stage: 4)
 
     if !stop_c.is_err()

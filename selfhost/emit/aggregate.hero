@@ -279,7 +279,7 @@ function ready(text: str) -> Setup
     p = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
     out = resolve.resolve(p.tree, s, p.decls, p.uses)
-    c: state.Checked @ checker.check(p.tree, out, s, p.decls)
+    c: state.Checked = checker.check(p.tree, out, s, p.decls)
     assert c.diagnostics.len() == 0
     names = ctype.new_names(s, p.decls)
     return Setup(c: c, s: s, decls: p.decls, names: names)

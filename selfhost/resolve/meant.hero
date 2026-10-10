@@ -1,0 +1,68 @@
+# What a call's marks say the author MEANT to write (design.md §4.4 the
+# three line shapes, §4.8 `@` parameters, §4.17 one mistake one message;
+# spec § 5; panel 209's R1b). A cell nothing re-binds is refused by
+# `resolve/unused_sweep.hero`'s sweep, and the sweep must not fire on a cell
+# whose write is there in intent and refused or still owed in form:
+#
+# - `bump(k)` for `function bump(@c: Counter)`: the checker marks `k` with
+#   a certain `@` (`marker_mismatch`), so the cell is written once the fix
+#   lands, and telling it never re-bound beside that would hand `check
+#   --apply` two certain fixes that undo each other (the compiler's own
+#   test *a certain fix enclosing another* found it in panel 209's
+#   prototype);
+# - `g(@n)` for a parameter taking none, `One(x: @n)` for a construction,
+#   `f(@n)` for a function value: the `@` is refused, by `built_marks.hero`
+#   here or by the checker, and the cell was meant to be written.
+#
+# A leaf out of `resolve/writes.hero`, which crossed its ceiling the day
+# this landed (CLAUDE.md §11): it reads the locals and writes one count, and
+# calls nothing in the walker's ring. Only a cell's count moves: a `=`
+# binding behind a refused `@` is not written, and its one message is the
+# marker's. The name is looked up by its text, as `write_root` does, because
+# the marks are read where the callee has just been resolved and the
+# arguments not yet.
+
+use ast
+use token
+use source
+use resolve/state
+
+# A field lent to C through `.ptr()` is a place C may write: spec § 13, *C
+# writes back through the lend only where the binding is a `@` name*. So
+# the cell at the lend's root counts as written, by C, and is not a cell
+# nothing re-binds. `s.cstr()` and `s.lease()` lend bytes C only reads, and
+# a lease's cell is written by `end_lease(@x)`, an `@` argument.
+function lent_for_writing(@r: state.Resolver, a: ast.Ast, s: source.Source, name: token.Span, receiver: i64)
+    if source.span_text(s, name) == "ptr"
+        meant_write(@r, a, s, receiver)
+
+# The cell at the root of `id`, a name or a field or index path over one,
+# counted as written once.
+function meant_write(@r: state.Resolver, a: ast.Ast, s: source.Source, id: i64)
+    match a.exprs[id].kind
+        .name =>
+            local = state.lookup_local(r, source.span_text(s, a.exprs[id].span))
+
+            if !local.is_err() && r.out.locals[local.must()].kind == .cell
+                r.out.locals[local.must()].writes @ r.out.locals[local.must()].writes + 1
+        .field f => meant_write(@r, a, s, f.base)
+        .index i => meant_write(@r, a, s, i.base)
+
+        .field_name | .int_lit | .float_lit | .str_lit | .interp | .char_lit | .bool_lit | .null_ptr => return
+        .hole | .unary | .binary | .call | .method | .variant_case                                   => return
+        .array | .map | .try_expr | .if_expr | .match_expr | .error                                  => return
+
+# The arguments `given` read against the parameters from `first` (1 where a
+# UFCS receiver is the first parameter), `writes` saying which parameter
+# takes an `@`: a cell handed bare where the parameter takes `@`, and a cell
+# handed `@` where the parameter takes none or none stands, are each the
+# cell the author meant to write.
+function meant_by_signature(@r: state.Resolver, a: ast.Ast, s: source.Source, writes: [bool], first: i64, given: [ast.Arg])
+    k: i64 @ first
+
+    for arg in given
+        takes = k < writes.len() && writes[k]
+
+        if arg.mutable != takes
+            meant_write(@r, a, s, arg.value)
+        k @ k + 1
