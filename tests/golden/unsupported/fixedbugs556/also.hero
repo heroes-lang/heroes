@@ -1,0 +1,8 @@
+# A module of defect 556's cases (lane b18-ffi, 2026-10-10): it binds the
+# header the root module binds, so its unit includes the definition too.
+
+extern "fixedbugs-556-defines.h"
+    function twice(x: i64) -> i64
+
+function doubled(x: i64) -> i64
+    return twice(x: x)
