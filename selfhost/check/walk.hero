@@ -560,7 +560,7 @@ function check(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.So
         # An operator of forms with no type of their own takes the type its
         # position asks for, as a literal does (spec § 2; defect 564).
         .binary b =>
-            if operands.arithmetic(b.op) && operands.numeric(c, expected) && operands.takes_context(a, r, s, decls, id) && operands.leaves_take(c, a, decls, id: id, ty: expected)
+            if waits.arithmetic(b.op) && operands.numeric(c, expected) && operands.takes_context(a, r, s, decls, id) && operands.leaves_take(c, a, decls, id: id, ty: expected)
                 context_operands(@c, a, r, s, decls, id: id, expected: expected)
                 return
         .unary u =>
@@ -586,7 +586,7 @@ function context_operands(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s
 
     match a.exprs[id].kind
         .binary b =>
-            if operands.arithmetic(b.op)
+            if waits.arithmetic(b.op)
                 context_operands(@c, a, r, s, decls, id: b.left, expected: expected)
                 context_operands(@c, a, r, s, decls, id: b.right, expected: expected)
                 _ = state.record_expr(
@@ -2357,6 +2357,14 @@ test "an argument with no type of its own waits for the call's others, and a pai
     told = checked_program(lib + "first(a: [], b: []).len())\n")
     assert told.out.diagnostics.len() == 1
     assert told.out.diagnostics[0].message == "`[]` takes its type from the type its position asks for, and `a` of `first` asks for `A`: no other argument and no context says what `A` is"
+
+test "an operator over literals waits as a literal does, and takes the type the call settles"
+    # Defect 578: the context, an argument with a type of its own on either
+    # side, and the pair of two waiting arguments in both orders.
+    lib = "function id<T>(a: T) -> T\n    return a\n\nfunction first<A>(a: A, b: A) -> A\n    _ = b\n    return a\n\nfunction f(b8: u8) -> u8\n"
+
+    for line in ["    return id(a: 2 + 3)\n", "    return first(a: 2 + 3, b: b8)\n", "    return first(a: b8, b: 2 + 3)\n", "    _ = first(a: 2 + 3, b: 1) + first(a: 1, b: 2 + 3)\n    return b8\n"]
+        assert checked_program(lib + line).out.diagnostics.len() == 0
 
 test "a poisoned argument reports once, and the parameter it left unbound is not a second message"
     # `len` as a value is `builtin_as_value`; the `B` that argument would have
