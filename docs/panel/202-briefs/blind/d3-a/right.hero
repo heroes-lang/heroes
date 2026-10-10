@@ -1,0 +1,4 @@
+use left
+
+function right(x: i32) -> i32
+    return left.twice(x: x.to_i64().must()).to_i32().must()

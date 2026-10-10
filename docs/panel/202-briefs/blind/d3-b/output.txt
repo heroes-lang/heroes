@@ -1,0 +1,11 @@
+$ heroes test main.hero
+error[ffi_header_refused]: `a.h` and `b.h`, the headers two groups name, cannot be compiled in one unit: clang refuses them together, at `a.h` line 1 and `b.h` line 1: conflicting types for 'twice'
+  at left.hero:1:8
+    |
+  1 | extern "a.h"
+    |        ^^^^^
+  note: `a.h` line 1 reads `static inline long twice(long x) { return 2 * x; }`
+  note: `b.h` line 1 reads `static inline int twice(int x) { return x + x; }`
+  note: the other group names `b.h` at right.hero:1
+  note: each group's header is included in the unit clang compiled before a line of its own, so these two are read together there, and these cannot be compiled in one unit whichever comes first: bind a C name they share from one header, or name for one group a header of your own that declares only what that group binds
+(exit 1)

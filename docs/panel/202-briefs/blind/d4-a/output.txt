@@ -1,0 +1,10 @@
+$ heroes build main.hero -o main
+internal error: linking failed:
+duplicate symbol '_twice' in:
+    onedef/build/tu-572455cd7c03d0b1/left-72dc4bba0bc3e2d7.o
+    onedef/build/tu-6a4e79942ca6458f/right-72dc4bba0bc3e2d7.o
+ld: 1 duplicate symbols
+clang: error: linker command failed with exit code 1 (use -v to see invocation)
+
+error: the linker refused the objects clang compiled
+(exit 2)
