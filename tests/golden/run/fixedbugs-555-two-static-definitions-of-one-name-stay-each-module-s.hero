@@ -1,0 +1,16 @@
+# fixedbugs, defect 555, lane b18-ffi, 2026-10-10 (panel 202's C1; the
+# sitting's `fp`), the shape beside the repair.
+#
+# Two modules bind `twice` from two headers each defining it `static
+# inline`, of `int` here and of `long long` in the other. A `static`
+# definition is its unit's own, so the two never meet at the link, and the
+# question of two declarations of one name passes them over: the program
+# builds and prints each module's value, as it did before the repair.
+use fixedbugs555/static_long
+
+extern "fixedbugs-555-static-int.h"
+    function twice(x: i32) -> i32
+
+function main()
+    print(static_long.doubled(x: 3))
+    print(twice(x: 4))

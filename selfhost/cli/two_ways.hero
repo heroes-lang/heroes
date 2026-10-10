@@ -1,0 +1,289 @@
+# One C name two modules' headers declare two ways, told before the link
+# (design.md §4.19, §1.12; CLAUDE.md §7's named exception; panel 202's C1,
+# ratified 2026-10-10; defect 555).
+#
+# **Each module's unit reads its own headers** (`cli/probing.hero`), so two
+# modules may bind one C name from two headers that declare it two ways, and
+# each unit compiles. Where both declarations have external linkage, the
+# linker joins them to one symbol and C calls that symbol through a type it
+# does not have (C11 6.2.7p2, undefined behaviour no tool must report):
+# `long twice(long)` in one header and `double twice(double)` in the other
+# built at exit 0 and printed `4.0` for `twice(4.0)`, and `clang -flto` on
+# ld64 and lld told nothing (panel 202's ffi-pragmatist). A `static`
+# definition is each unit's own, so two of them never meet: `fp`'s two
+# `static inline twice` stay a correct program.
+#
+# **Every external name two header lists declare, bound or not**: the
+# sitting's widening, taken because it refused no tracked program the bound
+# names do not (measured at the landing over the 25 tracked programs whose
+# modules bind headers of their own in two modules: 2 refused, the blind
+# seat's two copies of `clash`, which bind the name). The names are clang's
+# list of each unit's declarations (`-ast-list`, kept like a probe's dump),
+# and only a name two lists hold is asked about.
+#
+# **The types are clang's, canonical, and so is the linkage.** A question
+# unit per header list asks of each such name what `emit/ffi_asked.hero`
+# asks of a result: `struct hero_c1 x = (__typeof__(name) *)0;` is refused
+# naming the type, and clang's `aka` is the canonical one, every typedef
+# read through, so `int64_t (int64_t)` and `long long (long long)` are one
+# type and `long (long)` another (measured on this Mac's clang 21: a dumped
+# type keeps its typedefs, and JSON's `desugaredQualType` reads through one
+# level only). `static __typeof__(name) name;` is refused, *static
+# declaration of 'twice' follows non-static declaration*, exactly where the
+# name has external linkage, and clang's note under it is where the header
+# declares it. Each question stands under `#line 1 "hero-c1-<kind> <name>"`,
+# so its answer names it, and an answer is positive evidence: a name whose
+# type question clang did not answer is not compared.
+
+use ast
+use source
+use diag
+use token
+use emit/ffi_lookup
+use emit/clang_place
+use emit/externs as emit_externs
+use cli/toolchain
+use cli/probing
+use cli/two_ways_ask
+use cli/strings
+
+# One list's declaration of a name: where it is told, the binding's name or
+# the group's header string, the file declaring it as that group names it,
+# whether a group of the list binds it, and the answer.
+record Side
+    span: token.Span
+    file: str
+    bound: bool
+    answer: two_ways_ask.Answer
+
+# The diagnostics for every name two header lists declare with external
+# linkage and two canonical types, in the order of the names.
+function told(t: toolchain.Toolchain, probings: [probing.Probing], s: source.Source, decls: [ast.Decl]) -> [diag.Diagnostic]
+    out: [diag.Diagnostic] @ []
+    lists = own_headers(probings)
+
+    if lists.len() < 2
+        return out
+    named: [{str: bool}] @ []
+    counts: {str: i64} @ {}
+
+    for one in lists
+        mine = two_ways_ask.listed(t, one.probe.must())
+        named @ named.push(mine)
+
+        for name in keys(mine)
+            counts[name] @ counts[name].default(0) + 1
+
+    shared: [str] @ []
+
+    for name in keys(counts)
+        if counts[name].must() >= 2
+            shared @ shared.push(name)
+
+    if shared.len() == 0
+        return out
+    shared @ sort(shared)
+    each: [{str: two_ways_ask.Answer}] @ []
+    at: i64 @ 0
+
+    for one in lists
+        asked: [str] @ []
+
+        for name in shared
+            if !named[at][name].is_err()
+                asked @ asked.push(name)
+
+        each @ each.push(two_ways_ask.answers(t, one.probe.must(), names: asked))
+        at @ at + 1
+
+    for name in shared
+        types: [str] @ []
+        index: i64 @ 0
+
+        for _ in lists
+            given = each[index][name]
+
+            if !given.is_err() && given.must().external
+                types @ types.push(given.must().type)
+            index @ index + 1
+
+        # Where every external declaration agrees, nothing is told, and the
+        # sides are only found for a name that is.
+        if agreeing(types)
+            continue
+        sides: [Side] @ []
+        index @ 0
+
+        for one in lists
+            given = each[index][name]
+
+            if !given.is_err() && given.must().external
+                sides @ sides.push(side_of(one, name: name, answer: given.must(), s: s, decls: decls))
+            index @ index + 1
+
+        clash = disagreeing(sides)
+
+        if !clash.is_err()
+            out @ out.push(diagnostic(s, name: name, pair: clash.must()))
+
+    return out
+
+# The lists whose units read a header no compiler of this project owns, and
+# whose probe read them: the compiler's own headers declare one thing in
+# every unit.
+function own_headers(probings: [probing.Probing]) -> [probing.Probing]
+    out: [probing.Probing] @ []
+
+    for one in probings
+        if !one.probe.is_err() && !one.probe.must().read.is_err()
+            for header in one.headers
+                if !emit_externs.is_own(header)
+                    out @ out.push(one)
+                    break
+
+    return out
+
+# Where a list's declaration of `name` is told: the binding's own name where
+# a group of the list binds it, else the string of the list's group whose
+# header is the file clang names, or the first of its groups.
+function side_of(one: probing.Probing, name: str, answer: two_ways_ask.Answer, s: source.Source, decls: [ast.Decl]) -> Side
+    group: token.Span? @ fail(code: "none", msg: "no group of the list")
+    header: str @ ""
+    spellings = clang_place.spellings(answer.path)
+
+    for f in one.program.functions
+        spans = emit_externs.extern_spans(decls, f)
+
+        if spans.header.is_err()
+            continue
+        spelled = emit_externs.unquoted(s, span: spans.header.must())
+
+        if !emit_externs.is_extern_constant(decls, f) && source.span_text(s, decls[f.decl].name) == name
+            return Side(
+                span: decls[f.decl].name,
+                file: file_named(answer, header: spelled),
+                bound: true,
+                answer: answer
+            )
+
+        if group.is_err() || holds(spellings, one: spelled) && !holds(spellings, one: header)
+            group @ ok(spans.header.must())
+            header @ spelled
+
+    return Side(
+        span: group.default(token.Span(start: 0, end: 0)),
+        file: file_named(answer, header: header),
+        bound: false,
+        answer: answer
+    )
+
+function holds(spellings: [str], one: str) -> bool
+    for spelled in spellings
+        if spelled == one
+            return true
+
+    return false
+
+# The file clang names as the group naming `header` would: the header's own
+# name where it is that file, from its directory where it is beside it.
+function file_named(answer: two_ways_ask.Answer, header: str) -> str
+    if answer.path.len() == 0
+        return header
+    return clang_place.shown(path: answer.path, directory: clang_place.found_in(path: answer.path, spelled: header))
+
+# The first two sides whose canonical types differ, the one whose file sorts
+# first by bytes first, so the words are the same whichever module the
+# program names first. A type of no parameters, `()`, takes any, and is
+# compared by its result alone.
+function disagreeing(sides: [Side]) -> [Side]?
+    i: i64 @ 0
+
+    while i < sides.len()
+        j: i64 @ i + 1
+
+        while j < sides.len()
+            if !same_type(one: sides[i].answer.type, other: sides[j].answer.type)
+                if sort([sides[i].file, sides[j].file])[0] == sides[i].file
+                    return ok([sides[i], sides[j]])
+                return ok([sides[j], sides[i]])
+            j @ j + 1
+
+        i @ i + 1
+
+    return fail(code: "none", msg: "every declaration agrees")
+
+function agreeing(types: [str]) -> bool
+    for one in types
+        for other in types
+            if !same_type(one: one, other: other)
+                return false
+
+    return true
+
+function same_type(one: str, other: str) -> bool
+    if one == other
+        return true
+
+    for side in [one, other]
+        if strings.ends_with(text: side, suffix: " (*)()")
+            return result_of(one) == result_of(other)
+
+    return false
+
+# The result a pointer-to-function type's text names: all before ` (*)(`.
+function result_of(type_text: str) -> str
+    at = ffi_lookup.char_index_of(text: type_text, needle: " (*)(")
+
+    if at.is_err()
+        return type_text
+    return type_text.slice(from: 0, to: at.must())
+
+# The diagnostic, on the side whose file sorts first.
+function diagnostic(s: source.Source, name: str, pair: [Side]) -> diag.Diagnostic
+    first = pair[0]
+    second = pair[1]
+    what: str @ "two modules' headers declare one C name two ways"
+
+    if first.bound && second.bound
+        what @ "two groups bind one C function two ways"
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "ffi_declared_two_ways",
+        message: "`" + name + "` is declared `" + shown_type(first.answer.type) + "` " + where(first) + " and `" + shown_type(second.answer.type) + "` " + where(second) + ": " + what + ", and the linker joins both to one symbol",
+        span: first.span
+    )
+    d.notes @ d.notes.push(
+        "the other module's group is at " + source.elsewhere(s, here: first.span.start, there: second.span.start)
+    )
+    remedy: str @ "no group binds `" + name + "`, which the two headers' own code calls, and only one of them can declare it as it is defined: a program binds the two groups together only where their headers agree"
+
+    if first.bound && second.bound
+        remedy @ "bind `" + name + "` in both modules from the header that declares it as it is defined, or from one module, whose unit reads both headers, where clang refuses the two declarations together"
+    d.notes @ d.notes.push(
+        "each module's unit reads its own headers, so both compile, and C then reaches one `" + name + "` through two types, reading what it is given and what it returns as the other's (C11 6.2.7): " + remedy
+    )
+    return d
+
+# Where a side's header declares the name: the file and its line.
+function where(one: Side) -> str
+    if one.answer.row == 0
+        return "in `" + one.file + "`"
+    return "in `" + one.file + "` line " + one.answer.row.to_str()
+
+# A pointer-to-function type's text as the function's own: `long (*)(long)`
+# is `long (long)`.
+function shown_type(pointer: str) -> str
+    at = ffi_lookup.char_index_of(text: pointer, needle: " (*)(")
+
+    if at.is_err()
+        return pointer
+    return pointer.slice(from: 0, to: at.must()) + " (" + pointer.slice(from: at.must() + 5, to: pointer.len())
+
+## Tests
+
+test "a canonical type of no parameters takes any, and is compared by its result"
+    assert same_type(one: "long (*)(long)", other: "long (*)(long)")
+    assert !same_type(one: "long (*)(long)", other: "double (*)(double)")
+    assert same_type(one: "int (*)()", other: "int (*)(int)")
+    assert !same_type(one: "int (*)()", other: "long (*)(int)")
+    assert shown_type("long (*)(long)") == "long (long)"
+    assert shown_type("int (*)(const char *restrict, ...)") == "int (const char *restrict, ...)"
