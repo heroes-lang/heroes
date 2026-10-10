@@ -1,0 +1,16 @@
+# fixedbugs, defect 588, lane b19-dep, 2026-10-10 (panel 208's R2).
+#
+# SYMPTOM: beside the binding never called, the same function called: clang
+# refused the call and the probe both, exit 2; told once now, on the binding,
+# not at each line of the unit that names it.
+#
+# FIX: `emit/ffi_unavailable.hero` reads clang's `'gone' is unavailable` wherever
+# the unit names the binding, and where a group of this program declares the
+# name it is told `ffi_unavailable` on the binding, at exit 1, the header's
+# own words in a note (panel 208's R2; `.claude/rules/c-boundary.md`).
+
+extern "fixedbugs-588-unavailable.h"
+    function gone(x: i64) -> i64  #~ ffi_unavailable
+
+function main()
+    print(gone(x: 6))
