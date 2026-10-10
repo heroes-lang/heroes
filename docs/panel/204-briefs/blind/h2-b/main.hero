@@ -1,0 +1,8 @@
+extern "jpeglib.h" package "libjpeg"
+    function jpeg_std_error(err: ptr) -> ptr
+
+extern "stdio.h"
+    function puts(s: cstr) -> i32
+
+function main()
+    print(1)

@@ -1,0 +1,8 @@
+extern "stdio.h"
+    record CFile tag FILE
+
+extern "jpeglib.h" package "libjpeg"
+    function jpeg_std_error(err: ptr) -> ptr
+
+function main()
+    print(1)
