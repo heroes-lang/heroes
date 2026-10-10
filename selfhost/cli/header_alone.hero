@@ -1,0 +1,57 @@
+# Whether a header clang refused in a unit compiles alone, and which earlier
+# header of the unit it does not compile after (design.md §4.19, §4.17;
+# panel 202's R2, ratified 2026-10-10; defect 557).
+#
+# **A header that compiles alone can fail after another**: `a.h` defines a
+# macro `twice(x)`, and `b.h`'s `static inline int twice(int x)` read after
+# it is no declaration clang can parse. clang's first error lands in `b.h`
+# with no note in `a.h` (its notes name `a.h` only under the errors after),
+# and until 2026-10-10 the refusal was told as `b.h` not compiling at all,
+# where it compiles alone and the other order of the two groups compiled
+# whole. So, on the failure path alone, the refused header is compiled alone,
+# and where it compiles, with each header the unit read before it: the first
+# it does not compile after is the one named, found by compiling the two
+# alone, so what is told is the two headers' and never the unit's order.
+#
+# Under the words every probe compiles under (`compiling.probe_words`), each
+# unit opening with the compiler's own two (`emit/externs.SEEDS`), as every
+# probe's does.
+
+use emit/externs as emit_externs
+use cli/toolchain
+use cli/compiling
+use cli/process
+use cli/publish
+use cli/digest
+use cli/strings
+
+# The first header of `headers` before `header` that `header` does not
+# compile after, where `header` compiles alone; absent where it does not
+# compile alone, which is its own refusal, or compiles after each.
+function earlier(t: toolchain.Toolchain, under: compiling.Compiling, header: str, headers: [str]) -> str?
+    if !compiles(t, under: under, headers: [header])
+        return fail(code: "none", msg: "the header does not compile alone")
+
+    for one in headers
+        if one == header
+            break
+
+        if !emit_externs.is_own(one) && !compiles(t, under: under, headers: [one, header])
+            return ok(one)
+
+    return fail(code: "none", msg: "it compiles after each header before it")
+
+# Whether a unit of the compiler's own two headers, then `headers`, compiles.
+function compiles(t: toolchain.Toolchain, under: compiling.Compiling, headers: [str]) -> bool
+    text = compiling.include_lines(strings.with_all(list: emit_externs.SEEDS, more: headers))
+    dir = t.build + "/alone"
+
+    if process.mkdir_all(dir).is_err()
+        return false
+    unit = dir + "/alone-" + digest.digest(text) + ".c"
+
+    if publish.write_whole(path: unit, text: text, keyed: true).is_err()
+        return false
+    line = strings.with_all(list: ["clang", "-fsyntax-only"], more: compiling.probe_words(under))
+    ran = process.run(program: "clang", words: line.push(unit), out: process.discard(), err: process.discard())
+    return ran.started && ran.code == 0

@@ -237,6 +237,7 @@ function produce(path: str, s: source.Source, options: compile.Options, t: toolc
                 struct_tags: went.struct_tags,
                 asked: went.asked,
                 asking: planned.probings,
+                unit_headers: emit_externs.headers(art.must().program, s, art.must().decls),
                 refused: "the artifact was not written"
             )
             return fail(code: whose.failure_code(refused), msg: whose.failure_message(refused))

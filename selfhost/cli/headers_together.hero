@@ -59,10 +59,48 @@ function told(s: source.Source, one: Side, other: Side, message: str, added: [st
     for note in added
         d.notes @ d.notes.push(note)
 
-    d.notes @ d.notes.push(
-        "each group's header is included in the unit clang compiled before a line of its own, so these two are read together there, and these cannot be compiled in one unit whichever comes first: bind a C name they share from one header, or name for one group a header of your own that declares only what that group binds"
-    )
+    d.notes @ d.notes.push(remedy(s, one: first.span, other: second.span))
     return d
+
+# A header clang refused in a unit that compiles alone, and the earlier
+# header of the unit whose presence makes it fail, found by compiling the two
+# alone (defect 557, `cli/header_alone.hero`): a macro one header defines
+# rewrites a name the other declares, in one order. Told on the refused
+# group's string.
+function after(s: source.Source, refused: Side, earlier: token.Span, earlier_header: str, message: str, added: [str]) -> diag.Diagnostic
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "ffi_header_refused",
+        message: "`" + refused.header + "`, the header this group names, compiles alone and not after `" + earlier_header + "`, the header another group names, where clang refuses it at " + at_line(refused) + ": " + message,
+        span: refused.span
+    )
+
+    if !refused.quoted.is_err()
+        d.notes @ d.notes.push(
+            "`" + refused.file + "` line " + refused.row.to_str() + " reads `" + refused.quoted.must() + "`"
+        )
+    d.notes @ d.notes.push(
+        "the other group names `" + earlier_header + "` at " + source.elsewhere(s, here: refused.span.start, there: earlier.start)
+    )
+
+    for note in added
+        d.notes @ d.notes.push(note)
+
+    d.notes @ d.notes.push(remedy(s, one: refused.span, other: earlier))
+    return d
+
+# What two groups whose headers one unit cannot read together are told to
+# do (panel 202's R2, defect 561): bind them from two modules, which is true
+# of every shape the sitting measured. Until 2026-10-10 the note said *these
+# cannot be compiled in one unit whichever comes first*, false where the
+# other order compiles (raymath and raylib, libtasn1 and OpenSSL), and
+# offered *a header of your own that declares only what that group binds*,
+# which two readers of two could not make work where the other header
+# defines the name. Where the groups are two modules' already, the unit is
+# `heroes test`'s, or a module's that spells the other's record.
+function remedy(s: source.Source, one: token.Span, other: token.Span) -> str
+    if source.component_at(s, one.start) == source.component_at(s, other.start)
+        return "each group's header is included in the unit clang compiled before a line of its own, so these two are read together there: bind the two groups from two modules, whose units each read their own groups' headers"
+    return "the two groups are two modules', and a unit reads both headers where `heroes test` compiles the whole program as one unit or a module's unit spells a record the other group declares"
 
 # Where a side's line is: the file and its line, and the group's header it
 # arrives through where the file is another (defect 550), so the words are

@@ -96,6 +96,7 @@ function begins(text: str, prefix: str) -> bool
 # where the first gave none. A unit asks only its own modules' names, so two
 # answer one name only where two modules bind it, and the first asked,
 # the module whose unit was refused, is the one its reader is about.
+# ORDER: none — each walk fills a table keyed by name.
 function merged(first: ffi_asked.Asked, then: ffi_asked.Asked) -> ffi_asked.Asked
     out: ffi_asked.Asked @ first
     said: [str] @ []

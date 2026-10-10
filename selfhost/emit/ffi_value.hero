@@ -40,7 +40,7 @@ use emit/ffi_result
 use emit/clang_place
 use emit/clang_name
 use emit/record_constant
-use cli/header_refused
+use cli/clang_first
 use cli/clang_excerpt
 use parse
 use resolve
@@ -165,7 +165,7 @@ function spelled_at(rows: [str], line: str, name: str) -> Spelled?
 
         # A note's own includes stand above it since panel 202's (g).
         if row.len() > 0 && row[0] != ' ' && clang_place.included(row).is_err()
-            if header_refused.severity_of(row) != header_refused.NOTE
+            if clang_first.severity_of(row) != clang_first.NOTE
                 return fail(code: "none", msg: "no note names the macro")
             place = clang_place.place(row)
 

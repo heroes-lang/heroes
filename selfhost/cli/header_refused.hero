@@ -46,29 +46,12 @@ use emit/ffi_lookup
 use cli/read_back
 use cli/headers_together
 use cli/group_file
+use cli/clang_first
 use cli/clang_excerpt
 use emit/ffi_build
 use parse
 use resolve
 use checker
-
-# clang's first error, read: its row in the text, its place, and its message.
-record First
-    row: i64
-    place: clang_place.Place
-    message: str
-
-constant ERROR: str
-    ": error: "
-
-constant FATAL: str
-    ": fatal error: "
-
-constant NOTE: str
-    ": note: "
-
-constant NOT_FOUND: str
-    "' file not found"
 
 constant AS_ERROR: str
     "[-Werror"
@@ -78,132 +61,66 @@ constant AS_ERROR: str
 # the compiler's, as clang was given them.
 function refused(stderr: str, s: source.Source, decls: [ast.Decl], runtime: str, build: str) -> [diag.Diagnostic]
     none: [diag.Diagnostic] = []
-    rows = ffi_lookup.lines(text: stderr)
-    found = first_error(rows)
+    read = clang_first.reading(stderr: stderr, s: s, decls: decls, runtime: runtime, build: build)
 
-    if found.is_err()
+    if read.is_err()
         return none
-    first = found.must()
+    one = read.must()
 
-    if !clang_place.offset_of(text: first.message, needle: NOT_FOUND).is_err()
+    if !one.beside.is_err()
+        return [
+            pair(s, one.rows, first: one.first, steps: one.steps, at: one.at, group: one.group, beside: one.beside.must(), note: one.note, notes: one.notes)
+        ]
+    return [told(one.rows, first: one.first, steps: one.steps, at: one.at, group: one.group, notes: one.notes)]
+
+# The group whose header clang refused on its own, where it refused one group's
+# header and no note names another's: the header `cli/header_alone.hero` asks
+# whether it compiles alone (defect 557).
+function refused_alone(stderr: str, s: source.Source, decls: [ast.Decl], runtime: str, build: str) -> group_file.Group?
+    read = clang_first.reading(stderr: stderr, s: s, decls: decls, runtime: runtime, build: build)?
+
+    if !read.beside.is_err()
+        return fail(code: "none", msg: "two headers are told")
+    return ok(read.group)
+
+# A header clang refused in a unit that compiles alone, and the earlier
+# header of the unit it does not compile after (defect 557,
+# `cli/header_alone.hero`): told as two headers refused together, the words
+# the same whichever is written first.
+function refused_after(stderr: str, s: source.Source, decls: [ast.Decl], runtime: str, build: str, earlier: group_file.Group) -> [diag.Diagnostic]
+    none: [diag.Diagnostic] = []
+    read = clang_first.reading(stderr: stderr, s: s, decls: decls, runtime: runtime, build: build)
+
+    if read.is_err()
         return none
-    steps = clang_place.stack(stderr: stderr, line: rows[first.row])
-    at: i64 @ steps.len() - 1
-    group: group_file.Group? @ fail(code: "none", msg: "no group's header is in the stack")
+    one = read.must()
+    directory = clang_place.found_in(path: one.steps[one.at].path, spelled: one.group.header)
+    refused_file: str @ one.group.header
 
-    # The unit clang compiled heads the stack and is the build's, so the
-    # search never names a group after it.
-    while at >= 0 && group.is_err()
-        if !group_file.compilers(path: steps[at].path, runtime: runtime, build: build)
-            group @ group_file.group_of(s, decls, path: steps[at].path)
+    if one.at < one.steps.len() - 1
+        refused_file @ clang_place.shown(path: one.first.place.path, directory: directory)
+    side = headers_together.Side(
+        span: one.group.span,
+        header: one.group.header,
+        file: refused_file,
+        row: one.first.place.row,
+        quoted: clang_excerpt.of(one.rows, after: one.first.row)
+    )
+    added: [str] @ []
 
-        if group.is_err()
-            at @ at - 1
+    for note in one.notes
+        added @ added.push(
+            "clang adds, at `" + clang_place.shown(path: note.path, directory: directory) + "` line " + note.row.to_str() + ": " + note.text
+        )
 
-    if group.is_err()
-        return none
-    hop: i64 @ at
-
-    while hop < steps.len()
-        if group_file.compilers(path: steps[hop].path, runtime: runtime, build: build)
-            return none
-        hop @ hop + 1
-
-    notes = attached(rows, after: first.row)
-
-    for note in notes
-        if group_file.compilers(path: note.path, runtime: runtime, build: build)
-            return none
-
-    # A note in ANOTHER group's header, or in a file one includes: the two
-    # are refused together, and neither alone (defect 538,
-    # `cli/headers_together.hero`). The group is the innermost of the note's
-    # own includes that is one, which clang prints since panel 202's (g)
-    # (defect 550): until then a note in a file another group's header
-    # includes named no group, and one order was told as one header.
-    for note in notes
-        reached = group_file.arriving(stderr: stderr, row: rows[note.index], s: s, decls: decls)
-
-        if !reached.is_err() && reached.must().group.header != group.must().header
-            return [
-                pair(s, rows, first: first, steps: steps, at: at, group: group.must(), beside: reached.must(), note: note, notes: notes)
-            ]
-
-    return [told(rows, first: first, steps: steps, at: at, group: group.must(), notes: notes)]
-
-# The first row clang wrote as an error with a place, `path:row:col: error:`
-# or `fatal error:`. A row its excerpt quotes begins with a space, and a
-# warning or a note before it is passed over.
-function first_error(rows: [str]) -> First?
-    index: i64 @ 0
-
-    for row in rows
-        line = clang_place.without_return(row)
-        severity = severity_of(line)
-
-        if line.len() > 0 && line[0] != ' ' && (severity == ERROR || severity == FATAL)
-            place = clang_place.place(line)
-
-            if !place.is_err()
-                at = clang_place.offset_of(text: line, needle: severity).must()
-                return ok(
-                    First(row: index, place: place.must(), message: line.slice(from: at + severity.len(), to: line.len()))
-                )
-        index @ index + 1
-
-    return fail(code: "none", msg: "clang reported no error with a place")
-
-# The severity a diagnostic line is written with: the first of clang's
-# markers on it, so a message that quotes another is still its own.
-function severity_of(line: str) -> str
-    first: i64 @ line.len()
-    which: str @ ""
-
-    for marker in [FATAL, ERROR, ": warning: ", NOTE]
-        at = clang_place.offset_of(text: line, needle: marker)
-
-        if !at.is_err() && at.must() < first
-            first @ at.must()
-            which @ marker
-
-    return which
-
-# A note clang attached to the error: where it points and what it says.
-record Attached
-    path: str
-    row: i64
-    text: str
-    index: i64
-
-# The notes clang wrote under the error, up to the next diagnostic that is
-# not a note or clang's count of what it reported. A note's own includes
-# stand above it (`-fdiagnostics-show-note-include-stack`, panel 202's (g)),
-# so an include line is passed over, and the next diagnostic decides.
-function attached(rows: [str], after: i64) -> [Attached]
-    out: [Attached] @ []
-    index: i64 @ after + 1
-
-    while index < rows.len()
-        line = clang_place.without_return(rows[index])
-
-        if line.len() > 0 && line[0] != ' ' && clang_place.included(line).is_err()
-            if severity_of(line) != NOTE
-                return out
-            place = clang_place.place(line)
-
-            if !place.is_err()
-                at = clang_place.offset_of(text: line, needle: NOTE).must()
-                out @ out.push(
-                    Attached(path: place.must().path, row: place.must().row, text: line.slice(from: at + NOTE.len(), to: line.len()), index: index)
-                )
-        index @ index + 1
-
-    return out
+    return [
+        headers_together.after(s, refused: side, earlier: earlier.span, earlier_header: earlier.header, message: one.first.message, added: added)
+    ]
 
 # The diagnostic, on the group's string: the file clang refused, as the group
 # would name it, its line and clang's message, then what clang quoted and
 # attached, the includes it followed, and what a `-Werror` means here.
-function told(rows: [str], first: First, steps: [clang_place.Place], at: i64, group: group_file.Group, notes: [Attached]) -> diag.Diagnostic
+function told(rows: [str], first: clang_first.First, steps: [clang_place.Place], at: i64, group: group_file.Group, notes: [clang_first.Attached]) -> diag.Diagnostic
     directory = clang_place.found_in(path: steps[at].path, spelled: group.header)
     refused_file: str @ group.header
     head: str @ "`" + group.header + "`, the header this group names, does not compile: clang refuses it"
@@ -252,7 +169,7 @@ function told(rows: [str], first: First, steps: [clang_place.Place], at: i64, gr
 # The two headers clang refused together, `group`'s where its first error
 # lies and `beside`'s where `note` points (defect 538): told in the headers'
 # own order, never the `use` lines'.
-function pair(s: source.Source, rows: [str], first: First, steps: [clang_place.Place], at: i64, group: group_file.Group, beside: group_file.Reached, note: Attached, notes: [Attached]) -> diag.Diagnostic
+function pair(s: source.Source, rows: [str], first: clang_first.First, steps: [clang_place.Place], at: i64, group: group_file.Group, beside: group_file.Reached, note: clang_first.Attached, notes: [clang_first.Attached]) -> diag.Diagnostic
     directory = clang_place.found_in(path: steps[at].path, spelled: group.header)
     refused_file: str @ group.header
 

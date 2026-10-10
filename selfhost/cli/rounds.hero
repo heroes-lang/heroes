@@ -18,6 +18,7 @@
 
 use source
 use emit/ffi_asked
+use emit/externs as emit_externs
 use cli/compile
 use cli/toolchain
 use cli/compiling
@@ -90,6 +91,7 @@ function run(t: toolchain.Toolchain, options: compile.Options, art: compile.Arti
             struct_tags: struct_tags,
             asked: asked,
             asking: probing.holding(planned.probings, modules: refused_in),
+            unit_headers: unit_headers(art, s, site: site, planned: planned, modules: refused_in),
             refused: "clang refused the generated C"
         )
         return Rounds(verdict: refused, binary: "", struct_tags: struct_tags, asked: asked)
@@ -180,3 +182,24 @@ function joined(first: [diag.Diagnostic], more: [diag.Diagnostic]) -> [diag.Diag
         out @ out.push(d)
 
     return out
+
+# The headers of the unit a refusal is, in its order: `heroes test`'s one unit
+# reads every group's, a module's unit its plan's (`emit/unit_plan.hero`).
+function unit_headers(art: compile.Artifact, s: source.Source, site: assemble.Site, planned: probing.Planned, modules: [str]) -> [str]
+    if site.is_tests
+        return emit_externs.headers(art.program, s, art.decls)
+    out: [str] @ []
+
+    for one in probing.holding(planned.probings, modules: modules)
+        for header in one.headers
+            if !holds(out, one: header)
+                out @ out.push(header)
+
+    return out
+
+function holds(list: [str], one: str) -> bool
+    for each in list
+        if each == one
+            return true
+
+    return false

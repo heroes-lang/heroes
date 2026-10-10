@@ -78,11 +78,14 @@ function told(t: toolchain.Toolchain, probings: [probing.Probing], s: source.Sou
         mine = two_ways_ask.listed(t, one.probe.must())
         named @ named.push(mine)
 
+        # ORDER: none — a count per name.
         for name in keys(mine)
             counts[name] @ counts[name].default(0) + 1
 
     shared: [str] @ []
 
+    # ORDER: by name, `shared` sorted below before anything reads it — the
+    # diagnostics come in that order.
     for name in keys(counts)
         if counts[name].must() >= 2
             shared @ shared.push(name)
