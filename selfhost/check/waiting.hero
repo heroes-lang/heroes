@@ -17,8 +17,9 @@
 # world (`.claude/rules/module-shape.md`): §4.5's ⇐-only forms
 # (`check/contextual.hero`), a number literal, a generic function's name, a
 # call of `ok`, `fail` or of a generic function (whose result may be what the
-# context gives it), and an array or map literal holding one of those. Every
-# other argument has a type of its own and binds as before.
+# context gives it), an array or map literal holding one of those, and an
+# arithmetic operator or a minus over them, `2 + 3` (defect 578). Every other
+# argument has a type of its own and binds as before.
 #
 # **What settles a letter nothing else does, in this order** (spec § 9: the
 # arguments that have a type of their own, else the context, else a generic
@@ -67,12 +68,23 @@ function needs_context(a: ast.Ast, r: resolved.Resolved, s: source.Source, decls
                 if needs_context(a, r, s, decls, id: e.key) || needs_context(a, r, s, decls, id: e.value)
                     return true
         .call cl => return made_by_context(a, r, decls, callee: cl.callee)
-        .method => return generic_top(decls, named: r.uses[id])
+        .method  => return generic_top(decls, named: r.uses[id])
+        .binary b => return arithmetic(b.op) && needs_context(a, r, s, decls, id: b.left) && needs_context(a, r, s, decls, id: b.right)
+        .unary u => return u.op == .neg && needs_context(a, r, s, decls, id: u.operand)
         .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit | .null_ptr => return false
-        .hole | .name | .unary | .binary | .field | .field_name | .index => return false
+        .hole | .name | .field | .field_name | .index => return false
         .variant_case | .try_expr | .if_expr | .match_expr | .error => return false
 
     return false
+
+# Whether `op`'s result is its operands' own type: an operator of literals
+# waits as a literal does (defect 578), and `check/operands.hero` hands such an
+# operator's type to its operands.
+function arithmetic(op: ast.BinaryOp) -> bool
+    return match op
+        .add | .sub | .mul | .div | .rem                         => true
+        .eq | .ne | .lt | .le | .gt | .ge                        => false
+        .and | .or | .bit_and | .bit_or | .bit_xor | .shl | .shr => false
 
 # `ok(…)`, `fail(…)`, or a generic function called by its name.
 function made_by_context(a: ast.Ast, r: resolved.Resolved, decls: [ast.Decl], callee: i64) -> bool
@@ -199,8 +211,10 @@ function takes(c: state.Checker, a: ast.Ast, decls: [ast.Decl], id: i64, ty: i64
                 .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return false
                 .array | .fixed | .fallible | .function_ty | .named       => return false
                 .case_ty | .failure | .generic | .error                   => return false
+        .binary b => return !arithmetic(b.op) || takes(c, a, decls, id: b.left, ty: ty) && takes(c, a, decls, id: b.right, ty: ty)
+        .unary u => return u.op != .neg || takes(c, a, decls, id: u.operand, ty: ty)
         .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit | .null_ptr => return true
-        .hole | .name | .unary | .binary | .field | .field_name | .index | .call       => return true
-        .method | .variant_case | .try_expr | .if_expr | .match_expr | .error          => return true
+        .hole | .name | .field | .field_name | .index | .call => return true
+        .method | .variant_case | .try_expr | .if_expr | .match_expr | .error => return true
 
     return true

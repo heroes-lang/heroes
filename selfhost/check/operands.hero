@@ -48,13 +48,6 @@ constant LEFT: i64
 constant BOTH: i64
     3
 
-# Whether `op`'s result is its operands' own type.
-function arithmetic(op: ast.BinaryOp) -> bool
-    return match op
-        .add | .sub | .mul | .div | .rem                         => true
-        .eq | .ne | .lt | .le | .gt | .ge                        => false
-        .and | .or | .bit_and | .bit_or | .bit_xor | .shl | .shr => false
-
 # Whether the type `ty` is one an arithmetic operator answers: a number.
 function numeric(c: state.Checker, ty: i64) -> bool
     return match table.get(c.out.types, ty)
@@ -73,7 +66,7 @@ function takes_context(a: ast.Ast, r: resolved.Resolved, s: source.Source, decls
         .str_lit | .interp | .bool_lit | .field_name | .index | .try_expr => return false
         .if_expr | .match_expr | .error => return false
         .name | .field => return function_value.generic_at(a, r, decls, id)
-        .binary b => return arithmetic(b.op) && takes_context(a, r, s, decls, id: b.left) && takes_context(a, r, s, decls, id: b.right)
+        .binary b => return waiting.arithmetic(b.op) && takes_context(a, r, s, decls, id: b.left) && takes_context(a, r, s, decls, id: b.right)
         .unary u                        => return u.op == .neg && takes_context(a, r, s, decls, id: u.operand)
         .array | .map | .call | .method => return waiting.needs_context(a, r, s, decls, id)
 
@@ -87,7 +80,7 @@ function takes_context(a: ast.Ast, r: resolved.Resolved, s: source.Source, decls
 function leaves_take(c: state.Checker, a: ast.Ast, decls: [ast.Decl], id: i64, ty: i64) -> bool
     match a.exprs[id].kind
         .binary b =>
-            if arithmetic(b.op)
+            if waiting.arithmetic(b.op)
                 return leaves_take(c, a, decls, id: b.left, ty: ty) && leaves_take(c, a, decls, id: b.right, ty: ty)
         .unary u =>
             if u.op == .neg && !contextual.number_literal(a, id) && !contextual.float_literal(a, id)
@@ -119,7 +112,7 @@ function leaves_take(c: state.Checker, a: ast.Ast, decls: [ast.Decl], id: i64, t
 # Whether `id` is an arithmetic operator or a minus of a non-literal.
 function operator(a: ast.Ast, id: i64) -> bool
     match a.exprs[id].kind
-        .binary b => return arithmetic(b.op)
+        .binary b => return waiting.arithmetic(b.op)
         .unary u => return u.op == .neg && !contextual.number_literal(a, id) && !contextual.float_literal(a, id)
         .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit | .null_ptr => return false
         .hole | .name | .field | .field_name | .index | .call | .method => return false
@@ -131,7 +124,7 @@ function operator(a: ast.Ast, id: i64) -> bool
 # of a small one, which every arithmetic operator under its root is.
 function in_tree(a: ast.Ast, takes: [{i64: bool}], id: i64) -> bool
     match a.exprs[id].kind
-        .binary b => return arithmetic(b.op) && (takes.len() == 0 || !takes[0][id].is_err())
+        .binary b => return waiting.arithmetic(b.op) && (takes.len() == 0 || !takes[0][id].is_err())
         .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit | .null_ptr => return false
         .hole | .name | .unary | .field | .field_name | .index | .call | .method => return false
         .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error => return false
@@ -159,7 +152,7 @@ function taking(a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.
 
         match a.exprs[at].kind
             .binary b =>
-                if k == 0 || arithmetic(b.op)
+                if k == 0 || waiting.arithmetic(b.op)
                     order @ order.push(b.left)
                     order @ order.push(b.right)
             .unary u =>
@@ -193,7 +186,7 @@ function size(a: ast.Ast, id: i64, budget: i64, root: bool) -> i64
 
     match a.exprs[id].kind
         .binary b =>
-            if root || arithmetic(b.op)
+            if root || waiting.arithmetic(b.op)
                 left = 1 + size(a, id: b.left, budget: budget - 1, root: false)
                 return left + size(a, id: b.right, budget: budget - left, root: false)
         .unary u =>
@@ -209,7 +202,7 @@ function size(a: ast.Ast, id: i64, budget: i64, root: bool) -> i64
 function node_takes(a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], out: {i64: bool}, id: i64, root: bool) -> bool
     match a.exprs[id].kind
         .binary b =>
-            if arithmetic(b.op)
+            if waiting.arithmetic(b.op)
                 return out[b.left].default(false) && out[b.right].default(false)
 
             if root
