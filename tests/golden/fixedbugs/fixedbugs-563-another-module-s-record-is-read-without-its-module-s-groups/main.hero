@@ -1,0 +1,13 @@
+# fixedbugs, defect 563, lane b18-ffi, 2026-10-10 (panel 204's R3), the
+# shape beside it: this module spells `holding.Holder`, so its unit reads
+# `fixedbugs-563-holder.h`, after its own groups' headers and without the
+# group `holding` writes above it, whose header defines the `Need` the first
+# spells (design.md §4.1). `holding`'s own unit compiles. Until 2026-10-10 the
+# refusal said *repair the header*; it says now which header the module
+# writes above it and that the module spelling the record needs a group
+# naming it.
+use holding
+
+function main()
+    h = holding.make(v: 3)
+    print(h.v)

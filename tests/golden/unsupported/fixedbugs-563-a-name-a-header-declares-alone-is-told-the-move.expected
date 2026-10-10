@@ -1,0 +1,6 @@
+error[ffi_unknown_name]: `fixedbugs-563-q.h` declares `FIXEDBUGS_563_Q_VALUE` read alone, and not after `fixedbugs-563-p.h`, the header another group names: clang read them in this module's order and could not find it
+  at tests/golden/unsupported/fixedbugs-563-a-name-a-header-declares-alone-is-told-the-move.hero:15:5
+     |
+  15 |     constant FIXEDBUGS_563_Q_VALUE: i64  #~ ffi_unknown_name
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: these compile when `fixedbugs-563-q.h` is included before `fixedbugs-563-p.h`, which the group at line 11 names: a module's headers are included in the order its groups are written, so write this group above that one

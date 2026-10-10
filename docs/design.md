@@ -2402,8 +2402,18 @@ header that needs another's names compiles only below it: `<jpeglib.h>` declares
 `jpeg_stdio_dest(j_compress_ptr, FILE *)` and includes no `<stdio.h>`, so its group is refused
 above a `stdio.h` group and builds below one, and the prefix is why it fails at `FILE` rather than
 at `size_t`. A header's `#ifndef` default takes an earlier header's definition, so two headers can
-mean another program in the other order (`cfgone`: `3 50` against `3 10`). **No pass sorts, thins
-or moves this list** but the repeated header, dropped at its second group, and a change to it
+mean another program in the other order (`cfgone`: `3 50` against `3 10`). Where two headers define
+one macro two ways, which C11 6.10.3p2 forbids and clang only warns of, the unit is refused
+(`-Werror=macro-redefined`, panel 204's R2, `cli/macro_twice.hero`), told what the order it reads
+them in and the other order make of the macro, and drafted, as a `guess`, a header of the program's
+own that includes the two with an `#undef` between them; where each defines it only if no header
+before it has, as the compiler-engineer's `dual` does, both orders build and mean two programs, and
+this paragraph is what says so. A header clang refuses where its group stands is told what the
+program needs instead of a repair, each asked of clang on the failure path alone
+(`cli/header_order.hero`, panel 204's R3): the move of another group of its module after which the
+unit compiles, saying so where the move makes a bound name read otherwise; else the header of C's
+own it needs before it; else, for a header not beside the program, the header of the program's own
+the line it needs goes in. **No pass sorts, thins or moves this list** but the repeated header, dropped at its second group, and a change to it
 changes what programs mean, so it is a sitting's (CLAUDE.md § 4). **Until panel 204 a record-only
 group's header came after every other** (panel 061's second walk): `extern "stdio.h"` holding only
 `record CFile tag FILE` above `jpeglib.h` was refused *unknown type name 'FILE'*, and the same
