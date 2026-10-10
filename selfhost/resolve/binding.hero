@@ -38,10 +38,11 @@ function param_binding(ty: i64, mutable: bool) -> Binding
 function bind_binding(ty: i64?, value: i64) -> Binding
     return Binding(kind: .bind, mutable: false, ty: ty, value: ok(value), symbol: no_symbol())
 
-# `v: i64 @= 0` — the type is mandatory, which is what makes the third line
-# shape distinguishable from a mutation (§4.4); `symbol` is that `@`.
-function cell_binding(ty: i64, value: i64, symbol: token.Span) -> Binding
-    return Binding(kind: .cell, mutable: true, ty: ok(ty), value: ok(value), symbol: symbol)
+# `v @= 0`, or `v: i64 @= 0` — the symbol is what tells the line from a
+# mutation, so the type is optional as on `=` (spec § 5, panel 209); `symbol`
+# is that `@=`.
+function cell_binding(ty: i64?, value: i64, symbol: token.Span) -> Binding
+    return Binding(kind: .cell, mutable: true, ty: ty, value: ok(value), symbol: symbol)
 
 # `for x in xs` — the element type comes from the iterable.
 function loop_binding(iterable: i64) -> Binding

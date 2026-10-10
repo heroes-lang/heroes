@@ -96,8 +96,11 @@ function handle_names(a: ast.Ast, s: source.Source, decls: [ast.Decl], params: [
 
         match st.kind
             .declare d =>
-                if is_ptr(a: a, s: s, decls: decls, ty: d.ty)
-                    names @ names.push(source.span_text(s, d.name))
+                match d.ty
+                    .ok ty =>
+                        if is_ptr(a: a, s: s, decls: decls, ty: ty)
+                            names @ names.push(source.span_text(s, d.name))
+                    .err _ => names @ names
             .bind b =>
                 match b.ty
                     .ok ty =>

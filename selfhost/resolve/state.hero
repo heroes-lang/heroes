@@ -450,7 +450,7 @@ test "the wildcard never binds and a built-in is taken everywhere, told once"
         s,
         decls,
         span_at(start: 11, end: 16),
-        resolve_binding.cell_binding(ty: 0, value: 0, symbol: span_at(start: 17, end: 18))
+        resolve_binding.cell_binding(ty: ok(0), value: 0, symbol: span_at(start: 17, end: 18))
     )
     assert lookup_local(r, "range").must() == reserved.must()
     assert r.out.diagnostics.len() == 2

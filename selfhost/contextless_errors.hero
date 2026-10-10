@@ -39,14 +39,32 @@ function cannot_infer_empty(what: str, name: str, written: str, literal: str, sp
     return d
 
 # The same empty literal where it is the whole value of a binding with no
-# annotation, `counts = {}`: the guess annotates that binding, under the name
-# the program gave it (defect 574).
-function annotated(d: diag.Diagnostic, name: str, written: str, literal: str) -> diag.Diagnostic
+# annotation, `counts = {}`, or of a cell's, `counts @= {}`: the guess
+# annotates that binding or cell, under the name the program gave it and
+# with its own symbol (defect 574; panel 209).
+function annotated(d: diag.Diagnostic, name: str, written: str, literal: str, cell: bool) -> diag.Diagnostic
     out: diag.Diagnostic @= d
-    out.fixes @ [
-        diag.Fix(title: "annotate the binding: `" + name + ": " + written + " = " + literal + "`", replacement: "", span: d.span, certainty: .guess)
-    ]
+    what: str @= "binding: `" + name + ": " + written + " = " + literal + "`"
+
+    if cell
+        what @ "cell: `" + name + ": " + written + " @= " + literal + "`"
+    out.fixes @ [diag.Fix(title: "annotate the " + what, replacement: "", span: d.span, certainty: .guess)]
     return out
+
+# A cell born of the bare `nullptr` with no written type, `db @= nullptr`,
+# would be a `ptr` cell, and the handle it was meant to hold refuses it at
+# its first use, lines away and with no word of the declaration (panel 209):
+# told at the birth, and the cell is poisoned so the call below says nothing.
+function cannot_infer_nullptr(name: str, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @= diag.new_diagnostic(
+        code: "cannot_infer",
+        message: "`nullptr` alone says `ptr`, not which handle `" + name + "` will hold — write the handle's type on the declaration",
+        span: span
+    )
+    d.fixes @ d.fixes.push(
+        diag.Fix(title: "annotate the cell: `" + name + ": <Handle> @= nullptr`", replacement: "", span: span, certainty: .guess)
+    )
+    return d
 
 ## Forms that cannot say what they are
 
@@ -177,7 +195,7 @@ test "a contextless form says where the missing half should come from"
     no_entry = empty_map_literal(span)
     assert no_entry.message == "the map literal is empty, so there is nothing to infer its type from — write the annotation"
     assert no_entry.fixes[0].title == "bind it first with its type, `m: {str: i64} = {}`, and use `m` here"
-    bound = annotated(no_entry, name: "counts", written: "{str: i64}", literal: "{}")
+    bound = annotated(no_entry, name: "counts", written: "{str: i64}", literal: "{}", cell: false)
     assert bound.fixes.len() == 1
     assert bound.fixes[0].title == "annotate the binding: `counts: {str: i64} = {}`"
     case_alone = cannot_infer_case("plus", span)

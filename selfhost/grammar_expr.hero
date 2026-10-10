@@ -99,6 +99,7 @@ use parse/at_prefix
 use parse/rest_words
 use expr_render
 use expr_kinds
+use cell_errors
 use dot_words
 
 ## The precedence table — §4.14, read from the bottom up
@@ -889,10 +890,10 @@ function statement_kind(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.StmtKi
     if k == .kw_while
         return while_stmt(@c, @a, text)
 
-    # `x = …` and `v: … @ …` are the two declaration shapes; everything else
-    # starting with a name is an expression, and possibly the place of a
+    # `x = …`, `v @= …` and `v: … @= …` are the declaration shapes; everything
+    # else starting with a name is an expression, and possibly the place of a
     # mutation.
-    if k == .ident && cursor.peek(c, 1) == .eq
+    if k == .ident && (cursor.peek(c, 1) == .eq || cursor.peek(c, 1) == .at_eq)
         return bind_stmt(@c, @a, text)
 
     if k == .ident && cursor.peek(c, 1) == .colon
@@ -987,18 +988,23 @@ function for_stmt(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.StmtKind
 
 ## The three line shapes that begin with a name
 
-# `x = 5` — binds once, forever (§4.4). The type is inferred, and inference is
-# local: the value on this line decides it (§4.5).
+# `x = 5` binds once, forever (§4.4), and `v @= 0` declares a mutable cell
+# (spec § 5, panel 209); either type is inferred, locally, from the value on
+# its line (§4.5).
 function bind_stmt(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.StmtKind
     name = cursor.bump(@c).span
-    _ = cursor.bump(@c)
-    return .bind(name: name, ty: fail(code: "inferred", msg: "no written type"), value: parse_expr(@c, @a, text))
+    at = cursor.bump(@c)
+    value = parse_expr(@c, @a, text)
 
-# `v: i64 @= 0` — a mutable cell, type mandatory (`@`, the symbol until panel
-# 209, is told with a certain fix and still read, `annotation.cell_symbol`).
-# `xs: [i64] = []` — an immutable binding that needs its annotation because an
-# empty literal cannot say what it holds (§4.5). A type that failed is one
-# mistake, and what it owes after it is `parse/annotation`'s (defect 131).
+    if at.kind == .at_eq
+        return .declare(name: name, ty: fail(code: "inferred", msg: "no written type"), value: value, symbol: at.span)
+    return .bind(name: name, ty: fail(code: "inferred", msg: "no written type"), value: value)
+
+# `v: i64 @= 0` — a cell with its type written (`@`, the symbol until panel
+# 209, is told with a certain fix and still read, `annotation.cell_symbol`);
+# `xs: [i64] = []` — a binding whose empty literal needs its annotation (§4.5).
+# A type that failed is one mistake, and what it owes after it is
+# `parse/annotation`'s (defect 131).
 function annotated(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.StmtKind
     name = cursor.bump(@c).span
     _ = cursor.bump(@c)
@@ -1008,7 +1014,7 @@ function annotated(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.StmtKind
     at = cursor.current_span(c)
 
     if annotation.cell_symbol(@c, text)
-        return .declare(name: name, ty: ty, value: parse_expr(@c, @a, text), symbol: at)
+        return .declare(name: name, ty: ok(ty), value: parse_expr(@c, @a, text), symbol: at)
 
     if cursor.eat(@c, .eq)
         return .bind(name: name, ty: ok(ty), value: parse_expr(@c, @a, text))
@@ -1023,18 +1029,11 @@ function expression_or_mutation(@c: cursor.Cursor, @a: ast.Ast, text: str) -> as
     value = parse_expr(@c, @a, text)
 
     # A block that just closed ended the statement: an `@` below it opens the
-    # next one, never this one's mutation (`parse/at_prefix`). A place that
-    # could not be read at all was told by what refused it, `@ 5` at its `@`.
-    if cursor.previous_kind(c) == .dedent || !cursor.eat(@c, .at)
+    # next one, never this one's mutation (`parse/at_prefix`). `p.x @= 1` is the
+    # write it can only be, and a left side that is no place is told at the
+    # value, both by `cell_errors`.
+    if cursor.previous_kind(c) == .dedent || !cell_errors.written(@c, a, text, place: value)
         return .expr_stmt(value: value)
-
-    if !expr_kinds.is_place(a, value) && a.exprs[value].kind != .error
-        cursor.error(
-            @c,
-            code: "not_a_place",
-            message: "only a name, a field or an element can be mutated — the left of `@` must name where the value goes",
-            span: a.exprs[value].span
-        )
     return .mutate(place: value, value: parse_expr(@c, @a, text))
 
 # `@v = e` or `@return 1`, told once at its `@` and read as the statement the

@@ -49,13 +49,11 @@ function write_stmt(tree: ast.Ast, s: source.Source, id: i64, indent: i64, head:
                 indent: indent
             )
         .declare dc =>
-            return write_valued(
-                tree,
-                s,
-                head: head + "declare " + source.span_text(s, dc.name) + ": " + types.render_type(tree, dc.ty, s) + " @= ",
-                value: dc.value,
-                indent: indent
-            )
+            typed: str @= source.span_text(s, dc.name)
+
+            if !dc.ty.is_err()
+                typed @ typed + ": " + types.render_type(tree, dc.ty.must(), s)
+            return write_valued(tree, s, head: head + "declare " + typed + " @= ", value: dc.value, indent: indent)
         .mutate m =>
             return write_valued(
                 tree,

@@ -1,0 +1,22 @@
+# A cell born of the bare `nullptr` with no written type would be a `ptr`,
+# and the handle it was meant for refused it lines below with no word of
+# the declaration: told at the birth, with a guess naming the annotation,
+# and the cell poisoned so the opener below says nothing (panel 209's R1).
+# The cell beside it, annotated `CDb`, is the handle it says and is told
+# nothing.
+
+extern "inferred-cell-born-of-nullptr-is-told-at-its-birth.h"
+    record CDb tag cdb
+    function db_open(path: cstr lent, @out: CDb acquires db_close) -> i64
+    function db_close(db: CDb consumes) -> i64
+
+function main()
+    db @= nullptr  #~ cannot_infer
+    told: CDb @= nullptr
+
+    if db_open(path: ":memory:".cstr(), out: @db) != 0
+        return
+
+    if db_open(path: ":memory:".cstr(), out: @told) != 0
+        return
+    _ = db_close(told)

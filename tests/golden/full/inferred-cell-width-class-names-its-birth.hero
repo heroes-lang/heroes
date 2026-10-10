@@ -1,0 +1,11 @@
+# A cell born of a bare integer literal is an `i64`, and a later write of
+# another width is a mismatch that, until panel 209, named the two types and
+# not the declaration where the repair is: the note names the birth and the
+# guess annotates the cell with the width the write holds (the width class,
+# 15 cells in 4 files of `selfhost/` at the sitting).
+
+function main()
+    n @= 0
+    b: u8 = 255
+    n @ b  #~ type_mismatch
+    print(n)

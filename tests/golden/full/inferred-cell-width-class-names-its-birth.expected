@@ -1,0 +1,7 @@
+error[type_mismatch]: expected `i64`, found `u8`
+  at tests/golden/full/inferred-cell-width-class-names-its-birth.hero:10:9
+     |
+  10 |     n @ b  #~ type_mismatch
+     |         ^
+  note: `n` is an `i64` from the literal it was born of at line 8, and a cell keeps the type it was born with — the width it should hold is written on the declaration
+  fix (guess): annotate the cell: `n: u8 @= …` (at tests/golden/full/inferred-cell-width-class-names-its-birth.hero:8:6)

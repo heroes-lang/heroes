@@ -1,0 +1,3 @@
+tests/golden/check/cell-redeclared-is-its-rebinding.hero:7:7: error[cell_redeclared]: `n` is already mutable here, declared at line 6 — `@=` would declare a second `n`, and a cell is re-bound with `@`: write `n @ …`
+tests/golden/check/cell-redeclared-is-its-rebinding.hero:11:7: error[cell_redeclared]: `v` is already mutable here, declared at line 10 — `@=` would declare a second `v`, and a cell is re-bound with `@`: write `v @ …`
+tests/golden/check/cell-redeclared-is-its-rebinding.hero:14:11: error[cell_redeclared]: `v` is already mutable here, declared at line 10 — `@=` would declare a second `v`, and a cell is re-bound with `@`: write `v @ …`

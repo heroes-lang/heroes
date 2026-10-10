@@ -1,0 +1,14 @@
+# `p.x @= 1` or `xs[0] @= 2`: the cell's symbol on a field or an element,
+# which can only be the write it looks like, since a cell is a bare name.
+# One message at the symbol with the certain fix that writes `@`, and the
+# line read as the write (panel 209).
+
+record Point
+    x: i64
+
+function main()
+    p @= Point(x: 1)
+    p.x @= 2  #~ declared_place
+    xs @= [1]
+    xs[0] @= 3  #~ declared_place
+    print(p.x + xs[0])

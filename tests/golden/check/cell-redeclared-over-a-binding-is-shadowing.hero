@@ -1,0 +1,8 @@
+# `x @= 2` where `x` was bound with `=` is no re-binding: a `=` binds once,
+# forever, so the message is the shadowing one and carries no certain fix
+# (spec § 5; the edge of panel 209's op= pair).
+
+function main()
+    x = 1
+    x @= 2  #~ shadowed_binding
+    print(x)

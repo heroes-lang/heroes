@@ -68,6 +68,7 @@ use check/waiting as waits
 use check/waiting_order as settle_order
 use check/settling
 use check/empty_binding
+use check/width_class
 use check/discard
 use value_errors
 use discard_errors
@@ -779,30 +780,13 @@ function statement(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: sourc
 
     match a.stmts[id].kind
         .bind b =>
-            bound: i64 @= 0
-
-            if !b.ty.is_err()
-                declared = lower.lower_ty(@c, a, r, b.ty.must())
-                check(@c, a, r, s, decls, id: b.value, expected: declared)
-                bound @ declared
-            else
-                said = c.out.diagnostics.len()
-                bound @ synth(@c, a, r, s, decls, b.value)
-                empty_binding.retell(@c, a, s, from: said, value: b.value, name: b.name)
-
-            # Panel 017 C: () is not a value, so nothing can hold one.
-            # Poisoned rather than (): every later read stays quiet,
-            # because there is one mistake here and it has been reported.
-            if bound == table.unit_ty(c.out.types)
-                state.push_diagnostic(@c, discard_errors.bound_unit(source.span_text(s, b.name), b.name))
-                bound @ state.error_ty_of(c)
+            bound = born(@c, a, r, s, decls, ty: b.ty, value: b.value, name: b.name, cell: false)
             discard.refuse(@c, a, s, decls, name: b.name, value: b.value, ty: bound, span: span)
             state.bind_local(@c, b.name, ty: bound)
             return falls_with_nothing()
         .declare d =>
-            declared = lower.lower_ty(@c, a, r, d.ty)
-            check(@c, a, r, s, decls, id: d.value, expected: declared)
-            state.bind_local(@c, d.name, ty: declared)
+            held = born(@c, a, r, s, decls, ty: d.ty, value: d.value, name: d.name, cell: true)
+            state.bind_local(@c, d.name, ty: held)
             return falls_with_nothing()
         .mutate m =>
             target = synth(@c, a, r, s, decls, m.place)
@@ -813,7 +797,9 @@ function statement(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: sourc
             # absent; WRITING one cannot fail, because m[k] @ v inserts.
             # So the target sheds one fallible layer, only for this shape.
             narrowed = access.write_target(c, a, place: m.place, read: target)
+            said = c.out.diagnostics.len()
             check(@c, a, r, s, decls, id: m.value, expected: narrowed)
+            width_class.note(@c, a, r, s, decls, place: m.place, value: m.value, from: said)
             return falls_with_nothing()
         .return_stmt rv => return returns(@c, a, r, s, decls, value: rv.value, span: span)
         .break_stmt     => return loop_jump(@c, word: "break", span: span)
@@ -825,6 +811,21 @@ function statement(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: sourc
         .error          => return falls_with_nothing()
 
     return falls_with_nothing()
+
+# The type a binding or a cell is born with (§4.5; spec § 5, panel 209): the
+# written one, checked against the value, or the value's own where none is
+# written; what the value cannot say or hold is `check/empty_binding`'s to tell.
+function born(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], ty: i64?, value: i64, name: token.Span, cell: bool) -> i64
+    held: i64 @= 0
+
+    if !ty.is_err()
+        held @ lower.lower_ty(@c, a, r, ty.must())
+        check(@c, a, r, s, decls, id: value, expected: held)
+    else
+        said = c.out.diagnostics.len()
+        held @ synth(@c, a, r, s, decls, value)
+        held @ empty_binding.retell(@c, a, s, from: said, value: value, name: name, cell: cell, held: held)
+    return empty_binding.poisoned(@c, a, s, name: name, value: value, held: held, bare_cell: cell && ty.is_err())
 
 # The three statements below are functions of their own so that `statement`,
 # which every nested block recurses through, holds none of their

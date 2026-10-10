@@ -1,0 +1,16 @@
+# `v @= e` on a name already mutable, a cell or an `@` parameter, is the
+# cell's symbol where its re-binding was meant: one message at the symbol
+# with the certain fix that writes `@`, the write counted, nothing declared
+# twice and no second message below (spec § 5; panel 209's op= pair).
+
+function bump(@n: i64)
+    n @= n + 1  #~ cell_redeclared
+
+function main()
+    v @= 0
+    v @= v + 1  #~ cell_redeclared
+
+    if v > 0
+        v @= 2  #~ cell_redeclared
+    bump(@v)
+    print(v)

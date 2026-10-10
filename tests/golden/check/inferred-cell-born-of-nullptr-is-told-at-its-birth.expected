@@ -1,0 +1,1 @@
+tests/golden/check/inferred-cell-born-of-nullptr-is-told-at-its-birth.hero:14:11: error[cannot_infer]: `nullptr` alone says `ptr`, not which handle `db` will hold — write the handle's type on the declaration
