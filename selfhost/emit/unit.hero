@@ -60,6 +60,7 @@ use emit/writer
 use emit/decls as emit_decls
 use emit/typeorder
 use emit/extern_probe
+use emit/extern_refs
 use emit/perfn
 use emit/descriptors
 use emit/signature
@@ -121,6 +122,10 @@ function unit(plan: unit_plan.Plan, p: containers.Program, c: state.Checked, s: 
     # the typedefs and not in the prelude (panel 111 R4). `tu_p` is the
     # same program the reach loop above walked for exactly this reason.
     extern_probe.extern_probes(@w, tu_p, c, names, s, decls)
+
+    # Every function this unit calls through a group, its address held, so
+    # the link needs its definition at every level (defect 562).
+    extern_refs.references(@w, tu_p, s, decls)
     perfn.prototypes(@w, c, names, decls, want: want)
 
     # `declared`, not `walked.reached`: an option this TU prints `_hash`

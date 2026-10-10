@@ -1,0 +1,6 @@
+error[ffi_missing_link]: `twice` is defined only `inline` in `fixedbugs-562-inline.h` line 4, and nothing else defines it: C wants one external definition of it in the program, which a call reaches wherever it is not inlined, and an `inline` definition alone in a header gives none
+  at tests/golden/unsupported/fixedbugs-562-a-header-only-inline-is-told-what-c-wants.hero:13:5
+     |
+  13 |     function twice(x: i64) -> i64  #~ ffi_missing_link
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: every unit that calls it references the external definition, at `-O0` and `-O2` alike, so the link refuses it at both: write `twice` `static inline` in the header, so each unit has its own, or link the library that defines it, `extern "fixedbugs-562-inline.h" link "<library>"`
