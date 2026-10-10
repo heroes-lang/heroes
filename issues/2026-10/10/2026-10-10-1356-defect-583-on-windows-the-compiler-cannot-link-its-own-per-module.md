@@ -3,7 +3,7 @@ kind: defect
 area: cli
 milestone: none
 filed: 2026-10-10
-commit: none
+commit: bf1eb16bc7f0d456689864bf7f7954c5cb585dff
 github: none
 ---
 
@@ -12,3 +12,5 @@ github: none
     **Origin:** found by lane b18-guard beside panel 205's landing (its final reply and notes, `.claude/worktrees/scratch-b15/b18-guard/notes.txt`, ignored by git), filed by the coordinator at 13:56 on 2026-10-10.
 
     **Class: blocking**, 2026-10-10 (`.claude/rules/verification.md` § Bounded discovery): the compiler unable to build itself per module on a supported platform.
+
+    Repaired at `bf1eb16bc7f0d456689864bf7f7954c5cb585dff`, 2026-10-10 (lane b19-link), gated by its cases and the compiler's own tests; the net is owed at the batch's close. The link's words but `clang` are written into `link-words.rsp` in the binary's home, which is named by every one of them, and clang runs `clang --rsp-quoting=posix @<that file>` with the PDB's name and `-o` after it (`selfhost/cli/response_file.hero`, called from `cli/link.hero`): always, on every platform, never past a length. Each word is written by GNU's rule, double quotes and a backslash before each backslash and quote, which `--rsp-quoting=posix` names on every host: measured under Apple clang 21.0.0 and Debian clang 22.1.8 (Linux arm64), fourteen objects with hard names (a space, a tab, a line end, both quotes, a backslash inside, doubled and last, `$`, `;`, `&`, `*`, `#`, `<CFGDIR>`, an accented `e`) linked through one file and clang said nothing under `-Weverything`, while `--rsp-quoting=windows` lost the two with a backslash. This tree's self-build links 580 objects through a file of 35,165 bytes (33,385 characters of object paths, past the 32,767 the box refused). Cases: four compiler tests, a link of one object repeated until its paths pass 32,767 characters, run and checked word for word against its file, and the hard names linked through `through`. Gate: the compiler's own tests 1,564 and 0 on this Mac and in the Linux arm64 container; layout 4 and 0 on each touched module; cache 7 and 0; run narrowed 1 and 0 (`link`), 15 and 0 (`396`); determinism 482 and 1, lines 445 and 1, warnings 507 and 2, every red a case the harness's watchdog ended (exit 124) at load 100 that alone builds or emits at exit 0, the emission twice `cmp`-equal and the `-O2` builds printing no warning. Two generations of the compiler built through the file are `cmp`-equal on Linux arm64; on this Mac they differ, and so do two links of the same objects before the repair (defect 593), the C they emit being `cmp`-equal. The Windows box did not answer at 15:05; the CI's Windows leg judges, running the compiler's own tests, the long link among them. Cost, instructions of a cold build: a small program 959.7M to 957.8M, the compiler on the base source 429.75G to 407.43G at load 18 to 111, inside the noise. Beside it, filed apart: defect 586 (a unit's compile words) and 593.
