@@ -30,10 +30,13 @@
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
+#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -42,7 +45,7 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 
 #line 8 "tests/golden/run/ffi-rest-zero-a-partial-record.hero"
 _Static_assert(__builtin_classify_type(((SP *)0)->kind) == 1 && sizeof(((SP *)0)->kind) == sizeof(int32_t) && (_Generic(((SP *)0)->kind, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field SP kind");
-#line 46 "ffirestzeroapartialrecord.c"
+#line 49 "ffirestzeroapartialrecord.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -106,6 +109,7 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
+#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
@@ -125,7 +129,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 129 "ffirestzeroapartialrecord.c"
+#line 133 "ffirestzeroapartialrecord.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_ffirestzeroapartialrecord_SP_eq(const SP *a, const SP *b);
@@ -141,16 +145,13 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 SP h_ffirestzeroapartialrecord_built(void);
 void h_ffirestzeroapartialrecord_main(void);
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 12 "tests/golden/run/ffi-rest-zero-a-partial-record.hero"
 SP h_ffirestzeroapartialrecord_built(void) {
-#line 149 "ffirestzeroapartialrecord.c"
-    int32_t t1;
-    SP t2;
-    goto bb0;
+#line 12 "tests/golden/run/ffi-rest-zero-a-partial-record.hero"
+    int32_t t1; SP t2; goto bb0;
+#line 12 "tests/golden/run/ffi-rest-zero-a-partial-record.hero"
 bb0:
-#line 13 "tests/golden/run/ffi-rest-zero-a-partial-record.hero"
     t1 = INT64_C(4);
 #line 13 "tests/golden/run/ffi-rest-zero-a-partial-record.hero"
     t2 = (SP){0};
@@ -160,24 +161,17 @@ bb0:
     t2.kind = t1;
 #line 13 "tests/golden/run/ffi-rest-zero-a-partial-record.hero"
     return t2;
-#line 164 "ffirestzeroapartialrecord.c"
+#line 165 "ffirestzeroapartialrecord.c"
 }
 
 #line 15 "tests/golden/run/ffi-rest-zero-a-partial-record.hero"
 void h_ffirestzeroapartialrecord_main(void) {
-#line 169 "ffirestzeroapartialrecord.c"
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-    SP *const hero_lend_h0_s = (SP *)hero_lend_local(sizeof(SP), "ffirestzeroapartialrecord.main", "s");
+#line 15 "tests/golden/run/ffi-rest-zero-a-partial-record.hero"
 #define h0_s (*hero_lend_h0_s)
-    SP t1;
-    SP t2;
-    int32_t t3;
-    HeroStr t4;
-    int64_t t5;
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
-    goto bb0;
+#line 15 "tests/golden/run/ffi-rest-zero-a-partial-record.hero"
+    SP *const hero_lend_h0_s = (SP *)hero_lend_local(sizeof(SP), "ffirestzeroapartialrecord.main", "s"); SP t1; SP t2; int32_t t3; HeroStr t4; int64_t t5; goto bb0;
+#line 15 "tests/golden/run/ffi-rest-zero-a-partial-record.hero"
 bb0:
-#line 16 "tests/golden/run/ffi-rest-zero-a-partial-record.hero"
     (void)dirty();
     t1 = h_ffirestzeroapartialrecord_built();
 #line 17 "tests/golden/run/ffi-rest-zero-a-partial-record.hero"
@@ -203,10 +197,9 @@ bb0:
     hero_lend_local_give(hero_lend_h0_s);
 #line 18 "tests/golden/run/ffi-rest-zero-a-partial-record.hero"
     return;
-#line 207 "ffirestzeroapartialrecord.c"
+#line 201 "ffirestzeroapartialrecord.c"
 }
 #undef h0_s
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_ffirestzeroapartialrecord_SP_eq(const SP *a, const SP *b) {
     hero_panic("h_ffirestzeroapartialrecord_SP_eq: a partial record has no structural equality");
 }

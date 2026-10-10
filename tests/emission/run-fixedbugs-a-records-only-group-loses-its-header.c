@@ -32,10 +32,13 @@
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
+#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -47,11 +50,11 @@ _Static_assert(__builtin_classify_type(((Color *)0)->r) == 1 && sizeof(((Color *
 _Static_assert(__builtin_classify_type(((Color *)0)->g) == 1 && sizeof(((Color *)0)->g) == sizeof(uint8_t) && (_Generic(((Color *)0)->g, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 1), "heroes-ffi-field Color g");
 _Static_assert(__builtin_classify_type(((Color *)0)->b) == 1 && sizeof(((Color *)0)->b) == sizeof(uint8_t) && (_Generic(((Color *)0)->b, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 1), "heroes-ffi-field Color b");
 _Static_assert(__builtin_classify_type(((Color *)0)->a) == 1 && sizeof(((Color *)0)->a) == sizeof(uint8_t) && (_Generic(((Color *)0)->a, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 1), "heroes-ffi-field Color a");
-#line 51 "fixedbugsarecordsonlygrouplosesitsheader.c"
+#line 54 "fixedbugsarecordsonlygrouplosesitsheader.c"
 
 #line 22 "tests/golden/run/fixedbugs-a-records-only-group-loses-its-header.hero"
 _Static_assert(__builtin_classify_type(*(Color *)0) != 13, "heroes-ffi-union Color r g b a");
-#line 55 "fixedbugsarecordsonlygrouplosesitsheader.c"
+#line 58 "fixedbugsarecordsonlygrouplosesitsheader.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -119,7 +122,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 123 "fixedbugsarecordsonlygrouplosesitsheader.c"
+#line 126 "fixedbugsarecordsonlygrouplosesitsheader.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugsarecordsonlygrouplosesitsheader_Color_eq(const Color *a, const Color *b);
@@ -134,26 +137,13 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_fixedbugsarecordsonlygrouplosesitsheader_main(void);
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 28 "tests/golden/run/fixedbugs-a-records-only-group-loses-its-header.hero"
 void h_fixedbugsarecordsonlygrouplosesitsheader_main(void) {
-#line 142 "fixedbugsarecordsonlygrouplosesitsheader.c"
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-    Color h0_red;
-    uint8_t t1;
-    uint8_t t2;
-    uint8_t t3;
-    uint8_t t4;
-    Color t5;
-    Color t6;
-    uint8_t t7;
-    Color t8;
-    uint8_t t9;
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
-    goto bb0;
+#line 28 "tests/golden/run/fixedbugs-a-records-only-group-loses-its-header.hero"
+    Color h0_red; uint8_t t1; uint8_t t2; uint8_t t3; uint8_t t4; Color t5; Color t6; uint8_t t7; Color t8; uint8_t t9; goto bb0;
+#line 28 "tests/golden/run/fixedbugs-a-records-only-group-loses-its-header.hero"
 bb0:
-#line 29 "tests/golden/run/fixedbugs-a-records-only-group-loses-its-header.hero"
     t1 = UINT64_C(255);
 #line 29 "tests/golden/run/fixedbugs-a-records-only-group-loses-its-header.hero"
     t2 = UINT64_C(0);
@@ -181,9 +171,8 @@ bb0:
     hero_print_end();
 #line 31 "tests/golden/run/fixedbugs-a-records-only-group-loses-its-header.hero"
     return;
-#line 185 "fixedbugsarecordsonlygrouplosesitsheader.c"
+#line 175 "fixedbugsarecordsonlygrouplosesitsheader.c"
 }
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_fixedbugsarecordsonlygrouplosesitsheader_Color_eq(const Color *a, const Color *b) {
     if (!(a->r == b->r)) return false;
     if (!(a->g == b->g)) return false;

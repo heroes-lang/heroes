@@ -30,10 +30,13 @@
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
+#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -45,11 +48,11 @@ _Static_assert(sizeof(struct held) - __builtin_offsetof(struct held, buf) != 0, 
 #line 9 "tests/golden/run/fixedbugs-395-a-count-read-at-run-time-past-c-s-unit-aborts.hero"
 _Static_assert(_Generic(&((struct held *)0)->buf, _Bool (*)[16]: (sizeof(_Bool) == sizeof(uint8_t) && (((_Bool)-1 < 0) == ((uint8_t)-1 < 0))), char (*)[16]: (sizeof(char) == sizeof(uint8_t) && (((char)-1 < 0) == ((uint8_t)-1 < 0))), signed char (*)[16]: (sizeof(signed char) == sizeof(uint8_t) && (((signed char)-1 < 0) == ((uint8_t)-1 < 0))), short (*)[16]: (sizeof(short) == sizeof(uint8_t) && (((short)-1 < 0) == ((uint8_t)-1 < 0))), int (*)[16]: (sizeof(int) == sizeof(uint8_t) && (((int)-1 < 0) == ((uint8_t)-1 < 0))), long (*)[16]: (sizeof(long) == sizeof(uint8_t) && (((long)-1 < 0) == ((uint8_t)-1 < 0))), long long (*)[16]: (sizeof(long long) == sizeof(uint8_t) && (((long long)-1 < 0) == ((uint8_t)-1 < 0))), unsigned char (*)[16]: (sizeof(unsigned char) == sizeof(uint8_t) && (((unsigned char)-1 < 0) == ((uint8_t)-1 < 0))), unsigned short (*)[16]: (sizeof(unsigned short) == sizeof(uint8_t) && (((unsigned short)-1 < 0) == ((uint8_t)-1 < 0))), unsigned int (*)[16]: (sizeof(unsigned int) == sizeof(uint8_t) && (((unsigned int)-1 < 0) == ((uint8_t)-1 < 0))), unsigned long (*)[16]: (sizeof(unsigned long) == sizeof(uint8_t) && (((unsigned long)-1 < 0) == ((uint8_t)-1 < 0))), unsigned long long (*)[16]: (sizeof(unsigned long long) == sizeof(uint8_t) && (((unsigned long long)-1 < 0) == ((uint8_t)-1 < 0))), default: 0), "heroes-ffi-field Held buf");
 _Static_assert(__builtin_classify_type(((struct held *)0)->after) == 1 && sizeof(((struct held *)0)->after) == sizeof(int64_t) && (_Generic(((struct held *)0)->after, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Held after");
-#line 49 "fixedbugs395acountreadatruntimepastcsunitaborts.c"
+#line 52 "fixedbugs395acountreadatruntimepastcsunitaborts.c"
 
 #line 8 "tests/golden/run/fixedbugs-395-a-count-read-at-run-time-past-c-s-unit-aborts.hero"
 _Static_assert(__builtin_classify_type(*(struct held *)0) != 13, "heroes-ffi-union Held buf after");
-#line 53 "fixedbugs395acountreadatruntimepastcsunitaborts.c"
+#line 56 "fixedbugs395acountreadatruntimepastcsunitaborts.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -112,6 +115,7 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
+#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
@@ -131,7 +135,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 135 "fixedbugs395acountreadatruntimepastcsunitaborts.c"
+#line 139 "fixedbugs395acountreadatruntimepastcsunitaborts.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs395acountreadatruntimepastcsunitaborts_Held_eq(const struct held *a, const struct held *b);
@@ -147,17 +151,13 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 uint64_t h_fixedbugs395acountreadatruntimepastcsunitaborts_at_run_time(uint64_t h0_k);
 void h_fixedbugs395acountreadatruntimepastcsunitaborts_main(void);
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 13 "tests/golden/run/fixedbugs-395-a-count-read-at-run-time-past-c-s-unit-aborts.hero"
 uint64_t h_fixedbugs395acountreadatruntimepastcsunitaborts_at_run_time(uint64_t h0_k) {
-#line 155 "fixedbugs395acountreadatruntimepastcsunitaborts.c"
-    uint64_t t1;
-    uint64_t t2;
-    uint64_t t3;
-    goto bb0;
+#line 13 "tests/golden/run/fixedbugs-395-a-count-read-at-run-time-past-c-s-unit-aborts.hero"
+    uint64_t t1; uint64_t t2; uint64_t t3; goto bb0;
+#line 13 "tests/golden/run/fixedbugs-395-a-count-read-at-run-time-past-c-s-unit-aborts.hero"
 bb0:
-#line 14 "tests/golden/run/fixedbugs-395-a-count-read-at-run-time-past-c-s-unit-aborts.hero"
     t1 = h0_k;
 #line 14 "tests/golden/run/fixedbugs-395-a-count-read-at-run-time-past-c-s-unit-aborts.hero"
     t2 = UINT64_C(4);
@@ -170,39 +170,10 @@ bb0:
 
 #line 16 "tests/golden/run/fixedbugs-395-a-count-read-at-run-time-past-c-s-unit-aborts.hero"
 void h_fixedbugs395acountreadatruntimepastcsunitaborts_main(void) {
-#line 174 "fixedbugs395acountreadatruntimepastcsunitaborts.c"
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-    struct held h0_h;
-    uint8_t t1;
-    uint8_t t2;
-    uint8_t t3;
-    uint8_t t4;
-    uint8_t t5;
-    uint8_t t6;
-    uint8_t t7;
-    uint8_t t8;
-    uint8_t t9;
-    uint8_t t10;
-    uint8_t t11;
-    uint8_t t12;
-    uint8_t t13;
-    uint8_t t14;
-    uint8_t t15;
-    uint8_t t16;
-    int64_t t18;
-    struct held t19;
-    struct held t20;
-    int64_t t21;
-    void * t24;
-    uint64_t t25;
-    uint64_t t26;
-    int64_t t27;
-    struct held t28;
-    int64_t t29;
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
-    goto bb0;
+#line 16 "tests/golden/run/fixedbugs-395-a-count-read-at-run-time-past-c-s-unit-aborts.hero"
+    struct held h0_h; uint8_t t1; uint8_t t2; uint8_t t3; uint8_t t4; uint8_t t5; uint8_t t6; uint8_t t7; uint8_t t8; uint8_t t9; uint8_t t10; uint8_t t11; uint8_t t12; uint8_t t13; uint8_t t14; uint8_t t15; uint8_t t16; int64_t t18; struct held t19; struct held t20; int64_t t21; void * t24; uint64_t t25; uint64_t t26; int64_t t27; struct held t28; int64_t t29; goto bb0;
+#line 16 "tests/golden/run/fixedbugs-395-a-count-read-at-run-time-past-c-s-unit-aborts.hero"
 bb0:
-#line 17 "tests/golden/run/fixedbugs-395-a-count-read-at-run-time-past-c-s-unit-aborts.hero"
     t1 = UINT64_C(0);
 #line 17 "tests/golden/run/fixedbugs-395-a-count-read-at-run-time-past-c-s-unit-aborts.hero"
     t2 = UINT64_C(0);
@@ -269,9 +240,8 @@ bb0:
     hero_print_end();
 #line 20 "tests/golden/run/fixedbugs-395-a-count-read-at-run-time-past-c-s-unit-aborts.hero"
     return;
-#line 273 "fixedbugs395acountreadatruntimepastcsunitaborts.c"
+#line 244 "fixedbugs395acountreadatruntimepastcsunitaborts.c"
 }
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_fixedbugs395acountreadatruntimepastcsunitaborts_Held_eq(const struct held *a, const struct held *b) {
     if (!((a->buf[0] == b->buf[0] && a->buf[1] == b->buf[1] && a->buf[2] == b->buf[2] && a->buf[3] == b->buf[3] && a->buf[4] == b->buf[4] && a->buf[5] == b->buf[5] && a->buf[6] == b->buf[6] && a->buf[7] == b->buf[7] && a->buf[8] == b->buf[8] && a->buf[9] == b->buf[9] && a->buf[10] == b->buf[10] && a->buf[11] == b->buf[11] && a->buf[12] == b->buf[12] && a->buf[13] == b->buf[13] && a->buf[14] == b->buf[14] && a->buf[15] == b->buf[15]))) return false;
     if (!(a->after == b->after)) return false;

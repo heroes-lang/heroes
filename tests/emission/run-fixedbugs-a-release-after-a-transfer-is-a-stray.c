@@ -30,10 +30,13 @@
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
+#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -83,7 +86,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_45627840, "handed over");
 HERO_STR_STATIC(hero_str_4414937d, "not reached");
 
-#line 87 "fixedbugsareleaseafteratransferisastray.c"
+#line 90 "fixedbugsareleaseafteratransferisastray.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -107,6 +110,7 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
+#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
@@ -128,7 +132,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 132 "fixedbugsareleaseafteratransferisastray.c"
+#line 136 "fixedbugsareleaseafteratransferisastray.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugsareleaseafteratransferisastray_Ob_eq(ob * const *a, ob * const *b);
@@ -145,25 +149,13 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_fixedbugsareleaseafteratransferisastray_main(void);
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 28 "tests/golden/run/fixedbugs-a-release-after-a-transfer-is-a-stray.hero"
 void h_fixedbugsareleaseafteratransferisastray_main(void) {
-#line 153 "fixedbugsareleaseafteratransferisastray.c"
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-    ob * h0_a;
-    wr * h1_w;
-    ob * t1;
-    ob * t2;
-    wr * t3;
-    HeroStr t4;
-    ob * t5;
-    wr * t6;
-    HeroStr t7;
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
-    goto bb0;
+#line 28 "tests/golden/run/fixedbugs-a-release-after-a-transfer-is-a-stray.hero"
+    ob * h0_a; wr * h1_w; ob * t1; ob * t2; wr * t3; HeroStr t4; ob * t5; wr * t6; HeroStr t7; goto bb0;
+#line 28 "tests/golden/run/fixedbugs-a-release-after-a-transfer-is-a-stray.hero"
 bb0:
-#line 29 "tests/golden/run/fixedbugs-a-release-after-a-transfer-is-a-stray.hero"
     t1 = ob_new();
 #line 29 "tests/golden/run/fixedbugs-a-release-after-a-transfer-is-a-stray.hero"
     hero_handle_acquired(t1, "ob_put");
@@ -232,9 +224,8 @@ bb0:
     hero_print_end();
 #line 34 "tests/golden/run/fixedbugs-a-release-after-a-transfer-is-a-stray.hero"
     return;
-#line 236 "fixedbugsareleaseafteratransferisastray.c"
+#line 228 "fixedbugsareleaseafteratransferisastray.c"
 }
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_fixedbugsareleaseafteratransferisastray_Ob_eq(ob * const *a, ob * const *b) {
     return hero_handle_eq(*a, *b);
 }

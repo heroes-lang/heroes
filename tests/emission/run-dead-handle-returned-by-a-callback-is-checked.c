@@ -30,10 +30,13 @@
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
+#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -81,7 +84,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_21c9984d, "C wrote ");
 
-#line 85 "deadhandlereturnedbyacallbackischecked.c"
+#line 88 "deadhandlereturnedbyacallbackischecked.c"
 typedef node * (*h_0fn_4dd6fcee)(int32_t);
 typedef struct h_0opt_f87774a {
     int64_t tag;
@@ -106,6 +109,7 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
+#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
@@ -126,7 +130,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 130 "deadhandlereturnedbyacallbackischecked.c"
+#line 134 "deadhandlereturnedbyacallbackischecked.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_deadhandlereturnedbyacallbackischecked_Node_eq(node * const *a, node * const *b);
@@ -149,24 +153,13 @@ __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
     return f;
 }
 
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 18 "tests/golden/run/dead-handle-returned-by-a-callback-is-checked.hero"
 node * h_deadhandlereturnedbyacallbackischecked_give(int32_t h0_k) {
-#line 157 "deadhandlereturnedbyacallbackischecked.c"
-    hero_thread_guard("deadhandlereturnedbyacallbackischecked.give");
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-    node * h1_m;
-    node * t1;
-    int32_t t2;
-    int32_t t3;
-    bool t4;
-    node * t5;
-    node * t6;
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
-    goto bb0;
+#line 18 "tests/golden/run/dead-handle-returned-by-a-callback-is-checked.hero"
+    hero_thread_guard("deadhandlereturnedbyacallbackischecked.give"); node * h1_m; node * t1; int32_t t2; int32_t t3; bool t4; node * t5; node * t6; goto bb0;
+#line 18 "tests/golden/run/dead-handle-returned-by-a-callback-is-checked.hero"
 bb0:
-#line 19 "tests/golden/run/dead-handle-returned-by-a-callback-is-checked.hero"
     t1 = node_new();
 #line 19 "tests/golden/run/dead-handle-returned-by-a-callback-is-checked.hero"
     hero_handle_acquired(t1, "node_free");
@@ -208,7 +201,7 @@ bb2:
 bb3:
 #line 22 "tests/golden/run/dead-handle-returned-by-a-callback-is-checked.hero"
     goto bb1;
-#line 212 "deadhandlereturnedbyacallbackischecked.c"
+#line 205 "deadhandlereturnedbyacallbackischecked.c"
 }
 
 node * h_0cb_deadhandlereturnedbyacallbackischecked_give(int32_t h0_k) {
@@ -219,13 +212,10 @@ node * h_0cb_deadhandlereturnedbyacallbackischecked_give(int32_t h0_k) {
 
 #line 25 "tests/golden/run/dead-handle-returned-by-a-callback-is-checked.hero"
 void h_deadhandlereturnedbyacallbackischecked_main(void) {
-#line 223 "deadhandlereturnedbyacallbackischecked.c"
-    HeroStr t1;
-    h_0fn_4dd6fcee t2;
-    int64_t t3;
-    goto bb0;
+#line 25 "tests/golden/run/dead-handle-returned-by-a-callback-is-checked.hero"
+    HeroStr t1; h_0fn_4dd6fcee t2; int64_t t3; goto bb0;
+#line 25 "tests/golden/run/dead-handle-returned-by-a-callback-is-checked.hero"
 bb0:
-#line 26 "tests/golden/run/dead-handle-returned-by-a-callback-is-checked.hero"
     t1 = HERO_STR_LIT(hero_str_21c9984d);
 #line 26 "tests/golden/run/dead-handle-returned-by-a-callback-is-checked.hero"
     t2 = h_deadhandlereturnedbyacallbackischecked_give;
@@ -239,9 +229,8 @@ bb0:
     hero_print_end();
 #line 26 "tests/golden/run/dead-handle-returned-by-a-callback-is-checked.hero"
     return;
-#line 243 "deadhandlereturnedbyacallbackischecked.c"
+#line 233 "deadhandlereturnedbyacallbackischecked.c"
 }
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_deadhandlereturnedbyacallbackischecked_Node_eq(node * const *a, node * const *b) {
     return hero_handle_eq(*a, *b);
 }

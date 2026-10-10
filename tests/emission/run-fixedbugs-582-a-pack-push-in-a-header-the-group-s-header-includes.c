@@ -30,10 +30,13 @@
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
+#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -78,7 +81,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_20, " ");
 
-#line 82 "fixedbugs582apackpushinaheaderthegroupsheaderincludes.c"
+#line 85 "fixedbugs582apackpushinaheaderthegroupsheaderincludes.c"
 typedef struct h_fixedbugs582pair_Pair {
     uint8_t f_a;
     int64_t f_b;
@@ -138,6 +141,7 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
+#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
@@ -157,7 +161,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 161 "fixedbugs582apackpushinaheaderthegroupsheaderincludes.c"
+#line 165 "fixedbugs582apackpushinaheaderthegroupsheaderincludes.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs582pair_Pair_eq(const h_fixedbugs582pair_Pair *a, const h_fixedbugs582pair_Pair *b);
@@ -186,33 +190,13 @@ h_fixedbugs582pair_Pair h_fixedbugs582pair_make(int64_t h0_n);
 int64_t h_fixedbugs582pair_second(h_fixedbugs582pair_Pair h0_p);
 h_fixedbugs582pair_Shape h_fixedbugs582pair_shape(int64_t h0_n);
 int64_t h_fixedbugs582pair_area(h_fixedbugs582pair_Shape h0_s);
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 12 "tests/golden/run/fixedbugs-582-a-pack-push-in-a-header-the-group-s-header-includes.hero"
 void h_fixedbugs582apackpushinaheaderthegroupsheaderincludes_main(void) {
-#line 194 "fixedbugs582apackpushinaheaderthegroupsheaderincludes.c"
-    h_fixedbugs582pair_Pair h0_p;
-    int64_t t1;
-    int64_t t2;
-    h_fixedbugs582pair_Pair t3;
-    h_fixedbugs582pair_Pair t4;
-    int64_t t5;
-    HeroStr t6;
-    h_fixedbugs582pair_Pair t7;
-    int64_t t8;
-    HeroStr t9;
-    uint8_t t10;
-    int64_t t11;
-    int64_t t12;
-    h_fixedbugs582pair_Pair t13;
-    int64_t t14;
-    int64_t t15;
-    int64_t t16;
-    h_fixedbugs582pair_Shape t17;
-    int64_t t18;
-    goto bb0;
+#line 12 "tests/golden/run/fixedbugs-582-a-pack-push-in-a-header-the-group-s-header-includes.hero"
+    h_fixedbugs582pair_Pair h0_p; int64_t t1; int64_t t2; h_fixedbugs582pair_Pair t3; h_fixedbugs582pair_Pair t4; int64_t t5; HeroStr t6; h_fixedbugs582pair_Pair t7; int64_t t8; HeroStr t9; uint8_t t10; int64_t t11; int64_t t12; h_fixedbugs582pair_Pair t13; int64_t t14; int64_t t15; int64_t t16; h_fixedbugs582pair_Shape t17; int64_t t18; goto bb0;
+#line 12 "tests/golden/run/fixedbugs-582-a-pack-push-in-a-header-the-group-s-header-includes.hero"
 bb0:
-#line 13 "tests/golden/run/fixedbugs-582-a-pack-push-in-a-header-the-group-s-header-includes.hero"
     t1 = INT64_C(-123456789);
 #line 13 "tests/golden/run/fixedbugs-582-a-pack-push-in-a-header-the-group-s-header-includes.hero"
     t2 = llabs(t1);
@@ -266,18 +250,15 @@ bb0:
     hero_print_end();
 #line 15 "tests/golden/run/fixedbugs-582-a-pack-push-in-a-header-the-group-s-header-includes.hero"
     return;
-#line 270 "fixedbugs582apackpushinaheaderthegroupsheaderincludes.c"
+#line 254 "fixedbugs582apackpushinaheaderthegroupsheaderincludes.c"
 }
 
 #line 17 "tests/golden/run/fixedbugs582/pair.hero"
 h_fixedbugs582pair_Pair h_fixedbugs582pair_make(int64_t h0_n) {
-#line 275 "fixedbugs582apackpushinaheaderthegroupsheaderincludes.c"
-    uint8_t t1;
-    int64_t t2;
-    h_fixedbugs582pair_Pair t3;
-    goto bb0;
+#line 17 "tests/golden/run/fixedbugs582/pair.hero"
+    uint8_t t1; int64_t t2; h_fixedbugs582pair_Pair t3; goto bb0;
+#line 17 "tests/golden/run/fixedbugs582/pair.hero"
 bb0:
-#line 18 "tests/golden/run/fixedbugs582/pair.hero"
     t1 = UINT64_C(1);
 #line 18 "tests/golden/run/fixedbugs582/pair.hero"
     t2 = h0_n;
@@ -285,34 +266,29 @@ bb0:
     t3 = (h_fixedbugs582pair_Pair){.f_a = t1, .f_b = t2};
 #line 18 "tests/golden/run/fixedbugs582/pair.hero"
     return t3;
-#line 289 "fixedbugs582apackpushinaheaderthegroupsheaderincludes.c"
+#line 270 "fixedbugs582apackpushinaheaderthegroupsheaderincludes.c"
 }
 
 #line 20 "tests/golden/run/fixedbugs582/pair.hero"
 int64_t h_fixedbugs582pair_second(h_fixedbugs582pair_Pair h0_p) {
-#line 294 "fixedbugs582apackpushinaheaderthegroupsheaderincludes.c"
-    h_fixedbugs582pair_Pair t1;
-    int64_t t2;
-    goto bb0;
+#line 20 "tests/golden/run/fixedbugs582/pair.hero"
+    h_fixedbugs582pair_Pair t1; int64_t t2; goto bb0;
+#line 20 "tests/golden/run/fixedbugs582/pair.hero"
 bb0:
-#line 21 "tests/golden/run/fixedbugs582/pair.hero"
     t1 = h0_p;
 #line 21 "tests/golden/run/fixedbugs582/pair.hero"
     t2 = t1.f_b;
 #line 21 "tests/golden/run/fixedbugs582/pair.hero"
     return t2;
-#line 305 "fixedbugs582apackpushinaheaderthegroupsheaderincludes.c"
+#line 284 "fixedbugs582apackpushinaheaderthegroupsheaderincludes.c"
 }
 
 #line 23 "tests/golden/run/fixedbugs582/pair.hero"
 h_fixedbugs582pair_Shape h_fixedbugs582pair_shape(int64_t h0_n) {
-#line 310 "fixedbugs582apackpushinaheaderthegroupsheaderincludes.c"
-    int64_t t1;
-    int64_t t2;
-    h_fixedbugs582pair_Shape t3;
-    goto bb0;
+#line 23 "tests/golden/run/fixedbugs582/pair.hero"
+    int64_t t1; int64_t t2; h_fixedbugs582pair_Shape t3; goto bb0;
+#line 23 "tests/golden/run/fixedbugs582/pair.hero"
 bb0:
-#line 24 "tests/golden/run/fixedbugs582/pair.hero"
     t1 = h0_n;
 #line 24 "tests/golden/run/fixedbugs582/pair.hero"
     t2 = h0_n;
@@ -320,48 +296,15 @@ bb0:
     t3 = (h_fixedbugs582pair_Shape){.tag = h_fixedbugs582pair_Shape_tag_rect, .as.c_rect = {.f_w = t1, .f_h = t2}};
 #line 24 "tests/golden/run/fixedbugs582/pair.hero"
     return t3;
-#line 324 "fixedbugs582apackpushinaheaderthegroupsheaderincludes.c"
+#line 300 "fixedbugs582apackpushinaheaderthegroupsheaderincludes.c"
 }
 
 #line 26 "tests/golden/run/fixedbugs582/pair.hero"
 int64_t h_fixedbugs582pair_area(h_fixedbugs582pair_Shape h0_s) {
-#line 329 "fixedbugs582apackpushinaheaderthegroupsheaderincludes.c"
-    h_fixedbugs582pair_Shape h1_s0;
-    h_fixedbugs582pair_Shape_c_flag h2_f;
-    h_0opt_e201354 h3_f0 = {0};
-    h_fixedbugs582pair_Shape_c_rect h4_r;
-    int64_t h5_ret0;
-    h_0opt_e201354 h6_own6 = {0};
-    h_fixedbugs582pair_Shape t1;
-    h_fixedbugs582pair_Shape t2;
-    int64_t t3;
-    int64_t t4;
-    h_fixedbugs582pair_Shape t5;
-    h_fixedbugs582pair_Shape_c_flag t6;
-    h_fixedbugs582pair_Shape_c_flag t7;
-    uint8_t t8;
-    h_0opt_e201354 t9;
-    h_0opt_e201354 t10;
-    int64_t t11;
-    int64_t t12;
-    bool t13;
-    h_0opt_e201354 t14;
-    HeroFailure t15;
-    h_0opt_e201354 t16;
-    int64_t t17;
-    h_fixedbugs582pair_Shape t18;
-    h_fixedbugs582pair_Shape_c_rect t19;
-    h_fixedbugs582pair_Shape_c_rect t20;
-    int64_t t21;
-    h_fixedbugs582pair_Shape_c_rect t22;
-    int64_t t23;
-    int64_t t24;
-    int64_t t25;
-    h_0opt_e201354 t26;
-    h_0opt_e201354 t27;
-    goto bb0;
+#line 26 "tests/golden/run/fixedbugs582/pair.hero"
+    h_fixedbugs582pair_Shape h1_s0; h_fixedbugs582pair_Shape_c_flag h2_f; h_0opt_e201354 h3_f0 = {0}; h_fixedbugs582pair_Shape_c_rect h4_r; int64_t h5_ret0; h_0opt_e201354 h6_own6 = {0}; h_fixedbugs582pair_Shape t1; h_fixedbugs582pair_Shape t2; int64_t t3; int64_t t4; h_fixedbugs582pair_Shape t5; h_fixedbugs582pair_Shape_c_flag t6; h_fixedbugs582pair_Shape_c_flag t7; uint8_t t8; h_0opt_e201354 t9; h_0opt_e201354 t10; int64_t t11; int64_t t12; bool t13; h_0opt_e201354 t14; HeroFailure t15; h_0opt_e201354 t16; int64_t t17; h_fixedbugs582pair_Shape t18; h_fixedbugs582pair_Shape_c_rect t19; h_fixedbugs582pair_Shape_c_rect t20; int64_t t21; h_fixedbugs582pair_Shape_c_rect t22; int64_t t23; int64_t t24; int64_t t25; h_0opt_e201354 t26; h_0opt_e201354 t27; goto bb0;
+#line 26 "tests/golden/run/fixedbugs582/pair.hero"
 bb0:
-#line 27 "tests/golden/run/fixedbugs582/pair.hero"
     t1 = h0_s;
 #line 27 "tests/golden/run/fixedbugs582/pair.hero"
     h1_s0 = t1;
@@ -405,15 +348,15 @@ bb3:
     t26 = h6_own6;
 #line 29 "tests/golden/run/fixedbugs582/pair.hero"
     h6_own6 = t9;
-#line 409 "fixedbugs582apackpushinaheaderthegroupsheaderincludes.c"
+#line 29 "tests/golden/run/fixedbugs582/pair.hero"
     h_0opt_e201354_release(&t26);
 #line 29 "tests/golden/run/fixedbugs582/pair.hero"
     t27 = h3_f0;
-#line 413 "fixedbugs582apackpushinaheaderthegroupsheaderincludes.c"
+#line 29 "tests/golden/run/fixedbugs582/pair.hero"
     h_0opt_e201354_retain(&t9);
 #line 29 "tests/golden/run/fixedbugs582/pair.hero"
     h3_f0 = t9;
-#line 417 "fixedbugs582apackpushinaheaderthegroupsheaderincludes.c"
+#line 29 "tests/golden/run/fixedbugs582/pair.hero"
     h_0opt_e201354_release(&t27);
 #line 29 "tests/golden/run/fixedbugs582/pair.hero"
     t10 = h3_f0;
@@ -462,7 +405,7 @@ bb6:
     t14 = h3_f0;
 #line 29 "tests/golden/run/fixedbugs582/pair.hero"
     t15 = t14.as.err;
-#line 466 "fixedbugs582apackpushinaheaderthegroupsheaderincludes.c"
+#line 409 "fixedbugs582apackpushinaheaderthegroupsheaderincludes.c"
     hero_panic_must(t15);
     hero_unreachable();
 bb7:
@@ -471,7 +414,6 @@ bb7:
     h_0opt_e201354_release(hero_slot_escape(&h6_own6));
     return t25;
 }
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_fixedbugs582pair_Pair_eq(const h_fixedbugs582pair_Pair *a, const h_fixedbugs582pair_Pair *b) {
     if (!(a->f_a == b->f_a)) return false;
     if (!(a->f_b == b->f_b)) return false;

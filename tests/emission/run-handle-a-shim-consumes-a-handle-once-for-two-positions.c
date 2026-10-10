@@ -30,10 +30,13 @@
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
+#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -85,7 +88,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_1fadc951, "refs before: ");
 HERO_STR_STATIC(hero_str_4fad0733, "freed through the ssl");
 
-#line 89 "handleashimconsumesahandleoncefortwopositions.c"
+#line 92 "handleashimconsumesahandleoncefortwopositions.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -109,6 +112,7 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
+#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
@@ -132,7 +136,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 136 "handleashimconsumesahandleoncefortwopositions.c"
+#line 140 "handleashimconsumesahandleoncefortwopositions.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_handleashimconsumesahandleoncefortwopositions_Bio_eq(bio * const *a, bio * const *b);
@@ -149,27 +153,13 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_handleashimconsumesahandleoncefortwopositions_main(void);
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 15 "tests/golden/run/handle-a-shim-consumes-a-handle-once-for-two-positions.hero"
 void h_handleashimconsumesahandleoncefortwopositions_main(void) {
-#line 157 "handleashimconsumesahandleoncefortwopositions.c"
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-    ssl * h0_s;
-    bio * h1_b;
-    ssl * t1;
-    bio * t2;
-    HeroStr t3;
-    bio * t4;
-    int64_t t5;
-    ssl * t6;
-    bio * t7;
-    ssl * t8;
-    HeroStr t9;
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
-    goto bb0;
+#line 15 "tests/golden/run/handle-a-shim-consumes-a-handle-once-for-two-positions.hero"
+    ssl * h0_s; bio * h1_b; ssl * t1; bio * t2; HeroStr t3; bio * t4; int64_t t5; ssl * t6; bio * t7; ssl * t8; HeroStr t9; goto bb0;
+#line 15 "tests/golden/run/handle-a-shim-consumes-a-handle-once-for-two-positions.hero"
 bb0:
-#line 16 "tests/golden/run/handle-a-shim-consumes-a-handle-once-for-two-positions.hero"
     t1 = ssl_new();
 #line 16 "tests/golden/run/handle-a-shim-consumes-a-handle-once-for-two-positions.hero"
     hero_handle_acquired(t1, "ssl_free");
@@ -230,9 +220,8 @@ bb0:
     hero_print_end();
 #line 21 "tests/golden/run/handle-a-shim-consumes-a-handle-once-for-two-positions.hero"
     return;
-#line 234 "handleashimconsumesahandleoncefortwopositions.c"
+#line 224 "handleashimconsumesahandleoncefortwopositions.c"
 }
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_handleashimconsumesahandleoncefortwopositions_Bio_eq(bio * const *a, bio * const *b) {
     return hero_handle_eq(*a, *b);
 }

@@ -30,10 +30,13 @@
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
+#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -81,7 +84,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_6f955e8a, "renewed: ");
 
-#line 85 "handlealiveafteranendthenarebinding.c"
+#line 88 "handlealiveafteranendthenarebinding.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -105,6 +108,7 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
+#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
@@ -126,7 +130,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 130 "handlealiveafteranendthenarebinding.c"
+#line 134 "handlealiveafteranendthenarebinding.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_handlealiveafteranendthenarebinding_Node_eq(node * const *a, node * const *b);
@@ -141,26 +145,13 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_handlealiveafteranendthenarebinding_main(void);
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 11 "tests/golden/run/handle-alive-after-an-end-then-a-rebinding.hero"
 void h_handlealiveafteranendthenarebinding_main(void) {
-#line 149 "handlealiveafteranendthenarebinding.c"
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-    node * h0_n;
-    int64_t t1;
-    node * t2;
-    node * t3;
-    int64_t t4;
-    node * t5;
-    HeroStr t6;
-    node * t7;
-    int64_t t8;
-    node * t9;
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
-    goto bb0;
+#line 11 "tests/golden/run/handle-alive-after-an-end-then-a-rebinding.hero"
+    node * h0_n; int64_t t1; node * t2; node * t3; int64_t t4; node * t5; HeroStr t6; node * t7; int64_t t8; node * t9; goto bb0;
+#line 11 "tests/golden/run/handle-alive-after-an-end-then-a-rebinding.hero"
 bb0:
-#line 12 "tests/golden/run/handle-alive-after-an-end-then-a-rebinding.hero"
     t1 = INT64_C(1);
 #line 12 "tests/golden/run/handle-alive-after-an-end-then-a-rebinding.hero"
     t2 = node_new(t1);
@@ -216,9 +207,8 @@ bb0:
     }
 #line 16 "tests/golden/run/handle-alive-after-an-end-then-a-rebinding.hero"
     return;
-#line 220 "handlealiveafteranendthenarebinding.c"
+#line 211 "handlealiveafteranendthenarebinding.c"
 }
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_handlealiveafteranendthenarebinding_Node_eq(node * const *a, node * const *b) {
     return hero_handle_eq(*a, *b);
 }

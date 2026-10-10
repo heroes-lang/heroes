@@ -31,10 +31,13 @@
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
+#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -45,7 +48,7 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 _Static_assert(sizeof(struct four) - __builtin_offsetof(struct four, a) != 0, "heroes-ffi-flex Four a");
 #line 18 "tests/golden/run/fixedbugs-a-borrowed-handle-is-written-into-a-fixed-array.hero"
 _Static_assert(_Generic(&((struct four *)0)->a, ob * (*)[4]: 1, default: 0) && sizeof(struct four) - __builtin_offsetof(struct four, a) >= sizeof(ob *[4]), "heroes-ffi-field Four a");
-#line 49 "fixedbugsaborrowedhandleiswrittenintoafixedarray.c"
+#line 52 "fixedbugsaborrowedhandleiswrittenintoafixedarray.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -111,6 +114,7 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
+#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
@@ -131,7 +135,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 135 "fixedbugsaborrowedhandleiswrittenintoafixedarray.c"
+#line 139 "fixedbugsaborrowedhandleiswrittenintoafixedarray.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugsaborrowedhandleiswrittenintoafixedarray_Ob_eq(ob * const *a, ob * const *b);
@@ -149,47 +153,13 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_fixedbugsaborrowedhandleiswrittenintoafixedarray_main(void);
 HeroArrayHeader * h_library_args(void);
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 22 "tests/golden/run/fixedbugs-a-borrowed-handle-is-written-into-a-fixed-array.hero"
 void h_fixedbugsaborrowedhandleiswrittenintoafixedarray_main(void) {
-#line 157 "fixedbugsaborrowedhandleiswrittenintoafixedarray.c"
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-    struct four h0_f;
-    int64_t h1_k;
-    HeroArrayHeader * h2_own2 = {0};
-    ob * t1;
-    ob * t2;
-    ob * t3;
-    ob * t4;
-    struct four t6;
-    int64_t t7;
-    int64_t t8;
-    ob * t9;
-    int64_t t10;
-    int64_t t11;
-    ob * t12;
-    HeroArrayHeader * t13;
-    int64_t t14;
-    int64_t t15;
-    int64_t t16;
-    int64_t t17;
-    int64_t t18;
-    ob * t19;
-    HeroStr t20;
-    struct four t21;
-    int64_t t22;
-    HeroStr t23;
-    struct four t24;
-    int64_t t26;
-    ob * t27;
-    ob * t28;
-    bool t29;
-    HeroArrayHeader * t30;
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
-    goto bb0;
+#line 22 "tests/golden/run/fixedbugs-a-borrowed-handle-is-written-into-a-fixed-array.hero"
+    struct four h0_f; int64_t h1_k; HeroArrayHeader * h2_own2 = {0}; ob * t1; ob * t2; ob * t3; ob * t4; struct four t6; int64_t t7; int64_t t8; ob * t9; int64_t t10; int64_t t11; ob * t12; HeroArrayHeader * t13; int64_t t14; int64_t t15; int64_t t16; int64_t t17; int64_t t18; ob * t19; HeroStr t20; struct four t21; int64_t t22; HeroStr t23; struct four t24; int64_t t26; ob * t27; ob * t28; bool t29; HeroArrayHeader * t30; goto bb0;
+#line 22 "tests/golden/run/fixedbugs-a-borrowed-handle-is-written-into-a-fixed-array.hero"
 bb0:
-#line 23 "tests/golden/run/fixedbugs-a-borrowed-handle-is-written-into-a-fixed-array.hero"
     t1 = ((void *)0);
 #line 23 "tests/golden/run/fixedbugs-a-borrowed-handle-is-written-into-a-fixed-array.hero"
     t2 = ((void *)0);
@@ -224,7 +194,7 @@ bb0:
     t30 = h2_own2;
 #line 26 "tests/golden/run/fixedbugs-a-borrowed-handle-is-written-into-a-fixed-array.hero"
     h2_own2 = t13;
-#line 228 "fixedbugsaborrowedhandleiswrittenintoafixedarray.c"
+#line 26 "tests/golden/run/fixedbugs-a-borrowed-handle-is-written-into-a-fixed-array.hero"
     hero_array_decref(t30);
 #line 26 "tests/golden/run/fixedbugs-a-borrowed-handle-is-written-into-a-fixed-array.hero"
     t14 = ((void)(t13 == NULL ? ((void)hero_array_len(t13), hero_unreachable()) : (void)0), t13->len);
@@ -278,51 +248,32 @@ bb0:
     hero_print_bool(t29);
 #line 28 "tests/golden/run/fixedbugs-a-borrowed-handle-is-written-into-a-fixed-array.hero"
     hero_print_end();
-#line 282 "fixedbugsaborrowedhandleiswrittenintoafixedarray.c"
+#line 252 "fixedbugsaborrowedhandleiswrittenintoafixedarray.c"
     hero_array_release_at(&h2_own2);
     return;
 }
 
 #line 196 "<heroes library>"
 HeroArrayHeader * h_library_args(void) {
-#line 289 "fixedbugsaborrowedhandleiswrittenintoafixedarray.c"
-    HeroArrayHeader * h0_out = {0};
-    int64_t h1_i;
-    HeroArrayHeader * h2_own2 = {0};
-    HeroStr h3_own3 = {0};
-    HeroArrayHeader * t1;
-    int64_t t2;
-    int64_t t3;
-    int64_t t4;
-    bool t5;
-    int64_t t7;
-    HeroStr t8;
-    int64_t t10;
-    int64_t t11;
-    int64_t t12;
-    HeroArrayHeader * t13;
-    HeroArrayHeader * t14;
-    HeroArrayHeader * t15;
-    HeroStr t16;
-    goto bb0;
+#line 196 "<heroes library>"
+    HeroArrayHeader * h0_out = {0}; int64_t h1_i; HeroArrayHeader * h2_own2 = {0}; HeroStr h3_own3 = {0}; HeroArrayHeader * t1; int64_t t2; int64_t t3; int64_t t4; bool t5; int64_t t7; HeroStr t8; int64_t t10; int64_t t11; int64_t t12; HeroArrayHeader * t13; HeroArrayHeader * t14; HeroArrayHeader * t15; HeroStr t16; goto bb0;
+#line 196 "<heroes library>"
 bb0:
-#line 197 "<heroes library>"
     t1 = hero_array_new(&hero_desc_str, 1);
 #line 197 "<heroes library>"
     t14 = h2_own2;
 #line 197 "<heroes library>"
     h2_own2 = t1;
-#line 316 "fixedbugsaborrowedhandleiswrittenintoafixedarray.c"
+#line 197 "<heroes library>"
     hero_array_decref(t14);
 #line 197 "<heroes library>"
     t15 = h0_out;
-#line 320 "fixedbugsaborrowedhandleiswrittenintoafixedarray.c"
+#line 197 "<heroes library>"
     hero_array_incref(t1);
 #line 197 "<heroes library>"
     h0_out = t1;
-#line 324 "fixedbugsaborrowedhandleiswrittenintoafixedarray.c"
+#line 197 "<heroes library>"
     hero_array_decref(t15);
-#line 198 "<heroes library>"
     t2 = INT64_C(0);
 #line 198 "<heroes library>"
     h1_i = t2;
@@ -346,7 +297,7 @@ bb2:
     t16 = h3_own3;
 #line 200 "<heroes library>"
     h3_own3 = t8;
-#line 350 "fixedbugsaborrowedhandleiswrittenintoafixedarray.c"
+#line 200 "<heroes library>"
     hero_str_decref(t16);
 #line 200 "<heroes library>"
     hero_array_push_owned(&h0_out, &t8);
@@ -362,14 +313,13 @@ bb2:
 #line 201 "<heroes library>"
 bb3:
     t13 = h0_out;
-#line 366 "fixedbugsaborrowedhandleiswrittenintoafixedarray.c"
+#line 317 "fixedbugsaborrowedhandleiswrittenintoafixedarray.c"
     hero_array_incref(t13);
     hero_array_release_at(&h0_out);
     hero_array_release_at(&h2_own2);
     hero_str_release_at(&h3_own3);
     return t13;
 }
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_fixedbugsaborrowedhandleiswrittenintoafixedarray_Ob_eq(ob * const *a, ob * const *b) {
     return hero_handle_eq(*a, *b);
 }

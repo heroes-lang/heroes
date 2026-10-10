@@ -30,10 +30,13 @@
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
+#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -82,7 +85,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_36f6e615, "kept through ");
 HERO_STR_STATIC(hero_str_21ae9a8f, " turns: ");
 
-#line 86 "handlealiveafteraloopthatendsonbreak.c"
+#line 89 "handlealiveafteraloopthatendsonbreak.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -106,6 +109,7 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
+#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
@@ -127,7 +131,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 131 "handlealiveafteraloopthatendsonbreak.c"
+#line 135 "handlealiveafteraloopthatendsonbreak.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_handlealiveafteraloopthatendsonbreak_Node_eq(node * const *a, node * const *b);
@@ -142,43 +146,13 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_handlealiveafteraloopthatendsonbreak_main(void);
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 13 "tests/golden/run/handle-alive-after-a-loop-that-ends-on-break.hero"
 void h_handlealiveafteraloopthatendsonbreak_main(void) {
-#line 150 "handlealiveafteraloopthatendsonbreak.c"
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-    node * h0_n;
-    bool h1_ended;
-    int64_t h2_k;
-    int64_t t1;
-    node * t2;
-    bool t3;
-    int64_t t4;
-    int64_t t5;
-    int64_t t6;
-    bool t7;
-    node * t8;
-    int64_t t9;
-    int64_t t10;
-    bool t11;
-    node * t12;
-    bool t13;
-    int64_t t14;
-    int64_t t15;
-    int64_t t16;
-    bool t17;
-    bool t18;
-    HeroStr t19;
-    int64_t t20;
-    HeroStr t21;
-    node * t22;
-    int64_t t23;
-    node * t24;
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
-    goto bb0;
+#line 13 "tests/golden/run/handle-alive-after-a-loop-that-ends-on-break.hero"
+    node * h0_n; bool h1_ended; int64_t h2_k; int64_t t1; node * t2; bool t3; int64_t t4; int64_t t5; int64_t t6; bool t7; node * t8; int64_t t9; int64_t t10; bool t11; node * t12; bool t13; int64_t t14; int64_t t15; int64_t t16; bool t17; bool t18; HeroStr t19; int64_t t20; HeroStr t21; node * t22; int64_t t23; node * t24; goto bb0;
+#line 13 "tests/golden/run/handle-alive-after-a-loop-that-ends-on-break.hero"
 bb0:
-#line 14 "tests/golden/run/handle-alive-after-a-loop-that-ends-on-break.hero"
     t1 = INT64_C(3);
 #line 14 "tests/golden/run/handle-alive-after-a-loop-that-ends-on-break.hero"
     t2 = node_new(t1);
@@ -309,9 +283,8 @@ bb8:
 bb9:
 #line 27 "tests/golden/run/handle-alive-after-a-loop-that-ends-on-break.hero"
     goto bb7;
-#line 313 "handlealiveafteraloopthatendsonbreak.c"
+#line 287 "handlealiveafteraloopthatendsonbreak.c"
 }
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_handlealiveafteraloopthatendsonbreak_Node_eq(node * const *a, node * const *b) {
     return hero_handle_eq(*a, *b);
 }

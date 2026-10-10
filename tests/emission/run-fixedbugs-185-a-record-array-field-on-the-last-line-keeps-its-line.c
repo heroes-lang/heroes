@@ -31,10 +31,13 @@
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
+#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -48,11 +51,11 @@ _Static_assert(__builtin_classify_type(((Holder *)0)->count) == 1 && sizeof(((Ho
 _Static_assert(sizeof(Holder) - __builtin_offsetof(Holder, cells) != 0, "heroes-ffi-flex Holder cells");
 #line 19 "tests/golden/run/fixedbugs-185-a-record-array-field-on-the-last-line-keeps-its-line.hero"
 _Static_assert(_Generic(&((Holder *)0)->cells, Cell (*)[2]: 1, default: 0) && sizeof(Holder) - __builtin_offsetof(Holder, cells) >= sizeof(Cell[2]), "heroes-ffi-field Holder cells");
-#line 52 "fixedbugs185arecordarrayfieldonthelastlinekeepsitsline.c"
+#line 55 "fixedbugs185arecordarrayfieldonthelastlinekeepsitsline.c"
 
 #line 17 "tests/golden/run/fixedbugs-185-a-record-array-field-on-the-last-line-keeps-its-line.hero"
 _Static_assert(__builtin_classify_type(*(Holder *)0) != 13, "heroes-ffi-union Holder count cells");
-#line 56 "fixedbugs185arecordarrayfieldonthelastlinekeepsitsline.c"
+#line 59 "fixedbugs185arecordarrayfieldonthelastlinekeepsitsline.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -115,6 +118,7 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
+#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
@@ -134,7 +138,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 138 "fixedbugs185arecordarrayfieldonthelastlinekeepsitsline.c"
+#line 142 "fixedbugs185arecordarrayfieldonthelastlinekeepsitsline.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs185arecordarrayfieldonthelastlinekeepsitsline_Cell_eq(const Cell *a, const Cell *b);
@@ -151,34 +155,13 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_fixedbugs185arecordarrayfieldonthelastlinekeepsitsline_main(void);
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 8 "tests/golden/run/fixedbugs-185-a-record-array-field-on-the-last-line-keeps-its-line.hero"
 void h_fixedbugs185arecordarrayfieldonthelastlinekeepsitsline_main(void) {
-#line 159 "fixedbugs185arecordarrayfieldonthelastlinekeepsitsline.c"
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-    Holder h0_h;
-    int32_t t1;
-    int32_t t2;
-    Cell t3;
-    int32_t t4;
-    Cell t5;
-    Holder t7;
-    Holder t8;
-    int64_t t10;
-    Cell t11;
-    int32_t t12;
-    Holder t13;
-    int64_t t15;
-    Cell t16;
-    int32_t t17;
-    int32_t t18;
-    Holder t19;
-    int32_t t20;
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
-    goto bb0;
+#line 8 "tests/golden/run/fixedbugs-185-a-record-array-field-on-the-last-line-keeps-its-line.hero"
+    Holder h0_h; int32_t t1; int32_t t2; Cell t3; int32_t t4; Cell t5; Holder t7; Holder t8; int64_t t10; Cell t11; int32_t t12; Holder t13; int64_t t15; Cell t16; int32_t t17; int32_t t18; Holder t19; int32_t t20; goto bb0;
+#line 8 "tests/golden/run/fixedbugs-185-a-record-array-field-on-the-last-line-keeps-its-line.hero"
 bb0:
-#line 9 "tests/golden/run/fixedbugs-185-a-record-array-field-on-the-last-line-keeps-its-line.hero"
     t1 = INT64_C(2);
 #line 9 "tests/golden/run/fixedbugs-185-a-record-array-field-on-the-last-line-keeps-its-line.hero"
     t2 = INT64_C(3);
@@ -222,9 +205,8 @@ bb0:
     hero_print_end();
 #line 11 "tests/golden/run/fixedbugs-185-a-record-array-field-on-the-last-line-keeps-its-line.hero"
     return;
-#line 226 "fixedbugs185arecordarrayfieldonthelastlinekeepsitsline.c"
+#line 209 "fixedbugs185arecordarrayfieldonthelastlinekeepsitsline.c"
 }
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_fixedbugs185arecordarrayfieldonthelastlinekeepsitsline_Cell_eq(const Cell *a, const Cell *b) {
     if (!(a->v == b->v)) return false;
     return true;

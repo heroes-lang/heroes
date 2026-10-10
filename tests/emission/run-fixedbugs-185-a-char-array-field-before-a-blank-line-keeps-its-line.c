@@ -31,10 +31,13 @@
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
+#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -46,11 +49,11 @@ _Static_assert(__builtin_classify_type(((struct label *)0)->id) == 1 && sizeof((
 _Static_assert(sizeof(struct label) - __builtin_offsetof(struct label, name) != 0, "heroes-ffi-flex Label name");
 #line 15 "tests/golden/run/fixedbugs-185-a-char-array-field-before-a-blank-line-keeps-its-line.hero"
 _Static_assert(_Generic(&((struct label *)0)->name, _Bool (*)[8]: (sizeof(_Bool) == sizeof(int8_t) && (((_Bool)-1 < 0) == ((int8_t)-1 < 0))), char (*)[8]: (sizeof(char) == sizeof(int8_t) && (((char)-1 < 0) == ((int8_t)-1 < 0))), signed char (*)[8]: (sizeof(signed char) == sizeof(int8_t) && (((signed char)-1 < 0) == ((int8_t)-1 < 0))), short (*)[8]: (sizeof(short) == sizeof(int8_t) && (((short)-1 < 0) == ((int8_t)-1 < 0))), int (*)[8]: (sizeof(int) == sizeof(int8_t) && (((int)-1 < 0) == ((int8_t)-1 < 0))), long (*)[8]: (sizeof(long) == sizeof(int8_t) && (((long)-1 < 0) == ((int8_t)-1 < 0))), long long (*)[8]: (sizeof(long long) == sizeof(int8_t) && (((long long)-1 < 0) == ((int8_t)-1 < 0))), unsigned char (*)[8]: (sizeof(unsigned char) == sizeof(int8_t) && (((unsigned char)-1 < 0) == ((int8_t)-1 < 0))), unsigned short (*)[8]: (sizeof(unsigned short) == sizeof(int8_t) && (((unsigned short)-1 < 0) == ((int8_t)-1 < 0))), unsigned int (*)[8]: (sizeof(unsigned int) == sizeof(int8_t) && (((unsigned int)-1 < 0) == ((int8_t)-1 < 0))), unsigned long (*)[8]: (sizeof(unsigned long) == sizeof(int8_t) && (((unsigned long)-1 < 0) == ((int8_t)-1 < 0))), unsigned long long (*)[8]: (sizeof(unsigned long long) == sizeof(int8_t) && (((unsigned long long)-1 < 0) == ((int8_t)-1 < 0))), default: 0), "heroes-ffi-field Label name");
-#line 50 "fixedbugs185achararrayfieldbeforeablanklinekeepsitsline.c"
+#line 53 "fixedbugs185achararrayfieldbeforeablanklinekeepsitsline.c"
 
 #line 13 "tests/golden/run/fixedbugs-185-a-char-array-field-before-a-blank-line-keeps-its-line.hero"
 _Static_assert(__builtin_classify_type(*(struct label *)0) != 13, "heroes-ffi-union Label id name");
-#line 54 "fixedbugs185achararrayfieldbeforeablanklinekeepsitsline.c"
+#line 57 "fixedbugs185achararrayfieldbeforeablanklinekeepsitsline.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -121,6 +124,7 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
+#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
@@ -140,7 +144,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 144 "fixedbugs185achararrayfieldbeforeablanklinekeepsitsline.c"
+#line 148 "fixedbugs185achararrayfieldbeforeablanklinekeepsitsline.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs185achararrayfieldbeforeablanklinekeepsitsline_Label_eq(const struct label *a, const struct label *b);
@@ -159,56 +163,13 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_fixedbugs185achararrayfieldbeforeablanklinekeepsitsline_main(void);
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 17 "tests/golden/run/fixedbugs-185-a-char-array-field-before-a-blank-line-keeps-its-line.hero"
 void h_fixedbugs185achararrayfieldbeforeablanklinekeepsitsline_main(void) {
-#line 167 "fixedbugs185achararrayfieldbeforeablanklinekeepsitsline.c"
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-    struct label h0_l;
-    h_0opt_f87774a h1_f0 = {0};
-    h_0opt_e201354 h2_f1 = {0};
-    h_0opt_f87774a h3_own3 = {0};
-    h_0opt_e201354 h4_own4 = {0};
-    int32_t t1;
-    int8_t t2;
-    int8_t t3;
-    int8_t t4;
-    int8_t t5;
-    int8_t t6;
-    int8_t t7;
-    int8_t t8;
-    int8_t t9;
-    struct label t11;
-    struct label t12;
-    h_0opt_f87774a t14;
-    h_0opt_f87774a t15;
-    int64_t t16;
-    int64_t t17;
-    bool t18;
-    h_0opt_f87774a t19;
-    HeroFailure t20;
-    h_0opt_f87774a t21;
-    HeroStr t22;
-    struct label t23;
-    int32_t t24;
-    h_0opt_e201354 t25;
-    h_0opt_e201354 t26;
-    int64_t t27;
-    int64_t t28;
-    bool t29;
-    h_0opt_e201354 t30;
-    HeroFailure t31;
-    h_0opt_e201354 t32;
-    int64_t t33;
-    h_0opt_f87774a t34;
-    h_0opt_f87774a t35;
-    h_0opt_e201354 t36;
-    h_0opt_e201354 t37;
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
-    goto bb0;
+#line 17 "tests/golden/run/fixedbugs-185-a-char-array-field-before-a-blank-line-keeps-its-line.hero"
+    struct label h0_l; h_0opt_f87774a h1_f0 = {0}; h_0opt_e201354 h2_f1 = {0}; h_0opt_f87774a h3_own3 = {0}; h_0opt_e201354 h4_own4 = {0}; int32_t t1; int8_t t2; int8_t t3; int8_t t4; int8_t t5; int8_t t6; int8_t t7; int8_t t8; int8_t t9; struct label t11; struct label t12; h_0opt_f87774a t14; h_0opt_f87774a t15; int64_t t16; int64_t t17; bool t18; h_0opt_f87774a t19; HeroFailure t20; h_0opt_f87774a t21; HeroStr t22; struct label t23; int32_t t24; h_0opt_e201354 t25; h_0opt_e201354 t26; int64_t t27; int64_t t28; bool t29; h_0opt_e201354 t30; HeroFailure t31; h_0opt_e201354 t32; int64_t t33; h_0opt_f87774a t34; h_0opt_f87774a t35; h_0opt_e201354 t36; h_0opt_e201354 t37; goto bb0;
+#line 17 "tests/golden/run/fixedbugs-185-a-char-array-field-before-a-blank-line-keeps-its-line.hero"
 bb0:
-#line 18 "tests/golden/run/fixedbugs-185-a-char-array-field-before-a-blank-line-keeps-its-line.hero"
     t1 = INT64_C(7);
 #line 18 "tests/golden/run/fixedbugs-185-a-char-array-field-before-a-blank-line-keeps-its-line.hero"
     t2 = INT64_C(104);
@@ -253,15 +214,15 @@ bb0:
     t34 = h3_own3;
 #line 19 "tests/golden/run/fixedbugs-185-a-char-array-field-before-a-blank-line-keeps-its-line.hero"
     h3_own3 = t14;
-#line 257 "fixedbugs185achararrayfieldbeforeablanklinekeepsitsline.c"
+#line 19 "tests/golden/run/fixedbugs-185-a-char-array-field-before-a-blank-line-keeps-its-line.hero"
     h_0opt_f87774a_release(&t34);
 #line 19 "tests/golden/run/fixedbugs-185-a-char-array-field-before-a-blank-line-keeps-its-line.hero"
     t35 = h1_f0;
-#line 261 "fixedbugs185achararrayfieldbeforeablanklinekeepsitsline.c"
+#line 19 "tests/golden/run/fixedbugs-185-a-char-array-field-before-a-blank-line-keeps-its-line.hero"
     h_0opt_f87774a_retain(&t14);
 #line 19 "tests/golden/run/fixedbugs-185-a-char-array-field-before-a-blank-line-keeps-its-line.hero"
     h1_f0 = t14;
-#line 265 "fixedbugs185achararrayfieldbeforeablanklinekeepsitsline.c"
+#line 19 "tests/golden/run/fixedbugs-185-a-char-array-field-before-a-blank-line-keeps-its-line.hero"
     h_0opt_f87774a_release(&t35);
 #line 19 "tests/golden/run/fixedbugs-185-a-char-array-field-before-a-blank-line-keeps-its-line.hero"
     t15 = h1_f0;
@@ -292,15 +253,15 @@ bb1:
     t36 = h4_own4;
 #line 20 "tests/golden/run/fixedbugs-185-a-char-array-field-before-a-blank-line-keeps-its-line.hero"
     h4_own4 = t25;
-#line 296 "fixedbugs185achararrayfieldbeforeablanklinekeepsitsline.c"
+#line 20 "tests/golden/run/fixedbugs-185-a-char-array-field-before-a-blank-line-keeps-its-line.hero"
     h_0opt_e201354_release(&t36);
 #line 20 "tests/golden/run/fixedbugs-185-a-char-array-field-before-a-blank-line-keeps-its-line.hero"
     t37 = h2_f1;
-#line 300 "fixedbugs185achararrayfieldbeforeablanklinekeepsitsline.c"
+#line 20 "tests/golden/run/fixedbugs-185-a-char-array-field-before-a-blank-line-keeps-its-line.hero"
     h_0opt_e201354_retain(&t25);
 #line 20 "tests/golden/run/fixedbugs-185-a-char-array-field-before-a-blank-line-keeps-its-line.hero"
     h2_f1 = t25;
-#line 304 "fixedbugs185achararrayfieldbeforeablanklinekeepsitsline.c"
+#line 20 "tests/golden/run/fixedbugs-185-a-char-array-field-before-a-blank-line-keeps-its-line.hero"
     h_0opt_e201354_release(&t37);
 #line 20 "tests/golden/run/fixedbugs-185-a-char-array-field-before-a-blank-line-keeps-its-line.hero"
     t26 = h2_f1;
@@ -318,7 +279,7 @@ bb2:
     t19 = h1_f0;
 #line 19 "tests/golden/run/fixedbugs-185-a-char-array-field-before-a-blank-line-keeps-its-line.hero"
     t20 = t19.as.err;
-#line 322 "fixedbugs185achararrayfieldbeforeablanklinekeepsitsline.c"
+#line 283 "fixedbugs185achararrayfieldbeforeablanklinekeepsitsline.c"
     hero_panic_must(t20);
     hero_unreachable();
 bb3:
@@ -330,7 +291,7 @@ bb3:
     hero_print_int(t33);
 #line 20 "tests/golden/run/fixedbugs-185-a-char-array-field-before-a-blank-line-keeps-its-line.hero"
     hero_print_end();
-#line 334 "fixedbugs185achararrayfieldbeforeablanklinekeepsitsline.c"
+#line 295 "fixedbugs185achararrayfieldbeforeablanklinekeepsitsline.c"
     h_0opt_f87774a_release(hero_slot_escape(&h1_f0));
     h_0opt_e201354_release(hero_slot_escape(&h2_f1));
     h_0opt_f87774a_release(hero_slot_escape(&h3_own3));
@@ -341,11 +302,10 @@ bb4:
     t30 = h2_f1;
 #line 20 "tests/golden/run/fixedbugs-185-a-char-array-field-before-a-blank-line-keeps-its-line.hero"
     t31 = t30.as.err;
-#line 345 "fixedbugs185achararrayfieldbeforeablanklinekeepsitsline.c"
+#line 306 "fixedbugs185achararrayfieldbeforeablanklinekeepsitsline.c"
     hero_panic_must(t31);
     hero_unreachable();
 }
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_fixedbugs185achararrayfieldbeforeablanklinekeepsitsline_Label_eq(const struct label *a, const struct label *b) {
     if (!(a->id == b->id)) return false;
     if (!((a->name[0] == b->name[0] && a->name[1] == b->name[1] && a->name[2] == b->name[2] && a->name[3] == b->name[3] && a->name[4] == b->name[4] && a->name[5] == b->name[5] && a->name[6] == b->name[6] && a->name[7] == b->name[7]))) return false;

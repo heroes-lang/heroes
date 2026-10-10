@@ -31,10 +31,13 @@
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
+#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -62,7 +65,7 @@ _Static_assert(_Generic(&((Camera2D *)0)->offset, Vector2 *: 1, default: 0) && s
 _Static_assert(_Generic(&((Camera2D *)0)->target, Vector2 *: 1, default: 0) && sizeof(((Camera2D *)0)->target) == sizeof(Vector2), "heroes-ffi-field Camera2D target");
 _Static_assert(_Generic(&((Camera2D *)0)->rotation, float *: 1, default: 0) && sizeof(((Camera2D *)0)->rotation) == sizeof(float), "heroes-ffi-field Camera2D rotation");
 _Static_assert(_Generic(&((Camera2D *)0)->zoom, float *: 1, default: 0) && sizeof(((Camera2D *)0)->zoom) == sizeof(float), "heroes-ffi-field Camera2D zoom");
-#line 66 "fixedbugsanestedrecordandatypedpointer.c"
+#line 69 "fixedbugsanestedrecordandatypedpointer.c"
 
 #line 35 "tests/golden/run/fixedbugs-a-nested-record-and-a-typed-pointer.hero"
 _Static_assert(__builtin_classify_type(*(Texture *)0) != 13, "heroes-ffi-union Texture id width height mipmaps format");
@@ -72,7 +75,7 @@ _Static_assert(__builtin_classify_type(*(Font *)0) != 13, "heroes-ffi-union Font
 _Static_assert(__builtin_classify_type(*(Vector2 *)0) != 13, "heroes-ffi-union Vector2 x y");
 #line 51 "tests/golden/run/fixedbugs-a-nested-record-and-a-typed-pointer.hero"
 _Static_assert(__builtin_classify_type(*(Camera2D *)0) != 13, "heroes-ffi-union Camera2D offset target rotation zoom");
-#line 76 "fixedbugsanestedrecordandatypedpointer.c"
+#line 79 "fixedbugsanestedrecordandatypedpointer.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -137,6 +140,7 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
+#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
@@ -157,7 +161,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 161 "fixedbugsanestedrecordandatypedpointer.c"
+#line 165 "fixedbugsanestedrecordandatypedpointer.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugsanestedrecordandatypedpointer_Texture_eq(const Texture *a, const Texture *b);
@@ -178,49 +182,12 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_fixedbugsanestedrecordandatypedpointer_main(void);
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 59 "tests/golden/run/fixedbugs-a-nested-record-and-a-typed-pointer.hero"
 void h_fixedbugsanestedrecordandatypedpointer_main(void) {
-#line 186 "fixedbugsanestedrecordandatypedpointer.c"
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-    Camera2D h0_c;
-    Vector2 h1_p;
-    Font h2_empty;
-    float t1;
-    float t2;
-    Vector2 t3;
-    float t4;
-    float t5;
-    Vector2 t6;
-    float t7;
-    float t8;
-    Camera2D t9;
-    float t10;
-    float t11;
-    Vector2 t12;
-    Camera2D t13;
-    Vector2 t14;
-    Vector2 t15;
-    float t16;
-    Vector2 t17;
-    float t18;
-    int32_t t19;
-    int32_t t20;
-    int32_t t21;
-    uint32_t t22;
-    int32_t t23;
-    int32_t t24;
-    int32_t t25;
-    int32_t t26;
-    Texture t27;
-    void * t28;
-    void * t29;
-    Font t30;
-    Font t31;
-    bool t32;
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
-    goto bb0;
+#line 59 "tests/golden/run/fixedbugs-a-nested-record-and-a-typed-pointer.hero"
+    Camera2D h0_c; Vector2 h1_p; Font h2_empty; float t1; float t2; Vector2 t3; float t4; float t5; Vector2 t6; float t7; float t8; Camera2D t9; float t10; float t11; Vector2 t12; Camera2D t13; Vector2 t14; Vector2 t15; float t16; Vector2 t17; float t18; int32_t t19; int32_t t20; int32_t t21; uint32_t t22; int32_t t23; int32_t t24; int32_t t25; int32_t t26; Texture t27; void * t28; void * t29; Font t30; Font t31; bool t32; goto bb0;
+#line 59 "tests/golden/run/fixedbugs-a-nested-record-and-a-typed-pointer.hero"
 bb0:
 #line 63 "tests/golden/run/fixedbugs-a-nested-record-and-a-typed-pointer.hero"
     t1 = 0x0p+0;
@@ -296,9 +263,8 @@ bb0:
     hero_print_end();
 #line 83 "tests/golden/run/fixedbugs-a-nested-record-and-a-typed-pointer.hero"
     return;
-#line 300 "fixedbugsanestedrecordandatypedpointer.c"
+#line 267 "fixedbugsanestedrecordandatypedpointer.c"
 }
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_fixedbugsanestedrecordandatypedpointer_Texture_eq(const Texture *a, const Texture *b) {
     if (!(a->id == b->id)) return false;
     if (!(a->width == b->width)) return false;

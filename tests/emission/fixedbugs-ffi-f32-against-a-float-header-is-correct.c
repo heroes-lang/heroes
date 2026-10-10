@@ -31,10 +31,13 @@
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
+#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -77,7 +80,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 81 "ffif32againstafloatheaderiscorrect.c"
+#line 84 "ffif32againstafloatheaderiscorrect.c"
 typedef struct h_0opt_e201354 {
     int64_t tag;
     union {
@@ -109,6 +112,7 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
+#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
@@ -128,7 +132,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 132 "ffif32againstafloatheaderiscorrect.c"
+#line 136 "ffif32againstafloatheaderiscorrect.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
@@ -145,33 +149,12 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_ffif32againstafloatheaderiscorrect_main(void);
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 42 "tests/golden/fixedbugs/ffi-f32-against-a-float-header-is-correct.hero"
 void h_ffif32againstafloatheaderiscorrect_main(void) {
-#line 153 "ffif32againstafloatheaderiscorrect.c"
-    float h0_bigger;
-    h_0opt_e201354 h1_f0 = {0};
-    h_0opt_e201354 h2_own2 = {0};
-    HeroStr h3_own3 = {0};
-    float t1;
-    float t2;
-    float t3;
-    float t4;
-    h_0opt_e201354 t5;
-    h_0opt_e201354 t6;
-    int64_t t7;
-    int64_t t8;
-    bool t9;
-    h_0opt_e201354 t10;
-    HeroFailure t11;
-    h_0opt_e201354 t12;
-    int64_t t13;
-    HeroStr t14;
-    h_0opt_e201354 t15;
-    h_0opt_e201354 t16;
-    HeroStr t17;
-    goto bb0;
+#line 42 "tests/golden/fixedbugs/ffi-f32-against-a-float-header-is-correct.hero"
+    float h0_bigger; h_0opt_e201354 h1_f0 = {0}; h_0opt_e201354 h2_own2 = {0}; HeroStr h3_own3 = {0}; float t1; float t2; float t3; float t4; h_0opt_e201354 t5; h_0opt_e201354 t6; int64_t t7; int64_t t8; bool t9; h_0opt_e201354 t10; HeroFailure t11; h_0opt_e201354 t12; int64_t t13; HeroStr t14; h_0opt_e201354 t15; h_0opt_e201354 t16; HeroStr t17; goto bb0;
+#line 42 "tests/golden/fixedbugs/ffi-f32-against-a-float-header-is-correct.hero"
 bb0:
 #line 46 "tests/golden/fixedbugs/ffi-f32-against-a-float-header-is-correct.hero"
     t1 = 0x1.cp+1;
@@ -196,15 +179,15 @@ bb0:
     t15 = h2_own2;
 #line 47 "tests/golden/fixedbugs/ffi-f32-against-a-float-header-is-correct.hero"
     h2_own2 = t5;
-#line 200 "ffif32againstafloatheaderiscorrect.c"
+#line 47 "tests/golden/fixedbugs/ffi-f32-against-a-float-header-is-correct.hero"
     h_0opt_e201354_release(&t15);
 #line 47 "tests/golden/fixedbugs/ffi-f32-against-a-float-header-is-correct.hero"
     t16 = h1_f0;
-#line 204 "ffif32againstafloatheaderiscorrect.c"
+#line 47 "tests/golden/fixedbugs/ffi-f32-against-a-float-header-is-correct.hero"
     h_0opt_e201354_retain(&t5);
 #line 47 "tests/golden/fixedbugs/ffi-f32-against-a-float-header-is-correct.hero"
     h1_f0 = t5;
-#line 208 "ffif32againstafloatheaderiscorrect.c"
+#line 47 "tests/golden/fixedbugs/ffi-f32-against-a-float-header-is-correct.hero"
     h_0opt_e201354_release(&t16);
 #line 47 "tests/golden/fixedbugs/ffi-f32-against-a-float-header-is-correct.hero"
     t6 = h1_f0;
@@ -228,13 +211,13 @@ bb1:
     t17 = h3_own3;
 #line 47 "tests/golden/fixedbugs/ffi-f32-against-a-float-header-is-correct.hero"
     h3_own3 = t14;
-#line 232 "ffif32againstafloatheaderiscorrect.c"
+#line 47 "tests/golden/fixedbugs/ffi-f32-against-a-float-header-is-correct.hero"
     hero_str_decref(t17);
 #line 47 "tests/golden/fixedbugs/ffi-f32-against-a-float-header-is-correct.hero"
     hero_print_str(t14);
 #line 47 "tests/golden/fixedbugs/ffi-f32-against-a-float-header-is-correct.hero"
     hero_print_end();
-#line 238 "ffif32againstafloatheaderiscorrect.c"
+#line 221 "ffif32againstafloatheaderiscorrect.c"
     h_0opt_e201354_release(hero_slot_escape(&h1_f0));
     h_0opt_e201354_release(hero_slot_escape(&h2_own2));
     hero_str_release_at(&h3_own3);
@@ -244,11 +227,10 @@ bb2:
     t10 = h1_f0;
 #line 47 "tests/golden/fixedbugs/ffi-f32-against-a-float-header-is-correct.hero"
     t11 = t10.as.err;
-#line 248 "ffif32againstafloatheaderiscorrect.c"
+#line 231 "ffif32againstafloatheaderiscorrect.c"
     hero_panic_must(t11);
     hero_unreachable();
 }
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
     if (v->tag == INT64_C(0)) {
         return;

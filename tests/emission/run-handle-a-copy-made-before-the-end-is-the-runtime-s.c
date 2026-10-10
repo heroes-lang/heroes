@@ -30,10 +30,13 @@
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
+#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -82,7 +85,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_4f2b9c5e, "through the copy: ");
 HERO_STR_STATIC(hero_str_4414937d, "not reached");
 
-#line 86 "handleacopymadebeforetheendistheruntimes.c"
+#line 89 "handleacopymadebeforetheendistheruntimes.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -106,6 +109,7 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
+#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
@@ -127,7 +131,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 131 "handleacopymadebeforetheendistheruntimes.c"
+#line 135 "handleacopymadebeforetheendistheruntimes.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_handleacopymadebeforetheendistheruntimes_Node_eq(node * const *a, node * const *b);
@@ -142,27 +146,13 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_handleacopymadebeforetheendistheruntimes_main(void);
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 16 "tests/golden/run/handle-a-copy-made-before-the-end-is-the-runtime-s.hero"
 void h_handleacopymadebeforetheendistheruntimes_main(void) {
-#line 150 "handleacopymadebeforetheendistheruntimes.c"
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-    node * h0_a;
-    node * h1_keep;
-    int64_t t1;
-    node * t2;
-    node * t3;
-    HeroStr t4;
-    node * t5;
-    int64_t t6;
-    node * t7;
-    node * t8;
-    HeroStr t9;
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
-    goto bb0;
+#line 16 "tests/golden/run/handle-a-copy-made-before-the-end-is-the-runtime-s.hero"
+    node * h0_a; node * h1_keep; int64_t t1; node * t2; node * t3; HeroStr t4; node * t5; int64_t t6; node * t7; node * t8; HeroStr t9; goto bb0;
+#line 16 "tests/golden/run/handle-a-copy-made-before-the-end-is-the-runtime-s.hero"
 bb0:
-#line 17 "tests/golden/run/handle-a-copy-made-before-the-end-is-the-runtime-s.hero"
     t1 = INT64_C(5);
 #line 17 "tests/golden/run/handle-a-copy-made-before-the-end-is-the-runtime-s.hero"
     t2 = node_new(t1);
@@ -219,9 +209,8 @@ bb0:
     hero_print_end();
 #line 22 "tests/golden/run/handle-a-copy-made-before-the-end-is-the-runtime-s.hero"
     return;
-#line 223 "handleacopymadebeforetheendistheruntimes.c"
+#line 213 "handleacopymadebeforetheendistheruntimes.c"
 }
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_handleacopymadebeforetheendistheruntimes_Node_eq(node * const *a, node * const *b) {
     return hero_handle_eq(*a, *b);
 }

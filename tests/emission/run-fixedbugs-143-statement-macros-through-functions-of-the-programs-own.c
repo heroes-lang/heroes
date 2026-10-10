@@ -30,10 +30,13 @@
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
+#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -82,7 +85,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 86 "fixedbugs143statementmacrosthroughfunctionsoftheprogramsown.c"
+#line 89 "fixedbugs143statementmacrosthroughfunctionsoftheprogramsown.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -106,6 +109,7 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
+#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
@@ -130,7 +134,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 134 "fixedbugs143statementmacrosthroughfunctionsoftheprogramsown.c"
+#line 138 "fixedbugs143statementmacrosthroughfunctionsoftheprogramsown.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs143statementmacrosthroughfunctionsoftheprogramsown_BitSet_eq(bit_set * const *a, bit_set * const *b);
@@ -145,35 +149,13 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_fixedbugs143statementmacrosthroughfunctionsoftheprogramsown_main(void);
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 20 "tests/golden/run/fixedbugs-143-statement-macros-through-functions-of-the-programs-own.hero"
 void h_fixedbugs143statementmacrosthroughfunctionsoftheprogramsown_main(void) {
-#line 153 "fixedbugs143statementmacrosthroughfunctionsoftheprogramsown.c"
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-    bit_set * h0_s;
-    int32_t t1;
-    int32_t t2;
-    bit_set * t3;
-    bit_set * t4;
-    int32_t t5;
-    bit_set * t6;
-    int32_t t7;
-    bit_set * t8;
-    int32_t t9;
-    bit_set * t10;
-    int32_t t11;
-    int32_t t12;
-    bit_set * t13;
-    int32_t t14;
-    int32_t t15;
-    bit_set * t16;
-    int32_t t17;
-    bit_set * t18;
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
-    goto bb0;
+#line 20 "tests/golden/run/fixedbugs-143-statement-macros-through-functions-of-the-programs-own.hero"
+    bit_set * h0_s; int32_t t1; int32_t t2; bit_set * t3; bit_set * t4; int32_t t5; bit_set * t6; int32_t t7; bit_set * t8; int32_t t9; bit_set * t10; int32_t t11; int32_t t12; bit_set * t13; int32_t t14; int32_t t15; bit_set * t16; int32_t t17; bit_set * t18; goto bb0;
+#line 20 "tests/golden/run/fixedbugs-143-statement-macros-through-functions-of-the-programs-own.hero"
 bb0:
-#line 21 "tests/golden/run/fixedbugs-143-statement-macros-through-functions-of-the-programs-own.hero"
     t1 = INT64_C(256);
 #line 21 "tests/golden/run/fixedbugs-143-statement-macros-through-functions-of-the-programs-own.hero"
     t2 = hero_exit_status_of(t1);
@@ -253,9 +235,8 @@ bb0:
     }
 #line 29 "tests/golden/run/fixedbugs-143-statement-macros-through-functions-of-the-programs-own.hero"
     return;
-#line 257 "fixedbugs143statementmacrosthroughfunctionsoftheprogramsown.c"
+#line 239 "fixedbugs143statementmacrosthroughfunctionsoftheprogramsown.c"
 }
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_fixedbugs143statementmacrosthroughfunctionsoftheprogramsown_BitSet_eq(bit_set * const *a, bit_set * const *b) {
     return hero_handle_eq(*a, *b);
 }

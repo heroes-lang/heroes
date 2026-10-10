@@ -30,10 +30,13 @@
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
+#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -85,7 +88,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_7b9bb5d3, "refs: ");
 HERO_STR_STATIC(hero_str_24ff3fd9, "refs after: ");
 
-#line 89 "handletworeferencesattwoconsumingpositions.c"
+#line 92 "handletworeferencesattwoconsumingpositions.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -109,6 +112,7 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
+#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
@@ -131,7 +135,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 135 "handletworeferencesattwoconsumingpositions.c"
+#line 139 "handletworeferencesattwoconsumingpositions.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_handletworeferencesattwoconsumingpositions_Ob_eq(ob * const *a, ob * const *b);
@@ -146,28 +150,13 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_handletworeferencesattwoconsumingpositions_main(void);
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 21 "tests/golden/run/handle-two-references-at-two-consuming-positions.hero"
 void h_handletworeferencesattwoconsumingpositions_main(void) {
-#line 154 "handletworeferencesattwoconsumingpositions.c"
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-    ob * h0_a;
-    ob * h1_b;
-    ob * t1;
-    ob * t2;
-    ob * t3;
-    HeroStr t4;
-    ob * t5;
-    int64_t t6;
-    ob * t7;
-    ob * t8;
-    HeroStr t9;
-    int64_t t10;
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
-    goto bb0;
+#line 21 "tests/golden/run/handle-two-references-at-two-consuming-positions.hero"
+    ob * h0_a; ob * h1_b; ob * t1; ob * t2; ob * t3; HeroStr t4; ob * t5; int64_t t6; ob * t7; ob * t8; HeroStr t9; int64_t t10; goto bb0;
+#line 21 "tests/golden/run/handle-two-references-at-two-consuming-positions.hero"
 bb0:
-#line 22 "tests/golden/run/handle-two-references-at-two-consuming-positions.hero"
     t1 = ob_new();
 #line 22 "tests/golden/run/handle-two-references-at-two-consuming-positions.hero"
     hero_handle_acquired(t1, "ob_put|both_put");
@@ -227,9 +216,8 @@ bb0:
     hero_print_end();
 #line 26 "tests/golden/run/handle-two-references-at-two-consuming-positions.hero"
     return;
-#line 231 "handletworeferencesattwoconsumingpositions.c"
+#line 220 "handletworeferencesattwoconsumingpositions.c"
 }
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_handletworeferencesattwoconsumingpositions_Ob_eq(ob * const *a, ob * const *b) {
     return hero_handle_eq(*a, *b);
 }
