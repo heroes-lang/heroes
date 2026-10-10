@@ -34,3 +34,8 @@ function main()
 # the section, never a line (CL-037). The line numbers above were written against
 # the layout at commit 834d804f; read today they are:
 #   spec:253 is spec § 13 FFI` promised the lend only "for
+
+# Corrected 2026-10-10, defect 576, below the program so every line keeps its
+# number: the lend on line 28 is told at column 12, the `(` that opens its
+# receiver, where it was told inside it: a call after a parenthesised base
+# spans from the base's opener since that repair.

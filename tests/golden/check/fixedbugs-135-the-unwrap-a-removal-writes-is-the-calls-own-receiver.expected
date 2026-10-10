@@ -1,2 +1,2 @@
 tests/golden/check/fixedbugs-135-the-unwrap-a-removal-writes-is-the-calls-own-receiver.hero:14:11: error[bad_operand]: `default` takes a fallible value, found `str`
-tests/golden/check/fixedbugs-135-the-unwrap-a-removal-writes-is-the-calls-own-receiver.hero:15:12: error[bad_operand]: `must` takes a fallible value, found `i64`
+tests/golden/check/fixedbugs-135-the-unwrap-a-removal-writes-is-the-calls-own-receiver.hero:15:11: error[bad_operand]: `must` takes a fallible value, found `i64`

@@ -1,0 +1,45 @@
+# Fixed defect 578, 2026-10-10 (found by panel 206's completeness critic).
+# Symptom: on batch 18's round `y: u8 = id(a: 2 + 3)`, `id<T>(a: T) -> T`, was
+# refused *expected `u8`, found `i64`* while `y: u8 = id(a: 5)` built, and so
+# was `first(a: 2 + 3, b: b8)` with `b8: u8`; spec § 9 has a type parameter
+# take its type from a literal among the arguments only after those with a
+# type of their own and the context. Cause: an operator over literals has no
+# type of its own, and defect 541's waiting arguments did not count it among
+# them, so it was synthesised first, at `i64`. Repair: an arithmetic operator
+# or a minus whose every operand waits waits too (`check/waiting.hero`), weighs
+# what its operands weigh, and is checked against its parameter with defect
+# 564's operand typing. Every line below but the plain `i64` pair was refused
+# on the round's compiler. The shapes: the context, a nested operator, a
+# minus, a generic call among the operands, a receiver, an argument with a
+# type of its own on either side, and the pairs of two waiting arguments in
+# both orders.
+
+function id<T>(a: T) -> T
+    return a
+
+function first<A>(a: A, b: A) -> A
+    pair = [a, b]
+    return pair[0]
+
+function shown(v: u8) -> str
+    return v.to_str()
+
+function main()
+    b8: u8 = 1
+    y: u8 = id(a: 2 + 3)
+    print(y)
+    w: u8 = first(a: 2 + 3, b: 1)
+    print(w)
+    n: i8 = id(a: -(2 + 3))
+    print(n)
+    g: u8 = id(a: (2 + 3) * 4)
+    print(g)
+    h: u8 = id(a: id(a: 2) + 3)
+    print(h)
+    print((2 + 3).shown())
+    print(first(a: 2 + 3, b: b8))
+    print(first(a: b8, b: 2 + 3))
+    print(first(a: 2 + 3, b: 1))
+    print(first(a: 1, b: 2 + 3))
+    print(first(a: [2 + 3], b: []).len())
+    print(first(a: [], b: [2 + 3]).len())
