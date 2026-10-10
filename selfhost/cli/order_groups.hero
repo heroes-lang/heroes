@@ -1,0 +1,164 @@
+# The groups a refused unit's order is asked about, and the lists the
+# asking moves (design.md §4.19; panel 204's R2 and R3; defect 563): which
+# group of a module names a header, what a group member binds, every name a
+# module binds, a list with one element moved, and the program's own
+# directory. Split out of `cli/header_order.hero` on 2026-10-10, which they
+# took past the layout's threshold, and read by `cli/macro_twice.hero` too.
+
+use source
+use ast
+use token
+use emit/externs as emit_externs
+use emit/clang_place
+use cli/compiling
+use cli/process
+
+# The string of the first group of `module` naming `header`.
+function group_in(s: source.Source, decls: [ast.Decl], header: str, module: str) -> token.Span?
+    for decl in decls
+        named: token.Span? @ fail(code: "none", msg: "no header")
+
+        match decl.kind
+            .function_decl fd          => named @ fd.value.header
+            .constant_decl k           => named @ k.header
+            .record_decl rec           => named @ rec.header
+            .variant_decl | .test_decl => continue
+
+        if !named.is_err() && emit_externs.unquoted(s, span: named.must()) == header && source.component_at(s, named.must().start) == module
+            return named
+
+    return fail(code: "none", msg: "no group of the module names this header")
+
+# The headers `module`'s groups name above its first group naming `header`,
+# once each in written order, that `unit` does not read.
+function written_above(s: source.Source, decls: [ast.Decl], header: str, module: str, unit: [str]) -> [str]
+    out: [str] @ []
+
+    for decl in decls
+        named: token.Span? @ fail(code: "none", msg: "no header")
+
+        match decl.kind
+            .function_decl fd          => named @ fd.value.header
+            .constant_decl k           => named @ k.header
+            .record_decl rec           => named @ rec.header
+            .variant_decl | .test_decl => continue
+
+        if !named.is_err() && source.component_at(s, named.must().start) == module
+            one = emit_externs.unquoted(s, span: named.must())
+
+            if one == header
+                return out
+
+            if !holds(unit, one: one) && !holds(out, one: one) && !emit_externs.is_own(one)
+                out @ out.push(one)
+
+    return out
+
+# A group member a diagnostic stands on: its C name and its group's header.
+record Bound
+    name: str
+    header: str
+
+function bound_at(s: source.Source, decls: [ast.Decl], span: token.Span) -> Bound?
+    for decl in decls
+        if decl.name.start >= span.start && decl.name.end <= span.end
+            named: token.Span? @ fail(code: "none", msg: "no header")
+
+            match decl.kind
+                .function_decl fd                         => named @ fd.value.header
+                .constant_decl k                          => named @ k.header
+                .record_decl | .variant_decl | .test_decl => continue
+
+            if !named.is_err()
+                return ok(
+                    Bound(name: source.span_text(s, decl.name), header: emit_externs.unquoted(s, span: named.must()))
+                )
+
+    return fail(code: "none", msg: "no group member stands there")
+
+# Every function and constant `module`'s groups bind, by their C names, in
+# the order they are written.
+function bound_names(s: source.Source, decls: [ast.Decl], module: str) -> [str]
+    out: [str] @ []
+
+    for decl in decls
+        named: token.Span? @ fail(code: "none", msg: "no header")
+
+        match decl.kind
+            .function_decl fd                         => named @ fd.value.header
+            .constant_decl k                          => named @ k.header
+            .record_decl | .variant_decl | .test_decl => continue
+
+        if !named.is_err() && source.component_at(s, decl.name.start) == module
+            out @ out.push(source.span_text(s, decl.name))
+
+    return out
+
+# `list` with the element at `from` placed at `to`, the others in order.
+function moved(list: [str], from: i64, to: i64) -> [str]
+    out: [str] @ []
+    index: i64 @ 0
+
+    for one in list
+        if index == to
+            out @ out.push(list[from])
+
+        if index != from
+            out @ out.push(one)
+        index @ index + 1
+
+    return out
+
+function index_of(list: [str], one: str) -> i64
+    index: i64 @ 0
+
+    for each in list
+        if each == one
+            return index
+        index @ index + 1
+
+    return -1
+
+function holds(list: [str], one: str) -> bool
+    return index_of(list, one: one) >= 0
+
+# Where `part` first stands in `text`, or -1.
+function index_text(text: str, part: str) -> i64
+    return clang_place.offset_of(text: text, needle: part).default(-1)
+
+# A header's file name without its directories and its extension.
+function stem(header: str) -> str
+    start: i64 @ 0
+    end: i64 @ header.len()
+    index: i64 @ 0
+
+    while index < header.len()
+        if header[index] == '/' || header[index] == '\\'
+            start @ index + 1
+        else if header[index] == '.' && index > start
+            end @ index
+        index @ index + 1
+
+    if end <= start
+        end @ header.len()
+    return header.slice(from: start, to: end)
+
+# Whether a header is the program's own: a file of that name beside the
+# program, in the directory its units search last.
+function beside_program(under: compiling.Compiling, header: str) -> bool
+    dir: str @ under.source_dir
+
+    if dir == ""
+        dir @ "."
+    return process.path_exists(dir + "/" + header)
+
+## Tests
+
+test "a list's element is moved to another place, the rest in order, and a header's stem is its file's name"
+    assert moved(["a", "b", "c", "d"], from: 3, to: 1).join(" ") == "a d b c"
+    assert moved(["a", "b", "c", "d"], from: 0, to: 2).join(" ") == "b a c d"
+    assert stem("lib/b.h") == "b"
+    assert stem("pcre2.h") == "pcre2"
+    assert stem("noext") == "noext"
+    assert index_text(text: "abcabc", part: "ca") == 2
+    assert index_of(["x", "y"], one: "z") == -1

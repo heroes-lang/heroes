@@ -1,0 +1,8 @@
+error[ffi_header_refused]: `fixedbugs-563-width.h`, the header this group names, does not compile where its group is written: clang refuses it at line 4: unknown type name 'Wide'
+  at tests/golden/unsupported/fixedbugs-563-a-move-that-changes-a-bound-function-says-so.hero:12:8
+     |
+  12 | extern "fixedbugs-563-width.h"  #~ ffi_header_refused
+     |        ^^^^^^^^^^^^^^^^^^^^^^^
+  note: `fixedbugs-563-width.h` line 4 reads `static inline int width(Wide w) { return w.v + FIXEDBUGS_563_WIDTH; }`
+  note: `fixedbugs-563-width.h` compiles when `fixedbugs-563-wide.h`, which the group at line 15 names, is included before it: a module's headers are included in the order its groups are written, so write that group above this one
+  note: the move changes what C makes of `width`, which read otherwise in that order than as the groups are written: check the moved program means what it should

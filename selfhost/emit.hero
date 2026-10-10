@@ -200,7 +200,8 @@ function emit_told(target: emit_decls.BuildTarget, p: containers.Program, c: sta
         decls: decls,
         version: version,
         tu_local: "",
-        records: every
+        records: every,
+        headers: emit_externs.headers(p, s, decls)
     )
 
     # Types before anything that can mention one: every typedef in one

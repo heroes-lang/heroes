@@ -1,0 +1,20 @@
+# fixedbugs, defect 563, lane b18-ffi, 2026-10-10 (panel 204's R2; the
+# critic's Expect and libjpeg, whose `expect.h` line 222 and libjpeg's
+# `jmorecfg.h` line 175 each define `EXTERN`, one as an object and one as a
+# function).
+#
+# The two headers here do the same with `FIXEDBUGS_563_EXTERN`, each
+# whatever came before, so no order of the two groups compiles: this order
+# is refused and the other is told refused too, by the one clang run that
+# asked it. Until 2026-10-10 either built at exit 0 under a warning. What
+# remains is a header of the program's own with an `#undef` between them,
+# which the note drafts and the `guess` fixes name.
+extern "fixedbugs-563-tcl.h"
+    function tcl_level() -> i64
+
+extern "fixedbugs-563-jpeg.h"  #~ ffi_header_refused
+    function jpeg_level() -> i64
+
+function main()
+    print(tcl_level())
+    print(jpeg_level())

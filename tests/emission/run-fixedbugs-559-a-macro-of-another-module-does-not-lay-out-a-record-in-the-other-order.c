@@ -114,18 +114,10 @@ int64_t h_fixedbugs559wide_doubled(int64_t h0_x);
 
 #line 17 "tests/golden/run/fixedbugs-559-a-macro-of-another-module-does-not-lay-out-a-record-in-the-other-order.hero"
 void h_fixedbugs559amacroofanothermoduledoesnotlayoutarecordintheotherorder_main(void) {
-#line 118 "fixedbugs559amacroofanothermoduledoesnotlayoutarecordintheotherorder.c"
-    S h0_s;
-    int32_t t1;
-    int32_t t2;
-    S t3;
-    int64_t t4;
-    int64_t t5;
-    S t6;
-    int32_t t7;
-    goto bb0;
+#line 17 "tests/golden/run/fixedbugs-559-a-macro-of-another-module-does-not-lay-out-a-record-in-the-other-order.hero"
+    S h0_s; int32_t t1; int32_t t2; S t3; int64_t t4; int64_t t5; S t6; int32_t t7; goto bb0;
+#line 17 "tests/golden/run/fixedbugs-559-a-macro-of-another-module-does-not-lay-out-a-record-in-the-other-order.hero"
 bb0:
-#line 18 "tests/golden/run/fixedbugs-559-a-macro-of-another-module-does-not-lay-out-a-record-in-the-other-order.hero"
     t1 = INT64_C(1);
 #line 18 "tests/golden/run/fixedbugs-559-a-macro-of-another-module-does-not-lay-out-a-record-in-the-other-order.hero"
     t2 = INT64_C(2);
@@ -149,23 +141,21 @@ bb0:
     hero_print_end();
 #line 20 "tests/golden/run/fixedbugs-559-a-macro-of-another-module-does-not-lay-out-a-record-in-the-other-order.hero"
     return;
-#line 153 "fixedbugs559amacroofanothermoduledoesnotlayoutarecordintheotherorder.c"
+#line 145 "fixedbugs559amacroofanothermoduledoesnotlayoutarecordintheotherorder.c"
 }
 
 #line 7 "tests/golden/run/fixedbugs559/wide.hero"
 int64_t h_fixedbugs559wide_doubled(int64_t h0_x) {
-#line 158 "fixedbugs559amacroofanothermoduledoesnotlayoutarecordintheotherorder.c"
-    int64_t t1;
-    int64_t t2;
-    goto bb0;
+#line 7 "tests/golden/run/fixedbugs559/wide.hero"
+    int64_t t1; int64_t t2; goto bb0;
+#line 7 "tests/golden/run/fixedbugs559/wide.hero"
 bb0:
-#line 8 "tests/golden/run/fixedbugs559/wide.hero"
     t1 = h0_x;
 #line 8 "tests/golden/run/fixedbugs559/wide.hero"
     t2 = twice(t1);
 #line 8 "tests/golden/run/fixedbugs559/wide.hero"
     return t2;
-#line 169 "fixedbugs559amacroofanothermoduledoesnotlayoutarecordintheotherorder.c"
+#line 159 "fixedbugs559amacroofanothermoduledoesnotlayoutarecordintheotherorder.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs559amacroofanothermoduledoesnotlayoutarecordintheotherorder_S_eq(const S *a, const S *b) {
     if (!(a->a == b->a)) return false;

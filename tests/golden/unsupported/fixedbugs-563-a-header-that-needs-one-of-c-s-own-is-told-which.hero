@@ -1,0 +1,13 @@
+# fixedbugs, defect 563, lane b18-ffi, 2026-10-10 (panel 204's R3; the
+# ffi-pragmatist's `jpeglib.h` alone).
+#
+# `fixedbugs-563-file.h` spells `FILE` and includes nothing, and this module
+# has no other group to move, so until 2026-10-10 it was told *repair the
+# header*. Each header of C's own the unit does not read is tried just
+# before it, and the first after which it compiles, `stdio.h`, is told as a
+# group to write above this one.
+extern "fixedbugs-563-file.h"  #~ ffi_header_refused
+    function file_given(f: ptr) -> i32
+
+function main()
+    print(file_given(f: nullptr))

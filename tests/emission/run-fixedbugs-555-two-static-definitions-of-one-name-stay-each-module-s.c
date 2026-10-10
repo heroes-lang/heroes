@@ -100,14 +100,10 @@ int64_t h_fixedbugs555staticlong_doubled(int64_t h0_x);
 
 #line 14 "tests/golden/run/fixedbugs-555-two-static-definitions-of-one-name-stay-each-module-s.hero"
 void h_fixedbugs555twostaticdefinitionsofonenamestayeachmodules_main(void) {
-#line 104 "fixedbugs555twostaticdefinitionsofonenamestayeachmodules.c"
-    int64_t t1;
-    int64_t t2;
-    int32_t t3;
-    int32_t t4;
-    goto bb0;
+#line 14 "tests/golden/run/fixedbugs-555-two-static-definitions-of-one-name-stay-each-module-s.hero"
+    int64_t t1; int64_t t2; int32_t t3; int32_t t4; goto bb0;
+#line 14 "tests/golden/run/fixedbugs-555-two-static-definitions-of-one-name-stay-each-module-s.hero"
 bb0:
-#line 15 "tests/golden/run/fixedbugs-555-two-static-definitions-of-one-name-stay-each-module-s.hero"
     t1 = INT64_C(3);
 #line 15 "tests/golden/run/fixedbugs-555-two-static-definitions-of-one-name-stay-each-module-s.hero"
     t2 = h_fixedbugs555staticlong_doubled(t1);
@@ -124,23 +120,21 @@ bb0:
     hero_print_end();
 #line 16 "tests/golden/run/fixedbugs-555-two-static-definitions-of-one-name-stay-each-module-s.hero"
     return;
-#line 128 "fixedbugs555twostaticdefinitionsofonenamestayeachmodules.c"
+#line 124 "fixedbugs555twostaticdefinitionsofonenamestayeachmodules.c"
 }
 
 #line 7 "tests/golden/run/fixedbugs555/static_long.hero"
 int64_t h_fixedbugs555staticlong_doubled(int64_t h0_x) {
-#line 133 "fixedbugs555twostaticdefinitionsofonenamestayeachmodules.c"
-    int64_t t1;
-    int64_t t2;
-    goto bb0;
+#line 7 "tests/golden/run/fixedbugs555/static_long.hero"
+    int64_t t1; int64_t t2; goto bb0;
+#line 7 "tests/golden/run/fixedbugs555/static_long.hero"
 bb0:
-#line 8 "tests/golden/run/fixedbugs555/static_long.hero"
     t1 = h0_x;
 #line 8 "tests/golden/run/fixedbugs555/static_long.hero"
     t2 = twice(t1);
 #line 8 "tests/golden/run/fixedbugs555/static_long.hero"
     return t2;
-#line 144 "fixedbugs555twostaticdefinitionsofonenamestayeachmodules.c"
+#line 138 "fixedbugs555twostaticdefinitionsofonenamestayeachmodules.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

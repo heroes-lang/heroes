@@ -1,0 +1,196 @@
+# What C makes of the names a module binds, in one order of its headers and
+# in another (design.md §4.19; panel 204's R3, ratified 2026-10-10, the
+# completeness critic's correction: *a move that changes what a bound name
+# means says so*; defect 563). A note that tells the author to write one
+# group above another is a change to the program, and where a header read
+# earlier configures one read later, `#ifndef LIMIT` in it, the move can make
+# a function the program calls mean something else: `cfgone`'s `cap` caps at
+# 10 one way and at 100 the other.
+#
+# **So both orders are preprocessed, on the failure path alone**, `clang -E
+# -dD -P` once each, and each bound name's meaning read from both texts the
+# same way: its last `#define` where it is a macro, else its first
+# definition, its body to the closing brace, else its first declaration,
+# else the first line naming it. A name whose two readings differ is named.
+# The reading is the same function of either text, so it can name a name
+# whose text differs and never miss one whose definition does.
+
+use emit/ffi_lookup
+use emit/clang_place
+use cli/toolchain
+use cli/compiling
+use cli/order_trial
+use cli/strings
+
+# The names of `names` whose meaning reads otherwise with the headers in
+# `after`'s order than in `before`'s, in `names`' order; none where either
+# order could not be preprocessed.
+function changed(t: toolchain.Toolchain, under: compiling.Compiling, before: [str], after: [str], names: [str]) -> [str]
+    none: [str] = []
+    words = compiling.probe_words(under)
+    one = order_trial.output(
+        t,
+        words: words,
+        text: order_trial.opening(before, question: ""),
+        mode: ["-E", "-dD", "-P"]
+    )
+    two = order_trial.output(t, words: words, text: order_trial.opening(after, question: ""), mode: ["-E", "-dD", "-P"])
+
+    if one.is_err() || two.is_err()
+        return none
+    first = ffi_lookup.lines(text: one.must())
+    second = ffi_lookup.lines(text: two.must())
+    out: [str] @ []
+
+    # A name with no meaning in either order is the refusal's own, absent
+    # where the move gives it one, and is no change of meaning.
+    for name in names
+        was = meaning(first, name: name)
+        is = meaning(second, name: name)
+
+        if was != "" && is != "" && was != is
+            out @ out.push(name)
+
+    return out
+
+# A name's meaning in the lines of a preprocessed text, its blanks folded.
+function meaning(lines: [str], name: str) -> str
+    macro: str @ ""
+    defined: bool @ false
+
+    for line in lines
+        row = clang_place.without_return(line)
+
+        if strings.starts_with(text: row, prefix: "#define " + name + " ") || strings.starts_with(text: row, prefix: "#define " + name + "(") || row == "#define " + name
+            macro @ folded(row)
+            defined @ true
+        else if row == "#undef " + name
+            macro @ ""
+            defined @ false
+
+    if defined
+        return macro
+    declared: str @ ""
+    named: str @ ""
+    index: i64 @ 0
+
+    while index < lines.len()
+        at = word_at(text: lines[index], word: name)
+
+        # A directive is a macro's, read above, and never a declaration.
+        if !at.is_err() && !strings.starts_with(text: lines[index], prefix: "#")
+            if named == ""
+                named @ folded(lines[index])
+            shape = after_name(lines, row: index, from: at.must() + name.len())
+
+            if shape.body
+                return shape.text
+
+            if shape.called && declared == ""
+                declared @ shape.text
+        index @ index + 1
+
+    if declared != ""
+        return declared
+    return named
+
+# What follows a name: whether it is called or declared with a parameter
+# list, whether a body follows that list, and the text from the name's line
+# to the end of what follows.
+record Shape
+    called: bool
+    body: bool
+    text: str
+
+function after_name(lines: [str], row: i64, from: i64) -> Shape
+    text: [str] @ []
+    depth: i64 @ 0
+    opened: bool @ false
+    seen_paren: bool @ false
+    at: i64 @ row
+    column: i64 @ from
+
+    while at < lines.len() && at < row + 400
+        line = lines[at]
+        text @ text.push(line)
+
+        while column < line.len()
+            c = line[column]
+
+            if !seen_paren && c != ' ' && c != '\t' && c != '('
+                return Shape(called: false, body: false, text: "")
+
+            if c == '('
+                seen_paren @ true
+                depth @ depth + 1
+            else if c == ')'
+                depth @ depth - 1
+            else if c == '{' && depth == 0 && seen_paren
+                opened @ true
+                depth @ 1
+            else if c == '}' && opened
+                depth @ depth - 1
+
+                if depth == 0
+                    return Shape(called: true, body: true, text: folded(text.join(" ")))
+            else if c == ';' && depth == 0 && !opened
+                return Shape(called: true, body: false, text: folded(text.join(" ")))
+            column @ column + 1
+
+        at @ at + 1
+        column @ 0
+
+    return Shape(called: seen_paren, body: false, text: folded(text.join(" ")))
+
+# Where `word` stands in `text` as a whole identifier, absent where it does
+# not.
+function word_at(text: str, word: str) -> i64?
+    at: i64 @ clang_place.offset_of(text: text, needle: word)?
+
+    while at + word.len() <= text.len()
+        if clang_place.same_bytes(text: text, from: at, part: word)
+            end = at + word.len()
+
+            if (at == 0 || !ident(text[at - 1])) && (end >= text.len() || !ident(text[end]))
+                return ok(at)
+        at @ at + 1
+
+    return fail(code: "none", msg: "no whole word")
+
+function ident(c: u8) -> bool
+    return c == '_' || c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c >= '0' && c <= '9'
+
+# A text with every run of blanks one space, and none at its ends.
+function folded(text: str) -> str
+    words: [str] @ []
+    from: i64 @ 0
+    index: i64 @ 0
+
+    while index < text.len()
+        if text[index] == ' ' || text[index] == '\t'
+            if index > from
+                words @ words.push(text.slice(from: from, to: index))
+            from @ index + 1
+        index @ index + 1
+
+    if index > from
+        words @ words.push(text.slice(from: from, to: index))
+    return words.join(" ")
+
+## Tests
+
+test "a bound name's meaning is its last definition as a macro, else its body"
+    lines = [
+        "#define LIMIT 10"
+        "#undef LIMIT"
+        "#define LIMIT 100"
+        "static inline int cap(int v)"
+        "{ return v > 100 ? 100 : v; }"
+        "int capped(void);"
+    ]
+    assert meaning(lines, name: "LIMIT") == "#define LIMIT 100"
+    assert meaning(lines, name: "cap") == "static inline int cap(int v) { return v > 100 ? 100 : v; }"
+    assert meaning(lines, name: "capped") == "int capped(void);"
+    assert meaning(["#define K 1", "#undef K"], name: "K") == ""
+    assert word_at(text: "int recap(int); int cap(int);", word: "cap").must() == 20
+    assert word_at(text: "recap", word: "cap").is_err()
