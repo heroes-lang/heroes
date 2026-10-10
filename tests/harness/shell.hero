@@ -730,8 +730,26 @@ function skipped(name: str, skip: [str]) -> bool
 # Two minutes is the line between *slow* and *never*, chosen against the
 # slowest thing the corpus actually does — seconds, not minutes — so it is not
 # a performance budget in disguise (CLAUDE.md §13).
+#
+# **Ten minutes since 2026-10-11, because the premise under two expired**
+# (defect 605). `run --sanitize` of defect 539's thousand-deep case, a build
+# at `-O2` under ASan, ended at the watchdog on the CI's Linux arm64 leg (run
+# 38069799820, clang 18.1.3, a runner of four CPUs) and nowhere else. In the
+# CI's own clang, Ubuntu 24.04's on arm64, in a container of four CPUs on the
+# author's Mac, that build took 59.5 s and 2.7 GB, the 875-deep 51.3 s, and
+# the seed's build in the same container 9.7 s; the runner built the seed in
+# 21.7 s, and the CI's own two verdicts bracket the factor, the 875 under
+# 120 s and the thousand over, at 2.02 to 2.34: 120 to 139 s, the slowest
+# thing the net does, legitimately slow (clang's JumpThreading, inliner and
+# EarlyCSE over a thousand-deep chain, 24.6 of the 28.9 s of its passes) and
+# never a hang. And one machine's speed is not one number: the same image's
+# seed build read 9.7 s and 20.8 s an hour apart, as the Mac's other work
+# rose. So the bound is about four times the upper estimate, twice for that
+# variance and twice for the next slowest program; a hang costs ten minutes,
+# and twenty-five in one push still leave the net its summary inside the CI
+# job's six hours.
 constant WATCHDOG_SECONDS: i64
-    120
+    600
 
 # **What an executable is CALLED on this machine** — "" on POSIX, ".exe" on
 # Windows. The harness needs it wherever it names a binary with `-o` and then
@@ -1263,9 +1281,10 @@ test "fixedbugs: the watchdog is a runtime limit, because no probe could name th
     # not clear its build directory.
     #
     # A limit is not a program, so it stopped being one. What this case can
-    # assert is that the number every caller relies on is still the number
-    # coreutils used, and that the guard is asked for rather than assumed.
-    assert WATCHDOG_SECONDS == 120
+    # assert is that the number every caller relies on is the one measured,
+    # and that the guard is asked for rather than assumed. It was coreutils'
+    # 120 until defect 605 measured a legitimate build past it (2026-10-11).
+    assert WATCHDOG_SECONDS == 600
 
     # It really runs a program and really gets its code back, with a limit
     # nothing here comes near.
