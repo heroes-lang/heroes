@@ -31,6 +31,7 @@ use ir/containers
 use emit/members
 use emit/unit_plan
 use emit/externs as emit_externs
+use emit/header_packages
 use cli/toolchain
 use cli/compiling
 use cli/pointee
@@ -38,17 +39,21 @@ use cli/pointee_ask
 use cli/pointee_wants
 use cli/layout
 use cli/strings
+use cli/libraries
 
 # The modules whose units read one header list: the list, the modules, the
 # program cut to their members (the externs the pointee check asks about),
-# the group records their units read the headers of, and the probe of those
-# headers, absent where none of them has anything to ask.
+# the group records their units read the headers of, the probe of those
+# headers, absent where none of them has anything to ask, and the words their
+# units compile under, whose packages are those of the groups naming the
+# list's headers (panel 205's R3, defect 572).
 record Probing
     headers: [str]
     modules: [str]
     program: containers.Program
     records: {i64: bool}
     probe: compiling.Probe?
+    under: compiling.Compiling
 
 # What a build settles before any round runs: the shared tables every unit
 # is rendered from, each module's plan, and the probes of their headers.
@@ -57,29 +62,38 @@ record Planned
     plans: [unit_plan.Plan]
     probings: [Probing]
 
-function planned(t: toolchain.Toolchain, under: compiling.Compiling, p: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl], components: [str]) -> Planned
+function planned(t: toolchain.Toolchain, under: compiling.Compiling, p: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl], components: [str], package_words: {str: [str]}, by_header: {str: [str]}) -> Planned
     no_tags: {str: bool} = {}
     no_units: {str: str} = {}
     whole = members.whole_of(p, c, s, decls, struct_tags: no_tags, lend_units: no_units)
     plans = unit_plan.plans(components, p, c, s, decls, whole: whole)
-    return Planned(whole: whole, plans: plans, probings: probings_of(t, under: under, p, c, s, decls, plans: plans))
+    return Planned(
+        whole: whole,
+        plans: plans,
+        probings: probings_of(t, under: under, p, c, s, decls, plans: plans, package_words: package_words, by_header: by_header)
+    )
 
 # The plans grouped by the header list their units read, in the order the
 # first of each comes. Each group's lists are built in a local of its own and
 # never through an index of a list of them, which would copy what it holds
 # at every write; and every probe shares one memo of the headers' digests,
 # so a header two lists include is hashed once.
-function probings_of(t: toolchain.Toolchain, under: compiling.Compiling, p: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl], plans: [unit_plan.Plan]) -> [Probing]
+function probings_of(t: toolchain.Toolchain, under: compiling.Compiling, p: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl], plans: [unit_plan.Plan], package_words: {str: [str]}, by_header: {str: [str]}) -> [Probing]
     keys_seen: {str: i64} @ {}
     lists: [[str]] @ []
+    packages: [[str]] @ []
     group_of: [i64] @ []
 
+    # A header list's packages are those of the groups naming its headers
+    # (`emit/header_packages.hero`, defect 572), so one list is one set of
+    # words, and its probe compiles under them.
     for plan in plans
         key = plan.headers.join("\n")
 
         if keys_seen[key].is_err()
             keys_seen[key] @ lists.len()
             lists @ lists.push(plan.headers)
+            packages @ packages.push(header_packages.of(by_header, listed: plan.headers))
         group_of @ group_of.push(keys_seen[key].must())
 
     out: [Probing] @ []
@@ -107,9 +121,20 @@ function probings_of(t: toolchain.Toolchain, under: compiling.Compiling, p: cont
         unasked: compiling.Probe? = fail(code: "none", msg: "nothing to ask of these headers")
         probe: compiling.Probe? @ unasked
 
+        words = compiling.Compiling(
+            level: under.level,
+            sanitize: under.sanitize,
+            search_include: under.search_include,
+            package_flags: libraries.words_of(package_words, packages: packages[group]),
+            runtime: under.runtime,
+            source_dir: under.source_dir
+        )
+
         if asks(program, c, s, decls, records: records) || binds(program, decls)
-            probe @ ok(compiling.probe_with(t.build, under: under, headers: headers, memo: @memo))
-        out @ out.push(Probing(headers: headers, modules: modules, program: program, records: records, probe: probe))
+            probe @ ok(compiling.probe_with(t.build, under: words, headers: headers, memo: @memo))
+        out @ out.push(
+            Probing(headers: headers, modules: modules, program: program, records: records, probe: probe, under: words)
+        )
         group @ group + 1
 
     return out
