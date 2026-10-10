@@ -14,6 +14,11 @@
 #
 # A computed count is written `n.to_u64().must()`, and that aborts with
 # `does_not_fit` at the value rather than inside the primitive.
+#
+# Corrected 2026-10-10, panel 206 R3: a negative literal count does not
+# compile (`-1` is refused `int_out_of_range`); a count computed negative, as
+# `0 - 1` at the `u64` it is asked for, aborts at its subtraction, the path
+# panel 054 ruled for a computed count, told `integer overflow`.
 
 function main()
     print(repeat("-", 40))
