@@ -140,6 +140,42 @@ def in_run_roots(tree, rel):
     return any(rel.startswith(root + "/") for root in roots)
 
 
+CANONICAL_SUITE = os.path.join("tests", "harness", "suite_canonical.hero")
+ANY_ROW = re.compile(r'^\s*"([^"\s]+)"\s*$')
+
+
+def canonical_reads(tree, rel):
+    """Whether the `canonical` suite holds `rel` to `heroes fmt`: under one of
+    its `SOURCE_DIRS`, read from the suite's own file as `ceiling.py` reads the
+    `layout` suite's table (defect 603, 2026-10-10). A probe fixture under
+    `tests/golden/surface-fixtures/` is a program the probe reads in the shape
+    it was written, comments after a type's `.` or inside a parameter's
+    brackets, not canonical on purpose, and that suite leaves the directory
+    out of its walk; the commit guard held such a fixture to `fmt` all the
+    same, so a rewrite of one cell in it could not be committed. Where the
+    suite's file or its constant cannot be read the answer is True, the loud
+    direction: a file nobody can place is held to `fmt`."""
+    try:
+        with open(os.path.join(tree, CANONICAL_SUITE), encoding="utf-8") as handle:
+            rows = handle.read().split("\n")
+    except OSError:
+        return True
+    dirs, inside = [], False
+    for row in rows:
+        if row.startswith("constant SOURCE_DIRS:"):
+            inside = True
+            continue
+        if inside:
+            if row.strip() == "]":
+                break
+            found = ANY_ROW.match(row)
+            if found:
+                dirs.append(found.group(1))
+    if not dirs:
+        return True
+    return any(rel == d or rel.startswith(d + "/") for d in dirs)
+
+
 def word_for(names):
     """A word every one of `names` holds, the longest, for the harness's third
     word: their common prefix where they have one."""
