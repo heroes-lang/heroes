@@ -8,6 +8,14 @@
 # stands: its operands are known before the program runs, so it aborts each
 # time it runs, and spec § 4 refuses such a step in a constant's body whether
 # the program reaches it or not.
+#
+# Corrected 2026-10-10, panel 207 R1 and R2: spec § 4 refuses an integer
+# operator that would abort, run or not, at least where its operands are
+# known, and the last note of each message says that class since then, what
+# *known* is named in it (a literal, an operator on known values, a `=` name
+# or written constant holding one, or a cell since its last write with no
+# loop or branch between that writes it), where it said *a step of a
+# constant's body that aborts is a compile error*.
 
 constant BIG: u8
     200 + 100  #~ int_out_of_range

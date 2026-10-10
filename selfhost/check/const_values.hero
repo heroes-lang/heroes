@@ -178,6 +178,66 @@ function complement(v: contextual.LitValue) -> Slot
         return none()
     return from_bits(~b.must())
 
+## A step, judged
+
+# Where a step stands: its text and its right side's, the constant it is in,
+# and its span, which is what a diagnostic of it says.
+record Place
+    text: str
+    right: str
+    owner: str
+    span: token.Span
+
+# A step's value, or none and the diagnostic that says why it aborts.
+record Outcome
+    slot: Slot
+    told: [diag.Diagnostic]
+
+function kept(s: Slot) -> Outcome
+    no: [diag.Diagnostic] = []
+    return Outcome(slot: s, told: no)
+
+function refused(d: diag.Diagnostic) -> Outcome
+    return Outcome(slot: none(), told: [d])
+
+# An integer step whose right side is known, at the width `kind` the walk
+# recorded on it. A division by a known zero and a shift by a count outside
+# 0..63 abort whatever the left side is, so `x` may be unknown for those.
+function stepped(op: ast.BinaryOp, x: Slot, y: contextual.LitValue, kind: widths.IntKind, at: Place) -> Outcome
+    if (op == .div || op == .rem) && y.magnitude == 0
+        return refused(by_zero(text: at.text, right: at.right, owner: at.owner, span: at.span))
+
+    if (op == .shl || op == .shr) && count_outside(y)
+        return refused(shift_count(text: at.text, count: y, owner: at.owner, span: at.span))
+
+    if !x.known
+        return kept(none())
+
+    return match op
+        .add | .sub | .mul                             => summed(step(op, x: x.value, y: y), kind, at)
+        .div                                           => fitted(quotient(x: x.value, y: y), kind, at)
+        .rem                                           => remaindered(x: x.value, y: y, kind, at)
+        .bit_and | .bit_or | .bit_xor | .shl | .shr    => kept(bitwise(op, x: x.value, y: y))
+        .eq | .ne | .lt | .le | .gt | .ge | .and | .or => kept(none())
+
+# A value at its width: kept where it fits, told where it does not.
+function fitted(v: contextual.LitValue, kind: widths.IntKind, at: Place) -> Outcome
+    if fits(kind, v)
+        return kept(of(v))
+    return refused(overflow(text: at.text, got: of(v), kind, owner: at.owner, span: at.span))
+
+function summed(got: Slot, kind: widths.IntKind, at: Place) -> Outcome
+    if got.known
+        return fitted(got.value, kind, at)
+    return refused(overflow(text: at.text, got: got, kind, owner: at.owner, span: at.span))
+
+function remaindered(x: contextual.LitValue, y: contextual.LitValue, kind: widths.IntKind, at: Place) -> Outcome
+    whole = quotient(x: x, y: y)
+
+    if fits(kind, whole)
+        return kept(of(remainder(x: x, y: y)))
+    return refused(remainder_overflow(text: at.text, whole: whole, kind, owner: at.owner, span: at.span))
+
 ## What is told
 
 function shown(v: contextual.LitValue) -> str
@@ -191,12 +251,14 @@ function beyond(negative: bool) -> str
         return "less than -" + U64_MAX.to_str()
     return "more than " + U64_MAX.to_str()
 
-# Why the step is a compile error wherever it stands: what is known makes it
-# abort each time it runs, and § 4 refuses such a step in a constant's body
-# whether the program reaches it or not (a branch not taken, a loop that never
-# runs, a constant nothing reads).
+# Why the step is a compile error wherever it stands, in the words of spec
+# § 4's class (panel 207 R2): its operands are known in that sentence's sense,
+# so it aborts each time it runs, and such an integer operator in a constant's
+# body is refused run or not (a branch not taken, a loop that never runs, a
+# constant nothing reads). The note names what *known* is, since a step the
+# walk does not know, an index or a cell a loop writes, aborts where it runs.
 function reached(known_part: str, owner: str) -> str
-    return known_part + " known before the program runs, so the step aborts each time it runs; a step of a constant's body that aborts is a compile error, whether or not the step or `" + owner + "` is ever reached (spec § 4)"
+    return known_part + " known (a literal, an operator on known values, a `=` name or written constant holding one, or a cell since its last write with no loop or branch between that writes it), so the step aborts each time it runs, and in a constant's body such an integer operator is a compile error, run or not, whether or not `" + owner + "` is read (spec § 4)"
 
 function range_of(kind: widths.IntKind) -> str
     return widths.int_article_name(kind) + " holds " + widths.int_low_text(kind) + " through " + widths.int_high_text(kind)

@@ -1,0 +1,18 @@
+---
+kind: defect
+area: check
+milestone: none
+filed: 2026-10-10
+commit: 8065724512de96a261b01c31b4e18ecf17d7e644
+github: none
+---
+
+- [ ] **580 — a constant's body whose step aborts only on a loop's later turn compiles and aborts at every read** | after panel 206's R1 landed in lane b18-close (`eb5fef1b`, on batch 18's round, 2026-10-10), a constant body `v: u8 @ 0` with `while i < 3` doing `v @ v + 100` compiles and aborts at every read, while spec § 4's C4b, landed with it, reads *a step of it that aborts is a compile error*; the walk forgets an `@` cell's value after a loop that writes it, so the step's operands are unknown; deciding it needs an exact evaluator of a constant's body with a step bound, the row panel 039's C1 refused as an optimisation with no measured need | `selfhost/check/const_steps.hero` (in batch 18's round, 2026-10-10) and spec § 4; for a sitting: an evaluator of a constant's body with a bound, or C4b's sentence narrowed · **class: blocking**
+
+    **Origin:** found by lane b18-close in its landing of panel 206 (its final reply and notes, `.claude/worktrees/scratch-b15/b18-close/notes.txt`, ignored by git), filed by the coordinator at 11:25 on 2026-10-10, the lane's measurement, not re-run by the coordinator.
+
+    **Class: blocking**, 2026-10-10 (`.claude/rules/verification.md` § Bounded discovery): the spec false on a shape it names (CLAUDE.md § 12).
+
+    **Ruled 2026-10-10** by panel 207 (`docs/panel/207-a-constant-s-body-refuses-at-least-the-integer-steps-whose-operands-are-known-and-the-spec-says-exactly-that.md`, ratified at 12:33): C4b states the walk's class exactly, open above (R1), the diagnostic note agrees (R2), and what the class leaves (an index, a string index, an `assert`, a nan, a branch the walk cannot decide, a group's constant, a hang) aborts where it runs with a `run` witness per kind (R3); an exact evaluator with a bound is refused by design.md's *never a quota*. This item, whose title names one of at least six kinds, closes with R1 to R3's landing.
+
+    Repaired at `80657245`, 2026-10-10 (lane b18-close), gated by its cases and the compiler's own tests; the net is owed at the batch's close. Route W first: `check/const_writes.hero` reads a loop's condition and body for the cells it writes, and the walk forgets only those at the loop's entry and after it, a cell the loop never writes keeping its value on every turn. Measured clean: of panel 207's 160 shapes it moves the critic's `s31`, the spec-warden's `t8` and the critic's edge `e16` to refused and nothing else; the 577 goldens do not move, `LOOPED` and `UNTOUCHED` among them; the census of 3,344 tracked files moves none; `check selfhost/main.hero` 80.996e9 to 80.928e9 instructions, inside the runs' spread. So spec § 4 takes G3 made open (R1), 7565 to 7613 cl100k and 7430 to 7479 legacy, the one `--refresh` at 12:44 reading 10,004 real (+60, 176 left under the ceiling); the note of every refused step says the same class, naming what *known* is (R2, `const_values.hero`'s `reached`), and `const_steps.hero`'s module doc says it too. Cases: `check/fixedbugs-580-…` (`s31`, `t8`, `e16`, red on the base); five `run/fixedbugs-580-…` witnesses, one per kind the class leaves (a loop's later turn, a branch the walk cannot decide, an index, an `assert`, a nan), each pinning its abort (R3; a group's constant is 577's `c03` case); the 577 check and full cases take a dated correction beneath their headers, the full case's eight notes reworded. check 656, full 35, fixes 940, annotations 971, spec 23, grammar 9, unseen 3, special 10, records 28, layout 6, order 3, run narrowed 8, determinism 500, emission 1158, the compiler's 1,564 tests and the net's 327, 0 failed.
