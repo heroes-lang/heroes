@@ -123,6 +123,8 @@ function names_alone(t: table.Types, written: {i64: i64}, nameless: i64, named: 
                     if !shares
                         return false
 
+                    # ORDER: none — the walk asks whether any written node's type is
+                    # this one, an answer no order of the keys can change.
                     for id in keys(written)
                         if written[id].must() == nameless
                             return true
