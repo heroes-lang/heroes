@@ -3,7 +3,7 @@ kind: defect
 area: process
 milestone: none
 filed: 2026-10-10
-commit: none
+commit: 9d493742be4433bdb24d55a3a039ef96d13ee942
 github: none
 ---
 
@@ -12,3 +12,5 @@ github: none
     **Origin:** found by the landing lane of panel 209 at 20:22 on 2026-10-10, at the commit of M-inferred-cell step 1; the two files' HEAD versions were judged with `heroes fmt <copy>` and are not canonical either, so the guard would have refused them whenever any commit named them.
 
     **Class: blocking**, 2026-10-10: the current work's acceptance fails, a commit the suites accept cannot be made; repaired in the same lane, the hook's canonical refusal scoped to the directories the `canonical` suite reads, with a test in `test_hooks.py`.
+
+    Repaired at `9d493742` (lane `lane-inferred-cell`, 2026-10-10 20:30; on the trunk's local `main` as the cherry-pick `55bcd8f2`, since the guard that judges a lane's commit is the trunk's copy), gated by the hooks' own tests, 155 passed, five of them the new class `ProbeFixtures`; the net is owed at the batch's close.
