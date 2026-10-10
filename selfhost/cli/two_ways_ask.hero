@@ -167,9 +167,15 @@ function read(said: str) -> {str: Answer}
             name = asked_name(row: row, prefix: LINKAGE)
             external[name] @ true
 
-            # clang's note under the refusal is the header's declaration.
-            if index + 1 < lines.len() && !found(text: lines[index + 1], needle: ": note: ").is_err()
-                place = clang_place.place(lines[index + 1])
+            # clang's note under the refusal is the header's declaration, its
+            # own includes above it (panel 202's (g)).
+            under: i64 @ index + 1
+
+            while under < lines.len() && !clang_place.included(lines[under]).is_err()
+                under @ under + 1
+
+            if under < lines.len() && !found(text: lines[under], needle: ": note: ").is_err()
+                place = clang_place.place(lines[under])
 
                 if !place.is_err()
                     paths[name] @ place.must().path

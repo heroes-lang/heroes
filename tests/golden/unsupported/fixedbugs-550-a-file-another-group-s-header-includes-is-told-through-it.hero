@@ -1,0 +1,21 @@
+# fixedbugs, defect 550, lane b18-ffi, 2026-10-10 (panel 202's (g); lane
+# b17-emit's `inc1`).
+#
+# One module's two groups: `fixedbugs-550-a.h` reaches its `twice` through a
+# file it includes, and `fixedbugs-550-b.h` defines another `twice`, so the
+# module's unit cannot compile both. clang's first error lands in the second
+# header, its note in the included file, which no group names, and until
+# 2026-10-10 this order was told as `fixedbugs-550-b.h` not compiling at all,
+# where each header compiles alone. clang prints the note's own includes
+# now, and both headers are told, the file named with the header it arrives
+# through, in the words the other order gets.
+
+extern "fixedbugs-550-a.h"  #~ ffi_header_refused
+    function twice(x: i64) -> i64
+
+extern "fixedbugs-550-b.h"
+    function thrice(x: i32) -> i32
+
+function main()
+    print(twice(x: 3))
+    print(thrice(x: 4))

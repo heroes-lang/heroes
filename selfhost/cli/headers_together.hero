@@ -42,7 +42,7 @@ function told(s: source.Source, one: Side, other: Side, message: str, added: [st
         second @ one
     d: diag.Diagnostic @ diag.new_diagnostic(
         code: "ffi_header_refused",
-        message: "`" + first.header + "` and `" + second.header + "`, the headers two groups name, cannot be compiled in one unit: clang refuses them together, at `" + first.file + "` line " + first.row.to_str() + " and `" + second.file + "` line " + second.row.to_str() + ": " + message,
+        message: "`" + first.header + "` and `" + second.header + "`, the headers two groups name, cannot be compiled in one unit: clang refuses them together, at " + at_line(first) + between(first) + " and " + at_line(second) + ": " + message,
         span: first.span
     )
 
@@ -63,3 +63,17 @@ function told(s: source.Source, one: Side, other: Side, message: str, added: [st
         "each group's header is included in the unit clang compiled before a line of its own, so these two are read together there, and these cannot be compiled in one unit whichever comes first: bind a C name they share from one header, or name for one group a header of your own that declares only what that group binds"
     )
     return d
+
+# Where a side's line is: the file and its line, and the group's header it
+# arrives through where the file is another (defect 550), so the words are
+# the same whichever header is included first.
+function at_line(side: Side) -> str
+    if side.file == side.header
+        return "`" + side.file + "` line " + side.row.to_str()
+    return "`" + side.file + "` line " + side.row.to_str() + ", which `" + side.header + "` includes"
+
+# The comma that closes a side's `which ... includes` before the next.
+function between(side: Side) -> str
+    if side.file == side.header
+        return ""
+    return ","

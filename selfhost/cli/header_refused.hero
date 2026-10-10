@@ -38,26 +38,16 @@
 use source
 use ast
 use diag
-use token
 use emit/clang_place
-use emit/clang_name
 use emit/ffi_lookup
-use emit/externs as emit_externs
-use cli/strings
 use cli/read_back
 use cli/headers_together
+use cli/group_file
 use cli/clang_excerpt
 use emit/ffi_build
 use parse
 use resolve
 use checker
-
-# The group a file of the stack is the header of: the header's string on the
-# group's `extern` line, which the diagnostic points at, and the header as the
-# group wrote it.
-record Group
-    span: token.Span
-    header: str
 
 # clang's first error, read: its row in the text, its place, and its message.
 record First
@@ -96,13 +86,13 @@ function refused(stderr: str, s: source.Source, decls: [ast.Decl], runtime: str,
         return none
     steps = clang_place.stack(stderr: stderr, line: rows[first.row])
     at: i64 @ steps.len() - 1
-    group: Group? @ fail(code: "none", msg: "no group's header is in the stack")
+    group: group_file.Group? @ fail(code: "none", msg: "no group's header is in the stack")
 
     # The unit clang compiled heads the stack and is the build's, so the
     # search never names a group after it.
     while at >= 0 && group.is_err()
-        if !compilers(path: steps[at].path, runtime: runtime, build: build)
-            group @ group_of(s, decls, path: steps[at].path)
+        if !group_file.compilers(path: steps[at].path, runtime: runtime, build: build)
+            group @ group_file.group_of(s, decls, path: steps[at].path)
 
         if group.is_err()
             at @ at - 1
@@ -112,24 +102,28 @@ function refused(stderr: str, s: source.Source, decls: [ast.Decl], runtime: str,
     hop: i64 @ at
 
     while hop < steps.len()
-        if compilers(path: steps[hop].path, runtime: runtime, build: build)
+        if group_file.compilers(path: steps[hop].path, runtime: runtime, build: build)
             return none
         hop @ hop + 1
 
     notes = attached(rows, after: first.row)
 
     for note in notes
-        if compilers(path: note.path, runtime: runtime, build: build)
+        if group_file.compilers(path: note.path, runtime: runtime, build: build)
             return none
 
-    # A note in ANOTHER group's header: the two are refused together, and
-    # neither alone (defect 538, `cli/headers_together.hero`).
+    # A note in ANOTHER group's header, or in a file one includes: the two
+    # are refused together, and neither alone (defect 538,
+    # `cli/headers_together.hero`). The group is the innermost of the note's
+    # own includes that is one, which clang prints since panel 202's (g)
+    # (defect 550): until then a note in a file another group's header
+    # includes named no group, and one order was told as one header.
     for note in notes
-        beside = group_of(s, decls, path: note.path)
+        reached = group_file.arriving(stderr: stderr, row: rows[note.index], s: s, decls: decls)
 
-        if !beside.is_err() && beside.must().header != group.must().header
+        if !reached.is_err() && reached.must().group.header != group.must().header
             return [
-                pair(s, rows, first: first, steps: steps, at: at, group: group.must(), beside: beside.must(), note: note, notes: notes)
+                pair(s, rows, first: first, steps: steps, at: at, group: group.must(), beside: reached.must(), note: note, notes: notes)
             ]
 
     return [told(rows, first: first, steps: steps, at: at, group: group.must(), notes: notes)]
@@ -179,7 +173,9 @@ record Attached
     index: i64
 
 # The notes clang wrote under the error, up to the next diagnostic that is
-# not a note, the next include stack, or clang's count of what it reported.
+# not a note or clang's count of what it reported. A note's own includes
+# stand above it (`-fdiagnostics-show-note-include-stack`, panel 202's (g)),
+# so an include line is passed over, and the next diagnostic decides.
 function attached(rows: [str], after: i64) -> [Attached]
     out: [Attached] @ []
     index: i64 @ after + 1
@@ -187,7 +183,7 @@ function attached(rows: [str], after: i64) -> [Attached]
     while index < rows.len()
         line = clang_place.without_return(rows[index])
 
-        if line.len() > 0 && line[0] != ' '
+        if line.len() > 0 && line[0] != ' ' && clang_place.included(line).is_err()
             if severity_of(line) != NOTE
                 return out
             place = clang_place.place(line)
@@ -201,54 +197,10 @@ function attached(rows: [str], after: i64) -> [Attached]
 
     return out
 
-# Whether a file clang names is the compiler's: under the runtime's directory
-# or the build's, as clang was given them, either separator read as `/`.
-function compilers(path: str, runtime: str, build: str) -> bool
-    return beneath(path: path, dir: runtime) || beneath(path: path, dir: build)
-
-function beneath(path: str, dir: str) -> bool
-    p = plain(path)
-    d = plain(dir)
-
-    if d.len() == 0
-        return false
-    return strings.starts_with(text: p, prefix: d + "/")
-
-# A path slashed, without a leading `./`, which clang writes where it was
-# given the directory `.`.
-function plain(path: str) -> str
-    p = clang_place.slashed(path)
-
-    if strings.starts_with(text: p, prefix: "./")
-        return p.slice(from: 2, to: p.len())
-    return p
-
-# The group whose header is the file at `path`, spelled every way clang's
-# path allows, longest first.
-function group_of(s: source.Source, decls: [ast.Decl], path: str) -> Group?
-    for spelled in clang_place.spellings(path)
-        for decl in decls
-            named: token.Span? @ fail(code: "none", msg: "no header")
-
-            match decl.kind
-                .function_decl fd          => named @ fd.value.header
-                .constant_decl k           => named @ k.header
-                .record_decl rec           => named @ rec.header
-                .variant_decl | .test_decl => continue
-
-            if named.is_err()
-                continue
-            header = emit_externs.unquoted(s, span: named.must())
-
-            if clang_name.printed_as(printed: spelled, value: header)
-                return ok(Group(span: named.must(), header: header))
-
-    return fail(code: "none", msg: "no group's header is this file")
-
 # The diagnostic, on the group's string: the file clang refused, as the group
 # would name it, its line and clang's message, then what clang quoted and
 # attached, the includes it followed, and what a `-Werror` means here.
-function told(rows: [str], first: First, steps: [clang_place.Place], at: i64, group: Group, notes: [Attached]) -> diag.Diagnostic
+function told(rows: [str], first: First, steps: [clang_place.Place], at: i64, group: group_file.Group, notes: [Attached]) -> diag.Diagnostic
     directory = clang_place.found_in(path: steps[at].path, spelled: group.header)
     refused_file: str @ group.header
     head: str @ "`" + group.header + "`, the header this group names, does not compile: clang refuses it"
@@ -297,7 +249,7 @@ function told(rows: [str], first: First, steps: [clang_place.Place], at: i64, gr
 # The two headers clang refused together, `group`'s where its first error
 # lies and `beside`'s where `note` points (defect 538): told in the headers'
 # own order, never the `use` lines'.
-function pair(s: source.Source, rows: [str], first: First, steps: [clang_place.Place], at: i64, group: Group, beside: Group, note: Attached, notes: [Attached]) -> diag.Diagnostic
+function pair(s: source.Source, rows: [str], first: First, steps: [clang_place.Place], at: i64, group: group_file.Group, beside: group_file.Reached, note: Attached, notes: [Attached]) -> diag.Diagnostic
     directory = clang_place.found_in(path: steps[at].path, spelled: group.header)
     refused_file: str @ group.header
 
@@ -311,9 +263,9 @@ function pair(s: source.Source, rows: [str], first: First, steps: [clang_place.P
         quoted: clang_excerpt.of(rows, after: first.row)
     )
     other = headers_together.Side(
-        span: beside.span,
-        header: beside.header,
-        file: beside.header,
+        span: beside.group.span,
+        header: beside.group.header,
+        file: clang_place.shown(path: note.path, directory: beside.directory),
         row: note.row,
         quoted: clang_excerpt.of(rows, after: note.index)
     )
@@ -465,3 +417,22 @@ test "two headers clang refuses together are both told, whichever the program in
     assert two[0].message == one[0].message
     assert two[0].notes == one[0].notes
     assert two[0].span.start == one[0].span.start
+
+# Defect 550: the earlier declaration sits in a file `a.h` includes, which no
+# group names, and clang prints that note's own includes since panel 202's
+# (g) (`cli/flags.hero`), as Apple clang 21 wrote them for lane b17-emit's
+# `inc1` and `inc2`: both orders are told the same words, the file named with
+# the header it arrives through.
+test "a note in a file another group's header includes is told through that header, whichever is included first (defect 550)"
+    text = "extern \"a.h\"\n    function twice(x: i64) -> i64\n\nextern \"b.h\"\n    function thrice(x: i32) -> i32\n\nfunction main()\n    print(twice(x: 3))\n"
+    s = source.new_source(name: "p.hero", text: text)
+    parsed = parse.parse(text)
+    a_first = "In file included from build/tu-1/p.c:3:\n./b.h:1:19: error: conflicting types for 'twice'\n    1 | static inline int twice(int x) { return x + x; }\n      |                   ^\nIn file included from build/tu-1/p.c:2:\nIn file included from ./a.h:1:\n./a_impl.h:1:20: note: previous definition is here\n    1 | static inline long twice(long x) { return 2 * x; }\n      |                    ^\n1 error generated.\n"
+    b_first = "In file included from build/tu-1/p.c:3:\nIn file included from ./a.h:1:\n./a_impl.h:1:20: error: conflicting types for 'twice'\n    1 | static inline long twice(long x) { return 2 * x; }\n      |                    ^\nIn file included from build/tu-1/p.c:2:\n./b.h:1:19: note: previous definition is here\n    1 | static inline int twice(int x) { return x + x; }\n      |                   ^\n1 error generated.\n"
+    one = refused(stderr: a_first, s: s, decls: parsed.decls, runtime: "runtime", build: "build")
+    two = refused(stderr: b_first, s: s, decls: parsed.decls, runtime: "runtime", build: "build")
+    assert one.len() == 1
+    assert one[0].message == "`a.h` and `b.h`, the headers two groups name, cannot be compiled in one unit: clang refuses them together, at `a_impl.h` line 1, which `a.h` includes, and `b.h` line 1: conflicting types for 'twice'"
+    assert two[0].message == one[0].message
+    assert two[0].notes == one[0].notes
+    assert source.span_text(s, one[0].span) == "\"a.h\""
