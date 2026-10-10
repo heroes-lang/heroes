@@ -12,3 +12,5 @@ github: none
     **Origin:** filed by the coordinator at 02:34 on 2026-10-10 from panel 204 (`docs/panel/204-c-reads-a-module-s-headers-in-the-order-its-groups-are-written-and-the-spec-says-so.md`, R5), the seats' measurements, not re-run by the coordinator.
 
     **Class: blocking**, 2026-10-10 (`.claude/rules/verification.md` § Bounded discovery): a correct program refused.
+
+    **Ruled 2026-10-10** by panel 205 (`docs/panel/205-a-library-s-own-header-code-is-judged-as-clang-judges-a-system-header-the-checks-raised-again-after-it-and-a-switch-goes-in-the-first-group.md`, ratified at 03:38): R2: inside the groups' region only `-Wall` and `-Wsign-conversion` are ignored, wherever a header was found, the rest kept as errors and every FFI check raised again after the close (R1); this item's attribution to panel 198's *as `-I`* is false: GMP and libavutil come through pkg-config's `-I`, and on Linux a system directory is silenced by clang's own design.
