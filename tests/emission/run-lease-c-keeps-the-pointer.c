@@ -9,9 +9,18 @@
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic ignored "-Wpragma-pack"
+#pragma float_control(push)
 #include "heroes_guard_open.h"
 #include <lease-c-keeps-the-pointer.h>
 #include "heroes_guard_close.h"
+#pragma clang diagnostic ignored "-Wignored-pragmas"
+#pragma pack()
+#pragma float_control(pop)
+#pragma float_control(precise, on)
+#pragma GCC visibility push(default)
+#pragma clang section bss="" data="" rodata="" text="" relro=""
+#pragma clang optimize on
 #pragma clang diagnostic pop
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -25,8 +34,6 @@
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
-#pragma clang diagnostic ignored "-Wdeprecated-pragma"
-#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -73,7 +80,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_f63dcff, "row-");
 HERO_STR_STATIC(hero_str_3390715c, "-payload");
 
-#line 77 "leaseckeepsthepointer.c"
+#line 84 "leaseckeepsthepointer.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -116,7 +123,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 120 "leaseckeepsthepointer.c"
+#line 127 "leaseckeepsthepointer.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -129,10 +136,11 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_leaseckeepsthepointer_main(void);
+#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 15 "tests/golden/run/lease-c-keeps-the-pointer.hero"
 void h_leaseckeepsthepointer_main(void) {
-#line 136 "leaseckeepsthepointer.c"
+#line 144 "leaseckeepsthepointer.c"
     int64_t h0_at;
     const char * h1_label;
     HeroStr h2_own2 = {0};
@@ -186,7 +194,7 @@ bb2:
     t17 = h2_own2;
 #line 19 "tests/golden/run/lease-c-keeps-the-pointer.hero"
     h2_own2 = t7;
-#line 190 "leaseckeepsthepointer.c"
+#line 198 "leaseckeepsthepointer.c"
     hero_str_decref(t17);
 #line 19 "tests/golden/run/lease-c-keeps-the-pointer.hero"
     t8 = hero_str_concat(t5, t7);
@@ -194,7 +202,7 @@ bb2:
     t18 = h3_own3;
 #line 19 "tests/golden/run/lease-c-keeps-the-pointer.hero"
     h3_own3 = t8;
-#line 198 "leaseckeepsthepointer.c"
+#line 206 "leaseckeepsthepointer.c"
     hero_str_decref(t18);
 #line 19 "tests/golden/run/lease-c-keeps-the-pointer.hero"
     t9 = HERO_STR_LIT(hero_str_3390715c);
@@ -204,7 +212,7 @@ bb2:
     t19 = h4_own4;
 #line 19 "tests/golden/run/lease-c-keeps-the-pointer.hero"
     h4_own4 = t10;
-#line 208 "leaseckeepsthepointer.c"
+#line 216 "leaseckeepsthepointer.c"
     hero_str_decref(t19);
 #line 19 "tests/golden/run/lease-c-keeps-the-pointer.hero"
     t11 = hero_str_held(t10);
@@ -230,12 +238,13 @@ bb2:
     goto bb1;
 #line 23 "tests/golden/run/lease-c-keeps-the-pointer.hero"
 bb3:
-#line 234 "leaseckeepsthepointer.c"
+#line 242 "leaseckeepsthepointer.c"
     hero_str_release_at(&h2_own2);
     hero_str_release_at(&h3_own3);
     hero_str_release_at(&h4_own4);
     return;
 }
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_incref(v->as.ok);

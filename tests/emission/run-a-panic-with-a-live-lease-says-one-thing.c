@@ -9,9 +9,18 @@
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic ignored "-Wpragma-pack"
+#pragma float_control(push)
 #include "heroes_guard_open.h"
 #include <a-panic-with-a-live-lease-says-one-thing.h>
 #include "heroes_guard_close.h"
+#pragma clang diagnostic ignored "-Wignored-pragmas"
+#pragma pack()
+#pragma float_control(pop)
+#pragma float_control(precise, on)
+#pragma GCC visibility push(default)
+#pragma clang section bss="" data="" rodata="" text="" relro=""
+#pragma clang optimize on
 #pragma clang diagnostic pop
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -25,8 +34,6 @@
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
-#pragma clang diagnostic ignored "-Wdeprecated-pragma"
-#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -71,7 +78,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_35d9fe9b, "payload");
 
-#line 75 "apanicwithaliveleasesaysonething.c"
+#line 82 "apanicwithaliveleasesaysonething.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -114,7 +121,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 118 "apanicwithaliveleasesaysonething.c"
+#line 125 "apanicwithaliveleasesaysonething.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -127,10 +134,11 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_apanicwithaliveleasesaysonething_main(void);
+#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 10 "tests/golden/run/a-panic-with-a-live-lease-says-one-thing.hero"
 void h_apanicwithaliveleasesaysonething_main(void) {
-#line 134 "apanicwithaliveleasesaysonething.c"
+#line 142 "apanicwithaliveleasesaysonething.c"
     HeroStr h0_x = {0};
     const char * h1_c;
     HeroArrayHeader * h2_a = {0};
@@ -158,11 +166,11 @@ bb0:
     t1 = HERO_STR_LIT(hero_str_35d9fe9b);
 #line 11 "tests/golden/run/a-panic-with-a-live-lease-says-one-thing.hero"
     t13 = h0_x;
-#line 162 "apanicwithaliveleasesaysonething.c"
+#line 170 "apanicwithaliveleasesaysonething.c"
     hero_str_incref(t1);
 #line 11 "tests/golden/run/a-panic-with-a-live-lease-says-one-thing.hero"
     h0_x = t1;
-#line 166 "apanicwithaliveleasesaysonething.c"
+#line 174 "apanicwithaliveleasesaysonething.c"
     hero_str_decref(t13);
 #line 12 "tests/golden/run/a-panic-with-a-live-lease-says-one-thing.hero"
     t2 = h0_x;
@@ -190,15 +198,15 @@ bb0:
     t14 = h3_own3;
 #line 14 "tests/golden/run/a-panic-with-a-live-lease-says-one-thing.hero"
     h3_own3 = t8;
-#line 194 "apanicwithaliveleasesaysonething.c"
+#line 202 "apanicwithaliveleasesaysonething.c"
     hero_array_decref(t14);
 #line 14 "tests/golden/run/a-panic-with-a-live-lease-says-one-thing.hero"
     t15 = h2_a;
-#line 198 "apanicwithaliveleasesaysonething.c"
+#line 206 "apanicwithaliveleasesaysonething.c"
     hero_array_incref(t8);
 #line 14 "tests/golden/run/a-panic-with-a-live-lease-says-one-thing.hero"
     h2_a = t8;
-#line 202 "apanicwithaliveleasesaysonething.c"
+#line 210 "apanicwithaliveleasesaysonething.c"
     hero_array_decref(t15);
 #line 15 "tests/golden/run/a-panic-with-a-live-lease-says-one-thing.hero"
     t9 = h2_a;
@@ -212,20 +220,21 @@ bb0:
     t16 = h4_own4;
 #line 15 "tests/golden/run/a-panic-with-a-live-lease-says-one-thing.hero"
     h4_own4 = t12;
-#line 216 "apanicwithaliveleasesaysonething.c"
+#line 224 "apanicwithaliveleasesaysonething.c"
     hero_str_decref(t16);
 #line 15 "tests/golden/run/a-panic-with-a-live-lease-says-one-thing.hero"
     hero_print_str(t12);
 #line 15 "tests/golden/run/a-panic-with-a-live-lease-says-one-thing.hero"
     hero_print_end();
     hero_held_release(&h1_c);
-#line 223 "apanicwithaliveleasesaysonething.c"
+#line 231 "apanicwithaliveleasesaysonething.c"
     hero_str_release_at(&h0_x);
     hero_array_release_at(&h2_a);
     hero_array_release_at(&h3_own3);
     hero_str_release_at(&h4_own4);
     return;
 }
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_incref(v->as.ok);

@@ -9,10 +9,19 @@
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic ignored "-Wpragma-pack"
+#pragma float_control(push)
 #include "heroes_guard_open.h"
 #include <stdio.h>
 #include <string.h>
 #include "heroes_guard_close.h"
+#pragma clang diagnostic ignored "-Wignored-pragmas"
+#pragma pack()
+#pragma float_control(pop)
+#pragma float_control(precise, on)
+#pragma GCC visibility push(default)
+#pragma clang section bss="" data="" rodata="" text="" relro=""
+#pragma clang optimize on
 #pragma clang diagnostic pop
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -26,8 +35,6 @@
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
-#pragma clang diagnostic ignored "-Wdeprecated-pragma"
-#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -88,7 +95,7 @@ HERO_STR_STATIC(hero_str_d028710, "the bytes of ");
 HERO_STR_STATIC(hero_str_612f4355, " are not UTF-8");
 HERO_STR_STATIC(hero_str_b908f30, "could not read ");
 
-#line 92 "fixedbugs245aleaseofastrholdinganulstops.c"
+#line 99 "fixedbugs245aleaseofastrholdinganulstops.c"
 typedef struct h_0opt_e1f4933 {
     int64_t tag;
     union {
@@ -143,7 +150,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 147 "fixedbugs245aleaseofastrholdinganulstops.c"
+#line 154 "fixedbugs245aleaseofastrholdinganulstops.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_e1f4933_retain(const h_0opt_e1f4933 *v);
@@ -167,23 +174,24 @@ int64_t h_library_HERO_OS_NOT_FOUND(void);
 int64_t h_library_HERO_OS_NOT_TEXT(void);
 int64_t h_library_HERO_OS_BAD_NAME(void);
 h_0opt_f87774a h_library_read_file(HeroStr h0_path);
+#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 18 "tests/golden/run/fixedbugs-245-a-lease-of-a-str-holding-a-nul-stops.hero"
 HeroStr h_fixedbugs245aleaseofastrholdinganulstops_HELD(void) {
-#line 174 "fixedbugs245aleaseofastrholdinganulstops.c"
+#line 182 "fixedbugs245aleaseofastrholdinganulstops.c"
     HeroStr t1;
     goto bb0;
 bb0:
 #line 19 "tests/golden/run/fixedbugs-245-a-lease-of-a-str-holding-a-nul-stops.hero"
     t1 = HERO_STR_LIT(hero_str_6107d0b4);
-#line 180 "fixedbugs245aleaseofastrholdinganulstops.c"
+#line 188 "fixedbugs245aleaseofastrholdinganulstops.c"
     hero_str_incref(t1);
     return t1;
 }
 
 #line 21 "tests/golden/run/fixedbugs-245-a-lease-of-a-str-holding-a-nul-stops.hero"
 HeroStr h_fixedbugs245aleaseofastrholdinganulstops_held(void) {
-#line 187 "fixedbugs245aleaseofastrholdinganulstops.c"
+#line 195 "fixedbugs245aleaseofastrholdinganulstops.c"
     void * h0_handle;
     HeroArrayHeader * h1_xs0 = {0};
     int64_t h2_i0;
@@ -257,7 +265,7 @@ bb0:
     t49 = h6_own6;
 #line 22 "tests/golden/run/fixedbugs-245-a-lease-of-a-str-holding-a-nul-stops.hero"
     h6_own6 = t1;
-#line 261 "fixedbugs245aleaseofastrholdinganulstops.c"
+#line 269 "fixedbugs245aleaseofastrholdinganulstops.c"
     hero_str_decref(t49);
 #line 22 "tests/golden/run/fixedbugs-245-a-lease-of-a-str-holding-a-nul-stops.hero"
     t2 = hero_str_lend(t1);
@@ -298,15 +306,15 @@ bb1:
     t50 = h7_own7;
 #line 25 "tests/golden/run/fixedbugs-245-a-lease-of-a-str-holding-a-nul-stops.hero"
     h7_own7 = t13;
-#line 302 "fixedbugs245aleaseofastrholdinganulstops.c"
+#line 310 "fixedbugs245aleaseofastrholdinganulstops.c"
     hero_array_decref(t50);
 #line 25 "tests/golden/run/fixedbugs-245-a-lease-of-a-str-holding-a-nul-stops.hero"
     t51 = h1_xs0;
-#line 306 "fixedbugs245aleaseofastrholdinganulstops.c"
+#line 314 "fixedbugs245aleaseofastrholdinganulstops.c"
     hero_array_incref(t13);
 #line 25 "tests/golden/run/fixedbugs-245-a-lease-of-a-str-holding-a-nul-stops.hero"
     h1_xs0 = t13;
-#line 310 "fixedbugs245aleaseofastrholdinganulstops.c"
+#line 318 "fixedbugs245aleaseofastrholdinganulstops.c"
     hero_array_decref(t51);
 #line 25 "tests/golden/run/fixedbugs-245-a-lease-of-a-str-holding-a-nul-stops.hero"
     t14 = INT64_C(0);
@@ -316,7 +324,7 @@ bb1:
     goto bb3;
 #line 25 "tests/golden/run/fixedbugs-245-a-lease-of-a-str-holding-a-nul-stops.hero"
 bb2:
-#line 320 "fixedbugs245aleaseofastrholdinganulstops.c"
+#line 328 "fixedbugs245aleaseofastrholdinganulstops.c"
     (void)t7;
     (void)t8;
     hero_panic_assert(t6);
@@ -357,15 +365,15 @@ bb4:
     t52 = h8_own8;
 #line 26 "tests/golden/run/fixedbugs-245-a-lease-of-a-str-holding-a-nul-stops.hero"
     h8_own8 = t23;
-#line 361 "fixedbugs245aleaseofastrholdinganulstops.c"
+#line 369 "fixedbugs245aleaseofastrholdinganulstops.c"
     h_0opt_e1f4933_release(&t52);
 #line 26 "tests/golden/run/fixedbugs-245-a-lease-of-a-str-holding-a-nul-stops.hero"
     t53 = h4_f0;
-#line 365 "fixedbugs245aleaseofastrholdinganulstops.c"
+#line 373 "fixedbugs245aleaseofastrholdinganulstops.c"
     h_0opt_e1f4933_retain(&t23);
 #line 26 "tests/golden/run/fixedbugs-245-a-lease-of-a-str-holding-a-nul-stops.hero"
     h4_f0 = t23;
-#line 369 "fixedbugs245aleaseofastrholdinganulstops.c"
+#line 377 "fixedbugs245aleaseofastrholdinganulstops.c"
     h_0opt_e1f4933_release(&t53);
 #line 26 "tests/golden/run/fixedbugs-245-a-lease-of-a-str-holding-a-nul-stops.hero"
     t24 = h4_f0;
@@ -400,7 +408,7 @@ bb6:
     t54 = h9_own9;
 #line 29 "tests/golden/run/fixedbugs-245-a-lease-of-a-str-holding-a-nul-stops.hero"
     h9_own9 = t39;
-#line 404 "fixedbugs245aleaseofastrholdinganulstops.c"
+#line 412 "fixedbugs245aleaseofastrholdinganulstops.c"
     hero_str_decref(t54);
 #line 29 "tests/golden/run/fixedbugs-245-a-lease-of-a-str-holding-a-nul-stops.hero"
     t40 = h_library_read_file(t39);
@@ -408,15 +416,15 @@ bb6:
     t55 = h10_own10;
 #line 29 "tests/golden/run/fixedbugs-245-a-lease-of-a-str-holding-a-nul-stops.hero"
     h10_own10 = t40;
-#line 412 "fixedbugs245aleaseofastrholdinganulstops.c"
+#line 420 "fixedbugs245aleaseofastrholdinganulstops.c"
     h_0opt_f87774a_release(&t55);
 #line 29 "tests/golden/run/fixedbugs-245-a-lease-of-a-str-holding-a-nul-stops.hero"
     t56 = h5_f1;
-#line 416 "fixedbugs245aleaseofastrholdinganulstops.c"
+#line 424 "fixedbugs245aleaseofastrholdinganulstops.c"
     h_0opt_f87774a_retain(&t40);
 #line 29 "tests/golden/run/fixedbugs-245-a-lease-of-a-str-holding-a-nul-stops.hero"
     h5_f1 = t40;
-#line 420 "fixedbugs245aleaseofastrholdinganulstops.c"
+#line 428 "fixedbugs245aleaseofastrholdinganulstops.c"
     h_0opt_f87774a_release(&t56);
 #line 29 "tests/golden/run/fixedbugs-245-a-lease-of-a-str-holding-a-nul-stops.hero"
     t41 = h5_f1;
@@ -446,7 +454,7 @@ bb8:
     t28 = h4_f0;
 #line 26 "tests/golden/run/fixedbugs-245-a-lease-of-a-str-holding-a-nul-stops.hero"
     t29 = t28.as.err;
-#line 450 "fixedbugs245aleaseofastrholdinganulstops.c"
+#line 458 "fixedbugs245aleaseofastrholdinganulstops.c"
     hero_panic_must(t29);
     hero_unreachable();
 bb9:
@@ -454,7 +462,7 @@ bb9:
     t47 = h5_f1;
 #line 29 "tests/golden/run/fixedbugs-245-a-lease-of-a-str-holding-a-nul-stops.hero"
     t48 = t47.as.ok;
-#line 458 "fixedbugs245aleaseofastrholdinganulstops.c"
+#line 466 "fixedbugs245aleaseofastrholdinganulstops.c"
     hero_str_incref(t48);
     hero_array_release_at(&h1_xs0);
     h_0opt_e1f4933_release(hero_slot_escape(&h4_f0));
@@ -470,14 +478,14 @@ bb10:
     t45 = h5_f1;
 #line 29 "tests/golden/run/fixedbugs-245-a-lease-of-a-str-holding-a-nul-stops.hero"
     t46 = t45.as.err;
-#line 474 "fixedbugs245aleaseofastrholdinganulstops.c"
+#line 482 "fixedbugs245aleaseofastrholdinganulstops.c"
     hero_panic_must(t46);
     hero_unreachable();
 }
 
 #line 31 "tests/golden/run/fixedbugs-245-a-lease-of-a-str-holding-a-nul-stops.hero"
 void h_fixedbugs245aleaseofastrholdinganulstops_main(void) {
-#line 481 "fixedbugs245aleaseofastrholdinganulstops.c"
+#line 489 "fixedbugs245aleaseofastrholdinganulstops.c"
     HeroStr h0_s = {0};
     const char * h1_c;
     HeroStr h2_own2 = {0};
@@ -501,15 +509,15 @@ bb0:
     t11 = h2_own2;
 #line 32 "tests/golden/run/fixedbugs-245-a-lease-of-a-str-holding-a-nul-stops.hero"
     h2_own2 = t1;
-#line 505 "fixedbugs245aleaseofastrholdinganulstops.c"
+#line 513 "fixedbugs245aleaseofastrholdinganulstops.c"
     hero_str_decref(t11);
 #line 32 "tests/golden/run/fixedbugs-245-a-lease-of-a-str-holding-a-nul-stops.hero"
     t12 = h0_s;
-#line 509 "fixedbugs245aleaseofastrholdinganulstops.c"
+#line 517 "fixedbugs245aleaseofastrholdinganulstops.c"
     hero_str_incref(t1);
 #line 32 "tests/golden/run/fixedbugs-245-a-lease-of-a-str-holding-a-nul-stops.hero"
     h0_s = t1;
-#line 513 "fixedbugs245aleaseofastrholdinganulstops.c"
+#line 521 "fixedbugs245aleaseofastrholdinganulstops.c"
     hero_str_decref(t12);
 #line 33 "tests/golden/run/fixedbugs-245-a-lease-of-a-str-holding-a-nul-stops.hero"
     t2 = HERO_STR_LIT(hero_str_41d10789);
@@ -544,7 +552,7 @@ bb0:
 #line 35 "tests/golden/run/fixedbugs-245-a-lease-of-a-str-holding-a-nul-stops.hero"
     hero_print_end();
     hero_held_release(&h1_c);
-#line 548 "fixedbugs245aleaseofastrholdinganulstops.c"
+#line 556 "fixedbugs245aleaseofastrholdinganulstops.c"
     hero_str_release_at(&h0_s);
     hero_str_release_at(&h2_own2);
     return;
@@ -552,31 +560,31 @@ bb0:
 
 #line 109 "<heroes library>"
 int64_t h_library_HERO_OS_OK(void) {
-#line 556 "fixedbugs245aleaseofastrholdinganulstops.c"
+#line 564 "fixedbugs245aleaseofastrholdinganulstops.c"
     return HERO_OS_OK;
 }
 
 #line 110 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_FOUND(void) {
-#line 562 "fixedbugs245aleaseofastrholdinganulstops.c"
+#line 570 "fixedbugs245aleaseofastrholdinganulstops.c"
     return HERO_OS_NOT_FOUND;
 }
 
 #line 111 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_TEXT(void) {
-#line 568 "fixedbugs245aleaseofastrholdinganulstops.c"
+#line 576 "fixedbugs245aleaseofastrholdinganulstops.c"
     return HERO_OS_NOT_TEXT;
 }
 
 #line 112 "<heroes library>"
 int64_t h_library_HERO_OS_BAD_NAME(void) {
-#line 574 "fixedbugs245aleaseofastrholdinganulstops.c"
+#line 582 "fixedbugs245aleaseofastrholdinganulstops.c"
     return HERO_OS_BAD_NAME;
 }
 
 #line 167 "<heroes library>"
 h_0opt_f87774a h_library_read_file(HeroStr h0_path) {
-#line 580 "fixedbugs245aleaseofastrholdinganulstops.c"
+#line 588 "fixedbugs245aleaseofastrholdinganulstops.c"
     int64_t *const hero_lend_h1_status = (int64_t *)hero_lend_local(sizeof(int64_t), "library.read_file", "status");
 #define h1_status (*hero_lend_h1_status)
     HeroStr h2_text = {0};
@@ -655,15 +663,15 @@ bb0:
     t39 = h4_own4;
 #line 169 "<heroes library>"
     h4_own4 = t3;
-#line 659 "fixedbugs245aleaseofastrholdinganulstops.c"
+#line 667 "fixedbugs245aleaseofastrholdinganulstops.c"
     hero_str_decref(t39);
 #line 169 "<heroes library>"
     t40 = h2_text;
-#line 663 "fixedbugs245aleaseofastrholdinganulstops.c"
+#line 671 "fixedbugs245aleaseofastrholdinganulstops.c"
     hero_str_incref(t3);
 #line 169 "<heroes library>"
     h2_text = t3;
-#line 667 "fixedbugs245aleaseofastrholdinganulstops.c"
+#line 675 "fixedbugs245aleaseofastrholdinganulstops.c"
     hero_str_decref(t40);
 #line 170 "<heroes library>"
     t4 = h1_status;
@@ -687,7 +695,7 @@ bb1:
 bb2:
 #line 171 "<heroes library>"
     t7 = h2_text;
-#line 691 "fixedbugs245aleaseofastrholdinganulstops.c"
+#line 699 "fixedbugs245aleaseofastrholdinganulstops.c"
     hero_str_incref(t7);
 #line 171 "<heroes library>"
     t8 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t7};
@@ -695,7 +703,7 @@ bb2:
     t41 = h5_own5;
 #line 171 "<heroes library>"
     h5_own5 = t8;
-#line 699 "fixedbugs245aleaseofastrholdinganulstops.c"
+#line 707 "fixedbugs245aleaseofastrholdinganulstops.c"
     h_0opt_f87774a_release(&t41);
 #line 171 "<heroes library>"
     h3_ret0 = t8;
@@ -721,7 +729,7 @@ bb5:
     t12 = HERO_STR_LIT(hero_str_3e46668);
 #line 175 "<heroes library>"
     t13 = HERO_STR_LIT(hero_str_75aeb685);
-#line 725 "fixedbugs245aleaseofastrholdinganulstops.c"
+#line 733 "fixedbugs245aleaseofastrholdinganulstops.c"
     hero_str_incref(t12);
     hero_str_incref(t13);
 #line 175 "<heroes library>"
@@ -730,7 +738,7 @@ bb5:
     t42 = h6_own6;
 #line 175 "<heroes library>"
     h6_own6 = t14;
-#line 734 "fixedbugs245aleaseofastrholdinganulstops.c"
+#line 742 "fixedbugs245aleaseofastrholdinganulstops.c"
     h_0opt_f87774a_release(&t42);
 #line 175 "<heroes library>"
     h3_ret0 = t14;
@@ -764,7 +772,7 @@ bb8:
     t43 = h7_own7;
 #line 177 "<heroes library>"
     h7_own7 = t21;
-#line 768 "fixedbugs245aleaseofastrholdinganulstops.c"
+#line 776 "fixedbugs245aleaseofastrholdinganulstops.c"
     hero_str_decref(t43);
     hero_str_incref(t18);
     hero_str_incref(t21);
@@ -774,7 +782,7 @@ bb8:
     t44 = h8_own8;
 #line 177 "<heroes library>"
     h8_own8 = t22;
-#line 778 "fixedbugs245aleaseofastrholdinganulstops.c"
+#line 786 "fixedbugs245aleaseofastrholdinganulstops.c"
     h_0opt_f87774a_release(&t44);
 #line 177 "<heroes library>"
     h3_ret0 = t22;
@@ -798,7 +806,7 @@ bb10:
     t45 = h9_own9;
 #line 183 "<heroes library>"
     h9_own9 = t36;
-#line 802 "fixedbugs245aleaseofastrholdinganulstops.c"
+#line 810 "fixedbugs245aleaseofastrholdinganulstops.c"
     hero_str_decref(t45);
     hero_str_incref(t33);
     hero_str_incref(t36);
@@ -808,7 +816,7 @@ bb10:
     t46 = h10_own10;
 #line 183 "<heroes library>"
     h10_own10 = t37;
-#line 812 "fixedbugs245aleaseofastrholdinganulstops.c"
+#line 820 "fixedbugs245aleaseofastrholdinganulstops.c"
     h_0opt_f87774a_release(&t46);
 #line 183 "<heroes library>"
     h3_ret0 = t37;
@@ -828,7 +836,7 @@ bb11:
     t47 = h11_own11;
 #line 182 "<heroes library>"
     h11_own11 = t29;
-#line 832 "fixedbugs245aleaseofastrholdinganulstops.c"
+#line 840 "fixedbugs245aleaseofastrholdinganulstops.c"
     hero_str_decref(t47);
 #line 182 "<heroes library>"
     t30 = HERO_STR_LIT(hero_str_612f4355);
@@ -838,7 +846,7 @@ bb11:
     t48 = h12_own12;
 #line 182 "<heroes library>"
     h12_own12 = t31;
-#line 842 "fixedbugs245aleaseofastrholdinganulstops.c"
+#line 850 "fixedbugs245aleaseofastrholdinganulstops.c"
     hero_str_decref(t48);
     hero_str_incref(t26);
     hero_str_incref(t31);
@@ -848,7 +856,7 @@ bb11:
     t49 = h13_own13;
 #line 182 "<heroes library>"
     h13_own13 = t32;
-#line 852 "fixedbugs245aleaseofastrholdinganulstops.c"
+#line 860 "fixedbugs245aleaseofastrholdinganulstops.c"
     h_0opt_f87774a_release(&t49);
 #line 182 "<heroes library>"
     h3_ret0 = t32;
@@ -860,7 +868,7 @@ bb12:
     goto bb10;
 #line 182 "<heroes library>"
 bb13:
-#line 864 "fixedbugs245aleaseofastrholdinganulstops.c"
+#line 872 "fixedbugs245aleaseofastrholdinganulstops.c"
     t38 = h3_ret0;
     h_0opt_f87774a_retain(&t38);
     hero_str_release_at(&h2_text);
@@ -878,6 +886,7 @@ bb13:
     return t38;
 }
 #undef h1_status
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL void h_0opt_e1f4933_retain(const h_0opt_e1f4933 *v) {
     if (v->tag == INT64_C(0)) {
         return;

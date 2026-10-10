@@ -1,0 +1,15 @@
+# fixedbugs, defect 582, lane b19-pack, 2026-10-10, a shape beside
+# `fixedbugs-582-a-header-s-fp-contract-fast-leaves-the-program-s-arithmetic-unfused`:
+# `#pragma float_control(precise, off)` let clang reassociate the program's
+# `big + one - big` at `-O2` into `1.0`, where the sum in order is `0.0`.
+# Contraction alone it left as it was here.
+
+extern "fixedbugs-582-a-header-s-float-control-precise-off-leaves-the-program-s-sums-in-order.h"
+    function llabs(x: i64) -> i64
+
+function main()
+    one = llabs(-1).to_f64()
+    ten = llabs(-10).to_f64()
+    big = llabs(-10000000000000000).to_f64()
+    tenth = one / ten
+    print(tenth * ten - one, " ", big + one - big)

@@ -9,9 +9,18 @@
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic ignored "-Wpragma-pack"
+#pragma float_control(push)
 #include "heroes_guard_open.h"
 #include <fixedbugs-396-buffers.h>
 #include "heroes_guard_close.h"
+#pragma clang diagnostic ignored "-Wignored-pragmas"
+#pragma pack()
+#pragma float_control(pop)
+#pragma float_control(precise, on)
+#pragma GCC visibility push(default)
+#pragma clang section bss="" data="" rodata="" text="" relro=""
+#pragma clang optimize on
 #pragma clang diagnostic pop
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -25,8 +34,6 @@
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
-#pragma clang diagnostic ignored "-Wdeprecated-pragma"
-#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -73,7 +80,7 @@ HERO_STR_STATIC(hero_str_750951cb, "before ");
 HERO_STR_STATIC(hero_str_5687795c, "not reached ");
 HERO_STR_STATIC(hero_str_20, " ");
 
-#line 77 "fixedbugs396alocallentthroughawrapperaborts.c"
+#line 84 "fixedbugs396alocallentthroughawrapperaborts.c"
 typedef struct h_fixedbugs396alocallentthroughawrapperaborts_Pair {
     uint8_t f_a;
     int64_t f_b;
@@ -121,7 +128,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 125 "fixedbugs396alocallentthroughawrapperaborts.c"
+#line 132 "fixedbugs396alocallentthroughawrapperaborts.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs396alocallentthroughawrapperaborts_Pair_eq(const h_fixedbugs396alocallentthroughawrapperaborts_Pair *a, const h_fixedbugs396alocallentthroughawrapperaborts_Pair *b);
@@ -138,10 +145,11 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 int32_t h_fixedbugs396alocallentthroughawrapperaborts_inner(uint8_t *ph0_x);
 int32_t h_fixedbugs396alocallentthroughawrapperaborts_outer(uint8_t *ph0_y);
 void h_fixedbugs396alocallentthroughawrapperaborts_main(void);
+#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 16 "tests/golden/run/fixedbugs-396-a-local-lent-through-a-wrapper-aborts.hero"
 int32_t h_fixedbugs396alocallentthroughawrapperaborts_inner(uint8_t *ph0_x) {
-#line 145 "fixedbugs396alocallentthroughawrapperaborts.c"
+#line 153 "fixedbugs396alocallentthroughawrapperaborts.c"
     int32_t t1;
     goto bb0;
 bb0:
@@ -151,12 +159,12 @@ bb0:
     t1 = digest32((void *)&(*ph0_x));
 #line 17 "tests/golden/run/fixedbugs-396-a-local-lent-through-a-wrapper-aborts.hero"
     return t1;
-#line 155 "fixedbugs396alocallentthroughawrapperaborts.c"
+#line 163 "fixedbugs396alocallentthroughawrapperaborts.c"
 }
 
 #line 19 "tests/golden/run/fixedbugs-396-a-local-lent-through-a-wrapper-aborts.hero"
 int32_t h_fixedbugs396alocallentthroughawrapperaborts_outer(uint8_t *ph0_y) {
-#line 160 "fixedbugs396alocallentthroughawrapperaborts.c"
+#line 168 "fixedbugs396alocallentthroughawrapperaborts.c"
     int32_t t1;
     goto bb0;
 bb0:
@@ -164,12 +172,12 @@ bb0:
     t1 = h_fixedbugs396alocallentthroughawrapperaborts_inner(&(*ph0_y));
 #line 20 "tests/golden/run/fixedbugs-396-a-local-lent-through-a-wrapper-aborts.hero"
     return t1;
-#line 168 "fixedbugs396alocallentthroughawrapperaborts.c"
+#line 176 "fixedbugs396alocallentthroughawrapperaborts.c"
 }
 
 #line 22 "tests/golden/run/fixedbugs-396-a-local-lent-through-a-wrapper-aborts.hero"
 void h_fixedbugs396alocallentthroughawrapperaborts_main(void) {
-#line 173 "fixedbugs396alocallentthroughawrapperaborts.c"
+#line 181 "fixedbugs396alocallentthroughawrapperaborts.c"
     h_fixedbugs396alocallentthroughawrapperaborts_Pair h0_p;
     uint8_t *const hero_lend_h1_m = (uint8_t *)hero_lend_local(sizeof(uint8_t), "fixedbugs396alocallentthroughawrapperaborts.main", "m");
 #define h1_m (*hero_lend_h1_m)
@@ -238,9 +246,10 @@ bb0:
     hero_lend_local_give(hero_lend_h1_m);
 #line 27 "tests/golden/run/fixedbugs-396-a-local-lent-through-a-wrapper-aborts.hero"
     return;
-#line 242 "fixedbugs396alocallentthroughawrapperaborts.c"
+#line 250 "fixedbugs396alocallentthroughawrapperaborts.c"
 }
 #undef h1_m
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_fixedbugs396alocallentthroughawrapperaborts_Pair_eq(const h_fixedbugs396alocallentthroughawrapperaborts_Pair *a, const h_fixedbugs396alocallentthroughawrapperaborts_Pair *b) {
     if (!(a->f_a == b->f_a)) return false;
     if (!(a->f_b == b->f_b)) return false;

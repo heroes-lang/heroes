@@ -9,9 +9,18 @@
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic ignored "-Wpragma-pack"
+#pragma float_control(push)
 #include "heroes_guard_open.h"
 #include <limit-a-handle-c-kept-and-hands-a-callback-after-the-release-is-not-caught.h>
 #include "heroes_guard_close.h"
+#pragma clang diagnostic ignored "-Wignored-pragmas"
+#pragma pack()
+#pragma float_control(pop)
+#pragma float_control(precise, on)
+#pragma GCC visibility push(default)
+#pragma clang section bss="" data="" rodata="" text="" relro=""
+#pragma clang optimize on
 #pragma clang diagnostic pop
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -25,8 +34,6 @@
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
-#pragma clang diagnostic ignored "-Wdeprecated-pragma"
-#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -77,7 +84,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_12576dd3, "the callback read after the release: ");
 
-#line 81 "limitahandleckeptandhandsacallbackafterthereleaseisnotcaught.c"
+#line 88 "limitahandleckeptandhandsacallbackafterthereleaseisnotcaught.c"
 typedef int64_t (*h_0fn_7a996e48)(node *);
 typedef struct h_0opt_f87774a {
     int64_t tag;
@@ -124,7 +131,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 128 "limitahandleckeptandhandsacallbackafterthereleaseisnotcaught.c"
+#line 135 "limitahandleckeptandhandsacallbackafterthereleaseisnotcaught.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_limitahandleckeptandhandsacallbackafterthereleaseisnotcaught_Node_eq(node * const *a, node * const *b);
@@ -147,13 +154,16 @@ __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
     return f;
 }
 
+#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 24 "tests/golden/run/limit-a-handle-c-kept-and-hands-a-callback-after-the-release-is-not-caught.hero"
 int64_t h_limitahandleckeptandhandsacallbackafterthereleaseisnotcaught_seen(node * h0_n) {
-#line 154 "limitahandleckeptandhandsacallbackafterthereleaseisnotcaught.c"
+#line 162 "limitahandleckeptandhandsacallbackafterthereleaseisnotcaught.c"
     hero_thread_guard("limitahandleckeptandhandsacallbackafterthereleaseisnotcaught.seen");
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
     node * t1;
     int64_t t2;
+#pragma clang diagnostic warning "-Wdeprecated-declarations"
     goto bb0;
 bb0:
 #line 25 "tests/golden/run/limit-a-handle-c-kept-and-hands-a-callback-after-the-release-is-not-caught.hero"
@@ -164,7 +174,7 @@ bb0:
     t2 = node_value(t1);
 #line 25 "tests/golden/run/limit-a-handle-c-kept-and-hands-a-callback-after-the-release-is-not-caught.hero"
     return t2;
-#line 168 "limitahandleckeptandhandsacallbackafterthereleaseisnotcaught.c"
+#line 178 "limitahandleckeptandhandsacallbackafterthereleaseisnotcaught.c"
 }
 
 int64_t h_0cb_limitahandleckeptandhandsacallbackafterthereleaseisnotcaught_seen(node * h0_n) {
@@ -175,7 +185,8 @@ int64_t h_0cb_limitahandleckeptandhandsacallbackafterthereleaseisnotcaught_seen(
 
 #line 27 "tests/golden/run/limit-a-handle-c-kept-and-hands-a-callback-after-the-release-is-not-caught.hero"
 void h_limitahandleckeptandhandsacallbackafterthereleaseisnotcaught_main(void) {
-#line 179 "limitahandleckeptandhandsacallbackafterthereleaseisnotcaught.c"
+#line 189 "limitahandleckeptandhandsacallbackafterthereleaseisnotcaught.c"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
     node * h0_a;
     node * t1;
     h_0fn_7a996e48 t2;
@@ -183,6 +194,7 @@ void h_limitahandleckeptandhandsacallbackafterthereleaseisnotcaught_main(void) {
     node * t4;
     HeroStr t5;
     int64_t t6;
+#pragma clang diagnostic warning "-Wdeprecated-declarations"
     goto bb0;
 bb0:
 #line 28 "tests/golden/run/limit-a-handle-c-kept-and-hands-a-callback-after-the-release-is-not-caught.hero"
@@ -223,8 +235,9 @@ bb0:
     hero_print_end();
 #line 32 "tests/golden/run/limit-a-handle-c-kept-and-hands-a-callback-after-the-release-is-not-caught.hero"
     return;
-#line 227 "limitahandleckeptandhandsacallbackafterthereleaseisnotcaught.c"
+#line 239 "limitahandleckeptandhandsacallbackafterthereleaseisnotcaught.c"
 }
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_limitahandleckeptandhandsacallbackafterthereleaseisnotcaught_Node_eq(node * const *a, node * const *b) {
     return hero_handle_eq(*a, *b);
 }

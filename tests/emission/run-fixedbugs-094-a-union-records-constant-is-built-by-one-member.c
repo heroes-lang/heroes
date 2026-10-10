@@ -9,11 +9,20 @@
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic ignored "-Wpragma-pack"
+#pragma float_control(push)
 #include "heroes_guard_open.h"
 #include <fixedbugs-094-values.h>
 #pragma push_macro("f")
 #pragma push_macro("i")
 #include "heroes_guard_close.h"
+#pragma clang diagnostic ignored "-Wignored-pragmas"
+#pragma pack()
+#pragma float_control(pop)
+#pragma float_control(precise, on)
+#pragma GCC visibility push(default)
+#pragma clang section bss="" data="" rodata="" text="" relro=""
+#pragma clang optimize on
 #pragma clang diagnostic pop
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -27,8 +36,6 @@
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
-#pragma clang diagnostic ignored "-Wdeprecated-pragma"
-#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -38,7 +45,7 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 #line 8 "tests/golden/run/fixedbugs-094-a-union-records-constant-is-built-by-one-member.hero"
 _Static_assert(__builtin_classify_type(((Num *)0)->i) == 1 && sizeof(((Num *)0)->i) == sizeof(int32_t) && (_Generic(((Num *)0)->i, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Num i");
 _Static_assert(_Generic(&((Num *)0)->f, float *: 1, default: 0) && sizeof(((Num *)0)->f) == sizeof(float), "heroes-ffi-field Num f");
-#line 42 "fixedbugs094aunionrecordsconstantisbuiltbyonemember.c"
+#line 49 "fixedbugs094aunionrecordsconstantisbuiltbyonemember.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -115,7 +122,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 119 "fixedbugs094aunionrecordsconstantisbuiltbyonemember.c"
+#line 126 "fixedbugs094aunionrecordsconstantisbuiltbyonemember.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs094aunionrecordsconstantisbuiltbyonemember_Num_eq(const Num *a, const Num *b);
@@ -132,10 +139,12 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 Num h_fixedbugs094aunionrecordsconstantisbuiltbyonemember_NUM_INIT(void);
 Num h_fixedbugs094aunionrecordsconstantisbuiltbyonemember_NUM_F(void);
 void h_fixedbugs094aunionrecordsconstantisbuiltbyonemember_main(void);
+#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #line 10 "tests/golden/run/fixedbugs-094-a-union-records-constant-is-built-by-one-member.hero"
 Num h_fixedbugs094aunionrecordsconstantisbuiltbyonemember_NUM_INIT(void) {
-#line 139 "fixedbugs094aunionrecordsconstantisbuiltbyonemember.c"
+#line 148 "fixedbugs094aunionrecordsconstantisbuiltbyonemember.c"
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wexcess-initializers"
 #pragma clang diagnostic error "-Wconstant-conversion"
@@ -147,10 +156,11 @@ Num h_fixedbugs094aunionrecordsconstantisbuiltbyonemember_NUM_INIT(void) {
 #pragma clang diagnostic ignored "-Winitializer-overrides"
 #line 10 "tests/golden/run/fixedbugs-094-a-union-records-constant-is-built-by-one-member.hero"
     Num hero_constant_value = NUM_INIT;
-#line 151 "fixedbugs094aunionrecordsconstantisbuiltbyonemember.c"
+#line 160 "fixedbugs094aunionrecordsconstantisbuiltbyonemember.c"
 #pragma clang diagnostic pop
     return hero_constant_value;
 }
+#pragma clang diagnostic warning "-Wdeprecated-declarations"
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
@@ -163,9 +173,10 @@ Num h_fixedbugs094aunionrecordsconstantisbuiltbyonemember_NUM_INIT(void) {
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #line 11 "tests/golden/run/fixedbugs-094-a-union-records-constant-is-built-by-one-member.hero"
 Num h_fixedbugs094aunionrecordsconstantisbuiltbyonemember_NUM_F(void) {
-#line 169 "fixedbugs094aunionrecordsconstantisbuiltbyonemember.c"
+#line 180 "fixedbugs094aunionrecordsconstantisbuiltbyonemember.c"
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wexcess-initializers"
 #pragma clang diagnostic error "-Wconstant-conversion"
@@ -177,10 +188,11 @@ Num h_fixedbugs094aunionrecordsconstantisbuiltbyonemember_NUM_F(void) {
 #pragma clang diagnostic ignored "-Winitializer-overrides"
 #line 11 "tests/golden/run/fixedbugs-094-a-union-records-constant-is-built-by-one-member.hero"
     Num hero_constant_value = NUM_F;
-#line 181 "fixedbugs094aunionrecordsconstantisbuiltbyonemember.c"
+#line 192 "fixedbugs094aunionrecordsconstantisbuiltbyonemember.c"
 #pragma clang diagnostic pop
     return hero_constant_value;
 }
+#pragma clang diagnostic warning "-Wdeprecated-declarations"
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
@@ -195,7 +207,8 @@ Num h_fixedbugs094aunionrecordsconstantisbuiltbyonemember_NUM_F(void) {
 
 #line 13 "tests/golden/run/fixedbugs-094-a-union-records-constant-is-built-by-one-member.hero"
 void h_fixedbugs094aunionrecordsconstantisbuiltbyonemember_main(void) {
-#line 199 "fixedbugs094aunionrecordsconstantisbuiltbyonemember.c"
+#line 211 "fixedbugs094aunionrecordsconstantisbuiltbyonemember.c"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
     Num h0_n;
     Num h1_g;
     Num t1;
@@ -204,6 +217,7 @@ void h_fixedbugs094aunionrecordsconstantisbuiltbyonemember_main(void) {
     Num t4;
     Num t5;
     float t6;
+#pragma clang diagnostic warning "-Wdeprecated-declarations"
     goto bb0;
 bb0:
 #line 14 "tests/golden/run/fixedbugs-094-a-union-records-constant-is-built-by-one-member.hero"
@@ -229,8 +243,9 @@ bb0:
     hero_print_end();
 #line 17 "tests/golden/run/fixedbugs-094-a-union-records-constant-is-built-by-one-member.hero"
     return;
-#line 233 "fixedbugs094aunionrecordsconstantisbuiltbyonemember.c"
+#line 247 "fixedbugs094aunionrecordsconstantisbuiltbyonemember.c"
 }
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_fixedbugs094aunionrecordsconstantisbuiltbyonemember_Num_eq(const Num *a, const Num *b) {
     if (!(a->i == b->i)) return false;
     if (!(a->f == b->f)) return false;

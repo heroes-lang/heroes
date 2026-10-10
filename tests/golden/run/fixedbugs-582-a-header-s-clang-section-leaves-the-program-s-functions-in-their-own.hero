@@ -1,0 +1,14 @@
+# fixedbugs, defect 582, lane b19-pack, 2026-10-10, a shape beside the
+# packing: a header's `#pragma clang section text=...` placed the program's
+# own functions in the header's section, and on this Mac `ld` said of it
+# *have unwind information, but it's not a code section*, a raw warning on
+# a correct program. The close sets every section back to the target's own
+# (`emit/header_state.hero`).
+
+use fixedbugs582/pair
+
+extern "fixedbugs-582-a-header-s-clang-section-leaves-the-program-s-functions-in-their-own.h"
+    function llabs(x: i64) -> i64
+
+function main()
+    print(pair.second(pair.make(llabs(-42))))

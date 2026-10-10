@@ -9,11 +9,20 @@
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic ignored "-Wpragma-pack"
+#pragma float_control(push)
 #include "heroes_guard_open.h"
 #include <fixedbugs-152-an-object-through-a-function-of-the-programs-own.h>
 #include <stdlib.h>
 #include <errno.h>
 #include "heroes_guard_close.h"
+#pragma clang diagnostic ignored "-Wignored-pragmas"
+#pragma pack()
+#pragma float_control(pop)
+#pragma float_control(precise, on)
+#pragma GCC visibility push(default)
+#pragma clang section bss="" data="" rodata="" text="" relro=""
+#pragma clang optimize on
 #pragma clang diagnostic pop
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -27,8 +36,6 @@
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
-#pragma clang diagnostic ignored "-Wdeprecated-pragma"
-#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -77,7 +84,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_19d86d81, "99999999999999999999999");
 
-#line 81 "fixedbugs152anobjectthroughafunctionoftheprogramsown.c"
+#line 88 "fixedbugs152anobjectthroughafunctionoftheprogramsown.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -120,7 +127,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 124 "fixedbugs152anobjectthroughafunctionoftheprogramsown.c"
+#line 131 "fixedbugs152anobjectthroughafunctionoftheprogramsown.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -134,12 +141,15 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 int32_t h_fixedbugs152anobjectthroughafunctionoftheprogramsown_ERANGE(void);
 void h_fixedbugs152anobjectthroughafunctionoftheprogramsown_main(void);
+#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #line 19 "tests/golden/run/fixedbugs-152-an-object-through-a-function-of-the-programs-own.hero"
 int32_t h_fixedbugs152anobjectthroughafunctionoftheprogramsown_ERANGE(void) {
-#line 141 "fixedbugs152anobjectthroughafunctionoftheprogramsown.c"
+#line 150 "fixedbugs152anobjectthroughafunctionoftheprogramsown.c"
     return ERANGE;
 }
+#pragma clang diagnostic warning "-Wdeprecated-declarations"
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
@@ -154,7 +164,7 @@ int32_t h_fixedbugs152anobjectthroughafunctionoftheprogramsown_ERANGE(void) {
 
 #line 21 "tests/golden/run/fixedbugs-152-an-object-through-a-function-of-the-programs-own.hero"
 void h_fixedbugs152anobjectthroughafunctionoftheprogramsown_main(void) {
-#line 158 "fixedbugs152anobjectthroughafunctionoftheprogramsown.c"
+#line 168 "fixedbugs152anobjectthroughafunctionoftheprogramsown.c"
     int64_t h0_big;
     int32_t t1;
     HeroStr t2;
@@ -202,8 +212,9 @@ bb0:
     hero_print_end();
 #line 26 "tests/golden/run/fixedbugs-152-an-object-through-a-function-of-the-programs-own.hero"
     return;
-#line 206 "fixedbugs152anobjectthroughafunctionoftheprogramsown.c"
+#line 216 "fixedbugs152anobjectthroughafunctionoftheprogramsown.c"
 }
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_incref(v->as.ok);

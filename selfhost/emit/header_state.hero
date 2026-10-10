@@ -1,0 +1,157 @@
+# The C state a group's header can leave set past its own end, saved before
+# the groups' includes and given back after them, so the lines the compiler
+# writes are compiled as the build says (design.md §4.19, §1.12; defect 582,
+# 2026-10-10).
+#
+# **A pragma outlives the header that writes it.** A header of the program's
+# own opening `#pragma pack(push, 1)` and never popping it packed every
+# record its unit declared after it, so a program's two modules laid one
+# record out two ways, the module that read the header packed and the other
+# not: `Pair(a: 1, b: 123456789)` made in one and read in the other printed
+# `1513209474796486656`, at exit 0, under clang's two `-Wpragma-pack`
+# warnings. Measured on this Mac beside it, each at exit 0: `pack(2)`,
+# `pack(1)` with no push, a push in a header the group's header includes, a
+# pop of another label, a pop past the header's own and `#pragma options
+# align=packed` the same; `#pragma clang fp contract(fast)` made the
+# program's `0.1 * 10.0 - 1.0` one fused step at `-O2`, `5.551115123125783e-17`
+# where it is `0.0`, and `#pragma float_control(precise, off)` reassociated
+# `1e16 + 1.0 - 1e16` into `1.0`; `#pragma clang section text=...` placed the
+# program's functions in the header's section, a raw `ld` warning;
+# `#pragma clang optimize off` compiled them unoptimised under `-O2`; and, in
+# the Linux arm64 image with a C program of the same shape, `#pragma GCC
+# visibility push(hidden)` hid a function from `dladdr` under `-rdynamic`,
+# which is how the runtime names the function a stack-exhaustion panic stops in.
+#
+# **So the state is given back after the close, each as the build gives
+# it.** The floating-point state is one stack in clang, contraction,
+# reassociation, exceptions and the rounding mode alike: `float_control(push)`
+# before the groups and its pop after them give back exactly what the build
+# set, a push a header leaves open being the one popped; and a header that
+# pops past its own takes the push, so `float_control(precise, on)` after
+# the pop sets the build's own model again, clang's precise one with
+# contraction inside a statement, on every target this compiler builds for
+# (measured on the four by the IR's `llvm.fmuladd`). The packing, the
+# visibility, the sections and the optimisation are set back to the build's
+# own: `pack()` is the packing the command line gives, `push(default)` the
+# visibility of a build that names no `-fvisibility`, pushed and never
+# popped so a header's pushes left open stand beneath it, empty sections the
+# target's own and `optimize on` the level's. A test below holds the build's
+# words to every premise here. clang's two `-Wpragma-pack` words on a
+# header's packing left changed, and its word on a pop of the close's that
+# a header's pop past its own already took, are quiet in the region: what
+# they warn of no longer reaches a line the compiler writes. The header's
+# own declarations keep what it set for them: a record bound from a packed
+# header is the header's own type, laid out where the header declares it.
+#
+# What a header's state cannot reach is left alone, measured the same day:
+# `#pragma ms_struct on` lays out bit-fields alone, and the unit writes none;
+# `#pragma weak` names a symbol, and every name the unit defines is mangled.
+# A clang `attribute push` or `assume_nonnull begin` left open, or
+# `options align=mac68k`, is refused with the header compiled alone
+# (`ffi_header_refused`), which is true of it.
+
+use cli/flags
+use cli/process
+use cli/strings
+use emit/header_region
+
+# The lines before the groups' includes, inside their region: the
+# floating-point state saved, and clang's two warnings on a header's packing
+# left changed quiet in it, since the close below gives the packing back.
+constant SAVED: [str]
+    [
+        "#pragma clang diagnostic ignored \"-Wpragma-pack\""
+        "#pragma float_control(push)"
+    ]
+
+# The lines after the guard's close, still inside the region: a pop of the
+# close's own that a header already took quiet, then the packing, the
+# floating-point state and its model, the visibility, the sections and the
+# optimisation, each as the build gives it.
+constant GIVEN_BACK: [str]
+    [
+        "#pragma clang diagnostic ignored \"-Wignored-pragmas\""
+        "#pragma pack()"
+        "#pragma float_control(pop)"
+        "#pragma float_control(precise, on)"
+        "#pragma GCC visibility push(default)"
+        "#pragma clang section bss=\"\" data=\"\" rodata=\"\" text=\"\" relro=\"\""
+        "#pragma clang optimize on"
+    ]
+
+# The words of the build that would make a line above other than the
+# build's own: a packing, a visibility, a bit-field layout, or a
+# floating-point model other than clang's precise default.
+constant PREMISES: [str]
+    [
+        "-fpack-struct"
+        "-fvisibility"
+        "-mms-bitfields"
+        "-ffp-"
+        "-ffast-math"
+        "-funsafe-math"
+        "-fassociative-math"
+        "-freciprocal-math"
+        "-ffinite-math"
+        "-fno-honor-"
+        "-fno-signed-zeros"
+        "-fapprox-func"
+        "-frounding-math"
+        "-fno-trapping-math"
+        "-fcx-"
+        "-fcomplex-arithmetic"
+    ]
+
+## Tests
+
+# Each line is the state it names, in the order the unit writes them.
+test "the floating-point state is saved before the groups and every state given back after them"
+    assert SAVED.len() == 2
+    assert SAVED[1] == "#pragma float_control(push)"
+    assert GIVEN_BACK[1] == "#pragma pack()"
+    assert GIVEN_BACK[2] == "#pragma float_control(pop)"
+    assert GIVEN_BACK[3] == "#pragma float_control(precise, on)"
+    assert GIVEN_BACK.len() == 7
+
+# The premise the constant lines rest on: `push(default)` and
+# `float_control(precise, on)` are the build's own only while no word of it
+# sets the visibility or the floating-point model, and `pack()` while none
+# sets the packing. A word added that does is named here, and the lines owe it.
+test "no build word sets a state the close gives back as a constant"
+    for level in ["-O0", "-O2"]
+        for word in flags.level_words(level: level, sanitize: true)
+            for premise in PREMISES
+                assert !strings.starts_with(text: word, prefix: premise)
+
+# **Asked of the platform's own clang**: a header leaving its packing pushed,
+# the floating-point state pushed and changed, a hidden visibility, a section
+# and no optimisation, then the unit's lines. Under the unit's words and
+# `-Werror`, the program's own record is laid out by the build's packing,
+# the header's by its own, and none of the lines says a word; without the
+# lines given back the program's record is packed, so the case is not blind.
+test "a header's packing and state left set reach no line the compiler writes"
+    dir = "build/selftest-header-state"
+    assert !process.mkdir_all(dir).is_err()
+    header = "#pragma pack(push, 1)\n#pragma float_control(push)\n#pragma float_control(precise, off)\n#pragma clang fp contract(fast)\n#pragma GCC visibility push(hidden)\n#pragma clang section text=\"__TEXT,__heroes_hdr\"\n#pragma clang optimize off\nstruct heroes_theirs { char a; long long b; };\n"
+    assert !write_file(path: dir + "/heroes_state.h", text: header).is_err()
+    after = "struct heroes_mine { char a; long long b; };\n_Static_assert(sizeof(struct heroes_theirs) == 1 + sizeof(long long), \"the header's record keeps its packing\");\n_Static_assert(sizeof(struct heroes_mine) == 2 * sizeof(long long), \"the program's record has the build's\");\nint heroes_state_probe(void);\nint heroes_state_probe(void) { return 1; }\n"
+
+    for give in [true, false]
+        lines: [str] @ strings.with_all(list: header_region.opening(), more: SAVED)
+        lines @ lines.push("#include <heroes_state.h>")
+
+        if give
+            lines @ strings.with_all(list: lines, more: GIVEN_BACK)
+        lines @ lines.push(header_region.CLOSING)
+        unit = dir + "/unit-" + give.to_str() + ".c"
+        assert !write_file(path: unit, text: lines.join("\n") + "\n" + after).is_err()
+        words: [str] @ ["clang"]
+
+        for word in flags.level_words(level: "-O0", sanitize: false)
+            words @ words.push(word)
+
+        for word in ["-Werror", "-fsyntax-only", "-I", dir, unit]
+            words @ words.push(word)
+
+        said = process.run(program: "clang", words: words, out: process.discard(), err: process.discard())
+        assert said.code == 0 == give

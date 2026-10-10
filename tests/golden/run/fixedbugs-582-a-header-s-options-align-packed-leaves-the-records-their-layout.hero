@@ -1,0 +1,16 @@
+# fixedbugs, defect 582, lane b19-pack, 2026-10-10, a shape beside
+# `fixedbugs-582-a-header-s-unclosed-pack-push-leaves-two-modules-one-record-layout`:
+# Apple's `#pragma options align=packed`, which clang keeps on the same
+# stack as `pack`, packed `main`'s records on this Mac the same way. Where
+# the target has no `options` pragma, clang ignores it in the header's
+# region, and the records have their layout either way.
+
+use fixedbugs582/pair
+
+extern "fixedbugs-582-a-header-s-options-align-packed-leaves-the-records-their-layout.h"
+    function llabs(x: i64) -> i64
+
+function main()
+    p = pair.make(llabs(-123456789))
+    print(p.b, " ", pair.second(p), " ", pair.second(pair.Pair(a: 2, b: llabs(-987654321))))
+    print(pair.area(pair.shape(llabs(-7))))

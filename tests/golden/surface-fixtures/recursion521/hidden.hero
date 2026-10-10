@@ -1,0 +1,16 @@
+# Defect 582's shape beside the packing, beside defect 521's `direct`: a
+# header of the program's own leaves `#pragma GCC visibility push(hidden)`
+# open, which hid every function the unit defined after it from glibc's
+# `dladdr`, so on Linux the guard could not name the frame that ran out. The
+# close gives the visibility back, and `down` is named as `direct`'s is.
+
+extern "hidden-582.h"
+    function llabs(x: i64) -> i64
+
+function down(n: i64) -> i64
+    if n == 0
+        return 0
+    return 1 + down(n - llabs(-1))
+
+function main()
+    print(down(1000000000))

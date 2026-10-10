@@ -9,11 +9,20 @@
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic ignored "-Wpragma-pack"
+#pragma float_control(push)
 #include "heroes_guard_open.h"
 #include <ffi-a-construction.h>
 #pragma push_macro("f")
 #pragma push_macro("i")
 #include "heroes_guard_close.h"
+#pragma clang diagnostic ignored "-Wignored-pragmas"
+#pragma pack()
+#pragma float_control(pop)
+#pragma float_control(precise, on)
+#pragma GCC visibility push(default)
+#pragma clang section bss="" data="" rodata="" text="" relro=""
+#pragma clang optimize on
 #pragma clang diagnostic pop
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -27,8 +36,6 @@
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
-#pragma clang diagnostic ignored "-Wdeprecated-pragma"
-#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -38,7 +45,7 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 #line 12 "tests/golden/run/ffi-a-construction-names-one-member-of-a-union-type.hero"
 _Static_assert(__builtin_classify_type(((UT *)0)->i) == 1 && sizeof(((UT *)0)->i) == sizeof(int32_t) && (_Generic(((UT *)0)->i, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field UT i");
 _Static_assert(_Generic(&((UT *)0)->f, float *: 1, default: 0) && sizeof(((UT *)0)->f) == sizeof(float), "heroes-ffi-field UT f");
-#line 42 "ffiaconstructionnamesonememberofauniontype.c"
+#line 49 "ffiaconstructionnamesonememberofauniontype.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -118,7 +125,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 122 "ffiaconstructionnamesonememberofauniontype.c"
+#line 129 "ffiaconstructionnamesonememberofauniontype.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_ffiaconstructionnamesonememberofauniontype_UT_eq(const UT *a, const UT *b);
@@ -133,10 +140,12 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_ffiaconstructionnamesonememberofauniontype_main(void);
+#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 16 "tests/golden/run/ffi-a-construction-names-one-member-of-a-union-type.hero"
 void h_ffiaconstructionnamesonememberofauniontype_main(void) {
-#line 140 "ffiaconstructionnamesonememberofauniontype.c"
+#line 148 "ffiaconstructionnamesonememberofauniontype.c"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
     UT h0_u;
     float t1;
     UT t2;
@@ -144,6 +153,7 @@ void h_ffiaconstructionnamesonememberofauniontype_main(void) {
     int32_t t4;
     UT t5;
     int32_t t6;
+#pragma clang diagnostic warning "-Wdeprecated-declarations"
     goto bb0;
 bb0:
 #line 17 "tests/golden/run/ffi-a-construction-names-one-member-of-a-union-type.hero"
@@ -168,8 +178,9 @@ bb0:
     hero_print_end();
 #line 19 "tests/golden/run/ffi-a-construction-names-one-member-of-a-union-type.hero"
     return;
-#line 172 "ffiaconstructionnamesonememberofauniontype.c"
+#line 182 "ffiaconstructionnamesonememberofauniontype.c"
 }
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_ffiaconstructionnamesonememberofauniontype_UT_eq(const UT *a, const UT *b) {
     if (!(a->i == b->i)) return false;
     if (!(a->f == b->f)) return false;

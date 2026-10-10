@@ -9,9 +9,18 @@
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic ignored "-Wpragma-pack"
+#pragma float_control(push)
 #include "heroes_guard_open.h"
 #include <fixedbugs-314-a-str-released-twice-is-named-at-every-size.h>
 #include "heroes_guard_close.h"
+#pragma clang diagnostic ignored "-Wignored-pragmas"
+#pragma pack()
+#pragma float_control(pop)
+#pragma float_control(precise, on)
+#pragma GCC visibility push(default)
+#pragma clang section bss="" data="" rodata="" text="" relro=""
+#pragma clang optimize on
 #pragma clang diagnostic pop
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -25,8 +34,6 @@
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
-#pragma clang diagnostic ignored "-Wdeprecated-pragma"
-#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -71,7 +78,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_3205, "ab");
 
-#line 75 "fixedbugs314astrreleasedtwiceisnamedateverysize.c"
+#line 82 "fixedbugs314astrreleasedtwiceisnamedateverysize.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -114,7 +121,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 118 "fixedbugs314astrreleasedtwiceisnamedateverysize.c"
+#line 125 "fixedbugs314astrreleasedtwiceisnamedateverysize.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -127,10 +134,11 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_fixedbugs314astrreleasedtwiceisnamedateverysize_main(void);
+#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 25 "tests/golden/run/fixedbugs-314-a-str-released-twice-is-named-at-every-size.hero"
 void h_fixedbugs314astrreleasedtwiceisnamedateverysize_main(void) {
-#line 134 "fixedbugs314astrreleasedtwiceisnamedateverysize.c"
+#line 142 "fixedbugs314astrreleasedtwiceisnamedateverysize.c"
     HeroStr h0_word = {0};
     HeroStr h1_own1 = {0};
     HeroStr t1;
@@ -154,15 +162,15 @@ bb0:
     t8 = h1_own1;
 #line 26 "tests/golden/run/fixedbugs-314-a-str-released-twice-is-named-at-every-size.hero"
     h1_own1 = t3;
-#line 158 "fixedbugs314astrreleasedtwiceisnamedateverysize.c"
+#line 166 "fixedbugs314astrreleasedtwiceisnamedateverysize.c"
     hero_str_decref(t8);
 #line 26 "tests/golden/run/fixedbugs-314-a-str-released-twice-is-named-at-every-size.hero"
     t9 = h0_word;
-#line 162 "fixedbugs314astrreleasedtwiceisnamedateverysize.c"
+#line 170 "fixedbugs314astrreleasedtwiceisnamedateverysize.c"
     hero_str_incref(t3);
 #line 26 "tests/golden/run/fixedbugs-314-a-str-released-twice-is-named-at-every-size.hero"
     h0_word = t3;
-#line 166 "fixedbugs314astrreleasedtwiceisnamedateverysize.c"
+#line 174 "fixedbugs314astrreleasedtwiceisnamedateverysize.c"
     hero_str_decref(t9);
 #line 27 "tests/golden/run/fixedbugs-314-a-str-released-twice-is-named-at-every-size.hero"
     t4 = h0_word;
@@ -177,11 +185,12 @@ bb0:
     t7 = hero_str_lend(t6);
 #line 28 "tests/golden/run/fixedbugs-314-a-str-released-twice-is-named-at-every-size.hero"
     (void)release_behind(hero_cstr_nonnull(t7));
-#line 181 "fixedbugs314astrreleasedtwiceisnamedateverysize.c"
+#line 189 "fixedbugs314astrreleasedtwiceisnamedateverysize.c"
     hero_str_release_at(&h0_word);
     hero_str_release_at(&h1_own1);
     return;
 }
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_incref(v->as.ok);

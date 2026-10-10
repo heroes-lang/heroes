@@ -9,9 +9,18 @@
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic ignored "-Wpragma-pack"
+#pragma float_control(push)
 #include "heroes_guard_open.h"
 #include <fixedbugs-396-buffers.h>
 #include "heroes_guard_close.h"
+#pragma clang diagnostic ignored "-Wignored-pragmas"
+#pragma pack()
+#pragma float_control(pop)
+#pragma float_control(precise, on)
+#pragma GCC visibility push(default)
+#pragma clang section bss="" data="" rodata="" text="" relro=""
+#pragma clang optimize on
 #pragma clang diagnostic pop
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -25,8 +34,6 @@
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
-#pragma clang diagnostic ignored "-Wdeprecated-pragma"
-#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -72,7 +79,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_43560e4d, "before");
 HERO_STR_STATIC(hero_str_5687795c, "not reached ");
 
-#line 76 "fixedbugs396aonecelllocalcoverrunsaborts.c"
+#line 83 "fixedbugs396aonecelllocalcoverrunsaborts.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -115,7 +122,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 119 "fixedbugs396aonecelllocalcoverrunsaborts.c"
+#line 126 "fixedbugs396aonecelllocalcoverrunsaborts.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -128,10 +135,11 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_fixedbugs396aonecelllocalcoverrunsaborts_main(void);
+#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 9 "tests/golden/run/fixedbugs-396-a-one-cell-local-c-overruns-aborts.hero"
 void h_fixedbugs396aonecelllocalcoverrunsaborts_main(void) {
-#line 135 "fixedbugs396aonecelllocalcoverrunsaborts.c"
+#line 143 "fixedbugs396aonecelllocalcoverrunsaborts.c"
     uint8_t *const hero_lend_h0_m = (uint8_t *)hero_lend_local(sizeof(uint8_t), "fixedbugs396aonecelllocalcoverrunsaborts.main", "m");
 #define h0_m (*hero_lend_h0_m)
     uint8_t t1;
@@ -170,9 +178,10 @@ bb0:
     hero_lend_local_give(hero_lend_h0_m);
 #line 13 "tests/golden/run/fixedbugs-396-a-one-cell-local-c-overruns-aborts.hero"
     return;
-#line 174 "fixedbugs396aonecelllocalcoverrunsaborts.c"
+#line 182 "fixedbugs396aonecelllocalcoverrunsaborts.c"
 }
 #undef h0_m
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_incref(v->as.ok);
