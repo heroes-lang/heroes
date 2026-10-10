@@ -3,12 +3,31 @@
 #include <math.h>
 #include <hero_os.h>
 #include <heroes_runtime.h>
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wall"
+#pragma clang diagnostic ignored "-Wsign-conversion"
+#pragma clang diagnostic error "-Wreturn-type"
+#pragma clang diagnostic error "-Wuninitialized"
+#pragma clang diagnostic error "-Wconditional-uninitialized"
 #include "heroes_guard_open.h"
 #include <fixedbugs-563-wide.h>
 #include <fixedbugs-563-skew.h>
 #pragma push_macro("a")
 #pragma push_macro("b")
 #include "heroes_guard_close.h"
+#pragma clang diagnostic pop
+#pragma clang diagnostic error "-Wreturn-type"
+#pragma clang diagnostic error "-Wuninitialized"
+#pragma clang diagnostic error "-Wformat"
+#pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic error "-Wshorten-64-to-32"
+#pragma clang diagnostic error "-Wsign-conversion"
+#pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
+#pragma clang diagnostic error "-Wincompatible-pointer-types"
+#pragma clang diagnostic error "-Wint-conversion"
+#pragma clang diagnostic error "-Wimplicit-function-declaration"
+#pragma clang diagnostic error "-Wincompatible-function-pointer-types"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
@@ -19,11 +38,11 @@ _Static_assert(__builtin_classify_type(((Wh *)0)->w) == 1 && sizeof(((Wh *)0)->w
 #line 7 "tests/golden/run/fixedbugs563/narrow.hero"
 _Static_assert(__builtin_classify_type(((Sk *)0)->a) == 1 && sizeof(((Sk *)0)->a) == sizeof(int32_t) && (_Generic(((Sk *)0)->a, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Sk a");
 _Static_assert(__builtin_classify_type(((Sk *)0)->b) == 1 && sizeof(((Sk *)0)->b) == sizeof(int32_t) && (_Generic(((Sk *)0)->b, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Sk b");
-#line 23 "fixedbugs563amodulesownheaderscomebeforeanothermodulesrecord.c"
+#line 42 "fixedbugs563amodulesownheaderscomebeforeanothermodulesrecord.c"
 
 #line 6 "tests/golden/run/fixedbugs563/narrow.hero"
 _Static_assert(__builtin_classify_type(*(Sk *)0) != 13, "heroes-ffi-union Sk a b");
-#line 27 "fixedbugs563amodulesownheaderscomebeforeanothermodulesrecord.c"
+#line 46 "fixedbugs563amodulesownheaderscomebeforeanothermodulesrecord.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -87,6 +106,17 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+#pragma clang diagnostic error "-Wreturn-type"
+#pragma clang diagnostic error "-Wuninitialized"
+#pragma clang diagnostic error "-Wformat"
+#pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic error "-Wshorten-64-to-32"
+#pragma clang diagnostic error "-Wsign-conversion"
+#pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
+#pragma clang diagnostic error "-Wincompatible-pointer-types"
+#pragma clang diagnostic error "-Wint-conversion"
+#pragma clang diagnostic error "-Wimplicit-function-declaration"
+#pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wdouble-promotion"
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
@@ -103,7 +133,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 107 "fixedbugs563amodulesownheaderscomebeforeanothermodulesrecord.c"
+#line 137 "fixedbugs563amodulesownheaderscomebeforeanothermodulesrecord.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs563wide_Wh_eq(const Wh *a, const Wh *b);
@@ -126,10 +156,11 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 void h_fixedbugs563amodulesownheaderscomebeforeanothermodulesrecord_main(void);
 Wh h_fixedbugs563wide_make(int32_t h0_v);
 int64_t h_fixedbugs563narrow_total(Wh h0_x);
+#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 15 "tests/golden/run/fixedbugs-563-a-module-s-own-headers-come-before-another-module-s-record.hero"
 void h_fixedbugs563amodulesownheaderscomebeforeanothermodulesrecord_main(void) {
-#line 133 "fixedbugs563amodulesownheaderscomebeforeanothermodulesrecord.c"
+#line 164 "fixedbugs563amodulesownheaderscomebeforeanothermodulesrecord.c"
     int32_t t1;
     Wh t2;
     int64_t t3;
@@ -147,12 +178,12 @@ bb0:
     hero_print_end();
 #line 16 "tests/golden/run/fixedbugs-563-a-module-s-own-headers-come-before-another-module-s-record.hero"
     return;
-#line 151 "fixedbugs563amodulesownheaderscomebeforeanothermodulesrecord.c"
+#line 182 "fixedbugs563amodulesownheaderscomebeforeanothermodulesrecord.c"
 }
 
 #line 8 "tests/golden/run/fixedbugs563/wide.hero"
 Wh h_fixedbugs563wide_make(int32_t h0_v) {
-#line 156 "fixedbugs563amodulesownheaderscomebeforeanothermodulesrecord.c"
+#line 187 "fixedbugs563amodulesownheaderscomebeforeanothermodulesrecord.c"
     int32_t t1;
     Wh t2;
     goto bb0;
@@ -163,12 +194,13 @@ bb0:
     t2 = wh_make(t1);
 #line 9 "tests/golden/run/fixedbugs563/wide.hero"
     return t2;
-#line 167 "fixedbugs563amodulesownheaderscomebeforeanothermodulesrecord.c"
+#line 198 "fixedbugs563amodulesownheaderscomebeforeanothermodulesrecord.c"
 }
 
 #line 10 "tests/golden/run/fixedbugs563/narrow.hero"
 int64_t h_fixedbugs563narrow_total(Wh h0_x) {
-#line 172 "fixedbugs563amodulesownheaderscomebeforeanothermodulesrecord.c"
+#line 203 "fixedbugs563amodulesownheaderscomebeforeanothermodulesrecord.c"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
     Sk h1_s;
     h_0opt_e201354 h2_f0 = {0};
     h_0opt_e201354 h3_own3 = {0};
@@ -194,6 +226,7 @@ int64_t h_fixedbugs563narrow_total(Wh h0_x) {
     int64_t t20;
     h_0opt_e201354 t21;
     h_0opt_e201354 t22;
+#pragma clang diagnostic warning "-Wdeprecated-declarations"
     goto bb0;
 bb0:
 #line 11 "tests/golden/run/fixedbugs563/narrow.hero"
@@ -225,15 +258,15 @@ bb0:
     t21 = h3_own3;
 #line 12 "tests/golden/run/fixedbugs563/narrow.hero"
     h3_own3 = t12;
-#line 229 "fixedbugs563amodulesownheaderscomebeforeanothermodulesrecord.c"
+#line 262 "fixedbugs563amodulesownheaderscomebeforeanothermodulesrecord.c"
     h_0opt_e201354_release(&t21);
 #line 12 "tests/golden/run/fixedbugs563/narrow.hero"
     t22 = h2_f0;
-#line 233 "fixedbugs563amodulesownheaderscomebeforeanothermodulesrecord.c"
+#line 266 "fixedbugs563amodulesownheaderscomebeforeanothermodulesrecord.c"
     h_0opt_e201354_retain(&t12);
 #line 12 "tests/golden/run/fixedbugs563/narrow.hero"
     h2_f0 = t12;
-#line 237 "fixedbugs563amodulesownheaderscomebeforeanothermodulesrecord.c"
+#line 270 "fixedbugs563amodulesownheaderscomebeforeanothermodulesrecord.c"
     h_0opt_e201354_release(&t22);
 #line 12 "tests/golden/run/fixedbugs563/narrow.hero"
     t13 = h2_f0;
@@ -251,7 +284,7 @@ bb1:
     t19 = h2_f0;
 #line 12 "tests/golden/run/fixedbugs563/narrow.hero"
     t20 = t19.as.ok;
-#line 255 "fixedbugs563amodulesownheaderscomebeforeanothermodulesrecord.c"
+#line 288 "fixedbugs563amodulesownheaderscomebeforeanothermodulesrecord.c"
     h_0opt_e201354_release(hero_slot_escape(&h2_f0));
     h_0opt_e201354_release(hero_slot_escape(&h3_own3));
     return t20;
@@ -260,10 +293,11 @@ bb2:
     t17 = h2_f0;
 #line 12 "tests/golden/run/fixedbugs563/narrow.hero"
     t18 = t17.as.err;
-#line 264 "fixedbugs563amodulesownheaderscomebeforeanothermodulesrecord.c"
+#line 297 "fixedbugs563amodulesownheaderscomebeforeanothermodulesrecord.c"
     hero_panic_must(t18);
     hero_unreachable();
 }
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_fixedbugs563wide_Wh_eq(const Wh *a, const Wh *b) {
     if (!(a->w == b->w)) return false;
     return true;

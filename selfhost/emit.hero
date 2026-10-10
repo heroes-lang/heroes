@@ -241,7 +241,7 @@ function emit_told(target: emit_decls.BuildTarget, p: containers.Program, c: sta
 
     # The program's own definitions, where a `deprecated` attribute is
     # spoken; quiet again after them (`emit/deprecation.hero`, defect 571).
-    grouped = deprecation.binds_a_group(emit_externs.headers_for(p, s, decls, records: every))
+    grouped = deprecation.binds_a_group(emit_externs.headers(p, s, decls))
 
     if grouped
         deprecation.say(@w, line: deprecation.SPOKEN)

@@ -67,7 +67,6 @@ use emit/signature
 use emit/body
 use emit/callback_thunk
 use emit/deprecation
-use emit/externs as emit_externs
 
 # One module's translation unit, written from its plan
 # (`emit/unit_plan.hero`, which decides what it holds and which headers it
@@ -166,7 +165,7 @@ function unit(plan: unit_plan.Plan, p: containers.Program, c: state.Checked, s: 
     # The program's own definitions, where a `deprecated` attribute is
     # spoken as clang says it of C written by hand; quiet again after them
     # (`emit/deprecation.hero`, defect 571).
-    grouped = deprecation.binds_a_group(emit_externs.headers_for(tu_p, s, decls, records: ok(plan.records)))
+    grouped = deprecation.binds_a_group(plan.headers)
 
     if grouped
         deprecation.say(@w, line: deprecation.SPOKEN)
