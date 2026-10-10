@@ -1,0 +1,7 @@
+# Defect 453, lane b18-ffi, 2026-10-10: a module binding a function whose
+# result type is a typedef its header chooses by a macro.
+extern "onefile-num.h"
+    function onefile_size() -> i32  #~ ffi_one_file
+
+function size() -> i32
+    return onefile_size()

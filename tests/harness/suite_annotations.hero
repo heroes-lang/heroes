@@ -90,7 +90,9 @@ constant NORMAL_ARM: [str]
 # 1. **Which command provokes the diagnostic.** `check` for a type error,
 #    `build` for anything FFI — the probe block only reaches clang on a
 #    build. Measured over all fourteen files: check-then-build resolves
-#    every one, so the rule is *try check, and if it says nothing, build*.
+#    every one, so the rule is *try check, and if it says nothing, build*;
+#    and since defect 453, where the build is clean, `--emit-c`, whose one
+#    file is refused where it cannot mean the units' program.
 # 2. **Which file to run.** A case is a DIRECTORY here, not a file: some
 #    of these are modules with no `main`, whose diagnostic is provoked by
 #    a neighbour. So every `.hero` in the group that has a `main` is run,
@@ -737,6 +739,13 @@ function provoked(scratch: str, compiler: str, path: str) -> str?
         return ok(checked.err)
     built = shell.run_guarded(scratch: scratch, words: [compiler, "build", path, "-o", scratch + "/annotated.bin"])?
 
+    # **And `--emit-c` where the build is clean** (defect 453, 2026-10-10):
+    # the one file it writes reads every module's headers together, and is
+    # refused where it cannot mean the program the units build, a
+    # diagnostic no other verb says. Pooled with the build's own words.
+    if built.code == 0
+        emitted = shell.run_guarded(scratch: scratch, words: [compiler, "build", path, "--emit-c", "-o", scratch + "/annotated.c"])?
+        return ok(built.err + emitted.err)
     return ok(built.err)
 
 # Why `provoked` had nothing to hand back, "" where it had. The shape

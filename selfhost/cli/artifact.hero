@@ -62,6 +62,8 @@ use cli/io
 use cli/compile
 use cli/toolchain
 use cli/probing
+use cli/compiling
+use cli/one_file
 use cli/pointee_ask
 use cli/header_types
 use cli/publish
@@ -77,8 +79,8 @@ use cli/publish
 #
 # `probings` are the build's, each module's headers asked its own questions
 # (panel 202's C0, `cli/probing.hero`), their answers kept from the rounds.
-function write_c(t: toolchain.Toolchain, options: compile.Options, art: compile.Artifact, s: source.Source, @answered: [pointee_ask.Answered], probings: [probing.Probing], struct_tags: {str: bool}, version: str) -> ()?
-    checked = probing.check_all(t, art.program, art.checked, s, art.decls, probings, answered: @answered)
+function write_c(t: toolchain.Toolchain, options: compile.Options, art: compile.Artifact, s: source.Source, @answered: [pointee_ask.Answered], planned: probing.Planned, under: compiling.Compiling, struct_tags: {str: bool}, version: str) -> ()?
+    checked = probing.check_all(t, art.program, art.checked, s, art.decls, planned.probings, answered: @answered)
     checked.verdict?
 
     # **THE ARTIFACT IS THE C THAT COMPILED, NOT THE FIRST DRAFT** (defect 049,
@@ -121,6 +123,18 @@ function write_c(t: toolchain.Toolchain, options: compile.Options, art: compile.
 
     if struct_tags.len() > 0 || units.len() > 0
         text @ emit.emit_told(target: options.target, p: art.program, c: art.checked, s: s, decls: art.decls, version: version, text: true, struct_tags: struct_tags, lend_units: units).c
+
+    # **The one file is written only where it means the program the units
+    # build** (defect 453, panel 202's R3; `cli/one_file.hero`): where a
+    # module's unit reads other headers than the one file, clang is asked
+    # whether the file compiles and whether each binding means in it what it
+    # means in its module's unit, and a refusal is told at exit 1 with nothing
+    # written.
+    refusal = one_file.refused(t, under, art.program, s, art.decls, text: text, plans: planned.plans)
+
+    if refusal.len() > 0
+        _ = compile.stage(refusal, s).is_err()
+        return fail(code: "diagnostics", msg: "the one file would not mean the program the units build")
 
     if options.output.is_err()
         io.print_artifact(text: text)

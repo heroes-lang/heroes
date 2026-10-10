@@ -1,0 +1,10 @@
+# Defect 453, lane b18-ffi, 2026-10-10 (panel 202's R3; the ffi-pragmatist's
+# `macro3`): `build` prints 300 and 8; in the one file `--emit-c` writes, the
+# first module's macro rewrites the second's `twice`, which clang compiles
+# into another program. Until 2026-10-10 it was written at exit 0.
+use narrow
+use hundred
+
+function main()
+    print(hundred.hundredfold(x: 3))
+    print(narrow.doubled(x: 4))
