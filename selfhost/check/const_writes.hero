@@ -1,0 +1,106 @@
+# The cells a loop writes, read from its text (panel 207 R1, route W,
+# ratified 2026-10-10; spec § 4). `check/const_steps.hero` walks a loop's
+# condition and body once, though they may run any number of times, so a cell
+# the loop writes holds no value there, nor after the loop; a cell it never
+# writes keeps on every turn the value it held at the loop's start, and keeps
+# it after. This module answers which cells those are: every `place @ value`
+# whose place is a cell's own name, anywhere in the condition or the body, a
+# nested loop, a branch, an arm or an `if` or a `match` inside an expression
+# included.
+#
+# A cell is named by the expression that first gave it a value, the key the
+# walk holds it by (`Local.value`). A write through a field or an element
+# writes a record or an array, which the walk gives no value, and a call, the
+# one other way a cell could be written (`@` arguments), is refused in a
+# constant's body before the checker runs (panel 039, `constant_body`).
+
+use ast
+use resolved
+
+# The cells written by `cond`, when there is one, and by `body`, in the order
+# written, a cell once for each write.
+function of_loop(a: ast.Ast, r: resolved.Resolved, cond: i64?, body: ast.Block) -> [i64]
+    found: [i64] @ []
+
+    if !cond.is_err()
+        expression(@found, a, r, id: cond.must())
+    block(@found, a, r, body)
+    return found
+
+function block(@found: [i64], a: ast.Ast, r: resolved.Resolved, b: ast.Block)
+    for sid in b.stmts
+        statement(@found, a, r, sid: sid)
+
+function statement(@found: [i64], a: ast.Ast, r: resolved.Resolved, sid: i64)
+    match a.stmts[sid].kind
+        .expr_stmt e   => expression(@found, a, r, id: e.value)
+        .bind b        => expression(@found, a, r, id: b.value)
+        .declare d     => expression(@found, a, r, id: d.value)
+        .assert_stmt t => expression(@found, a, r, id: t.value)
+        .mutate m =>
+            expression(@found, a, r, id: m.value)
+            expression(@found, a, r, id: m.place)
+            cell(@found, r, place: m.place)
+        .return_stmt t =>
+            if !t.value.is_err()
+                expression(@found, a, r, id: t.value.must())
+        .while_stmt w =>
+            expression(@found, a, r, id: w.cond)
+            block(@found, a, r, w.block)
+        .for_in f =>
+            expression(@found, a, r, id: f.iterable)
+            block(@found, a, r, f.block)
+        .break_stmt | .continue_stmt | .error => return
+
+# A place that is a cell's own name.
+function cell(@found: [i64], r: resolved.Resolved, place: i64)
+    match r.uses[place]
+        .local l =>
+            if r.locals[l.at].mutable && !r.locals[l.at].value.is_err()
+                found @ found.push(r.locals[l.at].value.must())
+        .unresolved | .top | .builtin | .module => return
+
+# The writes inside an expression: only an `if` or a `match` holds a
+# statement, and either may stand inside any operand.
+function expression(@found: [i64], a: ast.Ast, r: resolved.Resolved, id: i64)
+    match a.exprs[id].kind
+        .unary u      => expression(@found, a, r, id: u.operand)
+        .field f      => expression(@found, a, r, id: f.base)
+        .field_name f => expression(@found, a, r, id: f.base)
+        .binary b =>
+            expression(@found, a, r, id: b.left)
+            expression(@found, a, r, id: b.right)
+        .index x =>
+            expression(@found, a, r, id: x.base)
+            expression(@found, a, r, id: x.index)
+        .interp ip =>
+            for h in ip.holes
+                expression(@found, a, r, id: h)
+        .variant_case v =>
+            for arg in v.args
+                expression(@found, a, r, id: arg.value)
+        .array xs =>
+            for e in xs.elements
+                expression(@found, a, r, id: e)
+        .map m =>
+            for entry in m.entries
+                expression(@found, a, r, id: entry.key)
+                expression(@found, a, r, id: entry.value)
+        .if_expr x =>
+            for branch in x.branches
+                expression(@found, a, r, id: branch.cond)
+                block(@found, a, r, branch.block)
+
+            if !x.otherwise.is_err()
+                block(@found, a, r, x.otherwise.must())
+        .match_expr m =>
+            expression(@found, a, r, id: m.scrutinee)
+
+            for arm in m.arms
+                match arm.body
+                    .one_stmt o => statement(@found, a, r, sid: o.at)
+                    .block k    => block(@found, a, r, k.block)
+        # A call, a `.` call and a `?` are refused in a body already.
+        .call | .method | .try_expr                                      => return
+        .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit | .name => return
+        .null_ptr | .hole | .error                                       => return

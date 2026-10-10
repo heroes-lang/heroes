@@ -112,7 +112,7 @@ variant Token
 
 Declaration order never matters but a group's (section 13); mutual recursion
 needs no forward declarations. There are no mutable globals. Constants use SCREAMING_CASE, and
-a written body computes over literals and other constants, and a step of it that aborts is a compile error.
+a written body computes over literals and other constants. An integer operator in it that would abort, run or not, is a compile error at least where its operands are known: a literal, an operator on known values, a `=` name or written constant holding one, or a cell since its last write with no loop or branch between that writes it.
 
     Declaration = "constant" ident ":" Type Block
                 | "function" ident [ Generics ] Params [ "->" Type ] Block

@@ -1,0 +1,12 @@
+# Fixed defect 580, 2026-10-10 (panel 207 R3; the critic's `s07`): an `assert`
+# is a statement, not an integer operator, so `assert 1 == 2` in a constant's
+# body is not judged when the program is compiled. It fails where `V` is read,
+# the `1` before it flushed first.
+
+constant V: i64
+    assert 1 == 2
+    5
+
+function main()
+    print(1)
+    print(V)

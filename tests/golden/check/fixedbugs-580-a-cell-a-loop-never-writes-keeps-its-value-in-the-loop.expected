@@ -1,0 +1,3 @@
+tests/golden/check/fixedbugs-580-a-cell-a-loop-never-writes-keeps-its-value-in-the-loop.hero:21:13: error[int_out_of_range]: `a + 100` computes 300, which does not fit a `u8`
+tests/golden/check/fixedbugs-580-a-cell-a-loop-never-writes-keeps-its-value-in-the-loop.hero:31:13: error[int_out_of_range]: `a + 100` computes 300, which does not fit a `u8`
+tests/golden/check/fixedbugs-580-a-cell-a-loop-never-writes-keeps-its-value-in-the-loop.hero:45:17: error[int_out_of_range]: `v + 100` computes 300, which does not fit a `u8`
