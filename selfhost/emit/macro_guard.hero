@@ -48,6 +48,7 @@ use emit/guarded_names
 use emit/externs as emit_externs
 use emit/checks_raised
 use emit/header_region
+use emit/header_state
 use emit/deprecation
 use cli/process
 use cli/strings
@@ -74,14 +75,16 @@ constant STANDARD_USED: [str]
 
 # The groups' include lines as the unit writes them: inside the region a
 # header's own code is judged in (`emit/header_region.hero`, defect 569),
+# the floating-point state saved (`emit/header_state.hero`, defect 582),
 # between the two guard includes, each name of the list the program binds
-# pushed again before the close; after the region every warning a check of a
-# binding rests on raised again, whatever a header's pragma did to it
-# (`emit/checks_raised.hero`, defect 570); nothing where there are none.
+# pushed again before the close, and after it the packing and every other
+# state a header can leave set given back; after the region every warning a
+# check of a binding rests on raised again, whatever a header's pragma did
+# to it (`emit/checks_raised.hero`, defect 570); nothing where there are none.
 function around(lines: [str], bound: {str: bool}) -> [str]
     if lines.len() == 0
         return lines
-    out: [str] @ header_region.opening()
+    out: [str] @ strings.with_all(list: header_region.opening(), more: header_state.SAVED)
     out @ out.push(OPEN_LINE)
 
     for line in lines
@@ -92,6 +95,7 @@ function around(lines: [str], bound: {str: bool}) -> [str]
             out @ out.push("#pragma push_macro(\"" + name + "\")")
 
     out @ out.push(CLOSE_LINE)
+    out @ strings.with_all(list: out, more: header_state.GIVEN_BACK)
     out @ out.push(header_region.CLOSING)
 
     for raised in checks_raised.lines()
@@ -175,17 +179,20 @@ function in_word(b: u8) -> bool
 ## Tests
 
 # The groups' includes alone are guarded, a bound name the list holds is
-# pushed again before the close, and none are nothing.
+# pushed again before the close, the state a header can leave set given
+# back after it, and none are nothing.
 test "the groups' includes stand between the guard's two, a bound name of the list pushed again"
     none: [str] = []
     bound: {str: bool} @ {}
     assert around(none, bound: bound).len() == 0
     bound["INT64_C"] @ true
     bound["LIMIT"] @ true
-    head = strings.with_all(
-        list: header_region.opening(),
-        more: [OPEN_LINE, "#include <a.h>", "#pragma push_macro(\"INT64_C\")", CLOSE_LINE, header_region.CLOSING]
+    opened = strings.with_all(list: header_region.opening(), more: header_state.SAVED)
+    guarded = strings.with_all(
+        list: opened,
+        more: [OPEN_LINE, "#include <a.h>", "#pragma push_macro(\"INT64_C\")", CLOSE_LINE]
     )
+    head = strings.with_all(list: guarded, more: header_state.GIVEN_BACK).push(header_region.CLOSING)
     got = around(["#include <a.h>"], bound: bound)
     assert got.len() == head.len() + checks_raised.lines().len() + 1
     assert got.slice(from: 0, to: head.len()) == head

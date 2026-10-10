@@ -1,0 +1,15 @@
+# fixedbugs, defect 582, lane b19-pack, 2026-10-10, a shape beside
+# `fixedbugs-582-a-header-s-unclosed-pack-push-leaves-two-modules-one-record-layout`:
+# a header that pushes under one label and pops another pops nothing, and
+# its packing reached `main`'s records as an unclosed push's does. `pack()`
+# names no label, so no label a header uses can stand in its way.
+
+use fixedbugs582/pair
+
+extern "fixedbugs-582-a-pack-pop-of-another-label-leaves-the-records-their-layout.h"
+    function llabs(x: i64) -> i64
+
+function main()
+    p = pair.make(llabs(-123456789))
+    print(p.b, " ", pair.second(p), " ", pair.second(pair.Pair(a: 2, b: llabs(-987654321))))
+    print(pair.area(pair.shape(llabs(-7))))

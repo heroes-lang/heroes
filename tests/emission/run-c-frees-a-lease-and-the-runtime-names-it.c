@@ -9,9 +9,18 @@
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic ignored "-Wpragma-pack"
+#pragma float_control(push)
 #include "heroes_guard_open.h"
 #include <c-frees-a-lease-and-the-runtime-names-it.h>
 #include "heroes_guard_close.h"
+#pragma clang diagnostic ignored "-Wignored-pragmas"
+#pragma pack()
+#pragma float_control(pop)
+#pragma float_control(precise, on)
+#pragma GCC visibility push(default)
+#pragma clang section bss="" data="" rodata="" text="" relro=""
+#pragma clang optimize on
 #pragma clang diagnostic pop
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -69,7 +78,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_35d9fe9b, "payload");
 
-#line 73 "cfreesaleaseandtheruntimenamesit.c"
+#line 82 "cfreesaleaseandtheruntimenamesit.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -112,7 +121,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 116 "cfreesaleaseandtheruntimenamesit.c"
+#line 125 "cfreesaleaseandtheruntimenamesit.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -129,7 +138,7 @@ void h_cfreesaleaseandtheruntimenamesit_main(void);
 
 #line 26 "tests/golden/run/c-frees-a-lease-and-the-runtime-names-it.hero"
 void h_cfreesaleaseandtheruntimenamesit_main(void) {
-#line 133 "cfreesaleaseandtheruntimenamesit.c"
+#line 142 "cfreesaleaseandtheruntimenamesit.c"
     HeroStr h0_x = {0};
     const char * h1_c;
     HeroStr t1;
@@ -144,11 +153,11 @@ bb0:
     t1 = HERO_STR_LIT(hero_str_35d9fe9b);
 #line 27 "tests/golden/run/c-frees-a-lease-and-the-runtime-names-it.hero"
     t6 = h0_x;
-#line 148 "cfreesaleaseandtheruntimenamesit.c"
+#line 157 "cfreesaleaseandtheruntimenamesit.c"
     hero_str_incref(t1);
 #line 27 "tests/golden/run/c-frees-a-lease-and-the-runtime-names-it.hero"
     h0_x = t1;
-#line 152 "cfreesaleaseandtheruntimenamesit.c"
+#line 161 "cfreesaleaseandtheruntimenamesit.c"
     hero_str_decref(t6);
 #line 28 "tests/golden/run/c-frees-a-lease-and-the-runtime-names-it.hero"
     t2 = h0_x;
@@ -165,7 +174,7 @@ bb0:
 #line 30 "tests/golden/run/c-frees-a-lease-and-the-runtime-names-it.hero"
     (void)eat(hero_cstr_nonnull(t5));
     hero_held_release(&h1_c);
-#line 169 "cfreesaleaseandtheruntimenamesit.c"
+#line 178 "cfreesaleaseandtheruntimenamesit.c"
     hero_str_release_at(&h0_x);
     return;
 }

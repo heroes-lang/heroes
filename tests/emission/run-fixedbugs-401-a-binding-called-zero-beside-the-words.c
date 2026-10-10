@@ -9,11 +9,20 @@
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic ignored "-Wpragma-pack"
+#pragma float_control(push)
 #include "heroes_guard_open.h"
 #include <fixedbugs-401-a-binding-called-zero-beside-the-words.h>
 #pragma push_macro("a")
 #pragma push_macro("b")
 #include "heroes_guard_close.h"
+#pragma clang diagnostic ignored "-Wignored-pragmas"
+#pragma pack()
+#pragma float_control(pop)
+#pragma float_control(precise, on)
+#pragma GCC visibility push(default)
+#pragma clang section bss="" data="" rodata="" text="" relro=""
+#pragma clang optimize on
 #pragma clang diagnostic pop
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -37,11 +46,11 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 _Static_assert(__builtin_classify_type(((struct pair *)0)->a) == 1 && sizeof(((struct pair *)0)->a) == sizeof(int32_t) && (_Generic(((struct pair *)0)->a, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Pair a");
 _Static_assert(__builtin_classify_type(((struct pair *)0)->b) == 1 && sizeof(((struct pair *)0)->b) == sizeof(int32_t) && (_Generic(((struct pair *)0)->b, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Pair b");
 _Static_assert(__builtin_classify_type(((struct pair *)0)->zero) == 1 && sizeof(((struct pair *)0)->zero) == sizeof(int32_t) && (_Generic(((struct pair *)0)->zero, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Pair zero");
-#line 41 "fixedbugs401abindingcalledzerobesidethewords.c"
+#line 50 "fixedbugs401abindingcalledzerobesidethewords.c"
 
 #line 9 "tests/golden/run/fixedbugs-401-a-binding-called-zero-beside-the-words.hero"
 _Static_assert(__builtin_classify_type(*(struct pair *)0) != 13, "heroes-ffi-union Pair a b zero");
-#line 45 "fixedbugs401abindingcalledzerobesidethewords.c"
+#line 54 "fixedbugs401abindingcalledzerobesidethewords.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -123,7 +132,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 127 "fixedbugs401abindingcalledzerobesidethewords.c"
+#line 136 "fixedbugs401abindingcalledzerobesidethewords.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs401abindingcalledzerobesidethewords_Pair_eq(const struct pair *a, const struct pair *b);
@@ -144,7 +153,7 @@ void h_fixedbugs401abindingcalledzerobesidethewords_main(void);
 
 #line 16 "tests/golden/run/fixedbugs-401-a-binding-called-zero-beside-the-words.hero"
 struct pair h_fixedbugs401abindingcalledzerobesidethewords_beside(void) {
-#line 148 "fixedbugs401abindingcalledzerobesidethewords.c"
+#line 157 "fixedbugs401abindingcalledzerobesidethewords.c"
     int32_t h0_zero;
     int32_t t1;
     int32_t t2;
@@ -170,12 +179,12 @@ bb0:
     t4.a = t3;
 #line 19 "tests/golden/run/fixedbugs-401-a-binding-called-zero-beside-the-words.hero"
     return t4;
-#line 174 "fixedbugs401abindingcalledzerobesidethewords.c"
+#line 183 "fixedbugs401abindingcalledzerobesidethewords.c"
 }
 
 #line 22 "tests/golden/run/fixedbugs-401-a-binding-called-zero-beside-the-words.hero"
 struct pair h_fixedbugs401abindingcalledzerobesidethewords_named(int32_t h0_zero) {
-#line 179 "fixedbugs401abindingcalledzerobesidethewords.c"
+#line 188 "fixedbugs401abindingcalledzerobesidethewords.c"
     int32_t t1;
     int32_t t2;
     struct pair t3;
@@ -195,12 +204,12 @@ bb0:
     t3.zero = t2;
 #line 23 "tests/golden/run/fixedbugs-401-a-binding-called-zero-beside-the-words.hero"
     return t3;
-#line 199 "fixedbugs401abindingcalledzerobesidethewords.c"
+#line 208 "fixedbugs401abindingcalledzerobesidethewords.c"
 }
 
 #line 25 "tests/golden/run/fixedbugs-401-a-binding-called-zero-beside-the-words.hero"
 void h_fixedbugs401abindingcalledzerobesidethewords_main(void) {
-#line 204 "fixedbugs401abindingcalledzerobesidethewords.c"
+#line 213 "fixedbugs401abindingcalledzerobesidethewords.c"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
     struct pair h0_p;
     struct pair h1_q;
@@ -296,7 +305,7 @@ bb0:
     hero_print_end();
 #line 29 "tests/golden/run/fixedbugs-401-a-binding-called-zero-beside-the-words.hero"
     return;
-#line 300 "fixedbugs401abindingcalledzerobesidethewords.c"
+#line 309 "fixedbugs401abindingcalledzerobesidethewords.c"
 }
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_fixedbugs401abindingcalledzerobesidethewords_Pair_eq(const struct pair *a, const struct pair *b) {

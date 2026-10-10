@@ -1,0 +1,22 @@
+# fixedbugs, defect 582, lane b19-pack, 2026-10-10, the other half of the
+# repair: a record bound from a header that packs it, and never pops, keeps
+# the header's layout after the close gives the packing back, nine bytes, as
+# C lays it out where the header declares it; the program's own `pair.Pair`
+# the build's. Built in Heroes and read in C, built in C and read in Heroes,
+# and both units agree on `Pair`.
+
+use fixedbugs582/pair
+
+extern "fixedbugs-582-a-record-bound-from-a-packing-header-keeps-the-header-s-layout.h"
+    record Packed582
+        a: u8
+        b: i64
+    function packed_make(b: i64) -> Packed582
+    function packed_b(p: Packed582) -> i64
+    function packed_size() -> i64
+
+function main()
+    made = packed_make(123456789)
+    print(packed_size(), " ", made.a, " ", made.b, " ", packed_b(Packed582(a: 3, b: 987654321)))
+    p = pair.make(made.b)
+    print(p.b, " ", pair.second(p))

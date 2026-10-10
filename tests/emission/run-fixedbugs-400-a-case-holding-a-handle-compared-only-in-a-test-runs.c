@@ -9,9 +9,18 @@
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic ignored "-Wpragma-pack"
+#pragma float_control(push)
 #include "heroes_guard_open.h"
 #include <fixedbugs-400-a-struct-tag-with-no-typedef.h>
 #include "heroes_guard_close.h"
+#pragma clang diagnostic ignored "-Wignored-pragmas"
+#pragma pack()
+#pragma float_control(pop)
+#pragma float_control(precise, on)
+#pragma GCC visibility push(default)
+#pragma clang section bss="" data="" rodata="" text="" relro=""
+#pragma clang optimize on
 #pragma clang diagnostic pop
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -66,7 +75,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 70 "fixedbugs400acaseholdingahandlecomparedonlyinatestruns.c"
+#line 79 "fixedbugs400acaseholdingahandlecomparedonlyinatestruns.c"
 typedef enum h_fixedbugs400acaseholdingahandlecomparedonlyinatestruns_Slot_tag {
     h_fixedbugs400acaseholdingahandlecomparedonlyinatestruns_Slot_tag_empty = 0,
     h_fixedbugs400acaseholdingahandlecomparedonlyinatestruns_Slot_tag_held = 1,
@@ -112,7 +121,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 116 "fixedbugs400acaseholdingahandlecomparedonlyinatestruns.c"
+#line 125 "fixedbugs400acaseholdingahandlecomparedonlyinatestruns.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs400acaseholdingahandlecomparedonlyinatestruns_Opaque_eq(struct opaque * const *a, struct opaque * const *b);
@@ -135,7 +144,7 @@ void h_fixedbugs400acaseholdingahandlecomparedonlyinatestruns_main(void);
 
 #line 22 "tests/golden/run/fixedbugs-400-a-case-holding-a-handle-compared-only-in-a-test-runs.hero"
 void h_fixedbugs400acaseholdingahandlecomparedonlyinatestruns_main(void) {
-#line 139 "fixedbugs400acaseholdingahandlecomparedonlyinatestruns.c"
+#line 148 "fixedbugs400acaseholdingahandlecomparedonlyinatestruns.c"
     int64_t t1;
     goto bb0;
 bb0:
@@ -147,7 +156,7 @@ bb0:
     hero_print_end();
 #line 23 "tests/golden/run/fixedbugs-400-a-case-holding-a-handle-compared-only-in-a-test-runs.hero"
     return;
-#line 151 "fixedbugs400acaseholdingahandlecomparedonlyinatestruns.c"
+#line 160 "fixedbugs400acaseholdingahandlecomparedonlyinatestruns.c"
 }
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_fixedbugs400acaseholdingahandlecomparedonlyinatestruns_Opaque_eq(struct opaque * const *a, struct opaque * const *b) {

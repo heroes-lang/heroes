@@ -9,11 +9,20 @@
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic ignored "-Wpragma-pack"
+#pragma float_control(push)
 #include "heroes_guard_open.h"
 #include <math.h>
 #include <stdio.h>
 #pragma push_macro("sqrt")
 #include "heroes_guard_close.h"
+#pragma clang diagnostic ignored "-Wignored-pragmas"
+#pragma pack()
+#pragma float_control(pop)
+#pragma float_control(precise, on)
+#pragma GCC visibility push(default)
+#pragma clang section bss="" data="" rodata="" text="" relro=""
+#pragma clang optimize on
 #pragma clang diagnostic pop
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -75,7 +84,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 79 "fficonstant.c"
+#line 88 "fficonstant.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -118,7 +127,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 122 "fficonstant.c"
+#line 131 "fficonstant.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -139,7 +148,7 @@ void h_fficonstant_main(void);
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #line 45 "tests/golden/run/ffi-constant.hero"
 double h_fficonstant_M_PI(void) {
-#line 143 "fficonstant.c"
+#line 152 "fficonstant.c"
     return M_PI;
 }
 #pragma clang diagnostic warning "-Wdeprecated-declarations"
@@ -158,7 +167,7 @@ double h_fficonstant_M_PI(void) {
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #line 49 "tests/golden/run/ffi-constant.hero"
 int64_t h_fficonstant_SEEK_SET(void) {
-#line 162 "fficonstant.c"
+#line 171 "fficonstant.c"
     return SEEK_SET;
 }
 #pragma clang diagnostic warning "-Wdeprecated-declarations"
@@ -177,7 +186,7 @@ int64_t h_fficonstant_SEEK_SET(void) {
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #line 50 "tests/golden/run/ffi-constant.hero"
 int64_t h_fficonstant_SEEK_END(void) {
-#line 181 "fficonstant.c"
+#line 190 "fficonstant.c"
     return SEEK_END;
 }
 #pragma clang diagnostic warning "-Wdeprecated-declarations"
@@ -195,7 +204,7 @@ int64_t h_fficonstant_SEEK_END(void) {
 
 #line 52 "tests/golden/run/ffi-constant.hero"
 void h_fficonstant_main(void) {
-#line 199 "fficonstant.c"
+#line 208 "fficonstant.c"
     double t1;
     double t2;
     double t3;
@@ -241,7 +250,7 @@ bb0:
     hero_print_end();
 #line 59 "tests/golden/run/ffi-constant.hero"
     return;
-#line 245 "fficonstant.c"
+#line 254 "fficonstant.c"
 }
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {

@@ -9,9 +9,18 @@
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic ignored "-Wpragma-pack"
+#pragma float_control(push)
 #include "heroes_guard_open.h"
 #include <sqlite3.h>
 #include "heroes_guard_close.h"
+#pragma clang diagnostic ignored "-Wignored-pragmas"
+#pragma pack()
+#pragma float_control(pop)
+#pragma float_control(precise, on)
+#pragma GCC visibility push(default)
+#pragma clang section bss="" data="" rodata="" text="" relro=""
+#pragma clang optimize on
 #pragma clang diagnostic pop
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -74,7 +83,7 @@ HERO_STR_STATIC(hero_str_41b4cad0, ":memory:");
 HERO_STR_STATIC(hero_str_353a8d65, "no database");
 HERO_STR_STATIC(hero_str_5689c81, "select 1");
 
-#line 78 "ffioutparameterguard.c"
+#line 87 "ffioutparameterguard.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -118,7 +127,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 122 "ffioutparameterguard.c"
+#line 131 "ffioutparameterguard.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -137,7 +146,7 @@ void h_ffioutparameterguard_main(void);
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #line 34 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
 int64_t h_ffioutparameterguard_SQLITE_OK(void) {
-#line 141 "ffioutparameterguard.c"
+#line 150 "ffioutparameterguard.c"
     return SQLITE_OK;
 }
 #pragma clang diagnostic warning "-Wdeprecated-declarations"
@@ -155,7 +164,7 @@ int64_t h_ffioutparameterguard_SQLITE_OK(void) {
 
 #line 38 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
 void h_ffioutparameterguard_main(void) {
-#line 159 "ffioutparameterguard.c"
+#line 168 "ffioutparameterguard.c"
     void * *const hero_lend_h0_db = (void * *)hero_lend_local(sizeof(void *), "ffioutparameterguard.main", "db");
 #define h0_db (*hero_lend_h0_db)
     void * *const hero_lend_h1_stmt = (void * *)hero_lend_local(sizeof(void *), "ffioutparameterguard.main", "stmt");
@@ -259,7 +268,7 @@ bb4:
     hero_lend_local_give(hero_lend_h0_db);
 #line 42 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
     return;
-#line 263 "ffioutparameterguard.c"
+#line 272 "ffioutparameterguard.c"
 }
 #undef h0_db
 #undef h1_stmt

@@ -9,9 +9,18 @@
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic ignored "-Wpragma-pack"
+#pragma float_control(push)
 #include "heroes_guard_open.h"
 #include <fixedbugs-151-unions.h>
 #include "heroes_guard_close.h"
+#pragma clang diagnostic ignored "-Wignored-pragmas"
+#pragma pack()
+#pragma float_control(pop)
+#pragma float_control(precise, on)
+#pragma GCC visibility push(default)
+#pragma clang section bss="" data="" rodata="" text="" relro=""
+#pragma clang optimize on
 #pragma clang diagnostic pop
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -36,13 +45,13 @@ _Static_assert(__builtin_classify_type(((PK *)0)->k) == 1 && sizeof(((PK *)0)->k
 _Static_assert(sizeof(PK) - __builtin_offsetof(PK, c) != 0, "heroes-ffi-flex PK c");
 #line 10 "tests/golden/run/fixedbugs-151-an-arm-as-wide-as-a-packed-union-compared.hero"
 _Static_assert(_Generic(&((PK *)0)->c, _Bool (*)[5]: (sizeof(_Bool) == sizeof(uint8_t) && (((_Bool)-1 < 0) == ((uint8_t)-1 < 0))), char (*)[5]: (sizeof(char) == sizeof(uint8_t) && (((char)-1 < 0) == ((uint8_t)-1 < 0))), signed char (*)[5]: (sizeof(signed char) == sizeof(uint8_t) && (((signed char)-1 < 0) == ((uint8_t)-1 < 0))), short (*)[5]: (sizeof(short) == sizeof(uint8_t) && (((short)-1 < 0) == ((uint8_t)-1 < 0))), int (*)[5]: (sizeof(int) == sizeof(uint8_t) && (((int)-1 < 0) == ((uint8_t)-1 < 0))), long (*)[5]: (sizeof(long) == sizeof(uint8_t) && (((long)-1 < 0) == ((uint8_t)-1 < 0))), long long (*)[5]: (sizeof(long long) == sizeof(uint8_t) && (((long long)-1 < 0) == ((uint8_t)-1 < 0))), unsigned char (*)[5]: (sizeof(unsigned char) == sizeof(uint8_t) && (((unsigned char)-1 < 0) == ((uint8_t)-1 < 0))), unsigned short (*)[5]: (sizeof(unsigned short) == sizeof(uint8_t) && (((unsigned short)-1 < 0) == ((uint8_t)-1 < 0))), unsigned int (*)[5]: (sizeof(unsigned int) == sizeof(uint8_t) && (((unsigned int)-1 < 0) == ((uint8_t)-1 < 0))), unsigned long (*)[5]: (sizeof(unsigned long) == sizeof(uint8_t) && (((unsigned long)-1 < 0) == ((uint8_t)-1 < 0))), unsigned long long (*)[5]: (sizeof(unsigned long long) == sizeof(uint8_t) && (((unsigned long long)-1 < 0) == ((uint8_t)-1 < 0))), default: 0), "heroes-ffi-field PK c");
-#line 40 "fixedbugs151anarmaswideasapackedunioncompared.c"
+#line 49 "fixedbugs151anarmaswideasapackedunioncompared.c"
 
 #line 8 "tests/golden/run/fixedbugs-151-an-arm-as-wide-as-a-packed-union-compared.hero"
 _Static_assert(__builtin_classify_type(*(PK *)0) != 13 || sizeof(((PK *)0)->k) == sizeof(PK), "heroes-ffi-union-narrow PK k");
 #line 8 "tests/golden/run/fixedbugs-151-an-arm-as-wide-as-a-packed-union-compared.hero"
 _Static_assert(__builtin_classify_type(*(PK *)0) != 13 || sizeof(((PK *)0)->c) == sizeof(PK), "heroes-ffi-union-narrow PK c");
-#line 46 "fixedbugs151anarmaswideasapackedunioncompared.c"
+#line 55 "fixedbugs151anarmaswideasapackedunioncompared.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -127,7 +136,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 131 "fixedbugs151anarmaswideasapackedunioncompared.c"
+#line 140 "fixedbugs151anarmaswideasapackedunioncompared.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs151anarmaswideasapackedunioncompared_PK_eq(const PK *a, const PK *b);
@@ -146,7 +155,7 @@ void h_fixedbugs151anarmaswideasapackedunioncompared_main(void);
 
 #line 13 "tests/golden/run/fixedbugs-151-an-arm-as-wide-as-a-packed-union-compared.hero"
 void h_fixedbugs151anarmaswideasapackedunioncompared_main(void) {
-#line 150 "fixedbugs151anarmaswideasapackedunioncompared.c"
+#line 159 "fixedbugs151anarmaswideasapackedunioncompared.c"
     uint8_t t1;
     PK t2;
     uint8_t t3;
@@ -192,7 +201,7 @@ bb0:
     hero_print_end();
 #line 14 "tests/golden/run/fixedbugs-151-an-arm-as-wide-as-a-packed-union-compared.hero"
     return;
-#line 196 "fixedbugs151anarmaswideasapackedunioncompared.c"
+#line 205 "fixedbugs151anarmaswideasapackedunioncompared.c"
 }
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_fixedbugs151anarmaswideasapackedunioncompared_PK_eq(const PK *a, const PK *b) {

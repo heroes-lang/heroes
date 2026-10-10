@@ -9,10 +9,19 @@
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic ignored "-Wpragma-pack"
+#pragma float_control(push)
 #include "heroes_guard_open.h"
 #include <fixedbugs-a-handle-in-a-record-field.h>
 #pragma push_macro("handle")
 #include "heroes_guard_close.h"
+#pragma clang diagnostic ignored "-Wignored-pragmas"
+#pragma pack()
+#pragma float_control(pop)
+#pragma float_control(precise, on)
+#pragma GCC visibility push(default)
+#pragma clang section bss="" data="" rodata="" text="" relro=""
+#pragma clang optimize on
 #pragma clang diagnostic pop
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -36,7 +45,7 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 _Static_assert(_Generic(&((Slot *)0)->handle, Thing * *: 1, default: 0) && sizeof(((Slot *)0)->handle) == sizeof(Thing *), "heroes-ffi-field Slot handle");
 _Static_assert(_Generic(&((Slot *)0)->ratio, double *: 1, default: 0) && sizeof(((Slot *)0)->ratio) == sizeof(double), "heroes-ffi-field Slot ratio");
 _Static_assert(__builtin_classify_type(((Slot *)0)->count) == 1 && sizeof(((Slot *)0)->count) == sizeof(int64_t) && (_Generic(((Slot *)0)->count, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Slot count");
-#line 40 "fixedbugsahandleinarecordfield.c"
+#line 49 "fixedbugsahandleinarecordfield.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -119,7 +128,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 123 "fixedbugsahandleinarecordfield.c"
+#line 132 "fixedbugsahandleinarecordfield.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugsahandleinarecordfield_Thing_eq(Thing * const *a, Thing * const *b);
@@ -140,7 +149,7 @@ void h_fixedbugsahandleinarecordfield_main(void);
 
 #line 50 "tests/golden/run/fixedbugs-a-handle-in-a-record-field.hero"
 void h_fixedbugsahandleinarecordfield_main(void) {
-#line 144 "fixedbugsahandleinarecordfield.c"
+#line 153 "fixedbugsahandleinarecordfield.c"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
     Slot h0_s;
     int64_t t1;
@@ -192,7 +201,7 @@ bb0:
     hero_print_end();
 #line 57 "tests/golden/run/fixedbugs-a-handle-in-a-record-field.hero"
     return;
-#line 196 "fixedbugsahandleinarecordfield.c"
+#line 205 "fixedbugsahandleinarecordfield.c"
 }
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_fixedbugsahandleinarecordfield_Thing_eq(Thing * const *a, Thing * const *b) {

@@ -9,10 +9,19 @@
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic ignored "-Wpragma-pack"
+#pragma float_control(push)
 #include "heroes_guard_open.h"
 #include <fixedbugs-a-freed-object-read-through-a-stale-copy-is-not-a-null-handle.h>
 #pragma push_macro("value")
 #include "heroes_guard_close.h"
+#pragma clang diagnostic ignored "-Wignored-pragmas"
+#pragma pack()
+#pragma float_control(pop)
+#pragma float_control(precise, on)
+#pragma GCC visibility push(default)
+#pragma clang section bss="" data="" rodata="" text="" relro=""
+#pragma clang optimize on
 #pragma clang diagnostic pop
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -75,7 +84,7 @@ HERO_STR_STATIC(hero_str_63c4e8c6, "before: ");
 HERO_STR_STATIC(hero_str_2731e935, "null: ");
 HERO_STR_STATIC(hero_str_3043d2a7, "after: ");
 
-#line 79 "fixedbugsafreedobjectreadthroughastalecopyisnotanullhandle.c"
+#line 88 "fixedbugsafreedobjectreadthroughastalecopyisnotanullhandle.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -119,7 +128,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 123 "fixedbugsafreedobjectreadthroughastalecopyisnotanullhandle.c"
+#line 132 "fixedbugsafreedobjectreadthroughastalecopyisnotanullhandle.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugsafreedobjectreadthroughastalecopyisnotanullhandle_Outer_eq(outer * const *a, outer * const *b);
@@ -138,7 +147,7 @@ void h_fixedbugsafreedobjectreadthroughastalecopyisnotanullhandle_main(void);
 
 #line 37 "tests/golden/run/fixedbugs-a-freed-object-read-through-a-stale-copy-is-not-a-null-handle.hero"
 void h_fixedbugsafreedobjectreadthroughastalecopyisnotanullhandle_main(void) {
-#line 142 "fixedbugsafreedobjectreadthroughastalecopyisnotanullhandle.c"
+#line 151 "fixedbugsafreedobjectreadthroughastalecopyisnotanullhandle.c"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
     outer * h0_a;
     outer * h1_kept;
@@ -221,7 +230,7 @@ bb0:
     hero_print_end();
 #line 43 "tests/golden/run/fixedbugs-a-freed-object-read-through-a-stale-copy-is-not-a-null-handle.hero"
     return;
-#line 225 "fixedbugsafreedobjectreadthroughastalecopyisnotanullhandle.c"
+#line 234 "fixedbugsafreedobjectreadthroughastalecopyisnotanullhandle.c"
 }
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_fixedbugsafreedobjectreadthroughastalecopyisnotanullhandle_Outer_eq(outer * const *a, outer * const *b) {

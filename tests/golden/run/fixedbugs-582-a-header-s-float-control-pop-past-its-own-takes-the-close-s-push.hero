@@ -1,0 +1,18 @@
+# fixedbugs, defect 582, lane b19-pack, 2026-10-10, a shape beside
+# `fixedbugs-582-a-header-s-own-unclosed-float-control-push-is-the-one-popped`:
+# the header pops a push it never made, which takes the one the close saved
+# the state in, and then turns contraction to `fast`. The close's pop finds
+# nothing, quiet in the header's region, and `float_control(precise, on)`
+# after it sets the build's model again: `0.0`, where the trunk printed
+# `5.551115123125783e-17` at `-O2` under clang's *stack empty* about the
+# header's pop.
+
+extern "fixedbugs-582-a-header-s-float-control-pop-past-its-own-takes-the-close-s-push.h"
+    function llabs(x: i64) -> i64
+
+function main()
+    one = llabs(-1).to_f64()
+    ten = llabs(-10).to_f64()
+    big = llabs(-10000000000000000).to_f64()
+    tenth = one / ten
+    print(tenth * ten - one, " ", big + one - big)
