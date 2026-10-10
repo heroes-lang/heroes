@@ -24,6 +24,7 @@
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
@@ -31,7 +32,7 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 
 #line 9 "tests/golden/run/fixedbugs-396-sha256-final-past-sixteen-aborts.hero"
 _Static_assert(__builtin_classify_type(((struct SHA256state_st *)0)->num) == 1 && sizeof(((struct SHA256state_st *)0)->num) == sizeof(uint32_t) && (_Generic(((struct SHA256state_st *)0)->num, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 1), "heroes-ffi-field Sha256Ctx num");
-#line 35 "fixedbugs396sha256finalpastsixteenaborts.c"
+#line 36 "fixedbugs396sha256finalpastsixteenaborts.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -119,7 +120,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 123 "fixedbugs396sha256finalpastsixteenaborts.c"
+#line 124 "fixedbugs396sha256finalpastsixteenaborts.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs396sha256finalpastsixteenaborts_Sha256Ctx_eq(const struct SHA256state_st *a, const struct SHA256state_st *b);
@@ -134,10 +135,12 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_fixedbugs396sha256finalpastsixteenaborts_main(void);
+#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 14 "tests/golden/run/fixedbugs-396-sha256-final-past-sixteen-aborts.hero"
 void h_fixedbugs396sha256finalpastsixteenaborts_main(void) {
-#line 141 "fixedbugs396sha256finalpastsixteenaborts.c"
+#line 143 "fixedbugs396sha256finalpastsixteenaborts.c"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
     struct SHA256state_st *const hero_lend_h0_c = (struct SHA256state_st *)hero_lend_local(sizeof(struct SHA256state_st), "fixedbugs396sha256finalpastsixteenaborts.main", "c");
 #define h0_c (*hero_lend_h0_c)
     HeroArrayHeader * h1_md = {0};
@@ -157,6 +160,7 @@ void h_fixedbugs396sha256finalpastsixteenaborts_main(void) {
     int64_t t13;
     HeroArrayHeader * t14;
     HeroArrayHeader * t15;
+#pragma clang diagnostic warning "-Wdeprecated-declarations"
     goto bb0;
 bb0:
 #line 15 "tests/golden/run/fixedbugs-396-sha256-final-past-sixteen-aborts.hero"
@@ -170,15 +174,15 @@ bb0:
     t14 = h2_own2;
 #line 16 "tests/golden/run/fixedbugs-396-sha256-final-past-sixteen-aborts.hero"
     h2_own2 = t3;
-#line 174 "fixedbugs396sha256finalpastsixteenaborts.c"
+#line 178 "fixedbugs396sha256finalpastsixteenaborts.c"
     hero_array_decref(t14);
 #line 16 "tests/golden/run/fixedbugs-396-sha256-final-past-sixteen-aborts.hero"
     t15 = h1_md;
-#line 178 "fixedbugs396sha256finalpastsixteenaborts.c"
+#line 182 "fixedbugs396sha256finalpastsixteenaborts.c"
     hero_array_incref(t3);
 #line 16 "tests/golden/run/fixedbugs-396-sha256-final-past-sixteen-aborts.hero"
     h1_md = t3;
-#line 182 "fixedbugs396sha256finalpastsixteenaborts.c"
+#line 186 "fixedbugs396sha256finalpastsixteenaborts.c"
     hero_array_decref(t15);
 #line 17 "tests/golden/run/fixedbugs-396-sha256-final-past-sixteen-aborts.hero"
     hero_lend_local_name(hero_lend_h0_c, "SHA256_Init", "c");
@@ -234,13 +238,14 @@ bb0:
     hero_print_int(t13);
 #line 19 "tests/golden/run/fixedbugs-396-sha256-final-past-sixteen-aborts.hero"
     hero_print_end();
-#line 238 "fixedbugs396sha256finalpastsixteenaborts.c"
+#line 242 "fixedbugs396sha256finalpastsixteenaborts.c"
     hero_array_release_at(&h1_md);
     hero_array_release_at(&h2_own2);
     hero_lend_local_give(hero_lend_h0_c);
     return;
 }
 #undef h0_c
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_fixedbugs396sha256finalpastsixteenaborts_Sha256Ctx_eq(const struct SHA256state_st *a, const struct SHA256state_st *b) {
     hero_panic("h_fixedbugs396sha256finalpastsixteenaborts_Sha256Ctx_eq: a partial record has no structural equality");
 }

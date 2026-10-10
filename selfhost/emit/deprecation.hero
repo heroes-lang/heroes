@@ -1,0 +1,107 @@
+# A header's `deprecated` attribute is clang's advice to whoever names the
+# name, and the compiler's own lines are nobody's choice (design.md §4.19,
+# Part 8's *this language has no warning level*; panel 205's R5, ratified
+# 2026-10-10; defect 571).
+#
+# **The compiler names every name a group binds**, in its result assertion,
+# its probe, a constant's accessor, a record's field assertions and
+# per-type functions, so `<ucontext.h>` bound through a header of the
+# program's own defining `_XOPEN_SOURCE 600` built at exit 0 and printed
+# clang's `-Wdeprecated-declarations` at the emitted `_Static_assert(
+# HERO_RET_I32(getcontext((void *)0)), ...)`, a line no author wrote, over a
+# correct program that never called it (panel 205's critic, `uc`).
+#
+# **So the warning is quiet on the compiler's lines and spoken on the
+# program's**: quiet from the groups' close (`emit/macro_guard.hero`), so the
+# assertions, the typedefs, the probes and the prototypes say nothing; spoken
+# over the definitions, where the program's own calls and signatures are, as
+# clang would say it of C written by hand; and quiet again over each group
+# constant's accessor inside them and over the per-type functions after
+# them. Nothing about a verdict moves: the warning was never an error, and a
+# unit that binds no group's header writes none of these lines.
+
+use ast
+use source
+use check/table
+use check/state
+use ir/containers
+use emit/externs as emit_externs
+use emit/writer
+
+constant QUIET: str
+    "#pragma clang diagnostic ignored \"-Wdeprecated-declarations\""
+
+constant SPOKEN: str
+    "#pragma clang diagnostic warning \"-Wdeprecated-declarations\""
+
+# One of the two lines, at the generated file.
+function say(@w: writer.Writer, line: str)
+    writer.at_generated(@w)
+    writer.line(@w, text: line)
+
+# Whether `f` is a constant a group's header holds, which the compiler's own
+# accessor names.
+function group_constant(s: source.Source, decls: [ast.Decl], f: containers.Function) -> bool
+    if !emit_externs.is_extern_constant(decls, f)
+        return false
+    header = emit_externs.extern_spans(decls, f).header
+
+    return !header.is_err() && !emit_externs.is_own(emit_externs.unquoted(s, span: header.must()))
+
+# Whether a function's prologue, the compiler's line inside the program's
+# own definition, declares a local of a group's record (or an inline array of
+# one), which names the header's type there a second time: the program's
+# signature and statements already say it at the program's lines.
+function names_a_group_type(c: state.Checked, s: source.Source, decls: [ast.Decl], f: containers.Function) -> bool
+    for slot in f.slots
+        ty: i64 @ slot.ty
+        looking: bool @ true
+
+        while looking
+            looking @ false
+
+            match table.get(c.types, ty)
+                .named n =>
+                    match decls[n.decl].kind
+                        .record_decl rec =>
+                            if !rec.header.is_err() && !emit_externs.is_own(emit_externs.unquoted(s, span: rec.header.must()))
+                                return true
+                        .function_decl | .constant_decl | .variant_decl | .test_decl => continue
+                .fixed fx =>
+                    ty @ fx.element
+                    looking @ true
+                .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit      => continue
+                .array | .map | .fallible | .function_ty | .case_ty | .failure => continue
+                .generic | .error                                              => continue
+
+    return false
+
+# Before a prologue: the quiet line where it names a group's record, and
+# whether it did; after it, the warning spoken again for the statements.
+function before_prologue(@w: writer.Writer, c: state.Checked, s: source.Source, decls: [ast.Decl], f: containers.Function) -> bool
+    typed = names_a_group_type(c, s, decls, f)
+
+    if typed
+        say(@w, line: QUIET)
+    return typed
+
+function after_prologue(@w: writer.Writer, typed: bool)
+    if typed
+        say(@w, line: SPOKEN)
+
+# Whether a unit's headers hold a group's, a header other than the
+# compiler's own: the units whose guard writes the quiet line.
+function binds_a_group(headers: [str]) -> bool
+    for header in headers
+        if !emit_externs.is_own(header)
+            return true
+
+    return false
+
+## Tests
+
+test "the two lines name the one warning, quiet and spoken"
+    assert QUIET == "#pragma clang diagnostic ignored \"-Wdeprecated-declarations\""
+    assert SPOKEN == "#pragma clang diagnostic warning \"-Wdeprecated-declarations\""
+    assert binds_a_group(["math.h", "hero_os.h", "a.h"])
+    assert !binds_a_group(["math.h", "hero_os.h"])

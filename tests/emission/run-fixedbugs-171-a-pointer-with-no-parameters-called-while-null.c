@@ -24,6 +24,7 @@
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
@@ -68,7 +69,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_43560e4d, "before");
 HERO_STR_STATIC(hero_str_347b94b5, "after");
 
-#line 72 "fixedbugs171apointerwithnoparameterscalledwhilenull.c"
+#line 73 "fixedbugs171apointerwithnoparameterscalledwhilenull.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -109,7 +110,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 113 "fixedbugs171apointerwithnoparameterscalledwhilenull.c"
+#line 114 "fixedbugs171apointerwithnoparameterscalledwhilenull.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -122,10 +123,11 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_fixedbugs171apointerwithnoparameterscalledwhilenull_main(void);
+#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 10 "tests/golden/run/fixedbugs-171-a-pointer-with-no-parameters-called-while-null.hero"
 void h_fixedbugs171apointerwithnoparameterscalledwhilenull_main(void) {
-#line 129 "fixedbugs171apointerwithnoparameterscalledwhilenull.c"
+#line 131 "fixedbugs171apointerwithnoparameterscalledwhilenull.c"
     HeroStr t1;
     HeroStr t2;
     goto bb0;
@@ -144,8 +146,9 @@ bb0:
     hero_print_end();
 #line 13 "tests/golden/run/fixedbugs-171-a-pointer-with-no-parameters-called-while-null.hero"
     return;
-#line 148 "fixedbugs171apointerwithnoparameterscalledwhilenull.c"
+#line 150 "fixedbugs171apointerwithnoparameterscalledwhilenull.c"
 }
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_incref(v->as.ok);

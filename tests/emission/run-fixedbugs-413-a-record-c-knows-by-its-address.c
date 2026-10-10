@@ -24,6 +24,7 @@
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
@@ -40,11 +41,11 @@ _Static_assert(sizeof(struct pair) - __builtin_offsetof(struct pair, k) != 0, "h
 #line 29 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
 _Static_assert(_Generic(&((struct pair *)0)->k, struct keeper (*)[2]: 1, default: 0) && sizeof(struct pair) - __builtin_offsetof(struct pair, k) >= sizeof(struct keeper[2]), "heroes-ffi-field Pair k");
 _Static_assert(__builtin_classify_type(((struct pair *)0)->after) == 1 && sizeof(((struct pair *)0)->after) == sizeof(int64_t) && (_Generic(((struct pair *)0)->after, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Pair after");
-#line 44 "fixedbugs413arecordcknowsbyitsaddress.c"
+#line 45 "fixedbugs413arecordcknowsbyitsaddress.c"
 
 #line 25 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
 _Static_assert(__builtin_classify_type(*(struct wrap *)0) != 13, "heroes-ffi-union Wrap before k");
-#line 48 "fixedbugs413arecordcknowsbyitsaddress.c"
+#line 49 "fixedbugs413arecordcknowsbyitsaddress.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -130,7 +131,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 134 "fixedbugs413arecordcknowsbyitsaddress.c"
+#line 135 "fixedbugs413arecordcknowsbyitsaddress.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs413arecordcknowsbyitsaddress_Keeper_eq(const struct keeper *a, const struct keeper *b);
@@ -188,11 +189,14 @@ int32_t h_fixedbugs413arecordcknowsbyitsaddress_deep(struct keeper *ph0_k, int64
 int64_t h_fixedbugs413arecordcknowsbyitsaddress_every_one(HeroArrayHeader * *ph0_ks);
 void h_fixedbugs413arecordcknowsbyitsaddress_main(void);
 HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to);
+#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 34 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
 int32_t h_fixedbugs413arecordcknowsbyitsaddress_start(struct keeper *ph0_k) {
-#line 195 "fixedbugs413arecordcknowsbyitsaddress.c"
+#line 197 "fixedbugs413arecordcknowsbyitsaddress.c"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
     int32_t t1;
+#pragma clang diagnostic warning "-Wdeprecated-declarations"
     goto bb0;
 bb0:
 #line 35 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
@@ -201,25 +205,28 @@ bb0:
     t1 = keep_init(&(*ph0_k));
 #line 35 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     return t1;
-#line 205 "fixedbugs413arecordcknowsbyitsaddress.c"
+#line 209 "fixedbugs413arecordcknowsbyitsaddress.c"
 }
 
 #line 37 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
 int32_t h_fixedbugs413arecordcknowsbyitsaddress_passed_on(struct keeper *ph0_k) {
-#line 210 "fixedbugs413arecordcknowsbyitsaddress.c"
+#line 214 "fixedbugs413arecordcknowsbyitsaddress.c"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
     int32_t t1;
+#pragma clang diagnostic warning "-Wdeprecated-declarations"
     goto bb0;
 bb0:
 #line 38 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     t1 = h_fixedbugs413arecordcknowsbyitsaddress_start(&(*ph0_k));
 #line 38 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     return t1;
-#line 218 "fixedbugs413arecordcknowsbyitsaddress.c"
+#line 224 "fixedbugs413arecordcknowsbyitsaddress.c"
 }
 
 #line 40 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
 int32_t h_fixedbugs413arecordcknowsbyitsaddress_deep(struct keeper *ph0_k, int64_t h1_n) {
-#line 223 "fixedbugs413arecordcknowsbyitsaddress.c"
+#line 229 "fixedbugs413arecordcknowsbyitsaddress.c"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
     int32_t h2_ret0;
     int64_t t1;
     int64_t t2;
@@ -230,6 +237,7 @@ int32_t h_fixedbugs413arecordcknowsbyitsaddress_deep(struct keeper *ph0_k, int64
     int64_t t7;
     int32_t t8;
     int32_t t9;
+#pragma clang diagnostic warning "-Wdeprecated-declarations"
     goto bb0;
 bb0:
 #line 41 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
@@ -270,14 +278,14 @@ bb3:
     goto bb1;
 #line 42 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
 bb4:
-#line 274 "fixedbugs413arecordcknowsbyitsaddress.c"
+#line 282 "fixedbugs413arecordcknowsbyitsaddress.c"
     t9 = h2_ret0;
     return t9;
 }
 
 #line 45 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
 int64_t h_fixedbugs413arecordcknowsbyitsaddress_every_one(HeroArrayHeader * *ph0_ks) {
-#line 281 "fixedbugs413arecordcknowsbyitsaddress.c"
+#line 289 "fixedbugs413arecordcknowsbyitsaddress.c"
     int64_t h1_refused;
     HeroArrayHeader * h2_xs0 = {0};
     int64_t h3_i0;
@@ -327,15 +335,15 @@ bb0:
     t25 = h5_own5;
 #line 48 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     h5_own5 = t5;
-#line 331 "fixedbugs413arecordcknowsbyitsaddress.c"
+#line 339 "fixedbugs413arecordcknowsbyitsaddress.c"
     hero_array_decref(t25);
 #line 48 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     t26 = h2_xs0;
-#line 335 "fixedbugs413arecordcknowsbyitsaddress.c"
+#line 343 "fixedbugs413arecordcknowsbyitsaddress.c"
     hero_array_incref(t5);
 #line 48 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     h2_xs0 = t5;
-#line 339 "fixedbugs413arecordcknowsbyitsaddress.c"
+#line 347 "fixedbugs413arecordcknowsbyitsaddress.c"
     hero_array_decref(t26);
 #line 48 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     t6 = INT64_C(0);
@@ -392,7 +400,7 @@ bb3:
 bb4:
 #line 52 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     t24 = h1_refused;
-#line 396 "fixedbugs413arecordcknowsbyitsaddress.c"
+#line 404 "fixedbugs413arecordcknowsbyitsaddress.c"
     hero_array_release_at(&h2_xs0);
     hero_array_release_at(&h5_own5);
     return t24;
@@ -413,12 +421,13 @@ bb6:
 bb7:
 #line 50 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     goto bb5;
-#line 417 "fixedbugs413arecordcknowsbyitsaddress.c"
+#line 425 "fixedbugs413arecordcknowsbyitsaddress.c"
 }
 
 #line 54 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
 void h_fixedbugs413arecordcknowsbyitsaddress_main(void) {
-#line 422 "fixedbugs413arecordcknowsbyitsaddress.c"
+#line 430 "fixedbugs413arecordcknowsbyitsaddress.c"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
     struct keeper *const hero_lend_h0_k = (struct keeper *)hero_lend_local(sizeof(struct keeper), "fixedbugs413arecordcknowsbyitsaddress.main", "k");
 #define h0_k (*hero_lend_h0_k)
     HeroArrayHeader * h1_ks = {0};
@@ -526,6 +535,7 @@ void h_fixedbugs413arecordcknowsbyitsaddress_main(void) {
     HeroArrayHeader * t89;
     HeroArrayHeader * t90;
     HeroArrayHeader * t91;
+#pragma clang diagnostic warning "-Wdeprecated-declarations"
     goto bb0;
 bb0:
 #line 55 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
@@ -574,15 +584,15 @@ bb0:
     t88 = h9_own9;
 #line 57 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     h9_own9 = t8;
-#line 578 "fixedbugs413arecordcknowsbyitsaddress.c"
+#line 588 "fixedbugs413arecordcknowsbyitsaddress.c"
     hero_array_decref(t88);
 #line 57 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     t89 = h1_ks;
-#line 582 "fixedbugs413arecordcknowsbyitsaddress.c"
+#line 592 "fixedbugs413arecordcknowsbyitsaddress.c"
     hero_array_incref(t8);
 #line 57 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     h1_ks = t8;
-#line 586 "fixedbugs413arecordcknowsbyitsaddress.c"
+#line 596 "fixedbugs413arecordcknowsbyitsaddress.c"
     hero_array_decref(t89);
 #line 58 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     t9 = INT64_C(1);
@@ -631,15 +641,15 @@ bb0:
     t90 = h10_own10;
 #line 59 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     h10_own10 = t20;
-#line 635 "fixedbugs413arecordcknowsbyitsaddress.c"
+#line 645 "fixedbugs413arecordcknowsbyitsaddress.c"
     hero_array_decref(t90);
 #line 59 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     t91 = h2_ws;
-#line 639 "fixedbugs413arecordcknowsbyitsaddress.c"
+#line 649 "fixedbugs413arecordcknowsbyitsaddress.c"
     hero_array_incref(t20);
 #line 59 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     h2_ws = t20;
-#line 643 "fixedbugs413arecordcknowsbyitsaddress.c"
+#line 653 "fixedbugs413arecordcknowsbyitsaddress.c"
     hero_array_decref(t91);
 #line 60 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     t21 = INT64_C(1);
@@ -902,7 +912,7 @@ bb0:
     hero_print_int(t87);
 #line 75 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     hero_print_end();
-#line 906 "fixedbugs413arecordcknowsbyitsaddress.c"
+#line 916 "fixedbugs413arecordcknowsbyitsaddress.c"
     hero_array_release_at(&h1_ks);
     hero_array_release_at(&h2_ws);
     hero_array_release_at(&h9_own9);
@@ -922,7 +932,7 @@ bb0:
 
 #line 26 "<heroes library>"
 HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to) {
-#line 926 "fixedbugs413arecordcknowsbyitsaddress.c"
+#line 936 "fixedbugs413arecordcknowsbyitsaddress.c"
     HeroArrayHeader * h2_out = {0};
     int64_t h3_i;
     HeroArrayHeader * h4_own4 = {0};
@@ -946,15 +956,15 @@ bb0:
     t13 = h4_own4;
 #line 27 "<heroes library>"
     h4_own4 = t1;
-#line 950 "fixedbugs413arecordcknowsbyitsaddress.c"
+#line 960 "fixedbugs413arecordcknowsbyitsaddress.c"
     hero_array_decref(t13);
 #line 27 "<heroes library>"
     t14 = h2_out;
-#line 954 "fixedbugs413arecordcknowsbyitsaddress.c"
+#line 964 "fixedbugs413arecordcknowsbyitsaddress.c"
     hero_array_incref(t1);
 #line 27 "<heroes library>"
     h2_out = t1;
-#line 958 "fixedbugs413arecordcknowsbyitsaddress.c"
+#line 968 "fixedbugs413arecordcknowsbyitsaddress.c"
     hero_array_decref(t14);
 #line 28 "<heroes library>"
     t2 = h0_from;
@@ -988,12 +998,13 @@ bb2:
 #line 31 "<heroes library>"
 bb3:
     t12 = h2_out;
-#line 992 "fixedbugs413arecordcknowsbyitsaddress.c"
+#line 1002 "fixedbugs413arecordcknowsbyitsaddress.c"
     hero_array_incref(t12);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h4_own4);
     return t12;
 }
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_fixedbugs413arecordcknowsbyitsaddress_Keeper_eq(const struct keeper *a, const struct keeper *b) {
     if (!(a->self == b->self)) return false;
     if (!(a->uses == b->uses)) return false;

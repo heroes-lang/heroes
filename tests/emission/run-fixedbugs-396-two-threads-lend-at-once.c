@@ -24,6 +24,7 @@
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
@@ -69,7 +70,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_20, " ");
 
-#line 73 "fixedbugs396twothreadslendatonce.c"
+#line 74 "fixedbugs396twothreadslendatonce.c"
 typedef int64_t (*h_0fn_48ac9712)(int64_t);
 typedef struct h_0opt_1ec004 {
     int64_t tag;
@@ -132,7 +133,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 136 "fixedbugs396twothreadslendatonce.c"
+#line 137 "fixedbugs396twothreadslendatonce.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_1ec004_retain(const h_0opt_1ec004 *v);
@@ -162,10 +163,11 @@ __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
     return f;
 }
 
+#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 14 "tests/golden/run/fixedbugs-396-two-threads-lend-at-once.hero"
 uint8_t h_fixedbugs396twothreadslendatonce_expected(int64_t h0_seed, int64_t h1_at) {
-#line 169 "fixedbugs396twothreadslendatonce.c"
+#line 171 "fixedbugs396twothreadslendatonce.c"
     h_0opt_1ec004 h2_f0 = {0};
     h_0opt_1ec004 h3_own3 = {0};
     int64_t t1;
@@ -232,15 +234,15 @@ bb0:
     t21 = h3_own3;
 #line 15 "tests/golden/run/fixedbugs-396-two-threads-lend-at-once.hero"
     h3_own3 = t12;
-#line 236 "fixedbugs396twothreadslendatonce.c"
+#line 238 "fixedbugs396twothreadslendatonce.c"
     h_0opt_1ec004_release(&t21);
 #line 15 "tests/golden/run/fixedbugs-396-two-threads-lend-at-once.hero"
     t22 = h2_f0;
-#line 240 "fixedbugs396twothreadslendatonce.c"
+#line 242 "fixedbugs396twothreadslendatonce.c"
     h_0opt_1ec004_retain(&t12);
 #line 15 "tests/golden/run/fixedbugs-396-two-threads-lend-at-once.hero"
     h2_f0 = t12;
-#line 244 "fixedbugs396twothreadslendatonce.c"
+#line 246 "fixedbugs396twothreadslendatonce.c"
     h_0opt_1ec004_release(&t22);
 #line 15 "tests/golden/run/fixedbugs-396-two-threads-lend-at-once.hero"
     t13 = h2_f0;
@@ -258,7 +260,7 @@ bb1:
     t19 = h2_f0;
 #line 15 "tests/golden/run/fixedbugs-396-two-threads-lend-at-once.hero"
     t20 = t19.as.ok;
-#line 262 "fixedbugs396twothreadslendatonce.c"
+#line 264 "fixedbugs396twothreadslendatonce.c"
     h_0opt_1ec004_release(hero_slot_escape(&h2_f0));
     h_0opt_1ec004_release(hero_slot_escape(&h3_own3));
     return t20;
@@ -267,14 +269,14 @@ bb2:
     t17 = h2_f0;
 #line 15 "tests/golden/run/fixedbugs-396-two-threads-lend-at-once.hero"
     t18 = t17.as.err;
-#line 271 "fixedbugs396twothreadslendatonce.c"
+#line 273 "fixedbugs396twothreadslendatonce.c"
     hero_panic_must(t18);
     hero_unreachable();
 }
 
 #line 17 "tests/golden/run/fixedbugs-396-two-threads-lend-at-once.hero"
 int64_t h_fixedbugs396twothreadslendatonce_worker(int64_t h0_seed) {
-#line 278 "fixedbugs396twothreadslendatonce.c"
+#line 280 "fixedbugs396twothreadslendatonce.c"
     hero_thread_guard("fixedbugs396twothreadslendatonce.worker");
     int64_t h1_wrong;
     int64_t h2_round;
@@ -352,15 +354,15 @@ bb2:
     t38 = h6_own6;
 #line 22 "tests/golden/run/fixedbugs-396-two-threads-lend-at-once.hero"
     h6_own6 = t6;
-#line 356 "fixedbugs396twothreadslendatonce.c"
+#line 358 "fixedbugs396twothreadslendatonce.c"
     hero_array_decref(t38);
 #line 22 "tests/golden/run/fixedbugs-396-two-threads-lend-at-once.hero"
     t39 = h3_md;
-#line 360 "fixedbugs396twothreadslendatonce.c"
+#line 362 "fixedbugs396twothreadslendatonce.c"
     hero_array_incref(t6);
 #line 22 "tests/golden/run/fixedbugs-396-two-threads-lend-at-once.hero"
     h3_md = t6;
-#line 364 "fixedbugs396twothreadslendatonce.c"
+#line 366 "fixedbugs396twothreadslendatonce.c"
     hero_array_decref(t39);
 #line 23 "tests/golden/run/fixedbugs-396-two-threads-lend-at-once.hero"
     t7 = h0_seed;
@@ -378,15 +380,15 @@ bb2:
     t40 = h7_own7;
 #line 23 "tests/golden/run/fixedbugs-396-two-threads-lend-at-once.hero"
     h7_own7 = t8;
-#line 382 "fixedbugs396twothreadslendatonce.c"
+#line 384 "fixedbugs396twothreadslendatonce.c"
     h_0opt_fbbb698_release(&t40);
 #line 23 "tests/golden/run/fixedbugs-396-two-threads-lend-at-once.hero"
     t41 = h4_f0;
-#line 386 "fixedbugs396twothreadslendatonce.c"
+#line 388 "fixedbugs396twothreadslendatonce.c"
     h_0opt_fbbb698_retain(&t8);
 #line 23 "tests/golden/run/fixedbugs-396-two-threads-lend-at-once.hero"
     h4_f0 = t8;
-#line 390 "fixedbugs396twothreadslendatonce.c"
+#line 392 "fixedbugs396twothreadslendatonce.c"
     h_0opt_fbbb698_release(&t41);
 #line 23 "tests/golden/run/fixedbugs-396-two-threads-lend-at-once.hero"
     t9 = h4_f0;
@@ -402,7 +404,7 @@ bb2:
 bb3:
 #line 33 "tests/golden/run/fixedbugs-396-two-threads-lend-at-once.hero"
     t37 = h1_wrong;
-#line 406 "fixedbugs396twothreadslendatonce.c"
+#line 408 "fixedbugs396twothreadslendatonce.c"
     hero_array_release_at(&h3_md);
     h_0opt_fbbb698_release(hero_slot_escape(&h4_f0));
     hero_array_release_at(&h6_own6);
@@ -438,7 +440,7 @@ bb5:
     t13 = h4_f0;
 #line 23 "tests/golden/run/fixedbugs-396-two-threads-lend-at-once.hero"
     t14 = t13.as.err;
-#line 442 "fixedbugs396twothreadslendatonce.c"
+#line 444 "fixedbugs396twothreadslendatonce.c"
     hero_panic_must(t14);
     hero_unreachable();
 bb6:
@@ -507,7 +509,7 @@ bb10:
 bb11:
 #line 28 "tests/golden/run/fixedbugs-396-two-threads-lend-at-once.hero"
     goto bb9;
-#line 511 "fixedbugs396twothreadslendatonce.c"
+#line 513 "fixedbugs396twothreadslendatonce.c"
 }
 
 int64_t h_0cb_fixedbugs396twothreadslendatonce_worker(int64_t h0_seed) {
@@ -517,7 +519,7 @@ int64_t h_0cb_fixedbugs396twothreadslendatonce_worker(int64_t h0_seed) {
 
 #line 35 "tests/golden/run/fixedbugs-396-two-threads-lend-at-once.hero"
 void h_fixedbugs396twothreadslendatonce_main(void) {
-#line 521 "fixedbugs396twothreadslendatonce.c"
+#line 523 "fixedbugs396twothreadslendatonce.c"
     int64_t h0_a;
     int64_t h1_b;
     int64_t h2_here;
@@ -585,8 +587,9 @@ bb0:
     hero_print_end();
 #line 39 "tests/golden/run/fixedbugs-396-two-threads-lend-at-once.hero"
     return;
-#line 589 "fixedbugs396twothreadslendatonce.c"
+#line 591 "fixedbugs396twothreadslendatonce.c"
 }
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL void h_0opt_1ec004_retain(const h_0opt_1ec004 *v) {
     if (v->tag == INT64_C(0)) {
         return;

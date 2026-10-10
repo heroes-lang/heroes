@@ -24,6 +24,7 @@
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
@@ -68,7 +69,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_4414937d, "not reached");
 
-#line 72 "fixedbugscgivesapointerbacktwiceandtheruntimesaysso.c"
+#line 73 "fixedbugscgivesapointerbacktwiceandtheruntimesaysso.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -111,7 +112,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 115 "fixedbugscgivesapointerbacktwiceandtheruntimesaysso.c"
+#line 116 "fixedbugscgivesapointerbacktwiceandtheruntimesaysso.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -124,10 +125,11 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_fixedbugscgivesapointerbacktwiceandtheruntimesaysso_main(void);
+#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 25 "tests/golden/run/fixedbugs-c-gives-a-pointer-back-twice-and-the-runtime-says-so.hero"
 void h_fixedbugscgivesapointerbacktwiceandtheruntimesaysso_main(void) {
-#line 131 "fixedbugscgivesapointerbacktwiceandtheruntimesaysso.c"
+#line 133 "fixedbugscgivesapointerbacktwiceandtheruntimesaysso.c"
     void * h0_p;
     void * t1;
     void * t2;
@@ -152,8 +154,9 @@ bb0:
     hero_print_end();
 #line 29 "tests/golden/run/fixedbugs-c-gives-a-pointer-back-twice-and-the-runtime-says-so.hero"
     return;
-#line 156 "fixedbugscgivesapointerbacktwiceandtheruntimesaysso.c"
+#line 158 "fixedbugscgivesapointerbacktwiceandtheruntimesaysso.c"
 }
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_incref(v->as.ok);

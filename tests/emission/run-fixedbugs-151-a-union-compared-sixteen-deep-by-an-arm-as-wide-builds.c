@@ -25,6 +25,7 @@
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
@@ -32,11 +33,11 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 
 #line 10 "tests/golden/run/fixedbugs-151-a-union-compared-sixteen-deep-by-an-arm-as-wide-builds.hero"
 _Static_assert(__builtin_classify_type(((U *)0)->i) == 1 && sizeof(((U *)0)->i) == sizeof(int32_t) && (_Generic(((U *)0)->i, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field U i");
-#line 36 "fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds.c"
+#line 37 "fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds.c"
 
 #line 9 "tests/golden/run/fixedbugs-151-a-union-compared-sixteen-deep-by-an-arm-as-wide-builds.hero"
 _Static_assert(__builtin_classify_type(*(U *)0) != 13 || sizeof(((U *)0)->i) == sizeof(U), "heroes-ffi-union-narrow U i");
-#line 40 "fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds.c"
+#line 41 "fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -185,7 +186,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 189 "fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds.c"
+#line 190 "fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_U_eq(const U *a, const U *b);
@@ -233,10 +234,11 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R15 h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_deep(int32_t h0_i);
 void h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_main(void);
+#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 61 "tests/golden/run/fixedbugs-151-a-union-compared-sixteen-deep-by-an-arm-as-wide-builds.hero"
 h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R15 h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_deep(int32_t h0_i) {
-#line 240 "fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds.c"
+#line 242 "fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds.c"
     h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R0 h1_r0;
     h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R1 h2_r1;
     h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R2 h3_r2;
@@ -370,12 +372,12 @@ bb0:
     t33 = (h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R15){.f_inner = t32};
 #line 77 "tests/golden/run/fixedbugs-151-a-union-compared-sixteen-deep-by-an-arm-as-wide-builds.hero"
     return t33;
-#line 374 "fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds.c"
+#line 376 "fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds.c"
 }
 
 #line 79 "tests/golden/run/fixedbugs-151-a-union-compared-sixteen-deep-by-an-arm-as-wide-builds.hero"
 void h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_main(void) {
-#line 379 "fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds.c"
+#line 381 "fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds.c"
     int32_t t1;
     h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_R15 t2;
     int32_t t3;
@@ -421,8 +423,9 @@ bb0:
     hero_print_end();
 #line 80 "tests/golden/run/fixedbugs-151-a-union-compared-sixteen-deep-by-an-arm-as-wide-builds.hero"
     return;
-#line 425 "fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds.c"
+#line 427 "fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds.c"
 }
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_fixedbugs151aunioncomparedsixteendeepbyanarmaswidebuilds_U_eq(const U *a, const U *b) {
     if (!(a->i == b->i)) return false;
     return true;

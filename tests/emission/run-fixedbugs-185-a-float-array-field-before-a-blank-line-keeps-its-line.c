@@ -24,6 +24,7 @@
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
@@ -33,7 +34,7 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 _Static_assert(sizeof(Pair) - __builtin_offsetof(Pair, weights) != 0, "heroes-ffi-flex Pair weights");
 #line 10 "tests/golden/run/fixedbugs-185-a-float-array-field-before-a-blank-line-keeps-its-line.hero"
 _Static_assert(_Generic(&((Pair *)0)->weights, float (*)[2]: 1, default: 0) && sizeof(Pair) - __builtin_offsetof(Pair, weights) >= sizeof(float[2]), "heroes-ffi-field Pair weights");
-#line 37 "fixedbugs185afloatarrayfieldbeforeablanklinekeepsitsline.c"
+#line 38 "fixedbugs185afloatarrayfieldbeforeablanklinekeepsitsline.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -113,7 +114,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 117 "fixedbugs185afloatarrayfieldbeforeablanklinekeepsitsline.c"
+#line 118 "fixedbugs185afloatarrayfieldbeforeablanklinekeepsitsline.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs185afloatarrayfieldbeforeablanklinekeepsitsline_Pair_eq(const Pair *a, const Pair *b);
@@ -128,10 +129,12 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_fixedbugs185afloatarrayfieldbeforeablanklinekeepsitsline_main(void);
+#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 12 "tests/golden/run/fixedbugs-185-a-float-array-field-before-a-blank-line-keeps-its-line.hero"
 void h_fixedbugs185afloatarrayfieldbeforeablanklinekeepsitsline_main(void) {
-#line 135 "fixedbugs185afloatarrayfieldbeforeablanklinekeepsitsline.c"
+#line 137 "fixedbugs185afloatarrayfieldbeforeablanklinekeepsitsline.c"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
     Pair h0_p;
     float t1;
     float t2;
@@ -145,6 +148,7 @@ void h_fixedbugs185afloatarrayfieldbeforeablanklinekeepsitsline_main(void) {
     float t13;
     Pair t14;
     float t15;
+#pragma clang diagnostic warning "-Wdeprecated-declarations"
     goto bb0;
 bb0:
 #line 13 "tests/golden/run/fixedbugs-185-a-float-array-field-before-a-blank-line-keeps-its-line.hero"
@@ -181,8 +185,9 @@ bb0:
     hero_print_end();
 #line 15 "tests/golden/run/fixedbugs-185-a-float-array-field-before-a-blank-line-keeps-its-line.hero"
     return;
-#line 185 "fixedbugs185afloatarrayfieldbeforeablanklinekeepsitsline.c"
+#line 189 "fixedbugs185afloatarrayfieldbeforeablanklinekeepsitsline.c"
 }
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_fixedbugs185afloatarrayfieldbeforeablanklinekeepsitsline_Pair_eq(const Pair *a, const Pair *b) {
     if (!((a->weights[0] == b->weights[0] && a->weights[1] == b->weights[1]))) return false;
     return true;

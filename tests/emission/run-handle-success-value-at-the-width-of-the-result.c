@@ -24,6 +24,7 @@
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
@@ -72,7 +73,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_3294dee, "released: ");
 HERO_STR_STATIC(hero_str_20, " ");
 
-#line 76 "handlesuccessvalueatthewidthoftheresult.c"
+#line 77 "handlesuccessvalueatthewidthoftheresult.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -117,7 +118,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 121 "handlesuccessvalueatthewidthoftheresult.c"
+#line 122 "handlesuccessvalueatthewidthoftheresult.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_handlesuccessvalueatthewidthoftheresult_Ob_eq(ob * const *a, ob * const *b);
@@ -132,10 +133,12 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_handlesuccessvalueatthewidthoftheresult_main(void);
+#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 13 "tests/golden/run/handle-success-value-at-the-width-of-the-result.hero"
 void h_handlesuccessvalueatthewidthoftheresult_main(void) {
-#line 139 "handlesuccessvalueatthewidthoftheresult.c"
+#line 141 "handlesuccessvalueatthewidthoftheresult.c"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
     ob * h0_a;
     ob * h1_b;
     uint64_t h2_total;
@@ -152,6 +155,7 @@ void h_handlesuccessvalueatthewidthoftheresult_main(void) {
     bool t10;
     HeroStr t11;
     bool t12;
+#pragma clang diagnostic warning "-Wdeprecated-declarations"
     goto bb0;
 bb0:
 #line 14 "tests/golden/run/handle-success-value-at-the-width-of-the-result.hero"
@@ -234,8 +238,9 @@ bb0:
     hero_print_end();
 #line 18 "tests/golden/run/handle-success-value-at-the-width-of-the-result.hero"
     return;
-#line 238 "handlesuccessvalueatthewidthoftheresult.c"
+#line 242 "handlesuccessvalueatthewidthoftheresult.c"
 }
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_handlesuccessvalueatthewidthoftheresult_Ob_eq(ob * const *a, ob * const *b) {
     return hero_handle_eq(*a, *b);
 }

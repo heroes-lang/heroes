@@ -24,6 +24,7 @@
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
@@ -70,7 +71,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_78, "x");
 
-#line 74 "fixedbugs419ahandleoveraunioncomparesasanaddress.c"
+#line 75 "fixedbugs419ahandleoveraunioncomparesasanaddress.c"
 typedef struct h_fixedbugs419ahandleoveraunioncomparesasanaddress_Held {
     Cell * f_h;
     HeroStr f_name;
@@ -120,7 +121,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 124 "fixedbugs419ahandleoveraunioncomparesasanaddress.c"
+#line 125 "fixedbugs419ahandleoveraunioncomparesasanaddress.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs419ahandleoveraunioncomparesasanaddress_Cell_eq(Cell * const *a, Cell * const *b);
@@ -156,10 +157,12 @@ HERO_TU_QUIET static const HeroDesc h_fixedbugs419ahandleoveraunioncomparesasana
 };
 
 void h_fixedbugs419ahandleoveraunioncomparesasanaddress_main(void);
+#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 33 "tests/golden/run/fixedbugs-419-a-handle-over-a-union-compares-as-an-address.hero"
 void h_fixedbugs419ahandleoveraunioncomparesasanaddress_main(void) {
-#line 163 "fixedbugs419ahandleoveraunioncomparesasanaddress.c"
+#line 165 "fixedbugs419ahandleoveraunioncomparesasanaddress.c"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
     Cell * h0_a;
     Cell * h1_b;
     Cell * h2_n;
@@ -227,6 +230,7 @@ void h_fixedbugs419ahandleoveraunioncomparesasanaddress_main(void) {
     HeroArrayHeader * t54;
     HeroArrayHeader * t55;
     HeroArrayHeader * t56;
+#pragma clang diagnostic warning "-Wdeprecated-declarations"
     goto bb0;
 bb0:
 #line 34 "tests/golden/run/fixedbugs-419-a-handle-over-a-union-compares-as-an-address.hero"
@@ -311,7 +315,7 @@ bb0:
     t25 = h0_a;
 #line 47 "tests/golden/run/fixedbugs-419-a-handle-over-a-union-compares-as-an-address.hero"
     t26 = HERO_STR_LIT(hero_str_78);
-#line 315 "fixedbugs419ahandleoveraunioncomparesasanaddress.c"
+#line 319 "fixedbugs419ahandleoveraunioncomparesasanaddress.c"
     hero_str_incref(t26);
 #line 47 "tests/golden/run/fixedbugs-419-a-handle-over-a-union-compares-as-an-address.hero"
     t27 = (h_fixedbugs419ahandleoveraunioncomparesasanaddress_Held){.f_h = t25, .f_name = t26};
@@ -319,13 +323,13 @@ bb0:
     t49 = h3_own3;
 #line 47 "tests/golden/run/fixedbugs-419-a-handle-over-a-union-compares-as-an-address.hero"
     h3_own3 = t27;
-#line 323 "fixedbugs419ahandleoveraunioncomparesasanaddress.c"
+#line 327 "fixedbugs419ahandleoveraunioncomparesasanaddress.c"
     h_fixedbugs419ahandleoveraunioncomparesasanaddress_Held_release(&t49);
 #line 47 "tests/golden/run/fixedbugs-419-a-handle-over-a-union-compares-as-an-address.hero"
     t28 = h1_b;
 #line 47 "tests/golden/run/fixedbugs-419-a-handle-over-a-union-compares-as-an-address.hero"
     t29 = HERO_STR_LIT(hero_str_78);
-#line 329 "fixedbugs419ahandleoveraunioncomparesasanaddress.c"
+#line 333 "fixedbugs419ahandleoveraunioncomparesasanaddress.c"
     hero_str_incref(t29);
 #line 47 "tests/golden/run/fixedbugs-419-a-handle-over-a-union-compares-as-an-address.hero"
     t30 = (h_fixedbugs419ahandleoveraunioncomparesasanaddress_Held){.f_h = t28, .f_name = t29};
@@ -333,7 +337,7 @@ bb0:
     t50 = h4_own4;
 #line 47 "tests/golden/run/fixedbugs-419-a-handle-over-a-union-compares-as-an-address.hero"
     h4_own4 = t30;
-#line 337 "fixedbugs419ahandleoveraunioncomparesasanaddress.c"
+#line 341 "fixedbugs419ahandleoveraunioncomparesasanaddress.c"
     h_fixedbugs419ahandleoveraunioncomparesasanaddress_Held_release(&t50);
 #line 47 "tests/golden/run/fixedbugs-419-a-handle-over-a-union-compares-as-an-address.hero"
     t31 = h_fixedbugs419ahandleoveraunioncomparesasanaddress_Held_eq(&t27, &t30);
@@ -344,7 +348,7 @@ bb0:
     t32 = h0_a;
 #line 48 "tests/golden/run/fixedbugs-419-a-handle-over-a-union-compares-as-an-address.hero"
     t33 = HERO_STR_LIT(hero_str_78);
-#line 348 "fixedbugs419ahandleoveraunioncomparesasanaddress.c"
+#line 352 "fixedbugs419ahandleoveraunioncomparesasanaddress.c"
     hero_str_incref(t33);
 #line 48 "tests/golden/run/fixedbugs-419-a-handle-over-a-union-compares-as-an-address.hero"
     t34 = (h_fixedbugs419ahandleoveraunioncomparesasanaddress_Held){.f_h = t32, .f_name = t33};
@@ -352,13 +356,13 @@ bb0:
     t51 = h5_own5;
 #line 48 "tests/golden/run/fixedbugs-419-a-handle-over-a-union-compares-as-an-address.hero"
     h5_own5 = t34;
-#line 356 "fixedbugs419ahandleoveraunioncomparesasanaddress.c"
+#line 360 "fixedbugs419ahandleoveraunioncomparesasanaddress.c"
     h_fixedbugs419ahandleoveraunioncomparesasanaddress_Held_release(&t51);
 #line 48 "tests/golden/run/fixedbugs-419-a-handle-over-a-union-compares-as-an-address.hero"
     t35 = h0_a;
 #line 48 "tests/golden/run/fixedbugs-419-a-handle-over-a-union-compares-as-an-address.hero"
     t36 = HERO_STR_LIT(hero_str_78);
-#line 362 "fixedbugs419ahandleoveraunioncomparesasanaddress.c"
+#line 366 "fixedbugs419ahandleoveraunioncomparesasanaddress.c"
     hero_str_incref(t36);
 #line 48 "tests/golden/run/fixedbugs-419-a-handle-over-a-union-compares-as-an-address.hero"
     t37 = (h_fixedbugs419ahandleoveraunioncomparesasanaddress_Held){.f_h = t35, .f_name = t36};
@@ -366,7 +370,7 @@ bb0:
     t52 = h6_own6;
 #line 48 "tests/golden/run/fixedbugs-419-a-handle-over-a-union-compares-as-an-address.hero"
     h6_own6 = t37;
-#line 370 "fixedbugs419ahandleoveraunioncomparesasanaddress.c"
+#line 374 "fixedbugs419ahandleoveraunioncomparesasanaddress.c"
     h_fixedbugs419ahandleoveraunioncomparesasanaddress_Held_release(&t52);
 #line 48 "tests/golden/run/fixedbugs-419-a-handle-over-a-union-compares-as-an-address.hero"
     t38 = h_fixedbugs419ahandleoveraunioncomparesasanaddress_Held_eq(&t34, &t37);
@@ -383,7 +387,7 @@ bb0:
     t53 = h7_own7;
 #line 49 "tests/golden/run/fixedbugs-419-a-handle-over-a-union-compares-as-an-address.hero"
     h7_own7 = t40;
-#line 387 "fixedbugs419ahandleoveraunioncomparesasanaddress.c"
+#line 391 "fixedbugs419ahandleoveraunioncomparesasanaddress.c"
     hero_array_decref(t53);
 #line 49 "tests/golden/run/fixedbugs-419-a-handle-over-a-union-compares-as-an-address.hero"
     t41 = h1_b;
@@ -395,7 +399,7 @@ bb0:
     t54 = h8_own8;
 #line 49 "tests/golden/run/fixedbugs-419-a-handle-over-a-union-compares-as-an-address.hero"
     h8_own8 = t42;
-#line 399 "fixedbugs419ahandleoveraunioncomparesasanaddress.c"
+#line 403 "fixedbugs419ahandleoveraunioncomparesasanaddress.c"
     hero_array_decref(t54);
 #line 49 "tests/golden/run/fixedbugs-419-a-handle-over-a-union-compares-as-an-address.hero"
     t43 = hero_array_eq(t40, t42);
@@ -412,7 +416,7 @@ bb0:
     t55 = h9_own9;
 #line 50 "tests/golden/run/fixedbugs-419-a-handle-over-a-union-compares-as-an-address.hero"
     h9_own9 = t45;
-#line 416 "fixedbugs419ahandleoveraunioncomparesasanaddress.c"
+#line 420 "fixedbugs419ahandleoveraunioncomparesasanaddress.c"
     hero_array_decref(t55);
 #line 50 "tests/golden/run/fixedbugs-419-a-handle-over-a-union-compares-as-an-address.hero"
     t46 = h0_a;
@@ -424,7 +428,7 @@ bb0:
     t56 = h10_own10;
 #line 50 "tests/golden/run/fixedbugs-419-a-handle-over-a-union-compares-as-an-address.hero"
     h10_own10 = t47;
-#line 428 "fixedbugs419ahandleoveraunioncomparesasanaddress.c"
+#line 432 "fixedbugs419ahandleoveraunioncomparesasanaddress.c"
     hero_array_decref(t56);
 #line 50 "tests/golden/run/fixedbugs-419-a-handle-over-a-union-compares-as-an-address.hero"
     t48 = hero_array_eq(t45, t47);
@@ -432,7 +436,7 @@ bb0:
     hero_print_bool(t48);
 #line 50 "tests/golden/run/fixedbugs-419-a-handle-over-a-union-compares-as-an-address.hero"
     hero_print_end();
-#line 436 "fixedbugs419ahandleoveraunioncomparesasanaddress.c"
+#line 440 "fixedbugs419ahandleoveraunioncomparesasanaddress.c"
     h_fixedbugs419ahandleoveraunioncomparesasanaddress_Held_release(hero_slot_escape(&h3_own3));
     h_fixedbugs419ahandleoveraunioncomparesasanaddress_Held_release(hero_slot_escape(&h4_own4));
     h_fixedbugs419ahandleoveraunioncomparesasanaddress_Held_release(hero_slot_escape(&h5_own5));
@@ -443,6 +447,7 @@ bb0:
     hero_array_release_at(&h10_own10);
     return;
 }
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_fixedbugs419ahandleoveraunioncomparesasanaddress_Cell_eq(Cell * const *a, Cell * const *b) {
     return hero_handle_eq(*a, *b);
 }

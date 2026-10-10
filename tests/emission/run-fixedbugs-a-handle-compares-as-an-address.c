@@ -24,6 +24,7 @@
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
@@ -70,7 +71,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_78, "x");
 
-#line 74 "fixedbugsahandlecomparesasanaddress.c"
+#line 75 "fixedbugsahandlecomparesasanaddress.c"
 typedef struct h_fixedbugsahandlecomparesasanaddress_Held {
     Chunk * f_h;
     HeroStr f_name;
@@ -128,7 +129,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 132 "fixedbugsahandlecomparesasanaddress.c"
+#line 133 "fixedbugsahandlecomparesasanaddress.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugsahandlecomparesasanaddress_Chunk_eq(Chunk * const *a, Chunk * const *b);
@@ -168,10 +169,12 @@ HERO_TU_QUIET static const HeroDesc h_fixedbugsahandlecomparesasanaddress_Chunk_
 };
 
 void h_fixedbugsahandlecomparesasanaddress_main(void);
+#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 61 "tests/golden/run/fixedbugs-a-handle-compares-as-an-address.hero"
 void h_fixedbugsahandlecomparesasanaddress_main(void) {
-#line 175 "fixedbugsahandlecomparesasanaddress.c"
+#line 177 "fixedbugsahandlecomparesasanaddress.c"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
     Chunk * h0_a;
     Chunk * h1_b;
     Chunk * h2_n;
@@ -254,6 +257,7 @@ void h_fixedbugsahandlecomparesasanaddress_main(void) {
     h_0opt_2e1eec0d t65;
     h_0opt_2e1eec0d t66;
     h_0opt_2e1eec0d t67;
+#pragma clang diagnostic warning "-Wdeprecated-declarations"
     goto bb0;
 bb0:
 #line 62 "tests/golden/run/fixedbugs-a-handle-compares-as-an-address.hero"
@@ -339,7 +343,7 @@ bb0:
     t25 = h0_a;
 #line 80 "tests/golden/run/fixedbugs-a-handle-compares-as-an-address.hero"
     t26 = HERO_STR_LIT(hero_str_78);
-#line 343 "fixedbugsahandlecomparesasanaddress.c"
+#line 347 "fixedbugsahandlecomparesasanaddress.c"
     hero_str_incref(t26);
 #line 80 "tests/golden/run/fixedbugs-a-handle-compares-as-an-address.hero"
     t27 = (h_fixedbugsahandlecomparesasanaddress_Held){.f_h = t25, .f_name = t26};
@@ -347,13 +351,13 @@ bb0:
     t56 = h5_own5;
 #line 80 "tests/golden/run/fixedbugs-a-handle-compares-as-an-address.hero"
     h5_own5 = t27;
-#line 351 "fixedbugsahandlecomparesasanaddress.c"
+#line 355 "fixedbugsahandlecomparesasanaddress.c"
     h_fixedbugsahandlecomparesasanaddress_Held_release(&t56);
 #line 80 "tests/golden/run/fixedbugs-a-handle-compares-as-an-address.hero"
     t28 = h1_b;
 #line 80 "tests/golden/run/fixedbugs-a-handle-compares-as-an-address.hero"
     t29 = HERO_STR_LIT(hero_str_78);
-#line 357 "fixedbugsahandlecomparesasanaddress.c"
+#line 361 "fixedbugsahandlecomparesasanaddress.c"
     hero_str_incref(t29);
 #line 80 "tests/golden/run/fixedbugs-a-handle-compares-as-an-address.hero"
     t30 = (h_fixedbugsahandlecomparesasanaddress_Held){.f_h = t28, .f_name = t29};
@@ -361,7 +365,7 @@ bb0:
     t57 = h6_own6;
 #line 80 "tests/golden/run/fixedbugs-a-handle-compares-as-an-address.hero"
     h6_own6 = t30;
-#line 365 "fixedbugsahandlecomparesasanaddress.c"
+#line 369 "fixedbugsahandlecomparesasanaddress.c"
     h_fixedbugsahandlecomparesasanaddress_Held_release(&t57);
 #line 80 "tests/golden/run/fixedbugs-a-handle-compares-as-an-address.hero"
     t31 = h_fixedbugsahandlecomparesasanaddress_Held_eq(&t27, &t30);
@@ -372,7 +376,7 @@ bb0:
     t32 = h0_a;
 #line 81 "tests/golden/run/fixedbugs-a-handle-compares-as-an-address.hero"
     t33 = HERO_STR_LIT(hero_str_78);
-#line 376 "fixedbugsahandlecomparesasanaddress.c"
+#line 380 "fixedbugsahandlecomparesasanaddress.c"
     hero_str_incref(t33);
 #line 81 "tests/golden/run/fixedbugs-a-handle-compares-as-an-address.hero"
     t34 = (h_fixedbugsahandlecomparesasanaddress_Held){.f_h = t32, .f_name = t33};
@@ -380,13 +384,13 @@ bb0:
     t58 = h7_own7;
 #line 81 "tests/golden/run/fixedbugs-a-handle-compares-as-an-address.hero"
     h7_own7 = t34;
-#line 384 "fixedbugsahandlecomparesasanaddress.c"
+#line 388 "fixedbugsahandlecomparesasanaddress.c"
     h_fixedbugsahandlecomparesasanaddress_Held_release(&t58);
 #line 81 "tests/golden/run/fixedbugs-a-handle-compares-as-an-address.hero"
     t35 = h0_a;
 #line 81 "tests/golden/run/fixedbugs-a-handle-compares-as-an-address.hero"
     t36 = HERO_STR_LIT(hero_str_78);
-#line 390 "fixedbugsahandlecomparesasanaddress.c"
+#line 394 "fixedbugsahandlecomparesasanaddress.c"
     hero_str_incref(t36);
 #line 81 "tests/golden/run/fixedbugs-a-handle-compares-as-an-address.hero"
     t37 = (h_fixedbugsahandlecomparesasanaddress_Held){.f_h = t35, .f_name = t36};
@@ -394,7 +398,7 @@ bb0:
     t59 = h8_own8;
 #line 81 "tests/golden/run/fixedbugs-a-handle-compares-as-an-address.hero"
     h8_own8 = t37;
-#line 398 "fixedbugsahandlecomparesasanaddress.c"
+#line 402 "fixedbugsahandlecomparesasanaddress.c"
     h_fixedbugsahandlecomparesasanaddress_Held_release(&t59);
 #line 81 "tests/golden/run/fixedbugs-a-handle-compares-as-an-address.hero"
     t38 = h_fixedbugsahandlecomparesasanaddress_Held_eq(&t34, &t37);
@@ -411,7 +415,7 @@ bb0:
     t60 = h9_own9;
 #line 82 "tests/golden/run/fixedbugs-a-handle-compares-as-an-address.hero"
     h9_own9 = t40;
-#line 415 "fixedbugsahandlecomparesasanaddress.c"
+#line 419 "fixedbugsahandlecomparesasanaddress.c"
     hero_array_decref(t60);
 #line 82 "tests/golden/run/fixedbugs-a-handle-compares-as-an-address.hero"
     t41 = h1_b;
@@ -423,7 +427,7 @@ bb0:
     t61 = h10_own10;
 #line 82 "tests/golden/run/fixedbugs-a-handle-compares-as-an-address.hero"
     h10_own10 = t42;
-#line 427 "fixedbugsahandlecomparesasanaddress.c"
+#line 431 "fixedbugsahandlecomparesasanaddress.c"
     hero_array_decref(t61);
 #line 82 "tests/golden/run/fixedbugs-a-handle-compares-as-an-address.hero"
     t43 = hero_array_eq(t40, t42);
@@ -440,7 +444,7 @@ bb0:
     t62 = h11_own11;
 #line 83 "tests/golden/run/fixedbugs-a-handle-compares-as-an-address.hero"
     h11_own11 = t45;
-#line 444 "fixedbugsahandlecomparesasanaddress.c"
+#line 448 "fixedbugsahandlecomparesasanaddress.c"
     hero_array_decref(t62);
 #line 83 "tests/golden/run/fixedbugs-a-handle-compares-as-an-address.hero"
     t46 = h0_a;
@@ -452,7 +456,7 @@ bb0:
     t63 = h12_own12;
 #line 83 "tests/golden/run/fixedbugs-a-handle-compares-as-an-address.hero"
     h12_own12 = t47;
-#line 456 "fixedbugsahandlecomparesasanaddress.c"
+#line 460 "fixedbugsahandlecomparesasanaddress.c"
     hero_array_decref(t63);
 #line 83 "tests/golden/run/fixedbugs-a-handle-compares-as-an-address.hero"
     t48 = hero_array_eq(t45, t47);
@@ -467,15 +471,15 @@ bb0:
     t64 = h13_own13;
 #line 84 "tests/golden/run/fixedbugs-a-handle-compares-as-an-address.hero"
     h13_own13 = t50;
-#line 471 "fixedbugsahandlecomparesasanaddress.c"
+#line 475 "fixedbugsahandlecomparesasanaddress.c"
     h_0opt_2e1eec0d_release(&t64);
 #line 84 "tests/golden/run/fixedbugs-a-handle-compares-as-an-address.hero"
     t65 = h3_oa;
-#line 475 "fixedbugsahandlecomparesasanaddress.c"
+#line 479 "fixedbugsahandlecomparesasanaddress.c"
     h_0opt_2e1eec0d_retain(&t50);
 #line 84 "tests/golden/run/fixedbugs-a-handle-compares-as-an-address.hero"
     h3_oa = t50;
-#line 479 "fixedbugsahandlecomparesasanaddress.c"
+#line 483 "fixedbugsahandlecomparesasanaddress.c"
     h_0opt_2e1eec0d_release(&t65);
 #line 85 "tests/golden/run/fixedbugs-a-handle-compares-as-an-address.hero"
     t51 = h1_b;
@@ -485,15 +489,15 @@ bb0:
     t66 = h14_own14;
 #line 85 "tests/golden/run/fixedbugs-a-handle-compares-as-an-address.hero"
     h14_own14 = t52;
-#line 489 "fixedbugsahandlecomparesasanaddress.c"
+#line 493 "fixedbugsahandlecomparesasanaddress.c"
     h_0opt_2e1eec0d_release(&t66);
 #line 85 "tests/golden/run/fixedbugs-a-handle-compares-as-an-address.hero"
     t67 = h4_ob;
-#line 493 "fixedbugsahandlecomparesasanaddress.c"
+#line 497 "fixedbugsahandlecomparesasanaddress.c"
     h_0opt_2e1eec0d_retain(&t52);
 #line 85 "tests/golden/run/fixedbugs-a-handle-compares-as-an-address.hero"
     h4_ob = t52;
-#line 497 "fixedbugsahandlecomparesasanaddress.c"
+#line 501 "fixedbugsahandlecomparesasanaddress.c"
     h_0opt_2e1eec0d_release(&t67);
 #line 86 "tests/golden/run/fixedbugs-a-handle-compares-as-an-address.hero"
     t53 = h3_oa;
@@ -505,7 +509,7 @@ bb0:
     hero_print_bool(t55);
 #line 86 "tests/golden/run/fixedbugs-a-handle-compares-as-an-address.hero"
     hero_print_end();
-#line 509 "fixedbugsahandlecomparesasanaddress.c"
+#line 513 "fixedbugsahandlecomparesasanaddress.c"
     h_0opt_2e1eec0d_release(hero_slot_escape(&h3_oa));
     h_0opt_2e1eec0d_release(hero_slot_escape(&h4_ob));
     h_fixedbugsahandlecomparesasanaddress_Held_release(hero_slot_escape(&h5_own5));
@@ -520,6 +524,7 @@ bb0:
     h_0opt_2e1eec0d_release(hero_slot_escape(&h14_own14));
     return;
 }
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_fixedbugsahandlecomparesasanaddress_Chunk_eq(Chunk * const *a, Chunk * const *b) {
     return hero_handle_eq(*a, *b);
 }

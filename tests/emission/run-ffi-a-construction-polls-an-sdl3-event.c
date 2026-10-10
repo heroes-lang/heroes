@@ -26,6 +26,7 @@
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
@@ -47,11 +48,11 @@ _Static_assert(__builtin_classify_type(((SDL_UserEvent *)0)->data2) == 5 && _Gen
 _Static_assert(__builtin_classify_type(((SDL_Event *)0)->type) == 1 && sizeof(((SDL_Event *)0)->type) == sizeof(uint32_t) && (_Generic(((SDL_Event *)0)->type, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 1), "heroes-ffi-field SDL_Event type");
 _Static_assert(_Generic(&((SDL_Event *)0)->common, SDL_CommonEvent *: 1, default: 0) && sizeof(((SDL_Event *)0)->common) == sizeof(SDL_CommonEvent), "heroes-ffi-field SDL_Event common");
 _Static_assert(_Generic(&((SDL_Event *)0)->user, SDL_UserEvent *: 1, default: 0) && sizeof(((SDL_Event *)0)->user) == sizeof(SDL_UserEvent), "heroes-ffi-field SDL_Event user");
-#line 51 "ffiaconstructionpollsansdl3event.c"
+#line 52 "ffiaconstructionpollsansdl3event.c"
 
 #line 29 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
 _Static_assert(__builtin_classify_type(*(SDL_UserEvent *)0) != 13, "heroes-ffi-union SDL_UserEvent type reserved timestamp windowID code data1 data2");
-#line 55 "ffiaconstructionpollsansdl3event.c"
+#line 56 "ffiaconstructionpollsansdl3event.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -138,7 +139,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 142 "ffiaconstructionpollsansdl3event.c"
+#line 143 "ffiaconstructionpollsansdl3event.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_ffiaconstructionpollsansdl3event_SDL_CommonEvent_eq(const SDL_CommonEvent *a, const SDL_CommonEvent *b);
@@ -157,10 +158,12 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_ffiaconstructionpollsansdl3event_main(void);
+#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 46 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
 void h_ffiaconstructionpollsansdl3event_main(void) {
-#line 164 "ffiaconstructionpollsansdl3event.c"
+#line 166 "ffiaconstructionpollsansdl3event.c"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
     SDL_Event *const hero_lend_h0_sent = (SDL_Event *)hero_lend_local(sizeof(SDL_Event), "ffiaconstructionpollsansdl3event.main", "sent");
 #define h0_sent (*hero_lend_h0_sent)
     bool h1_found;
@@ -216,6 +219,7 @@ void h_ffiaconstructionpollsansdl3event_main(void) {
     uint32_t t43;
     uint32_t t44;
     bool t45;
+#pragma clang diagnostic warning "-Wdeprecated-declarations"
     goto bb0;
 bb0:
 #line 47 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
@@ -397,10 +401,11 @@ bb9:
 bb10:
 #line 63 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
     goto bb6;
-#line 401 "ffiaconstructionpollsansdl3event.c"
+#line 405 "ffiaconstructionpollsansdl3event.c"
 }
 #undef h0_sent
 #undef h6_got
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_ffiaconstructionpollsansdl3event_SDL_CommonEvent_eq(const SDL_CommonEvent *a, const SDL_CommonEvent *b) {
     if (!(a->type == b->type)) return false;
     if (!(a->reserved == b->reserved)) return false;

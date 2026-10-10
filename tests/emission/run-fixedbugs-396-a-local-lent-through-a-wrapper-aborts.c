@@ -24,6 +24,7 @@
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
@@ -69,7 +70,7 @@ HERO_STR_STATIC(hero_str_750951cb, "before ");
 HERO_STR_STATIC(hero_str_5687795c, "not reached ");
 HERO_STR_STATIC(hero_str_20, " ");
 
-#line 73 "fixedbugs396alocallentthroughawrapperaborts.c"
+#line 74 "fixedbugs396alocallentthroughawrapperaborts.c"
 typedef struct h_fixedbugs396alocallentthroughawrapperaborts_Pair {
     uint8_t f_a;
     int64_t f_b;
@@ -117,7 +118,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 121 "fixedbugs396alocallentthroughawrapperaborts.c"
+#line 122 "fixedbugs396alocallentthroughawrapperaborts.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs396alocallentthroughawrapperaborts_Pair_eq(const h_fixedbugs396alocallentthroughawrapperaborts_Pair *a, const h_fixedbugs396alocallentthroughawrapperaborts_Pair *b);
@@ -134,10 +135,11 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 int32_t h_fixedbugs396alocallentthroughawrapperaborts_inner(uint8_t *ph0_x);
 int32_t h_fixedbugs396alocallentthroughawrapperaborts_outer(uint8_t *ph0_y);
 void h_fixedbugs396alocallentthroughawrapperaborts_main(void);
+#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 16 "tests/golden/run/fixedbugs-396-a-local-lent-through-a-wrapper-aborts.hero"
 int32_t h_fixedbugs396alocallentthroughawrapperaborts_inner(uint8_t *ph0_x) {
-#line 141 "fixedbugs396alocallentthroughawrapperaborts.c"
+#line 143 "fixedbugs396alocallentthroughawrapperaborts.c"
     int32_t t1;
     goto bb0;
 bb0:
@@ -147,12 +149,12 @@ bb0:
     t1 = digest32((void *)&(*ph0_x));
 #line 17 "tests/golden/run/fixedbugs-396-a-local-lent-through-a-wrapper-aborts.hero"
     return t1;
-#line 151 "fixedbugs396alocallentthroughawrapperaborts.c"
+#line 153 "fixedbugs396alocallentthroughawrapperaborts.c"
 }
 
 #line 19 "tests/golden/run/fixedbugs-396-a-local-lent-through-a-wrapper-aborts.hero"
 int32_t h_fixedbugs396alocallentthroughawrapperaborts_outer(uint8_t *ph0_y) {
-#line 156 "fixedbugs396alocallentthroughawrapperaborts.c"
+#line 158 "fixedbugs396alocallentthroughawrapperaborts.c"
     int32_t t1;
     goto bb0;
 bb0:
@@ -160,12 +162,12 @@ bb0:
     t1 = h_fixedbugs396alocallentthroughawrapperaborts_inner(&(*ph0_y));
 #line 20 "tests/golden/run/fixedbugs-396-a-local-lent-through-a-wrapper-aborts.hero"
     return t1;
-#line 164 "fixedbugs396alocallentthroughawrapperaborts.c"
+#line 166 "fixedbugs396alocallentthroughawrapperaborts.c"
 }
 
 #line 22 "tests/golden/run/fixedbugs-396-a-local-lent-through-a-wrapper-aborts.hero"
 void h_fixedbugs396alocallentthroughawrapperaborts_main(void) {
-#line 169 "fixedbugs396alocallentthroughawrapperaborts.c"
+#line 171 "fixedbugs396alocallentthroughawrapperaborts.c"
     h_fixedbugs396alocallentthroughawrapperaborts_Pair h0_p;
     uint8_t *const hero_lend_h1_m = (uint8_t *)hero_lend_local(sizeof(uint8_t), "fixedbugs396alocallentthroughawrapperaborts.main", "m");
 #define h1_m (*hero_lend_h1_m)
@@ -234,9 +236,10 @@ bb0:
     hero_lend_local_give(hero_lend_h1_m);
 #line 27 "tests/golden/run/fixedbugs-396-a-local-lent-through-a-wrapper-aborts.hero"
     return;
-#line 238 "fixedbugs396alocallentthroughawrapperaborts.c"
+#line 240 "fixedbugs396alocallentthroughawrapperaborts.c"
 }
 #undef h1_m
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_fixedbugs396alocallentthroughawrapperaborts_Pair_eq(const h_fixedbugs396alocallentthroughawrapperaborts_Pair *a, const h_fixedbugs396alocallentthroughawrapperaborts_Pair *b) {
     if (!(a->f_a == b->f_a)) return false;
     if (!(a->f_b == b->f_b)) return false;

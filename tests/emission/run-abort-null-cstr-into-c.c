@@ -24,6 +24,7 @@
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
@@ -71,7 +72,7 @@ HERO_STR_STATIC(hero_str_203132, "zzz");
 HERO_STR_STATIC(hero_str_79, "y");
 HERO_STR_STATIC(hero_str_187ae0ee, "unreachable");
 
-#line 75 "abortnullcstrintoc.c"
+#line 76 "abortnullcstrintoc.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -114,7 +115,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 118 "abortnullcstrintoc.c"
+#line 119 "abortnullcstrintoc.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -127,10 +128,11 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_abortnullcstrintoc_main(void);
+#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 20 "tests/golden/run/abort-null-cstr-into-c.hero"
 void h_abortnullcstrintoc_main(void) {
-#line 134 "abortnullcstrintoc.c"
+#line 136 "abortnullcstrintoc.c"
     const char * h0_absent;
     HeroStr t1;
     HeroStr t2;
@@ -196,8 +198,9 @@ bb2:
 bb3:
 #line 34 "tests/golden/run/abort-null-cstr-into-c.hero"
     goto bb1;
-#line 200 "abortnullcstrintoc.c"
+#line 202 "abortnullcstrintoc.c"
 }
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_incref(v->as.ok);

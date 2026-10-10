@@ -24,6 +24,7 @@
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
@@ -72,7 +73,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_6023594d, "failed add: ");
 HERO_STR_STATIC(hero_str_727306ec, "sum: ");
 
-#line 76 "handletransferonlyonsuccesskeepstheobligation.c"
+#line 77 "handletransferonlyonsuccesskeepstheobligation.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -118,7 +119,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 122 "handletransferonlyonsuccesskeepstheobligation.c"
+#line 123 "handletransferonlyonsuccesskeepstheobligation.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_handletransferonlyonsuccesskeepstheobligation_Node_eq(node * const *a, node * const *b);
@@ -133,10 +134,12 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_handletransferonlyonsuccesskeepstheobligation_main(void);
+#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 13 "tests/golden/run/handle-transfer-only-on-success-keeps-the-obligation.hero"
 void h_handletransferonlyonsuccesskeepstheobligation_main(void) {
-#line 140 "handletransferonlyonsuccesskeepstheobligation.c"
+#line 142 "handletransferonlyonsuccesskeepstheobligation.c"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
     node * h0_parent;
     node * h1_child;
     int32_t h2_rc;
@@ -164,6 +167,7 @@ void h_handletransferonlyonsuccesskeepstheobligation_main(void) {
     node * t22;
     int64_t t23;
     node * t24;
+#pragma clang diagnostic warning "-Wdeprecated-declarations"
     goto bb0;
 bb0:
 #line 14 "tests/golden/run/handle-transfer-only-on-success-keeps-the-obligation.hero"
@@ -318,8 +322,9 @@ bb2:
 bb3:
 #line 20 "tests/golden/run/handle-transfer-only-on-success-keeps-the-obligation.hero"
     goto bb1;
-#line 322 "handletransferonlyonsuccesskeepstheobligation.c"
+#line 326 "handletransferonlyonsuccesskeepstheobligation.c"
 }
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_handletransferonlyonsuccesskeepstheobligation_Node_eq(node * const *a, node * const *b) {
     return hero_handle_eq(*a, *b);
 }

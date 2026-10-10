@@ -24,6 +24,7 @@
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
@@ -74,7 +75,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_1998f2, "abc");
 HERO_STR_STATIC(hero_str_7a, "z");
 
-#line 78 "fixedbugs411readonlypointerstakeeverylend.c"
+#line 79 "fixedbugs411readonlypointerstakeeverylend.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -123,7 +124,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 127 "fixedbugs411readonlypointerstakeeverylend.c"
+#line 128 "fixedbugs411readonlypointerstakeeverylend.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -136,10 +137,11 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_fixedbugs411readonlypointerstakeeverylend_main(void);
+#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 23 "tests/golden/run/fixedbugs-411-read-only-pointers-take-every-lend.hero"
 void h_fixedbugs411readonlypointerstakeeverylend_main(void) {
-#line 143 "fixedbugs411readonlypointerstakeeverylend.c"
+#line 145 "fixedbugs411readonlypointerstakeeverylend.c"
     HeroStr h0_s = {0};
     HeroStr h1_t = {0};
     const char * h2_x;
@@ -192,25 +194,25 @@ bb0:
     t34 = h3_own3;
 #line 24 "tests/golden/run/fixedbugs-411-read-only-pointers-take-every-lend.hero"
     h3_own3 = t3;
-#line 196 "fixedbugs411readonlypointerstakeeverylend.c"
+#line 198 "fixedbugs411readonlypointerstakeeverylend.c"
     hero_str_decref(t34);
 #line 24 "tests/golden/run/fixedbugs-411-read-only-pointers-take-every-lend.hero"
     t35 = h0_s;
-#line 200 "fixedbugs411readonlypointerstakeeverylend.c"
+#line 202 "fixedbugs411readonlypointerstakeeverylend.c"
     hero_str_incref(t3);
 #line 24 "tests/golden/run/fixedbugs-411-read-only-pointers-take-every-lend.hero"
     h0_s = t3;
-#line 204 "fixedbugs411readonlypointerstakeeverylend.c"
+#line 206 "fixedbugs411readonlypointerstakeeverylend.c"
     hero_str_decref(t35);
 #line 25 "tests/golden/run/fixedbugs-411-read-only-pointers-take-every-lend.hero"
     t4 = h0_s;
 #line 25 "tests/golden/run/fixedbugs-411-read-only-pointers-take-every-lend.hero"
     t36 = h1_t;
-#line 210 "fixedbugs411readonlypointerstakeeverylend.c"
+#line 212 "fixedbugs411readonlypointerstakeeverylend.c"
     hero_str_incref(t4);
 #line 25 "tests/golden/run/fixedbugs-411-read-only-pointers-take-every-lend.hero"
     h1_t = t4;
-#line 214 "fixedbugs411readonlypointerstakeeverylend.c"
+#line 216 "fixedbugs411readonlypointerstakeeverylend.c"
     hero_str_decref(t36);
 #line 26 "tests/golden/run/fixedbugs-411-read-only-pointers-take-every-lend.hero"
     t5 = h0_s;
@@ -303,12 +305,13 @@ bb0:
     hero_print_str(t33);
 #line 37 "tests/golden/run/fixedbugs-411-read-only-pointers-take-every-lend.hero"
     hero_print_end();
-#line 307 "fixedbugs411readonlypointerstakeeverylend.c"
+#line 309 "fixedbugs411readonlypointerstakeeverylend.c"
     hero_str_release_at(&h0_s);
     hero_str_release_at(&h1_t);
     hero_str_release_at(&h3_own3);
     return;
 }
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_incref(v->as.ok);

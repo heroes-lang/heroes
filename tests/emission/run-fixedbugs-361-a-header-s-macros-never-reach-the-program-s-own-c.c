@@ -24,6 +24,7 @@
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
@@ -67,7 +68,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 71 "fixedbugs361aheadersmacrosneverreachtheprogramsownc.c"
+#line 72 "fixedbugs361aheadersmacrosneverreachtheprogramsownc.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -110,7 +111,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 114 "fixedbugs361aheadersmacrosneverreachtheprogramsownc.c"
+#line 115 "fixedbugs361aheadersmacrosneverreachtheprogramsownc.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -124,12 +125,15 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 int64_t h_fixedbugs361aheadersmacrosneverreachtheprogramsownc_LIMIT(void);
 void h_fixedbugs361aheadersmacrosneverreachtheprogramsownc_main(void);
+#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #line 16 "tests/golden/run/fixedbugs-361-a-header-s-macros-never-reach-the-program-s-own-c.hero"
 int64_t h_fixedbugs361aheadersmacrosneverreachtheprogramsownc_LIMIT(void) {
-#line 131 "fixedbugs361aheadersmacrosneverreachtheprogramsownc.c"
+#line 134 "fixedbugs361aheadersmacrosneverreachtheprogramsownc.c"
     return LIMIT;
 }
+#pragma clang diagnostic warning "-Wdeprecated-declarations"
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
@@ -144,7 +148,7 @@ int64_t h_fixedbugs361aheadersmacrosneverreachtheprogramsownc_LIMIT(void) {
 
 #line 18 "tests/golden/run/fixedbugs-361-a-header-s-macros-never-reach-the-program-s-own-c.hero"
 void h_fixedbugs361aheadersmacrosneverreachtheprogramsownc_main(void) {
-#line 148 "fixedbugs361aheadersmacrosneverreachtheprogramsownc.c"
+#line 152 "fixedbugs361aheadersmacrosneverreachtheprogramsownc.c"
     int64_t t1;
     int64_t t2;
     int64_t t3;
@@ -171,8 +175,9 @@ bb0:
     hero_print_end();
 #line 21 "tests/golden/run/fixedbugs-361-a-header-s-macros-never-reach-the-program-s-own-c.hero"
     return;
-#line 175 "fixedbugs361aheadersmacrosneverreachtheprogramsownc.c"
+#line 179 "fixedbugs361aheadersmacrosneverreachtheprogramsownc.c"
 }
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_incref(v->as.ok);
