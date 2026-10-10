@@ -27,6 +27,7 @@ use cli/pointee_ask
 use cli/header_types
 use cli/tag_spelling
 use cli/whose
+use cli/two_ways
 
 # What the rounds came back with: the verdict, the failure already told where
 # it is the author's (`whose.of_refusal`); where the binary landed; the tags
@@ -53,6 +54,10 @@ function run(t: toolchain.Toolchain, options: compile.Options, art: compile.Arti
 
         if !linked.is_err()
             break
+
+        # A refusal already told is the author's and ends the rounds.
+        if whose.failure_code(linked) == "diagnostics"
+            return Rounds(verdict: linked, binary: "", struct_tags: struct_tags, asked: asked)
         lesson = tag_spelling.learn(
             t,
             art,
@@ -110,6 +115,16 @@ function round(t: toolchain.Toolchain, options: compile.Options, art: compile.Ar
             binary: "",
             modules: checked.modules
         )
+
+    # One C function two modules' groups bind and their headers declare two
+    # ways, told before any unit compiles (panel 202's C1,
+    # `cli/two_ways.hero`): the author's, said here, and no round after it.
+    two = two_ways.told(t, planned.probings, s: s, decls: art.decls)
+
+    if two.len() > 0
+        _ = compile.stage(two, s).is_err()
+        refused: ()? = fail(code: "diagnostics", msg: "two groups bind one C function two ways")
+        return assemble.Round(verdict: refused, refusals: [], binary: "", modules: [])
 
     # The unit each counted parameter's count is compared in, read from the
     # header by the check above (panel 194's R7): every unit is emitted with
