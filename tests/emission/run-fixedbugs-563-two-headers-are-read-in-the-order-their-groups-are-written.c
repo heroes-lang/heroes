@@ -100,14 +100,10 @@ void h_fixedbugs563twoheadersarereadintheordertheirgroupsarewritten_main(void);
 
 #line 16 "tests/golden/run/fixedbugs-563-two-headers-are-read-in-the-order-their-groups-are-written.hero"
 void h_fixedbugs563twoheadersarereadintheordertheirgroupsarewritten_main(void) {
-#line 104 "fixedbugs563twoheadersarereadintheordertheirgroupsarewritten.c"
-    int64_t t1;
-    int64_t t2;
-    int32_t t3;
-    int32_t t4;
-    goto bb0;
+#line 16 "tests/golden/run/fixedbugs-563-two-headers-are-read-in-the-order-their-groups-are-written.hero"
+    int64_t t1; int64_t t2; int32_t t3; int32_t t4; goto bb0;
+#line 16 "tests/golden/run/fixedbugs-563-two-headers-are-read-in-the-order-their-groups-are-written.hero"
 bb0:
-#line 17 "tests/golden/run/fixedbugs-563-two-headers-are-read-in-the-order-their-groups-are-written.hero"
     t1 = INT64_C(6);
 #line 17 "tests/golden/run/fixedbugs-563-two-headers-are-read-in-the-order-their-groups-are-written.hero"
     t2 = half(t1);
@@ -124,7 +120,7 @@ bb0:
     hero_print_end();
 #line 18 "tests/golden/run/fixedbugs-563-two-headers-are-read-in-the-order-their-groups-are-written.hero"
     return;
-#line 128 "fixedbugs563twoheadersarereadintheordertheirgroupsarewritten.c"
+#line 124 "fixedbugs563twoheadersarereadintheordertheirgroupsarewritten.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

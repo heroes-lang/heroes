@@ -102,13 +102,10 @@ void h_fixedbugs563arecordonlygroupisincludedwhereitiswritten_main(void);
 
 #line 18 "tests/golden/run/fixedbugs-563-a-record-only-group-is-included-where-it-is-written.hero"
 void h_fixedbugs563arecordonlygroupisincludedwhereitiswritten_main(void) {
-#line 106 "fixedbugs563arecordonlygroupisincludedwhereitiswritten.c"
-    int32_t t1;
-    Need t2;
-    int32_t t3;
-    goto bb0;
+#line 18 "tests/golden/run/fixedbugs-563-a-record-only-group-is-included-where-it-is-written.hero"
+    int32_t t1; Need t2; int32_t t3; goto bb0;
+#line 18 "tests/golden/run/fixedbugs-563-a-record-only-group-is-included-where-it-is-written.hero"
 bb0:
-#line 19 "tests/golden/run/fixedbugs-563-a-record-only-group-is-included-where-it-is-written.hero"
     t1 = INT64_C(7);
 #line 19 "tests/golden/run/fixedbugs-563-a-record-only-group-is-included-where-it-is-written.hero"
     t2 = (Need){.v = t1};
@@ -120,7 +117,7 @@ bb0:
     hero_print_end();
 #line 19 "tests/golden/run/fixedbugs-563-a-record-only-group-is-included-where-it-is-written.hero"
     return;
-#line 124 "fixedbugs563arecordonlygroupisincludedwhereitiswritten.c"
+#line 121 "fixedbugs563arecordonlygroupisincludedwhereitiswritten.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs563arecordonlygroupisincludedwhereitiswritten_Need_eq(const Need *a, const Need *b) {
     if (!(a->v == b->v)) return false;

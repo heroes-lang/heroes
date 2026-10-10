@@ -129,13 +129,10 @@ int64_t h_fixedbugs563narrow_total(Wh h0_x);
 
 #line 15 "tests/golden/run/fixedbugs-563-a-module-s-own-headers-come-before-another-module-s-record.hero"
 void h_fixedbugs563amodulesownheaderscomebeforeanothermodulesrecord_main(void) {
-#line 133 "fixedbugs563amodulesownheaderscomebeforeanothermodulesrecord.c"
-    int32_t t1;
-    Wh t2;
-    int64_t t3;
-    goto bb0;
+#line 15 "tests/golden/run/fixedbugs-563-a-module-s-own-headers-come-before-another-module-s-record.hero"
+    int32_t t1; Wh t2; int64_t t3; goto bb0;
+#line 15 "tests/golden/run/fixedbugs-563-a-module-s-own-headers-come-before-another-module-s-record.hero"
 bb0:
-#line 16 "tests/golden/run/fixedbugs-563-a-module-s-own-headers-come-before-another-module-s-record.hero"
     t1 = INT64_C(4);
 #line 16 "tests/golden/run/fixedbugs-563-a-module-s-own-headers-come-before-another-module-s-record.hero"
     t2 = h_fixedbugs563wide_make(t1);
@@ -147,56 +144,29 @@ bb0:
     hero_print_end();
 #line 16 "tests/golden/run/fixedbugs-563-a-module-s-own-headers-come-before-another-module-s-record.hero"
     return;
-#line 151 "fixedbugs563amodulesownheaderscomebeforeanothermodulesrecord.c"
+#line 148 "fixedbugs563amodulesownheaderscomebeforeanothermodulesrecord.c"
 }
 
 #line 8 "tests/golden/run/fixedbugs563/wide.hero"
 Wh h_fixedbugs563wide_make(int32_t h0_v) {
-#line 156 "fixedbugs563amodulesownheaderscomebeforeanothermodulesrecord.c"
-    int32_t t1;
-    Wh t2;
-    goto bb0;
+#line 8 "tests/golden/run/fixedbugs563/wide.hero"
+    int32_t t1; Wh t2; goto bb0;
+#line 8 "tests/golden/run/fixedbugs563/wide.hero"
 bb0:
-#line 9 "tests/golden/run/fixedbugs563/wide.hero"
     t1 = h0_v;
 #line 9 "tests/golden/run/fixedbugs563/wide.hero"
     t2 = wh_make(t1);
 #line 9 "tests/golden/run/fixedbugs563/wide.hero"
     return t2;
-#line 167 "fixedbugs563amodulesownheaderscomebeforeanothermodulesrecord.c"
+#line 162 "fixedbugs563amodulesownheaderscomebeforeanothermodulesrecord.c"
 }
 
 #line 10 "tests/golden/run/fixedbugs563/narrow.hero"
 int64_t h_fixedbugs563narrow_total(Wh h0_x) {
-#line 172 "fixedbugs563amodulesownheaderscomebeforeanothermodulesrecord.c"
-    Sk h1_s;
-    h_0opt_e201354 h2_f0 = {0};
-    h_0opt_e201354 h3_own3 = {0};
-    int32_t t1;
-    int32_t t2;
-    Sk t3;
-    Wh t4;
-    int32_t t5;
-    Sk t6;
-    int32_t t7;
-    int32_t t8;
-    Sk t9;
-    int32_t t10;
-    int32_t t11;
-    h_0opt_e201354 t12;
-    h_0opt_e201354 t13;
-    int64_t t14;
-    int64_t t15;
-    bool t16;
-    h_0opt_e201354 t17;
-    HeroFailure t18;
-    h_0opt_e201354 t19;
-    int64_t t20;
-    h_0opt_e201354 t21;
-    h_0opt_e201354 t22;
-    goto bb0;
+#line 10 "tests/golden/run/fixedbugs563/narrow.hero"
+    Sk h1_s; h_0opt_e201354 h2_f0 = {0}; h_0opt_e201354 h3_own3 = {0}; int32_t t1; int32_t t2; Sk t3; Wh t4; int32_t t5; Sk t6; int32_t t7; int32_t t8; Sk t9; int32_t t10; int32_t t11; h_0opt_e201354 t12; h_0opt_e201354 t13; int64_t t14; int64_t t15; bool t16; h_0opt_e201354 t17; HeroFailure t18; h_0opt_e201354 t19; int64_t t20; h_0opt_e201354 t21; h_0opt_e201354 t22; goto bb0;
+#line 10 "tests/golden/run/fixedbugs563/narrow.hero"
 bb0:
-#line 11 "tests/golden/run/fixedbugs563/narrow.hero"
     t1 = INT64_C(1);
 #line 11 "tests/golden/run/fixedbugs563/narrow.hero"
     t2 = INT64_C(2);
@@ -225,15 +195,15 @@ bb0:
     t21 = h3_own3;
 #line 12 "tests/golden/run/fixedbugs563/narrow.hero"
     h3_own3 = t12;
-#line 229 "fixedbugs563amodulesownheaderscomebeforeanothermodulesrecord.c"
+#line 12 "tests/golden/run/fixedbugs563/narrow.hero"
     h_0opt_e201354_release(&t21);
 #line 12 "tests/golden/run/fixedbugs563/narrow.hero"
     t22 = h2_f0;
-#line 233 "fixedbugs563amodulesownheaderscomebeforeanothermodulesrecord.c"
+#line 12 "tests/golden/run/fixedbugs563/narrow.hero"
     h_0opt_e201354_retain(&t12);
 #line 12 "tests/golden/run/fixedbugs563/narrow.hero"
     h2_f0 = t12;
-#line 237 "fixedbugs563amodulesownheaderscomebeforeanothermodulesrecord.c"
+#line 12 "tests/golden/run/fixedbugs563/narrow.hero"
     h_0opt_e201354_release(&t22);
 #line 12 "tests/golden/run/fixedbugs563/narrow.hero"
     t13 = h2_f0;
@@ -251,7 +221,7 @@ bb1:
     t19 = h2_f0;
 #line 12 "tests/golden/run/fixedbugs563/narrow.hero"
     t20 = t19.as.ok;
-#line 255 "fixedbugs563amodulesownheaderscomebeforeanothermodulesrecord.c"
+#line 225 "fixedbugs563amodulesownheaderscomebeforeanothermodulesrecord.c"
     h_0opt_e201354_release(hero_slot_escape(&h2_f0));
     h_0opt_e201354_release(hero_slot_escape(&h3_own3));
     return t20;
@@ -260,7 +230,7 @@ bb2:
     t17 = h2_f0;
 #line 12 "tests/golden/run/fixedbugs563/narrow.hero"
     t18 = t17.as.err;
-#line 264 "fixedbugs563amodulesownheaderscomebeforeanothermodulesrecord.c"
+#line 234 "fixedbugs563amodulesownheaderscomebeforeanothermodulesrecord.c"
     hero_panic_must(t18);
     hero_unreachable();
 }
