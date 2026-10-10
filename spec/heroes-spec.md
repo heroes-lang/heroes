@@ -112,7 +112,7 @@ variant Token
 
 Declaration order never matters but a group's (section 13); mutual recursion
 needs no forward declarations. There are no mutable globals. Constants use SCREAMING_CASE, and
-a written body computes over literals and other constants.
+a written body computes over literals and other constants, and a step of it that aborts is a compile error.
 
     Declaration = "constant" ident ":" Type Block
                 | "function" ident [ Generics ] Params [ "->" Type ] Block
