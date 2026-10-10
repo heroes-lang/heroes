@@ -1,0 +1,247 @@
+# Whether a name a header declares no more is hidden by a switch a header of
+# the program's own defines, asked by a refused round after the switches of
+# `cli/switch_ask.hero` (design.md §4.19, §4.17; defect 585, 2026-10-10).
+#
+# **A switch that narrows is a switch too.** Defect 568's question is a name
+# the header declares only where a switch stands; its converse is a name the
+# header declares only where a switch does not, and a header of the
+# program's own can define that one: on this Mac `string.h` declares
+# `strlcpy` only where `_POSIX_C_SOURCE` is not defined, so a first group's
+# header defining `_POSIX_C_SOURCE 200112L` was told *`string.h` declares no
+# `strlcpy`*, true and short of the cause.
+#
+# **So two questions, each positive evidence.** The first reads, after each
+# of the unit's headers in their order, which of the strict switches below
+# stands, and a switch that stands before the first header, the build's or
+# clang's own, is no header's. For each switch a header defined, the second
+# reads the headers again with that switch undefined after every header,
+# and asks each name as `cli/switch_ask.hero` does: a name reached and
+# called nothing undeclared is declared without the switch, which the
+# refused unit, where it stands, does not declare. The headers named are
+# those after which the switch stands again in that second reading, each
+# one that defines it. Each answer is
+# an assertion that fails every time it is reached, in a file named for its
+# question, so nothing is read of a line clang did not reach.
+
+use ast
+use source
+use emit/c_text
+use emit/ffi_lookup
+use emit/ffi_switched
+use ir/containers
+use cli/toolchain
+use cli/compiling
+use cli/process
+use cli/publish
+use cli/strings
+use cli/read_back
+use cli/switch_ask
+
+constant SET_FILE: str
+    "hero-ask-unswitch-set "
+
+constant SET: str
+    "hero-unswitch-set"
+
+# The switches that narrow what a C library declares to a standard, each a
+# name a header of the program's own may define.
+constant NARROWING: [str]
+    [
+        "_POSIX_C_SOURCE"
+        "_POSIX_SOURCE"
+        "_XOPEN_SOURCE"
+        "_ANSI_SOURCE"
+        "_ISOC99_SOURCE"
+        "_ISOC11_SOURCE"
+    ]
+
+# `found`, and each other name of `program`'s groups a switch defined by the
+# unit's headers hides, with the switch and the headers that define it; a
+# name no switch accounts for is left out.
+function with_narrowed(t: toolchain.Toolchain, under: compiling.Compiling, program: containers.Program, s: source.Source, decls: [ast.Decl], headers: [str], found: {str: ffi_switched.Switch}) -> {str: ffi_switched.Switch}
+    out: {str: ffi_switched.Switch} @ found
+    names: [str] @ []
+
+    for name in switch_ask.names_of(program, s, decls)
+        if found[name].is_err()
+            names @ names.push(name)
+
+    if names.len() == 0
+        return out
+    defined = definers(said: asked(t, under: under, text: set_unit(headers: headers, undefined: "")), headers: headers)
+
+    for macro in NARROWING
+        if defined[macro].is_err()
+            continue
+        said = asked(t, under: under, text: set_unit(headers: headers, undefined: macro) + switch_ask.questions(names))
+
+        # Undefined after every header, the switch stands after one only
+        # where that header defines it again: those are the headers named.
+        by = defining(said: said, macro: macro, headers: headers)
+
+        for name in switch_ask.read(said)
+            if out[name].is_err() && by.len() > 0
+                out[name] @ ffi_switched.Switch(macro: macro, defined_by: by)
+
+    return out
+
+# The headers after which `macro`'s marker was reached, in their order.
+function defining(said: str, macro: str, headers: [str]) -> [str]
+    rows = marker_rows(said)
+    out: [str] @ []
+
+    for index in range(from: 0, to: headers.len())
+        if holds(rows, macro: macro, at: index.to_str())
+            out @ out.push(headers[index])
+
+    return out
+
+# The rows of the markers clang reached, each from its switch's name on.
+function marker_rows(said: str) -> [str]
+    rows: [str] @ []
+
+    for row in ffi_lookup.lines(text: said)
+        if strings.starts_with(text: row, prefix: SET_FILE) && ffi_lookup.has(text: row, needle: SET)
+            rows @ rows.push(row.slice(from: SET_FILE.len(), to: row.len()))
+
+    return rows
+
+# The unit's headers in their order, after each a marker for every strict
+# switch that stands there, and one before the first; `undefined`, where it
+# names one, undefined after each marker of its own.
+function set_unit(headers: [str], undefined: str) -> str
+    lines: [str] @ markers(at: "before")
+    index: i64 @ 0
+
+    for header in headers
+        lines @ strings.with_all(list: lines, more: c_text.includes([header]))
+        lines @ strings.with_all(list: lines, more: markers(at: index.to_str()))
+
+        if undefined != ""
+            lines @ lines.push("#undef " + undefined)
+        index @ index + 1
+
+    return lines.join("\n") + "\n"
+
+# One marker per strict switch, each reached only where the switch stands.
+function markers(at: str) -> [str]
+    out: [str] @ []
+
+    for macro in NARROWING
+        out @ out.push("#if defined(" + macro + ")")
+        out @ out.push(c_text.line_directive(at: 1, file: SET_FILE + macro + " " + at))
+        out @ out.push("_Static_assert(0, \"" + SET + "\");")
+        out @ out.push("#endif")
+
+    return out
+
+# Each strict switch a header defined, with the headers after which it was
+# first found standing, in their order; a switch standing before every
+# header is no header's.
+function definers(said: str, headers: [str]) -> {str: [str]}
+    out: {str: [str]} @ {}
+    before: {str: bool} @ {}
+    rows = marker_rows(said)
+
+    for row in rows
+        macro = word_at(row, word: 0)
+
+        if word_at(row, word: 1) == "before"
+            before[macro] @ true
+
+    for macro in NARROWING
+        if !before[macro].is_err()
+            continue
+        found: [str] @ []
+        stood: bool @ false
+
+        for index in range(from: 0, to: headers.len())
+            here = holds(rows, macro: macro, at: index.to_str())
+
+            if here && !stood
+                found @ found.push(headers[index])
+            stood @ here
+
+        if found.len() > 0
+            out[macro] @ found
+
+    return out
+
+# Whether a marker of `macro` after the header `at` was reached.
+function holds(rows: [str], macro: str, at: str) -> bool
+    for row in rows
+        if word_at(row, word: 0) == macro && word_at(row, word: 1) == at
+            return true
+
+    return false
+
+# The `word`th word of a marker's row, a space or the colon that opens the
+# position ending it.
+function word_at(row: str, word: i64) -> str
+    at: i64 @ 0
+    seen: i64 @ 0
+
+    while at < row.len()
+        start = at
+
+        while at < row.len() && row[at] != 32 && row[at] != 58
+            at @ at + 1
+
+        if seen == word
+            return row.slice(from: start, to: at)
+
+        if at < row.len() && row[at] == 58
+            return ""
+        seen @ seen + 1
+        at @ at + 1
+
+    return ""
+
+# What clang said of a question unit, nothing where it could not be asked.
+function asked(t: toolchain.Toolchain, under: compiling.Compiling, text: str) -> str
+    path = publish.private_name(t.build + "/unswitch-ask") + ".c"
+    err = publish.private_name(t.build + "/unswitch-ask-stderr.txt")
+
+    if write_file(path: path, text: text).is_err()
+        return ""
+    line = strings.with_all(
+        list: ["clang", "-fsyntax-only", "-ferror-limit=0", "-fno-caret-diagnostics"],
+        more: compiling.probe_words(under)
+    )
+    ran = process.run(program: "clang", words: line.push(path), out: process.discard(), err: err)
+    said = read_back.words(err)
+    publish.discard(path)
+    publish.discard(err)
+
+    if !ran.started || said.is_err()
+        return ""
+    return said.must()
+
+## Tests
+
+test "each header is followed by a marker per strict switch, and the asked switch undefined after it"
+    got = set_unit(headers: ["cfg.h"], undefined: "_POSIX_C_SOURCE")
+    assert strings.starts_with(
+        text: got,
+        prefix: "#if defined(_POSIX_C_SOURCE)\n#line 1 \"hero-ask-unswitch-set _POSIX_C_SOURCE before\"\n"
+    )
+    assert ffi_lookup.has(
+        text: got,
+        needle: "#include <cfg.h>\n#if defined(_POSIX_C_SOURCE)\n#line 1 \"hero-ask-unswitch-set _POSIX_C_SOURCE 0\"\n_Static_assert(0, \"hero-unswitch-set\");\n#endif\n"
+    )
+    assert strings.ends_with(text: got, suffix: "#endif\n#undef _POSIX_C_SOURCE\n")
+    assert !ffi_lookup.has(text: set_unit(headers: ["cfg.h"], undefined: ""), needle: "#undef")
+
+test "a switch is a header's where it first stands after it, and no header's where it stands before them all"
+    said = "hero-ask-unswitch-set _POSIX_C_SOURCE 0:1:1: error: static assertion failed: hero-unswitch-set\nhero-ask-unswitch-set _POSIX_C_SOURCE 1:1:1: error: static assertion failed: hero-unswitch-set\nhero-ask-unswitch-set _XOPEN_SOURCE before:1:1: error: static assertion failed: hero-unswitch-set\nhero-ask-unswitch-set _XOPEN_SOURCE 0:1:1: error: static assertion failed: hero-unswitch-set\nhero-ask-unswitch-set _ANSI_SOURCE 1:1:1: error: static assertion failed: hero-unswitch-set\n"
+    got = definers(said: said, headers: ["cfg.h", "string.h"])
+    assert got["_POSIX_C_SOURCE"].must() == ["cfg.h"]
+    assert got["_XOPEN_SOURCE"].is_err()
+    assert got["_ANSI_SOURCE"].must() == ["string.h"]
+    assert got["_ISOC99_SOURCE"].is_err()
+    assert definers(said: "", headers: ["cfg.h"]).len() == 0
+
+test "the headers named are each one after which the switch stands again, undefined after every header"
+    said = "hero-ask-unswitch-set _POSIX_C_SOURCE 0:1:1: error: static assertion failed: hero-unswitch-set\nhero-ask-unswitch-set _POSIX_C_SOURCE 2:1:1: error: static assertion failed: hero-unswitch-set\nhero-ask-unswitch-set _XOPEN_SOURCE 1:1:1: error: static assertion failed: hero-unswitch-set\n"
+    assert defining(said: said, macro: "_POSIX_C_SOURCE", headers: ["a.h", "b.h", "c.h"]) == ["a.h", "c.h"]
+    assert defining(said: "", macro: "_POSIX_C_SOURCE", headers: ["a.h"]).len() == 0

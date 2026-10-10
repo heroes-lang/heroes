@@ -23,6 +23,7 @@ use emit/ffi_asked
 use emit/ffi_answer
 use cli/probing
 use cli/switch_ask
+use cli/unswitch_ask
 use cli/units
 use emit/ffi_lookup
 use cli/input
@@ -57,8 +58,18 @@ function ask(t: toolchain.Toolchain, art: compile.Artifact, s: source.Source, st
         answer: ffi_asked.Asked @ asked_of(t, text: text, under: one.under)
 
         # And a name the headers declare only under a switch of the C
-        # library (`cli/switch_ask.hero`, defect 568).
-        answer.switched @ switch_ask.switched(t, under: one.under, one.program, s, art.decls, headers: one.headers)
+        # library (`cli/switch_ask.hero`, defect 568), or only without one a
+        # header defines (`cli/unswitch_ask.hero`, defect 585).
+        switched = switch_ask.switched(t, under: one.under, one.program, s, art.decls, headers: one.headers)
+        answer.switched @ unswitch_ask.with_narrowed(
+            t,
+            under: one.under,
+            one.program,
+            s,
+            art.decls,
+            headers: one.headers,
+            found: switched
+        )
         out @ ffi_answer.merged(first: out, then: answer)
 
     return out
