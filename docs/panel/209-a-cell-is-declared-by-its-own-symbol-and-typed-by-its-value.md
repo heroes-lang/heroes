@@ -272,3 +272,13 @@ habitual symbol to the act a reader must find, and rewrites every binding
 line of the tree rather than the cells'. Recorded as a reading (CLAUDE.md
 § 4). The critic's `@`-parameter question stays its own open decision; the
 landing is a milestone the author schedules.
+
+## Scored at the landing, 2026-10-10
+
+Scored by the landing lane at the milestone's close, each by the command its row names (the journal is `docs/records/journal/062-inferred-cell.md`):
+
+- **compiler-engineer, the three ceilings and the census**: `layout` 0 failed at every step; `check/walk.hero` at 1870 and `grammar_expr.hero` at 1084 by the suite's unit, both held; **`selfhost/parse/` at 8735, not 8699**, raised with its reason beside the row (the prediction's *or a DECIDED row saying why the budget moves*), and the leaf outside `parse/` is `cell_errors.hero`, 46 lines; the census refused 0 `never_rebound` after the rewrites: **true in three of four parts, the budget false as a number and met as the row allowed**.
+- **compiler-engineer, one pass of `check --apply`**: the tree moved in one pass over every root, by hand at the two cases where `--apply` stops at the lexer (a bracket left open), and a second pass over the examples was owed by a restore from HEAD, not by the fix: **true of the fix, false of the pass as a single command**; `suite_fixes` 965 and 0.
+- **ffi-pragmatist**: after migration `grep` reads **6 annotated `@= nullptr` cells in `examples/` and 27 in `tests/`** (28 with the landing's own golden) **and 0 bare** in the programs that build; the one bare cell is the golden that refuses it. **True**, 26 having become 27 by a case landed between the sitting and the migration.
+- **the sitting, the narrower-born class**: every annotation kept, so the migrated tree's `check` refuses 0 width mismatches; the class's count under inference is the sitting's 15 of 5,926 by construction, nothing having been stripped. **True as the landing was built, not as the stripped copy was measured.**
+- **spec-warden (3) and historian (3)**, the kill rates of `inverse-at`, `bind-as-cell`, `forget-at-decl` and `mutate-undeclared`: panel 187's R2 after the push, as the chain says; **pending, not lapsed**.
