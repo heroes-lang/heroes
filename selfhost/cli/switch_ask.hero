@@ -1,0 +1,171 @@
+# Whether a header declares a name only under a switch of the C library,
+# asked by a refused round (design.md §4.19, §4.17; panel 205's R3, ratified
+# 2026-10-10; defect 568).
+#
+# **A name the header hides is not a name it lacks.** glibc's `sched.h`
+# declares `sched_getcpu` only where `_GNU_SOURCE` stood before the first
+# header of the library the unit read, and `wchar.h` its `wcwidth` only under
+# `_XOPEN_SOURCE`; bound without the switch, the build said *`sched.h`
+# declares no `sched_getcpu`*, which is false, and a reader who knew the
+# function exists had nothing to act on. So where clang calls a group's name
+# undeclared, the round asks the module's headers again, once under each
+# switch below, each defined before every header: a name declared there is
+# told as the header's under that switch (`emit/ffi_declared.hero`), with the
+# one place the switch can stand, a header of the program's own that the
+# module's first group names (the unit reads the C library's headers after
+# its groups, `runtime/heroes_standard.h`).
+#
+# **Each question answers in its own file name**, `hero-ask-switch <name>`,
+# as `emit/ffi_asked.hero`'s do, and the answer is positive evidence: the
+# assertion under each question fails every time it is reached, so a name is
+# declared under a switch where its question was reached and clang called
+# nothing in it undeclared. Asked only by a build already refused, and only
+# of the program's own groups' names.
+
+use ast
+use source
+use emit/c_text
+use emit/externs as emit_externs
+use emit/ffi_lookup
+use ir/containers
+use cli/toolchain
+use cli/compiling
+use cli/process
+use cli/publish
+use cli/strings
+use cli/read_back
+
+constant FILE: str
+    "hero-ask-switch "
+
+constant REACHED: str
+    "hero-switch-asked"
+
+# The switches asked, narrowest first, each as its `#define` writes it: what
+# X/Open names, then everything glibc's GNU extensions add.
+constant SWITCHES: [str]
+    ["_XOPEN_SOURCE 700", "_GNU_SOURCE 1"]
+
+# Each name of `program`'s groups the headers declare only under a switch,
+# with the switch's name, the narrowest first.
+function switched(t: toolchain.Toolchain, under: compiling.Compiling, program: containers.Program, s: source.Source, decls: [ast.Decl], headers: [str]) -> {str: str}
+    out: {str: str} @ {}
+    names = names_of(program, s, decls)
+
+    if names.len() == 0
+        return out
+
+    for defined in SWITCHES
+        for name in declared(t, under: under, text: unit(defined: defined, headers: headers, names: names))
+            if out[name].is_err()
+                out[name] @ first_word(defined)
+
+    return out
+
+# The names the compiler writes from a group's header, functions and
+# constants, each once: the compiler's own headers' are the runtime's.
+function names_of(program: containers.Program, s: source.Source, decls: [ast.Decl]) -> [str]
+    out: [str] @ []
+    seen: {str: bool} @ {}
+
+    for f in program.functions
+        header = emit_externs.extern_spans(decls, f).header
+
+        if header.is_err() || emit_externs.is_own(emit_externs.unquoted(s, span: header.must()))
+            continue
+        name = source.span_text(s, decls[f.decl].name)
+
+        if seen[name].is_err()
+            seen[name] @ true
+            out @ out.push(name)
+
+    return out
+
+# The question unit: the switch before every header, then each name under a
+# file of its own, its type asked and the assertion that says it was reached.
+function unit(defined: str, headers: [str], names: [str]) -> str
+    lines: [str] @ ["#define " + defined]
+    lines @ strings.with_all(list: lines, more: c_text.includes(headers))
+    index: i64 @ 0
+
+    for name in names
+        lines @ lines.push(c_text.line_directive(at: 1, file: FILE + name))
+        lines @ lines.push("__typeof__(" + name + ") *hero_switch_" + index.to_str() + " = 0;")
+        lines @ lines.push("_Static_assert(0, \"" + REACHED + "\");")
+        index @ index + 1
+
+    return lines.join("\n") + "\n"
+
+# The names whose question clang reached and called nothing undeclared in.
+function declared(t: toolchain.Toolchain, under: compiling.Compiling, text: str) -> [str]
+    out: [str] @ []
+    path = publish.private_name(t.build + "/switch-ask") + ".c"
+    err = publish.private_name(t.build + "/switch-ask-stderr.txt")
+
+    if write_file(path: path, text: text).is_err()
+        return out
+    line = strings.with_all(
+        list: ["clang", "-fsyntax-only", "-ferror-limit=0", "-fno-caret-diagnostics"],
+        more: compiling.probe_words(under)
+    )
+    ran = process.run(program: "clang", words: line.push(path), out: process.discard(), err: err)
+    said = read_back.words(err)
+    publish.discard(path)
+    publish.discard(err)
+
+    if !ran.started || said.is_err()
+        return out
+    return read(said.must())
+
+# The names reached and not undeclared, in the order clang reached them.
+function read(said: str) -> [str]
+    reached: [str] @ []
+    undeclared: {str: bool} @ {}
+
+    for row in ffi_lookup.lines(text: said)
+        if !strings.starts_with(text: row, prefix: FILE)
+            continue
+        name = asked_name(row)
+
+        if ffi_lookup.has(text: row, needle: REACHED)
+            reached @ reached.push(name)
+        else if ffi_lookup.has(text: row, needle: "undeclared")
+            undeclared[name] @ true
+
+    out: [str] @ []
+
+    for name in reached
+        if undeclared[name].is_err()
+            out @ out.push(name)
+
+    return out
+
+# The name a question's line asks about, up to the colon that opens the
+# position.
+function asked_name(row: str) -> str
+    at: i64 @ FILE.len()
+
+    while at < row.len() && row[at] != 58
+        at @ at + 1
+
+    return row.slice(from: FILE.len(), to: at)
+
+function first_word(text: str) -> str
+    at: i64 @ 0
+
+    while at < text.len() && text[at] != 32
+        at @ at + 1
+
+    return text.slice(from: 0, to: at)
+
+## Tests
+
+test "a switch stands before every header, and each name asks its type under a file of its own"
+    got = unit(defined: "_GNU_SOURCE 1", headers: ["sched.h"], names: ["sched_getcpu"])
+    assert got == "#define _GNU_SOURCE 1\n#include <sched.h>\n#line 1 \"hero-ask-switch sched_getcpu\"\n__typeof__(sched_getcpu) *hero_switch_0 = 0;\n_Static_assert(0, \"hero-switch-asked\");\n"
+    assert first_word("_XOPEN_SOURCE 700") == "_XOPEN_SOURCE"
+
+test "a name is declared under a switch where its question was reached and nothing in it is undeclared"
+    said = "hero-ask-switch sched_getcpu:1:1: error: static assertion failed: hero-switch-asked\nhero-ask-switch nosuch:1:12: error: use of undeclared identifier 'nosuch'\nhero-ask-switch nosuch:1:1: error: static assertion failed: hero-switch-asked\n./x.h:3:1: error: unrelated\n"
+    assert read(said) == ["sched_getcpu"]
+    assert read("") == []

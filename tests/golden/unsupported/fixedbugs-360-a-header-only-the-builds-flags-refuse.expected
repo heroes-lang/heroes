@@ -1,8 +1,8 @@
 error[ffi_header_refused]: `fixedbugs-360-flags.h`, the header this group names, does not compile: clang refuses it at line 5: implicit conversion loses integer precision: 'long long' to 'int' [-Werror,-Wshorten-64-to-32]
-  at tests/golden/unsupported/fixedbugs-360-a-header-only-the-builds-flags-refuse.hero:9:8
-    |
-  9 | extern "fixedbugs-360-flags.h"  #~ ffi_header_refused
-    |        ^^^^^^^^^^^^^^^^^^^^^^^
+  at tests/golden/unsupported/fixedbugs-360-a-header-only-the-builds-flags-refuse.hero:16:8
+     |
+  16 | extern "fixedbugs-360-flags.h"  #~ ffi_header_refused
+     |        ^^^^^^^^^^^^^^^^^^^^^^^
   note: `fixedbugs-360-flags.h` line 5 reads `static inline int narrowed(long long x) { return x; }`
-  note: clang's `-Werror` says the warning is one this compiler makes an error in every unit it compiles, the headers each includes among them, and no warning is turned off for a header
+  note: clang's `-Werror` says the warning is one this compiler makes an error in a header's own code too, wherever the header was found: a header's code is passed over for `-Wall`'s warnings and sign conversions alone, never for a missing return, an uninitialised read, a value narrowed to 32 bits or a pointer of another type
   note: a group's header is compiled as this program's own C includes it, before any declaration of the group is checked against it: repair the header, or name the one that declares this group's C

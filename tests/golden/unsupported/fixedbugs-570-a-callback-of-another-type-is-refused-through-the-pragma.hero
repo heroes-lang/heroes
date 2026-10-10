@@ -1,0 +1,22 @@
+# fixedbugs, defect 570, lane b18-guard, 2026-10-10 (panel 205's R1).
+#
+# SYMPTOM: through a header writing `#pragma clang diagnostic ignored
+# "-Wincompatible-function-pointer-types"`, a callback declared
+# `(function(x: i64) -> i64)` against `void (*)(void)` built and ran it.
+#
+# CAUSE: clang makes the warning an error by default, and the header's
+# pragma turned it off at the probe.
+#
+# FIX: after the groups' includes, and again at the probe region, every
+# warning a check of a binding rests on is raised again
+# (`emit/checks_raised.hero`), the build's `-Werror` words and clang's three
+# default errors, so the message is the one a plain header gets.
+
+extern "fixedbugs-570-a-callback-of-another-type-is-refused-through-the-pragma.h"
+    function run_cb(f: (function(x: i64) -> i64)) -> i32  #~ ffi_callback_type
+
+function cb(x: i64) -> i64
+    return x
+
+function main()
+    print(run_cb(cb))

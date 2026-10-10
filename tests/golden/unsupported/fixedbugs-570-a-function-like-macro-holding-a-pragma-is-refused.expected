@@ -1,0 +1,7 @@
+error[ffi_macro_name]: `fixedbugs-570-a-function-like-macro-holding-a-pragma-is-refused.h` defines `my_twice` as a macro whose expansion holds a `_Pragma`: where this program's C calls `my_twice`, the pragma changes how clang judges every line after it, the checks of this program's bindings among them
+  at tests/golden/unsupported/fixedbugs-570-a-function-like-macro-holding-a-pragma-is-refused.hero:26:14
+     |
+  26 |     function my_twice(x: i32) -> i32  #~ ffi_macro_name
+     |              ^^^^^^^^
+  note: clang read the header, and the expansion of `my_twice` runs `#pragma clang diagnostic ignored "-Wincompatible-pointer-types-discards-qualifiers"`
+  note: a header of your own that includes `fixedbugs-570-a-function-like-macro-holding-a-pragma-is-refused.h` and then writes `#undef my_twice`, named by this group instead, binds the header's own `my_twice` where it declares one

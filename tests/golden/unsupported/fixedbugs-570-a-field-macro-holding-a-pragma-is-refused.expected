@@ -1,0 +1,7 @@
+error[ffi_macro_name]: `fixedbugs-570-a-field-macro-holding-a-pragma-is-refused.h` defines `count` as a macro whose expansion holds a `_Pragma`: where this program's C reads the field `count`, the pragma changes how clang judges every line after it, the checks of this program's bindings among them
+  at tests/golden/unsupported/fixedbugs-570-a-field-macro-holding-a-pragma-is-refused.hero:23:9
+     |
+  23 |         count: i64  #~ ffi_macro_name
+     |         ^^^^^
+  note: clang read the header, and the expansion of `count` runs `#pragma clang diagnostic ignored "-Wincompatible-pointer-types-discards-qualifiers"`
+  note: a header of your own that includes `fixedbugs-570-a-field-macro-holding-a-pragma-is-refused.h` and then writes `#undef count`, named by this group instead, binds the header's own `count` where it declares one

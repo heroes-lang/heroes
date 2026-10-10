@@ -1,0 +1,21 @@
+# fixedbugs, defect 570, lane b18-guard, 2026-10-10 (panel 205's R1).
+#
+# SYMPTOM: a header defining a constant as `_Pragma("clang diagnostic
+# ignored \"-Wsign-conversion\"") 5` and binding it beside `abs(x: u32)`:
+# the constant's return assertion expanded the macro above the probes, and
+# the sign check was off for them; it built and printed `10`.
+#
+# CAUSE: a `_Pragma` stands where the macro is expanded, on the compiler's
+# own line, after the groups' includes.
+#
+# FIX: after the groups' includes, and again at the probe region, every
+# warning a check of a binding rests on is raised again
+# (`emit/checks_raised.hero`), the build's `-Werror` words and clang's three
+# default errors, so the message is the one a plain header gets.
+
+extern "fixedbugs-570-a-constant-s-pragma-turns-off-no-check.h"
+    constant QUIET_FIVE: i32
+    function abs(x: u32) -> i32  #~ ffi_parameter_type
+
+function main()
+    print(abs(5) + QUIET_FIVE)

@@ -1,0 +1,89 @@
+# What a group's header's OWN code is held to: the diagnostics of the region
+# its include stands in (design.md §4.19, §1.12; panel 205's R2, ratified
+# 2026-10-10; defect 569).
+#
+# **A header's own code was judged by where it was found.** clang quiets
+# every warning located in a header it finds in a system directory, whatever
+# `-I` says (GCC's and clang's documentation), so on Linux arm64 `gmp.h` in
+# `/usr/include` built and printed `6`, while on this Mac the same program,
+# `gmp.h` found under Homebrew through pkg-config's `-I`, was refused by
+# `-Werror=sign-conversion` at `gmp.h:1882`, inside the library's own inline
+# code, before any binding was checked; libavutil, avcodec, avformat,
+# swscale and libfdt alike. And an environment variable decided it on one
+# machine: `CPATH` refused it, `C_INCLUDE_PATH` (a system directory to
+# clang) built it.
+#
+# **So the region is judged as one policy, wherever the header was found**:
+# the diagnostic state is pushed, `-Wall` and `-Wsign-conversion` are
+# ignored, the two families a library's own style trips, and the warnings
+# that say the header's code the program RUNS has no defined behaviour, a
+# missing return, a read of an uninitialised value, stay errors (`KEPT`, which
+# `-Wall`'s ignore would otherwise take); `-Wshorten-64-to-32`, the pointer
+# types and clang's default errors are not in `-Wall` and stay as the build's
+# flags set them. The region is popped at the guard's close, and every check
+# of a binding is raised again after it (`emit/checks_raised.hero`, defect
+# 570), so nothing a header's code is excused from reaches a line the
+# compiler wrote. Measured at the landing, 2026-10-10: the six libraries
+# build on this Mac, `CPATH` and `C_INCLUDE_PATH` agree, a header of the
+# program's own with a missing return, an uninitialised read or a 64-to-32
+# narrowing is refused; panel 204's 182 Mac headers read 10 refusals and 0
+# raw warnings where they read 16 and 2, exactly the six moving, and the 85
+# Linux arm64 headers copied to a directory of the user's 2 where they read
+# 3, `gmp.h` moving; and of the 1,456 tracked files with an `extern`, no
+# program moved but the defect's own cases.
+
+use emit/checks_raised
+
+# What a header's own code is not held to.
+constant QUIETED: [str]
+    [
+        "-Wall"
+        "-Wsign-conversion"
+    ]
+
+# What it still is, which `-Wall`'s ignore would otherwise turn off: each an
+# error on the build's command line too (`cli/flags.hero`).
+constant KEPT: [str]
+    [
+        "-Wreturn-type"
+        "-Wuninitialized"
+        "-Wconditional-uninitialized"
+    ]
+
+# The lines before the groups' includes: the push, the ignores, the kept.
+function opening() -> [str]
+    out: [str] @ ["#pragma clang diagnostic push"]
+
+    for word in QUIETED
+        out @ out.push("#pragma clang diagnostic ignored \"" + word + "\"")
+
+    for word in KEPT
+        out @ out.push("#pragma clang diagnostic error \"" + word + "\"")
+
+    return out
+
+# The line after the guard's close, which gives back the state before the
+# region; a header's own push left open is what the checks raised after it
+# answer.
+constant CLOSING: str
+    "#pragma clang diagnostic pop"
+
+## Tests
+
+test "a header's own code is quiet of -Wall and sign conversion alone, a missing return and an uninitialised read kept"
+    got = opening()
+    assert got[0] == "#pragma clang diagnostic push"
+    assert got[1] == "#pragma clang diagnostic ignored \"-Wall\""
+    assert got[2] == "#pragma clang diagnostic ignored \"-Wsign-conversion\""
+    assert got[3] == "#pragma clang diagnostic error \"-Wreturn-type\""
+    assert got.len() == 1 + QUIETED.len() + KEPT.len()
+
+    # Each kept warning is a check the build raises after the region too.
+    for word in KEPT
+        found: bool @ false
+
+        for one in checks_raised.checked()
+            if one == word
+                found @ true
+
+        assert found

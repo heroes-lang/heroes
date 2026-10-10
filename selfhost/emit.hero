@@ -31,6 +31,7 @@ use emit/perfn
 use emit/descriptors
 use emit/signature
 use emit/body
+use emit/deprecation
 use emit/callback_guard
 use emit/callback_thunk
 use emit/builtins
@@ -238,10 +239,19 @@ function emit_told(target: emit_decls.BuildTarget, p: containers.Program, c: sta
 
     callback_thunk.lookup_table(@w, p, c, names, s, decls, callbacks: callbacks)
 
+    # The program's own definitions, where a `deprecated` attribute is
+    # spoken; quiet again after them (`emit/deprecation.hero`, defect 571).
+    grouped = deprecation.binds_a_group(emit_externs.headers(p, s, decls))
+
+    if grouped
+        deprecation.say(@w, line: deprecation.SPOKEN)
+
     for at in shown
         if emit_decls.emitted(p.functions[at], target: target)
             body.definition(@w, callees, c, names, s, decls, f: p.functions[at], guarded_decls: guarded_decls)
 
+    if grouped
+        deprecation.say(@w, line: deprecation.QUIET)
     perfn.bodies(@w, c, names, s, decls, want: synth.everything())
 
     match target

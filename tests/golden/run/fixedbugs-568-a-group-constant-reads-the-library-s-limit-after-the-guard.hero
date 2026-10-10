@@ -1,0 +1,18 @@
+# fixedbugs, defect 568, lane b18-guard, 2026-10-10 (panel 205's R3).
+#
+# Beside `run/fixedbugs-568-the-first-group-s-header-is-read-before-the-c-library`:
+# with `<stdint.h>` and `<math.h>` read after the groups, each of their
+# macros was undefined when the guard saved it, so the guard gave back
+# nothing and a group's constant whose macro names `INT32_MAX` or `INFINITY`
+# lost the name with the region. The guard keeps only the four the unit's
+# own C writes (`emit/guarded_names.hero`), and these stay the headers'.
+
+extern "fixedbugs-568-a-group-constant-reads-the-library-s-limit-after-the-guard.h"
+    constant CASE_LIMIT: i32
+    constant CASE_HUGE: f64
+    constant CASE_LOW: i64
+
+function main()
+    print(CASE_LIMIT)
+    print(CASE_HUGE > 1000000.0)
+    print(CASE_LOW < 0)

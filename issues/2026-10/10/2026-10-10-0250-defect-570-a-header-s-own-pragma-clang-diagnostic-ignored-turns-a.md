@@ -3,7 +3,7 @@ kind: defect
 area: emit
 milestone: none
 filed: 2026-10-10
-commit: none
+commit: bd1136f9b1c8624aafe761ab7c130e72eea5d921
 github: none
 ---
 
@@ -14,3 +14,7 @@ github: none
     **Class: blocking**, 2026-10-10 (`.claude/rules/verification.md` § Bounded discovery): a wrong binding accepted, the compiler's promise that clang checks a declaration against its header broken.
 
     **Widened and ruled 2026-10-10** by panel 205 (`docs/panel/205-a-library-s-own-header-code-is-judged-as-clang-judges-a-system-header-the-checks-raised-again-after-it-and-a-switch-goes-in-the-first-group.md`, ratified at 03:38): fourteen rows of this cause build today on this Mac and Linux arm64, measured by the spec-warden, the compiler-engineer and the critic: a sign, a handle of another tag (defect 029's class), an integer for a pointer (`read_p(p: i64)` against `int *`, aborting 134 at run time), a callback, an undeclared function (`getpid(x: f64)`, no warning), under `ignored`, `GCC diagnostic ignored`, a downgrade to `warning`, `-Wconversion`, `-Weverything` and a push with no pop; `mac`, a `_Pragma` inside a constant's macro; and `callee`, a macro naming the bound function that expands to a `_Pragma`. R1: every warning an FFI check rests on is raised again after the groups' close and in the probe region, and `callee` is asked of clang and refused with a true message.
+
+    Repaired at `bd1136f9b1c8624aafe761ab7c130e72eea5d921`, 2026-10-10, gated by its cases and the compiler's own tests; the net is owed at the batch's close. Every warning a check rests on, each `-Werror=` word of `flags.flags()` and clang's `int-conversion`, `implicit-function-declaration` and `incompatible-function-pointer-types` (`emit/checks_raised.hero`), is raised again after the groups' close, at the probe region's opening outside its push, and after every group constant's accessor (a constant's `_Pragma` reached a call's `const` lend in the definitions, a shape beside); every name the compiler writes but a constant's, a function, a releaser, a record's name and tag and each field, is preprocessed as the compiler writes it under a file of its own before any unit compiles (`cli/pragma_ask.hero`), and a `_Pragma` in its expansion is refused `ffi_macro_name`, *`callee.h` defines `my_abs` as a macro whose expansion holds a `_Pragma`* with the pragma quoted, `callee` and a function-like macro, a tag and a field beside it. The twelve shapes and `mac` are told the plain header's messages. Cases `unsupported/fixedbugs-570-*` (19, each red on the base) and `run/fixedbugs-570-*` (2 correct twins); unsupported 19 and 0, run 2 and 0, annotations 19 and 0, emit 11 and 0, emission 1,098 and 0 after its re-bless (259 moved, every line a raise or a `#line`), layout 6 and 0, wholes 532 and 0, the compiler's own tests 1,552 passed. A cold build pays one `clang -E` per header list: 712M to 976M instructions on a one-group program, 746M to 868M on `examples/sqlite`, the self-build 421.8G to 421.9G.
+
+    Corrected 2026-10-10: of the 19 cases, the undeclared function was not red on the base built from the current source, which already refuses `getpid(x: f64)` through a header declaring nothing; the seed-built compiler, older than that source, had built it. `5e81541a` gives the case panel 205's `ifd`, `getpid() -> i64`, which that base builds at exit 0 and the repair refuses.

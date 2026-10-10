@@ -134,11 +134,15 @@ record Asked
     fields: {str: Typed}
     widths: {str: i64}
 
+    # Each name the headers declare only under a switch of the C library,
+    # with the switch (`cli/switch_ask.hero`, defect 568).
+    switched: {str: str}
+
 # The answer of a run that was not made: nothing said, nothing a value or a
 # macro, no tag or type answered.
 function nothing() -> Asked
     none: {str: bool} = {}
-    return Asked(said: "", values: none, macros: none, types: {}, results: {}, fields: {}, widths: {})
+    return Asked(said: "", values: none, macros: none, types: {}, results: {}, fields: {}, widths: {}, switched: {})
 
 # The unit's C: `headers`, then what is said again and asked of each
 # `extern` function of `p` its own files declare, and of each group record

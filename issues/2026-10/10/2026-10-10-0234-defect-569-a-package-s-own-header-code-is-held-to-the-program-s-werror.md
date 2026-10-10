@@ -3,7 +3,7 @@ kind: defect
 area: cli
 milestone: none
 filed: 2026-10-10
-commit: none
+commit: ee4dda85b9c511db4376672496ac46d41d22e79d
 github: none
 ---
 
@@ -14,3 +14,5 @@ github: none
     **Class: blocking**, 2026-10-10 (`.claude/rules/verification.md` § Bounded discovery): a correct program refused.
 
     **Ruled 2026-10-10** by panel 205 (`docs/panel/205-a-library-s-own-header-code-is-judged-as-clang-judges-a-system-header-the-checks-raised-again-after-it-and-a-switch-goes-in-the-first-group.md`, ratified at 03:38): R2: inside the groups' region only `-Wall` and `-Wsign-conversion` are ignored, wherever a header was found, the rest kept as errors and every FFI check raised again after the close (R1); this item's attribution to panel 198's *as `-I`* is false: GMP and libavutil come through pkg-config's `-I`, and on Linux a system directory is silenced by clang's own design.
+
+    Repaired at `ee4dda85b9c511db4376672496ac46d41d22e79d`, 2026-10-10, gated by its cases and the compiler's own tests; the net is owed at the batch's close. The groups' includes stand in a region of their own (`emit/header_region.hero`): the diagnostic state pushed, `-Wall` and `-Wsign-conversion` ignored, `return-type`, `uninitialized` and `conditional-uninitialized` kept as errors, popped at the guard's close, every check of a binding raised again after it (defect 570); `-Wshorten-64-to-32`, the pointer types and clang's default errors stay as the flags set them. On this Mac gmp, libavutil, avcodec, avformat, swscale and libfdt build and print `6`, `3998054`, `4129126`, `4129126`, `655718` and `1`, a wrong sign or handle through them is still refused, a header of the program's own with a missing return, an uninitialised read or a 64-to-32 narrowing is still refused, and `CPATH` and `C_INCLUDE_PATH` both print `6`; panel 204's 182 Mac headers read 10 refused and 0 with raw warnings where they read 16 and 2, the six moving; the 85 Linux arm64 headers copied to a directory of the user's read 2 refused where they read 3, `gmp.h` moving; of 1,456 tracked files with an `extern`, `--emit-c` base against this, 19 exit codes move, every one a case of this lane. The premise of `cli/package_words.hero` and the note of `cli/header_refused.hero` are rewritten true; the 360 case keeps its verdict, its comment corrected below it and its note rewritten by hand. `-Wformat` is ignored in the region with `-Wall`, as R2 is written; keeping it an error there moved none of the 182 Mac headers (a question for the coordinator). Cases `run/fixedbugs-569-*` (2, red on the base) and `unsupported/fixedbugs-569-*` (3); unsupported 224 and 0, run 2 and 0, warnings 498 and 0, annotations 58 and 0, emission 1,102 and 0 after its re-bless, emit 11 and 0, layout 6 and 0, wholes 534 and 0, the compiler's own tests 1,553 passed.

@@ -1,0 +1,14 @@
+# fixedbugs, defect 570, lane b18-guard, 2026-10-10 (panel 205's R1).
+#
+# The correct twin of `unsupported/fixedbugs-570-*`: a header's pragmas
+# change nothing for a binding that agrees with it, the checks raised again
+# after it being errors already.
+
+extern "fixedbugs-570-a-header-s-pragma-leaves-a-correct-binding-building.h"
+    record A tag a
+    function abs(x: i32) -> i32
+    function take_a(p: A) -> i32
+
+function main()
+    print(abs(-5))
+    print(take_a(nullptr))
