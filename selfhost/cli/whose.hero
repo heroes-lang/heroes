@@ -19,6 +19,7 @@ use cli/header_ask
 use cli/probing
 use cli/header_refused
 use cli/header_alone
+use cli/inline_only
 use cli/group_file
 use diag
 use cli/deep_types
@@ -50,6 +51,16 @@ function of_refusal(failed: ()?, art: compile.Artifact, s: source.Source, t: too
     # told before any question is asked of the header after it.
     if told_header(message, art, s, t, under: under, unit_headers: unit_headers)
         return fail(code: "diagnostics", msg: "a header this program binds does not compile")
+
+    # A function the linker found no definition of whose header defines it
+    # only `inline` (defect 562, `cli/inline_only.hero`), told before the
+    # reading of a missing `link` would tell it as one.
+    if code == link.REFUSED
+        inline = inline_only.told(message, s, art.decls, t, asking: asking)
+
+        if inline.len() > 0
+            _ = compile.stage(inline, s).is_err()
+            return fail(code: "diagnostics", msg: "a header defines a called function only inline")
 
     # Asked only now, of a round clang refused (defect 152), unless the rounds
     # asked it already.

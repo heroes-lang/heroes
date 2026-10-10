@@ -152,16 +152,32 @@ function named(s: source.Source, modules: [str]) -> str
 # the probes and the units say first.
 function definitions(t: toolchain.Toolchain, probe: compiling.Probe) -> {str: bool}
     none: {str: bool} = {}
+    dumped = dump_of(t, probe)
+
+    if dumped.is_err()
+        return none
+    return external_definitions(dumped.must())
+
+# Every function these headers alone give only a C99 inline definition of
+# (C11 6.7.4p7): a body, external linkage, and every declaration `inline` and
+# none `extern`, which provides no external definition (defect 562,
+# `cli/inline_only.hero`). Asked on the failure path alone.
+function inline_only(t: toolchain.Toolchain, probe: compiling.Probe) -> {str: bool}
+    none: {str: bool} = {}
+    dumped = dump_of(t, probe)
+
+    if dumped.is_err()
+        return none
+    return merged(tops_of(dumped.must())).inline_only
+
+# clang's dump of a unit of these headers alone, absent where it could not
+# dump them, which the probes and the units say first.
+function dump_of(t: toolchain.Toolchain, probe: compiling.Probe) -> str?
     text = compiling.include_lines(probe.headers)
     dir = t.build + "/defined"
-    made = process.mkdir_all(dir)
-
-    if made.is_err()
-        return none
+    process.mkdir_all(dir)?
     unit = dir + "/defined-" + digest.digest(text) + ".c"
-
-    if publish.write_whole(path: unit, text: text, keyed: true).is_err()
-        return none
+    publish.write_whole(path: unit, text: text, keyed: true)?
     said = publish.private_name(dir + "/defined-stdout.txt")
     line = strings.with_all(
         list: ["clang", "-fsyntax-only", "-fno-color-diagnostics", "-Xclang", "-ast-dump"],
@@ -171,9 +187,9 @@ function definitions(t: toolchain.Toolchain, probe: compiling.Probe) -> {str: bo
     dumped = read_back.words(said)
     publish.discard(said)
 
-    if !ran.started || ran.code != 0 || dumped.is_err()
-        return none
-    return external_definitions(dumped.must())
+    if !ran.started || ran.code != 0
+        return fail(code: "unread", msg: "clang did not dump the headers")
+    return dumped
 
 # One top-level declaration of the dump: its kind, its name, the words after
 # its type, and whether a line under it is its body or GNU's inline mark.
@@ -185,6 +201,11 @@ record Top
     gnu: bool
 
 function external_definitions(dumped: str) -> {str: bool}
+    return merged(tops_of(dumped)).external
+
+# The dump's top-level declarations, each with its body and GNU mark read
+# from the lines under it.
+function tops_of(dumped: str) -> [Top]
     tops: [Top] @ []
     start: i64 @ 0
     at: i64 @ 0
@@ -206,7 +227,7 @@ function external_definitions(dumped: str) -> {str: bool}
             start @ at + 1
         at @ at + 1
 
-    return merged(tops)
+    return tops
 
 # Whether a line is a direct child of the top-level declaration above it.
 function child(row: str) -> bool
@@ -254,7 +275,11 @@ function closing(row: str, from: i64) -> i64
 # the first is not `static`, a function's definition external where it has a
 # body and is no C99 inline definition, an object's where one declaration is
 # not `extern` or has an initialiser.
-function merged(tops: [Top]) -> {str: bool}
+record Merged
+    external: {str: bool}
+    inline_only: {str: bool}
+
+function merged(tops: [Top]) -> Merged
     first_static: {str: bool} @ {}
     seen: {str: bool} @ {}
     function_body: {str: bool} @ {}
@@ -288,16 +313,20 @@ function merged(tops: [Top]) -> {str: bool}
             object_defined[top.name] @ true
 
     out: {str: bool} @ {}
+    inline: {str: bool} @ {}
 
     for name in keys(seen)
         if first_static[name].is_err()
             if !functions[name].is_err()
-                if !function_body[name].is_err() && !not_inline[name].is_err() && gnu[name].is_err()
-                    out[name] @ true
+                if !function_body[name].is_err() && gnu[name].is_err()
+                    if !not_inline[name].is_err()
+                        out[name] @ true
+                    else
+                        inline[name] @ true
             else if !object_defined[name].is_err()
                 out[name] @ false
 
-    return out
+    return Merged(external: out, inline_only: inline)
 
 function holds(words: [str], word: str) -> bool
     for one in words
@@ -358,6 +387,9 @@ test "a dump's external definitions are read at its top level, as C reads the de
         assert got[name].is_err()
 
     assert got.len() == 5
+
+    # And the one C99 inline definition alone, `c99` (defect 562).
+    assert keys(merged(tops_of(rows.join("\n") + "\n")).inline_only) == ["c99"]
     s = source.new_source(name: "t.hero", text: "")
     assert named(s, modules: ["left"]) == "`left`"
     assert named(s, modules: ["a", "b", "c"]) == "`a`, `b` and `c`"
