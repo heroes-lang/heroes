@@ -1,0 +1,1 @@
+tests/golden/check/fixedbugs-577-a-constant-another-module-writes-is-read-through-its-body.hero:10:5: error[int_out_of_range]: `limits.TOP + 100` computes 300, which does not fit a `u8`

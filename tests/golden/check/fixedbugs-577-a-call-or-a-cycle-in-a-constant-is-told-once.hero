@@ -1,0 +1,23 @@
+# Fixed defect 577, 2026-10-10 (panel 206 R1; the critic's `c04` and `t09`): a
+# body holding a call is refused `constant_body` where the call stands (panel
+# 039), and a constant defined through itself is refused `constant_cycle`;
+# neither is told twice. The walk that computes a body's steps reads the
+# checker's types, which a program the name stage refuses never reaches, and
+# it gives a call and a constant still being walked no value besides, so
+# `id(a: 200) + 100` and `B + 1` are steps it would not judge.
+
+function id(a: u8) -> u8
+    return a
+
+constant N: u8
+    id(a: 200) + 100  #~ constant_body
+
+constant A: u8  #~ constant_cycle
+    B + 1
+
+constant B: u8
+    A + 1
+
+function main()
+    print(N)
+    print(A)

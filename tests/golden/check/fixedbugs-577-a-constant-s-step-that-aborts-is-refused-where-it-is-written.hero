@@ -1,0 +1,218 @@
+# Fixed defect 577, 2026-10-10 (filed by lane b18-infer beside defect 564;
+# panel 206 R1, ratified that day). Symptom: since 564 the operands of an
+# operator take the type their position asks for, so `constant BIG: u8` of
+# `200 + 100` built, and the C function that computes a constant at every read
+# aborted 134 each time `BIG` was read; spec § 4's *a written body computes
+# over literals and other constants* reads, to 2 of 2 blind readers, as the
+# compiler's computation. Cause: no stage computed a body. Repair:
+# `check/const_steps.hero` walks every constant's written body, read or not,
+# computes each operator step at the width the checker recorded, and refuses
+# the step that overflows, divides by zero or shifts outside 0..63 at its
+# line, `int_out_of_range` or `division_by_zero` (spec § 4 since panel 206:
+# *a step of it that aborts is a compile error*).
+#
+# The shapes are panel 206's critic's (`c01` to `c22`, `t04`, `t05`, `t08`,
+# `v03`, `s11` and the sitting's `p206/const`), each constant named after its
+# shape, and the shapes beside them: a name the body binds and a cell it
+# writes, a map, a `f"..."` hole and a case's payload, the smallest `i64` by
+# -1, a negative shift count, a step under the smallest `i64`, a character.
+# Every step is judged where it is written, the right of `&&`, a branch not
+# taken and a loop that never runs included, as `y: u8 = 300` is refused in a
+# function nothing calls (`c21`). The constants below the last refusal have
+# no step that aborts and are accepted: a chain that fits (`c11`), a sum
+# read twice (`c23`), cells a branch or a loop leaves uncertain, and the
+# boundaries of five widths. Nothing here is read but `main`'s line, so the
+# constants nobody reads are refused as the read ones are (`t05`, `t08`).
+
+variant Token
+    num
+        v: u8
+    none
+
+constant C01: u8
+    2 - 3 + 5  #~ int_out_of_range
+
+constant C02: u8
+    255 + 1 - 1  #~ int_out_of_range
+
+constant M: i8
+    -128
+
+constant C05: i8
+    -M  #~ int_out_of_range
+
+constant C06: bool
+    false && 1 / 0 == 0  #~ division_by_zero
+
+constant C07: i8
+    -128 / -1  #~ int_out_of_range
+
+constant C08: u64
+    0 - 1  #~ int_out_of_range
+
+constant C09: u8
+    x: u8 = 200 + 100  #~ int_out_of_range
+    x
+
+constant C10: [u8]
+    [200 + 100]  #~ int_out_of_range
+
+constant Z: u8
+    0
+
+constant C13: u8
+    7 / Z  #~ division_by_zero
+
+constant C14: i64
+    1 << 64  #~ int_out_of_range
+
+constant C15: i64
+    4294967296 * 4294967296  #~ int_out_of_range
+
+constant C16: i8
+    -128 % -1  #~ int_out_of_range
+
+constant C17: u8
+    A17 + 100  #~ int_out_of_range
+
+constant A17: u8
+    200
+
+constant C19: u8
+    x: u8 @ 1
+
+    while false
+        x @ 200 + 100  #~ int_out_of_range
+
+    x
+
+constant C22: u8
+    if false
+        200 + 100  #~ int_out_of_range
+    else
+        1
+
+constant T04: i64
+    9223372036854775807 + 1  #~ int_out_of_range
+
+constant T05: u8
+    200 + 100  #~ int_out_of_range
+
+constant V03: i64
+    7 % 0  #~ division_by_zero
+
+constant A11: u8
+    200
+
+constant S11: u8
+    A11 + 100  #~ int_out_of_range
+
+constant BIG: u8
+    200 + 100  #~ int_out_of_range
+
+constant BOUND: u8
+    x: u8 = 200
+    x + 100  #~ int_out_of_range
+
+constant CELL: u8
+    v: u8 @ 200
+    v @ v + 100  #~ int_out_of_range
+    v
+
+constant BRANCH: u8
+    v: u8 @ 200
+
+    if A11 > 1
+        v @ v + 100  #~ int_out_of_range
+    v
+
+constant MAP: {str: u8}
+    {"a": 255 + 1}  #~ int_out_of_range
+
+constant HOLE: str
+    f"{9223372036854775807 + 1}"  #~ int_out_of_range
+
+constant CASE: Token
+    .num(v: 200 + 100)  #~ int_out_of_range
+
+constant LOWEST: i64
+    -9223372036854775808 / -1  #~ int_out_of_range
+
+constant REST: i64
+    -9223372036854775808 % -1  #~ int_out_of_range
+
+constant SHIFT: i64
+    1 << -1  #~ int_out_of_range
+
+constant TOP: i64
+    1 << 63
+
+constant UNDER: i64
+    TOP - 1  #~ int_out_of_range
+
+constant LETTER: u8
+    'a' + 159  #~ int_out_of_range
+
+constant A: u8
+    200
+
+constant B: u8
+    A + 55
+
+constant C11: u8
+    B - A
+
+constant C23: u8
+    200 + 50
+
+constant LOOPED: u8
+    v: u8 @ 0
+    i: i64 @ 0
+
+    while i < 2
+        v @ v + 100
+        i @ i + 1
+
+    v
+
+constant UNTOUCHED: u8
+    v: u8 @ 255
+
+    while false
+        i: i64 @ 0
+        i @ i + 1
+
+    v @ 0
+    v + 1
+
+constant CHOSEN: u8
+    v: u8 @ 200
+
+    if A > 1
+        v @ 0
+    else
+        v @ 1
+
+    v + 100
+
+constant W16: u16
+    65535 + 0
+
+constant N32: i32
+    -2147483648 + 0
+
+constant CHAR: u8
+    'a' + 158
+
+constant MIN64: i64
+    -9223372036854775808 / 1
+
+constant MASK: i64
+    ~0 & 255
+
+function never() -> u8
+    y: u8 = 300  #~ int_out_of_range
+    return y
+
+function main()
+    print(C11)
