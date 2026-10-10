@@ -163,7 +163,8 @@ function spelled_at(rows: [str], line: str, name: str) -> Spelled?
     while index < rows.len()
         row = clang_place.without_return(rows[index])
 
-        if row.len() > 0 && row[0] != ' '
+        # A note's own includes stand above it since panel 202's (g).
+        if row.len() > 0 && row[0] != ' ' && clang_place.included(row).is_err()
             if header_refused.severity_of(row) != header_refused.NOTE
                 return fail(code: "none", msg: "no note names the macro")
             place = clang_place.place(row)

@@ -9,9 +9,10 @@
 # corrected — a count in prose is the premise §11 says expires in
 # silence. The reasons ride each flag below; the array is the fact.
 
-# The seventeen — the bootstrap's thirteen in their order but `-g`, then
-# panel 103's, then panel 154's, then panel 161's, then panel 199's two; the
-# debug word is the level's since panel 197 (`debug_words` below):
+# The eighteen — the bootstrap's thirteen in their order but `-g`, then
+# panel 103's, then panel 154's, then panel 161's, then panel 199's two, then
+# panel 202's; the debug word is the level's since panel 197 (`debug_words`
+# below):
 # - gnu11 not c11: one predefined macro apart (__STRICT_ANSI__), whose
 #   only effect on glibc is to hide M_PI, strdup, fileno and most of
 #   what §1.11 says a program binds (panel 047, ratified).
@@ -104,6 +105,18 @@
 #   (`check/self_call.hero`); what this drops is where clang cannot tell
 #   true from false, or is silent. Last, after `-Wall`, since a later word
 #   wins (`tests/golden/run/fixedbugs-507-*`).
+# - **-fdiagnostics-show-note-include-stack is panel 202's (g)** (defect 550,
+#   ratified 2026-10-10): clang prints the includes that reach an error's file
+#   and, by default, not those that reach a note's. So where two groups'
+#   headers declared one name two ways and the earlier declaration sat in a
+#   file another group's header includes, the note named a file no group
+#   names, and the refusal was told as one header not compiling in one order
+#   of the `use` lines and as the two headers in the other. With the flag the
+#   same clang run prints the note's includes from the unit's own line, on
+#   clang 21 and 22 (the ffi-pragmatist's measurement), and
+#   `cli/header_refused.hero` reads the group's header the file arrives
+#   through. Words, never a type's meaning, so it reaches every probe too;
+#   the key names this list, so every key moved once.
 use cli/process
 
 function flags() -> [str]
@@ -125,6 +138,7 @@ function flags() -> [str]
         "-fsigned-char"
         "-fno-optimize-sibling-calls"
         "-Wno-infinite-recursion"
+        "-fdiagnostics-show-note-include-stack"
     ]
 
 # **THE DEBUG WORD IS THE LEVEL'S** (panel 197, defects 219 and 322,
@@ -267,9 +281,9 @@ function sanitizers(sanitize: bool) -> [str]
 
 ## Tests
 
-test "the array is the fact: seventeen flags, gnu11 named first and panel 199's two last"
+test "the array is the fact: eighteen flags, gnu11 named first and panel 202's last"
     got = flags()
-    assert got.len() == 17
+    assert got.len() == 18
     assert got[0] == "-std=gnu11"
     assert got[9] == "-fno-delete-null-pointer-checks"
     assert got[12] == "-Werror=incompatible-pointer-types-discards-qualifiers"
@@ -288,6 +302,9 @@ test "the array is the fact: seventeen flags, gnu11 named first and panel 199's 
     # And its R3, after `-Wall`, which would turn the warning back on were it
     # later in the list (defect 507).
     assert got[16] == "-Wno-infinite-recursion"
+
+    # And panel 202's (g): a note's includes, read by the header's refusal.
+    assert got[17] == "-fdiagnostics-show-note-include-stack"
     assert got[3] == "-Wall"
     assert sanitizers(sanitize: true).len() == 1
     assert sanitizers(sanitize: false).len() == 0
@@ -299,10 +316,10 @@ test "the array is the fact: seventeen flags, gnu11 named first and panel 199's 
     assert debug_words("-O0") == ["-g"]
     assert debug_words("-O2") == ["-gline-tables-only"]
     o2 = level_words(level: "-O2", sanitize: true)
-    assert o2.len() == 20
-    assert o2[17] == "-O2"
-    assert o2[18] == "-gline-tables-only"
-    assert o2[19] == "-fsanitize=address,undefined"
+    assert o2.len() == 21
+    assert o2[18] == "-O2"
+    assert o2[19] == "-gline-tables-only"
+    assert o2[20] == "-fsanitize=address,undefined"
     assert level_words(level: "-O0", sanitize: false) == flags().push("-O0").push("-g")
 
     # A call stays a call at every level (panel 199's R2), the words each
