@@ -4,7 +4,7 @@ The status and the chain. Why the table looks the way it does is
 `docs/roadmap/shape.md`; who scheduled each row and what ratified it is
 `docs/roadmap/scheduling.md`.
 
-**Open: 12 defects · 1 decision.** The defects are the open issues whose card
+**Open: 13 defects · 1 decision.** The defects are the open issues whose card
 says `kind: defect` and the decisions the open ones that say `kind: decision`,
 files of `issues/` since 2026-10-04 (their rules `issues/README.md`); this line
 must equal both.
@@ -26,7 +26,7 @@ against a banner reading 3.
 | The platforms | **four**, since 2026-09-18: Linux x86-64, **Linux arm64**, Darwin arm64, Windows x86-64. The two Linux legs are one axis apart by construction — same Debian, same clang, same libc — so a divergence between them has one candidate cause. Windows is the one the author starts by hand |
 | The spec | **7636** on the vendored ranks and **10,024** on the reader's own, against a ceiling of **10240**. The milestone spent two rows of `docs/measurements/010-spec-budget-ledger.md`, 107 and 108: the cell's symbol with the type kept (10,029 real), then the type optional and the never-re-bound rule merged into § 5's use sentence (10,024, +3 on the trunk the sitting measured) |
 | The contract | **8167** on the reader's own against a ceiling of **12288**, judged on `claude-opus-5`, refreshed 2026-09-29 |
-| Records | sittings **207** · journals **63**, numbered files only · milestone pages **54** in `docs/roadmap/milestones/` · measurements **39** · issues **1,976** in `issues/`, 74 open, since 2026-10-04 · questions **466** in `docs/learn/`, 441 open, not issues since 2026-10-05 · `docs/records/book/beats/` **130** |
+| Records | sittings **207** · journals **63**, numbered files only · milestone pages **54** in `docs/roadmap/milestones/` · measurements **39** · issues **1,977** in `issues/`, 75 open, since 2026-10-04 · questions **466** in `docs/learn/`, 441 open, not issues since 2026-10-05 · `docs/records/book/beats/` **130** |
 | Waiting on the author | **the push that carries `m-inferred-cell`**, with the site's commits it publishes; the critic's decision on an `@` parameter the callee never writes (`issues/2026-10/10/2026-10-10-1737-an-at-parameter-the-callee-never-writes-is-accepted.md`, open with its default); and the `git checkout --` of the two CRLF probe working copies on the trunk (defect 600's record) |
 
 **Re-measured 2026-10-10 at the close of M-inferred-cell, the full net on a
