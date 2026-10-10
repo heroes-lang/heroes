@@ -27,7 +27,8 @@
 # each found at its own name, and clang said nothing under `-Weverything`;
 # under `--rsp-quoting=windows` the two names holding a backslash were not
 # found. **On Windows this is unrun**: the cases below and `cli/link.hero`'s
-# run there on the CI's Windows leg.
+# run there on the CI's Windows leg, which is handed only the names a Windows
+# file may have (`hard_names`, defect 602).
 #
 # A file holds bytes, and clang reads them as UTF-8 (a byte-order mark it
 # would strip is never written), which is what a `str` holds and what the
@@ -35,6 +36,7 @@
 # codepage.c`). A word that opens with `@` inside the file is read as a
 # file's name, as it is on a line: no word this compiler writes opens so.
 
+use cli/digest
 use cli/process
 use cli/publish
 
@@ -66,6 +68,44 @@ function for_link(line: [str], home: str) -> [str]?
 # `.dSYM`, and a linker writes no `.rsp`, so none of it is published as this.
 constant LINK_WORDS: str
     "link-words.rsp"
+
+# **A compile's words, a unit's or a probe's, in a file named by them**
+# (defect 586). Every package a program's groups name reaches every unit's
+# compile line and every probe's whole (`compiling.search_words`), so the
+# line grows with the packages as the link grew with the objects: the fifty
+# largest `pkg-config --cflags` answers of this Mac's 505 packages are 34,670
+# characters, past the 32,767 Windows takes (measured 2026-10-10). So the line
+# a caller builds, `clang` and the words its run shares with every other run
+# of the build, goes through a file, and the caller adds its own after it,
+# its input, its output and its listing. Always, and not past a length: one
+# path on every platform.
+#
+# **The file is named by its bytes**, `words-<digest>.rsp` in `dir`, so any
+# directory under `build/` serves, every run of the same words reads one file,
+# and no key moves: a key names the words, never the line that carries them.
+# It is read back before it is trusted and written whole where it says
+# anything else (`publish.write_whole`, keyed: another build's copy is these
+# bytes), so a file a power cut zeroed is written again, never read as words.
+# Measured on this Mac: a unit compiled from such a file and from the line
+# gave one object, byte for byte, and one dependency listing, which names no
+# `.rsp`. **Where the file cannot be written the line is run as it stands**:
+# the same words, so no answer can differ, and the build's own writes into
+# the same `build/` say why it refuses.
+function carried(line: [str], dir: str) -> [str]
+    text = text_of(line)
+    at = dir + "/words-" + digest.digest(text) + ".rsp"
+    held = read_file(at)
+
+    if !held.is_err() && held.must() == text
+        return ["clang", QUOTING, "@" + at]
+
+    if process.mkdir_all(dir).is_err()
+        return line
+    written = through(line: line, at: at, keyed: true)
+
+    if written.is_err()
+        return line
+    return written.must()
 
 # The words of `line` but its first, one a line, each by `quoted`.
 function text_of(line: [str]) -> str
@@ -114,6 +154,34 @@ test "a word is written in double quotes with a backslash before each backslash 
     assert text_of(["clang", "x.o", "-l", "m"]) == "\"x.o\"\n\"-l\"\n\"m\"\n"
     assert text_of(["clang"]) == "\n"
 
+test "a compile's words are carried in a file named by them, read back before it is trusted (defect 586)"
+    dir = "build/selftest-response-carried"
+    assert !process.remove_tree(dir).is_err()
+    line = ["clang", "-DA=1", "-I", "a b"]
+    first = carried(line: line, dir: dir)
+    assert first.len() == 3
+    assert first[0] == "clang"
+    assert first[1] == QUOTING
+    at = first[2].slice(from: 1, to: first[2].len())
+    assert at == dir + "/words-" + digest.digest(text_of(line)) + ".rsp"
+    assert read_file(at).must() == text_of(line)
+
+    # The same words are the same file, and other words another.
+    assert carried(line: line, dir: dir) == first
+    assert carried(line: ["clang", "-DA=2"], dir: dir) != first
+
+    # A file that says anything else, as a power cut can leave one, is
+    # written again before clang is pointed at it.
+    assert !write_file(path: at, text: "\"-DA=0\"\n").is_err()
+    assert carried(line: line, dir: dir) == first
+    assert read_file(at).must() == text_of(line)
+
+    # Where no file can be made, the line runs as it stands.
+    blocked = dir + "/blocked"
+    assert !write_file(path: blocked, text: "a file, not a directory\n").is_err()
+    assert carried(line: line, dir: blocked + "/inner") == line
+    assert !process.remove_tree(dir).is_err()
+
 test "the line names the file and the one rule it is read by (defect 583)"
     dir = "build/selftest-response-line"
     assert !process.remove_tree(dir).is_err()
@@ -123,9 +191,15 @@ test "the line names the file and the one rule it is read by (defect 583)"
     assert read_file(at).must() == "\"-g\"\n\"a b.o\"\n"
     assert !process.remove_tree(dir).is_err()
 
-# Every name a platform lets a file have that a rule could misread: on POSIX
-# the quote, the backslash inside a name and at its end, the tab and the line
-# end as well; on Windows the backslash is the separator, and a name under it.
+# Every name a platform lets a file have that a rule could misread. Both are
+# handed a space, a quote, a two-byte character and the shell's own bytes; on
+# Windows the backslash is the separator, and a name under it. **POSIX alone
+# is handed every byte Windows refuses in a name** (`windows_refuses`, defect
+# 602): the double quote, `<CFGDIR>`'s angles, `:`, `|`, `?` and `*`, the tab
+# and the line end, and the backslash inside a name, doubled and last, which
+# Windows reads as a separator. `<CFGDIR>x.o` was on both lists until defect
+# 602: the CI's Windows leg (clang 20.1.8) could not compile an object under
+# it, and the assertion named no name.
 function hard_names(windows: bool) -> [str]
     accent: [u8] = [195, 169]
     names: [str] = [
@@ -135,7 +209,6 @@ function hard_names(windows: bool) -> [str]
         "dollar$HOME.o"
         "semi;amp&.o"
         "hash#pct%.o"
-        "<CFGDIR>x.o"
         "paren(1).o"
     ]
 
@@ -143,8 +216,114 @@ function hard_names(windows: bool) -> [str]
         return names.push("sub\\inner.o")
     return strings.with_all(
         list: names,
-        more: ["quo\"te.o", "back\\slash.o", "dbl\\\\back.o", "trail\\", "tab\tx.o", "line\nend.o", "star*.o"]
+        more: ["quo\"te.o", "<CFGDIR>x.o", "colon:x.o", "pipe|ask?.o", "star*.o", "back\\slash.o", "dbl\\\\back.o", "trail\\", "tab\tx.o", "line\nend.o"]
     )
+
+# Why Windows refuses `name` as a file's, or "" where it holds it. Each part
+# between two `\` is read by Microsoft's rules (*Naming Files, Paths, and
+# Namespaces*, learn.microsoft.com, read 2026-10-11): none of `< > : " / | ?
+# *` and no byte below 32, no part ending in a space or a dot, and no device's
+# name, `NUL.o` being `NUL` as `NUL.tar.gz` is. Asked of the list Windows is
+# handed on every platform, so a name no Windows file may have is refused on
+# this Mac before a Windows leg is asked (defect 602).
+function windows_refuses(name: str) -> str
+    start: i64 @= 0
+    at: i64 @= 0
+
+    while at <= name.len()
+        if at == name.len() || name[at] == '\\'
+            why = part_refused(name.slice(from: start, to: at))
+
+            if why.len() > 0
+                return "`" + name + "`: " + why
+            start @ at + 1
+
+        at @ at + 1
+
+    return ""
+
+# One part of a Windows path, by the rules above.
+function part_refused(part: str) -> str
+    for i in range(from: 0, to: part.len())
+        b = part[i]
+
+        if b < 32 || b == '<' || b == '>' || b == ':' || b == '"' || b == '/' || b == '|' || b == '?' || b == '*'
+            return "byte " + b.to_str() + " is reserved in a Windows name"
+
+    if part.len() > 0 && (part[part.len() - 1] == ' ' || part[part.len() - 1] == '.')
+        return "a Windows name does not end in a space or a dot"
+    stem: i64 @= 0
+
+    while stem < part.len() && part[stem] != '.'
+        stem @ stem + 1
+
+    for device in devices()
+        if same_letters(name: part.slice(from: 0, to: stem), as: device)
+            return "`" + device + "` is a device's name on Windows"
+
+    return ""
+
+# The names Windows keeps for its devices, the superscripts `¹ ² ³` read as
+# digits after `COM` and `LPT`.
+function devices() -> [str]
+    out: [str] @= ["CON", "PRN", "AUX", "NUL"]
+    digits: [str] @= []
+
+    for d in range(from: 1, to: 10)
+        digits @ digits.push(d.to_str())
+
+    for last in [185, 178, 179]
+        two: [u8] = [194, last.to_u8().must()]
+        digits @ digits.push(two.validated_bytes().must())
+
+    for digit in digits
+        out @ strings.with_all(list: out, more: ["COM" + digit, "LPT" + digit])
+
+    return out
+
+# Two names the same but for the case of their ASCII letters, as Windows
+# compares a device's.
+function same_letters(name: str, as: str) -> bool
+    if name.len() != as.len()
+        return false
+
+    for i in range(from: 0, to: name.len())
+        if folded(name[i]) != folded(as[i])
+            return false
+
+    return true
+
+function folded(b: u8) -> u8
+    if b >= 'a' && b <= 'z'
+        return b - 32
+    return b
+
+test "Windows is handed no name a Windows file may not have, and POSIX every byte Windows refuses (defect 602)"
+    refused: [str] @= []
+
+    for name in hard_names(windows: true)
+        why = windows_refuses(name)
+
+        if why.len() > 0
+            refused @ refused.push(why)
+
+    assert refused.join("; ") == ""
+
+    for name in ["<CFGDIR>x.o", "quo\"te.o", "colon:x.o", "pipe|ask?.o", "star*.o", "tab\tx.o", "line\nend.o", "trail.", "trail ", "nul.o", "Com1", "LPT9.tar.gz", "a\\con"]
+        assert windows_refuses(name) != ""
+
+    for name in ["sub\\inner.o", "console.o", "com10.o", "lpt.o", ".hidden", "a.b.o"]
+        assert windows_refuses(name) == ""
+
+    superscript: [u8] = [76, 80, 84, 194, 185, 46, 111]
+    assert windows_refuses(superscript.validated_bytes().must()) != ""
+
+# What a run that failed said, or "" for one that did not: a failure is
+# asserted by its words, so a red names what clang refused.
+function failure_of(failed: ()?) -> str
+    match failed
+        .ok    => return ""
+        .err e => return e.msg
 
 test "every hard name an object can have is read back from the file as written, and linked (defect 583)"
     root = "build/selftest-response-names"
@@ -158,6 +337,10 @@ test "every hard name an object can have is read back from the file as written, 
     calls: [str] @= []
     declared: [str] @= []
 
+    # Every name is tried before one is asserted, and the assertion shows each
+    # that failed, so one red says every name a platform refused (defect 602).
+    unmade: [str] @= []
+
     for i in range(from: 0, to: names.len())
         object = root + "/" + names[i]
         made = process.run(
@@ -166,11 +349,14 @@ test "every hard name an object can have is read back from the file as written, 
             out: process.discard(),
             err: process.discard()
         )
-        assert made.started && made.code == 0
+
+        if !made.started || made.code != 0
+            unmade @ unmade.push(names[i])
         line @ line.push(object)
         calls @ calls.push("f" + i.to_str() + "()")
         declared @ declared.push("int f" + i.to_str() + "(void);\n")
 
+    assert unmade.join(" | ") == ""
     main_c = root + "/main.c"
     main_text = declared.join("") + "int main(void) { return " + calls.join(" + ") + " == " + names.len().to_str() + " ? 0 : 1; }\n"
     assert !publish.write_whole(path: main_c, text: main_text, keyed: false).is_err()
@@ -180,7 +366,9 @@ test "every hard name an object can have is read back from the file as written, 
     binary = root + "/hard" + process.exe_suffix()
     run = strings.with_all(list: through(line: line, at: root + "/hard.rsp", keyed: false).must(), more: ["-o", binary])
     said = root + "/said.txt"
-    assert !toolchain.run_clang(line: run, what: "linking", err_path: said).is_err()
+
+    # The linker's own words, which name an object it could not find.
+    assert failure_of(toolchain.run_clang(line: run, what: "linking", err_path: said)) == ""
     assert read_file(said).must() == ""
     ran = process.run(program: binary, words: [binary], out: process.discard(), err: process.discard())
     assert ran.started && ran.code == 0

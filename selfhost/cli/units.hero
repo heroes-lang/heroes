@@ -54,6 +54,7 @@ use cli/compiling
 use cli/strings
 use cli/clang_told
 use cli/kept
+use cli/response_file
 use cli/served
 
 # The distinct components of a compilation, in file-table order: the
@@ -162,7 +163,10 @@ function tu_object(t: toolchain.Toolchain, module: str, tu_text: str, level: str
     # `-MT dep` names the listing's target a word rather than a path,
     # so the reader cuts at the first `:` on a fact it chose. The
     # listing rides this compile; no second clang invocation exists.
-    line: [str] @= strings.with_all(list: ["clang"], more: words)
+    # **The unit's words reach clang in a file** (defect 586,
+    # `response_file.carried`): every package's compile words are among
+    # them, and one file in `build/words/` serves every unit of the build.
+    line: [str] @= response_file.carried(line: strings.with_all(list: ["clang"], more: words), dir: t.build + "/words")
 
     # `-fno-crash-diagnostics` (defect 170): a clang that dies writes no copy of
     # the unit and no script into the system's temporary folder (8,270,409
@@ -470,6 +474,51 @@ test "a package's -D reaches the unit's compile, and an object is keyed by the w
         @told
     ).must()
     assert linked == seven
+
+# **A unit whose package words pass what one Windows line holds compiles**
+# (defect 586): the fifty largest `pkg-config --cflags` answers of this Mac's
+# packages are 34,670 characters, so one package answering a `-D` per name
+# until its words alone pass 32,767 is the line they make. It compiles on
+# every platform, its words read from the one file `build/words/` holds, and
+# a second unit under the same words reads the same file.
+test "a unit whose package words pass what one Windows command line holds compiles, its words read from a file (defect 586)"
+    t: toolchain.Toolchain @= toolchain.locate_toolchain(hint: "", fingerprint: "port-test").must()
+    t.build @ "build/selftest-unit-long-words"
+    assert !process.remove_tree(t.build).is_err()
+    none: [str] = []
+    memo: {str: str} @= {}
+    told: {str: bool} @= {}
+    words: [str] @= ["-DHEROES_LONG_LAST=586"]
+    length: i64 @= 0
+
+    while length <= 32767
+        word = "-DHEROES_LONG_PAD_" + words.len().to_str() + "_" + "0123456789".repeat(4) + "=1"
+        words @ words.push(word)
+        length @ length + word.len() + 1
+
+    for module in ["longone", "longtwo"]
+        object = tu_object(
+            t,
+            module: module,
+            tu_text: "int heroes_long_" + module + "(void);\nint heroes_long_" + module + "(void) { return HEROES_LONG_LAST; }\n",
+            level: "-O0",
+            sanitize: false,
+            search: "",
+            package_flags: words,
+            source_dir: "",
+            search_include: none,
+            @memo,
+            @told
+        )
+        assert failure_text(object) == ""
+        assert process.path_exists(object.must())
+
+    carried = process.files_under(t.build + "/words").must()
+    assert carried.len() == 1
+    held = read_file(carried[0]).must()
+    assert held.len() > 32767
+    assert strings.holds(text: held, needle: "\n\"-DHEROES_LONG_LAST=586\"\n")
+    assert !process.remove_tree(t.build).is_err()
 
 # **A unit's object is keyed by every word its line compiles under, the
 # source's own directory among them** (defect 167, `compiling.unit_words`). One

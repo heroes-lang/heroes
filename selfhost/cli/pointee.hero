@@ -67,6 +67,7 @@ use cli/libraries
 use cli/compiling
 use cli/process
 use cli/publish
+use cli/response_file
 use cli/digest
 use cli/deps
 use cli/header_types
@@ -178,14 +179,9 @@ function check(t: toolchain.Toolchain, p: containers.Program, c: state.Checked, 
         "-ast-dump=json"
         "-Xclang"
         "-ast-dump-filter=" + header_types.PREFIX
-        "-MD"
-        "-MT"
-        "dep"
-        "-MF"
-        depfile
     ]
-    line @ strings.with_all(list: line, more: words)
-    line @ line.push(dump_c)
+    line @ response_file.carried(line: strings.with_all(list: line, more: words), dir: dir)
+    line @ strings.with_all(list: line, more: ["-MD", "-MT", "dep", "-MF", depfile, dump_c])
     ran = process.run(program: "clang", words: line, out: dump_json, err: err_path)
 
     # Read back as every word clang writes is (`cli/read_back.hero`, defect
@@ -228,7 +224,10 @@ function check(t: toolchain.Toolchain, p: containers.Program, c: state.Checked, 
     check_c = unit_path(dir: dir, stem: "check", text: check_text)
     publish.write_whole(path: check_c, text: check_text, keyed: true)?
     check_err = publish.private_name(dir + "/check-stderr.txt")
-    check_line: [str] @= strings.with_all(list: ["clang", "-fsyntax-only"], more: words)
+    check_line: [str] @= response_file.carried(
+        line: strings.with_all(list: ["clang", "-fsyntax-only"], more: words),
+        dir: dir
+    )
     check_line @ check_line.push(check_c)
 
     # The question is the check's, and a header's warning in what clang says
@@ -313,9 +312,11 @@ test "the pointee check publishes its answer and its verdict before the record t
     listed = process.files_under(t.build).must()
 
     # The two units, the answer, the verdict and the record, and the include
-    # lines `compiling.reads` asked clang about (defect 168): nothing else,
-    # and nothing private.
-    assert listed.len() == 6
+    # lines `compiling.reads` asked clang about (defect 168), and the words
+    # of each of the three runs, named by their bytes (defect 586): nothing
+    # else, and nothing private.
+    assert listed.len() == 9
+    carried: i64 @= 0
 
     for path in listed
         assert !strings.ends_with(text: path, suffix: ".tmp")
@@ -323,7 +324,11 @@ test "the pointee check publishes its answer and its verdict before the record t
         if strings.ends_with(text: path, suffix: "/dump.deps.txt")
             records @ records + 1
 
+        if strings.holds(text: path, needle: "/words-") && strings.ends_with(text: path, suffix: ".rsp")
+            carried @ carried + 1
+
     assert records == 1
+    assert carried == 3
     second_answers: [pointee_ask.Answered] @= []
     second = check(
         t,
@@ -336,7 +341,7 @@ test "the pointee check publishes its answer and its verdict before the record t
     )
     assert failure_text(second) == failure_text(first)
     assert second_answers.len() == first_answers.len()
-    assert process.files_under(t.build).must().len() == 6
+    assert process.files_under(t.build).must().len() == 9
 
 # **A package's `-D` reaches the check, and its verdict is keyed by the words
 # it was asked with** (defect 161). The header decides the pointee's width by
