@@ -536,7 +536,7 @@ constant REFUSED: [str]
 # row 83: every item one file of `issues/`. Its plan was written as
 # `M-issue-cards` and never committed under it, so no record carries that name.
 constant ROWS: i64
-    87
+    88
 
 # **`WATCHED` stood here until 2026-09-07 and nothing had read it since
 # 2026-08-19.** It listed `design.md` and `CLAUDE.md` as *"the two documents whose
