@@ -41,6 +41,7 @@ use cli/two_ways
 use cli/two_ways_ask
 use cli/process
 use cli/publish
+use cli/response_file
 use cli/digest
 use cli/strings
 use cli/read_back
@@ -183,9 +184,9 @@ function dump_of(t: toolchain.Toolchain, probe: compiling.Probe) -> str?
     unit = dir + "/defined-" + digest.digest(text) + ".c"
     publish.write_whole(path: unit, text: text, keyed: true)?
     said = publish.private_name(dir + "/defined-stdout.txt")
-    line = strings.with_all(
-        list: ["clang", "-fsyntax-only", "-fno-color-diagnostics", "-Xclang", "-ast-dump"],
-        more: probe.words
+    line = response_file.carried(
+        line: strings.with_all(list: ["clang", "-fsyntax-only", "-fno-color-diagnostics", "-Xclang", "-ast-dump"], more: probe.words),
+        dir: dir
     )
     ran = process.run(program: "clang", words: line.push(unit), out: said, err: process.discard())
     dumped = read_back.words(said)

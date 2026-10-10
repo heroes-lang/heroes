@@ -17,6 +17,7 @@ use cli/response_file
 use cli/strings
 use cli/toolchain
 use cli/units
+use module/reading as file_reading
 
 # One link over every object. Re-run on every build, deliberately: it
 # is one clang call, and it is what lets a `link` name change take
@@ -49,6 +50,7 @@ function link_objects(t: toolchain.Toolchain, objects: [str], module: str, outpu
         objects: objects,
         level: level,
         sanitize: sanitize,
+        target: t.target,
         search_library: search_library,
         package_flags: package_flags,
         link_names: link_names
@@ -140,14 +142,16 @@ function link_objects(t: toolchain.Toolchain, objects: [str], module: str, outpu
 # `.pdb` only when the link line carries a `-g` word), the sanitizers, the
 # link's own flags (`link_flags.link_flags`, which carries the
 # measurements: `-rdynamic` on POSIX, the stack reserve and a full link on
-# Windows), the `--library` directories, the objects, a package's link
-# words (`libraries.link_words`) and the `link` names. No include directory:
-# a link reads none, and until defect 206 the link took the `--include`
-# directories and a package's whole answer, whose `-F` clang on Linux
-# called *argument unused during compilation*.
-function link_line(objects: [str], level: str, sanitize: bool, search_library: [str], package_flags: [str], link_names: [str]) -> [str]
+# Windows), the target's (`link_flags.target_words`: a reproducible output
+# from Apple's linker, defect 593), the `--library` directories, the
+# objects, a package's link words (`libraries.link_words`) and the `link`
+# names. No include directory: a link reads none, and until defect 206 the
+# link took the `--include` directories and a package's whole answer, whose
+# `-F` clang on Linux called *argument unused during compilation*.
+function link_line(objects: [str], level: str, sanitize: bool, target: str, search_library: [str], package_flags: [str], link_names: [str]) -> [str]
     line: [str] @= strings.with_all(list: ["clang"], more: flags.level_words(level: level, sanitize: sanitize))
     line @ strings.with_all(list: line, more: link_flags.link_flags())
+    line @ strings.with_all(list: line, more: link_flags.target_words(target))
 
     for dir in search_library
         line @ strings.with_all(list: line, more: ["-L", dir])
@@ -496,6 +500,7 @@ test "a link over a package's compile words carries none of them and prints noth
         objects: [runtime, made],
         level: "-O0",
         sanitize: false,
+        target: t.target,
         search_library: none,
         package_flags: words,
         link_names: none
@@ -582,6 +587,7 @@ test "a link whose objects pass what one Windows command line holds reads every 
         objects: objects,
         level: "-O0",
         sanitize: false,
+        target: t.target,
         search_library: none,
         package_flags: none,
         link_names: none
@@ -600,4 +606,70 @@ test "a link whose objects pass what one Windows command line holds reads every 
 
     assert ends == line.len() - 1
     assert strings.holds(text: held, needle: "\n\"" + filler + "\"\n")
+    assert !process.remove_tree(t.build).is_err()
+
+# **Two links of the same objects into one path are one binary** (defect 593):
+# on this Mac the second differed from the first in its `LC_UUID`, which
+# Apple's linker drew at random under the `-O0` clang's driver hands it, and
+# the line now asks it for a reproducible output (`link_flags.target_words`).
+# Asserted on POSIX, where Linux's two generations were already one binary
+# (defect 583's measurement); on Windows unmeasured, its box being off.
+test "two links of the same objects into one path are one binary (defect 593)"
+    t: toolchain.Toolchain @= toolchain.locate_toolchain(hint: "", fingerprint: "port-test").must()
+    t.build @ "build/selftest-link-same"
+    assert !process.remove_tree(t.build).is_err()
+    none: [str] = []
+    memo: {str: str} @= {}
+    told: {str: bool} @= {}
+    runtime = toolchain.runtime_object(t, level: "-O0", sanitize: false).must()
+    made = units.tu_object(
+        t,
+        module: "linksame",
+        tu_text: "int main(void) { return 0; }\n",
+        level: "-O0",
+        sanitize: false,
+        search: "",
+        package_flags: none,
+        source_dir: "",
+        search_include: none,
+        @memo,
+        @told
+    ).must()
+    wanted = t.build + "/same" + process.exe_suffix()
+    bytes_of: [str] @= []
+
+    for _ in range(from: 0, to: 2)
+        linked = link_objects(
+            t,
+            objects: [runtime, made],
+            module: "linksame",
+            output: ok(wanted),
+            level: "-O0",
+            sanitize: false,
+            search_library: none,
+            package_flags: none,
+            link_names: none
+        ).must()
+        bytes_of @ bytes_of.push(file_reading.key_of(linked).must())
+
+    if process.exe_suffix() != ".exe"
+        assert bytes_of[0] == bytes_of[1]
+
+    # The word is on the line where clang names an Apple target, and only there.
+    line = link_line(
+        objects: [runtime, made],
+        level: "-O0",
+        sanitize: false,
+        target: t.target,
+        search_library: none,
+        package_flags: none,
+        link_names: none
+    )
+    said: bool @= false
+
+    for word in line
+        if word == "-Wl,-reproducible"
+            said @ true
+
+    assert said == link_flags.apple(t.target)
     assert !process.remove_tree(t.build).is_err()

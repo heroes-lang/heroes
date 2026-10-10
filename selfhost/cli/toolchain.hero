@@ -75,6 +75,10 @@ record Toolchain
     # That answer's first line, the version banner the floor is checked on;
     # empty when clang did not answer.
     compiler_banner: str
+    # The triple that answer says the driver compiles and links for
+    # (`clang_floor.target`), empty when clang did not answer: whose linker
+    # the link runs, which `link_flags.target_words` asks (defect 593).
+    target: str
 
 # Locate the runtime, or say the places it looked. The search is why
 # the ABI stamp exists: a decoy runtime/ compiled with zero warnings
@@ -126,7 +130,7 @@ function toolchain_at(runtime: str, fingerprint: str) -> Toolchain?
     said = clang_floor.identity(build_dir: "build", runtime: runtime, words: asked)
 
     return ok(
-        Toolchain(runtime: runtime, build: "build", fingerprint: fingerprint + "|" + LAYOUT, runtime_key: digest.digest(gathered), compiler_key: digest.digest(asked.join(" ") + "|" + answer_text(said)), compiler_banner: clang_floor.banner(said.default("")))
+        Toolchain(runtime: runtime, build: "build", fingerprint: fingerprint + "|" + LAYOUT, runtime_key: digest.digest(gathered), compiler_key: digest.digest(asked.join(" ") + "|" + answer_text(said)), compiler_banner: clang_floor.banner(said.default("")), target: clang_floor.target(said.default("")))
     )
 
 # What the key is given for clang's answer: the answer, or what was said

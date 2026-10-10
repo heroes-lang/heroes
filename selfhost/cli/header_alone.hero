@@ -22,6 +22,7 @@ use cli/toolchain
 use cli/compiling
 use cli/process
 use cli/publish
+use cli/response_file
 use cli/digest
 use cli/strings
 
@@ -52,6 +53,9 @@ function compiles(t: toolchain.Toolchain, under: compiling.Compiling, headers: [
 
     if publish.write_whole(path: unit, text: text, keyed: true).is_err()
         return false
-    line = strings.with_all(list: ["clang", "-fsyntax-only"], more: compiling.probe_words(under))
+    line = response_file.carried(
+        line: strings.with_all(list: ["clang", "-fsyntax-only"], more: compiling.probe_words(under)),
+        dir: dir
+    )
     ran = process.run(program: "clang", words: line.push(unit), out: process.discard(), err: process.discard())
     return ran.started && ran.code == 0

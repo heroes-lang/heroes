@@ -94,6 +94,46 @@ function link_flags() -> [str]
     # a clean stream.
     return ["-Wl,/STACK:67108864", "-Wl,/INCREMENTAL:NO"]
 
+# **A link for an Apple target asks Apple's linker for a reproducible output**
+# (defect 593, 2026-10-11). At `-O0` clang's driver for Darwin hands its
+# linker `-O0`, and the linker then writes a random `LC_UUID` rather than one
+# hashed from the output: measured on this Mac with ld-27037.1 (Xcode 27.0)
+# and ld-1267 (the Command Line Tools), the same three objects linked twice
+# into one path gave two binaries 48 bytes apart, the UUID (a version 4 one)
+# and its page's hash, and `-Wl,-O0` alone did the same. **`-reproducible`
+# hashes it again**, a version 3 UUID, and writes each object's time in the
+# debug map as 0, so an object compiled again with the same bytes moves no
+# byte of the binary (without it, `touch` on the objects moved 114). Both
+# linkers took it; the compiler's own tests, 609 objects, linked in 0.12 to
+# 0.14 s with it and without it, and twice with it gave one binary. **A debugger
+# still finds everything**: the binary keeps its UUID, which a `.dSYM` is
+# matched by, and lldb, given a binary whose debug map says 0, stopped at a
+# breakpoint set by file and line and printed every frame's file and line
+# (measured). Asked of the target clang names (`clang_floor.target`), never of
+# the platform this compiler runs on: GNU ld would read `-reproducible` as
+# other words, and Linux's two generations are already one binary (defect
+# 583's measurement).
+function target_words(target: str) -> [str]
+    if apple(target)
+        return ["-Wl,-reproducible"]
+    none: [str] = []
+    return none
+
+# A triple whose vendor is `apple`, the second of its words: the targets
+# clang's driver links with Apple's linker.
+function apple(target: str) -> bool
+    first: i64 @= 0
+
+    while first < target.len() && target[first] != '-'
+        first @ first + 1
+
+    vendor = "apple"
+    end = first + 1 + vendor.len()
+
+    if end > target.len() || target.slice(from: first + 1, to: end) != vendor
+        return false
+    return end == target.len() || target[end] == '-'
+
 test "the link flags are one platform's, and the platform is asked not assumed"
     # On this machine the answer is whatever `exe_suffix()` says, so the case
     # asserts the RULE rather than a number it cannot know: exactly one flag on
@@ -112,3 +152,18 @@ test "the link flags are one platform's, and the platform is asked not assumed"
     # stack reserve into the wrong list — which this names exactly.
     for flag in flags.flags()
         assert flag != "-Wl,/STACK:67108864"
+
+test "a link for an Apple target asks for a reproducible output, and no other link does (defect 593)"
+    assert target_words("arm64-apple-darwin25.6.0") == ["-Wl,-reproducible"]
+    assert target_words("x86_64-apple-darwin") == ["-Wl,-reproducible"]
+    assert target_words("aarch64-unknown-linux-gnu").len() == 0
+    assert target_words("x86_64-pc-windows-msvc").len() == 0
+    assert target_words("x86_64-pc-linux-gnu").len() == 0
+    assert target_words("").len() == 0
+    assert !apple("arm64-applesauce-darwin")
+    assert !apple("apple")
+    assert apple("arm64-apple")
+
+    # Never on a compile line: it is the linker's word alone.
+    for flag in flags.flags()
+        assert flag != "-Wl,-reproducible"

@@ -143,6 +143,29 @@ function banner(said: str) -> str
 
     return first.join("")
 
+# The triple the driver compiles and links for, what follows `Target: ` on the
+# banner's own line of it (`arm64-apple-darwin25.6.0` on this Mac,
+# `aarch64-unknown-linux-gnu` in the Linux arm64 container), or "" where clang
+# said no such line. The link reads it to know whose linker the driver runs
+# (`link_flags.target_words`, defect 593).
+function target(said: str) -> str
+    marker = "Target: "
+    start: i64 @= 0
+
+    while start < said.len()
+        end: i64 @= start
+
+        while end < said.len() && said[end] != '\n'
+            end @ end + 1
+
+        line = said.slice(from: start, to: end)
+
+        if strings.starts_with(text: line, prefix: marker)
+            return line.slice(from: marker.len(), to: line.len())
+        start @ end + 1
+
+    return ""
+
 # The floor, enforced on the banner `identity` read: absent when clang is at
 # or above it, a message the CLI prints at exit 2 otherwise — the tool could
 # not run, which is what exit 2 means (CLAUDE.md §10). A clang that did not
@@ -206,3 +229,12 @@ test "the identity is what this clang says it will run, and a flag moves it"
     # A word clang refuses is an absent identity carrying what it said.
     refused = identity(build_dir: "build", runtime: "runtime", words: ["--heroes-no-such-flag"])
     assert refused.is_err()
+
+test "the target is the banner's own line of it, and this clang names one (defect 593)"
+    assert target("Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin25.6.0\nThread model: posix\n") == "arm64-apple-darwin25.6.0"
+    assert target("clang version 20.1.8\nTarget: x86_64-pc-windows-msvc\n") == "x86_64-pc-windows-msvc"
+    assert target("Target: aarch64-unknown-linux-gnu") == "aarch64-unknown-linux-gnu"
+    assert target("clang version 22.1.8\n \"-triple\" \"x86_64-pc-linux-gnu\"\n") == ""
+    assert target("") == ""
+    here = identity(build_dir: "build", runtime: "runtime", words: ["-std=gnu11"]).must()
+    assert target(here).len() > 0

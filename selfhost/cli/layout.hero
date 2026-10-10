@@ -60,6 +60,7 @@ use emit/layout_check
 use cli/toolchain
 use cli/process
 use cli/publish
+use cli/response_file
 use cli/digest
 use cli/deps
 use cli/pointee
@@ -137,9 +138,8 @@ function check_records(t: toolchain.Toolchain, p: containers.Program, c: state.C
     publish.write_whole(path: screen_c, text: screen_text, keyed: true)?
     depfile = publish.private_name(dir + "/screen.d")
     err_path = publish.private_name(dir + "/screen-stderr.txt")
-    line: [str] @= ["clang", "-fsyntax-only", "-ferror-limit=0", "-MD", "-MT", "dep", "-MF", depfile]
-    line @ searched(a, line: line)
-    line @ line.push(screen_c)
+    line: [str] @= searched(a, line: ["clang", "-fsyntax-only", "-ferror-limit=0"])
+    line @ strings.with_all(list: line, more: ["-MD", "-MT", "dep", "-MF", depfile, screen_c])
     ran = process.run(program: "clang", words: line, out: process.discard(), err: err_path)
 
     # Read back with every word kept (`cli/read_back.hero`, defect 337): one
@@ -313,8 +313,10 @@ function judged(a: Asking, sum: str, text: str) -> ()?
         return fail(code: "clang", msg: said)
     return ok()
 
+# The line with the probe's words after it, carried in a file (defect 586,
+# `response_file.carried`): a package's compile words are among them.
 function searched(a: Asking, line: [str]) -> [str]
-    return strings.with_all(list: line, more: a.words)
+    return response_file.carried(line: strings.with_all(list: line, more: a.words), dir: a.dir)
 
 ## Tests
 
