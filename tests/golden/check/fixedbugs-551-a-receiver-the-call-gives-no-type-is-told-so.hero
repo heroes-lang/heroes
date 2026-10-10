@@ -19,7 +19,35 @@ function plus(n: i64?, m: i64) -> i64
     return n.default(0) + m
 
 function main()
-    print(ok(1).h())  #~ cannot_infer
-    print(fail(code: 1, msg: "no").h())  #~ cannot_infer
-    print([].count())  #~ cannot_infer
-    print(ok(2).plus(3))  #~ cannot_infer
+    print(ok(1).h())
+    print(fail(code: 1, msg: "no").h())  #~ type_mismatch
+    print([].count())
+    print(ok(2).plus(3))
+
+# Corrected 2026-10-10, defect 541 (panel 203 R1 (b)), below the program so
+# every line keeps its number: the four lines of `main` are accepted but the
+# `fail(…)`, whose `code: 1` is the program's own mistake, now told
+# (`type_mismatch`). The value before the dot, where its form can hold no
+# field, is typed as the first argument of the function the call names, so
+# `[].count()` is `count([])`, as spec § 9 says `x.f(y)` is `f(x, y)`. What is
+# told now is a receiver at a generic function's first parameter whose letter
+# nothing in the call settles, below, naming the parameter it stands for.
+
+function held<A>(n: A?) -> i64
+    if n.is_err()
+        return 0
+    return 1
+
+function sized<A>(xs: [A]) -> i64
+    return xs.len()
+
+function added<A>(n: A?, m: i64) -> i64
+    if n.is_err()
+        return m
+    return m + 1
+
+function after_panel_203()
+    print(ok(1).held())  #~ cannot_infer
+    print(fail(code: "no", msg: "no").held())  #~ cannot_infer
+    print([].sized())  #~ cannot_infer
+    print(ok(2).added(3))  #~ cannot_infer

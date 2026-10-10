@@ -156,7 +156,8 @@ Shadowing is a compile error: a `use` binds its name for the whole file, so noth
     Place     = ident { "." ident | "[" Expression "]" } .
 
 ## 6. Failure: `T?`
-A `T?` is a `T` or an error: `ok(v)` or `fail(code:, msg:)`; `ok()` is the `()?`. Codes are stable
+A `T?` is a `T` or an error: `ok(v)` or `fail(code:, msg:)`, each taking its type
+from the context; `ok()` is the `()?`. Codes are stable
 snake_case strings; read `e.code` and `e.msg`. No exceptions exist.
 An abort ends the program at once, saying why; no `T?` carries one.
 
@@ -274,10 +275,11 @@ Loops: `while cond` and `for x in xs`, over an array or a `range` (section 11).
 - Top-level functions are values: `xs.fold(0, add)`.
 - Generics: on functions only, no constraints, always inferred, never written
   at the call site: `function map<A, B>(xs: [A], f: (function(A) -> B)) -> [B]`.
-  A type parameter takes its type from the arguments, else from the type the
-  context asks for, and a generic function's parameter asks for none; a call
-  that says neither is an error. `xs.map(double)` takes both from `double`'s
-  signature.
+  A type parameter takes its type from the arguments that have one of their
+  own, else from the type the context asks for, else from a generic call or a
+  literal among them (section 2); `ok(...)`, `[]` and a case name give none, and
+  a call that says none of these is an error. `xs.map(double)` takes both from
+  `double`'s signature.
 - Recursion too deep aborts.
 
     Args     = "(" [ Arg { "," Arg } ] ")" .
