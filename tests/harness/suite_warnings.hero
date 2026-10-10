@@ -39,6 +39,7 @@
 
 use absence
 use cases
+use gallery
 use report
 use shell
 use strings
@@ -74,6 +75,27 @@ function run_all(scratch: str, compiler: str) -> report.Report?
             compiler: compiler,
             label: "warnings/" + strings.base_name(path: dir),
             main: main
+        )
+        judged @ judged + 1
+
+    # **The gallery's programs, one file each, since 2026-10-11** (defect
+    # 606): the walk above finds a directory's `main.hero`, and the gallery
+    # has none, so no program the site's gallery shows was held to this bar.
+    # One with holes produces no C (spec § 12), which `check`'s answer says
+    # (`gallery.unfinished`); a check that cannot run leaves the build to say
+    # why, as a failure.
+    for path in gallery.programs(scratch)?
+        said = gallery.checked(scratch: scratch, compiler: compiler, path: path)
+
+        if !said.is_err() && gallery.unfinished(said.must())
+            continue
+        judge(
+            @r,
+            @skipped,
+            scratch: scratch,
+            compiler: compiler,
+            label: "warnings/" + gallery.name_of(path),
+            main: path
         )
         judged @ judged + 1
 

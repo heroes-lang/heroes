@@ -118,7 +118,7 @@ function report(diagnostics: [diag.Diagnostic], s: source.Source, inv: argv.Invo
                 return ok(.failed_exit)
             .ok _ => _ = 0
 
-        return ok(apply_answer.hand_back(s, settled: settled.must(), inv: inv, told: kept.len()))
+        return ok(apply_answer.hand_back(s, settled: settled.must(), inv: inv, own: apply_answer.in_root(kept, s: s)))
 
     if argv.has(inv, spelling: "--json")
         io.eprint_raw(text: check_json.json(kept, s))
