@@ -170,9 +170,11 @@ function trees() -> [Tree]
     # Both rows raised 2026-10-07 at batch 13's gate, to what the suite asked:
     # selfhost to 469 seeds and 4221 variants, tests to 1100 and 9900, the
     # batch's modules and cases taking each past its floor by more than a quarter.
+    # The selfhost row raised 2026-10-10 at batch 18's gate, to what the suite
+    # asked: 599 seeds and 5391 variants, past 469 and 4221 by more than a quarter.
     none: [str] = []
     return [
-        Tree(name: "selfhost, multi", root: "selfhost", seeds: 469, floor: Floor(family: "multi", generated: 4221, parsing: 4221), known: none)
+        Tree(name: "selfhost, multi", root: "selfhost", seeds: 599, floor: Floor(family: "multi", generated: 5391, parsing: 5391), known: none)
         Tree(name: "tests, multi", root: "tests", seeds: 1100, floor: Floor(family: "multi", generated: 9900, parsing: 9900), known: none)
         Tree(name: "examples, multi", root: "examples", seeds: 120, floor: Floor(family: "multi", generated: 1080, parsing: 1080), known: none)
     ]

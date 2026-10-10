@@ -150,7 +150,7 @@ function with_name(out: [Asked], @seen: {str: bool}, s: source.Source, span: tok
     seen[name] @ true
     return out.push(Asked(name: name, kind: kind, header: header, span: span, arity: arity))
 
-# `out` with each releaser a mark's span names, each called with one argument.
+# ORDER: by name, as `sort` orders a `str`, which the question unit's lines follow; `out` with each releaser a mark's span names, each called with one argument.
 function with_words(out: [Asked], @seen: {str: bool}, s: source.Source, span: token.Span, header: str) -> [Asked]
     words: {str: bool} @ {}
     macro_guard.words_into(@words, text: source.span_text(s, span))
