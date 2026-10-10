@@ -392,7 +392,7 @@ test "an admitted rpath is one word where a loader reads it, and none on Windows
 # `link_flags.link_flags` stops saying it, the word restates nothing and this fires.
 test "the link line carries -rdynamic on every POSIX link, which --export-dynamic restates"
     if process.exe_suffix() != ".exe"
-        said: bool @ false
+        said: bool @= false
 
         for flag in link_flags.link_flags()
             if flag == "-rdynamic"

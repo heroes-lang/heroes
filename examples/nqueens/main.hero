@@ -24,7 +24,7 @@ constant SIZE: i64
 # May a queen stand in `col` of the next row, given the rows already placed?
 # `placed[r]` is the column of the queen in row `r`.
 function fits(placed: [i64], col: i64) -> bool
-    row: i64 @ 0
+    row: i64 @= 0
 
     while row < len(placed)
         other = placed[row]
@@ -43,12 +43,12 @@ function fits(placed: [i64], col: i64) -> bool
 function solutions_from(placed: [i64]) -> i64
     if len(placed) == SIZE
         return 1
-    found: i64 @ 0
-    col: i64 @ 0
+    found: i64 @= 0
+    col: i64 @= 0
 
     while col < SIZE
         if fits(placed: placed, col: col)
-            deeper: [i64] @ placed
+            deeper: [i64] @= placed
             deeper @ deeper.push(col)
             found @ found + solutions_from(placed: deeper)
         col @ col + 1
@@ -61,14 +61,14 @@ function from_column(col: i64) -> i64
     return solutions_from(placed: start)
 
 function together() -> i64
-    handles: [i64] @ []
-    c: i64 @ 0
+    handles: [i64] @= []
+    c: i64 @= 0
 
     while c < SIZE
         handles @ handles.push(hero_thread_spawn(body: from_column, arg: c))
         c @ c + 1
 
-    found: i64 @ 0
+    found: i64 @= 0
 
     for h in handles
         found @ found + hero_thread_join(handle: h)

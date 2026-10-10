@@ -31,7 +31,7 @@ function main()
     print(f"{x}{x}ü")
     print(f"ñ{label(x)}ñ")
     print(f"{f"ø{x}ø"} and {"å"}")
-    m: {str: i64} @ {}
+    m: {str: i64} @= {}
     m[f"clé{x}"] @ 1
     m[f"ключ{x}"] @ 2
     print(f"{m[f"clé{x}"].must()} {m[f"ключ{x}"].must()}")

@@ -33,9 +33,9 @@ use strings
 # looks like would not have worked here: `annotation` and `belongs` are
 # both perfectly good snake_case.
 function claimed_by(text: str) -> [str]
-    found: [str] @ []
+    found: [str] @= []
     rows = strings.lines(text)
-    line: i64 @ 0
+    line: i64 @= 0
 
     for row in rows
         line @ line + 1
@@ -49,7 +49,7 @@ function claimed_by(text: str) -> [str]
 # of `claimed_by` on 2026-09-12 so a test can reach the rule rather than
 # imitate it, which is how the `v` defect below survived.
 function marks_in(row: str, line: i64) -> [str]
-    found: [str] @ []
+    found: [str] @= []
     opener = strings.trimmed(row)
 
     if strings.starts_with(text: opener, prefix: "#") && !strings.starts_with(text: opener, prefix: "#~")
@@ -74,8 +74,8 @@ function marks_in(row: str, line: i64) -> [str]
         # `variant_not_callable`, and neither had ever been annotated, so the
         # hole was real for as long as this reader has existed and nothing had
         # walked into it.
-        delta: i64 @ 0
-        codes: str @ strings.trimmed(chunk)
+        delta: i64 @= 0
+        codes: str @= strings.trimmed(chunk)
 
         if strings.starts_with(text: chunk, prefix: "v")
             delta @ 1
@@ -95,8 +95,8 @@ function marks_in(row: str, line: i64) -> [str]
 # arrived, and hard-coding it would have quietly exempted the new kind
 # from the invariant.
 function reported_by(text: str) -> [str]
-    found: [str] @ []
-    pending: str @ ""
+    found: [str] @= []
+    pending: str @= ""
 
     for row in strings.lines(text)
         if strings.starts_with(text: row, prefix: "  at ")
@@ -119,7 +119,7 @@ function reported_by(text: str) -> [str]
         # The one-line form carries its own location; the rich form's
         # headline does not, so it waits for the `at` line.
         parts = strings.split_on(text: row, byte: 58)
-        placed: bool @ false
+        placed: bool @= false
 
         if parts.len() > 1
             number = strings.to_number(strings.trimmed(parts[1]))
@@ -138,8 +138,8 @@ function reported_by(text: str) -> [str]
 # by default it prints §4.17's form, whose `  at <file>:<line>:<col>` line
 # carries both halves the comparison needs.
 function reported_with_file(text: str) -> [str]
-    found: [str] @ []
-    pending: str @ ""
+    found: [str] @= []
+    pending: str @= ""
 
     for row in strings.lines(text)
         if strings.starts_with(text: row, prefix: "  at ")
@@ -186,8 +186,8 @@ function code_of(row: str) -> str?
 
 # The word before the bracket, cut at a space or a colon.
 function last_word(text: str) -> str
-    start: i64 @ 0
-    i: i64 @ 0
+    start: i64 @= 0
+    i: i64 @= 0
 
     while i < text.len()
         if text[i] == 32 || text[i] == 58
@@ -230,7 +230,7 @@ test "the one-line form carries its own location"
     assert said == ["3:unused_binding"]
 
 test "the rich form waits for its `at` line, whatever the kind"
-    text = "unsupported[pointer_element]: a `ptr` cannot live in a container\n  at x.hero:31:5\n     |\n  31 |     handles: [ptr] @ []\n     |     ^^^^^^^^^^^^^^^^^^^\n  note: a note in brackets [not_a_code]\n"
+    text = "unsupported[pointer_element]: a `ptr` cannot live in a container\n  at x.hero:31:5\n     |\n  31 |     handles: [ptr] @= []\n     |     ^^^^^^^^^^^^^^^^^^^\n  note: a note in brackets [not_a_code]\n"
     assert reported_by(text) == ["31:pointer_element"]
 
 # The reader the annotations sweep holds a run's output to, which had no test

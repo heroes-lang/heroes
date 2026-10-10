@@ -126,7 +126,7 @@ function opening_brace(c: cursor.Cursor, text: str, goes_on: bool) -> i64
 # or `=` and a name, or a name and a `:`, `variant T: a`, `record R x: i64`,
 # `record Pair<T>: x: T`, `record R = x: i64` (defect 315).
 function members_on_its_line(c: cursor.Cursor) -> bool
-    i: i64 @ c.pos
+    i: i64 @= c.pos
 
     while !token.ends_a_line(c.tokens[i].kind)
         k = c.tokens[i].kind
@@ -140,7 +140,7 @@ function members_on_its_line(c: cursor.Cursor) -> bool
 # Whether nothing but line ends and comments stands between the tokens at
 # `from` and `to`.
 function holds_nothing(c: cursor.Cursor, from: i64, to: i64) -> bool
-    i: i64 @ from + 1
+    i: i64 @= from + 1
 
     while i < to
         if !cursor.is_invisible(c.tokens[i].kind)
@@ -215,7 +215,7 @@ function close_of(below: Below) -> i64
 # a `<`, `record Pair<T>`, that type parameters are a function's alone (spec
 # § 9; defect 135's class, lane recovery-b3).
 function junk_after_head(@c: cursor.Cursor, head: str, found: str, span: token.Span, members: str, generic: bool)
-    rule: str @ ""
+    rule: str @= ""
 
     if generic
         rule @ "type parameters are written on a function only; "
@@ -233,13 +233,13 @@ function junk_after_head(@c: cursor.Cursor, head: str, found: str, span: token.S
 # break and the margin inside its backticks, `record` + a line end + `x`
 # (defect 131's class, 2026-09-29).
 function on_one_line(c: cursor.Cursor, text: str, head: token.Span) -> str
-    i: i64 @ c.pos
+    i: i64 @= c.pos
 
     while i > 0 && c.tokens[i - 1].span.start >= head.start
         i @ i - 1
 
-    parts: [str] @ []
-    last: i64 @ -1
+    parts: [str] @= []
+    last: i64 @= -1
 
     while i < c.tokens.len() && c.tokens[i].span.end <= head.end
         t = c.tokens[i]

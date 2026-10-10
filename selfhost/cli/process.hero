@@ -112,7 +112,7 @@ function run(program: str, words: [str], out: str, err: str) -> Ran
     for word in words
         hero_run_arg(word: word)
 
-    status: i64 @ 0
+    status: i64 @= 0
     code = hero_run_go(
         program: program.cstr(),
         in_path: "".cstr(),
@@ -207,13 +207,13 @@ function walk(dir: str) -> Walked?
 
     if found < 0
         return fail(code: "cannot_walk", msg: "cannot read " + dir)
-    out: [str] @ []
-    unnamed: [str] @ []
-    at: i64 @ 0
+    out: [str] @= []
+    unnamed: [str] @= []
+    at: i64 @= 0
 
     while at < found
-        status: i64 @ 0
-        marks: i64 @ 0
+        status: i64 @= 0
+        marks: i64 @= 0
         name = hero_dir_at_shown(index: at, status: @status, marks: @marks)
 
         if status == HERO_OS_OK
@@ -255,8 +255,8 @@ function unnamed_said(written: str) -> str
 # reads the value as the shown read reads a file (`hero_env_shown`), so a
 # value that is not text is held, and named.
 function env(name: str) -> str?
-    status: i64 @ 0
-    marks: i64 @ 0
+    status: i64 @= 0
+    marks: i64 @= 0
     got = hero_env_shown(name: name.cstr(), status: @status, marks: @marks)
 
     if status == HERO_OS_NOT_FOUND
@@ -273,8 +273,8 @@ function env(name: str) -> str?
 # a `PKG_CONFIG_LIBDIR` set empty leaves `pkg-config` no default directory
 # (defect 292, `cli/package_answer.hero`).
 function is_set(name: str) -> bool
-    status: i64 @ 0
-    marks: i64 @ 0
+    status: i64 @= 0
+    marks: i64 @= 0
     _ = hero_env_shown(name: name.cstr(), status: @status, marks: @marks)
     return status != HERO_OS_NOT_FOUND
 
@@ -282,8 +282,8 @@ function is_set(name: str) -> bool
 # written by its value, `<0xE9>`; "" where it is unset. For a variable that
 # names a place, never for one that may hold a secret.
 function env_written(name: str) -> str
-    status: i64 @ 0
-    marks: i64 @ 0
+    status: i64 @= 0
+    marks: i64 @= 0
     got = hero_env_shown(name: name.cstr(), status: @status, marks: @marks)
     return written_value(answer: got, marks: marks)
 
@@ -388,7 +388,7 @@ test "a link in a tree is removed as the link, and what it names is kept (defect
     assert !write_file(path: dir + "/outside/keep.txt", text: "keep").is_err()
     assert !write_file(path: dir + "/tree/inner/own.txt", text: "own").is_err()
     maker = dir + "/maker" + exe_suffix()
-    source: str @ "#include <unistd.h>\nint main(void) {\n    if (symlink(\"../outside\", \"" + dir + "/tree/to-dir\") != 0) return 3;\n    if (symlink(\"../outside/keep.txt\", \"" + dir + "/tree/to-file\") != 0) return 4;\n    if (symlink(\"outside\", \"" + dir + "/alone\") != 0) return 5;\n    return 0;\n}\n"
+    source: str @= "#include <unistd.h>\nint main(void) {\n    if (symlink(\"../outside\", \"" + dir + "/tree/to-dir\") != 0) return 3;\n    if (symlink(\"../outside/keep.txt\", \"" + dir + "/tree/to-file\") != 0) return 4;\n    if (symlink(\"outside\", \"" + dir + "/alone\") != 0) return 5;\n    return 0;\n}\n"
 
     if windows
         source @ "#include <windows.h>\nstatic int linked(const wchar_t *name, const wchar_t *target, DWORD flags) {\n    if (CreateSymbolicLinkW(name, target, flags | SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE)) return 1;\n    return 0;\n}\nint main(void) {\n    if (!linked(L\"" + dir + "/tree/to-dir\", L\"..\\\\outside\", SYMBOLIC_LINK_FLAG_DIRECTORY)) return GetLastError() == ERROR_PRIVILEGE_NOT_HELD ? 7 : 3;\n    if (!linked(L\"" + dir + "/tree/to-file\", L\"..\\\\outside\\\\keep.txt\", 0)) return 4;\n    if (!linked(L\"" + dir + "/alone\", L\"outside\", SYMBOLIC_LINK_FLAG_DIRECTORY)) return 5;\n    return 0;\n}\n"
@@ -431,7 +431,7 @@ test "a file whose name is not UTF-8 is named by its bytes, and the walk never p
     assert !mkdir_all(dir + "/only").is_err()
     assert !write_file(path: dir + "/only/plain.hero", text: "function main()\n    print(1)\n").is_err()
     maker = dir + "/maker" + exe_suffix()
-    source: str @ "#include <stdio.h>\nint main(void) {\n    FILE *f = fopen(\"" + dir + "/only/caf\\xe9.hero\", \"wb\");\n    if (f == NULL) return 3;\n    fputs(\"x\", f);\n    return fclose(f) == 0 ? 0 : 4;\n}\n"
+    source: str @= "#include <stdio.h>\nint main(void) {\n    FILE *f = fopen(\"" + dir + "/only/caf\\xe9.hero\", \"wb\");\n    if (f == NULL) return 3;\n    fputs(\"x\", f);\n    return fclose(f) == 0 ? 0 : 4;\n}\n"
 
     if windows
         source @ "#include <windows.h>\nstatic int touch(const wchar_t *path) {\n    HANDLE h = CreateFileW(path, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);\n    if (h == INVALID_HANDLE_VALUE) return 0;\n    DWORD put = 0;\n    BOOL wrote = WriteFile(h, \"x\", 1, &put, NULL);\n    return CloseHandle(h) && wrote && put == 1;\n}\nint main(void) {\n    if (!touch(L\"" + dir + "/only/caf\\xD800.hero\")) return 3;\n    if (!CreateDirectoryW(L\"" + dir + "/only/d\\xD800\", NULL)) return 4;\n    if (!touch(L\"" + dir + "/only/d\\xD800/x.hero\")) return 5;\n    if (!CreateDirectoryW(L\"" + dir + "/only/e\\xD800\", NULL)) return 6;\n    return 0;\n}\n"

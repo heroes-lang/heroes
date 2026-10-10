@@ -52,7 +52,7 @@ constant KEPT: [str]
 
 # The lines before the groups' includes: the push, the ignores, the kept.
 function opening() -> [str]
-    out: [str] @ ["#pragma clang diagnostic push"]
+    out: [str] @= ["#pragma clang diagnostic push"]
 
     for word in QUIETED
         out @ out.push("#pragma clang diagnostic ignored \"" + word + "\"")
@@ -80,7 +80,7 @@ test "a header's own code is quiet of -Wall and sign conversion alone, a missing
 
     # Each kept warning is a check the build raises after the region too.
     for word in KEPT
-        found: bool @ false
+        found: bool @= false
 
         for one in checks_raised.checked()
             if one == word

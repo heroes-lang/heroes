@@ -19,7 +19,7 @@ function main()
     xs = range(from: 0, to: 4)
     print(len(xs), xs[0], xs[3])
 
-    total: i64 @ 0
+    total: i64 @= 0
 
     for i in range(from: 1, to: 6)
         total @ total + i
@@ -36,7 +36,7 @@ function main()
     print(sort(range(from: 0, to: 3))[2], len(slice(range(from: 0, to: 5), from: 1, to: 3)))
 
 function map_str(xs: [i64]) -> [str]
-    out: [str] @ []
+    out: [str] @= []
 
     for x in xs
         out @ push(out, to_str(x))

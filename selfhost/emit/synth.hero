@@ -22,13 +22,13 @@ use emit/worklist
 function content_key(c: state.Checked, s: source.Source, decls: [ast.Decl], ty: i64) -> str
     no_generics: [str] = []
     rendered = render.render_ty(c.types, s, decls, ty, no_generics)
-    named: {str: bool} @ {}
-    seen: {i64: bool} @ {}
+    named: {str: bool} @= {}
+    seen: {i64: bool} @= {}
 
     # Drained from its top without copying it (`emit/worklist.hero`, defect
     # 498).
-    frontier: [i64] @ [ty]
-    size: i64 @ 1
+    frontier: [i64] @= [ty]
+    size: i64 @= 1
 
     while size > 0
         id = worklist.take(frontier, size: @size)
@@ -68,8 +68,8 @@ function content_key(c: state.Checked, s: source.Source, decls: [ast.Decl], ty: 
 # SET, which `ctype.with_functions` reads in no order, so the order the
 # queue drains in reaches nothing.
 function collect(c: state.Checked, decls: [ast.Decl], ty: i64, @into: {i64: bool}, @seen: {i64: bool})
-    queue: [i64] @ [ty]
-    next: i64 @ 0
+    queue: [i64] @= [ty]
+    next: i64 @= 0
 
     while next < queue.len()
         at = queue[next]
@@ -131,7 +131,7 @@ function collect(c: state.Checked, decls: [ast.Decl], ty: i64, @into: {i64: bool
 # to. A field whose type was never lowered has already been refused and is
 # left out.
 function field_types(c: state.Checked, decls: [ast.Decl], decl: i64) -> [i64]
-    out: [i64] @ []
+    out: [i64] @= []
 
     match decls[decl].kind
         .record_decl rec =>
@@ -181,7 +181,7 @@ function everything() -> Wanted
 # The declared types a set of reached type ids mentions — a `.named`
 # arm carries the declaration index the aggregate walks are keyed by.
 function wanted_of(c: state.Checked, reached: {i64: bool}) -> Wanted
-    named: {i64: bool} @ {}
+    named: {i64: bool} @= {}
 
     # ORDER: none — the walk fills a SET, and both readers below ask it
     # a membership question.

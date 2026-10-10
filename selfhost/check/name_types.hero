@@ -62,8 +62,8 @@ function synth_name(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: sour
 # payload reported "no field g" about a payload that declares g — a
 # message asserting a fiction, the one thing §4.17 forbids.
 function field_of_function_type(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], receiver: i64, name: str) -> i64?
-    holder: i64 @ -1
-    case_at: i64 @ -1
+    holder: i64 @= -1
+    case_at: i64 @= -1
 
     match table.get(c.out.types, receiver)
         .named n => holder @ n.decl
@@ -76,7 +76,7 @@ function field_of_function_type(@c: state.Checker, a: ast.Ast, r: resolved.Resol
 
     if holder < 0
         return fail(code: "absent", msg: "the receiver is not a record or a case")
-    found_ty: i64 @ -1
+    found_ty: i64 @= -1
 
     match decls[holder].kind
         .record_decl rec =>

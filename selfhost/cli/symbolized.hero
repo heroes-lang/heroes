@@ -67,7 +67,7 @@ function options_with(current: str) -> str
 
 # Whether `needle` stands in `text`, byte for byte.
 function holds(text: str, needle: str) -> bool
-    at: i64 @ 0
+    at: i64 @= 0
 
     while at + needle.len() <= text.len()
         if text.slice(from: at, to: at + needle.len()) == needle

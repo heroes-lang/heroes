@@ -40,15 +40,15 @@ constant SCHEMA: i64
 
 # The diagnostics a stage said, as the document `check --json` writes.
 function json(diagnostics: [diag.Diagnostic], s: source.Source) -> str
-    rows: [str] @ [head(kind: "diagnostics", s: s)]
+    rows: [str] @= [head(kind: "diagnostics", s: s)]
 
     if diagnostics.len() == 0
         rows @ rows.push("  \"diagnostics\": []\n}\n")
         return rows.join("")
     rows @ rows.push("  \"diagnostics\": [\n")
     rounds = certain.outcomes(diagnostics, s)
-    flat: i64 @ 0
-    index: i64 @ 0
+    flat: i64 @= 0
+    index: i64 @= 0
 
     for d in diagnostics
         found = source.locate(s, d.span.start)
@@ -57,20 +57,20 @@ function json(diagnostics: [diag.Diagnostic], s: source.Source) -> str
         rows @ rows.push("      \"message\": " + quote(d.message) + ",\n")
         rows @ rows.push("      \"file\": " + quote(found.file) + ",\n")
         rows @ rows.push("      \"line\": " + found.line.to_str() + ",\n      \"col\": " + found.col.to_str() + ",\n")
-        notes: [str] @ []
+        notes: [str] @= []
 
         for note in d.notes
             notes @ notes.push(quote(note))
 
         rows @ rows.push("      \"notes\": [" + notes.join(", ") + "],\n")
-        fixes: [str] @ []
+        fixes: [str] @= []
 
         for fix in d.fixes
-            tag: str @ "guess"
+            tag: str @= "guess"
 
             if fix.certainty == .certain
                 tag @ "certain"
-            first: str @ ""
+            first: str @= ""
 
             if rounds[flat].len() > 0
                 first @ ", \"first_round\": \"" + rounds[flat] + "\""
@@ -103,15 +103,15 @@ function head(kind: str, s: source.Source) -> str
 # reading to read it held it, so the root is named by its bytes on disk and
 # never by the text a round left.
 function head_of(kind: str, readings: [source.Source]) -> str
-    read: [str] @ []
-    named: [str] @ []
+    read: [str] @= []
+    named: [str] @= []
 
     for s in readings
-        index: i64 @ 0
+        index: i64 @= 0
 
         for entry in s.files
             if !entry.is_library && !certain.listed(names: named, name: entry.name)
-                digest: str @ "null"
+                digest: str @= "null"
 
                 if !faulted(s, index: index)
                     digest @ "\"" + sha256.of(source_extent.text_of(s, index)) + "\""
@@ -124,7 +124,7 @@ function head_of(kind: str, readings: [source.Source]) -> str
 # Whether the file at `index` holds a byte that is not UTF-8.
 function faulted(s: source.Source, index: i64) -> bool
     start = s.files[index].start
-    end: i64 @ s.text.len()
+    end: i64 @= s.text.len()
 
     if index + 1 < s.files.len()
         end @ s.files[index + 1].start

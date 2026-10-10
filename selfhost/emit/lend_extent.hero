@@ -95,7 +95,7 @@ record Lent
 function assertions(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], f: containers.Function, run: ir.Run, decl: i64)
     counted = lend_count.counted_siblings(s, decls, decl: decl)
     given = containers.args_of(f, run)
-    index: i64 @ 0
+    index: i64 @= 0
 
     for arg in given
         # A buffer (panel 196's R4) is the emitter's own and exactly its
@@ -141,7 +141,7 @@ function stated_checks(names: ctype.Names, s: source.Source, decls: [ast.Decl], 
     fits_bytes = extent + " <= (uint64_t)sizeof(" + lent.place + ")"
     fits_units = extent + " <= (uint64_t)(sizeof(" + lent.place + ") / " + unit + ")"
     at_lend = lent.span.start.to_str() + " " + lent.span.end.to_str()
-    marker: str @ STATED_MARKER
+    marker: str @= STATED_MARKER
 
     if lent.whole
         marker @ STATED_RECORD_MARKER
@@ -215,7 +215,7 @@ function constant_count(c: state.Checked, s: source.Source, decls: [ast.Decl], f
 # The two assertions, of which C picks the one that can fail: the first holds
 # for every unit wider than a byte, the second for a byte.
 function asserted(c: state.Checked, lent: Lent, n: lend_count.Count, text: str, spelled: str, unit: str, marker_tail: str, stated: token.Span, header: str) -> [str]
-    low: str @ ""
+    low: str @= ""
 
     if lend_count.signed_int(c, n.ty)
         low @ "0 <= (" + spelled + ")(" + text + ") && "
@@ -251,13 +251,13 @@ function compared(c: state.Checked, s: source.Source, lent: Lent, n: lend_count.
     where = source.source_line(s, lent.span.start)
     at = where.file + ":" + where.line.to_str() + ": `" + callee + "` was given "
     from = "read from `" + count + "` at run time"
-    bytes: str @ at + "an extent past the " + lent.length.to_str() + " bytes of the field lent to it, " + from
-    units: str @ bytes + " and counted in what the header's `" + header + "` points at"
+    bytes: str @= at + "an extent past the " + lent.length.to_str() + " bytes of the field lent to it, " + from
+    units: str @= bytes + " and counted in what the header's `" + header + "` points at"
 
     if lent.whole
         bytes @ at + "a count past the record lent whole to `" + pointer + "`, " + from + " and counted in bytes"
         units @ at + "a count past the record lent whole to `" + pointer + "`, " + from + " and counted in what the header's `" + header + "` points at"
-    low: str @ ""
+    low: str @= ""
 
     if lend_count.signed_int(c, n.ty)
         low @ n.text + " < 0 || "

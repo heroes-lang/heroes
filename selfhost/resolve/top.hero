@@ -31,7 +31,7 @@ use module/diagnostics
 
 function collect(@r: state.Resolver, s: source.Source, decls: [ast.Decl], uses: [ast.Use])
     r.library @ builtin_names.of_library(s, decls)
-    index: i64 @ 0
+    index: i64 @= 0
 
     for decl in decls
         collect_fields(@r, s, decl)
@@ -181,7 +181,7 @@ function unused_uses(@r: state.Resolver, s: source.Source, uses: [ast.Use])
     # same way. The test at the bottom of this file is what fires if that
     # ever stops being true, which is what §11 asks of a premise nobody can
     # remove.
-    seen: {str: bool} @ {}
+    seen: {str: bool} @= {}
 
     for used in uses
         from = source.module_at(s, used.span.start)
@@ -217,13 +217,13 @@ function unused_uses(@r: state.Resolver, s: source.Source, uses: [ast.Use])
 function resolved_file(text: str) -> state.Resolver
     p = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
-    r: state.Resolver @ state.new_resolver(
+    r: state.Resolver @= state.new_resolver(
         expr_count: p.tree.exprs.len(),
         type_count: p.tree.types.len()
     )
     r.module @ "t"
     collect(@r, s, p.decls, p.uses)
-    index: i64 @ 0
+    index: i64 @= 0
 
     for d in p.decls
         _ = d
@@ -262,7 +262,7 @@ test "a use is a binding: twice is noise, a declared name is a clash"
 
     # The use wins the table; the declaration arrives second and clashes —
     # and the unread use stays quiet, refused names keep their one message.
-    found: bool @ false
+    found: bool @= false
 
     for d in clash.out.diagnostics
         if d.code == "shadowed_binding"
@@ -279,7 +279,7 @@ test "a local may not take a name a `use` bound, and a field still may"
     # that RAN: `geom.x` meaning the local record's field on one line and
     # the module's function on another, at exit 0 (panel 102).
     local = resolved_file("use geom\n\nfunction main()\n    geom = 1\n    print(to_str(geom))\n")
-    refused: bool @ false
+    refused: bool @= false
 
     for d in local.out.diagnostics
         if d.code == "shadowed_binding"
@@ -307,7 +307,7 @@ test "a path binds its last part, and the sweep key cannot be ambiguous"
     # with a declaration called `decl` — the path itself is not a name
     # anything can declare (panel 099 R3).
     clash = resolved_file("use syntax/decl\nconstant decl: i64\n    1\n")
-    found: bool @ false
+    found: bool @= false
 
     for d in clash.out.diagnostics
         if d.code == "shadowed_binding"
@@ -333,14 +333,14 @@ test "a path binds its last part, and the sweep key cannot be ambiguous"
     ]
     s = source.from_files(files)
     p = parse.parse(s.text)
-    r: state.Resolver @ state.new_resolver(
+    r: state.Resolver @= state.new_resolver(
         expr_count: p.tree.exprs.len(),
         type_count: p.tree.types.len()
     )
     collect(@r, s, p.decls, p.uses)
     unused_uses(@r, s, p.uses)
     unused_sweep.report(@r, s)
-    unread: i64 @ 0
+    unread: i64 @= 0
 
     for d in r.out.diagnostics
         if d.code == "unused_binding"
@@ -361,12 +361,12 @@ test "a file may not bind one name twice, and `as` is the repair"
     ]
     s = source.from_files(files)
     p = parse.parse(s.text)
-    r: state.Resolver @ state.new_resolver(
+    r: state.Resolver @= state.new_resolver(
         expr_count: p.tree.exprs.len(),
         type_count: p.tree.types.len()
     )
     collect(@r, s, p.decls, p.uses)
-    taken: i64 @ 0
+    taken: i64 @= 0
 
     for d in r.out.diagnostics
         if d.code == "module_binding_taken"
@@ -386,7 +386,7 @@ test "a file may not bind one name twice, and `as` is the repair"
     ]
     s2 = source.from_files(fixed)
     p2 = parse.parse(s2.text)
-    r2: state.Resolver @ state.new_resolver(
+    r2: state.Resolver @= state.new_resolver(
         expr_count: p2.tree.exprs.len(),
         type_count: p2.tree.types.len()
     )

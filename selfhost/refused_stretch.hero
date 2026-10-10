@@ -96,11 +96,11 @@ function run_shown(run: str) -> str
 function run_end(text: str, at: i64, hole: bool) -> i64
     if !seen(text, at: at)
         return -1
-    end: i64 @ at + bytes.char_at(text, at).len()
-    many: bool @ false
+    end: i64 @= at + bytes.char_at(text, at).len()
+    many: bool @= false
 
     while true
-        next: i64 @ end
+        next: i64 @= end
 
         while next < text.len() && text[next] == ' '
             next @ next + 1
@@ -137,7 +137,7 @@ function seen(text: str, at: i64) -> bool
 ## Tests
 
 function lexed_one(text: str) -> state.LexState
-    l: state.LexState @ state.new_state()
+    l: state.LexState @= state.new_state()
     l.pos @ 0
     _ = told(@l, text, at: 0)
     return l
@@ -169,14 +169,14 @@ test "a template literal is one error token, the cursor past it"
     assert over.pos == 5
     assert over.tokens.len() == 1
 
-    in_a_hole: state.LexState @ state.new_state()
+    in_a_hole: state.LexState @= state.new_state()
     in_a_hole.holes @ [0]
     assert told(@in_a_hole, "`a\nb`}\"\n", at: 0)
     assert in_a_hole.pos == 5
 
     # Where a backtick follows its close there, it is no template over lines,
     # and its line, which leaves it open, holds the rest (defect 414).
-    ticked: state.LexState @ state.new_state()
+    ticked: state.LexState @= state.new_state()
     ticked.holes @ [0]
     assert told(@ticked, "`a\nb`}`\"\n", at: 0)
     assert ticked.pos == 2

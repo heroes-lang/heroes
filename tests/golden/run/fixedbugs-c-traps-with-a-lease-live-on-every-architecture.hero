@@ -13,7 +13,7 @@ extern "fixedbugs-c-traps-with-a-lease-live-on-every-architecture.h"
 
 function main()
     word = repeat("ab", 4)
-    held: cstr @ word.lease()
+    held: cstr @= word.lease()
     c_trap(s: held)
     end_lease(@held)
     print("not reached")

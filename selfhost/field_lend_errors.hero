@@ -29,7 +29,7 @@ use diag
 # repair a reader needs is a different sentence, and §4.17 asks a diagnostic to
 # carry what fixes the program without opening another file.
 function field_lend_escapes(span: token.Span) -> diag.Diagnostic
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "field_lend_escapes",
         message: "`.ptr()` lends this field's address to C for the length of one call (§4.19), and a lend may stand only as an argument of a call — here it stands somewhere the pointer outlives the record it points into",
         span: span
@@ -46,7 +46,7 @@ function field_lend_escapes(span: token.Span) -> diag.Diagnostic
 # answer, this one hands over the field itself. So the field has to still be
 # somewhere the program can see when C returns, and a returned temporary is not.
 function field_lend_needs_a_place(span: token.Span) -> diag.Diagnostic
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "field_lend_needs_a_place",
         message: "`.ptr()` lends a field's address to C, so the field must be one this program can still name — here the bytes belong to a value nothing holds",
         span: span
@@ -67,7 +67,7 @@ function field_lend_needs_a_place(span: token.Span) -> diag.Diagnostic
 # inside clang at the wrapper's call at exit 2 (measured on the route's landing
 # day), and a lend from a `@` root reached C with nothing checked about it.
 function field_lend_needs_a_header(span: token.Span) -> diag.Diagnostic
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "field_lend_needs_a_header",
         message: "`.ptr()` lends a field's address to C, and it may stand only as an argument of a function declared in an `extern` group — here the callee is this program's own, and no header says whether it writes through the pointer or how far it reads",
         span: span
@@ -92,7 +92,7 @@ function field_lend_needs_a_header(span: token.Span) -> diag.Diagnostic
 # (panel 171): the extent is the first of the two words on a `ptr`, and a
 # `lent` with no extent beside it is `lent_shape`, dead text.
 function field_lend_uncounted(callee: str, parameter: str, span: token.Span) -> diag.Diagnostic
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "field_lend_uncounted",
         message: "`.ptr()` lends a field's address to C with an extent this call states, and `" + parameter + "` of `" + callee + "` does not say which argument the extent is — so nothing can check the number against the field",
         span: span
@@ -119,7 +119,7 @@ function field_lend_uncounted(callee: str, parameter: str, span: token.Span) -> 
 # reason, and a fix `--apply` may take must be the one there is no second
 # candidate for (design.md §4.17's inverse case, panel 071).
 function field_lend_extent(lend: str, callee: str, parameter: str, count: str, stated: str, length: i64, span: token.Span) -> diag.Diagnostic
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "field_lend_extent",
         message: "`" + lend + "` lends a field of " + length.to_str() + " bytes, and `" + count + "` states " + stated + " — `" + parameter + "` of `" + callee + "` is declared `counted_by " + count + "`, and C read the field's own size from the header",
         span: span
@@ -140,7 +140,7 @@ function field_lend_extent(lend: str, callee: str, parameter: str, count: str, s
 # does not know, and a guess that is wrong by a factor would write past the
 # field all the same.
 function field_lend_unit(lend: str, callee: str, parameter: str, count: str, stated: str, length: i64, header_type: str, span: token.Span) -> diag.Diagnostic
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "field_lend_extent",
         message: "`" + lend + "` lends a field of " + length.to_str() + " bytes, and `" + count + "` states " + stated + " — `" + parameter + "` of `" + callee + "` is declared `counted_by " + count + "`, and the header's `" + header_type + "` counts it in what it points at, so C reaches past the field: C read both sizes from the header",
         span: span
@@ -168,7 +168,7 @@ function field_lend_unit(lend: str, callee: str, parameter: str, count: str, sta
 # only meant to READ through a parameter the header should have marked `const`
 # is theirs to say. The note names both roads.
 function field_lend_written(lend: str, root: str, callee: str, c_type: str, span: token.Span) -> diag.Diagnostic
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "field_lend_written",
         message: "`" + lend + "` lends a field of `" + root + "` to `" + callee + "`, and the header declares that parameter `" + c_type + "` — C may write through it, and `" + root + "` is not a `@` name",
         span: span

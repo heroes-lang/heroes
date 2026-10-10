@@ -25,7 +25,7 @@ use emit/writer
 use emit/externs as emit_externs
 
 function references(@w: writer.Writer, p: containers.Program, s: source.Source, decls: [ast.Decl])
-    called: {str: bool} @ {}
+    called: {str: bool} @= {}
 
     for f in p.functions
         for blk in f.blocks

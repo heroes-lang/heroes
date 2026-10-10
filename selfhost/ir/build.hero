@@ -17,7 +17,7 @@
 # A synthetic name cannot collide: it starts with `$`, and `$` is not in
 # the language — not an identifier character, not an operator. Without
 # the sigil the dump would be ambiguous on input the author may legally
-# write, because `t0: i64 @ 0` is legal Heroes.
+# write, because `t0: i64 @= 0` is legal Heroes.
 
 use token
 use resolved
@@ -88,8 +88,8 @@ function empty_function() -> containers.Function
     )
 
 function new_lowering(r: resolved.Resolved, unit: i64) -> Lowering
-    by_span: {i64: i64} @ {}
-    index: i64 @ 0
+    by_span: {i64: i64} @= {}
+    index: i64 @= 0
 
     for local in r.locals
         by_span[local.name.start] @ index
@@ -191,7 +191,7 @@ function terminate(@b: Lowering, term: ir.Term)
     # list is hoisted as `push_inst`'s is (defect 261): walked and copied at
     # every edge into it, a join of N arms cost N squared.
     for target in flow.successors(term)
-        preds: [i64] @ b.building.blocks[target].preds
+        preds: [i64] @= b.building.blocks[target].preds
 
         if preds.len() == 0 || preds[preds.len() - 1] != b.current
             b.building.blocks[target].preds @ []
@@ -224,7 +224,7 @@ function push_inst(@b: Lowering, inst: ir.Inst)
     # With the block's own reference dropped first, `held` is the list's
     # one owner and grows in place: the hoisting design.md Part 8 wart 8
     # names beside the lend (defect 112).
-    held: [ir.Inst] @ b.building.blocks[b.current].insts
+    held: [ir.Inst] @= b.building.blocks[b.current].insts
     none: [ir.Inst] = []
     b.building.blocks[b.current].insts @ none
     held @ held.push(inst)
@@ -284,7 +284,7 @@ function local_kind(r: resolved.Resolved, local: i64?) -> containers.SlotKind
 # A slot the author did not write: $i0 for a loop index, $r0 for a
 # branch's value, $s0 for a scrutinee held across arms.
 function synthetic(@b: Lowering, prefix: str, ty: i64) -> i64
-    count: i64 @ 0
+    count: i64 @= 0
     found = b.counters[prefix]
 
     if !found.is_err()
@@ -313,7 +313,7 @@ function value_ty(b: Lowering, value: i64) -> i64
 # The @ parameters, in declaration order — what every exit edge owes a
 # copy_out to (§4.8).
 function mutable_params(b: Lowering) -> [i64]
-    out: [i64] @ []
+    out: [i64] @= []
 
     for slot_id in b.building.params
         match b.building.slots[slot_id].kind
@@ -361,7 +361,7 @@ function fresh() -> Lowering
     return new_lowering(resolved.new_resolved(), unit: 0)
 
 test "a block ends once, and nothing lands after the terminator"
-    b: Lowering @ fresh()
+    b: Lowering @= fresh()
     begin(@b, name: "f", decl: 0, kind: .function_kind, result: 0, generics: [], span: token.Span(start: 0, end: 1))
     entry(@b)
     exit_block = block(@b, note: "exit")
@@ -382,7 +382,7 @@ test "a block ends once, and nothing lands after the terminator"
     assert v == 1
 
 test "defect 261: one edge per target a terminator names, every arm a predecessor of its join in order"
-    b: Lowering @ fresh()
+    b: Lowering @= fresh()
     begin(@b, name: "j", decl: 0, kind: .function_kind, result: 0, generics: [], span: token.Span(start: 0, end: 1))
     entry(@b)
     twice = block(@b, note: "twice")
@@ -397,7 +397,7 @@ test "defect 261: one edge per target a terminator names, every arm a predecesso
     # A branch whose two sides are one block: one edge.
     switch_to(@b, target: twice)
     terminate(@b, .branch(cond: 0, then_to: meet, else_to: meet))
-    arms: [i64] @ [twice]
+    arms: [i64] @= [twice]
 
     # Forty arms into one join, each recorded once and in the order they ended.
     while arms.len() <= 40
@@ -417,7 +417,7 @@ test "defect 261: one edge per target a terminator names, every arm a predecesso
     assert b.building.blocks.len() == arms.len() + 3
 
 test "value 0 is unit, temporaries count up, synthetics never collide"
-    b: Lowering @ fresh()
+    b: Lowering @= fresh()
     begin(@b, name: "g", decl: 0, kind: .function_kind, result: 0, generics: [], span: token.Span(start: 0, end: 1))
     entry(@b)
     assert unit_value() == 0
@@ -430,7 +430,7 @@ test "value 0 is unit, temporaries count up, synthetics never collide"
     assert b.building.slots[c].name == "$i1"
 
 test "a run slices back out"
-    b: Lowering @ fresh()
+    b: Lowering @= fresh()
     begin(@b, name: "h", decl: 0, kind: .function_kind, result: 0, generics: [], span: token.Span(start: 0, end: 1))
     entry(@b)
     run = args_run(@b, [.value_arg(value: 4), .value_arg(value: 5)])

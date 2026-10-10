@@ -34,10 +34,10 @@ function at_run_time(k: u64) -> u64
     return k
 
 function main()
-    o: One @ One(a: 0)
-    p: Pad @ Pad(c: 0, d: 0)
-    w: Outer @ Outer(inner: One(a: 0), z: 7)
-    q: Pfd @ Pfd(fd: 0, events: 1, revents: 0)
+    o: One @= One(a: 0)
+    p: Pad @= Pad(c: 0, d: 0)
+    w: Outer @= Outer(inner: One(a: 0), z: 7)
+    q: Pfd @= Pfd(fd: 0, events: 1, revents: 0)
     print(fill(@o, n: 4))
     print(o.a)
     print(fill_pad(@p, n: 16))
@@ -46,7 +46,7 @@ function main()
     print(w.z)
     print(fill_lpvoid(@o, n: 4))
     print(peek(@o, n: 4))
-    n: u32 @ 4
+    n: u32 @= 4
     print(fill_len(@o, @n))
     print(poll_like(@q, nfds: 1))
     print(q.revents)

@@ -30,11 +30,11 @@ use check/waiting
 # Every generic function's name the bindings so far settle in part, its
 # instance binding the callee's letters in turn; what none settles is left.
 function partly(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], params: [i64], left: [waiting.Held], @bindings: [i64?]) -> [waiting.Held]
-    still: [waiting.Held] @ []
+    still: [waiting.Held] @= []
 
     for w in left
         param = params[w.at]
-        got: i64? @ fail(code: "not_generic", msg: "not a generic function's name")
+        got: i64? @= fail(code: "not_generic", msg: "not a generic function's name")
 
         if function_value.generic_at(a, r, decls, w.value)
             got @ through(@c, a, r, s, decls, id: w.value, wanted: param, callee: bindings)
@@ -97,7 +97,7 @@ function parameter_name(s: source.Source, decls: [ast.Decl], decl: i64, at: i64)
 # meets no settled part.
 function through(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], id: i64, wanted: i64, callee: [i64?]) -> i64?
     span = a.exprs[id].span
-    decl: i64 @ 0
+    decl: i64 @= 0
 
     match r.uses[id]
         .top t => decl @ t.at
@@ -108,13 +108,13 @@ function through(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.
 
     letters = function_value.letters_of(s, decls, decl: decl)
     signature = function_value.signature_of(@c, a, r, s, decls, decl: decl)
-    own: [i64?] @ []
+    own: [i64?] @= []
 
     for _ in letters
         own @ own.push(fail(code: "unbound", msg: "no part of the parameter settled it yet"))
 
     meet(@c, own: @own, value: signature, wanted: wanted, callee: callee, concrete: false)
-    bound: [i64] @ []
+    bound: [i64] @= []
 
     for b in own
         if b.is_err()
@@ -181,7 +181,7 @@ function meet(@c: state.Checker, @own: [i64?], value: i64, wanted: i64, callee: 
                     ws = table.params_of(c.out.types, w.params)
 
                     if vs.len() == ws.len()
-                        i: i64 @ 0
+                        i: i64 @= 0
 
                         while i < vs.len()
                             meet(@c, own: @own, value: vs[i], wanted: ws[i], callee: callee, concrete: concrete)

@@ -23,8 +23,8 @@ use check/flow_groups
 # The locals two paths changed after the clock `from`, each once, `one`'s
 # first, each path's in the order of their numbers.
 function since(one: flow_groups.Groups, two: flow_groups.Groups, from: i64) -> [str]
-    out: [str] @ []
-    named: {str: bool} @ {}
+    out: [str] @= []
+    named: {str: bool} @= {}
 
     for g in [one, two]
         for local in after(g, from: from)
@@ -37,14 +37,14 @@ function since(one: flow_groups.Groups, two: flow_groups.Groups, from: i64) -> [
 # The locals of `g` whose group changed after `from`, in the order of their
 # numbers.
 function after(g: flow_groups.Groups, from: i64) -> [str]
-    out: [str] @ []
+    out: [str] @= []
 
     if g.root.latest > from
         later(@out, n: g.root, level: g.levels, from: from)
     return out
 
 function later(@out: [str], n: flow_groups.Node, level: i64, from: i64)
-    at: i64 @ 0
+    at: i64 @= 0
 
     if level > 0
         while at < n.kids.len()
@@ -60,13 +60,13 @@ function later(@out: [str], n: flow_groups.Node, level: i64, from: i64)
         at @ at + 1
 
 test "what changed after a clock is found on each path, each local once"
-    base: flow_groups.Groups @ flow_groups.none()
+    base: flow_groups.Groups @= flow_groups.none()
     flow_groups.put(@base, one: stamped("3", stamp: 1))
     flow_groups.put(@base, one: stamped("4", stamp: 2))
-    one: flow_groups.Groups @ base
+    one: flow_groups.Groups @= base
     flow_groups.put(@one, one: stamped("5", stamp: 3))
     flow_groups.put(@one, one: stamped("3", stamp: 4))
-    two: flow_groups.Groups @ base
+    two: flow_groups.Groups @= base
     flow_groups.put(@two, one: stamped("70000", stamp: 3))
     flow_groups.put(@two, one: stamped("5", stamp: 4))
     assert since(one: one, two: two, from: 2) == ["3", "5", "70000"]
@@ -76,7 +76,7 @@ test "what changed after a clock is found on each path, each local once"
     assert after(base, from: 0) == ["3", "4"]
 
 function stamped(local: str, stamp: i64) -> flow_groups.Held
-    one: flow_groups.Held @ flow_groups.empty(local)
+    one: flow_groups.Held @= flow_groups.empty(local)
     one.kept @ one.kept.push([local])
     one.stamp @ stamp
     return one

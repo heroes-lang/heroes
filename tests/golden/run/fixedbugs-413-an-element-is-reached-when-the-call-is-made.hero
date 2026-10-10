@@ -22,9 +22,9 @@ function hundred(@n: i64) -> i64
     return 1
 
 function main()
-    xs: [i64] @ [1]
+    xs: [i64] @= [1]
     add(n: @xs[0], k: grow(@xs))
     print(xs[0], " ", xs.len())
-    n: i64 @ 1
+    n: i64 @= 1
     add(n: @n, k: hundred(@n))
     print(n)

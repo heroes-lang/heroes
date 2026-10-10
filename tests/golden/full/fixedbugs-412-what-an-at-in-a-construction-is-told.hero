@@ -13,8 +13,8 @@ record Point
     y: i64
 
 function main()
-    n: i64 @ 1
-    zero: i32 @ 0
+    n: i64 @= 1
+    zero: i32 @= 0
     p = Point(x: @n, y: 2)  #~ marker_mismatch
     q = Pair(a: 1, rest: @zero)  #~ marker_mismatch
     print(p.x, q.a)

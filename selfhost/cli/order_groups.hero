@@ -16,7 +16,7 @@ use cli/process
 # The string of the first group of `module` naming `header`.
 function group_in(s: source.Source, decls: [ast.Decl], header: str, module: str) -> token.Span?
     for decl in decls
-        named: token.Span? @ fail(code: "none", msg: "no header")
+        named: token.Span? @= fail(code: "none", msg: "no header")
 
         match decl.kind
             .function_decl fd          => named @ fd.value.header
@@ -32,10 +32,10 @@ function group_in(s: source.Source, decls: [ast.Decl], header: str, module: str)
 # The headers `module`'s groups name above its first group naming `header`,
 # once each in written order, that `unit` does not read.
 function written_above(s: source.Source, decls: [ast.Decl], header: str, module: str, unit: [str]) -> [str]
-    out: [str] @ []
+    out: [str] @= []
 
     for decl in decls
-        named: token.Span? @ fail(code: "none", msg: "no header")
+        named: token.Span? @= fail(code: "none", msg: "no header")
 
         match decl.kind
             .function_decl fd          => named @ fd.value.header
@@ -62,7 +62,7 @@ record Bound
 function bound_at(s: source.Source, decls: [ast.Decl], span: token.Span) -> Bound?
     for decl in decls
         if decl.name.start >= span.start && decl.name.end <= span.end
-            named: token.Span? @ fail(code: "none", msg: "no header")
+            named: token.Span? @= fail(code: "none", msg: "no header")
 
             match decl.kind
                 .function_decl fd                         => named @ fd.value.header
@@ -79,10 +79,10 @@ function bound_at(s: source.Source, decls: [ast.Decl], span: token.Span) -> Boun
 # Every function and constant `module`'s groups bind, by their C names, in
 # the order they are written.
 function bound_names(s: source.Source, decls: [ast.Decl], module: str) -> [str]
-    out: [str] @ []
+    out: [str] @= []
 
     for decl in decls
-        named: token.Span? @ fail(code: "none", msg: "no header")
+        named: token.Span? @= fail(code: "none", msg: "no header")
 
         match decl.kind
             .function_decl fd                         => named @ fd.value.header
@@ -96,8 +96,8 @@ function bound_names(s: source.Source, decls: [ast.Decl], module: str) -> [str]
 
 # `list` with the element at `from` placed at `to`, the others in order.
 function moved(list: [str], from: i64, to: i64) -> [str]
-    out: [str] @ []
-    index: i64 @ 0
+    out: [str] @= []
+    index: i64 @= 0
 
     for one in list
         if index == to
@@ -110,7 +110,7 @@ function moved(list: [str], from: i64, to: i64) -> [str]
     return out
 
 function index_of(list: [str], one: str) -> i64
-    index: i64 @ 0
+    index: i64 @= 0
 
     for each in list
         if each == one
@@ -128,9 +128,9 @@ function index_text(text: str, part: str) -> i64
 
 # A header's file name without its directories and its extension.
 function stem(header: str) -> str
-    start: i64 @ 0
-    end: i64 @ header.len()
-    index: i64 @ 0
+    start: i64 @= 0
+    end: i64 @= header.len()
+    index: i64 @= 0
 
     while index < header.len()
         if header[index] == '/' || header[index] == '\\'
@@ -146,7 +146,7 @@ function stem(header: str) -> str
 # Whether a header is the program's own: a file of that name beside the
 # program, in the directory its units search last.
 function beside_program(under: compiling.Compiling, header: str) -> bool
-    dir: str @ under.source_dir
+    dir: str @= under.source_dir
 
     if dir == ""
         dir @ "."

@@ -7,8 +7,8 @@
 # overflow aborts at every width (spec § 7), the `1` before it flushed first.
 
 constant V: u8
-    v: u8 @ 0
-    i: i64 @ 0
+    v: u8 @= 0
+    i: i64 @= 0
 
     while i < 3
         v @ v + 100

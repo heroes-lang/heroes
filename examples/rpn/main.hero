@@ -24,7 +24,7 @@ variant Token
     divide
 
 function tokens_of(text: str) -> [Token]?
-    out: [Token] @ []
+    out: [Token] @= []
 
     for word in split_words(text)
         one = token_of(word)?
@@ -52,10 +52,10 @@ function token_of(word: str) -> Token?
 function number_of(word: str) -> i64?
     if word.len() == 0
         return fail(code: "empty", msg: "an empty word is not a number")
-    negative: bool @ false
-    total: i64 @ 0
-    digits: i64 @ 0
-    first: bool @ true
+    negative: bool @= false
+    total: i64 @= 0
+    digits: i64 @= 0
+    first: bool @= true
 
     for ch in word.chars()
         if first && ch == "-"
@@ -77,7 +77,7 @@ function number_of(word: str) -> i64?
 
 function digit_of(ch: str) -> i64?
     digits = "0123456789"
-    i: i64 @ 0
+    i: i64 @= 0
 
     while i < 10
         if digits.slice(from: i, to: i + 1) == ch
@@ -87,8 +87,8 @@ function digit_of(ch: str) -> i64?
     return fail(code: "not_a_digit", msg: "`" + ch + "` is not a digit")
 
 function split_words(text: str) -> [str]
-    out: [str] @ []
-    piece: str @ ""
+    out: [str] @= []
+    piece: str @= ""
 
     for ch in text.chars()
         if ch == " "
@@ -104,7 +104,7 @@ function split_words(text: str) -> [str]
     return out
 
 function evaluate(text: str) -> i64?
-    stack: [i64] @ []
+    stack: [i64] @= []
 
     for one in tokens_of(text)?
         match one

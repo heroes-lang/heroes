@@ -41,11 +41,11 @@ function measure(s: Shape) -> i64
         .line l => l.n
 
 function main()
-    total: i64 @ 0
-    letters: i64 @ 0
-    cells: i64 @ 0
-    lengths: i64 @ 0
-    at: i64 @ 0
+    total: i64 @= 0
+    letters: i64 @= 0
+    cells: i64 @= 0
+    lengths: i64 @= 0
+    at: i64 @= 0
 
     while at < 1000
         total @ total + DIGITS[at % 8] + NONE.len()

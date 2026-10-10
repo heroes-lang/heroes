@@ -46,8 +46,8 @@ extern "hero_os.h"
 # One worker: the sum of the squares of a band of a thousand numbers, chosen
 # by the index it is handed. Everything it touches it made itself.
 function band(index: i64) -> i64
-    total: i64 @ 0
-    n: i64 @ index * 1000
+    total: i64 @= 0
+    n: i64 @= index * 1000
 
     while n < index * 1000 + 1000
         total @ total + n * n
@@ -84,8 +84,8 @@ function deep(levels: i64) -> i64
 # The same answer without threads, which is what makes the test above a test
 # rather than a restatement.
 function whole(bands: i64) -> i64
-    total: i64 @ 0
-    n: i64 @ 0
+    total: i64 @= 0
+    n: i64 @= 0
 
     while n < bands * 1000
         total @ total + n * n
@@ -94,14 +94,14 @@ function whole(bands: i64) -> i64
     return total
 
 function in_parallel(bands: i64) -> i64
-    handles: [i64] @ []
-    i: i64 @ 0
+    handles: [i64] @= []
+    i: i64 @= 0
 
     while i < bands
         handles @ handles.push(hero_thread_spawn(body: band, arg: i))
         i @ i + 1
 
-    total: i64 @ 0
+    total: i64 @= 0
 
     for h in handles
         total @ total + hero_thread_join(handle: h)

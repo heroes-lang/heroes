@@ -25,7 +25,7 @@ extern "c-frees-a-lease-and-the-runtime-names-it.h"
 
 function main()
     x = "payload"
-    c: cstr @ x.lease()
+    c: cstr @= x.lease()
     print(1)
     eat(s: c)
     end_lease(@c)

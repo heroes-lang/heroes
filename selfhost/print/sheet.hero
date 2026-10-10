@@ -69,7 +69,7 @@ function after_last(@sh: Sheet, text: str)
         return
     at = sh.lines.len() - 1
     last = sh.lines[at]
-    kept: str @ last
+    kept: str @= last
 
     if last.len() > 0 && last[last.len() - 1] == '\n'
         kept @ last.slice(from: 0, to: last.len() - 1)
@@ -85,8 +85,8 @@ function after_last(@sh: Sheet, text: str)
 function ends_with(sh: Sheet, text: str) -> bool
     if text.len() > sh.size
         return false
-    at: i64 @ sh.lines.len()
-    held: i64 @ 0
+    at: i64 @= sh.lines.len()
+    held: i64 @= 0
 
     while at > 0 && held < text.len()
         at @ at - 1
@@ -103,26 +103,26 @@ function ends_with(sh: Sheet, text: str) -> bool
 function indent_after(@sh: Sheet, from: i64, by: str)
     if from >= sh.size
         return
-    at: i64 @ sh.lines.len() - 1
-    start: i64 @ sh.size - sh.lines[at].len()
+    at: i64 @= sh.lines.len() - 1
+    start: i64 @= sh.size - sh.lines[at].len()
 
     while start > from
         at @ at - 1
         start @ start - sh.lines[at].len()
 
     first = sh.lines[at]
-    newline: i64 @ from - start
+    newline: i64 @= from - start
 
     while newline < first.len() && first[newline] != '\n'
         newline @ newline + 1
 
     if start + newline + 1 >= sh.size
         return
-    grown: i64 @ 0
+    grown: i64 @= 0
     one = indented(text: first, from: newline + 1, by: by)
     grown @ grown + one.len() - first.len()
     rewrite(@sh.lines, at: at, text: one)
-    later: i64 @ at + 1
+    later: i64 @= at + 1
 
     while later < sh.lines.len()
         was = sh.lines[later]
@@ -136,9 +136,9 @@ function indent_after(@sh: Sheet, from: i64, by: str)
 # `text` with `by` in front of every whole line from byte `from` on that is
 # not a blank one.
 function indented(text: str, from: i64, by: str) -> str
-    parts: [str] @ [text.slice(from: 0, to: from)]
-    start: i64 @ from
-    at: i64 @ from
+    parts: [str] @= [text.slice(from: 0, to: from)]
+    start: i64 @= from
+    at: i64 @= from
 
     while at < text.len()
         if text[at] == '\n'
@@ -165,7 +165,7 @@ function rewrite(@lines: [str], at: i64, text: str)
 ## Tests
 
 test "a sheet reads as the one string it replaces, and ends in a blank line once"
-    sh: Sheet @ empty()
+    sh: Sheet @= empty()
     blank(@sh)
     assert whole(sh) == ""
     line(@sh, text: "    if c")
@@ -181,20 +181,20 @@ test "a sheet reads as the one string it replaces, and ends in a blank line once
     assert !ends_with(sh, text: whole(sh) + "x")
 
     # A trailing note on an empty page is a line of its own.
-    other: Sheet @ empty()
+    other: Sheet @= empty()
     after_last(@other, text: "  # alone")
     assert whole(other) == "  # alone\n"
 
     # A page of one blank line is one `\n`, and a blank line after it is a
     # second: the old string's `n >= 2`.
-    third: Sheet @ empty()
+    third: Sheet @= empty()
     line(@third, text: "")
     blank(@third)
     assert whole(third) == "\n\n"
 
 test "a line that ends in a character above ASCII is asked by its bytes, and takes its blank line"
     # `fmt` aborted here on `# café` closing a body with a declaration after it.
-    sh: Sheet @ empty()
+    sh: Sheet @= empty()
     line(@sh, text: "    print(1)  # café")
     blank(@sh)
     assert whole(sh) == "    print(1)  # café\n\n"
@@ -202,7 +202,7 @@ test "a line that ends in a character above ASCII is asked by its bytes, and tak
     assert whole(sh) == "    print(1)  # café\n\n"
 
     for last in ["é", "€", "😀", "é€😀"]
-        page: Sheet @ empty()
+        page: Sheet @= empty()
         line(@page, text: "# " + last)
         assert ends_with(page, text: last + "\n")
         assert !ends_with(page, text: "\n\n")
@@ -210,7 +210,7 @@ test "a line that ends in a character above ASCII is asked by its bytes, and tak
         assert whole(page) == "# " + last + "\n\n"
 
 test "a head across lines is indented after its first line, a blank line and what came before it are not"
-    sh: Sheet @ empty()
+    sh: Sheet @= empty()
     line(@sh, text: "x")
     mark = sh.size
     line(@sh, text: "    while t[a +  # c")
@@ -221,7 +221,7 @@ test "a head across lines is indented after its first line, a blank line and wha
     assert sh.size == whole(sh).len()
 
     # One line, or nothing, after the mark: nothing to indent.
-    one: Sheet @ empty()
+    one: Sheet @= empty()
     line(@one, text: "    if c")
     indent_after(@one, from: 0, by: "        ")
     indent_after(@one, from: one.size, by: "        ")
@@ -229,7 +229,7 @@ test "a head across lines is indented after its first line, a blank line and wha
 
     # A mark inside a line whose `\n` a trailing note moved: the line it is
     # on is the head's first, and a line that holds two keeps both right.
-    inner: Sheet @ empty()
+    inner: Sheet @= empty()
     line(@inner, text: "a")
     mark_inner = inner.size
     after_last(@inner, text: "  # t")

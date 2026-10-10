@@ -10,6 +10,6 @@ extern "ffi-out-cell-on-a-ptr-the-header-takes-by-value.h"
     function wipe(@p: ptr)  #~ ffi_parameter_type
 
 function main()
-    p: ptr @ nullptr
+    p: ptr @= nullptr
     wipe(@p)
     print("after")

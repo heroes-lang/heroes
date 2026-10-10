@@ -97,20 +97,20 @@ function judged_share(job: Job, phase: i64, index: i64) -> ()?
         mirror: job.out + "/mirror",
         capture: job.out + "/work/capture-" + phase.to_str() + "-" + index.to_str()
     )
-    lines: [str] @ []
-    alone_lines: [str] @ []
-    texts: {str: str} @ {}
+    lines: [str] @= []
+    alone_lines: [str] @= []
+    texts: {str: str} @= {}
 
     if phase == CORPUS
         files = plan.files(p)
-        task: i64 @ index
+        task: i64 @= index
 
         while task < files.len()
             row = planted.unmutated(at, file: files[task], index: task, original: original(at, file: files[task], @texts)?)?
             lines @ lines.push(task.to_str() + "\t" + json_fields.written(row))
             task @ task + JOBS
     else if phase == SINGLES
-        task: i64 @ index
+        task: i64 @= index
 
         while task < p.singles.len()
             one = p.singles[task]
@@ -125,7 +125,7 @@ function judged_share(job: Job, phase: i64, index: i64) -> ()?
     else
         alone = read_alone(job.out)?
         singles = plan.by_key(p)
-        task: i64 @ index
+        task: i64 @= index
 
         while task < p.pairs.len()
             two = p.pairs[task]
@@ -149,7 +149,7 @@ function original(at: judged.Place, file: str, @texts: {str: str}) -> str?
     return got
 
 function written(path: str, lines: [str]) -> ()?
-    text: str @ ""
+    text: str @= ""
 
     if lines.len() > 0
         text @ lines.join("\n") + "\n"
@@ -160,7 +160,7 @@ function written(path: str, lines: [str]) -> ()?
 
 # Every single's codes alone, by key, the normal arm's first.
 function read_alone(out: str) -> {str: [[str]]}?
-    got: {str: [[str]]} @ {}
+    got: {str: [[str]]} @= {}
     text = read_file(out + "/work/alone.jsonl")
 
     if text.is_err()

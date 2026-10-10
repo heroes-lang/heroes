@@ -8,7 +8,7 @@
 # residual the sitting names. Each text prints as its bytes.
 
 function bytes_of(s: str) -> str
-    out: str @ ""
+    out: str @= ""
 
     for i in range(from: 0, to: s.len())
         out @ out + " " + s[i].to_str()

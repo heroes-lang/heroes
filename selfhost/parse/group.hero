@@ -84,7 +84,7 @@ function extern_group(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text: 
         # head: what goes on is told on its own, the junk (defect 198) or a
         # word the lexer refused (defect 133's class, lane recovery-b7),
         # `extern "m.h" )` or `extern "m.h" fn` over nothing.
-        at: token.Span @ cursor.current_span(c)
+        at: token.Span @= cursor.current_span(c)
 
         if !cursor.at_fresh_line(c)
             at @ head
@@ -98,7 +98,7 @@ function extern_group(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text: 
         )
 
         if close >= 0
-            lines: cursor.Cursor @ braced_lines.laid_out(c, text)
+            lines: cursor.Cursor @= braced_lines.laid_out(c, text)
             members(@lines, @a, @decls, text, group_doc: doc, linkage: linkage)
             braced_lines.took(c: @c, view: lines)
             return
@@ -121,9 +121,9 @@ function extern_group(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text: 
 # no group holds, so it reads as nothing here and costs no second message.
 function members(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text: str, group_doc: [token.Span], linkage: tails.Linkage)
     _ = cursor.bump(@c)
-    first: bool @ true
-    done: bool @ false
-    habit: i64 @ -1
+    first: bool @= true
+    done: bool @= false
+    habit: i64 @= -1
 
     while !done
         cursor.skip_terminators(@c)
@@ -138,7 +138,7 @@ function members(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text: str, 
             # **A `record` is a member like the other two** (panel 060). It
             # takes the group's doc on the first line exactly as they do.
             keyword = cursor.current_span(c)
-            doc: [token.Span] @ group_doc
+            doc: [token.Span] @= group_doc
 
             if !first
                 doc @ doc_comments.take_docs(@c, text, keyword)
@@ -150,7 +150,7 @@ function members(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text: str, 
 
             # The group's own doc comment documents its first signature; after
             # that each line takes its own, exactly as a record's fields do.
-            doc: [token.Span] @ group_doc
+            doc: [token.Span] @= group_doc
 
             if !first
                 doc @ doc_comments.take_docs(@c, text, keyword)
@@ -159,7 +159,7 @@ function members(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text: str, 
 
             if !cursor.at(c, .ident)
                 if !cursor.at_reported_error(c)
-                    message: str @ "expected the C function's name, found " + cursor.found(c, text) + " — `function sqrt(x: f64) -> f64`"
+                    message: str @= "expected the C function's name, found " + cursor.found(c, text) + " — `function sqrt(x: f64) -> f64`"
 
                     if is_constant
                         message @ "expected the C constant's name, found " + cursor.found(c, text) + " — `constant SQLITE_OK: i64`"
@@ -226,12 +226,12 @@ function members(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text: str, 
 # keyword or a word whose certain swap writes it, `fn q() -> i64 )`; and ""
 # where the cursor opens its line or the line opens with anything else.
 function member_of_the_line(c: cursor.Cursor) -> str
-    i: i64 @ c.pos - 1
+    i: i64 @= c.pos - 1
 
     while i >= 0 && !token.is_line_end(c.tokens[i].kind)
         i @ i - 1
 
-    first: i64 @ i + 1
+    first: i64 @= i + 1
 
     while first < c.pos && c.tokens[first].kind == .comment
         first @ first + 1

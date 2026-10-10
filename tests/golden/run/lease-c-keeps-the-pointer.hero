@@ -13,10 +13,10 @@ extern "lease-c-keeps-the-pointer.h"
     function stash_len() -> u64
 
 function main()
-    at: i64 @ 0
+    at: i64 @= 0
 
     while at < 3
-        label: cstr @ ("row-" + at.to_str() + "-payload").lease()
+        label: cstr @= ("row-" + at.to_str() + "-payload").lease()
         stash_put(s: label)
         print(stash_len())
         end_lease(@label)

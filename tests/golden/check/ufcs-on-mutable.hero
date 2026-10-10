@@ -11,7 +11,7 @@ function bump(@c: Counter)
     c.n @ c.n + 1
 
 function main()
-    c: Counter @ Counter(n: 0)
+    c: Counter @= Counter(n: 0)
     c.bump()  #~ ufcs_on_mutable
     bump(@c)
     print(c.n)

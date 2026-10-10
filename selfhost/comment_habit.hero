@@ -45,8 +45,8 @@ function opens_at(text: str, at: i64) -> bool
 function divides_at(text: str, at: i64, inside: bool) -> bool
     if !inside || text[at + 1] != '/'
         return false
-    depth: i64 @ 0
-    i: i64 @ at + 2
+    depth: i64 @= 0
+    i: i64 @= at + 2
 
     while i < text.len() && text[i] != '\n' && text[i] != '#'
         b = text[i]
@@ -77,7 +77,7 @@ function divides_at(text: str, at: i64, inside: bool) -> bool
 # The offset past the `*/` that closes a block comment on the line that
 # holds `from`, or -1 where its line holds none.
 function block_end(text: str, from: i64) -> i64
-    i: i64 @ from
+    i: i64 @= from
 
     while i + 1 < text.len() && text[i] != '\n'
         if text[i] == '*' && text[i + 1] == '/'
@@ -97,7 +97,7 @@ function comment_end(text: str, at: i64) -> i64
 
     if same >= 0
         return same
-    i: i64 @ at + 2
+    i: i64 @= at + 2
 
     while i + 1 < text.len() && !(text[i] == '*' && text[i + 1] == '/')
         i @ i + 1
@@ -109,7 +109,7 @@ function comment_end(text: str, at: i64) -> i64
 # Whether nothing but spaces, or a `#` comment, stands from `from` to its
 # line's end.
 function ends_its_line(text: str, from: i64) -> bool
-    i: i64 @ from
+    i: i64 @= from
 
     while i < text.len() && text[i] == ' '
         i @ i + 1
@@ -134,30 +134,30 @@ function holds_the_line(text: str, at: i64) -> bool
 # the habit's decoration, dropped, and its line ends as the file's. What a
 # comment holds is no part of the program, so the rewrite is its own words.
 function written_with_hashes(text: str, at: i64, end: i64) -> str
-    begin: i64 @ at
+    begin: i64 @= at
 
     while begin > 0 && text[begin - 1] != '\n'
         begin @ begin - 1
 
-    past: i64 @ begin
+    past: i64 @= begin
 
     while past < at && text[past] == ' '
         past @ past + 1
 
     margin = text.slice(from: begin, to: past)
-    lines: [str] @ []
-    break_with: str @ "\n"
-    from: i64 @ at + 2
+    lines: [str] @= []
+    break_with: str @= "\n"
+    from: i64 @= at + 2
 
     while from <= end - 2
-        to: i64 @ from
+        to: i64 @= from
 
         while to < end - 2 && text[to] != '\n'
             to @ to + 1
 
         if to < end - 2 && to > from && text[to - 1] == '\r'
             break_with @ "\r\n"
-        words: str @ inner_of(text, from: from, to: to)
+        words: str @= inner_of(text, from: from, to: to)
 
         if words.len() > 0 && words[words.len() - 1] == '\r'
             words @ inner_of(words, from: 0, to: words.len() - 1)
@@ -175,8 +175,8 @@ function written_with_hashes(text: str, at: i64, end: i64) -> str
 
 # The text from `from` to `to`, its spaces off both ends.
 function inner_of(text: str, from: i64, to: i64) -> str
-    a: i64 @ from
-    b: i64 @ to
+    a: i64 @= from
+    b: i64 @= to
 
     while a < b && text[a] == ' '
         a @ a + 1
@@ -188,7 +188,7 @@ function inner_of(text: str, from: i64, to: i64) -> str
 
 # How many `/` open the comment at `at`: `//`, or `///` for a doc comment.
 function slashes(text: str, at: i64) -> i64
-    i: i64 @ at
+    i: i64 @= at
 
     while i < text.len() && text[i] == '/'
         i @ i + 1

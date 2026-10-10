@@ -122,7 +122,7 @@ constant REFUSED: [str]
 # once a walk. A row that does not read as two numbers reads as nothing here,
 # and the test below holds every row to its shape and its order.
 function refused_runs() -> [i64]
-    out: [i64] @ []
+    out: [i64] @= []
 
     for row in REFUSED
         parts = strings.words(row)
@@ -141,7 +141,7 @@ function refused_runs() -> [i64]
 # `refused_runs()`: the runs are in order, so the first that starts past
 # `code` ends the search.
 function refused_in(code: i64, runs: [i64]) -> bool
-    at: i64 @ 0
+    at: i64 @= 0
 
     while at + 1 < runs.len()
         if code < runs[at]
@@ -163,7 +163,7 @@ function refused(code: i64) -> bool
 # runs at every byte cost the walk three quarters more (41.7 billion
 # instructions against 23.9, measured 2026-10-07).
 function ascii_refused(runs: [i64]) -> [bool]
-    out: [bool] @ []
+    out: [bool] @= []
 
     for code in range(from: 0, to: 128)
         out @ out.push(refused_in(code, runs: runs))
@@ -175,9 +175,9 @@ function ascii_refused(runs: [i64]) -> [bool]
 # `ascii_refused`. ASCII is asked byte by byte and anything above it decoded,
 # a `str` being well-formed UTF-8 (spec § 3).
 function found_in(text: str, runs: [i64], ascii: [bool]) -> [Found]
-    out: [Found] @ []
-    line: i64 @ 1
-    at: i64 @ 0
+    out: [Found] @= []
+    line: i64 @= 1
+    at: i64 @= 0
 
     while at < text.len()
         b = text[at]
@@ -213,7 +213,7 @@ function width_of(b: u8) -> i64
 # The code point of the `width` bytes at `at`.
 function decoded(text: str, at: i64, width: i64) -> i64
     lead = to_i64(text[at]).must()
-    code: i64 @ lead & 31
+    code: i64 @= lead & 31
 
     if width == 3
         code @ lead & 15
@@ -229,8 +229,8 @@ function decoded(text: str, at: i64, width: i64) -> i64
 # `U+` and the code in four hexadecimal digits at least, as Unicode writes it.
 function named(code: i64) -> str
     digits = "0123456789ABCDEF"
-    out: str @ ""
-    left: i64 @ code
+    out: str @= ""
+    left: i64 @= code
 
     while left > 0
         out @ digits.slice(from: left % 16, to: left % 16 + 1) + out
@@ -258,10 +258,10 @@ function listed(one: Found, among: [Found]) -> bool
 ## The walk
 
 function run_all(scratch: str) -> report.Report?
-    r: report.Report @ report.empty()
+    r: report.Report @= report.empty()
     files = shell.project_files(scratch)?
-    documents: i64 @ 0
-    found: [Found] @ []
+    documents: i64 @= 0
+    found: [Found] @= []
     held = refused_runs()
     ascii = ascii_refused(held)
 
@@ -278,13 +278,13 @@ function run_all(scratch: str) -> report.Report?
             found @ found.push(Found(path: path, line: one.line, code: one.code))
 
     excused = known()
-    unexcused: [str] @ []
+    unexcused: [str] @= []
 
     for one in found
         if !listed(one, among: excused)
             unexcused @ unexcused.push("    " + one.path + ":" + one.line.to_str() + ": " + named(one.code))
 
-    stale: [str] @ []
+    stale: [str] @= []
 
     for one in excused
         if !listed(one, among: found)
@@ -340,7 +340,7 @@ test "a character is found at its line and named by its code"
 test "the refused runs are two numbers each, in order and apart, so the search may stop early"
     held = refused_runs()
     assert held.len() == REFUSED.len() * 2
-    at: i64 @ 0
+    at: i64 @= 0
 
     while at + 1 < held.len()
         assert held[at] <= held[at + 1]

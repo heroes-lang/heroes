@@ -49,7 +49,7 @@ function refused(t: toolchain.Toolchain, under: compiling.Compiling, p: containe
     none: [diag.Diagnostic] = []
     whole = emit_externs.headers(p, s, decls)
     fused = order_trial.theirs(whole)
-    differing: [unit_plan.Plan] @ []
+    differing: [unit_plan.Plan] @= []
 
     # A unit that reads no group's header but the compiler's own reads none
     # the one file could read otherwise.
@@ -69,7 +69,7 @@ function refused(t: toolchain.Toolchain, under: compiling.Compiling, p: containe
     if !ran.compiles
         return [uncompiled(s, decls, t, said: ran.said, message: ran.refusal)]
     by_module = bound(s, decls)
-    asked: [str] @ []
+    asked: [str] @= []
 
     for plan in differing
         for name in by_module[plan.module].default([])
@@ -77,7 +77,7 @@ function refused(t: toolchain.Toolchain, under: compiling.Compiling, p: containe
 
     if asked.len() == 0
         return none
-    memo: {str: str} @ {}
+    memo: {str: str} @= {}
     one = compiling.probe_with(t.build, under: under, headers: whole, memo: @memo)
     theirs = two_ways_ask.answers(t, one, names: asked)
     fused_read = header_meaning.read_of(t, under: under, headers: fused, names: asked)
@@ -89,7 +89,7 @@ function refused(t: toolchain.Toolchain, under: compiling.Compiling, p: containe
         if names.len() > 0
             own = compiling.probe_with(t.build, under: under, headers: plan.headers, memo: @memo)
             mine = two_ways_ask.answers(t, own, names: names)
-            read: [str] @ []
+            read: [str] @= []
             own_read = header_meaning.read_of(t, under: under, headers: order_trial.theirs(plan.headers), names: names)
 
             if !own_read.is_err() && !fused_read.is_err()
@@ -114,10 +114,10 @@ function refused(t: toolchain.Toolchain, under: compiling.Compiling, p: containe
 # not the compiler's own, by its C name, in written order: one walk of the
 # declarations.
 function bound(s: source.Source, decls: [ast.Decl]) -> {str: [str]}
-    out: {str: [str]} @ {}
+    out: {str: [str]} @= {}
 
     for decl in decls
-        named: token.Span? @ fail(code: "none", msg: "no header")
+        named: token.Span? @= fail(code: "none", msg: "no header")
 
         match decl.kind
             .function_decl fd                         => named @ fd.value.header
@@ -140,13 +140,13 @@ function uncompiled(s: source.Source, decls: [ast.Decl], t: toolchain.Toolchain,
         two = header_refused.sides(read.must())
 
         if !two.is_err()
-            first: headers_together.Side @ two.must().one
-            second: headers_together.Side @ two.must().other
+            first: headers_together.Side @= two.must().one
+            second: headers_together.Side @= two.must().other
 
             if sort([first.header, second.header])[0] != first.header
                 first @ two.must().other
                 second @ two.must().one
-            d: diag.Diagnostic @ diag.new_diagnostic(
+            d: diag.Diagnostic @= diag.new_diagnostic(
                 code: "ffi_one_file",
                 message: "`--emit-c` writes this program as one file, and in it `" + first.header + "`, the header this group names, and `" + second.header + "`, which another module's group names at " + source.elsewhere(s, here: first.span.start, there: second.span.start) + ", cannot be compiled together: clang refuses them, at " + headers_together.at_line(first) + headers_together.between(first) + " and " + headers_together.at_line(second) + ": " + message,
                 span: first.span
@@ -160,7 +160,7 @@ function uncompiled(s: source.Source, decls: [ast.Decl], t: toolchain.Toolchain,
 
             d.notes @ d.notes.push(UNITS)
             return d
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "ffi_one_file",
         message: "`--emit-c` writes this program as one file, which reads every module's headers together, and clang refuses it where each module's unit compiles: " + message,
         span: first_group(decls)
@@ -172,13 +172,13 @@ function uncompiled(s: source.Source, decls: [ast.Decl], t: toolchain.Toolchain,
 # unit.
 function meant_otherwise(s: source.Source, decls: [ast.Decl], plan: unit_plan.Plan, name: str, fused: [str], typed: bool, mine: str, theirs: str) -> diag.Diagnostic
     at = name_span(s, decls, module: plan.module, name: name)
-    others: [str] @ []
+    others: [str] @= []
 
     for header in fused
         if !holds(order_trial.theirs(plan.headers), one: header)
             others @ others.push("`" + header + "`")
 
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "ffi_one_file",
         message: "`--emit-c` writes this program as one file, and in it `" + name + "`, which this group binds, is not what this module's own unit makes of it: the one file reads it beside the headers other modules' groups name, " + others.join(", "),
         span: at

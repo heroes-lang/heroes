@@ -84,9 +84,9 @@ function pointee_width(s: source.Source, decls: [ast.Decl], tree: ast.Ast, line:
     if !ffi_lookup.has(text: line, needle: ffi_lookup.FAILED)
         return fail(code: "none", msg: "not an assertion failure")
     measured = ffi_lookup.after(text: line, marker: BITS_MARKER)
-    rest: str? @ ffi_lookup.after(text: line, marker: MARKER)
-    first: i64 @ 3
-    width: i64 @ word_bits
+    rest: str? @= ffi_lookup.after(text: line, marker: MARKER)
+    first: i64 @= 3
+    width: i64 @= word_bits
 
     if !measured.is_err()
         rest @ measured
@@ -107,8 +107,8 @@ function pointee_width(s: source.Source, decls: [ast.Decl], tree: ast.Ast, line:
         width @ bits.must()
     name = parts[0]
     param = parts[1]
-    tail: [str] @ []
-    index: i64 @ first
+    tail: [str] @= []
+    index: i64 @= first
 
     while index < parts.len()
         tail @ tail.push(parts[index])
@@ -120,13 +120,13 @@ function pointee_width(s: source.Source, decls: [ast.Decl], tree: ast.Ast, line:
     if found.is_err()
         return fail(code: "none", msg: "no group declares this name")
     spans = parameter_spans(s, decls, tree, name: name, param: param)
-    at: token.Span @ found.must().span
-    written: str @ "a width the header does not have"
+    at: token.Span @= found.must().span
+    written: str @= "a width the header does not have"
 
     if !spans.is_err()
         at @ spans.must().name
         written @ "`" + source.span_text(s, spans.must().ty) + "`"
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "ffi_parameter_type",
         message: "`" + param + "` of `" + name + "` is declared " + written + ", and the header's `" + header_type + " *` points at a different width or sign — clang read the header, and C writes back exactly the bytes the header expects",
         span: at
@@ -177,8 +177,8 @@ function pointee_void(s: source.Source, decls: [ast.Decl], tree: ast.Ast, line: 
 
     if parts.len() < 4
         return fail(code: "none", msg: "the marker's tail is not ours")
-    tail: [str] @ []
-    index: i64 @ 3
+    tail: [str] @= []
+    index: i64 @= 3
 
     while index < parts.len()
         tail @ tail.push(parts[index])
@@ -219,8 +219,8 @@ function pointee_depth(s: source.Source, decls: [ast.Decl], tree: ast.Ast, line:
         return fail(code: "none", msg: "the marker's tail is not ours")
     name = parts[0]
     param = parts[1]
-    tail: [str] @ []
-    index: i64 @ 3
+    tail: [str] @= []
+    index: i64 @= 3
 
     while index < parts.len()
         tail @ tail.push(parts[index])
@@ -232,13 +232,13 @@ function pointee_depth(s: source.Source, decls: [ast.Decl], tree: ast.Ast, line:
     if found.is_err()
         return fail(code: "none", msg: "no group declares this name")
     spans = parameter_spans(s, decls, tree, name: name, param: param)
-    at: token.Span @ found.must().span
-    written: str @ "with `@`"
+    at: token.Span @= found.must().span
+    written: str @= "with `@`"
 
     if !spans.is_err()
         at @ spans.must().name
         written @ "`@" + param + ": " + source.span_text(s, spans.must().ty) + "`"
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "ffi_parameter_type",
         message: "`" + param + "` of `" + name + "` is declared " + written + ", so C is handed the address of the program's cell, and the header's `" + header_type + " *` points at `" + header_type + "` — one pointer, which C reads as the handle itself, never as a cell to write one into",
         span: at
@@ -269,7 +269,7 @@ function pointee_depth(s: source.Source, decls: [ast.Decl], tree: ast.Ast, line:
 # pointing at the same opaque type both get the diagnostic; `add_once` keeps
 # one per span, which is the parameter, so a repeated line costs nothing.
 function pointee_unsized(s: source.Source, decls: [ast.Decl], tree: ast.Ast, answered: [pointee_ask.Answered], line: str) -> [diag.Diagnostic]
-    out: [diag.Diagnostic] @ []
+    out: [diag.Diagnostic] @= []
     named = ffi_lookup.after(text: line, marker: "incomplete type '")
 
     if named.is_err()
@@ -308,13 +308,13 @@ function unsized(s: source.Source, decls: [ast.Decl], tree: ast.Ast, name: str, 
     if found.is_err()
         return fail(code: "none", msg: "no group declares this name")
     spans = parameter_spans(s, decls, tree, name: name, param: param)
-    at: token.Span @ found.must().span
-    written: str @ "at a width"
+    at: token.Span @= found.must().span
+    written: str @= "at a width"
 
     if !spans.is_err()
         at @ spans.must().name
         written @ "`" + source.span_text(s, spans.must().ty) + "`"
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "ffi_parameter_type",
         message: "`" + param + "` of `" + name + "` is declared " + written + ", and the header's `" + header_type + " *` points at `" + header_type + "`, " + why,
         span: at
@@ -339,7 +339,7 @@ function unsized(s: source.Source, decls: [ast.Decl], tree: ast.Ast, name: str, 
 # name, a type and a flag), and `@ n` with a space is accepted (measured), so
 # the position is read off the text rather than assumed adjacent.
 function at_marker_before(s: source.Source, name: token.Span) -> i64?
-    i: i64 @ name.start - 1
+    i: i64 @= name.start - 1
 
     while i >= 0 && source.span_text(s, token.Span(start: i, end: i + 1)) == " "
         i @ i - 1

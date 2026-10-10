@@ -14,10 +14,10 @@ extern "time.h"
     function time(@t: i64) -> i64
 
 function main()
-    e: i32 @ 0
+    e: i32 @= 0
     m = frexp(8.0, @e)
     print(m)
     print(e)
-    t: i64 @ 0
+    t: i64 @= 0
     _ = time(@t)
     print(t > 0)

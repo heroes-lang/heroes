@@ -9,8 +9,8 @@ constant WORDS: [str]
     ["ziggy", "", "spiders", "from", "mars", "ziggy", "a \"quoted\" \\ word"]
 
 function main()
-    letters: i64 @ 0
-    at: i64 @ 0
+    letters: i64 @= 0
+    at: i64 @= 0
 
     while at < 700
         letters @ letters + WORDS[at % 7].len()
@@ -20,7 +20,7 @@ function main()
     print(WORDS.join("|"))
     print(sort(WORDS).join(","))
     print(WORDS[2] + WORDS[4], " ", WORDS[4].chars().len(), " ", WORDS == WORDS)
-    xs: [str] @ WORDS
+    xs: [str] @= WORDS
     xs[1] @ "stardust"
     xs @ xs.push("bowie")
     print(xs.join(" "), " ", WORDS[1].len(), " ", WORDS.len())

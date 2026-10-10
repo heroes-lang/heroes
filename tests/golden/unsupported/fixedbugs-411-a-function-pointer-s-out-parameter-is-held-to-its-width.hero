@@ -10,6 +10,6 @@ extern "fixedbugs-411-pointers.h"
     function fp_count(@n: i32)  #~ ffi_parameter_type
 
 function main()
-    n: i32 @ 0
+    n: i32 @= 0
     fp_count(n: @n)
     print(n)

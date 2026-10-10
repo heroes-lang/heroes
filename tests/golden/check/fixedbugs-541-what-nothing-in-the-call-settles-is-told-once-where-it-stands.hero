@@ -47,7 +47,7 @@ function half(x: u8) -> u8
     return x / 2
 
 function apply_all<A>(fs: [(function(A) -> A)], x: A) -> A
-    out: A @ x
+    out: A @= x
 
     for f in fs
         out @ f(out)

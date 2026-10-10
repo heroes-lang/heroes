@@ -7,7 +7,7 @@ function free(@p: cstr)
     end_lease(@p)  #~ end_lease_of_no_lease
 
 function main()
-    d: cstr @ nullptr
+    d: cstr @= nullptr
     end_lease(@d)  #~ end_lease_of_no_lease
     end_lease(d)  #~ end_lease_of_no_lease
     free(@d)

@@ -42,7 +42,7 @@ function annotated()
     print(p)
     g: u8 = (2 + 3) * (4 - 1)
     print(g)
-    xs: [u8] @ []
+    xs: [u8] @= []
     xs @ xs.push(2 + 3)
     print(xs.len())
     top: u64 = 18446744073709551615 - 1

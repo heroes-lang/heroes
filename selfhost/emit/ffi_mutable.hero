@@ -93,9 +93,9 @@ function writable_parameter(s: source.Source, decls: [ast.Decl], tree: ast.Ast, 
     # than asserted to be cstr (CLAUDE.md §11 — a narrowing asks the
     # value): a future Heroes type that also lowers to a pointer would
     # otherwise be described wrong.
-    param: str @ ""
-    declared: str @ "cstr"
-    index: i64 @ 0
+    param: str @= ""
+    declared: str @= "cstr"
+    index: i64 @= 0
 
     # **The `char **` carve-out** (§4.19; panel 109's condition 5, spelled in the
     # spec since M-declared-freer step 2). Panel 058's rule is right in general:
@@ -129,8 +129,8 @@ function writable_parameter(s: source.Source, decls: [ast.Decl], tree: ast.Ast, 
 # `ptr`, and now replaces the parameter's type. A parameter the route could not
 # name keeps the declaration's span and has no fix.
 function refusal(name: str, param: str, declared: str, c_type: str, spans: ffi_pointee.ParamSpans?, whole: token.Span) -> diag.Diagnostic
-    which: str @ "a parameter"
-    span: token.Span @ whole
+    which: str @= "a parameter"
+    span: token.Span @= whole
 
     if param.len() > 0
         which @ "`" + param + "`"
@@ -143,7 +143,7 @@ function refusal(name: str, param: str, declared: str, c_type: str, spans: ffi_p
     # does not WRITE through its argument, it deallocates it — both
     # are the same defect for this program and neither is "writing",
     # so the message states what the header actually declares.
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "ffi_writable_parameter",
         message: which + " of `" + name + "` is declared `" + declared + "`, and the header says `" + c_type + "` — C does not promise to leave it alone",
         span: span
@@ -189,7 +189,7 @@ function spans_of(s: source.Source, decls: [ast.Decl], tree: ast.Ast, decl: i64,
 # `cstring_t *` or `const gchar **` arrives here as `const char **`, measured
 # on the three spellings panel 176's critic wrote.
 function owned_const(name: str, param: str, span: token.Span) -> diag.Diagnostic
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "ffi_owned_const_cell",
         message: "`" + param + "` of `" + name + "` is marked `owned`, and the header says `const char **` — C hands back bytes it asks the caller not to change, which is how a C function lends a string, not how it gives one",
         span: span
@@ -211,8 +211,8 @@ test "a writable char * names the lent parameter and the owning repair"
     low = lower.lower(parsed.tree, out, c, s, parsed.decls)
     names = ctype.new_names(s, parsed.decls)
     fs = low.program.functions
-    f0: containers.Function @ fs[0]
-    picked: bool @ false
+    f0: containers.Function @= fs[0]
+    picked: bool @= false
 
     for f in fs
         if f.name == "strtok" && !picked

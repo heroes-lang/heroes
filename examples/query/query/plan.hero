@@ -100,7 +100,7 @@ function nothing_yet() -> Summary
 
 # One row folded into a summary.
 function with_row(s: Summary, r: row.Row) -> Summary
-    highest: i64 @ s.best
+    highest: i64 @= s.best
 
     if r.score > highest
         highest @ r.score
@@ -201,7 +201,7 @@ test "the mean of an empty group is a refusal and not a zero"
     assert nothing_yet().best == -1
 
 test "a group is a record, and two groups built apart are one key"
-    m: {Group: i64} @ {}
+    m: {Group: i64} @= {}
     m[Group(team: "argo", active: true)] @ 1
     m[Group(team: "argo", active: true)] @ 2
     assert m.keys().len() == 1
@@ -211,7 +211,7 @@ test "a group is a record, and two groups built apart are one key"
 test "every column has a heading and a reading, and the two lists cannot drift"
     r = row.Row(id: 7, team: "argo", name: "p7", active: false, score: 42, rate: 1.5)
     every: [Column] = [.id, .team, .name, .active, .score, .rate]
-    seen: [str] @ []
+    seen: [str] @= []
 
     for c in every
         seen @ seen.push(heading(c))

@@ -40,12 +40,12 @@ use diag
 # argument (`others`, `check/labels.other_labels`), the order written is one
 # reading among several, and each is offered, none applied.
 function wrong_label(holder: str, written: str, expected: str, elsewhere: bool, doubled: bool, others: [str], span: token.Span) -> diag.Diagnostic
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "wrong_label",
         message: "`" + holder + "` has nothing called `" + written + "` at this position — it is " + in_order(expected, others),
         span: span
     )
-    certainty: diag.Certainty @ .certain
+    certainty: diag.Certainty @= .certain
 
     if elsewhere || doubled || others.len() > 0
         certainty @ .guess
@@ -76,7 +76,7 @@ function wrong_label(holder: str, written: str, expected: str, elsewhere: bool, 
 # `certain`: the label is removed, the value stays where it is, and the program
 # does what it already did.
 function label_on_function_value(written: str, span: token.Span) -> diag.Diagnostic
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "label_on_function_value",
         message: "nothing can be confused with this position of the function type, so it has no name — `" + written + ":` names nothing",
         span: span
@@ -109,7 +109,7 @@ function label_on_function_value(written: str, span: token.Span) -> diag.Diagnos
 # where the label goes: before an argument's `@`, since `swap(@a: x, …)`
 # does not parse (`argument_front`).
 function needs_label(name: str, expected: str, shared: str, others: [str], span: token.Span, at: i64) -> diag.Diagnostic
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "needs_label",
         message: "two of `" + name + "`'s parameters are `" + shared + "`, so every one of them is named at the call site — " + which_one(expected, others),
         span: span
@@ -118,7 +118,7 @@ function needs_label(name: str, expected: str, shared: str, others: [str], span:
     return d
 
 function missing_label(holder: str, expected: str, others: [str], span: token.Span, at: i64) -> diag.Diagnostic
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "missing_label",
         message: "`" + holder + "`'s fields are always named — " + which_one(expected, others),
         span: span
@@ -134,12 +134,12 @@ function which_one(expected: str, others: [str]) -> str
 function in_order(expected: str, others: [str]) -> str
     if others.len() == 0
         return "`" + expected + "`"
-    quoted: [str] @ []
+    quoted: [str] @= []
 
     for other in others
         quoted @ quoted.push("`" + other + "`")
 
-    order: str @ "another order"
+    order: str @= "another order"
 
     if others.len() == 1
         order @ "the other order"
@@ -149,11 +149,11 @@ function in_order(expected: str, others: [str]) -> str
 # there, and beside it as guesses the labels of the other readings.
 function label_fixes(expected: str, others: [str], at: i64) -> [diag.Fix]
     insertion = token.Span(start: at, end: at)
-    certainty: diag.Certainty @ .certain
+    certainty: diag.Certainty @= .certain
 
     if others.len() > 0
         certainty @ .guess
-    fixes: [diag.Fix] @ [
+    fixes: [diag.Fix] @= [
         diag.Fix(title: "write `" + expected + ": `", replacement: expected + ": ", span: insertion, certainty: certainty)
     ]
 
@@ -167,7 +167,7 @@ function label_fixes(expected: str, others: [str], at: i64) -> [diag.Fix]
 # Where an argument's label goes: before its `@` where it has one (spec
 # § 9, `Arg = [ ident ":" ] [ "@" ] Expression`), before its value otherwise.
 function argument_front(text: str, value_start: i64, mutable: bool) -> i64
-    i: i64 @ value_start
+    i: i64 @= value_start
 
     if !mutable
         return i
@@ -190,11 +190,11 @@ function argument_front(text: str, value_start: i64, mutable: bool) -> i64
 # An argument with no label: every field it could be, among those the
 # construction does not name, `candidates`.
 function unnamed_in_part(holder: str, candidates: [str], span: token.Span, at: i64) -> diag.Diagnostic
-    message: str @ "`" + holder + "`'s fields are always named, and every field it declares is named already"
+    message: str @= "`" + holder + "`'s fields are always named, and every field it declares is named already"
 
     if candidates.len() > 0
         message @ "`" + holder + "`'s fields are always named, and a construction of it may name only some, so the position does not say which field this is: it may be " + any_of(candidates)
-    d: diag.Diagnostic @ diag.new_diagnostic(code: "missing_label", message: message, span: span)
+    d: diag.Diagnostic @= diag.new_diagnostic(code: "missing_label", message: message, span: span)
     insertion = token.Span(start: at, end: at)
 
     for one in candidates
@@ -207,7 +207,7 @@ function unnamed_in_part(holder: str, candidates: [str], span: token.Span, at: i
 # A label that names no field: the record's fields, and as renames the ones
 # the construction does not name that could take the value.
 function no_such_field(holder: str, written: str, fields: [str], candidates: [str], span: token.Span) -> diag.Diagnostic
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "wrong_label",
         message: "`" + holder + "` has nothing called `" + written + "`: its fields are " + all_of(fields),
         span: span
@@ -248,8 +248,8 @@ function listing(names: [str], last: str) -> str
 
     if names.len() == 1
         return "`" + names[0] + "`"
-    heads: [str] @ []
-    at: i64 @ 0
+    heads: [str] @= []
+    at: i64 @= 0
 
     while at < names.len() - 1
         heads @ heads.push("`" + names[at] + "`")

@@ -12,7 +12,7 @@ extern "handle-a-reference-through-an-out-cell.h"
 
 function main()
     a = ob_new()
-    b: Ob @ nullptr
+    b: Ob @= nullptr
     rc = ob_dup(o: a, out: @b)
     print("rc: ", rc, " refs: ", ob_refs(o: a))
     ob_put(o: b)

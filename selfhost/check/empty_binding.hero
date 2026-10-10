@@ -20,8 +20,8 @@ use contextless_errors
 # Tells again, since `from`, what the walk said of the value `value` bound to
 # `name`.
 function retell(@c: state.Checker, a: ast.Ast, s: source.Source, from: i64, value: i64, name: token.Span)
-    written: str @ ""
-    literal: str @ ""
+    written: str @= ""
+    literal: str @= ""
 
     match a.exprs[value].kind
         .array items =>
@@ -39,7 +39,7 @@ function retell(@c: state.Checker, a: ast.Ast, s: source.Source, from: i64, valu
     if written == ""
         return
     span = a.exprs[value].span
-    k: i64 @ from
+    k: i64 @= from
 
     while k < c.out.diagnostics.len()
         d = c.out.diagnostics[k]

@@ -11,7 +11,7 @@
 # run and the fixed program checks clean (`selfhost/parse/colon_habit.hero`).
 
 function main()
-    n: i64 @ 3
+    n: i64 @= 3
 
     if n > 0
         print(1)  #~ trailing_colon

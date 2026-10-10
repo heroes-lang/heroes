@@ -17,7 +17,7 @@ function finish(@j: Json)
 
 function main()
     a = obj_new()
-    b: Json @ obj_new()
+    b: Json @= obj_new()
     finish(@b)
     _ = obj_add(object: a, string: "b".cstr(), item: b)
     obj_delete(item: a)

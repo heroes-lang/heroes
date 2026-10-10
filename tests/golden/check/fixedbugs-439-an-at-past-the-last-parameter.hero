@@ -29,7 +29,7 @@ constant LIMIT: i64
     3
 
 function main()
-    n: i64 @ 1
+    n: i64 @= 1
     m = 2
     t: i32 = 3
     bump(@n, @m)  #~ wrong_arity

@@ -115,14 +115,14 @@ function main()
     # benchmark's original point was a garbage collector that must not move or
     # free it.
     long_lived = grown(DEPTH)
-    depth: i64 @ MIN_DEPTH
+    depth: i64 @= MIN_DEPTH
 
     while depth <= DEPTH
         # Half as many trees for every two levels of depth, so each line of
         # the output allocates about the same number of nodes as the last.
         iterations = 1 << DEPTH - depth + MIN_DEPTH
-        total: i64 @ 0
-        i: i64 @ 0
+        total: i64 @= 0
+        i: i64 @= 0
 
         while i < iterations
             total @ total + checked(grown(depth))
@@ -156,14 +156,14 @@ test "a tree of depth d holds two-to-the-d-plus-one minus one nodes"
     # The second oracle, and the one the published file cannot give: it names
     # six arrangements, this names fifteen, and 14 is 32,767 nodes built and
     # dropped inside one assertion.
-    depth: i64 @ 0
+    depth: i64 @= 0
 
     while depth <= 14
         assert checked(grown(depth)) == (1 << depth + 1) - 1
         depth @ depth + 1
 
 test "the depth of a grown tree is the depth it was asked for"
-    depth: i64 @ 0
+    depth: i64 @= 0
 
     while depth <= 12
         assert depth_of(grown(depth)) == depth
@@ -179,7 +179,7 @@ test "a leaf is one node and no depth, and a negative depth is a leaf"
     assert checked(grown(0 - 3)) == 1
 
 test "both halves of every node have the same shape"
-    depth: i64 @ 0
+    depth: i64 @= 0
 
     while depth <= 10
         assert balanced(grown(depth))
@@ -189,7 +189,7 @@ test "two trees grown apart are the same value, at every depth"
     # Structural equality over a recursive variant, which is code the compiler
     # generates by walking fields rather than bytes (CLAUDE.md §7). The trees
     # share no allocation: each `grown` call built its own.
-    depth: i64 @ 0
+    depth: i64 @= 0
 
     while depth <= 8
         assert grown(depth) == grown(depth)
@@ -210,7 +210,7 @@ test "a tree taken apart by hand is the tree the program built"
 test "a copy of a tree does not change when the original is replaced"
     # Value semantics on a recursive variant: `held` is an independent copy,
     # which is what makes `long_lived` in `main` safe to read at the end.
-    held: Tree @ grown(3)
+    held: Tree @= grown(3)
     kept = held
     held @ grown(5)
     assert checked(kept) == 15

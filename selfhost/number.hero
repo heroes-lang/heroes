@@ -70,7 +70,7 @@ function number(@l: state.LexState, text: str)
             span = token.Span(start: start, end: l.pos)
             written = text.slice(from: start, to: l.pos)
             lowered = digits.prefix(base) + text.slice(from: start + 2, to: l.pos)
-            d: diag.Diagnostic @ diag.new_diagnostic(
+            d: diag.Diagnostic @= diag.new_diagnostic(
                 code: "base_prefix_case",
                 message: "`" + written + "` writes the base in uppercase — this language spells it `" + digits.prefix(base) + "`",
                 span: span
@@ -86,7 +86,7 @@ function number(@l: state.LexState, text: str)
             # A fraction is such a fault, told above (defect 154): `0X1.5`
             # lowered is `0x1.5`, refused for the fraction the first run named.
             if run.count > 0 || faulted
-                same: str @ "is the same value written correctly"
+                same: str @= "is the same value written correctly"
 
                 # A faulted literal has no value to keep, so the note says
                 # only what the lowering does.
@@ -106,7 +106,7 @@ function number(@l: state.LexState, text: str)
             state.error_token(@l, d)
             return
     run = digit_run(@l, text, .decimal)
-    kind: token.TokenKind @ .int_lit
+    kind: token.TokenKind @= .int_lit
 
     # A leading zero is NOT octal here, and the whole reason this diagnostic
     # exists is that it is octal almost everywhere else: `print(0700)` printed
@@ -192,7 +192,7 @@ function based(@l: state.LexState, text: str, base: digits.Base, start: i64)
 
     if run.count == 0
         if !run.faulted
-            d: diag.Diagnostic @ diag.new_diagnostic(
+            d: diag.Diagnostic @= diag.new_diagnostic(
                 code: "empty_base_literal",
                 message: "`" + text.slice(from: start, to: l.pos) + "` names a base and then stops — a number needs digits",
                 span: span
@@ -233,7 +233,7 @@ function fraction(@l: state.LexState, text: str, base: digits.Base, start: i64, 
     if byte_at(text, l.pos) != '.' || !bytes.is_digit(byte_at(text, l.pos + 1))
         return false
     point = l.pos
-    going: bool @ true
+    going: bool @= true
 
     while going
         b = byte_at(text, l.pos)
@@ -251,7 +251,7 @@ function fraction(@l: state.LexState, text: str, base: digits.Base, start: i64, 
     if told
         return true
     written = text.slice(from: start, to: l.pos)
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "digit_not_in_base",
         message: "`" + written + "` has a fraction, which only a decimal literal may have — `.` is not " + digits.a_name(base) + " digit",
         span: token.Span(start: point, end: l.pos)
@@ -272,7 +272,7 @@ function fraction(@l: state.LexState, text: str, base: digits.Base, start: i64, 
 # only for a prefixed base. In decimal it must fall through untouched, because
 # `1e300` belongs to the exponent refusal above and `1.str()` belongs to UFCS.
 function digit_run(@l: state.LexState, text: str, base: digits.Base) -> Run
-    run: Run @ Run(count: 0, faulted: false)
+    run: Run @= Run(count: 0, faulted: false)
 
     while true
         b = byte_at(text, l.pos)
@@ -295,7 +295,7 @@ function digit_run(@l: state.LexState, text: str, base: digits.Base) -> Run
             span = token.Span(start: bad_start, end: l.pos)
 
             if !run.faulted
-                d: diag.Diagnostic @ diag.new_diagnostic(
+                d: diag.Diagnostic @= diag.new_diagnostic(
                     code: "misplaced_separator",
                     message: "`_` groups digits, so it goes between two of them",
                     span: span
@@ -314,7 +314,7 @@ function digit_run(@l: state.LexState, text: str, base: digits.Base) -> Run
             span = token.Span(start: bad_start, end: l.pos)
 
             if !run.faulted
-                d: diag.Diagnostic @ diag.new_diagnostic(
+                d: diag.Diagnostic @= diag.new_diagnostic(
                     code: "digit_not_in_base",
                     message: "`" + text.slice(from: bad_start, to: l.pos) + "` is not " + digits.a_name(base) + " digit",
                     span: span
@@ -328,30 +328,30 @@ function digit_run(@l: state.LexState, text: str, base: digits.Base) -> Run
     return run
 
 test "one token for a float, and the dot stays for UFCS"
-    l: state.LexState @ state.new_state()
+    l: state.LexState @= state.new_state()
     number(@l, "1.5")
     assert l.tokens[0].kind == .float_lit
     assert l.pos == 3
-    u: state.LexState @ state.new_state()
+    u: state.LexState @= state.new_state()
     number(@u, "1.str()")
     assert u.tokens[0].kind == .int_lit
     assert u.pos == 1
 
 test "the four bases scan and the digits are case-blind"
-    l: state.LexState @ state.new_state()
+    l: state.LexState @= state.new_state()
     number(@l, "0xFF")
     assert l.tokens[0].kind == .int_lit
     assert l.pos == 4
-    o: state.LexState @ state.new_state()
+    o: state.LexState @= state.new_state()
     number(@o, "0o37")
     assert o.tokens[0].kind == .int_lit
-    b: state.LexState @ state.new_state()
+    b: state.LexState @= state.new_state()
     number(@b, "1_000_000")
     assert b.tokens[0].kind == .int_lit
     assert b.diagnostics.len() == 0
 
 test "an uppercase prefix is refused and only the prefix is lowered"
-    l: state.LexState @ state.new_state()
+    l: state.LexState @= state.new_state()
     number(@l, "0X1F")
     assert l.tokens[0].kind == .error
     assert l.diagnostics[0].code == "base_prefix_case"
@@ -364,7 +364,7 @@ test "an uppercase prefix is refused and only the prefix is lowered"
 test "an uppercase prefix with no digit after it is told both mistakes and offered no fix"
     # Defect 135's L5: the lowering wrote `0x`, refused anew as empty.
     for alone in ["0X", "0B", "0O", "0X)"]
-        l: state.LexState @ state.new_state()
+        l: state.LexState @= state.new_state()
         number(@l, alone)
         assert l.diagnostics.len() == 1
         assert l.diagnostics[0].code == "base_prefix_case"
@@ -374,7 +374,7 @@ test "an uppercase prefix with no digit after it is told both mistakes and offer
     # fraction is one (defect 154), `0X.5` with it, which was told only the
     # case.
     for faulted in ["0XG", "0B2", "0X_", "0X.5", "0X1.5"]
-        f: state.LexState @ state.new_state()
+        f: state.LexState @= state.new_state()
         number(@f, faulted)
         assert f.diagnostics.len() == 2
         assert f.diagnostics[0].code == "digit_not_in_base" || f.diagnostics[0].code == "misplaced_separator"
@@ -390,7 +390,7 @@ test "an uppercase prefix with no digit after it is told both mistakes and offer
 # exponent, separators, and after digits that already faulted.
 test "a based literal with a fraction is one mistake, the number's own"
     for written in ["0x1.5", "0b1.0", "0o7.1", "0x.5", "0x1.5.2", "0x1.5e3", "0x1.8p-3", "0x1_0.5", "0x1.5_0"]
-        l: state.LexState @ state.new_state()
+        l: state.LexState @= state.new_state()
         number(@l, written)
         assert l.tokens.len() == 1
         assert l.tokens[0].kind == .error
@@ -399,25 +399,25 @@ test "a based literal with a fraction is one mistake, the number's own"
         assert l.diagnostics[0].code == "digit_not_in_base"
         assert l.diagnostics[0].fixes.len() == 0
 
-    told: state.LexState @ state.new_state()
+    told: state.LexState @= state.new_state()
     number(@told, "0xG.5")
     assert told.diagnostics.len() == 1
     assert told.pos == 5
 
     # A letter after the point is a field or a call, as on a decimal literal.
     for member in ["0xa.b", "0x1.to_str()", "0b1.x"]
-        m: state.LexState @ state.new_state()
+        m: state.LexState @= state.new_state()
         number(@m, member)
         assert m.tokens[0].kind == .int_lit
         assert m.diagnostics.len() == 0
 
     # And a subtraction after a hexadecimal `e` digit is not an exponent.
-    minus: state.LexState @ state.new_state()
+    minus: state.LexState @= state.new_state()
     number(@minus, "0x1.5e-3")
     assert minus.pos == 6
 
 test "a leading zero is never octal and both fixes are guesses"
-    l: state.LexState @ state.new_state()
+    l: state.LexState @= state.new_state()
     number(@l, "0700")
     assert l.tokens[0].kind == .error
     assert l.diagnostics[0].code == "leading_zero"
@@ -425,7 +425,7 @@ test "a leading zero is never octal and both fixes are guesses"
     assert l.diagnostics[0].fixes[0].replacement == "0o700"
     assert l.diagnostics[0].fixes[1].replacement == "700"
     assert l.diagnostics[0].fixes[0].certainty == .guess
-    z: state.LexState @ state.new_state()
+    z: state.LexState @= state.new_state()
     number(@z, "0.5")
     assert z.tokens[0].kind == .float_lit
     assert z.diagnostics.len() == 0
@@ -453,13 +453,13 @@ test "every fix of a leading zero is a literal the scanner accepts, with the val
     assert fixed_values("00o7") == [7]
 
     for joined in ["0644u", "07e3", "00X7", "0_7e3"]
-        l: state.LexState @ state.new_state()
+        l: state.LexState @= state.new_state()
         number(@l, joined)
         assert l.diagnostics[0].code == "leading_zero"
         assert l.diagnostics[0].fixes.len() == 0
 
     for faulted in ["0__7", "0_"]
-        f: state.LexState @ state.new_state()
+        f: state.LexState @= state.new_state()
         number(@f, faulted)
         assert f.diagnostics.len() == 1
         assert f.diagnostics[0].code == "misplaced_separator"
@@ -468,7 +468,7 @@ test "every fix of a leading zero is a literal the scanner accepts, with the val
 # the letters after it are no token of their own; a method's `.` stays a call.
 test "a run whose separator faulted takes what joins it, and is one message (defect 339)"
     for written in ["1_u", "0644_u", "00_x7", "1__u8", "1_é", "1_u.5"]
-        l: state.LexState @ state.new_state()
+        l: state.LexState @= state.new_state()
         number(@l, written)
         assert l.diagnostics.len() == 1
         assert l.diagnostics[0].code == "misplaced_separator"
@@ -476,7 +476,7 @@ test "a run whose separator faulted takes what joins it, and is one message (def
         assert l.tokens[0].kind == .error
         assert l.pos == written.len()
 
-    called: state.LexState @ state.new_state()
+    called: state.LexState @= state.new_state()
     number(@called, "1_.to_str()")
     assert called.pos == 2
 
@@ -486,11 +486,11 @@ test "a run whose separator faulted takes what joins it, and is one message (def
 # own answer over each shape, so the two readers of the rule cannot drift.
 test "one zero before a marker is offered exactly where the scanner takes what it writes (defect 338)"
     for after in ["x7", "x", "xg", "x7g", "x7.5", "x_7", "x7_", "x7__7", "xF_F", "b2", "b1_0", "o9", "o17"]
-        scanned: state.LexState @ state.new_state()
+        scanned: state.LexState @= state.new_state()
         number(@scanned, "0" + after)
         clean = scanned.diagnostics.len() == 0 && scanned.tokens.len() == 1 && scanned.tokens[0].kind == .int_lit && scanned.pos == after.len() + 1
         assert leading_zeros.based_literal("0" + after) == clean
-        zeros: state.LexState @ state.new_state()
+        zeros: state.LexState @= state.new_state()
         number(@zeros, "00" + after)
         assert zeros.diagnostics.len() == 1
 
@@ -505,18 +505,18 @@ test "one zero before a marker is offered exactly where the scanner takes what i
 # call after it or not, and a lone zero with one, stay as they were.
 test "a leading zero is refused whatever follows its digits but a fraction (defect 325)"
     for written in ["0700.to_str()", "0_7.to_str()", "00.to_str()", "0700.to_str().len()", "07.", "07..9", "0700.y"]
-        l: state.LexState @ state.new_state()
+        l: state.LexState @= state.new_state()
         number(@l, written)
         assert l.diagnostics.len() == 1
         assert l.diagnostics[0].code == "leading_zero"
         assert l.tokens[0].kind == .error
 
-    called: state.LexState @ state.new_state()
+    called: state.LexState @= state.new_state()
     number(@called, "0700.to_str()")
     assert called.diagnostics[0].fixes.len() == 2
 
     for fix in called.diagnostics[0].fixes
-        m: state.LexState @ state.new_state()
+        m: state.LexState @= state.new_state()
         number(@m, fix.replacement + ".to_str()")
         assert m.diagnostics.len() == 0
         assert m.tokens[0].kind == .int_lit
@@ -526,45 +526,45 @@ test "a leading zero is refused whatever follows its digits but a fraction (defe
     assert digits.decode_int(called.diagnostics[0].fixes[1].replacement).must() == 700
 
     for float_written in ["0.5", "00.5", "07.5", "0700.5", "0700.5.to_str()"]
-        f: state.LexState @ state.new_state()
+        f: state.LexState @= state.new_state()
         number(@f, float_written)
         assert f.diagnostics.len() == 0
         assert f.tokens[0].kind == .float_lit
 
-    lone: state.LexState @ state.new_state()
+    lone: state.LexState @= state.new_state()
     number(@lone, "0.to_str()")
     assert lone.diagnostics.len() == 0
     assert lone.tokens[0].kind == .int_lit
 
 test "an exponent is refused where it is written"
-    l: state.LexState @ state.new_state()
+    l: state.LexState @= state.new_state()
     number(@l, "1e300")
     assert l.tokens[0].kind == .error
     assert l.diagnostics[0].code == "exponent_literal"
     assert l.pos == 5
-    s: state.LexState @ state.new_state()
+    s: state.LexState @= state.new_state()
     number(@s, "2E+10")
     assert s.diagnostics[0].code == "exponent_literal"
-    n: state.LexState @ state.new_state()
+    n: state.LexState @= state.new_state()
     number(@n, "1eggs")
     assert n.tokens[0].kind == .int_lit
     assert n.pos == 1
 
 # UNVERIFIED — pending debrief
 test "a based literal fails loudly, never by splitting"
-    l: state.LexState @ state.new_state()
+    l: state.LexState @= state.new_state()
     number(@l, "0b12")
     assert l.tokens[0].kind == .error
     assert l.diagnostics[0].code == "digit_not_in_base"
-    e: state.LexState @ state.new_state()
+    e: state.LexState @= state.new_state()
     number(@e, "0x")
     assert e.tokens[0].kind == .error
     assert e.diagnostics[0].code == "empty_base_literal"
-    m: state.LexState @ state.new_state()
+    m: state.LexState @= state.new_state()
     number(@m, "1__000")
     assert m.tokens[0].kind == .error
     assert m.diagnostics[0].code == "misplaced_separator"
-    t: state.LexState @ state.new_state()
+    t: state.LexState @= state.new_state()
     number(@t, "1_")
     assert t.tokens[0].kind == .error
     assert t.diagnostics[0].code == "misplaced_separator"
@@ -573,13 +573,13 @@ test "a based literal fails loudly, never by splitting"
 # scanned again, and the value of the one literal it is; -1 where it is not one
 # literal the scanner accepts whole.
 function fixed_values(written: str) -> [i64]
-    l: state.LexState @ state.new_state()
+    l: state.LexState @= state.new_state()
     number(@l, written)
-    out: [i64] @ []
+    out: [i64] @= []
 
     for fix in l.diagnostics[0].fixes
         text = fix.replacement + written.slice(from: l.diagnostics[0].span.end, to: written.len())
-        m: state.LexState @ state.new_state()
+        m: state.LexState @= state.new_state()
         number(@m, text)
 
         if m.diagnostics.len() > 0 || m.pos != text.len() || m.tokens.len() != 1 || m.tokens[0].kind != .int_lit

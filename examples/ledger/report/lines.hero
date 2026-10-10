@@ -14,7 +14,7 @@ constant BALANCE_HEADING: str
 # One line of the book: the entry's own fields, and the account's kind
 # fetched through the join this program also asks the database to do.
 function book_lines(entries: [entry.Entry], accounts: [entry.Account]) -> [str]
-    out: [str] @ []
+    out: [str] @= []
 
     for e in entries
         kind = entry.kind_of(e.account, accounts).default("?")
@@ -48,7 +48,7 @@ function right(text: str, to: i64) -> str
 function holds(text: str, needle: str) -> bool
     if needle.len() > text.len()
         return false
-    at: i64 @ 0
+    at: i64 @= 0
 
     while at + needle.len() <= text.len()
         if text.slice(from: at, to: at + needle.len()) == needle

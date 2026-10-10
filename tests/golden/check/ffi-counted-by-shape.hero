@@ -43,7 +43,7 @@ function counted(s: Slot) -> i64
 
 function main()
     s = Slot(b: [1, 2, 3, 4], id: 0)
-    k: i64 @ 4
+    k: i64 @= 4
     print(not_a_pointer(p: 0, n: 4).to_str())
     print(no_such_sibling(p: nullptr, n: 4).to_str())
     print(not_an_integer(p: nullptr, n: 4.0).to_str())

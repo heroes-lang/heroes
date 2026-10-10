@@ -25,7 +25,7 @@ function main()
     if (xs.  # the whole condition
         len() > 2)
         print(3)
-    i: i64 @ 0
+    i: i64 @= 0
 
     while i < (p.  # a while
         x)

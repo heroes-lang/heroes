@@ -50,8 +50,8 @@ use cli/strings
 # the real ones: this filters the list, it does not renumber it. A control
 # character reaches the terminal by its code, `<U+001B>`, never raw (290).
 function dump(p: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl]) -> str
-    live: [bool] @ []
-    i: i64 @ 0
+    live: [bool] @= []
+    i: i64 @= 0
 
     while i < p.strings.len()
         live @ live.push(false)
@@ -70,8 +70,8 @@ function dump(p: containers.Program, c: state.Checked, s: source.Source, decls: 
                         .field | .index | .map_get | .len_of | .tag_of | .payload                               => continue
                         .func_ref | .copy_out | .abort_op | .incref | .decref | .decref_slot | .hole | .missing => continue
 
-    rows: [str] @ []
-    any_live: bool @ false
+    rows: [str] @= []
+    any_live: bool @= false
 
     for used in live
         if used
@@ -81,7 +81,7 @@ function dump(p: containers.Program, c: state.Checked, s: source.Source, decls: 
         rows @ rows.push("strings\n")
 
         # ORDER: ascending string index — the dense walk IS the sort.
-        at: i64 @ 0
+        at: i64 @= 0
 
         while at < live.len()
             if live[at]
@@ -94,7 +94,7 @@ function dump(p: containers.Program, c: state.Checked, s: source.Source, decls: 
     # --dump-<stage> answers "what does the compiler know about the
     # file I named" (CLAUDE.md §10), and the library is identical in
     # every program.
-    shown: i64 @ 0
+    shown: i64 @= 0
 
     for f in p.functions
         if source.is_root(s, f.span.start)
@@ -106,8 +106,8 @@ function dump(p: containers.Program, c: state.Checked, s: source.Source, decls: 
     return shown_char.visible(rows.join(""))
 
 function one(f: containers.Function, c: state.Checked, s: source.Source, decls: [ast.Decl]) -> str
-    rows: [str] @ [header(f, c, s, decls)]
-    is_extern: bool @ false
+    rows: [str] @= [header(f, c, s, decls)]
+    is_extern: bool @= false
 
     match f.kind
         .extern_kind                                 => is_extern @ true
@@ -122,7 +122,7 @@ function one(f: containers.Function, c: state.Checked, s: source.Source, decls: 
 
     if locals != ""
         rows @ rows.push("    slots  " + locals + "\n")
-    index: i64 @ 0
+    index: i64 @= 0
 
     for blk in f.blocks
         rows @ rows.push(block_header(id: index, note: blk.note, preds: blk.preds))
@@ -143,14 +143,14 @@ function header(f: containers.Function, c: state.Checked, s: source.Source, decl
         .constant_kind => return "constant " + f.name + ": " + render.render_ty(c.types, s, decls, f.result, f.generics) + "\n"
         .test_kind => return "test " + f.name + "\n"
         .function_kind | .extern_kind =>
-            generics: str @ ""
+            generics: str @= ""
 
             if f.generics.len() > 0
                 generics @ "<" + f.generics.join(", ") + ">"
-            params: [str] @ []
+            params: [str] @= []
 
             for slot_id in f.params
-                marker: str @ ""
+                marker: str @= ""
 
                 match f.slots[slot_id].kind
                     .param_slot ps =>
@@ -162,11 +162,11 @@ function header(f: containers.Function, c: state.Checked, s: source.Source, decl
                     marker + f.slots[slot_id].name + ": " + render.render_ty(c.types, s, decls, f.slots[slot_id].ty, f.generics)
                 )
 
-            result: str @ ""
+            result: str @= ""
 
             if f.result != table.unit_ty(c.types)
                 result @ " -> " + render.render_ty(c.types, s, decls, f.result, f.generics)
-            word: str @ "function"
+            word: str @= "function"
 
             match f.kind
                 .extern_kind                                 => word @ "extern function"
@@ -180,11 +180,11 @@ function header(f: containers.Function, c: state.Checked, s: source.Source, decl
 # signature, and repeating them would make the line that matters
 # harder to find.
 function slot_line(f: containers.Function, c: state.Checked, s: source.Source, decls: [ast.Decl]) -> str
-    rendered: [str] @ []
-    index: i64 @ 0
+    rendered: [str] @= []
+    index: i64 @= 0
 
     for slot in f.slots
-        is_param: bool @ false
+        is_param: bool @= false
 
         for p in f.params
             if p == index
@@ -198,10 +198,10 @@ function slot_line(f: containers.Function, c: state.Checked, s: source.Source, d
 
 # `bb1  while: test    preds bb0, bb3`
 function block_header(id: i64, note: str, preds: [i64]) -> str
-    line: str @ "    bb" + id.to_str() + "  " + note
+    line: str @= "    bb" + id.to_str() + "  " + note
 
     if preds.len() > 0
-        names: [str] @ []
+        names: [str] @= []
 
         for p in preds
             names @ names.push("bb" + p.to_str())
@@ -214,8 +214,8 @@ function terminator(term: ir.Term) -> str
         .jump j => return "jump bb" + j.to.to_str()
         .branch br => return "branch " + value_name(br.cond) + " -> bb" + br.then_to.to_str() + " else bb" + br.else_to.to_str()
         .switch_term sw =>
-            edges: [str] @ []
-            case_at: i64 @ 0
+            edges: [str] @= []
+            case_at: i64 @= 0
 
             for edge_to in sw.cases
                 edges @ edges.push("case " + case_at.to_str() + " -> bb" + edge_to.to_str())
@@ -255,8 +255,8 @@ function operation(f: containers.Function, inst: ir.Inst, c: state.Checked, s: s
         .store st      => return "store " + written(f, st.place, c, s, decls) + " <- " + value_name(st.value)
         .push_owned pg => return "push_owned " + written(f, pg.place, c, s, decls) + " <- " + value_name(pg.value)
         .unary u =>
-            word: str @ "neg"
-            bang: str @ ""
+            word: str @= "neg"
+            bang: str @= ""
 
             match u.op
                 .neg =>
@@ -267,7 +267,7 @@ function operation(f: containers.Function, inst: ir.Inst, c: state.Checked, s: s
 
             return word + bang + " " + value_name(u.operand)
         .binary bin =>
-            bang: str @ ""
+            bang: str @= ""
 
             if aborts(bin.op, operands: containers.value_type(f, bin.left), int_id: int_id)
                 bang @ "!"
@@ -277,7 +277,7 @@ function operation(f: containers.Function, inst: ir.Inst, c: state.Checked, s: s
                 .str_to_cstr => return "cast str_to_cstr " + value_name(ca.operand)
                 .cstr_to_ptr => return "cast cstr_to_ptr " + value_name(ca.operand)
         .call cl =>
-            tail: str @ ""
+            tail: str @= ""
 
             if cl.variadic
                 tail @ " variadic"
@@ -295,7 +295,7 @@ function operation(f: containers.Function, inst: ir.Inst, c: state.Checked, s: s
         .func_ref fr => return "funcref " + target(fr.callee, s, decls)
         .copy_out co => return "copyout " + f.slots[co.param].name
         .abort_op ab =>
-            word: str @ "must"
+            word: str @= "must"
 
             match ab.why
                 .assert_abort => word @ "assert"
@@ -321,8 +321,8 @@ function operation(f: containers.Function, inst: ir.Inst, c: state.Checked, s: s
 
 # A place, in the surface's own notation: `l.pos`, `xs[$t2]`, `total`.
 function written(f: containers.Function, place: ir.Place, c: state.Checked, s: source.Source, decls: [ast.Decl]) -> str
-    parts: [str] @ [f.slots[place.root].name]
-    ty: i64 @ f.slots[place.root].ty
+    parts: [str] @= [f.slots[place.root].name]
+    ty: i64 @= f.slots[place.root].ty
 
     for step in containers.steps_of(f, place.path)
         match step
@@ -345,7 +345,7 @@ function written(f: containers.Function, place: ir.Place, c: state.Checked, s: s
     return parts.join("")
 
 function argument_list(f: containers.Function, run: ir.Run, c: state.Checked, s: source.Source, decls: [ast.Decl]) -> str
-    rendered: [str] @ []
+    rendered: [str] @= []
 
     for arg in containers.args_of(f, run)
         match arg
@@ -361,7 +361,7 @@ function argument_list(f: containers.Function, run: ir.Run, c: state.Checked, s:
 function constant_text(value: ir.IntConst) -> str
     match value
         .int_const ic =>
-            sign: str @ ""
+            sign: str @= ""
 
             if ic.value.negative
                 sign @ "-"
@@ -469,7 +469,7 @@ function name_of_field(c: state.Checked, s: source.Source, decls: [ast.Decl], ow
 # The type a field HOLDS, so a path can keep naming its steps past the
 # first one.
 function field_ty_of(c: state.Checked, decls: [ast.Decl], owner: i64, at: i64) -> i64
-    written_id: i64? @ fail(code: "none", msg: "no field")
+    written_id: i64? @= fail(code: "none", msg: "no field")
 
     match table.get(c.types, owner)
         .named n =>
@@ -525,7 +525,7 @@ function case_name(c: state.Checked, s: source.Source, decls: [ast.Decl], owner:
 # any C binding can hand back — put a raw invisible byte into every
 # dump.
 function escaped(text: str) -> str
-    parts: [str] @ []
+    parts: [str] @= []
 
     for ch in text.chars()
         if ch == "\n"

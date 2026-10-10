@@ -66,7 +66,7 @@ use parse/headless
 # below consumes its keyword without asking its kind, which is what lets the
 # `error` token the lexer left there stand for the keyword the swap writes.
 function file(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], @uses: [ast.Use], text: str)
-    done: bool @ false
+    done: bool @= false
 
     while !done
         cursor.skip_terminators(@c)
@@ -220,7 +220,7 @@ function variant_declaration(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl],
     # `empty_variant` points at its own head, `variant Token`, as
     # `empty_record` does: it pointed at the next line's first token, a line
     # the author did nothing wrong on, until 2026-09-29 (defect 131's class).
-    below: members_below.Below @ .indented
+    below: members_below.Below @= .indented
 
     if !cursor.at(c, .indent)
         written = token.Span(start: hd.keyword.start, end: hd.name.end)
@@ -235,7 +235,7 @@ function variant_declaration(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl],
         if below == .none
             return
     start = cursor.current_span(c)
-    cases: [ast.Case] @ []
+    cases: [ast.Case] @= []
 
     # A declaration among the cases is read as one, as among a record's
     # fields (`records.among_members`, defect 200).
@@ -243,7 +243,7 @@ function variant_declaration(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl],
         records.among_members(@c, @a, text: text, holder: "variant")
     else
         cases @ members_below.cases_below(@c, @a, text, below: below)
-    finish: token.Span @ start
+    finish: token.Span @= start
 
     if cases.len() > 0
         finish @ cases[cases.len() - 1].name
@@ -265,10 +265,10 @@ record Parsed
 
 function parse_source(text: str) -> Parsed
     out = lexer.lex_one(text)
-    c: cursor.Cursor @ cursor.lexed_cursor(tokens: out.tokens, root_end: -1, closes: out.closes, swaps: out.swaps)
-    a: ast.Ast @ ast.new_ast()
-    decls: [ast.Decl] @ []
-    uses: [ast.Use] @ []
+    c: cursor.Cursor @= cursor.lexed_cursor(tokens: out.tokens, root_end: -1, closes: out.closes, swaps: out.swaps)
+    a: ast.Ast @= ast.new_ast()
+    decls: [ast.Decl] @= []
+    uses: [ast.Use] @= []
     file(@c, @a, @decls, @uses, text)
     return Parsed(decls: decls, uses: uses, diagnostics: c.diagnostics, tree: a)
 
@@ -401,15 +401,15 @@ test "a module's foreign head is read as its own lexer swapped it, past a bracke
     s = source.from_files(inputs)
     module = lexer.lex_files(s)[1]
     assert module.swaps.len() == 1
-    c: cursor.Cursor @ cursor.lexed_cursor(
+    c: cursor.Cursor @= cursor.lexed_cursor(
         tokens: module.tokens,
         root_end: -1,
         closes: module.closes,
         swaps: module.swaps
     )
-    a: ast.Ast @ ast.new_ast()
-    decls: [ast.Decl] @ []
-    uses: [ast.Use] @ []
+    a: ast.Ast @= ast.new_ast()
+    decls: [ast.Decl] @= []
+    uses: [ast.Use] @= []
     file(@c, @a, @decls, @uses, s.text)
     assert decls.len() == 1
     assert c.diagnostics.len() == 1
@@ -489,18 +489,18 @@ test "a swap is read only where its keyword is what the grammar expects"
 # an absent body only inside brackets, where a head's recovery ran past it.
 test "a head joined to a line that fails holds its missing body back"
     for text in ["function main()\n    if\n    print(1 +)\n", "function main()\n    for\n    x in )\n", "function main()\n    y = match\n    print(1 +)\n"]
-        c: cursor.Cursor @ cursor.new_cursor(lexer.lex_one(text).tokens)
-        a: ast.Ast @ ast.new_ast()
-        decls: [ast.Decl] @ []
-        uses: [ast.Use] @ []
+        c: cursor.Cursor @= cursor.new_cursor(lexer.lex_one(text).tokens)
+        a: ast.Ast @= ast.new_ast()
+        decls: [ast.Decl] @= []
+        uses: [ast.Use] @= []
         file(@c, @a, @decls, @uses, text)
         assert c.held.len() == 1
         assert c.held[0].diagnostic.code == "missing_body" || c.held[0].diagnostic.code == "missing_match_arms"
 
     crossed = "function main()\n    if (1 > 0\n    y = 3 )\n"
-    d: cursor.Cursor @ cursor.new_cursor(lexer.lex_one(crossed).tokens)
-    b: ast.Ast @ ast.new_ast()
-    none: [ast.Decl] @ []
-    nothing: [ast.Use] @ []
+    d: cursor.Cursor @= cursor.new_cursor(lexer.lex_one(crossed).tokens)
+    b: ast.Ast @= ast.new_ast()
+    none: [ast.Decl] @= []
+    nothing: [ast.Use] @= []
     file(@d, @b, @none, @nothing, crossed)
     assert d.held.len() == 0

@@ -14,7 +14,7 @@ function first_at_least(xs: [i64], least: i64) -> i64  #~ missing_return
             return x
 
 function count_down(n: i64) -> i64  #~ missing_return
-    i: i64 @ n
+    i: i64 @= n
 
     while i > 0
         if i == 3

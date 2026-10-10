@@ -2124,7 +2124,7 @@ function looped(c: bool)
     b297 = f_open()
     b298 = f_open()
     b299 = f_open()
-    t: i64 @ 0
+    t: i64 @= 0
 
     while t < 1
         if c

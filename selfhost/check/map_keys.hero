@@ -37,8 +37,8 @@ use ffi_errors
 
 # Check every map key the program writes or builds.
 function check(@c: state.Checker, a: ast.Ast, s: source.Source, decls: [ast.Decl])
-    # `m: {Color: i64} @ {}` — the annotation's own key node.
-    node: i64 @ 0
+    # `m: {Color: i64} @= {}` — the annotation's own key node.
+    node: i64 @= 0
 
     while node < a.types.len()
         match a.types[node].kind
@@ -54,7 +54,7 @@ function check(@c: state.Checker, a: ast.Ast, s: source.Source, decls: [ast.Decl
     # `m = {c: 1}` — no map node exists, so the type comes from the
     # expression table and the span from the first entry's key, which is
     # the thing the reader has to change.
-    at: i64 @ 0
+    at: i64 @= 0
 
     while at < a.exprs.len()
         match a.exprs[at].kind
@@ -91,7 +91,7 @@ function refuse(@c: state.Checker, s: source.Source, decls: [ast.Decl], key: i64
         shown = state.show(c, s, decls, key)
         state.push_diagnostic(@c, handles.handle_map_key(key: shown, reached: handled.must().path, span: span))
         return
-    float_seen: {i64: bool} @ {}
+    float_seen: {i64: bool} @= {}
     floated = reaches_float(c, s, decls, ty: key, @float_seen)
 
     if !floated.is_err()
@@ -149,8 +149,8 @@ function refuse(@c: state.Checker, s: source.Source, decls: [ast.Decl], key: i64
 # deepest owner still wins, and children are pushed last to first, so the
 # float named is the one the recursion found first.
 function reaches_float(c: state.Checker, s: source.Source, decls: [ast.Decl], ty: i64, @seen: {i64: bool}) -> str?
-    stack: [Standing] @ [Standing(ty: ty, through: "")]
-    live: i64 @ 1
+    stack: [Standing] @= [Standing(ty: ty, through: "")]
+    live: i64 @= 1
 
     while live > 0
         live @ live - 1
@@ -159,7 +159,7 @@ function reaches_float(c: state.Checker, s: source.Source, decls: [ast.Decl], ty
         if !seen[here.ty].is_err()
             continue
         seen[here.ty] @ true
-        inner: [Standing] @ []
+        inner: [Standing] @= []
 
         match table.get(c.out.types, here.ty)
             .float_ty => return ok(here.through)
@@ -186,7 +186,7 @@ function reaches_float(c: state.Checker, s: source.Source, decls: [ast.Decl], ty
             .int_ty | .bool | .str | .ptr | .cstr | .unit          => continue
             .function_ty | .case_ty | .failure | .generic | .error => continue
 
-        back: i64 @ inner.len() - 1
+        back: i64 @= inner.len() - 1
 
         while back >= 0
             if live < stack.len()
@@ -206,7 +206,7 @@ record Standing
 
 # A declaration's fields as places to stand, each through `owner.field`.
 function fields_from(c: state.Checker, s: source.Source, owner: str, fields: [ast.Field]) -> [Standing]
-    out: [Standing] @ []
+    out: [Standing] @= []
 
     for field in fields
         written = state.written_type(c.out, field.ty)
@@ -222,37 +222,37 @@ function swept(text: str) -> state.Checker
     p = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
     out = resolve.resolve(p.tree, s, p.decls, p.uses)
-    c: state.Checker @ state.new_checker(out_of: out, expr_count: p.tree.exprs.len())
+    c: state.Checker @= state.new_checker(out_of: out, expr_count: p.tree.exprs.len())
     check_decls.file(@c, p.tree, out, s, p.decls)
     check(@c, p.tree, s, p.decls)
     return c
 
 test "a float key is refused at the annotation, with the deepest owner"
-    direct = swept("function f()\n    m: {f64: i64} @ {}\n    _ = m\n")
+    direct = swept("function f()\n    m: {f64: i64} @= {}\n    _ = m\n")
     assert direct.out.diagnostics.len() == 1
     assert direct.out.diagnostics[0].code == "float_map_key"
     assert direct.out.diagnostics[0].message == "`f64` cannot be a map key, because it is a float"
     nested = swept(
-        "record Point\n    x: i64\n    y: f64\n\nrecord Wrapper\n    inner: Point\n\nfunction f()\n    m: {Wrapper: i64} @ {}\n    _ = m\n"
+        "record Point\n    x: i64\n    y: f64\n\nrecord Wrapper\n    inner: Point\n\nfunction f()\n    m: {Wrapper: i64} @= {}\n    _ = m\n"
     )
     assert nested.out.diagnostics.len() == 1
     assert nested.out.diagnostics[0].message == "`Wrapper` cannot be a map key, because `Point.y` is a float"
 
 test "the literal route is caught too, and an exact key stays legal"
     built = swept("function f()\n    m = {1.5: 2}\n    print(len(m))\n")
-    found: bool @ false
+    found: bool @= false
 
     for d in built.out.diagnostics
         if d.code == "float_map_key"
             found @ true
 
     assert found
-    fine = swept("function f()\n    m: {str: i64} @ {}\n    m[\"a\"] @ 1\n    print(len(m))\n")
+    fine = swept("function f()\n    m: {str: i64} @= {}\n    m[\"a\"] @ 1\n    print(len(m))\n")
     assert fine.out.diagnostics.len() == 0
 
 test "a partial key is the partial's message, and only one fires"
     c = swept(
-        "extern \"r.h\"\n    record Font partial\n        size: f64\n\nfunction f()\n    m: {Font: i64} @ {}\n    _ = m\n"
+        "extern \"r.h\"\n    record Font partial\n        size: f64\n\nfunction f()\n    m: {Font: i64} @= {}\n    _ = m\n"
     )
     assert c.out.diagnostics.len() == 1
     assert c.out.diagnostics[0].code == "ffi_partial_operation"

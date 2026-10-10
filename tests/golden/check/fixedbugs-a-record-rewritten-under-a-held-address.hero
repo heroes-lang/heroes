@@ -27,7 +27,7 @@ extern "keeper.h"
     function k_sum(p: ptr counted_by n lent, n: i64) -> i64
 
 function main()
-    s: KSlot @ KSlot(name: [72, 0, 0, 0, 0, 0, 0, 0], id: 0)
+    s: KSlot @= KSlot(name: [72, 0, 0, 0, 0, 0, 0, 0], id: 0)
     k_register(p: s.name.ptr(), n: 8)  #~ lend_kept
     print(k_read_later())
     s @ KSlot(name: [1, 0, 0, 0, 0, 0, 0, 0], id: 1)

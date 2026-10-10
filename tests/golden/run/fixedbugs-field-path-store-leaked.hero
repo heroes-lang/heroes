@@ -28,7 +28,7 @@ record Pair
     right: Row
 
 function main()
-    p: Row @ Row(cells: [9])
+    p: Row @= Row(cells: [9])
     print(p.cells[0], len(p.cells))
 
     # The write that leaked: a counted place reached through a field.
@@ -41,7 +41,7 @@ function main()
     print(len(p.cells))
 
     # Two levels deep, and through a record that holds two of them.
-    q: Pair @ Pair(left: Row(cells: [1]), right: Row(cells: [2]))
+    q: Pair @= Pair(left: Row(cells: [1]), right: Row(cells: [2]))
     q.left @ Row(cells: [5, 6])
     print(q.left.cells[1], q.right.cells[0])
 

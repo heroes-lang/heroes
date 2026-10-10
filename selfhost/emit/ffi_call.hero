@@ -130,16 +130,16 @@ function call_shape(s: source.Source, decls: [ast.Decl], p: containers.Program, 
 
     if arity
         n = counts(at.must().rest)
-        message: str @ "`" + name + "` is declared with a different number of parameters from `" + header + "`'s — clang read the header, and the call this declaration implies does not fit it"
+        message: str @= "`" + name + "` is declared with a different number of parameters from `" + header + "`'s — clang read the header, and the call this declaration implies does not fit it"
 
         if !n.is_err()
             message @ "`" + name + "` is declared with " + n.must().have.to_str() + " parameters, and `" + header + "` gives it " + n.must().expected.to_str() + " — clang read the header, and the call this declaration implies does not fit it"
-        d: diag.Diagnostic @ diag.new_diagnostic(code: "ffi_call_shape", message: message, span: span)
+        d: diag.Diagnostic @= diag.new_diagnostic(code: "ffi_call_shape", message: message, span: span)
         d.notes @ d.notes.push(
             "§4.19: an `extern` is checked against the real header. Declare exactly the parameters the header has, at its widths — or, for a function the header declares variadic (`...`), the fixed shape this program calls it with"
         )
         return ok(d)
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "ffi_call_shape",
         message: "`" + name + "`'s format string is not a literal at this shape — `" + header + "` declares it variadic, and a format bound alone with nothing after it is what clang refuses (`-Wformat-security`)",
         span: span
@@ -179,7 +179,7 @@ function not_a_function(s: source.Source, decls: [ast.Decl], p: containers.Progr
     if !type_form.is_err()
         if ffi_lookup.up_to_quote(type_form.must()) != name
             return fail(code: "none", msg: "a type this declaration does not name")
-        d: diag.Diagnostic @ diag.new_diagnostic(
+        d: diag.Diagnostic @= diag.new_diagnostic(
             code: "ffi_call_shape",
             message: "`" + header + "` declares `" + name + "` as a type, not a function: " + DOES_NOT_FIT,
             span: declared.must().span
@@ -191,7 +191,7 @@ function not_a_function(s: source.Source, decls: [ast.Decl], p: containers.Progr
     c_type = ffi_lookup.up_to_quote(object_form.must())
 
     if !values[name].is_err()
-        d: diag.Diagnostic @ diag.new_diagnostic(
+        d: diag.Diagnostic @= diag.new_diagnostic(
             code: "ffi_call_shape",
             message: "`" + header + "` defines `" + name + "` as a value of type `" + c_type + "`, not a function: " + DOES_NOT_FIT,
             span: declared.must().span
@@ -200,7 +200,7 @@ function not_a_function(s: source.Source, decls: [ast.Decl], p: containers.Progr
             "a value the header holds is bound as a `constant`, with no parameters and no parentheses where it is read: `constant " + name + ": " + constant_type(c, s, decls, f: found.must().f) + "` (§ 13)"
         )
         return ok(d)
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "ffi_call_shape",
         message: "`" + header + "` declares `" + name + "` as an object of type `" + c_type + "`, not a function: " + DOES_NOT_FIT,
         span: declared.must().span
@@ -216,7 +216,7 @@ function not_a_function(s: source.Source, decls: [ast.Decl], p: containers.Progr
 # nothing, and clang refuses what it expands to, or the invocation itself.
 # `macros` is that unit's answer, and without a yes this is not the reading.
 function macro_call(s: source.Source, tree: ast.Ast, decls: [ast.Decl], p: containers.Program, line: str, macros: {str: bool}) -> diag.Diagnostic?
-    unfed: bool @ false
+    unfed: bool @= false
 
     for words in MACRO_UNFED
         if ffi_lookup.has(text: line, needle: words)
@@ -304,7 +304,7 @@ test "a name the header has as an object, a value or a type is told as what it i
     out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
     c = checker.check(parsed.tree, out, s, parsed.decls)
     low = lower.lower(parsed.tree, out, c, s, parsed.decls)
-    values: {str: bool} @ {}
+    values: {str: bool} @= {}
     values["RED"] @ true
     object = not_a_function(
         s,

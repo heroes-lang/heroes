@@ -82,7 +82,7 @@ record Model
 function compare(was: str, before: [token.Token], now: str, after: [token.Token]) -> str
     printed = model(now, tokens: after, ignored: [])
     first = model(was, tokens: before, ignored: [])
-    dropped: [i64] @ []
+    dropped: [i64] @= []
 
     for head in first.heads
         if !listed(printed.heads, value: head)
@@ -105,11 +105,11 @@ function model(text: str, tokens: [token.Token], ignored: [i64]) -> Model
     words = seed.placed(text, tokens: tokens)
     starts = source.starts_of(text)
     keep = counted(words)
-    norm: [i64] @ []
-    depth: [i64] @ []
-    around: [str] @ []
-    count: i64 @ 0
-    open: [str] @ []
+    norm: [i64] @= []
+    depth: [i64] @= []
+    around: [str] @= []
+    count: i64 @= 0
+    open: [str] @= []
 
     for i in range(from: 0, to: words.len())
         norm @ norm.push(count)
@@ -118,7 +118,7 @@ function model(text: str, tokens: [token.Token], ignored: [i64]) -> Model
             count @ count + 1
         depth @ depth.push(open.len())
         kind = words[i].kind
-        named: [str] @ []
+        named: [str] @= []
 
         # Only a comment is asked which brackets are around it.
         if kind == .comment
@@ -137,12 +137,12 @@ function model(text: str, tokens: [token.Token], ignored: [i64]) -> Model
 
     # The logical lines: a line whose first code token is at depth 0, its
     # column, that token, and the blocks open after it.
-    column: [i64] @ []
-    first: [i64] @ []
-    blocks: [[str]] @ []
-    heads: [i64] @ []
-    stack: [str] @ ["file"]
-    seen: i64 @ -1
+    column: [i64] @= []
+    first: [i64] @= []
+    blocks: [[str]] @= []
+    heads: [i64] @= []
+    stack: [str] @= ["file"]
+    seen: i64 @= -1
 
     for i in range(from: 0, to: words.len())
         w = words[i]
@@ -162,7 +162,7 @@ function model(text: str, tokens: [token.Token], ignored: [i64]) -> Model
         level = w.start / 4
 
         if level > stack.len() - 1
-            opener: str @ "orphan"
+            opener: str @= "orphan"
 
             if first.len() > 0
                 opener @ opened_by(text, starts: starts, words: words, norm: norm, at: first[first.len() - 1])
@@ -175,12 +175,12 @@ function model(text: str, tokens: [token.Token], ignored: [i64]) -> Model
         first @ first.push(i)
         blocks @ blocks.push(stack)
 
-    notes: [Note] @ []
-    depths: [i64] @ []
-    between: [i64] @ []
-    stacks: [[str]] @ []
-    last_code: i64 @ -1
-    p: i64 @ -1
+    notes: [Note] @= []
+    depths: [i64] @= []
+    between: [i64] @= []
+    stacks: [[str]] @= []
+    last_code: i64 @= -1
+    p: i64 @= -1
 
     for i in range(from: 0, to: words.len())
         w = words[i]
@@ -191,12 +191,12 @@ function model(text: str, tokens: [token.Token], ignored: [i64]) -> Model
         if w.kind != .comment
             last_code @ i
             continue
-        next: i64 @ -1
+        next: i64 @= -1
 
         if norm[i] < count
             next @ norm[i]
         body = seed.right_trimmed(text.slice(from: starts[w.line] + w.start, to: starts[w.line] + w.end))
-        note: Note @ Note(
+        note: Note @= Note(
             text: body,
             line: w.line + 1,
             kind: "block",
@@ -205,8 +205,8 @@ function model(text: str, tokens: [token.Token], ignored: [i64]) -> Model
             prior: norm[i] - 1,
             next: next
         )
-        level: i64 @ -1
-        open_here: [str] @ []
+        level: i64 @= -1
+        open_here: [str] @= []
 
         if last_code >= 0 && words[last_code].line == w.line
             note.kind @ "trails"
@@ -215,8 +215,8 @@ function model(text: str, tokens: [token.Token], ignored: [i64]) -> Model
             note.kind @ "bracket"
             note.owner @ "bracket " + around[i]
         else
-            above: i64 @ 0
-            below: i64 @ 0
+            above: i64 @= 0
+            below: i64 @= 0
             open_here @ ["file"]
 
             if p >= 0
@@ -227,12 +227,12 @@ function model(text: str, tokens: [token.Token], ignored: [i64]) -> Model
                 below @ column[p + 1] / 4
 
                 if below > above
-                    opener: str @ "orphan"
+                    opener: str @= "orphan"
 
                     if p >= 0
                         opener @ opened_by(text, starts: starts, words: words, norm: norm, at: first[p])
                     open_here @ open_here.push(opener)
-            high: i64 @ above
+            high: i64 @= above
 
             if below > high
                 high @ below
@@ -251,15 +251,15 @@ function model(text: str, tokens: [token.Token], ignored: [i64]) -> Model
         stacks @ stacks.push(open_here)
 
     # The run rule, read from the last comment up.
-    later: i64 @ -1
-    later_between: i64 @ -2
-    k: i64 @ notes.len() - 1
+    later: i64 @= -1
+    later_between: i64 @= -2
+    k: i64 @= notes.len() - 1
 
     while k >= 0
         if notes[k].kind != "block"
             later_between @ -2
         else
-            level: i64 @ depths[k]
+            level: i64 @= depths[k]
 
             if later_between == between[k] && level < later
                 level @ later
@@ -273,7 +273,7 @@ function model(text: str, tokens: [token.Token], ignored: [i64]) -> Model
 # Which tokens are counted: not a comment, a comma or a parenthesis, not
 # the three tokens of `-> ()`, not any token of an extern group's head line.
 function counted(words: [seed.Word]) -> [bool]
-    out: [bool] @ []
+    out: [bool] @= []
 
     # A local before its push: a `&&` in the argument parts the push from its
     # store, and the push copied the array until defect 381 (`ir/place_store.hero`).
@@ -281,7 +281,7 @@ function counted(words: [seed.Word]) -> [bool]
         kept = w.kind != .comment && w.kind != .comma && w.kind != .lparen && w.kind != .rparen
         out @ out.push(kept)
 
-    code: [i64] @ []
+    code: [i64] @= []
 
     for i in range(from: 0, to: words.len())
         if words[i].kind != .comment
@@ -294,7 +294,7 @@ function counted(words: [seed.Word]) -> [bool]
             out[i] @ false
 
         if words[i].kind == .kw_extern
-            b: i64 @ a
+            b: i64 @= a
 
             while b < code.len() && words[code[b]].line == words[i].line
                 out[code[b]] @ false
@@ -307,7 +307,7 @@ function counted(words: [seed.Word]) -> [bool]
 function opened_by(text: str, starts: [i64], words: [seed.Word], norm: [i64], at: i64) -> str
     if words[at].kind != .kw_extern
         return norm[at].to_str()
-    j: i64 @ at + 1
+    j: i64 @= at + 1
 
     while j < words.len() && words[j].kind == .comment
         j @ j + 1
@@ -329,7 +329,7 @@ function block_name(stack: [str], level: i64) -> str
 function moved(was: Model, now: Model) -> str
     if was.total != now.total
         return "the tokens `fmt` keeps are " + was.total.to_str() + " in the variant and " + now.total.to_str() + " in its output"
-    k: i64 @ 0
+    k: i64 @= 0
 
     while k < was.notes.len() && k < now.notes.len()
         x = was.notes[k]

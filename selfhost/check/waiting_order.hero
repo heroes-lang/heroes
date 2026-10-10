@@ -121,7 +121,7 @@ function weight(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.S
             match r.uses[id]
                 .top t =>
                     if waiting.generic_top(decls, named: r.uses[id])
-                        before: i64 @ m.receiver
+                        before: i64 @= m.receiver
 
                         if r.uses[m.receiver] == .module
                             before @ -1
@@ -181,8 +181,8 @@ function sum(x: i64, y: i64) -> i64
 # named by no argument, `wanted<A>(what: str) -> A?` refused alone.
 function call_weight(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], decl: i64, receiver: i64, given: [ast.Arg], depth: i64) -> i64
     letters = function_value.letters_of(s, decls, decl: decl)
-    params: [i64] @ []
-    result: i64 @ 0
+    params: [i64] @= []
+    result: i64 @= 0
 
     # The written types as the walk lowered them, read where it has, since
     # the weight is asked again at every level of a nested call.
@@ -194,7 +194,7 @@ function call_weight(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: sou
             result @ lowered(@c, a, r, at: fd.value.result)
         .constant_decl | .record_decl | .variant_decl | .test_decl => return 0
 
-    values: [i64] @ []
+    values: [i64] @= []
 
     if receiver >= 0
         values @ values.push(receiver)
@@ -204,15 +204,15 @@ function call_weight(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: sou
 
     if values.len() != params.len()
         return 0
-    weights: [i64] @ []
+    weights: [i64] @= []
 
     for _ in letters
         weights @ weights.push(REFUSES)
 
-    i: i64 @ 0
+    i: i64 @= 0
 
     while i < values.len()
-        w: i64 @ 0
+        w: i64 @= 0
 
         if waiting.needs_context(a, r, s, decls, id: values[i])
             w @ weight(@c, a, r, s, decls, id: values[i], depth: depth)
@@ -230,8 +230,8 @@ function call_weight(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: sou
 
     while i < values.len()
         if function_value.generic_at(a, r, decls, values[i])
-            lightest: i64 @ REFUSES
-            k: i64 @ 0
+            lightest: i64 @= REFUSES
+            k: i64 @= 0
 
             while k < weights.len()
                 if check_generics.mentions(c, ty: params[i], at: k) && weights[k] < lightest
@@ -242,8 +242,8 @@ function call_weight(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: sou
                 lighten(c, @weights, ty: params[i], w: lightest)
         i @ i + 1
 
-    total: i64 @ 0
-    k: i64 @ 0
+    total: i64 @= 0
+    k: i64 @= 0
 
     while k < weights.len()
         if check_generics.mentions(c, ty: result, at: k)
@@ -261,7 +261,7 @@ function lowered(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, at: i64) -
     return lower.lower_ty(@c, a, r, at)
 
 function lighten(c: state.Checker, @weights: [i64], ty: i64, w: i64)
-    k: i64 @ 0
+    k: i64 @= 0
 
     while k < weights.len()
         if check_generics.mentions(c, ty: ty, at: k) && w < weights[k]
@@ -273,9 +273,9 @@ function lighten(c: state.Checker, @weights: [i64], ty: i64, w: i64)
 # none is left but generic functions' names and the forms that refuse
 # themselves. With `refusing`, the first of those forms instead.
 function next_alone(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], left: [waiting.Held], refusing: bool) -> i64
-    best: i64 @ -1
-    lightest: i64 @ REFUSES
-    k: i64 @ 0
+    best: i64 @= -1
+    lightest: i64 @= REFUSES
+    k: i64 @= 0
 
     while k < left.len()
         value = left[k].value
@@ -295,8 +295,8 @@ function next_alone(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: sour
 
 # `left` without its `at`th entry.
 function without(left: [waiting.Held], at: i64) -> [waiting.Held]
-    rest: [waiting.Held] @ []
-    k: i64 @ 0
+    rest: [waiting.Held] @= []
+    k: i64 @= 0
 
     while k < left.len()
         if k != at

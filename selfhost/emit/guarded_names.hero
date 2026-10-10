@@ -152,11 +152,11 @@ function left() -> [str]
     return split(LEFT_LINES)
 
 function split(lines: [str]) -> [str]
-    out: [str] @ []
+    out: [str] @= []
 
     for line in lines
-        start: i64 @ 0
-        i: i64 @ 0
+        start: i64 @= 0
+        i: i64 @= 0
 
         while i <= line.len()
             if i == line.len() || line[i] == 32

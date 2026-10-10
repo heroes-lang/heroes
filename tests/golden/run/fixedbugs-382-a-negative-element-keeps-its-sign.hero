@@ -17,8 +17,8 @@ constant WIDEST: [i32]
     [-2147483648, 2147483647]
 
 function main()
-    total: i64 @ 0
-    at: i64 @ 0
+    total: i64 @= 0
+    at: i64 @= 0
 
     while at < 3
         total @ total + NEG[at]

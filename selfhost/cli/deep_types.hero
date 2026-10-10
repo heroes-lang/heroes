@@ -69,9 +69,9 @@ function deepest(c: state.Checked, decls: [ast.Decl]) -> Deepest
 # What each declaration reachable from `roots` holds by value, found by a
 # queue, so no stack grows with the chain.
 function held_graph(c: state.Checked, decls: [ast.Decl], roots: [i64]) -> {i64: [i64]}
-    found: {i64: [i64]} @ {}
-    queue: [i64] @ roots
-    next: i64 @ 0
+    found: {i64: [i64]} @= {}
+    queue: [i64] @= roots
+    next: i64 @= 0
 
     while next < queue.len()
         decl = queue[next]
@@ -95,14 +95,14 @@ function held_graph(c: state.Checked, decls: [ast.Decl], roots: [i64]) -> {i64: 
 # survives no more than a C compiler (defect 490, as 189 held `typeorder`).
 function deepest_of(roots: [i64], graph: {i64: [i64]}) -> Deepest
     none: [i64] = []
-    depth: {i64: i64} @ {}
-    best: Deepest @ Deepest(depth: 0, top: -1)
+    depth: {i64: i64} @= {}
+    best: Deepest @= Deepest(depth: 0, top: -1)
 
     for root in roots
         if !depth[root].is_err()
             continue
-        frames: [Frame] @ [Frame(decl: root, holds: graph[root].default(none), next: 0)]
-        live: i64 @ 1
+        frames: [Frame] @= [Frame(decl: root, holds: graph[root].default(none), next: 0)]
+        live: i64 @= 1
 
         while live > 0
             top = frames[live - 1]
@@ -122,7 +122,7 @@ function deepest_of(roots: [i64], graph: {i64: [i64]}) -> Deepest
             else
                 # Each held declaration is measured by now: the checker
                 # refuses a by-value cycle, so the walk is over a DAG.
-                below: i64 @ 0
+                below: i64 @= 0
 
                 for held in top.holds
                     d = depth[held].default(0)
@@ -141,8 +141,8 @@ function deepest_of(roots: [i64], graph: {i64: [i64]}) -> Deepest
 # The declared types one declaration holds by value: its fields' and its
 # cases' fields', seen through an option or a fixed array to what they hold.
 function holds(c: state.Checked, decls: [ast.Decl], decl: i64) -> [i64]
-    out: [i64] @ []
-    fields: [ast.Field] @ types.fields_of(decls, decl: decl)
+    out: [i64] @= []
+    fields: [ast.Field] @= types.fields_of(decls, decl: decl)
 
     for one_case in types.cases_of(decls, decl: decl)
         for field in one_case.fields
@@ -163,7 +163,7 @@ function holds(c: state.Checked, decls: [ast.Decl], decl: i64) -> [i64]
 # fixed array hold what they wrap; an array, a map and a function hold a
 # pointer.
 function held_decl(c: state.Checked, ty: i64) -> i64
-    at: i64 @ ty
+    at: i64 @= ty
 
     while true
         match table.get(c.types, at)
@@ -179,7 +179,7 @@ function held_decl(c: state.Checked, ty: i64) -> i64
 
 # `n` records, each holding the one before by value, checked.
 function chained(n: i64) -> Checked
-    parts: [str] @ ["record R0\n    v: i64\n"]
+    parts: [str] @= ["record R0\n    v: i64\n"]
 
     for i in range(from: 1, to: n)
         parts @ parts.push("record R" + i.to_str() + "\n    inner: R" + (i - 1).to_str() + "\n")
@@ -216,7 +216,7 @@ test "the note names the deepest chain past the depth the emitter helps from, an
 # above.
 test "the deepest chain is walked with a stack of its own, a hundred thousand deep (defect 490)"
     n: i64 = 100000
-    graph: {i64: [i64]} @ {}
+    graph: {i64: [i64]} @= {}
     graph[0] @ []
 
     for i in range(from: 1, to: n)
@@ -227,7 +227,7 @@ test "the deepest chain is walked with a stack of its own, a hundred thousand de
     assert found.top == n - 1
 
     # Two chains below one: the deeper counts, and each is measured once.
-    fork: {i64: [i64]} @ {}
+    fork: {i64: [i64]} @= {}
     fork[0] @ []
     fork[1] @ [0]
     fork[2] @ [1]
@@ -252,7 +252,7 @@ test "the deepest chain is walked with a stack of its own, a hundred thousand de
 # measured 2026-10-07 with the touch written as a declaration again).
 test "the debug information meets a type chain past the emitter's depth from its bottom (defect 219)"
     n: i64 = typeorder.IN_ORDER_FROM + 8
-    parts: [str] @ ["variant R0\n    a\n        v: i64\n    b\n"]
+    parts: [str] @= ["variant R0\n    a\n        v: i64\n    b\n"]
 
     for i in range(from: 1, to: n)
         parts @ parts.push("variant R" + i.to_str() + "\n    a\n        inner: R" + (i - 1).to_str() + "\n    b\n")
@@ -287,7 +287,7 @@ test "the debug information meets a type chain past the emitter's depth from its
         runtime: "runtime",
         source_dir: ""
     )
-    words: [str] @ strings.with_all(list: ["clang"], more: compiling.unit_words(under))
+    words: [str] @= strings.with_all(list: ["clang"], more: compiling.unit_words(under))
     words @ strings.with_all(list: words, more: ["-emit-llvm", "-S", root + "/unit.c", "-o", root + "/unit.ll"])
     assert process.run(program: "clang", words: words, out: process.discard(), err: process.discard()).code == 0
     assert first_retained(ir: read_file(root + "/unit.ll").must(), prefix: "h_t_R") == "h_t_R0"
@@ -302,7 +302,7 @@ function first_retained(ir: str, prefix: str) -> str
 
     if opened.is_err()
         return ""
-    at: i64 @ opened.must() + 2
+    at: i64 @= opened.must() + 2
 
     while at < members.len()
         if members[at] == '!'
@@ -317,8 +317,8 @@ function first_retained(ir: str, prefix: str) -> str
 # The name metadata `!id` carries, through at most four types it is a pointer
 # to or a qualifier of; "" where none is named.
 function named(ir: str, id: i64) -> str
-    member: i64 @ id
-    hops: i64 @ 0
+    member: i64 @= id
+    hops: i64 @= 0
 
     while member >= 0 && hops < 5
         line = metadata_line(ir, id: member)
@@ -326,7 +326,7 @@ function named(ir: str, id: i64) -> str
 
         if !found.is_err()
             from = found.must() + 7
-            to: i64 @ from
+            to: i64 @= from
 
             while to < line.len() && line[to] != '"'
                 to @ to + 1
@@ -347,8 +347,8 @@ function number_after(text: str, needle: str) -> i64
 
 # The decimal number whose digits start at `at` in `text`, or -1.
 function digits_at(text: str, at: i64) -> i64
-    number: i64 @ -1
-    next: i64 @ at
+    number: i64 @= -1
+    next: i64 @= at
 
     while next < text.len() && bytes.is_digit(text[next])
         if number < 0
@@ -364,7 +364,7 @@ function metadata_line(ir: str, id: i64) -> str
 
     if id < 0 || found.is_err()
         return ""
-    end: i64 @ found.must() + 1
+    end: i64 @= found.must() + 1
 
     while end < ir.len() && ir[end] != '\n'
         end @ end + 1

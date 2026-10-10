@@ -51,7 +51,7 @@ record Wide
     a31: i64
 
 function widen(w: Wide, k: i64) -> Wide
-    out: Wide @ w
+    out: Wide @= w
     out.a0 @ w.a0 + k
     return out
 

@@ -51,7 +51,7 @@ function before_call(@w: writer.Writer, c: state.Checked, s: source.Source, decl
     match decls[decl].kind
         .function_decl fd =>
             name = source.span_text(s, decls[decl].name)
-            at: i64 @ 0
+            at: i64 @= 0
             by = consumer(s, fd.value, name: name)
 
             for p in fd.value.params
@@ -118,7 +118,7 @@ function announce(@w: writer.Writer, c: state.Checked, s: source.Source, decls: 
     if suffixes.len() == 0
         writer.line(@w, text: "    /* heroes: a mark on a type that reaches no handle */")
         return
-    k: i64 @ 0
+    k: i64 @= 0
 
     for suffix in suffixes
         writer.line(
@@ -147,8 +147,8 @@ function reads_cell(p: ast.Param) -> bool
 # crossing: the argument or the cell, its parameter, the call, and the
 # suffix where the handle sits inside a record or a fixed array.
 function crossing(@w: writer.Writer, c: state.Checked, s: source.Source, decls: [ast.Decl], ty: i64, p: ast.Param, argument: str, callee: str)
-    what: str @ "the argument `"
-    value: str @ argument
+    what: str @= "the argument `"
+    value: str @= argument
 
     if p.mutable
         what @ "the cell `@"
@@ -156,7 +156,7 @@ function crossing(@w: writer.Writer, c: state.Checked, s: source.Source, decls: 
     where = what + source.span_text(s, p.name) + "` of `" + callee + "`"
 
     for suffix in reaches.handle_suffixes(c, s, decls, ty: ty)
-        inside: str @ ""
+        inside: str @= ""
 
         if suffix != ""
             inside @ ", at `" + suffix + "`"
@@ -187,7 +187,7 @@ test "a cell a handle comes out through is not read, and everything else is"
     text = "extern \"m.h\"\n    record Ob tag ob\n    function ob_put(a: Ob consumes)\n    function ob_up(a: Ob retains ob_put) -> i32 when 1\n    function ob_out(@a: Ob retains ob_put) -> i32 when 1\n    function ob_new(@a: Ob acquires ob_put)\n    function ob_lend(@a: Ob borrows)\n    function ob_touch(@a: Ob)\n"
     parsed = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
-    read: [bool] @ []
+    read: [bool] @= []
 
     for decl in parsed.decls
         match decl.kind

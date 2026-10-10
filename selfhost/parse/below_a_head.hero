@@ -51,7 +51,7 @@ record Below
 # bodies only below a bodiless head, which no program that compiles has.
 function lines_below(lines: [seams.Line], froms: [i64], r: readings.Readings, apart: lexer.LexOutput, text: str, root_end: i64) -> Below
     b = bodied_lines(lines, froms: froms, r: r)
-    bodies: readings.Sorted @ readings.sorted([])
+    bodies: readings.Sorted @= readings.sorted([])
 
     if b.froms.len() > 0
         bodies @ readings.sorted(readings.read_bodies(apart, text: text, root_end: root_end))
@@ -70,7 +70,7 @@ function agreed(line: seams.Line, d: diag.Diagnostic, r: readings.Readings) -> b
 
     if !seams.opens_a_line_below(line, at: at)
         return false
-    i: i64 @ text_outline.last_at_most(r.held.starts, at: at) + 1
+    i: i64 @= text_outline.last_at_most(r.held.starts, at: at) + 1
 
     while i < r.held.starts.len() && r.held.starts[i] <= line.after
         if r.held.diagnostics[i].code == d.code
@@ -82,9 +82,9 @@ function agreed(line: seams.Line, d: diag.Diagnostic, r: readings.Readings) -> b
 # The lines below a bodiless head: where the apart reading says a missing body
 # the joined one holds as well, and where that line ends.
 function bodied_lines(lines: [seams.Line], froms: [i64], r: readings.Readings) -> Bodied
-    starts: [i64] @ []
-    ends: [i64] @ []
-    read_as: [Reading] @ []
+    starts: [i64] @= []
+    ends: [i64] @= []
+    read_as: [Reading] @= []
 
     for d in r.other.diagnostics
         at = seams.line_at(lines, froms: froms, at: d.span.start)
@@ -106,15 +106,15 @@ function bodied_lines(lines: [seams.Line], froms: [i64], r: readings.Readings) -
 # statement its `in` is refused; and `match` over `print(1) )` is a line
 # beside it, which as arms is refused at its first word.
 function read_as_what_it_is(lines: [seams.Line], froms: [i64], b: Bodied, r: readings.Readings, bodies: readings.Sorted) -> Bodied
-    read_as: [Reading] @ []
-    i: i64 @ 0
+    read_as: [Reading] @= []
+    i: i64 @= 0
 
     while i < b.froms.len()
         line = lines[seams.line_at(lines, froms: froms, at: b.froms[i])]
         as_body = first_refusal(line, s: bodies, from: b.froms[i], to: b.ends[i], r: r)
         beside = first_refusal(line, s: r.other, from: b.froms[i], to: b.ends[i], r: r)
         joined = first_refusal(line, s: r.joined, from: b.froms[i], to: b.ends[i], r: r)
-        reading: Reading @ .beside
+        reading: Reading @= .beside
 
         if as_body >= beside && as_body >= joined
             reading @ .body
@@ -129,7 +129,7 @@ function read_as_what_it_is(lines: [seams.Line], froms: [i64], b: Bodied, r: rea
 # the head's missing body and the breaks' own reports aside, or `to` where
 # there is none.
 function first_refusal(line: seams.Line, s: readings.Sorted, from: i64, to: i64, r: readings.Readings) -> i64
-    i: i64 @ text_outline.last_at_most(s.starts, at: from - 1) + 1
+    i: i64 @= text_outline.last_at_most(s.starts, at: from - 1) + 1
 
     while i < s.starts.len() && s.starts[i] < to
         d = s.diagnostics[i]

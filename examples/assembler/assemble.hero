@@ -35,8 +35,8 @@ record Assembled
 ## Pass one
 
 function label_table(lines: [program.Line]) -> {str: i64}?
-    labels: {str: i64} @ {}
-    at: i64 @ 0
+    labels: {str: i64} @= {}
+    at: i64 @= 0
 
     for line in lines
         if line.label != ""
@@ -56,7 +56,7 @@ function label_table(lines: [program.Line]) -> {str: i64}?
 
 function assemble(lines: [program.Line]) -> Assembled?
     labels = label_table(lines)?
-    code: [i64] @ []
+    code: [i64] @= []
 
     for line in lines
         if line.mnemonic == ""

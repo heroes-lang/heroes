@@ -59,7 +59,7 @@ use emit/mangle
 # ends a life read from it.
 function places_of(c: state.Checked, s: source.Source, decls: [ast.Decl], f: containers.Function, run: ir.Run) -> [str?]
     given = containers.args_of(f, run)
-    written: [str] @ []
+    written: [str] @= []
 
     for arg in given
         match arg
@@ -68,7 +68,7 @@ function places_of(c: state.Checked, s: source.Source, decls: [ast.Decl], f: con
 
     writes = writes_of(written)
 
-    out: [str?] @ []
+    out: [str?] @= []
 
     for arg in given
         match arg
@@ -95,8 +95,8 @@ record Writes
     outers: {str: bool}
 
 function writes_of(written: [str]) -> Writes
-    places: {str: bool} @ {}
-    outers: {str: bool} @ {}
+    places: {str: bool} @= {}
+    outers: {str: bool} @= {}
 
     for one in written
         places[one] @ true
@@ -123,8 +123,8 @@ function rewritten(writes: Writes, key: str) -> bool
 # Every place a key lies inside: the key cut at each step boundary, a `.` or
 # a `[`, so `3[].0` lies inside `3` and `3[]`, as `inside` reads a boundary.
 function outers_of(key: str) -> [str]
-    out: [str] @ []
-    at: i64 @ 1
+    out: [str] @= []
+    at: i64 @= 1
 
     while at < key.len()
         if key[at] == 46 || key[at] == 91
@@ -147,7 +147,7 @@ function inside(inner: str, outer: str) -> bool
     return next == 46 || next == 91
 
 function key_of_place(f: containers.Function, at: ir.Place) -> str
-    parts: [str] @ [at.root.to_str()]
+    parts: [str] @= [at.root.to_str()]
 
     for step in containers.steps_of(f, at.path)
         match step

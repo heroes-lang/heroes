@@ -101,13 +101,13 @@ function lost(@r: Reading, text: str, at: i64) -> bool
     # has found, or on the next where `at` is a line's end: the scanner asks
     # of no line end, and the walk is answered there too.
     from = at + 1
-    line: i64 @ r.line
+    line: i64 @= r.line
 
     if text[at] == '\n'
         line @ from
 
     if r.start != line
-        end: i64 @ from
+        end: i64 @= from
 
         while end < text.len() && text[end] != '\n'
             end @ end + 1
@@ -127,12 +127,12 @@ function lost(@r: Reading, text: str, at: i64) -> bool
 function quoted_before(@r: Reading, text: str, at: i64) -> bool
     if at >= r.line && at <= r.seen
         return r.quote >= 0 && r.quote < at
-    floor: i64 @ 0
+    floor: i64 @= 0
 
     if at > r.seen
         floor @ r.seen
-    i: i64 @ at
-    first: i64 @ -1
+    i: i64 @= at
+    first: i64 @= -1
 
     while i > floor && text[i - 1] != '\n'
         i @ i - 1
@@ -160,17 +160,17 @@ function quoted_before(@r: Reading, text: str, at: i64) -> bool
 # are kept where `kept` asks, and a line read for its start alone keeps
 # none.
 function answers(text: str, start: i64, end: i64, beyond: bool, kept: bool) -> Answers
-    out: [bool] @ [false]
-    next: bool @ false
-    inside: bool @ true
-    after: bool @ beyond
-    i: i64 @ end
+    out: [bool] @= [false]
+    next: bool @= false
+    inside: bool @= true
+    after: bool @= beyond
+    i: i64 @= end
 
     while i > start
         i @ i - 1
         b = text[i]
-        outside: bool @ next
-        within: bool @ inside
+        outside: bool @= next
+        within: bool @= inside
 
         if b == '\\'
             within @ after
@@ -208,12 +208,12 @@ function carried(@r: Reading, text: str, at: i64) -> bool
 
     if held >= 0 && r.run[held] == at
         return r.run_inside[held]
-    starts: [i64] @ []
-    ends: [i64] @ []
-    s: i64 @ at
+    starts: [i64] @= []
+    ends: [i64] @= []
+    s: i64 @= at
 
     while true
-        e: i64 @ s
+        e: i64 @= s
 
         while e < text.len() && text[e] != '\n'
             e @ e + 1
@@ -227,16 +227,16 @@ function carried(@r: Reading, text: str, at: i64) -> bool
 
     # The last line's walk ends on it or at the text's end, which ends it
     # inside a string; each line above goes on from the one below it.
-    backward: [bool] @ []
-    beyond: bool @ true
-    k: i64 @ starts.len() - 1
+    backward: [bool] @= []
+    beyond: bool @= true
+    k: i64 @= starts.len() - 1
 
     while k >= 0
         beyond @ answers(text, start: starts[k], end: ends[k], beyond: beyond, kept: false).inside
         backward @ backward.push(beyond)
         k @ k - 1
 
-    inside: [bool] @ []
+    inside: [bool] @= []
     k @ backward.len() - 1
 
     while k >= 0
@@ -249,8 +249,8 @@ function carried(@r: Reading, text: str, at: i64) -> bool
 
 # The index of the last of `ascending` that is at most `at`, or -1.
 function at_most(ascending: [i64], at: i64) -> i64
-    low: i64 @ 0
-    high: i64 @ ascending.len()
+    low: i64 @= 0
+    high: i64 @= ascending.len()
 
     while low < high
         middle = (low + high) / 2
@@ -268,13 +268,13 @@ function at_most(ascending: [i64], at: i64) -> i64
 # to: a quote before `at` on its line, and the reading on from the byte
 # after it.
 function walked(text: str, at: i64) -> bool
-    start: i64 @ at
+    start: i64 @= at
 
     while start > 0 && text[start - 1] != '\n'
         start @ start - 1
 
-    quoted: bool @ false
-    q: i64 @ start
+    quoted: bool @= false
+    q: i64 @= start
 
     while q < at
         if text[q] == '"' || text[q] == '\''
@@ -283,8 +283,8 @@ function walked(text: str, at: i64) -> bool
 
     if !quoted
         return false
-    inside: bool @ false
-    i: i64 @ at + 1
+    inside: bool @= false
+    i: i64 @= at + 1
 
     while i < text.len() && text[i] != '\n'
         b = text[i]
@@ -313,8 +313,8 @@ test "the reading answers as the walk does at every offset, in order and out of 
     ]
 
     for text in texts
-        forward: Reading @ unread()
-        at: i64 @ 0
+        forward: Reading @= unread()
+        at: i64 @= 0
 
         while at < text.len()
             assert lost(@forward, text, at: at) == walked(text, at: at)
@@ -322,7 +322,7 @@ test "the reading answers as the walk does at every offset, in order and out of 
 
         # Asked from the end back, each line is read again, and a line a
         # walk is carried onto is read once.
-        backward: Reading @ unread()
+        backward: Reading @= unread()
         at @ text.len() - 1
 
         while at >= 0
@@ -330,7 +330,7 @@ test "the reading answers as the walk does at every offset, in order and out of 
             at @ at - 1
 
         # And every other offset, then the ones between, from the end back.
-        skipping: Reading @ unread()
+        skipping: Reading @= unread()
         at @ 0
 
         while at < text.len()
@@ -344,14 +344,14 @@ test "the reading answers as the walk does at every offset, in order and out of 
             at @ at - 2
 
 test "no more is read than the questions ask"
-    r: Reading @ unread()
+    r: Reading @= unread()
     assert !lost(@r, "$ $ $\n", at: 2)
     assert r.start == -1
     assert r.seen == 2
 
     # The walk's answers are read for the line asked about and no other.
     text = "x \"a\" $ \"b\nc \"d\" $\n"
-    t: Reading @ unread()
+    t: Reading @= unread()
     assert lost(@t, text, at: 6)
     assert t.start == 0
     assert t.end == 10
@@ -359,6 +359,6 @@ test "no more is read than the questions ask"
     assert t.run.len() == 0
 
     # A line a `\` inside a string carries the walk past is read for that.
-    u: Reading @ unread()
+    u: Reading @= unread()
     assert !lost(@u, "a \"b\" $ \"c\\\nd\" e\n", at: 6)
     assert u.run == [12]

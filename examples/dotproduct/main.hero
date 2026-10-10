@@ -33,8 +33,8 @@ function right(at: i64) -> i64
     return 53 - at % 53
 
 function band(index: i64) -> i64
-    total: i64 @ 0
-    at: i64 @ index * PER_BAND
+    total: i64 @= 0
+    at: i64 @= index * PER_BAND
 
     while at < index * PER_BAND + PER_BAND
         total @ total + left(at: at) * right(at: at)
@@ -43,14 +43,14 @@ function band(index: i64) -> i64
     return total
 
 function together() -> i64
-    handles: [i64] @ []
-    i: i64 @ 0
+    handles: [i64] @= []
+    i: i64 @= 0
 
     while i < BANDS
         handles @ handles.push(hero_thread_spawn(body: band, arg: i))
         i @ i + 1
 
-    total: i64 @ 0
+    total: i64 @= 0
 
     for h in handles
         total @ total + hero_thread_join(handle: h)
@@ -58,8 +58,8 @@ function together() -> i64
     return total
 
 function alone() -> i64
-    total: i64 @ 0
-    at: i64 @ 0
+    total: i64 @= 0
+    at: i64 @= 0
 
     while at < BANDS * PER_BAND
         total @ total + left(at: at) * right(at: at)

@@ -180,15 +180,15 @@ record Checker
 
 function new_checker(out_of: resolved.Resolved, expr_count: i64) -> Checker
     types = table.new_types()
-    local_types: [i64] @ []
-    i: i64 @ 0
+    local_types: [i64] @= []
+    i: i64 @= 0
 
     while i < out_of.locals.len()
         local_types @ local_types.push(0)
         i @ i + 1
 
-    expr_types: [i64] @ []
-    j: i64 @ 0
+    expr_types: [i64] @= []
+    j: i64 @= 0
 
     while j < expr_count
         expr_types @ expr_types.push(0)
@@ -219,8 +219,8 @@ function new_checker(out_of: resolved.Resolved, expr_count: i64) -> Checker
         ends: ends,
         rested: rested
     )
-    locals_by_span: {i64: i64} @ {}
-    k: i64 @ 0
+    locals_by_span: {i64: i64} @= {}
+    k: i64 @= 0
 
     while k < out_of.locals.len()
         locals_by_span[out_of.locals[k].name.start] @ k
@@ -284,14 +284,14 @@ function record_expr(@c: Checker, at: i64, ty: i64) -> i64
 ## Tests
 
 test "a local is typed by the position of its name, not by walk order"
-    r: resolved.Resolved @ resolved.new_resolved()
+    r: resolved.Resolved @= resolved.new_resolved()
     r.locals @ r.locals.push(
         resolved.Local(name: token.Span(start: 10, end: 11), kind: .bind, mutable: false, owner: 0, depth: 0, ty: fail(code: "absent", msg: "inferred"), value: fail(code: "absent", msg: "none"), reads: 1, writes: 0, symbol: token.Span(start: 0, end: 0))
     )
     r.locals @ r.locals.push(
         resolved.Local(name: token.Span(start: 30, end: 31), kind: .cell, mutable: true, owner: 0, depth: 0, ty: fail(code: "absent", msg: "x"), value: fail(code: "absent", msg: "x"), reads: 1, writes: 1, symbol: token.Span(start: 32, end: 33))
     )
-    c: Checker @ new_checker(out_of: r, expr_count: 2)
+    c: Checker @= new_checker(out_of: r, expr_count: 2)
     bind_local(@c, token.Span(start: 30, end: 31), table.str_ty(c.out.types))
     assert local_type(c.out, 0) == 0
     assert local_type(c.out, 1) == table.str_ty(c.out.types)
@@ -301,7 +301,7 @@ test "a local is typed by the position of its name, not by walk order"
 
 test "an expression's type is recorded dense, error until someone says"
     r: resolved.Resolved = resolved.new_resolved()
-    c: Checker @ new_checker(out_of: r, expr_count: 3)
+    c: Checker @= new_checker(out_of: r, expr_count: 3)
     assert c.out.expr_types.len() == 3
     assert c.out.expr_types[1] == table.error_ty(c.out.types)
     given = record_expr(@c, at: 1, ty: table.bool_ty(c.out.types))

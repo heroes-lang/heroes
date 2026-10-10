@@ -43,7 +43,7 @@ use library_source
 # compile together there. The answers are one (`emit/ffi_answer.merged`), the
 # first asked first.
 function ask(t: toolchain.Toolchain, art: compile.Artifact, s: source.Source, struct_tags: {str: bool}, asking: [probing.Probing]) -> ffi_asked.Asked
-    out: ffi_asked.Asked @ ffi_asked.nothing()
+    out: ffi_asked.Asked @= ffi_asked.nothing()
 
     for one in asking
         text = ffi_asked.unit(
@@ -55,7 +55,7 @@ function ask(t: toolchain.Toolchain, art: compile.Artifact, s: source.Source, st
             headers: one.headers,
             records: ok(one.records)
         )
-        answer: ffi_asked.Asked @ asked_of(t, text: text, under: one.under)
+        answer: ffi_asked.Asked @= asked_of(t, text: text, under: one.under)
 
         # And a name the headers declare only under a switch of the C
         # library (`cli/switch_ask.hero`, defect 568), or only without one a
@@ -197,7 +197,7 @@ test "a refused round's questions are asked under the build's level and sanitize
     assert plain.values["thing"].is_err()
 
     for sanitize in [false, true]
-        level: str @ "-O2"
+        level: str @= "-O2"
 
         if sanitize
             level @ "-O0"

@@ -48,15 +48,15 @@ function show(g: grid.Grid, path: [i64])
 # The maze with the path marked. `S` and `E` keep their own letters — a drawing
 # that overwrote them would be a drawing you cannot check against the file.
 function drawn(g: grid.Grid, path: [i64]) -> [str]
-    on: {i64: bool} @ {}
+    on: {i64: bool} @= {}
 
     for index in path
         on[index] @ true
 
-    out: [str] @ []
+    out: [str] @= []
 
     for row in range(from: 0, to: g.height)
-        pieces: [str] @ []
+        pieces: [str] @= []
 
         for column in range(from: 0, to: g.width)
             index = grid.index_of(g, row: row, column: column)

@@ -45,8 +45,8 @@ function main()
 
     # Every one of ours decodes, so every entry is an `ok` carrying the same
     # text `args()` gave.
-    same: bool @ true
-    i: i64 @ 0
+    same: bool @= true
+    i: i64 @= 0
 
     while i < given.len()
         one = checked[i]

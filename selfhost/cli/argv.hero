@@ -52,7 +52,7 @@ function value_of(inv: Invocation, spelling: str) -> str?
 # Every value a repeatable flag was given, in the order written —
 # which is the order clang will search, so the order the author chose.
 function values_of(inv: Invocation, spelling: str) -> [str]
-    out: [str] @ []
+    out: [str] @= []
 
     for f in inv.flags
         if f.spelling == spelling && !f.value.is_err()
@@ -81,8 +81,8 @@ function parse(given: [str], dir_probe: (function(str) -> bool)) -> Invocation?
     if word == "--help" || word == "-h" || word == "help"
         return ok(bare(tag: .help_cmd))
     table = cli_table.commands()
-    found: i64 @ -1
-    index: i64 @ 0
+    found: i64 @= -1
+    index: i64 @= 0
 
     for c in table
         if c.name == word && found == -1
@@ -94,17 +94,17 @@ function parse(given: [str], dir_probe: (function(str) -> bool)) -> Invocation?
 
         if !retired.is_err()
             return fail(code: "bad_usage", msg: "`" + word + "` is no longer a command — use `" + retired.must() + "`")
-        names: [str] @ []
+        names: [str] @= []
 
         for c in table
             names @ names.push(c.name)
 
         return fail(code: "bad_usage", msg: "unknown command `" + word + "` — the commands are " + names.join(", "))
     command = table[found]
-    file: str? @ fail(code: "none", msg: "no file")
-    flags: [FlagHit] @ []
-    program_args: [str] @ []
-    at: i64 @ 1
+    file: str? @= fail(code: "none", msg: "no file")
+    flags: [FlagHit] @= []
+    program_args: [str] @= []
+    at: i64 @= 1
 
     while at < given.len()
         arg = given[at]
@@ -114,7 +114,7 @@ function parse(given: [str], dir_probe: (function(str) -> bool)) -> Invocation?
             # forward to. Anywhere else the separator is a mistake
             # worth naming rather than a no-op that silently drops
             # what follows it.
-            take: bool @ false
+            take: bool @= false
 
             match command.tag
                 .run_cmd                                                        => take @ true
@@ -128,7 +128,7 @@ function parse(given: [str], dir_probe: (function(str) -> bool)) -> Invocation?
                     code: "bad_usage",
                     msg: "`--` passes arguments to the program, and `" + command.name + "` does not run one — only `heroes run` does"
                 )
-            follow: i64 @ at + 1
+            follow: i64 @= at + 1
 
             while follow < given.len()
                 program_args @ program_args.push(given[follow])
@@ -137,8 +137,8 @@ function parse(given: [str], dir_probe: (function(str) -> bool)) -> Invocation?
             break
 
         if starts_with_dash(arg)
-            known: i64 @ -1
-            probe: i64 @ 0
+            known: i64 @= -1
+            probe: i64 @= 0
 
             for f in command.flags
                 if f.spelling == arg && known == -1
@@ -155,7 +155,7 @@ function parse(given: [str], dir_probe: (function(str) -> bool)) -> Invocation?
                     )
                 return fail(code: "bad_usage", msg: unknown_flag(command: command, arg: arg))
             wanted = command.flags[known]
-            value: str? @ fail(code: "none", msg: "no value")
+            value: str? @= fail(code: "none", msg: "no value")
 
             if wanted.value
                 if at + 1 >= given.len() || starts_with_dash(given[at + 1])
@@ -198,7 +198,7 @@ function parse(given: [str], dir_probe: (function(str) -> bool)) -> Invocation?
                 flags @ flags.push(FlagHit(spelling: wanted.spelling, value: value))
             at @ at + 1
             continue
-        no_operand: bool @ false
+        no_operand: bool @= false
 
         match command.operand
             .no_operand                       => no_operand @ true
@@ -218,7 +218,7 @@ function parse(given: [str], dir_probe: (function(str) -> bool)) -> Invocation?
         file @ ok(arg)
         at @ at + 1
 
-    needs_file: bool @ false
+    needs_file: bool @= false
 
     match command.operand
         .file_operand                   => needs_file @ true
@@ -244,7 +244,7 @@ function empty_operand(command: cli_table.Command) -> str
 function unknown_flag(command: cli_table.Command, arg: str) -> str
     if command.flags.len() == 0
         return "`" + command.name + "` takes no flags, and `" + arg + "` was given"
-    accepted: [str] @ []
+    accepted: [str] @= []
 
     for f in command.flags
         accepted @ accepted.push(f.spelling)
@@ -272,8 +272,8 @@ function unheld(given: [str], at: i64) -> [str]
     match parse(given, dir_probe: unasked)
         .err e => return ["error: " + e.msg]
         .ok inv =>
-            dash: i64 @ -1
-            index: i64 @ 1
+            dash: i64 @= -1
+            index: i64 @= 1
 
             while index < given.len() && dash < 0
                 if given[index] == "--"
@@ -415,7 +415,7 @@ test "an empty value for a flag that takes one is refused, naming the flag (defe
         .ok _  => assert false
         .err e => assert e.msg == "`-o` needs a path, and was given an empty one: `heroes build <file.hero> -o <path>`"
 
-    asked: i64 @ 0
+    asked: i64 @= 0
 
     for c in cli_table.commands()
         for f in c.flags
@@ -449,10 +449,10 @@ test "an empty operand is refused, naming the command, before anything is read (
         .ok _  => assert false
         .err e => assert e.msg == "`mutate` was given an empty file, which names none: `heroes mutate [file]`, or no file for its default"
 
-    asked: i64 @ 0
+    asked: i64 @= 0
 
     for c in cli_table.commands()
-        taken: bool @ true
+        taken: bool @= true
 
         match c.operand
             .no_operand                       => taken @ false
@@ -470,7 +470,7 @@ test "an empty operand is refused, naming the command, before anything is read (
 
 # The flags the table gives a command, as `unknown_flag` lists them.
 function flag_list(name: str) -> str
-    spellings: [str] @ []
+    spellings: [str] @= []
 
     for c in cli_table.commands()
         if c.name == name

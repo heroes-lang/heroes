@@ -47,7 +47,7 @@ record Node
 function main()
     # (1) The veto's own program. `h = g` shares every level; the write must copy
     # every level it passes through, or `h` sees the 7.
-    g: Grid @ Grid(rows: [Row(cells: [0, 0])])
+    g: Grid @= Grid(rows: [Row(cells: [0, 0])])
     h = g
     g.rows[0].cells[0] @ 7
     print(g.rows[0].cells[0])
@@ -60,21 +60,21 @@ function main()
     # order is the rule: increfed before the outermost unshare, therefore still alive
     # when the copy happens. What comes out is a tree, never a cycle — the value it
     # captured refers to the OLD block, and the unshare made a new one.
-    n: Node @ Node(label: 1, children: [Node(label: 2, children: [])])
+    n: Node @= Node(label: 1, children: [Node(label: 2, children: [])])
     n.children[0] @ n
     print(n.label, len(n.children))
     print(n.children[0].label)
     print(len(n.children[0].children))
 
     # (3) The stored value lives inside the container being mutated, one level down.
-    m: Grid @ Grid(rows: [Row(cells: [4, 5]), Row(cells: [6, 7])])
+    m: Grid @= Grid(rows: [Row(cells: [4, 5]), Row(cells: [6, 7])])
     m.rows[0] @ m.rows[1]
     print(m.rows[0].cells[0], m.rows[1].cells[0])
     m.rows[0].cells[0] @ 9
     print(m.rows[0].cells[0], m.rows[1].cells[0])
 
     # A single step, for the boundary: no descent, `set` unshares by itself.
-    xs: [i64] @ [1, 2, 3]
+    xs: [i64] @= [1, 2, 3]
     ys = xs
     xs[1] @ 9
     print(xs[1], ys[1])

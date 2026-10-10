@@ -48,18 +48,18 @@ record Applied
 
 # Every hunk of `sets` applied to `lines`; a failure where two overlap.
 function apply(lines: [str], sets: [Tagged]) -> Applied?
-    flat: [Placed] @ []
+    flat: [Placed] @= []
 
     for one in sets
         for h in one.hunks
             flat @ flat.push(Placed(hunk: h, tag: one.tag))
 
     order = sorted(flat)
-    out: [str] @ []
-    pos: i64 @ 0
-    shift: i64 @ 0
-    tags: [str] @ []
-    sites: [[i64]] @ []
+    out: [str] @= []
+    pos: i64 @= 0
+    shift: i64 @= 0
+    tags: [str] @= []
+    sites: [[i64]] @= []
 
     for one in sets
         tags @ tags.push(one.tag)
@@ -100,10 +100,10 @@ function apply(lines: [str], sets: [Tagged]) -> Applied?
 # The hunks in the order they are applied, `(start, end)` ascending, ties
 # kept in the order given: an insertion before a replacement at one line.
 function sorted(flat: [Placed]) -> [Placed]
-    out: [Placed] @ []
+    out: [Placed] @= []
 
     for p in flat
-        at: i64 @ out.len()
+        at: i64 @= out.len()
 
         while at > 0 && later(a: out[at - 1].hunk, than: p.hunk)
             at @ at - 1
@@ -116,8 +116,8 @@ function later(a: Hunk, than: Hunk) -> bool
     return a.start > than.start || a.start == than.start && a.end > than.end
 
 function insert(list: [Placed], at: i64, p: Placed) -> [Placed]
-    out: [Placed] @ []
-    i: i64 @ 0
+    out: [Placed] @= []
+    i: i64 @= 0
 
     for one in list
         if i == at
@@ -130,7 +130,7 @@ function insert(list: [Placed], at: i64, p: Placed) -> [Placed]
     return out
 
 function index_of(tags: [str], tag: str) -> i64
-    at: i64 @ 0
+    at: i64 @= 0
 
     for one in tags
         if one == tag
@@ -141,7 +141,7 @@ function index_of(tags: [str], tag: str) -> i64
 
 # The 1-based lines a tag's hunks name in the applied text.
 function site_of(a: Applied, tag: str) -> [i64]
-    at: i64 @ 0
+    at: i64 @= 0
 
     for one in a.site_tags
         if one == tag
@@ -155,7 +155,7 @@ function site_of(a: Applied, tag: str) -> [i64]
 # past every hunk wholly before it, or on the first new line of the hunk
 # that replaces it.
 function mapped(a: Applied, line: i64) -> i64
-    shift: i64 @ 0
+    shift: i64 @= 0
     index = line - 1
 
     for p in a.order
@@ -172,13 +172,13 @@ function mapped(a: Applied, line: i64) -> i64
 # A mutant's site: its hunks' own lines, and the lines of each statement
 # it touches mapped into the applied text, ascending, each once.
 function statement_site(a: Applied, tag: str, statements: [Lines]) -> [i64]
-    seen: {i64: bool} @ {}
+    seen: {i64: bool} @= {}
 
     for line in site_of(a, tag: tag)
         seen[line] @ true
 
     for range_of in statements
-        line: i64 @ range_of.first
+        line: i64 @= range_of.first
 
         while line <= range_of.last
             seen[mapped(a, line: line)] @ true
@@ -190,13 +190,13 @@ function statement_site(a: Applied, tag: str, statements: [Lines]) -> [i64]
 # A text's lines as `replay.py` reads them: one final newline taken off and
 # remembered, the rest split at each line feed.
 function lines_of(text: str) -> [str]
-    body: str @ text
+    body: str @= text
 
     if ends_newline(text)
         body @ text.slice(from: 0, to: text.len() - 1)
-    out: [str] @ []
-    start: i64 @ 0
-    at: i64 @ 0
+    out: [str] @= []
+    start: i64 @= 0
+    at: i64 @= 0
 
     while at < body.len()
         if body[at] == 10

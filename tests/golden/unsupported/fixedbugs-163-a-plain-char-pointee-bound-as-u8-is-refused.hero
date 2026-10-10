@@ -10,6 +10,6 @@ extern "fixedbugs-163-plain-char.h"
     function fill(@p: u8)  #~ ffi_parameter_type
 
 function main()
-    v: u8 @ 0
+    v: u8 @= 0
     fill(@v)
     print(v)

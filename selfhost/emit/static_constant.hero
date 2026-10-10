@@ -111,7 +111,7 @@ function close(@w: writer.Writer)
     writer.line(@w, text: "#endif")
 
 function laid_out(p: containers.Program, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], f: containers.Function, owner: str) -> Laid?
-    is_constant: bool @ false
+    is_constant: bool @= false
 
     match f.kind
         .constant_kind                             => is_constant @ true
@@ -119,8 +119,8 @@ function laid_out(p: containers.Program, c: state.Checked, names: ctype.Names, s
 
     if !is_constant || f.blocks.len() != 1 || !is_array(c, ty: f.result)
         return fail(code: "none", msg: "not a constant array of one block")
-    texts: {i64: str} @ {}
-    blocks: [str] @ []
+    texts: {i64: str} @= {}
+    blocks: [str] @= []
 
     for one in f.blocks[0].insts
         match one.op
@@ -135,7 +135,7 @@ function laid_out(p: containers.Program, c: state.Checked, names: ctype.Names, s
             .construct k =>
                 if one.dest.is_err()
                     return fail(code: "none", msg: "a construction with no value")
-                arguments: [str] @ []
+                arguments: [str] @= []
 
                 for arg in containers.args_of(f, k.arguments)
                     match arg
@@ -190,7 +190,7 @@ function laid_out(p: containers.Program, c: state.Checked, names: ctype.Names, s
 function constructed(c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], shape: ir.Shape, ty: i64, arguments: [str], name: str) -> Built?
     match shape
         .array_shape =>
-            element: i64 @ 0 - 1
+            element: i64 @= 0 - 1
 
             match table.get(c.types, ty)
                 .array arr                                                => element @ arr.element
@@ -251,8 +251,8 @@ function lowered(text: str) -> containers.Program
     out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
     c: state.Checked = checker.check(parsed.tree, out, s, parsed.decls)
     low = lower.lower(parsed.tree, out, c, s, parsed.decls)
-    p: containers.Program @ low.program
-    cc: state.Checked @ c
+    p: containers.Program @= low.program
+    cc: state.Checked @= c
     _ = mono.run(@p, @cc, s, parsed.decls).len()
     place_store.run(@p)
     own.run(@p, cc)
@@ -300,7 +300,7 @@ test "the switch's three lines are each read where the generated file is believe
     c: state.Checked = checker.check(parsed.tree, out, s, parsed.decls)
     p = lowered(text)
     names = ctype.new_names(s, parsed.decls)
-    w: writer.Writer @ writer.new_writer("t")
+    w: writer.Writer @= writer.new_writer("t")
 
     for f in p.functions
         if f.name == "K"
@@ -312,11 +312,11 @@ test "the switch's three lines are each read where the generated file is believe
             close(@w)
 
     got = writer.finish(w)
-    believed: i64 @ 1
-    physical: i64 @ 1
-    start: i64 @ 0
-    seen: i64 @ 0
-    at: i64 @ 0
+    believed: i64 @= 1
+    physical: i64 @= 1
+    start: i64 @= 0
+    seen: i64 @= 0
+    at: i64 @= 0
 
     while at < got.len()
         if got[at] == 10

@@ -9,7 +9,7 @@ variant Step
     skip
 
 function walk(xs: [Step]) -> i64
-    seen: i64 @ 0
+    seen: i64 @= 0
 
     for s in xs
         match s

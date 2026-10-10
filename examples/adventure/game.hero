@@ -27,12 +27,12 @@ function is_space(c: u8) -> bool
     return c == ' ' || c == '\t' || c == 13
 
 function trimmed(line: str) -> str
-    from: i64 @ 0
+    from: i64 @= 0
 
     while from < line.len() && is_space(line[from])
         from @ from + 1
 
-    to: i64 @ line.len()
+    to: i64 @= line.len()
 
     while to > from && is_space(line[to - 1])
         to @ to - 1
@@ -40,7 +40,7 @@ function trimmed(line: str) -> str
     return line.slice(from: from, to: to)
 
 function first_word(line: str) -> str
-    i: i64 @ 0
+    i: i64 @= 0
 
     while i < line.len() && line[i] != ' '
         i @ i + 1
@@ -91,7 +91,7 @@ function describe(w: world.World, g: Game) -> [str]
     match world.room_at(w, g.here)
         .err _ => return ["You are nowhere, which should not be possible."]
         .ok room =>
-            lines: [str] @ [room.description]
+            lines: [str] @= [room.description]
 
             if room.item != "" && g.taken[room.item].is_err()
                 lines @ lines.push("There is a " + room.item + " here.")
@@ -129,7 +129,7 @@ function take(w: world.World, g: Game) -> Turn
             return Turn(said: ["You take the " + room.item + "."], next: picked)
 
 function with_taken(taken: {str: bool}, item: str) -> {str: bool}
-    out: {str: bool} @ taken
+    out: {str: bool} @= taken
     out[item] @ true
     return out
 
@@ -158,8 +158,8 @@ function open(g: Game) -> Turn
 # A whole walkthrough, played in order — the shape every test below uses, and
 # the shape `main` uses too, so what is tested is what runs.
 function play_all(w: world.World, lines: [str]) -> Turn
-    g: Game @ begin(w)
-    said: [str] @ []
+    g: Game @= begin(w)
+    said: [str] @= []
 
     for line in lines
         turn = play(w, g, line)

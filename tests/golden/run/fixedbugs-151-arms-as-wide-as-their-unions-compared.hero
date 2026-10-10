@@ -32,7 +32,7 @@ record Box
 
 function main()
     print(Box(s: make_sa(i: 5)) == Box(s: make_sa(i: 6)), " ", Box(s: make_sa(i: 5)) == Box(s: make_sa(i: 5)))
-    seen: {SA: i64} @ {}
+    seen: {SA: i64} @= {}
     seen[make_sa(i: 5)] @ 1
     seen[make_sa(i: 5)] @ 2
     seen[make_sa(i: 6)] @ 3

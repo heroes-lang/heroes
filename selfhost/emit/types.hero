@@ -31,7 +31,7 @@ use cli/strings
 
 # Every aggregate the program declares, in the order C can accept them.
 function aggregates(c: state.Checked, decls: [ast.Decl]) -> [i64]
-    out: [i64] @ []
+    out: [i64] @= []
 
     for decl in c.type_order
         match decls[decl].kind
@@ -71,15 +71,15 @@ function is_variant(decls: [ast.Decl], decl: i64) -> bool
 # differs from <type> <name>, and the same reason a function type
 # needs a typedef (panel 062).
 function member(c: state.Checked, names: ctype.Names, s: source.Source, field: ast.Field) -> str
-    ty: i64 @ table.error_ty(c.types)
+    ty: i64 @= table.error_ty(c.types)
     written = state.written_type(c, field.ty)
 
     if !written.is_err()
         ty @ written.must()
     name = mangle.field(source.span_text(s, field.name))
-    is_fixed: bool @ false
-    fixed_elem: i64 @ 0
-    fixed_len: i64 @ 0
+    is_fixed: bool @= false
+    fixed_elem: i64 @= 0
+    fixed_len: i64 @= 0
 
     match table.get(c.types, ty)
         .fixed x =>
@@ -91,13 +91,13 @@ function member(c: state.Checked, names: ctype.Names, s: source.Source, field: a
         .case_ty | .failure | .generic | .error                   => is_fixed @ is_fixed
 
     if is_fixed
-        elem: str @ "void"
+        elem: str @= "void"
         inner = ctype.c_type(names, c: c, ty: fixed_elem)
 
         if !inner.is_err()
             elem @ inner.must()
         return "    " + elem + " " + name + "[" + fixed_len.to_str() + "];"
-    spelling: str @ "void"
+    spelling: str @= "void"
     found = ctype.c_type(names, c: c, ty: ty)
 
     if !found.is_err()
@@ -112,7 +112,7 @@ function member(c: state.Checked, names: ctype.Names, s: source.Source, field: a
 # they need not travel in the same registers. The emitter cannot get a
 # layout wrong that it never states.
 function declared(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], decl: i64)
-    skip: bool @ false
+    skip: bool @= false
 
     match decls[decl].kind
         .record_decl rec =>
@@ -147,17 +147,17 @@ function declared(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: so
 # pointer from a compile error into undefined behaviour — the one
 # thing "clang type-checks every call" exists to prevent.
 function function_type(@w: writer.Writer, c: state.Checked, names: ctype.Names, name: str, params: table.Params, result: i64)
-    spelled: [str] @ []
+    spelled: [str] @= []
 
     for p in table.params_of(c.types, params)
-        one: str @ "void"
+        one: str @= "void"
         found = ctype.c_type(names, c: c, ty: p)
 
         if !found.is_err()
             one @ found.must()
         spelled @ spelled.push(one)
 
-    list: str @ "void"
+    list: str @= "void"
 
     if spelled.len() > 0
         list @ spelled.join(", ")
@@ -200,7 +200,7 @@ function variant_definition(@w: writer.Writer, c: state.Checked, names: ctype.Na
     cases = cases_of(decls, decl: decl)
     tag = mangle.tag_type(name)
     writer.line(@w, text: "typedef enum " + tag + " {")
-    at: i64 @ 0
+    at: i64 @= 0
 
     for one_case in cases
         writer.line(
@@ -225,7 +225,7 @@ function variant_definition(@w: writer.Writer, c: state.Checked, names: ctype.Na
 
     writer.line(@w, text: "typedef struct " + name + " {")
     writer.line(@w, text: "    " + tag + " tag;")
-    carrying: i64 @ 0
+    carrying: i64 @= 0
 
     for one_case in cases
         if one_case.fields.len() > 0
@@ -271,7 +271,7 @@ test "a record is a struct, and the order puts a dependency first"
     assert order.len() == 2
     assert order[0] == 0
     assert order[1] == 1
-    w: writer.Writer @ writer.new_writer("t")
+    w: writer.Writer @= writer.new_writer("t")
     declared(@w, got.c, got.names, got.s, got.decls, decl: 1)
     text = writer.finish(w)
     assert text == "#line 2 \"t.c\"\ntypedef struct h_t_Outer {\n    h_t_Inner f_kid;\n    HeroStr f_label;\n} h_t_Outer;\n\n"
@@ -280,7 +280,7 @@ test "a variant is enum, payload structs, and a union that skips bare cases"
     got = ready(
         "variant Tok\n    word\n        text: str\n    plus\n\nfunction main()\n    t: Tok = .plus\n    _ = t\n"
     )
-    w: writer.Writer @ writer.new_writer("t")
+    w: writer.Writer @= writer.new_writer("t")
     declared(@w, got.c, got.names, got.s, got.decls, decl: 0)
     text = writer.finish(w)
     assert text == "#line 2 \"t.c\"\ntypedef enum h_t_Tok_tag {\n    h_t_Tok_tag_word = 0,\n    h_t_Tok_tag_plus = 1,\n} h_t_Tok_tag;\n\ntypedef struct h_t_Tok_c_word {\n    HeroStr f_text;\n} h_t_Tok_c_word;\n\ntypedef struct h_t_Tok {\n    h_t_Tok_tag tag;\n    union {\n        h_t_Tok_c_word c_word;\n    } as;\n} h_t_Tok;\n\n"
@@ -289,11 +289,11 @@ test "an all-bare variant has no union, and a group's record no definition"
     got = ready(
         "variant Coin\n    heads\n    tails\n\nextern \"m.h\"\n    record Color\n        r: i64\n\nfunction main()\n    c: Coin = .heads\n    _ = c\n"
     )
-    w: writer.Writer @ writer.new_writer("t")
+    w: writer.Writer @= writer.new_writer("t")
     declared(@w, got.c, got.names, got.s, got.decls, decl: 0)
     bare = writer.finish(w)
     assert !strings.holds(text: bare, needle: "union")
-    quiet: writer.Writer @ writer.new_writer("t")
+    quiet: writer.Writer @= writer.new_writer("t")
     declared(@quiet, got.c, got.names, got.s, got.decls, decl: 1)
     assert writer.finish(quiet) == ""
 
@@ -301,11 +301,11 @@ test "an option carries ok and err, a unit option only err, and (void) guards ar
     got = ready(
         "function pick(ready_flag: bool) -> i64?\n    if ready_flag\n        return ok(1)\n    return fail(code: \"e\", msg: \"m\")\n\nfunction main()\n    print(pick(true).default(0))\n"
     )
-    w: writer.Writer @ writer.new_writer("t")
+    w: writer.Writer @= writer.new_writer("t")
     option(@w, got.c, got.names, name: "h_0opt_e201354", payload: table.int_ty_id(got.c.types))
     with_ok = writer.finish(w)
     assert with_ok == "#line 2 \"t.c\"\ntypedef struct h_0opt_e201354 {\n    int64_t tag;\n    union {\n        int64_t ok;\n        HeroFailure err;\n    } as;\n} h_0opt_e201354;\n\n"
-    bare: writer.Writer @ writer.new_writer("t")
+    bare: writer.Writer @= writer.new_writer("t")
     option(@bare, got.c, got.names, name: "h_t_0opt1", payload: table.unit_ty(got.c.types))
     unit_text = writer.finish(bare)
     assert !strings.holds(text: unit_text, needle: "ok;")

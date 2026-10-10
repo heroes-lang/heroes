@@ -69,24 +69,24 @@ function parse(text: str) -> ParseOutput
 function parse_source(s: source.Source) -> ParseOutput
     files = lexer.lex_files(s)
     lexed = lexer.joined(s, files: files)
-    comments: [token.Span] @ []
+    comments: [token.Span] @= []
 
     for t in lexed.tokens
         if t.kind == .comment
             comments @ comments.push(t.span)
 
-    a: ast.Ast @ ast.new_ast()
-    decls: [ast.Decl] @ []
-    uses: [ast.Use] @ []
-    lexer_said: [diag.Diagnostic] @ []
-    normal: [diag.Diagnostic] @ []
-    controlled: [diag.Diagnostic] @ []
+    a: ast.Ast @= ast.new_ast()
+    decls: [ast.Decl] @= []
+    uses: [ast.Use] @= []
+    lexer_said: [diag.Diagnostic] @= []
+    normal: [diag.Diagnostic] @= []
+    controlled: [diag.Diagnostic] @= []
     bound = source_extent.root_end(s)
-    index: i64 @ 0
+    index: i64 @= 0
 
     for one in files
-        lexed_file: lexer.LexOutput @ one
-        c: cursor.Cursor @ cursor.lexed_cursor(
+        lexed_file: lexer.LexOutput @= one
+        c: cursor.Cursor @= cursor.lexed_cursor(
             tokens: lexed_file.tokens,
             root_end: bound,
             closes: lexed_file.closes,
@@ -121,12 +121,12 @@ function parse_source(s: source.Source) -> ParseOutput
 
     # A brace habit's `{` that never closed is told once, by the parser; and
     # the openers of a line the lexer named open at one place, once.
-    diagnostics: [diag.Diagnostic] @ told_once(
+    diagnostics: [diag.Diagnostic] @= told_once(
         unclosed.withdrawn(lexed: lexer_said, said: normal, text: s.text),
         lexed: lexed,
         text: s.text
     )
-    control: [diag.Diagnostic] @ told_once(
+    control: [diag.Diagnostic] @= told_once(
         unclosed.withdrawn(lexed: lexer_said, said: controlled, text: s.text),
         lexed: lexed,
         text: s.text
@@ -153,35 +153,35 @@ function parse_source(s: source.Source) -> ParseOutput
 # reaches plus the library (§1.11), and a diagnostic must never point
 # inside the last of those.
 function parse_bounded(text: str, root_end: i64) -> ParseOutput
-    lexed: lexer.LexOutput @ lexer.lex_one(text)
-    comments: [token.Span] @ []
+    lexed: lexer.LexOutput @= lexer.lex_one(text)
+    comments: [token.Span] @= []
 
     for t in lexed.tokens
         if t.kind == .comment
             comments @ comments.push(t.span)
 
-    c: cursor.Cursor @ cursor.lexed_cursor(
+    c: cursor.Cursor @= cursor.lexed_cursor(
         tokens: lexed.tokens,
         root_end: root_end,
         closes: lexed.closes,
         swaps: lexed.swaps
     )
     pairing.pair_all(@c, text)
-    a: ast.Ast @ ast.new_ast()
-    decls: [ast.Decl] @ []
-    uses: [ast.Use] @ []
+    a: ast.Ast @= ast.new_ast()
+    decls: [ast.Decl] @= []
+    uses: [ast.Use] @= []
     decl.file(@c, @a, @decls, @uses, text)
 
     # As `parse_source` does, a text the lexer refused a break in is read apart.
     if lexed.breaks.len() > 0
         apart.weigh(@c, lexed: @lexed, apart: lexer.lex_apart(text), text: text)
     said = quote_held.held(which_arm.placed(c, lexed: lexed.diagnostics), lexed: lexed.diagnostics, text: text)
-    diagnostics: [diag.Diagnostic] @ told_once(
+    diagnostics: [diag.Diagnostic] @= told_once(
         unclosed.withdrawn(lexed: lexed.diagnostics, said: said.normal, text: text),
         lexed: lexed,
         text: text
     )
-    control: [diag.Diagnostic] @ told_once(
+    control: [diag.Diagnostic] @= told_once(
         unclosed.withdrawn(lexed: lexed.diagnostics, said: said.control, text: text),
         lexed: lexed,
         text: text
@@ -210,7 +210,7 @@ function told_once(said: [diag.Diagnostic], lexed: lexer.LexOutput, text: str) -
 
 # Which file each diagnostic of a parse points into, in order.
 function files_of(s: source.Source, p: ParseOutput) -> [i64]
-    out: [i64] @ []
+    out: [i64] @= []
 
     for d in p.diagnostics
         out @ out.push(source.file_of(s, d.span.start))
@@ -297,7 +297,7 @@ test "diagnostics come out lexer-first, then parser"
 # `check --apply` and so nothing else would ever run one.
 function every_fix_parses(text: str, code: str) -> bool
     first = parse(text)
-    applied: i64 @ 0
+    applied: i64 @= 0
 
     for d in first.diagnostics
         if d.code != code
@@ -466,7 +466,7 @@ test "an arm opened by a minus set apart from its literal is refused, and its fi
         assert deleted.diagnostics[0].fixes[0].replacement == ""
 
     tabbed = "function main()\n    k = match n\n        -\t1 => 10\n        _ => 20\n"
-    mended: i64 @ 0
+    mended: i64 @= 0
 
     for d in parse(tabbed).diagnostics
         if d.code == code
@@ -571,7 +571,7 @@ test "a pattern takes one literal after its sign, and nothing after the literal"
 
 # The codes of a parse's diagnostics, in order: what the tests below compare.
 function codes(diagnostics: [diag.Diagnostic]) -> [str]
-    out: [str] @ []
+    out: [str] @= []
 
     for d in diagnostics
         out @ out.push(d.code)

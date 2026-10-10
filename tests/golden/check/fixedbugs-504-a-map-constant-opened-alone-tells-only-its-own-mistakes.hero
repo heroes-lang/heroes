@@ -54,7 +54,7 @@ function whitesmiths(x: i64)
 function a_block(x: i64)
     y = x
     {
-        z: i64 @ 2  #~ expected_expression
+        z: i64 @= 2  #~ expected_expression
         print(y + z)
     }
 

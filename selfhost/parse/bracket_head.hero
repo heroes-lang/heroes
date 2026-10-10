@@ -68,9 +68,9 @@ record Around
     carries: [token.Span]
 
 function openers_around(c: cursor.Cursor, text: str, open: i64, own: str, also_unclosed: bool) -> Around
-    names: [str] @ []
-    closers: [str] @ [own]
-    carries: [token.Span] @ []
+    names: [str] @= []
+    closers: [str] @= [own]
+    carries: [token.Span] @= []
 
     for at in enclosing_openers(c, at: open)
         written = cursor.slice_of(text, c.tokens[at].span)
@@ -99,9 +99,9 @@ function holds(c: cursor.Cursor, open: i64, at: i64) -> bool
 # the line walked back by depth to its start. A list ended at a binding below
 # names them with its own, which close where it does (defect 307).
 function enclosing_openers(c: cursor.Cursor, at: i64) -> [i64]
-    out: [i64] @ []
-    depth: i64 @ 0
-    i: i64 @ at - 1
+    out: [i64] @= []
+    depth: i64 @= 0
+    i: i64 @= at - 1
 
     while i >= 0 && !token.is_line_end(c.tokens[i].kind)
         k = c.tokens[i].kind

@@ -51,8 +51,8 @@ record Excerpt
 # stretch of it before the span, which a caret pads past the line where the
 # span starts in the spaces and tabs it drops after its last character.
 function wider(text: str, from: i64, to: i64) -> bool
-    columns: i64 @ 0
-    at: i64 @ from
+    columns: i64 @= 0
+    at: i64 @= from
 
     while at < to && at < text.len()
         ch = bytes.char_at(text, at)
@@ -73,8 +73,8 @@ function wider(text: str, from: i64, to: i64) -> bool
 function window(s: source.Source, d: diag.Diagnostic, start: i64, end: i64, col: i64) -> Excerpt
     text = s.text
     at = d.span.start
-    lo: i64 @ at
-    before: i64 @ 0
+    lo: i64 @= at
+    before: i64 @= 0
 
     while lo > start
         back = char_before(text, at: lo, floor: start)
@@ -88,12 +88,12 @@ function window(s: source.Source, d: diag.Diagnostic, start: i64, end: i64, col:
     # Both marks are paid for, so a window is never wider than `SHOWN`, the
     # spaces and tabs a caret is padded across past the line counted too.
     room = SHOWN - 2
-    limit: i64 @ end
+    limit: i64 @= end
 
     if at > limit
         limit @ at
-    hi: i64 @ lo
-    used: i64 @ 0
+    hi: i64 @= lo
+    used: i64 @= 0
 
     while hi < limit
         ch = bytes.char_at(text, hi)
@@ -113,15 +113,15 @@ function window(s: source.Source, d: diag.Diagnostic, start: i64, end: i64, col:
         used @ used + w
         lo @ back
 
-    stop: i64 @ hi
+    stop: i64 @= hi
 
     if stop > end
         stop @ end
 
     if stop < lo
         stop @ lo
-    shown: str @ text.slice(from: lo, to: stop)
-    padding: [str] @ []
+    shown: str @= text.slice(from: lo, to: stop)
+    padding: [str] @= []
 
     if lo > start
         shown @ CUT + shown
@@ -129,7 +129,7 @@ function window(s: source.Source, d: diag.Diagnostic, start: i64, end: i64, col:
 
     if hi < end
         shown @ shown + CUT
-    p: i64 @ lo
+    p: i64 @= lo
 
     while p < at
         ch = bytes.char_at(text, p)
@@ -142,7 +142,7 @@ function window(s: source.Source, d: diag.Diagnostic, start: i64, end: i64, col:
 
     # The caret stops where the window is cut, and runs as far as the span
     # does where it is not.
-    to: i64 @ d.span.end
+    to: i64 @= d.span.end
 
     if hi < end
         to @ hi
@@ -159,8 +159,8 @@ function underlined(s: source.Source, d: diag.Diagnostic, col: i64, to: i64) -> 
 
     if end_pos.line != source.line_of(s, d.span.start) || end_pos.col <= col
         return 1
-    width: i64 @ 0
-    p: i64 @ d.span.start
+    width: i64 @= 0
+    p: i64 @= d.span.start
 
     while p < d.span.end && p < to
         ch = bytes.char_at(s.text, p)
@@ -174,7 +174,7 @@ function underlined(s: source.Source, d: diag.Diagnostic, col: i64, to: i64) -> 
 # The first byte of the character before the one at `at`, no further back
 # than `floor`: a byte from 0x80 to 0xBF continues a character (spec § 3).
 function char_before(text: str, at: i64, floor: i64) -> i64
-    back: i64 @ at - 1
+    back: i64 @= at - 1
 
     while back > floor && text[back] >= 128 && text[back] < 192
         back @ back - 1
@@ -193,7 +193,7 @@ function wider_line(line: str) -> bool
 function excerpt_of(text: str, start: i64, end: i64) -> Excerpt
     s = source.new_source(name: "t.hero", text: text)
     d = diag.new_diagnostic(code: "x", message: "m", span: token.Span(start: start, end: end))
-    line_end: i64 @ text.len()
+    line_end: i64 @= text.len()
 
     while line_end > 0 && (text[line_end - 1] == '\n' || text[line_end - 1] == ' ')
         line_end @ line_end - 1

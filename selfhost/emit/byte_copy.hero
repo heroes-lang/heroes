@@ -108,7 +108,7 @@ test "a unit's own struct is copied as bytes where the unit defines the copy, an
     assert own_declaration(parsed.decls[2])
     assert !own_struct(c, parsed.decls, ty: table.int_ty_id(c.types))
     assert !own_struct(c, parsed.decls, ty: table.str_ty(c.types))
-    w: writer.Writer @ writer.new_writer("t")
+    w: writer.Writer @= writer.new_writer("t")
     assert copied(w, owned: true, held: false, target: "t1", value: "t2") == "t1 = t2;"
     w.copies_bytes @ true
     assert copied(w, owned: true, held: false, target: "t1", value: "(h_t_P){.f_x = t2}") == "HERO_COPY(t1, ((h_t_P){.f_x = t2}));"

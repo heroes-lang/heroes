@@ -62,12 +62,12 @@ record Lacked
 # link carried is the one it stopped at.
 function reported(message: str, linked: [str]) -> Lacked?
     words = libraries.link_words(linked)
-    best: Lacked? @ fail(code: "none", msg: "the linker reports none of the packages' words missing")
-    longest: i64 @ 0
-    index: i64 @ 0
+    best: Lacked? @= fail(code: "none", msg: "the linker reports none of the packages' words missing")
+    longest: i64 @= 0
+    index: i64 @= 0
 
     while index < words.len()
-        one: Lacked @ Lacked(name: named_library(words[index]), kind: "library", words: [words[index]], found: true)
+        one: Lacked @= Lacked(name: named_library(words[index]), kind: "library", words: [words[index]], found: true)
 
         if words[index] == "-framework" && index + 1 < words.len()
             one @ Lacked(
@@ -117,7 +117,7 @@ function framework_unsupported(message: str) -> bool
 # The first `-framework <name>` the link carried, the one such a linker stops at,
 # not found because the linker does not take the word; an error where none was.
 function first_framework(words: [str]) -> Lacked?
-    index: i64 @ 0
+    index: i64 @= 0
 
     while index < words.len()
         if words[index] == "-framework" && index + 1 < words.len()
@@ -146,10 +146,10 @@ function missing(message: str, s: source.Source, decls: [ast.Decl], build: str, 
 
     if lacked.is_err()
         return none
-    asked: {str: bool} @ {}
+    asked: {str: bool} @= {}
 
     for decl in decls
-        group: ast.Library? @ fail(code: "none", msg: "no library")
+        group: ast.Library? @= fail(code: "none", msg: "no library")
 
         match decl.kind
             .function_decl fd          => group @ fd.value.library
@@ -182,7 +182,7 @@ function answers(package: str, build: str, lacked: Lacked) -> bool
     if flags.is_err()
         return false
     words = libraries.link_words(flags.must())
-    at: i64 @ 0
+    at: i64 @= 0
 
     while at + lacked.words.len() <= words.len()
         if words.slice(from: at, to: at + lacked.words.len()) == lacked.words
@@ -203,7 +203,7 @@ function told(package: str, lacked: Lacked, span: token.Span) -> diag.Diagnostic
     # it is not told as one, and `link` is no way out, a framework being no
     # library name.
     if !lacked.found
-        unsupported: diag.Diagnostic @ diag.new_diagnostic(
+        unsupported: diag.Diagnostic @= diag.new_diagnostic(
             code: "ffi_missing_library",
             message: "the package `" + pkg + "` answered with `" + answered + "`, and this machine's linker does not take a framework — `-framework` is macOS's",
             span: span
@@ -212,12 +212,12 @@ function told(package: str, lacked: Lacked, span: token.Span) -> diag.Diagnostic
             "a `.pc` answering `-framework` suits macOS, where a framework bundles a library and its headers; on this machine the package's answer does not fit — use one built for this platform, or name the library it wraps directly with `link`"
         )
         return unsupported
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "ffi_missing_library",
         message: "this machine has no " + lacked.kind + " called `" + shell_split.shown(lacked.name, keep_lines: false) + "` — the package `" + pkg + "` answered with `" + answered + "`, and the linker looked",
         span: span
     )
-    way: str @ ", or name the library directly with `link` and pass `--library <dir>`"
+    way: str @= ", or name the library directly with `link` and pass `--library <dir>`"
 
     if lacked.kind == "framework"
         way @ ""

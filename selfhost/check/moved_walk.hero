@@ -41,7 +41,7 @@ record Walk
 function run(a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], body: ast.Block, by_start: {i64: i64}) -> [diag.Diagnostic]
     frames: [Frame] = []
     found: [diag.Diagnostic] = []
-    w: Walk @ Walk(flow: flow.start(), frames: frames, loud: true, by_start: by_start, found: found)
+    w: Walk @= Walk(flow: flow.start(), frames: frames, loud: true, by_start: by_start, found: found)
     block(@w, a, r, s, decls, body: body)
     return w.found
 
@@ -302,7 +302,7 @@ function crossed(@w: Walk, a: ast.Ast, r: resolved.Resolved, s: source.Source, d
 function branches(@w: Walk, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], arms: [ast.Branch], otherwise: ast.Block?)
     base = flow.split(w.flow)
     w.flow @ base
-    out: flow.Flow @ flow.unreachable()
+    out: flow.Flow @= flow.unreachable()
 
     for one in arms
         expr(@w, a, r, s, decls, id: one.cond)
@@ -318,7 +318,7 @@ function branches(@w: Walk, a: ast.Ast, r: resolved.Resolved, s: source.Source, 
 function matched(@w: Walk, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], scrutinee: i64, arms: [ast.Arm])
     expr(@w, a, r, s, decls, id: scrutinee)
     base = flow.split(w.flow)
-    out: flow.Flow @ flow.unreachable()
+    out: flow.Flow @= flow.unreachable()
 
     for arm in arms
         w.flow @ base

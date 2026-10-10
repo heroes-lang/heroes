@@ -51,9 +51,9 @@ function fill(@g: Grid, @first: str, @second: str, @third: str, n: i64)
     g.rows[0].cells[1] @ score(.c)
 
 function main()
-    g: Grid @ Grid(rows: [Row(cells: [0, 0])])
-    x: str @ "x"
-    y: str @ "y"
-    z: str @ "z"
+    g: Grid @= Grid(rows: [Row(cells: [0, 0])])
+    x: str @= "x"
+    y: str @= "y"
+    z: str @= "z"
     fill(@g, first: @x, second: @y, third: @z, n: 4)
     print(x, y, z, g.rows[0].cells[0], g.rows[0].cells[1])

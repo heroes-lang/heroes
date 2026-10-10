@@ -45,12 +45,12 @@ function reached_header(s: source.Source, decls: [ast.Decl], line: str, stderr: 
 
     # A stack clang printed begins with the file it was asked to compile,
     # which is this compiler's C and never a group's header.
-    first: i64 @ 0
+    first: i64 @= 0
 
     if steps.len() > 1
         first @ 1
-    at: i64 @ steps.len() - 1
-    owner: Owner? @ fail(code: "none", msg: "no group's header is in the stack")
+    at: i64 @= steps.len() - 1
+    owner: Owner? @= fail(code: "none", msg: "no group's header is in the stack")
 
     while at >= first && owner.is_err()
         owner @ owner_of(s, decls, path: steps[at].path)
@@ -81,26 +81,26 @@ function owner_of(s: source.Source, decls: [ast.Decl], path: str) -> Owner?
 # file and line, in a note.
 function reached(steps: [clang_place.Place], at: i64, owner: Owner, missing: str, angled: bool) -> diag.Diagnostic
     directory = clang_place.found_in(path: steps[at].path, spelled: owner.header)
-    names: [str] @ [owner.header]
-    index: i64 @ at + 1
+    names: [str] @= [owner.header]
+    index: i64 @= at + 1
 
     while index < steps.len()
         names @ names.push(clang_place.shown(path: steps[index].path, directory: directory))
         index @ index + 1
 
     head = "`" + missing + "` is not on this machine's include path, and `" + owner.header + "`, the header this group names, includes it"
-    message: str @ head + " at line " + steps[at].row.to_str()
+    message: str @= head + " at line " + steps[at].row.to_str()
 
     if names.len() > 1
         message @ head + " through " + listed(names.slice(from: 1, to: names.len()))
-    d: diag.Diagnostic @ diag.new_diagnostic(code: "ffi_missing_header", message: message, span: owner.span)
+    d: diag.Diagnostic @= diag.new_diagnostic(code: "ffi_missing_header", message: message, span: owner.span)
 
     if names.len() > 1
-        hops: [str] @ []
-        hop: i64 @ 0
+        hops: [str] @= []
+        hop: i64 @= 0
 
         while hop < names.len()
-            next: str @ missing
+            next: str @= missing
 
             if hop + 1 < names.len()
                 next @ names[hop + 1]
@@ -125,7 +125,7 @@ function reached(steps: [clang_place.Place], at: i64, owner: Owner, missing: str
 # `a`, `a` and `b`, `a`, `b` and `c`: names in backticks, as a sentence lists
 # them.
 function listed(names: [str]) -> str
-    quoted: [str] @ []
+    quoted: [str] @= []
 
     for one in names
         quoted @ quoted.push("`" + one + "`")

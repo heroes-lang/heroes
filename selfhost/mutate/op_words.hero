@@ -27,7 +27,7 @@ function function_word(op: str, word: str, types_too: bool, p: model.Program, @o
 
             if t.kind != "kw_function"
                 continue
-            context: str @ ""
+            context: str @= ""
 
             if i == 0 && (s.kind == "top-function" || s.kind == "member-function")
                 context @ s.kind
@@ -42,7 +42,7 @@ function let_word(p: model.Program, @out: [mutant.Mutant])
         if s.kind != "bind" || s.toks[0].kind != "ident"
             continue
         t = s.toks[0]
-        context: str @ "bind"
+        context: str @= "bind"
 
         if t.text == "_"
             context @ "discard"
@@ -56,7 +56,7 @@ function var_word(p: model.Program, @out: [mutant.Mutant])
     for s in p.stmts
         if s.kind != "declare"
             continue
-        context: str @ "declare"
+        context: str @= "declare"
 
         if s.head
             context @ "bound-head"
@@ -96,7 +96,7 @@ function case_word(p: model.Program, @out: [mutant.Mutant])
     for s in p.stmts
         if s.kind != "arm"
             continue
-        context: str @ "arm"
+        context: str @= "arm"
 
         if s.head
             context @ "arm-block"

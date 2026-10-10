@@ -38,7 +38,7 @@ function param_binding(ty: i64, mutable: bool) -> Binding
 function bind_binding(ty: i64?, value: i64) -> Binding
     return Binding(kind: .bind, mutable: false, ty: ty, value: ok(value), symbol: no_symbol())
 
-# `v: i64 @ 0` — the type is mandatory, which is what makes the third line
+# `v: i64 @= 0` — the type is mandatory, which is what makes the third line
 # shape distinguishable from a mutation (§4.4); `symbol` is that `@`.
 function cell_binding(ty: i64, value: i64, symbol: token.Span) -> Binding
     return Binding(kind: .cell, mutable: true, ty: ok(ty), value: ok(value), symbol: symbol)

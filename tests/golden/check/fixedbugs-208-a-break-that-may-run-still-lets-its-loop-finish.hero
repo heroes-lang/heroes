@@ -15,7 +15,7 @@ function a_live_break_then_a_dead_one(n: i64) -> i64  #~ missing_return
 
 # A `break` that may run elsewhere in the loop.
 function a_live_break_beside_a_dead_one(n: i64, a: bool) -> i64  #~ missing_return
-    m: i64 @ n
+    m: i64 @= n
 
     while true
         if a
@@ -30,7 +30,7 @@ function a_live_break_beside_a_dead_one(n: i64, a: bool) -> i64  #~ missing_retu
 # returns, a statement stays legal (R4 refuses only what follows a jump
 # word), so a `break` there is the loop's own.
 function a_break_after_exit(n: i64) -> i64  #~ missing_return
-    m: i64 @ n
+    m: i64 @= n
 
     while true
         if m > 3
@@ -39,7 +39,7 @@ function a_break_after_exit(n: i64) -> i64  #~ missing_return
         m @ m + 1
 
 function a_break_after_assert_false(n: i64) -> i64  #~ missing_return
-    m: i64 @ n
+    m: i64 @= n
 
     while true
         if m > 3
@@ -48,7 +48,7 @@ function a_break_after_assert_false(n: i64) -> i64  #~ missing_return
         m @ m + 1
 
 function a_break_after_an_if_that_returns(n: i64) -> i64  #~ missing_return
-    m: i64 @ n
+    m: i64 @= n
 
     while true
         if m > 3
@@ -62,7 +62,7 @@ function a_break_after_an_if_that_returns(n: i64) -> i64  #~ missing_return
 # A dead `break` of a loop inside is that loop's, and so is one of a `for`:
 # the outer loop has none, ends its path, and only the refusal is told.
 function a_dead_break_of_an_inner_loop(n: i64) -> i64
-    m: i64 @ n
+    m: i64 @= n
 
     while true
         while true
@@ -72,7 +72,7 @@ function a_dead_break_of_an_inner_loop(n: i64) -> i64
             m @ m + 1
 
 function a_dead_break_of_a_for(n: i64) -> i64
-    m: i64 @ n
+    m: i64 @= n
 
     while true
         for i in [1, 2]

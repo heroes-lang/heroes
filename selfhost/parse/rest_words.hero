@@ -22,9 +22,9 @@ record Split
 # anywhere else they are refused and dropped. Asked of every call, so a
 # list without them is handed back as it came, and the test is a `bool`.
 function split(@c: cursor.Cursor, @a: ast.Ast, text: str, given: [ast.Arg]) -> Split
-    rest: i64 @ -1
-    found: bool @ false
-    k: i64 @ 0
+    rest: i64 @= -1
+    found: bool @= false
+    k: i64 @= 0
 
     for arg in given
         if is_words(a, text, arg: arg)
@@ -43,7 +43,7 @@ function split(@c: cursor.Cursor, @a: ast.Ast, text: str, given: [ast.Arg]) -> S
 
     if !found
         return Split(args: given, rest: -1)
-    kept: [ast.Arg] @ []
+    kept: [ast.Arg] @= []
 
     for arg in given
         if !is_words(a, text, arg: arg)

@@ -26,7 +26,7 @@ constant ENDS_ON_A_FOR: i64
 
 # The block's message stands where the block begins.
 constant AFTER_TWO_LINES: i64
-    x: i64 @ 1
+    x: i64 @= 1
     x @ x + 1
     assert x == 2  #~ no_value
 

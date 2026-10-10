@@ -10,8 +10,8 @@ extern "string.h"
     function strlen(s: cstr lent) -> u64
 
 function main()
-    at: i64 @ 0
-    total: u64 @ 0
+    at: i64 @= 0
+    total: u64 @= 0
 
     while at < 5
         total @ total + strlen(s: ("row-" + at.to_str()).cstr())

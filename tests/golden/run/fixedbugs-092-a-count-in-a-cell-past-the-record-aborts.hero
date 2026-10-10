@@ -12,8 +12,8 @@ extern "fixedbugs-092-records.h"
     function fill_len(@buf: One counted_by n, @n: u32) -> i64
 
 function main()
-    o: One @ One(a: 0)
-    n: u32 @ 4096
+    o: One @= One(a: 0)
+    n: u32 @= 4096
     print(o.a)
     print(fill_len(@o, @n))
     print(o.a)

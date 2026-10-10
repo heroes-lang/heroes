@@ -20,7 +20,7 @@ constant CONTINUES: i64
     continue  #~ jump_outside_loop
 
 constant LINES_THEN_BREAK: i64
-    x: i64 @ 1
+    x: i64 @= 1
     x @ x + 1
     break  #~ jump_outside_loop
 

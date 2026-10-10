@@ -14,7 +14,7 @@ function at_run_time(k: u64) -> u64
     return k * 4
 
 function main()
-    h: Held @ Held(buf: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], after: 7)
+    h: Held @= Held(buf: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], after: 7)
     print(h.after)
     print(fill_ints(a: h.buf.ptr(), n: at_run_time(k: 4)))
     print(h.after)

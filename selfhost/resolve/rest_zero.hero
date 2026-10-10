@@ -78,7 +78,7 @@ function at_call(@r: state.Resolver, a: ast.Ast, s: source.Source, decls: [ast.D
 # the walk never reads their `zero` as a name. A list without them is handed
 # back as it came, since every case built in the program passes here.
 function apart(@r: state.Resolver, a: ast.Ast, s: source.Source, name: token.Span, given: [ast.Arg]) -> [ast.Arg]
-    found: bool @ false
+    found: bool @= false
 
     for arg in given
         if rest_words.is_words(a, s.text, arg: arg)
@@ -86,7 +86,7 @@ function apart(@r: state.Resolver, a: ast.Ast, s: source.Source, name: token.Spa
 
     if !found
         return given
-    kept: [ast.Arg] @ []
+    kept: [ast.Arg] @= []
 
     for arg in given
         if rest_words.is_words(a, s.text, arg: arg)
@@ -125,7 +125,7 @@ function ended(a: ast.Ast, uses: [resolved.Ref], at: i64) -> Ended?
                 return ok(Ended(words: words_span(a, words: a.rests[cl.rest]), callee: uses[cl.callee]))
         .method m =>
             if m.rest >= 0
-                callee: resolved.Ref @ .unresolved
+                callee: resolved.Ref @= .unresolved
 
                 if uses[m.receiver] == .module
                     callee @ uses[at]
@@ -177,7 +177,7 @@ function has_rest_field(s: source.Source, fields: [ast.Field]) -> bool
 # whose scope holds the words says they are not its read, and a certain
 # rename to `_` becomes a guess, the words perhaps meant to read it.
 function unused_notes(@r: state.Resolver, s: source.Source)
-    amended: [diag.Diagnostic] @ []
+    amended: [diag.Diagnostic] @= []
 
     for d in r.out.diagnostics
         amended @ amended.push(noted(r, s, d))
@@ -195,11 +195,11 @@ function noted(r: state.Resolver, s: source.Source, d: diag.Diagnostic) -> diag.
 
     if words.is_err()
         return d
-    out: diag.Diagnostic @ d
+    out: diag.Diagnostic @= d
     out.notes @ out.notes.push(
         "`rest: zero` at " + source.elsewhere(s, here: d.span.start, there: words.must().start) + " is not a read of this binding: the words end a construction of a group's `record`, every field it does not name zero, and read no name"
     )
-    fixes: [diag.Fix] @ []
+    fixes: [diag.Fix] @= []
 
     for f in d.fixes
         fixes @ fixes.push(diag.Fix(title: f.title, replacement: f.replacement, span: f.span, certainty: .guess))
@@ -210,7 +210,7 @@ function noted(r: state.Resolver, s: source.Source, d: diag.Diagnostic) -> diag.
 ## What each misuse is told
 
 function outside_a_group(name: str, has_rest: bool, span: token.Span) -> diag.Diagnostic
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "rest_outside_a_group",
         message: "`" + name + "` is a Heroes `record`, and a construction of one names every field, always (§4.9): `rest: zero` ends only a construction of a group's `record`, whose layout is the header's",
         span: span
@@ -225,7 +225,7 @@ function outside_a_group(name: str, has_rest: bool, span: token.Span) -> diag.Di
     return d
 
 function a_case(name: str, span: token.Span) -> diag.Diagnostic
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "rest_outside_a_group",
         message: "`" + name + "` builds a case of a Heroes `variant`, and a construction of one names every field, always (§4.9): `rest: zero` ends only a construction of a group's `record`, whose layout is the header's",
         span: span
@@ -236,7 +236,7 @@ function a_case(name: str, span: token.Span) -> diag.Diagnostic
     return d
 
 function a_field(name: str, span: token.Span) -> diag.Diagnostic
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "rest_is_a_field",
         message: "`" + name + "` has a field called `rest`, so `rest: zero` at the end of its construction would read as that field: the words cannot end this construction",
         span: span
@@ -247,7 +247,7 @@ function a_field(name: str, span: token.Span) -> diag.Diagnostic
     return d
 
 function not_a_construction(span: token.Span) -> diag.Diagnostic
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "rest_not_a_construction",
         message: "`rest: zero` ends a construction of a group's `record`, every field it does not name zero, and this call builds none: the words are never an argument",
         span: span

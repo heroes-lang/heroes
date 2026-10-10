@@ -10,7 +10,7 @@ function wipe(@x: cstr)
     x @ nullptr
 
 function main()
-    c: cstr @ "abc".lease()
+    c: cstr @= "abc".lease()
     c @ nullptr  #~ lease_written
     wipe(@c)  #~ lease_written
     print(strlen(s: c))

@@ -19,6 +19,6 @@ extern "fixedbugs-411-writes.h"
 
 function main()
     s = "a".repeat(1)
-    x: cstr @ s.lease()
+    x: cstr @= s.lease()
     print(w_uchar(p: x))
     end_lease(@x)

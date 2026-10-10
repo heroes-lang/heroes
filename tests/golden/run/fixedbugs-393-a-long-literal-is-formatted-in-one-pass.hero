@@ -408,14 +408,14 @@ function main()
         9 +  # operand 62
         64
     )
-    weighted: i64 @ 0
-    at: i64 @ 1
+    weighted: i64 @= 0
+    at: i64 @= 1
 
     for x in xs
         weighted @ weighted + x * at
         at @ at + 1
 
-    keyed: i64 @ 0
+    keyed: i64 @= 0
 
     for k in range(from: 0, to: 64)
         keyed @ keyed + m[f"k{k}"].must() * (k + 1)

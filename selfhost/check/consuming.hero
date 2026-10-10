@@ -54,11 +54,11 @@ record Consumed
 # that is not a function, and empty for a function with no marked parameter,
 # which is almost all of them.
 function consuming_positions(decl: ast.Decl) -> [Consumed]
-    out: [Consumed] @ []
+    out: [Consumed] @= []
 
     match decl.kind
         .function_decl fd =>
-            at: i64 @ 0
+            at: i64 @= 0
 
             for p in fd.value.params
                 # `transfers` ends the caller's obligation as `consumes` does
@@ -132,11 +132,11 @@ function refuse_borrowed(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s:
 # said "ends" of both. The repair is the same either way, which is why one code
 # carries both.
 function refusal(borrowed: str, callee: str, transfers: bool, span: token.Span) -> diag.Diagnostic
-    does: str @ "ends the life of what it is given"
+    does: str @= "ends the life of what it is given"
 
     if transfers
         does @ "hands the life of what it is given into another value that will end it"
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "consumed_borrowed_handle",
         message: "`" + callee + "` " + does + ", and `" + borrowed + "` was borrowed — this function promised not to change it",
         span: span

@@ -42,18 +42,18 @@ record Line
 # statement broken at a thousand line ends is neither walked nor copied a
 # thousand times.
 function lines_of(tokens: [token.Token], lexed: lexer.LexOutput) -> [Line]
-    out: [Line] @ []
-    at: i64 @ 0
+    out: [Line] @= []
+    at: i64 @= 0
 
     while at < lexed.breaks.len()
         first = lexed.breaks[at].after
         from = line_start(tokens, at: first)
         end = line_end(tokens, from: first)
-        belows: [i64] @ []
-        owns: [i64] @ []
-        own_ends: [i64] @ []
-        causes: [token.Span] @ []
-        statements: [i64] @ []
+        belows: [i64] @= []
+        owns: [i64] @= []
+        own_ends: [i64] @= []
+        causes: [token.Span] @= []
+        statements: [i64] @= []
 
         while at < lexed.breaks.len() && lexed.breaks[at].after < end
             b = lexed.breaks[at]
@@ -84,7 +84,7 @@ function lines_of(tokens: [token.Token], lexed: lexer.LexOutput) -> [Line]
     return out
 
 function significant_before(tokens: [token.Token], at: i64) -> i64
-    i: i64 @ at - 1
+    i: i64 @= at - 1
 
     while i > 0 && tokens[i].kind == .comment
         i @ i - 1
@@ -94,8 +94,8 @@ function significant_before(tokens: [token.Token], at: i64) -> i64
 # Where the line holding the token at `at` begins: after the last line end
 # outside brackets before it, past any comment.
 function line_start(tokens: [token.Token], at: i64) -> i64
-    depth: i64 @ 0
-    i: i64 @ at - 1
+    depth: i64 @= 0
+    i: i64 @= at - 1
 
     while i >= 0 && !(depth == 0 && token.is_line_end(tokens[i].kind))
         k = tokens[i].kind
@@ -116,8 +116,8 @@ function line_start(tokens: [token.Token], at: i64) -> i64
 # The index of the line end outside brackets that ends the line holding the
 # token at `from`, or of the stream's `eof`.
 function line_end(tokens: [token.Token], from: i64) -> i64
-    depth: i64 @ 0
-    i: i64 @ from
+    depth: i64 @= 0
+    i: i64 @= from
 
     while i < tokens.len() - 1 && !(depth == 0 && token.is_line_end(tokens[i].kind))
         k = tokens[i].kind
@@ -131,7 +131,7 @@ function line_end(tokens: [token.Token], from: i64) -> i64
     return i
 
 function word_after(tokens: [token.Token], at: i64) -> i64
-    i: i64 @ at
+    i: i64 @= at
 
     while i < tokens.len() - 1 && (token.is_line_end(tokens[i].kind) || tokens[i].kind == .comment)
         i @ i + 1

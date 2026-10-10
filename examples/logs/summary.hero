@@ -21,7 +21,7 @@ constant ERR_NONE_AT_LEVEL: str
     "none_at_level"
 
 function tally(names: [str]) -> {str: i64}
-    counts: {str: i64} @ {}
+    counts: {str: i64} @= {}
 
     for name in names
         counts[name] @ counts[name].default(0) + 1
@@ -29,7 +29,7 @@ function tally(names: [str]) -> {str: i64}
     return counts
 
 function levels_of(entries: [entry.Entry]) -> [str]
-    out: [str] @ []
+    out: [str] @= []
 
     for one in entries
         out @ out.push(one.level)
@@ -37,7 +37,7 @@ function levels_of(entries: [entry.Entry]) -> [str]
     return out
 
 function sources_of(entries: [entry.Entry]) -> [str]
-    out: [str] @ []
+    out: [str] @= []
 
     for one in entries
         out @ out.push(one.source)
@@ -45,7 +45,7 @@ function sources_of(entries: [entry.Entry]) -> [str]
     return out
 
 function hours_of(entries: [entry.Entry]) -> [str]
-    out: [str] @ []
+    out: [str] @= []
 
     for one in entries
         out @ out.push(entry.hour_of(one))
@@ -55,11 +55,11 @@ function hours_of(entries: [entry.Entry]) -> [str]
 # The keys, most first. A selection over `sort(keys(m))`, so the starting order
 # is already the tie-break and the loop only has to find the largest count.
 function ranked(counts: {str: i64}) -> [str]
-    left: [str] @ sort(keys(counts))
-    out: [str] @ []
+    left: [str] @= sort(keys(counts))
+    out: [str] @= []
 
     while left.len() > 0
-        best: i64 @ 0
+        best: i64 @= 0
 
         for i in range(from: 1, to: left.len())
             if counts[left[i]].default(0) > counts[left[best]].default(0)
@@ -71,7 +71,7 @@ function ranked(counts: {str: i64}) -> [str]
     return out
 
 function without(names: [str], at: i64) -> [str]
-    out: [str] @ []
+    out: [str] @= []
 
     for i in range(from: 0, to: names.len())
         if i != at
@@ -81,7 +81,7 @@ function without(names: [str], at: i64) -> [str]
 
 # `name n` per line, in ranked order — the shape every section of the report has.
 function rows(counts: {str: i64}) -> [str]
-    out: [str] @ []
+    out: [str] @= []
 
     for name in ranked(counts)
         out @ out.push("  " + name + " " + counts[name].default(0).to_str())

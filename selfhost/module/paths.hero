@@ -44,8 +44,8 @@ use parse
 # the parser later, once.
 function uses_of(text: str) -> [str]
     out = lexer.lex_one(text)
-    found: [str] @ []
-    at: i64 @ 0
+    found: [str] @= []
+    at: i64 @= 0
 
     while at < out.tokens.len()
         if out.tokens[at].kind == .kw_use
@@ -68,8 +68,8 @@ function path_at(tokens: [token.Token], text: str, at: i64) -> str?
     if at >= tokens.len() || tokens[at].kind != .ident
         return fail(code: "no_path", msg: "a use line whose name is missing or not a name")
     start = tokens[at].span.start
-    end: i64 @ tokens[at].span.end
-    probe: i64 @ at + 1
+    end: i64 @= tokens[at].span.end
+    probe: i64 @= at + 1
 
     while probe + 1 < tokens.len()
         slash = tokens[probe]
@@ -137,7 +137,7 @@ test "a use line's path is read whole, and adjacency is what makes it one"
 # other side of the agreement test below.
 function parse_of(text: str) -> [str]
     parsed = parse.parse(text)
-    out: [str] @ []
+    out: [str] @= []
 
     for u in parsed.uses
         out @ out.push(text.slice(from: u.name.start, to: u.name.end))
@@ -162,7 +162,7 @@ test "the two readers of one adjacency rule agree, and this test is why"
         scanned = uses_of(text)
         parsed = parse_of(text)
         assert scanned.len() == parsed.len()
-        at: i64 @ 0
+        at: i64 @= 0
 
         while at < scanned.len()
             assert scanned[at] == parsed[at]

@@ -25,9 +25,9 @@ extern "fixedbugs-092-counted-by.h"
     function no_sibling(@buf: One counted_by m, n: u64) -> i64  #~ counted_by_shape
 
 function main()
-    o: One @ One(a: 0)
-    k: u32 @ 4
-    x: f64 @ 4.0
+    o: One @= One(a: 0)
+    k: u32 @= 4
+    x: f64 @= 4.0
     print(by_value_count(@o, n: 4))
     print(cell_count(@o, @k))
     print(not_lent(buf: o, n: 4))

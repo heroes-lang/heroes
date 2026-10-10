@@ -141,7 +141,7 @@ function known(id: str) -> bool
 
 # The mutants of operator `id` in one program, in the Python's order.
 function generate(id: str, p: model.Program) -> [mutant.Mutant]?
-    out: [mutant.Mutant] @ []
+    out: [mutant.Mutant] @= []
 
     if op_layout.run(id, p: p, @out)? || op_words.run(id, p: p, @out)? || op_sigs.run(id, p: p, @out)? || op_flow.run(id, p: p, @out)?
         return ok(out)
@@ -157,7 +157,7 @@ function generate(id: str, p: model.Program) -> [mutant.Mutant]?
 # row has a generator: an id `generate` refuses is a row with no habit.
 test "the table holds the Python's 96 operators, each with a generator"
     assert IDS.len() == 96
-    seen: {str: bool} @ {}
+    seen: {str: bool} @= {}
 
     for id in IDS
         assert seen[id].is_err()

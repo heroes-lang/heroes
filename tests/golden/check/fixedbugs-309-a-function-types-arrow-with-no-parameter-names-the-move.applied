@@ -33,7 +33,7 @@ function as_a_result() -> (function( -> i64))  #~ expected_function_type_params_
     print(1)
 
 function as_a_binding(d: (function() -> i64))
-    g: (function( -> i64)) @ d  #~ expected_function_type_params_close
+    g: (function( -> i64)) @= d  #~ expected_function_type_params_close
     print(1)
 
 record Holder

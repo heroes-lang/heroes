@@ -23,7 +23,7 @@ record Point
     y: i64
 
 function total(xs: [i64]) -> i64
-    sum: i64 @ 0
+    sum: i64 @= 0
 
     for n in xs
         sum @ sum + n

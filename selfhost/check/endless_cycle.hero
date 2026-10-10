@@ -55,9 +55,9 @@ record Settled
 # alone (`check/endless.hero`), the calls of the function at `i` being
 # `edges[starts[i] .. starts[i + 1]]`.
 function every_cycle(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], asked: [bool], starts: [i64], edges: [i64])
-    members: [bool] @ []
-    minus: [i64] @ []
-    zero: [i64] @ []
+    members: [bool] @= []
+    minus: [i64] @= []
+    zero: [i64] @= []
 
     for _ in decls
         members @ members.push(false)
@@ -66,7 +66,7 @@ function every_cycle(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: sou
 
     parts = endless_parts.components(asked, starts: starts, edges: edges)
     none: [i64] = []
-    set: Settled @ Settled(
+    set: Settled @= Settled(
         members: members,
         witness: minus,
         reached: minus,
@@ -77,26 +77,26 @@ function every_cycle(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: sou
 
     # Who waits on whom: for each function, the walks that counted it a
     # member, a list threaded through `waiting` and `after`.
-    wait: Waits @ Waits(first: minus, who: none, after: none, queued: members)
+    wait: Waits @= Waits(first: minus, who: none, after: none, queued: members)
 
     # Whether a member's last walk named a function that may end the program:
     # asked of `check/may_end.hero`, a reading of the whole program, only of
     # the members still standing once the walks settle, since a way out
     # found later only takes members away, as an escape does.
-    saw: [bool] @ members
-    ends: [bool] @ []
-    from: i64 @ 0
+    saw: [bool] @= members
+    ends: [bool] @= []
+    from: i64 @= 0
 
     for to in parts.ends
         if to - from >= 2 || calls_a_member(set.members, starts: starts, edges: edges, at: parts.nodes[from])
-            queue: [i64] @ parts.nodes.slice(from: from, to: to)
+            queue: [i64] @= parts.nodes.slice(from: from, to: to)
 
             for v in queue
                 set.members[v] @ true
                 wait.queued[v] @ true
 
-            next: i64 @ 0
-            settling: bool @ true
+            next: i64 @= 0
+            settling: bool @= true
 
             while settling
                 while next < queue.len()
@@ -119,7 +119,7 @@ function every_cycle(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: sou
                             leave_set(@set.members, @wait, @queue, at: v)
 
                 settling @ false
-                k: i64 @ from
+                k: i64 @= from
 
                 while k < to
                     v = parts.nodes[k]
@@ -151,7 +151,7 @@ record Waits
 # counted it one is walked again.
 function leave_set(@members: [bool], @wait: Waits, @queue: [i64], at: i64)
     members[at] @ false
-    p: i64 @ wait.first[at]
+    p: i64 @= wait.first[at]
 
     while p >= 0
         y = wait.who[p]
@@ -178,7 +178,7 @@ function settle(@set: Settled, w: self_walk.Walk, at: i64)
 # Whether the function at `at` calls a member: a part of one function that
 # calls none walks as it walked alone, and is not walked again.
 function calls_a_member(members: [bool], starts: [i64], edges: [i64], at: i64) -> bool
-    e: i64 @ starts[at]
+    e: i64 @= starts[at]
 
     while e < starts[at + 1]
         if members[edges[e]]
@@ -190,27 +190,27 @@ function calls_a_member(members: [bool], starts: [i64], edges: [i64], at: i64) -
 # From each member not yet reached, its witnesses followed to a cycle; the
 # cycle and the members its members call first, told once.
 function tell(@c: state.Checker, a: ast.Ast, s: source.Source, decls: [ast.Decl], set: Settled)
-    stamp: [i64] @ []
-    told: [bool] @ []
+    stamp: [i64] @= []
+    told: [bool] @= []
 
     for _ in decls
         stamp @ stamp.push(-1)
         told @ told.push(false)
 
-    i: i64 @ 0
+    i: i64 @= 0
 
     while i < decls.len()
         if set.members[i] && stamp[i] < 0
-            v: i64 @ i
+            v: i64 @= i
 
             while v >= 0 && set.members[v] && stamp[v] < 0
                 stamp[v] @ i
                 v @ set.reached[v]
 
             if v >= 0 && set.members[v] && stamp[v] == i && !told[v]
-                group: [i64] @ [v]
+                group: [i64] @= [v]
                 told[v] @ true
-                g: i64 @ 0
+                g: i64 @= 0
 
                 while g < group.len()
                     for t in targets(set, at: group[g])
@@ -233,9 +233,9 @@ function tell(@c: state.Checker, a: ast.Ast, s: source.Source, decls: [ast.Decl]
 # says so rather than claim they call each other).
 function mutual(set: Settled, group: [i64], to: i64) -> bool
     for from in group
-        seen: [i64] @ [from]
-        k: i64 @ 0
-        found: bool @ from == to
+        seen: [i64] @= [from]
+        k: i64 @= 0
+        found: bool @= from == to
 
         while k < seen.len() && !found
             for t in targets(set, at: seen[k])
@@ -262,8 +262,8 @@ function among(seen: [i64], t: i64) -> bool
 # The members the paths through the member at `at` call first, by
 # declaration, each once.
 function targets(set: Settled, at: i64) -> [i64]
-    found: [i64] @ []
-    k: i64 @ set.first_from[at]
+    found: [i64] @= []
+    k: i64 @= set.first_from[at]
 
     while k < set.first_to[at]
         t = set.firsts[k]
@@ -273,7 +273,7 @@ function targets(set: Settled, at: i64) -> [i64]
         k @ k + 1
 
     sorted = found.sort()
-    once: [i64] @ []
+    once: [i64] @= []
 
     for t in sorted
         if once.len() == 0 || once[once.len() - 1] != t
@@ -306,12 +306,12 @@ function walk_one(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source
 # named with every member its paths call first, and each other one's first
 # call and where.
 function refusal(a: ast.Ast, s: source.Source, decls: [ast.Decl], group: [i64], set: Settled, each_other: bool) -> diag.Diagnostic
-    names: [str] @ []
-    steps: [str] @ []
+    names: [str] @= []
+    steps: [str] @= []
 
     for at in group
         names @ names.push(named(s, decls, at: at))
-        called: [str] @ []
+        called: [str] @= []
 
         for t in targets(set, at: at)
             called @ called.push(named(s, decls, at: t))
@@ -328,12 +328,12 @@ function refusal(a: ast.Ast, s: source.Source, decls: [ast.Decl], group: [i64], 
         " call each other for ever: "
     else
         " never return: "
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "endless_recursion",
         message: spoken(names, last: " and ") + how + spoken(steps, last: " and ") + ", before it can return, so no call to " + either + " returns",
         span: span
     )
-    i: i64 @ 1
+    i: i64 @= 1
 
     while i < group.len()
         there = a.exprs[set.witness[group[i]]].span

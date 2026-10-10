@@ -59,14 +59,14 @@ record Program
 
 # The model of `path`'s `text`, from its tokens.
 function program(path: str, text: str, toks: [tokens.Tok]) -> Program
-    lines: [Line] @ []
-    no: i64 @ 1
+    lines: [Line] @= []
+    no: i64 @= 1
 
     for one in split_lines(text)
         lines @ lines.push(Line(no: no, text: one, toks: [], comment: [], stmt: -1))
         no @ no + 1
 
-    p: Program @ Program(
+    p: Program @= Program(
         path: path,
         text: text,
         trailing_newline: ends_newline(text),
@@ -82,8 +82,8 @@ function program(path: str, text: str, toks: [tokens.Tok]) -> Program
 # A text's lines as the Python split them: at each line feed, the final
 # one's empty remainder dropped where the text ends with one.
 function split_lines(text: str) -> [str]
-    out: [str] @ []
-    start: i64 @ 0
+    out: [str] @= []
+    start: i64 @= 0
 
     for at in range(from: 0, to: text.len())
         if text[at] == 10
@@ -99,19 +99,19 @@ function ends_newline(text: str) -> bool
 
 # The statements, their lines, and which of them are heads (`_walk`).
 function walk(@p: Program, toks: [tokens.Tok])
-    depth: i64 @ 0
-    stack_heads: [i64] @ []
-    stack_levels: [i64] @ []
-    level: i64 @ 0
-    last_real_line: i64 @ 0
-    last_closed: i64 @ -1
-    open: bool @ false
-    cur_toks: [tokens.Tok] @ []
-    cur_first: i64 @ 0
-    cur_last: i64 @ 0
+    depth: i64 @= 0
+    stack_heads: [i64] @= []
+    stack_levels: [i64] @= []
+    level: i64 @= 0
+    last_real_line: i64 @= 0
+    last_closed: i64 @= -1
+    open: bool @= false
+    cur_toks: [tokens.Tok] @= []
+    cur_first: i64 @= 0
+    cur_last: i64 @= 0
 
     for t0 in toks
-        t: tokens.Tok @ t0
+        t: tokens.Tok @= t0
         layout = tokens.synthetic(t.kind)
 
         if layout && open && (t.kind != "terminator" || depth == 0)
@@ -188,7 +188,7 @@ function walk(@p: Program, toks: [tokens.Tok])
             p.lines[no - 1].stmt @ s.sid
 
         if s.head
-            first: i64 @ s.last + 1
+            first: i64 @= s.last + 1
 
             while first <= p.lines.len() && p.lines[first - 1].toks.len() == 0
                 first @ first + 1
@@ -213,8 +213,8 @@ function started(sid: i64, toks: [tokens.Tok], first: i64, last: i64) -> Stateme
 # Each statement's parent, kind and, for a head, what its block holds
 # (`_relate`): the innermost open head whose block holds its first line.
 function relate(@p: Program)
-    open_heads: [i64] @ []
-    parents: [i64] @ []
+    open_heads: [i64] @= []
+    parents: [i64] @= []
 
     for index in range(from: 0, to: p.stmts.len())
         s = p.stmts[index]
@@ -222,7 +222,7 @@ function relate(@p: Program)
         while open_heads.len() > 0 && !holds(p.stmts[open_heads[open_heads.len() - 1]], no: s.first)
             open_heads @ open_heads.slice(from: 0, to: open_heads.len() - 1)
 
-        parent: i64 @ -1
+        parent: i64 @= -1
 
         if open_heads.len() > 0
             parent @ open_heads[open_heads.len() - 1]
@@ -231,7 +231,7 @@ function relate(@p: Program)
 
         if parent < 0
             p.top @ p.top.push(index)
-        parent_opens: str @ ""
+        parent_opens: str @= ""
 
         if parent >= 0
             parent_opens @ p.stmts[parent].opens
@@ -246,7 +246,7 @@ function relate(@p: Program)
 
     # Each head's children in statement order, gathered once: a push onto a
     # field copies the array it grows (spec § 10).
-    gathered: [[i64]] @ []
+    gathered: [[i64]] @= []
 
     for _ in p.stmts
         none: [i64] = []
@@ -274,7 +274,7 @@ function stmt(p: Program, sid: i64) -> Statement
     return p.stmts[sid]
 
 function indent(l: Line) -> i64
-    count: i64 @ 0
+    count: i64 @= 0
 
     while count < l.text.len() && l.text[count] == ' '
         count @ count + 1

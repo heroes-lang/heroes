@@ -25,7 +25,7 @@ use ir/released_oracle
 # function since defect 218, where it was asked again by every returning
 # block, with a walk of the parameters for every slot.
 function owed_slots(f: containers.Function, c: state.Checked) -> [i64]
-    is_param: [bool] @ []
+    is_param: [bool] @= []
 
     while is_param.len() < f.slots.len()
         is_param @ is_param.push(false)
@@ -34,11 +34,11 @@ function owed_slots(f: containers.Function, c: state.Checked) -> [i64]
         if p >= 0 && p < is_param.len()
             is_param[p] @ true
 
-    owed: [i64] @ []
-    index: i64 @ 0
+    owed: [i64] @= []
+    index: i64 @= 0
 
     for slot in f.slots
-        counted: bool @ false
+        counted: bool @= false
 
         match slot.kind
             .local_slot | .synthetic_slot => counted @ layout.is_refcounted(c, slot.ty)
@@ -64,7 +64,7 @@ function owed_slots(f: containers.Function, c: state.Checked) -> [i64]
 # precedes the store, the sweep's follows it. Found by removing a sweep
 # decref by hand and watching the check stay silent.
 function released_on_return(f: containers.Function, blk: containers.Block, owed: [i64], label: str, @problems: [str])
-    is_return: bool @ false
+    is_return: bool @= false
 
     match blk.term
         .return_term                                          => is_return @ true
@@ -105,12 +105,12 @@ record Releases
     visits: i64
 
 function releases(blk: containers.Block) -> Releases
-    floor: {i64: i64} @ {}
-    named: {i64: i64} @ {}
-    freed: {i64: i64} @ {}
-    retained: {i64: i64} @ {}
-    visits: i64 @ 0
-    at: i64 @ 0
+    floor: {i64: i64} @= {}
+    named: {i64: i64} @= {}
+    freed: {i64: i64} @= {}
+    retained: {i64: i64} @= {}
+    visits: i64 @= 0
+    at: i64 @= 0
 
     for inst in blk.insts
         visits @ visits + 1
@@ -142,7 +142,7 @@ function releases(blk: containers.Block) -> Releases
 
         at @ at + 1
 
-    released: {i64: bool} @ {}
+    released: {i64: bool} @= {}
 
     # ORDER: none, since each slot's answer is set on its own and no order
     # reaches anything.
@@ -191,8 +191,8 @@ function releases(blk: containers.Block) -> Releases
 # **A store into the return slot takes nothing** (panel 190's R2): that slot
 # borrows and no sweep releases it, so rule 5 must move the value first.
 function owning_temporaries_move_into_slots(f: containers.Function, blk: containers.Block, c: state.Checked, label: str, @problems: [str])
-    stored: {i64: bool} @ {}
-    borrowed: {i64: bool} @ {}
+    stored: {i64: bool} @= {}
+    borrowed: {i64: bool} @= {}
 
     for one in blk.insts
         match one.op
@@ -212,7 +212,7 @@ function owning_temporaries_move_into_slots(f: containers.Function, blk: contain
 
         if !owning.allocates(inst.op) || !layout.is_refcounted(c, inst.ty) || !stored[dest].is_err()
             continue
-        why: str @ "no store in this block takes it — a temporary never carries ownership across an edge"
+        why: str @= "no store in this block takes it — a temporary never carries ownership across an edge"
 
         if !borrowed[dest].is_err()
             why @ "only the return slot takes it: that slot borrows, so nothing would release it"
@@ -247,15 +247,15 @@ function checked(text: str) -> state.Checked
     return checker.check(p.tree, out, s, p.decls)
 
 test "two walks answer what the nested walks answered, on every slot of every generated block"
-    seed: i64 @ 106
-    blocks: i64 @ 0
-    first: str @ ""
+    seed: i64 @= 106
+    blocks: i64 @= 0
+    first: str @= ""
 
     while blocks < 1500 && first == ""
         slots = 1 + blocks % 6
         blk = released_oracle.generated(seed: @seed, slots: slots)
         got = releases(blk).released
-        at: i64 @ 0
+        at: i64 @= 0
 
         while at < slots
             if !got[at].is_err() != released_oracle.released_after(blk, slot_at: at, floor: released_oracle.last_write(blk, slot_at: at))
@@ -280,13 +280,13 @@ test "a returning block that leaves a slot it owns unreleased is named, however 
 
     # Written, and never released.
     bare = one_slot([store], term: returns)
-    named: [str] @ []
+    named: [str] @= []
     released_on_return(bare, bare.blocks[0], owed: owed, label: "f: ", problems: @named)
     assert named == [said]
 
     # Released by name, or by a decref of a load taken after the write.
     by_name = one_slot([store, sweep], term: returns)
-    quiet: [str] @ []
+    quiet: [str] @= []
     released_on_return(by_name, by_name.blocks[0], owed: owed, label: "f: ", problems: @quiet)
     by_load = one_slot([store, load, decref], term: returns)
     released_on_return(by_load, by_load.blocks[0], owed: owed, label: "f: ", problems: @quiet)
@@ -295,13 +295,13 @@ test "a returning block that leaves a slot it owns unreleased is named, however 
     # A store's own load and decref come BEFORE the write it makes: the pair
     # a sweep was taken for until position told them apart.
     early = one_slot([load, store, decref], term: returns)
-    mistaken: [str] @ []
+    mistaken: [str] @= []
     released_on_return(early, early.blocks[0], owed: owed, label: "f: ", problems: @mistaken)
     assert mistaken == [said]
 
     # A block that does not return owes nothing, and neither does a slot not owed.
     jumps = one_slot([store], term: .jump(to: 0))
-    none: [str] @ []
+    none: [str] @= []
     released_on_return(jumps, jumps.blocks[0], owed: owed, label: "f: ", problems: @none)
     released_on_return(bare, bare.blocks[0], owed: [], label: "f: ", problems: @none)
     assert none.len() == 0
@@ -318,7 +318,7 @@ test "an owning temporary no store in its block takes is named, and one a store 
     )
     returns: ir.Term = .return_term(value: fail(code: "none", msg: "no value"))
     f = one_slot([], term: returns)
-    lone: [str] @ []
+    lone: [str] @= []
     owning_temporaries_move_into_slots(
         f,
         containers.Block(preds: [], insts: [concat], term: returns, note: "t"),
@@ -329,7 +329,7 @@ test "an owning temporary no store in its block takes is named, and one a store 
     assert lone == ["f: $3 owns a reference and no store in this block takes it — a temporary never carries ownership across an edge"]
 
     # Moved, in either order: the store is looked for anywhere in the block.
-    moved: [str] @ []
+    moved: [str] @= []
     owning_temporaries_move_into_slots(
         f,
         containers.Block(preds: [], insts: [concat, store], term: returns, note: "t"),
@@ -362,7 +362,7 @@ test "an owning temporary only the return slot takes is named, and one a slot of
     text_ty = table.str_ty(c.types)
     span = token.Span(start: 0, end: 1)
     returns: ir.Term = .return_term(value: fail(code: "none", msg: "no value"))
-    f: containers.Function @ one_slot([], term: returns)
+    f: containers.Function @= one_slot([], term: returns)
     f.slots @ [
         containers.Slot(name: "$own0", ty: text_ty, kind: .synthetic_slot)
         containers.Slot(name: "$ret0", ty: text_ty, kind: .return_slot)
@@ -381,7 +381,7 @@ test "an owning temporary only the return slot takes is named, and one a slot of
         ty: text_ty,
         span: span
     )
-    alone: [str] @ []
+    alone: [str] @= []
     owning_temporaries_move_into_slots(
         f,
         containers.Block(preds: [], insts: [concat, into_ret], term: .jump(to: 1), note: "t"),
@@ -392,7 +392,7 @@ test "an owning temporary only the return slot takes is named, and one a slot of
     assert alone == ["f: $3 owns a reference and only the return slot takes it: that slot borrows, so nothing would release it"]
 
     # Rule 5's move first, then the return site's plain copy: quiet.
-    both: [str] @ []
+    both: [str] @= []
     owning_temporaries_move_into_slots(
         f,
         containers.Block(preds: [], insts: [concat, into_own, into_ret], term: .jump(to: 1), note: "t"),
@@ -405,7 +405,7 @@ test "an owning temporary only the return slot takes is named, and one a slot of
 test "a local or synthetic slot of a counted type is owed, a parameter or a number is not"
     c = checked("function f()\n    return\n")
     text_ty = table.str_ty(c.types)
-    f: containers.Function @ one_slot([], term: .return_term(value: fail(code: "none", msg: "no value")))
+    f: containers.Function @= one_slot([], term: .return_term(value: fail(code: "none", msg: "no value")))
     f.slots @ [
         containers.Slot(name: "a", ty: text_ty, kind: .local_slot(mutable: false))
         containers.Slot(name: "p", ty: text_ty, kind: .param_slot(mutable: false))
@@ -421,9 +421,9 @@ test "a local or synthetic slot of a counted type is owed, a parameter or a numb
 test "the two walks visit each instruction twice and each released slot once, on a sweep of 2,000 slots"
     span = token.Span(start: 0, end: 1)
     void: i64? = fail(code: "none", msg: "void")
-    insts: [ir.Inst] @ []
+    insts: [ir.Inst] @= []
     slots = 2000
-    value: i64 @ 1
+    value: i64 @= 1
 
     # Each slot moved once, the ownership pass's shape: load the old value,
     # store the new, release the old. Then the sweep, one release per slot.

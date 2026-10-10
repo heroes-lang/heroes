@@ -13,7 +13,7 @@
 
 # The defect's own shape.
 function reproducer(n: i64) -> i64
-    m: i64 @ n
+    m: i64 @= n
 
     while true
         if m > 3
@@ -29,7 +29,7 @@ function in_the_loop_body(n: i64) -> i64
 
 # After `continue`.
 function after_continue(n: i64) -> i64
-    m: i64 @ n
+    m: i64 @= n
 
     while true
         m @ m + 1
@@ -40,7 +40,7 @@ function after_continue(n: i64) -> i64
 
 # Nested in a statement that never runs.
 function nested_in_a_dead_if(n: i64) -> i64
-    m: i64 @ n
+    m: i64 @= n
 
     while true
         if m > 3
@@ -52,7 +52,7 @@ function nested_in_a_dead_if(n: i64) -> i64
 
 # Behind another statement that never runs, which is the one told.
 function padded(n: i64) -> i64
-    m: i64 @ n
+    m: i64 @= n
 
     while true
         if m > 3
@@ -63,7 +63,7 @@ function padded(n: i64) -> i64
 
 # Two of them.
 function two_dead_breaks(n: i64) -> i64
-    m: i64 @ n
+    m: i64 @= n
 
     while true
         if m > 3
@@ -74,7 +74,7 @@ function two_dead_breaks(n: i64) -> i64
 
 # In a `match` arm's block.
 function in_a_match_arm(n: i64) -> i64
-    m: i64 @ n
+    m: i64 @= n
 
     while true
         match m
@@ -85,7 +85,7 @@ function in_a_match_arm(n: i64) -> i64
 
 # In an `else`.
 function in_an_else(n: i64) -> i64
-    m: i64 @ n
+    m: i64 @= n
 
     while true
         if m < 3
@@ -96,7 +96,7 @@ function in_an_else(n: i64) -> i64
 
 # In a generic function.
 function generic<T>(x: T, n: i64) -> i64
-    m: i64 @ n
+    m: i64 @= n
     _ = x
 
     while true
@@ -107,7 +107,7 @@ function generic<T>(x: T, n: i64) -> i64
 
 # In a value `if`'s branch and a value `match`'s arm.
 function in_a_value_if(n: i64) -> i64
-    m: i64 @ n
+    m: i64 @= n
 
     while true
         x = if m > 3
@@ -118,7 +118,7 @@ function in_a_value_if(n: i64) -> i64
         m @ m + x
 
 function in_a_value_arm(n: i64) -> i64
-    m: i64 @ n
+    m: i64 @= n
 
     while true
         x = match m

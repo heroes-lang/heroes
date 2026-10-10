@@ -28,17 +28,17 @@ function init(@s: ZStream) -> i32
     return deflateInit_(@s, level: -1, version: zlibVersion(), stream_size: 112)
 
 function main()
-    s: ZStream @ ZStream(rest: zero)
+    s: ZStream @= ZStream(rest: zero)
     a = deflateInit_(@s, level: -1, version: zlibVersion(), stream_size: 112)
     b = deflateReset(@s)
     c = deflateEnd(@s)
     print(a, " ", b, " ", c)
-    zs: [ZStream] @ [ZStream(rest: zero), ZStream(rest: zero)]
+    zs: [ZStream] @= [ZStream(rest: zero), ZStream(rest: zero)]
     d = deflateInit_(@zs[0], level: -1, version: zlibVersion(), stream_size: 112)
     e = deflateReset(@zs[0])
     f = deflateEnd(@zs[0])
     print(d, " ", e, " ", f)
-    t: ZStream @ ZStream(rest: zero)
+    t: ZStream @= ZStream(rest: zero)
     g = init(@t)
     h = deflateReset(@t)
     i = deflateEnd(@t)

@@ -33,7 +33,7 @@ use checker
 # at their use sites; a third would be an index into an array of
 # arrays, which the checker refuses today.
 function fixed_text(c: state.Checked, s: source.Source, decls: [ast.Decl], f: containers.Function, value: i64) -> str?
-    is_fixed: bool @ false
+    is_fixed: bool @= false
 
     match table.get(c.types, containers.value_type(f, value))
         .fixed                                                    => is_fixed @ true
@@ -49,7 +49,7 @@ function fixed_text(c: state.Checked, s: source.Source, decls: [ast.Decl], f: co
             if !inst.dest.is_err() && inst.dest.must() == value
                 match inst.op
                     .construct con =>
-                        is_array_shape: bool @ false
+                        is_array_shape: bool @= false
 
                         match con.shape
                             .array_shape                             => is_array_shape @ true
@@ -58,7 +58,7 @@ function fixed_text(c: state.Checked, s: source.Source, decls: [ast.Decl], f: co
 
                         if !is_array_shape
                             return fail(code: "none", msg: "not a producer of a fixed value")
-                        parts: [str] @ []
+                        parts: [str] @= []
 
                         for arg in containers.args_of(f, con.arguments)
                             match arg
@@ -78,7 +78,7 @@ function fixed_text(c: state.Checked, s: source.Source, decls: [ast.Decl], f: co
 
                         if found.is_err()
                             return fail(code: "none", msg: "not a field of this type")
-                        base_text: str @ mangle.value(fl.base)
+                        base_text: str @= mangle.value(fl.base)
                         inner = fixed_text(c, s, decls, f, value: fl.base)
 
                         if !inner.is_err()
@@ -114,7 +114,7 @@ function fixed_text(c: state.Checked, s: source.Source, decls: [ast.Decl], f: co
 # §11's premise that expires in silence while the sentence around it still reads
 # as correct.
 function element(c: state.Checked, s: source.Source, decls: [ast.Decl], f: containers.Function, base: i64, index: i64) -> str?
-    length: i64 @ 0 - 1
+    length: i64 @= 0 - 1
 
     match table.get(c.types, containers.value_type(f, base))
         .fixed x                                                  => length @ x.length
@@ -124,7 +124,7 @@ function element(c: state.Checked, s: source.Source, decls: [ast.Decl], f: conta
 
     if length < 0
         return fail(code: "none", msg: "not a fixed array")
-    base_text: str @ mangle.value(base)
+    base_text: str @= mangle.value(base)
     rendered = fixed_text(c, s, decls, f, value: base)
 
     if !rendered.is_err()

@@ -23,7 +23,7 @@ function comment(@l: state.LexState, text: str)
     start = l.pos
     l.pos @ end_of_comment(@l.diagnostics, text, from: l.pos)
 
-    end: i64 @ l.pos
+    end: i64 @= l.pos
 
     # Don't let a trailing carriage return (13) into the comment's text.
     if end > start && text[end - 1] == 13
@@ -45,7 +45,7 @@ function comment_token(@l: state.LexState, start: i64, end: i64)
 # it a reader cannot see told once into `diagnostics`; a tab, and a carriage
 # return before the line feed, are held.
 function end_of_comment(@diagnostics: [diag.Diagnostic], text: str, from: i64) -> i64
-    at: i64 @ raw_refusal.clear(text, from: from)
+    at: i64 @= raw_refusal.clear(text, from: from)
 
     while at < text.len() && text[at] != 10
         b = text[at]
@@ -66,13 +66,13 @@ function end_of_comment(@diagnostics: [diag.Diagnostic], text: str, from: i64) -
 ## Tests
 
 test "a comment's run a reader cannot see is told once, and a tab is held"
-    said: [diag.Diagnostic] @ []
+    said: [diag.Diagnostic] @= []
     esc: [u8] = [27, 7]
     text = "# a" + esc.validated_bytes().must() + "b\tc\nx"
     assert end_of_comment(@said, text, from: 0) == 8
     assert said.len() == 1
     assert said[0].code == "invisible_character"
     assert said[0].fixes[0].replacement == "<U+001B><U+0007>"
-    clean: [diag.Diagnostic] @ []
+    clean: [diag.Diagnostic] @= []
     assert end_of_comment(@clean, "# plain\n", from: 0) == 7
     assert clean.len() == 0

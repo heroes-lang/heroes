@@ -65,8 +65,8 @@ function read(@c: cursor.Cursor, text: str, open: token.Span) -> i64
 # always decimal here, because the lexer already refused every other base's
 # prefix inside a bracket.
 function decode_length(written: str) -> i64?
-    value: i64 @ 0
-    i: i64 @ 0
+    value: i64 @= 0
+    i: i64 @= 0
 
     while i < written.len()
         b = written[i]

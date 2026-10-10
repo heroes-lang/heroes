@@ -22,8 +22,8 @@ constant C23: u8
     200 + 50
 
 constant LOOPED: u8
-    v: u8 @ 0
-    i: i64 @ 0
+    v: u8 @= 0
+    i: i64 @= 0
 
     while i < 2
         v @ v + 100
@@ -32,17 +32,17 @@ constant LOOPED: u8
     v
 
 constant UNTOUCHED: u8
-    v: u8 @ 255
+    v: u8 @= 255
 
     while false
-        i: i64 @ 0
+        i: i64 @= 0
         i @ i + 1
 
     v @ 0
     v + 1
 
 constant CHOSEN: u8
-    v: u8 @ 200
+    v: u8 @= 200
 
     if A > 1
         v @ 0
@@ -52,7 +52,7 @@ constant CHOSEN: u8
     v + 100
 
 constant ARMED: u8
-    v: u8 @ 200
+    v: u8 @= 200
 
     w: u8 = match v
         200 => 1

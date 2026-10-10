@@ -59,7 +59,7 @@ function sets_name_releasers(@c: state.Checker, s: source.Source, decls: [ast.De
                         mark: fd.value.retains_result,
                         reached: result_handle.must()
                     )
-                index: i64 @ 0
+                index: i64 @= 0
 
                 for p in fd.value.params
                     behind = acquiring.handle_behind(c, s, decls, node: p.ty)
@@ -92,9 +92,9 @@ record Receiving
 # plain one, a `borrows`, a `retains`, or an `@` cell that `acquires`), or a
 # result that begins or joins a life.
 function receiver(c: state.Checker, s: source.Source, decls: [ast.Decl], fd: ast.FunctionDecl, except: i64) -> Receiving
-    survives: bool @ false
-    dying: [str] @ []
-    index: i64 @ 0
+    survives: bool @= false
+    dying: [str] @= []
+    index: i64 @= 0
 
     for p in fd.params
         if index != except && !acquiring.handle_behind(c, s, decls, node: p.ty).is_err()
@@ -113,14 +113,14 @@ function receiver(c: state.Checker, s: source.Source, decls: [ast.Decl], fd: ast
 # The refusal says what it found: nothing at all, or a sibling that ends with
 # the call. The two repairs differ, so the note does too.
 function transfer_without_receiver(param: str, name: str, dying: [str], span: token.Span) -> diag.Diagnostic
-    seen: str @ "no other parameter of `" + name + "` reaches a handle and its result begins no life"
+    seen: str @= "no other parameter of `" + name + "` reaches a handle and its result begins no life"
 
     if dying.len() == 1
         seen @ "the other parameter of `" + name + "` reaching a handle, " + dying[0] + ", does not survive the call, and its result begins no life"
 
     if dying.len() > 1
         seen @ "the other parameters of `" + name + "` reaching a handle, " + dying.join(" and ") + ", do not survive the call, and its result begins no life"
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "transfer_without_receiver",
         message: "`" + param + "` of `" + name + "` is marked `transfers`, and the call has nowhere to hand the life to: " + seen,
         span: span
@@ -153,7 +153,7 @@ function releaser_reads(@c: state.Checker, s: source.Source, decls: [ast.Decl], 
     text = source.span_text(s, mark.must())
     names = handles.releasers(text)
     spans = handles.releaser_spans(text, at: mark.must())
-    index: i64 @ 0
+    index: i64 @= 0
 
     # Every name of the set, one at a time (defect 075): the diagnostic points
     # at the one that does not resolve, and the others still count.
@@ -194,7 +194,7 @@ function ends_a_life(c: state.Checker, s: source.Source, decls: [ast.Decl], name
 # worse than no word: design.md Part 6 calls it *a comment that looks like a
 # guarantee*.
 function unread_releaser(word: str, named: str, handle: str, span: token.Span) -> diag.Diagnostic
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "unread_releaser",
         message: "`" + named + "` does not end the life of any `" + handle + "`: no `extern` of this module declares it taking one back with `consumes`",
         span: span
@@ -222,12 +222,12 @@ function releaser_note(word: str, handle: str) -> str
 function driven(text: str) -> state.Checker
     p = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
-    c: state.Checker @ declared.checked_file(text)
+    c: state.Checker @= declared.checked_file(text)
     sets_name_releasers(@c, s, p.decls)
     return c
 
 function codes_of(c: state.Checker) -> [str]
-    out: [str] @ []
+    out: [str] @= []
 
     for d in c.out.diagnostics
         out @ out.push(d.code)

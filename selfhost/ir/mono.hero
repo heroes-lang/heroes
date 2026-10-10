@@ -64,8 +64,8 @@ record FoundCall
 # originals. Returns the diagnostics it found; a program with none is
 # monomorphic afterwards, which the mono phase's verifier check asserts.
 function run(@p: containers.Program, @c: state.Checked, s: source.Source, decls: [ast.Decl]) -> [diag.Diagnostic]
-    diagnostics: [diag.Diagnostic] @ []
-    generic: {i64: bool} @ {}
+    diagnostics: [diag.Diagnostic] @= []
+    generic: {i64: bool} @= {}
 
     for f in p.functions
         if f.generics.len() > 0
@@ -74,16 +74,16 @@ function run(@p: containers.Program, @c: state.Checked, s: source.Source, decls:
     if len(generic) == 0
         containers.advance_to(@p, .mono)
         return diagnostics
-    queue: [Pending] @ []
-    seen: {str: bool} @ {}
+    queue: [Pending] @= []
+    seen: {str: bool} @= {}
 
     for f in p.functions
         if f.generics.len() == 0
             no_parent: i64? = fail(code: "root", msg: "reached from a non-generic root")
             enqueue(calls_in(f, generic, c), parent: no_parent, queue: @queue, seen: @seen)
 
-    instances: [containers.Function] @ []
-    at: i64 @ 0
+    instances: [containers.Function] @= []
+    at: i64 @= 0
 
     while at < queue.len()
         pending = queue[at]
@@ -106,10 +106,10 @@ function run(@p: containers.Program, @c: state.Checked, s: source.Source, decls:
         # a type parameter into the copy. That was this pass's first
         # defect, and the verifier caught it.
         raw = calls_in(instance, generic, c)
-        applied: [FoundCall] @ []
+        applied: [FoundCall] @= []
 
         for one in raw
-            substituted: [i64] @ []
+            substituted: [i64] @= []
 
             for t in one.instance.bound
                 substituted @ substituted.push(apply(@c, ty: t, bound: pending.instance.bound))
@@ -124,7 +124,7 @@ function run(@p: containers.Program, @c: state.Checked, s: source.Source, decls:
 
     # The templates go: they have no C, and leaving one would emit a
     # body with a type parameter in it.
-    kept: [containers.Function] @ []
+    kept: [containers.Function] @= []
 
     for f in p.functions
         if f.generics.len() == 0
@@ -157,7 +157,7 @@ function find_template(p: containers.Program, decl: i64) -> containers.Function?
 # enclosing instance (this function once took a subst parameter it
 # never read, with a doc line saying it did).
 function calls_in(f: containers.Function, generic: {i64: bool}, c: state.Checked) -> [FoundCall]
-    found: [FoundCall] @ []
+    found: [FoundCall] @= []
 
     for blk in f.blocks
         for inst in blk.insts
@@ -205,7 +205,7 @@ function enqueue(calls: [FoundCall], parent: i64?, @queue: [Pending], @seen: {st
             queue @ queue.push(Pending(instance: one.instance, parent: parent, span: one.span))
 
 function instance_key(instance: Instance) -> str
-    rendered: [str] @ []
+    rendered: [str] @= []
 
     for t in instance.bound
         rendered @ rendered.push(t.to_str())
@@ -225,20 +225,20 @@ function instance_key(instance: Instance) -> str
 # Copy; Heroes values copy whole, so blk.term travels as a value and
 # the hand clone has nothing to do.
 function instantiate(template: containers.Function, bound: [i64], bound_at: token.Span, @c: state.Checked) -> containers.Function
-    slots: [containers.Slot] @ []
+    slots: [containers.Slot] @= []
 
     for slot in template.slots
         slots @ slots.push(containers.Slot(name: slot.name, ty: apply(@c, ty: slot.ty, bound: bound), kind: slot.kind))
 
-    values: [i64] @ []
+    values: [i64] @= []
 
     for v in template.values
         values @ values.push(apply(@c, ty: v, bound: bound))
 
-    blocks: [containers.Block] @ []
+    blocks: [containers.Block] @= []
 
     for blk in template.blocks
-        insts: [ir.Inst] @ []
+        insts: [ir.Inst] @= []
 
         for inst in blk.insts
             insts @ insts.push(
@@ -286,7 +286,7 @@ function apply(@c: state.Checked, ty: i64, bound: [i64]) -> i64
             value = apply(@c, ty: m.value, bound: bound)
             return table.intern(@c.types, .map(key: key, value: value))
         .function_ty fn_ty =>
-            spelled: [i64] @ []
+            spelled: [i64] @= []
 
             for one in table.params_of(c.types, fn_ty.params)
                 spelled @ spelled.push(apply(@c, ty: one, bound: bound))
@@ -305,7 +305,7 @@ function apply(@c: state.Checked, ty: i64, bound: [i64]) -> i64
 # calling a generic went to clang as a call to hero_unreachable with
 # arguments (panel 084's filed defect).
 function substituted_calls(template: containers.Function, bound: [i64], @c: state.Checked) -> {i64: [i64]}
-    out: {i64: [i64]} @ {}
+    out: {i64: [i64]} @= {}
 
     for blk in template.blocks
         for inst in blk.insts
@@ -313,7 +313,7 @@ function substituted_calls(template: containers.Function, bound: [i64], @c: stat
 
             if recorded.is_err()
                 continue
-            reached: [i64] @ []
+            reached: [i64] @= []
 
             for t in recorded.must()
                 reached @ reached.push(apply(@c, ty: t, bound: bound))
@@ -330,15 +330,15 @@ function substituted_calls(template: containers.Function, bound: [i64], @c: stat
 # every compiler has, terminating because the instance already exists.
 function recursive(queue: [Pending], at: i64, c: state.Checked, s: source.Source, decls: [ast.Decl]) -> diag.Diagnostic?
     pending = queue[at]
-    walk: i64? @ pending.parent
+    walk: i64? @= pending.parent
 
     while !walk.is_err()
         ancestor = queue[walk.must()]
 
         if ancestor.instance.decl == pending.instance.decl && ancestor.instance.bound.len() == pending.instance.bound.len()
-            all_contained: bool @ true
-            any_grew: bool @ false
-            i: i64 @ 0
+            all_contained: bool @= true
+            any_grew: bool @= false
+            i: i64 @= 0
 
             while i < pending.instance.bound.len()
                 small = ancestor.instance.bound[i]
@@ -360,7 +360,7 @@ function recursive(queue: [Pending], at: i64, c: state.Checked, s: source.Source
     return fail(code: "fine", msg: "no growing repeat on the chain")
 
 function show_list(c: state.Checked, s: source.Source, decls: [ast.Decl], list: [i64]) -> str
-    rendered: [str] @ []
+    rendered: [str] @= []
     none: [str] = []
 
     for t in list
@@ -372,7 +372,7 @@ function show_list(c: state.Checked, s: source.Source, decls: [ast.Decl], list: 
 # explanation: what was instantiated, what it reached, and the one edit
 # that ends it.
 function polymorphic_recursion(from: str, to: str, span: token.Span) -> diag.Diagnostic
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "polymorphic_recursion",
         message: "this call instantiates the function that contains it at a LARGER type — `<" + from + ">` reaches `<" + to + ">`, which reaches a larger one again, without end",
         span: span
@@ -409,7 +409,7 @@ function contains(c: state.Checked, big: i64, small: i64) -> bool
 # The instances of one declaration, for the mangler and the dump's
 # instance table.
 function instances_of(p: containers.Program, decl: i64) -> [[i64]]
-    out: [[i64]] @ []
+    out: [[i64]] @= []
 
     for f in p.functions
         if f.decl == decl && f.instance.len() > 0
@@ -422,8 +422,8 @@ function instances_of(p: containers.Program, decl: i64) -> [[i64]]
 # program, because the pass has already deleted the templates by the
 # time the emitter runs.
 function generic_decls(decls: [ast.Decl]) -> {i64: i64}
-    found: {i64: i64} @ {}
-    index: i64 @ 0
+    found: {i64: i64} @= {}
+    index: i64 @= 0
 
     for decl in decls
         match decl.kind
@@ -457,17 +457,17 @@ function monoed(text: str) -> MonoOut
     parsed = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
     out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
-    c: state.Checked @ checker.check(parsed.tree, out, s, parsed.decls)
+    c: state.Checked @= checker.check(parsed.tree, out, s, parsed.decls)
     assert c.diagnostics.len() == 0
     low = lower.lower(parsed.tree, out, c, s, parsed.decls)
-    p: containers.Program @ low.program
+    p: containers.Program @= low.program
     diagnostics = run(@p, @c, s, parsed.decls)
     return MonoOut(program: p, checked: c, decls: parsed.decls, diagnostics: diagnostics)
 
 test "two uses make two copies, the template dies, and mono verifies"
     got = monoed("function id<T>(x: T) -> T\n    return x\n\nfunction main()\n    print(id(3))\n    print(id(\"a\"))\n")
     assert got.diagnostics.len() == 0
-    copies: i64 @ 0
+    copies: i64 @= 0
 
     for f in got.program.functions
         assert f.generics.len() == 0
@@ -486,15 +486,15 @@ test "a generic calling a generic carries substituted call instances"
         "function inner<T>(x: T) -> T\n    return x\n\nfunction outer<T>(x: T) -> T\n    return inner(x)\n\nfunction main()\n    print(outer(5))\n"
     )
     assert got.diagnostics.len() == 0
-    named: [str] @ []
+    named: [str] @= []
 
     for f in got.program.functions
         named @ named.push(f.name)
 
     # Both instances exist: outer<i64> reached inner<i64> through the
     # substituted queue, not through the template's own T.
-    saw_inner: bool @ false
-    saw_outer: bool @ false
+    saw_inner: bool @= false
+    saw_outer: bool @= false
 
     for f in got.program.functions
         if f.name == "inner" && f.instance.len() == 1
@@ -529,9 +529,9 @@ test "a generic function named as a value is copied at the type its context name
         "function id<T>(x: T) -> T\n    return x\n\nfunction outer<B>(x: B) -> B\n    f: (function(B) -> B) = id\n    return f(x)\n\nfunction main()\n    g: (function(i64) -> i64) = id\n    print(g(3))\n    print(outer(\"a\"))\n"
     )
     assert got.diagnostics.len() == 0
-    copies: i64 @ 0
-    at_int: bool @ false
-    at_str: bool @ false
+    copies: i64 @= 0
+    at_int: bool @= false
+    at_str: bool @= false
 
     for f in got.program.functions
         assert f.generics.len() == 0

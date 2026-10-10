@@ -10,7 +10,7 @@
 # `_`. Each form `Simple` names stands on an arm's line here and runs: a
 # mutation of a name, a field and an element; `while`, `for` and `if` over a
 # block; `return`, `break`, `continue`, `assert`; a call; `_ = e`, `_: T = e`
-# and `_: T @ e`; in arms joined with `|`, on a payload, nested, in a loop.
+# and `_: T @= e`; in arms joined with `|`, on a payload, nested, in a loop.
 
 variant Color
     red
@@ -33,9 +33,9 @@ function noisy(k: i64) -> i64
     return k
 
 function mutations(c: Color) -> i64
-    n: i64 @ 0
-    b: Box @ Box(v: 0)
-    ys: [i64] @ [0, 0]
+    n: i64 @= 0
+    b: Box @= Box(v: 0)
+    ys: [i64] @= [0, 0]
 
     match c
         .red   => n @ 1
@@ -45,7 +45,7 @@ function mutations(c: Color) -> i64
     return n + b.v + ys[1]
 
 function loops(c: Color) -> i64
-    n: i64 @ 0
+    n: i64 @= 0
 
     match c
         .red   => while n < 3
@@ -58,7 +58,7 @@ function loops(c: Color) -> i64
     return n
 
 function jumps(n: i64) -> i64
-    total: i64 @ 0
+    total: i64 @= 0
 
     for i in range(from: 0, to: n)
         match i % 4
@@ -78,21 +78,21 @@ function jumps(n: i64) -> i64
     return total
 
 function discards(c: Color) -> i64
-    k: i64 @ 0
+    k: i64 @= 0
 
     match c
         .red           => _ = noisy(k: 10)
         .green | .blue => _: i64 = noisy(k: 20)
 
     match c
-        .red   => _: i64 @ twice(k: 15)
+        .red   => _: i64 @= twice(k: 15)
         .green => k @ 1
         .blue  => k @ 2
 
     return k
 
 function measured(s: Shape) -> i64
-    total: i64 @ 0
+    total: i64 @= 0
 
     match s
         .dot    => _ = 0
@@ -101,7 +101,7 @@ function measured(s: Shape) -> i64
     return total
 
 function nested(c: Color, n: i64) -> i64
-    m: i64 @ 0
+    m: i64 @= 0
 
     match c
         .red           => match n

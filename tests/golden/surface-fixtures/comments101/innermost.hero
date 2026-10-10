@@ -7,7 +7,7 @@
 # innermost of several, and the comment stays before the inner `(`.
 
 function f(xs: [i64], a: i64, b: i64, c: i64) -> i64
-    ys: [i64] @ xs
+    ys: [i64] @= xs
     ys[(  # after the outer paren
         (a + b) * c)] @ 1
     return ys[0]

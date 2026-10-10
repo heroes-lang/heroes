@@ -84,7 +84,7 @@ function grow(@slots: [token.Span], span: token.Span)
 ## Tests
 
 test "a stack of openers pops and cuts in place, and reads only what is open"
-    o: Openers @ empty()
+    o: Openers @= empty()
     opened(@o, token.Span(start: 0, end: 1))
     opened(@o, token.Span(start: 3, end: 4))
     opened(@o, token.Span(start: 5, end: 6))

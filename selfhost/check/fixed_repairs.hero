@@ -51,7 +51,7 @@ function growable_twin(@c: state.Checker, ty: i64) -> i64
             return table.intern(@c.out.types, .map(key: key, value: value))
         .fallible o => return table.intern(@c.out.types, .fallible(payload: growable_twin(@c, o.payload)))
         .function_ty f =>
-            params: [i64] @ []
+            params: [i64] @= []
 
             for p in table.params_of(c.out.types, f.params)
                 params @ params.push(growable_twin(@c, p))
@@ -69,7 +69,7 @@ function growable_twin(@c: state.Checker, ty: i64) -> i64
 # holds. A record counts whether or not it is a group's, since the reader may
 # be about to move it into one; a variant never does.
 function fills_a_field(c: state.Checker, decls: [ast.Decl], ty: i64) -> bool
-    element: i64 @ -1
+    element: i64 @= -1
 
     match table.get(c.out.types, ty)
         .fixed x                                                           => element @ x.element
@@ -103,14 +103,14 @@ function declared(spelled: str) -> Declared
     p = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
     out = resolve.resolve(p.tree, s, p.decls, p.uses)
-    c: state.Checker @ state.new_checker(out_of: out, expr_count: p.tree.exprs.len())
-    i: i64 @ 0
+    c: state.Checker @= state.new_checker(out_of: out, expr_count: p.tree.exprs.len())
+    i: i64 @= 0
 
     while i < p.tree.types.len()
         _ = lower.lower_ty(@c, p.tree, out, i)
         i @ i + 1
 
-    node: i64 @ 0
+    node: i64 @= 0
 
     match p.decls[1].kind
         .function_decl f                                           => node @ f.value.params[0].ty
@@ -119,7 +119,7 @@ function declared(spelled: str) -> Declared
     return Declared(c: c, ty: c.out.written_types[node].must(), s: s, decls: p.decls)
 
 function twin_of(spelled: str) -> str
-    d: Declared @ declared(spelled)
+    d: Declared @= declared(spelled)
     twin = growable_twin(@d.c, d.ty)
     return state.show(d.c, d.s, d.decls, twin)
 

@@ -37,7 +37,7 @@ use check/table
 function fits(@t: table.Types, wanted: i64, got: i64) -> bool
     if wanted == got
         return true
-    wl: [str] @ []
+    wl: [str] @= []
 
     match table.get(t, wanted)
         .function_ty w                                            => wl @ table.labels_of(t, w.labels)
@@ -47,9 +47,9 @@ function fits(@t: table.Types, wanted: i64, got: i64) -> bool
 
     if wl.len() == 0
         return false
-    filled: [str] @ []
-    spelled: [i64] @ []
-    result: i64 @ 0
+    filled: [str] @= []
+    spelled: [i64] @= []
+    result: i64 @= 0
 
     match table.get(t, got)
         .function_ty g =>
@@ -66,7 +66,7 @@ function fits(@t: table.Types, wanted: i64, got: i64) -> bool
                 return false
             spelled @ table.params_of(t, g.params)
             result @ g.result
-            i: i64 @ 0
+            i: i64 @= 0
 
             while i < wl.len()
                 if i >= gl.len() || gl[i].len() == 0
@@ -107,14 +107,14 @@ function names_alone(t: table.Types, written: {i64: i64}, nameless: i64, named: 
 
                     if w.result != g.result || ws.len() != gs.len()
                         return false
-                    i: i64 @ 0
+                    i: i64 @= 0
 
                     while i < ws.len()
                         if ws[i] != gs[i]
                             return false
                         i @ i + 1
 
-                    shares: bool @ false
+                    shares: bool @= false
 
                     for one in shared(ws)
                         if one
@@ -151,7 +151,7 @@ function names_alone(t: table.Types, written: {i64: i64}, nameless: i64, named: 
 # other, n positions cost n times n, and the call by name asked it in a copy
 # of its own.
 function shared(params: [i64]) -> [bool]
-    count: {i64: i64} @ {}
+    count: {i64: i64} @= {}
 
     for p in params
         seen = count[p]
@@ -161,7 +161,7 @@ function shared(params: [i64]) -> [bool]
         else
             count[p] @ seen.must() + 1
 
-    out: [bool] @ []
+    out: [bool] @= []
 
     for p in params
         out @ out.push(count[p].must() > 1)

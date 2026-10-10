@@ -192,9 +192,9 @@ bb0:
 #line 34 "tests/golden/run/ffi-a-lent-field-counted-by-a-constant.hero"
     t5 = INT64_C(8);
 #line 34 "tests/golden/run/ffi-a-lent-field-counted-by-a-constant.hero"
-    _Static_assert(sizeof(*(const void *)0) != 1 || (0 <= (int64_t)(INT64_C(8)) && (int64_t)(INT64_C(8)) <= (int64_t)sizeof(h0_s.name)), "heroes-ffi-extent sum_n p n 1588 1600 1605 1606 8");
+    _Static_assert(sizeof(*(const void *)0) != 1 || (0 <= (int64_t)(INT64_C(8)) && (int64_t)(INT64_C(8)) <= (int64_t)sizeof(h0_s.name)), "heroes-ffi-extent sum_n p n 1589 1601 1606 1607 8");
 #line 34 "tests/golden/run/ffi-a-lent-field-counted-by-a-constant.hero"
-    _Static_assert(sizeof(*(const void *)0) == 1 || (0 <= (int64_t)(INT64_C(8)) && (int64_t)(INT64_C(8)) <= (int64_t)(sizeof(h0_s.name) / sizeof(*(const void *)0))), "heroes-ffi-extent-unit sum_n p n 1588 1600 1605 1606 8 const void *");
+    _Static_assert(sizeof(*(const void *)0) == 1 || (0 <= (int64_t)(INT64_C(8)) && (int64_t)(INT64_C(8)) <= (int64_t)(sizeof(h0_s.name) / sizeof(*(const void *)0))), "heroes-ffi-extent-unit sum_n p n 1589 1601 1606 1607 8 const void *");
 #line 34 "tests/golden/run/ffi-a-lent-field-counted-by-a-constant.hero"
     t6 = sum_n(t4, t5);
 #line 34 "tests/golden/run/ffi-a-lent-field-counted-by-a-constant.hero"
@@ -205,9 +205,9 @@ bb0:
 #line 35 "tests/golden/run/ffi-a-lent-field-counted-by-a-constant.hero"
     t10 = h_ffialentfieldcountedbyaconstant_SL_NAME_LEN();
 #line 35 "tests/golden/run/ffi-a-lent-field-counted-by-a-constant.hero"
-    _Static_assert(sizeof(*(const void *)0) != 1 || (0 <= (int64_t)(SL_NAME_LEN) && (int64_t)(SL_NAME_LEN) <= (int64_t)sizeof(h0_s.name)), "heroes-ffi-extent sum_n p n 1628 1640 1645 1656 8");
+    _Static_assert(sizeof(*(const void *)0) != 1 || (0 <= (int64_t)(SL_NAME_LEN) && (int64_t)(SL_NAME_LEN) <= (int64_t)sizeof(h0_s.name)), "heroes-ffi-extent sum_n p n 1629 1641 1646 1657 8");
 #line 35 "tests/golden/run/ffi-a-lent-field-counted-by-a-constant.hero"
-    _Static_assert(sizeof(*(const void *)0) == 1 || (0 <= (int64_t)(SL_NAME_LEN) && (int64_t)(SL_NAME_LEN) <= (int64_t)(sizeof(h0_s.name) / sizeof(*(const void *)0))), "heroes-ffi-extent-unit sum_n p n 1628 1640 1645 1656 8 const void *");
+    _Static_assert(sizeof(*(const void *)0) == 1 || (0 <= (int64_t)(SL_NAME_LEN) && (int64_t)(SL_NAME_LEN) <= (int64_t)(sizeof(h0_s.name) / sizeof(*(const void *)0))), "heroes-ffi-extent-unit sum_n p n 1629 1641 1646 1657 8 const void *");
 #line 35 "tests/golden/run/ffi-a-lent-field-counted-by-a-constant.hero"
     t11 = sum_n(t9, t10);
 #line 35 "tests/golden/run/ffi-a-lent-field-counted-by-a-constant.hero"
@@ -222,9 +222,9 @@ bb0:
 #line 36 "tests/golden/run/ffi-a-lent-field-counted-by-a-constant.hero"
     if (__builtin_sub_overflow(t15, t16, &t17)) hero_panic_overflow();
 #line 36 "tests/golden/run/ffi-a-lent-field-counted-by-a-constant.hero"
-    _Static_assert(sizeof(*(const void *)0) != 1 || (0 <= (int64_t)((SL_NAME_LEN - INT64_C(4))) && (int64_t)((SL_NAME_LEN - INT64_C(4))) <= (int64_t)sizeof(h0_s.name)), "heroes-ffi-extent sum_n p n 1678 1690 1695 1710 8");
+    _Static_assert(sizeof(*(const void *)0) != 1 || (0 <= (int64_t)((SL_NAME_LEN - INT64_C(4))) && (int64_t)((SL_NAME_LEN - INT64_C(4))) <= (int64_t)sizeof(h0_s.name)), "heroes-ffi-extent sum_n p n 1679 1691 1696 1711 8");
 #line 36 "tests/golden/run/ffi-a-lent-field-counted-by-a-constant.hero"
-    _Static_assert(sizeof(*(const void *)0) == 1 || (0 <= (int64_t)((SL_NAME_LEN - INT64_C(4))) && (int64_t)((SL_NAME_LEN - INT64_C(4))) <= (int64_t)(sizeof(h0_s.name) / sizeof(*(const void *)0))), "heroes-ffi-extent-unit sum_n p n 1678 1690 1695 1710 8 const void *");
+    _Static_assert(sizeof(*(const void *)0) == 1 || (0 <= (int64_t)((SL_NAME_LEN - INT64_C(4))) && (int64_t)((SL_NAME_LEN - INT64_C(4))) <= (int64_t)(sizeof(h0_s.name) / sizeof(*(const void *)0))), "heroes-ffi-extent-unit sum_n p n 1679 1691 1696 1711 8 const void *");
 #line 36 "tests/golden/run/ffi-a-lent-field-counted-by-a-constant.hero"
     t18 = sum_n(t14, t17);
 #line 36 "tests/golden/run/ffi-a-lent-field-counted-by-a-constant.hero"
@@ -251,18 +251,18 @@ bb0:
 #line 43 "tests/golden/run/ffi-a-lent-field-counted-by-a-constant.hero"
     t28 = h_ffialentfieldcountedbyaconstant_SL_NAME_LEN();
 #line 43 "tests/golden/run/ffi-a-lent-field-counted-by-a-constant.hero"
-    _Static_assert(sizeof(*(void *)0) != 1 || (0 <= (int64_t)(SL_NAME_LEN) && (int64_t)(SL_NAME_LEN) <= (int64_t)sizeof(h0_s.name)), "heroes-ffi-extent sl_fill p n 1916 1928 1933 1944 8");
+    _Static_assert(sizeof(*(void *)0) != 1 || (0 <= (int64_t)(SL_NAME_LEN) && (int64_t)(SL_NAME_LEN) <= (int64_t)sizeof(h0_s.name)), "heroes-ffi-extent sl_fill p n 1917 1929 1934 1945 8");
 #line 43 "tests/golden/run/ffi-a-lent-field-counted-by-a-constant.hero"
-    _Static_assert(sizeof(*(void *)0) == 1 || (0 <= (int64_t)(SL_NAME_LEN) && (int64_t)(SL_NAME_LEN) <= (int64_t)(sizeof(h0_s.name) / sizeof(*(void *)0))), "heroes-ffi-extent-unit sl_fill p n 1916 1928 1933 1944 8 void *");
+    _Static_assert(sizeof(*(void *)0) == 1 || (0 <= (int64_t)(SL_NAME_LEN) && (int64_t)(SL_NAME_LEN) <= (int64_t)(sizeof(h0_s.name) / sizeof(*(void *)0))), "heroes-ffi-extent-unit sl_fill p n 1917 1929 1934 1945 8 void *");
 #line 43 "tests/golden/run/ffi-a-lent-field-counted-by-a-constant.hero"
     (void)sl_fill(t27, t28);
     t31 = (void *)(h0_s.name);
 #line 44 "tests/golden/run/ffi-a-lent-field-counted-by-a-constant.hero"
     t32 = INT64_C(8);
 #line 44 "tests/golden/run/ffi-a-lent-field-counted-by-a-constant.hero"
-    _Static_assert(sizeof(*(const void *)0) != 1 || (0 <= (int64_t)(INT64_C(8)) && (int64_t)(INT64_C(8)) <= (int64_t)sizeof(h0_s.name)), "heroes-ffi-extent sum_n p n 1965 1977 1982 1983 8");
+    _Static_assert(sizeof(*(const void *)0) != 1 || (0 <= (int64_t)(INT64_C(8)) && (int64_t)(INT64_C(8)) <= (int64_t)sizeof(h0_s.name)), "heroes-ffi-extent sum_n p n 1966 1978 1983 1984 8");
 #line 44 "tests/golden/run/ffi-a-lent-field-counted-by-a-constant.hero"
-    _Static_assert(sizeof(*(const void *)0) == 1 || (0 <= (int64_t)(INT64_C(8)) && (int64_t)(INT64_C(8)) <= (int64_t)(sizeof(h0_s.name) / sizeof(*(const void *)0))), "heroes-ffi-extent-unit sum_n p n 1965 1977 1982 1983 8 const void *");
+    _Static_assert(sizeof(*(const void *)0) == 1 || (0 <= (int64_t)(INT64_C(8)) && (int64_t)(INT64_C(8)) <= (int64_t)(sizeof(h0_s.name) / sizeof(*(const void *)0))), "heroes-ffi-extent-unit sum_n p n 1966 1978 1983 1984 8 const void *");
 #line 44 "tests/golden/run/ffi-a-lent-field-counted-by-a-constant.hero"
     t33 = sum_n(t31, t32);
 #line 44 "tests/golden/run/ffi-a-lent-field-counted-by-a-constant.hero"
@@ -284,9 +284,9 @@ bb0:
 #line 49 "tests/golden/run/ffi-a-lent-field-counted-by-a-constant.hero"
     t40 = h_ffialentfieldcountedbyaconstant_SL_NAME_LEN();
 #line 49 "tests/golden/run/ffi-a-lent-field-counted-by-a-constant.hero"
-    _Static_assert(sizeof(*(const void *)0) != 1 || (0 <= (int64_t)(SL_NAME_LEN) && (int64_t)(SL_NAME_LEN) <= (int64_t)sizeof(h2_b.name)), "heroes-ffi-extent sum_n p n 2121 2133 2138 2149 8");
+    _Static_assert(sizeof(*(const void *)0) != 1 || (0 <= (int64_t)(SL_NAME_LEN) && (int64_t)(SL_NAME_LEN) <= (int64_t)sizeof(h2_b.name)), "heroes-ffi-extent sum_n p n 2122 2134 2139 2150 8");
 #line 49 "tests/golden/run/ffi-a-lent-field-counted-by-a-constant.hero"
-    _Static_assert(sizeof(*(const void *)0) == 1 || (0 <= (int64_t)(SL_NAME_LEN) && (int64_t)(SL_NAME_LEN) <= (int64_t)(sizeof(h2_b.name) / sizeof(*(const void *)0))), "heroes-ffi-extent-unit sum_n p n 2121 2133 2138 2149 8 const void *");
+    _Static_assert(sizeof(*(const void *)0) == 1 || (0 <= (int64_t)(SL_NAME_LEN) && (int64_t)(SL_NAME_LEN) <= (int64_t)(sizeof(h2_b.name) / sizeof(*(const void *)0))), "heroes-ffi-extent-unit sum_n p n 2122 2134 2139 2150 8 const void *");
 #line 49 "tests/golden/run/ffi-a-lent-field-counted-by-a-constant.hero"
     t41 = sum_n(t39, t40);
 #line 49 "tests/golden/run/ffi-a-lent-field-counted-by-a-constant.hero"

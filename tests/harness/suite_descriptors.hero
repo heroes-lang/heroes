@@ -43,7 +43,7 @@ constant SEED: str
     "seed/heroes.c"
 
 function run_all(scratch: str) -> report.Report?
-    r: report.Report @ report.empty()
+    r: report.Report @= report.empty()
 
     for entry in shell.list_entries(scratch: scratch, dir: EMISSIONS)?
         if !strings.ends_with(text: entry, suffix: ".c")
@@ -101,16 +101,16 @@ function judge(@r: report.Report, label: str, c: str)
 # is a fact about the value rather than a premise that the emitter stays
 # ASCII (CLAUDE.md §11).
 function named_in(c: str) -> {str: bool}
-    found: {str: bool} @ {}
+    found: {str: bool} @= {}
     n = c.len()
-    at: i64 @ 0
+    at: i64 @= 0
 
     while at < n
         if c[at] != '&'
             at @ at + 1
             continue
         start = at + 1
-        end: i64 @ start
+        end: i64 @= start
 
         while end < n && is_name_byte(c[end])
             end @ end + 1
@@ -137,11 +137,11 @@ function named_in(c: str) -> {str: bool}
 # — quadrupling for a doubling, measured 2026-08-23 and queued in
 # DECIDE.md. This walk allocates once per HIT instead of once per line.
 function defined_in(c: str) -> {str: bool}
-    found: {str: bool} @ {}
+    found: {str: bool} @= {}
     opener = "static const HeroDesc "
     n = c.len()
     width = opener.len()
-    at: i64 @ 0
+    at: i64 @= 0
 
     while at + width < n
         # `s` is the opener's first byte: the cheap test that keeps this
@@ -153,7 +153,7 @@ function defined_in(c: str) -> {str: bool}
             at @ at + 1
             continue
         start = at + width
-        end: i64 @ start
+        end: i64 @= start
 
         while end < n && is_name_byte(c[end])
             end @ end + 1
@@ -167,7 +167,7 @@ function defined_in(c: str) -> {str: bool}
 # Whether `needle` sits at `at`, byte for byte. No slice, so no abort on
 # a text whose bytes are not this scanner's business.
 function matches_at(c: str, at: i64, needle: str) -> bool
-    k: i64 @ 0
+    k: i64 @= 0
 
     while k < needle.len()
         if at + k >= c.len() || c[at + k] != needle[k]
@@ -183,27 +183,27 @@ function is_name_byte(b: u8) -> bool
 
 test "both directions fire, and the runtime's own descriptors are not asked to be defined"
     good = "static const HeroDesc h_m_P_desc = {\n};\nt0 = hero_array_new(&h_m_P_desc, 1);\n"
-    r1: report.Report @ report.empty()
+    r1: report.Report @= report.empty()
     judge(@r1, label: "good", c: good)
     assert r1.failed == 0
     assert r1.passed == 1
 
     # Defined and never pointed at: the warning this pruning exists for.
     unused = "static const HeroDesc h_m_P_desc = {\n};\n"
-    r2: report.Report @ report.empty()
+    r2: report.Report @= report.empty()
     judge(@r2, label: "unused", c: unused)
     assert r2.failed == 1
 
     # Pointed at and never defined: the exit-2 direction, which is worse.
     missing = "t0 = hero_array_new(&h_m_Q_desc, 1);\n"
-    r3: report.Report @ report.empty()
+    r3: report.Report @= report.empty()
     judge(@r3, label: "missing", c: missing)
     assert r3.failed == 1
 
     # The runtime's five are named by every program that holds an array
     # of scalars and defined by none of them.
     runtime = "t0 = hero_array_new(&hero_desc_int, 1);\n"
-    r4: report.Report @ report.empty()
+    r4: report.Report @= report.empty()
     judge(@r4, label: "runtime", c: runtime)
     assert r4.failed == 0
 

@@ -53,7 +53,7 @@ function ending_of(g: game.Game) -> str
 # every other file in this corpus uses, so a reader who has met one has met all
 # of them.
 function commands(script: str) -> [str]
-    out: [str] @ []
+    out: [str] @= []
 
     for line in split_lines(script)
         head = trimmed(line)
@@ -68,12 +68,12 @@ function is_space(c: u8) -> bool
     return c == ' ' || c == '\t' || c == 13
 
 function trimmed(line: str) -> str
-    from: i64 @ 0
+    from: i64 @= 0
 
     while from < line.len() && is_space(line[from])
         from @ from + 1
 
-    to: i64 @ line.len()
+    to: i64 @= line.len()
 
     while to > from && is_space(line[to - 1])
         to @ to - 1
@@ -81,9 +81,9 @@ function trimmed(line: str) -> str
     return line.slice(from: from, to: to)
 
 function split_lines(text: str) -> [str]
-    out: [str] @ []
-    start: i64 @ 0
-    i: i64 @ 0
+    out: [str] @= []
+    start: i64 @= 0
+    i: i64 @= 0
 
     while i < text.len()
         if text[i] == '\n'

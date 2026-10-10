@@ -67,7 +67,7 @@ record Emitted
 # and runs the binary once per test, so each failure is its own
 # process and one abort does not hide the tests after it.
 function tests_of(p: containers.Program) -> [str]
-    out: [str] @ []
+    out: [str] @= []
 
     for f in p.functions
         match f.kind
@@ -80,10 +80,10 @@ function tests_of(p: containers.Program) -> [str]
 # a perfectly good translation unit — it just cannot become a binary,
 # and the difference belongs to the caller.
 function entry_point(p: containers.Program) -> i64?
-    index: i64 @ 0
+    index: i64 @= 0
 
     for f in p.functions
-        is_main: bool @ false
+        is_main: bool @= false
 
         match f.kind
             .function_kind                             => is_main @ f.name == "main"
@@ -100,8 +100,8 @@ function entry_point(p: containers.Program) -> i64?
 # passes its own list to the same walk instead.
 function shown_fused(p: containers.Program, s: source.Source) -> [i64]
     used = builtins.reachable(p, s)
-    shown: [i64] @ []
-    index: i64 @ 0
+    shown: [i64] @= []
+    index: i64 @= 0
 
     for f in p.functions
         if !source.is_library(s, f.span.start) || !used[f.decl].is_err()
@@ -171,7 +171,7 @@ function emit_told(target: emit_decls.BuildTarget, p: containers.Program, c: sta
     walked = reach.reach_of(p, c, target: target, shown: shown)
     reached: {i64: bool} = walked.reached
     constructed: {i64: bool} = walked.constructed
-    names: ctype.Names @ ctype.new_names_qualified(s, decls, struct_tags: struct_tags)
+    names: ctype.Names @= ctype.new_names_qualified(s, decls, struct_tags: struct_tags)
     names @ ctype.with_options(names, c: c, s: s, decls: decls)
     names @ ctype.with_functions(names, c: c, s: s, decls: decls, p: p)
     names.lend_units @ lend_local.with_flows(lend_units, p, c)
@@ -188,7 +188,7 @@ function emit_told(target: emit_decls.BuildTarget, p: containers.Program, c: sta
     # (panel 085 R6). Internally inconsistent rather than merely
     # different from the bootstrap, which is what settled which side had
     # the bug.
-    w: writer.Writer @ writer.new_writer(module)
+    w: writer.Writer @= writer.new_writer(module)
     every: {i64: bool}? = fail(code: "every", msg: "the fused unit reads every group's header")
     emit_decls.prelude(
         @w,
@@ -270,11 +270,11 @@ function has(text: str, needle: str) -> bool
 
     if needle_cs.len() > cs.len()
         return false
-    start: i64 @ 0
+    start: i64 @= 0
 
     while start <= cs.len() - needle_cs.len()
-        matched: bool @ true
-        offset: i64 @ 0
+        matched: bool @= true
+        offset: i64 @= 0
 
         while offset < needle_cs.len()
             if cs[start + offset] != needle_cs[offset]
@@ -296,8 +296,8 @@ test "one program, one unit: prelude, order, shim — and the same bytes twice"
     c: state.Checked = checker.check(parsed.tree, out, s, parsed.decls)
     assert c.diagnostics.len() == 0
     low = lower.lower(parsed.tree, out, c, s, parsed.decls)
-    p: containers.Program @ low.program
-    cc: state.Checked @ c
+    p: containers.Program @= low.program
+    cc: state.Checked @= c
     mono_diags = mono.run(@p, @cc, s, parsed.decls)
     assert mono_diags.len() == 0
     place_store.run(@p)
@@ -336,8 +336,8 @@ test "a descriptor copies its element as bytes, never by an assignment of the st
     c: state.Checked = checker.check(parsed.tree, out, s, parsed.decls)
     assert c.diagnostics.len() == 0
     low = lower.lower(parsed.tree, out, c, s, parsed.decls)
-    p: containers.Program @ low.program
-    cc: state.Checked @ c
+    p: containers.Program @= low.program
+    cc: state.Checked @= c
     assert mono.run(@p, @cc, s, parsed.decls).len() == 0
     place_store.run(@p)
     own.run(@p, cc)

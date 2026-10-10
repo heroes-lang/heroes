@@ -27,7 +27,7 @@ function main()
     print(f"{f"}}{word}{{"} and {"}"}")
     print(BRACED)
     print(wrapped(n: 7))
-    m: {str: i64} @ {}
+    m: {str: i64} @= {}
     m[f"{{k}}"] @ 1
     print(m["{k}"].must())
     print("{{a}} }} a}b")

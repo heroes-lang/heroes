@@ -9,7 +9,7 @@ extern "a-panic-with-a-live-lease-says-one-thing.h"
 
 function main()
     x = "payload"
-    c: cstr @ x.lease()
+    c: cstr @= x.lease()
     look(s: c)
     a = [1, 2, 3]
     print(to_str(a[9]))

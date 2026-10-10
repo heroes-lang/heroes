@@ -21,9 +21,9 @@
 
 function digest(text: str) -> str
     m = 2147483647
-    a: i64 @ 0
-    b: i64 @ 0
-    index: i64 @ 0
+    a: i64 @= 0
+    b: i64 @= 0
+    index: i64 @= 0
 
     while index < text.len()
         v = text[index].to_i64().must()
@@ -35,9 +35,9 @@ function digest(text: str) -> str
 
 function hex8(number: i64) -> str
     ds = "0123456789abcdef"
-    out: str @ ""
-    value: i64 @ number
-    count: i64 @ 0
+    out: str @= ""
+    value: i64 @= number
+    count: i64 @= 0
 
     while count < 8
         d = value % 16

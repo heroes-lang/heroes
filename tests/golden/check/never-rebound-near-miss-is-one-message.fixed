@@ -6,7 +6,7 @@
 # carries, beside the rename, the note that says how a cell is declared
 # (R9), since a bare `name @ value` never declares.
 function total_of(xs: [i64]) -> i64
-    total: i64 @ 0
+    total: i64 @= 0
     for x in xs
         total @ total + x     #~ unknown_name
     return total

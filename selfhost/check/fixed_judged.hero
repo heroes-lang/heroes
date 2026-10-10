@@ -34,7 +34,7 @@ use parse
 # node, at any depth, written as the `[T]` of what it holds. Spans stay, so
 # the repaired program's messages are found at the same places.
 function repaired(a: ast.Ast, refused: {i64: bool}) -> ast.Ast
-    out: ast.Ast @ a
+    out: ast.Ast @= a
 
     for node in range(from: 0, to: a.types.len())
         if !refused[node].is_err()
@@ -62,7 +62,7 @@ function grown(@a: ast.Ast, id: i64)
 # What `told` keeps: the refusal, and every message `again`, the repaired
 # program's typing, tells at the same place with the same code.
 function reproduced(told: [diag.Diagnostic], again: [diag.Diagnostic]) -> [diag.Diagnostic]
-    kept: [diag.Diagnostic] @ []
+    kept: [diag.Diagnostic] @= []
 
     for d in told
         if d.code == "fixed_outside_a_group" || told_again(again, d)
@@ -84,15 +84,15 @@ function told_again(again: [diag.Diagnostic], d: diag.Diagnostic) -> bool
 # it is never in the map.
 test "the repaired program writes each refused fixed array as its [T]"
     p = parse.parse("function f(g: i64[2][3], h: u8[4]) -> i64\n    return 0\n")
-    refused: {i64: bool} @ {}
+    refused: {i64: bool} @= {}
 
     match p.decls[0].kind
         .function_decl f                                           => refused[f.value.params[0].ty] @ true
         .constant_decl | .record_decl | .variant_decl | .test_decl => assert false
 
     grown_tree = repaired(p.tree, refused)
-    arrays: i64 @ 0
-    fixed: i64 @ 0
+    arrays: i64 @= 0
+    fixed: i64 @= 0
 
     for t in grown_tree.types
         match t.kind

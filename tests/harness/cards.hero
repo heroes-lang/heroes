@@ -174,7 +174,7 @@ function read_card(text: str) -> Card
     rows = strings.lines(text)
 
     if rows.len() == 0 || rows[0] != FENCE
-        opening: str @ "nothing"
+        opening: str @= "nothing"
 
         if rows.len() > 0
             opening @ "`" + shown(rows[0]) + "`"
@@ -183,7 +183,7 @@ function read_card(text: str) -> Card
             consumed: 0,
             complaints: ["line 1 is " + opening + ", and an issue file opens with its card, " + template()]
         )
-    close: i64 @ 1
+    close: i64 @= 1
 
     while close < rows.len() && close <= FIELDS.len() + 1 && rows[close] != FENCE
         close @ close + 1
@@ -193,8 +193,8 @@ function read_card(text: str) -> Card
             consumed: 0,
             complaints: ["line 1 opens a card that no `---` closes within " + (FIELDS.len() + 2).to_str() + " lines, " + template()]
         )
-    consumed: i64 @ close + 1
-    complaints: [str] @ []
+    consumed: i64 @= close + 1
+    complaints: [str] @= []
 
     if consumed < rows.len() && rows[consumed] == ""
         consumed @ consumed + 1
@@ -208,8 +208,8 @@ function read_card(text: str) -> Card
             "the card holds " + (close - 1).to_str() + " lines between its fences, and it holds " + FIELDS.len().to_str() + ", one per field: " + FIELDS.join(", ")
         )
         return empty_card(consumed: consumed, complaints: complaints)
-    values: [str] @ []
-    i: i64 @ 0
+    values: [str] @= []
+    i: i64 @= 0
 
     while i < FIELDS.len()
         value = field_value(row: rows[i + 1], field: FIELDS[i])
@@ -264,7 +264,7 @@ function field_value(row: str, field: str) -> str?
 
 # Each value against its own vocabulary, one complaint per value that departs.
 function value_offences(values: [str]) -> [str]
-    out: [str] @ []
+    out: [str] @= []
 
     if !among(word: values[0], words: KINDS)
         out @ out.push("line 2: `kind` is `" + values[0] + "`, and a kind is one of " + told(KINDS))
@@ -300,8 +300,8 @@ function strip_card(text: str) -> str
 
     if taken >= rows.len()
         return ""
-    kept: [str] @ []
-    i: i64 @ taken
+    kept: [str] @= []
+    i: i64 @= taken
 
     while i < rows.len()
         kept @ kept.push(rows[i])
@@ -329,7 +329,7 @@ function is_milestone_name(name: str) -> bool
 
     if rest[0] == '-' || rest[rest.len() - 1] == '-'
         return false
-    i: i64 @ 0
+    i: i64 @= 0
 
     while i < rest.len()
         byte = rest[i]
@@ -355,7 +355,7 @@ function is_full_hash(text: str) -> bool
 function is_hex(text: str) -> bool
     if text.len() == 0
         return false
-    i: i64 @ 0
+    i: i64 @= 0
 
     while i < text.len()
         byte = text[i]
@@ -373,7 +373,7 @@ function is_issue_url(text: str) -> bool
 
     if number.len() == 0 || number[0] == '0'
         return false
-    i: i64 @ 0
+    i: i64 @= 0
 
     while i < number.len()
         if number[i] < '0' || number[i] > '9'
@@ -395,14 +395,14 @@ function is_issue_url(text: str) -> bool
 # this function taking the day after the quotation for the issue's birth.
 function origin_day(body: str) -> str
     rows = strings.lines(body)
-    i: i64 @ 0
+    i: i64 @= 0
 
     while i < rows.len() && !strings.starts_with(text: strings.trimmed(rows[i]), prefix: "**Origin:**")
         i @ i + 1
 
     if i == rows.len()
         return ""
-    paragraph: [str] @ []
+    paragraph: [str] @= []
 
     while i < rows.len() && strings.trimmed(rows[i]) != ""
         paragraph @ paragraph.push(rows[i])
@@ -413,7 +413,7 @@ function origin_day(body: str) -> str
 # The first YYYY-MM-DD in `text` that is a day of the calendar and stands
 # alone, no digit before it or after it.
 function first_day(text: str) -> str
-    i: i64 @ 0
+    i: i64 @= 0
 
     while i + 10 <= text.len()
         before_ok = i == 0 || !is_digit_byte(text[i - 1])
@@ -427,7 +427,7 @@ function first_day(text: str) -> str
     return ""
 
 function looks_like_day(text: str, at: i64) -> bool
-    j: i64 @ 0
+    j: i64 @= 0
 
     while j < 10
         byte = text[at + j]
@@ -449,9 +449,9 @@ function is_digit_byte(byte: u8) -> bool
 # in the order written: the one sentence `.claude/rules/verification.md` § The
 # batch gives a repair, so the one this reads.
 function repaired_hashes(body: str) -> [str]
-    out: [str] @ []
+    out: [str] @= []
     pieces = strings.split_text(text: body, separator: "Repaired at `")
-    i: i64 @ 1
+    i: i64 @= 1
 
     while i < pieces.len()
         close = strings.index_of(text: pieces[i], needle: "`")
@@ -470,7 +470,7 @@ function repaired_hashes(body: str) -> [str]
 # the first byte a name does not hold; the empty string where the first field
 # opens with no milestone.
 function first_field_milestone(line: str) -> str
-    opening: str @ ""
+    opening: str @= ""
 
     if strings.starts_with(text: line, prefix: "- [ ] **M-")
         opening @ "- [ ] **"
@@ -481,7 +481,7 @@ function first_field_milestone(line: str) -> str
     if opening == ""
         return ""
     rest = strings.without_prefix(text: line, prefix: opening)
-    end: i64 @ 2
+    end: i64 @= 2
 
     while end < rest.len() && (rest[end] >= 'a' && rest[end] <= 'z' || rest[end] >= '0' && rest[end] <= '9' || rest[end] == '-')
         end @ end + 1
@@ -507,8 +507,8 @@ function day_of(text: str) -> i64?
 
     if text.len() < 10
         return fail(code: "shape", msg: wrong)
-    digits: i64 @ 0
-    i: i64 @ 0
+    digits: i64 @= 0
+    i: i64 @= 0
 
     while i < 10
         byte = text[i]

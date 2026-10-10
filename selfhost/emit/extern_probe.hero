@@ -99,7 +99,7 @@ function probe_name(module: str, name: str) -> str
 # call. Nothing asks what KIND of extern it is; that premise is the one
 # M-header-constants falsified for the sibling walks.
 function extern_probes(@w: writer.Writer, p: containers.Program, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl])
-    probes: [Probe] @ []
+    probes: [Probe] @= []
 
     for f in p.functions
         if emit_externs.extern_spans(decls, f).header.is_err()
@@ -218,8 +218,8 @@ function probe_line(probe: str, name: str, parameters: [str], arguments: [str]) 
 # `cstr` lent to a pointer the check read crosses cast, as at the call
 # (`emit/lend_type.hero`, defect 427), so every reader rebuilds it alike.
 function probe_arguments(f: containers.Function, c: state.Checked, names: ctype.Names, callee: str) -> [str]
-    out: [str] @ []
-    index: i64 @ 0
+    out: [str] @= []
+    index: i64 @= 0
 
     for slot_id in f.params
         name = "a" + index.to_str()
@@ -235,7 +235,7 @@ function probe_arguments(f: containers.Function, c: state.Checked, names: ctype.
 # An `@` parameter whose declared type is opaque or numeric — the two
 # the emitter hands to C as `(void *)`, at the call and in the probe.
 function is_cast_out(c: state.Checked, slot: containers.Slot) -> bool
-    mutable: bool @ false
+    mutable: bool @= false
 
     match slot.kind
         .param_slot ps =>
@@ -255,8 +255,8 @@ function is_cast_out(c: state.Checked, slot: containers.Slot) -> bool
 # The names a probe gives its arguments: positional, so nothing about
 # the author's own parameter names can change the generated line.
 function argument_names(count: i64) -> [str]
-    out: [str] @ []
-    index: i64 @ 0
+    out: [str] @= []
+    index: i64 @= 0
 
     while index < count
         out @ out.push("a" + index.to_str())
@@ -265,7 +265,7 @@ function argument_names(count: i64) -> [str]
     return out
 
 test "a probe per extern with parameters, mutables as pointers, columns exact"
-    text = "extern \"m.h\"\n    function narrow(x: i64) -> i64\n    function fill(@buf: i64, n: i64)\n    function version() -> i64\n\nfunction main()\n    print(narrow(x: 1))\n    v: i64 @ 0\n    fill(buf: @v, n: 1)\n    print(version())\n"
+    text = "extern \"m.h\"\n    function narrow(x: i64) -> i64\n    function fill(@buf: i64, n: i64)\n    function version() -> i64\n\nfunction main()\n    print(narrow(x: 1))\n    v: i64 @= 0\n    fill(buf: @v, n: 1)\n    print(version())\n"
     parsed = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
     out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
@@ -273,7 +273,7 @@ test "a probe per extern with parameters, mutables as pointers, columns exact"
     assert c.diagnostics.len() == 0
     low = lower.lower(parsed.tree, out, c, s, parsed.decls)
     names = ctype.new_names(s, parsed.decls)
-    w: writer.Writer @ writer.new_writer("t")
+    w: writer.Writer @= writer.new_writer("t")
     extern_probes(@w, low.program, c, names, s, parsed.decls)
     got = writer.finish(w)
 
@@ -326,7 +326,7 @@ test "no probes, no pragma block: the block may only exist when a probe does"
         assert c.diagnostics.len() == 0
         low = lower.lower(parsed.tree, out, c, s, parsed.decls)
         names = ctype.new_names(s, parsed.decls)
-        w: writer.Writer @ writer.new_writer("t")
+        w: writer.Writer @= writer.new_writer("t")
         extern_probes(@w, low.program, c, names, s, parsed.decls)
         got = writer.finish(w)
         assert !ffi_lookup.has(text: got, needle: "diagnostic push")
@@ -348,11 +348,11 @@ function find_text(line: str, needle: str) -> i64?
 
     if needle_cs.len() > cs.len()
         return fail(code: "none", msg: "not found")
-    start: i64 @ 0
+    start: i64 @= 0
 
     while start <= cs.len() - needle_cs.len()
-        matched: bool @ true
-        offset: i64 @ 0
+        matched: bool @= true
+        offset: i64 @= 0
 
         while offset < needle_cs.len()
             if cs[start + offset] != needle_cs[offset]

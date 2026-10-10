@@ -34,13 +34,13 @@ record Holder
     s: str
 
 function main()
-    s: str @ "abc"
+    s: str @= "abc"
     s[0] @ 65  #~ str_element_write
 
-    r: Holder @ Holder(s: "abc")
+    r: Holder @= Holder(s: "abc")
     r.s[0] @ 65  #~ str_element_write
 
-    xs: [str] @ ["abc"]
+    xs: [str] @= ["abc"]
     xs[0][0] @ 65  #~ str_element_write
 
     # An out-of-range index is the same refusal and not a bounds question: the
@@ -49,7 +49,7 @@ function main()
 
     # The neighbours. A `[u8]` element IS a place; a whole `str` element of a
     # `[str]` IS a place; and the read side of `s[i]` is untouched.
-    bs: [u8] @ [1, 2]
+    bs: [u8] @= [1, 2]
     bs[0] @ 65
     xs[0] @ "zzz"
     print(f"{s[0]} {bs[0]} {xs[0]} {r.s}")

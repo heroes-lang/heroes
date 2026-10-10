@@ -49,7 +49,7 @@ function mapr<A, B>(f: (function(A) -> B), xs: [A]) -> [B]
     return xs.map(f)
 
 function apply_all<A>(fs: [(function(A) -> A)], x: A) -> A
-    out: A @ x
+    out: A @= x
 
     for f in fs
         out @ f(out)
@@ -57,7 +57,7 @@ function apply_all<A>(fs: [(function(A) -> A)], x: A) -> A
     return out
 
 function apply_rev<A>(x: A, fs: [(function(A) -> A)]) -> A
-    out: A @ x
+    out: A @= x
 
     for f in fs
         out @ f(out)

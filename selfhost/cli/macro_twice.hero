@@ -71,13 +71,13 @@ record Trial
     defined: str
 
 function diagnostic(s: source.Source, earlier: headers_together.Side, later: headers_together.Side, macro: str, message: str, added: [str], other_way: Trial) -> diag.Diagnostic
-    first: headers_together.Side @ earlier
-    second: headers_together.Side @ later
+    first: headers_together.Side @= earlier
+    second: headers_together.Side @= later
 
     if sort([earlier.header, later.header])[0] != earlier.header
         first @ later
         second @ earlier
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "ffi_header_refused",
         message: "`" + first.header + "` and `" + second.header + "`, the headers two groups name, define the macro `" + macro + "` two ways, which C forbids: clang refuses them together, at " + headers_together.at_line(first) + headers_together.between(first) + " and " + headers_together.at_line(second) + ": " + message,
         span: first.span
@@ -134,7 +134,7 @@ function other_note(earlier: headers_together.Side, later: headers_together.Side
 function moved(headers: [str], header: str, before: str) -> [str]
     if !order_groups.holds(headers, one: header) || !order_groups.holds(headers, one: before)
         return [header, before]
-    out: [str] @ []
+    out: [str] @= []
 
     for one in headers
         if one == before
@@ -164,7 +164,7 @@ function trial(t: toolchain.Toolchain, under: compiling.Compiling, headers: [str
 
 # The macro's definition in clang's `-dM` listing, as `definition` words it.
 function last_definition(listing: str, macro: str) -> str
-    found: str @ ""
+    found: str @= ""
 
     for line in ffi_lookup.lines(text: listing)
         row = clang_place.without_return(line)
@@ -179,9 +179,9 @@ function last_definition(listing: str, macro: str) -> str
 # one space, so a header's `#   define EXTERN extern X` and clang's listing of
 # it read alike.
 function definition(line: str) -> str
-    words: [str] @ []
-    from: i64 @ 0
-    index: i64 @ 0
+    words: [str] @= []
+    from: i64 @= 0
+    index: i64 @= 0
 
     while index < line.len()
         if line[index] == ' ' || line[index] == '\t'
@@ -192,7 +192,7 @@ function definition(line: str) -> str
 
     if index > from
         words @ words.push(line.slice(from: from, to: index))
-    start: i64 @ 0
+    start: i64 @= 0
 
     if words.len() > 0 && words[0] == "#"
         start @ 1

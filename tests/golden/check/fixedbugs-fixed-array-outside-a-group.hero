@@ -5,11 +5,11 @@
 # days after being registered). Three positions, two of them the worst shape a
 # defect can take:
 #
-#     xs: [i64[4]] @ []       heroes check exit 0, heroes build exit 0, A BINARY,
+#     xs: [i64[4]] @= []       heroes check exit 0, heroes build exit 0, A BINARY,
 #                             then `panic: entered unreachable code — this is a
 #                             compiler bug, please report it`, exit 134
-#     m: {str: i64[2]} @ {}   the same
-#     x: i64[4] @ [1,2,3,4]   exit 2, "internal error: compiling the generated C
+#     m: {str: i64[2]} @= {}   the same
+#     x: i64[4] @= [1,2,3,4]   exit 2, "internal error: compiling the generated C
 #                             failed: use of undeclared identifier 'h0_x'"
 #
 # The first two are worse than the third. `heroes build` *succeeds* and writes a

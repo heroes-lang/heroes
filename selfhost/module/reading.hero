@@ -50,8 +50,8 @@ record Text
 # (`file_not_found`) or it would not read (`read_failed`). A file that is not
 # UTF-8 is not a failure here: what to tell about it is `not_text.hero`'s.
 function source_text(path: str) -> Text?
-    status: i64 @ 0
-    marks: i64 @ 0
+    status: i64 @= 0
+    marks: i64 @= 0
     got = hero_file_read_shown(path: path.cstr(), status: @status, marks: @marks)
 
     if status == HERO_OS_NOT_FOUND
@@ -95,7 +95,7 @@ record Keyed
 # holds them to it over files of every shape: a seal written by the one is
 # read by the other whenever a `build/` outlives a compiler.
 function key_of(path: str) -> str?
-    status: i64 @ 0
+    status: i64 @= 0
     got = hero_file_key(path: path.cstr(), status: @status)
 
     if status == HERO_OS_NOT_FOUND
@@ -106,8 +106,8 @@ function key_of(path: str) -> str?
     return ok(got)
 
 function keyed(path: str) -> Keyed?
-    status: i64 @ 0
-    marks: i64 @ 0
+    status: i64 @= 0
+    marks: i64 @= 0
     got = hero_file_read_shown(path: path.cstr(), status: @status, marks: @marks)
 
     if status == HERO_OS_NOT_FOUND
@@ -133,8 +133,8 @@ function followed(added: [i64], file: Text, at: i64) -> [i64]
 # the compilation's text: `modules[k]` holds file k + 1's, the root being
 # `rooted`'s and the library, always last, holding none.
 function placed(s: source.Source, modules: [[source.Fault]]) -> source.Source
-    out: source.Source @ s
-    index: i64 @ 1
+    out: source.Source @= s
+    index: i64 @= 1
 
     for faults in modules
         for one in faults
@@ -147,7 +147,7 @@ function placed(s: source.Source, modules: [[source.Fault]]) -> source.Source
 # The root's faults before the modules': the root begins the text, so its own
 # offsets are the compilation's and every one of them comes first.
 function rooted(s: source.Source, root: [source.Fault]) -> source.Source
-    out: source.Source @ s
+    out: source.Source @= s
     out.faults @ root
 
     for one in s.faults
@@ -179,7 +179,7 @@ function nothing_at(opened: str, named: str) -> ()?
 # directory with no search permission), which is not absence. A path whose
 # every question fails is not called absent either.
 function absent(opened: str) -> bool
-    at: str @ opened
+    at: str @= opened
 
     while at.len() > 0
         match files.entry(at)
@@ -194,8 +194,8 @@ function absent(opened: str) -> bool
 # `path` without its last part and the separator before it: the directory
 # that would hold it, or "" where there is none to ask.
 function holder(path: str) -> str
-    cut: i64 @ -1
-    index: i64 @ 0
+    cut: i64 @= -1
+    index: i64 @= 0
 
     while index < path.len()
         if path[index] == '/'
@@ -262,8 +262,8 @@ test "defect 409: a module's three hundred faults stand after the root's, each m
         source.user_file(name: "geom.hero", text: "x".repeat(300) + "\n")
     ]
     s = source.from_files(inputs)
-    in_geom: [source.Fault] @ []
-    k: i64 @ 0
+    in_geom: [source.Fault] @= []
+    k: i64 @= 0
 
     while k < 300
         in_geom @ in_geom.push(source.Fault(at: k, byte: 200 + k % 50))
@@ -310,8 +310,8 @@ test "a file that is not UTF-8 has a key no file of text can have"
     assert held.key.len() == 16
     assert held.key[0] == 'n'
     assert held.text.len() > 0
-    status: i64 @ 0
-    marks: i64 @ 0
+    status: i64 @= 0
+    marks: i64 @= 0
     answer = hero_file_read_shown(path: latin.cstr(), status: @status, marks: @marks)
     assert status == HERO_OS_NOT_TEXT
     assert marks == 2

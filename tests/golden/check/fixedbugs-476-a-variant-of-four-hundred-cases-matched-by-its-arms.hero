@@ -412,7 +412,7 @@ variant V
     c399
 
 function f(v: V) -> i64
-    total: i64 @ 0
+    total: i64 @= 0
 
     match v  #~ non_exhaustive
         .c0   => total @ total + 0

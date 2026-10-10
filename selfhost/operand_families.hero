@@ -43,19 +43,19 @@ variant Family
 
 function family(kind: token.TokenKind) -> Family
     return match kind
-        .int_lit | .char_lit                                                             => .integer
-        .float_lit                                                                       => .float
-        .str_lit | .str_piece                                                            => .text
-        .kw_true | .kw_false                                                             => .truth
-        .kw_nullptr                                                                      => .pointer
-        .ident | .kw_constant | .kw_function | .kw_record | .kw_variant | .kw_match      => .none
-        .kw_if | .kw_else | .kw_for | .kw_while | .kw_in | .kw_break | .kw_continue      => .none
-        .kw_return | .kw_test | .kw_assert | .kw_extern | .kw_use | .kw_fail | .eq | .at => .none
-        .colon | .colon_colon | .comma | .dot | .question | .hole | .arrow | .fat_arrow  => .none
-        .pipe | .lparen | .rparen | .lbracket | .rbracket | .lbrace | .rbrace            => .none
-        .plus | .minus | .star | .slash | .percent | .eq_eq | .bang_eq | .lt | .le       => .none
-        .gt | .ge | .and_and | .or_or | .bang | .amp | .caret | .tilde | .shl | .shr     => .none
-        .comment | .terminator | .indent | .dedent | .eof | .error                       => .none
+        .int_lit | .char_lit                                                                      => .integer
+        .float_lit                                                                                => .float
+        .str_lit | .str_piece                                                                     => .text
+        .kw_true | .kw_false                                                                      => .truth
+        .kw_nullptr                                                                               => .pointer
+        .ident | .kw_constant | .kw_function | .kw_record | .kw_variant | .kw_match               => .none
+        .kw_if | .kw_else | .kw_for | .kw_while | .kw_in | .kw_break | .kw_continue               => .none
+        .kw_return | .kw_test | .kw_assert | .kw_extern | .kw_use | .kw_fail | .eq | .at | .at_eq => .none
+        .colon | .colon_colon | .comma | .dot | .question | .hole | .arrow | .fat_arrow           => .none
+        .pipe | .lparen | .rparen | .lbracket | .rbracket | .lbrace | .rbrace                     => .none
+        .plus | .minus | .star | .slash | .percent | .eq_eq | .bang_eq | .lt | .le                => .none
+        .gt | .ge | .and_and | .or_or | .bang | .amp | .caret | .tilde | .shl | .shr              => .none
+        .comment | .terminator | .indent | .dedent | .eof | .error                                => .none
 
 ## The operators
 
@@ -81,20 +81,20 @@ variant Takes
 # caller's to tell, since only what stands after the literal says so.
 function takes(kind: token.TokenKind) -> Takes
     return match kind
-        .plus                                                                        => .sum
-        .minus | .star | .slash | .percent | .lt | .le | .gt | .ge                   => .number
-        .amp | .pipe | .caret | .shl | .shr | .tilde                                 => .integer
-        .and_and | .or_or | .bang | .kw_if | .kw_while | .kw_assert                  => .truth
-        .eq_eq | .bang_eq                                                            => .anything
-        .kw_match                                                                    => .scrutinee
-        .kw_in                                                                       => .nothing
-        .ident | .int_lit | .float_lit | .str_lit | .str_piece | .char_lit           => .unjudged
-        .kw_constant | .kw_function | .kw_record | .kw_variant | .kw_else            => .unjudged
-        .kw_for | .kw_break | .kw_continue | .kw_return | .kw_test | .kw_extern      => .unjudged
-        .kw_nullptr | .kw_use | .kw_true | .kw_false | .kw_fail | .eq | .at | .colon => .unjudged
-        .colon_colon | .comma | .dot | .question | .hole | .arrow | .fat_arrow       => .unjudged
-        .lparen | .rparen | .lbracket | .rbracket | .lbrace | .rbrace                => .unjudged
-        .comment | .terminator | .indent | .dedent | .eof | .error                   => .unjudged
+        .plus                                                                                 => .sum
+        .minus | .star | .slash | .percent | .lt | .le | .gt | .ge                            => .number
+        .amp | .pipe | .caret | .shl | .shr | .tilde                                          => .integer
+        .and_and | .or_or | .bang | .kw_if | .kw_while | .kw_assert                           => .truth
+        .eq_eq | .bang_eq                                                                     => .anything
+        .kw_match                                                                             => .scrutinee
+        .kw_in                                                                                => .nothing
+        .ident | .int_lit | .float_lit | .str_lit | .str_piece | .char_lit                    => .unjudged
+        .kw_constant | .kw_function | .kw_record | .kw_variant | .kw_else                     => .unjudged
+        .kw_for | .kw_break | .kw_continue | .kw_return | .kw_test | .kw_extern               => .unjudged
+        .kw_nullptr | .kw_use | .kw_true | .kw_false | .kw_fail | .eq | .at | .at_eq | .colon => .unjudged
+        .colon_colon | .comma | .dot | .question | .hole | .arrow | .fat_arrow                => .unjudged
+        .lparen | .rparen | .lbracket | .rbracket | .lbrace | .rbrace                         => .unjudged
+        .comment | .terminator | .indent | .dedent | .eof | .error                            => .unjudged
 
 # Can an operator that takes `t` take a literal of family `f` under some
 # type? One row per family, naming what takes it, so a new `Takes` takes no
@@ -121,23 +121,23 @@ constant PREFIX: i64
 # test holds this copy), and 0 for a token that is no binary operator.
 function power(kind: token.TokenKind) -> i64
     return match kind
-        .or_or                                                                      => 1
-        .and_and                                                                    => 2
-        .eq_eq | .bang_eq | .lt | .le | .gt | .ge                                   => 3
-        .pipe                                                                       => 4
-        .caret                                                                      => 5
-        .amp                                                                        => 6
-        .shl | .shr                                                                 => 7
-        .plus | .minus                                                              => 8
-        .star | .slash | .percent                                                   => 9
-        .ident | .int_lit | .float_lit | .str_lit | .str_piece | .char_lit          => 0
-        .kw_constant | .kw_function | .kw_record | .kw_variant | .kw_match | .kw_if => 0
-        .kw_else | .kw_for | .kw_while | .kw_in | .kw_break | .kw_continue          => 0
-        .kw_return | .kw_test | .kw_assert | .kw_extern | .kw_nullptr | .kw_use     => 0
-        .kw_true | .kw_false | .kw_fail | .eq | .at | .colon | .colon_colon         => 0
-        .comma | .dot | .question | .hole | .arrow | .fat_arrow | .bang | .tilde    => 0
-        .lparen | .rparen | .lbracket | .rbracket | .lbrace | .rbrace               => 0
-        .comment | .terminator | .indent | .dedent | .eof | .error                  => 0
+        .or_or                                                                       => 1
+        .and_and                                                                     => 2
+        .eq_eq | .bang_eq | .lt | .le | .gt | .ge                                    => 3
+        .pipe                                                                        => 4
+        .caret                                                                       => 5
+        .amp                                                                         => 6
+        .shl | .shr                                                                  => 7
+        .plus | .minus                                                               => 8
+        .star | .slash | .percent                                                    => 9
+        .ident | .int_lit | .float_lit | .str_lit | .str_piece | .char_lit           => 0
+        .kw_constant | .kw_function | .kw_record | .kw_variant | .kw_match | .kw_if  => 0
+        .kw_else | .kw_for | .kw_while | .kw_in | .kw_break | .kw_continue           => 0
+        .kw_return | .kw_test | .kw_assert | .kw_extern | .kw_nullptr | .kw_use      => 0
+        .kw_true | .kw_false | .kw_fail | .eq | .at | .at_eq | .colon | .colon_colon => 0
+        .comma | .dot | .question | .hole | .arrow | .fat_arrow | .bang | .tilde     => 0
+        .lparen | .rparen | .lbracket | .rbracket | .lbrace | .rbrace                => 0
+        .comment | .terminator | .indent | .dedent | .eof | .error                   => 0
 
 # A token after which an operand begins, so a literal right after it is the
 # whole left operand of the operator that follows the literal: a binding, a
@@ -145,16 +145,16 @@ function power(kind: token.TokenKind) -> i64
 # opener or a `,`, and a line's edge.
 function begins_an_operand(kind: token.TokenKind) -> bool
     return match kind
-        .eq | .at | .kw_return | .fat_arrow | .kw_assert | .kw_if | .kw_while | .kw_in    => true
-        .kw_match | .lparen | .lbracket | .lbrace | .comma                                => true
-        .terminator | .indent | .dedent                                                   => true
-        .ident | .int_lit | .float_lit | .str_lit | .str_piece | .char_lit                => false
-        .kw_constant | .kw_function | .kw_record | .kw_variant | .kw_else | .kw_for       => false
-        .kw_break | .kw_continue | .kw_test | .kw_extern | .kw_nullptr | .kw_use          => false
-        .kw_true | .kw_false | .kw_fail | .colon | .colon_colon | .dot | .question        => false
-        .hole | .arrow | .pipe | .rparen | .rbracket | .rbrace | .plus | .minus | .star   => false
-        .slash | .percent | .eq_eq | .bang_eq | .lt | .le | .gt | .ge | .and_and | .or_or => false
-        .bang | .amp | .caret | .tilde | .shl | .shr | .comment | .eof | .error           => false
+        .eq | .at | .at_eq | .kw_return | .fat_arrow | .kw_assert | .kw_if | .kw_while | .kw_in => true
+        .kw_match | .lparen | .lbracket | .lbrace | .comma                                      => true
+        .terminator | .indent | .dedent                                                         => true
+        .ident | .int_lit | .float_lit | .str_lit | .str_piece | .char_lit                      => false
+        .kw_constant | .kw_function | .kw_record | .kw_variant | .kw_else | .kw_for             => false
+        .kw_break | .kw_continue | .kw_test | .kw_extern | .kw_nullptr | .kw_use                => false
+        .kw_true | .kw_false | .kw_fail | .colon | .colon_colon | .dot | .question              => false
+        .hole | .arrow | .pipe | .rparen | .rbracket | .rbrace | .plus | .minus | .star         => false
+        .slash | .percent | .eq_eq | .bang_eq | .lt | .le | .gt | .ge | .and_and | .or_or       => false
+        .bang | .amp | .caret | .tilde | .shl | .shr | .comment | .eof | .error                 => false
 
 test "an operator takes the families the checker accepts beside it, and no other"
     assert admits(takes(.plus), .text)

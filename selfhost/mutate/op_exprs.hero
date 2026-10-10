@@ -23,7 +23,7 @@ function and_or_words(p: model.Program, @out: [mutant.Mutant])
     for s in p.stmts
         for t in s.toks
             if t.kind == "and_and" || t.kind == "or_or"
-                w: str @ "or"
+                w: str @= "or"
 
                 if t.kind == "and_and"
                     w @ "and"
@@ -43,7 +43,7 @@ function triple_equals(p: model.Program, @out: [mutant.Mutant])
     for s in p.stmts
         for t in s.toks
             if t.kind == "eq_eq" || t.kind == "bang_eq"
-                w: str @ "!=="
+                w: str @= "!=="
 
                 if t.kind == "eq_eq"
                     w @ "==="
@@ -59,11 +59,11 @@ function line_comment(p: model.Program, @out: [mutant.Mutant])
 
         if bytes.bytes_at(text: c.text, at: 0, needle: "##") || bytes.bytes_at(text: c.text, at: 0, needle: "#~")
             continue
-        context: str @ "own-line"
+        context: str @= "own-line"
 
         if model.code(l)
             context @ "trailing"
-        stmts: [i64] @ []
+        stmts: [i64] @= []
 
         if l.stmt >= 0
             stmts @ [l.stmt]
@@ -77,7 +77,7 @@ function ternary(p: model.Program, @out: [mutant.Mutant])
         if !op_base.one_of(s.kind, set: ["bind", "declare", "return"]) || !s.head || !op_base.single_line(s) || !op_base.no_comment(p, s: s)
             continue
         toks = s.toks
-        ki: i64 @ -1
+        ki: i64 @= -1
 
         for j in range(from: 0, to: toks.len())
             if toks[j].kind == "kw_if" && toks[j].depth == 0
@@ -113,7 +113,7 @@ function ternary(p: model.Program, @out: [mutant.Mutant])
 
 # `.name(` ... `)` on one line: the dot's index and the closer's, each pair.
 function method_calls(s: model.Statement, name: str) -> [[i64]]
-    out: [[i64]] @ []
+    out: [[i64]] @= []
     toks = s.toks
     closer = op_base.enclosing(toks).closer
 
@@ -170,7 +170,7 @@ function slice_colon(p: model.Program, @out: [mutant.Mutant])
             if inner.len() < 6 || inner[0].text != "from" || inner[1].kind != "colon"
                 continue
             d = toks[i + 2].depth + 1
-            k: i64 @ -1
+            k: i64 @= -1
 
             for j in range(from: 0, to: inner.len())
                 if inner[j].kind == "comma" && inner[j].depth == d
@@ -190,8 +190,8 @@ record Declared
     functions: {str: bool}
 
 function declared(p: model.Program) -> Declared
-    records: {str: bool} @ {}
-    functions: {str: bool} @ {}
+    records: {str: bool} @= {}
+    functions: {str: bool} @= {}
 
     for s in p.stmts
         if s.toks.len() > 1 && s.toks[1].kind == "ident"
@@ -207,7 +207,7 @@ function all_labelled(toks: [tokens.Tok], o: i64, c: i64) -> bool
     if c == o + 1
         return false
     d = toks[o].depth + 1
-    starts: [i64] @ [o + 1]
+    starts: [i64] @= [o + 1]
 
     for j in range(from: o + 1, to: c)
         if toks[j].kind == "comma" && toks[j].depth == d
@@ -224,7 +224,7 @@ function all_labelled(toks: [tokens.Tok], o: i64, c: i64) -> bool
 # a function, called with every argument labelled; the name's index and
 # the closer's, each pair.
 function constructions(s: model.Statement, names: Declared) -> [[i64]]
-    out: [[i64]] @ []
+    out: [[i64]] @= []
     toks = s.toks
     closer = op_base.enclosing(toks).closer
 

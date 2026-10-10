@@ -22,7 +22,7 @@ use source
 # the parameters. Both positions are read, because both are the mark: a `cstr`
 # result and a parameter the header spells `char **`.
 function marks(decls: [ast.Decl], s: source.Source) -> {str: token.Span}
-    found: {str: token.Span} @ {}
+    found: {str: token.Span} @= {}
 
     for one in decls
         match one.kind

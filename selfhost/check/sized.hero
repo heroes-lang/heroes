@@ -58,8 +58,8 @@ function order_and_cycles(a: ast.Ast, r: resolved.Resolved, s: source.Source, de
 # makes the reported cycle stable, and therefore makes a `#~ no_size`
 # annotation land on the same line every run.
 function collect(a: ast.Ast, r: resolved.Resolved, decls: [ast.Decl]) -> [Edge]
-    edges: [Edge] @ []
-    index: i64 @ 0
+    edges: [Edge] @= []
+    index: i64 @= 0
 
     for decl in decls
         match decl.kind
@@ -146,20 +146,20 @@ function by_value_target(a: ast.Ast, r: resolved.Resolved, ty: i64) -> i64?
 # instructions, the square of its depth. `resolve/cycles.hero` walked the
 # same way until defect 374, and walks as this one does now.
 function walk(s: source.Source, decls: [ast.Decl], edges: [Edge]) -> SizeAnswer
-    colour: [i64] @ []
-    i: i64 @ 0
+    colour: [i64] @= []
+    i: i64 @= 0
 
     while i < decls.len()
         colour @ colour.push(0)
         i @ i + 1
 
     outs = outs_of(edges, nodes: decls.len())
-    order: [i64] @ []
-    seen: {str: bool} @ {}
-    diagnostics: [diag.Diagnostic] @ []
-    stack: [PathStep] @ []
-    height: i64 @ 0
-    root: i64 @ 0
+    order: [i64] @= []
+    seen: {str: bool} @= {}
+    diagnostics: [diag.Diagnostic] @= []
+    stack: [PathStep] @= []
+    height: i64 @= 0
+    root: i64 @= 0
 
     while root < decls.len()
         if colour[root] != 0 || !is_aggregate(decls, root)
@@ -217,13 +217,13 @@ function is_aggregate(decls: [ast.Decl], decl: i64) -> bool
 # the order `collect` met them, which is the order the walk takes them in
 # and so what decides which rotation of a cycle it meets first.
 function outs_of(edges: [Edge], nodes: i64) -> [[i64]]
-    outs: [[i64]] @ []
+    outs: [[i64]] @= []
 
     while outs.len() < nodes
         empty: [i64] = []
         outs @ outs.push(empty)
 
-    index: i64 @ 0
+    index: i64 @= 0
 
     for edge in edges
         add_out(@outs[edge.from], edge: index)
@@ -247,8 +247,8 @@ function put_step(@stack: [PathStep], at: i64, step: PathStep) -> i64
 # The edges the path took, root first: the one each step below `height`
 # but the root's was entered by.
 function path_of(stack: [PathStep], height: i64) -> [i64]
-    path: [i64] @ []
-    k: i64 @ 1
+    path: [i64] @= []
+    k: i64 @= 1
 
     while k < height
         path @ path.push(stack[k].via)
@@ -257,7 +257,7 @@ function path_of(stack: [PathStep], height: i64) -> [i64]
     return path
 
 function cycle_nodes_key(edges: [Edge], cycle: [i64]) -> str
-    rendered: [str] @ []
+    rendered: [str] @= []
 
     for e in cycle
         rendered @ rendered.push(edges[e].from.to_str())
@@ -271,8 +271,8 @@ function cycle_nodes_key(edges: [Edge], cycle: [i64]) -> str
 # walk happened to enter from — otherwise reordering two unrelated
 # declarations rewrites a golden's expected file.
 function cycle_from(edges: [Edge], path: [i64], closing: i64, target: i64) -> [i64]
-    cycle: [i64] @ []
-    found: bool @ false
+    cycle: [i64] @= []
+    found: bool @= false
 
     for e in path
         if edges[e].from == target
@@ -284,22 +284,22 @@ function cycle_from(edges: [Edge], path: [i64], closing: i64, target: i64) -> [i
     # A self-edge: the path holds nothing, the closing edge is the whole
     # cycle.
     cycle @ cycle.push(closing)
-    lowest_at: i64 @ 0
-    i: i64 @ 0
+    lowest_at: i64 @= 0
+    i: i64 @= 0
 
     while i < cycle.len()
         if edges[cycle[i]].from < edges[cycle[lowest_at]].from
             lowest_at @ i
         i @ i + 1
 
-    rotated: [i64] @ []
-    j: i64 @ lowest_at
+    rotated: [i64] @= []
+    j: i64 @= lowest_at
 
     while j < cycle.len()
         rotated @ rotated.push(cycle[j])
         j @ j + 1
 
-    k: i64 @ 0
+    k: i64 @= 0
 
     while k < lowest_at
         rotated @ rotated.push(cycle[k])
@@ -313,7 +313,7 @@ function cycle_from(edges: [Edge], path: [i64], closing: i64, target: i64) -> [i
 # pair was filed as a bug.
 function report(s: source.Source, decls: [ast.Decl], edges: [Edge], cycle: [i64]) -> diag.Diagnostic
     last = cycle[cycle.len() - 1]
-    steps: [str] @ []
+    steps: [str] @= []
 
     for e in cycle
         # `A.b: B (line 5)` rather than prose: the colon form is the one
@@ -325,7 +325,7 @@ function report(s: source.Source, decls: [ast.Decl], edges: [Edge], cycle: [i64]
             decl_name(s, decls, edges[e].from) + "." + source.span_text(s, edges[e].name) + ": " + decl_name(s, decls, edges[e].to) + " (" + at + ")"
         )
 
-    kind: str @ "record"
+    kind: str @= "record"
 
     match decls[edges[last].from].kind
         .variant_decl                                               => kind @ "variant"

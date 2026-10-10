@@ -32,12 +32,12 @@ function right_at(row: i64, col: i64) -> i64
 
 # One row of the product, as a real array built on this thread.
 function product_row(row: i64) -> [i64]
-    out: [i64] @ []
-    col: i64 @ 0
+    out: [i64] @= []
+    col: i64 @= 0
 
     while col < SIZE
-        total: i64 @ 0
-        k: i64 @ 0
+        total: i64 @= 0
+        k: i64 @= 0
 
         while k < SIZE
             total @ total + left_at(row: row, col: k) * right_at(row: k, col: col)
@@ -51,14 +51,14 @@ function product_row(row: i64) -> [i64]
 # A band of eight rows, built in full and then reduced to one number. The rows
 # are dropped when this function returns, on the thread that allocated them.
 function band(index: i64) -> i64
-    rows: [[i64]] @ []
-    row: i64 @ index * (SIZE / BANDS)
+    rows: [[i64]] @= []
+    row: i64 @= index * (SIZE / BANDS)
 
     while row < index * (SIZE / BANDS) + SIZE / BANDS
         rows @ rows.push(product_row(row: row))
         row @ row + 1
 
-    total: i64 @ 0
+    total: i64 @= 0
 
     for r in rows
         for v in r
@@ -67,14 +67,14 @@ function band(index: i64) -> i64
     return total
 
 function together() -> i64
-    handles: [i64] @ []
-    i: i64 @ 0
+    handles: [i64] @= []
+    i: i64 @= 0
 
     while i < BANDS
         handles @ handles.push(hero_thread_spawn(body: band, arg: i))
         i @ i + 1
 
-    total: i64 @ 0
+    total: i64 @= 0
 
     for h in handles
         total @ total + hero_thread_join(handle: h)
@@ -82,8 +82,8 @@ function together() -> i64
     return total
 
 function alone() -> i64
-    total: i64 @ 0
-    row: i64 @ 0
+    total: i64 @= 0
+    row: i64 @= 0
 
     while row < SIZE
         for v in product_row(row: row)
@@ -103,8 +103,8 @@ test "a row of the product has one entry per column"
     assert len(product_row(row: 0)) == SIZE
 
 test "the first entry is the first row against the first column, by hand"
-    total: i64 @ 0
-    k: i64 @ 0
+    total: i64 @= 0
+    k: i64 @= 0
 
     while k < SIZE
         total @ total + left_at(row: 0, col: k) * right_at(row: k, col: 0)

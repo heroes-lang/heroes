@@ -54,7 +54,7 @@ function closes_type_parameters(tokens: [token.Token], breaks: [state.Break], at
 
     if k != .kw_record && k != .kw_variant || head + 2 >= at || tokens[head + 1].kind != .ident || tokens[head + 2].kind != .lt
         return false
-    i: i64 @ head + 3
+    i: i64 @= head + 3
 
     while i < at
         if tokens[i].kind != .ident && tokens[i].kind != .comma
@@ -84,11 +84,11 @@ function ends_with_a_separator(tokens: [token.Token], at: i64, spaces: i64, marg
 # the line below a break begins, and past a comment. Walked back once per
 # line decided, over that line's own tokens.
 function line_head(tokens: [token.Token], breaks: [state.Break], at: i64) -> i64
-    floor: i64 @ 0
+    floor: i64 @= 0
 
     if breaks.len() > 0 && breaks[breaks.len() - 1].after <= at
         floor @ breaks[breaks.len() - 1].after
-    i: i64 @ at
+    i: i64 @= at
 
     while i > floor && !token.is_line_end(tokens[i - 1].kind)
         i @ i - 1
@@ -112,8 +112,8 @@ function line_head(tokens: [token.Token], breaks: [state.Break], at: i64) -> i64
 # patterns alone, `0` over `| 1 => 10`, holds neither, and its join is the
 # arm the author broke.
 function opens_an_arm(tokens: [token.Token], breaks: [state.Break], at: i64) -> bool
-    depth: i64 @ 0
-    i: i64 @ line_head(tokens, breaks: breaks, at: at)
+    depth: i64 @= 0
+    i: i64 @= line_head(tokens, breaks: breaks, at: at)
 
     while i <= at
         k = tokens[i].kind
@@ -132,7 +132,7 @@ function opens_an_arm(tokens: [token.Token], breaks: [state.Break], at: i64) -> 
 
 # Does the statement the tokens end with open with a declaration's keyword?
 function heads_a_declaration(tokens: [token.Token]) -> bool
-    i: i64 @ tokens.len() - 1
+    i: i64 @= tokens.len() - 1
 
     while i > 0 && !token.is_line_end(tokens[i - 1].kind)
         i @ i - 1
@@ -146,7 +146,7 @@ function heads_a_declaration(tokens: [token.Token]) -> bool
 # Does the token at `at` begin its line in the stream: nothing before it but
 # comments, back to a line's end, a block's edge or the file's start?
 function opens_a_line(tokens: [token.Token], at: i64) -> bool
-    i: i64 @ at - 1
+    i: i64 @= at - 1
 
     while i >= 0 && tokens[i].kind == .comment
         i @ i - 1

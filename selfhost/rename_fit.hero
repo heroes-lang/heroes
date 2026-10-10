@@ -81,13 +81,13 @@ record Said
 # The name stage's answer for `s`, every rename in it `certain` where both
 # witnesses hold and a `guess` everywhere else.
 function judged(out: resolved.Resolved, s: source.Source, parsed: parse.ParseOutput) -> resolved.Resolved
-    result: resolved.Resolved @ out
-    offers: [Offer] @ []
-    at: i64 @ 0
+    result: resolved.Resolved @= out
+    offers: [Offer] @= []
+    at: i64 @= 0
 
     for d in out.diagnostics
         if is_rename(d.code)
-            k: i64 @ 0
+            k: i64 @= 0
 
             for f in d.fixes
                 result.diagnostics[at].fixes[k].certainty @ .guess
@@ -100,7 +100,7 @@ function judged(out: resolved.Resolved, s: source.Source, parsed: parse.ParseOut
 
     if offers.len() == 0 || parsed.diagnostics.len() > 0 || modules.errors(s, parsed.uses).len() > 0
         return result
-    written: [Said] @ []
+    written: [Said] @= []
 
     for d in out.diagnostics
         written @ written.push(said(d, edit: none_edit()))
@@ -110,7 +110,7 @@ function judged(out: resolved.Resolved, s: source.Source, parsed: parse.ParseOut
 
     # One trial renames one name and asks every other did-you-mean the first
     # asked, so the trials share their answers (defect 386).
-    asking: asked.Asking @ asked.new_asking()
+    asking: asked.Asking @= asked.new_asking()
 
     for offer in offers
         if fits(offer, s, written, @asking)
@@ -141,7 +141,7 @@ function fits(offer: Offer, s: source.Source, written: [Said], @asking: asked.As
     if parsed.diagnostics.len() > 0 || modules.errors(tried, parsed.uses).len() > 0
         return false
     out = resolve.resolve_asking(parsed.tree, tried, parsed.decls, parsed.uses, @asking)
-    now: [Said] @ []
+    now: [Said] @= []
 
     for d in out.diagnostics
         now @ now.push(said(d, edit: offer.edit))
@@ -159,7 +159,7 @@ function fits(offer: Offer, s: source.Source, written: [Said], @asking: asked.As
 # first equal one answers, at the same thing: the count of a `Said` is how
 # many equal ones that list would still hold.
 function said_before(now: [Said], told: {Said: i64}) -> bool
-    left: {Said: i64} @ told
+    left: {Said: i64} @= told
 
     for one in now
         times = left[one].default(0)
@@ -172,8 +172,8 @@ function said_before(now: [Said], told: {Said: i64}) -> bool
 
 # How many times `xs` holds each `Said`, the one at `without` aside.
 function counted(xs: [Said], without: i64) -> {Said: i64}
-    counts: {Said: i64} @ {}
-    at: i64 @ 0
+    counts: {Said: i64} @= {}
+    at: i64 @= 0
 
     for one in xs
         if at != without
@@ -186,11 +186,11 @@ function counted(xs: [Said], without: i64) -> {Said: i64}
 # never holds a line end, so every line keeps its number and only the bytes
 # after it on its own line, and in the files after it, move.
 function renamed(s: source.Source, edit: diag.Fix) -> source.Source
-    inputs: [source.InputFile] @ []
-    index: i64 @ 0
+    inputs: [source.InputFile] @= []
+    index: i64 @= 0
 
     for f in s.files
-        text: str @ source_extent.text_of(s, index)
+        text: str @= source_extent.text_of(s, index)
         start = edit.span.start - f.start
 
         if start >= 0 && edit.span.end - f.start <= text.len()
@@ -254,7 +254,7 @@ function judged_source(s: source.Source) -> resolved.Resolved
 
 # Each rename's certainty, in source order, `certain` or `guess`.
 function certainties(out: resolved.Resolved) -> [str]
-    words: [str] @ []
+    words: [str] @= []
 
     for d in out.diagnostics
         if is_rename(d.code)
@@ -280,7 +280,7 @@ test "a rename is certain where its letters allow it alone and its program says 
     assert certainties_of("record Point\n    x: i64\n    y: i64\n\nfunction main()\n    p = Pointt(x: 1, y: 2)\n    print(p.x)\n") == ["certain"]
     assert certainties_of("function main()\n    xs = [1, 2, 3]\n    print(xs.lenn())\n") == ["certain"]
     assert certainties_of("record Point\n    x: i64\n    y: i64\n\nfunction main()\n    p: Pointt = Point(x: 1, y: 2)\n    print(p.x)\n") == ["certain"]
-    assert certainties_of("function main()\n    total: i64 @ 0\n    totl @ 5\n    print(total)\n") == ["certain"]
+    assert certainties_of("function main()\n    total: i64 @= 0\n    totl @ 5\n    print(total)\n") == ["certain"]
     assert certainties_of("function double(n: i64) -> i64\n    return n * 2\n\nfunction main()\n    ys = [1, 2].map(dobule)\n    print(ys.len())\n") == ["certain"]
 
 # Defect 220: the letters allow one name, and the program the rename writes
@@ -299,13 +299,13 @@ test "a rename whose program is refused anew is a guess"
     assert certainties_of("record Point\n    x: i64\n    y: i64\n\nfunction main()\n    p = Pointt(1, 2)\n    print(p.x)\n") == ["guess"]
     assert certainties_of("function main()\n    n = 5\n    print(n.lenn())\n") == ["guess"]
     assert certainties_of("record Amount\n    n: i64\n\nfunction main()\n    x: Amont = 5\n    print(x.n)\n") == ["guess"]
-    assert certainties_of("function main()\n    total: str @ \"\"\n    totl @ 5\n    print(total)\n") == ["guess"]
+    assert certainties_of("function main()\n    total: str @= \"\"\n    totl @ 5\n    print(total)\n") == ["guess"]
     assert certainties_of("function main()\n    xs = [2.0, 1.0]\n    ys = sqrt(xs)\n    print(ys)\n") == ["guess"]
     assert certainties_of("function double(n: str) -> str\n    return n + n\n\nfunction main()\n    ys = [1, 2].map(dobule)\n    print(ys.len())\n") == ["guess"]
 
 test "an error the program already had stands against no rename, and two are each tried alone"
     total = "function total(xs: [i64]) -> i64\n    return xs.len()\n\n"
-    assert certainties_of(total + "function main()\n    xs = [1, 2, 3]\n    print(totl(xs))\n    s: str @ \"a\"\n    s @ 5\n    print(s)\n") == ["certain"]
+    assert certainties_of(total + "function main()\n    xs = [1, 2, 3]\n    print(totl(xs))\n    s: str @= \"a\"\n    s @ 5\n    print(s)\n") == ["certain"]
     assert certainties_of(total + "function main()\n    xs = [1, 2, 3]\n    count = 2\n    n = totl(xs)\n    print(n + coutn)\n") == ["certain", "certain"]
 
     # One letter from another one-letter name is no slip the letters pin,
@@ -322,8 +322,8 @@ test "a name inside a module, and a rename in a module that is not the root, are
     assert certainties(judged_files(main: "use calc\n\nfunction main()\n    print(calc.twice(2.0))\n", calc: misfit)) == ["guess"]
 
 test "past TRIED renames, the rest stay the guesses they were offered as"
-    lines: [str] @ ["function main()\n    total = 1\n"]
-    n: i64 @ 0
+    lines: [str] @= ["function main()\n    total = 1\n"]
+    n: i64 @= 0
 
     while n <= TRIED
         lines @ lines.push("    print(totl)\n")
@@ -364,11 +364,11 @@ test "a count of what was said answers what a walk of the list answered"
     b = Said(code: "unknown_name", message: "m", start: 3, end: 4)
     c = Said(code: "unused_binding", message: "m", start: 1, end: 2)
     lists = lists_of(things: [a, b, c], longest: 3)
-    pairs: i64 @ 0
+    pairs: i64 @= 0
 
     for now in lists
         for told in lists
-            without: i64 @ -1
+            without: i64 @= -1
 
             while without < told.len()
                 assert said_before(now, told: counted(told, without: without)) == walked(now: now, told: struck(told, at: without))
@@ -384,12 +384,12 @@ test "a count of what was said answers what a walk of the list answered"
 # the empty list among them.
 function lists_of(things: [Said], longest: i64) -> [[Said]]
     empty: [Said] = []
-    out: [[Said]] @ [empty]
-    last: [[Said]] @ [empty]
-    size: i64 @ 0
+    out: [[Said]] @= [empty]
+    last: [[Said]] @= [empty]
+    size: i64 @= 0
 
     while size < longest
-        longer: [[Said]] @ []
+        longer: [[Said]] @= []
 
         for one in last
             for thing in things
@@ -406,11 +406,11 @@ function lists_of(things: [Said], longest: i64) -> [[Said]]
 # The match as it was read until defect 372: each thing in `now` found in
 # `left` in turn and the first equal one struck out.
 function walked(now: [Said], told: [Said]) -> bool
-    left: [Said] @ told
+    left: [Said] @= told
 
     for one in now
-        found: i64 @ -1
-        at: i64 @ 0
+        found: i64 @= -1
+        at: i64 @= 0
 
         for have in left
             if found < 0 && have == one
@@ -424,8 +424,8 @@ function walked(now: [Said], told: [Said]) -> bool
     return true
 
 function struck(xs: [Said], at: i64) -> [Said]
-    kept: [Said] @ []
-    index: i64 @ 0
+    kept: [Said] @= []
+    index: i64 @= 0
 
     for one in xs
         if index != at

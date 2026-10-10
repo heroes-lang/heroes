@@ -70,8 +70,8 @@ function valid(d: Date) -> bool
 function day_of_year(d: Date) -> i64?
     if !valid(d)
         return fail(code: "bad_date", msg: "no such date")
-    total: i64 @ d.day
-    month: i64 @ 1
+    total: i64 @= d.day
+    month: i64 @= 1
 
     while month < d.month
         total @ total + days_in_month(year: d.year, month: month)

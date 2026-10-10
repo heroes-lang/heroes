@@ -66,7 +66,7 @@ function bounded(program: str, words: [str], capture: str) -> Answer?
     for word in words
         hero_run_arg(word: word)
 
-    status: i64 @ 0
+    status: i64 @= 0
     code = hero_run_go(
         program: program.cstr(),
         in_path: "".cstr(),

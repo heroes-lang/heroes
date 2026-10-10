@@ -33,12 +33,12 @@ function hkey(parts: [str]) -> str
 # Every key must be one width, as a hash or `padded` makes it, so the
 # index written after it orders only a tie.
 function ordered_by(by: [str]) -> [i64]
-    at: {str: i64} @ {}
+    at: {str: i64} @= {}
 
     for i in range(from: 0, to: by.len())
         at[by[i] + "\t" + padded(i)] @ i
 
-    out: [i64] @ []
+    out: [i64] @= []
 
     # ORDER: by key, then by index: every key one width, the index padded.
     for k in sort(keys(at))
@@ -54,11 +54,11 @@ function padded(n: i64) -> str
 # Every operator's sites over `programs`, the table's order kept; a mutant
 # that leaves its program's lines as they were is no site.
 function candidates(programs: [model.Program]) -> [Sites]?
-    out: [Sites] @ []
-    texts: [[str]] @ []
+    out: [Sites] @= []
+    texts: [[str]] @= []
 
     for p in programs
-        lines: [str] @ []
+        lines: [str] @= []
 
         for l in p.lines
             lines @ lines.push(l.text)
@@ -66,7 +66,7 @@ function candidates(programs: [model.Program]) -> [Sites]?
         texts @ texts.push(lines)
 
     for op in operators.IDS
-        found: [mutant.Mutant] @ []
+        found: [mutant.Mutant] @= []
 
         for index in range(from: 0, to: programs.len())
             for m in operators.generate(op, p: programs[index])?
@@ -79,31 +79,31 @@ function candidates(programs: [model.Program]) -> [Sites]?
 
 # Up to `cap` of one operator's sites (`stratified`).
 function stratified(op: str, found: [mutant.Mutant], cap: i64) -> [mutant.Mutant]
-    contexts: [str] @ []
-    seen: {str: bool} @ {}
+    contexts: [str] @= []
+    seen: {str: bool} @= {}
 
     for m in found
         if seen[m.context].is_err()
             seen[m.context] @ true
             contexts @ contexts.push(m.context)
 
-    context_keys: [str] @ []
+    context_keys: [str] @= []
 
     for c in contexts
         context_keys @ context_keys.push(hkey([op, c]))
 
-    queues: [[mutant.Mutant]] @ []
+    queues: [[mutant.Mutant]] @= []
 
     for ci in ordered_by(context_keys)
         queues @ queues.push(queue(op: op, context: contexts[ci], found: found))
 
-    out: [mutant.Mutant] @ []
-    heads: [i64] @ []
+    out: [mutant.Mutant] @= []
+    heads: [i64] @= []
 
     for _ in queues
         heads @ heads.push(0)
 
-    left: bool @ true
+    left: bool @= true
 
     while out.len() < cap && left
         left @ false
@@ -122,8 +122,8 @@ function stratified(op: str, found: [mutant.Mutant], cap: i64) -> [mutant.Mutant
 # file its mutants in their anchor's; then the first of every file, the
 # second of every file, and so on.
 function queue(op: str, context: str, found: [mutant.Mutant]) -> [mutant.Mutant]
-    files: [str] @ []
-    by_file: {str: [mutant.Mutant]} @ {}
+    files: [str] @= []
+    by_file: {str: [mutant.Mutant]} @= {}
 
     for m in found
         if m.context != context
@@ -136,30 +136,30 @@ function queue(op: str, context: str, found: [mutant.Mutant]) -> [mutant.Mutant]
         else
             by_file[m.file] @ held.must().push(m)
 
-    file_keys: [str] @ []
+    file_keys: [str] @= []
 
     for f in files
         file_keys @ file_keys.push(hkey([op, context, f]))
 
-    per_file: [[mutant.Mutant]] @ []
+    per_file: [[mutant.Mutant]] @= []
 
     for fi in ordered_by(file_keys)
         mine = by_file[files[fi]].must()
-        anchor_keys: [str] @ []
+        anchor_keys: [str] @= []
 
         for m in mine
             anchor_keys @ anchor_keys.push(hkey([op, m.anchor]))
 
-        sorted_mine: [mutant.Mutant] @ []
+        sorted_mine: [mutant.Mutant] @= []
 
         for mi in ordered_by(anchor_keys)
             sorted_mine @ sorted_mine.push(mine[mi])
 
         per_file @ per_file.push(sorted_mine)
 
-    q: [mutant.Mutant] @ []
-    depth: i64 @ 0
-    took: bool @ true
+    q: [mutant.Mutant] @= []
+    depth: i64 @= 0
+    took: bool @= true
 
     while took
         took @ false
@@ -175,7 +175,7 @@ function queue(op: str, context: str, found: [mutant.Mutant]) -> [mutant.Mutant]
 
 # Each mutant's row of `plan-singles.jsonl`.
 function plan_rows(chosen: [mutant.Mutant], programs: [model.Program], by_file: {str: i64}, for_pairs: bool) -> [str]
-    rows: [str] @ []
+    rows: [str] @= []
 
     for m in chosen
         p = programs[by_file[m.file].must()]
@@ -190,12 +190,12 @@ function plan_rows(chosen: [mutant.Mutant], programs: [model.Program], by_file: 
 function extent_of(p: model.Program, m: mutant.Mutant) -> [i64]
     if m.stmts.len() == 0
         return [mutant.first_start(m) + 1, mutant.last_end(m)]
-    lo: i64 @ 0
-    hi: i64 @ 0
+    lo: i64 @= 0
+    hi: i64 @= 0
 
     for sid in m.stmts
         s = p.stmts[sid]
-        b: i64 @ s.last
+        b: i64 @= s.last
 
         if s.head && s.block_last > 0
             b @ s.block_last
@@ -209,7 +209,7 @@ function extent_of(p: model.Program, m: mutant.Mutant) -> [i64]
     return [lo, hi]
 
 function stmt_lines(p: model.Program, m: mutant.Mutant) -> [[i64]]
-    out: [[i64]] @ []
+    out: [[i64]] @= []
 
     for sid in m.stmts
         out @ out.push([p.stmts[sid].first, p.stmts[sid].last])

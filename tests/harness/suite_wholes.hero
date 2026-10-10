@@ -58,8 +58,8 @@ constant QUOTED: i64
     5
 
 function run_all(scratch: str) -> report.Report?
-    r: report.Report @ report.empty()
-    judged: i64 @ 0
+    r: report.Report @= report.empty()
+    judged: i64 @= 0
 
     for entry in shell.list_entries(scratch: scratch, dir: EMISSIONS)?
         if !strings.ends_with(text: entry, suffix: ".c")
@@ -91,7 +91,7 @@ function judge(@r: report.Report, label: str, c: str)
     if found.len() == 0
         report.keep_pass(@r)
         return
-    quoted: [str] @ []
+    quoted: [str] @= []
 
     for one in found
         if quoted.len() < QUOTED
@@ -119,20 +119,20 @@ variant Mode
 # `suite_descriptors` measured `split_on` on it never finishing. A line is
 # materialised only for a finding.
 function partial_writes(c: str) -> [Finding]
-    found: [Finding] @ []
+    found: [Finding] @= []
 
     # One set per open brace: the temporaries written whole in it so far.
     # Index 0 is outside every function and holds nothing.
-    scopes: [{i64: bool}] @ [{}]
-    mode: Mode @ .code
+    scopes: [{i64: bool}] @= [{}]
+    mode: Mode @= .code
     n = c.len()
-    at: i64 @ 0
-    line: i64 @ 1
-    line_start: i64 @ 0
+    at: i64 @= 0
+    line: i64 @= 1
+    line_start: i64 @= 0
 
     # Whether the next code byte begins a statement: after a line's
     # indentation, a `{`, a `}` or a `;`.
-    fresh: bool @ true
+    fresh: bool @= true
 
     while at < n
         b = c[at]
@@ -236,7 +236,7 @@ function partial_writes(c: str) -> [Finding]
 
         # `&t<N>.`, `&t<N>[` and `&(t<N>.`: the address of a part, handed on.
         if b == '&'
-            name_at: i64 @ at + 1
+            name_at: i64 @= at + 1
 
             if name_at < n && c[name_at] == '('
                 name_at @ name_at + 1
@@ -273,7 +273,7 @@ function partial_writes(c: str) -> [Finding]
 function temporary_end(c: str, at: i64) -> i64
     if at >= c.len() || c[at] != 't'
         return at
-    end: i64 @ at + 1
+    end: i64 @= at + 1
 
     while end < c.len() && c[end] >= '0' && c[end] <= '9'
         end @ end + 1
@@ -287,8 +287,8 @@ function temporary_end(c: str, at: i64) -> i64
     return end
 
 function number_of(c: str, from: i64, to: i64) -> i64
-    value: i64 @ 0
-    at: i64 @ from
+    value: i64 @= 0
+    at: i64 @= from
 
     while at < to
         value @ value * 10 + (c[at] - '0').to_i64().must()
@@ -305,7 +305,7 @@ function at_whole_assignment(c: str, at: i64) -> bool
 # `>=` are not one, since each has a byte other than a space before its `=`
 # or an `=` after it.
 function assigns_before_end(c: str, at: i64) -> bool
-    k: i64 @ at
+    k: i64 @= at
 
     while k + 2 < c.len()
         b = c[k]
@@ -330,7 +330,7 @@ function written_whole(scopes: [{i64: bool}], value: i64) -> bool
 function is_label(c: str, at: i64) -> bool
     if at + 3 >= c.len() || c[at] != 'b' || c[at + 1] != 'b'
         return false
-    k: i64 @ at + 2
+    k: i64 @= at + 2
 
     while k < c.len() && c[k] >= '0' && c[k] <= '9'
         k @ k + 1
@@ -338,7 +338,7 @@ function is_label(c: str, at: i64) -> bool
     return k > at + 2 && k < c.len() && c[k] == ':'
 
 function skip_line(c: str, at: i64) -> i64
-    k: i64 @ at
+    k: i64 @= at
 
     while k < c.len() && c[k] != '\n'
         k @ k + 1
@@ -399,11 +399,11 @@ test "reads, pointers, slots, literals and comments are not partial writes"
     assert partial_writes("int f(void) {\nbb0:\n    g(&(t3.f_x));\n}\n").len() == 1
 
 test "a failure names the count and the sites, and a clean text passes"
-    clean: report.Report @ report.empty()
+    clean: report.Report @= report.empty()
     judge(@clean, label: "clean", c: "int f(void) {\nbb0:\n    t1 = g();\n}\n")
     assert clean.passed == 1
     assert clean.failed == 0
-    bad: report.Report @ report.empty()
+    bad: report.Report @= report.empty()
     judge(@bad, label: "bad", c: "int f(void) {\nbb0:\n    t1.tag = INT64_C(0);\n}\n")
     assert bad.failed == 1
     assert strings.contains(text: bad.failures[0], needle: "1 writes into a part of a temporary")

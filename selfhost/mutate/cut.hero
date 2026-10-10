@@ -94,8 +94,8 @@ function cut(compiler: str, tree: str, out: str) -> Made?
     _ = phase(out, which: cut_workers.LEX, tasks: kept)?
     programs = modelled(out: out, mirror: mirror, kept: kept)?
     sites = strata.candidates(programs)?
-    chosen: [mutant.Mutant] @ []
-    counts: [str] @ []
+    chosen: [mutant.Mutant] @= []
+    counts: [str] @= []
 
     for one in sites
         counts @ counts.push(one.op + " " + one.found.len().to_str())
@@ -104,14 +104,14 @@ function cut(compiler: str, tree: str, out: str) -> Made?
             chosen @ chosen.push(m)
 
     written(out + "/work/sites.txt", lines: counts)?
-    by_file: {str: i64} @ {}
+    by_file: {str: i64} @= {}
 
     for index in range(from: 0, to: programs.len())
         by_file[programs[index].path] @ index
 
     rows = strata.plan_rows(chosen, programs: programs, by_file: by_file, for_pairs: false)
     judged_singles = verdicts(phase(out, which: cut_workers.SINGLES, tasks: rows)?)?
-    named: [str] @ []
+    named: [str] @= []
 
     for m in chosen
         named @ named.push(mutant.key_of(m))
@@ -125,25 +125,25 @@ function cut(compiler: str, tree: str, out: str) -> Made?
     )
     halves = strata.plan_rows(paired.extra, programs: programs, by_file: by_file, for_pairs: true)
     judged_halves = verdicts(phase(out, which: cut_workers.HALVES, tasks: halves)?)?
-    all_rows: [str] @ rows
+    all_rows: [str] @= rows
 
     for row in halves
         all_rows @ all_rows.push(row)
 
     written(out + "/plan-singles.jsonl", lines: all_rows)?
-    pair_rows: [str] @ []
+    pair_rows: [str] @= []
 
     for p in paired.pairs
         pair_rows @ pair_rows.push(pair_plan.row(p))
 
     written(out + "/plan-pairs.jsonl", lines: pair_rows)?
-    base_rows: [str] @ judged_singles.base
+    base_rows: [str] @= judged_singles.base
 
     for row in judged_halves.base
         base_rows @ base_rows.push(row)
 
     written(out + "/plan-base.jsonl", lines: base_rows)?
-    planted: {str: bool} @ {}
+    planted: {str: bool} @= {}
 
     for m in chosen
         planted[m.file] @ true
@@ -165,7 +165,7 @@ function cut(compiler: str, tree: str, out: str) -> Made?
     )
 
 function total_sites(sites: [strata.Sites]) -> i64
-    n: i64 @ 0
+    n: i64 @= 0
 
     for one in sites
         n @ n + one.found.len()
@@ -180,10 +180,10 @@ function empty_folder(path: str) -> bool
     return walked.must().files.len() == 0 && walked.must().unnamed.len() == 0
 
 function without(files: [str], gone: [str]) -> [str]
-    out: [str] @ []
+    out: [str] @= []
 
     for f in files
-        keep: bool @ true
+        keep: bool @= true
 
         for g in gone
             if g == f
@@ -196,7 +196,7 @@ function without(files: [str], gone: [str]) -> [str]
 
 # The tasks whose record's field `name` is written `value`.
 function where(records: [str], files: [str], name: str, value: str) -> [str]?
-    out: [str] @ []
+    out: [str] @= []
 
     for index in range(from: 0, to: records.len())
         j = json_read.read_json(records[index])?
@@ -210,8 +210,8 @@ function where(records: [str], files: [str], name: str, value: str) -> [str]?
 # The clean programs whose closure is within the cap, each closure's bytes
 # written to `work/closures.jsonl`.
 function within_cap(mirror: str, out: str, clean: [str]) -> [str]?
-    kept: [str] @ []
-    lines: [str] @ []
+    kept: [str] @= []
+    lines: [str] @= []
 
     for rel in clean
         read = cut_corpus.closure(mirror: mirror, rel: rel)?
@@ -231,8 +231,8 @@ function within_cap(mirror: str, out: str, clean: [str]) -> [str]?
 # its text is not stops the cut, naming it: a site planted from it would
 # be planted elsewhere.
 function modelled(out: str, mirror: str, kept: [str]) -> [model.Program]?
-    programs: [model.Program] @ []
-    problems: [str] @ []
+    programs: [model.Program] @= []
+    problems: [str] @= []
 
     for index in range(from: 0, to: kept.len())
         rel = kept[index]
@@ -265,16 +265,16 @@ record Verdicts
     base: [str]
 
 function verdicts(records: [str]) -> Verdicts?
-    reported: [bool] @ []
-    second: [bool] @ []
-    base: [str] @ []
+    reported: [bool] @= []
+    second: [bool] @= []
+    base: [str] @= []
 
     for line in records
         j = json_read.read_json(line)?
         reported @ reported.push(json_fields.truth_of(json_fields.field(j, name: "reported")?)?)
         second @ second.push(json_fields.truth_of(json_fields.field(j, name: "second")?)?)
         names = ["key", "stage", "class_normal", "class_control"]
-        values: [json_read.Json] @ []
+        values: [json_read.Json] @= []
 
         for name in names
             values @ values.push(json_fields.field(j, name: name)?)
@@ -287,20 +287,20 @@ function verdicts(records: [str]) -> Verdicts?
 # task order.
 function phase(out: str, which: i64, tasks: [str]) -> [str]?
     written(cut_workers.tasks_path(out, phase: which), lines: tasks)?
-    handles: [i64] @ []
+    handles: [i64] @= []
 
     for index in range(from: 0, to: cut_workers.JOBS)
         handles @ handles.push(hero_thread_spawn(body: cut_workers.work, arg: index * 8 + which))
 
-    done: i64 @ 0
+    done: i64 @= 0
 
     for h in handles
         done @ done + hero_thread_join(handle: h)
 
     if done != cut_workers.JOBS
         return fail(code: "worker_failed", msg: failures(out, which: which))
-    rows: [str] @ []
-    filled: [bool] @ []
+    rows: [str] @= []
+    filled: [bool] @= []
 
     for _ in tasks
         rows @ rows.push("")
@@ -332,7 +332,7 @@ function first_tab(line: str) -> i64?
     return fail(code: "no_tab", msg: "no tab")
 
 function failures(out: str, which: i64) -> str
-    said: [str] @ []
+    said: [str] @= []
 
     for index in range(from: 0, to: cut_workers.JOBS)
         got = read_file(cut_workers.failure_path(out, phase: which, index: index))
@@ -345,7 +345,7 @@ function failures(out: str, which: i64) -> str
     return said.join("")
 
 function written(path: str, lines: [str]) -> ()?
-    text: str @ ""
+    text: str @= ""
 
     if lines.len() > 0
         text @ lines.join("\n") + "\n"
@@ -395,7 +395,7 @@ test "a checkout, a folder that holds something and a tree that is not there are
 test "the operators, the strata and the pairs are the Python instrument's on ten programs of the frozen corpus (defect 448)"
     dir = "tests/golden/recovery/cut"
     listed = judged.told_lines(read_file(dir + "/programs.txt").must())
-    programs: [model.Program] @ []
+    programs: [model.Program] @= []
 
     for i in range(from: 0, to: listed.len())
         text = read_file("tests/golden/recovery/corpus/" + listed[i] + ".frozen").must()
@@ -408,7 +408,7 @@ test "the operators, the strata and the pairs are the Python instrument's on ten
         assert p.problems.len() == 0
         programs @ programs.push(p)
 
-    by_file: {str: i64} @ {}
+    by_file: {str: i64} @= {}
 
     for i in range(from: 0, to: programs.len())
         by_file[programs[i].path] @ i
@@ -417,13 +417,13 @@ test "the operators, the strata and the pairs are the Python instrument's on ten
     expected_sites = judged.told_lines(read_file(dir + "/sites.txt").must())
     expected_strata = judged.told_lines(read_file(dir + "/strata.txt").must())
     assert sites.len() == 96
-    plan: [mutant.Mutant] @ []
-    named: [str] @ []
+    plan: [mutant.Mutant] @= []
+    named: [str] @= []
 
     for k in range(from: 0, to: sites.len())
         rows = strata.plan_rows(sites[k].found, programs: programs, by_file: by_file, for_pairs: false)
         assert sites[k].op + " " + rows.len().to_str() + " " + digest_of(rows) == expected_sites[k]
-        line: [str] @ [sites[k].op]
+        line: [str] @= [sites[k].op]
 
         for m in strata.stratified(sites[k].op, found: sites[k].found, cap: 3)
             plan @ plan.push(m)
@@ -432,15 +432,15 @@ test "the operators, the strata and the pairs are the Python instrument's on ten
 
         assert line.join(" ") == expected_strata[k]
 
-    reported: [bool] @ []
-    second: [bool] @ []
+    reported: [bool] @= []
+    second: [bool] @= []
 
     for k in named
         reported @ reported.push(k[0] < '8')
         second @ second.push(k[1] < '8')
 
     paired = pair_plan.planned(plan, named: named, reported: reported, second: second, sites: sites)
-    pair_rows: [str] @ []
+    pair_rows: [str] @= []
 
     for p in paired.pairs
         pair_rows @ pair_rows.push(pair_plan.row(p))

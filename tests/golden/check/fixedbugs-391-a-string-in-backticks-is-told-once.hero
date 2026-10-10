@@ -15,7 +15,7 @@
 # lines is not one stretch: the lexer reads a line at a time.
 
 function in_a_hole(x: i64)
-    m: {str: i64} @ {}
+    m: {str: i64} @= {}
     m[f"ключ{x}"] @ 2
     print(f"{m[`ключ${x}`].must()}")  #~ unexpected_character
 

@@ -22,8 +22,8 @@
 # space is never written, because it is invisible and it changes a diff.
 
 function words_of(text: str) -> [str]
-    out: [str] @ []
-    piece: str @ ""
+    out: [str] @= []
+    piece: str @= ""
 
     for ch in text.chars()
         if ch == " " || ch == "\n" || ch == "\t"
@@ -41,8 +41,8 @@ function words_of(text: str) -> [str]
 function wrapped(text: str, width: i64) -> [str]?
     if width < 1
         return fail(code: "bad_width", msg: "a width below one leaves nowhere to put a word")
-    lines: [str] @ []
-    current: str @ ""
+    lines: [str] @= []
+    current: str @= ""
 
     for word in words_of(text)
         if current.len() == 0
@@ -72,7 +72,7 @@ function rendered(text: str, width: i64) -> str?
 # against the width it asked for — and which may EXCEED it, by exactly as much
 # as the longest single word does.
 function longest(text: str, width: i64) -> i64?
-    most: i64 @ 0
+    most: i64 @= 0
 
     for line in wrapped(text, width: width)?
         if line.len() > most
@@ -162,7 +162,7 @@ test "wrapping is idempotent at the same width"
 test "every word survives, in order, whatever the width"
     for width in [1, 5, 12, 20, 100]
         said = wrapped(PASSAGE, width: width).must()
-        back: [str] @ []
+        back: [str] @= []
 
         for line in said
             for word in words_of(line)

@@ -53,7 +53,7 @@ function cut(@m: Marks, to: i64)
 # points at a report beginning at `at` is the last there; anything else, a
 # list cut behind the marks or a mark whose report is gone, is walked.
 function stands(m: Marks, said: [diag.Diagnostic], at: i64, since: i64) -> bool
-    from: i64 @ since
+    from: i64 @= since
 
     if said.len() >= m.upto && since <= m.upto
         mark = m.at[at]
@@ -78,8 +78,8 @@ function report_at(start: i64) -> diag.Diagnostic
     return diag.new_diagnostic(code: "c", message: "m", span: token.Span(start: start, end: start + 1))
 
 test "a report is found by its mark, a tail by a walk, and a cut list never misleads"
-    said: [diag.Diagnostic] @ [report_at(4), report_at(9), report_at(4)]
-    m: Marks @ none()
+    said: [diag.Diagnostic] @= [report_at(4), report_at(9), report_at(4)]
+    m: Marks @= none()
     noted(@m, said: said)
     assert stands(m, said: said, at: 9, since: 0)
     assert stands(m, said: said, at: 4, since: 2)

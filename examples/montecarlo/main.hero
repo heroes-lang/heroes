@@ -39,9 +39,9 @@ function next_of(x: i64) -> i64
 # How many of this thread's darts land inside the quarter circle. The seed is
 # the only thing that came in.
 function inside_for(seed: i64) -> i64
-    hits: i64 @ 0
-    x: i64 @ seed * 7919 + 1
-    n: i64 @ 0
+    hits: i64 @= 0
+    x: i64 @= seed * 7919 + 1
+    n: i64 @= 0
 
     while n < DARTS
         x @ next_of(x: x)
@@ -56,14 +56,14 @@ function inside_for(seed: i64) -> i64
     return hits
 
 function estimate() -> f64
-    handles: [i64] @ []
-    i: i64 @ 0
+    handles: [i64] @= []
+    i: i64 @= 0
 
     while i < THREADS
         handles @ handles.push(hero_thread_spawn(body: inside_for, arg: i))
         i @ i + 1
 
-    hits: i64 @ 0
+    hits: i64 @= 0
 
     for h in handles
         hits @ hits + hero_thread_join(handle: h)

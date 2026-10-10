@@ -6,7 +6,7 @@
 # a list compared with `==`.
 
 function counting()
-    i: i64 @ 0
+    i: i64 @= 0
 
     for (i < 3)  #~ for_missing_in
         i @ i + 1
@@ -18,7 +18,7 @@ function forever()
     print(1)
 
 function within()
-    a: i64 @ 0
+    a: i64 @= 0
 
     for (a < 3) && (a > -1)  #~ for_missing_in
         a @ a + 1

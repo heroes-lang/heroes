@@ -103,12 +103,12 @@ function share(job: Job, phase: i64, index: i64) -> ()?
     tasks = judged.told_lines(text.must())
     capture = job.out + "/work/capture-" + phase.to_str() + "-" + index.to_str()
     mirror = job.out + "/work/mirror"
-    lines: [str] @ []
-    texts: {str: str} @ {}
-    task: i64 @ index
+    lines: [str] @= []
+    texts: {str: str} @= {}
+    task: i64 @= index
 
     while task < tasks.len()
-        said: str @ ""
+        said: str @= ""
 
         if phase == CENSUS
             said @ census(job, mirror: mirror, rel: tasks[task], capture: capture)?
@@ -121,7 +121,7 @@ function share(job: Job, phase: i64, index: i64) -> ()?
         lines @ lines.push(task.to_str() + "\t" + said)
         task @ task + JOBS
 
-    body: str @ ""
+    body: str @= ""
 
     if lines.len() > 0
         body @ lines.join("\n") + "\n"
@@ -132,7 +132,7 @@ function share(job: Job, phase: i64, index: i64) -> ()?
 
 # Every code of an arm's messages, sorted, each once.
 function codes(a: brief.Arm) -> [str]
-    seen: {str: bool} @ {}
+    seen: {str: bool} @= {}
 
     for m in a.messages
         seen[m.code] @ true
@@ -143,7 +143,7 @@ function codes(a: brief.Arm) -> [str]
 function census(job: Job, mirror: str, rel: str, capture: str) -> str?
     a = brief.checked(compiler: job.compiler, mirror: mirror, rel: rel, extra: [], capture: capture)?
     told = codes(a)
-    kind: str @ "other"
+    kind: str @= "other"
 
     if a.exit == 0 && a.messages.len() == 0 && a.other.len() == 0
         kind @ "accepted"
@@ -190,7 +190,7 @@ function lexed(job: Job, mirror: str, rel: str, task: i64, capture: str) -> str?
     return ok(rel)
 
 function beside(rel: str, name: str) -> str
-    at: i64 @ rel.len() - 1
+    at: i64 @= rel.len() - 1
 
     while at >= 0
         if rel[at] == '/'
@@ -207,7 +207,7 @@ function single(job: Job, mirror: str, row: str, capture: str, @texts: {str: str
     j = json_read.read_json(row)?
     m = mutant_of(j)?
     key = json_fields.text_field(j, name: "key")?
-    spans: [[i64]] @ []
+    spans: [[i64]] @= []
 
     for span in json_fields.items_field(j, name: "stmt_lines")?
         ends = json_fields.items_of(span)?
@@ -220,7 +220,7 @@ function single(job: Job, mirror: str, row: str, capture: str, @texts: {str: str
     lines = model_lines(original)
     planted = mutant.sited([m], lines: lines, ranges: [spans])?
     site = planted.sites[0]
-    text: str @ planted.lines.join("\n")
+    text: str @= planted.lines.join("\n")
 
     if original.len() > 0 && original[original.len() - 1] == 10
         text @ text + "\n"
@@ -241,7 +241,7 @@ function single(job: Job, mirror: str, row: str, capture: str, @texts: {str: str
 
 # A plan row's mutant, its hunks with their sites as written.
 function mutant_of(j: json_read.Json) -> mutant.Mutant?
-    hunks: [mutant.Hunk] @ []
+    hunks: [mutant.Hunk] @= []
 
     for h in json_fields.items_field(j, name: "hunks")?
         hunks @ hunks.push(
@@ -267,8 +267,8 @@ function text_of(mirror: str, file: str, @texts: {str: str}) -> str?
 # A text's lines as the model splits them: at each line feed, a final one
 # making none.
 function model_lines(text: str) -> [str]
-    out: [str] @ []
-    start: i64 @ 0
+    out: [str] @= []
+    start: i64 @= 0
 
     for at in range(from: 0, to: text.len())
         if text[at] == 10

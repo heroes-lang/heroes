@@ -5,7 +5,7 @@
 # is told not to copy, libcurl for the body of a request — and the header cannot
 # say which: a parameter that copies and one that keeps are both `const char *`.
 #
-# A lease is for that case. `x: cstr @ s.lease()` hands C a COPY of the bytes
+# A lease is for that case. `x: cstr @= s.lease()` hands C a COPY of the bytes
 # that lives until `end_lease(@x)` frees it and empties the cell. The name of a
 # lease may stand only as an argument of a call, nothing else writes its cell,
 # and a lease nobody ends is counted when `main` returns, so a leak is a loud
@@ -17,10 +17,10 @@ extern "13-lease.h"
     function kept_label_length() -> u64
 
 function main()
-    at: i64 @ 0
+    at: i64 @= 0
 
     while at < 3
-        label: cstr @ f"row-{at}-payload".lease()
+        label: cstr @= f"row-{at}-payload".lease()
         keep_label(s: label)
         print(f"C still reads {kept_label_length()} bytes")
         end_lease(@label)

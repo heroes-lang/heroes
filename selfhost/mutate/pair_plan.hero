@@ -66,8 +66,8 @@ function pair_ok(a: mutant.Mutant, b: mutant.Mutant) -> bool
 # (a first), `second` (told on its site, in either arm); `sites` every
 # operator's sites, the table's order.
 function planned(plan: [mutant.Mutant], named: [str], reported: [bool], second: [bool], sites: [strata.Sites]) -> Paired
-    firsts: {str: [i64]} @ {}
-    seconds: {str: [i64]} @ {}
+    firsts: {str: [i64]} @= {}
+    seconds: {str: [i64]} @= {}
 
     for i in range(from: 0, to: plan.len())
         if reported[i]
@@ -77,25 +77,25 @@ function planned(plan: [mutant.Mutant], named: [str], reported: [bool], second: 
             seconds[plan[i].op] @ seconds[plan[i].op].default([]).push(i)
 
     # Each operator's seconds by file, each file's by where they begin.
-    by_file: {str: {str: [i64]}} @ {}
+    by_file: {str: {str: [i64]}} @= {}
 
     for op in operators.IDS
-        files: {str: [i64]} @ {}
+        files: {str: [i64]} @= {}
 
         for i in seconds[op].default([])
             files[plan[i].file] @ files[plan[i].file].default([]).push(i)
 
-        sorted_files: {str: [i64]} @ {}
+        sorted_files: {str: [i64]} @= {}
 
         # ORDER: none observed; each file's list is ordered on its own.
         for f in keys(files)
             list = files[f].must()
-            starts: [str] @ []
+            starts: [str] @= []
 
             for i in list
                 starts @ starts.push(strata.padded(mutant.first_start(plan[i])))
 
-            in_order: [i64] @ []
+            in_order: [i64] @= []
 
             for pos in strata.ordered_by(starts)
                 in_order @ in_order.push(list[pos])
@@ -104,8 +104,8 @@ function planned(plan: [mutant.Mutant], named: [str], reported: [bool], second: 
 
         by_file[op] @ sorted_files
 
-    pairs: [Pair] @ []
-    missing: [[str]] @ []
+    pairs: [Pair] @= []
+    missing: [[str]] @= []
 
     for a_op in operators.IDS
         for b_op in operators.IDS
@@ -127,13 +127,13 @@ function planned(plan: [mutant.Mutant], named: [str], reported: [bool], second: 
 # The pairs of one ordered pair of operators, up to `SAMPLES`, each in a
 # file of its own; how many were found.
 function pairs_of(plan: [mutant.Mutant], named: [str], a_op: str, b_op: str, firsts: [i64], seconds: {str: [i64]}, @pairs: [Pair]) -> i64
-    order_keys: [str] @ []
+    order_keys: [str] @= []
 
     for i in firsts
         order_keys @ order_keys.push(strata.hkey([a_op, b_op, plan[i].file, plan[i].anchor]))
 
-    got: i64 @ 0
-    used: {str: bool} @ {}
+    got: i64 @= 0
+    used: {str: bool} @= {}
 
     for pos in strata.ordered_by(order_keys)
         a = firsts[pos]
@@ -159,17 +159,17 @@ function pairs_of(plan: [mutant.Mutant], named: [str], a_op: str, b_op: str, fir
 # Where the singles hold no pair for an ordered pair of operators, one
 # planted from the sites, in the files the two share, by their hash.
 function fallbacks(named: [str], sites: [strata.Sites], missing: [[str]], pairs: [Pair]) -> Paired
-    out: [Pair] @ pairs
-    extra: [mutant.Mutant] @ []
-    known: {str: bool} @ {}
+    out: [Pair] @= pairs
+    extra: [mutant.Mutant] @= []
+    known: {str: bool} @= {}
 
     for k in named
         known[k] @ true
 
-    by_op: {str: {str: [mutant.Mutant]}} @ {}
+    by_op: {str: {str: [mutant.Mutant]}} @= {}
 
     for one in sites
-        files: {str: [mutant.Mutant]} @ {}
+        files: {str: [mutant.Mutant]} @= {}
 
         for m in one.found
             files[m.file] @ files[m.file].default([]).push(m)
@@ -181,8 +181,8 @@ function fallbacks(named: [str], sites: [strata.Sites], missing: [[str]], pairs:
         b_op = both[1]
         a_files = by_op[a_op].default({})
         b_files = by_op[b_op].default({})
-        shared: [str] @ []
-        shared_keys: [str] @ []
+        shared: [str] @= []
+        shared_keys: [str] @= []
 
         # ORDER: none observed; the shared files are ordered by their hash.
         for f in keys(a_files)
@@ -207,7 +207,7 @@ function fallbacks(named: [str], sites: [strata.Sites], missing: [[str]], pairs:
     return Paired(pairs: out, extra: extra)
 
 function ordered(items: [str], by: [str]) -> [str]
-    out: [str] @ []
+    out: [str] @= []
 
     for pos in strata.ordered_by(by)
         out @ out.push(items[pos])
@@ -218,26 +218,26 @@ function ordered(items: [str], by: [str]) -> [str]
 # file's first `FALLBACK_FIRSTS` firsts by their anchor's hash, each tried
 # against the seconds in the order they begin.
 function first_fit(a_op: str, files: [str], a_files: {str: [mutant.Mutant]}, b_files: {str: [mutant.Mutant]}) -> [mutant.Mutant]
-    tried: i64 @ 0
+    tried: i64 @= 0
 
     for f in files
         if tried >= FALLBACK_FILES
             break
         tried @ tried + 1
         a_all = a_files[f].must()
-        a_keys: [str] @ []
+        a_keys: [str] @= []
 
         for m in a_all
             a_keys @ a_keys.push(strata.hkey([a_op, m.anchor]))
 
         b_all = b_files[f].must()
-        b_keys: [str] @ []
+        b_keys: [str] @= []
 
         for m in b_all
             b_keys @ b_keys.push(strata.padded(mutant.first_start(m)))
 
         b_order = strata.ordered_by(b_keys)
-        taken: i64 @ 0
+        taken: i64 @= 0
 
         for ai in strata.ordered_by(a_keys)
             if taken >= FALLBACK_FIRSTS
@@ -253,8 +253,8 @@ function first_fit(a_op: str, files: [str], a_files: {str: [mutant.Mutant]}, b_f
 
 # A pair as `plan-pairs.jsonl` holds it.
 function row(p: Pair) -> str
-    names: [str] @ ["a", "b", "a_op", "b_op", "file"]
-    values: [json_read.Json] @ [
+    names: [str] @= ["a", "b", "a_op", "b_op", "file"]
+    values: [json_read.Json] @= [
         json_fields.string(p.a)
         json_fields.string(p.b)
         json_fields.string(p.a_op)

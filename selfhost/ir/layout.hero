@@ -84,7 +84,7 @@ function field_index(decls: [ast.Decl], c: state.Checked, s: source.Source, owne
         .named n =>
             match decls[n.decl].kind
                 .record_decl rec =>
-                    names: [str] @ []
+                    names: [str] @= []
 
                     for field in rec.fields
                         names @ names.push(source.span_text(s, field.name))
@@ -97,7 +97,7 @@ function field_index(decls: [ast.Decl], c: state.Checked, s: source.Source, owne
         .case_ty vc =>
             match decls[vc.decl].kind
                 .variant_decl v =>
-                    names: [str] @ []
+                    names: [str] @= []
 
                     for field in v.cases[vc.at].fields
                         names @ names.push(source.span_text(s, field.name))
@@ -127,8 +127,8 @@ function case_index(@cases: {i64: {str: i64}}, decls: [ast.Decl], s: source.Sour
 
     match decls[decl].kind
         .variant_decl v =>
-            names: {str: i64} @ {}
-            at: i64 @ 0
+            names: {str: i64} @= {}
+            at: i64 @= 0
 
             for one_case in v.cases
                 text = source.span_text(s, one_case.name)
@@ -144,7 +144,7 @@ function case_index(@cases: {i64: {str: i64}}, decls: [ast.Decl], s: source.Sour
     return fail(code: "absent", msg: "unreached")
 
 function position(names: [str], wanted: str) -> i64?
-    at: i64 @ 0
+    at: i64 @= 0
 
     for name in names
         if name == wanted
@@ -182,11 +182,11 @@ test "a field, a payload field and a failure field all become indices"
     # expression, so their ids may be fresh: every query goes through a
     # Checked carrying the extended table — an id must never be asked of
     # a table that did not issue it.
-    tbl: table.Types @ c.types
+    tbl: table.Types @= c.types
     point = table.intern(@tbl, .named(decl: 0))
     word_case = table.intern(@tbl, .case_ty(decl: 1, at: 0))
     failure = table.intern(@tbl, .failure)
-    widened: state.Checked @ c
+    widened: state.Checked @= c
     widened.types @ tbl
 
     # The span arithmetic is guarded: the test first proves the span
@@ -217,7 +217,7 @@ test "a case name becomes its index, and counted is a lookup"
     c = checker.check(p.tree, out, s, p.decls)
     plus_span = token.Span(start: 79, end: 83)
     assert source.span_text(s, plus_span) == "plus"
-    cases: {i64: {str: i64}} @ {}
+    cases: {i64: {str: i64}} @= {}
     assert case_index(@cases, p.decls, s, decl: 1, name: plus_span).must() == 1
     assert case_index(@cases, p.decls, s, decl: 1, name: plus_span).must() == 1
     assert cases.len() == 1

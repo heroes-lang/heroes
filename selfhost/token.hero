@@ -59,6 +59,8 @@ variant TokenKind
     kw_fail
     eq
     at
+    # `@=`, the symbol that declares a mutable cell (panel 209).
+    at_eq
     colon
     # `::`, the field-name operator: `Point::x` is the `str` `"x"`.
     # Two bytes rather than a second meaning for `.`, which already
@@ -149,16 +151,16 @@ function closer_of(opener: TokenKind) -> TokenKind
 # reads no parse, as the two above came here.
 function begins_an_expression(kind: TokenKind) -> bool
     return match kind
-        .minus | .bang | .tilde | .ident | .int_lit | .float_lit | .str_lit | .str_piece => true
-        .char_lit | .kw_true | .kw_false | .kw_nullptr | .hole | .kw_fail | .kw_if       => true
-        .kw_match | .lparen | .lbracket | .lbrace | .dot                                 => true
-        .kw_constant | .kw_function | .kw_record | .kw_variant | .kw_else | .kw_for      => false
-        .kw_while | .kw_in | .kw_break | .kw_continue | .kw_return | .kw_test            => false
-        .kw_assert | .kw_extern | .kw_use | .eq | .at | .colon | .colon_colon | .comma   => false
-        .question | .arrow | .fat_arrow | .pipe | .rparen | .rbracket | .rbrace | .plus  => false
-        .star | .slash | .percent | .eq_eq | .bang_eq | .lt | .le | .gt | .ge            => false
-        .and_and | .or_or | .amp | .caret | .shl | .shr | .comment | .terminator         => false
-        .indent | .dedent | .eof | .error                                                => false
+        .minus | .bang | .tilde | .ident | .int_lit | .float_lit | .str_lit | .str_piece        => true
+        .char_lit | .kw_true | .kw_false | .kw_nullptr | .hole | .kw_fail | .kw_if              => true
+        .kw_match | .lparen | .lbracket | .lbrace | .dot                                        => true
+        .kw_constant | .kw_function | .kw_record | .kw_variant | .kw_else | .kw_for             => false
+        .kw_while | .kw_in | .kw_break | .kw_continue | .kw_return | .kw_test                   => false
+        .kw_assert | .kw_extern | .kw_use | .eq | .at | .at_eq | .colon | .colon_colon | .comma => false
+        .question | .arrow | .fat_arrow | .pipe | .rparen | .rbracket | .rbrace | .plus         => false
+        .star | .slash | .percent | .eq_eq | .bang_eq | .lt | .le | .gt | .ge                   => false
+        .and_and | .or_or | .amp | .caret | .shl | .shr | .comment | .terminator                => false
+        .indent | .dedent | .eof | .error                                                       => false
 
 # A token of `kind` over `start` to `end`: a stream written by hand, as the
 # parser's tests write theirs, eight modules of which held a copy as `tok`
@@ -175,16 +177,16 @@ function made(kind: TokenKind, start: i64, end: i64) -> Token
 # defect 193, a table of kinds that reads no parse.
 function continues_a_line(kind: TokenKind) -> bool
     return match kind
-        .plus | .star | .slash | .percent | .eq_eq | .bang_eq | .lt | .le | .gt | .ge      => true
-        .and_and | .or_or | .amp | .pipe | .caret | .shl | .shr | .eq | .at | .comma       => true
-        .colon | .colon_colon | .question | .arrow | .fat_arrow | .rparen | .rbracket      => true
-        .rbrace | .kw_else | .kw_in                                                        => true
-        .minus | .bang | .tilde | .ident | .int_lit | .float_lit | .str_lit | .str_piece   => false
-        .char_lit | .kw_true | .kw_false | .kw_nullptr | .hole | .kw_fail | .kw_if         => false
-        .kw_match | .lparen | .lbracket | .lbrace | .dot | .kw_constant | .kw_function     => false
-        .kw_record | .kw_variant | .kw_for | .kw_while | .kw_break | .kw_continue          => false
-        .kw_return | .kw_test | .kw_assert | .kw_extern | .kw_use | .comment | .terminator => false
-        .indent | .dedent | .eof | .error                                                  => false
+        .plus | .star | .slash | .percent | .eq_eq | .bang_eq | .lt | .le | .gt | .ge         => true
+        .and_and | .or_or | .amp | .pipe | .caret | .shl | .shr | .eq | .at | .at_eq | .comma => true
+        .colon | .colon_colon | .question | .arrow | .fat_arrow | .rparen | .rbracket         => true
+        .rbrace | .kw_else | .kw_in                                                           => true
+        .minus | .bang | .tilde | .ident | .int_lit | .float_lit | .str_lit | .str_piece      => false
+        .char_lit | .kw_true | .kw_false | .kw_nullptr | .hole | .kw_fail | .kw_if            => false
+        .kw_match | .lparen | .lbracket | .lbrace | .dot | .kw_constant | .kw_function        => false
+        .kw_record | .kw_variant | .kw_for | .kw_while | .kw_break | .kw_continue             => false
+        .kw_return | .kw_test | .kw_assert | .kw_extern | .kw_use | .comment | .terminator    => false
+        .indent | .dedent | .eof | .error                                                     => false
 
 # A token no statement begins with, which at the head of a line can only go
 # on with the line above: a binary operator (spec § 7), the `?` that
@@ -195,32 +197,32 @@ function continues_a_line(kind: TokenKind) -> bool
 # 351, a table of kinds that reads no lexer, which `next_line` asks too.
 function can_only_go_on(kind: TokenKind) -> bool
     return match kind
-        .or_or | .and_and | .eq_eq | .bang_eq | .lt | .le | .gt | .ge                    => true
-        .pipe | .caret | .amp | .shl | .shr | .plus | .minus | .star | .slash | .percent => true
-        .question | .colon_colon                                                         => true
-        .ident | .int_lit | .float_lit | .str_lit | .str_piece | .char_lit               => false
-        .kw_constant | .kw_function | .kw_record | .kw_variant | .kw_match | .kw_if      => false
-        .kw_else | .kw_for | .kw_while | .kw_in | .kw_break | .kw_continue               => false
-        .kw_return | .kw_test | .kw_assert | .kw_extern | .kw_nullptr | .kw_use          => false
-        .kw_true | .kw_false | .kw_fail | .eq | .at | .colon | .comma | .dot | .hole     => false
-        .arrow | .fat_arrow | .lparen | .rparen | .lbracket | .rbracket | .lbrace        => false
-        .rbrace | .bang | .tilde | .comment | .terminator | .indent | .dedent | .eof     => false
-        .error                                                                           => false
+        .or_or | .and_and | .eq_eq | .bang_eq | .lt | .le | .gt | .ge                         => true
+        .pipe | .caret | .amp | .shl | .shr | .plus | .minus | .star | .slash | .percent      => true
+        .question | .colon_colon                                                              => true
+        .ident | .int_lit | .float_lit | .str_lit | .str_piece | .char_lit                    => false
+        .kw_constant | .kw_function | .kw_record | .kw_variant | .kw_match | .kw_if           => false
+        .kw_else | .kw_for | .kw_while | .kw_in | .kw_break | .kw_continue                    => false
+        .kw_return | .kw_test | .kw_assert | .kw_extern | .kw_nullptr | .kw_use               => false
+        .kw_true | .kw_false | .kw_fail | .eq | .at | .at_eq | .colon | .comma | .dot | .hole => false
+        .arrow | .fat_arrow | .lparen | .rparen | .lbracket | .rbracket | .lbrace             => false
+        .rbrace | .bang | .tilde | .comment | .terminator | .indent | .dedent | .eof          => false
+        .error                                                                                => false
 
 # A token spec § 8's `Pattern` is written with, or the `|` that joins two.
 # ENUMERATED, so that a new kind is answered for here. Moved here from
 # `parse/margin_arms` with defect 193, a table of kinds that reads no parse.
 function of_a_pattern(k: TokenKind) -> bool
     return match k
-        .dot | .ident | .minus | .int_lit | .str_lit | .char_lit | .pipe | .comment             => true
-        .float_lit | .str_piece | .kw_constant | .kw_function | .kw_record | .kw_variant        => false
-        .kw_match | .kw_if | .kw_else | .kw_for | .kw_while | .kw_in | .kw_break | .kw_continue => false
-        .kw_return | .kw_test | .kw_assert | .kw_extern | .kw_nullptr | .kw_use | .kw_true      => false
-        .kw_false | .kw_fail | .eq | .at | .colon | .colon_colon | .comma | .question | .arrow  => false
-        .fat_arrow | .lparen | .rparen | .lbracket | .rbracket | .lbrace | .rbrace | .plus      => false
-        .star | .slash | .percent | .eq_eq | .bang_eq | .lt | .le | .gt | .ge | .and_and        => false
-        .or_or | .amp | .caret | .shl | .shr | .bang | .tilde | .hole | .terminator | .indent   => false
-        .dedent | .eof | .error                                                                 => false
+        .dot | .ident | .minus | .int_lit | .str_lit | .char_lit | .pipe | .comment                     => true
+        .float_lit | .str_piece | .kw_constant | .kw_function | .kw_record | .kw_variant                => false
+        .kw_match | .kw_if | .kw_else | .kw_for | .kw_while | .kw_in | .kw_break | .kw_continue         => false
+        .kw_return | .kw_test | .kw_assert | .kw_extern | .kw_nullptr | .kw_use | .kw_true              => false
+        .kw_false | .kw_fail | .eq | .at | .at_eq | .colon | .colon_colon | .comma | .question | .arrow => false
+        .fat_arrow | .lparen | .rparen | .lbracket | .rbracket | .lbrace | .rbrace | .plus              => false
+        .star | .slash | .percent | .eq_eq | .bang_eq | .lt | .le | .gt | .ge | .and_and                => false
+        .or_or | .amp | .caret | .shl | .shr | .bang | .tilde | .hole | .terminator | .indent           => false
+        .dedent | .eof | .error                                                                         => false
 
 ## The stable names
 
@@ -259,6 +261,7 @@ function kind_name(kind: TokenKind) -> str
         .kw_fail     => "kw_fail"
         .eq          => "eq"
         .at          => "at"
+        .at_eq       => "at_eq"
         .colon       => "colon"
         .colon_colon => "colon_colon"
         .comma       => "comma"
@@ -319,7 +322,7 @@ test "the four literal kinds keep their Rust names through kind_name"
     assert kind_name(.char_lit) == "char"
 
 test "kinds compare structurally"
-    k: TokenKind @ .lparen
+    k: TokenKind @= .lparen
     assert k == .lparen
     assert k != .rparen
     k @ .eof
@@ -327,7 +330,7 @@ test "kinds compare structurally"
 
 test "a token carries its span by value"
     t = Token(kind: .hole, span: Span(start: 4, end: 7))
-    u: Token @ t
+    u: Token @= t
     u.span.start @ 0
     assert t.span.start == 4
     assert u.span.start == 0

@@ -40,7 +40,7 @@ function hunk(start: i64, end: i64, lines: [str]) -> Hunk
 
 # A mutant, its hunks put in order and its statements each once, ascending.
 function made(op: str, file: str, anchor: str, hunks: [Hunk], context: str, stmts: [i64]) -> Mutant
-    seen: {i64: bool} @ {}
+    seen: {i64: bool} @= {}
 
     for sid in stmts
         seen[sid] @ true
@@ -51,11 +51,11 @@ function made(op: str, file: str, anchor: str, hunks: [Hunk], context: str, stmt
 # Hunks in the order `(start, end > start)`, ties kept as given: an
 # insertion sort, stable, as Python's `sorted` is.
 function ordered(hunks: [Hunk]) -> [Hunk]
-    out: [Hunk] @ []
+    out: [Hunk] @= []
 
     for h in hunks
         out @ out.push(h)
-        at: i64 @ out.len() - 1
+        at: i64 @= out.len() - 1
 
         while at > 0 && after(a: out[at - 1], b: h)
             out[at] @ out[at - 1]
@@ -80,10 +80,10 @@ function first_start(m: Mutant) -> i64
 # One past the last original line any hunk touches, an insertion counting
 # the line it goes before.
 function last_end(m: Mutant) -> i64
-    out: i64 @ 0
+    out: i64 @= 0
 
     for h in m.hunks
-        reach: i64 @ h.end
+        reach: i64 @= h.end
 
         if h.start + 1 > reach
             reach @ h.start + 1
@@ -96,7 +96,7 @@ function last_end(m: Mutant) -> i64
 # Whether hunks put in order can be applied together: none begins before
 # the furthest line an earlier one replaced (`edits.apply`'s refusal).
 function fits(hunks: [Hunk]) -> bool
-    pos: i64 @ 0
+    pos: i64 @= 0
 
     for h in ordered(hunks)
         if h.start < pos
@@ -109,7 +109,7 @@ function fits(hunks: [Hunk]) -> bool
 
 # Whether two mutants' hunks can be planted together (`edits.compatible`).
 function compatible(a: Mutant, b: Mutant) -> bool
-    both: [Hunk] @ a.hunks
+    both: [Hunk] @= a.hunks
 
     for h in b.hunks
         both @ both.push(h)
@@ -123,7 +123,7 @@ function compatible(a: Mutant, b: Mutant) -> bool
 function changes(m: Mutant, lines: [str]) -> bool?
     if !fits(m.hunks)
         return fail(code: "overlap", msg: m.op + " made overlapping hunks in " + m.file + " at " + m.anchor)
-    delta: i64 @ 0
+    delta: i64 @= 0
 
     for h in m.hunks
         if h.end > lines.len() || h.start > lines.len()
@@ -135,8 +135,8 @@ function changes(m: Mutant, lines: [str]) -> bool?
 
     # The same length: compare the lines the hunks rewrite, from the first
     # hunk's start to the last line any of them replaced.
-    region: [str] @ []
-    pos: i64 @ m.hunks[0].start
+    region: [str] @= []
+    pos: i64 @= m.hunks[0].start
 
     for h in m.hunks
         for line in lines.slice(from: pos, to: h.start)
@@ -173,8 +173,8 @@ record Placed
     where: i64
 
 function sited(mutants: [Mutant], lines: [str], ranges: [[[i64]]]) -> Sited?
-    flat: [Hunk] @ []
-    owners: [i64] @ []
+    flat: [Hunk] @= []
+    owners: [i64] @= []
 
     for index in range(from: 0, to: mutants.len())
         for h in mutants[index].hunks
@@ -182,9 +182,9 @@ function sited(mutants: [Mutant], lines: [str], ranges: [[[i64]]]) -> Sited?
             owners @ owners.push(index)
 
     order = order_of(flat)
-    placed: [Placed] @ []
-    out: [str] @ []
-    pos: i64 @ 0
+    placed: [Placed] @= []
+    out: [str] @= []
+    pos: i64 @= 0
 
     for i in order
         h = flat[i]
@@ -206,10 +206,10 @@ function sited(mutants: [Mutant], lines: [str], ranges: [[[i64]]]) -> Sited?
     for line in lines.slice(from: pos, to: lines.len())
         out @ out.push(line)
 
-    sites: [[i64]] @ []
+    sites: [[i64]] @= []
 
     for index in range(from: 0, to: mutants.len())
-        got: {i64: bool} @ {}
+        got: {i64: bool} @= {}
 
         for p in placed
             if p.owner == index
@@ -228,11 +228,11 @@ function sited(mutants: [Mutant], lines: [str], ranges: [[[i64]]]) -> Sited?
 
 # The indices of `flat` in the order hunks are applied, stable.
 function order_of(flat: [Hunk]) -> [i64]
-    out: [i64] @ []
+    out: [i64] @= []
 
     for index in range(from: 0, to: flat.len())
         out @ out.push(index)
-        at: i64 @ out.len() - 1
+        at: i64 @= out.len() - 1
 
         while at > 0 && after(a: flat[out[at - 1]], b: flat[index])
             out[at] @ out[at - 1]
@@ -244,7 +244,7 @@ function order_of(flat: [Hunk]) -> [i64]
 
 # Original 0-based line `i` in the planted text: its new 0-based indices.
 function mapped(placed: [Placed], line: i64) -> [i64]
-    shift: i64 @ 0
+    shift: i64 @= 0
 
     for p in placed
         h = p.hunk
@@ -263,20 +263,20 @@ function mapped(placed: [Placed], line: i64) -> [i64]
 # its extent and its statements' lines, and `for_pairs` where it was added
 # to be a pair's half.
 function row(m: Mutant, key: str, extent: [i64], stmt_lines: [[i64]], for_pairs: bool) -> str
-    hunks: [json_read.Json] @ []
+    hunks: [json_read.Json] @= []
 
     for h in m.hunks
         hunks @ hunks.push(
             .fields(names: ["start", "end", "new", "site"], values: [json_fields.whole(h.start), json_fields.whole(h.end), json_fields.strings(h.lines), json_fields.wholes(h.site)])
         )
 
-    spans: [json_read.Json] @ []
+    spans: [json_read.Json] @= []
 
     for span in stmt_lines
         spans @ spans.push(json_fields.wholes(span))
 
-    names: [str] @ ["op", "file", "anchor", "context", "stmts", "hunks", "key", "extent", "stmt_lines"]
-    values: [json_read.Json] @ [
+    names: [str] @= ["op", "file", "anchor", "context", "stmts", "hunks", "key", "extent", "stmt_lines"]
+    values: [json_read.Json] @= [
         json_fields.string(m.op)
         json_fields.string(m.file)
         json_fields.string(m.anchor)

@@ -182,7 +182,7 @@ record Program
 
 function run_all(scratch: str, compiler: str) -> report.Report?
     programs = collect(scratch)?
-    r: report.Report @ report.empty()
+    r: report.Report @= report.empty()
 
     # **The floor is checked from both sides HERE and not inside `sweep`**, and
     # the seam is deliberate: `sweep` takes its floor as a parameter and the
@@ -206,7 +206,7 @@ function run_all(scratch: str, compiler: str) -> report.Report?
 # nothing blessed passes only as a refusal, so it is no emission compared and
 # is counted apart (defect 341).
 function blessed_among(programs: [Program]) -> i64
-    count: i64 @ 0
+    count: i64 @= 0
 
     for one in programs
         if shell.exists(one.stored)
@@ -231,7 +231,7 @@ function blessing() -> bool
 # directory is one `find` and one listing to check for orphans. Flattening
 # can in principle collide, so the sweep asks; it does not assume.
 function collect(scratch: str) -> [Program]?
-    found: [Program] @ []
+    found: [Program] @= []
 
     for group in GROUPS
         for entry in shell.list_entries(scratch: scratch, dir: "tests/golden/" + group)?
@@ -258,7 +258,7 @@ function collect(scratch: str) -> [Program]?
 # parameters — so the tests at the bottom can run it over a tree of their
 # own instead of over the repository.
 function sweep(scratch: str, compiler: str, store: str, programs: [Program], update: bool, least: i64) -> report.Report?
-    r: report.Report @ report.empty()
+    r: report.Report @= report.empty()
     blessed = blessed_among(programs)
 
     if blessed < least
@@ -267,8 +267,8 @@ function sweep(scratch: str, compiler: str, store: str, programs: [Program], upd
             label: "emission",
             detail: "  " + blessed.to_str() + " programs whose emission is blessed, and there were " + least.to_str() + " — an oracle that quietly stops comparing is worse than no oracle"
         )
-    seen: {str: str} @ {}
-    skipped: i64 @ 0
+    seen: {str: str} @= {}
+    skipped: i64 @= 0
 
     for one in programs
         earlier = seen[one.stored]
@@ -335,7 +335,7 @@ function sweep(scratch: str, compiler: str, store: str, programs: [Program], upd
                 # verdict about the author's program.
                 report.keep_pass(@r)
             else
-                blame: str @ "  " + one.source + " emits nothing: exit " + said.must().code.to_str() + "\n"
+                blame: str @= "  " + one.source + " emits nothing: exit " + said.must().code.to_str() + "\n"
 
                 if said.must().code == 2
                     blame @ blame + "  exit 2 is the compiler blaming ITSELF — it wrote C it could not compile\n"
@@ -419,7 +419,7 @@ function orphans(@r: report.Report, scratch: str, store: str, seen: {str: str})
     if listing.is_err()
         report.keep_failure(@r, label: "emission/store", detail: "  cannot list " + store)
         return
-    stray: [str] @ []
+    stray: [str] @= []
 
     for entry in listing.must()
         if strings.ends_with(text: entry, suffix: ".c") && seen[entry].is_err()
@@ -439,8 +439,8 @@ function orphans(@r: report.Report, scratch: str, store: str, seen: {str: str})
 function differences(blessed: str, emitted: str) -> str
     left = strings.lines(blessed)
     right = strings.lines(emitted)
-    shown: [str] @ []
-    i: i64 @ 0
+    shown: [str] @= []
+    i: i64 @= 0
 
     while i < left.len() && i < right.len() && shown.len() < 3
         if left[i] != right[i]
@@ -693,7 +693,7 @@ test "two emissions of different lengths report the lengths rather than a line"
 # command lines any more, so the function went with them — but a script
 # is still a script, and its text still has to be well formed.
 function inside_a_script(text: str) -> str
-    out: str @ "'"
+    out: str @= "'"
 
     for ch in text.chars()
         if ch == "'"

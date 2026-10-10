@@ -94,7 +94,7 @@ function conversion_call(@c: state.Checker, s: source.Source, decls: [ast.Decl],
         from_float = is_float(c, one) && widths.int_name(kind) == "i64"
 
         if !from_float && !is_int(c, one)
-            allowed: str @ "an integer"
+            allowed: str @= "an integer"
 
             if widths.int_name(kind) == "i64"
                 allowed @ "an integer or a float"
@@ -215,7 +215,7 @@ function builtin_call(@c: state.Checker, s: source.Source, decls: [ast.Decl], na
         int_id = table.int_ty_id(c.out.types)
 
         if given[1] != int_id || given[2] != int_id
-            offender: i64 @ given[1]
+            offender: i64 @= given[1]
 
             if given[1] == int_id
                 offender @ given[2]
@@ -270,7 +270,7 @@ function builtin_call(@c: state.Checker, s: source.Source, decls: [ast.Decl], na
     if name == "join" && given.len() == 2
         str_id = table.str_ty(c.out.types)
         of_str = table.lookup(c.out.types, .array(element: str_id))
-        wanted: i64 @ -1
+        wanted: i64 @= -1
 
         if !of_str.is_err()
             wanted @ of_str.must()
@@ -394,7 +394,7 @@ function fallible_builtin(@c: state.Checker, s: source.Source, decls: [ast.Decl]
 # its own tokens, certain only where the removal takes nothing with it.
 function unwrapping_nothing(@c: state.Checker, s: source.Source, decls: [ast.Decl], name: str, got: i64, span: token.Span) -> i64
     shown = state.show(c, s, decls, got)
-    d: diag.Diagnostic @ value_errors.bad_operand(op: name, allowed: "a fallible value", got: shown, span: span)
+    d: diag.Diagnostic @= value_errors.bad_operand(op: name, allowed: "a fallible value", got: shown, span: span)
     d.notes @ d.notes.push(
         "`" + shown + "` cannot fail, so there is no error case to handle — this is the shape `to_str` and `to_f64` hand back, because neither of those can fail either"
     )
@@ -432,7 +432,7 @@ function plain_source(text: str) -> source.Source
     return source.new_source(name: "t.hero", text: text)
 
 test "the conversions answer by name: fallible to a width, plain to a float"
-    c: state.Checker @ fresh()
+    c: state.Checker @= fresh()
     s = plain_source("x\n")
     d: [ast.Decl] = []
     int_id = table.int_ty_id(c.out.types)
@@ -452,7 +452,7 @@ test "the conversions answer by name: fallible to a width, plain to a float"
     assert c.out.diagnostics[0].message == "`to_u8` takes an integer, found `str`"
 
 test "print takes any width and refuses the rest with the true set"
-    c: state.Checker @ fresh()
+    c: state.Checker @= fresh()
     s = plain_source("x\n")
     d: [ast.Decl] = []
     u8_id = table.intern(@c.out.types, .int_ty(kind: .u8))
@@ -469,7 +469,7 @@ test "print takes any width and refuses the rest with the true set"
     assert c.out.diagnostics[0].message == "`print` takes any integer, a float, `bool` or `str`, found `ptr`"
 
 test "the list answers by shape: push, slice, keys, repeat, join, sort"
-    c: state.Checker @ fresh()
+    c: state.Checker @= fresh()
     s = plain_source("x\n")
     d: [ast.Decl] = []
     int_id = table.int_ty_id(c.out.types)
@@ -501,7 +501,7 @@ test "the list answers by shape: push, slice, keys, repeat, join, sort"
     assert builtin_call(@c, s, d, name: "push", given: lonely, span: token.Span(start: 0, end: 1)).is_err()
 
 test "must unwraps, and on a sure value offers the certain removal"
-    c: state.Checker @ fresh()
+    c: state.Checker @= fresh()
 
     # The span's own text is the call: the fix is computed from it.
     s = plain_source("x.must()\n")
@@ -527,7 +527,7 @@ test "the removal is found past characters above ASCII in the call"
     # `5.default("é")` on a value that cannot fail aborted `check` here: the
     # search for `.default(` sliced its way back through `é`. The tokens that
     # replaced the search (defect 135's C9) are held to it too.
-    c: state.Checker @ fresh()
+    c: state.Checker @= fresh()
     s = plain_source("5.default(\"é€😀\")\n")
     d: [ast.Decl] = []
     int_id = table.int_ty_id(c.out.types)
@@ -538,7 +538,7 @@ test "the removal is found past characters above ASCII in the call"
     assert c.out.diagnostics[0].fixes[0].replacement == "5"
 
 test "an expectation is handed down where the ⇐-only forms need one"
-    c: state.Checker @ fresh()
+    c: state.Checker @= fresh()
     int_id = table.int_ty_id(c.out.types)
     xs = table.intern(@c.out.types, .array(element: int_id))
     assert expectation(c, "push", first: xs, index: 1).must() == int_id

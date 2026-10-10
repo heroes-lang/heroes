@@ -35,9 +35,9 @@ extern "stdio.h"
     function remove(path: cstr lent) -> i64
 
 function main()
-    lines: [str] @ []
+    lines: [str] @= []
     _ = push(@lines, "one")  #~ marker_mismatch
-    v: i64 @ 3
+    v: i64 @= 3
     print(len(@lines), sort(@lines).len())  #~ marker_mismatch marker_mismatch
     _ = to_str(@v)  #~ marker_mismatch
     _ = remove("/tmp/heroes-no-such-file".cstr())

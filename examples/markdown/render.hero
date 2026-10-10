@@ -18,7 +18,7 @@ function underline(level: i64, text: str) -> str
     return repeat("-", text.len().to_u64().must())
 
 function indent(lines: [str], prefix: str) -> [str]
-    out: [str] @ []
+    out: [str] @= []
 
     for line in lines
         out @ out.push(prefix + line)
@@ -58,8 +58,8 @@ function runs_on(before: blocks.Block, after: blocks.Block) -> bool
 # An index rather than `for b in document`, because the separator is a question
 # about a *pair* of blocks and the loop has to be able to look behind it.
 function render(document: [blocks.Block]) -> str
-    out: [str] @ []
-    i: i64 @ 0
+    out: [str] @= []
+    i: i64 @= 0
 
     while i < document.len()
         if i > 0 && !runs_on(before: document[i - 1], after: document[i])

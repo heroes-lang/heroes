@@ -14,7 +14,7 @@
 #     the type rather than a failure, which is why the conversion is infallible.
 
 function main()
-    a: f32 @ 1.5
+    a: f32 @= 1.5
     a @ a + 0.25
     print(a)
 
@@ -40,7 +40,7 @@ function main()
     sorted = sort(xs)
     print(sorted[0])
     print(sorted[2])
-    m: {str: f32} @ {}
+    m: {str: f32} @= {}
     m["half"] @ 0.5
     print(m["half"].must())
     print(xs[0] == 2.5)

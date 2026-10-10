@@ -38,8 +38,8 @@ function one_line(text: str, from: i64, to: i64) -> bool
 function is_module_name(s: str) -> bool
     if s.len() == 0
         return false
-    start: i64 @ 0
-    i: i64 @ 0
+    start: i64 @= 0
+    i: i64 @= 0
 
     while i < s.len()
         if s[i] == '/'
@@ -60,7 +60,7 @@ function is_one_part(s: str) -> bool
 
     if !(first >= 'a' && first <= 'z' || first >= 'A' && first <= 'Z' || first == '_')
         return false
-    i: i64 @ 1
+    i: i64 @= 1
 
     while i < s.len()
         b = s[i]
@@ -75,8 +75,8 @@ function is_one_part(s: str) -> bool
 # is the same shape the lexer's own scanners use — the delimiters are known to
 # be there because the token is a `str_lit`.
 function unquote(s: str) -> str
-    start: i64 @ 0
-    end: i64 @ s.len()
+    start: i64 @= 0
+    end: i64 @= s.len()
 
     if end > start && s[start] == '"'
         start @ start + 1

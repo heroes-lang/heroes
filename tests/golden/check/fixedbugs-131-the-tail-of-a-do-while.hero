@@ -8,7 +8,7 @@
 # it none is asked for (`selfhost/parse/loop_habit.hero`).
 
 function main()
-    x: i64 @ 0
+    x: i64 @= 0
 
     do {  #~ expected_end_of_line
         x @ x + 1

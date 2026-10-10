@@ -45,16 +45,16 @@ function show(n: i64) -> str
 
 function main()
     xs = [1, 2, 3]
-    m: {str: i64} @ {}
+    m: {str: i64} @= {}
     m["a"] @ 1
-    p: Point @ Point(x: 1, y: 2)
+    p: Point @= Point(x: 1, y: 2)
     shift(@p, by: 3)
-    total: i64 @ 0
+    total: i64 @= 0
 
     for k in sort(keys(m))
         total @ total + m[k].must()
 
-    i: i64 @ 0
+    i: i64 @= 0
 
     while i < len(xs)
         if xs[i] == 2

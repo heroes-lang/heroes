@@ -40,7 +40,7 @@ so a long expression, a condition included, breaks inside parentheses.
     Use  = "use" ident { "/" ident } [ "as" ident ] NEWLINE .
 
 ## 2. Literals
-- A literal takes the type its context asks for — `b: u8 @ 255`, and `b + 1` is a
+- A literal takes the type its context asks for — `b: u8 @= 255`, and `b + 1` is a
   `u8` — otherwise `i64`.
 - One `i64` is `0x1f` `0o37` `0b11111` or `31`, with `_` between any two digits.
   A leading zero is an error, never octal. Every base writes a value, so a literal must fit its type.
@@ -128,10 +128,10 @@ a written body computes over literals and other constants. An integer operator i
 ## 5. Bindings
 ```
 x = 5              # immutable binding, type inferred
-v: i64 @ 0         # mutable declaration — the type is REQUIRED
-v @ v + 1          # mutation; only a declared @ name can be mutated
+v: i64 @= 0        # mutable declaration — the type is REQUIRED
+v @ v + 1          # mutation; only a cell declared with @= can be mutated
 ```
-`=` binds once, forever. `@` declares a mutable cell and re-binds it, or a
+`=` binds once, forever. `@=` declares a mutable cell, and `@` re-binds it, or a
 field or element inside one.
 Signatures are always explicit; inference is local only.
 All bindings are initialised. An unused binding or parameter is a compile
@@ -147,7 +147,7 @@ Shadowing is a compile error: a `use` binds its name for the whole file, so noth
 
     Block     = INDENT { Statement } DEDENT .
     Statement = ident Binding | Simple .
-    Binding   = ( "=" | ":" Type ( "@" | "=" ) ) Expression NEWLINE .
+    Binding   = ( "=" | ":" Type ( "@=" | "=" ) ) Expression NEWLINE .
     Simple    = "_" Binding | Place "@" Expression NEWLINE
               | "return" [ Expression ] NEWLINE
               | "break" NEWLINE | "continue" NEWLINE
@@ -290,9 +290,9 @@ Loops: `while cond` and `for x in xs`, over an array or a `range` (section 11).
 `s[i]` yields a `u8`; iterate characters with
 `s.chars()`, which yields single-character `str`. A container literal separates
 elements by newline across lines and by comma on one, and an empty one needs an
-annotation: `xs: [i64] = []` · `m: {str: i64} @ {}`.
+annotation: `xs: [i64] = []` · `m: {str: i64} @= {}`.
 ```
-m: {str: i64} @ {}
+m: {str: i64} @= {}
 m["a"] @ 1
 print(m["b"].default(0))
 for k in sort(keys(m))
@@ -411,7 +411,7 @@ and one past the field is refused; a group's record lent whole with `@` may say 
 C writes back through the lend only where the binding is a `@` name. A lend
 lives for its call and no longer: a parameter, `@` or not, is taken to keep what
 it is handed unless declared `lent`, and a lend reaches only one so declared.
-`x: cstr @ s.lease()` is a COPY of the bytes that C may read for as long as the
+`x: cstr @= s.lease()` is a COPY of the bytes that C may read for as long as the
 program says, and `end_lease(@x)` frees it and empties the cell. A lend and a
 lease name stand only as an argument of a call, nothing else writes a lease's
 cell, and a lease nobody ends, like a handle nobody consumes, aborts when

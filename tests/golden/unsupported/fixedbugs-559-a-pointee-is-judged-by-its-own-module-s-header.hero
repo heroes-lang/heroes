@@ -15,7 +15,7 @@ extern "fixedbugs-559-int.h"
     function fill_int(@x: i64)  #~ ffi_parameter_type
 
 function main()
-    y: i64 @ 0
+    y: i64 @= 0
     fill_int(@y)
     print(long_twice.doubled(x: 3) + y)
     print(twice(x: 4))

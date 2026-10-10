@@ -30,7 +30,7 @@ use byte_evidence
 # text: 0 for nearly every file, 3 for one mark, more for a file a tool saved
 # twice, adding one each time.
 function mark_length(text: str) -> i64
-    at: i64 @ 0
+    at: i64 @= 0
 
     while at + 2 < text.len() && text[at] == 239 && text[at + 1] == 187 && text[at + 2] == 191
         at @ at + 3
@@ -40,12 +40,12 @@ function mark_length(text: str) -> i64
 # The one message for the marks that open the text, at them, with the fix
 # that deletes them.
 function marked(length: i64) -> diag.Diagnostic
-    what: str @ "a UTF-8 byte-order mark, U+FEFF,"
+    what: str @= "a UTF-8 byte-order mark, U+FEFF,"
 
     if length > 3
         what @ (length / 3).to_str() + " UTF-8 byte-order marks, U+FEFF,"
     at = token.Span(start: 0, end: length)
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "unexpected_character",
         message: "the file opens with " + what + " which is not part of the language's syntax: a `.hero` file is UTF-8 with no mark",
         span: at
@@ -63,11 +63,11 @@ function utf16_told(text: str) -> [diag.Diagnostic]
 
     if order.len() == 0
         return out
-    first: i64 @ 0
+    first: i64 @= 0
 
     if text[0] != 0
         first @ 1
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "unexpected_character",
         message: "the control character U+0000 is not part of the language's syntax",
         span: token.Span(start: first, end: first + 1)
@@ -81,10 +81,10 @@ function utf16_told(text: str) -> [diag.Diagnostic]
 # message stands before the rest, and `parse/apart` reads a break's
 # diagnostic at that place.
 function behind(breaks: [state.Break], by: i64) -> [state.Break]
-    out: [state.Break] @ []
+    out: [state.Break] @= []
 
     for b in breaks
-        moved: state.Break @ b
+        moved: state.Break @= b
 
         if b.diagnostic >= 0
             moved.diagnostic @ b.diagnostic + by

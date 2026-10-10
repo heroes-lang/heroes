@@ -27,8 +27,8 @@ function written(s: source.Source, span: token.Span) -> str
     if source.newlines_in(text) == 0
         return text
     tokens = lexer.lex_one(text).tokens
-    parts: [str] @ []
-    last: i64 @ -1
+    parts: [str] @= []
+    last: i64 @= -1
 
     for t in tokens
         if !stream_tables.is_invisible(t.kind) && t.kind != .eof

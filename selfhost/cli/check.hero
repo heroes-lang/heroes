@@ -35,7 +35,7 @@ function run(s: source.Source, inv: argv.Invocation) -> cli_table.Exit
 
     # The control arm reads the parse as a language without the thesis rules
     # does: what a refusal of theirs held back is said there (defect 131).
-    said: [diag.Diagnostic] @ parsed.diagnostics
+    said: [diag.Diagnostic] @= parsed.diagnostics
 
     if argv.has(inv, spelling: "--permissive")
         said @ parsed.control
@@ -132,7 +132,7 @@ function report(diagnostics: [diag.Diagnostic], s: source.Source, inv: argv.Invo
 
 # §4.17's form for the filtered list, blank line between entries.
 function rich(diagnostics: [diag.Diagnostic], s: source.Source) -> str
-    rendered: [str] @ []
+    rendered: [str] @= []
 
     for d in diagnostics
         rendered @ rendered.push(diag_render.render(d, s))
@@ -174,13 +174,13 @@ function rich(diagnostics: [diag.Diagnostic], s: source.Source) -> str
 # (panel 193's R4 and R5).
 function settle(first: [diag.Diagnostic], s: source.Source, inv: argv.Invocation, stage: i64) -> apply_answer.Settled?
     round = certain.applied(first, s)
-    elsewhere: [str] @ round.elsewhere
-    readings: [source.Source] @ []
-    text: str @ round.text
-    seen: [str] @ [source_extent.user_text(s)]
-    malformed: i64 @ round.malformed
-    wrote: i64 @ round.applied
-    count: i64 @ 1
+    elsewhere: [str] @= round.elsewhere
+    readings: [source.Source] @= []
+    text: str @= round.text
+    seen: [str] @= [source_extent.user_text(s)]
+    malformed: i64 @= round.malformed
+    wrote: i64 @= round.applied
+    count: i64 @= 1
 
     while wrote > 0 && count < ROUNDS
         again = modules.load_text(path: s.name, root_text: text, library: library_source.text())?
@@ -221,7 +221,7 @@ function settle(first: [diag.Diagnostic], s: source.Source, inv: argv.Invocation
         io.eprint(
             text: "internal error: " + malformed.to_str() + " certain fix(es) had a span that ends before it starts, and were not applied"
         )
-    rounds: i64 @ count
+    rounds: i64 @= count
 
     if round.applied == 0
         rounds @ 0
@@ -239,7 +239,7 @@ constant ROUNDS: i64
 # stages and their order are `run`'s, and the round cases below hold them.
 function said_at(s: source.Source, inv: argv.Invocation, stage: i64) -> [diag.Diagnostic]
     parsed = parse.parse_source(s)
-    said: [diag.Diagnostic] @ parsed.diagnostics
+    said: [diag.Diagnostic] @= parsed.diagnostics
 
     if argv.has(inv, spelling: "--permissive")
         said @ parsed.control
@@ -268,7 +268,7 @@ function at_stage(said: [diag.Diagnostic], found: i64, stage: i64) -> [diag.Diag
 # A stage's diagnostics as `--permissive` keeps them: without the ones that
 # exist for the thesis, the control arm of Part 11's measurement.
 function kept_of(diagnostics: [diag.Diagnostic], inv: argv.Invocation) -> [diag.Diagnostic]
-    kept: [diag.Diagnostic] @ []
+    kept: [diag.Diagnostic] @= []
 
     for d in diagnostics
         if argv.has(inv, spelling: "--permissive") && diag.is_thesis_rule(d)
@@ -281,7 +281,7 @@ function kept_of(diagnostics: [diag.Diagnostic], inv: argv.Invocation) -> [diag.
 
 test "stages stop on the first noise, apply repairs, holes stay exit 0"
     # A clean file with a hole: exit 0, the report is stdout's.
-    holey = "function main()\n    n: i64 @ ???\n    print(n)\n"
+    holey = "function main()\n    n: i64 @= ???\n    print(n)\n"
     hs = source.new_source(name: "t.hero", text: holey)
     quiet = argv.Invocation(tag: .check_cmd, file: ok("t.hero"), program_args: [], flags: [])
     assert run(hs, quiet) == .ok_exit
@@ -325,7 +325,7 @@ test "a certain fix enclosing another is made again from the text the inner one 
     head = "function total(n: i64) -> i64\n    return n + 1\n\nfunction main()\n    xs = 4\n"
     assert settled_text(text: head + "    print(total(xs.must()).must())\n", stage: 4) == head + "    print(total(xs))\n"
     assert settled_text(text: head + "    print(total(xs.must()).must())\n    print(0)\n", stage: 4) == head + "    print(total(xs))\n    print(0)\n"
-    counter = "record Counter\n    n: i64\n\nfunction bump(@c: Counter) -> i64\n    c.n @ c.n + 1\n    return c.n\n\nfunction main()\n    k: Counter @ Counter(n: 0)\n"
+    counter = "record Counter\n    n: i64\n\nfunction bump(@c: Counter) -> i64\n    c.n @ c.n + 1\n    return c.n\n\nfunction main()\n    k: Counter @= Counter(n: 0)\n"
     assert settled_text(text: counter + "    print(bump(k).must())\n", stage: 4) == counter + "    print(bump(@k))\n"
 
     # `to:` is written because between two `str` parameters a label is certain
@@ -385,7 +385,7 @@ test "the json schema leads with its version and escapes its strings"
 # it writes to, held to `check_json.SCHEMA` so the two cannot part: stderr
 # for the diagnostics, stdout for the program `--apply` prints (R4).
 test "the help names the answer's schema and its stream"
-    said: str @ ""
+    said: str @= ""
 
     for c in cli_table.commands()
         if c.name == "check"
@@ -409,11 +409,11 @@ function has_text(text: str, needle: str) -> bool
 
     if needle_cs.len() > cs.len()
         return false
-    start: i64 @ 0
+    start: i64 @= 0
 
     while start <= cs.len() - needle_cs.len()
-        matched: bool @ true
-        offset: i64 @ 0
+        matched: bool @= true
+        offset: i64 @= 0
 
         while offset < needle_cs.len()
             if cs[start + offset] != needle_cs[offset]

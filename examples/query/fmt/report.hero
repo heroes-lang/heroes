@@ -28,8 +28,8 @@ record Field
 # without padding, because a line that ends in blanks is a line a diff
 # argues about.
 function padded(cells: [str], widths: [i64]) -> str
-    out: str @ ""
-    at: i64 @ 0
+    out: str @= ""
+    at: i64 @= 0
 
     while at < cells.len()
         if at > 0
@@ -52,10 +52,10 @@ function wide(text: str, to: i64) -> str
 
 # The width each column needs: the widest of its heading and its values.
 function widths_for(columns: [plan.Column], rows: [row.Row]) -> [i64]
-    out: [i64] @ []
+    out: [i64] @= []
 
     for c in columns
-        widest: i64 @ plan.heading(c).len()
+        widest: i64 @= plan.heading(c).len()
 
         for r in rows
             here = plan.text_at(c, r).len()
@@ -70,15 +70,15 @@ function widths_for(columns: [plan.Column], rows: [row.Row]) -> [i64]
 # The rows as a table: a heading line, then one line per row.
 function table(columns: [plan.Column], rows: [row.Row]) -> str
     widths = widths_for(columns, rows)
-    headings: [str] @ []
+    headings: [str] @= []
 
     for c in columns
         headings @ headings.push(plan.heading(c))
 
-    lines: [str] @ [padded(headings, widths)]
+    lines: [str] @= [padded(headings, widths)]
 
     for r in rows
-        cells: [str] @ []
+        cells: [str] @= []
 
         for c in columns
             cells @ cells.push(plan.text_at(c, r))
@@ -89,23 +89,23 @@ function table(columns: [plan.Column], rows: [row.Row]) -> str
 
 # A joined row's line: the row's own columns, then its region.
 function joined_table(columns: [plan.Column], rows: [plan.Joined]) -> str
-    plain: [row.Row] @ []
+    plain: [row.Row] @= []
 
     for j in rows
         plain @ plain.push(j.r)
 
     widths = widths_for(columns, plain)
-    headings: [str] @ []
+    headings: [str] @= []
 
     for c in columns
         headings @ headings.push(plan.heading(c))
 
     headings @ headings.push("region")
     with_region = widths.push(6)
-    lines: [str] @ [padded(headings, with_region)]
+    lines: [str] @= [padded(headings, with_region)]
 
     for j in rows
-        cells: [str] @ []
+        cells: [str] @= []
 
         for c in columns
             cells @ cells.push(plan.text_at(c, j.r))
@@ -121,7 +121,7 @@ function joined_table(columns: [plan.Column], rows: [plan.Joined]) -> str
 # cannot happen, because a group exists only where a row put it.
 function group_line(g: plan.Group, s: plan.Summary) -> str
     mean = plan.mean_of(s)
-    shown: str @ "-"
+    shown: str @= "-"
 
     if !mean.is_err()
         shown @ rounded(mean.must())
@@ -149,7 +149,7 @@ function rounded(v: f64) -> str
     hundredths = to_i64(v * 100.0 + 0.5).must()
     whole = hundredths / 100
     rest = hundredths % 100
-    tail: str @ rest.to_str()
+    tail: str @= rest.to_str()
 
     if rest < 10
         tail @ "0" + tail
@@ -205,9 +205,9 @@ test "a group line carries its key and its four numbers"
     assert holds(text: group_line(plan.Group(team: "argo", active: false), s), needle: "idle")
 
 function split_lines(text: str) -> [str]
-    out: [str] @ []
-    start: i64 @ 0
-    at: i64 @ 0
+    out: [str] @= []
+    start: i64 @= 0
+    at: i64 @= 0
 
     while at < text.len()
         if text[at] == '\n'
@@ -221,7 +221,7 @@ function split_lines(text: str) -> [str]
 function holds(text: str, needle: str) -> bool
     if needle.len() > text.len()
         return false
-    at: i64 @ 0
+    at: i64 @= 0
 
     while at + needle.len() <= text.len()
         if text.slice(from: at, to: at + needle.len()) == needle

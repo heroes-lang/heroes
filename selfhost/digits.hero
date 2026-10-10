@@ -123,7 +123,7 @@ record Split
 
 function split_base(text: str) -> Split
     if text.len() > 2 && text[0] == '0'
-        marker: u8 @ text[1]
+        marker: u8 @= text[1]
 
         if marker >= 'A' && marker <= 'Z'
             marker @ marker + 32
@@ -143,8 +143,8 @@ function split_base(text: str) -> Split
 function decode_u64(text: str) -> u64?
     split = split_base(text)
     r = radix(split.base)
-    value: u64 @ 0
-    i: i64 @ 0
+    value: u64 @= 0
+    i: i64 @= 0
 
     while i < split.digits.len()
         b = split.digits[i]
@@ -182,8 +182,8 @@ function render_in_base(value: u64, base: Base) -> str
 
     if value == 0
         return prefix(base) + "0"
-    out: str @ ""
-    v: u64 @ value
+    out: str @= ""
+    v: u64 @= value
 
     while v > 0
         d = to_i64(v % r).must()
@@ -204,12 +204,12 @@ function render_in_base(value: u64, base: Base) -> str
 # same finding with a different number in it.
 function int_out_of_range(text: str, span: token.Span) -> diag.Diagnostic
     split = split_base(text)
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "int_out_of_range",
         message: "`" + text + "` does not fit an `i64`",
         span: span
     )
-    note: str @ ""
+    note: str @= ""
 
     if split.base == .decimal
         note @ "a literal with nothing to take a width from is an `i64`, which holds -9223372036854775808 through 9223372036854775807"
@@ -223,7 +223,7 @@ function int_out_of_range(text: str, span: token.Span) -> diag.Diagnostic
 # the type, so the note names it and says the repair has two ends.
 function int_out_of_range_at(text: str, span: token.Span, kind: widths.IntKind) -> diag.Diagnostic
     a_width = widths.int_article_name(kind)
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "int_out_of_range",
         message: "`" + text + "` does not fit " + a_width,
         span: span
@@ -242,7 +242,7 @@ function int_out_of_range_at(text: str, span: token.Span, kind: widths.IntKind) 
 # The prefix needs no work: `0X` never reaches here, the lexer refuses it
 # where it is written.
 function canonical_int(text: str) -> str
-    parts: [str] @ []
+    parts: [str] @= []
 
     for c in text.chars()
         lower = match c

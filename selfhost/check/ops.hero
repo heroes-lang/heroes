@@ -93,7 +93,7 @@ function binary(@c: state.Checker, s: source.Source, decls: [ast.Decl], op: ast.
             int_id = table.int_ty_id(c.out.types)
 
             if left != int_id || right != int_id
-                bad: i64 @ left
+                bad: i64 @= left
 
                 if left == int_id
                     bad @ right
@@ -132,7 +132,7 @@ function binary(@c: state.Checker, s: source.Source, decls: [ast.Decl], op: ast.
             wanted = table.bool_ty(c.out.types)
 
             if left != wanted || right != wanted
-                bad: i64 @ left
+                bad: i64 @= left
 
                 if left == wanted
                     bad @ right
@@ -170,12 +170,12 @@ function arithmetic(@c: state.Checker, s: source.Source, decls: [ast.Decl], op: 
         b = state.show(c, s, decls, right)
         state.push_diagnostic(@c, value_errors.mixed_arithmetic(op: op_name(op), left: a, right: b, span: span))
         return state.error_ty_of(c)
-    offender: i64 @ left
+    offender: i64 @= left
 
     if acceptable(c, left, op)
         offender @ right
     got = state.show(c, s, decls, offender)
-    allowed: str @ "`i64` with `i64` or `f64` with `f64`"
+    allowed: str @= "`i64` with `i64` or `f64` with `f64`"
 
     if op == .add
         allowed @ "`i64` with `i64`, `f64` with `f64`, or `str` with `str`"
@@ -262,7 +262,7 @@ function anywhere() -> token.Span
     return token.Span(start: 0, end: 1)
 
 test "arithmetic is monomorphic and the mix names the conversion"
-    c: state.Checker @ bare_checker()
+    c: state.Checker @= bare_checker()
     s = source.new_source(name: "t.hero", text: "x\n")
     int_id = table.int_ty_id(c.out.types)
     f64_id = table.f64_ty(c.out.types)
@@ -275,7 +275,7 @@ test "arithmetic is monomorphic and the mix names the conversion"
     assert c.out.diagnostics[0].message == "`+` takes two of one type — two integers of the SAME width, or two floats of the same width — and found `i64` and `f64`"
 
 test "plus joins two str and nothing else does"
-    c: state.Checker @ bare_checker()
+    c: state.Checker @= bare_checker()
     s = source.new_source(name: "t.hero", text: "x\n")
     str_id = table.str_ty(c.out.types)
     assert binary(@c, s, no_decls(), .add, left: str_id, right: str_id, span: anywhere()) == str_id
@@ -285,7 +285,7 @@ test "plus joins two str and nothing else does"
     assert c.out.diagnostics[0].code == "bad_operand"
 
 test "equality wants one type, ordering wants a number, logic wants bool"
-    c: state.Checker @ bare_checker()
+    c: state.Checker @= bare_checker()
     s = source.new_source(name: "t.hero", text: "x\n")
     int_id = table.int_ty_id(c.out.types)
     str_id = table.str_ty(c.out.types)
@@ -305,7 +305,7 @@ test "a partial record refuses == transitively, with the record named"
     p = parse.parse("extern \"s.h\"\n    record Font partial\n        size: i64\n")
     s = source.new_source(name: "t.hero", text: "extern \"s.h\"\n    record Font partial\n        size: i64\n")
     r: resolved.Resolved = resolved.new_resolved()
-    c: state.Checker @ state.new_checker(out_of: r, expr_count: 0)
+    c: state.Checker @= state.new_checker(out_of: r, expr_count: 0)
     font = table.intern(@c.out.types, .named(decl: 0))
     xs = table.intern(@c.out.types, .array(element: font))
     _ = binary(@c, s, p.decls, .eq, left: xs, right: xs, span: anywhere())
@@ -314,7 +314,7 @@ test "a partial record refuses == transitively, with the record named"
     assert c.out.diagnostics[0].message == "`Font` is `partial`, so it cannot be compared with `==` — reached through `[Font]`: the fields it does not name are part of the answer, and this program cannot see them"
 
 test "unary keeps the same three fences, and poison stays silent"
-    c: state.Checker @ bare_checker()
+    c: state.Checker @= bare_checker()
     s = source.new_source(name: "t.hero", text: "x\n")
     int_id = table.int_ty_id(c.out.types)
     f64_id = table.f64_ty(c.out.types)

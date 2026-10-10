@@ -25,7 +25,7 @@ use shown_char
 # written as itself or as `<U+XXXX>` in `shown_char.u_plus`'s form, which is
 # clang's: upper-case hexadecimal, at least four digits.
 function printed_as(printed: str, value: str) -> bool
-    at: i64 @ 0
+    at: i64 @= 0
 
     for ch in value.chars()
         escaped = "<" + shown_char.u_plus(shown_char.code_point(ch)) + ">"

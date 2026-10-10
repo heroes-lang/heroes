@@ -56,11 +56,11 @@ record Buffer
 
 # Every buffer one extern call lends, in argument order.
 function buffers(c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], f: containers.Function, run: ir.Run, decl: i64) -> [Buffer]
-    out: [Buffer] @ []
+    out: [Buffer] @= []
     given = containers.args_of(f, run)
     params = lend_count.param_names(s, decls, decl: decl)
     callee = source.span_text(s, decls[decl].name)
-    index: i64 @ 0
+    index: i64 @= 0
 
     for arg in given
         element = lend_count.buffer_element(c, decls, decl: decl, index: index)
@@ -114,8 +114,8 @@ function pointee_check(c: state.Checked, names: ctype.Names, s: source.Source, d
 
     if spelled.is_err()
         return ""
-    candidates: [str] @ []
-    void_too: bool @ false
+    candidates: [str] @= []
+    void_too: bool @= false
 
     match table.get(c.types, element)
         .int_ty ik =>
@@ -130,7 +130,7 @@ function pointee_check(c: state.Checked, names: ctype.Names, s: source.Source, d
         .array | .fixed | .map | .fallible | .function_ty => candidates @ candidates
         .case_ty | .failure | .generic                    => candidates @ candidates
 
-    alternatives: [str] @ []
+    alternatives: [str] @= []
 
     for one in candidates
         alternatives @ alternatives.push(
@@ -195,7 +195,7 @@ function before(@w: writer.Writer, held: [Buffer], arguments: [str]) -> [str]
     if held.len() == 0
         return arguments
     writer.line(@w, text: "    {")
-    out: [str] @ arguments
+    out: [str] @= arguments
 
     for b in held
         if b.check != ""
@@ -216,7 +216,7 @@ function before(@w: writer.Writer, held: [Buffer], arguments: [str]) -> [str]
 function after(@w: writer.Writer, held: [Buffer])
     if held.len() == 0
         return
-    at: i64 @ held.len() - 1
+    at: i64 @= held.len() - 1
 
     while at >= 0
         b = held[at]

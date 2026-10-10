@@ -57,7 +57,7 @@ record Seen
 # where none is: walked back, and where the walk meets the token the kept walk
 # began at, on from the one it ended at (the premise above).
 function seen_before(tokens: [token.Token], t: Tables, at: i64) -> Seen
-    i: i64 @ 0
+    i: i64 @= 0
     from = t.walked_from
     to = t.walked_to
 
@@ -89,8 +89,8 @@ function relaid(@tokens: [token.Token], at: i64, kind: token.TokenKind, span: to
 ## Tests
 
 function made(kinds: [token.TokenKind]) -> [token.Token]
-    out: [token.Token] @ []
-    at: i64 @ 0
+    out: [token.Token] @= []
+    at: i64 @= 0
 
     for k in kinds
         out @ out.push(token.Token(kind: k, span: token.Span(start: at, end: at + 1)))
@@ -100,7 +100,7 @@ function made(kinds: [token.TokenKind]) -> [token.Token]
 
 # The walk back with no walk kept: the token at or before `at` a reader sees.
 function walked_back(tokens: [token.Token], at: i64) -> i64
-    i: i64 @ 0
+    i: i64 @= 0
 
     if at > 0
         i @ at
@@ -120,14 +120,14 @@ test "a kept walk answers what the walk back answers, from any token"
 
     for kept in range(from: -1, to: tokens.len())
         for at in range(from: -1, to: tokens.len())
-            t: Tables @ none()
+            t: Tables @= none()
 
             if kept >= 0
                 walked(@t, from: kept, to: walked_back(tokens, at: kept))
             assert seen_before(tokens, t, at: at).at == walked_back(tokens, at: at)
 
     # And walking on from each token, as the parser does, keeping each walk.
-    t: Tables @ none()
+    t: Tables @= none()
 
     for at in range(from: -1, to: tokens.len())
         seen = seen_before(tokens, t, at: at)
@@ -139,8 +139,8 @@ test "a kept walk answers what the walk back answers, from any token"
 # `parse/colon_habit` lays a `:` out as an indent: the kept walk ended at
 # it, and the answer is the one before it.
 test "a token laid out invisible since a walk ended at it is passed over"
-    tokens: [token.Token] @ made([.ident, .colon, .terminator, .dedent, .eof])
-    t: Tables @ none()
+    tokens: [token.Token] @= made([.ident, .colon, .terminator, .dedent, .eof])
+    t: Tables @= none()
     walked(@t, from: 3, to: seen_before(tokens, t, at: 3).at)
     assert t.walked_from == 3 && t.walked_to == 1
     relaid(@tokens, at: 1, kind: .indent, span: token.Span(start: 3, end: 3))

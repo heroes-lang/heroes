@@ -85,7 +85,7 @@ function judged(@c: state.Checker, a: ast.Ast, s: source.Source, decls: [ast.Dec
     if !is_array_out(c, param)
         return .not_a_buffer
     written = state.written_type(c.out, param.ty).must()
-    element: i64 @ written
+    element: i64 @= written
 
     match table.get(c.out.types, written)
         .array x                                                  => element @ x.element
@@ -94,7 +94,7 @@ function judged(@c: state.Checker, a: ast.Ast, s: source.Source, decls: [ast.Dec
         .case_ty | .failure | .generic | .error                   => element @ written
 
     name = source.span_text(s, param.name)
-    why: str @ ""
+    why: str @= ""
 
     if is_handle(decls, element: table.get(c.out.types, element))
         why @ "`" + state.show(c, s, decls, element) + "` is a handle, a pointer whose life its marks keep, and a buffer of them would hand the program pointers no mark began — a buffer holds numbers or this group's records"

@@ -104,7 +104,7 @@ function place_of(text: str, span: token.Span, @outline: text_outline.Outline) -
 
 # The offset where the line holding `at` begins.
 function line_start(text: str, at: i64) -> i64
-    i: i64 @ at
+    i: i64 @= at
 
     while i > 0 && text[i - 1] != '\n'
         i @ i - 1
@@ -112,7 +112,7 @@ function line_start(text: str, at: i64) -> i64
     return i
 
 function only_margin(text: str, from: i64, to: i64) -> bool
-    i: i64 @ from
+    i: i64 @= from
 
     while i < to
         if text[i] != ' ' && text[i] != '\t'
@@ -124,7 +124,7 @@ function only_margin(text: str, from: i64, to: i64) -> bool
 # The last character before `at` on its line that is not a space, or `floor`
 # minus one where there is none.
 function significant_before(text: str, at: i64, floor: i64) -> i64
-    i: i64 @ at - 1
+    i: i64 @= at - 1
 
     while i >= floor && (text[i] == ' ' || text[i] == '\t')
         i @ i - 1
@@ -133,7 +133,7 @@ function significant_before(text: str, at: i64, floor: i64) -> i64
 
 # The identifier that ends just before `at`.
 function word_ending(text: str, at: i64) -> str
-    i: i64 @ at
+    i: i64 @= at
 
     while i > 0 && (bytes.is_alnum(text[i - 1]) || text[i - 1] == '_')
         i @ i - 1
@@ -184,8 +184,8 @@ function after_paren(text: str, at: i64, floor: i64) -> Place
 
 # After a `,`: inside a function type's parameter list, a type's place.
 function after_comma(text: str, at: i64, floor: i64) -> Place
-    depth: i64 @ 0
-    i: i64 @ at - 1
+    depth: i64 @= 0
+    i: i64 @= at - 1
 
     while i >= floor
         ch = text[i]
@@ -242,7 +242,7 @@ function may_be_wider(text: str, span: token.Span) -> bool
 
     if before <= begins || text[before] != '>' || text[before - 1] != '-'
         return false
-    after: i64 @ span.end
+    after: i64 @= span.end
 
     while after < text.len() && text[after] == ' '
         after @ after + 1
@@ -251,7 +251,7 @@ function may_be_wider(text: str, span: token.Span) -> bool
 
 # The first character on the line at `from` that is not a space or a tab.
 function first_mark(text: str, from: i64) -> i64
-    i: i64 @ from
+    i: i64 @= from
 
     while i < text.len() && (text[i] == ' ' || text[i] == '\t')
         i @ i + 1
@@ -259,7 +259,7 @@ function first_mark(text: str, from: i64) -> i64
     return i
 
 function word_end(text: str, from: i64) -> i64
-    i: i64 @ from
+    i: i64 @= from
 
     while i < text.len() && (bytes.is_alnum(text[i]) || text[i] == '_')
         i @ i + 1
@@ -269,7 +269,7 @@ function word_end(text: str, from: i64) -> i64
 # The offset of the quote that closes the one at `from`, or of the line's
 # end where none does: a string never runs past its line.
 function past_quoted(text: str, from: i64, quote: u8, limit: i64) -> i64
-    i: i64 @ from + 1
+    i: i64 @= from + 1
 
     while i < limit && text[i] != quote && text[i] != '\n'
         if text[i] == '\\'
@@ -281,7 +281,7 @@ function past_quoted(text: str, from: i64, quote: u8, limit: i64) -> i64
 ## Tests
 
 function at_word(text: str, word: str) -> token.Span
-    i: i64 @ 0
+    i: i64 @= 0
 
     while i + word.len() <= text.len()
         if bytes.bytes_at(text: text, at: i, needle: word) && (i == 0 || !bytes.is_alnum(text[i - 1]))
@@ -293,7 +293,7 @@ function at_word(text: str, word: str) -> token.Span
 # Where `word`, its first whole occurrence, stands in `text`, the text's
 # outline read for the one question.
 function place_in(text: str, word: str) -> Place
-    outline: text_outline.Outline @ text_outline.unread()
+    outline: text_outline.Outline @= text_outline.unread()
     return place_of(text, at_word(text: text, word: word), @outline)
 
 test "a word that opens its line stands at the margin, in a group or in a block"
@@ -352,10 +352,10 @@ test "a word's place takes the lines above it from the outline alone"
     shut = "f(x)\nfn g()\n"
     open = "f(x \nfn g()\n"
     at = at_word(text: open, word: "fn")
-    read_shut: text_outline.Outline @ text_outline.unread()
+    read_shut: text_outline.Outline @= text_outline.unread()
     text_outline.read(@read_shut, shut)
     assert place_of(open, at, @read_shut) == .top
-    read_open: text_outline.Outline @ text_outline.unread()
+    read_open: text_outline.Outline @= text_outline.unread()
     assert place_of(open, at, @read_open) == .other
 
     # The nearest line at the margin, which says whether a word one level in
@@ -364,10 +364,10 @@ test "a word's place takes the lines above it from the outline alone"
     group = "extern \"m.h\"\n    fn p()\n    fn q()\n"
     other = "extern \"m.h\"\nfn     p()\n    fn q()\n"
     member = at_word(text: other, word: "fn q")
-    read_group: text_outline.Outline @ text_outline.unread()
+    read_group: text_outline.Outline @= text_outline.unread()
     text_outline.read(@read_group, group)
     assert place_of(other, token.Span(start: member.start, end: member.start + 2), @read_group) == .member
-    read_other: text_outline.Outline @ text_outline.unread()
+    read_other: text_outline.Outline @= text_outline.unread()
     assert place_of(other, token.Span(start: member.start, end: member.start + 2), @read_other) == .statement
 
 # Defect 452's case: the helper finds a word past characters above ASCII,

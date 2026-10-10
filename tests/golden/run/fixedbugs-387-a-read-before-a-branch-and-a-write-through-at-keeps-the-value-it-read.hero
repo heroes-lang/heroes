@@ -32,32 +32,32 @@ function sure(xs: [i64], b: bool) -> i64
     return xs.len() * 1000
 
 function through_must() -> i64
-    out: [i64] @ []
+    out: [i64] @= []
     out @ out.push(5)
     return total(out, half(4).must() + bump(@out))
 
 function through_default() -> i64
-    out: [i64] @ []
+    out: [i64] @= []
     out @ out.push(5)
     return total(out, half(3).default(2) + bump(@out))
 
 function through_question() -> i64?
-    out: [i64] @ []
+    out: [i64] @= []
     out @ out.push(5)
     return ok(total(out, half(4)? + bump(@out)))
 
 function through_and() -> i64
-    out: [i64] @ []
+    out: [i64] @= []
     out @ out.push(5)
     return sure(out, out.len() > 0 && bumped(@out))
 
 function through_or() -> i64
-    out: [i64] @ []
+    out: [i64] @= []
     out @ out.push(5)
     return sure(out, out.len() > 5 || bumped(@out))
 
 function main()
-    out: [i64] @ []
+    out: [i64] @= []
     out @ out.push(5)
     print(total(out, half(4).must() + bump(@out)))
     print(through_must())

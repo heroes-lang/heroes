@@ -11,7 +11,7 @@ function f(a: [i64], m: {str: i64}, g: [[i64]]) -> i64
         1]
     z = m[  # in a map's index
         "k"].must()
-    b: [i64] @ a
+    b: [i64] @= a
     b[  # in a place
         0] @ 1
     return x + y + z + b[0] + g[0][  # in a second index

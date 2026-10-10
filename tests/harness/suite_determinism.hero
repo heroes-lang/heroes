@@ -47,11 +47,11 @@ constant C_DIRS: [str]
     ]
 
 function run_all(scratch: str, compiler: str) -> report.Report?
-    r: report.Report @ report.empty()
+    r: report.Report @= report.empty()
     written = scratch + "/determinism"
     shell.mkdir_all(written)?
-    skipped: i64 @ 0
-    total: i64 @ 0
+    skipped: i64 @= 0
+    total: i64 @= 0
 
     for item in cases.collect(scratch: scratch, dir: IR_DIR)?
         total @ total + 1
@@ -111,7 +111,7 @@ function c_case(@r: report.Report, @skipped: i64, scratch: str, compiler: str, w
             skipped @ skipped + 1
             report.keep_skip(@r, label: "determinism/c/" + item.name, detail: "  " + lacks.must())
             return
-        detail: str @ "  cannot emit " + item.source + ":\n" + last_error(first)
+        detail: str @= "  cannot emit " + item.source + ":\n" + last_error(first)
         why = absence.refused(lacks)
 
         if why.len() > 0
@@ -168,7 +168,7 @@ function units_alike(@r: report.Report, scratch: str, compiler: str, item: cases
             detail: "  `--emit-c` refuses " + item.source + "'s one file, and its units could not be asked twice:\n" + last_units_error(one) + last_units_error(two)
         )
         return
-    wrong: [str] @ []
+    wrong: [str] @= []
 
     if names_of(one.must()) != names_of(two.must())
         wrong @ wrong.push(
@@ -189,7 +189,7 @@ function units_alike(@r: report.Report, scratch: str, compiler: str, item: cases
         report.keep_pass(@r)
 
 function names_of(units: [one_file_units.Unit]) -> [str]
-    out: [str] @ []
+    out: [str] @= []
 
     for unit in units
         out @ out.push(unit.name)
@@ -205,7 +205,7 @@ function last_units_error(got: [one_file_units.Unit]?) -> str
 # comparison uses; a non-empty `into` writes through `-o` and the answer
 # is read from the file instead.
 function dumped(scratch: str, compiler: str, item: cases.Case, flag: str, into: str) -> str?
-    line: [str] @ [compiler, "build", item.source, flag]
+    line: [str] @= [compiler, "build", item.source, flag]
 
     if into.len() > 0
         line @ line.push("-o")
@@ -298,8 +298,8 @@ test "fixedbugs: a case that cannot emit is skipped only where the machine lacks
     assert !compiler.is_err()
     has = absence.planted_case(dir: tree, name: "has", bound: "stdio.h", missing: "stdio.h")
     assert !has.is_err()
-    refuted: report.Report @ report.empty()
-    none_skipped: i64 @ 0
+    refuted: report.Report @= report.empty()
+    none_skipped: i64 @= 0
     c_case(
         @refuted,
         @none_skipped,
@@ -314,8 +314,8 @@ test "fixedbugs: a case that cannot emit is skipped only where the machine lacks
     assert strings.contains(text: refuted.failures[0], needle: "clang finds `stdio.h`")
     lacks = absence.planted_case(dir: tree, name: "lacks", bound: absence.NOWHERE, missing: absence.NOWHERE)
     assert !lacks.is_err()
-    excused: report.Report @ report.empty()
-    one_skipped: i64 @ 0
+    excused: report.Report @= report.empty()
+    one_skipped: i64 @= 0
     c_case(
         @excused,
         @one_skipped,
@@ -341,8 +341,8 @@ test "fixedbugs: a case whose one file --emit-c refuses is judged on its units, 
     scratch = shell.own_scratch()
     planted = one_file_units.planted_two_ways(scratch)
     assert !planted.is_err()
-    judged: report.Report @ report.empty()
-    none_skipped: i64 @ 0
+    judged: report.Report @= report.empty()
+    none_skipped: i64 @= 0
     c_case(
         @judged,
         @none_skipped,

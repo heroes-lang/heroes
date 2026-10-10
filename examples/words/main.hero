@@ -21,8 +21,8 @@
 # the order, and a real tokeniser would put the interesting part somewhere
 # else.
 function words_of(text: str) -> [str]
-    out: [str] @ []
-    piece: str @ ""
+    out: [str] @= []
+    piece: str @= ""
 
     for ch in text.chars()
         if is_letter(ch)
@@ -60,7 +60,7 @@ function lowered(ch: str) -> str
 # rather than a dependency.
 function to_str_of_byte(b: u8) -> str
     lower = "abcdefghijklmnopqrstuvwxyz"
-    i: i64 @ 0
+    i: i64 @= 0
 
     while i < 26
         if lower[i] == b
@@ -70,7 +70,7 @@ function to_str_of_byte(b: u8) -> str
     return "?"
 
 function counted(text: str) -> {str: i64}
-    tally: {str: i64} @ {}
+    tally: {str: i64} @= {}
 
     for one in words_of(text)
         tally[one] @ tally[one].default(0) + 1
@@ -87,8 +87,8 @@ function counted(text: str) -> {str: i64}
 # affect equality: two `==`-equal maps may walk differently.
 function report(text: str) -> str
     tally = counted(text)
-    rows: [str] @ []
-    most: i64 @ 0
+    rows: [str] @= []
+    most: i64 @= 0
 
     for word in sort(keys(tally))
         n = tally[word].must()
@@ -99,7 +99,7 @@ function report(text: str) -> str
     # Counted down from the highest, so the primary key is the count and the
     # secondary key is the sorted walk above. Two nested walks rather than a
     # comparison function, because `sort` takes no comparator (`spec:179`).
-    at: i64 @ most
+    at: i64 @= most
 
     while at > 0
         for word in sort(keys(tally))

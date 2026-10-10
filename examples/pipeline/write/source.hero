@@ -24,7 +24,7 @@ function count(s: Sink) -> i64
     return s.rows.len()
 
 test "a sink keeps what it is given, in order"
-    s: Sink @ new_sink()
+    s: Sink @= new_sink()
     emit(@s, "first")
     emit(@s, "second")
     assert s.count() == 2

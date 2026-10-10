@@ -27,10 +27,10 @@ extern "poll.h"
     function poll(@fds: [PollFd] counted_by 2 lent, nfds: u32, timeout: i32) -> i32
 
 function main()
-    fds: [i32] @ []
+    fds: [i32] @= []
     print(pipe(@fds), " ", fds.len(), " ", fds[0] != fds[1])
     print(write(fd: fds[1], data: "hello".cstr(), n: 5))
-    watched: [PollFd] @ [
+    watched: [PollFd] @= [
         PollFd(fd: fds[0], events: POLLIN.to_i16().must(), revents: 0)
         PollFd(fd: fds[1], events: POLLOUT.to_i16().must(), revents: 0)
     ]
@@ -43,8 +43,8 @@ function main()
         " ",
         watched[1].revents == POLLOUT.to_i16().must()
     )
-    buf: [u8] @ []
+    buf: [u8] @= []
     print(read(fd: fds[0], @buf, n: 64), " ", buf.len(), " ", buf[0], " ", buf[4], " ", buf[5])
     print(close(fd: fds[0]), " ", close(fd: fds[1]))
-    name: [i8] @ []
+    name: [i8] @= []
     print(gethostname(@name, namelen: 256), " ", name.len(), " ", name[0] != 0)

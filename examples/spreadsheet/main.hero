@@ -40,7 +40,7 @@ function evaluate(text: str)
         .ok s  => report(s)
 
 function report(s: sheet.Sheet)
-    broken: i64 @ 0
+    broken: i64 @= 0
 
     for name in sheet.names(s)
         match formula.value_of(s, name, [])
@@ -59,7 +59,7 @@ function report(s: sheet.Sheet)
 # letter and three digits, and a longer name simply pushes its own column out —
 # which is a report being honest rather than a report being wrong.
 function padded(name: str) -> str
-    out: str @ name
+    out: str @= name
 
     while out.len() < 4
         out @ out + " "

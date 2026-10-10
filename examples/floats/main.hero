@@ -50,7 +50,7 @@ function is_a_number(x: f64) -> bool
 # A reading that a sensor may not have answered, kept as a float because that
 # is how a real one arrives: the failure is in the VALUE and not beside it.
 function usable(readings: [f64]) -> [f64]
-    out: [f64] @ []
+    out: [f64] @= []
 
     for one in readings
         if is_a_number(one)
@@ -66,7 +66,7 @@ function mean(readings: [f64]) -> f64
 
     if good.len() == 0
         return a_nan()
-    total: f64 @ 0.0
+    total: f64 @= 0.0
 
     for one in good
         total @ total + one
@@ -80,7 +80,7 @@ function mean(readings: [f64]) -> f64
 # observed by every reader of `main.expected`. Sorting floats is total here
 # only because `is_a_number` removed the values on which it is not.
 function report(readings: [f64]) -> str
-    rows: [str] @ []
+    rows: [str] @= []
 
     for one in sort(usable(readings))
         rows @ rows.push(one.to_str())

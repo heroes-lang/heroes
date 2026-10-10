@@ -5,7 +5,7 @@
 # Bulk regression case.
 
 function greet(name: str, formal: bool) -> str
-    prefix: str @ "hi "
+    prefix: str @= "hi "
 
     if formal
         prefix @ "good day "

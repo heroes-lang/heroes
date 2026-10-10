@@ -28,25 +28,25 @@ function one() -> i64
 
 function a_bare_name()
     a = 1
-    b: i64 @ 0
+    b: i64 @= 0
     g(a @b)  #~ misplaced_mutable_marker
     print(b)
 
 function a_second_bare_name()
     a = 1
-    b: i64 @ 0
+    b: i64 @= 0
     g(a, b @b)  #~ misplaced_mutable_marker
     print(b)
 
 function after_a_label()
-    n: i64 @ 0
+    n: i64 @= 0
     h(x: nullptr @n)  #~ expected_args_close
     print(n)
 
 function after_a_literal_a_call_a_field_a_marker()
     r = R(v: 1)
-    b: i64 @ 0
-    c: i64 @ 0
+    b: i64 @= 0
+    c: i64 @= 0
     g(1 @b)  #~ expected_args_close
     g(one() @b)  #~ expected_args_close
     g(r.v @b)  #~ expected_args_close

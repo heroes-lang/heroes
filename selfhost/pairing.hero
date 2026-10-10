@@ -62,8 +62,8 @@ function paired_closer(c: cursor.Cursor, text: str, open: i64) -> i64
 # The walk from the opener at token `open` alone, `paired_closer`'s answer
 # for a cursor `pair_all` did not pair, a view or a test's.
 function walked_closer(c: cursor.Cursor, text: str, open: i64) -> i64
-    depth: i64 @ 0
-    i: i64 @ open
+    depth: i64 @= 0
+    i: i64 @= open
     bounded = c.root_end >= 0 && c.tokens[open].span.start < c.root_end
     closed = close_after(c, at: c.tokens[open].span.start)
 
@@ -102,10 +102,10 @@ function walked_closer(c: cursor.Cursor, text: str, open: i64) -> i64
 # closer's own kind. Kept apart because it builds an array the walk by depth,
 # taken for every bracket the parser reads, does not.
 function paired_by_kinds(c: cursor.Cursor, text: str, open: i64) -> i64
-    kinds: [token.TokenKind] @ [c.tokens[open].kind]
-    i: i64 @ open + 1
+    kinds: [token.TokenKind] @= [c.tokens[open].kind]
+    i: i64 @= open + 1
     bounded = c.root_end >= 0 && c.tokens[open].span.start < c.root_end
-    closed: i64 @ close_after(c, at: c.tokens[open].span.start)
+    closed: i64 @= close_after(c, at: c.tokens[open].span.start)
 
     while c.tokens[i].kind != .eof && !(bounded && c.tokens[i].span.start >= c.root_end)
         k = c.tokens[i].kind
@@ -153,7 +153,7 @@ function pair_all(@c: cursor.Cursor, text: str)
 # walked from each of its openers to its closer, which cost the square of the
 # brackets nested in a body written in braces (defect 257).
 function view(c: cursor.Cursor, tokens: [token.Token], text: str) -> cursor.Cursor
-    seen: cursor.Cursor @ cursor.lexed_cursor(tokens: tokens, root_end: c.root_end, closes: c.closes, swaps: c.swaps)
+    seen: cursor.Cursor @= cursor.lexed_cursor(tokens: tokens, root_end: c.root_end, closes: c.closes, swaps: c.swaps)
     pair_all(@seen, text)
     return seen
 
@@ -166,7 +166,7 @@ function view(c: cursor.Cursor, tokens: [token.Token], text: str) -> cursor.Curs
 # never closed pops the openers whose closers it took. Each is the walk from
 # one opener (`walked_closer`, `paired_by_kinds`) asked of all at once.
 function table(c: cursor.Cursor, text: str) -> [i64]
-    pairs: [i64] @ []
+    pairs: [i64] @= []
 
     for t in c.tokens
         _ = t
@@ -175,16 +175,16 @@ function table(c: cursor.Cursor, text: str) -> [i64]
     # The openers open are the first `depth` of `stack`: a pop or a cut is a
     # number, where a slice copied the stack at every closer, the square of
     # a nesting's depth (defect 473).
-    stack: [i64] @ []
-    depth: i64 @ 0
-    next: i64 @ 0
-    bounded: bool @ c.root_end >= 0
-    i: i64 @ 0
+    stack: [i64] @= []
+    depth: i64 @= 0
+    next: i64 @= 0
+    bounded: bool @= c.root_end >= 0
+    i: i64 @= 0
 
     while c.tokens[i].kind != .eof
         k = c.tokens[i].kind
         at = c.tokens[i].span.start
-        taken: bool @ false
+        taken: bool @= false
 
         if bounded && at >= c.root_end
             depth @ 0
@@ -232,7 +232,7 @@ function table(c: cursor.Cursor, text: str) -> [i64]
 # The position among the first `depth` of `stack`, the openers open by token
 # index, of the innermost `opener`, or -1.
 function innermost_of(c: cursor.Cursor, stack: [i64], depth: i64, opener: token.TokenKind) -> i64
-    at: i64 @ depth - 1
+    at: i64 @= depth - 1
 
     while at >= 0 && c.tokens[stack[at]].kind != opener
         at @ at - 1
@@ -245,7 +245,7 @@ function opens(kind: token.TokenKind) -> bool
 # The index in `kinds`, the openers open in a pairing walk, of the innermost
 # `opener`, or -1.
 function innermost(kinds: [token.TokenKind], opener: token.TokenKind) -> i64
-    at: i64 @ kinds.len() - 1
+    at: i64 @= kinds.len() - 1
 
     while at >= 0 && kinds[at] != opener
         at @ at - 1

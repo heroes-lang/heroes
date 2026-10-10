@@ -14,8 +14,8 @@ function pick() -> (function(i64) -> i64)
     return f
 
 function main()
-    n: i64 @ 1
-    m: i64 @ 2
+    n: i64 @= 1
+    m: i64 @= 2
     print(f(@n))  #~ marker_mismatch
     print(f(x: @m))  #~ marker_mismatch
     print(n.add(b: @m))  #~ marker_mismatch

@@ -44,7 +44,7 @@ function field_type(@c: state.Checker, a: ast.Ast, s: source.Source, r: resolved
                         if source.span_text(s, candidate.name) == name
                             return lower.lower_ty(@c, a, r, candidate.ty)
 
-                    known: [str] @ []
+                    known: [str] @= []
 
                     for f in rec.fields
                         known @ known.push(source.span_text(s, f.name))
@@ -74,7 +74,7 @@ function field_type(@c: state.Checker, a: ast.Ast, s: source.Source, r: resolved
                         if source.span_text(s, candidate.name) == name
                             return lower.lower_ty(@c, a, r, candidate.ty)
 
-                    known: [str] @ []
+                    known: [str] @= []
 
                     for f in one_case.fields
                         known @ known.push(source.span_text(s, f.name))
@@ -168,7 +168,7 @@ function fixed_bound_check(@c: state.Checker, a: ast.Ast, s: source.Source, decl
 
             if v.negative || past
                 shown = state.show(c, s, decls, base_ty)
-                rendered: str @ v.magnitude.to_str()
+                rendered: str @= v.magnitude.to_str()
 
                 if v.negative
                     rendered @ "-" + v.magnitude.to_str()
@@ -313,7 +313,7 @@ test "a field is found on a record, and the miss lists what exists"
     p = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
     out = resolve.resolve(p.tree, s, p.decls, p.uses)
-    c: state.Checker @ state.new_checker(out_of: out, expr_count: 0)
+    c: state.Checker @= state.new_checker(out_of: out, expr_count: 0)
     base = table.intern(@c.out.types, .named(decl: 0))
 
     # `x` sits at offset 13, `y` at 24 in the text above.
@@ -329,7 +329,7 @@ test "the error payload has exactly two fields, both str"
     p = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
     out = resolve.resolve(p.tree, s, p.decls, p.uses)
-    c: state.Checker @ state.new_checker(out_of: out, expr_count: 0)
+    c: state.Checker @= state.new_checker(out_of: out, expr_count: 0)
     fail_ty = table.failure_ty(c.out.types)
 
     # Reuse the `x` span for a name that exists nowhere on the error.
@@ -338,7 +338,7 @@ test "the error payload has exactly two fields, both str"
     assert c.out.diagnostics[0].message == "`the error` has no field `x` — `the error` has `code`, `msg`"
 
 test "indexing answers by shape: u8, T, V?, and the refusals"
-    c: state.Checker @ ready("record P\n    x: i64\n")
+    c: state.Checker @= ready("record P\n    x: i64\n")
     s = source.new_source(name: "t.hero", text: "record P\n    x: i64\n")
     d: [ast.Decl] = []
     int_id = table.int_ty_id(c.out.types)
@@ -360,7 +360,7 @@ test "indexing answers by shape: u8, T, V?, and the refusals"
     assert c.out.diagnostics[1].code == "not_indexable"
 
 test "the try operator wants a fallible value inside a fallible function"
-    c: state.Checker @ ready("record P\n    x: i64\n")
+    c: state.Checker @= ready("record P\n    x: i64\n")
     s = source.new_source(name: "t.hero", text: "record P\n    x: i64\n")
     d: [ast.Decl] = []
     int_id = table.int_ty_id(c.out.types)

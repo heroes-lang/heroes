@@ -17,20 +17,20 @@ function bump(@xs: [i64]) -> i64
     return xs.len()
 
 function grown(n: i64) -> [i64]?
-    out: [i64] @ []
+    out: [i64] @= []
     out @ out.push(half(n).must())
     out @ out.push(half(n).default(0))
     out @ out.push(half(n)?)
     return ok(out)
 
 function flags(n: i64) -> [bool]
-    out: [bool] @ []
+    out: [bool] @= []
     out @ out.push(n > 1 && n < 4)
     out @ out.push(n < 1 || n > 3)
     return out
 
 function kept_classic() -> [i64]
-    out: [i64] @ [1]
+    out: [i64] @= [1]
     kept = out
     out @ out.push(half(2).must() + bump(@out))
     print(kept.len())

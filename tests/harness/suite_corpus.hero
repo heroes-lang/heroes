@@ -108,14 +108,14 @@ constant LEAST: i64
     44
 
 function run_all(scratch: str, compiler: str) -> report.Report?
-    r: report.Report @ report.empty()
+    r: report.Report @= report.empty()
     programs = program_directories(scratch)?
 
     floors.check(@r, label: "corpus", found: programs.len(), floor: LEAST, what: "program directories in " + EXAMPLES)
     binaries = scratch + "/corpus"
     shell.mkdir_all(binaries)?
-    skipped: i64 @ 0
-    crossing: i64 @ 0
+    skipped: i64 @= 0
+    crossing: i64 @= 0
 
     for dir in programs
         modules = module_texts(scratch: scratch, dir: dir)?
@@ -193,7 +193,7 @@ function one_program(scratch: str, compiler: str, binaries: str, dir: str, @r: r
             if !lacks.is_err()
                 report.keep_skip(@r, label: "corpus/" + name, detail: "  " + lacks.must())
                 return true
-            detail: str @ "  `heroes test` exited " + said.must().code.to_str() + ":\n" + said.must().out + said.must().err
+            detail: str @= "  `heroes test` exited " + said.must().code.to_str() + ":\n" + said.must().out + said.must().err
             why = absence.refused(lacks)
 
             if why.len() > 0
@@ -333,7 +333,7 @@ function program_arguments(dir: str) -> [str]
 
     if text.is_err()
         return []
-    out: [str] @ []
+    out: [str] @= []
 
     for row in strings.lines(text.must())
         if row.len() > 0
@@ -353,7 +353,7 @@ function passed_after_dashes(dir: str) -> [str]
     return shell.both(first: ["--"], second: passed)
 
 function program_directories(scratch: str) -> [str]?
-    found: [str] @ []
+    found: [str] @= []
 
     for dir in shell.list_directories(scratch: scratch, dir: EXAMPLES)?
         if !read_file(dir + "/main.hero").is_err()
@@ -375,7 +375,7 @@ function program_directories(scratch: str) -> [str]?
 # `suite_canonical.hero:84-85` made this same repair for the same reason and
 # measured what it was missing: 325 files of 371.
 function module_texts(scratch: str, dir: str) -> [str]?
-    texts: [str] @ []
+    texts: [str] @= []
     nothing: [str] = []
 
     for entry in shell.list_tree(scratch: scratch, dir: dir, skip: nothing)?
@@ -391,7 +391,7 @@ function module_texts(scratch: str, dir: str) -> [str]?
 # directory that cannot be walked answers none, and the witness then reads the
 # root alone, which can only refuse a skip.
 function module_paths(scratch: str, dir: str) -> [str]
-    out: [str] @ []
+    out: [str] @= []
     nothing: [str] = []
     walked = shell.list_tree(scratch: scratch, dir: dir, skip: nothing)
 
@@ -434,8 +434,8 @@ test "fixedbugs: no comment of an example runs straight into a section heading (
     nothing: [str] = []
     files = shell.list_tree(scratch: "build/harness-selftest", dir: EXAMPLES, skip: nothing)
     assert !files.is_err()
-    cut: [str] @ []
-    read: i64 @ 0
+    cut: [str] @= []
+    read: i64 @= 0
 
     for path in files.must()
         if !strings.ends_with(text: path, suffix: ".hero")
@@ -443,8 +443,8 @@ test "fixedbugs: no comment of an example runs straight into a section heading (
         text = read_file(path)
         assert !text.is_err()
         read @ read + 1
-        before: str @ ""
-        at: i64 @ 0
+        before: str @= ""
+        at: i64 @= 0
 
         for row in strings.lines(text.must())
             at @ at + 1
@@ -507,7 +507,7 @@ test "fixedbugs: a program whose tests cannot build is skipped only where the ma
     assert !compiler.is_err()
     has = absence.planted_case(dir: tree + "/has", name: "main", bound: "stdio.h", missing: "stdio.h")
     assert !has.is_err()
-    refuted: report.Report @ report.empty()
+    refuted: report.Report @= report.empty()
     took = one_program(
         scratch: scratch,
         compiler: compiler.must(),
@@ -525,7 +525,7 @@ test "fixedbugs: a program whose tests cannot build is skipped only where the ma
     assert !write_file(path: lacks + "/db/store.hero", text: store).is_err()
     told = absence.header_said(path: lacks + "/db/store.hero", source: store, header: absence.NOWHERE).must()
     assert !write_file(path: lacks + "/main.said", text: told).is_err()
-    excused: report.Report @ report.empty()
+    excused: report.Report @= report.empty()
     skipped = one_program(
         scratch: scratch,
         compiler: compiler.must(),

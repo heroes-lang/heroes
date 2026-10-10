@@ -94,15 +94,15 @@ function lex(s: source.Source) -> LexOutput
 # is what the compiler can show of it, not what its author wrote, so it is an
 # empty file here holding `not_text.told`'s diagnostics alone.
 function lex_files(s: source.Source) -> [LexOutput]
-    out: [LexOutput] @ []
-    index: i64 @ 0
+    out: [LexOutput] @= []
+    index: i64 @= 0
 
     for entry in s.files
         _ = entry
         told = not_text.told(s, index)
 
         if told.len() > 0
-            unread: LexOutput @ moved(lex_one(""), offset: s.files[index].start)
+            unread: LexOutput @= moved(lex_one(""), offset: s.files[index].start)
             unread.diagnostics @ told
             out @ out.push(unread)
         else
@@ -115,19 +115,19 @@ function lex_files(s: source.Source) -> [LexOutput]
 # where its text begins at `offset`; a break's indexes are the stream's and
 # do not move.
 function moved(one: LexOutput, offset: i64) -> LexOutput
-    tokens: [token.Token] @ []
+    tokens: [token.Token] @= []
 
     for t in one.tokens
         tokens @ tokens.push(
             token.Token(kind: t.kind, span: token.Span(start: t.span.start + offset, end: t.span.end + offset))
         )
 
-    diagnostics: [diag.Diagnostic] @ []
+    diagnostics: [diag.Diagnostic] @= []
 
     for d in one.diagnostics
-        shifted: diag.Diagnostic @ d
+        shifted: diag.Diagnostic @= d
         shifted.span @ token.Span(start: d.span.start + offset, end: d.span.end + offset)
-        fixes: [diag.Fix] @ []
+        fixes: [diag.Fix] @= []
 
         for fix in d.fixes
             fixes @ fixes.push(
@@ -137,12 +137,12 @@ function moved(one: LexOutput, offset: i64) -> LexOutput
         shifted.fixes @ fixes
         diagnostics @ diagnostics.push(shifted)
 
-    closes: [i64] @ []
+    closes: [i64] @= []
 
     for at in one.closes
         closes @ closes.push(at + offset)
 
-    swaps: [swap_words.Swap] @ []
+    swaps: [swap_words.Swap] @= []
 
     for swap in one.swaps
         swaps @ swaps.push(swap_words.Swap(at: swap.at + offset, word: swap.word))
@@ -152,10 +152,10 @@ function moved(one: LexOutput, offset: i64) -> LexOutput
 # The files' streams as the compilation's ONE, for every reader but the
 # parser: each file's tokens but its own eof, and one eof at the root's end.
 function joined(s: source.Source, files: [LexOutput]) -> LexOutput
-    tokens: [token.Token] @ []
-    diagnostics: [diag.Diagnostic] @ []
-    closes: [i64] @ []
-    swaps: [swap_words.Swap] @ []
+    tokens: [token.Token] @= []
+    diagnostics: [diag.Diagnostic] @= []
+    closes: [i64] @= []
+    swaps: [swap_words.Swap] @= []
 
     for one in files
         for t in one.tokens
@@ -211,17 +211,17 @@ function lexed(text: str, apart: bool, bodies: bool) -> LexOutput
     utf16 = file_start.utf16_told(text)
 
     if utf16.len() > 0
-        unread: LexOutput @ lexed("", apart: apart, bodies: bodies)
+        unread: LexOutput @= lexed("", apart: apart, bodies: bodies)
         unread.diagnostics @ utf16
         return unread
     mark = file_start.mark_length(text)
 
     if mark > 0
-        after: LexOutput @ moved(
+        after: LexOutput @= moved(
             lexed(text.slice(from: mark, to: text.len()), apart: apart, bodies: bodies),
             offset: mark
         )
-        told: [diag.Diagnostic] @ [file_start.marked(mark)]
+        told: [diag.Diagnostic] @= [file_start.marked(mark)]
 
         for d in after.diagnostics
             told @ told.push(d)
@@ -229,7 +229,7 @@ function lexed(text: str, apart: bool, bodies: bool) -> LexOutput
         after.diagnostics @ told
         after.breaks @ file_start.behind(after.breaks, by: 1)
         return after
-    l: state.LexState @ state.new_state()
+    l: state.LexState @= state.new_state()
     l.apart @ apart
     l.bodies @ bodies
 
@@ -275,7 +275,7 @@ function lexed(text: str, apart: bool, bodies: bool) -> LexOutput
         dropped: heads_told.told_by_heads(l.diagnostics, tokens: l.tokens, text: text)
     )
     said = refused_runs.told_once(left.diagnostics, text: text)
-    refused: [state.Break] @ []
+    refused: [state.Break] @= []
 
     for b in refused_runs.renumbered(l.breaks, at: refused_runs.through(first: left.at, then: said.at))
         if b.diagnostic >= 0
@@ -301,8 +301,8 @@ function lexed(text: str, apart: bool, bodies: bool) -> LexOutput
 # a reading apart leaves out. Only a word goes, since a dedent begins where
 # its margin does, which at margin zero is the head's own first byte.
 function without_heads(tokens: [token.Token], heads: [i64]) -> [token.Token]
-    out: [token.Token] @ []
-    next: i64 @ 0
+    out: [token.Token] @= []
+    next: i64 @= 0
 
     for t in tokens
         if !is_layout(t.kind)
@@ -324,7 +324,7 @@ function is_layout(kind: token.TokenKind) -> bool
 # The kinds as one spaced line — the port's answer to the Rust snapshot
 # tests' rendering, and what keeps every end-to-end assertion readable.
 function kind_line(tokens: [token.Token]) -> str
-    names: [str] @ []
+    names: [str] @= []
 
     for t in tokens
         names @ names.push(token.kind_name(t.kind))
@@ -338,7 +338,7 @@ test "a file that is not text is told and not lexed; the files beside it are"
         source.user_file(name: "main.hero", text: "use geom\n\nfunction main()\n    print(geom.two())\n")
         source.user_file(name: "geom.hero", text: "# g�om\nfunction two() -> i64\n    return 2\n")
     ]
-    s: source.Source @ source.from_files(inputs)
+    s: source.Source @= source.from_files(inputs)
     s.faults @ [source.Fault(at: s.files[1].start + 3, byte: 233)]
     files = lex_files(s)
     assert files[0].diagnostics.len() == 0
@@ -547,7 +547,7 @@ test "an opener the rule ended is named at the line and the word that ended it"
     assert ended.diagnostics[0].message == "`(` opened here is never closed"
 
     # Asked of an offset before the last one asked, the count starts again.
-    l: state.LexState @ state.new_state()
+    l: state.LexState @= state.new_state()
     text = "a\nb\nc\n"
     assert state.line_of(@l, text, at: 4) == 3
     assert state.line_of(@l, text, at: 2) == 2
@@ -591,7 +591,7 @@ test "dedents close one level at a time and eof closes the rest"
 # UNVERIFIED — pending debrief
 test "an error never stops the lexer"
     out = lex_one("let x = 0700 € \"open\n")
-    codes: [str] @ []
+    codes: [str] @= []
 
     for d in out.diagnostics
         codes @ codes.push(d.code)
@@ -1121,8 +1121,8 @@ test "a backslash at a line's end is one message, and the line it asks for is jo
 # `text` with every fix of `d` written, back to front: what `check --apply`
 # writes where they are certain.
 function fixed_by(text: str, d: diag.Diagnostic) -> str
-    out: str @ text
-    i: i64 @ d.fixes.len() - 1
+    out: str @= text
+    i: i64 @= d.fixes.len() - 1
 
     while i >= 0
         f = d.fixes[i]

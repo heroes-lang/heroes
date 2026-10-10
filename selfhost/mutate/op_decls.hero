@@ -15,7 +15,7 @@ use mutate/tokens
 # The token indices that begin a type: after `->`, and after a
 # declaration's `:` (not a map entry's, not a call's label).
 function type_positions(s: model.Statement) -> [i64]
-    out: [i64] @ []
+    out: [i64] @= []
     toks = s.toks
     around = op_base.enclosing(toks).around
 
@@ -65,7 +65,7 @@ function bracket_type(op: str, go: bool, p: model.Program, @out: [mutant.Mutant]
 
         for i in type_positions(s)
             if i + 2 < toks.len() && toks[i].kind == "lbracket" && toks[i + 1].kind == "ident" && toks[i + 2].kind == "rbracket" && toks[i].line == toks[i + 2].line
-                put: str @ toks[i + 1].text + "[]"
+                put: str @= toks[i + 1].text + "[]"
 
                 if go
                     put @ "[]" + toks[i + 1].text
@@ -86,7 +86,7 @@ function type_word(op: str, from: str, to: str, p: model.Program, @out: [mutant.
         toks = s.toks
 
         for i in type_positions(s)
-            j: i64 @ i
+            j: i64 @= i
 
             if i < toks.len() && toks[i].kind == "lbracket"
                 j @ i + 1
@@ -103,8 +103,8 @@ function field_commas(p: model.Program, @out: [mutant.Mutant])
 
         if s.children.len() < 2 || !one_line_kids(p, s: s, comments: false)
             continue
-        hunks: [mutant.Hunk] @ []
-        sids: [i64] @ [s.sid]
+        hunks: [mutant.Hunk] @= []
+        sids: [i64] @= [s.sid]
 
         for kid in s.children
             l = model.line(p, no: p.stmts[kid].first)
@@ -147,8 +147,8 @@ function case_parens(p: model.Program, @out: [mutant.Mutant])
         if op_base.comment_between(p, first: s.block_first, last: s.block_last)
             continue
         l = model.line(p, no: s.first)
-        inner: [str] @ []
-        sids: [i64] @ [s.sid]
+        inner: [str] @= []
+        sids: [i64] @= [s.sid]
 
         for kid in s.children
             inner @ inner.push(model.stripped(model.line(p, no: p.stmts[kid].first).text))
@@ -199,7 +199,7 @@ function use_dotted(p: model.Program, @out: [mutant.Mutant])
     for s in p.stmts
         if s.kind != "top-use"
             continue
-        slashes: [tokens.Tok] @ []
+        slashes: [tokens.Tok] @= []
 
         for t in s.toks
             if t.kind == "slash"
@@ -207,8 +207,8 @@ function use_dotted(p: model.Program, @out: [mutant.Mutant])
 
         if slashes.len() == 0
             continue
-        text: str @ model.line(p, no: s.first).text
-        at: i64 @ slashes.len() - 1
+        text: str @= model.line(p, no: s.first).text
+        at: i64 @= slashes.len() - 1
 
         while at >= 0
             text @ op_base.splice(text: text, c0: slashes[at].c0, c1: slashes[at].c1, put: ".")

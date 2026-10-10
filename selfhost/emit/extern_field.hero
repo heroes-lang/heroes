@@ -71,7 +71,7 @@ function assertions(c: state.Checked, names: ctype.Names, s: source.Source, c_ty
     # conjunct decides the one case left — a function pointer, where
     # void * round-tripping is POSIX's promise and this makes it a
     # CHECKED assumption.
-    is_ptr: bool @ false
+    is_ptr: bool @= false
 
     match table.get(c.types, ty)
         .ptr                                                       => is_ptr @ true
@@ -96,9 +96,9 @@ function assertions(c: state.Checked, names: ctype.Names, s: source.Source, c_ty
     # so char[N] matched int8_t (*)[N] at none of the eight widths —
     # 26 of 81 fixed-array fields across eleven headers are char[N],
     # and uname() was unreachable at any price.
-    is_fixed: bool @ false
-    fixed_elem: i64 @ 0
-    fixed_len: i64 @ 0
+    is_fixed: bool @= false
+    fixed_elem: i64 @= 0
+    fixed_len: i64 @= 0
 
     match table.get(c.types, ty)
         .fixed x =>
@@ -115,7 +115,7 @@ function assertions(c: state.Checked, names: ctype.Names, s: source.Source, c_ty
         if elem.is_err()
             return fail(code: "none", msg: "an element with no C spelling")
         flex_line = "_Static_assert(sizeof(" + c_type + ") - __builtin_offsetof(" + c_type + ", " + member + ") != 0, \"" + FLEX_ASSERTION + " " + hero_name + " " + member + "\");"
-        elem_is_int: bool @ false
+        elem_is_int: bool @= false
 
         match table.get(c.types, fixed_elem)
             .int_ty                                                    => elem_is_int @ true
@@ -159,7 +159,7 @@ function assertions(c: state.Checked, names: ctype.Names, s: source.Source, c_ty
             # The LENGTH needs no separate conjunct any more: it is inside every
             # association as `(*)[N]`, so a right element at a wrong count lands
             # on `default: 0` like anything else.
-            rows: [str] @ []
+            rows: [str] @= []
 
             for c_int in assert_spelling.C_INTEGER_TYPES
                 rows @ rows.push(
@@ -199,7 +199,7 @@ function assertions(c: state.Checked, names: ctype.Names, s: source.Source, c_ty
     #
     # The spellings are `assert_spelling.CSTR_SPELLINGS`, shared with
     # `HERO_RET_CSTR` so the set cannot drift between the two positions.
-    is_cstr: bool @ false
+    is_cstr: bool @= false
 
     match table.get(c.types, ty)
         .cstr                                                      => is_cstr @ true
@@ -221,8 +221,8 @@ function assertions(c: state.Checked, names: ctype.Names, s: source.Source, c_ty
         return ok(
             ["_Static_assert(_Generic(" + place + ", " + assert_spelling.CSTR_SPELLINGS + ", default:0) && sizeof(" + place + ") == sizeof(char *), \"" + FIELD_ASSERTION + " " + hero_name + " " + member + "\");"]
         )
-    is_int: bool @ false
-    int_kind: widths.IntKind @ .i64
+    is_int: bool @= false
+    int_kind: widths.IntKind @= .i64
 
     match table.get(c.types, ty)
         .int_ty ik =>
@@ -247,7 +247,7 @@ function assertions(c: state.Checked, names: ctype.Names, s: source.Source, c_ty
     # where it used to break the build.
     if is_int
         spelling = widths.int_c_type(int_kind)
-        declared: str @ "0"
+        declared: str @= "0"
 
         if !widths.int_signed(int_kind)
             declared @ "1"
@@ -325,7 +325,7 @@ test "a cstr field accepts every spelling C gives a string, not just const char 
     c: state.Checked = checker.check(parsed.tree, out, s, parsed.decls)
     assert c.diagnostics.len() == 0
     names = ctype.new_names(s, parsed.decls)
-    fields: [ast.Field] @ []
+    fields: [ast.Field] @= []
 
     match parsed.decls[0].kind
         .record_decl rec                                             => fields @ rec.fields
@@ -353,7 +353,7 @@ test "the four branches: pointer, char array, integer by width+sign, float by id
     c: state.Checked = checker.check(parsed.tree, out, s, parsed.decls)
     assert c.diagnostics.len() == 0
     names = ctype.new_names(s, parsed.decls)
-    fields: [ast.Field] @ []
+    fields: [ast.Field] @= []
 
     match parsed.decls[0].kind
         .record_decl rec                                             => fields @ rec.fields
@@ -388,7 +388,7 @@ test "a float array and a record array are two lines each, as the integer one is
     c: state.Checked = checker.check(parsed.tree, out, s, parsed.decls)
     assert c.diagnostics.len() == 0
     names = ctype.new_names(s, parsed.decls)
-    fields: [ast.Field] @ []
+    fields: [ast.Field] @= []
 
     match parsed.decls[1].kind
         .record_decl rec                                             => fields @ rec.fields

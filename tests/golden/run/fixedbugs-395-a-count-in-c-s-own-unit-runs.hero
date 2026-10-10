@@ -35,8 +35,8 @@ function at_run_time(k: u64) -> u64
     return k
 
 function main()
-    h: Held @ Held(buf: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], after: 7)
-    t: Ten @ Ten(buf: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], after: 7)
+    h: Held @= Held(buf: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], after: 7)
+    t: Ten @= Ten(buf: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], after: 7)
     print(fill_ints(a: h.buf.ptr(), n: 4))
     print(fill_ints(a: h.buf.ptr(), n: HELD_INTS))
     print(fill_ints(a: h.buf.ptr(), n: at_run_time(k: 4)))
@@ -50,7 +50,7 @@ function main()
     print(fill_wide(dst: h.buf.ptr(), n: 4))
     print(copy_n(dst: h.buf.ptr(), src: t.buf.ptr(), n: 10))
     print(read_ints(a: h.buf.ptr(), n: 2))
-    n: u32 @ 16
+    n: u32 @= 16
     print(fill_len(buf: h.buf.ptr(), @n))
     print(h.after)
     print(t.after)

@@ -16,8 +16,8 @@ function count_down(@n: i64, @seen: i64)
             return
 
 function main()
-    n: i64 @ 10
-    seen: i64 @ 0
+    n: i64 @= 10
+    seen: i64 @= 0
     count_down(n: @n, seen: @seen)
     print(n)
     print(seen)

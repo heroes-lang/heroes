@@ -156,7 +156,7 @@ function nothing() -> Asked
 # `struct_tags` is what the rounds learned, so a call's zero of a handle is
 # spelled as theirs was.
 function unit(p: containers.Program, s: source.Source, decls: [ast.Decl], c: state.Checked, struct_tags: {str: bool}, headers: [str], records: {i64: bool}?) -> str
-    out: [str] @ c_text.includes(headers)
+    out: [str] @= c_text.includes(headers)
 
     names = ctype.with_functions(
         ctype.new_names_qualified(s, decls, struct_tags: struct_tags),
@@ -165,13 +165,13 @@ function unit(p: containers.Program, s: source.Source, decls: [ast.Decl], c: sta
         decls: decls,
         p: p
     )
-    index: i64 @ 0
+    index: i64 @= 0
 
     # The type questions stand after every other, so one whose call a macro
     # turns into a statement, which clang recovers from as it can, reaches
     # no question but the type questions after it.
-    typings: [str] @ ["struct hero_ask_result { char hero_c; };"]
-    typed: i64 @ 0
+    typings: [str] @= ["struct hero_ask_result { char hero_c; };"]
+    typed: i64 @= 0
 
     for f in p.functions
         if emit_externs.extern_spans(decls, f).header.is_err()
@@ -185,7 +185,7 @@ function unit(p: containers.Program, s: source.Source, decls: [ast.Decl], c: sta
         out @ out.push("#ifdef " + name)
         out @ out.push("#warning hero-ask")
         out @ out.push("#endif")
-        given: str @ name
+        given: str @= name
 
         if !emit_externs.is_extern_constant(decls, f)
             given @ extern_assert.zero_call(f, names, c, s, decls)
@@ -199,7 +199,7 @@ function unit(p: containers.Program, s: source.Source, decls: [ast.Decl], c: sta
         if emit_externs.is_extern_constant(decls, f)
             continue
         at = source.source_line(s, start)
-        said: str @ name
+        said: str @= name
 
         if f.params.len() == 0
             said @ name + "()"
@@ -216,7 +216,7 @@ function unit(p: containers.Program, s: source.Source, decls: [ast.Decl], c: sta
     # (libc's `sa_handler`), and a misspelt one that names some other macro
     # is no member at all, which clang can only say as a syntax error. And
     # each record's tag, but `void`, which only a handle carries.
-    at: i64 @ -1
+    at: i64 @= -1
 
     for decl in decls
         at @ at + 1
@@ -261,7 +261,7 @@ function typed_in(row: str) -> Typed?
         return fail(code: "none", msg: "not an incompatible initialiser")
     spelled = ffi_lookup.up_to_quote(after.must())
     aka = ffi_lookup.after(text: after.must(), marker: "(aka '")
-    canonical: str @ spelled
+    canonical: str @= spelled
 
     if !aka.is_err()
         canonical @ ffi_lookup.up_to_quote(aka.must())

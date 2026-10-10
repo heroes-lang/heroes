@@ -51,7 +51,7 @@ constant SWITCHES: [str]
 # with the switch's name, the narrowest first; a name a switch a header
 # defines hides is `cli/unswitch_ask.hero`'s (defect 585).
 function switched(t: toolchain.Toolchain, under: compiling.Compiling, program: containers.Program, s: source.Source, decls: [ast.Decl], headers: [str]) -> {str: ffi_switched.Switch}
-    out: {str: ffi_switched.Switch} @ {}
+    out: {str: ffi_switched.Switch} @= {}
     names = names_of(program, s, decls)
 
     if names.len() == 0
@@ -68,8 +68,8 @@ function switched(t: toolchain.Toolchain, under: compiling.Compiling, program: c
 # The names the compiler writes from a group's header, functions and
 # constants, each once: the compiler's own headers' are the runtime's.
 function names_of(program: containers.Program, s: source.Source, decls: [ast.Decl]) -> [str]
-    out: [str] @ []
-    seen: {str: bool} @ {}
+    out: [str] @= []
+    seen: {str: bool} @= {}
 
     for f in program.functions
         header = emit_externs.extern_spans(decls, f).header
@@ -86,15 +86,15 @@ function names_of(program: containers.Program, s: source.Source, decls: [ast.Dec
 
 # The question unit: the switch before every header, then the questions.
 function unit(defined: str, headers: [str], names: [str]) -> str
-    lines: [str] @ ["#define " + defined]
+    lines: [str] @= ["#define " + defined]
     lines @ strings.with_all(list: lines, more: c_text.includes(headers))
     return lines.join("\n") + "\n" + questions(names)
 
 # Each name under a file of its own, its type asked and the assertion that
 # says it was reached; `cli/unswitch_ask.hero` asks them after its headers.
 function questions(names: [str]) -> str
-    lines: [str] @ []
-    index: i64 @ 0
+    lines: [str] @= []
+    index: i64 @= 0
 
     for name in names
         lines @ lines.push(c_text.line_directive(at: 1, file: FILE + name))
@@ -127,8 +127,8 @@ function declared(t: toolchain.Toolchain, under: compiling.Compiling, text: str)
 
 # The names reached and not undeclared, in the order clang reached them.
 function read(said: str) -> [str]
-    reached: [str] @ []
-    undeclared: {str: bool} @ {}
+    reached: [str] @= []
+    undeclared: {str: bool} @= {}
 
     for row in ffi_lookup.lines(text: said)
         if !strings.starts_with(text: row, prefix: FILE)
@@ -140,7 +140,7 @@ function read(said: str) -> [str]
         else if ffi_lookup.has(text: row, needle: "undeclared")
             undeclared[name] @ true
 
-    out: [str] @ []
+    out: [str] @= []
 
     for name in reached
         if undeclared[name].is_err()
@@ -151,7 +151,7 @@ function read(said: str) -> [str]
 # The name a question's line asks about, up to the colon that opens the
 # position.
 function asked_name(row: str) -> str
-    at: i64 @ FILE.len()
+    at: i64 @= FILE.len()
 
     while at < row.len() && row[at] != 58
         at @ at + 1
@@ -159,7 +159,7 @@ function asked_name(row: str) -> str
     return row.slice(from: FILE.len(), to: at)
 
 function first_word(text: str) -> str
-    at: i64 @ 0
+    at: i64 @= 0
 
     while at < text.len() && text[at] != 32
         at @ at + 1

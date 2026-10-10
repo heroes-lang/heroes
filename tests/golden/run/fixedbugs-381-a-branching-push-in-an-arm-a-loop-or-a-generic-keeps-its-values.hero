@@ -13,7 +13,7 @@ function half(n: i64) -> i64?
     return fail(code: "odd", msg: "odd")
 
 function in_an_arm(n: i64) -> [i64]
-    out: [i64] @ []
+    out: [i64] @= []
 
     for at in range(from: 0, to: n)
         match half(at)
@@ -23,7 +23,7 @@ function in_an_arm(n: i64) -> [i64]
     return out
 
 function in_a_loop(grid: [[i64]]) -> [i64]
-    out: [i64] @ []
+    out: [i64] @= []
 
     for row in grid
         for x in row
@@ -32,7 +32,7 @@ function in_a_loop(grid: [[i64]]) -> [i64]
     return out
 
 function all_of<T>(xs: [T?]) -> [T]
-    out: [T] @ []
+    out: [T] @= []
 
     for x in xs
         out @ out.push(x.must())
@@ -40,7 +40,7 @@ function all_of<T>(xs: [T?]) -> [T]
     return out
 
 function words(n: i64) -> [str]
-    out: [str] @ []
+    out: [str] @= []
 
     for at in range(from: 0, to: n)
         out @ out.push(f"w{half(at).default(9)}")
@@ -48,7 +48,7 @@ function words(n: i64) -> [str]
     return out
 
 function rows(n: i64) -> [[i64]]
-    out: [[i64]] @ []
+    out: [[i64]] @= []
 
     for at in range(from: 0, to: n)
         row: [i64]? = ok([at, at + 1])
@@ -57,7 +57,7 @@ function rows(n: i64) -> [[i64]]
     return out
 
 function lengths_before(n: i64) -> [i64]
-    out: [i64] @ []
+    out: [i64] @= []
 
     for at in range(from: 0, to: n)
         out @ out.push(out.len() * 100 + half(at * 2).must())
@@ -65,7 +65,7 @@ function lengths_before(n: i64) -> [i64]
     return out
 
 function shown(xs: [i64]) -> str
-    parts: [str] @ []
+    parts: [str] @= []
 
     for x in xs
         parts @ parts.push(x.to_str())

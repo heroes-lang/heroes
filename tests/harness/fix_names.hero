@@ -68,7 +68,7 @@ constant LEAST_TITLES: i64
     40
 
 function run_default(scratch: str, compiler: str) -> report.Report?
-    r: report.Report @ report.empty()
+    r: report.Report @= report.empty()
     spec = read_file("spec/heroes-spec.md")
 
     if spec.is_err()
@@ -89,7 +89,7 @@ function run_default(scratch: str, compiler: str) -> report.Report?
     if listed.is_err()
         report.keep_failure(@r, label: "fix-names", detail: "  cannot list " + CHECK_DIR)
         return ok(r)
-    seen: i64 @ 0
+    seen: i64 @= 0
 
     for entry in strings.lines(listed.must().out)
         if !strings.ends_with(text: entry, suffix: ".hero")
@@ -119,9 +119,9 @@ function run_default(scratch: str, compiler: str) -> report.Report?
 # split on `"` alone would cut it in half — measured on
 # `"n is " + n.to_str()`, which is one of the 53.
 function titles_in(text: str) -> [str]
-    out: [str] @ []
+    out: [str] @= []
     cs = chars_of(text)
-    at: i64 @ 0
+    at: i64 @= 0
     marker = chars_of("\"title\": \"")
 
     while at + marker.len() <= cs.len()
@@ -129,8 +129,8 @@ function titles_in(text: str) -> [str]
             at @ at + 1
             continue
         from = at + marker.len()
-        k: i64 @ from
-        built: [str] @ []
+        k: i64 @= from
+        built: [str] @= []
 
         while k < cs.len()
             if cs[k] == "\\" && k + 1 < cs.len()
@@ -149,7 +149,7 @@ function titles_in(text: str) -> [str]
     return out
 
 function matches(cs: [str], at: i64, needle: [str]) -> bool
-    i: i64 @ 0
+    i: i64 @= 0
 
     while i < needle.len()
         if at + i >= cs.len() || cs[at + i] != needle[i]
@@ -198,16 +198,16 @@ function judge(@r: report.Report, where: str, title: str, names: [str])
             report.keep_pass(@r)
 
 function backticked(title: str) -> [str]
-    out: [str] @ []
+    out: [str] @= []
     cs = chars_of(title)
-    at: i64 @ 0
+    at: i64 @= 0
 
     while at < cs.len()
         if cs[at] != "`"
             at @ at + 1
             continue
-        k: i64 @ at + 1
-        built: [str] @ []
+        k: i64 @= at + 1
+        built: [str] @= []
 
         while k < cs.len() && cs[k] != "`"
             built @ built.push(cs[k])
@@ -224,8 +224,8 @@ function backticked(title: str) -> [str]
 # not made of a name's characters plus the `<` a family template carries.
 function callee_of(span: str) -> str?
     cs = chars_of(span)
-    at: i64 @ 0
-    built: [str] @ []
+    at: i64 @= 0
+    built: [str] @= []
 
     while at < cs.len() && cs[at] != "("
         built @ built.push(cs[at])
@@ -250,7 +250,7 @@ function callee_of(span: str) -> str?
 function name_shaped(word: str) -> bool
     if word.len() == 0
         return false
-    at: i64 @ 0
+    at: i64 @= 0
 
     while at < word.len()
         b = word[at]

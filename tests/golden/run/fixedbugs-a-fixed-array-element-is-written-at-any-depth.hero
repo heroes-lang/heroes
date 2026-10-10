@@ -38,18 +38,18 @@ extern "fixedbugs-a-fixed-array-element-is-written-at-any-depth.h"
 function main()
     k: i64 = len(args()) + 2
 
-    o: Outer @ Outer(rows: [Row(a: [1, 2, 3]), Row(a: [4, 5, 6])], tail: 7)
+    o: Outer @= Outer(rows: [Row(a: [1, 2, 3]), Row(a: [4, 5, 6])], tail: 7)
     o.rows[1].a[2] @ 60
     o.rows[0] @ Row(a: [10, 20, 30])
     o.rows[k - 1].a[k - 2] @ 40
     print(o.rows[0].a[0], " ", o.rows[1].a[0], " ", o.rows[1].a[2], " ", o.tail, " sum: ", outer_sum(o: o))
 
-    r: Holder @ Holder(xs: [Cell(v: 1, w: 2), Cell(v: 3, w: 4), Cell(v: 5, w: 6)])
+    r: Holder @= Holder(xs: [Cell(v: 1, w: 2), Cell(v: 3, w: 4), Cell(v: 5, w: 6)])
     r.xs[1].v @ 33
     r.xs[k].w @ 66
     print(r.xs[1].v, " ", r.xs[1].w, " ", r.xs[2].w, " sum: ", holder_sum(h: r))
 
-    xs: [Nums] @ [Nums(a: [1, 2, 3, 4]), Nums(a: [5, 6, 7, 8])]
+    xs: [Nums] @= [Nums(a: [1, 2, 3, 4]), Nums(a: [5, 6, 7, 8])]
     ys = xs
     xs[1].a[k] @ 70
     print(xs[1].a[2], " ", ys[1].a[2], " ", xs[0].a[2])

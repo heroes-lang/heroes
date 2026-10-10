@@ -24,7 +24,7 @@ use resolve/errors
 use resolve/binding as resolve_binding
 
 function report(@r: state.Resolver, s: source.Source)
-    gathered: [diag.Diagnostic] @ []
+    gathered: [diag.Diagnostic] @= []
 
     for local in r.out.locals
         if local.reads > 0
@@ -79,7 +79,7 @@ function rebound_nowhere(r: state.Resolver, s: source.Source, local: resolved.Lo
 test "the unused sweep spares the hole's module, the @ write, the suggestion"
     s = state.tiny()
     decls: [ast.Decl] = []
-    r: state.Resolver @ state.new_resolver(expr_count: 0, type_count: 0)
+    r: state.Resolver @= state.new_resolver(expr_count: 0, type_count: 0)
     state.open_scope(@r)
     assert !state.declare(@r, s, decls, state.span_at(start: 0, end: 1), resolve_binding.bind_binding(ty: fail(code: "absent", msg: "inferred"), value: 0)).is_err()
     assert !state.declare(@r, s, decls, state.span_at(start: 2, end: 3), resolve_binding.param_binding(ty: 0, mutable: true)).is_err()
@@ -91,7 +91,7 @@ test "the unused sweep spares the hole's module, the @ write, the suggestion"
     assert r.out.diagnostics[0].code == "unused_binding"
 
     # A hole in the module suspends the rule file-wide.
-    quiet: state.Resolver @ state.new_resolver(expr_count: 0, type_count: 0)
+    quiet: state.Resolver @= state.new_resolver(expr_count: 0, type_count: 0)
     state.open_scope(@quiet)
     assert !state.declare(@quiet, s, decls, state.span_at(start: 0, end: 1), resolve_binding.bind_binding(ty: fail(code: "absent", msg: "inferred"), value: 0)).is_err()
     resolved.note_hole(@quiet.out, "t")
@@ -99,7 +99,7 @@ test "the unused sweep spares the hole's module, the @ write, the suggestion"
     assert quiet.out.diagnostics.len() == 0
 
     # A suggested name is already spoken for.
-    offered: state.Resolver @ state.new_resolver(expr_count: 0, type_count: 0)
+    offered: state.Resolver @= state.new_resolver(expr_count: 0, type_count: 0)
     state.open_scope(@offered)
     assert !state.declare(@offered, s, decls, state.span_at(start: 0, end: 1), resolve_binding.bind_binding(ty: fail(code: "absent", msg: "inferred"), value: 0)).is_err()
     candidates: [[str]] = [["x"]]

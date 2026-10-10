@@ -15,8 +15,8 @@ function twice(n: i64) -> i64
     return m  #~ expected_expression
 
 function main()
-    v: i64 @ 1
-    w: i64 @ 2
+    v: i64 @= 1
+    w: i64 @= 2
     x = v + w  #~ expected_expression
     print(x)
 
@@ -31,6 +31,6 @@ function main()
         v @ v + 1
     print(f"v is {v}")  #~ expected_expression
     bump(@w)  #~ expected_expression
-    count: i64 @ 0
+    count: i64 @= 0
     count @ count + 1  #~ expected_expression
     print(count + twice(w))

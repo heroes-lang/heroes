@@ -250,8 +250,8 @@ function too_big(a: i64, b: i64, op: str) -> i64?
 # A call: the arguments first, left to right, then the door into
 # `run/eval.hero`.
 function applied(nodes: tree.Tree, name: str, ids: [i64], f: value.Frame, call: (function(value.Request) -> value.Frame?)) -> Answer?
-    walking: value.Frame @ f
-    given: [value.Value] @ []
+    walking: value.Frame @= f
+    given: [value.Value] @= []
 
     for id in ids
         step = evaluated(nodes, id, walking, call)?
@@ -260,7 +260,7 @@ function applied(nodes: tree.Tree, name: str, ids: [i64], f: value.Frame, call: 
 
     after = call(value.Request(nodes: nodes, name: name, given: given, frame: walking))?
     result = after.result
-    home: value.Frame @ after
+    home: value.Frame @= after
     home.returned @ false
     home.result @ .nothing
     return ok(Answer(frame: home, got: result))

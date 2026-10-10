@@ -60,7 +60,7 @@ function step(@l: state.LexState, text: str, backslash: i64, literal: i64) -> i6
 # the program means what it meant.
 function respelled(shown: str, value: i64, span: token.Span) -> diag.Diagnostic
     one = raw_chars.escaped(value)
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "escape_spelling",
         message: "`" + shown + "` is written `" + one + "`: an escape by code is spelled in lowercase hexadecimal with no leading zero, its one spelling",
         span: span
@@ -73,7 +73,7 @@ function respelled(shown: str, value: i64, span: token.Span) -> diag.Diagnostic
 # `\u{0}`: no escape writes a NUL. What says it names no invariant panel 192's
 # R1 denies, since a `str` may hold one: the literal cannot, and the bytes can.
 function nul(shown: str, span: token.Span) -> diag.Diagnostic
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "nul_in_string",
         message: "`" + shown + "` writes a NUL, and no escape writes one: a NUL is a byte no screen shows, so a `str` that must hold one is built from bytes as the program runs, a `[u8]` read by `validated_bytes()`",
         span: span
@@ -90,7 +90,7 @@ function nul(shown: str, span: token.Span) -> diag.Diagnostic
 # is written into the file unread.
 function needless(shown: str, value: i64, span: token.Span, in_piece: bool) -> diag.Diagnostic
     own = own_escape(value, in_piece: in_piece)
-    d: diag.Diagnostic @ diag.new_diagnostic(code: "escape_not_needed", message: "", span: span)
+    d: diag.Diagnostic @= diag.new_diagnostic(code: "escape_not_needed", message: "", span: span)
 
     if own.len() > 0
         d.message @ "`" + shown + "` writes a character a string writes `" + own + "`, its one spelling: write that"

@@ -45,9 +45,9 @@ record Applied
     malformed: i64
 
 function applied(diagnostics: [diag.Diagnostic], s: source.Source) -> Applied
-    edits: [diag.Fix] @ []
-    elsewhere: [str] @ []
-    malformed: i64 @ 0
+    edits: [diag.Fix] @= []
+    elsewhere: [str] @= []
+    malformed: i64 @= 0
     limit = source_extent.root_end(s)
 
     for d in diagnostics
@@ -71,11 +71,11 @@ function applied(diagnostics: [diag.Diagnostic], s: source.Source) -> Applied
     ordered = in_order(edits)
     keep = chosen(ordered)
     whole = source_extent.user_text(s)
-    pieces: [str] @ []
-    cut: i64 @ 0
-    written: i64 @ 0
-    withheld: i64 @ 0
-    at: i64 @ 0
+    pieces: [str] @= []
+    cut: i64 @= 0
+    written: i64 @= 0
+    withheld: i64 @= 0
+    at: i64 @= 0
 
     # The kept fixes in the order of their spans, each piece of the text
     # between two of them copied once (defect 105: copying the whole text at
@@ -111,7 +111,7 @@ variant Choice
 # The fixes by where their span starts, then where it ends, a tie in the
 # order they were found.
 function in_order(edits: [diag.Fix]) -> [diag.Fix]
-    ordered: [diag.Fix] @ []
+    ordered: [diag.Fix] @= []
 
     for at in order_of(edits)
         taken = edits[at]
@@ -122,18 +122,18 @@ function in_order(edits: [diag.Fix]) -> [diag.Fix]
 # That order as indices into `edits`: two stable passes, by end and then by
 # start, so `outcomes` can say of each fix what `chosen` decided.
 function order_of(edits: [diag.Fix]) -> [i64]
-    ends: [i64] @ []
+    ends: [i64] @= []
 
     for fix in edits
         ends @ ends.push(fix.span.end)
 
     by_end = stable.order(by: ends)
-    starts: [i64] @ []
+    starts: [i64] @= []
 
     for at in by_end
         starts @ starts.push(edits[at].span.start)
 
-    order: [i64] @ []
+    order: [i64] @= []
 
     for at in stable.order(by: starts)
         order @ order.push(by_end[at])
@@ -147,14 +147,14 @@ function order_of(edits: [diag.Fix]) -> [i64]
 # it beside each place, so a tool writing exactly the `written` ones writes
 # that round and nothing else.
 function outcomes(diagnostics: [diag.Diagnostic], s: source.Source) -> [str]
-    said: [str] @ []
-    edits: [diag.Fix] @ []
-    slots: [i64] @ []
+    said: [str] @= []
+    edits: [diag.Fix] @= []
+    slots: [i64] @= []
     limit = source_extent.root_end(s)
 
     for d in diagnostics
         for fix in d.fixes
-            word: str @ ""
+            word: str @= ""
 
             if fix.certainty == .certain
                 word @ "written"
@@ -171,7 +171,7 @@ function outcomes(diagnostics: [diag.Diagnostic], s: source.Source) -> [str]
 
     order = order_of(edits)
     keep = chosen(in_order(edits))
-    at: i64 @ 0
+    at: i64 @= 0
 
     while at < order.len()
         slot = slots[order[at]]
@@ -192,16 +192,16 @@ function word_of(choice: Choice) -> str
 # a run the shortest are taken first, so an inner fix is written and the one
 # enclosing it waits.
 function chosen(ordered: [diag.Fix]) -> [Choice]
-    keep: [Choice] @ []
+    keep: [Choice] @= []
 
     for _ in ordered
         keep @ keep.push(.write)
 
-    first: i64 @ 0
+    first: i64 @= 0
 
     while first < ordered.len()
-        stop: i64 @ first + 1
-        reach: i64 @ ordered[first].span.end
+        stop: i64 @= first + 1
+        reach: i64 @= ordered[first].span.end
 
         while stop < ordered.len() && (ordered[stop].span.start < reach || one_point(one: ordered[stop - 1], two: ordered[stop]))
             if ordered[stop].span.end > reach
@@ -218,17 +218,17 @@ function chosen(ordered: [diag.Fix]) -> [Choice]
 # it touches one already written, in which case it waits for the next round;
 # a fix identical to one written, span and text, is its twin and is dropped.
 function settle_run(ordered: [diag.Fix], keep: [Choice], from: i64, to: i64) -> [Choice]
-    out: [Choice] @ keep
-    lengths: [i64] @ []
+    out: [Choice] @= keep
+    lengths: [i64] @= []
 
     for at in range(from: from, to: to)
         lengths @ lengths.push(ordered[at].span.end - ordered[at].span.start)
 
-    taken: [i64] @ []
+    taken: [i64] @= []
 
     for offset in stable.order(by: lengths)
         at = from + offset
-        verdict: Choice @ .write
+        verdict: Choice @= .write
 
         for other in taken
             if same(one: ordered[at], two: ordered[other])
@@ -334,7 +334,7 @@ test "a span that ends before it starts is counted and never written"
 # the inner one is written, its twin dropped, and a guess has none.
 test "a fix's first-round outcome is what applied does with it"
     s = source.new_source(name: "t.hero", text: "abcdefghij")
-    wide: diag.Diagnostic @ fixing(start: 1, end: 8, text: "BCDEFGH")
+    wide: diag.Diagnostic @= fixing(start: 1, end: 8, text: "BCDEFGH")
     wide.fixes @ wide.fixes.push(
         diag.Fix(title: "g", replacement: "x", span: token.Span(start: 0, end: 1), certainty: .guess)
     )

@@ -26,7 +26,7 @@ function compare(@c: state.Checker, s: source.Source, decls: [ast.Decl], expecte
         return
     a_text = state.show(c, s, decls, expected)
     b_text = state.show(c, s, decls, got)
-    d: diag.Diagnostic @ value_errors.mismatch(expected: a_text, got: b_text, span: span)
+    d: diag.Diagnostic @= value_errors.mismatch(expected: a_text, got: b_text, span: span)
 
     # A T? where a T was wanted has one obvious repair, and it is a GUESS
     # (panel 043): .must() aborts on the error case, and whether that is

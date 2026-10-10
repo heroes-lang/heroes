@@ -27,7 +27,7 @@ function through_a_parameter(x: i64??) -> i64   #~ nested_fallible
     return x.must().must()
 
 function in_a_binding() -> i64
-    v: i64?? @ ok(ok(1))            #~ nested_fallible
+    v: i64?? @= ok(ok(1))            #~ nested_fallible
     return v.must().must()
 
 # Legal: the nesting goes through a container, which is a different type.
@@ -36,7 +36,7 @@ function boxed(x: i64) -> [i64?]?
     return ok(xs)
 
 function mapped(x: i64) -> {str: i64?}?
-    m: {str: i64?} @ {}
+    m: {str: i64?} @= {}
     m["a"] @ ok(x)
     return ok(m)
 

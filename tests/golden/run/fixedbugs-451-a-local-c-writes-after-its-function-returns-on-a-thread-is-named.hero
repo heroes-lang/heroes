@@ -17,7 +17,7 @@ extern "hero_os.h"
     function hero_thread_join(handle: i64) -> i64
 
 function lend() -> i64
-    n: i64 @ 0
+    n: i64 @= 0
     cell_keep(@n)
     return n
 

@@ -77,7 +77,7 @@ function success_c(c: state.Checked, s: source.Source, decls: [ast.Decl], decl: 
 
             if value.is_err()
                 return ok(text)
-            suffix: str @ "ULL"
+            suffix: str @= "ULL"
             written = state.written_type(c, fd.value.result)
 
             if !written.is_err()

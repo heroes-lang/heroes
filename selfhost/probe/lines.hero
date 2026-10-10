@@ -42,8 +42,8 @@ record Facts
     prior: [i64]
 
 function facts(s: seed.Seed) -> Facts
-    tokens: [bool] @ []
-    comments: [bool] @ []
+    tokens: [bool] @= []
+    comments: [bool] @= []
 
     for _ in s.lines
         tokens @ tokens.push(false)
@@ -56,9 +56,9 @@ function facts(s: seed.Seed) -> Facts
             if w.kind == .comment
                 comments[w.line] @ true
 
-    prior: [i64] @ []
-    last: i64 @ -1
-    index: i64 @ 0
+    prior: [i64] @= []
+    last: i64 @= -1
+    index: i64 @= 0
 
     for line in s.lines
         prior @ prior.push(last)
@@ -77,7 +77,7 @@ function trailable(f: Facts, line: i64) -> bool
 # The columns `single` puts a comment at above line `i`, ascending.
 function columns_above(s: seed.Seed, f: Facts, i: i64) -> [i64]
     own = seed.indent_of(s.lines[i])
-    found: [i64] @ [0, own, own + 4]
+    found: [i64] @= [0, own, own + 4]
 
     if f.prior[i] >= 0
         above = seed.indent_of(s.lines[f.prior[i]])
@@ -86,7 +86,7 @@ function columns_above(s: seed.Seed, f: Facts, i: i64) -> [i64]
 
     if own >= 4
         found @ found.push(own - 4)
-    out: [i64] @ []
+    out: [i64] @= []
 
     for k in found.sort()
         if out.len() == 0 || out[out.len() - 1] != k
@@ -104,7 +104,7 @@ function end_columns(s: seed.Seed, f: Facts) -> [i64]
 
 function single(s: seed.Seed) -> [seed.Edit]
     f = facts(s)
-    out: [seed.Edit] @ []
+    out: [seed.Edit] @= []
 
     for i in range(from: 0, to: s.lines.len())
         line = s.lines[i]
@@ -131,7 +131,7 @@ function single(s: seed.Seed) -> [seed.Edit]
 
 # The nine are the same for every file: their text is `shaped`'s.
 function multi(_: seed.Seed) -> [seed.Edit]
-    out: [seed.Edit] @ [whole(family: "multi", name: "ALLT", shape: "ALLT", crlf: false, newline: true)]
+    out: [seed.Edit] @= [whole(family: "multi", name: "ALLT", shape: "ALLT", crlf: false, newline: true)]
     out @ out.push(whole(family: "multi", name: "ALLT_crlf", shape: "ALLT", crlf: true, newline: true))
 
     for shape in ["ALLO", "ALLOP", "ALLTO", "RUNDESC", "RUNASC", "RUNDESCBL", "RUNMIX"]
@@ -140,7 +140,7 @@ function multi(_: seed.Seed) -> [seed.Edit]
     return out
 
 function ends(s: seed.Seed) -> [seed.Edit]
-    out: [seed.Edit] @ [whole(family: "ends", name: "SEED_crlf", shape: "SEED", crlf: true, newline: true)]
+    out: [seed.Edit] @= [whole(family: "ends", name: "SEED_crlf", shape: "SEED", crlf: true, newline: true)]
     out @ out.push(whole(family: "ends", name: "SEED_nonl", shape: "SEED", crlf: false, newline: false))
     out @ out.push(whole(family: "ends", name: "SEED_crlf_nonl", shape: "SEED", crlf: true, newline: false))
     out @ out.push(whole(family: "ends", name: "ALLT_nonl", shape: "ALLT", crlf: false, newline: false))
@@ -157,7 +157,7 @@ function ends(s: seed.Seed) -> [seed.Edit]
 
 function columns(s: seed.Seed) -> [seed.Edit]
     f = facts(s)
-    out: [seed.Edit] @ []
+    out: [seed.Edit] @= []
 
     for i in range(from: 0, to: s.lines.len())
         n = (i + 1).to_str()
@@ -182,7 +182,7 @@ constant LONG: str
 
 function texts(s: seed.Seed) -> [seed.Edit]
     f = facts(s)
-    out: [seed.Edit] @ []
+    out: [seed.Edit] @= []
 
     for i in range(from: 0, to: s.lines.len())
         line = s.lines[i]
@@ -213,7 +213,7 @@ function text(s: seed.Seed, e: seed.Edit) -> str
 # Every line of the seed rewritten by one of `multi`'s shapes, or as it is.
 function shaped(s: seed.Seed, shape: str) -> [str]
     f = facts(s)
-    out: [str] @ []
+    out: [str] @= []
 
     for i in range(from: 0, to: s.lines.len())
         line = s.lines[i]
@@ -221,7 +221,7 @@ function shaped(s: seed.Seed, shape: str) -> [str]
         own = seed.indent_of(line)
 
         if !seed.blank(line) && (shape == "ALLO" || shape == "ALLOP" || shape == "ALLTO")
-            column: i64 @ own
+            column: i64 @= own
 
             if shape == "ALLOP"
                 column @ column_of(s, line: f.prior[i])
@@ -257,15 +257,15 @@ function column_of(s: seed.Seed, line: i64) -> i64
 function run(from: i64, to: i64, style: str) -> [i64]
     if from - to < 8
         return []
-    down: [i64] @ []
-    k: i64 @ from
+    down: [i64] @= []
+    k: i64 @= from
 
     while k > to - 1
         down @ down.push(k)
         k @ k - 4
 
     if style == "RUNASC"
-        up: [i64] @ []
+        up: [i64] @= []
 
         for at in range(from: 0, to: down.len())
             up @ up.push(down[down.len() - 1 - at])
@@ -273,7 +273,7 @@ function run(from: i64, to: i64, style: str) -> [i64]
         return up
 
     if style == "RUNMIX"
-        mixed: [i64] @ down.slice(from: 1, to: down.len())
+        mixed: [i64] @= down.slice(from: 1, to: down.len())
         mixed @ mixed.push(down[0])
         return mixed
     return down
@@ -292,7 +292,7 @@ function seeded(written: str) -> seed.Seed
 
 test "the line families make the seats' variants, named as the seats named them"
     s = seeded("function f()\n    if c\n        print(1)\n# c\n    print(2)\n")
-    names: [str] @ []
+    names: [str] @= []
 
     for e in single(s)
         names @ names.push(e.name)

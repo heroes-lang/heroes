@@ -84,7 +84,7 @@ function twice() -> i64
 # The blind reading's task 2: the increment under `return i`, and the
 # `print` after `break`.
 function first_negative(xs: [i64]) -> i64
-    i: i64 @ 0
+    i: i64 @= 0
 
     while i < xs.len()
         if xs[i] < 0

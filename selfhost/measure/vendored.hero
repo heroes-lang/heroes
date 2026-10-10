@@ -47,7 +47,7 @@ function instruments() -> [Instrument]
 # that caused it.
 function readings_of(text: str) -> [Reading]?
     parts = pieces.pieces_of(text)
-    readings: [Reading] @ []
+    readings: [Reading] @= []
 
     for one in instruments()
         table_path = VENDOR + "/" + one.file
@@ -58,7 +58,7 @@ function readings_of(text: str) -> [Reading]?
                 code: "no_table",
                 msg: "cannot read `" + table_path + "` — `measure` reads its vendored tables from the repository root, and the file it measures by default lives there too"
             )
-        ranks: bpe.Ranks @ bpe.empty()
+        ranks: bpe.Ranks @= bpe.empty()
 
         if one.json
             ranks @ bpe.from_claude_json(raw.must())
@@ -70,7 +70,7 @@ function readings_of(text: str) -> [Reading]?
         # shape §9 calls an invariant that cannot fail.
         if bpe.size(ranks) == 0
             return fail(code: "no_table", msg: "`" + table_path + "` parsed to an empty table")
-        total: i64 @ 0
+        total: i64 @= 0
 
         for piece in parts
             total @ total + bpe.count_piece(r: ranks, piece: piece)
@@ -82,7 +82,7 @@ function readings_of(text: str) -> [Reading]?
 # The binding vendored figure: the maximum, because the verdict may not rest on
 # whichever table happens to be kinder.
 function highest(readings: [Reading]) -> i64
-    most: i64 @ 0
+    most: i64 @= 0
 
     for one in readings
         if one.tokens > most

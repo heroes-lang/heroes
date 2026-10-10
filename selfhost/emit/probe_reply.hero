@@ -30,8 +30,8 @@ function argument_columns(probe: str, name: str, parameters: [str], arguments: [
     if found.is_err()
         none: [i64] = []
         return none
-    at: i64 @ found.must() + opens.len()
-    out: [i64] @ []
+    at: i64 @= found.must() + opens.len()
+    out: [i64] @= []
 
     for argument in arguments
         out @ out.push(at + 1)

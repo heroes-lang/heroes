@@ -22,10 +22,10 @@ function not_a_record(got: str, field: str, span: token.Span) -> diag.Diagnostic
     )
 
 function no_such_field(holder: str, field: str, known: [str], span: token.Span) -> diag.Diagnostic
-    tail: str @ ""
+    tail: str @= ""
 
     if known.len() > 0
-        quoted: [str] @ []
+        quoted: [str] @= []
 
         for f in known
             quoted @ quoted.push("`" + f + "`")
@@ -55,12 +55,12 @@ function field_of_variant(holder: str, field: str, span: token.Span) -> diag.Dia
     )
 
 function missing_fields(holder: str, fields: [str], declared_at: str, span: token.Span) -> diag.Diagnostic
-    labelled: [str] @ []
+    labelled: [str] @= []
 
     for f in fields
         labelled @ labelled.push(f + ":")
 
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "missing_fields",
         message: "`" + holder + "` is built with every field, named: " + labelled.join(", ") + " — all of them, always",
         span: span
@@ -80,7 +80,7 @@ function missing_fields(holder: str, fields: [str], declared_at: str, span: toke
 # panel 129's compiler seat found it by attacking the shape beside the repair,
 # and the swap inside such a type was accepted at exit 0.
 function repeated_parameter_name(written: str, span: token.Span) -> diag.Diagnostic
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "repeated_parameter_name",
         message: "this function type calls two of its parameters `" + written + "`, so a call through it still cannot say which is which",
         span: span
@@ -112,7 +112,7 @@ function arrow_inside_parameters(span: token.Span) -> diag.Diagnostic
 # describing it, because the reader has to invent two names and the shape is
 # what tells them where they go.
 function needs_parameter_names(shared: str, shown: str, span: token.Span) -> diag.Diagnostic
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "needs_parameter_names",
         message: "two of `" + shown + "`'s parameters are `" + shared + "`, so this type names both of them — give each a name that says which is which",
         span: span
@@ -128,7 +128,7 @@ function needs_parameter_names(shared: str, shown: str, span: token.Span) -> dia
 # positions cannot be confused, so dropping the name changes nothing a program
 # can observe.
 function named_parameter_in_function_type(written: str, span: token.Span) -> diag.Diagnostic
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "named_parameter_in_function_type",
         message: "no two parameters of this function type share a type, so `" + written + ":` names a position nothing can confuse",
         span: span
@@ -148,11 +148,11 @@ function named_parameter_in_function_type(written: str, span: token.Span) -> dia
 # fallible discard's precedent, since a guess that cannot compile is still
 # wrong.
 function marker_mismatch(name: str, wants: bool, blocked: str, span: token.Span) -> diag.Diagnostic
-    message: str @ "`" + name + "` does not change this argument — the `@` says it does"
+    message: str @= "`" + name + "` does not change this argument — the `@` says it does"
 
     if wants
         message @ "`" + name + "` changes this argument, so the call site writes `@` too"
-    d: diag.Diagnostic @ diag.new_diagnostic(code: "marker_mismatch", message: message, span: span)
+    d: diag.Diagnostic @= diag.new_diagnostic(code: "marker_mismatch", message: message, span: span)
 
     if wants && blocked.len() > 0
         d.notes @ d.notes.push(blocked)
@@ -175,7 +175,7 @@ function ufcs_on_mutable(name: str, span: token.Span) -> diag.Diagnostic
 # does not have, and the build died on it in clang. No fix: the repair is a
 # different function, and which one is the author's.
 function mutable_parameter_as_value(name: str, param: str, span: token.Span) -> diag.Diagnostic
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "mutable_parameter_as_value",
         message: "`" + name + "` changes its argument `" + param + "` through `@`, and a function value cannot: no function type carries an `@` (§ 9), so `" + name + "` is only called by name, its `" + param + "` marked `@` at the call",
         span: span
@@ -188,7 +188,7 @@ function mutable_parameter_as_value(name: str, param: str, span: token.Span) -> 
 # An `@` at a call through a function VALUE (defect 398, the shape beside it):
 # such a value never changes an argument, since its type cannot say it does.
 function marker_through_a_value(span: token.Span) -> diag.Diagnostic
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "marker_mismatch",
         message: "a function value does not change this argument — the `@` says it does",
         span: span
@@ -211,7 +211,7 @@ function case_on_non_variant(got: str, case_name: str, span: token.Span) -> diag
     )
 
 function no_such_case(holder: str, case_name: str, known: [str], span: token.Span) -> diag.Diagnostic
-    quoted: [str] @ []
+    quoted: [str] @= []
 
     for c in known
         quoted @ quoted.push("`." + c + "`")
@@ -239,7 +239,7 @@ function wildcard_on_variant(got: str, span: token.Span) -> diag.Diagnostic
     )
 
 function non_exhaustive(missing: [str], span: token.Span) -> diag.Diagnostic
-    quoted: [str] @ []
+    quoted: [str] @= []
 
     for c in missing
         quoted @ quoted.push("`" + c + "`")
@@ -292,7 +292,7 @@ test "the pattern messages name what is known and what is missing"
 # earlier spelling is named where it differs, since `'a'` covering `97` is
 # the whole of what the reader has to be told.
 function covered_value(shown: str, earlier: str, span: token.Span) -> diag.Diagnostic
-    tail: str @ ""
+    tail: str @= ""
 
     if earlier != shown
         tail @ ", written `" + earlier + "`, the same value"

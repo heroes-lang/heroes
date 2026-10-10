@@ -20,7 +20,7 @@ extern "fixedbugs-c-writes-over-a-leases-header.h"
 
 function main()
     word = repeat("ab", 4)
-    x: cstr @ word.lease()
+    x: cstr @= word.lease()
     clobber_held(s: x)
     end_lease(@x)
     print(word)

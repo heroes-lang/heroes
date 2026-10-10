@@ -21,7 +21,7 @@ use parse/bracket_head
 
 # Whether the map whose `{` is at `open` ends above its entry begun at token
 # `first`, asked after the key where its `:` goes (`keyed`), else after the
-# value: a binding or a mutation, `y = 3 )`, a declaration, `z: i64 @ 3 )`,
+# value: a binding or a mutation, `y = 3 )`, a declaration, `z: i64 @= 3 )`,
 # or a line with no `:` over one of them further down. Told once, at the
 # binding's `=` or `@`, naming the `{` and the openers it stands in on its
 # line, and where their closers go; the cursor at the entry's line, which the
@@ -39,7 +39,7 @@ function ended_at_a_binding(@c: cursor.Cursor, text: str, open: i64, first: i64,
 
     if pair < 0 || c.tokens[pair].kind == .rbrace || !unclosed.a_line_below(c, text, open: open, at: first)
         return false
-    mark: i64 @ c.pos
+    mark: i64 @= c.pos
 
     if !marked
         mark @ binding_below(c, text, to: pair)
@@ -53,7 +53,7 @@ function ended_at_a_binding(@c: cursor.Cursor, text: str, open: i64, first: i64,
 # The `=` or `@` of the first binding, mutation or declaration on a line below
 # the cursor's, before the token `to`, or -1.
 function binding_below(c: cursor.Cursor, text: str, to: i64) -> i64
-    i: i64 @ c.pos
+    i: i64 @= c.pos
 
     while i < to
         if c.tokens[i].kind == .terminator || c.tokens[i].kind == .comment
@@ -75,15 +75,15 @@ function mark_on(c: cursor.Cursor, text: str, from: i64, to: i64) -> i64
     if c.tokens[from].kind != .ident
         return -1
 
-    if c.tokens[from + 1].kind == .eq || c.tokens[from + 1].kind == .at
+    if c.tokens[from + 1].kind == .eq || c.tokens[from + 1].kind == .at || c.tokens[from + 1].kind == .at_eq
         return from + 1
 
     if c.tokens[from + 1].kind != .colon
         return -1
-    i: i64 @ from + 2
+    i: i64 @= from + 2
 
     while i < to && c.tokens[i].kind != .terminator
-        if c.tokens[i].kind == .eq || c.tokens[i].kind == .at
+        if c.tokens[i].kind == .eq || c.tokens[i].kind == .at || c.tokens[i].kind == .at_eq
             return i
         i @ past_a_bracket(c, text, at: i, to: to)
 
@@ -104,16 +104,16 @@ function past_a_bracket(c: cursor.Cursor, text: str, at: i64, to: i64) -> i64
 # The report at the binding's mark `mark`: where a key's `:` goes, where the
 # name opens its line, else where the next entry's separator goes.
 function told(@c: cursor.Cursor, text: str, open: i64, mark: i64)
-    moved: cursor.Cursor @ c
+    moved: cursor.Cursor @= c
     moved.pos @ mark
     named = text_lines.margin_width(text, at: c.tokens[mark - 1].span.start) >= 0
-    code: str @ "expected_separator"
-    what: str @ "`,` or a new line between one entry and the next"
+    code: str @= "expected_separator"
+    what: str @= "`,` or a new line between one entry and the next"
 
     if named
         code @ "expected_map_entry_colon"
         what @ "`:` between a map's key and its value"
-    report: diag.Diagnostic @ diag.new_diagnostic(
+    report: diag.Diagnostic @= diag.new_diagnostic(
         code: code,
         message: "expected " + what + ", found " + cursor.found(moved, text) + " — a binding is no entry: the `{` still open " + text_lines.place_above(text, at: c.tokens[open].span.start, from: c.tokens[mark].span.start) + ", " + list_line.closing_above(c, text: text, open: open, own: "}"),
         span: c.tokens[mark].span

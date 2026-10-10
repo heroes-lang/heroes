@@ -21,7 +21,7 @@
 
 # A small network with two routes between the ends, one of them longer.
 function network() -> {str: [str]}
-    lines: {str: [str]} @ {}
+    lines: {str: [str]} @= {}
     lines["kings"] @ ["euston", "angel"]
     lines["euston"] @ ["kings", "camden"]
     lines["camden"] @ ["euston", "highgate"]
@@ -43,11 +43,11 @@ function route(lines: {str: [str]}, from: str, to: str) -> [str]?
 
     if from == to
         return ok([from])
-    frontier: [str] @ [from]
-    came_from: {str: str} @ {}
-    seen: {str: bool} @ {}
+    frontier: [str] @= [from]
+    came_from: {str: str} @= {}
+    seen: {str: bool} @= {}
     seen[from] @ true
-    at: i64 @ 0
+    at: i64 @= 0
 
     while at < frontier.len()
         here = frontier[at]
@@ -70,16 +70,16 @@ function route(lines: {str: [str]}, from: str, to: str) -> [str]?
 # not the other way: a station has one predecessor in a breadth-first tree
 # and may have many successors.
 function walked_back(came_from: {str: str}, from: str, to: str) -> [str]
-    backwards: [str] @ [to]
-    here: str @ to
+    backwards: [str] @= [to]
+    here: str @= to
 
     while here != from
         previous = came_from[here].default(from)
         backwards @ backwards.push(previous)
         here @ previous
 
-    forwards: [str] @ []
-    i: i64 @ backwards.len() - 1
+    forwards: [str] @= []
+    i: i64 @= backwards.len() - 1
 
     while i >= 0
         forwards @ forwards.push(backwards[i])
@@ -148,8 +148,8 @@ test "every station on a route is a neighbour of the one before it"
     # The property that makes the answer a route and not a list of names.
     lines = network()
     path = route(lines, from: "kings", to: "camden").must()
-    i: i64 @ 1
-    linked: i64 @ 0
+    i: i64 @= 1
+    linked: i64 @= 0
 
     while i < path.len()
         for one in neighbours(lines, station: path[i - 1])

@@ -43,9 +43,9 @@ use checker
 # be error in places this pass reads as fact. It is the caller that
 # declines to ask.
 function lower(a: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl]) -> containers.Lowered
-    b: build.Lowering @ build.new_lowering(r, unit: table.unit_ty(c.types))
+    b: build.Lowering @= build.new_lowering(r, unit: table.unit_ty(c.types))
     b.validated @ owned_release.library_validated(decls, s)
-    index: i64 @ 0
+    index: i64 @= 0
 
     while index < decls.len()
         declaration(@b, a, r, c, s, decls, index)
@@ -102,7 +102,7 @@ function declaration(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: st
                 # shape an extern function has. The result type comes
                 # from the checker's table rather than from a body that
                 # does not exist (§4.19, panel 038).
-                result: i64 @ table.unit_ty(c.types)
+                result: i64 @= table.unit_ty(c.types)
                 found = c.results[index]
 
                 if !found.is_err()
@@ -139,17 +139,17 @@ function declaration(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: st
         .record_decl | .variant_decl => return
 
 function lower_function(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl], f: ast.FunctionDecl, index: i64, name: str)
-    result: i64 @ table.unit_ty(c.types)
+    result: i64 @= table.unit_ty(c.types)
     found = c.results[index]
 
     if !found.is_err()
         result @ found.must()
-    generics: [str] @ []
+    generics: [str] @= []
 
     for g in f.generics
         generics @ generics.push(source.span_text(s, g))
 
-    kind: containers.FnKind @ .function_kind
+    kind: containers.FnKind @= .function_kind
 
     if f.is_extern
         kind @ .extern_kind
@@ -161,7 +161,7 @@ function lower_function(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c:
     # body to use them in) and its parameter types are exactly
     # what the emitter writes a C prototype from.
     for param in f.params
-        ty: i64 @ table.error_ty(c.types)
+        ty: i64 @= table.error_ty(c.types)
         written = state.written_type(c, param.ty)
 
         if !written.is_err()
@@ -255,7 +255,7 @@ test "a constant IS a value, an extern has no blocks, a test returns nothing"
 
 test "a negative literal folds, a mutation stores through a place"
     got = lowered(
-        "record P\n    x: i64\n\nfunction f() -> i64\n    v: i64 @ -128\n    p: P @ P(x: 1)\n    v @ v + 1\n    return v\n"
+        "record P\n    x: i64\n\nfunction f() -> i64\n    v: i64 @= -128\n    p: P @= P(x: 1)\n    v @ v + 1\n    return v\n"
     )
     f = got.program.functions[0]
 
@@ -279,11 +279,11 @@ test "string literals intern decoded, and twice is once"
 
 test "a while is three blocks and a for is four, continue landing on the step"
     got = lowered(
-        "function g(xs: [i64]) -> i64\n    total: i64 @ 0\n    for x in xs\n        if x == 0\n            continue\n        total @ total + x\n    return total\n"
+        "function g(xs: [i64]) -> i64\n    total: i64 @= 0\n    for x in xs\n        if x == 0\n            continue\n        total @ total + x\n    return total\n"
     )
     f = got.program.functions[0]
-    step_at: i64 @ 0 - 1
-    at: i64 @ 0
+    step_at: i64 @= 0 - 1
+    at: i64 @= 0
 
     for blk in f.blocks
         if blk.note == "for: step"
@@ -294,7 +294,7 @@ test "a while is three blocks and a for is four, continue landing on the step"
 
     # The continue arm jumps to the STEP block, not the test: the
     # increment owes itself to that path too.
-    jumped: bool @ false
+    jumped: bool @= false
 
     for blk in f.blocks
         if blk.note == "if: then"
@@ -309,7 +309,7 @@ test "a while is three blocks and a for is four, continue landing on the step"
 test "an if in value position stores into $r and the join loads it"
     got = lowered("function h(c: bool) -> i64\n    v = if c\n        1\n    else\n        2\n    return v\n")
     f = got.program.functions[0]
-    named: bool @ false
+    named: bool @= false
 
     for slot in f.slots
         if slot.name == "$r0"
@@ -320,9 +320,9 @@ test "an if in value position stores into $r and the join loads it"
 test "&& branches with its own polarity and || with the opposite"
     got = lowered("function s(p: bool, q: bool) -> bool\n    return p && q\n")
     f = got.program.functions[0]
-    rest_at: i64 @ 0 - 1
-    meet_at: i64 @ 0 - 1
-    at: i64 @ 0
+    rest_at: i64 @= 0 - 1
+    meet_at: i64 @= 0 - 1
+    at: i64 @= 0
 
     for blk in f.blocks
         if blk.note == "&&: right"
@@ -342,7 +342,7 @@ test "&& branches with its own polarity and || with the opposite"
 test "a join every arm returned past is sealed unreachable"
     got = lowered("function d(c: bool) -> i64\n    if c\n        return 1\n    else\n        return 2\n")
     f = got.program.functions[0]
-    sealed: bool @ false
+    sealed: bool @= false
 
     for blk in f.blocks
         if blk.note == "if: join"
@@ -358,8 +358,8 @@ test "? branches on the tag, and the error edge is a real exit edge"
     )
     f = got.program.functions[1]
     assert f.name == "outer"
-    propagate_at: i64 @ 0 - 1
-    at: i64 @ 0
+    propagate_at: i64 @= 0 - 1
+    at: i64 @= 0
 
     for blk in f.blocks
         if blk.note == "?: propagate"
@@ -372,7 +372,7 @@ test "? branches on the tag, and the error edge is a real exit edge"
     # as err, and leaves by an exit edge like any return: `outer` has two
     # ways out, so it stores the wrapped value into the return slot and
     # jumps to the one exit, which returns it (panel 190).
-    wrapped: i64 @ 0 - 1
+    wrapped: i64 @= 0 - 1
 
     for inst in f.blocks[propagate_at].insts
         match inst.op
@@ -405,12 +405,12 @@ test "? branches on the tag, and the error edge is a real exit edge"
 
 test "an @ argument is a place, and a record construction is not a call"
     got = lowered(
-        "record Pt\n    x: i64\n\nfunction bump(@n: i64)\n    n @ n + 1\n\nfunction f() -> i64\n    v: i64 @ 0\n    bump(@v)\n    _ = Pt(x: 2)\n    return v\n"
+        "record Pt\n    x: i64\n\nfunction bump(@n: i64)\n    n @ n + 1\n\nfunction f() -> i64\n    v: i64 @= 0\n    bump(@v)\n    _ = Pt(x: 2)\n    return v\n"
     )
     f = got.program.functions[1]
     assert f.name == "f"
-    passed_place: bool @ false
-    built: bool @ false
+    passed_place: bool @= false
+    built: bool @= false
 
     for blk in f.blocks
         for inst in blk.insts
@@ -435,8 +435,8 @@ test "an @ argument is a place, and a record construction is not a call"
 test "UFCS puts the receiver first, and print is variadic with no destination"
     got = lowered("function double(n: i64) -> i64\n    return n * 2\n\nfunction g()\n    print(5.double())\n")
     f = got.program.functions[1]
-    ufcs_two: bool @ false
-    printed: bool @ false
+    ufcs_two: bool @= false
+    printed: bool @= false
 
     for blk in f.blocks
         for inst in blk.insts
@@ -461,7 +461,7 @@ test "UFCS puts the receiver first, and print is variadic with no destination"
 test "must branches to the payload or an abort that carries the failure"
     got = lowered("function h(m: {str: i64}) -> i64\n    return m[\"a\"].must()\n")
     f = got.program.functions[0]
-    aborted: bool @ false
+    aborted: bool @= false
 
     for blk in f.blocks
         if blk.note == "must: abort"
@@ -487,7 +487,7 @@ test "an assert carries its text and both sides, and a str side rides a slot"
     # The failure block: text + left + right = three operands, and the
     # str sides were parked in $assert slots so nothing counted crosses
     # the block edge.
-    carried_three: bool @ false
+    carried_three: bool @= false
 
     for blk in fun.blocks
         if blk.note == "assert: failed"
@@ -501,7 +501,7 @@ test "an assert carries its text and both sides, and a str side rides a slot"
                     .func_ref | .copy_out | .incref | .decref | .decref_slot | .hole | .missing         => continue
 
     assert carried_three
-    slotted: i64 @ 0
+    slotted: i64 @= 0
 
     for slot in fun.slots
         if slot.name == "$assert0" || slot.name == "$assert1"
@@ -510,7 +510,7 @@ test "an assert carries its text and both sides, and a str side rides a slot"
     assert slotted == 2
 
     # The interned text is the expression as written, keyword stripped.
-    found_text: bool @ false
+    found_text: bool @= false
 
     for text in got.program.strings
         if text == "name == \"bowie\""
@@ -521,7 +521,7 @@ test "an assert carries its text and both sides, and a str side rides a slot"
 test "a bare assert carries only its text, and an i64 side rides no slot"
     got = lowered("function g(flag: bool, n: i64)\n    assert flag\n    assert n > 0\n")
     fun = got.program.functions[0]
-    counts: [i64] @ []
+    counts: [i64] @= []
 
     for blk in fun.blocks
         if blk.note == "assert: failed"
@@ -546,7 +546,7 @@ test "a variant match is a dense switch with no default edge"
         "variant Shape\n    dot\n    square\n        side: i64\n\nfunction area(sh: Shape) -> i64\n    return match sh\n        .dot => 0\n        .square sq => sq.side * sq.side\n"
     )
     f = got.program.functions[0]
-    switched: bool @ false
+    switched: bool @= false
 
     for blk in f.blocks
         match blk.term
@@ -558,7 +558,7 @@ test "a variant match is a dense switch with no default edge"
     assert switched
 
     # The payload binding is a real slot named sq.
-    named: bool @ false
+    named: bool @= false
 
     for slot in f.slots
         if slot.name == "sq"
@@ -571,7 +571,7 @@ test "a literal match is a chain of tests closed by _, and a T? still switches"
         "function say(n: i64) -> str\n    return match n\n        0 => \"zero\"\n        1 => \"one\"\n        _ => \"many\"\n\nfunction unwrap(v: i64?) -> i64\n    return match v\n        .ok n => n\n        .err => 0 - 1\n"
     )
     chain = got.program.functions[0]
-    tests: i64 @ 0
+    tests: i64 @= 0
 
     for blk in chain.blocks
         if blk.note == "match: test"
@@ -579,7 +579,7 @@ test "a literal match is a chain of tests closed by _, and a T? still switches"
 
     assert tests == 2
     wrapped = got.program.functions[1]
-    fallible_switch: bool @ false
+    fallible_switch: bool @= false
 
     for blk in wrapped.blocks
         match blk.term
@@ -592,10 +592,10 @@ test "a literal match is a chain of tests closed by _, and a T? still switches"
 
 test "an @ argument through an index is handed over as the element's own place, and nothing is stored back"
     got = lowered(
-        "record Bag\n    n: i64\n\nfunction bump(@b: Bag)\n    b.n @ b.n + 1\n\nfunction main()\n    bs: [Bag] @ [Bag(n: 1)]\n    bump(@bs[0])\n    print(bs[0].n)\n"
+        "record Bag\n    n: i64\n\nfunction bump(@b: Bag)\n    b.n @ b.n + 1\n\nfunction main()\n    bs: [Bag] @= [Bag(n: 1)]\n    bump(@bs[0])\n    print(bs[0].n)\n"
     )
-    handed_over: bool @ false
-    stored_through_index: bool @ false
+    handed_over: bool @= false
+    stored_through_index: bool @= false
 
     for f in got.program.functions
         if f.name != "main"

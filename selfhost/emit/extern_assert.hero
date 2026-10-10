@@ -39,7 +39,7 @@ use ir/lower
 function extern_assertions(@w: writer.Writer, p: containers.Program, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl])
     # Everything a header owns, whichever kind it lowered to: the
     # question both answer is "does a header declare this".
-    externs: [containers.Function] @ []
+    externs: [containers.Function] @= []
 
     # A record's constant is asked by its own accessor, which initialises the
     # header's struct with the header's value (`emit/record_constant.hero`,
@@ -128,8 +128,8 @@ function extern_assertions(@w: writer.Writer, p: containers.Program, c: state.Ch
     writer.line(@w, text: "#define HERO_RET_PTR(c) (__builtin_classify_type(c) == 5)")
 
     # Conditional, both of them, for panel 063's golden-churn reason.
-    any_record: bool @ false
-    any_cstr: bool @ false
+    any_record: bool @= false
+    any_cstr: bool @= false
 
     for f in externs
         match table.get(c.types, f.result)
@@ -200,7 +200,7 @@ function extern_assertions(@w: writer.Writer, p: containers.Program, c: state.Ch
 # round asks clang the type of the same call (`emit/ffi_asked.hero`; defect
 # 186), so the two cannot mean different calls.
 function zero_call(f: containers.Function, names: ctype.Names, c: state.Checked, s: source.Source, decls: [ast.Decl]) -> str
-    zeros: [str] @ []
+    zeros: [str] @= []
 
     for slot_id in f.params
         declared = f.slots[slot_id]
@@ -209,7 +209,7 @@ function zero_call(f: containers.Function, names: ctype.Names, c: state.Checked,
         # is a null of that pointer type — the value's own zero was
         # -Wint-conversion, a warning that survived a green run
         # until the goldens were read.
-        mutable: bool @ false
+        mutable: bool @= false
 
         match declared.kind
             .param_slot ps =>
@@ -232,11 +232,11 @@ function has(text: str, needle: str) -> bool
 
     if needle_cs.len() > cs.len()
         return false
-    start: i64 @ 0
+    start: i64 @= 0
 
     while start <= cs.len() - needle_cs.len()
-        matched: bool @ true
-        offset: i64 @ 0
+        matched: bool @= true
+        offset: i64 @= 0
 
         while offset < needle_cs.len()
             if cs[start + offset] != needle_cs[offset]
@@ -259,7 +259,7 @@ test "an extern function gets its zero-cost call, a constant its token and value
     assert c.diagnostics.len() == 0
     low = lower.lower(parsed.tree, out, c, s, parsed.decls)
     names = ctype.new_names(s, parsed.decls)
-    w: writer.Writer @ writer.new_writer("t")
+    w: writer.Writer @= writer.new_writer("t")
     extern_assertions(@w, low.program, c, names, s, parsed.decls)
     got = writer.finish(w)
 

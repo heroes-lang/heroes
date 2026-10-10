@@ -11,7 +11,7 @@
 # whose `@c` is a lease's cell, reported beside defect 439 by its lane.
 
 function main()
-    c: cstr @ "abc".lease()
+    c: cstr @= "abc".lease()
     n = 1
     end_lease(@c, @n)  #~ builtin_shape
     print(n)

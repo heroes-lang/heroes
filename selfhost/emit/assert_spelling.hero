@@ -168,7 +168,7 @@ function asks_for_a_value(c: state.Checked, ty: i64) -> bool
 # panel. The arm buys the mistake being NAMED rather than carried by
 # a catch-all.
 function zero_of(names: ctype.Names, c: state.Checked, ty: i64, mutable: bool) -> str
-    is_cstr: bool @ false
+    is_cstr: bool @= false
 
     match table.get(c.types, ty)
         .cstr                                                      => is_cstr @ true

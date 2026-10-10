@@ -20,7 +20,7 @@ function main()
     target = big_new()
     keep = target
     big_free(n: target)
-    i: i64 @ 0
+    i: i64 @= 0
 
     while i < 1048576
         n = big_new()

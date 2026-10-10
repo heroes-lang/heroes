@@ -30,7 +30,7 @@ use resolved
 ## Names that resolve to nothing
 
 function unknown_name(name: str, near: [str], span: token.Span) -> diag.Diagnostic
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "unknown_name",
         message: "nothing named `" + name + "` is in scope",
         span: span
@@ -44,9 +44,9 @@ function unknown_name(name: str, near: [str], span: token.Span) -> diag.Diagnost
 # have meant, since a bare `name @ value` never declares (spec § 5), and
 # today's message said only that nothing of that name was in scope.
 function unknown_place(name: str, near: [str], span: token.Span) -> diag.Diagnostic
-    d: diag.Diagnostic @ unknown_name(name, near, span)
+    d: diag.Diagnostic @= unknown_name(name, near, span)
     d.notes @ d.notes.push(
-        "`" + name + " @ …` changes a cell that already exists; a new cell is declared with its type, `" + name + ": <type> @ <value>`, and a value bound once with `" + name + " = <value>`"
+        "`" + name + " @ …` changes a cell that already exists; a new cell is declared with its type, `" + name + ": <type> @= <value>`, and a value bound once with `" + name + " = <value>`"
     )
     return d
 
@@ -63,7 +63,7 @@ test "a mutation of a name nothing binds says how a cell is declared"
 # is a standard library's knowledge, which this compiler does not hold
 # (CLAUDE.md § 13), so the note says *if*, and the rename stays a guess.
 function unknown_called(name: str, near: [str], span: token.Span) -> diag.Diagnostic
-    d: diag.Diagnostic @ unknown_name(name, near, span)
+    d: diag.Diagnostic @= unknown_name(name, near, span)
     d.notes @ d.notes.push(binding_note(name))
     return d
 
@@ -76,7 +76,7 @@ function binding_note(name: str) -> str
 # an unknown name after the dot is answerable now — before types exist. It
 # is called, so a function of C is offered its binding as a bare name is.
 function unknown_function(name: str, near: [str], span: token.Span) -> diag.Diagnostic
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "unknown_function",
         message: "no function named `" + name + "` — `x." + name + "(…)` means `" + name + "(x, …)`, so `" + name + "` has to be a top-level function or a built-in",
         span: span
@@ -86,7 +86,7 @@ function unknown_function(name: str, near: [str], span: token.Span) -> diag.Diag
     return d
 
 function unknown_type(name: str, near: [str], span: token.Span) -> diag.Diagnostic
-    d: diag.Diagnostic @ diag.new_diagnostic(code: "unknown_type", message: "no type named `" + name + "`", span: span)
+    d: diag.Diagnostic @= diag.new_diagnostic(code: "unknown_type", message: "no type named `" + name + "`", span: span)
     suggest(@d, near, span)
     return d
 
@@ -167,7 +167,7 @@ function unused(name: str, kind: resolved.LocalKind, writes: i64, span: token.Sp
         .loop_var => "the loop variable `" + name + "` is never read — write `for _ in …` when the element is not needed"
         .payload => "the payload `" + name + "` is never read — write `_` in the pattern when the value is not needed"
 
-    d: diag.Diagnostic @ diag.new_diagnostic(code: "unused_binding", message: message, span: span)
+    d: diag.Diagnostic @= diag.new_diagnostic(code: "unused_binding", message: message, span: span)
 
     if kind == .loop_var || kind == .payload
         d.fixes @ d.fixes.push(
@@ -187,15 +187,15 @@ function not_mutable(name: str, kind: resolved.LocalKind, span: token.Span) -> d
         .param => "`" + name + "` is a parameter without `@`, so it cannot be written — mark it `@" + name + "` in the signature and at every call site (copy in, copy out)"
         .loop_var => "`" + name + "` is the loop variable, and it is bound afresh for each element — write to a cell declared outside the loop"
         .payload => "`" + name + "` is bound by the pattern, and a pattern binding is not a cell — bind what you need with `@` outside the `match`"
-        .bind | .cell => "`" + name + "` was bound with `=`, which binds once, forever — a cell is declared with its type: `" + name + ": <type> @ <value>`"
+        .bind | .cell => "`" + name + "` was bound with `=`, which binds once, forever — a cell is declared with its type: `" + name + ": <type> @= <value>`"
 
-    d: diag.Diagnostic @ diag.new_diagnostic(code: "not_mutable", message: message, span: span)
+    d: diag.Diagnostic @= diag.new_diagnostic(code: "not_mutable", message: message, span: span)
 
     if kind == .bind
         # The type is the missing half and no type exists yet at this stage:
         # prose, not a fix a tool may apply (§4.17).
         d.fixes @ d.fixes.push(
-            diag.Fix(title: "declare `" + name + "` as a cell: `" + name + ": <type> @ <value>`", replacement: "", span: span, certainty: .guess)
+            diag.Fix(title: "declare `" + name + "` as a cell: `" + name + ": <type> @= <value>`", replacement: "", span: span, certainty: .guess)
         )
     return d
 
@@ -225,7 +225,7 @@ function suggest(@d: diag.Diagnostic, near: [str], span: token.Span)
         return
 
     if near.len() > 1
-        quoted: [str] @ []
+        quoted: [str] @= []
 
         for c in near
             quoted @ quoted.push("`" + c + "`")
@@ -298,16 +298,16 @@ test "a write to a plain binding earns the guess, not a certain fix"
     loop_write = not_mutable("x", .loop_var, span)
     assert loop_write.fixes.len() == 0
 
-# `v: i64 @ 5` and no `v @ …` after it, nor an `@v` handed to a call: a cell
+# `v: i64 @= 5` and no `v @ …` after it, nor an `@v` handed to a call: a cell
 # nothing re-binds is a binding written with the wrong symbol (spec § 5,
 # panel 209's R1b, the rule Zig 0.12 ships as an error). The fix is certain:
 # the `@` that declared it, whose span the `Local` carries, becomes `=`, the
 # annotation stays, and the program means what it meant, since nothing ever
 # wrote the cell.
 function never_rebound(name: str, span: token.Span, symbol: token.Span) -> diag.Diagnostic
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "never_rebound",
-        message: "`" + name + "` is declared a mutable cell and nothing re-binds it — a value written once is a binding: write `=` where the `@` is",
+        message: "`" + name + "` is declared a mutable cell and nothing re-binds it — a value written once is a binding: write `=` where the `@=` is",
         span: span
     )
     d.fixes @ d.fixes.push(

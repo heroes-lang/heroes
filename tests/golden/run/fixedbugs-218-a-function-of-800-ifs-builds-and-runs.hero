@@ -10,7 +10,7 @@
 # This case: 800 `if` statements, built and run.
 
 function main()
-    t: i64 @ 0
+    t: i64 @= 0
 
     if t == 0
         t @ t + 1

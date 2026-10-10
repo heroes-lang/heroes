@@ -10,7 +10,7 @@ constant MAX: i64
 function report(n: i64, xs: [i64], ys: [i64]) -> i64
     n = 1  #~ shadowed_binding
     MAX = 2  #~ shadowed_binding
-    total: i64 @ 0
+    total: i64 @= 0
     for x in xs
         total @ total + x
     for x in ys

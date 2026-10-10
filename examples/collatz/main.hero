@@ -27,8 +27,8 @@ constant PER_BAND: i64
 # How many steps `n` takes to reach 1. The sequence is not stored: a chain of
 # 200 steps costs one `i64` here, not an array.
 function steps(n: i64) -> i64
-    count: i64 @ 0
-    v: i64 @ n
+    count: i64 @= 0
+    v: i64 @= n
 
     while v != 1
         if v % 2 == 0
@@ -41,8 +41,8 @@ function steps(n: i64) -> i64
 
 # The longest chain in one band, and the band is chosen by the index.
 function longest_in(index: i64) -> i64
-    best: i64 @ 0
-    n: i64 @ index * PER_BAND + 1
+    best: i64 @= 0
+    n: i64 @= index * PER_BAND + 1
 
     while n <= index * PER_BAND + PER_BAND
         s = steps(n: n)
@@ -54,14 +54,14 @@ function longest_in(index: i64) -> i64
     return best
 
 function longest_at_once() -> i64
-    handles: [i64] @ []
-    i: i64 @ 0
+    handles: [i64] @= []
+    i: i64 @= 0
 
     while i < BANDS
         handles @ handles.push(hero_thread_spawn(body: longest_in, arg: i))
         i @ i + 1
 
-    best: i64 @ 0
+    best: i64 @= 0
 
     for h in handles
         found = hero_thread_join(handle: h)
@@ -73,8 +73,8 @@ function longest_at_once() -> i64
 
 # The same answer with one thread, which is what makes the tests real.
 function longest_alone() -> i64
-    best: i64 @ 0
-    n: i64 @ 1
+    best: i64 @= 0
+    n: i64 @= 1
 
     while n <= BANDS * PER_BAND
         s = steps(n: n)

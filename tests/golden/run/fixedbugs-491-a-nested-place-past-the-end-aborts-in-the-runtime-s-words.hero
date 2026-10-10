@@ -7,7 +7,7 @@ record Row
     cells: [i64]
 
 function main()
-    rows: [Row] @ [Row(cells: [1, 2]), Row(cells: [3, 4])]
+    rows: [Row] @= [Row(cells: [1, 2]), Row(cells: [3, 4])]
     at: i64 = 5
     rows[1].cells[0] @ 30
     print(rows[1].cells[0])

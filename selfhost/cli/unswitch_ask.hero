@@ -59,8 +59,8 @@ constant NARROWING: [str]
 # unit's headers hides, with the switch and the headers that define it; a
 # name no switch accounts for is left out.
 function with_narrowed(t: toolchain.Toolchain, under: compiling.Compiling, program: containers.Program, s: source.Source, decls: [ast.Decl], headers: [str], found: {str: ffi_switched.Switch}) -> {str: ffi_switched.Switch}
-    out: {str: ffi_switched.Switch} @ found
-    names: [str] @ []
+    out: {str: ffi_switched.Switch} @= found
+    names: [str] @= []
 
     for name in switch_ask.names_of(program, s, decls)
         if found[name].is_err()
@@ -88,7 +88,7 @@ function with_narrowed(t: toolchain.Toolchain, under: compiling.Compiling, progr
 # The headers after which `macro`'s marker was reached, in their order.
 function defining(said: str, macro: str, headers: [str]) -> [str]
     rows = marker_rows(said)
-    out: [str] @ []
+    out: [str] @= []
 
     for index in range(from: 0, to: headers.len())
         if holds(rows, macro: macro, at: index.to_str())
@@ -98,7 +98,7 @@ function defining(said: str, macro: str, headers: [str]) -> [str]
 
 # The rows of the markers clang reached, each from its switch's name on.
 function marker_rows(said: str) -> [str]
-    rows: [str] @ []
+    rows: [str] @= []
 
     for row in ffi_lookup.lines(text: said)
         if strings.starts_with(text: row, prefix: SET_FILE) && ffi_lookup.has(text: row, needle: SET)
@@ -110,8 +110,8 @@ function marker_rows(said: str) -> [str]
 # switch that stands there, and one before the first; `undefined`, where it
 # names one, undefined after each marker of its own.
 function set_unit(headers: [str], undefined: str) -> str
-    lines: [str] @ markers(at: "before")
-    index: i64 @ 0
+    lines: [str] @= markers(at: "before")
+    index: i64 @= 0
 
     for header in headers
         lines @ strings.with_all(list: lines, more: c_text.includes([header]))
@@ -125,7 +125,7 @@ function set_unit(headers: [str], undefined: str) -> str
 
 # One marker per strict switch, each reached only where the switch stands.
 function markers(at: str) -> [str]
-    out: [str] @ []
+    out: [str] @= []
 
     for macro in NARROWING
         out @ out.push("#if defined(" + macro + ")")
@@ -139,8 +139,8 @@ function markers(at: str) -> [str]
 # first found standing, in their order; a switch standing before every
 # header is no header's.
 function definers(said: str, headers: [str]) -> {str: [str]}
-    out: {str: [str]} @ {}
-    before: {str: bool} @ {}
+    out: {str: [str]} @= {}
+    before: {str: bool} @= {}
     rows = marker_rows(said)
 
     for row in rows
@@ -152,8 +152,8 @@ function definers(said: str, headers: [str]) -> {str: [str]}
     for macro in NARROWING
         if !before[macro].is_err()
             continue
-        found: [str] @ []
-        stood: bool @ false
+        found: [str] @= []
+        stood: bool @= false
 
         for index in range(from: 0, to: headers.len())
             here = holds(rows, macro: macro, at: index.to_str())
@@ -178,8 +178,8 @@ function holds(rows: [str], macro: str, at: str) -> bool
 # The `word`th word of a marker's row, a space or the colon that opens the
 # position ending it.
 function word_at(row: str, word: i64) -> str
-    at: i64 @ 0
-    seen: i64 @ 0
+    at: i64 @= 0
+    seen: i64 @= 0
 
     while at < row.len()
         start = at

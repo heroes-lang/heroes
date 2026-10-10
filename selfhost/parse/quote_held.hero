@@ -32,7 +32,7 @@ function held(said: which_arm.Said, lexed: [diag.Diagnostic], text: str) -> whic
     return which_arm.Said(normal: kept(said.normal, lost: lost), control: kept(said.control, lost: lost))
 
 function kept(said: [diag.Diagnostic], lost: lost_quote.Lost) -> [diag.Diagnostic]
-    out: [diag.Diagnostic] @ []
+    out: [diag.Diagnostic] @= []
 
     for d in said
         if !lost_quote.holds(lost, at: d.span.start)

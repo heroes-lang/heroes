@@ -26,8 +26,8 @@ extern "fixedbugs-two-threads-over-one-allocator-give-back-their-own-handles.h"
     function sn_value(n: S) -> i64
 
 function worker(slot: i64) -> i64
-    total: i64 @ 0
-    i: i64 @ 0
+    total: i64 @= 0
+    i: i64 @= 0
 
     while i < 200000
         n = sn_new()

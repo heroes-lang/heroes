@@ -15,6 +15,6 @@ function main()
     n = hero_args_count()          #~ extern_across_modules
     print(n)
     _ = hero_exit                  #~ extern_across_modules
-    status: i64 @ 0
+    status: i64 @= 0
     _ = "p".hero_file_read_str(@status)    #~ extern_across_modules
     print(status)

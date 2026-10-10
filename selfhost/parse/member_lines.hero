@@ -56,16 +56,16 @@ use laid_braces
 # One `name: type` per line: a record's fields, and a variant case's payload.
 # Consumes the whole indent … dedent block.
 function field_block(@c: cursor.Cursor, @a: ast.Ast, text: str) -> [ast.Field]
-    habit: i64 @ -1
+    habit: i64 @= -1
     return fields_of(@c, @a, text, @habit)
 
 # The same, where `habit` is the index of the declaration's one report of a
 # `,` ending its members' lines, or -1 before one is told (`comma`). Each is
 # matched out before its push, which a `.must()` kept from growing in place.
 function fields_of(@c: cursor.Cursor, @a: ast.Ast, text: str, @habit: i64) -> [ast.Field]
-    fields: [ast.Field] @ []
+    fields: [ast.Field] @= []
     _ = cursor.bump(@c)
-    reading: bool @ true
+    reading: bool @= true
 
     while reading
         cursor.skip_terminators(@c)
@@ -134,10 +134,10 @@ function field_line(@c: cursor.Cursor, @a: ast.Ast, text: str, @habit: i64) -> a
 # indented field block, or by its fields in braces, on its line or alone on
 # the line below it (`braced_fields`).
 function case_block(@c: cursor.Cursor, @a: ast.Ast, text: str) -> [ast.Case]
-    cases: [ast.Case] @ []
-    habit: i64 @ -1
+    cases: [ast.Case] @= []
+    habit: i64 @= -1
     _ = cursor.bump(@c)
-    reading: bool @ true
+    reading: bool @= true
 
     while reading
         cursor.skip_terminators(@c)
@@ -154,7 +154,7 @@ function case_block(@c: cursor.Cursor, @a: ast.Ast, text: str) -> [ast.Case]
             refused_case(@c, text)
             last = cases.len() - 1
             laid = past_laid_braces(@c)
-            braced: [ast.Field] @ []
+            braced: [ast.Field] @= []
 
             if laid && cursor.at(c, .indent)
                 braced @ fields_of(@c, @a, text, @habit)
@@ -162,7 +162,7 @@ function case_block(@c: cursor.Cursor, @a: ast.Ast, text: str) -> [ast.Case]
                 braced @ braced_fields(@c, @a, text)
 
             # Grown in a local: no push grows `cases[last]` in place.
-            fields: [ast.Field] @ cases[last].fields
+            fields: [ast.Field] @= cases[last].fields
 
             for field in braced
                 fields @ fields.push(field)
@@ -203,7 +203,7 @@ function case_line(@c: cursor.Cursor, @a: ast.Ast, text: str, @habit: i64) -> as
     _ = cursor.bump(@c)
     colon_habit.eat(@c)
     which = "the case `" + cursor.slice_of(text, name) + "`"
-    fields: [ast.Field] @ []
+    fields: [ast.Field] @= []
 
     if braces_close(c, text)
         told(@c, text: text, member: which, rule: CASE_RULE)
@@ -256,7 +256,7 @@ function past_laid_braces(@c: cursor.Cursor) -> bool
 
 # The fields in the braces the cursor's `{` opens, and the cursor past them.
 function braced_fields(@c: cursor.Cursor, @a: ast.Ast, text: str) -> [ast.Field]
-    lines: cursor.Cursor @ braced_lines.laid_out(c, text)
+    lines: cursor.Cursor @= braced_lines.laid_out(c, text)
     fields = field_block(@lines, @a, text)
     braced_lines.took(c: @c, view: lines)
     return fields
@@ -264,7 +264,7 @@ function braced_fields(@c: cursor.Cursor, @a: ast.Ast, text: str) -> [ast.Field]
 # The cases in the braces the cursor's `{` opens, a variant's written in
 # braces, and the cursor past them.
 function braced_cases(@c: cursor.Cursor, @a: ast.Ast, text: str) -> [ast.Case]
-    lines: cursor.Cursor @ braced_lines.laid_out(c, text)
+    lines: cursor.Cursor @= braced_lines.laid_out(c, text)
     cases = case_block(@lines, @a, text)
     braced_lines.took(c: @c, view: lines)
     return cases
@@ -319,7 +319,7 @@ function comma(@c: cursor.Cursor, text: str, member: str, rule: str, @habit: i64
     # Out of the report while one is added, so that the push grows them in
     # place: through `c.diagnostics[habit]` each `,` copied all before it.
     if habit >= 0
-        fixes: [diag.Fix] @ c.diagnostics[habit].fixes
+        fixes: [diag.Fix] @= c.diagnostics[habit].fixes
         c.diagnostics[habit].fixes @ []
         fixes @ fixes.push(gone)
         c.diagnostics[habit].fixes @ fixes
@@ -352,8 +352,8 @@ test "a field is one line, and its doc comment is the run above it"
         token.made(.dedent, start: 13, end: 13)
         token.made(.eof, start: 13, end: 13)
     ]
-    c: cursor.Cursor @ cursor.new_cursor(stream)
-    a: ast.Ast @ ast.new_ast()
+    c: cursor.Cursor @= cursor.new_cursor(stream)
+    a: ast.Ast @= ast.new_ast()
     fields = field_block(@c, @a, text)
     assert fields.len() == 1
     assert fields[0].doc.len() == 1
@@ -373,8 +373,8 @@ test "a field takes no indented block, and says so"
         token.made(.dedent, start: 9, end: 9)
         token.made(.eof, start: 9, end: 9)
     ]
-    c: cursor.Cursor @ cursor.new_cursor(stream)
-    a: ast.Ast @ ast.new_ast()
+    c: cursor.Cursor @= cursor.new_cursor(stream)
+    a: ast.Ast @= ast.new_ast()
     fields = field_block(@c, @a, "x: i64\n    y\n")
     assert fields.len() == 1
     assert c.diagnostics[0].code == "unexpected_block"
@@ -395,8 +395,8 @@ test "a case is a name, and its fields are the block under it"
         token.made(.dedent, start: 16, end: 16)
         token.made(.eof, start: 16, end: 16)
     ]
-    c: cursor.Cursor @ cursor.new_cursor(stream)
-    a: ast.Ast @ ast.new_ast()
+    c: cursor.Cursor @= cursor.new_cursor(stream)
+    a: ast.Ast @= ast.new_ast()
     cases = case_block(@c, @a, "num\n    v: i64\nplus\n")
     assert cases.len() == 2
     assert cases[0].fields.len() == 1
@@ -417,8 +417,8 @@ test "a refused case name does not spin the loop on its own payload"
         token.made(.dedent, start: 4, end: 4)
         token.made(.eof, start: 4, end: 4)
     ]
-    c: cursor.Cursor @ cursor.new_cursor(stream)
-    a: ast.Ast @ ast.new_ast()
+    c: cursor.Cursor @= cursor.new_cursor(stream)
+    a: ast.Ast @= ast.new_ast()
     cases = case_block(@c, @a, "1\n    x\n")
     assert cases.len() == 0
     assert c.diagnostics[0].code == "expected_case"
@@ -428,8 +428,8 @@ test "a case's line ends after its name, and one report says what stands past it
     # `dark grey` compiled as two cases until 2026-09-30, and `circle f64` as a
     # case named `f64`: the second name is the line's one mistake.
     for text in ["variant S\n    light\n    dark grey\n", "variant S\n    light\n    dark grey  # a note\n", "variant S\r\n    light\r\n    dark grey\r\n", "variant S\n    light\n    dark grey"]
-        c: cursor.Cursor @ orphans.at_indent(text)
-        a: ast.Ast @ ast.new_ast()
+        c: cursor.Cursor @= orphans.at_indent(text)
+        a: ast.Ast @= ast.new_ast()
         cases = case_block(@c, @a, text)
         assert cases.len() == 2
         assert c.diagnostics.len() == 1
@@ -438,8 +438,8 @@ test "a case's line ends after its name, and one report says what stands past it
 
     # The fields below a case whose line went on are still that case's.
     square = "variant S\n    square side\n        s: f64\n    dot\n"
-    d: cursor.Cursor @ orphans.at_indent(square)
-    b: ast.Ast @ ast.new_ast()
+    d: cursor.Cursor @= orphans.at_indent(square)
+    b: ast.Ast @= ast.new_ast()
     shapes = case_block(@d, @b, square)
     assert shapes.len() == 2
     assert cursor.slice_of(square, shapes[0].name) == "square"
@@ -448,8 +448,8 @@ test "a case's line ends after its name, and one report says what stands past it
 
 test "a field's line ends after its type, a report standing there already being the one"
     text = "record P\n    x: i64 y: i64\n    z: )\n    w: i64\n"
-    c: cursor.Cursor @ orphans.at_indent(text)
-    a: ast.Ast @ ast.new_ast()
+    c: cursor.Cursor @= orphans.at_indent(text)
+    a: ast.Ast @= ast.new_ast()
     fields = field_block(@c, @a, text)
     assert fields.len() == 3
     assert c.diagnostics.len() == 2
@@ -461,8 +461,8 @@ test "a refused literal past a case still owes the line's end, and a colon endin
     # The lexer's own report on `0X10` is its spelling's; `dark 0x10`, what
     # its certain fix writes, is refused for the line end, so that is said now.
     text = "variant S\n    dark 0X10\n    grey:\n        r: i64\n"
-    c: cursor.Cursor @ orphans.at_indent(text)
-    a: ast.Ast @ ast.new_ast()
+    c: cursor.Cursor @= orphans.at_indent(text)
+    a: ast.Ast @= ast.new_ast()
     cases = case_block(@c, @a, text)
     assert cases.len() == 2
     assert cases[1].fields.len() == 1
@@ -475,8 +475,8 @@ test "a case's fields in braces are its own, and each brace is told once"
     # On the case's line or alone below it, Allman's style: the `{` is one
     # report, a field's mistake inside is its own, and no `}` is refused.
     text = "variant S\n    circle { r: f64, d f64 }\n    ring\n    {\n        w: f64\n    }\n    dot\n"
-    c: cursor.Cursor @ orphans.at_indent(text)
-    a: ast.Ast @ ast.new_ast()
+    c: cursor.Cursor @= orphans.at_indent(text)
+    a: ast.Ast @= ast.new_ast()
     cases = case_block(@c, @a, text)
     assert cases.len() == 3
     assert cases[0].fields.len() == 1

@@ -73,7 +73,7 @@ function rules_of(grammar: str, name: str) -> [Rule]?
     repository = member(text: grammar, object: whole, key: "repository")?
     entry = member(text: grammar, object: repository, key: name)?
     patterns = member(text: grammar, object: entry, key: "patterns")?
-    out: [Rule] @ []
+    out: [Rule] @= []
 
     for element in elements(text: grammar, array: patterns)?
         included = optional_string(text: grammar, object: element, key: "include")?
@@ -121,7 +121,7 @@ function optional_string(text: str, object: Span, key: str) -> str?
 function member(text: str, object: Span, key: str) -> Span?
     if object.start >= object.stop || text[object.start] != '{'
         return fail(code: "not_an_object", msg: "`" + key + "` was asked of a value that is not an object")
-    at: i64 @ skip_space(text: text, at: object.start + 1)
+    at: i64 @= skip_space(text: text, at: object.start + 1)
 
     while at < object.stop && text[at] != '}'
         named = Span(start: at, stop: value_end(text: text, at: at)?)
@@ -145,8 +145,8 @@ function member(text: str, object: Span, key: str) -> Span?
 function elements(text: str, array: Span) -> [Span]?
     if array.start >= array.stop || text[array.start] != '['
         return fail(code: "not_an_array", msg: "a `patterns` that is not an array")
-    out: [Span] @ []
-    at: i64 @ skip_space(text: text, at: array.start + 1)
+    out: [Span] @= []
+    at: i64 @= skip_space(text: text, at: array.start + 1)
 
     while at < array.stop && text[at] != ']'
         stop = value_end(text: text, at: at)?
@@ -170,8 +170,8 @@ function value_end(text: str, at: i64) -> i64?
         return string_end(text: text, at: at)
 
     if text[at] == '{' || text[at] == '['
-        depth: i64 @ 0
-        i: i64 @ at
+        depth: i64 @= 0
+        i: i64 @= at
 
         while i < text.len()
             if text[i] == '"'
@@ -188,7 +188,7 @@ function value_end(text: str, at: i64) -> i64?
             i @ i + 1
 
         return fail(code: "malformed", msg: "a bracket the grammar never closes")
-    i: i64 @ at
+    i: i64 @= at
 
     while i < text.len() && text[i] != ',' && text[i] != '}' && text[i] != ']' && !strings.is_space(text[i])
         i @ i + 1
@@ -196,7 +196,7 @@ function value_end(text: str, at: i64) -> i64?
     return ok(i)
 
 function string_end(text: str, at: i64) -> i64?
-    i: i64 @ at + 1
+    i: i64 @= at + 1
 
     while i < text.len()
         if text[i] == '\\'
@@ -210,7 +210,7 @@ function string_end(text: str, at: i64) -> i64?
     return fail(code: "malformed", msg: "a string the grammar never closes")
 
 function skip_space(text: str, at: i64) -> i64
-    i: i64 @ at
+    i: i64 @= at
 
     while i < text.len() && strings.is_space(text[i])
         i @ i + 1
@@ -223,8 +223,8 @@ function json_string(text: str, value: Span) -> str?
     if value.stop - value.start < 2 || text[value.start] != '"'
         return fail(code: "not_a_string", msg: "a value that is not a string where one was due")
     cs = text.slice(from: value.start + 1, to: value.stop - 1).chars()
-    out: str @ ""
-    i: i64 @ 0
+    out: str @= ""
+    i: i64 @= 0
 
     while i < cs.len()
         if cs[i] != "\\"
@@ -275,9 +275,9 @@ function ends(pattern: str, text: str, at: i64) -> [i64]?
 
 # The branches of `p[from..to]` split at its own `|`, tried in order.
 function alternatives_ends(p: [str], from: i64, to: i64, s: [str], at: i64) -> [i64]?
-    out: [i64] @ []
-    start: i64 @ from
-    i: i64 @ from
+    out: [i64] @= []
+    start: i64 @= from
+    i: i64 @= from
 
     while i <= to
         if i == to || p[i] == "|"
@@ -313,12 +313,12 @@ function skip_atom(p: [str], at: i64, to: i64) -> i64?
 # One branch: its items one after another, the places reached so far carried
 # from each to the next in the order of preference.
 function sequence_ends(p: [str], from: i64, to: i64, s: [str], at: i64) -> [i64]?
-    places: [i64] @ [at]
-    i: i64 @ from
+    places: [i64] @= [at]
+    i: i64 @= from
 
     while i < to
         item = item_at(p: p, at: i, to: to)?
-        next_places: [i64] @ []
+        next_places: [i64] @= []
 
         for place in places
             for one in repeated(p: p, item: item, s: s, at: place, count: 0)?
@@ -336,7 +336,7 @@ function sequence_ends(p: [str], from: i64, to: i64, s: [str], at: i64) -> [i64]
 # backtracks in. A repetition that matched nothing ends the loop, as
 # Oniguruma's own empty-loop check does.
 function repeated(p: [str], item: Item, s: [str], at: i64, count: i64) -> [i64]?
-    out: [i64] @ []
+    out: [i64] @= []
 
     if item.max < 0 || count < item.max
         for one in once(p: p, item: item, s: s, at: at)?
@@ -378,7 +378,7 @@ function kept(places: [i64], one: i64) -> [i64]
 # The item that opens at `p[at]`, its quantifier read with it.
 function item_at(p: [str], at: i64, to: i64) -> Item?
     c = p[at]
-    item: Item @ Item(kind: "literal", one: c, from: 0, to: 0, negated: false, min: 1, max: 1, next: at + 1)
+    item: Item @= Item(kind: "literal", one: c, from: 0, to: 0, negated: false, min: 1, max: 1, next: at + 1)
 
     if c == "\\"
         item.one @ escaped(p: p, at: at, to: to)?
@@ -419,7 +419,7 @@ function item_at(p: [str], at: i64, to: i64) -> Item?
 # one is refused: the order of preference it asks for is not the one `repeated`
 # keeps.
 function quantified(p: [str], item: Item, to: i64) -> Item?
-    out: Item @ item
+    out: Item @= item
     at = item.next
 
     if at >= to
@@ -437,7 +437,7 @@ function quantified(p: [str], item: Item, to: i64) -> Item?
             out.max @ 1
         out.next @ at + 1
     else if q == "{"
-        close: i64 @ at + 1
+        close: i64 @= at + 1
 
         while close < to && p[close] != "}"
             close @ close + 1
@@ -499,7 +499,7 @@ function escape_end(p: [str], at: i64) -> i64
 # member, as in Oniguruma; a `[` inside it is a nested class or a POSIX
 # bracket, refused.
 function class_end(p: [str], at: i64, to: i64) -> i64?
-    i: i64 @ at + 1
+    i: i64 @= at + 1
 
     if i < to && p[i] == "^"
         i @ i + 1
@@ -523,8 +523,8 @@ function class_end(p: [str], at: i64, to: i64) -> i64?
 
 # The `)` that closes the group opening at `p[at]`.
 function group_end(p: [str], at: i64, to: i64) -> i64?
-    depth: i64 @ 0
-    i: i64 @ at
+    depth: i64 @= 0
+    i: i64 @= at
 
     while i < to
         if p[i] == "\\"
@@ -550,7 +550,7 @@ function group_end(p: [str], at: i64, to: i64) -> i64?
 # escaped ones, and ranges between two of them, compared by code.
 function in_class(p: [str], from: i64, to: i64, c: str) -> bool?
     code = code_of(c)
-    i: i64 @ from
+    i: i64 @= from
 
     while i < to
         low = class_member(p: p, at: i, to: to)?
@@ -589,8 +589,8 @@ function code_of(c: str) -> i64
 
     if c.len() == 1
         return first
-    value: i64 @ first & 127 >> c.len()
-    i: i64 @ 1
+    value: i64 @= first & 127 >> c.len()
+    i: i64 @= 1
 
     while i < c.len()
         value @ value * 64 + (to_i64(c[i]).must() & 63)

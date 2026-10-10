@@ -35,7 +35,7 @@ record FieldRead
 function field(c: state.Checked, s: source.Source, decls: [ast.Decl], owner: i64, index: i64) -> FieldRead?
     # §4.6's built-in record: two strs, code then msg, with no
     # declaration anywhere to read them from.
-    is_failure: bool @ false
+    is_failure: bool @= false
 
     match table.get(c.types, owner)
         .failure                                                   => is_failure @ true
@@ -44,13 +44,13 @@ function field(c: state.Checked, s: source.Source, decls: [ast.Decl], owner: i64
         .case_ty | .generic | .error                               => is_failure @ is_failure
 
     if is_failure
-        member: str @ "msg"
+        member: str @= "msg"
 
         if index == 0
             member @ "code"
         return ok(FieldRead(member: member, ty: table.str_ty(c.types)))
-    decl: i64 @ 0 - 1
-    case_at: i64 @ 0 - 1
+    decl: i64 @= 0 - 1
+    case_at: i64 @= 0 - 1
 
     match table.get(c.types, owner)
         .named n => decl @ n.decl
@@ -63,8 +63,8 @@ function field(c: state.Checked, s: source.Source, decls: [ast.Decl], owner: i64
 
     if decl < 0
         return fail(code: "none", msg: "not an aggregate")
-    fields: [ast.Field] @ []
-    foreign: bool @ false
+    fields: [ast.Field] @= []
+    foreign: bool @= false
 
     match decls[decl].kind
         .record_decl rec =>
@@ -161,15 +161,15 @@ record Reached
 function reached(c: state.Checked, names: ctype.Names?, s: source.Source, decls: [ast.Decl], f: containers.Function, at: ir.Place) -> Reached
     # The lvalue so far, as pieces joined where a step wraps it, so a long
     # path is not copied whole at every field (defect 105).
-    parts: [str] @ [slot_lvalue(f, at.root)]
-    ty: i64 @ f.slots[at.root].ty
-    unshares: [str] @ []
-    known: ctype.Names? @ names
+    parts: [str] @= [slot_lvalue(f, at.root)]
+    ty: i64 @= f.slots[at.root].ty
+    unshares: [str] @= []
+    known: ctype.Names? @= names
 
     # Whether the place so far is a slot and fields alone, which holds no call
     # (defect 491): an element step over such a base is read in place, over
     # any other the runtime's call stays (`emit/array_read.hero`'s `place`).
-    pure: bool @ true
+    pure: bool @= true
 
     for step in containers.steps_of(f, at.path)
         match step

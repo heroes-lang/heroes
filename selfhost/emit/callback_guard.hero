@@ -77,12 +77,12 @@ record Callbacks
 
 function callbacks_of(p: containers.Program, c: state.Checked, decls: [ast.Decl]) -> Callbacks
     none: {i64: bool} = {}
-    held: [i64] @ []
+    held: [i64] @= []
 
     if !takes_a_callback(p, c, decls)
         return Callbacks(opened: false, decls: none, functions: held)
     taken = addresses_taken(p)
-    index: i64 @ 0
+    index: i64 @= 0
 
     for f in p.functions
         if !taken[f.decl].is_err()
@@ -93,7 +93,7 @@ function callbacks_of(p: containers.Program, c: state.Checked, decls: [ast.Decl]
 
 # Every declaration whose address an instruction of the program takes.
 function addresses_taken(p: containers.Program) -> {i64: bool}
-    out: {i64: bool} @ {}
+    out: {i64: bool} @= {}
 
     for f in p.functions
         for blk in f.blocks

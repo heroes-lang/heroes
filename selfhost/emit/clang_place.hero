@@ -71,15 +71,15 @@ function stack(stderr: str, line: str) -> [Place]
         return none
     rows = ffi_lookup.lines(text: stderr)
     target = without_return(line)
-    at: i64 @ -1
-    index: i64 @ 0
+    at: i64 @= -1
+    index: i64 @= 0
 
     for row in rows
         if at < 0 && without_return(row) == target
             at @ index
         index @ index + 1
 
-    above: i64 @ at - 1
+    above: i64 @= at - 1
 
     while above >= 0
         if included(rows[above]).is_err()
@@ -94,8 +94,8 @@ function stack(stderr: str, line: str) -> [Place]
         told = place(rows[last + 1])
 
         if !told.is_err() && told.must().path == own.must().path
-            steps: [Place] @ []
-            level: i64 @ above + 1
+            steps: [Place] @= []
+            level: i64 @= above + 1
 
             while level <= last
                 steps @ steps.push(included(rows[level]).must())
@@ -110,7 +110,7 @@ function stack(stderr: str, line: str) -> [Place]
 # Windows drive's own colon stays in it.
 function place(line: str) -> Place?
     text = without_return(line)
-    end: i64 @ text.len()
+    end: i64 @= text.len()
 
     for severity in SEVERITIES
         at = offset_of(text: text, needle: severity)
@@ -146,8 +146,8 @@ function included(line: str) -> Place?
 # `ib/x.h`.
 function spellings(path: str) -> [str]
     p = slashed(path)
-    out: [str] @ []
-    cut: i64 @ 0
+    out: [str] @= []
+    cut: i64 @= 0
 
     while cut < p.len()
         if cut == 0 || p[cut - 1] == '/'
@@ -176,7 +176,7 @@ function found_in(path: str, spelled: str) -> str
 # there, and anything else, a system header among them, as clang printed it.
 function shown(path: str, directory: str) -> str
     p = slashed(path)
-    cut: i64 @ 0
+    cut: i64 @= 0
 
     while cut < p.len()
         if cut == 0 || p[cut - 1] == '/'
@@ -195,7 +195,7 @@ function shown(path: str, directory: str) -> str
 # Mac), so a slashed path whose part from `cut` is a framework's header also
 # spells the include that reached it.
 function framed(p: str, cut: i64) -> str?
-    slash: i64 @ cut
+    slash: i64 @= cut
 
     while slash < p.len() && p[slash] != '/'
         slash @ slash + 1
@@ -213,7 +213,7 @@ function framed(p: str, cut: i64) -> str?
     return fail(code: "none", msg: "not a framework's headers")
 
 function slashed(path: str) -> str
-    out: [str] @ []
+    out: [str] @= []
 
     for ch in path.chars()
         if ch == "\\"
@@ -232,7 +232,7 @@ function without_return(text: str) -> str
 
 # The number after the last colon: `path:5` reads 5, `path:` nothing.
 function last_number(text: str) -> Tail?
-    at: i64 @ text.len() - 1
+    at: i64 @= text.len() - 1
 
     while at >= 0 && text[at] != ':'
         at @ at - 1
@@ -247,7 +247,7 @@ function last_number(text: str) -> Tail?
 
 # The byte offset of an ASCII needle's first occurrence.
 function offset_of(text: str, needle: str) -> i64?
-    start: i64 @ 0
+    start: i64 @= 0
 
     while start + needle.len() <= text.len()
         if same_bytes(text: text, from: start, part: needle)
@@ -261,7 +261,7 @@ function offset_of(text: str, needle: str) -> i64?
 function same_bytes(text: str, from: i64, part: str) -> bool
     if from < 0 || from + part.len() > text.len()
         return false
-    index: i64 @ 0
+    index: i64 @= 0
 
     while index < part.len()
         if text[from + index] != part[index]

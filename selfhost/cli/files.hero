@@ -121,7 +121,7 @@ function stage(staged: str, text: str, like: str) -> ()?
 
     # A step the header names and this does not is said by its number, never
     # passed off as one of these.
-    name: str @ "step " + step.to_str()
+    name: str @= "step " + step.to_str()
 
     if step == HERO_STAGE_FLUSH
         name @ "flush"

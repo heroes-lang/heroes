@@ -129,7 +129,7 @@ function scan_piece(@l: state.LexState, text: str, start: i64)
 # deletion repairs. The token keeps its kind, so one brace is one diagnostic.
 function lone_brace(@l: state.LexState, at: i64)
     span = token.Span(start: at, end: at + 1)
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "lone_brace",
         message: "a `}` alone in an `f\"…\"` literal is an error — `}}` writes one brace, as `{{` does, and a `}` closes only the hole a `{` opened",
         span: span
@@ -163,7 +163,7 @@ function ends_closed(text: str) -> bool
 # (`escape.end_of`, panel 192): a scan from the left meets the pairs
 # `scan_piece` met.
 function piece_text(text: str) -> str
-    from: i64 @ 1
+    from: i64 @= 1
 
     if text.len() >= 2 && text[0] == 'f' && text[1] == '"'
         from @ 2
@@ -171,9 +171,9 @@ function piece_text(text: str) -> str
     if text.len() <= from
         return ""
     inner = text.slice(from: from, to: text.len() - 1)
-    undoubled: [str] @ []
-    run: i64 @ 0
-    at: i64 @ 0
+    undoubled: [str] @= []
+    run: i64 @= 0
+    at: i64 @= 0
 
     while at < inner.len()
         if inner[at] == '\\'

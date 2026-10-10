@@ -38,8 +38,8 @@ function key(name: str, index: i64) -> str
 # `arguments` as `name`'s call hands them to C: each one the table holds a
 # type for is cast to it.
 function cast_lends(units: {str: str}, name: str, arguments: [str]) -> [str]
-    out: [str] @ []
-    index: i64 @ 0
+    out: [str] @= []
+    index: i64 @= 0
 
     for argument in arguments
         to = units[key(name: name, index: index)]
@@ -57,7 +57,7 @@ function cast_lends(units: {str: str}, name: str, arguments: [str]) -> [str]
 # word from clang: those cross cast. `answers` are the pointee check's, so a
 # binding it refused never reaches a unit that holds its cast.
 function with_read_casts(units: {str: str}, answers: [pointee_ask.Answered]) -> {str: str}
-    out: {str: str} @ units
+    out: {str: str} @= units
 
     for one in answers
         if one.asked.declared == pointee_ask.READ && casts(one.header_type)
@@ -80,7 +80,7 @@ function casts(header_type: str) -> bool
 # exception: C cannot apply `*` to it, so the pointer inside is asked, which
 # is what the call converts the argument to.
 function asked_type(written: str, through: str) -> str?
-    plain: str @ through
+    plain: str @= through
 
     if plain.len() == 0
         plain @ written
@@ -100,8 +100,8 @@ function asked_type(written: str, through: str) -> str?
 # The type without the qualifiers written before it, `const _Atomic(char *)`
 # being an atomic pointer that is itself `const`.
 function without_leading_qualifiers(text: str) -> str
-    kept: str @ ffi_lookup.trimmed(text)
-    cut: bool @ true
+    kept: str @= ffi_lookup.trimmed(text)
+    cut: bool @= true
 
     while cut
         cut @ false
@@ -135,7 +135,7 @@ constant TOP_QUALIFIERS: [str]
 
 function unqualified(text: str) -> str
     kept = ffi_lookup.trimmed(text)
-    star: i64 @ kept.len() - 1
+    star: i64 @= kept.len() - 1
 
     while star >= 0 && !bytes.bytes_at(text: kept, at: star, needle: "*")
         star @ star - 1
@@ -144,7 +144,7 @@ function unqualified(text: str) -> str
         return kept
 
     for word in ffi_lookup.words(text: kept.slice(from: star + 1, to: kept.len()))
-        qualifier: bool @ false
+        qualifier: bool @= false
 
         for one in TOP_QUALIFIERS
             if one == word
@@ -158,7 +158,7 @@ function unqualified(text: str) -> str
 ## Tests
 
 test "a lend the table names a type for is cast to it, and every other argument is left as it was"
-    units: {str: str} @ {}
+    units: {str: str} @= {}
     units[key(name: "SHA256_Update", index: 1)] @ "const unsigned char *"
     units["SHA256_Update 1"] @ "int *"
     got = cast_lends(units, name: "SHA256_Update", arguments: ["a0", "hero_cstr_nonnull(t3)", "a2"])

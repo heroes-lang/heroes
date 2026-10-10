@@ -525,9 +525,20 @@ constant DECIDED: [str]
 # five lines in the file that reads past the end, and the row had two lines
 # of room at lane b14-parse's close (8,694): a crash in the parser is repaired
 # where the read is, never moved elsewhere to fit a count.
+#
+# **Raised 2026-10-10, 8699 -> 8735, for panel 209's R1b at M-inferred-cell
+# step 2.** A cell is declared by its own symbol, `@=`, and the parser reads it
+# where the annotation is read: `parse/annotation.hero`'s `cell_symbol`, which
+# also tells the old `@` once, with the certain fix that rewrote the tree
+# through `check --apply` (+15), and `parse/at_prefix.hero`'s `lent_with_eq`,
+# the `@=` written where an argument's `@` was meant, one message with its
+# certain fix instead of a token nobody named (+13); 36 in this row's unit,
+# measured by this suite narrowed to `parse/apart.hero` at the step's gate. A
+# surface form the panel adopted is read beside its neighbours, never moved
+# elsewhere to fit a count.
 constant BUDGETS: [str]
     [
-        "selfhost/parse/ 8699"
+        "selfhost/parse/ 8735"
     ]
 
 # The floor is the Rust's own idea —
@@ -638,7 +649,7 @@ constant GROWTH_ALLOWED: [str]
 # narrowed run asks no floor, and asks its modules' own appends, growths and
 # budget (defect 215, below).
 function run_all(scratch: str, only: str) -> report.Report?
-    r: report.Report @ report.empty()
+    r: report.Report @= report.empty()
 
     # **`list_tree`, not `list_entries`, and the difference is 133 files.**
     # `list_entries` scans with `recursive: 0`, which was the whole tree until
@@ -658,7 +669,7 @@ function run_all(scratch: str, only: str) -> report.Report?
     # that is three quarters of the compiler going unmeasured in green.
     nothing: [str] = []
     files = shell.list_tree(scratch: scratch, dir: COMPILER, skip: nothing)?
-    modules: [str] @ []
+    modules: [str] @= []
 
     for path in files
         if strings.ends_with(text: path, suffix: ".hero") && (only == "" || strings.contains(text: path, needle: only))
@@ -683,19 +694,19 @@ function run_all(scratch: str, only: str) -> report.Report?
     # gate, four sites. An allowance for a module the walk did not take is not
     # asked, since it would read as *no longer grown there*, a false red; nor
     # is a budget whose directory holds no module the walk took.
-    allowed: [str] @ GROWTH_ALLOWED
-    rows: [str] @ BUDGETS
+    allowed: [str] @= GROWTH_ALLOWED
+    rows: [str] @= BUDGETS
 
     if only != ""
         allowed @ entries_for(entries: GROWTH_ALLOWED, modules: modules)
         rows @ rows_holding(rows: BUDGETS, modules: modules)
-    over: [str] @ []
-    slow: [str] @ []
-    streams: [str] @ []
-    grown_keys: [str] @ []
-    grown_lines: [str] @ []
-    spent: [i64] @ []
-    held: [i64] @ []
+    over: [str] @= []
+    slow: [str] @= []
+    streams: [str] @= []
+    grown_keys: [str] @= []
+    grown_lines: [str] @= []
+    spent: [i64] @= []
+    held: [i64] @= []
 
     for _ in rows
         spent @ spent.push(0)
@@ -801,7 +812,7 @@ function run_all(scratch: str, only: str) -> report.Report?
 # A module's lines added to each row of `rows` whose directory holds it, and
 # the module counted there.
 function tally(@spent: [i64], @held: [i64], rows: [str], path: str, lines: i64)
-    index: i64 @ 0
+    index: i64 @= 0
 
     for entry in rows
         parts = strings.words(entry)
@@ -816,12 +827,12 @@ function tally(@spent: [i64], @held: [i64], rows: [str], path: str, lines: i64)
 # holds no module, where the budget would measure nothing and pass, and one
 # whose modules, `spent` lines over `held` of them, pass its number.
 function over_budget(rows: [str], spent: [i64], held: [i64]) -> [str]
-    out: [str] @ []
-    index: i64 @ 0
+    out: [str] @= []
+    index: i64 @= 0
 
     for entry in rows
         parts = strings.words(entry)
-        number: i64? @ fail(code: "row", msg: "no number")
+        number: i64? @= fail(code: "row", msg: "no number")
 
         if parts.len() == 2
             number @ strings.to_number(parts[1])
@@ -841,8 +852,8 @@ function over_budget(rows: [str], spent: [i64], held: [i64]) -> [str]
 # The growths no allowance names, and each allowance no growth matched:
 # `found[i]` is `written[i]`'s module and name, as an allowance spells them.
 function unallowed(found: [str], written: [str], allowed: [str]) -> [str]
-    out: [str] @ []
-    index: i64 @ 0
+    out: [str] @= []
+    index: i64 @= 0
 
     for key in found
         if !listed(allowed, key: key)
@@ -859,7 +870,7 @@ function unallowed(found: [str], written: [str], allowed: [str]) -> [str]
 # The entries of `entries`, `<module> <name>` each, whose module is one of
 # `modules`.
 function entries_for(entries: [str], modules: [str]) -> [str]
-    out: [str] @ []
+    out: [str] @= []
 
     for entry in entries
         parts = strings.words(entry)
@@ -872,11 +883,11 @@ function entries_for(entries: [str], modules: [str]) -> [str]
 # The rows of `rows`, `<directory/> <lines>` each, whose directory holds one
 # of `modules`.
 function rows_holding(rows: [str], modules: [str]) -> [str]
-    out: [str] @ []
+    out: [str] @= []
 
     for row in rows
         parts = strings.words(row)
-        holds: bool @ false
+        holds: bool @= false
 
         for path in modules
             if parts.len() > 0 && strings.starts_with(text: path, prefix: parts[0])
@@ -898,8 +909,8 @@ function listed(entries: [str], key: str) -> bool
 # Every line of `text`, outside a comment, that appends to the lexer's state
 # through the field, as `path:line: the line`.
 function slow_appends(path: str, text: str) -> [str]
-    out: [str] @ []
-    at: i64 @ 0
+    out: [str] @= []
+    at: i64 @= 0
 
     for row in strings.split_on(text: text, byte: '\n')
         at @ at + 1
@@ -908,7 +919,7 @@ function slow_appends(path: str, text: str) -> [str]
         if strings.starts_with(text: code, prefix: "#")
             continue
 
-        hit: bool @ reports_through_a_field(code)
+        hit: bool @= reports_through_a_field(code)
 
         for needle in SLOW_APPENDS
             if strings.contains(text: code, needle: needle)
@@ -953,8 +964,8 @@ function reports_through_a_field(code: str) -> bool
 # table entirely. That is what says the metric change is not a way to
 # hide growth: it moves numbers in both directions.
 function code_lines(text: str) -> i64
-    count: i64 @ 0
-    inside: bool @ false
+    count: i64 @= 0
+    inside: bool @= false
 
     for row in strings.lines(text)
         if strings.starts_with(text: row, prefix: "test \"")
@@ -1257,8 +1268,8 @@ test "a budget's row is a directory with its slash, so `parse.hero` is not under
 
 test "a budget is passed, met, empty or malformed, and each but the met is said"
     rows = ["selfhost/parse/ 10", "selfhost/none/ 5", "selfhost/parse 3"]
-    spent: [i64] @ [0, 0, 0]
-    held: [i64] @ [0, 0, 0]
+    spent: [i64] @= [0, 0, 0]
+    held: [i64] @= [0, 0, 0]
     tally(spent: @spent, held: @held, rows: rows, path: "selfhost/parse/a.hero", lines: 6)
     tally(spent: @spent, held: @held, rows: rows, path: "selfhost/parse/b.hero", lines: 4)
     tally(spent: @spent, held: @held, rows: rows, path: "selfhost/parse.hero", lines: 7)

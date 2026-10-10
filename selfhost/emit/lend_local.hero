@@ -87,7 +87,7 @@ function is_local(f: containers.Function, at: i64) -> bool
 
 # Which `@` parameter of the function a slot is, or -1.
 function param_position(f: containers.Function, at: i64) -> i64
-    position: i64 @ 0
+    position: i64 @= 0
 
     for param in f.params
         if param == at
@@ -116,8 +116,8 @@ function reaches_c(callee: ir.Callee, at: i64, reaching: {str: str}) -> bool
 # as the longest chain of wrappers plus one, and a program that hands C no `@`
 # parameter at all is read once.
 function flows(p: containers.Program, c: state.Checked) -> {str: str}
-    out: {str: str} @ {}
-    grew: bool @ true
+    out: {str: str} @= {}
+    grew: bool @= true
 
     while grew
         grew @ false
@@ -127,7 +127,7 @@ function flows(p: containers.Program, c: state.Checked) -> {str: str}
                 for inst in blk.insts
                     match inst.op
                         .call cl =>
-                            position: i64 @ 0
+                            position: i64 @= 0
 
                             for arg in containers.args_of(f, cl.arguments)
                                 at = whole_slot(c, f, arg)
@@ -151,7 +151,7 @@ function flows(p: containers.Program, c: state.Checked) -> {str: str}
 # ORDER: none. Every key is written into a map, so the walk's order is not
 # observed.
 function with_flows(units: {str: str}, p: containers.Program, c: state.Checked) -> {str: str}
-    out: {str: str} @ units
+    out: {str: str} @= units
     found = flows(p, c)
 
     for k in keys(found)
@@ -166,13 +166,13 @@ function with_flows(units: {str: str}, p: containers.Program, c: state.Checked) 
 # runtime holds them to, so the order is observed and must be the same at
 # both ends.
 function guarded(c: state.Checked, names: ctype.Names, f: containers.Function) -> [i64]
-    seen: {i64: bool} @ {}
+    seen: {i64: bool} @= {}
 
     for blk in f.blocks
         for inst in blk.insts
             match inst.op
                 .call cl =>
-                    position: i64 @ 0
+                    position: i64 @= 0
 
                     for arg in containers.args_of(f, cl.arguments)
                         at = whole_slot(c, f, arg)
@@ -214,13 +214,13 @@ function defined(f: containers.Function, at: i64) -> str
 function label(@w: writer.Writer, c: state.Checked, s: source.Source, decls: [ast.Decl], f: containers.Function, run: ir.Run, decl: i64)
     params = lend_count.param_names(s, decls, decl: decl)
     callee = lend_count.quoted(source.span_text(s, decls[decl].name))
-    index: i64 @ 0
+    index: i64 @= 0
 
     for arg in containers.args_of(f, run)
         at = whole_slot(c, f, arg)
 
         if at >= 0 && index < params.len()
-            held: str @ ""
+            held: str @= ""
 
             if is_local(f, at)
                 held @ pointer(f, at)
@@ -238,8 +238,8 @@ function label(@w: writer.Writer, c: state.Checked, s: source.Source, decls: [as
 # taken first, for `emit/term.hero` to write before it returns.
 function releases(c: state.Checked, names: ctype.Names, f: containers.Function) -> [str]
     taken = guarded(c, names, f)
-    out: [str] @ []
-    at: i64 @ taken.len() - 1
+    out: [str] @= []
+    at: i64 @= taken.len() - 1
 
     while at >= 0
         out @ out.push("    hero_lend_local_give(" + pointer(f, taken[at]) + ");")

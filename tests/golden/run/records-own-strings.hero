@@ -29,7 +29,7 @@ function main()
     # a literal has a negative refcount and would hide every counting mistake.
     p = Person(name: "ada" + "!", age: 36)
     print(greet(p))
-    q: Person @ p
+    q: Person @= p
     print(q.name)
     q @ Person(name: "grace", age: 45)
     print(q.name, p.name)

@@ -138,7 +138,7 @@ test "a record's constant is built from the header's value at its own line, a ha
     assert c.diagnostics.len() == 0
     low = lower.lower(parsed.tree, out, c, s, parsed.decls)
     names = ctype.new_names(s, parsed.decls)
-    kinds: [str] @ []
+    kinds: [str] @= []
 
     for f in low.program.functions
         if !emit_externs.is_extern_constant(parsed.decls, f)
@@ -147,7 +147,7 @@ test "a record's constant is built from the header's value at its own line, a ha
         kinds @ kinds.push(name + ":" + is_record_value(c, parsed.decls, f).to_str())
 
         if name == "PT_INIT"
-            w: writer.Writer @ writer.new_writer("t")
+            w: writer.Writer @= writer.new_writer("t")
             accessor(@w, f, c, names, s, parsed.decls)
             got = writer.finish(w)
 

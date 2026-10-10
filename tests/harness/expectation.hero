@@ -86,8 +86,8 @@ record Expectation
 # something else entirely.
 function split(text: str) -> Expectation?
     rows = strings.lines(text)
-    ending: Ending @ .silent
-    kept: [str] @ rows
+    ending: Ending @= .silent
+    kept: [str] @= rows
 
     if rows.len() > 0
         last = rows[rows.len() - 1]
@@ -106,7 +106,7 @@ function split(text: str) -> Expectation?
     # The sanitiser line sits BEFORE the ending, so it is read after the
     # ending has been taken off: a case declares both, and the two judge
     # different runs (panel 173).
-    sanitizer: str? @ fail(code: "none", msg: "no sanitiser line")
+    sanitizer: str? @= fail(code: "none", msg: "no sanitiser line")
 
     if kept.len() > 0
         before = kept[kept.len() - 1]
@@ -121,7 +121,7 @@ function split(text: str) -> Expectation?
                 )
             sanitizer @ ok(needle)
             kept @ kept.slice(from: 0, to: kept.len() - 1)
-    out: str @ kept.join("\n")
+    out: str @= kept.join("\n")
 
     if out.len() > 0
         out @ out + "\n"

@@ -12,8 +12,8 @@ use operators
 # `(interp f"a { n } b")`: the pieces verbatim and each hole re-printed, so a
 # call inside a hole shows in the dump as it shows anywhere.
 function interp_render(a: ast.Ast, pieces: [token.Span], holes: [i64], text: str) -> str
-    parts: [str] @ ["(interp"]
-    i: i64 @ 0
+    parts: [str] @= ["(interp"]
+    i: i64 @= 0
 
     while i < pieces.len()
         parts @ parts.push(" " + cursor.slice_of(text, pieces[i]))

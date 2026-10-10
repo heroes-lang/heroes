@@ -80,7 +80,7 @@ function on_an_i64(n: i64) -> i64
         _ => return 23
 
 function in_a_loop(c: Color) -> i64
-    n: i64 @ 0
+    n: i64 @= 0
 
     while n < 10
         n @ n + 1
@@ -92,7 +92,7 @@ function in_a_loop(c: Color) -> i64
     return n
 
 function in_a_for(xs: [i64]) -> i64
-    total: i64 @ 0
+    total: i64 @= 0
 
     for x in xs
         match x

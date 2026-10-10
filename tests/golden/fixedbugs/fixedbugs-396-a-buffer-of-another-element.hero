@@ -21,16 +21,16 @@ extern "fixedbugs-396-a-buffer-of-another-element.h"
     function plain_chars(@p: [i8] counted_by 4 lent)
 
 function main()
-    a: [u32] @ []
+    a: [u32] @= []
     wide(@a)
-    b: [i32] @ []
+    b: [i32] @= []
     ints_void(@b)
-    c: [Pair] @ []
+    c: [Pair] @= []
     pairs_as_ints(@c)
-    d: [u8] @ []
+    d: [u8] @= []
     signed_chars(@d)
-    e: [u8] @ []
+    e: [u8] @= []
     bytes_void(@e)
-    f: [i8] @ []
+    f: [i8] @= []
     plain_chars(@f)
     print(a.len(), b.len(), c.len(), d.len(), e.len(), f.len())

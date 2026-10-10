@@ -17,7 +17,7 @@ use emit/externs as emit_externs
 # package's `-I` reaches every unit that must find its header, its `-D` no
 # unit that reads none of its headers.
 function by_header(p: containers.Program, s: source.Source, decls: [ast.Decl]) -> {str: [str]}
-    out: {str: [str]} @ {}
+    out: {str: [str]} @= {}
 
     for f in p.functions
         spans = emit_externs.extern_spans(decls, f)
@@ -60,11 +60,11 @@ function with_package(@by: {str: [str]}, header: str, package: str)
 
 # The packages of `listed`'s headers, each once, in the headers' order.
 function of(by: {str: [str]}, listed: [str]) -> [str]
-    out: [str] @ []
+    out: [str] @= []
 
     for header in listed
         for package in by[header].default([])
-            found: bool @ false
+            found: bool @= false
 
             for one in out
                 if one == package
@@ -78,7 +78,7 @@ function of(by: {str: [str]}, listed: [str]) -> [str]
 ## Tests
 
 test "a header's packages are the ones its groups name, each once, in the headers' order"
-    by: {str: [str]} @ {}
+    by: {str: [str]} @= {}
     with_package(by: @by, header: "a.h", package: "pa")
     with_package(by: @by, header: "a.h", package: "pa")
     with_package(by: @by, header: "b.h", package: "pb")

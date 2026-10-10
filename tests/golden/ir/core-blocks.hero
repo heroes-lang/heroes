@@ -3,7 +3,7 @@
 # comparisons rather than a switch because exhaustiveness over `i64` is
 # impossible and `_` is what closes it.
 function first_even_after(xs: [i64], floor: i64) -> i64
-    i: i64 @ 0
+    i: i64 @= 0
 
     while i < xs.len()
         v = xs[i]

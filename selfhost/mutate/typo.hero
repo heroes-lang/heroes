@@ -33,7 +33,7 @@ use mutate/sites
 
 # **A one-character edit** in an identifier, wherever a bare name is read.
 function typo_ident(a: ast.Ast, s: source.Source) -> [str]
-    out: [str] @ []
+    out: [str] @= []
 
     for e in a.exprs
         if !sites.is_name(e)
@@ -64,7 +64,7 @@ function typo_ident(a: ast.Ast, s: source.Source) -> [str]
 # have made lands on an identifier the checker resolves, where `typo-ident`
 # already kills it.
 function typo_string_key(a: ast.Ast, s: source.Source) -> [str]
-    out: [str] @ []
+    out: [str] @= []
 
     for e in a.exprs
         key = string_key(a: a, e: e)
@@ -104,7 +104,7 @@ function string_key(a: ast.Ast, e: ast.Expr) -> i64?
 # The same slip inside an error **code**: `fail("unknown_char", …)`, and the
 # `e.code == "unknown_char"` that reads it back.
 function typo_code(a: ast.Ast, s: source.Source) -> [str]
-    out: [str] @ []
+    out: [str] @= []
 
     for e in a.exprs
         literal = code_literal(a: a, s: s, e: e)
@@ -201,7 +201,7 @@ function code_text(s: source.Source, span: token.Span) -> str?
 
     if inner.len() < 3
         return fail(code: "not_a_code", msg: "too short for a slip")
-    i: i64 @ 0
+    i: i64 @= 0
 
     while i < inner.len()
         if inner[i] == 92
@@ -212,7 +212,7 @@ function code_text(s: source.Source, span: token.Span) -> str?
 
 # A `constant`'s value, off by one digit.
 function typo_digit(a: ast.Ast, s: source.Source, decls: [ast.Decl]) -> [str]
-    out: [str] @ []
+    out: [str] @= []
 
     for d in decls
         literal = constant_number(a: a, decl: d)
@@ -278,8 +278,8 @@ function is_int_literal(e: ast.Expr) -> bool
 # and absent where the literal does not end in a digit of its own base.
 function neighbouring_digit(text: str) -> str?
     cs = text.chars()
-    prefix: i64 @ 0
-    radix: i64 @ 10
+    prefix: i64 @= 0
+    radix: i64 @= 10
 
     if cs.len() > 2 && cs[0] == "0"
         if cs[1] == "x"
@@ -291,7 +291,7 @@ function neighbouring_digit(text: str) -> str?
         else if cs[1] == "b"
             prefix @ 2
             radix @ 2
-    at: i64 @ cs.len() - 1
+    at: i64 @= cs.len() - 1
 
     while at >= 0 && cs[at] == "_"
         at @ at - 1
@@ -302,12 +302,12 @@ function neighbouring_digit(text: str) -> str?
 
     if value.is_err()
         return fail(code: "no_digit", msg: "the last character is not a digit of this base")
-    moved: i64 @ value.must() + 1
+    moved: i64 @= value.must() + 1
 
     if value.must() + 1 == radix
         moved @ value.must() - 1
-    out: [str] @ []
-    i: i64 @ 0
+    out: [str] @= []
+    i: i64 @= 0
 
     while i < cs.len()
         if i == at
@@ -322,7 +322,7 @@ function digit_value(ch: str, radix: i64) -> i64?
     if ch.len() != 1
         return fail(code: "not_a_digit", msg: "not one character")
     b = ch[0].to_i64().must()
-    value: i64 @ -1
+    value: i64 @= -1
 
     if b >= 48 && b <= 57
         value @ b - 48

@@ -56,8 +56,8 @@ constant MEMBER: str
 # `dump` is the rows of the blocks this compiler asked for
 # (`layout_rows.wrapper_rows`), never clang's whole output.
 function check_unit(headers: [str], dump: str, wanted: [layout_text.Asked], s: source.Source, decls: [ast.Decl], u: extern_union.Used, c: state.Checked) -> str?
-    lines: [str] @ c_text.includes(headers)
-    wrote: bool @ false
+    lines: [str] @= c_text.includes(headers)
+    wrote: bool @= false
 
     rows = layout_rows.rows_of(dump)
     opened = layout_text.heads(rows)
@@ -115,11 +115,11 @@ function check_unit(headers: [str], dump: str, wanted: [layout_text.Asked], s: s
 # byte with one it names and whether two it names share one
 # (`emit/layout_sites.hero`).
 function record_lines(one: layout_text.Asked, hero_name: str, tree: [layout_text.Member], decls: [ast.Decl], u: extern_union.Used, s: source.Source, c: state.Checked, sizes: {str: i64}) -> [str]
-    out: [str] @ []
-    declared: {str: bool} @ {}
-    wide: {str: bool} @ {}
-    order: [str] @ []
-    partial: bool @ true
+    out: [str] @= []
+    declared: {str: bool} @= {}
+    wide: {str: bool} @= {}
+    order: [str] @= []
+    partial: bool @= true
 
     match decls[one.decl].kind
         .record_decl rec =>
@@ -138,9 +138,9 @@ function record_lines(one: layout_text.Asked, hero_name: str, tree: [layout_text
     seen = layout_text.visible(tree)
     t = one.c_type
     is_union = "__builtin_classify_type(*(" + t + " *)0) == 13"
-    shown: {str: bool} @ {}
-    group_of: {str: i64} @ {}
-    unsized: {str: bool} @ {}
+    shown: {str: bool} @= {}
+    group_of: {str: i64} @= {}
+    unsized: {str: bool} @= {}
 
     for v in seen
         shown[tree[v.at].name] @ true
@@ -156,7 +156,7 @@ function record_lines(one: layout_text.Asked, hero_name: str, tree: [layout_text
     # like any other (found by panel 186's ffi-pragmatist: without this,
     # `sigaction` was refused for leaving out `__sigaction_u`, the union its
     # `sa_handler` names).
-    aliases: [str] @ []
+    aliases: [str] @= []
 
     for name in order
         if shown[name].is_err()
@@ -168,13 +168,13 @@ function record_lines(one: layout_text.Asked, hero_name: str, tree: [layout_text
 
             if !declared[m.name].is_err() || m.flexible
                 continue
-            terms: [str] @ []
+            terms: [str] @= []
 
             if m.bitfield
                 terms @ terms.push("_Generic(((" + t + " *)0)->" + m.name + ", default: 0)")
             else
                 terms @ terms.push(layout_compare.size_of(t: t, m: m.name) + " == 0")
-            arm_named: bool @ false
+            arm_named: bool @= false
 
             for w in seen
                 n = tree[w.at]
@@ -203,8 +203,8 @@ function record_lines(one: layout_text.Asked, hero_name: str, tree: [layout_text
             # the record declares, or a member whose bytes the declared
             # fields inside it fill.
             if !m.bitfield && aliases.len() > 0
-                inside: [str] @ []
-                counted: [str] @ []
+                inside: [str] @= []
+                counted: [str] @= []
 
                 for a in aliases
                     inside @ inside.push(" || " + layout_compare.shares(t: t, a: m.name, b: a))
@@ -216,7 +216,7 @@ function record_lines(one: layout_text.Asked, hero_name: str, tree: [layout_text
                     "(__builtin_classify_type(((" + t + " *)0)->" + m.name + ") == 13 && (0" + inside.join("") + "))"
                 )
                 terms @ terms.push("(0" + counted.join("") + " >= " + layout_compare.size_of(t: t, m: m.name) + ")")
-            marker: str @ MISSING
+            marker: str @= MISSING
 
             if m.bitfield
                 marker @ MISSING_BITS
@@ -257,7 +257,7 @@ function record_lines(one: layout_text.Asked, hero_name: str, tree: [layout_text
     # syntax error, and at the field's line it is told as the field's
     # (`emit/ffi_layout.hero`'s `macro_field`) where the record's line could
     # only be the compiler's, exit 2 (lane land186, 2026-10-02).
-    probes: [str] @ []
+    probes: [str] @= []
 
     for a in aliases
         at = field_place(s, decls, decl: one.decl, field: a)
@@ -271,12 +271,12 @@ function record_lines(one: layout_text.Asked, hero_name: str, tree: [layout_text
         probes @ probes.push(line)
 
     out @ probes
-    defined: [str] @ []
+    defined: [str] @= []
 
     for a in aliases
         defined @ defined.push("defined(" + a + ")")
 
-    guarded: [str] @ ["#if " + defined.join(" && ")]
+    guarded: [str] @= ["#if " + defined.join(" && ")]
 
     for line in out
         guarded @ guarded.push(line)

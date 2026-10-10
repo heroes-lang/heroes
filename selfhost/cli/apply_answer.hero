@@ -36,12 +36,12 @@ record Settled
 function answer(s: source.Source, settled: Settled, as_json: bool) -> str
     if !as_json
         return settled.text
-    readings: [source.Source] @ [s]
+    readings: [source.Source] @= [s]
 
     for one in settled.readings
         readings @ readings.push(one)
 
-    others: [str] @ []
+    others: [str] @= []
 
     for one in settled.elsewhere
         others @ others.push(check_json.quote(one))

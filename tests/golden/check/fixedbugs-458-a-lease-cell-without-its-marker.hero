@@ -6,5 +6,5 @@
 
 function main()
     x = "abc"
-    c: cstr @ x.lease()
+    c: cstr @= x.lease()
     end_lease(c)  #~ marker_mismatch

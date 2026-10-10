@@ -1,7 +1,7 @@
 # fixedbugs, defect 422, lane b13-zero401, 2026-10-06, found by lane
 # b13-fixed405.
 #
-# SYMPTOM: `args: i64 @ 1`, then `args @ 2` and `args @ 3`, was told
+# SYMPTOM: `args: i64 @= 1`, then `args @ 2` and `args @ 3`, was told
 # `builtin_name_taken` at the binding and `no_mutable_globals` at each write,
 # the writes saying `args` was a top-level declaration: three messages for
 # one name. So for a parameter, an `@` argument, a field's write, any name a
@@ -31,23 +31,23 @@ function bump(@n: i64)
     n @ n + 1
 
 function written_never_read()
-    args: i64 @ 1  #~ builtin_name_taken
+    args: i64 @= 1  #~ builtin_name_taken
     args @ 2
     args @ 3
 
 function written_and_read() -> i64
-    args: i64 @ 1  #~ builtin_name_taken
+    args: i64 @= 1  #~ builtin_name_taken
     args @ 2
     args @ 3
     return args
 
 function a_built_in_written_in_heroes() -> bool
-    any: bool @ false  #~ builtin_name_taken
+    any: bool @= false  #~ builtin_name_taken
     any @ true
     return any
 
 function a_runtime_built_in() -> i64
-    len: i64 @ 1  #~ builtin_name_taken
+    len: i64 @= 1  #~ builtin_name_taken
     len @ len + 1
     return len
 
@@ -55,7 +55,7 @@ function a_parameter(@args: i64)  #~ builtin_name_taken
     args @ args + 1
 
 function a_loop_variable() -> i64
-    total: i64 @ 0
+    total: i64 @= 0
 
     for range in [1, 2]  #~ builtin_name_taken
         total @ total + range
@@ -67,25 +67,25 @@ function a_payload(v: V) -> i64
         .one print => print.x  #~ builtin_name_taken
 
 function an_at_argument_and_a_field() -> i64
-    sort: i64 @ 1  #~ builtin_name_taken
+    sort: i64 @= 1  #~ builtin_name_taken
     bump(@sort)
-    keys: P @ P(x: sort)  #~ builtin_name_taken
+    keys: P @= P(x: sort)  #~ builtin_name_taken
     keys.x @ 2
     return keys.x
 
 function a_top_level_name() -> i64
-    helper: i64 @ 1  #~ shadowed_binding
+    helper: i64 @= 1  #~ shadowed_binding
     helper @ 2
     return helper
 
 function no_built_in() -> i64
-    n: i64 @ 1
+    n: i64 @= 1
     n @ 2
     n @ 3
     return n
 
 function main()
-    n: i64 @ 1
+    n: i64 @= 1
     a_parameter(@n)
     written_never_read()
     print(written_and_read(), a_runtime_built_in(), a_loop_variable(), a_payload(.one(x: 1)))

@@ -20,7 +20,7 @@ variant Shape
         rest: i64
 
 function first(xs: [i32]) -> i32
-    total: i32 @ 0
+    total: i32 @= 0
 
     for zero in xs  #~ unused_binding
         total @ total + Pair(a: 1, rest: zero).a

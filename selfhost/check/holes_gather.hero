@@ -34,9 +34,9 @@ record Maker
     params: str
 
 function gather(tree: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl]) -> Gathered
-    locals_of: [[i64]] @ []
-    starts: [i64] @ []
-    ascending: bool @ true
+    locals_of: [[i64]] @= []
+    starts: [i64] @= []
+    ascending: bool @= true
 
     for decl in decls
         none: [i64] = []
@@ -46,15 +46,15 @@ function gather(tree: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source
             ascending @ false
         starts @ starts.push(decl.span.start)
 
-    index: i64 @ 0
+    index: i64 @= 0
 
     for local in r.locals
         if local.owner >= 0 && local.owner < locals_of.len()
             add_local(@locals_of[local.owner], index)
         index @ index + 1
 
-    maker_at: {i64: i64} @ {}
-    makers: [[Maker]] @ []
+    maker_at: {i64: i64} @= {}
+    makers: [[Maker]] @= []
 
     # ORDER: ascending (module, name), which every row keeps.
     for module in sort(resolved.modules_declaring(r))
@@ -70,10 +70,10 @@ function gather(tree: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source
                     result = state.result_type(c, decl)
 
                     if !result.is_err()
-                        params: [str] @ []
+                        params: [str] @= []
 
                         for p in fd.value.params
-                            marker: str @ ""
+                            marker: str @= ""
 
                             if p.mutable
                                 marker @ "@"

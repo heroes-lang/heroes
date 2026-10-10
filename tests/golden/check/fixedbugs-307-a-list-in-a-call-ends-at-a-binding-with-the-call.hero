@@ -33,11 +33,11 @@ function right_below()
 function a_declaration()
     k = g([1, 2
     print(k)
-    z: i64 @ 3 4 ))  #~ expected_separator expected_end_of_line
+    z: i64 @= 3 4 ))  #~ expected_separator expected_end_of_line
     print(z)
 
 function a_mutation()
-    z: i64 @ 0
+    z: i64 @= 0
     k = g([1, 2
     print(k)
     z @ 3 4 ))  #~ expected_separator expected_end_of_line

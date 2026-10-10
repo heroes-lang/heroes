@@ -44,7 +44,7 @@ function listed(tree: str) -> [str]?
 
     if walked.unnamed.len() > 0
         return fail(code: "no_corpus", msg: process.unnamed_said(walked.unnamed[0]))
-    out: [str] @ []
+    out: [str] @= []
     root = tree + "/"
 
     for path in walked.files
@@ -61,7 +61,7 @@ function ends_hero(path: str) -> bool
 
 # Whether a folder of the path, its last part being the file, is skipped.
 function skipped(rel: str) -> bool
-    start: i64 @ 0
+    start: i64 @= 0
 
     for at in range(from: 0, to: rel.len())
         if rel[at] == '/'
@@ -78,7 +78,7 @@ function skipped(rel: str) -> bool
 # Every program copied into the mirror; the ones whose bytes are not text,
 # which the compiler refuses unread, are named and left out of it.
 function mirrored(tree: str, files: [str], mirror: str) -> [str]?
-    unread: [str] @ []
+    unread: [str] @= []
 
     for rel in files
         text = read_file(tree + "/" + rel)
@@ -95,7 +95,7 @@ function mirrored(tree: str, files: [str], mirror: str) -> [str]?
     return ok(unread)
 
 function folder(path: str) -> str
-    at: i64 @ path.len() - 1
+    at: i64 @= path.len() - 1
 
     while at > 0 && path[at] != '/'
         at @ at - 1
@@ -111,7 +111,7 @@ function closure(mirror: str, rel: str) -> [str]?
     if text.is_err()
         return fail(code: "no_corpus", msg: "cannot read " + path)
     loaded = modules.load_text(path: path, root_text: text.must(), library: library_source.text())?
-    out: [str] @ []
+    out: [str] @= []
     prefix = mirror + "/"
 
     for f in loaded.files
@@ -122,7 +122,7 @@ function closure(mirror: str, rel: str) -> [str]?
 
 # The bytes of every file of a closure.
 function closure_bytes(mirror: str, files: [str]) -> i64?
-    total: i64 @ 0
+    total: i64 @= 0
 
     for rel in files
         text = read_file(mirror + "/" + rel)
@@ -137,7 +137,7 @@ function closure_bytes(mirror: str, files: [str]) -> i64?
 # `<out>/corpus/`, named so no walker of `.hero` files reads a program the
 # language may move under (defect 210's step 1); how many were written.
 function frozen(mirror: str, out: str, programs: [str]) -> i64?
-    seen: {str: bool} @ {}
+    seen: {str: bool} @= {}
 
     for rel in programs
         for file in closure(mirror: mirror, rel: rel)?

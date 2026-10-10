@@ -61,9 +61,9 @@ function utf16_said(order: str) -> str
 # Asked of characters, so a U+FFFD the shown text holds for one byte of the
 # file counts as that byte.
 function utf16_order(text: str) -> str
-    nul_first: i64 @ 0
-    nul_second: i64 @ 0
-    at: i64 @ 0
+    nul_first: i64 @= 0
+    nul_second: i64 @= 0
+    at: i64 @= 0
 
     while at < text.len()
         then = at + character_length(text[at])
@@ -103,7 +103,7 @@ function character_length(lead: u8) -> i64
 # which a one-byte encoding writing one letter alone does far more often.
 function sequence(text: str, mine: [source.Fault], start: i64) -> str
     lead = mine[0].byte
-    need: i64 @ 4
+    need: i64 @= 4
 
     if lead < 192 || lead > 247
         return ""
@@ -112,12 +112,12 @@ function sequence(text: str, mine: [source.Fault], start: i64) -> str
         need @ 2
     else if lead < 240
         need @ 3
-    given: i64 @ 1
+    given: i64 @= 1
 
     while given < need && given < mine.len() && mine[given].at == mine[0].at + 3 * given && mine[given].byte < 192
         given @ given + 1
 
-    words: [str] @ []
+    words: [str] @= []
 
     for k in range(from: 0, to: given)
         words @ words.push(shown(mine[k].byte))
@@ -139,7 +139,7 @@ function sequence(text: str, mine: [source.Fault], start: i64) -> str
 # U+10FFFF, or an overlong form of a smaller one, the three ways the
 # runtime's judge refuses a whole sequence (`hero_utf8_sequence`).
 function forbidden(mine: [source.Fault], need: i64) -> str
-    value: i64 @ mine[0].byte - 192
+    value: i64 @= mine[0].byte - 192
 
     if need == 3
         value @ mine[0].byte - 224
@@ -162,7 +162,7 @@ function forbidden(mine: [source.Fault], need: i64) -> str
 # is read as a one-byte encoding's). Asked of the text, which is whole, and not
 # of the faults, which are bounded (`faults_of`).
 function only_replacements(text: str) -> bool
-    at: i64 @ 0
+    at: i64 @= 0
 
     while at < text.len()
         if text[at] < 128
@@ -175,7 +175,7 @@ function only_replacements(text: str) -> bool
     return true
 
 function holds_nul(text: str) -> bool
-    at: i64 @ 0
+    at: i64 @= 0
 
     while at < text.len()
         if text[at] == 0

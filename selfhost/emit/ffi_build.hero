@@ -42,7 +42,7 @@ function missing_link(s: source.Source, decls: [ast.Decl], line: str) -> diag.Di
 
     if found.is_err()
         return fail(code: "none", msg: "no group declares this symbol")
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "ffi_missing_link",
         message: "the linker cannot find `" + name.must() + "`, and no group in this program says which library has it",
         span: found.must().span
@@ -69,11 +69,11 @@ function missing_link(s: source.Source, decls: [ast.Decl], line: str) -> diag.Di
 function missing_library(s: source.Source, decls: [ast.Decl], line: str) -> diag.Diagnostic?
     if !ffi_lookup.has(text: line, needle: "library '") && !ffi_lookup.has(text: line, needle: "cannot find -l") && !ffi_lookup.has(text: line, needle: "could not open '")
         return fail(code: "none", msg: "not a missing-library line")
-    name: str @ ""
-    span: token.Span? @ fail(code: "none", msg: "no group names this library")
+    name: str @= ""
+    span: token.Span? @= fail(code: "none", msg: "no group names this library")
 
     for decl in decls
-        library: ast.Library? @ fail(code: "none", msg: "no library")
+        library: ast.Library? @= fail(code: "none", msg: "no library")
 
         match decl.kind
             .function_decl fd          => library @ fd.value.library
@@ -95,7 +95,7 @@ function missing_library(s: source.Source, decls: [ast.Decl], line: str) -> diag
 
     if span.is_err()
         return fail(code: "none", msg: "no group names this library")
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "ffi_missing_library",
         message: "this machine has no library called `" + name + "` — the group names it, and the linker looked",
         span: span.must()
@@ -137,7 +137,7 @@ function undefined_symbol(line: str) -> str?
 
         if opened.is_err()
             return fail(code: "none", msg: "no quoted symbol")
-        letters: [str] @ []
+        letters: [str] @= []
 
         for ch in opened.must().chars()
             if ch == "\""
@@ -175,7 +175,7 @@ function undefined_symbol(line: str) -> str?
 function missing_header(s: source.Source, decls: [ast.Decl], line: str, stderr: str) -> diag.Diagnostic?
     if !ffi_lookup.has(text: line, needle: "file not found")
         return fail(code: "none", msg: "not a missing-header line")
-    opened: str? @ ffi_lookup.after(text: line, marker: "error: '")
+    opened: str? @= ffi_lookup.after(text: line, marker: "error: '")
 
     if opened.is_err()
         opened @ ffi_lookup.after(text: line, marker: "'")
@@ -191,7 +191,7 @@ function missing_header(s: source.Source, decls: [ast.Decl], line: str, stderr: 
 
     if span.is_err()
         return header_reach.reached_header(s, decls, line: line, stderr: stderr, missing: header)
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "ffi_missing_header",
         message: "`" + header + "` is not on this machine's include path — clang looked and did not find it",
         span: span.must()
@@ -230,8 +230,8 @@ function package_problem(s: source.Source, decls: [ast.Decl], stderr: str, line:
     if span.is_err()
         return fail(code: "none", msg: "no group asked for this package")
     headline = "the package " + line.slice(from: ffi_lookup.PACKAGE.len(), to: line.len())
-    d: diag.Diagnostic @ diag.new_diagnostic(code: "ffi_package", message: headline, span: span.must())
-    index: i64 @ 0
+    d: diag.Diagnostic @= diag.new_diagnostic(code: "ffi_package", message: headline, span: span.must())
+    index: i64 @= 0
 
     for one in ffi_lookup.lines(text: stderr)
         note = ffi_lookup.trimmed(one)

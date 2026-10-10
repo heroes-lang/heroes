@@ -47,7 +47,7 @@ constant DEFAULT_PATH: str
 
 function main()
     given = args()
-    path: str @ DEFAULT_PATH
+    path: str @= DEFAULT_PATH
 
     if given.len() > 0
         path @ given[0]
@@ -115,8 +115,8 @@ function report_of(rows: [row.Row])
     print("total  ", engine.aggregate(rows, .total_score).to_str())
     print("best   ", engine.aggregate(rows, .best_score).to_str())
 
-    counted: i64 @ 0
-    summed: i64 @ 0
+    counted: i64 @= 0
+    summed: i64 @= 0
 
     for r in rows
         counted @ counted + 1
@@ -154,8 +154,8 @@ test "a file the program writes is the file the program reads"
 test "the grouped totals add up to the ungrouped ones"
     rows = row.generated(1000)
     groups = engine.grouped(rows)
-    counted: i64 @ 0
-    summed: i64 @ 0
+    counted: i64 @= 0
+    summed: i64 @= 0
 
     for key in engine.group_order(groups)
         s = groups[key].must()
@@ -167,9 +167,9 @@ test "the grouped totals add up to the ungrouped ones"
 
 test "the engine's aggregates agree with a plain loop over the same rows"
     rows = engine.filtered(row.generated(800), .active_is(want: true))
-    counted: i64 @ 0
-    summed: i64 @ 0
-    best: i64 @ -1
+    counted: i64 @= 0
+    summed: i64 @= 0
+    best: i64 @= -1
 
     for r in rows
         counted @ counted + 1
@@ -193,7 +193,7 @@ test "the join neither invents nor loses a row, and every region is a real one"
     rows = row.generated(500)
     with_region = engine.joined_with(rows, row.teams())
     assert with_region.len() == rows.len()
-    regions: {str: bool} @ {}
+    regions: {str: bool} @= {}
 
     for j in with_region
         regions[j.region] @ true
@@ -208,7 +208,7 @@ test "the whole table at its real size, which is the size the report prints"
     assert ordered[0].score >= ordered[4999].score
 
     # The top row really is the highest, checked against a plain scan.
-    best: i64 @ -1
+    best: i64 @= -1
 
     for r in rows
         if r.score > best

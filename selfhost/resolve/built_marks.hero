@@ -114,7 +114,7 @@ function takes_at(r: state.Resolver, decls: [ast.Decl], callee: i64) -> [bool]
         .local | .unresolved | .module => return NO_WRITES
 
 function param_writes(params: [ast.Param]) -> [bool]
-    writes: [bool] @ []
+    writes: [bool] @= []
 
     for p in params
         writes @ writes.push(p.mutable)
@@ -167,8 +167,8 @@ function set_aside(given: [ast.Arg]) -> [ast.Arg]
 # taken off, untold, where it takes none or where no parameter stands, past
 # the last, whose arity the checker tells (defect 439).
 function beside(writes: [bool], first: i64, given: [ast.Arg]) -> [ast.Arg]
-    kept: [ast.Arg] @ []
-    k: i64 @ first
+    kept: [ast.Arg] @= []
+    k: i64 @= first
 
     for arg in given
         if arg.mutable && (k >= writes.len() || !writes[k])
@@ -183,7 +183,7 @@ function beside(writes: [bool], first: i64, given: [ast.Arg]) -> [ast.Arg]
 # the construction names and `what` the kind of value it builds. A list
 # without one is handed back as it came, since every construction passes here.
 function unmarked(@r: state.Resolver, a: ast.Ast, s: source.Source, built: str, what: str, tell: bool, given: [ast.Arg]) -> [ast.Arg]
-    marked: bool @ false
+    marked: bool @= false
 
     for arg in given
         if arg.mutable
@@ -191,7 +191,7 @@ function unmarked(@r: state.Resolver, a: ast.Ast, s: source.Source, built: str, 
 
     if !marked
         return given
-    kept: [ast.Arg] @ []
+    kept: [ast.Arg] @= []
 
     for arg in given
         if arg.mutable
@@ -207,11 +207,11 @@ function told(a: ast.Ast, s: source.Source, built: str, what: str, arg: ast.Arg)
     value_span = a.exprs[arg.value].span
     at = label_errors.argument_front(s.text, value_start: value_span.start, mutable: true)
     value = source.span_text(s, value_span)
-    written: str @ "@" + value
+    written: str @= "@" + value
 
     if !arg.name.is_err()
         written @ source.span_text(s, arg.name.must()) + ": @" + value
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "marker_mismatch",
         message: "`" + built + "(…)` builds " + what + ", which keeps a copy of each value: the `@` in `" + written + "` says `" + value + "` is changed and written back, and only a function's `@` parameter does that (§4.8)",
         span: token.Span(start: at, end: value_span.end)

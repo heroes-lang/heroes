@@ -49,8 +49,8 @@ function resolve_type(@r: state.Resolver, a: ast.Ast, s: source.Source, decls: [
                 resolve_type(@r, a, s, decls, param)
 
             resolve_type(@r, a, s, decls, f.result)
-            written: [str] @ []
-            any_name: bool @ false
+            written: [str] @= []
+            any_name: bool @= false
 
             for label in f.labels
                 one = source.span_text(s, label)
@@ -102,7 +102,7 @@ function named(@r: state.Resolver, a: ast.Ast, s: source.Source, decls: [ast.Dec
             # "unknown type" would be a lie and a did-you-mean noise.
 
             .function_decl fd =>
-                what: str @ "a function"
+                what: str @= "a function"
 
                 if fd.value.is_extern
                     what @ "an extern function"
@@ -121,7 +121,7 @@ function named(@r: state.Resolver, a: ast.Ast, s: source.Source, decls: [ast.Dec
 # The byte offset of the first `.`, or absent — Rust's `split_once` in the
 # shape a language without tuples writes it.
 function first_dot(name: str) -> i64?
-    i: i64 @ 0
+    i: i64 @= 0
 
     while i < name.len()
         if name[i] == '.'
@@ -139,7 +139,7 @@ function qualified_type(@r: state.Resolver, a: ast.Ast, s: source.Source, decls:
     # moment a file says `as` (panel 101 — the diagnostic at the bottom of
     # this function offered a name the file does not bind, as a CERTAIN fix).
     wrote = name.slice(from: 0, to: split_at)
-    module: str @ wrote
+    module: str @= wrote
     type_name = name.slice(from: split_at + 1, to: name.len())
 
     # A written type is qualified by the module's BINDING, exactly as a
@@ -189,13 +189,13 @@ function is_type_decl(decls: [ast.Decl], at: i64) -> bool
 # is sorted — the ORDER mark's rule; gathered once, `resolve/offered.hero`),
 # then the primitives from the one array that lists them.
 function type_candidates(@r: state.Resolver, decls: [ast.Decl]) -> [[str]]
-    generics: [str] @ []
+    generics: [str] @= []
 
     for g in r.generics
         if !g.told
             generics @ generics.push(g.name)
 
-    primitives: [str] @ []
+    primitives: [str] @= []
 
     for k in widths.int_kinds()
         primitives @ primitives.push(widths.int_name(k))
@@ -232,11 +232,11 @@ function record_decl_named(name_start: i64, name_end: i64) -> ast.Decl
 
 test "the three namespaces answer in order: primitive, generic, declaration"
     s = fixture()
-    a: ast.Ast @ ast.new_ast()
+    a: ast.Ast @= ast.new_ast()
     prim_node = typed(@a, start: 0, end: 3)
     generic_node = typed(@a, start: 4, end: 5)
     top_node = typed(@a, start: 6, end: 11)
-    r: state.Resolver @ state.new_resolver(expr_count: 0, type_count: 3)
+    r: state.Resolver @= state.new_resolver(expr_count: 0, type_count: 3)
     r.module @ "t"
     r.generics @ r.generics.push(state.GenericParam(name: "A", position: 0, told: false))
     decls: [ast.Decl] = [record_decl_named(name_start: 6, name_end: 11)]
@@ -251,13 +251,13 @@ test "the three namespaces answer in order: primitive, generic, declaration"
 
 test "a compound type is one walk over the arena"
     s = fixture()
-    a: ast.Ast @ ast.new_ast()
+    a: ast.Ast @= ast.new_ast()
     element = typed(@a, start: 0, end: 3)
     array_node = ast.push_type(
         @a.types,
         ast.TypeNode(kind: .array_of(element: element), span: token.Span(start: 0, end: 3))
     )
-    r: state.Resolver @ state.new_resolver(expr_count: 0, type_count: 2)
+    r: state.Resolver @= state.new_resolver(expr_count: 0, type_count: 2)
     r.module @ "t"
     resolve_type(@r, a, s, empty_decls(), array_node)
     assert r.out.type_uses[element] == .prim(value: .int_prim(kind: .i64))
@@ -267,7 +267,7 @@ test "a compound type is one walk over the arena"
 
 test "a value in type position is named for what it is"
     s = fixture()
-    a: ast.Ast @ ast.new_ast()
+    a: ast.Ast @= ast.new_ast()
     fn_node = typed(@a, start: 12, end: 13)
     doc: [token.Span] = []
     ps: [ast.Param] = []
@@ -289,7 +289,7 @@ test "a value in type position is named for what it is"
     )
     fspan = token.Span(start: 12, end: 13)
     decls: [ast.Decl] = [ast.Decl(name: fspan, doc: doc, span: fspan, kind: .function_decl(value: f))]
-    r: state.Resolver @ state.new_resolver(expr_count: 0, type_count: 1)
+    r: state.Resolver @= state.new_resolver(expr_count: 0, type_count: 1)
     r.module @ "t"
     resolved.declare_top(@r.out, module: "t", name: "f", decl: 0)
     resolve_type(@r, a, s, decls, fn_node)
@@ -299,11 +299,11 @@ test "a value in type position is named for what it is"
 
 test "a qualified type reaches next door, and only through a use"
     s = fixture()
-    a: ast.Ast @ ast.new_ast()
+    a: ast.Ast @= ast.new_ast()
     good = typed(@a, start: 14, end: 24)
     bad = typed(@a, start: 25, end: 31)
     decls: [ast.Decl] = [record_decl_named(name_start: 19, name_end: 24)]
-    r: state.Resolver @ state.new_resolver(expr_count: 0, type_count: 2)
+    r: state.Resolver @= state.new_resolver(expr_count: 0, type_count: 2)
     r.module @ "t"
     resolved.declare_use(@r.out, from: "t", binding: "geom", module: "geom")
     resolved.declare_top(@r.out, module: "geom", name: "Point", decl: 0)
@@ -316,9 +316,9 @@ test "a qualified type reaches next door, and only through a use"
 
 test "an unknown type earns the nearest names, generics ranked first"
     s = fixture()
-    a: ast.Ast @ ast.new_ast()
+    a: ast.Ast @= ast.new_ast()
     typo = typed(@a, start: 32, end: 36)
-    r: state.Resolver @ state.new_resolver(expr_count: 0, type_count: 1)
+    r: state.Resolver @= state.new_resolver(expr_count: 0, type_count: 1)
     r.module @ "t"
     r.generics @ r.generics.push(state.GenericParam(name: "flob", position: 0, told: false))
     resolve_type(@r, a, s, empty_decls(), typo)

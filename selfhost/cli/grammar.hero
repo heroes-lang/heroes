@@ -53,9 +53,9 @@ function report() -> str
 # cannot see a word moved between two arms.
 function keyword_block() -> str
     words = keywords.keywords()
-    rows: [str] @ ["Keywords (" + words.len().to_str() + "), which a program may not use as a name:"]
-    cells: [str] @ []
-    i: i64 @ 0
+    rows: [str] @= ["Keywords (" + words.len().to_str() + "), which a program may not use as a name:"]
+    cells: [str] @= []
+    i: i64 @= 0
 
     while i < words.len()
         cell = pad(text: words[i], width: 11)
@@ -78,11 +78,11 @@ function keyword_block() -> str
 # hand while the parser read eleven, because there was no table to print.
 function contextual_block() -> str
     words = keywords.contextual()
-    rows: [str] @ [
+    rows: [str] @= [
         "Contextual words (" + words.len().to_str() + "), each read in one position and an ordinary name everywhere else:"
     ]
-    cells: [str] @ []
-    i: i64 @ 0
+    cells: [str] @= []
+    i: i64 @= 0
 
     while i < words.len()
         cell = pad(text: words[i], width: 11)
@@ -101,7 +101,7 @@ function contextual_block() -> str
 # The binary operators, loosest first, each with the power the climber asks for
 # and the name the tree carries.
 function power_block() -> str
-    rows: [str] @ [
+    rows: [str] @= [
         "Binary operators, loosest first. Every one is left-associative, so the\nclimber asks for `power + 1` on the right. The `operator` column is the name\nthe tree carries, and a spelling paired with the wrong one parses as the wrong\noperator with every test green (panel 067).\n"
     ]
     rows @ rows.push("\n  power  spelling  operator")
@@ -139,11 +139,11 @@ function production_block() -> str
 
     if text.is_err()
         return "The productions are in `" + SPEC + "`, which is not readable from here.\nThis command reads it relative to the working directory, as `measure` reads its\ntables, so run it from the repository to see them collected."
-    rows: [str] @ [
+    rows: [str] @= [
         "Productions, collected from `" + SPEC + "`, where each is authored beside the\nprose that governs it. `=` defines and `.` ends, `|` alternates, `[ ]` is\noptional, `{ }` repeats zero or more times."
     ]
-    in_fence: bool @ false
-    start: i64 @ 0
+    in_fence: bool @= false
+    start: i64 @= 0
 
     # **CHARACTERS, never bytes**, and the language taught this rather than a
     # comment: slicing a byte off `—` aborts with "string slice splits a
@@ -151,7 +151,7 @@ function production_block() -> str
     # document's own em dash. `tests/harness/spec_text.hero` carries the same
     # rule for the same reason.
     cs = text.must().chars()
-    i: i64 @ 0
+    i: i64 @= 0
 
     while i <= cs.len()
         if i < cs.len() && cs[i] != "\n"
@@ -209,7 +209,7 @@ function aligned(number: i64, width: i64) -> str
 
 function trim_right(text: str) -> str
     cs = text.chars()
-    last: i64 @ cs.len()
+    last: i64 @= cs.len()
 
     while last > 0 && cs[last - 1] == " "
         last @ last - 1
@@ -271,11 +271,11 @@ test "a column is padded to its width and never past it"
 function strings_contains(text: str, needle: str) -> bool
     if needle.len() == 0
         return true
-    at: i64 @ 0
+    at: i64 @= 0
 
     while at + needle.len() <= text.len()
-        same: bool @ true
-        i: i64 @ 0
+        same: bool @= true
+        i: i64 @= 0
 
         while i < needle.len()
             if text[at + i] != needle[i]

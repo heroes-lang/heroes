@@ -250,13 +250,13 @@ constant LEAST_SHARED_STATE: i64
 function run_all(scratch: str) -> report.Report?
     nothing: [str] = []
     files = shell.list_tree(scratch: scratch, dir: RUNTIME, skip: nothing)?
-    sources: [str] @ []
+    sources: [str] @= []
 
     for path in files
         if strings.ends_with(text: path, suffix: ".c") || strings.ends_with(text: path, suffix: ".h")
             sources @ sources.push(path)
 
-    r: report.Report @ report.empty()
+    r: report.Report @= report.empty()
     keep_single_point(@r, sources: sources)
     keep_boundary(@r)
     keep_shared_state(@r, sources: sources)
@@ -264,8 +264,8 @@ function run_all(scratch: str) -> report.Report?
 
 # Rule 1: every allocation in the runtime happens in one file.
 function keep_single_point(@r: report.Report, sources: [str])
-    strays: [str] @ []
-    at_the_point: i64 @ 0
+    strays: [str] @= []
+    at_the_point: i64 @= 0
 
     for path in sources
         text = read_file(path)
@@ -274,7 +274,7 @@ function keep_single_point(@r: report.Report, sources: [str])
             report.keep_failure(@r, label: "runtime/alloc", detail: "  cannot read " + path)
             continue
         rows = code_lines(text.must())
-        at: i64 @ 0
+        at: i64 @= 0
 
         while at < rows.len()
             row = strings.trimmed(rows[at])
@@ -323,9 +323,9 @@ function keep_boundary(@r: report.Report)
         report.keep_failure(@r, label: "runtime/refcount", detail: "  cannot read " + HEADER)
         return
     rows = code_lines(text.must())
-    wrong: [str] @ []
-    declared: i64 @ 0
-    at: i64 @ 0
+    wrong: [str] @= []
+    declared: i64 @= 0
+    at: i64 @= 0
 
     while at < rows.len()
         row = strings.trimmed(rows[at])
@@ -361,9 +361,9 @@ function keep_boundary(@r: report.Report)
 # Rule 3: no object survives between calls in the runtime without
 # somebody having decided whether a second thread may see it.
 function keep_shared_state(@r: report.Report, sources: [str])
-    unnamed: [str] @ []
-    seen: {str: bool} @ {}
-    total: i64 @ 0
+    unnamed: [str] @= []
+    seen: {str: bool} @= {}
+    total: i64 @= 0
 
     for path in sources
         if !strings.ends_with(text: path, suffix: ".c")
@@ -374,7 +374,7 @@ function keep_shared_state(@r: report.Report, sources: [str])
             report.keep_failure(@r, label: "runtime/threads", detail: "  cannot read " + path)
             continue
         rows = code_lines(text.must())
-        at: i64 @ 0
+        at: i64 @= 0
 
         while at < rows.len()
             row = strings.trimmed(rows[at])
@@ -405,7 +405,7 @@ function keep_shared_state(@r: report.Report, sources: [str])
     else
         report.keep_pass(@r)
 
-    stale: [str] @ []
+    stale: [str] @= []
 
     for entry in SHARED_BY_DECISION
         wanted = entry_key(entry)
@@ -517,7 +517,7 @@ function pointed_function_name(row: str) -> str
         return ""
 
     cs = row.chars()
-    at: i64 @ open.must() + 1
+    at: i64 @= open.must() + 1
 
     while at < cs.len() && (cs[at] == " " || word_byte(cs[at][0]))
         at @ at + 1
@@ -525,7 +525,7 @@ function pointed_function_name(row: str) -> str
     if at >= cs.len() || cs[at] != "*"
         return ""
 
-    name: str @ ""
+    name: str @= ""
 
     while at < cs.len() && name == ""
         while at < cs.len() && (cs[at] == "*" || cs[at] == " ")
@@ -580,8 +580,8 @@ function object_name(row: str) -> str
         return pointed
 
     cs = row.chars()
-    stop: i64 @ cs.len()
-    at: i64 @ 0
+    stop: i64 @= cs.len()
+    at: i64 @= 0
 
     while at < cs.len()
         c = cs[at]
@@ -591,7 +591,7 @@ function object_name(row: str) -> str
             break
         at @ at + 1
 
-    i: i64 @ stop - 1
+    i: i64 @= stop - 1
 
     while i >= 0 && !word_byte(cs[i][0])
         i @ i - 1
@@ -645,13 +645,13 @@ function is_prototype(row: str) -> bool
 # is the guard that fires if it ever happens anyway.
 function code_lines(text: str) -> [str]
     cs = text.chars()
-    out: [str] @ []
-    row: [str] @ []
-    block: bool @ false
-    line: bool @ false
-    quoted: bool @ false
-    charred: bool @ false
-    at: i64 @ 0
+    out: [str] @= []
+    row: [str] @= []
+    block: bool @= false
+    line: bool @= false
+    quoted: bool @= false
+    charred: bool @= false
+    at: i64 @= 0
 
     while at < cs.len()
         c = cs[at]
@@ -739,7 +739,7 @@ function char_at(cs: [str], at: i64) -> str
 # The word boundary is what tells `malloc(` from `hero_malloc_raw(`, and
 # the `(` is what tells a call from a mention.
 function calls(code: str, name: str) -> bool
-    at: i64 @ 0
+    at: i64 @= 0
 
     while at + name.len() <= code.len()
         if matches(text: code, at: at, needle: name) && !joined_before(text: code, at: at) && opens(text: code, at: at + name.len())
@@ -751,7 +751,7 @@ function calls(code: str, name: str) -> bool
 # Is `name` here as a whole word at all, called or not? What the `inline`
 # ban needs: `static inline int f(void)` opens no parenthesis of its own.
 function names_word(code: str, name: str) -> bool
-    at: i64 @ 0
+    at: i64 @= 0
 
     while at + name.len() <= code.len()
         if matches(text: code, at: at, needle: name) && !joined_before(text: code, at: at) && !joined_after(text: code, at: at + name.len())
@@ -761,7 +761,7 @@ function names_word(code: str, name: str) -> bool
     return false
 
 function matches(text: str, at: i64, needle: str) -> bool
-    i: i64 @ 0
+    i: i64 @= 0
 
     while i < needle.len()
         if text[at + i] != needle[i]
@@ -783,7 +783,7 @@ function joined_after(text: str, at: i64) -> bool
     return word_byte(text[at])
 
 function opens(text: str, at: i64) -> bool
-    i: i64 @ at
+    i: i64 @= at
 
     while i < text.len() && (text[i] == ' ' || text[i] == '\t')
         i @ i + 1

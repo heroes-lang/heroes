@@ -27,20 +27,20 @@ record Reduced
     finished: bool
 
 function reduced(text: str, fails: (function(str) -> bool), protect: bool) -> Reduced
-    lines: [str] @ seed.cut_lines(text)
+    lines: [str] @= seed.cut_lines(text)
     newline = seed.ends_newline(text)
-    attempts: i64 @ 0
-    chunk: i64 @ lines.len() / 2
+    attempts: i64 @= 0
+    chunk: i64 @= lines.len() / 2
 
     if chunk < 1
         chunk @ 1
 
     while attempts < ATTEMPTS
-        kept: bool @ false
-        at: i64 @ 0
+        kept: bool @= false
+        at: i64 @= 0
 
         while at < lines.len() && attempts < ATTEMPTS
-            end: i64 @ at + chunk
+            end: i64 @= at + chunk
 
             if end > lines.len()
                 end @ lines.len()
@@ -48,7 +48,7 @@ function reduced(text: str, fails: (function(str) -> bool), protect: bool) -> Re
             if protect && holds_probe(lines.slice(from: at, to: end))
                 at @ end
                 continue
-            left: [str] @ lines.slice(from: 0, to: at)
+            left: [str] @= lines.slice(from: 0, to: at)
 
             for line in lines.slice(from: end, to: lines.len())
                 left @ left.push(line)
@@ -89,7 +89,7 @@ function holds_probe(lines: [str]) -> bool
 # Whether `line` holds `zq_`, the mark every comment the probe writes starts
 # with.
 function has_mark(line: str) -> bool
-    at: i64 @ 0
+    at: i64 @= 0
 
     while at + 3 <= line.len()
         if line[at] == 'z' && line[at + 1] == 'q' && line[at + 2] == '_'

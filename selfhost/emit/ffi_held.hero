@@ -29,7 +29,7 @@ use parse
 # always `struct <tag>`, which clang never calls an identifier.
 function held_kind(s: source.Source, decls: [ast.Decl], name: str, types: {str: str}) -> str?
     answer = types[name].default("neither")
-    tagged: bool @ false
+    tagged: bool @= false
 
     if answer == "neither"
         return fail(code: "none", msg: "the header holds no such word")
@@ -58,7 +58,7 @@ test "a handle's tag is held where the header answered any kind, and only there 
     text = "extern \"tags.h\"\n    record UH tag utag\n    record OH tag opaque\n    record GH tag shared\n    function shared() -> i32\n    record F tag fielded\n        n: i32\n\nfunction main()\n    print(1)\n"
     parsed = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
-    types: {str: str} @ {}
+    types: {str: str} @= {}
 
     for kind in ["tag", "union", "enum", "type"]
         types["opaque"] @ kind

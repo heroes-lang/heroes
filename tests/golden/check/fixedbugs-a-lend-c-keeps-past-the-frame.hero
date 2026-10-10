@@ -30,7 +30,7 @@ extern "keeper.h"
     function later() -> i64
 
 function lend_and_return()
-    s: Sl2 @ mk()
+    s: Sl2 @= mk()
     keep(p: s.name.ptr(), n: 8)  #~ lend_kept
 
 function lend_a_string()

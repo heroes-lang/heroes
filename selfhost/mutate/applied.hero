@@ -49,8 +49,8 @@ function judged_apply(at: judged.Place, applied_rel: str, original_rel: str, tex
     after = judged.checked(at, rel: applied_rel, permissive: false)?
     mine = judged.codes_of(normal)
     theirs = judged.codes_of(after)
-    stands: {str: bool} @ {}
-    fresh: {str: bool} @ {}
+    stands: {str: bool} @= {}
+    fresh: {str: bool} @= {}
 
     # ORDER: none observed; each code only joins a set.
     for code in keys(theirs)
@@ -59,7 +59,7 @@ function judged_apply(at: judged.Place, applied_rel: str, original_rel: str, tex
         else
             fresh[code] @ true
 
-    flags: [str] @ []
+    flags: [str] @= []
 
     if moved
         if fresh.len() > 0
@@ -78,7 +78,7 @@ function judged_apply(at: judged.Place, applied_rel: str, original_rel: str, tex
         if clean && printed != original && another_program(at, applied_rel: applied_rel, original_rel: original_rel, original: original)?
             flags @ flags.push("APPLY-OTHER")
     judged.uproot(at, rel: applied_rel)?
-    found: [str] @ none
+    found: [str] @= none
 
     if changed
         # ORDER: codes ascending by bytes, Python's `sorted` over ASCII codes.
@@ -101,7 +101,7 @@ function another_program(at: judged.Place, applied_rel: str, original_rel: str, 
 
 # `<code>\t<line>` of every message of an arm.
 function places(arm: judged.Arm) -> [str]
-    out: [str] @ []
+    out: [str] @= []
 
     for m in arm.messages
         out @ out.push(judged.code_of(m) + "\t" + judged.line_of(m).to_str())
@@ -117,8 +117,8 @@ function shared_place(a: [str], b: [str]) -> bool
     return false
 
 function newlines(text: str) -> i64
-    n: i64 @ 0
-    at: i64 @ 0
+    n: i64 @= 0
+    at: i64 @= 0
 
     while at < text.len()
         if text[at] == 10

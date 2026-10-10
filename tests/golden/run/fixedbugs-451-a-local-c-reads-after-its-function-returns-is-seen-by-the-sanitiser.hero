@@ -18,7 +18,7 @@ extern "fixedbugs-451-keepers.h"
     function cell_read_later() -> i64
 
 function lend() -> i64
-    n: i64 @ 0
+    n: i64 @= 0
     cell_keep(@n)
     return n
 

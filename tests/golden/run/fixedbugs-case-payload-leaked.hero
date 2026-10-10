@@ -35,7 +35,7 @@ function label(text: str, from: i64, to: i64) -> Token
     return .name(s: text.slice(from: from, to: to))
 
 function main()
-    out: [Token] @ []
+    out: [Token] @= []
     out @ out.push(label("alphabet", from: 0, to: 5))
     out @ out.push(.num(v: 12))
 

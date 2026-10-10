@@ -32,8 +32,8 @@ record Machine
     output: [str]
 
 function run(code: [i64], fuel: i64) -> [str]?
-    m: Machine @ Machine(registers: [0, 0, 0, 0], pc: 0, output: [])
-    left: i64 @ fuel
+    m: Machine @= Machine(registers: [0, 0, 0, 0], pc: 0, output: [])
+    left: i64 @= fuel
 
     while left > 0
         left @ left - 1

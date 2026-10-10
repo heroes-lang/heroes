@@ -63,12 +63,12 @@ function declaration(@c: cursor.Cursor, @uses: [ast.Use], text: str)
     if !cursor.at(c, .ident)
         missing_name(@c, text, keyword)
         return
-    name: token.Span @ cursor.bump(@c).span
+    name: token.Span @= cursor.bump(@c).span
 
     # The path's LAST part, tracked as the loop grows the path: it is the
     # binding when no `as` follows, and a span rather than a slice so a
     # diagnostic can point at it.
-    last: token.Span @ name
+    last: token.Span @= name
 
     # `use geom.shapes` — a dot is not the separator, and the second token
     # is where the author finds that out. The message names the spelling
@@ -128,7 +128,7 @@ function declaration(@c: cursor.Cursor, @uses: [ast.Use], text: str)
     # **`as` is an ordinary identifier, not a keyword**: zero C identifiers
     # named `as` in 3120 SDK headers, but panel 060 spells a group record's
     # fields as its header does, so an unmeasured platform could have one.
-    binding: token.Span @ last
+    binding: token.Span @= last
 
     if cursor.at(c, .ident) && cursor.slice_of(text, cursor.current_span(c)) == keywords.WORD_AS
         word = cursor.current_span(c)
@@ -161,7 +161,7 @@ function declaration(@c: cursor.Cursor, @uses: [ast.Use], text: str)
 # of one intent, and the sentence that answers the intent answers all four.
 # The provoking case is a witness, not the class.
 function climbs(@c: cursor.Cursor, text: str, keyword: token.Span)
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "module_path_climbs",
         message: "a `use` path cannot climb — every `use` starts at the directory of the file you compile, so write the path from there: `use lex/token`, wherever the file that writes it sits",
         span: cursor.current_span(c)
@@ -195,7 +195,7 @@ function part_missing(@c: cursor.Cursor, text: str, name: token.Span, slash: tok
 # line.
 function alias_missing(@c: cursor.Cursor, text: str, word: token.Span)
     same_line = module_text.one_line(text, from: word.start, to: cursor.current_span(c).start)
-    message: str @ "`as` renames the module and this line names nothing — `use syntax/decl as sd`, and then this file calls it `sd`"
+    message: str @= "`as` renames the module and this line names nothing — `use syntax/decl as sd`, and then this file calls it `sd`"
 
     if same_line
         message @ "expected a name after `as`, found " + cursor.found(c, text) + " — `use syntax/decl as sd`, and then this file calls it `sd`"
@@ -219,7 +219,7 @@ function alias_missing(@c: cursor.Cursor, text: str, word: token.Span)
 # this is that reasoning as a landmark rather than a special case, because a
 # LINE exists whatever the last token on it happened to be.
 function skip_rest_of_line(@c: cursor.Cursor, text: str, from: token.Span)
-    scanning: bool @ true
+    scanning: bool @= true
 
     while scanning && !cursor.at(c, .eof)
         if !module_text.one_line(text, from: from.start, to: cursor.current_span(c).start)
@@ -241,7 +241,7 @@ function quoted_module(@c: cursor.Cursor, text: str)
     s = cursor.current_span(c)
     quoted = cursor.slice_of(text, s)
     inner = module_text.unquote(quoted)
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "use_wants_a_name",
         message: "a module is named, not quoted — write `use " + inner + "`, which reads `" + inner + ".hero` from the directory of the file you compile",
         span: s
@@ -277,7 +277,7 @@ function missing_name(@c: cursor.Cursor, text: str, keyword: token.Span)
     if cursor.at_reported_error(c)
         return
     same_line = module_text.one_line(text, from: keyword.start, to: cursor.current_span(c).start)
-    message: str @ "`use` names one module and this line names none — `use geom`, which reads `geom.hero` beside this file"
+    message: str @= "`use` names one module and this line names none — `use geom`, which reads `geom.hero` beside this file"
 
     if same_line
         message @ "expected the module's name after `use`, found " + cursor.found(c, text) + " — `use geom`, which reads `geom.hero` beside this file"
@@ -301,8 +301,8 @@ test "the happy path is one identifier"
         token.made(.ident, start: 4, end: 8)
         token.made(.eof, start: 8, end: 8)
     ]
-    c: cursor.Cursor @ cursor.new_cursor(stream)
-    uses: [ast.Use] @ []
+    c: cursor.Cursor @= cursor.new_cursor(stream)
+    uses: [ast.Use] @= []
     declaration(@c, @uses, "use geom")
     assert uses.len() == 1
     assert cursor.slice_of("use geom", uses[0].name) == "geom"
@@ -316,8 +316,8 @@ test "a quoted module is met with the repair, not a lecture"
         token.made(.str_lit, start: 4, end: 10)
         token.made(.eof, start: 10, end: 10)
     ]
-    c: cursor.Cursor @ cursor.new_cursor(stream)
-    uses: [ast.Use] @ []
+    c: cursor.Cursor @= cursor.new_cursor(stream)
+    uses: [ast.Use] @= []
     declaration(@c, @uses, text)
     assert uses.len() == 0
     assert c.diagnostics[0].code == "use_wants_a_name"
@@ -337,8 +337,8 @@ test "a quoted PATH now earns the certain fix too"
         token.made(.str_lit, start: 4, end: 17)
         token.made(.eof, start: 17, end: 17)
     ]
-    c: cursor.Cursor @ cursor.new_cursor(stream)
-    uses: [ast.Use] @ []
+    c: cursor.Cursor @= cursor.new_cursor(stream)
+    uses: [ast.Use] @= []
     declaration(@c, @uses, text)
     assert c.diagnostics[0].code == "use_wants_a_name"
     assert c.diagnostics[0].fixes.len() == 1
@@ -354,8 +354,8 @@ test "the fix is still withheld where applying it would not parse"
         token.made(.str_lit, start: 4, end: 18)
         token.made(.eof, start: 18, end: 18)
     ]
-    c: cursor.Cursor @ cursor.new_cursor(stream)
-    uses: [ast.Use] @ []
+    c: cursor.Cursor @= cursor.new_cursor(stream)
+    uses: [ast.Use] @= []
     declaration(@c, @uses, text)
     assert c.diagnostics[0].code == "use_wants_a_name"
     assert c.diagnostics[0].fixes.len() == 0
@@ -369,8 +369,8 @@ test "a dot is not the separator, and the second token is where you find out"
         token.made(.ident, start: 9, end: 15)
         token.made(.eof, start: 15, end: 15)
     ]
-    c: cursor.Cursor @ cursor.new_cursor(stream)
-    uses: [ast.Use] @ []
+    c: cursor.Cursor @= cursor.new_cursor(stream)
+    uses: [ast.Use] @= []
     declaration(@c, @uses, text)
     assert uses.len() == 0
     assert c.diagnostics[0].code == "module_path_has_no_parts"
@@ -386,8 +386,8 @@ test "a slashed path is the spelling, and the whole path is the name"
         token.made(.ident, start: 11, end: 15)
         token.made(.eof, start: 15, end: 15)
     ]
-    d: cursor.Cursor @ cursor.new_cursor(slashed)
-    more: [ast.Use] @ []
+    d: cursor.Cursor @= cursor.new_cursor(slashed)
+    more: [ast.Use] @= []
     declaration(@d, @more, "use shapes/geom")
     assert d.diagnostics.len() == 0
     assert more.len() == 1
@@ -404,8 +404,8 @@ test "three parts, and a space in a path is not a path"
         token.made(.ident, start: 8, end: 9)
         token.made(.eof, start: 9, end: 9)
     ]
-    c: cursor.Cursor @ cursor.new_cursor(deep)
-    uses: [ast.Use] @ []
+    c: cursor.Cursor @= cursor.new_cursor(deep)
+    uses: [ast.Use] @= []
     declaration(@c, @uses, "use a/b/c")
     assert uses.len() == 1
     assert cursor.slice_of("use a/b/c", uses[0].name) == "a/b/c"
@@ -419,8 +419,8 @@ test "three parts, and a space in a path is not a path"
         token.made(.ident, start: 8, end: 9)
         token.made(.eof, start: 9, end: 9)
     ]
-    d: cursor.Cursor @ cursor.new_cursor(spaced)
-    more: [ast.Use] @ []
+    d: cursor.Cursor @= cursor.new_cursor(spaced)
+    more: [ast.Use] @= []
     declaration(@d, @more, "use a / b")
     assert more.len() == 1
     assert cursor.slice_of("use a / b", more[0].name) == "a"
@@ -436,8 +436,8 @@ test "a path cannot climb, and one message answers all four spellings"
         token.made(.ident, start: 7, end: 12)
         token.made(.eof, start: 12, end: 12)
     ]
-    c: cursor.Cursor @ cursor.new_cursor(climb)
-    uses: [ast.Use] @ []
+    c: cursor.Cursor @= cursor.new_cursor(climb)
+    uses: [ast.Use] @= []
     declaration(@c, @uses, "use ../token")
     assert uses.len() == 0
     assert c.diagnostics.len() == 1
@@ -454,8 +454,8 @@ test "a path cannot climb, and one message answers all four spellings"
         token.made(.dot, start: 9, end: 10)
         token.made(.eof, start: 10, end: 10)
     ]
-    d: cursor.Cursor @ cursor.new_cursor(inner)
-    more: [ast.Use] @ []
+    d: cursor.Cursor @= cursor.new_cursor(inner)
+    more: [ast.Use] @= []
     declaration(@d, @more, "use lex/..")
     assert more.len() == 0
     assert d.diagnostics[0].code == "module_path_climbs"
@@ -467,8 +467,8 @@ test "a separator with nothing after it names the two modules it is between"
         token.made(.slash, start: 10, end: 11)
         token.made(.eof, start: 11, end: 11)
     ]
-    c: cursor.Cursor @ cursor.new_cursor(dangling)
-    uses: [ast.Use] @ []
+    c: cursor.Cursor @= cursor.new_cursor(dangling)
+    uses: [ast.Use] @= []
     declaration(@c, @uses, "use shapes/")
     assert uses.len() == 0
     assert c.diagnostics[0].code == "module_path_wants_a_part"
@@ -484,8 +484,8 @@ test "a bare use blames its own keyword, never the next line"
         token.made(.kw_function, start: 4, end: 12)
         token.made(.eof, start: 15, end: 15)
     ]
-    c: cursor.Cursor @ cursor.new_cursor(stream)
-    uses: [ast.Use] @ []
+    c: cursor.Cursor @= cursor.new_cursor(stream)
+    uses: [ast.Use] @= []
     declaration(@c, @uses, text)
     assert c.diagnostics.len() == 1
     assert c.diagnostics[0].code == "expected_module_name"
@@ -501,8 +501,8 @@ test "a use whose mistake IS on its line quotes what it found"
         token.made(.int_lit, start: 4, end: 6)
         token.made(.eof, start: 6, end: 6)
     ]
-    c: cursor.Cursor @ cursor.new_cursor(stream)
-    uses: [ast.Use] @ []
+    c: cursor.Cursor @= cursor.new_cursor(stream)
+    uses: [ast.Use] @= []
     declaration(@c, @uses, text)
     assert c.diagnostics[0].code == "expected_module_name"
     assert c.diagnostics[0].message == "expected the module's name after `use`, found a number (`42`) — `use geom`, which reads `geom.hero` beside this file"

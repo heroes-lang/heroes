@@ -117,18 +117,18 @@ constant MASK: i64
 # masks and shifts as constants: a call per rotation, ten per round, cost
 # more than the rotation.
 function of(text: str) -> str
-    h: [i64] @ START
-    w: [i64] @ []
+    h: [i64] @= START
+    w: [i64] @= []
 
     while w.len() < 64
         w @ w.push(0)
 
     constants = K
     whole = text.len() - text.len() % 64
-    at: i64 @ 0
+    at: i64 @= 0
 
     while at < whole
-        i: i64 @ 0
+        i: i64 @= 0
 
         while i < 16
             b = at + i * 4
@@ -139,10 +139,10 @@ function of(text: str) -> str
         at @ at + 64
 
     tail = padded_tail(text, from: whole)
-    block: i64 @ 0
+    block: i64 @= 0
 
     while block < tail.len()
-        i: i64 @ 0
+        i: i64 @= 0
 
         while i < 16
             b = block + i * 4
@@ -152,7 +152,7 @@ function of(text: str) -> str
         compress(h: @h, w: @w, constants: constants)
         block @ block + 64
 
-    out: [str] @ []
+    out: [str] @= []
 
     for word in h
         out @ out.push(hex8(word))
@@ -167,8 +167,8 @@ function byte(text: str, at: i64) -> i64
 # bytes of 64, and the length in bits, big-endian, in the last 8. One block,
 # or two where fewer than 9 bytes were left for the padding.
 function padded_tail(text: str, from: i64) -> [i64]
-    bytes: [i64] @ []
-    at: i64 @ from
+    bytes: [i64] @= []
+    at: i64 @= from
 
     while at < text.len()
         b = byte(text, at: at)
@@ -181,7 +181,7 @@ function padded_tail(text: str, from: i64) -> [i64]
         bytes @ bytes.push(0)
 
     bits = text.len() * 8
-    shift: i64 @ 56
+    shift: i64 @= 56
 
     while shift >= 0
         bytes @ bytes.push(bits >> shift & 255)
@@ -194,7 +194,7 @@ function padded_tail(text: str, from: i64) -> [i64]
 # bits is `x >> r | (x & (2^r - 1)) << (32 - r)`: the low bits are masked
 # before they move up, so nothing passes bit 31.
 function compress(@h: [i64], @w: [i64], constants: [i64])
-    i: i64 @ 16
+    i: i64 @= 16
 
     while i < 64
         x = w[i - 15]
@@ -204,15 +204,15 @@ function compress(@h: [i64], @w: [i64], constants: [i64])
         w[i] @ w[i - 16] + s0 + w[i - 7] + s1 & MASK
         i @ i + 1
 
-    a: i64 @ h[0]
-    b: i64 @ h[1]
-    c: i64 @ h[2]
-    d: i64 @ h[3]
-    e: i64 @ h[4]
-    f: i64 @ h[5]
-    g: i64 @ h[6]
-    k: i64 @ h[7]
-    round: i64 @ 0
+    a: i64 @= h[0]
+    b: i64 @= h[1]
+    c: i64 @= h[2]
+    d: i64 @= h[3]
+    e: i64 @= h[4]
+    f: i64 @= h[5]
+    g: i64 @= h[6]
+    k: i64 @= h[7]
+    round: i64 @= 0
 
     while round < 64
         s1 = (e >> 6 | (e & 63) << 26) ^ (e >> 11 | (e & 2047) << 21) ^ (e >> 25 | (e & 33554431) << 7)
@@ -242,9 +242,9 @@ function compress(@h: [i64], @w: [i64], constants: [i64])
 # A 32-bit word as eight lowercase hexadecimal digits.
 function hex8(word: i64) -> str
     digits = "0123456789abcdef"
-    out: str @ ""
-    value: i64 @ word
-    count: i64 @ 0
+    out: str @= ""
+    value: i64 @= word
+    count: i64 @= 0
 
     while count < 8
         d = value % 16

@@ -11,8 +11,8 @@ extern "ffi-out-cell-on-a-handle-the-header-writes-back.h"
     function eat(p: Mem consumes)
 
 function main()
-    a: Mem @ nullptr
-    b: Mem @ nullptr
+    a: Mem @= nullptr
+    b: Mem @= nullptr
     print(make_into(@a) + make_typedef(@b))
     eat(a)
     eat(b)

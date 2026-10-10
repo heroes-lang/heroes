@@ -44,8 +44,8 @@ function unwritable(value: str, suffixed: bool) -> str
 
     if reserved.len() > 0
         return "holds `" + reserved + "`, which no file's name on Windows can hold"
-    start: i64 @ 0
-    at: i64 @ 0
+    start: i64 @= 0
+    at: i64 @= 0
 
     while at <= value.len()
         if at == value.len() || value[at] == '/'
@@ -59,7 +59,7 @@ function unwritable(value: str, suffixed: bool) -> str
     return ""
 
 function reserved_byte(value: str) -> str
-    at: i64 @ 0
+    at: i64 @= 0
 
     while at < value.len()
         b = value[at]
@@ -79,7 +79,7 @@ function reserved_byte(value: str) -> str
 # was a thesis rule for them, and the author's reading of 2026-10-03 extends
 # R2 to a name no NTFS file holds (defect 445).
 function control_byte(value: str) -> i64
-    at: i64 @ 0
+    at: i64 @= 0
 
     while at < value.len()
         if value[at] >= 1 && value[at] < 32
@@ -114,7 +114,7 @@ function control_byte(value: str) -> i64
 # 22 in the Linux container). Such a value's message keeps its route, which
 # `head_names` adds.
 function library_unwritable(value: str, what: str, rooted: bool) -> str
-    at: i64 @ 0
+    at: i64 @= 0
 
     while at < value.len()
         b = value[at]
@@ -185,7 +185,7 @@ function ending(b: u8) -> str
 # That build reads `nul:.h` as the stream `.h` of `nul` where Wine reads the
 # device, and the rule takes Wine's reading, as it does behind an extension.
 function device(part: str) -> bool
-    stem: i64 @ 0
+    stem: i64 @= 0
 
     while stem < part.len() && part[stem] != '.'
         stem @ stem + 1
@@ -213,7 +213,7 @@ function device(part: str) -> bool
 function same_letters(part: str, word: str) -> bool
     if part.len() < word.len()
         return false
-    i: i64 @ 0
+    i: i64 @= 0
 
     while i < word.len()
         if bytes.lower(part[i]) != word[i]
@@ -237,9 +237,9 @@ function locked(value: str) -> str
     return ""
 
 function climbs_back(value: str) -> bool
-    depth: i64 @ 0
-    start: i64 @ 0
-    at: i64 @ 0
+    depth: i64 @= 0
+    start: i64 @= 0
+    at: i64 @= 0
 
     while at <= value.len()
         if at == value.len() || value[at] == '/'

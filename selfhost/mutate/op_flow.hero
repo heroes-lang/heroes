@@ -17,7 +17,7 @@ function paren_condition(p: model.Program, @out: [mutant.Mutant])
     for s in p.stmts
         if !op_base.one_of(s.kind, set: ["if", "else-if", "while"]) || !op_base.single_line(s) || !s.head
             continue
-        k: i64 @ 1
+        k: i64 @= 1
 
         if s.kind == "else-if"
             k @ 2
@@ -88,7 +88,7 @@ function range_loop(p: model.Program, s: model.Statement) -> [str]
     if rest[2].text != "from" || rest[3].kind != "colon"
         return none
     inner = rest.slice(from: 4, to: rest.len() - 1)
-    k: i64 @ -1
+    k: i64 @= -1
 
     for j in range(from: 0, to: inner.len())
         if inner[j].kind == "comma" && inner[j].depth == rest[1].depth + 1
@@ -154,7 +154,7 @@ function plus_plus(p: model.Program, @out: [mutant.Mutant])
     for s in p.stmts
         if !self_mutation(s) || s.toks.len() != 5 || s.toks[3].kind != "plus" && s.toks[3].kind != "minus" || s.toks[4].text != "1"
             continue
-        sign: str @ "++"
+        sign: str @= "++"
 
         if s.toks[3].kind == "minus"
             sign @ "--"

@@ -46,13 +46,13 @@ function template(text: str, from: i64, to: i64) -> diag.Diagnostic
     holes = holds_a_hole(text, from: from, to: to)
     rewritten = rewritten_as(text, from: from, to: to, holes: holes)
     lines = lines_in(text, from: from, to: to)
-    shown: str @ escape_readings.quoted(text.slice(from: from, to: to))
-    broken: str @ ""
+    shown: str @= escape_readings.quoted(text.slice(from: from, to: to))
+    broken: str @= ""
 
     if lines > 1
         shown @ escape_readings.quoted(text.slice(from: from, to: backtick_strings.line_end(text, from: from)) + "…") + ", over " + lines.to_str() + " lines,"
         broken @ ", on one line, a line break in its text written `\\n`"
-    message: str @ shown + backtick_strings.BACKTICKS_SAID + " — a string is written in double quotes" + broken
+    message: str @= shown + backtick_strings.BACKTICKS_SAID + " — a string is written in double quotes" + broken
 
     if holes
         message @ shown + backtick_strings.TEMPLATE_SAID + " — a value goes into a string through a hole of an `f\"…\"` literal" + broken
@@ -61,7 +61,7 @@ function template(text: str, from: i64, to: i64) -> diag.Diagnostic
 
     if !rewritten.is_err()
         message @ message + ": `" + rewritten.must() + "`"
-    d: diag.Diagnostic @ diag.new_diagnostic(code: "unexpected_character", message: message, span: span)
+    d: diag.Diagnostic @= diag.new_diagnostic(code: "unexpected_character", message: message, span: span)
 
     if !rewritten.is_err()
         d.fixes @ d.fixes.push(
@@ -71,8 +71,8 @@ function template(text: str, from: i64, to: i64) -> diag.Diagnostic
 
 # How many lines the template from `from` to `to` stands on.
 function lines_in(text: str, from: i64, to: i64) -> i64
-    n: i64 @ 1
-    i: i64 @ from
+    n: i64 @= 1
+    i: i64 @= from
 
     while i < to
         if text[i] == '\n'
@@ -85,7 +85,7 @@ function lines_in(text: str, from: i64, to: i64) -> i64
 # told once, with no literal offered.
 function unclosed(text: str, from: i64, to: i64) -> diag.Diagnostic
     shown = escape_readings.quoted(text.slice(from: from, to: to)) + ", closed nowhere on its line,"
-    message: str @ shown + backtick_strings.BACKTICKS_SAID + " — a string is written in double quotes, opened and closed on one line"
+    message: str @= shown + backtick_strings.BACKTICKS_SAID + " — a string is written in double quotes, opened and closed on one line"
 
     if holds_a_hole(text, from: from, to: to)
         message @ shown + backtick_strings.TEMPLATE_SAID + " — a value goes into a string through a hole of an `f\"…\"` literal, opened and closed on one line"
@@ -94,7 +94,7 @@ function unclosed(text: str, from: i64, to: i64) -> diag.Diagnostic
 # Whether the template from `from` holds a `${` in its own text, the byte
 # before `to` aside, which is its closing backtick or a hole's own `{`.
 function holds_a_hole(text: str, from: i64, to: i64) -> bool
-    i: i64 @ from + 1
+    i: i64 @= from + 1
 
     while i < to - 1
         if text[i] == '\\'
@@ -118,9 +118,9 @@ function holds_a_hole(text: str, from: i64, to: i64) -> bool
 # template, character, brace, line end or nothing goes over, and no escape
 # but those.
 function rewritten_as(text: str, from: i64, to: i64, holes: bool) -> str?
-    out: [str] @ []
-    braced: bool @ false
-    i: i64 @ from + 1
+    out: [str] @= []
+    braced: bool @= false
+    i: i64 @= from + 1
     last = to - 1
 
     while i < last
@@ -197,7 +197,7 @@ function written(ch: str) -> str?
 # its code is empty or holds a brace, a backtick, a `'` or a line end, which
 # an `f"…"` hole would not read as JavaScript does.
 function hole_end(text: str, at: i64, last: i64) -> i64
-    i: i64 @ at
+    i: i64 @= at
 
     while i < last
         b = text[i]

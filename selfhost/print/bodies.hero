@@ -18,7 +18,7 @@ use print/types
 use parse
 
 function write_block(tree: ast.Ast, s: source.Source, block: ast.Block, indent: i64) -> str
-    rows: [str] @ []
+    rows: [str] @= []
 
     for id in block.stmts
         rows @ rows.push(write_stmt(tree, s, id: id, indent: indent, head: ""))
@@ -37,7 +37,7 @@ function pad(indent: i64) -> str
 function write_stmt(tree: ast.Ast, s: source.Source, id: i64, indent: i64, head: str) -> str
     match tree.stmts[id].kind
         .bind b =>
-            annotation: str @ ""
+            annotation: str @= ""
 
             if !b.ty.is_err()
                 annotation @ ": " + types.render_type(tree, b.ty.must(), s)
@@ -52,7 +52,7 @@ function write_stmt(tree: ast.Ast, s: source.Source, id: i64, indent: i64, head:
             return write_valued(
                 tree,
                 s,
-                head: head + "declare " + source.span_text(s, dc.name) + ": " + types.render_type(tree, dc.ty, s) + " @ ",
+                head: head + "declare " + source.span_text(s, dc.name) + ": " + types.render_type(tree, dc.ty, s) + " @= ",
                 value: dc.value,
                 indent: indent
             )
@@ -81,7 +81,7 @@ function write_stmt(tree: ast.Ast, s: source.Source, id: i64, indent: i64, head:
         # expression reads like a statement kind that does not exist.
 
         .expr_stmt e =>
-            is_control: bool @ false
+            is_control: bool @= false
 
             match tree.exprs[e.value].kind
                 .if_expr | .match_expr                                                         => is_control @ true
@@ -101,12 +101,12 @@ function write_stmt(tree: ast.Ast, s: source.Source, id: i64, indent: i64, head:
 function write_valued(tree: ast.Ast, s: source.Source, head: str, value: i64, indent: i64) -> str
     match tree.exprs[value].kind
         .if_expr ie =>
-            rows: [str] @ []
-            index: i64 @ 0
+            rows: [str] @= []
+            index: i64 @= 0
 
             for branch in ie.branches
-                keyword: str @ "else if"
-                prefix: str @ ""
+                keyword: str @= "else if"
+                prefix: str @= ""
 
                 if index == 0
                     keyword @ "if"
@@ -120,10 +120,10 @@ function write_valued(tree: ast.Ast, s: source.Source, head: str, value: i64, in
                 rows @ rows.push(write_block(tree, s, block: ie.otherwise.must(), indent: indent + 2))
             return rows.join("")
         .match_expr me =>
-            rows: [str] @ [pad(indent) + head + "match " + render_expr(tree, me.scrutinee, s) + "\n"]
+            rows: [str] @= [pad(indent) + head + "match " + render_expr(tree, me.scrutinee, s) + "\n"]
 
             for arm in me.arms
-                patterns: [str] @ []
+                patterns: [str] @= []
 
                 for pattern in arm.patterns
                     patterns @ patterns.push(render_pattern(tree, s, pattern: pattern))
@@ -170,7 +170,7 @@ function render_expr(tree: ast.Ast, id: i64, s: source.Source) -> str
         )
         .hole => return "???"
         .unary u =>
-            op: str @ "-"
+            op: str @= "-"
 
             match u.op
                 .neg     => op @ "-"
@@ -189,14 +189,14 @@ function render_expr(tree: ast.Ast, id: i64, s: source.Source) -> str
                 return "." + source.span_text(s, vc.name)
             return "." + source.span_text(s, vc.name) + "(" + render_args(tree, s, given: vc.args) + ")"
         .array arr =>
-            rendered: [str] @ []
+            rendered: [str] @= []
 
             for item in arr.elements
                 rendered @ rendered.push(render_expr(tree, item, s))
 
             return "[" + rendered.join(", ") + "]"
         .map mp =>
-            rendered: [str] @ []
+            rendered: [str] @= []
 
             for entry in mp.entries
                 rendered @ rendered.push(render_expr(tree, entry.key, s) + ": " + render_expr(tree, entry.value, s))
@@ -220,14 +220,14 @@ function written(tree: ast.Ast, given: [ast.Arg], rest: i64) -> [ast.Arg]
     return given.push(tree.rests[rest])
 
 function render_args(tree: ast.Ast, s: source.Source, given: [ast.Arg]) -> str
-    rendered: [str] @ []
+    rendered: [str] @= []
 
     for arg in given
-        name: str @ ""
+        name: str @= ""
 
         if !arg.name.is_err()
             name @ source.span_text(s, arg.name.must()) + ": "
-        marker: str @ ""
+        marker: str @= ""
 
         if arg.mutable
             marker @ "@"
@@ -259,29 +259,29 @@ function binary_op(op: ast.BinaryOp) -> str
 ## Tests
 
 test "the dump proves precedence, labels statements, and keeps control shapes"
-    text = "function main()\n    x = 2 + 3 * 4\n    v: i64 @ 0\n    v @ x\n    if v > 10\n        print(v)\n    else\n        print(0)\n    match v\n        11 => print(1)\n        _ =>\n            print(2)\n            print(3)\n"
+    text = "function main()\n    x = 2 + 3 * 4\n    v: i64 @= 0\n    v @ x\n    if v > 10\n        print(v)\n    else\n        print(0)\n    match v\n        11 => print(1)\n        _ =>\n            print(2)\n            print(3)\n"
     parsed = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
-    body: ast.Block @ ast.Block(span: token.Span(start: 0, end: 0), stmts: [])
+    body: ast.Block @= ast.Block(span: token.Span(start: 0, end: 0), stmts: [])
 
     match parsed.decls[0].kind
         .function_decl fd                                          => body @ fd.value.body.must()
         .constant_decl | .record_decl | .variant_decl | .test_decl => assert false
 
     got = write_block(parsed.tree, s, block: body, indent: 0)
-    expected = "bind x = (2 + (3 * 4))\ndeclare v: i64 @ 0\nmutate v @ x\nif (v > 10)\n  expr print(v)\nelse\n  expr print(0)\nmatch v\n  11 => expr print(1)\n  _ =>\n    expr print(2)\n    expr print(3)\n"
+    expected = "bind x = (2 + (3 * 4))\ndeclare v: i64 @= 0\nmutate v @ x\nif (v > 10)\n  expr print(v)\nelse\n  expr print(0)\nmatch v\n  11 => expr print(1)\n  _ =>\n    expr print(2)\n    expr print(3)\n"
     assert got == expected
 
 test "arguments carry their labels and markers, patterns their bindings"
-    text = "variant Shape\n    dot\n    box\n        w: i64\n\nfunction grow(@target: i64, by: i64)\n    target @ target + by\n\nfunction main()\n    v: i64 @ 0\n    grow(target: @v, by: 2)\n    sh: Shape @ .box(w: 3)\n    match sh\n        .dot => print(0)\n        .box b => print(b.w)\n"
+    text = "variant Shape\n    dot\n    box\n        w: i64\n\nfunction grow(@target: i64, by: i64)\n    target @ target + by\n\nfunction main()\n    v: i64 @= 0\n    grow(target: @v, by: 2)\n    sh: Shape @= .box(w: 3)\n    match sh\n        .dot => print(0)\n        .box b => print(b.w)\n"
     parsed = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
-    body: ast.Block @ ast.Block(span: token.Span(start: 0, end: 0), stmts: [])
+    body: ast.Block @= ast.Block(span: token.Span(start: 0, end: 0), stmts: [])
 
     match parsed.decls[2].kind
         .function_decl fd                                          => body @ fd.value.body.must()
         .constant_decl | .record_decl | .variant_decl | .test_decl => assert false
 
     got = write_block(parsed.tree, s, block: body, indent: 0)
-    expected = "declare v: i64 @ 0\nexpr grow(target: @v, by: 2)\ndeclare sh: Shape @ .box(w: 3)\nmatch sh\n  .dot => expr print(0)\n  .box b => expr print(b.w)\n"
+    expected = "declare v: i64 @= 0\nexpr grow(target: @v, by: 2)\ndeclare sh: Shape @= .box(w: 3)\nmatch sh\n  .dot => expr print(0)\n  .box b => expr print(b.w)\n"
     assert got == expected

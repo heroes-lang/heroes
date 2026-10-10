@@ -11,14 +11,14 @@ constant SHOUTS: [str]
     [f"a{BASE}b", "plain", f"{BASE + 2}"]
 
 function main()
-    letters: i64 @ 0
-    at: i64 @ 0
+    letters: i64 @= 0
+    at: i64 @= 0
 
     while at < 300
         letters @ letters + SHOUTS[at % 3].len()
         at @ at + 1
 
     print(letters, " ", SHOUTS.join(","))
-    copy: [str] @ SHOUTS
+    copy: [str] @= SHOUTS
     copy[0] @ "bowie"
     print(copy[0], " ", SHOUTS[0])

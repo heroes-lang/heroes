@@ -66,20 +66,20 @@ record Prologue
     defines: [str]
 
 function written(c: state.Checked, names: ctype.Names, f: containers.Function, live: [bool], read: {i64: bool}, owner: str, copies_bytes: bool) -> Prologue
-    lines: [str] @ []
-    defines: [str] @ []
+    lines: [str] @= []
+    defines: [str] @= []
 
     # What every declaration below asks of the function, read once
     # (defect 112): the first live writer of each temporary, and which
     # slots the emitted C reads.
     d = unread.defs(f, live)
     slots_read = unread.slots_read(f, live, d, read)
-    index: i64 @ 0
+    index: i64 @= 0
 
     # A local an `extern` call is lent whole through `@` lives in a guarded
     # region instead of this frame (panel 196's R7), declared where its slot
     # would be.
-    in_place: {i64: bool} @ {}
+    in_place: {i64: bool} @= {}
 
     for at in lend_local.guarded(c, names, f)
         in_place[at] @ true
@@ -89,7 +89,7 @@ function written(c: state.Checked, names: ctype.Names, f: containers.Function, l
     # slot (the header above says why it has no local). Asked of a set made
     # once, where each slot walked every parameter (defect 478, 2026-10-08):
     # defect 230's shape, the parameters times the slots.
-    params: {i64: bool} @ {}
+    params: {i64: bool} @= {}
 
     for param in f.params
         params[param] @ true
@@ -110,9 +110,9 @@ function written(c: state.Checked, names: ctype.Names, f: containers.Function, l
         spelled = ctype.c_type(names, c: c, ty: slot.ty)
 
         if !spelled.is_err()
-            initialiser: str @ ""
+            initialiser: str @= ""
             name = mangle.slot(index: index, name: slot.name)
-            by_bytes: bool @ false
+            by_bytes: bool @= false
 
             # Refcounted (the header above says why). Past `typeorder`'s
             # depth the zero is written by bytes (defect 539): `{0}` sends
@@ -130,14 +130,14 @@ function written(c: state.Checked, names: ctype.Names, f: containers.Function, l
             # silence is deliberate. **This comment said `_ = v` was the
             # only way to reach such a slot, and the premise was false**
             # (panel 108, 2026-09-04): a cell passed as an `@` argument and
-            # never read afterwards reaches it too — `error: ptr @ nullptr`
+            # never read afterwards reaches it too — `error: ptr @= nullptr`
             # handed to `sqlite3_exec` — because the resolver counts the
             # copy-in as a read and accepts the program. The attribute is
             # harmless there and buys nothing, measured: with the slot's
             # address taken, clang warns about neither form. A refcounted
             # slot never gets it, and that FALLS OUT: the exit sweep
             # decrefs it (`decref_slot`, panel 106), so it is read.
-            deliberate: str @ ""
+            deliberate: str @= ""
 
             if !slots_read[index]
                 deliberate @ "__attribute__((unused)) "
@@ -147,11 +147,11 @@ function written(c: state.Checked, names: ctype.Names, f: containers.Function, l
                 lines @ lines.push("__builtin_memset(&" + name + ", 0, sizeof " + name + ");")
         index @ index + 1
 
-    value_at: i64 @ 0
+    value_at: i64 @= 0
     lends = field_lend.const_lends(f)
 
     for ty in f.values
-        keep: bool @ true
+        keep: bool @= true
 
         if ctype.is_unit(c, ty: ty)
             keep @ false
@@ -193,7 +193,7 @@ function written(c: state.Checked, names: ctype.Names, f: containers.Function, l
                 # answer of. Saying the silence is deliberate keeps
                 # every check and needs no per-operator list to stay
                 # true.
-                deliberate: str @ ""
+                deliberate: str @= ""
 
                 if read[value_at].is_err()
                     deliberate @ "__attribute__((unused)) "
@@ -205,7 +205,7 @@ function written(c: state.Checked, names: ctype.Names, f: containers.Function, l
                 # and clang refuses the honest READ instead of the write
                 # (panel 166; measured on the route's first landing, which was
                 # reverted for it, 2026-09-19).
-                spelling: str @ spelled.must()
+                spelling: str @= spelled.must()
 
                 if !lends[value_at].is_err()
                     spelling @ "const " + spelled.must()

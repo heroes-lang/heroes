@@ -15,7 +15,7 @@ extern "fixedbugs-570-a-constant-s-pragma-leaves-a-correct-program-running.h"
     constant QUIET_FIVE: i32
 
 function main()
-    t: Slot @ slot_make()
+    t: Slot @= slot_make()
     slot_fill(p: t.nsap.ptr(), n: 8)
     print(slot_sum(p: t.nsap.ptr(), n: 8))
     print(abs(-QUIET_FIVE))

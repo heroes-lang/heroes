@@ -107,7 +107,7 @@ function constant_tail(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text:
 
     # An `extern` constant has no body, and an indented one under it is the
     # mistake `body_check` names. Everything else keeps the old shape.
-    body: ast.Block? @ fail(code: "absent", msg: "an extern constant's value is the header's")
+    body: ast.Block? @= fail(code: "absent", msg: "an extern constant's value is the header's")
 
     if is_from_c(linkage)
         body_check(@c, "constant")
@@ -118,7 +118,7 @@ function constant_tail(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text:
             cursor.recover_to_next_decl(@c)
             return
         body @ b
-    finish: token.Span @ cursor.previous_significant_span(@c)
+    finish: token.Span @= cursor.previous_significant_span(@c)
 
     if !body.is_err()
         finish @ body.must().span
@@ -142,7 +142,7 @@ function function_tail(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text:
         owed_body(@c, @a, text: text, owner: heads.whose(text, name, .kw_function), head: head)
         return
     sig = read.must()
-    body: ast.Block? @ fail(code: "absent", msg: "an extern function's code comes from C")
+    body: ast.Block? @= fail(code: "absent", msg: "an extern function's code comes from C")
 
     if is_extern
         body_check(@c, "function")
@@ -153,7 +153,7 @@ function function_tail(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text:
             cursor.recover_to_next_decl(@c)
             return
         body @ b
-    finish: token.Span @ sig.end
+    finish: token.Span @= sig.end
 
     if !body.is_err()
         finish @ body.must().span
@@ -193,8 +193,8 @@ function owed_body(@c: cursor.Cursor, @a: ast.Ast, text: str, owner: str, head: 
 
 # Whether the line begun at token `from` holds a `=` outside its brackets.
 function value_on_its_line(c: cursor.Cursor, from: i64) -> bool
-    depth: i64 @ 0
-    i: i64 @ from
+    depth: i64 @= 0
+    i: i64 @= from
 
     while i < c.tokens.len() - 1 && !(depth == 0 && (c.tokens[i].kind == .terminator || c.tokens[i].kind == .indent || c.tokens[i].kind == .dedent))
         k = c.tokens[i].kind
@@ -223,7 +223,7 @@ function body_check(@c: cursor.Cursor, kind: str)
     if !cursor.at(c, .indent)
         return
     span = cursor.current_span(c)
-    what: str @ "an `extern` declaration has no body — it names a C function, and C provides the code"
+    what: str @= "an `extern` declaration has no body — it names a C function, and C provides the code"
 
     if kind == "constant"
         what @ "an `extern` declaration has no body — this `constant` names one the header already defines, so the value is the header's and never yours"

@@ -68,8 +68,8 @@ function left_of(tokens: [token.Token], text: str, o: i64, level: i64) -> famili
     return read.family
 
 function operand_start(tokens: [token.Token], text: str, o: i64, level: i64) -> i64
-    depth: i64 @ 0
-    i: i64 @ o - 1
+    depth: i64 @= 0
+    i: i64 @= o - 1
 
     while i >= 0
         k = tokens[i].kind
@@ -96,7 +96,7 @@ function operand_start(tokens: [token.Token], text: str, o: i64, level: i64) -> 
 ## Spec § 7's grammar, over literals
 
 function binary(tokens: [token.Token], text: str, at: i64, least: i64, limit: i64) -> Reading
-    left: Reading @ unary(tokens, text, at: at, limit: limit)
+    left: Reading @= unary(tokens, text, at: at, limit: limit)
 
     while left.next >= 0
         i = past_comments(tokens, from: left.next)
@@ -150,7 +150,7 @@ function unary(tokens: [token.Token], text: str, at: i64, limit: i64) -> Reading
 # The index after the fields, calls, indices, `?` and `::` that follow a name
 # at `at`, or -1 where one of them is cut short.
 function past_the_postfixes(tokens: [token.Token], at: i64, limit: i64) -> i64
-    i: i64 @ at
+    i: i64 @= at
 
     while i < limit
         k = tokens[i].kind
@@ -174,8 +174,8 @@ function past_the_postfixes(tokens: [token.Token], at: i64, limit: i64) -> i64
 # The index after the bracket that `at` opens closes, -1 where it does not
 # close before `limit`.
 function past_the_bracket(tokens: [token.Token], at: i64, limit: i64) -> i64
-    depth: i64 @ 0
-    i: i64 @ at
+    depth: i64 @= 0
+    i: i64 @= at
 
     while i < limit
         k = tokens[i].kind
@@ -250,8 +250,8 @@ function literal_last(tokens: [token.Token], text: str, from: i64) -> i64
 
     if tokens[from].kind != .str_piece
         return from
-    depth: i64 @ 0
-    i: i64 @ from
+    depth: i64 @= 0
+    i: i64 @= from
 
     while i < tokens.len()
         t = tokens[i]
@@ -277,8 +277,8 @@ function literal_first(tokens: [token.Token], text: str, last: i64) -> i64
 
     if tokens[last].kind != .str_piece
         return last
-    depth: i64 @ 0
-    i: i64 @ last
+    depth: i64 @= 0
+    i: i64 @= last
 
     while i >= 0
         t = tokens[i]
@@ -305,7 +305,7 @@ function closes(text: str, t: token.Token) -> bool
     return t.span.end - t.span.start >= 2 && text[t.span.end - 1] == '"'
 
 function past_comments(tokens: [token.Token], from: i64) -> i64
-    i: i64 @ from
+    i: i64 @= from
 
     while i < tokens.len() && tokens[i].kind == .comment
         i @ i + 1
@@ -313,7 +313,7 @@ function past_comments(tokens: [token.Token], from: i64) -> i64
     return i
 
 function before_comments(tokens: [token.Token], at: i64) -> i64
-    i: i64 @ at
+    i: i64 @= at
 
     while i >= 0 && tokens[i].kind == .comment
         i @ i - 1

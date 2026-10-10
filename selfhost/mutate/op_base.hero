@@ -54,7 +54,7 @@ function splice(text: str, c0: i64, c1: i64, put: str) -> str
 # `to`, and never past the end, so a span the Python read as empty is
 # empty here and never the abort a reversed slice is (spec § 10).
 function cut(text: str, from: i64, to: i64) -> str
-    end: i64 @ to
+    end: i64 @= to
 
     if end > text.len()
         end @ text.len()
@@ -133,10 +133,10 @@ record Enclosing
     pairs: [[i64]]
 
 function enclosing(toks: [tokens.Tok]) -> Enclosing
-    stack: [i64] @ []
-    around: [i64] @ []
-    closer: [i64] @ []
-    pairs: [[i64]] @ []
+    stack: [i64] @= []
+    around: [i64] @= []
+    closer: [i64] @= []
+    pairs: [[i64]] @= []
 
     for i in range(from: 0, to: toks.len())
         closer @ closer.push(-1)
@@ -175,12 +175,12 @@ function decl_head(s: model.Statement) -> bool
 
 # The statements after `s` in its block, in order.
 function siblings_after(p: model.Program, s: model.Statement) -> [i64]
-    group: [i64] @ p.top
+    group: [i64] @= p.top
 
     if s.parent >= 0
         group @ p.stmts[s.parent].children
-    out: [i64] @ []
-    seen: bool @ false
+    out: [i64] @= []
+    seen: bool @= false
 
     for x in group
         if seen
@@ -193,7 +193,7 @@ function siblings_after(p: model.Program, s: model.Statement) -> [i64]
 
 # An `if` head and the `else if` and `else` heads after it: the chain.
 function else_chain(p: model.Program, s: model.Statement) -> [i64]
-    chain: [i64] @ [s.sid]
+    chain: [i64] @= [s.sid]
 
     for x in siblings_after(p, s: s)
         n = p.stmts[x]

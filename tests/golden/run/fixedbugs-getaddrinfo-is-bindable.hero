@@ -23,7 +23,7 @@ extern "netdb.h"
     function freeaddrinfo(ai: AI consumes)
 
 function main()
-    res: AI @ nullptr
+    res: AI @= nullptr
     rc = getaddrinfo("127.0.0.1".cstr(), service: nullptr, hints: nullptr, @res)
     print(rc)
     freeaddrinfo(res)

@@ -9,7 +9,7 @@
 # leaves the case as it is (`literals.hero`).
 
 function counts(text: str) -> i64
-    n: i64 @ 0
+    n: i64 @= 0
 
     for i in range(from: 0, to: text.len())
         if to_i64(text[i]).must() == '\'  #~ unterminated_char

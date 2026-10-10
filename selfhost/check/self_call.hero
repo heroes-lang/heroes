@@ -44,7 +44,7 @@ use check/self_walk
 ## The rule
 
 function walked(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], at: i64, body: ast.Block, collect: bool, members: [bool]) -> self_walk.Walk
-    w: self_walk.Walk @ self_walk.start(at: at, collect: collect, members: members)
+    w: self_walk.Walk @= self_walk.start(at: at, collect: collect, members: members)
     block(@w, @c, a, r, s, decls, body: body)
 
     # The end of the body returns, from a function with no result; from one
@@ -195,7 +195,7 @@ function call(@w: self_walk.Walk, @c: state.Checker, a: ast.Ast, r: resolved.Res
     known = known_callee(a, r, decls, at: callee)
     own = names_itself(r, w, at: callee, ufcs: false, decls: decls) || known >= 0 && self_walk.among(w, at: known)
     arguments(@w, @c, a, r, s, decls, given: given, own: own)
-    to: i64 @ top_at(r, at: callee)
+    to: i64 @= top_at(r, at: callee)
 
     # A value bound once to a function the program writes, `f = go`, is that
     # function where it is called (panel 201, defect 520).
@@ -273,7 +273,7 @@ function known_callee(a: ast.Ast, r: resolved.Resolved, decls: [ast.Decl], at: i
 ## Where control splits
 
 function branches(@w: self_walk.Walk, @c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], arms: [ast.Branch], otherwise: ast.Block?)
-    out: self_walk.Flow @ self_walk.dead()
+    out: self_walk.Flow @= self_walk.dead()
 
     for one in arms
         expr(@w, @c, a, r, s, decls, id: one.cond)
@@ -289,7 +289,7 @@ function branches(@w: self_walk.Walk, @c: state.Checker, a: ast.Ast, r: resolved
 function matched(@w: self_walk.Walk, @c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], scrutinee: i64, arms: [ast.Arm])
     expr(@w, @c, a, r, s, decls, id: scrutinee)
     entry = w.flow
-    out: self_walk.Flow @ self_walk.dead()
+    out: self_walk.Flow @= self_walk.dead()
 
     for arm in arms
         w.flow @ entry

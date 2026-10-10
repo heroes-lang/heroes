@@ -68,7 +68,7 @@ variant Holds
 function significant_before(c: cursor.Cursor, at: i64) -> i64
     if at <= 0
         return 0
-    i: i64 @ at - 1
+    i: i64 @= at - 1
 
     while i > 0 && (c.tokens[i].kind == .comment || c.tokens[i].kind == .terminator)
         i @ i - 1
@@ -78,7 +78,7 @@ function significant_before(c: cursor.Cursor, at: i64) -> i64
 # Whether a line end stands between the token the parser is on and the last
 # one a reader sees before it.
 function crossed_a_line_end(c: cursor.Cursor) -> bool
-    i: i64 @ c.pos - 1
+    i: i64 @= c.pos - 1
 
     while i >= 0 && (c.tokens[i].kind == .comment || c.tokens[i].kind == .terminator)
         if c.tokens[i].kind == .terminator
@@ -198,7 +198,7 @@ function expect_after(@c: cursor.Cursor, text: str, kind: token.TokenKind, code:
         return false
 
     if cursor.at(c, .terminator)
-        next: i64 @ c.pos
+        next: i64 @= c.pos
 
         while c.tokens[next].kind == .terminator || c.tokens[next].kind == .comment
             next @ next + 1
@@ -225,7 +225,7 @@ function other_reading(holds: Holds, kind: token.TokenKind) -> line_end_readings
 # with the line above, a missing `,` the other reading where `other` says so:
 # the entry `parse/unclosed` and `parse/list_line` call.
 function continued(@c: cursor.Cursor, text: str, before: i64, other: bool)
-    reading: line_end_readings.Other @ .nothing
+    reading: line_end_readings.Other @= .nothing
 
     if other
         reading @ .argument
@@ -241,7 +241,7 @@ function refused(@c: cursor.Cursor, text: str, before: i64, other: line_end_read
     kind = cursor.current_kind(c)
     words = line_end_readings.said(other, written: written, kind: kind, alone: stands_alone(c, text: text, kind: kind))
     message = "a line end stands before `" + written + "`: the line above ends with " + named(text, ender) + ", which keeps its line end, and inside brackets a line end may stand only before a closing bracket or a `,`" + words.tail
-    d: diag.Diagnostic @ diag.new_diagnostic(code: "line_end_before_continuation", message: message, span: found)
+    d: diag.Diagnostic @= diag.new_diagnostic(code: "line_end_before_continuation", message: message, span: found)
     d.fixes @ d.fixes.push(
         moved_up(text: text, ender: ender.span, found: found, tight: is_tight(kind), title: words.title, certainty: words.certainty)
     )
@@ -285,17 +285,17 @@ function named(text: str, t: token.Token) -> str
 # after the token go, and so does its line end when nothing followed it there,
 # and so do the spaces that trailed the line above before its line end.
 function moved_up(text: str, ender: token.Span, found: token.Span, tight: bool, title: str, certainty: diag.Certainty) -> diag.Fix
-    lead: str @ " "
+    lead: str @= " "
 
     if tight
         lead @ ""
-    end: i64 @ text_lines.past_spaces(text, at: found.end)
+    end: i64 @= text_lines.past_spaces(text, at: found.end)
 
     if end + 1 < text.len() && text[end] == '\r' && text[end + 1] == '\n'
         end @ text_lines.past_spaces(text, at: end + 2)
     else if end < text.len() && text[end] == '\n'
         end @ text_lines.past_spaces(text, at: end + 1)
-    kept: i64 @ text_lines.past_spaces(text, at: ender.end)
+    kept: i64 @= text_lines.past_spaces(text, at: ender.end)
 
     if kept >= text.len() || text[kept] != '\n' && text[kept] != '\r'
         kept @ ender.end
@@ -317,13 +317,13 @@ function has_a_line_end(text: str) -> bool
 # Past what is left of the bracket, up to its closer and not over it, so the
 # caller's `expect` takes the closer as usual.
 function to_the_closer(@c: cursor.Cursor, closer: token.TokenKind)
-    opener: token.TokenKind @ .lparen
+    opener: token.TokenKind @= .lparen
 
     if closer == .rbracket
         opener @ .lbracket
     else if closer == .rbrace
         opener @ .lbrace
-    depth: i64 @ 0
+    depth: i64 @= 0
 
     while !cursor.at(c, .eof)
         k = cursor.current_kind(c)

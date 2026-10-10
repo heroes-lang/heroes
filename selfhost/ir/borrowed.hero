@@ -60,21 +60,21 @@ function lenders(f: containers.Function, counted: [bool]) -> {i64: bool}
 # The same, over the borrows already read: the ownership pass reads them once
 # and asks this and `ir/held.hero`'s holds of them (panel 196's R1).
 function lenders_of(f: containers.Function, b: Borrows) -> {i64: bool}
-    lent: {i64: bool} @ {}
+    lent: {i64: bool} @= {}
 
     if b.value.len() == 0
         return lent
 
     # The edges are drawn once, and only for a function that needs a walk.
-    into: graph.Edges @ graph.Edges(first: [], targets: [], visits: 0)
-    drawn: bool @ false
-    bi: i64 @ 0
+    into: graph.Edges @= graph.Edges(first: [], targets: [], visits: 0)
+    drawn: bool @= false
+    bi: i64 @= 0
 
     for blk in f.blocks
-        at: i64 @ 0
+        at: i64 @= 0
 
         while at <= blk.insts.len()
-            reads: [i64] @ []
+            reads: [i64] @= []
 
             if at < blk.insts.len()
                 reads @ uses.operands(f, blk.insts[at].op)
@@ -119,29 +119,29 @@ function borrows(f: containers.Function, counted: [bool]) -> Borrows
 
     # -2 for a value no instruction has defined yet in the walk, -1 for one
     # that borrows from no counted load.
-    lender: [i64] @ graph.filled(size: n, value: 0 - 2)
-    value: [i64] @ []
-    block: [i64] @ []
-    at_of: [i64] @ []
-    root: [i64] @ []
-    nearest: [i64] @ []
+    lender: [i64] @= graph.filled(size: n, value: 0 - 2)
+    value: [i64] @= []
+    block: [i64] @= []
+    at_of: [i64] @= []
+    root: [i64] @= []
+    nearest: [i64] @= []
 
     # A view whose base a later block defines: block order is not the order
     # of definitions, so it is settled after the walk, once its base is.
-    waiting: [i64] @ []
-    waiting_base: [i64] @ []
+    waiting: [i64] @= []
+    waiting_base: [i64] @= []
 
     # Which blocks write each root, gathered in the same walk: the first block
     # found and whether a second one does, and whether some instruction
     # writes every root at once.
-    first_writer: {i64: i64} @ {}
-    twice: {i64: bool} @ {}
-    anywhere: bool @ false
-    bi: i64 @ 0
+    first_writer: {i64: i64} @= {}
+    twice: {i64: bool} @= {}
+    anywhere: bool @= false
+    bi: i64 @= 0
 
     for blk in f.blocks
         first = value.len()
-        at: i64 @ 0
+        at: i64 @= 0
 
         for one in blk.insts
             if !survival.writes_nothing(f, one.op)
@@ -161,7 +161,7 @@ function borrows(f: containers.Function, counted: [bool]) -> Borrows
             if !one.dest.is_err() && one.dest.must() >= 0 && one.dest.must() < n
                 d = one.dest.must()
                 lender[d] @ 0 - 1
-                base: i64 @ 0 - 1
+                base: i64 @= 0 - 1
 
                 match one.op
                     .load ld =>
@@ -193,13 +193,13 @@ function borrows(f: containers.Function, counted: [bool]) -> Borrows
             nearest_writes(f, insts: blk.insts, first: first, at_of: at_of, root: root, nearest: @nearest)
         bi @ bi + 1
 
-    moved: bool @ true
+    moved: bool @= true
 
     while moved && waiting.len() > 0
         moved @ false
-        still: [i64] @ []
-        still_base: [i64] @ []
-        k: i64 @ 0
+        still: [i64] @= []
+        still_base: [i64] @= []
+        k: i64 @= 0
 
         while k < waiting.len()
             from = lender[waiting_base[k]]
@@ -219,8 +219,8 @@ function borrows(f: containers.Function, counted: [bool]) -> Borrows
     # a function where every load is forgotten has nothing to read.
     if value.len() == 0
         return Borrows(lender: lender, value: none, block: none, at: none, root: none, nearest: none)
-    kept: [bool] @ []
-    some: bool @ false
+    kept: [bool] @= []
+    some: bool @= false
 
     while kept.len() < value.len()
         k = kept.len()
@@ -232,7 +232,7 @@ function borrows(f: containers.Function, counted: [bool]) -> Borrows
 
     if !some
         return Borrows(lender: lender, value: none, block: none, at: none, root: none, nearest: none)
-    v: i64 @ 0
+    v: i64 @= 0
 
     while v < n
         if lender[v] >= 0 && !kept[lender[v]]
@@ -253,14 +253,14 @@ function written_elsewhere(first_writer: {i64: i64}, twice: {i64: bool}, root: i
 # position of the nearest instruction after each that may write its root:
 # one walk from the block's end, the writes read from `survival`'s table.
 function nearest_writes(f: containers.Function, insts: [ir.Inst], first: i64, at_of: [i64], root: [i64], @nearest: [i64])
-    below: {i64: i64} @ {}
-    every: i64 @ 0 - 1
-    k: i64 @ nearest.len() - 1
-    at: i64 @ insts.len() - 1
+    below: {i64: i64} @= {}
+    every: i64 @= 0 - 1
+    k: i64 @= nearest.len() - 1
+    at: i64 @= insts.len() - 1
 
     while at >= 0
         while k >= first && at_of[k] == at
-            write: i64 @ below[root[k]].default(0 - 1)
+            write: i64 @= below[root[k]].default(0 - 1)
 
             if every >= 0 && (write < 0 || every < write)
                 write @ every
@@ -297,7 +297,7 @@ function bump() -> ir.Inst
 # `between.blocks_of`'s function, its value table wide enough for the five
 # values the cases name.
 function made(terms: [ir.Term], bodies: [[ir.Inst]]) -> containers.Function
-    f: containers.Function @ between.blocks_of(terms: terms, bodies: bodies)
+    f: containers.Function @= between.blocks_of(terms: terms, bodies: bodies)
     f.values @ [0, 1, 1, 1, 1]
     return f
 

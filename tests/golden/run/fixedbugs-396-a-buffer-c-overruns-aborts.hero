@@ -9,7 +9,7 @@ extern "fixedbugs-396-buffers.h"
     function digest32(@md: [u8] counted_by 16 lent) -> i32
 
 function main()
-    md: [u8] @ []
+    md: [u8] @= []
     print("before")
     print(digest32(@md))
     print("not reached ", md.len())

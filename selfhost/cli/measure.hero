@@ -85,8 +85,8 @@ function run(inv: argv.Invocation) -> cli_table.Exit
 # is exit 2, the tool unable to run (panel 016's contract).
 function reported(path: str, here: str, readings: [vendored.Reading]) -> cli_table.Exit
     print(path)
-    highest: i64 @ 0
-    lowest: i64 @ -1
+    highest: i64 @= 0
+    lowest: i64 @= -1
 
     for one in readings
         print(
@@ -102,7 +102,7 @@ function reported(path: str, here: str, readings: [vendored.Reading]) -> cli_tab
     if lowest == -1
         lowest @ 0
     spread = highest - lowest
-    percent: i64 @ 0
+    percent: i64 @= 0
 
     if highest > 0
         percent @ spread * 100 / highest
@@ -187,8 +187,8 @@ function reported(path: str, here: str, readings: [vendored.Reading]) -> cli_tab
     # number was 7306. There is no vendored branch left here on purpose: a
     # fallback to `highest` is how the old answer would come back for whichever
     # document somebody forgot.
-    ceiling: i64 @ budgets.CEILING
-    weighed: i64 @ pinned.SPEC_REAL_TOKENS
+    ceiling: i64 @= budgets.CEILING
+    weighed: i64 @= pinned.SPEC_REAL_TOKENS
 
     if path == budgets.CONTRACT
         ceiling @ budgets.CONTRACT_CEILING
@@ -305,7 +305,7 @@ test "no operand measures the spec, and an unreadable file is the tool failing"
     none: str? = fail(code: "no_operand", msg: "measure was given no file")
     spec = read_file(budgets.SPEC)
     assert !spec.is_err()
-    ending: i64 @ 1
+    ending: i64 @= 1
 
     if digest.digest(spec.must()) == pinned.SPEC_DIGEST
         ending @ 0

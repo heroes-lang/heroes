@@ -66,12 +66,12 @@ record Whole
 # `lend_units` is what the round's pointee check read of each counted
 # parameter (`emit.emit_told`'s, panel 194's R7).
 function whole_of(p: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl], struct_tags: {str: bool}, lend_units: {str: str}) -> Whole
-    names: ctype.Names @ ctype.new_names_qualified(s, decls, struct_tags: struct_tags)
+    names: ctype.Names @= ctype.new_names_qualified(s, decls, struct_tags: struct_tags)
     names @ ctype.with_options(names, c: c, s: s, decls: decls)
     names @ ctype.with_functions(names, c: c, s: s, decls: decls, p: p)
     names.lend_units @ lend_units
-    by_decl: {i64: i64} @ {}
-    index: i64 @ 0
+    by_decl: {i64: i64} @= {}
+    index: i64 @= 0
 
     for f in p.functions
         if f.instance.len() == 0
@@ -91,10 +91,10 @@ function whole_of(p: containers.Program, c: state.Checked, s: source.Source, dec
 # the names read what a round learned, a tag clang asked `struct` for and
 # each counted parameter's unit, so the rest is the build's, asked once.
 function retold(built: Whole, p: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl], struct_tags: {str: bool}, lend_units: {str: str}) -> Whole
-    out: Whole @ built
+    out: Whole @= built
 
     if struct_tags.len() > 0
-        names: ctype.Names @ ctype.new_names_qualified(s, decls, struct_tags: struct_tags)
+        names: ctype.Names @= ctype.new_names_qualified(s, decls, struct_tags: struct_tags)
         names @ ctype.with_options(names, c: c, s: s, decls: decls)
         out.names @ ctype.with_functions(names, c: c, s: s, decls: decls, p: p)
     out.names.lend_units @ lend_units
@@ -124,10 +124,10 @@ record Members
 # instances they reach. `taken` is keyed by function index; the
 # frontier carries indices whose calls are still to be walked.
 function members(module: str, p: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl], shown: [i64], by_decl: {i64: i64}, callees: instances.Held) -> Members
-    taken: {i64: bool} @ {}
-    declared: {i64: bool} @ {}
-    frontier: [i64] @ []
-    size: i64 @ 0
+    taken: {i64: bool} @= {}
+    declared: {i64: bool} @= {}
+    frontier: [i64] @= []
+    size: i64 @= 0
 
     # Seeded from the FUSED unit's own selection, filtered to this
     # module: for an author module that is exactly its functions, and
@@ -226,18 +226,18 @@ function members(module: str, p: containers.Program, c: state.Checked, s: source
 # whatever those contain — to a fixpoint, because a field is a
 # declaration with fields of its own.
 function declared_reach(c: state.Checked, decls: [ast.Decl], seed: {i64: bool}) -> {i64: bool}
-    out: {i64: bool} @ seed
+    out: {i64: bool} @= seed
 
     # ORDER: none — a worklist whose output is a SET, and every reader
     # below asks it a membership question. Drained from its top without
     # copying it (`emit/worklist.hero`, defect 498).
-    frontier: [i64] @ keys(out)
-    size: i64 @ frontier.len()
+    frontier: [i64] @= keys(out)
+    size: i64 @= frontier.len()
 
     while size > 0
         id = worklist.take(frontier, size: @size)
-        next: [i64] @ table.contained(c.types, id)
-        written_ids: [i64] @ []
+        next: [i64] @= table.contained(c.types, id)
+        written_ids: [i64] @= []
 
         match table.get(c.types, id)
             .named n    => written_ids @ fields_written(decls, decl: n.decl)
@@ -273,7 +273,7 @@ function declared_reach(c: state.Checked, decls: [ast.Decl], seed: {i64: bool}) 
 # field of every case of a variant. Written-type indices, which the
 # caller resolves — the same two-step `emit_descriptor_set` takes.
 function fields_written(decls: [ast.Decl], decl: i64) -> [i64]
-    out: [i64] @ []
+    out: [i64] @= []
 
     for field in types.fields_of(decls, decl: decl)
         out @ out.push(field.ty)
@@ -292,8 +292,8 @@ function fields_written(decls: [ast.Decl], decl: i64) -> [i64]
 # string table stay whole — every index a kept function carries still
 # resolves — and only `functions` shrinks.
 function tu_program(p: containers.Program, keep: [i64]) -> containers.Program
-    out: containers.Program @ p
-    kept: [containers.Function] @ []
+    out: containers.Program @= p
+    kept: [containers.Function] @= []
 
     for at in keep
         kept @ kept.push(p.functions[at])
@@ -304,8 +304,8 @@ function tu_program(p: containers.Program, keep: [i64]) -> containers.Program
 # Every function index in a program — the per-TU walk's own list, since
 # a TU's program IS its members.
 function all_of(p: containers.Program) -> [i64]
-    out: [i64] @ []
-    index: i64 @ 0
+    out: [i64] @= []
+    index: i64 @= 0
 
     for _ in p.functions
         out @ out.push(index)

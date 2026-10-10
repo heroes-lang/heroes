@@ -17,8 +17,8 @@ function bar(width: i64) -> str
     return "#".repeat(point.span(from: origin, to: tip).to_u64().must())
 
 function frame(width: i64, height: i64) -> str
-    rows: [str] @ [bar(width: width)]
-    at: i64 @ 1
+    rows: [str] @= [bar(width: width)]
+    at: i64 @= 1
 
     while at < height
         rows @ rows.push(bar(width: width))

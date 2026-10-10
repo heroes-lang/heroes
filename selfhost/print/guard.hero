@@ -86,8 +86,8 @@ function checked(path: str, s: source.Source) -> Checked
     # guard's own and are handed over rather than made again (defect 105).
     # A source that holds more than the file is parsed alone, as the guard
     # would.
-    before: parse.ParseOutput @ out
-    read: owners.Lines @ printed.lines
+    before: parse.ParseOutput @= out
+    read: owners.Lines @= printed.lines
 
     if s.files.len() != 1
         before @ parse.parse(source_extent.user_text(s))
@@ -99,7 +99,7 @@ function checked(path: str, s: source.Source) -> Checked
         read: read,
         formatted: formatted
     )
-    refusal: str? @ judged.refusal
+    refusal: str? @= judged.refusal
 
     # The printer's own check, and the one no other can make: a comment no
     # walk could keep where it was written is printed somewhere else, which

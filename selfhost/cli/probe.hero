@@ -80,14 +80,14 @@ record Root
 
 function run(inv: argv.Invocation) -> cli_table.Exit
     named = argv.value_of(inv, spelling: "--family")
-    families: [str] @ judge.FAMILIES
+    families: [str] @= judge.FAMILIES
 
     if !named.is_err()
         if !judge.known(named.must())
             io.eprint(text: "error: no family `" + named.must() + "`\n  the seven are: " + judge.FAMILIES.join(", "))
             return .failed_exit
         families @ [named.must()]
-    stride: i64 @ 1
+    stride: i64 @= 1
     given = argv.value_of(inv, spelling: "--stride")
 
     if !given.is_err()
@@ -98,7 +98,7 @@ function run(inv: argv.Invocation) -> cli_table.Exit
                 text: "error: `--stride` takes a whole number of variants from 1 up, and was given `" + given.must() + "`"
             )
             return .failed_exit
-    paths: [str] @ FIXTURES
+    paths: [str] @= FIXTURES
 
     if !inv.file.is_err()
         paths @ [inv.file.must()]
@@ -107,10 +107,10 @@ function run(inv: argv.Invocation) -> cli_table.Exit
     if found.is_err()
         io.eprint(text: "error: " + why(found))
         return .failed_exit
-    roots: [Root] @ found.must()
+    roots: [Root] @= found.must()
     single = !inv.file.is_err() && !process.is_directory(path: inv.file.must())
-    r: judge.Run @ judge.start(families, stride: stride)
-    refused: i64 @ 0
+    r: judge.Run @= judge.start(families, stride: stride)
+    refused: i64 @= 0
 
     for k in range(from: 0, to: roots.len())
         for path in roots[k].files
@@ -150,7 +150,7 @@ function run(inv: argv.Invocation) -> cli_table.Exit
 
 # Each path, and the `.hero` files under it in order: a file is itself.
 function gathered(paths: [str]) -> [Root]?
-    out: [Root] @ []
+    out: [Root] @= []
 
     for path in paths
         if !process.path_exists(path: path)
@@ -163,7 +163,7 @@ function gathered(paths: [str]) -> [Root]?
 
         if walked.is_err()
             return fail(code: "no_path", msg: "cannot read the directory " + path)
-        files: [str] @ []
+        files: [str] @= []
 
         for one in walked.must().unnamed
             if bytes.bytes_at(text: one, at: one.len() - 5, needle: ".hero")
@@ -175,7 +175,7 @@ function gathered(paths: [str]) -> [Root]?
 
         out @ out.push(Root(path: path, files: files.sort(), seeds: 0))
 
-    total: i64 @ 0
+    total: i64 @= 0
 
     for root in out
         total @ total + root.files.len()
@@ -189,7 +189,7 @@ function gathered(paths: [str]) -> [Root]?
 function counted(text: str) -> i64
     if text.len() == 0 || text.len() > 7
         return -1
-    value: i64 @ 0
+    value: i64 @= 0
 
     for at in range(from: 0, to: text.len())
         if text[at] < '0' || text[at] > '9'
@@ -204,7 +204,7 @@ function why(got: [Root]?) -> str
         .err e => e.msg
 
 function seeds(roots: [Root]) -> i64
-    count: i64 @ 0
+    count: i64 @= 0
 
     for root in roots
         count @ count + root.seeds
@@ -214,11 +214,11 @@ function seeds(roots: [Root]) -> i64
 ## The report
 
 function report(roots: [Root], r: judge.Run, refused: i64) -> str
-    stride: str @ ""
+    stride: str @= ""
 
     if r.stride > 1
         stride @ ", one variant in " + r.stride.to_str() + " of each family judged"
-    rows: [str] @ [
+    rows: [str] @= [
         "probe: " + seeds(roots).to_str() + " seeds, and " + refused.to_str() + " files the parser refuses" + stride + "\n"
     ]
 
@@ -228,7 +228,7 @@ function report(roots: [Root], r: judge.Run, refused: i64) -> str
     rows @ rows.push(
         "\n| family | generated | judged | parsing | held | refused by the guard | refused by the reader |\n|---|---|---|---|---|---|---|\n"
     )
-    sum: judge.Tally @ judge.Tally(
+    sum: judge.Tally @= judge.Tally(
         family: "**total**",
         generated: 0,
         judged: 0,
@@ -258,7 +258,7 @@ function report(roots: [Root], r: judge.Run, refused: i64) -> str
         )
 
         for t in r.tallies
-            codes: [str] @ []
+            codes: [str] @= []
 
             for d in r.discards
                 if d.family == t.family
@@ -287,22 +287,22 @@ function tally_row(t: judge.Tally) -> str
 # and the variant cut to the lines that still fail, then the next ones by
 # name.
 function failed(r: judge.Run) -> str
-    guarded: i64 @ 0
-    parsing: i64 @ 0
+    guarded: i64 @= 0
+    parsing: i64 @= 0
 
     for t in r.tallies
         guarded @ guarded + t.guard
         parsing @ parsing + t.parsing
 
     first = r.failures[0]
-    rows: [str] @ [
+    rows: [str] @= [
         "error: `fmt` failed " + r.failures.len().to_str() + " of " + parsing.to_str() + " variants the parser accepts: " + guarded.to_str() + " refused by its own guard, " + (r.failures.len() - guarded).to_str() + " by the independent reader\n"
     ]
     rows @ rows.push(
         "error: the first, `" + first.path + "`, family " + first.family + ", variant " + first.name + ", " + first.judge + ": " + first.why + "\n"
     )
     rows @ rows.push(site(first))
-    shown: i64 @ 0
+    shown: i64 @= 0
 
     for one in r.failures.slice(from: 1, to: r.failures.len())
         if shown == 0
@@ -334,23 +334,23 @@ function site(f: judge.Failure) -> str
         return "  the variant cannot be rebuilt from `" + f.path + "`\n"
     built = lines.text(s, e: found.must())
     after = seed.cut_lines(built)
-    at: i64 @ 0
+    at: i64 @= 0
 
     while at < s.lines.len() && at < after.len() && s.lines[at] == after[at]
         at @ at + 1
 
-    rows: [str] @ ["  the variant leaves the file at its line " + (at + 1).to_str() + ":\n"]
+    rows: [str] @= ["  the variant leaves the file at its line " + (at + 1).to_str() + ":\n"]
 
     for k in range(from: at, to: at + 3)
         if k < after.len()
             rows @ rows.push("    " + (k + 1).to_str() + " | " + after[k] + "\n")
 
-    fails: (function(str) -> bool) @ judge.guard_fails
+    fails: (function(str) -> bool) @= judge.guard_fails
 
     if f.judge == "the reader"
         fails @ judge.reader_fails
     cut = reduce.reduced(built, fails: fails, protect: found.must().shape == "")
-    stopped: str @ ""
+    stopped: str @= ""
 
     if !cut.finished
         stopped @ ", stopped at the limit"

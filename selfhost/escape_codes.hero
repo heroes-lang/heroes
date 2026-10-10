@@ -74,7 +74,7 @@ function opens_brace(text: str, at: i64) -> bool
 # or the line's end comes first: what the author wrote there is still a
 # character by its name or code, and the literal's own end stays its own.
 function brace_end(text: str, from: i64) -> i64
-    i: i64 @ from
+    i: i64 @= from
 
     while i < text.len()
         b = text[i]
@@ -107,7 +107,7 @@ function byte_at(text: str, i: i64) -> u8
 # Past the digits from `from`, at most `most` of them, hexadecimal or octal;
 # `none` where there are fewer than `least`.
 function counted(text: str, from: i64, least: i64, most: i64, hex: bool, none: i64) -> i64
-    i: i64 @ from
+    i: i64 @= from
 
     while i < text.len() && i - from < most && digit_of(text[i], hex: hex) >= 0
         i @ i + 1
@@ -166,8 +166,8 @@ function code_value(text: str, at: i64, end: i64) -> i64
 
     if b == 'M'
         return 128 + to_i64(text[at + 2]).must()
-    from: i64 @ at + 1
-    hex: bool @ b != 'o'
+    from: i64 @= at + 1
+    hex: bool @= b != 'o'
     braced = (b == 'x' || b == 'u' || b == 'o' || b == 'N') && opens_brace(text, at: at)
 
     if b >= '0' && b <= '7'
@@ -177,8 +177,8 @@ function code_value(text: str, at: i64, end: i64) -> i64
         from @ at + 4
     else if braced
         from @ at + 2
-    value: i64 @ 0
-    i: i64 @ from
+    value: i64 @= 0
+    i: i64 @= from
 
     while i < end && digit_of(text[i], hex: hex) >= 0 && value <= 1114111
         if hex

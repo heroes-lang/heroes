@@ -50,7 +50,7 @@ function names_a_record(r: resolved.Resolved, decls: [ast.Decl], base: i64) -> b
 # record that has no such field.
 function field_name_type(@c: state.Checker, s: source.Source, r: resolved.Resolved, decls: [ast.Decl], base: i64, base_span: token.Span, field: token.Span) -> i64
     name = source.span_text(s, field)
-    at: i64 @ 0
+    at: i64 @= 0
 
     match r.uses[base]
         .top t => at @ t.at
@@ -60,7 +60,7 @@ function field_name_type(@c: state.Checker, s: source.Source, r: resolved.Resolv
 
     match decls[at].kind
         .record_decl rec =>
-            known: [str] @ []
+            known: [str] @= []
 
             for candidate in rec.fields
                 known @ known.push(source.span_text(s, candidate.name))
@@ -102,8 +102,8 @@ function dot_on_a_record_name(@c: state.Checker, a: ast.Ast, s: source.Source, r
     holder = source.span_text(s, a.exprs[base].span)
     span = token.Span(start: a.exprs[base].span.end, end: name.start)
     twin = value_named_like(s, r, decls, holder: holder, at: span.start)
-    certainty: diag.Certainty? @ ok(.guess)
-    notes: [str] @ []
+    certainty: diag.Certainty? @= ok(.guess)
+    notes: [str] @= []
 
     if !twin.is_err()
         notes @ notes.push(
@@ -131,7 +131,7 @@ function dot_on_a_record_name(@c: state.Checker, a: ast.Ast, s: source.Source, r
 # message about construction, which is not the mistake that was made — so
 # the repair is named, with the certainty `dot_on_a_record_name` gives it.
 function dot_where_colons_belong(holder: str, field: str, span: token.Span, certainty: diag.Certainty?, notes: [str]) -> diag.Diagnostic
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "dot_on_a_record_name",
         message: "`" + holder + "` names a record, so `" + holder + "." + field + "` reads a field from a value that is not there — `" + holder + "::" + field + "` is the NAME of that field, and `" + holder + "(field: value, …)` builds one",
         span: span
@@ -164,7 +164,7 @@ function value_named_like(s: source.Source, r: resolved.Resolved, decls: [ast.De
 # Whether `field` is one of `base`'s fields, asked of the declaration rather
 # than of a type: the base names a record, so it has no type to ask.
 function record_has_field(s: source.Source, r: resolved.Resolved, decls: [ast.Decl], base: i64, field: str) -> bool
-    at: i64 @ 0
+    at: i64 @= 0
 
     match r.uses[base]
         .top t                                    => at @ t.at

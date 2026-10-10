@@ -50,7 +50,7 @@ function only(@t: Tally, word: str) -> str
     return word + "?"
 
 function main()
-    t: Tally @ Tally(n: 0)
+    t: Tally @= Tally(n: 0)
     print(pick(@t, "words"), pick(@t, "ab"), pick(@t, "a"))
     print(halves(@t, 8).default(0), halves(@t, 3).default(0))
     count(@t, "four")

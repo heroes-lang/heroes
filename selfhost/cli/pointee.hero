@@ -108,8 +108,8 @@ function check(t: toolchain.Toolchain, p: containers.Program, c: state.Checked, 
         return ok()
     headers = probe.headers
     words = probe.words
-    memo: {str: str} @ probe.digests
-    asked: [str] @ []
+    memo: {str: str} @= probe.digests
+    asked: [str] @= []
 
     for one in wanted
         asked @ asked.push(
@@ -171,7 +171,7 @@ function check(t: toolchain.Toolchain, p: containers.Program, c: state.Checked, 
     depfile = publish.private_name(dir + "/dump.d")
     dump_json = publish.private_name(dir + "/dump.json")
     err_path = publish.private_name(dir + "/dump-stderr.txt")
-    line: [str] @ [
+    line: [str] @= [
         "clang"
         "-fsyntax-only"
         "-Xclang"
@@ -228,7 +228,7 @@ function check(t: toolchain.Toolchain, p: containers.Program, c: state.Checked, 
     check_c = unit_path(dir: dir, stem: "check", text: check_text)
     publish.write_whole(path: check_c, text: check_text, keyed: true)?
     check_err = publish.private_name(dir + "/check-stderr.txt")
-    check_line: [str] @ strings.with_all(list: ["clang", "-fsyntax-only"], more: words)
+    check_line: [str] @= strings.with_all(list: ["clang", "-fsyntax-only"], more: words)
     check_line @ check_line.push(check_c)
 
     # The question is the check's, and a header's warning in what clang says
@@ -239,7 +239,7 @@ function check(t: toolchain.Toolchain, p: containers.Program, c: state.Checked, 
         err_path: check_err
     )
     publish.discard(check_err)
-    said: str @ "ok\n"
+    said: str @= "ok\n"
 
     if checked.is_err()
         said @ failure_note(checked)
@@ -288,17 +288,17 @@ function probing(t: toolchain.Toolchain, p: containers.Program, s: source.Source
 # The binding the check exists for, refused, asked twice: the first time
 # cold, the second from what the first published.
 test "the pointee check publishes its answer and its verdict before the record that names them, and reads them back (defect 134)"
-    text = "extern \"math.h\"\n    function frexp(x: f64, @e: i16) -> f64\n\nfunction main()\n    e: i16 @ 0\n    print(frexp(8.0, @e))\n"
+    text = "extern \"math.h\"\n    function frexp(x: f64, @e: i16) -> f64\n\nfunction main()\n    e: i16 @= 0\n    print(frexp(8.0, @e))\n"
     parsed = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
     out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
     c = checker.check(parsed.tree, out, s, parsed.decls)
     low = lower.lower(parsed.tree, out, c, s, parsed.decls)
-    t: toolchain.Toolchain @ toolchain.locate_toolchain(hint: "", fingerprint: "port-test").must()
+    t: toolchain.Toolchain @= toolchain.locate_toolchain(hint: "", fingerprint: "port-test").must()
     t.build @ "build/selftest-pointee"
     assert !process.remove_tree(t.build).is_err()
     none: [str] = []
-    first_answers: [pointee_ask.Answered] @ []
+    first_answers: [pointee_ask.Answered] @= []
     first = check(
         t,
         low.program,
@@ -309,7 +309,7 @@ test "the pointee check publishes its answer and its verdict before the record t
         probe: probing(t, low.program, s, parsed.decls, under: compiling.Compiling(level: "-O0", sanitize: false, search_include: none, package_flags: none, runtime: t.runtime, source_dir: ""))
     )
     assert first.is_err()
-    records: i64 @ 0
+    records: i64 @= 0
     listed = process.files_under(t.build).must()
 
     # The two units, the answer, the verdict and the record, and the include
@@ -324,7 +324,7 @@ test "the pointee check publishes its answer and its verdict before the record t
             records @ records + 1
 
     assert records == 1
-    second_answers: [pointee_ask.Answered] @ []
+    second_answers: [pointee_ask.Answered] @= []
     second = check(
         t,
         low.program,
@@ -344,13 +344,13 @@ test "the pointee check publishes its answer and its verdict before the record t
 # refused the correct 64-bit declaration, and after the compiler passed the
 # `-D` it replayed that refusal from the same `build/` (measured 2026-10-02).
 test "a package's -D reaches the pointee check, and its verdict is keyed by the words it was asked with (defect 161)"
-    text = "extern \"wide.h\"\n    function hero_get(@out: i64)\n\nfunction main()\n    n: i64 @ 0\n    hero_get(out: @n)\n    print(n)\n"
+    text = "extern \"wide.h\"\n    function hero_get(@out: i64)\n\nfunction main()\n    n: i64 @= 0\n    hero_get(out: @n)\n    print(n)\n"
     parsed = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
     out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
     c = checker.check(parsed.tree, out, s, parsed.decls)
     low = lower.lower(parsed.tree, out, c, s, parsed.decls)
-    t: toolchain.Toolchain @ toolchain.locate_toolchain(hint: "", fingerprint: "port-test").must()
+    t: toolchain.Toolchain @= toolchain.locate_toolchain(hint: "", fingerprint: "port-test").must()
     t.build @ "build/selftest-pointee-package"
     headers_at = "build/selftest-pointee-package-include"
     assert !process.remove_tree(t.build).is_err()
@@ -361,7 +361,7 @@ test "a package's -D reaches the pointee check, and its verdict is keyed by the 
 
     # Without the package's word the header's type is 32 bits wide, and the
     # declaration is refused.
-    narrow_answers: [pointee_ask.Answered] @ []
+    narrow_answers: [pointee_ask.Answered] @= []
     narrow = check(
         t,
         low.program,
@@ -374,7 +374,7 @@ test "a package's -D reaches the pointee check, and its verdict is keyed by the 
     assert narrow.is_err()
 
     # With it, in the same `build/`, the question is asked again and passes.
-    wide_answers: [pointee_ask.Answered] @ []
+    wide_answers: [pointee_ask.Answered] @= []
     wide = check(
         t,
         low.program,
@@ -389,7 +389,7 @@ test "a package's -D reaches the pointee check, and its verdict is keyed by the 
     # The key names the compile words alone: without the link word the
     # verdict already published answers, and nothing new is written.
     held = process.files_under(t.build).must().len()
-    again_answers: [pointee_ask.Answered] @ []
+    again_answers: [pointee_ask.Answered] @= []
     again = check(
         t,
         low.program,
@@ -412,13 +412,13 @@ test "a package's -D reaches the pointee check, and its verdict is keyed by the 
 # shadows. Measured before this repair: the second program replayed the
 # first's verdict, an `i32` accepted against `int64_t *`.
 test "the pointee check asks each directory's own header, and one that appears earlier in the search, in one build (defect 168)"
-    text = "extern \"x.h\"\n    function hero_fill(@p: i32)\n\nfunction main()\n    n: i32 @ 0\n    hero_fill(@n)\n    print(n)\n"
+    text = "extern \"x.h\"\n    function hero_fill(@p: i32)\n\nfunction main()\n    n: i32 @= 0\n    hero_fill(@n)\n    print(n)\n"
     parsed = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
     out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
     c = checker.check(parsed.tree, out, s, parsed.decls)
     low = lower.lower(parsed.tree, out, c, s, parsed.decls)
-    t: toolchain.Toolchain @ toolchain.locate_toolchain(hint: "", fingerprint: "port-test").must()
+    t: toolchain.Toolchain @= toolchain.locate_toolchain(hint: "", fingerprint: "port-test").must()
     root = "build/selftest-pointee-dirs"
     assert !process.remove_tree(root).is_err()
     narrow = root + "/narrow"
@@ -435,13 +435,13 @@ test "the pointee check asks each directory's own header, and one that appears e
     for first in [narrow, wide]
         t.build @ first + "-first"
         assert !process.remove_tree(t.build).is_err()
-        second: str @ wide
+        second: str @= wide
 
         if first == wide
             second @ narrow
 
         for dir in [first, second]
-            answers: [pointee_ask.Answered] @ []
+            answers: [pointee_ask.Answered] @= []
             asked = check(
                 t,
                 low.program,
@@ -457,7 +457,7 @@ test "the pointee check asks each directory's own header, and one that appears e
     # `--include` directory, which a unit's compile searches first.
     t.build @ root + "/build-shadow"
     assert !process.remove_tree(t.build).is_err()
-    beside: [pointee_ask.Answered] @ []
+    beside: [pointee_ask.Answered] @= []
     under = compiling.Compiling(
         level: "-O0",
         sanitize: false,
@@ -468,7 +468,7 @@ test "the pointee check asks each directory's own header, and one that appears e
     )
     assert !check(t, low.program, c, s, parsed.decls, answered: @beside, probe: probing(t, low.program, s, parsed.decls, under: under)).is_err()
     assert !write_file(path: inc + "/x.h", text: "#include <stdint.h>\nvoid hero_fill(int64_t *p);\n").is_err()
-    earlier: [pointee_ask.Answered] @ []
+    earlier: [pointee_ask.Answered] @= []
     assert check(
         t,
         low.program,
@@ -487,13 +487,13 @@ test "the pointee check asks each directory's own header, and one that appears e
 # the refusal. Measured before this repair: the `-O2` build accepted it and C
 # wrote eight bytes into the four, which ASan reported under `--sanitize`.
 test "the pointee check judges a parameter under the build's level and sanitizers (defect 167)"
-    text = "extern \"lvl.h\"\n    function hero_put(@p: i32)\n\nfunction main()\n    n: i32 @ 0\n    hero_put(@n)\n    print(n)\n"
+    text = "extern \"lvl.h\"\n    function hero_put(@p: i32)\n\nfunction main()\n    n: i32 @= 0\n    hero_put(@n)\n    print(n)\n"
     parsed = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
     out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
     c = checker.check(parsed.tree, out, s, parsed.decls)
     low = lower.lower(parsed.tree, out, c, s, parsed.decls)
-    t: toolchain.Toolchain @ toolchain.locate_toolchain(hint: "", fingerprint: "port-test").must()
+    t: toolchain.Toolchain @= toolchain.locate_toolchain(hint: "", fingerprint: "port-test").must()
     t.build @ "build/selftest-pointee-level"
     headers_at = "build/selftest-pointee-level-include"
     assert !process.remove_tree(t.build).is_err()
@@ -503,7 +503,7 @@ test "the pointee check judges a parameter under the build's level and sanitizer
     none: [str] = []
 
     for level in ["-O0", "-O2", "-O0"]
-        answers: [pointee_ask.Answered] @ []
+        answers: [pointee_ask.Answered] @= []
         under = compiling.Compiling(
             level: level,
             sanitize: false,
@@ -523,7 +523,7 @@ test "the pointee check judges a parameter under the build's level and sanitizer
         )
         assert asked.is_err() == (level == "-O2")
 
-    sanitised: [pointee_ask.Answered] @ []
+    sanitised: [pointee_ask.Answered] @= []
     under = compiling.Compiling(
         level: "-O0",
         sanitize: true,
@@ -553,7 +553,7 @@ test "the pointee check judges a parameter under the build's level and sanitizer
 # and this test holds the check's own verdict on every clang it runs on.
 test "the pointee check refuses a cstr to bytes C may write and takes one to const bytes (defect 411)"
     header = "#include <stdint.h>\ntypedef unsigned char *w_bytes;\ntypedef const unsigned char *r_bytes;\nint32_t w_uchar(unsigned char *p);\nint32_t w_schar(signed char *p);\nint32_t w_u8(uint8_t *p);\nint32_t w_typedef(w_bytes p);\nint32_t w_array(unsigned char p[32]);\nint32_t w_restrict(unsigned char *restrict p);\nint32_t w_char(char *const p);\nint32_t w_void(void *p);\nint32_t r_uchar(const unsigned char *p);\nint32_t r_schar(const signed char *p);\nint32_t r_u8(const uint8_t *p);\nint32_t r_typedef(r_bytes p);\nint32_t r_array(const unsigned char p[32]);\nint32_t r_void(const void *p);\nint32_t r_char(const char *p);\n"
-    t: toolchain.Toolchain @ toolchain.locate_toolchain(hint: "", fingerprint: "port-test").must()
+    t: toolchain.Toolchain @= toolchain.locate_toolchain(hint: "", fingerprint: "port-test").must()
     headers_at = "build/selftest-pointee-read-include"
     assert !process.mkdir_all(headers_at).is_err()
     assert !write_file(path: headers_at + "/rw.h", text: header).is_err()
@@ -562,7 +562,7 @@ test "the pointee check refuses a cstr to bytes C may write and takes one to con
     reads = ["r_uchar", "r_schar", "r_u8", "r_typedef", "r_array", "r_void", "r_char"]
 
     for names in [writes, reads]
-        lines: [str] @ ["extern \"rw.h\""]
+        lines: [str] @= ["extern \"rw.h\""]
 
         for name in names
             lines @ lines.push("    function " + name + "(p: cstr lent) -> i32")
@@ -576,7 +576,7 @@ test "the pointee check refuses a cstr to bytes C may write and takes one to con
         low = lower.lower(parsed.tree, out, c, s, parsed.decls)
         t.build @ "build/selftest-pointee-read-" + names[0]
         assert !process.remove_tree(t.build).is_err()
-        answers: [pointee_ask.Answered] @ []
+        answers: [pointee_ask.Answered] @= []
         under = compiling.Compiling(
             level: "-O0",
             sanitize: false,

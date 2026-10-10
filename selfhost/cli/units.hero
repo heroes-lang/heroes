@@ -62,10 +62,10 @@ use cli/served
 # ORDER: file-table order — s.files is built in load order, which is
 # itself a function of the program's `use` graph.
 function components(s: source.Source) -> [str]
-    out: [str] @ []
+    out: [str] @= []
 
     for entry in s.files
-        already: bool @ false
+        already: bool @= false
 
         for one in out
             if one == entry.component
@@ -162,7 +162,7 @@ function tu_object(t: toolchain.Toolchain, module: str, tu_text: str, level: str
     # `-MT dep` names the listing's target a word rather than a path,
     # so the reader cuts at the first `:` on a fact it chose. The
     # listing rides this compile; no second clang invocation exists.
-    line: [str] @ strings.with_all(list: ["clang"], more: words)
+    line: [str] @= strings.with_all(list: ["clang"], more: words)
 
     # `-fno-crash-diagnostics` (defect 170): a clang that dies writes no copy of
     # the unit and no script into the system's temporary folder (8,270,409
@@ -191,7 +191,7 @@ function tu_object(t: toolchain.Toolchain, module: str, tu_text: str, level: str
         # `build/tu-…` into diagnostics the surface rows pin as
         # `err_lacks("build/")`, measured on the fixedbugs corpus.
         return fail(code: said_code(compiled), msg: failure_text(compiled) + "\nthe generated C is at " + c_file)
-    said: str @ ""
+    said: str @= ""
 
     if strings.trimmed(compiled.must()).len() > 0
         said @ compiled.must()
@@ -276,12 +276,12 @@ test "a unit compiled under one clang answer is compiled again under another (de
     # clang's own answer under one more flag, asked of the real compiler.
     more = strings.with_all(list: flags.level_words(level: "-O0", sanitize: false), more: ["-DHEROES_KEY_PROBE=1"])
     said = clang_floor.identity(build_dir: "build", runtime: here.runtime, words: more)
-    other: toolchain.Toolchain @ here
+    other: toolchain.Toolchain @= here
     other.compiler_key @ digest.digest(more.join(" ") + "|" + toolchain.answer_text(said))
     text = "#include <stdint.h>\nint64_t heroes_key_probe(void);\nint64_t heroes_key_probe(void) { return 1; }\n"
     none: [str] = []
-    memo: {str: str} @ {}
-    told: {str: bool} @ {}
+    memo: {str: str} @= {}
+    told: {str: bool} @= {}
     first = tu_object(
         here,
         module: "keyprobe",
@@ -335,7 +335,7 @@ test "a unit compiled under one clang answer is compiled again under another (de
 # its header saying 8. Now each header is another object's name, and a
 # record whose object is gone is a recompile.
 test "a record vouches only for the object its own compile made, and one whose object is gone is a recompile (defect 134)"
-    t: toolchain.Toolchain @ toolchain.locate_toolchain(hint: "", fingerprint: "port-test").must()
+    t: toolchain.Toolchain @= toolchain.locate_toolchain(hint: "", fingerprint: "port-test").must()
     t.build @ "build/selftest-vouch"
     headers_at = "build/selftest-vouch-include"
     assert !process.remove_tree(t.build).is_err()
@@ -343,8 +343,8 @@ test "a record vouches only for the object its own compile made, and one whose o
     text = "#include \"vouch.h\"\nint64_t heroes_vouch(void);\nint64_t heroes_vouch(void) { return VOUCH; }\n"
     none: [str] = []
     assert !write_file(path: headers_at + "/vouch.h", text: "#include <stdint.h>\n#define VOUCH 1\n").is_err()
-    told: {str: bool} @ {}
-    one: {str: str} @ {}
+    told: {str: bool} @= {}
+    one: {str: str} @= {}
     first = tu_object(
         t,
         module: "vouch",
@@ -359,7 +359,7 @@ test "a record vouches only for the object its own compile made, and one whose o
         @told
     ).must()
     assert !write_file(path: headers_at + "/vouch.h", text: "#include <stdint.h>\n#define VOUCH 2\n").is_err()
-    two: {str: str} @ {}
+    two: {str: str} @= {}
     second = tu_object(
         t,
         module: "vouch",
@@ -376,7 +376,7 @@ test "a record vouches only for the object its own compile made, and one whose o
     assert second != first
     assert process.path_exists(first)
     assert !process.remove_file(second).is_err()
-    three: {str: str} @ {}
+    three: {str: str} @= {}
     third = tu_object(
         t,
         module: "vouch",
@@ -404,13 +404,13 @@ test "a record vouches only for the object its own compile made, and one whose o
 # replayed the old one (measured 2026-10-02: a header returning 8 under the
 # package's `-D` printed 7).
 test "a package's -D reaches the unit's compile, and an object is keyed by the words it was compiled with (defect 161)"
-    t: toolchain.Toolchain @ toolchain.locate_toolchain(hint: "", fingerprint: "port-test").must()
+    t: toolchain.Toolchain @= toolchain.locate_toolchain(hint: "", fingerprint: "port-test").must()
     t.build @ "build/selftest-package-words"
     assert !process.remove_tree(t.build).is_err()
     text = "#include <stdint.h>\nint64_t heroes_package_value(void);\nint64_t heroes_package_value(void) { return HEROES_PACKAGE_VALUE; }\n"
     none: [str] = []
-    memo: {str: str} @ {}
-    told: {str: bool} @ {}
+    memo: {str: str} @= {}
+    told: {str: bool} @= {}
 
     # Without the package's word the unit does not compile, and nothing is
     # kept for the compile that has it to find.
@@ -478,7 +478,7 @@ test "a package's -D reaches the unit's compile, and an object is keyed by the w
 # text kept two directories apart only because its first line names its root
 # source, which this text does not.
 test "a unit compiled beside two same-named headers is two objects, keyed by the source's own directory (defect 167)"
-    t: toolchain.Toolchain @ toolchain.locate_toolchain(hint: "", fingerprint: "port-test").must()
+    t: toolchain.Toolchain @= toolchain.locate_toolchain(hint: "", fingerprint: "port-test").must()
     root = "build/selftest-units-dirs"
     t.build @ root + "/build"
     assert !process.remove_tree(root).is_err()
@@ -492,8 +492,8 @@ test "a unit compiled beside two same-named headers is two objects, keyed by the
     assert !write_file(path: two + "/beside.h", text: "#define HERO_BESIDE 2\n").is_err()
     text = "#include <stdint.h>\n#include <beside.h>\nint64_t heroes_beside(void);\nint64_t heroes_beside(void) { return HERO_BESIDE; }\n"
     none: [str] = []
-    memo: {str: str} @ {}
-    told: {str: bool} @ {}
+    memo: {str: str} @= {}
+    told: {str: bool} @= {}
     first = tu_object(
         t,
         module: "beside",

@@ -44,8 +44,8 @@ extern "fixedbugs-395-units.h"
     function fill_wide(dst: ptr counted_by n lent, n: u64) -> i64
 
 function main()
-    h: Held @ Held(buf: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], after: 7)
-    t: Ten @ Ten(buf: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], after: 7)
+    h: Held @= Held(buf: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], after: 7)
+    t: Ten @= Ten(buf: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], after: 7)
     print(fill_ints(a: h.buf.ptr(), n: 16))  #~ field_lend_extent
     print(fill_shorts(a: t.buf.ptr(), n: 6))  #~ field_lend_extent
     print(fill_ints(a: t.buf.ptr(), n: 3))  #~ field_lend_extent

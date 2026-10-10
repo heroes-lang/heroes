@@ -23,9 +23,9 @@ use bytes
 # diagnostic clang quotes back) is left alone: the poison is the line-ending
 # pair, and rewriting anything else would edit clang's own words.
 function without_returns(text: str) -> str
-    parts: [str] @ []
-    start: i64 @ 0
-    at: i64 @ 0
+    parts: [str] @= []
+    start: i64 @= 0
+    at: i64 @= 0
 
     # Whole segments between the pairs, never byte-by-byte: `slice` aborts on
     # a split character (spec § 10 Strings, arrays, maps), clang's stderr quotes this compiler's own
@@ -47,12 +47,12 @@ function without_returns(text: str) -> str
 
 function trimmed(text: str) -> str
     cs = text.chars()
-    head: i64 @ 0
+    head: i64 @= 0
 
     while head < cs.len() && (cs[head] == " " || cs[head] == "\t" || cs[head] == "\n")
         head @ head + 1
 
-    tail: i64 @ cs.len()
+    tail: i64 @= cs.len()
 
     while tail > head && (cs[tail - 1] == " " || cs[tail - 1] == "\t" || cs[tail - 1] == "\n")
         tail @ tail - 1
@@ -78,7 +78,7 @@ function bool_text(value: bool) -> str
 # element for a POSIX shell and joined them with spaces — the whole
 # reason a filename with a space in it was ever a question here.
 function with_all(list: [str], more: [str]) -> [str]
-    out: [str] @ list
+    out: [str] @= list
 
     for one in more
         out @ out.push(one)
@@ -103,7 +103,7 @@ function starts_with(text: str, prefix: str) -> bool
 
     if ps.len() > cs.len()
         return false
-    index: i64 @ 0
+    index: i64 @= 0
 
     for p in ps
         if cs[index] != p
@@ -120,7 +120,7 @@ function starts_with(text: str, prefix: str) -> bool
 # the needle was absent or came after it, with *string slice splits a
 # character* where the answer was no.
 function holds(text: str, needle: str) -> bool
-    at: i64 @ 0
+    at: i64 @= 0
 
     while at + needle.len() <= text.len()
         if bytes.bytes_at(text: text, at: at, needle: needle)
@@ -136,7 +136,7 @@ function ends_with(text: str, suffix: str) -> bool
     if suffix.len() > text.len()
         return false
     offset = text.len() - suffix.len()
-    index: i64 @ 0
+    index: i64 @= 0
 
     while index < suffix.len()
         if text[offset + index] != suffix[index]

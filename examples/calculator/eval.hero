@@ -26,7 +26,7 @@ function lookup(env: {str: i64}, name: str) -> i64?
     return ok(env[name].must())
 
 function sum_of(children: [parse.Expr], env: {str: i64}) -> i64?
-    tot: i64 @ 0
+    tot: i64 @= 0
 
     for c in children
         tot @ tot + evaluate(c, env)?
@@ -34,7 +34,7 @@ function sum_of(children: [parse.Expr], env: {str: i64}) -> i64?
     return ok(tot)
 
 function product_of(children: [parse.Expr], env: {str: i64}) -> i64?
-    tot: i64 @ 1
+    tot: i64 @= 1
 
     for c in children
         tot @ tot * evaluate(c, env)?
@@ -58,7 +58,7 @@ function names_used(e: parse.Expr) -> [str]
         .product q  => names_of(q.children)
 
 function names_of(children: [parse.Expr]) -> [str]
-    out: [str] @ []
+    out: [str] @= []
 
     for c in children
         for n in c.names_used()
@@ -71,7 +71,7 @@ function names_of(children: [parse.Expr]) -> [str]
 # From text to result, in one call.
 function calculate(text: str, env: {str: i64}) -> i64?
     ts = lex.tokenize(text)?
-    p: parse.Parse @ parse.Parse(ts: ts, pos: 0)
+    p: parse.Parse @= parse.Parse(ts: ts, pos: 0)
     tree = parse.expression(@p)?
 
     if !parse.parse_at_end(p)
@@ -105,7 +105,7 @@ test "errors reach the top"
 
 test "values are always copies"
     a = [1, 2, 3]
-    b: [i64] @ a
+    b: [i64] @= a
     b @ b.push(4)
     assert a.len() == 3
     assert b.len() == 4
@@ -129,7 +129,7 @@ function simplify(e: parse.Expr) -> parse.Expr
 # The children of a sum that survive: each simplified, and the literal zeroes
 # dropped because adding one changes nothing.
 function keep_sum(children: [parse.Expr]) -> [parse.Expr]
-    out: [parse.Expr] @ []
+    out: [parse.Expr] @= []
 
     for child in children
         one = simplify(child)
@@ -141,7 +141,7 @@ function keep_sum(children: [parse.Expr]) -> [parse.Expr]
 
 # The same for a product, dropping the ones.
 function keep_product(children: [parse.Expr]) -> [parse.Expr]
-    out: [parse.Expr] @ []
+    out: [parse.Expr] @= []
 
     for child in children
         one = simplify(child)

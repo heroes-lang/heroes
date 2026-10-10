@@ -35,12 +35,12 @@ record Holder
     after: i64
 
 function inner()
-    other: [u8] @ []
+    other: [u8] @= []
     _ = digest32(@other)
     print("inner ", other.len(), " ", other[31])
 
 function main()
-    md: [u8] @ [
+    md: [u8] @= [
         9
         9
         9
@@ -84,30 +84,30 @@ function main()
     ]
     before = md
     print(digest32(@md), " ", md.len(), " ", md[0], " ", md[31], " ", before.len(), " ", before[0])
-    named: [u8] @ []
+    named: [u8] @= []
     print(digest_const(@named), " ", named.len(), " ", named[31])
-    bytes: [u8] @ []
+    bytes: [u8] @= []
     print(fill_void(@bytes, n: 5), " ", bytes.len(), " ", bytes[4])
-    ints: [i32] @ [7]
+    ints: [i32] @= [7]
     fill_ints4(@ints)
     print(ints.len(), " ", ints[0], " ", ints[3])
-    pairs: [Pair] @ []
+    pairs: [Pair] @= []
     fill_pairs2(@pairs)
     print(pairs.len(), " ", pairs[0].b, " ", pairs[1].a)
-    reals: [f64] @ []
+    reals: [f64] @= []
     fill_reals3(@reals)
     print(reals.len(), " ", reals[2])
-    small: [u8] @ [1, 2]
+    small: [u8] @= [1, 2]
     double_bytes(@small)
     print(small.len(), " ", small[0], " ", small[1], " ", small[2], " ", small[3])
-    h: Holder @ Holder(digest: [], after: 7)
+    h: Holder @= Holder(digest: [], after: 7)
     _ = digest32(@h.digest)
     print(h.digest.len(), " ", h.digest[1], " ", h.after)
-    rows: [[u8]] @ [[], []]
+    rows: [[u8]] @= [[], []]
     _ = digest32(@rows[1])
     print(rows[0].len(), " ", rows[1].len(), " ", rows[1][2])
-    late: [u8] @ []
+    late: [u8] @= []
     fill_after(@late, cb: inner)
     print(late.len(), " ", late[15])
-    big: [u8] @ []
+    big: [u8] @= []
     print(fill_void(@big, n: 16777216), " ", big.len(), " ", big[16777215])

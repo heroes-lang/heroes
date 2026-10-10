@@ -102,13 +102,13 @@ function run_all(scratch: str, compiler: str, dir: str, least: i64) -> report.Re
 function run_cases(scratch: str, compiler: str, dir: str, least: i64, only: str) -> report.Report?
     # One directory walk answers "does this case have a .fixed?" for every
     # case, where `test -e` would be sixty-five more processes.
-    present: {str: bool} @ {}
+    present: {str: bool} @= {}
 
     for entry in shell.list_entries(scratch: scratch, dir: dir)?
         present[entry] @ true
 
-    r: report.Report @ report.empty()
-    seen: i64 @ 0
+    r: report.Report @= report.empty()
+    seen: i64 @= 0
 
     for item in cases.matching(found: cases.collect(scratch: scratch, dir: dir)?, only: only)
         stem = strings.without_suffix(text: item.source, suffix: ".hero")
@@ -327,16 +327,16 @@ function run_fixtures(scratch: str, compiler: str, dir: str, least: i64) -> repo
 # extension, judged whole, every root of it, as the whole run judges it; the
 # floor asked only of the whole.
 function fixtures_named(scratch: str, compiler: str, dir: str, least: i64, only: str) -> report.Report?
-    r: report.Report @ report.empty()
-    seen: i64 @ 0
+    r: report.Report @= report.empty()
+    seen: i64 @= 0
 
     for case_dir in shell.list_directories(scratch: scratch, dir: dir)?
         entries = shell.list_entries(scratch: scratch, dir: case_dir)?
 
         if only != "" && !names_a_case(case_dir: case_dir, entries: entries, only: only)
             continue
-        present: {str: bool} @ {}
-        roots: i64 @ 0
+        present: {str: bool} @= {}
+        roots: i64 @= 0
 
         for entry in entries
             present[entry] @ true
@@ -588,7 +588,7 @@ function judge_fixture_fixed(@r: report.Report, scratch: str, compiler: str, lab
     if write_file(path: copy + "/" + strings.base_name(path: source), text: want.must()).is_err()
         report.keep_failure(@r, label: label, detail: "  cannot write the copy of " + source)
         return
-    broken: str @ ""
+    broken: str @= ""
 
     for file in entries
         if !strings.ends_with(text: file, suffix: ".hero") || broken != ""
@@ -623,7 +623,7 @@ function copy_case(scratch: str, from: str, to: str) -> ()?
 
 # Everything before the last `/`, or `.` where there is none.
 function parent_of(path: str) -> str
-    at: i64 @ path.len() - 1
+    at: i64 @= path.len() - 1
 
     while at >= 0 && path[at] != '/'
         at @ at - 1

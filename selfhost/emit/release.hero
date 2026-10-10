@@ -52,7 +52,7 @@ use checker
 # and a fault in it names the statement (defect 540; until then every one was
 # the generated file's, a stop of its own in the middle of a line).
 function named(@w: writer.Writer, c: state.Checked, names: ctype.Names, ty: i64, name: str, keep: bool)
-    line: str @ ""
+    line: str @= ""
 
     match table.get(c.types, ty)
         .str =>
@@ -97,7 +97,7 @@ function named(@w: writer.Writer, c: state.Checked, names: ctype.Names, ty: i64,
 # `hero_slot_escape`, and a failure by its own function, which already takes
 # the address and is the runtime's.
 function slot(@w: writer.Writer, c: state.Checked, names: ctype.Names, ty: i64, name: str)
-    line: str @ ""
+    line: str @= ""
 
     match table.get(c.types, ty)
         .str                                                  => line @ "    hero_str_release_at(&" + name + ");"
@@ -133,7 +133,7 @@ test "the exit sweep hands a counted slot over by its address, a unit's own type
     c: state.Checked = checker.check(parsed.tree, out, s, parsed.decls)
     assert c.diagnostics.len() == 0
     names = ctype.new_names(s, parsed.decls)
-    w: writer.Writer @ writer.new_writer("t")
+    w: writer.Writer @= writer.new_writer("t")
     slot(@w, c, names, ty: table.str_ty(c.types), name: "h0_s")
     slot(@w, c, names, ty: table.lookup(c.types, .named(decl: 0)).must(), name: "h1_p")
     named(@w, c, names, ty: table.str_ty(c.types), name: "t3", keep: false)

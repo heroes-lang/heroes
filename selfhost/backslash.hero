@@ -47,7 +47,7 @@ use openers
 function asks_to_go_on(l: state.LexState, text: str, at: i64) -> bool
     if l.last_significant.is_err()
         return false
-    i: i64 @ at + 1
+    i: i64 @= at + 1
 
     while i < text.len() && (text[i] == ' ' || text[i] == '\r' && i + 1 < text.len() && text[i + 1] == '\n')
         i @ i + 1
@@ -60,13 +60,13 @@ function asks_to_go_on(l: state.LexState, text: str, at: i64) -> bool
 function asked(@l: state.LexState, text: str)
     at = l.pos
     l.pos @ at + 1
-    rule: str @ "outside brackets a line ends its statement, and a long one breaks inside parentheses"
+    rule: str @= "outside brackets a line ends its statement, and a long one breaks inside parentheses"
 
     if l.holes.len() > 0
         rule @ "a literal and its holes stand on one line"
     else if openers.depth(l.open_brackets) > 0
         rule @ "inside brackets a line goes on below with nothing at its end"
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "unexpected_character",
         message: "`\\` is not part of the language's syntax, and no line goes on past one: " + rule,
         span: token.Span(start: at, end: at + 1)
@@ -83,7 +83,7 @@ function asked(@l: state.LexState, text: str)
 
 # The index of the last token that is not a comment.
 function last_token(tokens: [token.Token]) -> i64
-    at: i64 @ tokens.len() - 1
+    at: i64 @= tokens.len() - 1
 
     while at > 0 && tokens[at].kind == .comment
         at @ at - 1
@@ -112,7 +112,7 @@ function word_below(l: state.LexState, text: str) -> i64
 # asks to go on: -1 where a comment stands after it, or the next line holds
 # no word, its margin a tab, or the text ends.
 function next_word(text: str, from: i64) -> i64
-    i: i64 @ from
+    i: i64 @= from
 
     while i < text.len() && (text[i] == ' ' || text[i] == '\r')
         i @ i + 1
@@ -147,7 +147,7 @@ function closes_or_separates(text: str, at: i64) -> bool
 # begins the next, `noise`, the line end stands and the fix deletes the `\`.
 function within_brackets(@l: state.LexState, text: str, below: i64, noise: bool, sure: bool)
     if !noise && below >= 0
-        certainty: diag.Certainty @ .guess
+        certainty: diag.Certainty @= .guess
 
         if sure
             certainty @ .certain
@@ -159,7 +159,7 @@ function within_brackets(@l: state.LexState, text: str, below: i64, noise: bool,
 # `::` or a `/`, or before a closer, a `,` or a `.`.
 function offer_join(@l: state.LexState, text: str, below: i64, certainty: diag.Certainty)
     left = l.tokens[last_token(l.tokens)]
-    glue: str @ " "
+    glue: str @= " "
     k = left.kind
 
     if k == .lparen || k == .lbracket || k == .lbrace || k == .dot || k == .colon_colon || k == .slash || closes_or_separates(text, at: below) || text[below] == '.'
@@ -178,7 +178,7 @@ function joined(@l: state.LexState, fixes: [diag.Fix], head: bool)
     l.backslash @ -1
 
 test "a backslash asks its line to go on only where it stands last on a line with a token before it"
-    l: state.LexState @ state.new_state()
+    l: state.LexState @= state.new_state()
     l.last_significant @ ok(.plus)
 
     for text in ["\\\n", "\\   \n", "\\\r\n", "\\  # note\n", "\\"]

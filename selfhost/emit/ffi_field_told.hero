@@ -57,7 +57,7 @@ function declaring(s: source.Source, decls: [ast.Decl], typed: ffi_asked.Typed, 
     numeric = bits == 8 || bits == 16 || bits == 32 || bits == 64
 
     if (kind == 1 || kind == 2) && numeric
-        sign: str @ "i"
+        sign: str @= "i"
 
         if kind == 2
             sign @ "u"
@@ -123,9 +123,9 @@ constant SIGNED_CHAR: str
 # header's own width and sign over the whole type `written`, where there is
 # one and it is not the one `declared`.
 function offered(given: diag.Diagnostic, s: source.Source, decls: [ast.Decl], typed: ffi_asked.Typed, code: i64, word_bits: i64, member: str, declared: str, written: token.Span) -> diag.Diagnostic
-    d: diag.Diagnostic @ given
+    d: diag.Diagnostic @= given
     open = last_bracket(typed.canonical)
-    element: str @ typed.canonical
+    element: str @= typed.canonical
 
     if open > 0
         element @ typed.canonical.slice(from: 0, to: open)
@@ -159,7 +159,7 @@ function caveat(typed: ffi_asked.Typed, word_bits: i64) -> str?
     )
 
 function has(text: str, needle: str) -> bool
-    at: i64 @ 0
+    at: i64 @= 0
 
     while at + needle.len() <= text.len()
         if text.slice(from: at, to: at + needle.len()) == needle
@@ -170,7 +170,7 @@ function has(text: str, needle: str) -> bool
 
 # Where `[` last opens in `text`, -1 where it never does.
 function last_bracket(text: str) -> i64
-    at: i64 @ text.len() - 1
+    at: i64 @= text.len() - 1
 
     while at >= 0
         if text[at] == '['

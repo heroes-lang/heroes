@@ -19,7 +19,7 @@ record Holder
     m: {u16: str}
 
 function main()
-    names: {u8: str} @ {11: "eleven"}
+    names: {u8: str} @= {11: "eleven"}
     print(names[11].must())
     names[12] @ "twelve"
     print(names[12].must())

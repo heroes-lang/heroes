@@ -34,13 +34,13 @@ function arm_spelled(op: str, spelled: str, p: model.Program, @out: [mutant.Muta
             continue
         a = s.toks[at]
         text = model.line(p, no: a.line).text
-        c0: i64 @ a.c0
+        c0: i64 @= a.c0
 
         if spelled == ":"
             while c0 > 0 && text[c0 - 1] == ' '
                 c0 @ c0 - 1
 
-        context: str @ "arm"
+        context: str @= "arm"
 
         if s.head
             context @ "arm-block"
@@ -84,7 +84,7 @@ function pattern_comma(p: model.Program, @out: [mutant.Mutant])
 
             if t.kind == "pipe" && t.depth == 0
                 text = model.line(p, no: t.line).text
-                c0: i64 @ t.c0
+                c0: i64 @= t.c0
 
                 if t.c0 > 0 && text[t.c0 - 1] == ' '
                     c0 @ t.c0 - 1
@@ -98,8 +98,8 @@ function arms_at_margin(p: model.Program, @out: [mutant.Mutant])
         if !s.head || s.opens != "arms" || !op_base.block_ok(s)
             continue
         base = op_base.indent_of(p, s: s)
-        new: [str] @ []
-        ok_all: bool @ true
+        new: [str] @= []
+        ok_all: bool @= true
 
         for no in range(from: s.block_first, to: s.block_last + 1)
             l = model.line(p, no: no)
@@ -115,7 +115,7 @@ function arms_at_margin(p: model.Program, @out: [mutant.Mutant])
 
         if !ok_all
             continue
-        site: [i64] @ []
+        site: [i64] @= []
 
         for no in range(from: s.block_first, to: s.block_last + 1)
             l = model.line(p, no: no)

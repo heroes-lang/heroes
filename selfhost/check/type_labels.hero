@@ -36,7 +36,7 @@ use data_errors
 
 # Every function type the program writes, judged once.
 function check(@c: state.Checker, a: ast.Ast, s: source.Source, decls: [ast.Decl])
-    node: i64 @ 0
+    node: i64 @= 0
 
     while node < a.types.len()
         match a.types[node].kind
@@ -55,7 +55,7 @@ function judge(@c: state.Checker, a: ast.Ast, s: source.Source, decls: [ast.Decl
     # worse than one that can be silent.
     if labels.len() != params.len()
         return
-    lowered: [i64] @ []
+    lowered: [i64] @= []
 
     for p in params
         written = state.written_type(c.out, p)
@@ -65,9 +65,9 @@ function judge(@c: state.Checker, a: ast.Ast, s: source.Source, decls: [ast.Decl
 
         lowered @ lowered.push(written.must())
 
-    missing: i64? @ fail(code: "named", msg: "every confusable position carries a name")
+    missing: i64? @= fail(code: "named", msg: "every confusable position carries a name")
     shared = type_fit.shared(lowered)
-    i: i64 @ 0
+    i: i64 @= 0
 
     while i < lowered.len()
         named = labels[i].end > labels[i].start
@@ -110,8 +110,8 @@ function judge(@c: state.Checker, a: ast.Ast, s: source.Source, decls: [ast.Decl
 # *a type parameter*.
 function shown(c: state.Checker, a: ast.Ast, s: source.Source, decls: [ast.Decl], ty: i64, at: i64) -> str
     start = a.types[at].span.start
-    letters: [str] @ []
-    best: i64 @ -1
+    letters: [str] @= []
+    best: i64 @= -1
 
     for decl in decls
         if decl.span.start <= start && decl.span.start > best
@@ -121,7 +121,7 @@ function shown(c: state.Checker, a: ast.Ast, s: source.Source, decls: [ast.Decl]
     return render.render_ty(c.out.types, s, decls, ty, letters)
 
 function letters_of(s: source.Source, decl: ast.Decl) -> [str]
-    letters: [str] @ []
+    letters: [str] @= []
 
     match decl.kind
         .function_decl fd =>
@@ -137,11 +137,11 @@ function letters_of(s: source.Source, decl: ast.Decl) -> [str]
 # mandatory and not required to DISTINGUISH, which is the whole of what they are
 # for.
 function repeated(s: source.Source, labels: [token.Span]) -> str?
-    i: i64 @ 0
+    i: i64 @= 0
 
     while i < labels.len()
         one = source.span_text(s, labels[i])
-        j: i64 @ i + 1
+        j: i64 @= i + 1
 
         while j < labels.len()
             if one.len() > 0 && one == source.span_text(s, labels[j])
@@ -158,7 +158,7 @@ function judged(text: str) -> state.Checker
     p = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
     out = resolve.resolve(p.tree, s, p.decls, p.uses)
-    c: state.Checker @ state.new_checker(out_of: out, expr_count: p.tree.exprs.len())
+    c: state.Checker @= state.new_checker(out_of: out, expr_count: p.tree.exprs.len())
     check_decls.file(@c, p.tree, out, s, p.decls)
     check(@c, p.tree, s, p.decls)
     return c

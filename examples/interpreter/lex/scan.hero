@@ -59,8 +59,8 @@ constant ERR_NUMBER: str
 
 # Every token in `source`, ending with exactly one `.finish`.
 function scanned(source: str) -> [token.Token]?
-    out: [token.Token] @ []
-    at: i64 @ 0
+    out: [token.Token] @= []
+    at: i64 @= 0
     n = source.len()
 
     while at < n
@@ -109,7 +109,7 @@ record Read
 # Where the line holding `from` ends: the index of its `\n`, or the end of the
 # source. Used to skip a comment.
 function line_end(source: str, from: i64) -> i64
-    at: i64 @ from
+    at: i64 @= from
 
     while at < source.len() && byte_at(source: source, at: at) != '\n'
         at @ at + 1
@@ -147,8 +147,8 @@ function is_word_rest(b: i64) -> bool
 # do not fit. See the module header: this is the guard that keeps a script from
 # panicking the interpreter.
 function number_at(source: str, from: i64) -> Read?
-    value: i64 @ 0
-    at: i64 @ from
+    value: i64 @= 0
+    at: i64 @= from
 
     while is_digit(byte_at(source: source, at: at))
         digit = byte_at(source: source, at: at) - '0'
@@ -173,15 +173,15 @@ function number_at(source: str, from: i64) -> Read?
 # out deliberately — a scanner that accepts an escape it cannot explain is a
 # scanner whose author was copying.
 function text_at(source: str, from: i64) -> Read?
-    pieces: [str] @ []
-    at: i64 @ from + 1
+    pieces: [str] @= []
+    at: i64 @= from + 1
 
     # Where the current unescaped run began. The literal is copied a RUN at a
     # time rather than a byte at a time, and that is what keeps this safe on
     # text: every slice is taken between two ASCII bytes (the opening quote, an
     # escape's backslash, the closing quote), so none of them can split a
     # character. A byte-at-a-time loop aborts on the first accented letter.
-    run: i64 @ at
+    run: i64 @= at
 
     while at < source.len()
         one = byte_at(source: source, at: at)
@@ -224,7 +224,7 @@ function text_at(source: str, from: i64) -> Read?
 # module does not hold a list of keywords, and that is deliberate: one list, in
 # the module that owns the vocabulary.
 function word_at(source: str, from: i64) -> Read
-    at: i64 @ from
+    at: i64 @= from
 
     while is_word_rest(byte_at(source: source, at: at))
         at @ at + 1
@@ -342,7 +342,7 @@ test "blank lines and comments collapse into the newline that follows them"
     # statements — the parser would then have to know what an empty statement
     # is, and it does not.
     got = scanned("print 1\n\n\n# a comment\n\nprint 2").must()
-    newlines: i64 @ 0
+    newlines: i64 @= 0
 
     for one in got
         if one == .newline
@@ -416,7 +416,7 @@ test "the source always ends in exactly one finish, whatever it held"
 
     for source in sources
         got = scanned(source).must()
-        finishes: i64 @ 0
+        finishes: i64 @= 0
 
         for one in got
             if one == .finish

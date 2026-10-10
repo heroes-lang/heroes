@@ -49,14 +49,14 @@ function shape(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, id: i64) -> 
             value = lower_ty(@c, a, r, m.value)
             table.intern(@c.out.types, .map(key: key, value: value))
         .function_type f =>
-            lowered: [i64] @ []
+            lowered: [i64] @= []
 
             for p in f.params
                 lowered @ lowered.push(lower_ty(@c, a, r, p))
 
             result = lower_ty(@c, a, r, f.result)
             written = r.fn_labels[id]
-            names: [str] @ []
+            names: [str] @= []
 
             if !written.is_err()
                 names @ written.must()
@@ -88,8 +88,8 @@ function lowered_program(text: str) -> state.Checker
     p = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
     out = resolve.resolve(p.tree, s, p.decls, p.uses)
-    c: state.Checker @ state.new_checker(out_of: out, expr_count: p.tree.exprs.len())
-    i: i64 @ 0
+    c: state.Checker @= state.new_checker(out_of: out, expr_count: p.tree.exprs.len())
+    i: i64 @= 0
 
     while i < p.tree.types.len()
         _ = lower_ty(@c, p.tree, out, i)
@@ -102,7 +102,7 @@ test "a type written twice is one id both times"
 
     # The two parameter nodes lowered to the SAME id: interning is the
     # equality. Find the two array ids among the written types.
-    ids: [i64] @ []
+    ids: [i64] @= []
 
     for id in keys(c.out.written_types)
         got = c.out.written_types[id].must()
@@ -123,7 +123,7 @@ test "an extern's parameter types are recorded with no local to hang on"
     c = lowered_program("extern \"math.h\"\n    function pow(base: f64, exponent: f64) -> f64\n")
 
     # No locals exist, and still every written node has an answer.
-    lowered: i64 @ 0
+    lowered: i64 @= 0
 
     for id in keys(c.out.written_types)
         _ = id
@@ -137,7 +137,7 @@ test "the resolver's silence lowers to the silent error id"
 
     # Qoint was the resolver's diagnostic; the lowering says nothing and
     # hands back id 0, which every downstream rule stays quiet about.
-    poisoned_count: i64 @ 0
+    poisoned_count: i64 @= 0
 
     for id in keys(c.out.written_types)
         if c.out.written_types[id].must() == 0

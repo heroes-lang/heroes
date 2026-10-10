@@ -42,9 +42,9 @@ function columns() -> i64
 # language has no `split` built in (spec § Built-ins), and the shape a
 # generated file needs is the simple one: no quoting, no escapes.
 function split(text: str, at: u8) -> [str]
-    out: [str] @ []
-    start: i64 @ 0
-    index: i64 @ 0
+    out: [str] @= []
+    start: i64 @= 0
+    index: i64 @= 0
 
     while index < text.len()
         if text[index] == at
@@ -82,15 +82,15 @@ function int_of(text: str, line: i64) -> i64?
     if text.len() == 0
         return fail(code: ERR_NUMBER, msg: "line " + line.to_str() + ": a number field is empty")
     negative = text[0] == '-'
-    start: i64 @ 0
+    start: i64 @= 0
 
     if negative
         start @ 1
 
         if text.len() == 1
             return fail(code: ERR_NUMBER, msg: "line " + line.to_str() + ": `-` is not a number")
-    total: i64 @ 0
-    at: i64 @ start
+    total: i64 @= 0
+    at: i64 @= start
 
     while at < text.len()
         digit = text[at]
@@ -130,7 +130,7 @@ function float_of(text: str, line: i64) -> f64?
         return fail(code: ERR_NUMBER, msg: "line " + line.to_str() + ": `" + text + "` has two points")
     negative = text.len() > 0 && text[0] == '-'
     whole_digits = digits_of(halves[0], line: line, negative: negative)?
-    fraction_digits: str @ ""
+    fraction_digits: str @= ""
 
     if halves.len() == 2
         fraction_digits @ halves[1]
@@ -144,8 +144,8 @@ function float_of(text: str, line: i64) -> f64?
             code: ERR_NUMBER,
             msg: "line " + line.to_str() + ": `" + text + "` has " + all_digits.len().to_str() + " digits and an i64 holds " + MOST_DIGITS.to_str()
         )
-    scaled: i64 @ 0
-    at: i64 @ 0
+    scaled: i64 @= 0
+    at: i64 @= 0
 
     while at < all_digits.len()
         digit = all_digits[at]
@@ -155,8 +155,8 @@ function float_of(text: str, line: i64) -> f64?
         scaled @ scaled * 10 + to_i64(digit - '0').must()
         at @ at + 1
 
-    scale: f64 @ 1.0
-    left: i64 @ fraction_digits.len()
+    scale: f64 @= 1.0
+    left: i64 @= fraction_digits.len()
 
     while left > 0
         scale @ scale * 10.0
@@ -195,8 +195,8 @@ function read(text: str) -> [row.Row]?
             code: ERR_HEADER,
             msg: "the header reads `" + all_lines[0] + "` and this program writes `" + row.HEADER + "`"
         )
-    out: [row.Row] @ []
-    number: i64 @ 1
+    out: [row.Row] @= []
+    number: i64 @= 1
     wanted = columns()
 
     for one in all_lines.slice(from: 1, to: all_lines.len())
@@ -270,7 +270,7 @@ record Trouble
 function holds(text: str, needle: str) -> bool
     if needle.len() > text.len()
         return false
-    at: i64 @ 0
+    at: i64 @= 0
 
     while at + needle.len() <= text.len()
         if text.slice(from: at, to: at + needle.len()) == needle

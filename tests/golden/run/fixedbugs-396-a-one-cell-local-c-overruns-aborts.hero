@@ -7,7 +7,7 @@ extern "fixedbugs-396-buffers.h"
     function digest32(@md: u8) -> i32
 
 function main()
-    m: u8 @ 0
+    m: u8 @= 0
     print("before")
     print(digest32(@m))
     print("not reached ", m)

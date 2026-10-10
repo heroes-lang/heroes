@@ -59,7 +59,7 @@ function wrong_type(s: source.Source, decls: [ast.Decl], tree: ast.Ast, line: st
         )
 
     if found.must().is_constant
-        d: diag.Diagnostic @ diag.new_diagnostic(
+        d: diag.Diagnostic @= diag.new_diagnostic(
             code: "ffi_constant_type",
             message: "`" + name + "` is not `" + declared + "` in `" + found.must().header + "` — clang read the header and the types disagree",
             span: found.must().span
@@ -68,7 +68,7 @@ function wrong_type(s: source.Source, decls: [ast.Decl], tree: ast.Ast, line: st
             "an `extern constant` takes its value from the header (§4.19), so its type is the header's too: correct the declared type, or name the header that spells `" + name + "` as `" + declared + "`"
         )
         return ok(d)
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "ffi_return_type",
         message: "`" + name + "` does not return `" + declared + "` — that is what `" + found.must().header + "` says, and clang read it",
         span: found.must().span
@@ -100,7 +100,7 @@ function not_constant(s: source.Source, decls: [ast.Decl], line: str) -> diag.Di
 
     if found.is_err()
         return fail(code: "none", msg: "no group declares this name")
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "ffi_not_constant",
         message: "`" + found.must().header + "` has `" + name + "`, but not as a constant — clang cannot read its value while compiling",
         span: found.must().span
@@ -143,8 +143,8 @@ constant UNKNOWN: str
 # hero_q;`, and where it says the word is a tag of any kind or a type
 # (`emit/ffi_held.hero`), this reader says nothing.
 function unknown_name(s: source.Source, tree: ast.Ast, decls: [ast.Decl], line: str, stderr: str, macros: {str: bool}, types: {str: str}, switched: {str: ffi_switched.Switch}) -> diag.Diagnostic?
-    quoted: str @ ""
-    caught: bool @ false
+    quoted: str @= ""
+    caught: bool @= false
     call_form = ffi_lookup.after(text: line, marker: "call to undeclared function '")
 
     if !call_form.is_err()
@@ -213,7 +213,7 @@ function unknown_name(s: source.Source, tree: ast.Ast, decls: [ast.Decl], line: 
         return ok(
             ffi_switched.told(header: found.must().header, name: name, decided: switched[name].must(), span: found.must().span)
         )
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "ffi_unknown_name",
         message: "`" + found.must().header + "` declares no `" + name + "` — clang read the header and could not find it",
         span: found.must().span
@@ -251,11 +251,11 @@ function macro_name(s: source.Source, tree: ast.Ast, decls: [ast.Decl], name: st
     if found.is_err()
         return fail(code: "none", msg: "no group declares this name")
     header = found.must().header
-    message: str @ "`" + header + "` defines `" + name + "` as a macro, not a function: a macro has no parameter types for clang to hold this declaration to"
+    message: str @= "`" + header + "` defines `" + name + "` as a macro, not a function: a macro has no parameter types for clang to hold this declaration to"
 
     if found.must().is_constant
         message @ "`" + header + "` defines `" + name + "` as a macro that takes arguments, not a value: it has none until it is called, and a macro has no parameter types for clang to hold a declaration to"
-    d: diag.Diagnostic @ diag.new_diagnostic(code: "ffi_macro_name", message: message, span: found.must().span)
+    d: diag.Diagnostic @= diag.new_diagnostic(code: "ffi_macro_name", message: message, span: found.must().span)
     d.notes @ d.notes.push(
         "bind a function of the program's own that calls it: in a header beside this file, `" + shim(s, tree, decls, name: name) + "`, with the C types the macro's documentation gives where the placeholders stand; then name that header in an `extern` group and declare `hero_" + name + "` there like any function, and clang holds that declaration to your function (§ 13)"
     )
@@ -266,9 +266,9 @@ function macro_name(s: source.Source, tree: ast.Ast, decls: [ast.Decl], name: st
 # value back. With no parameters declared, the macro's are the author's to
 # write, since a macro refused here takes some.
 function shim(s: source.Source, tree: ast.Ast, decls: [ast.Decl], name: str) -> str
-    names: [str] @ []
-    typed: [str] @ []
-    gives: bool @ true
+    names: [str] @= []
+    typed: [str] @= []
+    gives: bool @= true
 
     for decl in decls
         if source.span_text(s, decl.name) != name
@@ -286,8 +286,8 @@ function shim(s: source.Source, tree: ast.Ast, decls: [ast.Decl], name: str) -> 
                         .named | .array_of | .fixed | .map_of | .fallible | .function_type | .error => gives @ true
             .constant_decl | .record_decl | .variant_decl | .test_decl => continue
 
-    head: str @ "(<its parameters, in C>)"
-    call: str @ name + "(<their names>)"
+    head: str @= "(<its parameters, in C>)"
+    call: str @= name + "(<their names>)"
 
     if names.len() > 0
         head @ "(" + typed.join(", ") + ")"
@@ -319,8 +319,8 @@ function did_you_mean(stderr: str, name: str) -> str?
 # assertion's own closing punctuation.
 function trim_trailing(name: str) -> str
     cs = name.chars()
-    end: i64 @ cs.len()
-    fall: bool @ false
+    end: i64 @= cs.len()
+    fall: bool @= false
 
     while end > 0 && !fall
         last = cs[end - 1]
@@ -330,8 +330,8 @@ function trim_trailing(name: str) -> str
         else
             fall @ true
 
-    kept: [str] @ []
-    index: i64 @ 0
+    kept: [str] @= []
+    index: i64 @= 0
 
     while index < end
         kept @ kept.push(cs[index])
@@ -379,7 +379,7 @@ test "wrong_type splits the emitter's own tail into the two codes"
 
     # With the refused round's answer the header's type is named and its
     # word offered (defect 186).
-    asked: {str: ffi_asked.Typed} @ {}
+    asked: {str: ffi_asked.Typed} @= {}
     asked["sqrt"] @ ffi_asked.Typed(spelled: "double", canonical: "double")
     named = wrong_type(
         s,
@@ -459,7 +459,7 @@ test "a handle's tag the header holds is never told absent (defect 400)"
     c = checker.check(parsed.tree, out, s, parsed.decls)
     assert c.diagnostics.len() == 0
     no_macros: {str: bool} = {}
-    types: {str: str} @ {}
+    types: {str: str} @= {}
     types["opaque"] @ "tag"
     types["opaqe"] @ "neither"
     held = "m.c:14:42: error: use of undeclared identifier 'opaque'"

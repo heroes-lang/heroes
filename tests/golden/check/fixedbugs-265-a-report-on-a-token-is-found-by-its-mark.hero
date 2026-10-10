@@ -12,7 +12,7 @@
 # `said_here` finds the report standing.
 
 function heads(n: i64)
-    m: i64 @ n
+    m: i64 @= n
     while m >  #~ expected_expression
         m @ m - 1
     if m >  #~ expected_expression

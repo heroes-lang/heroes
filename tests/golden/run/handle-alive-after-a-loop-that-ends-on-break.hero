@@ -12,8 +12,8 @@ extern "handle-alive-after-a-loop-that-ends-on-break.h"
 
 function main()
     n = node_new(v: 3)
-    ended: bool @ false
-    k: i64 @ 0
+    ended: bool @= false
+    k: i64 @= 0
 
     while k < 3
         if node_peek(n: n) == k

@@ -23,7 +23,7 @@ function spaced() -> i64
 function loops(xs: [i64])
     for x in xs  #~ expected_expression
         print(x)
-    n: i64 @ 2
+    n: i64 @= 2
 
     while n > 0  #~ expected_expression
         n @ n - 1

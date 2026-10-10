@@ -68,7 +68,7 @@ function said(other: Other, written: str, kind: token.TokenKind, alone: bool) ->
             title: act + " it: " + title,
             certainty: .guess
         )
-    certainty: diag.Certainty @ .certain
+    certainty: diag.Certainty @= .certain
 
     if alone
         certainty @ .guess
@@ -95,7 +95,7 @@ function operand_act(kind: token.TokenKind) -> str
 # answer alike by being one.
 function closed_below(c: cursor.Cursor, text: str) -> bool
     here = cursor.current_span(c).start
-    i: i64 @ c.pos - 1
+    i: i64 @= c.pos - 1
 
     while i >= 0
         k = c.tokens[i].kind
@@ -121,7 +121,7 @@ function closed_below(c: cursor.Cursor, text: str) -> bool
 # spelled `word`.
 function standing_on(text: str, word: str) -> cursor.Cursor
     out = lexer.lex_one(text)
-    c: cursor.Cursor @ cursor.new_cursor(out.tokens)
+    c: cursor.Cursor @= cursor.new_cursor(out.tokens)
     c.closes @ out.closes
 
     while c.tokens[c.pos].kind != .eof && cursor.slice_of(text, c.tokens[c.pos].span) != word

@@ -97,7 +97,7 @@ function stage(diagnostics: [diag.Diagnostic], s: source.Source) -> cli_table.Ex
             )
             return ok(.failed_exit)
 
-    rendered: [str] @ []
+    rendered: [str] @= []
 
     for d in diagnostics
         rendered @ rendered.push(diag_render.render(d, s))
@@ -167,7 +167,7 @@ function to_unit(s: source.Source, options: Options, version: str) -> Artifact?
 
     if !stop_r.is_err()
         return leave(stop_r.must(), stage_name: "name resolution")
-    c: state.Checked @ checker.check(parsed.tree, out, s, parsed.decls)
+    c: state.Checked @= checker.check(parsed.tree, out, s, parsed.decls)
     stop_c = stage(c.diagnostics, s)
 
     if !stop_c.is_err()
@@ -177,7 +177,7 @@ function to_unit(s: source.Source, options: Options, version: str) -> Artifact?
 
     if !stop_l.is_err()
         return leave(stop_l.must(), stage_name: "lowering")
-    p: containers.Program @ low.program
+    p: containers.Program @= low.program
     problems = verify.verify(p, c, parsed.decls)
 
     if problems.len() > 0
@@ -216,11 +216,11 @@ function to_unit(s: source.Source, options: Options, version: str) -> Artifact?
     # not the file named on the command line.
     if c.holes.len() > 0
         io.print_artifact(text: holes.report(parsed.tree, out, c, s, parsed.decls))
-        files: [str] @ []
+        files: [str] @= []
 
         for hole in c.holes
             found = source.locate(s, hole.span.start)
-            already: bool @ false
+            already: bool @= false
 
             for one in files
                 if one == found.file
@@ -229,7 +229,7 @@ function to_unit(s: source.Source, options: Options, version: str) -> Artifact?
             if !already
                 files @ files.push(found.file)
 
-        unit: str @ "holes"
+        unit: str @= "holes"
 
         if c.holes.len() == 1
             unit @ "hole"
@@ -242,7 +242,7 @@ function to_unit(s: source.Source, options: Options, version: str) -> Artifact?
     # blessed emissions. `heroes build` of a program emits one .c per
     # module instead, so asking for the fused text there is 785,323
     # lines printed and dropped (measured on the compiler's own source).
-    wants_text: bool @ options.emit_c
+    wants_text: bool @= options.emit_c
 
     match options.target
         .tests_build   => wants_text @ true
@@ -284,7 +284,7 @@ function to_unit(s: source.Source, options: Options, version: str) -> Artifact?
     # what those five cases already satisfy.
 
     # A test build needs no main: the test blocks are the program.
-    needs_main: bool @ false
+    needs_main: bool @= false
 
     match options.target
         .program_build => needs_main @ true
@@ -362,7 +362,7 @@ test "the two stops, the hole refusal, and the missing main"
     assert got.must().c.len() > 0
 
     # A holed file: diagnostics exit, no unit.
-    hs = source.new_source(name: "t.hero", text: "function main()\n    n: i64 @ ???\n    print(n)\n")
+    hs = source.new_source(name: "t.hero", text: "function main()\n    n: i64 @= ???\n    print(n)\n")
     hopt = Options(
         level: "-O0",
         dump_ir: false,

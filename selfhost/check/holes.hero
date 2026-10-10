@@ -30,7 +30,7 @@ constant SUGGESTIONS: i64
 
 # The report for every hole in the file, in source order.
 function report(tree: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl]) -> str
-    rows: [str] @ []
+    rows: [str] @= []
     none: [str] = []
 
     if c.holes.len() == 0
@@ -43,7 +43,7 @@ function report(tree: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source
         # the root file at concatenated lines (panel 033 D2).
         found = source.locate(s, hole.span.start)
         rows @ rows.push("hole at " + found.file + ":" + found.line.to_str() + ":" + found.col.to_str() + "\n")
-        is_error: bool @ false
+        is_error: bool @= false
 
         match table.get(c.types, hole.expected)
             .error                                                     => is_error @ true
@@ -62,7 +62,7 @@ function report(tree: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source
                 result = state.result_type(c, owner.must())
 
                 if !result.is_err()
-                    is_unit: bool @ false
+                    is_unit: bool @= false
 
                     match table.get(c.types, result.must())
                         .unit                                                      => is_unit @ true
@@ -92,14 +92,14 @@ function in_scope(g: holes_gather.Gathered, r: resolved.Resolved, c: state.Check
     if owner.is_err()
         return ""
     none: [str] = []
-    shown: [str] @ []
+    shown: [str] @= []
 
     for index in g.locals_of[owner.must()]
         local = r.locals[index]
 
         if local.name.start <= at
             rendered = render.render_ty(c.types, s, decls, state.local_type(c, index), none)
-            marker: str @ ""
+            marker: str @= ""
 
             if local.mutable
                 marker @ " (mutable)"
@@ -107,8 +107,8 @@ function in_scope(g: holes_gather.Gathered, r: resolved.Resolved, c: state.Check
 
     if shown.len() == 0
         return ""
-    rows: [str] @ ["  in scope:\n"]
-    kept: i64 @ 0
+    rows: [str] @= ["  in scope:\n"]
+    kept: i64 @= 0
 
     for line in shown
         if kept < SUGGESTIONS
@@ -123,7 +123,7 @@ function in_scope(g: holes_gather.Gathered, r: resolved.Resolved, c: state.Check
 # most often a value that has to be built, and the fields are what it
 # is built from (§4.9: every field named, always).
 function fields_of(tree: ast.Ast, c: state.Checked, s: source.Source, decls: [ast.Decl], expected: i64) -> str
-    decl_at: i64 @ -1
+    decl_at: i64 @= -1
 
     match table.get(c.types, expected)
         .named n                                                   => decl_at @ n.decl
@@ -136,14 +136,14 @@ function fields_of(tree: ast.Ast, c: state.Checked, s: source.Source, decls: [as
 
     match decls[decl_at].kind
         .record_decl rec =>
-            shown: [str] @ []
+            shown: [str] @= []
 
             for f in rec.fields
                 shown @ shown.push(source.span_text(s, f.name) + ": " + types.render_type(tree, f.ty, s))
 
             return "  fields of " + source.span_text(s, decls[decl_at].name) + ": " + shown.join(", ") + "\n"
         .variant_decl v =>
-            shown: [str] @ []
+            shown: [str] @= []
 
             for one_case in v.cases
                 shown @ shown.push("." + source.span_text(s, one_case.name))
@@ -162,7 +162,7 @@ function fields_of(tree: ast.Ast, c: state.Checked, s: source.Source, decls: [as
 # §4.16's promise is the answer handed over, not a guess to repair.
 function nearby(g: holes_gather.Gathered, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl], expected: i64, at: i64) -> str
     here = source.module_at(s, at)
-    is_error: bool @ false
+    is_error: bool @= false
 
     match table.get(c.types, expected)
         .error                                                     => is_error @ true
@@ -172,7 +172,7 @@ function nearby(g: holes_gather.Gathered, r: resolved.Resolved, c: state.Checked
 
     if is_error
         return ""
-    shown: [str] @ []
+    shown: [str] @= []
     row = g.maker_at[expected]
 
     if row.is_err()
@@ -184,14 +184,14 @@ function nearby(g: holes_gather.Gathered, r: resolved.Resolved, c: state.Checked
     for m in g.makers[row.must()]
         if shown.len() == SUGGESTIONS
             break
-        reachable: bool @ m.module == here || m.module == source.LIBRARY_MODULE
+        reachable: bool @= m.module == here || m.module == source.LIBRARY_MODULE
 
         if !reachable
             reachable @ !resolved.binding_in(r, from: here, module: m.module).is_err()
 
         if !reachable
             continue
-        written: str @ m.name
+        written: str @= m.name
 
         if m.module != here
             # The form the author would TYPE, which is what THIS FILE
@@ -212,7 +212,7 @@ function nearby(g: holes_gather.Gathered, r: resolved.Resolved, c: state.Checked
             if local.is_err()
                 continue
             written @ local.must() + "." + m.name
-        line: str @ written + "(" + m.params + ")"
+        line: str @= written + "(" + m.params + ")"
 
         if decls[m.decl].doc.len() > 0
             line @ line + "\n      " + source.span_text(s, decls[m.decl].doc[0])
@@ -220,7 +220,7 @@ function nearby(g: holes_gather.Gathered, r: resolved.Resolved, c: state.Checked
 
     if shown.len() == 0
         return ""
-    rows: [str] @ ["  functions that return it:\n"]
+    rows: [str] @= ["  functions that return it:\n"]
 
     for line in shown
         rows @ rows.push("    " + line + "\n")
@@ -234,7 +234,7 @@ function nearby(g: holes_gather.Gathered, r: resolved.Resolved, c: state.Checked
 # stopped holding would cost time and never an answer.
 function owner_of(g: holes_gather.Gathered, decls: [ast.Decl], at: i64) -> i64?
     if !g.ascending
-        index: i64 @ 0
+        index: i64 @= 0
 
         for decl in decls
             if decl.span.start <= at && at < decl.span.end
@@ -242,8 +242,8 @@ function owner_of(g: holes_gather.Gathered, decls: [ast.Decl], at: i64) -> i64?
             index @ index + 1
 
         return fail(code: "none", msg: "no declaration holds this offset")
-    low: i64 @ 0
-    high: i64 @ g.starts.len()
+    low: i64 @= 0
+    high: i64 @= g.starts.len()
 
     while low < high
         middle = (low + high) / 2
@@ -264,7 +264,7 @@ function owner_of(g: holes_gather.Gathered, decls: [ast.Decl], at: i64) -> i64?
 ## Tests
 
 test "a hole reports the expected type, the scope, the fields and the makers"
-    text = "record Point\n    x: i64\n    y: i64\n\n# Builds the origin.\nfunction origin() -> Point\n    return Point(x: 0, y: 0)\n\nfunction main()\n    n = 3\n    p: Point @ ???\n    print(p.x + n)\n"
+    text = "record Point\n    x: i64\n    y: i64\n\n# Builds the origin.\nfunction origin() -> Point\n    return Point(x: 0, y: 0)\n\nfunction main()\n    n = 3\n    p: Point @= ???\n    print(p.x + n)\n"
     parsed = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
     out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
@@ -272,7 +272,7 @@ test "a hole reports the expected type, the scope, the fields and the makers"
     assert c.diagnostics.len() == 0
     assert c.holes.len() == 1
     got = report(parsed.tree, out, c, s, parsed.decls)
-    assert has_text(text: got, needle: "hole at t.hero:11:16\n")
+    assert has_text(text: got, needle: "hole at t.hero:11:17\n")
     assert has_text(text: got, needle: "  expected type: Point\n")
     assert has_text(text: got, needle: "  in scope:\n    n: i64\n")
     assert has_text(text: got, needle: "  fields of Point: x: i64, y: i64\n")
@@ -287,11 +287,11 @@ function has_text(text: str, needle: str) -> bool
 
     if needle_cs.len() > cs.len()
         return false
-    start: i64 @ 0
+    start: i64 @= 0
 
     while start <= cs.len() - needle_cs.len()
-        matched: bool @ true
-        offset: i64 @ 0
+        matched: bool @= true
+        offset: i64 @= 0
 
         while offset < needle_cs.len()
             if cs[start + offset] != needle_cs[offset]

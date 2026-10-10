@@ -34,7 +34,7 @@ function header(@c: cursor.Cursor, text: str) -> token.Span?
         return ok(span)
 
     if !cursor.at_reported_error(c)
-        message: str @ "expected the header's name in quotes after `extern`, found " + cursor.found(c, text) + " — `extern \"sqlite3.h\"`" + heads.in_braces(c, block: heads.below_of(.kw_extern))
+        message: str @= "expected the header's name in quotes after `extern`, found " + cursor.found(c, text) + " — `extern \"sqlite3.h\"`" + heads.in_braces(c, block: heads.below_of(.kw_extern))
 
         if cursor.at(c, .kw_function)
             message @ "an `extern` names the header its signatures come from — `extern \"math.h\"`, then the signatures indented under it. Without the header there is no `#include`, and nothing checks the declaration (§4.19)"
@@ -118,7 +118,7 @@ function one_library(@c: cursor.Cursor, text: str) -> ast.Library?
 
     if !cursor.at(c, .str_lit)
         if !cursor.at_reported_error(c)
-            message: str @ "expected the library's name in quotes after `link`, found " + cursor.found(c, text) + " — `link \"sqlite3\"`, which is `-lsqlite3` to the linker"
+            message: str @= "expected the library's name in quotes after `link`, found " + cursor.found(c, text) + " — `link \"sqlite3\"`, which is `-lsqlite3` to the linker"
 
             if is_package
                 message @ "expected the package's name in quotes after `package`, found " + cursor.found(c, text) + " — `package \"raylib\"`, which is what the machine is asked about"

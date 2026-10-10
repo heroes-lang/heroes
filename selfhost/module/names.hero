@@ -31,17 +31,17 @@ use bytes
 # with its underscores, before any sanitising. Deterministic from the path
 # as given: `./x.hero`, `x.hero` and `/tmp/x.hero` all yield `x`.
 function stem_of(path: str) -> str
-    start: i64 @ 0
-    i: i64 @ 0
+    start: i64 @= 0
+    i: i64 @= 0
 
     while i < path.len()
         if path[i] == '/' || path[i] == '\\'
             start @ i + 1
         i @ i + 1
 
-    end: i64 @ path.len()
-    j: i64 @ start
-    scanning: bool @ true
+    end: i64 @= path.len()
+    j: i64 @= start
+    scanning: bool @= true
 
     while scanning && j < path.len()
         if path[j] == '.'
@@ -80,8 +80,8 @@ function module_of(path: str) -> str
 # It is NOT the module's binding name — that is `binding_of`, the last part.
 # Two namespaces (C's and the program's) and this is C's.
 function component_of(module: str) -> str
-    letters: [str] @ []
-    i: i64 @ 0
+    letters: [str] @= []
+    i: i64 @= 0
 
     while i < module.len()
         if bytes.is_alnum(module[i])
@@ -109,8 +109,8 @@ function component_of(module: str) -> str
 # is built (`modules.hero`), for the same reason a component collision is
 # refused there: it is a property of a SET of files.
 function binding_of(module: str) -> str
-    start: i64 @ 0
-    i: i64 @ 0
+    start: i64 @= 0
+    i: i64 @= 0
 
     while i < module.len()
         if module[i] == '/'

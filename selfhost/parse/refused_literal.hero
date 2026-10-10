@@ -63,8 +63,8 @@ function closed(c: cursor.Cursor, text: str) -> bool
 
     if s.end - s.start < 2 || text[s.end - 1] != quote
         return false
-    slashes: i64 @ 0
-    i: i64 @ s.end - 2
+    slashes: i64 @= 0
+    i: i64 @= s.end - 2
 
     while i > s.start && text[i] == '\\'
         slashes @ slashes + 1

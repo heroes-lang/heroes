@@ -45,7 +45,7 @@ function condition(a: i64, b: bool) -> i64
 
 # A loop's iterable, after `in`.
 function iterable(xs: [i64]) -> i64
-    total: i64 @ 0
+    total: i64 @= 0
 
     #~v continuation_outside_brackets
     for x in xs

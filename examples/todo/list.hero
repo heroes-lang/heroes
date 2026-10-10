@@ -39,12 +39,12 @@ function is_space(c: u8) -> bool
     return c == ' ' || c == '\t' || c == 13
 
 function trimmed(line: str) -> str
-    from: i64 @ 0
+    from: i64 @= 0
 
     while from < line.len() && is_space(line[from])
         from @ from + 1
 
-    to: i64 @ line.len()
+    to: i64 @= line.len()
 
     while to > from && is_space(line[to - 1])
         to @ to - 1
@@ -52,9 +52,9 @@ function trimmed(line: str) -> str
     return line.slice(from: from, to: to)
 
 function split_lines(text: str) -> [str]
-    out: [str] @ []
-    start: i64 @ 0
-    i: i64 @ 0
+    out: [str] @= []
+    start: i64 @= 0
+    i: i64 @= 0
 
     while i < text.len()
         if text[i] == '\n'
@@ -69,8 +69,8 @@ function split_lines(text: str) -> [str]
 ## Reading and writing
 
 function read(text: str) -> [Task]?
-    out: [Task] @ []
-    number: i64 @ 0
+    out: [Task] @= []
+    number: i64 @= 0
 
     for line in split_lines(text)
         number @ number + 1
@@ -92,7 +92,7 @@ function read(text: str) -> [Task]?
 function render(tasks: [Task]) -> str
     if tasks.len() == 0
         return ""
-    lines: [str] @ []
+    lines: [str] @= []
 
     for task in tasks
         lines @ lines.push(marker_of(task) + " " + task.text)
@@ -120,7 +120,7 @@ function complete(tasks: [Task], n: i64) -> [Task]?
             code: ERR_NO_SUCH_TASK,
             msg: "there is no task " + n.to_str() + " — the list has " + tasks.len().to_str()
         )
-    out: [Task] @ []
+    out: [Task] @= []
 
     for i in range(from: 0, to: tasks.len())
         if i == n - 1
@@ -131,7 +131,7 @@ function complete(tasks: [Task], n: i64) -> [Task]?
     return ok(out)
 
 function left_to_do(tasks: [Task]) -> i64
-    open: i64 @ 0
+    open: i64 @= 0
 
     for task in tasks
         if !task.done
@@ -141,7 +141,7 @@ function left_to_do(tasks: [Task]) -> i64
 
 # `1. [ ] buy milk`, the view a person reads and types a number back at.
 function numbered(tasks: [Task]) -> [str]
-    out: [str] @ []
+    out: [str] @= []
 
     for i in range(from: 0, to: tasks.len())
         out @ out.push((i + 1).to_str() + ". " + marker_of(tasks[i]) + " " + tasks[i].text)

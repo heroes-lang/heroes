@@ -21,7 +21,7 @@ function f(ys: [i64], a: i64, b: i64) -> i64
     )]
     v = ys[(a + b  # after a sum
     )]
-    zs: [i64] @ ys
+    zs: [i64] @= ys
     zs[(a  # in a place
     )] @ 1
     return x + y + z + w + v + zs[0]

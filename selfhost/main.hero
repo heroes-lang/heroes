@@ -84,7 +84,7 @@ constant STACK_BYTES: i64
     268435456
 
 function main()
-    why: i64 @ 0
+    why: i64 @= 0
     handle = hero_thread_spawn_sized(body: command, arg: 0, bytes: STACK_BYTES, why: @why)
 
     # A thread the operating system will not start is the tool unable to run,
@@ -123,9 +123,9 @@ function command(_: i64) -> i64
     # `args_checked()`*, which fits one of them alone: an argument after
     # `run`'s `--`, which is the program's.
     raw = args_checked()
-    given: [str] @ []
-    unheld: i64 @ -1
-    at: i64 @ 0
+    given: [str] @= []
+    unheld: i64 @= -1
+    at: i64 @= 0
 
     for one in raw
         if one.is_err() && unheld < 0
@@ -157,7 +157,7 @@ function command(_: i64) -> i64
         if !clash.is_err()
             io.eprint(text: "error: " + clash.must())
             exit(code: 2)
-    reading: bool @ false
+    reading: bool @= false
 
     # `fmt` reads THE FILE IT WAS NAMED and nothing else, where the other
     # six read the whole compilation. It is the one command that provably
@@ -176,7 +176,7 @@ function command(_: i64) -> i64
     #
     # It also closes a second thing: a syntax error in a SIBLING module
     # used to refuse to format the file you named.
-    root_only: bool @ false
+    root_only: bool @= false
 
     # The ones that answer without reading a program.
     match inv.tag
@@ -209,7 +209,7 @@ function command(_: i64) -> i64
     _ = reading
     path = inv.file.default("")
     library = library_source.text()
-    read: source.Source? @ fail(code: "unset", msg: "no read yet")
+    read: source.Source? @= fail(code: "unset", msg: "no read yet")
 
     if root_only
         read @ input.read_root_only(path: path)
@@ -220,7 +220,7 @@ function command(_: i64) -> i64
         io.eprint(text: "error: " + message_of_source(read))
         exit(code: 2)
     s: source.Source = read.must()
-    verdict: cli_table.Exit @ .ok_exit
+    verdict: cli_table.Exit @= .ok_exit
 
     match inv.tag
         .lex_cmd                                                                        => verdict @ lex.run(s, inv)
@@ -252,8 +252,8 @@ function command(_: i64) -> i64
 # `process.walk` names a file. `args_checked()` says which argument is not
 # text, and not what it holds.
 function arg_written(index: i64) -> str
-    status: i64 @ 0
-    marks: i64 @ 0
+    status: i64 @= 0
+    marks: i64 @= 0
     got = hero_args_shown(index: index, status: @status, marks: @marks)
     return process.written_value(answer: got, marks: marks)
 

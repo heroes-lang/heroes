@@ -8,6 +8,6 @@ extern "ffi-owned-on-a-cell-a-typedef-spells-const.h"
     function free_out(p: cstr)
 
 function main()
-    s: str? @ fail(code: "none", msg: "nothing yet")
+    s: str? @= fail(code: "none", msg: "nothing yet")
     fill_t(out: @s)
     print("after")

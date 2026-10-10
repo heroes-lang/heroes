@@ -48,10 +48,10 @@ function check(p: containers.Program, f: containers.Function, c: state.Checked, 
     if !has_return_slot(f)
         return
     exits = exit_blocks(f)
-    index: i64 @ 0
+    index: i64 @= 0
 
     for blk in f.blocks
-        position: i64 @ 0
+        position: i64 @= 0
 
         for inst in blk.insts
             for root in roots_named(f, inst.op)
@@ -67,9 +67,9 @@ function check(p: containers.Program, f: containers.Function, c: state.Checked, 
 
 # Two or more returning blocks, refused, but for the hole's shape above.
 function ways_out(f: containers.Function, c: state.Checked, label: str, @problems: [str])
-    returning: [str] @ []
-    valueless: bool @ false
-    index: i64 @ 0
+    returning: [str] @= []
+    valueless: bool @= false
+    index: i64 @= 0
 
     for blk in f.blocks
         match blk.term
@@ -99,11 +99,11 @@ function has_return_slot(f: containers.Function) -> bool
 # The blocks that return the value of their own whole load of a return
 # slot: the exits a return site may jump to.
 function exit_blocks(f: containers.Function) -> {i64: bool}
-    exits: {i64: bool} @ {}
-    index: i64 @ 0
+    exits: {i64: bool} @= {}
+    index: i64 @= 0
 
     for blk in f.blocks
-        returned: i64 @ 0 - 1
+        returned: i64 @= 0 - 1
 
         match blk.term
             .return_term ret =>
@@ -177,7 +177,7 @@ function named(slot: str) -> str
 function exit_load(p: containers.Program, blk: containers.Block, c: state.Checked, position: i64, slot: str) -> str
     inst = blk.insts[position]
     loaded = inst.dest.default(0 - 1)
-    returns_it: bool @ false
+    returns_it: bool @= false
 
     match blk.term
         .return_term ret                                      => returns_it @ !ret.value.is_err() && ret.value.must() == loaded
@@ -185,7 +185,7 @@ function exit_load(p: containers.Program, blk: containers.Block, c: state.Checke
 
     if !returns_it
         return "reads " + slot + " and does not return what it read: only the exit reads it"
-    at: i64 @ 0
+    at: i64 @= 0
 
     while at < position
         match blk.insts[at].op
@@ -196,7 +196,7 @@ function exit_load(p: containers.Program, blk: containers.Block, c: state.Checke
 
         at @ at + 1
 
-    owned: bool @ false
+    owned: bool @= false
 
     match p.phase
         .owned           => owned @ true
@@ -229,7 +229,7 @@ function unretained(slot: str) -> str
 # nothing on a merged function. What each way out stored there is read
 # instead, once, from the exit: a store of another type is the wrong return.
 function stored_types(f: containers.Function, blk: containers.Block, c: state.Checked, value: i64, at: str, @problems: [str])
-    root: i64 @ 0 - 1
+    root: i64 @= 0 - 1
 
     for inst in blk.insts
         if !inst.dest.is_err() && inst.dest.must() == value
@@ -247,7 +247,7 @@ function stored_types(f: containers.Function, blk: containers.Block, c: state.Ch
 
     if f.slots[root].ty != f.result
         problems @ problems.push(at + "returns " + slot + ", which is not of the function's result type")
-    index: i64 @ 0
+    index: i64 @= 0
 
     for site in f.blocks
         for inst in site.insts
@@ -337,7 +337,7 @@ function whole(root: i64) -> ir.Place
     return ir.Place(root: root, path: ir.Run(start: 0, length: 0))
 
 function asked(f: containers.Function, phase: containers.Phase, c: state.Checked) -> [str]
-    problems: [str] @ []
+    problems: [str] @= []
     check(containers.Program(phase: phase, functions: [f], strings: []), f, c, label: "f: ", problems: @problems)
     return problems
 

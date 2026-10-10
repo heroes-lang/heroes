@@ -41,7 +41,7 @@ record Ran
 # C asked after them, or nothing.
 function opening(headers: [str], question: str) -> str
     no_names: {str: bool} = {}
-    lines: [str] @ [macro_guard.FIRST_LINE]
+    lines: [str] @= [macro_guard.FIRST_LINE]
 
     for line in c_text.includes(emit_externs.SEEDS)
         lines @ lines.push(line)
@@ -57,7 +57,7 @@ function opening(headers: [str], question: str) -> str
 
 # A unit's headers but the compiler's own, which its opening writes first.
 function theirs(headers: [str]) -> [str]
-    out: [str] @ []
+    out: [str] @= []
 
     for header in headers
         if !emit_externs.is_own(header)

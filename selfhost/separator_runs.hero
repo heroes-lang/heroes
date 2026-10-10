@@ -58,7 +58,7 @@ function semicolon(@diagnostics: [diag.Diagnostic], text: str, at: token.Span)
 # run's report where the last report said is that run's. The deletion,
 # titled `title`, takes the separator and the spaces before it on its line.
 function said(@diagnostics: [diag.Diagnostic], text: str, at: token.Span, code: str, message: str, title: str)
-    from: i64 @ at.start
+    from: i64 @= at.start
 
     while from > 0 && (text[from - 1] == ' ' || text[from - 1] == '\t')
         from @ from - 1
@@ -68,12 +68,12 @@ function said(@diagnostics: [diag.Diagnostic], text: str, at: token.Span, code: 
 
     if last >= 0 && runs_on(diagnostics[last], text: text, code: code, title: title, to: at.start)
         none: [diag.Fix] = []
-        run: diag.Diagnostic @ diagnostics[last]
+        run: diag.Diagnostic @= diagnostics[last]
         diagnostics[last].fixes @ none
         push_fix(@run.fixes, gone)
         diagnostics[last] @ run
         return
-    d: diag.Diagnostic @ diag.new_diagnostic(code: code, message: message, span: at)
+    d: diag.Diagnostic @= diag.new_diagnostic(code: code, message: message, span: at)
     d.fixes @ d.fixes.push(gone)
     diagnostics @ diagnostics.push(d)
 
@@ -85,7 +85,7 @@ function runs_on(d: diag.Diagnostic, text: str, code: str, title: str, to: i64) 
 
     if d.code != code || n == 0 || d.fixes[n - 1].title != title
         return false
-    i: i64 @ d.fixes[n - 1].span.end
+    i: i64 @= d.fixes[n - 1].span.end
 
     while i < to
         if text[i] == '\n' && i + 1 < to && with_words(text[i + 1])
@@ -105,7 +105,7 @@ function push_fix(@fixes: [diag.Fix], f: diag.Fix)
 # Whether nothing but spaces stands from `at` to its line's end, a comment or
 # the text's end: a separator there ends its line.
 function ends_its_line(text: str, at: i64) -> bool
-    i: i64 @ at
+    i: i64 @= at
 
     while i < text.len() && (text[i] == ' ' || text[i] == '\t')
         i @ i + 1
@@ -118,7 +118,7 @@ test "a separator opens a run, and the next in its declaration is one more delet
     # Two statements of one function, then a second function's: `,` at 9, 20
     # and 44, a declaration at column 0 between the second and the third.
     text = "    x = 1,\n    y = 2,\nfunction g()\n    z = 3,\n"
-    reports: [diag.Diagnostic] @ []
+    reports: [diag.Diagnostic] @= []
 
     for at in [9, 20, 44]
         comma(@reports, text, at: token.Span(start: at, end: at + 1))
@@ -130,7 +130,7 @@ test "a separator opens a run, and the next in its declaration is one more delet
 
 test "any other report said between ends a run"
     text = "    x = 1,\n    y = 2,\n"
-    reports: [diag.Diagnostic] @ []
+    reports: [diag.Diagnostic] @= []
     comma(@reports, text, at: token.Span(start: 9, end: 10))
     reports @ reports.push(diag.new_diagnostic(code: "other", message: "m", span: token.Span(start: 15, end: 16)))
     comma(@reports, text, at: token.Span(start: 20, end: 21))
@@ -139,7 +139,7 @@ test "any other report said between ends a run"
 
 test "a deletion takes the separator and the spaces before it, and a separator ends its line before a comment"
     text = "    x: i64  ;  # a note\n"
-    reports: [diag.Diagnostic] @ []
+    reports: [diag.Diagnostic] @= []
     semicolon(@reports, text, at: token.Span(start: 12, end: 13))
     assert reports[0].fixes[0].span.start == 10
     assert reports[0].fixes[0].certainty == .certain

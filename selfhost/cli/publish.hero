@@ -70,14 +70,14 @@ use cli/strings
 # that fires if a part is ever held to fewer than 255 minus the suffix).
 function private_name(path: str) -> str
     suffix = "." + process.pid().to_str() + "-" + process.serial().to_str() + ".tmp"
-    cut: i64 @ path.len()
+    cut: i64 @= path.len()
 
     while cut > 0 && path[cut - 1] != 47 && path[cut - 1] != 92
         cut @ cut - 1
 
     if path.len() - cut <= NAME_KEPT
         return path + suffix
-    end: i64 @ cut + NAME_KEPT
+    end: i64 @= cut + NAME_KEPT
 
     # Back to the first byte of a character: a UTF-8 continuation byte is
     # 0x80 to 0xBF, and a slice may not split one.
@@ -103,9 +103,9 @@ constant NAME_KEPT: i64
 # process's own name only by a pid used again, so it is passed over for the
 # next, a few times and no more.
 function write_whole(path: str, text: str, keyed: bool) -> ()?
-    staged: str @ private_name(path)
-    made: ()? @ files.stage(staged: staged, text: text, like: "")
-    tries: i64 @ 1
+    staged: str @= private_name(path)
+    made: ()? @= files.stage(staged: staged, text: text, like: "")
+    tries: i64 @= 1
 
     while made.is_err() && process.path_exists(staged) && tries < STAGE_TRIES
         staged @ private_name(path)
@@ -218,7 +218,7 @@ function refused(path: str, what: str) -> str?
 # alone, which every platform takes: `\` is Windows' separator and a byte of
 # a name elsewhere, so a path is never split at it.
 function base_of(path: str) -> str
-    at: i64 @ path.len()
+    at: i64 @= path.len()
 
     while at > 0 && path[at - 1] != 47
         at @ at - 1
@@ -287,7 +287,7 @@ function stage_words(failed: ()?) -> str
 # as it was, or, where nothing was there, still nothing. Asked of the path
 # when the sentence is written, because that is the moment it describes.
 function untouched(path: str, what: str) -> ()?
-    ending: str @ path + " is untouched"
+    ending: str @= path + " is untouched"
 
     if nothing_at(path)
         ending @ path + " was not created"
@@ -336,8 +336,8 @@ test "a private name a killed build left behind is passed over and never written
     assert !process.mkdir_all(dir).is_err()
     target = dir + "/kept.txt"
     asked = private_name(target)
-    serial: i64 @ 0
-    at: i64 @ (target + "." + process.pid().to_str() + "-").len()
+    serial: i64 @= 0
+    at: i64 @= (target + "." + process.pid().to_str() + "-").len()
 
     while at < asked.len() - 4
         serial @ serial * 10 + (asked[at] - '0').to_i64().must()

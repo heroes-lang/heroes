@@ -34,7 +34,7 @@ function blocked(a: ast.Ast, r: resolved.Resolved, s: source.Source, value: i64)
     root = leasing.place_root(a, at: value)
 
     if root.is_err()
-        return "`@` stands before a place the call writes back into, a name, a field or an element, and this is a value: bind it to a cell first, `x: <type> @ …`, and pass `@x`"
+        return "`@` stands before a place the call writes back into, a name, a field or an element, and this is a value: bind it to a cell first, `x: <type> @= …`, and pass `@x`"
     name = source.span_text(s, a.exprs[root.must()].span)
     marked = "`@" + source.span_text(s, a.exprs[value].span) + "`"
 
@@ -49,8 +49,8 @@ function blocked(a: ast.Ast, r: resolved.Resolved, s: source.Source, value: i64)
                 .param => "`" + name + "` is a parameter without `@`, so " + marked + " would be refused: mark it `@" + name + "` in the signature too, and at every call"
                 .loop_var => "`" + name + "` is the loop variable, bound afresh for each element, so " + marked + " would be refused: pass a cell declared outside the loop"
                 .payload => "`" + name + "` is bound by the pattern, so " + marked + " would be refused: bind what you need with `@` outside the `match`"
-                .bind | .cell => "`" + name + "` was bound with `=`, which binds once, so " + marked + " would be refused: declare it a cell, `" + name + ": <type> @ <value>`, and pass " + marked
-        .top | .module | .builtin | .unresolved => return "`" + name + "` is no cell, and there are no mutable globals: pass a cell declared with `@`"
+                .bind | .cell => "`" + name + "` was bound with `=`, which binds once, so " + marked + " would be refused: declare it a cell, `" + name + ": <type> @= <value>`, and pass " + marked
+        .top | .module | .builtin | .unresolved => return "`" + name + "` is no cell, and there are no mutable globals: pass a cell declared with `@=`"
 
     return ""
 

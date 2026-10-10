@@ -39,8 +39,8 @@ function put(path: str, bytes: [i64]) -> bool
     return true
 
 function said(path: str)
-    status: i64 @ 0
-    marks: i64 @ 0
+    status: i64 @= 0
+    marks: i64 @= 0
     got = hero_file_read_shown(path: path.cstr(), status: @status, marks: @marks)
     print("status ", status == HERO_OS_OK, " ", status == HERO_OS_NOT_FOUND, " ", status == HERO_OS_NOT_TEXT)
     print("marks [", got.slice(from: 0, to: marks), "]")

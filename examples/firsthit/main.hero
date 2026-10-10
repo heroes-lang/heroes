@@ -45,7 +45,7 @@ function wanted(n: i64) -> bool
     return n > 0 && n % 97 == 0 && n % 89 == 0
 
 function first_in(index: i64) -> i64
-    at: i64 @ index * PER_BAND
+    at: i64 @= index * PER_BAND
 
     while at < index * PER_BAND + PER_BAND
         if wanted(n: at)
@@ -55,14 +55,14 @@ function first_in(index: i64) -> i64
     return NOWHERE
 
 function first_at_once() -> i64
-    handles: [i64] @ []
-    i: i64 @ 0
+    handles: [i64] @= []
+    i: i64 @= 0
 
     while i < BANDS
         handles @ handles.push(hero_thread_spawn(body: first_in, arg: i))
         i @ i + 1
 
-    best: i64 @ NOWHERE
+    best: i64 @= NOWHERE
 
     for h in handles
         found = hero_thread_join(handle: h)
@@ -73,7 +73,7 @@ function first_at_once() -> i64
     return best
 
 function first_alone() -> i64
-    at: i64 @ 0
+    at: i64 @= 0
 
     while at < BANDS * PER_BAND
         if wanted(n: at)

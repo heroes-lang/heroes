@@ -14,5 +14,5 @@ function built() -> SP
 
 function main()
     dirty()
-    s: SP @ built()
+    s: SP @= built()
     print(s.kind, " ", sp_union(@s))

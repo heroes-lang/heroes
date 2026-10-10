@@ -31,11 +31,11 @@ function right_below()
 function a_declaration()
     x = {1: 2
     print(x)
-    z: i64 @ 3 )  #~ expected_separator expected_end_of_line
+    z: i64 @= 3 )  #~ expected_separator expected_end_of_line
     print(z)
 
 function a_mutation()
-    z: i64 @ 0
+    z: i64 @= 0
     x = {1: 2
     print(x)
     z @ 3 )  #~ expected_map_entry_colon expected_end_of_line

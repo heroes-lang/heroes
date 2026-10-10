@@ -69,14 +69,14 @@ function read_plan(dir: str) -> Plan?
     singles_text = read_text(dir + "/plan-singles.jsonl")?
     base_text = read_text(dir + "/plan-base.jsonl")?
     pairs_text = read_text(dir + "/plan-pairs.jsonl")?
-    base: {str: json_read.Json} @ {}
+    base: {str: json_read.Json} @= {}
 
     for row in json_read.read_lines(base_text)?
         base[json_fields.text_field(row, name: "key")?] @ row
 
-    singles: [Single] @ []
-    seen: {str: bool} @ {}
-    number: i64 @ 0
+    singles: [Single] @= []
+    seen: {str: bool} @= {}
+    number: i64 @= 0
 
     for row in json_read.read_lines(singles_text)?
         number @ number + 1
@@ -93,7 +93,7 @@ function read_plan(dir: str) -> Plan?
         seen[one.must().key] @ true
         singles @ singles.push(one.must())
 
-    pairs: [Pair] @ []
+    pairs: [Pair] @= []
     number @ 0
 
     for row in json_read.read_lines(pairs_text)?
@@ -119,14 +119,14 @@ function single(row: json_read.Json, base: {str: json_read.Json}) -> Single?
 
     if measured.is_err()
         return fail(code: "bad_plan", msg: "`" + key + "` has no line in plan-base.jsonl")
-    found: [hunks.Hunk] @ []
+    found: [hunks.Hunk] @= []
 
     for h in json_fields.items_field(row, name: "hunks")?
         found @ found.push(
             hunks.Hunk(start: json_fields.whole_field(h, name: "start")?, end: json_fields.whole_field(h, name: "end")?, lines: json_fields.texts_field(h, name: "new")?, site: json_fields.wholes_field(h, name: "site")?)
         )
 
-    statements: [hunks.Lines] @ []
+    statements: [hunks.Lines] @= []
 
     for range_of in json_fields.items_field(row, name: "stmt_lines")?
         ends = json_fields.items_of(range_of)?
@@ -148,7 +148,7 @@ function pair(row: json_read.Json) -> Pair?
 
 # Each file of the plan in `dir` with its digest, as `PINNED` writes them.
 function digests(dir: str) -> [str]?
-    out: [str] @ []
+    out: [str] @= []
 
     for name in PLAN_FILES
         out @ out.push(name + " " + digest.digest(read_text(dir + "/" + name)?))
@@ -157,7 +157,7 @@ function digests(dir: str) -> [str]?
 
 # Every program the plan mutates, sorted, each once.
 function files(p: Plan) -> [str]
-    seen: {str: bool} @ {}
+    seen: {str: bool} @= {}
 
     for one in p.singles
         seen[one.file] @ true
@@ -168,7 +168,7 @@ function files(p: Plan) -> [str]
 
 # The singles by key.
 function by_key(p: Plan) -> {str: Single}
-    out: {str: Single} @ {}
+    out: {str: Single} @= {}
 
     for one in p.singles
         out[one.key] @ one
@@ -219,7 +219,7 @@ test "the pinned plan is the one frozen on 2026-09-30, with every program it mut
     assert programs.len() == 634
     walked = process.walk(DEFAULT + "/corpus").must()
     assert walked.files.len() == 653
-    frozen: {str: bool} @ {}
+    frozen: {str: bool} @= {}
 
     for path in walked.files
         frozen[path] @ true

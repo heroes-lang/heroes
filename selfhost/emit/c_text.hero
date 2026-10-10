@@ -40,13 +40,13 @@
 # character's edge, and an escaped byte of a longer character is never the
 # edge of a slice.
 function literal(text: str) -> str
-    parts: [str] @ ["\""]
-    plain: i64 @ 0
-    i: i64 @ 0
+    parts: [str] @= ["\""]
+    plain: i64 @= 0
+    i: i64 @= 0
 
     while i < text.len()
         byte = text[i]
-        escape: str @ ""
+        escape: str @= ""
 
         if byte == '"'
             escape @ "\\\""
@@ -128,13 +128,13 @@ function line_at(at: i64, name: str) -> str
 # reaches here is a path the compiler was given or found, or a name of its
 # own; one that held a NUL would name another file, so it stops here.
 function line_name(file: str) -> str
-    parts: [str] @ ["\""]
-    plain: i64 @ 0
-    i: i64 @ 0
+    parts: [str] @= ["\""]
+    plain: i64 @= 0
+    i: i64 @= 0
 
     while i < file.len()
         byte = file[i]
-        escape: str @ ""
+        escape: str @= ""
         assert byte != 0
 
         if byte == '"'
@@ -167,7 +167,7 @@ function line_name(file: str) -> str
 # One `#include <...>` per header, in the order given, each as `header_lines`
 # spells it.
 function includes(headers: [str]) -> [str]
-    out: [str] @ []
+    out: [str] @= []
 
     for header in headers
         for line in header_lines(header)
@@ -181,9 +181,9 @@ function includes(headers: [str]) -> [str]
 # is the only one written (`emit/decls.hero` says why).
 function header_lines(header: str) -> [str]
     text = "#include <" + header + ">"
-    lines: [str] @ []
-    start: i64 @ 0
-    i: i64 @ 0
+    lines: [str] @= []
+    start: i64 @= 0
+    i: i64 @= 0
 
     while i < text.len()
         if ends_trigraph(text, at: i)
@@ -201,13 +201,13 @@ function header_lines(header: str) -> [str]
 # `#line` restore after it. A byte above ASCII stays itself: a comment may
 # hold any UTF-8, and a `str` holds nothing else.
 function in_comment(text: str) -> str
-    parts: [str] @ []
-    plain: i64 @ 0
-    i: i64 @ 0
+    parts: [str] @= []
+    plain: i64 @= 0
+    i: i64 @= 0
 
     while i < text.len()
         byte = text[i]
-        escape: str @ ""
+        escape: str @= ""
 
         if byte == '\n'
             escape @ "\\n"

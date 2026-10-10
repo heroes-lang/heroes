@@ -118,7 +118,7 @@ function write_c(t: toolchain.Toolchain, options: compile.Options, art: compile.
     # `tests/golden/run/` programs under the build's own flags at `-O0`
     # (`-fsyntax-only`, a package's `pkg-config --cflags` added for the nine
     # that bind one), and said nothing of any of them.
-    text: str @ art.c
+    text: str @= art.c
     units = header_types.lend_units(answered)
 
     if struct_tags.len() > 0 || units.len() > 0

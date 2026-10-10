@@ -91,8 +91,8 @@ function toggled(mask: i64, level: str) -> i64
 # worth reading together: one place where C's parentheses are unnecessary here,
 # one where they are just as necessary as there.
 function how_many(mask: i64) -> i64
-    left: i64 @ mask
-    n: i64 @ 0
+    left: i64 @= mask
+    n: i64 @= 0
 
     while left != 0
         n @ n + (left & 1)
@@ -103,7 +103,7 @@ function how_many(mask: i64) -> i64
 # The names in the set, in the order the levels are declared — which is the order
 # of severity, and the one a reader expects a level list in.
 function names_of(mask: i64) -> [str]
-    out: [str] @ []
+    out: [str] @= []
 
     for level in ["TRACE", "DEBUG", "INFO", "WARN", "ERROR"]
         if holds(mask, level)
@@ -113,7 +113,7 @@ function names_of(mask: i64) -> [str]
 
 # `ERROR,WARN` — a comma-separated list of level names, as one mask.
 function read(text: str) -> i64?
-    mask: i64 @ 0
+    mask: i64 @= 0
 
     for name in split_on(text, ',')
         if bit_of(name) == 0
@@ -126,9 +126,9 @@ function read(text: str) -> i64?
     return ok(mask)
 
 function split_on(text: str, c: u8) -> [str]
-    out: [str] @ []
-    start: i64 @ 0
-    i: i64 @ 0
+    out: [str] @= []
+    start: i64 @= 0
+    i: i64 @= 0
 
     while i <= text.len()
         if i == text.len() || text[i] == c

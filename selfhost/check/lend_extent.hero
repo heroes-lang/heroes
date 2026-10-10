@@ -77,7 +77,7 @@ use resolve
 # is a sibling is the sibling, whatever the group also declares.
 function declared_extents(@c: state.Checker, a: ast.Ast, s: source.Source, decls: [ast.Decl], f: ast.FunctionDecl, declared_name: token.Span, refused: {i64: bool})
     function_name = source.span_text(s, declared_name)
-    position: i64 @ 0 - 1
+    position: i64 @= 0 - 1
 
     for param in f.params
         position @ position + 1
@@ -87,7 +87,7 @@ function declared_extents(@c: state.Checker, a: ast.Ast, s: source.Source, decls
         mark = param.counted_by.must()
         param_name = source.span_text(s, param.name)
         sibling_name = source.span_text(s, mark)
-        why: str @ ""
+        why: str @= ""
 
         if !is_ptr(c, param.ty) && !lent_whole(c, decls, param) && !ffi_buffer.is_array_out(c, param)
             why @ "`counted_by` says how far C reads or writes through a `ptr`, through a group's record lent whole with `@`, or through an array lent with `@` as a buffer, and `" + param_name + "` is none of them"
@@ -207,7 +207,7 @@ function declared_lends(@c: state.Checker, s: source.Source, f: ast.FunctionDecl
         if !param.lent
             continue
         param_name = source.span_text(s, param.name)
-        why: str @ ""
+        why: str @= ""
 
         if param.mutable
             continue
@@ -270,8 +270,8 @@ function shape_refusals(text: str) -> i64
     p = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
     out = resolve.resolve(p.tree, s, p.decls, p.uses)
-    c: state.Checker @ state.new_checker(out_of: out, expr_count: p.tree.exprs.len())
-    i: i64 @ 0
+    c: state.Checker @= state.new_checker(out_of: out, expr_count: p.tree.exprs.len())
+    i: i64 @= 0
 
     while i < p.tree.types.len()
         _ = lower.lower_ty(@c, p.tree, out, i)
@@ -286,7 +286,7 @@ function shape_refusals(text: str) -> i64
             .constant_decl | .record_decl | .variant_decl | .test_decl =>
                 _ = 0
 
-    n: i64 @ 0
+    n: i64 @= 0
 
     for d in c.out.diagnostics
         if d.code == "counted_by_shape"
@@ -302,8 +302,8 @@ test "the three shapes of a wrong mark are refused, and the right one is quiet"
 
 test "a mark naming its own parameter names no extent, and an `@` cell is a count C reads"
     assert shape_refusals("extern \"s.h\"\n    function f(p: ptr counted_by p, n: i64) -> i64\n\nfunction main()\n    print(f(p: nullptr, n: 0))\n") == 1
-    assert shape_refusals("extern \"s.h\"\n    function f(p: ptr counted_by n, @n: i64) -> i64\n\nfunction main()\n    k: i64 @ 0\n    print(f(p: nullptr, @k))\n") == 0
-    assert shape_refusals("extern \"s.h\"\n    function f(p: ptr counted_by n, @n: f64) -> i64\n\nfunction main()\n    k: f64 @ 0.0\n    print(f(p: nullptr, @k))\n") == 1
+    assert shape_refusals("extern \"s.h\"\n    function f(p: ptr counted_by n, @n: i64) -> i64\n\nfunction main()\n    k: i64 @= 0\n    print(f(p: nullptr, @k))\n") == 0
+    assert shape_refusals("extern \"s.h\"\n    function f(p: ptr counted_by n, @n: f64) -> i64\n\nfunction main()\n    k: f64 @= 0.0\n    print(f(p: nullptr, @k))\n") == 1
 
 # Panel 194's R7: a group's record lent whole through `@` takes the mark; the
 # same record by value lends nothing, and a handle is a pointer already.

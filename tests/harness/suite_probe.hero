@@ -182,9 +182,9 @@ function trees() -> [Tree]
     ]
 
 function run_all(scratch: str, compiler: str) -> report.Report?
-    r: report.Report @ report.empty()
+    r: report.Report @= report.empty()
     row = fixture_row()
-    words: [str] @ [compiler]
+    words: [str] @= [compiler]
 
     for word in row.words
         words @ words.push(word)
@@ -206,7 +206,7 @@ function run_all(scratch: str, compiler: str) -> report.Report?
         census = shell.run(scratch: scratch, program: compiler, words: [compiler, "probe", tree.root, "--family", family, "--stride", CENSUS_STRIDE])?
         files = shell.found_under(dir: tree.root, suffix: ".hero", reference: "")?
         none: [str] = []
-        sum: Sum @ Sum(seeds: 0, refused: 0, generated: 0, parsing: 0, named: none, broken: none)
+        sum: Sum @= Sum(seeds: 0, refused: 0, generated: 0, parsing: 0, named: none, broken: none)
 
         for file in files
             one = shell.run(scratch: scratch, program: compiler, words: [compiler, "probe", file, "--family", family])?
@@ -220,7 +220,7 @@ function run_all(scratch: str, compiler: str) -> report.Report?
 function judged(@r: report.Report, row: Row, ran: shell.Run)
     label = "probe/" + row.name
     named = failures(ran.err)
-    want: i64 @ 0
+    want: i64 @= 0
 
     if row.known.len() > 0
         want @ 2
@@ -297,7 +297,7 @@ function judged(@r: report.Report, row: Row, ran: shell.Run)
 # else at 1, and every exit but 0 and a 2 naming its failures, is kept to
 # be told, the watchdog's 124 among them.
 function added(sum: Sum, file: str, family: str, ran: shell.Run) -> Sum
-    out: Sum @ sum
+    out: Sum @= sum
 
     if ran.code == 1 && strings.contains(text: ran.err, needle: REFUSING)
         out.refused @ out.refused + 1
@@ -419,7 +419,7 @@ function shown(broken: [str]) -> str
 # Every failure the report names, as `<file> <family> <variant>`: the first
 # is written `, family F, variant V,` after its file, the next ones `F V,`.
 function failures(err: str) -> [str]
-    out: [str] @ []
+    out: [str] @= []
 
     for line in strings.lines(err)
         first = strings.starts_with(text: line, prefix: "error: the first, `")
@@ -431,7 +431,7 @@ function failures(err: str) -> [str]
         if parts.len() < 3
             continue
         pieces = strings.split_text(text: parts[2], separator: ",")
-        found: [str] @ [parts[1]]
+        found: [str] @= [parts[1]]
 
         if first && pieces.len() > 2
             for word in strings.words(pieces[1] + " " + pieces[2])
@@ -465,7 +465,7 @@ function refused_of(out: str) -> i64
 function tally(text: str, family: str) -> [str]
     for line in strings.lines(text)
         if strings.starts_with(text: line, prefix: "| " + family + " | ")
-            cells: [str] @ []
+            cells: [str] @= []
 
             for cell in strings.split_text(text: line, separator: "|")
                 if strings.trimmed(cell).len() > 0
@@ -494,7 +494,7 @@ function head(text: str) -> str
 
 # The directories the surface suite's `fmt` rows read.
 function fixture_directories() -> [str]
-    out: [str] @ []
+    out: [str] @= []
     tables = [
         suite_surface.argv_probes()
         suite_surface.help_probes()
@@ -518,7 +518,7 @@ function fixture_directories() -> [str]
     return out
 
 function directory_of(path: str) -> str
-    at: i64 @ path.len() - 1
+    at: i64 @= path.len() - 1
 
     while at > 0 && path[at] != '/'
         at @ at - 1
@@ -541,7 +541,7 @@ test "a report's failures, seeds and rows are read as the probe writes them"
 
 test "a row is red on an exit it does not expect, a failure no defect names, and a known one that holds"
     row = fixture_row()
-    r: report.Report @ report.empty()
+    r: report.Report @= report.empty()
     judged(
         @r,
         row: row,
@@ -549,7 +549,7 @@ test "a row is red on an exit it does not expect, a failure no defect names, and
     )
     assert r.failed == 1
     known = Row(name: "known", words: row.words, seeds: row.seeds, floors: row.floors, known: ["x.hero multi ALLO"])
-    k: report.Report @ report.empty()
+    k: report.Report @= report.empty()
     judged(@k, row: known, ran: shell.Run(code: 2, out: "", err: "", started: true, why: 0))
     assert k.failed == 1
 
@@ -564,7 +564,7 @@ function no_sum() -> Sum
     return Sum(seeds: 0, refused: 0, generated: 0, parsing: 0, named: none, broken: none)
 
 test "a file's run adds a seed, a file the parser refuses, or a run no row allows"
-    sum: Sum @ added(no_sum(), file: "a.hero", family: "multi", ran: file_run(code: 0, seeds: 1, err: ""))
+    sum: Sum @= added(no_sum(), file: "a.hero", family: "multi", ran: file_run(code: 0, seeds: 1, err: ""))
     sum @ added(
         sum,
         file: "b.hero",
@@ -614,9 +614,9 @@ test "a file's run adds a seed, a file the parser refuses, or a run no row allow
 test "a tree is red when its files do not read what the probe reads of its root"
     tree = Tree(name: "t", root: "t", seeds: 2, floor: Floor(family: "multi", generated: 18, parsing: 18), known: [])
     census = file_run(code: 0, seeds: 2, err: "")
-    whole: Sum @ added(no_sum(), file: "a.hero", family: "multi", ran: file_run(code: 0, seeds: 1, err: ""))
+    whole: Sum @= added(no_sum(), file: "a.hero", family: "multi", ran: file_run(code: 0, seeds: 1, err: ""))
     whole @ added(whole, file: "b.hero", family: "multi", ran: file_run(code: 0, seeds: 1, err: ""))
-    green: report.Report @ report.empty()
+    green: report.Report @= report.empty()
     summed(@green, tree: tree, census: census, sum: whole)
     assert green.failed == 0
     assert green.passed == 4
@@ -624,13 +624,13 @@ test "a tree is red when its files do not read what the probe reads of its root"
     # One file short of the root: the census says so, whatever the floors.
     short = added(no_sum(), file: "a.hero", family: "multi", ran: file_run(code: 0, seeds: 1, err: ""))
     low = Tree(name: "t", root: "t", seeds: 1, floor: Floor(family: "multi", generated: 9, parsing: 9), known: [])
-    missed: report.Report @ report.empty()
+    missed: report.Report @= report.empty()
     summed(@missed, tree: low, census: census, sum: short)
     assert missed.failed == 1
     assert strings.contains(text: missed.failures[0], needle: "FAIL probe/t/covered")
 
     # A census the watchdog stopped, and a file's run no row allows.
-    stopped: report.Report @ report.empty()
+    stopped: report.Report @= report.empty()
     summed(@stopped, tree: tree, census: shell.Run(code: 124, out: "", err: "", started: true, why: 0), sum: whole)
     assert stopped.failed == 1
     killed = added(
@@ -639,7 +639,7 @@ test "a tree is red when its files do not read what the probe reads of its root"
         family: "multi",
         ran: shell.Run(code: 124, out: "", err: "", started: true, why: 0)
     )
-    broken: report.Report @ report.empty()
+    broken: report.Report @= report.empty()
     summed(@broken, tree: tree, census: census, sum: killed)
     assert broken.failed == 1
     assert strings.contains(text: broken.failures[0], needle: "`c.hero` exited 124")
@@ -653,10 +653,10 @@ test "a tree's failures are held to the ones its row names as known"
         ran: file_run(code: 2, seeds: 1, err: "error: the first, `f.hero`, family multi, variant ALLO, the guard: it moved")
     )
     floor = Floor(family: "multi", generated: 9, parsing: 9)
-    unknown: report.Report @ report.empty()
+    unknown: report.Report @= report.empty()
     summed(@unknown, tree: Tree(name: "t", root: "t", seeds: 1, floor: floor, known: []), census: census, sum: failing)
     assert unknown.failed == 1
-    named: report.Report @ report.empty()
+    named: report.Report @= report.empty()
     summed(
         @named,
         tree: Tree(name: "t", root: "t", seeds: 1, floor: floor, known: ["f.hero multi ALLO"]),
@@ -664,7 +664,7 @@ test "a tree's failures are held to the ones its row names as known"
         sum: failing
     )
     assert named.failed == 0
-    gone: report.Report @ report.empty()
+    gone: report.Report @= report.empty()
     clean = added(no_sum(), file: "f.hero", family: "multi", ran: file_run(code: 0, seeds: 1, err: ""))
     summed(
         @gone,

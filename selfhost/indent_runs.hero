@@ -79,10 +79,10 @@ record Margin
     end: i64
 
 function margin_at(text: str, at: i64) -> Margin
-    spaces: i64 @ 0
-    tabs: i64 @ 0
-    cols: i64 @ 0
-    i: i64 @ at
+    spaces: i64 @= 0
+    tabs: i64 @= 0
+    cols: i64 @= 0
+    i: i64 @= at
 
     while i < text.len() && (text[i] == ' ' || text[i] == '\t')
         if text[i] == ' '
@@ -117,7 +117,7 @@ function quiet(@l: state.LexState, text: str, m: Margin, line: i64, blank: bool)
     if m.tabs > 0
         if l.run[0].kind != .tabs
             open_tabs(@l, text, m, line: line)
-        width: i64 @ m.cols + l.run[0].shift
+        width: i64 @= m.cols + l.run[0].shift
 
         if blank
             width @ 0
@@ -171,7 +171,7 @@ function tab_line(@l: state.LexState, text: str, m: Margin, line: i64) -> i64
     if l.run[0].kind != .tabs
         open_tabs(@l, text, m, line: line)
     cols = m.cols + l.run[0].shift
-    level: i64 @ cols / 4
+    level: i64 @= cols / 4
 
     if !l.run[0].decided
         l.run[0].decided @ true
@@ -188,7 +188,7 @@ function tab_line(@l: state.LexState, text: str, m: Margin, line: i64) -> i64
 # A line the run holds, at `level`: one level deeper than the line above at
 # most, its margin fixed to four spaces a level.
 function held(@l: state.LexState, m: Margin, line: i64, level: i64) -> i64
-    laid: i64 @ level
+    laid: i64 @= level
 
     if laid > l.level + 1
         laid @ l.level + 1
@@ -249,15 +249,15 @@ function finish(@l: state.LexState, text: str)
     if l.run[0].kind == .none
         return
     below = text_lines.newlines_between(text: text, from: l.run[0].first, to: l.run[0].last)
-    d: diag.Diagnostic @ l.diagnostics[l.run[0].said]
+    d: diag.Diagnostic @= l.diagnostics[l.run[0].said]
 
     if below > 0
         d.message @ extended(d.message, kind: l.run[0].kind, below: below)
-    certainty: diag.Certainty @ .guess
+    certainty: diag.Certainty @= .guess
 
     if l.run[0].sure
         certainty @ .certain
-    fixes: [diag.Fix] @ []
+    fixes: [diag.Fix] @= []
 
     for f in l.run[0].fixes
         fixes @ fixes.push(diag.Fix(title: f.title, replacement: f.replacement, span: f.span, certainty: certainty))
@@ -267,7 +267,7 @@ function finish(@l: state.LexState, text: str)
     l.run[0] @ state.no_run()
 
 function extended(message: str, kind: state.RunKind, below: i64) -> str
-    lines: str @ "the " + below.to_str() + " below it"
+    lines: str @= "the " + below.to_str() + " below it"
 
     if below == 1
         lines @ "the one below it"
@@ -281,7 +281,7 @@ function extended(message: str, kind: state.RunKind, below: i64) -> str
 function fix(@l: state.LexState, m: Margin, line: i64, width: i64)
     if m.tabs == 0 && m.spaces == width
         return
-    title: str @ "indent with " + width.to_str() + " spaces"
+    title: str @= "indent with " + width.to_str() + " spaces"
 
     if width == 0
         title @ "delete the margin"

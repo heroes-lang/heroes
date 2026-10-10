@@ -39,14 +39,14 @@ record GeneratedType
 # Every C type this pass generates functions for, in emission order,
 # with whether it owns a counted reference.
 function every_generated_type(c: state.Checked, names: ctype.Names, decls: [ast.Decl], want: synth.Wanted) -> [GeneratedType]
-    out: [GeneratedType] @ []
+    out: [GeneratedType] @= []
 
     for decl in types.aggregates(c, decls)
         if !synth.wants_decl(w: want, decl: decl)
             continue
 
         if types.is_variant(decls, decl: decl)
-            case_at: i64 @ 0
+            case_at: i64 @= 0
 
             for one_case in types.cases_of(decls, decl: decl)
                 if one_case.fields.len() > 0
@@ -71,7 +71,7 @@ function every_generated_type(c: state.Checked, names: ctype.Names, decls: [ast.
 # functions, one never defined, and the reader sees undefined symbol
 # about a name they did not write.
 function prototypes(@w: writer.Writer, c: state.Checked, names: ctype.Names, decls: [ast.Decl], want: synth.Wanted)
-    wrote: bool @ false
+    wrote: bool @= false
 
     for one in every_generated_type(c, names, decls, want: want)
         writer.at_generated(@w)
@@ -114,7 +114,7 @@ function bodies(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: sour
         at = ctype.aggregate(names, decl: decl)
 
         if types.is_variant(decls, decl: decl)
-            case_at: i64 @ 0
+            case_at: i64 @= 0
 
             for one_case in types.cases_of(decls, decl: decl)
                 if one_case.fields.len() > 0
@@ -226,7 +226,7 @@ function option_bodies(@w: writer.Writer, c: state.Checked, names: ctype.Names, 
 # through it would mean copying the payload onto itself and casting
 # away the const. One helper, two call sites, no cast.
 function one_reference(@w: writer.Writer, c: state.Checked, names: ctype.Names, name: str, payload: i64, counted: bool, has_ok: bool, keep: bool)
-    verb: str @ "release"
+    verb: str @= "release"
 
     if keep
         verb @ "retain"
@@ -263,7 +263,7 @@ test "payloads come before their variant, and every option gets four functions"
     assert c.diagnostics.len() == 0
     names0 = ctype.new_names(s, p.decls)
     names = ctype.with_options(names0, c: c, s: s, decls: p.decls)
-    w: writer.Writer @ writer.new_writer("t")
+    w: writer.Writer @= writer.new_writer("t")
     prototypes(@w, c, names, p.decls, want: synth.everything())
     protos = writer.finish(w)
     assert strings.holds(
@@ -271,14 +271,14 @@ test "payloads come before their variant, and every option gets four functions"
         needle: "HERO_TU_LOCAL bool h_t_Tok_c_word_eq(const h_t_Tok_c_word *a, const h_t_Tok_c_word *b);"
     )
     assert strings.holds(text: protos, needle: "HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);")
-    bw: writer.Writer @ writer.new_writer("t")
+    bw: writer.Writer @= writer.new_writer("t")
     bodies(@bw, c, names, s, p.decls, want: synth.everything())
     body_text = writer.finish(bw)
 
     # The payload's eq is defined before the variant's, which calls it.
-    payload_at: i64 @ 0 - 1
-    outer_at: i64 @ 0 - 1
-    scan: i64 @ 0
+    payload_at: i64 @= 0 - 1
+    outer_at: i64 @= 0 - 1
+    scan: i64 @= 0
 
     # Each offset is asked of its bytes (`bytes.bytes_at`, defect 452),
     # which answers no past the end and never slices: until then the bound

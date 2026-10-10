@@ -18,7 +18,7 @@ extern "dead-handle-read-by-c-through-a-cell-it-should-only-write.h"
     function one() -> i64
 
 function main()
-    cert: X509 @ ob_new()
+    cert: X509 @= ob_new()
 
     if one() == 1
         ob_put(a: cert)

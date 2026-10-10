@@ -18,6 +18,6 @@ extern "time.h"
     function time(@t: u64) -> i64  #~ ffi_parameter_type
 
 function main()
-    t: u64 @ 0
+    t: u64 @= 0
     _ = time(@t)
     print(t > 0)

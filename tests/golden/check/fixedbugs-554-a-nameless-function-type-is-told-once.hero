@@ -69,9 +69,9 @@ function as_letter_branch_and_eq(c: bool)
     print(g == add)
 
 function in_push_store_default()
-    fs: [(function(i64, i64) -> i64)] @ []  #~ needs_parameter_names
+    fs: [(function(i64, i64) -> i64)] @= []  #~ needs_parameter_names
     fs @ fs.push(add)
-    m: {str: (function(i64, i64) -> i64)} @ {}  #~ needs_parameter_names
+    m: {str: (function(i64, i64) -> i64)} @= {}  #~ needs_parameter_names
     m["a"] @ add
     o: (function(i64, i64) -> i64)? = fail(code: "none", msg: "none")  #~ needs_parameter_names
     print(fs.len() + m.len() + o.default(add)(1, 2))

@@ -33,7 +33,7 @@ function main()
     print(both == Pair(one: p, two: q))
 
     # A copy is independent, so mutating the copy leaves the original alone.
-    r: Point @ p
+    r: Point @= p
     r @ moved(r)
 
     # Two prints, not one: `print(r.x, p.x)` writes `100`, which a golden cannot

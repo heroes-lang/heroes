@@ -42,7 +42,7 @@ use ir/inout
 # carries a NAME and the lowering needs the declaration, because a call is made
 # to an index and not to a word.
 function extern_named(decls: [ast.Decl], s: source.Source, name: str) -> i64?
-    at: i64 @ 0
+    at: i64 @= 0
 
     for one in decls
         match one.kind
@@ -61,7 +61,7 @@ function extern_named(decls: [ast.Decl], s: source.Source, name: str) -> i64?
 # (`resolve/builtin_names.hero`), and the origin is asked all the same, so the
 # release can call nothing but the library's.
 function library_validated(decls: [ast.Decl], s: source.Source) -> i64?
-    at: i64 @ 0
+    at: i64 @= 0
 
     for one in decls
         match one.kind

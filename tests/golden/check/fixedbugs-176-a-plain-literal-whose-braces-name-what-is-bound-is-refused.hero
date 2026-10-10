@@ -50,7 +50,7 @@ function main()
     for x in xs
         print("{x}")  #~ hole_without_f
 
-    m: {str: i64} @ {}
+    m: {str: i64} @= {}
     m["{i}"] @ 1  #~ hole_without_f
     print(f"{"{i}"} nested")  #~ hole_without_f
     print("{{{i}}}")  #~ hole_without_f

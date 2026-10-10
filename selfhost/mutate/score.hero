@@ -172,16 +172,16 @@ function is_survived(f: Fate) -> bool
 # Run every operator over every source, and score them. `only` empty runs all
 # thirteen.
 function scored(sources: [Program], only: str, library: str) -> Run
-    scores: [Score] @ []
-    survived: [Survivor] @ []
+    scores: [Score] @= []
+    survived: [Survivor] @= []
 
     for operator in ops.operators()
         if only.len() > 0 && only != operator.id
             continue
-        mutants: i64 @ 0
-        excluded: i64 @ 0
-        strict: i64 @ 0
-        permissive: i64 @ 0
+        mutants: i64 @= 0
+        excluded: i64 @= 0
+        strict: i64 @= 0
+        permissive: i64 @= 0
 
         for one in sources
             for mutant in ops.apply(id: operator.id, name: one.name, text: one.text)
@@ -224,11 +224,11 @@ function scored(sources: [Program], only: str, library: str) -> Run
 function locate(operator: str, file: str, original: str, mutant: str) -> Survivor?
     before = lines_of(original)
     after = lines_of(mutant)
-    longest: i64 @ before.len()
+    longest: i64 @= before.len()
 
     if after.len() > longest
         longest @ after.len()
-    at: i64 @ 0
+    at: i64 @= 0
 
     while at < longest
         if at >= before.len() || at >= after.len() || before[at] != after[at]
@@ -245,9 +245,9 @@ function at_line(lines: [str], at: i64) -> str?
     return ok(lines[at])
 
 function lines_of(text: str) -> [str]
-    out: [str] @ []
-    start: i64 @ 0
-    i: i64 @ 0
+    out: [str] @= []
+    start: i64 @= 0
+    i: i64 @= 0
 
     while i < text.len()
         if text[i] == 10
@@ -261,13 +261,13 @@ function lines_of(text: str) -> [str]
 
 # The table, as text. Written to be pasted into `docs/measurements/<NNN>.md`.
 function report(scores: [Score]) -> str
-    rows: [str] @ [
+    rows: [str] @= [
         "| operator | mutants | excluded | killed (check) | killed (--permissive) |\n|---|---|---|---|---|\n"
     ]
-    mutants: i64 @ 0
-    excluded: i64 @ 0
-    strict: i64 @ 0
-    permissive: i64 @ 0
+    mutants: i64 @= 0
+    excluded: i64 @= 0
+    strict: i64 @= 0
+    permissive: i64 @= 0
 
     for score in scores
         mutants @ mutants + score.mutants
@@ -294,8 +294,8 @@ function report(scores: [Score]) -> str
 function survivor_report(survivors: [Survivor]) -> str
     if survivors.len() == 0
         return "No surviving mutants: every mistake in this corpus is a compile error.\n"
-    rows: [str] @ []
-    operator: str @ ""
+    rows: [str] @= []
+    operator: str @= ""
 
     for one in survivors
         if one.operator != operator
@@ -318,7 +318,7 @@ function survivor_report(survivors: [Survivor]) -> str
 
 function trimmed_end(text: str) -> str
     cs = text.chars()
-    last: i64 @ cs.len()
+    last: i64 @= cs.len()
 
     while last > 0 && (cs[last - 1] == " " || cs[last - 1] == "\t" || cs[last - 1] == "\r")
         last @ last - 1

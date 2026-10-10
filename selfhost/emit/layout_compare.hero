@@ -58,8 +58,8 @@ constant NARROW_IN: str
 # reaches (`aliases`), every union of the tree it may lie in. `wide` holds
 # the declared fields whose Heroes type compares bit for bit.
 function compared_lines(t: str, hero_name: str, tree: [layout_text.Member], declared: {str: bool}, aliases: [str], wide: {str: bool}, sizes: {str: i64}) -> [str]
-    out: [str] @ []
-    k: i64 @ 0
+    out: [str] @= []
+    k: i64 @= 0
 
     while k < tree.len()
         m = tree[k]
@@ -68,7 +68,7 @@ function compared_lines(t: str, hero_name: str, tree: [layout_text.Member], decl
             outer = outermost_union(tree, at: k)
 
             if outer >= 0
-                beside: str @ m.name
+                beside: str @= m.name
 
                 for one in arms(tree, at: outer)
                     if one != k
@@ -107,8 +107,8 @@ function field_against(t: str, hero_name: str, field: str, wide: bool, arm: layo
 # classification of its path, an anonymous one by whether the field lies
 # within one of its members.
 function alias_lines(t: str, hero_name: str, tree: [layout_text.Member], a: str, wide: bool, sizes: {str: i64}) -> [str]
-    out: [str] @ []
-    k: i64 @ 0
+    out: [str] @= []
+    k: i64 @= 0
 
     while k < tree.len()
         m = tree[k]
@@ -129,7 +129,7 @@ function alias_lines(t: str, hero_name: str, tree: [layout_text.Member], a: str,
                 out @ out.push("_Static_assert(!" + inside + ", \"" + OVERLAP_IN + tail)
 
         if m.union_kw
-            held: [str] @ []
+            held: [str] @= []
             them = arms(tree, at: k)
 
             for one in them
@@ -166,9 +166,9 @@ function alias_lines(t: str, hero_name: str, tree: [layout_text.Member], a: str,
 # and `nan` unequal to itself, a `bool` is not every byte pattern, and a
 # record compares its fields and never its padding.
 function compares_bitwise(c: state.Checked, decls: [ast.Decl], ty: i64) -> bool
-    at: i64 @ ty
-    deeper: bool @ true
-    answer: bool @ false
+    at: i64 @= ty
+    deeper: bool @= true
+    answer: bool @= false
 
     while deeper
         deeper @ false
@@ -187,9 +187,9 @@ function compares_bitwise(c: state.Checked, decls: [ast.Decl], ty: i64) -> bool
 # The outermost anonymous union above the member at `at`, or -1: the levels
 # above a member are the nearest shallower rows before it.
 function outermost_union(tree: [layout_text.Member], at: i64) -> i64
-    found: i64 @ -1
-    level: i64 @ tree[at].depth
-    k: i64 @ at - 1
+    found: i64 @= -1
+    level: i64 @= tree[at].depth
+    k: i64 @= at - 1
 
     while k >= 0 && level > 1
         if tree[k].depth < level
@@ -204,9 +204,9 @@ function outermost_union(tree: [layout_text.Member], at: i64) -> i64
 # The members C names inside the anonymous union at `at`: every named row of
 # its subtree that no named record between them hides.
 function arms(tree: [layout_text.Member], at: i64) -> [i64]
-    out: [i64] @ []
-    hidden: i64 @ 0
-    k: i64 @ at + 1
+    out: [i64] @= []
+    hidden: i64 @= 0
+    k: i64 @= at + 1
 
     while k < tree.len() && tree[k].depth > tree[at].depth
         m = tree[k]
@@ -264,15 +264,15 @@ function has_line(lines: [str], needle: str) -> bool
 
 test "a field compared is asked against every arm of its outermost union, and only there"
     dump = "         0 | struct hero_ly_0\n         0 |   DEEP v\n         0 |     int32_t kind\n         4 |     struct DEEP::(anonymous at ./bf.h:4:32) \n         4 |       union DEEP::(anonymous at ./bf.h:4:41) \n         4 |         int32_t i\n         4 |         float f\n         8 |       int32_t y\n        12 |     int32_t x\n           | [sizeof=16, align=4]\n"
-    declared: {str: bool} @ {}
-    wide: {str: bool} @ {}
+    declared: {str: bool} @= {}
+    wide: {str: bool} @= {}
 
     for one in ["kind", "i", "y", "x"]
         declared[one] @ true
         wide[one] @ true
 
     none: [str] = []
-    sizes: {str: i64} @ {}
+    sizes: {str: i64} @= {}
     sizes["./bf.h:4:41)"] @ 4
     got = compared_lines(
         t: "DEEP",
@@ -320,7 +320,7 @@ test "a field compared is asked against every arm of its outermost union, and on
 test "a field a macro reaches is asked of every union it may lie in"
     dump = "         0 | struct hero_ly_0\n         0 |   struct sigaction v\n         0 |     union __sigaction_u __sigaction_u\n         0 |       void (*)(int) __sa_handler\n         0 |       void (*)(int, struct __siginfo *, void *) __sa_sigaction\n         8 |     sigset_t sa_mask\n        12 |     int sa_flags\n           | [sizeof=16, align=8]\n"
     declared: {str: bool} = {}
-    wide: {str: bool} @ {}
+    wide: {str: bool} @= {}
     wide["sa_handler"] @ true
     no_sizes: {str: i64} = {}
     got = compared_lines(

@@ -26,8 +26,8 @@ record Run
     plan_digests: [str]
 
 function read_run(dir: str) -> Run?
-    by_single: {str: json_read.Json} @ {}
-    by_pair: {str: json_read.Json} @ {}
+    by_single: {str: json_read.Json} @= {}
+    by_pair: {str: json_read.Json} @= {}
 
     for row in json_read.read_lines(text_at(dir + "/singles.jsonl")?)?
         by_single[json_fields.text_field(row, name: "key")?] @ row
@@ -35,7 +35,7 @@ function read_run(dir: str) -> Run?
     for row in json_read.read_lines(text_at(dir + "/pairs.jsonl")?)?
         by_pair[json_fields.text_field(row, name: "key")?] @ row
 
-    digests: [str] @ []
+    digests: [str] @= []
     meta = read_file(dir + "/run.json")
 
     if !meta.is_err()
@@ -120,7 +120,7 @@ function own_told(row: json_read.Json, arm: str, run: Run, frozen: Frozen, @text
 
 # The codes of `diags` whose line is in `site`'s span, sorted, each once.
 function within(diags: [json_read.Json], site: [i64]) -> [str]
-    seen: {str: bool} @ {}
+    seen: {str: bool} @= {}
     none: [str] = []
 
     if site.len() == 0
@@ -147,7 +147,7 @@ function original(frozen: Frozen, file: str, @texts: {str: str}) -> str?
 # Messages as compared across two runs: each written whole, the planted
 # file's name made one.
 function alike(diags: [json_read.Json], used: str) -> [str]
-    out: [str] @ []
+    out: [str] @= []
 
     for d in diags
         out @ out.push(own.named_alike(text: json_fields.written(d), used: used))

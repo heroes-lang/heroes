@@ -84,13 +84,13 @@ constant MISMATCHED: str
 # module has no string library behind it and one caller does not earn one.
 function without_const_char(text: str) -> str
     cs = text.chars()
-    kept: [str] @ []
-    at: i64 @ 0
+    kept: [str] @= []
+    at: i64 @= 0
     marker = "const char *".chars()
 
     while at < cs.len()
-        matched: bool @ at + marker.len() <= cs.len()
-        offset: i64 @ 0
+        matched: bool @= at + marker.len() <= cs.len()
+        offset: i64 @= 0
 
         while matched && offset < marker.len()
             if cs[at + offset] != marker[offset]
@@ -178,7 +178,7 @@ function parameter_width(s: source.Source, decls: [ast.Decl], p: containers.Prog
     # types with no Heroes name are exactly the interesting ones, 356
     # of 1159 entry points by panel 052's count.
     spelled = c_spellings.spelling(c_type: c_type.must(), word_bits: word_bits)
-    what: str @ "a different kind of thing from"
+    what: str @= "a different kind of thing from"
 
     if kind == NARROWED || kind == DEMOTED
         what @ "wider than"
@@ -219,13 +219,13 @@ function parameter_width(s: source.Source, decls: [ast.Decl], p: containers.Prog
         parameters: parameters.must(),
         arguments: arguments
     )
-    which: str @ "a parameter"
+    which: str @= "a parameter"
 
     # Whether the parameter clang pointed at is a CALLBACK, tracked here
     # rather than re-derived below, because the column walk is the only
     # place that knows which parameter it is (panel 111 R4).
-    is_callback: bool @ false
-    index: i64 @ 0
+    is_callback: bool @= false
+    index: i64 @= 0
 
     for column in columns
         if column == at.must().col && index < f.params.len()
@@ -254,7 +254,7 @@ function parameter_width(s: source.Source, decls: [ast.Decl], p: containers.Prog
     # `consequence` are written for a value C converts, and a function
     # pointer is not one — C refuses it outright.
     if is_callback
-        cb: diag.Diagnostic @ diag.new_diagnostic(
+        cb: diag.Diagnostic @= diag.new_diagnostic(
             code: "ffi_callback_type",
             message: which + " of `" + name + "` is not the callback the header declares — clang read the header, and it says `" + c_type.must() + "`",
             span: span
@@ -291,7 +291,7 @@ function parameter_width(s: source.Source, decls: [ast.Decl], p: containers.Prog
     # upstream, in arithmetic the author ran at f32), a truncation
     # drops the fraction, an integer into a float rounds only the
     # values a mantissa cannot hold.
-    consequence: str @ "and C would convert the value in silence"
+    consequence: str @= "and C would convert the value in silence"
 
     if kind == MISMATCHED
         consequence @ "and the two do not convert"
@@ -315,7 +315,7 @@ function parameter_width(s: source.Source, decls: [ast.Decl], p: containers.Prog
     mark = freer_marks.marked_as_freer(c.freers, name: name)
 
     if !mark.is_err()
-        bad: diag.Diagnostic @ diag.new_diagnostic(
+        bad: diag.Diagnostic @= diag.new_diagnostic(
             code: "ffi_freer_type",
             message: "`" + name + "` cannot free a string: the header takes `" + c_type.must() + "`, and a freer for an `owned` `cstr` is handed the string's own bytes",
             span: mark.must()
@@ -327,7 +327,7 @@ function parameter_width(s: source.Source, decls: [ast.Decl], p: containers.Prog
             "name the function that frees THIS string — `free` for `strdup`, `sqlite3_free` for SQLite's own — or drop the `owned` mark and free it yourself"
         )
         return ok(bad)
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "ffi_parameter_type",
         message: which + " of `" + name + "` is declared " + what + " the header's `" + c_type.must() + "` — clang read the header, " + consequence,
         span: span
@@ -376,8 +376,8 @@ test "the width, the sign and the class, gated by the probe's own line"
     # The column is computed the way the emitter computes it, so the
     # test cannot drift from the contract.
     fs = low.program.functions
-    f0: containers.Function @ fs[0]
-    picked: bool @ false
+    f0: containers.Function @= fs[0]
+    picked: bool @= false
 
     for f in fs
         if f.name == "narrow" && !picked
@@ -424,8 +424,8 @@ test "the float family: four directions, each with its own sentence"
     low = lower.lower(parsed.tree, out, c, s, parsed.decls)
     names = ctype.new_names(s, parsed.decls)
     fs = low.program.functions
-    f0: containers.Function @ fs[0]
-    picked: bool @ false
+    f0: containers.Function @= fs[0]
+    picked: bool @= false
 
     for f in fs
         if f.name == "narrow" && !picked

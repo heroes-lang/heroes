@@ -41,7 +41,7 @@ function report(@out: resolved.Resolved, a: ast.Ast, s: source.Source, decls: [a
         # A cycle through a body that was already refused is a consequence:
         # the body rule is the primary one — it names the line the author
         # wrote.
-        tainted: bool @ false
+        tainted: bool @= false
 
         for member in cycle
             if refused[member]
@@ -61,8 +61,8 @@ function report(@out: resolved.Resolved, a: ast.Ast, s: source.Source, decls: [a
 # which decides the rotation the diagnostic names (the Rust BTreeSet gave
 # this for free; the port pays with one sort per list, §4.9's sentence).
 function edges(out: resolved.Resolved, a: ast.Ast, decls: [ast.Decl], extent: [constant_body.Extent]) -> [[i64]]
-    adjacent: [[i64]] @ []
-    i: i64 @ 0
+    adjacent: [[i64]] @= []
+    i: i64 @= 0
 
     while i < decls.len()
         empty: [i64] = []
@@ -70,8 +70,8 @@ function edges(out: resolved.Resolved, a: ast.Ast, decls: [ast.Decl], extent: [c
         i @ i + 1
 
     count = a.exprs.len()
-    idx: i64 @ 0
-    seen: {i64: bool} @ {}
+    idx: i64 @= 0
+    seen: {i64: bool} @= {}
 
     while idx < count
         here = idx
@@ -91,7 +91,7 @@ function edges(out: resolved.Resolved, a: ast.Ast, decls: [ast.Decl], extent: [c
                 seen[key] @ true
                 add_edge(@adjacent[home], to: to)
 
-    sorted: [[i64]] @ []
+    sorted: [[i64]] @= []
 
     for list in adjacent
         sorted @ sorted.push(sort(list))
@@ -110,22 +110,22 @@ record PathStep
 # and that is what tells a back edge from a diamond — two constants that
 # both read a third are not a cycle.
 function walk(decls: [ast.Decl], adjacent: [[i64]]) -> [[i64]]
-    colour: [i64] @ []
-    i: i64 @ 0
+    colour: [i64] @= []
+    i: i64 @= 0
 
     while i < decls.len()
         colour @ colour.push(0)
         i @ i + 1
 
-    found: [[i64]] @ []
-    seen: {str: bool} @ {}
-    root: i64 @ 0
+    found: [[i64]] @= []
+    seen: {str: bool} @= {}
+    root: i64 @= 0
 
     # The path is a stack and its height, its steps written over as it grows
     # again: popped by a slice, it was copied whole at every step, the
     # square of a chain's length (defect 374).
-    path: [PathStep] @ []
-    height: i64 @ 0
+    path: [PathStep] @= []
+    height: i64 @= 0
 
     while root < decls.len()
         if colour[root] != 0
@@ -147,23 +147,23 @@ function walk(decls: [ast.Decl], adjacent: [[i64]]) -> [[i64]]
             if colour[next] == 1
                 # The cycle is the suffix of the path from `next` on — no
                 # second search, because the path IS the reconstruction.
-                at: i64 @ 0
-                j: i64 @ 0
+                at: i64 @= 0
+                j: i64 @= 0
 
                 while j < height
                     if path[j].node == next
                         at @ j
                     j @ j + 1
 
-                cycle: [i64] @ []
-                k: i64 @ at
+                cycle: [i64] @= []
+                k: i64 @= at
 
                 while k < height
                     node = path[k].node
                     cycle @ cycle.push(node)
                     k @ k + 1
 
-                constant_on_it: bool @ false
+                constant_on_it: bool @= false
 
                 for member in cycle
                     if constant_body.is_valued_constant(decls, member)
@@ -195,7 +195,7 @@ function put_step(@path: [PathStep], at: i64, step: PathStep) -> i64
 # One cycle per SET: the key sorts the members, so two rotations of one
 # cycle collapse. `/` cannot occur in a rendered index.
 function cycle_key(cycle: [i64]) -> str
-    rendered: [str] @ []
+    rendered: [str] @= []
 
     for member in sort(cycle)
         rendered @ rendered.push(member.to_str())
@@ -210,8 +210,8 @@ function cycle_key(cycle: [i64]) -> str
 # cannot change, so the anchor is chosen from the set.
 function diagnose(a: ast.Ast, s: source.Source, decls: [ast.Decl], cycle: [i64]) -> diag.Diagnostic
     _ = a
-    anchor: i64 @ cycle[0]
-    best: i64 @ -1
+    anchor: i64 @= cycle[0]
+    best: i64 @= -1
 
     for member in cycle
         if constant_body.is_valued_constant(decls, member)
@@ -224,38 +224,38 @@ function diagnose(a: ast.Ast, s: source.Source, decls: [ast.Decl], cycle: [i64])
     span = decls[anchor].name
     holder = source.span_text(s, span)
     direct = cycle.len() == 1
-    message: str @ "`constant " + holder + "` is defined as itself, so it has no value"
+    message: str @= "`constant " + holder + "` is defined as itself, so it has no value"
 
     if !direct
-        through: [str] @ []
+        through: [str] @= []
 
         for member in cycle
             if member != anchor
                 through @ through.push(source.span_text(s, decls[member].name))
 
         message @ "`constant " + holder + "` is defined in terms of itself through `" + through.join("`, `") + "`, so it has no value"
-    d: diag.Diagnostic @ diag.new_diagnostic(code: "constant_cycle", message: message, span: span)
+    d: diag.Diagnostic @= diag.new_diagnostic(code: "constant_cycle", message: message, span: span)
 
     if !direct
         # Printed from the anchor round to the anchor, whatever rotation
         # the walk found it in, so the note reads as the reader's own file
         # does.
-        at: i64 @ 0
-        j: i64 @ 0
+        at: i64 @= 0
+        j: i64 @= 0
 
         for member in cycle
             if member == anchor
                 at @ j
             j @ j + 1
 
-        steps: [str] @ []
-        k: i64 @ at
+        steps: [str] @= []
+        k: i64 @= at
 
         while k < cycle.len()
             steps @ steps.push(source.span_text(s, decls[cycle[k]].name))
             k @ k + 1
 
-        m: i64 @ 0
+        m: i64 @= 0
 
         while m < at
             steps @ steps.push(source.span_text(s, decls[cycle[m]].name))
@@ -277,13 +277,13 @@ function diagnose(a: ast.Ast, s: source.Source, decls: [ast.Decl], cycle: [i64])
 function checked_file(text: str) -> state.Resolver
     p = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
-    r: state.Resolver @ state.new_resolver(
+    r: state.Resolver @= state.new_resolver(
         expr_count: p.tree.exprs.len(),
         type_count: p.tree.types.len()
     )
     r.module @ "t"
     top.collect(@r, s, p.decls, p.uses)
-    index: i64 @ 0
+    index: i64 @= 0
 
     for d in p.decls
         _ = d

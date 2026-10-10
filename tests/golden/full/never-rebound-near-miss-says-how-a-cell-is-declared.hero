@@ -4,7 +4,7 @@
 # full form pins the note; `tests/golden/check/never-rebound-near-miss-is-one-message.hero`
 # pins that it is the one message.
 function total_of(xs: [i64]) -> i64
-    total: i64 @ 0
+    total: i64 @= 0
     for x in xs
         totl @ total + x     #~ unknown_name
     return total

@@ -88,21 +88,21 @@ record Told
 # at most `TOLD` times, a word's every run, everything else as it was, in the
 # order it was.
 function told_once(diagnostics: [diag.Diagnostic], text: str) -> Told
-    out: [diag.Diagnostic] @ []
-    at: [i64] @ []
+    out: [diag.Diagnostic] @= []
+    at: [i64] @= []
 
     # By kind (`kind_of`): where its run's first stands in `out`, -1 for one
     # counted rather than told; the run's length, its end and its words, and
     # whether its character is unseen; how many of the kind were told, the
     # last of them, and how many characters were counted.
-    first: [i64] @ [-1, -1, -1, -1]
-    run: [i64] @ [0, 0, 0, 0]
-    run_end: [i64] @ [-1, -1, -1, -1]
-    run_said: [str] @ ["", "", "", ""]
-    run_unseen: [bool] @ [false, false, false, false]
-    kept: [i64] @ [0, 0, 0, 0]
-    last_kept: [i64] @ [-1, -1, -1, -1]
-    unsaid: [i64] @ [0, 0, 0, 0]
+    first: [i64] @= [-1, -1, -1, -1]
+    run: [i64] @= [0, 0, 0, 0]
+    run_end: [i64] @= [-1, -1, -1, -1]
+    run_said: [str] @= ["", "", "", ""]
+    run_unseen: [bool] @= [false, false, false, false]
+    kept: [i64] @= [0, 0, 0, 0]
+    last_kept: [i64] @= [-1, -1, -1, -1]
+    unsaid: [i64] @= [0, 0, 0, 0]
 
     for d in diagnostics
         if !gathered(d)
@@ -168,7 +168,7 @@ function goes_on(kind: i64, hidden: bool, text: str, from: i64, to: i64) -> bool
 
     if kind != WORD || to <= from
         return to == from
-    i: i64 @ from
+    i: i64 @= from
 
     while i < to && i < text.len()
         if text[i] != ' '
@@ -181,9 +181,9 @@ function goes_on(kind: i64, hidden: bool, text: str, from: i64, to: i64) -> bool
 # reader tells instead (`heads_told.told_by_heads`, defect 250), with where
 # each one given went, as `told_once` says it.
 function without(diagnostics: [diag.Diagnostic], dropped: [bool]) -> Told
-    out: [diag.Diagnostic] @ []
-    at: [i64] @ []
-    k: i64 @ 0
+    out: [diag.Diagnostic] @= []
+    at: [i64] @= []
+    k: i64 @= 0
 
     for d in diagnostics
         if dropped[k]
@@ -198,7 +198,7 @@ function without(diagnostics: [diag.Diagnostic], dropped: [bool]) -> Told
 # Where each diagnostic went through two of the steps above, the first's
 # places read through the second's.
 function through(first: [i64], then: [i64]) -> [i64]
-    out: [i64] @ []
+    out: [i64] @= []
 
     for one in first
         if one < 0
@@ -212,10 +212,10 @@ function through(first: [i64], then: [i64]) -> [i64]
 # `told_once` gave it; a break whose diagnostic was counted names none, which
 # cannot happen, a break's being a join's, with its fix.
 function renumbered(breaks: [state.Break], at: [i64]) -> [state.Break]
-    out: [state.Break] @ []
+    out: [state.Break] @= []
 
     for b in breaks
-        moved: state.Break @ b
+        moved: state.Break @= b
 
         if b.diagnostic >= 0
             moved.diagnostic @ at[b.diagnostic]
@@ -246,8 +246,8 @@ function gathered(d: diag.Diagnostic) -> bool
 # language's. Counted by the bytes that begin a character, never by a
 # slice, so no span can stop the count by splitting one.
 function characters(d: diag.Diagnostic, text: str) -> i64
-    n: i64 @ 0
-    at: i64 @ d.span.start
+    n: i64 @= 0
+    at: i64 @= d.span.start
 
     while at >= 0 && at < d.span.end && at < text.len()
         b = text[at]
@@ -273,7 +273,7 @@ function unseen(d: diag.Diagnostic, text: str) -> bool
 function noted(out: [diag.Diagnostic], at: i64, run: i64) -> [diag.Diagnostic]
     if at < 0 || run < 2
         return out
-    done: [diag.Diagnostic] @ out
+    done: [diag.Diagnostic] @= out
     done[at].notes @ done[at].notes.push("the first of " + run.to_str() + " in a row")
     return done
 
@@ -313,7 +313,7 @@ test "a stretch counted rather than told stands for its characters, its spaces a
     # A span splitting a character is counted, never sliced.
     assert characters(refused(start: 0, said: "`к`"), text: text) == 1
     shown = "`` `a b` ``" + backtick_strings.BACKTICKS_SAID + " — a string is written in double quotes"
-    template: diag.Diagnostic @ diag.new_diagnostic(
+    template: diag.Diagnostic @= diag.new_diagnostic(
         code: "unexpected_character",
         message: shown,
         span: token.Span(start: 20, end: 25)
@@ -329,12 +329,12 @@ test "a stretch counted rather than told stands for its characters, its spaces a
     assert characters(over, text: "`a\r\nb`\n") == 4
 
 test "past eight refused characters the rest are counted on the last told, and a refusal with a fix is never gathered"
-    said: [diag.Diagnostic] @ []
+    said: [diag.Diagnostic] @= []
 
     for k in range(from: 0, to: 12)
         said @ said.push(refused(start: k * 2, said: "`$`"))
 
-    fixed: diag.Diagnostic @ refused(start: 40, said: "`;`")
+    fixed: diag.Diagnostic @= refused(start: 40, said: "`;`")
     fixed.fixes @ fixed.fixes.push(
         diag.Fix(title: "delete the `;`", replacement: "", span: token_at(40), certainty: .certain)
     )
@@ -368,7 +368,7 @@ test "past eight refused characters the rest are counted on the last told, and a
 # characters ends neither's run.
 test "tabs, carriage returns and foreign words are told once a run, each kind on its own count"
     tab = "a tab is a compile error — use spaces"
-    told: [diag.Diagnostic] @ []
+    told: [diag.Diagnostic] @= []
 
     for k in range(from: 0, to: 3)
         told @ told.push(diag.new_diagnostic(code: "tab_in_line", message: tab, span: token_at(k)))
@@ -379,7 +379,7 @@ test "tabs, carriage returns and foreign words are told once a run, each kind on
 
     # A word's run goes through the spaces between, and ends at another word.
     said = "`fn` is not a word in this language, and a name cannot be one: choose another name"
-    words: [diag.Diagnostic] @ []
+    words: [diag.Diagnostic] @= []
 
     for k in [0, 3, 7, 12]
         words @ words.push(
@@ -393,7 +393,7 @@ test "tabs, carriage returns and foreign words are told once a run, each kind on
 
     # Twelve carriage returns apart: eight told and four counted, in their own
     # words; the control characters around a tab keep their run.
-    returns: [diag.Diagnostic] @ []
+    returns: [diag.Diagnostic] @= []
     cr = "a carriage return that is not part of a line ending — delete it, or end the line"
 
     for k in range(from: 0, to: 12)

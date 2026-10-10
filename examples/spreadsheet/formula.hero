@@ -78,7 +78,7 @@ function value_of(s: sheet.Sheet, name: str, visiting: [str]) -> f64?
 
     if source == ""
         return ok(0.0)
-    p: Parse @ Parse(text: source, pos: 0)
+    p: Parse @= Parse(text: source, pos: 0)
     v = expression(@p, s, visiting.push(name))?
     skip_space(@p)
 
@@ -89,8 +89,8 @@ function value_of(s: sheet.Sheet, name: str, visiting: [str]) -> f64?
 ## The grammar
 
 function expression(@p: Parse, s: sheet.Sheet, visiting: [str]) -> f64?
-    total: f64 @ term(@p, s, visiting)?
-    more: bool @ true
+    total: f64 @= term(@p, s, visiting)?
+    more: bool @= true
 
     while more
         skip_space(@p)
@@ -107,8 +107,8 @@ function expression(@p: Parse, s: sheet.Sheet, visiting: [str]) -> f64?
     return ok(total)
 
 function term(@p: Parse, s: sheet.Sheet, visiting: [str]) -> f64?
-    total: f64 @ factor(@p, s, visiting)?
-    more: bool @ true
+    total: f64 @= factor(@p, s, visiting)?
+    more: bool @= true
 
     while more
         skip_space(@p)
@@ -159,7 +159,7 @@ function factor(@p: Parse, s: sheet.Sheet, visiting: [str]) -> f64?
 # A literal, built digit by digit: the language offers no conversion from `str`
 # to a number, on purpose, because parsing can fail and a conversion may not.
 function number(@p: Parse) -> f64
-    whole: f64 @ 0.0
+    whole: f64 @= 0.0
 
     while !at_end(p) && sheet.is_digit(here(p))
         whole @ whole * 10.0 + to_f64(to_i64(here(p) - '0').must())
@@ -167,7 +167,7 @@ function number(@p: Parse) -> f64
 
     if !at_end(p) && here(p) == '.'
         advance(@p)
-        scale: f64 @ 1.0
+        scale: f64 @= 1.0
 
         while !at_end(p) && sheet.is_digit(here(p))
             scale @ scale / 10.0
@@ -211,7 +211,7 @@ function sum_of(@p: Parse, s: sheet.Sheet, visiting: [str]) -> f64?
         return fail(code: ERR_UNCLOSED_PAREN, msg: "`SUM(` is never closed")
     inside = p.text.slice(from: start, to: p.pos)
     advance(@p)
-    total: f64 @ 0.0
+    total: f64 @= 0.0
 
     for name in sheet.expand(inside)?
         total @ total + value_of(s, name, visiting)?

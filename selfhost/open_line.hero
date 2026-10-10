@@ -80,7 +80,7 @@ function left_open(@l: state.LexState)
 
 # The index of the last token of `tokens` that is not a comment.
 function last_significant(tokens: [token.Token]) -> i64
-    at: i64 @ tokens.len() - 1
+    at: i64 @= tokens.len() - 1
 
     while at > 0 && tokens[at].kind == .comment
         at @ at - 1
@@ -134,8 +134,8 @@ function goes_on_at_head(text: str, at: i64) -> i64
 # tab, or a line under braces or an indentation habit, which keep their own
 # count, is `margin`.
 function written_margin(l: state.LexState, text: str, at: i64, margin: i64) -> i64
-    i: i64 @ at
-    first: i64 @ at
+    i: i64 @= at
+    first: i64 @= at
 
     while i >= 0 && !token.is_line_end(l.tokens[i].kind)
         if l.tokens[i].kind != .comment
@@ -250,7 +250,7 @@ function refuse_the_end(@l: state.LexState, text: str, at: i64, spaces: i64) -> 
         plant(@l)
         l.deeper @ l.bodies && spaces == margin
         return false
-    where: str @ "at the same margin, where a new statement begins"
+    where: str @= "at the same margin, where a new statement begins"
     written = written_margin(l, text, at: at, margin: margin)
 
     if spaces > written
@@ -258,7 +258,7 @@ function refuse_the_end(@l: state.LexState, text: str, at: i64, spaces: i64) -> 
     else if spaces < written
         where @ "at a shallower margin, where the block above ends"
     message = "a line outside brackets ends its statement, and this one cannot end with `" + text.slice(from: left.span.start, to: left.span.end) + "`: the next line goes on with it " + where + "; write the statement on one line, or break it inside parentheses"
-    d: diag.Diagnostic @ diag.new_diagnostic(code: "continuation_outside_brackets", message: message, span: left.span)
+    d: diag.Diagnostic @= diag.new_diagnostic(code: "continuation_outside_brackets", message: message, span: left.span)
 
     # Operators alone on their line, a stray above an arm or a statement, or
     # an expression broken around them over its operand (`alone_lines`):
@@ -274,12 +274,12 @@ function refuse_the_end(@l: state.LexState, text: str, at: i64, spaces: i64) -> 
     # where the author more likely closed the block; and there is none with a
     # comment between, which a join would carry into the statement.
     if l.tokens.len() == at + 1
-        certainty: diag.Certainty @ .certain
+        certainty: diag.Certainty @= .certain
 
         # Where a `\` asked for the join, it is what the author wrote.
         if l.backslash < 0 && (spaces < margin || next_line.stands_alone(text, from: l.pos))
             certainty @ .guess
-        glue: str @ " "
+        glue: str @= " "
 
         # `.`, `::` and `/` join with no space, and so does a `-` that begins
         # its line, which is a sign: the join writes it against its operand
@@ -299,17 +299,17 @@ function refuse_the_end(@l: state.LexState, text: str, at: i64, spaces: i64) -> 
 function refuse_the_head(@l: state.LexState, text: str, at: i64, spaces: i64, commented: bool)
     left = l.tokens[at]
     head = punctuation.punct_at(text, at: l.pos)
-    shown: str @ "`" + text.slice(from: l.pos, to: l.pos + head.width) + "`"
+    shown: str @= "`" + text.slice(from: l.pos, to: l.pos + head.width) + "`"
 
     if head.kind == .minus
         shown @ "a `-` set apart from its operand"
-    where: str @ "the line above, which ended its statement at the same margin"
+    where: str @= "the line above, which ended its statement at the same margin"
     after_a_block = spaces < l.level * 4
 
     if after_a_block
         where @ "the block above, whose statement ended when the block closed"
     message = "a line outside brackets ends its statement, and this one cannot begin with " + shown + ": it goes on with " + where + "; write the statement on one line, or break it after an operator inside parentheses"
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "continuation_outside_brackets",
         message: message,
         span: token.Span(start: l.pos, end: l.pos + head.width)
@@ -319,11 +319,11 @@ function refuse_the_head(@l: state.LexState, text: str, at: i64, spaces: i64, co
     # begins with this token; after a block it moves the line into the
     # block's last one, which the author more likely did not mean.
     if !commented
-        certainty: diag.Certainty @ .certain
+        certainty: diag.Certainty @= .certain
 
         if after_a_block
             certainty @ .guess
-        glue: str @ " "
+        glue: str @= " "
 
         if head.kind == .question || head.kind == .colon_colon
             glue @ ""

@@ -59,8 +59,8 @@ function is_fallible_operation(name: str) -> bool
 # past the checker (§4.9), so a label that names nothing here is the
 # compiler's own fault, and it stops loudly.
 function given_fields(s: source.Source, decls: [ast.Decl], decl: i64, given: [ast.Arg]) -> [i64]
-    out: [i64] @ []
-    names: [str] @ []
+    out: [i64] @= []
+    names: [str] @= []
 
     match decls[decl].kind
         .record_decl rec =>
@@ -71,8 +71,8 @@ function given_fields(s: source.Source, decls: [ast.Decl], decl: i64, given: [as
     for arg in given
         assert !arg.name.is_err()
         label = source.span_text(s, arg.name.must())
-        found: i64 @ -1
-        k: i64 @ 0
+        found: i64 @= -1
+        k: i64 @= 0
 
         while k < names.len()
             if names[k] == label
@@ -90,9 +90,9 @@ function given_fields(s: source.Source, decls: [ast.Decl], decl: i64, given: [as
 # and `{kind, f, x}` there, so the dump never reads its arguments as fields
 # they are not.
 function named_list(s: source.Source, decls: [ast.Decl], decl: i64, given: [i64]) -> str
-    names: [str] @ []
-    whole: bool @ true
-    at: i64 @ 0
+    names: [str] @= []
+    whole: bool @= true
+    at: i64 @= 0
 
     match decls[decl].kind
         .record_decl rec =>
@@ -122,8 +122,8 @@ function is_variadic(name: str) -> bool
 # Both ends, spaces and tabs: the trailing trim keeps a comment after
 # the expression — the statement span reaches one — out of the message.
 function trimmed(text: str) -> str
-    first: i64 @ 0
-    past: i64 @ text.len()
+    first: i64 @= 0
+    past: i64 @= text.len()
 
     while first < past && (text[first] == ' ' || text[first] == '\t')
         first @ first + 1
@@ -159,7 +159,7 @@ function cases_of(c: state.Checked, s: source.Source, decls: [ast.Decl], subject
         .named n =>
             match decls[n.decl].kind
                 .variant_decl v =>
-                    names: [str] @ []
+                    names: [str] @= []
 
                     for one_case in v.cases
                         names @ names.push(source.span_text(s, one_case.name))
@@ -178,7 +178,7 @@ function cases_of(c: state.Checked, s: source.Source, decls: [ast.Decl], subject
 
 function case_position(names: [str], s: source.Source, name: token.Span) -> i64?
     wanted = source.span_text(s, name)
-    at: i64 @ 0
+    at: i64 @= 0
 
     for candidate in names
         if candidate == wanted

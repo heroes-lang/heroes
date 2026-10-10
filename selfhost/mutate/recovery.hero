@@ -103,7 +103,7 @@ function mirrored(plan_dir: str, out: str, files: [str]) -> ()?
     if walked.must().unnamed.len() > 0
         return fail(code: "no_corpus", msg: process.unnamed_said(walked.must().unnamed[0]))
     suffix = ".frozen"
-    copied: {str: bool} @ {}
+    copied: {str: bool} @= {}
 
     for path in walked.must().files
         if path.len() <= root.len() + suffix.len() || !bytes.bytes_at(text: path, at: path.len() - suffix.len(), needle: suffix)
@@ -133,7 +133,7 @@ function mirrored(plan_dir: str, out: str, files: [str]) -> ()?
     return ok()
 
 function directory(path: str) -> str
-    at: i64 @ path.len() - 1
+    at: i64 @= path.len() - 1
 
     while at > 0 && path[at] != '/'
         at @ at - 1
@@ -142,20 +142,20 @@ function directory(path: str) -> str
 
 # One phase on `workers.JOBS` threads, its `count` records in task order.
 function phase(out: str, which: i64, count: i64) -> [str]?
-    handles: [i64] @ []
+    handles: [i64] @= []
 
     for index in range(from: 0, to: workers.JOBS)
         handles @ handles.push(hero_thread_spawn(body: workers.work, arg: index * 4 + which))
 
-    done: i64 @ 0
+    done: i64 @= 0
 
     for h in handles
         done @ done + hero_thread_join(handle: h)
 
     if done != workers.JOBS
         return fail(code: "worker_failed", msg: failures(out, which: which))
-    rows: [str] @ []
-    filled: [bool] @ []
+    rows: [str] @= []
+    filled: [bool] @= []
 
     for _ in range(from: 0, to: count)
         rows @ rows.push("")
@@ -185,7 +185,7 @@ function phase(out: str, which: i64, count: i64) -> [str]?
             return fail(code: "worker_failed", msg: "a task of phase " + which.to_str() + " has no record")
 
     if which == workers.SINGLES
-        alone: [str] @ []
+        alone: [str] @= []
 
         for index in range(from: 0, to: workers.JOBS)
             for line in lines_of(read_file(workers.alone_path(out, index: index))?)
@@ -196,7 +196,7 @@ function phase(out: str, which: i64, count: i64) -> [str]?
 
 # What the workers that failed wrote, each on a line.
 function failures(out: str, which: i64) -> str
-    said: [str] @ []
+    said: [str] @= []
 
     for index in range(from: 0, to: workers.JOBS)
         got = read_file(workers.failure_path(out, phase: which, index: index))
@@ -217,8 +217,8 @@ function first_tab(line: str) -> i64
 
 # A text's lines, the last one's line feed not making an empty line.
 function lines_of(text: str) -> [str]
-    out: [str] @ []
-    start: i64 @ 0
+    out: [str] @= []
+    start: i64 @= 0
 
     for at in range(from: 0, to: text.len())
         if text[at] == 10
@@ -230,7 +230,7 @@ function lines_of(text: str) -> [str]
     return out
 
 function written(path: str, lines: [str]) -> ()?
-    text: str @ ""
+    text: str @= ""
 
     if lines.len() > 0
         text @ lines.join("\n") + "\n"

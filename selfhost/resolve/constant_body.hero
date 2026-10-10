@@ -38,12 +38,12 @@ record Extent
 # the order given (defect 363: the insertion sort it replaces copied the
 # list at every declaration, the square of their number).
 function extents(decls: [ast.Decl]) -> [Extent]
-    starts: [i64] @ []
+    starts: [i64] @= []
 
     for decl in decls
         starts @ starts.push(decl.span.start)
 
-    out: [Extent] @ []
+    out: [Extent] @= []
 
     for at in stable.order(by: starts)
         entry = Extent(start: decls[at].span.start, end: decls[at].span.end, decl: at)
@@ -52,8 +52,8 @@ function extents(decls: [ast.Decl]) -> [Extent]
     return out
 
 function owner(extent: [Extent], offset: i64) -> i64?
-    lo: i64 @ 0
-    hi: i64 @ extent.len() - 1
+    lo: i64 @= 0
+    hi: i64 @= extent.len() - 1
 
     if extent.len() == 0
         return fail(code: "outside", msg: "no declarations at all")
@@ -84,7 +84,7 @@ record Offender
     holder: i64
 
 function bodies(@out: resolved.Resolved, a: ast.Ast, s: source.Source, decls: [ast.Decl], extent: [Extent]) -> [bool]
-    found: [Offender] @ []
+    found: [Offender] @= []
 
     for expr in a.exprs
         # Everything a definition may be — literals, the containers built
@@ -121,12 +121,12 @@ function bodies(@out: resolved.Resolved, a: ast.Ast, s: source.Source, decls: [a
     # offender is that one's inside (`inside_another`). The constants whose
     # bodies are refused are a flag per declaration, which the cycles ask.
     inside = inside_another(found)
-    refused: [bool] @ []
+    refused: [bool] @= []
 
     while refused.len() < decls.len()
         refused @ refused.push(false)
 
-    at: i64 @ 0
+    at: i64 @= 0
 
     for offender in found
         nested = inside[at]
@@ -146,8 +146,8 @@ function bodies(@out: resolved.Resolved, a: ast.Ast, s: source.Source, decls: [a
 # its end, so one sweep keeping the furthest end met answers each (defect
 # 363: each offender against every other cost the square of their number).
 function inside_another(found: [Offender]) -> [bool]
-    ends: [i64] @ []
-    inside: [bool] @ []
+    ends: [i64] @= []
+    inside: [bool] @= []
 
     for offender in found
         end = -offender.span.end
@@ -155,13 +155,13 @@ function inside_another(found: [Offender]) -> [bool]
         inside @ inside.push(false)
 
     by_end = stable.order(by: ends)
-    starts: [i64] @ []
+    starts: [i64] @= []
 
     for at in by_end
         start = found[at].span.start
         starts @ starts.push(start)
 
-    furthest: i64 @ -1
+    furthest: i64 @= -1
 
     for k in stable.order(by: starts)
         at = by_end[k]
@@ -178,7 +178,7 @@ function inside_another(found: [Offender]) -> [bool]
 # The message names the constant, because the caret is on the call and the
 # rule is about the declaration around it.
 function body_diagnostic(name: str, what: str, span: token.Span) -> diag.Diagnostic
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "constant_body",
         message: "`constant " + name + "`'s body may not contain " + what + " — it may only read literals and other constants",
         span: span

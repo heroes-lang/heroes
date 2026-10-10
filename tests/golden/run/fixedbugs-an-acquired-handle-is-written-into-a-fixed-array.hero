@@ -27,8 +27,8 @@ extern "fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.h"
     function ob_freed() -> i64
 
 function main()
-    f: Four @ Four(a: [nullptr, nullptr, nullptr, nullptr])
-    n: i64 @ 1
+    f: Four @= Four(a: [nullptr, nullptr, nullptr, nullptr])
+    n: i64 @= 1
 
     for i in range(from: 0, to: 4)
         f.a[i] @ ob_new(n: n)

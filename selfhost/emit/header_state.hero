@@ -137,7 +137,7 @@ test "a header's packing and state left set reach no line the compiler writes"
     after = "struct heroes_mine { char a; long long b; };\n_Static_assert(sizeof(struct heroes_theirs) == 1 + sizeof(long long), \"the header's record keeps its packing\");\n_Static_assert(sizeof(struct heroes_mine) == 2 * sizeof(long long), \"the program's record has the build's\");\nint heroes_state_probe(void);\nint heroes_state_probe(void) { return 1; }\n"
 
     for give in [true, false]
-        lines: [str] @ strings.with_all(list: header_region.opening(), more: SAVED)
+        lines: [str] @= strings.with_all(list: header_region.opening(), more: SAVED)
         lines @ lines.push("#include <heroes_state.h>")
 
         if give
@@ -145,7 +145,7 @@ test "a header's packing and state left set reach no line the compiler writes"
         lines @ lines.push(header_region.CLOSING)
         unit = dir + "/unit-" + give.to_str() + ".c"
         assert !write_file(path: unit, text: lines.join("\n") + "\n" + after).is_err()
-        words: [str] @ ["clang"]
+        words: [str] @= ["clang"]
 
         for word in flags.level_words(level: "-O0", sanitize: false)
             words @ words.push(word)

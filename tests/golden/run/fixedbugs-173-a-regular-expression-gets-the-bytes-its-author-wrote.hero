@@ -24,7 +24,7 @@ extern "string.h"
 
 # Whether `text` matches `pattern` as an extended regular expression.
 function matches(pattern: str, text: str) -> bool
-    re: regex_t @ regex_t(re_nsub: 0)
+    re: regex_t @= regex_t(re_nsub: 0)
 
     if regcomp(@re, pattern.cstr(), REG_EXTENDED) != 0
         print("regcomp refused: ", pattern)

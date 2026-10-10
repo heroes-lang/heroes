@@ -147,8 +147,8 @@ record Owed
 # `x: i64` among `class Q`'s methods, is read as the field it is (lane
 # recovery-b8): it was a statement, a binding with no value.
 function next(@c: cursor.Cursor, @a: ast.Ast, text: str) -> Owed
-    told: bool @ true
-    habit: i64 @ -1
+    told: bool @= true
+    habit: i64 @= -1
     return next_member(@c, @a, text: text, holder: "", told: @told, @habit)
 
 # The same, where the block is a `record`'s or a `variant`'s, its `holder`,
@@ -162,7 +162,7 @@ function next(@c: cursor.Cursor, @a: ast.Ast, text: str) -> Owed
 # and then `unexpected_block`, two messages, its body unread.
 function next_member(@c: cursor.Cursor, @a: ast.Ast, text: str, holder: str, @told: bool, @habit: i64) -> Owed
     cursor.skip_terminators(@c)
-    k: token.TokenKind @ swap_reading.opens_line_as(c, text)
+    k: token.TokenKind @= swap_reading.opens_line_as(c, text)
 
     while member_owner(c, text, kind: k) == "" && (holder != "" && k != .dedent && k != .eof || holder == "" && k == .ident && headless.field_shaped(c.tokens, c.pos))
         if holder == "variant"
@@ -192,9 +192,9 @@ function next_member(@c: cursor.Cursor, @a: ast.Ast, text: str, holder: str, @to
 
     if !told
         told @ true
-        what: str @ "field"
-        holds: str @ "its fields, one per line, `name: type`"
-        taking: str @ ""
+        what: str @= "field"
+        holds: str @= "its fields, one per line, `name: type`"
+        taking: str @= ""
 
         if holder == "variant"
             what @ "case"
@@ -267,12 +267,12 @@ function head_read(@c: cursor.Cursor, @a: ast.Ast, text: str, kind: token.TokenK
 # indented or in braces, told as the top level tells them
 # (`parse/members_below`).
 function members(@c: cursor.Cursor, @a: ast.Ast, text: str, fields: bool)
-    kind: token.TokenKind @ .kw_variant
+    kind: token.TokenKind @= .kw_variant
 
     if fields
         kind @ .kw_record
     named = head(@c, text: text, kind: kind)
-    below: members_below.Below @ members_below.here(c, text)
+    below: members_below.Below @= members_below.here(c, text)
 
     if !named.is_err()
         written = token.Span(start: named.must().keyword.start, end: named.must().name.end)
@@ -339,8 +339,8 @@ function lexed(text: str) -> cursor.Cursor
 
 test "a block of declarations is read line by line, each owing what its keyword opens"
     text = "class Q\n    function f(x: i64) -> i64\n        return x\n    record R\n        y i64\n    x = 1\n"
-    c: cursor.Cursor @ lexed(text)
-    a: ast.Ast @ ast.new_ast()
+    c: cursor.Cursor @= lexed(text)
+    a: ast.Ast @= ast.new_ast()
 
     while !cursor.at(c, .indent)
         _ = cursor.bump(@c)

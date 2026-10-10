@@ -28,14 +28,14 @@ use ir/lower
 # can be asked of it; a `cstr` is the writability check's (panel 058); a
 # record is the header's own struct.
 function pointees(p: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl]) -> [pointee_ask.Pointee]
-    out: [pointee_ask.Pointee] @ []
+    out: [pointee_ask.Pointee] @= []
 
     for f in p.functions
         if emit_externs.extern_spans(decls, f).header.is_err()
             continue
         name = source.span_text(s, decls[f.decl].name)
         found = source.locate(s, decls[f.decl].name.start)
-        index: i64 @ 0
+        index: i64 @= 0
 
         for slot_id in f.params
             slot = f.slots[slot_id]
@@ -135,7 +135,7 @@ function whole_record(c: state.Checked, slot: containers.Slot, decls: [ast.Decl]
 # The C spelling of a numeric `@` parameter's declared type, or absent for
 # any other kind of slot.
 function numeric_out(c: state.Checked, slot: containers.Slot) -> str?
-    mutable: bool @ false
+    mutable: bool @= false
 
     match slot.kind
         .param_slot ps =>
@@ -172,7 +172,7 @@ function numeric_out(c: state.Checked, slot: containers.Slot) -> str?
 # right there. What is returned is a word for the marker, not a C type: the
 # depth line needs none.
 function opaque_out(c: state.Checked, slot: containers.Slot, decls: [ast.Decl]) -> str?
-    mutable: bool @ false
+    mutable: bool @= false
 
     match slot.kind
         .param_slot ps =>
@@ -205,11 +205,11 @@ test "a numeric @ parameter is asked its width, an opaque one its depth, and eac
     c = checker.check(parsed.tree, out, s, parsed.decls)
     low = lower.lower(parsed.tree, out, c, s, parsed.decls)
     wanted = pointees(low.program, c, s, parsed.decls)
-    named: [str] @ []
+    named: [str] @= []
 
     for one in wanted
         if one.file == "t.hero"
-            kind: str @ "width"
+            kind: str @= "width"
 
             if one.depth
                 kind @ "depth"
@@ -233,7 +233,7 @@ test "a lend asks the unit of a counted parameter, and a record lent whole with 
     c = checker.check(parsed.tree, out, s, parsed.decls)
     assert c.diagnostics.len() == 0
     low = lower.lower(parsed.tree, out, c, s, parsed.decls)
-    named: [str] @ []
+    named: [str] @= []
 
     for one in pointees(low.program, c, s, parsed.decls)
         if one.file == "t.hero"
@@ -252,7 +252,7 @@ test "a cstr parameter asks whether its pointer points at const bytes, and a cst
     c = checker.check(parsed.tree, out, s, parsed.decls)
     assert c.diagnostics.len() == 0
     low = lower.lower(parsed.tree, out, c, s, parsed.decls)
-    named: [str] @ []
+    named: [str] @= []
 
     for one in pointees(low.program, c, s, parsed.decls)
         if one.file == "t.hero"

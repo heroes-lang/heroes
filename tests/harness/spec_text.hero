@@ -37,13 +37,13 @@ use strings
 # the same check every other code span gets (panel 133).
 function identifiers_in_code(text: str) -> [str]
     cs = text.chars()
-    found: [str] @ []
-    in_block: bool @ false
-    in_span: bool @ false
-    in_indent: bool @ false
-    at_line_start: bool @ true
-    word: [str] @ []
-    i: i64 @ 0
+    found: [str] @= []
+    in_block: bool @= false
+    in_span: bool @= false
+    in_indent: bool @= false
+    at_line_start: bool @= true
+    word: [str] @= []
+    i: i64 @= 0
 
     while i < cs.len()
         if at_line_start && !in_block
@@ -97,7 +97,7 @@ function opens_indented(cs: [str], at: i64, was: bool) -> bool
 
     if at + 4 > cs.len()
         return false
-    j: i64 @ at
+    j: i64 @= at
 
     while j < at + 4
         if cs[j] != " "
@@ -153,10 +153,10 @@ function offered_builtins(text: str) -> [str]?
     tail = cs.slice(from: from, to: cs.len())
     sentence = tail.slice(from: 0, to: end_of_sentence(tail))
     kept = without_prose_parentheses(sentence)
-    names: [str] @ []
-    inside: bool @ false
-    piece: [str] @ []
-    i: i64 @ 0
+    names: [str] @= []
+    inside: bool @= false
+    piece: [str] @= []
+    i: i64 @= 0
 
     while i < kept.len()
         if kept[i] == "`"
@@ -181,7 +181,7 @@ function at_marker(cs: [str], needle: str) -> i64?
     if wanted.len() == 0 || wanted.len() > cs.len()
         return fail(code: "absent", msg: "the marker is not there")
     limit = cs.len() - wanted.len()
-    at: i64 @ 0
+    at: i64 @= 0
 
     while at <= limit
         if cs.slice(from: at, to: at + wanted.len()) == wanted
@@ -195,8 +195,8 @@ function at_marker(cs: [str], needle: str) -> i64?
 # and end nothing. A stop counts only when whitespace follows it, which is
 # what keeps `1.33` and `§1.6` from ending a sentence either.
 function end_of_sentence(cs: [str]) -> i64
-    in_span: bool @ false
-    i: i64 @ 0
+    in_span: bool @= false
+    i: i64 @= 0
 
     while i < cs.len()
         if cs[i] == "`"
@@ -217,10 +217,10 @@ function end_of_sentence(cs: [str]) -> i64
 # and `to` is a word ABOUT a built-in rather than the name of one; code spans
 # are kept whole, so `print(...)` survives.
 function without_prose_parentheses(cs: [str]) -> [str]
-    out: [str] @ []
-    in_code: bool @ false
-    depth: i64 @ 0
-    i: i64 @ 0
+    out: [str] @= []
+    in_code: bool @= false
+    depth: i64 @= 0
+    i: i64 @= 0
 
     while i < cs.len()
         ch = cs[i]
@@ -252,7 +252,7 @@ function without_prose_parentheses(cs: [str]) -> [str]
 # punctuation, so this is that premise's falsifier — and it pins the SET
 # rather than the count, because another em dash is not news and a letter is.
 function above_ascii(text: str) -> [str]
-    seen: {str: bool} @ {}
+    seen: {str: bool} @= {}
 
     for ch in text.chars()
         if ch.len() > 1
@@ -270,8 +270,8 @@ function above_ascii(text: str) -> [str]
 # byte offset is safe here because a line starts right after a newline, one
 # byte, so a slice from it never splits a character.
 function section_named(text: str, name: str) -> i64?
-    at: i64 @ 0
-    in_fence: bool @ false
+    at: i64 @= 0
+    in_fence: bool @= false
 
     for line in strings.lines(text)
         # A `## ` inside a fenced block is a Heroes section heading, which the
@@ -293,7 +293,7 @@ function section_named(text: str, name: str) -> i64?
 # space, and nothing else is looked past, so `1.0 release` keeps its title.
 function without_number(title: str) -> str
     cs = title.chars()
-    i: i64 @ 0
+    i: i64 @= 0
 
     while i < cs.len() && is_digit(cs[i])
         i @ i + 1

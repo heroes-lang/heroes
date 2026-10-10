@@ -74,7 +74,7 @@ function main()
     # declaration carries none; an unmarked parameter is assumed to keep, so
     # the lend is refused and this copy, released right after the call, is
     # right under either option (spec § 13, panel 171).
-    url: cstr @ "https://example.invalid/".lease()
+    url: cstr @= "https://example.invalid/".lease()
     rc = curl_easy_setopt(handle, CURLOPT_URL.to_u32().must(), url)
     end_lease(@url)
 

@@ -40,15 +40,15 @@ function pick() -> i64
     return 0
 
 function main()
-    b: Bag @ Bag(items: ["a"])
+    b: Bag @= Bag(items: ["a"])
     add_items(@b.items, "x")
     print(b.items.len())
-    bs: [Bag] @ [Bag(items: ["a"]), Bag(items: ["b", "c"])]
+    bs: [Bag] @= [Bag(items: ["a"]), Bag(items: ["b", "c"])]
     add(@bs[0], "y")
     print(bs[0].items.len())
     add_items(@bs[1].items, "z")
     print(bs[1].items.len())
-    cs: [Bag] @ [Bag(items: ["d", "e", "f", "g"])]
+    cs: [Bag] @= [Bag(items: ["d", "e", "f", "g"])]
     swap(a: @bs[0], b: @cs[0])
     print(bs[0].items.len())
     print(cs[0].items.len())

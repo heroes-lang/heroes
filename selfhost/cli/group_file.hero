@@ -47,7 +47,7 @@ function plain(path: str) -> str
 function group_of(s: source.Source, decls: [ast.Decl], path: str) -> Group?
     for spelled in clang_place.spellings(path)
         for decl in decls
-            named: token.Span? @ fail(code: "none", msg: "no header")
+            named: token.Span? @= fail(code: "none", msg: "no header")
 
             match decl.kind
                 .function_decl fd          => named @ fd.value.header
@@ -73,7 +73,7 @@ record Reached
 
 function arriving(stderr: str, row: str, s: source.Source, decls: [ast.Decl]) -> Reached?
     steps = clang_place.stack(stderr: stderr, line: row)
-    at: i64 @ steps.len() - 1
+    at: i64 @= steps.len() - 1
 
     while at >= 0
         found = group_of(s, decls, path: steps[at].path)

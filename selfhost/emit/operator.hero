@@ -37,7 +37,7 @@ function unary(@w: writer.Writer, f: containers.Function, c: state.Checked, op: 
     match op
         .not_op => writer.line(@w, text: "    " + name + " = !" + value + ";")
         .neg =>
-            is_int: bool @ false
+            is_int: bool @= false
 
             match table.get(c.types, containers.value_type(f, operand))
                 .int_ty                                                    => is_int @ true
@@ -65,7 +65,7 @@ function binary(@w: writer.Writer, c: state.Checked, names: ctype.Names, f: cont
     name = target.must()
 
     # The no-op the fall-through arms mutate: name is =-bound.
-    fall: bool @ false
+    fall: bool @= false
     l = mangle.value(left)
     r = mangle.value(right)
     left_ty = containers.value_type(f, left)
@@ -102,8 +102,8 @@ function binary(@w: writer.Writer, c: state.Checked, names: ctype.Names, f: cont
     # guard, and with one variant per width a u8 would have made it
     # false — the guard dropped, t0 = l + r emitted bare, and "overflow
     # aborts at every width" silently untrue at exit 0.
-    integral: bool @ false
-    is_float: bool @ false
+    integral: bool @= false
+    is_float: bool @= false
 
     match table.get(c.types, left_ty)
         .int_ty                                                    => integral @ true
@@ -115,7 +115,7 @@ function binary(@w: writer.Writer, c: state.Checked, names: ctype.Names, f: cont
     match op
         .add | .sub | .mul =>
             if integral
-                builtin: str @ "add"
+                builtin: str @= "add"
 
                 match op
                     .sub                                                   => builtin @ "sub"
@@ -130,7 +130,7 @@ function binary(@w: writer.Writer, c: state.Checked, names: ctype.Names, f: cont
                 return
         .div | .rem =>
             if integral
-                operator: str @ "/"
+                operator: str @= "/"
 
                 if op == .rem
                     operator @ "%"
@@ -146,7 +146,7 @@ function binary(@w: writer.Writer, c: state.Checked, names: ctype.Names, f: cont
         # defined.
 
         .bit_and | .bit_or | .bit_xor =>
-            operator: str @ "&"
+            operator: str @= "&"
 
             match op
                 .bit_or                                        => operator @ "|"
@@ -193,7 +193,7 @@ function binary(@w: writer.Writer, c: state.Checked, names: ctype.Names, f: cont
 
         .lt | .le | .gt | .ge =>
             if is_float
-                operator: str @ "<"
+                operator: str @= "<"
 
                 match op
                     .le                                                => operator @ "<="
@@ -217,7 +217,7 @@ function binary(@w: writer.Writer, c: state.Checked, names: ctype.Names, f: cont
     if op == .rem
         writer.line(@w, text: "    " + name + " = fmod(" + l + ", " + r + ");")
         return
-    plain: str @ "+"
+    plain: str @= "+"
 
     match op
         .sub        => plain @ "-"
@@ -258,7 +258,7 @@ function eq_or_bust(@w: writer.Writer, name: str, call: str, op: ir.BinaryOp)
 # are byte-wise, which is what makes == structural on a string the
 # same way it is on a record.
 function str_binary(@w: writer.Writer, name: str, l: str, r: str, op: ir.BinaryOp)
-    call: str @ ""
+    call: str @= ""
 
     match op
         .add => call @ "hero_str_concat(" + l + ", " + r + ")"
@@ -314,7 +314,7 @@ function ready() -> Setup
 
 test "overflow guards on + - * and negation, the / and % pair, the shifts"
     got = ready()
-    w: writer.Writer @ writer.new_writer("t")
+    w: writer.Writer @= writer.new_writer("t")
     binary(@w, got.c, got.names, got.f, op: .add, left: 1, right: 2, target: ok("t0"))
     binary(@w, got.c, got.names, got.f, op: .rem, left: 1, right: 2, target: ok("t0"))
     binary(@w, got.c, got.names, got.f, op: .shl, left: 1, right: 2, target: ok("t0"))
@@ -324,7 +324,7 @@ test "overflow guards on + - * and negation, the / and % pair, the shifts"
 
 test "a nan stops an ordering, f64 % is fmod, and str + concatenates"
     got = ready()
-    w: writer.Writer @ writer.new_writer("t")
+    w: writer.Writer @= writer.new_writer("t")
     binary(@w, got.c, got.names, got.f, op: .lt, left: 3, right: 4, target: ok("t0"))
     binary(@w, got.c, got.names, got.f, op: .rem, left: 3, right: 4, target: ok("t0"))
     binary(@w, got.c, got.names, got.f, op: .add, left: 5, right: 6, target: ok("t0"))

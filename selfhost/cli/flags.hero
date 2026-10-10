@@ -181,7 +181,7 @@ function debug_words(level: str) -> [str]
 # writes the `.pdb` only when the link line carries a `-g` word (`clang -###`
 # on the box, panel 197).
 function level_words(level: str, sanitize: bool) -> [str]
-    out: [str] @ flags()
+    out: [str] @= flags()
     out @ out.push(level)
 
     for word in debug_words(level)
@@ -250,7 +250,7 @@ test "the array is the fact: nineteen flags, gnu11 named first and panel 204's l
     # A call stays a call at every level (panel 199's R2), the words each
     # level hands a unit, the runtime and the link.
     for level in ["-O0", "-O2"]
-        kept: i64 @ 0
+        kept: i64 @= 0
 
         for word in level_words(level: level, sanitize: false)
             if word == "-fno-optimize-sibling-calls"
@@ -272,11 +272,11 @@ test "the optimised build keeps a call in tail position a call (panel 199's R2)"
     unit = "build/selftest-sibling-calls/unit.c"
     text = "void heroes_sibling_sink(int seen);\nint heroes_sibling_probe(int n);\nint heroes_sibling_probe(int n) {\n    if (n == 0) {\n        return 0;\n    }\n    heroes_sibling_sink(n);\n    return heroes_sibling_probe(n - 1);\n}\n"
     assert !write_file(path: unit, text: text).is_err()
-    counts: [i64] @ []
+    counts: [i64] @= []
 
     for keep in [true, false]
         said = "build/selftest-sibling-calls/unit-" + keep.to_str() + ".s"
-        words: [str] @ ["clang"]
+        words: [str] @= ["clang"]
 
         for word in level_words(level: "-O2", sanitize: false)
             if keep || word != "-fno-optimize-sibling-calls"
@@ -303,7 +303,7 @@ test "clang's word on a function that can only call itself is not passed on (pan
     assert !write_file(path: unit, text: text).is_err()
 
     for keep in [true, false]
-        words: [str] @ ["clang"]
+        words: [str] @= ["clang"]
 
         for word in level_words(level: "-O0", sanitize: false)
             if keep || word != "-Wno-infinite-recursion"
@@ -334,7 +334,7 @@ test "an unoptimised unit describes its locals to a debugger, and an optimised o
 
     for level in ["-O0", "-O2"]
         said = "build/selftest-debug-words/unit" + level + ".s"
-        words: [str] @ ["clang"]
+        words: [str] @= ["clang"]
 
         for word in level_words(level: level, sanitize: false)
             words @ words.push(word)
@@ -353,7 +353,7 @@ test "an unoptimised unit describes its locals to a debugger, and an optimised o
 # without, on this Mac, Linux arm64 (Debian clang 22.1.8) and the Windows box
 # (clang 23.1.1)). A statement under `#line N "x.hero"` carries the column of
 # the C file's own text, never a `.hero` one: lldb stops at `dbg.hero:2:8` and
-# draws its caret under the eighth character of `    total: i64 @ 0`, and
+# draws its caret under the eighth character of `    total: i64 @= 0`, and
 # Linux's AddressSanitizer names `uaf.hero:9:10`. With the word those columns
 # go and nothing else a tool shows about a file and a line moves: lldb's
 # breakpoints, stops and backtraces read the same functions, offsets, files
@@ -385,7 +385,7 @@ test "the level's words keep a unit's columns, and a `#line` carries the C file'
 
     for level in ["-O0", "-O2"]
         said = "build/selftest-columns/probe" + level + ".s"
-        words: [str] @ ["clang"]
+        words: [str] @= ["clang"]
 
         for word in level_words(level: level, sanitize: false)
             words @ words.push(word)
@@ -395,7 +395,7 @@ test "the level's words keep a unit's columns, and a `#line` carries the C file'
 
         assert process.run(program: "clang", words: words, out: process.discard(), err: process.discard()).code == 0
         assembly = read_file(said).must()
-        columns: [i64] @ []
+        columns: [i64] @= []
 
         # clang's comment on a location directive: `probe.c:4:12`, the column
         # left out where it is 0 (DWARF) or written as 0 (CodeView).
@@ -403,8 +403,8 @@ test "the level's words keep a unit's columns, and a `#line` carries the C file'
             at = first_at(text: assembly, needle: place)
             a_column_is_written = at >= 0
             assert a_column_is_written
-            column: i64 @ 0
-            next: i64 @ at + place.len()
+            column: i64 @= 0
+            next: i64 @= at + place.len()
 
             while next < assembly.len() && assembly[next] >= '0' && assembly[next] <= '9'
                 column @ column * 10 + (assembly[next] - '0').to_i64().must()
@@ -435,11 +435,11 @@ test "every macro flags() defines is the runtime header's own on Windows, before
     # The first line marker entering a system header: `# 1 "<path>" 1 3`.
     system = first_at(text: text, needle: "\" 1 3")
     assert system > 0
-    defined: i64 @ 0
+    defined: i64 @= 0
 
     for flag in flags()
         if flag.len() > 2 && flag[0] == '-' && flag[1] == 'D'
-            name: str @ flag.slice(from: 2, to: flag.len())
+            name: str @= flag.slice(from: 2, to: flag.len())
             value = first_at(text: flag, needle: "=")
 
             if value > 0
@@ -454,12 +454,12 @@ test "every macro flags() defines is the runtime header's own on Windows, before
 # How many times `needle` stands in `text`, none overlapping, compared byte
 # by byte as `first_at` compares.
 function times(text: str, needle: str) -> i64
-    count: i64 @ 0
-    at: i64 @ 0
+    count: i64 @= 0
+    at: i64 @= 0
 
     while at + needle.len() <= text.len()
-        same: bool @ true
-        k: i64 @ 0
+        same: bool @= true
+        k: i64 @= 0
 
         while same && k < needle.len()
             same @ text[at + k] == needle[k]
@@ -476,11 +476,11 @@ function times(text: str, needle: str) -> i64
 # Where `needle` first stands in `text`, compared byte by byte, so a text
 # holding a longer character is never sliced through one; or -1.
 function first_at(text: str, needle: str) -> i64
-    at: i64 @ 0
+    at: i64 @= 0
 
     while at + needle.len() <= text.len()
-        same: bool @ true
-        k: i64 @ 0
+        same: bool @= true
+        k: i64 @= 0
 
         while same && k < needle.len()
             same @ text[at + k] == needle[k]

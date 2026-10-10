@@ -100,7 +100,7 @@ function a_header_open(@l: state.LexState, text: str) -> bool
     if k < 0
         return false
     open = openers.opener(l.open_brackets, k).start
-    i: i64 @ l.tokens.len() - 1
+    i: i64 @= l.tokens.len() - 1
 
     while i >= 0 && l.tokens[i].span.start > open
         if l.tokens[i].kind == .error && text.slice(from: l.tokens[i].span.start, to: l.tokens[i].span.end) == ";"
@@ -112,8 +112,8 @@ function a_header_open(@l: state.LexState, text: str) -> bool
 # Whether the line from `at` holds a `;`, or a closer of no opener on it: a
 # clause of a header split over lines, the `(` closing below.
 function a_clause(text: str, at: i64) -> bool
-    depth: i64 @ 0
-    i: i64 @ at
+    depth: i64 @= 0
+    i: i64 @= at
 
     while i < text.len() && text[i] != '\n' && text[i] != '#'
         b = text[i]
@@ -135,7 +135,7 @@ function a_clause(text: str, at: i64) -> bool
 
 # The index of the last token laid out that is no comment, or -1.
 function last_not_a_comment(l: state.LexState) -> i64
-    last: i64 @ l.tokens.len() - 1
+    last: i64 @= l.tokens.len() - 1
 
     while last >= 0 && l.tokens[last].kind == .comment
         last @ last - 1

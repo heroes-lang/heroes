@@ -21,7 +21,7 @@ use text_lines
 # line whose margin is one level below its own.
 function crossed(c: cursor.Cursor, text: str, from: i64) -> bool
     body = text_lines.line_margin(text, at: c.tokens[from].span.start) + 4
-    i: i64 @ from + 1
+    i: i64 @= from + 1
 
     while i < c.pos
         start = c.tokens[i].span.start
@@ -46,7 +46,7 @@ test "a head went on to its body's margin only where a line past its first stand
         token.made(.terminator, start: 23, end: 23)
         token.made(.eof, start: 24, end: 24)
     ]
-    c: cursor.Cursor @ cursor.new_cursor(tokens)
+    c: cursor.Cursor @= cursor.new_cursor(tokens)
     c.pos @ 7
     assert crossed(c, swallowed, from: 0)
 
@@ -63,6 +63,6 @@ test "a head went on to its body's margin only where a line past its first stand
         token.made(.terminator, start: 24, end: 24)
         token.made(.eof, start: 25, end: 25)
     ]
-    d: cursor.Cursor @ cursor.new_cursor(deeper)
+    d: cursor.Cursor @= cursor.new_cursor(deeper)
     d.pos @ 7
     assert !crossed(d, aligned, from: 0)

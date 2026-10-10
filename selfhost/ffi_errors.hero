@@ -37,7 +37,7 @@ function ffi_type(name: str, what: str, span: token.Span) -> diag.Diagnostic
 # what the reader wrote. The refusal is one level down, so the message
 # has to say which level.
 function ffi_callback_carries(callback: str, carried: str, what: str, span: token.Span) -> diag.Diagnostic
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "ffi_type",
         message: "`" + callback + "` cannot cross the FFI boundary, and it is " + what + " — the callback may stand there, but `" + carried + "` inside it cannot (§4.19)",
         span: span
@@ -58,7 +58,7 @@ function ffi_callback_carries(callback: str, carried: str, what: str, span: toke
 # function type crosses — true of a parameter, and the sentence a reader
 # would take as permission here.
 function ffi_result_position(function_name: str, name: str, span: token.Span) -> diag.Diagnostic
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "ffi_type",
         message: "`" + function_name + "` cannot return `" + name + "` — a function type crosses the FFI boundary as a *parameter* only (§4.19)",
         span: span
@@ -110,7 +110,7 @@ function ffi_parameter_position(parameter: str, function_name: str, name: str, w
 # would be a second name for one question (`ffi_parameter_position`'s own
 # reasoning, one function up).
 function counted_by_shape(parameter: str, function_name: str, why: str, span: token.Span) -> diag.Diagnostic
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "counted_by_shape",
         message: "`counted_by` on `" + parameter + "` of `" + function_name + "` names no extent — " + why,
         span: span
@@ -126,7 +126,7 @@ function counted_by_shape(parameter: str, function_name: str, why: str, span: to
 # an `@` parameter since panel 196's R3; unread, it is refused, which is
 # `check/marks.hero`'s rule for the handle words applied to this one.
 function lent_shape(parameter: str, function_name: str, why: str, span: token.Span) -> diag.Diagnostic
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "lent_shape",
         message: "`lent` on `" + parameter + "` of `" + function_name + "` is a word nothing reads — " + why,
         span: span
@@ -137,7 +137,7 @@ function lent_shape(parameter: str, function_name: str, why: str, span: token.Sp
     return d
 
 function ffi_field_type(name: str, why: str, span: token.Span) -> diag.Diagnostic
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "ffi_field_type",
         message: "`" + name + "` cannot be a field of a `record` in an `extern` group — the header owns the layout, and it can hold a number, `bool`, `ptr`, `cstr`, or another record of the group (§4.19)",
         span: span
@@ -153,11 +153,11 @@ function ffi_field_type(name: str, why: str, span: token.Span) -> diag.Diagnosti
 # Port note: Rust calls this parameter `record`; Heroes reserves the
 # word, so the port says `holder`.
 function partial_operation(holder: str, shown: str, what: str, span: token.Span) -> diag.Diagnostic
-    through: str @ ""
+    through: str @= ""
 
     if holder != shown
         through @ " — reached through `" + shown + "`"
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "ffi_partial_operation",
         message: "`" + holder + "` is `partial`, so it cannot be " + what + through + ": the fields it does not name are part of the answer, and this program cannot see them",
         span: span
@@ -215,7 +215,7 @@ function fixed_index_out_of_range(shown: str, length: i64, got_text: str, span: 
 # The places no fixed array stands name a function's result since defect 424:
 # the note said *binding, constant or parameter* at a result too.
 function fixed_outside_a_group(name: str, growable: str, fills: bool, into: BuiltInto?, span: token.Span) -> diag.Diagnostic
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "fixed_outside_a_group",
         message: "`" + name + "` is a C array member, so it stands only as a field of a `record` inside an `extern` group, whose layout a C compiler chose — here no group's record holds it (§4.19)",
         span: span
@@ -249,13 +249,13 @@ record BuiltInto
 
 # The construction named, and the two ways it is written without the value.
 function built_into(b: BuiltInto) -> str
-    names: [str] @ []
+    names: [str] @= []
 
     for f in b.fields
         names @ names.push("`" + f + "`")
 
-    which: str @ "field " + names[0] + " is"
-    them: str @ names[0]
+    which: str @= "field " + names[0] + " is"
+    them: str @= names[0]
 
     if names.len() > 1
         which @ "fields " + names.slice(from: 0, to: names.len() - 1).join(", ") + " and " + names[names.len() - 1] + " are"
@@ -278,11 +278,11 @@ function built_into(b: BuiltInto) -> str
 # `reached` empty means the key type IS a float; otherwise it names the
 # member that is one — the reader's next act differs.
 function float_map_key(key: str, reached: str, span: token.Span) -> diag.Diagnostic
-    because: str @ "it is a float"
+    because: str @= "it is a float"
 
     if reached.len() > 0
         because @ "`" + reached + "` is a float"
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "float_map_key",
         message: "`" + key + "` cannot be a map key, because " + because,
         span: span

@@ -47,12 +47,12 @@ constant PREFIX: str
 # per extern asked about — one per NAME, because two parameters of one
 # function are read from one declaration.
 function dump_unit(headers: [str], wanted: [pointee_ask.Pointee]) -> str
-    lines: [str] @ c_text.includes(headers)
+    lines: [str] @= c_text.includes(headers)
 
-    named: [str] @ []
+    named: [str] @= []
 
     for one in wanted
-        already: bool @ false
+        already: bool @= false
 
         for seen in named
             if seen == one.name
@@ -74,7 +74,7 @@ function dump_unit(headers: [str], wanted: [pointee_ask.Pointee]) -> str
 # C11 arithmetic; for a float pointee the two sides agree and only
 # `sizeof` decides, which is the right question for a float.
 function check_unit(headers: [str], wanted: [pointee_ask.Pointee], types: {str: [str]}, sugar: {str: [str]}) -> str
-    lines: [str] @ c_text.includes(headers)
+    lines: [str] @= c_text.includes(headers)
 
     for one in answered(wanted, types: types, sugar: sugar)
         header_type = one.header_type
@@ -148,7 +148,7 @@ function check_unit(headers: [str], wanted: [pointee_ask.Pointee], types: {str: 
 # and the parameter has to be found from it. An ask the dump did not serve
 # (a macro name, a by-value parameter) is left out, exactly as before.
 function answered(wanted: [pointee_ask.Pointee], types: {str: [str]}, sugar: {str: [str]}) -> [pointee_ask.Answered]
-    out: [pointee_ask.Answered] @ []
+    out: [pointee_ask.Answered] @= []
 
     for one in wanted
         params = types[one.name]
@@ -164,7 +164,7 @@ function answered(wanted: [pointee_ask.Pointee], types: {str: [str]}, sugar: {st
         # a pointer as clang reads it through every typedef: one the header
         # takes by value is the call's own refusal, at the call.
         if one.declared == pointee_ask.UNIT || one.declared == pointee_ask.WHOLE
-            through: str @ desugared_at(sugar, name: one.name, index: one.index)
+            through: str @= desugared_at(sugar, name: one.name, index: one.index)
 
             if through.len() == 0
                 through @ written
@@ -195,7 +195,7 @@ function desugared_at(sugar: {str: [str]}, name: str, index: i64) -> str
 # spells the parameter, keyed `<C name> <position>`: what `emit/ctype.Names`
 # carries to `emit/lend_extent.hero` (panel 194's R7, defects 092 and 395).
 function lend_units(answers: [pointee_ask.Answered]) -> {str: str}
-    out: {str: str} @ {}
+    out: {str: str} @= {}
 
     for one in answers
         if one.asked.declared == pointee_ask.UNIT
@@ -220,7 +220,7 @@ function pointee_of(qual_type: str) -> str?
     return ok(without)
 
 function last_star(text: str) -> i64?
-    index: i64 @ text.len() - 1
+    index: i64 @= text.len() - 1
 
     while index >= 0
         if text[index] == '*'
@@ -247,14 +247,14 @@ function strip_word(text: str, word: str) -> str
 # A general JSON parser would be a second way to read a file this compiler
 # writes the question for, and the shape is the contract.
 function parameter_types(json: str, name: str) -> [str]
-    out: [str] @ []
+    out: [str] @= []
     opened = locate_text(text: json, needle: "\"name\": \"" + PREFIX + name + "\"", from: 0)
 
     if opened.is_err()
         return out
-    at: i64 @ opened.must()
+    at: i64 @= opened.must()
     stop = locate_text(text: json, needle: "\"kind\": \"FunctionDecl\"", from: at)
-    limit: i64 @ json.len()
+    limit: i64 @= json.len()
 
     if !stop.is_err()
         limit @ stop.must()
@@ -280,7 +280,7 @@ function parameter_types(json: str, name: str) -> [str]
 
 # The parameter types for every asked-about extern, keyed by name.
 function types_of(json: str, wanted: [pointee_ask.Pointee]) -> {str: [str]}
-    out: {str: [str]} @ {}
+    out: {str: [str]} @= {}
 
     for one in wanted
         if out[one.name].is_err()
@@ -294,14 +294,14 @@ function types_of(json: str, wanted: [pointee_ask.Pointee]) -> {str: [str]}
 # of the dump's shape, measured on Apple clang 21.0.0 for `LPVOID`, `size_t`
 # and a function's own `typeof`; read for a lend's asks alone (panel 194's R7).
 function parameter_sugar(json: str, name: str) -> [str]
-    out: [str] @ []
+    out: [str] @= []
     opened = locate_text(text: json, needle: "\"name\": \"" + PREFIX + name + "\"", from: 0)
 
     if opened.is_err()
         return out
-    at: i64 @ opened.must()
+    at: i64 @= opened.must()
     stop = locate_text(text: json, needle: "\"kind\": \"FunctionDecl\"", from: at)
-    limit: i64 @ json.len()
+    limit: i64 @= json.len()
 
     if !stop.is_err()
         limit @ stop.must()
@@ -316,7 +316,7 @@ function parameter_sugar(json: str, name: str) -> [str]
         if typed.is_err() || typed.must() >= limit
             break
         plain = locate_text(text: json, needle: "\"desugaredQualType\": \"", from: param.must())
-        found: str @ ""
+        found: str @= ""
 
         if !plain.is_err() && plain.must() < typed.must()
             start = plain.must() + 22
@@ -330,7 +330,7 @@ function parameter_sugar(json: str, name: str) -> [str]
     return out
 
 function sugar_of(json: str, wanted: [pointee_ask.Pointee]) -> {str: [str]}
-    out: {str: [str]} @ {}
+    out: {str: [str]} @= {}
 
     for one in wanted
         if out[one.name].is_err()
@@ -347,7 +347,7 @@ function sugar_of(json: str, wanted: [pointee_ask.Pointee]) -> {str: [str]}
 function locate_text(text: str, needle: str, from: i64) -> i64?
     if needle.len() == 0 || from < 0
         return fail(code: "none", msg: "nothing to find")
-    index: i64 @ from
+    index: i64 @= from
 
     while index + needle.len() <= text.len()
         if bytes.bytes_at(text: text, at: index, needle: needle)
@@ -357,8 +357,8 @@ function locate_text(text: str, needle: str, from: i64) -> i64?
     return fail(code: "none", msg: "not found")
 
 function trimmed(text: str) -> str
-    start: i64 @ 0
-    stop: i64 @ text.len()
+    start: i64 @= 0
+    stop: i64 @= text.len()
 
     while start < stop && text[start] == ' '
         start @ start + 1
@@ -406,7 +406,7 @@ test "the check unit asserts width and sign at the author's line, with the marke
         pointee_ask.Pointee(name: "frexp", param: "e", index: 1, declared: "int32_t", file: "t.hero", line: 3, depth: false)
         pointee_ask.Pointee(name: "eat", param: "p", index: 0, declared: "handle", file: "t.hero", line: 4, depth: true)
     ]
-    types: {str: [str]} @ {}
+    types: {str: [str]} @= {}
     types["getline"] @ ["char **restrict", "size_t *restrict", "FILE *restrict"]
     types["frexp"] @ ["double", "int *"]
     types["eat"] @ ["void *"]

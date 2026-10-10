@@ -67,7 +67,7 @@ function start() -> Flow
     return Flow(groups: flow_groups.none(), live: true, clock: 0)
 
 function unreachable() -> Flow
-    f: Flow @ start()
+    f: Flow @= start()
     f.live @ false
     return f
 
@@ -94,7 +94,7 @@ function meet(base: Flow, one: Flow, two: Flow) -> Flow
 
     if !two.live
         return one
-    out: Flow @ base
+    out: Flow @= base
     out.clock @ one.clock
 
     if two.clock > out.clock
@@ -102,7 +102,7 @@ function meet(base: Flow, one: Flow, two: Flow) -> Flow
     out.clock @ out.clock + 1
 
     for local in flow_log.since(one: one.groups, two: two.groups, from: base.clock)
-        both: flow_groups.Held @ met(
+        both: flow_groups.Held @= met(
             mine: flow_groups.get(one.groups, local: local),
             theirs: flow_groups.get(two.groups, local: local)
         )
@@ -114,8 +114,8 @@ function meet(base: Flow, one: Flow, two: Flow) -> Flow
 # A local's group met with its twin: dead on both, in `mine`'s order; kept on
 # either.
 function met(mine: flow_groups.Held, theirs: flow_groups.Held) -> flow_groups.Held
-    both: [flow_groups.Dead] @ []
-    kept: [[str]] @ mine.kept
+    both: [flow_groups.Dead] @= []
+    kept: [[str]] @= mine.kept
 
     for d in mine.dead
         if holds(theirs.dead, path: d.path)
@@ -130,7 +130,7 @@ function met(mine: flow_groups.Held, theirs: flow_groups.Held) -> flow_groups.He
 # The group `h`, changed on this path, put back stamped one later.
 function changed(@f: Flow, h: flow_groups.Held)
     f.clock @ f.clock + 1
-    one: flow_groups.Held @ h
+    one: flow_groups.Held @= h
     one.stamp @ f.clock
     flow_groups.put(@f.groups, one: one)
 
@@ -154,7 +154,7 @@ function listed(set: [[str]], path: [str]) -> bool
 function definite_prefix(k: [str], p: [str]) -> bool
     if k.len() > p.len()
         return false
-    at: i64 @ 0
+    at: i64 @= 0
 
     while at < k.len()
         if k[at] != p[at] || k[at] == "[?]"
@@ -165,7 +165,7 @@ function definite_prefix(k: [str], p: [str]) -> bool
 
 # `a` and `b` may name overlapping storage on some run.
 function may_overlap(a: [str], b: [str]) -> bool
-    at: i64 @ 0
+    at: i64 @= 0
 
     while at < a.len() && at < b.len()
         if a[at] != b[at] && !(is_element(a[at]) && is_element(b[at]) && (a[at] == "[?]" || b[at] == "[?]"))
@@ -209,7 +209,7 @@ function dead_crossing(f: Flow, path: [str]) -> flow_groups.Dead?
 # local's order, as a second end of it would have been written last. A place
 # a reference keeps is not ended, and its group goes back as it was.
 function ended(@f: Flow, path: [str], shown: str, callee: str, at: token.Span)
-    h: flow_groups.Held @ flow_groups.taken(@f.groups, local: local_of(path))
+    h: flow_groups.Held @= flow_groups.taken(@f.groups, local: local_of(path))
 
     for k in h.kept
         if may_overlap(a: k, b: path)
@@ -228,7 +228,7 @@ function add_dead(@dead: [flow_groups.Dead], one: flow_groups.Dead)
     dead @ dead.push(one)
 
 function ended_again(@dead: [flow_groups.Dead], last: flow_groups.Dead)
-    survivors: [flow_groups.Dead] @ []
+    survivors: [flow_groups.Dead] @= []
 
     for d in dead
         if d.path != last.path
@@ -241,7 +241,7 @@ function ended_again(@dead: [flow_groups.Dead], last: flow_groups.Dead)
 function written(@f: Flow, path: [str])
     if !reached(f, path: path)
         return
-    h: flow_groups.Held @ flow_groups.taken(@f.groups, local: local_of(path))
+    h: flow_groups.Held @= flow_groups.taken(@f.groups, local: local_of(path))
     revived(@h, path: path)
     changed(@f, h: h)
 
@@ -251,7 +251,7 @@ function reached(f: Flow, path: [str]) -> bool
 
 function revived(@h: flow_groups.Held, path: [str])
     if reaches_dead(h.dead, path: path)
-        survivors: [flow_groups.Dead] @ []
+        survivors: [flow_groups.Dead] @= []
 
         for d in h.dead
             if !may_overlap(a: d.path, b: path)
@@ -260,7 +260,7 @@ function revived(@h: flow_groups.Held, path: [str])
         h.dead @ survivors
 
     if reaches_kept(h.kept, path: path)
-        still: [[str]] @ []
+        still: [[str]] @= []
 
         for k in h.kept
             if !may_overlap(a: k, b: path)
@@ -285,7 +285,7 @@ function reaches_kept(set: [[str]], path: [str]) -> bool
 function retained(@f: Flow, path: [str])
     if kept_already(f, path: path)
         return
-    h: flow_groups.Held @ flow_groups.taken(@f.groups, local: local_of(path))
+    h: flow_groups.Held @= flow_groups.taken(@f.groups, local: local_of(path))
     add_kept(@h.kept, path: path)
     changed(@f, h: h)
 
@@ -303,7 +303,7 @@ function span_at(n: i64) -> token.Span
 # Every place a flow holds dead, local by local, and every kept one: what
 # the one list held before defect 499, for the tests to read.
 function every_dead(f: Flow) -> [flow_groups.Dead]
-    out: [flow_groups.Dead] @ []
+    out: [flow_groups.Dead] @= []
 
     for h in flow_groups.each(f.groups)
         for d in h.dead
@@ -312,7 +312,7 @@ function every_dead(f: Flow) -> [flow_groups.Dead]
     return out
 
 function every_kept(f: Flow) -> [[str]]
-    out: [[str]] @ []
+    out: [[str]] @= []
 
     for h in flow_groups.each(f.groups)
         for k in h.kept
@@ -321,7 +321,7 @@ function every_kept(f: Flow) -> [[str]]
     return out
 
 test "a read is dead under a definite prefix and alive under an element only the run knows"
-    f: Flow @ start()
+    f: Flow @= start()
     ended(@f, path: ["3", ".cell"], shown: "x.cell", callee: "close", at: span_at(0))
     assert !dead_read(f, path: ["3", ".cell"]).is_err()
     assert !dead_read(f, path: ["3", ".cell", ".inner"]).is_err()
@@ -337,7 +337,7 @@ test "a read is dead under a definite prefix and alive under an element only the
     assert dead_read(f, path: ["6", "[?]"]).is_err()
 
 test "a crossing into C is dead when the whole covers a dead part, and not through an unknown element"
-    f: Flow @ start()
+    f: Flow @= start()
     ended(@f, path: ["3", ".cell"], shown: "x.cell", callee: "close", at: span_at(0))
     ended(@f, path: ["5", "[?]"], shown: "xs[i]", callee: "close", at: span_at(1))
     assert !dead_crossing(f, path: ["3"]).is_err()
@@ -348,7 +348,7 @@ test "a crossing into C is dead when the whole covers a dead part, and not throu
     assert dead_crossing(f, path: ["5", "[?]"]).is_err()
 
 test "a write revives what it could reach, and a reference keeps a place alive"
-    f: Flow @ start()
+    f: Flow @= start()
     ended(@f, path: ["3", ".cell"], shown: "x.cell", callee: "close", at: span_at(0))
     ended(@f, path: ["6", "[0]"], shown: "ys[0]", callee: "close", at: span_at(1))
     written(@f, path: ["3"])
@@ -365,8 +365,8 @@ test "a write revives what it could reach, and a reference keeps a place alive"
 
 test "where paths meet a place is dead only on both, and kept on either"
     base = split(start())
-    one: Flow @ base
-    two: Flow @ base
+    one: Flow @= base
+    two: Flow @= base
     ended(@one, path: ["1"], shown: "a", callee: "close", at: span_at(0))
     ended(@one, path: ["2"], shown: "b", callee: "close", at: span_at(1))
     ended(@two, path: ["2"], shown: "b", callee: "close", at: span_at(2))
@@ -387,17 +387,17 @@ test "where paths meet a place is dead only on both, and kept on either"
 # is the base's. And what the join met is changed after the outer split's
 # clock, for the join of that split to meet (defect 530's clock).
 test "a join meets only what its paths changed since the split, under splits inside splits"
-    f: Flow @ start()
+    f: Flow @= start()
     ended(@f, path: ["1"], shown: "a", callee: "close", at: span_at(0))
     ended(@f, path: ["4"], shown: "d", callee: "close", at: span_at(1))
     assert f.clock == 2
     outer = split(f)
-    one: Flow @ outer
+    one: Flow @= outer
     ended(@one, path: ["2"], shown: "b", callee: "close", at: span_at(2))
-    deep: Flow @ split(one)
+    deep: Flow @= split(one)
     ended(@deep, path: ["3"], shown: "c", callee: "close", at: span_at(3))
     written(@deep, path: ["1"])
-    two: Flow @ outer
+    two: Flow @= outer
     ended(@two, path: ["3"], shown: "c", callee: "close", at: span_at(4))
     ended(@two, path: ["2"], shown: "b", callee: "close", at: span_at(5))
     both = meet(base: outer, one: deep, two: two)
@@ -413,7 +413,7 @@ test "a join meets only what its paths changed since the split, under splits ins
 # earliest ended that covers it; a write to one local leaves every other
 # local's places dead; and a join keeps each local's order.
 test "each local's places are one group, kept in the order they were ended"
-    f: Flow @ start()
+    f: Flow @= start()
     ended(@f, path: ["4", ".a"], shown: "x.a", callee: "close", at: span_at(0))
     ended(@f, path: ["4"], shown: "x", callee: "close", at: span_at(1))
     ended(@f, path: ["9"], shown: "y", callee: "close", at: span_at(2))
@@ -431,8 +431,8 @@ test "each local's places are one group, kept in the order they were ended"
     assert every_dead(f).len() == 1
     assert !dead_read(f, path: ["9"]).is_err()
     assert dead_read(f, path: ["4", ".a"]).is_err()
-    many: Flow @ start()
-    k: i64 @ 0
+    many: Flow @= start()
+    k: i64 @= 0
 
     while k < 300
         ended(@many, path: [k.to_str()], shown: "h", callee: "close", at: span_at(k))
@@ -448,11 +448,11 @@ test "each local's places are one group, kept in the order they were ended"
 # Defect 530: a path's change leaves the base it went on from as it was,
 # whatever the number of its local.
 test "a path changes its own groups, and the base keeps its own"
-    f: Flow @ start()
+    f: Flow @= start()
     ended(@f, path: ["3"], shown: "a", callee: "close", at: span_at(0))
     ended(@f, path: ["70000", ".cell"], shown: "b.cell", callee: "close", at: span_at(1))
     base = split(f)
-    one: Flow @ base
+    one: Flow @= base
     written(@one, path: ["70000"])
     ended(@one, path: ["40"], shown: "c", callee: "close", at: span_at(2))
     assert dead_read(one, path: ["70000", ".cell"]).is_err()

@@ -59,13 +59,13 @@ constant XOROUT: i64
 # the only value ever xored in is 32 bits wide. The `.to_u32()` at the end is
 # where the width becomes part of the type instead of a fact about the loop.
 function crc32(text: str) -> u32
-    reg: i64 @ INIT
-    i: i64 @ 0
+    reg: i64 @= INIT
+    i: i64 @= 0
 
     while i < text.len()
         byte: u8 = text[i]
         reg @ reg ^ byte.to_i64().must()
-        bit: i64 @ 0
+        bit: i64 @= 0
 
         while bit < 8
             # `reg & 1 == 1` is `(reg & 1) == 1`: in Heroes `&` binds tighter
@@ -85,8 +85,8 @@ function crc32(text: str) -> u32
 # The bits of `value`, most significant first, reversed — used only by the test
 # that checks the reflected polynomial against the catalogue's.
 function reversed_bits(value: i64, width: i64) -> i64
-    out: i64 @ 0
-    i: i64 @ 0
+    out: i64 @= 0
+    i: i64 @= 0
 
     while i < width
         out @ out << 1 | value >> i & 1
@@ -142,13 +142,13 @@ test "the register never leaves 32 bits, at every step of a real message"
     # The claim the module's header rests on, made falsifiable: if any step
     # grew past 32 bits the mask-free implementation would be wrong, and the
     # check value alone would not say where.
-    reg: i64 @ INIT
-    i: i64 @ 0
+    reg: i64 @= INIT
+    i: i64 @= 0
     text = "123456789"
 
     while i < text.len()
         reg @ reg ^ text[i].to_i64().must()
-        bit: i64 @ 0
+        bit: i64 @= 0
 
         while bit < 8
             if reg & 1 == 1

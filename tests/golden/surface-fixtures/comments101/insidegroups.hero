@@ -26,7 +26,7 @@ function h(a: i64) -> i64
     return x
 
 function k(xs: [i64], a: i64, b: i64, c: i64) -> i64
-    ys: [i64] @ xs
+    ys: [i64] @= xs
     ys[(  # after the outer paren
         (a + b) * c  # before the outer close
     )] @ 1

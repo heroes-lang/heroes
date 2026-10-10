@@ -82,17 +82,17 @@ function mismatch(what: str, expected: str, actual: str) -> str
 function tally(one: Report, two: Report) -> Report
     # `+` joins numbers and strings, never arrays (spec § 7 Operators), so the
     # failures are pushed one at a time.
-    merged: [str] @ one.failures
+    merged: [str] @= one.failures
 
     for failure in two.failures
         merged @ merged.push(failure)
 
-    skipped: [str] @ one.skips
+    skipped: [str] @= one.skips
 
     for skip in two.skips
         skipped @ skipped.push(skip)
 
-    told: [str] @ one.outgrown
+    told: [str] @= one.outgrown
 
     for floor in two.outgrown
         told @ told.push(floor)
@@ -121,7 +121,7 @@ function verdict(r: Report, what: str) -> bool
     return r.failed == 0
 
 test "a report counts, keeps its failures and prints its verdict"
-    r: Report @ empty()
+    r: Report @= empty()
     keep_pass(@r)
     keep_pass(@r)
     keep_failure(@r, label: "check/x", detail: "  it said nothing")
@@ -135,9 +135,9 @@ test "a mismatch shows both sides and where each begins"
     assert shown == "  check/x.hero\n--- expected ---\none\n--- actual ---\ntwo\n--- end ---"
 
 test "two reports add up, failures included"
-    one: Report @ empty()
+    one: Report @= empty()
     keep_pass(@one)
-    two: Report @ empty()
+    two: Report @= empty()
     keep_failure(@two, label: "run/y", detail: "  exit 2")
     both = tally(one: one, two: two)
     assert both.passed == 1
@@ -145,7 +145,7 @@ test "two reports add up, failures included"
     assert both.failures.len() == 1
 
 test "a skip is named and kept, and it is neither a pass nor a failure"
-    r: Report @ empty()
+    r: Report @= empty()
     keep_pass(@r)
     keep_skip(@r, label: "unsupported/x", detail: "  clang does not find `gone.h` on this machine")
     assert r.passed == 1
@@ -157,14 +157,14 @@ test "a skip is named and kept, and it is neither a pass nor a failure"
     assert verdict(r, "self-test")
 
     # And it travels with the tally, so the harness's last lines name it.
-    other: Report @ empty()
+    other: Report @= empty()
     keep_skip(@other, label: "unsupported/y", detail: "  no `pkg-config` here")
     both = tally(one: r, two: other)
     assert both.skips.len() == 2
     assert both.skips[1] == "SKIP unsupported/y\n  no `pkg-config` here"
 
 test "a floor outgrown is told and counted, and it moves no verdict"
-    r: Report @ empty()
+    r: Report @= empty()
     keep_pass(@r)
     keep_outgrown(@r, label: "canonical", detail: "  files: 1200 against a floor of 900")
     assert r.passed == 1
@@ -175,10 +175,10 @@ test "a floor outgrown is told and counted, and it moves no verdict"
 
     # The shape every reader of a count line parses is kept when none is told,
     # and a second floor is counted in the plural.
-    plain: Report @ empty()
+    plain: Report @= empty()
     keep_pass(@plain)
     assert counted(plain) == "1 passed, 0 failed"
-    other: Report @ empty()
+    other: Report @= empty()
     keep_outgrown(@other, label: "layout", detail: "  modules: 700 against a floor of 527")
     keep_failure(@other, label: "layout", detail: "  over its ceiling")
     both = tally(one: r, two: other)

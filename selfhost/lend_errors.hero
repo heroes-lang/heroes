@@ -51,7 +51,7 @@ use diag
 # refuses: the two diagnostics pointed at each other, and a reader
 # following either arrived at the other.
 function cstr_escapes(span: token.Span) -> diag.Diagnostic
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "cstr_escapes",
         message: "`.cstr()` lends this string to C for the length of one call (§4.19), and a lend may stand only as an argument of a call — here it stands somewhere the pointer outlives the bytes it points into",
         span: span
@@ -67,7 +67,7 @@ function cstr_escapes(span: token.Span) -> diag.Diagnostic
     # dies with the frame, at exit 0. A reader who follows the first note into
     # that shape needs the second sentence, because the first one blesses it.
     d.notes @ d.notes.push(
-        "building a `record` of an `extern` group is not such a call: the pointer becomes a field of a value the statement hands on, and it outlives the bytes. Copy the bytes with `x: cstr @ s.lease()` and hold the cell, or hold the `str` and lend at each call"
+        "building a `record` of an `extern` group is not such a call: the pointer becomes a field of a value the statement hands on, and it outlives the bytes. Copy the bytes with `x: cstr @= s.lease()` and hold the cell, or hold the `str` and lend at each call"
     )
     return d
 
@@ -84,7 +84,7 @@ function cstr_escapes(span: token.Span) -> diag.Diagnostic
 # than guessing: answer the `str` and let the caller lend it. That is what
 # `tests/golden/surface-fixtures/externroute/bind.hero` does.
 function cstr_out_of_heroes(name: str, span: token.Span) -> diag.Diagnostic
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "cstr_out_of_heroes",
         message: "`" + name + "` answers `cstr`, and a `cstr` is C's pointer rather than this language's string (§4.19) — only a function inside an `extern` group may answer one",
         span: span
@@ -102,7 +102,7 @@ function cstr_out_of_heroes(name: str, span: token.Span) -> diag.Diagnostic
 # Measured at the sitting: no such field exists in this tree, and the emitter's
 # `pointer_element` note used to send people here.
 function cstr_in_a_record(holder: str, field: str, span: token.Span) -> diag.Diagnostic
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "cstr_in_a_record",
         message: "`" + holder + "." + field + "` holds a `cstr`, and `" + holder + "` is not a record of an `extern` group — a C pointer parked in a Heroes record outlives the bytes it points into (§4.19)",
         span: span
@@ -127,7 +127,7 @@ function cstr_in_a_record(holder: str, field: str, span: token.Span) -> diag.Dia
 # called with `"12".cstr()`, hands C a kept pointer through a route no rule
 # reading the extern's parameter alone can see.
 function lend_needs_a_header(span: token.Span) -> diag.Diagnostic
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "lend_needs_a_header",
         message: "`.cstr()` lends a `str` to C for one call, and it may stand only as an argument of a function declared in an `extern` group — here the callee is this program's own, and no declaration of this program can say what becomes of the pointer",
         span: span
@@ -161,12 +161,12 @@ function lend_needs_a_header(span: token.Span) -> diag.Diagnostic
 # is asked first. A note that offered `s.lease()` for `.ptr()` would send the
 # reader to a form that does not exist (the critic's gap 3).
 function lend_kept(lend: str, callee: str, parameter: str, count: str, span: token.Span) -> diag.Diagnostic
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "lend_kept",
         message: lend + " lends bytes to C for this call and no longer, and `" + parameter + "` of `" + callee + "` is not declared to let them go — a C parameter without `lent` is assumed to keep what it is handed, and bytes kept past the call are read after the program has changed or freed them",
         span: span
     )
-    spelling: str @ "`" + parameter + ": cstr lent`"
+    spelling: str @= "`" + parameter + ": cstr lent`"
 
     if count != ""
         spelling @ "`" + parameter + ": ptr counted_by " + count + " lent`"
@@ -180,6 +180,6 @@ function lend_kept(lend: str, callee: str, parameter: str, count: str, span: tok
         )
     else
         d.notes @ d.notes.push(
-            "if C does keep the pointer, hand it bytes that outlive the call: `x: cstr @ s.lease()`, and `end_lease(@x)` once C is done with them. And if C frees what it is handed, neither route works: a lease is freed by `end_lease` and nothing else"
+            "if C does keep the pointer, hand it bytes that outlive the call: `x: cstr @= s.lease()`, and `end_lease(@x)` once C is done with them. And if C frees what it is handed, neither route works: a lease is freed by `end_lease` and nothing else"
         )
     return d

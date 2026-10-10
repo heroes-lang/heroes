@@ -7,9 +7,9 @@ extern "stdlib.h"
     function getenv(name: cstr lent) -> cstr
 
 function main()
-    d: cstr @ getenv(name: "HOME".cstr())
+    d: cstr @= getenv(name: "HOME".cstr())
     end_lease(@d)  #~ end_lease_of_no_lease
-    c: cstr @ "abc".lease()
+    c: cstr @= "abc".lease()
     end_lease(@c)  #~ marker_mismatch
     end_lease(@c)
 

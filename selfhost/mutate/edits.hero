@@ -31,7 +31,7 @@ use mutate/sites
 # argument rule exists. Label and value travel together, so a named call stays
 # named and an inversion of `from:`/`to:` is a real swap.
 function swap_args(a: ast.Ast, s: source.Source) -> [str]
-    out: [str] @ []
+    out: [str] @= []
 
     for e in a.exprs
         given = sites.args_of(e)
@@ -48,7 +48,7 @@ function swap_args(a: ast.Ast, s: source.Source) -> [str]
 # deleting a middle arm would leave the indentation the parser reads, which is
 # a different mutation.
 function drop_case(a: ast.Ast, s: source.Source) -> [str]
-    out: [str] @ []
+    out: [str] @= []
 
     for e in a.exprs
         arms = sites.arms_of(e)
@@ -62,11 +62,11 @@ function drop_case(a: ast.Ast, s: source.Source) -> [str]
 
     return out
 
-# **Mutability confusion**: `v: i64 @ 0` becomes `v = 0`. The annotation and
+# **Mutability confusion**: `v: i64 @= 0` becomes `v = 0`. The annotation and
 # the marker go, and the later `v @ …` lines are left alone — which is the
 # mistake.
 function forget_at_decl(a: ast.Ast, s: source.Source) -> [str]
-    out: [str] @ []
+    out: [str] @= []
 
     for st in a.stmts
         match st.kind
@@ -83,7 +83,7 @@ function forget_at_decl(a: ast.Ast, s: source.Source) -> [str]
 # mutated name is misspelled, so `v @ v + 1` writes to something nobody
 # declared.
 function mutate_undeclared(a: ast.Ast, s: source.Source) -> [str]
-    out: [str] @ []
+    out: [str] @= []
 
     for st in a.stmts
         match st.kind
@@ -102,7 +102,7 @@ function mutate_undeclared(a: ast.Ast, s: source.Source) -> [str]
 # **A lazy catch-all**: a variant arm's patterns replaced by `_`, which §4.7
 # forbids on a variant.
 function wildcard_variant(a: ast.Ast, s: source.Source) -> [str]
-    out: [str] @ []
+    out: [str] @= []
 
     for e in a.exprs
         for arm in sites.arms_of(e)
@@ -121,11 +121,11 @@ function wildcard_variant(a: ast.Ast, s: source.Source) -> [str]
 # **Style transfer from Python**: every label dropped at once, because the
 # habit is not to write half of them.
 function positional_named(a: ast.Ast, s: source.Source) -> [str]
-    out: [str] @ []
+    out: [str] @= []
 
     for e in a.exprs
         given = sites.args_of(e)
-        labelled: bool @ false
+        labelled: bool @= false
 
         for arg in given
             if !arg.name.is_err()
@@ -137,8 +137,8 @@ function positional_named(a: ast.Ast, s: source.Source) -> [str]
         # Back to front, so each edit leaves the earlier offsets valid. The
         # text is rebuilt from the source every time rather than carried, so
         # one site's mutant never sees another's.
-        text: str @ s.text
-        i: i64 @ given.len() - 1
+        text: str @= s.text
+        i: i64 @= given.len() - 1
 
         while i >= 0
             match given[i].name
@@ -161,7 +161,7 @@ function positional_named(a: ast.Ast, s: source.Source) -> [str]
 # (panel 041). The narrowing is a fact about the characters in hand rather than
 # a premise about the corpus (CLAUDE.md §11).
 function mix_int_float(a: ast.Ast, s: source.Source) -> [str]
-    out: [str] @ []
+    out: [str] @= []
 
     for e in a.exprs
         match e.kind
@@ -184,7 +184,7 @@ function mix_int_float(a: ast.Ast, s: source.Source) -> [str]
 # **An inner-scope habit**: the same binding written again, immediately after,
 # without an inner scope to make it legal.
 function shadow(a: ast.Ast, s: source.Source) -> [str]
-    out: [str] @ []
+    out: [str] @= []
 
     for st in a.stmts
         match st.kind
@@ -220,7 +220,7 @@ function shadow(a: ast.Ast, s: source.Source) -> [str]
 # something. `docs/measurements/014` is the thirteen-operator baseline it is
 # scored against.
 function local_takes_a_module(a: ast.Ast, s: source.Source, uses: [ast.Use]) -> [str]
-    out: [str] @ []
+    out: [str] @= []
 
     if uses.len() == 0
         return out
@@ -251,7 +251,7 @@ function local_takes_a_module(a: ast.Ast, s: source.Source, uses: [ast.Use]) -> 
 # **Forgotten error propagation**: the `?` dropped. It is the last byte of the
 # expression, checked rather than assumed.
 function drop_question(a: ast.Ast, s: source.Source) -> [str]
-    out: [str] @ []
+    out: [str] @= []
 
     for e in a.exprs
         match e.kind
@@ -287,7 +287,7 @@ function drop_question(a: ast.Ast, s: source.Source) -> [str]
 # between the two operand spans — a fact about the two expressions in hand
 # rather than a search of the line.
 function boolean_twin(a: ast.Ast, s: source.Source) -> [str]
-    out: [str] @ []
+    out: [str] @= []
 
     for e in a.exprs
         match e.kind

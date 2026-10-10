@@ -31,9 +31,9 @@ record Position
     col: i64
 
 function line_col(text: str, offset: i64) -> Position
-    line: i64 @ 1
-    col: i64 @ 1
-    i: i64 @ 0
+    line: i64 @= 1
+    col: i64 @= 1
+    i: i64 @= 0
 
     while i < offset && i < text.len()
         if text[i] == '\n'
@@ -50,8 +50,8 @@ function line_col(text: str, offset: i64) -> Position
 # How many line ends lie between two offsets, `from` included and `to`
 # excluded. Zero means the two offsets are on the same line.
 function newlines_between(text: str, from: i64, to: i64) -> i64
-    count: i64 @ 0
-    i: i64 @ from
+    count: i64 @= 0
+    i: i64 @= from
 
     while i < to && i < text.len()
         if text[i] == '\n'
@@ -63,11 +63,11 @@ function newlines_between(text: str, from: i64, to: i64) -> i64
 # The 1-based column of an offset, read BACKWARDS to the line end above it
 # — so the cost is the length of one line rather than of the file.
 function column_of(text: str, offset: i64) -> i64
-    i: i64 @ offset
+    i: i64 @= offset
 
     if i > text.len()
         i @ text.len()
-    col: i64 @ 1
+    col: i64 @= 1
 
     while i > 0 && text[i - 1] != '\n'
         col @ col + 1
@@ -91,7 +91,7 @@ function margin_has_tab(text: str, at: i64) -> bool
 
     if width < 0
         return false
-    i: i64 @ at - width
+    i: i64 @= at - width
 
     while i < at
         if text[i] == '\t'
@@ -103,12 +103,12 @@ function margin_has_tab(text: str, at: i64) -> bool
 # The width of the blank margin of the line that holds byte `at`, wherever on
 # its line `at` stands (`parse/unclosed.swallows_the_body`).
 function line_margin(text: str, at: i64) -> i64
-    start: i64 @ at
+    start: i64 @= at
 
     while start > 0 && text[start - 1] != '\n'
         start @ start - 1
 
-    i: i64 @ start
+    i: i64 @= start
 
     while i < text.len() && (text[i] == ' ' || text[i] == '\t')
         i @ i + 1
@@ -118,7 +118,7 @@ function line_margin(text: str, at: i64) -> i64
 # How many bytes of blank margin stand before `at` on its line, or -1 where
 # something else does and `at` does not begin its line.
 function margin_width(text: str, at: i64) -> i64
-    i: i64 @ at - 1
+    i: i64 @= at - 1
 
     while i >= 0 && text[i] != '\n'
         if text[i] != ' ' && text[i] != '\t'
@@ -130,7 +130,7 @@ function margin_width(text: str, at: i64) -> i64
 # The offset past the spaces that follow `at` on its line: the lexer's
 # and the parser's, each of which kept a copy until defect 194.
 function past_spaces(text: str, at: i64) -> i64
-    i: i64 @ at
+    i: i64 @= at
 
     while i < text.len() && text[i] == ' '
         i @ i + 1
@@ -141,7 +141,7 @@ function past_spaces(text: str, at: i64) -> i64
 # writes a line writes: `\r\n` in a CRLF file. Moved here from
 # `parse/colon_habit.hero` with defect 196, a reading of the text alone.
 function line_break(text: str, at: i64) -> str
-    i: i64 @ at
+    i: i64 @= at
 
     while i < text.len() && text[i] != '\n'
         i @ i + 1
@@ -185,7 +185,7 @@ test "the local readings agree with the walk from byte zero, at every offset"
     # leading newline, an empty line and a trailing one is checked, so the
     # agreement is a measurement rather than a sentence.
     text = "\nab\n\ncdef\n"
-    i: i64 @ 0
+    i: i64 @= 0
 
     while i <= text.len()
         assert column_of(text, i) == line_col(text, i).col

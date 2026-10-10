@@ -27,11 +27,11 @@ use diag
 # toolchain.
 function told(s: source.Source) -> diag.Diagnostic
     end = source_extent.root_end(s)
-    at: i64 @ end - 1
+    at: i64 @= end - 1
 
     if at < 0
         at @ 0
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "no_entry_point",
         message: "this file declares no `function main()`, so it cannot become a binary",
         span: token.Span(start: at, end: end)

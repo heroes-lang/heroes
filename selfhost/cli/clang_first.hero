@@ -51,8 +51,8 @@ function reading(stderr: str, s: source.Source, decls: [ast.Decl], runtime: str,
     if !clang_place.offset_of(text: first.message, needle: NOT_FOUND).is_err()
         return fail(code: "none", msg: "a missing header")
     steps = clang_place.stack(stderr: stderr, line: rows[first.row])
-    at: i64 @ steps.len() - 1
-    group: group_file.Group? @ fail(code: "none", msg: "no group's header is in the stack")
+    at: i64 @= steps.len() - 1
+    group: group_file.Group? @= fail(code: "none", msg: "no group's header is in the stack")
 
     # The unit clang compiled heads the stack and is the build's, so the
     # search never names a group after it.
@@ -65,7 +65,7 @@ function reading(stderr: str, s: source.Source, decls: [ast.Decl], runtime: str,
 
     if group.is_err()
         return fail(code: "none", msg: "no group's header is in the stack")
-    hop: i64 @ at
+    hop: i64 @= at
 
     while hop < steps.len()
         if group_file.compilers(path: steps[hop].path, runtime: runtime, build: build)
@@ -102,7 +102,7 @@ function reading(stderr: str, s: source.Source, decls: [ast.Decl], runtime: str,
 # or `fatal error:`. A row its excerpt quotes begins with a space, and a
 # warning or a note before it is passed over.
 function first_error(rows: [str]) -> First?
-    index: i64 @ 0
+    index: i64 @= 0
 
     for row in rows
         line = clang_place.without_return(row)
@@ -123,8 +123,8 @@ function first_error(rows: [str]) -> First?
 # The severity a diagnostic line is written with: the first of clang's
 # markers on it, so a message that quotes another is still its own.
 function severity_of(line: str) -> str
-    first: i64 @ line.len()
-    which: str @ ""
+    first: i64 @= line.len()
+    which: str @= ""
 
     for marker in [FATAL, ERROR, ": warning: ", NOTE]
         at = clang_place.offset_of(text: line, needle: marker)
@@ -147,8 +147,8 @@ record Attached
 # stand above it (`-fdiagnostics-show-note-include-stack`, panel 202's (g)),
 # so an include line is passed over, and the next diagnostic decides.
 function attached(rows: [str], after: i64) -> [Attached]
-    out: [Attached] @ []
-    index: i64 @ after + 1
+    out: [Attached] @= []
+    index: i64 @= after + 1
 
     while index < rows.len()
         line = clang_place.without_return(rows[index])

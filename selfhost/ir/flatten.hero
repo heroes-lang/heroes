@@ -63,8 +63,8 @@ use inventory
 # expression (§4.7). A function body wants nothing — it hands its value
 # back through return.
 function block(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl], body: ast.Block, wants_value: bool) -> i64?
-    value: i64? @ fail(code: "none", msg: "no value yet")
-    index: i64 @ 0
+    value: i64? @= fail(code: "none", msg: "no value yet")
+    index: i64 @= 0
 
     for id in body.stmts
         if build.is_terminated(b)
@@ -145,7 +145,7 @@ function returned(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state
     emissions.copy_out(@b, c, span: span)
     build.terminate(@b, .return_term(value: ok(produced)))
 
-# `x = 5` and `v: i64 @ 0` are both slots by here: §4.4's mutation rule
+# `x = 5` and `v: i64 @= 0` are both slots by here: §4.4's mutation rule
 # was enforced by the resolver, and the IR does not re-litigate it.
 function bind_stmt(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl], name: token.Span, value: i64, span: token.Span)
     produced = expr(@b, a, r, c, s, decls, id: value)
@@ -169,7 +169,7 @@ function bind_stmt(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: stat
 # expressions are lowered before the value being stored, because
 # `xs[f()] @ g()` calls f first.
 function place(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl], id: i64) -> ir.Place
-    steps: [ir.PathStep] @ []
+    steps: [ir.PathStep] @= []
     root = walk_place(@b, a, r, c, s, decls, id: id, steps: @steps)
     path = build.steps_run(@b, steps)
     return ir.Place(root: root, path: path)
@@ -271,8 +271,8 @@ function for_loop(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state
     # body reads it by name. `for _ in xs` names nothing (§4.7), so it
     # gets no slot and the body never reads an element — the loop is
     # being run for its count.
-    element: i64? @ fail(code: "none", msg: "no loop variable")
-    element_ty: i64 @ int_id
+    element: i64? @= fail(code: "none", msg: "no loop variable")
+    element_ty: i64 @= int_id
     local = build.local_at(b, name)
 
     if !local.is_err()
@@ -323,7 +323,7 @@ function for_loop(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state
 # the join slot is simply never loaded.
 function if_expr(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl], branches: [ast.Branch], otherwise: ast.Block?, ty: i64, span: token.Span) -> i64
     wants_value = ty != build.unit_ty(b) && ty != table.error_ty(c.types)
-    result: i64? @ fail(code: "none", msg: "statement position")
+    result: i64? @= fail(code: "none", msg: "statement position")
 
     if wants_value
         result @ ok(build.synthetic(@b, prefix: "r", ty: ty))
@@ -358,15 +358,15 @@ function short_circuit(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: 
     result = build.synthetic(@b, prefix: "b", ty: ty)
     first = expr(@b, a, r, c, s, decls, id: left)
     build.store_slot(@b, slot_id: result, value: first, span: span)
-    is_and: bool @ false
+    is_and: bool @= false
 
     match op
         .and                                                                 => is_and @ true
         .add | .sub | .mul | .div | .rem | .eq | .ne | .lt | .le | .gt | .ge => is_and @ is_and
         .or | .bit_and | .bit_or | .bit_xor | .shl | .shr                    => is_and @ is_and
 
-    rest: i64 @ 0
-    meet: i64 @ 0
+    rest: i64 @= 0
+    meet: i64 @= 0
 
     if is_and
         rest @ build.block(@b, note: "&&: right")
@@ -441,7 +441,7 @@ function fallible_operation(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved
     build.store_slot(@b, slot_id: result, value: value, span: span)
     build.terminate(@b, .jump(to: meet))
     build.switch_to(@b, target: fallback)
-    fallback_value: i64 @ 0
+    fallback_value: i64 @= 0
 
     if given.len() > 0
         fallback_value @ expr(@b, a, r, c, s, decls, id: given[0].value)
@@ -505,7 +505,7 @@ function hold(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Che
 # `f(x)`, `Point(x: 3, y: 4)`, `ok(v)`, `fail(c, m)`, `h.cb(n)` — one
 # syntax, and what it IS depends on what the callee resolved to.
 function call(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl], callee: i64, given: [ast.Arg], ty: i64, span: token.Span) -> i64
-    is_name: bool @ false
+    is_name: bool @= false
 
     match a.exprs[callee].kind
         .name                                                                          => is_name @ true
@@ -604,9 +604,9 @@ function case_construct(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c:
 # and carries no further meaning. A parameter marked `owned <freer>` is
 # handed a cell instead, and its release is what `after` owes.
 function lower_args(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl], given: [ast.Arg], callee: i64?) -> inout.Args
-    lowered_args: [ir.Arg] @ []
-    after: [inout.WriteBack] @ []
-    at: i64 @ 0
+    lowered_args: [ir.Arg] @= []
+    after: [inout.WriteBack] @= []
+    at: i64 @= 0
 
     for arg in given
         if arg.mutable
@@ -626,14 +626,14 @@ function lower_args(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: sta
 # value.
 function with_receiver(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl], receiver: i64, given: [ast.Arg], callee: i64?) -> inout.Args
     first = expr(@b, a, r, c, s, decls, id: receiver)
-    lowered_args: [ir.Arg] @ [.value_arg(value: first)]
-    after: [inout.WriteBack] @ []
+    lowered_args: [ir.Arg] @= [.value_arg(value: first)]
+    after: [inout.WriteBack] @= []
 
     # The receiver IS parameter zero, so every written argument sits one to
     # the right of its own index — and a mark is read at the parameter's
     # position. UFCS cannot reach an `@` first parameter (§4.11), so the
     # offset never has to describe the receiver itself.
-    at: i64 @ 1
+    at: i64 @= 1
 
     for arg in given
         if arg.mutable
@@ -663,7 +663,7 @@ function method(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.C
     # itself: the name after the dot has no expression id of its own.
     # The qualified form first: the receiver names a module, erased here
     # exactly as it is erased in the C.
-    is_qualified: bool @ false
+    is_qualified: bool @= false
 
     match r.uses[receiver]
         .module                                => is_qualified @ true
@@ -717,7 +717,7 @@ function method(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.C
     field_ty = layout.field_type(decls, c, s, owner: c.expr_types[receiver], name: name)
 
     if !field_ty.is_err()
-        is_function: bool @ false
+        is_function: bool @= false
 
         match table.get(c.types, field_ty.must())
             .function_ty                                              => is_function @ true
@@ -783,13 +783,13 @@ function field_call(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: sta
     # the emitted C blamed itself for a correct program (panel 068 F8).
     # The fallback is deliberate: a field the checker could not resolve
     # has already been reported, and lowering stays quiet.
-    function_ty: i64 @ ty
+    function_ty: i64 @= ty
     written = layout.field_type(decls, c, s, owner: owner, name: name)
 
     if !written.is_err()
         function_ty @ written.must()
     found = layout.field_index(decls, c, s, owner: owner, name: name)
-    target: i64 @ 0
+    target: i64 @= 0
 
     if found.is_err()
         target @ build.emit(@b, op: .missing, ty: function_ty, span: span)
@@ -817,7 +817,7 @@ variant Carried
 
 function lower_assert(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl], asserted: i64, span: token.Span)
     text = emissions.assert_text(@b, c, s, span: span)
-    sides: [i64] @ []
+    sides: [i64] @= []
     cond = assert_condition(@b, a, r, c, s, decls, asserted: asserted, sides: @sides)
 
     # A COUNTED OPERAND TRAVELS THROUGH A SLOT, NOT ACROSS THE EDGE.
@@ -829,7 +829,7 @@ function lower_assert(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: s
     # predicted this; it arrived early, on the gallery's own
     # `assert sentence_of([...]) == "one two"`. A synthetic slot costs
     # two instructions on a path that is about to abort the program.
-    carried: [Carried] @ []
+    carried: [Carried] @= []
 
     for side in sides
         ty = build.value_ty(b, side)
@@ -845,7 +845,7 @@ function lower_assert(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: s
     bad = build.block(@b, note: "assert: failed")
     build.terminate(@b, .branch(cond: cond, then_to: good, else_to: bad))
     build.switch_to(@b, target: bad)
-    operands: [ir.Arg] @ [.value_arg(value: text)]
+    operands: [ir.Arg] @= [.value_arg(value: text)]
 
     for one in carried
         match one
@@ -939,7 +939,7 @@ function lower_match(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: st
     subject = build.synthetic(@b, prefix: "s", ty: subject_ty)
     build.store_slot(@b, slot_id: subject, value: value, span: span)
     wants_value = ty != build.unit_ty(b) && ty != table.error_ty(c.types)
-    result: i64? @ fail(code: "none", msg: "statement position")
+    result: i64? @= fail(code: "none", msg: "statement position")
 
     if wants_value
         result @ ok(build.synthetic(@b, prefix: "r", ty: ty))
@@ -969,19 +969,19 @@ function tagged(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.C
     # One block per arm; a |-joined arm is several tags pointing at one
     # block. -1 is "no edge yet": block ids are indices and never
     # negative, and the sentinel is read exactly once, below.
-    edges: [i64] @ []
-    i: i64 @ 0
+    edges: [i64] @= []
+    i: i64 @= 0
 
     while i < names.len()
         edges @ edges.push(0 - 1)
         i @ i + 1
 
-    bodies: [ArmPlan] @ []
-    arm_at: i64 @ 0
+    bodies: [ArmPlan] @= []
+    arm_at: i64 @= 0
 
     for arm in arms
         arm_block = build.block(@b, note: "match: arm")
-        bound: i64? @ fail(code: "none", msg: "binds nothing")
+        bound: i64? @= fail(code: "none", msg: "binds nothing")
 
         for pattern in arm.patterns
             match pattern.kind
@@ -1002,7 +1002,7 @@ function tagged(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.C
                 # claimed.
 
                 .wildcard =>
-                    fill: i64 @ 0
+                    fill: i64 @= 0
 
                     while fill < edges.len()
                         if edges[fill] < 0
@@ -1016,17 +1016,17 @@ function tagged(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.C
     # Exhaustiveness was proved by the checker, so an unclaimed case
     # cannot happen — and saying so with unreachable is CLAUDE.md §7's
     # rule rather than a safety net.
-    unclaimed: bool @ false
+    unclaimed: bool @= false
 
     for edge in edges
         if edge < 0
             unclaimed @ true
 
-    orphan_block: i64? @ fail(code: "none", msg: "every case claimed")
+    orphan_block: i64? @= fail(code: "none", msg: "every case claimed")
 
     if unclaimed
         orphan_block @ ok(build.block(@b, note: "match: unclaimed"))
-    cases: [i64] @ []
+    cases: [i64] @= []
 
     for edge in edges
         if edge >= 0
@@ -1055,7 +1055,7 @@ function tagged(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.C
 # `.num n` — the payload of a known case, into a slot the body can read.
 function bind_payload(@b: build.Lowering, r: resolved.Resolved, c: state.Checked, s: source.Source, plan: Plan, case_at: i64, name: token.Span)
     held = build.load_slot(@b, slot_id: plan.subject, span: name)
-    ty: i64 @ table.error_ty(c.types)
+    ty: i64 @= table.error_ty(c.types)
     local = build.local_at(b, name)
 
     if !local.is_err()
@@ -1071,16 +1071,16 @@ function bind_payload(@b: build.Lowering, r: resolved.Resolved, c: state.Checked
 # impossible and _ closes the match (§4.7).
 function literals(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl], plan: Plan, arms: [ast.Arm])
     bool_id = table.bool_ty(c.types)
-    blocks: [i64] @ []
-    arm_ats: [i64] @ []
-    arm_at: i64 @ 0
+    blocks: [i64] @= []
+    arm_ats: [i64] @= []
+    arm_at: i64 @= 0
 
     for arm in arms
         arm_block = build.block(@b, note: "match: arm")
         blocks @ blocks.push(arm_block)
         arm_ats @ arm_ats.push(arm_at)
         arm_at @ arm_at + 1
-        is_wild: bool @ false
+        is_wild: bool @= false
 
         for pattern in arm.patterns
             match pattern.kind
@@ -1109,7 +1109,7 @@ function literals(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state
 
     # Falling past every arm cannot happen: the checker required _.
     build.terminate(@b, .unreachable)
-    walk: i64 @ 0
+    walk: i64 @= 0
 
     while walk < blocks.len()
         build.switch_to(@b, target: blocks[walk])
@@ -1162,7 +1162,7 @@ function expr(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Che
         # and the concatenation is `ir/interp.hero`'s (panel 121 R4).
 
         .interp ip =>
-            values: [i64] @ []
+            values: [i64] @= []
 
             for h in ip.holes
                 values @ values.push(expr(@b, a, r, c, s, decls, id: h))
@@ -1185,7 +1185,7 @@ function expr(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Che
             if !folded.is_err()
                 return folded.must()
             operand = expr(@b, a, r, c, s, decls, id: u.operand)
-            un: ir.UnaryOp @ .neg
+            un: ir.UnaryOp @= .neg
 
             match u.op
                 .neg     => un @ .neg
@@ -1222,7 +1222,7 @@ function expr(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Che
             # `grid.WALL` is one qualified name, not a field of a value —
             # decided by the resolver and read back here rather than
             # re-decided.
-            qualified: bool @ false
+            qualified: bool @= false
 
             match r.uses[f.base]
                 .module                                => qualified @ true
@@ -1252,7 +1252,7 @@ function expr(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Che
 
             # A map access yields V? and cannot abort; an array index can
             # (§4.9). Same syntax, two instructions.
-            is_map: bool @ false
+            is_map: bool @= false
 
             match table.get(c.types, owner)
                 .map                                                      => is_map @ true
@@ -1264,7 +1264,7 @@ function expr(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Che
                 return build.emit(@b, op: .map_get(map: base, key: key), ty: ty, span: span)
             return build.emit(@b, op: .index(base: base, at: key), ty: ty, span: span)
         .array elements =>
-            values: [i64] @ []
+            values: [i64] @= []
 
             for e in elements.elements
                 values @ values.push(expr(@b, a, r, c, s, decls, id: e))
@@ -1275,7 +1275,7 @@ function expr(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Che
             # Key and value alternate in the run: a map literal is
             # n-ary, and the pairing is positional rather than a second
             # arena.
-            values: [i64] @ []
+            values: [i64] @= []
 
             for entry in entries.entries
                 values @ values.push(expr(@b, a, r, c, s, decls, id: entry.key))

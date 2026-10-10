@@ -22,6 +22,6 @@ extern "ffi-pointee-opaque.h"
     function fill(@out: i64) -> i32  #~ ffi_parameter_type
 
 function main()
-    out: i64 @ 0
+    out: i64 @= 0
     print(fill(@out).to_str())
     print(out.to_str())

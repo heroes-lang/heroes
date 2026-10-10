@@ -28,14 +28,14 @@ use check/labels
 # Each argument's field: the index in `names` its label names, or -1 where it
 # has no label or names no field.
 function fields_named(s: source.Source, names: [str], given: [ast.Arg]) -> [i64]
-    out: [i64] @ []
+    out: [i64] @= []
 
     for arg in given
-        found: i64 @ -1
+        found: i64 @= -1
 
         if !arg.name.is_err()
             written = source.span_text(s, arg.name.must())
-            q: i64 @ 0
+            q: i64 @= 0
 
             for name in names
                 if name == written && found < 0
@@ -51,11 +51,11 @@ function fields_named(s: source.Source, names: [str], given: [ast.Arg]) -> [i64]
 # one the record declares after it. `types` are the fields' types, which say
 # what else an argument could be.
 function told(c: state.Checker, a: ast.Ast, s: source.Source, decls: [ast.Decl], holder: str, names: [str], types: [i64], given: [ast.Arg], at: [i64]) -> [diag.Diagnostic]
-    out: [diag.Diagnostic] @ []
+    out: [diag.Diagnostic] @= []
     taken = labels.written_labels(s, given)
-    seen: [i64] @ []
-    last: i64 @ -1
-    k: i64 @ 0
+    seen: [i64] @= []
+    last: i64 @= -1
+    k: i64 @= 0
 
     for arg in given
         field = at[k]
@@ -68,7 +68,7 @@ function told(c: state.Checker, a: ast.Ast, s: source.Source, decls: [ast.Decl],
                 value_start: a.exprs[arg.value].span.start,
                 mutable: arg.mutable
             )
-            open: [str] @ fitting(
+            open: [str] @= fitting(
                 c,
                 a,
                 decls,
@@ -131,7 +131,7 @@ function told(c: state.Checker, a: ast.Ast, s: source.Source, decls: [ast.Decl],
 
 # The first field named after argument `from`, or `beyond` where none is.
 function next_named(at: [i64], from: i64, beyond: i64) -> i64
-    k: i64 @ from
+    k: i64 @= from
 
     while k < at.len()
         if at[k] >= 0
@@ -144,9 +144,9 @@ function next_named(at: [i64], from: i64, beyond: i64) -> i64
 # the value; where none could, every one of them no label writes, since the
 # value's own type may be the mistake.
 function fitting(c: state.Checker, a: ast.Ast, decls: [ast.Decl], names: [str], types: [i64], from: i64, to: i64, value: i64, taken: [str]) -> [str]
-    could: [str] @ []
-    free: [str] @ []
-    q: i64 @ from
+    could: [str] @= []
+    free: [str] @= []
+    q: i64 @= from
 
     while q < to && q < names.len()
         if !labels.listed(taken, names[q])

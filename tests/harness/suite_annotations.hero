@@ -226,9 +226,9 @@ constant RUN_LEAST: i64
 # narrowed run asks neither the thesis witnesses nor the floors, which are
 # questions about the whole.
 function run_all(scratch: str, compiler: str, only: str) -> report.Report?
-    r: report.Report @ report.empty()
-    annotated: i64 @ 0
-    witnessed: {str: bool} @ {}
+    r: report.Report @= report.empty()
+    annotated: i64 @= 0
+    witnessed: {str: bool} @= {}
 
     for dir in DIRECTORIES
         found = cases.matching(found: cases.collect(scratch: scratch, dir: dir)?, only: only)
@@ -276,8 +276,8 @@ record Asked
 
 # The run roots' half: every group under `roots`, each program in it asked.
 function run_roots(@r: report.Report, scratch: str, compiler: str, roots: [str]) -> Asked?
-    marks: i64 @ 0
-    stepped: i64 @ 0
+    marks: i64 @= 0
+    stepped: i64 @= 0
 
     for group in groups(scratch: scratch, roots: roots)?
         marks @ marks + one_group(@r, scratch: scratch, compiler: compiler, group: group, @stepped)
@@ -294,7 +294,7 @@ function run_roots(@r: report.Report, scratch: str, compiler: str, roots: [str])
 # program's marks were judged by the whole suite alone: `annotations
 # qualifytypo` selected nothing and exited 2.
 function asked_groups(@r: report.Report, scratch: str, compiler: str, roots: [str], only: str) -> ()?
-    stepped: i64 @ 0
+    stepped: i64 @= 0
 
     for group in groups(scratch: scratch, roots: roots)?
         entries = shell.list_entries(scratch: scratch, dir: group)?
@@ -424,7 +424,7 @@ function every_thesis_rule_has_a_witness(@r: report.Report, witnessed: {str: boo
 # `<line>:<code>`: every one under the normal arm's directories, none under the
 # control arm's (`NORMAL_ARM` says why).
 function witness_codes(dir: str, claimed: [str]) -> [str]
-    out: [str] @ []
+    out: [str] @= []
 
     if !holds(names: NORMAL_ARM, name: dir)
         return out
@@ -446,8 +446,8 @@ function holds(names: [str], name: str) -> bool
 # reads them, in the order written. Anything else on those lines is not a
 # code: the list is one string per line, and that is the shape this reads.
 function thesis_codes(diag_source: str) -> [str]
-    out: [str] @ []
-    inside: bool @ false
+    out: [str] @= []
+    inside: bool @= false
 
     for row in strings.lines(diag_source)
         if strings.starts_with(text: row, prefix: "function is_thesis_rule")
@@ -470,10 +470,10 @@ function thesis_codes(diag_source: str) -> [str]
 # expire in silence (CLAUDE.md §11) — a new fixture directory joins this
 # sweep by existing.
 function groups(scratch: str, roots: [str]) -> [str]?
-    out: [str] @ []
+    out: [str] @= []
 
     for root in roots
-        holds_cases: bool @ false
+        holds_cases: bool @= false
 
         for entry in shell.list_entries(scratch: scratch, dir: root)?
             if strings.ends_with(text: entry, suffix: ".hero")
@@ -498,8 +498,8 @@ function one_group(@r: report.Report, scratch: str, compiler: str, group: str, @
     if files.is_err()
         report.keep_failure(@r, label: label, detail: "  cannot list " + group)
         return 0
-    paths: [str] @ []
-    texts: [str] @ []
+    paths: [str] @= []
+    texts: [str] @= []
 
     for path in files.must()
         if !strings.ends_with(text: path, suffix: ".hero")
@@ -518,21 +518,21 @@ function one_group(@r: report.Report, scratch: str, compiler: str, group: str, @
     # has, and named sixteen skips *judged where that is* on every run, of
     # programs no machine judges (measured 2026-10-04, the first run of the
     # step-aside below).
-    marked: i64 @ 0
+    marked: i64 @= 0
 
     for text in texts
         marked @ marked + mark_readers.claimed_by(text).len()
 
     if marked == 0
         return 0
-    claimed: [str] @ []
-    said: str @ ""
-    ran: i64 @ 0
-    programs: i64 @ 0
-    refusals: [str] @ []
-    asked_reach: {str: bool} @ {}
-    aside_reach: {str: bool} @ {}
-    at: i64 @ 0
+    claimed: [str] @= []
+    said: str @= ""
+    ran: i64 @= 0
+    programs: i64 @= 0
+    refusals: [str] @= []
+    asked_reach: {str: bool} @= {}
+    aside_reach: {str: bool} @= {}
+    at: i64 @= 0
 
     # The programs first, each asked or stepped aside with its own marks.
     while at < paths.len()
@@ -608,7 +608,7 @@ function one_group(@r: report.Report, scratch: str, compiler: str, group: str, @
     # them* of a program that has one, and beside a program judged, the
     # module's mark was compared with what that program said. A mark in a
     # module no program reaches is claimed, and nothing reports it.
-    unreached: [str] @ []
+    unreached: [str] @= []
     at @ 0
 
     while at < paths.len()
@@ -642,7 +642,7 @@ function one_group(@r: report.Report, scratch: str, compiler: str, group: str, @
     reported = sorted(mark_readers.reported_with_file(said))
 
     if sorted(claimed) != reported
-        detail: str @ "  the annotations and the diagnostics disagree\n    annotated: " + sorted(claimed).join(" ") + "\n    reported:  " + reported.join(" ") + "\n  `#~ <code>` marks this line, `#~v <code>` the next one. This group has no `.expected`, so what it is compared against is what the compiler printed just now."
+        detail: str @= "  the annotations and the diagnostics disagree\n    annotated: " + sorted(claimed).join(" ") + "\n    reported:  " + reported.join(" ") + "\n  `#~ <code>` marks this line, `#~v <code>` the next one. This group has no `.expected`, so what it is compared against is what the compiler printed just now."
 
         if unreached.len() > 0
             detail @ detail + "\n  in a module no program of this group reaches by its `use` lines: " + unreached.join(" ")
@@ -674,15 +674,15 @@ function nothing_provokes(claimed: [str], programs: i64) -> str
 # the same premise that left a module's marks to the claim.
 function modules_reached(root: str, paths: [str], texts: [str]) -> [str]
     home = absence.directory_of(root)
-    reached: [str] @ []
-    pending: [str] @ [root]
-    seen: {str: bool} @ {}
+    reached: [str] @= []
+    pending: [str] @= [root]
+    seen: {str: bool} @= {}
     seen[root] @ true
 
     while pending.len() > 0
         current = pending[pending.len() - 1]
         pending @ pending.slice(from: 0, to: pending.len() - 1)
-        at: i64 @ 0
+        at: i64 @= 0
 
         while at < paths.len() && paths[at] != current
             at @ at + 1
@@ -705,7 +705,7 @@ function modules_reached(root: str, paths: [str], texts: [str]) -> [str]
 # production), so a line opening `use ` at its first byte is one, and a
 # comment or a mark after its path is not part of it.
 function uses_of(text: str) -> [str]
-    out: [str] @ []
+    out: [str] @= []
 
     for row in strings.lines(text)
         if !strings.starts_with(text: row, prefix: "use ")
@@ -784,23 +784,23 @@ test "a thesis rule with no witness is one failure, and the real list is found"
     assert !real.is_err()
     listed = thesis_codes(real.must())
     assert listed.len() >= 14
-    all_seen: {str: bool} @ {}
+    all_seen: {str: bool} @= {}
 
     for code in listed
         all_seen[code] @ true
 
-    green: report.Report @ report.empty()
+    green: report.Report @= report.empty()
     every_thesis_rule_has_a_witness(@green, witnessed: all_seen)
     assert green.failed == 0
     assert green.passed == listed.len()
-    one_short: {str: bool} @ all_seen
+    one_short: {str: bool} @= all_seen
     one_short @ {}
 
     for code in listed
         if code != "declared_twice"
             one_short[code] @ true
 
-    red: report.Report @ report.empty()
+    red: report.Report @= report.empty()
     every_thesis_rule_has_a_witness(@red, witnessed: one_short)
     assert red.failed == 1
 
@@ -816,7 +816,7 @@ test "fixedbugs: the control arm's cases are held to their marks, and witness no
     arm = cases.collect(scratch: scratch, dir: "tests/golden/permissive").must()
     in_arm = cases.matching(found: arm, only: "the-control-arm").len()
     assert in_arm >= 4
-    named: i64 @ 0
+    named: i64 @= 0
 
     for dir in DIRECTORIES
         named @ named + cases.matching(found: cases.collect(scratch: scratch, dir: dir).must(), only: "the-control-arm").len()
@@ -837,7 +837,7 @@ test "fixedbugs: the control arm's cases are held to their marks, and witness no
     # rule, so no case of its directory marks one. A case that did would pin
     # the control arm failing to drop it, green in both forms.
     listed = thesis_codes(read_file(THESIS_LIST).must())
-    seen: i64 @ 0
+    seen: i64 @= 0
 
     for item in arm
         for mark in mark_readers.claimed_by(read_file(item.source).must())
@@ -889,7 +889,7 @@ test "fixedbugs: a run-root program steps aside only where its case and the mach
     assert !plant_missing(path: unmarked, source: program(header: nowhere, on_head: "", on_function: ""), bound: nowhere, missing: nowhere).is_err()
     compiler = absence.said_stub(scratch)
     assert !compiler.is_err()
-    got: report.Report @ report.empty()
+    got: report.Report @= report.empty()
     run = run_roots(@got, scratch: scratch, compiler: compiler.must(), roots: [root])
     assert !run.is_err()
     assert run.must().marks == 2
@@ -928,7 +928,7 @@ test "fixedbugs: a machine stepping every run-root program aside reads red, and 
 
     compiler = absence.said_stub(scratch)
     assert !compiler.is_err()
-    got: report.Report @ report.empty()
+    got: report.Report @= report.empty()
     run = run_roots(@got, scratch: scratch, compiler: compiler.must(), roots: [root]).must()
     assert run.marks == 0
     assert run.stepped == 2
@@ -936,17 +936,17 @@ test "fixedbugs: a machine stepping every run-root program aside reads red, and 
     assert got.failed == 0
 
     # The expectation half alone holds its floor; the third turns it red.
-    all_aside: report.Report @ report.empty()
+    all_aside: report.Report @= report.empty()
     floored(@all_aside, expected: 10, run: run, floor: 10, run_floor: 2)
     assert all_aside.failed == 1
     assert strings.contains(text: all_aside.failures[0], needle: "this machine is not asking them")
 
     # A floor the marks found miss is red; one they reach is green, the mark
     # stepped aside counted as reached (10 expected, 9 asked, 1 stepped aside).
-    short: report.Report @ report.empty()
+    short: report.Report @= report.empty()
     floored(@short, expected: 10, run: Asked(marks: 9, stepped: 1), floor: 21, run_floor: 10)
     assert short.failed == 1
-    reached: report.Report @ report.empty()
+    reached: report.Report @= report.empty()
     floored(@reached, expected: 10, run: Asked(marks: 9, stepped: 1), floor: 20, run_floor: 10)
     assert reached.failed == 0
 
@@ -955,7 +955,7 @@ test "fixedbugs: a machine stepping every run-root program aside reads red, and 
     # of 3581 the walk reaches whole; the split of the 3575 is this Mac's 133
     # run-root marks less those six. Green, where the asked-only floor read it
     # red.
-    box: report.Report @ report.empty()
+    box: report.Report @= report.empty()
     floored(@box, expected: 3448, run: Asked(marks: 127, stepped: 6), floor: 3581, run_floor: 133)
     assert box.failed == 0
     assert box.passed == 2
@@ -966,7 +966,7 @@ test "fixedbugs: a machine stepping every run-root program aside reads red, and 
 # total's floor: the total reads green, as it did under one floor, and the run
 # roots' own floor reads red, naming them.
 test "fixedbugs: the run roots' half going is red by a floor of its own, whatever the total reads (defect 318)"
-    gone: report.Report @ report.empty()
+    gone: report.Report @= report.empty()
     floored(@gone, expected: 3714, run: Asked(marks: 0, stepped: 0), floor: 3581, run_floor: 133)
     assert gone.passed == 1
     assert gone.failed == 1
@@ -1082,19 +1082,19 @@ test "fixedbugs: a narrowed sweep asks each run-root group its word names, whole
     assert !plant(path: root + "/alpha/first.hero", source: judged, said: wrong_type(root + "/alpha/first.hero")).is_err()
     assert !plant(path: root + "/beta/second.hero", source: judged, said: wrong_type(root + "/beta/second.hero")).is_err()
     assert !plant(path: root + "/beta/third.hero", source: judged, said: "").is_err()
-    by_name: report.Report @ report.empty()
+    by_name: report.Report @= report.empty()
     assert !asked_groups(@by_name, scratch: scratch, compiler: stand_in, roots: [root], only: "alpha").is_err()
     assert by_name.passed == 1
     assert by_name.failed == 0
 
     # A file's name asks its whole group: `second`'s mark holds, `third`'s
     # does not, and the group is one verdict.
-    by_file: report.Report @ report.empty()
+    by_file: report.Report @= report.empty()
     assert !asked_groups(@by_file, scratch: scratch, compiler: stand_in, roots: [root], only: "third").is_err()
     assert by_file.passed == 0
     assert by_file.failed == 1
     assert strings.starts_with(text: by_file.failures[0], prefix: "FAIL annotations/" + root + "/beta\n")
-    neither: report.Report @ report.empty()
+    neither: report.Report @= report.empty()
     assert !asked_groups(@neither, scratch: scratch, compiler: stand_in, roots: [root], only: "gamma").is_err()
     assert neither.passed + neither.failed == 0
     tree = run_all(scratch: scratch, compiler: shell.some_compiler().must(), only: "qualifytypo")
@@ -1117,7 +1117,7 @@ record Grouped
     got: report.Report
 
 function grouped(scratch: str, root: str, compiler: str) -> Grouped
-    got: report.Report @ report.empty()
+    got: report.Report @= report.empty()
     asked = run_roots(@got, scratch: scratch, compiler: compiler, roots: [root]).must()
     return Grouped(asked: asked, got: got)
 

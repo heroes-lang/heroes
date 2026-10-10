@@ -15,13 +15,13 @@ function expected(seed: i64, at: i64) -> u8
     return ((seed * 31 + at * 17 + 63) % 256).to_u8().must()
 
 function worker(seed: i64) -> i64
-    wrong: i64 @ 0
-    round: i64 @ 0
+    wrong: i64 @= 0
+    round: i64 @= 0
 
     while round < 2000
-        md: [u8] @ []
+        md: [u8] @= []
         stamp32(@md, seed: seed.to_u64().must())
-        at: i64 @ 0
+        at: i64 @= 0
 
         while at < 32
             if md[at] != expected(seed: seed, at: at)

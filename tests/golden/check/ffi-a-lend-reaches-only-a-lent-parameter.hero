@@ -30,14 +30,14 @@ function wrap(s: cstr) -> u64
 
 function main()
     x = "payload"
-    s: S @ S(b: [1, 2, 3, 4])
+    s: S @= S(b: [1, 2, 3, 4])
     print(reads(s: x.cstr()))
     print(keeps(s: x.cstr()))  #~ lend_kept
     print(wrap(s: x.cstr()))  #~ lend_needs_a_header
     print(fills(p: s.b.ptr(), n: 4))
     print(parks(p: s.b.ptr(), n: 4))  #~ lend_kept
     print(bare(p: s.b.ptr(), n: 4))  #~ field_lend_uncounted
-    l: cstr @ x.lease()
+    l: cstr @= x.lease()
     print(keeps(s: l))
     end_lease(@l)
     print(keeps(s: nullptr))

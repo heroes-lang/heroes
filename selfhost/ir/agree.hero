@@ -30,7 +30,7 @@ function agree(t: table.Types, value: i64, lands: i64) -> bool
 
                     if pa.len() != pb.len() || !agree(t, value: fa.result, lands: fb.result)
                         return false
-                    i: i64 @ 0
+                    i: i64 @= 0
 
                     while i < pa.len()
                         if !agree(t, value: pa[i], lands: pb[i])
@@ -50,7 +50,7 @@ function agree(t: table.Types, value: i64, lands: i64) -> bool
 ## Tests
 
 test "two function types agree up to their parameters' names, and nothing else does"
-    t: table.Types @ table.new_types()
+    t: table.Types @= table.new_types()
     int_id = table.int_ty_id(t)
     str_id = table.str_ty(t)
     one: [i64] = [int_id]

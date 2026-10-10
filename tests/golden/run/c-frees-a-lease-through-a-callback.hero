@@ -11,7 +11,7 @@ extern "c-frees-a-lease-through-a-callback.h"
 
 function main()
     x = "payload"
-    c: cstr @ x.lease()
+    c: cstr @= x.lease()
     print(2)
     take_cb(s: c, cb: eat)
     end_lease(@c)

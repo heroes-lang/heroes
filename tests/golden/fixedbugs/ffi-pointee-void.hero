@@ -29,6 +29,6 @@ extern "string.h"
     function memcpy(@dst: i32, src: ptr, n: u64) -> ptr  #~ ffi_parameter_type
 
 function main()
-    dst: i32 @ to_i32(0).must()
+    dst: i32 @= to_i32(0).must()
     _ = memcpy(@dst, src: nullptr, n: to_u64(0).must())
     print(dst.to_str())

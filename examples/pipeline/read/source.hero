@@ -10,8 +10,8 @@ record Reader
     at: i64
 
 function new_reader(text: str) -> Reader
-    rows: [str] @ []
-    piece: str @ ""
+    rows: [str] @= []
+    piece: str @= ""
 
     for ch in text.chars()
         if ch == "\n"
@@ -38,7 +38,7 @@ function remaining(r: Reader) -> i64
     return r.lines.len() - r.at
 
 test "a reader walks its lines once and then fails"
-    r: Reader @ new_reader("a\nb\n")
+    r: Reader @= new_reader("a\nb\n")
     assert r.remaining() == 2
     assert next_line(@r).must() == "a"
     assert next_line(@r).must() == "b"
@@ -46,17 +46,17 @@ test "a reader walks its lines once and then fails"
     assert r.remaining() == 0
 
 test "a last line with no newline is still a line"
-    r: Reader @ new_reader("only")
+    r: Reader @= new_reader("only")
     assert r.remaining() == 1
     assert next_line(@r).must() == "only"
 
 test "empty text has no lines at all"
-    r: Reader @ new_reader("")
+    r: Reader @= new_reader("")
     assert r.remaining() == 0
     assert next_line(@r).is_err()
 
 test "a blank line in the middle is kept"
-    r: Reader @ new_reader("a\n\nb\n")
+    r: Reader @= new_reader("a\n\nb\n")
     assert r.remaining() == 3
     assert !next_line(@r).is_err()
     assert next_line(@r).must() == ""

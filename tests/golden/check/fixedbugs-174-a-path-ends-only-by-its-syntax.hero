@@ -23,7 +23,7 @@ function asserted_a_negation(n: i64) -> i64  #~ missing_return
 
 # A `break` of its own, even one no run reaches, lets the loop finish.
 function a_break_under_if_false(n: i64) -> i64  #~ missing_return
-    m: i64 @ n
+    m: i64 @= n
 
     while true
         if false
@@ -34,7 +34,7 @@ function a_break_under_if_false(n: i64) -> i64  #~ missing_return
         m @ m + 1
 
 function a_break_in_an_arm(n: i64) -> i64  #~ missing_return
-    m: i64 @ n
+    m: i64 @= n
 
     while true
         match m
@@ -46,7 +46,7 @@ function a_break_in_an_arm(n: i64) -> i64  #~ missing_return
 
 # A condition that is not the word `true` is a value.
 function a_condition_that_holds(n: i64) -> i64  #~ missing_return
-    m: i64 @ n
+    m: i64 @= n
 
     while m > -1
         if m > 3
@@ -81,7 +81,7 @@ function every_arm_exits(k: i64) -> i64
     return x
 
 function an_arm_that_loops_and_breaks(k: i64) -> i64
-    n: i64 @ 0
+    n: i64 @= 0
 
     x = match k
         0 =>

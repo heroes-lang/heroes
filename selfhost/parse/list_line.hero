@@ -53,7 +53,7 @@ function separates(@c: cursor.Cursor, text: str, closer: token.TokenKind) -> boo
     # prints. A negative element as it always was.
     if after.kind != .comment && after.span.start == sign.end
         return true
-    at: i64 @ c.pos + 1
+    at: i64 @= c.pos + 1
 
     while c.tokens[at].kind == .comment
         at @ at + 1
@@ -82,7 +82,7 @@ function separates(@c: cursor.Cursor, text: str, closer: token.TokenKind) -> boo
 function set_apart(@c: cursor.Cursor, text: str, closer: token.TokenKind, above: token.Span, operand: token.Span, entry: bool) -> bool
     sign = cursor.current_span(c)
     between = text.slice(from: sign.end, to: operand.start)
-    how: str @ "begins with `- `, a minus set apart from its value by a space"
+    how: str @= "begins with `- `, a minus set apart from its value by a space"
 
     if c.tokens[c.pos + 1].kind == .comment
         how @ "begins with `-` and a comment, a minus set apart from its value"
@@ -97,8 +97,8 @@ function set_apart(@c: cursor.Cursor, text: str, closer: token.TokenKind, above:
         certainty: .guess
     )
     negative = against_its_value(text: text, sign: sign, operand: operand)
-    fixes: [diag.Fix] @ []
-    message: str @ "this line of the list " + how + ", and a line end with no `,` in a list starts a new element, so it would be a negative element where the gap says a subtraction: to subtract, end the line above with the `-`; for a negative element, write the `-` against its value"
+    fixes: [diag.Fix] @= []
+    message: str @= "this line of the list " + how + ", and a line end with no `,` in a list starts a new element, so it would be a negative element where the gap says a subtraction: to subtract, end the line above with the `-`; for a negative element, write the `-` against its value"
 
     if closer == .rbracket
         fixes @ fixes.push(subtract)
@@ -113,7 +113,7 @@ function set_apart(@c: cursor.Cursor, text: str, closer: token.TokenKind, above:
     else
         message @ "this line of the map " + how + ", and a line end with no `,` in a map starts a new entry, which this line cannot be, since it holds no `:`: to subtract, end the line above with the `-`"
         fixes @ fixes.push(subtract)
-    d: diag.Diagnostic @ diag.new_diagnostic(code: "spaced_minus_element", message: message, span: sign)
+    d: diag.Diagnostic @= diag.new_diagnostic(code: "spaced_minus_element", message: message, span: sign)
     d.fixes @ fixes
     cursor.say(@c, d)
 
@@ -127,8 +127,8 @@ function set_apart(@c: cursor.Cursor, text: str, closer: token.TokenKind, above:
 # Whether a map's line, from `from` to the line end or `,` that ends it at the
 # entry's own depth, holds the `:` that makes it an entry.
 function holds_a_colon(c: cursor.Cursor, from: i64) -> bool
-    depth: i64 @ 0
-    i: i64 @ from
+    depth: i64 @= 0
+    i: i64 @= from
 
     while c.tokens[i].kind != .eof
         k = c.tokens[i].kind
@@ -153,19 +153,19 @@ function holds_a_colon(c: cursor.Cursor, from: i64) -> bool
 # `-` goes.
 function against_its_value(text: str, sign: token.Span, operand: token.Span) -> diag.Fix
     between = text.slice(from: sign.end, to: operand.start)
-    lead: i64 @ 0
+    lead: i64 @= 0
 
     while lead < between.len() && between[lead] == ' '
         lead @ lead + 1
 
-    rest: str @ between.slice(from: lead, to: between.len())
-    start: i64 @ sign.start
+    rest: str @= between.slice(from: lead, to: between.len())
+    start: i64 @= sign.start
 
     if line_end.has_a_line_end(rest) && (rest[0] == '\n' || rest[0] == '\r')
         while start > 0 && text[start - 1] == ' '
             start @ start - 1
 
-        cut: i64 @ 1
+        cut: i64 @= 1
 
         if rest[0] == '\r' && rest.len() > 1
             cut @ 2
@@ -183,7 +183,7 @@ function against_its_value(text: str, sign: token.Span, operand: token.Span) -> 
 # knot on 2026-09-30 (lane recovery-b4), when that file stood at its ceiling:
 # it reads the cursor alone, and nothing of the grammar.
 function trailing_comma(@c: cursor.Cursor, comma: token.Span)
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "trailing_comma",
         message: "a trailing comma is not part of the list — write `f(a, b)`, `[1, 2]`",
         span: comma
@@ -252,7 +252,7 @@ function ended_at_a_binding(@c: cursor.Cursor, text: str, open: i64, first: i64,
 
     if pair < 0 || c.tokens[pair].kind == .rbracket
         return false
-    report: diag.Diagnostic @ diag.new_diagnostic(
+    report: diag.Diagnostic @= diag.new_diagnostic(
         code: "expected_separator",
         message: "expected `,` or a new line between one element and the next, found " + cursor.found(c, text) + " — a binding is no element: the `[` still open " + text_lines.place_above(text, at: c.tokens[open].span.start, from: cursor.current_span(c).start) + ", " + closing_above(c, text: text, open: open, own: "]"),
         span: cursor.current_span(c)
@@ -323,7 +323,7 @@ function another_kind(c: cursor.Cursor, text: str, what: str, closer: token.Toke
         return ""
     opener = c.tokens[open].span
     found = cursor.current_span(c)
-    own: str @ "`]`"
+    own: str @= "`]`"
 
     if closer == .rbrace
         own @ "`}`"

@@ -50,14 +50,14 @@ function read(@c: cursor.Cursor, @a: ast.Ast, text: str, in_group: bool) -> Sign
     # No `->` means no value. The `unit` node is synthesised at the end of the
     # header so later passes never have to ask whether the arrow was written
     # (§4.3: `()` is a type like any other).
-    result: i64 @ 0
+    result: i64 @= 0
 
     # `-> cstr owned sqlite3_free`: the freer rides the RESULT and is read
     # right after its type, which is the only place it can be — a signature
     # with no arrow hands nothing back for anybody to free (§4.19, panel 109).
     # The five words come in any order (panel 177's landing, finding 1), and
     # `when` with no arrow before it is named as such (finding 2).
-    marks: parse_members.Marks @ parse_members.no_marks()
+    marks: parse_members.Marks @= parse_members.no_marks()
 
     if cursor.eat(@c, .arrow) || arrow_habit(@c, @a, text, in_group: in_group)
         result @ type.parse_type(@c, @a, text)
@@ -85,8 +85,8 @@ function read(@c: cursor.Cursor, @a: ast.Ast, text: str, in_group: bool) -> Sign
 function arrow_habit(@c: cursor.Cursor, @a: ast.Ast, text: str, in_group: bool) -> bool
     if !cursor.at(c, .colon) && !cursor.at(c, .fat_arrow) || line_end.said_here(c)
         return false
-    probe: cursor.Cursor @ c
-    scratch: ast.Ast @ a
+    probe: cursor.Cursor @= c
+    scratch: ast.Ast @= a
     said = probe.diagnostics.len()
     _ = cursor.bump(@probe)
     first = cursor.current_span(probe)
@@ -107,22 +107,22 @@ function arrow_habit(@c: cursor.Cursor, @a: ast.Ast, text: str, in_group: bool) 
     # body written on the head's line, Python's `pass` or an expression body,
     # `=> value` (defect 135's P8, lane recovery-b7): applied, `function
     # stub(): pass` became `-> pass`, refused anew for its missing body.
-    certainty: diag.Certainty @ .guess
-    tail: str @ ", and the body goes on the lines below the head, one level deeper"
+    certainty: diag.Certainty @= .guess
+    tail: str @= ", and the body goes on the lines below the head, one level deeper"
 
     if in_group || brace_habit.ending(probe, text) >= 0 || opening.body_below(probe, text)
         certainty @ .certain
         tail @ ""
     written = cursor.current_span(c)
     shown = text.slice(from: first.start, to: cursor.previous_significant_span(@probe).end)
-    fix: str @ "->"
+    fix: str @= "->"
 
     if written.start > 0 && text[written.start - 1] != ' '
         fix @ " " + fix
 
     if written.end < text.len() && text[written.end] != ' '
         fix @ fix + " "
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "expected_end_of_line",
         message: "expected `->` or the end of the line, found `" + cursor.slice_of(text, written) + "` — a `function`'s result type is written after `->`: `-> " + shown + "`" + tail,
         span: written
@@ -139,8 +139,8 @@ function arrow_habit(@c: cursor.Cursor, @a: ast.Ast, text: str, in_group: bool) 
 # A signature read from `text`, whose first two tokens are `function` and the
 # name, and the cursor it leaves.
 function read_of(text: str) -> cursor.Cursor
-    c: cursor.Cursor @ cursor.new_cursor(lexer.lex_one(text).tokens)
-    a: ast.Ast @ ast.new_ast()
+    c: cursor.Cursor @= cursor.new_cursor(lexer.lex_one(text).tokens)
+    a: ast.Ast @= ast.new_ast()
     _ = cursor.bump(@c)
     _ = cursor.bump(@c)
     assert !read(@c, @a, text, in_group: false).is_err()

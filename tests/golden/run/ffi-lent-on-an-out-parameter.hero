@@ -11,8 +11,8 @@ extern "ffi-lent-on-an-out-parameter.h"
     function widen(@s: Span lent)
 
 function main()
-    e: i32 @ 0
+    e: i32 @= 0
     print(halve(x: 3.0, @e), " ", e)
-    s: Span @ Span(lo: 10, hi: 20)
+    s: Span @= Span(lo: 10, hi: 20)
     widen(@s)
     print(s.lo, " ", s.hi)

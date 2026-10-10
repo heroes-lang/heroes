@@ -37,7 +37,7 @@ function parsed(@c: cursor.Cursor, @t: tree.Tree) -> i64?
     return either(@c, @t)
 
 function either(@c: cursor.Cursor, @t: tree.Tree) -> i64?
-    left: i64 @ both(@c, @t)?
+    left: i64 @= both(@c, @t)?
 
     while cursor.here(c) == .bars
         _ = cursor.bump(@c)
@@ -47,7 +47,7 @@ function either(@c: cursor.Cursor, @t: tree.Tree) -> i64?
     return ok(left)
 
 function both(@c: cursor.Cursor, @t: tree.Tree) -> i64?
-    left: i64 @ compared(@c, @t)?
+    left: i64 @= compared(@c, @t)?
 
     while cursor.here(c) == .ampersands
         _ = cursor.bump(@c)
@@ -81,10 +81,10 @@ function compared(@c: cursor.Cursor, @t: tree.Tree) -> i64?
     return ok(made)
 
 function summed(@c: cursor.Cursor, @t: tree.Tree) -> i64?
-    left: i64 @ scaled(@c, @t)?
+    left: i64 @= scaled(@c, @t)?
 
     while cursor.here(c) == .plus || cursor.here(c) == .minus
-        op: tree.Op @ .add
+        op: tree.Op @= .add
 
         if cursor.bump(@c) == .minus
             op @ .subtract
@@ -94,10 +94,10 @@ function summed(@c: cursor.Cursor, @t: tree.Tree) -> i64?
     return ok(left)
 
 function scaled(@c: cursor.Cursor, @t: tree.Tree) -> i64?
-    left: i64 @ unary(@c, @t)?
+    left: i64 @= unary(@c, @t)?
 
     while is_scaling(cursor.here(c))
-        op: tree.Op @ .multiply
+        op: tree.Op @= .multiply
         taken = cursor.bump(@c)
 
         if taken == .slash
@@ -164,7 +164,7 @@ function named(@c: cursor.Cursor, @t: tree.Tree, word: str) -> i64?
 
     # `given` and not `args`: `args` is a built-in of the language, so the
     # name is taken everywhere (`error[builtin_name_taken]`) even for a local.
-    given: [i64] @ []
+    given: [i64] @= []
 
     if cursor.here(c) == .rparen
         _ = cursor.bump(@c)

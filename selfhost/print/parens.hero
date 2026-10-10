@@ -81,14 +81,14 @@ function render(tree: ast.Ast, s: source.Source, id: i64) -> str
                 return "." + source.span_text(s, vc.name)
             return "." + source.span_text(s, vc.name) + "(" + args_line(tree, s, given: vc.args) + ")"
         .array arr =>
-            rendered: [str] @ []
+            rendered: [str] @= []
 
             for item in arr.elements
                 rendered @ rendered.push(render(tree, s, id: item))
 
             return "[" + rendered.join(", ") + "]"
         .map mp =>
-            rendered: [str] @ []
+            rendered: [str] @= []
 
             for entry in mp.entries
                 rendered @ rendered.push(render(tree, s, id: entry.key) + ": " + render(tree, s, id: entry.value))
@@ -132,7 +132,7 @@ function wrapped(tree: ast.Ast, s: source.Source, id: i64, needed: i64) -> str
     return render(tree, s, id: id)
 
 function needs_parens(tree: ast.Ast, id: i64, needed: i64) -> bool
-    is_control: bool @ false
+    is_control: bool @= false
 
     match tree.exprs[id].kind
         .if_expr | .match_expr                                                         => is_control @ true
@@ -143,7 +143,7 @@ function needs_parens(tree: ast.Ast, id: i64, needed: i64) -> bool
     return power(tree, id) < needed && !is_control
 
 function args_line(tree: ast.Ast, s: source.Source, given: [ast.Arg]) -> str
-    rendered: [str] @ []
+    rendered: [str] @= []
 
     for arg in given
         rendered @ rendered.push(arg_text(tree, s, arg: arg))
@@ -156,7 +156,7 @@ function arg_text(tree: ast.Ast, s: source.Source, arg: ast.Arg) -> str
 # What an argument prints before its value: its name, and the `@` of one
 # the call lets the callee change (§4.8).
 function arg_lead(s: source.Source, arg: ast.Arg) -> str
-    name: str @ ""
+    name: str @= ""
 
     if !arg.name.is_err()
         name @ source.span_text(s, arg.name.must()) + ": "

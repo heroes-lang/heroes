@@ -87,13 +87,13 @@ function in_the_c_runtime(library: str) -> bool
 # the two the compiler's own link line already says, are `cli/package_words`'
 # (panel 198, defect 444): Debian 13 refused 23 correct packages for them.
 function filter_words(package: str, said: str) -> [str]?
-    flags: [str] @ []
+    flags: [str] @= []
     parts = shell_split.words(package: package, said: said)?
-    index: i64 @ 0
+    index: i64 @= 0
 
     while index < parts.len()
         word = parts[index]
-        next: str @ ""
+        next: str @= ""
 
         if index + 1 < parts.len()
             next @ parts[index + 1]
@@ -156,7 +156,7 @@ function filter_words(package: str, said: str) -> [str]?
 # name, the one value in a word of its own, never begins with `-` or `@`
 # (`package_words.is_value`).
 function compile_flags(package_flags: [str]) -> [str]
-    out: [str] @ []
+    out: [str] @= []
 
     for flag in package_flags
         if flag == "-pthread" || valued_by(flag, prefixes: ["-I", "-D", "-U", "-F"])
@@ -182,14 +182,14 @@ function valued_by(flag: str, prefixes: [str]) -> bool
 # compilation*, the one compile word it warns about there (Debian clang
 # 22.1.8 and 18.1.8, measured 2026-10-03; `-framework` is no Linux link's).
 function link_words(package_flags: [str]) -> [str]
-    framework: bool @ false
+    framework: bool @= false
 
     for flag in package_flags
         if flag == "-framework"
             framework @ true
 
-    out: [str] @ []
-    index: i64 @ 0
+    out: [str] @= []
+    index: i64 @= 0
 
     while index < package_flags.len()
         flag = package_flags[index]
@@ -224,7 +224,7 @@ function tail_after(word: str, prefix: str) -> str?
 
     if ps.len() > ws.len()
         return fail(code: "none", msg: "shorter than the prefix")
-    index: i64 @ 0
+    index: i64 @= 0
 
     for p in ps
         if ws[index] != p
@@ -237,7 +237,7 @@ function tail_after(word: str, prefix: str) -> str?
 # word holding a space is never read as two: the shape `cli/link.hero`'s
 # `binary_home` keys the link line with.
 function key_text(words: [str]) -> str
-    parts: [str] @ []
+    parts: [str] @= []
 
     for word in words
         parts @ parts.push(word.len().to_str() + ":" + word)
@@ -249,7 +249,7 @@ function key_text(words: [str]) -> str
 # own groups name and no other module's (panel 205's R3, defect 572); the
 # first package that cannot answer stops the build as it would there.
 function resolve_each(packages: [str], build_dir: str) -> {str: [str]}?
-    out: {str: [str]} @ {}
+    out: {str: [str]} @= {}
 
     for package in packages
         out[package] @ resolve_packages(packages: [package], build_dir: build_dir)?
@@ -258,7 +258,7 @@ function resolve_each(packages: [str], build_dir: str) -> {str: [str]}?
 
 # The words of `packages`, in their order, from what `resolve_each` answered.
 function words_of(each: {str: [str]}, packages: [str]) -> [str]
-    out: [str] @ []
+    out: [str] @= []
 
     for package in packages
         for word in each[package].default([])
@@ -273,7 +273,7 @@ function words_of(each: {str: [str]}, packages: [str]) -> [str]
 # message opens with the PACKAGE marker, which is emit_ffi_lookup's
 # contract: the one class whose text this compiler writes itself.
 function resolve_packages(packages: [str], build_dir: str) -> [str]?
-    flags: [str] @ []
+    flags: [str] @= []
 
     for package in packages
         process.mkdir_all(build_dir)?
@@ -498,13 +498,13 @@ test "a package's -pthread, -isystem and its own link line's words (panel 198)"
 # admitted, fires here.
 test "the refusal's note names the list word for word, and the list admits every word it names (panel 198)"
     refusal = filter_words(package: "n", said: "-fplugin=x.so")
-    note: str @ ""
+    note: str @= ""
     empty: [str] = []
 
     match refusal
         .ok => assert false
         .err e =>
-            row: [str] @ []
+            row: [str] @= []
 
             for ch in e.msg.chars()
                 if ch != "\n"
@@ -522,9 +522,9 @@ test "the refusal's note names the list word for word, and the list admits every
     assert strings.starts_with(text: note, prefix: "  only `-D`")
     assert strings.ends_with(text: note, suffix: ": " + reason)
     listed = note.slice(from: 0, to: note.len() - reason.len())
-    spans: [str] @ []
-    open: bool @ false
-    span: [str] @ []
+    spans: [str] @= []
+    open: bool @= false
+    span: [str] @= []
 
     for ch in listed.chars()
         if ch == "`" && open
@@ -550,7 +550,7 @@ test "the refusal's note names the list word for word, and the list admits every
             assert !filter_words(package: "n", said: named + " v").is_err()
             assert !filter_words(package: "n", said: named + "v").is_err()
             continue
-        filled: str @ named
+        filled: str @= named
 
         if strings.ends_with(text: named, suffix: "<dir>")
             filled @ named.slice(from: 0, to: named.len() - 5) + "/d"
@@ -629,7 +629,7 @@ test "a link takes a package's link words, and its -F only beside a framework (d
     both = strings.with_all(list: compile_flags(flags), more: link_words(flags))
 
     for word in flags
-        found: bool @ false
+        found: bool @= false
 
         for one in both
             if one == word
@@ -785,11 +785,11 @@ function has_text(text: str, needle: str) -> bool
 
     if needle_cs.len() > cs.len()
         return false
-    start: i64 @ 0
+    start: i64 @= 0
 
     while start <= cs.len() - needle_cs.len()
-        matched: bool @ true
-        offset: i64 @ 0
+        matched: bool @= true
+        offset: i64 @= 0
 
         while offset < needle_cs.len()
             if cs[start + offset] != needle_cs[offset]

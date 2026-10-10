@@ -71,9 +71,9 @@ use checker
 # `kinds` is `phases.type_kinds`, found once per build (defect 229): this
 # walked every type id as deep as it goes, in every translation unit.
 function generated(c: state.Checked, decls: [ast.Decl], reachable: {i64: bool}, constructed: {i64: bool}, want: synth.Wanted, kinds: [i64]) -> [i64]
-    wanted: {i64: bool} @ {}
-    queue: [i64] @ []
-    id: i64 @ 0
+    wanted: {i64: bool} @= {}
+    queue: [i64] @= []
+    id: i64 @= 0
 
     while id < kinds.len()
         # A type still carrying a parameter is skipped, as in both
@@ -133,7 +133,7 @@ function generated(c: state.Checked, decls: [ast.Decl], reachable: {i64: bool}, 
         # name the payload's descriptor.
         if !synth.wants_decl(want, decl: decl)
             continue
-        written_ids: [i64] @ []
+        written_ids: [i64] @= []
 
         for field in types.fields_of(decls, decl: decl)
             written_ids @ written_ids.push(field.ty)
@@ -154,11 +154,11 @@ function generated(c: state.Checked, decls: [ast.Decl], reachable: {i64: bool}, 
                 .array | .fixed | .map | .function_ty | .named            => continue
                 .case_ty | .failure | .generic | .error                   => continue
 
-    seen: {i64: bool} @ {}
+    seen: {i64: bool} @= {}
 
     # Drained from its top without copying it (`emit/worklist.hero`, defect
     # 498).
-    size: i64 @ queue.len()
+    size: i64 @= queue.len()
 
     while size > 0
         next = worklist.take(queue, size: @size)
@@ -189,7 +189,7 @@ function generated(c: state.Checked, decls: [ast.Decl], reachable: {i64: bool}, 
             .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => continue
             .fixed | .function_ty | .failure | .generic | .error      => continue
 
-    out: [i64] @ []
+    out: [i64] @= []
 
     # ORDER: ascending TyId — `definitions` walks this into the emitted
     # `_desc` table, so this order is IN THE C: change it and the same
@@ -216,9 +216,9 @@ test "the worklist reaches an element, a payload, and expands as it drains"
 
     # Reachable: everything the program's own types mention — built the
     # way the driver will build it, closed under containment.
-    reachable: {i64: bool} @ {}
+    reachable: {i64: bool} @= {}
     count = table.len_of(c.types)
-    id: i64 @ 0
+    id: i64 @= 0
 
     while id < count
         reachable[id] @ true
@@ -230,7 +230,7 @@ test "the worklist reaches an element, a payload, and expands as it drains"
     # is in. Marked by hand rather than lowered, which keeps the case
     # about the worklist; the driver fills the same map from the
     # `construct` instructions and nothing else.
-    constructed: {i64: bool} @ {}
+    constructed: {i64: bool} @= {}
     constructed[table.lookup(c.types, .array(element: point)).must()] @ true
     got = generated(
         c,
@@ -240,8 +240,8 @@ test "the worklist reaches an element, a payload, and expands as it drains"
         want: synth.everything(),
         kinds: phases.type_kinds(c)
     )
-    saw_point: bool @ false
-    saw_option: bool @ false
+    saw_point: bool @= false
+    saw_option: bool @= false
 
     for one in got
         if one == point
@@ -261,7 +261,7 @@ test "the worklist reaches an element, a payload, and expands as it drains"
     assert saw_option
 
     # Ascending: the key walk is the sort.
-    walk: i64 @ 1
+    walk: i64 @= 1
 
     while walk < got.len()
         assert got[walk - 1] < got[walk]
@@ -281,9 +281,9 @@ test "an array a signature interned and nobody builds gets no descriptor"
     out = resolve.resolve(p.tree, s, p.decls, p.uses)
     c: state.Checked = checker.check(p.tree, out, s, p.decls)
     assert c.diagnostics.len() == 0
-    reachable: {i64: bool} @ {}
+    reachable: {i64: bool} @= {}
     count_types = table.len_of(c.types)
-    id: i64 @ 0
+    id: i64 @= 0
 
     while id < count_types
         reachable[id] @ true
@@ -297,7 +297,7 @@ test "an array a signature interned and nobody builds gets no descriptor"
     # descriptor, which is what keeps this from passing for the wrong
     # reason.
     row = table.lookup(c.types, .named(decl: 0)).must()
-    built: {i64: bool} @ {}
+    built: {i64: bool} @= {}
     built[table.lookup(c.types, .array(element: row)).must()] @ true
     got = generated(
         c,

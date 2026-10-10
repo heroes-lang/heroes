@@ -65,14 +65,14 @@ record Told
 # The diagnostics for every name two header lists declare with external
 # linkage and two canonical types, in the order of the names.
 function told(t: toolchain.Toolchain, probings: [probing.Probing], s: source.Source, decls: [ast.Decl]) -> Told
-    out: [diag.Diagnostic] @ []
-    names: {str: bool} @ {}
+    out: [diag.Diagnostic] @= []
+    names: {str: bool} @= {}
     lists = own_headers(probings)
 
     if lists.len() < 2
         return Told(diagnostics: out, names: names)
-    named: [{str: bool}] @ []
-    counts: {str: i64} @ {}
+    named: [{str: bool}] @= []
+    counts: {str: i64} @= {}
 
     for one in lists
         mine = two_ways_ask.listed(t, one.probe.must())
@@ -82,7 +82,7 @@ function told(t: toolchain.Toolchain, probings: [probing.Probing], s: source.Sou
         for name in keys(mine)
             counts[name] @ counts[name].default(0) + 1
 
-    shared: [str] @ []
+    shared: [str] @= []
 
     # ORDER: by name, `shared` sorted below before anything reads it — the
     # diagnostics come in that order.
@@ -93,11 +93,11 @@ function told(t: toolchain.Toolchain, probings: [probing.Probing], s: source.Sou
     if shared.len() == 0
         return Told(diagnostics: out, names: names)
     shared @ sort(shared)
-    each: [{str: two_ways_ask.Answer}] @ []
-    at: i64 @ 0
+    each: [{str: two_ways_ask.Answer}] @= []
+    at: i64 @= 0
 
     for one in lists
-        asked: [str] @ []
+        asked: [str] @= []
 
         for name in shared
             if !named[at][name].is_err()
@@ -107,8 +107,8 @@ function told(t: toolchain.Toolchain, probings: [probing.Probing], s: source.Sou
         at @ at + 1
 
     for name in shared
-        types: [str] @ []
-        index: i64 @ 0
+        types: [str] @= []
+        index: i64 @= 0
 
         for _ in lists
             given = each[index][name]
@@ -121,7 +121,7 @@ function told(t: toolchain.Toolchain, probings: [probing.Probing], s: source.Sou
         # sides are only found for a name that is.
         if agreeing(types)
             continue
-        sides: [Side] @ []
+        sides: [Side] @= []
         index @ 0
 
         for one in lists
@@ -143,7 +143,7 @@ function told(t: toolchain.Toolchain, probings: [probing.Probing], s: source.Sou
 # whose probe read them: the compiler's own headers declare one thing in
 # every unit.
 function own_headers(probings: [probing.Probing]) -> [probing.Probing]
-    out: [probing.Probing] @ []
+    out: [probing.Probing] @= []
 
     for one in probings
         if !one.probe.is_err() && !one.probe.must().read.is_err()
@@ -158,8 +158,8 @@ function own_headers(probings: [probing.Probing]) -> [probing.Probing]
 # a group of the list binds it, else the string of the list's group whose
 # header is the file clang names, or the first of its groups.
 function side_of(one: probing.Probing, name: str, answer: two_ways_ask.Answer, s: source.Source, decls: [ast.Decl]) -> Side
-    group: token.Span? @ fail(code: "none", msg: "no group of the list")
-    header: str @ ""
+    group: token.Span? @= fail(code: "none", msg: "no group of the list")
+    header: str @= ""
     spellings = clang_place.spellings(answer.path)
 
     for f in one.program.functions
@@ -207,10 +207,10 @@ function file_named(answer: two_ways_ask.Answer, header: str) -> str
 # program names first. A type of no parameters, `()`, takes any, and is
 # compared by its result alone.
 function disagreeing(sides: [Side]) -> [Side]?
-    i: i64 @ 0
+    i: i64 @= 0
 
     while i < sides.len()
-        j: i64 @ i + 1
+        j: i64 @= i + 1
 
         while j < sides.len()
             if !same_type(one: sides[i].answer.type, other: sides[j].answer.type)
@@ -253,11 +253,11 @@ function result_of(type_text: str) -> str
 function diagnostic(s: source.Source, name: str, pair: [Side]) -> diag.Diagnostic
     first = pair[0]
     second = pair[1]
-    what: str @ "two modules' headers declare one C name two ways"
+    what: str @= "two modules' headers declare one C name two ways"
 
     if first.bound && second.bound
         what @ "two groups bind one C function two ways"
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "ffi_declared_two_ways",
         message: "`" + name + "` is declared `" + shown_type(first.answer.type) + "` " + where(first) + " and `" + shown_type(second.answer.type) + "` " + where(second) + ": " + what + ", and the linker joins both to one symbol",
         span: first.span
@@ -265,7 +265,7 @@ function diagnostic(s: source.Source, name: str, pair: [Side]) -> diag.Diagnosti
     d.notes @ d.notes.push(
         "the other module's group is at " + source.elsewhere(s, here: first.span.start, there: second.span.start)
     )
-    remedy: str @ "no group binds `" + name + "`, which the two headers' own code calls, and only one of them can declare it as it is defined: a program binds the two groups together only where their headers agree"
+    remedy: str @= "no group binds `" + name + "`, which the two headers' own code calls, and only one of them can declare it as it is defined: a program binds the two groups together only where their headers agree"
 
     if first.bound && second.bound
         remedy @ "bind `" + name + "` in both modules from the header that declares it as it is defined, or from one module, whose unit reads both headers, where clang refuses the two declarations together"

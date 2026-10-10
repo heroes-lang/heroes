@@ -4,7 +4,7 @@
 # The lexer keeps every opener on one stack, any closer popping the last one,
 # and at a file's end names each opener still on it: `unclosed_bracket`, `[`
 # opened here is never closed. The parser, reading the same brackets, then
-# met the place where the closer was owed and named it too: `n: [i64 @ [3]`
+# met the place where the closer was owed and named it too: `n: [i64 @= [3]`
 # cost `unclosed_bracket` and `expected_array_close`, one missing `]` and two
 # messages, and `x = [1, 2` over `print(x)` read the lines below as elements
 # and refused them, since past an opener that never closes the lexer reads
@@ -66,7 +66,7 @@ function recover_past_pair(@c: cursor.Cursor, text: str, open: i64)
 
 # The index of the first token past the line ends and comments at the cursor.
 function past_line_ends(c: cursor.Cursor) -> i64
-    i: i64 @ c.pos
+    i: i64 @= c.pos
 
     while c.tokens[i].kind == .terminator || c.tokens[i].kind == .comment
         i @ i + 1
@@ -91,7 +91,7 @@ function ends_at_the_line(c: cursor.Cursor) -> bool
 function past_what_goes_on(@c: cursor.Cursor, text: str, holds: line_end.Holds)
     while cursor.at(c, .terminator)
         before = line_end.significant_before(c, at: c.pos)
-        below: cursor.Cursor @ c
+        below: cursor.Cursor @= c
         below.pos @ past_line_ends(c)
 
         if !line_end.goes_on(below, text: text, holds: holds, before: before) || next_line.holds_an_arrow(text, from: cursor.current_span(below).start)
@@ -139,7 +139,7 @@ function swallows_the_body(c: cursor.Cursor, text: str, from: i64) -> bool
 # The walk back stops at a line that opens a declaration at column 0, where
 # the lexer names every opener still open and empties its stack.
 function inside_an_open_bracket(c: cursor.Cursor, text: str, from: i64) -> bool
-    i: i64 @ from - 1
+    i: i64 @= from - 1
 
     while i >= 0 && !opens_a_declaration(c, text, at: i)
         k = c.tokens[i].kind
@@ -172,7 +172,7 @@ function past_what_was_swallowed(@c: cursor.Cursor, text: str, from: i64)
 # The first opener on a head's line, from token `from` to the cursor, that
 # the lexer named never closed, or -1.
 function head_opener(c: cursor.Cursor, text: str, from: i64) -> i64
-    i: i64 @ from
+    i: i64 @= from
 
     while i < c.pos
         k = c.tokens[i].kind
@@ -200,7 +200,7 @@ function past_the_reach(@c: cursor.Cursor, open: i64)
 
 # Whether a line ends between the opener at `open` and the token at `at`.
 function a_line_below(c: cursor.Cursor, text: str, open: i64, at: i64) -> bool
-    i: i64 @ c.tokens[open].span.end
+    i: i64 @= c.tokens[open].span.end
 
     while i < c.tokens[at].span.start
         if text[i] == '\n'
@@ -219,8 +219,8 @@ function end_literal(@c: cursor.Cursor, text: str, open: i64)
     if never_closed(c, text, open: open)
         past_what_goes_on(@c, text: text, holds: .elements)
         return
-    what: str @ "`}` to close the map"
-    code: str @ "expected_map_close"
+    what: str @= "`}` to close the map"
+    code: str @= "expected_map_close"
 
     if c.tokens[open].kind == .lbracket
         what @ "`]` to close the list"
@@ -280,8 +280,8 @@ function type_closer(@c: cursor.Cursor, text: str, open: i64) -> token.Span
     if never_closed(c, text, open: open)
         return cursor.previous_significant_span(@c)
     kind = token.closer_of(c.tokens[open].kind)
-    what: str @ "`)` to close the function type"
-    code: str @ "expected_function_type_close"
+    what: str @= "`)` to close the function type"
+    code: str @= "expected_function_type_close"
 
     if kind == .rbracket
         what @ "`]` to close the array type"
@@ -312,7 +312,7 @@ function type_closer(@c: cursor.Cursor, text: str, open: i64) -> token.Span
 # And an opener a report of `said` carries, the one edit it names closing it
 # too (defect 459, `diag.carried`).
 function withdrawn(lexed: [diag.Diagnostic], said: [diag.Diagnostic], text: str) -> [diag.Diagnostic]
-    out: [diag.Diagnostic] @ []
+    out: [diag.Diagnostic] @= []
     carried = diag.carried(said)
 
     for d in lexed
@@ -336,7 +336,7 @@ function spoken_at(said: [diag.Diagnostic], at: i64, code: str) -> bool
 ## Tests
 
 test "an opener is never closed where the lexer's stack leaves it open"
-    text = "n: [i64 @ [3]\nm = (1 + [2, 3])\n"
+    text = "n: [i64 @= [3]\nm = (1 + [2, 3])\n"
 
     # `[` at 2 is left open, the one at 5 is closed by the `]` at 7, and the
     # `(` at 11 by its `)`, a `[` and its `]` between them.
@@ -380,7 +380,7 @@ test "an opener whose closer a literal that never closed took has no closer to t
 # it at, `]` for `f(a b]`, and not past a `)` further down.
 test "a closer of another kind is the one an opener is recovered past"
     text = "f(a b]\ny = 3 )\n"
-    c: cursor.Cursor @ cursor.new_cursor(lexer.lex_one(text).tokens)
+    c: cursor.Cursor @= cursor.new_cursor(lexer.lex_one(text).tokens)
     assert pairing.paired_closer(c, text, open: 1) == 4
     c.pos @ 3
     recover_past_pair(@c, text, open: 1)
@@ -393,7 +393,7 @@ test "a closer of another kind is the one an opener is recovered past"
 test "a report that carries an opener withdraws the lexer's report of it, and only then"
     text = "x = [[1, 2\nprint(x)\ny = 3 )\n"
     outer = diag.new_diagnostic(code: "unclosed_bracket", message: "m", span: token.Span(start: 4, end: 5))
-    binding: diag.Diagnostic @ diag.new_diagnostic(
+    binding: diag.Diagnostic @= diag.new_diagnostic(
         code: "expected_separator",
         message: "m",
         span: token.Span(start: 22, end: 23)

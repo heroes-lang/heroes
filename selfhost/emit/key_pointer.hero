@@ -28,9 +28,9 @@ use emit/synth
 # it as deep as the records go, and the children are pushed last to first,
 # so the pointer found is the one the recursion found first.
 function reaches_pointer(c: state.Checked, decls: [ast.Decl], ty: i64) -> str?
-    seen: {i64: bool} @ {}
-    stack: [i64] @ [ty]
-    live: i64 @ 1
+    seen: {i64: bool} @= {}
+    stack: [i64] @= [ty]
+    live: i64 @= 1
 
     while live > 0
         live @ live - 1
@@ -39,7 +39,7 @@ function reaches_pointer(c: state.Checked, decls: [ast.Decl], ty: i64) -> str?
         if !seen[at].is_err()
             continue
         seen[at] @ true
-        inner: [i64] @ []
+        inner: [i64] @= []
 
         match table.get(c.types, at)
             .ptr                                                   => return ok("`ptr`")
@@ -51,7 +51,7 @@ function reaches_pointer(c: state.Checked, decls: [ast.Decl], ty: i64) -> str?
             .int_ty | .float_ty | .bool | .str | .unit | .fixed    => continue
             .function_ty | .case_ty | .failure | .generic | .error => continue
 
-        back: i64 @ inner.len() - 1
+        back: i64 @= inner.len() - 1
 
         while back >= 0
             if live < stack.len()

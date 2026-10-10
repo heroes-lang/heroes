@@ -54,14 +54,14 @@ use lex_interp
 # should, with *use `while`* over `keyword`; `read` is the cursor after the
 # rest was read as the `while`'s condition.
 function refuse(@c: cursor.Cursor, text: str, keyword: token.Span, read: cursor.Cursor)
-    certainty: diag.Certainty @ .guess
+    certainty: diag.Certainty @= .guess
 
     if !cursor.at(c, .ident) && a_loop(c: c, text: text, read: read) && a_condition(c: c, text: text, read: read)
         certainty @ .certain
     header = c_header(c, text)
-    rule: str @ "a loop over a condition is `while`"
+    rule: str @= "a loop over a condition is `while`"
 
-    found: str @ cursor.found(c, text)
+    found: str @= cursor.found(c, text)
 
     if header
         rule @ "C's three-clause header is no loop here: count with `for i in range(from: a, to: b)`, and loop on a condition with `while`"
@@ -69,7 +69,7 @@ function refuse(@c: cursor.Cursor, text: str, keyword: token.Span, read: cursor.
     # The bare header's `;`, which the lexer took with the rest of its line.
     if cursor.at(c, .error) && cursor.slice_of(text, cursor.current_span(c))[0] == ';'
         found @ "`;`"
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "for_missing_in",
         message: "`for` iterates — `for x in xs`; found " + found + " — " + rule,
         span: cursor.current_span(c)
@@ -93,10 +93,10 @@ function refuse(@c: cursor.Cursor, text: str, keyword: token.Span, read: cursor.
 # that ends no literal opens a hole, and one after a hole closes it: a `;` in
 # a hole is the hole's, told by the lexer (defect 312).
 function c_header(c: cursor.Cursor, text: str) -> bool
-    depth: i64 @ 0
-    holes: i64 @ 0
-    inside: i64 @ 0
-    i: i64 @ c.pos
+    depth: i64 @= 0
+    holes: i64 @= 0
+    inside: i64 @= 0
+    i: i64 @= c.pos
 
     if cursor.at(c, .lparen)
         inside @ 1
@@ -158,8 +158,8 @@ function a_loop(c: cursor.Cursor, text: str, read: cursor.Cursor) -> bool
 # that was refused anew as `not_bool` (the certain-fix audit's P4), and so did
 # `for 3`, `for ("abc")` and `for {"a": 1}` beside them.
 function a_condition(c: cursor.Cursor, text: str, read: cursor.Cursor) -> bool
-    from: i64 @ c.pos
-    to: i64 @ read.pos
+    from: i64 @= c.pos
+    to: i64 @= read.pos
 
     while to > from && (c.tokens[to - 1].kind == .comment || c.tokens[to - 1].kind == .terminator)
         to @ to - 1
@@ -170,7 +170,7 @@ function a_condition(c: cursor.Cursor, text: str, read: cursor.Cursor) -> bool
 
     if to - from == 1 && (c.tokens[from].kind == .kw_true || c.tokens[from].kind == .kw_false)
         return true
-    depth: i64 @ 0
+    depth: i64 @= 0
 
     for at in range(from: from, to: to)
         k = c.tokens[at].kind
@@ -220,7 +220,7 @@ function do_while() -> str
 # opens, and the `while` below it a loop with no body (defect 367); the
 # caller reads the block, and `do_tail` the `while`.
 function under_a_do(@c: cursor.Cursor, text: str, from: i64) -> bool
-    i: i64 @ c.pos - 1
+    i: i64 @= c.pos - 1
 
     while i > from && (c.tokens[i].kind == .comment || token.is_line_end(c.tokens[i].kind))
         i @ i - 1
@@ -237,7 +237,7 @@ function under_a_do(@c: cursor.Cursor, text: str, from: i64) -> bool
 
 # Whether the token at `at` is the name `do`, the first on its line.
 function alone_do(c: cursor.Cursor, text: str, at: i64) -> bool
-    i: i64 @ at - 1
+    i: i64 @= at - 1
 
     while i >= 0 && c.tokens[i].kind == .comment
         i @ i - 1
@@ -250,9 +250,9 @@ function alone_do(c: cursor.Cursor, text: str, at: i64) -> bool
 # alone on the line above, closes the block the lexer laid out below the `{`
 # (defect 303). A body below makes it a loop, read as one.
 function do_tail(c: cursor.Cursor, text: str, head: i64) -> bool
-    close: i64 @ head - 1
-    opener: i64 @ -1
-    below: i64 @ c.pos
+    close: i64 @= head - 1
+    opener: i64 @= -1
+    below: i64 @= c.pos
 
     while close > 0 && c.tokens[close].kind == .comment
         close @ close - 1
@@ -274,8 +274,8 @@ function do_tail(c: cursor.Cursor, text: str, head: i64) -> bool
 # -1: past the indent the block's last dedent closes, by depth, where it has
 # a block, the `{`.
 function laid_opener(c: cursor.Cursor, text: str, head: i64) -> i64
-    i: i64 @ head - 1
-    depth: i64 @ 0
+    i: i64 @= head - 1
+    depth: i64 @= 0
 
     while i > 0 && c.tokens[i].kind == .comment
         i @ i - 1
@@ -306,8 +306,8 @@ function laid_opener(c: cursor.Cursor, text: str, head: i64) -> i64
 # The index of the `{` the `}` at `close` closes, by depth, or `close` itself
 # where none does.
 function opener_of(c: cursor.Cursor, close: i64) -> i64
-    depth: i64 @ 0
-    i: i64 @ close
+    depth: i64 @= 0
+    i: i64 @= close
 
     while i >= 0
         k = c.tokens[i].kind
@@ -324,7 +324,7 @@ function opener_of(c: cursor.Cursor, close: i64) -> i64
     return close
 
 function on(c: cursor.Cursor, at: i64) -> cursor.Cursor
-    moved: cursor.Cursor @ c
+    moved: cursor.Cursor @= c
     moved.pos @ at
     return moved
 

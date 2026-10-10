@@ -43,7 +43,7 @@ function judge(@r: state.Resolver, a: ast.Ast, s: source.Source, id: i64)
     if source.is_library(s, span.start)
         return
     found = plain_holes.holes(s.text, span: span)
-    bound: [plain_holes.PlainHole] @ []
+    bound: [plain_holes.PlainHole] @= []
 
     for h in found
         if bound_here(r, s, names: h.names)
@@ -60,7 +60,7 @@ function judge(@r: state.Resolver, a: ast.Ast, s: source.Source, id: i64)
         for n in h.names
             name = source.span_text(s, n)
             local = state.lookup_local(r, name)
-            at: i64 @ -1
+            at: i64 @= -1
 
             if !local.is_err()
                 at @ local.must()
@@ -99,7 +99,7 @@ function read_them(@r: state.Resolver, s: source.Source, names: [token.Span])
 function unused_notes(@r: state.Resolver, s: source.Source)
     if r.braced.len() == 0
         return
-    amended: [diag.Diagnostic] @ []
+    amended: [diag.Diagnostic] @= []
 
     for d in r.out.diagnostics
         amended @ amended.push(noted(r, s, d))
@@ -118,7 +118,7 @@ function noted(r: state.Resolver, s: source.Source, d: diag.Diagnostic) -> diag.
 
     if found.is_err()
         return d
-    out: diag.Diagnostic @ d
+    out: diag.Diagnostic @= d
     literal = found.must().literal
     shown = escape_readings.quoted(source.span_text(s, literal))
 
@@ -131,7 +131,7 @@ function noted(r: state.Resolver, s: source.Source, d: diag.Diagnostic) -> diag.
         "the literal " + shown + " holds `" + name + "` in braces, and without an `f` before its quote it prints them as they stand"
     )
     written = plain_holes.with_f(s.text, span: literal, active: naming(s, literal: literal, name: name))
-    fixes: [diag.Fix] @ [
+    fixes: [diag.Fix] @= [
         diag.Fix(title: "write the `f`: " + escape_readings.quoted(written), replacement: written, span: literal, certainty: .guess)
     ]
 
@@ -143,7 +143,7 @@ function noted(r: state.Resolver, s: source.Source, d: diag.Diagnostic) -> diag.
 
 # The local bound at `span`, or -1.
 function local_at(out: resolved.Resolved, span: token.Span) -> i64
-    i: i64 @ 0
+    i: i64 @= 0
 
     while i < out.locals.len()
         if out.locals[i].name == span
@@ -155,7 +155,7 @@ function local_at(out: resolved.Resolved, span: token.Span) -> i64
 # The braced name `name` of declaration `owner`: the one that meant `local`
 # where one did, else the first the walk met.
 function held(r: state.Resolver, owner: i64, name: str, local: i64) -> braced_names.Braced?
-    first: braced_names.Braced? @ fail(code: "none", msg: "no plain literal holds the name")
+    first: braced_names.Braced? @= fail(code: "none", msg: "no plain literal holds the name")
 
     for b in r.braced
         if b.owner == owner && b.name == name
@@ -169,10 +169,10 @@ function held(r: state.Resolver, owner: i64, name: str, local: i64) -> braced_na
 
 # The holes of the literal at `literal` that read `name`.
 function naming(s: source.Source, literal: token.Span, name: str) -> [plain_holes.PlainHole]
-    out: [plain_holes.PlainHole] @ []
+    out: [plain_holes.PlainHole] @= []
 
     for h in plain_holes.holes(s.text, span: literal)
-        reads: bool @ false
+        reads: bool @= false
 
         for n in h.names
             if source.span_text(s, n) == name

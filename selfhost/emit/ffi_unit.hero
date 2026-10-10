@@ -44,7 +44,7 @@ constant UNIT_MARKER: str
 
 # Every diagnostic a check unit's line says about a lend's parameter.
 function lend_refusals(s: source.Source, decls: [ast.Decl], tree: ast.Ast, answered: [pointee_ask.Answered], line: str) -> [diag.Diagnostic]
-    out: [diag.Diagnostic] @ []
+    out: [diag.Diagnostic] @= []
     whole = whole_void(s, decls, tree, line: line)
 
     if !whole.is_err()
@@ -71,7 +71,7 @@ function whole_void(s: source.Source, decls: [ast.Decl], tree: ast.Ast, line: st
     param = parts[1]
     header_type = ffi_pointee.trim_quote(tail_from(parts, at: 2))
     at = parameter_at(s, decls, tree, name: name, param: param)?
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "ffi_parameter_type",
         message: "`" + param + "` of `" + name + "` lends a whole record to C, and the header takes it as `" + header_type + "` — C converts any record's address to that in silence, and how far it reaches is another argument this declaration ties to nothing",
         span: at
@@ -85,13 +85,13 @@ function whole_void(s: source.Source, decls: [ast.Decl], tree: ast.Ast, line: st
 # parameter's unit line: the parameter is every counted one whose pointee,
 # through every typedef, is X — or the `aka` clang adds after a typedef's name.
 function unit_unsized(s: source.Source, decls: [ast.Decl], tree: ast.Ast, answered: [pointee_ask.Answered], line: str) -> [diag.Diagnostic]
-    out: [diag.Diagnostic] @ []
+    out: [diag.Diagnostic] @= []
     named = ffi_lookup.after(text: line, marker: "incomplete type '")
 
     if named.is_err()
         return out
     first = ffi_lookup.up_to_quote(named.must())
-    aka: str @ ""
+    aka: str @= ""
     plain = ffi_lookup.after(text: named.must(), marker: "(aka '")
 
     if !plain.is_err()
@@ -107,7 +107,7 @@ function unit_unsized(s: source.Source, decls: [ast.Decl], tree: ast.Ast, answer
 
         if at.is_err()
             continue
-        d: diag.Diagnostic @ diag.new_diagnostic(
+        d: diag.Diagnostic @= diag.new_diagnostic(
             code: "ffi_parameter_type",
             message: "`" + one.asked.param + "` of `" + one.asked.name + "` is declared `counted_by`, and the header's `" + one.header_type + "` points at `" + one.pointee + "`, which it leaves incomplete — C counts in a type only C can size, so no count can be held to what is lent",
             span: at.must()
@@ -135,8 +135,8 @@ function parameter_at(s: source.Source, decls: [ast.Decl], tree: ast.Ast, name: 
 # A marker's words from `at` on, joined back: the header's type may be
 # several words (`struct pfd *`).
 function tail_from(parts: [str], at: i64) -> str
-    tail: [str] @ []
-    index: i64 @ at
+    tail: [str] @= []
+    index: i64 @= at
 
     while index < parts.len()
         tail @ tail.push(parts[index])

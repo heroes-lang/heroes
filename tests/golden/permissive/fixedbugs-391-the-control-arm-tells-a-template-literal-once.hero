@@ -6,7 +6,7 @@
 
 function main()
     x = 7
-    m: {str: i64} @ {}
+    m: {str: i64} @= {}
     m[f"ключ{x}"] @ 2
     print(f"{m[`ключ${x}`].must()}")  #~ unexpected_character
     y = ключ  #~ unexpected_character

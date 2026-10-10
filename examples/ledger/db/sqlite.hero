@@ -229,7 +229,7 @@ record Statement
 # wrote a file would have to clean it up, and its output would depend on
 # what a previous run left behind.
 function opened() -> Db?
-    db: CDb @ nullptr
+    db: CDb @= nullptr
 
     if sqlite3_open(":memory:".cstr(), @db) != SQLITE_OK
         # **A FAILED OPEN STILL HANDS BACK A CONNECTION, and dropping it leaks
@@ -274,7 +274,7 @@ function closed(@db: Db) -> i64
 # belt and braces: the cell is null when SQLite chooses not to fill it, and a
 # refusal with an empty reason is the shape this program exists to refuse.
 function run(db: Db, sql: str) -> ()?
-    problem: str? @ fail(code: "none", msg: "sqlite has not answered yet")
+    problem: str? @= fail(code: "none", msg: "sqlite has not answered yet")
 
     if sqlite3_exec(db: db.handle, sql: sql.cstr(), callback: nullptr, context: nullptr, error: @problem) != SQLITE_OK
         return fail(code: "statement_refused", msg: sql + ": " + problem.default(why(db)))
@@ -288,8 +288,8 @@ function changed(db: Db) -> i64
 # A prepared statement, which is the shape that makes this program different
 # from `examples/sqlite/`: prepared once, bound and stepped many times.
 function prepared(db: Db, sql: str) -> Statement?
-    statement: CStmt @ nullptr
-    tail: cstr @ nullptr
+    statement: CStmt @= nullptr
+    tail: cstr @= nullptr
 
     if sqlite3_prepare_v2(db: db.handle, sql: sql.cstr(), length: -1, statement: @statement, tail: @tail) != SQLITE_OK
         return fail(code: "cannot_prepare", msg: sql + ": " + why(db))
@@ -352,7 +352,7 @@ function bind_float(statement: Statement, at: i64, value: f64) -> ()?
 # release safe: SQLite has its own copy by then, so a rearrangement that moves
 # the `step` cannot break it (panel 124, ratified 2026-09-09).
 function bind_text(statement: Statement, at: i64, text: str) -> ()?
-    held: cstr @ text.lease()
+    held: cstr @= text.lease()
     rc = sqlite3_bind_text(
         statement: statement.handle,
         column: to_i32(at).must(),

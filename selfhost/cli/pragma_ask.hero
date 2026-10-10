@@ -67,8 +67,8 @@ record Asked
 # `_Pragma`, each name told once, in the order the lists and their
 # declarations come.
 function told(t: toolchain.Toolchain, probings: [probing.Probing], s: source.Source, decls: [ast.Decl]) -> [diag.Diagnostic]
-    out: [diag.Diagnostic] @ []
-    seen: {str: bool} @ {}
+    out: [diag.Diagnostic] @= []
+    seen: {str: bool} @= {}
 
     for one in probings
         if one.probe.is_err() || one.probe.must().read.is_err()
@@ -90,14 +90,14 @@ function told(t: toolchain.Toolchain, probings: [probing.Probing], s: source.Sou
 # `headers`, the compiler's own headers' groups left out (their names are
 # the runtime's), each once, in declaration order.
 function asked_of(s: source.Source, decls: [ast.Decl], headers: [str]) -> [Asked]
-    wanted: {str: bool} @ {}
+    wanted: {str: bool} @= {}
 
     for header in headers
         if !emit_externs.is_own(header)
             wanted[header] @ true
 
-    out: [Asked] @ []
-    seen: {str: bool} @ {}
+    out: [Asked] @= []
+    seen: {str: bool} @= {}
 
     for decl in decls
         found = macro_guard.header_of(decl)
@@ -152,9 +152,9 @@ function with_name(out: [Asked], @seen: {str: bool}, s: source.Source, span: tok
 
 # ORDER: by name, as `sort` orders a `str`, which the question unit's lines follow; `out` with each releaser a mark's span names, each called with one argument.
 function with_words(out: [Asked], @seen: {str: bool}, s: source.Source, span: token.Span, header: str) -> [Asked]
-    words: {str: bool} @ {}
+    words: {str: bool} @= {}
     macro_guard.words_into(@words, text: source.span_text(s, span))
-    grown: [Asked] @ out
+    grown: [Asked] @= out
 
     for word in sort(keys(words))
         if seen[word].is_err()
@@ -166,15 +166,15 @@ function with_words(out: [Asked], @seen: {str: bool}, s: source.Source, span: to
 # The question unit: the headers, then each name as the compiler writes it,
 # under its own file name.
 function unit(headers: [str], asked: [Asked]) -> str
-    lines: [str] @ c_text.includes(headers)
+    lines: [str] @= c_text.includes(headers)
 
     for each in asked
         lines @ lines.push(c_text.line_directive(at: 1, file: PREFIX + each.name))
         lines @ lines.push("(" + each.name + ");")
 
         if each.arity >= 0
-            zeros: [str] @ []
-            k: i64 @ 0
+            zeros: [str] @= []
+            k: i64 @= 0
 
             while k < each.arity
                 zeros @ zeros.push("0")
@@ -227,10 +227,10 @@ function preprocessed(dir: str, text: str, words: [str]) -> str?
 # under a question's own file is that name's. Read by bytes, and only the
 # lines that open with `#`: the text is every header's, megabytes for some.
 function read(said: str) -> {str: str}
-    out: {str: str} @ {}
-    current: str @ ""
+    out: {str: str} @= {}
+    current: str @= ""
     n = said.len()
-    at: i64 @ 0
+    at: i64 @= 0
 
     while at < n
         while at < n && (said[at] == 32 || said[at] == 9)
@@ -241,7 +241,7 @@ function read(said: str) -> {str: str}
         while at < n && said[at] != 10
             at @ at + 1
 
-        end: i64 @ at
+        end: i64 @= at
 
         if end > start && said[end - 1] == 13
             end @ end - 1
@@ -263,13 +263,13 @@ function read(said: str) -> {str: str}
 
 # The file a line marker names, between its first two quotes.
 function marked_file(line: str) -> str
-    at: i64 @ 0
+    at: i64 @= 0
 
     while at < line.len() && line[at] != 34
         at @ at + 1
 
     from = at + 1
-    end: i64 @ from
+    end: i64 @= from
 
     while end < line.len() && line[end] != 34
         end @ end + 1
@@ -280,13 +280,13 @@ function marked_file(line: str) -> str
 
 # The refusal, at the name's own declaration.
 function diagnostic(asked: Asked, pragma: str) -> diag.Diagnostic
-    where: str @ "where this program's C calls `" + asked.name + "`"
+    where: str @= "where this program's C calls `" + asked.name + "`"
 
     if asked.kind == "field"
         where @ "where this program's C reads the field `" + asked.name + "`"
     else if asked.kind == "type"
         where @ "where this program's C names the type `" + asked.name + "`"
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "ffi_macro_name",
         message: "`" + asked.header + "` defines `" + asked.name + "` as a macro whose expansion holds a `_Pragma`: " + where + ", the pragma changes how clang judges every line after it, the checks of this program's bindings among them",
         span: asked.span
@@ -306,7 +306,7 @@ test "each name is asked as the compiler writes it, under a file of its own"
     s = source.new_source(name: "t.hero", text: text)
     parsed = parse_of(s)
     asked = asked_of(s, parsed, headers: ["hero_os.h", "h.h"])
-    names: [str] @ []
+    names: [str] @= []
 
     for each in asked
         names @ names.push(each.name + "/" + each.kind + "/" + each.arity.to_str())

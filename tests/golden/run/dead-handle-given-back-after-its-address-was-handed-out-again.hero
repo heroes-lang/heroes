@@ -21,7 +21,7 @@ function closed(@n: Node)
     node_free(n: n)
 
 function main()
-    a: Node @ node_new()
+    a: Node @= node_new()
     closed(@a)
     b = node_new()
     print("the new node reads ", node_value(n: b))

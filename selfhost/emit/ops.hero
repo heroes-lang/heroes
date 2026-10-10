@@ -44,7 +44,7 @@ use checker
 # `p` is the program held with its index, built once per program
 # (`instances.Held`, defect 492): every lookup below reads it.
 function call(@w: writer.Writer, p: instances.Held, f: containers.Function, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], callee: ir.Callee, run: ir.Run, arguments: [str], target: str?, instance: [i64])
-    assign: str @ ""
+    assign: str @= ""
 
     if !target.is_err()
         assign @ target.must() + " = "
@@ -98,7 +98,7 @@ function call(@w: writer.Writer, p: instances.Held, f: containers.Function, c: s
                 field_lend.lent(@w, c, s, decls, f, run: run, into: target.must())
                 return
 
-            in_emitted: bool @ false
+            in_emitted: bool @= false
 
             for one in builtins.EMITTED
                 if one == builtin_name
@@ -110,8 +110,8 @@ function call(@w: writer.Writer, p: instances.Held, f: containers.Function, c: s
                 # push's second argument is a PLACE, not a value: the
                 # runtime copies through the element descriptor, the
                 # only way one function can append an i64 and a Point.
-                written: [str] @ []
-                at: i64 @ 0
+                written: [str] @= []
+                at: i64 @= 0
 
                 for text in arguments
                     if builtin_name == "push" && at == 1
@@ -192,7 +192,7 @@ function call(@w: writer.Writer, p: instances.Held, f: containers.Function, c: s
             # §7 says the generated C compiles without a single warning,
             # and the compiler's own warning must never be routed to the
             # author, under any option this sitting weighed.
-            cast: str @ ""
+            cast: str @= ""
 
             if assign.len() == 0
                 cast @ "(void)"
@@ -225,7 +225,7 @@ function call(@w: writer.Writer, p: instances.Held, f: containers.Function, c: s
             when = handle_result.success_c(c, s, decls, decl: e.decl)
             keeps = !when.is_err() || handle_result.reads_result(decls, decl: e.decl)
             invocation = extern_name + "(" + crossed.join(", ") + ")"
-            result_name: str? @ target
+            result_name: str? @= target
 
             if keeps && assign.len() == 0
                 writer.line(@w, text: "    {")
@@ -289,13 +289,13 @@ function guard_arguments(p: instances.Held, c: state.Checked, decls: [ast.Decl],
     if declared.is_err()
         return arguments
     callee = p.program.functions[declared.must()]
-    out: [str] @ []
-    index: i64 @ 0
+    out: [str] @= []
+    index: i64 @= 0
 
     for argument in arguments
-        is_cstr: bool @ false
-        is_out: bool @ false
-        cast: bool @ false
+        is_cstr: bool @= false
+        is_out: bool @= false
+        cast: bool @= false
 
         if index < callee.params.len()
             slot = callee.slots[callee.params[index]]
@@ -404,7 +404,7 @@ test "a Heroes call names the copy, an extern stays bare with its cstr guarded"
         span: token.Span(start: 60, end: 61)
     )
     empty_instance: [i64] = []
-    w: writer.Writer @ writer.new_writer("t")
+    w: writer.Writer @= writer.new_writer("t")
     call(
         @w,
         instances.hold(p),

@@ -1,11 +1,11 @@
 # M-inferred-cell step 1, panel 209's R1b and the spec's own § 13 shape
-# (`db: Db @ nullptr` re-bound only by `open(@db)`): a write through an `@`
+# (`db: Db @= nullptr` re-bound only by `open(@db)`): a write through an `@`
 # argument is a re-binding, counted by `resolve/writes.inout_root`, so a
 # cell written only that way is a cell and not a binding in disguise.
 function bump(@n: i64)
     n @ n + 1
 
 function main()
-    v: i64 @ 5
+    v: i64 @= 5
     bump(@v)
     print(v)

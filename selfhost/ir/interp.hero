@@ -33,8 +33,8 @@ use inventory
 # `holes[i]`; `pieces` has one more entry than `holes`.
 function desugar(@b: build.Lowering, c: state.Checked, s: source.Source, pieces: [token.Span], holes: [i64], values: [i64], span: token.Span) -> i64
     str_id = table.str_ty(c.types)
-    parts: [i64] @ []
-    at: i64 @ 0
+    parts: [i64] @= []
+    at: i64 @= 0
 
     while at < pieces.len()
         text = lex_interp.piece_text(source.span_text(s, pieces[at]))
@@ -50,8 +50,8 @@ function desugar(@b: build.Lowering, c: state.Checked, s: source.Source, pieces:
 
     if parts.len() == 0
         return literal(@b, text: "", ty: str_id, span: span)
-    acc: i64 @ parts[0]
-    next: i64 @ 1
+    acc: i64 @= parts[0]
+    next: i64 @= 1
 
     while next < parts.len()
         acc @ build.emit(@b, op: .binary(op: .add, left: acc, right: parts[next]), ty: str_id, span: span)

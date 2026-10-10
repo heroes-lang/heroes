@@ -39,12 +39,12 @@ function nearest(name: str, candidates: [str]) -> [str]
 # costs a comparison of two numbers each.
 function nearest_in(name: str, lists: [[str]]) -> [str]
     size = name.len()
-    allowed: i64 @ 2
+    allowed: i64 @= 2
 
     if name.chars().len() < 4
         allowed @ 1
-    near: [str] @ []
-    band: [i64] @ []
+    near: [str] @= []
+    band: [i64] @= []
 
     for candidates in lists
         for candidate in candidates
@@ -72,7 +72,7 @@ function already_listed(xs: [str], x: str) -> bool
 function same_ignoring_case(a: str, b: str) -> bool
     if a.len() != b.len()
         return false
-    i: i64 @ 0
+    i: i64 @= 0
 
     while i < a.len()
         if bytes.lower(a[i]) != bytes.lower(b[i])
@@ -117,8 +117,8 @@ function one_reading(name: str, candidate: str) -> bool
 
     if name[0] != candidate[0] || name[name.len() - 1] != candidate[candidate.len() - 1]
         return false
-    longer: str @ name
-    other: str @ candidate
+    longer: str @= name
+    other: str @= candidate
 
     if candidate.len() > name.len()
         longer @ candidate
@@ -135,7 +135,7 @@ function one_reading(name: str, candidate: str) -> bool
 # The first byte at which two names differ, or the shorter's length where
 # one begins the other.
 function first_difference(a: str, b: str) -> i64
-    i: i64 @ 0
+    i: i64 @= 0
 
     while i < a.len() && i < b.len() && a[i] == b[i]
         i @ i + 1
@@ -158,12 +158,12 @@ function same_part(word: str, left: i64, right: i64) -> bool
 
 # How many bytes the part of `word` holding byte `at` has.
 function part_length(word: str, at: i64) -> i64
-    start: i64 @ at
+    start: i64 @= at
 
     while start > 0 && same_part(word, left: start - 1, right: start)
         start @ start - 1
 
-    finish: i64 @ at
+    finish: i64 @= at
 
     while finish + 1 < word.len() && same_part(word, left: finish, right: finish + 1)
         finish @ finish + 1
@@ -175,7 +175,7 @@ function part_length(word: str, at: i64) -> i64
 function swapped(a: str, b: str) -> bool
     if a.len() != b.len()
         return false
-    i: i64 @ 0
+    i: i64 @= 0
 
     while i < a.len() && a[i] == b[i]
         i @ i + 1
@@ -188,21 +188,21 @@ function swapped(a: str, b: str) -> bool
 # is asked about. The did-you-mean asks `within` below instead, of every name
 # in scope.
 function distance(a: str, b: str) -> i64
-    previous: [i64] @ []
-    j: i64 @ 0
+    previous: [i64] @= []
+    j: i64 @= 0
 
     while j <= b.len()
         previous @ previous.push(j)
         j @ j + 1
 
-    i: i64 @ 0
+    i: i64 @= 0
 
     while i < a.len()
-        current: [i64] @ [i + 1]
-        k: i64 @ 0
+        current: [i64] @= [i + 1]
+        k: i64 @= 0
 
         while k < b.len()
-            cost: i64 @ 1
+            cost: i64 @= 1
 
             if a[i] == b[k]
                 cost @ 0
@@ -215,7 +215,7 @@ function distance(a: str, b: str) -> i64
     return previous[b.len()]
 
 function min3(a: i64, b: i64, c: i64) -> i64
-    least: i64 @ a
+    least: i64 @= a
 
     if b < least
         least @ b
@@ -256,28 +256,28 @@ function within(@band: [i64], a: str, b: str, most: i64) -> bool
     while band.len() < width
         band @ band.push(over)
 
-    d: i64 @ 0
+    d: i64 @= 0
 
     while d < width
         j = d - most
-        cell: i64 @ over
+        cell: i64 @= over
 
         if j >= 0 && j <= long
             cell @ j
         band[d] @ cell
         d @ d + 1
 
-    i: i64 @ 1
+    i: i64 @= 1
 
     while i <= a.len()
         here = a[i - 1]
-        least: i64 @ over
-        left: i64 @ over
+        least: i64 @= over
+        left: i64 @= over
         d @ 0
 
         while d < width
             j = i + d - most
-            cell: i64 @ over
+            cell: i64 @= over
 
             if j == 0
                 cell @ i
@@ -392,12 +392,12 @@ test "a band of the table answers what the whole table answers"
 
     # One band lent to every pair, as `nearest` lends it: what a pair before
     # left in it is never read.
-    band: [i64] @ []
+    band: [i64] @= []
 
     for set in [words, names]
         for a in set
             for b in set
-                most: i64 @ -1
+                most: i64 @= -1
 
                 while most <= 3
                     assert within(@band, a: a, b: b, most: most) == (distance(a: a, b: b) <= most)
@@ -405,12 +405,12 @@ test "a band of the table answers what the whole table answers"
 
 # Every word of at most `longest` letters drawn from `letters`.
 function words_of(letters: [str], longest: i64) -> [str]
-    out: [str] @ [""]
-    last: [str] @ [""]
-    size: i64 @ 0
+    out: [str] @= [""]
+    last: [str] @= [""]
+    size: i64 @= 0
 
     while size < longest
-        longer: [str] @ []
+        longer: [str] @= []
 
         for word in last
             for letter in letters
@@ -469,11 +469,11 @@ function walked_nearest(name: str, candidates: [str]) -> [str]
         if c != name && same_ignoring_case(a: name, b: c)
             return [c]
 
-    allowed: i64 @ 2
+    allowed: i64 @= 2
 
     if name.chars().len() < 4
         allowed @ 1
-    near: [str] @ []
+    near: [str] @= []
 
     for candidate in candidates
         if candidate != name && !already_listed(near, candidate) && near.len() < 3

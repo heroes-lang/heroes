@@ -116,14 +116,14 @@ function tally(x: i64, @seen: [str])
     seen @ seen.push("rest")
 
 function main()
-    x: i64 @ 0
+    x: i64 @= 0
 
     while x < 13
         print(ladder(x))
         x @ x + 1
 
-    count: i64 @ 0
-    seen: [str] @ []
+    count: i64 @= 0
+    seen: [str] @= []
     x @ 0
 
     while x < 9

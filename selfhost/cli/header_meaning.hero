@@ -38,7 +38,7 @@ function changed(t: toolchain.Toolchain, under: compiling.Compiling, before: [st
 # the refusal's own, absent where the move gives it one, and is no change of
 # meaning.
 function differing(one: {str: str}, two: {str: str}, names: [str]) -> [str]
-    out: [str] @ []
+    out: [str] @= []
 
     for name in names
         was = one[name].default("")
@@ -59,16 +59,16 @@ function read_of(t: toolchain.Toolchain, under: compiling.Compiling, headers: [s
 # read in one pass however many names are asked (a header list of the
 # compiler's own preprocesses to thousands of lines).
 function readings(lines: [str], names: [str]) -> {str: str}
-    wanted: {str: bool} @ {}
+    wanted: {str: bool} @= {}
 
     for name in names
         wanted[name] @ true
 
-    macros: {str: str} @ {}
-    bodies: {str: str} @ {}
-    declared: {str: str} @ {}
-    named: {str: str} @ {}
-    index: i64 @ 0
+    macros: {str: str} @= {}
+    bodies: {str: str} @= {}
+    declared: {str: str} @= {}
+    named: {str: str} @= {}
+    index: i64 @= 0
 
     while index < lines.len()
         row = clang_place.without_return(lines[index])
@@ -91,7 +91,7 @@ function readings(lines: [str], names: [str]) -> {str: str}
                         declared[word.name] @ shape.text
         index @ index + 1
 
-    out: {str: str} @ {}
+    out: {str: str} @= {}
 
     for name in names
         if macros[name].default("") != ""
@@ -115,13 +115,13 @@ function macro_of(row: str) -> Directive?
     for opening in ["#define ", "#undef "]
         if strings.starts_with(text: row, prefix: opening)
             rest = row.slice(from: opening.len(), to: row.len())
-            end: i64 @ 0
+            end: i64 @= 0
 
             while end < rest.len() && ident(rest[end])
                 end @ end + 1
 
             if end > 0
-                text: str @ ""
+                text: str @= ""
 
                 if opening == "#define "
                     text @ folded(row)
@@ -135,8 +135,8 @@ record Word
     at: i64
 
 function identifiers(row: str) -> [Word]
-    out: [Word] @ []
-    index: i64 @ 0
+    out: [Word] @= []
+    index: i64 @= 0
 
     while index < row.len()
         if ident(row[index]) && !(row[index] >= '0' && row[index] <= '9')
@@ -163,12 +163,12 @@ record Shape
     text: str
 
 function after_name(lines: [str], row: i64, from: i64) -> Shape
-    text: [str] @ []
-    depth: i64 @ 0
-    opened: bool @ false
-    seen_paren: bool @ false
-    at: i64 @ row
-    column: i64 @ from
+    text: [str] @= []
+    depth: i64 @= 0
+    opened: bool @= false
+    seen_paren: bool @= false
+    at: i64 @= row
+    column: i64 @= from
 
     while at < lines.len() && at < row + 400
         line = lines[at]
@@ -207,9 +207,9 @@ function ident(c: u8) -> bool
 
 # A text with every run of blanks one space, and none at its ends.
 function folded(text: str) -> str
-    words: [str] @ []
-    from: i64 @ 0
-    index: i64 @ 0
+    words: [str] @= []
+    from: i64 @= 0
+    index: i64 @= 0
 
     while index < text.len()
         if text[index] == ' ' || text[index] == '\t'

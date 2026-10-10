@@ -96,7 +96,7 @@ function new_diagnostic(code: str, message: str, span: token.Span) -> Diagnostic
 # lexer's report of each is then withdrawn. A map, asked once per report, so
 # a file of many reports costs their sum and never their product.
 function carried(said: [Diagnostic]) -> {i64: bool}
-    starts: {i64: bool} @ {}
+    starts: {i64: bool} @= {}
 
     for d in said
         for span in d.carries
@@ -225,7 +225,7 @@ function render_line(d: Diagnostic, s: source.Source) -> str
     )
 
 test "a diagnostic starts empty and grows by mutation"
-    d: Diagnostic @ new_diagnostic(
+    d: Diagnostic @= new_diagnostic(
         code: "tab_in_line",
         message: "a tab is a compile error — use spaces",
         span: token.Span(start: 3, end: 4)

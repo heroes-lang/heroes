@@ -33,8 +33,8 @@ extern "netdb.h"
     function freeaddrinfo(ai: AI consumes)
 
 function main()
-    h: Hints @ Hints(ai_family: 0, ai_socktype: 1)
-    r: AI @ nullptr
+    h: Hints @= Hints(ai_family: 0, ai_socktype: 1)
+    r: AI @= nullptr
     rc = getaddrinfo(node: "127.0.0.1".cstr(), service: nullptr, hints: @h, res: @r)
     print(rc)
     freeaddrinfo(r)

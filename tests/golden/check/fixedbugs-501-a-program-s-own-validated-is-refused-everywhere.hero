@@ -41,7 +41,7 @@ function g<validated>(x: validated) -> validated  #~ builtin_name_taken
     return x
 
 function loop() -> i64
-    total: i64 @ 0
+    total: i64 @= 0
 
     for validated in [1, 2]  #~ builtin_name_taken
         total @ total + validated
