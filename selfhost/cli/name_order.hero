@@ -1,0 +1,86 @@
+# A name told absent from its header, asked again in another order of the
+# module's headers (design.md §4.19, §4.17; panel 204's R3, ratified
+# 2026-10-10, the ffi-pragmatist's widening; defect 563). A header's
+# declarations can depend on what was read before it: GLFW's `glfw3.h`
+# defines `GL_GLEXT_LEGACY` and includes `OpenGL/gl.h`, which then declares
+# no `GL_ABGR_EXT`, so the group naming `gl.h` written below it was told
+# *`OpenGL/gl.h` declares no `GL_ABGR_EXT`*, false of the header read alone;
+# and GMP's `gmp.h` declares `__gmpz_out_str` only after `stdio.h`, so the
+# group written above `stdio.h`'s was told it declares no such name.
+#
+# So, on the failure path alone, the header is asked with one line naming
+# the name after it (`cli/order_trial.hero`): alone, then with each other
+# group of its module moved across it (`header_order.search`), then, where
+# neither declares it, after each header of C's own the unit does not read
+# (`header_order.standard`). The first that declares it is told in place of
+# the false headline and its note.
+
+use source
+use ast
+use diag
+use emit/ffi_declared
+use cli/toolchain
+use cli/compiling
+use cli/order_trial
+use cli/order_groups
+use cli/header_order
+use cli/strings
+
+function unknown(d: diag.Diagnostic, s: source.Source, decls: [ast.Decl], t: toolchain.Toolchain, under: compiling.Compiling, unit_headers: [str]) -> diag.Diagnostic
+    if d.code != "ffi_unknown_name"
+        return d
+    bound = order_groups.bound_at(s, decls, span: d.span)
+
+    if bound.is_err()
+        return d
+    name = bound.must().name
+    header = bound.must().header
+    module = source.component_at(s, d.span.start)
+    question = "static void hero_order_q(void) { (void)(" + name + "); }"
+    written = order_trial.theirs(unit_headers)
+    alone = order_trial.compiled(t, words: compiling.unit_words(under), text: order_trial.opening([header], question: question)).compiles
+    found = header_order.search(
+        s,
+        decls,
+        t,
+        under: under,
+        written: written,
+        target: header,
+        module: module,
+        question: question
+    )
+    out: diag.Diagnostic @ d
+    notes: [str] @ []
+
+    for note in d.notes
+        if !strings.starts_with(text: note, prefix: ffi_declared.UNKNOWN)
+            notes @ notes.push(note)
+
+    if !found.is_err()
+        out.message @ "`" + header + "` declares `" + name + "` only in another order of this module's headers: clang read them in the order the groups are written and could not find it"
+
+        if alone
+            out.message @ "`" + header + "` declares `" + name + "` read alone, and not where this module's groups put it: clang read them in the order the groups are written and could not find it"
+        notes @ notes.push(header_order.move_note(s, decls, target: header, move: found.must(), at: d.span.start))
+        meant = header_order.meaning_note(s, decls, t, under: under, move: found.must(), module: module)
+
+        if meant != ""
+            notes @ notes.push(meant)
+        out.notes @ notes
+        return out
+
+    if alone
+        out.message @ "`" + header + "` declares `" + name + "` read alone, and not where this unit reads it, after the headers before it: clang could not find it there"
+        out.notes @ notes.push(
+            "a header this unit reads before `" + header + "` changes what it declares, and no order of this module's groups reads it alone"
+        )
+        return out
+    prerequisite = header_order.standard(t, under: under, written: written, target: header, question: question)
+
+    if prerequisite.is_err()
+        return d
+    out.message @ "`" + header + "` declares `" + name + "` only after `" + prerequisite.must() + "`, a header of C's own it does not include: clang read it without and could not find it"
+    out.notes @ notes.push(
+        "write a group naming `" + prerequisite.must() + "` above this one, which a module's unit then reads first; a group binds at least one name, and one holding only a record stands where it is written (§ 13)"
+    )
+    return out

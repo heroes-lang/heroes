@@ -21,6 +21,7 @@ use cli/header_refused
 use cli/header_alone
 use cli/macro_twice
 use cli/header_order
+use cli/name_order
 use cli/inline_only
 use cli/group_file
 use diag
@@ -75,11 +76,11 @@ function of_refusal(failed: ()?, art: compile.Artifact, s: source.Source, t: too
 
     # A name told absent from a header that declares it read alone is retold
     # with the move of a group that reads it so (panel 204's R3,
-    # `cli/header_order.hero`).
+    # `cli/name_order.hero`).
     theirs: [diag.Diagnostic] @ []
 
     for d in explained(message, art, s, answered, struct_tags: struct_tags, asked: answer)
-        theirs @ theirs.push(header_order.unknown(d, s, art.decls, t, under: under, unit_headers: unit_headers))
+        theirs @ theirs.push(name_order.unknown(d, s, art.decls, t, under: under, unit_headers: unit_headers))
 
     if theirs.len() > 0
         _ = compile.stage(theirs, s).is_err()
