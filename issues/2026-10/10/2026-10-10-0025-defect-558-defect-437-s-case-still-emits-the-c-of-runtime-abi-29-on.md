@@ -3,7 +3,7 @@ kind: defect
 area: golden
 milestone: none
 filed: 2026-10-10
-commit: none
+commit: 4bd4adc85e672224d1fbd61bdefc6b996f54ad91
 github: none
 ---
 
@@ -14,3 +14,5 @@ github: none
     **Class: blocking**, 2026-10-10 (`.claude/rules/verification.md` § Bounded discovery): a red CI.
 
     **Widened 2026-10-10**, read at 00:31: the CI's Linux x86-64 leg of the same run is red on the same case and only on it, 7,275 passed and 1 failed (job log through the API, kept beside the arm64 one); Darwin arm64 is green, the case skipped there as on this Mac.
+
+    Repaired at `4bd4adc8`, 2026-10-10 (the coordinator, at batch 18's close), gated by its case and the round's gate; the net is owed at the batch's close. The case's emission blessed in `heroes-linux-arm64:latest` (Debian clang 22.1.8) with the round's compiler built from its regenerated seed at `f6528c53`: `emission` whole there read 1168 passed and 1 failed before, the one red this case, so the shape beside it (every emission of a case this Mac skips) is this case alone; 1169 and 0 after the bless and on a second run; only this file copied back. The 860 moved lines are batch 17's and 18's repairs (defect 470's `hero_str_release_at`, 472's one-line prologue, the `#line` renumbering). The CI's two Linux legs judge it after the push.
