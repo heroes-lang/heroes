@@ -1,0 +1,12 @@
+# fixedbugs, defect 590, lane b20-pragma, 2026-10-11, a shape beside
+# `fixedbugs-590-a-header-s-fp-eval-method-leaves-the-unit-s-math-h-its-own`:
+# the method is set by a macro's `_Pragma`, in
+# `fixedbugs-590-a-header-that-sets-its-evaluation-method.h`, which the
+# group's header includes, and reached the unit's `<math.h>` the same way,
+# exit 2 before. The unit's own method is read before every group's header.
+
+extern "fixedbugs-590-a-fp-eval-method-in-a-header-the-group-s-header-includes.h"
+    function llabs(x: i64) -> i64
+
+function main()
+    print(llabs(-7) * 6)

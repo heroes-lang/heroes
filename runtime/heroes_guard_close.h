@@ -37,6 +37,7 @@
 #pragma pop_macro("HERO_ARRAY_STATIC_EMPTY")
 #pragma pop_macro("HERO_DIR_DIRECTORIES")
 #pragma pop_macro("HERO_DIR_FILES")
+#pragma pop_macro("HERO_FLT_EVAL_METHOD")
 #pragma pop_macro("HERO_FS_ABSENT")
 #pragma pop_macro("HERO_FS_DIRECTORY")
 #pragma pop_macro("HERO_FS_FILE")
