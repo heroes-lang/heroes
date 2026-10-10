@@ -184,6 +184,7 @@ function read(said: str) -> {str: Answer}
 
     out: {str: Answer} @ {}
 
+    # ORDER: none — a table keyed by name.
     for name in keys(types)
         out[name] @ Answer(
             type: types[name].must(),

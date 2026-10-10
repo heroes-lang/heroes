@@ -70,11 +70,15 @@ function told(t: toolchain.Toolchain, probings: [probing.Probing], s: source.Sou
     for one in lists
         defined = definitions(t, one.probe.must())
 
+        # ORDER: none — each name's list grows in the lists' order, whatever
+        # order the names are walked in.
         for name in keys(defined)
             defining[name] @ defining[name].default([]).push(Defining(list: at, is_function: defined[name].must()))
 
         at @ at + 1
 
+    # ORDER: by name, as `sort` orders a `str` — the diagnostics are staged
+    # in this order, so a program's refusals read alike on every run.
     for name in sort(keys(defining))
         found = defining[name].must()
         count: i64 @ 0
@@ -315,6 +319,7 @@ function merged(tops: [Top]) -> Merged
     out: {str: bool} @ {}
     inline: {str: bool} @ {}
 
+    # ORDER: none — two sets are built, keyed by name.
     for name in keys(seen)
         if first_static[name].is_err()
             if !functions[name].is_err()

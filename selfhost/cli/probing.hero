@@ -225,8 +225,12 @@ function code_of(failed: ()?) -> str
         .ok    => return ""
         .err e => return e.code
 
+# ORDER: ascending — no caller observes it today (each builds a set, sorts,
+# or asks whether any one holds), and sorted, one that does reads alike on
+# every run.
 function keys_of(set: {i64: bool}) -> [i64]
-    return keys(set)
+    return sort(keys(set))
 
+# ORDER: by path, as `sort` orders a `str` — the one caller builds a table.
 function keys_of_text(table: {str: str}) -> [str]
-    return keys(table)
+    return sort(keys(table))
