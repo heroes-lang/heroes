@@ -30,6 +30,7 @@ use ast
 use source
 use check/state
 use check/table
+use ir/layout
 use emit/writer
 use parse
 use resolve
@@ -38,16 +39,40 @@ use checker
 constant DEFINITION: str
     "#define HERO_COPY(dst, src) do { _Static_assert(__builtin_types_compatible_p(__typeof__(dst), __typeof__(src)), \"heroes-copy\"); __builtin_memmove(&(dst), &(src), sizeof(dst)); } while (0)"
 
+# **A counted struct's copy passes both addresses through `hero_slot_escape`**
+# (defect 566, 2026-10-10), the runtime's identity defect 470's release uses,
+# so it is a copy between two pointers clang cannot follow to their slots.
+# Slot to slot, a chain of counted records built in one body is ten thousand
+# copies in one block, and `MemCpyOpt`'s stack-move asks post-dominance across
+# that block for each: clang 23 on the Windows box spent 120.6 of 129 s there
+# on the thousand-deep case, which passed the CI's 120 s watchdog. Through the
+# identity, 4, 27 and 139 s at 250, 500 and 1,000 levels became 4, 4 and 16.
+# A struct holding nothing counted keeps the plain copy, which clang promotes
+# to registers: an `i64` chain 7,000 deep took 28 s there plain and 48 s
+# through the identity. It rests on defect 470's premise, the runtime a unit of
+# its own, which `release.hero`'s last test holds.
+constant DEFINITION_HELD: str
+    "#define HERO_COPY_HELD(dst, src) do { _Static_assert(__builtin_types_compatible_p(__typeof__(dst), __typeof__(src)), \"heroes-copy\"); __builtin_memmove(hero_slot_escape(&(dst)), hero_slot_escape(&(src)), sizeof(dst)); } while (0)"
+
 # The statement that gives `target` the value `value` has: a byte copy where
 # the unit defines `HERO_COPY` and the type is one of its own structs, the
 # assignment everywhere else. `value` must be a place or a compound literal.
 function assignment(w: writer.Writer, c: state.Checked, decls: [ast.Decl], ty: i64, target: str, value: str) -> str
-    return copied(w, owned: own_struct(c, decls, ty: ty), target: target, value: value)
+    return copied(
+        w,
+        owned: own_struct(c, decls, ty: ty),
+        held: layout.is_refcounted(c, ty),
+        target: target,
+        value: value
+    )
 
 # The same, where the site knows whether the type is one of the unit's own
-# structs: a construction knows it by its shape.
-function copied(w: writer.Writer, owned: bool, target: str, value: str) -> str
+# structs: a construction knows it by its shape. `held` is whether the type
+# holds a counted value, whose copy goes through the identity (above).
+function copied(w: writer.Writer, owned: bool, held: bool, target: str, value: str) -> str
     if w.copies_bytes && owned
+        if held
+            return "HERO_COPY_HELD(" + target + ", (" + value + "));"
         return "HERO_COPY(" + target + ", (" + value + "));"
     return target + " = " + value + ";"
 
@@ -84,8 +109,12 @@ test "a unit's own struct is copied as bytes where the unit defines the copy, an
     assert !own_struct(c, parsed.decls, ty: table.int_ty_id(c.types))
     assert !own_struct(c, parsed.decls, ty: table.str_ty(c.types))
     w: writer.Writer @ writer.new_writer("t")
-    assert copied(w, owned: true, target: "t1", value: "t2") == "t1 = t2;"
+    assert copied(w, owned: true, held: false, target: "t1", value: "t2") == "t1 = t2;"
     w.copies_bytes @ true
-    assert copied(w, owned: true, target: "t1", value: "(h_t_P){.f_x = t2}") == "HERO_COPY(t1, ((h_t_P){.f_x = t2}));"
-    assert copied(w, owned: false, target: "t1", value: "t2") == "t1 = t2;"
+    assert copied(w, owned: true, held: false, target: "t1", value: "(h_t_P){.f_x = t2}") == "HERO_COPY(t1, ((h_t_P){.f_x = t2}));"
+    assert copied(w, owned: false, held: false, target: "t1", value: "t2") == "t1 = t2;"
+
+    # A counted struct is copied through the identity (defect 566).
+    assert copied(w, owned: true, held: true, target: "t1", value: "t2") == "HERO_COPY_HELD(t1, (t2));"
+    assert copied(w, owned: false, held: true, target: "t1", value: "t2") == "t1 = t2;"
     assert assignment(w, c, parsed.decls, ty: table.int_ty_id(c.types), target: "t1", value: "t2") == "t1 = t2;"

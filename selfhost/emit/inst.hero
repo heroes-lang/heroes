@@ -241,6 +241,7 @@ function emit(@w: writer.Writer, p: instances.Held, c: state.Checked, names: cty
                     s,
                     decls,
                     f,
+                    ty: inst.ty,
                     shape: con.shape,
                     run: con.arguments,
                     target: target,
@@ -286,9 +287,20 @@ function emit(@w: writer.Writer, p: instances.Held, c: state.Checked, names: cty
             match ab.why
                 .must_abort   => abort.must_stop(@w, f, run: ab.arguments)
                 .assert_abort => abort.assert_stop(@w, c, f, run: ab.arguments)
-        .tag_of tg  => access.tag_read(@w, c, f, base: tg.value, target: target)
-        .payload pl => access.payload_read(@w, c, names, s, decls, f, base: pl.base, at: pl.at, target: target)
-        .field fl   => access.field_read(@w, c, s, decls, f, base: fl.base, at: fl.at, target: target)
+        .tag_of tg => access.tag_read(@w, c, f, base: tg.value, target: target)
+        .payload pl => access.payload_read(
+            @w,
+            c,
+            names,
+            s,
+            decls,
+            f,
+            base: pl.base,
+            at: pl.at,
+            ty: inst.ty,
+            target: target
+        )
+        .field fl => access.field_read(@w, c, s, decls, f, base: fl.base, at: fl.at, target: target)
         # A function used as a value is the C function designator, which
         # decays on its own — & would make the C say something the
         # language does not. `emit/func_ref.hero` holds it, and says why
