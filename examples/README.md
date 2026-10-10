@@ -110,7 +110,7 @@ mechanism is written down.
 
 ## `gallery/`
 
-Twelve programs written to be **read**: what the language looks like when it is
+Fourteen programs written to be **read**: what the language looks like when it is
 used rather than tested. One theme each, in reading order, opening with the
 smallest program worth compiling and ending with the shapes the middle end
 needed. It is not a program directory — each file is its own program, which is
@@ -153,3 +153,14 @@ instruments — 148 of the site's 160 code slices come out of this directory,
 measured 2026-09-04. **It said M-corpus-depth until then**, and that milestone
 closed 2026-09-04 with this half unbuilt, which is the kind of citation that goes
 on reading as scheduled while pointing at finished work.
+
+**Every file is built and run since 2026-10-11** (defect 606): the paragraph
+above was true until that day. `tests/harness/suite_corpus.hero` walks the
+gallery as programs of one file each (`tests/harness/gallery.hero`): each is
+`check`ed, and a finished one has its `test` blocks run and its output held to
+`<stem>.expected` beside it, in the `-O0`, `-O2` and `--sanitize`
+configurations; `09-holes.hero`, unfinished on purpose, is judged by the holes
+`check` hands back. `tests/harness/suite_warnings.hero` builds the finished
+ones at `-O0` and `-O2` and refuses any clang warning, as it does every
+program directory's. The site does not read the expectations: a gallery page
+shows the program, not what it prints.
