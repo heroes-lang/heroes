@@ -1,0 +1,18 @@
+# Fixed defect 574, 2026-10-10 (found by lane b18-close beside defect 553's
+# repair). Symptom: `print({})`, an empty map with nothing to type it and no
+# binding, was offered *annotate the binding: `m: {str: i64} = {}`*. Cause:
+# one guess served every position of an empty literal, worded for a binding.
+# Repair: where it stands the guess binds it first under a name with its type
+# and uses the name there (`contextless_errors.hero`); where it is the whole
+# value of a binding with no annotation, the guess annotates that binding
+# under the program's own name (`check/empty_binding.hero`). The shapes: a
+# call's argument, a receiver, a literal inside a binding's value, and two
+# bindings whose own names the guess writes.
+
+function main()
+    print({})  #~ cannot_infer
+    print([].len())  #~ cannot_infer
+    ys = [{}]  #~ cannot_infer
+    counts = {}  #~ cannot_infer
+    names = []  #~ cannot_infer
+    print(ys.len() + counts.len() + names.len())
