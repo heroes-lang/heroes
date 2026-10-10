@@ -179,6 +179,8 @@ function once(list: [str], header: str) -> [str]
 
 # The declarations a walk of group records visits, in declaration order:
 # every one, or those `records` holds where it is given.
+# ORDER: ascending declaration index — the order the groups are written in,
+# which the unit's include lines observe (panel 204).
 function walked(decls: [ast.Decl], records: {i64: bool}?) -> [i64]
     match records
         .ok set => return sort(keys(set))
