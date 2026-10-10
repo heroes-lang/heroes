@@ -3,7 +3,7 @@ kind: defect
 area: harness
 milestone: none
 filed: 2026-10-10
-commit: none
+commit: 6538f8772f4be20ec866d9a7bf62c8cc1d4f7b1e
 github: none
 ---
 
@@ -12,3 +12,5 @@ github: none
     **Origin:** found by the landing lane of panel 209 on 2026-10-10 at 21:07, when M-inferred-cell step 2's census (`heroes check` over every tracked example and golden, one process per file) listed the one real refusal in the tree; HEAD's own compiler, built in a detached worktree at `74722f82` from the seed and `selfhost/`, gave the same message on HEAD's file.
 
     **Class: adjacent**, 2026-10-10: real, found beside the work, none of `blocking`'s shapes; the example is repaired in step 2's commit by the rule's own certain fix (`seen` bound with `=`), and the suite that would have seen it is the item here.
+
+    Repaired at `6538f877`, 2026-10-11 (lane b20-tools), gated by its cases and the net's own tests; the net is owed at the batch's close. `tests/harness/gallery.hero` lists the gallery's programs, every `.hero` directly in it, and reads off `check`'s answer whether one is finished or a lesson about `???` (exit 0, the artifact opening `hole at `); `corpus` checks each, then runs a finished one's tests and holds what it prints to `<stem>.expected` beside it, owed, at `-O0`, `-O2` and `--sanitize`, thirteen expectations written and each read against its program; `warnings` builds the finished ones at `-O0` and `-O2`. A refusal, a missing expectation and a wrong output are each a failure in the case `fixedbugs: a gallery program is checked, owes its expectation, and is run (defect 606)`. `corpus` 70 and 0 (55 before, the gallery's 14 and its floor), `warnings` 578 and 0 (565 before, the thirteen finished), canonical 2 and 0, the net's own tests 336 and 0. Measured beside the item: `heroes mutate` over a planted gallery holding the refused `12-interpolation` exits 2 naming it, so `surface`'s row *mutate accepts the gallery* would have been red at the full net, and the item's *neither of which asks whether the program compiles* holds of `canonical` alone; what no suite did was build or run ten of the fourteen, or hold their C to `warnings`. `emission` is not widened: its blessed C is the emitter's snapshot, and the refusal is `corpus`'s.

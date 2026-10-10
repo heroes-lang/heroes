@@ -3,7 +3,7 @@ kind: defect
 area: cli
 milestone: none
 filed: 2026-10-11
-commit: none
+commit: 981e6071f93a4073ec01ca179332726975f3c22e
 github: none
 ---
 
@@ -12,3 +12,5 @@ github: none
     **Origin:** found by lane b20-tools at 01:13 on 2026-10-11, measuring defect 607 in a scratch tree (`.claude/worktrees/scratch-b15/b20-tools/m607c/`, ignored by git) with the lane's compiler built from the trunk at `42656199`.
 
     **Class: blocking**, 2026-10-11 (`.claude/rules/verification.md` § Bounded discovery): a false message, `no certain fix applies` of a diagnostic whose certain fix the line above names, and a count of diagnostics the file it names does not hold. Found beside 607 with another cause: 607 is what `--in-place` writes, this is what it says when it writes nothing.
+
+    Repaired at `981e6071`, 2026-10-11 (lane b20-tools), gated by its cases and the compiler's own tests; the net is owed at the batch's close. `apply_answer.hand_back` takes the root's own count, `in_root` asking `source.is_root` of each diagnostic's start, and its `unchanged` line says, where the root holds none, `none of the diagnostics is in it`, and where the note above names certain fixes in another module, that they are there: `applyx/main.hero` now reads `unchanged: none of the diagnostics is in it, and the certain fix(es) named above are in another module`; a root with one unknown name of its own beside such a fix, `no certain fix applies to its 1 diagnostic(s), and the one(s) named above are in another module`. Nothing written moves. Cases: four shapes in `apply_answer.hero`'s test and `surface`'s row on `applyx`; `surface` 408 and 0, `layout` narrowed to `apply_answer` 4 and 0, the compiler's own tests 1597 and 0, the net's own tests 336 and 0.
