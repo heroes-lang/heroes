@@ -9,10 +9,19 @@
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic ignored "-Wpragma-pack"
+#pragma float_control(push)
 #include "heroes_guard_open.h"
 #include <math.h>
 #pragma push_macro("fmaxf")
 #include "heroes_guard_close.h"
+#pragma clang diagnostic ignored "-Wignored-pragmas"
+#pragma pack()
+#pragma float_control(pop)
+#pragma float_control(precise, on)
+#pragma GCC visibility push(default)
+#pragma clang section bss="" data="" rodata="" text="" relro=""
+#pragma clang optimize on
 #pragma clang diagnostic pop
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -68,7 +77,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 72 "ffif32againstafloatheaderiscorrect.c"
+#line 81 "ffif32againstafloatheaderiscorrect.c"
 typedef struct h_0opt_e201354 {
     int64_t tag;
     union {
@@ -119,7 +128,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 123 "ffif32againstafloatheaderiscorrect.c"
+#line 132 "ffif32againstafloatheaderiscorrect.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
@@ -140,7 +149,7 @@ void h_ffif32againstafloatheaderiscorrect_main(void);
 
 #line 42 "tests/golden/fixedbugs/ffi-f32-against-a-float-header-is-correct.hero"
 void h_ffif32againstafloatheaderiscorrect_main(void) {
-#line 144 "ffif32againstafloatheaderiscorrect.c"
+#line 153 "ffif32againstafloatheaderiscorrect.c"
     float h0_bigger;
     h_0opt_e201354 h1_f0 = {0};
     h_0opt_e201354 h2_own2 = {0};
@@ -187,15 +196,15 @@ bb0:
     t15 = h2_own2;
 #line 47 "tests/golden/fixedbugs/ffi-f32-against-a-float-header-is-correct.hero"
     h2_own2 = t5;
-#line 191 "ffif32againstafloatheaderiscorrect.c"
+#line 200 "ffif32againstafloatheaderiscorrect.c"
     h_0opt_e201354_release(&t15);
 #line 47 "tests/golden/fixedbugs/ffi-f32-against-a-float-header-is-correct.hero"
     t16 = h1_f0;
-#line 195 "ffif32againstafloatheaderiscorrect.c"
+#line 204 "ffif32againstafloatheaderiscorrect.c"
     h_0opt_e201354_retain(&t5);
 #line 47 "tests/golden/fixedbugs/ffi-f32-against-a-float-header-is-correct.hero"
     h1_f0 = t5;
-#line 199 "ffif32againstafloatheaderiscorrect.c"
+#line 208 "ffif32againstafloatheaderiscorrect.c"
     h_0opt_e201354_release(&t16);
 #line 47 "tests/golden/fixedbugs/ffi-f32-against-a-float-header-is-correct.hero"
     t6 = h1_f0;
@@ -219,13 +228,13 @@ bb1:
     t17 = h3_own3;
 #line 47 "tests/golden/fixedbugs/ffi-f32-against-a-float-header-is-correct.hero"
     h3_own3 = t14;
-#line 223 "ffif32againstafloatheaderiscorrect.c"
+#line 232 "ffif32againstafloatheaderiscorrect.c"
     hero_str_decref(t17);
 #line 47 "tests/golden/fixedbugs/ffi-f32-against-a-float-header-is-correct.hero"
     hero_print_str(t14);
 #line 47 "tests/golden/fixedbugs/ffi-f32-against-a-float-header-is-correct.hero"
     hero_print_end();
-#line 229 "ffif32againstafloatheaderiscorrect.c"
+#line 238 "ffif32againstafloatheaderiscorrect.c"
     h_0opt_e201354_release(hero_slot_escape(&h1_f0));
     h_0opt_e201354_release(hero_slot_escape(&h2_own2));
     hero_str_release_at(&h3_own3);
@@ -235,7 +244,7 @@ bb2:
     t10 = h1_f0;
 #line 47 "tests/golden/fixedbugs/ffi-f32-against-a-float-header-is-correct.hero"
     t11 = t10.as.err;
-#line 239 "ffif32againstafloatheaderiscorrect.c"
+#line 248 "ffif32againstafloatheaderiscorrect.c"
     hero_panic_must(t11);
     hero_unreachable();
 }

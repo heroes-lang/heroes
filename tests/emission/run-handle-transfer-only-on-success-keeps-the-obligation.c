@@ -9,9 +9,18 @@
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic ignored "-Wpragma-pack"
+#pragma float_control(push)
 #include "heroes_guard_open.h"
 #include <handle-transfer-only-on-success-keeps-the-obligation.h>
 #include "heroes_guard_close.h"
+#pragma clang diagnostic ignored "-Wignored-pragmas"
+#pragma pack()
+#pragma float_control(pop)
+#pragma float_control(precise, on)
+#pragma GCC visibility push(default)
+#pragma clang section bss="" data="" rodata="" text="" relro=""
+#pragma clang optimize on
 #pragma clang diagnostic pop
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -74,7 +83,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_6023594d, "failed add: ");
 HERO_STR_STATIC(hero_str_727306ec, "sum: ");
 
-#line 78 "handletransferonlyonsuccesskeepstheobligation.c"
+#line 87 "handletransferonlyonsuccesskeepstheobligation.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -120,7 +129,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 124 "handletransferonlyonsuccesskeepstheobligation.c"
+#line 133 "handletransferonlyonsuccesskeepstheobligation.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_handletransferonlyonsuccesskeepstheobligation_Node_eq(node * const *a, node * const *b);
@@ -139,7 +148,7 @@ void h_handletransferonlyonsuccesskeepstheobligation_main(void);
 
 #line 13 "tests/golden/run/handle-transfer-only-on-success-keeps-the-obligation.hero"
 void h_handletransferonlyonsuccesskeepstheobligation_main(void) {
-#line 143 "handletransferonlyonsuccesskeepstheobligation.c"
+#line 152 "handletransferonlyonsuccesskeepstheobligation.c"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
     node * h0_parent;
     node * h1_child;
@@ -323,7 +332,7 @@ bb2:
 bb3:
 #line 20 "tests/golden/run/handle-transfer-only-on-success-keeps-the-obligation.hero"
     goto bb1;
-#line 327 "handletransferonlyonsuccesskeepstheobligation.c"
+#line 336 "handletransferonlyonsuccesskeepstheobligation.c"
 }
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_handletransferonlyonsuccesskeepstheobligation_Node_eq(node * const *a, node * const *b) {

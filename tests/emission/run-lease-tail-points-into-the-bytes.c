@@ -9,10 +9,19 @@
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic ignored "-Wpragma-pack"
+#pragma float_control(push)
 #include "heroes_guard_open.h"
 #include <string.h>
 #include <lease-tail-points-into-the-bytes.h>
 #include "heroes_guard_close.h"
+#pragma clang diagnostic ignored "-Wignored-pragmas"
+#pragma pack()
+#pragma float_control(pop)
+#pragma float_control(precise, on)
+#pragma GCC visibility push(default)
+#pragma clang section bss="" data="" rodata="" text="" relro=""
+#pragma clang optimize on
 #pragma clang diagnostic pop
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -71,7 +80,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_c4fd56d, "row-payload");
 
-#line 75 "leasetailpointsintothebytes.c"
+#line 84 "leasetailpointsintothebytes.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -116,7 +125,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 120 "leasetailpointsintothebytes.c"
+#line 129 "leasetailpointsintothebytes.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -134,7 +143,7 @@ void h_leasetailpointsintothebytes_main(void);
 
 #line 18 "tests/golden/run/lease-tail-points-into-the-bytes.hero"
 void h_leasetailpointsintothebytes_tail_of(const char * h0_s, const char * *ph1_out) {
-#line 138 "leasetailpointsintothebytes.c"
+#line 147 "leasetailpointsintothebytes.c"
     const char * t1;
     goto bb0;
 bb0:
@@ -146,12 +155,12 @@ bb0:
     (void)after_dash(hero_cstr_nonnull(t1), &(*ph1_out));
 #line 19 "tests/golden/run/lease-tail-points-into-the-bytes.hero"
     return;
-#line 150 "leasetailpointsintothebytes.c"
+#line 159 "leasetailpointsintothebytes.c"
 }
 
 #line 21 "tests/golden/run/lease-tail-points-into-the-bytes.hero"
 void h_leasetailpointsintothebytes_main(void) {
-#line 155 "leasetailpointsintothebytes.c"
+#line 164 "leasetailpointsintothebytes.c"
     const char * h0_label;
     const char * *const hero_lend_h1_tail = (const char * *)hero_lend_local(sizeof(const char *), "leasetailpointsintothebytes.main", "tail");
 #define h1_tail (*hero_lend_h1_tail)
@@ -187,7 +196,7 @@ bb0:
     hero_lend_local_give(hero_lend_h1_tail);
 #line 26 "tests/golden/run/lease-tail-points-into-the-bytes.hero"
     return;
-#line 191 "leasetailpointsintothebytes.c"
+#line 200 "leasetailpointsintothebytes.c"
 }
 #undef h1_tail
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"

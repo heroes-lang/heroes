@@ -9,9 +9,18 @@
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic ignored "-Wpragma-pack"
+#pragma float_control(push)
 #include "heroes_guard_open.h"
 #include <fixedbugs-c-traps-with-a-lease-live-on-every-architecture.h>
 #include "heroes_guard_close.h"
+#pragma clang diagnostic ignored "-Wignored-pragmas"
+#pragma pack()
+#pragma float_control(pop)
+#pragma float_control(precise, on)
+#pragma GCC visibility push(default)
+#pragma clang section bss="" data="" rodata="" text="" relro=""
+#pragma clang optimize on
 #pragma clang diagnostic pop
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -70,7 +79,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_3205, "ab");
 HERO_STR_STATIC(hero_str_4414937d, "not reached");
 
-#line 74 "fixedbugsctrapswithaleaseliveoneveryarchitecture.c"
+#line 83 "fixedbugsctrapswithaleaseliveoneveryarchitecture.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -113,7 +122,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 117 "fixedbugsctrapswithaleaseliveoneveryarchitecture.c"
+#line 126 "fixedbugsctrapswithaleaseliveoneveryarchitecture.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -130,7 +139,7 @@ void h_fixedbugsctrapswithaleaseliveoneveryarchitecture_main(void);
 
 #line 14 "tests/golden/run/fixedbugs-c-traps-with-a-lease-live-on-every-architecture.hero"
 void h_fixedbugsctrapswithaleaseliveoneveryarchitecture_main(void) {
-#line 134 "fixedbugsctrapswithaleaseliveoneveryarchitecture.c"
+#line 143 "fixedbugsctrapswithaleaseliveoneveryarchitecture.c"
     HeroStr h0_word = {0};
     const char * h1_held;
     HeroStr h2_own2 = {0};
@@ -155,15 +164,15 @@ bb0:
     t8 = h2_own2;
 #line 15 "tests/golden/run/fixedbugs-c-traps-with-a-lease-live-on-every-architecture.hero"
     h2_own2 = t3;
-#line 159 "fixedbugsctrapswithaleaseliveoneveryarchitecture.c"
+#line 168 "fixedbugsctrapswithaleaseliveoneveryarchitecture.c"
     hero_str_decref(t8);
 #line 15 "tests/golden/run/fixedbugs-c-traps-with-a-lease-live-on-every-architecture.hero"
     t9 = h0_word;
-#line 163 "fixedbugsctrapswithaleaseliveoneveryarchitecture.c"
+#line 172 "fixedbugsctrapswithaleaseliveoneveryarchitecture.c"
     hero_str_incref(t3);
 #line 15 "tests/golden/run/fixedbugs-c-traps-with-a-lease-live-on-every-architecture.hero"
     h0_word = t3;
-#line 167 "fixedbugsctrapswithaleaseliveoneveryarchitecture.c"
+#line 176 "fixedbugsctrapswithaleaseliveoneveryarchitecture.c"
     hero_str_decref(t9);
 #line 16 "tests/golden/run/fixedbugs-c-traps-with-a-lease-live-on-every-architecture.hero"
     t4 = h0_word;
@@ -180,7 +189,7 @@ bb0:
     hero_print_str(t7);
 #line 19 "tests/golden/run/fixedbugs-c-traps-with-a-lease-live-on-every-architecture.hero"
     hero_print_end();
-#line 184 "fixedbugsctrapswithaleaseliveoneveryarchitecture.c"
+#line 193 "fixedbugsctrapswithaleaseliveoneveryarchitecture.c"
     hero_str_release_at(&h0_word);
     hero_str_release_at(&h2_own2);
     return;

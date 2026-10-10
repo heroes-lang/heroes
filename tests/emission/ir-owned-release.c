@@ -9,10 +9,19 @@
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic ignored "-Wpragma-pack"
+#pragma float_control(push)
 #include "heroes_guard_open.h"
 #include <stdlib.h>
 #include <string.h>
 #include "heroes_guard_close.h"
+#pragma clang diagnostic ignored "-Wignored-pragmas"
+#pragma pack()
+#pragma float_control(pop)
+#pragma float_control(precise, on)
+#pragma GCC visibility push(default)
+#pragma clang section bss="" data="" rodata="" text="" relro=""
+#pragma clang optimize on
 #pragma clang diagnostic pop
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -75,7 +84,7 @@ HERO_STR_STATIC(hero_str_5263489, "a null `cstr` holds no text");
 HERO_STR_STATIC(hero_str_34624695, "not_text");
 HERO_STR_STATIC(hero_str_4bb64adb, "the bytes behind this `cstr` are not UTF-8");
 
-#line 79 "ownedrelease.c"
+#line 88 "ownedrelease.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -120,7 +129,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 124 "ownedrelease.c"
+#line 133 "ownedrelease.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -139,7 +148,7 @@ h_0opt_f87774a h_library_validated(const char * h0_c);
 
 #line 28 "tests/golden/ir/owned-release.hero"
 HeroStr h_ownedrelease_copy_of(HeroStr h0_text) {
-#line 143 "ownedrelease.c"
+#line 152 "ownedrelease.c"
     const char * h1_owned0;
     h_0opt_f87774a h2_owned1 = {0};
     h_0opt_f87774a h3_f0 = {0};
@@ -187,15 +196,15 @@ bb0:
     t20 = h5_own5;
 #line 29 "tests/golden/ir/owned-release.hero"
     h5_own5 = t5;
-#line 191 "ownedrelease.c"
+#line 200 "ownedrelease.c"
     h_0opt_f87774a_release(&t20);
 #line 29 "tests/golden/ir/owned-release.hero"
     t21 = h2_owned1;
-#line 195 "ownedrelease.c"
+#line 204 "ownedrelease.c"
     h_0opt_f87774a_retain(&t5);
 #line 29 "tests/golden/ir/owned-release.hero"
     h2_owned1 = t5;
-#line 199 "ownedrelease.c"
+#line 208 "ownedrelease.c"
     h_0opt_f87774a_release(&t21);
 #line 29 "tests/golden/ir/owned-release.hero"
     t6 = ((void *)0);
@@ -221,11 +230,11 @@ bb2:
     t11 = h2_owned1;
 #line 29 "tests/golden/ir/owned-release.hero"
     t22 = h3_f0;
-#line 225 "ownedrelease.c"
+#line 234 "ownedrelease.c"
     h_0opt_f87774a_retain(&t11);
 #line 29 "tests/golden/ir/owned-release.hero"
     h3_f0 = t11;
-#line 229 "ownedrelease.c"
+#line 238 "ownedrelease.c"
     h_0opt_f87774a_release(&t22);
 #line 29 "tests/golden/ir/owned-release.hero"
     t12 = h3_f0;
@@ -245,11 +254,11 @@ bb3:
     t17 = t16.as.ok;
 #line 29 "tests/golden/ir/owned-release.hero"
     t23 = h4_r0;
-#line 249 "ownedrelease.c"
+#line 258 "ownedrelease.c"
     hero_str_incref(t17);
 #line 29 "tests/golden/ir/owned-release.hero"
     h4_r0 = t17;
-#line 253 "ownedrelease.c"
+#line 262 "ownedrelease.c"
     hero_str_decref(t23);
     goto bb5;
 bb4:
@@ -257,17 +266,17 @@ bb4:
     t18 = HERO_STR_LIT(hero_str_0);
 #line 29 "tests/golden/ir/owned-release.hero"
     t24 = h4_r0;
-#line 261 "ownedrelease.c"
+#line 270 "ownedrelease.c"
     hero_str_incref(t18);
 #line 29 "tests/golden/ir/owned-release.hero"
     h4_r0 = t18;
-#line 265 "ownedrelease.c"
+#line 274 "ownedrelease.c"
     hero_str_decref(t24);
     goto bb5;
 bb5:
 #line 29 "tests/golden/ir/owned-release.hero"
     t19 = h4_r0;
-#line 271 "ownedrelease.c"
+#line 280 "ownedrelease.c"
     hero_str_incref(t19);
     h_0opt_f87774a_release(hero_slot_escape(&h2_owned1));
     h_0opt_f87774a_release(hero_slot_escape(&h3_f0));
@@ -278,13 +287,13 @@ bb5:
 
 #line 123 "<heroes library>"
 int64_t h_library_HERO_STR_OK(void) {
-#line 282 "ownedrelease.c"
+#line 291 "ownedrelease.c"
     return HERO_STR_OK;
 }
 
 #line 153 "<heroes library>"
 h_0opt_f87774a h_library_validated(const char * h0_c) {
-#line 288 "ownedrelease.c"
+#line 297 "ownedrelease.c"
     int64_t *const hero_lend_h1_status = (int64_t *)hero_lend_local(sizeof(int64_t), "library.validated", "status");
 #define h1_status (*hero_lend_h1_status)
     HeroStr h2_text = {0};
@@ -341,15 +350,15 @@ bb1:
     t19 = h4_own4;
 #line 157 "<heroes library>"
     h4_own4 = t9;
-#line 345 "ownedrelease.c"
+#line 354 "ownedrelease.c"
     hero_str_decref(t19);
 #line 157 "<heroes library>"
     t20 = h2_text;
-#line 349 "ownedrelease.c"
+#line 358 "ownedrelease.c"
     hero_str_incref(t9);
 #line 157 "<heroes library>"
     h2_text = t9;
-#line 353 "ownedrelease.c"
+#line 362 "ownedrelease.c"
     hero_str_decref(t20);
 #line 158 "<heroes library>"
     t10 = h1_status;
@@ -365,7 +374,7 @@ bb2:
     t4 = HERO_STR_LIT(hero_str_4a05a740);
 #line 155 "<heroes library>"
     t5 = HERO_STR_LIT(hero_str_5263489);
-#line 369 "ownedrelease.c"
+#line 378 "ownedrelease.c"
     hero_str_incref(t4);
     hero_str_incref(t5);
 #line 155 "<heroes library>"
@@ -374,7 +383,7 @@ bb2:
     t21 = h5_own5;
 #line 155 "<heroes library>"
     h5_own5 = t6;
-#line 378 "ownedrelease.c"
+#line 387 "ownedrelease.c"
     h_0opt_f87774a_release(&t21);
 #line 155 "<heroes library>"
     h3_ret0 = t6;
@@ -390,7 +399,7 @@ bb4:
     t15 = HERO_STR_LIT(hero_str_34624695);
 #line 160 "<heroes library>"
     t16 = HERO_STR_LIT(hero_str_4bb64adb);
-#line 394 "ownedrelease.c"
+#line 403 "ownedrelease.c"
     hero_str_incref(t15);
     hero_str_incref(t16);
 #line 160 "<heroes library>"
@@ -399,7 +408,7 @@ bb4:
     t22 = h6_own6;
 #line 160 "<heroes library>"
     h6_own6 = t17;
-#line 403 "ownedrelease.c"
+#line 412 "ownedrelease.c"
     h_0opt_f87774a_release(&t22);
 #line 160 "<heroes library>"
     h3_ret0 = t17;
@@ -409,7 +418,7 @@ bb4:
 bb5:
 #line 159 "<heroes library>"
     t13 = h2_text;
-#line 413 "ownedrelease.c"
+#line 422 "ownedrelease.c"
     hero_str_incref(t13);
 #line 159 "<heroes library>"
     t14 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t13};
@@ -417,7 +426,7 @@ bb5:
     t23 = h7_own7;
 #line 159 "<heroes library>"
     h7_own7 = t14;
-#line 421 "ownedrelease.c"
+#line 430 "ownedrelease.c"
     h_0opt_f87774a_release(&t23);
 #line 159 "<heroes library>"
     h3_ret0 = t14;
@@ -429,7 +438,7 @@ bb6:
     goto bb4;
 #line 159 "<heroes library>"
 bb7:
-#line 433 "ownedrelease.c"
+#line 442 "ownedrelease.c"
     t18 = h3_ret0;
     h_0opt_f87774a_retain(&t18);
     hero_str_release_at(&h2_text);

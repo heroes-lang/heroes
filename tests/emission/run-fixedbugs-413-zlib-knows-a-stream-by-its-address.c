@@ -9,9 +9,18 @@
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic ignored "-Wpragma-pack"
+#pragma float_control(push)
 #include "heroes_guard_open.h"
 #include <zlib.h>
 #include "heroes_guard_close.h"
+#pragma clang diagnostic ignored "-Wignored-pragmas"
+#pragma pack()
+#pragma float_control(pop)
+#pragma float_control(precise, on)
+#pragma GCC visibility push(default)
+#pragma clang section bss="" data="" rodata="" text="" relro=""
+#pragma clang optimize on
 #pragma clang diagnostic pop
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -34,7 +43,7 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 #line 20 "tests/golden/run/fixedbugs-413-zlib-knows-a-stream-by-its-address.hero"
 _Static_assert(__builtin_classify_type(((struct z_stream_s *)0)->avail_in) == 1 && sizeof(((struct z_stream_s *)0)->avail_in) == sizeof(uint32_t) && (_Generic(((struct z_stream_s *)0)->avail_in, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 1), "heroes-ffi-field ZStream avail_in");
 _Static_assert(__builtin_classify_type(((struct z_stream_s *)0)->avail_out) == 1 && sizeof(((struct z_stream_s *)0)->avail_out) == sizeof(uint32_t) && (_Generic(((struct z_stream_s *)0)->avail_out, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 1), "heroes-ffi-field ZStream avail_out");
-#line 38 "fixedbugs413zlibknowsastreambyitsaddress.c"
+#line 47 "fixedbugs413zlibknowsastreambyitsaddress.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -121,7 +130,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 125 "fixedbugs413zlibknowsastreambyitsaddress.c"
+#line 134 "fixedbugs413zlibknowsastreambyitsaddress.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs413zlibknowsastreambyitsaddress_ZStream_eq(const struct z_stream_s *a, const struct z_stream_s *b);
@@ -158,7 +167,7 @@ void h_fixedbugs413zlibknowsastreambyitsaddress_main(void);
 
 #line 27 "tests/golden/run/fixedbugs-413-zlib-knows-a-stream-by-its-address.hero"
 int32_t h_fixedbugs413zlibknowsastreambyitsaddress_init(struct z_stream_s *ph0_s) {
-#line 162 "fixedbugs413zlibknowsastreambyitsaddress.c"
+#line 171 "fixedbugs413zlibknowsastreambyitsaddress.c"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
     int32_t t1;
     const char * t2;
@@ -179,12 +188,12 @@ bb0:
     t4 = deflateInit_(&(*ph0_s), t1, hero_cstr_nonnull(t2), t3);
 #line 28 "tests/golden/run/fixedbugs-413-zlib-knows-a-stream-by-its-address.hero"
     return t4;
-#line 183 "fixedbugs413zlibknowsastreambyitsaddress.c"
+#line 192 "fixedbugs413zlibknowsastreambyitsaddress.c"
 }
 
 #line 30 "tests/golden/run/fixedbugs-413-zlib-knows-a-stream-by-its-address.hero"
 void h_fixedbugs413zlibknowsastreambyitsaddress_main(void) {
-#line 188 "fixedbugs413zlibknowsastreambyitsaddress.c"
+#line 197 "fixedbugs413zlibknowsastreambyitsaddress.c"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
     struct z_stream_s *const hero_lend_h0_s = (struct z_stream_s *)hero_lend_local(sizeof(struct z_stream_s), "fixedbugs413zlibknowsastreambyitsaddress.main", "s");
 #define h0_s (*hero_lend_h0_s)
@@ -323,15 +332,15 @@ bb0:
     t50 = h15_own15;
 #line 36 "tests/golden/run/fixedbugs-413-zlib-knows-a-stream-by-its-address.hero"
     h15_own15 = t15;
-#line 327 "fixedbugs413zlibknowsastreambyitsaddress.c"
+#line 336 "fixedbugs413zlibknowsastreambyitsaddress.c"
     hero_array_decref(t50);
 #line 36 "tests/golden/run/fixedbugs-413-zlib-knows-a-stream-by-its-address.hero"
     t51 = h4_zs;
-#line 331 "fixedbugs413zlibknowsastreambyitsaddress.c"
+#line 340 "fixedbugs413zlibknowsastreambyitsaddress.c"
     hero_array_incref(t15);
 #line 36 "tests/golden/run/fixedbugs-413-zlib-knows-a-stream-by-its-address.hero"
     h4_zs = t15;
-#line 335 "fixedbugs413zlibknowsastreambyitsaddress.c"
+#line 344 "fixedbugs413zlibknowsastreambyitsaddress.c"
     hero_array_decref(t51);
 #line 37 "tests/golden/run/fixedbugs-413-zlib-knows-a-stream-by-its-address.hero"
     t16 = INT64_C(0);
@@ -463,7 +472,7 @@ bb0:
     hero_print_int(t49);
 #line 49 "tests/golden/run/fixedbugs-413-zlib-knows-a-stream-by-its-address.hero"
     hero_print_end();
-#line 467 "fixedbugs413zlibknowsastreambyitsaddress.c"
+#line 476 "fixedbugs413zlibknowsastreambyitsaddress.c"
     hero_array_release_at(&h4_zs);
     hero_array_release_at(&h15_own15);
     hero_lend_local_give(hero_lend_h8_t);

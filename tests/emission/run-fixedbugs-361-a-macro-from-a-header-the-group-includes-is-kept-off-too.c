@@ -9,9 +9,18 @@
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic ignored "-Wpragma-pack"
+#pragma float_control(push)
 #include "heroes_guard_open.h"
 #include <fixedbugs-361-a-macro-from-a-header-the-group-includes-is-kept-off-too.h>
 #include "heroes_guard_close.h"
+#pragma clang diagnostic ignored "-Wignored-pragmas"
+#pragma pack()
+#pragma float_control(pop)
+#pragma float_control(precise, on)
+#pragma GCC visibility push(default)
+#pragma clang section bss="" data="" rodata="" text="" relro=""
+#pragma clang optimize on
 #pragma clang diagnostic pop
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -69,7 +78,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_fa5daa5, "text");
 
-#line 73 "fixedbugs361amacrofromaheaderthegroupincludesiskeptofftoo.c"
+#line 82 "fixedbugs361amacrofromaheaderthegroupincludesiskeptofftoo.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -112,7 +121,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 116 "fixedbugs361amacrofromaheaderthegroupincludesiskeptofftoo.c"
+#line 125 "fixedbugs361amacrofromaheaderthegroupincludesiskeptofftoo.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -129,7 +138,7 @@ void h_fixedbugs361amacrofromaheaderthegroupincludesiskeptofftoo_main(void);
 
 #line 15 "tests/golden/run/fixedbugs-361-a-macro-from-a-header-the-group-includes-is-kept-off-too.hero"
 void h_fixedbugs361amacrofromaheaderthegroupincludesiskeptofftoo_main(void) {
-#line 133 "fixedbugs361amacrofromaheaderthegroupincludesiskeptofftoo.c"
+#line 142 "fixedbugs361amacrofromaheaderthegroupincludesiskeptofftoo.c"
     bool h0_flag;
     int64_t t1;
     int64_t t2;
@@ -170,7 +179,7 @@ bb0:
     hero_print_end();
 #line 19 "tests/golden/run/fixedbugs-361-a-macro-from-a-header-the-group-includes-is-kept-off-too.hero"
     return;
-#line 174 "fixedbugs361amacrofromaheaderthegroupincludesiskeptofftoo.c"
+#line 183 "fixedbugs361amacrofromaheaderthegroupincludesiskeptofftoo.c"
 }
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {

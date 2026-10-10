@@ -9,9 +9,18 @@
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic ignored "-Wpragma-pack"
+#pragma float_control(push)
 #include "heroes_guard_open.h"
 #include <limit-a-copy-read-after-c-reused-its-address-is-not-caught.h>
 #include "heroes_guard_close.h"
+#pragma clang diagnostic ignored "-Wignored-pragmas"
+#pragma pack()
+#pragma float_control(pop)
+#pragma float_control(precise, on)
+#pragma GCC visibility push(default)
+#pragma clang section bss="" data="" rodata="" text="" relro=""
+#pragma clang optimize on
 #pragma clang diagnostic pop
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -72,7 +81,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_1b811794, "read through the stale copy: ");
 
-#line 76 "limitacopyreadaftercreuseditsaddressisnotcaught.c"
+#line 85 "limitacopyreadaftercreuseditsaddressisnotcaught.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -116,7 +125,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 120 "limitacopyreadaftercreuseditsaddressisnotcaught.c"
+#line 129 "limitacopyreadaftercreuseditsaddressisnotcaught.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_limitacopyreadaftercreuseditsaddressisnotcaught_Node_eq(node * const *a, node * const *b);
@@ -135,7 +144,7 @@ void h_limitacopyreadaftercreuseditsaddressisnotcaught_main(void);
 
 #line 24 "tests/golden/run/limit-a-copy-read-after-c-reused-its-address-is-not-caught.hero"
 void h_limitacopyreadaftercreuseditsaddressisnotcaught_main(void) {
-#line 139 "limitacopyreadaftercreuseditsaddressisnotcaught.c"
+#line 148 "limitacopyreadaftercreuseditsaddressisnotcaught.c"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
     node * h0_a;
     node * h1_keep;
@@ -206,7 +215,7 @@ bb0:
     }
 #line 30 "tests/golden/run/limit-a-copy-read-after-c-reused-its-address-is-not-caught.hero"
     return;
-#line 210 "limitacopyreadaftercreuseditsaddressisnotcaught.c"
+#line 219 "limitacopyreadaftercreuseditsaddressisnotcaught.c"
 }
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_limitacopyreadaftercreuseditsaddressisnotcaught_Node_eq(node * const *a, node * const *b) {

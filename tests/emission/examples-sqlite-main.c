@@ -9,9 +9,18 @@
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic ignored "-Wpragma-pack"
+#pragma float_control(push)
 #include "heroes_guard_open.h"
 #include <sqlite3.h>
 #include "heroes_guard_close.h"
+#pragma clang diagnostic ignored "-Wignored-pragmas"
+#pragma pack()
+#pragma float_control(pop)
+#pragma float_control(precise, on)
+#pragma GCC visibility push(default)
+#pragma clang section bss="" data="" rodata="" text="" relro=""
+#pragma clang optimize on
 #pragma clang diagnostic pop
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -86,7 +95,7 @@ HERO_STR_STATIC(hero_str_4a7e2e7, "select count(*) from note");
 HERO_STR_STATIC(hero_str_31daf47e, "longest: ");
 HERO_STR_STATIC(hero_str_4ea48131, "select max(length(body)) from note");
 
-#line 90 "main.c"
+#line 99 "main.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -136,7 +145,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 140 "main.c"
+#line 149 "main.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_main_Db_eq(sqlite3 * const *a, sqlite3 * const *b);
@@ -162,7 +171,7 @@ void h_main_main(void);
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #line 32 "examples/sqlite/main.hero"
 int64_t h_main_SQLITE_OK(void) {
-#line 166 "main.c"
+#line 175 "main.c"
     return SQLITE_OK;
 }
 #pragma clang diagnostic warning "-Wdeprecated-declarations"
@@ -181,7 +190,7 @@ int64_t h_main_SQLITE_OK(void) {
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #line 33 "examples/sqlite/main.hero"
 int64_t h_main_SQLITE_ROW(void) {
-#line 185 "main.c"
+#line 194 "main.c"
     return SQLITE_ROW;
 }
 #pragma clang diagnostic warning "-Wdeprecated-declarations"
@@ -199,7 +208,7 @@ int64_t h_main_SQLITE_ROW(void) {
 
 #line 76 "examples/sqlite/main.hero"
 int64_t h_main_run(sqlite3 * h0_db, HeroStr h1_sql) {
-#line 203 "main.c"
+#line 212 "main.c"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
     sqlite3 * t1;
     HeroStr t2;
@@ -229,12 +238,12 @@ bb0:
     t7 = sqlite3_exec(t1, hero_cstr_nonnull(t3), t4, t5, t6);
 #line 77 "examples/sqlite/main.hero"
     return t7;
-#line 233 "main.c"
+#line 242 "main.c"
 }
 
 #line 80 "examples/sqlite/main.hero"
 int64_t h_main_first_int(sqlite3 * h0_db, HeroStr h1_sql) {
-#line 238 "main.c"
+#line 247 "main.c"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
     sqlite3_stmt * *const hero_lend_h2_statement = (sqlite3_stmt * *)hero_lend_local(sizeof(sqlite3_stmt *), "main.first_int", "statement");
 #define h2_statement (*hero_lend_h2_statement)
@@ -384,7 +393,7 @@ bb6:
     goto bb4;
 #line 96 "examples/sqlite/main.hero"
 bb7:
-#line 388 "main.c"
+#line 397 "main.c"
     t27 = h6_ret0;
     hero_lend_local_give(hero_lend_h3_tail);
     hero_lend_local_give(hero_lend_h2_statement);
@@ -395,7 +404,7 @@ bb7:
 
 #line 100 "examples/sqlite/main.hero"
 void h_main_main(void) {
-#line 399 "main.c"
+#line 408 "main.c"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
     sqlite3 * *const hero_lend_h0_db = (sqlite3 * *)hero_lend_local(sizeof(sqlite3 *), "main.main", "db");
 #define h0_db (*hero_lend_h0_db)
@@ -530,7 +539,7 @@ bb4:
     hero_lend_local_give(hero_lend_h0_db);
 #line 113 "examples/sqlite/main.hero"
     return;
-#line 534 "main.c"
+#line 543 "main.c"
 }
 #undef h0_db
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"

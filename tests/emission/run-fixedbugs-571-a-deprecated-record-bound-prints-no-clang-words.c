@@ -9,10 +9,19 @@
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic ignored "-Wpragma-pack"
+#pragma float_control(push)
 #include "heroes_guard_open.h"
 #include <fixedbugs-571-a-deprecated-record-bound-prints-no-clang-words.h>
 #pragma push_macro("a")
 #include "heroes_guard_close.h"
+#pragma clang diagnostic ignored "-Wignored-pragmas"
+#pragma pack()
+#pragma float_control(pop)
+#pragma float_control(precise, on)
+#pragma GCC visibility push(default)
+#pragma clang section bss="" data="" rodata="" text="" relro=""
+#pragma clang optimize on
 #pragma clang diagnostic pop
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -34,7 +43,7 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 
 #line 14 "tests/golden/run/fixedbugs-571-a-deprecated-record-bound-prints-no-clang-words.hero"
 _Static_assert(__builtin_classify_type(((struct old_pair *)0)->a) == 1 && sizeof(((struct old_pair *)0)->a) == sizeof(int64_t) && (_Generic(((struct old_pair *)0)->a, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field OldPair a");
-#line 38 "fixedbugs571adeprecatedrecordboundprintsnoclangwords.c"
+#line 47 "fixedbugs571adeprecatedrecordboundprintsnoclangwords.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -112,7 +121,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 116 "fixedbugs571adeprecatedrecordboundprintsnoclangwords.c"
+#line 125 "fixedbugs571adeprecatedrecordboundprintsnoclangwords.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs571adeprecatedrecordboundprintsnoclangwords_OldPair_eq(const struct old_pair *a, const struct old_pair *b);
@@ -131,7 +140,7 @@ void h_fixedbugs571adeprecatedrecordboundprintsnoclangwords_main(void);
 
 #line 17 "tests/golden/run/fixedbugs-571-a-deprecated-record-bound-prints-no-clang-words.hero"
 void h_fixedbugs571adeprecatedrecordboundprintsnoclangwords_main(void) {
-#line 135 "fixedbugs571adeprecatedrecordboundprintsnoclangwords.c"
+#line 144 "fixedbugs571adeprecatedrecordboundprintsnoclangwords.c"
     int64_t t1;
     goto bb0;
 bb0:
@@ -143,7 +152,7 @@ bb0:
     hero_print_end();
 #line 18 "tests/golden/run/fixedbugs-571-a-deprecated-record-bound-prints-no-clang-words.hero"
     return;
-#line 147 "fixedbugs571adeprecatedrecordboundprintsnoclangwords.c"
+#line 156 "fixedbugs571adeprecatedrecordboundprintsnoclangwords.c"
 }
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_fixedbugs571adeprecatedrecordboundprintsnoclangwords_OldPair_eq(const struct old_pair *a, const struct old_pair *b) {

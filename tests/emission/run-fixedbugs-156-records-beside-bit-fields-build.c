@@ -9,11 +9,20 @@
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic ignored "-Wpragma-pack"
+#pragma float_control(push)
 #include "heroes_guard_open.h"
 #include <fixedbugs-156-bit-fields.h>
 #pragma push_macro("a")
 #pragma push_macro("b")
 #include "heroes_guard_close.h"
+#pragma clang diagnostic ignored "-Wignored-pragmas"
+#pragma pack()
+#pragma float_control(pop)
+#pragma float_control(precise, on)
+#pragma GCC visibility push(default)
+#pragma clang section bss="" data="" rodata="" text="" relro=""
+#pragma clang optimize on
 #pragma clang diagnostic pop
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -41,7 +50,7 @@ _Static_assert(__builtin_classify_type(((UNNAMED *)0)->b) == 1 && sizeof(((UNNAM
 #line 16 "tests/golden/run/fixedbugs-156-records-beside-bit-fields-build.hero"
 _Static_assert(__builtin_classify_type(((ZEROW *)0)->a) == 1 && sizeof(((ZEROW *)0)->a) == sizeof(int32_t) && (_Generic(((ZEROW *)0)->a, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field ZEROW a");
 _Static_assert(__builtin_classify_type(((ZEROW *)0)->b) == 1 && sizeof(((ZEROW *)0)->b) == sizeof(int32_t) && (_Generic(((ZEROW *)0)->b, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field ZEROW b");
-#line 45 "fixedbugs156recordsbesidebitfieldsbuild.c"
+#line 54 "fixedbugs156recordsbesidebitfieldsbuild.c"
 
 #line 12 "tests/golden/run/fixedbugs-156-records-beside-bit-fields-build.hero"
 _Static_assert(__builtin_classify_type(*(UNNAMED *)0) != 13, "heroes-ffi-union UNNAMED a b");
@@ -49,7 +58,7 @@ _Static_assert(__builtin_classify_type(*(UNNAMED *)0) != 13, "heroes-ffi-union U
 _Static_assert(__builtin_classify_type(*(UNNAMED *)0) != 13 || sizeof(((UNNAMED *)0)->a) == sizeof(UNNAMED), "heroes-ffi-union-narrow UNNAMED a");
 #line 12 "tests/golden/run/fixedbugs-156-records-beside-bit-fields-build.hero"
 _Static_assert(__builtin_classify_type(*(UNNAMED *)0) != 13 || sizeof(((UNNAMED *)0)->b) == sizeof(UNNAMED), "heroes-ffi-union-narrow UNNAMED b");
-#line 53 "fixedbugs156recordsbesidebitfieldsbuild.c"
+#line 62 "fixedbugs156recordsbesidebitfieldsbuild.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -134,7 +143,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 138 "fixedbugs156recordsbesidebitfieldsbuild.c"
+#line 147 "fixedbugs156recordsbesidebitfieldsbuild.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs156recordsbesidebitfieldsbuild_BF_eq(const BF *a, const BF *b);
@@ -157,7 +166,7 @@ void h_fixedbugs156recordsbesidebitfieldsbuild_main(void);
 
 #line 22 "tests/golden/run/fixedbugs-156-records-beside-bit-fields-build.hero"
 void h_fixedbugs156recordsbesidebitfieldsbuild_main(void) {
-#line 161 "fixedbugs156recordsbesidebitfieldsbuild.c"
+#line 170 "fixedbugs156recordsbesidebitfieldsbuild.c"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
     BF h0_built;
     UNNAMED h1_u;
@@ -236,7 +245,7 @@ bb0:
     hero_print_end();
 #line 27 "tests/golden/run/fixedbugs-156-records-beside-bit-fields-build.hero"
     return;
-#line 240 "fixedbugs156recordsbesidebitfieldsbuild.c"
+#line 249 "fixedbugs156recordsbesidebitfieldsbuild.c"
 }
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_fixedbugs156recordsbesidebitfieldsbuild_BF_eq(const BF *a, const BF *b) {

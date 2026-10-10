@@ -9,9 +9,18 @@
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic ignored "-Wpragma-pack"
+#pragma float_control(push)
 #include "heroes_guard_open.h"
 #include <handle-alive-under-when-after-a-failed-end.h>
 #include "heroes_guard_close.h"
+#pragma clang diagnostic ignored "-Wignored-pragmas"
+#pragma pack()
+#pragma float_control(pop)
+#pragma float_control(precise, on)
+#pragma GCC visibility push(default)
+#pragma clang section bss="" data="" rodata="" text="" relro=""
+#pragma clang optimize on
 #pragma clang diagnostic pop
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -75,7 +84,7 @@ HERO_STR_STATIC(hero_str_19c449f6, "busy close: ");
 HERO_STR_STATIC(hero_str_79302ff3, " statements still open: ");
 HERO_STR_STATIC(hero_str_68312d6c, "closed: ");
 
-#line 79 "handlealiveunderwhenafterafailedend.c"
+#line 88 "handlealiveunderwhenafterafailedend.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -120,7 +129,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 124 "handlealiveunderwhenafterafailedend.c"
+#line 133 "handlealiveunderwhenafterafailedend.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_handlealiveunderwhenafterafailedend_Db_eq(db * const *a, db * const *b);
@@ -139,7 +148,7 @@ void h_handlealiveunderwhenafterafailedend_main(void);
 
 #line 14 "tests/golden/run/handle-alive-under-when-after-a-failed-end.hero"
 void h_handlealiveunderwhenafterafailedend_main(void) {
-#line 143 "handlealiveunderwhenafterafailedend.c"
+#line 152 "handlealiveunderwhenafterafailedend.c"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
     db * h0_d;
     int32_t h1_first;
@@ -249,7 +258,7 @@ bb0:
     hero_print_end();
 #line 20 "tests/golden/run/handle-alive-under-when-after-a-failed-end.hero"
     return;
-#line 253 "handlealiveunderwhenafterafailedend.c"
+#line 262 "handlealiveunderwhenafterafailedend.c"
 }
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_handlealiveunderwhenafterafailedend_Db_eq(db * const *a, db * const *b) {

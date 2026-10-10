@@ -9,10 +9,19 @@
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic ignored "-Wpragma-pack"
+#pragma float_control(push)
 #include "heroes_guard_open.h"
 #include <fixedbugs-185-a-record-array-field-on-the-last-line-keeps-its-line.h>
 #pragma push_macro("v")
 #include "heroes_guard_close.h"
+#pragma clang diagnostic ignored "-Wignored-pragmas"
+#pragma pack()
+#pragma float_control(pop)
+#pragma float_control(precise, on)
+#pragma GCC visibility push(default)
+#pragma clang section bss="" data="" rodata="" text="" relro=""
+#pragma clang optimize on
 #pragma clang diagnostic pop
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -39,11 +48,11 @@ _Static_assert(__builtin_classify_type(((Holder *)0)->count) == 1 && sizeof(((Ho
 _Static_assert(sizeof(Holder) - __builtin_offsetof(Holder, cells) != 0, "heroes-ffi-flex Holder cells");
 #line 19 "tests/golden/run/fixedbugs-185-a-record-array-field-on-the-last-line-keeps-its-line.hero"
 _Static_assert(_Generic(&((Holder *)0)->cells, Cell (*)[2]: 1, default: 0) && sizeof(Holder) - __builtin_offsetof(Holder, cells) >= sizeof(Cell[2]), "heroes-ffi-field Holder cells");
-#line 43 "fixedbugs185arecordarrayfieldonthelastlinekeepsitsline.c"
+#line 52 "fixedbugs185arecordarrayfieldonthelastlinekeepsitsline.c"
 
 #line 17 "tests/golden/run/fixedbugs-185-a-record-array-field-on-the-last-line-keeps-its-line.hero"
 _Static_assert(__builtin_classify_type(*(Holder *)0) != 13, "heroes-ffi-union Holder count cells");
-#line 47 "fixedbugs185arecordarrayfieldonthelastlinekeepsitsline.c"
+#line 56 "fixedbugs185arecordarrayfieldonthelastlinekeepsitsline.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -125,7 +134,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 129 "fixedbugs185arecordarrayfieldonthelastlinekeepsitsline.c"
+#line 138 "fixedbugs185arecordarrayfieldonthelastlinekeepsitsline.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs185arecordarrayfieldonthelastlinekeepsitsline_Cell_eq(const Cell *a, const Cell *b);
@@ -146,7 +155,7 @@ void h_fixedbugs185arecordarrayfieldonthelastlinekeepsitsline_main(void);
 
 #line 8 "tests/golden/run/fixedbugs-185-a-record-array-field-on-the-last-line-keeps-its-line.hero"
 void h_fixedbugs185arecordarrayfieldonthelastlinekeepsitsline_main(void) {
-#line 150 "fixedbugs185arecordarrayfieldonthelastlinekeepsitsline.c"
+#line 159 "fixedbugs185arecordarrayfieldonthelastlinekeepsitsline.c"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
     Holder h0_h;
     int32_t t1;
@@ -213,7 +222,7 @@ bb0:
     hero_print_end();
 #line 11 "tests/golden/run/fixedbugs-185-a-record-array-field-on-the-last-line-keeps-its-line.hero"
     return;
-#line 217 "fixedbugs185arecordarrayfieldonthelastlinekeepsitsline.c"
+#line 226 "fixedbugs185arecordarrayfieldonthelastlinekeepsitsline.c"
 }
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_fixedbugs185arecordarrayfieldonthelastlinekeepsitsline_Cell_eq(const Cell *a, const Cell *b) {

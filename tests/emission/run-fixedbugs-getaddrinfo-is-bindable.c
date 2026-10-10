@@ -9,9 +9,18 @@
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic ignored "-Wpragma-pack"
+#pragma float_control(push)
 #include "heroes_guard_open.h"
 #include <netdb.h>
 #include "heroes_guard_close.h"
+#pragma clang diagnostic ignored "-Wignored-pragmas"
+#pragma pack()
+#pragma float_control(pop)
+#pragma float_control(precise, on)
+#pragma GCC visibility push(default)
+#pragma clang section bss="" data="" rodata="" text="" relro=""
+#pragma clang optimize on
 #pragma clang diagnostic pop
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -70,7 +79,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_69fd5e8e, "127.0.0.1");
 
-#line 74 "fixedbugsgetaddrinfoisbindable.c"
+#line 83 "fixedbugsgetaddrinfoisbindable.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -114,7 +123,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 118 "fixedbugsgetaddrinfoisbindable.c"
+#line 127 "fixedbugsgetaddrinfoisbindable.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugsgetaddrinfoisbindable_AI_eq(struct addrinfo * const *a, struct addrinfo * const *b);
@@ -133,7 +142,7 @@ void h_fixedbugsgetaddrinfoisbindable_main(void);
 
 #line 25 "tests/golden/run/fixedbugs-getaddrinfo-is-bindable.hero"
 void h_fixedbugsgetaddrinfoisbindable_main(void) {
-#line 137 "fixedbugsgetaddrinfoisbindable.c"
+#line 146 "fixedbugsgetaddrinfoisbindable.c"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
     struct addrinfo * *const hero_lend_h0_res = (struct addrinfo * *)hero_lend_local(sizeof(struct addrinfo *), "fixedbugsgetaddrinfoisbindable.main", "res");
 #define h0_res (*hero_lend_h0_res)
@@ -190,7 +199,7 @@ bb0:
     hero_lend_local_give(hero_lend_h0_res);
 #line 29 "tests/golden/run/fixedbugs-getaddrinfo-is-bindable.hero"
     return;
-#line 194 "fixedbugsgetaddrinfoisbindable.c"
+#line 203 "fixedbugsgetaddrinfoisbindable.c"
 }
 #undef h0_res
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"

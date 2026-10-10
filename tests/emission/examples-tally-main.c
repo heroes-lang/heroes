@@ -9,9 +9,18 @@
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic ignored "-Wpragma-pack"
+#pragma float_control(push)
 #include "heroes_guard_open.h"
 #include <stdio.h>
 #include "heroes_guard_close.h"
+#pragma clang diagnostic ignored "-Wignored-pragmas"
+#pragma pack()
+#pragma float_control(pop)
+#pragma float_control(precise, on)
+#pragma GCC visibility push(default)
+#pragma clang section bss="" data="" rodata="" text="" relro=""
+#pragma clang optimize on
 #pragma clang diagnostic pop
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -83,7 +92,7 @@ HERO_STR_STATIC(hero_str_20, " ");
 HERO_STR_STATIC(hero_str_43f04457, "this program reads text and that was not text");
 HERO_STR_STATIC(hero_str_38b441c6, "longest line: ");
 
-#line 87 "main.c"
+#line 96 "main.c"
 typedef struct h_main_Count {
     int64_t f_lines;
     int64_t f_words;
@@ -138,7 +147,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 142 "main.c"
+#line 151 "main.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_main_Count_eq(const h_main_Count *a, const h_main_Count *b);
@@ -171,7 +180,7 @@ void h_library_exit(int64_t h0_code);
 
 #line 49 "examples/tally/main.hero"
 int64_t h_main_END_OF_FILE(void) {
-#line 175 "main.c"
+#line 184 "main.c"
     int64_t t1;
     int64_t t2;
     int64_t t3;
@@ -185,12 +194,12 @@ bb0:
     if (__builtin_sub_overflow(t1, t2, &t3)) hero_panic_overflow();
 #line 50 "examples/tally/main.hero"
     return t3;
-#line 189 "main.c"
+#line 198 "main.c"
 }
 
 #line 62 "examples/tally/main.hero"
 h_0opt_f87774a h_main_fed(void) {
-#line 194 "main.c"
+#line 203 "main.c"
     HeroArrayHeader * h0_bytes = {0};
     bool h1_going;
     h_0opt_e201354 h2_f0 = {0};
@@ -257,15 +266,15 @@ bb0:
     t39 = h6_own6;
 #line 63 "examples/tally/main.hero"
     h6_own6 = t1;
-#line 261 "main.c"
+#line 270 "main.c"
     hero_array_decref(t39);
 #line 63 "examples/tally/main.hero"
     t40 = h0_bytes;
-#line 265 "main.c"
+#line 274 "main.c"
     hero_array_incref(t1);
 #line 63 "examples/tally/main.hero"
     h0_bytes = t1;
-#line 269 "main.c"
+#line 278 "main.c"
     hero_array_decref(t40);
 #line 64 "examples/tally/main.hero"
     t2 = true;
@@ -288,15 +297,15 @@ bb2:
     t41 = h7_own7;
 #line 67 "examples/tally/main.hero"
     h7_own7 = t5;
-#line 292 "main.c"
+#line 301 "main.c"
     h_0opt_e201354_release(&t41);
 #line 67 "examples/tally/main.hero"
     t42 = h2_f0;
-#line 296 "main.c"
+#line 305 "main.c"
     h_0opt_e201354_retain(&t5);
 #line 67 "examples/tally/main.hero"
     h2_f0 = t5;
-#line 300 "main.c"
+#line 309 "main.c"
     h_0opt_e201354_release(&t42);
 #line 67 "examples/tally/main.hero"
     t6 = h2_f0;
@@ -318,7 +327,7 @@ bb3:
     t43 = h8_own8;
 #line 76 "examples/tally/main.hero"
     h8_own8 = t37;
-#line 322 "main.c"
+#line 331 "main.c"
     h_0opt_f87774a_release(&t43);
 #line 76 "examples/tally/main.hero"
     h5_ret0 = t37;
@@ -346,7 +355,7 @@ bb5:
     t10 = h2_f0;
 #line 67 "examples/tally/main.hero"
     t11 = t10.as.err;
-#line 350 "main.c"
+#line 359 "main.c"
     hero_panic_must(t11);
     hero_unreachable();
 bb6:
@@ -409,7 +418,7 @@ bb12:
     t44 = h9_own9;
 #line 73 "examples/tally/main.hero"
     h9_own9 = t28;
-#line 413 "main.c"
+#line 422 "main.c"
     hero_str_decref(t44);
 #line 73 "examples/tally/main.hero"
     t29 = hero_str_concat(t26, t28);
@@ -417,7 +426,7 @@ bb12:
     t45 = h10_own10;
 #line 73 "examples/tally/main.hero"
     h10_own10 = t29;
-#line 421 "main.c"
+#line 430 "main.c"
     hero_str_decref(t45);
 #line 73 "examples/tally/main.hero"
     t30 = HERO_STR_LIT(hero_str_1112131b);
@@ -427,7 +436,7 @@ bb12:
     t46 = h11_own11;
 #line 73 "examples/tally/main.hero"
     h11_own11 = t31;
-#line 431 "main.c"
+#line 440 "main.c"
     hero_str_decref(t46);
     hero_str_incref(t25);
     hero_str_incref(t31);
@@ -437,7 +446,7 @@ bb12:
     t47 = h12_own12;
 #line 73 "examples/tally/main.hero"
     h12_own12 = t32;
-#line 441 "main.c"
+#line 450 "main.c"
     h_0opt_f87774a_release(&t47);
 #line 73 "examples/tally/main.hero"
     h5_ret0 = t32;
@@ -449,7 +458,7 @@ bb13:
     goto bb9;
 #line 73 "examples/tally/main.hero"
 bb14:
-#line 453 "main.c"
+#line 462 "main.c"
     t38 = h5_ret0;
     h_0opt_f87774a_retain(&t38);
     hero_array_release_at(&h0_bytes);
@@ -466,7 +475,7 @@ bb14:
 
 #line 82 "examples/tally/main.hero"
 h_0opt_f87774a h_main_text_of(HeroArrayHeader * h0_bytes) {
-#line 470 "main.c"
+#line 479 "main.c"
     HeroStr h1_out = {0};
     HeroArrayHeader * h2_xs0 = {0};
     int64_t h3_i0;
@@ -526,21 +535,21 @@ bb0:
     t1 = HERO_STR_LIT(hero_str_0);
 #line 83 "examples/tally/main.hero"
     t32 = h1_out;
-#line 530 "main.c"
+#line 539 "main.c"
     hero_str_incref(t1);
 #line 83 "examples/tally/main.hero"
     h1_out = t1;
-#line 534 "main.c"
+#line 543 "main.c"
     hero_str_decref(t32);
 #line 85 "examples/tally/main.hero"
     t2 = h0_bytes;
 #line 85 "examples/tally/main.hero"
     t33 = h2_xs0;
-#line 540 "main.c"
+#line 549 "main.c"
     hero_array_incref(t2);
 #line 85 "examples/tally/main.hero"
     h2_xs0 = t2;
-#line 544 "main.c"
+#line 553 "main.c"
     hero_array_decref(t33);
 #line 85 "examples/tally/main.hero"
     t3 = INT64_C(0);
@@ -593,7 +602,7 @@ bb3:
 bb4:
 #line 90 "examples/tally/main.hero"
     t29 = h1_out;
-#line 597 "main.c"
+#line 606 "main.c"
     hero_str_incref(t29);
 #line 90 "examples/tally/main.hero"
     t30 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t29};
@@ -601,7 +610,7 @@ bb4:
     t34 = h6_own6;
 #line 90 "examples/tally/main.hero"
     h6_own6 = t30;
-#line 605 "main.c"
+#line 614 "main.c"
     h_0opt_f87774a_release(&t34);
 #line 90 "examples/tally/main.hero"
     h5_ret0 = t30;
@@ -619,7 +628,7 @@ bb5:
     t35 = h7_own7;
 #line 88 "examples/tally/main.hero"
     h7_own7 = t24;
-#line 623 "main.c"
+#line 632 "main.c"
     hero_str_decref(t35);
 #line 88 "examples/tally/main.hero"
     t25 = hero_str_concat(t22, t24);
@@ -627,15 +636,15 @@ bb5:
     t36 = h8_own8;
 #line 88 "examples/tally/main.hero"
     h8_own8 = t25;
-#line 631 "main.c"
+#line 640 "main.c"
     hero_str_decref(t36);
 #line 88 "examples/tally/main.hero"
     t37 = h1_out;
-#line 635 "main.c"
+#line 644 "main.c"
     hero_str_incref(t25);
 #line 88 "examples/tally/main.hero"
     h1_out = t25;
-#line 639 "main.c"
+#line 648 "main.c"
     hero_str_decref(t37);
     goto bb3;
 bb6:
@@ -651,7 +660,7 @@ bb6:
     t38 = h9_own9;
 #line 87 "examples/tally/main.hero"
     h9_own9 = t17;
-#line 655 "main.c"
+#line 664 "main.c"
     hero_str_decref(t38);
 #line 87 "examples/tally/main.hero"
     t18 = hero_str_concat(t15, t17);
@@ -659,7 +668,7 @@ bb6:
     t39 = h10_own10;
 #line 87 "examples/tally/main.hero"
     h10_own10 = t18;
-#line 663 "main.c"
+#line 672 "main.c"
     hero_str_decref(t39);
 #line 87 "examples/tally/main.hero"
     t19 = HERO_STR_LIT(hero_str_72ebb9b8);
@@ -669,7 +678,7 @@ bb6:
     t40 = h11_own11;
 #line 87 "examples/tally/main.hero"
     h11_own11 = t20;
-#line 673 "main.c"
+#line 682 "main.c"
     hero_str_decref(t40);
     hero_str_incref(t14);
     hero_str_incref(t20);
@@ -679,7 +688,7 @@ bb6:
     t41 = h12_own12;
 #line 87 "examples/tally/main.hero"
     h12_own12 = t21;
-#line 683 "main.c"
+#line 692 "main.c"
     h_0opt_f87774a_release(&t41);
 #line 87 "examples/tally/main.hero"
     h5_ret0 = t21;
@@ -691,7 +700,7 @@ bb7:
     goto bb5;
 #line 87 "examples/tally/main.hero"
 bb8:
-#line 695 "main.c"
+#line 704 "main.c"
     t31 = h5_ret0;
     h_0opt_f87774a_retain(&t31);
     hero_str_release_at(&h1_out);
@@ -708,7 +717,7 @@ bb8:
 
 #line 96 "examples/tally/main.hero"
 HeroStr h_main_one_char(int64_t h0_b) {
-#line 712 "main.c"
+#line 721 "main.c"
     bool h1_b0;
     HeroStr h2_ret0 = {0};
     HeroStr h3_own3 = {0};
@@ -830,7 +839,7 @@ bb10:
     t30 = h3_own3;
 #line 108 "examples/tally/main.hero"
     h3_own3 = t21;
-#line 834 "main.c"
+#line 843 "main.c"
     hero_str_decref(t30);
 #line 108 "examples/tally/main.hero"
     t22 = h0_b;
@@ -850,7 +859,7 @@ bb10:
     t31 = h4_own4;
 #line 108 "examples/tally/main.hero"
     h4_own4 = t28;
-#line 854 "main.c"
+#line 863 "main.c"
     hero_str_decref(t31);
 #line 108 "examples/tally/main.hero"
     h2_ret0 = t28;
@@ -887,7 +896,7 @@ bb14:
     goto bb10;
 #line 107 "examples/tally/main.hero"
 bb15:
-#line 891 "main.c"
+#line 900 "main.c"
     t29 = h2_ret0;
     hero_str_incref(t29);
     hero_str_release_at(&h3_own3);
@@ -897,20 +906,20 @@ bb15:
 
 #line 110 "examples/tally/main.hero"
 HeroStr h_main_PRINTABLE(void) {
-#line 901 "main.c"
+#line 910 "main.c"
     HeroStr t1;
     goto bb0;
 bb0:
 #line 111 "examples/tally/main.hero"
     t1 = HERO_STR_LIT(hero_str_78068f5e);
-#line 907 "main.c"
+#line 916 "main.c"
     hero_str_incref(t1);
     return t1;
 }
 
 #line 125 "examples/tally/main.hero"
 h_main_Count h_main_counted(HeroStr h0_text) {
-#line 914 "main.c"
+#line 923 "main.c"
     int64_t h1_lines;
     int64_t h2_words;
     bool h3_inside;
@@ -1086,12 +1095,12 @@ bb11:
 bb12:
 #line 141 "examples/tally/main.hero"
     goto bb10;
-#line 1090 "main.c"
+#line 1099 "main.c"
 }
 
 #line 147 "examples/tally/main.hero"
 bool h_main_is_space(uint8_t h0_b) {
-#line 1095 "main.c"
+#line 1104 "main.c"
     bool h1_b0;
     bool h2_b1;
     bool h3_b2;
@@ -1180,12 +1189,12 @@ bb6:
     t15 = h1_b0;
 #line 148 "examples/tally/main.hero"
     return t15;
-#line 1184 "main.c"
+#line 1193 "main.c"
 }
 
 #line 150 "examples/tally/main.hero"
 HeroStr h_main_shown(h_main_Count h0_c) {
-#line 1189 "main.c"
+#line 1198 "main.c"
     HeroStr h1_own1 = {0};
     HeroStr h2_own2 = {0};
     HeroStr h3_own3 = {0};
@@ -1227,7 +1236,7 @@ bb0:
     t16 = h1_own1;
 #line 151 "examples/tally/main.hero"
     h1_own1 = t3;
-#line 1231 "main.c"
+#line 1240 "main.c"
     hero_str_decref(t16);
 #line 151 "examples/tally/main.hero"
     t4 = HERO_STR_LIT(hero_str_20);
@@ -1237,7 +1246,7 @@ bb0:
     t17 = h2_own2;
 #line 151 "examples/tally/main.hero"
     h2_own2 = t5;
-#line 1241 "main.c"
+#line 1250 "main.c"
     hero_str_decref(t17);
 #line 151 "examples/tally/main.hero"
     t6 = h0_c;
@@ -1249,7 +1258,7 @@ bb0:
     t18 = h3_own3;
 #line 151 "examples/tally/main.hero"
     h3_own3 = t8;
-#line 1253 "main.c"
+#line 1262 "main.c"
     hero_str_decref(t18);
 #line 151 "examples/tally/main.hero"
     t9 = hero_str_concat(t5, t8);
@@ -1257,7 +1266,7 @@ bb0:
     t19 = h4_own4;
 #line 151 "examples/tally/main.hero"
     h4_own4 = t9;
-#line 1261 "main.c"
+#line 1270 "main.c"
     hero_str_decref(t19);
 #line 151 "examples/tally/main.hero"
     t10 = HERO_STR_LIT(hero_str_20);
@@ -1267,7 +1276,7 @@ bb0:
     t20 = h5_own5;
 #line 151 "examples/tally/main.hero"
     h5_own5 = t11;
-#line 1271 "main.c"
+#line 1280 "main.c"
     hero_str_decref(t20);
 #line 151 "examples/tally/main.hero"
     t12 = h0_c;
@@ -1279,7 +1288,7 @@ bb0:
     t21 = h6_own6;
 #line 151 "examples/tally/main.hero"
     h6_own6 = t14;
-#line 1283 "main.c"
+#line 1292 "main.c"
     hero_str_decref(t21);
 #line 151 "examples/tally/main.hero"
     t15 = hero_str_concat(t11, t14);
@@ -1287,7 +1296,7 @@ bb0:
     t22 = h7_own7;
 #line 151 "examples/tally/main.hero"
     h7_own7 = t15;
-#line 1291 "main.c"
+#line 1300 "main.c"
     hero_str_decref(t22);
     hero_str_incref(t15);
     hero_str_release_at(&h1_own1);
@@ -1302,7 +1311,7 @@ bb0:
 
 #line 153 "examples/tally/main.hero"
 void h_main_main(void) {
-#line 1306 "main.c"
+#line 1315 "main.c"
     h_0opt_f87774a h0_text = {0};
     h_0opt_f87774a h1_f0 = {0};
     h_0opt_f87774a h2_f1 = {0};
@@ -1349,25 +1358,25 @@ bb0:
     t25 = h4_own4;
 #line 154 "examples/tally/main.hero"
     h4_own4 = t1;
-#line 1353 "main.c"
+#line 1362 "main.c"
     h_0opt_f87774a_release(&t25);
 #line 154 "examples/tally/main.hero"
     t26 = h0_text;
-#line 1357 "main.c"
+#line 1366 "main.c"
     h_0opt_f87774a_retain(&t1);
 #line 154 "examples/tally/main.hero"
     h0_text = t1;
-#line 1361 "main.c"
+#line 1370 "main.c"
     h_0opt_f87774a_release(&t26);
 #line 156 "examples/tally/main.hero"
     t2 = h0_text;
 #line 156 "examples/tally/main.hero"
     t27 = h1_f0;
-#line 1367 "main.c"
+#line 1376 "main.c"
     h_0opt_f87774a_retain(&t2);
 #line 156 "examples/tally/main.hero"
     h1_f0 = t2;
-#line 1371 "main.c"
+#line 1380 "main.c"
     h_0opt_f87774a_release(&t27);
 #line 156 "examples/tally/main.hero"
     t3 = h1_f0;
@@ -1385,11 +1394,11 @@ bb1:
     t9 = h0_text;
 #line 159 "examples/tally/main.hero"
     t28 = h2_f1;
-#line 1389 "main.c"
+#line 1398 "main.c"
     h_0opt_f87774a_retain(&t9);
 #line 159 "examples/tally/main.hero"
     h2_f1 = t9;
-#line 1393 "main.c"
+#line 1402 "main.c"
     h_0opt_f87774a_release(&t28);
 #line 159 "examples/tally/main.hero"
     t10 = h2_f1;
@@ -1427,11 +1436,11 @@ bb4:
     t17 = t16.as.ok;
 #line 159 "examples/tally/main.hero"
     t29 = h3_body;
-#line 1431 "main.c"
+#line 1440 "main.c"
     hero_str_incref(t17);
 #line 159 "examples/tally/main.hero"
     h3_body = t17;
-#line 1435 "main.c"
+#line 1444 "main.c"
     hero_str_decref(t29);
 #line 160 "examples/tally/main.hero"
     t18 = h3_body;
@@ -1443,7 +1452,7 @@ bb4:
     t30 = h5_own5;
 #line 160 "examples/tally/main.hero"
     h5_own5 = t20;
-#line 1447 "main.c"
+#line 1456 "main.c"
     hero_str_decref(t30);
 #line 160 "examples/tally/main.hero"
     hero_print_str(t20);
@@ -1460,7 +1469,7 @@ bb4:
     t31 = h6_own6;
 #line 161 "examples/tally/main.hero"
     h6_own6 = t24;
-#line 1464 "main.c"
+#line 1473 "main.c"
     hero_str_decref(t31);
 #line 161 "examples/tally/main.hero"
     hero_print_str(t21);
@@ -1468,7 +1477,7 @@ bb4:
     hero_print_str(t24);
 #line 161 "examples/tally/main.hero"
     hero_print_end();
-#line 1472 "main.c"
+#line 1481 "main.c"
     h_0opt_f87774a_release(hero_slot_escape(&h0_text));
     h_0opt_f87774a_release(hero_slot_escape(&h1_f0));
     h_0opt_f87774a_release(hero_slot_escape(&h2_f1));
@@ -1482,14 +1491,14 @@ bb5:
     t14 = h2_f1;
 #line 159 "examples/tally/main.hero"
     t15 = t14.as.err;
-#line 1486 "main.c"
+#line 1495 "main.c"
     hero_panic_must(t15);
     hero_unreachable();
 }
 
 #line 166 "examples/tally/main.hero"
 int64_t h_main_longest(HeroStr h0_text) {
-#line 1493 "main.c"
+#line 1502 "main.c"
     int64_t h1_best;
     int64_t h2_here;
     int64_t h3_at;
@@ -1642,12 +1651,12 @@ bb11:
 bb12:
 #line 181 "examples/tally/main.hero"
     goto bb10;
-#line 1646 "main.c"
+#line 1655 "main.c"
 }
 
 #line 227 "<heroes library>"
 void h_library_exit(int64_t h0_code) {
-#line 1651 "main.c"
+#line 1660 "main.c"
     int64_t t1;
     goto bb0;
 bb0:
@@ -1657,7 +1666,7 @@ bb0:
     (void)hero_exit(t1);
 #line 228 "<heroes library>"
     return;
-#line 1661 "main.c"
+#line 1670 "main.c"
 }
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_main_Count_eq(const h_main_Count *a, const h_main_Count *b) {

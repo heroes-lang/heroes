@@ -1,0 +1,14 @@
+# fixedbugs, defect 582, lane b19-pack, 2026-10-10, a shape beside
+# `fixedbugs-582-a-header-s-float-control-precise-off-leaves-the-program-s-sums-in-order`:
+# the header pushes the state itself and changes it with no pop, so the
+# close's pop takes the header's push, which holds the state the program had.
+
+extern "fixedbugs-582-a-header-s-own-unclosed-float-control-push-is-the-one-popped.h"
+    function llabs(x: i64) -> i64
+
+function main()
+    one = llabs(-1).to_f64()
+    ten = llabs(-10).to_f64()
+    big = llabs(-10000000000000000).to_f64()
+    tenth = one / ten
+    print(tenth * ten - one, " ", big + one - big)

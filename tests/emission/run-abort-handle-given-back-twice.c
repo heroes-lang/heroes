@@ -9,9 +9,18 @@
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic ignored "-Wpragma-pack"
+#pragma float_control(push)
 #include "heroes_guard_open.h"
 #include <abort-handle-given-back-twice.h>
 #include "heroes_guard_close.h"
+#pragma clang diagnostic ignored "-Wignored-pragmas"
+#pragma pack()
+#pragma float_control(pop)
+#pragma float_control(precise, on)
+#pragma GCC visibility push(default)
+#pragma clang section bss="" data="" rodata="" text="" relro=""
+#pragma clang optimize on
 #pragma clang diagnostic pop
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -70,7 +79,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 74 "aborthandlegivenbacktwice.c"
+#line 83 "aborthandlegivenbacktwice.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -115,7 +124,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 119 "aborthandlegivenbacktwice.c"
+#line 128 "aborthandlegivenbacktwice.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_aborthandlegivenbacktwice_Slot_eq(Slot * const *a, Slot * const *b);
@@ -134,7 +143,7 @@ void h_aborthandlegivenbacktwice_main(void);
 
 #line 46 "tests/golden/run/abort-handle-given-back-twice.hero"
 void h_aborthandlegivenbacktwice_main(void) {
-#line 138 "aborthandlegivenbacktwice.c"
+#line 147 "aborthandlegivenbacktwice.c"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
     Slot * h0_a;
     Slot * h1_twice;
@@ -196,7 +205,7 @@ bb0:
     }
 #line 51 "tests/golden/run/abort-handle-given-back-twice.hero"
     return;
-#line 200 "aborthandlegivenbacktwice.c"
+#line 209 "aborthandlegivenbacktwice.c"
 }
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_aborthandlegivenbacktwice_Slot_eq(Slot * const *a, Slot * const *b) {
