@@ -1,0 +1,6 @@
+error[ffi_missing_link]: the linker cannot find `fixedbugs_591_inner_labs`, the linker name `tests/golden/unsupported/fixedbugs-591-a-header-that-renames-labs.h` line 3 gives `labs`, bound here
+  at tests/golden/unsupported/fixedbugs-591-a-rename-in-a-header-the-group-s-header-includes.hero:7:5
+    |
+  7 |     function labs(x: i64) -> i64  #~ ffi_missing_link
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: a name a header gives by `#pragma redefine_extname` or an `__asm__` label is the linker's symbol as it is written, with none of the prefix a platform puts before a C name (`_` on Darwin), and nothing this program links defines `fixedbugs_591_inner_labs`: give the symbol its platform's own spelling in the header, or link the library that defines it, `extern "fixedbugs-591-a-rename-in-a-header-the-group-s-header-includes.h" link "<library>"`
