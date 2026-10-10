@@ -1,0 +1,8 @@
+# A module of defect 555's cases (lane b18-ffi, 2026-10-10): `twice` of
+# `long long`, from a header that declares it so.
+
+extern "fixedbugs-555-long.h"
+    function twice(x: i64) -> i64
+
+function doubled(x: i64) -> i64
+    return twice(x: x)

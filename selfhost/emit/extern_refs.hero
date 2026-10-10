@@ -1,0 +1,73 @@
+# A reference held to each C function a module's unit calls through a group,
+# so the link needs that function's external definition at every level
+# (design.md §4.19, §1.12; panel 202's R2, ratified 2026-10-10; defect 562).
+#
+# **A C99 `inline` definition in a header provides no external definition**
+# (C11 6.7.4p7), and C may call the external one wherever it does not inline
+# the call. At `-O0` it never inlines, so the link wanted the symbol and
+# `build` was refused, and at `-O2` it inlined every call, so `run` linked and
+# printed a value from a program no C compiler must accept: one program, two
+# verdicts. Each function this unit calls through a group from a header that
+# is not the compiler's own has its address held here, `used`, so every level
+# references it as `-O0` does, and the link says the same at both; where the
+# linker finds no definition, `cli/inline_only.hero` tells why. A `static`
+# function's address is the unit's own copy, and a function a library
+# exports is the call's own reference, so a correct binding links as before.
+#
+# Written in a module's unit only: the fused unit is the artifact
+# `--emit-c` writes and `heroes test` compiles at `-O0`, where every call
+# already references what it calls.
+
+use ast
+use source
+use ir/containers
+use emit/writer
+use emit/externs as emit_externs
+
+function references(@w: writer.Writer, p: containers.Program, s: source.Source, decls: [ast.Decl])
+    called: {str: bool} @ {}
+
+    for f in p.functions
+        for blk in f.blocks
+            for inst in blk.insts
+                match inst.op
+                    .call cl =>
+                        match cl.callee
+                            .extern_fn e =>
+                                if bound(decls, decl: e.decl, s: s)
+                                    called[source.span_text(s, decls[e.decl].name)] @ true
+                            .heroes_fn | .builtin_fn | .indirect => continue
+                    .lit | .load | .store | .push_owned | .unary | .binary | .cast | .func_ref  => continue
+                    .field | .index | .map_get | .len_of | .tag_of | .payload | .construct      => continue
+                    .copy_out | .abort_op | .incref | .decref | .decref_slot | .hole | .missing => continue
+
+    if called.len() == 0
+        return
+    writer.at_generated(@w)
+
+    # Inside a function that is kept, and never a static's initialiser: a
+    # name a header spells as a macro over an object, `#define via_slot
+    # (*slot)`, has no constant address, and its unit stopped at exit 2
+    # (`run/fixedbugs-171-*`, found by `warnings` at this defect's gate).
+    writer.line(@w, text: "__attribute__((used)) static void hero_extern_refs(void) {")
+    writer.line(@w, text: "    const void *volatile hero_ref;")
+
+    # ORDER: by name, so the unit's text is a function of the program.
+    for name in sort(keys(called))
+        writer.line(@w, text: "    hero_ref = (const void *)&" + name + ";")
+
+    writer.line(@w, text: "    (void)hero_ref;")
+    writer.line(@w, text: "}")
+    writer.blank(@w)
+
+# Whether a declaration is a group's function from a header of the program's,
+# not the compiler's own.
+function bound(decls: [ast.Decl], decl: i64, s: source.Source) -> bool
+    match decls[decl].kind
+        .function_decl fd =>
+            if fd.value.header.is_err()
+                return false
+            return !emit_externs.is_own(emit_externs.unquoted(s, span: fd.value.header.must()))
+        .constant_decl | .record_decl | .variant_decl | .test_decl => return false
+
+    return false

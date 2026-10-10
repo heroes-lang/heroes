@@ -1,0 +1,232 @@
+# The probes of a program's headers, asked per module's unit and never of
+# every header at once (design.md §4.19, §1.12; panel 202's R1 and C0,
+# ratified 2026-10-10; defect 559).
+#
+# **A probe judges the header the program's own compile will see**
+# (`cli/compiling.hero`), and since panel 093 the program is compiled one
+# unit per module, each reading its own groups' headers
+# (`emit/unit_plan.hero`). The pointee check, the layout check and a refused
+# round's questions read every header of the program in one unit until defect
+# 559, so a binding was judged against another module's header: beside two
+# headers that each define a `static inline twice` of another type, the dump
+# unit did not compile, the pointee check passed what it could not read, and
+# `fill(@x: i64)` over `void fill(int *x)` built at exit 0 and printed
+# `4294967299`, while the same program without the conflict was refused; a
+# group record beside them was refused at `build`; and a macro one module's
+# header defines chose another module's record layout, so no declaration of
+# it built in either `use` order and two messages of four contradicted
+# themselves. Probing the whole program first and per module only where that
+# fails is ruled out by that last shape: the whole program's probe compiles
+# and answers wrong.
+#
+# **One probe per header list, not per module**: modules whose units read
+# the same headers in the same order read the same C, so their questions are
+# asked together, and a module with nothing to ask runs no clang at all. The
+# compiler's own source has a handful of header lists among its modules.
+
+use ast
+use source
+use check/state
+use ir/containers
+use emit/members
+use emit/unit_plan
+use emit/externs as emit_externs
+use cli/toolchain
+use cli/compiling
+use cli/pointee
+use cli/pointee_ask
+use cli/pointee_wants
+use cli/layout
+use cli/strings
+
+# The modules whose units read one header list: the list, the modules, the
+# program cut to their members (the externs the pointee check asks about),
+# the group records their units read the headers of, and the probe of those
+# headers, absent where none of them has anything to ask.
+record Probing
+    headers: [str]
+    modules: [str]
+    program: containers.Program
+    records: {i64: bool}
+    probe: compiling.Probe?
+
+# What a build settles before any round runs: the shared tables every unit
+# is rendered from, each module's plan, and the probes of their headers.
+record Planned
+    whole: members.Whole
+    plans: [unit_plan.Plan]
+    probings: [Probing]
+
+function planned(t: toolchain.Toolchain, under: compiling.Compiling, p: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl], components: [str]) -> Planned
+    no_tags: {str: bool} = {}
+    no_units: {str: str} = {}
+    whole = members.whole_of(p, c, s, decls, struct_tags: no_tags, lend_units: no_units)
+    plans = unit_plan.plans(components, p, c, s, decls, whole: whole)
+    return Planned(whole: whole, plans: plans, probings: probings_of(t, under: under, p, c, s, decls, plans: plans))
+
+# The plans grouped by the header list their units read, in the order the
+# first of each comes. Each group's lists are built in a local of its own and
+# never through an index of a list of them, which would copy what it holds
+# at every write; and every probe shares one memo of the headers' digests,
+# so a header two lists include is hashed once.
+function probings_of(t: toolchain.Toolchain, under: compiling.Compiling, p: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl], plans: [unit_plan.Plan]) -> [Probing]
+    keys_seen: {str: i64} @ {}
+    lists: [[str]] @ []
+    group_of: [i64] @ []
+
+    for plan in plans
+        key = plan.headers.join("\n")
+
+        if keys_seen[key].is_err()
+            keys_seen[key] @ lists.len()
+            lists @ lists.push(plan.headers)
+        group_of @ group_of.push(keys_seen[key].must())
+
+    out: [Probing] @ []
+    memo: {str: str} @ {}
+    group: i64 @ 0
+
+    for headers in lists
+        modules: [str] @ []
+        kept: {i64: bool} @ {}
+        records: {i64: bool} @ {}
+        at: i64 @ 0
+
+        for plan in plans
+            if group_of[at] == group
+                modules @ modules.push(plan.module)
+
+                for f in plan.mine.defined
+                    kept[f] @ true
+
+                for decl in keys_of(plan.records)
+                    records[decl] @ true
+            at @ at + 1
+
+        program = members.tu_program(p, keep: sort(keys_of(kept)))
+        unasked: compiling.Probe? = fail(code: "none", msg: "nothing to ask of these headers")
+        probe: compiling.Probe? @ unasked
+
+        if asks(program, c, s, decls, records: records) || binds(program, decls)
+            probe @ ok(compiling.probe_with(t.build, under: under, headers: headers, memo: @memo))
+        out @ out.push(Probing(headers: headers, modules: modules, program: program, records: records, probe: probe))
+        group @ group + 1
+
+    return out
+
+# Whether a group's units have a question for a probe: an extern the pointee
+# check asks about, or a group record with fields the layout check lays out.
+function asks(program: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl], records: {i64: bool}) -> bool
+    return pointee_wants.pointees(program, c, s, decls).len() > 0 || laid_out(decls, records: records)
+
+# Whether a group's program binds a C function, which two lists' groups may
+# bind two ways (`cli/two_ways.hero`), asked under its probe's words.
+function binds(program: containers.Program, decls: [ast.Decl]) -> bool
+    for f in program.functions
+        if !emit_externs.extern_spans(decls, f).header.is_err() && !emit_externs.is_extern_constant(decls, f)
+            return true
+
+    return false
+
+# Whether a group's records hold one with fields, which is what
+# `layout_text.asked` lays out: asked of the declarations themselves, since
+# that reader names every declaration of the program first.
+function laid_out(decls: [ast.Decl], records: {i64: bool}) -> bool
+    for decl in keys_of(records)
+        match decls[decl].kind
+            .record_decl rec =>
+                if rec.fields.len() > 0
+                    return true
+            .constant_decl | .function_decl | .variant_decl | .test_decl => continue
+
+    return false
+
+# What the checks of every probe said: the first refusal and the modules
+# whose headers it was asked of, and a pointee dump that did not compile,
+# which the round tells only once its units compile (`cli/pointee.hero`).
+record Checked
+    verdict: ()?
+    modules: [str]
+    unread: ()?
+    unread_modules: [str]
+
+# The pointee check of each probe, then the layout check of each, their
+# answers about what each `@` parameter points at gathered into `answered`.
+function check_all(t: toolchain.Toolchain, p: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl], probings: [Probing], @answered: [pointee_ask.Answered]) -> Checked
+    none: [str] = []
+    unread: ()? @ ok()
+    unread_modules: [str] @ none
+    answered @ []
+
+    for one in probings
+        if !one.probe.is_err()
+            these: [pointee_ask.Answered] @ []
+            checked = pointee.check(t, one.program, c, s, decls, answered: @these, probe: one.probe.must())
+
+            for answer in these
+                answered @ answered.push(answer)
+
+            if code_of(checked) == "unread"
+                if !unread.is_err()
+                    unread @ checked
+                    unread_modules @ one.modules
+            else if checked.is_err()
+                return Checked(verdict: checked, modules: one.modules, unread: unread, unread_modules: unread_modules)
+
+    for one in probings
+        if !one.probe.is_err() && laid_out(decls, records: one.records)
+            laid = layout.check_records(t, p, c, s, decls, probe: one.probe.must(), records: ok(one.records))
+
+            if laid.is_err()
+                return Checked(verdict: laid, modules: one.modules, unread: unread, unread_modules: unread_modules)
+
+    return Checked(verdict: ok(), modules: none, unread: unread, unread_modules: unread_modules)
+
+# Every module of the program, the modules a refusal no one unit made is
+# asked of (a link's).
+function every_module(probings: [Probing]) -> [str]
+    out: [str] @ []
+
+    for one in probings
+        out @ strings.with_all(list: out, more: one.modules)
+
+    return out
+
+# The probings that hold any of `modules`.
+function holding(probings: [Probing], modules: [str]) -> [Probing]
+    out: [Probing] @ []
+
+    for one in probings
+        found: bool @ false
+
+        for module in one.modules
+            for wanted in modules
+                if module == wanted
+                    found @ true
+
+        if found
+            out @ out.push(one)
+
+    return out
+
+# Every probe's digests of the headers it read, for a round's memo.
+function digests_of(probings: [Probing]) -> {str: str}
+    out: {str: str} @ {}
+
+    for one in probings
+        if !one.probe.is_err()
+            for path in keys_of_text(one.probe.must().digests)
+                out[path] @ one.probe.must().digests[path].must()
+
+    return out
+
+function code_of(failed: ()?) -> str
+    match failed
+        .ok    => return ""
+        .err e => return e.code
+
+function keys_of(set: {i64: bool}) -> [i64]
+    return keys(set)
+
+function keys_of_text(table: {str: str}) -> [str]
+    return keys(table)

@@ -847,10 +847,15 @@ One file is one **module**, and the file you compile holds `main`. `use geom`
 binds `geom` to the declarations in `geom.hero` beside it, written qualified
 (`geom.dist2(a: p, b: q)`, `p: geom.Point`); every module you name needs its own
 `use`, there are no aliases and no wildcard, and modules may not form a cycle.
-The whole program is still emitted as **one `.c`** — one `.c` per module with
-prototypes across them and a per-module cache is a build architecture, deferred
-to Part 10 step 18 (panel 030 R1, panel 031). This paragraph read "one file, one
-program, **no modules in v1**" until panel 031.
+A program's C is cut by module (panel 093; panel 202 R1, ratified 2026-10-10):
+`build` and `run` compile one unit per module, prototypes across them and each
+unit cached, and each unit reads the headers of its own module's groups and of
+the group records it spells, never another module's, which every probe of the
+headers asks alike; `heroes test` and `--emit-c` read the whole program as one
+`.c`, which is the seed's bootstrap. This paragraph said *the whole program is
+still emitted as one `.c`* until 2026-10-10, stale since panel 093 made `build`
+per module, and it read "one file, one program, **no modules in v1**" until
+panel 031.
 
 ```
 ## Section title

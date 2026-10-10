@@ -1,0 +1,21 @@
+# fixedbugs, defect 555, lane b18-ffi, 2026-10-10 (panel 202's C1, its
+# widening, taken at the landing).
+#
+# No group binds `helper`: this module's header declares it of `long long`
+# and calls it from `quadruple`, another module's declares it of `double`
+# and calls it from `half`, and a third module's header defines it. The
+# linker joins the two declarations to one symbol, which triples a
+# `long long`: until 2026-10-10 this built at exit 0 and printed `4.0` for
+# `half.halved(x: 8.0)`, the `double` handed in coming back untouched where
+# the definition makes it `12.0`. Told on this group's string, the first by
+# its header's name, before anything links.
+use fixedbugs555/half
+use fixedbugs555/defines
+
+extern "fixedbugs-555-helper-a.h"  #~ ffi_declared_two_ways
+    function quadruple(x: i64) -> i64
+
+function main()
+    print(quadruple(x: 3))
+    print(half.halved(x: 8.0))
+    print(defines.unit())

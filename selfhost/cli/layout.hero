@@ -93,7 +93,20 @@ record Asking
     words: [str]
 
 function check(t: toolchain.Toolchain, p: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl], probe: compiling.Probe) -> ()?
-    wanted = layout_text.asked(s, decls)
+    every: {i64: bool}? = fail(code: "every", msg: "every group record")
+    return check_records(t, p, c, s, decls, probe: probe, records: every)
+
+# The same, of the group records `records` holds where it is given: those a
+# module's unit reads the headers of, asked of those headers alone, since a
+# record is laid out as the unit that spells it reads it (panel 202 R1,
+# `cli/probing.hero`). `p` is the whole program, whose every use of a record
+# is what the union questions ask about.
+function check_records(t: toolchain.Toolchain, p: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl], probe: compiling.Probe, records: {i64: bool}?) -> ()?
+    wanted: [layout_text.Asked] @ []
+
+    for one in layout_text.asked(s, decls)
+        if emit_externs.held(records, decl: one.decl)
+            wanted @ wanted.push(one)
 
     if wanted.len() == 0
         return ok()

@@ -58,14 +58,12 @@
 
 use source
 use emit
-use emit/externs as emit_externs
 use cli/io
 use cli/compile
 use cli/toolchain
-use cli/pointee
+use cli/probing
 use cli/pointee_ask
 use cli/header_types
-use cli/compiling
 use cli/publish
 
 # The artifact, written or printed, AFTER the build's own rounds have passed. A
@@ -76,10 +74,12 @@ use cli/publish
 # tag the header spells with `struct` in front — and `version` is the build's,
 # because `emit_maybe` stamps it. Both come from `cli/produce.hero`, which owns
 # the rounds; this file only applies their answer.
-function write_c(t: toolchain.Toolchain, options: compile.Options, art: compile.Artifact, s: source.Source, @answered: [pointee_ask.Answered], under: compiling.Compiling, struct_tags: {str: bool}, version: str) -> ()?
-    probe = compiling.probe(t.build, under: under, headers: emit_externs.headers(art.program, s, art.decls))
-    checked = pointee.check(t, art.program, art.checked, s, art.decls, answered: @answered, probe: probe)
-    checked?
+#
+# `probings` are the build's, each module's headers asked its own questions
+# (panel 202's C0, `cli/probing.hero`), their answers kept from the rounds.
+function write_c(t: toolchain.Toolchain, options: compile.Options, art: compile.Artifact, s: source.Source, @answered: [pointee_ask.Answered], probings: [probing.Probing], struct_tags: {str: bool}, version: str) -> ()?
+    checked = probing.check_all(t, art.program, art.checked, s, art.decls, probings, answered: @answered)
+    checked.verdict?
 
     # **THE ARTIFACT IS THE C THAT COMPILED, NOT THE FIRST DRAFT** (defect 049,
     # closing panel 157 R1 the way it was written). Until 2026-09-17 this ran

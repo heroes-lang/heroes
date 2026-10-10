@@ -1,0 +1,20 @@
+# fixedbugs, defect 559, lane b18-ffi, 2026-10-10 (panel 202's C0; the
+# critic's `skew32sw`).
+#
+# The case beside this one with its group also binding a function, so its
+# header comes before the other module's in the program's list of headers.
+# Until 2026-10-10 the order of the headers decided whether `S` was
+# refused, and in this order the base told the header as not compiling. It
+# builds in both orders now.
+use fixedbugs559/wide
+
+extern "fixedbugs-559-skew.h"
+    record S
+        a: i32
+        b: i32
+    function sget(s: S) -> i32
+
+function main()
+    s = S(a: 1, b: 2)
+    print(wide.doubled(x: 3))
+    print(sget(s: s))

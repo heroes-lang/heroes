@@ -99,6 +99,14 @@ function is_own(header: str) -> bool
 # The two seeds first, unconditional, seeded here so a program that also
 # BINDS one does not include it twice.
 function headers(p: containers.Program, s: source.Source, decls: [ast.Decl]) -> [str]
+    every: {i64: bool}? = fail(code: "every", msg: "every group record")
+    return headers_for(p, s, decls, records: every)
+
+# The same, with the record-only walk held to `records` where it is given:
+# a module's unit includes the groups of its own functions and the records
+# its unit reaches, never every record of the program (panel 202 R1,
+# `emit/unit_plan.hero`), so another module's header is not read beside it.
+function headers_for(p: containers.Program, s: source.Source, decls: [ast.Decl], records: {i64: bool}?) -> [str]
     seen: [str] @ SEEDS
 
     for f in p.functions
@@ -117,11 +125,12 @@ function headers(p: containers.Program, s: source.Source, decls: [ast.Decl]) -> 
             seen @ seen.push(header)
 
     # The record-only group (panel 061): walked over the DECLARATIONS,
-    # because that is where the answer is.
-    for decl in decls
-        match decl.kind
+    # because that is where the answer is; a module's unit walks only the
+    # records it reads, in declaration order, where every one is not asked.
+    for index in walked(decls, records: records)
+        match decls[index].kind
             .record_decl rec =>
-                if !rec.header.is_err()
+                if !rec.header.is_err() && held(records, decl: index)
                     header = unquoted(s, span: rec.header.must())
                     already: bool @ false
 
@@ -134,6 +143,20 @@ function headers(p: containers.Program, s: source.Source, decls: [ast.Decl]) -> 
             .constant_decl | .function_decl | .variant_decl | .test_decl => continue
 
     return seen
+
+# The declarations a walk of group records visits, in declaration order:
+# every one, or those `records` holds where it is given.
+function walked(decls: [ast.Decl], records: {i64: bool}?) -> [i64]
+    match records
+        .ok set => return sort(keys(set))
+        .err    => return range(from: 0, to: decls.len())
+
+# Whether a group record's header is one this unit reads: every one where no
+# set is given, the fused unit's; else the records the set holds.
+function held(records: {i64: bool}?, decl: i64) -> bool
+    match records
+        .ok set => return !set[decl].is_err()
+        .err    => return true
 
 # Every library a group named directly, and every package it asked for
 # — kept apart all the way to the toolchain, because a library name is
