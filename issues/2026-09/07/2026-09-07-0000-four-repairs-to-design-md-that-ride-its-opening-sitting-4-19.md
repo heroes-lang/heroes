@@ -89,3 +89,11 @@ github: none
 
     **Why it matters:** a document that omits what shipped briefs the next
     sitting wrong.
+
+    **The first item closed 2026-10-10**, by panel 204's R1 (defect 563, lane
+    b18-ffi): design.md §4.19 says a module's headers are included in the order
+    its groups are written, after the compiler's own prefix, that the order is
+    load-bearing and that no pass sorts, thins or moves the list, and §4.2's
+    *declaration order does not matter* names the exception. The task stays
+    open for the other four, (a), (b), (c) and the fifth, which were not
+    re-verified that day.
