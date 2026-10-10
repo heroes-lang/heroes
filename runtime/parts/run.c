@@ -61,11 +61,22 @@
 static _Thread_local char *hero_run_words[HERO_RUN_MAX_ARGS + 1];
 static _Thread_local int64_t hero_run_count = 0;
 
+/* Every word every thread's list holds, so the exit check can tell a list the
+ * program never gave back from a runtime call that kept what it borrowed
+ * (defect 573): the words are scratch, and the scratch count alone said *this
+ * is a runtime bug* of a program that left its last list standing. */
+static _Atomic int64_t hero_run_words_held = 0;
+
+static int64_t hero_run_words_held_at_exit(void) {
+    return atomic_load(&hero_run_words_held);
+}
+
 /* Drop every word. Safe to call twice, and called before every build. */
 void hero_run_reset(void) {
     for (int64_t i = 0; i < hero_run_count; i += 1) {
         hero_release(hero_run_words[i]);
         hero_run_words[i] = NULL;
+        atomic_fetch_sub(&hero_run_words_held, 1);
     }
     hero_run_count = 0;
 }
@@ -89,6 +100,7 @@ void hero_run_arg(HeroStr word) {
     copy[length] = '\0';
     hero_run_words[hero_run_count] = copy;
     hero_run_count += 1;
+    atomic_fetch_add(&hero_run_words_held, 1);
 }
 
 /* Where a stream goes when the caller wants it thrown away. The word is spelled

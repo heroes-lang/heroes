@@ -1,0 +1,2 @@
+1
+!panic: a directory listing of 1 name(s) is still held at exit — `hero_dir_scan` keeps its listing until `hero_dir_release()` gives it back, and this program did not call it after its last scan
