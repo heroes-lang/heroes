@@ -1,0 +1,13 @@
+# Fixed defect 580, 2026-10-10 (panel 207 R3; the critic's `s06`): an index is
+# not an operator of spec § 7's table, and the walk gives an array no value,
+# so `xs[5]` of a three-element array is not judged when the program is
+# compiled. It aborts where `V` is read (spec § 10: an out-of-bounds index
+# aborts), the `1` before it flushed first.
+
+constant V: i64
+    xs = [1, 2, 3]
+    xs[5]
+
+function main()
+    print(1)
+    print(V)
