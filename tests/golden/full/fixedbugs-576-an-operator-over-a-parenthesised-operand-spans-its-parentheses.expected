@@ -1,0 +1,12 @@
+error[int_out_of_range]: `-(-128)` does not fit an `i8`
+  at tests/golden/full/fixedbugs-576-an-operator-over-a-parenthesised-operand-spans-its-parentheses.hero:9:13
+    |
+  9 |     a: i8 @ -(-128)  #~ int_out_of_range
+    |             ^^^^^^^
+  note: an `i8` holds -128 through 127. Widen the type, or write a number in range — this language never truncates one silently
+
+error[type_mismatch]: expected `bool`, found `i64`
+  at tests/golden/full/fixedbugs-576-an-operator-over-a-parenthesised-operand-spans-its-parentheses.hero:11:15
+     |
+  11 |     e: bool = (1 + 2) * 3  #~ type_mismatch
+     |               ^^^^^^^^^^^
