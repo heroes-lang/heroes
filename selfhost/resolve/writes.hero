@@ -72,6 +72,10 @@ function write_root(@r: state.Resolver, a: ast.Ast, s: source.Source, id: i64)
             errors.no_mutable_globals(name: text, what: "top-level declaration", span: span)
         )
         return
+
+    if text == "_"
+        state.push_diagnostic(@r, errors.wildcard_place(span))
+        return
     candidates = names.value_candidates(@r)
     near = did_you_mean.near_names(@r, text, candidates)
     state.push_diagnostic(@r, errors.unknown_place(text, near, span))

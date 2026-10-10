@@ -1,0 +1,2 @@
+tests/golden/check/fixedbugs-613-a-name-near-the-wildcard-is-still-told-unused.hero:8:5: error[unused_binding]: `k` is bound and never read — remove the binding, or read it
+tests/golden/check/fixedbugs-613-a-name-near-the-wildcard-is-still-told-unused.hero:9:5: error[unknown_name]: `_` binds nothing, so there is no cell for `@` to re-bind there — a value dropped on purpose is written `_ = …`
