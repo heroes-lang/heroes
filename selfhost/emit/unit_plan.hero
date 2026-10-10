@@ -30,6 +30,7 @@ use ir/containers
 use emit/reach
 use emit/members
 use emit/externs as emit_externs
+use emit/decls as emit_decls
 
 # One module's unit, planned: what it defines and declares (`members`), the
 # program cut to its members, the types its sections spell, closed as C reads
@@ -44,18 +45,21 @@ record Plan
     groups: Groups
     records: {i64: bool}
     headers: [str]
+    target: emit_decls.BuildTarget
 
 # A plan per component of the program, in the order the build compiles them
 # (`cli/units.components`), from one build's shared tables.
-function plans(components: [str], p: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl], whole: members.Whole) -> [Plan]
+# `target` is the build's: a program's, or `heroes test`'s, whose units define
+# their modules' tests and whose root runs them (defect 560).
+function plans(components: [str], p: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl], whole: members.Whole, target: emit_decls.BuildTarget) -> [Plan]
     out: [Plan] @ []
 
     for component in components
-        out @ out.push(plan(component, p, c, s, decls, whole: whole))
+        out @ out.push(plan(component, p, c, s, decls, whole: whole, target: target))
 
     return out
 
-function plan(module: str, p: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl], whole: members.Whole) -> Plan
+function plan(module: str, p: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl], whole: members.Whole, target: emit_decls.BuildTarget) -> Plan
     mine = members.members(module, p, c, s, decls, shown: whole.shown, by_decl: whole.by_decl, callees: whole.callees)
     tu_p = members.tu_program(p, keep: mine.defined)
 
@@ -65,7 +69,7 @@ function plan(module: str, p: containers.Program, c: state.Checked, s: source.So
     # satellites that still mentioned it; trimming NOTHING made a TU
     # 19,193 lines where 87% belonged to other modules, and the
     # compiler's own build went 188 s -> 484 s (measured 2026-08-25).
-    walked = reach.reach_of(tu_p, c, target: .program_build, shown: members.all_of(tu_p))
+    walked = reach.reach_of(tu_p, c, target: target, shown: members.all_of(tu_p))
 
     # A PROTOTYPE names types too, and the body walk above cannot see
     # the ones belonging to another TU's function. So the signatures of
@@ -137,7 +141,8 @@ function plan(module: str, p: containers.Program, c: state.Checked, s: source.So
         declared: declared,
         groups: groups,
         records: records,
-        headers: emit_externs.headers_for(tu_p, s, decls, records: ok(records), own: ok(module))
+        headers: emit_externs.headers_for(tu_p, s, decls, records: ok(records), own: ok(module)),
+        target: target
     )
 
 # Whether a declaration is a record of an `extern` group.
@@ -151,8 +156,8 @@ function group_record(decls: [ast.Decl], decl: i64) -> bool
 # Every group record a module declares, which the module's TU spells whether
 # or not a line of its code reaches it (defect 416, 2026-10-06). **A binding
 # the header refutes is the program's mistake whether or not a line uses
-# it**, and the fused unit, which `heroes test`, `--emit-c` and the seed
-# compile, already said so: its per-type functions are asked of every
+# it**, and the fused unit, which `--emit-c` and the seed compile (and
+# `heroes test` until defect 560), already said so: its per-type functions are asked of every
 # declaration. Until that day a module's unit spelled only what its code
 # reached, so a handle over a union's tag or a misspelled one that nothing
 # used was refused by `test` alone, and `--emit-c` wrote a unit clang refuses

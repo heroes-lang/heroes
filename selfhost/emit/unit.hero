@@ -54,6 +54,7 @@ use check/state
 use ir/containers
 use emit
 use emit/synth
+use emit/ctype
 use emit/members
 use emit/unit_plan
 use emit/writer
@@ -107,7 +108,7 @@ function unit(plan: unit_plan.Plan, p: containers.Program, c: state.Checked, s: 
     emit_decls.prelude(
         @w,
         tu_p,
-        target: .program_build,
+        target: plan.target,
         c: c,
         names: names,
         s: s,
@@ -156,7 +157,7 @@ function unit(plan: unit_plan.Plan, p: containers.Program, c: state.Checked, s: 
     for at in mine.needed
         f = p.functions[at]
 
-        if emit_decls.emitted(f, target: .program_build)
+        if emit_decls.emitted(f, target: plan.target)
             signature.prototype(@w, f, c, names, s, decls)
 
     callback_thunk.lookup_table(@w, p, c, names, s, decls, callbacks: whole.callbacks)
@@ -164,7 +165,7 @@ function unit(plan: unit_plan.Plan, p: containers.Program, c: state.Checked, s: 
     for at in keep
         f = p.functions[at]
 
-        if emit_decls.emitted(f, target: .program_build)
+        if emit_decls.emitted(f, target: plan.target)
             # The FULL program, not the TU's slice: a call names its
             # callee by searching p.functions, and a cross-TU call's
             # callee is exactly the function this TU does not define.
@@ -177,8 +178,27 @@ function unit(plan: unit_plan.Plan, p: containers.Program, c: state.Checked, s: 
     perfn.bodies(@w, c, names, s, decls, want: want)
 
     if is_root
-        entry = emit.entry_point(p)
-
-        if !entry.is_err()
-            emit_decls.shim(@w, p.functions[entry.must()], s)
+        root_shim(@w, plan, p, c, names, s, decls)
     return writer.finish(w)
+
+# The root unit's `main`: the program's, or under `heroes test` the runner
+# of every module's tests, each defined in its own module's unit and
+# declared here, so the program's `main` never runs before a test (defect
+# 560; until 2026-10-10 `heroes test` compiled the whole program as one unit,
+# and so computed or refused another program than `build`).
+function root_shim(@w: writer.Writer, plan: unit_plan.Plan, p: containers.Program, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl])
+    match plan.target
+        .program_build =>
+            entry = emit.entry_point(p)
+
+            if !entry.is_err()
+                emit_decls.shim(@w, p.functions[entry.must()], s)
+        .tests_build =>
+            for f in p.functions
+                match f.kind
+                    .test_kind =>
+                        if !source.is_library(s, f.span.start) && source.component_at(s, f.span.start) != plan.module
+                            signature.prototype(@w, f, c, names, s, decls)
+                    .function_kind | .constant_kind | .extern_kind => continue
+
+            emit_decls.test_shim(@w, p, s)

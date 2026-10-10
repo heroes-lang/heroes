@@ -18,16 +18,18 @@ use cli/toolchain
 use cli/clang_first
 use cli/process
 use cli/publish
+use cli/files
 use cli/digest
 use cli/read_back
 use cli/strings
 
-# Whether the unit compiled, whether clang could be asked at all, and its
-# first error where it refused.
+# Whether the unit compiled, whether clang could be asked at all, its first
+# error where it refused, and all it said.
 record Ran
     asked: bool
     compiles: bool
     refusal: str
+    said: str
 
 # The line every unit opens with, quoted as the prelude writes it
 # (`emit/decls.prelude`).
@@ -63,29 +65,58 @@ function theirs(headers: [str]) -> [str]
 
     return out
 
-# `clang -fsyntax-only` of `text` under `words`.
+# `clang -fsyntax-only` of `text` under `words`, written where its bytes
+# name it, so a question asked again finds its unit.
 function compiled(t: toolchain.Toolchain, words: [str], text: str) -> Ran
-    unasked = Ran(asked: false, compiles: false, refusal: "")
     unit = written(t, text: text)
 
     if unit.is_err()
-        return unasked
-    err = publish.private_name(t.build + "/order/order-stderr.txt")
-    line = strings.with_all(list: ["clang", "-fsyntax-only", "-fno-caret-diagnostics"], more: words)
-    ran = process.run(program: "clang", words: line.push(unit.must()), out: process.discard(), err: err)
-    said = read_back.words(err)
-    publish.discard(err)
+        return Ran(asked: false, compiles: false, refusal: "", said: "")
+    return compiled_at(words: words, unit: unit.must(), err: t.build + "/order/order-stderr.txt")
+
+# The same of a text asked once and large, a whole program's
+# (`cli/one_file.hero`): written under a private name and thrown away after,
+# so no digest of its bytes is taken and no copy of it is kept (measured
+# 2026-10-10: keyed by its digest, the compiler's own 49 MB file took the
+# `--emit-c` that wrote it to 512.9 billion instructions, and under a private
+# name to 487.3). Its name ends `.tmp`, so clang is told it is C.
+function compiled_once(t: toolchain.Toolchain, words: [str], text: str) -> Ran
+    dir = t.build + "/order"
+
+    if process.mkdir_all(dir).is_err()
+        return Ran(asked: false, compiles: false, refusal: "", said: "")
+    unit = publish.private_name(dir + "/one-file.c")
+
+    if files.stage(staged: unit, text: text, like: "").is_err()
+        publish.discard(unit)
+        return Ran(asked: false, compiles: false, refusal: "", said: "")
+    ran = compiled_at(words: words, unit: unit, err: dir + "/one-file-stderr.txt")
+    publish.discard(unit)
+    return ran
+
+function compiled_at(words: [str], unit: str, err: str) -> Ran
+    unasked = Ran(asked: false, compiles: false, refusal: "", said: "")
+    said_at = publish.private_name(err)
+    line = strings.with_all(list: ["clang", "-fsyntax-only"], more: words)
+    ran = process.run(
+        program: "clang",
+        words: line.push("-x").push("c").push(unit),
+        out: process.discard(),
+        err: said_at
+    )
+    said = read_back.words(said_at)
+    publish.discard(said_at)
 
     if !ran.started || said.is_err()
         return unasked
 
     if ran.code == 0
-        return Ran(asked: true, compiles: true, refusal: "")
+        return Ran(asked: true, compiles: true, refusal: "", said: said.must())
     first = clang_first.first_error(ffi_lookup.lines(text: said.must()))
 
     if first.is_err()
-        return Ran(asked: true, compiles: false, refusal: "")
-    return Ran(asked: true, compiles: false, refusal: first.must().message)
+        return Ran(asked: true, compiles: false, refusal: "", said: said.must())
+    return Ran(asked: true, compiles: false, refusal: first.must().message, said: said.must())
 
 # What clang writes on stdout for `text` under `words` and `mode` (`-E -dM`,
 # say), absent where it could not or refused.

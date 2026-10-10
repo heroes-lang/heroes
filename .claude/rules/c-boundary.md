@@ -47,11 +47,12 @@ had become loud in both directions (CL-028).
 ## A clang failure that the author's own extern caused
 
 A clang failure is normally exit 2 and says the **compiler** is wrong. One class
-is exit 1 with a diagnostic on the `.hero` line, and it has nine members
+is exit 1 with a diagnostic on the `.hero` line, and it has ten members
 (panel 036, widened by panel 048, CL-008; the fifth by panel 166; the sixth by
 defect 360, 2026-10-06, with no sitting, on defect 060's precedent: who is
 blamed moves, the line between accepted and refused does not; the seventh,
-eighth and ninth by panel 202, ratified 2026-10-10, its R2):
+eighth and ninth by panel 202, ratified 2026-10-10, its R2; the tenth by its
+R3, the same day):
 
 - a result type the header refutes, and a record's constant whose header value
   C will not build as that record, judged by the accessor's own declaration at
@@ -94,6 +95,13 @@ eighth and ninth by panel 202, ratified 2026-10-10, its R2):
   and modules named (`cli/defined_twice.hero`); until then the link said
   *duplicate symbol* at exit 2, and a tentative one linked on this Mac and
   not on Linux.
+- **the one file `--emit-c` writes, where it cannot mean the program the
+  units build**: added 2026-10-10 (panel 202's R3, defect 453). Told
+  `ffi_one_file` at exit 1, nothing written, where a module's unit reads
+  other headers than the file and clang refuses the file, naming the two
+  modules and their headers, or where a module's binding has another C type,
+  another macro or another dump in it (`cli/one_file.hero`); until then the
+  file was written at exit 0, clang never reading it.
 
 **The narrowing is `declaration()`, not whose text it is.** Every class recovers
 a name and asks whether *this program* declared it `extern`, so a symbol nobody

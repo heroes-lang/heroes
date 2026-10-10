@@ -851,11 +851,16 @@ A program's C is cut by module (panel 093; panel 202 R1, ratified 2026-10-10):
 `build` and `run` compile one unit per module, prototypes across them and each
 unit cached, and each unit reads the headers of its own module's groups and of
 the group records it spells, never another module's, which every probe of the
-headers asks alike; `heroes test` and `--emit-c` read the whole program as one
-`.c`, which is the seed's bootstrap. This paragraph said *the whole program is
-still emitted as one `.c`* until 2026-10-10, stale since panel 093 made `build`
-per module, and it read "one file, one program, **no modules in v1**" until
-panel 031.
+headers asks alike. `heroes test` compiles a unit per module too, the root's
+`main` running every module's tests (panel 202 R3, defect 560), and `--emit-c`
+writes the whole program as one `.c`, which is the seed's bootstrap, refused at
+exit 1 where that file cannot mean the program the units build: where it does
+not compile, or where a module's binding means something else in it, each asked
+of clang (defect 453, `cli/one_file.hero`). This paragraph said *`heroes test`
+and `--emit-c` read the whole program as one `.c`* until the same day; it said
+*the whole program is still emitted as one `.c`* until 2026-10-10, stale since
+panel 093 made `build` per module, and it read "one file, one program, **no
+modules in v1**" until panel 031.
 
 ```
 ## Section title
