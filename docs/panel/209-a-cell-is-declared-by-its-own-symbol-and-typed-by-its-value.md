@@ -252,3 +252,23 @@ starts from the engineer's worktree and removes the rest.
 
 Pending. The decision issue is
 `issues/2026-10/10/2026-10-10-1736-panel-209-ratify-amend-or-overturn-a-cell-declared-by-its-own-symbol.md`.
+
+**Ratified, 2026-10-10 17:57** (the line above stood from 17:33 to 17:57): the
+author, in conversation, meant as *all right, then I ratify the panel; and
+then on to the push*, after weighing on the human side that the small
+asymmetry at the declaration is the price for the mutation standing out,
+and after asking the coordinator's reading as a model, which agreed for its
+own reasons (the common act keeps the common symbol `=`, the rare act the
+rare one, and the line a reader must find in a block is the rare one; `:=`
+carries two priors that contradict each other, Go's and Pascal's, where
+`@=` carries one weak one that 0 of 12 blind readers followed). A variant
+the author raised in the same conversation, **`:=` for the once-bound name,
+`@=` for the cell and bare `=` for the mutation**, was weighed and set aside
+unmeasured: every confusion among its three forms is still a compile error
+(a name declared twice is shadowing, `=` on a non-cell is `not_mutable`, a
+bare `=` on an undeclared name is `unknown_name`), but it moves the loud
+glyph from the mutation to the birth against §4.4's reason, gives the most
+habitual symbol to the act a reader must find, and rewrites every binding
+line of the tree rather than the cells'. Recorded as a reading (CLAUDE.md
+§ 4). The critic's `@`-parameter question stays its own open decision; the
+landing is a milestone the author schedules.
