@@ -315,6 +315,22 @@ function never_rebound(name: str, span: token.Span, symbol: token.Span) -> diag.
     )
     return d
 
+# `_ @= e`, or `_: T @= e`: the wildcard binds nothing (spec § 5), so the cell
+# its symbol would declare is one nothing can ever re-bind, R1b's rule at the
+# one name no write reaches, a hole in its module or not (defect 608). The
+# same code and the same certain fix at the symbol, `@=` or the old `@`: the
+# line runs as the discard `_ = e`, so writing `=` changes nothing it does.
+function never_rebound_wildcard(written: str, span: token.Span, symbol: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @= diag.new_diagnostic(
+        code: "never_rebound",
+        message: "`_` binds nothing, so a cell declared on it is one nothing can re-bind — a value dropped on purpose is written `_ = …`: write `=` where the `" + written + "` is",
+        span: span
+    )
+    d.fixes @ d.fixes.push(
+        diag.Fix(title: "write `=`: `_` drops the value", replacement: "=", span: symbol, certainty: .certain)
+    )
+    return d
+
 test "a cell nothing re-binds is told once, with a certain fix at its @"
     d = never_rebound("v", span: token.Span(start: 4, end: 5), symbol: token.Span(start: 11, end: 12))
     assert d.code == "never_rebound"
@@ -322,3 +338,13 @@ test "a cell nothing re-binds is told once, with a certain fix at its @"
     assert d.fixes[0].certainty == .certain
     assert d.fixes[0].replacement == "="
     assert d.fixes[0].span.start == 11
+
+test "the wildcard's cell is told at the _, its fix writing = over the symbol written"
+    d = never_rebound_wildcard("@=", span: token.Span(start: 4, end: 5), symbol: token.Span(start: 6, end: 8))
+    assert d.code == "never_rebound"
+    assert d.span.start == 4
+    assert d.message == "`_` binds nothing, so a cell declared on it is one nothing can re-bind — a value dropped on purpose is written `_ = …`: write `=` where the `@=` is"
+    assert d.fixes.len() == 1
+    assert d.fixes[0].certainty == .certain
+    assert d.fixes[0].replacement == "="
+    assert d.fixes[0].span.end == 8

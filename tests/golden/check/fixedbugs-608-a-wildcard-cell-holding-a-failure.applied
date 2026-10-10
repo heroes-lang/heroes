@@ -1,0 +1,16 @@
+# Fixed 2026-10-11, defect 608, lane b20-check: the shape beside it whose
+# value is a `T?`. Symptom: `_ @= h(1)` was accepted and dropped the error,
+# which `_ = h(1)` is refused for (spec § 5: a `_` never drops a `T?`), the
+# checker's discard rule reading the `=` line alone. Now the line is told
+# once, here; its certain fix writes `_ = h(1)`, which `check` then refuses
+# as `discarded_failure`, as it refuses that line anywhere, so this case
+# carries an `.applied` and no `.fixed`.
+
+function h(x: i64) -> i64?
+    if x > 0
+        return ok(x)
+    return fail(code: "neg", msg: "negative")
+
+function main()
+    _ = h(1)  #~ never_rebound
+    print("done")

@@ -1,0 +1,16 @@
+# Fixed 2026-10-11, defect 608, lane b20-check. Symptom: `_ @= f(1)` checked
+# and ran as the discard `_ = f(1)`: `_` binds nothing (spec § 5), so the
+# cell its symbol declares is one nothing can re-bind, and the never-re-bound
+# rule, which reads the locals, never saw it (47 of the 48 survivors of
+# `heroes mutate examples --operator bind-as-cell`). Cause: the resolver's
+# `.declare` arm handed `_` to `state.declare`, whose answer for the
+# wildcard is a silent `fail`. Now each such line is told once at its `_`,
+# the `_` repeating as it may, with the certain fix that writes `=`.
+
+function f(x: i64) -> i64
+    return x + 1
+
+function main()
+    _ @= f(1)  #~ never_rebound
+    _ @= f(2)  #~ never_rebound
+    print("done")

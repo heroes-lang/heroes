@@ -1,0 +1,14 @@
+# Fixed 2026-10-11, defect 608, lane b20-check: the shape beside it with the
+# symbol a cell took until panel 209, `_: i64 @ f(1)`. Before the repair it
+# was told `old_cell_symbol`, whose certain fix writes `@=` and so wrote the
+# accepted wildcard cell; with the wildcard refused, that fix would have
+# written a line refused again, two passes of `check --apply` for one line.
+# Now `parse/annotation` leaves the wildcard's old `@` to the resolver, which
+# tells it once, and the certain fix writes `=` where the `@` is.
+
+function f(x: i64) -> i64
+    return x + 1
+
+function main()
+    _: i64 @ f(1)  #~ never_rebound
+    print("done")

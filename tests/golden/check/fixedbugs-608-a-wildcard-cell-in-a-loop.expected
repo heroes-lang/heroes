@@ -1,0 +1,2 @@
+tests/golden/check/fixedbugs-608-a-wildcard-cell-in-a-loop.hero:11:9: error[never_rebound]: `_` binds nothing, so a cell declared on it is one nothing can re-bind — a value dropped on purpose is written `_ = …`: write `=` where the `@=` is
+tests/golden/check/fixedbugs-608-a-wildcard-cell-in-a-loop.hero:15:9: error[never_rebound]: `_` binds nothing, so a cell declared on it is one nothing can re-bind — a value dropped on purpose is written `_ = …`: write `=` where the `@=` is

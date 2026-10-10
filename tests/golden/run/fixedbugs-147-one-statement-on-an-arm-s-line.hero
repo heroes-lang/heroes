@@ -85,7 +85,7 @@ function discards(c: Color) -> i64
         .green | .blue => _: i64 = noisy(k: 20)
 
     match c
-        .red   => _: i64 @= twice(k: 15)
+        .red   => _: i64 = twice(k: 15)
         .green => k @ 1
         .blue  => k @ 2
 
@@ -126,3 +126,10 @@ function main()
     print(measured(s: .dot), " ", measured(s: .line(length: 9)))
     print(nested(c: .red, n: 0), " ", nested(c: .red, n: 5), " ", nested(c: .blue, n: 5))
     print(early(c: .red), " ", early(c: .green))
+
+# Corrected 2026-10-11, defect 608, lane b20-check, of the header's
+# `_: T @= e`: refused since that repair, `_` binding nothing, so the cell its
+# symbol declares is one nothing can re-bind (spec § 5). `discards` writes
+# `_: T = e`, which that arm always ran as (its C byte for byte the same,
+# measured), and the refusal's cases are `tests/golden/check/fixedbugs-608-*`.
+# Written here, below the code, so that no line the emission cites moves.

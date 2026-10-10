@@ -1013,7 +1013,7 @@ function annotated(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.StmtKind
     annotation.past_a_refused_type(@c, typed)
     at = cursor.current_span(c)
 
-    if annotation.cell_symbol(@c, text)
+    if annotation.cell_symbol(@c, text, wildcard: cursor.slice_of(text, name) == "_")
         return .declare(name: name, ty: ok(ty), value: parse_expr(@c, @a, text), symbol: at)
 
     if cursor.eat(@c, .eq)

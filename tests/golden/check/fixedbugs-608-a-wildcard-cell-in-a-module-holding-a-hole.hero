@@ -1,0 +1,15 @@
+# Fixed 2026-10-11, defect 608, lane b20-check: the shape beside it in a
+# module that holds a hole. A hole suspends the unused rule and the
+# never-re-bound rule for a named cell file-wide (design.md §4.16), since the
+# missing code may yet read or re-bind it; `_` binds nothing, so no code the
+# hole stands for can ever re-bind it, and the line is told all the same.
+
+function f(x: i64) -> i64
+    return x + 1
+
+function later() -> i64
+    return ???
+
+function main()
+    _ @= f(1)  #~ never_rebound
+    print("done")

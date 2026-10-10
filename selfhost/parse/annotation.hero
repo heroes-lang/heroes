@@ -77,12 +77,12 @@ function no_binding_symbol(@c: cursor.Cursor, text: str, typed: opening.Mark)
 
 # The symbol that declares a cell after an annotation, eaten: `@=` (spec
 # § 5, panel 209), or `@`, the symbol until 2026-10-10, told at once with a
-# certain fix that writes `@=` there, which is how the tree's 1671 files were
-# rewritten, through `check --apply`'s own words; the line is still read as
-# the declaration it is, so the rest of the file is judged. False where
-# neither stands, the cursor unmoved.
-function cell_symbol(@c: cursor.Cursor, text: str) -> bool
-    if cursor.eat(@c, .at_eq)
+# certain fix writing `@=` (how `check --apply` rewrote the tree's 1671
+# files) and read as the declaration it is, so the rest of the file is
+# judged; quiet at the `wildcard`'s `@`, a cell the resolver tells with the
+# fix writing `=` (defect 608). False where neither stands, cursor unmoved.
+function cell_symbol(@c: cursor.Cursor, text: str, wildcard: bool) -> bool
+    if cursor.eat(@c, .at_eq) || wildcard && cursor.eat(@c, .at)
         return true
 
     if !cursor.at(c, .at)

@@ -1,0 +1,11 @@
+# Fixed 2026-10-11, defect 608, lane b20-check: the shape beside it with the
+# cell's type written, `_: i64 @= f(1)`. Symptom: accepted as the discard
+# `_: i64 = f(1)`. Now told once at the `_`, and the certain fix writes `=`
+# where the `@=` is, the annotation kept.
+
+function f(x: i64) -> i64
+    return x + 1
+
+function main()
+    _: i64 @= f(1)  #~ never_rebound
+    print("done")
