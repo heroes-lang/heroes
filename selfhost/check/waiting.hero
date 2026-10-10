@@ -54,7 +54,7 @@ record Held
 
 # Whether the argument `id`, written for a generic callee, waits.
 function needs_context(a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], id: i64) -> bool
-    if function_value.generic_at(a, r, s, decls, id) || contextual.contextual(a, id)
+    if function_value.generic_at(a, r, decls, id) || contextual.contextual(a, id)
         return true
 
     match a.exprs[id].kind
@@ -66,8 +66,8 @@ function needs_context(a: ast.Ast, r: resolved.Resolved, s: source.Source, decls
             for e in en.entries
                 if needs_context(a, r, s, decls, id: e.key) || needs_context(a, r, s, decls, id: e.value)
                     return true
-        .call cl => return made_by_context(a, r, s, decls, callee: cl.callee)
-        .method => return generic_top(s, decls, named: r.uses[id])
+        .call cl => return made_by_context(a, r, decls, callee: cl.callee)
+        .method => return generic_top(decls, named: r.uses[id])
         .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit | .null_ptr => return false
         .hole | .name | .unary | .binary | .field | .field_name | .index => return false
         .variant_case | .try_expr | .if_expr | .match_expr | .error => return false
@@ -75,28 +75,28 @@ function needs_context(a: ast.Ast, r: resolved.Resolved, s: source.Source, decls
     return false
 
 # `ok(…)`, `fail(…)`, or a generic function called by its name.
-function made_by_context(a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], callee: i64) -> bool
+function made_by_context(a: ast.Ast, r: resolved.Resolved, decls: [ast.Decl], callee: i64) -> bool
     if a.exprs[callee].kind != .name
         return false
 
     match r.uses[callee]
         .builtin b => return inventory.name_of(b.at) == "ok" || inventory.name_of(b.at) == "fail"
-        .top | .local | .module | .unresolved => return generic_top(s, decls, named: r.uses[callee])
+        .top | .local | .module | .unresolved => return generic_top(decls, named: r.uses[callee])
 
     return false
 
-function generic_top(s: source.Source, decls: [ast.Decl], named: resolved.Ref) -> bool
+function generic_top(decls: [ast.Decl], named: resolved.Ref) -> bool
     match named
-        .top t                                    => return function_value.letters_of(s, decls, decl: t.at).len() > 0
+        .top t                                    => return function_value.generic(decls, decl: t.at)
         .local | .builtin | .module | .unresolved => return false
 
     return false
 
 # A call of a generic function, by its name or as `x.f()`.
-function generic_call(a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], id: i64) -> bool
+function generic_call(a: ast.Ast, r: resolved.Resolved, decls: [ast.Decl], id: i64) -> bool
     match a.exprs[id].kind
-        .call cl => return a.exprs[cl.callee].kind == .name && generic_top(s, decls, named: r.uses[cl.callee])
-        .method => return generic_top(s, decls, named: r.uses[id])
+        .call cl => return a.exprs[cl.callee].kind == .name && generic_top(decls, named: r.uses[cl.callee])
+        .method => return generic_top(decls, named: r.uses[id])
         .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit | .null_ptr => return false
         .hole | .name | .unary | .binary | .field | .field_name | .index | .array | .map => return false
         .variant_case | .try_expr | .if_expr | .match_expr | .error => return false

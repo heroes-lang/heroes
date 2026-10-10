@@ -86,7 +86,7 @@ function next(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Sou
 
         # One argument left and no generic function's name: what it weighs
         # orders nothing, so it is not weighed.
-        if pending.left.len() == 1 && !function_value.generic_at(a, r, s, decls, pending.left[0].value)
+        if pending.left.len() == 1 && !function_value.generic_at(a, r, decls, pending.left[0].value)
             return alone(
                 call,
                 @pending,

@@ -53,7 +53,7 @@ function by_the_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: sou
 
     if !waiting.needs_context(a, r, s, decls, id: receiver)
         return false
-    return !waiting.generic_call(a, r, s, decls, id: receiver) || weight(@c, a, r, s, decls, id: receiver, depth: LOOK) > 0
+    return !waiting.generic_call(a, r, decls, id: receiver) || weight(@c, a, r, s, decls, id: receiver, depth: LOOK) > 0
 
 # How deep `weight` looks: a call or a literal nested past it weighs as a
 # literal does. A generic call's weight asks its arguments', so a chain
@@ -81,7 +81,7 @@ function weight(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.S
     if depth <= 0
         return 1
 
-    if function_value.generic_at(a, r, s, decls, id)
+    if function_value.generic_at(a, r, decls, id)
         return REFUSES
 
     if contextual.number_literal(a, id) || contextual.float_literal(a, id)
@@ -102,7 +102,7 @@ function weight(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.S
                 y: weight(@c, a, r, s, decls, id: en.entries[0].value, depth: depth - 1)
             )
         .call cl =>
-            if waiting.made_by_context(a, r, s, decls, callee: cl.callee)
+            if waiting.made_by_context(a, r, decls, callee: cl.callee)
                 match r.uses[cl.callee]
                     .top t => return call_weight(
                         @c,
@@ -120,7 +120,7 @@ function weight(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.S
         .method m =>
             match r.uses[id]
                 .top t =>
-                    if waiting.generic_top(s, decls, named: r.uses[id])
+                    if waiting.generic_top(decls, named: r.uses[id])
                         before: i64 @ m.receiver
 
                         if r.uses[m.receiver] == .module
@@ -218,7 +218,7 @@ function call_weight(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: sou
     i @ 0
 
     while i < values.len()
-        if function_value.generic_at(a, r, s, decls, values[i])
+        if function_value.generic_at(a, r, decls, values[i])
             lightest: i64 @ REFUSES
             k: i64 @ 0
 
@@ -269,7 +269,7 @@ function next_alone(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: sour
     while k < left.len()
         value = left[k].value
 
-        if !function_value.generic_at(a, r, s, decls, value)
+        if !function_value.generic_at(a, r, decls, value)
             w = weight(@c, a, r, s, decls, id: value, depth: LOOK)
 
             if refusing && w >= REFUSES

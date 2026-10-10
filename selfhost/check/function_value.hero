@@ -87,7 +87,7 @@ function signature_of(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: so
 
 # Whether this expression names a GENERIC top-level function: a bare name, or
 # one a module qualifies (`helper.ident`), which the resolver answers alike.
-function generic_at(a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], id: i64) -> bool
+function generic_at(a: ast.Ast, r: resolved.Resolved, decls: [ast.Decl], id: i64) -> bool
     named = match a.exprs[id].kind
         .name                                                                          => true
         .field f                                                                       => r.uses[f.base] == .module
@@ -99,10 +99,18 @@ function generic_at(a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [
         return false
 
     match r.uses[id]
-        .top t                                    => return letters_of(s, decls, decl: t.at).len() > 0
+        .top t                                    => return generic(decls, decl: t.at)
         .local | .module | .builtin | .unresolved => return false
 
     return false
+
+# Whether the declaration `decl` is a function with type parameters, asked
+# without spelling them, since the walk asks it of every name it checks and
+# every operand that may wait (`check/waiting.hero`).
+function generic(decls: [ast.Decl], decl: i64) -> bool
+    return match decls[decl].kind
+        .function_decl fd                                          => fd.value.generics.len() > 0
+        .constant_decl | .record_decl | .variant_decl | .test_decl => false
 
 # The type parameters a function declares, as written; none for anything else.
 function letters_of(s: source.Source, decls: [ast.Decl], decl: i64) -> [str]

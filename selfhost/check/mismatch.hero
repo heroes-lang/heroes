@@ -1,0 +1,43 @@
+# The one mismatch a position that knows its type tells, where what stands
+# there is another (design.md §4.5, §4.17): `compare` for a type the walk
+# synthesised, `shown` for a form written in its place.
+#
+# Moved out of `check/walk.hero` unchanged with defect 564 (panel 203 R3),
+# whose operator walk grew that file past its decided ceiling: neither calls
+# anything of the walk.
+
+use token
+use diag
+use ast
+use source
+use value_errors
+use check/table
+use check/type_fit
+use check/state
+
+function compare(@c: state.Checker, s: source.Source, decls: [ast.Decl], expected: i64, got: i64, span: token.Span)
+    if expected == got || table.poisoned(c.out.types, expected) || table.poisoned(c.out.types, got)
+        return
+
+    # `type_fit.fits` is an id comparison with one exception, a parameter the
+    # declaration called `_` (defect 026, panel 129's ffi seat); a nameless
+    # written type refused already is quiet here (defect 554).
+    if type_fit.fits(@c.out.types, wanted: expected, got: got) || type_fit.unnamed_shadow(c.out.types, c.out.written_types, a: expected, b: got)
+        return
+    a_text = state.show(c, s, decls, expected)
+    b_text = state.show(c, s, decls, got)
+    d: diag.Diagnostic @ value_errors.mismatch(expected: a_text, got: b_text, span: span)
+
+    # A T? where a T was wanted has one obvious repair, and it is a GUESS
+    # (panel 043): .must() aborts on the error case, and whether that is
+    # what the author wants is theirs to say — ?, .default(v) and a match
+    # are the other three answers §4.6 gives.
+    if table.get(c.out.types, got) == .fallible(payload: expected)
+        d.fixes @ d.fixes.push(
+            diag.Fix(title: "`.must()` — abort on the error case, giving `" + a_text + "`", replacement: source.span_text(s, span) + ".must()", span: span, certainty: .guess)
+        )
+    state.push_diagnostic(@c, d)
+
+function shown(@c: state.Checker, s: source.Source, decls: [ast.Decl], expected: i64, got: str, span: token.Span)
+    a_text = state.show(c, s, decls, expected)
+    state.push_diagnostic(@c, value_errors.mismatch(expected: a_text, got: got, span: span))

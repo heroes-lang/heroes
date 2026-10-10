@@ -36,7 +36,6 @@
 # reaches expressions only as an absent branch value in the join.
 
 use token
-use diag
 use ast
 use source
 use resolved
@@ -82,6 +81,8 @@ use check/interp
 use check/reach
 use check/path_end
 use check/callee_text
+use check/operands
+use check/mismatch
 use check/name_types
 
 ## The two statement-side answers
@@ -157,40 +158,18 @@ function synth(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.So
                 at: id,
                 ty: ops.unary(@c, s, decls, u.op, operand: operand_ty, span: span)
             )
-        .binary b =>
+        .binary =>
             # Every binary operator wants both operands to be one type, so
             # whenever ONE side has no type of its own, the other side's is
             # the expectation: that is what makes `t == .plus` writable,
             # and what gives the ??? in `"n = " + ???` a type to report.
-            # The operator still decides the RESULT; this only settles the
-            # operands.
-            left_ty: i64 @ 0
-            right_ty: i64 @ 0
+            # A generic call, `ok(…)` and an operator of literals have none
+            # either (defect 564), asked of the whole operator tree at once.
+            takes: [{i64: bool}] @ []
 
-            if contextual.contextual(a, b.right) && !contextual.contextual(a, b.left)
-                left_ty @ synth(@c, a, r, s, decls, b.left)
-
-                if contextual.adopts(c, a, decls, id: b.right, offered: left_ty)
-                    check(@c, a, r, s, decls, id: b.right, expected: left_ty)
-                    right_ty @ left_ty
-                else
-                    right_ty @ synth(@c, a, r, s, decls, b.right)
-            else if contextual.contextual(a, b.left) && !contextual.contextual(a, b.right)
-                right_ty @ synth(@c, a, r, s, decls, b.right)
-
-                if contextual.adopts(c, a, decls, id: b.left, offered: right_ty)
-                    check(@c, a, r, s, decls, id: b.left, expected: right_ty)
-                    left_ty @ right_ty
-                else
-                    left_ty @ synth(@c, a, r, s, decls, b.left)
-            else
-                left_ty @ synth(@c, a, r, s, decls, b.left)
-                right_ty @ synth(@c, a, r, s, decls, b.right)
-            return state.record_expr(
-                @c,
-                at: id,
-                ty: ops.binary(@c, s, decls, b.op, left: left_ty, right: right_ty, span: span)
-            )
+            if !operands.small(a, id: id)
+                takes @ operands.taking(a, r, s, decls, id)
+            return state.record_expr(@c, at: id, ty: operator_type(@c, a, r, s, decls, id: id, takes: takes))
         .field f =>
             # A module in base position makes the whole expression one
             # qualified name — `grid.WALL`, a constant next door — which
@@ -368,7 +347,7 @@ function check(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.So
         if contextual.adopts(c, a, decls, id: id, offered: expected)
             _ = state.record_expr(@c, at: id, ty: expected)
         else
-            mismatch_shown(@c, s, decls, expected: expected, got: "ptr", span: span)
+            mismatch.shown(@c, s, decls, expected: expected, got: "ptr", span: span)
         return
 
     # A number literal, checked against the width the context asked for —
@@ -393,18 +372,18 @@ function check(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.So
                 # The digits under a minus sign need the type too: the
                 # lowering walks to them and would otherwise find no type,
                 # which reaches the emitter as a type nobody wrote.
-                record_through_neg(@c, a, id: id, ty: expected)
+                operands.record_through_neg(@c, a, id: id, ty: expected)
             .float_ty | .bool | .str | .ptr | .cstr | .unit | .array =>
                 got = table.int_ty_id(c.out.types)
-                mismatch_shown(@c, s, decls, expected: expected, got: state.show(c, s, decls, got), span: span)
+                mismatch.shown(@c, s, decls, expected: expected, got: state.show(c, s, decls, got), span: span)
                 _ = state.record_expr(@c, at: id, ty: got)
             .fixed | .map | .fallible | .function_ty | .named =>
                 got = table.int_ty_id(c.out.types)
-                mismatch_shown(@c, s, decls, expected: expected, got: state.show(c, s, decls, got), span: span)
+                mismatch.shown(@c, s, decls, expected: expected, got: state.show(c, s, decls, got), span: span)
                 _ = state.record_expr(@c, at: id, ty: got)
             .case_ty | .failure | .generic | .error =>
                 got = table.int_ty_id(c.out.types)
-                mismatch_shown(@c, s, decls, expected: expected, got: state.show(c, s, decls, got), span: span)
+                mismatch.shown(@c, s, decls, expected: expected, got: state.show(c, s, decls, got), span: span)
                 _ = state.record_expr(@c, at: id, ty: got)
 
         return
@@ -419,16 +398,16 @@ function check(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.So
             .case_ty | .failure | .generic | .error                => false
 
         if is_float_width
-            record_through_neg(@c, a, id: id, ty: expected)
+            operands.record_through_neg(@c, a, id: id, ty: expected)
         else
             got = table.f64_ty(c.out.types)
-            mismatch_shown(@c, s, decls, expected: expected, got: state.show(c, s, decls, got), span: span)
+            mismatch.shown(@c, s, decls, expected: expected, got: state.show(c, s, decls, got), span: span)
             _ = state.record_expr(@c, at: id, ty: got)
         return
 
     # A generic function's name is the instance this position's type names
     # (defect 402, `check/function_value.hero`).
-    if function_value.generic_at(a, r, s, decls, id)
+    if function_value.generic_at(a, r, decls, id)
         _ = state.record_expr(@c, at: id, ty: function_value.instance(@c, a, r, s, decls, id: id, expected: expected))
         return
 
@@ -444,7 +423,7 @@ function check(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.So
                     .case_ty | .failure | .generic | .error                   => false
 
                 if !is_array
-                    mismatch_shown(@c, s, decls, expected: expected, got: "[]", span: span)
+                    mismatch.shown(@c, s, decls, expected: expected, got: "[]", span: span)
                 _ = state.record_expr(@c, at: id, ty: expected)
                 return
 
@@ -454,7 +433,7 @@ function check(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.So
             if checked_array_literal(@c, a, r, s, decls, id: id, elements: items.elements, expected: expected, span: span)
                 return
             got = synth(@c, a, r, s, decls, id)
-            compare(@c, s, decls, expected: expected, got: got, span: span)
+            mismatch.compare(@c, s, decls, expected: expected, got: got, span: span)
             return
         .map entries =>
             if entries.entries.len() == 0
@@ -465,14 +444,14 @@ function check(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.So
                     .case_ty | .failure | .generic | .error                   => false
 
                 if !is_map
-                    mismatch_shown(@c, s, decls, expected: expected, got: "{}", span: span)
+                    mismatch.shown(@c, s, decls, expected: expected, got: "{}", span: span)
                 _ = state.record_expr(@c, at: id, ty: expected)
                 return
 
             if checked_map_literal(@c, a, r, s, decls, id: id, entries: entries.entries, expected: expected)
                 return
             got = synth(@c, a, r, s, decls, id)
-            compare(@c, s, decls, expected: expected, got: got, span: span)
+            mismatch.compare(@c, s, decls, expected: expected, got: got, span: span)
             return
         .variant_case vc =>
             case_construct(@c, a, r, s, decls, at: id, called: vc.name, given: vc.args, expected: expected)
@@ -503,7 +482,7 @@ function check(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.So
             # was that one fall.
             got = dispatch_call(@c, a, r, s, decls, at: id, callee: cl.callee, given: cl.args, expected: ok(expected))
             _ = state.record_expr(@c, at: id, ty: got)
-            compare(@c, s, decls, expected: expected, got: got, span: span)
+            mismatch.compare(@c, s, decls, expected: expected, got: got, span: span)
             return
         # An if or match in ⇐ position pushes the expectation into every
         # branch, so the error lands in the branch that disagrees — and so
@@ -568,7 +547,7 @@ function check(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.So
                 expected: ok(expected)
             )
             _ = state.record_expr(@c, at: id, ty: got)
-            compare(@c, s, decls, expected: expected, got: got, span: span)
+            mismatch.compare(@c, s, decls, expected: expected, got: got, span: span)
             return
         # `Room.name` where the position asks for a type: what it asks is
         # what decides whether `::` is the one repair (defect 135).
@@ -578,17 +557,104 @@ function check(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.So
                 _ = state.record_expr(@c, at: id, ty: state.error_ty_of(c))
                 return
         .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit | .null_ptr => fall_through()
-        .name | .unary | .binary | .field_name | .index | .hole                        => fall_through()
-        .try_expr | .error                                                             => fall_through()
+        # An operator of forms with no type of their own takes the type its
+        # position asks for, as a literal does (spec § 2; defect 564).
+        .binary b =>
+            if operands.arithmetic(b.op) && operands.numeric(c, expected) && operands.takes_context(a, r, s, decls, id) && operands.leaves_take(c, a, decls, id: id, ty: expected)
+                context_operands(@c, a, r, s, decls, id: id, expected: expected)
+                return
+        .unary u =>
+            if u.op == .neg && operands.numeric(c, expected) && operands.takes_context(a, r, s, decls, id) && operands.leaves_take(c, a, decls, id: id, ty: expected)
+                context_operands(@c, a, r, s, decls, id: id, expected: expected)
+                return
+        .name | .field_name | .index | .hole => fall_through()
+        .try_expr | .error                   => fall_through()
 
     got = synth(@c, a, r, s, decls, id)
-    compare(@c, s, decls, expected: expected, got: got, span: span)
+    mismatch.compare(@c, s, decls, expected: expected, got: got, span: span)
 
 # The no-op an arm may call: an arm body must be a statement, `_ = 0` is
 # a declaration the rule refuses, and a bare function call whose type is
 # () is exactly what a statement is allowed to be.
 function fall_through()
     return
+
+# The operands of an operator `operands.takes_context` holds of, each checked
+# against `expected`, the type the operator's position asks for (defect 564).
+function context_operands(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], id: i64, expected: i64)
+    span = a.exprs[id].span
+
+    match a.exprs[id].kind
+        .binary b =>
+            if operands.arithmetic(b.op)
+                context_operands(@c, a, r, s, decls, id: b.left, expected: expected)
+                context_operands(@c, a, r, s, decls, id: b.right, expected: expected)
+                _ = state.record_expr(
+                    @c,
+                    at: id,
+                    ty: ops.binary(@c, s, decls, b.op, left: expected, right: expected, span: span)
+                )
+                return
+        .unary u =>
+            if u.op == .neg && !contextual.number_literal(a, id) && !contextual.float_literal(a, id)
+                context_operands(@c, a, r, s, decls, id: u.operand, expected: expected)
+                _ = state.record_expr(@c, at: id, ty: ops.unary(@c, s, decls, u.op, operand: expected, span: span))
+                return
+        .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit | .null_ptr => fall_through()
+        .name | .hole | .field | .field_name | .index | .call | .method                => fall_through()
+        .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error    => fall_through()
+
+    check(@c, a, r, s, decls, id: id, expected: expected)
+
+# A binary operator's type, its operands each settling the other's where one
+# has no type of its own and the other has (§4.5). `takes` holds, for the
+# operator tree this one stands in, which operand takes its type from where
+# it stands (`operands.taking`), so a chain is asked once, not at each level;
+# empty for a small tree, which is asked again at each node.
+function operator_type(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], id: i64, takes: [{i64: bool}]) -> i64
+    match a.exprs[id].kind
+        .binary b =>
+            which = operands.pair(a, r, s, decls, takes, left: b.left, right: b.right)
+            left_ty: i64 @ 0
+            right_ty: i64 @ 0
+
+            if which == operands.RIGHT
+                left_ty @ operand_type(@c, a, r, s, decls, id: b.left, takes: takes)
+                right_ty @ offered_to(@c, a, r, s, decls, id: b.right, offered: left_ty, takes: takes)
+            else if which == operands.LEFT
+                right_ty @ operand_type(@c, a, r, s, decls, id: b.right, takes: takes)
+                left_ty @ offered_to(@c, a, r, s, decls, id: b.left, offered: right_ty, takes: takes)
+            else
+                left_ty @ operand_type(@c, a, r, s, decls, id: b.left, takes: takes)
+                right_ty @ operand_type(@c, a, r, s, decls, id: b.right, takes: takes)
+            return ops.binary(@c, s, decls, b.op, left: left_ty, right: right_ty, span: a.exprs[id].span)
+        .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit | .null_ptr => fall_through()
+        .name | .hole | .unary | .field | .field_name | .index | .call | .method       => fall_through()
+        .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error    => fall_through()
+
+    return synth(@c, a, r, s, decls, id)
+
+# An operand synthesised: an arithmetic operator of the same tree from
+# `takes`, anything else as the walk synthesises it.
+function operand_type(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], id: i64, takes: [{i64: bool}]) -> i64
+    if operands.in_tree(a, takes, id: id)
+        return state.record_expr(@c, at: id, ty: operator_type(@c, a, r, s, decls, id: id, takes: takes))
+    return synth(@c, a, r, s, decls, id)
+
+# An operand with no type of its own given the other's, `offered`, where it
+# takes it: an operator of literals at a number, every literal in it held to
+# the width (`context_operands`); else synthesised as it would be.
+function offered_to(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], id: i64, offered: i64, takes: [{i64: bool}]) -> i64
+    if !contextual.adopts(c, a, decls, id: id, offered: offered)
+        return operand_type(@c, a, r, s, decls, id: id, takes: takes)
+
+    if operands.operator(a, id: id)
+        if !operands.numeric(c, offered) || !operands.leaves_take(c, a, decls, id: id, ty: offered)
+            return operand_type(@c, a, r, s, decls, id: id, takes: takes)
+        context_operands(@c, a, r, s, decls, id: id, expected: offered)
+        return offered
+    check(@c, a, r, s, decls, id: id, expected: offered)
+    return offered
 
 # The array-literal half of ⇐, true when the expectation's shape took it.
 function checked_array_literal(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], id: i64, elements: [i64], expected: i64, span: token.Span) -> bool
@@ -637,51 +703,6 @@ function checked_map_literal(@c: state.Checker, a: ast.Ast, r: resolved.Resolved
         .case_ty | .failure | .generic | .error                   => return false
 
     return false
-
-# Record `expected` on the node and on every negated layer under it.
-function record_through_neg(@c: state.Checker, a: ast.Ast, id: i64, ty: i64)
-    at: i64 @ id
-    walking: bool @ true
-
-    while walking
-        _ = state.record_expr(@c, at: at, ty: ty)
-
-        match a.exprs[at].kind
-            .unary u =>
-                if u.op == .neg
-                    at @ u.operand
-                else
-                    walking @ false
-            .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit | .null_ptr => walking @ false
-            .name | .hole | .binary | .field | .field_name | .index | .call | .method      => walking @ false
-            .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error    => walking @ false
-
-function compare(@c: state.Checker, s: source.Source, decls: [ast.Decl], expected: i64, got: i64, span: token.Span)
-    if expected == got || table.poisoned(c.out.types, expected) || table.poisoned(c.out.types, got)
-        return
-
-    # `type_fit.fits` is an id comparison with one exception, a parameter the
-    # declaration called `_` (defect 026, panel 129's ffi seat); a nameless
-    # written type refused already is quiet here (defect 554).
-    if type_fit.fits(@c.out.types, wanted: expected, got: got) || type_fit.unnamed_shadow(c.out.types, c.out.written_types, a: expected, b: got)
-        return
-    a_text = state.show(c, s, decls, expected)
-    b_text = state.show(c, s, decls, got)
-    d: diag.Diagnostic @ value_errors.mismatch(expected: a_text, got: b_text, span: span)
-
-    # A T? where a T was wanted has one obvious repair, and it is a GUESS
-    # (panel 043): .must() aborts on the error case, and whether that is
-    # what the author wants is theirs to say — ?, .default(v) and a match
-    # are the other three answers §4.6 gives.
-    if table.get(c.out.types, got) == .fallible(payload: expected)
-        d.fixes @ d.fixes.push(
-            diag.Fix(title: "`.must()` — abort on the error case, giving `" + a_text + "`", replacement: source.span_text(s, span) + ".must()", span: span, certainty: .guess)
-        )
-    state.push_diagnostic(@c, d)
-
-function mismatch_shown(@c: state.Checker, s: source.Source, decls: [ast.Decl], expected: i64, got: str, span: token.Span)
-    a_text = state.show(c, s, decls, expected)
-    state.push_diagnostic(@c, value_errors.mismatch(expected: a_text, got: got, span: span))
 
 ## Statements — where divergence lives
 
@@ -2141,6 +2162,20 @@ test "no promotions anywhere, and the width takes the literal"
     assert breaks.out.diagnostics.len() == 1
     assert breaks.out.diagnostics[0].code == "int_out_of_range"
     assert breaks.out.diagnostics[0].message == "`300` does not fit a `u8`"
+
+test "an operator of literals takes the width its position asks for, each literal held to it"
+    # Defect 564: an annotation, a declared result, the other operand and a
+    # float width, each the operator's type; a literal past the width is told
+    # where it stands, and an integer among floats keeps `mixed_arithmetic`.
+    for text in ["function f() -> u8\n    return 2 + 3\n", "function f() -> u8\n    y: u8 = 2 * (3 + 4)\n    return y\n", "function f(b: u8) -> u8\n    return (2 + 3) * b\n", "function f() -> f32\n    return 0.5 * 2.0\n"]
+        assert checked_program(text).out.diagnostics.len() == 0
+
+    wide = checked_program("function f() -> u8\n    return 300 + 1\n")
+    assert wide.out.diagnostics.len() == 1
+    assert wide.out.diagnostics[0].code == "int_out_of_range"
+    mixed = checked_program("function f() -> f32\n    return 1 + 2.0\n")
+    assert mixed.out.diagnostics.len() == 1
+    assert mixed.out.diagnostics[0].code == "mixed_arithmetic"
 
 test "a case with no type of its own takes the other side's"
     c = checked_program("variant Token\n    plus\n    minus\n\nfunction f(t: Token) -> bool\n    return t == .plus\n")
