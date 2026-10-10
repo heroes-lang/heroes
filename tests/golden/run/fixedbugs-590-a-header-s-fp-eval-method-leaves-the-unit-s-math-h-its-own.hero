@@ -1,0 +1,20 @@
+# fixedbugs, defect 590, lane b20-pragma, 2026-10-11, found by lane b19-pack
+# beside defect 582: a header's `#pragma clang fp eval_method(double)` at
+# file scope made clang refuse every later expansion of
+# `__FLT_EVAL_METHOD__`, and the unit reads `<math.h>` after its groups,
+# which expands it to choose `float_t`: the header compiled alone, and the
+# program was *internal error* at exit 2, on this Mac and in glibc alike.
+#
+# FIX: `heroes_runtime.h` reads the unit's own method before any group, and
+# `heroes_standard.h` hands it to `<math.h>`; the program's `f32` arithmetic
+# is evaluated as the build says, the guard giving back the floating-point
+# state (defect 582), so `big + one - big` is `0.0`, as in `float`.
+
+extern "fixedbugs-590-a-header-s-fp-eval-method-leaves-the-unit-s-math-h-its-own.h"
+    function llabs(x: i64) -> i64
+
+function main()
+    big: f32 = 16777216.0
+    one = llabs(-1).to_f64().to_f32()
+    three = llabs(-3).to_f64().to_f32()
+    print(llabs(-42), " ", big + one - big, " ", one / three)

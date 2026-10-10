@@ -1,0 +1,17 @@
+# fixedbugs, defect 590, lane b20-pragma, 2026-10-11, a shape beside
+# `fixedbugs-590-a-header-s-fp-eval-method-leaves-the-unit-s-math-h-its-own`:
+# `eval_method(extended)` was the same exit 2, and in the Linux arm64 image,
+# where `long double` has 128 bits, it would evaluate the program's `f64`
+# expressions in them (`fpext double to fp128`, measured in C beside the
+# unit's lines with the floating-point state not given back). The unit reads
+# `<math.h>` with its own method and the program's doubles are doubles.
+
+extern "fixedbugs-590-a-header-s-fp-eval-method-extended-leaves-the-program-s-doubles.h"
+    function llabs(x: i64) -> i64
+
+function main()
+    one = llabs(-1).to_f64()
+    ten = llabs(-10).to_f64()
+    big = llabs(-10000000000000000).to_f64()
+    tenth = one / ten
+    print(tenth * ten - one, " ", big + one - big, " ", one / (one + one + one))
