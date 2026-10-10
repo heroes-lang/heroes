@@ -161,8 +161,9 @@ constant ENTRIES: [str]
 # same: one it cannot emit for a library it lacks is skipped by name, and
 # floored below a third. **467 on 2026-10-07**: `ls tests/emission/*.c | wc
 # -l`, every one claimed (the suite's `orphans`), and the suite's own count.
+# **589 on 2026-10-10**, at batch 19's gate, the suite's own count.
 constant LEAST: i64
-    467
+    589
 
 # **The refusals, counted apart** (defect 341): the programs with nothing
 # blessed, each of which passes only as a refusal, exit 1 and no C. Floored so

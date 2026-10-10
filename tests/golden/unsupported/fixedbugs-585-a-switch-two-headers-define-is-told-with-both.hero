@@ -1,0 +1,16 @@
+# fixedbugs, defect 585, lane b19-pack, 2026-10-10, a shape beside
+# `fixedbugs-585-a-name-a-switch-of-the-program-s-own-header-hides-is-told-the-switch`:
+# two headers of the program's own define the switch, and the name is
+# declared only with it undefined after both, so both are named.
+
+extern "fixedbugs-585-strict.h"
+    function strict_on() -> i64
+
+extern "fixedbugs-585-also-strict.h"
+    function also_strict_on() -> i64
+
+extern "fixedbugs-585-wide.h"
+    function wide_only() -> i64  #~ ffi_unknown_name
+
+function main()
+    print(strict_on() + also_strict_on() + wide_only())

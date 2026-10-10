@@ -9,9 +9,18 @@
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic ignored "-Wpragma-pack"
+#pragma float_control(push)
 #include "heroes_guard_open.h"
 #include <sqlite3.h>
 #include "heroes_guard_close.h"
+#pragma clang diagnostic ignored "-Wignored-pragmas"
+#pragma pack()
+#pragma float_control(pop)
+#pragma float_control(precise, on)
+#pragma GCC visibility push(default)
+#pragma clang section bss="" data="" rodata="" text="" relro=""
+#pragma clang optimize on
 #pragma clang diagnostic pop
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -26,6 +35,8 @@
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -187,7 +198,7 @@ HERO_STR_STATIC(hero_str_4a05a740, "null_cstr");
 HERO_STR_STATIC(hero_str_5263489, "a null `cstr` holds no text");
 HERO_STR_STATIC(hero_str_4bb64adb, "the bytes behind this `cstr` are not UTF-8");
 
-#line 191 "main.c"
+#line 202 "main.c"
 typedef struct h_bookentry_Amount {
     int64_t f_cents;
 } h_bookentry_Amount;
@@ -398,7 +409,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 402 "main.c"
+#line 413 "main.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_bookentry_Amount_eq(const h_bookentry_Amount *a, const h_bookentry_Amount *b);
@@ -680,7 +691,6 @@ bool h_reportlines_holds(HeroStr h0_text, HeroStr h1_needle);
 int64_t h_library_HERO_STR_OK(void);
 h_0opt_f87774a h_library_validated(const char * h0_c);
 void h_library_exit(int64_t h0_code);
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 33 "examples/ledger/main.hero"
 void h_main_main(void) {
@@ -826,7 +836,7 @@ bb5:
     t16 = h2_f1;
 #line 39 "examples/ledger/main.hero"
     t17 = t16.as.err;
-#line 830 "main.c"
+#line 840 "main.c"
     hero_panic_must(t17);
     hero_unreachable();
 bb6:
@@ -904,7 +914,7 @@ bb8:
 bb9:
 #line 52 "examples/ledger/main.hero"
     h_dbsqlite_closed(&h3_db);
-#line 908 "main.c"
+#line 918 "main.c"
     h_0opt_24dfc0bb_release(hero_slot_escape(&h0_opened));
     h_0opt_24dfc0bb_release(hero_slot_escape(&h1_f0));
     h_0opt_24dfc0bb_release(hero_slot_escape(&h2_f1));
@@ -950,7 +960,7 @@ bb10:
 bb11:
 #line 51 "examples/ledger/main.hero"
     goto bb9;
-#line 954 "main.c"
+#line 964 "main.c"
 }
 
 #line 57 "examples/ledger/main.hero"
@@ -1958,7 +1968,7 @@ bb40:
     goto bb41;
 #line 84 "examples/ledger/main.hero"
 bb41:
-#line 1962 "main.c"
+#line 1972 "main.c"
     t227 = h25_ret0;
     h_0opt_a8ea2_retain(&t227);
     h_0opt_a8ea2_release(hero_slot_escape(&h1_f0));
@@ -2808,7 +2818,7 @@ bb20:
     t141 = h19_f5;
 #line 126 "examples/ledger/main.hero"
     t142 = t141.as.err;
-#line 2812 "main.c"
+#line 2822 "main.c"
     hero_panic_must(t142);
     hero_unreachable();
 bb21:
@@ -3050,7 +3060,7 @@ bb31:
     goto bb27;
 #line 137 "examples/ledger/main.hero"
 bb32:
-#line 3054 "main.c"
+#line 3064 "main.c"
     t204 = h27_ret0;
     h_0opt_a8ea2_retain(&t204);
     hero_array_release_at(&h1_xs0);
@@ -3657,7 +3667,7 @@ bb22:
     goto bb23;
 #line 155 "examples/ledger/main.hero"
 bb23:
-#line 3661 "main.c"
+#line 3671 "main.c"
     t105 = h16_ret0;
     h_0opt_5036d564_retain(&t105);
     h_0opt_791f9719_release(hero_slot_escape(&h1_f0));
@@ -4018,7 +4028,7 @@ bb14:
     goto bb12;
 #line 178 "examples/ledger/main.hero"
 bb15:
-#line 4022 "main.c"
+#line 4032 "main.c"
     t61 = h10_ret0;
     h_0opt_e201354_retain(&t61);
     h_0opt_791f9719_release(hero_slot_escape(&h2_f0));
@@ -4396,7 +4406,7 @@ bb18:
     goto bb16;
 #line 201 "examples/ledger/main.hero"
 bb19:
-#line 4400 "main.c"
+#line 4410 "main.c"
     t65 = h12_ret0;
     h_0opt_db92a83_retain(&t65);
     h_0opt_791f9719_release(hero_slot_escape(&h2_f0));
@@ -4591,7 +4601,7 @@ bb15:
     goto bb13;
 #line 220 "examples/ledger/main.hero"
 bb16:
-#line 4595 "main.c"
+#line 4605 "main.c"
     t48 = h3_ret0;
     return t48;
 }
@@ -4657,7 +4667,7 @@ bb3:
     goto bb1;
 #line 233 "examples/ledger/main.hero"
 bb4:
-#line 4661 "main.c"
+#line 4671 "main.c"
     t15 = h3_ret0;
     return t15;
 }
@@ -4693,7 +4703,7 @@ bb3:
     goto bb1;
 #line 238 "examples/ledger/main.hero"
 bb4:
-#line 4697 "main.c"
+#line 4707 "main.c"
     t4 = h1_ret0;
     hero_str_incref(t4);
     return t4;
@@ -4732,7 +4742,7 @@ bb0:
 bb1:
 #line 306 "examples/ledger/main.hero"
     t9 = h2_r0;
-#line 4736 "main.c"
+#line 4746 "main.c"
     hero_str_incref(t9);
     h_0opt_a8ea2_release(hero_slot_escape(&h1_s0));
     hero_str_release_at(&h2_r0);
@@ -4779,7 +4789,7 @@ bb3:
     hero_str_decref(t13);
 #line 306 "examples/ledger/main.hero"
     goto bb1;
-#line 4783 "main.c"
+#line 4793 "main.c"
 }
 
 #line 310 "examples/ledger/main.hero"
@@ -4815,7 +4825,7 @@ bb0:
 bb1:
 #line 311 "examples/ledger/main.hero"
     t9 = h2_r0;
-#line 4819 "main.c"
+#line 4829 "main.c"
     hero_str_incref(t9);
     h_0opt_24dfc0bb_release(hero_slot_escape(&h1_s0));
     hero_str_release_at(&h2_r0);
@@ -4862,7 +4872,7 @@ bb3:
     hero_str_decref(t13);
 #line 311 "examples/ledger/main.hero"
     goto bb1;
-#line 4866 "main.c"
+#line 4876 "main.c"
 }
 
 #line 26 "examples/ledger/book/entry.hero"
@@ -5005,7 +5015,7 @@ bb8:
     goto bb6;
 #line 31 "examples/ledger/book/entry.hero"
 bb9:
-#line 5009 "main.c"
+#line 5019 "main.c"
     t27 = h3_ret0;
     h_0opt_2e78f68e_retain(&t27);
     hero_str_release_at(&h4_own4);
@@ -5033,7 +5043,7 @@ bb0:
     t5 = (h_bookentry_Amount){.f_cents = t4};
 #line 35 "examples/ledger/book/entry.hero"
     return t5;
-#line 5037 "main.c"
+#line 5047 "main.c"
 }
 
 #line 37 "examples/ledger/book/entry.hero"
@@ -5055,7 +5065,7 @@ bb0:
     t6 = (h_bookentry_Amount){.f_cents = t5};
 #line 38 "examples/ledger/book/entry.hero"
     return t6;
-#line 5059 "main.c"
+#line 5069 "main.c"
 }
 
 #line 44 "examples/ledger/book/entry.hero"
@@ -5253,7 +5263,7 @@ bb9:
     goto bb7;
 #line 58 "examples/ledger/book/entry.hero"
 bb10:
-#line 5257 "main.c"
+#line 5267 "main.c"
     t37 = h6_ret0;
     hero_str_incref(t37);
     hero_str_release_at(&h4_tail);
@@ -5540,7 +5550,7 @@ bb0:
     h10_own10 = t75;
 #line 79 "examples/ledger/book/entry.hero"
     hero_array_decref(t86);
-#line 5544 "main.c"
+#line 5554 "main.c"
     hero_array_incref(t75);
     h_bookentry_Entry_release(hero_slot_escape(&h0_own0));
     h_bookentry_Entry_release(hero_slot_escape(&h1_own1));
@@ -5639,7 +5649,7 @@ bb0:
     h4_own4 = t13;
 #line 99 "examples/ledger/book/entry.hero"
     hero_array_decref(t18);
-#line 5643 "main.c"
+#line 5653 "main.c"
     hero_array_incref(t13);
     h_bookentry_Account_release(hero_slot_escape(&h0_own0));
     h_bookentry_Account_release(hero_slot_escape(&h1_own1));
@@ -5986,7 +5996,7 @@ bb9:
     t41 = h9_f1;
 #line 125 "examples/ledger/book/entry.hero"
     t42 = t41.as.err;
-#line 5990 "main.c"
+#line 6000 "main.c"
     hero_panic_must(t42);
     hero_unreachable();
 bb10:
@@ -6008,7 +6018,7 @@ bb11:
     t59 = h10_f2;
 #line 126 "examples/ledger/book/entry.hero"
     t60 = t59.as.err;
-#line 6012 "main.c"
+#line 6022 "main.c"
     hero_panic_must(t60);
     hero_unreachable();
 bb12:
@@ -6102,7 +6112,7 @@ bb14:
 bb15:
 #line 137 "examples/ledger/book/entry.hero"
     t109 = h11_out;
-#line 6106 "main.c"
+#line 6116 "main.c"
     hero_array_incref(t109);
     hero_array_release_at(&h1_names);
     hero_map_release_at(&h2_totals);
@@ -6186,7 +6196,7 @@ bb17:
     t88 = h15_f3;
 #line 134 "examples/ledger/book/entry.hero"
     t89 = t88.as.err;
-#line 6190 "main.c"
+#line 6200 "main.c"
     hero_panic_must(t89);
     hero_unreachable();
 bb18:
@@ -6215,7 +6225,7 @@ bb19:
     t99 = h16_f4;
 #line 134 "examples/ledger/book/entry.hero"
     t100 = t99.as.err;
-#line 6219 "main.c"
+#line 6229 "main.c"
     hero_panic_must(t100);
     hero_unreachable();
 }
@@ -6302,7 +6312,7 @@ bb3:
 bb4:
 #line 146 "examples/ledger/book/entry.hero"
     t19 = h1_sum;
-#line 6306 "main.c"
+#line 6316 "main.c"
     hero_array_release_at(&h2_xs0);
     h_bookentry_Entry_release(hero_slot_escape(&h4_e));
     return t19;
@@ -6440,7 +6450,7 @@ bb7:
     goto bb5;
 #line 152 "examples/ledger/book/entry.hero"
 bb8:
-#line 6444 "main.c"
+#line 6454 "main.c"
     t25 = h5_ret0;
     h_0opt_f87774a_retain(&t25);
     hero_array_release_at(&h2_xs0);
@@ -6451,13 +6461,11 @@ bb8:
     return t25;
 }
 
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #line 45 "examples/ledger/db/sqlite.hero"
 int64_t h_dbsqlite_SQLITE_OK(void) {
-#line 6458 "main.c"
+#line 6467 "main.c"
     return SQLITE_OK;
 }
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
@@ -6471,13 +6479,11 @@ int64_t h_dbsqlite_SQLITE_OK(void) {
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #line 46 "examples/ledger/db/sqlite.hero"
 int64_t h_dbsqlite_SQLITE_ROW(void) {
-#line 6478 "main.c"
+#line 6485 "main.c"
     return SQLITE_ROW;
 }
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
@@ -6491,13 +6497,11 @@ int64_t h_dbsqlite_SQLITE_ROW(void) {
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #line 47 "examples/ledger/db/sqlite.hero"
 int64_t h_dbsqlite_SQLITE_DONE(void) {
-#line 6498 "main.c"
+#line 6503 "main.c"
     return SQLITE_DONE;
 }
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
@@ -6511,13 +6515,11 @@ int64_t h_dbsqlite_SQLITE_DONE(void) {
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #line 48 "examples/ledger/db/sqlite.hero"
 int64_t h_dbsqlite_SQLITE_INTEGER(void) {
-#line 6518 "main.c"
+#line 6521 "main.c"
     return SQLITE_INTEGER;
 }
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
@@ -6531,13 +6533,11 @@ int64_t h_dbsqlite_SQLITE_INTEGER(void) {
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #line 49 "examples/ledger/db/sqlite.hero"
 int64_t h_dbsqlite_SQLITE_FLOAT(void) {
-#line 6538 "main.c"
+#line 6539 "main.c"
     return SQLITE_FLOAT;
 }
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
@@ -6551,13 +6551,11 @@ int64_t h_dbsqlite_SQLITE_FLOAT(void) {
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #line 50 "examples/ledger/db/sqlite.hero"
 int64_t h_dbsqlite_SQLITE_TEXT(void) {
-#line 6558 "main.c"
+#line 6557 "main.c"
     return SQLITE_TEXT;
 }
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
@@ -6571,13 +6569,11 @@ int64_t h_dbsqlite_SQLITE_TEXT(void) {
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #line 51 "examples/ledger/db/sqlite.hero"
 int64_t h_dbsqlite_SQLITE_NULL(void) {
-#line 6578 "main.c"
+#line 6575 "main.c"
     return SQLITE_NULL;
 }
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
@@ -6591,13 +6587,11 @@ int64_t h_dbsqlite_SQLITE_NULL(void) {
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #line 56 "examples/ledger/db/sqlite.hero"
 void * h_dbsqlite_SQLITE_TRANSIENT(void) {
-#line 6598 "main.c"
+#line 6593 "main.c"
     return SQLITE_TRANSIENT;
 }
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
@@ -6614,7 +6608,7 @@ void * h_dbsqlite_SQLITE_TRANSIENT(void) {
 #line 158 "examples/ledger/db/sqlite.hero"
 h_0opt_e405689 h_dbsqlite_cell_at(sqlite3_stmt * h0_statement, int32_t h1_column) {
 #line 158 "examples/ledger/db/sqlite.hero"
-    _Pragma("clang diagnostic ignored \"-Wdeprecated-declarations\"") int32_t h2_kind; h_0opt_e201354 h3_f0 = {0}; h_0opt_e201354 h4_f1 = {0}; h_0opt_e201354 h5_f2 = {0}; h_0opt_f87774a h6_text = {0}; h_0opt_f87774a h7_f3 = {0}; h_0opt_e201354 h8_f4 = {0}; h_0opt_f87774a h9_f5 = {0}; h_0opt_e201354 h10_f6 = {0}; h_0opt_e405689 h11_ret0 = {0}; h_0opt_e201354 h12_own12 = {0}; h_0opt_e201354 h13_own13 = {0}; h_dbsqlite_Cell h14_own14 = {0}; h_0opt_e405689 h15_own15 = {0}; h_0opt_e201354 h16_own16 = {0}; h_dbsqlite_Cell h17_own17 = {0}; h_0opt_e405689 h18_own18 = {0}; h_0opt_e201354 h19_own19 = {0}; h_0opt_f87774a h20_own20 = {0}; h_0opt_e201354 h21_own21 = {0}; HeroStr h22_own22 = {0}; HeroStr h23_own23 = {0}; HeroStr h24_own24 = {0}; h_0opt_e405689 h25_own25 = {0}; h_dbsqlite_Cell h26_own26 = {0}; h_0opt_e405689 h27_own27 = {0}; h_dbsqlite_Cell h28_own28 = {0}; h_0opt_e405689 h29_own29 = {0}; h_dbsqlite_Cell h30_own30 = {0}; h_0opt_e405689 h31_own31 = {0}; sqlite3_stmt * t1; int32_t t2; int32_t t3; int32_t t4; h_0opt_e201354 t5; h_0opt_e201354 t6; int64_t t7; int64_t t8; bool t9; h_0opt_e201354 t10; HeroFailure t11; h_0opt_e201354 t12; int64_t t13; int64_t t14; bool t15; sqlite3_stmt * t16; int32_t t17; int64_t t18; h_dbsqlite_Cell t19; h_0opt_e405689 t20; int32_t t21; h_0opt_e201354 t22; h_0opt_e201354 t23; int64_t t24; int64_t t25; bool t26; h_0opt_e201354 t27; HeroFailure t28; h_0opt_e201354 t29; int64_t t30; int64_t t31; bool t32; sqlite3_stmt * t33; int32_t t34; double t35; h_dbsqlite_Cell t36; h_0opt_e405689 t37; int32_t t38; h_0opt_e201354 t39; h_0opt_e201354 t40; int64_t t41; int64_t t42; bool t43; h_0opt_e201354 t44; HeroFailure t45; h_0opt_e201354 t46; int64_t t47; int64_t t48; bool t49; sqlite3_stmt * t50; int32_t t51; const char * t52; h_0opt_f87774a t53; h_0opt_f87774a t54; h_0opt_f87774a t55; int64_t t56; int64_t t57; bool t58; HeroStr t59; HeroStr t60; int32_t t61; h_0opt_e201354 t62; h_0opt_e201354 t63; int64_t t64; int64_t t65; bool t66; h_0opt_e201354 t67; HeroFailure t68; h_0opt_e201354 t69; int64_t t70; HeroStr t71; HeroStr t72; HeroStr t73; HeroStr t74; h_0opt_e405689 t75; h_0opt_f87774a t76; h_0opt_f87774a t77; int64_t t78; int64_t t79; bool t80; h_0opt_f87774a t81; HeroFailure t82; h_0opt_f87774a t83; HeroStr t84; h_dbsqlite_Cell t85; h_0opt_e405689 t86; int32_t t87; h_0opt_e201354 t88; h_0opt_e201354 t89; int64_t t90; int64_t t91; bool t92; h_0opt_e201354 t93; HeroFailure t94; h_0opt_e201354 t95; int64_t t96; int64_t t97; bool t98; h_dbsqlite_Cell t99; h_0opt_e405689 t100; h_dbsqlite_Cell t101; h_0opt_e405689 t102; h_0opt_e405689 t103; h_0opt_e201354 t104; h_0opt_e201354 t105; h_0opt_e201354 t106; h_0opt_e201354 t107; h_dbsqlite_Cell t108; h_0opt_e405689 t109; h_0opt_e201354 t110; h_0opt_e201354 t111; h_dbsqlite_Cell t112; h_0opt_e405689 t113; h_0opt_e201354 t114; h_0opt_e201354 t115; h_0opt_f87774a t116; h_0opt_f87774a t117; h_0opt_f87774a t118; h_0opt_f87774a t119; h_0opt_e201354 t120; h_0opt_e201354 t121; HeroStr t122; HeroStr t123; HeroStr t124; h_0opt_e405689 t125; h_dbsqlite_Cell t126; h_0opt_e405689 t127; h_dbsqlite_Cell t128; h_0opt_e405689 t129; h_dbsqlite_Cell t130; h_0opt_e405689 t131; _Pragma("clang diagnostic warning \"-Wdeprecated-declarations\"") goto bb0;
+    int32_t h2_kind; h_0opt_e201354 h3_f0 = {0}; h_0opt_e201354 h4_f1 = {0}; h_0opt_e201354 h5_f2 = {0}; h_0opt_f87774a h6_text = {0}; h_0opt_f87774a h7_f3 = {0}; h_0opt_e201354 h8_f4 = {0}; h_0opt_f87774a h9_f5 = {0}; h_0opt_e201354 h10_f6 = {0}; h_0opt_e405689 h11_ret0 = {0}; h_0opt_e201354 h12_own12 = {0}; h_0opt_e201354 h13_own13 = {0}; h_dbsqlite_Cell h14_own14 = {0}; h_0opt_e405689 h15_own15 = {0}; h_0opt_e201354 h16_own16 = {0}; h_dbsqlite_Cell h17_own17 = {0}; h_0opt_e405689 h18_own18 = {0}; h_0opt_e201354 h19_own19 = {0}; h_0opt_f87774a h20_own20 = {0}; h_0opt_e201354 h21_own21 = {0}; HeroStr h22_own22 = {0}; HeroStr h23_own23 = {0}; HeroStr h24_own24 = {0}; h_0opt_e405689 h25_own25 = {0}; h_dbsqlite_Cell h26_own26 = {0}; h_0opt_e405689 h27_own27 = {0}; h_dbsqlite_Cell h28_own28 = {0}; h_0opt_e405689 h29_own29 = {0}; h_dbsqlite_Cell h30_own30 = {0}; h_0opt_e405689 h31_own31 = {0}; sqlite3_stmt * t1; int32_t t2; int32_t t3; int32_t t4; h_0opt_e201354 t5; h_0opt_e201354 t6; int64_t t7; int64_t t8; bool t9; h_0opt_e201354 t10; HeroFailure t11; h_0opt_e201354 t12; int64_t t13; int64_t t14; bool t15; sqlite3_stmt * t16; int32_t t17; int64_t t18; h_dbsqlite_Cell t19; h_0opt_e405689 t20; int32_t t21; h_0opt_e201354 t22; h_0opt_e201354 t23; int64_t t24; int64_t t25; bool t26; h_0opt_e201354 t27; HeroFailure t28; h_0opt_e201354 t29; int64_t t30; int64_t t31; bool t32; sqlite3_stmt * t33; int32_t t34; double t35; h_dbsqlite_Cell t36; h_0opt_e405689 t37; int32_t t38; h_0opt_e201354 t39; h_0opt_e201354 t40; int64_t t41; int64_t t42; bool t43; h_0opt_e201354 t44; HeroFailure t45; h_0opt_e201354 t46; int64_t t47; int64_t t48; bool t49; sqlite3_stmt * t50; int32_t t51; const char * t52; h_0opt_f87774a t53; h_0opt_f87774a t54; h_0opt_f87774a t55; int64_t t56; int64_t t57; bool t58; HeroStr t59; HeroStr t60; int32_t t61; h_0opt_e201354 t62; h_0opt_e201354 t63; int64_t t64; int64_t t65; bool t66; h_0opt_e201354 t67; HeroFailure t68; h_0opt_e201354 t69; int64_t t70; HeroStr t71; HeroStr t72; HeroStr t73; HeroStr t74; h_0opt_e405689 t75; h_0opt_f87774a t76; h_0opt_f87774a t77; int64_t t78; int64_t t79; bool t80; h_0opt_f87774a t81; HeroFailure t82; h_0opt_f87774a t83; HeroStr t84; h_dbsqlite_Cell t85; h_0opt_e405689 t86; int32_t t87; h_0opt_e201354 t88; h_0opt_e201354 t89; int64_t t90; int64_t t91; bool t92; h_0opt_e201354 t93; HeroFailure t94; h_0opt_e201354 t95; int64_t t96; int64_t t97; bool t98; h_dbsqlite_Cell t99; h_0opt_e405689 t100; h_dbsqlite_Cell t101; h_0opt_e405689 t102; h_0opt_e405689 t103; h_0opt_e201354 t104; h_0opt_e201354 t105; h_0opt_e201354 t106; h_0opt_e201354 t107; h_dbsqlite_Cell t108; h_0opt_e405689 t109; h_0opt_e201354 t110; h_0opt_e201354 t111; h_dbsqlite_Cell t112; h_0opt_e405689 t113; h_0opt_e201354 t114; h_0opt_e201354 t115; h_0opt_f87774a t116; h_0opt_f87774a t117; h_0opt_f87774a t118; h_0opt_f87774a t119; h_0opt_e201354 t120; h_0opt_e201354 t121; HeroStr t122; HeroStr t123; HeroStr t124; h_0opt_e405689 t125; h_dbsqlite_Cell t126; h_0opt_e405689 t127; h_dbsqlite_Cell t128; h_0opt_e405689 t129; h_dbsqlite_Cell t130; h_0opt_e405689 t131; goto bb0;
 #line 158 "examples/ledger/db/sqlite.hero"
 bb0:
     t1 = h0_statement;
@@ -6702,7 +6696,7 @@ bb3:
     t10 = h3_f0;
 #line 161 "examples/ledger/db/sqlite.hero"
     t11 = t10.as.err;
-#line 6706 "main.c"
+#line 6700 "main.c"
     hero_panic_must(t11);
     hero_unreachable();
 bb4:
@@ -6788,7 +6782,7 @@ bb8:
     t27 = h4_f1;
 #line 164 "examples/ledger/db/sqlite.hero"
     t28 = t27.as.err;
-#line 6792 "main.c"
+#line 6786 "main.c"
     hero_panic_must(t28);
     hero_unreachable();
 bb9:
@@ -6874,7 +6868,7 @@ bb13:
     t44 = h5_f2;
 #line 167 "examples/ledger/db/sqlite.hero"
     t45 = t44.as.err;
-#line 6878 "main.c"
+#line 6872 "main.c"
     hero_panic_must(t45);
     hero_unreachable();
 bb14:
@@ -7039,7 +7033,7 @@ bb20:
     t67 = h8_f4;
 #line 176 "examples/ledger/db/sqlite.hero"
     t68 = t67.as.err;
-#line 7043 "main.c"
+#line 7037 "main.c"
     hero_panic_must(t68);
     hero_unreachable();
 bb21:
@@ -7077,7 +7071,7 @@ bb22:
     t81 = h9_f5;
 #line 178 "examples/ledger/db/sqlite.hero"
     t82 = t81.as.err;
-#line 7081 "main.c"
+#line 7075 "main.c"
     hero_panic_must(t82);
     hero_unreachable();
 bb23:
@@ -7121,7 +7115,7 @@ bb25:
     t93 = h10_f6;
 #line 180 "examples/ledger/db/sqlite.hero"
     t94 = t93.as.err;
-#line 7125 "main.c"
+#line 7119 "main.c"
     hero_panic_must(t94);
     hero_unreachable();
 bb26:
@@ -7153,7 +7147,7 @@ bb27:
     goto bb23;
 #line 181 "examples/ledger/db/sqlite.hero"
 bb28:
-#line 7157 "main.c"
+#line 7151 "main.c"
     t103 = h11_ret0;
     h_0opt_e405689_retain(&t103);
     h_0opt_e201354_release(hero_slot_escape(&h3_f0));
@@ -7192,7 +7186,7 @@ h_0opt_24dfc0bb h_dbsqlite_opened(void) {
 #line 231 "examples/ledger/db/sqlite.hero"
 #define h0_db (*hero_lend_h0_db)
 #line 231 "examples/ledger/db/sqlite.hero"
-    _Pragma("clang diagnostic ignored \"-Wdeprecated-declarations\"") sqlite3 * *const hero_lend_h0_db = (sqlite3 * *)hero_lend_local(sizeof(sqlite3 *), "dbsqlite.opened", "db"); HeroStr h1_reason = {0}; h_0opt_24dfc0bb h2_ret0 = {0}; h_0opt_24dfc0bb h3_own3 = {0}; HeroStr h4_own4 = {0}; h_0opt_24dfc0bb h5_own5 = {0}; sqlite3 * t1; HeroStr t2; const char * t3; int64_t t4; int64_t t5; bool t6; sqlite3 * t7; h_dbsqlite_Db t8; HeroStr t9; sqlite3 * t10; HeroStr t12; HeroStr t13; h_0opt_24dfc0bb t14; sqlite3 * t15; h_dbsqlite_Db t16; h_0opt_24dfc0bb t17; h_0opt_24dfc0bb t18; h_0opt_24dfc0bb t19; HeroStr t20; HeroStr t21; h_0opt_24dfc0bb t22; _Pragma("clang diagnostic warning \"-Wdeprecated-declarations\"") goto bb0;
+    sqlite3 * *const hero_lend_h0_db = (sqlite3 * *)hero_lend_local(sizeof(sqlite3 *), "dbsqlite.opened", "db"); HeroStr h1_reason = {0}; h_0opt_24dfc0bb h2_ret0 = {0}; h_0opt_24dfc0bb h3_own3 = {0}; HeroStr h4_own4 = {0}; h_0opt_24dfc0bb h5_own5 = {0}; sqlite3 * t1; HeroStr t2; const char * t3; int64_t t4; int64_t t5; bool t6; sqlite3 * t7; h_dbsqlite_Db t8; HeroStr t9; sqlite3 * t10; HeroStr t12; HeroStr t13; h_0opt_24dfc0bb t14; sqlite3 * t15; h_dbsqlite_Db t16; h_0opt_24dfc0bb t17; h_0opt_24dfc0bb t18; h_0opt_24dfc0bb t19; HeroStr t20; HeroStr t21; h_0opt_24dfc0bb t22; goto bb0;
 #line 231 "examples/ledger/db/sqlite.hero"
 bb0:
     t1 = ((void *)0);
@@ -7292,7 +7286,7 @@ bb3:
     goto bb1;
 #line 250 "examples/ledger/db/sqlite.hero"
 bb4:
-#line 7296 "main.c"
+#line 7290 "main.c"
     t18 = h2_ret0;
     h_0opt_24dfc0bb_retain(&t18);
     hero_str_release_at(&h1_reason);
@@ -7327,7 +7321,7 @@ bb0:
     }
 #line 254 "examples/ledger/db/sqlite.hero"
     return t3;
-#line 7331 "main.c"
+#line 7325 "main.c"
 }
 
 #line 276 "examples/ledger/db/sqlite.hero"
@@ -7562,7 +7556,7 @@ bb8:
     goto bb9;
 #line 280 "examples/ledger/db/sqlite.hero"
 bb9:
-#line 7566 "main.c"
+#line 7560 "main.c"
     t40 = h8_ret0;
     h_0opt_a8ea2_retain(&t40);
     h_0opt_f87774a_release(hero_slot_escape(&h2_problem));
@@ -7626,7 +7620,7 @@ bb1:
     t11 = h1_f0;
 #line 286 "examples/ledger/db/sqlite.hero"
     t12 = t11.as.ok;
-#line 7630 "main.c"
+#line 7624 "main.c"
     h_0opt_e201354_release(hero_slot_escape(&h1_f0));
     h_0opt_e201354_release(hero_slot_escape(&h2_own2));
     return t12;
@@ -7635,7 +7629,7 @@ bb2:
     t9 = h1_f0;
 #line 286 "examples/ledger/db/sqlite.hero"
     t10 = t9.as.err;
-#line 7639 "main.c"
+#line 7633 "main.c"
     hero_panic_must(t10);
     hero_unreachable();
 }
@@ -7647,7 +7641,7 @@ h_0opt_791f9719 h_dbsqlite_prepared(h_dbsqlite_Db h0_db, HeroStr h1_sql) {
 #line 290 "examples/ledger/db/sqlite.hero"
 #define h3_tail (*hero_lend_h3_tail)
 #line 290 "examples/ledger/db/sqlite.hero"
-    _Pragma("clang diagnostic ignored \"-Wdeprecated-declarations\"") sqlite3_stmt * *const hero_lend_h2_statement = (sqlite3_stmt * *)hero_lend_local(sizeof(sqlite3_stmt *), "dbsqlite.prepared", "statement"); const char * *const hero_lend_h3_tail = (const char * *)hero_lend_local(sizeof(const char *), "dbsqlite.prepared", "tail"); h_0opt_791f9719 h4_ret0 = {0}; h_0opt_791f9719 h5_own5 = {0}; HeroStr h6_own6 = {0}; HeroStr h7_own7 = {0}; HeroStr h8_own8 = {0}; h_0opt_791f9719 h9_own9 = {0}; sqlite3_stmt * t1; const char * t2; h_dbsqlite_Db t3; sqlite3 * t4; HeroStr t5; const char * t6; int32_t t7; int64_t t8; int64_t t9; bool t10; HeroStr t11; HeroStr t12; HeroStr t13; HeroStr t14; h_dbsqlite_Db t15; HeroStr t16; HeroStr t17; h_0opt_791f9719 t18; sqlite3_stmt * t19; h_dbsqlite_Statement t20; h_0opt_791f9719 t21; h_0opt_791f9719 t22; h_0opt_791f9719 t23; HeroStr t24; HeroStr t25; HeroStr t26; h_0opt_791f9719 t27; _Pragma("clang diagnostic warning \"-Wdeprecated-declarations\"") goto bb0;
+    sqlite3_stmt * *const hero_lend_h2_statement = (sqlite3_stmt * *)hero_lend_local(sizeof(sqlite3_stmt *), "dbsqlite.prepared", "statement"); const char * *const hero_lend_h3_tail = (const char * *)hero_lend_local(sizeof(const char *), "dbsqlite.prepared", "tail"); h_0opt_791f9719 h4_ret0 = {0}; h_0opt_791f9719 h5_own5 = {0}; HeroStr h6_own6 = {0}; HeroStr h7_own7 = {0}; HeroStr h8_own8 = {0}; h_0opt_791f9719 h9_own9 = {0}; sqlite3_stmt * t1; const char * t2; h_dbsqlite_Db t3; sqlite3 * t4; HeroStr t5; const char * t6; int32_t t7; int64_t t8; int64_t t9; bool t10; HeroStr t11; HeroStr t12; HeroStr t13; HeroStr t14; h_dbsqlite_Db t15; HeroStr t16; HeroStr t17; h_0opt_791f9719 t18; sqlite3_stmt * t19; h_dbsqlite_Statement t20; h_0opt_791f9719 t21; h_0opt_791f9719 t22; h_0opt_791f9719 t23; HeroStr t24; HeroStr t25; HeroStr t26; h_0opt_791f9719 t27; goto bb0;
 #line 290 "examples/ledger/db/sqlite.hero"
 bb0:
     t1 = ((void *)0);
@@ -7756,7 +7750,7 @@ bb3:
     goto bb1;
 #line 295 "examples/ledger/db/sqlite.hero"
 bb4:
-#line 7760 "main.c"
+#line 7754 "main.c"
     t22 = h4_ret0;
     h_0opt_791f9719_retain(&t22);
     h_0opt_791f9719_release(hero_slot_escape(&h5_own5));
@@ -7794,7 +7788,7 @@ bb0:
     }
 #line 299 "examples/ledger/db/sqlite.hero"
     return t3;
-#line 7798 "main.c"
+#line 7792 "main.c"
 }
 
 #line 303 "examples/ledger/db/sqlite.hero"
@@ -7858,7 +7852,7 @@ bb3:
     goto bb1;
 #line 305 "examples/ledger/db/sqlite.hero"
 bb4:
-#line 7862 "main.c"
+#line 7856 "main.c"
     t10 = h1_ret0;
     h_0opt_a8ea2_retain(&t10);
     h_0opt_a8ea2_release(hero_slot_escape(&h2_own2));
@@ -7981,7 +7975,7 @@ bb6:
     goto bb4;
 #line 329 "examples/ledger/db/sqlite.hero"
 bb7:
-#line 7985 "main.c"
+#line 7979 "main.c"
     t20 = h2_ret0;
     h_0opt_70720e79_retain(&t20);
     h_0opt_70720e79_release(hero_slot_escape(&h3_own3));
@@ -8075,7 +8069,7 @@ bb3:
     t9 = h3_f0;
 #line 337 "examples/ledger/db/sqlite.hero"
     t10 = t9.as.err;
-#line 8079 "main.c"
+#line 8073 "main.c"
     hero_panic_must(t10);
     hero_unreachable();
 bb4:
@@ -8123,7 +8117,7 @@ bb5:
     goto bb1;
 #line 338 "examples/ledger/db/sqlite.hero"
 bb6:
-#line 8127 "main.c"
+#line 8121 "main.c"
     t24 = h4_ret0;
     h_0opt_a8ea2_retain(&t24);
     h_0opt_e1f4933_release(hero_slot_escape(&h3_f0));
@@ -8218,7 +8212,7 @@ bb3:
     t9 = h3_f0;
 #line 342 "examples/ledger/db/sqlite.hero"
     t10 = t9.as.err;
-#line 8222 "main.c"
+#line 8216 "main.c"
     hero_panic_must(t10);
     hero_unreachable();
 bb4:
@@ -8266,7 +8260,7 @@ bb5:
     goto bb1;
 #line 343 "examples/ledger/db/sqlite.hero"
 bb6:
-#line 8270 "main.c"
+#line 8264 "main.c"
     t24 = h4_ret0;
     h_0opt_a8ea2_retain(&t24);
     h_0opt_e1f4933_release(hero_slot_escape(&h3_f0));
@@ -8359,7 +8353,7 @@ bb2:
     t11 = h4_f0;
 #line 358 "examples/ledger/db/sqlite.hero"
     t12 = t11.as.err;
-#line 8363 "main.c"
+#line 8357 "main.c"
     hero_panic_must(t12);
     hero_unreachable();
 bb3:
@@ -8421,7 +8415,7 @@ bb5:
     goto bb3;
 #line 366 "examples/ledger/db/sqlite.hero"
 bb6:
-#line 8425 "main.c"
+#line 8419 "main.c"
     t29 = h6_ret0;
     h_0opt_a8ea2_retain(&t29);
     h_0opt_e1f4933_release(hero_slot_escape(&h4_f0));
@@ -8478,7 +8472,7 @@ bb1:
     t11 = h1_f0;
 #line 372 "examples/ledger/db/sqlite.hero"
     t12 = t11.as.ok;
-#line 8482 "main.c"
+#line 8476 "main.c"
     h_0opt_e201354_release(hero_slot_escape(&h1_f0));
     h_0opt_e201354_release(hero_slot_escape(&h2_own2));
     return t12;
@@ -8487,7 +8481,7 @@ bb2:
     t9 = h1_f0;
 #line 372 "examples/ledger/db/sqlite.hero"
     t10 = t9.as.err;
-#line 8491 "main.c"
+#line 8485 "main.c"
     hero_panic_must(t10);
     hero_unreachable();
 }
@@ -8551,7 +8545,7 @@ bb1:
     h4_own4 = t13;
 #line 380 "examples/ledger/db/sqlite.hero"
     h_0opt_e405689_release(&t16);
-#line 8555 "main.c"
+#line 8549 "main.c"
     h_0opt_e405689_retain(&t13);
     h_0opt_e1f4933_release(hero_slot_escape(&h2_f0));
     h_0opt_e1f4933_release(hero_slot_escape(&h3_own3));
@@ -8562,7 +8556,7 @@ bb2:
     t9 = h2_f0;
 #line 380 "examples/ledger/db/sqlite.hero"
     t10 = t9.as.err;
-#line 8566 "main.c"
+#line 8560 "main.c"
     hero_panic_must(t10);
     hero_unreachable();
 }
@@ -8606,7 +8600,7 @@ bb0:
 bb1:
 #line 385 "examples/ledger/db/sqlite.hero"
     t21 = h2_r0;
-#line 8610 "main.c"
+#line 8604 "main.c"
     h_0opt_e201354_retain(&t21);
     h_dbsqlite_Cell_release(hero_slot_escape(&h1_s0));
     h_0opt_e201354_release(hero_slot_escape(&h2_r0));
@@ -8757,7 +8751,7 @@ bb6:
     h_0opt_e201354_release(&t32);
 #line 385 "examples/ledger/db/sqlite.hero"
     goto bb1;
-#line 8761 "main.c"
+#line 8755 "main.c"
 }
 
 #line 392 "examples/ledger/db/sqlite.hero"
@@ -8799,7 +8793,7 @@ bb0:
 bb1:
 #line 393 "examples/ledger/db/sqlite.hero"
     t27 = h2_r0;
-#line 8803 "main.c"
+#line 8797 "main.c"
     h_0opt_f87774a_retain(&t27);
     h_dbsqlite_Cell_release(hero_slot_escape(&h1_s0));
     h_0opt_f87774a_release(hero_slot_escape(&h2_r0));
@@ -8985,7 +8979,7 @@ bb6:
     h_0opt_f87774a_release(&t41);
 #line 393 "examples/ledger/db/sqlite.hero"
     goto bb1;
-#line 8989 "main.c"
+#line 8983 "main.c"
 }
 
 #line 403 "examples/ledger/db/sqlite.hero"
@@ -9061,7 +9055,7 @@ bb2:
 bb3:
 #line 404 "examples/ledger/db/sqlite.hero"
     t12 = h2_r0;
-#line 9065 "main.c"
+#line 9059 "main.c"
     hero_str_incref(t12);
     h_0opt_f87774a_release(hero_slot_escape(&h1_f0));
     hero_str_release_at(&h2_r0);
@@ -9076,7 +9070,7 @@ HeroStr h_reportlines_BALANCE_HEADING(void) {
 #line 11 "examples/ledger/report/lines.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_3a42ef76);
-#line 9080 "main.c"
+#line 9074 "main.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -9193,7 +9187,7 @@ bb3:
 bb4:
 #line 25 "examples/ledger/report/lines.hero"
     t55 = h2_out;
-#line 9197 "main.c"
+#line 9191 "main.c"
     hero_array_incref(t55);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h3_xs0);
@@ -9387,7 +9381,7 @@ bb7:
     hero_array_push_owned(&h2_out, &t50);
 #line 21 "examples/ledger/report/lines.hero"
     goto bb3;
-#line 9391 "main.c"
+#line 9385 "main.c"
 }
 
 #line 27 "examples/ledger/report/lines.hero"
@@ -9489,7 +9483,7 @@ bb0:
     h10_own10 = t20;
 #line 28 "examples/ledger/report/lines.hero"
     hero_str_decref(t29);
-#line 9493 "main.c"
+#line 9487 "main.c"
     hero_str_incref(t20);
     hero_str_release_at(&h2_own2);
     hero_str_release_at(&h3_own3);
@@ -9619,7 +9613,7 @@ bb5:
     t19 = h2_f0;
 #line 35 "examples/ledger/report/lines.hero"
     t20 = t19.as.err;
-#line 9623 "main.c"
+#line 9617 "main.c"
     hero_panic_must(t20);
     hero_unreachable();
 bb6:
@@ -9749,7 +9743,7 @@ bb5:
     t18 = h2_f0;
 #line 43 "examples/ledger/report/lines.hero"
     t19 = t18.as.err;
-#line 9753 "main.c"
+#line 9747 "main.c"
     hero_panic_must(t19);
     hero_unreachable();
 bb6:
@@ -9879,7 +9873,7 @@ bb9:
     goto bb7;
 #line 55 "examples/ledger/report/lines.hero"
 bb10:
-#line 9883 "main.c"
+#line 9877 "main.c"
     t29 = h3_ret0;
     hero_str_release_at(&h4_own4);
     return t29;
@@ -9887,7 +9881,7 @@ bb10:
 
 #line 123 "<heroes library>"
 int64_t h_library_HERO_STR_OK(void) {
-#line 9891 "main.c"
+#line 9885 "main.c"
     return HERO_STR_OK;
 }
 
@@ -10010,7 +10004,7 @@ bb6:
     goto bb4;
 #line 159 "<heroes library>"
 bb7:
-#line 10014 "main.c"
+#line 10008 "main.c"
     t18 = h3_ret0;
     h_0opt_f87774a_retain(&t18);
     hero_str_release_at(&h2_text);
@@ -10034,9 +10028,8 @@ bb0:
     (void)hero_exit(t1);
 #line 228 "<heroes library>"
     return;
-#line 10038 "main.c"
+#line 10032 "main.c"
 }
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_bookentry_Amount_eq(const h_bookentry_Amount *a, const h_bookentry_Amount *b) {
     if (!(a->f_cents == b->f_cents)) return false;
     return true;

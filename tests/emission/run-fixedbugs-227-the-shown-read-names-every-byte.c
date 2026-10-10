@@ -9,9 +9,18 @@
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic ignored "-Wpragma-pack"
+#pragma float_control(push)
 #include "heroes_guard_open.h"
 #include <stdio.h>
 #include "heroes_guard_close.h"
+#pragma clang diagnostic ignored "-Wignored-pragmas"
+#pragma pack()
+#pragma float_control(pop)
+#pragma float_control(precise, on)
+#pragma GCC visibility push(default)
+#pragma clang section bss="" data="" rodata="" text="" relro=""
+#pragma clang optimize on
 #pragma clang diagnostic pop
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -26,6 +35,8 @@
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -90,7 +101,7 @@ HERO_STR_STATIC(hero_str_391e7e27, " bytes");
 HERO_STR_STATIC(hero_str_2fccf3e5, "cannot build the fixture");
 HERO_STR_STATIC(hero_str_49656b13, "build/heroes-golden-shown-no-such-file");
 
-#line 94 "fixedbugs227theshownreadnameseverybyte.c"
+#line 105 "fixedbugs227theshownreadnameseverybyte.c"
 typedef struct h_0opt_e1f4933 {
     int64_t tag;
     union {
@@ -146,7 +157,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 150 "fixedbugs227theshownreadnameseverybyte.c"
+#line 161 "fixedbugs227theshownreadnameseverybyte.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_e1f4933_retain(const h_0opt_e1f4933 *v);
@@ -170,23 +181,22 @@ HeroStr h_fixedbugs227theshownreadnameseverybyte_IS_TEXT(void);
 bool h_fixedbugs227theshownreadnameseverybyte_put(HeroStr h0_path, HeroArrayHeader * h1_bytes);
 void h_fixedbugs227theshownreadnameseverybyte_said(HeroStr h0_path);
 void h_fixedbugs227theshownreadnameseverybyte_main(void);
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 19 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
 int64_t h_fixedbugs227theshownreadnameseverybyte_HERO_OS_OK(void) {
-#line 178 "fixedbugs227theshownreadnameseverybyte.c"
+#line 188 "fixedbugs227theshownreadnameseverybyte.c"
     return HERO_OS_OK;
 }
 
 #line 20 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
 int64_t h_fixedbugs227theshownreadnameseverybyte_HERO_OS_NOT_FOUND(void) {
-#line 184 "fixedbugs227theshownreadnameseverybyte.c"
+#line 194 "fixedbugs227theshownreadnameseverybyte.c"
     return HERO_OS_NOT_FOUND;
 }
 
 #line 21 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
 int64_t h_fixedbugs227theshownreadnameseverybyte_HERO_OS_NOT_TEXT(void) {
-#line 190 "fixedbugs227theshownreadnameseverybyte.c"
+#line 200 "fixedbugs227theshownreadnameseverybyte.c"
     return HERO_OS_NOT_TEXT;
 }
 
@@ -197,7 +207,7 @@ HeroStr h_fixedbugs227theshownreadnameseverybyte_NOT_TEXT(void) {
 #line 23 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_7d88d4f7);
-#line 201 "fixedbugs227theshownreadnameseverybyte.c"
+#line 211 "fixedbugs227theshownreadnameseverybyte.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -209,7 +219,7 @@ HeroStr h_fixedbugs227theshownreadnameseverybyte_IS_TEXT(void) {
 #line 26 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_1e3ef7a5);
-#line 213 "fixedbugs227theshownreadnameseverybyte.c"
+#line 223 "fixedbugs227theshownreadnameseverybyte.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -367,7 +377,7 @@ bb9:
     t25 = h6_f0;
 #line 36 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
     t26 = t25.as.err;
-#line 371 "fixedbugs227theshownreadnameseverybyte.c"
+#line 381 "fixedbugs227theshownreadnameseverybyte.c"
     hero_panic_must(t26);
     hero_unreachable();
 bb10:
@@ -520,7 +530,7 @@ bb0:
     hero_print_str(t35);
 #line 47 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
     hero_print_end();
-#line 524 "fixedbugs227theshownreadnameseverybyte.c"
+#line 534 "fixedbugs227theshownreadnameseverybyte.c"
     hero_str_release_at(&h3_got);
     hero_str_release_at(&h4_own4);
     hero_str_release_at(&h5_own5);
@@ -693,7 +703,7 @@ bb6:
     goto bb4;
 #line 60 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
 bb7:
-#line 697 "fixedbugs227theshownreadnameseverybyte.c"
+#line 707 "fixedbugs227theshownreadnameseverybyte.c"
     hero_str_release_at(&h0_own0);
     hero_array_release_at(&h1_own1);
     hero_str_release_at(&h2_own2);
@@ -702,7 +712,6 @@ bb7:
     hero_str_release_at(&h5_own5);
     return;
 }
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL void h_0opt_e1f4933_retain(const h_0opt_e1f4933 *v) {
     if (v->tag == INT64_C(0)) {
         return;

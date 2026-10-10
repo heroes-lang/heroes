@@ -31,7 +31,6 @@ use emit/inst
 use emit/term
 use emit/unread
 use emit/constant_accessor
-use emit/deprecation
 use emit/writer
 use emit/lend_local
 use emit/prologue
@@ -105,24 +104,18 @@ function built(@w: writer.Writer, p: instances.Held, c: state.Checked, names: ct
     # first, because the prologue already touches this runtime's values and
     # the whole point of the guard is that a foreign thread must touch none of
     # them (panel 111 R9). The exit and the cleanup stay the generated file's
-    # (defect 335). A group record's `deprecated` attribute is quiet over the
-    # prologue, the compiler's declarations inside the program's definition,
-    # by a `_Pragma` inside the line (defect 571).
+    # (defect 335). A group record's `deprecated` attribute needs no word
+    # here: a header's deprecations are quiet over the whole unit after the
+    # groups' close (`emit/deprecation.hero`, panel 208).
     statements: [str] @ []
     guard = callback_guard.entry(s, f, guarded_decls: guarded_decls)
-    typed = deprecation.names_a_group_type(c, s, decls, f)
 
     if guard != ""
         statements @ statements.push(guard)
 
-    if typed
-        statements @ statements.push(deprecation.QUIET_INLINE)
-
     for one in entry.lines
         statements @ statements.push(one)
 
-    if typed
-        statements @ statements.push(deprecation.SPOKEN_INLINE)
     statements @ statements.push("goto " + mangle.block(0) + ";")
     writer.line(@w, text: "    " + statements.join(" "))
     released = lend_local.releases(c, names, f)

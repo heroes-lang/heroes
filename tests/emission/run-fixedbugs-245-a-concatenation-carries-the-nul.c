@@ -9,10 +9,19 @@
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic ignored "-Wpragma-pack"
+#pragma float_control(push)
 #include "heroes_guard_open.h"
 #include <stdio.h>
 #include <string.h>
 #include "heroes_guard_close.h"
+#pragma clang diagnostic ignored "-Wignored-pragmas"
+#pragma pack()
+#pragma float_control(pop)
+#pragma float_control(precise, on)
+#pragma GCC visibility push(default)
+#pragma clang section bss="" data="" rodata="" text="" relro=""
+#pragma clang optimize on
 #pragma clang diagnostic pop
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -27,6 +36,8 @@
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -88,7 +99,7 @@ HERO_STR_STATIC(hero_str_d028710, "the bytes of ");
 HERO_STR_STATIC(hero_str_612f4355, " are not UTF-8");
 HERO_STR_STATIC(hero_str_b908f30, "could not read ");
 
-#line 92 "fixedbugs245aconcatenationcarriesthenul.c"
+#line 103 "fixedbugs245aconcatenationcarriesthenul.c"
 typedef struct h_0opt_e1f4933 {
     int64_t tag;
     union {
@@ -144,7 +155,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 148 "fixedbugs245aconcatenationcarriesthenul.c"
+#line 159 "fixedbugs245aconcatenationcarriesthenul.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_e1f4933_retain(const h_0opt_e1f4933 *v);
@@ -168,7 +179,6 @@ int64_t h_library_HERO_OS_NOT_FOUND(void);
 int64_t h_library_HERO_OS_NOT_TEXT(void);
 int64_t h_library_HERO_OS_BAD_NAME(void);
 h_0opt_f87774a h_library_read_file(HeroStr h0_path);
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 16 "tests/golden/run/fixedbugs-245-a-concatenation-carries-the-nul.hero"
 HeroStr h_fixedbugs245aconcatenationcarriesthenul_HELD(void) {
@@ -177,7 +187,7 @@ HeroStr h_fixedbugs245aconcatenationcarriesthenul_HELD(void) {
 #line 16 "tests/golden/run/fixedbugs-245-a-concatenation-carries-the-nul.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_5167ba47);
-#line 181 "fixedbugs245aconcatenationcarriesthenul.c"
+#line 191 "fixedbugs245aconcatenationcarriesthenul.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -252,7 +262,7 @@ bb1:
     goto bb3;
 #line 23 "tests/golden/run/fixedbugs-245-a-concatenation-carries-the-nul.hero"
 bb2:
-#line 256 "fixedbugs245aconcatenationcarriesthenul.c"
+#line 266 "fixedbugs245aconcatenationcarriesthenul.c"
     (void)t7;
     (void)t8;
     hero_panic_assert(t6);
@@ -382,7 +392,7 @@ bb8:
     t28 = h4_f0;
 #line 24 "tests/golden/run/fixedbugs-245-a-concatenation-carries-the-nul.hero"
     t29 = t28.as.err;
-#line 386 "fixedbugs245aconcatenationcarriesthenul.c"
+#line 396 "fixedbugs245aconcatenationcarriesthenul.c"
     hero_panic_must(t29);
     hero_unreachable();
 bb9:
@@ -390,7 +400,7 @@ bb9:
     t47 = h5_f1;
 #line 27 "tests/golden/run/fixedbugs-245-a-concatenation-carries-the-nul.hero"
     t48 = t47.as.ok;
-#line 394 "fixedbugs245aconcatenationcarriesthenul.c"
+#line 404 "fixedbugs245aconcatenationcarriesthenul.c"
     hero_str_incref(t48);
     hero_array_release_at(&h1_xs0);
     h_0opt_e1f4933_release(hero_slot_escape(&h4_f0));
@@ -406,7 +416,7 @@ bb10:
     t45 = h5_f1;
 #line 27 "tests/golden/run/fixedbugs-245-a-concatenation-carries-the-nul.hero"
     t46 = t45.as.err;
-#line 410 "fixedbugs245aconcatenationcarriesthenul.c"
+#line 420 "fixedbugs245aconcatenationcarriesthenul.c"
     hero_panic_must(t46);
     hero_unreachable();
 }
@@ -479,7 +489,7 @@ bb0:
     hero_print_uint(t12);
 #line 33 "tests/golden/run/fixedbugs-245-a-concatenation-carries-the-nul.hero"
     hero_print_end();
-#line 483 "fixedbugs245aconcatenationcarriesthenul.c"
+#line 493 "fixedbugs245aconcatenationcarriesthenul.c"
     hero_str_release_at(&h0_s);
     hero_str_release_at(&h1_made);
     hero_str_release_at(&h2_own2);
@@ -489,25 +499,25 @@ bb0:
 
 #line 109 "<heroes library>"
 int64_t h_library_HERO_OS_OK(void) {
-#line 493 "fixedbugs245aconcatenationcarriesthenul.c"
+#line 503 "fixedbugs245aconcatenationcarriesthenul.c"
     return HERO_OS_OK;
 }
 
 #line 110 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_FOUND(void) {
-#line 499 "fixedbugs245aconcatenationcarriesthenul.c"
+#line 509 "fixedbugs245aconcatenationcarriesthenul.c"
     return HERO_OS_NOT_FOUND;
 }
 
 #line 111 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_TEXT(void) {
-#line 505 "fixedbugs245aconcatenationcarriesthenul.c"
+#line 515 "fixedbugs245aconcatenationcarriesthenul.c"
     return HERO_OS_NOT_TEXT;
 }
 
 #line 112 "<heroes library>"
 int64_t h_library_HERO_OS_BAD_NAME(void) {
-#line 511 "fixedbugs245aconcatenationcarriesthenul.c"
+#line 521 "fixedbugs245aconcatenationcarriesthenul.c"
     return HERO_OS_BAD_NAME;
 }
 
@@ -742,7 +752,7 @@ bb12:
     goto bb10;
 #line 182 "<heroes library>"
 bb13:
-#line 746 "fixedbugs245aconcatenationcarriesthenul.c"
+#line 756 "fixedbugs245aconcatenationcarriesthenul.c"
     t38 = h3_ret0;
     h_0opt_f87774a_retain(&t38);
     hero_str_release_at(&h2_text);
@@ -760,7 +770,6 @@ bb13:
     return t38;
 }
 #undef h1_status
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL void h_0opt_e1f4933_retain(const h_0opt_e1f4933 *v) {
     if (v->tag == INT64_C(0)) {
         return;

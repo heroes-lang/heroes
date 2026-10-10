@@ -1,0 +1,17 @@
+# fixedbugs, defect 584, lane b19-dep, 2026-10-10 (panel 208's R1).
+#
+# SYMPTOM: an enumerator its header marks `deprecated`, bound as a constant
+# and read in the program's own arithmetic: silent since defect 571 through
+# the compiler's accessor, and held silent with the warning spoken nowhere.
+#
+# FIX: `-Wdeprecated-declarations`, `-Wdeprecated-pragma` and
+# `-Wattribute-warning` are ignored over the whole unit after the groups'
+# close, the program's own lines as the compiler's (`emit/deprecation.hero`,
+# panel 208's R1): a deprecation is advice about a program, not a mistake in
+# it, and this language has no warning level.
+
+extern "fixedbugs-584-a-deprecated-enumerator-read-builds-silent.h"
+    constant OLD_LIMIT: i64
+
+function main()
+    print(OLD_LIMIT * 6)

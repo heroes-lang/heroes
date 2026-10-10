@@ -175,20 +175,26 @@ function warning_told_once(scratch: str, compiler: str, @r: report.Report)
 # first by name, whichever ran out; and `direct` its name alone, the frame
 # being the recursion. The Windows guard walks no frames (`runtime/parts/
 # stack.c`) and says the first sentence alone, which it is held to there.
+# `hidden` binds a header that leaves `#pragma GCC visibility push(hidden)`
+# open (defect 582): glibc's `dladdr` reads only exported symbols, so on
+# Linux the function went unnamed until the guard's close gave the
+# visibility back (`selfhost/emit/header_state.hero`).
 record Told
     file: str
     posix: [str]
+    defect: str
 
 function recursion_rows() -> [Told]
     return [
-        Told(file: "behind", posix: ["panic: stack exhausted in behind.helper, inside the recursion of behind.climbs"])
-        Told(file: "mutual", posix: ["panic: stack exhausted in mutual.ping, inside the recursion of mutual.ping and mutual.pong", "panic: stack exhausted in mutual.pong, inside the recursion of mutual.ping and mutual.pong"])
-        Told(file: "direct", posix: ["panic: stack exhausted in direct.down"])
+        Told(file: "behind", posix: ["panic: stack exhausted in behind.helper, inside the recursion of behind.climbs"], defect: "521")
+        Told(file: "mutual", posix: ["panic: stack exhausted in mutual.ping, inside the recursion of mutual.ping and mutual.pong", "panic: stack exhausted in mutual.pong, inside the recursion of mutual.ping and mutual.pong"], defect: "521")
+        Told(file: "direct", posix: ["panic: stack exhausted in direct.down"], defect: "521")
+        Told(file: "hidden", posix: ["panic: stack exhausted in hidden.down"], defect: "582")
     ]
 
 function recursion_named(scratch: str, compiler: str, @r: report.Report)
     for program in recursion_rows()
-        label = "surface/the stack guard names the recursion beside the frame that ran out, `" + program.file + "` at -O0 (defect 521)"
+        label = "surface/the stack guard names the recursion beside the frame that ran out, `" + program.file + "` at -O0 (defect " + program.defect + ")"
         ran = shell.run(
             scratch: scratch,
             program: compiler,

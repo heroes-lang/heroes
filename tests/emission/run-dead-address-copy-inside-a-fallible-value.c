@@ -9,9 +9,18 @@
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic ignored "-Wpragma-pack"
+#pragma float_control(push)
 #include "heroes_guard_open.h"
 #include <dead-address-copy-inside-a-fallible-value.h>
 #include "heroes_guard_close.h"
+#pragma clang diagnostic ignored "-Wignored-pragmas"
+#pragma pack()
+#pragma float_control(pop)
+#pragma float_control(precise, on)
+#pragma GCC visibility push(default)
+#pragma clang section bss="" data="" rodata="" text="" relro=""
+#pragma clang optimize on
 #pragma clang diagnostic pop
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -26,6 +35,8 @@
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -74,7 +85,7 @@ HERO_STR_STATIC(hero_str_41b4cad0, ":memory:");
 HERO_STR_STATIC(hero_str_2cb37c54, "cannot_open");
 HERO_STR_STATIC(hero_str_38b9, "no");
 
-#line 78 "deadaddresscopyinsideafalliblevalue.c"
+#line 89 "deadaddresscopyinsideafalliblevalue.c"
 typedef struct h_deadaddresscopyinsideafalliblevalue_Db {
     cdb * f_handle;
 } h_deadaddresscopyinsideafalliblevalue_Db;
@@ -132,7 +143,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 136 "deadaddresscopyinsideafalliblevalue.c"
+#line 147 "deadaddresscopyinsideafalliblevalue.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_deadaddresscopyinsideafalliblevalue_CDb_eq(cdb * const *a, cdb * const *b);
@@ -172,14 +183,13 @@ HERO_TU_QUIET static const HeroDesc h_deadaddresscopyinsideafalliblevalue_Db_des
 h_0opt_77d4f5ff h_deadaddresscopyinsideafalliblevalue_opened(void);
 int64_t h_deadaddresscopyinsideafalliblevalue_closed(h_deadaddresscopyinsideafalliblevalue_Db *ph0_db);
 void h_deadaddresscopyinsideafalliblevalue_main(void);
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 16 "tests/golden/run/dead-address-copy-inside-a-fallible-value.hero"
 h_0opt_77d4f5ff h_deadaddresscopyinsideafalliblevalue_opened(void) {
 #line 16 "tests/golden/run/dead-address-copy-inside-a-fallible-value.hero"
 #define h0_db (*hero_lend_h0_db)
 #line 16 "tests/golden/run/dead-address-copy-inside-a-fallible-value.hero"
-    _Pragma("clang diagnostic ignored \"-Wdeprecated-declarations\"") cdb * *const hero_lend_h0_db = (cdb * *)hero_lend_local(sizeof(cdb *), "deadaddresscopyinsideafalliblevalue.opened", "db"); h_0opt_77d4f5ff h1_ret0 = {0}; h_0opt_77d4f5ff h2_own2 = {0}; h_0opt_77d4f5ff h3_own3 = {0}; cdb * t1; HeroStr t2; const char * t3; int64_t t4; int64_t t5; bool t6; HeroStr t7; HeroStr t8; h_0opt_77d4f5ff t9; cdb * t10; h_deadaddresscopyinsideafalliblevalue_Db t11; h_0opt_77d4f5ff t12; h_0opt_77d4f5ff t13; h_0opt_77d4f5ff t14; h_0opt_77d4f5ff t15; _Pragma("clang diagnostic warning \"-Wdeprecated-declarations\"") goto bb0;
+    cdb * *const hero_lend_h0_db = (cdb * *)hero_lend_local(sizeof(cdb *), "deadaddresscopyinsideafalliblevalue.opened", "db"); h_0opt_77d4f5ff h1_ret0 = {0}; h_0opt_77d4f5ff h2_own2 = {0}; h_0opt_77d4f5ff h3_own3 = {0}; cdb * t1; HeroStr t2; const char * t3; int64_t t4; int64_t t5; bool t6; HeroStr t7; HeroStr t8; h_0opt_77d4f5ff t9; cdb * t10; h_deadaddresscopyinsideafalliblevalue_Db t11; h_0opt_77d4f5ff t12; h_0opt_77d4f5ff t13; h_0opt_77d4f5ff t14; h_0opt_77d4f5ff t15; goto bb0;
 #line 16 "tests/golden/run/dead-address-copy-inside-a-fallible-value.hero"
 bb0:
     t1 = ((void *)0);
@@ -247,7 +257,7 @@ bb3:
     goto bb1;
 #line 20 "tests/golden/run/dead-address-copy-inside-a-fallible-value.hero"
 bb4:
-#line 251 "deadaddresscopyinsideafalliblevalue.c"
+#line 261 "deadaddresscopyinsideafalliblevalue.c"
     t13 = h1_ret0;
     h_0opt_77d4f5ff_retain(&t13);
     h_0opt_77d4f5ff_release(hero_slot_escape(&h2_own2));
@@ -280,7 +290,7 @@ bb0:
     }
 #line 24 "tests/golden/run/dead-address-copy-inside-a-fallible-value.hero"
     return t3;
-#line 284 "deadaddresscopyinsideafalliblevalue.c"
+#line 294 "deadaddresscopyinsideafalliblevalue.c"
 }
 
 #line 26 "tests/golden/run/dead-address-copy-inside-a-fallible-value.hero"
@@ -357,7 +367,7 @@ bb2:
     t7 = h1_f0;
 #line 28 "tests/golden/run/dead-address-copy-inside-a-fallible-value.hero"
     t8 = t7.as.err;
-#line 361 "deadaddresscopyinsideafalliblevalue.c"
+#line 371 "deadaddresscopyinsideafalliblevalue.c"
     hero_panic_must(t8);
     hero_unreachable();
 bb3:
@@ -375,7 +385,7 @@ bb3:
     hero_print_int(t22);
 #line 30 "tests/golden/run/dead-address-copy-inside-a-fallible-value.hero"
     hero_print_end();
-#line 379 "deadaddresscopyinsideafalliblevalue.c"
+#line 389 "deadaddresscopyinsideafalliblevalue.c"
     h_0opt_77d4f5ff_release(hero_slot_escape(&h0_result));
     h_0opt_77d4f5ff_release(hero_slot_escape(&h1_f0));
     h_0opt_77d4f5ff_release(hero_slot_escape(&h3_f1));
@@ -386,11 +396,10 @@ bb4:
     t17 = h3_f1;
 #line 30 "tests/golden/run/dead-address-copy-inside-a-fallible-value.hero"
     t18 = t17.as.err;
-#line 390 "deadaddresscopyinsideafalliblevalue.c"
+#line 400 "deadaddresscopyinsideafalliblevalue.c"
     hero_panic_must(t18);
     hero_unreachable();
 }
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_deadaddresscopyinsideafalliblevalue_CDb_eq(cdb * const *a, cdb * const *b) {
     return hero_handle_eq(*a, *b);
 }

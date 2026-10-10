@@ -88,6 +88,7 @@ use emit/externs as emit_externs
 use emit/c_text
 use emit/extern_assert
 use emit/ffi_lookup
+use emit/ffi_switched
 use emit/field_asked
 use parse
 use resolve
@@ -135,8 +136,9 @@ record Asked
     widths: {str: i64}
 
     # Each name the headers declare only under a switch of the C library,
-    # with the switch (`cli/switch_ask.hero`, defect 568).
-    switched: {str: str}
+    # or only without one a header defines, with the switch
+    # (`cli/switch_ask.hero`, defect 568; `cli/unswitch_ask.hero`, 585).
+    switched: {str: ffi_switched.Switch}
 
 # The answer of a run that was not made: nothing said, nothing a value or a
 # macro, no tag or type answered.

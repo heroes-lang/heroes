@@ -169,11 +169,16 @@ function run_clang(line: [str], what: str, err_path: str) -> ()?
 # dump and screen runs never printed theirs. A failure is `run_clang`'s, and
 # carries clang's whole text, warnings included, as a verdict always did.
 function asked_of_clang(line: [str], what: str, err_path: str) -> str?
+    return asked_through(program: "clang", words: line, what: what, err_path: err_path)
+
+# One program's line, its first word the program's own name as a line's is
+# (`hero_run_go`), asked as `asked_of_clang` asks clang.
+function asked_through(program: str, words: [str], what: str, err_path: str) -> str?
     # **`discard()` and not `""`, because the empty path INHERITS.** Under the
     # net this compiler is a child whose stdout is a capture file, and a clang
     # that outlives it goes on holding that file: `docs/panel/174` route F, and
     # defect 074 is what it cost.
-    ran = process.run(program: "clang", words: line, out: process.discard(), err: err_path)
+    ran = process.run(program: program, words: words, out: process.discard(), err: err_path)
     noise: str @ ""
 
     # **clang's words are read back where the bytes enter**, by

@@ -1,0 +1,67 @@
+# A name a group's header marks `unavailable`, refused on its `extern` line
+# (design.md §4.19; panel 208's R2, defect 588; the C boundary's rule file,
+# its section on a clang failure the author's own extern caused).
+#
+# Clang refuses every use of such a name, the compiler's own probe of the
+# binding included, so a program binding one, called or not, was *internal
+# error: compiling the generated C failed* at exit 2, the header's refusal
+# blamed on the compiler. A deprecation is clang's advice and is quiet
+# (`emit/deprecation.hero`); this is clang's error, and the header's own
+# words are the verdict: told on the binding, whichever line of the unit clang
+# names, so one name is told once. The narrowing is `declaration()`, as every
+# member of the class: a name no group of THIS program declares stays exit 2,
+# the compiler's.
+
+use ast
+use diag
+use source
+use emit/ffi_lookup
+use emit/ffi_site
+
+constant OPENING: str
+    "error: '"
+
+constant SAID: str
+    "' is unavailable"
+
+function unavailable(s: source.Source, decls: [ast.Decl], line: str) -> diag.Diagnostic?
+    if !ffi_lookup.has(text: line, needle: SAID)
+        return fail(code: "none", msg: "not an unavailable name")
+    rest = ffi_lookup.after(text: line, marker: OPENING)
+
+    if rest.is_err()
+        return fail(code: "none", msg: "not an error line")
+    name = ffi_lookup.up_to_quote(rest.must())
+    found = ffi_lookup.declaration(s, decls, name: name)
+
+    if found.is_err()
+        return fail(code: "none", msg: "no group declares this name")
+    header = found.must().header
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "ffi_unavailable",
+        message: "`" + header + "` marks `" + name + "` unavailable, so no program may bind it",
+        span: found.must().span
+    )
+    words = ffi_lookup.after(text: line, marker: SAID + ": ")
+
+    if !words.is_err()
+        d.notes @ d.notes.push("`" + header + "` says of `" + name + "`: " + without_flag(words.must()))
+    d.notes @ d.notes.push(
+        "§4.19: an `extern` is checked against the real header, and clang refuses every use of a name it marks unavailable, this binding's own check included: remove the binding, or bind what the header offers in its place"
+    )
+    return ok(d)
+
+# The header's words without a trailing `[-W...]` clang may add.
+function without_flag(text: str) -> str
+    at = ffi_lookup.char_index_of(text: text, needle: " [-W")
+
+    if at.is_err()
+        return text
+
+    return ffi_site.slice_chars(text.chars(), from: 0, to: at.must())
+
+## Tests
+
+test "a line that names no unavailable name is not read"
+    assert without_flag("gone for good") == "gone for good"
+    assert without_flag("gone for good [-Wsomething]") == "gone for good"

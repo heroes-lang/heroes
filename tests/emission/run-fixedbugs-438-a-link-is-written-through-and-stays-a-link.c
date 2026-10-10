@@ -9,9 +9,18 @@
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic ignored "-Wpragma-pack"
+#pragma float_control(push)
 #include "heroes_guard_open.h"
 #include <unistd.h>
 #include "heroes_guard_close.h"
+#pragma clang diagnostic ignored "-Wignored-pragmas"
+#pragma pack()
+#pragma float_control(pop)
+#pragma float_control(precise, on)
+#pragma GCC visibility push(default)
+#pragma clang section bss="" data="" rodata="" text="" relro=""
+#pragma clang optimize on
 #pragma clang diagnostic pop
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -26,6 +35,8 @@
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -113,7 +124,7 @@ HERO_STR_STATIC(hero_str_7e662f9e, "write_failed");
 HERO_STR_STATIC(hero_str_1755ec20, "could not write a path holding a NUL byte, which names no file");
 HERO_STR_STATIC(hero_str_39d7c22a, "could not write ");
 
-#line 117 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
+#line 128 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
 typedef struct h_0opt_1b9b98 {
     int64_t tag;
     union {
@@ -174,7 +185,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 178 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
+#line 189 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_1b9b98_retain(const h_0opt_1b9b98 *v);
@@ -206,17 +217,16 @@ int64_t h_library_HERO_OS_NOT_TEXT(void);
 int64_t h_library_HERO_OS_BAD_NAME(void);
 h_0opt_f87774a h_library_read_file(HeroStr h0_path);
 h_0opt_a8ea2 h_library_write_file(HeroStr h0_path, HeroStr h1_text);
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 26 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
 int64_t h_fixedbugs438alinkiswrittenthroughandstaysalink_HERO_DIR_FILES(void) {
-#line 214 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
+#line 224 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
     return HERO_DIR_FILES;
 }
 
 #line 27 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
 int64_t h_fixedbugs438alinkiswrittenthroughandstaysalink_HERO_FS_LINK(void) {
-#line 220 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
+#line 230 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
     return HERO_FS_LINK;
 }
 
@@ -227,7 +237,7 @@ HeroStr h_fixedbugs438alinkiswrittenthroughandstaysalink_TEXT(void) {
 #line 29 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_70a25bad);
-#line 231 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
+#line 241 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -326,7 +336,7 @@ bb2:
 bb3:
 #line 43 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
     t19 = h3_out;
-#line 330 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
+#line 340 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
     hero_array_incref(t19);
     hero_array_release_at(&h1_buf);
     hero_array_release_at(&h3_out);
@@ -418,7 +428,7 @@ bb2:
 bb3:
 #line 53 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
     t24 = h1_out;
-#line 422 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
+#line 432 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
     hero_array_incref(t24);
     hero_array_release_at(&h1_out);
     h_0opt_1b9b98_release(hero_slot_escape(&h3_f0));
@@ -447,7 +457,7 @@ bb5:
     t16 = h3_f0;
 #line 50 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
     t17 = t16.as.err;
-#line 451 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
+#line 461 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
     hero_panic_must(t17);
     hero_unreachable();
 }
@@ -529,7 +539,7 @@ bb3:
     hero_str_decref(t17);
 #line 56 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
     t12 = hero_str_eq(t10, t11);
-#line 533 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
+#line 543 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
     h_0opt_f87774a_release(hero_slot_escape(&h1_f0));
     hero_str_release_at(&h2_r0);
     h_0opt_f87774a_release(hero_slot_escape(&h3_own3));
@@ -558,7 +568,7 @@ bb0:
     t6 = h1_count;
 #line 62 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
     return t6;
-#line 562 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
+#line 572 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
 }
 
 #line 64 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
@@ -846,7 +856,7 @@ bb9:
     goto bb10;
 #line 73 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
 bb10:
-#line 850 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
+#line 860 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
     hero_str_release_at(&h1_file);
     hero_str_release_at(&h2_link);
     h_0opt_a8ea2_release(hero_slot_escape(&h5_f0));
@@ -1058,7 +1068,7 @@ bb5:
     goto bb6;
 #line 94 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
 bb6:
-#line 1062 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
+#line 1072 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
     hero_str_release_at(&h1_link);
     hero_str_release_at(&h2_named);
     h_0opt_a8ea2_release(hero_slot_escape(&h3_f0));
@@ -1213,7 +1223,7 @@ bb5:
     goto bb1;
 #line 111 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
 bb6:
-#line 1217 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
+#line 1227 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
     hero_str_release_at(&h0_root);
     hero_str_release_at(&h1_one);
     hero_str_release_at(&h2_two);
@@ -1226,25 +1236,25 @@ bb6:
 
 #line 109 "<heroes library>"
 int64_t h_library_HERO_OS_OK(void) {
-#line 1230 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
+#line 1240 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
     return HERO_OS_OK;
 }
 
 #line 110 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_FOUND(void) {
-#line 1236 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
+#line 1246 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
     return HERO_OS_NOT_FOUND;
 }
 
 #line 111 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_TEXT(void) {
-#line 1242 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
+#line 1252 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
     return HERO_OS_NOT_TEXT;
 }
 
 #line 112 "<heroes library>"
 int64_t h_library_HERO_OS_BAD_NAME(void) {
-#line 1248 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
+#line 1258 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
     return HERO_OS_BAD_NAME;
 }
 
@@ -1479,7 +1489,7 @@ bb12:
     goto bb10;
 #line 182 "<heroes library>"
 bb13:
-#line 1483 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
+#line 1493 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
     t38 = h3_ret0;
     h_0opt_f87774a_retain(&t38);
     hero_str_release_at(&h2_text);
@@ -1606,7 +1616,7 @@ bb6:
     goto bb4;
 #line 191 "<heroes library>"
 bb7:
-#line 1610 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
+#line 1620 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
     t19 = h3_ret0;
     h_0opt_a8ea2_retain(&t19);
     h_0opt_a8ea2_release(hero_slot_escape(&h4_own4));
@@ -1615,7 +1625,6 @@ bb7:
     h_0opt_a8ea2_release(hero_slot_escape(&h7_own7));
     return t19;
 }
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL void h_0opt_1b9b98_retain(const h_0opt_1b9b98 *v) {
     if (v->tag == INT64_C(0)) {
         return;

@@ -1,0 +1,17 @@
+# fixedbugs, defect 587, lane b19-dep, 2026-10-10 (panel 208's R1).
+#
+# SYMPTOM: a macro under `#pragma clang deprecated`, bound as a constant and
+# read: clang printed `-Wdeprecated-pragma` at the compiler's own assertions
+# and accessor of the constant, lines no author wrote, at exit 0.
+#
+# FIX: `-Wdeprecated-declarations`, `-Wdeprecated-pragma` and
+# `-Wattribute-warning` are ignored over the whole unit after the groups'
+# close, the program's own lines as the compiler's (`emit/deprecation.hero`,
+# panel 208's R1): a deprecation is advice about a program, not a mistake in
+# it, and this language has no warning level.
+
+extern "fixedbugs-587-a-macro-its-header-marks-with-pragma-clang-deprecated-builds-silent.h"
+    constant OLD_MAC: i64
+
+function main()
+    print(OLD_MAC)

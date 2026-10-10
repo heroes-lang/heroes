@@ -47,12 +47,13 @@ had become loud in both directions (CL-028).
 ## A clang failure that the author's own extern caused
 
 A clang failure is normally exit 2 and says the **compiler** is wrong. One class
-is exit 1 with a diagnostic on the `.hero` line, and it has ten members
+is exit 1 with a diagnostic on the `.hero` line, and it has eleven members
 (panel 036, widened by panel 048, CL-008; the fifth by panel 166; the sixth by
 defect 360, 2026-10-06, with no sitting, on defect 060's precedent: who is
 blamed moves, the line between accepted and refused does not; the seventh,
 eighth and ninth by panel 202, ratified 2026-10-10, its R2; the tenth by its
-R3, the same day):
+R3, the same day; the eleventh by panel 208, ratified 2026-10-10, its R2,
+which counted it the seventh on the trunk's list of that hour):
 
 - a result type the header refutes, and a record's constant whose header value
   C will not build as that record, judged by the accessor's own declaration at
@@ -102,6 +103,14 @@ R3, the same day):
   modules and their headers, or where a module's binding has another C type,
   another macro or another dump in it (`cli/one_file.hero`); until then the
   file was written at exit 0, clang never reading it.
+- **a name its header marks `unavailable`**, a function, a constant or a
+  record, called or only bound: added 2026-10-10 (panel 208's R2, defect
+  588). Clang refuses every use of it, the compiler's own probe of the binding
+  included, and `emit/ffi_unavailable.hero` reads that error, wherever in the
+  unit clang names it, into `ffi_unavailable` on the binding, once, the
+  header's own words in a note; until then it was *internal error: compiling
+  the generated C failed* at exit 2. A name its header marks deprecated is
+  not a member: it binds and builds silent (design.md §4.19, panel 208's R1).
 
 **The narrowing is `declaration()`, not whose text it is.** Every class recovers
 a name and asks whether *this program* declared it `extern`, so a symbol nobody

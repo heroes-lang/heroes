@@ -9,9 +9,18 @@
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic ignored "-Wpragma-pack"
+#pragma float_control(push)
 #include "heroes_guard_open.h"
 #include <fixedbugs-a-handle-compares-as-an-address.h>
 #include "heroes_guard_close.h"
+#pragma clang diagnostic ignored "-Wignored-pragmas"
+#pragma pack()
+#pragma float_control(pop)
+#pragma float_control(precise, on)
+#pragma GCC visibility push(default)
+#pragma clang section bss="" data="" rodata="" text="" relro=""
+#pragma clang optimize on
 #pragma clang diagnostic pop
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -26,6 +35,8 @@
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -73,7 +84,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_78, "x");
 
-#line 77 "fixedbugsahandlecomparesasanaddress.c"
+#line 88 "fixedbugsahandlecomparesasanaddress.c"
 typedef struct h_fixedbugsahandlecomparesasanaddress_Held {
     Chunk * f_h;
     HeroStr f_name;
@@ -132,7 +143,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 136 "fixedbugsahandlecomparesasanaddress.c"
+#line 147 "fixedbugsahandlecomparesasanaddress.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugsahandlecomparesasanaddress_Chunk_eq(Chunk * const *a, Chunk * const *b);
@@ -172,12 +183,11 @@ HERO_TU_QUIET static const HeroDesc h_fixedbugsahandlecomparesasanaddress_Chunk_
 };
 
 void h_fixedbugsahandlecomparesasanaddress_main(void);
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 61 "tests/golden/run/fixedbugs-a-handle-compares-as-an-address.hero"
 void h_fixedbugsahandlecomparesasanaddress_main(void) {
 #line 61 "tests/golden/run/fixedbugs-a-handle-compares-as-an-address.hero"
-    _Pragma("clang diagnostic ignored \"-Wdeprecated-declarations\"") Chunk * h0_a; Chunk * h1_b; Chunk * h2_n; h_0opt_2e1eec0d h3_oa = {0}; h_0opt_2e1eec0d h4_ob = {0}; h_fixedbugsahandlecomparesasanaddress_Held h5_own5 = {0}; h_fixedbugsahandlecomparesasanaddress_Held h6_own6 = {0}; h_fixedbugsahandlecomparesasanaddress_Held h7_own7 = {0}; h_fixedbugsahandlecomparesasanaddress_Held h8_own8 = {0}; HeroArrayHeader * h9_own9 = {0}; HeroArrayHeader * h10_own10 = {0}; HeroArrayHeader * h11_own11 = {0}; HeroArrayHeader * h12_own12 = {0}; h_0opt_2e1eec0d h13_own13 = {0}; h_0opt_2e1eec0d h14_own14 = {0}; int64_t t1; Chunk * t2; int64_t t3; Chunk * t4; Chunk * t5; Chunk * t6; int64_t t7; Chunk * t8; int64_t t9; Chunk * t10; Chunk * t11; bool t12; Chunk * t13; Chunk * t14; bool t15; Chunk * t16; Chunk * t17; bool t18; Chunk * t19; Chunk * t20; bool t21; Chunk * t22; Chunk * t23; bool t24; Chunk * t25; HeroStr t26; h_fixedbugsahandlecomparesasanaddress_Held t27; Chunk * t28; HeroStr t29; h_fixedbugsahandlecomparesasanaddress_Held t30; bool t31; Chunk * t32; HeroStr t33; h_fixedbugsahandlecomparesasanaddress_Held t34; Chunk * t35; HeroStr t36; h_fixedbugsahandlecomparesasanaddress_Held t37; bool t38; Chunk * t39; HeroArrayHeader * t40; Chunk * t41; HeroArrayHeader * t42; bool t43; Chunk * t44; HeroArrayHeader * t45; Chunk * t46; HeroArrayHeader * t47; bool t48; Chunk * t49; h_0opt_2e1eec0d t50; Chunk * t51; h_0opt_2e1eec0d t52; h_0opt_2e1eec0d t53; h_0opt_2e1eec0d t54; bool t55; h_fixedbugsahandlecomparesasanaddress_Held t56; h_fixedbugsahandlecomparesasanaddress_Held t57; h_fixedbugsahandlecomparesasanaddress_Held t58; h_fixedbugsahandlecomparesasanaddress_Held t59; HeroArrayHeader * t60; HeroArrayHeader * t61; HeroArrayHeader * t62; HeroArrayHeader * t63; h_0opt_2e1eec0d t64; h_0opt_2e1eec0d t65; h_0opt_2e1eec0d t66; h_0opt_2e1eec0d t67; _Pragma("clang diagnostic warning \"-Wdeprecated-declarations\"") goto bb0;
+    Chunk * h0_a; Chunk * h1_b; Chunk * h2_n; h_0opt_2e1eec0d h3_oa = {0}; h_0opt_2e1eec0d h4_ob = {0}; h_fixedbugsahandlecomparesasanaddress_Held h5_own5 = {0}; h_fixedbugsahandlecomparesasanaddress_Held h6_own6 = {0}; h_fixedbugsahandlecomparesasanaddress_Held h7_own7 = {0}; h_fixedbugsahandlecomparesasanaddress_Held h8_own8 = {0}; HeroArrayHeader * h9_own9 = {0}; HeroArrayHeader * h10_own10 = {0}; HeroArrayHeader * h11_own11 = {0}; HeroArrayHeader * h12_own12 = {0}; h_0opt_2e1eec0d h13_own13 = {0}; h_0opt_2e1eec0d h14_own14 = {0}; int64_t t1; Chunk * t2; int64_t t3; Chunk * t4; Chunk * t5; Chunk * t6; int64_t t7; Chunk * t8; int64_t t9; Chunk * t10; Chunk * t11; bool t12; Chunk * t13; Chunk * t14; bool t15; Chunk * t16; Chunk * t17; bool t18; Chunk * t19; Chunk * t20; bool t21; Chunk * t22; Chunk * t23; bool t24; Chunk * t25; HeroStr t26; h_fixedbugsahandlecomparesasanaddress_Held t27; Chunk * t28; HeroStr t29; h_fixedbugsahandlecomparesasanaddress_Held t30; bool t31; Chunk * t32; HeroStr t33; h_fixedbugsahandlecomparesasanaddress_Held t34; Chunk * t35; HeroStr t36; h_fixedbugsahandlecomparesasanaddress_Held t37; bool t38; Chunk * t39; HeroArrayHeader * t40; Chunk * t41; HeroArrayHeader * t42; bool t43; Chunk * t44; HeroArrayHeader * t45; Chunk * t46; HeroArrayHeader * t47; bool t48; Chunk * t49; h_0opt_2e1eec0d t50; Chunk * t51; h_0opt_2e1eec0d t52; h_0opt_2e1eec0d t53; h_0opt_2e1eec0d t54; bool t55; h_fixedbugsahandlecomparesasanaddress_Held t56; h_fixedbugsahandlecomparesasanaddress_Held t57; h_fixedbugsahandlecomparesasanaddress_Held t58; h_fixedbugsahandlecomparesasanaddress_Held t59; HeroArrayHeader * t60; HeroArrayHeader * t61; HeroArrayHeader * t62; HeroArrayHeader * t63; h_0opt_2e1eec0d t64; h_0opt_2e1eec0d t65; h_0opt_2e1eec0d t66; h_0opt_2e1eec0d t67; goto bb0;
 #line 61 "tests/golden/run/fixedbugs-a-handle-compares-as-an-address.hero"
 bb0:
     t1 = INT64_C(0);
@@ -426,7 +436,7 @@ bb0:
     hero_print_bool(t55);
 #line 86 "tests/golden/run/fixedbugs-a-handle-compares-as-an-address.hero"
     hero_print_end();
-#line 430 "fixedbugsahandlecomparesasanaddress.c"
+#line 440 "fixedbugsahandlecomparesasanaddress.c"
     h_0opt_2e1eec0d_release(hero_slot_escape(&h3_oa));
     h_0opt_2e1eec0d_release(hero_slot_escape(&h4_ob));
     h_fixedbugsahandlecomparesasanaddress_Held_release(hero_slot_escape(&h5_own5));
@@ -441,7 +451,6 @@ bb0:
     h_0opt_2e1eec0d_release(hero_slot_escape(&h14_own14));
     return;
 }
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_fixedbugsahandlecomparesasanaddress_Chunk_eq(Chunk * const *a, Chunk * const *b) {
     return hero_handle_eq(*a, *b);
 }

@@ -9,10 +9,19 @@
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic ignored "-Wpragma-pack"
+#pragma float_control(push)
 #include "heroes_guard_open.h"
 #include <ffi-a-char-field-becomes-text.h>
 #pragma push_macro("name")
 #include "heroes_guard_close.h"
+#pragma clang diagnostic ignored "-Wignored-pragmas"
+#pragma pack()
+#pragma float_control(pop)
+#pragma float_control(precise, on)
+#pragma GCC visibility push(default)
+#pragma clang section bss="" data="" rodata="" text="" relro=""
+#pragma clang optimize on
 #pragma clang diagnostic pop
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -27,6 +36,8 @@
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -41,11 +52,11 @@ _Static_assert(sizeof(Tag) - __builtin_offsetof(Tag, raw) != 0, "heroes-ffi-flex
 #line 35 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
 _Static_assert(_Generic(&((Tag *)0)->raw, _Bool (*)[8]: (sizeof(_Bool) == sizeof(uint8_t) && (((_Bool)-1 < 0) == ((uint8_t)-1 < 0))), char (*)[8]: (sizeof(char) == sizeof(uint8_t) && (((char)-1 < 0) == ((uint8_t)-1 < 0))), signed char (*)[8]: (sizeof(signed char) == sizeof(uint8_t) && (((signed char)-1 < 0) == ((uint8_t)-1 < 0))), short (*)[8]: (sizeof(short) == sizeof(uint8_t) && (((short)-1 < 0) == ((uint8_t)-1 < 0))), int (*)[8]: (sizeof(int) == sizeof(uint8_t) && (((int)-1 < 0) == ((uint8_t)-1 < 0))), long (*)[8]: (sizeof(long) == sizeof(uint8_t) && (((long)-1 < 0) == ((uint8_t)-1 < 0))), long long (*)[8]: (sizeof(long long) == sizeof(uint8_t) && (((long long)-1 < 0) == ((uint8_t)-1 < 0))), unsigned char (*)[8]: (sizeof(unsigned char) == sizeof(uint8_t) && (((unsigned char)-1 < 0) == ((uint8_t)-1 < 0))), unsigned short (*)[8]: (sizeof(unsigned short) == sizeof(uint8_t) && (((unsigned short)-1 < 0) == ((uint8_t)-1 < 0))), unsigned int (*)[8]: (sizeof(unsigned int) == sizeof(uint8_t) && (((unsigned int)-1 < 0) == ((uint8_t)-1 < 0))), unsigned long (*)[8]: (sizeof(unsigned long) == sizeof(uint8_t) && (((unsigned long)-1 < 0) == ((uint8_t)-1 < 0))), unsigned long long (*)[8]: (sizeof(unsigned long long) == sizeof(uint8_t) && (((unsigned long long)-1 < 0) == ((uint8_t)-1 < 0))), default: 0), "heroes-ffi-field Tag raw");
 _Static_assert(__builtin_classify_type(((Tag *)0)->id) == 1 && sizeof(((Tag *)0)->id) == sizeof(int32_t) && (_Generic(((Tag *)0)->id, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Tag id");
-#line 45 "ffiacharfieldbecomestext.c"
+#line 56 "ffiacharfieldbecomestext.c"
 
 #line 33 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
 _Static_assert(__builtin_classify_type(*(Tag *)0) != 13, "heroes-ffi-union Tag name raw id");
-#line 49 "ffiacharfieldbecomestext.c"
+#line 60 "ffiacharfieldbecomestext.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -140,7 +151,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 144 "ffiacharfieldbecomestext.c"
+#line 155 "ffiacharfieldbecomestext.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_ffiacharfieldbecomestext_Tag_eq(const Tag *a, const Tag *b);
@@ -159,12 +170,11 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_ffiacharfieldbecomestext_main(void);
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 39 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
 void h_ffiacharfieldbecomestext_main(void) {
 #line 39 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    _Pragma("clang diagnostic ignored \"-Wdeprecated-declarations\"") Tag h0_t; h_0opt_f87774a h1_f0 = {0}; h_0opt_f87774a h2_f1 = {0}; Tag h3_full; h_0opt_f87774a h4_f2 = {0}; h_0opt_f87774a h5_f3 = {0}; Tag h6_bad; h_0opt_f87774a h7_s0 = {0}; HeroStr h8_text = {0}; HeroFailure h9_e = {0}; h_0opt_e201354 h10_f4 = {0}; h_0opt_f87774a h11_own11 = {0}; h_0opt_f87774a h12_own12 = {0}; h_0opt_f87774a h13_own13 = {0}; h_0opt_f87774a h14_own14 = {0}; h_0opt_f87774a h15_own15 = {0}; h_0opt_e201354 h16_own16 = {0}; int8_t t1; int8_t t2; int8_t t3; int8_t t4; int8_t t5; int8_t t6; int8_t t7; int8_t t8; uint8_t t10; uint8_t t11; uint8_t t12; uint8_t t13; uint8_t t14; uint8_t t15; uint8_t t16; uint8_t t17; int32_t t19; Tag t20; Tag t21; h_0opt_f87774a t23; h_0opt_f87774a t24; int64_t t25; int64_t t26; bool t27; h_0opt_f87774a t28; HeroFailure t29; h_0opt_f87774a t30; HeroStr t31; Tag t32; h_0opt_f87774a t34; h_0opt_f87774a t35; int64_t t36; int64_t t37; bool t38; h_0opt_f87774a t39; HeroFailure t40; h_0opt_f87774a t41; HeroStr t42; int8_t t43; int8_t t44; int8_t t45; int8_t t46; int8_t t47; int8_t t48; int8_t t49; int8_t t50; uint8_t t52; uint8_t t53; uint8_t t54; uint8_t t55; uint8_t t56; uint8_t t57; uint8_t t58; uint8_t t59; int32_t t61; Tag t62; Tag t63; h_0opt_f87774a t65; h_0opt_f87774a t66; int64_t t67; int64_t t68; bool t69; h_0opt_f87774a t70; HeroFailure t71; h_0opt_f87774a t72; HeroStr t73; HeroStr t74; Tag t75; h_0opt_f87774a t77; h_0opt_f87774a t78; int64_t t79; int64_t t80; bool t81; h_0opt_f87774a t82; HeroFailure t83; h_0opt_f87774a t84; HeroStr t85; HeroStr t86; int8_t t87; int8_t t88; int8_t t89; int8_t t90; int8_t t91; int8_t t92; int8_t t93; int8_t t94; uint8_t t96; uint8_t t97; uint8_t t98; uint8_t t99; uint8_t t100; uint8_t t101; uint8_t t102; uint8_t t103; int32_t t105; Tag t106; Tag t107; h_0opt_f87774a t109; h_0opt_f87774a t110; int64_t t111; h_0opt_f87774a t112; HeroStr t113; HeroStr t114; HeroStr t115; h_0opt_f87774a t116; HeroFailure t117; HeroFailure t118; HeroStr t119; Tag t120; int32_t t121; h_0opt_e201354 t122; h_0opt_e201354 t123; int64_t t124; int64_t t125; bool t126; h_0opt_e201354 t127; HeroFailure t128; h_0opt_e201354 t129; int64_t t130; h_0opt_f87774a t131; h_0opt_f87774a t132; h_0opt_f87774a t133; h_0opt_f87774a t134; h_0opt_f87774a t135; h_0opt_f87774a t136; h_0opt_f87774a t137; h_0opt_f87774a t138; h_0opt_f87774a t139; h_0opt_f87774a t140; h_0opt_e201354 t141; h_0opt_e201354 t142; HeroStr t143; HeroFailure t144; _Pragma("clang diagnostic warning \"-Wdeprecated-declarations\"") goto bb0;
+    Tag h0_t; h_0opt_f87774a h1_f0 = {0}; h_0opt_f87774a h2_f1 = {0}; Tag h3_full; h_0opt_f87774a h4_f2 = {0}; h_0opt_f87774a h5_f3 = {0}; Tag h6_bad; h_0opt_f87774a h7_s0 = {0}; HeroStr h8_text = {0}; HeroFailure h9_e = {0}; h_0opt_e201354 h10_f4 = {0}; h_0opt_f87774a h11_own11 = {0}; h_0opt_f87774a h12_own12 = {0}; h_0opt_f87774a h13_own13 = {0}; h_0opt_f87774a h14_own14 = {0}; h_0opt_f87774a h15_own15 = {0}; h_0opt_e201354 h16_own16 = {0}; int8_t t1; int8_t t2; int8_t t3; int8_t t4; int8_t t5; int8_t t6; int8_t t7; int8_t t8; uint8_t t10; uint8_t t11; uint8_t t12; uint8_t t13; uint8_t t14; uint8_t t15; uint8_t t16; uint8_t t17; int32_t t19; Tag t20; Tag t21; h_0opt_f87774a t23; h_0opt_f87774a t24; int64_t t25; int64_t t26; bool t27; h_0opt_f87774a t28; HeroFailure t29; h_0opt_f87774a t30; HeroStr t31; Tag t32; h_0opt_f87774a t34; h_0opt_f87774a t35; int64_t t36; int64_t t37; bool t38; h_0opt_f87774a t39; HeroFailure t40; h_0opt_f87774a t41; HeroStr t42; int8_t t43; int8_t t44; int8_t t45; int8_t t46; int8_t t47; int8_t t48; int8_t t49; int8_t t50; uint8_t t52; uint8_t t53; uint8_t t54; uint8_t t55; uint8_t t56; uint8_t t57; uint8_t t58; uint8_t t59; int32_t t61; Tag t62; Tag t63; h_0opt_f87774a t65; h_0opt_f87774a t66; int64_t t67; int64_t t68; bool t69; h_0opt_f87774a t70; HeroFailure t71; h_0opt_f87774a t72; HeroStr t73; HeroStr t74; Tag t75; h_0opt_f87774a t77; h_0opt_f87774a t78; int64_t t79; int64_t t80; bool t81; h_0opt_f87774a t82; HeroFailure t83; h_0opt_f87774a t84; HeroStr t85; HeroStr t86; int8_t t87; int8_t t88; int8_t t89; int8_t t90; int8_t t91; int8_t t92; int8_t t93; int8_t t94; uint8_t t96; uint8_t t97; uint8_t t98; uint8_t t99; uint8_t t100; uint8_t t101; uint8_t t102; uint8_t t103; int32_t t105; Tag t106; Tag t107; h_0opt_f87774a t109; h_0opt_f87774a t110; int64_t t111; h_0opt_f87774a t112; HeroStr t113; HeroStr t114; HeroStr t115; h_0opt_f87774a t116; HeroFailure t117; HeroFailure t118; HeroStr t119; Tag t120; int32_t t121; h_0opt_e201354 t122; h_0opt_e201354 t123; int64_t t124; int64_t t125; bool t126; h_0opt_e201354 t127; HeroFailure t128; h_0opt_e201354 t129; int64_t t130; h_0opt_f87774a t131; h_0opt_f87774a t132; h_0opt_f87774a t133; h_0opt_f87774a t134; h_0opt_f87774a t135; h_0opt_f87774a t136; h_0opt_f87774a t137; h_0opt_f87774a t138; h_0opt_f87774a t139; h_0opt_f87774a t140; h_0opt_e201354 t141; h_0opt_e201354 t142; HeroStr t143; HeroFailure t144; goto bb0;
 #line 39 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
 bb0:
 #line 41 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
@@ -307,7 +317,7 @@ bb2:
     t28 = h1_f0;
 #line 47 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
     t29 = t28.as.err;
-#line 311 "ffiacharfieldbecomestext.c"
+#line 321 "ffiacharfieldbecomestext.c"
     hero_panic_must(t29);
     hero_unreachable();
 bb3:
@@ -406,7 +416,7 @@ bb4:
     t39 = h2_f1;
 #line 51 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
     t40 = t39.as.err;
-#line 410 "ffiacharfieldbecomestext.c"
+#line 420 "ffiacharfieldbecomestext.c"
     hero_panic_must(t40);
     hero_unreachable();
 bb5:
@@ -470,7 +480,7 @@ bb6:
     t70 = h4_f2;
 #line 56 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
     t71 = t70.as.err;
-#line 474 "ffiacharfieldbecomestext.c"
+#line 484 "ffiacharfieldbecomestext.c"
     hero_panic_must(t71);
     hero_unreachable();
 bb7:
@@ -580,7 +590,7 @@ bb8:
     t82 = h5_f3;
 #line 59 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
     t83 = t82.as.err;
-#line 584 "ffiacharfieldbecomestext.c"
+#line 594 "ffiacharfieldbecomestext.c"
     hero_panic_must(t83);
     hero_unreachable();
 bb9:
@@ -673,7 +683,7 @@ bb12:
     hero_print_int(t130);
 #line 75 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
     hero_print_end();
-#line 677 "ffiacharfieldbecomestext.c"
+#line 687 "ffiacharfieldbecomestext.c"
     h_0opt_f87774a_release(hero_slot_escape(&h1_f0));
     h_0opt_f87774a_release(hero_slot_escape(&h2_f1));
     h_0opt_f87774a_release(hero_slot_escape(&h4_f2));
@@ -694,11 +704,10 @@ bb13:
     t127 = h10_f4;
 #line 75 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
     t128 = t127.as.err;
-#line 698 "ffiacharfieldbecomestext.c"
+#line 708 "ffiacharfieldbecomestext.c"
     hero_panic_must(t128);
     hero_unreachable();
 }
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_ffiacharfieldbecomestext_Tag_eq(const Tag *a, const Tag *b) {
     if (!((a->name[0] == b->name[0] && a->name[1] == b->name[1] && a->name[2] == b->name[2] && a->name[3] == b->name[3] && a->name[4] == b->name[4] && a->name[5] == b->name[5] && a->name[6] == b->name[6] && a->name[7] == b->name[7]))) return false;
     if (!((a->raw[0] == b->raw[0] && a->raw[1] == b->raw[1] && a->raw[2] == b->raw[2] && a->raw[3] == b->raw[3] && a->raw[4] == b->raw[4] && a->raw[5] == b->raw[5] && a->raw[6] == b->raw[6] && a->raw[7] == b->raw[7]))) return false;

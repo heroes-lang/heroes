@@ -1,0 +1,18 @@
+# fixedbugs, defect 584, lane b19-dep, 2026-10-10 (panel 208's R1).
+#
+# SYMPTOM: a record its header marks `deprecated`, a local of the program's
+# own: clang printed its warning at the emitted C of the local.
+#
+# FIX: `-Wdeprecated-declarations`, `-Wdeprecated-pragma` and
+# `-Wattribute-warning` are ignored over the whole unit after the groups'
+# close, the program's own lines as the compiler's (`emit/deprecation.hero`,
+# panel 208's R1): a deprecation is advice about a program, not a mistake in
+# it, and this language has no warning level.
+
+extern "fixedbugs-584-a-deprecated-record-as-a-local-builds-silent.h"
+    record OldPair tag old_pair
+        a: i64
+
+function main()
+    p = OldPair(a: 5)
+    print(p.a)

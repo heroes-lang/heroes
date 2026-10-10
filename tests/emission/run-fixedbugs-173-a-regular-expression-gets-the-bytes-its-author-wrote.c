@@ -9,10 +9,19 @@
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic ignored "-Wpragma-pack"
+#pragma float_control(push)
 #include "heroes_guard_open.h"
 #include <regex.h>
 #include <string.h>
 #include "heroes_guard_close.h"
+#pragma clang diagnostic ignored "-Wignored-pragmas"
+#pragma pack()
+#pragma float_control(pop)
+#pragma float_control(precise, on)
+#pragma GCC visibility push(default)
+#pragma clang section bss="" data="" rodata="" text="" relro=""
+#pragma clang optimize on
 #pragma clang diagnostic pop
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -27,6 +36,8 @@
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -35,7 +46,7 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 
 #line 17 "tests/golden/run/fixedbugs-173-a-regular-expression-gets-the-bytes-its-author-wrote.hero"
 _Static_assert(__builtin_classify_type(((regex_t *)0)->re_nsub) == 1 && sizeof(((regex_t *)0)->re_nsub) == sizeof(uint64_t) && (_Generic(((regex_t *)0)->re_nsub, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 1), "heroes-ffi-field regex_t re_nsub");
-#line 39 "fixedbugs173aregularexpressiongetsthebytesitsauthorwrote.c"
+#line 50 "fixedbugs173aregularexpressiongetsthebytesitsauthorwrote.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -139,7 +150,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 143 "fixedbugs173aregularexpressiongetsthebytesitsauthorwrote.c"
+#line 154 "fixedbugs173aregularexpressiongetsthebytesitsauthorwrote.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs173aregularexpressiongetsthebytesitsauthorwrote_regex_t_eq(const regex_t *a, const regex_t *b);
@@ -157,15 +168,12 @@ int32_t h_fixedbugs173aregularexpressiongetsthebytesitsauthorwrote_REG_EXTENDED(
 bool h_fixedbugs173aregularexpressiongetsthebytesitsauthorwrote_matches(HeroStr h0_pattern, HeroStr h1_text);
 void h_fixedbugs173aregularexpressiongetsthebytesitsauthorwrote_report(HeroStr h0_pattern, HeroStr h1_yes, HeroStr h2_no);
 void h_fixedbugs173aregularexpressiongetsthebytesitsauthorwrote_main(void);
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #line 15 "tests/golden/run/fixedbugs-173-a-regular-expression-gets-the-bytes-its-author-wrote.hero"
 int32_t h_fixedbugs173aregularexpressiongetsthebytesitsauthorwrote_REG_EXTENDED(void) {
-#line 166 "fixedbugs173aregularexpressiongetsthebytesitsauthorwrote.c"
+#line 175 "fixedbugs173aregularexpressiongetsthebytesitsauthorwrote.c"
     return REG_EXTENDED;
 }
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
@@ -184,7 +192,7 @@ bool h_fixedbugs173aregularexpressiongetsthebytesitsauthorwrote_matches(HeroStr 
 #line 26 "tests/golden/run/fixedbugs-173-a-regular-expression-gets-the-bytes-its-author-wrote.hero"
 #define h2_re (*hero_lend_h2_re)
 #line 26 "tests/golden/run/fixedbugs-173-a-regular-expression-gets-the-bytes-its-author-wrote.hero"
-    _Pragma("clang diagnostic ignored \"-Wdeprecated-declarations\"") regex_t *const hero_lend_h2_re = (regex_t *)hero_lend_local(sizeof(regex_t), "fixedbugs173aregularexpressiongetsthebytesitsauthorwrote.matches", "re"); int64_t h3_rc; bool h4_ret0; uint64_t t1; regex_t t2; HeroStr t3; const char * t4; int32_t t5; int64_t t6; int64_t t7; bool t8; HeroStr t9; HeroStr t10; bool t11; HeroStr t12; const char * t13; uint64_t t14; void * t15; int32_t t16; int64_t t17; int64_t t18; int64_t t19; bool t20; bool t21; _Pragma("clang diagnostic warning \"-Wdeprecated-declarations\"") goto bb0;
+    regex_t *const hero_lend_h2_re = (regex_t *)hero_lend_local(sizeof(regex_t), "fixedbugs173aregularexpressiongetsthebytesitsauthorwrote.matches", "re"); int64_t h3_rc; bool h4_ret0; uint64_t t1; regex_t t2; HeroStr t3; const char * t4; int32_t t5; int64_t t6; int64_t t7; bool t8; HeroStr t9; HeroStr t10; bool t11; HeroStr t12; const char * t13; uint64_t t14; void * t15; int32_t t16; int64_t t17; int64_t t18; int64_t t19; bool t20; bool t21; goto bb0;
 #line 26 "tests/golden/run/fixedbugs-173-a-regular-expression-gets-the-bytes-its-author-wrote.hero"
 bb0:
     t1 = UINT64_C(0);
@@ -261,7 +269,7 @@ bb3:
     goto bb1;
 #line 31 "tests/golden/run/fixedbugs-173-a-regular-expression-gets-the-bytes-its-author-wrote.hero"
 bb4:
-#line 265 "fixedbugs173aregularexpressiongetsthebytesitsauthorwrote.c"
+#line 273 "fixedbugs173aregularexpressiongetsthebytesitsauthorwrote.c"
     t21 = h4_ret0;
     hero_lend_local_give(hero_lend_h2_re);
     return t21;
@@ -343,7 +351,7 @@ bb0:
     hero_print_end();
 #line 39 "tests/golden/run/fixedbugs-173-a-regular-expression-gets-the-bytes-its-author-wrote.hero"
     return;
-#line 347 "fixedbugs173aregularexpressiongetsthebytesitsauthorwrote.c"
+#line 355 "fixedbugs173aregularexpressiongetsthebytesitsauthorwrote.c"
 }
 
 #line 41 "tests/golden/run/fixedbugs-173-a-regular-expression-gets-the-bytes-its-author-wrote.hero"
@@ -397,13 +405,12 @@ bb0:
     t12 = HERO_STR_LIT(hero_str_7280d90);
 #line 44 "tests/golden/run/fixedbugs-173-a-regular-expression-gets-the-bytes-its-author-wrote.hero"
     h_fixedbugs173aregularexpressiongetsthebytesitsauthorwrote_report(t10, t11, t12);
-#line 401 "fixedbugs173aregularexpressiongetsthebytesitsauthorwrote.c"
+#line 409 "fixedbugs173aregularexpressiongetsthebytesitsauthorwrote.c"
     hero_str_release_at(&h1_own1);
     hero_str_release_at(&h2_own2);
     hero_str_release_at(&h3_own3);
     return;
 }
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_fixedbugs173aregularexpressiongetsthebytesitsauthorwrote_regex_t_eq(const regex_t *a, const regex_t *b) {
     hero_panic("h_fixedbugs173aregularexpressiongetsthebytesitsauthorwrote_regex_t_eq: a partial record has no structural equality");
 }

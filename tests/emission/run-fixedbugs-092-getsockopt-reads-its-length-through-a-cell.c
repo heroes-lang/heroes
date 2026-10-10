@@ -9,9 +9,18 @@
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic ignored "-Wpragma-pack"
+#pragma float_control(push)
 #include "heroes_guard_open.h"
 #include <sys/socket.h>
 #include "heroes_guard_close.h"
+#pragma clang diagnostic ignored "-Wignored-pragmas"
+#pragma pack()
+#pragma float_control(pop)
+#pragma float_control(precise, on)
+#pragma GCC visibility push(default)
+#pragma clang section bss="" data="" rodata="" text="" relro=""
+#pragma clang optimize on
 #pragma clang diagnostic pop
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -26,6 +35,8 @@
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -35,11 +46,11 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 #line 15 "tests/golden/run/fixedbugs-092-getsockopt-reads-its-length-through-a-cell.hero"
 _Static_assert(__builtin_classify_type(((struct linger *)0)->l_onoff) == 1 && sizeof(((struct linger *)0)->l_onoff) == sizeof(int32_t) && (_Generic(((struct linger *)0)->l_onoff, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Linger l_onoff");
 _Static_assert(__builtin_classify_type(((struct linger *)0)->l_linger) == 1 && sizeof(((struct linger *)0)->l_linger) == sizeof(int32_t) && (_Generic(((struct linger *)0)->l_linger, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Linger l_linger");
-#line 39 "fixedbugs092getsockoptreadsitslengththroughacell.c"
+#line 50 "fixedbugs092getsockoptreadsitslengththroughacell.c"
 
 #line 14 "tests/golden/run/fixedbugs-092-getsockopt-reads-its-length-through-a-cell.hero"
 _Static_assert(__builtin_classify_type(*(struct linger *)0) != 13, "heroes-ffi-union Linger l_onoff l_linger");
-#line 43 "fixedbugs092getsockoptreadsitslengththroughacell.c"
+#line 54 "fixedbugs092getsockoptreadsitslengththroughacell.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -140,7 +151,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 144 "fixedbugs092getsockoptreadsitslengththroughacell.c"
+#line 155 "fixedbugs092getsockoptreadsitslengththroughacell.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs092getsockoptreadsitslengththroughacell_Linger_eq(const struct linger *a, const struct linger *b);
@@ -163,15 +174,12 @@ int64_t h_fixedbugs092getsockoptreadsitslengththroughacell_SOCK_STREAM(void);
 int64_t h_fixedbugs092getsockoptreadsitslengththroughacell_SOL_SOCKET(void);
 int64_t h_fixedbugs092getsockoptreadsitslengththroughacell_SO_LINGER(void);
 void h_fixedbugs092getsockoptreadsitslengththroughacell_main(void);
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #line 10 "tests/golden/run/fixedbugs-092-getsockopt-reads-its-length-through-a-cell.hero"
 int64_t h_fixedbugs092getsockoptreadsitslengththroughacell_AF_UNIX(void) {
-#line 172 "fixedbugs092getsockoptreadsitslengththroughacell.c"
+#line 181 "fixedbugs092getsockoptreadsitslengththroughacell.c"
     return AF_UNIX;
 }
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
@@ -185,13 +193,11 @@ int64_t h_fixedbugs092getsockoptreadsitslengththroughacell_AF_UNIX(void) {
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #line 11 "tests/golden/run/fixedbugs-092-getsockopt-reads-its-length-through-a-cell.hero"
 int64_t h_fixedbugs092getsockoptreadsitslengththroughacell_SOCK_STREAM(void) {
-#line 192 "fixedbugs092getsockoptreadsitslengththroughacell.c"
+#line 199 "fixedbugs092getsockoptreadsitslengththroughacell.c"
     return SOCK_STREAM;
 }
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
@@ -205,13 +211,11 @@ int64_t h_fixedbugs092getsockoptreadsitslengththroughacell_SOCK_STREAM(void) {
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #line 12 "tests/golden/run/fixedbugs-092-getsockopt-reads-its-length-through-a-cell.hero"
 int64_t h_fixedbugs092getsockoptreadsitslengththroughacell_SOL_SOCKET(void) {
-#line 212 "fixedbugs092getsockoptreadsitslengththroughacell.c"
+#line 217 "fixedbugs092getsockoptreadsitslengththroughacell.c"
     return SOL_SOCKET;
 }
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
@@ -225,13 +229,11 @@ int64_t h_fixedbugs092getsockoptreadsitslengththroughacell_SOL_SOCKET(void) {
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #line 13 "tests/golden/run/fixedbugs-092-getsockopt-reads-its-length-through-a-cell.hero"
 int64_t h_fixedbugs092getsockoptreadsitslengththroughacell_SO_LINGER(void) {
-#line 232 "fixedbugs092getsockoptreadsitslengththroughacell.c"
+#line 235 "fixedbugs092getsockoptreadsitslengththroughacell.c"
     return SO_LINGER;
 }
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
@@ -252,7 +254,7 @@ void h_fixedbugs092getsockoptreadsitslengththroughacell_main(void) {
 #line 20 "tests/golden/run/fixedbugs-092-getsockopt-reads-its-length-through-a-cell.hero"
 #define h4_n (*hero_lend_h4_n)
 #line 20 "tests/golden/run/fixedbugs-092-getsockopt-reads-its-length-through-a-cell.hero"
-    _Pragma("clang diagnostic ignored \"-Wdeprecated-declarations\"") h_0opt_e1f4933 h0_f0 = {0}; h_0opt_e1f4933 h1_f1 = {0}; int32_t h2_fd; struct linger *const hero_lend_h3_l = (struct linger *)hero_lend_local(sizeof(struct linger), "fixedbugs092getsockoptreadsitslengththroughacell.main", "l"); uint32_t *const hero_lend_h4_n = (uint32_t *)hero_lend_local(sizeof(uint32_t), "fixedbugs092getsockoptreadsitslengththroughacell.main", "n"); h_0opt_e1f4933 h5_f2 = {0}; h_0opt_e1f4933 h6_f3 = {0}; h_0opt_e1f4933 h7_own7 = {0}; h_0opt_e1f4933 h8_own8 = {0}; h_0opt_e1f4933 h9_own9 = {0}; h_0opt_e1f4933 h10_own10 = {0}; int64_t t1; h_0opt_e1f4933 t2; h_0opt_e1f4933 t3; int64_t t4; int64_t t5; bool t6; h_0opt_e1f4933 t7; HeroFailure t8; h_0opt_e1f4933 t9; int32_t t10; int64_t t11; h_0opt_e1f4933 t12; h_0opt_e1f4933 t13; int64_t t14; int64_t t15; bool t16; h_0opt_e1f4933 t17; HeroFailure t18; h_0opt_e1f4933 t19; int32_t t20; int32_t t21; int32_t t22; int32_t t23; int32_t t24; struct linger t25; uint32_t t26; int32_t t27; int64_t t28; h_0opt_e1f4933 t29; h_0opt_e1f4933 t30; int64_t t31; int64_t t32; bool t33; h_0opt_e1f4933 t34; HeroFailure t35; h_0opt_e1f4933 t36; int32_t t37; int64_t t38; h_0opt_e1f4933 t39; h_0opt_e1f4933 t40; int64_t t41; int64_t t42; bool t43; h_0opt_e1f4933 t44; HeroFailure t45; h_0opt_e1f4933 t46; int32_t t47; int32_t t48; struct linger t49; int32_t t50; uint32_t t51; h_0opt_e1f4933 t52; h_0opt_e1f4933 t53; h_0opt_e1f4933 t54; h_0opt_e1f4933 t55; h_0opt_e1f4933 t56; h_0opt_e1f4933 t57; h_0opt_e1f4933 t58; h_0opt_e1f4933 t59; _Pragma("clang diagnostic warning \"-Wdeprecated-declarations\"") goto bb0;
+    h_0opt_e1f4933 h0_f0 = {0}; h_0opt_e1f4933 h1_f1 = {0}; int32_t h2_fd; struct linger *const hero_lend_h3_l = (struct linger *)hero_lend_local(sizeof(struct linger), "fixedbugs092getsockoptreadsitslengththroughacell.main", "l"); uint32_t *const hero_lend_h4_n = (uint32_t *)hero_lend_local(sizeof(uint32_t), "fixedbugs092getsockoptreadsitslengththroughacell.main", "n"); h_0opt_e1f4933 h5_f2 = {0}; h_0opt_e1f4933 h6_f3 = {0}; h_0opt_e1f4933 h7_own7 = {0}; h_0opt_e1f4933 h8_own8 = {0}; h_0opt_e1f4933 h9_own9 = {0}; h_0opt_e1f4933 h10_own10 = {0}; int64_t t1; h_0opt_e1f4933 t2; h_0opt_e1f4933 t3; int64_t t4; int64_t t5; bool t6; h_0opt_e1f4933 t7; HeroFailure t8; h_0opt_e1f4933 t9; int32_t t10; int64_t t11; h_0opt_e1f4933 t12; h_0opt_e1f4933 t13; int64_t t14; int64_t t15; bool t16; h_0opt_e1f4933 t17; HeroFailure t18; h_0opt_e1f4933 t19; int32_t t20; int32_t t21; int32_t t22; int32_t t23; int32_t t24; struct linger t25; uint32_t t26; int32_t t27; int64_t t28; h_0opt_e1f4933 t29; h_0opt_e1f4933 t30; int64_t t31; int64_t t32; bool t33; h_0opt_e1f4933 t34; HeroFailure t35; h_0opt_e1f4933 t36; int32_t t37; int64_t t38; h_0opt_e1f4933 t39; h_0opt_e1f4933 t40; int64_t t41; int64_t t42; bool t43; h_0opt_e1f4933 t44; HeroFailure t45; h_0opt_e1f4933 t46; int32_t t47; int32_t t48; struct linger t49; int32_t t50; uint32_t t51; h_0opt_e1f4933 t52; h_0opt_e1f4933 t53; h_0opt_e1f4933 t54; h_0opt_e1f4933 t55; h_0opt_e1f4933 t56; h_0opt_e1f4933 t57; h_0opt_e1f4933 t58; h_0opt_e1f4933 t59; goto bb0;
 #line 20 "tests/golden/run/fixedbugs-092-getsockopt-reads-its-length-through-a-cell.hero"
 bb0:
     t1 = h_fixedbugs092getsockoptreadsitslengththroughacell_AF_UNIX();
@@ -338,7 +340,7 @@ bb2:
     t7 = h0_f0;
 #line 21 "tests/golden/run/fixedbugs-092-getsockopt-reads-its-length-through-a-cell.hero"
     t8 = t7.as.err;
-#line 342 "fixedbugs092getsockoptreadsitslengththroughacell.c"
+#line 344 "fixedbugs092getsockoptreadsitslengththroughacell.c"
     hero_panic_must(t8);
     hero_unreachable();
 bb3:
@@ -405,7 +407,7 @@ bb4:
     t17 = h1_f1;
 #line 21 "tests/golden/run/fixedbugs-092-getsockopt-reads-its-length-through-a-cell.hero"
     t18 = t17.as.err;
-#line 409 "fixedbugs092getsockoptreadsitslengththroughacell.c"
+#line 411 "fixedbugs092getsockoptreadsitslengththroughacell.c"
     hero_panic_must(t18);
     hero_unreachable();
 bb5:
@@ -455,7 +457,7 @@ bb6:
     t34 = h5_f2;
 #line 24 "tests/golden/run/fixedbugs-092-getsockopt-reads-its-length-through-a-cell.hero"
     t35 = t34.as.err;
-#line 459 "fixedbugs092getsockoptreadsitslengththroughacell.c"
+#line 461 "fixedbugs092getsockoptreadsitslengththroughacell.c"
     hero_panic_must(t35);
     hero_unreachable();
 bb7:
@@ -487,7 +489,7 @@ bb7:
     hero_print_int(t51);
 #line 26 "tests/golden/run/fixedbugs-092-getsockopt-reads-its-length-through-a-cell.hero"
     hero_print_end();
-#line 491 "fixedbugs092getsockoptreadsitslengththroughacell.c"
+#line 493 "fixedbugs092getsockoptreadsitslengththroughacell.c"
     h_0opt_e1f4933_release(hero_slot_escape(&h0_f0));
     h_0opt_e1f4933_release(hero_slot_escape(&h1_f1));
     h_0opt_e1f4933_release(hero_slot_escape(&h5_f2));
@@ -504,13 +506,12 @@ bb8:
     t44 = h6_f3;
 #line 24 "tests/golden/run/fixedbugs-092-getsockopt-reads-its-length-through-a-cell.hero"
     t45 = t44.as.err;
-#line 508 "fixedbugs092getsockoptreadsitslengththroughacell.c"
+#line 510 "fixedbugs092getsockoptreadsitslengththroughacell.c"
     hero_panic_must(t45);
     hero_unreachable();
 }
 #undef h3_l
 #undef h4_n
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_fixedbugs092getsockoptreadsitslengththroughacell_Linger_eq(const struct linger *a, const struct linger *b) {
     if (!(a->l_onoff == b->l_onoff)) return false;
     if (!(a->l_linger == b->l_linger)) return false;

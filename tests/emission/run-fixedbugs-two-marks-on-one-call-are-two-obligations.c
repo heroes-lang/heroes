@@ -9,9 +9,18 @@
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic ignored "-Wpragma-pack"
+#pragma float_control(push)
 #include "heroes_guard_open.h"
 #include <fixedbugs-two-marks-on-one-call-are-two-obligations.h>
 #include "heroes_guard_close.h"
+#pragma clang diagnostic ignored "-Wignored-pragmas"
+#pragma pack()
+#pragma float_control(pop)
+#pragma float_control(precise, on)
+#pragma GCC visibility push(default)
+#pragma clang section bss="" data="" rodata="" text="" relro=""
+#pragma clang optimize on
 #pragma clang diagnostic pop
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -26,6 +35,8 @@
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -72,7 +83,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_455ecde8, "both given back");
 
-#line 76 "fixedbugstwomarksononecallaretwoobligations.c"
+#line 87 "fixedbugstwomarksononecallaretwoobligations.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -118,7 +129,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 122 "fixedbugstwomarksononecallaretwoobligations.c"
+#line 133 "fixedbugstwomarksononecallaretwoobligations.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugstwomarksononecallaretwoobligations_Slot_eq(Slot * const *a, Slot * const *b);
@@ -135,7 +146,6 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_fixedbugstwomarksononecallaretwoobligations_main(void);
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 25 "tests/golden/run/fixedbugs-two-marks-on-one-call-are-two-obligations.hero"
 void h_fixedbugstwomarksononecallaretwoobligations_main(void) {
@@ -144,7 +154,7 @@ void h_fixedbugstwomarksononecallaretwoobligations_main(void) {
 #line 25 "tests/golden/run/fixedbugs-two-marks-on-one-call-are-two-obligations.hero"
 #define h1_b (*hero_lend_h1_b)
 #line 25 "tests/golden/run/fixedbugs-two-marks-on-one-call-are-two-obligations.hero"
-    _Pragma("clang diagnostic ignored \"-Wdeprecated-declarations\"") Slot * *const hero_lend_h0_a = (Slot * *)hero_lend_local(sizeof(Slot *), "fixedbugstwomarksononecallaretwoobligations.main", "a"); Conn * *const hero_lend_h1_b = (Conn * *)hero_lend_local(sizeof(Conn *), "fixedbugstwomarksononecallaretwoobligations.main", "b"); Slot * t1; Conn * t2; int64_t t3; Slot * t4; Conn * t5; HeroStr t6; _Pragma("clang diagnostic warning \"-Wdeprecated-declarations\"") goto bb0;
+    Slot * *const hero_lend_h0_a = (Slot * *)hero_lend_local(sizeof(Slot *), "fixedbugstwomarksononecallaretwoobligations.main", "a"); Conn * *const hero_lend_h1_b = (Conn * *)hero_lend_local(sizeof(Conn *), "fixedbugstwomarksononecallaretwoobligations.main", "b"); Slot * t1; Conn * t2; int64_t t3; Slot * t4; Conn * t5; HeroStr t6; goto bb0;
 #line 25 "tests/golden/run/fixedbugs-two-marks-on-one-call-are-two-obligations.hero"
 bb0:
     t1 = ((void *)0);
@@ -201,11 +211,10 @@ bb0:
     hero_lend_local_give(hero_lend_h0_a);
 #line 31 "tests/golden/run/fixedbugs-two-marks-on-one-call-are-two-obligations.hero"
     return;
-#line 205 "fixedbugstwomarksononecallaretwoobligations.c"
+#line 215 "fixedbugstwomarksononecallaretwoobligations.c"
 }
 #undef h0_a
 #undef h1_b
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_fixedbugstwomarksononecallaretwoobligations_Slot_eq(Slot * const *a, Slot * const *b) {
     return hero_handle_eq(*a, *b);
 }

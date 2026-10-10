@@ -9,9 +9,18 @@
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic ignored "-Wpragma-pack"
+#pragma float_control(push)
 #include "heroes_guard_open.h"
 #include <abort-handle-given-back-twice.h>
 #include "heroes_guard_close.h"
+#pragma clang diagnostic ignored "-Wignored-pragmas"
+#pragma pack()
+#pragma float_control(pop)
+#pragma float_control(precise, on)
+#pragma GCC visibility push(default)
+#pragma clang section bss="" data="" rodata="" text="" relro=""
+#pragma clang optimize on
 #pragma clang diagnostic pop
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -26,6 +35,8 @@
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -71,7 +82,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 75 "aborthandlegivenbacktwice.c"
+#line 86 "aborthandlegivenbacktwice.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -117,7 +128,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 121 "aborthandlegivenbacktwice.c"
+#line 132 "aborthandlegivenbacktwice.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_aborthandlegivenbacktwice_Slot_eq(Slot * const *a, Slot * const *b);
@@ -132,12 +143,11 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_aborthandlegivenbacktwice_main(void);
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 46 "tests/golden/run/abort-handle-given-back-twice.hero"
 void h_aborthandlegivenbacktwice_main(void) {
 #line 46 "tests/golden/run/abort-handle-given-back-twice.hero"
-    _Pragma("clang diagnostic ignored \"-Wdeprecated-declarations\"") Slot * h0_a; Slot * h1_twice; int64_t t1; Slot * t2; Slot * t3; int64_t t4; Slot * t5; Slot * t6; Slot * t7; _Pragma("clang diagnostic warning \"-Wdeprecated-declarations\"") goto bb0;
+    Slot * h0_a; Slot * h1_twice; int64_t t1; Slot * t2; Slot * t3; int64_t t4; Slot * t5; Slot * t6; Slot * t7; goto bb0;
 #line 46 "tests/golden/run/abort-handle-given-back-twice.hero"
 bb0:
     t1 = INT64_C(7);
@@ -187,9 +197,8 @@ bb0:
     }
 #line 51 "tests/golden/run/abort-handle-given-back-twice.hero"
     return;
-#line 191 "aborthandlegivenbacktwice.c"
+#line 201 "aborthandlegivenbacktwice.c"
 }
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_aborthandlegivenbacktwice_Slot_eq(Slot * const *a, Slot * const *b) {
     return hero_handle_eq(*a, *b);
 }

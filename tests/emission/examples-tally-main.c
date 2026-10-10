@@ -9,9 +9,18 @@
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic ignored "-Wpragma-pack"
+#pragma float_control(push)
 #include "heroes_guard_open.h"
 #include <stdio.h>
 #include "heroes_guard_close.h"
+#pragma clang diagnostic ignored "-Wignored-pragmas"
+#pragma pack()
+#pragma float_control(pop)
+#pragma float_control(precise, on)
+#pragma GCC visibility push(default)
+#pragma clang section bss="" data="" rodata="" text="" relro=""
+#pragma clang optimize on
 #pragma clang diagnostic pop
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -26,6 +35,8 @@
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -84,7 +95,7 @@ HERO_STR_STATIC(hero_str_20, " ");
 HERO_STR_STATIC(hero_str_43f04457, "this program reads text and that was not text");
 HERO_STR_STATIC(hero_str_38b441c6, "longest line: ");
 
-#line 88 "main.c"
+#line 99 "main.c"
 typedef struct h_main_Count {
     int64_t f_lines;
     int64_t f_words;
@@ -140,7 +151,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 144 "main.c"
+#line 155 "main.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_main_Count_eq(const h_main_Count *a, const h_main_Count *b);
@@ -169,7 +180,6 @@ HeroStr h_main_shown(h_main_Count h0_c);
 void h_main_main(void);
 int64_t h_main_longest(HeroStr h0_text);
 void h_library_exit(int64_t h0_code);
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 49 "examples/tally/main.hero"
 int64_t h_main_END_OF_FILE(void) {
@@ -184,7 +194,7 @@ bb0:
     if (__builtin_sub_overflow(t1, t2, &t3)) hero_panic_overflow();
 #line 50 "examples/tally/main.hero"
     return t3;
-#line 188 "main.c"
+#line 198 "main.c"
 }
 
 #line 62 "examples/tally/main.hero"
@@ -286,7 +296,7 @@ bb5:
     t10 = h2_f0;
 #line 67 "examples/tally/main.hero"
     t11 = t10.as.err;
-#line 290 "main.c"
+#line 300 "main.c"
     hero_panic_must(t11);
     hero_unreachable();
 bb6:
@@ -391,7 +401,7 @@ bb13:
     goto bb9;
 #line 73 "examples/tally/main.hero"
 bb14:
-#line 395 "main.c"
+#line 405 "main.c"
     t38 = h5_ret0;
     h_0opt_f87774a_retain(&t38);
     hero_array_release_at(&h0_bytes);
@@ -584,7 +594,7 @@ bb7:
     goto bb5;
 #line 87 "examples/tally/main.hero"
 bb8:
-#line 588 "main.c"
+#line 598 "main.c"
     t31 = h5_ret0;
     h_0opt_f87774a_retain(&t31);
     hero_str_release_at(&h1_out);
@@ -745,7 +755,7 @@ bb14:
     goto bb10;
 #line 107 "examples/tally/main.hero"
 bb15:
-#line 749 "main.c"
+#line 759 "main.c"
     t29 = h2_ret0;
     hero_str_incref(t29);
     hero_str_release_at(&h3_own3);
@@ -760,7 +770,7 @@ HeroStr h_main_PRINTABLE(void) {
 #line 110 "examples/tally/main.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_78068f5e);
-#line 764 "main.c"
+#line 774 "main.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -904,7 +914,7 @@ bb11:
 bb12:
 #line 141 "examples/tally/main.hero"
     goto bb10;
-#line 908 "main.c"
+#line 918 "main.c"
 }
 
 #line 147 "examples/tally/main.hero"
@@ -980,7 +990,7 @@ bb6:
     t15 = h1_b0;
 #line 148 "examples/tally/main.hero"
     return t15;
-#line 984 "main.c"
+#line 994 "main.c"
 }
 
 #line 150 "examples/tally/main.hero"
@@ -1060,7 +1070,7 @@ bb0:
     h7_own7 = t15;
 #line 151 "examples/tally/main.hero"
     hero_str_decref(t22);
-#line 1064 "main.c"
+#line 1074 "main.c"
     hero_str_incref(t15);
     hero_str_release_at(&h1_own1);
     hero_str_release_at(&h2_own2);
@@ -1201,7 +1211,7 @@ bb4:
     hero_print_str(t24);
 #line 161 "examples/tally/main.hero"
     hero_print_end();
-#line 1205 "main.c"
+#line 1215 "main.c"
     h_0opt_f87774a_release(hero_slot_escape(&h0_text));
     h_0opt_f87774a_release(hero_slot_escape(&h1_f0));
     h_0opt_f87774a_release(hero_slot_escape(&h2_f1));
@@ -1215,7 +1225,7 @@ bb5:
     t14 = h2_f1;
 #line 159 "examples/tally/main.hero"
     t15 = t14.as.err;
-#line 1219 "main.c"
+#line 1229 "main.c"
     hero_panic_must(t15);
     hero_unreachable();
 }
@@ -1344,7 +1354,7 @@ bb11:
 bb12:
 #line 181 "examples/tally/main.hero"
     goto bb10;
-#line 1348 "main.c"
+#line 1358 "main.c"
 }
 
 #line 227 "<heroes library>"
@@ -1358,9 +1368,8 @@ bb0:
     (void)hero_exit(t1);
 #line 228 "<heroes library>"
     return;
-#line 1362 "main.c"
+#line 1372 "main.c"
 }
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_main_Count_eq(const h_main_Count *a, const h_main_Count *b) {
     if (!(a->f_lines == b->f_lines)) return false;
     if (!(a->f_words == b->f_words)) return false;

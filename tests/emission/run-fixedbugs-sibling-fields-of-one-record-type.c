@@ -9,12 +9,21 @@
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic ignored "-Wpragma-pack"
+#pragma float_control(push)
 #include "heroes_guard_open.h"
 #include <fixedbugs-sibling-fields-of-one-record-type.h>
 #pragma push_macro("a")
 #pragma push_macro("b")
 #pragma push_macro("s")
 #include "heroes_guard_close.h"
+#pragma clang diagnostic ignored "-Wignored-pragmas"
+#pragma pack()
+#pragma float_control(pop)
+#pragma float_control(precise, on)
+#pragma GCC visibility push(default)
+#pragma clang section bss="" data="" rodata="" text="" relro=""
+#pragma clang optimize on
 #pragma clang diagnostic pop
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -29,6 +38,8 @@
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -40,7 +51,7 @@ _Static_assert(_Generic(&((Inner *)0)->s, Slot * *: 1, default: 0) && sizeof(((I
 #line 36 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
 _Static_assert(_Generic(&((Pair *)0)->a, Inner *: 1, default: 0) && sizeof(((Pair *)0)->a) == sizeof(Inner), "heroes-ffi-field Pair a");
 _Static_assert(_Generic(&((Pair *)0)->b, Inner *: 1, default: 0) && sizeof(((Pair *)0)->b) == sizeof(Inner), "heroes-ffi-field Pair b");
-#line 44 "fixedbugssiblingfieldsofonerecordtype.c"
+#line 55 "fixedbugssiblingfieldsofonerecordtype.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -128,7 +139,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 132 "fixedbugssiblingfieldsofonerecordtype.c"
+#line 143 "fixedbugssiblingfieldsofonerecordtype.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugssiblingfieldsofonerecordtype_Slot_eq(Slot * const *a, Slot * const *b);
@@ -147,12 +158,11 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_fixedbugssiblingfieldsofonerecordtype_main(void);
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 42 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
 void h_fixedbugssiblingfieldsofonerecordtype_main(void) {
 #line 42 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
-    _Pragma("clang diagnostic ignored \"-Wdeprecated-declarations\"") Pair h0_p; int64_t t1; Pair t2; Pair t3; Inner t4; Slot * t5; int64_t t6; Pair t7; Inner t8; Slot * t9; int64_t t10; Pair t11; Inner t12; Slot * t13; Pair t14; Inner t15; Slot * t16; HeroStr t17; _Pragma("clang diagnostic warning \"-Wdeprecated-declarations\"") goto bb0;
+    Pair h0_p; int64_t t1; Pair t2; Pair t3; Inner t4; Slot * t5; int64_t t6; Pair t7; Inner t8; Slot * t9; int64_t t10; Pair t11; Inner t12; Slot * t13; Pair t14; Inner t15; Slot * t16; HeroStr t17; goto bb0;
 #line 42 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
 bb0:
     t1 = INT64_C(7);
@@ -231,9 +241,8 @@ bb0:
     hero_print_end();
 #line 48 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
     return;
-#line 235 "fixedbugssiblingfieldsofonerecordtype.c"
+#line 245 "fixedbugssiblingfieldsofonerecordtype.c"
 }
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_fixedbugssiblingfieldsofonerecordtype_Slot_eq(Slot * const *a, Slot * const *b) {
     return hero_handle_eq(*a, *b);
 }
