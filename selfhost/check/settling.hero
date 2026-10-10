@@ -1,0 +1,130 @@
+# What comes next for a generic call's arguments that wait (spec § 9, defect
+# 541, panel 203 R1; design.md §4.5, §4.12): `next` says it, and the walk
+# does it (`check/walk.hero`'s `settle_waiting`), since checking an argument
+# and synthesising one are the walk's.
+#
+# The order, by form and never by position, so that a pair's verdict is the
+# same whichever argument is written first (R1 (a)):
+#
+# 1. an argument whose parameter names only settled letters is checked
+#    against it with them replaced, as a non-generic callee's argument is;
+# 2. with none such, the type the call's position asks for, once, where a
+#    literal it would settle can take it (`check/waiting.hero`'s
+#    `context_taken`);
+# 3. the waiting argument whose synthesis owes least to a literal's default
+#    (`check/waiting_order.hero`'s `weight`), synthesised alone, binding
+#    what it settles;
+# 4. a generic function's name, from the letters bound so far
+#    (`check/waiting_names.hero`'s `partly`);
+# 5. a form that refuses itself, `[]`, `{}`, `ok(…)`, a case, synthesised and
+#    told where it stands, quiet where an earlier argument's mistake left its
+#    letter poisoned (§4.5: that mistake's shadow);
+# 6. generic functions' names nothing settles, refused.
+#
+# After each step the first is asked again, so what one argument settles
+# reaches the others before anything weaker speaks.
+
+use ast
+use source
+use resolved
+use check/state
+use check/function_value
+use check/generics as check_generics
+use check/waiting
+use check/waiting_order
+use check/waiting_names
+
+# A generic call whose arguments wait: its declaration, its parameters'
+# types, the receiver of `x.f(…)` where the call types it (-1 for none), its
+# result's type and the type its position asks for.
+record Call
+    decl: i64
+    params: [i64]
+    receiver: i64
+    result: i64
+    expected: i64?
+
+# The arguments still waiting, and whether the context has been asked.
+record Pending
+    left: [waiting.Held]
+    asked: bool
+
+# What the walk does next: check an argument against `ty`; synthesise one
+# alone, the value before the dot where `dotted`, a mistake's shadow where
+# `shadow`; or nothing more, the call tainted where something was refused.
+variant Next
+    checked
+        held: waiting.Held
+        ty: i64
+    alone
+        held: waiting.Held
+        dotted: bool
+        shadow: bool
+    done
+        tainted: bool
+
+function next(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], call: Call, @pending: Pending, @bindings: [i64?]) -> Next
+    while pending.left.len() > 0
+        k: i64 @ 0
+
+        while k < pending.left.len()
+            ready = pending.left[k]
+
+            if waiting.settled_all(c, ty: call.params[ready.at], callee: bindings)
+                pending.left @ waiting_order.without(pending.left, at: k)
+                return .checked(held: ready, ty: check_generics.substitute(@c, call.params[ready.at], bindings))
+            k @ k + 1
+
+        if !pending.asked
+            pending.asked @ true
+            after: [i64?] @ bindings
+            check_generics.bind_missing(c, @after, param: call.result, got: call.expected.must())
+
+            if waiting.context_taken(@c, a, decls, params: call.params, left: pending.left, before: bindings, after: after)
+                bindings @ after
+            continue
+
+        # One argument left and no generic function's name: what it weighs
+        # orders nothing, so it is not weighed.
+        if pending.left.len() == 1 && !function_value.generic_at(a, r, s, decls, pending.left[0].value)
+            return alone(
+                call,
+                @pending,
+                at: 0,
+                shadow: waiting.shadowed(c, ty: call.params[pending.left[0].at], callee: bindings)
+            )
+        k @ waiting_order.next_alone(@c, a, r, s, decls, left: pending.left, refusing: false)
+
+        if k >= 0
+            return alone(call, @pending, at: k, shadow: false)
+        still = pending.left
+        pending.left @ waiting_names.partly(@c, a, r, s, decls, params: call.params, left: still, @bindings)
+
+        if pending.left.len() < still.len()
+            continue
+        k @ waiting_order.next_alone(@c, a, r, s, decls, left: pending.left, refusing: true)
+
+        if k >= 0
+            shadow = waiting.shadowed(c, ty: call.params[pending.left[k].at], callee: bindings)
+            return alone(call, @pending, at: k, shadow: shadow)
+        tainted = waiting_names.refuse(
+            @c,
+            a,
+            r,
+            s,
+            decls,
+            decl: call.decl,
+            params: call.params,
+            left: pending.left,
+            bindings: bindings
+        )
+        pending.left @ []
+        return .done(tainted: tainted)
+
+    return .done(tainted: false)
+
+# The `at`th waiting argument, taken out of `pending` to be synthesised alone.
+function alone(call: Call, @pending: Pending, at: i64, shadow: bool) -> Next
+    held = pending.left[at]
+    pending.left @ waiting_order.without(pending.left, at: at)
+    return .alone(held: held, dotted: held.value == call.receiver, shadow: shadow)

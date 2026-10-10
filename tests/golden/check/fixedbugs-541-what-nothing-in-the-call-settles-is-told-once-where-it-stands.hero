@@ -1,0 +1,96 @@
+# Fixed defect 541, 2026-10-10 (panel 203 R1, ratified by the author): the
+# refused half; `run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-
+# one-from-the-call` holds what the route accepts. An argument with no type of
+# its own waits for the call's others; what no other argument and no context
+# settles is told where it stands, naming the parameter, the type it asks for
+# and the letters nothing says, once per mistake: a second form waiting on a
+# letter the first one's refusal poisoned is that mistake's shadow (§4.5).
+# The shapes: two empty literals, two `ok(…)` with no context (panel 203's
+# `nestedcall`), a form inside an array literal, a generic function's name
+# nothing settles, a receiver `{}`, a letter a mistaken argument poisoned
+# beside a waiting `[]`;
+# a context the literals cannot take (`T` inside a generic function, `str`),
+# told once at the call as the base told it; a literal past the width its
+# context asks for; an int and a float literal in both orders; § 9's `fold`
+# with a generic function whose one letter ties `acc` to `item`, in both
+# orders (the literal settles `B` before the name speaks, spec § 9: a
+# literal among the arguments); the critic's `apply_all(fs: [ident, half],
+# x: 200)`, the array's first element giving it no type; and a `fold` whose
+# function disagrees with the array, told once where the base told it three
+# times.
+
+function first<A>(a: A, b: A) -> A
+    pair = [a, b]
+    return pair[0]
+
+function ident<A>(x: A) -> A
+    return x
+
+function deep<A>(ns: [A?]) -> i64
+    return ns.len()
+
+function apply1<A>(f: (function(A) -> A)) -> i64
+    _ = f
+    return 1
+
+function sizes<K, V>(m: {K: V}) -> i64
+    return m.len()
+
+function keep<T>(acc: T, item: T) -> T
+    _ = item
+    return acc
+
+function foldr<A, B>(f: (function(acc: B, item: A) -> B), start: B, xs: [A]) -> B
+    return xs.fold(start, f)
+
+function half(x: u8) -> u8
+    return x / 2
+
+function apply_all<A>(fs: [(function(A) -> A)], x: A) -> A
+    out: A @ x
+
+    for f in fs
+        out @ f(out)
+
+    return out
+
+function add8(acc: u8, item: u8) -> u8
+    return acc + item
+
+function inside<T>(x: T) -> T
+    y: T = first(a: 1, b: 2)  #~ type_mismatch
+    _ = y
+    return x
+
+function nothing_settles()
+    print(first(a: [], b: []).len())  #~ cannot_infer
+    x = first(a: ok(1), b: ok(2))  #~ cannot_infer
+    print(x.must())
+    print(deep(ns: [ok(1)]))  #~ cannot_infer
+    print(apply1(f: ident))  #~ cannot_infer
+    print({}.sizes())  #~ cannot_infer
+    print(first(a: true * 2, b: []).len())  #~ bad_operand
+
+function contexts()
+    s: str = first(a: 1, b: 2)  #~ type_mismatch
+    print(s)
+    y: u8 = first(a: 300, b: 2)  #~ int_out_of_range
+    print(y)
+    z: u8 = first(a: 1, b: 2.5)  #~ type_mismatch
+    print(z)
+    print(first(a: 1, b: 2.5))  #~ type_mismatch
+    print(first(a: 2.5, b: 1))  #~ type_mismatch
+
+function folds()
+    us: [u8] = [1, 2, 3]
+    print(us.fold(0, keep))  #~ type_mismatch
+    print(foldr(f: keep, start: 0, xs: us))  #~ type_mismatch
+    print(apply_all(fs: [ident, half], x: 200))  #~ type_mismatch
+    ns: [i64] = [1, 2, 3]
+    print(ns.fold(0, add8))  #~ type_mismatch
+
+function main()
+    print(inside(x: "s"))
+    nothing_settles()
+    contexts()
+    folds()

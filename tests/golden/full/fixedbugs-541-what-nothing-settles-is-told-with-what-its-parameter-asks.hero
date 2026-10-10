@@ -1,0 +1,22 @@
+# Fixed defect 541, 2026-10-10 (panel 203 R1): the whole form of what is told
+# where nothing in a generic call settles a letter an argument's parameter
+# names, a form that takes its type from its position and a generic
+# function's name, each naming the parameter, the type it asks for and the
+# letter nothing says, its guess giving the value its type first
+# (`check/fixedbugs-541-what-nothing-in-the-call-settles-is-told-once-where-it-stands`
+# holds every shape).
+
+function first<A>(a: A, b: A) -> A
+    pair = [a, b]
+    return pair[0]
+
+function ident<A>(x: A) -> A
+    return x
+
+function apply1<A>(f: (function(A) -> A)) -> i64
+    _ = f
+    return 1
+
+function main()
+    print(first(a: [], b: []).len())  #~ cannot_infer
+    print(apply1(f: ident))  #~ cannot_infer

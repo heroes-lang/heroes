@@ -1,0 +1,13 @@
+error[cannot_infer]: `[]` takes its type from the type its position asks for, and `a` of `first` asks for `A`: no other argument and no context says what `A` is
+  at tests/golden/full/fixedbugs-541-what-nothing-settles-is-told-with-what-its-parameter-asks.hero:21:20
+     |
+  21 |     print(first(a: [], b: []).len())  #~ cannot_infer
+     |                    ^^
+  fix (guess): bind it first, `v: <type> = []`, and pass `v`
+
+error[cannot_infer]: nothing here says what `A` of `ident` is: a generic function used as a value takes its types from the type its position asks for, and `f` of `apply1` asks for `(function(A) -> A)`, where no other argument and no context says what `A` of `apply1` is
+  at tests/golden/full/fixedbugs-541-what-nothing-settles-is-told-with-what-its-parameter-asks.hero:22:21
+     |
+  22 |     print(apply1(f: ident))  #~ cannot_infer
+     |                     ^^^^^
+  fix (guess): give it its type first, `v: (function(A) -> A) = ident` with a type written for `A`, and pass `v`
