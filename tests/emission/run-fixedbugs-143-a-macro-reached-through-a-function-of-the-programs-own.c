@@ -95,14 +95,10 @@ void h_fixedbugs143amacroreachedthroughafunctionoftheprogramsown_main(void);
 
 #line 12 "tests/golden/run/fixedbugs-143-a-macro-reached-through-a-function-of-the-programs-own.hero"
 void h_fixedbugs143amacroreachedthroughafunctionoftheprogramsown_main(void) {
-#line 99 "fixedbugs143amacroreachedthroughafunctionoftheprogramsown.c"
-    int32_t t1;
-    int32_t t2;
-    int32_t t3;
-    int32_t t4;
-    goto bb0;
+#line 12 "tests/golden/run/fixedbugs-143-a-macro-reached-through-a-function-of-the-programs-own.hero"
+    int32_t t1; int32_t t2; int32_t t3; int32_t t4; goto bb0;
+#line 12 "tests/golden/run/fixedbugs-143-a-macro-reached-through-a-function-of-the-programs-own.hero"
 bb0:
-#line 13 "tests/golden/run/fixedbugs-143-a-macro-reached-through-a-function-of-the-programs-own.hero"
     t1 = INT64_C(3);
 #line 13 "tests/golden/run/fixedbugs-143-a-macro-reached-through-a-function-of-the-programs-own.hero"
     t2 = hero_SQUARE(t1);
@@ -119,7 +115,7 @@ bb0:
     hero_print_end();
 #line 14 "tests/golden/run/fixedbugs-143-a-macro-reached-through-a-function-of-the-programs-own.hero"
     return;
-#line 123 "fixedbugs143amacroreachedthroughafunctionoftheprogramsown.c"
+#line 119 "fixedbugs143amacroreachedthroughafunctionoftheprogramsown.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

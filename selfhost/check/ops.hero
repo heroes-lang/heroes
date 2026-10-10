@@ -20,6 +20,7 @@ use parse
 use resolved
 use check/table
 use check/state
+use check/type_fit
 use check/partial
 use value_errors
 use ffi_errors
@@ -45,9 +46,10 @@ function binary(@c: state.Checker, s: source.Source, decls: [ast.Decl], op: ast.
         .add | .sub | .mul | .div | .rem => return arithmetic(@c, s, decls, op, left: left, right: right, span: span)
         .eq | .ne =>
             if left != right
-                a = state.show(c, s, decls, left)
-                b = state.show(c, s, decls, right)
-                state.push_diagnostic(@c, value_errors.mismatch(expected: a, got: b, span: span))
+                if !type_fit.unnamed_shadow(c.out.types, c.out.written_types, a: left, b: right)
+                    a = state.show(c, s, decls, left)
+                    b = state.show(c, s, decls, right)
+                    state.push_diagnostic(@c, value_errors.mismatch(expected: a, got: b, span: span))
                 return state.error_ty_of(c)
 
             # A partial record cannot answer `==`, and neither can anything

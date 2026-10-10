@@ -106,99 +106,10 @@ void h_fixedbugsfieldpathstoreleaked_main(void);
 
 #line 30 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
 void h_fixedbugsfieldpathstoreleaked_main(void) {
-#line 110 "fixedbugsfieldpathstoreleaked.c"
-    h_fixedbugsfieldpathstoreleaked_Row h0_p = {0};
-    h_fixedbugsfieldpathstoreleaked_Pair h1_q = {0};
-    HeroArrayHeader * h2_own2 = {0};
-    h_fixedbugsfieldpathstoreleaked_Row h3_own3 = {0};
-    HeroArrayHeader * h4_own4 = {0};
-    HeroArrayHeader * h5_own5 = {0};
-    HeroArrayHeader * h6_own6 = {0};
-    HeroArrayHeader * h7_own7 = {0};
-    h_fixedbugsfieldpathstoreleaked_Row h8_own8 = {0};
-    HeroArrayHeader * h9_own9 = {0};
-    h_fixedbugsfieldpathstoreleaked_Row h10_own10 = {0};
-    h_fixedbugsfieldpathstoreleaked_Pair h11_own11 = {0};
-    HeroArrayHeader * h12_own12 = {0};
-    h_fixedbugsfieldpathstoreleaked_Row h13_own13 = {0};
-    int64_t t1;
-    HeroArrayHeader * t2;
-    h_fixedbugsfieldpathstoreleaked_Row t3;
-    h_fixedbugsfieldpathstoreleaked_Row t4;
-    HeroArrayHeader * t5;
-    int64_t t6;
-    int64_t t7;
-    h_fixedbugsfieldpathstoreleaked_Row t8;
-    HeroArrayHeader * t9;
-    int64_t t10;
-    int64_t t11;
-    int64_t t12;
-    HeroArrayHeader * t13;
-    h_fixedbugsfieldpathstoreleaked_Row t14;
-    HeroArrayHeader * t15;
-    int64_t t16;
-    int64_t t17;
-    h_fixedbugsfieldpathstoreleaked_Row t18;
-    HeroArrayHeader * t19;
-    int64_t t20;
-    int64_t t21;
-    HeroArrayHeader * t22;
-    int64_t t23;
-    int64_t t24;
-    int64_t t25;
-    HeroArrayHeader * t26;
-    h_fixedbugsfieldpathstoreleaked_Row t27;
-    HeroArrayHeader * t28;
-    int64_t t29;
-    int64_t t30;
-    HeroArrayHeader * t31;
-    h_fixedbugsfieldpathstoreleaked_Row t32;
-    int64_t t33;
-    HeroArrayHeader * t34;
-    h_fixedbugsfieldpathstoreleaked_Row t35;
-    h_fixedbugsfieldpathstoreleaked_Pair t36;
-    int64_t t37;
-    int64_t t38;
-    HeroArrayHeader * t39;
-    h_fixedbugsfieldpathstoreleaked_Row t40;
-    h_fixedbugsfieldpathstoreleaked_Pair t41;
-    h_fixedbugsfieldpathstoreleaked_Row t42;
-    HeroArrayHeader * t43;
-    int64_t t44;
-    int64_t t45;
-    h_fixedbugsfieldpathstoreleaked_Pair t46;
-    h_fixedbugsfieldpathstoreleaked_Row t47;
-    HeroArrayHeader * t48;
-    int64_t t49;
-    int64_t t50;
-    h_fixedbugsfieldpathstoreleaked_Pair t51;
-    h_fixedbugsfieldpathstoreleaked_Row t52;
-    h_fixedbugsfieldpathstoreleaked_Pair t53;
-    h_fixedbugsfieldpathstoreleaked_Row t54;
-    HeroArrayHeader * t55;
-    int64_t t56;
-    HeroArrayHeader * t57;
-    h_fixedbugsfieldpathstoreleaked_Row t58;
-    h_fixedbugsfieldpathstoreleaked_Row t59;
-    HeroArrayHeader * t60;
-    HeroArrayHeader * t61;
-    HeroArrayHeader * t62;
-    HeroArrayHeader * t63;
-    HeroArrayHeader * t64;
-    HeroArrayHeader * t65;
-    HeroArrayHeader * t66;
-    h_fixedbugsfieldpathstoreleaked_Row t67;
-    HeroArrayHeader * t68;
-    h_fixedbugsfieldpathstoreleaked_Row t69;
-    h_fixedbugsfieldpathstoreleaked_Pair t70;
-    h_fixedbugsfieldpathstoreleaked_Pair t71;
-    HeroArrayHeader * t72;
-    h_fixedbugsfieldpathstoreleaked_Row t73;
-    h_fixedbugsfieldpathstoreleaked_Row t74;
-    h_fixedbugsfieldpathstoreleaked_Row t75;
-    goto bb0;
+#line 30 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
+    h_fixedbugsfieldpathstoreleaked_Row h0_p = {0}; h_fixedbugsfieldpathstoreleaked_Pair h1_q = {0}; HeroArrayHeader * h2_own2 = {0}; h_fixedbugsfieldpathstoreleaked_Row h3_own3 = {0}; HeroArrayHeader * h4_own4 = {0}; HeroArrayHeader * h5_own5 = {0}; HeroArrayHeader * h6_own6 = {0}; HeroArrayHeader * h7_own7 = {0}; h_fixedbugsfieldpathstoreleaked_Row h8_own8 = {0}; HeroArrayHeader * h9_own9 = {0}; h_fixedbugsfieldpathstoreleaked_Row h10_own10 = {0}; h_fixedbugsfieldpathstoreleaked_Pair h11_own11 = {0}; HeroArrayHeader * h12_own12 = {0}; h_fixedbugsfieldpathstoreleaked_Row h13_own13 = {0}; int64_t t1; HeroArrayHeader * t2; h_fixedbugsfieldpathstoreleaked_Row t3; h_fixedbugsfieldpathstoreleaked_Row t4; HeroArrayHeader * t5; int64_t t6; int64_t t7; h_fixedbugsfieldpathstoreleaked_Row t8; HeroArrayHeader * t9; int64_t t10; int64_t t11; int64_t t12; HeroArrayHeader * t13; h_fixedbugsfieldpathstoreleaked_Row t14; HeroArrayHeader * t15; int64_t t16; int64_t t17; h_fixedbugsfieldpathstoreleaked_Row t18; HeroArrayHeader * t19; int64_t t20; int64_t t21; HeroArrayHeader * t22; int64_t t23; int64_t t24; int64_t t25; HeroArrayHeader * t26; h_fixedbugsfieldpathstoreleaked_Row t27; HeroArrayHeader * t28; int64_t t29; int64_t t30; HeroArrayHeader * t31; h_fixedbugsfieldpathstoreleaked_Row t32; int64_t t33; HeroArrayHeader * t34; h_fixedbugsfieldpathstoreleaked_Row t35; h_fixedbugsfieldpathstoreleaked_Pair t36; int64_t t37; int64_t t38; HeroArrayHeader * t39; h_fixedbugsfieldpathstoreleaked_Row t40; h_fixedbugsfieldpathstoreleaked_Pair t41; h_fixedbugsfieldpathstoreleaked_Row t42; HeroArrayHeader * t43; int64_t t44; int64_t t45; h_fixedbugsfieldpathstoreleaked_Pair t46; h_fixedbugsfieldpathstoreleaked_Row t47; HeroArrayHeader * t48; int64_t t49; int64_t t50; h_fixedbugsfieldpathstoreleaked_Pair t51; h_fixedbugsfieldpathstoreleaked_Row t52; h_fixedbugsfieldpathstoreleaked_Pair t53; h_fixedbugsfieldpathstoreleaked_Row t54; HeroArrayHeader * t55; int64_t t56; HeroArrayHeader * t57; h_fixedbugsfieldpathstoreleaked_Row t58; h_fixedbugsfieldpathstoreleaked_Row t59; HeroArrayHeader * t60; HeroArrayHeader * t61; HeroArrayHeader * t62; HeroArrayHeader * t63; HeroArrayHeader * t64; HeroArrayHeader * t65; HeroArrayHeader * t66; h_fixedbugsfieldpathstoreleaked_Row t67; HeroArrayHeader * t68; h_fixedbugsfieldpathstoreleaked_Row t69; h_fixedbugsfieldpathstoreleaked_Pair t70; h_fixedbugsfieldpathstoreleaked_Pair t71; HeroArrayHeader * t72; h_fixedbugsfieldpathstoreleaked_Row t73; h_fixedbugsfieldpathstoreleaked_Row t74; h_fixedbugsfieldpathstoreleaked_Row t75; goto bb0;
+#line 30 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
 bb0:
-#line 31 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
     t1 = INT64_C(9);
 #line 31 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
     t2 = hero_array_new(&hero_desc_int, 1);
@@ -208,8 +119,9 @@ bb0:
     t57 = h2_own2;
 #line 31 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
     h2_own2 = t2;
-#line 212 "fixedbugsfieldpathstoreleaked.c"
+#line 31 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
     hero_array_decref(t57);
+#line 31 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
     hero_array_incref(t2);
 #line 31 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
     t3 = (h_fixedbugsfieldpathstoreleaked_Row){.f_cells = t2};
@@ -217,17 +129,16 @@ bb0:
     t58 = h3_own3;
 #line 31 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
     h3_own3 = t3;
-#line 221 "fixedbugsfieldpathstoreleaked.c"
+#line 31 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
     h_fixedbugsfieldpathstoreleaked_Row_release(&t58);
 #line 31 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
     t59 = h0_p;
-#line 225 "fixedbugsfieldpathstoreleaked.c"
+#line 31 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
     h_fixedbugsfieldpathstoreleaked_Row_retain(&t3);
 #line 31 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
     h0_p = t3;
-#line 229 "fixedbugsfieldpathstoreleaked.c"
+#line 31 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
     h_fixedbugsfieldpathstoreleaked_Row_release(&t59);
-#line 32 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
     t4 = h0_p;
 #line 32 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
     t5 = t4.f_cells;
@@ -261,17 +172,16 @@ bb0:
     t60 = h4_own4;
 #line 35 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
     h4_own4 = t13;
-#line 265 "fixedbugsfieldpathstoreleaked.c"
+#line 35 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
     hero_array_decref(t60);
 #line 35 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
     t61 = h0_p.f_cells;
-#line 269 "fixedbugsfieldpathstoreleaked.c"
+#line 35 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
     hero_array_incref(t13);
 #line 35 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
     h0_p.f_cells = t13;
-#line 273 "fixedbugsfieldpathstoreleaked.c"
+#line 35 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
     hero_array_decref(t61);
-#line 36 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
     t14 = h0_p;
 #line 36 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
     t15 = t14.f_cells;
@@ -301,17 +211,16 @@ bb0:
     t62 = h5_own5;
 #line 39 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
     h5_own5 = t22;
-#line 305 "fixedbugsfieldpathstoreleaked.c"
+#line 39 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
     hero_array_decref(t62);
 #line 39 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
     t63 = h0_p.f_cells;
-#line 309 "fixedbugsfieldpathstoreleaked.c"
+#line 39 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
     hero_array_incref(t22);
 #line 39 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
     h0_p.f_cells = t22;
-#line 313 "fixedbugsfieldpathstoreleaked.c"
+#line 39 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
     hero_array_decref(t63);
-#line 40 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
     t23 = INT64_C(2);
 #line 40 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
     t24 = INT64_C(3);
@@ -329,17 +238,16 @@ bb0:
     t64 = h6_own6;
 #line 40 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
     h6_own6 = t26;
-#line 333 "fixedbugsfieldpathstoreleaked.c"
+#line 40 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
     hero_array_decref(t64);
 #line 40 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
     t65 = h0_p.f_cells;
-#line 337 "fixedbugsfieldpathstoreleaked.c"
+#line 40 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
     hero_array_incref(t26);
 #line 40 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
     h0_p.f_cells = t26;
-#line 341 "fixedbugsfieldpathstoreleaked.c"
+#line 40 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
     hero_array_decref(t65);
-#line 41 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
     t27 = h0_p;
 #line 41 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
     t28 = t27.f_cells;
@@ -359,8 +267,9 @@ bb0:
     t66 = h7_own7;
 #line 44 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
     h7_own7 = t31;
-#line 363 "fixedbugsfieldpathstoreleaked.c"
+#line 44 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
     hero_array_decref(t66);
+#line 44 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
     hero_array_incref(t31);
 #line 44 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
     t32 = (h_fixedbugsfieldpathstoreleaked_Row){.f_cells = t31};
@@ -368,7 +277,7 @@ bb0:
     t67 = h8_own8;
 #line 44 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
     h8_own8 = t32;
-#line 372 "fixedbugsfieldpathstoreleaked.c"
+#line 44 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
     h_fixedbugsfieldpathstoreleaked_Row_release(&t67);
 #line 44 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
     t33 = INT64_C(2);
@@ -380,8 +289,9 @@ bb0:
     t68 = h9_own9;
 #line 44 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
     h9_own9 = t34;
-#line 384 "fixedbugsfieldpathstoreleaked.c"
+#line 44 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
     hero_array_decref(t68);
+#line 44 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
     hero_array_incref(t34);
 #line 44 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
     t35 = (h_fixedbugsfieldpathstoreleaked_Row){.f_cells = t34};
@@ -389,9 +299,11 @@ bb0:
     t69 = h10_own10;
 #line 44 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
     h10_own10 = t35;
-#line 393 "fixedbugsfieldpathstoreleaked.c"
+#line 44 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
     h_fixedbugsfieldpathstoreleaked_Row_release(&t69);
+#line 44 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
     h_fixedbugsfieldpathstoreleaked_Row_retain(&t32);
+#line 44 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
     h_fixedbugsfieldpathstoreleaked_Row_retain(&t35);
 #line 44 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
     t36 = (h_fixedbugsfieldpathstoreleaked_Pair){.f_left = t32, .f_right = t35};
@@ -399,17 +311,16 @@ bb0:
     t70 = h11_own11;
 #line 44 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
     h11_own11 = t36;
-#line 403 "fixedbugsfieldpathstoreleaked.c"
+#line 44 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
     h_fixedbugsfieldpathstoreleaked_Pair_release(&t70);
 #line 44 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
     t71 = h1_q;
-#line 407 "fixedbugsfieldpathstoreleaked.c"
+#line 44 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
     h_fixedbugsfieldpathstoreleaked_Pair_retain(&t36);
 #line 44 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
     h1_q = t36;
-#line 411 "fixedbugsfieldpathstoreleaked.c"
+#line 44 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
     h_fixedbugsfieldpathstoreleaked_Pair_release(&t71);
-#line 45 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
     t37 = INT64_C(5);
 #line 45 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
     t38 = INT64_C(6);
@@ -423,8 +334,9 @@ bb0:
     t72 = h12_own12;
 #line 45 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
     h12_own12 = t39;
-#line 427 "fixedbugsfieldpathstoreleaked.c"
+#line 45 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
     hero_array_decref(t72);
+#line 45 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
     hero_array_incref(t39);
 #line 45 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
     t40 = (h_fixedbugsfieldpathstoreleaked_Row){.f_cells = t39};
@@ -432,17 +344,16 @@ bb0:
     t73 = h13_own13;
 #line 45 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
     h13_own13 = t40;
-#line 436 "fixedbugsfieldpathstoreleaked.c"
+#line 45 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
     h_fixedbugsfieldpathstoreleaked_Row_release(&t73);
 #line 45 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
     t74 = h1_q.f_left;
-#line 440 "fixedbugsfieldpathstoreleaked.c"
+#line 45 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
     h_fixedbugsfieldpathstoreleaked_Row_retain(&t40);
 #line 45 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
     h1_q.f_left = t40;
-#line 444 "fixedbugsfieldpathstoreleaked.c"
+#line 45 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
     h_fixedbugsfieldpathstoreleaked_Row_release(&t74);
-#line 46 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
     t41 = h1_q;
 #line 46 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
     t42 = t41.f_left;
@@ -474,13 +385,12 @@ bb0:
     t52 = t51.f_right;
 #line 49 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
     t75 = h1_q.f_right;
-#line 478 "fixedbugsfieldpathstoreleaked.c"
+#line 49 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
     h_fixedbugsfieldpathstoreleaked_Row_retain(&t52);
 #line 49 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
     h1_q.f_right = t52;
-#line 482 "fixedbugsfieldpathstoreleaked.c"
+#line 49 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
     h_fixedbugsfieldpathstoreleaked_Row_release(&t75);
-#line 50 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
     t53 = h1_q;
 #line 50 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
     t54 = t53.f_right;
@@ -492,7 +402,7 @@ bb0:
     hero_print_int(t56);
 #line 50 "tests/golden/run/fixedbugs-field-path-store-leaked.hero"
     hero_print_end();
-#line 496 "fixedbugsfieldpathstoreleaked.c"
+#line 406 "fixedbugsfieldpathstoreleaked.c"
     h_fixedbugsfieldpathstoreleaked_Row_release(hero_slot_escape(&h0_p));
     h_fixedbugsfieldpathstoreleaked_Pair_release(hero_slot_escape(&h1_q));
     hero_array_release_at(&h2_own2);

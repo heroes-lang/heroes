@@ -110,20 +110,10 @@ void h_fixedbugsonecalltakingahandleattwoconsumingpositionssaysso_main(void);
 
 #line 21 "tests/golden/run/fixedbugs-one-call-taking-a-handle-at-two-consuming-positions-says-so.hero"
 void h_fixedbugsonecalltakingahandleattwoconsumingpositionssaysso_main(void) {
-#line 114 "fixedbugsonecalltakingahandleattwoconsumingpositionssaysso.c"
-    ssl * h0_s;
-    bio * h1_b;
-    ssl * t1;
-    bio * t2;
-    HeroStr t3;
-    ssl * t4;
-    bio * t5;
-    bio * t6;
-    ssl * t7;
-    HeroStr t8;
-    goto bb0;
+#line 21 "tests/golden/run/fixedbugs-one-call-taking-a-handle-at-two-consuming-positions-says-so.hero"
+    ssl * h0_s; bio * h1_b; ssl * t1; bio * t2; HeroStr t3; ssl * t4; bio * t5; bio * t6; ssl * t7; HeroStr t8; goto bb0;
+#line 21 "tests/golden/run/fixedbugs-one-call-taking-a-handle-at-two-consuming-positions-says-so.hero"
 bb0:
-#line 22 "tests/golden/run/fixedbugs-one-call-taking-a-handle-at-two-consuming-positions-says-so.hero"
     t1 = ssl_new();
 #line 22 "tests/golden/run/fixedbugs-one-call-taking-a-handle-at-two-consuming-positions-says-so.hero"
     hero_handle_acquired(t1, "ssl_free");
@@ -184,7 +174,7 @@ bb0:
     hero_print_end();
 #line 27 "tests/golden/run/fixedbugs-one-call-taking-a-handle-at-two-consuming-positions-says-so.hero"
     return;
-#line 188 "fixedbugsonecalltakingahandleattwoconsumingpositionssaysso.c"
+#line 178 "fixedbugsonecalltakingahandleattwoconsumingpositionssaysso.c"
 }
 HERO_TU_LOCAL bool h_fixedbugsonecalltakingahandleattwoconsumingpositionssaysso_Bio_eq(bio * const *a, bio * const *b) {
     return hero_handle_eq(*a, *b);

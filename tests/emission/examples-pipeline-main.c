@@ -127,103 +127,10 @@ int64_t h_writesource_count(h_writesource_Sink h0_s);
 
 #line 34 "examples/pipeline/main.hero"
 HeroStr h_main_report(HeroStr h0_text) {
-#line 131 "main.c"
-    h_readsource_Reader h1_r = {0};
-    h_writesource_Sink h2_s = {0};
-    int64_t h3_longest;
-    int64_t h4_lines;
-    HeroStr h5_heading = {0};
-    h_0opt_f87774a h6_one = {0};
-    h_0opt_f87774a h7_f0 = {0};
-    h_0opt_f87774a h8_f1 = {0};
-    HeroStr h9_row = {0};
-    bool h10_b0;
-    h_readsource_Reader h11_own11 = {0};
-    h_writesource_Sink h12_own12 = {0};
-    h_0opt_f87774a h13_own13 = {0};
-    HeroStr h14_own14 = {0};
-    HeroStr h15_own15 = {0};
-    HeroStr h16_own16 = {0};
-    HeroStr h17_own17 = {0};
-    HeroStr h18_own18 = {0};
-    HeroStr h19_own19 = {0};
-    HeroStr t1;
-    h_readsource_Reader t2;
-    h_writesource_Sink t3;
-    int64_t t4;
-    int64_t t5;
-    HeroStr t6;
-    bool t7;
-    h_0opt_f87774a t8;
-    h_0opt_f87774a t9;
-    h_0opt_f87774a t10;
-    int64_t t11;
-    int64_t t12;
-    bool t13;
-    h_0opt_f87774a t14;
-    h_0opt_f87774a t15;
-    int64_t t16;
-    int64_t t17;
-    bool t18;
-    h_0opt_f87774a t19;
-    HeroFailure t20;
-    h_0opt_f87774a t21;
-    HeroStr t22;
-    int64_t t23;
-    int64_t t24;
-    int64_t t25;
-    HeroStr t26;
-    int64_t t27;
-    int64_t t28;
-    bool t29;
-    HeroStr t30;
-    int64_t t31;
-    HeroStr t32;
-    int64_t t33;
-    int64_t t34;
-    bool t35;
-    HeroStr t36;
-    bool t37;
-    bool t38;
-    HeroStr t39;
-    HeroStr t40;
-    int64_t t41;
-    HeroStr t42;
-    HeroStr t43;
-    HeroStr t44;
-    int64_t t45;
-    HeroStr t46;
-    HeroStr t47;
-    HeroStr t48;
-    int64_t t49;
-    int64_t t50;
-    bool t51;
-    HeroStr t52;
-    HeroStr t53;
-    HeroStr t54;
-    HeroStr t55;
-    h_writesource_Sink t56;
-    HeroStr t57;
-    h_readsource_Reader t58;
-    h_readsource_Reader t59;
-    h_writesource_Sink t60;
-    h_writesource_Sink t61;
-    HeroStr t62;
-    h_0opt_f87774a t63;
-    h_0opt_f87774a t64;
-    h_0opt_f87774a t65;
-    HeroStr t66;
-    HeroStr t67;
-    HeroStr t68;
-    HeroStr t69;
-    h_0opt_f87774a t70;
-    HeroStr t71;
-    HeroStr t72;
-    HeroStr t73;
-    HeroStr t74;
-    goto bb0;
+#line 34 "examples/pipeline/main.hero"
+    h_readsource_Reader h1_r = {0}; h_writesource_Sink h2_s = {0}; int64_t h3_longest; int64_t h4_lines; HeroStr h5_heading = {0}; h_0opt_f87774a h6_one = {0}; h_0opt_f87774a h7_f0 = {0}; h_0opt_f87774a h8_f1 = {0}; HeroStr h9_row = {0}; bool h10_b0; h_readsource_Reader h11_own11 = {0}; h_writesource_Sink h12_own12 = {0}; h_0opt_f87774a h13_own13 = {0}; HeroStr h14_own14 = {0}; HeroStr h15_own15 = {0}; HeroStr h16_own16 = {0}; HeroStr h17_own17 = {0}; HeroStr h18_own18 = {0}; HeroStr h19_own19 = {0}; HeroStr t1; h_readsource_Reader t2; h_writesource_Sink t3; int64_t t4; int64_t t5; HeroStr t6; bool t7; h_0opt_f87774a t8; h_0opt_f87774a t9; h_0opt_f87774a t10; int64_t t11; int64_t t12; bool t13; h_0opt_f87774a t14; h_0opt_f87774a t15; int64_t t16; int64_t t17; bool t18; h_0opt_f87774a t19; HeroFailure t20; h_0opt_f87774a t21; HeroStr t22; int64_t t23; int64_t t24; int64_t t25; HeroStr t26; int64_t t27; int64_t t28; bool t29; HeroStr t30; int64_t t31; HeroStr t32; int64_t t33; int64_t t34; bool t35; HeroStr t36; bool t37; bool t38; HeroStr t39; HeroStr t40; int64_t t41; HeroStr t42; HeroStr t43; HeroStr t44; int64_t t45; HeroStr t46; HeroStr t47; HeroStr t48; int64_t t49; int64_t t50; bool t51; HeroStr t52; HeroStr t53; HeroStr t54; HeroStr t55; h_writesource_Sink t56; HeroStr t57; h_readsource_Reader t58; h_readsource_Reader t59; h_writesource_Sink t60; h_writesource_Sink t61; HeroStr t62; h_0opt_f87774a t63; h_0opt_f87774a t64; h_0opt_f87774a t65; HeroStr t66; HeroStr t67; HeroStr t68; HeroStr t69; h_0opt_f87774a t70; HeroStr t71; HeroStr t72; HeroStr t73; HeroStr t74; goto bb0;
+#line 34 "examples/pipeline/main.hero"
 bb0:
-#line 35 "examples/pipeline/main.hero"
     t1 = h0_text;
 #line 35 "examples/pipeline/main.hero"
     t2 = h_readsource_new_reader(t1);
@@ -231,33 +138,31 @@ bb0:
     t58 = h11_own11;
 #line 35 "examples/pipeline/main.hero"
     h11_own11 = t2;
-#line 235 "main.c"
+#line 35 "examples/pipeline/main.hero"
     h_readsource_Reader_release(&t58);
 #line 35 "examples/pipeline/main.hero"
     t59 = h1_r;
-#line 239 "main.c"
+#line 35 "examples/pipeline/main.hero"
     h_readsource_Reader_retain(&t2);
 #line 35 "examples/pipeline/main.hero"
     h1_r = t2;
-#line 243 "main.c"
+#line 35 "examples/pipeline/main.hero"
     h_readsource_Reader_release(&t59);
-#line 36 "examples/pipeline/main.hero"
     t3 = h_writesource_new_sink();
 #line 36 "examples/pipeline/main.hero"
     t60 = h12_own12;
 #line 36 "examples/pipeline/main.hero"
     h12_own12 = t3;
-#line 251 "main.c"
+#line 36 "examples/pipeline/main.hero"
     h_writesource_Sink_release(&t60);
 #line 36 "examples/pipeline/main.hero"
     t61 = h2_s;
-#line 255 "main.c"
+#line 36 "examples/pipeline/main.hero"
     h_writesource_Sink_retain(&t3);
 #line 36 "examples/pipeline/main.hero"
     h2_s = t3;
-#line 259 "main.c"
+#line 36 "examples/pipeline/main.hero"
     h_writesource_Sink_release(&t61);
-#line 37 "examples/pipeline/main.hero"
     t4 = INT64_C(0);
 #line 37 "examples/pipeline/main.hero"
     h3_longest = t4;
@@ -267,13 +172,15 @@ bb0:
     t6 = HERO_STR_LIT(hero_str_0);
 #line 39 "examples/pipeline/main.hero"
     t62 = h5_heading;
-#line 271 "main.c"
+#line 39 "examples/pipeline/main.hero"
     hero_str_incref(t6);
 #line 39 "examples/pipeline/main.hero"
     h5_heading = t6;
-#line 275 "main.c"
+#line 39 "examples/pipeline/main.hero"
     hero_str_decref(t62);
+#line 39 "examples/pipeline/main.hero"
     goto bb1;
+#line 39 "examples/pipeline/main.hero"
 bb1:
 #line 41 "examples/pipeline/main.hero"
     t7 = true;
@@ -286,25 +193,25 @@ bb2:
     t63 = h13_own13;
 #line 42 "examples/pipeline/main.hero"
     h13_own13 = t8;
-#line 290 "main.c"
+#line 42 "examples/pipeline/main.hero"
     h_0opt_f87774a_release(&t63);
 #line 42 "examples/pipeline/main.hero"
     t64 = h6_one;
-#line 294 "main.c"
+#line 42 "examples/pipeline/main.hero"
     h_0opt_f87774a_retain(&t8);
 #line 42 "examples/pipeline/main.hero"
     h6_one = t8;
-#line 298 "main.c"
+#line 42 "examples/pipeline/main.hero"
     h_0opt_f87774a_release(&t64);
 #line 44 "examples/pipeline/main.hero"
     t9 = h6_one;
 #line 44 "examples/pipeline/main.hero"
     t65 = h7_f0;
-#line 304 "main.c"
+#line 44 "examples/pipeline/main.hero"
     h_0opt_f87774a_retain(&t9);
 #line 44 "examples/pipeline/main.hero"
     h7_f0 = t9;
-#line 308 "main.c"
+#line 44 "examples/pipeline/main.hero"
     h_0opt_f87774a_release(&t65);
 #line 44 "examples/pipeline/main.hero"
     t10 = h7_f0;
@@ -328,7 +235,7 @@ bb3:
     t66 = h14_own14;
 #line 56 "examples/pipeline/main.hero"
     h14_own14 = t42;
-#line 332 "main.c"
+#line 56 "examples/pipeline/main.hero"
     hero_str_decref(t66);
 #line 56 "examples/pipeline/main.hero"
     t43 = hero_str_concat(t40, t42);
@@ -336,7 +243,7 @@ bb3:
     t67 = h15_own15;
 #line 56 "examples/pipeline/main.hero"
     h15_own15 = t43;
-#line 340 "main.c"
+#line 56 "examples/pipeline/main.hero"
     hero_str_decref(t67);
 #line 56 "examples/pipeline/main.hero"
     h_writesource_emit(&h2_s, t43);
@@ -349,7 +256,7 @@ bb3:
     t68 = h16_own16;
 #line 57 "examples/pipeline/main.hero"
     h16_own16 = t46;
-#line 353 "main.c"
+#line 57 "examples/pipeline/main.hero"
     hero_str_decref(t68);
 #line 57 "examples/pipeline/main.hero"
     t47 = hero_str_concat(t44, t46);
@@ -357,7 +264,7 @@ bb3:
     t69 = h17_own17;
 #line 57 "examples/pipeline/main.hero"
     h17_own17 = t47;
-#line 361 "main.c"
+#line 57 "examples/pipeline/main.hero"
     hero_str_decref(t69);
 #line 57 "examples/pipeline/main.hero"
     h_writesource_emit(&h2_s, t47);
@@ -377,11 +284,11 @@ bb4:
     t14 = h6_one;
 #line 47 "examples/pipeline/main.hero"
     t70 = h8_f1;
-#line 381 "main.c"
+#line 47 "examples/pipeline/main.hero"
     h_0opt_f87774a_retain(&t14);
 #line 47 "examples/pipeline/main.hero"
     h8_f1 = t14;
-#line 385 "main.c"
+#line 47 "examples/pipeline/main.hero"
     h_0opt_f87774a_release(&t70);
 #line 47 "examples/pipeline/main.hero"
     t15 = h8_f1;
@@ -409,13 +316,12 @@ bb7:
     t22 = t21.as.ok;
 #line 47 "examples/pipeline/main.hero"
     t71 = h9_row;
-#line 413 "main.c"
+#line 47 "examples/pipeline/main.hero"
     hero_str_incref(t22);
 #line 47 "examples/pipeline/main.hero"
     h9_row = t22;
-#line 417 "main.c"
+#line 47 "examples/pipeline/main.hero"
     hero_str_decref(t71);
-#line 48 "examples/pipeline/main.hero"
     t23 = h4_lines;
 #line 48 "examples/pipeline/main.hero"
     t24 = INT64_C(1);
@@ -439,7 +345,7 @@ bb8:
     t19 = h8_f1;
 #line 47 "examples/pipeline/main.hero"
     t20 = t19.as.err;
-#line 443 "main.c"
+#line 349 "main.c"
     hero_panic_must(t20);
     hero_unreachable();
 bb9:
@@ -494,15 +400,19 @@ bb15:
     t39 = h9_row;
 #line 54 "examples/pipeline/main.hero"
     t72 = h5_heading;
-#line 498 "main.c"
+#line 54 "examples/pipeline/main.hero"
     hero_str_incref(t39);
 #line 54 "examples/pipeline/main.hero"
     h5_heading = t39;
-#line 502 "main.c"
+#line 54 "examples/pipeline/main.hero"
     hero_str_decref(t72);
+#line 54 "examples/pipeline/main.hero"
     goto bb12;
+#line 54 "examples/pipeline/main.hero"
 bb16:
+#line 54 "examples/pipeline/main.hero"
     goto bb12;
+#line 54 "examples/pipeline/main.hero"
 bb17:
 #line 64 "examples/pipeline/main.hero"
     t56 = h2_s;
@@ -512,8 +422,9 @@ bb17:
     t73 = h18_own18;
 #line 64 "examples/pipeline/main.hero"
     h18_own18 = t57;
-#line 516 "main.c"
+#line 64 "examples/pipeline/main.hero"
     hero_str_decref(t73);
+#line 428 "main.c"
     hero_str_incref(t57);
     h_readsource_Reader_release(hero_slot_escape(&h1_r));
     h_writesource_Sink_release(hero_slot_escape(&h2_s));
@@ -543,7 +454,7 @@ bb18:
     t74 = h19_own19;
 #line 60 "examples/pipeline/main.hero"
     h19_own19 = t54;
-#line 547 "main.c"
+#line 60 "examples/pipeline/main.hero"
     hero_str_decref(t74);
 #line 60 "examples/pipeline/main.hero"
     h_writesource_emit(&h2_s, t54);
@@ -557,54 +468,15 @@ bb19:
     h_writesource_emit(&h2_s, t55);
 #line 62 "examples/pipeline/main.hero"
     goto bb17;
-#line 561 "main.c"
+#line 472 "main.c"
 }
 
 #line 68 "examples/pipeline/main.hero"
 bool h_main_looks_like_heading(HeroStr h0_row) {
-#line 566 "main.c"
-    HeroStr h1_first = {0};
-    HeroArrayHeader * h2_xs0 = {0};
-    int64_t h3_i0;
-    HeroStr h4_ch = {0};
-    bool h5_ret0;
-    HeroArrayHeader * h6_own6 = {0};
-    HeroStr t1;
-    int64_t t2;
-    int64_t t3;
-    bool t4;
-    bool t5;
-    HeroStr t6;
-    HeroStr t7;
-    HeroArrayHeader * t8;
-    int64_t t9;
-    int64_t t10;
-    HeroArrayHeader * t11;
-    int64_t t12;
-    bool t13;
-    HeroArrayHeader * t14;
-    int64_t t15;
-    HeroStr t16;
-    HeroStr t17;
-    int64_t t18;
-    int64_t t19;
-    bool t20;
-    HeroStr t21;
-    int64_t t22;
-    int64_t t23;
-    int64_t t24;
-    HeroStr t25;
-    HeroStr t26;
-    bool t27;
-    bool t28;
-    HeroStr t29;
-    HeroArrayHeader * t30;
-    HeroArrayHeader * t31;
-    HeroStr t32;
-    HeroStr t33;
-    goto bb0;
+#line 68 "examples/pipeline/main.hero"
+    HeroStr h1_first = {0}; HeroArrayHeader * h2_xs0 = {0}; int64_t h3_i0; HeroStr h4_ch = {0}; bool h5_ret0; HeroArrayHeader * h6_own6 = {0}; HeroStr t1; int64_t t2; int64_t t3; bool t4; bool t5; HeroStr t6; HeroStr t7; HeroArrayHeader * t8; int64_t t9; int64_t t10; HeroArrayHeader * t11; int64_t t12; bool t13; HeroArrayHeader * t14; int64_t t15; HeroStr t16; HeroStr t17; int64_t t18; int64_t t19; bool t20; HeroStr t21; int64_t t22; int64_t t23; int64_t t24; HeroStr t25; HeroStr t26; bool t27; bool t28; HeroStr t29; HeroArrayHeader * t30; HeroArrayHeader * t31; HeroStr t32; HeroStr t33; goto bb0;
+#line 68 "examples/pipeline/main.hero"
 bb0:
-#line 69 "examples/pipeline/main.hero"
     t1 = h0_row;
 #line 69 "examples/pipeline/main.hero"
     t2 = hero_str_len(t1);
@@ -620,11 +492,11 @@ bb1:
     t6 = HERO_STR_LIT(hero_str_0);
 #line 71 "examples/pipeline/main.hero"
     t29 = h1_first;
-#line 624 "main.c"
+#line 71 "examples/pipeline/main.hero"
     hero_str_incref(t6);
 #line 71 "examples/pipeline/main.hero"
     h1_first = t6;
-#line 628 "main.c"
+#line 71 "examples/pipeline/main.hero"
     hero_str_decref(t29);
 #line 73 "examples/pipeline/main.hero"
     t7 = h0_row;
@@ -634,15 +506,15 @@ bb1:
     t30 = h6_own6;
 #line 73 "examples/pipeline/main.hero"
     h6_own6 = t8;
-#line 638 "main.c"
+#line 73 "examples/pipeline/main.hero"
     hero_array_decref(t30);
 #line 73 "examples/pipeline/main.hero"
     t31 = h2_xs0;
-#line 642 "main.c"
+#line 73 "examples/pipeline/main.hero"
     hero_array_incref(t8);
 #line 73 "examples/pipeline/main.hero"
     h2_xs0 = t8;
-#line 646 "main.c"
+#line 73 "examples/pipeline/main.hero"
     hero_array_decref(t31);
 #line 73 "examples/pipeline/main.hero"
     t9 = INT64_C(0);
@@ -684,13 +556,12 @@ bb5:
     t16 = ((void)((t14 == NULL || t15 < 0 || t15 >= t14->len) ? ((void)hero_array_at(t14, t15), hero_unreachable()) : (void)0), (void)(t14->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t14 + 1))[t15]);
 #line 73 "examples/pipeline/main.hero"
     t32 = h4_ch;
-#line 688 "main.c"
+#line 73 "examples/pipeline/main.hero"
     hero_str_incref(t16);
 #line 73 "examples/pipeline/main.hero"
     h4_ch = t16;
-#line 692 "main.c"
+#line 73 "examples/pipeline/main.hero"
     hero_str_decref(t32);
-#line 74 "examples/pipeline/main.hero"
     t17 = h1_first;
 #line 74 "examples/pipeline/main.hero"
     t18 = hero_str_len(t17);
@@ -734,16 +605,21 @@ bb9:
     t21 = h4_ch;
 #line 75 "examples/pipeline/main.hero"
     t33 = h1_first;
-#line 738 "main.c"
+#line 75 "examples/pipeline/main.hero"
     hero_str_incref(t21);
 #line 75 "examples/pipeline/main.hero"
     h1_first = t21;
-#line 742 "main.c"
+#line 75 "examples/pipeline/main.hero"
     hero_str_decref(t33);
+#line 75 "examples/pipeline/main.hero"
     goto bb8;
+#line 75 "examples/pipeline/main.hero"
 bb10:
+#line 75 "examples/pipeline/main.hero"
     goto bb8;
+#line 75 "examples/pipeline/main.hero"
 bb11:
+#line 623 "main.c"
     t28 = h5_ret0;
     hero_str_release_at(&h1_first);
     hero_array_release_at(&h2_xs0);
@@ -754,39 +630,28 @@ bb11:
 
 #line 82 "examples/pipeline/main.hero"
 HeroStr h_main_SAMPLE(void) {
-#line 758 "main.c"
-    HeroStr t1;
-    goto bb0;
+#line 82 "examples/pipeline/main.hero"
+    HeroStr t1; goto bb0;
+#line 82 "examples/pipeline/main.hero"
 bb0:
-#line 83 "examples/pipeline/main.hero"
     t1 = HERO_STR_LIT(hero_str_663ae3de);
-#line 764 "main.c"
+#line 639 "main.c"
     hero_str_incref(t1);
     return t1;
 }
 
 #line 85 "examples/pipeline/main.hero"
 void h_main_main(void) {
-#line 771 "main.c"
-    HeroStr h0_own0 = {0};
-    HeroStr h1_own1 = {0};
-    HeroStr h2_own2 = {0};
-    HeroStr t1;
-    HeroStr t2;
-    HeroStr t3;
-    HeroStr t4;
-    HeroStr t5;
-    HeroStr t6;
-    HeroStr t7;
-    goto bb0;
+#line 85 "examples/pipeline/main.hero"
+    HeroStr h0_own0 = {0}; HeroStr h1_own1 = {0}; HeroStr h2_own2 = {0}; HeroStr t1; HeroStr t2; HeroStr t3; HeroStr t4; HeroStr t5; HeroStr t6; HeroStr t7; goto bb0;
+#line 85 "examples/pipeline/main.hero"
 bb0:
-#line 86 "examples/pipeline/main.hero"
     t1 = h_main_SAMPLE();
 #line 86 "examples/pipeline/main.hero"
     t5 = h0_own0;
 #line 86 "examples/pipeline/main.hero"
     h0_own0 = t1;
-#line 790 "main.c"
+#line 86 "examples/pipeline/main.hero"
     hero_str_decref(t5);
 #line 86 "examples/pipeline/main.hero"
     t2 = h_main_report(t1);
@@ -794,7 +659,7 @@ bb0:
     t6 = h1_own1;
 #line 86 "examples/pipeline/main.hero"
     h1_own1 = t2;
-#line 798 "main.c"
+#line 86 "examples/pipeline/main.hero"
     hero_str_decref(t6);
 #line 86 "examples/pipeline/main.hero"
     hero_print_str(t2);
@@ -807,13 +672,13 @@ bb0:
     t7 = h2_own2;
 #line 87 "examples/pipeline/main.hero"
     h2_own2 = t4;
-#line 811 "main.c"
+#line 87 "examples/pipeline/main.hero"
     hero_str_decref(t7);
 #line 87 "examples/pipeline/main.hero"
     hero_print_str(t4);
 #line 87 "examples/pipeline/main.hero"
     hero_print_end();
-#line 817 "main.c"
+#line 682 "main.c"
     hero_str_release_at(&h0_own0);
     hero_str_release_at(&h1_own1);
     hero_str_release_at(&h2_own2);
@@ -822,84 +687,33 @@ bb0:
 
 #line 12 "examples/pipeline/read/source.hero"
 h_readsource_Reader h_readsource_new_reader(HeroStr h0_text) {
-#line 826 "main.c"
-    HeroArrayHeader * h1_rows = {0};
-    HeroStr h2_piece = {0};
-    HeroArrayHeader * h3_xs0 = {0};
-    int64_t h4_i0;
-    HeroStr h5_ch = {0};
-    HeroArrayHeader * h6_own6 = {0};
-    HeroArrayHeader * h7_own7 = {0};
-    HeroStr h8_own8 = {0};
-    h_readsource_Reader h9_own9 = {0};
-    HeroArrayHeader * t1;
-    HeroStr t2;
-    HeroStr t3;
-    HeroArrayHeader * t4;
-    int64_t t5;
-    int64_t t6;
-    HeroArrayHeader * t7;
-    int64_t t8;
-    bool t9;
-    HeroArrayHeader * t10;
-    int64_t t11;
-    HeroStr t12;
-    HeroStr t13;
-    HeroStr t14;
-    bool t15;
-    HeroStr t17;
-    HeroStr t19;
-    HeroStr t20;
-    HeroStr t21;
-    HeroStr t22;
-    int64_t t23;
-    int64_t t24;
-    int64_t t25;
-    HeroStr t26;
-    int64_t t27;
-    int64_t t28;
-    bool t29;
-    HeroStr t31;
-    HeroArrayHeader * t33;
-    int64_t t34;
-    h_readsource_Reader t35;
-    HeroArrayHeader * t36;
-    HeroArrayHeader * t37;
-    HeroStr t38;
-    HeroArrayHeader * t39;
-    HeroArrayHeader * t40;
-    HeroStr t41;
-    HeroStr t42;
-    HeroStr t43;
-    HeroStr t44;
-    h_readsource_Reader t45;
-    goto bb0;
+#line 12 "examples/pipeline/read/source.hero"
+    HeroArrayHeader * h1_rows = {0}; HeroStr h2_piece = {0}; HeroArrayHeader * h3_xs0 = {0}; int64_t h4_i0; HeroStr h5_ch = {0}; HeroArrayHeader * h6_own6 = {0}; HeroArrayHeader * h7_own7 = {0}; HeroStr h8_own8 = {0}; h_readsource_Reader h9_own9 = {0}; HeroArrayHeader * t1; HeroStr t2; HeroStr t3; HeroArrayHeader * t4; int64_t t5; int64_t t6; HeroArrayHeader * t7; int64_t t8; bool t9; HeroArrayHeader * t10; int64_t t11; HeroStr t12; HeroStr t13; HeroStr t14; bool t15; HeroStr t17; HeroStr t19; HeroStr t20; HeroStr t21; HeroStr t22; int64_t t23; int64_t t24; int64_t t25; HeroStr t26; int64_t t27; int64_t t28; bool t29; HeroStr t31; HeroArrayHeader * t33; int64_t t34; h_readsource_Reader t35; HeroArrayHeader * t36; HeroArrayHeader * t37; HeroStr t38; HeroArrayHeader * t39; HeroArrayHeader * t40; HeroStr t41; HeroStr t42; HeroStr t43; HeroStr t44; h_readsource_Reader t45; goto bb0;
+#line 12 "examples/pipeline/read/source.hero"
 bb0:
-#line 13 "examples/pipeline/read/source.hero"
     t1 = hero_array_new(&hero_desc_str, 1);
 #line 13 "examples/pipeline/read/source.hero"
     t36 = h6_own6;
 #line 13 "examples/pipeline/read/source.hero"
     h6_own6 = t1;
-#line 885 "main.c"
+#line 13 "examples/pipeline/read/source.hero"
     hero_array_decref(t36);
 #line 13 "examples/pipeline/read/source.hero"
     t37 = h1_rows;
-#line 889 "main.c"
+#line 13 "examples/pipeline/read/source.hero"
     hero_array_incref(t1);
 #line 13 "examples/pipeline/read/source.hero"
     h1_rows = t1;
-#line 893 "main.c"
+#line 13 "examples/pipeline/read/source.hero"
     hero_array_decref(t37);
-#line 14 "examples/pipeline/read/source.hero"
     t2 = HERO_STR_LIT(hero_str_0);
 #line 14 "examples/pipeline/read/source.hero"
     t38 = h2_piece;
-#line 899 "main.c"
+#line 14 "examples/pipeline/read/source.hero"
     hero_str_incref(t2);
 #line 14 "examples/pipeline/read/source.hero"
     h2_piece = t2;
-#line 903 "main.c"
+#line 14 "examples/pipeline/read/source.hero"
     hero_str_decref(t38);
 #line 16 "examples/pipeline/read/source.hero"
     t3 = h0_text;
@@ -909,15 +723,15 @@ bb0:
     t39 = h7_own7;
 #line 16 "examples/pipeline/read/source.hero"
     h7_own7 = t4;
-#line 913 "main.c"
+#line 16 "examples/pipeline/read/source.hero"
     hero_array_decref(t39);
 #line 16 "examples/pipeline/read/source.hero"
     t40 = h3_xs0;
-#line 917 "main.c"
+#line 16 "examples/pipeline/read/source.hero"
     hero_array_incref(t4);
 #line 16 "examples/pipeline/read/source.hero"
     h3_xs0 = t4;
-#line 921 "main.c"
+#line 16 "examples/pipeline/read/source.hero"
     hero_array_decref(t40);
 #line 16 "examples/pipeline/read/source.hero"
     t5 = INT64_C(0);
@@ -947,13 +761,12 @@ bb2:
     t12 = ((void)((t10 == NULL || t11 < 0 || t11 >= t10->len) ? ((void)hero_array_at(t10, t11), hero_unreachable()) : (void)0), (void)(t10->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t10 + 1))[t11]);
 #line 16 "examples/pipeline/read/source.hero"
     t41 = h5_ch;
-#line 951 "main.c"
+#line 16 "examples/pipeline/read/source.hero"
     hero_str_incref(t12);
 #line 16 "examples/pipeline/read/source.hero"
     h5_ch = t12;
-#line 955 "main.c"
+#line 16 "examples/pipeline/read/source.hero"
     hero_str_decref(t41);
-#line 17 "examples/pipeline/read/source.hero"
     t13 = h5_ch;
 #line 17 "examples/pipeline/read/source.hero"
     t14 = HERO_STR_LIT(hero_str_a);
@@ -998,13 +811,15 @@ bb6:
     t19 = HERO_STR_LIT(hero_str_0);
 #line 19 "examples/pipeline/read/source.hero"
     t42 = h2_piece;
-#line 1002 "main.c"
+#line 19 "examples/pipeline/read/source.hero"
     hero_str_incref(t19);
 #line 19 "examples/pipeline/read/source.hero"
     h2_piece = t19;
-#line 1006 "main.c"
+#line 19 "examples/pipeline/read/source.hero"
     hero_str_decref(t42);
+#line 19 "examples/pipeline/read/source.hero"
     goto bb5;
+#line 19 "examples/pipeline/read/source.hero"
 bb7:
 #line 21 "examples/pipeline/read/source.hero"
     t20 = h2_piece;
@@ -1016,23 +831,25 @@ bb7:
     t43 = h8_own8;
 #line 21 "examples/pipeline/read/source.hero"
     h8_own8 = t22;
-#line 1020 "main.c"
+#line 21 "examples/pipeline/read/source.hero"
     hero_str_decref(t43);
 #line 21 "examples/pipeline/read/source.hero"
     t44 = h2_piece;
-#line 1024 "main.c"
+#line 21 "examples/pipeline/read/source.hero"
     hero_str_incref(t22);
 #line 21 "examples/pipeline/read/source.hero"
     h2_piece = t22;
-#line 1028 "main.c"
+#line 21 "examples/pipeline/read/source.hero"
     hero_str_decref(t44);
+#line 21 "examples/pipeline/read/source.hero"
     goto bb5;
+#line 21 "examples/pipeline/read/source.hero"
 bb8:
 #line 26 "examples/pipeline/read/source.hero"
     t33 = h1_rows;
 #line 26 "examples/pipeline/read/source.hero"
     t34 = INT64_C(0);
-#line 1036 "main.c"
+#line 26 "examples/pipeline/read/source.hero"
     hero_array_incref(t33);
 #line 26 "examples/pipeline/read/source.hero"
     t35 = (h_readsource_Reader){.f_lines = t33, .f_at = t34};
@@ -1040,8 +857,9 @@ bb8:
     t45 = h9_own9;
 #line 26 "examples/pipeline/read/source.hero"
     h9_own9 = t35;
-#line 1044 "main.c"
+#line 26 "examples/pipeline/read/source.hero"
     h_readsource_Reader_release(&t45);
+#line 863 "main.c"
     h_readsource_Reader_retain(&t35);
     hero_array_release_at(&h1_rows);
     hero_str_release_at(&h2_piece);
@@ -1063,43 +881,15 @@ bb9:
 bb10:
 #line 24 "examples/pipeline/read/source.hero"
     goto bb8;
-#line 1067 "main.c"
+#line 885 "main.c"
 }
 
 #line 30 "examples/pipeline/read/source.hero"
 h_0opt_f87774a h_readsource_next_line(h_readsource_Reader *ph0_r) {
-#line 1072 "main.c"
-    HeroStr h1_one = {0};
-    h_0opt_f87774a h2_ret0 = {0};
-    h_0opt_f87774a h3_own3 = {0};
-    h_0opt_f87774a h4_own4 = {0};
-    h_readsource_Reader t1;
-    int64_t t2;
-    h_readsource_Reader t3;
-    HeroArrayHeader * t4;
-    int64_t t5;
-    bool t6;
-    HeroStr t7;
-    HeroStr t8;
-    h_0opt_f87774a t9;
-    h_readsource_Reader t10;
-    HeroArrayHeader * t11;
-    h_readsource_Reader t12;
-    int64_t t13;
-    HeroStr t14;
-    h_readsource_Reader t15;
-    int64_t t16;
-    int64_t t17;
-    int64_t t18;
-    HeroStr t19;
-    h_0opt_f87774a t20;
-    h_0opt_f87774a t21;
-    HeroStr t22;
-    h_0opt_f87774a t23;
-    h_0opt_f87774a t24;
-    goto bb0;
+#line 30 "examples/pipeline/read/source.hero"
+    HeroStr h1_one = {0}; h_0opt_f87774a h2_ret0 = {0}; h_0opt_f87774a h3_own3 = {0}; h_0opt_f87774a h4_own4 = {0}; h_readsource_Reader t1; int64_t t2; h_readsource_Reader t3; HeroArrayHeader * t4; int64_t t5; bool t6; HeroStr t7; HeroStr t8; h_0opt_f87774a t9; h_readsource_Reader t10; HeroArrayHeader * t11; h_readsource_Reader t12; int64_t t13; HeroStr t14; h_readsource_Reader t15; int64_t t16; int64_t t17; int64_t t18; HeroStr t19; h_0opt_f87774a t20; h_0opt_f87774a t21; HeroStr t22; h_0opt_f87774a t23; h_0opt_f87774a t24; goto bb0;
+#line 30 "examples/pipeline/read/source.hero"
 bb0:
-#line 31 "examples/pipeline/read/source.hero"
     t1 = (*ph0_r);
 #line 31 "examples/pipeline/read/source.hero"
     t2 = t1.f_at;
@@ -1127,13 +917,12 @@ bb1:
     t14 = ((void)((t11 == NULL || t13 < 0 || t13 >= t11->len) ? ((void)hero_array_at(t11, t13), hero_unreachable()) : (void)0), (void)(t11->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t11 + 1))[t13]);
 #line 33 "examples/pipeline/read/source.hero"
     t22 = h1_one;
-#line 1131 "main.c"
+#line 33 "examples/pipeline/read/source.hero"
     hero_str_incref(t14);
 #line 33 "examples/pipeline/read/source.hero"
     h1_one = t14;
-#line 1135 "main.c"
+#line 33 "examples/pipeline/read/source.hero"
     hero_str_decref(t22);
-#line 34 "examples/pipeline/read/source.hero"
     t15 = (*ph0_r);
 #line 34 "examples/pipeline/read/source.hero"
     t16 = t15.f_at;
@@ -1144,7 +933,7 @@ bb1:
 #line 34 "examples/pipeline/read/source.hero"
     (*ph0_r).f_at = t18;
     t19 = h1_one;
-#line 1148 "main.c"
+#line 35 "examples/pipeline/read/source.hero"
     hero_str_incref(t19);
 #line 35 "examples/pipeline/read/source.hero"
     t20 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t19};
@@ -1152,7 +941,7 @@ bb1:
     t23 = h3_own3;
 #line 35 "examples/pipeline/read/source.hero"
     h3_own3 = t20;
-#line 1156 "main.c"
+#line 35 "examples/pipeline/read/source.hero"
     h_0opt_f87774a_release(&t23);
 #line 35 "examples/pipeline/read/source.hero"
     h2_ret0 = t20;
@@ -1164,8 +953,9 @@ bb2:
     t7 = HERO_STR_LIT(hero_str_4e2cb1e5);
 #line 32 "examples/pipeline/read/source.hero"
     t8 = HERO_STR_LIT(hero_str_702e6a8f);
-#line 1168 "main.c"
+#line 32 "examples/pipeline/read/source.hero"
     hero_str_incref(t7);
+#line 32 "examples/pipeline/read/source.hero"
     hero_str_incref(t8);
 #line 32 "examples/pipeline/read/source.hero"
     t9 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t7, .msg = t8}};
@@ -1173,7 +963,7 @@ bb2:
     t24 = h4_own4;
 #line 32 "examples/pipeline/read/source.hero"
     h4_own4 = t9;
-#line 1177 "main.c"
+#line 32 "examples/pipeline/read/source.hero"
     h_0opt_f87774a_release(&t24);
 #line 32 "examples/pipeline/read/source.hero"
     h2_ret0 = t9;
@@ -1185,7 +975,7 @@ bb3:
     goto bb1;
 #line 32 "examples/pipeline/read/source.hero"
 bb4:
-#line 1189 "main.c"
+#line 979 "main.c"
     t21 = h2_ret0;
     h_0opt_f87774a_retain(&t21);
     hero_str_release_at(&h1_one);
@@ -1196,16 +986,10 @@ bb4:
 
 #line 37 "examples/pipeline/read/source.hero"
 int64_t h_readsource_remaining(h_readsource_Reader h0_r) {
-#line 1200 "main.c"
-    h_readsource_Reader t1;
-    HeroArrayHeader * t2;
-    int64_t t3;
-    h_readsource_Reader t4;
-    int64_t t5;
-    int64_t t6;
-    goto bb0;
+#line 37 "examples/pipeline/read/source.hero"
+    h_readsource_Reader t1; HeroArrayHeader * t2; int64_t t3; h_readsource_Reader t4; int64_t t5; int64_t t6; goto bb0;
+#line 37 "examples/pipeline/read/source.hero"
 bb0:
-#line 38 "examples/pipeline/read/source.hero"
     t1 = h0_r;
 #line 38 "examples/pipeline/read/source.hero"
     t2 = t1.f_lines;
@@ -1219,42 +1003,32 @@ bb0:
     if (__builtin_sub_overflow(t3, t5, &t6)) hero_panic_overflow();
 #line 38 "examples/pipeline/read/source.hero"
     return t6;
-#line 1223 "main.c"
+#line 1007 "main.c"
 }
 
 #line 13 "examples/pipeline/write/source.hero"
 h_writesource_Sink h_writesource_new_sink(void) {
-#line 1228 "main.c"
-    HeroArrayHeader * h0_empty = {0};
-    HeroArrayHeader * h1_own1 = {0};
-    h_writesource_Sink h2_own2 = {0};
-    HeroArrayHeader * t1;
-    HeroArrayHeader * t2;
-    h_writesource_Sink t3;
-    HeroArrayHeader * t4;
-    HeroArrayHeader * t5;
-    h_writesource_Sink t6;
-    goto bb0;
+#line 13 "examples/pipeline/write/source.hero"
+    HeroArrayHeader * h0_empty = {0}; HeroArrayHeader * h1_own1 = {0}; h_writesource_Sink h2_own2 = {0}; HeroArrayHeader * t1; HeroArrayHeader * t2; h_writesource_Sink t3; HeroArrayHeader * t4; HeroArrayHeader * t5; h_writesource_Sink t6; goto bb0;
+#line 13 "examples/pipeline/write/source.hero"
 bb0:
-#line 14 "examples/pipeline/write/source.hero"
     t1 = hero_array_new(&hero_desc_str, 1);
 #line 14 "examples/pipeline/write/source.hero"
     t4 = h1_own1;
 #line 14 "examples/pipeline/write/source.hero"
     h1_own1 = t1;
-#line 1246 "main.c"
+#line 14 "examples/pipeline/write/source.hero"
     hero_array_decref(t4);
 #line 14 "examples/pipeline/write/source.hero"
     t5 = h0_empty;
-#line 1250 "main.c"
+#line 14 "examples/pipeline/write/source.hero"
     hero_array_incref(t1);
 #line 14 "examples/pipeline/write/source.hero"
     h0_empty = t1;
-#line 1254 "main.c"
+#line 14 "examples/pipeline/write/source.hero"
     hero_array_decref(t5);
-#line 15 "examples/pipeline/write/source.hero"
     t2 = h0_empty;
-#line 1258 "main.c"
+#line 15 "examples/pipeline/write/source.hero"
     hero_array_incref(t2);
 #line 15 "examples/pipeline/write/source.hero"
     t3 = (h_writesource_Sink){.f_rows = t2};
@@ -1262,8 +1036,9 @@ bb0:
     t6 = h2_own2;
 #line 15 "examples/pipeline/write/source.hero"
     h2_own2 = t3;
-#line 1266 "main.c"
+#line 15 "examples/pipeline/write/source.hero"
     h_writesource_Sink_release(&t6);
+#line 1042 "main.c"
     h_writesource_Sink_retain(&t3);
     hero_array_release_at(&h0_empty);
     hero_array_release_at(&h1_own1);
@@ -1273,17 +1048,10 @@ bb0:
 
 #line 17 "examples/pipeline/write/source.hero"
 void h_writesource_emit(h_writesource_Sink *ph0_s, HeroStr h1_row) {
-#line 1277 "main.c"
-    HeroArrayHeader * h2_own2 = {0};
-    h_writesource_Sink t1;
-    HeroArrayHeader * t2;
-    HeroStr t3;
-    HeroArrayHeader * t4;
-    HeroArrayHeader * t5;
-    HeroArrayHeader * t6;
-    goto bb0;
+#line 17 "examples/pipeline/write/source.hero"
+    HeroArrayHeader * h2_own2 = {0}; h_writesource_Sink t1; HeroArrayHeader * t2; HeroStr t3; HeroArrayHeader * t4; HeroArrayHeader * t5; HeroArrayHeader * t6; goto bb0;
+#line 17 "examples/pipeline/write/source.hero"
 bb0:
-#line 18 "examples/pipeline/write/source.hero"
     t1 = (*ph0_s);
 #line 18 "examples/pipeline/write/source.hero"
     t2 = t1.f_rows;
@@ -1295,32 +1063,27 @@ bb0:
     t5 = h2_own2;
 #line 18 "examples/pipeline/write/source.hero"
     h2_own2 = t4;
-#line 1299 "main.c"
+#line 18 "examples/pipeline/write/source.hero"
     hero_array_decref(t5);
 #line 18 "examples/pipeline/write/source.hero"
     t6 = (*ph0_s).f_rows;
-#line 1303 "main.c"
+#line 18 "examples/pipeline/write/source.hero"
     hero_array_incref(t4);
 #line 18 "examples/pipeline/write/source.hero"
     (*ph0_s).f_rows = t4;
-#line 1307 "main.c"
+#line 18 "examples/pipeline/write/source.hero"
     hero_array_decref(t6);
+#line 1077 "main.c"
     hero_array_release_at(&h2_own2);
     return;
 }
 
 #line 20 "examples/pipeline/write/source.hero"
 HeroStr h_writesource_rendered(h_writesource_Sink h0_s) {
-#line 1315 "main.c"
-    HeroStr h1_own1 = {0};
-    h_writesource_Sink t1;
-    HeroArrayHeader * t2;
-    HeroStr t3;
-    HeroStr t4;
-    HeroStr t5;
-    goto bb0;
+#line 20 "examples/pipeline/write/source.hero"
+    HeroStr h1_own1 = {0}; h_writesource_Sink t1; HeroArrayHeader * t2; HeroStr t3; HeroStr t4; HeroStr t5; goto bb0;
+#line 20 "examples/pipeline/write/source.hero"
 bb0:
-#line 21 "examples/pipeline/write/source.hero"
     t1 = h0_s;
 #line 21 "examples/pipeline/write/source.hero"
     t2 = t1.f_rows;
@@ -1332,8 +1095,9 @@ bb0:
     t5 = h1_own1;
 #line 21 "examples/pipeline/write/source.hero"
     h1_own1 = t4;
-#line 1336 "main.c"
+#line 21 "examples/pipeline/write/source.hero"
     hero_str_decref(t5);
+#line 1101 "main.c"
     hero_str_incref(t4);
     hero_str_release_at(&h1_own1);
     return t4;
@@ -1341,13 +1105,10 @@ bb0:
 
 #line 23 "examples/pipeline/write/source.hero"
 int64_t h_writesource_count(h_writesource_Sink h0_s) {
-#line 1345 "main.c"
-    h_writesource_Sink t1;
-    HeroArrayHeader * t2;
-    int64_t t3;
-    goto bb0;
+#line 23 "examples/pipeline/write/source.hero"
+    h_writesource_Sink t1; HeroArrayHeader * t2; int64_t t3; goto bb0;
+#line 23 "examples/pipeline/write/source.hero"
 bb0:
-#line 24 "examples/pipeline/write/source.hero"
     t1 = h0_s;
 #line 24 "examples/pipeline/write/source.hero"
     t2 = t1.f_rows;
@@ -1355,7 +1116,7 @@ bb0:
     t3 = ((void)(t2 == NULL ? ((void)hero_array_len(t2), hero_unreachable()) : (void)0), t2->len);
 #line 24 "examples/pipeline/write/source.hero"
     return t3;
-#line 1359 "main.c"
+#line 1120 "main.c"
 }
 HERO_TU_LOCAL void h_readsource_Reader_retain(const h_readsource_Reader *v) {
     hero_array_incref(v->f_lines);

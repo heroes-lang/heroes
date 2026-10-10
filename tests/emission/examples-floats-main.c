@@ -100,13 +100,10 @@ void h_main_main(void);
 
 #line 29 "examples/floats/main.hero"
 double h_main_a_nan(void) {
-#line 104 "main.c"
-    double t1;
-    double t2;
-    double t3;
-    goto bb0;
+#line 29 "examples/floats/main.hero"
+    double t1; double t2; double t3; goto bb0;
+#line 29 "examples/floats/main.hero"
 bb0:
-#line 30 "examples/floats/main.hero"
     t1 = 0x0p+0;
 #line 30 "examples/floats/main.hero"
     t2 = 0x0p+0;
@@ -114,18 +111,15 @@ bb0:
     t3 = t1 / t2;
 #line 30 "examples/floats/main.hero"
     return t3;
-#line 118 "main.c"
+#line 115 "main.c"
 }
 
 #line 32 "examples/floats/main.hero"
 double h_main_an_infinity(void) {
-#line 123 "main.c"
-    double t1;
-    double t2;
-    double t3;
-    goto bb0;
+#line 32 "examples/floats/main.hero"
+    double t1; double t2; double t3; goto bb0;
+#line 32 "examples/floats/main.hero"
 bb0:
-#line 33 "examples/floats/main.hero"
     t1 = 0x1p+0;
 #line 33 "examples/floats/main.hero"
     t2 = 0x0p+0;
@@ -133,20 +127,15 @@ bb0:
     t3 = t1 / t2;
 #line 33 "examples/floats/main.hero"
     return t3;
-#line 137 "main.c"
+#line 131 "main.c"
 }
 
 #line 35 "examples/floats/main.hero"
 double h_main_a_negative_infinity(void) {
-#line 142 "main.c"
-    double t1;
-    double t2;
-    double t3;
-    double t4;
-    double t5;
-    goto bb0;
+#line 35 "examples/floats/main.hero"
+    double t1; double t2; double t3; double t4; double t5; goto bb0;
+#line 35 "examples/floats/main.hero"
 bb0:
-#line 36 "examples/floats/main.hero"
     t1 = 0x0p+0;
 #line 36 "examples/floats/main.hero"
     t2 = 0x1p+0;
@@ -158,18 +147,15 @@ bb0:
     t5 = t1 - t4;
 #line 36 "examples/floats/main.hero"
     return t5;
-#line 162 "main.c"
+#line 151 "main.c"
 }
 
 #line 39 "examples/floats/main.hero"
 bool h_main_is_nan(double h0_x) {
-#line 167 "main.c"
-    double t1;
-    double t2;
-    bool t3;
-    goto bb0;
+#line 39 "examples/floats/main.hero"
+    double t1; double t2; bool t3; goto bb0;
+#line 39 "examples/floats/main.hero"
 bb0:
-#line 40 "examples/floats/main.hero"
     t1 = h0_x;
 #line 40 "examples/floats/main.hero"
     t2 = h0_x;
@@ -177,23 +163,15 @@ bb0:
     t3 = t1 != t2;
 #line 40 "examples/floats/main.hero"
     return t3;
-#line 181 "main.c"
+#line 167 "main.c"
 }
 
 #line 44 "examples/floats/main.hero"
 bool h_main_is_infinite(double h0_x) {
-#line 186 "main.c"
-    bool h1_b0;
-    double t1;
-    double t2;
-    bool t3;
-    double t4;
-    double t5;
-    bool t6;
-    bool t7;
-    goto bb0;
+#line 44 "examples/floats/main.hero"
+    bool h1_b0; double t1; double t2; bool t3; double t4; double t5; bool t6; bool t7; goto bb0;
+#line 44 "examples/floats/main.hero"
 bb0:
-#line 45 "examples/floats/main.hero"
     t1 = h0_x;
 #line 45 "examples/floats/main.hero"
     t2 = h_main_an_infinity();
@@ -221,23 +199,15 @@ bb2:
     t7 = h1_b0;
 #line 45 "examples/floats/main.hero"
     return t7;
-#line 225 "main.c"
+#line 203 "main.c"
 }
 
 #line 47 "examples/floats/main.hero"
 bool h_main_is_a_number(double h0_x) {
-#line 230 "main.c"
-    bool h1_b0;
-    double t1;
-    bool t2;
-    bool t3;
-    double t4;
-    bool t5;
-    bool t6;
-    bool t7;
-    goto bb0;
+#line 47 "examples/floats/main.hero"
+    bool h1_b0; double t1; bool t2; bool t3; double t4; bool t5; bool t6; bool t7; goto bb0;
+#line 47 "examples/floats/main.hero"
 bb0:
-#line 48 "examples/floats/main.hero"
     t1 = h0_x;
 #line 48 "examples/floats/main.hero"
     t2 = h_main_is_nan(t1);
@@ -265,64 +235,39 @@ bb2:
     t7 = h1_b0;
 #line 48 "examples/floats/main.hero"
     return t7;
-#line 269 "main.c"
+#line 239 "main.c"
 }
 
 #line 52 "examples/floats/main.hero"
 HeroArrayHeader * h_main_usable(HeroArrayHeader * h0_readings) {
-#line 274 "main.c"
-    HeroArrayHeader * h1_out = {0};
-    HeroArrayHeader * h2_xs0 = {0};
-    int64_t h3_i0;
-    double h4_one;
-    HeroArrayHeader * h5_own5 = {0};
-    HeroArrayHeader * t1;
-    HeroArrayHeader * t2;
-    int64_t t3;
-    int64_t t4;
-    HeroArrayHeader * t5;
-    int64_t t6;
-    bool t7;
-    HeroArrayHeader * t8;
-    int64_t t9;
-    double t10;
-    double t11;
-    bool t12;
-    double t14;
-    int64_t t16;
-    int64_t t17;
-    int64_t t18;
-    HeroArrayHeader * t19;
-    HeroArrayHeader * t20;
-    HeroArrayHeader * t21;
-    HeroArrayHeader * t22;
-    goto bb0;
+#line 52 "examples/floats/main.hero"
+    HeroArrayHeader * h1_out = {0}; HeroArrayHeader * h2_xs0 = {0}; int64_t h3_i0; double h4_one; HeroArrayHeader * h5_own5 = {0}; HeroArrayHeader * t1; HeroArrayHeader * t2; int64_t t3; int64_t t4; HeroArrayHeader * t5; int64_t t6; bool t7; HeroArrayHeader * t8; int64_t t9; double t10; double t11; bool t12; double t14; int64_t t16; int64_t t17; int64_t t18; HeroArrayHeader * t19; HeroArrayHeader * t20; HeroArrayHeader * t21; HeroArrayHeader * t22; goto bb0;
+#line 52 "examples/floats/main.hero"
 bb0:
-#line 53 "examples/floats/main.hero"
     t1 = hero_array_new(&hero_desc_f64, 1);
 #line 53 "examples/floats/main.hero"
     t20 = h5_own5;
 #line 53 "examples/floats/main.hero"
     h5_own5 = t1;
-#line 308 "main.c"
+#line 53 "examples/floats/main.hero"
     hero_array_decref(t20);
 #line 53 "examples/floats/main.hero"
     t21 = h1_out;
-#line 312 "main.c"
+#line 53 "examples/floats/main.hero"
     hero_array_incref(t1);
 #line 53 "examples/floats/main.hero"
     h1_out = t1;
-#line 316 "main.c"
+#line 53 "examples/floats/main.hero"
     hero_array_decref(t21);
 #line 55 "examples/floats/main.hero"
     t2 = h0_readings;
 #line 55 "examples/floats/main.hero"
     t22 = h2_xs0;
-#line 322 "main.c"
+#line 55 "examples/floats/main.hero"
     hero_array_incref(t2);
 #line 55 "examples/floats/main.hero"
     h2_xs0 = t2;
-#line 326 "main.c"
+#line 55 "examples/floats/main.hero"
     hero_array_decref(t22);
 #line 55 "examples/floats/main.hero"
     t3 = INT64_C(0);
@@ -373,7 +318,7 @@ bb3:
 bb4:
 #line 59 "examples/floats/main.hero"
     t19 = h1_out;
-#line 377 "main.c"
+#line 322 "main.c"
     hero_array_incref(t19);
     hero_array_release_at(&h1_out);
     hero_array_release_at(&h2_xs0);
@@ -392,54 +337,15 @@ bb6:
 bb7:
 #line 57 "examples/floats/main.hero"
     goto bb5;
-#line 396 "main.c"
+#line 341 "main.c"
 }
 
 #line 64 "examples/floats/main.hero"
 double h_main_mean(HeroArrayHeader * h0_readings) {
-#line 401 "main.c"
-    HeroArrayHeader * h1_good = {0};
-    double h2_total;
-    HeroArrayHeader * h3_xs0 = {0};
-    int64_t h4_i0;
-    double h5_one;
-    double h6_ret0;
-    HeroArrayHeader * h7_own7 = {0};
-    HeroArrayHeader * t1;
-    HeroArrayHeader * t2;
-    HeroArrayHeader * t3;
-    int64_t t4;
-    int64_t t5;
-    bool t6;
-    double t7;
-    double t8;
-    HeroArrayHeader * t9;
-    int64_t t10;
-    int64_t t11;
-    HeroArrayHeader * t12;
-    int64_t t13;
-    bool t14;
-    HeroArrayHeader * t15;
-    int64_t t16;
-    double t17;
-    double t18;
-    double t19;
-    double t20;
-    int64_t t21;
-    int64_t t22;
-    int64_t t23;
-    double t24;
-    HeroArrayHeader * t25;
-    int64_t t26;
-    double t27;
-    double t28;
-    double t29;
-    HeroArrayHeader * t30;
-    HeroArrayHeader * t31;
-    HeroArrayHeader * t32;
-    goto bb0;
+#line 64 "examples/floats/main.hero"
+    HeroArrayHeader * h1_good = {0}; double h2_total; HeroArrayHeader * h3_xs0 = {0}; int64_t h4_i0; double h5_one; double h6_ret0; HeroArrayHeader * h7_own7 = {0}; HeroArrayHeader * t1; HeroArrayHeader * t2; HeroArrayHeader * t3; int64_t t4; int64_t t5; bool t6; double t7; double t8; HeroArrayHeader * t9; int64_t t10; int64_t t11; HeroArrayHeader * t12; int64_t t13; bool t14; HeroArrayHeader * t15; int64_t t16; double t17; double t18; double t19; double t20; int64_t t21; int64_t t22; int64_t t23; double t24; HeroArrayHeader * t25; int64_t t26; double t27; double t28; double t29; HeroArrayHeader * t30; HeroArrayHeader * t31; HeroArrayHeader * t32; goto bb0;
+#line 64 "examples/floats/main.hero"
 bb0:
-#line 65 "examples/floats/main.hero"
     t1 = h0_readings;
 #line 65 "examples/floats/main.hero"
     t2 = h_main_usable(t1);
@@ -447,15 +353,15 @@ bb0:
     t30 = h7_own7;
 #line 65 "examples/floats/main.hero"
     h7_own7 = t2;
-#line 451 "main.c"
+#line 65 "examples/floats/main.hero"
     hero_array_decref(t30);
 #line 65 "examples/floats/main.hero"
     t31 = h1_good;
-#line 455 "main.c"
+#line 65 "examples/floats/main.hero"
     hero_array_incref(t2);
 #line 65 "examples/floats/main.hero"
     h1_good = t2;
-#line 459 "main.c"
+#line 65 "examples/floats/main.hero"
     hero_array_decref(t31);
 #line 67 "examples/floats/main.hero"
     t3 = h1_good;
@@ -477,11 +383,11 @@ bb1:
     t9 = h1_good;
 #line 71 "examples/floats/main.hero"
     t32 = h3_xs0;
-#line 481 "main.c"
+#line 71 "examples/floats/main.hero"
     hero_array_incref(t9);
 #line 71 "examples/floats/main.hero"
     h3_xs0 = t9;
-#line 485 "main.c"
+#line 71 "examples/floats/main.hero"
     hero_array_decref(t32);
 #line 71 "examples/floats/main.hero"
     t10 = INT64_C(0);
@@ -562,7 +468,7 @@ bb7:
     goto bb8;
 #line 74 "examples/floats/main.hero"
 bb8:
-#line 566 "main.c"
+#line 472 "main.c"
     t29 = h6_ret0;
     hero_array_release_at(&h1_good);
     hero_array_release_at(&h3_xs0);
@@ -572,60 +478,24 @@ bb8:
 
 #line 82 "examples/floats/main.hero"
 HeroStr h_main_report(HeroArrayHeader * h0_readings) {
-#line 576 "main.c"
-    HeroArrayHeader * h1_rows = {0};
-    HeroArrayHeader * h2_xs0 = {0};
-    int64_t h3_i0;
-    double h4_one;
-    HeroArrayHeader * h5_own5 = {0};
-    HeroArrayHeader * h6_own6 = {0};
-    HeroArrayHeader * h7_own7 = {0};
-    HeroStr h8_own8 = {0};
-    HeroStr h9_own9 = {0};
-    HeroArrayHeader * t1;
-    HeroArrayHeader * t2;
-    HeroArrayHeader * t3;
-    HeroArrayHeader * t4;
-    int64_t t5;
-    int64_t t6;
-    HeroArrayHeader * t7;
-    int64_t t8;
-    bool t9;
-    HeroArrayHeader * t10;
-    int64_t t11;
-    double t12;
-    double t14;
-    HeroStr t15;
-    int64_t t17;
-    int64_t t18;
-    int64_t t19;
-    HeroArrayHeader * t20;
-    HeroStr t21;
-    HeroStr t22;
-    HeroArrayHeader * t23;
-    HeroArrayHeader * t24;
-    HeroArrayHeader * t25;
-    HeroArrayHeader * t26;
-    HeroArrayHeader * t27;
-    HeroStr t28;
-    HeroStr t29;
-    goto bb0;
+#line 82 "examples/floats/main.hero"
+    HeroArrayHeader * h1_rows = {0}; HeroArrayHeader * h2_xs0 = {0}; int64_t h3_i0; double h4_one; HeroArrayHeader * h5_own5 = {0}; HeroArrayHeader * h6_own6 = {0}; HeroArrayHeader * h7_own7 = {0}; HeroStr h8_own8 = {0}; HeroStr h9_own9 = {0}; HeroArrayHeader * t1; HeroArrayHeader * t2; HeroArrayHeader * t3; HeroArrayHeader * t4; int64_t t5; int64_t t6; HeroArrayHeader * t7; int64_t t8; bool t9; HeroArrayHeader * t10; int64_t t11; double t12; double t14; HeroStr t15; int64_t t17; int64_t t18; int64_t t19; HeroArrayHeader * t20; HeroStr t21; HeroStr t22; HeroArrayHeader * t23; HeroArrayHeader * t24; HeroArrayHeader * t25; HeroArrayHeader * t26; HeroArrayHeader * t27; HeroStr t28; HeroStr t29; goto bb0;
+#line 82 "examples/floats/main.hero"
 bb0:
-#line 83 "examples/floats/main.hero"
     t1 = hero_array_new(&hero_desc_str, 1);
 #line 83 "examples/floats/main.hero"
     t23 = h5_own5;
 #line 83 "examples/floats/main.hero"
     h5_own5 = t1;
-#line 621 "main.c"
+#line 83 "examples/floats/main.hero"
     hero_array_decref(t23);
 #line 83 "examples/floats/main.hero"
     t24 = h1_rows;
-#line 625 "main.c"
+#line 83 "examples/floats/main.hero"
     hero_array_incref(t1);
 #line 83 "examples/floats/main.hero"
     h1_rows = t1;
-#line 629 "main.c"
+#line 83 "examples/floats/main.hero"
     hero_array_decref(t24);
 #line 85 "examples/floats/main.hero"
     t2 = h0_readings;
@@ -635,7 +505,7 @@ bb0:
     t25 = h6_own6;
 #line 85 "examples/floats/main.hero"
     h6_own6 = t3;
-#line 639 "main.c"
+#line 85 "examples/floats/main.hero"
     hero_array_decref(t25);
 #line 85 "examples/floats/main.hero"
     t4 = hero_array_sort(t3);
@@ -643,15 +513,15 @@ bb0:
     t26 = h7_own7;
 #line 85 "examples/floats/main.hero"
     h7_own7 = t4;
-#line 647 "main.c"
+#line 85 "examples/floats/main.hero"
     hero_array_decref(t26);
 #line 85 "examples/floats/main.hero"
     t27 = h2_xs0;
-#line 651 "main.c"
+#line 85 "examples/floats/main.hero"
     hero_array_incref(t4);
 #line 85 "examples/floats/main.hero"
     h2_xs0 = t4;
-#line 655 "main.c"
+#line 85 "examples/floats/main.hero"
     hero_array_decref(t27);
 #line 85 "examples/floats/main.hero"
     t5 = INT64_C(0);
@@ -688,7 +558,7 @@ bb2:
     t28 = h8_own8;
 #line 86 "examples/floats/main.hero"
     h8_own8 = t15;
-#line 692 "main.c"
+#line 86 "examples/floats/main.hero"
     hero_str_decref(t28);
 #line 86 "examples/floats/main.hero"
     hero_array_push_owned(&h1_rows, &t15);
@@ -718,8 +588,9 @@ bb4:
     t29 = h9_own9;
 #line 88 "examples/floats/main.hero"
     h9_own9 = t22;
-#line 722 "main.c"
+#line 88 "examples/floats/main.hero"
     hero_str_decref(t29);
+#line 594 "main.c"
     hero_str_incref(t22);
     hero_array_release_at(&h1_rows);
     hero_array_release_at(&h2_xs0);
@@ -733,107 +604,10 @@ bb4:
 
 #line 90 "examples/floats/main.hero"
 void h_main_main(void) {
-#line 737 "main.c"
-    double h0_n;
-    double h1_up;
-    double h2_down;
-    HeroArrayHeader * h3_readings = {0};
-    HeroArrayHeader * h4_empty = {0};
-    HeroStr h5_own5 = {0};
-    HeroStr h6_own6 = {0};
-    HeroStr h7_own7 = {0};
-    HeroStr h8_own8 = {0};
-    HeroArrayHeader * h9_own9 = {0};
-    HeroArrayHeader * h10_own10 = {0};
-    HeroStr h11_own11 = {0};
-    HeroStr h12_own12 = {0};
-    HeroArrayHeader * h13_own13 = {0};
-    double t1;
-    double t2;
-    double t3;
-    double t4;
-    HeroStr t5;
-    double t6;
-    HeroStr t7;
-    double t8;
-    HeroStr t9;
-    double t10;
-    HeroStr t11;
-    double t12;
-    double t13;
-    bool t14;
-    double t15;
-    double t16;
-    bool t17;
-    double t18;
-    bool t19;
-    double t20;
-    bool t21;
-    double t22;
-    double t23;
-    bool t24;
-    double t25;
-    double t26;
-    bool t27;
-    double t28;
-    bool t29;
-    double t30;
-    bool t31;
-    double t32;
-    bool t33;
-    double t34;
-    double t35;
-    double t36;
-    bool t37;
-    double t38;
-    double t39;
-    double t40;
-    bool t41;
-    double t42;
-    double t43;
-    double t44;
-    double t45;
-    bool t46;
-    double t47;
-    double t48;
-    double t49;
-    bool t50;
-    double t51;
-    double t52;
-    double t53;
-    double t54;
-    double t55;
-    double t56;
-    double t57;
-    double t58;
-    double t59;
-    HeroArrayHeader * t60;
-    HeroArrayHeader * t61;
-    HeroArrayHeader * t62;
-    int64_t t63;
-    HeroArrayHeader * t64;
-    double t65;
-    HeroStr t66;
-    HeroArrayHeader * t67;
-    HeroStr t68;
-    HeroArrayHeader * t69;
-    HeroArrayHeader * t70;
-    double t71;
-    bool t72;
-    HeroStr t73;
-    HeroStr t74;
-    HeroStr t75;
-    HeroStr t76;
-    HeroArrayHeader * t77;
-    HeroArrayHeader * t78;
-    HeroArrayHeader * t79;
-    HeroStr t80;
-    HeroStr t81;
-    HeroArrayHeader * t82;
-    HeroArrayHeader * t83;
-    goto bb0;
+#line 90 "examples/floats/main.hero"
+    double h0_n; double h1_up; double h2_down; HeroArrayHeader * h3_readings = {0}; HeroArrayHeader * h4_empty = {0}; HeroStr h5_own5 = {0}; HeroStr h6_own6 = {0}; HeroStr h7_own7 = {0}; HeroStr h8_own8 = {0}; HeroArrayHeader * h9_own9 = {0}; HeroArrayHeader * h10_own10 = {0}; HeroStr h11_own11 = {0}; HeroStr h12_own12 = {0}; HeroArrayHeader * h13_own13 = {0}; double t1; double t2; double t3; double t4; HeroStr t5; double t6; HeroStr t7; double t8; HeroStr t9; double t10; HeroStr t11; double t12; double t13; bool t14; double t15; double t16; bool t17; double t18; bool t19; double t20; bool t21; double t22; double t23; bool t24; double t25; double t26; bool t27; double t28; bool t29; double t30; bool t31; double t32; bool t33; double t34; double t35; double t36; bool t37; double t38; double t39; double t40; bool t41; double t42; double t43; double t44; double t45; bool t46; double t47; double t48; double t49; bool t50; double t51; double t52; double t53; double t54; double t55; double t56; double t57; double t58; double t59; HeroArrayHeader * t60; HeroArrayHeader * t61; HeroArrayHeader * t62; int64_t t63; HeroArrayHeader * t64; double t65; HeroStr t66; HeroArrayHeader * t67; HeroStr t68; HeroArrayHeader * t69; HeroArrayHeader * t70; double t71; bool t72; HeroStr t73; HeroStr t74; HeroStr t75; HeroStr t76; HeroArrayHeader * t77; HeroArrayHeader * t78; HeroArrayHeader * t79; HeroStr t80; HeroStr t81; HeroArrayHeader * t82; HeroArrayHeader * t83; goto bb0;
+#line 90 "examples/floats/main.hero"
 bb0:
-#line 91 "examples/floats/main.hero"
     t1 = h_main_a_nan();
 #line 91 "examples/floats/main.hero"
     h0_n = t1;
@@ -851,7 +625,7 @@ bb0:
     t73 = h5_own5;
 #line 97 "examples/floats/main.hero"
     h5_own5 = t5;
-#line 855 "main.c"
+#line 97 "examples/floats/main.hero"
     hero_str_decref(t73);
 #line 97 "examples/floats/main.hero"
     hero_print_str(t5);
@@ -864,7 +638,7 @@ bb0:
     t74 = h6_own6;
 #line 98 "examples/floats/main.hero"
     h6_own6 = t7;
-#line 868 "main.c"
+#line 98 "examples/floats/main.hero"
     hero_str_decref(t74);
 #line 98 "examples/floats/main.hero"
     hero_print_str(t7);
@@ -877,7 +651,7 @@ bb0:
     t75 = h7_own7;
 #line 99 "examples/floats/main.hero"
     h7_own7 = t9;
-#line 881 "main.c"
+#line 99 "examples/floats/main.hero"
     hero_str_decref(t75);
 #line 99 "examples/floats/main.hero"
     hero_print_str(t9);
@@ -890,7 +664,7 @@ bb0:
     t76 = h8_own8;
 #line 100 "examples/floats/main.hero"
     h8_own8 = t11;
-#line 894 "main.c"
+#line 100 "examples/floats/main.hero"
     hero_str_decref(t76);
 #line 100 "examples/floats/main.hero"
     hero_print_str(t11);
@@ -1050,17 +824,16 @@ bb0:
     t77 = h9_own9;
 #line 123 "examples/floats/main.hero"
     h9_own9 = t60;
-#line 1054 "main.c"
+#line 123 "examples/floats/main.hero"
     hero_array_decref(t77);
 #line 123 "examples/floats/main.hero"
     t78 = h3_readings;
-#line 1058 "main.c"
+#line 123 "examples/floats/main.hero"
     hero_array_incref(t60);
 #line 123 "examples/floats/main.hero"
     h3_readings = t60;
-#line 1062 "main.c"
+#line 123 "examples/floats/main.hero"
     hero_array_decref(t78);
-#line 124 "examples/floats/main.hero"
     t61 = h3_readings;
 #line 124 "examples/floats/main.hero"
     t62 = h_main_usable(t61);
@@ -1068,7 +841,7 @@ bb0:
     t79 = h10_own10;
 #line 124 "examples/floats/main.hero"
     h10_own10 = t62;
-#line 1072 "main.c"
+#line 124 "examples/floats/main.hero"
     hero_array_decref(t79);
 #line 124 "examples/floats/main.hero"
     t63 = ((void)(t62 == NULL ? ((void)hero_array_len(t62), hero_unreachable()) : (void)0), t62->len);
@@ -1085,7 +858,7 @@ bb0:
     t80 = h11_own11;
 #line 125 "examples/floats/main.hero"
     h11_own11 = t66;
-#line 1089 "main.c"
+#line 125 "examples/floats/main.hero"
     hero_str_decref(t80);
 #line 125 "examples/floats/main.hero"
     hero_print_str(t66);
@@ -1098,7 +871,7 @@ bb0:
     t81 = h12_own12;
 #line 126 "examples/floats/main.hero"
     h12_own12 = t68;
-#line 1102 "main.c"
+#line 126 "examples/floats/main.hero"
     hero_str_decref(t81);
 #line 126 "examples/floats/main.hero"
     hero_print_str(t68);
@@ -1109,17 +882,16 @@ bb0:
     t82 = h13_own13;
 #line 127 "examples/floats/main.hero"
     h13_own13 = t69;
-#line 1113 "main.c"
+#line 127 "examples/floats/main.hero"
     hero_array_decref(t82);
 #line 127 "examples/floats/main.hero"
     t83 = h4_empty;
-#line 1117 "main.c"
+#line 127 "examples/floats/main.hero"
     hero_array_incref(t69);
 #line 127 "examples/floats/main.hero"
     h4_empty = t69;
-#line 1121 "main.c"
+#line 127 "examples/floats/main.hero"
     hero_array_decref(t83);
-#line 128 "examples/floats/main.hero"
     t70 = h4_empty;
 #line 128 "examples/floats/main.hero"
     t71 = h_main_mean(t70);
@@ -1129,7 +901,7 @@ bb0:
     hero_print_bool(t72);
 #line 128 "examples/floats/main.hero"
     hero_print_end();
-#line 1133 "main.c"
+#line 905 "main.c"
     hero_array_release_at(&h3_readings);
     hero_array_release_at(&h4_empty);
     hero_str_release_at(&h5_own5);

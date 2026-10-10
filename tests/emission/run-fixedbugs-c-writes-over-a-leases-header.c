@@ -97,22 +97,10 @@ void h_fixedbugscwritesoveraleasesheader_main(void);
 
 #line 21 "tests/golden/run/fixedbugs-c-writes-over-a-leases-header.hero"
 void h_fixedbugscwritesoveraleasesheader_main(void) {
-#line 101 "fixedbugscwritesoveraleasesheader.c"
-    HeroStr h0_word = {0};
-    const char * h1_x;
-    HeroStr h2_own2 = {0};
-    HeroStr t1;
-    uint64_t t2;
-    HeroStr t3;
-    HeroStr t4;
-    const char * t5;
-    const char * t6;
-    HeroStr t7;
-    HeroStr t8;
-    HeroStr t9;
-    goto bb0;
+#line 21 "tests/golden/run/fixedbugs-c-writes-over-a-leases-header.hero"
+    HeroStr h0_word = {0}; const char * h1_x; HeroStr h2_own2 = {0}; HeroStr t1; uint64_t t2; HeroStr t3; HeroStr t4; const char * t5; const char * t6; HeroStr t7; HeroStr t8; HeroStr t9; goto bb0;
+#line 21 "tests/golden/run/fixedbugs-c-writes-over-a-leases-header.hero"
 bb0:
-#line 22 "tests/golden/run/fixedbugs-c-writes-over-a-leases-header.hero"
     t1 = HERO_STR_LIT(hero_str_3205);
 #line 22 "tests/golden/run/fixedbugs-c-writes-over-a-leases-header.hero"
     t2 = UINT64_C(4);
@@ -122,17 +110,16 @@ bb0:
     t8 = h2_own2;
 #line 22 "tests/golden/run/fixedbugs-c-writes-over-a-leases-header.hero"
     h2_own2 = t3;
-#line 126 "fixedbugscwritesoveraleasesheader.c"
+#line 22 "tests/golden/run/fixedbugs-c-writes-over-a-leases-header.hero"
     hero_str_decref(t8);
 #line 22 "tests/golden/run/fixedbugs-c-writes-over-a-leases-header.hero"
     t9 = h0_word;
-#line 130 "fixedbugscwritesoveraleasesheader.c"
+#line 22 "tests/golden/run/fixedbugs-c-writes-over-a-leases-header.hero"
     hero_str_incref(t3);
 #line 22 "tests/golden/run/fixedbugs-c-writes-over-a-leases-header.hero"
     h0_word = t3;
-#line 134 "fixedbugscwritesoveraleasesheader.c"
+#line 22 "tests/golden/run/fixedbugs-c-writes-over-a-leases-header.hero"
     hero_str_decref(t9);
-#line 23 "tests/golden/run/fixedbugs-c-writes-over-a-leases-header.hero"
     t4 = h0_word;
 #line 23 "tests/golden/run/fixedbugs-c-writes-over-a-leases-header.hero"
     t5 = hero_str_held(t4);
@@ -147,7 +134,7 @@ bb0:
     hero_print_str(t7);
 #line 26 "tests/golden/run/fixedbugs-c-writes-over-a-leases-header.hero"
     hero_print_end();
-#line 151 "fixedbugscwritesoveraleasesheader.c"
+#line 138 "fixedbugscwritesoveraleasesheader.c"
     hero_str_release_at(&h0_word);
     hero_str_release_at(&h2_own2);
     return;

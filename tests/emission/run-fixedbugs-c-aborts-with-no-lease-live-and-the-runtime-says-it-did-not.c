@@ -96,12 +96,10 @@ void h_fixedbugscabortswithnoleaseliveandtheruntimesaysitdidnot_main(void);
 
 #line 15 "tests/golden/run/fixedbugs-c-aborts-with-no-lease-live-and-the-runtime-says-it-did-not.hero"
 void h_fixedbugscabortswithnoleaseliveandtheruntimesaysitdidnot_main(void) {
-#line 100 "fixedbugscabortswithnoleaseliveandtheruntimesaysitdidnot.c"
-    HeroStr t1;
-    HeroStr t2;
-    goto bb0;
+#line 15 "tests/golden/run/fixedbugs-c-aborts-with-no-lease-live-and-the-runtime-says-it-did-not.hero"
+    HeroStr t1; HeroStr t2; goto bb0;
+#line 15 "tests/golden/run/fixedbugs-c-aborts-with-no-lease-live-and-the-runtime-says-it-did-not.hero"
 bb0:
-#line 16 "tests/golden/run/fixedbugs-c-aborts-with-no-lease-live-and-the-runtime-says-it-did-not.hero"
     t1 = HERO_STR_LIT(hero_str_43560e4d);
 #line 16 "tests/golden/run/fixedbugs-c-aborts-with-no-lease-live-and-the-runtime-says-it-did-not.hero"
     hero_print_str(t1);
@@ -115,7 +113,7 @@ bb0:
     hero_print_end();
 #line 18 "tests/golden/run/fixedbugs-c-aborts-with-no-lease-live-and-the-runtime-says-it-did-not.hero"
     return;
-#line 119 "fixedbugscabortswithnoleaseliveandtheruntimesaysitdidnot.c"
+#line 117 "fixedbugscabortswithnoleaseliveandtheruntimesaysitdidnot.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

@@ -113,10 +113,9 @@ void h_ffirestzeroarecordoflongarrays_main(void);
 
 #line 19 "tests/golden/run/ffi-rest-zero-a-record-of-long-arrays.hero"
 struct big h_ffirestzeroarecordoflongarrays_one_named(void) {
-#line 117 "ffirestzeroarecordoflongarrays.c"
-    int32_t t1;
-    struct big t2;
-    goto bb0;
+#line 19 "tests/golden/run/ffi-rest-zero-a-record-of-long-arrays.hero"
+    int32_t t1; struct big t2; goto bb0;
+#line 19 "tests/golden/run/ffi-rest-zero-a-record-of-long-arrays.hero"
 bb0:
 #line 21 "tests/golden/run/ffi-rest-zero-a-record-of-long-arrays.hero"
     t1 = INT64_C(7);
@@ -128,44 +127,33 @@ bb0:
     t2.n = t1;
 #line 20 "tests/golden/run/ffi-rest-zero-a-record-of-long-arrays.hero"
     return t2;
-#line 132 "ffirestzeroarecordoflongarrays.c"
+#line 131 "ffirestzeroarecordoflongarrays.c"
 }
 
 #line 26 "tests/golden/run/ffi-rest-zero-a-record-of-long-arrays.hero"
 struct big h_ffirestzeroarecordoflongarrays_none_named(void) {
-#line 137 "ffirestzeroarecordoflongarrays.c"
-    struct big t1;
-    goto bb0;
+#line 26 "tests/golden/run/ffi-rest-zero-a-record-of-long-arrays.hero"
+    struct big t1; goto bb0;
+#line 26 "tests/golden/run/ffi-rest-zero-a-record-of-long-arrays.hero"
 bb0:
-#line 27 "tests/golden/run/ffi-rest-zero-a-record-of-long-arrays.hero"
     t1 = (struct big){0};
 #line 27 "tests/golden/run/ffi-rest-zero-a-record-of-long-arrays.hero"
     __builtin_memset(&t1, 0, sizeof t1);
 #line 27 "tests/golden/run/ffi-rest-zero-a-record-of-long-arrays.hero"
     return t1;
-#line 147 "ffirestzeroarecordoflongarrays.c"
+#line 145 "ffirestzeroarecordoflongarrays.c"
 }
 
 #line 29 "tests/golden/run/ffi-rest-zero-a-record-of-long-arrays.hero"
 void h_ffirestzeroarecordoflongarrays_main(void) {
-#line 152 "ffirestzeroarecordoflongarrays.c"
-    struct big *const hero_lend_h0_a = (struct big *)hero_lend_local(sizeof(struct big), "ffirestzeroarecordoflongarrays.main", "a");
+#line 29 "tests/golden/run/ffi-rest-zero-a-record-of-long-arrays.hero"
 #define h0_a (*hero_lend_h0_a)
-    struct big *const hero_lend_h1_b = (struct big *)hero_lend_local(sizeof(struct big), "ffirestzeroarecordoflongarrays.main", "b");
+#line 29 "tests/golden/run/ffi-rest-zero-a-record-of-long-arrays.hero"
 #define h1_b (*hero_lend_h1_b)
-    struct big t1;
-    struct big t2;
-    int32_t t3;
-    HeroStr t4;
-    int64_t t5;
-    struct big t6;
-    struct big t7;
-    int32_t t8;
-    HeroStr t9;
-    int64_t t10;
-    goto bb0;
+#line 29 "tests/golden/run/ffi-rest-zero-a-record-of-long-arrays.hero"
+    struct big *const hero_lend_h0_a = (struct big *)hero_lend_local(sizeof(struct big), "ffirestzeroarecordoflongarrays.main", "a"); struct big *const hero_lend_h1_b = (struct big *)hero_lend_local(sizeof(struct big), "ffirestzeroarecordoflongarrays.main", "b"); struct big t1; struct big t2; int32_t t3; HeroStr t4; int64_t t5; struct big t6; struct big t7; int32_t t8; HeroStr t9; int64_t t10; goto bb0;
+#line 29 "tests/golden/run/ffi-rest-zero-a-record-of-long-arrays.hero"
 bb0:
-#line 30 "tests/golden/run/ffi-rest-zero-a-record-of-long-arrays.hero"
     (void)dirty();
     t1 = h_ffirestzeroarecordoflongarrays_one_named();
 #line 31 "tests/golden/run/ffi-rest-zero-a-record-of-long-arrays.hero"
@@ -214,7 +202,7 @@ bb0:
     hero_lend_local_give(hero_lend_h0_a);
 #line 35 "tests/golden/run/ffi-rest-zero-a-record-of-long-arrays.hero"
     return;
-#line 218 "ffirestzeroarecordoflongarrays.c"
+#line 206 "ffirestzeroarecordoflongarrays.c"
 }
 #undef h0_a
 #undef h1_b

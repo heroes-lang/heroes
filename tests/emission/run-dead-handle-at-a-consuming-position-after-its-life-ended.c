@@ -104,23 +104,10 @@ void h_deadhandleataconsumingpositionafteritslifeended_main(void);
 
 #line 19 "tests/golden/run/dead-handle-at-a-consuming-position-after-its-life-ended.hero"
 void h_deadhandleataconsumingpositionafteritslifeended_main(void) {
-#line 108 "deadhandleataconsumingpositionafteritslifeended.c"
-    Obj * h0_a;
-    Obj * h1_b;
-    Obj * t1;
-    Obj * t2;
-    int64_t t3;
-    int64_t t4;
-    bool t5;
-    Obj * t6;
-    Obj * t7;
-    HeroStr t8;
-    const char * t9;
-    Obj * t10;
-    Obj * t12;
-    goto bb0;
+#line 19 "tests/golden/run/dead-handle-at-a-consuming-position-after-its-life-ended.hero"
+    Obj * h0_a; Obj * h1_b; Obj * t1; Obj * t2; int64_t t3; int64_t t4; bool t5; Obj * t6; Obj * t7; HeroStr t8; const char * t9; Obj * t10; Obj * t12; goto bb0;
+#line 19 "tests/golden/run/dead-handle-at-a-consuming-position-after-its-life-ended.hero"
 bb0:
-#line 20 "tests/golden/run/dead-handle-at-a-consuming-position-after-its-life-ended.hero"
     t1 = obj_new();
 #line 20 "tests/golden/run/dead-handle-at-a-consuming-position-after-its-life-ended.hero"
     hero_handle_acquired(t1, "obj_delete");
@@ -200,7 +187,7 @@ bb2:
 bb3:
 #line 24 "tests/golden/run/dead-handle-at-a-consuming-position-after-its-life-ended.hero"
     goto bb1;
-#line 204 "deadhandleataconsumingpositionafteritslifeended.c"
+#line 191 "deadhandleataconsumingpositionafteritslifeended.c"
 }
 HERO_TU_LOCAL bool h_deadhandleataconsumingpositionafteritslifeended_Json_eq(Obj * const *a, Obj * const *b) {
     return hero_handle_eq(*a, *b);

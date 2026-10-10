@@ -43,3 +43,8 @@ function main()
     print(pick(x: 1, o: .plus))  #~ cannot_infer
     print(rows(x: 1, ys: [], m: {"a": 1}))  #~ cannot_infer
     print(rows(x: 1, ys: [2], m: {}))  #~ cannot_infer
+
+# Corrected 2026-10-09, defect 552: a form inside an argument no longer keeps
+# its own message; it is told by the same rule, naming what it gives its type
+# to, and `fixedbugs-552-a-form-inside-a-generic-function-s-argument-names-it`
+# pins it.

@@ -102,23 +102,10 @@ void h_fixedbugs185afloatarrayfieldbeforeablanklinekeepsitsline_main(void);
 
 #line 12 "tests/golden/run/fixedbugs-185-a-float-array-field-before-a-blank-line-keeps-its-line.hero"
 void h_fixedbugs185afloatarrayfieldbeforeablanklinekeepsitsline_main(void) {
-#line 106 "fixedbugs185afloatarrayfieldbeforeablanklinekeepsitsline.c"
-    Pair h0_p;
-    float t1;
-    float t2;
-    Pair t4;
-    Pair t5;
-    int64_t t7;
-    float t8;
-    Pair t9;
-    int64_t t11;
-    float t12;
-    float t13;
-    Pair t14;
-    float t15;
-    goto bb0;
+#line 12 "tests/golden/run/fixedbugs-185-a-float-array-field-before-a-blank-line-keeps-its-line.hero"
+    Pair h0_p; float t1; float t2; Pair t4; Pair t5; int64_t t7; float t8; Pair t9; int64_t t11; float t12; float t13; Pair t14; float t15; goto bb0;
+#line 12 "tests/golden/run/fixedbugs-185-a-float-array-field-before-a-blank-line-keeps-its-line.hero"
 bb0:
-#line 13 "tests/golden/run/fixedbugs-185-a-float-array-field-before-a-blank-line-keeps-its-line.hero"
     t1 = 0x1.8p+0;
 #line 13 "tests/golden/run/fixedbugs-185-a-float-array-field-before-a-blank-line-keeps-its-line.hero"
     t2 = 0x1.2p+1;
@@ -152,7 +139,7 @@ bb0:
     hero_print_end();
 #line 15 "tests/golden/run/fixedbugs-185-a-float-array-field-before-a-blank-line-keeps-its-line.hero"
     return;
-#line 156 "fixedbugs185afloatarrayfieldbeforeablanklinekeepsitsline.c"
+#line 143 "fixedbugs185afloatarrayfieldbeforeablanklinekeepsitsline.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs185afloatarrayfieldbeforeablanklinekeepsitsline_Pair_eq(const Pair *a, const Pair *b) {
     if (!((a->weights[0] == b->weights[0] && a->weights[1] == b->weights[1]))) return false;

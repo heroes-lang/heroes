@@ -117,22 +117,10 @@ HeroArrayHeader * h_library_args(void);
 
 #line 22 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
 void h_fixedbugsafixedarrayelementiswrittenatacomputedindex_bump(struct quad *ph0_q, int64_t h1_at) {
-#line 121 "fixedbugsafixedarrayelementiswrittenatacomputedindex.c"
-    int64_t t1;
-    struct quad t2;
-    int64_t t4;
-    int32_t t5;
-    int32_t t6;
-    int32_t t7;
-    int64_t t8;
-    struct quad t9;
-    int64_t t11;
-    int32_t t12;
-    int32_t t13;
-    int32_t t14;
-    goto bb0;
+#line 22 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
+    int64_t t1; struct quad t2; int64_t t4; int32_t t5; int32_t t6; int32_t t7; int64_t t8; struct quad t9; int64_t t11; int32_t t12; int32_t t13; int32_t t14; goto bb0;
+#line 22 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
 bb0:
-#line 23 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
     t1 = h1_at;
 #line 23 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
     t2 = (*ph0_q);
@@ -161,87 +149,15 @@ bb0:
     (*ph0_q).a[((uint64_t)(t8) >= UINT64_C(4) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t8))] = t14;
 #line 24 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
     return;
-#line 165 "fixedbugsafixedarrayelementiswrittenatacomputedindex.c"
+#line 153 "fixedbugsafixedarrayelementiswrittenatacomputedindex.c"
 }
 
 #line 26 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
 void h_fixedbugsafixedarrayelementiswrittenatacomputedindex_main(void) {
-#line 170 "fixedbugsafixedarrayelementiswrittenatacomputedindex.c"
-    struct quad h0_q;
-    HeroArrayHeader * h1_xs0 = {0};
-    int64_t h2_i0;
-    int64_t h3_i;
-    int64_t h4_last;
-    HeroArrayHeader * h5_own5 = {0};
-    HeroArrayHeader * h6_own6 = {0};
-    int32_t t1;
-    int32_t t2;
-    int32_t t3;
-    int32_t t4;
-    int64_t t6;
-    struct quad t7;
-    int64_t t8;
-    int64_t t9;
-    HeroArrayHeader * t10;
-    int64_t t11;
-    int64_t t12;
-    HeroArrayHeader * t13;
-    int64_t t14;
-    bool t15;
-    HeroArrayHeader * t16;
-    int64_t t17;
-    int64_t t18;
-    int64_t t19;
-    struct quad t20;
-    int64_t t22;
-    int32_t t23;
-    int32_t t24;
-    int32_t t25;
-    int64_t t26;
-    int64_t t27;
-    int64_t t28;
-    struct quad t29;
-    int64_t t31;
-    int32_t t32;
-    HeroStr t33;
-    struct quad t34;
-    int64_t t36;
-    int32_t t37;
-    HeroStr t38;
-    struct quad t39;
-    int64_t t41;
-    int32_t t42;
-    HeroStr t43;
-    struct quad t44;
-    int64_t t46;
-    int32_t t47;
-    HeroStr t48;
-    struct quad t49;
-    int64_t t50;
-    HeroArrayHeader * t51;
-    int64_t t52;
-    int64_t t53;
-    int64_t t54;
-    int64_t t55;
-    struct quad t56;
-    int64_t t58;
-    int32_t t59;
-    HeroStr t60;
-    struct quad t61;
-    int64_t t63;
-    int32_t t64;
-    HeroStr t65;
-    struct quad t66;
-    int64_t t67;
-    HeroStr t68;
-    struct quad t69;
-    int64_t t70;
-    HeroArrayHeader * t71;
-    HeroArrayHeader * t72;
-    HeroArrayHeader * t73;
-    goto bb0;
+#line 26 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
+    struct quad h0_q; HeroArrayHeader * h1_xs0 = {0}; int64_t h2_i0; int64_t h3_i; int64_t h4_last; HeroArrayHeader * h5_own5 = {0}; HeroArrayHeader * h6_own6 = {0}; int32_t t1; int32_t t2; int32_t t3; int32_t t4; int64_t t6; struct quad t7; int64_t t8; int64_t t9; HeroArrayHeader * t10; int64_t t11; int64_t t12; HeroArrayHeader * t13; int64_t t14; bool t15; HeroArrayHeader * t16; int64_t t17; int64_t t18; int64_t t19; struct quad t20; int64_t t22; int32_t t23; int32_t t24; int32_t t25; int64_t t26; int64_t t27; int64_t t28; struct quad t29; int64_t t31; int32_t t32; HeroStr t33; struct quad t34; int64_t t36; int32_t t37; HeroStr t38; struct quad t39; int64_t t41; int32_t t42; HeroStr t43; struct quad t44; int64_t t46; int32_t t47; HeroStr t48; struct quad t49; int64_t t50; HeroArrayHeader * t51; int64_t t52; int64_t t53; int64_t t54; int64_t t55; struct quad t56; int64_t t58; int32_t t59; HeroStr t60; struct quad t61; int64_t t63; int32_t t64; HeroStr t65; struct quad t66; int64_t t67; HeroStr t68; struct quad t69; int64_t t70; HeroArrayHeader * t71; HeroArrayHeader * t72; HeroArrayHeader * t73; goto bb0;
+#line 26 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
 bb0:
-#line 27 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
     t1 = INT64_C(1);
 #line 27 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
     t2 = INT64_C(2);
@@ -265,15 +181,15 @@ bb0:
     t71 = h5_own5;
 #line 29 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
     h5_own5 = t10;
-#line 269 "fixedbugsafixedarrayelementiswrittenatacomputedindex.c"
+#line 29 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
     hero_array_decref(t71);
 #line 29 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
     t72 = h1_xs0;
-#line 273 "fixedbugsafixedarrayelementiswrittenatacomputedindex.c"
+#line 29 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
     hero_array_incref(t10);
 #line 29 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
     h1_xs0 = t10;
-#line 277 "fixedbugsafixedarrayelementiswrittenatacomputedindex.c"
+#line 29 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
     hero_array_decref(t72);
 #line 29 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
     t11 = INT64_C(0);
@@ -393,7 +309,7 @@ bb4:
     t73 = h6_own6;
 #line 33 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
     h6_own6 = t51;
-#line 397 "fixedbugsafixedarrayelementiswrittenatacomputedindex.c"
+#line 33 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
     hero_array_decref(t73);
 #line 33 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
     t52 = ((void)(t51 == NULL ? ((void)hero_array_len(t51), hero_unreachable()) : (void)0), t51->len);
@@ -447,7 +363,7 @@ bb4:
     hero_print_int(t70);
 #line 35 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-a-computed-index.hero"
     hero_print_end();
-#line 451 "fixedbugsafixedarrayelementiswrittenatacomputedindex.c"
+#line 367 "fixedbugsafixedarrayelementiswrittenatacomputedindex.c"
     hero_array_release_at(&h1_xs0);
     hero_array_release_at(&h5_own5);
     hero_array_release_at(&h6_own6);
@@ -456,41 +372,25 @@ bb4:
 
 #line 26 "<heroes library>"
 HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to) {
-#line 460 "fixedbugsafixedarrayelementiswrittenatacomputedindex.c"
-    HeroArrayHeader * h2_out = {0};
-    int64_t h3_i;
-    HeroArrayHeader * h4_own4 = {0};
-    HeroArrayHeader * t1;
-    int64_t t2;
-    int64_t t3;
-    int64_t t4;
-    bool t5;
-    int64_t t7;
-    int64_t t9;
-    int64_t t10;
-    int64_t t11;
-    HeroArrayHeader * t12;
-    HeroArrayHeader * t13;
-    HeroArrayHeader * t14;
-    goto bb0;
+#line 26 "<heroes library>"
+    HeroArrayHeader * h2_out = {0}; int64_t h3_i; HeroArrayHeader * h4_own4 = {0}; HeroArrayHeader * t1; int64_t t2; int64_t t3; int64_t t4; bool t5; int64_t t7; int64_t t9; int64_t t10; int64_t t11; HeroArrayHeader * t12; HeroArrayHeader * t13; HeroArrayHeader * t14; goto bb0;
+#line 26 "<heroes library>"
 bb0:
-#line 27 "<heroes library>"
     t1 = hero_array_new(&hero_desc_int, 1);
 #line 27 "<heroes library>"
     t13 = h4_own4;
 #line 27 "<heroes library>"
     h4_own4 = t1;
-#line 484 "fixedbugsafixedarrayelementiswrittenatacomputedindex.c"
+#line 27 "<heroes library>"
     hero_array_decref(t13);
 #line 27 "<heroes library>"
     t14 = h2_out;
-#line 488 "fixedbugsafixedarrayelementiswrittenatacomputedindex.c"
+#line 27 "<heroes library>"
     hero_array_incref(t1);
 #line 27 "<heroes library>"
     h2_out = t1;
-#line 492 "fixedbugsafixedarrayelementiswrittenatacomputedindex.c"
+#line 27 "<heroes library>"
     hero_array_decref(t14);
-#line 28 "<heroes library>"
     t2 = h0_from;
 #line 28 "<heroes library>"
     h3_i = t2;
@@ -522,7 +422,7 @@ bb2:
 #line 31 "<heroes library>"
 bb3:
     t12 = h2_out;
-#line 526 "fixedbugsafixedarrayelementiswrittenatacomputedindex.c"
+#line 426 "fixedbugsafixedarrayelementiswrittenatacomputedindex.c"
     hero_array_incref(t12);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h4_own4);
@@ -531,44 +431,25 @@ bb3:
 
 #line 196 "<heroes library>"
 HeroArrayHeader * h_library_args(void) {
-#line 535 "fixedbugsafixedarrayelementiswrittenatacomputedindex.c"
-    HeroArrayHeader * h0_out = {0};
-    int64_t h1_i;
-    HeroArrayHeader * h2_own2 = {0};
-    HeroStr h3_own3 = {0};
-    HeroArrayHeader * t1;
-    int64_t t2;
-    int64_t t3;
-    int64_t t4;
-    bool t5;
-    int64_t t7;
-    HeroStr t8;
-    int64_t t10;
-    int64_t t11;
-    int64_t t12;
-    HeroArrayHeader * t13;
-    HeroArrayHeader * t14;
-    HeroArrayHeader * t15;
-    HeroStr t16;
-    goto bb0;
+#line 196 "<heroes library>"
+    HeroArrayHeader * h0_out = {0}; int64_t h1_i; HeroArrayHeader * h2_own2 = {0}; HeroStr h3_own3 = {0}; HeroArrayHeader * t1; int64_t t2; int64_t t3; int64_t t4; bool t5; int64_t t7; HeroStr t8; int64_t t10; int64_t t11; int64_t t12; HeroArrayHeader * t13; HeroArrayHeader * t14; HeroArrayHeader * t15; HeroStr t16; goto bb0;
+#line 196 "<heroes library>"
 bb0:
-#line 197 "<heroes library>"
     t1 = hero_array_new(&hero_desc_str, 1);
 #line 197 "<heroes library>"
     t14 = h2_own2;
 #line 197 "<heroes library>"
     h2_own2 = t1;
-#line 562 "fixedbugsafixedarrayelementiswrittenatacomputedindex.c"
+#line 197 "<heroes library>"
     hero_array_decref(t14);
 #line 197 "<heroes library>"
     t15 = h0_out;
-#line 566 "fixedbugsafixedarrayelementiswrittenatacomputedindex.c"
+#line 197 "<heroes library>"
     hero_array_incref(t1);
 #line 197 "<heroes library>"
     h0_out = t1;
-#line 570 "fixedbugsafixedarrayelementiswrittenatacomputedindex.c"
+#line 197 "<heroes library>"
     hero_array_decref(t15);
-#line 198 "<heroes library>"
     t2 = INT64_C(0);
 #line 198 "<heroes library>"
     h1_i = t2;
@@ -592,7 +473,7 @@ bb2:
     t16 = h3_own3;
 #line 200 "<heroes library>"
     h3_own3 = t8;
-#line 596 "fixedbugsafixedarrayelementiswrittenatacomputedindex.c"
+#line 200 "<heroes library>"
     hero_str_decref(t16);
 #line 200 "<heroes library>"
     hero_array_push_owned(&h0_out, &t8);
@@ -608,7 +489,7 @@ bb2:
 #line 201 "<heroes library>"
 bb3:
     t13 = h0_out;
-#line 612 "fixedbugsafixedarrayelementiswrittenatacomputedindex.c"
+#line 493 "fixedbugsafixedarrayelementiswrittenatacomputedindex.c"
     hero_array_incref(t13);
     hero_array_release_at(&h0_out);
     hero_array_release_at(&h2_own2);

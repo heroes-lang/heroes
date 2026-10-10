@@ -102,19 +102,10 @@ void h_aborthandlegivenbacktwice_main(void);
 
 #line 46 "tests/golden/run/abort-handle-given-back-twice.hero"
 void h_aborthandlegivenbacktwice_main(void) {
-#line 106 "aborthandlegivenbacktwice.c"
-    Slot * h0_a;
-    Slot * h1_twice;
-    int64_t t1;
-    Slot * t2;
-    Slot * t3;
-    int64_t t4;
-    Slot * t5;
-    Slot * t6;
-    Slot * t7;
-    goto bb0;
+#line 46 "tests/golden/run/abort-handle-given-back-twice.hero"
+    Slot * h0_a; Slot * h1_twice; int64_t t1; Slot * t2; Slot * t3; int64_t t4; Slot * t5; Slot * t6; Slot * t7; goto bb0;
+#line 46 "tests/golden/run/abort-handle-given-back-twice.hero"
 bb0:
-#line 47 "tests/golden/run/abort-handle-given-back-twice.hero"
     t1 = INT64_C(7);
 #line 47 "tests/golden/run/abort-handle-given-back-twice.hero"
     t2 = slot_open(t1);
@@ -162,7 +153,7 @@ bb0:
     }
 #line 51 "tests/golden/run/abort-handle-given-back-twice.hero"
     return;
-#line 166 "aborthandlegivenbacktwice.c"
+#line 157 "aborthandlegivenbacktwice.c"
 }
 HERO_TU_LOCAL bool h_aborthandlegivenbacktwice_Slot_eq(Slot * const *a, Slot * const *b) {
     return hero_handle_eq(*a, *b);

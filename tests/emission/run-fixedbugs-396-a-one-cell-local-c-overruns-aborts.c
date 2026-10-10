@@ -98,17 +98,12 @@ void h_fixedbugs396aonecelllocalcoverrunsaborts_main(void);
 
 #line 9 "tests/golden/run/fixedbugs-396-a-one-cell-local-c-overruns-aborts.hero"
 void h_fixedbugs396aonecelllocalcoverrunsaborts_main(void) {
-#line 102 "fixedbugs396aonecelllocalcoverrunsaborts.c"
-    uint8_t *const hero_lend_h0_m = (uint8_t *)hero_lend_local(sizeof(uint8_t), "fixedbugs396aonecelllocalcoverrunsaborts.main", "m");
+#line 9 "tests/golden/run/fixedbugs-396-a-one-cell-local-c-overruns-aborts.hero"
 #define h0_m (*hero_lend_h0_m)
-    uint8_t t1;
-    HeroStr t2;
-    int32_t t3;
-    HeroStr t4;
-    uint8_t t5;
-    goto bb0;
+#line 9 "tests/golden/run/fixedbugs-396-a-one-cell-local-c-overruns-aborts.hero"
+    uint8_t *const hero_lend_h0_m = (uint8_t *)hero_lend_local(sizeof(uint8_t), "fixedbugs396aonecelllocalcoverrunsaborts.main", "m"); uint8_t t1; HeroStr t2; int32_t t3; HeroStr t4; uint8_t t5; goto bb0;
+#line 9 "tests/golden/run/fixedbugs-396-a-one-cell-local-c-overruns-aborts.hero"
 bb0:
-#line 10 "tests/golden/run/fixedbugs-396-a-one-cell-local-c-overruns-aborts.hero"
     t1 = UINT64_C(0);
 #line 10 "tests/golden/run/fixedbugs-396-a-one-cell-local-c-overruns-aborts.hero"
     h0_m = t1;
@@ -137,7 +132,7 @@ bb0:
     hero_lend_local_give(hero_lend_h0_m);
 #line 13 "tests/golden/run/fixedbugs-396-a-one-cell-local-c-overruns-aborts.hero"
     return;
-#line 141 "fixedbugs396aonecelllocalcoverrunsaborts.c"
+#line 136 "fixedbugs396aonecelllocalcoverrunsaborts.c"
 }
 #undef h0_m
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {

@@ -145,33 +145,10 @@ struct line h_fixedbugs094anestedbracelistbuildsarecordofrecords_LINE_FLAT(void)
 
 #line 16 "tests/golden/run/fixedbugs-094-a-nested-brace-list-builds-a-record-of-records.hero"
 void h_fixedbugs094anestedbracelistbuildsarecordofrecords_main(void) {
-#line 149 "fixedbugs094anestedbracelistbuildsarecordofrecords.c"
-    struct line h0_l;
-    struct line h1_f;
-    struct line t1;
-    struct line t2;
-    struct pt t3;
-    int32_t t4;
-    struct line t5;
-    struct pt t6;
-    int32_t t7;
-    struct line t8;
-    struct pt t9;
-    int32_t t10;
-    struct line t11;
-    struct pt t12;
-    int32_t t13;
-    struct line t14;
-    struct line t15;
-    struct pt t16;
-    int32_t t17;
-    struct line t18;
-    struct pt t19;
-    int32_t t20;
-    int32_t t21;
-    goto bb0;
+#line 16 "tests/golden/run/fixedbugs-094-a-nested-brace-list-builds-a-record-of-records.hero"
+    struct line h0_l; struct line h1_f; struct line t1; struct line t2; struct pt t3; int32_t t4; struct line t5; struct pt t6; int32_t t7; struct line t8; struct pt t9; int32_t t10; struct line t11; struct pt t12; int32_t t13; struct line t14; struct line t15; struct pt t16; int32_t t17; struct line t18; struct pt t19; int32_t t20; int32_t t21; goto bb0;
+#line 16 "tests/golden/run/fixedbugs-094-a-nested-brace-list-builds-a-record-of-records.hero"
 bb0:
-#line 17 "tests/golden/run/fixedbugs-094-a-nested-brace-list-builds-a-record-of-records.hero"
     t1 = h_fixedbugs094anestedbracelistbuildsarecordofrecords_LINE_INIT();
 #line 17 "tests/golden/run/fixedbugs-094-a-nested-brace-list-builds-a-record-of-records.hero"
     h0_l = t1;
@@ -233,7 +210,7 @@ bb0:
     hero_print_end();
 #line 23 "tests/golden/run/fixedbugs-094-a-nested-brace-list-builds-a-record-of-records.hero"
     return;
-#line 237 "fixedbugs094anestedbracelistbuildsarecordofrecords.c"
+#line 214 "fixedbugs094anestedbracelistbuildsarecordofrecords.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs094anestedbracelistbuildsarecordofrecords_Pt_eq(const struct pt *a, const struct pt *b) {
     if (!(a->x == b->x)) return false;

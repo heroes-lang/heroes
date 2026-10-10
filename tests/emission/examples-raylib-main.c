@@ -155,68 +155,10 @@ void h_main_main(void);
 
 #line 103 "examples/raylib/main.hero"
 void h_main_main(void) {
-#line 159 "main.c"
-    Color h0_red;
-    Vector2 h1_mid;
-    AutomationEvent h2_event;
-    Rectangle h3_box;
-    uint32_t t1;
-    HeroStr t2;
-    int32_t t3;
-    int32_t t4;
-    int32_t t5;
-    uint8_t t6;
-    uint8_t t7;
-    uint8_t t8;
-    uint8_t t9;
-    Color t10;
-    Color t11;
-    int32_t t12;
-    Color t13;
-    float t14;
-    Color t15;
-    int32_t t16;
-    float t17;
-    float t18;
-    Vector2 t19;
-    float t20;
-    float t21;
-    Vector2 t22;
-    float t23;
-    Vector2 t24;
-    Vector2 t25;
-    float t26;
-    HeroStr t27;
-    Vector2 t28;
-    float t29;
-    uint32_t t30;
-    uint32_t t31;
-    int32_t t32;
-    int32_t t33;
-    int32_t t34;
-    int32_t t35;
-    AutomationEvent t37;
-    AutomationEvent t38;
-    int64_t t40;
-    int32_t t41;
-    float t42;
-    float t43;
-    float t44;
-    float t45;
-    Rectangle t46;
-    float t47;
-    float t48;
-    Vector2 t49;
-    Rectangle t50;
-    bool t51;
-    float t52;
-    float t53;
-    Vector2 t54;
-    Rectangle t55;
-    bool t56;
-    goto bb0;
+#line 103 "examples/raylib/main.hero"
+    Color h0_red; Vector2 h1_mid; AutomationEvent h2_event; Rectangle h3_box; uint32_t t1; HeroStr t2; int32_t t3; int32_t t4; int32_t t5; uint8_t t6; uint8_t t7; uint8_t t8; uint8_t t9; Color t10; Color t11; int32_t t12; Color t13; float t14; Color t15; int32_t t16; float t17; float t18; Vector2 t19; float t20; float t21; Vector2 t22; float t23; Vector2 t24; Vector2 t25; float t26; HeroStr t27; Vector2 t28; float t29; uint32_t t30; uint32_t t31; int32_t t32; int32_t t33; int32_t t34; int32_t t35; AutomationEvent t37; AutomationEvent t38; int64_t t40; int32_t t41; float t42; float t43; float t44; float t45; Rectangle t46; float t47; float t48; Vector2 t49; Rectangle t50; bool t51; float t52; float t53; Vector2 t54; Rectangle t55; bool t56; goto bb0;
+#line 103 "examples/raylib/main.hero"
 bb0:
-#line 104 "examples/raylib/main.hero"
     t1 = UINT64_C(7);
 #line 104 "examples/raylib/main.hero"
     (void)SetRandomSeed(t1);
@@ -362,7 +304,7 @@ bb0:
     hero_print_end();
 #line 125 "examples/raylib/main.hero"
     return;
-#line 366 "main.c"
+#line 308 "main.c"
 }
 HERO_TU_LOCAL bool h_main_Color_eq(const Color *a, const Color *b) {
     if (!(a->r == b->r)) return false;

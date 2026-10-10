@@ -99,12 +99,10 @@ void h_fixedbugs151memberswithnobytesleftout_main(void);
 
 #line 28 "tests/golden/run/fixedbugs-151-members-with-no-bytes-left-out.hero"
 void h_fixedbugs151memberswithnobytesleftout_main(void) {
-#line 103 "fixedbugs151memberswithnobytesleftout.c"
-    ZE t1;
-    int32_t t2;
-    goto bb0;
+#line 28 "tests/golden/run/fixedbugs-151-members-with-no-bytes-left-out.hero"
+    ZE t1; int32_t t2; goto bb0;
+#line 28 "tests/golden/run/fixedbugs-151-members-with-no-bytes-left-out.hero"
 bb0:
-#line 29 "tests/golden/run/fixedbugs-151-members-with-no-bytes-left-out.hero"
     t1 = make_ze();
 #line 29 "tests/golden/run/fixedbugs-151-members-with-no-bytes-left-out.hero"
     t2 = t1.x;
@@ -114,7 +112,7 @@ bb0:
     hero_print_end();
 #line 29 "tests/golden/run/fixedbugs-151-members-with-no-bytes-left-out.hero"
     return;
-#line 118 "fixedbugs151memberswithnobytesleftout.c"
+#line 116 "fixedbugs151memberswithnobytesleftout.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs151memberswithnobytesleftout_ZE_eq(const ZE *a, const ZE *b) {
     if (!(a->x == b->x)) return false;

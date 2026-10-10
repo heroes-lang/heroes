@@ -111,27 +111,10 @@ h_0opt_e201354 h_sugartry_step(h_sugartry_Reader *ph0_r, HeroArrayHeader * h1_xs
 
 #line 7 "tests/golden/ir/sugar-try.hero"
 h_0opt_e201354 h_sugartry_first_of(HeroArrayHeader * h0_xs) {
-#line 115 "sugartry.c"
-    h_0opt_e201354 h1_ret0 = {0};
-    h_0opt_e201354 h2_own2 = {0};
-    h_0opt_e201354 h3_own3 = {0};
-    HeroArrayHeader * t1;
-    int64_t t2;
-    int64_t t3;
-    bool t4;
-    HeroStr t5;
-    HeroStr t6;
-    h_0opt_e201354 t7;
-    HeroArrayHeader * t8;
-    int64_t t9;
-    int64_t t10;
-    h_0opt_e201354 t11;
-    h_0opt_e201354 t12;
-    h_0opt_e201354 t13;
-    h_0opt_e201354 t14;
-    goto bb0;
+#line 7 "tests/golden/ir/sugar-try.hero"
+    h_0opt_e201354 h1_ret0 = {0}; h_0opt_e201354 h2_own2 = {0}; h_0opt_e201354 h3_own3 = {0}; HeroArrayHeader * t1; int64_t t2; int64_t t3; bool t4; HeroStr t5; HeroStr t6; h_0opt_e201354 t7; HeroArrayHeader * t8; int64_t t9; int64_t t10; h_0opt_e201354 t11; h_0opt_e201354 t12; h_0opt_e201354 t13; h_0opt_e201354 t14; goto bb0;
+#line 7 "tests/golden/ir/sugar-try.hero"
 bb0:
-#line 8 "tests/golden/ir/sugar-try.hero"
     t1 = h0_xs;
 #line 8 "tests/golden/ir/sugar-try.hero"
     t2 = ((void)(t1 == NULL ? ((void)hero_array_len(t1), hero_unreachable()) : (void)0), t1->len);
@@ -155,7 +138,7 @@ bb1:
     t13 = h2_own2;
 #line 10 "tests/golden/ir/sugar-try.hero"
     h2_own2 = t11;
-#line 159 "sugartry.c"
+#line 10 "tests/golden/ir/sugar-try.hero"
     h_0opt_e201354_release(&t13);
 #line 10 "tests/golden/ir/sugar-try.hero"
     h1_ret0 = t11;
@@ -167,8 +150,9 @@ bb2:
     t5 = HERO_STR_LIT(hero_str_7ba188c6);
 #line 9 "tests/golden/ir/sugar-try.hero"
     t6 = HERO_STR_LIT(hero_str_6105f16d);
-#line 171 "sugartry.c"
+#line 9 "tests/golden/ir/sugar-try.hero"
     hero_str_incref(t5);
+#line 9 "tests/golden/ir/sugar-try.hero"
     hero_str_incref(t6);
 #line 9 "tests/golden/ir/sugar-try.hero"
     t7 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t5, .msg = t6}};
@@ -176,7 +160,7 @@ bb2:
     t14 = h3_own3;
 #line 9 "tests/golden/ir/sugar-try.hero"
     h3_own3 = t7;
-#line 180 "sugartry.c"
+#line 9 "tests/golden/ir/sugar-try.hero"
     h_0opt_e201354_release(&t14);
 #line 9 "tests/golden/ir/sugar-try.hero"
     h1_ret0 = t7;
@@ -188,7 +172,7 @@ bb3:
     goto bb1;
 #line 9 "tests/golden/ir/sugar-try.hero"
 bb4:
-#line 192 "sugartry.c"
+#line 176 "sugartry.c"
     t12 = h1_ret0;
     h_0opt_e201354_retain(&t12);
     h_0opt_e201354_release(hero_slot_escape(&h2_own2));
@@ -198,38 +182,10 @@ bb4:
 
 #line 12 "tests/golden/ir/sugar-try.hero"
 h_0opt_e201354 h_sugartry_step(h_sugartry_Reader *ph0_r, HeroArrayHeader * h1_xs) {
-#line 202 "sugartry.c"
-    h_0opt_e201354 h2_f0 = {0};
-    int64_t h3_v;
-    h_0opt_e201354 h4_ret0 = {0};
-    h_0opt_e201354 h5_own5 = {0};
-    h_0opt_e201354 h6_own6 = {0};
-    h_0opt_e201354 h7_own7 = {0};
-    HeroArrayHeader * t1;
-    h_0opt_e201354 t2;
-    h_0opt_e201354 t3;
-    int64_t t4;
-    int64_t t5;
-    bool t6;
-    h_0opt_e201354 t7;
-    HeroFailure t8;
-    h_0opt_e201354 t9;
-    h_0opt_e201354 t10;
-    int64_t t11;
-    h_sugartry_Reader t12;
-    int64_t t13;
-    int64_t t14;
-    int64_t t15;
-    int64_t t16;
-    h_0opt_e201354 t17;
-    h_0opt_e201354 t18;
-    h_0opt_e201354 t19;
-    h_0opt_e201354 t20;
-    h_0opt_e201354 t21;
-    h_0opt_e201354 t22;
-    goto bb0;
+#line 12 "tests/golden/ir/sugar-try.hero"
+    h_0opt_e201354 h2_f0 = {0}; int64_t h3_v; h_0opt_e201354 h4_ret0 = {0}; h_0opt_e201354 h5_own5 = {0}; h_0opt_e201354 h6_own6 = {0}; h_0opt_e201354 h7_own7 = {0}; HeroArrayHeader * t1; h_0opt_e201354 t2; h_0opt_e201354 t3; int64_t t4; int64_t t5; bool t6; h_0opt_e201354 t7; HeroFailure t8; h_0opt_e201354 t9; h_0opt_e201354 t10; int64_t t11; h_sugartry_Reader t12; int64_t t13; int64_t t14; int64_t t15; int64_t t16; h_0opt_e201354 t17; h_0opt_e201354 t18; h_0opt_e201354 t19; h_0opt_e201354 t20; h_0opt_e201354 t21; h_0opt_e201354 t22; goto bb0;
+#line 12 "tests/golden/ir/sugar-try.hero"
 bb0:
-#line 13 "tests/golden/ir/sugar-try.hero"
     t1 = h1_xs;
 #line 13 "tests/golden/ir/sugar-try.hero"
     t2 = h_sugartry_first_of(t1);
@@ -237,15 +193,15 @@ bb0:
     t19 = h5_own5;
 #line 13 "tests/golden/ir/sugar-try.hero"
     h5_own5 = t2;
-#line 241 "sugartry.c"
+#line 13 "tests/golden/ir/sugar-try.hero"
     h_0opt_e201354_release(&t19);
 #line 13 "tests/golden/ir/sugar-try.hero"
     t20 = h2_f0;
-#line 245 "sugartry.c"
+#line 13 "tests/golden/ir/sugar-try.hero"
     h_0opt_e201354_retain(&t2);
 #line 13 "tests/golden/ir/sugar-try.hero"
     h2_f0 = t2;
-#line 249 "sugartry.c"
+#line 13 "tests/golden/ir/sugar-try.hero"
     h_0opt_e201354_release(&t20);
 #line 13 "tests/golden/ir/sugar-try.hero"
     t3 = h2_f0;
@@ -281,7 +237,7 @@ bb1:
     t21 = h6_own6;
 #line 15 "tests/golden/ir/sugar-try.hero"
     h6_own6 = t17;
-#line 285 "sugartry.c"
+#line 15 "tests/golden/ir/sugar-try.hero"
     h_0opt_e201354_release(&t21);
 #line 15 "tests/golden/ir/sugar-try.hero"
     h4_ret0 = t17;
@@ -293,7 +249,7 @@ bb2:
     t7 = h2_f0;
 #line 13 "tests/golden/ir/sugar-try.hero"
     t8 = t7.as.err;
-#line 297 "sugartry.c"
+#line 13 "tests/golden/ir/sugar-try.hero"
     hero_failure_retain(&t8);
 #line 13 "tests/golden/ir/sugar-try.hero"
     t9 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t8};
@@ -301,7 +257,7 @@ bb2:
     t22 = h7_own7;
 #line 13 "tests/golden/ir/sugar-try.hero"
     h7_own7 = t9;
-#line 305 "sugartry.c"
+#line 13 "tests/golden/ir/sugar-try.hero"
     h_0opt_e201354_release(&t22);
 #line 13 "tests/golden/ir/sugar-try.hero"
     h4_ret0 = t9;
@@ -309,7 +265,7 @@ bb2:
     goto bb3;
 #line 13 "tests/golden/ir/sugar-try.hero"
 bb3:
-#line 313 "sugartry.c"
+#line 269 "sugartry.c"
     t18 = h4_ret0;
     h_0opt_e201354_retain(&t18);
     h_0opt_e201354_release(hero_slot_escape(&h2_f0));

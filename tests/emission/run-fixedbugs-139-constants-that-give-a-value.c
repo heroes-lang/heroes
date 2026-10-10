@@ -92,19 +92,10 @@ void h_fixedbugs139constantsthatgiveavalue_main(void);
 
 #line 7 "tests/golden/run/fixedbugs-139-constants-that-give-a-value.hero"
 int64_t h_fixedbugs139constantsthatgiveavalue_BY_MATCH(void) {
-#line 96 "fixedbugs139constantsthatgiveavalue.c"
-    int64_t h0_s0;
-    int64_t h1_r0;
-    int64_t t1;
-    int64_t t2;
-    int64_t t3;
-    bool t4;
-    int64_t t5;
-    int64_t t6;
-    int64_t t7;
-    goto bb0;
+#line 7 "tests/golden/run/fixedbugs-139-constants-that-give-a-value.hero"
+    int64_t h0_s0; int64_t h1_r0; int64_t t1; int64_t t2; int64_t t3; bool t4; int64_t t5; int64_t t6; int64_t t7; goto bb0;
+#line 7 "tests/golden/run/fixedbugs-139-constants-that-give-a-value.hero"
 bb0:
-#line 8 "tests/golden/run/fixedbugs-139-constants-that-give-a-value.hero"
     t1 = INT64_C(1);
 #line 8 "tests/golden/run/fixedbugs-139-constants-that-give-a-value.hero"
     h0_s0 = t1;
@@ -140,20 +131,15 @@ bb4:
     h1_r0 = t6;
 #line 8 "tests/golden/run/fixedbugs-139-constants-that-give-a-value.hero"
     goto bb1;
-#line 144 "fixedbugs139constantsthatgiveavalue.c"
+#line 135 "fixedbugs139constantsthatgiveavalue.c"
 }
 
 #line 12 "tests/golden/run/fixedbugs-139-constants-that-give-a-value.hero"
 int64_t h_fixedbugs139constantsthatgiveavalue_BY_IF(void) {
-#line 149 "fixedbugs139constantsthatgiveavalue.c"
-    int64_t h0_r0;
-    bool t1;
-    int64_t t2;
-    int64_t t3;
-    int64_t t4;
-    goto bb0;
+#line 12 "tests/golden/run/fixedbugs-139-constants-that-give-a-value.hero"
+    int64_t h0_r0; bool t1; int64_t t2; int64_t t3; int64_t t4; goto bb0;
+#line 12 "tests/golden/run/fixedbugs-139-constants-that-give-a-value.hero"
 bb0:
-#line 13 "tests/golden/run/fixedbugs-139-constants-that-give-a-value.hero"
     t1 = true;
 #line 13 "tests/golden/run/fixedbugs-139-constants-that-give-a-value.hero"
     if (t1) goto bb2; else goto bb3;
@@ -178,21 +164,15 @@ bb3:
     h0_r0 = t3;
 #line 13 "tests/golden/run/fixedbugs-139-constants-that-give-a-value.hero"
     goto bb1;
-#line 182 "fixedbugs139constantsthatgiveavalue.c"
+#line 168 "fixedbugs139constantsthatgiveavalue.c"
 }
 
 #line 18 "tests/golden/run/fixedbugs-139-constants-that-give-a-value.hero"
 int64_t h_fixedbugs139constantsthatgiveavalue_AFTER_A_MATCH(void) {
-#line 187 "fixedbugs139constantsthatgiveavalue.c"
-    int64_t h0_s0;
-    int64_t t1;
-    int64_t t2;
-    int64_t t3;
-    bool t4;
-    int64_t t7;
-    goto bb0;
+#line 18 "tests/golden/run/fixedbugs-139-constants-that-give-a-value.hero"
+    int64_t h0_s0; int64_t t1; int64_t t2; int64_t t3; bool t4; int64_t t7; goto bb0;
+#line 18 "tests/golden/run/fixedbugs-139-constants-that-give-a-value.hero"
 bb0:
-#line 19 "tests/golden/run/fixedbugs-139-constants-that-give-a-value.hero"
     t1 = INT64_C(3);
 #line 19 "tests/golden/run/fixedbugs-139-constants-that-give-a-value.hero"
     h0_s0 = t1;
@@ -221,18 +201,15 @@ bb3:
 bb4:
 #line 23 "tests/golden/run/fixedbugs-139-constants-that-give-a-value.hero"
     goto bb1;
-#line 225 "fixedbugs139constantsthatgiveavalue.c"
+#line 205 "fixedbugs139constantsthatgiveavalue.c"
 }
 
 #line 27 "tests/golden/run/fixedbugs-139-constants-that-give-a-value.hero"
 void h_fixedbugs139constantsthatgiveavalue_main(void) {
-#line 230 "fixedbugs139constantsthatgiveavalue.c"
-    int64_t t1;
-    int64_t t2;
-    int64_t t3;
-    goto bb0;
+#line 27 "tests/golden/run/fixedbugs-139-constants-that-give-a-value.hero"
+    int64_t t1; int64_t t2; int64_t t3; goto bb0;
+#line 27 "tests/golden/run/fixedbugs-139-constants-that-give-a-value.hero"
 bb0:
-#line 28 "tests/golden/run/fixedbugs-139-constants-that-give-a-value.hero"
     t1 = h_fixedbugs139constantsthatgiveavalue_BY_MATCH();
 #line 28 "tests/golden/run/fixedbugs-139-constants-that-give-a-value.hero"
     hero_print_int(t1);
@@ -250,7 +227,7 @@ bb0:
     hero_print_end();
 #line 30 "tests/golden/run/fixedbugs-139-constants-that-give-a-value.hero"
     return;
-#line 254 "fixedbugs139constantsthatgiveavalue.c"
+#line 231 "fixedbugs139constantsthatgiveavalue.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

@@ -104,20 +104,10 @@ void h_handlealiveafteranendthenarebinding_main(void);
 
 #line 11 "tests/golden/run/handle-alive-after-an-end-then-a-rebinding.hero"
 void h_handlealiveafteranendthenarebinding_main(void) {
-#line 108 "handlealiveafteranendthenarebinding.c"
-    node * h0_n;
-    int64_t t1;
-    node * t2;
-    node * t3;
-    int64_t t4;
-    node * t5;
-    HeroStr t6;
-    node * t7;
-    int64_t t8;
-    node * t9;
-    goto bb0;
+#line 11 "tests/golden/run/handle-alive-after-an-end-then-a-rebinding.hero"
+    node * h0_n; int64_t t1; node * t2; node * t3; int64_t t4; node * t5; HeroStr t6; node * t7; int64_t t8; node * t9; goto bb0;
+#line 11 "tests/golden/run/handle-alive-after-an-end-then-a-rebinding.hero"
 bb0:
-#line 12 "tests/golden/run/handle-alive-after-an-end-then-a-rebinding.hero"
     t1 = INT64_C(1);
 #line 12 "tests/golden/run/handle-alive-after-an-end-then-a-rebinding.hero"
     t2 = node_new(t1);
@@ -173,7 +163,7 @@ bb0:
     }
 #line 16 "tests/golden/run/handle-alive-after-an-end-then-a-rebinding.hero"
     return;
-#line 177 "handlealiveafteranendthenarebinding.c"
+#line 167 "handlealiveafteranendthenarebinding.c"
 }
 HERO_TU_LOCAL bool h_handlealiveafteranendthenarebinding_Node_eq(node * const *a, node * const *b) {
     return hero_handle_eq(*a, *b);

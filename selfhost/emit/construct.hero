@@ -15,6 +15,7 @@ use source
 use check/state
 use ir
 use ir/containers
+use ir/layout
 use emit/mangle
 use emit/ctype
 use emit/aggregate
@@ -51,7 +52,7 @@ function argument_names(f: containers.Function, run: ir.Run) -> [str]
 # A group's record whose construction ends with `rest: zero` is the one
 # exception, written as statements rather than a literal: every byte zero,
 # then each field it names (`emit/zeroed.hero`, panel 194).
-function record_or_case(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], f: containers.Function, shape: ir.Shape, run: ir.Run, target: str?, span: token.Span)
+function record_or_case(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], f: containers.Function, ty: i64, shape: ir.Shape, run: ir.Run, target: str?, span: token.Span)
     if target.is_err()
         return
     rendered: [str] @ []
@@ -119,7 +120,10 @@ function record_or_case(@w: writer.Writer, c: state.Checked, names: ctype.Names,
     if literal.is_err()
         writer.line(@w, text: "    hero_unreachable(); /* not an aggregate */")
     else
-        writer.line(@w, text: "    " + byte_copy.copied(w, owned: owned, target: target.must(), value: literal.must()))
+        writer.line(
+            @w,
+            text: "    " + byte_copy.copied(w, owned: owned, held: layout.is_refcounted(c, ty), target: target.must(), value: literal.must())
+        )
 
 # An array literal is several statements, because each push releases
 # the array it grew from.
@@ -164,7 +168,13 @@ function option(@w: writer.Writer, names: ctype.Names, f: containers.Function, t
     if text.is_err()
         writer.line(@w, text: "    hero_unreachable(); /* not a T? */")
         return
-    writer.line(@w, text: "    " + byte_copy.copied(w, owned: true, target: target.must(), value: text.must()))
+
+    # A `T?` holds a failure's two strings whatever its payload, so it is
+    # always counted and its copy always goes through the identity.
+    writer.line(
+        @w,
+        text: "    " + byte_copy.copied(w, owned: true, held: true, target: target.must(), value: text.must())
+    )
 
 ## Tests
 
@@ -203,6 +213,7 @@ test "one expression for the by-value shapes, statements for the containers"
         s,
         parsed.decls,
         f,
+        ty: int_id,
         shape: .record_shape(decl: 0, given: [0]),
         run: ir.Run(start: 0, length: 1),
         target: ok("t5"),

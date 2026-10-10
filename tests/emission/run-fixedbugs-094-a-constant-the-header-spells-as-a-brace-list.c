@@ -126,19 +126,10 @@ struct pt h_fixedbugs094aconstanttheheaderspellsasabracelist_PT_INIT(void) {
 
 #line 25 "tests/golden/run/fixedbugs-094-a-constant-the-header-spells-as-a-brace-list.hero"
 void h_fixedbugs094aconstanttheheaderspellsasabracelist_main(void) {
-#line 130 "fixedbugs094aconstanttheheaderspellsasabracelist.c"
-    struct pt h0_p;
-    struct pt t1;
-    struct pt t2;
-    int32_t t3;
-    struct pt t4;
-    int32_t t5;
-    struct pt t6;
-    struct pt t7;
-    bool t8;
-    goto bb0;
+#line 25 "tests/golden/run/fixedbugs-094-a-constant-the-header-spells-as-a-brace-list.hero"
+    struct pt h0_p; struct pt t1; struct pt t2; int32_t t3; struct pt t4; int32_t t5; struct pt t6; struct pt t7; bool t8; goto bb0;
+#line 25 "tests/golden/run/fixedbugs-094-a-constant-the-header-spells-as-a-brace-list.hero"
 bb0:
-#line 26 "tests/golden/run/fixedbugs-094-a-constant-the-header-spells-as-a-brace-list.hero"
     t1 = h_fixedbugs094aconstanttheheaderspellsasabracelist_PT_INIT();
 #line 26 "tests/golden/run/fixedbugs-094-a-constant-the-header-spells-as-a-brace-list.hero"
     h0_p = t1;
@@ -167,7 +158,7 @@ bb0:
     hero_print_end();
 #line 29 "tests/golden/run/fixedbugs-094-a-constant-the-header-spells-as-a-brace-list.hero"
     return;
-#line 171 "fixedbugs094aconstanttheheaderspellsasabracelist.c"
+#line 162 "fixedbugs094aconstanttheheaderspellsasabracelist.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs094aconstanttheheaderspellsasabracelist_Pt_eq(const struct pt *a, const struct pt *b) {
     if (!(a->x == b->x)) return false;

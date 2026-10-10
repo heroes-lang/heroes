@@ -114,13 +114,10 @@ __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
 
 #line 17 "tests/golden/run/dead-address-callback-hand-back-clears-the-mark.hero"
 int64_t h_deadaddresscallbackhandbackclearsthemark_seen(node * h0_n) {
-#line 118 "deadaddresscallbackhandbackclearsthemark.c"
-    hero_thread_guard("deadaddresscallbackhandbackclearsthemark.seen");
-    node * t1;
-    int64_t t2;
-    goto bb0;
+#line 17 "tests/golden/run/dead-address-callback-hand-back-clears-the-mark.hero"
+    hero_thread_guard("deadaddresscallbackhandbackclearsthemark.seen"); node * t1; int64_t t2; goto bb0;
+#line 17 "tests/golden/run/dead-address-callback-hand-back-clears-the-mark.hero"
 bb0:
-#line 18 "tests/golden/run/dead-address-callback-hand-back-clears-the-mark.hero"
     t1 = h0_n;
 #line 18 "tests/golden/run/dead-address-callback-hand-back-clears-the-mark.hero"
     hero_handle_alive(t1, "the argument `n` of `node_value`");
@@ -128,7 +125,7 @@ bb0:
     t2 = node_value(t1);
 #line 18 "tests/golden/run/dead-address-callback-hand-back-clears-the-mark.hero"
     return t2;
-#line 132 "deadaddresscallbackhandbackclearsthemark.c"
+#line 129 "deadaddresscallbackhandbackclearsthemark.c"
 }
 
 int64_t h_0cb_deadaddresscallbackhandbackclearsthemark_seen(node * h0_n) {
@@ -139,16 +136,10 @@ int64_t h_0cb_deadaddresscallbackhandbackclearsthemark_seen(node * h0_n) {
 
 #line 20 "tests/golden/run/dead-address-callback-hand-back-clears-the-mark.hero"
 void h_deadaddresscallbackhandbackclearsthemark_main(void) {
-#line 143 "deadaddresscallbackhandbackclearsthemark.c"
-    node * h0_mine;
-    node * t1;
-    node * t2;
-    HeroStr t3;
-    h_0fn_41481456 t4;
-    int64_t t5;
-    goto bb0;
+#line 20 "tests/golden/run/dead-address-callback-hand-back-clears-the-mark.hero"
+    node * h0_mine; node * t1; node * t2; HeroStr t3; h_0fn_41481456 t4; int64_t t5; goto bb0;
+#line 20 "tests/golden/run/dead-address-callback-hand-back-clears-the-mark.hero"
 bb0:
-#line 21 "tests/golden/run/dead-address-callback-hand-back-clears-the-mark.hero"
     t1 = node_new();
 #line 21 "tests/golden/run/dead-address-callback-hand-back-clears-the-mark.hero"
     hero_handle_acquired(t1, "node_free");
@@ -180,7 +171,7 @@ bb0:
     hero_print_end();
 #line 23 "tests/golden/run/dead-address-callback-hand-back-clears-the-mark.hero"
     return;
-#line 184 "deadaddresscallbackhandbackclearsthemark.c"
+#line 175 "deadaddresscallbackhandbackclearsthemark.c"
 }
 HERO_TU_LOCAL bool h_deadaddresscallbackhandbackclearsthemark_Node_eq(node * const *a, node * const *b) {
     return hero_handle_eq(*a, *b);

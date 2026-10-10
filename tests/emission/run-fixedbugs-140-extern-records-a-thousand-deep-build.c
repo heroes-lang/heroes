@@ -4111,33 +4111,25 @@ void h_fixedbugs140externrecordsathousanddeepbuild_main(void);
 
 #line 2023 "tests/golden/run/fixedbugs-140-extern-records-a-thousand-deep-build.hero"
 void h_fixedbugs140externrecordsathousanddeepbuild_main(void) {
-#line 4115 "fixedbugs140externrecordsathousanddeepbuild.c"
-    HeroArrayHeader * h0_xs = {0};
-    HeroArrayHeader * h1_own1 = {0};
-    HeroArrayHeader * t1;
-    HeroArrayHeader * t2;
-    int64_t t3;
-    HeroArrayHeader * t4;
-    HeroArrayHeader * t5;
-    goto bb0;
+#line 2023 "tests/golden/run/fixedbugs-140-extern-records-a-thousand-deep-build.hero"
+    HeroArrayHeader * h0_xs = {0}; HeroArrayHeader * h1_own1 = {0}; HeroArrayHeader * t1; HeroArrayHeader * t2; int64_t t3; HeroArrayHeader * t4; HeroArrayHeader * t5; goto bb0;
+#line 2023 "tests/golden/run/fixedbugs-140-extern-records-a-thousand-deep-build.hero"
 bb0:
-#line 2024 "tests/golden/run/fixedbugs-140-extern-records-a-thousand-deep-build.hero"
     t1 = hero_array_new(&h_fixedbugs140externrecordsathousanddeepbuild_G999_desc, 1);
 #line 2024 "tests/golden/run/fixedbugs-140-extern-records-a-thousand-deep-build.hero"
     t4 = h1_own1;
 #line 2024 "tests/golden/run/fixedbugs-140-extern-records-a-thousand-deep-build.hero"
     h1_own1 = t1;
-#line 4131 "fixedbugs140externrecordsathousanddeepbuild.c"
+#line 2024 "tests/golden/run/fixedbugs-140-extern-records-a-thousand-deep-build.hero"
     hero_array_decref(t4);
 #line 2024 "tests/golden/run/fixedbugs-140-extern-records-a-thousand-deep-build.hero"
     t5 = h0_xs;
-#line 4135 "fixedbugs140externrecordsathousanddeepbuild.c"
+#line 2024 "tests/golden/run/fixedbugs-140-extern-records-a-thousand-deep-build.hero"
     hero_array_incref(t1);
 #line 2024 "tests/golden/run/fixedbugs-140-extern-records-a-thousand-deep-build.hero"
     h0_xs = t1;
-#line 4139 "fixedbugs140externrecordsathousanddeepbuild.c"
+#line 2024 "tests/golden/run/fixedbugs-140-extern-records-a-thousand-deep-build.hero"
     hero_array_decref(t5);
-#line 2025 "tests/golden/run/fixedbugs-140-extern-records-a-thousand-deep-build.hero"
     t2 = h0_xs;
 #line 2025 "tests/golden/run/fixedbugs-140-extern-records-a-thousand-deep-build.hero"
     t3 = ((void)(t2 == NULL ? ((void)hero_array_len(t2), hero_unreachable()) : (void)0), t2->len);
@@ -4145,7 +4137,7 @@ bb0:
     hero_print_int(t3);
 #line 2025 "tests/golden/run/fixedbugs-140-extern-records-a-thousand-deep-build.hero"
     hero_print_end();
-#line 4149 "fixedbugs140externrecordsathousanddeepbuild.c"
+#line 4141 "fixedbugs140externrecordsathousanddeepbuild.c"
     hero_array_release_at(&h0_xs);
     hero_array_release_at(&h1_own1);
     return;

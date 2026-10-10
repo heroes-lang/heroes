@@ -100,33 +100,10 @@ int64_t h_adversarialdivergingarms_walk(HeroArrayHeader * h0_xs);
 
 #line 11 "tests/golden/ir/adversarial-diverging-arms.hero"
 int64_t h_adversarialdivergingarms_walk(HeroArrayHeader * h0_xs) {
-#line 104 "adversarialdivergingarms.c"
-    int64_t h1_seen;
-    HeroArrayHeader * h2_xs0 = {0};
-    int64_t h3_i0;
-    h_adversarialdivergingarms_Step h4_s;
-    h_adversarialdivergingarms_Step h5_s0;
-    int64_t t1;
-    HeroArrayHeader * t2;
-    int64_t t3;
-    int64_t t4;
-    HeroArrayHeader * t5;
-    int64_t t6;
-    bool t7;
-    HeroArrayHeader * t8;
-    int64_t t9;
-    h_adversarialdivergingarms_Step t10;
-    h_adversarialdivergingarms_Step t11;
-    h_adversarialdivergingarms_Step t12;
-    int64_t t13;
-    int64_t t14;
-    int64_t t15;
-    int64_t t16;
-    int64_t t17;
-    HeroArrayHeader * t18;
-    goto bb0;
+#line 11 "tests/golden/ir/adversarial-diverging-arms.hero"
+    int64_t h1_seen; HeroArrayHeader * h2_xs0 = {0}; int64_t h3_i0; h_adversarialdivergingarms_Step h4_s; h_adversarialdivergingarms_Step h5_s0; int64_t t1; HeroArrayHeader * t2; int64_t t3; int64_t t4; HeroArrayHeader * t5; int64_t t6; bool t7; HeroArrayHeader * t8; int64_t t9; h_adversarialdivergingarms_Step t10; h_adversarialdivergingarms_Step t11; h_adversarialdivergingarms_Step t12; int64_t t13; int64_t t14; int64_t t15; int64_t t16; int64_t t17; HeroArrayHeader * t18; goto bb0;
+#line 11 "tests/golden/ir/adversarial-diverging-arms.hero"
 bb0:
-#line 12 "tests/golden/ir/adversarial-diverging-arms.hero"
     t1 = INT64_C(0);
 #line 12 "tests/golden/ir/adversarial-diverging-arms.hero"
     h1_seen = t1;
@@ -134,11 +111,11 @@ bb0:
     t2 = h0_xs;
 #line 14 "tests/golden/ir/adversarial-diverging-arms.hero"
     t18 = h2_xs0;
-#line 138 "adversarialdivergingarms.c"
+#line 14 "tests/golden/ir/adversarial-diverging-arms.hero"
     hero_array_incref(t2);
 #line 14 "tests/golden/ir/adversarial-diverging-arms.hero"
     h2_xs0 = t2;
-#line 142 "adversarialdivergingarms.c"
+#line 14 "tests/golden/ir/adversarial-diverging-arms.hero"
     hero_array_decref(t18);
 #line 14 "tests/golden/ir/adversarial-diverging-arms.hero"
     t3 = INT64_C(0);
@@ -201,7 +178,7 @@ bb3:
 bb4:
 #line 21 "tests/golden/ir/adversarial-diverging-arms.hero"
     t17 = h1_seen;
-#line 205 "adversarialdivergingarms.c"
+#line 182 "adversarialdivergingarms.c"
     hero_array_release_at(&h2_xs0);
     return t17;
 bb6:

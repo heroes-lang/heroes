@@ -140,28 +140,10 @@ int64_t h_fficountedbyastatedextent_HELD_LEN(void) {
 
 #line 28 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
 struct held h_fficountedbyastatedextent_zero(void) {
-#line 144 "fficountedbyastatedextent.c"
-    uint8_t t1;
-    uint8_t t2;
-    uint8_t t3;
-    uint8_t t4;
-    uint8_t t5;
-    uint8_t t6;
-    uint8_t t7;
-    uint8_t t8;
-    uint8_t t9;
-    uint8_t t10;
-    uint8_t t11;
-    uint8_t t12;
-    uint8_t t13;
-    uint8_t t14;
-    uint8_t t15;
-    uint8_t t16;
-    int64_t t18;
-    struct held t19;
-    goto bb0;
+#line 28 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
+    uint8_t t1; uint8_t t2; uint8_t t3; uint8_t t4; uint8_t t5; uint8_t t6; uint8_t t7; uint8_t t8; uint8_t t9; uint8_t t10; uint8_t t11; uint8_t t12; uint8_t t13; uint8_t t14; uint8_t t15; uint8_t t16; int64_t t18; struct held t19; goto bb0;
+#line 28 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
 bb0:
-#line 29 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
     t1 = UINT64_C(0);
 #line 29 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
     t2 = UINT64_C(0);
@@ -199,78 +181,17 @@ bb0:
     t19 = (struct held){.buf = {t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16}, .after = t18};
 #line 29 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
     return t19;
-#line 203 "fficountedbyastatedextent.c"
+#line 185 "fficountedbyastatedextent.c"
 }
 
 #line 31 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
 void h_fficountedbyastatedextent_main(void) {
-#line 208 "fficountedbyastatedextent.c"
-    struct held h0_h;
-    struct pair *const hero_lend_h1_pair = (struct pair *)hero_lend_local(sizeof(struct pair), "fficountedbyastatedextent.main", "pair");
+#line 31 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
 #define h1_pair (*hero_lend_h1_pair)
-    struct held t1;
-    void * t4;
-    struct held t5;
-    int64_t t7;
-    uint8_t t8;
-    HeroStr t9;
-    struct held t10;
-    int64_t t12;
-    uint8_t t13;
-    HeroStr t14;
-    struct held t15;
-    int64_t t16;
-    struct held t17;
-    void * t20;
-    struct held t21;
-    int64_t t23;
-    uint8_t t24;
-    HeroStr t25;
-    struct held t26;
-    int64_t t28;
-    uint8_t t29;
-    HeroStr t30;
-    struct held t31;
-    int64_t t32;
-    struct held t33;
-    void * t36;
-    struct held t37;
-    int64_t t39;
-    uint8_t t40;
-    HeroStr t41;
-    struct held t42;
-    int64_t t43;
-    struct held t44;
-    void * t47;
-    struct held t48;
-    int64_t t50;
-    uint8_t t51;
-    HeroStr t52;
-    struct held t53;
-    int64_t t54;
-    struct held t55;
-    void * t58;
-    struct held t59;
-    int64_t t61;
-    uint8_t t62;
-    HeroStr t63;
-    struct held t64;
-    int64_t t66;
-    uint8_t t67;
-    HeroStr t68;
-    struct held t69;
-    int64_t t70;
-    int32_t t71;
-    int32_t t72;
-    struct pair t73;
-    struct pair t74;
-    int32_t t75;
-    HeroStr t76;
-    struct pair t77;
-    int32_t t78;
-    goto bb0;
+#line 31 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
+    struct held h0_h; struct pair *const hero_lend_h1_pair = (struct pair *)hero_lend_local(sizeof(struct pair), "fficountedbyastatedextent.main", "pair"); struct held t1; void * t4; struct held t5; int64_t t7; uint8_t t8; HeroStr t9; struct held t10; int64_t t12; uint8_t t13; HeroStr t14; struct held t15; int64_t t16; struct held t17; void * t20; struct held t21; int64_t t23; uint8_t t24; HeroStr t25; struct held t26; int64_t t28; uint8_t t29; HeroStr t30; struct held t31; int64_t t32; struct held t33; void * t36; struct held t37; int64_t t39; uint8_t t40; HeroStr t41; struct held t42; int64_t t43; struct held t44; void * t47; struct held t48; int64_t t50; uint8_t t51; HeroStr t52; struct held t53; int64_t t54; struct held t55; void * t58; struct held t59; int64_t t61; uint8_t t62; HeroStr t63; struct held t64; int64_t t66; uint8_t t67; HeroStr t68; struct held t69; int64_t t70; int32_t t71; int32_t t72; struct pair t73; struct pair t74; int32_t t75; HeroStr t76; struct pair t77; int32_t t78; goto bb0;
+#line 31 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
 bb0:
-#line 32 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
     t1 = h_fficountedbyastatedextent_zero();
 #line 32 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
     h0_h = t1;
@@ -487,7 +408,7 @@ bb0:
     hero_lend_local_give(hero_lend_h1_pair);
 #line 49 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
     return;
-#line 491 "fficountedbyastatedextent.c"
+#line 412 "fficountedbyastatedextent.c"
 }
 #undef h1_pair
 HERO_TU_LOCAL bool h_fficountedbyastatedextent_Held_eq(const struct held *a, const struct held *b) {

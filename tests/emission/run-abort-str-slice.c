@@ -91,35 +91,19 @@ void h_abortstrslice_main(void);
 
 #line 6 "tests/golden/run/abort-str-slice.hero"
 void h_abortstrslice_main(void) {
-#line 95 "abortstrslice.c"
-    HeroStr h0_s = {0};
-    HeroStr h1_own1 = {0};
-    HeroStr h2_own2 = {0};
-    HeroStr t1;
-    HeroStr t2;
-    int64_t t3;
-    int64_t t4;
-    HeroStr t5;
-    HeroStr t6;
-    int64_t t7;
-    int64_t t8;
-    HeroStr t9;
-    HeroStr t10;
-    HeroStr t11;
-    HeroStr t12;
-    goto bb0;
+#line 6 "tests/golden/run/abort-str-slice.hero"
+    HeroStr h0_s = {0}; HeroStr h1_own1 = {0}; HeroStr h2_own2 = {0}; HeroStr t1; HeroStr t2; int64_t t3; int64_t t4; HeroStr t5; HeroStr t6; int64_t t7; int64_t t8; HeroStr t9; HeroStr t10; HeroStr t11; HeroStr t12; goto bb0;
+#line 6 "tests/golden/run/abort-str-slice.hero"
 bb0:
-#line 7 "tests/golden/run/abort-str-slice.hero"
     t1 = HERO_STR_LIT(hero_str_33edea20);
 #line 7 "tests/golden/run/abort-str-slice.hero"
     t10 = h0_s;
-#line 117 "abortstrslice.c"
+#line 7 "tests/golden/run/abort-str-slice.hero"
     hero_str_incref(t1);
 #line 7 "tests/golden/run/abort-str-slice.hero"
     h0_s = t1;
-#line 121 "abortstrslice.c"
+#line 7 "tests/golden/run/abort-str-slice.hero"
     hero_str_decref(t10);
-#line 8 "tests/golden/run/abort-str-slice.hero"
     t2 = h0_s;
 #line 8 "tests/golden/run/abort-str-slice.hero"
     t3 = INT64_C(1);
@@ -131,7 +115,7 @@ bb0:
     t11 = h1_own1;
 #line 8 "tests/golden/run/abort-str-slice.hero"
     h1_own1 = t5;
-#line 135 "abortstrslice.c"
+#line 8 "tests/golden/run/abort-str-slice.hero"
     hero_str_decref(t11);
 #line 8 "tests/golden/run/abort-str-slice.hero"
     hero_print_str(t5);
@@ -148,13 +132,13 @@ bb0:
     t12 = h2_own2;
 #line 9 "tests/golden/run/abort-str-slice.hero"
     h2_own2 = t9;
-#line 152 "abortstrslice.c"
+#line 9 "tests/golden/run/abort-str-slice.hero"
     hero_str_decref(t12);
 #line 9 "tests/golden/run/abort-str-slice.hero"
     hero_print_str(t9);
 #line 9 "tests/golden/run/abort-str-slice.hero"
     hero_print_end();
-#line 158 "abortstrslice.c"
+#line 142 "abortstrslice.c"
     hero_str_release_at(&h0_s);
     hero_str_release_at(&h1_own1);
     hero_str_release_at(&h2_own2);

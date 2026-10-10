@@ -18,7 +18,15 @@ function relay(f: (function(str, str) -> str)) -> str  #~ needs_parameter_names
     return f("one", "two")
 
 function main()
-    print(relay(pair))  #~ type_mismatch
+    print(relay(pair))
 
 function pair(code: str, msg: str) -> str
     return code + "/" + msg
+
+# Corrected 2026-10-09, defect 554: the paragraph above that pins the second
+# diagnostic as no cascade no longer holds. The type is refused where it is
+# written, and the mismatch between it and `pair`, which differs from it by
+# its names alone, is now quiet (`type_fit.unnamed_shadow`): one mistake,
+# one message, whose note says a function given to the type fits where its
+# own names agree. Named `(from, to)`, the type still meets `pair` with a
+# `type_mismatch`, which is then the mistake there is.

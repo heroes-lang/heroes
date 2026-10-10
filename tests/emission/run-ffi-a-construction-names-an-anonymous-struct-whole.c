@@ -112,27 +112,10 @@ void h_ffiaconstructionnamesananonymousstructwhole_main(void);
 
 #line 20 "tests/golden/run/ffi-a-construction-names-an-anonymous-struct-whole.hero"
 void h_ffiaconstructionnamesananonymousstructwhole_main(void) {
-#line 116 "ffiaconstructionnamesananonymousstructwhole.c"
-    SB h0_b;
-    SB h1_c;
-    int32_t t1;
-    int16_t t2;
-    int16_t t3;
-    SB t4;
-    SB t5;
-    int32_t t6;
-    SB t7;
-    int32_t t8;
-    int32_t t9;
-    int32_t t10;
-    SB t11;
-    SB t12;
-    int16_t t13;
-    SB t14;
-    int16_t t15;
-    goto bb0;
+#line 20 "tests/golden/run/ffi-a-construction-names-an-anonymous-struct-whole.hero"
+    SB h0_b; SB h1_c; int32_t t1; int16_t t2; int16_t t3; SB t4; SB t5; int32_t t6; SB t7; int32_t t8; int32_t t9; int32_t t10; SB t11; SB t12; int16_t t13; SB t14; int16_t t15; goto bb0;
+#line 20 "tests/golden/run/ffi-a-construction-names-an-anonymous-struct-whole.hero"
 bb0:
-#line 21 "tests/golden/run/ffi-a-construction-names-an-anonymous-struct-whole.hero"
     t1 = INT64_C(1);
 #line 21 "tests/golden/run/ffi-a-construction-names-an-anonymous-struct-whole.hero"
     t2 = INT64_C(2);
@@ -179,7 +162,7 @@ bb0:
     hero_print_end();
 #line 26 "tests/golden/run/ffi-a-construction-names-an-anonymous-struct-whole.hero"
     return;
-#line 183 "ffiaconstructionnamesananonymousstructwhole.c"
+#line 166 "ffiaconstructionnamesananonymousstructwhole.c"
 }
 HERO_TU_LOCAL bool h_ffiaconstructionnamesananonymousstructwhole_SB_eq(const SB *a, const SB *b) {
     if (!(a->kind == b->kind)) return false;

@@ -105,17 +105,10 @@ __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
 
 #line 36 "tests/golden/run/fixedbugs-a-c-function-crosses-as-a-callback.hero"
 void h_fixedbugsacfunctioncrossesasacallback_main(void) {
-#line 109 "fixedbugsacfunctioncrossesasacallback.c"
-    void * h0_b;
-    void * t1;
-    void * t2;
-    int64_t t3;
-    h_0fn_406f9b0 t4;
-    int64_t t5;
-    int64_t t6;
-    goto bb0;
+#line 36 "tests/golden/run/fixedbugs-a-c-function-crosses-as-a-callback.hero"
+    void * h0_b; void * t1; void * t2; int64_t t3; h_0fn_406f9b0 t4; int64_t t5; int64_t t6; goto bb0;
+#line 36 "tests/golden/run/fixedbugs-a-c-function-crosses-as-a-callback.hero"
 bb0:
-#line 37 "tests/golden/run/fixedbugs-a-c-function-crosses-as-a-callback.hero"
     t1 = (void *)blob_make();
 #line 37 "tests/golden/run/fixedbugs-a-c-function-crosses-as-a-callback.hero"
     h0_b = t1;
@@ -141,7 +134,7 @@ bb0:
     hero_print_end();
 #line 47 "tests/golden/run/fixedbugs-a-c-function-crosses-as-a-callback.hero"
     return;
-#line 145 "fixedbugsacfunctioncrossesasacallback.c"
+#line 138 "fixedbugsacfunctioncrossesasacallback.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

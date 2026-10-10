@@ -90,13 +90,10 @@ void h_sugarufcs_main(void);
 
 #line 4 "tests/golden/ir/sugar-ufcs.hero"
 int64_t h_sugarufcs_double(int64_t h0_n) {
-#line 94 "sugarufcs.c"
-    int64_t t1;
-    int64_t t2;
-    int64_t t3;
-    goto bb0;
+#line 4 "tests/golden/ir/sugar-ufcs.hero"
+    int64_t t1; int64_t t2; int64_t t3; goto bb0;
+#line 4 "tests/golden/ir/sugar-ufcs.hero"
 bb0:
-#line 5 "tests/golden/ir/sugar-ufcs.hero"
     t1 = h0_n;
 #line 5 "tests/golden/ir/sugar-ufcs.hero"
     t2 = INT64_C(2);
@@ -104,22 +101,15 @@ bb0:
     if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow();
 #line 5 "tests/golden/ir/sugar-ufcs.hero"
     return t3;
-#line 108 "sugarufcs.c"
+#line 105 "sugarufcs.c"
 }
 
 #line 7 "tests/golden/ir/sugar-ufcs.hero"
 void h_sugarufcs_main(void) {
-#line 113 "sugarufcs.c"
-    HeroArrayHeader * h0_own0 = {0};
-    int64_t t1;
-    int64_t t2;
-    HeroArrayHeader * t3;
-    int64_t t4;
-    int64_t t5;
-    HeroArrayHeader * t6;
-    goto bb0;
+#line 7 "tests/golden/ir/sugar-ufcs.hero"
+    HeroArrayHeader * h0_own0 = {0}; int64_t t1; int64_t t2; HeroArrayHeader * t3; int64_t t4; int64_t t5; HeroArrayHeader * t6; goto bb0;
+#line 7 "tests/golden/ir/sugar-ufcs.hero"
 bb0:
-#line 8 "tests/golden/ir/sugar-ufcs.hero"
     t1 = INT64_C(1);
 #line 8 "tests/golden/ir/sugar-ufcs.hero"
     t2 = INT64_C(2);
@@ -133,7 +123,7 @@ bb0:
     t6 = h0_own0;
 #line 8 "tests/golden/ir/sugar-ufcs.hero"
     h0_own0 = t3;
-#line 137 "sugarufcs.c"
+#line 8 "tests/golden/ir/sugar-ufcs.hero"
     hero_array_decref(t6);
 #line 8 "tests/golden/ir/sugar-ufcs.hero"
     t4 = ((void)(t3 == NULL ? ((void)hero_array_len(t3), hero_unreachable()) : (void)0), t3->len);
@@ -143,7 +133,7 @@ bb0:
     hero_print_int(t5);
 #line 8 "tests/golden/ir/sugar-ufcs.hero"
     hero_print_end();
-#line 147 "sugarufcs.c"
+#line 137 "sugarufcs.c"
     hero_array_release_at(&h0_own0);
     return;
 }

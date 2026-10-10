@@ -97,12 +97,10 @@ void h_fixedbugs314amapreleasedtwiceisnamed_main(void);
 
 #line 21 "tests/golden/run/fixedbugs-314-a-map-released-twice-is-named.hero"
 void h_fixedbugs314amapreleasedtwiceisnamed_main(void) {
-#line 101 "fixedbugs314amapreleasedtwiceisnamed.c"
-    HeroStr t1;
-    int64_t t2;
-    goto bb0;
+#line 21 "tests/golden/run/fixedbugs-314-a-map-released-twice-is-named.hero"
+    HeroStr t1; int64_t t2; goto bb0;
+#line 21 "tests/golden/run/fixedbugs-314-a-map-released-twice-is-named.hero"
 bb0:
-#line 22 "tests/golden/run/fixedbugs-314-a-map-released-twice-is-named.hero"
     t1 = HERO_STR_LIT(hero_str_30aab90c);
 #line 22 "tests/golden/run/fixedbugs-314-a-map-released-twice-is-named.hero"
     hero_print_str(t1);
@@ -113,7 +111,7 @@ bb0:
     (void)release_twice(t2);
 #line 23 "tests/golden/run/fixedbugs-314-a-map-released-twice-is-named.hero"
     return;
-#line 117 "fixedbugs314amapreleasedtwiceisnamed.c"
+#line 115 "fixedbugs314amapreleasedtwiceisnamed.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

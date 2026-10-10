@@ -94,12 +94,10 @@ bool h_adversarialnestedshortcircuit_decide(bool h0_a, bool h1_b, bool h2_c);
 
 #line 7 "tests/golden/ir/adversarial-nested-shortcircuit.hero"
 bool h_adversarialnestedshortcircuit_loud(HeroStr h0_tag, bool h1_answer) {
-#line 98 "adversarialnestedshortcircuit.c"
-    HeroStr t1;
-    bool t2;
-    goto bb0;
+#line 7 "tests/golden/ir/adversarial-nested-shortcircuit.hero"
+    HeroStr t1; bool t2; goto bb0;
+#line 7 "tests/golden/ir/adversarial-nested-shortcircuit.hero"
 bb0:
-#line 8 "tests/golden/ir/adversarial-nested-shortcircuit.hero"
     t1 = h0_tag;
 #line 8 "tests/golden/ir/adversarial-nested-shortcircuit.hero"
     hero_print_str(t1);
@@ -108,28 +106,15 @@ bb0:
     t2 = h1_answer;
 #line 9 "tests/golden/ir/adversarial-nested-shortcircuit.hero"
     return t2;
-#line 112 "adversarialnestedshortcircuit.c"
+#line 110 "adversarialnestedshortcircuit.c"
 }
 
 #line 11 "tests/golden/ir/adversarial-nested-shortcircuit.hero"
 bool h_adversarialnestedshortcircuit_decide(bool h0_a, bool h1_b, bool h2_c) {
-#line 117 "adversarialnestedshortcircuit.c"
-    bool h3_b0;
-    bool h4_b1;
-    HeroStr t1;
-    bool t2;
-    bool t3;
-    HeroStr t4;
-    bool t5;
-    bool t6;
-    bool t7;
-    HeroStr t8;
-    bool t9;
-    bool t10;
-    bool t11;
-    goto bb0;
+#line 11 "tests/golden/ir/adversarial-nested-shortcircuit.hero"
+    bool h3_b0; bool h4_b1; HeroStr t1; bool t2; bool t3; HeroStr t4; bool t5; bool t6; bool t7; HeroStr t8; bool t9; bool t10; bool t11; goto bb0;
+#line 11 "tests/golden/ir/adversarial-nested-shortcircuit.hero"
 bb0:
-#line 12 "tests/golden/ir/adversarial-nested-shortcircuit.hero"
     t1 = HERO_STR_LIT(hero_str_61);
 #line 12 "tests/golden/ir/adversarial-nested-shortcircuit.hero"
     t2 = h0_a;
@@ -177,7 +162,7 @@ bb4:
     t11 = h3_b0;
 #line 12 "tests/golden/ir/adversarial-nested-shortcircuit.hero"
     return t11;
-#line 181 "adversarialnestedshortcircuit.c"
+#line 166 "adversarialnestedshortcircuit.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

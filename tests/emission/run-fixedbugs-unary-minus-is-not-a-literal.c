@@ -109,15 +109,10 @@ void h_fixedbugsunaryminusisnotaliteral_main(void);
 
 #line 32 "tests/golden/run/fixedbugs-unary-minus-is-not-a-literal.hero"
 h_0opt_e201354 h_fixedbugsunaryminusisnotaliteral_negated(int64_t h0_n) {
-#line 113 "fixedbugsunaryminusisnotaliteral.c"
-    h_0opt_e201354 h1_own1 = {0};
-    int64_t t1;
-    int64_t t2;
-    h_0opt_e201354 t3;
-    h_0opt_e201354 t4;
-    goto bb0;
+#line 32 "tests/golden/run/fixedbugs-unary-minus-is-not-a-literal.hero"
+    h_0opt_e201354 h1_own1 = {0}; int64_t t1; int64_t t2; h_0opt_e201354 t3; h_0opt_e201354 t4; goto bb0;
+#line 32 "tests/golden/run/fixedbugs-unary-minus-is-not-a-literal.hero"
 bb0:
-#line 33 "tests/golden/run/fixedbugs-unary-minus-is-not-a-literal.hero"
     t1 = h0_n;
 #line 33 "tests/golden/run/fixedbugs-unary-minus-is-not-a-literal.hero"
     if (__builtin_sub_overflow(INT64_C(0), t1, &t2)) hero_panic_overflow();
@@ -127,8 +122,9 @@ bb0:
     t4 = h1_own1;
 #line 33 "tests/golden/run/fixedbugs-unary-minus-is-not-a-literal.hero"
     h1_own1 = t3;
-#line 131 "fixedbugsunaryminusisnotaliteral.c"
+#line 33 "tests/golden/run/fixedbugs-unary-minus-is-not-a-literal.hero"
     h_0opt_e201354_release(&t4);
+#line 128 "fixedbugsunaryminusisnotaliteral.c"
     h_0opt_e201354_retain(&t3);
     h_0opt_e201354_release(hero_slot_escape(&h1_own1));
     return t3;
@@ -136,67 +132,23 @@ bb0:
 
 #line 35 "tests/golden/run/fixedbugs-unary-minus-is-not-a-literal.hero"
 double h_fixedbugsunaryminusisnotaliteral_scaled(double h0_v) {
-#line 140 "fixedbugsunaryminusisnotaliteral.c"
-    double t1;
-    double t2;
-    goto bb0;
+#line 35 "tests/golden/run/fixedbugs-unary-minus-is-not-a-literal.hero"
+    double t1; double t2; goto bb0;
+#line 35 "tests/golden/run/fixedbugs-unary-minus-is-not-a-literal.hero"
 bb0:
-#line 36 "tests/golden/run/fixedbugs-unary-minus-is-not-a-literal.hero"
     t1 = h0_v;
 #line 36 "tests/golden/run/fixedbugs-unary-minus-is-not-a-literal.hero"
     t2 = -t1;
 #line 36 "tests/golden/run/fixedbugs-unary-minus-is-not-a-literal.hero"
     return t2;
-#line 151 "fixedbugsunaryminusisnotaliteral.c"
+#line 145 "fixedbugsunaryminusisnotaliteral.c"
 }
 
 #line 38 "tests/golden/run/fixedbugs-unary-minus-is-not-a-literal.hero"
 void h_fixedbugsunaryminusisnotaliteral_main(void) {
-#line 156 "fixedbugsunaryminusisnotaliteral.c"
-    int8_t h0_small;
-    int64_t h1_n;
-    double h2_x;
-    h_0opt_e201354 h3_f0 = {0};
-    h_0opt_e201354 h4_own4 = {0};
-    int8_t t1;
-    HeroStr t2;
-    int8_t t3;
-    int64_t t4;
-    int64_t t5;
-    int64_t t6;
-    double t7;
-    double t8;
-    double t9;
-    HeroStr t10;
-    int64_t t11;
-    HeroStr t12;
-    double t13;
-    HeroStr t14;
-    int64_t t15;
-    h_0opt_e201354 t16;
-    h_0opt_e201354 t17;
-    int64_t t18;
-    int64_t t19;
-    bool t20;
-    h_0opt_e201354 t21;
-    HeroFailure t22;
-    h_0opt_e201354 t23;
-    int64_t t24;
-    HeroStr t25;
-    double t26;
-    double t27;
-    HeroStr t28;
-    int64_t t29;
-    int64_t t30;
-    int64_t t31;
-    int64_t t32;
-    HeroStr t33;
-    double t34;
-    double t35;
-    double t36;
-    h_0opt_e201354 t37;
-    h_0opt_e201354 t38;
-    goto bb0;
+#line 38 "tests/golden/run/fixedbugs-unary-minus-is-not-a-literal.hero"
+    int8_t h0_small; int64_t h1_n; double h2_x; h_0opt_e201354 h3_f0 = {0}; h_0opt_e201354 h4_own4 = {0}; int8_t t1; HeroStr t2; int8_t t3; int64_t t4; int64_t t5; int64_t t6; double t7; double t8; double t9; HeroStr t10; int64_t t11; HeroStr t12; double t13; HeroStr t14; int64_t t15; h_0opt_e201354 t16; h_0opt_e201354 t17; int64_t t18; int64_t t19; bool t20; h_0opt_e201354 t21; HeroFailure t22; h_0opt_e201354 t23; int64_t t24; HeroStr t25; double t26; double t27; HeroStr t28; int64_t t29; int64_t t30; int64_t t31; int64_t t32; HeroStr t33; double t34; double t35; double t36; h_0opt_e201354 t37; h_0opt_e201354 t38; goto bb0;
+#line 38 "tests/golden/run/fixedbugs-unary-minus-is-not-a-literal.hero"
 bb0:
 #line 40 "tests/golden/run/fixedbugs-unary-minus-is-not-a-literal.hero"
     t1 = INT64_C(-128);
@@ -255,15 +207,15 @@ bb0:
     t37 = h4_own4;
 #line 52 "tests/golden/run/fixedbugs-unary-minus-is-not-a-literal.hero"
     h4_own4 = t16;
-#line 259 "fixedbugsunaryminusisnotaliteral.c"
+#line 52 "tests/golden/run/fixedbugs-unary-minus-is-not-a-literal.hero"
     h_0opt_e201354_release(&t37);
 #line 52 "tests/golden/run/fixedbugs-unary-minus-is-not-a-literal.hero"
     t38 = h3_f0;
-#line 263 "fixedbugsunaryminusisnotaliteral.c"
+#line 52 "tests/golden/run/fixedbugs-unary-minus-is-not-a-literal.hero"
     h_0opt_e201354_retain(&t16);
 #line 52 "tests/golden/run/fixedbugs-unary-minus-is-not-a-literal.hero"
     h3_f0 = t16;
-#line 267 "fixedbugsunaryminusisnotaliteral.c"
+#line 52 "tests/golden/run/fixedbugs-unary-minus-is-not-a-literal.hero"
     h_0opt_e201354_release(&t38);
 #line 52 "tests/golden/run/fixedbugs-unary-minus-is-not-a-literal.hero"
     t17 = h3_f0;
@@ -325,7 +277,7 @@ bb1:
     hero_print_f64(t36);
 #line 55 "tests/golden/run/fixedbugs-unary-minus-is-not-a-literal.hero"
     hero_print_end();
-#line 329 "fixedbugsunaryminusisnotaliteral.c"
+#line 281 "fixedbugsunaryminusisnotaliteral.c"
     h_0opt_e201354_release(hero_slot_escape(&h3_f0));
     h_0opt_e201354_release(hero_slot_escape(&h4_own4));
     return;
@@ -334,7 +286,7 @@ bb2:
     t21 = h3_f0;
 #line 52 "tests/golden/run/fixedbugs-unary-minus-is-not-a-literal.hero"
     t22 = t21.as.err;
-#line 338 "fixedbugsunaryminusisnotaliteral.c"
+#line 290 "fixedbugsunaryminusisnotaliteral.c"
     hero_panic_must(t22);
     hero_unreachable();
 }

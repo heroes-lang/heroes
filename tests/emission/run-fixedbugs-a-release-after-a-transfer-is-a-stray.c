@@ -108,19 +108,10 @@ void h_fixedbugsareleaseafteratransferisastray_main(void);
 
 #line 28 "tests/golden/run/fixedbugs-a-release-after-a-transfer-is-a-stray.hero"
 void h_fixedbugsareleaseafteratransferisastray_main(void) {
-#line 112 "fixedbugsareleaseafteratransferisastray.c"
-    ob * h0_a;
-    wr * h1_w;
-    ob * t1;
-    ob * t2;
-    wr * t3;
-    HeroStr t4;
-    ob * t5;
-    wr * t6;
-    HeroStr t7;
-    goto bb0;
+#line 28 "tests/golden/run/fixedbugs-a-release-after-a-transfer-is-a-stray.hero"
+    ob * h0_a; wr * h1_w; ob * t1; ob * t2; wr * t3; HeroStr t4; ob * t5; wr * t6; HeroStr t7; goto bb0;
+#line 28 "tests/golden/run/fixedbugs-a-release-after-a-transfer-is-a-stray.hero"
 bb0:
-#line 29 "tests/golden/run/fixedbugs-a-release-after-a-transfer-is-a-stray.hero"
     t1 = ob_new();
 #line 29 "tests/golden/run/fixedbugs-a-release-after-a-transfer-is-a-stray.hero"
     hero_handle_acquired(t1, "ob_put");
@@ -189,7 +180,7 @@ bb0:
     hero_print_end();
 #line 34 "tests/golden/run/fixedbugs-a-release-after-a-transfer-is-a-stray.hero"
     return;
-#line 193 "fixedbugsareleaseafteratransferisastray.c"
+#line 184 "fixedbugsareleaseafteratransferisastray.c"
 }
 HERO_TU_LOCAL bool h_fixedbugsareleaseafteratransferisastray_Ob_eq(ob * const *a, ob * const *b) {
     return hero_handle_eq(*a, *b);

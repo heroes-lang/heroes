@@ -140,18 +140,10 @@ Num h_fixedbugs094aunionrecordsconstantisbuiltbyonemember_NUM_F(void) {
 
 #line 13 "tests/golden/run/fixedbugs-094-a-union-records-constant-is-built-by-one-member.hero"
 void h_fixedbugs094aunionrecordsconstantisbuiltbyonemember_main(void) {
-#line 144 "fixedbugs094aunionrecordsconstantisbuiltbyonemember.c"
-    Num h0_n;
-    Num h1_g;
-    Num t1;
-    Num t2;
-    int32_t t3;
-    Num t4;
-    Num t5;
-    float t6;
-    goto bb0;
+#line 13 "tests/golden/run/fixedbugs-094-a-union-records-constant-is-built-by-one-member.hero"
+    Num h0_n; Num h1_g; Num t1; Num t2; int32_t t3; Num t4; Num t5; float t6; goto bb0;
+#line 13 "tests/golden/run/fixedbugs-094-a-union-records-constant-is-built-by-one-member.hero"
 bb0:
-#line 14 "tests/golden/run/fixedbugs-094-a-union-records-constant-is-built-by-one-member.hero"
     t1 = h_fixedbugs094aunionrecordsconstantisbuiltbyonemember_NUM_INIT();
 #line 14 "tests/golden/run/fixedbugs-094-a-union-records-constant-is-built-by-one-member.hero"
     h0_n = t1;
@@ -174,7 +166,7 @@ bb0:
     hero_print_end();
 #line 17 "tests/golden/run/fixedbugs-094-a-union-records-constant-is-built-by-one-member.hero"
     return;
-#line 178 "fixedbugs094aunionrecordsconstantisbuiltbyonemember.c"
+#line 170 "fixedbugs094aunionrecordsconstantisbuiltbyonemember.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs094aunionrecordsconstantisbuiltbyonemember_Num_eq(const Num *a, const Num *b) {
     if (!(a->i == b->i)) return false;

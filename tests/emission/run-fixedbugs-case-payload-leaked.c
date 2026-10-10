@@ -143,19 +143,10 @@ void h_fixedbugscasepayloadleaked_main(void);
 
 #line 34 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
 h_fixedbugscasepayloadleaked_Token h_fixedbugscasepayloadleaked_label(HeroStr h0_text, int64_t h1_from, int64_t h2_to) {
-#line 147 "fixedbugscasepayloadleaked.c"
-    HeroStr h3_own3 = {0};
-    h_fixedbugscasepayloadleaked_Token h4_own4 = {0};
-    HeroStr t1;
-    int64_t t2;
-    int64_t t3;
-    HeroStr t4;
-    h_fixedbugscasepayloadleaked_Token t5;
-    HeroStr t6;
-    h_fixedbugscasepayloadleaked_Token t7;
-    goto bb0;
+#line 34 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
+    HeroStr h3_own3 = {0}; h_fixedbugscasepayloadleaked_Token h4_own4 = {0}; HeroStr t1; int64_t t2; int64_t t3; HeroStr t4; h_fixedbugscasepayloadleaked_Token t5; HeroStr t6; h_fixedbugscasepayloadleaked_Token t7; goto bb0;
+#line 34 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
 bb0:
-#line 35 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
     t1 = h0_text;
 #line 35 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
     t2 = h1_from;
@@ -167,8 +158,9 @@ bb0:
     t6 = h3_own3;
 #line 35 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
     h3_own3 = t4;
-#line 171 "fixedbugscasepayloadleaked.c"
+#line 35 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
     hero_str_decref(t6);
+#line 35 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
     hero_str_incref(t4);
 #line 35 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
     t5 = (h_fixedbugscasepayloadleaked_Token){.tag = h_fixedbugscasepayloadleaked_Token_tag_name, .as.c_name = {.f_s = t4}};
@@ -176,8 +168,9 @@ bb0:
     t7 = h4_own4;
 #line 35 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
     h4_own4 = t5;
-#line 180 "fixedbugscasepayloadleaked.c"
+#line 35 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
     h_fixedbugscasepayloadleaked_Token_release(&t7);
+#line 174 "fixedbugscasepayloadleaked.c"
     h_fixedbugscasepayloadleaked_Token_retain(&t5);
     hero_str_release_at(&h3_own3);
     h_fixedbugscasepayloadleaked_Token_release(hero_slot_escape(&h4_own4));
@@ -186,72 +179,25 @@ bb0:
 
 #line 37 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
 void h_fixedbugscasepayloadleaked_main(void) {
-#line 190 "fixedbugscasepayloadleaked.c"
-    HeroArrayHeader * h0_out = {0};
-    HeroArrayHeader * h1_copy = {0};
-    HeroArrayHeader * h2_own2 = {0};
-    h_fixedbugscasepayloadleaked_Token h3_own3 = {0};
-    h_fixedbugscasepayloadleaked_Token h4_own4 = {0};
-    h_fixedbugscasepayloadleaked_Token h5_own5 = {0};
-    h_fixedbugscasepayloadleaked_Token h6_own6 = {0};
-    h_fixedbugscasepayloadleaked_Token h7_own7 = {0};
-    HeroArrayHeader * t1;
-    HeroStr t3;
-    int64_t t4;
-    int64_t t5;
-    h_fixedbugscasepayloadleaked_Token t6;
-    int64_t t9;
-    h_fixedbugscasepayloadleaked_Token t10;
-    HeroArrayHeader * t12;
-    HeroStr t14;
-    int64_t t15;
-    int64_t t16;
-    h_fixedbugscasepayloadleaked_Token t17;
-    HeroArrayHeader * t19;
-    int64_t t20;
-    HeroArrayHeader * t21;
-    int64_t t22;
-    HeroArrayHeader * t23;
-    int64_t t24;
-    h_fixedbugscasepayloadleaked_Token t25;
-    HeroStr t26;
-    int64_t t27;
-    int64_t t28;
-    h_fixedbugscasepayloadleaked_Token t29;
-    bool t30;
-    HeroArrayHeader * t31;
-    int64_t t32;
-    h_fixedbugscasepayloadleaked_Token t33;
-    int64_t t34;
-    h_fixedbugscasepayloadleaked_Token t35;
-    bool t36;
-    HeroArrayHeader * t37;
-    HeroArrayHeader * t38;
-    h_fixedbugscasepayloadleaked_Token t39;
-    h_fixedbugscasepayloadleaked_Token t40;
-    HeroArrayHeader * t41;
-    h_fixedbugscasepayloadleaked_Token t42;
-    h_fixedbugscasepayloadleaked_Token t43;
-    h_fixedbugscasepayloadleaked_Token t44;
-    goto bb0;
+#line 37 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
+    HeroArrayHeader * h0_out = {0}; HeroArrayHeader * h1_copy = {0}; HeroArrayHeader * h2_own2 = {0}; h_fixedbugscasepayloadleaked_Token h3_own3 = {0}; h_fixedbugscasepayloadleaked_Token h4_own4 = {0}; h_fixedbugscasepayloadleaked_Token h5_own5 = {0}; h_fixedbugscasepayloadleaked_Token h6_own6 = {0}; h_fixedbugscasepayloadleaked_Token h7_own7 = {0}; HeroArrayHeader * t1; HeroStr t3; int64_t t4; int64_t t5; h_fixedbugscasepayloadleaked_Token t6; int64_t t9; h_fixedbugscasepayloadleaked_Token t10; HeroArrayHeader * t12; HeroStr t14; int64_t t15; int64_t t16; h_fixedbugscasepayloadleaked_Token t17; HeroArrayHeader * t19; int64_t t20; HeroArrayHeader * t21; int64_t t22; HeroArrayHeader * t23; int64_t t24; h_fixedbugscasepayloadleaked_Token t25; HeroStr t26; int64_t t27; int64_t t28; h_fixedbugscasepayloadleaked_Token t29; bool t30; HeroArrayHeader * t31; int64_t t32; h_fixedbugscasepayloadleaked_Token t33; int64_t t34; h_fixedbugscasepayloadleaked_Token t35; bool t36; HeroArrayHeader * t37; HeroArrayHeader * t38; h_fixedbugscasepayloadleaked_Token t39; h_fixedbugscasepayloadleaked_Token t40; HeroArrayHeader * t41; h_fixedbugscasepayloadleaked_Token t42; h_fixedbugscasepayloadleaked_Token t43; h_fixedbugscasepayloadleaked_Token t44; goto bb0;
+#line 37 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
 bb0:
-#line 38 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
     t1 = hero_array_new(&h_fixedbugscasepayloadleaked_Token_desc, 1);
 #line 38 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
     t37 = h2_own2;
 #line 38 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
     h2_own2 = t1;
-#line 245 "fixedbugscasepayloadleaked.c"
+#line 38 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
     hero_array_decref(t37);
 #line 38 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
     t38 = h0_out;
-#line 249 "fixedbugscasepayloadleaked.c"
+#line 38 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
     hero_array_incref(t1);
 #line 38 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
     h0_out = t1;
-#line 253 "fixedbugscasepayloadleaked.c"
+#line 38 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
     hero_array_decref(t38);
-#line 39 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
     t3 = HERO_STR_LIT(hero_str_334014a4);
 #line 39 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
     t4 = INT64_C(0);
@@ -263,7 +209,7 @@ bb0:
     t39 = h3_own3;
 #line 39 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
     h3_own3 = t6;
-#line 267 "fixedbugscasepayloadleaked.c"
+#line 39 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
     h_fixedbugscasepayloadleaked_Token_release(&t39);
 #line 39 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
     hero_array_push_owned(&h0_out, &t6);
@@ -274,7 +220,7 @@ bb0:
     t40 = h4_own4;
 #line 40 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
     h4_own4 = t10;
-#line 278 "fixedbugscasepayloadleaked.c"
+#line 40 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
     h_fixedbugscasepayloadleaked_Token_release(&t40);
 #line 40 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
     hero_array_push_owned(&h0_out, &t10);
@@ -282,13 +228,12 @@ bb0:
     t12 = h0_out;
 #line 44 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
     t41 = h1_copy;
-#line 286 "fixedbugscasepayloadleaked.c"
+#line 44 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
     hero_array_incref(t12);
 #line 44 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
     h1_copy = t12;
-#line 290 "fixedbugscasepayloadleaked.c"
+#line 44 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
     hero_array_decref(t41);
-#line 45 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
     t14 = HERO_STR_LIT(hero_str_68e7bae0);
 #line 45 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
     t15 = INT64_C(0);
@@ -300,7 +245,7 @@ bb0:
     t42 = h5_own5;
 #line 45 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
     h5_own5 = t17;
-#line 304 "fixedbugscasepayloadleaked.c"
+#line 45 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
     h_fixedbugscasepayloadleaked_Token_release(&t42);
 #line 45 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
     hero_array_push_owned(&h0_out, &t17);
@@ -337,7 +282,7 @@ bb0:
     t43 = h6_own6;
 #line 52 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
     h6_own6 = t29;
-#line 341 "fixedbugscasepayloadleaked.c"
+#line 52 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
     h_fixedbugscasepayloadleaked_Token_release(&t43);
 #line 52 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
     t30 = h_fixedbugscasepayloadleaked_Token_eq(&t25, &t29);
@@ -358,7 +303,7 @@ bb0:
     t44 = h7_own7;
 #line 53 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
     h7_own7 = t35;
-#line 362 "fixedbugscasepayloadleaked.c"
+#line 53 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
     h_fixedbugscasepayloadleaked_Token_release(&t44);
 #line 53 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
     t36 = h_fixedbugscasepayloadleaked_Token_eq(&t33, &t35);
@@ -366,7 +311,7 @@ bb0:
     hero_print_bool(t36);
 #line 53 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
     hero_print_end();
-#line 370 "fixedbugscasepayloadleaked.c"
+#line 315 "fixedbugscasepayloadleaked.c"
     hero_array_release_at(&h0_out);
     hero_array_release_at(&h1_copy);
     hero_array_release_at(&h2_own2);

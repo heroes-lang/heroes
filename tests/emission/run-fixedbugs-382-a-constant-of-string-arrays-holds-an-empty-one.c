@@ -117,29 +117,10 @@ HeroArrayHeader * h_fixedbugs382aconstantofstringarraysholdsanemptyone_NESTS(voi
 
 #line 7 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
 HeroArrayHeader * h_fixedbugs382aconstantofstringarraysholdsanemptyone_NESTS(void) {
-#line 121 "fixedbugs382aconstantofstringarraysholdsanemptyone.c"
-    HeroArrayHeader * h0_own0 = {0};
-    HeroArrayHeader * h1_own1 = {0};
-    HeroArrayHeader * h2_own2 = {0};
-    HeroArrayHeader * h3_own3 = {0};
-    HeroArrayHeader * h4_own4 = {0};
-    HeroStr t1;
-    HeroStr t2;
-    HeroArrayHeader * t3;
-    HeroArrayHeader * t4;
-    HeroStr t5;
-    HeroArrayHeader * t6;
-    HeroStr t7;
-    HeroArrayHeader * t8;
-    HeroArrayHeader * t9;
-    HeroArrayHeader * t10;
-    HeroArrayHeader * t11;
-    HeroArrayHeader * t12;
-    HeroArrayHeader * t13;
-    HeroArrayHeader * t14;
-    goto bb0;
+#line 7 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
+    HeroArrayHeader * h0_own0 = {0}; HeroArrayHeader * h1_own1 = {0}; HeroArrayHeader * h2_own2 = {0}; HeroArrayHeader * h3_own3 = {0}; HeroArrayHeader * h4_own4 = {0}; HeroStr t1; HeroStr t2; HeroArrayHeader * t3; HeroArrayHeader * t4; HeroStr t5; HeroArrayHeader * t6; HeroStr t7; HeroArrayHeader * t8; HeroArrayHeader * t9; HeroArrayHeader * t10; HeroArrayHeader * t11; HeroArrayHeader * t12; HeroArrayHeader * t13; HeroArrayHeader * t14; goto bb0;
+#line 7 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
 bb0:
-#line 8 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
     t1 = HERO_STR_LIT(hero_str_61);
 #line 8 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
     t2 = HERO_STR_LIT(hero_str_62);
@@ -153,7 +134,7 @@ bb0:
     t10 = h0_own0;
 #line 8 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
     h0_own0 = t3;
-#line 157 "fixedbugs382aconstantofstringarraysholdsanemptyone.c"
+#line 8 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
     hero_array_decref(t10);
 #line 8 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
     t4 = hero_array_new(&hero_desc_str, 1);
@@ -161,7 +142,7 @@ bb0:
     t11 = h1_own1;
 #line 8 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
     h1_own1 = t4;
-#line 165 "fixedbugs382aconstantofstringarraysholdsanemptyone.c"
+#line 8 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
     hero_array_decref(t11);
 #line 8 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
     t5 = HERO_STR_LIT(hero_str_63);
@@ -173,7 +154,7 @@ bb0:
     t12 = h2_own2;
 #line 8 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
     h2_own2 = t6;
-#line 177 "fixedbugs382aconstantofstringarraysholdsanemptyone.c"
+#line 8 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
     hero_array_decref(t12);
 #line 8 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
     t7 = HERO_STR_LIT(hero_str_0);
@@ -185,7 +166,7 @@ bb0:
     t13 = h3_own3;
 #line 8 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
     h3_own3 = t8;
-#line 189 "fixedbugs382aconstantofstringarraysholdsanemptyone.c"
+#line 8 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
     hero_array_decref(t13);
 #line 8 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
     t9 = hero_array_new(&hero_desc_array, 4);
@@ -201,8 +182,9 @@ bb0:
     t14 = h4_own4;
 #line 8 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
     h4_own4 = t9;
-#line 205 "fixedbugs382aconstantofstringarraysholdsanemptyone.c"
+#line 8 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
     hero_array_decref(t14);
+#line 188 "fixedbugs382aconstantofstringarraysholdsanemptyone.c"
     hero_array_incref(t9);
     hero_array_release_at(&h0_own0);
     hero_array_release_at(&h1_own1);
@@ -215,116 +197,10 @@ bb0:
 
 #line 10 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
 void h_fixedbugs382aconstantofstringarraysholdsanemptyone_main(void) {
-#line 219 "fixedbugs382aconstantofstringarraysholdsanemptyone.c"
-    int64_t h0_total;
-    HeroArrayHeader * h1_xs0 = {0};
-    int64_t h2_i0;
-    HeroArrayHeader * h3_inner = {0};
-    HeroArrayHeader * h4_copy = {0};
-    HeroArrayHeader * h5_own5 = {0};
-    HeroArrayHeader * h6_own6 = {0};
-    HeroArrayHeader * h7_own7 = {0};
-    HeroArrayHeader * h8_own8 = {0};
-    HeroArrayHeader * h9_own9 = {0};
-    HeroStr h10_own10 = {0};
-    HeroArrayHeader * h11_own11 = {0};
-    HeroArrayHeader * h12_own12 = {0};
-    HeroStr h13_own13 = {0};
-    HeroArrayHeader * h14_own14 = {0};
-    HeroArrayHeader * h15_own15 = {0};
-    HeroStr h16_own16 = {0};
-    int64_t t1;
-    HeroArrayHeader * t2;
-    int64_t t3;
-    int64_t t4;
-    HeroArrayHeader * t5;
-    int64_t t6;
-    bool t7;
-    HeroArrayHeader * t8;
-    int64_t t9;
-    HeroArrayHeader * t10;
-    int64_t t11;
-    HeroArrayHeader * t12;
-    int64_t t13;
-    int64_t t14;
-    int64_t t15;
-    int64_t t16;
-    int64_t t17;
-    int64_t t18;
-    HeroStr t19;
-    HeroArrayHeader * t20;
-    int64_t t21;
-    HeroArrayHeader * t22;
-    int64_t t23;
-    HeroStr t24;
-    HeroStr t25;
-    HeroArrayHeader * t26;
-    int64_t t27;
-    HeroArrayHeader * t28;
-    int64_t t29;
-    HeroStr t30;
-    HeroArrayHeader * t31;
-    int64_t t32;
-    HeroArrayHeader * t33;
-    int64_t t34;
-    HeroStr t35;
-    int64_t t36;
-    HeroStr t37;
-    HeroArrayHeader * t38;
-    int64_t t39;
-    HeroArrayHeader * t40;
-    HeroStr t41;
-    HeroStr t42;
-    HeroArrayHeader * t43;
-    int64_t t44;
-    HeroArrayHeader * t45;
-    int64_t t46;
-    HeroArrayHeader * t47;
-    HeroStr t48;
-    HeroArrayHeader * t49;
-    int64_t t50;
-    int64_t t51;
-    HeroStr t52;
-    HeroArrayHeader * t53;
-    int64_t t54;
-    HeroArrayHeader * t55;
-    int64_t t56;
-    HeroStr t57;
-    HeroStr t58;
-    HeroArrayHeader * t59;
-    int64_t t60;
-    HeroArrayHeader * t61;
-    HeroStr t62;
-    HeroStr t63;
-    HeroStr t64;
-    HeroArrayHeader * t65;
-    int64_t t66;
-    HeroArrayHeader * t67;
-    int64_t t68;
-    HeroStr t69;
-    HeroArrayHeader * t70;
-    int64_t t71;
-    HeroArrayHeader * t72;
-    HeroStr t73;
-    HeroStr t74;
-    HeroArrayHeader * t75;
-    HeroArrayHeader * t76;
-    HeroArrayHeader * t77;
-    HeroArrayHeader * t78;
-    HeroArrayHeader * t79;
-    HeroArrayHeader * t80;
-    HeroArrayHeader * t81;
-    HeroStr t82;
-    HeroArrayHeader * t83;
-    HeroArrayHeader * t84;
-    HeroArrayHeader * t85;
-    HeroStr t86;
-    HeroArrayHeader * t87;
-    HeroArrayHeader * t88;
-    HeroStr t89;
-    goto bb0;
+#line 10 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
+    int64_t h0_total; HeroArrayHeader * h1_xs0 = {0}; int64_t h2_i0; HeroArrayHeader * h3_inner = {0}; HeroArrayHeader * h4_copy = {0}; HeroArrayHeader * h5_own5 = {0}; HeroArrayHeader * h6_own6 = {0}; HeroArrayHeader * h7_own7 = {0}; HeroArrayHeader * h8_own8 = {0}; HeroArrayHeader * h9_own9 = {0}; HeroStr h10_own10 = {0}; HeroArrayHeader * h11_own11 = {0}; HeroArrayHeader * h12_own12 = {0}; HeroStr h13_own13 = {0}; HeroArrayHeader * h14_own14 = {0}; HeroArrayHeader * h15_own15 = {0}; HeroStr h16_own16 = {0}; int64_t t1; HeroArrayHeader * t2; int64_t t3; int64_t t4; HeroArrayHeader * t5; int64_t t6; bool t7; HeroArrayHeader * t8; int64_t t9; HeroArrayHeader * t10; int64_t t11; HeroArrayHeader * t12; int64_t t13; int64_t t14; int64_t t15; int64_t t16; int64_t t17; int64_t t18; HeroStr t19; HeroArrayHeader * t20; int64_t t21; HeroArrayHeader * t22; int64_t t23; HeroStr t24; HeroStr t25; HeroArrayHeader * t26; int64_t t27; HeroArrayHeader * t28; int64_t t29; HeroStr t30; HeroArrayHeader * t31; int64_t t32; HeroArrayHeader * t33; int64_t t34; HeroStr t35; int64_t t36; HeroStr t37; HeroArrayHeader * t38; int64_t t39; HeroArrayHeader * t40; HeroStr t41; HeroStr t42; HeroArrayHeader * t43; int64_t t44; HeroArrayHeader * t45; int64_t t46; HeroArrayHeader * t47; HeroStr t48; HeroArrayHeader * t49; int64_t t50; int64_t t51; HeroStr t52; HeroArrayHeader * t53; int64_t t54; HeroArrayHeader * t55; int64_t t56; HeroStr t57; HeroStr t58; HeroArrayHeader * t59; int64_t t60; HeroArrayHeader * t61; HeroStr t62; HeroStr t63; HeroStr t64; HeroArrayHeader * t65; int64_t t66; HeroArrayHeader * t67; int64_t t68; HeroStr t69; HeroArrayHeader * t70; int64_t t71; HeroArrayHeader * t72; HeroStr t73; HeroStr t74; HeroArrayHeader * t75; HeroArrayHeader * t76; HeroArrayHeader * t77; HeroArrayHeader * t78; HeroArrayHeader * t79; HeroArrayHeader * t80; HeroArrayHeader * t81; HeroStr t82; HeroArrayHeader * t83; HeroArrayHeader * t84; HeroArrayHeader * t85; HeroStr t86; HeroArrayHeader * t87; HeroArrayHeader * t88; HeroStr t89; goto bb0;
+#line 10 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
 bb0:
-#line 11 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
     t1 = INT64_C(0);
 #line 11 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
     h0_total = t1;
@@ -334,15 +210,15 @@ bb0:
     t75 = h5_own5;
 #line 13 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
     h5_own5 = t2;
-#line 338 "fixedbugs382aconstantofstringarraysholdsanemptyone.c"
+#line 13 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
     hero_array_decref(t75);
 #line 13 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
     t76 = h1_xs0;
-#line 342 "fixedbugs382aconstantofstringarraysholdsanemptyone.c"
+#line 13 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
     hero_array_incref(t2);
 #line 13 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
     h1_xs0 = t2;
-#line 346 "fixedbugs382aconstantofstringarraysholdsanemptyone.c"
+#line 13 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
     hero_array_decref(t76);
 #line 13 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
     t3 = INT64_C(0);
@@ -372,13 +248,12 @@ bb2:
     t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), ((HeroArrayHeader * const *)(const void *)(t8 + 1))[t9]);
 #line 13 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
     t77 = h3_inner;
-#line 376 "fixedbugs382aconstantofstringarraysholdsanemptyone.c"
+#line 13 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
     hero_array_incref(t10);
 #line 13 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
     h3_inner = t10;
-#line 380 "fixedbugs382aconstantofstringarraysholdsanemptyone.c"
+#line 13 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
     hero_array_decref(t77);
-#line 14 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
     t11 = h0_total;
 #line 14 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
     t12 = h3_inner;
@@ -414,7 +289,7 @@ bb4:
     t78 = h6_own6;
 #line 16 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
     h6_own6 = t20;
-#line 418 "fixedbugs382aconstantofstringarraysholdsanemptyone.c"
+#line 16 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
     hero_array_decref(t78);
 #line 16 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
     t21 = INT64_C(2);
@@ -432,7 +307,7 @@ bb4:
     t79 = h7_own7;
 #line 16 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
     h7_own7 = t26;
-#line 436 "fixedbugs382aconstantofstringarraysholdsanemptyone.c"
+#line 16 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
     hero_array_decref(t79);
 #line 16 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
     t27 = INT64_C(1);
@@ -448,7 +323,7 @@ bb4:
     t80 = h8_own8;
 #line 16 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
     h8_own8 = t31;
-#line 452 "fixedbugs382aconstantofstringarraysholdsanemptyone.c"
+#line 16 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
     hero_array_decref(t80);
 #line 16 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
     t32 = INT64_C(3);
@@ -468,7 +343,7 @@ bb4:
     t81 = h9_own9;
 #line 16 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
     h9_own9 = t38;
-#line 472 "fixedbugs382aconstantofstringarraysholdsanemptyone.c"
+#line 16 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
     hero_array_decref(t81);
 #line 16 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
     t39 = INT64_C(0);
@@ -482,7 +357,7 @@ bb4:
     t82 = h10_own10;
 #line 16 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
     h10_own10 = t42;
-#line 486 "fixedbugs382aconstantofstringarraysholdsanemptyone.c"
+#line 16 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
     hero_str_decref(t82);
 #line 16 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
     hero_print_int(t18);
@@ -509,17 +384,16 @@ bb4:
     t83 = h11_own11;
 #line 17 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
     h11_own11 = t43;
-#line 513 "fixedbugs382aconstantofstringarraysholdsanemptyone.c"
+#line 17 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
     hero_array_decref(t83);
 #line 17 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
     t84 = h4_copy;
-#line 517 "fixedbugs382aconstantofstringarraysholdsanemptyone.c"
+#line 17 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
     hero_array_incref(t43);
 #line 17 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
     h4_copy = t43;
-#line 521 "fixedbugs382aconstantofstringarraysholdsanemptyone.c"
+#line 17 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
     hero_array_decref(t84);
-#line 18 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
     t44 = INT64_C(1);
 #line 18 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
     t45 = h4_copy;
@@ -535,8 +409,9 @@ bb4:
     t85 = h12_own12;
 #line 18 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
     h12_own12 = t49;
-#line 539 "fixedbugs382aconstantofstringarraysholdsanemptyone.c"
+#line 18 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
     hero_array_decref(t85);
+#line 18 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
     hero_array_incref(t49);
 #line 18 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
     hero_array_set(&(h4_copy), t44, &t49);
@@ -545,7 +420,7 @@ bb4:
     t51 = INT64_C(1);
 #line 19 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
     t52 = HERO_STR_LIT(hero_str_65);
-#line 549 "fixedbugs382aconstantofstringarraysholdsanemptyone.c"
+#line 19 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
     hero_str_incref(t52);
 #line 19 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
     hero_array_unshare(&(h4_copy));
@@ -576,7 +451,7 @@ bb4:
     t86 = h13_own13;
 #line 20 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
     h13_own13 = t63;
-#line 580 "fixedbugs382aconstantofstringarraysholdsanemptyone.c"
+#line 20 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
     hero_str_decref(t86);
 #line 20 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
     t64 = HERO_STR_LIT(hero_str_20);
@@ -586,7 +461,7 @@ bb4:
     t87 = h14_own14;
 #line 20 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
     h14_own14 = t65;
-#line 590 "fixedbugs382aconstantofstringarraysholdsanemptyone.c"
+#line 20 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
     hero_array_decref(t87);
 #line 20 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
     t66 = INT64_C(1);
@@ -602,7 +477,7 @@ bb4:
     t88 = h15_own15;
 #line 20 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
     h15_own15 = t70;
-#line 606 "fixedbugs382aconstantofstringarraysholdsanemptyone.c"
+#line 20 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
     hero_array_decref(t88);
 #line 20 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
     t71 = INT64_C(0);
@@ -616,7 +491,7 @@ bb4:
     t89 = h16_own16;
 #line 20 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
     h16_own16 = t74;
-#line 620 "fixedbugs382aconstantofstringarraysholdsanemptyone.c"
+#line 20 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
     hero_str_decref(t89);
 #line 20 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
     hero_print_str(t57);
@@ -634,7 +509,7 @@ bb4:
     hero_print_str(t74);
 #line 20 "tests/golden/run/fixedbugs-382-a-constant-of-string-arrays-holds-an-empty-one.hero"
     hero_print_end();
-#line 638 "fixedbugs382aconstantofstringarraysholdsanemptyone.c"
+#line 513 "fixedbugs382aconstantofstringarraysholdsanemptyone.c"
     hero_array_release_at(&h1_xs0);
     hero_array_release_at(&h3_inner);
     hero_array_release_at(&h4_copy);

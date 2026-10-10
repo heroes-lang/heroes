@@ -105,21 +105,10 @@ void h_handleacopymadebeforetheendistheruntimes_main(void);
 
 #line 16 "tests/golden/run/handle-a-copy-made-before-the-end-is-the-runtime-s.hero"
 void h_handleacopymadebeforetheendistheruntimes_main(void) {
-#line 109 "handleacopymadebeforetheendistheruntimes.c"
-    node * h0_a;
-    node * h1_keep;
-    int64_t t1;
-    node * t2;
-    node * t3;
-    HeroStr t4;
-    node * t5;
-    int64_t t6;
-    node * t7;
-    node * t8;
-    HeroStr t9;
-    goto bb0;
+#line 16 "tests/golden/run/handle-a-copy-made-before-the-end-is-the-runtime-s.hero"
+    node * h0_a; node * h1_keep; int64_t t1; node * t2; node * t3; HeroStr t4; node * t5; int64_t t6; node * t7; node * t8; HeroStr t9; goto bb0;
+#line 16 "tests/golden/run/handle-a-copy-made-before-the-end-is-the-runtime-s.hero"
 bb0:
-#line 17 "tests/golden/run/handle-a-copy-made-before-the-end-is-the-runtime-s.hero"
     t1 = INT64_C(5);
 #line 17 "tests/golden/run/handle-a-copy-made-before-the-end-is-the-runtime-s.hero"
     t2 = node_new(t1);
@@ -176,7 +165,7 @@ bb0:
     hero_print_end();
 #line 22 "tests/golden/run/handle-a-copy-made-before-the-end-is-the-runtime-s.hero"
     return;
-#line 180 "handleacopymadebeforetheendistheruntimes.c"
+#line 169 "handleacopymadebeforetheendistheruntimes.c"
 }
 HERO_TU_LOCAL bool h_handleacopymadebeforetheendistheruntimes_Node_eq(node * const *a, node * const *b) {
     return hero_handle_eq(*a, *b);

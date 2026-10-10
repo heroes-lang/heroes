@@ -115,46 +115,10 @@ void h_ffiaconstructionnamesonearmofeachunion_main(void);
 
 #line 22 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
 void h_ffiaconstructionnamesonearmofeachunion_main(void) {
-#line 119 "ffiaconstructionnamesonearmofeachunion.c"
-    SA h0_s;
-    SA h1_t;
-    SA h2_a;
-    SA h3_b;
-    bool h4_b0;
-    bool h5_b1;
-    SA t1;
-    SA t2;
-    int32_t t3;
-    int32_t t4;
-    float t5;
-    int32_t t6;
-    SA t7;
-    SA t8;
-    float t9;
-    SA t10;
-    int32_t t11;
-    SA t12;
-    SA t13;
-    SA t14;
-    int32_t t15;
-    SA t16;
-    int32_t t17;
-    bool t18;
-    SA t19;
-    int32_t t20;
-    SA t21;
-    int32_t t22;
-    bool t23;
-    bool t24;
-    SA t25;
-    int32_t t26;
-    SA t27;
-    int32_t t28;
-    bool t29;
-    bool t30;
-    goto bb0;
+#line 22 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
+    SA h0_s; SA h1_t; SA h2_a; SA h3_b; bool h4_b0; bool h5_b1; SA t1; SA t2; int32_t t3; int32_t t4; float t5; int32_t t6; SA t7; SA t8; float t9; SA t10; int32_t t11; SA t12; SA t13; SA t14; int32_t t15; SA t16; int32_t t17; bool t18; SA t19; int32_t t20; SA t21; int32_t t22; bool t23; bool t24; SA t25; int32_t t26; SA t27; int32_t t28; bool t29; bool t30; goto bb0;
+#line 22 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
 bb0:
-#line 23 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
     t1 = make_sa();
 #line 23 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
     h0_s = t1;
@@ -257,7 +221,7 @@ bb4:
     hero_print_end();
 #line 30 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
     return;
-#line 261 "ffiaconstructionnamesonearmofeachunion.c"
+#line 225 "ffiaconstructionnamesonearmofeachunion.c"
 }
 HERO_TU_LOCAL bool h_ffiaconstructionnamesonearmofeachunion_SA_eq(const SA *a, const SA *b) {
     if (!(a->kind == b->kind)) return false;

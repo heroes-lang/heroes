@@ -104,24 +104,10 @@ void h_ffiacquiresandconsumes_main(void);
 
 #line 17 "tests/golden/run/ffi-acquires-and-consumes.hero"
 void h_ffiacquiresandconsumes_main(void) {
-#line 108 "ffiacquiresandconsumes.c"
-    Slot * h0_a;
-    Slot * h1_b;
-    int64_t t1;
-    Slot * t2;
-    int64_t t3;
-    Slot * t4;
-    Slot * t5;
-    int64_t t6;
-    Slot * t7;
-    int64_t t8;
-    int64_t t9;
-    Slot * t10;
-    Slot * t11;
-    HeroStr t12;
-    goto bb0;
+#line 17 "tests/golden/run/ffi-acquires-and-consumes.hero"
+    Slot * h0_a; Slot * h1_b; int64_t t1; Slot * t2; int64_t t3; Slot * t4; Slot * t5; int64_t t6; Slot * t7; int64_t t8; int64_t t9; Slot * t10; Slot * t11; HeroStr t12; goto bb0;
+#line 17 "tests/golden/run/ffi-acquires-and-consumes.hero"
 bb0:
-#line 18 "tests/golden/run/ffi-acquires-and-consumes.hero"
     t1 = INT64_C(7);
 #line 18 "tests/golden/run/ffi-acquires-and-consumes.hero"
     t2 = slot_open(t1);
@@ -186,7 +172,7 @@ bb0:
     hero_print_end();
 #line 23 "tests/golden/run/ffi-acquires-and-consumes.hero"
     return;
-#line 190 "ffiacquiresandconsumes.c"
+#line 176 "ffiacquiresandconsumes.c"
 }
 HERO_TU_LOCAL bool h_ffiacquiresandconsumes_Slot_eq(Slot * const *a, Slot * const *b) {
     return hero_handle_eq(*a, *b);

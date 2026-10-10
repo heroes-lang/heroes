@@ -105,29 +105,10 @@ void h_records_main(void);
 
 #line 18 "tests/golden/run/records.hero"
 int64_t h_records_dist2(h_records_Point h0_a, h_records_Point h1_b) {
-#line 109 "records.c"
-    int64_t h2_dx;
-    int64_t h3_dy;
-    h_records_Point t1;
-    int64_t t2;
-    h_records_Point t3;
-    int64_t t4;
-    int64_t t5;
-    h_records_Point t6;
-    int64_t t7;
-    h_records_Point t8;
-    int64_t t9;
-    int64_t t10;
-    int64_t t11;
-    int64_t t12;
-    int64_t t13;
-    int64_t t14;
-    int64_t t15;
-    int64_t t16;
-    int64_t t17;
-    goto bb0;
+#line 18 "tests/golden/run/records.hero"
+    int64_t h2_dx; int64_t h3_dy; h_records_Point t1; int64_t t2; h_records_Point t3; int64_t t4; int64_t t5; h_records_Point t6; int64_t t7; h_records_Point t8; int64_t t9; int64_t t10; int64_t t11; int64_t t12; int64_t t13; int64_t t14; int64_t t15; int64_t t16; int64_t t17; goto bb0;
+#line 18 "tests/golden/run/records.hero"
 bb0:
-#line 19 "tests/golden/run/records.hero"
     t1 = h0_a;
 #line 19 "tests/golden/run/records.hero"
     t2 = t1.f_x;
@@ -165,22 +146,15 @@ bb0:
     if (__builtin_add_overflow(t13, t16, &t17)) hero_panic_overflow();
 #line 21 "tests/golden/run/records.hero"
     return t17;
-#line 169 "records.c"
+#line 150 "records.c"
 }
 
 #line 23 "tests/golden/run/records.hero"
 h_records_Point h_records_moved(h_records_Point h0_p) {
-#line 174 "records.c"
-    h_records_Point t1;
-    int64_t t2;
-    int64_t t3;
-    int64_t t4;
-    h_records_Point t5;
-    int64_t t6;
-    h_records_Point t7;
-    goto bb0;
+#line 23 "tests/golden/run/records.hero"
+    h_records_Point t1; int64_t t2; int64_t t3; int64_t t4; h_records_Point t5; int64_t t6; h_records_Point t7; goto bb0;
+#line 23 "tests/golden/run/records.hero"
 bb0:
-#line 24 "tests/golden/run/records.hero"
     t1 = h0_p;
 #line 24 "tests/golden/run/records.hero"
     t2 = t1.f_x;
@@ -196,61 +170,15 @@ bb0:
     t7 = (h_records_Point){.f_x = t4, .f_y = t6};
 #line 24 "tests/golden/run/records.hero"
     return t7;
-#line 200 "records.c"
+#line 174 "records.c"
 }
 
 #line 26 "tests/golden/run/records.hero"
 void h_records_main(void) {
-#line 205 "records.c"
-    h_records_Point h0_p;
-    h_records_Point h1_q;
-    h_records_Pair h2_both;
-    h_records_Point h3_r;
-    int64_t t1;
-    int64_t t2;
-    h_records_Point t3;
-    int64_t t4;
-    int64_t t5;
-    h_records_Point t6;
-    h_records_Point t7;
-    h_records_Point t8;
-    int64_t t9;
-    h_records_Point t10;
-    h_records_Point t11;
-    bool t12;
-    h_records_Point t13;
-    int64_t t14;
-    int64_t t15;
-    h_records_Point t16;
-    bool t17;
-    h_records_Point t18;
-    h_records_Point t19;
-    h_records_Pair t20;
-    h_records_Pair t21;
-    h_records_Point t22;
-    int64_t t23;
-    h_records_Pair t24;
-    h_records_Point t25;
-    h_records_Point t26;
-    h_records_Pair t27;
-    bool t28;
-    h_records_Point t29;
-    h_records_Point t30;
-    h_records_Point t31;
-    h_records_Point t32;
-    int64_t t33;
-    h_records_Point t34;
-    int64_t t35;
-    h_records_Point t36;
-    h_records_Point t37;
-    h_records_Pair t38;
-    h_records_Point t39;
-    h_records_Point t40;
-    h_records_Pair t41;
-    bool t42;
-    goto bb0;
+#line 26 "tests/golden/run/records.hero"
+    h_records_Point h0_p; h_records_Point h1_q; h_records_Pair h2_both; h_records_Point h3_r; int64_t t1; int64_t t2; h_records_Point t3; int64_t t4; int64_t t5; h_records_Point t6; h_records_Point t7; h_records_Point t8; int64_t t9; h_records_Point t10; h_records_Point t11; bool t12; h_records_Point t13; int64_t t14; int64_t t15; h_records_Point t16; bool t17; h_records_Point t18; h_records_Point t19; h_records_Pair t20; h_records_Pair t21; h_records_Point t22; int64_t t23; h_records_Pair t24; h_records_Point t25; h_records_Point t26; h_records_Pair t27; bool t28; h_records_Point t29; h_records_Point t30; h_records_Point t31; h_records_Point t32; int64_t t33; h_records_Point t34; int64_t t35; h_records_Point t36; h_records_Point t37; h_records_Pair t38; h_records_Point t39; h_records_Point t40; h_records_Pair t41; bool t42; goto bb0;
+#line 26 "tests/golden/run/records.hero"
 bb0:
-#line 27 "tests/golden/run/records.hero"
     t1 = INT64_C(0);
 #line 27 "tests/golden/run/records.hero"
     t2 = INT64_C(0);
@@ -368,7 +296,7 @@ bb0:
     hero_print_end();
 #line 47 "tests/golden/run/records.hero"
     return;
-#line 372 "records.c"
+#line 300 "records.c"
 }
 HERO_TU_LOCAL bool h_records_Point_eq(const h_records_Point *a, const h_records_Point *b) {
     if (!(a->f_x == b->f_x)) return false;

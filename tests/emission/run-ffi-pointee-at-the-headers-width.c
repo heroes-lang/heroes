@@ -98,24 +98,14 @@ void h_ffipointeeattheheaderswidth_main(void);
 
 #line 16 "tests/golden/run/ffi-pointee-at-the-headers-width.hero"
 void h_ffipointeeattheheaderswidth_main(void) {
-#line 102 "ffipointeeattheheaderswidth.c"
-    int32_t *const hero_lend_h0_e = (int32_t *)hero_lend_local(sizeof(int32_t), "ffipointeeattheheaderswidth.main", "e");
+#line 16 "tests/golden/run/ffi-pointee-at-the-headers-width.hero"
 #define h0_e (*hero_lend_h0_e)
-    double h1_m;
-    int64_t *const hero_lend_h2_t = (int64_t *)hero_lend_local(sizeof(int64_t), "ffipointeeattheheaderswidth.main", "t");
+#line 16 "tests/golden/run/ffi-pointee-at-the-headers-width.hero"
 #define h2_t (*hero_lend_h2_t)
-    int32_t t1;
-    double t2;
-    double t3;
-    double t4;
-    int32_t t5;
-    int64_t t6;
-    int64_t t8;
-    int64_t t9;
-    bool t10;
-    goto bb0;
+#line 16 "tests/golden/run/ffi-pointee-at-the-headers-width.hero"
+    int32_t *const hero_lend_h0_e = (int32_t *)hero_lend_local(sizeof(int32_t), "ffipointeeattheheaderswidth.main", "e"); double h1_m; int64_t *const hero_lend_h2_t = (int64_t *)hero_lend_local(sizeof(int64_t), "ffipointeeattheheaderswidth.main", "t"); int32_t t1; double t2; double t3; double t4; int32_t t5; int64_t t6; int64_t t8; int64_t t9; bool t10; goto bb0;
+#line 16 "tests/golden/run/ffi-pointee-at-the-headers-width.hero"
 bb0:
-#line 17 "tests/golden/run/ffi-pointee-at-the-headers-width.hero"
     t1 = INT64_C(0);
 #line 17 "tests/golden/run/ffi-pointee-at-the-headers-width.hero"
     h0_e = t1;
@@ -157,7 +147,7 @@ bb0:
     hero_lend_local_give(hero_lend_h0_e);
 #line 23 "tests/golden/run/ffi-pointee-at-the-headers-width.hero"
     return;
-#line 161 "ffipointeeattheheaderswidth.c"
+#line 151 "ffipointeeattheheaderswidth.c"
 }
 #undef h0_e
 #undef h2_t

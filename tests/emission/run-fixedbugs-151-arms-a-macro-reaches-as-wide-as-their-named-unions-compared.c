@@ -122,35 +122,9 @@ void h_fixedbugs151armsamacroreachesaswideastheirnamedunionscompared_main(void);
 
 #line 18 "tests/golden/run/fixedbugs-151-arms-a-macro-reaches-as-wide-as-their-named-unions-compared.hero"
 void h_fixedbugs151armsamacroreachesaswideastheirnamedunionscompared_main(void) {
-#line 126 "fixedbugs151armsamacroreachesaswideastheirnamedunionscompared.c"
-    uint8_t t1;
-    ADDR t2;
-    uint8_t t3;
-    ADDR t4;
-    bool t5;
-    HeroStr t6;
-    uint8_t t7;
-    ADDR t8;
-    uint8_t t9;
-    ADDR t10;
-    bool t11;
-    HeroStr t12;
-    uint8_t t13;
-    ADDR t14;
-    int64_t t16;
-    uint8_t t17;
-    int32_t t18;
-    ACT t19;
-    int32_t t20;
-    ACT t21;
-    bool t22;
-    HeroStr t23;
-    int32_t t24;
-    ACT t25;
-    int32_t t26;
-    ACT t27;
-    bool t28;
-    goto bb0;
+#line 18 "tests/golden/run/fixedbugs-151-arms-a-macro-reaches-as-wide-as-their-named-unions-compared.hero"
+    uint8_t t1; ADDR t2; uint8_t t3; ADDR t4; bool t5; HeroStr t6; uint8_t t7; ADDR t8; uint8_t t9; ADDR t10; bool t11; HeroStr t12; uint8_t t13; ADDR t14; int64_t t16; uint8_t t17; int32_t t18; ACT t19; int32_t t20; ACT t21; bool t22; HeroStr t23; int32_t t24; ACT t25; int32_t t26; ACT t27; bool t28; goto bb0;
+#line 18 "tests/golden/run/fixedbugs-151-arms-a-macro-reaches-as-wide-as-their-named-unions-compared.hero"
 bb0:
 #line 20 "tests/golden/run/fixedbugs-151-arms-a-macro-reaches-as-wide-as-their-named-unions-compared.hero"
     t1 = UINT64_C(1);
@@ -224,7 +198,7 @@ bb0:
     hero_print_end();
 #line 26 "tests/golden/run/fixedbugs-151-arms-a-macro-reaches-as-wide-as-their-named-unions-compared.hero"
     return;
-#line 228 "fixedbugs151armsamacroreachesaswideastheirnamedunionscompared.c"
+#line 202 "fixedbugs151armsamacroreachesaswideastheirnamedunionscompared.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs151armsamacroreachesaswideastheirnamedunionscompared_ADDR_eq(const ADDR *a, const ADDR *b) {
     if (!((a->addr_bytes[0] == b->addr_bytes[0] && a->addr_bytes[1] == b->addr_bytes[1] && a->addr_bytes[2] == b->addr_bytes[2] && a->addr_bytes[3] == b->addr_bytes[3] && a->addr_bytes[4] == b->addr_bytes[4] && a->addr_bytes[5] == b->addr_bytes[5] && a->addr_bytes[6] == b->addr_bytes[6] && a->addr_bytes[7] == b->addr_bytes[7] && a->addr_bytes[8] == b->addr_bytes[8] && a->addr_bytes[9] == b->addr_bytes[9] && a->addr_bytes[10] == b->addr_bytes[10] && a->addr_bytes[11] == b->addr_bytes[11] && a->addr_bytes[12] == b->addr_bytes[12] && a->addr_bytes[13] == b->addr_bytes[13] && a->addr_bytes[14] == b->addr_bytes[14] && a->addr_bytes[15] == b->addr_bytes[15]))) return false;

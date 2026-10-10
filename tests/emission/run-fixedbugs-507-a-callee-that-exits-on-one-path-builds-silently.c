@@ -93,13 +93,10 @@ void h_library_exit(int64_t h0_code);
 
 #line 12 "tests/golden/run/fixedbugs-507-a-callee-that-exits-on-one-path-builds-silently.hero"
 int64_t h_fixedbugs507acalleethatexitsononepathbuildssilently_next(int64_t h0_n) {
-#line 97 "fixedbugs507acalleethatexitsononepathbuildssilently.c"
-    int64_t t1;
-    int64_t t2;
-    int64_t t3;
-    goto bb0;
+#line 12 "tests/golden/run/fixedbugs-507-a-callee-that-exits-on-one-path-builds-silently.hero"
+    int64_t t1; int64_t t2; int64_t t3; goto bb0;
+#line 12 "tests/golden/run/fixedbugs-507-a-callee-that-exits-on-one-path-builds-silently.hero"
 bb0:
-#line 13 "tests/golden/run/fixedbugs-507-a-callee-that-exits-on-one-path-builds-silently.hero"
     t1 = h0_n;
 #line 13 "tests/golden/run/fixedbugs-507-a-callee-that-exits-on-one-path-builds-silently.hero"
     t2 = INT64_C(1);
@@ -107,19 +104,15 @@ bb0:
     if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow();
 #line 13 "tests/golden/run/fixedbugs-507-a-callee-that-exits-on-one-path-builds-silently.hero"
     return t3;
-#line 111 "fixedbugs507acalleethatexitsononepathbuildssilently.c"
+#line 108 "fixedbugs507acalleethatexitsononepathbuildssilently.c"
 }
 
 #line 15 "tests/golden/run/fixedbugs-507-a-callee-that-exits-on-one-path-builds-silently.hero"
 void h_fixedbugs507acalleethatexitsononepathbuildssilently_stop_after(int64_t h0_n) {
-#line 116 "fixedbugs507acalleethatexitsononepathbuildssilently.c"
-    int64_t t1;
-    int64_t t2;
-    bool t3;
-    int64_t t4;
-    goto bb0;
+#line 15 "tests/golden/run/fixedbugs-507-a-callee-that-exits-on-one-path-builds-silently.hero"
+    int64_t t1; int64_t t2; bool t3; int64_t t4; goto bb0;
+#line 15 "tests/golden/run/fixedbugs-507-a-callee-that-exits-on-one-path-builds-silently.hero"
 bb0:
-#line 16 "tests/golden/run/fixedbugs-507-a-callee-that-exits-on-one-path-builds-silently.hero"
     t1 = h0_n;
 #line 16 "tests/golden/run/fixedbugs-507-a-callee-that-exits-on-one-path-builds-silently.hero"
     t2 = INT64_C(3);
@@ -144,20 +137,15 @@ bb2:
 bb3:
 #line 17 "tests/golden/run/fixedbugs-507-a-callee-that-exits-on-one-path-builds-silently.hero"
     goto bb1;
-#line 148 "fixedbugs507acalleethatexitsononepathbuildssilently.c"
+#line 141 "fixedbugs507acalleethatexitsononepathbuildssilently.c"
 }
 
 #line 19 "tests/golden/run/fixedbugs-507-a-callee-that-exits-on-one-path-builds-silently.hero"
 int64_t h_fixedbugs507acalleethatexitsononepathbuildssilently_serve(int64_t h0_n) {
-#line 153 "fixedbugs507acalleethatexitsononepathbuildssilently.c"
-    int64_t t1;
-    int64_t t2;
-    int64_t t3;
-    int64_t t4;
-    int64_t t5;
-    goto bb0;
+#line 19 "tests/golden/run/fixedbugs-507-a-callee-that-exits-on-one-path-builds-silently.hero"
+    int64_t t1; int64_t t2; int64_t t3; int64_t t4; int64_t t5; goto bb0;
+#line 19 "tests/golden/run/fixedbugs-507-a-callee-that-exits-on-one-path-builds-silently.hero"
 bb0:
-#line 20 "tests/golden/run/fixedbugs-507-a-callee-that-exits-on-one-path-builds-silently.hero"
     t1 = h0_n;
 #line 20 "tests/golden/run/fixedbugs-507-a-callee-that-exits-on-one-path-builds-silently.hero"
     h_fixedbugs507acalleethatexitsononepathbuildssilently_stop_after(t1);
@@ -173,17 +161,15 @@ bb0:
     t5 = h_fixedbugs507acalleethatexitsononepathbuildssilently_serve(t4);
 #line 22 "tests/golden/run/fixedbugs-507-a-callee-that-exits-on-one-path-builds-silently.hero"
     return t5;
-#line 177 "fixedbugs507acalleethatexitsononepathbuildssilently.c"
+#line 165 "fixedbugs507acalleethatexitsononepathbuildssilently.c"
 }
 
 #line 24 "tests/golden/run/fixedbugs-507-a-callee-that-exits-on-one-path-builds-silently.hero"
 void h_fixedbugs507acalleethatexitsononepathbuildssilently_main(void) {
-#line 182 "fixedbugs507acalleethatexitsononepathbuildssilently.c"
-    int64_t t1;
-    int64_t t2;
-    goto bb0;
+#line 24 "tests/golden/run/fixedbugs-507-a-callee-that-exits-on-one-path-builds-silently.hero"
+    int64_t t1; int64_t t2; goto bb0;
+#line 24 "tests/golden/run/fixedbugs-507-a-callee-that-exits-on-one-path-builds-silently.hero"
 bb0:
-#line 25 "tests/golden/run/fixedbugs-507-a-callee-that-exits-on-one-path-builds-silently.hero"
     t1 = INT64_C(1);
 #line 25 "tests/golden/run/fixedbugs-507-a-callee-that-exits-on-one-path-builds-silently.hero"
     t2 = h_fixedbugs507acalleethatexitsononepathbuildssilently_serve(t1);
@@ -193,22 +179,21 @@ bb0:
     hero_print_end();
 #line 25 "tests/golden/run/fixedbugs-507-a-callee-that-exits-on-one-path-builds-silently.hero"
     return;
-#line 197 "fixedbugs507acalleethatexitsononepathbuildssilently.c"
+#line 183 "fixedbugs507acalleethatexitsononepathbuildssilently.c"
 }
 
 #line 227 "<heroes library>"
 void h_library_exit(int64_t h0_code) {
-#line 202 "fixedbugs507acalleethatexitsononepathbuildssilently.c"
-    int64_t t1;
-    goto bb0;
+#line 227 "<heroes library>"
+    int64_t t1; goto bb0;
+#line 227 "<heroes library>"
 bb0:
-#line 228 "<heroes library>"
     t1 = h0_code;
 #line 228 "<heroes library>"
     (void)hero_exit(t1);
 #line 228 "<heroes library>"
     return;
-#line 212 "fixedbugs507acalleethatexitsononepathbuildssilently.c"
+#line 197 "fixedbugs507acalleethatexitsononepathbuildssilently.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

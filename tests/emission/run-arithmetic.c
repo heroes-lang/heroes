@@ -89,24 +89,10 @@ void h_arithmetic_main(void);
 
 #line 5 "tests/golden/run/arithmetic.hero"
 void h_arithmetic_main(void) {
-#line 93 "arithmetic.c"
-    int64_t t1;
-    int64_t t2;
-    int64_t t3;
-    int64_t t4;
-    int64_t t5;
-    int64_t t6;
-    int64_t t7;
-    int64_t t8;
-    int64_t t9;
-    int64_t t10;
-    int64_t t11;
-    int64_t t12;
-    int64_t t13;
-    int64_t t14;
-    goto bb0;
+#line 5 "tests/golden/run/arithmetic.hero"
+    int64_t t1; int64_t t2; int64_t t3; int64_t t4; int64_t t5; int64_t t6; int64_t t7; int64_t t8; int64_t t9; int64_t t10; int64_t t11; int64_t t12; int64_t t13; int64_t t14; goto bb0;
+#line 5 "tests/golden/run/arithmetic.hero"
 bb0:
-#line 6 "tests/golden/run/arithmetic.hero"
     t1 = INT64_C(2);
 #line 6 "tests/golden/run/arithmetic.hero"
     t2 = INT64_C(3);
@@ -157,7 +143,7 @@ bb0:
     hero_print_end();
 #line 9 "tests/golden/run/arithmetic.hero"
     return;
-#line 161 "arithmetic.c"
+#line 147 "arithmetic.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

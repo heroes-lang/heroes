@@ -110,24 +110,10 @@ void h_fixedbugs151onearmofananonymousunionbuiltandread_main(void);
 
 #line 15 "tests/golden/run/fixedbugs-151-one-arm-of-an-anonymous-union-built-and-read.hero"
 void h_fixedbugs151onearmofananonymousunionbuiltandread_main(void) {
-#line 114 "fixedbugs151onearmofananonymousunionbuiltandread.c"
-    SA h0_s;
-    int32_t t1;
-    int32_t t2;
-    int32_t t3;
-    SA t4;
-    SA t5;
-    int32_t t6;
-    int32_t t7;
-    SA t8;
-    int32_t t9;
-    int32_t t10;
-    SA t11;
-    int32_t t12;
-    int32_t t13;
-    goto bb0;
+#line 15 "tests/golden/run/fixedbugs-151-one-arm-of-an-anonymous-union-built-and-read.hero"
+    SA h0_s; int32_t t1; int32_t t2; int32_t t3; SA t4; SA t5; int32_t t6; int32_t t7; SA t8; int32_t t9; int32_t t10; SA t11; int32_t t12; int32_t t13; goto bb0;
+#line 15 "tests/golden/run/fixedbugs-151-one-arm-of-an-anonymous-union-built-and-read.hero"
 bb0:
-#line 16 "tests/golden/run/fixedbugs-151-one-arm-of-an-anonymous-union-built-and-read.hero"
     t1 = INT64_C(1);
 #line 16 "tests/golden/run/fixedbugs-151-one-arm-of-an-anonymous-union-built-and-read.hero"
     t2 = INT64_C(7);
@@ -163,7 +149,7 @@ bb0:
     hero_print_end();
 #line 18 "tests/golden/run/fixedbugs-151-one-arm-of-an-anonymous-union-built-and-read.hero"
     return;
-#line 167 "fixedbugs151onearmofananonymousunionbuiltandread.c"
+#line 153 "fixedbugs151onearmofananonymousunionbuiltandread.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs151onearmofananonymousunionbuiltandread_SA_eq(const SA *a, const SA *b) {
     if (!(a->kind == b->kind)) return false;

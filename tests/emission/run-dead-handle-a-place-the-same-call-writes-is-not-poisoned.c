@@ -105,18 +105,12 @@ void h_deadhandleaplacethesamecallwritesisnotpoisoned_main(void);
 
 #line 21 "tests/golden/run/dead-handle-a-place-the-same-call-writes-is-not-poisoned.hero"
 void h_deadhandleaplacethesamecallwritesisnotpoisoned_main(void) {
-#line 109 "deadhandleaplacethesamecallwritesisnotpoisoned.c"
-    node * *const hero_lend_h0_a = (node * *)hero_lend_local(sizeof(node *), "deadhandleaplacethesamecallwritesisnotpoisoned.main", "a");
+#line 21 "tests/golden/run/dead-handle-a-place-the-same-call-writes-is-not-poisoned.hero"
 #define h0_a (*hero_lend_h0_a)
-    node * t1;
-    node * t2;
-    HeroStr t3;
-    node * t4;
-    int64_t t5;
-    node * t6;
-    goto bb0;
+#line 21 "tests/golden/run/dead-handle-a-place-the-same-call-writes-is-not-poisoned.hero"
+    node * *const hero_lend_h0_a = (node * *)hero_lend_local(sizeof(node *), "deadhandleaplacethesamecallwritesisnotpoisoned.main", "a"); node * t1; node * t2; HeroStr t3; node * t4; int64_t t5; node * t6; goto bb0;
+#line 21 "tests/golden/run/dead-handle-a-place-the-same-call-writes-is-not-poisoned.hero"
 bb0:
-#line 22 "tests/golden/run/dead-handle-a-place-the-same-call-writes-is-not-poisoned.hero"
     t1 = node_new();
 #line 22 "tests/golden/run/dead-handle-a-place-the-same-call-writes-is-not-poisoned.hero"
     hero_handle_acquired(t1, "node_free");
@@ -169,7 +163,7 @@ bb0:
     hero_lend_local_give(hero_lend_h0_a);
 #line 25 "tests/golden/run/dead-handle-a-place-the-same-call-writes-is-not-poisoned.hero"
     return;
-#line 173 "deadhandleaplacethesamecallwritesisnotpoisoned.c"
+#line 167 "deadhandleaplacethesamecallwritesisnotpoisoned.c"
 }
 #undef h0_a
 HERO_TU_LOCAL bool h_deadhandleaplacethesamecallwritesisnotpoisoned_Node_eq(node * const *a, node * const *b) {

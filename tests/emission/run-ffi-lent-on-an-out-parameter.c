@@ -111,27 +111,14 @@ void h_ffilentonanoutparameter_main(void);
 
 #line 13 "tests/golden/run/ffi-lent-on-an-out-parameter.hero"
 void h_ffilentonanoutparameter_main(void) {
-#line 115 "ffilentonanoutparameter.c"
-    int32_t *const hero_lend_h0_e = (int32_t *)hero_lend_local(sizeof(int32_t), "ffilentonanoutparameter.main", "e");
+#line 13 "tests/golden/run/ffi-lent-on-an-out-parameter.hero"
 #define h0_e (*hero_lend_h0_e)
-    struct span *const hero_lend_h1_s = (struct span *)hero_lend_local(sizeof(struct span), "ffilentonanoutparameter.main", "s");
+#line 13 "tests/golden/run/ffi-lent-on-an-out-parameter.hero"
 #define h1_s (*hero_lend_h1_s)
-    int32_t t1;
-    double t2;
-    double t3;
-    HeroStr t4;
-    int32_t t5;
-    int64_t t6;
-    int64_t t7;
-    struct span t8;
-    struct span t9;
-    int64_t t10;
-    HeroStr t11;
-    struct span t12;
-    int64_t t13;
-    goto bb0;
+#line 13 "tests/golden/run/ffi-lent-on-an-out-parameter.hero"
+    int32_t *const hero_lend_h0_e = (int32_t *)hero_lend_local(sizeof(int32_t), "ffilentonanoutparameter.main", "e"); struct span *const hero_lend_h1_s = (struct span *)hero_lend_local(sizeof(struct span), "ffilentonanoutparameter.main", "s"); int32_t t1; double t2; double t3; HeroStr t4; int32_t t5; int64_t t6; int64_t t7; struct span t8; struct span t9; int64_t t10; HeroStr t11; struct span t12; int64_t t13; goto bb0;
+#line 13 "tests/golden/run/ffi-lent-on-an-out-parameter.hero"
 bb0:
-#line 14 "tests/golden/run/ffi-lent-on-an-out-parameter.hero"
     t1 = INT64_C(0);
 #line 14 "tests/golden/run/ffi-lent-on-an-out-parameter.hero"
     h0_e = t1;
@@ -185,7 +172,7 @@ bb0:
     hero_lend_local_give(hero_lend_h0_e);
 #line 18 "tests/golden/run/ffi-lent-on-an-out-parameter.hero"
     return;
-#line 189 "ffilentonanoutparameter.c"
+#line 176 "ffilentonanoutparameter.c"
 }
 #undef h0_e
 #undef h1_s

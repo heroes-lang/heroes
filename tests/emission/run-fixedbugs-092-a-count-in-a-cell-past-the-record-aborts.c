@@ -101,22 +101,14 @@ void h_fixedbugs092acountinacellpasttherecordaborts_main(void);
 
 #line 14 "tests/golden/run/fixedbugs-092-a-count-in-a-cell-past-the-record-aborts.hero"
 void h_fixedbugs092acountinacellpasttherecordaborts_main(void) {
-#line 105 "fixedbugs092acountinacellpasttherecordaborts.c"
-    struct one *const hero_lend_h0_o = (struct one *)hero_lend_local(sizeof(struct one), "fixedbugs092acountinacellpasttherecordaborts.main", "o");
+#line 14 "tests/golden/run/fixedbugs-092-a-count-in-a-cell-past-the-record-aborts.hero"
 #define h0_o (*hero_lend_h0_o)
-    uint32_t *const hero_lend_h1_n = (uint32_t *)hero_lend_local(sizeof(uint32_t), "fixedbugs092acountinacellpasttherecordaborts.main", "n");
+#line 14 "tests/golden/run/fixedbugs-092-a-count-in-a-cell-past-the-record-aborts.hero"
 #define h1_n (*hero_lend_h1_n)
-    int32_t t1;
-    struct one t2;
-    uint32_t t3;
-    struct one t4;
-    int32_t t5;
-    int64_t t6;
-    struct one t7;
-    int32_t t8;
-    goto bb0;
+#line 14 "tests/golden/run/fixedbugs-092-a-count-in-a-cell-past-the-record-aborts.hero"
+    struct one *const hero_lend_h0_o = (struct one *)hero_lend_local(sizeof(struct one), "fixedbugs092acountinacellpasttherecordaborts.main", "o"); uint32_t *const hero_lend_h1_n = (uint32_t *)hero_lend_local(sizeof(uint32_t), "fixedbugs092acountinacellpasttherecordaborts.main", "n"); int32_t t1; struct one t2; uint32_t t3; struct one t4; int32_t t5; int64_t t6; struct one t7; int32_t t8; goto bb0;
+#line 14 "tests/golden/run/fixedbugs-092-a-count-in-a-cell-past-the-record-aborts.hero"
 bb0:
-#line 15 "tests/golden/run/fixedbugs-092-a-count-in-a-cell-past-the-record-aborts.hero"
     t1 = INT64_C(0);
 #line 15 "tests/golden/run/fixedbugs-092-a-count-in-a-cell-past-the-record-aborts.hero"
     t2 = (struct one){.a = t1};
@@ -156,7 +148,7 @@ bb0:
     hero_lend_local_give(hero_lend_h0_o);
 #line 19 "tests/golden/run/fixedbugs-092-a-count-in-a-cell-past-the-record-aborts.hero"
     return;
-#line 160 "fixedbugs092acountinacellpasttherecordaborts.c"
+#line 152 "fixedbugs092acountinacellpasttherecordaborts.c"
 }
 #undef h0_o
 #undef h1_n

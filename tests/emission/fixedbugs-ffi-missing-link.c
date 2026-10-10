@@ -95,12 +95,10 @@ void h_ffimissinglink_main(void);
 
 #line 59 "tests/golden/fixedbugs/ffi-missing-link.hero"
 void h_ffimissinglink_main(void) {
-#line 99 "ffimissinglink.c"
-    HeroStr t1;
-    int64_t t2;
-    goto bb0;
+#line 59 "tests/golden/fixedbugs/ffi-missing-link.hero"
+    HeroStr t1; int64_t t2; goto bb0;
+#line 59 "tests/golden/fixedbugs/ffi-missing-link.hero"
 bb0:
-#line 60 "tests/golden/fixedbugs/ffi-missing-link.hero"
     t1 = HERO_STR_LIT(hero_str_279ecc0f);
 #line 60 "tests/golden/fixedbugs/ffi-missing-link.hero"
     t2 = sqlite3_libversion_number();
@@ -112,7 +110,7 @@ bb0:
     hero_print_end();
 #line 60 "tests/golden/fixedbugs/ffi-missing-link.hero"
     return;
-#line 116 "ffimissinglink.c"
+#line 114 "ffimissinglink.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

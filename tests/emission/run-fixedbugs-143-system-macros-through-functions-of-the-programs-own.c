@@ -108,24 +108,10 @@ void h_fixedbugs143systemmacrosthroughfunctionsoftheprogramsown_main(void);
 
 #line 20 "tests/golden/run/fixedbugs-143-system-macros-through-functions-of-the-programs-own.hero"
 void h_fixedbugs143systemmacrosthroughfunctionsoftheprogramsown_main(void) {
-#line 112 "fixedbugs143systemmacrosthroughfunctionsoftheprogramsown.c"
-    fd_set * h0_s;
-    int32_t t1;
-    int32_t t2;
-    fd_set * t3;
-    fd_set * t4;
-    int32_t t5;
-    fd_set * t6;
-    int32_t t7;
-    fd_set * t8;
-    int32_t t9;
-    int32_t t10;
-    fd_set * t11;
-    int32_t t12;
-    fd_set * t13;
-    goto bb0;
+#line 20 "tests/golden/run/fixedbugs-143-system-macros-through-functions-of-the-programs-own.hero"
+    fd_set * h0_s; int32_t t1; int32_t t2; fd_set * t3; fd_set * t4; int32_t t5; fd_set * t6; int32_t t7; fd_set * t8; int32_t t9; int32_t t10; fd_set * t11; int32_t t12; fd_set * t13; goto bb0;
+#line 20 "tests/golden/run/fixedbugs-143-system-macros-through-functions-of-the-programs-own.hero"
 bb0:
-#line 21 "tests/golden/run/fixedbugs-143-system-macros-through-functions-of-the-programs-own.hero"
     t1 = INT64_C(256);
 #line 21 "tests/golden/run/fixedbugs-143-system-macros-through-functions-of-the-programs-own.hero"
     t2 = hero_wexitstatus(t1);
@@ -187,7 +173,7 @@ bb0:
     }
 #line 27 "tests/golden/run/fixedbugs-143-system-macros-through-functions-of-the-programs-own.hero"
     return;
-#line 191 "fixedbugs143systemmacrosthroughfunctionsoftheprogramsown.c"
+#line 177 "fixedbugs143systemmacrosthroughfunctionsoftheprogramsown.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs143systemmacrosthroughfunctionsoftheprogramsown_FdSet_eq(fd_set * const *a, fd_set * const *b) {
     return hero_handle_eq(*a, *b);

@@ -125,30 +125,10 @@ void h_fixedbugs156recordsbesidebitfieldsbuild_main(void);
 
 #line 22 "tests/golden/run/fixedbugs-156-records-beside-bit-fields-build.hero"
 void h_fixedbugs156recordsbesidebitfieldsbuild_main(void) {
-#line 129 "fixedbugs156recordsbesidebitfieldsbuild.c"
-    BF h0_built;
-    UNNAMED h1_u;
-    BF t1;
-    int32_t t2;
-    int32_t t3;
-    BF t4;
-    BF t5;
-    int32_t t6;
-    int32_t t7;
-    int32_t t8;
-    UNNAMED t9;
-    UNNAMED t10;
-    UNNAMED t11;
-    bool t12;
-    HeroStr t13;
-    UNNAMED t14;
-    int32_t t15;
-    ZEROW t16;
-    int32_t t17;
-    int32_t t18;
-    goto bb0;
+#line 22 "tests/golden/run/fixedbugs-156-records-beside-bit-fields-build.hero"
+    BF h0_built; UNNAMED h1_u; BF t1; int32_t t2; int32_t t3; BF t4; BF t5; int32_t t6; int32_t t7; int32_t t8; UNNAMED t9; UNNAMED t10; UNNAMED t11; bool t12; HeroStr t13; UNNAMED t14; int32_t t15; ZEROW t16; int32_t t17; int32_t t18; goto bb0;
+#line 22 "tests/golden/run/fixedbugs-156-records-beside-bit-fields-build.hero"
 bb0:
-#line 23 "tests/golden/run/fixedbugs-156-records-beside-bit-fields-build.hero"
     t1 = make_bf();
 #line 23 "tests/golden/run/fixedbugs-156-records-beside-bit-fields-build.hero"
     t2 = t1.kind;
@@ -202,7 +182,7 @@ bb0:
     hero_print_end();
 #line 27 "tests/golden/run/fixedbugs-156-records-beside-bit-fields-build.hero"
     return;
-#line 206 "fixedbugs156recordsbesidebitfieldsbuild.c"
+#line 186 "fixedbugs156recordsbesidebitfieldsbuild.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs156recordsbesidebitfieldsbuild_BF_eq(const BF *a, const BF *b) {
     hero_panic("h_fixedbugs156recordsbesidebitfieldsbuild_BF_eq: a partial record has no structural equality");

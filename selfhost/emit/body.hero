@@ -2,46 +2,8 @@
 # (design.md §3.1; panels 020, 021, 029, 038). Port of
 # archive/bootstrap-rs/heroes/src/emit/body.rs.
 #
-# EVERY SLOT AND TEMPORARY IS DECLARED IN THE PROLOGUE, as one place to
-# read them, and not because C forbids the jump. This header said *goto
-# may not jump over an initialisation*, and that is C++'s rule: C accepts
-# it, compiled under this project's flags by panel 182's critic
-# (`gotoinit.c`, exit 0), where clang++ refuses it.
-#
-# WHAT THE PROLOGUE INITIALISES, and why each class is what it is (panel
-# 182, on panel 021 R3):
-# - A VALUE, a temporary `t<N>`, is NEVER ZEROED. Its one definition
-#   precedes every read of it on every path, which the verifier proves
-#   (`ir/values.hero`: dominance between blocks, `in_order` within one),
-#   and the C writes each definition whole (`emit/container.hero`'s map
-#   lookup is where it did not). So a C local clang thinks may be read
-#   uninitialised is a LOWERING bug, which is what -Werror=uninitialized
-#   is in the flag set to catch, and a zero would hide it: the seed held
-#   81,680 zeroed values at `0fc98107`, every one dead by four
-#   instruments, each taken out of that check. clang sees a read BY
-#   VALUE; a read through an address (`release(&t)`) it does not see,
-#   and there the verifier stands alone.
-# - A REFCOUNTED SLOT IS ZEROED (panel 021 R3), because rule 3's
-#   old-value load reads every slot before its first store (`ir/own.hero`:
-#   load old, store, release old), and the exit sweep releases every
-#   local and synthetic slot whether the path that stored it ran or not.
-#   decref of the null non-value is a no-op; the alternative is a
-#   liveness pass. clang's ARC spec licenses exactly this for __strong
-#   locals.
-# - AN `@` PARAMETER HAS NO SLOT IN C AT ALL (panel 196's R1): it is the
-#   caller's place, reached through the pointer the signature declares
-#   (`places.slot_lvalue`), so the body reads and writes the caller's
-#   place itself and C handed it from inside the body receives that place.
-#   Until R1 the prologue declared a local and copied the place into it,
-#   `h0_s = *ph0_s;`, and every exit copied it back: §4.8's copy in, copy
-#   out lowered literally. Inside Heroes the two lowerings are one meaning,
-#   because an `@` place is exclusive (defect 011's refusal of two `@`
-#   arguments of one place; a by-value argument the call writes the root
-#   of is held for the call, `ir/held.hero`); to C they were two addresses,
-#   and a library that keeps one, zlib's stream or libuv's handle, was
-#   handed a frame that died when the wrapper returned (defect 413).
-# - Nothing else is initialised, for the value's reason: a Heroes
-#   binding is always initialised, and clang checks the rest.
+# THE PROLOGUE, what it declares and what it zeroes, is `emit/prologue.hero`
+# (moved out on 2026-10-10 with defect 472, which writes it as one line).
 #
 # A BLOCK NOTHING JUMPS TO IS OMITTED ENTIRELY, not merely unlabelled:
 # C is physical, and an unlabelled block would fall through from the
@@ -59,20 +21,19 @@ use source
 use check/state
 use ir/containers
 use ir/instances
-use ir/layout
 use emit/mangle
 use emit/ctype
 use emit/signature
 use emit/static_constant
 use emit/callback_guard
 use emit/callback_thunk
-use emit/field_lend
 use emit/inst
 use emit/term
 use emit/unread
 use emit/record_constant
 use emit/writer
 use emit/lend_local
+use emit/prologue
 use parse
 use resolve
 use checker
@@ -134,17 +95,36 @@ function built(@w: writer.Writer, p: instances.Held, c: state.Checked, names: ct
         writer.line(@w, text: "}")
         return
     writer.line(@w, text: signature.signature(f, c, names, s, decls) + " {")
-    writer.at_generated(@w)
-
-    # Before the prologue, because the prologue already touches this
-    # runtime's values and the whole point of the guard is that a
-    # foreign thread must touch none of them (panel 111 R9).
-    callback_guard.entry(@w, s, f, guarded_decls: guarded_decls)
     live = reachable(f)
     read = unread.emitted_reads(f, c)
     owner = source.component_at(s, decls[f.decl].span.start) + "." + f.name
-    prologue(@w, c, names, f, live: live, read: read, owner: owner)
-    writer.line(@w, text: "    goto " + mangle.block(0) + ";")
+    entry = prologue.written(c, names, f, live: live, read: read, owner: owner, copies_bytes: w.copies_bytes)
+
+    for one in entry.defines
+        writer.line(@w, text: one)
+
+    # THE ENTRY IS ONE PHYSICAL LINE UNDER THE FUNCTION'S OWN LINE (defect
+    # 472, panel 200's R4): the thread guard, the prologue and the jump to the
+    # first block, so a `step` into the function and a breakpoint on it stop
+    # on its `function` line and never on the generated C. One line, because
+    # `#line` anchors one line and C counts on from it: a second would claim
+    # the author's next line for housekeeping (design.md §3.1), and a `#line`
+    # before each grew the seed by 28% (the sitting's critic). The guard comes
+    # first, because the prologue already touches this runtime's values and
+    # the whole point of the guard is that a foreign thread must touch none of
+    # them (panel 111 R9). The exit and the cleanup stay the generated file's
+    # (defect 335).
+    statements: [str] @ []
+    guard = callback_guard.entry(s, f, guarded_decls: guarded_decls)
+
+    if guard != ""
+        statements @ statements.push(guard)
+
+    for one in entry.lines
+        statements @ statements.push(one)
+
+    statements @ statements.push("goto " + mangle.block(0) + ";")
+    writer.line(@w, text: "    " + statements.join(" "))
     released = lend_local.releases(c, names, f)
     index: i64 @ 0
 
@@ -153,7 +133,7 @@ function built(@w: writer.Writer, p: instances.Held, c: state.Checked, names: ct
             writer.line(@w, text: mangle.block(index) + ":")
 
             for one in blk.insts
-                inst.emit(@w, p, c, names, s, decls, f, inst: one, live_values: read)
+                inst.emit(@w, p, c, names, s, decls, f, inst: one, live_values: read, ends: blk.term)
 
             term.emit(@w, f, c, term: blk.term, released: released)
         index @ index + 1
@@ -182,152 +162,6 @@ function reachable(f: containers.Function) -> [bool]
 
     return live
 
-function prologue(@w: writer.Writer, c: state.Checked, names: ctype.Names, f: containers.Function, live: [bool], read: {i64: bool}, owner: str)
-    # What every declaration below asks of the function, read once
-    # (defect 112): the first live writer of each temporary, and which
-    # slots the emitted C reads.
-    d = unread.defs(f, live)
-    slots_read = unread.slots_read(f, live, d, read)
-    index: i64 @ 0
-
-    # A local an `extern` call is lent whole through `@` lives in a guarded
-    # region instead of this frame (panel 196's R7), declared where its slot
-    # would be.
-    in_place: {i64: bool} @ {}
-
-    for at in lend_local.guarded(c, names, f)
-        in_place[at] @ true
-
-    # A parameter is already declared by the signature: a plain one as its
-    # value, an `@` one as the pointer to the caller's place, which is the
-    # slot (the header above says why it has no local). Asked of a set made
-    # once, where each slot walked every parameter (defect 478, 2026-10-08):
-    # defect 230's shape, the parameters times the slots.
-    params: {i64: bool} @ {}
-
-    for param in f.params
-        params[param] @ true
-
-    for slot in f.slots
-        if !params[index].is_err()
-            index @ index + 1
-            continue
-
-        if !in_place[index].is_err()
-            lend_local.declare(@w, c, names, f, at: index, owner: owner)
-            index @ index + 1
-            continue
-        spelled = ctype.c_type(names, c: c, ty: slot.ty)
-
-        if !spelled.is_err()
-            initialiser: str @ ""
-            name = mangle.slot(index: index, name: slot.name)
-            by_bytes: bool @ false
-
-            # Refcounted (the header above says why). Past `typeorder`'s
-            # depth the zero is written by bytes (defect 539): `{0}` sends
-            # clang down the struct by brace elision, a recursion as deep as
-            # the chain, which died between 750 and 875 records holding a
-            # `str` (Apple clang 21, arm64 macOS), where the memset builds at
-            # 1,000. Below it a unit's C is what it was, byte for byte.
-            if layout.is_refcounted(c, slot.ty)
-                if w.copies_bytes
-                    by_bytes @ true
-                else
-                    initialiser @ " = {0}"
-
-            # A slot that is written and never read is told to C that the
-            # silence is deliberate. **This comment said `_ = v` was the
-            # only way to reach such a slot, and the premise was false**
-            # (panel 108, 2026-09-04): a cell passed as an `@` argument and
-            # never read afterwards reaches it too — `error: ptr @ nullptr`
-            # handed to `sqlite3_exec` — because the resolver counts the
-            # copy-in as a read and accepts the program. The attribute is
-            # harmless there and buys nothing, measured: with the slot's
-            # address taken, clang warns about neither form. A refcounted
-            # slot never gets it, and that FALLS OUT: the exit sweep
-            # decrefs it (`decref_slot`, panel 106), so it is read.
-            deliberate: str @ ""
-
-            if !slots_read[index]
-                deliberate @ "__attribute__((unused)) "
-            writer.line(
-                @w,
-                text: "    " + deliberate + spelled.must() + " " + name + initialiser + ";"
-            )
-
-            if by_bytes
-                writer.line(@w, text: "    __builtin_memset(&" + name + ", 0, sizeof " + name + ");")
-        index @ index + 1
-
-    value_at: i64 @ 0
-    lends = field_lend.const_lends(f)
-
-    for ty in f.values
-        keep: bool @ true
-
-        if ctype.is_unit(c, ty: ty)
-            keep @ false
-
-        if keep && !unread.assigned(d, value: value_at)
-            keep @ false
-
-        # A discarded result is never assigned either, so declaring it
-        # would be the unused variable this rule exists to stop. The two
-        # decisions agree by reading the same set.
-        if keep && unread.discarded(f, d, value: value_at, read: read)
-            keep @ false
-
-        if keep
-            spelled = ctype.c_type(names, c: c, ty: ty)
-
-            # A temporary takes NO initialiser, refcounted or not (panel
-            # 182; the header above says why). Until then this line zeroed a
-            # refcounted one, carried from the Rust port with no comment
-            # beside it (`body.rs:178`), where panel 021 R3 licensed slots.
-            if !spelled.is_err()
-                # The TEMPORARY half of the attribute above (panel 118).
-                # An op that may NOT lose its destination still prints
-                # its assignment, because the overflow guard, the nan
-                # panic and an aggregate's generated `eq` are printed
-                # WITH it — so a result nothing reads leaves both the
-                # declaration and the assignment standing, and clang
-                # says `set but not used`. Measured: every
-                # `_ = f().is_err()`, and `_ = a == b` on a `str` and
-                # on an array.
-                #
-                # The attribute rather than dropping the destination,
-                # which is the narrower repair and was tried first: on
-                # an AGGREGATE the assignment is a runtime call
-                # carrying its own check — `hero_array_require`, and a
-                # partial record's deliberate `hero_panic` in
-                # `emit/structural.hero` — so dropping it would delete
-                # a tripwire on exactly the lines nobody reads the
-                # answer of. Saying the silence is deliberate keeps
-                # every check and needs no per-operator list to stay
-                # true.
-                deliberate: str @ ""
-
-                if read[value_at].is_err()
-                    deliberate @ "__attribute__((unused)) "
-
-                # A lend rooted at a name the author may not write is
-                # `const void *`, and the temporary has to say so: declared by
-                # its Heroes type alone it is `void *`, the qualifier dies on
-                # the assignment one line before the call it exists to reach,
-                # and clang refuses the honest READ instead of the write
-                # (panel 166; measured on the route's first landing, which was
-                # reverted for it, 2026-09-19).
-                spelling: str @ spelled.must()
-
-                if !lends[value_at].is_err()
-                    spelling @ "const " + spelled.must()
-                writer.line(
-                    @w,
-                    text: "    " + deliberate + spelling + " " + mangle.value(value_at) + ";"
-                )
-        value_at @ value_at + 1
-
 ## Tests
 
 test "a whole function prints: signature, prologue, goto bb0, blocks, close"
@@ -355,9 +189,12 @@ test "a whole function prints: signature, prologue, goto bb0, blocks, close"
     )
     got = writer.finish(w)
     assert strings.holds(text: got, needle: "int64_t h_t_add(int64_t h0_a, int64_t h1_b) {")
-    assert strings.holds(text: got, needle: "    int64_t t1;")
-    assert strings.holds(text: got, needle: "    int64_t t3;")
-    assert strings.holds(text: got, needle: "    goto bb0;")
+
+    # The entry, one line under the function's own (defect 472).
+    assert strings.holds(
+        text: got,
+        needle: "{\n#line 1 \"t.hero\"\n    int64_t t1; int64_t t2; int64_t t3; goto bb0;\n"
+    )
     assert strings.holds(text: got, needle: "bb0:")
     assert strings.holds(text: got, needle: "    if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow();")
     assert strings.holds(text: got, needle: "    return t3;")

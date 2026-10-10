@@ -110,28 +110,10 @@ void h_handlereferencejoinsthelifeitfinds_main(void);
 
 #line 16 "tests/golden/run/handle-reference-joins-the-life-it-finds.hero"
 void h_handlereferencejoinsthelifeitfinds_main(void) {
-#line 114 "handlereferencejoinsthelifeitfinds.c"
-    ob * h0_a;
-    ob * h1_b;
-    int32_t h2_rc;
-    int64_t t1;
-    ob * t2;
-    ob * t3;
-    ob * t4;
-    ob * t5;
-    int32_t t6;
-    HeroStr t7;
-    ob * t8;
-    int64_t t9;
-    HeroStr t10;
-    int32_t t11;
-    ob * t12;
-    ob * t13;
-    ob * t14;
-    HeroStr t15;
-    goto bb0;
+#line 16 "tests/golden/run/handle-reference-joins-the-life-it-finds.hero"
+    ob * h0_a; ob * h1_b; int32_t h2_rc; int64_t t1; ob * t2; ob * t3; ob * t4; ob * t5; int32_t t6; HeroStr t7; ob * t8; int64_t t9; HeroStr t10; int32_t t11; ob * t12; ob * t13; ob * t14; HeroStr t15; goto bb0;
+#line 16 "tests/golden/run/handle-reference-joins-the-life-it-finds.hero"
 bb0:
-#line 17 "tests/golden/run/handle-reference-joins-the-life-it-finds.hero"
     t1 = INT64_C(3);
 #line 17 "tests/golden/run/handle-reference-joins-the-life-it-finds.hero"
     t2 = ob_new(t1);
@@ -230,7 +212,7 @@ bb0:
     hero_print_end();
 #line 24 "tests/golden/run/handle-reference-joins-the-life-it-finds.hero"
     return;
-#line 234 "handlereferencejoinsthelifeitfinds.c"
+#line 216 "handlereferencejoinsthelifeitfinds.c"
 }
 HERO_TU_LOCAL bool h_handlereferencejoinsthelifeitfinds_Ob_eq(ob * const *a, ob * const *b) {
     return hero_handle_eq(*a, *b);

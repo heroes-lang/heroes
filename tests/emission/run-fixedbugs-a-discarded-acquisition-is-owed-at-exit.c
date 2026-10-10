@@ -101,11 +101,10 @@ void h_fixedbugsadiscardedacquisitionisowedatexit_main(void);
 
 #line 9 "tests/golden/run/fixedbugs-a-discarded-acquisition-is-owed-at-exit.hero"
 void h_fixedbugsadiscardedacquisitionisowedatexit_main(void) {
-#line 105 "fixedbugsadiscardedacquisitionisowedatexit.c"
-    HeroStr t2;
-    goto bb0;
+#line 9 "tests/golden/run/fixedbugs-a-discarded-acquisition-is-owed-at-exit.hero"
+    HeroStr t2; goto bb0;
+#line 9 "tests/golden/run/fixedbugs-a-discarded-acquisition-is-owed-at-exit.hero"
 bb0:
-#line 10 "tests/golden/run/fixedbugs-a-discarded-acquisition-is-owed-at-exit.hero"
     {
 #line 10 "tests/golden/run/fixedbugs-a-discarded-acquisition-is-owed-at-exit.hero"
     __typeof__(ob_new()) hero_when = ob_new();
@@ -120,7 +119,7 @@ bb0:
     hero_print_end();
 #line 11 "tests/golden/run/fixedbugs-a-discarded-acquisition-is-owed-at-exit.hero"
     return;
-#line 124 "fixedbugsadiscardedacquisitionisowedatexit.c"
+#line 123 "fixedbugsadiscardedacquisitionisowedatexit.c"
 }
 HERO_TU_LOCAL bool h_fixedbugsadiscardedacquisitionisowedatexit_Ob_eq(ob * const *a, ob * const *b) {
     return hero_handle_eq(*a, *b);

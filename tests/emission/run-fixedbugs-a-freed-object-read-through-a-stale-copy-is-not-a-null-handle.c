@@ -106,25 +106,10 @@ void h_fixedbugsafreedobjectreadthroughastalecopyisnotanullhandle_main(void);
 
 #line 37 "tests/golden/run/fixedbugs-a-freed-object-read-through-a-stale-copy-is-not-a-null-handle.hero"
 void h_fixedbugsafreedobjectreadthroughastalecopyisnotanullhandle_main(void) {
-#line 110 "fixedbugsafreedobjectreadthroughastalecopyisnotanullhandle.c"
-    outer * h0_a;
-    outer * h1_kept;
-    outer * t1;
-    outer * t2;
-    HeroStr t3;
-    outer * t4;
-    int64_t t5;
-    outer * t6;
-    HeroStr t7;
-    outer * t8;
-    outer * t9;
-    bool t10;
-    HeroStr t11;
-    outer * t12;
-    int64_t t13;
-    goto bb0;
+#line 37 "tests/golden/run/fixedbugs-a-freed-object-read-through-a-stale-copy-is-not-a-null-handle.hero"
+    outer * h0_a; outer * h1_kept; outer * t1; outer * t2; HeroStr t3; outer * t4; int64_t t5; outer * t6; HeroStr t7; outer * t8; outer * t9; bool t10; HeroStr t11; outer * t12; int64_t t13; goto bb0;
+#line 37 "tests/golden/run/fixedbugs-a-freed-object-read-through-a-stale-copy-is-not-a-null-handle.hero"
 bb0:
-#line 38 "tests/golden/run/fixedbugs-a-freed-object-read-through-a-stale-copy-is-not-a-null-handle.hero"
     t1 = make();
 #line 38 "tests/golden/run/fixedbugs-a-freed-object-read-through-a-stale-copy-is-not-a-null-handle.hero"
     hero_handle_acquired(t1, "release");
@@ -187,7 +172,7 @@ bb0:
     hero_print_end();
 #line 43 "tests/golden/run/fixedbugs-a-freed-object-read-through-a-stale-copy-is-not-a-null-handle.hero"
     return;
-#line 191 "fixedbugsafreedobjectreadthroughastalecopyisnotanullhandle.c"
+#line 176 "fixedbugsafreedobjectreadthroughastalecopyisnotanullhandle.c"
 }
 HERO_TU_LOCAL bool h_fixedbugsafreedobjectreadthroughastalecopyisnotanullhandle_Outer_eq(outer * const *a, outer * const *b) {
     return hero_handle_eq(*a, *b);

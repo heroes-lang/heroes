@@ -93,733 +93,10 @@ void h_fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder_main(v
 
 #line 15 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
 int64_t h_fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder_mix(int64_t h0_a0, HeroStr *ph1_b0, int64_t h2_a1, HeroStr *ph3_b1, int64_t h4_a2, HeroStr *ph5_b2, int64_t h6_a3, HeroStr *ph7_b3, int64_t h8_a4, HeroStr *ph9_b4, int64_t h10_a5, HeroStr *ph11_b5, int64_t h12_a6, HeroStr *ph13_b6, int64_t h14_a7, HeroStr *ph15_b7, int64_t h16_a8, HeroStr *ph17_b8, int64_t h18_a9, HeroStr *ph19_b9, int64_t h20_a10, HeroStr *ph21_b10, int64_t h22_a11, HeroStr *ph23_b11, int64_t h24_a12, HeroStr *ph25_b12, int64_t h26_a13, HeroStr *ph27_b13, int64_t h28_a14, HeroStr *ph29_b14, int64_t h30_a15, HeroStr *ph31_b15, int64_t h32_a16, HeroStr *ph33_b16, int64_t h34_a17, HeroStr *ph35_b17, int64_t h36_a18, HeroStr *ph37_b18, int64_t h38_a19, HeroStr *ph39_b19, int64_t h40_a20, HeroStr *ph41_b20, int64_t h42_a21, HeroStr *ph43_b21, int64_t h44_a22, HeroStr *ph45_b22, int64_t h46_a23, HeroStr *ph47_b23, int64_t h48_a24, HeroStr *ph49_b24, int64_t h50_a25, HeroStr *ph51_b25, int64_t h52_a26, HeroStr *ph53_b26, int64_t h54_a27, HeroStr *ph55_b27, int64_t h56_a28, HeroStr *ph57_b28, int64_t h58_a29, HeroStr *ph59_b29, int64_t h60_a30, HeroStr *ph61_b30, int64_t h62_a31, HeroStr *ph63_b31, int64_t h64_a32, HeroStr *ph65_b32, int64_t h66_a33, HeroStr *ph67_b33, int64_t h68_a34, HeroStr *ph69_b34, int64_t h70_a35, HeroStr *ph71_b35, int64_t h72_a36, HeroStr *ph73_b36, int64_t h74_a37, HeroStr *ph75_b37, int64_t h76_a38, HeroStr *ph77_b38, int64_t h78_a39, HeroStr *ph79_b39) {
-#line 97 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
-    int64_t h80_total;
-    int64_t h81_l0;
-    int64_t h82_l1;
-    int64_t h83_l2;
-    int64_t h84_l3;
-    int64_t h85_l4;
-    int64_t h86_l5;
-    int64_t h87_l6;
-    int64_t h88_l7;
-    int64_t h89_l8;
-    int64_t h90_l9;
-    int64_t h91_l10;
-    int64_t h92_l11;
-    int64_t h93_l12;
-    int64_t h94_l13;
-    int64_t h95_l14;
-    int64_t h96_l15;
-    int64_t h97_l16;
-    int64_t h98_l17;
-    int64_t h99_l18;
-    int64_t h100_l19;
-    int64_t h101_l20;
-    int64_t h102_l21;
-    int64_t h103_l22;
-    int64_t h104_l23;
-    int64_t h105_l24;
-    int64_t h106_l25;
-    int64_t h107_l26;
-    int64_t h108_l27;
-    int64_t h109_l28;
-    int64_t h110_l29;
-    int64_t h111_l30;
-    int64_t h112_l31;
-    int64_t h113_l32;
-    int64_t h114_l33;
-    int64_t h115_l34;
-    int64_t h116_l35;
-    int64_t h117_l36;
-    int64_t h118_l37;
-    int64_t h119_l38;
-    int64_t h120_l39;
-    HeroStr h121_own121 = {0};
-    HeroStr h122_own122 = {0};
-    HeroStr h123_own123 = {0};
-    HeroStr h124_own124 = {0};
-    HeroStr h125_own125 = {0};
-    HeroStr h126_own126 = {0};
-    HeroStr h127_own127 = {0};
-    HeroStr h128_own128 = {0};
-    HeroStr h129_own129 = {0};
-    HeroStr h130_own130 = {0};
-    HeroStr h131_own131 = {0};
-    HeroStr h132_own132 = {0};
-    HeroStr h133_own133 = {0};
-    HeroStr h134_own134 = {0};
-    HeroStr h135_own135 = {0};
-    HeroStr h136_own136 = {0};
-    HeroStr h137_own137 = {0};
-    HeroStr h138_own138 = {0};
-    HeroStr h139_own139 = {0};
-    HeroStr h140_own140 = {0};
-    HeroStr h141_own141 = {0};
-    HeroStr h142_own142 = {0};
-    HeroStr h143_own143 = {0};
-    HeroStr h144_own144 = {0};
-    HeroStr h145_own145 = {0};
-    HeroStr h146_own146 = {0};
-    HeroStr h147_own147 = {0};
-    HeroStr h148_own148 = {0};
-    HeroStr h149_own149 = {0};
-    HeroStr h150_own150 = {0};
-    HeroStr h151_own151 = {0};
-    HeroStr h152_own152 = {0};
-    HeroStr h153_own153 = {0};
-    HeroStr h154_own154 = {0};
-    HeroStr h155_own155 = {0};
-    HeroStr h156_own156 = {0};
-    HeroStr h157_own157 = {0};
-    HeroStr h158_own158 = {0};
-    HeroStr h159_own159 = {0};
-    HeroStr h160_own160 = {0};
-    int64_t t1;
-    int64_t t2;
-    int64_t t3;
-    int64_t t4;
-    HeroStr t5;
-    HeroStr t6;
-    HeroStr t7;
-    int64_t t8;
-    int64_t t9;
-    int64_t t10;
-    int64_t t11;
-    int64_t t12;
-    HeroStr t13;
-    int64_t t14;
-    int64_t t15;
-    int64_t t16;
-    int64_t t17;
-    int64_t t18;
-    HeroStr t19;
-    HeroStr t20;
-    HeroStr t21;
-    int64_t t22;
-    int64_t t23;
-    int64_t t24;
-    int64_t t25;
-    int64_t t26;
-    HeroStr t27;
-    int64_t t28;
-    int64_t t29;
-    int64_t t30;
-    int64_t t31;
-    int64_t t32;
-    HeroStr t33;
-    HeroStr t34;
-    HeroStr t35;
-    int64_t t36;
-    int64_t t37;
-    int64_t t38;
-    int64_t t39;
-    int64_t t40;
-    HeroStr t41;
-    int64_t t42;
-    int64_t t43;
-    int64_t t44;
-    int64_t t45;
-    int64_t t46;
-    HeroStr t47;
-    HeroStr t48;
-    HeroStr t49;
-    int64_t t50;
-    int64_t t51;
-    int64_t t52;
-    int64_t t53;
-    int64_t t54;
-    HeroStr t55;
-    int64_t t56;
-    int64_t t57;
-    int64_t t58;
-    int64_t t59;
-    int64_t t60;
-    HeroStr t61;
-    HeroStr t62;
-    HeroStr t63;
-    int64_t t64;
-    int64_t t65;
-    int64_t t66;
-    int64_t t67;
-    int64_t t68;
-    HeroStr t69;
-    int64_t t70;
-    int64_t t71;
-    int64_t t72;
-    int64_t t73;
-    int64_t t74;
-    HeroStr t75;
-    HeroStr t76;
-    HeroStr t77;
-    int64_t t78;
-    int64_t t79;
-    int64_t t80;
-    int64_t t81;
-    int64_t t82;
-    HeroStr t83;
-    int64_t t84;
-    int64_t t85;
-    int64_t t86;
-    int64_t t87;
-    int64_t t88;
-    HeroStr t89;
-    HeroStr t90;
-    HeroStr t91;
-    int64_t t92;
-    int64_t t93;
-    int64_t t94;
-    int64_t t95;
-    int64_t t96;
-    HeroStr t97;
-    int64_t t98;
-    int64_t t99;
-    int64_t t100;
-    int64_t t101;
-    int64_t t102;
-    HeroStr t103;
-    HeroStr t104;
-    HeroStr t105;
-    int64_t t106;
-    int64_t t107;
-    int64_t t108;
-    int64_t t109;
-    int64_t t110;
-    HeroStr t111;
-    int64_t t112;
-    int64_t t113;
-    int64_t t114;
-    int64_t t115;
-    int64_t t116;
-    HeroStr t117;
-    HeroStr t118;
-    HeroStr t119;
-    int64_t t120;
-    int64_t t121;
-    int64_t t122;
-    int64_t t123;
-    int64_t t124;
-    HeroStr t125;
-    int64_t t126;
-    int64_t t127;
-    int64_t t128;
-    int64_t t129;
-    int64_t t130;
-    HeroStr t131;
-    HeroStr t132;
-    HeroStr t133;
-    int64_t t134;
-    int64_t t135;
-    int64_t t136;
-    int64_t t137;
-    int64_t t138;
-    HeroStr t139;
-    int64_t t140;
-    int64_t t141;
-    int64_t t142;
-    int64_t t143;
-    int64_t t144;
-    HeroStr t145;
-    HeroStr t146;
-    HeroStr t147;
-    int64_t t148;
-    int64_t t149;
-    int64_t t150;
-    int64_t t151;
-    int64_t t152;
-    HeroStr t153;
-    int64_t t154;
-    int64_t t155;
-    int64_t t156;
-    int64_t t157;
-    int64_t t158;
-    HeroStr t159;
-    HeroStr t160;
-    HeroStr t161;
-    int64_t t162;
-    int64_t t163;
-    int64_t t164;
-    int64_t t165;
-    int64_t t166;
-    HeroStr t167;
-    int64_t t168;
-    int64_t t169;
-    int64_t t170;
-    int64_t t171;
-    int64_t t172;
-    HeroStr t173;
-    HeroStr t174;
-    HeroStr t175;
-    int64_t t176;
-    int64_t t177;
-    int64_t t178;
-    int64_t t179;
-    int64_t t180;
-    HeroStr t181;
-    int64_t t182;
-    int64_t t183;
-    int64_t t184;
-    int64_t t185;
-    int64_t t186;
-    HeroStr t187;
-    HeroStr t188;
-    HeroStr t189;
-    int64_t t190;
-    int64_t t191;
-    int64_t t192;
-    int64_t t193;
-    int64_t t194;
-    HeroStr t195;
-    int64_t t196;
-    int64_t t197;
-    int64_t t198;
-    int64_t t199;
-    int64_t t200;
-    HeroStr t201;
-    HeroStr t202;
-    HeroStr t203;
-    int64_t t204;
-    int64_t t205;
-    int64_t t206;
-    int64_t t207;
-    int64_t t208;
-    HeroStr t209;
-    int64_t t210;
-    int64_t t211;
-    int64_t t212;
-    int64_t t213;
-    int64_t t214;
-    HeroStr t215;
-    HeroStr t216;
-    HeroStr t217;
-    int64_t t218;
-    int64_t t219;
-    int64_t t220;
-    int64_t t221;
-    int64_t t222;
-    HeroStr t223;
-    int64_t t224;
-    int64_t t225;
-    int64_t t226;
-    int64_t t227;
-    int64_t t228;
-    HeroStr t229;
-    HeroStr t230;
-    HeroStr t231;
-    int64_t t232;
-    int64_t t233;
-    int64_t t234;
-    int64_t t235;
-    int64_t t236;
-    HeroStr t237;
-    int64_t t238;
-    int64_t t239;
-    int64_t t240;
-    int64_t t241;
-    int64_t t242;
-    HeroStr t243;
-    HeroStr t244;
-    HeroStr t245;
-    int64_t t246;
-    int64_t t247;
-    int64_t t248;
-    int64_t t249;
-    int64_t t250;
-    HeroStr t251;
-    int64_t t252;
-    int64_t t253;
-    int64_t t254;
-    int64_t t255;
-    int64_t t256;
-    HeroStr t257;
-    HeroStr t258;
-    HeroStr t259;
-    int64_t t260;
-    int64_t t261;
-    int64_t t262;
-    int64_t t263;
-    int64_t t264;
-    HeroStr t265;
-    int64_t t266;
-    int64_t t267;
-    int64_t t268;
-    int64_t t269;
-    int64_t t270;
-    HeroStr t271;
-    HeroStr t272;
-    HeroStr t273;
-    int64_t t274;
-    int64_t t275;
-    int64_t t276;
-    int64_t t277;
-    int64_t t278;
-    HeroStr t279;
-    int64_t t280;
-    int64_t t281;
-    int64_t t282;
-    int64_t t283;
-    int64_t t284;
-    HeroStr t285;
-    HeroStr t286;
-    HeroStr t287;
-    int64_t t288;
-    int64_t t289;
-    int64_t t290;
-    int64_t t291;
-    int64_t t292;
-    HeroStr t293;
-    int64_t t294;
-    int64_t t295;
-    int64_t t296;
-    int64_t t297;
-    int64_t t298;
-    HeroStr t299;
-    HeroStr t300;
-    HeroStr t301;
-    int64_t t302;
-    int64_t t303;
-    int64_t t304;
-    int64_t t305;
-    int64_t t306;
-    HeroStr t307;
-    int64_t t308;
-    int64_t t309;
-    int64_t t310;
-    int64_t t311;
-    int64_t t312;
-    HeroStr t313;
-    HeroStr t314;
-    HeroStr t315;
-    int64_t t316;
-    int64_t t317;
-    int64_t t318;
-    int64_t t319;
-    int64_t t320;
-    HeroStr t321;
-    int64_t t322;
-    int64_t t323;
-    int64_t t324;
-    int64_t t325;
-    int64_t t326;
-    HeroStr t327;
-    HeroStr t328;
-    HeroStr t329;
-    int64_t t330;
-    int64_t t331;
-    int64_t t332;
-    int64_t t333;
-    int64_t t334;
-    HeroStr t335;
-    int64_t t336;
-    int64_t t337;
-    int64_t t338;
-    int64_t t339;
-    int64_t t340;
-    HeroStr t341;
-    HeroStr t342;
-    HeroStr t343;
-    int64_t t344;
-    int64_t t345;
-    int64_t t346;
-    int64_t t347;
-    int64_t t348;
-    HeroStr t349;
-    int64_t t350;
-    int64_t t351;
-    int64_t t352;
-    int64_t t353;
-    int64_t t354;
-    HeroStr t355;
-    HeroStr t356;
-    HeroStr t357;
-    int64_t t358;
-    int64_t t359;
-    int64_t t360;
-    int64_t t361;
-    int64_t t362;
-    HeroStr t363;
-    int64_t t364;
-    int64_t t365;
-    int64_t t366;
-    int64_t t367;
-    int64_t t368;
-    HeroStr t369;
-    HeroStr t370;
-    HeroStr t371;
-    int64_t t372;
-    int64_t t373;
-    int64_t t374;
-    int64_t t375;
-    int64_t t376;
-    HeroStr t377;
-    int64_t t378;
-    int64_t t379;
-    int64_t t380;
-    int64_t t381;
-    int64_t t382;
-    HeroStr t383;
-    HeroStr t384;
-    HeroStr t385;
-    int64_t t386;
-    int64_t t387;
-    int64_t t388;
-    int64_t t389;
-    int64_t t390;
-    HeroStr t391;
-    int64_t t392;
-    int64_t t393;
-    int64_t t394;
-    int64_t t395;
-    int64_t t396;
-    HeroStr t397;
-    HeroStr t398;
-    HeroStr t399;
-    int64_t t400;
-    int64_t t401;
-    int64_t t402;
-    int64_t t403;
-    int64_t t404;
-    HeroStr t405;
-    int64_t t406;
-    int64_t t407;
-    int64_t t408;
-    int64_t t409;
-    int64_t t410;
-    HeroStr t411;
-    HeroStr t412;
-    HeroStr t413;
-    int64_t t414;
-    int64_t t415;
-    int64_t t416;
-    int64_t t417;
-    int64_t t418;
-    HeroStr t419;
-    int64_t t420;
-    int64_t t421;
-    int64_t t422;
-    int64_t t423;
-    int64_t t424;
-    HeroStr t425;
-    HeroStr t426;
-    HeroStr t427;
-    int64_t t428;
-    int64_t t429;
-    int64_t t430;
-    int64_t t431;
-    int64_t t432;
-    HeroStr t433;
-    int64_t t434;
-    int64_t t435;
-    int64_t t436;
-    int64_t t437;
-    int64_t t438;
-    HeroStr t439;
-    HeroStr t440;
-    HeroStr t441;
-    int64_t t442;
-    int64_t t443;
-    int64_t t444;
-    int64_t t445;
-    int64_t t446;
-    HeroStr t447;
-    int64_t t448;
-    int64_t t449;
-    int64_t t450;
-    int64_t t451;
-    int64_t t452;
-    HeroStr t453;
-    HeroStr t454;
-    HeroStr t455;
-    int64_t t456;
-    int64_t t457;
-    int64_t t458;
-    int64_t t459;
-    int64_t t460;
-    HeroStr t461;
-    int64_t t462;
-    int64_t t463;
-    int64_t t464;
-    int64_t t465;
-    int64_t t466;
-    HeroStr t467;
-    HeroStr t468;
-    HeroStr t469;
-    int64_t t470;
-    int64_t t471;
-    int64_t t472;
-    int64_t t473;
-    int64_t t474;
-    HeroStr t475;
-    int64_t t476;
-    int64_t t477;
-    int64_t t478;
-    int64_t t479;
-    int64_t t480;
-    HeroStr t481;
-    HeroStr t482;
-    HeroStr t483;
-    int64_t t484;
-    int64_t t485;
-    int64_t t486;
-    int64_t t487;
-    int64_t t488;
-    HeroStr t489;
-    int64_t t490;
-    int64_t t491;
-    int64_t t492;
-    int64_t t493;
-    int64_t t494;
-    HeroStr t495;
-    HeroStr t496;
-    HeroStr t497;
-    int64_t t498;
-    int64_t t499;
-    int64_t t500;
-    int64_t t501;
-    int64_t t502;
-    HeroStr t503;
-    int64_t t504;
-    int64_t t505;
-    int64_t t506;
-    int64_t t507;
-    int64_t t508;
-    HeroStr t509;
-    HeroStr t510;
-    HeroStr t511;
-    int64_t t512;
-    int64_t t513;
-    int64_t t514;
-    int64_t t515;
-    int64_t t516;
-    HeroStr t517;
-    int64_t t518;
-    int64_t t519;
-    int64_t t520;
-    int64_t t521;
-    int64_t t522;
-    HeroStr t523;
-    HeroStr t524;
-    HeroStr t525;
-    int64_t t526;
-    int64_t t527;
-    int64_t t528;
-    int64_t t529;
-    int64_t t530;
-    HeroStr t531;
-    int64_t t532;
-    int64_t t533;
-    int64_t t534;
-    int64_t t535;
-    int64_t t536;
-    HeroStr t537;
-    HeroStr t538;
-    HeroStr t539;
-    int64_t t540;
-    int64_t t541;
-    int64_t t542;
-    int64_t t543;
-    int64_t t544;
-    HeroStr t545;
-    int64_t t546;
-    int64_t t547;
-    int64_t t548;
-    int64_t t549;
-    int64_t t550;
-    HeroStr t551;
-    HeroStr t552;
-    HeroStr t553;
-    int64_t t554;
-    int64_t t555;
-    int64_t t556;
-    int64_t t557;
-    int64_t t558;
-    HeroStr t559;
-    int64_t t560;
-    int64_t t561;
-    int64_t t562;
-    HeroStr t563;
-    HeroStr t564;
-    HeroStr t565;
-    HeroStr t566;
-    HeroStr t567;
-    HeroStr t568;
-    HeroStr t569;
-    HeroStr t570;
-    HeroStr t571;
-    HeroStr t572;
-    HeroStr t573;
-    HeroStr t574;
-    HeroStr t575;
-    HeroStr t576;
-    HeroStr t577;
-    HeroStr t578;
-    HeroStr t579;
-    HeroStr t580;
-    HeroStr t581;
-    HeroStr t582;
-    HeroStr t583;
-    HeroStr t584;
-    HeroStr t585;
-    HeroStr t586;
-    HeroStr t587;
-    HeroStr t588;
-    HeroStr t589;
-    HeroStr t590;
-    HeroStr t591;
-    HeroStr t592;
-    HeroStr t593;
-    HeroStr t594;
-    HeroStr t595;
-    HeroStr t596;
-    HeroStr t597;
-    HeroStr t598;
-    HeroStr t599;
-    HeroStr t600;
-    HeroStr t601;
-    HeroStr t602;
-    HeroStr t603;
-    HeroStr t604;
-    HeroStr t605;
-    HeroStr t606;
-    HeroStr t607;
-    HeroStr t608;
-    HeroStr t609;
-    HeroStr t610;
-    HeroStr t611;
-    HeroStr t612;
-    HeroStr t613;
-    HeroStr t614;
-    HeroStr t615;
-    HeroStr t616;
-    HeroStr t617;
-    HeroStr t618;
-    HeroStr t619;
-    HeroStr t620;
-    HeroStr t621;
-    HeroStr t622;
-    HeroStr t623;
-    HeroStr t624;
-    HeroStr t625;
-    HeroStr t626;
-    HeroStr t627;
-    HeroStr t628;
-    HeroStr t629;
-    HeroStr t630;
-    HeroStr t631;
-    HeroStr t632;
-    HeroStr t633;
-    HeroStr t634;
-    HeroStr t635;
-    HeroStr t636;
-    HeroStr t637;
-    HeroStr t638;
-    HeroStr t639;
-    HeroStr t640;
-    HeroStr t641;
-    HeroStr t642;
-    goto bb0;
+#line 15 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
+    int64_t h80_total; int64_t h81_l0; int64_t h82_l1; int64_t h83_l2; int64_t h84_l3; int64_t h85_l4; int64_t h86_l5; int64_t h87_l6; int64_t h88_l7; int64_t h89_l8; int64_t h90_l9; int64_t h91_l10; int64_t h92_l11; int64_t h93_l12; int64_t h94_l13; int64_t h95_l14; int64_t h96_l15; int64_t h97_l16; int64_t h98_l17; int64_t h99_l18; int64_t h100_l19; int64_t h101_l20; int64_t h102_l21; int64_t h103_l22; int64_t h104_l23; int64_t h105_l24; int64_t h106_l25; int64_t h107_l26; int64_t h108_l27; int64_t h109_l28; int64_t h110_l29; int64_t h111_l30; int64_t h112_l31; int64_t h113_l32; int64_t h114_l33; int64_t h115_l34; int64_t h116_l35; int64_t h117_l36; int64_t h118_l37; int64_t h119_l38; int64_t h120_l39; HeroStr h121_own121 = {0}; HeroStr h122_own122 = {0}; HeroStr h123_own123 = {0}; HeroStr h124_own124 = {0}; HeroStr h125_own125 = {0}; HeroStr h126_own126 = {0}; HeroStr h127_own127 = {0}; HeroStr h128_own128 = {0}; HeroStr h129_own129 = {0}; HeroStr h130_own130 = {0}; HeroStr h131_own131 = {0}; HeroStr h132_own132 = {0}; HeroStr h133_own133 = {0}; HeroStr h134_own134 = {0}; HeroStr h135_own135 = {0}; HeroStr h136_own136 = {0}; HeroStr h137_own137 = {0}; HeroStr h138_own138 = {0}; HeroStr h139_own139 = {0}; HeroStr h140_own140 = {0}; HeroStr h141_own141 = {0}; HeroStr h142_own142 = {0}; HeroStr h143_own143 = {0}; HeroStr h144_own144 = {0}; HeroStr h145_own145 = {0}; HeroStr h146_own146 = {0}; HeroStr h147_own147 = {0}; HeroStr h148_own148 = {0}; HeroStr h149_own149 = {0}; HeroStr h150_own150 = {0}; HeroStr h151_own151 = {0}; HeroStr h152_own152 = {0}; HeroStr h153_own153 = {0}; HeroStr h154_own154 = {0}; HeroStr h155_own155 = {0}; HeroStr h156_own156 = {0}; HeroStr h157_own157 = {0}; HeroStr h158_own158 = {0}; HeroStr h159_own159 = {0}; HeroStr h160_own160 = {0}; int64_t t1; int64_t t2; int64_t t3; int64_t t4; HeroStr t5; HeroStr t6; HeroStr t7; int64_t t8; int64_t t9; int64_t t10; int64_t t11; int64_t t12; HeroStr t13; int64_t t14; int64_t t15; int64_t t16; int64_t t17; int64_t t18; HeroStr t19; HeroStr t20; HeroStr t21; int64_t t22; int64_t t23; int64_t t24; int64_t t25; int64_t t26; HeroStr t27; int64_t t28; int64_t t29; int64_t t30; int64_t t31; int64_t t32; HeroStr t33; HeroStr t34; HeroStr t35; int64_t t36; int64_t t37; int64_t t38; int64_t t39; int64_t t40; HeroStr t41; int64_t t42; int64_t t43; int64_t t44; int64_t t45; int64_t t46; HeroStr t47; HeroStr t48; HeroStr t49; int64_t t50; int64_t t51; int64_t t52; int64_t t53; int64_t t54; HeroStr t55; int64_t t56; int64_t t57; int64_t t58; int64_t t59; int64_t t60; HeroStr t61; HeroStr t62; HeroStr t63; int64_t t64; int64_t t65; int64_t t66; int64_t t67; int64_t t68; HeroStr t69; int64_t t70; int64_t t71; int64_t t72; int64_t t73; int64_t t74; HeroStr t75; HeroStr t76; HeroStr t77; int64_t t78; int64_t t79; int64_t t80; int64_t t81; int64_t t82; HeroStr t83; int64_t t84; int64_t t85; int64_t t86; int64_t t87; int64_t t88; HeroStr t89; HeroStr t90; HeroStr t91; int64_t t92; int64_t t93; int64_t t94; int64_t t95; int64_t t96; HeroStr t97; int64_t t98; int64_t t99; int64_t t100; int64_t t101; int64_t t102; HeroStr t103; HeroStr t104; HeroStr t105; int64_t t106; int64_t t107; int64_t t108; int64_t t109; int64_t t110; HeroStr t111; int64_t t112; int64_t t113; int64_t t114; int64_t t115; int64_t t116; HeroStr t117; HeroStr t118; HeroStr t119; int64_t t120; int64_t t121; int64_t t122; int64_t t123; int64_t t124; HeroStr t125; int64_t t126; int64_t t127; int64_t t128; int64_t t129; int64_t t130; HeroStr t131; HeroStr t132; HeroStr t133; int64_t t134; int64_t t135; int64_t t136; int64_t t137; int64_t t138; HeroStr t139; int64_t t140; int64_t t141; int64_t t142; int64_t t143; int64_t t144; HeroStr t145; HeroStr t146; HeroStr t147; int64_t t148; int64_t t149; int64_t t150; int64_t t151; int64_t t152; HeroStr t153; int64_t t154; int64_t t155; int64_t t156; int64_t t157; int64_t t158; HeroStr t159; HeroStr t160; HeroStr t161; int64_t t162; int64_t t163; int64_t t164; int64_t t165; int64_t t166; HeroStr t167; int64_t t168; int64_t t169; int64_t t170; int64_t t171; int64_t t172; HeroStr t173; HeroStr t174; HeroStr t175; int64_t t176; int64_t t177; int64_t t178; int64_t t179; int64_t t180; HeroStr t181; int64_t t182; int64_t t183; int64_t t184; int64_t t185; int64_t t186; HeroStr t187; HeroStr t188; HeroStr t189; int64_t t190; int64_t t191; int64_t t192; int64_t t193; int64_t t194; HeroStr t195; int64_t t196; int64_t t197; int64_t t198; int64_t t199; int64_t t200; HeroStr t201; HeroStr t202; HeroStr t203; int64_t t204; int64_t t205; int64_t t206; int64_t t207; int64_t t208; HeroStr t209; int64_t t210; int64_t t211; int64_t t212; int64_t t213; int64_t t214; HeroStr t215; HeroStr t216; HeroStr t217; int64_t t218; int64_t t219; int64_t t220; int64_t t221; int64_t t222; HeroStr t223; int64_t t224; int64_t t225; int64_t t226; int64_t t227; int64_t t228; HeroStr t229; HeroStr t230; HeroStr t231; int64_t t232; int64_t t233; int64_t t234; int64_t t235; int64_t t236; HeroStr t237; int64_t t238; int64_t t239; int64_t t240; int64_t t241; int64_t t242; HeroStr t243; HeroStr t244; HeroStr t245; int64_t t246; int64_t t247; int64_t t248; int64_t t249; int64_t t250; HeroStr t251; int64_t t252; int64_t t253; int64_t t254; int64_t t255; int64_t t256; HeroStr t257; HeroStr t258; HeroStr t259; int64_t t260; int64_t t261; int64_t t262; int64_t t263; int64_t t264; HeroStr t265; int64_t t266; int64_t t267; int64_t t268; int64_t t269; int64_t t270; HeroStr t271; HeroStr t272; HeroStr t273; int64_t t274; int64_t t275; int64_t t276; int64_t t277; int64_t t278; HeroStr t279; int64_t t280; int64_t t281; int64_t t282; int64_t t283; int64_t t284; HeroStr t285; HeroStr t286; HeroStr t287; int64_t t288; int64_t t289; int64_t t290; int64_t t291; int64_t t292; HeroStr t293; int64_t t294; int64_t t295; int64_t t296; int64_t t297; int64_t t298; HeroStr t299; HeroStr t300; HeroStr t301; int64_t t302; int64_t t303; int64_t t304; int64_t t305; int64_t t306; HeroStr t307; int64_t t308; int64_t t309; int64_t t310; int64_t t311; int64_t t312; HeroStr t313; HeroStr t314; HeroStr t315; int64_t t316; int64_t t317; int64_t t318; int64_t t319; int64_t t320; HeroStr t321; int64_t t322; int64_t t323; int64_t t324; int64_t t325; int64_t t326; HeroStr t327; HeroStr t328; HeroStr t329; int64_t t330; int64_t t331; int64_t t332; int64_t t333; int64_t t334; HeroStr t335; int64_t t336; int64_t t337; int64_t t338; int64_t t339; int64_t t340; HeroStr t341; HeroStr t342; HeroStr t343; int64_t t344; int64_t t345; int64_t t346; int64_t t347; int64_t t348; HeroStr t349; int64_t t350; int64_t t351; int64_t t352; int64_t t353; int64_t t354; HeroStr t355; HeroStr t356; HeroStr t357; int64_t t358; int64_t t359; int64_t t360; int64_t t361; int64_t t362; HeroStr t363; int64_t t364; int64_t t365; int64_t t366; int64_t t367; int64_t t368; HeroStr t369; HeroStr t370; HeroStr t371; int64_t t372; int64_t t373; int64_t t374; int64_t t375; int64_t t376; HeroStr t377; int64_t t378; int64_t t379; int64_t t380; int64_t t381; int64_t t382; HeroStr t383; HeroStr t384; HeroStr t385; int64_t t386; int64_t t387; int64_t t388; int64_t t389; int64_t t390; HeroStr t391; int64_t t392; int64_t t393; int64_t t394; int64_t t395; int64_t t396; HeroStr t397; HeroStr t398; HeroStr t399; int64_t t400; int64_t t401; int64_t t402; int64_t t403; int64_t t404; HeroStr t405; int64_t t406; int64_t t407; int64_t t408; int64_t t409; int64_t t410; HeroStr t411; HeroStr t412; HeroStr t413; int64_t t414; int64_t t415; int64_t t416; int64_t t417; int64_t t418; HeroStr t419; int64_t t420; int64_t t421; int64_t t422; int64_t t423; int64_t t424; HeroStr t425; HeroStr t426; HeroStr t427; int64_t t428; int64_t t429; int64_t t430; int64_t t431; int64_t t432; HeroStr t433; int64_t t434; int64_t t435; int64_t t436; int64_t t437; int64_t t438; HeroStr t439; HeroStr t440; HeroStr t441; int64_t t442; int64_t t443; int64_t t444; int64_t t445; int64_t t446; HeroStr t447; int64_t t448; int64_t t449; int64_t t450; int64_t t451; int64_t t452; HeroStr t453; HeroStr t454; HeroStr t455; int64_t t456; int64_t t457; int64_t t458; int64_t t459; int64_t t460; HeroStr t461; int64_t t462; int64_t t463; int64_t t464; int64_t t465; int64_t t466; HeroStr t467; HeroStr t468; HeroStr t469; int64_t t470; int64_t t471; int64_t t472; int64_t t473; int64_t t474; HeroStr t475; int64_t t476; int64_t t477; int64_t t478; int64_t t479; int64_t t480; HeroStr t481; HeroStr t482; HeroStr t483; int64_t t484; int64_t t485; int64_t t486; int64_t t487; int64_t t488; HeroStr t489; int64_t t490; int64_t t491; int64_t t492; int64_t t493; int64_t t494; HeroStr t495; HeroStr t496; HeroStr t497; int64_t t498; int64_t t499; int64_t t500; int64_t t501; int64_t t502; HeroStr t503; int64_t t504; int64_t t505; int64_t t506; int64_t t507; int64_t t508; HeroStr t509; HeroStr t510; HeroStr t511; int64_t t512; int64_t t513; int64_t t514; int64_t t515; int64_t t516; HeroStr t517; int64_t t518; int64_t t519; int64_t t520; int64_t t521; int64_t t522; HeroStr t523; HeroStr t524; HeroStr t525; int64_t t526; int64_t t527; int64_t t528; int64_t t529; int64_t t530; HeroStr t531; int64_t t532; int64_t t533; int64_t t534; int64_t t535; int64_t t536; HeroStr t537; HeroStr t538; HeroStr t539; int64_t t540; int64_t t541; int64_t t542; int64_t t543; int64_t t544; HeroStr t545; int64_t t546; int64_t t547; int64_t t548; int64_t t549; int64_t t550; HeroStr t551; HeroStr t552; HeroStr t553; int64_t t554; int64_t t555; int64_t t556; int64_t t557; int64_t t558; HeroStr t559; int64_t t560; int64_t t561; int64_t t562; HeroStr t563; HeroStr t564; HeroStr t565; HeroStr t566; HeroStr t567; HeroStr t568; HeroStr t569; HeroStr t570; HeroStr t571; HeroStr t572; HeroStr t573; HeroStr t574; HeroStr t575; HeroStr t576; HeroStr t577; HeroStr t578; HeroStr t579; HeroStr t580; HeroStr t581; HeroStr t582; HeroStr t583; HeroStr t584; HeroStr t585; HeroStr t586; HeroStr t587; HeroStr t588; HeroStr t589; HeroStr t590; HeroStr t591; HeroStr t592; HeroStr t593; HeroStr t594; HeroStr t595; HeroStr t596; HeroStr t597; HeroStr t598; HeroStr t599; HeroStr t600; HeroStr t601; HeroStr t602; HeroStr t603; HeroStr t604; HeroStr t605; HeroStr t606; HeroStr t607; HeroStr t608; HeroStr t609; HeroStr t610; HeroStr t611; HeroStr t612; HeroStr t613; HeroStr t614; HeroStr t615; HeroStr t616; HeroStr t617; HeroStr t618; HeroStr t619; HeroStr t620; HeroStr t621; HeroStr t622; HeroStr t623; HeroStr t624; HeroStr t625; HeroStr t626; HeroStr t627; HeroStr t628; HeroStr t629; HeroStr t630; HeroStr t631; HeroStr t632; HeroStr t633; HeroStr t634; HeroStr t635; HeroStr t636; HeroStr t637; HeroStr t638; HeroStr t639; HeroStr t640; HeroStr t641; HeroStr t642; goto bb0;
+#line 15 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
 bb0:
-#line 16 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t1 = INT64_C(0);
 #line 16 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     h80_total = t1;
@@ -839,17 +116,16 @@ bb0:
     t563 = h121_own121;
 #line 18 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     h121_own121 = t7;
-#line 843 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 18 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t563);
 #line 18 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t564 = (*ph1_b0);
-#line 847 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 18 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_incref(t7);
 #line 18 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     (*ph1_b0) = t7;
-#line 851 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 18 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t564);
-#line 19 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t8 = h80_total;
 #line 19 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t9 = h0_a0;
@@ -883,17 +159,16 @@ bb0:
     t565 = h122_own122;
 #line 21 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     h122_own122 = t21;
-#line 887 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 21 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t565);
 #line 21 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t566 = (*ph3_b1);
-#line 891 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 21 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_incref(t21);
 #line 21 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     (*ph3_b1) = t21;
-#line 895 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 21 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t566);
-#line 22 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t22 = h80_total;
 #line 22 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t23 = h2_a1;
@@ -927,17 +202,16 @@ bb0:
     t567 = h123_own123;
 #line 24 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     h123_own123 = t35;
-#line 931 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 24 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t567);
 #line 24 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t568 = (*ph5_b2);
-#line 935 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 24 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_incref(t35);
 #line 24 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     (*ph5_b2) = t35;
-#line 939 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 24 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t568);
-#line 25 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t36 = h80_total;
 #line 25 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t37 = h4_a2;
@@ -971,17 +245,16 @@ bb0:
     t569 = h124_own124;
 #line 27 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     h124_own124 = t49;
-#line 975 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 27 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t569);
 #line 27 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t570 = (*ph7_b3);
-#line 979 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 27 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_incref(t49);
 #line 27 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     (*ph7_b3) = t49;
-#line 983 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 27 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t570);
-#line 28 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t50 = h80_total;
 #line 28 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t51 = h6_a3;
@@ -1015,17 +288,16 @@ bb0:
     t571 = h125_own125;
 #line 30 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     h125_own125 = t63;
-#line 1019 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 30 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t571);
 #line 30 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t572 = (*ph9_b4);
-#line 1023 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 30 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_incref(t63);
 #line 30 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     (*ph9_b4) = t63;
-#line 1027 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 30 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t572);
-#line 31 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t64 = h80_total;
 #line 31 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t65 = h8_a4;
@@ -1059,17 +331,16 @@ bb0:
     t573 = h126_own126;
 #line 33 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     h126_own126 = t77;
-#line 1063 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 33 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t573);
 #line 33 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t574 = (*ph11_b5);
-#line 1067 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 33 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_incref(t77);
 #line 33 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     (*ph11_b5) = t77;
-#line 1071 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 33 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t574);
-#line 34 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t78 = h80_total;
 #line 34 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t79 = h10_a5;
@@ -1103,17 +374,16 @@ bb0:
     t575 = h127_own127;
 #line 36 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     h127_own127 = t91;
-#line 1107 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 36 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t575);
 #line 36 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t576 = (*ph13_b6);
-#line 1111 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 36 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_incref(t91);
 #line 36 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     (*ph13_b6) = t91;
-#line 1115 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 36 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t576);
-#line 37 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t92 = h80_total;
 #line 37 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t93 = h12_a6;
@@ -1147,17 +417,16 @@ bb0:
     t577 = h128_own128;
 #line 39 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     h128_own128 = t105;
-#line 1151 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 39 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t577);
 #line 39 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t578 = (*ph15_b7);
-#line 1155 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 39 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_incref(t105);
 #line 39 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     (*ph15_b7) = t105;
-#line 1159 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 39 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t578);
-#line 40 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t106 = h80_total;
 #line 40 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t107 = h14_a7;
@@ -1191,17 +460,16 @@ bb0:
     t579 = h129_own129;
 #line 42 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     h129_own129 = t119;
-#line 1195 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 42 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t579);
 #line 42 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t580 = (*ph17_b8);
-#line 1199 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 42 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_incref(t119);
 #line 42 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     (*ph17_b8) = t119;
-#line 1203 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 42 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t580);
-#line 43 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t120 = h80_total;
 #line 43 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t121 = h16_a8;
@@ -1235,17 +503,16 @@ bb0:
     t581 = h130_own130;
 #line 45 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     h130_own130 = t133;
-#line 1239 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 45 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t581);
 #line 45 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t582 = (*ph19_b9);
-#line 1243 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 45 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_incref(t133);
 #line 45 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     (*ph19_b9) = t133;
-#line 1247 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 45 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t582);
-#line 46 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t134 = h80_total;
 #line 46 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t135 = h18_a9;
@@ -1279,17 +546,16 @@ bb0:
     t583 = h131_own131;
 #line 48 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     h131_own131 = t147;
-#line 1283 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 48 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t583);
 #line 48 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t584 = (*ph21_b10);
-#line 1287 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 48 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_incref(t147);
 #line 48 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     (*ph21_b10) = t147;
-#line 1291 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 48 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t584);
-#line 49 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t148 = h80_total;
 #line 49 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t149 = h20_a10;
@@ -1323,17 +589,16 @@ bb0:
     t585 = h132_own132;
 #line 51 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     h132_own132 = t161;
-#line 1327 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 51 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t585);
 #line 51 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t586 = (*ph23_b11);
-#line 1331 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 51 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_incref(t161);
 #line 51 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     (*ph23_b11) = t161;
-#line 1335 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 51 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t586);
-#line 52 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t162 = h80_total;
 #line 52 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t163 = h22_a11;
@@ -1367,17 +632,16 @@ bb0:
     t587 = h133_own133;
 #line 54 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     h133_own133 = t175;
-#line 1371 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 54 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t587);
 #line 54 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t588 = (*ph25_b12);
-#line 1375 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 54 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_incref(t175);
 #line 54 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     (*ph25_b12) = t175;
-#line 1379 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 54 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t588);
-#line 55 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t176 = h80_total;
 #line 55 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t177 = h24_a12;
@@ -1411,17 +675,16 @@ bb0:
     t589 = h134_own134;
 #line 57 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     h134_own134 = t189;
-#line 1415 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 57 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t589);
 #line 57 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t590 = (*ph27_b13);
-#line 1419 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 57 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_incref(t189);
 #line 57 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     (*ph27_b13) = t189;
-#line 1423 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 57 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t590);
-#line 58 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t190 = h80_total;
 #line 58 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t191 = h26_a13;
@@ -1455,17 +718,16 @@ bb0:
     t591 = h135_own135;
 #line 60 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     h135_own135 = t203;
-#line 1459 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 60 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t591);
 #line 60 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t592 = (*ph29_b14);
-#line 1463 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 60 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_incref(t203);
 #line 60 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     (*ph29_b14) = t203;
-#line 1467 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 60 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t592);
-#line 61 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t204 = h80_total;
 #line 61 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t205 = h28_a14;
@@ -1499,17 +761,16 @@ bb0:
     t593 = h136_own136;
 #line 63 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     h136_own136 = t217;
-#line 1503 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 63 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t593);
 #line 63 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t594 = (*ph31_b15);
-#line 1507 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 63 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_incref(t217);
 #line 63 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     (*ph31_b15) = t217;
-#line 1511 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 63 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t594);
-#line 64 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t218 = h80_total;
 #line 64 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t219 = h30_a15;
@@ -1543,17 +804,16 @@ bb0:
     t595 = h137_own137;
 #line 66 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     h137_own137 = t231;
-#line 1547 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 66 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t595);
 #line 66 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t596 = (*ph33_b16);
-#line 1551 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 66 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_incref(t231);
 #line 66 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     (*ph33_b16) = t231;
-#line 1555 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 66 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t596);
-#line 67 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t232 = h80_total;
 #line 67 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t233 = h32_a16;
@@ -1587,17 +847,16 @@ bb0:
     t597 = h138_own138;
 #line 69 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     h138_own138 = t245;
-#line 1591 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 69 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t597);
 #line 69 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t598 = (*ph35_b17);
-#line 1595 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 69 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_incref(t245);
 #line 69 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     (*ph35_b17) = t245;
-#line 1599 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 69 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t598);
-#line 70 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t246 = h80_total;
 #line 70 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t247 = h34_a17;
@@ -1631,17 +890,16 @@ bb0:
     t599 = h139_own139;
 #line 72 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     h139_own139 = t259;
-#line 1635 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 72 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t599);
 #line 72 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t600 = (*ph37_b18);
-#line 1639 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 72 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_incref(t259);
 #line 72 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     (*ph37_b18) = t259;
-#line 1643 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 72 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t600);
-#line 73 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t260 = h80_total;
 #line 73 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t261 = h36_a18;
@@ -1675,17 +933,16 @@ bb0:
     t601 = h140_own140;
 #line 75 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     h140_own140 = t273;
-#line 1679 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 75 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t601);
 #line 75 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t602 = (*ph39_b19);
-#line 1683 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 75 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_incref(t273);
 #line 75 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     (*ph39_b19) = t273;
-#line 1687 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 75 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t602);
-#line 76 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t274 = h80_total;
 #line 76 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t275 = h38_a19;
@@ -1719,17 +976,16 @@ bb0:
     t603 = h141_own141;
 #line 78 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     h141_own141 = t287;
-#line 1723 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 78 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t603);
 #line 78 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t604 = (*ph41_b20);
-#line 1727 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 78 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_incref(t287);
 #line 78 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     (*ph41_b20) = t287;
-#line 1731 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 78 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t604);
-#line 79 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t288 = h80_total;
 #line 79 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t289 = h40_a20;
@@ -1763,17 +1019,16 @@ bb0:
     t605 = h142_own142;
 #line 81 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     h142_own142 = t301;
-#line 1767 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 81 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t605);
 #line 81 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t606 = (*ph43_b21);
-#line 1771 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 81 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_incref(t301);
 #line 81 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     (*ph43_b21) = t301;
-#line 1775 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 81 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t606);
-#line 82 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t302 = h80_total;
 #line 82 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t303 = h42_a21;
@@ -1807,17 +1062,16 @@ bb0:
     t607 = h143_own143;
 #line 84 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     h143_own143 = t315;
-#line 1811 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 84 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t607);
 #line 84 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t608 = (*ph45_b22);
-#line 1815 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 84 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_incref(t315);
 #line 84 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     (*ph45_b22) = t315;
-#line 1819 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 84 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t608);
-#line 85 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t316 = h80_total;
 #line 85 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t317 = h44_a22;
@@ -1851,17 +1105,16 @@ bb0:
     t609 = h144_own144;
 #line 87 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     h144_own144 = t329;
-#line 1855 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 87 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t609);
 #line 87 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t610 = (*ph47_b23);
-#line 1859 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 87 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_incref(t329);
 #line 87 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     (*ph47_b23) = t329;
-#line 1863 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 87 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t610);
-#line 88 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t330 = h80_total;
 #line 88 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t331 = h46_a23;
@@ -1895,17 +1148,16 @@ bb0:
     t611 = h145_own145;
 #line 90 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     h145_own145 = t343;
-#line 1899 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 90 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t611);
 #line 90 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t612 = (*ph49_b24);
-#line 1903 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 90 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_incref(t343);
 #line 90 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     (*ph49_b24) = t343;
-#line 1907 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 90 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t612);
-#line 91 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t344 = h80_total;
 #line 91 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t345 = h48_a24;
@@ -1939,17 +1191,16 @@ bb0:
     t613 = h146_own146;
 #line 93 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     h146_own146 = t357;
-#line 1943 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 93 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t613);
 #line 93 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t614 = (*ph51_b25);
-#line 1947 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 93 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_incref(t357);
 #line 93 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     (*ph51_b25) = t357;
-#line 1951 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 93 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t614);
-#line 94 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t358 = h80_total;
 #line 94 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t359 = h50_a25;
@@ -1983,17 +1234,16 @@ bb0:
     t615 = h147_own147;
 #line 96 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     h147_own147 = t371;
-#line 1987 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 96 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t615);
 #line 96 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t616 = (*ph53_b26);
-#line 1991 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 96 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_incref(t371);
 #line 96 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     (*ph53_b26) = t371;
-#line 1995 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 96 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t616);
-#line 97 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t372 = h80_total;
 #line 97 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t373 = h52_a26;
@@ -2027,17 +1277,16 @@ bb0:
     t617 = h148_own148;
 #line 99 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     h148_own148 = t385;
-#line 2031 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 99 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t617);
 #line 99 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t618 = (*ph55_b27);
-#line 2035 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 99 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_incref(t385);
 #line 99 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     (*ph55_b27) = t385;
-#line 2039 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 99 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t618);
-#line 100 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t386 = h80_total;
 #line 100 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t387 = h54_a27;
@@ -2071,17 +1320,16 @@ bb0:
     t619 = h149_own149;
 #line 102 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     h149_own149 = t399;
-#line 2075 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 102 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t619);
 #line 102 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t620 = (*ph57_b28);
-#line 2079 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 102 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_incref(t399);
 #line 102 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     (*ph57_b28) = t399;
-#line 2083 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 102 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t620);
-#line 103 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t400 = h80_total;
 #line 103 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t401 = h56_a28;
@@ -2115,17 +1363,16 @@ bb0:
     t621 = h150_own150;
 #line 105 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     h150_own150 = t413;
-#line 2119 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 105 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t621);
 #line 105 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t622 = (*ph59_b29);
-#line 2123 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 105 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_incref(t413);
 #line 105 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     (*ph59_b29) = t413;
-#line 2127 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 105 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t622);
-#line 106 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t414 = h80_total;
 #line 106 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t415 = h58_a29;
@@ -2159,17 +1406,16 @@ bb0:
     t623 = h151_own151;
 #line 108 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     h151_own151 = t427;
-#line 2163 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 108 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t623);
 #line 108 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t624 = (*ph61_b30);
-#line 2167 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 108 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_incref(t427);
 #line 108 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     (*ph61_b30) = t427;
-#line 2171 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 108 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t624);
-#line 109 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t428 = h80_total;
 #line 109 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t429 = h60_a30;
@@ -2203,17 +1449,16 @@ bb0:
     t625 = h152_own152;
 #line 111 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     h152_own152 = t441;
-#line 2207 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 111 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t625);
 #line 111 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t626 = (*ph63_b31);
-#line 2211 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 111 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_incref(t441);
 #line 111 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     (*ph63_b31) = t441;
-#line 2215 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 111 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t626);
-#line 112 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t442 = h80_total;
 #line 112 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t443 = h62_a31;
@@ -2247,17 +1492,16 @@ bb0:
     t627 = h153_own153;
 #line 114 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     h153_own153 = t455;
-#line 2251 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 114 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t627);
 #line 114 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t628 = (*ph65_b32);
-#line 2255 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 114 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_incref(t455);
 #line 114 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     (*ph65_b32) = t455;
-#line 2259 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 114 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t628);
-#line 115 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t456 = h80_total;
 #line 115 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t457 = h64_a32;
@@ -2291,17 +1535,16 @@ bb0:
     t629 = h154_own154;
 #line 117 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     h154_own154 = t469;
-#line 2295 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 117 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t629);
 #line 117 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t630 = (*ph67_b33);
-#line 2299 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 117 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_incref(t469);
 #line 117 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     (*ph67_b33) = t469;
-#line 2303 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 117 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t630);
-#line 118 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t470 = h80_total;
 #line 118 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t471 = h66_a33;
@@ -2335,17 +1578,16 @@ bb0:
     t631 = h155_own155;
 #line 120 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     h155_own155 = t483;
-#line 2339 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 120 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t631);
 #line 120 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t632 = (*ph69_b34);
-#line 2343 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 120 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_incref(t483);
 #line 120 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     (*ph69_b34) = t483;
-#line 2347 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 120 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t632);
-#line 121 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t484 = h80_total;
 #line 121 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t485 = h68_a34;
@@ -2379,17 +1621,16 @@ bb0:
     t633 = h156_own156;
 #line 123 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     h156_own156 = t497;
-#line 2383 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 123 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t633);
 #line 123 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t634 = (*ph71_b35);
-#line 2387 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 123 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_incref(t497);
 #line 123 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     (*ph71_b35) = t497;
-#line 2391 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 123 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t634);
-#line 124 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t498 = h80_total;
 #line 124 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t499 = h70_a35;
@@ -2423,17 +1664,16 @@ bb0:
     t635 = h157_own157;
 #line 126 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     h157_own157 = t511;
-#line 2427 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 126 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t635);
 #line 126 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t636 = (*ph73_b36);
-#line 2431 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 126 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_incref(t511);
 #line 126 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     (*ph73_b36) = t511;
-#line 2435 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 126 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t636);
-#line 127 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t512 = h80_total;
 #line 127 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t513 = h72_a36;
@@ -2467,17 +1707,16 @@ bb0:
     t637 = h158_own158;
 #line 129 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     h158_own158 = t525;
-#line 2471 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 129 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t637);
 #line 129 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t638 = (*ph75_b37);
-#line 2475 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 129 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_incref(t525);
 #line 129 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     (*ph75_b37) = t525;
-#line 2479 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 129 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t638);
-#line 130 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t526 = h80_total;
 #line 130 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t527 = h74_a37;
@@ -2511,17 +1750,16 @@ bb0:
     t639 = h159_own159;
 #line 132 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     h159_own159 = t539;
-#line 2515 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 132 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t639);
 #line 132 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t640 = (*ph77_b38);
-#line 2519 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 132 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_incref(t539);
 #line 132 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     (*ph77_b38) = t539;
-#line 2523 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 132 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t640);
-#line 133 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t540 = h80_total;
 #line 133 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t541 = h76_a38;
@@ -2555,17 +1793,16 @@ bb0:
     t641 = h160_own160;
 #line 135 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     h160_own160 = t553;
-#line 2559 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 135 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t641);
 #line 135 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t642 = (*ph79_b39);
-#line 2563 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 135 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_incref(t553);
 #line 135 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     (*ph79_b39) = t553;
-#line 2567 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 135 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t642);
-#line 136 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t554 = h80_total;
 #line 136 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t555 = h78_a39;
@@ -2584,7 +1821,7 @@ bb0:
 #line 136 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     h80_total = t561;
     t562 = h80_total;
-#line 2588 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 1825 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
     hero_str_release_at(&h121_own121);
     hero_str_release_at(&h122_own122);
     hero_str_release_at(&h123_own123);
@@ -2630,571 +1867,369 @@ bb0:
 
 #line 139 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
 void h_fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder_main(void) {
-#line 2634 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
-    HeroStr h0_s0 = {0};
-    HeroStr h1_s1 = {0};
-    HeroStr h2_s2 = {0};
-    HeroStr h3_s3 = {0};
-    HeroStr h4_s4 = {0};
-    HeroStr h5_s5 = {0};
-    HeroStr h6_s6 = {0};
-    HeroStr h7_s7 = {0};
-    HeroStr h8_s8 = {0};
-    HeroStr h9_s9 = {0};
-    HeroStr h10_s10 = {0};
-    HeroStr h11_s11 = {0};
-    HeroStr h12_s12 = {0};
-    HeroStr h13_s13 = {0};
-    HeroStr h14_s14 = {0};
-    HeroStr h15_s15 = {0};
-    HeroStr h16_s16 = {0};
-    HeroStr h17_s17 = {0};
-    HeroStr h18_s18 = {0};
-    HeroStr h19_s19 = {0};
-    HeroStr h20_s20 = {0};
-    HeroStr h21_s21 = {0};
-    HeroStr h22_s22 = {0};
-    HeroStr h23_s23 = {0};
-    HeroStr h24_s24 = {0};
-    HeroStr h25_s25 = {0};
-    HeroStr h26_s26 = {0};
-    HeroStr h27_s27 = {0};
-    HeroStr h28_s28 = {0};
-    HeroStr h29_s29 = {0};
-    HeroStr h30_s30 = {0};
-    HeroStr h31_s31 = {0};
-    HeroStr h32_s32 = {0};
-    HeroStr h33_s33 = {0};
-    HeroStr h34_s34 = {0};
-    HeroStr h35_s35 = {0};
-    HeroStr h36_s36 = {0};
-    HeroStr h37_s37 = {0};
-    HeroStr h38_s38 = {0};
-    HeroStr h39_s39 = {0};
-    HeroStr t1;
-    HeroStr t2;
-    HeroStr t3;
-    HeroStr t4;
-    HeroStr t5;
-    HeroStr t6;
-    HeroStr t7;
-    HeroStr t8;
-    HeroStr t9;
-    HeroStr t10;
-    HeroStr t11;
-    HeroStr t12;
-    HeroStr t13;
-    HeroStr t14;
-    HeroStr t15;
-    HeroStr t16;
-    HeroStr t17;
-    HeroStr t18;
-    HeroStr t19;
-    HeroStr t20;
-    HeroStr t21;
-    HeroStr t22;
-    HeroStr t23;
-    HeroStr t24;
-    HeroStr t25;
-    HeroStr t26;
-    HeroStr t27;
-    HeroStr t28;
-    HeroStr t29;
-    HeroStr t30;
-    HeroStr t31;
-    HeroStr t32;
-    HeroStr t33;
-    HeroStr t34;
-    HeroStr t35;
-    HeroStr t36;
-    HeroStr t37;
-    HeroStr t38;
-    HeroStr t39;
-    HeroStr t40;
-    int64_t t41;
-    int64_t t42;
-    int64_t t43;
-    int64_t t44;
-    int64_t t45;
-    int64_t t46;
-    int64_t t47;
-    int64_t t48;
-    int64_t t49;
-    int64_t t50;
-    int64_t t51;
-    int64_t t52;
-    int64_t t53;
-    int64_t t54;
-    int64_t t55;
-    int64_t t56;
-    int64_t t57;
-    int64_t t58;
-    int64_t t59;
-    int64_t t60;
-    int64_t t61;
-    int64_t t62;
-    int64_t t63;
-    int64_t t64;
-    int64_t t65;
-    int64_t t66;
-    int64_t t67;
-    int64_t t68;
-    int64_t t69;
-    int64_t t70;
-    int64_t t71;
-    int64_t t72;
-    int64_t t73;
-    int64_t t74;
-    int64_t t75;
-    int64_t t76;
-    int64_t t77;
-    int64_t t78;
-    int64_t t79;
-    int64_t t80;
-    int64_t t81;
-    HeroStr t82;
-    HeroStr t83;
-    HeroStr t84;
-    HeroStr t85;
-    HeroStr t86;
-    HeroStr t87;
-    HeroStr t88;
-    HeroStr t89;
-    HeroStr t90;
-    HeroStr t91;
-    HeroStr t92;
-    HeroStr t93;
-    HeroStr t94;
-    HeroStr t95;
-    HeroStr t96;
-    HeroStr t97;
-    HeroStr t98;
-    HeroStr t99;
-    HeroStr t100;
-    HeroStr t101;
-    HeroStr t102;
-    HeroStr t103;
-    HeroStr t104;
-    HeroStr t105;
-    HeroStr t106;
-    HeroStr t107;
-    HeroStr t108;
-    HeroStr t109;
-    HeroStr t110;
-    HeroStr t111;
-    HeroStr t112;
-    HeroStr t113;
-    HeroStr t114;
-    HeroStr t115;
-    HeroStr t116;
-    HeroStr t117;
-    HeroStr t118;
-    HeroStr t119;
-    HeroStr t120;
-    HeroStr t121;
-    HeroStr t122;
-    HeroStr t123;
-    goto bb0;
+#line 139 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
+    HeroStr h0_s0 = {0}; HeroStr h1_s1 = {0}; HeroStr h2_s2 = {0}; HeroStr h3_s3 = {0}; HeroStr h4_s4 = {0}; HeroStr h5_s5 = {0}; HeroStr h6_s6 = {0}; HeroStr h7_s7 = {0}; HeroStr h8_s8 = {0}; HeroStr h9_s9 = {0}; HeroStr h10_s10 = {0}; HeroStr h11_s11 = {0}; HeroStr h12_s12 = {0}; HeroStr h13_s13 = {0}; HeroStr h14_s14 = {0}; HeroStr h15_s15 = {0}; HeroStr h16_s16 = {0}; HeroStr h17_s17 = {0}; HeroStr h18_s18 = {0}; HeroStr h19_s19 = {0}; HeroStr h20_s20 = {0}; HeroStr h21_s21 = {0}; HeroStr h22_s22 = {0}; HeroStr h23_s23 = {0}; HeroStr h24_s24 = {0}; HeroStr h25_s25 = {0}; HeroStr h26_s26 = {0}; HeroStr h27_s27 = {0}; HeroStr h28_s28 = {0}; HeroStr h29_s29 = {0}; HeroStr h30_s30 = {0}; HeroStr h31_s31 = {0}; HeroStr h32_s32 = {0}; HeroStr h33_s33 = {0}; HeroStr h34_s34 = {0}; HeroStr h35_s35 = {0}; HeroStr h36_s36 = {0}; HeroStr h37_s37 = {0}; HeroStr h38_s38 = {0}; HeroStr h39_s39 = {0}; HeroStr t1; HeroStr t2; HeroStr t3; HeroStr t4; HeroStr t5; HeroStr t6; HeroStr t7; HeroStr t8; HeroStr t9; HeroStr t10; HeroStr t11; HeroStr t12; HeroStr t13; HeroStr t14; HeroStr t15; HeroStr t16; HeroStr t17; HeroStr t18; HeroStr t19; HeroStr t20; HeroStr t21; HeroStr t22; HeroStr t23; HeroStr t24; HeroStr t25; HeroStr t26; HeroStr t27; HeroStr t28; HeroStr t29; HeroStr t30; HeroStr t31; HeroStr t32; HeroStr t33; HeroStr t34; HeroStr t35; HeroStr t36; HeroStr t37; HeroStr t38; HeroStr t39; HeroStr t40; int64_t t41; int64_t t42; int64_t t43; int64_t t44; int64_t t45; int64_t t46; int64_t t47; int64_t t48; int64_t t49; int64_t t50; int64_t t51; int64_t t52; int64_t t53; int64_t t54; int64_t t55; int64_t t56; int64_t t57; int64_t t58; int64_t t59; int64_t t60; int64_t t61; int64_t t62; int64_t t63; int64_t t64; int64_t t65; int64_t t66; int64_t t67; int64_t t68; int64_t t69; int64_t t70; int64_t t71; int64_t t72; int64_t t73; int64_t t74; int64_t t75; int64_t t76; int64_t t77; int64_t t78; int64_t t79; int64_t t80; int64_t t81; HeroStr t82; HeroStr t83; HeroStr t84; HeroStr t85; HeroStr t86; HeroStr t87; HeroStr t88; HeroStr t89; HeroStr t90; HeroStr t91; HeroStr t92; HeroStr t93; HeroStr t94; HeroStr t95; HeroStr t96; HeroStr t97; HeroStr t98; HeroStr t99; HeroStr t100; HeroStr t101; HeroStr t102; HeroStr t103; HeroStr t104; HeroStr t105; HeroStr t106; HeroStr t107; HeroStr t108; HeroStr t109; HeroStr t110; HeroStr t111; HeroStr t112; HeroStr t113; HeroStr t114; HeroStr t115; HeroStr t116; HeroStr t117; HeroStr t118; HeroStr t119; HeroStr t120; HeroStr t121; HeroStr t122; HeroStr t123; goto bb0;
+#line 139 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
 bb0:
-#line 140 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t1 = HERO_STR_LIT(hero_str_73);
 #line 140 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t84 = h0_s0;
-#line 2804 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 140 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_incref(t1);
 #line 140 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     h0_s0 = t1;
-#line 2808 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 140 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t84);
-#line 141 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t2 = HERO_STR_LIT(hero_str_73);
 #line 141 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t85 = h1_s1;
-#line 2814 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 141 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_incref(t2);
 #line 141 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     h1_s1 = t2;
-#line 2818 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 141 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t85);
-#line 142 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t3 = HERO_STR_LIT(hero_str_73);
 #line 142 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t86 = h2_s2;
-#line 2824 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 142 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_incref(t3);
 #line 142 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     h2_s2 = t3;
-#line 2828 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 142 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t86);
-#line 143 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t4 = HERO_STR_LIT(hero_str_73);
 #line 143 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t87 = h3_s3;
-#line 2834 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 143 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_incref(t4);
 #line 143 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     h3_s3 = t4;
-#line 2838 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 143 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t87);
-#line 144 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t5 = HERO_STR_LIT(hero_str_73);
 #line 144 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t88 = h4_s4;
-#line 2844 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 144 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_incref(t5);
 #line 144 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     h4_s4 = t5;
-#line 2848 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 144 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t88);
-#line 145 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t6 = HERO_STR_LIT(hero_str_73);
 #line 145 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t89 = h5_s5;
-#line 2854 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 145 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_incref(t6);
 #line 145 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     h5_s5 = t6;
-#line 2858 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 145 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t89);
-#line 146 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t7 = HERO_STR_LIT(hero_str_73);
 #line 146 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t90 = h6_s6;
-#line 2864 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 146 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_incref(t7);
 #line 146 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     h6_s6 = t7;
-#line 2868 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 146 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t90);
-#line 147 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t8 = HERO_STR_LIT(hero_str_73);
 #line 147 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t91 = h7_s7;
-#line 2874 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 147 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_incref(t8);
 #line 147 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     h7_s7 = t8;
-#line 2878 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 147 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t91);
-#line 148 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t9 = HERO_STR_LIT(hero_str_73);
 #line 148 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t92 = h8_s8;
-#line 2884 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 148 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_incref(t9);
 #line 148 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     h8_s8 = t9;
-#line 2888 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 148 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t92);
-#line 149 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t10 = HERO_STR_LIT(hero_str_73);
 #line 149 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t93 = h9_s9;
-#line 2894 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 149 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_incref(t10);
 #line 149 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     h9_s9 = t10;
-#line 2898 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 149 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t93);
-#line 150 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t11 = HERO_STR_LIT(hero_str_73);
 #line 150 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t94 = h10_s10;
-#line 2904 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 150 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_incref(t11);
 #line 150 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     h10_s10 = t11;
-#line 2908 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 150 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t94);
-#line 151 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t12 = HERO_STR_LIT(hero_str_73);
 #line 151 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t95 = h11_s11;
-#line 2914 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 151 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_incref(t12);
 #line 151 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     h11_s11 = t12;
-#line 2918 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 151 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t95);
-#line 152 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t13 = HERO_STR_LIT(hero_str_73);
 #line 152 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t96 = h12_s12;
-#line 2924 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 152 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_incref(t13);
 #line 152 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     h12_s12 = t13;
-#line 2928 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 152 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t96);
-#line 153 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t14 = HERO_STR_LIT(hero_str_73);
 #line 153 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t97 = h13_s13;
-#line 2934 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 153 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_incref(t14);
 #line 153 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     h13_s13 = t14;
-#line 2938 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 153 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t97);
-#line 154 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t15 = HERO_STR_LIT(hero_str_73);
 #line 154 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t98 = h14_s14;
-#line 2944 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 154 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_incref(t15);
 #line 154 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     h14_s14 = t15;
-#line 2948 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 154 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t98);
-#line 155 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t16 = HERO_STR_LIT(hero_str_73);
 #line 155 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t99 = h15_s15;
-#line 2954 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 155 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_incref(t16);
 #line 155 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     h15_s15 = t16;
-#line 2958 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 155 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t99);
-#line 156 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t17 = HERO_STR_LIT(hero_str_73);
 #line 156 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t100 = h16_s16;
-#line 2964 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 156 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_incref(t17);
 #line 156 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     h16_s16 = t17;
-#line 2968 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 156 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t100);
-#line 157 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t18 = HERO_STR_LIT(hero_str_73);
 #line 157 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t101 = h17_s17;
-#line 2974 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 157 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_incref(t18);
 #line 157 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     h17_s17 = t18;
-#line 2978 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 157 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t101);
-#line 158 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t19 = HERO_STR_LIT(hero_str_73);
 #line 158 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t102 = h18_s18;
-#line 2984 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 158 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_incref(t19);
 #line 158 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     h18_s18 = t19;
-#line 2988 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 158 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t102);
-#line 159 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t20 = HERO_STR_LIT(hero_str_73);
 #line 159 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t103 = h19_s19;
-#line 2994 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 159 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_incref(t20);
 #line 159 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     h19_s19 = t20;
-#line 2998 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 159 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t103);
-#line 160 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t21 = HERO_STR_LIT(hero_str_73);
 #line 160 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t104 = h20_s20;
-#line 3004 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 160 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_incref(t21);
 #line 160 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     h20_s20 = t21;
-#line 3008 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 160 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t104);
-#line 161 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t22 = HERO_STR_LIT(hero_str_73);
 #line 161 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t105 = h21_s21;
-#line 3014 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 161 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_incref(t22);
 #line 161 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     h21_s21 = t22;
-#line 3018 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 161 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t105);
-#line 162 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t23 = HERO_STR_LIT(hero_str_73);
 #line 162 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t106 = h22_s22;
-#line 3024 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 162 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_incref(t23);
 #line 162 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     h22_s22 = t23;
-#line 3028 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 162 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t106);
-#line 163 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t24 = HERO_STR_LIT(hero_str_73);
 #line 163 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t107 = h23_s23;
-#line 3034 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 163 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_incref(t24);
 #line 163 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     h23_s23 = t24;
-#line 3038 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 163 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t107);
-#line 164 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t25 = HERO_STR_LIT(hero_str_73);
 #line 164 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t108 = h24_s24;
-#line 3044 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 164 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_incref(t25);
 #line 164 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     h24_s24 = t25;
-#line 3048 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 164 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t108);
-#line 165 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t26 = HERO_STR_LIT(hero_str_73);
 #line 165 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t109 = h25_s25;
-#line 3054 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 165 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_incref(t26);
 #line 165 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     h25_s25 = t26;
-#line 3058 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 165 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t109);
-#line 166 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t27 = HERO_STR_LIT(hero_str_73);
 #line 166 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t110 = h26_s26;
-#line 3064 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 166 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_incref(t27);
 #line 166 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     h26_s26 = t27;
-#line 3068 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 166 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t110);
-#line 167 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t28 = HERO_STR_LIT(hero_str_73);
 #line 167 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t111 = h27_s27;
-#line 3074 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 167 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_incref(t28);
 #line 167 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     h27_s27 = t28;
-#line 3078 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 167 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t111);
-#line 168 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t29 = HERO_STR_LIT(hero_str_73);
 #line 168 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t112 = h28_s28;
-#line 3084 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 168 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_incref(t29);
 #line 168 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     h28_s28 = t29;
-#line 3088 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 168 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t112);
-#line 169 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t30 = HERO_STR_LIT(hero_str_73);
 #line 169 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t113 = h29_s29;
-#line 3094 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 169 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_incref(t30);
 #line 169 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     h29_s29 = t30;
-#line 3098 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 169 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t113);
-#line 170 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t31 = HERO_STR_LIT(hero_str_73);
 #line 170 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t114 = h30_s30;
-#line 3104 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 170 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_incref(t31);
 #line 170 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     h30_s30 = t31;
-#line 3108 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 170 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t114);
-#line 171 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t32 = HERO_STR_LIT(hero_str_73);
 #line 171 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t115 = h31_s31;
-#line 3114 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 171 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_incref(t32);
 #line 171 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     h31_s31 = t32;
-#line 3118 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 171 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t115);
-#line 172 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t33 = HERO_STR_LIT(hero_str_73);
 #line 172 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t116 = h32_s32;
-#line 3124 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 172 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_incref(t33);
 #line 172 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     h32_s32 = t33;
-#line 3128 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 172 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t116);
-#line 173 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t34 = HERO_STR_LIT(hero_str_73);
 #line 173 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t117 = h33_s33;
-#line 3134 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 173 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_incref(t34);
 #line 173 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     h33_s33 = t34;
-#line 3138 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 173 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t117);
-#line 174 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t35 = HERO_STR_LIT(hero_str_73);
 #line 174 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t118 = h34_s34;
-#line 3144 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 174 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_incref(t35);
 #line 174 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     h34_s34 = t35;
-#line 3148 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 174 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t118);
-#line 175 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t36 = HERO_STR_LIT(hero_str_73);
 #line 175 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t119 = h35_s35;
-#line 3154 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 175 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_incref(t36);
 #line 175 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     h35_s35 = t36;
-#line 3158 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 175 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t119);
-#line 176 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t37 = HERO_STR_LIT(hero_str_73);
 #line 176 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t120 = h36_s36;
-#line 3164 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 176 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_incref(t37);
 #line 176 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     h36_s36 = t37;
-#line 3168 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 176 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t120);
-#line 177 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t38 = HERO_STR_LIT(hero_str_73);
 #line 177 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t121 = h37_s37;
-#line 3174 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 177 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_incref(t38);
 #line 177 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     h37_s37 = t38;
-#line 3178 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 177 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t121);
-#line 178 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t39 = HERO_STR_LIT(hero_str_73);
 #line 178 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t122 = h38_s38;
-#line 3184 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 178 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_incref(t39);
 #line 178 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     h38_s38 = t39;
-#line 3188 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 178 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t122);
-#line 179 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t40 = HERO_STR_LIT(hero_str_73);
 #line 179 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t123 = h39_s39;
-#line 3194 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 179 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_incref(t40);
 #line 179 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     h39_s39 = t40;
-#line 3198 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 179 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_str_decref(t123);
 #line 181 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     t41 = INT64_C(1);
@@ -3293,7 +2328,7 @@ bb0:
     hero_print_str(t83);
 #line 184 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
     hero_print_end();
-#line 3297 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
+#line 2332 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
     hero_str_release_at(&h0_s0);
     hero_str_release_at(&h1_s1);
     hero_str_release_at(&h2_s2);

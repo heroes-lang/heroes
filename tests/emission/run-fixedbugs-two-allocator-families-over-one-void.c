@@ -106,16 +106,10 @@ void h_fixedbugstwoallocatorfamiliesoveronevoid_main(void);
 
 #line 39 "tests/golden/run/fixedbugs-two-allocator-families-over-one-void.hero"
 void h_fixedbugstwoallocatorfamiliesoveronevoid_main(void) {
-#line 110 "fixedbugstwoallocatorfamiliesoveronevoid.c"
-    void * h0_a;
-    void * h1_h;
-    void * t1;
-    void * t2;
-    void * t3;
-    void * t4;
-    goto bb0;
+#line 39 "tests/golden/run/fixedbugs-two-allocator-families-over-one-void.hero"
+    void * h0_a; void * h1_h; void * t1; void * t2; void * t3; void * t4; goto bb0;
+#line 39 "tests/golden/run/fixedbugs-two-allocator-families-over-one-void.hero"
 bb0:
-#line 40 "tests/golden/run/fixedbugs-two-allocator-families-over-one-void.hero"
     t1 = arena_new();
 #line 40 "tests/golden/run/fixedbugs-two-allocator-families-over-one-void.hero"
     hero_handle_acquired(t1, "arena_free");
@@ -155,7 +149,7 @@ bb0:
     }
 #line 46 "tests/golden/run/fixedbugs-two-allocator-families-over-one-void.hero"
     return;
-#line 159 "fixedbugstwoallocatorfamiliesoveronevoid.c"
+#line 153 "fixedbugstwoallocatorfamiliesoveronevoid.c"
 }
 HERO_TU_LOCAL bool h_fixedbugstwoallocatorfamiliesoveronevoid_Arena_eq(void * const *a, void * const *b) {
     return hero_handle_eq(*a, *b);
