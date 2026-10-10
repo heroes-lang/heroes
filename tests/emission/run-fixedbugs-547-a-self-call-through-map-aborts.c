@@ -92,20 +92,10 @@ HERO_TU_LOCAL HeroArrayHeader * h_library_map_37f8817a(HeroArrayHeader * h0_xs, 
 
 #line 9 "tests/golden/run/fixedbugs-547-a-self-call-through-map-aborts.hero"
 int64_t h_fixedbugs547aselfcallthroughmapaborts_step(int64_t h0_n) {
-#line 96 "fixedbugs547aselfcallthroughmapaborts.c"
-    HeroArrayHeader * h1_own1 = {0};
-    HeroArrayHeader * h2_own2 = {0};
-    int64_t t1;
-    HeroArrayHeader * t2;
-    h_0fn_48ac9712 t3;
-    HeroArrayHeader * t4;
-    int64_t t5;
-    int64_t t6;
-    HeroArrayHeader * t7;
-    HeroArrayHeader * t8;
-    goto bb0;
+#line 9 "tests/golden/run/fixedbugs-547-a-self-call-through-map-aborts.hero"
+    HeroArrayHeader * h1_own1 = {0}; HeroArrayHeader * h2_own2 = {0}; int64_t t1; HeroArrayHeader * t2; h_0fn_48ac9712 t3; HeroArrayHeader * t4; int64_t t5; int64_t t6; HeroArrayHeader * t7; HeroArrayHeader * t8; goto bb0;
+#line 9 "tests/golden/run/fixedbugs-547-a-self-call-through-map-aborts.hero"
 bb0:
-#line 10 "tests/golden/run/fixedbugs-547-a-self-call-through-map-aborts.hero"
     t1 = h0_n;
 #line 10 "tests/golden/run/fixedbugs-547-a-self-call-through-map-aborts.hero"
     t2 = hero_array_new(&hero_desc_int, 1);
@@ -115,7 +105,7 @@ bb0:
     t7 = h1_own1;
 #line 10 "tests/golden/run/fixedbugs-547-a-self-call-through-map-aborts.hero"
     h1_own1 = t2;
-#line 119 "fixedbugs547aselfcallthroughmapaborts.c"
+#line 10 "tests/golden/run/fixedbugs-547-a-self-call-through-map-aborts.hero"
     hero_array_decref(t7);
 #line 10 "tests/golden/run/fixedbugs-547-a-self-call-through-map-aborts.hero"
     t3 = h_fixedbugs547aselfcallthroughmapaborts_step;
@@ -125,13 +115,13 @@ bb0:
     t8 = h2_own2;
 #line 10 "tests/golden/run/fixedbugs-547-a-self-call-through-map-aborts.hero"
     h2_own2 = t4;
-#line 129 "fixedbugs547aselfcallthroughmapaborts.c"
+#line 10 "tests/golden/run/fixedbugs-547-a-self-call-through-map-aborts.hero"
     hero_array_decref(t8);
 #line 10 "tests/golden/run/fixedbugs-547-a-self-call-through-map-aborts.hero"
     t5 = INT64_C(0);
 #line 10 "tests/golden/run/fixedbugs-547-a-self-call-through-map-aborts.hero"
     t6 = ((void)((t4 == NULL || t5 < 0 || t5 >= t4->len) ? ((void)hero_array_at(t4, t5), hero_unreachable()) : (void)0), (void)(t4->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t4 + 1))[t5]);
-#line 135 "fixedbugs547aselfcallthroughmapaborts.c"
+#line 125 "fixedbugs547aselfcallthroughmapaborts.c"
     hero_array_release_at(&h1_own1);
     hero_array_release_at(&h2_own2);
     return t6;
@@ -139,12 +129,10 @@ bb0:
 
 #line 12 "tests/golden/run/fixedbugs-547-a-self-call-through-map-aborts.hero"
 void h_fixedbugs547aselfcallthroughmapaborts_main(void) {
-#line 143 "fixedbugs547aselfcallthroughmapaborts.c"
-    int64_t t1;
-    int64_t t2;
-    goto bb0;
+#line 12 "tests/golden/run/fixedbugs-547-a-self-call-through-map-aborts.hero"
+    int64_t t1; int64_t t2; goto bb0;
+#line 12 "tests/golden/run/fixedbugs-547-a-self-call-through-map-aborts.hero"
 bb0:
-#line 13 "tests/golden/run/fixedbugs-547-a-self-call-through-map-aborts.hero"
     t1 = INT64_C(1);
 #line 13 "tests/golden/run/fixedbugs-547-a-self-call-through-map-aborts.hero"
     t2 = h_fixedbugs547aselfcallthroughmapaborts_step(t1);
@@ -154,66 +142,40 @@ bb0:
     hero_print_end();
 #line 13 "tests/golden/run/fixedbugs-547-a-self-call-through-map-aborts.hero"
     return;
-#line 158 "fixedbugs547aselfcallthroughmapaborts.c"
+#line 146 "fixedbugs547aselfcallthroughmapaborts.c"
 }
 
 #line 36 "<heroes library>"
 /* map<i64, i64> */
 #line 36 "<heroes library>"
 HERO_TU_LOCAL HeroArrayHeader * h_library_map_37f8817a(HeroArrayHeader * h0_xs, h_0fn_48ac9712 h1_f) {
-#line 165 "fixedbugs547aselfcallthroughmapaborts.c"
-    HeroArrayHeader * h2_out = {0};
-    HeroArrayHeader * h3_xs0 = {0};
-    int64_t h4_i0;
-    int64_t h5_x;
-    HeroArrayHeader * h6_own6 = {0};
-    HeroArrayHeader * t1;
-    HeroArrayHeader * t2;
-    int64_t t3;
-    int64_t t4;
-    HeroArrayHeader * t5;
-    int64_t t6;
-    bool t7;
-    HeroArrayHeader * t8;
-    int64_t t9;
-    int64_t t10;
-    h_0fn_48ac9712 t12;
-    int64_t t13;
-    int64_t t14;
-    int64_t t16;
-    int64_t t17;
-    int64_t t18;
-    HeroArrayHeader * t19;
-    HeroArrayHeader * t20;
-    HeroArrayHeader * t21;
-    HeroArrayHeader * t22;
-    goto bb0;
+#line 36 "<heroes library>"
+    HeroArrayHeader * h2_out = {0}; HeroArrayHeader * h3_xs0 = {0}; int64_t h4_i0; int64_t h5_x; HeroArrayHeader * h6_own6 = {0}; HeroArrayHeader * t1; HeroArrayHeader * t2; int64_t t3; int64_t t4; HeroArrayHeader * t5; int64_t t6; bool t7; HeroArrayHeader * t8; int64_t t9; int64_t t10; h_0fn_48ac9712 t12; int64_t t13; int64_t t14; int64_t t16; int64_t t17; int64_t t18; HeroArrayHeader * t19; HeroArrayHeader * t20; HeroArrayHeader * t21; HeroArrayHeader * t22; goto bb0;
+#line 36 "<heroes library>"
 bb0:
-#line 37 "<heroes library>"
     t1 = hero_array_new(&hero_desc_int, 1);
 #line 37 "<heroes library>"
     t20 = h6_own6;
 #line 37 "<heroes library>"
     h6_own6 = t1;
-#line 199 "fixedbugs547aselfcallthroughmapaborts.c"
+#line 37 "<heroes library>"
     hero_array_decref(t20);
 #line 37 "<heroes library>"
     t21 = h2_out;
-#line 203 "fixedbugs547aselfcallthroughmapaborts.c"
+#line 37 "<heroes library>"
     hero_array_incref(t1);
 #line 37 "<heroes library>"
     h2_out = t1;
-#line 207 "fixedbugs547aselfcallthroughmapaborts.c"
+#line 37 "<heroes library>"
     hero_array_decref(t21);
-#line 38 "<heroes library>"
     t2 = h0_xs;
 #line 38 "<heroes library>"
     t22 = h3_xs0;
-#line 213 "fixedbugs547aselfcallthroughmapaborts.c"
+#line 38 "<heroes library>"
     hero_array_incref(t2);
 #line 38 "<heroes library>"
     h3_xs0 = t2;
-#line 217 "fixedbugs547aselfcallthroughmapaborts.c"
+#line 38 "<heroes library>"
     hero_array_decref(t22);
 #line 38 "<heroes library>"
     t3 = INT64_C(0);
@@ -268,7 +230,7 @@ bb3:
 bb4:
 #line 40 "<heroes library>"
     t19 = h2_out;
-#line 272 "fixedbugs547aselfcallthroughmapaborts.c"
+#line 234 "fixedbugs547aselfcallthroughmapaborts.c"
     hero_array_incref(t19);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h3_xs0);

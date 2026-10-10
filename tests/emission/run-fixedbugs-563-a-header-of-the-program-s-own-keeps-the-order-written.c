@@ -98,14 +98,10 @@ void h_fixedbugs563aheaderoftheprogramsownkeepstheorderwritten_main(void);
 
 #line 15 "tests/golden/run/fixedbugs-563-a-header-of-the-program-s-own-keeps-the-order-written.hero"
 void h_fixedbugs563aheaderoftheprogramsownkeepstheorderwritten_main(void) {
-#line 102 "fixedbugs563aheaderoftheprogramsownkeepstheorderwritten.c"
-    int64_t t1;
-    int64_t t2;
-    int32_t t3;
-    int32_t t4;
-    goto bb0;
+#line 15 "tests/golden/run/fixedbugs-563-a-header-of-the-program-s-own-keeps-the-order-written.hero"
+    int64_t t1; int64_t t2; int32_t t3; int32_t t4; goto bb0;
+#line 15 "tests/golden/run/fixedbugs-563-a-header-of-the-program-s-own-keeps-the-order-written.hero"
 bb0:
-#line 16 "tests/golden/run/fixedbugs-563-a-header-of-the-program-s-own-keeps-the-order-written.hero"
     t1 = INT64_C(6);
 #line 16 "tests/golden/run/fixedbugs-563-a-header-of-the-program-s-own-keeps-the-order-written.hero"
     t2 = half(t1);
@@ -122,7 +118,7 @@ bb0:
     hero_print_end();
 #line 17 "tests/golden/run/fixedbugs-563-a-header-of-the-program-s-own-keeps-the-order-written.hero"
     return;
-#line 126 "fixedbugs563aheaderoftheprogramsownkeepstheorderwritten.c"
+#line 122 "fixedbugs563aheaderoftheprogramsownkeepstheorderwritten.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
