@@ -12,3 +12,5 @@ github: none
     **Origin:** filed by the coordinator at 02:34 on 2026-10-10 from panel 204 (`docs/panel/204-c-reads-a-module-s-headers-in-the-order-its-groups-are-written-and-the-spec-says-so.md`, R5), the seats' measurements, not re-run by the coordinator.
 
     **Class: blocking**, 2026-10-10 (`.claude/rules/verification.md` § Bounded discovery): a correct program refused, and a binding's verification lost.
+
+    **Ruled 2026-10-10** by panel 205 (`docs/panel/205-a-library-s-own-header-code-is-judged-as-clang-judges-a-system-header-the-checks-raised-again-after-it-and-a-switch-goes-in-the-first-group.md`, ratified at 03:38): R3: the compiler's prefix reads no libc header before the groups (its integer types from clang's builtins, `<stdint.h>` and `<math.h>` after the close, defect 361's guard kept), so a module's first group can set a switch; a name a header declares only under a feature-test macro is told so, never *declares no*; spec § 13 gains H2f. This item's *only a hand-written prototype builds* is false: a package's `-D` reaches it today (the critic's first pass), program-wide, which defect 572 repairs.
