@@ -4,8 +4,8 @@
 #include <hero_os.h>
 #include <heroes_runtime.h>
 #include "heroes_guard_open.h"
-#include <fixedbugs-559-wide.h>
 #include <fixedbugs-559-skew.h>
+#include <fixedbugs-559-wide.h>
 #pragma push_macro("a")
 #pragma push_macro("b")
 #include "heroes_guard_close.h"

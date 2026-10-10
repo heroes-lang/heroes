@@ -951,8 +951,13 @@ today into Java and C# `record`. The rejected alternatives:
 **There is no `variable` entity.** Mutable globals are forbidden (locality). Mutable bindings exist
 only as locals.
 
-**Declaration order does not matter.** All top-level names are visible throughout the file. No
-forward declarations, mutual recursion is free, and the model can emit functions in any order.
+**Declaration order does not matter, but a group's** (panel 204, ratified 2026-10-10). All
+top-level names are visible throughout the file. No forward declarations, mutual recursion is free,
+and the model can emit functions in any order. The one order that reaches C is that of a module's
+`extern` groups: C reads the module's headers in the order its groups are written (§4.19), so a
+header that needs another's names is written below it. This paragraph said *declaration order does
+not matter* with no exception until 2026-10-10, while the order of two groups already decided
+whether a program built (panel 091, defect 563).
 
 ### 4.3 Types
 
@@ -2383,6 +2388,31 @@ names are macros, and such a name is `error[ffi_macro_name]`, whose note drafts 
 `static inline` function in a header of the program's own that calls the macro, bound by `extern`
 like any function, every C type in the draft a placeholder the author fills from the macro's
 documentation, never the declaration's.
+
+**A module's headers are included in the order its groups are written, and the order is
+load-bearing** (panel 204, ratified 2026-10-10; the sentence panel 091 found owed, carried by
+`issues/2026-09/07/2026-09-07-0000-four-repairs-to-design-md-that-ride-its-opening-sitting-4-19.md`).
+A module's unit opens with the compiler's own headers, its prefix: `heroes_runtime.h`, which brings
+`stdbool.h`, `stddef.h` and `stdint.h`, then `math.h` and `hero_os.h` (`SEEDS` in
+`emit/externs.hero`). Then, between `heroes_guard_open.h` and `heroes_guard_close.h`, each header
+the module's groups name, once, where its first group stands, a group holding only records in its
+place like any other; after them, the header of each record of another module's group the unit
+spells (§4.1). Every probe of the unit reads the same list, its plan's (`emit/unit_plan.hero`). A
+header that needs another's names compiles only below it: `<jpeglib.h>` declares
+`jpeg_stdio_dest(j_compress_ptr, FILE *)` and includes no `<stdio.h>`, so its group is refused
+above a `stdio.h` group and builds below one, and the prefix is why it fails at `FILE` rather than
+at `size_t`. A header's `#ifndef` default takes an earlier header's definition, so two headers can
+mean another program in the other order (`cfgone`: `3 50` against `3 10`). **No pass sorts, thins
+or moves this list** but the repeated header, dropped at its second group, and a change to it
+changes what programs mean, so it is a sitting's (CLAUDE.md § 4). **Until panel 204 a record-only
+group's header came after every other** (panel 061's second walk): `extern "stdio.h"` holding only
+`record CFile tag FILE` above `jpeglib.h` was refused *unknown type name 'FILE'*, and the same
+group with a function in it built. The prefix comes first in every unit, so no group's header is
+read before it, and a line of C between two headers, a switch or an `#undef`, has one place to go:
+a header of the program's own that includes the two with the line between them, which one group
+then names in their place. A feature-test switch written there is still read after the prefix, so
+it reaches no header the prefix has read (defect 568); whether such a header builds, and what it
+means, is what clang says of it, as of any header.
 
 **A `constant` is the group's second kind of member, and its value is the header's**
 (panel 038). It carries no body — inside a group a declaration is a *signature, not a

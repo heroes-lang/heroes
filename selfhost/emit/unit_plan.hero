@@ -14,7 +14,8 @@
 # one module's header defines chose another module's record layout
 # (`skew`). And the probes read every header of the program in one unit,
 # which is the same cause seen from the checks: they now ask each plan's
-# own headers.
+# own headers. The unit's own groups' headers come first, in the order they
+# are written (panel 204's R1), and a record of another module's after them.
 #
 # **The reach is the unit's own**, the set its four sections are filtered by
 # (`unit.hero`), so a record is in a unit's headers exactly when the unit
@@ -118,7 +119,7 @@ function plan(module: str, p: containers.Program, c: state.Checked, s: source.So
     for decl in groups.decls
         records[decl] @ true
 
-    # ORDER: none, a set; `headers_for` walks the declarations in order.
+    # ORDER: none, a set; `headers_for` sorts what it walks into written order.
     for id in keys(declared)
         match table.get(c.types, id)
             .named n =>
@@ -136,7 +137,7 @@ function plan(module: str, p: containers.Program, c: state.Checked, s: source.So
         declared: declared,
         groups: groups,
         records: records,
-        headers: emit_externs.headers_for(tu_p, s, decls, records: ok(records))
+        headers: emit_externs.headers_for(tu_p, s, decls, records: ok(records), own: ok(module))
     )
 
 # Whether a declaration is a record of an `extern` group.

@@ -1,0 +1,9 @@
+# fixedbugs, defect 563: a group whose header defines a macro another
+# module's header reads, and a record that module spells.
+extern "fixedbugs-563-wide.h"
+    record Wh
+        w: i32
+    function wh_make(v: i32) -> Wh
+
+function make(v: i32) -> Wh
+    return wh_make(v: v)
