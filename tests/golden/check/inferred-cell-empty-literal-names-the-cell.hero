@@ -1,0 +1,11 @@
+# A cell born of an empty literal with no written type cannot say what it
+# holds, and the guess annotates the cell with its own symbol (spec § 5,
+# design.md §4.5; panel 209's R1). The writes below say nothing more: the
+# one mistake is told at the birth, and the cell is poisoned.
+
+function main()
+    xs @= []  #~ cannot_infer
+    m @= {}  #~ cannot_infer
+    xs @ xs.push(1)
+    m["a"] @ 1
+    print(xs.len() + m.len())

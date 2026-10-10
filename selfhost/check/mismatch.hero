@@ -38,6 +38,12 @@ function compare(@c: state.Checker, s: source.Source, decls: [ast.Decl], expecte
         )
     state.push_diagnostic(@c, d)
 
+# The got side rendered by the caller, a literal's own spelling. A poisoned
+# expectation was told where it was born, so the literal says nothing
+# (§4.17), as `compare` above keeps quiet; until panel 209's landing an
+# integer literal written into a cell born `[]` was told `expected ?`.
 function shown(@c: state.Checker, s: source.Source, decls: [ast.Decl], expected: i64, got: str, span: token.Span)
+    if table.poisoned(c.out.types, expected)
+        return
     a_text = state.show(c, s, decls, expected)
     state.push_diagnostic(@c, value_errors.mismatch(expected: a_text, got: got, span: span))

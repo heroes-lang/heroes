@@ -80,7 +80,14 @@ function statement(@r: state.Resolver, a: ast.Ast, s: source.Source, decls: [ast
             _ = state.declare(@r, s, decls, b.name, resolve_binding.bind_binding(ty: b.ty, value: b.value)).is_err()
         .declare d =>
             expr(@r, a, s, decls, d.value)
-            types.resolve_type(@r, a, s, decls, d.ty)
+
+            if !d.ty.is_err()
+                types.resolve_type(@r, a, s, decls, d.ty.must())
+
+            # `v @= e` on a `v` already mutable is its re-binding, told once
+            # with the certain fix that writes `@` (`resolve/meant`).
+            if d.ty.is_err() && meant.meant_rebinding(@r, s, name: d.name, symbol: d.symbol)
+                return
             _ = state.declare(
                 @r,
                 s,

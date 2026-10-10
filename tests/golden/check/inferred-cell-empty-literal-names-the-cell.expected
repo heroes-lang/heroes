@@ -1,0 +1,2 @@
+tests/golden/check/inferred-cell-empty-literal-names-the-cell.hero:7:11: error[cannot_infer]: the array literal is empty, so there is nothing to infer its type from — write the annotation
+tests/golden/check/inferred-cell-empty-literal-names-the-cell.hero:8:10: error[cannot_infer]: the map literal is empty, so there is nothing to infer its type from — write the annotation

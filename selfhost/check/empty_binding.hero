@@ -14,12 +14,17 @@ use token
 use diag
 use ast
 use source
+use check/table
 use check/state
 use contextless_errors
+use discard_errors
 
 # Tells again, since `from`, what the walk said of the value `value` bound to
-# `name`.
-function retell(@c: state.Checker, a: ast.Ast, s: source.Source, from: i64, value: i64, name: token.Span)
+# `name`, with `=` or, where `cell`, with `@=` (panel 209). Hands back the
+# type `held` the value was given, or the poison where it told again: the
+# literal's type is nothing's, and a write into it below would be a second
+# message for the one mistake (a cell's `m["a"] @ 1` under `m @= {}`).
+function retell(@c: state.Checker, a: ast.Ast, s: source.Source, from: i64, value: i64, name: token.Span, cell: bool, held: i64) -> i64
     written: str @= ""
     literal: str @= ""
 
@@ -32,13 +37,14 @@ function retell(@c: state.Checker, a: ast.Ast, s: source.Source, from: i64, valu
             if entries.entries.len() == 0
                 written @ "{str: i64}"
                 literal @ "{}"
-        .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit | .null_ptr => return
-        .name | .hole | .unary | .binary | .field | .field_name | .index | .call       => return
-        .method | .variant_case | .try_expr | .if_expr | .match_expr | .error          => return
+        .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit | .null_ptr => return held
+        .name | .hole | .unary | .binary | .field | .field_name | .index | .call       => return held
+        .method | .variant_case | .try_expr | .if_expr | .match_expr | .error          => return held
 
     if written == ""
-        return
+        return held
     span = a.exprs[value].span
+    told: bool @= false
     k: i64 @= from
 
     while k < c.out.diagnostics.len()
@@ -48,10 +54,32 @@ function retell(@c: state.Checker, a: ast.Ast, s: source.Source, from: i64, valu
             replace(
                 @c.out.diagnostics,
                 at: k,
-                d: contextless_errors.annotated(d, name: source.span_text(s, name), written: written, literal: literal)
+                d: contextless_errors.annotated(d, name: source.span_text(s, name), written: written, literal: literal, cell: cell)
             )
+            told @ true
         k @ k + 1
+
+    if told
+        return state.error_ty_of(c)
+    return held
 
 # Lent, so the list is written in place (defect 350's shape).
 function replace(@said: [diag.Diagnostic], at: i64, d: diag.Diagnostic)
     said[at] @ d
+
+# What no birth can hold, told once and poisoned, so every later read stays
+# quiet, there being one mistake and it reported: `()`, which is no value
+# (panel 017 C), and the bare `nullptr` of a cell with no written type
+# (`bare_cell`), a `ptr` where a handle was meant, which that handle would
+# refuse lines below with no word of the declaration (panel 209); a cell
+# annotated `db: CDb @= nullptr` is the handle it says. Otherwise `held`.
+function poisoned(@c: state.Checker, a: ast.Ast, s: source.Source, name: token.Span, value: i64, held: i64, bare_cell: bool) -> i64
+    if bare_cell && a.exprs[value].kind == .null_ptr
+        told = contextless_errors.cannot_infer_nullptr(name: source.span_text(s, name), span: a.exprs[value].span)
+        state.push_diagnostic(@c, told)
+        return state.error_ty_of(c)
+
+    if held == table.unit_ty(c.out.types)
+        state.push_diagnostic(@c, discard_errors.bound_unit(source.span_text(s, name), name))
+        return state.error_ty_of(c)
+    return held

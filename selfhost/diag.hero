@@ -183,6 +183,8 @@ function is_thesis_rule(d: Diagnostic) -> bool
     codes = [
         "unused_binding"
         "never_rebound"
+        "cell_redeclared"
+        "declared_place"
         "hole_without_f"
         "shadowed_binding"
         "builtin_name_taken"

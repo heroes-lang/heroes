@@ -1,0 +1,1 @@
+tests/golden/check/cell-redeclared-over-a-binding-is-shadowing.hero:7:5: error[shadowed_binding]: `x` is already in scope, bound at line 6 — shadowing is an error here: a name means one thing for as long as it is visible

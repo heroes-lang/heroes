@@ -1,0 +1,2 @@
+tests/golden/check/declared-place-is-a-write.hero:11:9: error[declared_place]: `p.x @= …` would declare a cell, and a cell is a bare name — a field or an element is written with `@`: `p.x @ …`
+tests/golden/check/declared-place-is-a-write.hero:13:11: error[declared_place]: `xs[0] @= …` would declare a cell, and a cell is a bare name — a field or an element is written with `@`: `xs[0] @ …`

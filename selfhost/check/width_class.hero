@@ -1,0 +1,89 @@
+# The width class (panel 209's sitting, which counted 15 such cells in 4
+# files of `selfhost/`): a cell born of a bare integer literal with no written
+# type, `n @= 0`, is an `i64`, the literal's default (§4.5), and a later write
+# of another width, `n @ b` with `b: u8`, is refused as any mismatch is. That
+# mismatch names the two types and not the line where the repair is, the
+# declaration above: so it gains a note naming the birth, and a `guess` fix
+# annotating the cell with the width the write holds.
+
+use token
+use diag
+use ast
+use source
+use resolved
+use widths
+use check/state
+use check/render
+
+# After the write of `value` into `place` was checked, from diagnostic `from`
+# on: where the place is a name resolved to such a cell, the value is of a
+# width, and a mismatch was told at the value, the mismatch takes the note
+# and the fix.
+function note(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], place: i64, value: i64, from: i64)
+    local = born_of_a_literal(a, r, place)
+
+    if local.is_err()
+        return
+    width = a_width(c, s, decls, ty: c.out.expr_types[value])
+
+    if width == ""
+        return
+    span = a.exprs[value].span
+    k: i64 @= from
+
+    while k < c.out.diagnostics.len()
+        d = c.out.diagnostics[k]
+
+        if d.code == "type_mismatch" && d.span.start == span.start && d.span.end == span.end
+            c.out.diagnostics[k] @ annotated(d, s, cell: r.locals[local.must()], width: width)
+        k @ k + 1
+
+# The local `place` names, where it is a cell born of an integer literal
+# with no written type; nothing otherwise.
+function born_of_a_literal(a: ast.Ast, r: resolved.Resolved, place: i64) -> i64?
+    match r.uses[place]
+        .local l =>
+            cell = r.locals[l.at]
+
+            if cell.kind != .cell || !cell.ty.is_err() || cell.value.is_err()
+                return fail(code: "none", msg: "not a cell born without a type")
+
+            match a.exprs[cell.value.must()].kind
+                .int_lit => return ok(l.at)
+                .char_lit | .float_lit | .str_lit | .interp | .bool_lit | .null_ptr | .name => return fail(
+                    code: "none",
+                    msg: "not born of an integer literal"
+                )
+                .hole | .unary | .binary | .field | .field_name | .index | .call | .method => return fail(
+                    code: "none",
+                    msg: "not born of an integer literal"
+                )
+                .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error => return fail(
+                    code: "none",
+                    msg: "not born of an integer literal"
+                )
+        .unresolved | .top | .builtin | .module => return fail(code: "none", msg: "no local")
+
+# The name of `ty` where it is one of the integer widths, else "".
+function a_width(c: state.Checker, s: source.Source, decls: [ast.Decl], ty: i64) -> str
+    name = render.render_ty(c.out.types, s, decls, ty, generics: [])
+
+    for kind in widths.int_kinds()
+        if widths.int_name(kind) == name
+            return name
+
+    return ""
+
+# The mismatch with the note naming the cell's birth and the fix writing the
+# width there.
+function annotated(d: diag.Diagnostic, s: source.Source, cell: resolved.Local, width: str) -> diag.Diagnostic
+    out: diag.Diagnostic @= d
+    name = source.span_text(s, cell.name)
+    born = source.elsewhere(s, here: d.span.start, there: cell.name.start)
+    out.notes @ out.notes.push(
+        "`" + name + "` is an `i64` from the literal it was born of at " + born + ", and a cell keeps the type it was born with — the width it should hold is written on the declaration"
+    )
+    out.fixes @ out.fixes.push(
+        diag.Fix(title: "annotate the cell: `" + name + ": " + width + " @= …`", replacement: ": " + width, span: token.Span(start: cell.name.end, end: cell.name.end), certainty: .guess)
+    )
+    return out

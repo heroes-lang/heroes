@@ -1,0 +1,2 @@
+tests/golden/check/no-place-before-the-cell-symbol.hero:9:5: error[not_a_place]: only a name, a field or an element can be mutated — the left of `@=` must name where the value goes, and `@=` declares a cell, which is a bare name
+tests/golden/check/no-place-before-the-cell-symbol.hero:10:5: error[not_a_place]: only a name, a field or an element can be mutated — the left of `@` must name where the value goes

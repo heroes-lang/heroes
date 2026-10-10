@@ -1,0 +1,13 @@
+# `f() @= 4`: no place stands before the cell's symbol, as none stands
+# before `@` in `f() @ 4`, and the same message says so at the value, with
+# the symbol's own word in it; the value after it is still read (panel 209).
+
+function f() -> i64
+    return 1
+
+function main()
+    f() @= 4  #~ not_a_place
+    f() @ 5  #~ not_a_place
+    v @= 0
+    v @ v + 1
+    print(v)

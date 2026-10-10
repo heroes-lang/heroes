@@ -61,14 +61,14 @@ variant StmtKind
         name: token.Span
         ty: i64?
         value: i64
-    # `v: i64 @= 0` — declares a mutable cell. The type is REQUIRED (§4.4):
-    # without it, `x @ 5` would not say whether it declares or mutates, and a
-    # typo would silently declare a new variable. `symbol` is the `@`'s own
-    # span, kept for the fix a cell nothing re-binds is offered: write `=`
-    # there (spec § 5, panel 209).
+    # `v @= 0`, or `v: i64 @= 0` — declares a mutable cell. The symbol tells
+    # it from a mutation, `v @ 5`, so the type is optional as on `=` and
+    # inferred from the value where none is written (spec § 5, panel 209).
+    # `symbol` is the `@=`'s own span, kept for the fix a cell nothing
+    # re-binds is offered: write `=` there.
     declare
         name: token.Span
-        ty: i64
+        ty: i64?
         value: i64
         symbol: token.Span
     # `v @ v + 1`, `l.pos @ l.pos + 1` — the left side is a PLACE: a name, or a

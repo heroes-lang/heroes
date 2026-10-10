@@ -24,6 +24,7 @@
 
 use ast
 use token
+use diag
 use source
 use resolve/state
 
@@ -66,3 +67,31 @@ function meant_by_signature(@r: state.Resolver, a: ast.Ast, s: source.Source, wr
         if arg.mutable != takes
             meant_write(@r, a, s, arg.value)
         k @ k + 1
+
+# `v @= e` where `v` is already a mutable local in scope, a cell or an `@`
+# parameter: the cell's symbol where its re-binding was meant, a second
+# declaration being refused as shadowing anyway (spec § 5). Told once at the
+# symbol with the certain fix that writes `@`, the write counted on the local
+# it re-binds, and nothing declared, so the lines below read the one `v`.
+# False, and nothing said, where no such local stands.
+function meant_rebinding(@r: state.Resolver, s: source.Source, name: token.Span, symbol: token.Span) -> bool
+    previous = state.lookup_local(r, source.span_text(s, name))
+
+    if previous.is_err() || !r.out.locals[previous.must()].mutable
+        return false
+    at = previous.must()
+    bound_at = source.elsewhere(s, here: name.start, there: r.out.locals[at].name.start)
+    state.push_diagnostic(@r, cell_redeclared(name: source.span_text(s, name), bound_at: bound_at, span: symbol))
+    r.out.locals[at].writes @ r.out.locals[at].writes + 1
+    return true
+
+function cell_redeclared(name: str, bound_at: str, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @= diag.new_diagnostic(
+        code: "cell_redeclared",
+        message: "`" + name + "` is already mutable here, declared at " + bound_at + " — `@=` would declare a second `" + name + "`, and a cell is re-bound with `@`: write `" + name + " @ …`",
+        span: span
+    )
+    d.fixes @ d.fixes.push(
+        diag.Fix(title: "write `@`: re-bind `" + name + "`", replacement: "@", span: span, certainty: .certain)
+    )
+    return d

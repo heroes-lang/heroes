@@ -1,0 +1,56 @@
+# What follows an expression at a statement's start: the `@` of a mutation,
+# or the cell's symbol `@=` where a write was meant (spec § 5; design.md
+# §4.4, §4.17; panel 209). `@=` declares a cell, and a cell is a bare name:
+# `p.x @= 1` or `xs[0] @= 2` can only be the write of a field or an element,
+# so it is told once, at the symbol, with the certain fix that writes `@`,
+# and the line is read as that write. `f() @ 1` and `f() @= 1` name no place
+# at all: told at the value, as `grammar_expr.expression_or_mutation` told the
+# first until this module took it, and the statement is still a mutation, so
+# its value says its own mistakes.
+
+use diag
+use ast
+use cursor
+use expr_kinds
+
+# Eats the `@` or `@=` after `place`, telling what is wrong with either, and
+# says whether a mutation's value follows; false, and nothing moved, where
+# neither stands, or where the `@=` follows a bare name, which
+# `grammar_expr.bind_stmt` reads as the declaration it is.
+function written(@c: cursor.Cursor, a: ast.Ast, text: str, place: i64) -> bool
+    if cursor.eat(@c, .at)
+        not_a_place(@c, a, place: place, symbol: "@")
+        return true
+
+    if !cursor.at(c, .at_eq) || a.exprs[place].kind == .name
+        return false
+    at = cursor.bump(@c).span
+
+    if !expr_kinds.is_place(a, place)
+        not_a_place(@c, a, place: place, symbol: "@=")
+        return true
+    spelled = cursor.slice_of(text, a.exprs[place].span)
+    d: diag.Diagnostic @= diag.new_diagnostic(
+        code: "declared_place",
+        message: "`" + spelled + " @= …` would declare a cell, and a cell is a bare name — a field or an element is written with `@`: `" + spelled + " @ …`",
+        span: at
+    )
+    d.fixes @ d.fixes.push(diag.Fix(title: "write `@`", replacement: "@", span: at, certainty: .certain))
+    cursor.say(@c, d)
+    return true
+
+# The left of the symbol is no place: told at the value, unless what refused
+# the value already spoke there.
+function not_a_place(@c: cursor.Cursor, a: ast.Ast, place: i64, symbol: str)
+    if expr_kinds.is_place(a, place) || a.exprs[place].kind == .error
+        return
+    more: str @= ""
+
+    if symbol == "@="
+        more @ ", and `@=` declares a cell, which is a bare name"
+    cursor.error(
+        @c,
+        code: "not_a_place",
+        message: "only a name, a field or an element can be mutated — the left of `" + symbol + "` must name where the value goes" + more,
+        span: a.exprs[place].span
+    )

@@ -739,8 +739,12 @@ function statement(@f: page.Fmt, tree: ast.Ast, s: source.Source, comments: [tok
             )
             valued(@f, tree, s, comments, head: lead + " = ", value: b.value, indent: indent, from: start)
         .declare dc =>
-            written = source.span_text(s, dc.name) + ": " + types.render_type(tree, dc.ty, s)
-            end = tree.types[dc.ty].span.end
+            written: str @= source.span_text(s, dc.name)
+            end: i64 @= dc.name.end
+
+            if !dc.ty.is_err()
+                written @ written + ": " + types.render_type(tree, dc.ty.must(), s)
+                end @ tree.types[dc.ty.must()].span.end
             lead = breaks.led_text(
                 @f,
                 tree,

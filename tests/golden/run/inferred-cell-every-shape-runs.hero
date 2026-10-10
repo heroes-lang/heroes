@@ -1,0 +1,37 @@
+# A cell declared `@=` with no written type takes its value's type as `=`
+# does (spec § 5, design.md §4.5; panel 209's R1): an integer, a string, a
+# record, an array and a map with elements, a float, a bool, and one handed
+# to an `@` parameter. Each is re-bound once and printed.
+
+record Point
+    x: i64
+    y: i64
+
+function bump(@n: i64)
+    n @ n + 1
+
+function main()
+    v @= 0
+    v @ v + 1
+    s @= "a"
+    s @ s + "b"
+    p @= Point(x: 1, y: 2)
+    p.x @ 5
+    xs @= [1, 2]
+    xs @ xs.push(3)
+    m @= {"k": 1}
+    m["j"] @ 2
+    f @= 1.5
+    f @ f * 2.0
+    b @= true
+    b @ !b
+    n @= 1
+    bump(@n)
+    print(v)
+    print(s)
+    print(p.x)
+    print(xs.len())
+    print(m.len())
+    print(f)
+    print(b)
+    print(n)

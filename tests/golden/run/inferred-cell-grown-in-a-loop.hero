@@ -1,0 +1,16 @@
+# Two cells declared `@=` with no written type, grown in a loop: the
+# accumulator from a literal, the index too, and a string cell appended to
+# in each round (spec § 5; panel 209's R1).
+
+function main()
+    total @= 0
+    i @= 0
+    row @= ""
+
+    while i < 5
+        total @ total + i
+        row @ row + i.to_str()
+        i @ i + 1
+
+    print(total)
+    print(row)
