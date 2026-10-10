@@ -14,6 +14,7 @@
 # for it, the crash panel 193's completeness critic measured on a consumer
 # that checked only the schema's number.
 
+use diag
 use source
 use source_extent
 use cli/check_json
@@ -69,9 +70,9 @@ function hand_back_clean(s: source.Source, inv: argv.Invocation) -> cli_table.Ex
 
 # What `--apply` hands back once a stage spoke and its rounds settled: the
 # program on stdout, or with `--in-place` written over the file it came from,
-# and with `--json` the document on stdout either way. `told` is how many
-# diagnostics the stage that spoke gave.
-function hand_back(s: source.Source, settled: Settled, inv: argv.Invocation, told: i64) -> cli_table.Exit
+# and with `--json` the document on stdout either way. `own` is how many of
+# the diagnostics the stage that spoke gave stand in the root (`in_root`).
+function hand_back(s: source.Source, settled: Settled, inv: argv.Invocation, own: i64) -> cli_table.Exit
     as_json = argv.has(inv, spelling: "--json")
 
     if !argv.has(inv, spelling: "--in-place")
@@ -94,13 +95,50 @@ function hand_back(s: source.Source, settled: Settled, inv: argv.Invocation, tol
             return .failed_exit
         io.eprint(text: "rewrote " + s.name)
     else
-        io.eprint(text: s.name + " unchanged: no `certain` fix applies to its " + told.to_str() + " diagnostic(s)")
+        io.eprint(text: unchanged(name: s.name, own: own, elsewhere: settled.elsewhere.len()))
 
     if as_json
         io.print_artifact(text: answer(s, settled: settled, as_json: true))
     return .ok_exit
 
+# What `--in-place` says of a root it leaves as it was (defect 621): of the
+# root's OWN diagnostics, and of the certain fixes the note above it names in
+# another module. Until 2026-10-11 the line counted every module's
+# diagnostics as the root's and said no certain fix applied to them, beneath
+# a note naming the one that did, in another file: `applyx/main.hero`, which
+# holds no diagnostic, was told `no certain fix applies to its 1
+# diagnostic(s)`.
+function unchanged(name: str, own: i64, elsewhere: i64) -> str
+    if own == 0 && elsewhere > 0
+        return name + " unchanged: none of the diagnostics is in it, and the certain fix(es) named above are in another module"
+
+    if own == 0
+        return name + " unchanged: none of the diagnostics is in it"
+
+    if elsewhere > 0
+        return name + " unchanged: no `certain` fix applies to its " + own.to_str() + " diagnostic(s), and the one(s) named above are in another module"
+    return name + " unchanged: no `certain` fix applies to its " + own.to_str() + " diagnostic(s)"
+
+# How many of a stage's diagnostics stand in the root, the one file
+# `--in-place` writes; the stage's own count is every module's (defect 621).
+function in_root(diagnostics: [diag.Diagnostic], s: source.Source) -> i64
+    own: i64 @= 0
+
+    for d in diagnostics
+        if source.is_root(s, d.span.start)
+            own @ own + 1
+
+    return own
+
 ## Tests
+
+# Defect 621: the line speaks of the root's own diagnostics, and of the
+# certain fixes in another module where the note above names any.
+test "fixedbugs: a root left as it was is told of its own diagnostics, and of the fixes elsewhere (defect 621)"
+    assert unchanged(name: "m.hero", own: 0, elsewhere: 1) == "m.hero unchanged: none of the diagnostics is in it, and the certain fix(es) named above are in another module"
+    assert unchanged(name: "m.hero", own: 0, elsewhere: 0) == "m.hero unchanged: none of the diagnostics is in it"
+    assert unchanged(name: "m.hero", own: 2, elsewhere: 1) == "m.hero unchanged: no `certain` fix applies to its 2 diagnostic(s), and the one(s) named above are in another module"
+    assert unchanged(name: "m.hero", own: 1, elsewhere: 0) == "m.hero unchanged: no `certain` fix applies to its 1 diagnostic(s)"
 
 # Panel 193's R4: the document says its kind, names what it read, and holds
 # the program `--apply` writes, its rounds and what it left elsewhere.
