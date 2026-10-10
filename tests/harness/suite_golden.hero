@@ -226,7 +226,9 @@ constant NO_FLAGS: [str]
 # 270's name bound nowhere, 294's two windows and 489's chain of records.
 # **29 on 2026-10-09**, raised by batch 17's closing as its gate told it
 # (`FLOOR full`, defect 536's rule): 459's, 525's, 532's and 548's whole
-# messages among the cases its lanes added.
+# messages among the cases its lanes added. **37 on 2026-10-10**, raised by
+# M-inferred-cell's closing as its gate told it: the width class's note and
+# fix among the cases panel 209's landing added.
 function shape_full() -> Shape
     return Shape(
         name: "full",
@@ -235,7 +237,7 @@ function shape_full() -> Shape
         flags: NO_FLAGS,
         on_stderr: true,
         want_code: 1,
-        least: 29,
+        least: 37,
         watched: true,
         silent_stdout: false,
         library_skip: false
