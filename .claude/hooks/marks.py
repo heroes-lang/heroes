@@ -10,6 +10,13 @@ eight cases of defects 324 and 325, each holding a lexer error on purpose, with
 (defect 334, 2026-10-04). Both hooks now ask the one judge through this
 module, so there is one way to ask it and one reading of its answer.
 
+AND A CASE THAT PARSES, NOT CANONICAL ON PURPOSE (defect 581, 2026-10-10):
+the commit guard asked a case's marks only where `fmt` refused it, so defect
+576's two cases, which parse and keep parentheses `fmt` would drop, were
+refused *not canonical* with their marks green. `held_to_marks` is the rule's
+one statement: a marked case of the suite's `DIRECTORIES` is judged by its
+marks whatever `fmt` answers.
+
 THE JUDGE, NOT A MIRROR. The comparison is `tests/harness/mark_readers.hero`'s;
 a second reader in Python would be a copy that can disagree with it in silence.
 A narrowed `annotations` run compares the marks of each case of its
@@ -101,6 +108,25 @@ def judged_narrowed(tree, rel):
     if os.path.dirname(rel) not in directories:
         return False
     return os.path.isfile(os.path.join(tree, rel[: -len(".hero")] + ".expected"))
+
+
+def held_to_marks(tree, rel, text):
+    """Whether the golden case `rel`, holding `text`, is judged by its marks
+    and not by `fmt`, whatever `fmt` answers (defect 581, 2026-10-10): a case
+    of the suite's `DIRECTORIES` whose `#~` marks claim diagnostics. Those
+    directories are the four the `canonical` suite leaves out of its walk
+    (`suite_canonical.hero`'s test *the exempt directories*), because there a
+    case's text is its subject: one does not parse on purpose (defect 334), and
+    one parses and is not canonical on purpose, as defect 576's two cases are,
+    `heroes fmt` writing `-(-128)` as `--128` and dropping the parentheses the
+    cases are about. Until that day only a case `fmt` refused was asked of its
+    marks, and the guard refused a merge carrying 576's as *not canonical*.
+    A case with no mark keeps `fmt`'s verdict, and so does one under the run
+    roots or another golden directory, whose programs the `canonical` suite
+    holds to `fmt` (`run/`, `emit/`, `ir/`, `fixedbugs/`)."""
+    if not rel.startswith("tests/golden/") or MARK.search(text) is None:
+        return False
+    return os.path.dirname(rel) in (constant(tree, "DIRECTORIES") or [])
 
 
 def in_run_roots(tree, rel):
