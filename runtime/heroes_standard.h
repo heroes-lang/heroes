@@ -34,10 +34,33 @@
  * the headers made it, a group's macro that expands to one among them. The
  * compiler's test holds its emitter to these ten (`emit/macro_guard.hero`).
  *
+ * A HEADER'S EVALUATION METHOD DOES NOT REACH `<math.h>` (defect 590). A
+ * group's header writing `#pragma clang fp eval_method(...)` at file scope
+ * makes clang refuse every later expansion of the builtin
+ * `__FLT_EVAL_METHOD__`, which `<math.h>` expands to choose `float_t`, on
+ * Darwin and in glibc alike; the floating-point state the guard gives back
+ * (`selfhost/emit/header_state.hero`) leaves the program's own arithmetic
+ * evaluated as the build says, and clang keeps the pragma's place in its
+ * preprocessor for the rest of the unit all the same. So `<math.h>` reads
+ * here the unit's own method, as `heroes_runtime.h` read it before the
+ * groups, which is what it would read with no such header, and the builtin
+ * is given back after it.
+ *
  * `runtime.c` includes this header, which compiles it with the runtime and
  * puts it under the key every cached object answers to. */
+#if defined(HERO_FLT_EVAL_METHOD)
+#  pragma push_macro("__FLT_EVAL_METHOD__")
+#  pragma clang diagnostic push
+#  pragma clang diagnostic ignored "-Wbuiltin-macro-redefined"
+#  undef __FLT_EVAL_METHOD__
+#  define __FLT_EVAL_METHOD__ HERO_FLT_EVAL_METHOD
+#  pragma clang diagnostic pop
+#endif
 #include <stdint.h>
 #include <math.h>
+#if defined(HERO_FLT_EVAL_METHOD)
+#  pragma pop_macro("__FLT_EVAL_METHOD__")
+#endif
 
 #undef HERO_STANDARD_PASTED
 #undef HERO_STANDARD_PASTE

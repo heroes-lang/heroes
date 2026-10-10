@@ -47,13 +47,15 @@ had become loud in both directions (CL-028).
 ## A clang failure that the author's own extern caused
 
 A clang failure is normally exit 2 and says the **compiler** is wrong. One class
-is exit 1 with a diagnostic on the `.hero` line, and it has eleven members
+is exit 1 with a diagnostic on the `.hero` line, and it has twelve members
 (panel 036, widened by panel 048, CL-008; the fifth by panel 166; the sixth by
 defect 360, 2026-10-06, with no sitting, on defect 060's precedent: who is
 blamed moves, the line between accepted and refused does not; the seventh,
 eighth and ninth by panel 202, ratified 2026-10-10, its R2; the tenth by its
 R3, the same day; the eleventh by panel 208, ratified 2026-10-10, its R2,
-which counted it the seventh on the trunk's list of that hour):
+which counted it the seventh on the trunk's list of that hour; the twelfth
+by defects 591 and 592, 2026-10-11, with no sitting, on defect 360's
+precedent):
 
 - a result type the header refutes, and a record's constant whose header value
   C will not build as that record, judged by the accessor's own declaration at
@@ -111,6 +113,22 @@ which counted it the seventh on the trunk's list of that hour):
   header's own words in a note; until then it was *internal error: compiling
   the generated C failed* at exit 2. A name its header marks deprecated is
   not a member: it binds and builds silent (design.md §4.19, panel 208's R1).
+- **a linker name a header gives a C name, by `#pragma redefine_extname` or
+  an `__asm__` label, that the linker cannot find**: added 2026-10-11
+  (defects 591 and 592, lane b20-pragma). Read on the link's failure path
+  from clang's dump of the module's header list, followed by the unit's own
+  `heroes_standard.h` and `main` (`cli/renamed.hero`, `AsmLabelAttr`): the
+  label of a function a group binds is told `ffi_missing_link` on the
+  binding, the file and line clang gave it named; the label of a name the C
+  this compiler writes uses, a runtime function read before the groups, a
+  function of `<math.h>` read after them, or `main` renamed away, is told
+  `ffi_header_refused` on the group's header. C has no way to take a label
+  back (measured on this Mac: a second pragma does not replace it, a label
+  written after it is *conflicting asm label*), so the program is told rather
+  than protected; until then *internal error: linking failed* at exit 2.
+  A label is the symbol as written, with no platform prefix, so
+  `redefine_extname labs llabs` fails on Darwin and links in the Linux arm64
+  image, where `llabs` is the symbol's own spelling.
 
 **The narrowing is `declaration()`, not whose text it is.** Every class recovers
 a name and asks whether *this program* declared it `extern`, so a symbol nobody

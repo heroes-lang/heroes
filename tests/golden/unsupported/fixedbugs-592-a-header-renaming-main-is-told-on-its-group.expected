@@ -1,0 +1,6 @@
+error[ffi_header_refused]: `fixedbugs-592-a-header-renaming-main-is-told-on-its-group.h` renames `main`, a name the C this compiler writes for the program uses: `fixedbugs-592-a-header-renaming-main-is-told-on-its-group.h` line 3 gives it the linker name `fixedbugs_592_other_main`, and the linker cannot find `main`
+  at tests/golden/unsupported/fixedbugs-592-a-header-renaming-main-is-told-on-its-group.hero:7:8
+    |
+  7 | extern "fixedbugs-592-a-header-renaming-main-is-told-on-its-group.h"  #~ ffi_header_refused
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: a `#pragma redefine_extname` or an `__asm__` label holds for every declaration of the name in the unit, the compiler's own before the groups and after them alike, and C has no way to take a label back once a declaration has one: rename in this header only names the program binds

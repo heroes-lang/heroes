@@ -1,0 +1,203 @@
+# A symbol the linker could not find because a header gave a C name another
+# linker name, told truly (design.md §4.19, §4.17; CLAUDE.md §7's named
+# exception; defects 591 and 592, 2026-10-11).
+#
+# **A label outlives the header that gives it, and no later line takes it
+# back.** `#pragma redefine_extname labs llabs` attaches the name `llabs` to
+# every declaration of `labs` in the unit, the one before the pragma and
+# every one after it, and so does an `__asm__("llabs")` label on the
+# header's own declaration. The label is the linker's symbol as written,
+# with none of the prefix a platform puts before a C name, so on this Mac a
+# bound `labs` reached `llabs`, which Mach-O spells `_llabs`, and the link
+# failed: *internal error: linking failed* at exit 2, the missing name no
+# group declares. And a header renaming a name the C this compiler writes
+# uses, the runtime's `hero_print_int` read before the groups, a function of
+# `<math.h>` read after them, or `main`, sent every call the compiler wrote
+# to a name nothing defines, the same exit 2. Measured on this Mac (Apple
+# clang 21): a second `redefine_extname` of the name does not replace the
+# first, and a declaration given its own label after the pragma is
+# *conflicting asm label*, so C has no way back once a header has spoken.
+#
+# **So the link's refusal is read here**, on the failure path alone: clang's
+# dump of the unit's header list, followed by the unit's own reading of the
+# library's standard headers and its `main`, says which C name carries each
+# label and where clang was told it (`cli/label_dump.hero`). An
+# undefined symbol that is a label of a function a group binds is told on the
+# binding, `ffi_missing_link`; one that is a label of a name the compiler's
+# own C uses, or the plain name of such a name a header renamed away, is told
+# on the group's header, `ffi_header_refused`. A symbol no label explains
+# stays the compiler's own failure, exit 2.
+
+use ast
+use source
+use diag
+use emit/ffi_lookup
+use emit/ffi_build
+use emit/externs as emit_externs
+use cli/toolchain
+use cli/probing
+use cli/group_file
+use cli/label_dump
+use cli/strings
+
+# A symbol the linker named, as it spelled it and as a C name.
+record Missing
+    raw: str
+    plain: str
+
+# The diagnostics for every undefined symbol the linker named that a header's
+# label of the headers of `asking` explains, once each: the label itself, or
+# `main` renamed away, the one external name the unit defines that the
+# mangler does not write (`.claude/rules/generated-c.md` § Names), whose
+# references outside the unit are the C library's start.
+function told(message: str, s: source.Source, decls: [ast.Decl], t: toolchain.Toolchain, asking: [probing.Probing]) -> [diag.Diagnostic]
+    out: [diag.Diagnostic] @= []
+    missing: [Missing] @= []
+
+    for one in missing_symbols(message)
+        if ffi_lookup.declaration(s, decls, name: one.plain).is_err()
+            missing @ missing.push(one)
+
+    if missing.len() == 0
+        return out
+    told_names: {str: bool} @= {}
+
+    for one in asking
+        if one.probe.is_err() || one.probe.must().read.is_err()
+            continue
+        labels = label_dump.labels_of(t, one.probe.must())
+
+        for m in missing
+            if !told_names[m.raw].is_err()
+                continue
+
+            for label in labels
+                given = label.label == m.raw
+                away = m.plain == "main" && label.name == "main" && label.label != m.raw
+
+                if given || away
+                    symbol: str @= m.raw
+
+                    if away
+                        symbol @ m.plain
+                    out @ out.push(
+                        diagnostic(s, decls, label: label, missing: symbol, headers: one.probe.must().headers)
+                    )
+                    told_names[m.raw] @ true
+                    break
+
+    return out
+
+function diagnostic(s: source.Source, decls: [ast.Decl], label: label_dump.Label, missing: str, headers: [str]) -> diag.Diagnostic
+    place = place_of(s, decls, label: label)
+    bound = ffi_lookup.declaration(s, decls, name: label.name)
+
+    if !bound.is_err() && !bound.must().is_constant
+        d: diag.Diagnostic @= diag.new_diagnostic(
+            code: "ffi_missing_link",
+            message: "the linker cannot find `" + missing + "`, the linker name " + place + " gives `" + label.name + "`, bound here",
+            span: bound.must().span
+        )
+        d.notes @ d.notes.push(
+            "a name a header gives by `#pragma redefine_extname` or an `__asm__` label is the linker's symbol as it is written, with none of the prefix a platform puts before a C name (`_` on Darwin), and nothing this program links defines `" + missing + "`: give the symbol its platform's own spelling in the header, or link the library that defines it, `extern \"" + bound.must().header + "\" link \"<library>\"`"
+        )
+        return d
+    group = group_for(s, decls, label: label, headers: headers)
+    d: diag.Diagnostic @= diag.new_diagnostic(
+        code: "ffi_header_refused",
+        message: "`" + group.header + "` renames `" + label.name + "`, a name the C this compiler writes for the program uses: " + place + " gives it the linker name `" + label.label + "`, and the linker cannot find `" + missing + "`",
+        span: group.span
+    )
+    d.notes @ d.notes.push(
+        "a `#pragma redefine_extname` or an `__asm__` label holds for every declaration of the name in the unit, the compiler's own before the groups and after them alike, and C has no way to take a label back once a declaration has one: rename in this header only names the program binds"
+    )
+    return d
+
+# Where the label was given, as the message says it: the group's header and
+# the line, the file as clang printed it where no group names it, or the
+# group's header list where the dump did not say, or said clang's own
+# buffer, `<scratch space>` for a `_Pragma` a macro wrote.
+function place_of(s: source.Source, decls: [ast.Decl], label: label_dump.Label) -> str
+    if !in_a_file(label)
+        return "a header of this group"
+    found = group_file.group_of(s, decls, path: label.file)
+
+    if !found.is_err()
+        return "`" + found.must().header + "` line " + label.line.to_str()
+    return "`" + group_file.plain(label.file) + "` line " + label.line.to_str()
+
+# Whether the dump placed the label in a file, not in none or in a buffer
+# of clang's own, which it prints in angle brackets.
+function in_a_file(label: label_dump.Label) -> bool
+    return label.file.len() > 0 && label.line > 0 && !strings.holds(text: label.file, needle: ">") && !strings.holds(text: label.file, needle: "<")
+
+# The group the label's file is the header of, else the first group of the
+# header list that names one.
+function group_for(s: source.Source, decls: [ast.Decl], label: label_dump.Label, headers: [str]) -> group_file.Group
+    if in_a_file(label)
+        found = group_file.group_of(s, decls, path: label.file)
+
+        if !found.is_err()
+            return found.must()
+
+    for header in headers
+        if !emit_externs.is_own(header)
+            found = group_file.group_of(s, decls, path: header)
+
+            if !found.is_err()
+                return found.must()
+
+    return group_file.Group(span: decls[0].span, header: label.file)
+
+# Every undefined symbol of the linker's words, in the two spellings
+# `ffi_build.undefined_symbol` reads: GNU's `undefined reference to `x'` and
+# ld64's `"x", referenced from:`, which keeps its symbol as Mach-O spells it.
+function missing_symbols(message: str) -> [Missing]
+    out: [Missing] @= []
+    seen: {str: bool} @= {}
+
+    for line in ffi_lookup.lines(text: message)
+        plain = ffi_build.undefined_symbol(line)
+
+        if plain.is_err()
+            continue
+        raw: str @= plain.must()
+        gnu = ffi_lookup.after(text: line, marker: "undefined reference to `")
+
+        if gnu.is_err()
+            raw @ quoted(line)
+
+        if raw.len() > 0 && seen[raw].is_err()
+            seen[raw] @ true
+            out @ out.push(Missing(raw: raw, plain: plain.must()))
+
+    return out
+
+# The text between a line's first two double quotes.
+function quoted(line: str) -> str
+    opened = ffi_lookup.after(text: line, marker: "\"")
+
+    if opened.is_err()
+        return ""
+    kept: [str] @= []
+
+    for ch in opened.must().chars()
+        if ch == "\""
+            break
+        kept @ kept.push(ch)
+
+    return kept.join("")
+
+## Tests
+
+# Both linkers' words are read, ld64's symbol kept as Mach-O spells it.
+test "an undefined symbol is read as the linker spelled it and as a C name"
+    got = missing_symbols(
+        "Undefined symbols for architecture arm64:\n  \"llabs\", referenced from:\n  \"_main\", referenced from:\nx.o: undefined reference to `nowhere'\n"
+    )
+    assert got.len() == 3
+    assert got[0].raw == "llabs"
+    assert got[0].plain == "llabs"
+    assert got[1].raw == "_main"
+    assert got[1].plain == "main"
+    assert got[2].raw == "nowhere"

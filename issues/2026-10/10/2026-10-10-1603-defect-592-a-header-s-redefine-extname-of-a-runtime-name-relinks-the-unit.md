@@ -3,7 +3,7 @@ kind: defect
 area: emit
 milestone: none
 filed: 2026-10-10
-commit: none
+commit: 6fe4c37f9d7b3c225be54105e64af78edcf63996
 github: none
 ---
 
@@ -12,3 +12,5 @@ github: none
     **Origin:** found by lane b19-pack attacking the shapes beside defect 582 (`.claude/worktrees/scratch-b15/b19-pack/shapes/`, ignored by git), filed by the lane at 16:03 on 2026-10-10.
 
     **Class: blocking**, 2026-10-10 (`.claude/rules/verification.md` § Bounded discovery): an exit 2 where the author can be told.
+
+    Repaired at `6fe4c37f9d7b3c225be54105e64af78edcf63996`, 2026-10-11 (lane b20-pragma), with defect 591, gated by its cases and the compiler's own tests; the net is owed at the batch's close. An undefined symbol that is a header's label of a name the C this compiler writes uses, or `main` renamed away, is told `ffi_header_refused` on the group's header, the label's file and line named (`cli/renamed.hero`, `cli/label_dump.hero`). Measured on this Mac (Apple clang 21), each exit 2 before and exit 1 after at `-O0` and `-O2`: the reproducer (`hero_print_int`), `main`, `fmod` (which the unit writes for `%` on an `f64`, declared after the groups), `hero_print_int` declared again by the header with an `__asm__` label, the pragma in a header the group's header includes, the pragma in the second of two groups' headers, and `heroes test` of such a program. In the Linux arm64 image (clang 22.1.8), at `6fe4c37f9d7b3c225be54105e64af78edcf63996`: its cases pass, and `fmod` and `main` are told. Measured and not taken: an explicit label on the runtime's first declaration resists a later pragma (a declaration labelled `_rt_fn`, then the pragma, calls `_rt_fn`), a route that labels each of the runtime's prototypes, about 150 by a grep of the two headers' lines ending in `);`, and still leaves the functions of `<math.h>` and `main`, declared after the groups, to the header; after the header C has no way back. Cases `unsupported/fixedbugs-592-*` (3).

@@ -1,0 +1,6 @@
+error[ffi_header_refused]: `fixedbugs-592-a-header-labelling-a-runtime-function-by-asm-is-told.h` renames `hero_print_int`, a name the C this compiler writes for the program uses: `fixedbugs-592-a-header-labelling-a-runtime-function-by-asm-is-told.h` line 4 gives it the linker name `fixedbugs_592_nowhere_print`, and the linker cannot find `fixedbugs_592_nowhere_print`
+  at tests/golden/unsupported/fixedbugs-592-a-header-labelling-a-runtime-function-by-asm-is-told.hero:7:8
+    |
+  7 | extern "fixedbugs-592-a-header-labelling-a-runtime-function-by-asm-is-told.h"  #~ ffi_header_refused
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: a `#pragma redefine_extname` or an `__asm__` label holds for every declaration of the name in the unit, the compiler's own before the groups and after them alike, and C has no way to take a label back once a declaration has one: rename in this header only names the program binds

@@ -1,0 +1,222 @@
+# Which C name a header gives which linker name, as clang's dump of a
+# module's header list says it (design.md §4.19; defects 591 and 592,
+# 2026-10-11). Split out of `cli/renamed.hero` the day it was written, when
+# reading the dump took that file past §11's 300 lines: that file tells a
+# symbol the linker could not find, and this reads the labels.
+#
+# **The dump is clang's own answer** (`-ast-dump`): an `AsmLabelAttr` under a
+# top-level `FunctionDecl` or `VarDecl` is the linker name that declaration
+# carries, a `#pragma redefine_extname`'s marked `Implicit` and placed at the
+# pragma, an `__asm__` label at the declaration. The unit's own standard
+# headers and `main` follow the header list, as the unit reads them after its
+# groups, so a pragma naming a function of `<math.h>` or `main`, held by
+# clang until the name is declared, is seen on that declaration. Asked on the
+# link's failure path alone.
+
+use cli/toolchain
+use cli/compiling
+use cli/process
+use cli/publish
+use cli/digest
+use cli/strings
+use cli/read_back
+use emit/macro_guard
+
+# A C name a declaration of the dump gives another linker name: the name,
+# the label, and the file and line clang says it was given at, `""` and 0
+# where the dump did not say.
+record Label
+    name: str
+    label: str
+    file: str
+    line: i64
+
+# Every label clang's dump of the header list gives a top-level function or
+# object, the unit's own reading of the library's standard headers and its
+# `main` after the list, as the unit reads them; none where clang did not
+# dump them.
+function labels_of(t: toolchain.Toolchain, probe: compiling.Probe) -> [Label]
+    none: [Label] = []
+    dumped = dump(t, probe)
+
+    if dumped.is_err()
+        return none
+    return labels_in(dumped.must())
+
+function dump(t: toolchain.Toolchain, probe: compiling.Probe) -> str?
+    text = compiling.include_lines(probe.headers) + macro_guard.STANDARD_LINE + "\nint main(int argc, char **argv);\n"
+    dir = t.build + "/renamed"
+    process.mkdir_all(dir)?
+    unit = dir + "/renamed-" + digest.digest(text) + ".c"
+    publish.write_whole(path: unit, text: text, keyed: true)?
+    said = publish.private_name(dir + "/renamed-stdout.txt")
+    line = strings.with_all(
+        list: ["clang", "-fsyntax-only", "-fno-color-diagnostics", "-Xclang", "-ast-dump"],
+        more: probe.words
+    )
+    ran = process.run(program: "clang", words: line.push(unit), out: said, err: process.discard())
+    dumped = read_back.words(said)
+    publish.discard(said)
+
+    if !ran.started || ran.code != 0
+        return fail(code: "unread", msg: "clang did not dump the headers")
+    return dumped
+
+# The labels of a dump: an `AsmLabelAttr` row directly under a top-level
+# `FunctionDecl` or `VarDecl`, its place read as clang printed it, every
+# location of the dump read in order, since clang prints one relative to the
+# last (`line:5:3` keeps the file, `col:9` the line too).
+function labels_in(dumped: str) -> [Label]
+    out: [Label] @= []
+    file: str @= ""
+    line: i64 @= 0
+    name: str @= ""
+    start: i64 @= 0
+    at: i64 @= 0
+
+    while at <= dumped.len()
+        if at == dumped.len() || dumped[at] == 10
+            row = dumped.slice(from: start, to: at)
+            top = strings.starts_with(text: row, prefix: "|-") || strings.starts_with(text: row, prefix: "`-")
+
+            if top
+                name @ top_name(row)
+            whole = Located(file: file, line: line)
+            moved = located(row, at: whole)
+            file @ moved.file
+            line @ moved.line
+
+            if !top && name.len() > 0 && direct_label(row)
+                out @ out.push(Label(name: name, label: last_quoted(row), file: file, line: line))
+            start @ at + 1
+        at @ at + 1
+
+    return out
+
+# A file and a line of the dump.
+record Located
+    file: str
+    line: i64
+
+# The place after every location of a row, read in order: `<file>:L:C` sets
+# both, `line:L:C` the line. A path inside a quoted type, `struct (unnamed at
+# x.h:3:9)`, is not a location clang printed as one and is passed over.
+function located(row: str, at: Located) -> Located
+    file: str @= at.file
+    line: i64 @= at.line
+    i: i64 @= 0
+
+    while i < row.len()
+        if row[i] == ':' && digits_then_colon(row, from: i + 1)
+            begin = token_start(row, before: i)
+            word = row.slice(from: begin, to: i)
+            number = leading_number(row, from: i + 1)
+
+            if word == "line"
+                line @ number
+            else if word.len() > 0 && !strings.holds(text: word, needle: "'") && !strings.holds(text: word, needle: "(") && word != "col"
+                file @ word
+                line @ number
+        i @ i + 1
+
+    return Located(file: file, line: line)
+
+# Whether `row` holds digits from `from` and then `:` and a digit.
+function digits_then_colon(row: str, from: i64) -> bool
+    i: i64 @= from
+
+    while i < row.len() && row[i] >= 48 && row[i] <= 57
+        i @ i + 1
+
+    return i > from && i + 1 < row.len() && row[i] == ':' && row[i + 1] >= 48 && row[i + 1] <= 57
+
+function leading_number(row: str, from: i64) -> i64
+    value: i64 @= 0
+    i: i64 @= from
+
+    while i < row.len() && row[i] >= 48 && row[i] <= 57
+        value @ value * 10 + (row[i] - 48).to_i64().must()
+        i @ i + 1
+
+    return value
+
+# Where the location token ending before `before` opens: after the nearest
+# `<`, `, ` or `> ` before it, which is how clang opens a range, its second
+# end and the location after it.
+function token_start(row: str, before: i64) -> i64
+    i: i64 @= before - 1
+
+    while i >= 0
+        if row[i] == '<'
+            return i + 1
+
+        if i > 0 && row[i] == ' ' && (row[i - 1] == ',' || row[i - 1] == '>')
+            return i + 1
+        i @ i - 1
+
+    return 0
+
+# The name of a top-level `FunctionDecl` or `VarDecl` row, `""` for any other.
+function top_name(row: str) -> str
+    if !strings.starts_with(text: row, prefix: "|-FunctionDecl ") && !strings.starts_with(text: row, prefix: "`-FunctionDecl ") && !strings.starts_with(text: row, prefix: "|-VarDecl ") && !strings.starts_with(text: row, prefix: "`-VarDecl ")
+        return ""
+    quote: i64 @= 0
+
+    while quote < row.len() && row[quote] != '\''
+        quote @ quote + 1
+
+    if quote >= row.len() || quote == 0
+        return ""
+    begin: i64 @= quote - 1
+
+    while begin > 0 && row[begin - 1] != ' '
+        begin @ begin - 1
+
+    return row.slice(from: begin, to: quote - 1)
+
+# Whether a row is an `AsmLabelAttr` directly under the top-level row above.
+function direct_label(row: str) -> bool
+    for opening in ["| |-AsmLabelAttr ", "| `-AsmLabelAttr ", "  |-AsmLabelAttr ", "  `-AsmLabelAttr "]
+        if strings.starts_with(text: row, prefix: opening)
+            return true
+
+    return false
+
+# The text between a row's last two double quotes: a label's own.
+function last_quoted(row: str) -> str
+    close: i64 @= row.len() - 1
+
+    while close >= 0 && row[close] != '"'
+        close @ close - 1
+
+    if close <= 0
+        return ""
+    open: i64 @= close - 1
+
+    while open >= 0 && row[open] != '"'
+        open @ open - 1
+
+    if open < 0
+        return ""
+    return row.slice(from: open + 1, to: close)
+
+## Tests
+
+# **The dump's locations are read as clang prints them**: a label a pragma
+# gave keeps the pragma's file and line; an `__asm__` label at `col:` keeps
+# the declaration's; a path in a quoted type moves nothing.
+test "a label's place is read from the dump's locations in order"
+    dumped = "|-FunctionDecl 0x1 <line:124:1, col:30> col:6 hero_print_int 'void (int64_t)'\n| |-ParmVarDecl 0x2 <col:21> col:28 'int64_t'\n| `-AsmLabelAttr 0x3 <./rn.h:1:41> Implicit \"hdr_print_int\"\n|-FunctionDecl 0x4 <./rn.h:5:1, col:48> col:6 twice 'long (long)'\n| `-AsmLabelAttr 0x5 <col:26> \"nowhere\"\n|-VarDecl 0x6 <line:7:1, col:9> col:9 v 'struct (unnamed at /x/y.h:3:9)'\n|-FunctionDecl 0x7 <line:8:1> col:6 plain 'void (void)'\n`-FunctionDecl 0x8 <probe.c:5:1, col:31> col:5 main 'int (int, char **)'\n  `-AsmLabelAttr 0x9 <./rn.h:2:31> Implicit \"other_main\"\n"
+    got = labels_in(dumped)
+    assert got.len() == 3
+    assert got[0].name == "hero_print_int"
+    assert got[0].label == "hdr_print_int"
+    assert got[0].file == "./rn.h"
+    assert got[0].line == 1
+    assert got[1].name == "twice"
+    assert got[1].label == "nowhere"
+    assert got[1].file == "./rn.h"
+    assert got[1].line == 5
+    assert got[2].name == "main"
+    assert got[2].label == "other_main"
+    assert got[2].line == 2
