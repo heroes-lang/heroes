@@ -1,0 +1,26 @@
+# Six calls of generic functions, each line on its own.
+
+function ident<A>(x: A) -> A
+    return x
+
+function first<A>(a: A, b: A) -> A
+    pair = [a, b]
+    return pair[0]
+
+function g<T>(x: T, n: i64?) -> T
+    if n.is_err()
+        return x
+    return x
+
+function main()
+    ns = [1, 2, 3]
+    b: u8 = 7
+    xs = [4, 5]
+    print(ns.map(ident).len().to_str())
+    print(first(a: b, b: 255).to_str())
+    print(g(x: 1, n: ok(2)).to_str())
+    print(first(a: xs, b: []).len().to_str())
+    y: u8 = first(a: 1, b: 2)
+    print(y.to_str())
+    x = first(a: ok(1), b: ok(2))
+    print(x.is_err().to_str())

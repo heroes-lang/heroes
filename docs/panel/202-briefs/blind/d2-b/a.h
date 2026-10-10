@@ -1,0 +1,1 @@
+long twice(long x);

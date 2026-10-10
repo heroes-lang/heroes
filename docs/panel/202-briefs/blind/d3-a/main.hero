@@ -1,0 +1,6 @@
+use left
+use right
+
+function main()
+    print(left.left(x: 3))
+    print(right.right(x: 4))

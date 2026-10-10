@@ -220,6 +220,9 @@ constant NO_FLAGS: [str]
 # day: in lane land199 at defect 457's message told whole (panel 199's R1), and
 # in lane parse at defect 494's case, the notes of a run told once, beside
 # 270's name bound nowhere, 294's two windows and 489's chain of records.
+# **29 on 2026-10-09**, raised by batch 17's closing as its gate told it
+# (`FLOOR full`, defect 536's rule): 459's, 525's, 532's and 548's whole
+# messages among the cases its lanes added.
 function shape_full() -> Shape
     return Shape(
         name: "full",
@@ -228,7 +231,7 @@ function shape_full() -> Shape
         flags: NO_FLAGS,
         on_stderr: true,
         want_code: 1,
-        least: 23,
+        least: 29,
         watched: true,
         silent_stdout: false,
         library_skip: false

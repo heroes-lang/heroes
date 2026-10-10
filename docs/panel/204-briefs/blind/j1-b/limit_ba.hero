@@ -1,0 +1,9 @@
+extern "b.h"
+    function cap(v: i32) -> i32
+
+extern "a.h"
+    function half(x: i64) -> i64
+
+function main()
+    print(half(x: 6))
+    print(cap(v: 50))

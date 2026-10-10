@@ -1,0 +1,5 @@
+extern "c.h"
+    function twice(x: i32) -> i32
+
+function left(x: i32) -> i32
+    return twice(x: x)
