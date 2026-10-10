@@ -9,9 +9,18 @@
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic ignored "-Wpragma-pack"
+#pragma float_control(push)
 #include "heroes_guard_open.h"
 #include <stdio.h>
 #include "heroes_guard_close.h"
+#pragma clang diagnostic ignored "-Wignored-pragmas"
+#pragma pack()
+#pragma float_control(pop)
+#pragma float_control(precise, on)
+#pragma GCC visibility push(default)
+#pragma clang section bss="" data="" rodata="" text="" relro=""
+#pragma clang optimize on
 #pragma clang diagnostic pop
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -26,6 +35,8 @@
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -97,7 +108,7 @@ HERO_STR_STATIC(hero_str_7e662f9e, "write_failed");
 HERO_STR_STATIC(hero_str_1755ec20, "could not write a path holding a NUL byte, which names no file");
 HERO_STR_STATIC(hero_str_39d7c22a, "could not write ");
 
-#line 101 "fixedbugsreadfileonbytesthatarenottext.c"
+#line 112 "fixedbugsreadfileonbytesthatarenottext.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -143,7 +154,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 147 "fixedbugsreadfileonbytesthatarenottext.c"
+#line 158 "fixedbugsreadfileonbytesthatarenottext.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -165,7 +176,6 @@ int64_t h_library_HERO_OS_NOT_TEXT(void);
 int64_t h_library_HERO_OS_BAD_NAME(void);
 h_0opt_f87774a h_library_read_file(HeroStr h0_path);
 h_0opt_a8ea2 h_library_write_file(HeroStr h0_path, HeroStr h1_text);
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 36 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
 HeroStr h_fixedbugsreadfileonbytesthatarenottext_NOT_TEXT(void) {
@@ -174,7 +184,7 @@ HeroStr h_fixedbugsreadfileonbytesthatarenottext_NOT_TEXT(void) {
 #line 36 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_22f1d61);
-#line 178 "fixedbugsreadfileonbytesthatarenottext.c"
+#line 188 "fixedbugsreadfileonbytesthatarenottext.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -186,7 +196,7 @@ HeroStr h_fixedbugsreadfileonbytesthatarenottext_IS_TEXT(void) {
 #line 39 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_788341e7);
-#line 190 "fixedbugsreadfileonbytesthatarenottext.c"
+#line 200 "fixedbugsreadfileonbytesthatarenottext.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -251,7 +261,7 @@ bb3:
     goto bb1;
 #line 48 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
 bb4:
-#line 255 "fixedbugsreadfileonbytesthatarenottext.c"
+#line 265 "fixedbugsreadfileonbytesthatarenottext.c"
     t19 = h2_ret0;
     return t19;
 }
@@ -643,7 +653,7 @@ bb15:
     goto bb13;
 #line 82 "tests/golden/run/fixedbugs-read-file-on-bytes-that-are-not-text.hero"
 bb16:
-#line 647 "fixedbugsreadfileonbytesthatarenottext.c"
+#line 657 "fixedbugsreadfileonbytesthatarenottext.c"
     h_0opt_f87774a_release(hero_slot_escape(&h0_s0));
     hero_str_release_at(&h1_text);
     hero_failure_release(&h2_e);
@@ -667,25 +677,25 @@ bb16:
 
 #line 109 "<heroes library>"
 int64_t h_library_HERO_OS_OK(void) {
-#line 671 "fixedbugsreadfileonbytesthatarenottext.c"
+#line 681 "fixedbugsreadfileonbytesthatarenottext.c"
     return HERO_OS_OK;
 }
 
 #line 110 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_FOUND(void) {
-#line 677 "fixedbugsreadfileonbytesthatarenottext.c"
+#line 687 "fixedbugsreadfileonbytesthatarenottext.c"
     return HERO_OS_NOT_FOUND;
 }
 
 #line 111 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_TEXT(void) {
-#line 683 "fixedbugsreadfileonbytesthatarenottext.c"
+#line 693 "fixedbugsreadfileonbytesthatarenottext.c"
     return HERO_OS_NOT_TEXT;
 }
 
 #line 112 "<heroes library>"
 int64_t h_library_HERO_OS_BAD_NAME(void) {
-#line 689 "fixedbugsreadfileonbytesthatarenottext.c"
+#line 699 "fixedbugsreadfileonbytesthatarenottext.c"
     return HERO_OS_BAD_NAME;
 }
 
@@ -920,7 +930,7 @@ bb12:
     goto bb10;
 #line 182 "<heroes library>"
 bb13:
-#line 924 "fixedbugsreadfileonbytesthatarenottext.c"
+#line 934 "fixedbugsreadfileonbytesthatarenottext.c"
     t38 = h3_ret0;
     h_0opt_f87774a_retain(&t38);
     hero_str_release_at(&h2_text);
@@ -1047,7 +1057,7 @@ bb6:
     goto bb4;
 #line 191 "<heroes library>"
 bb7:
-#line 1051 "fixedbugsreadfileonbytesthatarenottext.c"
+#line 1061 "fixedbugsreadfileonbytesthatarenottext.c"
     t19 = h3_ret0;
     h_0opt_a8ea2_retain(&t19);
     h_0opt_a8ea2_release(hero_slot_escape(&h4_own4));
@@ -1056,7 +1066,6 @@ bb7:
     h_0opt_a8ea2_release(hero_slot_escape(&h7_own7));
     return t19;
 }
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_incref(v->as.ok);

@@ -38,6 +38,7 @@ use emit/ffi_mutable
 use emit/ffi_read_only
 use emit/lend_type
 use emit/ffi_lend
+use emit/ffi_unavailable
 use emit/ffi_extent
 use emit/ffi_unit
 use emit/ffi_asked
@@ -151,6 +152,10 @@ function explain(stderr: str, s: source.Source, tree: ast.Ast, decls: [ast.Decl]
 
         if !not_const.is_err()
             found @ ffi_lookup.add_once(found, d: not_const.must())
+        gone = ffi_unavailable.unavailable(s, decls, line: line)
+
+        if !gone.is_err()
+            found @ ffi_lookup.add_once(found, d: gone.must())
 
         # The header's layout (panel 186): a member left out, a field in a
         # union. Read from the layout check's own markers, which run before

@@ -9,11 +9,20 @@
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic ignored "-Wpragma-pack"
+#pragma float_control(push)
 #include "heroes_guard_open.h"
 #include <dead-handle-in-a-callback-result-record-names-its-field.h>
 #pragma push_macro("a")
 #pragma push_macro("b")
 #include "heroes_guard_close.h"
+#pragma clang diagnostic ignored "-Wignored-pragmas"
+#pragma pack()
+#pragma float_control(pop)
+#pragma float_control(precise, on)
+#pragma GCC visibility push(default)
+#pragma clang section bss="" data="" rodata="" text="" relro=""
+#pragma clang optimize on
 #pragma clang diagnostic pop
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -28,6 +37,8 @@
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -37,11 +48,11 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 #line 12 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
 _Static_assert(_Generic(&((struct pair *)0)->a, node * *: 1, default: 0) && sizeof(((struct pair *)0)->a) == sizeof(node *), "heroes-ffi-field Pair a");
 _Static_assert(_Generic(&((struct pair *)0)->b, node * *: 1, default: 0) && sizeof(((struct pair *)0)->b) == sizeof(node *), "heroes-ffi-field Pair b");
-#line 41 "deadhandleinacallbackresultrecordnamesitsfield.c"
+#line 52 "deadhandleinacallbackresultrecordnamesitsfield.c"
 
 #line 11 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
 _Static_assert(__builtin_classify_type(*(struct pair *)0) != 13, "heroes-ffi-union Pair a b");
-#line 45 "deadhandleinacallbackresultrecordnamesitsfield.c"
+#line 56 "deadhandleinacallbackresultrecordnamesitsfield.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -140,7 +151,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 144 "deadhandleinacallbackresultrecordnamesitsfield.c"
+#line 155 "deadhandleinacallbackresultrecordnamesitsfield.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_deadhandleinacallbackresultrecordnamesitsfield_Node_eq(node * const *a, node * const *b);
@@ -169,12 +180,11 @@ __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
     return f;
 }
 
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 19 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
 struct pair h_deadhandleinacallbackresultrecordnamesitsfield_give(int32_t h0_k) {
 #line 19 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
-    hero_thread_guard("deadhandleinacallbackresultrecordnamesitsfield.give"); _Pragma("clang diagnostic ignored \"-Wdeprecated-declarations\"") struct pair h1_p; h_0opt_e201354 h2_f0 = {0}; h_0opt_e201354 h3_own3 = {0}; node * t1; node * t2; struct pair t3; int64_t t4; int32_t t5; h_0opt_e201354 t6; h_0opt_e201354 t7; int64_t t8; int64_t t9; bool t10; h_0opt_e201354 t11; HeroFailure t12; h_0opt_e201354 t13; int64_t t14; bool t15; struct pair t16; node * t17; struct pair t18; h_0opt_e201354 t19; h_0opt_e201354 t20; _Pragma("clang diagnostic warning \"-Wdeprecated-declarations\"") goto bb0;
+    hero_thread_guard("deadhandleinacallbackresultrecordnamesitsfield.give"); struct pair h1_p; h_0opt_e201354 h2_f0 = {0}; h_0opt_e201354 h3_own3 = {0}; node * t1; node * t2; struct pair t3; int64_t t4; int32_t t5; h_0opt_e201354 t6; h_0opt_e201354 t7; int64_t t8; int64_t t9; bool t10; h_0opt_e201354 t11; HeroFailure t12; h_0opt_e201354 t13; int64_t t14; bool t15; struct pair t16; node * t17; struct pair t18; h_0opt_e201354 t19; h_0opt_e201354 t20; goto bb0;
 #line 19 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
 bb0:
     t1 = node_new();
@@ -222,7 +232,7 @@ bb0:
 bb1:
 #line 24 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
     t18 = h1_p;
-#line 226 "deadhandleinacallbackresultrecordnamesitsfield.c"
+#line 236 "deadhandleinacallbackresultrecordnamesitsfield.c"
     h_0opt_e201354_release(hero_slot_escape(&h2_f0));
     h_0opt_e201354_release(hero_slot_escape(&h3_own3));
     return t18;
@@ -241,7 +251,7 @@ bb3:
     t11 = h2_f0;
 #line 22 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
     t12 = t11.as.err;
-#line 245 "deadhandleinacallbackresultrecordnamesitsfield.c"
+#line 255 "deadhandleinacallbackresultrecordnamesitsfield.c"
     hero_panic_must(t12);
     hero_unreachable();
 bb4:
@@ -267,7 +277,7 @@ bb4:
 bb5:
 #line 23 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
     goto bb1;
-#line 271 "deadhandleinacallbackresultrecordnamesitsfield.c"
+#line 281 "deadhandleinacallbackresultrecordnamesitsfield.c"
 }
 
 struct pair h_0cb_deadhandleinacallbackresultrecordnamesitsfield_give(int32_t h0_k) {
@@ -296,9 +306,8 @@ bb0:
     hero_print_end();
 #line 27 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
     return;
-#line 300 "deadhandleinacallbackresultrecordnamesitsfield.c"
+#line 310 "deadhandleinacallbackresultrecordnamesitsfield.c"
 }
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_deadhandleinacallbackresultrecordnamesitsfield_Node_eq(node * const *a, node * const *b) {
     return hero_handle_eq(*a, *b);
 }

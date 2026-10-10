@@ -1,0 +1,6 @@
+error[ffi_unknown_name]: `fixedbugs-585-wide.h` declares no `wide_only` under `_POSIX_C_SOURCE`, which `fixedbugs-585-strict.h` and `fixedbugs-585-also-strict.h` define: without that switch it declares it
+  at tests/golden/unsupported/fixedbugs-585-a-switch-two-headers-define-is-told-with-both.hero:13:5
+     |
+  13 |     function wide_only() -> i64  #~ ffi_unknown_name
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: a unit reads its module's groups' headers in the order they are written, so `_POSIX_C_SOURCE` as `fixedbugs-585-strict.h` and `fixedbugs-585-also-strict.h` define it stands where `fixedbugs-585-wide.h` is read: asked again with it undefined after `fixedbugs-585-strict.h` and `fixedbugs-585-also-strict.h`, `fixedbugs-585-wide.h` declares `wide_only`; take the switch out of `fixedbugs-585-strict.h` and `fixedbugs-585-also-strict.h`, or bind `wide_only` from a module whose unit does not read `fixedbugs-585-strict.h` and `fixedbugs-585-also-strict.h`

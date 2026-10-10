@@ -9,9 +9,18 @@
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic ignored "-Wpragma-pack"
+#pragma float_control(push)
 #include "heroes_guard_open.h"
 #include <fixedbugs-440-bytes.h>
 #include "heroes_guard_close.h"
+#pragma clang diagnostic ignored "-Wignored-pragmas"
+#pragma pack()
+#pragma float_control(pop)
+#pragma float_control(precise, on)
+#pragma GCC visibility push(default)
+#pragma clang section bss="" data="" rodata="" text="" relro=""
+#pragma clang optimize on
 #pragma clang diagnostic pop
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -26,6 +35,8 @@
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -73,7 +84,7 @@ HERO_STR_STATIC(hero_str_61, "a");
 HERO_STR_STATIC(hero_str_62, "b");
 HERO_STR_STATIC(hero_str_20, " ");
 
-#line 77 "fixedbugs440abyteselementstaysaplace.c"
+#line 88 "fixedbugs440abyteselementstaysaplace.c"
 typedef struct h_fixedbugs440abyteselementstaysaplace_Packet {
     HeroArrayHeader * f_bytes;
 } h_fixedbugs440abyteselementstaysaplace_Packet;
@@ -121,7 +132,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 125 "fixedbugs440abyteselementstaysaplace.c"
+#line 136 "fixedbugs440abyteselementstaysaplace.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_fixedbugs440abyteselementstaysaplace_Packet_retain(const h_fixedbugs440abyteselementstaysaplace_Packet *v);
@@ -141,7 +152,6 @@ void h_fixedbugs440abyteselementstaysaplace_f(uint8_t *ph0_n);
 void h_fixedbugs440abyteselementstaysaplace_add(int64_t h0_k, uint8_t *ph1_n);
 void h_fixedbugs440abyteselementstaysaplace_shout(HeroStr *ph0_s);
 void h_fixedbugs440abyteselementstaysaplace_main(void);
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 15 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
 void h_fixedbugs440abyteselementstaysaplace_f(uint8_t *ph0_n) {
@@ -158,7 +168,7 @@ bb0:
     (*ph0_n) = t3;
 #line 16 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
     return;
-#line 162 "fixedbugs440abyteselementstaysaplace.c"
+#line 172 "fixedbugs440abyteselementstaysaplace.c"
 }
 
 #line 18 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
@@ -181,7 +191,7 @@ bb0:
     hero_print_end();
 #line 20 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
     return;
-#line 185 "fixedbugs440abyteselementstaysaplace.c"
+#line 195 "fixedbugs440abyteselementstaysaplace.c"
 }
 
 #line 22 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
@@ -209,7 +219,7 @@ bb0:
     (*ph0_s) = t3;
 #line 23 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
     hero_str_decref(t5);
-#line 213 "fixedbugs440abyteselementstaysaplace.c"
+#line 223 "fixedbugs440abyteselementstaysaplace.c"
     hero_str_release_at(&h1_own1);
     return;
 }
@@ -386,7 +396,7 @@ bb0:
     hero_print_str(t34);
 #line 37 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
     hero_print_end();
-#line 390 "fixedbugs440abyteselementstaysaplace.c"
+#line 400 "fixedbugs440abyteselementstaysaplace.c"
     hero_array_release_at(&h0_bs);
     h_fixedbugs440abyteselementstaysaplace_Packet_release(hero_slot_escape(&h2_p));
     hero_str_release_at(&h3_s);
@@ -397,7 +407,6 @@ bb0:
     hero_array_release_at(&h8_own8);
     return;
 }
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL void h_fixedbugs440abyteselementstaysaplace_Packet_retain(const h_fixedbugs440abyteselementstaysaplace_Packet *v) {
     hero_array_incref(v->f_bytes);
 }

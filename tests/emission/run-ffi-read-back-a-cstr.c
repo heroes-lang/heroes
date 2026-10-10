@@ -9,10 +9,19 @@
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic ignored "-Wpragma-pack"
+#pragma float_control(push)
 #include "heroes_guard_open.h"
 #include <string.h>
 #include <stdlib.h>
 #include "heroes_guard_close.h"
+#pragma clang diagnostic ignored "-Wignored-pragmas"
+#pragma pack()
+#pragma float_control(pop)
+#pragma float_control(precise, on)
+#pragma GCC visibility push(default)
+#pragma clang section bss="" data="" rodata="" text="" relro=""
+#pragma clang optimize on
 #pragma clang diagnostic pop
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -27,6 +36,8 @@
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -77,7 +88,7 @@ HERO_STR_STATIC(hero_str_5263489, "a null `cstr` holds no text");
 HERO_STR_STATIC(hero_str_34624695, "not_text");
 HERO_STR_STATIC(hero_str_4bb64adb, "the bytes behind this `cstr` are not UTF-8");
 
-#line 81 "ffireadbackacstr.c"
+#line 92 "ffireadbackacstr.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -123,7 +134,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 127 "ffireadbackacstr.c"
+#line 138 "ffireadbackacstr.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -138,7 +149,6 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 void h_ffireadbackacstr_main(void);
 int64_t h_library_HERO_STR_OK(void);
 h_0opt_f87774a h_library_validated(const char * h0_c);
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 43 "tests/golden/run/ffi-read-back-a-cstr.hero"
 void h_ffireadbackacstr_main(void) {
@@ -224,7 +234,7 @@ bb2:
     t8 = h0_f0;
 #line 44 "tests/golden/run/ffi-read-back-a-cstr.hero"
     t9 = t8.as.err;
-#line 228 "ffireadbackacstr.c"
+#line 238 "ffireadbackacstr.c"
     hero_panic_must(t9);
     hero_unreachable();
 bb3:
@@ -307,7 +317,7 @@ bb4:
     t19 = h2_f1;
 #line 45 "tests/golden/run/ffi-read-back-a-cstr.hero"
     t20 = t19.as.err;
-#line 311 "ffireadbackacstr.c"
+#line 321 "ffireadbackacstr.c"
     hero_panic_must(t20);
     hero_unreachable();
 bb5:
@@ -370,12 +380,12 @@ bb7:
     hero_print_end();
 #line 60 "tests/golden/run/ffi-read-back-a-cstr.hero"
     goto bb5;
-#line 374 "ffireadbackacstr.c"
+#line 384 "ffireadbackacstr.c"
 }
 
 #line 123 "<heroes library>"
 int64_t h_library_HERO_STR_OK(void) {
-#line 379 "ffireadbackacstr.c"
+#line 389 "ffireadbackacstr.c"
     return HERO_STR_OK;
 }
 
@@ -498,7 +508,7 @@ bb6:
     goto bb4;
 #line 159 "<heroes library>"
 bb7:
-#line 502 "ffireadbackacstr.c"
+#line 512 "ffireadbackacstr.c"
     t18 = h3_ret0;
     h_0opt_f87774a_retain(&t18);
     hero_str_release_at(&h2_text);
@@ -510,7 +520,6 @@ bb7:
     return t18;
 }
 #undef h1_status
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_incref(v->as.ok);

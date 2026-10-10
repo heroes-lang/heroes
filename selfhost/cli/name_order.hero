@@ -13,12 +13,14 @@
 # group of its module moved across it (`header_order.search`), then, where
 # neither declares it, after each header of C's own the unit does not read
 # (`header_order.standard`). The first that declares it is told in place of
-# the false headline and its note.
+# the false headline and its note. A headline the switch reader told
+# (`emit/ffi_switched.hero`, defect 585) is true, and is left as it was.
 
 use source
 use ast
 use diag
 use emit/ffi_declared
+use emit/ffi_switched
 use cli/toolchain
 use cli/compiling
 use cli/order_trial
@@ -27,7 +29,7 @@ use cli/header_order
 use cli/strings
 
 function unknown(d: diag.Diagnostic, s: source.Source, decls: [ast.Decl], t: toolchain.Toolchain, under: compiling.Compiling, unit_headers: [str]) -> diag.Diagnostic
-    if d.code != "ffi_unknown_name"
+    if d.code != "ffi_unknown_name" || strings.ends_with(text: d.message, suffix: ffi_switched.NARROWED_TAIL)
         return d
     bound = order_groups.bound_at(s, decls, span: d.span)
 

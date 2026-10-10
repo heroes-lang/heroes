@@ -1,0 +1,187 @@
+# A clang line's words handed to clang in a file, `clang @<file>`, so that no
+# line is held to how long one command may be (design.md §3.1, §1.12; defect
+# 583).
+#
+# WHY. Windows has no argv: `CreateProcess` takes the whole line as one string
+# of at most 32,767 UTF-16 characters and refuses a longer one before anything
+# runs (`hero_run_win_command_line` in `runtime/parts/run.c` builds it). The
+# link names every object of a program, and the compiler's own per-module
+# build had 558 of them, 32,243 characters of paths: on the Windows box (clang
+# 23.1.1) clang could not be started, the system's reason 87 (lane b18-guard,
+# 2026-10-10). This tree's build had 578 the same day, 33,385 characters with
+# their separators, measured on this Mac. POSIX holds a line to `ARG_MAX`,
+# 1,048,576 bytes on Darwin and 2,097,152 in the Linux arm64 container
+# (`getconf`, 2026-10-10), which no build here comes near.
+#
+# ONE RULE READS THE FILE BACK, ON EVERY PLATFORM. clang splits a response
+# file by its host's rule unless the line names one: GNU's on POSIX, where a
+# backslash escapes the byte after it, and Windows' on Windows, where a
+# backslash is a byte unless a quote follows it. No spelling of `a\b` reads
+# back the same under both, so the line says `--rsp-quoting=posix` (`QUOTING`)
+# and every word is written by GNU's rule (`quoted`): in double quotes, a
+# backslash before each backslash and each quote, one word a line. Measured
+# 2026-10-10 under Apple clang 21.0.0 on this Mac and Debian clang 22.1.8 in
+# the Linux arm64 container: fourteen objects named with a space, a tab, a
+# line end, `'`, `"`, `\`, `\\`, a last `\`, `$`, `;`, `&`, `*`, `#`,
+# `<CFGDIR>` and a two-byte `e` with its accent linked through such a file,
+# each found at its own name, and clang said nothing under `-Weverything`;
+# under `--rsp-quoting=windows` the two names holding a backslash were not
+# found. **On Windows this is unrun**: the cases below and `cli/link.hero`'s
+# run there on the CI's Windows leg.
+#
+# A file holds bytes, and clang reads them as UTF-8 (a byte-order mark it
+# would strip is never written), which is what a `str` holds and what the
+# runtime's manifest makes every narrow name on Windows (`runtime/parts/
+# codepage.c`). A word that opens with `@` inside the file is read as a
+# file's name, as it is on a line: no word this compiler writes opens so.
+
+use cli/process
+use cli/publish
+
+# The rule clang reads the file by, named on the line so that no host's
+# default is asked.
+constant QUOTING: str
+    "--rsp-quoting=posix"
+
+# The line that runs `line` with its words after the first written at `at`:
+# `clang --rsp-quoting=posix @<at>`. What a caller adds after it is read after
+# them, as it was on the line. Whether `at` is keyed is the caller's to say
+# (`publish.write_whole`).
+function through(line: [str], at: str, keyed: bool) -> [str]?
+    publish.write_whole(path: at, text: text_of(line), keyed: keyed)?
+    return ok(["clang", QUOTING, "@" + at])
+
+# **A link's words, in a file in the binary's home** (`link.binary_home`,
+# defect 583). The home is named by every one of those words, so the file's
+# path and its bytes are the line's alone, it is keyed, and six builds of one
+# program publish one file; it is never a word of a key, so a warm build
+# stays warm. Always, and not past a length: one path, which every
+# platform's build runs, its price one file of the line's size per link.
+function for_link(line: [str], home: str) -> [str]?
+    process.mkdir_all(publish.beside(path: home, name: "."))?
+    return through(line: line, at: publish.beside(path: home, name: LINK_WORDS), keyed: true)
+
+# The file's name in the home. What the linker writes is published under
+# the binary's own name (`link.published_as`), the binary, a `.pdb`, a
+# `.dSYM`, and a linker writes no `.rsp`, so none of it is published as this.
+constant LINK_WORDS: str
+    "link-words.rsp"
+
+# The words of `line` but its first, one a line, each by `quoted`.
+function text_of(line: [str]) -> str
+    out: [str] @ []
+    at: i64 @ 1
+
+    while at < line.len()
+        out @ out.push(quoted(line[at]))
+        at @ at + 1
+
+    return out.join("\n") + "\n"
+
+# One word in double quotes, a backslash before each backslash and each
+# quote: GNU's rule reads any other byte inside quotes as itself, a space, a
+# tab and a line end among them. Cut only beside those two ASCII bytes, which
+# no UTF-8 character holds, so no slice splits one.
+function quoted(word: str) -> str
+    parts: [str] @ ["\""]
+    start: i64 @ 0
+    at: i64 @ 0
+
+    while at < word.len()
+        if word[at] == 92 || word[at] == 34
+            parts @ parts.push(word.slice(from: start, to: at))
+            parts @ parts.push("\\")
+            start @ at
+
+        at @ at + 1
+
+    parts @ parts.push(word.slice(from: start, to: word.len()))
+    parts @ parts.push("\"")
+    return parts.join("")
+
+## Tests
+
+use cli/strings
+use cli/toolchain
+
+test "a word is written in double quotes with a backslash before each backslash and each quote (defect 583)"
+    assert quoted("build/tu-0/a.o") == "\"build/tu-0/a.o\""
+    assert quoted("a b\tc") == "\"a b\tc\""
+    assert quoted("a\\b") == "\"a\\\\b\""
+    assert quoted("q\"x") == "\"q\\\"x\""
+    assert quoted("end\\") == "\"end\\\\\""
+    assert quoted("") == "\"\""
+    assert text_of(["clang", "x.o", "-l", "m"]) == "\"x.o\"\n\"-l\"\n\"m\"\n"
+    assert text_of(["clang"]) == "\n"
+
+test "the line names the file and the one rule it is read by (defect 583)"
+    dir = "build/selftest-response-line"
+    assert !process.remove_tree(dir).is_err()
+    assert !process.mkdir_all(dir).is_err()
+    at = dir + "/words.rsp"
+    assert through(line: ["clang", "-g", "a b.o"], at: at, keyed: false).must() == ["clang", "--rsp-quoting=posix", "@" + at]
+    assert read_file(at).must() == "\"-g\"\n\"a b.o\"\n"
+    assert !process.remove_tree(dir).is_err()
+
+# Every name a platform lets a file have that a rule could misread: on POSIX
+# the quote, the backslash inside a name and at its end, the tab and the line
+# end as well; on Windows the backslash is the separator, and a name under it.
+function hard_names(windows: bool) -> [str]
+    accent: [u8] = [195, 169]
+    names: [str] @ [
+        "sp ace.o"
+        "apo'st.o"
+        "caf" + accent.validated_bytes().must() + ".o"
+        "dollar$HOME.o"
+        "semi;amp&.o"
+        "hash#pct%.o"
+        "<CFGDIR>x.o"
+        "paren(1).o"
+    ]
+
+    if windows
+        return names.push("sub\\inner.o")
+    return strings.with_all(
+        list: names,
+        more: ["quo\"te.o", "back\\slash.o", "dbl\\\\back.o", "trail\\", "tab\tx.o", "line\nend.o", "star*.o"]
+    )
+
+test "every hard name an object can have is read back from the file as written, and linked (defect 583)"
+    root = "build/selftest-response-names"
+    assert !process.remove_tree(root).is_err()
+    assert !process.mkdir_all(root + "/sub").is_err()
+    windows = process.exe_suffix() == ".exe"
+    names = hard_names(windows)
+    one = root + "/one.c"
+    assert !publish.write_whole(path: one, text: "int NAME(void) { return 1; }\n", keyed: false).is_err()
+    line: [str] @ ["clang"]
+    calls: [str] @ []
+    declared: [str] @ []
+
+    for i in range(from: 0, to: names.len())
+        object = root + "/" + names[i]
+        made = process.run(
+            program: "clang",
+            words: ["clang", "-DNAME=f" + i.to_str(), "-c", one, "-o", object],
+            out: process.discard(),
+            err: process.discard()
+        )
+        assert made.started && made.code == 0
+        line @ line.push(object)
+        calls @ calls.push("f" + i.to_str() + "()")
+        declared @ declared.push("int f" + i.to_str() + "(void);\n")
+
+    main_c = root + "/main.c"
+    main_text = declared.join("") + "int main(void) { return " + calls.join(" + ") + " == " + names.len().to_str() + " ? 0 : 1; }\n"
+    assert !publish.write_whole(path: main_c, text: main_text, keyed: false).is_err()
+    main_o = root + "/main.o"
+    assert process.run(program: "clang", words: ["clang", "-c", main_c, "-o", main_o], out: process.discard(), err: process.discard()).code == 0
+    line @ line.push(main_o)
+    binary = root + "/hard" + process.exe_suffix()
+    run = strings.with_all(list: through(line: line, at: root + "/hard.rsp", keyed: false).must(), more: ["-o", binary])
+    said = root + "/said.txt"
+    assert !toolchain.run_clang(line: run, what: "linking", err_path: said).is_err()
+    assert read_file(said).must() == ""
+    ran = process.run(program: binary, words: [binary], out: process.discard(), err: process.discard())
+    assert ran.started && ran.code == 0
+    assert !process.remove_tree(root).is_err()

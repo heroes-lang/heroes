@@ -1,0 +1,30 @@
+# fixedbugs, defect 582: a module that reads no group's header, whose records
+# the cases' `main` builds and reads across the two units. `Pair` has seven
+# bytes of padding after `a` under the build's packing and none under
+# `pack(1)`, `Shape` a case of two fields beside a case of one byte.
+record Pair
+    a: u8
+    b: i64
+
+variant Shape
+    dot
+    flag
+        f: u8
+    rect
+        w: i64
+        h: i64
+
+function make(n: i64) -> Pair
+    return Pair(a: 1, b: n)
+
+function second(p: Pair) -> i64
+    return p.b
+
+function shape(n: i64) -> Shape
+    return .rect(w: n, h: n)
+
+function area(s: Shape) -> i64
+    match s
+        .dot    => return 0
+        .flag f => return f.f.to_i64().must()
+        .rect r => return r.w * r.h

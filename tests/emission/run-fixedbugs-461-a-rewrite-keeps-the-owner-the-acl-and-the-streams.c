@@ -9,9 +9,18 @@
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic ignored "-Wpragma-pack"
+#pragma float_control(push)
 #include "heroes_guard_open.h"
 #include <fixedbugs-461-a-rewrite-keeps-the-owner-the-acl-and-the-streams.h>
 #include "heroes_guard_close.h"
+#pragma clang diagnostic ignored "-Wignored-pragmas"
+#pragma pack()
+#pragma float_control(pop)
+#pragma float_control(precise, on)
+#pragma GCC visibility push(default)
+#pragma clang section bss="" data="" rodata="" text="" relro=""
+#pragma clang optimize on
 #pragma clang diagnostic pop
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -26,6 +35,8 @@
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -100,7 +111,7 @@ HERO_STR_STATIC(hero_str_7e662f9e, "write_failed");
 HERO_STR_STATIC(hero_str_1755ec20, "could not write a path holding a NUL byte, which names no file");
 HERO_STR_STATIC(hero_str_39d7c22a, "could not write ");
 
-#line 104 "fixedbugs461arewritekeepstheownertheaclandthestreams.c"
+#line 115 "fixedbugs461arewritekeepstheownertheaclandthestreams.c"
 typedef struct h_0opt_a8ea2 {
     int64_t tag;
     union {
@@ -151,7 +162,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 155 "fixedbugs461arewritekeepstheownertheaclandthestreams.c"
+#line 166 "fixedbugs461arewritekeepstheownertheaclandthestreams.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
@@ -172,11 +183,10 @@ int64_t h_library_HERO_OS_NOT_TEXT(void);
 int64_t h_library_HERO_OS_BAD_NAME(void);
 h_0opt_f87774a h_library_read_file(HeroStr h0_path);
 h_0opt_a8ea2 h_library_write_file(HeroStr h0_path, HeroStr h1_text);
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 33 "tests/golden/run/fixedbugs-461-a-rewrite-keeps-the-owner-the-acl-and-the-streams.hero"
 int64_t h_fixedbugs461arewritekeepstheownertheaclandthestreams_HERO_DIR_FILES(void) {
-#line 180 "fixedbugs461arewritekeepstheownertheaclandthestreams.c"
+#line 190 "fixedbugs461arewritekeepstheownertheaclandthestreams.c"
     return HERO_DIR_FILES;
 }
 
@@ -187,7 +197,7 @@ HeroStr h_fixedbugs461arewritekeepstheownertheaclandthestreams_TEXT(void) {
 #line 35 "tests/golden/run/fixedbugs-461-a-rewrite-keeps-the-owner-the-acl-and-the-streams.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_70a25bad);
-#line 191 "fixedbugs461arewritekeepstheownertheaclandthestreams.c"
+#line 201 "fixedbugs461arewritekeepstheownertheaclandthestreams.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -506,7 +516,7 @@ bb8:
     goto bb9;
 #line 52 "tests/golden/run/fixedbugs-461-a-rewrite-keeps-the-owner-the-acl-and-the-streams.hero"
 bb9:
-#line 510 "fixedbugs461arewritekeepstheownertheaclandthestreams.c"
+#line 520 "fixedbugs461arewritekeepstheownertheaclandthestreams.c"
     hero_str_release_at(&h0_dir);
     hero_str_release_at(&h1_path);
     h_0opt_a8ea2_release(hero_slot_escape(&h3_f0));
@@ -526,25 +536,25 @@ bb9:
 
 #line 109 "<heroes library>"
 int64_t h_library_HERO_OS_OK(void) {
-#line 530 "fixedbugs461arewritekeepstheownertheaclandthestreams.c"
+#line 540 "fixedbugs461arewritekeepstheownertheaclandthestreams.c"
     return HERO_OS_OK;
 }
 
 #line 110 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_FOUND(void) {
-#line 536 "fixedbugs461arewritekeepstheownertheaclandthestreams.c"
+#line 546 "fixedbugs461arewritekeepstheownertheaclandthestreams.c"
     return HERO_OS_NOT_FOUND;
 }
 
 #line 111 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_TEXT(void) {
-#line 542 "fixedbugs461arewritekeepstheownertheaclandthestreams.c"
+#line 552 "fixedbugs461arewritekeepstheownertheaclandthestreams.c"
     return HERO_OS_NOT_TEXT;
 }
 
 #line 112 "<heroes library>"
 int64_t h_library_HERO_OS_BAD_NAME(void) {
-#line 548 "fixedbugs461arewritekeepstheownertheaclandthestreams.c"
+#line 558 "fixedbugs461arewritekeepstheownertheaclandthestreams.c"
     return HERO_OS_BAD_NAME;
 }
 
@@ -779,7 +789,7 @@ bb12:
     goto bb10;
 #line 182 "<heroes library>"
 bb13:
-#line 783 "fixedbugs461arewritekeepstheownertheaclandthestreams.c"
+#line 793 "fixedbugs461arewritekeepstheownertheaclandthestreams.c"
     t38 = h3_ret0;
     h_0opt_f87774a_retain(&t38);
     hero_str_release_at(&h2_text);
@@ -906,7 +916,7 @@ bb6:
     goto bb4;
 #line 191 "<heroes library>"
 bb7:
-#line 910 "fixedbugs461arewritekeepstheownertheaclandthestreams.c"
+#line 920 "fixedbugs461arewritekeepstheownertheaclandthestreams.c"
     t19 = h3_ret0;
     h_0opt_a8ea2_retain(&t19);
     h_0opt_a8ea2_release(hero_slot_escape(&h4_own4));
@@ -915,7 +925,6 @@ bb7:
     h_0opt_a8ea2_release(hero_slot_escape(&h7_own7));
     return t19;
 }
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
     if (v->tag == INT64_C(0)) {
         return;

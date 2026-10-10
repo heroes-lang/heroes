@@ -9,9 +9,18 @@
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic ignored "-Wpragma-pack"
+#pragma float_control(push)
 #include "heroes_guard_open.h"
 #include <dead-address-remembered-through-a-million-later-ends.h>
 #include "heroes_guard_close.h"
+#pragma clang diagnostic ignored "-Wignored-pragmas"
+#pragma pack()
+#pragma float_control(pop)
+#pragma float_control(precise, on)
+#pragma GCC visibility push(default)
+#pragma clang section bss="" data="" rodata="" text="" relro=""
+#pragma clang optimize on
 #pragma clang diagnostic pop
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -26,6 +35,8 @@
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -74,7 +85,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_11c935bc, "ends after the target: ");
 HERO_STR_STATIC(hero_str_eb0c0ab, "the target reads: ");
 
-#line 78 "deadaddressrememberedthroughamillionlaterends.c"
+#line 89 "deadaddressrememberedthroughamillionlaterends.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -119,7 +130,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 123 "deadaddressrememberedthroughamillionlaterends.c"
+#line 134 "deadaddressrememberedthroughamillionlaterends.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_deadaddressrememberedthroughamillionlaterends_Big_eq(big * const *a, big * const *b);
@@ -134,12 +145,11 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_deadaddressrememberedthroughamillionlaterends_main(void);
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 19 "tests/golden/run/dead-address-remembered-through-a-million-later-ends.hero"
 void h_deadaddressrememberedthroughamillionlaterends_main(void) {
 #line 19 "tests/golden/run/dead-address-remembered-through-a-million-later-ends.hero"
-    _Pragma("clang diagnostic ignored \"-Wdeprecated-declarations\"") big * h0_target; big * h1_keep; int64_t h2_i; big * h3_n; big * t1; big * t2; big * t3; int64_t t4; int64_t t5; int64_t t6; bool t7; big * t8; big * t9; int64_t t10; int64_t t11; int64_t t12; HeroStr t13; int64_t t14; HeroStr t15; big * t16; int64_t t17; _Pragma("clang diagnostic warning \"-Wdeprecated-declarations\"") goto bb0;
+    big * h0_target; big * h1_keep; int64_t h2_i; big * h3_n; big * t1; big * t2; big * t3; int64_t t4; int64_t t5; int64_t t6; bool t7; big * t8; big * t9; int64_t t10; int64_t t11; int64_t t12; HeroStr t13; int64_t t14; HeroStr t15; big * t16; int64_t t17; goto bb0;
 #line 19 "tests/golden/run/dead-address-remembered-through-a-million-later-ends.hero"
 bb0:
     t1 = big_new();
@@ -234,9 +244,8 @@ bb3:
     hero_print_end();
 #line 31 "tests/golden/run/dead-address-remembered-through-a-million-later-ends.hero"
     return;
-#line 238 "deadaddressrememberedthroughamillionlaterends.c"
+#line 248 "deadaddressrememberedthroughamillionlaterends.c"
 }
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_deadaddressrememberedthroughamillionlaterends_Big_eq(big * const *a, big * const *b) {
     return hero_handle_eq(*a, *b);
 }

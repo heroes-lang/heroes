@@ -1,13 +1,30 @@
 # A name a group's header declares only under a switch of the C library,
 # told as the header's under it and never as a name it lacks (design.md
-# §4.19, §4.17; panel 205's R3, ratified 2026-10-10; defect 568). Split from
+# §4.19, §4.17; panel 205's R3, ratified 2026-10-10; defect 568), and its
+# converse, a name a switch a header of the program's own defines hides,
+# told with the switch and the header (defect 585, 2026-10-10). Split from
 # `emit/ffi_declared.hero`, which reads clang's word that the name is
 # undeclared, past §11's 300 lines: the answer that the switch would declare
-# it is `cli/switch_ask.hero`'s, and the words are here.
+# it is `cli/switch_ask.hero`'s and `cli/unswitch_ask.hero`'s, and the words
+# are here.
 
 use token
 use diag
 use emit/ffi_lookup
+
+# What a refused round learned of a name a switch decides: the switch, and
+# the headers after which the unit found it defined where it hides the name,
+# none where the header declares the name only under it.
+record Switch
+    macro: str
+    defined_by: [str]
+
+# The words for what the round learned: the switch that would declare the
+# name, or the one a header defines that hides it.
+function told(header: str, name: str, decided: Switch, span: token.Span) -> diag.Diagnostic
+    if decided.defined_by.len() == 0
+        return hidden(header: header, name: name, macro: decided.macro, span: span)
+    return narrowed(header: header, name: name, decided: decided, span: span)
 
 # The header declares `name` only under `macro`, a switch the C library reads
 # once, at the first of its headers a unit reads (panel 205's R3): told so,
@@ -23,6 +40,47 @@ function hidden(header: str, name: str, macro: str, span: token.Span) -> diag.Di
     )
     return d
 
+# The header declares no `name` under `decided.macro`, which the headers it
+# names define, and declares it with the switch undefined after them: told
+# so, with where the switch stands and the two ways out of it.
+# The end of a narrowed name's headline, which `cli/name_order.hero` reads
+# so as never to tell another order in its place: the headline is true, and
+# the switch is the cause (defect 585 beside defect 563, met in batch 19's
+# round).
+constant NARROWED_TAIL: str
+    ": without that switch it declares it"
+
+function narrowed(header: str, name: str, decided: Switch, span: token.Span) -> diag.Diagnostic
+    by = quoted_list(decided.defined_by)
+    verb: str @ "defines"
+
+    if decided.defined_by.len() > 1
+        verb @ "define"
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "ffi_unknown_name",
+        message: "`" + header + "` declares no `" + name + "` under `" + decided.macro + "`, which " + by + " " + verb + NARROWED_TAIL,
+        span: span
+    )
+    d.notes @ d.notes.push(
+        "a unit reads its module's groups' headers in the order they are written, so `" + decided.macro + "` as " + by + " " + verb + " it stands where `" + header + "` is read: asked again with it undefined after " + by + ", `" + header + "` declares `" + name + "`; take the switch out of " + by + ", or bind `" + name + "` from a module whose unit does not read " + by
+    )
+    return d
+
+# `a`, `a` and `b`, or `a`, `b` and `c`, each in backticks.
+function quoted_list(names: [str]) -> str
+    pieces: [str] @ []
+    index: i64 @ 0
+
+    for name in names
+        if index > 0 && index == names.len() - 1
+            pieces @ pieces.push(" and ")
+        else if index > 0
+            pieces @ pieces.push(", ")
+        pieces @ pieces.push("`" + name + "`")
+        index @ index + 1
+
+    return pieces.join("")
+
 ## Tests
 
 test "a name the header declares only under a switch is told so, with where the switch stands"
@@ -33,3 +91,28 @@ test "a name the header declares only under a switch is told so, with where the 
         text: d.notes[0],
         needle: "a header of your own that defines `_GNU_SOURCE` and then includes `sched.h`"
     )
+
+test "a name a switch a header defines hides is told with the switch and the header"
+    none: [str] = []
+    span = token.Span(start: 0, end: 1)
+    d = told(
+        header: "string.h",
+        name: "strlcpy",
+        decided: Switch(macro: "_POSIX_C_SOURCE", defined_by: ["cfg.h"]),
+        span: span
+    )
+    assert d.code == "ffi_unknown_name"
+    assert d.message == "`string.h` declares no `strlcpy` under `_POSIX_C_SOURCE`, which `cfg.h` defines: without that switch it declares it"
+    assert ffi_lookup.has(
+        text: d.notes[0],
+        needle: "take the switch out of `cfg.h`, or bind `strlcpy` from a module whose unit does not read `cfg.h`"
+    )
+    two = told(
+        header: "string.h",
+        name: "strlcpy",
+        decided: Switch(macro: "_XOPEN_SOURCE", defined_by: ["a.h", "b.h"]),
+        span: span
+    )
+    assert ffi_lookup.has(text: two.message, needle: "which `a.h` and `b.h` define:")
+    assert told(header: "sched.h", name: "sched_getcpu", decided: Switch(macro: "_GNU_SOURCE", defined_by: none), span: span).message == hidden(header: "sched.h", name: "sched_getcpu", macro: "_GNU_SOURCE", span: span).message
+    assert quoted_list(["a", "b", "c"]) == "`a`, `b` and `c`"

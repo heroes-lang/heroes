@@ -27,6 +27,7 @@ use source
 use emit/c_text
 use emit/externs as emit_externs
 use emit/ffi_lookup
+use emit/ffi_switched
 use ir/containers
 use cli/toolchain
 use cli/compiling
@@ -47,18 +48,20 @@ constant SWITCHES: [str]
     ["_XOPEN_SOURCE 700", "_GNU_SOURCE 1"]
 
 # Each name of `program`'s groups the headers declare only under a switch,
-# with the switch's name, the narrowest first.
-function switched(t: toolchain.Toolchain, under: compiling.Compiling, program: containers.Program, s: source.Source, decls: [ast.Decl], headers: [str]) -> {str: str}
-    out: {str: str} @ {}
+# with the switch's name, the narrowest first; a name a switch a header
+# defines hides is `cli/unswitch_ask.hero`'s (defect 585).
+function switched(t: toolchain.Toolchain, under: compiling.Compiling, program: containers.Program, s: source.Source, decls: [ast.Decl], headers: [str]) -> {str: ffi_switched.Switch}
+    out: {str: ffi_switched.Switch} @ {}
     names = names_of(program, s, decls)
 
     if names.len() == 0
         return out
+    none: [str] = []
 
     for defined in SWITCHES
         for name in declared(t, under: under, text: unit(defined: defined, headers: headers, names: names))
             if out[name].is_err()
-                out[name] @ first_word(defined)
+                out[name] @ ffi_switched.Switch(macro: first_word(defined), defined_by: none)
 
     return out
 
@@ -81,11 +84,16 @@ function names_of(program: containers.Program, s: source.Source, decls: [ast.Dec
 
     return out
 
-# The question unit: the switch before every header, then each name under a
-# file of its own, its type asked and the assertion that says it was reached.
+# The question unit: the switch before every header, then the questions.
 function unit(defined: str, headers: [str], names: [str]) -> str
     lines: [str] @ ["#define " + defined]
     lines @ strings.with_all(list: lines, more: c_text.includes(headers))
+    return lines.join("\n") + "\n" + questions(names)
+
+# Each name under a file of its own, its type asked and the assertion that
+# says it was reached; `cli/unswitch_ask.hero` asks them after its headers.
+function questions(names: [str]) -> str
+    lines: [str] @ []
     index: i64 @ 0
 
     for name in names

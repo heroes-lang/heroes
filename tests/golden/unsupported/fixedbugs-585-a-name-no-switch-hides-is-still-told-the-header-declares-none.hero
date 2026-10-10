@@ -1,0 +1,14 @@
+# fixedbugs, defect 585, lane b19-pack, 2026-10-10, the shape the message
+# must stay true on: under the same header defining `_POSIX_C_SOURCE`, a
+# name the other header declares under no switch at all is not declared
+# with the switch undefined either, so it is told as a name the header
+# lacks, and no switch is blamed.
+
+extern "fixedbugs-585-strict.h"
+    function strict_on() -> i64
+
+extern "fixedbugs-585-wide.h"
+    function narrow_only() -> i64  #~ ffi_unknown_name
+
+function main()
+    print(strict_on() + narrow_only())

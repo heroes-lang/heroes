@@ -9,10 +9,19 @@
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic ignored "-Wpragma-pack"
+#pragma float_control(push)
 #include "heroes_guard_open.h"
 #include <ffi-a-char-array-member.h>
 #pragma push_macro("name")
 #include "heroes_guard_close.h"
+#pragma clang diagnostic ignored "-Wignored-pragmas"
+#pragma pack()
+#pragma float_control(pop)
+#pragma float_control(precise, on)
+#pragma GCC visibility push(default)
+#pragma clang section bss="" data="" rodata="" text="" relro=""
+#pragma clang optimize on
 #pragma clang diagnostic pop
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -27,6 +36,8 @@
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -38,11 +49,11 @@ _Static_assert(sizeof(Tag) - __builtin_offsetof(Tag, name) != 0, "heroes-ffi-fle
 #line 35 "tests/golden/run/ffi-a-char-array-member.hero"
 _Static_assert(_Generic(&((Tag *)0)->name, _Bool (*)[4]: (sizeof(_Bool) == sizeof(int8_t) && (((_Bool)-1 < 0) == ((int8_t)-1 < 0))), char (*)[4]: (sizeof(char) == sizeof(int8_t) && (((char)-1 < 0) == ((int8_t)-1 < 0))), signed char (*)[4]: (sizeof(signed char) == sizeof(int8_t) && (((signed char)-1 < 0) == ((int8_t)-1 < 0))), short (*)[4]: (sizeof(short) == sizeof(int8_t) && (((short)-1 < 0) == ((int8_t)-1 < 0))), int (*)[4]: (sizeof(int) == sizeof(int8_t) && (((int)-1 < 0) == ((int8_t)-1 < 0))), long (*)[4]: (sizeof(long) == sizeof(int8_t) && (((long)-1 < 0) == ((int8_t)-1 < 0))), long long (*)[4]: (sizeof(long long) == sizeof(int8_t) && (((long long)-1 < 0) == ((int8_t)-1 < 0))), unsigned char (*)[4]: (sizeof(unsigned char) == sizeof(int8_t) && (((unsigned char)-1 < 0) == ((int8_t)-1 < 0))), unsigned short (*)[4]: (sizeof(unsigned short) == sizeof(int8_t) && (((unsigned short)-1 < 0) == ((int8_t)-1 < 0))), unsigned int (*)[4]: (sizeof(unsigned int) == sizeof(int8_t) && (((unsigned int)-1 < 0) == ((int8_t)-1 < 0))), unsigned long (*)[4]: (sizeof(unsigned long) == sizeof(int8_t) && (((unsigned long)-1 < 0) == ((int8_t)-1 < 0))), unsigned long long (*)[4]: (sizeof(unsigned long long) == sizeof(int8_t) && (((unsigned long long)-1 < 0) == ((int8_t)-1 < 0))), default: 0), "heroes-ffi-field Tag name");
 _Static_assert(__builtin_classify_type(((Tag *)0)->id) == 1 && sizeof(((Tag *)0)->id) == sizeof(int32_t) && (_Generic(((Tag *)0)->id, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Tag id");
-#line 42 "ffiachararraymember.c"
+#line 53 "ffiachararraymember.c"
 
 #line 34 "tests/golden/run/ffi-a-char-array-member.hero"
 _Static_assert(__builtin_classify_type(*(Tag *)0) != 13, "heroes-ffi-union Tag name id");
-#line 46 "ffiachararraymember.c"
+#line 57 "ffiachararraymember.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -135,7 +146,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 139 "ffiachararraymember.c"
+#line 150 "ffiachararraymember.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_ffiachararraymember_Tag_eq(const Tag *a, const Tag *b);
@@ -154,12 +165,11 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_ffiachararraymember_main(void);
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 39 "tests/golden/run/ffi-a-char-array-member.hero"
 void h_ffiachararraymember_main(void) {
 #line 39 "tests/golden/run/ffi-a-char-array-member.hero"
-    _Pragma("clang diagnostic ignored \"-Wdeprecated-declarations\"") Tag h0_t; h_0opt_e201354 h1_f0 = {0}; h_0opt_e201354 h2_f1 = {0}; h_0opt_e201354 h3_f2 = {0}; h_0opt_e201354 h4_own4 = {0}; h_0opt_e201354 h5_own5 = {0}; h_0opt_e201354 h6_own6 = {0}; int8_t t1; int8_t t2; int8_t t3; int8_t t4; int32_t t6; Tag t7; Tag t8; int32_t t9; h_0opt_e201354 t10; h_0opt_e201354 t11; int64_t t12; int64_t t13; bool t14; h_0opt_e201354 t15; HeroFailure t16; h_0opt_e201354 t17; int64_t t18; Tag t19; int64_t t21; int8_t t22; h_0opt_e201354 t23; h_0opt_e201354 t24; int64_t t25; int64_t t26; bool t27; h_0opt_e201354 t28; HeroFailure t29; h_0opt_e201354 t30; int64_t t31; HeroStr t32; Tag t33; int32_t t34; h_0opt_e201354 t35; h_0opt_e201354 t36; int64_t t37; int64_t t38; bool t39; h_0opt_e201354 t40; HeroFailure t41; h_0opt_e201354 t42; int64_t t43; h_0opt_e201354 t44; h_0opt_e201354 t45; h_0opt_e201354 t46; h_0opt_e201354 t47; h_0opt_e201354 t48; h_0opt_e201354 t49; _Pragma("clang diagnostic warning \"-Wdeprecated-declarations\"") goto bb0;
+    Tag h0_t; h_0opt_e201354 h1_f0 = {0}; h_0opt_e201354 h2_f1 = {0}; h_0opt_e201354 h3_f2 = {0}; h_0opt_e201354 h4_own4 = {0}; h_0opt_e201354 h5_own5 = {0}; h_0opt_e201354 h6_own6 = {0}; int8_t t1; int8_t t2; int8_t t3; int8_t t4; int32_t t6; Tag t7; Tag t8; int32_t t9; h_0opt_e201354 t10; h_0opt_e201354 t11; int64_t t12; int64_t t13; bool t14; h_0opt_e201354 t15; HeroFailure t16; h_0opt_e201354 t17; int64_t t18; Tag t19; int64_t t21; int8_t t22; h_0opt_e201354 t23; h_0opt_e201354 t24; int64_t t25; int64_t t26; bool t27; h_0opt_e201354 t28; HeroFailure t29; h_0opt_e201354 t30; int64_t t31; HeroStr t32; Tag t33; int32_t t34; h_0opt_e201354 t35; h_0opt_e201354 t36; int64_t t37; int64_t t38; bool t39; h_0opt_e201354 t40; HeroFailure t41; h_0opt_e201354 t42; int64_t t43; h_0opt_e201354 t44; h_0opt_e201354 t45; h_0opt_e201354 t46; h_0opt_e201354 t47; h_0opt_e201354 t48; h_0opt_e201354 t49; goto bb0;
 #line 39 "tests/golden/run/ffi-a-char-array-member.hero"
 bb0:
 #line 42 "tests/golden/run/ffi-a-char-array-member.hero"
@@ -252,7 +262,7 @@ bb2:
     t15 = h1_f0;
 #line 43 "tests/golden/run/ffi-a-char-array-member.hero"
     t16 = t15.as.err;
-#line 256 "ffiachararraymember.c"
+#line 266 "ffiachararraymember.c"
     hero_panic_must(t16);
     hero_unreachable();
 bb3:
@@ -298,7 +308,7 @@ bb4:
     t28 = h2_f1;
 #line 44 "tests/golden/run/ffi-a-char-array-member.hero"
     t29 = t28.as.err;
-#line 302 "ffiachararraymember.c"
+#line 312 "ffiachararraymember.c"
     hero_panic_must(t29);
     hero_unreachable();
 bb5:
@@ -314,7 +324,7 @@ bb5:
     hero_print_int(t43);
 #line 44 "tests/golden/run/ffi-a-char-array-member.hero"
     hero_print_end();
-#line 318 "ffiachararraymember.c"
+#line 328 "ffiachararraymember.c"
     h_0opt_e201354_release(hero_slot_escape(&h1_f0));
     h_0opt_e201354_release(hero_slot_escape(&h2_f1));
     h_0opt_e201354_release(hero_slot_escape(&h3_f2));
@@ -327,11 +337,10 @@ bb6:
     t40 = h3_f2;
 #line 44 "tests/golden/run/ffi-a-char-array-member.hero"
     t41 = t40.as.err;
-#line 331 "ffiachararraymember.c"
+#line 341 "ffiachararraymember.c"
     hero_panic_must(t41);
     hero_unreachable();
 }
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_ffiachararraymember_Tag_eq(const Tag *a, const Tag *b) {
     if (!((a->name[0] == b->name[0] && a->name[1] == b->name[1] && a->name[2] == b->name[2] && a->name[3] == b->name[3]))) return false;
     if (!(a->id == b->id)) return false;
