@@ -1,6 +1,6 @@
 tests/golden/check/fixedbugs-130-a-block-under-a-word-that-opens-none.hero:16:1: error[reserved_word]: `let` is not a word in this language — bind with `=`: `x = 5`
 tests/golden/check/fixedbugs-130-a-block-under-a-word-that-opens-none.hero:20:5: error[reserved_word]: `let` is not a word in this language — bind with `=`: `x = 5`
-tests/golden/check/fixedbugs-130-a-block-under-a-word-that-opens-none.hero:22:5: error[reserved_word]: `var` is not a word in this language — declare a mutable cell with `@=`: `v: i64 @= 0`
+tests/golden/check/fixedbugs-130-a-block-under-a-word-that-opens-none.hero:22:5: error[reserved_word]: `var` is not a word in this language — declare a mutable cell with `@=`: `v @= 0`
 tests/golden/check/fixedbugs-130-a-block-under-a-word-that-opens-none.hero:24:5: error[reserved_word]: `import` is not a word in this language — a module is named by `use`, on a line of its own at the top level of a file: `use geom`
 tests/golden/check/fixedbugs-130-a-block-under-a-word-that-opens-none.hero:26:5: error[reserved_word]: `const` is not a word in this language — inside a body a value is bound with `=`: `x = 5`, and a `constant` is declared at the top level of a file
 tests/golden/check/fixedbugs-130-a-block-under-a-word-that-opens-none.hero:28:5: error[reserved_word]: `int` is not a word in this language — an integer type says its width, `i64`, and a type is written where a type goes: after a name and `:`, or after `->`

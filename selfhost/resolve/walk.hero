@@ -403,7 +403,7 @@ test "an @ argument on a plain binding and on a loop variable each say why"
     )
     assert r.out.diagnostics.len() == 2
     assert r.out.diagnostics[0].code == "not_mutable"
-    assert r.out.diagnostics[0].message == "`y` was bound with `=`, which binds once, forever — a cell is declared with its type: `y: <type> @= <value>`"
+    assert r.out.diagnostics[0].message == "`y` was bound with `=`, which binds once, forever — a cell is declared `y @= <value>`"
     assert r.out.diagnostics[1].message == "`e` is the loop variable, and it is bound afresh for each element — write to a cell declared outside the loop"
 
 ## Panel 010's alias refusal (defect 011)

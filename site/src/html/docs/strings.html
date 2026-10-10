@@ -14,7 +14,7 @@
   <figure class="example" data-src="examples/gallery/07-strings.hero" data-lines="7-15">
 <pre><code><span class="c"># Bytes, not characters: this counts the ASCII spaces.</span>
 <span class="k">function</span> space_count(s: <span class="t">str</span>) -&gt; <span class="t">i64</span>
-    seen: <span class="t">i64</span> @ <span class="n">0</span>
+    seen: <span class="t">i64</span> @= <span class="n">0</span>
 
     <span class="k">for</span> i <span class="k">in</span> range(from: <span class="n">0</span>, to: s.len())
         <span class="k">if</span> s[i] == <span class="s">' '</span>
@@ -43,7 +43,7 @@ error[type_mismatch]: expected `u8`, found `str`
   <figure class="example" data-src="examples/gallery/07-strings.hero" data-lines="17-25">
 <pre><code><span class="c"># Characters, not bytes: this one is right for text.</span>
 <span class="k">function</span> letters_of(s: <span class="t">str</span>) -&gt; [<span class="t">str</span>]
-    out: [<span class="t">str</span>] @ []
+    out: [<span class="t">str</span>] @= []
 
     <span class="k">for</span> c <span class="k">in</span> s.chars()
         <span class="k">if</span> c != <span class="s">" "</span>
@@ -67,8 +67,8 @@ error[type_mismatch]: expected `u8`, found `str`
   <figure class="example" data-src="examples/gallery/07-strings.hero" data-lines="27-40">
 <pre><code><span class="c"># Splitting on a single space, written out. There is no library to hide in.</span>
 <span class="k">function</span> words_of(s: <span class="t">str</span>) -&gt; [<span class="t">str</span>]
-    out: [<span class="t">str</span>] @ []
-    start: <span class="t">i64</span> @ <span class="n">0</span>
+    out: [<span class="t">str</span>] @= []
+    start: <span class="t">i64</span> @= <span class="n">0</span>
 
     <span class="k">for</span> i <span class="k">in</span> range(from: <span class="n">0</span>, to: s.len())
         <span class="k">if</span> s[i] == <span class="s">' '</span>
@@ -100,7 +100,7 @@ error[type_mismatch]: expected `u8`, found `str`
   </figure>
   <figure class="example" data-src="examples/gallery/07-strings.hero" data-lines="47-54">
 <pre><code><span class="k">function</span> initials_of(words: [<span class="t">str</span>]) -&gt; <span class="t">str</span>
-    out: <span class="t">str</span> @ <span class="s">""</span>
+    out: <span class="t">str</span> @= <span class="s">""</span>
 
     <span class="k">for</span> w <span class="k">in</span> words
         <span class="k">if</span> w.len() &gt; <span class="n">0</span>

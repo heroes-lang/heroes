@@ -42,7 +42,7 @@ ok   "a rectangle keeps its size when it moves"
   <figure class="example" data-src="examples/gallery/09-holes.hero" data-lines="12-19">
 <pre><code><span class="c"># Written, tested, done.</span>
 <span class="k">function</span> total_calories(entries: [Entry]) -&gt; <span class="t">i64</span>
-    total: <span class="t">i64</span> @ <span class="n">0</span>
+    total: <span class="t">i64</span> @= <span class="n">0</span>
 
     <span class="k">for</span> e <span class="k">in</span> entries
         total @ total + e.calories

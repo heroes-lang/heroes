@@ -61,7 +61,7 @@ error[no_size]: `variant Expr` contains itself, so it has no size
   </figure>
   <figure class="example" data-src="examples/gallery/11-trees.hero" data-lines="27-41">
 <pre><code><span class="k">function</span> sum_of(parts: [Expr]) -&gt; <span class="t">i64</span>
-    total: <span class="t">i64</span> @ <span class="n">0</span>
+    total: <span class="t">i64</span> @= <span class="n">0</span>
 
     <span class="k">for</span> part <span class="k">in</span> parts
         total @ total + value_of(part)
@@ -69,7 +69,7 @@ error[no_size]: `variant Expr` contains itself, so it has no size
     <span class="k">return</span> total
 
 <span class="k">function</span> product_of(parts: [Expr]) -&gt; <span class="t">i64</span>
-    total: <span class="t">i64</span> @ <span class="n">1</span>
+    total: <span class="t">i64</span> @= <span class="n">1</span>
 
     <span class="k">for</span> part <span class="k">in</span> parts
         total @ total * value_of(part)

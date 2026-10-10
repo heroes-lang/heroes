@@ -15,7 +15,7 @@
 <pre><code><span class="c"># The parentheses around a function type are mandatory: without them</span>
 <span class="c"># `f: function(A) -&gt; B -&gt; [B]` would be a guessing game.</span>
 <span class="k">function</span> each&lt;A, B&gt;(xs: [A], f: (<span class="k">function</span>(A) -&gt; B)) -&gt; [B]
-    out: [B] @ []
+    out: [B] @= []
 
     <span class="k">for</span> x <span class="k">in</span> xs
         out @ out.push(f(x))
@@ -24,7 +24,7 @@
     <figcaption>examples/gallery/06-generics.hero, righe 8&ndash;16</figcaption>
   </figure>
   <p>
-    <code>&lt;A, B&gt;</code> dichiara due parametri di tipo. Il compilatore determina i tipi concreti dagli argomenti della chiamata. Nel corpo, <code>[A]</code> indica una lista di elementi di tipo <code>A</code> e <code>out: [B] @ []</code> dichiara una lista vuota di elementi di tipo <code>B</code>. La lista vuota richiede un tipo esplicito perché non contiene elementi da cui dedurlo.
+    <code>&lt;A, B&gt;</code> dichiara due parametri di tipo. Il compilatore determina i tipi concreti dagli argomenti della chiamata. Nel corpo, <code>[A]</code> indica una lista di elementi di tipo <code>A</code> e <code>out: [B] @= []</code> dichiara una lista vuota di elementi di tipo <code>B</code>. La lista vuota richiede un tipo esplicito perché non contiene elementi da cui dedurlo.
   </p>
 
   <h3>Le tre regole delle funzioni generiche</h3>
@@ -99,7 +99,7 @@ error[expected_type]: expected a type, found `function` — a type is `i64`, `f6
   <h3>Filtrare e combinare gli elementi</h3>
   <figure class="example" data-src="examples/gallery/06-generics.hero" data-lines="18-25">
 <pre><code><span class="k">function</span> keep_if&lt;A&gt;(xs: [A], ok_for: (<span class="k">function</span>(A) -&gt; <span class="t">bool</span>)) -&gt; [A]
-    out: [A] @ []
+    out: [A] @= []
 
     <span class="k">for</span> x <span class="k">in</span> xs
         <span class="k">if</span> ok_for(x)
@@ -120,7 +120,7 @@ error[type_mismatch]: expected `bool`, found `i64`
   <figure class="example" data-src="examples/gallery/06-generics.hero" data-lines="27-34">
 <pre><code><span class="c"># Two type parameters, and the accumulator is the one that names the result.</span>
 <span class="k">function</span> combine&lt;A, B&gt;(xs: [A], start: B, step: (<span class="k">function</span>(B, A) -&gt; B)) -&gt; B
-    total: B @ start
+    total: B @= start
 
     <span class="k">for</span> x <span class="k">in</span> xs
         total @ step(total, x)

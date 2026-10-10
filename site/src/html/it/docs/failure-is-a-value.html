@@ -36,7 +36,7 @@
 <span class="k">function</span> number_of(text: <span class="t">str</span>) -&gt; <span class="t">i64</span>?
     <span class="k">if</span> text.len() == <span class="n">0</span>
         <span class="k">return</span> <span class="k">fail</span>(code: <span class="s">"empty"</span>, msg: <span class="s">"there is nothing to read"</span>)
-    total: <span class="t">i64</span> @ <span class="n">0</span>
+    total: <span class="t">i64</span> @= <span class="n">0</span>
 
     <span class="k">for</span> i <span class="k">in</span> range(from: <span class="n">0</span>, to: text.len())
         total @ total * <span class="n">10</span> + digit_of(text[i])?
@@ -51,7 +51,7 @@
     Nell&rsquo;esempio compaiono anche la modifica di una variabile, gli intervalli e le chiamate con il punto.
   </p>
   <p>
-    <code>total: i64 @ 0</code> dichiara una variabile modificabile. La riga <code>total @ total * 10 + …</code> le assegna un nuovo valore. Il simbolo <code>=</code> serve invece a definire un nome che non può essere riassegnato. <a href="/it/docs/bindings-and-mutation/">Nomi e modifiche&nbsp;&rarr;</a>
+    <code>total: i64 @= 0</code> dichiara una variabile modificabile. La riga <code>total @ total * 10 + …</code> le assegna un nuovo valore. Il simbolo <code>=</code> serve invece a definire un nome che non può essere riassegnato. <a href="/it/docs/bindings-and-mutation/">Nomi e modifiche&nbsp;&rarr;</a>
   </p>
   <p>
     <code>range(from: 0, to: text.len())</code> conta da <code>from</code> fino a
@@ -70,7 +70,7 @@
   </p>
   <figure class="example" data-src="examples/gallery/03-fallible.hero" data-lines="26-34">
 <pre><code><span class="k">function</span> average_of(parts: [<span class="t">str</span>]) -&gt; <span class="t">i64</span>?
-    sum: <span class="t">i64</span> @ <span class="n">0</span>
+    sum: <span class="t">i64</span> @= <span class="n">0</span>
 
     <span class="k">for</span> p <span class="k">in</span> parts
         sum @ sum + number_of(p)?

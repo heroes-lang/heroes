@@ -40,7 +40,7 @@ so a long expression, a condition included, breaks inside parentheses.
     Use  = "use" ident { "/" ident } [ "as" ident ] NEWLINE .
 
 ## 2. Literals
-- A literal takes the type its context asks for — `b: u8 @= 255`, and `b + 1` is a
+- A literal takes the type its context asks for — `b: u8 = 255`, and `b + 1` is a
   `u8` — otherwise `i64`.
 - One `i64` is `0x1f` `0o37` `0b11111` or `31`, with `_` between any two digits.
   A leading zero is an error, never octal. Every base writes a value, so a literal must fit its type.
@@ -128,14 +128,14 @@ a written body computes over literals and other constants. An integer operator i
 ## 5. Bindings
 ```
 x = 5              # immutable binding, type inferred
-v: i64 @= 0        # mutable declaration — the type is REQUIRED
-v @ v + 1          # mutation; only a cell declared with @= can be mutated
+v @= 0             # mutable cell, type inferred too
+v @ v + 1          # re-binding
 ```
 `=` binds once, forever. `@=` declares a mutable cell, and `@` re-binds it, or a
 field or element inside one.
 Signatures are always explicit; inference is local only.
 All bindings are initialised. An unused binding or parameter is a compile
-error; a read is a use and a write is not, except through an `@` parameter.
+error, and so is a cell nothing re-binds, an `@` argument counting; a read is a use and a write is not, except through an `@` parameter.
 `_` names anything you do not use: a payload (`.num _ => 0`), a parameter, a
 value. It binds nothing, so it is never unused and may repeat. A line that
 computes a value must use it: bind it, or discard it on purpose with `_ = f(x)`,
@@ -147,7 +147,7 @@ Shadowing is a compile error: a `use` binds its name for the whole file, so noth
 
     Block     = INDENT { Statement } DEDENT .
     Statement = ident Binding | Simple .
-    Binding   = ( "=" | ":" Type ( "@=" | "=" ) ) Expression NEWLINE .
+    Binding   = [ ":" Type ] ( "=" | "@=" ) Expression NEWLINE .
     Simple    = "_" Binding | Place "@" Expression NEWLINE
               | "return" [ Expression ] NEWLINE
               | "break" NEWLINE | "continue" NEWLINE
