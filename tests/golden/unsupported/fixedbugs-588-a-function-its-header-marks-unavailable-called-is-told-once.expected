@@ -1,0 +1,7 @@
+error[ffi_unavailable]: `fixedbugs-588-unavailable.h` marks `gone` unavailable, so no program may bind it
+  at tests/golden/unsupported/fixedbugs-588-a-function-its-header-marks-unavailable-called-is-told-once.hero:13:5
+     |
+  13 |     function gone(x: i64) -> i64  #~ ffi_unavailable
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: `fixedbugs-588-unavailable.h` says of `gone`: gone for good
+  note: §4.19: an `extern` is checked against the real header, and clang refuses every use of a name it marks unavailable, this binding's own check included: remove the binding, or bind what the header offers in its place
