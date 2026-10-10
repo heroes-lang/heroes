@@ -1,0 +1,25 @@
+# fixedbugs, defect 570, lane b18-guard, 2026-10-10 (panel 205's R1).
+#
+# Beside `fixedbugs-570-a-macro-naming-the-bound-function-holds-a-pragma`:
+# a record's tag is written in a probe's parameters.
+#
+# SYMPTOM: `#define real_s _Pragma("clang diagnostic ignored
+# \"-Wsign-conversion\"") real_s` over `struct real_s`: the probe of
+# `use_s(p: S)` expanded the pragma, and the probe of `abs(x: u32)` after it
+# was silent; it built and printed `1` and `5`.
+#
+# FIX: every name the compiler writes but a constant's, a function's and
+# each releaser, a record's name and tag and each field, is preprocessed as
+# the compiler writes it under a file of its own before any unit compiles
+# (`cli/pragma_ask.hero`), and a `#pragma` its expansion prints refuses it,
+# `ffi_macro_name`, at its declaration: a raise after the name cannot reach
+# the line it stands on.
+
+extern "fixedbugs-570-a-tag-macro-holding-a-pragma-is-refused.h"
+    record S tag real_s  #~ ffi_macro_name
+    function use_s(p: S) -> i32
+    function abs(x: u32) -> i32
+
+function main()
+    print(use_s(nullptr))
+    print(abs(5))

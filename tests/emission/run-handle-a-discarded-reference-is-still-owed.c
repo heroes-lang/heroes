@@ -6,6 +6,17 @@
 #include "heroes_guard_open.h"
 #include <handle-a-discarded-reference-is-still-owed.h>
 #include "heroes_guard_close.h"
+#pragma clang diagnostic error "-Wreturn-type"
+#pragma clang diagnostic error "-Wuninitialized"
+#pragma clang diagnostic error "-Wformat"
+#pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic error "-Wshorten-64-to-32"
+#pragma clang diagnostic error "-Wsign-conversion"
+#pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
+#pragma clang diagnostic error "-Wincompatible-pointer-types"
+#pragma clang diagnostic error "-Wint-conversion"
+#pragma clang diagnostic error "-Wimplicit-function-declaration"
+#pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
@@ -54,7 +65,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_7b9bb5d3, "refs: ");
 HERO_STR_STATIC(hero_str_455ecde8, "both given back");
 
-#line 58 "handleadiscardedreferenceisstillowed.c"
+#line 69 "handleadiscardedreferenceisstillowed.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -70,6 +81,17 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+#pragma clang diagnostic error "-Wreturn-type"
+#pragma clang diagnostic error "-Wuninitialized"
+#pragma clang diagnostic error "-Wformat"
+#pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic error "-Wshorten-64-to-32"
+#pragma clang diagnostic error "-Wsign-conversion"
+#pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
+#pragma clang diagnostic error "-Wincompatible-pointer-types"
+#pragma clang diagnostic error "-Wint-conversion"
+#pragma clang diagnostic error "-Wimplicit-function-declaration"
+#pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wdouble-promotion"
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
@@ -88,7 +110,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 92 "handleadiscardedreferenceisstillowed.c"
+#line 114 "handleadiscardedreferenceisstillowed.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_handleadiscardedreferenceisstillowed_Ob_eq(ob * const *a, ob * const *b);
@@ -106,7 +128,7 @@ void h_handleadiscardedreferenceisstillowed_main(void);
 
 #line 13 "tests/golden/run/handle-a-discarded-reference-is-still-owed.hero"
 void h_handleadiscardedreferenceisstillowed_main(void) {
-#line 110 "handleadiscardedreferenceisstillowed.c"
+#line 132 "handleadiscardedreferenceisstillowed.c"
     ob * h0_a;
     ob * t1;
     ob * t2;
@@ -181,7 +203,7 @@ bb0:
     hero_print_end();
 #line 19 "tests/golden/run/handle-a-discarded-reference-is-still-owed.hero"
     return;
-#line 185 "handleadiscardedreferenceisstillowed.c"
+#line 207 "handleadiscardedreferenceisstillowed.c"
 }
 HERO_TU_LOCAL bool h_handleadiscardedreferenceisstillowed_Ob_eq(ob * const *a, ob * const *b) {
     return hero_handle_eq(*a, *b);

@@ -6,6 +6,17 @@
 #include "heroes_guard_open.h"
 #include <string.h>
 #include "heroes_guard_close.h"
+#pragma clang diagnostic error "-Wreturn-type"
+#pragma clang diagnostic error "-Wuninitialized"
+#pragma clang diagnostic error "-Wformat"
+#pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic error "-Wshorten-64-to-32"
+#pragma clang diagnostic error "-Wsign-conversion"
+#pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
+#pragma clang diagnostic error "-Wincompatible-pointer-types"
+#pragma clang diagnostic error "-Wint-conversion"
+#pragma clang diagnostic error "-Wimplicit-function-declaration"
+#pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
@@ -53,7 +64,7 @@ HERO_STR_STATIC(hero_str_203132, "zzz");
 HERO_STR_STATIC(hero_str_79, "y");
 HERO_STR_STATIC(hero_str_187ae0ee, "unreachable");
 
-#line 57 "abortnullcstrintoc.c"
+#line 68 "abortnullcstrintoc.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -69,6 +80,17 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+#pragma clang diagnostic error "-Wreturn-type"
+#pragma clang diagnostic error "-Wuninitialized"
+#pragma clang diagnostic error "-Wformat"
+#pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic error "-Wshorten-64-to-32"
+#pragma clang diagnostic error "-Wsign-conversion"
+#pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
+#pragma clang diagnostic error "-Wincompatible-pointer-types"
+#pragma clang diagnostic error "-Wint-conversion"
+#pragma clang diagnostic error "-Wimplicit-function-declaration"
+#pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wdouble-promotion"
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
@@ -85,7 +107,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 89 "abortnullcstrintoc.c"
+#line 111 "abortnullcstrintoc.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -101,7 +123,7 @@ void h_abortnullcstrintoc_main(void);
 
 #line 20 "tests/golden/run/abort-null-cstr-into-c.hero"
 void h_abortnullcstrintoc_main(void) {
-#line 105 "abortnullcstrintoc.c"
+#line 127 "abortnullcstrintoc.c"
     const char * h0_absent;
     HeroStr t1;
     HeroStr t2;
@@ -167,7 +189,7 @@ bb2:
 bb3:
 #line 34 "tests/golden/run/abort-null-cstr-into-c.hero"
     goto bb1;
-#line 171 "abortnullcstrintoc.c"
+#line 193 "abortnullcstrintoc.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

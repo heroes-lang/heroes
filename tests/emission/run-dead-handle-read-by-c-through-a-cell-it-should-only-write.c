@@ -6,6 +6,17 @@
 #include "heroes_guard_open.h"
 #include <dead-handle-read-by-c-through-a-cell-it-should-only-write.h>
 #include "heroes_guard_close.h"
+#pragma clang diagnostic error "-Wreturn-type"
+#pragma clang diagnostic error "-Wuninitialized"
+#pragma clang diagnostic error "-Wformat"
+#pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic error "-Wshorten-64-to-32"
+#pragma clang diagnostic error "-Wsign-conversion"
+#pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
+#pragma clang diagnostic error "-Wincompatible-pointer-types"
+#pragma clang diagnostic error "-Wint-conversion"
+#pragma clang diagnostic error "-Wimplicit-function-declaration"
+#pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
@@ -55,7 +66,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_1cd7fd75, "ob_up_ref_cell(a: @cert) == 1");
 HERO_STR_STATIC(hero_str_7034b02b, "references held: ");
 
-#line 59 "deadhandlereadbycthroughacellitshouldonlywrite.c"
+#line 70 "deadhandlereadbycthroughacellitshouldonlywrite.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -71,6 +82,17 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+#pragma clang diagnostic error "-Wreturn-type"
+#pragma clang diagnostic error "-Wuninitialized"
+#pragma clang diagnostic error "-Wformat"
+#pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic error "-Wshorten-64-to-32"
+#pragma clang diagnostic error "-Wsign-conversion"
+#pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
+#pragma clang diagnostic error "-Wincompatible-pointer-types"
+#pragma clang diagnostic error "-Wint-conversion"
+#pragma clang diagnostic error "-Wimplicit-function-declaration"
+#pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wdouble-promotion"
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
@@ -89,7 +111,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 93 "deadhandlereadbycthroughacellitshouldonlywrite.c"
+#line 115 "deadhandlereadbycthroughacellitshouldonlywrite.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_deadhandlereadbycthroughacellitshouldonlywrite_X509_eq(ob * const *a, ob * const *b);
@@ -107,7 +129,7 @@ void h_deadhandlereadbycthroughacellitshouldonlywrite_main(void);
 
 #line 20 "tests/golden/run/dead-handle-read-by-c-through-a-cell-it-should-only-write.hero"
 void h_deadhandlereadbycthroughacellitshouldonlywrite_main(void) {
-#line 111 "deadhandlereadbycthroughacellitshouldonlywrite.c"
+#line 133 "deadhandlereadbycthroughacellitshouldonlywrite.c"
     ob * *const hero_lend_h0_cert = (ob * *)hero_lend_local(sizeof(ob *), "deadhandlereadbycthroughacellitshouldonlywrite.main", "cert");
 #define h0_cert (*hero_lend_h0_cert)
     ob * t1;
@@ -204,7 +226,7 @@ bb4:
     return;
 #line 26 "tests/golden/run/dead-handle-read-by-c-through-a-cell-it-should-only-write.hero"
 bb5:
-#line 208 "deadhandlereadbycthroughacellitshouldonlywrite.c"
+#line 230 "deadhandlereadbycthroughacellitshouldonlywrite.c"
     hero_panic_assert_sides(t6, hero_int_to_str(t7), hero_int_to_str(t8));
     hero_unreachable();
 }

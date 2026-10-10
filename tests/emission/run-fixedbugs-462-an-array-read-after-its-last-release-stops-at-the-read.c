@@ -6,6 +6,17 @@
 #include "heroes_guard_open.h"
 #include <fixedbugs-462-an-array-read-after-its-last-release-stops-at-the-read.h>
 #include "heroes_guard_close.h"
+#pragma clang diagnostic error "-Wreturn-type"
+#pragma clang diagnostic error "-Wuninitialized"
+#pragma clang diagnostic error "-Wformat"
+#pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic error "-Wshorten-64-to-32"
+#pragma clang diagnostic error "-Wsign-conversion"
+#pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
+#pragma clang diagnostic error "-Wincompatible-pointer-types"
+#pragma clang diagnostic error "-Wint-conversion"
+#pragma clang diagnostic error "-Wimplicit-function-declaration"
+#pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
@@ -49,7 +60,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_583e9abf, "four elements, given back");
 
-#line 53 "fixedbugs462anarrayreadafteritslastreleasestopsattheread.c"
+#line 64 "fixedbugs462anarrayreadafteritslastreleasestopsattheread.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -65,6 +76,17 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+#pragma clang diagnostic error "-Wreturn-type"
+#pragma clang diagnostic error "-Wuninitialized"
+#pragma clang diagnostic error "-Wformat"
+#pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic error "-Wshorten-64-to-32"
+#pragma clang diagnostic error "-Wsign-conversion"
+#pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
+#pragma clang diagnostic error "-Wincompatible-pointer-types"
+#pragma clang diagnostic error "-Wint-conversion"
+#pragma clang diagnostic error "-Wimplicit-function-declaration"
+#pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wdouble-promotion"
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
@@ -81,7 +103,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 85 "fixedbugs462anarrayreadafteritslastreleasestopsattheread.c"
+#line 107 "fixedbugs462anarrayreadafteritslastreleasestopsattheread.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -97,7 +119,7 @@ void h_fixedbugs462anarrayreadafteritslastreleasestopsattheread_main(void);
 
 #line 20 "tests/golden/run/fixedbugs-462-an-array-read-after-its-last-release-stops-at-the-read.hero"
 void h_fixedbugs462anarrayreadafteritslastreleasestopsattheread_main(void) {
-#line 101 "fixedbugs462anarrayreadafteritslastreleasestopsattheread.c"
+#line 123 "fixedbugs462anarrayreadafteritslastreleasestopsattheread.c"
     HeroStr t1;
     int64_t t2;
     int64_t t3;
@@ -118,7 +140,7 @@ bb0:
     hero_print_end();
 #line 22 "tests/golden/run/fixedbugs-462-an-array-read-after-its-last-release-stops-at-the-read.hero"
     return;
-#line 122 "fixedbugs462anarrayreadafteritslastreleasestopsattheread.c"
+#line 144 "fixedbugs462anarrayreadafteritslastreleasestopsattheread.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

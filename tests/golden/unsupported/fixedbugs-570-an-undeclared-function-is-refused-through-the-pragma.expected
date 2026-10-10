@@ -1,0 +1,6 @@
+error[ffi_unknown_name]: `fixedbugs-570-an-undeclared-function-is-refused-through-the-pragma.h` declares no `getpid` — clang read the header and could not find it
+  at tests/golden/unsupported/fixedbugs-570-an-undeclared-function-is-refused-through-the-pragma.hero:17:5
+     |
+  17 |     function getpid(x: f64) -> i32  #~ ffi_unknown_name
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: an `extern` names what the header already has (§4.19): check the spelling, or name the header that does declare `getpid`

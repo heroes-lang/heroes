@@ -39,6 +39,7 @@ use source
 use parse
 use emit/guarded_names
 use emit/externs as emit_externs
+use emit/checks_raised
 
 # The line before the groups' includes, and the line after them.
 constant OPEN_LINE: str
@@ -49,7 +50,9 @@ constant CLOSE_LINE: str
 
 # The groups' include lines as the unit writes them: between the two guard
 # includes, each name of the list the program binds pushed again before the
-# close; nothing where there are none.
+# close, and after the close every warning a check of a binding rests on
+# raised again, whatever a header's pragma did to it (`emit/checks_raised.hero`,
+# defect 570); nothing where there are none.
 function around(lines: [str], bound: {str: bool}) -> [str]
     if lines.len() == 0
         return lines
@@ -62,7 +65,12 @@ function around(lines: [str], bound: {str: bool}) -> [str]
         if !bound[name].is_err()
             out @ out.push("#pragma push_macro(\"" + name + "\")")
 
-    return out.push(CLOSE_LINE)
+    out @ out.push(CLOSE_LINE)
+
+    for raised in checks_raised.lines()
+        out @ out.push(raised)
+
+    return out
 
 # Every C name the program's groups take from a header between the guards:
 # a function's or constant's own name, a record's, its C tag and its fields,
@@ -145,7 +153,12 @@ test "the groups' includes stand between the guard's two, a bound name of the li
     assert around(none, bound: bound).len() == 0
     bound["INT64_C"] @ true
     bound["LIMIT"] @ true
-    assert around(["#include <a.h>"], bound: bound) == [OPEN_LINE, "#include <a.h>", "#pragma push_macro(\"INT64_C\")", CLOSE_LINE]
+    head = [OPEN_LINE, "#include <a.h>", "#pragma push_macro(\"INT64_C\")", CLOSE_LINE]
+    got = around(["#include <a.h>"], bound: bound)
+    assert got.len() == head.len() + checks_raised.lines().len()
+    assert got.slice(from: 0, to: head.len()) == head
+    assert got[head.len()] == "#pragma clang diagnostic error \"-Wreturn-type\""
+    assert got[got.len() - 1] == checks_raised.lines()[checks_raised.lines().len() - 1]
 
 # The two runtime files save and give back this list, in its order, and no
 # other name: a line added to one and not here is named.

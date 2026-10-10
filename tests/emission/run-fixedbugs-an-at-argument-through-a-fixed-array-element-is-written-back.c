@@ -8,6 +8,17 @@
 #pragma push_macro("a")
 #pragma push_macro("v")
 #include "heroes_guard_close.h"
+#pragma clang diagnostic error "-Wreturn-type"
+#pragma clang diagnostic error "-Wuninitialized"
+#pragma clang diagnostic error "-Wformat"
+#pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic error "-Wshorten-64-to-32"
+#pragma clang diagnostic error "-Wsign-conversion"
+#pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
+#pragma clang diagnostic error "-Wincompatible-pointer-types"
+#pragma clang diagnostic error "-Wint-conversion"
+#pragma clang diagnostic error "-Wimplicit-function-declaration"
+#pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
@@ -23,13 +34,13 @@ _Static_assert(_Generic(&((struct holder *)0)->xs, struct cell (*)[3]: 1, defaul
 _Static_assert(sizeof(struct holder) - __builtin_offsetof(struct holder, a) != 0, "heroes-ffi-flex Holder a");
 #line 22 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
 _Static_assert(_Generic(&((struct holder *)0)->a, _Bool (*)[4]: (sizeof(_Bool) == sizeof(int64_t) && (((_Bool)-1 < 0) == ((int64_t)-1 < 0))), char (*)[4]: (sizeof(char) == sizeof(int64_t) && (((char)-1 < 0) == ((int64_t)-1 < 0))), signed char (*)[4]: (sizeof(signed char) == sizeof(int64_t) && (((signed char)-1 < 0) == ((int64_t)-1 < 0))), short (*)[4]: (sizeof(short) == sizeof(int64_t) && (((short)-1 < 0) == ((int64_t)-1 < 0))), int (*)[4]: (sizeof(int) == sizeof(int64_t) && (((int)-1 < 0) == ((int64_t)-1 < 0))), long (*)[4]: (sizeof(long) == sizeof(int64_t) && (((long)-1 < 0) == ((int64_t)-1 < 0))), long long (*)[4]: (sizeof(long long) == sizeof(int64_t) && (((long long)-1 < 0) == ((int64_t)-1 < 0))), unsigned char (*)[4]: (sizeof(unsigned char) == sizeof(int64_t) && (((unsigned char)-1 < 0) == ((int64_t)-1 < 0))), unsigned short (*)[4]: (sizeof(unsigned short) == sizeof(int64_t) && (((unsigned short)-1 < 0) == ((int64_t)-1 < 0))), unsigned int (*)[4]: (sizeof(unsigned int) == sizeof(int64_t) && (((unsigned int)-1 < 0) == ((int64_t)-1 < 0))), unsigned long (*)[4]: (sizeof(unsigned long) == sizeof(int64_t) && (((unsigned long)-1 < 0) == ((int64_t)-1 < 0))), unsigned long long (*)[4]: (sizeof(unsigned long long) == sizeof(int64_t) && (((unsigned long long)-1 < 0) == ((int64_t)-1 < 0))), default: 0), "heroes-ffi-field Holder a");
-#line 27 "fixedbugsanatargumentthroughafixedarrayelementiswrittenback.c"
+#line 38 "fixedbugsanatargumentthroughafixedarrayelementiswrittenback.c"
 
 #line 17 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
 _Static_assert(__builtin_classify_type(*(struct cell *)0) != 13, "heroes-ffi-union Cell v w");
 #line 20 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
 _Static_assert(__builtin_classify_type(*(struct holder *)0) != 13, "heroes-ffi-union Holder xs a");
-#line 33 "fixedbugsanatargumentthroughafixedarrayelementiswrittenback.c"
+#line 44 "fixedbugsanatargumentthroughafixedarrayelementiswrittenback.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -86,6 +97,17 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+#pragma clang diagnostic error "-Wreturn-type"
+#pragma clang diagnostic error "-Wuninitialized"
+#pragma clang diagnostic error "-Wformat"
+#pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic error "-Wshorten-64-to-32"
+#pragma clang diagnostic error "-Wsign-conversion"
+#pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
+#pragma clang diagnostic error "-Wincompatible-pointer-types"
+#pragma clang diagnostic error "-Wint-conversion"
+#pragma clang diagnostic error "-Wimplicit-function-declaration"
+#pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wdouble-promotion"
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
@@ -102,7 +124,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 106 "fixedbugsanatargumentthroughafixedarrayelementiswrittenback.c"
+#line 128 "fixedbugsanatargumentthroughafixedarrayelementiswrittenback.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugsanatargumentthroughafixedarrayelementiswrittenback_Cell_eq(const struct cell *a, const struct cell *b);
@@ -124,7 +146,7 @@ void h_fixedbugsanatargumentthroughafixedarrayelementiswrittenback_main(void);
 
 #line 25 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
 void h_fixedbugsanatargumentthroughafixedarrayelementiswrittenback_inc(int64_t *ph0_x) {
-#line 128 "fixedbugsanatargumentthroughafixedarrayelementiswrittenback.c"
+#line 150 "fixedbugsanatargumentthroughafixedarrayelementiswrittenback.c"
     int64_t t1;
     int64_t t2;
     int64_t t3;
@@ -140,12 +162,12 @@ bb0:
     (*ph0_x) = t3;
 #line 26 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
     return;
-#line 144 "fixedbugsanatargumentthroughafixedarrayelementiswrittenback.c"
+#line 166 "fixedbugsanatargumentthroughafixedarrayelementiswrittenback.c"
 }
 
 #line 28 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
 void h_fixedbugsanatargumentthroughafixedarrayelementiswrittenback_widen(struct cell *ph0_c) {
-#line 149 "fixedbugsanatargumentthroughafixedarrayelementiswrittenback.c"
+#line 171 "fixedbugsanatargumentthroughafixedarrayelementiswrittenback.c"
     struct cell t1;
     int64_t t2;
     int64_t t3;
@@ -164,12 +186,12 @@ bb0:
     (*ph0_c).w = t4;
 #line 29 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
     return;
-#line 168 "fixedbugsanatargumentthroughafixedarrayelementiswrittenback.c"
+#line 190 "fixedbugsanatargumentthroughafixedarrayelementiswrittenback.c"
 }
 
 #line 31 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
 void h_fixedbugsanatargumentthroughafixedarrayelementiswrittenback_main(void) {
-#line 173 "fixedbugsanatargumentthroughafixedarrayelementiswrittenback.c"
+#line 195 "fixedbugsanatargumentthroughafixedarrayelementiswrittenback.c"
     struct holder h0_h;
     int64_t t1;
     int64_t t2;
@@ -336,7 +358,7 @@ bb0:
     hero_print_end();
 #line 37 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
     return;
-#line 340 "fixedbugsanatargumentthroughafixedarrayelementiswrittenback.c"
+#line 362 "fixedbugsanatargumentthroughafixedarrayelementiswrittenback.c"
 }
 HERO_TU_LOCAL bool h_fixedbugsanatargumentthroughafixedarrayelementiswrittenback_Cell_eq(const struct cell *a, const struct cell *b) {
     if (!(a->v == b->v)) return false;

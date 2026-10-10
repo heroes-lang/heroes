@@ -6,6 +6,17 @@
 #include "heroes_guard_open.h"
 #include <fixedbugs-400-a-struct-tag-with-no-typedef.h>
 #include "heroes_guard_close.h"
+#pragma clang diagnostic error "-Wreturn-type"
+#pragma clang diagnostic error "-Wuninitialized"
+#pragma clang diagnostic error "-Wformat"
+#pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic error "-Wshorten-64-to-32"
+#pragma clang diagnostic error "-Wsign-conversion"
+#pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
+#pragma clang diagnostic error "-Wincompatible-pointer-types"
+#pragma clang diagnostic error "-Wint-conversion"
+#pragma clang diagnostic error "-Wimplicit-function-declaration"
+#pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
@@ -46,7 +57,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 50 "fixedbugs400arecordholdingahandlecomparedonlyinatestruns.c"
+#line 61 "fixedbugs400arecordholdingahandlecomparedonlyinatestruns.c"
 typedef struct h_fixedbugs400arecordholdingahandlecomparedonlyinatestruns_Holder {
     struct opaque * f_h;
 } h_fixedbugs400arecordholdingahandlecomparedonlyinatestruns_Holder;
@@ -80,7 +91,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 84 "fixedbugs400arecordholdingahandlecomparedonlyinatestruns.c"
+#line 95 "fixedbugs400arecordholdingahandlecomparedonlyinatestruns.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs400arecordholdingahandlecomparedonlyinatestruns_Opaque_eq(struct opaque * const *a, struct opaque * const *b);
@@ -100,7 +111,7 @@ void h_fixedbugs400arecordholdingahandlecomparedonlyinatestruns_main(void);
 
 #line 21 "tests/golden/run/fixedbugs-400-a-record-holding-a-handle-compared-only-in-a-test-runs.hero"
 void h_fixedbugs400arecordholdingahandlecomparedonlyinatestruns_main(void) {
-#line 104 "fixedbugs400arecordholdingahandlecomparedonlyinatestruns.c"
+#line 115 "fixedbugs400arecordholdingahandlecomparedonlyinatestruns.c"
     int64_t t1;
     goto bb0;
 bb0:
@@ -112,7 +123,7 @@ bb0:
     hero_print_end();
 #line 22 "tests/golden/run/fixedbugs-400-a-record-holding-a-handle-compared-only-in-a-test-runs.hero"
     return;
-#line 116 "fixedbugs400arecordholdingahandlecomparedonlyinatestruns.c"
+#line 127 "fixedbugs400arecordholdingahandlecomparedonlyinatestruns.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs400arecordholdingahandlecomparedonlyinatestruns_Opaque_eq(struct opaque * const *a, struct opaque * const *b) {
     return hero_handle_eq(*a, *b);

@@ -6,6 +6,17 @@
 #include "heroes_guard_open.h"
 #include <fixedbugs-396-buffers.h>
 #include "heroes_guard_close.h"
+#pragma clang diagnostic error "-Wreturn-type"
+#pragma clang diagnostic error "-Wuninitialized"
+#pragma clang diagnostic error "-Wformat"
+#pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic error "-Wshorten-64-to-32"
+#pragma clang diagnostic error "-Wsign-conversion"
+#pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
+#pragma clang diagnostic error "-Wincompatible-pointer-types"
+#pragma clang diagnostic error "-Wint-conversion"
+#pragma clang diagnostic error "-Wimplicit-function-declaration"
+#pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
@@ -50,7 +61,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_43560e4d, "before");
 HERO_STR_STATIC(hero_str_5687795c, "not reached ");
 
-#line 54 "fixedbugs396anextentaboveapageaborts.c"
+#line 65 "fixedbugs396anextentaboveapageaborts.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -66,6 +77,17 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+#pragma clang diagnostic error "-Wreturn-type"
+#pragma clang diagnostic error "-Wuninitialized"
+#pragma clang diagnostic error "-Wformat"
+#pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic error "-Wshorten-64-to-32"
+#pragma clang diagnostic error "-Wsign-conversion"
+#pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
+#pragma clang diagnostic error "-Wincompatible-pointer-types"
+#pragma clang diagnostic error "-Wint-conversion"
+#pragma clang diagnostic error "-Wimplicit-function-declaration"
+#pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wdouble-promotion"
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
@@ -82,7 +104,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 86 "fixedbugs396anextentaboveapageaborts.c"
+#line 108 "fixedbugs396anextentaboveapageaborts.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -98,7 +120,7 @@ void h_fixedbugs396anextentaboveapageaborts_main(void);
 
 #line 9 "tests/golden/run/fixedbugs-396-an-extent-above-a-page-aborts.hero"
 void h_fixedbugs396anextentaboveapageaborts_main(void) {
-#line 102 "fixedbugs396anextentaboveapageaborts.c"
+#line 124 "fixedbugs396anextentaboveapageaborts.c"
     HeroArrayHeader * h0_buf = {0};
     HeroArrayHeader * h1_own1 = {0};
     HeroArrayHeader * t1;
@@ -118,15 +140,15 @@ bb0:
     t8 = h1_own1;
 #line 10 "tests/golden/run/fixedbugs-396-an-extent-above-a-page-aborts.hero"
     h1_own1 = t1;
-#line 122 "fixedbugs396anextentaboveapageaborts.c"
+#line 144 "fixedbugs396anextentaboveapageaborts.c"
     hero_array_decref(t8);
 #line 10 "tests/golden/run/fixedbugs-396-an-extent-above-a-page-aborts.hero"
     t9 = h0_buf;
-#line 126 "fixedbugs396anextentaboveapageaborts.c"
+#line 148 "fixedbugs396anextentaboveapageaborts.c"
     hero_array_incref(t1);
 #line 10 "tests/golden/run/fixedbugs-396-an-extent-above-a-page-aborts.hero"
     h0_buf = t1;
-#line 130 "fixedbugs396anextentaboveapageaborts.c"
+#line 152 "fixedbugs396anextentaboveapageaborts.c"
     hero_array_decref(t9);
 #line 11 "tests/golden/run/fixedbugs-396-an-extent-above-a-page-aborts.hero"
     t2 = HERO_STR_LIT(hero_str_43560e4d);
@@ -164,7 +186,7 @@ bb0:
     hero_print_int(t7);
 #line 13 "tests/golden/run/fixedbugs-396-an-extent-above-a-page-aborts.hero"
     hero_print_end();
-#line 168 "fixedbugs396anextentaboveapageaborts.c"
+#line 190 "fixedbugs396anextentaboveapageaborts.c"
     hero_array_release_at(&h0_buf);
     hero_array_release_at(&h1_own1);
     return;

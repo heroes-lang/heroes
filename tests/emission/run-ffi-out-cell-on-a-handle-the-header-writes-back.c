@@ -7,6 +7,17 @@
 #include <ffi-out-cell-on-a-handle-the-header-writes-back.h>
 #pragma push_macro("void")
 #include "heroes_guard_close.h"
+#pragma clang diagnostic error "-Wreturn-type"
+#pragma clang diagnostic error "-Wuninitialized"
+#pragma clang diagnostic error "-Wformat"
+#pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic error "-Wshorten-64-to-32"
+#pragma clang diagnostic error "-Wsign-conversion"
+#pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
+#pragma clang diagnostic error "-Wincompatible-pointer-types"
+#pragma clang diagnostic error "-Wint-conversion"
+#pragma clang diagnostic error "-Wimplicit-function-declaration"
+#pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
@@ -52,7 +63,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_455ecde8, "both given back");
 
-#line 56 "ffioutcellonahandletheheaderwritesback.c"
+#line 67 "ffioutcellonahandletheheaderwritesback.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -68,6 +79,17 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+#pragma clang diagnostic error "-Wreturn-type"
+#pragma clang diagnostic error "-Wuninitialized"
+#pragma clang diagnostic error "-Wformat"
+#pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic error "-Wshorten-64-to-32"
+#pragma clang diagnostic error "-Wsign-conversion"
+#pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
+#pragma clang diagnostic error "-Wincompatible-pointer-types"
+#pragma clang diagnostic error "-Wint-conversion"
+#pragma clang diagnostic error "-Wimplicit-function-declaration"
+#pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wdouble-promotion"
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
@@ -86,7 +108,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 90 "ffioutcellonahandletheheaderwritesback.c"
+#line 112 "ffioutcellonahandletheheaderwritesback.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_ffioutcellonahandletheheaderwritesback_Mem_eq(void * const *a, void * const *b);
@@ -104,7 +126,7 @@ void h_ffioutcellonahandletheheaderwritesback_main(void);
 
 #line 13 "tests/golden/run/ffi-out-cell-on-a-handle-the-header-writes-back.hero"
 void h_ffioutcellonahandletheheaderwritesback_main(void) {
-#line 108 "ffioutcellonahandletheheaderwritesback.c"
+#line 130 "ffioutcellonahandletheheaderwritesback.c"
     void * *const hero_lend_h0_a = (void * *)hero_lend_local(sizeof(void *), "ffioutcellonahandletheheaderwritesback.main", "a");
 #define h0_a (*hero_lend_h0_a)
     void * *const hero_lend_h1_b = (void * *)hero_lend_local(sizeof(void *), "ffioutcellonahandletheheaderwritesback.main", "b");
@@ -180,7 +202,7 @@ bb0:
     hero_lend_local_give(hero_lend_h0_a);
 #line 19 "tests/golden/run/ffi-out-cell-on-a-handle-the-header-writes-back.hero"
     return;
-#line 184 "ffioutcellonahandletheheaderwritesback.c"
+#line 206 "ffioutcellonahandletheheaderwritesback.c"
 }
 #undef h0_a
 #undef h1_b

@@ -6,6 +6,17 @@
 #include "heroes_guard_open.h"
 #include <stdio.h>
 #include "heroes_guard_close.h"
+#pragma clang diagnostic error "-Wreturn-type"
+#pragma clang diagnostic error "-Wuninitialized"
+#pragma clang diagnostic error "-Wformat"
+#pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic error "-Wshorten-64-to-32"
+#pragma clang diagnostic error "-Wsign-conversion"
+#pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
+#pragma clang diagnostic error "-Wincompatible-pointer-types"
+#pragma clang diagnostic error "-Wint-conversion"
+#pragma clang diagnostic error "-Wimplicit-function-declaration"
+#pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
@@ -52,7 +63,7 @@ HERO_STR_STATIC(hero_str_79c9889a, "hello from C");
 HERO_STR_STATIC(hero_str_5cc08313, "computed");
 HERO_STR_STATIC(hero_str_6251eb62, "back in Heroes");
 
-#line 56 "fficstr.c"
+#line 67 "fficstr.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -68,6 +79,17 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+#pragma clang diagnostic error "-Wreturn-type"
+#pragma clang diagnostic error "-Wuninitialized"
+#pragma clang diagnostic error "-Wformat"
+#pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic error "-Wshorten-64-to-32"
+#pragma clang diagnostic error "-Wsign-conversion"
+#pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
+#pragma clang diagnostic error "-Wincompatible-pointer-types"
+#pragma clang diagnostic error "-Wint-conversion"
+#pragma clang diagnostic error "-Wimplicit-function-declaration"
+#pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wdouble-promotion"
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
@@ -84,7 +106,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 88 "fficstr.c"
+#line 110 "fficstr.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -101,7 +123,7 @@ void h_fficstr_main(void);
 
 #line 15 "tests/golden/run/ffi-cstr.hero"
 HeroStr h_fficstr_shout(HeroStr h0_text) {
-#line 105 "fficstr.c"
+#line 127 "fficstr.c"
     HeroStr h1_own1 = {0};
     HeroStr t1;
     HeroStr t2;
@@ -119,7 +141,7 @@ bb0:
     t4 = h1_own1;
 #line 16 "tests/golden/run/ffi-cstr.hero"
     h1_own1 = t3;
-#line 123 "fficstr.c"
+#line 145 "fficstr.c"
     hero_str_decref(t4);
     hero_str_incref(t3);
     hero_str_release_at(&h1_own1);
@@ -128,7 +150,7 @@ bb0:
 
 #line 18 "tests/golden/run/ffi-cstr.hero"
 void h_fficstr_main(void) {
-#line 132 "fficstr.c"
+#line 154 "fficstr.c"
     HeroStr h0_own0 = {0};
     HeroStr t1;
     const char * t2;
@@ -153,7 +175,7 @@ bb0:
     t9 = h0_own0;
 #line 24 "tests/golden/run/ffi-cstr.hero"
     h0_own0 = t5;
-#line 157 "fficstr.c"
+#line 179 "fficstr.c"
     hero_str_decref(t9);
 #line 24 "tests/golden/run/ffi-cstr.hero"
     t6 = hero_str_lend(t5);
@@ -164,7 +186,7 @@ bb0:
     hero_print_str(t8);
 #line 25 "tests/golden/run/ffi-cstr.hero"
     hero_print_end();
-#line 168 "fficstr.c"
+#line 190 "fficstr.c"
     hero_str_release_at(&h0_own0);
     return;
 }

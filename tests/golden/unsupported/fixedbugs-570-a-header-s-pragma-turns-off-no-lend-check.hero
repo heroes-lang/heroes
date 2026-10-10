@@ -1,0 +1,29 @@
+# fixedbugs, defect 570, lane b18-guard, 2026-10-10 (panel 205's R1).
+#
+# Beside the rows of panel 205, the one check that stands at a CALL's line
+# rather than a probe's (defect 065's, `emit/ffi_lend.hero`).
+#
+# SYMPTOM: through a header writing `#pragma clang diagnostic ignored
+# "-Wincompatible-pointer-types-discards-qualifiers"`, a field of an
+# immutable `t` lent to `slot_fill(void *)` built, and C wrote into `t`.
+#
+# CAUSE: the qualifier check is the build's `-Werror` word, and the header's
+# pragma outranked it at the call.
+#
+# FIX: after the groups' includes, and again at the probe region, every
+# warning a check of a binding rests on is raised again
+# (`emit/checks_raised.hero`), the build's `-Werror` words and clang's three
+# default errors, so the message is the one a plain header gets.
+
+extern "fixedbugs-570-a-header-s-pragma-turns-off-no-lend-check.h"
+    record Slot
+        nsap: u8[8]
+        id: i64
+    function slot_make() -> Slot
+    function slot_fill(p: ptr counted_by n lent, n: i64)
+    function slot_sum(p: ptr counted_by n lent, n: i64) -> i64
+
+function main()
+    t = slot_make()
+    slot_fill(p: t.nsap.ptr(), n: 8)  #~ field_lend_written
+    print(slot_sum(p: t.nsap.ptr(), n: 8))
