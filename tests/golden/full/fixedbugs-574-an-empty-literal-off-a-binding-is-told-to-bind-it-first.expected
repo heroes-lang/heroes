@@ -1,0 +1,34 @@
+error[cannot_infer]: the map literal is empty, so there is nothing to infer its type from — write the annotation
+  at tests/golden/full/fixedbugs-574-an-empty-literal-off-a-binding-is-told-to-bind-it-first.hero:13:11
+     |
+  13 |     print({})  #~ cannot_infer
+     |           ^^
+  fix (guess): bind it first with its type, `m: {str: i64} = {}`, and use `m` here
+
+error[cannot_infer]: the array literal is empty, so there is nothing to infer its type from — write the annotation
+  at tests/golden/full/fixedbugs-574-an-empty-literal-off-a-binding-is-told-to-bind-it-first.hero:14:11
+     |
+  14 |     print([].len())  #~ cannot_infer
+     |           ^^
+  fix (guess): bind it first with its type, `xs: [i64] = []`, and use `xs` here
+
+error[cannot_infer]: the map literal is empty, so there is nothing to infer its type from — write the annotation
+  at tests/golden/full/fixedbugs-574-an-empty-literal-off-a-binding-is-told-to-bind-it-first.hero:15:11
+     |
+  15 |     ys = [{}]  #~ cannot_infer
+     |           ^^
+  fix (guess): bind it first with its type, `m: {str: i64} = {}`, and use `m` here
+
+error[cannot_infer]: the map literal is empty, so there is nothing to infer its type from — write the annotation
+  at tests/golden/full/fixedbugs-574-an-empty-literal-off-a-binding-is-told-to-bind-it-first.hero:16:14
+     |
+  16 |     counts = {}  #~ cannot_infer
+     |              ^^
+  fix (guess): annotate the binding: `counts: {str: i64} = {}`
+
+error[cannot_infer]: the array literal is empty, so there is nothing to infer its type from — write the annotation
+  at tests/golden/full/fixedbugs-574-an-empty-literal-off-a-binding-is-told-to-bind-it-first.hero:17:13
+     |
+  17 |     names = []  #~ cannot_infer
+     |             ^^
+  fix (guess): annotate the binding: `names: [i64] = []`

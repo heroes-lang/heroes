@@ -65,6 +65,7 @@ use check/markers
 use check/function_value
 use check/generics as check_generics
 use check/generic_argument
+use check/empty_binding
 use check/discard
 use value_errors
 use discard_errors
@@ -796,7 +797,9 @@ function statement(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: sourc
                 check(@c, a, r, s, decls, id: b.value, expected: declared)
                 bound @ declared
             else
+                said = c.out.diagnostics.len()
                 bound @ synth(@c, a, r, s, decls, b.value)
+                empty_binding.retell(@c, a, s, from: said, value: b.value, name: b.name)
 
             # Panel 017 C: () is not a value, so nothing can hold one.
             # Poisoned rather than (): every later read stays quiet,
