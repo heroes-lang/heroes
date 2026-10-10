@@ -66,7 +66,6 @@ use emit/descriptors
 use emit/signature
 use emit/body
 use emit/callback_thunk
-use emit/deprecation
 
 # One module's translation unit, written from its plan
 # (`emit/unit_plan.hero`, which decides what it holds and which headers it
@@ -162,14 +161,6 @@ function unit(plan: unit_plan.Plan, p: containers.Program, c: state.Checked, s: 
 
     callback_thunk.lookup_table(@w, p, c, names, s, decls, callbacks: whole.callbacks)
 
-    # The program's own definitions, where a `deprecated` attribute is
-    # spoken as clang says it of C written by hand; quiet again after them
-    # (`emit/deprecation.hero`, defect 571).
-    grouped = deprecation.binds_a_group(plan.headers)
-
-    if grouped
-        deprecation.say(@w, line: deprecation.SPOKEN)
-
     for at in keep
         f = p.functions[at]
 
@@ -183,8 +174,6 @@ function unit(plan: unit_plan.Plan, p: containers.Program, c: state.Checked, s: 
             # one cause.
             body.definition(@w, whole.callees, c, names, s, decls, f: f, guarded_decls: guarded_decls)
 
-    if grouped
-        deprecation.say(@w, line: deprecation.QUIET)
     perfn.bodies(@w, c, names, s, decls, want: want)
 
     if is_root

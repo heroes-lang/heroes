@@ -25,6 +25,8 @@
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -38,7 +40,7 @@ _Static_assert(_Generic(&((ADDR *)0)->addr_bytes, _Bool (*)[16]: (sizeof(_Bool) 
 #line 13 "tests/golden/run/fixedbugs-151-arms-a-macro-reaches-as-wide-as-their-named-unions-compared.hero"
 _Static_assert(__builtin_classify_type(((ACT *)0)->act_one) == 5 && _Generic(((ACT *)0)->act_one, __typeof__(((ACT *)0)->act_one): 1, default: 0) && sizeof(((ACT *)0)->act_one) == sizeof(void *), "heroes-ffi-field ACT act_one");
 _Static_assert(__builtin_classify_type(((ACT *)0)->flags) == 1 && sizeof(((ACT *)0)->flags) == sizeof(int32_t) && (_Generic(((ACT *)0)->flags, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field ACT flags");
-#line 42 "fixedbugs151armsamacroreachesaswideastheirnamedunionscompared.c"
+#line 44 "fixedbugs151armsamacroreachesaswideastheirnamedunionscompared.c"
 
 #line 10 "tests/golden/run/fixedbugs-151-arms-a-macro-reaches-as-wide-as-their-named-unions-compared.hero"
 _Static_assert(__builtin_classify_type(*(ADDR *)0) != 13 || sizeof(((ADDR *)0)->addr_bytes) == sizeof(ADDR), "heroes-ffi-union-narrow ADDR addr_bytes");
@@ -46,7 +48,7 @@ _Static_assert(__builtin_classify_type(*(ADDR *)0) != 13 || sizeof(((ADDR *)0)->
 _Static_assert(__builtin_classify_type(*(ACT *)0) != 13 || sizeof(((ACT *)0)->act_one) == sizeof(ACT), "heroes-ffi-union-narrow ACT act_one");
 #line 12 "tests/golden/run/fixedbugs-151-arms-a-macro-reaches-as-wide-as-their-named-unions-compared.hero"
 _Static_assert(__builtin_classify_type(*(ACT *)0) != 13 || sizeof(((ACT *)0)->flags) == sizeof(ACT), "heroes-ffi-union-narrow ACT flags");
-#line 50 "fixedbugs151armsamacroreachesaswideastheirnamedunionscompared.c"
+#line 52 "fixedbugs151armsamacroreachesaswideastheirnamedunionscompared.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -133,7 +135,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 137 "fixedbugs151armsamacroreachesaswideastheirnamedunionscompared.c"
+#line 139 "fixedbugs151armsamacroreachesaswideastheirnamedunionscompared.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs151armsamacroreachesaswideastheirnamedunionscompared_ADDR_eq(const ADDR *a, const ADDR *b);
@@ -150,11 +152,10 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_fixedbugs151armsamacroreachesaswideastheirnamedunionscompared_main(void);
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 18 "tests/golden/run/fixedbugs-151-arms-a-macro-reaches-as-wide-as-their-named-unions-compared.hero"
 void h_fixedbugs151armsamacroreachesaswideastheirnamedunionscompared_main(void) {
-#line 158 "fixedbugs151armsamacroreachesaswideastheirnamedunionscompared.c"
+#line 159 "fixedbugs151armsamacroreachesaswideastheirnamedunionscompared.c"
     uint8_t t1;
     ADDR t2;
     uint8_t t3;
@@ -256,9 +257,8 @@ bb0:
     hero_print_end();
 #line 26 "tests/golden/run/fixedbugs-151-arms-a-macro-reaches-as-wide-as-their-named-unions-compared.hero"
     return;
-#line 260 "fixedbugs151armsamacroreachesaswideastheirnamedunionscompared.c"
+#line 261 "fixedbugs151armsamacroreachesaswideastheirnamedunionscompared.c"
 }
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_fixedbugs151armsamacroreachesaswideastheirnamedunionscompared_ADDR_eq(const ADDR *a, const ADDR *b) {
     if (!((a->addr_bytes[0] == b->addr_bytes[0] && a->addr_bytes[1] == b->addr_bytes[1] && a->addr_bytes[2] == b->addr_bytes[2] && a->addr_bytes[3] == b->addr_bytes[3] && a->addr_bytes[4] == b->addr_bytes[4] && a->addr_bytes[5] == b->addr_bytes[5] && a->addr_bytes[6] == b->addr_bytes[6] && a->addr_bytes[7] == b->addr_bytes[7] && a->addr_bytes[8] == b->addr_bytes[8] && a->addr_bytes[9] == b->addr_bytes[9] && a->addr_bytes[10] == b->addr_bytes[10] && a->addr_bytes[11] == b->addr_bytes[11] && a->addr_bytes[12] == b->addr_bytes[12] && a->addr_bytes[13] == b->addr_bytes[13] && a->addr_bytes[14] == b->addr_bytes[14] && a->addr_bytes[15] == b->addr_bytes[15]))) return false;
     return true;

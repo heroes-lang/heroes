@@ -25,6 +25,8 @@
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -39,11 +41,11 @@ _Static_assert(__builtin_classify_type(((SA *)0)->x) == 1 && sizeof(((SA *)0)->x
 #line 13 "tests/golden/run/ffi-rest-zero-a-nested-group-record.hero"
 _Static_assert(__builtin_classify_type(((struct outer *)0)->k) == 1 && sizeof(((struct outer *)0)->k) == sizeof(int32_t) && (_Generic(((struct outer *)0)->k, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Outer k");
 _Static_assert(_Generic(&((struct outer *)0)->inner, SA *: 1, default: 0) && sizeof(((struct outer *)0)->inner) == sizeof(SA), "heroes-ffi-field Outer inner");
-#line 43 "ffirestzeroanestedgrouprecord.c"
+#line 45 "ffirestzeroanestedgrouprecord.c"
 
 #line 12 "tests/golden/run/ffi-rest-zero-a-nested-group-record.hero"
 _Static_assert(__builtin_classify_type(*(struct outer *)0) != 13, "heroes-ffi-union Outer k inner");
-#line 47 "ffirestzeroanestedgrouprecord.c"
+#line 49 "ffirestzeroanestedgrouprecord.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -128,7 +130,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 132 "ffirestzeroanestedgrouprecord.c"
+#line 134 "ffirestzeroanestedgrouprecord.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_ffirestzeroanestedgrouprecord_SA_eq(const SA *a, const SA *b);
@@ -147,11 +149,10 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 struct outer h_ffirestzeroanestedgrouprecord_left_out(void);
 struct outer h_ffirestzeroanestedgrouprecord_built(void);
 void h_ffirestzeroanestedgrouprecord_main(void);
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 18 "tests/golden/run/ffi-rest-zero-a-nested-group-record.hero"
 struct outer h_ffirestzeroanestedgrouprecord_left_out(void) {
-#line 155 "ffirestzeroanestedgrouprecord.c"
+#line 156 "ffirestzeroanestedgrouprecord.c"
     int32_t t1;
     struct outer t2;
     goto bb0;
@@ -166,12 +167,12 @@ bb0:
     t2.k = t1;
 #line 19 "tests/golden/run/ffi-rest-zero-a-nested-group-record.hero"
     return t2;
-#line 170 "ffirestzeroanestedgrouprecord.c"
+#line 171 "ffirestzeroanestedgrouprecord.c"
 }
 
 #line 21 "tests/golden/run/ffi-rest-zero-a-nested-group-record.hero"
 struct outer h_ffirestzeroanestedgrouprecord_built(void) {
-#line 175 "ffirestzeroanestedgrouprecord.c"
+#line 176 "ffirestzeroanestedgrouprecord.c"
     int32_t t1;
     int32_t t2;
     SA t3;
@@ -198,13 +199,12 @@ bb0:
     t4.inner = t3;
 #line 22 "tests/golden/run/ffi-rest-zero-a-nested-group-record.hero"
     return t4;
-#line 202 "ffirestzeroanestedgrouprecord.c"
+#line 203 "ffirestzeroanestedgrouprecord.c"
 }
 
 #line 24 "tests/golden/run/ffi-rest-zero-a-nested-group-record.hero"
 void h_ffirestzeroanestedgrouprecord_main(void) {
-#line 207 "ffirestzeroanestedgrouprecord.c"
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#line 208 "ffirestzeroanestedgrouprecord.c"
     struct outer *const hero_lend_h0_a = (struct outer *)hero_lend_local(sizeof(struct outer), "ffirestzeroanestedgrouprecord.main", "a");
 #define h0_a (*hero_lend_h0_a)
     struct outer *const hero_lend_h1_b = (struct outer *)hero_lend_local(sizeof(struct outer), "ffirestzeroanestedgrouprecord.main", "b");
@@ -227,7 +227,6 @@ void h_ffirestzeroanestedgrouprecord_main(void) {
     int32_t t16;
     HeroStr t17;
     int64_t t18;
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
     goto bb0;
 bb0:
 #line 25 "tests/golden/run/ffi-rest-zero-a-nested-group-record.hero"
@@ -303,11 +302,10 @@ bb0:
     hero_lend_local_give(hero_lend_h0_a);
 #line 30 "tests/golden/run/ffi-rest-zero-a-nested-group-record.hero"
     return;
-#line 307 "ffirestzeroanestedgrouprecord.c"
+#line 306 "ffirestzeroanestedgrouprecord.c"
 }
 #undef h0_a
 #undef h1_b
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_ffirestzeroanestedgrouprecord_SA_eq(const SA *a, const SA *b) {
     if (!(a->kind == b->kind)) return false;
     if (!(a->c == b->c)) return false;

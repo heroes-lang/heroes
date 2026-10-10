@@ -25,6 +25,8 @@
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -68,7 +70,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 72 "fixedbugs451abufferpastamebibytecwritesafteritscallreturnsisnamed.c"
+#line 74 "fixedbugs451abufferpastamebibytecwritesafteritscallreturnsisnamed.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -111,7 +113,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 115 "fixedbugs451abufferpastamebibytecwritesafteritscallreturnsisnamed.c"
+#line 117 "fixedbugs451abufferpastamebibytecwritesafteritscallreturnsisnamed.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -125,11 +127,10 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 int64_t h_fixedbugs451abufferpastamebibytecwritesafteritscallreturnsisnamed_fill(void);
 void h_fixedbugs451abufferpastamebibytecwritesafteritscallreturnsisnamed_main(void);
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 15 "tests/golden/run/fixedbugs-451-a-buffer-past-a-mebibyte-c-writes-after-its-call-returns-is-named.hero"
 int64_t h_fixedbugs451abufferpastamebibytecwritesafteritscallreturnsisnamed_fill(void) {
-#line 133 "fixedbugs451abufferpastamebibytecwritesafteritscallreturnsisnamed.c"
+#line 134 "fixedbugs451abufferpastamebibytecwritesafteritscallreturnsisnamed.c"
     HeroArrayHeader * h0_md = {0};
     HeroArrayHeader * h1_own1 = {0};
     HeroArrayHeader * t1;
@@ -145,15 +146,15 @@ bb0:
     t5 = h1_own1;
 #line 16 "tests/golden/run/fixedbugs-451-a-buffer-past-a-mebibyte-c-writes-after-its-call-returns-is-named.hero"
     h1_own1 = t1;
-#line 149 "fixedbugs451abufferpastamebibytecwritesafteritscallreturnsisnamed.c"
+#line 150 "fixedbugs451abufferpastamebibytecwritesafteritscallreturnsisnamed.c"
     hero_array_decref(t5);
 #line 16 "tests/golden/run/fixedbugs-451-a-buffer-past-a-mebibyte-c-writes-after-its-call-returns-is-named.hero"
     t6 = h0_md;
-#line 153 "fixedbugs451abufferpastamebibytecwritesafteritscallreturnsisnamed.c"
+#line 154 "fixedbugs451abufferpastamebibytecwritesafteritscallreturnsisnamed.c"
     hero_array_incref(t1);
 #line 16 "tests/golden/run/fixedbugs-451-a-buffer-past-a-mebibyte-c-writes-after-its-call-returns-is-named.hero"
     h0_md = t1;
-#line 157 "fixedbugs451abufferpastamebibytecwritesafteritscallreturnsisnamed.c"
+#line 158 "fixedbugs451abufferpastamebibytecwritesafteritscallreturnsisnamed.c"
     hero_array_decref(t6);
 #line 17 "tests/golden/run/fixedbugs-451-a-buffer-past-a-mebibyte-c-writes-after-its-call-returns-is-named.hero"
     {
@@ -172,7 +173,7 @@ bb0:
     t3 = h0_md;
 #line 18 "tests/golden/run/fixedbugs-451-a-buffer-past-a-mebibyte-c-writes-after-its-call-returns-is-named.hero"
     t4 = ((void)(t3 == NULL ? ((void)hero_array_len(t3), hero_unreachable()) : (void)0), t3->len);
-#line 176 "fixedbugs451abufferpastamebibytecwritesafteritscallreturnsisnamed.c"
+#line 177 "fixedbugs451abufferpastamebibytecwritesafteritscallreturnsisnamed.c"
     hero_array_release_at(&h0_md);
     hero_array_release_at(&h1_own1);
     return t4;
@@ -180,7 +181,7 @@ bb0:
 
 #line 20 "tests/golden/run/fixedbugs-451-a-buffer-past-a-mebibyte-c-writes-after-its-call-returns-is-named.hero"
 void h_fixedbugs451abufferpastamebibytecwritesafteritscallreturnsisnamed_main(void) {
-#line 184 "fixedbugs451abufferpastamebibytecwritesafteritscallreturnsisnamed.c"
+#line 185 "fixedbugs451abufferpastamebibytecwritesafteritscallreturnsisnamed.c"
     int64_t t1;
     int64_t t2;
     goto bb0;
@@ -198,9 +199,8 @@ bb0:
     hero_print_end();
 #line 22 "tests/golden/run/fixedbugs-451-a-buffer-past-a-mebibyte-c-writes-after-its-call-returns-is-named.hero"
     return;
-#line 202 "fixedbugs451abufferpastamebibytecwritesafteritscallreturnsisnamed.c"
+#line 203 "fixedbugs451abufferpastamebibytecwritesafteritscallreturnsisnamed.c"
 }
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_incref(v->as.ok);

@@ -25,6 +25,8 @@
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -33,7 +35,7 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 
 #line 21 "tests/golden/run/fixedbugs-413-libuv-keeps-every-handles-address.hero"
 _Static_assert(__builtin_classify_type(((struct uv_timer_s *)0)->data) == 5 && _Generic(((struct uv_timer_s *)0)->data, __typeof__(((struct uv_timer_s *)0)->data): 1, default: 0) && sizeof(((struct uv_timer_s *)0)->data) == sizeof(void *), "heroes-ffi-field UvTimer data");
-#line 37 "fixedbugs413libuvkeepseveryhandlesaddress.c"
+#line 39 "fixedbugs413libuvkeepseveryhandlesaddress.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -120,7 +122,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 124 "fixedbugs413libuvkeepseveryhandlesaddress.c"
+#line 126 "fixedbugs413libuvkeepseveryhandlesaddress.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs413libuvkeepseveryhandlesaddress_UvTimer_eq(const struct uv_timer_s *a, const struct uv_timer_s *b);
@@ -163,18 +165,15 @@ __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
     return f;
 }
 
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 28 "tests/golden/run/fixedbugs-413-libuv-keeps-every-handles-address.hero"
 void h_fixedbugs413libuvkeepseveryhandlesaddress_seen(struct uv_handle_s * h0_h, void * h1_arg) {
-#line 171 "fixedbugs413libuvkeepseveryhandlesaddress.c"
+#line 172 "fixedbugs413libuvkeepseveryhandlesaddress.c"
     hero_thread_guard("fixedbugs413libuvkeepseveryhandlesaddress.seen");
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
     struct uv_handle_s * t1;
     void * t2;
     void * t3;
     bool t4;
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
     goto bb0;
 bb0:
 #line 29 "tests/golden/run/fixedbugs-413-libuv-keeps-every-handles-address.hero"
@@ -193,7 +192,7 @@ bb0:
     hero_print_end();
 #line 29 "tests/golden/run/fixedbugs-413-libuv-keeps-every-handles-address.hero"
     return;
-#line 197 "fixedbugs413libuvkeepseveryhandlesaddress.c"
+#line 196 "fixedbugs413libuvkeepseveryhandlesaddress.c"
 }
 
 void h_0cb_fixedbugs413libuvkeepseveryhandlesaddress_seen(struct uv_handle_s * h0_h, void * h1_arg) {
@@ -203,11 +202,9 @@ void h_0cb_fixedbugs413libuvkeepseveryhandlesaddress_seen(struct uv_handle_s * h
 
 #line 31 "tests/golden/run/fixedbugs-413-libuv-keeps-every-handles-address.hero"
 int32_t h_fixedbugs413libuvkeepseveryhandlesaddress_start(void * h0_loop, struct uv_timer_s *ph1_t) {
-#line 207 "fixedbugs413libuvkeepseveryhandlesaddress.c"
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#line 206 "fixedbugs413libuvkeepseveryhandlesaddress.c"
     void * t1;
     int32_t t2;
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
     goto bb0;
 bb0:
 #line 32 "tests/golden/run/fixedbugs-413-libuv-keeps-every-handles-address.hero"
@@ -218,13 +215,12 @@ bb0:
     t2 = uv_timer_init(t1, &(*ph1_t));
 #line 32 "tests/golden/run/fixedbugs-413-libuv-keeps-every-handles-address.hero"
     return t2;
-#line 222 "fixedbugs413libuvkeepseveryhandlesaddress.c"
+#line 219 "fixedbugs413libuvkeepseveryhandlesaddress.c"
 }
 
 #line 34 "tests/golden/run/fixedbugs-413-libuv-keeps-every-handles-address.hero"
 void h_fixedbugs413libuvkeepseveryhandlesaddress_main(void) {
-#line 227 "fixedbugs413libuvkeepseveryhandlesaddress.c"
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#line 224 "fixedbugs413libuvkeepseveryhandlesaddress.c"
     void * h0_loop;
     struct uv_timer_s *const hero_lend_h1_a = (struct uv_timer_s *)hero_lend_local(sizeof(struct uv_timer_s), "fixedbugs413libuvkeepseveryhandlesaddress.main", "a");
 #define h1_a (*hero_lend_h1_a)
@@ -253,7 +249,6 @@ void h_fixedbugs413libuvkeepseveryhandlesaddress_main(void) {
     void * t21;
     HeroArrayHeader * t22;
     HeroArrayHeader * t23;
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
     goto bb0;
 bb0:
 #line 35 "tests/golden/run/fixedbugs-413-libuv-keeps-every-handles-address.hero"
@@ -292,15 +287,15 @@ bb0:
     t22 = h3_own3;
 #line 39 "tests/golden/run/fixedbugs-413-libuv-keeps-every-handles-address.hero"
     h3_own3 = t8;
-#line 296 "fixedbugs413libuvkeepseveryhandlesaddress.c"
+#line 291 "fixedbugs413libuvkeepseveryhandlesaddress.c"
     hero_array_decref(t22);
 #line 39 "tests/golden/run/fixedbugs-413-libuv-keeps-every-handles-address.hero"
     t23 = h2_ts;
-#line 300 "fixedbugs413libuvkeepseveryhandlesaddress.c"
+#line 295 "fixedbugs413libuvkeepseveryhandlesaddress.c"
     hero_array_incref(t8);
 #line 39 "tests/golden/run/fixedbugs-413-libuv-keeps-every-handles-address.hero"
     h2_ts = t8;
-#line 304 "fixedbugs413libuvkeepseveryhandlesaddress.c"
+#line 299 "fixedbugs413libuvkeepseveryhandlesaddress.c"
     hero_array_decref(t23);
 #line 40 "tests/golden/run/fixedbugs-413-libuv-keeps-every-handles-address.hero"
     t9 = h0_loop;
@@ -346,14 +341,13 @@ bb0:
     t21 = h0_loop;
 #line 44 "tests/golden/run/fixedbugs-413-libuv-keeps-every-handles-address.hero"
     (void)uv_walk(t19, (h_0fn_7d30c22)hero_callback_of((void (*)(void))t20), t21);
-#line 350 "fixedbugs413libuvkeepseveryhandlesaddress.c"
+#line 345 "fixedbugs413libuvkeepseveryhandlesaddress.c"
     hero_array_release_at(&h2_ts);
     hero_array_release_at(&h3_own3);
     hero_lend_local_give(hero_lend_h1_a);
     return;
 }
 #undef h1_a
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_fixedbugs413libuvkeepseveryhandlesaddress_UvTimer_eq(const struct uv_timer_s *a, const struct uv_timer_s *b) {
     hero_panic("h_fixedbugs413libuvkeepseveryhandlesaddress_UvTimer_eq: a partial record has no structural equality");
 }

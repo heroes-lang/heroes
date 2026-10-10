@@ -25,6 +25,8 @@
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -70,7 +72,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 74 "deadaddresscopymadebeforetheendreachesc.c"
+#line 76 "deadaddresscopymadebeforetheendreachesc.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -114,7 +116,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 118 "deadaddresscopymadebeforetheendreachesc.c"
+#line 120 "deadaddresscopymadebeforetheendreachesc.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_deadaddresscopymadebeforetheendreachesc_Node_eq(node * const *a, node * const *b);
@@ -129,12 +131,10 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_deadaddresscopymadebeforetheendreachesc_main(void);
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 21 "tests/golden/run/dead-address-copy-made-before-the-end-reaches-c.hero"
 void h_deadaddresscopymadebeforetheendreachesc_main(void) {
-#line 137 "deadaddresscopymadebeforetheendreachesc.c"
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#line 138 "deadaddresscopymadebeforetheendreachesc.c"
     node * h0_a;
     node * h1_keep;
     node * t1;
@@ -142,7 +142,6 @@ void h_deadaddresscopymadebeforetheendreachesc_main(void) {
     node * t3;
     node * t4;
     int64_t t5;
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
     goto bb0;
 bb0:
 #line 22 "tests/golden/run/dead-address-copy-made-before-the-end-reaches-c.hero"
@@ -178,9 +177,8 @@ bb0:
     hero_print_end();
 #line 25 "tests/golden/run/dead-address-copy-made-before-the-end-reaches-c.hero"
     return;
-#line 182 "deadaddresscopymadebeforetheendreachesc.c"
+#line 181 "deadaddresscopymadebeforetheendreachesc.c"
 }
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_deadaddresscopymadebeforetheendreachesc_Node_eq(node * const *a, node * const *b) {
     return hero_handle_eq(*a, *b);
 }
