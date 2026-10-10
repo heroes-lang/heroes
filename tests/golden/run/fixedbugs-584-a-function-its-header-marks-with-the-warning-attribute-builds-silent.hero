@@ -1,0 +1,17 @@
+# fixedbugs, defect 584, lane b19-dep, 2026-10-10 (panel 208's R1).
+#
+# SYMPTOM: a function its header marks with GCC's `warning` attribute,
+# called: clang printed `-Wattribute-warning` at the emitted C of the call
+# at -O0 and nothing at -O2 (panel 208's compiler-engineer, s5).
+#
+# FIX: `-Wdeprecated-declarations`, `-Wdeprecated-pragma` and
+# `-Wattribute-warning` are ignored over the whole unit after the groups'
+# close, the program's own lines as the compiler's (`emit/deprecation.hero`,
+# panel 208's R1): a deprecation is advice about a program, not a mistake in
+# it, and this language has no warning level.
+
+extern "fixedbugs-584-a-function-its-header-marks-with-the-warning-attribute-builds-silent.h"
+    function warned(x: i64) -> i64
+
+function main()
+    print(warned(x: 6))

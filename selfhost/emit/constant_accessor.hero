@@ -7,10 +7,10 @@
 # **The accessor is the compiler's line among the program's**, the one place
 # in the definitions where a group's macro is expanded on purpose: its
 # `return NAME;` (or, for a record's constant, the initialisation
-# `emit/record_constant.hero` writes) names the header's value. So a
-# `deprecated` attribute is quiet over it and spoken again after it
-# (`emit/deprecation.hero`, defect 571), and every check of a binding is
-# raised again after it, since a `_Pragma` in the value reaches every line
+# `emit/record_constant.hero` writes) names the header's value. A header's
+# deprecations are quiet over the whole unit since panel 208
+# (`emit/deprecation.hero`), so none is said here; every check of a binding
+# is raised again after it, since a `_Pragma` in the value reaches every line
 # below (`emit/checks_raised.hero`, defect 570). A constant of the
 # compiler's own headers, the library's `HERO_OS_OK` among them, is the
 # runtime's, and is written with neither.
@@ -23,15 +23,10 @@ use emit/ctype
 use emit/signature
 use emit/record_constant
 use emit/checks_raised
-use emit/deprecation
 use emit/writer
 
 # The accessor, its signature at the declaration as every signature is.
 function accessor(@w: writer.Writer, f: containers.Function, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl])
-    grouped = deprecation.group_constant(s, decls, f)
-
-    if grouped
-        deprecation.say(@w, line: deprecation.QUIET)
     writer.at_span(@w, s, offset: f.span.start)
 
     # A record's constant is built from the header's value, which may be a
@@ -44,6 +39,4 @@ function accessor(@w: writer.Writer, f: containers.Function, c: state.Checked, n
         writer.line(@w, text: "    return " + source.span_text(s, decls[f.decl].name) + ";")
         writer.line(@w, text: "}")
 
-    if grouped
-        deprecation.say(@w, line: deprecation.SPOKEN)
     checks_raised.after_constant(@w, s, decls, f)

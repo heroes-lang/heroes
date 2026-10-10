@@ -1,0 +1,22 @@
+# fixedbugs, defect 584, lane b19-dep, 2026-10-10 (panel 208's R1).
+#
+# SYMPTOM: a record its header marks `deprecated`, a parameter's type and
+# built in `main`: clang printed its warning at the program's signature and
+# at `main`'s prologue temporary of the record, a line no author wrote
+# (panel 208's compiler-engineer, s3).
+#
+# FIX: `-Wdeprecated-declarations`, `-Wdeprecated-pragma` and
+# `-Wattribute-warning` are ignored over the whole unit after the groups'
+# close, the program's own lines as the compiler's (`emit/deprecation.hero`,
+# panel 208's R1): a deprecation is advice about a program, not a mistake in
+# it, and this language has no warning level.
+
+extern "fixedbugs-584-a-deprecated-record-in-a-signature-builds-silent.h"
+    record OldPair tag old_pair
+        a: i64
+
+function first(p: OldPair) -> i64
+    return p.a
+
+function main()
+    print(first(p: OldPair(a: 4)))

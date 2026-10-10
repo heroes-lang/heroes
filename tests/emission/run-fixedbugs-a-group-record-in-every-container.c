@@ -27,6 +27,8 @@
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -38,7 +40,7 @@ _Static_assert(__builtin_classify_type(((Color *)0)->r) == 1 && sizeof(((Color *
 _Static_assert(__builtin_classify_type(((Color *)0)->g) == 1 && sizeof(((Color *)0)->g) == sizeof(uint8_t) && (_Generic(((Color *)0)->g, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 1), "heroes-ffi-field Color g");
 _Static_assert(__builtin_classify_type(((Color *)0)->b) == 1 && sizeof(((Color *)0)->b) == sizeof(uint8_t) && (_Generic(((Color *)0)->b, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 1), "heroes-ffi-field Color b");
 _Static_assert(__builtin_classify_type(((Color *)0)->a) == 1 && sizeof(((Color *)0)->a) == sizeof(uint8_t) && (_Generic(((Color *)0)->a, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 1), "heroes-ffi-field Color a");
-#line 42 "fixedbugsagrouprecordineverycontainer.c"
+#line 44 "fixedbugsagrouprecordineverycontainer.c"
 
 #line 34 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
 _Static_assert(__builtin_classify_type(*(Color *)0) != 13, "heroes-ffi-union Color r g b a");
@@ -50,7 +52,7 @@ _Static_assert(__builtin_classify_type(*(Color *)0) != 13 || sizeof(((Color *)0)
 _Static_assert(__builtin_classify_type(*(Color *)0) != 13 || sizeof(((Color *)0)->b) == sizeof(Color), "heroes-ffi-union-narrow Color b");
 #line 34 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
 _Static_assert(__builtin_classify_type(*(Color *)0) != 13 || sizeof(((Color *)0)->a) == sizeof(Color), "heroes-ffi-union-narrow Color a");
-#line 54 "fixedbugsagrouprecordineverycontainer.c"
+#line 56 "fixedbugsagrouprecordineverycontainer.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -148,7 +150,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 152 "fixedbugsagrouprecordineverycontainer.c"
+#line 154 "fixedbugsagrouprecordineverycontainer.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugsagrouprecordineverycontainer_Color_eq(const Color *a, const Color *b);
@@ -188,12 +190,10 @@ HERO_TU_QUIET static const HeroDesc h_fixedbugsagrouprecordineverycontainer_Colo
 };
 
 void h_fixedbugsagrouprecordineverycontainer_main(void);
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 41 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
 void h_fixedbugsagrouprecordineverycontainer_main(void) {
-#line 196 "fixedbugsagrouprecordineverycontainer.c"
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#line 197 "fixedbugsagrouprecordineverycontainer.c"
     Color h0_a;
     Color h1_b;
     Color h2_c;
@@ -293,7 +293,6 @@ void h_fixedbugsagrouprecordineverycontainer_main(void) {
     h_0opt_31fbd75 t81;
     h_0opt_31fbd75 t82;
     h_0opt_31fbd75 t83;
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
     goto bb0;
 bb0:
 #line 42 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
@@ -363,15 +362,15 @@ bb0:
     t71 = h10_own10;
 #line 51 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     h10_own10 = t24;
-#line 367 "fixedbugsagrouprecordineverycontainer.c"
+#line 366 "fixedbugsagrouprecordineverycontainer.c"
     hero_array_decref(t71);
 #line 51 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     t72 = h3_xs;
-#line 371 "fixedbugsagrouprecordineverycontainer.c"
+#line 370 "fixedbugsagrouprecordineverycontainer.c"
     hero_array_incref(t24);
 #line 51 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     h3_xs = t24;
-#line 375 "fixedbugsagrouprecordineverycontainer.c"
+#line 374 "fixedbugsagrouprecordineverycontainer.c"
     hero_array_decref(t72);
 #line 52 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     t25 = h3_xs;
@@ -400,15 +399,15 @@ bb0:
     t73 = h11_own11;
 #line 56 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     h11_own11 = t32;
-#line 404 "fixedbugsagrouprecordineverycontainer.c"
+#line 403 "fixedbugsagrouprecordineverycontainer.c"
     hero_map_decref(t73);
 #line 56 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     t74 = h4_m;
-#line 408 "fixedbugsagrouprecordineverycontainer.c"
+#line 407 "fixedbugsagrouprecordineverycontainer.c"
     hero_map_incref(t32);
 #line 56 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     h4_m = t32;
-#line 412 "fixedbugsagrouprecordineverycontainer.c"
+#line 411 "fixedbugsagrouprecordineverycontainer.c"
     hero_map_decref(t74);
 #line 57 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     t33 = INT64_C(1);
@@ -441,15 +440,15 @@ bb0:
     t75 = h12_own12;
 #line 58 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     h12_own12 = t37;
-#line 445 "fixedbugsagrouprecordineverycontainer.c"
+#line 444 "fixedbugsagrouprecordineverycontainer.c"
     h_0opt_31fbd75_release(&t75);
 #line 58 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     t76 = h5_f0;
-#line 449 "fixedbugsagrouprecordineverycontainer.c"
+#line 448 "fixedbugsagrouprecordineverycontainer.c"
     h_0opt_31fbd75_retain(&t37);
 #line 58 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     h5_f0 = t37;
-#line 453 "fixedbugsagrouprecordineverycontainer.c"
+#line 452 "fixedbugsagrouprecordineverycontainer.c"
     h_0opt_31fbd75_release(&t76);
 #line 58 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     t38 = h5_f0;
@@ -480,15 +479,15 @@ bb1:
     t77 = h13_own13;
 #line 59 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     h13_own13 = t48;
-#line 484 "fixedbugsagrouprecordineverycontainer.c"
+#line 483 "fixedbugsagrouprecordineverycontainer.c"
     hero_map_decref(t77);
 #line 59 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     t78 = h6_keyed;
-#line 488 "fixedbugsagrouprecordineverycontainer.c"
+#line 487 "fixedbugsagrouprecordineverycontainer.c"
     hero_map_incref(t48);
 #line 59 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     h6_keyed = t48;
-#line 492 "fixedbugsagrouprecordineverycontainer.c"
+#line 491 "fixedbugsagrouprecordineverycontainer.c"
     hero_map_decref(t78);
 #line 60 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     t49 = h0_a;
@@ -521,15 +520,15 @@ bb1:
     t79 = h14_own14;
 #line 61 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     h14_own14 = t53;
-#line 525 "fixedbugsagrouprecordineverycontainer.c"
+#line 524 "fixedbugsagrouprecordineverycontainer.c"
     h_0opt_e201354_release(&t79);
 #line 61 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     t80 = h7_f1;
-#line 529 "fixedbugsagrouprecordineverycontainer.c"
+#line 528 "fixedbugsagrouprecordineverycontainer.c"
     h_0opt_e201354_retain(&t53);
 #line 61 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     h7_f1 = t53;
-#line 533 "fixedbugsagrouprecordineverycontainer.c"
+#line 532 "fixedbugsagrouprecordineverycontainer.c"
     h_0opt_e201354_release(&t80);
 #line 61 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     t54 = h7_f1;
@@ -547,7 +546,7 @@ bb2:
     t42 = h5_f0;
 #line 58 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     t43 = t42.as.err;
-#line 551 "fixedbugsagrouprecordineverycontainer.c"
+#line 550 "fixedbugsagrouprecordineverycontainer.c"
     hero_panic_must(t43);
     hero_unreachable();
 bb3:
@@ -567,25 +566,25 @@ bb3:
     t81 = h15_own15;
 #line 64 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     h15_own15 = t63;
-#line 571 "fixedbugsagrouprecordineverycontainer.c"
+#line 570 "fixedbugsagrouprecordineverycontainer.c"
     h_0opt_31fbd75_release(&t81);
 #line 64 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     t82 = h8_maybe;
-#line 575 "fixedbugsagrouprecordineverycontainer.c"
+#line 574 "fixedbugsagrouprecordineverycontainer.c"
     h_0opt_31fbd75_retain(&t63);
 #line 64 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     h8_maybe = t63;
-#line 579 "fixedbugsagrouprecordineverycontainer.c"
+#line 578 "fixedbugsagrouprecordineverycontainer.c"
     h_0opt_31fbd75_release(&t82);
 #line 65 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     t64 = h8_maybe;
 #line 65 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     t83 = h9_f2;
-#line 585 "fixedbugsagrouprecordineverycontainer.c"
+#line 584 "fixedbugsagrouprecordineverycontainer.c"
     h_0opt_31fbd75_retain(&t64);
 #line 65 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     h9_f2 = t64;
-#line 589 "fixedbugsagrouprecordineverycontainer.c"
+#line 588 "fixedbugsagrouprecordineverycontainer.c"
     h_0opt_31fbd75_release(&t83);
 #line 65 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     t65 = h9_f2;
@@ -607,7 +606,7 @@ bb3:
     hero_print_int(t70);
 #line 68 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     hero_print_end();
-#line 611 "fixedbugsagrouprecordineverycontainer.c"
+#line 610 "fixedbugsagrouprecordineverycontainer.c"
     hero_array_release_at(&h3_xs);
     hero_map_release_at(&h4_m);
     h_0opt_31fbd75_release(hero_slot_escape(&h5_f0));
@@ -627,11 +626,10 @@ bb4:
     t58 = h7_f1;
 #line 61 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     t59 = t58.as.err;
-#line 631 "fixedbugsagrouprecordineverycontainer.c"
+#line 630 "fixedbugsagrouprecordineverycontainer.c"
     hero_panic_must(t59);
     hero_unreachable();
 }
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_fixedbugsagrouprecordineverycontainer_Color_eq(const Color *a, const Color *b) {
     if (!(a->r == b->r)) return false;
     if (!(a->g == b->g)) return false;

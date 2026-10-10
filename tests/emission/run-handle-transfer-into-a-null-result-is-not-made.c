@@ -25,6 +25,8 @@
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -74,7 +76,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_1e4f0b6f, "grow failed, block kept: ");
 HERO_STR_STATIC(hero_str_614b144d, "grown: ");
 
-#line 78 "handletransferintoanullresultisnotmade.c"
+#line 80 "handletransferintoanullresultisnotmade.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -120,7 +122,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 124 "handletransferintoanullresultisnotmade.c"
+#line 126 "handletransferintoanullresultisnotmade.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_handletransferintoanullresultisnotmade_Mem_eq(mem * const *a, mem * const *b);
@@ -135,12 +137,10 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_handletransferintoanullresultisnotmade_main(void);
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 14 "tests/golden/run/handle-transfer-into-a-null-result-is-not-made.hero"
 void h_handletransferintoanullresultisnotmade_main(void) {
-#line 143 "handletransferintoanullresultisnotmade.c"
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#line 144 "handletransferintoanullresultisnotmade.c"
     mem * h0_p;
     mem * h1_q;
     mem * h2_r;
@@ -169,7 +169,6 @@ void h_handletransferintoanullresultisnotmade_main(void) {
     mem * t22;
     int64_t t23;
     mem * t24;
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
     goto bb0;
 bb0:
 #line 15 "tests/golden/run/handle-transfer-into-a-null-result-is-not-made.hero"
@@ -334,9 +333,8 @@ bb5:
 bb6:
 #line 26 "tests/golden/run/handle-transfer-into-a-null-result-is-not-made.hero"
     goto bb4;
-#line 338 "handletransferintoanullresultisnotmade.c"
+#line 337 "handletransferintoanullresultisnotmade.c"
 }
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_handletransferintoanullresultisnotmade_Mem_eq(mem * const *a, mem * const *b) {
     return hero_handle_eq(*a, *b);
 }

@@ -25,6 +25,8 @@
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -70,7 +72,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 74 "fixedbugsarealdeallocatorgiventhesamehandletwice.c"
+#line 76 "fixedbugsarealdeallocatorgiventhesamehandletwice.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -115,7 +117,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 119 "fixedbugsarealdeallocatorgiventhesamehandletwice.c"
+#line 121 "fixedbugsarealdeallocatorgiventhesamehandletwice.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugsarealdeallocatorgiventhesamehandletwice_Blk_eq(blk * const *a, blk * const *b);
@@ -130,12 +132,10 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_fixedbugsarealdeallocatorgiventhesamehandletwice_main(void);
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 67 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
 void h_fixedbugsarealdeallocatorgiventhesamehandletwice_main(void) {
-#line 138 "fixedbugsarealdeallocatorgiventhesamehandletwice.c"
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#line 139 "fixedbugsarealdeallocatorgiventhesamehandletwice.c"
     blk * h0_a;
     blk * h1_twice;
     int64_t t1;
@@ -145,7 +145,6 @@ void h_fixedbugsarealdeallocatorgiventhesamehandletwice_main(void) {
     blk * t5;
     blk * t6;
     blk * t7;
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
     goto bb0;
 bb0:
 #line 68 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
@@ -196,9 +195,8 @@ bb0:
     }
 #line 72 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
     return;
-#line 200 "fixedbugsarealdeallocatorgiventhesamehandletwice.c"
+#line 199 "fixedbugsarealdeallocatorgiventhesamehandletwice.c"
 }
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_fixedbugsarealdeallocatorgiventhesamehandletwice_Blk_eq(blk * const *a, blk * const *b) {
     return hero_handle_eq(*a, *b);
 }

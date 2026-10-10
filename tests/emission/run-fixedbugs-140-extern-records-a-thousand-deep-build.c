@@ -26,6 +26,8 @@
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -2032,7 +2034,7 @@ _Static_assert(_Generic(&((G997 *)0)->inner, G996 *: 1, default: 0) && sizeof(((
 _Static_assert(_Generic(&((G998 *)0)->inner, G997 *: 1, default: 0) && sizeof(((G998 *)0)->inner) == sizeof(G997), "heroes-ffi-field G998 inner");
 #line 2021 "tests/golden/run/fixedbugs-140-extern-records-a-thousand-deep-build.hero"
 _Static_assert(_Generic(&((G999 *)0)->inner, G998 *: 1, default: 0) && sizeof(((G999 *)0)->inner) == sizeof(G998), "heroes-ffi-field G999 inner");
-#line 2036 "fixedbugs140externrecordsathousanddeepbuild.c"
+#line 2038 "fixedbugs140externrecordsathousanddeepbuild.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -2098,7 +2100,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 2102 "fixedbugs140externrecordsathousanddeepbuild.c"
+#line 2104 "fixedbugs140externrecordsathousanddeepbuild.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs140externrecordsathousanddeepbuild_G0_eq(const G0 *a, const G0 *b);
@@ -4128,11 +4130,10 @@ HERO_TU_QUIET static const HeroDesc h_fixedbugs140externrecordsathousanddeepbuil
 };
 
 void h_fixedbugs140externrecordsathousanddeepbuild_main(void);
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 2023 "tests/golden/run/fixedbugs-140-extern-records-a-thousand-deep-build.hero"
 void h_fixedbugs140externrecordsathousanddeepbuild_main(void) {
-#line 4136 "fixedbugs140externrecordsathousanddeepbuild.c"
+#line 4137 "fixedbugs140externrecordsathousanddeepbuild.c"
     HeroArrayHeader * h0_xs = {0};
     HeroArrayHeader * h1_own1 = {0};
     HeroArrayHeader * t1;
@@ -4148,15 +4149,15 @@ bb0:
     t4 = h1_own1;
 #line 2024 "tests/golden/run/fixedbugs-140-extern-records-a-thousand-deep-build.hero"
     h1_own1 = t1;
-#line 4152 "fixedbugs140externrecordsathousanddeepbuild.c"
+#line 4153 "fixedbugs140externrecordsathousanddeepbuild.c"
     hero_array_decref(t4);
 #line 2024 "tests/golden/run/fixedbugs-140-extern-records-a-thousand-deep-build.hero"
     t5 = h0_xs;
-#line 4156 "fixedbugs140externrecordsathousanddeepbuild.c"
+#line 4157 "fixedbugs140externrecordsathousanddeepbuild.c"
     hero_array_incref(t1);
 #line 2024 "tests/golden/run/fixedbugs-140-extern-records-a-thousand-deep-build.hero"
     h0_xs = t1;
-#line 4160 "fixedbugs140externrecordsathousanddeepbuild.c"
+#line 4161 "fixedbugs140externrecordsathousanddeepbuild.c"
     hero_array_decref(t5);
 #line 2025 "tests/golden/run/fixedbugs-140-extern-records-a-thousand-deep-build.hero"
     t2 = h0_xs;
@@ -4166,12 +4167,11 @@ bb0:
     hero_print_int(t3);
 #line 2025 "tests/golden/run/fixedbugs-140-extern-records-a-thousand-deep-build.hero"
     hero_print_end();
-#line 4170 "fixedbugs140externrecordsathousanddeepbuild.c"
+#line 4171 "fixedbugs140externrecordsathousanddeepbuild.c"
     hero_array_release_at(&h0_xs);
     hero_array_release_at(&h1_own1);
     return;
 }
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_fixedbugs140externrecordsathousanddeepbuild_G0_eq(const G0 *a, const G0 *b) {
     if (!(a->v == b->v)) return false;
     return true;

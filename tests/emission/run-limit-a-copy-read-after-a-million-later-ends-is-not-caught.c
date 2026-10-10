@@ -25,6 +25,8 @@
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -73,7 +75,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_11c935bc, "ends after the target: ");
 HERO_STR_STATIC(hero_str_eb0c0ab, "the target reads: ");
 
-#line 77 "limitacopyreadafteramillionlaterendsisnotcaught.c"
+#line 79 "limitacopyreadafteramillionlaterendsisnotcaught.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -117,7 +119,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 121 "limitacopyreadafteramillionlaterendsisnotcaught.c"
+#line 123 "limitacopyreadafteramillionlaterendsisnotcaught.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_limitacopyreadafteramillionlaterendsisnotcaught_Big_eq(big * const *a, big * const *b);
@@ -132,12 +134,10 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_limitacopyreadafteramillionlaterendsisnotcaught_main(void);
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 19 "tests/golden/run/limit-a-copy-read-after-a-million-later-ends-is-not-caught.hero"
 void h_limitacopyreadafteramillionlaterendsisnotcaught_main(void) {
-#line 140 "limitacopyreadafteramillionlaterendsisnotcaught.c"
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#line 141 "limitacopyreadafteramillionlaterendsisnotcaught.c"
     big * h0_target;
     big * h1_keep;
     int64_t h2_i;
@@ -159,7 +159,6 @@ void h_limitacopyreadafteramillionlaterendsisnotcaught_main(void) {
     HeroStr t15;
     big * t16;
     int64_t t17;
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
     goto bb0;
 bb0:
 #line 20 "tests/golden/run/limit-a-copy-read-after-a-million-later-ends-is-not-caught.hero"
@@ -255,9 +254,8 @@ bb3:
     hero_print_end();
 #line 31 "tests/golden/run/limit-a-copy-read-after-a-million-later-ends-is-not-caught.hero"
     return;
-#line 259 "limitacopyreadafteramillionlaterendsisnotcaught.c"
+#line 258 "limitacopyreadafteramillionlaterendsisnotcaught.c"
 }
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_limitacopyreadafteramillionlaterendsisnotcaught_Big_eq(big * const *a, big * const *b) {
     return hero_handle_eq(*a, *b);
 }

@@ -25,6 +25,8 @@
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -76,7 +78,7 @@ HERO_STR_STATIC(hero_str_11f05721, " refs: ");
 HERO_STR_STATIC(hero_str_7b9bb5d3, "refs: ");
 HERO_STR_STATIC(hero_str_58753951, "released twice, as C expects");
 
-#line 80 "handlealivethroughareferencereleasedtwice.c"
+#line 82 "handlealivethroughareferencereleasedtwice.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -121,7 +123,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 125 "handlealivethroughareferencereleasedtwice.c"
+#line 127 "handlealivethroughareferencereleasedtwice.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_handlealivethroughareferencereleasedtwice_Cert_eq(x509 * const *a, x509 * const *b);
@@ -136,12 +138,10 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_handlealivethroughareferencereleasedtwice_main(void);
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 15 "tests/golden/run/handle-alive-through-a-reference-released-twice.hero"
 void h_handlealivethroughareferencereleasedtwice_main(void) {
-#line 144 "handlealivethroughareferencereleasedtwice.c"
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#line 145 "handlealivethroughareferencereleasedtwice.c"
     x509 * h0_cert;
     int32_t h1_rc;
     x509 * t1;
@@ -158,7 +158,6 @@ void h_handlealivethroughareferencereleasedtwice_main(void) {
     int64_t t12;
     x509 * t13;
     HeroStr t14;
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
     goto bb0;
 bb0:
 #line 16 "tests/golden/run/handle-alive-through-a-reference-released-twice.hero"
@@ -249,9 +248,8 @@ bb0:
     hero_print_end();
 #line 22 "tests/golden/run/handle-alive-through-a-reference-released-twice.hero"
     return;
-#line 253 "handlealivethroughareferencereleasedtwice.c"
+#line 252 "handlealivethroughareferencereleasedtwice.c"
 }
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_handlealivethroughareferencereleasedtwice_Cert_eq(x509 * const *a, x509 * const *b) {
     return hero_handle_eq(*a, *b);
 }
