@@ -1,6 +1,6 @@
 # A name a group's header marks `unavailable`, refused on its `extern` line
-# (design.md §4.19; panel 208's R2, defect 588; `.claude/rules/c-boundary.md`
-# § A clang failure that the author's own extern caused).
+# (design.md §4.19; panel 208's R2, defect 588; the C boundary's rule file,
+# its section on a clang failure the author's own extern caused).
 #
 # Clang refuses every use of such a name, the compiler's own probe of the
 # binding included, so a program binding one, called or not, was *internal
