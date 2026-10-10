@@ -1,0 +1,21 @@
+# fixedbugs, defect 585, lane b19-pack, 2026-10-10.
+#
+# SYMPTOM: under a header of the program's own defining `_POSIX_C_SOURCE
+# 200112L`, a name another header declares only where no POSIX level
+# narrows it was told *declares no `wide_only`*, true and short of the
+# cause: on this Mac `string.h`'s `strlcpy` was told so. These headers hide
+# their name as Darwin does, on every platform.
+#
+# FIX: a refused round reads which strict switch each header leaves defined
+# and asks the headers again with it undefined after the one that defines
+# it (`cli/unswitch_ask.hero`); a name declared there is told with the
+# switch and the header.
+
+extern "fixedbugs-585-strict.h"
+    function strict_on() -> i64
+
+extern "fixedbugs-585-wide.h"
+    function wide_only() -> i64  #~ ffi_unknown_name
+
+function main()
+    print(strict_on() + wide_only())

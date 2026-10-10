@@ -136,7 +136,7 @@ function not_constant(s: source.Source, decls: [ast.Decl], line: str) -> diag.Di
 # `types` is the header's answer to the record's own question, `typedef opaque
 # hero_q;`, and where it says the word is a tag of any kind or a type
 # (`emit/ffi_held.hero`), this reader says nothing.
-function unknown_name(s: source.Source, tree: ast.Ast, decls: [ast.Decl], line: str, stderr: str, macros: {str: bool}, types: {str: str}, switched: {str: str}) -> diag.Diagnostic?
+function unknown_name(s: source.Source, tree: ast.Ast, decls: [ast.Decl], line: str, stderr: str, macros: {str: bool}, types: {str: str}, switched: {str: ffi_switched.Switch}) -> diag.Diagnostic?
     quoted: str @ ""
     caught: bool @ false
     call_form = ffi_lookup.after(text: line, marker: "call to undeclared function '")
@@ -200,12 +200,12 @@ function unknown_name(s: source.Source, tree: ast.Ast, decls: [ast.Decl], line: 
     if !macros[name].is_err()
         return macro_name(s, tree, decls, name: name)
 
-    # A name the header declares under a switch of the C library, which a
-    # refused round asked (`cli/switch_ask.hero`, defect 568): it hides the
-    # name, and does not lack it.
+    # A name the header declares under a switch of the C library, or hides
+    # under one a header defines, which a refused round asked
+    # (`cli/switch_ask.hero`, defect 568; `cli/unswitch_ask.hero`, 585).
     if !switched[name].is_err()
         return ok(
-            ffi_switched.hidden(header: found.must().header, name: name, macro: switched[name].must(), span: found.must().span)
+            ffi_switched.told(header: found.must().header, name: name, decided: switched[name].must(), span: found.must().span)
         )
     d: diag.Diagnostic @ diag.new_diagnostic(
         code: "ffi_unknown_name",
@@ -411,7 +411,7 @@ test "unknown_name reads both clang spellings and takes the guess"
     line = "main.c:5:9: error: call to undeclared function 'sqrtt'; ISO C99 and later do not support implicit function declarations"
     no_macros: {str: bool} = {}
     unasked: {str: str} = {}
-    unswitched: {str: str} = {}
+    unswitched: {str: ffi_switched.Switch} = {}
     d = unknown_name(
         s,
         parsed.tree,
