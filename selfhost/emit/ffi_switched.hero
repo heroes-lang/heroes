@@ -43,6 +43,13 @@ function hidden(header: str, name: str, macro: str, span: token.Span) -> diag.Di
 # The header declares no `name` under `decided.macro`, which the headers it
 # names define, and declares it with the switch undefined after them: told
 # so, with where the switch stands and the two ways out of it.
+# The end of a narrowed name's headline, which `cli/name_order.hero` reads
+# so as never to tell another order in its place: the headline is true, and
+# the switch is the cause (defect 585 beside defect 563, met in batch 19's
+# round).
+constant NARROWED_TAIL: str
+    ": without that switch it declares it"
+
 function narrowed(header: str, name: str, decided: Switch, span: token.Span) -> diag.Diagnostic
     by = quoted_list(decided.defined_by)
     verb: str @ "defines"
@@ -51,7 +58,7 @@ function narrowed(header: str, name: str, decided: Switch, span: token.Span) -> 
         verb @ "define"
     d: diag.Diagnostic @ diag.new_diagnostic(
         code: "ffi_unknown_name",
-        message: "`" + header + "` declares no `" + name + "` under `" + decided.macro + "`, which " + by + " " + verb + ": without that switch it declares it",
+        message: "`" + header + "` declares no `" + name + "` under `" + decided.macro + "`, which " + by + " " + verb + NARROWED_TAIL,
         span: span
     )
     d.notes @ d.notes.push(
@@ -61,18 +68,18 @@ function narrowed(header: str, name: str, decided: Switch, span: token.Span) -> 
 
 # `a`, `a` and `b`, or `a`, `b` and `c`, each in backticks.
 function quoted_list(names: [str]) -> str
-    out: str @ ""
+    pieces: [str] @ []
     index: i64 @ 0
 
     for name in names
         if index > 0 && index == names.len() - 1
-            out @ out + " and "
+            pieces @ pieces.push(" and ")
         else if index > 0
-            out @ out + ", "
-        out @ out + "`" + name + "`"
+            pieces @ pieces.push(", ")
+        pieces @ pieces.push("`" + name + "`")
         index @ index + 1
 
-    return out
+    return pieces.join("")
 
 ## Tests
 
