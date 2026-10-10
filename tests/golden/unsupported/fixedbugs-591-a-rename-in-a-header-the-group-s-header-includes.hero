@@ -1,0 +1,10 @@
+# fixedbugs, defect 591, lane b20-pragma, 2026-10-11, a shape beside
+# `fixedbugs-591-a-bound-function-a-header-renames-by-redefine-extname-is-told`:
+# the pragma is in `fixedbugs-591-a-header-that-renames-labs.h`, which the
+# group's header includes, and the message names that file and its line.
+
+extern "fixedbugs-591-a-rename-in-a-header-the-group-s-header-includes.h"
+    function labs(x: i64) -> i64  #~ ffi_missing_link
+
+function main()
+    print(labs(-42))

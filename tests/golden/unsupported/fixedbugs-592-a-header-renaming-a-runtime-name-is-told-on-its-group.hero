@@ -1,0 +1,13 @@
+# fixedbugs, defect 592, lane b20-pragma, 2026-10-11, found by lane b19-pack
+# beside defect 582: the header renames `hero_print_int`, which the unit
+# declares before its groups and every `print` of an `i64` calls, so the
+# compiler's own calls reached a name nothing defines and the link said
+# *internal error* at exit 2. A label cannot be taken back after the header
+# (measured: a second pragma does not replace it, a label written after it
+# is *conflicting asm label*), so the program is told, on the group.
+
+extern "fixedbugs-592-a-header-renaming-a-runtime-name-is-told-on-its-group.h"  #~ ffi_header_refused
+    function labs(x: i64) -> i64
+
+function main()
+    print(labs(-42))

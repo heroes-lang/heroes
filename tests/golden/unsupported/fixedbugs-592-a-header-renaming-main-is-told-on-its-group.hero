@@ -1,0 +1,11 @@
+# fixedbugs, defect 592, lane b20-pragma, 2026-10-11, a shape beside
+# `fixedbugs-592-a-header-renaming-a-runtime-name-is-told-on-its-group`: the
+# name renamed is `main`, which the unit defines after its groups, so the
+# definition took the label and the C library's start found no `main`, the
+# same exit 2 before.
+
+extern "fixedbugs-592-a-header-renaming-main-is-told-on-its-group.h"  #~ ffi_header_refused
+    function labs(x: i64) -> i64
+
+function main()
+    print(labs(-42))
