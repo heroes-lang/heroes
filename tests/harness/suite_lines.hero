@@ -41,6 +41,7 @@
 
 use absence
 use cases
+use one_file_units
 use report
 use floors
 use shell
@@ -139,6 +140,13 @@ function one_case(@r: report.Report, @skipped: i64, scratch: str, compiler: str,
         )
         return
 
+    # A case whose one file `--emit-c` refuses (`ffi_one_file`, defect 453)
+    # is walked over the units `build` writes for it (`one_file_units`), every
+    # one: never passed over.
+    if said.must().code == 1 && one_file_units.refused_one_file(said.must().err)
+        units_walked(@r, scratch: scratch, compiler: compiler, item: item)
+        return
+
     if said.must().code != 0
         lacks = absence.machine_lacks(scratch: scratch, path: item.source, expected: "", said: said.must().err)
 
@@ -166,6 +174,60 @@ function one_case(@r: report.Report, @skipped: i64, scratch: str, compiler: str,
         label: "lines/" + item.name,
         detail: "  " + wrong.len().to_str() + " `#line` claim(s) wrong: a generated line pointing at a source line that is blank or absent, a restore of the generated file not naming its own next line, or a function's entry off its `function` line — `#line` drifted, and a debugger or a clang note will show the author a line they did not write:\n" + shown(wrong)
     )
+
+# Every `#line` claim of every unit `build` writes for a case, asked as the
+# one file's are; a function's entry is owed in one of them at least.
+function units_walked(@r: report.Report, scratch: str, compiler: str, item: cases.Case)
+    units = one_file_units.units_of(
+        scratch: scratch,
+        compiler: compiler,
+        source: item.source,
+        tag: item.name + "-lines"
+    )
+
+    if units.is_err()
+        report.keep_failure(
+            @r,
+            label: "lines/" + item.name,
+            detail: "  `--emit-c` refuses " + item.source + "'s one file, and its units could not be asked: " + unread_units(units)
+        )
+        return
+    wrong: [str] @ []
+    entries: i64 @ 0
+
+    for unit in units.must()
+        named = item.source + ", its unit " + unit.name
+
+        for one in offences(c: unit.text, source: named)
+            wrong @ wrong.push(one)
+
+        blind: bool @ false
+
+        for one in entry_offences(c: unit.text, source: named)
+            if strings.contains(text: one, needle: "no function's entry")
+                blind @ true
+            else
+                wrong @ wrong.push(one)
+
+        if !blind
+            entries @ entries + 1
+
+    if entries == 0
+        wrong @ wrong.push("    no unit of " + item.source + " holds a function's entry, so the walk asked nothing")
+
+    if wrong.len() == 0
+        report.keep_pass(@r)
+        return
+    report.keep_failure(
+        @r,
+        label: "lines/" + item.name,
+        detail: "  " + wrong.len().to_str() + " `#line` claim(s) wrong in the units `build` writes for a program whose one file `--emit-c` refuses:\n" + shown(wrong)
+    )
+
+function unread_units(got: [one_file_units.Unit]?) -> str
+    return match got
+        .ok _  => ""
+        .err e => e.msg
 
 # A machine that skipped a third of the tree for libraries it lacks is not
 # running the corpus, whatever the rest read: the rule `run` and the golden
@@ -216,6 +278,32 @@ test "fixedbugs: a case that cannot emit is skipped only where the machine lacks
     assert one_skipped == 1
     assert excused.skips.len() == 1
     assert strings.starts_with(text: excused.skips[0], prefix: "SKIP lines/lacks\n")
+    assert !shell.remove_tree(scratch).is_err()
+
+# DEFECT 453's widening in this suite, held as a test (2026-10-10): a program
+# whose one file `--emit-c` refuses is walked over the units `build` writes,
+# and reads as a pass, never a skip.
+test "fixedbugs: a case whose one file --emit-c refuses is walked over its units (defect 453)"
+    compiler = shell.some_compiler()
+
+    if compiler.is_err()
+        return
+    scratch = shell.own_scratch()
+    planted = one_file_units.planted_two_ways(scratch)
+    assert !planted.is_err()
+    judged: report.Report @ report.empty()
+    none_skipped: i64 @ 0
+    one_case(
+        @judged,
+        @none_skipped,
+        scratch: scratch,
+        compiler: compiler.must(),
+        item: cases.Case(source: planted.must(), expected: "", name: "two-ways")
+    )
+    assert judged.passed == 1
+    assert judged.failed == 0
+    assert none_skipped == 0
+    assert judged.skips.len() == 0
     assert !shell.remove_tree(scratch).is_err()
 
 test "a few skips for a missing library pass, a third of the tree does not"
