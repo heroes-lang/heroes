@@ -24,5 +24,5 @@
 # `[[i64]]` the refusal offers, and what the repaired program does not tell
 # again is withdrawn. The case holds one message: the refusal.
 function main()
-    x: i64[2][3] @ [[1, 2, 3], [1, 2, 3]]  #~ fixed_outside_a_group
+    x: i64[2][3] = [[1, 2, 3], [1, 2, 3]]  #~ fixed_outside_a_group
     print(len(x))

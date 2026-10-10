@@ -315,7 +315,7 @@ function substitute(@c: state.Checker, ty: i64, bindings: [i64?]) -> i64
 ## Tests
 
 test "a type parameter takes the first type it meets and holds it"
-    r: resolved.Resolved @ resolved.new_resolved()
+    r: resolved.Resolved = resolved.new_resolved()
     c: state.Checker @ state.new_checker(out_of: r, expr_count: 0)
     s = source.new_source(name: "t.hero", text: "x\n")
     d: [ast.Decl] = []
@@ -335,7 +335,7 @@ test "a type parameter takes the first type it meets and holds it"
     assert c.out.diagnostics[0].message == "expected `i64`, found `str`"
 
 test "binding descends the shapes: array, map, and a function type"
-    r: resolved.Resolved @ resolved.new_resolved()
+    r: resolved.Resolved = resolved.new_resolved()
     c: state.Checker @ state.new_checker(out_of: r, expr_count: 0)
     s = source.new_source(name: "t.hero", text: "x\n")
     d: [ast.Decl] = []
@@ -365,7 +365,7 @@ test "binding descends the shapes: array, map, and a function type"
     assert table.get(c.out.types, rebuilt) == .array(element: str_id)
 
 test "the context fills only what the arguments left, and never reports"
-    r: resolved.Resolved @ resolved.new_resolved()
+    r: resolved.Resolved = resolved.new_resolved()
     c: state.Checker @ state.new_checker(out_of: r, expr_count: 0)
     a_param = table.intern(@c.out.types, .generic(at: 0))
     b_param = table.intern(@c.out.types, .generic(at: 1))
@@ -401,7 +401,7 @@ test "the context fills only what the arguments left, and never reports"
     assert two[1].must() == str_id
 
 test "a signature either mentions a type parameter or it does not"
-    r: resolved.Resolved @ resolved.new_resolved()
+    r: resolved.Resolved = resolved.new_resolved()
     c: state.Checker @ state.new_checker(out_of: r, expr_count: 0)
     a_param = table.intern(@c.out.types, .generic(at: 0))
     str_id = table.str_ty(c.out.types)
@@ -413,10 +413,10 @@ test "a signature either mentions a type parameter or it does not"
     assert mentions(c, ty: nested, at: 0)
 
 test "an unbound generic substitutes to the silent error id"
-    r: resolved.Resolved @ resolved.new_resolved()
+    r: resolved.Resolved = resolved.new_resolved()
     c: state.Checker @ state.new_checker(out_of: r, expr_count: 0)
     a_param = table.intern(@c.out.types, .generic(at: 0))
-    bindings: [i64?] @ [fail(code: "unbound", msg: "A")]
+    bindings: [i64?] = [fail(code: "unbound", msg: "A")]
     assert substitute(@c, a_param, bindings) == 0
 
     # With no bindings at all, substitution is the identity.

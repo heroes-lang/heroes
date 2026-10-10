@@ -5,5 +5,5 @@
 
 function main()
     print("a�b")
-    x: i64 @ "text"  #~ type_mismatch
+    x: i64 = "text"  #~ type_mismatch
     print(x)

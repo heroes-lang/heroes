@@ -73,5 +73,5 @@ function main()
     print(f(a: 1, b: 2))
     print(len(map(ps, tag)))
     print(first(xs))
-    us: [()] @ []      #~ unit_element
+    us: [()] = []      #~ unit_element
     print(len(us))

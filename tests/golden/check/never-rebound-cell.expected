@@ -1,0 +1,1 @@
+tests/golden/check/never-rebound-cell.hero:9:5: error[never_rebound]: `v` is declared a mutable cell and nothing re-binds it — a value written once is a binding: write `=` where the `@` is

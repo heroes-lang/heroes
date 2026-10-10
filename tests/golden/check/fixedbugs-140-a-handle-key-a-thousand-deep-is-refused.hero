@@ -3011,5 +3011,5 @@ record R999
     inner: R998
 
 function main()
-    m: {R999: i64} @ {}  #~ handle_map_key
+    m: {R999: i64} = {}  #~ handle_map_key
     print(len(m))

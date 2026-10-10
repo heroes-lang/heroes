@@ -585,7 +585,7 @@ function is_name_byte(b: u8) -> bool
 # The name on the left, and every name on the right that is not inside quotes.
 function one_production(body: str) -> Production
     cut = strings.index_of(text: body, needle: "=")
-    name: str @ strings.trimmed(body.slice(from: 0, to: cut.default(0)))
+    name: str = strings.trimmed(body.slice(from: 0, to: cut.default(0)))
     rest = body.slice(from: cut.default(0) + 1, to: body.len())
     return Production(name: name, uses: names_outside_quotes(rest))
 

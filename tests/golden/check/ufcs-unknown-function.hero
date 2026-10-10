@@ -8,6 +8,6 @@ record Holder
     cb: (function(i64) -> i64)
 
 function run(h: Holder, n: i64) -> i64
-    m: {str: i64} @ {}
+    m: {str: i64} = {}
     m.set("a", 1)  #~ unknown_function
     return h.cb(n)

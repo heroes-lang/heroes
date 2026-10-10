@@ -38,6 +38,24 @@ function unknown_name(name: str, near: [str], span: token.Span) -> diag.Diagnost
     suggest(@d, near, span)
     return d
 
+# A name nothing binds, on the left of `@` (panel 209's R9): `totl @ total +
+# x` with no `totl` declared. The rename stays the fix where a near name
+# exists; what the message adds is the shape of the line the author may
+# have meant, since a bare `name @ value` never declares (spec § 5), and
+# today's message said only that nothing of that name was in scope.
+function unknown_place(name: str, near: [str], span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @ unknown_name(name, near, span)
+    d.notes @ d.notes.push(
+        "`" + name + " @ …` changes a cell that already exists; a new cell is declared with its type, `" + name + ": <type> @ <value>`, and a value bound once with `" + name + " = <value>`"
+    )
+    return d
+
+test "a mutation of a name nothing binds says how a cell is declared"
+    d = unknown_place("totl", ["total"], token.Span(start: 0, end: 4))
+    assert d.code == "unknown_name"
+    assert d.notes.len() == 1
+    assert d.fixes.len() == 1
+
 # A name nothing binds, called (defect 270): `print(sqrt(2.0))` with no
 # `extern` was offered `sort` alone, a guess that is true and points away
 # from the repair, since a function of C is bound in an `extern` group. The
@@ -279,3 +297,28 @@ test "a write to a plain binding earns the guess, not a certain fix"
     assert d.fixes[0].certainty == .guess
     loop_write = not_mutable("x", .loop_var, span)
     assert loop_write.fixes.len() == 0
+
+# `v: i64 @ 5` and no `v @ …` after it, nor an `@v` handed to a call: a cell
+# nothing re-binds is a binding written with the wrong symbol (spec § 5,
+# panel 209's R1b, the rule Zig 0.12 ships as an error). The fix is certain:
+# the `@` that declared it, whose span the `Local` carries, becomes `=`, the
+# annotation stays, and the program means what it meant, since nothing ever
+# wrote the cell.
+function never_rebound(name: str, span: token.Span, symbol: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "never_rebound",
+        message: "`" + name + "` is declared a mutable cell and nothing re-binds it — a value written once is a binding: write `=` where the `@` is",
+        span: span
+    )
+    d.fixes @ d.fixes.push(
+        diag.Fix(title: "write `=`: `" + name + "` is a binding", replacement: "=", span: symbol, certainty: .certain)
+    )
+    return d
+
+test "a cell nothing re-binds is told once, with a certain fix at its @"
+    d = never_rebound("v", span: token.Span(start: 4, end: 5), symbol: token.Span(start: 11, end: 12))
+    assert d.code == "never_rebound"
+    assert d.fixes.len() == 1
+    assert d.fixes[0].certainty == .certain
+    assert d.fixes[0].replacement == "="
+    assert d.fixes[0].span.start == 11

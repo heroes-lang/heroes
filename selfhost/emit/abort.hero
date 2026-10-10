@@ -116,7 +116,7 @@ test "a comparison carries both sides, an unprintable side is discarded aloud"
     parsed = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
     out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
-    c: state.Checked @ checker.check(parsed.tree, out, s, parsed.decls)
+    c: state.Checked = checker.check(parsed.tree, out, s, parsed.decls)
     str_id = table.str_ty(c.types)
     int_id = table.int_ty_id(c.types)
     f = containers.Function(

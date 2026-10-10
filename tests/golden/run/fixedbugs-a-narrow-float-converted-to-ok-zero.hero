@@ -21,14 +21,14 @@
 # refusal — because either alone passes under a stuck zero.
 
 function main()
-    small: f32 @ 7.9
+    small: f32 = 7.9
     print(to_i64(small).must())
-    negative: f32 @ -7.9
+    negative: f32 = -7.9
     print(to_i64(negative).must())
-    huge: f32 @ 100000000000000000000000000000.0
+    huge: f32 = 100000000000000000000000000000.0
     print(to_i64(huge).is_err())
 
     # The control: the same conversion at the width that always worked, so a
     # regression that breaks both is told apart from one that breaks this width.
-    wide: f64 @ 7.9
+    wide: f64 = 7.9
     print(to_i64(wide).must())

@@ -425,7 +425,7 @@ function mismatch(@c: state.Checker, s: source.Source, decls: [ast.Decl], want: 
 ## Tests
 
 function fresh() -> state.Checker
-    r: resolved.Resolved @ resolved.new_resolved()
+    r: resolved.Resolved = resolved.new_resolved()
     return state.new_checker(out_of: r, expr_count: 0)
 
 function plain_source(text: str) -> source.Source

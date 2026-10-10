@@ -18,7 +18,7 @@ function main()
     print(f"{n + 1} and {{braces}} and {word.len()}")
     print(f"plain")
     print(f"")
-    m: {str: i64} @ {"k": 7}
+    m: {str: i64} = {"k": 7}
     print(f"map {m["k"].must()} and nested {f"in {n}"}")
     x = 2.5
     flag = true

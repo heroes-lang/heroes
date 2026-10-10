@@ -80,8 +80,8 @@ function main()
     print(same(x: p, y: q))
     print(differs(x: p, y: q))
     print(chooses(x: p, y: q, alike: points_alike))
-    m: {str: i64} @ {"a": 1}
-    n: {str: i64} @ {"a": 1}
+    m: {str: i64} = {"a": 1}
+    n: {str: i64} = {"a": 1}
     print(maps_alike(a: m, b: n))
     print(arrays_alike(xs: [1, 2], ys: [1, 2]))
     one: i64? = ok(1)

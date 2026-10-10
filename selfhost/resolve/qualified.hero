@@ -211,7 +211,7 @@ test "a module in receiver position is decided before values are"
     a: ast.Ast @ ast.new_ast()
     receiver = name_expr(@a, start: 0, end: 4)
     call_node = name_expr(@a, start: 5, end: 10)
-    decls: [ast.Decl] @ [a_function_decl(name_start: 5, name_end: 10)]
+    decls: [ast.Decl] = [a_function_decl(name_start: 5, name_end: 10)]
     r: state.Resolver @ state.new_resolver(expr_count: 2, type_count: 0)
     r.module @ "t"
     resolved.declare_use(@r.out, from: "t", binding: "geom", module: "geom")
@@ -227,7 +227,7 @@ test "a qualified extern is refused — the reference, so call and value alike"
     a: ast.Ast @ ast.new_ast()
     receiver = name_expr(@a, start: 0, end: 4)
     call_node = name_expr(@a, start: 5, end: 10)
-    decls: [ast.Decl] @ [an_extern_decl(name_start: 5, name_end: 10)]
+    decls: [ast.Decl] = [an_extern_decl(name_start: 5, name_end: 10)]
     r: state.Resolver @ state.new_resolver(expr_count: 2, type_count: 0)
     r.module @ "t"
     resolved.declare_use(@r.out, from: "t", binding: "geom", module: "geom")
@@ -267,7 +267,7 @@ test "a name the module does not declare earns the module's own list"
     a: ast.Ast @ ast.new_ast()
     receiver = name_expr(@a, start: 0, end: 4)
     call_node = name_expr(@a, start: 11, end: 12)
-    decls: [ast.Decl] @ [a_function_decl(name_start: 5, name_end: 10)]
+    decls: [ast.Decl] = [a_function_decl(name_start: 5, name_end: 10)]
     r: state.Resolver @ state.new_resolver(expr_count: 2, type_count: 0)
     r.module @ "t"
     resolved.declare_use(@r.out, from: "t", binding: "geom", module: "geom")

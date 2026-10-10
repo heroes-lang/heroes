@@ -169,8 +169,8 @@ function emit_told(target: emit_decls.BuildTarget, p: containers.Program, c: sta
     # functions into every translation unit in the language.
     shown = shown_fused(p, s)
     walked = reach.reach_of(p, c, target: target, shown: shown)
-    reached: {i64: bool} @ walked.reached
-    constructed: {i64: bool} @ walked.constructed
+    reached: {i64: bool} = walked.reached
+    constructed: {i64: bool} = walked.constructed
     names: ctype.Names @ ctype.new_names_qualified(s, decls, struct_tags: struct_tags)
     names @ ctype.with_options(names, c: c, s: s, decls: decls)
     names @ ctype.with_functions(names, c: c, s: s, decls: decls, p: p)
@@ -293,7 +293,7 @@ test "one program, one unit: prelude, order, shim — and the same bytes twice"
     parsed = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
     out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
-    c: state.Checked @ checker.check(parsed.tree, out, s, parsed.decls)
+    c: state.Checked = checker.check(parsed.tree, out, s, parsed.decls)
     assert c.diagnostics.len() == 0
     low = lower.lower(parsed.tree, out, c, s, parsed.decls)
     p: containers.Program @ low.program
@@ -333,7 +333,7 @@ test "a descriptor copies its element as bytes, never by an assignment of the st
     parsed = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
     out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
-    c: state.Checked @ checker.check(parsed.tree, out, s, parsed.decls)
+    c: state.Checked = checker.check(parsed.tree, out, s, parsed.decls)
     assert c.diagnostics.len() == 0
     low = lower.lower(parsed.tree, out, c, s, parsed.decls)
     p: containers.Program @ low.program

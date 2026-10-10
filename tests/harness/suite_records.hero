@@ -536,7 +536,7 @@ constant REFUSED: [str]
 # row 83: every item one file of `issues/`. Its plan was written as
 # `M-issue-cards` and never committed under it, so no record carries that name.
 constant ROWS: i64
-    87
+    88
 
 # **`WATCHED` stood here until 2026-09-07 and nothing had read it since
 # 2026-08-19.** It listed `design.md` and `CLAUDE.md` as *"the two documents whose
@@ -2766,7 +2766,7 @@ function c_files(@r: report.Report, living: [str])
     # `docs/platforms/` since 2026-10-08: a probe written by hand for one
     # machine lives with that machine's page, as defect 463's does, run on a
     # Linux with SELinux enforcing, which no leg of the net is.
-    owns: [str] @ ["runtime/", "tools/spike/", "seed/", "docs/platforms/"]
+    owns: [str] = ["runtime/", "tools/spike/", "seed/", "docs/platforms/"]
     strays: [str] @ []
 
     for path in living
@@ -5984,8 +5984,8 @@ test "a row number is digits and nothing else"
     assert !all_digits("**Last closed**")
 
 function boundary(@r: report.Report)
-    caught: [str] @ ["scheduled for M8c", "at M5b the increfs", "M0 was day zero", "(M6+)"]
-    clean: [str] @ [
+    caught: [str] = ["scheduled for M8c", "at M5b the increfs", "M0 was day zero", "(M6+)"]
+    clean: [str] = [
         "STAC-M3 Antuco benchmarks"
         "INT64_MIN % -1 does not trap on ARM64"
         "the RM64 encoding"
@@ -6162,7 +6162,7 @@ test "a dead citation is caught, and the anchored rule ignores what it must"
 
     # The check itself, firing: a stand-in document citing something absent.
     fired: report.Report @ report.empty()
-    no_closed: {str: bool} @ {}
+    no_closed: {str: bool} = {}
     citations(@fired, scratch: "build/harness-selftest", present: ["design.md"], closed: no_closed)
     assert fired.failed + fired.passed == 1
 

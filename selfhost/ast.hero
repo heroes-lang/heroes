@@ -63,11 +63,14 @@ variant StmtKind
         value: i64
     # `v: i64 @ 0` — declares a mutable cell. The type is REQUIRED (§4.4):
     # without it, `x @ 5` would not say whether it declares or mutates, and a
-    # typo would silently declare a new variable.
+    # typo would silently declare a new variable. `symbol` is the `@`'s own
+    # span, kept for the fix a cell nothing re-binds is offered: write `=`
+    # there (spec § 5, panel 209).
     declare
         name: token.Span
         ty: i64
         value: i64
+        symbol: token.Span
     # `v @ v + 1`, `l.pos @ l.pos + 1` — the left side is a PLACE: a name, or a
     # field or index path rooted at one.
     mutate
@@ -680,10 +683,10 @@ test "a group's record carries what the head line said"
 test "the operators are the language's own, spelled once"
     # A case is contextual — `.shl`, never `BinaryOp.shl`, which is a type in
     # value position and the compiler says so.
-    shift: BinaryOp @ .shl
+    shift: BinaryOp = .shl
     assert shift != .shr
     ops: [BinaryOp] = [.add, .sub, .mul, .div, .rem]
     assert ops.len() == 5
     assert ops[0] == .add
-    u: UnaryOp @ .bit_not
+    u: UnaryOp = .bit_not
     assert u != .neg

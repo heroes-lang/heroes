@@ -20,7 +20,7 @@ function outer(@y: u8) -> i32
     return inner(@y)
 
 function main()
-    p: Pair @ Pair(a: 0, b: 7)
+    p: Pair = Pair(a: 0, b: 7)
     m: u8 @ 0
     print("before ", p.b)
     print(outer(@m))

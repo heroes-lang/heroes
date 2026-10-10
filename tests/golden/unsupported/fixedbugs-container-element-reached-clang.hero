@@ -37,15 +37,15 @@
 # `fixedbugs-pointer-in-a-container.hero`.
 
 function main()
-    units: [()] @ []                #~ unit_element
+    units: [()] = []                #~ unit_element
     print(len(units))
     # A nested one: refused for the `ptr` at the bottom, and named once — which
     # is the descent this case is about. Its comment used to say it was legal;
     # it fires now, and it is annotated now.
-    deep: [[ptr]] @ []              #~ pointer_element
+    deep: [[ptr]] = []              #~ pointer_element
     print(len(deep))
     # And the containers themselves emit, which is what makes the rows above
     # about the element rather than about the container.
-    fine: [i64] @ []
-    nested: {str: [i64]} @ {}
+    fine: [i64] = []
+    nested: {str: [i64]} = {}
     print(len(fine), len(nested))

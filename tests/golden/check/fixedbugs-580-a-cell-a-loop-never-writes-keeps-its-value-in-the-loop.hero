@@ -13,7 +13,7 @@
 # one wrote on the same turn.
 
 constant S31: u8
-    a: u8 @ 200
+    a: u8 = 200
     t: u8 @ 0
     i: i64 @ 0
 
@@ -24,7 +24,7 @@ constant S31: u8
     t
 
 constant T8: u8
-    a: u8 @ 200
+    a: u8 = 200
     t: u8 @ 0
 
     for _ in [1, 2]

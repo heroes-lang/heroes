@@ -102,7 +102,7 @@ function main()
 
     # `to_str` cannot fail either, at any width, which is why every message
     # in this file could be built without a single `.must()`.
-    b: u8 @ 200
+    b: u8 = 200
     print(b.to_str())
     print((0 - 1).to_str())
     print(2.5.to_str())
@@ -170,7 +170,7 @@ test "to_f32 rounds rather than refusing"
     assert 0.0.to_f32().to_f64() == 0.0
 
 test "to_str and to_f64 cannot fail, so they hand back a value"
-    b: u8 @ 200
+    b: u8 = 200
     assert b.to_str() == "200"
     assert (0 - 1).to_str() == "-1"
     assert 255.to_f64() == 255.0
@@ -179,7 +179,7 @@ test "to_str and to_f64 cannot fail, so they hand back a value"
 test "a literal takes the type its context asks for"
     # `200` is a `u8` here because the cell says so, and an `i64` two lines
     # down because nothing else says otherwise.
-    small: u8 @ 200
+    small: u8 = 200
     plain = 200
     assert small.to_i64().must() == plain
     assert small.to_str() == plain.to_str()

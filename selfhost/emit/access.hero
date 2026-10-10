@@ -169,7 +169,7 @@ test "len splits three ways, tag and payload split on the operand"
     parsed = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
     out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
-    c: state.Checked @ checker.check(parsed.tree, out, s, parsed.decls)
+    c: state.Checked = checker.check(parsed.tree, out, s, parsed.decls)
     assert c.diagnostics.len() == 0
     names = ctype.new_names(s, parsed.decls)
     str_id = table.str_ty(c.types)

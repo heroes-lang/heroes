@@ -9,7 +9,7 @@
 # This case: `%` at `i32`, -2147483648 % -1.
 
 function main()
-    x: i32 @ -2147483648
-    y: i32 @ -1
+    x: i32 = -2147483648
+    y: i32 = -1
     print(x % 10)
     print(x % y)

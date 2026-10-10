@@ -187,7 +187,7 @@ test "a backslash asks its line to go on only where it stands last on a line wit
     for text in ["\\ b\n", "\\\rb\n", "\\x\n"]
         assert !asks_to_go_on(l, text, at: 0)
 
-    n: state.LexState @ state.new_state()
+    n: state.LexState = state.new_state()
     assert !asks_to_go_on(n, "\\\n", at: 0)
 
 test "the next line's word is found past the line end and its margin, and never past a comment"

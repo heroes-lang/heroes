@@ -74,7 +74,7 @@ function write_root(@r: state.Resolver, a: ast.Ast, s: source.Source, id: i64)
         return
     candidates = names.value_candidates(@r)
     near = did_you_mean.near_names(@r, text, candidates)
-    state.push_diagnostic(@r, errors.unknown_name(text, near, span))
+    state.push_diagnostic(@r, errors.unknown_place(text, near, span))
 
 # The root of an `@` argument, held to the rule of the left of `@`. The
 # walker resolved the argument as a READ first (copy in), so an unknown

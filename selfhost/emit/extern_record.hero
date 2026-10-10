@@ -110,7 +110,7 @@ test "assertions land on the field's line, the probe counts positionally"
     parsed = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
     out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
-    c: state.Checked @ checker.check(parsed.tree, out, s, parsed.decls)
+    c: state.Checked = checker.check(parsed.tree, out, s, parsed.decls)
     assert c.diagnostics.len() == 0
     names = ctype.new_names(s, parsed.decls)
     w: writer.Writer @ writer.new_writer("t")
@@ -137,7 +137,7 @@ test "an array field's two assertions are two counted lines, each under the fiel
     parsed = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
     out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
-    c: state.Checked @ checker.check(parsed.tree, out, s, parsed.decls)
+    c: state.Checked = checker.check(parsed.tree, out, s, parsed.decls)
     assert c.diagnostics.len() == 0
     names = ctype.new_names(s, parsed.decls)
     w: writer.Writer @ writer.new_writer("t")

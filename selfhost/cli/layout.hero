@@ -581,7 +581,7 @@ test "a left-out empty struct is missing for MSVC's target and complete for a GN
     gnu_dump = "         0 | struct hero_ly_0\n         0 |   ZE v\n         0 |     struct hero_empty e\n         0 |     int[0] z\n         0 |     int x\n           | [sizeof=4, align=4]\n"
     rows = layout_rows.rows_of(gnu_dump)
     tree = layout_text.members(rows: rows, from: layout_text.heads(rows)[0].must()).must()
-    no_sizes: {str: i64} @ {}
+    no_sizes: {str: i64} = {}
     asked = layout_check.record_lines(
         layout_text.asked(s, parsed.decls)[0],
         hero_name: "ZE",

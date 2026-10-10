@@ -1,0 +1,13 @@
+# M-inferred-cell step 1, panel 209's R9: the mutation of a name nothing
+# binds says, beside the rename, how a cell is declared and how a value is
+# bound once, since a bare `name @ value` never declares (spec § 5). The
+# full form pins the note; `tests/golden/check/never-rebound-near-miss-is-one-message.hero`
+# pins that it is the one message.
+function total_of(xs: [i64]) -> i64
+    total: i64 @ 0
+    for x in xs
+        totl @ total + x     #~ unknown_name
+    return total
+
+function main()
+    print(total_of([1, 2, 3]))

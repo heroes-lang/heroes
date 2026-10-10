@@ -22,9 +22,9 @@ function f(n: i64) -> i64
     return n
 
 function main()
-    a: i8 @ -(-128)  #~ int_out_of_range
+    a: i8 = -(-128)  #~ int_out_of_range
     print(a)
-    b: i8 @ -((200))  #~ int_out_of_range
+    b: i8 = -((200))  #~ int_out_of_range
     print(b)
     n: i64 = 1
     c: bool = -(n)  #~ type_mismatch

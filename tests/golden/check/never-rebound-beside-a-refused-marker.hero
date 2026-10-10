@@ -1,0 +1,13 @@
+# M-inferred-cell step 1, the shape the compiler's own tests found in panel
+# 209's prototype: a cell whose only `@` stands before an argument of a
+# construction, which takes none. The `@` is refused once, `marker_mismatch`,
+# and counts as the write the author meant (`resolve/writes.meant_write`),
+# so the cell is not also told as one nothing re-binds: one mistake, one
+# message (design.md §4.17).
+record One
+    x: i64
+
+function main()
+    n: i64 @ 1
+    o = One(x: @n)       #~ marker_mismatch
+    print(o.x + n)

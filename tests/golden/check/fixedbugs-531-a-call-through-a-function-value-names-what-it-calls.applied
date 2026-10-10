@@ -26,7 +26,7 @@ function apply(g: (function(i64) -> i64)) -> i64
     return g(1, 2)  #~ wrong_arity
 
 function main()
-    f: (function(i64) -> i64) @ double
+    f: (function(i64) -> i64) = double
     print(f(1, 2))  #~ wrong_arity
     r = Ops(op: double)
     print(r.op(1, 2))  #~ wrong_arity
@@ -43,6 +43,6 @@ function main()
         )
     )
     print(apply(double))
-    move: (function(from: str, to: str) -> str) @ copy_text
+    move: (function(from: str, to: str) -> str) = copy_text
     print(move("a", "b"))  #~ needs_label needs_label
     print(move(from: "a", to: "b"))  #~ wrong_label

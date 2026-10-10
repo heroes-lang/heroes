@@ -5,5 +5,5 @@
 
 function main()
     x = "abc"
-    c: cstr @ x.lease()
+    c: cstr = x.lease()
     c.end_lease()  #~ ufcs_on_mutable

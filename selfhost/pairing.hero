@@ -316,7 +316,7 @@ test "every opener is paired by the one walk as by the walk from it"
         out = lexer.lex_one(text)
 
         for root in [-1, text.len() / 2]
-            c: cursor.Cursor @ cursor.lexed_cursor(
+            c: cursor.Cursor = cursor.lexed_cursor(
                 tokens: out.tokens,
                 root_end: root,
                 closes: out.closes,

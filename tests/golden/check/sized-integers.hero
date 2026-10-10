@@ -27,10 +27,10 @@
 #    it. Forgetting it is a type error rather than a truncation.
 
 function main()
-    b: u8 @ 300             #~ int_out_of_range
-    c: u8 @ 255
-    d: i64 @ 7
+    b: u8 = 300             #~ int_out_of_range
+    c: u8 = 255
+    d: i64 = 7
     e = c + d               #~ mixed_arithmetic
-    f: i64 @ c              #~ type_mismatch
-    g: u8 @ to_u8(300)     #~ type_mismatch
+    f: i64 = c              #~ type_mismatch
+    g: u8 = to_u8(300)     #~ type_mismatch
     print(b, c, d, e, f, g)

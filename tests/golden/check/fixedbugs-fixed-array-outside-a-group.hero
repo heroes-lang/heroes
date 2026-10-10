@@ -55,15 +55,15 @@ record Box
     xs: i64[4]                        #~ fixed_outside_a_group
 
 function elements()
-    xs: [i64[4]] @ []                 #~ fixed_outside_a_group
+    xs: [i64[4]] = []                 #~ fixed_outside_a_group
     print(len(xs))
 
 function map_values()
-    m: {str: i64[2]} @ {}             #~ fixed_outside_a_group
+    m: {str: i64[2]} = {}             #~ fixed_outside_a_group
     print(len(m))
 
 function a_binding()
-    x: i64[4] @ [1, 2, 3, 4]          #~ fixed_outside_a_group
+    x: i64[4] = [1, 2, 3, 4]          #~ fixed_outside_a_group
     print(x[0])
 
 function main()

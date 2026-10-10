@@ -7,7 +7,7 @@
 # itself. Each line is a type error a string's text stands on.
 
 function main()
-    a: i64 @ "a b​c"  #~ type_mismatch
-    b: i64 @ "﻿d"  #~ type_mismatch
-    c: i64 @ "café €"  #~ type_mismatch
+    a: i64 = "a b​c"  #~ type_mismatch
+    b: i64 = "﻿d"  #~ type_mismatch
+    c: i64 = "café €"  #~ type_mismatch
     print(a + b + c)

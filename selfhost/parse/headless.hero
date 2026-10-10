@@ -379,6 +379,6 @@ test "a block under a head that opens none is named and read"
 
 test "a line's head the lexer refused is told from one it read"
     text = "elif x\nx = 1\n"
-    c: cursor.Cursor @ lexed(text)
+    c: cursor.Cursor = lexed(text)
     assert refused_head(c, text, at: 0)
     assert !refused_head(c, text, at: 3)

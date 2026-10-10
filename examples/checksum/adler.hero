@@ -48,7 +48,7 @@ function halves(text: str) -> Halves
     i: i64 @ 0
 
     while i < text.len()
-        byte: u8 @ text[i]
+        byte: u8 = text[i]
         s1 @ (s1 + byte.to_i64().must()) % BASE
         s2 @ (s2 + s1) % BASE
         i @ i + 1

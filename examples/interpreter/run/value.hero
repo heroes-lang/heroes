@@ -57,8 +57,8 @@ record Frame
     depth: i64
 
 function fresh() -> Frame
-    vars: {str: Value} @ {}
-    fns: {str: i64} @ {}
+    vars: {str: Value} = {}
+    fns: {str: i64} = {}
     no_lines: [str] = []
     return Frame(
         vars: vars,

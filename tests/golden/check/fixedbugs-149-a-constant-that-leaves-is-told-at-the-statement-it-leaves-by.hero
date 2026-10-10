@@ -7,11 +7,11 @@
 # through which the body left, the first that does, whatever follows it.
 
 constant RETURNS_AFTER_A_LINE: i64
-    x: i64 @ 1
+    x: i64 = 1
     return x  #~ no_value
 
 constant LEAVES_BY_AN_IF: i64
-    x: i64 @ 1
+    x: i64 = 1
 
     if x == 1  #~ no_value
         return 1

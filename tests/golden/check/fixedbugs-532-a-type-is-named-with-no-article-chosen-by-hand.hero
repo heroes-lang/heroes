@@ -33,7 +33,7 @@ function main()
         _    => print("always")
 
     print(f"an item {item}")  #~ hole_not_renderable
-    m: {str: i64?} @ {"a": ok(1)}
+    m: {str: i64?} = {"a": ok(1)}
 
     #~v nested_read
     if m["a"].is_err()

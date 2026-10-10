@@ -14,6 +14,6 @@ extern "fixedbugs-361-a-macro-from-a-header-the-group-includes-is-kept-off-too.h
 
 function main()
     print(thrice(x: 14))
-    flag: bool @ thrice(x: 1) > 2
+    flag: bool = thrice(x: 1) > 2
     print(flag)
     print("text")

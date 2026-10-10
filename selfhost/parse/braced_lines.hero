@@ -202,7 +202,7 @@ test "braces the lexer took for a bracket are laid out as the block their lines'
     # 0 => {  /  if x  /      y()  /  z()  /  }: an arm's braces, which the
     # lexer reads as a map's; the inner body is a block of its own.
     text = "0 => {\n    if x\n        y()\n    z()\n}\n"
-    c: cursor.Cursor @ at_brace(text)
+    c: cursor.Cursor = at_brace(text)
     view = laid_out(c, text)
     view_kinds: [token.TokenKind] = [
         .indent
@@ -227,7 +227,7 @@ test "braces the lexer took for a bracket are laid out as the block their lines'
     # 0 => {  /  red, green,  /  blue # a note  /  }: a comma ends a member,
     # and a comment is no line of its own.
     cases = "0 => {\n    red, green,\n    blue # a note\n}\n"
-    d: cursor.Cursor @ at_brace(cases)
+    d: cursor.Cursor = at_brace(cases)
     shown = laid_out(d, cases)
     shown_kinds: [token.TokenKind] = [
         .indent
@@ -245,7 +245,7 @@ test "braces the lexer took for a bracket are laid out as the block their lines'
     # A `,` inside a member's brackets is the member's, and a line shallower
     # than the first is never shallower than the braces.
     typed = "0 => {\n        m: {str: i64},\n    n: i64\n}\n"
-    e: cursor.Cursor @ at_brace(typed)
+    e: cursor.Cursor = at_brace(typed)
     held = laid_out(e, typed)
     held_kinds: [token.TokenKind] = [
         .indent
@@ -270,7 +270,7 @@ test "a body's braces the lexer laid out are viewed as the block it made, every 
     # function f() {  /  red, green,  /  blue  /  }: the lexer's own lines,
     # read as they are without the braces (ruling 1, 2026-10-01).
     text = "function f() {\n    red, green,\n    blue\n}\n"
-    c: cursor.Cursor @ at_brace(text)
+    c: cursor.Cursor = at_brace(text)
     view = laid_out(c, text)
     shown = kinds(view)
     assert shown[0] == .indent
@@ -299,7 +299,7 @@ test "what the view's reading said is the cursor's, and the cursor is past the b
 # the lexer laid out and in braces it took for a bracket.
 test "a view of braces is paired as the walk from each of its openers pairs it"
     for text in ["function f() {\n    x = [[1], g([2, (3]]\n    print(x)\n}\n", "0 => {\n    m: {str: [i64]},\n    n: f([1, [2\n}\n"]
-        c: cursor.Cursor @ at_brace(text)
+        c: cursor.Cursor = at_brace(text)
         view = laid_out(c, text)
         assert view.tables.pairs.len() == view.tokens.len()
 

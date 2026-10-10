@@ -249,7 +249,7 @@ function lowered(text: str) -> containers.Program
     parsed = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
     out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
-    c: state.Checked @ checker.check(parsed.tree, out, s, parsed.decls)
+    c: state.Checked = checker.check(parsed.tree, out, s, parsed.decls)
     low = lower.lower(parsed.tree, out, c, s, parsed.decls)
     p: containers.Program @ low.program
     cc: state.Checked @ c
@@ -262,7 +262,7 @@ function laid_text(text: str) -> Laid?
     parsed = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
     out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
-    c: state.Checked @ checker.check(parsed.tree, out, s, parsed.decls)
+    c: state.Checked = checker.check(parsed.tree, out, s, parsed.decls)
     p = lowered(text)
     names = ctype.new_names(s, parsed.decls)
 
@@ -297,7 +297,7 @@ test "the switch's three lines are each read where the generated file is believe
     parsed = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
     out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
-    c: state.Checked @ checker.check(parsed.tree, out, s, parsed.decls)
+    c: state.Checked = checker.check(parsed.tree, out, s, parsed.decls)
     p = lowered(text)
     names = ctype.new_names(s, parsed.decls)
     w: writer.Writer @ writer.new_writer("t")

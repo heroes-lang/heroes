@@ -101,7 +101,7 @@ test "a unit's own struct is copied as bytes where the unit defines the copy, an
     parsed = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
     out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
-    c: state.Checked @ checker.check(parsed.tree, out, s, parsed.decls)
+    c: state.Checked = checker.check(parsed.tree, out, s, parsed.decls)
     assert c.diagnostics.len() == 0
     assert !own_declaration(parsed.decls[0])
     assert own_declaration(parsed.decls[1])

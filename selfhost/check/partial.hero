@@ -131,7 +131,7 @@ function field_types(c: state.Checker, decls: [ast.Decl], decl: i64) -> [i64]
 
 test "the reach is transitive through array, fallible and map"
     p = parse.parse("extern \"s.h\"\n    record Font partial\n        size: i64\n")
-    r: resolved.Resolved @ resolved.new_resolved()
+    r: resolved.Resolved = resolved.new_resolved()
     c: state.Checker @ state.new_checker(out_of: r, expr_count: 0)
     font = table.intern(@c.out.types, .named(decl: 0))
     assert reaches(c, p.decls, font).must() == 0

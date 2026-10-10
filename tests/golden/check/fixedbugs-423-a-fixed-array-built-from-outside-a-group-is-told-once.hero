@@ -40,11 +40,11 @@ function main()
     xs: i64[2] = []  #~ fixed_outside_a_group
     long: i64[2] = [1, 2, 3]  #~ fixed_outside_a_group
     grid: i64[2][3] = []  #~ fixed_outside_a_group
-    rows: i64[2][3] @ [[1, 2], [3, 4]]  #~ fixed_outside_a_group
+    rows: i64[2][3] = [[1, 2], [3, 4]]  #~ fixed_outside_a_group
     cell: i64[2] @ [1, 2]  #~ fixed_outside_a_group
     cell @ []
-    named: {str: i64[2]} @ {"a": [1, 2, 3]}  #~ fixed_outside_a_group
-    listed: [i64[2]] @ [[1, 2, 3]]  #~ fixed_outside_a_group
+    named: {str: i64[2]} = {"a": [1, 2, 3]}  #~ fixed_outside_a_group
+    listed: [i64[2]] = [[1, 2, 3]]  #~ fixed_outside_a_group
     ys: [i64] = [1]
     from_name: i64[2] = ys  #~ fixed_outside_a_group
     flag = ys.len() > 0

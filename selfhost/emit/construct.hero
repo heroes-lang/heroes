@@ -183,7 +183,7 @@ test "one expression for the by-value shapes, statements for the containers"
     parsed = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
     out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
-    c: state.Checked @ checker.check(parsed.tree, out, s, parsed.decls)
+    c: state.Checked = checker.check(parsed.tree, out, s, parsed.decls)
     assert c.diagnostics.len() == 0
     names = ctype.new_names(s, parsed.decls)
     int_id = table.int_ty_id(c.types)

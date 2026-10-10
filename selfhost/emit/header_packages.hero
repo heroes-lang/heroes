@@ -50,7 +50,7 @@ function by_header(p: containers.Program, s: source.Source, decls: [ast.Decl]) -
 
 # `package` added to `header`'s packages in `by`, once.
 function with_package(@by: {str: [str]}, header: str, package: str)
-    known: [str] @ by[header].default([])
+    known: [str] = by[header].default([])
 
     for one in known
         if one == package

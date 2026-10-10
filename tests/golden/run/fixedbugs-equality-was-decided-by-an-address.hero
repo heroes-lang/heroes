@@ -55,9 +55,9 @@ function main()
     c = [n]
     print(a == b, " ", a == c)
 
-    ma: {str: f64} @ {"k": n}
+    ma: {str: f64} = {"k": n}
     mb = ma
-    mc: {str: f64} @ {"k": n}
+    mc: {str: f64} = {"k": n}
     print(ma == mb, " ", ma == mc)
 
     # And the whole point of the repair is that ORDINARY equality is untouched:
@@ -69,9 +69,9 @@ function main()
     zs = [1.0, 2.0, 3.0]
     print(xs == ys, " ", xs == zs)
 
-    ns: {str: i64} @ {"a": 1}
+    ns: {str: i64} = {"a": 1}
     os = ns
-    ps: {str: i64} @ {"a": 1}
+    ps: {str: i64} = {"a": 1}
     print(ns == os, " ", ns == ps)
 
     # The length check that sits above the deleted line stays, because a length

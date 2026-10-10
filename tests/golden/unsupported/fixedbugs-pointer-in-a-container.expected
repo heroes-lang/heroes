@@ -1,7 +1,7 @@
 unsupported[pointer_element]: `ptr` as the element of an array is not emitted yet
   at tests/golden/unsupported/fixedbugs-pointer-in-a-container.hero:31:5
      |
-  31 |     handles: [ptr] @ []            #~ pointer_element
+  31 |     handles: [ptr] = []            #~ pointer_element
      |     ^^^^^^^^^^^^^^^^^^^
   note: hold a `str` and lend it with `.cstr()` at the call that reads it — a `cstr` parked in a Heroes record is refused for the same reason (panel 122 R4)
   note: the backend emits every type in the language, `if`, `while`, `for`, `match`, functions, and the built-ins `chars`, `end_lease`, `join`, `lease`, `keys`, `len`, `print`, `push`, `repeat`, `slice`, `sort`, `to_f32`, `to_f64`, `to_i64`, `to_str`, `to_i8`, `to_i16`, `to_i32`, `to_u8`, `to_u16`, `to_u32`, `to_u64`, `validated_bytes`, `ptr` — no other built-in is emitted yet
@@ -9,7 +9,7 @@ unsupported[pointer_element]: `ptr` as the element of an array is not emitted ye
 unsupported[pointer_element]: `cstr` as the element of an array is not emitted yet
   at tests/golden/unsupported/fixedbugs-pointer-in-a-container.hero:32:5
      |
-  32 |     names: [cstr] @ []             #~ pointer_element
+  32 |     names: [cstr] = []             #~ pointer_element
      |     ^^^^^^^^^^^^^^^^^^
   note: hold a `str` and lend it with `.cstr()` at the call that reads it — a `cstr` parked in a Heroes record is refused for the same reason (panel 122 R4)
   note: the backend emits every type in the language, `if`, `while`, `for`, `match`, functions, and the built-ins `chars`, `end_lease`, `join`, `lease`, `keys`, `len`, `print`, `push`, `repeat`, `slice`, `sort`, `to_f32`, `to_f64`, `to_i64`, `to_str`, `to_i8`, `to_i16`, `to_i32`, `to_u8`, `to_u16`, `to_u32`, `to_u64`, `validated_bytes`, `ptr` — no other built-in is emitted yet
@@ -17,7 +17,7 @@ unsupported[pointer_element]: `cstr` as the element of an array is not emitted y
 unsupported[pointer_element]: `ptr` as the element of a map value is not emitted yet
   at tests/golden/unsupported/fixedbugs-pointer-in-a-container.hero:33:5
      |
-  33 |     by_id: {i64: ptr} @ {}         #~ pointer_element
+  33 |     by_id: {i64: ptr} = {}         #~ pointer_element
      |     ^^^^^^^^^^^^^^^^^^^^^^
   note: hold a `str` and lend it with `.cstr()` at the call that reads it — a `cstr` parked in a Heroes record is refused for the same reason (panel 122 R4)
   note: the backend emits every type in the language, `if`, `while`, `for`, `match`, functions, and the built-ins `chars`, `end_lease`, `join`, `lease`, `keys`, `len`, `print`, `push`, `repeat`, `slice`, `sort`, `to_f32`, `to_f64`, `to_i64`, `to_str`, `to_i8`, `to_i16`, `to_i32`, `to_u8`, `to_u16`, `to_u32`, `to_u64`, `validated_bytes`, `ptr` — no other built-in is emitted yet
@@ -25,7 +25,7 @@ unsupported[pointer_element]: `ptr` as the element of a map value is not emitted
 unsupported[pointer_element]: `cstr` as the element of a map value is not emitted yet
   at tests/golden/unsupported/fixedbugs-pointer-in-a-container.hero:34:5
      |
-  34 |     texts: {i64: cstr} @ {}        #~ pointer_element
+  34 |     texts: {i64: cstr} = {}        #~ pointer_element
      |     ^^^^^^^^^^^^^^^^^^^^^^^
   note: hold a `str` and lend it with `.cstr()` at the call that reads it — a `cstr` parked in a Heroes record is refused for the same reason (panel 122 R4)
   note: the backend emits every type in the language, `if`, `while`, `for`, `match`, functions, and the built-ins `chars`, `end_lease`, `join`, `lease`, `keys`, `len`, `print`, `push`, `repeat`, `slice`, `sort`, `to_f32`, `to_f64`, `to_i64`, `to_str`, `to_i8`, `to_i16`, `to_i32`, `to_u8`, `to_u16`, `to_u32`, `to_u64`, `validated_bytes`, `ptr` — no other built-in is emitted yet
@@ -33,7 +33,7 @@ unsupported[pointer_element]: `cstr` as the element of a map value is not emitte
 unsupported[pointer_element]: `ptr` as the element of a map key is not emitted yet
   at tests/golden/unsupported/fixedbugs-pointer-in-a-container.hero:35:5
      |
-  35 |     tagged: {ptr: i64} @ {}        #~ pointer_element
+  35 |     tagged: {ptr: i64} = {}        #~ pointer_element
      |     ^^^^^^^^^^^^^^^^^^^^^^^
   note: hold a `str` and lend it with `.cstr()` at the call that reads it — a `cstr` parked in a Heroes record is refused for the same reason (panel 122 R4)
   note: the backend emits every type in the language, `if`, `while`, `for`, `match`, functions, and the built-ins `chars`, `end_lease`, `join`, `lease`, `keys`, `len`, `print`, `push`, `repeat`, `slice`, `sort`, `to_f32`, `to_f64`, `to_i64`, `to_str`, `to_i8`, `to_i16`, `to_i32`, `to_u8`, `to_u16`, `to_u32`, `to_u64`, `validated_bytes`, `ptr` — no other built-in is emitted yet
@@ -41,7 +41,7 @@ unsupported[pointer_element]: `ptr` as the element of a map key is not emitted y
 unsupported[pointer_element]: `cstr` as the element of a map key is not emitted yet
   at tests/golden/unsupported/fixedbugs-pointer-in-a-container.hero:36:5
      |
-  36 |     counted: {cstr: i64} @ {}      #~ pointer_element
+  36 |     counted: {cstr: i64} = {}      #~ pointer_element
      |     ^^^^^^^^^^^^^^^^^^^^^^^^^
   note: hold a `str` and lend it with `.cstr()` at the call that reads it — a `cstr` parked in a Heroes record is refused for the same reason (panel 122 R4)
   note: the backend emits every type in the language, `if`, `while`, `for`, `match`, functions, and the built-ins `chars`, `end_lease`, `join`, `lease`, `keys`, `len`, `print`, `push`, `repeat`, `slice`, `sort`, `to_f32`, `to_f64`, `to_i64`, `to_str`, `to_i8`, `to_i16`, `to_i32`, `to_u8`, `to_u16`, `to_u32`, `to_u64`, `validated_bytes`, `ptr` — no other built-in is emitted yet

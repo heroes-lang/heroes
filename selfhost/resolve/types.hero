@@ -239,7 +239,7 @@ test "the three namespaces answer in order: primitive, generic, declaration"
     r: state.Resolver @ state.new_resolver(expr_count: 0, type_count: 3)
     r.module @ "t"
     r.generics @ r.generics.push(state.GenericParam(name: "A", position: 0, told: false))
-    decls: [ast.Decl] @ [record_decl_named(name_start: 6, name_end: 11)]
+    decls: [ast.Decl] = [record_decl_named(name_start: 6, name_end: 11)]
     resolved.declare_top(@r.out, module: "t", name: "Point", decl: 0)
     resolve_type(@r, a, s, decls, prim_node)
     resolve_type(@r, a, s, decls, generic_node)
@@ -288,7 +288,7 @@ test "a value in type position is named for what it is"
         signature_end: token.Span(start: 12, end: 13)
     )
     fspan = token.Span(start: 12, end: 13)
-    decls: [ast.Decl] @ [ast.Decl(name: fspan, doc: doc, span: fspan, kind: .function_decl(value: f))]
+    decls: [ast.Decl] = [ast.Decl(name: fspan, doc: doc, span: fspan, kind: .function_decl(value: f))]
     r: state.Resolver @ state.new_resolver(expr_count: 0, type_count: 1)
     r.module @ "t"
     resolved.declare_top(@r.out, module: "t", name: "f", decl: 0)
@@ -302,7 +302,7 @@ test "a qualified type reaches next door, and only through a use"
     a: ast.Ast @ ast.new_ast()
     good = typed(@a, start: 14, end: 24)
     bad = typed(@a, start: 25, end: 31)
-    decls: [ast.Decl] @ [record_decl_named(name_start: 19, name_end: 24)]
+    decls: [ast.Decl] = [record_decl_named(name_start: 19, name_end: 24)]
     r: state.Resolver @ state.new_resolver(expr_count: 0, type_count: 2)
     r.module @ "t"
     resolved.declare_use(@r.out, from: "t", binding: "geom", module: "geom")

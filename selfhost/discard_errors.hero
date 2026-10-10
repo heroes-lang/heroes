@@ -46,7 +46,7 @@ record Readings
 
 # No second reading at all, for a value whose line is its own business.
 function no_readings() -> Readings
-    none: str? @ fail(code: "absent", msg: "no place of the value's own type")
+    none: str? = fail(code: "absent", msg: "no place of the value's own type")
     return Readings(place: none, decides: false, in_test: false, tail: false, returns: false)
 
 # A line computed a value and nothing received it (panel 003).

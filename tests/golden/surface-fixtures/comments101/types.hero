@@ -8,7 +8,7 @@
 function f(a: [  # inside a parameter's type
     i64]) -> i64
     x: [  # inside a local's type
-        i64] @ a
+        i64] = a
     return x.len()
 
 record R

@@ -41,13 +41,13 @@ function made() -> i64[2][3]  #~ fixed_outside_a_group
     return [[1, 2], [3, 4], [5, 6]]
 
 function main()
-    x: i64[2][3] @ [[1, 2], [3, 4], [5, 6]]  #~ fixed_outside_a_group
-    cells: Cell[2][2] @ [[Cell(v: 1), Cell(v: 2)], [Cell(v: 3), Cell(v: 4)]]  #~ fixed_outside_a_group
-    rows: [i64[2][3]] @ []  #~ fixed_outside_a_group
-    by_name: {str: i64[2][3]} @ {}  #~ fixed_outside_a_group
+    x: i64[2][3] = [[1, 2], [3, 4], [5, 6]]  #~ fixed_outside_a_group
+    cells: Cell[2][2] = [[Cell(v: 1), Cell(v: 2)], [Cell(v: 3), Cell(v: 4)]]  #~ fixed_outside_a_group
+    rows: [i64[2][3]] = []  #~ fixed_outside_a_group
+    by_name: {str: i64[2][3]} = {}  #~ fixed_outside_a_group
     maybe: i64[2][3]? = ok(x)  #~ fixed_outside_a_group
-    mixed: [i64[2]][3] @ [[[1, 2]], [[3, 4]], [[5, 6]]]  #~ fixed_outside_a_group
-    apart: {i64[2]: i64[3]} @ {}  #~ fixed_outside_a_group fixed_outside_a_group
+    mixed: [i64[2]][3] = [[[1, 2]], [[3, 4]], [[5, 6]]]  #~ fixed_outside_a_group
+    apart: {i64[2]: i64[3]} = {}  #~ fixed_outside_a_group fixed_outside_a_group
     print(
         x[0][0],
         cells[0][0].v,

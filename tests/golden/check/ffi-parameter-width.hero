@@ -17,5 +17,5 @@ extern "stdlib.h"
     function abs(n: i32) -> i32
 
 function main()
-    wide: i64 @ 7
+    wide: i64 = 7
     print(abs(wide))   #~ type_mismatch

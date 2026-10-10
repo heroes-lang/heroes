@@ -20,5 +20,5 @@
 # pipeline, so a file mixing this with a type error would only ever show this.
 
 function main()
-    n: int @ 1              #~ reserved_word
+    n: int = 1              #~ reserved_word
     print(n)

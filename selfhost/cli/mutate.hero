@@ -50,7 +50,7 @@ function run(inv: argv.Invocation) -> cli_table.Exit
             io.eprint(text: "error: `" + word + "` is a word of the recovery arm alone: `heroes mutate --recovery`")
             return .failed_exit
 
-    only: str @ argv.value_of(inv, spelling: "--operator").default("")
+    only: str = argv.value_of(inv, spelling: "--operator").default("")
 
     if only.len() > 0 && !ops.known(only)
         io.eprint(

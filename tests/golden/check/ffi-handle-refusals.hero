@@ -43,6 +43,6 @@ record Conn
     handle: Db
 
 function main()
-    direct: {Db: i64} @ {}  #~ handle_map_key
-    held: {Conn: i64} @ {}  #~ handle_map_key
+    direct: {Db: i64} = {}  #~ handle_map_key
+    held: {Conn: i64} = {}  #~ handle_map_key
     print((direct.len() + held.len()).to_str())

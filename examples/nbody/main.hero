@@ -298,7 +298,7 @@ function nine_places(v: f64) -> str
     scaled = to_i64(size * BILLION + 0.5).must()
     whole = scaled / 1000000000
     rest = scaled % 1000000000
-    text: str @ whole.to_str() + "." + padded(rest)
+    text: str = whole.to_str() + "." + padded(rest)
 
     if negative
         return "-" + text

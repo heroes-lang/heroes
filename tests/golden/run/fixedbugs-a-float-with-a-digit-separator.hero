@@ -27,10 +27,10 @@
 # point, right of it, on both sides, and none at all.
 
 function main()
-    left: f64 @ 1_0.5
-    right: f64 @ 1.5_5
-    both: f64 @ 1_000.000_1
-    plain: f64 @ 10.5
+    left: f64 = 1_0.5
+    right: f64 = 1.5_5
+    both: f64 = 1_000.000_1
+    plain: f64 = 10.5
     print(left)
     print(right)
     print(both)

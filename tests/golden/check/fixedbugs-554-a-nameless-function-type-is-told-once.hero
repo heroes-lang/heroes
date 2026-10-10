@@ -58,7 +58,7 @@ function as_receiver()
     print(add.apply())
 
 function as_letter_branch_and_eq(c: bool)
-    g: (function(i64, i64) -> i64) @ add  #~ needs_parameter_names
+    g: (function(i64, i64) -> i64) = add  #~ needs_parameter_names
     h = both(x: g, y: add)
 
     k = if c
@@ -73,7 +73,7 @@ function in_push_store_default()
     fs @ fs.push(add)
     m: {str: (function(i64, i64) -> i64)} @ {}  #~ needs_parameter_names
     m["a"] @ add
-    o: (function(i64, i64) -> i64)? @ fail(code: "none", msg: "none")  #~ needs_parameter_names
+    o: (function(i64, i64) -> i64)? = fail(code: "none", msg: "none")  #~ needs_parameter_names
     print(fs.len() + m.len() + o.default(add)(1, 2))
 
 function still_told()

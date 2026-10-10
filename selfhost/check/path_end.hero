@@ -216,7 +216,7 @@ function first_body(p: parse.ParseOutput) -> ast.Block
 function refused_in(text: str) -> state.Checker
     p = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
-    r: resolved.Resolved @ resolved.new_resolved()
+    r: resolved.Resolved = resolved.new_resolved()
     c: state.Checker @ state.new_checker(out_of: r, expr_count: p.tree.exprs.len())
     after_a_jump(@c, p.tree, s, body: first_body(p))
     return c

@@ -374,7 +374,7 @@ function accumulator() -> containers.Function
     f.slots @ [containers.Slot(name: "xs", ty: 0, kind: .local_slot(mutable: true))]
     f.values @ [0, 0, 0, 0, 0]
     f.arguments @ [.value_arg(value: 1), .value_arg(value: 0)]
-    body: [ir.Inst] @ [
+    body: [ir.Inst] = [
         inst(dest: ok(0), op: .lit(value: .bool_const(value: false)), ty: 0)
         inst(dest: ok(1), op: .load(place: bare(0)), ty: 0)
         inst(dest: ok(2), op: .call(callee: .builtin_fn(at: push_index()), arguments: ir.Run(start: 0, length: 2), variadic: false), ty: 0)

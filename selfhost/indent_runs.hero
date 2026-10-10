@@ -147,7 +147,7 @@ function with_words(@l: state.LexState, text: str, m: Margin, line: i64) -> i64
         if depth <= 0
             finish(@l, text)
         else
-            level: i64 @ l.run[0].base / 4 + (depth + 1) / 2
+            level: i64 = l.run[0].base / 4 + (depth + 1) / 2
 
             # Under a line that opens nothing the two-space reading is an
             # over-indent; the four-space one is read instead, out of the run.

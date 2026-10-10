@@ -135,7 +135,7 @@ function fate(name: str, text: str, library: str, permissive: bool) -> Fate
         # A parse failure is an exclusion, not a kill: it measures the lexer.
         return .excluded
     out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
-    c: state.Checked @ checker.check(parsed.tree, out, s, parsed.decls)
+    c: state.Checked = checker.check(parsed.tree, out, s, parsed.decls)
 
     if reports(diagnostics: out.diagnostics, permissive: permissive)
         return .killed

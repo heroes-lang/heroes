@@ -16,7 +16,7 @@ extern "fixedbugs-559-int.h"
 
 function main()
     y: i32 @ 0
-    z: i32 @ 7
+    z: i32 = 7
     fill_wide(@y)
     print(long_twice.doubled(x: 3))
     print(y + z + twice(x: 4))

@@ -398,7 +398,7 @@ test "tag_is_a_union lands the caret on the tag token, and record_by_tag answers
     asked["statt"] @ "enum"
     e = tag_is_a_union(s, parsed.decls, line: u, types: asked)
     assert ffi_lookup.has(text: e.must().message, needle: "as an `enum`, not a struct")
-    none: {str: str} @ {}
+    none: {str: str} = {}
     n = tag_is_a_union(s, parsed.decls, line: u, types: none)
     assert ffi_lookup.has(text: n.must().message, needle: "as a tag of another kind, not a struct")
 

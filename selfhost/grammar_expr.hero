@@ -852,7 +852,7 @@ function statement(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
     from = c.pos
     said = c.diagnostics.len()
     exprs = a.exprs.len()
-    kind: ast.StmtKind @ statement_kind(@c, @a, text)
+    kind: ast.StmtKind = statement_kind(@c, @a, text)
     return finish(@c, @a, text, start: start, from: from, kind: kind, said: said, exprs: exprs)
 
 function statement_kind(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.StmtKind
@@ -1004,9 +1004,10 @@ function annotated(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.StmtKind
     typed = opening.mark(c)
     ty = type.parse_type(@c, @a, text)
     annotation.past_a_refused_type(@c, typed)
+    at = cursor.current_span(c)
 
     if cursor.eat(@c, .at)
-        return .declare(name: name, ty: ty, value: parse_expr(@c, @a, text))
+        return .declare(name: name, ty: ty, value: parse_expr(@c, @a, text), symbol: at)
 
     if cursor.eat(@c, .eq)
         return .bind(name: name, ty: ok(ty), value: parse_expr(@c, @a, text))

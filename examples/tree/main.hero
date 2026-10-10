@@ -41,6 +41,6 @@ function main()
     print(u.nodes == v.nodes)
 
     # And a node the program never constructs still compares.
-    absent: node.Node @ .unreadable
+    absent: node.Node = .unreadable
     print(absent == .unreadable)
     print(absent == .number(value: 0))

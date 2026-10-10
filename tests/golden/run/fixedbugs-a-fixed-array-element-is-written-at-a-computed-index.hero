@@ -30,6 +30,6 @@ function main()
         q.a[i] @ q.a[i] * 10
 
     print(q.a[0], " ", q.a[1], " ", q.a[2], " ", q.a[3], " sum: ", quad_sum(q: q))
-    last: i64 @ len(args()) + 3
+    last: i64 = len(args()) + 3
     bump(@q, at: last)
     print(q.a[0], " ", q.a[3], " after: ", q.after, " sum: ", quad_sum(q: q))

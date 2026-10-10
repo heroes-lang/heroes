@@ -171,7 +171,7 @@ function refuse_leaving(@c: state.Checker, leaves: Leaves, what: str, span: toke
 ## Tests
 
 test "the first branch sets the type and the disagreement is blamed"
-    r: resolved.Resolved @ resolved.new_resolved()
+    r: resolved.Resolved = resolved.new_resolved()
     c: state.Checker @ state.new_checker(out_of: r, expr_count: 0)
     s = source.new_source(name: "t.hero", text: "x\n")
     d: [ast.Decl] = []
@@ -195,7 +195,7 @@ test "the first branch sets the type and the disagreement is blamed"
     assert c.out.diagnostics[0].span.start == 2
 
 test "a diverging branch contributes nothing, and all-diverging is legal"
-    r: resolved.Resolved @ resolved.new_resolved()
+    r: resolved.Resolved = resolved.new_resolved()
     c: state.Checker @ state.new_checker(out_of: r, expr_count: 0)
     s = source.new_source(name: "t.hero", text: "x\n")
     d: [ast.Decl] = []
@@ -223,7 +223,7 @@ test "a diverging branch contributes nothing, and all-diverging is legal"
 # jump, and reading the one as the other let a value `match` skip an arm
 # that gave it nothing, and a `match` statement count as leaving its block.
 test "a branch that fell through is not one that jumped"
-    r: resolved.Resolved @ resolved.new_resolved()
+    r: resolved.Resolved = resolved.new_resolved()
     c: state.Checker @ state.new_checker(out_of: r, expr_count: 0)
     s = source.new_source(name: "t.hero", text: "x\n")
     d: [ast.Decl] = []
@@ -248,7 +248,7 @@ test "a jump refused where it stands leaves, and no claim rests on it"
     assert both(first: .jumps, second: .jumps) == .jumps
     assert both(first: .jumps, second: .refused) == .refused
     assert both(first: .refused, second: .falls) == .falls
-    r: resolved.Resolved @ resolved.new_resolved()
+    r: resolved.Resolved = resolved.new_resolved()
     c: state.Checker @ state.new_checker(out_of: r, expr_count: 0)
     s = source.new_source(name: "t.hero", text: "x\n")
     d: [ast.Decl] = []
@@ -268,7 +268,7 @@ test "a branch that ends its path leaves, and the claim about it is not a jump's
     assert both(first: .ends, second: .refused) == .refused
     assert both(first: .ends, second: .falls) == .falls
     assert both(first: .jumps, second: .jumps) == .jumps
-    r: resolved.Resolved @ resolved.new_resolved()
+    r: resolved.Resolved = resolved.new_resolved()
     c: state.Checker @ state.new_checker(out_of: r, expr_count: 0)
     s = source.new_source(name: "t.hero", text: "x\n")
     d: [ast.Decl] = []

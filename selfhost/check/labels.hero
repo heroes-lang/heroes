@@ -360,7 +360,7 @@ test "a positional argument of fail is refused with the label to write"
     r = resolved.new_resolved()
     c: state.Checker @ state.new_checker(out_of: r, expr_count: 0)
     s = source.new_source(name: "t.hero", text: "    return fail(\"empty_list\", \"there is no first element\")\n")
-    none: token.Span? @ fail(code: "absent", msg: "written positionally")
+    none: token.Span? = fail(code: "absent", msg: "written positionally")
     nothing: [str] = []
     check_label(
         @c,
@@ -402,7 +402,7 @@ test "a label in the wrong position is the swap, and it is refused too"
     r = resolved.new_resolved()
     c: state.Checker @ state.new_checker(out_of: r, expr_count: 0)
     s = source.new_source(name: "t.hero", text: "fail(msg: \"m\", code: \"c\")\n")
-    at: token.Span? @ ok(token.Span(start: 5, end: 8))
+    at: token.Span? = ok(token.Span(start: 5, end: 8))
     taken: [str] = ["msg", "code"]
     check_label(@c, s, name: "fail", position: 0, written: at, value_span: token.Span(start: 10, end: 13), taken: taken)
     assert c.out.diagnostics.len() == 1
@@ -414,7 +414,7 @@ test "the receiver's position is exempt and the right label passes"
     r = resolved.new_resolved()
     c: state.Checker @ state.new_checker(out_of: r, expr_count: 0)
     s = source.new_source(name: "t.hero", text: "xs.slice(from: 1, to: 3)\n")
-    none: token.Span? @ fail(code: "absent", msg: "the receiver is the dot")
+    none: token.Span? = fail(code: "absent", msg: "the receiver is the dot")
     taken: [str] = ["from", "to"]
     check_label(
         @c,
@@ -425,7 +425,7 @@ test "the receiver's position is exempt and the right label passes"
         value_span: token.Span(start: 0, end: 2),
         taken: taken
     )
-    right: token.Span? @ ok(token.Span(start: 9, end: 13))
+    right: token.Span? = ok(token.Span(start: 9, end: 13))
     check_label(
         @c,
         s,
@@ -449,7 +449,7 @@ test "a built-in's label naming nothing is certain only where nothing else could
     r = resolved.new_resolved()
     c: state.Checker @ state.new_checker(out_of: r, expr_count: 0)
     s = source.new_source(name: "t.hero", text: "fail(msg: \"m\", cdoe: \"e\")\n")
-    at: token.Span? @ ok(token.Span(start: 15, end: 19))
+    at: token.Span? = ok(token.Span(start: 15, end: 19))
     swapped: [str] = ["msg", "cdoe"]
     check_label(
         @c,
@@ -467,7 +467,7 @@ test "a built-in's label naming nothing is certain only where nothing else could
     assert c.out.diagnostics[0].fixes[1].replacement == "code"
     placed: state.Checker @ state.new_checker(out_of: r, expr_count: 0)
     t = source.new_source(name: "t.hero", text: "fail(cdoe: \"e\", msg: \"m\")\n")
-    first: token.Span? @ ok(token.Span(start: 5, end: 9))
+    first: token.Span? = ok(token.Span(start: 5, end: 9))
     in_place: [str] = ["cdoe", "msg"]
     check_label(
         @placed,

@@ -302,7 +302,7 @@ test "headers seed the unit's first header and the os header, dedupe, and see a 
     parsed = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
     out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
-    c: state.Checked @ checker.check(parsed.tree, out, s, parsed.decls)
+    c: state.Checked = checker.check(parsed.tree, out, s, parsed.decls)
     assert c.diagnostics.len() == 0
     low = lower.lower(parsed.tree, out, c, s, parsed.decls)
     got = headers(low.program, s, parsed.decls)
@@ -324,7 +324,7 @@ test "a record-only group is included where it is written (panel 204)"
     parsed = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
     out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
-    c: state.Checked @ checker.check(parsed.tree, out, s, parsed.decls)
+    c: state.Checked = checker.check(parsed.tree, out, s, parsed.decls)
     low = lower.lower(parsed.tree, out, c, s, parsed.decls)
     got = headers(low.program, s, parsed.decls)
     assert got == ["heroes_unit.h", "hero_os.h", "stdio.h", "jpeglib.h", "time.h"]
@@ -340,7 +340,7 @@ test "a name no tool carries is found again before any tool is handed it (panel 
     parsed = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
     out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
-    c: state.Checked @ checker.check(parsed.tree, out, s, parsed.decls)
+    c: state.Checked = checker.check(parsed.tree, out, s, parsed.decls)
     low = lower.lower(parsed.tree, out, c, s, parsed.decls)
     said = unjudged(low.program, s, parsed.decls)
     assert strings.holds(text: said, needle: "holds `>`")

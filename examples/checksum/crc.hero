@@ -63,7 +63,7 @@ function crc32(text: str) -> u32
     i: i64 @ 0
 
     while i < text.len()
-        byte: u8 @ text[i]
+        byte: u8 = text[i]
         reg @ reg ^ byte.to_i64().must()
         bit: i64 @ 0
 

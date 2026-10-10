@@ -10,7 +10,7 @@
 # which aborts where `/` does and says why.
 
 function main()
-    x: i8 @ -128
-    y: i8 @ -1
+    x: i8 = -128
+    y: i8 = -1
     print(x % 3)
     print(x % y)

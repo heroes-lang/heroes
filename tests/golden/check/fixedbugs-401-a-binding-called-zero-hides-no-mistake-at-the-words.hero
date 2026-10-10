@@ -59,7 +59,7 @@ function a_payload(c: Choice) -> i32
         .one zero => Withrest(n: 1, rest: zero).n  #~ unused_binding rest_is_a_field
 
 function a_cell_read_elsewhere() -> i64
-    zero: i64 @ 5
+    zero: i64 = 5
     print(zero)
     return Hr(a: 1, rest: zero).a  #~ rest_outside_a_group
 
