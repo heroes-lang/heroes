@@ -1,0 +1,17 @@
+# A module of defect 559's cases (lane b18-ffi, 2026-10-10): it binds a
+# header of its own and spells another module's group record, so its unit
+# reads both headers.
+use fixedbugs559/points
+
+extern "fixedbugs-559-long.h"
+    function twice(x: i64) -> i64
+
+record Holder
+    p: points.Pt
+    n: i64
+
+function get(p: points.Pt) -> i64
+    return twice(x: to_i64(p.v + p.w).must())
+
+function hold(p: points.Pt) -> Holder
+    return Holder(p: p, n: 1)

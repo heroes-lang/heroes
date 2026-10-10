@@ -16,6 +16,7 @@ use cli/toolchain
 use cli/compiling
 use cli/pointee_ask
 use cli/header_ask
+use cli/probing
 use cli/header_refused
 use cli/deep_types
 use cli/link
@@ -28,8 +29,10 @@ use cli/package_missing
 # wrote after `-o` could spell a marker, and a publish that failed there is not
 # the header disagreeing with anybody. `asked` is the header's answer where the
 # rounds asked it already, under these very `struct_tags`
-# (`cli/tag_spelling.hero`, defect 400), so it is not asked twice.
-function of_refusal(failed: ()?, art: compile.Artifact, s: source.Source, t: toolchain.Toolchain, under: compiling.Compiling, answered: [pointee_ask.Answered], struct_tags: {str: bool}, asked: ffi_asked.Asked?, refused: str) -> ()?
+# (`cli/tag_spelling.hero`, defect 400), so it is not asked twice; `asking`
+# are the headers of the units the refusal is (`cli/probing.hero`), each
+# asked its own modules' questions where it is asked.
+function of_refusal(failed: ()?, art: compile.Artifact, s: source.Source, t: toolchain.Toolchain, under: compiling.Compiling, answered: [pointee_ask.Answered], struct_tags: {str: bool}, asked: ffi_asked.Asked?, asking: [probing.Probing], refused: str) -> ()?
     code = failure_code(failed)
     message = failure_message(failed) + deep_types.note(code, art.decls, art.checked, s)
 
@@ -46,7 +49,7 @@ function of_refusal(failed: ()?, art: compile.Artifact, s: source.Source, t: too
     answer: ffi_asked.Asked @ ffi_asked.nothing()
 
     if asked.is_err()
-        answer @ header_ask.ask(t, art, s, under: under, struct_tags: struct_tags)
+        answer @ header_ask.ask(t, art, s, under: under, struct_tags: struct_tags, asking: asking)
     else
         answer @ asked.must()
 

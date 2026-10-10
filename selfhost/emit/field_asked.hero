@@ -24,6 +24,7 @@ use source
 use emit/ctype
 use emit/c_text
 use emit/mangle
+use emit/externs as emit_externs
 
 constant FIELD: str
     "hero-ask-field "
@@ -32,15 +33,16 @@ constant WIDTH: str
     "hero-ask-width "
 
 # The two questions of every field of a group record of the program's own
-# files, each named `<record> <field>` after its prefix.
-function questions(names: ctype.Names, s: source.Source, decls: [ast.Decl]) -> [str]
+# files `records` holds (`emit_externs.held`), each named `<record> <field>`
+# after its prefix.
+function questions(names: ctype.Names, s: source.Source, decls: [ast.Decl], records: {i64: bool}?) -> [str]
     out: [str] @ []
     at: i64 @ 0
 
     for decl in decls
         match decl.kind
             .record_decl rec =>
-                if !rec.header.is_err() && !source.is_library(s, decl.name.start)
+                if !rec.header.is_err() && !source.is_library(s, decl.name.start) && emit_externs.held(records, decl: at)
                     for field in rec.fields
                         member = mangle.field_of(foreign: true, name: source.span_text(s, field.name))
                         place = "((" + ctype.of(names, decl: at) + " *)0)->" + member
