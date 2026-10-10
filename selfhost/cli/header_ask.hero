@@ -16,6 +16,7 @@ use cli/compile
 use cli/toolchain
 use cli/process
 use cli/publish
+use cli/response_file
 use cli/compiling
 use cli/strings
 use cli/read_back
@@ -82,9 +83,9 @@ function asked_of(t: toolchain.Toolchain, text: str, under: compiling.Compiling)
 
     if write_file(path: unit, text: text).is_err()
         return ffi_asked.nothing()
-    line = strings.with_all(
-        list: ["clang", "-fsyntax-only", "-ferror-limit=0", "-fno-caret-diagnostics"],
-        more: compiling.probe_words(under)
+    line = response_file.carried(
+        line: strings.with_all(list: ["clang", "-fsyntax-only", "-ferror-limit=0", "-fno-caret-diagnostics"], more: compiling.probe_words(under)),
+        dir: t.build + "/words"
     )
     ran = process.run(program: "clang", words: line.push(unit), out: process.discard(), err: err)
 

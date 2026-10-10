@@ -43,6 +43,7 @@ use cli/compiling
 use cli/probing
 use cli/process
 use cli/publish
+use cli/response_file
 use cli/digest
 use cli/kept
 use cli/libraries
@@ -213,7 +214,7 @@ function preprocessed(dir: str, text: str, words: [str]) -> str?
     path = dir + "/pragma-" + digest.digest(text) + ".c"
     publish.write_whole(path: path, text: text, keyed: true)?
     out = publish.private_name(dir + "/pragma-stdout.txt")
-    line = strings.with_all(list: ["clang", "-E"], more: words)
+    line = response_file.carried(line: strings.with_all(list: ["clang", "-E"], more: words), dir: dir)
     ran = process.run(program: "clang", words: line.push(path), out: out, err: process.discard())
     said = read_back.words(out)
     publish.discard(out)
