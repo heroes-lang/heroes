@@ -1,0 +1,78 @@
+# Fixed defect 564, 2026-10-10 (panel 203 R3, filed `blocking` against panel
+# 042's ratified ruling 3; found by panel 203's spec-warden). Symptom: `y: u8 =
+# 2 + 3`, `show(v: 2 + 3)` with `v: u8`, `e: u8 = 2 * (3 + 4)` and `d: f32 =
+# 0.5 * 2.0` were refused *expected `u8`, found `i64`* where spec § 2 gives a
+# literal the width its context asks for, and `1 + b` was already a `u8`.
+# Cause: a binary operator was always synthesised, so its operands met no
+# type but each other's, and two literals met only their defaults; panel 042
+# priced this residual inside its ruling 3 (*`Binary` is not a ⇐ form*) and it
+# never landed. Repair: an arithmetic operator, or a minus, whose every
+# operand has no type of its own takes the type its position asks for, and
+# hands it to each operand (`check/operands.hero`); a generic call, `ok(…)` and
+# an operator of literals have no type of their own beside an operand that
+# has one either, and take its type. Every line below was refused on the base.
+# The shapes: an annotation, a parameter, a nested operator, a float width, a
+# unary minus, a precedence chain, two groups, `push`, a width's top, an
+# `if` and a `match` in an annotated position, a generic call beside a `u8`
+# operand on either side and beside one under `==`, and an operator of
+# literals beside a `u8` operand.
+
+function first<A>(a: A, b: A) -> A
+    pair = [a, b]
+    return pair[0]
+
+function show(v: u8)
+    print(v)
+
+function wide(v: f32)
+    print(v)
+
+function annotated()
+    y: u8 = 2 + 3
+    print(y)
+    show(v: 2 + 3)
+    e: u8 = 2 * (3 + 4)
+    print(e)
+    d: f32 = 0.5 * 2.0
+    print(d)
+    wide(v: 0.25 * 2.0)
+    n: i8 = -(2 + 3)
+    print(n)
+    p: u8 = 2 + 3 * 4 - 1
+    print(p)
+    g: u8 = (2 + 3) * (4 - 1)
+    print(g)
+    xs: [u8] @ []
+    xs @ xs.push(2 + 3)
+    print(xs.len())
+    top: u64 = 18446744073709551615 - 1
+    print(top)
+
+function branches()
+    c = true
+    k = 1
+
+    y: u8 = if c
+        2 + 3
+    else
+        4
+    print(y)
+
+    z: u8 = match k
+        1 => 2 * 3
+        _ => 4 - 1
+
+    print(z)
+
+function beside()
+    b8: u8 = 2
+    print(first(a: 200, b: 2) + b8)
+    print(b8 + first(a: 200, b: 2))
+    print(first(a: 1, b: 2) == b8)
+    print(b8 + (2 + 3))
+    print((2 + 3) * b8)
+
+function main()
+    annotated()
+    branches()
+    beside()

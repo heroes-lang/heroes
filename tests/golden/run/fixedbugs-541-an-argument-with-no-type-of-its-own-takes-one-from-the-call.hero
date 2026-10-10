@@ -1,0 +1,198 @@
+# Fixed defect 541, 2026-10-10 (panel 203 R1, ratified by the author). Symptom:
+# fourteen shapes beside panel 201's sentence were refused, `cannot_infer` or
+# `type_mismatch`: a generic function's name, `ok(…)`, `[]`, a literal at a
+# narrower width, a result-only call, a concrete parameter of a generic
+# function, each written as a generic function's argument. Cause: a generic
+# callee's arguments were synthesised one by one in the order written (panel
+# 105's *flat only*), so an argument with no type of its own met none. Repair:
+# such an argument waits while the call's others settle the callee's letters
+# and is then checked against its parameter (`check/waiting.hero`); what
+# nothing else settles is settled by the context, then by the waiting argument
+# whose type owes least to a literal's default, then by a generic function's
+# name, the forms that refuse themselves last (`check/settling.hero`), so a
+# pair's verdict is the same in either order; and the value before the dot of
+# `x.f(…)` is typed as the argument it is (spec § 9, *`x.f(y)` is sugar for
+# `f(x, y)`*). Every line below was refused on the base and prints here.
+# The shapes: panel 203's fourteen and `literal2`; a literal at the width the
+# context asks for, through a binding, a parameter and a declared result;
+# § 9's own `fold` over a `[u8]`; the critic's pairs of two waiting arguments
+# and the compiler-engineer's eight, each in both orders; an own-typed part
+# speaking before a literal's default, in an array and in two maps; two
+# generic calls; a generic function's name settled from the rest of the call;
+# and the receiver, `[].count()`, `5.double()`, `ok(1).value()` and a generic
+# call before the dot.
+
+function ident<A>(x: A) -> A
+    return x
+
+function first<A>(a: A, b: A) -> A
+    pair = [a, b]
+    return pair[0]
+
+function same<A>(x: A) -> A
+    return x
+
+function empty<T>() -> [T]
+    out: [T] = []
+    return out
+
+function wanted<A>(what: str) -> A?
+    return fail(code: "type", msg: what)
+
+function app<A>(f: (function(A) -> A), x: A) -> A
+    return f(x)
+
+function app_rev<A>(x: A, f: (function(A) -> A)) -> A
+    return f(x)
+
+function mapr<A, B>(f: (function(A) -> B), xs: [A]) -> [B]
+    return xs.map(f)
+
+function apply_all<A>(fs: [(function(A) -> A)], x: A) -> A
+    out: A @ x
+
+    for f in fs
+        out @ f(out)
+
+    return out
+
+function apply_rev<A>(x: A, fs: [(function(A) -> A)]) -> A
+    out: A @ x
+
+    for f in fs
+        out @ f(out)
+
+    return out
+
+function keep_left<A, B>(acc: A, item: B) -> A
+    _ = item
+    return acc
+
+function keep<A>(x: A) -> bool
+    _ = x
+    return true
+
+function narrow<A>(x: A, n: u8) -> A
+    _ = n
+    return x
+
+function fallible<A>(x: A, n: i64?) -> A
+    _ = n.default(0)
+    return x
+
+function valued<A>(x: A, f: (function(i64) -> i64)) -> A
+    _ = f
+    return x
+
+function pairs<A, B>(f: (function(A) -> B), x: A, ys: [B]) -> i64
+    _ = f(x)
+    return ys.len()
+
+function double(x: i64) -> i64
+    return x * 2
+
+function less(x: u8) -> u8
+    return x - 100
+
+function add(acc: u8, item: u8) -> u8
+    return acc + item
+
+function count(xs: [i64]) -> i64
+    return xs.len()
+
+function times_two(x: u8) -> u8
+    return x * 2
+
+function value(n: i64?) -> i64
+    return n.default(0)
+
+function shown(v: u8) -> str
+    return v.to_str()
+
+function wide(v: u8)
+    print(v)
+
+function declared() -> u8
+    return first(a: 250, b: 1)
+
+function fourteen()
+    ns: [i64] = [1, 2, 3]
+    y: i64? = ok(5)
+    b: u8 = 3
+    xs: [i64] = [1]
+    print(app(f: ident, x: 20))
+    print(ns.map(ident).len())
+    print(ns.fold(19, keep_left))
+    print(ns.filter(keep).len())
+    nested: i64? = first(a: ok(1), b: ok(2))
+    print(nested.must())
+    print(first(a: y, b: ok(2)).must())
+    print(first(a: y, b: wanted(what: "i")).default(0))
+    print(first(a: b, b: 255))
+    print(first(a: 255, b: b))
+    print(narrow(x: 1, n: 255))
+    print(fallible(x: 1, n: ok(2)))
+    print(valued(x: 1, f: ident))
+    print(7.narrow(255))
+    print(first(a: xs, b: []).len())
+
+function widths()
+    y: u8 = first(a: 1, b: 2)
+    print(y)
+    wide(v: first(a: 255, b: 2))
+    print(declared())
+    us: [u8] = [1, 2, 3]
+    print(us.fold(0, add))
+
+function both_orders()
+    xs: [i64] = [1]
+    y: i64? = ok(5)
+    print(first(a: [1], b: []).len())
+    print(first(a: [], b: [1]).len())
+    print(first(a: {"k": 1}, b: {}).len())
+    print(first(a: {}, b: {"k": 1}).len())
+    print(first(a: [[1]], b: [[]]).len())
+    print(first(a: [[]], b: [[1]]).len())
+    print(app_rev(x: 20, f: ident))
+    print(mapr(f: ident, xs: [1, 2, 3]).len())
+    print(first(a: [], b: xs).len())
+    print(first(a: ok(2), b: y).must())
+    print(apply_all(fs: [ident, double], x: 3))
+    print(apply_rev(x: 3, fs: [ident, double]))
+
+function own_before_default()
+    b8: u8 = 1
+    k8: u8 = 1
+    k64: i64 = 1
+    k16: u16 = 2
+    v8: u8 = 2
+    print(first(a: [b8, 1], b: [2])[0])
+    print(first(a: [2], b: [b8, 1])[0])
+    print(first(a: {k8: 1}, b: {2: 3}).len())
+    print(first(a: {2: 3}, b: {k8: 1}).len())
+    print(first(a: {k64: 1}, b: {2: v8}).len())
+    print(first(a: {2: v8}, b: {k64: 1}).len())
+    print(first(a: {k64: {2: 3}}, b: {4: {k16: 5}}).len())
+    print(first(a: {4: {k16: 5}}, b: {k64: {2: 3}}).len())
+    print(apply_all(fs: [less, ident], x: 200))
+
+function calls_and_names()
+    print(first(a: empty(), b: same(x: [1])).len())
+    print(first(a: same(x: [1]), b: empty()).len())
+    print(pairs(f: ident, x: 1, ys: []))
+    print(first(a: ident, b: double)(3))
+    print(first(a: double, b: ident)(3))
+
+function receivers()
+    print([].count())
+    print(5.times_two())
+    print(ok(1).value())
+    print(first(a: 1, b: 2).shown())
+
+function main()
+    fourteen()
+    widths()
+    both_orders()
+    own_before_default()
+    calls_and_names()
+    receivers()

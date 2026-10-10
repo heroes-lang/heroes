@@ -17,9 +17,10 @@
 # **What counts as the function itself** is the resolver's answer, never a
 # name: a plain call whose callee resolves to this declaration, and its UFCS
 # spelling `x.f()` (spec § 9: `x.f(y)` is `f(x, y)`) where the checker itself
-# reads it so, asked of `check/walk.hero` and never read twice (§4.11: a field
-# of the receiver holding a function takes the call first; an `@` first
-# parameter takes no UFCS, `ufcs_on_mutable`). A same-named function of
+# reads it so, asked of `check/name_types.hero` and `check/walk.hero` as the
+# walk asks them and never read twice (§4.11: a field of the receiver holding
+# a function takes the call first; an `@` first parameter takes no UFCS,
+# `ufcs_on_mutable`). A same-named function of
 # another module, a variant case `.f(...)` and a call through a function value
 # are not the function.
 #
@@ -36,6 +37,7 @@ use resolved
 use check/state
 use check/path_end
 use check/walk
+use check/name_types
 use check/may_end
 use check/self_walk
 
@@ -212,7 +214,7 @@ function call(@w: self_walk.Walk, @c: state.Checker, a: ast.Ast, r: resolved.Res
 # receiver the first argument.
 function method(@w: self_walk.Walk, @c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], id: i64, receiver: i64, name: token.Span, given: [ast.Arg])
     qualified = r.uses[receiver] == .module
-    field = !qualified && !walk.field_of_function_type(@c, a, r, s, decls, receiver: c.out.expr_types[receiver], name: source.span_text(s, name)).is_err()
+    field = !qualified && !name_types.field_of_function_type(@c, a, r, s, decls, receiver: c.out.expr_types[receiver], name: source.span_text(s, name)).is_err()
     own = !field && names_itself(r, w, at: id, ufcs: !qualified, decls: decls)
 
     if !qualified && !(own && a.exprs[receiver].kind == .name)

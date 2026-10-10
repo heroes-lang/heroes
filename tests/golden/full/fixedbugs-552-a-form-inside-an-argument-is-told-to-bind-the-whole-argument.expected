@@ -1,13 +1,13 @@
-error[cannot_infer]: `ok(…)` takes its type from the type the context asks for, and a generic function's parameter asks for none, `ns` of `g` included, nor the literal written there, which takes its type from this element
-  at tests/golden/full/fixedbugs-552-a-form-inside-an-argument-is-told-to-bind-the-whole-argument.hero:16:24
+error[cannot_infer]: `ok(…)` takes its type from the type its position asks for, and `ns` of `g2` asks for `[A?]`: no other argument and no context says what `A` is, and the literal written there takes its type from this element
+  at tests/golden/full/fixedbugs-552-a-form-inside-an-argument-is-told-to-bind-the-whole-argument.hero:30:19
      |
-  16 |     print(g(x: 1, ns: [ok(1)]))  #~ cannot_infer
-     |                        ^^^^^
-  fix (guess): bind the argument first, `v: [i64?] = [ok(1)]`, and pass `v`
+  30 |     print(g2(ns: [ok(1)]))  #~ cannot_infer
+     |                   ^^^^^
+  fix (guess): bind the argument first, `v: <type> = [ok(1)]`, and pass `v`
 
-error[cannot_infer]: `ok(…)` takes its type from the type the context asks for, and the value written before `.h(…)` asks for none: its type is read first, to know what the call names, and it takes its type from this element
-  at tests/golden/full/fixedbugs-552-a-form-inside-an-argument-is-told-to-bind-the-whole-argument.hero:17:12
+error[cannot_infer]: `ok(…)` takes its type from the type its position asks for, and the value written before `.g2(…)`, `ns`, asks for `[A?]`: no other argument and no context says what `A` is, and the literal written there takes its type from this element
+  at tests/golden/full/fixedbugs-552-a-form-inside-an-argument-is-told-to-bind-the-whole-argument.hero:31:12
      |
-  17 |     print([ok(1)].h())  #~ cannot_infer
+  31 |     print([ok(1)].g2())  #~ cannot_infer
      |            ^^^^^
-  fix (guess): bind the value first, `v: [i64?] = [ok(1)]`, and call `v.h(…)`
+  fix (guess): bind the value first, `v: <type> = [ok(1)]`, and call `v.g2(…)`

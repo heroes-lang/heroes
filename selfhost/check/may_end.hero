@@ -28,7 +28,7 @@ use resolved
 use check/table
 use check/state
 use check/path_end
-use check/walk
+use check/name_types
 
 # One function's facts: whether it may end by itself, and the functions it
 # names, any of which may end it.
@@ -147,7 +147,7 @@ function expr(@f: Facts, @c: state.Checker, a: ast.Ast, r: resolved.Resolved, s:
                 expr(@f, @c, a, r, s, decls, id: m.receiver)
             arguments(@f, @c, a, r, s, decls, given: m.args)
 
-            if !qualified && !walk.field_of_function_type(@c, a, r, s, decls, receiver: c.out.expr_types[m.receiver], name: source.span_text(s, m.name)).is_err()
+            if !qualified && !name_types.field_of_function_type(@c, a, r, s, decls, receiver: c.out.expr_types[m.receiver], name: source.span_text(s, m.name)).is_err()
                 f.ends @ true
             else
                 match r.uses[id]

@@ -24,7 +24,7 @@ function id<T>(x: T) -> T
 
 function main()
     xs = [1, 2, 3]
-    print(join(xs.map(id).map(id), ", "))  #~ cannot_infer cannot_infer
+    print(join(xs.map(id).map(id), ", "))  #~ bad_operand
 
 # Corrected 2026-10-06, defect 402, lane b13-gen402, below the program so line
 # 27 stays line 27: the two messages above were not this line's mistake. Each
@@ -35,3 +35,10 @@ function main()
 # waited for, at this site. What the base told, `join` given `[a type
 # parameter]` and an `i64` where a type parameter was expected, was the shadow
 # of the unbound letter reaching the line's other calls.
+
+# Corrected 2026-10-10, defect 541 (panel 203 R1), below the program so line
+# 27 stays line 27: each `id` waits while `map`'s receiver settles `A`, and
+# takes the instance at `i64`, so the two maps are accepted; what is told is
+# the line's own mistake, `join` given the `[i64]` they make, its type as
+# written (`bad_operand`). Panel 105's flat rule, which the correction above
+# cites, is reversed for every argument with no type of its own.

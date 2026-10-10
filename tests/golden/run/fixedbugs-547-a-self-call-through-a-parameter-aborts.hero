@@ -1,0 +1,20 @@
+# Defect 547, 2026-10-10, panel 203's R2, ratified by the author with *close
+# 547 on the measurement*: a self-call through a parameter. `step` hands
+# itself to `go`, which calls what it is handed, so every call of `step`
+# calls `step` again before it returns, and `check` does not refuse it: no
+# rule follows a call through a parameter to what the callers hand it, and
+# doing so was the summary route the sitting measured and did not take (205
+# lines, +1.3% on every `check`, five shapes refused and three still missed,
+# this file's two siblings among them). The answer is panel 199 R2's,
+# at every level: the recursion runs until the stack is exhausted, an abort
+# that says so, never a crash. Under the sanitiser the runtime's guard yields
+# to ASan, which says `stack-overflow`.
+
+function go(n: i64, f: (function(i64) -> i64)) -> i64
+    return f(n)
+
+function step(n: i64) -> i64
+    return go(n: n, f: step)
+
+function main()
+    print(step(1))
