@@ -83,6 +83,28 @@ typedef __UINT64_TYPE__ uint64_t;
 typedef __INTPTR_TYPE__ intptr_t;
 typedef __UINTPTR_TYPE__ uintptr_t;
 
+/* **The unit's own evaluation method, read before any group** (defect 590).
+ * A header of the program's own writing `#pragma clang fp eval_method(...)`
+ * at file scope makes clang refuse every later expansion of
+ * `__FLT_EVAL_METHOD__` in the unit, and `<math.h>`, read after the groups
+ * (`heroes_standard.h`), expands it to choose `float_t`: the header compiled
+ * alone, and the program was *internal error* at exit 2. The value is read
+ * here, where no group has spoken, so `heroes_standard.h` can hand `<math.h>`
+ * the unit's own; a value C11 does not name is left unread, and `<math.h>`
+ * asks clang as before. */
+#if __FLT_EVAL_METHOD__ == -1
+#  define HERO_FLT_EVAL_METHOD (-1)
+#endif
+#if __FLT_EVAL_METHOD__ == 0
+#  define HERO_FLT_EVAL_METHOD 0
+#endif
+#if __FLT_EVAL_METHOD__ == 1
+#  define HERO_FLT_EVAL_METHOD 1
+#endif
+#if __FLT_EVAL_METHOD__ == 2
+#  define HERO_FLT_EVAL_METHOD 2
+#endif
+
 #define HERO_RUNTIME_ABI 30
 
 _Noreturn void hero_panic(const char *msg);

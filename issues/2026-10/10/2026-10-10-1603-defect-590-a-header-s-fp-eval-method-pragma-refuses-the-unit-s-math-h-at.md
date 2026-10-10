@@ -3,7 +3,7 @@ kind: defect
 area: emit
 milestone: none
 filed: 2026-10-10
-commit: none
+commit: 6f4c1b6360534bfae4e886b62fef70947d18a559
 github: none
 ---
 
@@ -12,3 +12,5 @@ github: none
     **Origin:** found by lane b19-pack attacking the shapes beside defect 582 (`.claude/worktrees/scratch-b15/b19-pack/shapes/`, ignored by git), filed by the lane at 16:03 on 2026-10-10.
 
     **Class: blocking**, 2026-10-10 (`.claude/rules/verification.md` § Bounded discovery): an exit 2 where the author can be told, the author's header blamed on the compiler.
+
+    Repaired at `6f4c1b6360534bfae4e886b62fef70947d18a559`, 2026-10-11 (lane b20-pragma), gated by its cases and the compiler's own tests; the net is owed at the batch's close. `runtime/heroes_runtime.h` reads the unit's own evaluation method before any group (`HERO_FLT_EVAL_METHOD`, guarded by defect 361's list and its two files), and `runtime/heroes_standard.h` hands it to `<math.h>` under the builtin's name and gives the builtin back after it, so `<math.h>` reads what it reads with no such header. The program's arithmetic was already the build's, by defect 582's give-back: measured in C with the unit's lines and without the give-back, `eval_method(double)` evaluated the program's `float` expressions in `double` on this Mac (`fpext`), and `eval_method(extended)` its `double` ones in `fp128` in the Linux arm64 image. Measured on this Mac (Apple clang 21), each exit 2 before and exit 0 with the build's values after, at `-O0` and `-O2`: `eval_method(double)` (the reproducer, with `f32` values), `(source)`, `(extended)`, the pragma in a header the group's header includes, the pragma through a macro's `_Pragma`, and `heroes test` of such a program; unchanged, a header that includes `<math.h>` before its pragma (exit 0 before and after) and one that includes it after (`ffi_header_refused`, the header refused alone, truly). In the Linux arm64 image (clang 22.1.8) glibc's `bits/flt-eval-method.h` and `math.h` refused the same way before, measured in C, and on the lane's tree at `6fe4c37f9d7b3c225be54105e64af78edcf63996` the cases read `run (only fixedbugs-590): 3 passed, 0 failed`, `eval_method(double)` and `(extended)` building with the build's values, and defect 582's `run (only fixedbugs-582): 11 passed, 0 failed`. Cases `run/fixedbugs-590-*` (3). Cost, instructions retired, two runs each: `heroes check selfhost/main.hero` 84.39G and 84.42G before, 84.40G and 84.38G after; a cold build of a small program 718M and 710M before, 723M and 707M after; no change past the runs' spread.

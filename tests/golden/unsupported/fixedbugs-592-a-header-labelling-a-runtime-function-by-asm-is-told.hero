@@ -1,0 +1,11 @@
+# fixedbugs, defect 592, lane b20-pragma, 2026-10-11, a shape beside
+# `fixedbugs-592-a-header-renaming-a-runtime-name-is-told-on-its-group`:
+# the header declares `hero_print_int` again with an `__asm__` label, which
+# clang takes, nothing having called it yet, the same cause and the same
+# exit 2 before.
+
+extern "fixedbugs-592-a-header-labelling-a-runtime-function-by-asm-is-told.h"  #~ ffi_header_refused
+    function labs(x: i64) -> i64
+
+function main()
+    print(labs(-42))

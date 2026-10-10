@@ -23,6 +23,7 @@ use cli/macro_twice
 use cli/header_order
 use cli/name_order
 use cli/inline_only
+use cli/renamed
 use cli/group_file
 use diag
 use cli/deep_types
@@ -67,6 +68,14 @@ function of_refusal(failed: ()?, art: compile.Artifact, s: source.Source, t: too
         if inline.len() > 0
             _ = compile.stage(inline, s).is_err()
             return fail(code: "diagnostics", msg: "a header defines a called function only inline")
+
+        # A symbol a header's label gave a C name (defects 591, 592,
+        # `cli/renamed.hero`), which no group declares by that symbol.
+        relabelled = renamed.told(message, s, art.decls, t, asking: asking)
+
+        if relabelled.len() > 0
+            _ = compile.stage(relabelled, s).is_err()
+            return fail(code: "diagnostics", msg: "a header gives a C name a linker name nothing defines")
 
     # Asked only now, of a round clang refused (defect 152), unless the rounds
     # asked it already.
