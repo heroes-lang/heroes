@@ -1,0 +1,30 @@
+# fixedbugs, defect 568 meeting defect 567, lane b18-guard, 2026-10-10.
+#
+# SYMPTOM (the merged tree before its repair, read rather than run): defect
+# 567's division guard writes `INT8_MIN`, `INT16_MIN` and `INT32_MIN` beside
+# an operand of that width, and defect 568's repair, measured on a tree that
+# wrote only `INT64_MIN` among them, had handed every other limit of
+# <stdint.h> to the headers. A group whose header reads <stdint.h> and then
+# defines `INT32_MIN` as 0 reached the guard: `0 / -1` aborted a correct
+# program, and the smallest `i32` by -1 went unguarded.
+#
+# FIX: the six names the division guard writes are guarded around the groups
+# like the four before them, and `runtime/heroes_standard.h` defines each
+# again from clang's predefined limits where the guard gave it back
+# undefined.
+
+extern "fixedbugs-568-a-group-s-narrow-limits-never-reach-a-division.h"
+    function narrow_limits_answer() -> i32
+
+function main()
+    a: i8 @ 0
+    b: i8 @ -1
+    print(a / b)
+    c: i16 @ 0
+    d: i16 @ -1
+    print(c / d)
+    e: i32 @ 0
+    f: i32 @ -1
+    print(e / f, narrow_limits_answer())
+    x: i32 @ -2147483648
+    print(x / f)
