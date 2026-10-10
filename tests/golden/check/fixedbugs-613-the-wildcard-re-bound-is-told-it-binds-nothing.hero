@@ -1,0 +1,16 @@
+# Fixed 2026-10-11, defect 613, lane b20-check. Symptom: `_ @ f(1)` was told
+# *nothing named `_` is in scope*, a rename to the nearest one-letter name
+# (`f`, `n`) offered, and panel 209 R9's note *a new cell is declared
+# `_ @= <value>`*, a line that declares nothing and is refused since defect
+# 608. Cause: `errors.unknown_place` wrote its note for every name, the
+# wildcard included. Now the wildcard on the left of `@` is told that it
+# binds nothing, and that a value dropped on purpose is `_ = …`.
+
+function f(x: i64) -> i64
+    return x + 1
+
+function main()
+    n = 4
+    _ @ f(1)  #~ unknown_name
+    _ @ n + 1  #~ unknown_name
+    print(n)

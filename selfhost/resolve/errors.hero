@@ -50,10 +50,25 @@ function unknown_place(name: str, near: [str], span: token.Span) -> diag.Diagnos
     )
     return d
 
+# The wildcard on the left of `@`, `_ @ e` or `_.x @ e`: `_` binds nothing
+# (spec § 5), so no cell stands under it, `_ @= …` declares none (defect
+# 608), and the names one letter from it are no typo it was, so none is
+# offered, nor kept from its own `unused_binding` (defect 613).
+function wildcard_place(span: token.Span) -> diag.Diagnostic
+    return diag.new_diagnostic(
+        code: "unknown_name",
+        message: "`_` binds nothing, so there is no cell for `@` to re-bind there — a value dropped on purpose is written `_ = …`",
+        span: span
+    )
+
 test "a mutation of a name nothing binds says how a cell is declared"
     d = unknown_place("totl", ["total"], token.Span(start: 0, end: 4))
     assert d.code == "unknown_name"
     assert d.notes.len() == 1
+    wildcard = wildcard_place(token.Span(start: 0, end: 1))
+    assert wildcard.code == "unknown_name"
+    assert wildcard.notes.len() == 0
+    assert wildcard.fixes.len() == 0
     assert d.fixes.len() == 1
 
 # A name nothing binds, called (defect 270): `print(sqrt(2.0))` with no

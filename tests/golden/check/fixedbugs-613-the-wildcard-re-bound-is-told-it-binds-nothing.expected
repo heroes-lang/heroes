@@ -1,0 +1,2 @@
+tests/golden/check/fixedbugs-613-the-wildcard-re-bound-is-told-it-binds-nothing.hero:14:5: error[unknown_name]: `_` binds nothing, so there is no cell for `@` to re-bind there — a value dropped on purpose is written `_ = …`
+tests/golden/check/fixedbugs-613-the-wildcard-re-bound-is-told-it-binds-nothing.hero:15:5: error[unknown_name]: `_` binds nothing, so there is no cell for `@` to re-bind there — a value dropped on purpose is written `_ = …`

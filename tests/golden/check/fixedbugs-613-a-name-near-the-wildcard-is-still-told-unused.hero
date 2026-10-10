@@ -1,0 +1,10 @@
+# Fixed 2026-10-11, defect 613, lane b20-check: the shape beside it where a
+# one-letter name stands near `_`. Before the repair `_ @ 5` offered `k` as
+# the rename, and a name offered as a repair is spared its own
+# `unused_binding`, so `k`, never read, was told only once the line was
+# fixed. Now no name is offered for the wildcard, and `k` is told at once.
+
+function main()
+    k = 4  #~ unused_binding
+    _ @ 5  #~ unknown_name
+    print("done")

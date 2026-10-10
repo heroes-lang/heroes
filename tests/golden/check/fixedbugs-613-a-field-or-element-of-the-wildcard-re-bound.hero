@@ -1,0 +1,14 @@
+# Fixed 2026-10-11, defect 613, lane b20-check: the shapes beside it, a field
+# and an element under the wildcard, whose root is the one the write reaches.
+# Symptom: each told *nothing named `_` is in scope* with the note writing
+# `_ @= <value>`. Now each is told that `_` binds nothing.
+
+record P
+    x: i64
+
+function main()
+    p @= P(x: 1)
+    _.x @ 2  #~ unknown_name
+    _[0] @ 3  #~ unknown_name
+    p.x @ 4
+    print(p.x)
