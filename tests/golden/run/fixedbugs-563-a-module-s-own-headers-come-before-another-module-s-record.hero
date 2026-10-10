@@ -1,0 +1,16 @@
+# fixedbugs, defect 563, lane b18-ffi, 2026-10-10 (panel 204's R1), the
+# shape beside the repair.
+#
+# `narrow`'s unit reads its own group's `fixedbugs-563-skew.h`, and
+# `fixedbugs-563-wide.h` too, for the `wide.Wh` it spells, a header that
+# defines the macro `skew.h` lays `Sk` out wide under. A module's own
+# groups' headers come first in its unit, in the order they are written,
+# and another module's record after them, so `Sk` is narrow as `narrow`
+# reads it. Until 2026-10-10 a unit's records were read in declaration
+# order across modules, `wide`'s first where this program names it first,
+# and `Sk.a: i32` was refused, *`Sk.a` is `long long`*.
+use fixedbugs563/wide
+use fixedbugs563/narrow
+
+function main()
+    print(narrow.total(x: wide.make(v: 4)))

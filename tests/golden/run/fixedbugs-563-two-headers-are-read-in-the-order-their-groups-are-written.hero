@@ -1,0 +1,18 @@
+# fixedbugs, defect 563, lane b18-ffi, 2026-10-10 (panel 204's R1; the
+# spec-warden's `cfgone`).
+#
+# `fixedbugs-563-cap.h` caps at `LIMIT` and defines it as 10 only where no
+# header read before it has, and `fixedbugs-563-limit.h` defines it as 100.
+# This module writes the `limit` group first, so C reads that header first
+# and `cap(v: 50)` is 50. Spec § 4 read *Declaration order never matters*
+# until 2026-10-10, false of exactly this: a group's order is the order C
+# reads its headers in (§ 13), and here it is what the program means.
+extern "fixedbugs-563-limit.h"
+    function half(x: i64) -> i64
+
+extern "fixedbugs-563-cap.h"
+    function cap(v: i32) -> i32
+
+function main()
+    print(half(x: 6))
+    print(cap(v: 50))

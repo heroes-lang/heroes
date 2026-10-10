@@ -1,0 +1,12 @@
+# fixedbugs, defect 563: a module whose own header lays `Sk` out narrow, and
+# which spells the other module's `Wh`.
+use fixedbugs563/wide
+
+extern "fixedbugs-563-skew.h"
+    record Sk
+        a: i32
+        b: i32
+
+function total(x: wide.Wh) -> i64
+    s = Sk(a: 1, b: 2)
+    return to_i64(x.w + s.a + s.b).must()
