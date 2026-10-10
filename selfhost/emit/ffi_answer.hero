@@ -1,0 +1,190 @@
+# How clang's answer to a refused round's questions is read, and how the
+# answers of several units are put together (design.md §4.19; CLAUDE.md §7's
+# named exception; defect 152, 2026-10-02). `emit/ffi_asked.hero` writes the
+# questions; this reads them back. Split out of that file on 2026-10-10, when
+# panel 202 had a refused round ask each module's unit's headers apart
+# (`cli/header_ask.hero`) and the answers of several units had to be one.
+
+use emit/ffi_asked
+use emit/ffi_lookup
+use emit/field_asked
+
+# clang's answer, read: a question's line is an answer, the rest was said again.
+# ORDER: none, the walk over `reached` fills a map, and nothing reads its order.
+function read(stderr: str) -> ffi_asked.Asked
+    said: [str] @ []
+    values: {str: bool} @ {}
+    macros: {str: bool} @ {}
+    reached: {str: bool} @ {}
+    refused: {str: str} @ {}
+    results: {str: ffi_asked.Typed} @ {}
+    fields: {str: ffi_asked.Typed} @ {}
+    widths: {str: i64} @ {}
+
+    for row in ffi_lookup.lines(text: stderr)
+        if !begins(text: row, prefix: ffi_asked.ASK)
+            said @ said.push(row)
+            continue
+
+        if begins(text: row, prefix: ffi_asked.RESULT)
+            given = ffi_asked.typed_in(row)
+
+            if !given.is_err()
+                results[asked_name(row: row, prefix: ffi_asked.RESULT)] @ given.must()
+
+        if begins(text: row, prefix: field_asked.FIELD) && !ffi_asked.typed_in(row).is_err()
+            fields[asked_name(row: row, prefix: field_asked.FIELD)] @ ffi_asked.typed_in(row).must()
+
+        if begins(text: row, prefix: field_asked.WIDTH) && !ffi_asked.typed_in(row).is_err()
+            widths[asked_name(row: row, prefix: field_asked.WIDTH)] @ field_asked.bracketed(
+                ffi_asked.typed_in(row).must().spelled
+            )
+
+        if begins(text: row, prefix: ffi_asked.VALUE) && ffi_lookup.has(text: row, needle: ffi_lookup.FAILED)
+            values[asked_name(row: row, prefix: ffi_asked.VALUE)] @ true
+
+        if begins(text: row, prefix: ffi_asked.MACRO) && ffi_lookup.has(text: row, needle: "warning: hero-ask")
+            macros[asked_name(row: row, prefix: ffi_asked.MACRO)] @ true
+
+        if begins(text: row, prefix: ffi_asked.TYPE)
+            name = asked_name(row: row, prefix: ffi_asked.TYPE)
+
+            if ffi_lookup.has(text: row, needle: ffi_lookup.FAILED)
+                reached[name] @ true
+            else if ffi_lookup.has(text: row, needle: "must use 'struct' tag")
+                refused[name] @ "tag"
+            else if ffi_lookup.has(text: row, needle: "must use 'union' tag")
+                refused[name] @ "union"
+            else if ffi_lookup.has(text: row, needle: "must use 'enum' tag")
+                refused[name] @ "enum"
+            else if ffi_lookup.has(text: row, needle: "unknown type name")
+                refused[name] @ "neither"
+
+    types: {str: str} @ {}
+
+    for name in keys(reached)
+        types[name] @ refused[name].default("type")
+
+    return ffi_asked.Asked(
+        said: said.join("\n"),
+        values: values,
+        macros: macros,
+        types: types,
+        results: results,
+        fields: fields,
+        widths: widths
+    )
+
+# The name a question's line asks about: what its file name holds after the
+# question's own words, up to the colon that opens the position.
+function asked_name(row: str, prefix: str) -> str
+    cs = row.chars()
+    index: i64 @ prefix.chars().len()
+    kept: [str] @ []
+
+    while index < cs.len() && cs[index] != ":"
+        kept @ kept.push(cs[index])
+        index @ index + 1
+
+    return kept.join("")
+
+function begins(text: str, prefix: str) -> bool
+    at = ffi_lookup.char_index_of(text: text, needle: prefix)
+    return !at.is_err() && at.must() == 0
+
+# The answers of two units as one: what each said, and each name's answer
+# where the first gave none. A unit asks only its own modules' names, so two
+# answer one name only where two modules bind it, and the first asked,
+# the module whose unit was refused, is the one its reader is about.
+function merged(first: ffi_asked.Asked, then: ffi_asked.Asked) -> ffi_asked.Asked
+    out: ffi_asked.Asked @ first
+    said: [str] @ []
+
+    for one in [first.said, then.said]
+        if one.len() > 0
+            said @ said.push(one)
+
+    out.said @ said.join("\n")
+
+    for name in keys(then.values)
+        if out.values[name].is_err()
+            out.values[name] @ true
+
+    for name in keys(then.macros)
+        if out.macros[name].is_err()
+            out.macros[name] @ true
+
+    for name in keys(then.types)
+        if out.types[name].is_err()
+            out.types[name] @ then.types[name].must()
+
+    for name in keys(then.results)
+        if out.results[name].is_err()
+            out.results[name] @ then.results[name].must()
+
+    for name in keys(then.fields)
+        if out.fields[name].is_err()
+            out.fields[name] @ then.fields[name].must()
+
+    for name in keys(then.widths)
+        if out.widths[name].is_err()
+            out.widths[name] @ then.widths[name].must()
+
+    return out
+
+## Tests
+
+test "a field's type and width are read from their questions (defect 517)"
+    answered = read(
+        "hero-ask-field Q a:1:81: error: initializing 'struct hero_ask_result' with an expression of incompatible type 'ev_kind'\nhero-ask-width Q a:1:81: error: initializing 'struct hero_ask_result' with an expression of incompatible type 'char (*)[34]'\nhero-ask-width Q b:1:95: error: no member named 'b' in 'only_tagg'\n"
+    )
+    assert answered.fields["Q a"].must() == ffi_asked.Typed(spelled: "ev_kind", canonical: "ev_kind")
+    assert answered.widths["Q a"].must() == 34
+    assert answered.widths["Q b"].is_err()
+
+test "an answer is read from the question's file name, and only a failed assertion is a value"
+    stderr = "t.hero:2:67: error: called object type 'int' is not a function or function pointer\nhero-ask-value BUFSIZ:1:16: error: static assertion failed due to requirement '!__builtin_constant_p(1024)': hero-ask\nhero-ask-value nosuch:1:38: error: use of undeclared identifier 'nosuch'\nhero-ask-macro WEXITSTATUS:2:2: warning: hero-ask [-W#warnings]\n2 errors generated."
+    got = read(stderr)
+    assert !got.values["BUFSIZ"].is_err()
+    assert !got.macros["WEXITSTATUS"].is_err()
+    assert got.macros.len() == 1
+
+    # A tag's three answers, each only where the question was reached.
+    tags = "hero-ask-type anon_s:2:16: error: static assertion failed due to requirement 'sizeof(anon_s *) == 0': hero-ask\nhero-ask-type only_tag:1:9: error: must use 'struct' tag to refer to type 'only_tag'\nhero-ask-type only_tag:2:16: error: static assertion failed due to requirement 'sizeof(struct only_tag *) == 0': hero-ask\nhero-ask-type only_tagg:1:9: error: unknown type name 'only_tagg'\nhero-ask-type only_tagg:2:16: error: static assertion failed due to requirement 'sizeof(int *) == 0': hero-ask\nhero-ask-type cut:1:9: error: unknown type name 'cut'\n"
+    typed = read(tags).types
+    assert typed["anon_s"].must() == "type"
+    assert typed["only_tag"].must() == "tag"
+    assert typed["only_tagg"].must() == "neither"
+    assert typed["cut"].is_err()
+
+    # A question clang could not ask is no answer.
+    assert got.values["nosuch"].is_err()
+    assert got.values.len() == 1
+
+    # What was said again stays, for the readers; no answer's line does.
+    assert ffi_lookup.has(text: got.said, needle: "t.hero:2:67: error: called object type 'int'")
+    assert !ffi_lookup.has(text: got.said, needle: "hero-ask")
+
+    # A result's type as the header spells it and the canonical one after
+    # it, or the one clang gives where there is no other (defect 186); a
+    # question that did not compile answers nothing.
+    results = "hero-ask-result add:1:83: error: initializing 'struct hero_ask_result' with an expression of incompatible type 'int64_t' (aka 'long long')\nhero-ask-result tick:1:83: error: initializing 'struct hero_ask_result' with an expression of incompatible type 'void'\nhero-ask-result on:1:90: error: unknown type name 'hero_fn_1'\n"
+    answered = read(results).results
+    assert answered["add"].must() == ffi_asked.Typed(spelled: "int64_t", canonical: "long long")
+    assert answered["tick"].must() == ffi_asked.Typed(spelled: "void", canonical: "void")
+    assert answered["on"].is_err()
+    assert ffi_asked.nothing().said == ""
+
+test "two units' answers are one, the first's where both answer a name (panel 202)"
+    one = read(
+        "hero-ask-value A:1:16: error: static assertion failed due to requirement '!__builtin_constant_p(1)': hero-ask\nt.hero:2:3: error: first\n"
+    )
+    two = read(
+        "hero-ask-value B:1:16: error: static assertion failed due to requirement '!__builtin_constant_p(2)': hero-ask\nhero-ask-macro A:2:2: warning: hero-ask [-W#warnings]\nu.hero:4:5: error: second\n"
+    )
+    both = merged(first: one, then: two)
+    assert !both.values["A"].is_err()
+    assert !both.values["B"].is_err()
+    assert !both.macros["A"].is_err()
+    assert both.said == "t.hero:2:3: error: first\nu.hero:4:5: error: second"
+    assert merged(first: ffi_asked.nothing(), then: one).said == one.said

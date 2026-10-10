@@ -189,7 +189,19 @@ function emit_told(target: emit_decls.BuildTarget, p: containers.Program, c: sta
     # different from the bootstrap, which is what settled which side had
     # the bug.
     w: writer.Writer @ writer.new_writer(module)
-    emit_decls.prelude(@w, p, target: target, c: c, names: names, s: s, decls: decls, version: version, tu_local: "")
+    every: {i64: bool}? = fail(code: "every", msg: "the fused unit reads every group's header")
+    emit_decls.prelude(
+        @w,
+        p,
+        target: target,
+        c: c,
+        names: names,
+        s: s,
+        decls: decls,
+        version: version,
+        tu_local: "",
+        records: every
+    )
 
     # Types before anything that can mention one: every typedef in one
     # containment order, then every per-type prototype, then the
