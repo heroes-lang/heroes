@@ -6,4 +6,4 @@ error[ffi_header_refused]: `fixedbugs-550-a.h` and `fixedbugs-550-b.h`, the head
   note: `fixedbugs-550-a-impl.h` line 3 reads `static inline long long twice(long long x) { return 2 * x; }`
   note: `fixedbugs-550-b.h` line 3 reads `static inline int twice(int x) { return x + x; }`
   note: the other group names `fixedbugs-550-b.h` at line 9
-  note: each group's header is included in the unit clang compiled before a line of its own, so these two are read together there, and these cannot be compiled in one unit whichever comes first: bind a C name they share from one header, or name for one group a header of your own that declares only what that group binds
+  note: each group's header is included in the unit clang compiled before a line of its own, so these two are read together there: bind the two groups from two modules, whose units each read their own groups' headers
