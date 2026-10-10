@@ -6,6 +6,17 @@
 #include "heroes_guard_open.h"
 #include <a-panic-with-a-live-lease-says-one-thing.h>
 #include "heroes_guard_close.h"
+#pragma clang diagnostic error "-Wreturn-type"
+#pragma clang diagnostic error "-Wuninitialized"
+#pragma clang diagnostic error "-Wformat"
+#pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic error "-Wshorten-64-to-32"
+#pragma clang diagnostic error "-Wsign-conversion"
+#pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
+#pragma clang diagnostic error "-Wincompatible-pointer-types"
+#pragma clang diagnostic error "-Wint-conversion"
+#pragma clang diagnostic error "-Wimplicit-function-declaration"
+#pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
@@ -49,7 +60,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_35d9fe9b, "payload");
 
-#line 53 "apanicwithaliveleasesaysonething.c"
+#line 64 "apanicwithaliveleasesaysonething.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -65,6 +76,17 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+#pragma clang diagnostic error "-Wreturn-type"
+#pragma clang diagnostic error "-Wuninitialized"
+#pragma clang diagnostic error "-Wformat"
+#pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic error "-Wshorten-64-to-32"
+#pragma clang diagnostic error "-Wsign-conversion"
+#pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
+#pragma clang diagnostic error "-Wincompatible-pointer-types"
+#pragma clang diagnostic error "-Wint-conversion"
+#pragma clang diagnostic error "-Wimplicit-function-declaration"
+#pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wdouble-promotion"
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
@@ -81,7 +103,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 85 "apanicwithaliveleasesaysonething.c"
+#line 107 "apanicwithaliveleasesaysonething.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -97,7 +119,7 @@ void h_apanicwithaliveleasesaysonething_main(void);
 
 #line 10 "tests/golden/run/a-panic-with-a-live-lease-says-one-thing.hero"
 void h_apanicwithaliveleasesaysonething_main(void) {
-#line 101 "apanicwithaliveleasesaysonething.c"
+#line 123 "apanicwithaliveleasesaysonething.c"
     HeroStr h0_x = {0};
     const char * h1_c;
     HeroArrayHeader * h2_a = {0};
@@ -125,11 +147,11 @@ bb0:
     t1 = HERO_STR_LIT(hero_str_35d9fe9b);
 #line 11 "tests/golden/run/a-panic-with-a-live-lease-says-one-thing.hero"
     t13 = h0_x;
-#line 129 "apanicwithaliveleasesaysonething.c"
+#line 151 "apanicwithaliveleasesaysonething.c"
     hero_str_incref(t1);
 #line 11 "tests/golden/run/a-panic-with-a-live-lease-says-one-thing.hero"
     h0_x = t1;
-#line 133 "apanicwithaliveleasesaysonething.c"
+#line 155 "apanicwithaliveleasesaysonething.c"
     hero_str_decref(t13);
 #line 12 "tests/golden/run/a-panic-with-a-live-lease-says-one-thing.hero"
     t2 = h0_x;
@@ -157,15 +179,15 @@ bb0:
     t14 = h3_own3;
 #line 14 "tests/golden/run/a-panic-with-a-live-lease-says-one-thing.hero"
     h3_own3 = t8;
-#line 161 "apanicwithaliveleasesaysonething.c"
+#line 183 "apanicwithaliveleasesaysonething.c"
     hero_array_decref(t14);
 #line 14 "tests/golden/run/a-panic-with-a-live-lease-says-one-thing.hero"
     t15 = h2_a;
-#line 165 "apanicwithaliveleasesaysonething.c"
+#line 187 "apanicwithaliveleasesaysonething.c"
     hero_array_incref(t8);
 #line 14 "tests/golden/run/a-panic-with-a-live-lease-says-one-thing.hero"
     h2_a = t8;
-#line 169 "apanicwithaliveleasesaysonething.c"
+#line 191 "apanicwithaliveleasesaysonething.c"
     hero_array_decref(t15);
 #line 15 "tests/golden/run/a-panic-with-a-live-lease-says-one-thing.hero"
     t9 = h2_a;
@@ -179,14 +201,14 @@ bb0:
     t16 = h4_own4;
 #line 15 "tests/golden/run/a-panic-with-a-live-lease-says-one-thing.hero"
     h4_own4 = t12;
-#line 183 "apanicwithaliveleasesaysonething.c"
+#line 205 "apanicwithaliveleasesaysonething.c"
     hero_str_decref(t16);
 #line 15 "tests/golden/run/a-panic-with-a-live-lease-says-one-thing.hero"
     hero_print_str(t12);
 #line 15 "tests/golden/run/a-panic-with-a-live-lease-says-one-thing.hero"
     hero_print_end();
     hero_held_release(&h1_c);
-#line 190 "apanicwithaliveleasesaysonething.c"
+#line 212 "apanicwithaliveleasesaysonething.c"
     hero_str_release_at(&h0_x);
     hero_array_release_at(&h2_a);
     hero_array_release_at(&h3_own3);

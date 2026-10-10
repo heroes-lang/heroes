@@ -1,0 +1,34 @@
+# fixedbugs, defect 570, lane b18-guard, 2026-10-10 (panel 205's R1).
+#
+# Beside `fixedbugs-570-a-macro-naming-the-bound-function-holds-a-pragma`:
+# a field's name is written in a body.
+#
+# SYMPTOM: `#define count _Pragma("clang diagnostic ignored
+# \"-Wincompatible-pointer-types-discards-qualifiers\"") count`: `main`'s
+# read of `b.count` expanded the pragma, and the lend of an immutable field
+# after it built, and C wrote into `t`.
+#
+# FIX: every name the compiler writes but a constant's, a function's and
+# each releaser, a record's name and tag and each field, is preprocessed as
+# the compiler writes it under a file of its own before any unit compiles
+# (`cli/pragma_ask.hero`), and a `#pragma` its expansion prints refuses it,
+# `ffi_macro_name`, at its declaration: a raise after the name cannot reach
+# the line it stands on.
+
+extern "fixedbugs-570-a-field-macro-holding-a-pragma-is-refused.h"
+    record Slot
+        nsap: u8[8]
+        id: i64
+    record Box
+        count: i64  #~ ffi_macro_name
+    function slot_make() -> Slot
+    function box_make() -> Box
+    function slot_fill(p: ptr counted_by n lent, n: i64)
+    function slot_sum(p: ptr counted_by n lent, n: i64) -> i64
+
+function main()
+    t = slot_make()
+    b = box_make()
+    print(b.count)
+    slot_fill(p: t.nsap.ptr(), n: 8)
+    print(slot_sum(p: t.nsap.ptr(), n: 8))

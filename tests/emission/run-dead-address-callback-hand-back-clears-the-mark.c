@@ -6,6 +6,17 @@
 #include "heroes_guard_open.h"
 #include <dead-address-callback-hand-back-clears-the-mark.h>
 #include "heroes_guard_close.h"
+#pragma clang diagnostic error "-Wreturn-type"
+#pragma clang diagnostic error "-Wuninitialized"
+#pragma clang diagnostic error "-Wformat"
+#pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic error "-Wshorten-64-to-32"
+#pragma clang diagnostic error "-Wsign-conversion"
+#pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
+#pragma clang diagnostic error "-Wincompatible-pointer-types"
+#pragma clang diagnostic error "-Wint-conversion"
+#pragma clang diagnostic error "-Wimplicit-function-declaration"
+#pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
@@ -53,7 +64,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_678ad40c, "visited ");
 
-#line 57 "deadaddresscallbackhandbackclearsthemark.c"
+#line 68 "deadaddresscallbackhandbackclearsthemark.c"
 typedef int64_t (*h_0fn_41481456)(node *);
 typedef struct h_0opt_f87774a {
     int64_t tag;
@@ -70,6 +81,17 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+#pragma clang diagnostic error "-Wreturn-type"
+#pragma clang diagnostic error "-Wuninitialized"
+#pragma clang diagnostic error "-Wformat"
+#pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic error "-Wshorten-64-to-32"
+#pragma clang diagnostic error "-Wsign-conversion"
+#pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
+#pragma clang diagnostic error "-Wincompatible-pointer-types"
+#pragma clang diagnostic error "-Wint-conversion"
+#pragma clang diagnostic error "-Wimplicit-function-declaration"
+#pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wdouble-promotion"
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
@@ -88,7 +110,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 92 "deadaddresscallbackhandbackclearsthemark.c"
+#line 114 "deadaddresscallbackhandbackclearsthemark.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_deadaddresscallbackhandbackclearsthemark_Node_eq(node * const *a, node * const *b);
@@ -114,7 +136,7 @@ __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
 
 #line 17 "tests/golden/run/dead-address-callback-hand-back-clears-the-mark.hero"
 int64_t h_deadaddresscallbackhandbackclearsthemark_seen(node * h0_n) {
-#line 118 "deadaddresscallbackhandbackclearsthemark.c"
+#line 140 "deadaddresscallbackhandbackclearsthemark.c"
     hero_thread_guard("deadaddresscallbackhandbackclearsthemark.seen");
     node * t1;
     int64_t t2;
@@ -128,7 +150,7 @@ bb0:
     t2 = node_value(t1);
 #line 18 "tests/golden/run/dead-address-callback-hand-back-clears-the-mark.hero"
     return t2;
-#line 132 "deadaddresscallbackhandbackclearsthemark.c"
+#line 154 "deadaddresscallbackhandbackclearsthemark.c"
 }
 
 int64_t h_0cb_deadaddresscallbackhandbackclearsthemark_seen(node * h0_n) {
@@ -139,7 +161,7 @@ int64_t h_0cb_deadaddresscallbackhandbackclearsthemark_seen(node * h0_n) {
 
 #line 20 "tests/golden/run/dead-address-callback-hand-back-clears-the-mark.hero"
 void h_deadaddresscallbackhandbackclearsthemark_main(void) {
-#line 143 "deadaddresscallbackhandbackclearsthemark.c"
+#line 165 "deadaddresscallbackhandbackclearsthemark.c"
     node * h0_mine;
     node * t1;
     node * t2;
@@ -180,7 +202,7 @@ bb0:
     hero_print_end();
 #line 23 "tests/golden/run/dead-address-callback-hand-back-clears-the-mark.hero"
     return;
-#line 184 "deadaddresscallbackhandbackclearsthemark.c"
+#line 206 "deadaddresscallbackhandbackclearsthemark.c"
 }
 HERO_TU_LOCAL bool h_deadaddresscallbackhandbackclearsthemark_Node_eq(node * const *a, node * const *b) {
     return hero_handle_eq(*a, *b);

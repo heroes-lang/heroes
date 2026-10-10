@@ -71,6 +71,7 @@ use emit/inst
 use emit/term
 use emit/unread
 use emit/record_constant
+use emit/checks_raised
 use emit/writer
 use emit/lend_local
 use parse
@@ -132,6 +133,7 @@ function built(@w: writer.Writer, p: instances.Held, c: state.Checked, names: ct
         writer.at_generated(@w)
         writer.line(@w, text: "    return " + extern_name + ";")
         writer.line(@w, text: "}")
+        checks_raised.after_constant(@w, s, decls, f)
         return
     writer.line(@w, text: signature.signature(f, c, names, s, decls) + " {")
     writer.at_generated(@w)

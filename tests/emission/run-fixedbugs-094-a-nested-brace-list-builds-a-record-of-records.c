@@ -8,6 +8,17 @@
 #pragma push_macro("a")
 #pragma push_macro("b")
 #include "heroes_guard_close.h"
+#pragma clang diagnostic error "-Wreturn-type"
+#pragma clang diagnostic error "-Wuninitialized"
+#pragma clang diagnostic error "-Wformat"
+#pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic error "-Wshorten-64-to-32"
+#pragma clang diagnostic error "-Wsign-conversion"
+#pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
+#pragma clang diagnostic error "-Wincompatible-pointer-types"
+#pragma clang diagnostic error "-Wint-conversion"
+#pragma clang diagnostic error "-Wimplicit-function-declaration"
+#pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
@@ -19,7 +30,7 @@ _Static_assert(__builtin_classify_type(((struct pt *)0)->y) == 1 && sizeof(((str
 #line 11 "tests/golden/run/fixedbugs-094-a-nested-brace-list-builds-a-record-of-records.hero"
 _Static_assert(_Generic(&((struct line *)0)->a, struct pt *: 1, default: 0) && sizeof(((struct line *)0)->a) == sizeof(struct pt), "heroes-ffi-field Line a");
 _Static_assert(_Generic(&((struct line *)0)->b, struct pt *: 1, default: 0) && sizeof(((struct line *)0)->b) == sizeof(struct pt), "heroes-ffi-field Line b");
-#line 23 "fixedbugs094anestedbracelistbuildsarecordofrecords.c"
+#line 34 "fixedbugs094anestedbracelistbuildsarecordofrecords.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -71,6 +82,17 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+#pragma clang diagnostic error "-Wreturn-type"
+#pragma clang diagnostic error "-Wuninitialized"
+#pragma clang diagnostic error "-Wformat"
+#pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic error "-Wshorten-64-to-32"
+#pragma clang diagnostic error "-Wsign-conversion"
+#pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
+#pragma clang diagnostic error "-Wincompatible-pointer-types"
+#pragma clang diagnostic error "-Wint-conversion"
+#pragma clang diagnostic error "-Wimplicit-function-declaration"
+#pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wdouble-promotion"
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
@@ -85,7 +107,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 89 "fixedbugs094anestedbracelistbuildsarecordofrecords.c"
+#line 111 "fixedbugs094anestedbracelistbuildsarecordofrecords.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs094anestedbracelistbuildsarecordofrecords_Pt_eq(const struct pt *a, const struct pt *b);
@@ -107,7 +129,7 @@ void h_fixedbugs094anestedbracelistbuildsarecordofrecords_main(void);
 
 #line 13 "tests/golden/run/fixedbugs-094-a-nested-brace-list-builds-a-record-of-records.hero"
 struct line h_fixedbugs094anestedbracelistbuildsarecordofrecords_LINE_INIT(void) {
-#line 111 "fixedbugs094anestedbracelistbuildsarecordofrecords.c"
+#line 133 "fixedbugs094anestedbracelistbuildsarecordofrecords.c"
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wexcess-initializers"
 #pragma clang diagnostic error "-Wconstant-conversion"
@@ -119,14 +141,25 @@ struct line h_fixedbugs094anestedbracelistbuildsarecordofrecords_LINE_INIT(void)
 #pragma clang diagnostic ignored "-Winitializer-overrides"
 #line 13 "tests/golden/run/fixedbugs-094-a-nested-brace-list-builds-a-record-of-records.hero"
     struct line hero_constant_value = LINE_INIT;
-#line 123 "fixedbugs094anestedbracelistbuildsarecordofrecords.c"
+#line 145 "fixedbugs094anestedbracelistbuildsarecordofrecords.c"
 #pragma clang diagnostic pop
     return hero_constant_value;
 }
+#pragma clang diagnostic error "-Wreturn-type"
+#pragma clang diagnostic error "-Wuninitialized"
+#pragma clang diagnostic error "-Wformat"
+#pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic error "-Wshorten-64-to-32"
+#pragma clang diagnostic error "-Wsign-conversion"
+#pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
+#pragma clang diagnostic error "-Wincompatible-pointer-types"
+#pragma clang diagnostic error "-Wint-conversion"
+#pragma clang diagnostic error "-Wimplicit-function-declaration"
+#pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 
 #line 14 "tests/golden/run/fixedbugs-094-a-nested-brace-list-builds-a-record-of-records.hero"
 struct line h_fixedbugs094anestedbracelistbuildsarecordofrecords_LINE_FLAT(void) {
-#line 130 "fixedbugs094anestedbracelistbuildsarecordofrecords.c"
+#line 163 "fixedbugs094anestedbracelistbuildsarecordofrecords.c"
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wexcess-initializers"
 #pragma clang diagnostic error "-Wconstant-conversion"
@@ -138,14 +171,25 @@ struct line h_fixedbugs094anestedbracelistbuildsarecordofrecords_LINE_FLAT(void)
 #pragma clang diagnostic ignored "-Winitializer-overrides"
 #line 14 "tests/golden/run/fixedbugs-094-a-nested-brace-list-builds-a-record-of-records.hero"
     struct line hero_constant_value = LINE_FLAT;
-#line 142 "fixedbugs094anestedbracelistbuildsarecordofrecords.c"
+#line 175 "fixedbugs094anestedbracelistbuildsarecordofrecords.c"
 #pragma clang diagnostic pop
     return hero_constant_value;
 }
+#pragma clang diagnostic error "-Wreturn-type"
+#pragma clang diagnostic error "-Wuninitialized"
+#pragma clang diagnostic error "-Wformat"
+#pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic error "-Wshorten-64-to-32"
+#pragma clang diagnostic error "-Wsign-conversion"
+#pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
+#pragma clang diagnostic error "-Wincompatible-pointer-types"
+#pragma clang diagnostic error "-Wint-conversion"
+#pragma clang diagnostic error "-Wimplicit-function-declaration"
+#pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 
 #line 16 "tests/golden/run/fixedbugs-094-a-nested-brace-list-builds-a-record-of-records.hero"
 void h_fixedbugs094anestedbracelistbuildsarecordofrecords_main(void) {
-#line 149 "fixedbugs094anestedbracelistbuildsarecordofrecords.c"
+#line 193 "fixedbugs094anestedbracelistbuildsarecordofrecords.c"
     struct line h0_l;
     struct line h1_f;
     struct line t1;
@@ -233,7 +277,7 @@ bb0:
     hero_print_end();
 #line 23 "tests/golden/run/fixedbugs-094-a-nested-brace-list-builds-a-record-of-records.hero"
     return;
-#line 237 "fixedbugs094anestedbracelistbuildsarecordofrecords.c"
+#line 281 "fixedbugs094anestedbracelistbuildsarecordofrecords.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs094anestedbracelistbuildsarecordofrecords_Pt_eq(const struct pt *a, const struct pt *b) {
     if (!(a->x == b->x)) return false;

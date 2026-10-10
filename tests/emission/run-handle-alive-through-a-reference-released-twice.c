@@ -6,6 +6,17 @@
 #include "heroes_guard_open.h"
 #include <handle-alive-through-a-reference-released-twice.h>
 #include "heroes_guard_close.h"
+#pragma clang diagnostic error "-Wreturn-type"
+#pragma clang diagnostic error "-Wuninitialized"
+#pragma clang diagnostic error "-Wformat"
+#pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic error "-Wshorten-64-to-32"
+#pragma clang diagnostic error "-Wsign-conversion"
+#pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
+#pragma clang diagnostic error "-Wincompatible-pointer-types"
+#pragma clang diagnostic error "-Wint-conversion"
+#pragma clang diagnostic error "-Wimplicit-function-declaration"
+#pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
@@ -56,7 +67,7 @@ HERO_STR_STATIC(hero_str_11f05721, " refs: ");
 HERO_STR_STATIC(hero_str_7b9bb5d3, "refs: ");
 HERO_STR_STATIC(hero_str_58753951, "released twice, as C expects");
 
-#line 60 "handlealivethroughareferencereleasedtwice.c"
+#line 71 "handlealivethroughareferencereleasedtwice.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -72,6 +83,17 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+#pragma clang diagnostic error "-Wreturn-type"
+#pragma clang diagnostic error "-Wuninitialized"
+#pragma clang diagnostic error "-Wformat"
+#pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic error "-Wshorten-64-to-32"
+#pragma clang diagnostic error "-Wsign-conversion"
+#pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
+#pragma clang diagnostic error "-Wincompatible-pointer-types"
+#pragma clang diagnostic error "-Wint-conversion"
+#pragma clang diagnostic error "-Wimplicit-function-declaration"
+#pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wdouble-promotion"
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
@@ -90,7 +112,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 94 "handlealivethroughareferencereleasedtwice.c"
+#line 116 "handlealivethroughareferencereleasedtwice.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_handlealivethroughareferencereleasedtwice_Cert_eq(x509 * const *a, x509 * const *b);
@@ -108,7 +130,7 @@ void h_handlealivethroughareferencereleasedtwice_main(void);
 
 #line 15 "tests/golden/run/handle-alive-through-a-reference-released-twice.hero"
 void h_handlealivethroughareferencereleasedtwice_main(void) {
-#line 112 "handlealivethroughareferencereleasedtwice.c"
+#line 134 "handlealivethroughareferencereleasedtwice.c"
     x509 * h0_cert;
     int32_t h1_rc;
     x509 * t1;
@@ -215,7 +237,7 @@ bb0:
     hero_print_end();
 #line 22 "tests/golden/run/handle-alive-through-a-reference-released-twice.hero"
     return;
-#line 219 "handlealivethroughareferencereleasedtwice.c"
+#line 241 "handlealivethroughareferencereleasedtwice.c"
 }
 HERO_TU_LOCAL bool h_handlealivethroughareferencereleasedtwice_Cert_eq(x509 * const *a, x509 * const *b) {
     return hero_handle_eq(*a, *b);

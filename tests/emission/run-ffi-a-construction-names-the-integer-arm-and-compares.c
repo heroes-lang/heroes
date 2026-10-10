@@ -7,6 +7,17 @@
 #include <ffi-a-construction.h>
 #pragma push_macro("i")
 #include "heroes_guard_close.h"
+#pragma clang diagnostic error "-Wreturn-type"
+#pragma clang diagnostic error "-Wuninitialized"
+#pragma clang diagnostic error "-Wformat"
+#pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic error "-Wshorten-64-to-32"
+#pragma clang diagnostic error "-Wsign-conversion"
+#pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
+#pragma clang diagnostic error "-Wincompatible-pointer-types"
+#pragma clang diagnostic error "-Wint-conversion"
+#pragma clang diagnostic error "-Wimplicit-function-declaration"
+#pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
@@ -16,7 +27,7 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 _Static_assert(__builtin_classify_type(((SA *)0)->kind) == 1 && sizeof(((SA *)0)->kind) == sizeof(int32_t) && (_Generic(((SA *)0)->kind, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field SA kind");
 _Static_assert(__builtin_classify_type(((SA *)0)->i) == 1 && sizeof(((SA *)0)->i) == sizeof(int32_t) && (_Generic(((SA *)0)->i, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field SA i");
 _Static_assert(__builtin_classify_type(((SA *)0)->x) == 1 && sizeof(((SA *)0)->x) == sizeof(int32_t) && (_Generic(((SA *)0)->x, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field SA x");
-#line 20 "ffiaconstructionnamestheintegerarmandcompares.c"
+#line 31 "ffiaconstructionnamestheintegerarmandcompares.c"
 
 #line 12 "tests/golden/run/ffi-a-construction-names-the-integer-arm-and-compares.hero"
 _Static_assert(__builtin_classify_type(*(SA *)0) != 13, "heroes-ffi-union SA kind i x");
@@ -26,7 +37,7 @@ _Static_assert(__builtin_classify_type(*(SA *)0) != 13 || sizeof(((SA *)0)->kind
 _Static_assert(__builtin_classify_type(*(SA *)0) != 13 || sizeof(((SA *)0)->i) == sizeof(SA), "heroes-ffi-union-narrow SA i");
 #line 12 "tests/golden/run/ffi-a-construction-names-the-integer-arm-and-compares.hero"
 _Static_assert(__builtin_classify_type(*(SA *)0) != 13 || sizeof(((SA *)0)->x) == sizeof(SA), "heroes-ffi-union-narrow SA x");
-#line 30 "ffiaconstructionnamestheintegerarmandcompares.c"
+#line 41 "ffiaconstructionnamestheintegerarmandcompares.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -84,6 +95,17 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+#pragma clang diagnostic error "-Wreturn-type"
+#pragma clang diagnostic error "-Wuninitialized"
+#pragma clang diagnostic error "-Wformat"
+#pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic error "-Wshorten-64-to-32"
+#pragma clang diagnostic error "-Wsign-conversion"
+#pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
+#pragma clang diagnostic error "-Wincompatible-pointer-types"
+#pragma clang diagnostic error "-Wint-conversion"
+#pragma clang diagnostic error "-Wimplicit-function-declaration"
+#pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wdouble-promotion"
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
@@ -101,7 +123,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 105 "ffiaconstructionnamestheintegerarmandcompares.c"
+#line 127 "ffiaconstructionnamestheintegerarmandcompares.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_ffiaconstructionnamestheintegerarmandcompares_SA_eq(const SA *a, const SA *b);
@@ -119,7 +141,7 @@ void h_ffiaconstructionnamestheintegerarmandcompares_main(void);
 
 #line 20 "tests/golden/run/ffi-a-construction-names-the-integer-arm-and-compares.hero"
 void h_ffiaconstructionnamestheintegerarmandcompares_main(void) {
-#line 123 "ffiaconstructionnamestheintegerarmandcompares.c"
+#line 145 "ffiaconstructionnamestheintegerarmandcompares.c"
     SA h0_m;
     SA h1_b;
     SA h2_p;
@@ -193,7 +215,7 @@ bb0:
     hero_print_end();
 #line 28 "tests/golden/run/ffi-a-construction-names-the-integer-arm-and-compares.hero"
     return;
-#line 197 "ffiaconstructionnamestheintegerarmandcompares.c"
+#line 219 "ffiaconstructionnamestheintegerarmandcompares.c"
 }
 HERO_TU_LOCAL bool h_ffiaconstructionnamestheintegerarmandcompares_SA_eq(const SA *a, const SA *b) {
     if (!(a->kind == b->kind)) return false;

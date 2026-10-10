@@ -58,6 +58,7 @@ use emit/ctype
 use emit/externs as emit_externs
 use emit/signature
 use emit/writer
+use emit/checks_raised
 use handles
 use parse
 use resolve
@@ -124,6 +125,7 @@ function accessor(@w: writer.Writer, f: containers.Function, c: state.Checked, n
     writer.line(@w, text: "#pragma clang diagnostic pop")
     writer.line(@w, text: "    return " + VALUE + ";")
     writer.line(@w, text: "}")
+    checks_raised.after_constant(@w, s, decls, f)
 
 ## Tests
 

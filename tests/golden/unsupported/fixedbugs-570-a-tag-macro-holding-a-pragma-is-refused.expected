@@ -1,0 +1,7 @@
+error[ffi_macro_name]: `fixedbugs-570-a-tag-macro-holding-a-pragma-is-refused.h` defines `real_s` as a macro whose expansion holds a `_Pragma`: where this program's C names the type `real_s`, the pragma changes how clang judges every line after it, the checks of this program's bindings among them
+  at tests/golden/unsupported/fixedbugs-570-a-tag-macro-holding-a-pragma-is-refused.hero:19:18
+     |
+  19 |     record S tag real_s  #~ ffi_macro_name
+     |                  ^^^^^^
+  note: clang read the header, and the expansion of `real_s` runs `#pragma clang diagnostic ignored "-Wsign-conversion"`
+  note: a header of your own that includes `fixedbugs-570-a-tag-macro-holding-a-pragma-is-refused.h` and then writes `#undef real_s`, named by this group instead, binds the header's own `real_s` where it declares one

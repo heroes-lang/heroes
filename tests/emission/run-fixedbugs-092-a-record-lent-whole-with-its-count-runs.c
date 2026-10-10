@@ -7,6 +7,17 @@
 #include <fixedbugs-092-records.h>
 #pragma push_macro("a")
 #include "heroes_guard_close.h"
+#pragma clang diagnostic error "-Wreturn-type"
+#pragma clang diagnostic error "-Wuninitialized"
+#pragma clang diagnostic error "-Wformat"
+#pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic error "-Wshorten-64-to-32"
+#pragma clang diagnostic error "-Wsign-conversion"
+#pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
+#pragma clang diagnostic error "-Wincompatible-pointer-types"
+#pragma clang diagnostic error "-Wint-conversion"
+#pragma clang diagnostic error "-Wimplicit-function-declaration"
+#pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
@@ -24,7 +35,7 @@ _Static_assert(__builtin_classify_type(((struct outer *)0)->z) == 1 && sizeof(((
 _Static_assert(__builtin_classify_type(((struct pfd *)0)->fd) == 1 && sizeof(((struct pfd *)0)->fd) == sizeof(int32_t) && (_Generic(((struct pfd *)0)->fd, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Pfd fd");
 _Static_assert(__builtin_classify_type(((struct pfd *)0)->events) == 1 && sizeof(((struct pfd *)0)->events) == sizeof(int16_t) && (_Generic(((struct pfd *)0)->events, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Pfd events");
 _Static_assert(__builtin_classify_type(((struct pfd *)0)->revents) == 1 && sizeof(((struct pfd *)0)->revents) == sizeof(int16_t) && (_Generic(((struct pfd *)0)->revents, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Pfd revents");
-#line 28 "fixedbugs092arecordlentwholewithitscountruns.c"
+#line 39 "fixedbugs092arecordlentwholewithitscountruns.c"
 
 #line 14 "tests/golden/run/fixedbugs-092-a-record-lent-whole-with-its-count-runs.hero"
 _Static_assert(__builtin_classify_type(*(struct pad *)0) != 13, "heroes-ffi-union Pad c d");
@@ -32,7 +43,7 @@ _Static_assert(__builtin_classify_type(*(struct pad *)0) != 13, "heroes-ffi-unio
 _Static_assert(__builtin_classify_type(*(struct outer *)0) != 13, "heroes-ffi-union Outer inner z");
 #line 20 "tests/golden/run/fixedbugs-092-a-record-lent-whole-with-its-count-runs.hero"
 _Static_assert(__builtin_classify_type(*(struct pfd *)0) != 13, "heroes-ffi-union Pfd fd events revents");
-#line 36 "fixedbugs092arecordlentwholewithitscountruns.c"
+#line 47 "fixedbugs092arecordlentwholewithitscountruns.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -94,6 +105,17 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+#pragma clang diagnostic error "-Wreturn-type"
+#pragma clang diagnostic error "-Wuninitialized"
+#pragma clang diagnostic error "-Wformat"
+#pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic error "-Wshorten-64-to-32"
+#pragma clang diagnostic error "-Wsign-conversion"
+#pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
+#pragma clang diagnostic error "-Wincompatible-pointer-types"
+#pragma clang diagnostic error "-Wint-conversion"
+#pragma clang diagnostic error "-Wimplicit-function-declaration"
+#pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wdouble-promotion"
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
@@ -117,7 +139,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 121 "fixedbugs092arecordlentwholewithitscountruns.c"
+#line 143 "fixedbugs092arecordlentwholewithitscountruns.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs092arecordlentwholewithitscountruns_One_eq(const struct one *a, const struct one *b);
@@ -142,7 +164,7 @@ void h_fixedbugs092arecordlentwholewithitscountruns_main(void);
 
 #line 33 "tests/golden/run/fixedbugs-092-a-record-lent-whole-with-its-count-runs.hero"
 uint64_t h_fixedbugs092arecordlentwholewithitscountruns_at_run_time(uint64_t h0_k) {
-#line 146 "fixedbugs092arecordlentwholewithitscountruns.c"
+#line 168 "fixedbugs092arecordlentwholewithitscountruns.c"
     uint64_t t1;
     goto bb0;
 bb0:
@@ -150,12 +172,12 @@ bb0:
     t1 = h0_k;
 #line 34 "tests/golden/run/fixedbugs-092-a-record-lent-whole-with-its-count-runs.hero"
     return t1;
-#line 154 "fixedbugs092arecordlentwholewithitscountruns.c"
+#line 176 "fixedbugs092arecordlentwholewithitscountruns.c"
 }
 
 #line 36 "tests/golden/run/fixedbugs-092-a-record-lent-whole-with-its-count-runs.hero"
 void h_fixedbugs092arecordlentwholewithitscountruns_main(void) {
-#line 159 "fixedbugs092arecordlentwholewithitscountruns.c"
+#line 181 "fixedbugs092arecordlentwholewithitscountruns.c"
     struct one *const hero_lend_h0_o = (struct one *)hero_lend_local(sizeof(struct one), "fixedbugs092arecordlentwholewithitscountruns.main", "o");
 #define h0_o (*hero_lend_h0_o)
     struct pad *const hero_lend_h1_p = (struct pad *)hero_lend_local(sizeof(struct pad), "fixedbugs092arecordlentwholewithitscountruns.main", "p");
@@ -412,7 +434,7 @@ bb0:
     hero_lend_local_give(hero_lend_h0_o);
 #line 56 "tests/golden/run/fixedbugs-092-a-record-lent-whole-with-its-count-runs.hero"
     return;
-#line 416 "fixedbugs092arecordlentwholewithitscountruns.c"
+#line 438 "fixedbugs092arecordlentwholewithitscountruns.c"
 }
 #undef h0_o
 #undef h1_p

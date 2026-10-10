@@ -7,6 +7,17 @@
 #include <limit-a-stale-copy-faulting-in-c-names-the-copy-the-program-kept.h>
 #pragma push_macro("value")
 #include "heroes_guard_close.h"
+#pragma clang diagnostic error "-Wreturn-type"
+#pragma clang diagnostic error "-Wuninitialized"
+#pragma clang diagnostic error "-Wformat"
+#pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic error "-Wshorten-64-to-32"
+#pragma clang diagnostic error "-Wsign-conversion"
+#pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
+#pragma clang diagnostic error "-Wincompatible-pointer-types"
+#pragma clang diagnostic error "-Wint-conversion"
+#pragma clang diagnostic error "-Wimplicit-function-declaration"
+#pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
@@ -56,7 +67,7 @@ HERO_STR_STATIC(hero_str_63c4e8c6, "before: ");
 HERO_STR_STATIC(hero_str_2731e935, "null: ");
 HERO_STR_STATIC(hero_str_3043d2a7, "after: ");
 
-#line 60 "limitastalecopyfaultingincnamesthecopytheprogramkept.c"
+#line 71 "limitastalecopyfaultingincnamesthecopytheprogramkept.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -72,6 +83,17 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+#pragma clang diagnostic error "-Wreturn-type"
+#pragma clang diagnostic error "-Wuninitialized"
+#pragma clang diagnostic error "-Wformat"
+#pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic error "-Wshorten-64-to-32"
+#pragma clang diagnostic error "-Wsign-conversion"
+#pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
+#pragma clang diagnostic error "-Wincompatible-pointer-types"
+#pragma clang diagnostic error "-Wint-conversion"
+#pragma clang diagnostic error "-Wimplicit-function-declaration"
+#pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wdouble-promotion"
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
@@ -89,7 +111,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 93 "limitastalecopyfaultingincnamesthecopytheprogramkept.c"
+#line 115 "limitastalecopyfaultingincnamesthecopytheprogramkept.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_limitastalecopyfaultingincnamesthecopytheprogramkept_Outer_eq(outer * const *a, outer * const *b);
@@ -107,7 +129,7 @@ void h_limitastalecopyfaultingincnamesthecopytheprogramkept_main(void);
 
 #line 24 "tests/golden/run/limit-a-stale-copy-faulting-in-c-names-the-copy-the-program-kept.hero"
 void h_limitastalecopyfaultingincnamesthecopytheprogramkept_main(void) {
-#line 111 "limitastalecopyfaultingincnamesthecopytheprogramkept.c"
+#line 133 "limitastalecopyfaultingincnamesthecopytheprogramkept.c"
     outer * h0_a;
     outer * h1_kept;
     outer * h2_b;
@@ -209,7 +231,7 @@ bb0:
     }
 #line 32 "tests/golden/run/limit-a-stale-copy-faulting-in-c-names-the-copy-the-program-kept.hero"
     return;
-#line 213 "limitastalecopyfaultingincnamesthecopytheprogramkept.c"
+#line 235 "limitastalecopyfaultingincnamesthecopytheprogramkept.c"
 }
 HERO_TU_LOCAL bool h_limitastalecopyfaultingincnamesthecopytheprogramkept_Outer_eq(outer * const *a, outer * const *b) {
     return hero_handle_eq(*a, *b);

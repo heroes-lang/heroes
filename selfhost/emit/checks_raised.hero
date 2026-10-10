@@ -1,0 +1,116 @@
+# Every warning a check of a binding rests on, raised again on the
+# compiler's own lines wherever a header's pragma may have turned it off
+# (design.md §4.19; panel 205's R1, ratified 2026-10-10; defect 570).
+#
+# **A pragma outranks the command line**, for the rest of the unit (GCC's and
+# clang's documentation, panel 205's historian). So a group's header writing
+# `#pragma clang diagnostic ignored "-Wsign-conversion"` with no push or pop
+# turned the build's `-Werror=sign-conversion` off for every line the compiler
+# wrote after it, and `abs(x: u32)` against C's `int abs(int)` built and
+# printed `5` where the same binding through a plain header is refused. The
+# sitting measured fourteen rows of that cause on this Mac and Linux arm64: a
+# sign, a handle of another tag, an integer for a pointer (`read_p(p: i64)`
+# against `int *`, aborting 134 at run time), a callback and an undeclared
+# function, each under `ignored`, `GCC diagnostic ignored`, a downgrade to
+# `warning`, `-Wconversion`, `-Weverything` and a push with no pop; and the
+# same through a header macro the compiler's own line expands, `_Pragma` in a
+# constant's value or in the bound name itself.
+#
+# **So the checks are raised again where a header's text can have run before
+# a line that rests on them**: after the groups' includes
+# (`emit/macro_guard.hero`), at the opening of the probe region
+# (`emit/extern_probe.hero`), and after the accessor of every group constant,
+# whose `return NAME;` expands the header's macro inside the definitions,
+# before a call's `const` lend (`emit/body.hero`, `emit/record_constant.hero`).
+# A name other than a constant's, which the compiler writes inside a probe or
+# a body, is asked of clang instead and refused when its expansion holds a
+# `_Pragma` (`cli/pragma_ask.hero`): a raise after it cannot reach the line it
+# stands on.
+#
+# **The list is read, never copied**: each warning the build's flags make an
+# error (`cli/flags.hero`'s one list, so a word added there is raised here
+# too), and the three clang makes errors by default that a check rests on, an
+# integer declared where the header takes a pointer, a function the header
+# never declares, a callback of another type. Each is already an error on the
+# command line or by default, so a raise changes nothing for a header that
+# leaves the checks alone.
+
+use ast
+use source
+use ir/containers
+use emit/externs as emit_externs
+use emit/writer
+use cli/flags
+use cli/strings
+
+# The warnings clang makes errors by default, which a header can turn off
+# like any other and which the build's flags do not name.
+constant DEFAULT_ERRORS: [str]
+    [
+        "-Wint-conversion"
+        "-Wimplicit-function-declaration"
+        "-Wincompatible-function-pointer-types"
+    ]
+
+# Every warning a check rests on: each `-Werror=` word of the build's flags,
+# in their order, then the default errors.
+function checked() -> [str]
+    out: [str] @ []
+
+    for word in flags.flags()
+        if strings.starts_with(text: word, prefix: "-Werror=")
+            out @ out.push("-W" + word.slice(from: 8, to: word.len()))
+
+    return strings.with_all(list: out, more: DEFAULT_ERRORS)
+
+# One `error` pragma per warning a check rests on, as the unit writes them.
+function lines() -> [str]
+    out: [str] @ []
+
+    for word in checked()
+        out @ out.push("#pragma clang diagnostic error \"" + word + "\"")
+
+    return out
+
+# After the accessor of a constant a group's header holds, the checks raised
+# again: its `return NAME;` expanded the header's macro, and a `_Pragma` in it
+# reaches every line after (the compiler's own headers' constants are the
+# runtime's, and stay as they are).
+function after_constant(@w: writer.Writer, s: source.Source, decls: [ast.Decl], f: containers.Function)
+    header = emit_externs.extern_spans(decls, f).header
+
+    if header.is_err() || emit_externs.is_own(emit_externs.unquoted(s, span: header.must()))
+        return
+    writer.at_generated(@w)
+
+    for raised in lines()
+        writer.line(@w, text: raised)
+
+## Tests
+
+# Every `-Werror=` word of the build's flags is raised, and the three default
+# errors after them: a word the flags gain is raised with no edit here.
+test "the checks raised are the build's -Werror words and clang's three default errors"
+    got = checked()
+    werror: [str] @ []
+
+    for word in flags.flags()
+        if strings.starts_with(text: word, prefix: "-Werror=")
+            werror @ werror.push(word)
+
+    assert got.len() == werror.len() + 3
+    assert got[0] == "-Wreturn-type"
+    assert got[werror.len()] == "-Wint-conversion"
+    assert got[got.len() - 1] == "-Wincompatible-function-pointer-types"
+
+    for word in ["-Wsign-conversion", "-Wshorten-64-to-32", "-Wincompatible-pointer-types", "-Wincompatible-pointer-types-discards-qualifiers", "-Wimplicit-function-declaration"]
+        found: bool @ false
+
+        for one in got
+            if one == word
+                found @ true
+
+        assert found
+
+    assert lines()[0] == "#pragma clang diagnostic error \"-Wreturn-type\""
+    assert lines().len() == got.len()

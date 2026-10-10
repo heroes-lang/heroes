@@ -6,6 +6,17 @@
 #include "heroes_guard_open.h"
 #include <lease-c-keeps-the-pointer.h>
 #include "heroes_guard_close.h"
+#pragma clang diagnostic error "-Wreturn-type"
+#pragma clang diagnostic error "-Wuninitialized"
+#pragma clang diagnostic error "-Wformat"
+#pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic error "-Wshorten-64-to-32"
+#pragma clang diagnostic error "-Wsign-conversion"
+#pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
+#pragma clang diagnostic error "-Wincompatible-pointer-types"
+#pragma clang diagnostic error "-Wint-conversion"
+#pragma clang diagnostic error "-Wimplicit-function-declaration"
+#pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
@@ -51,7 +62,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_f63dcff, "row-");
 HERO_STR_STATIC(hero_str_3390715c, "-payload");
 
-#line 55 "leaseckeepsthepointer.c"
+#line 66 "leaseckeepsthepointer.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -67,6 +78,17 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+#pragma clang diagnostic error "-Wreturn-type"
+#pragma clang diagnostic error "-Wuninitialized"
+#pragma clang diagnostic error "-Wformat"
+#pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic error "-Wshorten-64-to-32"
+#pragma clang diagnostic error "-Wsign-conversion"
+#pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
+#pragma clang diagnostic error "-Wincompatible-pointer-types"
+#pragma clang diagnostic error "-Wint-conversion"
+#pragma clang diagnostic error "-Wimplicit-function-declaration"
+#pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wdouble-promotion"
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
@@ -83,7 +105,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 87 "leaseckeepsthepointer.c"
+#line 109 "leaseckeepsthepointer.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -99,7 +121,7 @@ void h_leaseckeepsthepointer_main(void);
 
 #line 15 "tests/golden/run/lease-c-keeps-the-pointer.hero"
 void h_leaseckeepsthepointer_main(void) {
-#line 103 "leaseckeepsthepointer.c"
+#line 125 "leaseckeepsthepointer.c"
     int64_t h0_at;
     const char * h1_label;
     HeroStr h2_own2 = {0};
@@ -153,7 +175,7 @@ bb2:
     t17 = h2_own2;
 #line 19 "tests/golden/run/lease-c-keeps-the-pointer.hero"
     h2_own2 = t7;
-#line 157 "leaseckeepsthepointer.c"
+#line 179 "leaseckeepsthepointer.c"
     hero_str_decref(t17);
 #line 19 "tests/golden/run/lease-c-keeps-the-pointer.hero"
     t8 = hero_str_concat(t5, t7);
@@ -161,7 +183,7 @@ bb2:
     t18 = h3_own3;
 #line 19 "tests/golden/run/lease-c-keeps-the-pointer.hero"
     h3_own3 = t8;
-#line 165 "leaseckeepsthepointer.c"
+#line 187 "leaseckeepsthepointer.c"
     hero_str_decref(t18);
 #line 19 "tests/golden/run/lease-c-keeps-the-pointer.hero"
     t9 = HERO_STR_LIT(hero_str_3390715c);
@@ -171,7 +193,7 @@ bb2:
     t19 = h4_own4;
 #line 19 "tests/golden/run/lease-c-keeps-the-pointer.hero"
     h4_own4 = t10;
-#line 175 "leaseckeepsthepointer.c"
+#line 197 "leaseckeepsthepointer.c"
     hero_str_decref(t19);
 #line 19 "tests/golden/run/lease-c-keeps-the-pointer.hero"
     t11 = hero_str_held(t10);
@@ -197,7 +219,7 @@ bb2:
     goto bb1;
 #line 23 "tests/golden/run/lease-c-keeps-the-pointer.hero"
 bb3:
-#line 201 "leaseckeepsthepointer.c"
+#line 223 "leaseckeepsthepointer.c"
     hero_str_release_at(&h2_own2);
     hero_str_release_at(&h3_own3);
     hero_str_release_at(&h4_own4);

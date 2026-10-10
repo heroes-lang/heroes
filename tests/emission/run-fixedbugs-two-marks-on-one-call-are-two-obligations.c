@@ -6,6 +6,17 @@
 #include "heroes_guard_open.h"
 #include <fixedbugs-two-marks-on-one-call-are-two-obligations.h>
 #include "heroes_guard_close.h"
+#pragma clang diagnostic error "-Wreturn-type"
+#pragma clang diagnostic error "-Wuninitialized"
+#pragma clang diagnostic error "-Wformat"
+#pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic error "-Wshorten-64-to-32"
+#pragma clang diagnostic error "-Wsign-conversion"
+#pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
+#pragma clang diagnostic error "-Wincompatible-pointer-types"
+#pragma clang diagnostic error "-Wint-conversion"
+#pragma clang diagnostic error "-Wimplicit-function-declaration"
+#pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
@@ -51,7 +62,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_455ecde8, "both given back");
 
-#line 55 "fixedbugstwomarksononecallaretwoobligations.c"
+#line 66 "fixedbugstwomarksononecallaretwoobligations.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -67,6 +78,17 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+#pragma clang diagnostic error "-Wreturn-type"
+#pragma clang diagnostic error "-Wuninitialized"
+#pragma clang diagnostic error "-Wformat"
+#pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic error "-Wshorten-64-to-32"
+#pragma clang diagnostic error "-Wsign-conversion"
+#pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
+#pragma clang diagnostic error "-Wincompatible-pointer-types"
+#pragma clang diagnostic error "-Wint-conversion"
+#pragma clang diagnostic error "-Wimplicit-function-declaration"
+#pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wdouble-promotion"
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
@@ -85,7 +107,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 89 "fixedbugstwomarksononecallaretwoobligations.c"
+#line 111 "fixedbugstwomarksononecallaretwoobligations.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugstwomarksononecallaretwoobligations_Slot_eq(Slot * const *a, Slot * const *b);
@@ -105,7 +127,7 @@ void h_fixedbugstwomarksononecallaretwoobligations_main(void);
 
 #line 25 "tests/golden/run/fixedbugs-two-marks-on-one-call-are-two-obligations.hero"
 void h_fixedbugstwomarksononecallaretwoobligations_main(void) {
-#line 109 "fixedbugstwomarksononecallaretwoobligations.c"
+#line 131 "fixedbugstwomarksononecallaretwoobligations.c"
     Slot * *const hero_lend_h0_a = (Slot * *)hero_lend_local(sizeof(Slot *), "fixedbugstwomarksononecallaretwoobligations.main", "a");
 #define h0_a (*hero_lend_h0_a)
     Conn * *const hero_lend_h1_b = (Conn * *)hero_lend_local(sizeof(Conn *), "fixedbugstwomarksononecallaretwoobligations.main", "b");
@@ -173,7 +195,7 @@ bb0:
     hero_lend_local_give(hero_lend_h0_a);
 #line 31 "tests/golden/run/fixedbugs-two-marks-on-one-call-are-two-obligations.hero"
     return;
-#line 177 "fixedbugstwomarksononecallaretwoobligations.c"
+#line 199 "fixedbugstwomarksononecallaretwoobligations.c"
 }
 #undef h0_a
 #undef h1_b

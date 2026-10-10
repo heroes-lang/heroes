@@ -1,0 +1,27 @@
+# fixedbugs, defect 570, lane b18-guard, 2026-10-10 (panel 205's R1).
+#
+# Beside `fixedbugs-570-a-constant-s-pragma-turns-off-no-check`: the
+# probes are raised again at their region, and a call's line is not in it.
+#
+# SYMPTOM: a constant `QUIETQ` defined as `_Pragma("clang diagnostic ignored
+# \"-Wincompatible-pointer-types-discards-qualifiers\"") 5`: its accessor's
+# `return QUIETQ;` expanded the pragma in the definitions, before `main`'s
+# lend of an immutable field, and the lend built and C wrote into `t`.
+#
+# FIX: the accessor of every group constant is followed by every check
+# raised again (`emit/checks_raised.hero`'s `after_constant`).
+
+extern "fixedbugs-570-a-constant-s-pragma-turns-off-no-lend-check.h"
+    record Slot
+        nsap: u8[8]
+        id: i64
+    function slot_make() -> Slot
+    function slot_fill(p: ptr counted_by n lent, n: i64)
+    function slot_sum(p: ptr counted_by n lent, n: i64) -> i64
+    constant QUIETQ: i64
+
+function main()
+    t = slot_make()
+    print(QUIETQ)
+    slot_fill(p: t.nsap.ptr(), n: 8)  #~ field_lend_written
+    print(slot_sum(p: t.nsap.ptr(), n: 8))

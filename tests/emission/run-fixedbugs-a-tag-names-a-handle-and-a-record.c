@@ -6,6 +6,17 @@
 #include "heroes_guard_open.h"
 #include <netdb.h>
 #include "heroes_guard_close.h"
+#pragma clang diagnostic error "-Wreturn-type"
+#pragma clang diagnostic error "-Wuninitialized"
+#pragma clang diagnostic error "-Wformat"
+#pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic error "-Wshorten-64-to-32"
+#pragma clang diagnostic error "-Wsign-conversion"
+#pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
+#pragma clang diagnostic error "-Wincompatible-pointer-types"
+#pragma clang diagnostic error "-Wint-conversion"
+#pragma clang diagnostic error "-Wimplicit-function-declaration"
+#pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
@@ -14,11 +25,11 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 #line 30 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
 _Static_assert(__builtin_classify_type(((struct addrinfo *)0)->ai_family) == 1 && sizeof(((struct addrinfo *)0)->ai_family) == sizeof(int32_t) && (_Generic(((struct addrinfo *)0)->ai_family, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Hints ai_family");
 _Static_assert(__builtin_classify_type(((struct addrinfo *)0)->ai_socktype) == 1 && sizeof(((struct addrinfo *)0)->ai_socktype) == sizeof(int32_t) && (_Generic(((struct addrinfo *)0)->ai_socktype, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Hints ai_socktype");
-#line 18 "fixedbugsatagnamesahandleandarecord.c"
+#line 29 "fixedbugsatagnamesahandleandarecord.c"
 
 #line 29 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
 _Static_assert(__builtin_classify_type(*(struct addrinfo *)0) != 13, "heroes-ffi-union Hints ai_family ai_socktype");
-#line 22 "fixedbugsatagnamesahandleandarecord.c"
+#line 33 "fixedbugsatagnamesahandleandarecord.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -76,6 +87,17 @@ typedef struct h_0opt_a8ea2 {
     } as;
 } h_0opt_a8ea2;
 
+#pragma clang diagnostic error "-Wreturn-type"
+#pragma clang diagnostic error "-Wuninitialized"
+#pragma clang diagnostic error "-Wformat"
+#pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic error "-Wshorten-64-to-32"
+#pragma clang diagnostic error "-Wsign-conversion"
+#pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
+#pragma clang diagnostic error "-Wincompatible-pointer-types"
+#pragma clang diagnostic error "-Wint-conversion"
+#pragma clang diagnostic error "-Wimplicit-function-declaration"
+#pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wdouble-promotion"
 #pragma clang diagnostic error "-Wimplicit-float-conversion"
@@ -93,7 +115,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 97 "fixedbugsatagnamesahandleandarecord.c"
+#line 119 "fixedbugsatagnamesahandleandarecord.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugsatagnamesahandleandarecord_AI_eq(struct addrinfo * const *a, struct addrinfo * const *b);
@@ -113,7 +135,7 @@ void h_fixedbugsatagnamesahandleandarecord_main(void);
 
 #line 35 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
 void h_fixedbugsatagnamesahandleandarecord_main(void) {
-#line 117 "fixedbugsatagnamesahandleandarecord.c"
+#line 139 "fixedbugsatagnamesahandleandarecord.c"
     struct addrinfo *const hero_lend_h0_h = (struct addrinfo *)hero_lend_local(sizeof(struct addrinfo), "fixedbugsatagnamesahandleandarecord.main", "h");
 #define h0_h (*hero_lend_h0_h)
     struct addrinfo * *const hero_lend_h1_r = (struct addrinfo * *)hero_lend_local(sizeof(struct addrinfo *), "fixedbugsatagnamesahandleandarecord.main", "r");
@@ -181,7 +203,7 @@ bb0:
     hero_lend_local_give(hero_lend_h0_h);
 #line 40 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
     return;
-#line 185 "fixedbugsatagnamesahandleandarecord.c"
+#line 207 "fixedbugsatagnamesahandleandarecord.c"
 }
 #undef h0_h
 #undef h1_r
