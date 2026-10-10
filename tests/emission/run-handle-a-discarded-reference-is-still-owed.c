@@ -106,19 +106,10 @@ void h_handleadiscardedreferenceisstillowed_main(void);
 
 #line 13 "tests/golden/run/handle-a-discarded-reference-is-still-owed.hero"
 void h_handleadiscardedreferenceisstillowed_main(void) {
-#line 110 "handleadiscardedreferenceisstillowed.c"
-    ob * h0_a;
-    ob * t1;
-    ob * t2;
-    HeroStr t4;
-    ob * t5;
-    int64_t t6;
-    ob * t7;
-    ob * t8;
-    HeroStr t9;
-    goto bb0;
+#line 13 "tests/golden/run/handle-a-discarded-reference-is-still-owed.hero"
+    ob * h0_a; ob * t1; ob * t2; HeroStr t4; ob * t5; int64_t t6; ob * t7; ob * t8; HeroStr t9; goto bb0;
+#line 13 "tests/golden/run/handle-a-discarded-reference-is-still-owed.hero"
 bb0:
-#line 14 "tests/golden/run/handle-a-discarded-reference-is-still-owed.hero"
     t1 = ob_new();
 #line 14 "tests/golden/run/handle-a-discarded-reference-is-still-owed.hero"
     hero_handle_acquired(t1, "ob_put");
@@ -181,7 +172,7 @@ bb0:
     hero_print_end();
 #line 19 "tests/golden/run/handle-a-discarded-reference-is-still-owed.hero"
     return;
-#line 185 "handleadiscardedreferenceisstillowed.c"
+#line 176 "handleadiscardedreferenceisstillowed.c"
 }
 HERO_TU_LOCAL bool h_handleadiscardedreferenceisstillowed_Ob_eq(ob * const *a, ob * const *b) {
     return hero_handle_eq(*a, *b);

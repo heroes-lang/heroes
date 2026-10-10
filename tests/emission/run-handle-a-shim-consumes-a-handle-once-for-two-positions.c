@@ -112,21 +112,10 @@ void h_handleashimconsumesahandleoncefortwopositions_main(void);
 
 #line 15 "tests/golden/run/handle-a-shim-consumes-a-handle-once-for-two-positions.hero"
 void h_handleashimconsumesahandleoncefortwopositions_main(void) {
-#line 116 "handleashimconsumesahandleoncefortwopositions.c"
-    ssl * h0_s;
-    bio * h1_b;
-    ssl * t1;
-    bio * t2;
-    HeroStr t3;
-    bio * t4;
-    int64_t t5;
-    ssl * t6;
-    bio * t7;
-    ssl * t8;
-    HeroStr t9;
-    goto bb0;
+#line 15 "tests/golden/run/handle-a-shim-consumes-a-handle-once-for-two-positions.hero"
+    ssl * h0_s; bio * h1_b; ssl * t1; bio * t2; HeroStr t3; bio * t4; int64_t t5; ssl * t6; bio * t7; ssl * t8; HeroStr t9; goto bb0;
+#line 15 "tests/golden/run/handle-a-shim-consumes-a-handle-once-for-two-positions.hero"
 bb0:
-#line 16 "tests/golden/run/handle-a-shim-consumes-a-handle-once-for-two-positions.hero"
     t1 = ssl_new();
 #line 16 "tests/golden/run/handle-a-shim-consumes-a-handle-once-for-two-positions.hero"
     hero_handle_acquired(t1, "ssl_free");
@@ -187,7 +176,7 @@ bb0:
     hero_print_end();
 #line 21 "tests/golden/run/handle-a-shim-consumes-a-handle-once-for-two-positions.hero"
     return;
-#line 191 "handleashimconsumesahandleoncefortwopositions.c"
+#line 180 "handleashimconsumesahandleoncefortwopositions.c"
 }
 HERO_TU_LOCAL bool h_handleashimconsumesahandleoncefortwopositions_Bio_eq(bio * const *a, bio * const *b) {
     return hero_handle_eq(*a, *b);

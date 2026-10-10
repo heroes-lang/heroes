@@ -1,0 +1,15 @@
+# Fixed defect 567, 2026-10-10 (found by lane b18-ffi beside its work).
+# Symptom: `x: i8 @ -128`, `y: i8 @ -1`, `print(x / y)` printed -128 at exit 0,
+# where spec § 7 aborts on overflow at every width, and clang warned on the
+# guard at `-O2`. Cause: the guard of `/` and `%` compared with `INT64_MIN`
+# at every width, a comparison an `int8_t` can never satisfy, so it never
+# fired, and C computed in `int` and the store wrapped (at `i32` it is C's
+# undefined quotient). Repair: the guard takes the operands' own width's
+# smallest value (`emit/division.hero`), and an unsigned width none.
+# This case: an `i8` quotient that fits first, then -128 / -1.
+
+function main()
+    x: i8 @ -128
+    y: i8 @ -1
+    print(x / 2)
+    print(x / y)

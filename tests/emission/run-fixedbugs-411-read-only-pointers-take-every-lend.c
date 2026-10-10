@@ -110,50 +110,10 @@ void h_fixedbugs411readonlypointerstakeeverylend_main(void);
 
 #line 23 "tests/golden/run/fixedbugs-411-read-only-pointers-take-every-lend.hero"
 void h_fixedbugs411readonlypointerstakeeverylend_main(void) {
-#line 114 "fixedbugs411readonlypointerstakeeverylend.c"
-    HeroStr h0_s = {0};
-    HeroStr h1_t = {0};
-    const char * h2_x;
-    HeroStr h3_own3 = {0};
-    HeroStr t1;
-    uint64_t t2;
-    HeroStr t3;
-    HeroStr t4;
-    HeroStr t5;
-    const char * t6;
-    int32_t t7;
-    HeroStr t8;
-    const char * t9;
-    int32_t t10;
-    HeroStr t11;
-    const char * t12;
-    int32_t t13;
-    HeroStr t14;
-    const char * t15;
-    int32_t t16;
-    HeroStr t17;
-    const char * t18;
-    int32_t t19;
-    HeroStr t20;
-    const char * t21;
-    int32_t t22;
-    HeroStr t23;
-    const char * t24;
-    int32_t t25;
-    HeroStr t26;
-    const char * t27;
-    const char * t28;
-    int32_t t29;
-    HeroStr t30;
-    const char * t31;
-    int32_t t32;
-    HeroStr t33;
-    HeroStr t34;
-    HeroStr t35;
-    HeroStr t36;
-    goto bb0;
+#line 23 "tests/golden/run/fixedbugs-411-read-only-pointers-take-every-lend.hero"
+    HeroStr h0_s = {0}; HeroStr h1_t = {0}; const char * h2_x; HeroStr h3_own3 = {0}; HeroStr t1; uint64_t t2; HeroStr t3; HeroStr t4; HeroStr t5; const char * t6; int32_t t7; HeroStr t8; const char * t9; int32_t t10; HeroStr t11; const char * t12; int32_t t13; HeroStr t14; const char * t15; int32_t t16; HeroStr t17; const char * t18; int32_t t19; HeroStr t20; const char * t21; int32_t t22; HeroStr t23; const char * t24; int32_t t25; HeroStr t26; const char * t27; const char * t28; int32_t t29; HeroStr t30; const char * t31; int32_t t32; HeroStr t33; HeroStr t34; HeroStr t35; HeroStr t36; goto bb0;
+#line 23 "tests/golden/run/fixedbugs-411-read-only-pointers-take-every-lend.hero"
 bb0:
-#line 24 "tests/golden/run/fixedbugs-411-read-only-pointers-take-every-lend.hero"
     t1 = HERO_STR_LIT(hero_str_1998f2);
 #line 24 "tests/golden/run/fixedbugs-411-read-only-pointers-take-every-lend.hero"
     t2 = UINT64_C(1);
@@ -163,27 +123,25 @@ bb0:
     t34 = h3_own3;
 #line 24 "tests/golden/run/fixedbugs-411-read-only-pointers-take-every-lend.hero"
     h3_own3 = t3;
-#line 167 "fixedbugs411readonlypointerstakeeverylend.c"
+#line 24 "tests/golden/run/fixedbugs-411-read-only-pointers-take-every-lend.hero"
     hero_str_decref(t34);
 #line 24 "tests/golden/run/fixedbugs-411-read-only-pointers-take-every-lend.hero"
     t35 = h0_s;
-#line 171 "fixedbugs411readonlypointerstakeeverylend.c"
+#line 24 "tests/golden/run/fixedbugs-411-read-only-pointers-take-every-lend.hero"
     hero_str_incref(t3);
 #line 24 "tests/golden/run/fixedbugs-411-read-only-pointers-take-every-lend.hero"
     h0_s = t3;
-#line 175 "fixedbugs411readonlypointerstakeeverylend.c"
+#line 24 "tests/golden/run/fixedbugs-411-read-only-pointers-take-every-lend.hero"
     hero_str_decref(t35);
-#line 25 "tests/golden/run/fixedbugs-411-read-only-pointers-take-every-lend.hero"
     t4 = h0_s;
 #line 25 "tests/golden/run/fixedbugs-411-read-only-pointers-take-every-lend.hero"
     t36 = h1_t;
-#line 181 "fixedbugs411readonlypointerstakeeverylend.c"
+#line 25 "tests/golden/run/fixedbugs-411-read-only-pointers-take-every-lend.hero"
     hero_str_incref(t4);
 #line 25 "tests/golden/run/fixedbugs-411-read-only-pointers-take-every-lend.hero"
     h1_t = t4;
-#line 185 "fixedbugs411readonlypointerstakeeverylend.c"
+#line 25 "tests/golden/run/fixedbugs-411-read-only-pointers-take-every-lend.hero"
     hero_str_decref(t36);
-#line 26 "tests/golden/run/fixedbugs-411-read-only-pointers-take-every-lend.hero"
     t5 = h0_s;
 #line 26 "tests/golden/run/fixedbugs-411-read-only-pointers-take-every-lend.hero"
     t6 = hero_str_lend(t5);
@@ -274,7 +232,7 @@ bb0:
     hero_print_str(t33);
 #line 37 "tests/golden/run/fixedbugs-411-read-only-pointers-take-every-lend.hero"
     hero_print_end();
-#line 278 "fixedbugs411readonlypointerstakeeverylend.c"
+#line 236 "fixedbugs411readonlypointerstakeeverylend.c"
     hero_str_release_at(&h0_s);
     hero_str_release_at(&h1_t);
     hero_str_release_at(&h3_own3);

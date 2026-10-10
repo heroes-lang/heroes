@@ -89,25 +89,10 @@ void h_fixedbugsafloatwithadigitseparator_main(void);
 
 #line 29 "tests/golden/run/fixedbugs-a-float-with-a-digit-separator.hero"
 void h_fixedbugsafloatwithadigitseparator_main(void) {
-#line 93 "fixedbugsafloatwithadigitseparator.c"
-    double h0_left;
-    double h1_right;
-    double h2_both;
-    double h3_plain;
-    double t1;
-    double t2;
-    double t3;
-    double t4;
-    double t5;
-    double t6;
-    double t7;
-    double t8;
-    double t9;
-    double t10;
-    bool t11;
-    goto bb0;
+#line 29 "tests/golden/run/fixedbugs-a-float-with-a-digit-separator.hero"
+    double h0_left; double h1_right; double h2_both; double h3_plain; double t1; double t2; double t3; double t4; double t5; double t6; double t7; double t8; double t9; double t10; bool t11; goto bb0;
+#line 29 "tests/golden/run/fixedbugs-a-float-with-a-digit-separator.hero"
 bb0:
-#line 30 "tests/golden/run/fixedbugs-a-float-with-a-digit-separator.hero"
     t1 = 0x1.5p+3;
 #line 30 "tests/golden/run/fixedbugs-a-float-with-a-digit-separator.hero"
     h0_left = t1;
@@ -151,7 +136,7 @@ bb0:
     hero_print_end();
 #line 38 "tests/golden/run/fixedbugs-a-float-with-a-digit-separator.hero"
     return;
-#line 155 "fixedbugsafloatwithadigitseparator.c"
+#line 140 "fixedbugsafloatwithadigitseparator.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

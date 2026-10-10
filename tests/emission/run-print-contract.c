@@ -89,16 +89,10 @@ void h_printcontract_main(void);
 
 #line 6 "tests/golden/run/print-contract.hero"
 void h_printcontract_main(void) {
-#line 93 "printcontract.c"
-    int64_t t1;
-    int64_t t2;
-    int64_t t3;
-    bool t4;
-    bool t5;
-    int64_t t6;
-    goto bb0;
+#line 6 "tests/golden/run/print-contract.hero"
+    int64_t t1; int64_t t2; int64_t t3; bool t4; bool t5; int64_t t6; goto bb0;
+#line 6 "tests/golden/run/print-contract.hero"
 bb0:
-#line 7 "tests/golden/run/print-contract.hero"
     t1 = INT64_C(1);
 #line 7 "tests/golden/run/print-contract.hero"
     t2 = INT64_C(2);
@@ -129,7 +123,7 @@ bb0:
     hero_print_end();
 #line 10 "tests/golden/run/print-contract.hero"
     return;
-#line 133 "printcontract.c"
+#line 127 "printcontract.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

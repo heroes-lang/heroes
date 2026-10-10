@@ -116,159 +116,129 @@ void h_main_main(void);
 
 #line 41 "examples/palette/main.hero"
 int64_t h_main_OPAQUE_RED(void) {
-#line 120 "main.c"
-    int64_t t1;
-    goto bb0;
+#line 41 "examples/palette/main.hero"
+    int64_t t1; goto bb0;
+#line 41 "examples/palette/main.hero"
 bb0:
-#line 42 "examples/palette/main.hero"
     t1 = INT64_C(4278190335);
 #line 42 "examples/palette/main.hero"
     return t1;
-#line 128 "main.c"
+#line 127 "main.c"
 }
 
 #line 45 "examples/palette/main.hero"
 int64_t h_main_OPAQUE_RED_DECIMAL(void) {
-#line 133 "main.c"
-    int64_t t1;
-    goto bb0;
+#line 45 "examples/palette/main.hero"
+    int64_t t1; goto bb0;
+#line 45 "examples/palette/main.hero"
 bb0:
-#line 46 "examples/palette/main.hero"
     t1 = INT64_C(4278190335);
 #line 46 "examples/palette/main.hero"
     return t1;
-#line 141 "main.c"
+#line 139 "main.c"
 }
 
 #line 49 "examples/palette/main.hero"
 int64_t h_main_BYTE_HEX(void) {
-#line 146 "main.c"
-    int64_t t1;
-    goto bb0;
+#line 49 "examples/palette/main.hero"
+    int64_t t1; goto bb0;
+#line 49 "examples/palette/main.hero"
 bb0:
-#line 50 "examples/palette/main.hero"
     t1 = INT64_C(255);
 #line 50 "examples/palette/main.hero"
     return t1;
-#line 154 "main.c"
+#line 151 "main.c"
 }
 
 #line 52 "examples/palette/main.hero"
 int64_t h_main_BYTE_OCTAL(void) {
-#line 159 "main.c"
-    int64_t t1;
-    goto bb0;
+#line 52 "examples/palette/main.hero"
+    int64_t t1; goto bb0;
+#line 52 "examples/palette/main.hero"
 bb0:
-#line 53 "examples/palette/main.hero"
     t1 = INT64_C(255);
 #line 53 "examples/palette/main.hero"
     return t1;
-#line 167 "main.c"
+#line 163 "main.c"
 }
 
 #line 55 "examples/palette/main.hero"
 int64_t h_main_BYTE_BINARY(void) {
-#line 172 "main.c"
-    int64_t t1;
-    goto bb0;
+#line 55 "examples/palette/main.hero"
+    int64_t t1; goto bb0;
+#line 55 "examples/palette/main.hero"
 bb0:
-#line 56 "examples/palette/main.hero"
     t1 = INT64_C(255);
 #line 56 "examples/palette/main.hero"
     return t1;
-#line 180 "main.c"
+#line 175 "main.c"
 }
 
 #line 59 "examples/palette/main.hero"
 int64_t h_main_ALPHA_SHIFT(void) {
-#line 185 "main.c"
-    int64_t t1;
-    goto bb0;
+#line 59 "examples/palette/main.hero"
+    int64_t t1; goto bb0;
+#line 59 "examples/palette/main.hero"
 bb0:
-#line 60 "examples/palette/main.hero"
     t1 = INT64_C(0);
 #line 60 "examples/palette/main.hero"
     return t1;
-#line 193 "main.c"
+#line 187 "main.c"
 }
 
 #line 62 "examples/palette/main.hero"
 int64_t h_main_BLUE_SHIFT(void) {
-#line 198 "main.c"
-    int64_t t1;
-    goto bb0;
+#line 62 "examples/palette/main.hero"
+    int64_t t1; goto bb0;
+#line 62 "examples/palette/main.hero"
 bb0:
-#line 63 "examples/palette/main.hero"
     t1 = INT64_C(8);
 #line 63 "examples/palette/main.hero"
     return t1;
-#line 206 "main.c"
+#line 199 "main.c"
 }
 
 #line 65 "examples/palette/main.hero"
 int64_t h_main_GREEN_SHIFT(void) {
-#line 211 "main.c"
-    int64_t t1;
-    goto bb0;
+#line 65 "examples/palette/main.hero"
+    int64_t t1; goto bb0;
+#line 65 "examples/palette/main.hero"
 bb0:
-#line 66 "examples/palette/main.hero"
     t1 = INT64_C(16);
 #line 66 "examples/palette/main.hero"
     return t1;
-#line 219 "main.c"
+#line 211 "main.c"
 }
 
 #line 68 "examples/palette/main.hero"
 int64_t h_main_RED_SHIFT(void) {
-#line 224 "main.c"
-    int64_t t1;
-    goto bb0;
+#line 68 "examples/palette/main.hero"
+    int64_t t1; goto bb0;
+#line 68 "examples/palette/main.hero"
 bb0:
-#line 69 "examples/palette/main.hero"
     t1 = INT64_C(24);
 #line 69 "examples/palette/main.hero"
     return t1;
-#line 232 "main.c"
+#line 223 "main.c"
 }
 
 #line 73 "examples/palette/main.hero"
 int64_t h_main_DIRECTORY_MODE(void) {
-#line 237 "main.c"
-    int64_t t1;
-    goto bb0;
+#line 73 "examples/palette/main.hero"
+    int64_t t1; goto bb0;
+#line 73 "examples/palette/main.hero"
 bb0:
-#line 74 "examples/palette/main.hero"
     t1 = INT64_C(493);
 #line 74 "examples/palette/main.hero"
     return t1;
-#line 245 "main.c"
+#line 235 "main.c"
 }
 
 #line 82 "examples/palette/main.hero"
 h_main_Colour h_main_unpack(int64_t h0_packed) {
-#line 250 "main.c"
-    int64_t t1;
-    int64_t t2;
-    int64_t t3;
-    int64_t t4;
-    int64_t t5;
-    int64_t t6;
-    int64_t t7;
-    int64_t t8;
-    int64_t t9;
-    int64_t t10;
-    int64_t t11;
-    int64_t t12;
-    int64_t t13;
-    int64_t t14;
-    int64_t t15;
-    int64_t t16;
-    int64_t t17;
-    int64_t t18;
-    int64_t t19;
-    int64_t t20;
-    h_main_Colour t21;
-    goto bb0;
+#line 82 "examples/palette/main.hero"
+    int64_t t1; int64_t t2; int64_t t3; int64_t t4; int64_t t5; int64_t t6; int64_t t7; int64_t t8; int64_t t9; int64_t t10; int64_t t11; int64_t t12; int64_t t13; int64_t t14; int64_t t15; int64_t t16; int64_t t17; int64_t t18; int64_t t19; int64_t t20; h_main_Colour t21; goto bb0;
+#line 82 "examples/palette/main.hero"
 bb0:
 #line 84 "examples/palette/main.hero"
     t1 = h0_packed;
@@ -319,34 +289,15 @@ bb0:
     t21 = (h_main_Colour){.f_red = t5, .f_green = t10, .f_blue = t15, .f_alpha = t20};
 #line 83 "examples/palette/main.hero"
     return t21;
-#line 323 "main.c"
+#line 293 "main.c"
 }
 
 #line 90 "examples/palette/main.hero"
 int64_t h_main_pack(h_main_Colour h0_c) {
-#line 328 "main.c"
-    h_main_Colour t1;
-    int64_t t2;
-    int64_t t3;
-    int64_t t4;
-    h_main_Colour t5;
-    int64_t t6;
-    int64_t t7;
-    int64_t t8;
-    int64_t t9;
-    h_main_Colour t10;
-    int64_t t11;
-    int64_t t12;
-    int64_t t13;
-    int64_t t14;
-    h_main_Colour t15;
-    int64_t t16;
-    int64_t t17;
-    int64_t t18;
-    int64_t t19;
-    goto bb0;
+#line 90 "examples/palette/main.hero"
+    h_main_Colour t1; int64_t t2; int64_t t3; int64_t t4; h_main_Colour t5; int64_t t6; int64_t t7; int64_t t8; int64_t t9; h_main_Colour t10; int64_t t11; int64_t t12; int64_t t13; int64_t t14; h_main_Colour t15; int64_t t16; int64_t t17; int64_t t18; int64_t t19; goto bb0;
+#line 90 "examples/palette/main.hero"
 bb0:
-#line 91 "examples/palette/main.hero"
     t1 = h0_c;
 #line 91 "examples/palette/main.hero"
     t2 = t1.f_red;
@@ -394,28 +345,15 @@ bb0:
     t19 = t14 | t18;
 #line 91 "examples/palette/main.hero"
     return t19;
-#line 398 "main.c"
+#line 349 "main.c"
 }
 
 #line 96 "examples/palette/main.hero"
 int64_t h_main_swap_red_and_blue(int64_t h0_packed) {
-#line 403 "main.c"
-    h_main_Colour h1_c;
-    int64_t t1;
-    h_main_Colour t2;
-    h_main_Colour t3;
-    int64_t t4;
-    h_main_Colour t5;
-    int64_t t6;
-    h_main_Colour t7;
-    int64_t t8;
-    h_main_Colour t9;
-    int64_t t10;
-    h_main_Colour t11;
-    int64_t t12;
-    goto bb0;
+#line 96 "examples/palette/main.hero"
+    h_main_Colour h1_c; int64_t t1; h_main_Colour t2; h_main_Colour t3; int64_t t4; h_main_Colour t5; int64_t t6; h_main_Colour t7; int64_t t8; h_main_Colour t9; int64_t t10; h_main_Colour t11; int64_t t12; goto bb0;
+#line 96 "examples/palette/main.hero"
 bb0:
-#line 97 "examples/palette/main.hero"
     t1 = h0_packed;
 #line 97 "examples/palette/main.hero"
     t2 = h_main_unpack(t1);
@@ -442,21 +380,15 @@ bb0:
     t12 = h_main_pack(t11);
 #line 98 "examples/palette/main.hero"
     return t12;
-#line 446 "main.c"
+#line 384 "main.c"
 }
 
 #line 102 "examples/palette/main.hero"
 bool h_main_readable(int64_t h0_mode) {
-#line 451 "main.c"
-    int64_t t1;
-    int64_t t2;
-    int64_t t3;
-    int64_t t4;
-    bool t5;
-    bool t6;
-    goto bb0;
+#line 102 "examples/palette/main.hero"
+    int64_t t1; int64_t t2; int64_t t3; int64_t t4; bool t5; bool t6; goto bb0;
+#line 102 "examples/palette/main.hero"
 bb0:
-#line 103 "examples/palette/main.hero"
     t1 = h0_mode;
 #line 103 "examples/palette/main.hero"
     t2 = INT64_C(256);
@@ -470,71 +402,33 @@ bb0:
     t6 = !t5;
 #line 103 "examples/palette/main.hero"
     return t6;
-#line 474 "main.c"
+#line 406 "main.c"
 }
 
 #line 105 "examples/palette/main.hero"
 HeroStr h_main_hex_of(int64_t h0_value) {
-#line 479 "main.c"
-    HeroStr h1_digits = {0};
-    HeroStr h2_out = {0};
-    int64_t h3_i;
-    int64_t h4_nibble;
-    HeroStr h5_own5 = {0};
-    HeroStr h6_own6 = {0};
-    HeroStr t1;
-    HeroStr t2;
-    int64_t t3;
-    int64_t t4;
-    int64_t t5;
-    bool t6;
-    int64_t t7;
-    int64_t t8;
-    int64_t t9;
-    int64_t t10;
-    int64_t t11;
-    int64_t t12;
-    int64_t t13;
-    HeroStr t14;
-    HeroStr t15;
-    int64_t t16;
-    int64_t t17;
-    int64_t t18;
-    int64_t t19;
-    HeroStr t20;
-    HeroStr t21;
-    int64_t t22;
-    int64_t t23;
-    int64_t t24;
-    HeroStr t25;
-    HeroStr t26;
-    HeroStr t27;
-    HeroStr t28;
-    HeroStr t29;
-    HeroStr t30;
-    goto bb0;
+#line 105 "examples/palette/main.hero"
+    HeroStr h1_digits = {0}; HeroStr h2_out = {0}; int64_t h3_i; int64_t h4_nibble; HeroStr h5_own5 = {0}; HeroStr h6_own6 = {0}; HeroStr t1; HeroStr t2; int64_t t3; int64_t t4; int64_t t5; bool t6; int64_t t7; int64_t t8; int64_t t9; int64_t t10; int64_t t11; int64_t t12; int64_t t13; HeroStr t14; HeroStr t15; int64_t t16; int64_t t17; int64_t t18; int64_t t19; HeroStr t20; HeroStr t21; int64_t t22; int64_t t23; int64_t t24; HeroStr t25; HeroStr t26; HeroStr t27; HeroStr t28; HeroStr t29; HeroStr t30; goto bb0;
+#line 105 "examples/palette/main.hero"
 bb0:
-#line 106 "examples/palette/main.hero"
     t1 = HERO_STR_LIT(hero_str_35b2f7b2);
 #line 106 "examples/palette/main.hero"
     t26 = h1_digits;
-#line 522 "main.c"
+#line 106 "examples/palette/main.hero"
     hero_str_incref(t1);
 #line 106 "examples/palette/main.hero"
     h1_digits = t1;
-#line 526 "main.c"
+#line 106 "examples/palette/main.hero"
     hero_str_decref(t26);
-#line 107 "examples/palette/main.hero"
     t2 = HERO_STR_LIT(hero_str_0);
 #line 107 "examples/palette/main.hero"
     t27 = h2_out;
-#line 532 "main.c"
+#line 107 "examples/palette/main.hero"
     hero_str_incref(t2);
 #line 107 "examples/palette/main.hero"
     h2_out = t2;
-#line 536 "main.c"
+#line 107 "examples/palette/main.hero"
     hero_str_decref(t27);
-#line 108 "examples/palette/main.hero"
     t3 = INT64_C(7);
 #line 108 "examples/palette/main.hero"
     h3_i = t3;
@@ -586,7 +480,7 @@ bb2:
     t28 = h5_own5;
 #line 112 "examples/palette/main.hero"
     h5_own5 = t20;
-#line 590 "main.c"
+#line 112 "examples/palette/main.hero"
     hero_str_decref(t28);
 #line 112 "examples/palette/main.hero"
     t21 = hero_str_concat(t14, t20);
@@ -594,17 +488,16 @@ bb2:
     t29 = h6_own6;
 #line 112 "examples/palette/main.hero"
     h6_own6 = t21;
-#line 598 "main.c"
+#line 112 "examples/palette/main.hero"
     hero_str_decref(t29);
 #line 112 "examples/palette/main.hero"
     t30 = h2_out;
-#line 602 "main.c"
+#line 112 "examples/palette/main.hero"
     hero_str_incref(t21);
 #line 112 "examples/palette/main.hero"
     h2_out = t21;
-#line 606 "main.c"
+#line 112 "examples/palette/main.hero"
     hero_str_decref(t30);
-#line 113 "examples/palette/main.hero"
     t22 = h3_i;
 #line 113 "examples/palette/main.hero"
     t23 = INT64_C(1);
@@ -618,7 +511,7 @@ bb2:
 bb3:
 #line 115 "examples/palette/main.hero"
     t25 = h2_out;
-#line 622 "main.c"
+#line 515 "main.c"
     hero_str_incref(t25);
     hero_str_release_at(&h1_digits);
     hero_str_release_at(&h2_out);
@@ -629,60 +522,9 @@ bb3:
 
 #line 117 "examples/palette/main.hero"
 void h_main_main(void) {
-#line 633 "main.c"
-    h_main_Colour h0_red;
-    HeroStr h1_own1 = {0};
-    HeroStr h2_own2 = {0};
-    int64_t t1;
-    int64_t t2;
-    bool t3;
-    int64_t t4;
-    int64_t t5;
-    bool t6;
-    int64_t t7;
-    int64_t t8;
-    bool t9;
-    int64_t t10;
-    int64_t t11;
-    bool t12;
-    int64_t t13;
-    h_main_Colour t14;
-    h_main_Colour t15;
-    int64_t t16;
-    h_main_Colour t17;
-    int64_t t18;
-    h_main_Colour t19;
-    int64_t t20;
-    h_main_Colour t21;
-    int64_t t22;
-    h_main_Colour t23;
-    int64_t t24;
-    int64_t t25;
-    bool t26;
-    int64_t t27;
-    HeroStr t28;
-    int64_t t29;
-    int64_t t30;
-    HeroStr t31;
-    int64_t t32;
-    int64_t t33;
-    bool t34;
-    int64_t t35;
-    bool t36;
-    int64_t t37;
-    int64_t t38;
-    int64_t t39;
-    int64_t t40;
-    int64_t t41;
-    bool t42;
-    int64_t t43;
-    int64_t t44;
-    int64_t t45;
-    int64_t t46;
-    bool t47;
-    HeroStr t48;
-    HeroStr t49;
-    goto bb0;
+#line 117 "examples/palette/main.hero"
+    h_main_Colour h0_red; HeroStr h1_own1 = {0}; HeroStr h2_own2 = {0}; int64_t t1; int64_t t2; bool t3; int64_t t4; int64_t t5; bool t6; int64_t t7; int64_t t8; bool t9; int64_t t10; int64_t t11; bool t12; int64_t t13; h_main_Colour t14; h_main_Colour t15; int64_t t16; h_main_Colour t17; int64_t t18; h_main_Colour t19; int64_t t20; h_main_Colour t21; int64_t t22; h_main_Colour t23; int64_t t24; int64_t t25; bool t26; int64_t t27; HeroStr t28; int64_t t29; int64_t t30; HeroStr t31; int64_t t32; int64_t t33; bool t34; int64_t t35; bool t36; int64_t t37; int64_t t38; int64_t t39; int64_t t40; int64_t t41; bool t42; int64_t t43; int64_t t44; int64_t t45; int64_t t46; bool t47; HeroStr t48; HeroStr t49; goto bb0;
+#line 117 "examples/palette/main.hero"
 bb0:
 #line 119 "examples/palette/main.hero"
     t1 = h_main_BYTE_HEX();
@@ -774,7 +616,7 @@ bb0:
     t48 = h1_own1;
 #line 133 "examples/palette/main.hero"
     h1_own1 = t28;
-#line 778 "main.c"
+#line 133 "examples/palette/main.hero"
     hero_str_decref(t48);
 #line 133 "examples/palette/main.hero"
     hero_print_str(t28);
@@ -789,7 +631,7 @@ bb0:
     t49 = h2_own2;
 #line 134 "examples/palette/main.hero"
     h2_own2 = t31;
-#line 793 "main.c"
+#line 134 "examples/palette/main.hero"
     hero_str_decref(t49);
 #line 134 "examples/palette/main.hero"
     hero_print_str(t31);
@@ -844,7 +686,7 @@ bb0:
     hero_print_bool(t47);
 #line 143 "examples/palette/main.hero"
     hero_print_end();
-#line 848 "main.c"
+#line 690 "main.c"
     hero_str_release_at(&h1_own1);
     hero_str_release_at(&h2_own2);
     return;

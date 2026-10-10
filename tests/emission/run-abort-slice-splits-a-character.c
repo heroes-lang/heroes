@@ -91,33 +91,18 @@ void h_abortslicesplitsacharacter_main(void);
 
 #line 21 "tests/golden/run/abort-slice-splits-a-character.hero"
 void h_abortslicesplitsacharacter_main(void) {
-#line 95 "abortslicesplitsacharacter.c"
-    HeroStr h0_word = {0};
-    HeroStr h1_own1 = {0};
-    HeroStr h2_own2 = {0};
-    HeroStr t1;
-    HeroStr t2;
-    int64_t t3;
-    int64_t t4;
-    HeroStr t5;
-    HeroStr t6;
-    int64_t t7;
-    int64_t t8;
-    HeroStr t9;
-    HeroStr t10;
-    HeroStr t11;
-    HeroStr t12;
-    goto bb0;
+#line 21 "tests/golden/run/abort-slice-splits-a-character.hero"
+    HeroStr h0_word = {0}; HeroStr h1_own1 = {0}; HeroStr h2_own2 = {0}; HeroStr t1; HeroStr t2; int64_t t3; int64_t t4; HeroStr t5; HeroStr t6; int64_t t7; int64_t t8; HeroStr t9; HeroStr t10; HeroStr t11; HeroStr t12; goto bb0;
+#line 21 "tests/golden/run/abort-slice-splits-a-character.hero"
 bb0:
-#line 22 "tests/golden/run/abort-slice-splits-a-character.hero"
     t1 = HERO_STR_LIT(hero_str_78a14ef2);
 #line 22 "tests/golden/run/abort-slice-splits-a-character.hero"
     t10 = h0_word;
-#line 117 "abortslicesplitsacharacter.c"
+#line 22 "tests/golden/run/abort-slice-splits-a-character.hero"
     hero_str_incref(t1);
 #line 22 "tests/golden/run/abort-slice-splits-a-character.hero"
     h0_word = t1;
-#line 121 "abortslicesplitsacharacter.c"
+#line 22 "tests/golden/run/abort-slice-splits-a-character.hero"
     hero_str_decref(t10);
 #line 25 "tests/golden/run/abort-slice-splits-a-character.hero"
     t2 = h0_word;
@@ -131,7 +116,7 @@ bb0:
     t11 = h1_own1;
 #line 25 "tests/golden/run/abort-slice-splits-a-character.hero"
     h1_own1 = t5;
-#line 135 "abortslicesplitsacharacter.c"
+#line 25 "tests/golden/run/abort-slice-splits-a-character.hero"
     hero_str_decref(t11);
 #line 25 "tests/golden/run/abort-slice-splits-a-character.hero"
     hero_print_str(t5);
@@ -149,13 +134,13 @@ bb0:
     t12 = h2_own2;
 #line 28 "tests/golden/run/abort-slice-splits-a-character.hero"
     h2_own2 = t9;
-#line 153 "abortslicesplitsacharacter.c"
+#line 28 "tests/golden/run/abort-slice-splits-a-character.hero"
     hero_str_decref(t12);
 #line 28 "tests/golden/run/abort-slice-splits-a-character.hero"
     hero_print_str(t9);
 #line 28 "tests/golden/run/abort-slice-splits-a-character.hero"
     hero_print_end();
-#line 159 "abortslicesplitsacharacter.c"
+#line 144 "abortslicesplitsacharacter.c"
     hero_str_release_at(&h0_word);
     hero_str_release_at(&h1_own1);
     hero_str_release_at(&h2_own2);

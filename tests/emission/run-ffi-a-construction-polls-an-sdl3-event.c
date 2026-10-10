@@ -131,65 +131,14 @@ void h_ffiaconstructionpollsansdl3event_main(void);
 
 #line 46 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
 void h_ffiaconstructionpollsansdl3event_main(void) {
-#line 135 "ffiaconstructionpollsansdl3event.c"
-    SDL_Event *const hero_lend_h0_sent = (SDL_Event *)hero_lend_local(sizeof(SDL_Event), "ffiaconstructionpollsansdl3event.main", "sent");
+#line 46 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
 #define h0_sent (*hero_lend_h0_sent)
-    bool h1_found;
-    int32_t h2_code;
-    uint32_t h3_keyed;
-    int64_t h4_tries;
-    bool h5_b0;
-    SDL_Event *const hero_lend_h6_got = (SDL_Event *)hero_lend_local(sizeof(SDL_Event), "ffiaconstructionpollsansdl3event.main", "got");
+#line 46 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
 #define h6_got (*hero_lend_h6_got)
-    bool h7_b1;
-    uint32_t t1;
-    bool t2;
-    uint32_t t3;
-    uint32_t t4;
-    uint64_t t5;
-    uint32_t t6;
-    int32_t t7;
-    void * t8;
-    void * t9;
-    SDL_UserEvent t10;
-    SDL_Event t11;
-    bool t12;
-    bool t13;
-    int32_t t14;
-    uint32_t t15;
-    int64_t t16;
-    bool t17;
-    bool t18;
-    int64_t t19;
-    int64_t t20;
-    bool t21;
-    bool t22;
-    uint32_t t23;
-    SDL_Event t24;
-    bool t25;
-    SDL_Event t26;
-    uint32_t t27;
-    uint32_t t28;
-    bool t29;
-    bool t30;
-    bool t31;
-    SDL_Event t32;
-    SDL_UserEvent t33;
-    int32_t t34;
-    SDL_Event t35;
-    SDL_CommonEvent t36;
-    uint32_t t37;
-    int64_t t38;
-    int64_t t39;
-    int64_t t40;
-    bool t41;
-    int32_t t42;
-    uint32_t t43;
-    uint32_t t44;
-    bool t45;
-    goto bb0;
+#line 46 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
+    SDL_Event *const hero_lend_h0_sent = (SDL_Event *)hero_lend_local(sizeof(SDL_Event), "ffiaconstructionpollsansdl3event.main", "sent"); bool h1_found; int32_t h2_code; uint32_t h3_keyed; int64_t h4_tries; bool h5_b0; SDL_Event *const hero_lend_h6_got = (SDL_Event *)hero_lend_local(sizeof(SDL_Event), "ffiaconstructionpollsansdl3event.main", "got"); bool h7_b1; uint32_t t1; bool t2; uint32_t t3; uint32_t t4; uint64_t t5; uint32_t t6; int32_t t7; void * t8; void * t9; SDL_UserEvent t10; SDL_Event t11; bool t12; bool t13; int32_t t14; uint32_t t15; int64_t t16; bool t17; bool t18; int64_t t19; int64_t t20; bool t21; bool t22; uint32_t t23; SDL_Event t24; bool t25; SDL_Event t26; uint32_t t27; uint32_t t28; bool t29; bool t30; bool t31; SDL_Event t32; SDL_UserEvent t33; int32_t t34; SDL_Event t35; SDL_CommonEvent t36; uint32_t t37; int64_t t38; int64_t t39; int64_t t40; bool t41; int32_t t42; uint32_t t43; uint32_t t44; bool t45; goto bb0;
+#line 46 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
 bb0:
-#line 47 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
     t1 = UINT64_C(16384);
 #line 47 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
     t2 = SDL_Init(t1);
@@ -368,7 +317,7 @@ bb9:
 bb10:
 #line 63 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
     goto bb6;
-#line 372 "ffiaconstructionpollsansdl3event.c"
+#line 321 "ffiaconstructionpollsansdl3event.c"
 }
 #undef h0_sent
 #undef h6_got

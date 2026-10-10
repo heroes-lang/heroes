@@ -98,17 +98,10 @@ void h_sugarnamedargs_main(void);
 
 #line 9 "tests/golden/ir/sugar-named-args.hero"
 h_sugarnamedargs_Point h_sugarnamedargs_moved(h_sugarnamedargs_Point h0_p, int64_t h1_by) {
-#line 102 "sugarnamedargs.c"
-    h_sugarnamedargs_Point t1;
-    int64_t t2;
-    int64_t t3;
-    int64_t t4;
-    h_sugarnamedargs_Point t5;
-    int64_t t6;
-    h_sugarnamedargs_Point t7;
-    goto bb0;
+#line 9 "tests/golden/ir/sugar-named-args.hero"
+    h_sugarnamedargs_Point t1; int64_t t2; int64_t t3; int64_t t4; h_sugarnamedargs_Point t5; int64_t t6; h_sugarnamedargs_Point t7; goto bb0;
+#line 9 "tests/golden/ir/sugar-named-args.hero"
 bb0:
-#line 10 "tests/golden/ir/sugar-named-args.hero"
     t1 = h0_p;
 #line 10 "tests/golden/ir/sugar-named-args.hero"
     t2 = t1.f_x;
@@ -124,18 +117,15 @@ bb0:
     t7 = (h_sugarnamedargs_Point){.f_x = t4, .f_y = t6};
 #line 10 "tests/golden/ir/sugar-named-args.hero"
     return t7;
-#line 128 "sugarnamedargs.c"
+#line 121 "sugarnamedargs.c"
 }
 
 #line 12 "tests/golden/ir/sugar-named-args.hero"
 int64_t h_sugarnamedargs_copy_between(int64_t h0_from, int64_t h1_to) {
-#line 133 "sugarnamedargs.c"
-    int64_t t1;
-    int64_t t2;
-    int64_t t3;
-    goto bb0;
+#line 12 "tests/golden/ir/sugar-named-args.hero"
+    int64_t t1; int64_t t2; int64_t t3; goto bb0;
+#line 12 "tests/golden/ir/sugar-named-args.hero"
 bb0:
-#line 13 "tests/golden/ir/sugar-named-args.hero"
     t1 = h1_to;
 #line 13 "tests/golden/ir/sugar-named-args.hero"
     t2 = h0_from;
@@ -143,18 +133,15 @@ bb0:
     if (__builtin_sub_overflow(t1, t2, &t3)) hero_panic_overflow();
 #line 13 "tests/golden/ir/sugar-named-args.hero"
     return t3;
-#line 147 "sugarnamedargs.c"
+#line 137 "sugarnamedargs.c"
 }
 
 #line 15 "tests/golden/ir/sugar-named-args.hero"
 void h_sugarnamedargs_main(void) {
-#line 152 "sugarnamedargs.c"
-    int64_t t1;
-    int64_t t2;
-    int64_t t3;
-    goto bb0;
+#line 15 "tests/golden/ir/sugar-named-args.hero"
+    int64_t t1; int64_t t2; int64_t t3; goto bb0;
+#line 15 "tests/golden/ir/sugar-named-args.hero"
 bb0:
-#line 16 "tests/golden/ir/sugar-named-args.hero"
     t1 = INT64_C(1);
 #line 16 "tests/golden/ir/sugar-named-args.hero"
     t2 = INT64_C(4);
@@ -166,7 +153,7 @@ bb0:
     hero_print_end();
 #line 16 "tests/golden/ir/sugar-named-args.hero"
     return;
-#line 170 "sugarnamedargs.c"
+#line 157 "sugarnamedargs.c"
 }
 HERO_TU_LOCAL bool h_sugarnamedargs_Point_eq(const h_sugarnamedargs_Point *a, const h_sugarnamedargs_Point *b) {
     if (!(a->f_x == b->f_x)) return false;

@@ -104,23 +104,10 @@ void h_handleendonlyonsuccesskeepstheconnectionowed_main(void);
 
 #line 12 "tests/golden/run/handle-end-only-on-success-keeps-the-connection-owed.hero"
 void h_handleendonlyonsuccesskeepstheconnectionowed_main(void) {
-#line 108 "handleendonlyonsuccesskeepstheconnectionowed.c"
-    db * h0_d;
-    int32_t h1_first;
-    int32_t h2_second;
-    db * t1;
-    db * t2;
-    int32_t t3;
-    db * t4;
-    db * t5;
-    int32_t t6;
-    HeroStr t7;
-    int32_t t8;
-    HeroStr t9;
-    int32_t t10;
-    goto bb0;
+#line 12 "tests/golden/run/handle-end-only-on-success-keeps-the-connection-owed.hero"
+    db * h0_d; int32_t h1_first; int32_t h2_second; db * t1; db * t2; int32_t t3; db * t4; db * t5; int32_t t6; HeroStr t7; int32_t t8; HeroStr t9; int32_t t10; goto bb0;
+#line 12 "tests/golden/run/handle-end-only-on-success-keeps-the-connection-owed.hero"
 bb0:
-#line 13 "tests/golden/run/handle-end-only-on-success-keeps-the-connection-owed.hero"
     t1 = db_open();
 #line 13 "tests/golden/run/handle-end-only-on-success-keeps-the-connection-owed.hero"
     hero_handle_acquired(t1, "db_close");
@@ -196,7 +183,7 @@ bb0:
     hero_print_end();
 #line 17 "tests/golden/run/handle-end-only-on-success-keeps-the-connection-owed.hero"
     return;
-#line 200 "handleendonlyonsuccesskeepstheconnectionowed.c"
+#line 187 "handleendonlyonsuccesskeepstheconnectionowed.c"
 }
 HERO_TU_LOCAL bool h_handleendonlyonsuccesskeepstheconnectionowed_Db_eq(db * const *a, db * const *b) {
     return hero_handle_eq(*a, *b);

@@ -80,6 +80,65 @@ function fits(@t: table.Types, wanted: i64, got: i64) -> bool
 
     return table.intern_function(@t, spelled, filled, result: result) == wanted
 
+# Whether `a` and `b` are one function type but for the names of its
+# parameters, where the nameless one is a type the program WROTE with two
+# positions of one type (defect 554). `check/type_labels.hero` refuses that
+# type where it is written, `needs_parameter_names`, so the mismatch between
+# the two is that refusal's shadow, a second message for one mistake (§4.5):
+# `g: (function(i64, i64) -> i64) = add` was told both, and so was every
+# place the value of `g` met a named one. A pair that differs in a parameter's
+# type or in the result is a mistake of its own and is still told, and so is
+# a nameless type nothing wrote, one a generic's letters made, which nothing
+# refuses. Asked only where a mismatch is about to be said, so the walk over
+# `written` costs a refused program alone.
+function unnamed_shadow(t: table.Types, written: {i64: i64}, a: i64, b: i64) -> bool
+    return names_alone(t, written, nameless: a, named: b) || names_alone(t, written, nameless: b, named: a)
+
+function names_alone(t: table.Types, written: {i64: i64}, nameless: i64, named: i64) -> bool
+    match table.get(t, nameless)
+        .function_ty w =>
+            match table.get(t, named)
+                .function_ty g =>
+                    ws = table.params_of(t, w.params)
+                    gs = table.params_of(t, g.params)
+
+                    if table.labels_of(t, w.labels).len() > 0 || table.labels_of(t, g.labels).len() == 0
+                        return false
+
+                    if w.result != g.result || ws.len() != gs.len()
+                        return false
+                    i: i64 @ 0
+
+                    while i < ws.len()
+                        if ws[i] != gs[i]
+                            return false
+                        i @ i + 1
+
+                    shares: bool @ false
+
+                    for one in shared(ws)
+                        if one
+                            shares @ true
+
+                    if !shares
+                        return false
+
+                    # ORDER: none — the walk asks whether any written node's type is
+                    # this one, an answer no order of the keys can change.
+                    for id in keys(written)
+                        if written[id].must() == nameless
+                            return true
+
+                    return false
+                .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return false
+                .array | .fixed | .map | .fallible | .named | .case_ty    => return false
+                .failure | .generic | .error                              => return false
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return false
+        .array | .fixed | .map | .fallible | .named | .case_ty    => return false
+        .failure | .generic | .error                              => return false
+
+    return false
+
 # Whether each position of a parameter run shares its type with another — the
 # single fact §4.9 rests on, since defect 026 for a function TYPE as well as for
 # a declaration. The rule that makes a name mandatory in the type

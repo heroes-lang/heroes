@@ -111,60 +111,34 @@ __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
 
 #line 21 "examples/collatz/main.hero"
 int64_t h_main_BANDS(void) {
-#line 115 "main.c"
-    int64_t t1;
-    goto bb0;
+#line 21 "examples/collatz/main.hero"
+    int64_t t1; goto bb0;
+#line 21 "examples/collatz/main.hero"
 bb0:
-#line 22 "examples/collatz/main.hero"
     t1 = INT64_C(8);
 #line 22 "examples/collatz/main.hero"
     return t1;
-#line 123 "main.c"
+#line 122 "main.c"
 }
 
 #line 24 "examples/collatz/main.hero"
 int64_t h_main_PER_BAND(void) {
-#line 128 "main.c"
-    int64_t t1;
-    goto bb0;
+#line 24 "examples/collatz/main.hero"
+    int64_t t1; goto bb0;
+#line 24 "examples/collatz/main.hero"
 bb0:
-#line 25 "examples/collatz/main.hero"
     t1 = INT64_C(2500);
 #line 25 "examples/collatz/main.hero"
     return t1;
-#line 136 "main.c"
+#line 134 "main.c"
 }
 
 #line 29 "examples/collatz/main.hero"
 int64_t h_main_steps(int64_t h0_n) {
-#line 141 "main.c"
-    int64_t h1_count;
-    int64_t h2_v;
-    int64_t t1;
-    int64_t t2;
-    int64_t t3;
-    int64_t t4;
-    bool t5;
-    int64_t t6;
-    int64_t t7;
-    int64_t t8;
-    int64_t t9;
-    bool t10;
-    int64_t t11;
-    int64_t t12;
-    int64_t t13;
-    int64_t t14;
-    int64_t t15;
-    int64_t t16;
-    int64_t t17;
-    int64_t t18;
-    int64_t t19;
-    int64_t t20;
-    int64_t t21;
-    int64_t t22;
-    goto bb0;
+#line 29 "examples/collatz/main.hero"
+    int64_t h1_count; int64_t h2_v; int64_t t1; int64_t t2; int64_t t3; int64_t t4; bool t5; int64_t t6; int64_t t7; int64_t t8; int64_t t9; bool t10; int64_t t11; int64_t t12; int64_t t13; int64_t t14; int64_t t15; int64_t t16; int64_t t17; int64_t t18; int64_t t19; int64_t t20; int64_t t21; int64_t t22; goto bb0;
+#line 29 "examples/collatz/main.hero"
 bb0:
-#line 30 "examples/collatz/main.hero"
     t1 = INT64_C(0);
 #line 30 "examples/collatz/main.hero"
     h1_count = t1;
@@ -250,42 +224,15 @@ bb6:
     h2_v = t18;
 #line 37 "examples/collatz/main.hero"
     goto bb4;
-#line 254 "main.c"
+#line 228 "main.c"
 }
 
 #line 43 "examples/collatz/main.hero"
 int64_t h_main_longest_in(int64_t h0_index) {
-#line 259 "main.c"
-    hero_thread_guard("main.longest_in");
-    int64_t h1_best;
-    int64_t h2_n;
-    int64_t h3_s;
-    int64_t t1;
-    int64_t t2;
-    int64_t t3;
-    int64_t t4;
-    int64_t t5;
-    int64_t t6;
-    int64_t t7;
-    int64_t t8;
-    int64_t t9;
-    int64_t t10;
-    int64_t t11;
-    int64_t t12;
-    bool t13;
-    int64_t t14;
-    int64_t t15;
-    int64_t t16;
-    int64_t t17;
-    bool t18;
-    int64_t t19;
-    int64_t t20;
-    int64_t t21;
-    int64_t t22;
-    int64_t t23;
-    goto bb0;
+#line 43 "examples/collatz/main.hero"
+    hero_thread_guard("main.longest_in"); int64_t h1_best; int64_t h2_n; int64_t h3_s; int64_t t1; int64_t t2; int64_t t3; int64_t t4; int64_t t5; int64_t t6; int64_t t7; int64_t t8; int64_t t9; int64_t t10; int64_t t11; int64_t t12; bool t13; int64_t t14; int64_t t15; int64_t t16; int64_t t17; bool t18; int64_t t19; int64_t t20; int64_t t21; int64_t t22; int64_t t23; goto bb0;
+#line 43 "examples/collatz/main.hero"
 bb0:
-#line 44 "examples/collatz/main.hero"
     t1 = INT64_C(0);
 #line 44 "examples/collatz/main.hero"
     h1_best = t1;
@@ -365,7 +312,7 @@ bb5:
 bb6:
 #line 51 "examples/collatz/main.hero"
     goto bb4;
-#line 369 "main.c"
+#line 316 "main.c"
 }
 
 int64_t h_0cb_main_longest_in(int64_t h0_index) {
@@ -375,68 +322,25 @@ int64_t h_0cb_main_longest_in(int64_t h0_index) {
 
 #line 56 "examples/collatz/main.hero"
 int64_t h_main_longest_at_once(void) {
-#line 379 "main.c"
-    HeroArrayHeader * h0_handles = {0};
-    int64_t h1_i;
-    int64_t h2_best;
-    HeroArrayHeader * h3_xs0 = {0};
-    int64_t h4_i0;
-    int64_t h5_h;
-    int64_t h6_found;
-    HeroArrayHeader * h7_own7 = {0};
-    HeroArrayHeader * t1;
-    int64_t t2;
-    int64_t t3;
-    int64_t t4;
-    bool t5;
-    h_0fn_48ac9712 t7;
-    int64_t t8;
-    int64_t t9;
-    int64_t t11;
-    int64_t t12;
-    int64_t t13;
-    int64_t t14;
-    HeroArrayHeader * t15;
-    int64_t t16;
-    int64_t t17;
-    HeroArrayHeader * t18;
-    int64_t t19;
-    bool t20;
-    HeroArrayHeader * t21;
-    int64_t t22;
-    int64_t t23;
-    int64_t t24;
-    int64_t t25;
-    int64_t t26;
-    int64_t t27;
-    bool t28;
-    int64_t t29;
-    int64_t t30;
-    int64_t t31;
-    int64_t t32;
-    int64_t t33;
-    HeroArrayHeader * t34;
-    HeroArrayHeader * t35;
-    HeroArrayHeader * t36;
-    goto bb0;
+#line 56 "examples/collatz/main.hero"
+    HeroArrayHeader * h0_handles = {0}; int64_t h1_i; int64_t h2_best; HeroArrayHeader * h3_xs0 = {0}; int64_t h4_i0; int64_t h5_h; int64_t h6_found; HeroArrayHeader * h7_own7 = {0}; HeroArrayHeader * t1; int64_t t2; int64_t t3; int64_t t4; bool t5; h_0fn_48ac9712 t7; int64_t t8; int64_t t9; int64_t t11; int64_t t12; int64_t t13; int64_t t14; HeroArrayHeader * t15; int64_t t16; int64_t t17; HeroArrayHeader * t18; int64_t t19; bool t20; HeroArrayHeader * t21; int64_t t22; int64_t t23; int64_t t24; int64_t t25; int64_t t26; int64_t t27; bool t28; int64_t t29; int64_t t30; int64_t t31; int64_t t32; int64_t t33; HeroArrayHeader * t34; HeroArrayHeader * t35; HeroArrayHeader * t36; goto bb0;
+#line 56 "examples/collatz/main.hero"
 bb0:
-#line 57 "examples/collatz/main.hero"
     t1 = hero_array_new(&hero_desc_int, 1);
 #line 57 "examples/collatz/main.hero"
     t34 = h7_own7;
 #line 57 "examples/collatz/main.hero"
     h7_own7 = t1;
-#line 430 "main.c"
+#line 57 "examples/collatz/main.hero"
     hero_array_decref(t34);
 #line 57 "examples/collatz/main.hero"
     t35 = h0_handles;
-#line 434 "main.c"
+#line 57 "examples/collatz/main.hero"
     hero_array_incref(t1);
 #line 57 "examples/collatz/main.hero"
     h0_handles = t1;
-#line 438 "main.c"
+#line 57 "examples/collatz/main.hero"
     hero_array_decref(t35);
-#line 58 "examples/collatz/main.hero"
     t2 = INT64_C(0);
 #line 58 "examples/collatz/main.hero"
     h1_i = t2;
@@ -480,11 +384,11 @@ bb3:
     t15 = h0_handles;
 #line 66 "examples/collatz/main.hero"
     t36 = h3_xs0;
-#line 484 "main.c"
+#line 66 "examples/collatz/main.hero"
     hero_array_incref(t15);
 #line 66 "examples/collatz/main.hero"
     h3_xs0 = t15;
-#line 488 "main.c"
+#line 66 "examples/collatz/main.hero"
     hero_array_decref(t36);
 #line 66 "examples/collatz/main.hero"
     t16 = INT64_C(0);
@@ -543,7 +447,7 @@ bb6:
 bb7:
 #line 72 "examples/collatz/main.hero"
     t33 = h2_best;
-#line 547 "main.c"
+#line 451 "main.c"
     hero_array_release_at(&h0_handles);
     hero_array_release_at(&h3_xs0);
     hero_array_release_at(&h7_own7);
@@ -561,35 +465,15 @@ bb9:
 bb10:
 #line 70 "examples/collatz/main.hero"
     goto bb8;
-#line 565 "main.c"
+#line 469 "main.c"
 }
 
 #line 75 "examples/collatz/main.hero"
 int64_t h_main_longest_alone(void) {
-#line 570 "main.c"
-    int64_t h0_best;
-    int64_t h1_n;
-    int64_t h2_s;
-    int64_t t1;
-    int64_t t2;
-    int64_t t3;
-    int64_t t4;
-    int64_t t5;
-    int64_t t6;
-    bool t7;
-    int64_t t8;
-    int64_t t9;
-    int64_t t10;
-    int64_t t11;
-    bool t12;
-    int64_t t13;
-    int64_t t14;
-    int64_t t15;
-    int64_t t16;
-    int64_t t17;
-    goto bb0;
+#line 75 "examples/collatz/main.hero"
+    int64_t h0_best; int64_t h1_n; int64_t h2_s; int64_t t1; int64_t t2; int64_t t3; int64_t t4; int64_t t5; int64_t t6; bool t7; int64_t t8; int64_t t9; int64_t t10; int64_t t11; bool t12; int64_t t13; int64_t t14; int64_t t15; int64_t t16; int64_t t17; goto bb0;
+#line 75 "examples/collatz/main.hero"
 bb0:
-#line 76 "examples/collatz/main.hero"
     t1 = INT64_C(0);
 #line 76 "examples/collatz/main.hero"
     h0_best = t1;
@@ -657,21 +541,15 @@ bb5:
 bb6:
 #line 83 "examples/collatz/main.hero"
     goto bb4;
-#line 661 "main.c"
+#line 545 "main.c"
 }
 
 #line 88 "examples/collatz/main.hero"
 void h_main_main(void) {
-#line 666 "main.c"
-    HeroStr t1;
-    int64_t t2;
-    int64_t t3;
-    int64_t t4;
-    HeroStr t5;
-    int64_t t6;
-    goto bb0;
+#line 88 "examples/collatz/main.hero"
+    HeroStr t1; int64_t t2; int64_t t3; int64_t t4; HeroStr t5; int64_t t6; goto bb0;
+#line 88 "examples/collatz/main.hero"
 bb0:
-#line 89 "examples/collatz/main.hero"
     t1 = HERO_STR_LIT(hero_str_58d299d3);
 #line 89 "examples/collatz/main.hero"
     t2 = h_main_BANDS();
@@ -695,7 +573,7 @@ bb0:
     hero_print_end();
 #line 89 "examples/collatz/main.hero"
     return;
-#line 699 "main.c"
+#line 577 "main.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

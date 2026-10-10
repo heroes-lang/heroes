@@ -682,13 +682,26 @@ Part 2 rules out as a justification.
 - **`#line` when the instruction's line differs from the current effective line** — not per
   statement, and not per span change: `#line N` anchors the *next* line and C then
   auto-increments, so a Heroes line lowering to K C lines drifts by K−1. Restored to the generated
-  file around synthetic prologue/cleanup code, so lldb never blames user lines for housekeeping —
+  file around synthetic cleanup code, so lldb never blames user lines for housekeeping —
   which means the restore directive carries the printer's **own output line count**, making a
   newline-counting writer structural rather than incidental (panel 020, measured against
   `tools/spike/01-first.c`, which advertised `:2` and delivered `:6`). Debugging the emitter
   itself is the *author's* activity, not the tool's capability: it is three lines in the emitter's
   test helper, and `--no-line` is refused by CLAUDE.md §10's stopping rule (panel 016's watch
   list, settled in panel 020).
+
+  **AMENDED 2026-10-10 by panel 200's R4** (defect 472;
+  `docs/panel/200-a-counted-slot-is-released-by-its-address-and-the-emitted-program-s-other-routes-are-ruled.md`):
+  the sentence read *"Restored to the generated file around synthetic prologue/cleanup code"*.
+  The prologue now carries the function's own line: the thread guard, every declaration and its
+  zero, and the `goto` to the first block are **one physical line** under one `#line`, so a
+  `step` into a function and a breakpoint on it stop on its `function` line, which is the
+  function's header and not a statement the author wrote that runs. One line, because a second
+  under the same `#line` would claim the author's next line, and a `#line` before each grew the
+  seed by 28% (the sitting's critic); written as one, the compiler's C fell from 48,311,651 to
+  47,091,837 bytes and from 1,535,984 to 1,207,560 lines. The exit and the cleanup stay the
+  generated file's (defect 335), and since defect 540 a retain or a release inside a line is that
+  line's, the exit's retain and sweep excepted.
 - **The `@` parameter is a pointer parameter, and the body works through it** (panel 196's R1,
   ratified 2026-10-06). The callee is handed a `T *p_l`, and its every read and write of `l` is
   `(*p_l)`, the caller's place itself: no local copy, no copy-in, and `Op::CopyOut` writes no C,

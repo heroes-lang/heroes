@@ -104,22 +104,10 @@ void h_fixedbugsatransferthatfailedandnobodyendedisowedatexit_main(void);
 
 #line 11 "tests/golden/run/fixedbugs-a-transfer-that-failed-and-nobody-ended-is-owed-at-exit.hero"
 void h_fixedbugsatransferthatfailedandnobodyendedisowedatexit_main(void) {
-#line 108 "fixedbugsatransferthatfailedandnobodyendedisowedatexit.c"
-    node * h0_parent;
-    node * h1_child;
-    int64_t t1;
-    node * t2;
-    int64_t t3;
-    node * t4;
-    HeroStr t5;
-    node * t6;
-    node * t7;
-    int32_t t8;
-    int32_t t9;
-    node * t10;
-    goto bb0;
+#line 11 "tests/golden/run/fixedbugs-a-transfer-that-failed-and-nobody-ended-is-owed-at-exit.hero"
+    node * h0_parent; node * h1_child; int64_t t1; node * t2; int64_t t3; node * t4; HeroStr t5; node * t6; node * t7; int32_t t8; int32_t t9; node * t10; goto bb0;
+#line 11 "tests/golden/run/fixedbugs-a-transfer-that-failed-and-nobody-ended-is-owed-at-exit.hero"
 bb0:
-#line 12 "tests/golden/run/fixedbugs-a-transfer-that-failed-and-nobody-ended-is-owed-at-exit.hero"
     t1 = INT64_C(10);
 #line 12 "tests/golden/run/fixedbugs-a-transfer-that-failed-and-nobody-ended-is-owed-at-exit.hero"
     t2 = node_new(t1);
@@ -184,7 +172,7 @@ bb0:
     }
 #line 15 "tests/golden/run/fixedbugs-a-transfer-that-failed-and-nobody-ended-is-owed-at-exit.hero"
     return;
-#line 188 "fixedbugsatransferthatfailedandnobodyendedisowedatexit.c"
+#line 176 "fixedbugsatransferthatfailedandnobodyendedisowedatexit.c"
 }
 HERO_TU_LOCAL bool h_fixedbugsatransferthatfailedandnobodyendedisowedatexit_Node_eq(node * const *a, node * const *b) {
     return hero_handle_eq(*a, *b);

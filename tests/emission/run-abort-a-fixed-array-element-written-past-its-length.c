@@ -115,50 +115,10 @@ HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to);
 
 #line 23 "tests/golden/run/abort-a-fixed-array-element-written-past-its-length.hero"
 void h_abortafixedarrayelementwrittenpastitslength_main(void) {
-#line 119 "abortafixedarrayelementwrittenpastitslength.c"
-    struct nums h0_n;
-    HeroArrayHeader * h1_xs0 = {0};
-    int64_t h2_i0;
-    int64_t h3_i;
-    HeroArrayHeader * h4_own4 = {0};
-    int64_t t1;
-    int64_t t2;
-    int64_t t3;
-    int64_t t4;
-    int64_t t6;
-    struct nums t7;
-    int64_t t8;
-    int64_t t9;
-    HeroArrayHeader * t10;
-    int64_t t11;
-    int64_t t12;
-    HeroArrayHeader * t13;
-    int64_t t14;
-    bool t15;
-    HeroArrayHeader * t16;
-    int64_t t17;
-    int64_t t18;
-    HeroStr t19;
-    struct nums t20;
-    int64_t t21;
-    HeroStr t22;
-    int64_t t23;
-    int64_t t24;
-    int64_t t25;
-    int64_t t26;
-    int64_t t27;
-    int64_t t28;
-    int64_t t29;
-    int64_t t30;
-    HeroStr t31;
-    struct nums t32;
-    int64_t t34;
-    int64_t t35;
-    HeroArrayHeader * t36;
-    HeroArrayHeader * t37;
-    goto bb0;
+#line 23 "tests/golden/run/abort-a-fixed-array-element-written-past-its-length.hero"
+    struct nums h0_n; HeroArrayHeader * h1_xs0 = {0}; int64_t h2_i0; int64_t h3_i; HeroArrayHeader * h4_own4 = {0}; int64_t t1; int64_t t2; int64_t t3; int64_t t4; int64_t t6; struct nums t7; int64_t t8; int64_t t9; HeroArrayHeader * t10; int64_t t11; int64_t t12; HeroArrayHeader * t13; int64_t t14; bool t15; HeroArrayHeader * t16; int64_t t17; int64_t t18; HeroStr t19; struct nums t20; int64_t t21; HeroStr t22; int64_t t23; int64_t t24; int64_t t25; int64_t t26; int64_t t27; int64_t t28; int64_t t29; int64_t t30; HeroStr t31; struct nums t32; int64_t t34; int64_t t35; HeroArrayHeader * t36; HeroArrayHeader * t37; goto bb0;
+#line 23 "tests/golden/run/abort-a-fixed-array-element-written-past-its-length.hero"
 bb0:
-#line 24 "tests/golden/run/abort-a-fixed-array-element-written-past-its-length.hero"
     t1 = INT64_C(0);
 #line 24 "tests/golden/run/abort-a-fixed-array-element-written-past-its-length.hero"
     t2 = INT64_C(0);
@@ -182,15 +142,15 @@ bb0:
     t36 = h4_own4;
 #line 26 "tests/golden/run/abort-a-fixed-array-element-written-past-its-length.hero"
     h4_own4 = t10;
-#line 186 "abortafixedarrayelementwrittenpastitslength.c"
+#line 26 "tests/golden/run/abort-a-fixed-array-element-written-past-its-length.hero"
     hero_array_decref(t36);
 #line 26 "tests/golden/run/abort-a-fixed-array-element-written-past-its-length.hero"
     t37 = h1_xs0;
-#line 190 "abortafixedarrayelementwrittenpastitslength.c"
+#line 26 "tests/golden/run/abort-a-fixed-array-element-written-past-its-length.hero"
     hero_array_incref(t10);
 #line 26 "tests/golden/run/abort-a-fixed-array-element-written-past-its-length.hero"
     h1_xs0 = t10;
-#line 194 "abortafixedarrayelementwrittenpastitslength.c"
+#line 26 "tests/golden/run/abort-a-fixed-array-element-written-past-its-length.hero"
     hero_array_decref(t37);
 #line 26 "tests/golden/run/abort-a-fixed-array-element-written-past-its-length.hero"
     t11 = INT64_C(0);
@@ -278,7 +238,7 @@ bb4:
     hero_print_int(t35);
 #line 30 "tests/golden/run/abort-a-fixed-array-element-written-past-its-length.hero"
     hero_print_end();
-#line 282 "abortafixedarrayelementwrittenpastitslength.c"
+#line 242 "abortafixedarrayelementwrittenpastitslength.c"
     hero_array_release_at(&h1_xs0);
     hero_array_release_at(&h4_own4);
     return;
@@ -286,41 +246,25 @@ bb4:
 
 #line 26 "<heroes library>"
 HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to) {
-#line 290 "abortafixedarrayelementwrittenpastitslength.c"
-    HeroArrayHeader * h2_out = {0};
-    int64_t h3_i;
-    HeroArrayHeader * h4_own4 = {0};
-    HeroArrayHeader * t1;
-    int64_t t2;
-    int64_t t3;
-    int64_t t4;
-    bool t5;
-    int64_t t7;
-    int64_t t9;
-    int64_t t10;
-    int64_t t11;
-    HeroArrayHeader * t12;
-    HeroArrayHeader * t13;
-    HeroArrayHeader * t14;
-    goto bb0;
+#line 26 "<heroes library>"
+    HeroArrayHeader * h2_out = {0}; int64_t h3_i; HeroArrayHeader * h4_own4 = {0}; HeroArrayHeader * t1; int64_t t2; int64_t t3; int64_t t4; bool t5; int64_t t7; int64_t t9; int64_t t10; int64_t t11; HeroArrayHeader * t12; HeroArrayHeader * t13; HeroArrayHeader * t14; goto bb0;
+#line 26 "<heroes library>"
 bb0:
-#line 27 "<heroes library>"
     t1 = hero_array_new(&hero_desc_int, 1);
 #line 27 "<heroes library>"
     t13 = h4_own4;
 #line 27 "<heroes library>"
     h4_own4 = t1;
-#line 314 "abortafixedarrayelementwrittenpastitslength.c"
+#line 27 "<heroes library>"
     hero_array_decref(t13);
 #line 27 "<heroes library>"
     t14 = h2_out;
-#line 318 "abortafixedarrayelementwrittenpastitslength.c"
+#line 27 "<heroes library>"
     hero_array_incref(t1);
 #line 27 "<heroes library>"
     h2_out = t1;
-#line 322 "abortafixedarrayelementwrittenpastitslength.c"
+#line 27 "<heroes library>"
     hero_array_decref(t14);
-#line 28 "<heroes library>"
     t2 = h0_from;
 #line 28 "<heroes library>"
     h3_i = t2;
@@ -352,7 +296,7 @@ bb2:
 #line 31 "<heroes library>"
 bb3:
     t12 = h2_out;
-#line 356 "abortafixedarrayelementwrittenpastitslength.c"
+#line 300 "abortafixedarrayelementwrittenpastitslength.c"
     hero_array_incref(t12);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h4_own4);

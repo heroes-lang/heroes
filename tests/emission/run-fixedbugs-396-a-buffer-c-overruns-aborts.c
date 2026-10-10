@@ -98,36 +98,25 @@ void h_fixedbugs396abuffercoverrunsaborts_main(void);
 
 #line 11 "tests/golden/run/fixedbugs-396-a-buffer-c-overruns-aborts.hero"
 void h_fixedbugs396abuffercoverrunsaborts_main(void) {
-#line 102 "fixedbugs396abuffercoverrunsaborts.c"
-    HeroArrayHeader * h0_md = {0};
-    HeroArrayHeader * h1_own1 = {0};
-    HeroArrayHeader * t1;
-    HeroStr t2;
-    int32_t t3;
-    HeroStr t4;
-    HeroArrayHeader * t5;
-    int64_t t6;
-    HeroArrayHeader * t7;
-    HeroArrayHeader * t8;
-    goto bb0;
+#line 11 "tests/golden/run/fixedbugs-396-a-buffer-c-overruns-aborts.hero"
+    HeroArrayHeader * h0_md = {0}; HeroArrayHeader * h1_own1 = {0}; HeroArrayHeader * t1; HeroStr t2; int32_t t3; HeroStr t4; HeroArrayHeader * t5; int64_t t6; HeroArrayHeader * t7; HeroArrayHeader * t8; goto bb0;
+#line 11 "tests/golden/run/fixedbugs-396-a-buffer-c-overruns-aborts.hero"
 bb0:
-#line 12 "tests/golden/run/fixedbugs-396-a-buffer-c-overruns-aborts.hero"
     t1 = hero_array_new(&hero_desc_u8, 1);
 #line 12 "tests/golden/run/fixedbugs-396-a-buffer-c-overruns-aborts.hero"
     t7 = h1_own1;
 #line 12 "tests/golden/run/fixedbugs-396-a-buffer-c-overruns-aborts.hero"
     h1_own1 = t1;
-#line 121 "fixedbugs396abuffercoverrunsaborts.c"
+#line 12 "tests/golden/run/fixedbugs-396-a-buffer-c-overruns-aborts.hero"
     hero_array_decref(t7);
 #line 12 "tests/golden/run/fixedbugs-396-a-buffer-c-overruns-aborts.hero"
     t8 = h0_md;
-#line 125 "fixedbugs396abuffercoverrunsaborts.c"
+#line 12 "tests/golden/run/fixedbugs-396-a-buffer-c-overruns-aborts.hero"
     hero_array_incref(t1);
 #line 12 "tests/golden/run/fixedbugs-396-a-buffer-c-overruns-aborts.hero"
     h0_md = t1;
-#line 129 "fixedbugs396abuffercoverrunsaborts.c"
+#line 12 "tests/golden/run/fixedbugs-396-a-buffer-c-overruns-aborts.hero"
     hero_array_decref(t8);
-#line 13 "tests/golden/run/fixedbugs-396-a-buffer-c-overruns-aborts.hero"
     t2 = HERO_STR_LIT(hero_str_43560e4d);
 #line 13 "tests/golden/run/fixedbugs-396-a-buffer-c-overruns-aborts.hero"
     hero_print_str(t2);
@@ -161,7 +150,7 @@ bb0:
     hero_print_int(t6);
 #line 15 "tests/golden/run/fixedbugs-396-a-buffer-c-overruns-aborts.hero"
     hero_print_end();
-#line 165 "fixedbugs396abuffercoverrunsaborts.c"
+#line 154 "fixedbugs396abuffercoverrunsaborts.c"
     hero_array_release_at(&h0_md);
     hero_array_release_at(&h1_own1);
     return;

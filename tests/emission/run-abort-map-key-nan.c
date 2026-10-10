@@ -103,13 +103,10 @@ HERO_TU_LOCAL int64_t h_abortmapkeynan_count_1ad16c(HeroArrayHeader * h0_ks);
 
 #line 24 "tests/golden/run/abort-map-key-nan.hero"
 double h_abortmapkeynan_nan(void) {
-#line 107 "abortmapkeynan.c"
-    double t1;
-    double t2;
-    double t3;
-    goto bb0;
+#line 24 "tests/golden/run/abort-map-key-nan.hero"
+    double t1; double t2; double t3; goto bb0;
+#line 24 "tests/golden/run/abort-map-key-nan.hero"
 bb0:
-#line 25 "tests/golden/run/abort-map-key-nan.hero"
     t1 = 0x0p+0;
 #line 25 "tests/golden/run/abort-map-key-nan.hero"
     t2 = 0x0p+0;
@@ -117,24 +114,14 @@ bb0:
     t3 = t1 / t2;
 #line 25 "tests/golden/run/abort-map-key-nan.hero"
     return t3;
-#line 121 "abortmapkeynan.c"
+#line 118 "abortmapkeynan.c"
 }
 
 #line 35 "tests/golden/run/abort-map-key-nan.hero"
 void h_abortmapkeynan_main(void) {
-#line 126 "abortmapkeynan.c"
-    HeroArrayHeader * h0_own0 = {0};
-    HeroArrayHeader * h1_own1 = {0};
-    double t1;
-    double t2;
-    HeroArrayHeader * t3;
-    int64_t t4;
-    double t5;
-    HeroArrayHeader * t6;
-    int64_t t7;
-    HeroArrayHeader * t8;
-    HeroArrayHeader * t9;
-    goto bb0;
+#line 35 "tests/golden/run/abort-map-key-nan.hero"
+    HeroArrayHeader * h0_own0 = {0}; HeroArrayHeader * h1_own1 = {0}; double t1; double t2; HeroArrayHeader * t3; int64_t t4; double t5; HeroArrayHeader * t6; int64_t t7; HeroArrayHeader * t8; HeroArrayHeader * t9; goto bb0;
+#line 35 "tests/golden/run/abort-map-key-nan.hero"
 bb0:
 #line 37 "tests/golden/run/abort-map-key-nan.hero"
     t1 = 0x1.8p+0;
@@ -150,7 +137,7 @@ bb0:
     t8 = h0_own0;
 #line 37 "tests/golden/run/abort-map-key-nan.hero"
     h0_own0 = t3;
-#line 154 "abortmapkeynan.c"
+#line 37 "tests/golden/run/abort-map-key-nan.hero"
     hero_array_decref(t8);
 #line 37 "tests/golden/run/abort-map-key-nan.hero"
     t4 = h_abortmapkeynan_count_1ad16c(t3);
@@ -168,7 +155,7 @@ bb0:
     t9 = h1_own1;
 #line 40 "tests/golden/run/abort-map-key-nan.hero"
     h1_own1 = t6;
-#line 172 "abortmapkeynan.c"
+#line 40 "tests/golden/run/abort-map-key-nan.hero"
     hero_array_decref(t9);
 #line 40 "tests/golden/run/abort-map-key-nan.hero"
     t7 = h_abortmapkeynan_count_1ad16c(t6);
@@ -176,7 +163,7 @@ bb0:
     hero_print_int(t7);
 #line 40 "tests/golden/run/abort-map-key-nan.hero"
     hero_print_end();
-#line 180 "abortmapkeynan.c"
+#line 167 "abortmapkeynan.c"
     hero_array_release_at(&h0_own0);
     hero_array_release_at(&h1_own1);
     return;
@@ -186,59 +173,34 @@ bb0:
 /* count<f64> */
 #line 27 "tests/golden/run/abort-map-key-nan.hero"
 HERO_TU_LOCAL int64_t h_abortmapkeynan_count_1ad16c(HeroArrayHeader * h0_ks) {
-#line 190 "abortmapkeynan.c"
-    HeroMapHeader * h1_m = {0};
-    HeroArrayHeader * h2_xs0 = {0};
-    int64_t h3_i0;
-    double h4_k;
-    HeroMapHeader * h5_own5 = {0};
-    HeroMapHeader * t1;
-    HeroArrayHeader * t2;
-    int64_t t3;
-    int64_t t4;
-    HeroArrayHeader * t5;
-    int64_t t6;
-    bool t7;
-    HeroArrayHeader * t8;
-    int64_t t9;
-    double t10;
-    double t11;
-    int64_t t12;
-    int64_t t13;
-    int64_t t14;
-    int64_t t15;
-    HeroMapHeader * t16;
-    int64_t t17;
-    HeroMapHeader * t18;
-    HeroMapHeader * t19;
-    HeroArrayHeader * t20;
-    goto bb0;
+#line 27 "tests/golden/run/abort-map-key-nan.hero"
+    HeroMapHeader * h1_m = {0}; HeroArrayHeader * h2_xs0 = {0}; int64_t h3_i0; double h4_k; HeroMapHeader * h5_own5 = {0}; HeroMapHeader * t1; HeroArrayHeader * t2; int64_t t3; int64_t t4; HeroArrayHeader * t5; int64_t t6; bool t7; HeroArrayHeader * t8; int64_t t9; double t10; double t11; int64_t t12; int64_t t13; int64_t t14; int64_t t15; HeroMapHeader * t16; int64_t t17; HeroMapHeader * t18; HeroMapHeader * t19; HeroArrayHeader * t20; goto bb0;
+#line 27 "tests/golden/run/abort-map-key-nan.hero"
 bb0:
-#line 28 "tests/golden/run/abort-map-key-nan.hero"
     t1 = hero_map_new(&hero_desc_f64, &hero_desc_int, 0);
 #line 28 "tests/golden/run/abort-map-key-nan.hero"
     t18 = h5_own5;
 #line 28 "tests/golden/run/abort-map-key-nan.hero"
     h5_own5 = t1;
-#line 224 "abortmapkeynan.c"
+#line 28 "tests/golden/run/abort-map-key-nan.hero"
     hero_map_decref(t18);
 #line 28 "tests/golden/run/abort-map-key-nan.hero"
     t19 = h1_m;
-#line 228 "abortmapkeynan.c"
+#line 28 "tests/golden/run/abort-map-key-nan.hero"
     hero_map_incref(t1);
 #line 28 "tests/golden/run/abort-map-key-nan.hero"
     h1_m = t1;
-#line 232 "abortmapkeynan.c"
+#line 28 "tests/golden/run/abort-map-key-nan.hero"
     hero_map_decref(t19);
 #line 30 "tests/golden/run/abort-map-key-nan.hero"
     t2 = h0_ks;
 #line 30 "tests/golden/run/abort-map-key-nan.hero"
     t20 = h2_xs0;
-#line 238 "abortmapkeynan.c"
+#line 30 "tests/golden/run/abort-map-key-nan.hero"
     hero_array_incref(t2);
 #line 30 "tests/golden/run/abort-map-key-nan.hero"
     h2_xs0 = t2;
-#line 242 "abortmapkeynan.c"
+#line 30 "tests/golden/run/abort-map-key-nan.hero"
     hero_array_decref(t20);
 #line 30 "tests/golden/run/abort-map-key-nan.hero"
     t3 = INT64_C(0);
@@ -293,7 +255,7 @@ bb4:
     t16 = h1_m;
 #line 33 "tests/golden/run/abort-map-key-nan.hero"
     t17 = hero_map_len(t16);
-#line 297 "abortmapkeynan.c"
+#line 259 "abortmapkeynan.c"
     hero_map_release_at(&h1_m);
     hero_array_release_at(&h2_xs0);
     hero_map_release_at(&h5_own5);

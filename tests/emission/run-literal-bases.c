@@ -102,52 +102,10 @@ void h_literalbases_main(void);
 
 #line 27 "tests/golden/run/literal-bases.hero"
 void h_literalbases_main(void) {
-#line 106 "literalbases.c"
-    HeroStr h0_own0 = {0};
-    HeroStr t1;
-    int64_t t2;
-    HeroStr t3;
-    int64_t t4;
-    HeroStr t5;
-    int64_t t6;
-    HeroStr t7;
-    int64_t t8;
-    HeroStr t9;
-    int64_t t10;
-    HeroStr t11;
-    int64_t t12;
-    HeroStr t13;
-    int64_t t14;
-    int64_t t15;
-    bool t16;
-    HeroStr t17;
-    int64_t t18;
-    int64_t t19;
-    bool t20;
-    HeroStr t21;
-    int64_t t22;
-    HeroStr t23;
-    HeroStr t24;
-    int64_t t25;
-    int64_t t26;
-    int64_t t27;
-    HeroStr t28;
-    int64_t t29;
-    int64_t t30;
-    int64_t t31;
-    HeroStr t32;
-    int64_t t33;
-    int64_t t34;
-    int64_t t35;
-    HeroStr t36;
-    int64_t t37;
-    HeroStr t38;
-    int64_t t39;
-    int64_t t40;
-    HeroStr t41;
-    goto bb0;
+#line 27 "tests/golden/run/literal-bases.hero"
+    HeroStr h0_own0 = {0}; HeroStr t1; int64_t t2; HeroStr t3; int64_t t4; HeroStr t5; int64_t t6; HeroStr t7; int64_t t8; HeroStr t9; int64_t t10; HeroStr t11; int64_t t12; HeroStr t13; int64_t t14; int64_t t15; bool t16; HeroStr t17; int64_t t18; int64_t t19; bool t20; HeroStr t21; int64_t t22; HeroStr t23; HeroStr t24; int64_t t25; int64_t t26; int64_t t27; HeroStr t28; int64_t t29; int64_t t30; int64_t t31; HeroStr t32; int64_t t33; int64_t t34; int64_t t35; HeroStr t36; int64_t t37; HeroStr t38; int64_t t39; int64_t t40; HeroStr t41; goto bb0;
+#line 27 "tests/golden/run/literal-bases.hero"
 bb0:
-#line 28 "tests/golden/run/literal-bases.hero"
     t1 = HERO_STR_LIT(hero_str_e0a370d);
 #line 28 "tests/golden/run/literal-bases.hero"
     t2 = INT64_C(255);
@@ -236,7 +194,7 @@ bb0:
     t41 = h0_own0;
 #line 35 "tests/golden/run/literal-bases.hero"
     h0_own0 = t23;
-#line 240 "literalbases.c"
+#line 35 "tests/golden/run/literal-bases.hero"
     hero_str_decref(t41);
 #line 35 "tests/golden/run/literal-bases.hero"
     hero_print_str(t21);
@@ -301,7 +259,7 @@ bb0:
     hero_print_int(t40);
 #line 38 "tests/golden/run/literal-bases.hero"
     hero_print_end();
-#line 305 "literalbases.c"
+#line 263 "literalbases.c"
     hero_str_release_at(&h0_own0);
     return;
 }

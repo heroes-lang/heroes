@@ -97,13 +97,10 @@ void h_fixedbugs322asanitisernamestheherolineateverylevel_main(void);
 
 #line 19 "tests/golden/run/fixedbugs-322-a-sanitiser-names-the-hero-line-at-every-level.hero"
 void h_fixedbugs322asanitisernamestheherolineateverylevel_main(void) {
-#line 101 "fixedbugs322asanitisernamestheherolineateverylevel.c"
-    HeroStr t1;
-    int64_t t2;
-    int64_t t3;
-    goto bb0;
+#line 19 "tests/golden/run/fixedbugs-322-a-sanitiser-names-the-hero-line-at-every-level.hero"
+    HeroStr t1; int64_t t2; int64_t t3; goto bb0;
+#line 19 "tests/golden/run/fixedbugs-322-a-sanitiser-names-the-hero-line-at-every-level.hero"
 bb0:
-#line 20 "tests/golden/run/fixedbugs-322-a-sanitiser-names-the-hero-line-at-every-level.hero"
     t1 = HERO_STR_LIT(hero_str_68eb8936);
 #line 20 "tests/golden/run/fixedbugs-322-a-sanitiser-names-the-hero-line-at-every-level.hero"
     hero_print_str(t1);
@@ -118,7 +115,7 @@ bb0:
     hero_print_end();
 #line 21 "tests/golden/run/fixedbugs-322-a-sanitiser-names-the-hero-line-at-every-level.hero"
     return;
-#line 122 "fixedbugs322asanitisernamestheherolineateverylevel.c"
+#line 119 "fixedbugs322asanitisernamestheherolineateverylevel.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

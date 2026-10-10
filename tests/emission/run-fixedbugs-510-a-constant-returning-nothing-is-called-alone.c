@@ -95,11 +95,10 @@ void h_fixedbugs510aconstantreturningnothingiscalledalone_main(void);
 
 #line 6 "tests/golden/run/fixedbugs-510-a-constant-returning-nothing-is-called-alone.hero"
 void h_fixedbugs510aconstantreturningnothingiscalledalone_shout(HeroStr h0_s) {
-#line 99 "fixedbugs510aconstantreturningnothingiscalledalone.c"
-    HeroStr t1;
-    goto bb0;
+#line 6 "tests/golden/run/fixedbugs-510-a-constant-returning-nothing-is-called-alone.hero"
+    HeroStr t1; goto bb0;
+#line 6 "tests/golden/run/fixedbugs-510-a-constant-returning-nothing-is-called-alone.hero"
 bb0:
-#line 7 "tests/golden/run/fixedbugs-510-a-constant-returning-nothing-is-called-alone.hero"
     t1 = h0_s;
 #line 7 "tests/golden/run/fixedbugs-510-a-constant-returning-nothing-is-called-alone.hero"
     hero_print_str(t1);
@@ -107,32 +106,27 @@ bb0:
     hero_print_end();
 #line 7 "tests/golden/run/fixedbugs-510-a-constant-returning-nothing-is-called-alone.hero"
     return;
-#line 111 "fixedbugs510aconstantreturningnothingiscalledalone.c"
+#line 110 "fixedbugs510aconstantreturningnothingiscalledalone.c"
 }
 
 #line 9 "tests/golden/run/fixedbugs-510-a-constant-returning-nothing-is-called-alone.hero"
 h_0fn_54cd2b7b h_fixedbugs510aconstantreturningnothingiscalledalone_SHOUT(void) {
-#line 116 "fixedbugs510aconstantreturningnothingiscalledalone.c"
-    h_0fn_54cd2b7b t1;
-    goto bb0;
+#line 9 "tests/golden/run/fixedbugs-510-a-constant-returning-nothing-is-called-alone.hero"
+    h_0fn_54cd2b7b t1; goto bb0;
+#line 9 "tests/golden/run/fixedbugs-510-a-constant-returning-nothing-is-called-alone.hero"
 bb0:
-#line 10 "tests/golden/run/fixedbugs-510-a-constant-returning-nothing-is-called-alone.hero"
     t1 = h_fixedbugs510aconstantreturningnothingiscalledalone_shout;
 #line 10 "tests/golden/run/fixedbugs-510-a-constant-returning-nothing-is-called-alone.hero"
     return t1;
-#line 124 "fixedbugs510aconstantreturningnothingiscalledalone.c"
+#line 122 "fixedbugs510aconstantreturningnothingiscalledalone.c"
 }
 
 #line 12 "tests/golden/run/fixedbugs-510-a-constant-returning-nothing-is-called-alone.hero"
 void h_fixedbugs510aconstantreturningnothingiscalledalone_main(void) {
-#line 129 "fixedbugs510aconstantreturningnothingiscalledalone.c"
-    h_0fn_54cd2b7b t1;
-    HeroStr t2;
-    h_0fn_54cd2b7b t3;
-    HeroStr t4;
-    goto bb0;
+#line 12 "tests/golden/run/fixedbugs-510-a-constant-returning-nothing-is-called-alone.hero"
+    h_0fn_54cd2b7b t1; HeroStr t2; h_0fn_54cd2b7b t3; HeroStr t4; goto bb0;
+#line 12 "tests/golden/run/fixedbugs-510-a-constant-returning-nothing-is-called-alone.hero"
 bb0:
-#line 13 "tests/golden/run/fixedbugs-510-a-constant-returning-nothing-is-called-alone.hero"
     t1 = h_fixedbugs510aconstantreturningnothingiscalledalone_SHOUT();
 #line 13 "tests/golden/run/fixedbugs-510-a-constant-returning-nothing-is-called-alone.hero"
     t2 = HERO_STR_LIT(hero_str_35a1);
@@ -145,7 +139,7 @@ bb0:
     t3(t4);
 #line 14 "tests/golden/run/fixedbugs-510-a-constant-returning-nothing-is-called-alone.hero"
     return;
-#line 149 "fixedbugs510aconstantreturningnothingiscalledalone.c"
+#line 143 "fixedbugs510aconstantreturningnothingiscalledalone.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

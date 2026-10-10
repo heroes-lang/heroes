@@ -98,28 +98,19 @@ void h_cfreesaleaseonalatercall_main(void);
 
 #line 11 "tests/golden/run/c-frees-a-lease-on-a-later-call.hero"
 void h_cfreesaleaseonalatercall_main(void) {
-#line 102 "cfreesaleaseonalatercall.c"
-    HeroStr h0_x = {0};
-    const char * h1_c;
-    HeroStr t1;
-    HeroStr t2;
-    const char * t3;
-    const char * t4;
-    int64_t t5;
-    HeroStr t6;
-    goto bb0;
+#line 11 "tests/golden/run/c-frees-a-lease-on-a-later-call.hero"
+    HeroStr h0_x = {0}; const char * h1_c; HeroStr t1; HeroStr t2; const char * t3; const char * t4; int64_t t5; HeroStr t6; goto bb0;
+#line 11 "tests/golden/run/c-frees-a-lease-on-a-later-call.hero"
 bb0:
-#line 12 "tests/golden/run/c-frees-a-lease-on-a-later-call.hero"
     t1 = HERO_STR_LIT(hero_str_35d9fe9b);
 #line 12 "tests/golden/run/c-frees-a-lease-on-a-later-call.hero"
     t6 = h0_x;
-#line 117 "cfreesaleaseonalatercall.c"
+#line 12 "tests/golden/run/c-frees-a-lease-on-a-later-call.hero"
     hero_str_incref(t1);
 #line 12 "tests/golden/run/c-frees-a-lease-on-a-later-call.hero"
     h0_x = t1;
-#line 121 "cfreesaleaseonalatercall.c"
+#line 12 "tests/golden/run/c-frees-a-lease-on-a-later-call.hero"
     hero_str_decref(t6);
-#line 13 "tests/golden/run/c-frees-a-lease-on-a-later-call.hero"
     t2 = h0_x;
 #line 13 "tests/golden/run/c-frees-a-lease-on-a-later-call.hero"
     t3 = hero_str_held(t2);
@@ -135,7 +126,7 @@ bb0:
     hero_print_end();
     (void)later_free();
     hero_held_release(&h1_c);
-#line 139 "cfreesaleaseonalatercall.c"
+#line 130 "cfreesaleaseonalatercall.c"
     hero_str_release_at(&h0_x);
     return;
 }

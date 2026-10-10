@@ -89,13 +89,10 @@ int64_t h_sugartestassert_add(int64_t h0_a, int64_t h1_b);
 
 #line 6 "tests/golden/ir/sugar-test-assert.hero"
 int64_t h_sugartestassert_add(int64_t h0_a, int64_t h1_b) {
-#line 93 "sugartestassert.c"
-    int64_t t1;
-    int64_t t2;
-    int64_t t3;
-    goto bb0;
+#line 6 "tests/golden/ir/sugar-test-assert.hero"
+    int64_t t1; int64_t t2; int64_t t3; goto bb0;
+#line 6 "tests/golden/ir/sugar-test-assert.hero"
 bb0:
-#line 7 "tests/golden/ir/sugar-test-assert.hero"
     t1 = h0_a;
 #line 7 "tests/golden/ir/sugar-test-assert.hero"
     t2 = h1_b;
@@ -103,7 +100,7 @@ bb0:
     if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow();
 #line 7 "tests/golden/ir/sugar-test-assert.hero"
     return t3;
-#line 107 "sugartestassert.c"
+#line 104 "sugartestassert.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

@@ -124,13 +124,10 @@ void h_fixedbugsanatargumentthroughafixedarrayelementiswrittenback_main(void);
 
 #line 25 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
 void h_fixedbugsanatargumentthroughafixedarrayelementiswrittenback_inc(int64_t *ph0_x) {
-#line 128 "fixedbugsanatargumentthroughafixedarrayelementiswrittenback.c"
-    int64_t t1;
-    int64_t t2;
-    int64_t t3;
-    goto bb0;
+#line 25 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
+    int64_t t1; int64_t t2; int64_t t3; goto bb0;
+#line 25 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
 bb0:
-#line 26 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
     t1 = (*ph0_x);
 #line 26 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
     t2 = INT64_C(1);
@@ -140,19 +137,15 @@ bb0:
     (*ph0_x) = t3;
 #line 26 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
     return;
-#line 144 "fixedbugsanatargumentthroughafixedarrayelementiswrittenback.c"
+#line 141 "fixedbugsanatargumentthroughafixedarrayelementiswrittenback.c"
 }
 
 #line 28 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
 void h_fixedbugsanatargumentthroughafixedarrayelementiswrittenback_widen(struct cell *ph0_c) {
-#line 149 "fixedbugsanatargumentthroughafixedarrayelementiswrittenback.c"
-    struct cell t1;
-    int64_t t2;
-    int64_t t3;
-    int64_t t4;
-    goto bb0;
+#line 28 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
+    struct cell t1; int64_t t2; int64_t t3; int64_t t4; goto bb0;
+#line 28 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
 bb0:
-#line 29 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
     t1 = (*ph0_c);
 #line 29 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
     t2 = t1.w;
@@ -164,60 +157,15 @@ bb0:
     (*ph0_c).w = t4;
 #line 29 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
     return;
-#line 168 "fixedbugsanatargumentthroughafixedarrayelementiswrittenback.c"
+#line 161 "fixedbugsanatargumentthroughafixedarrayelementiswrittenback.c"
 }
 
 #line 31 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
 void h_fixedbugsanatargumentthroughafixedarrayelementiswrittenback_main(void) {
-#line 173 "fixedbugsanatargumentthroughafixedarrayelementiswrittenback.c"
-    struct holder h0_h;
-    int64_t t1;
-    int64_t t2;
-    struct cell t3;
-    int64_t t4;
-    int64_t t5;
-    struct cell t6;
-    int64_t t7;
-    int64_t t8;
-    struct cell t9;
-    int64_t t11;
-    int64_t t12;
-    int64_t t13;
-    int64_t t14;
-    struct holder t16;
-    int64_t t17;
-    int64_t t18;
-    int64_t t19;
-    int64_t t20;
-    struct holder t21;
-    int64_t t23;
-    int64_t t24;
-    HeroStr t25;
-    struct holder t26;
-    int64_t t28;
-    int64_t t29;
-    HeroStr t30;
-    struct holder t31;
-    int64_t t33;
-    int64_t t34;
-    HeroStr t35;
-    struct holder t36;
-    int64_t t38;
-    struct cell t39;
-    int64_t t40;
-    HeroStr t41;
-    struct holder t42;
-    int64_t t44;
-    struct cell t45;
-    int64_t t46;
-    HeroStr t47;
-    struct holder t48;
-    int64_t t50;
-    struct cell t51;
-    int64_t t52;
-    goto bb0;
+#line 31 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
+    struct holder h0_h; int64_t t1; int64_t t2; struct cell t3; int64_t t4; int64_t t5; struct cell t6; int64_t t7; int64_t t8; struct cell t9; int64_t t11; int64_t t12; int64_t t13; int64_t t14; struct holder t16; int64_t t17; int64_t t18; int64_t t19; int64_t t20; struct holder t21; int64_t t23; int64_t t24; HeroStr t25; struct holder t26; int64_t t28; int64_t t29; HeroStr t30; struct holder t31; int64_t t33; int64_t t34; HeroStr t35; struct holder t36; int64_t t38; struct cell t39; int64_t t40; HeroStr t41; struct holder t42; int64_t t44; struct cell t45; int64_t t46; HeroStr t47; struct holder t48; int64_t t50; struct cell t51; int64_t t52; goto bb0;
+#line 31 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
 bb0:
-#line 32 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
     t1 = INT64_C(1);
 #line 32 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
     t2 = INT64_C(2);
@@ -336,7 +284,7 @@ bb0:
     hero_print_end();
 #line 37 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
     return;
-#line 340 "fixedbugsanatargumentthroughafixedarrayelementiswrittenback.c"
+#line 288 "fixedbugsanatargumentthroughafixedarrayelementiswrittenback.c"
 }
 HERO_TU_LOCAL bool h_fixedbugsanatargumentthroughafixedarrayelementiswrittenback_Cell_eq(const struct cell *a, const struct cell *b) {
     if (!(a->v == b->v)) return false;

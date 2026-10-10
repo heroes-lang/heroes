@@ -117,26 +117,10 @@ void h_fixedbugstheunacquiredsiblingleaksloudly_main(void);
 
 #line 30 "tests/golden/run/fixedbugs-the-unacquired-sibling-leaks-loudly.hero"
 void h_fixedbugstheunacquiredsiblingleaksloudly_main(void) {
-#line 121 "fixedbugstheunacquiredsiblingleaksloudly.c"
-    Pair h0_p;
-    int64_t t1;
-    Pair t2;
-    Pair t3;
-    Inner t4;
-    Slot * t5;
-    int64_t t6;
-    Pair t7;
-    Inner t8;
-    Slot * t9;
-    int64_t t10;
-    int64_t t11;
-    Pair t12;
-    Inner t13;
-    Slot * t14;
-    HeroStr t15;
-    goto bb0;
+#line 30 "tests/golden/run/fixedbugs-the-unacquired-sibling-leaks-loudly.hero"
+    Pair h0_p; int64_t t1; Pair t2; Pair t3; Inner t4; Slot * t5; int64_t t6; Pair t7; Inner t8; Slot * t9; int64_t t10; int64_t t11; Pair t12; Inner t13; Slot * t14; HeroStr t15; goto bb0;
+#line 30 "tests/golden/run/fixedbugs-the-unacquired-sibling-leaks-loudly.hero"
 bb0:
-#line 31 "tests/golden/run/fixedbugs-the-unacquired-sibling-leaks-loudly.hero"
     t1 = INT64_C(7);
 #line 31 "tests/golden/run/fixedbugs-the-unacquired-sibling-leaks-loudly.hero"
     t2 = pair_open(t1);
@@ -196,7 +180,7 @@ bb0:
     hero_print_end();
 #line 36 "tests/golden/run/fixedbugs-the-unacquired-sibling-leaks-loudly.hero"
     return;
-#line 200 "fixedbugstheunacquiredsiblingleaksloudly.c"
+#line 184 "fixedbugstheunacquiredsiblingleaksloudly.c"
 }
 HERO_TU_LOCAL bool h_fixedbugstheunacquiredsiblingleaksloudly_Slot_eq(Slot * const *a, Slot * const *b) {
     return hero_handle_eq(*a, *b);

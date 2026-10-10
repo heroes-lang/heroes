@@ -106,26 +106,10 @@ void h_handlesuccessvalueatthewidthoftheresult_main(void);
 
 #line 13 "tests/golden/run/handle-success-value-at-the-width-of-the-result.hero"
 void h_handlesuccessvalueatthewidthoftheresult_main(void) {
-#line 110 "handlesuccessvalueatthewidthoftheresult.c"
-    ob * h0_a;
-    ob * h1_b;
-    uint64_t h2_total;
-    bool h3_done;
-    ob * t1;
-    ob * t2;
-    ob * t3;
-    uint64_t t4;
-    ob * t5;
-    bool t6;
-    HeroStr t7;
-    uint64_t t8;
-    uint64_t t9;
-    bool t10;
-    HeroStr t11;
-    bool t12;
-    goto bb0;
+#line 13 "tests/golden/run/handle-success-value-at-the-width-of-the-result.hero"
+    ob * h0_a; ob * h1_b; uint64_t h2_total; bool h3_done; ob * t1; ob * t2; ob * t3; uint64_t t4; ob * t5; bool t6; HeroStr t7; uint64_t t8; uint64_t t9; bool t10; HeroStr t11; bool t12; goto bb0;
+#line 13 "tests/golden/run/handle-success-value-at-the-width-of-the-result.hero"
 bb0:
-#line 14 "tests/golden/run/handle-success-value-at-the-width-of-the-result.hero"
     t1 = ob_new();
 #line 14 "tests/golden/run/handle-success-value-at-the-width-of-the-result.hero"
     hero_handle_acquired(t1, "ob_put|ob_release_all|ob_try_put");
@@ -205,7 +189,7 @@ bb0:
     hero_print_end();
 #line 18 "tests/golden/run/handle-success-value-at-the-width-of-the-result.hero"
     return;
-#line 209 "handlesuccessvalueatthewidthoftheresult.c"
+#line 193 "handlesuccessvalueatthewidthoftheresult.c"
 }
 HERO_TU_LOCAL bool h_handlesuccessvalueatthewidthoftheresult_Ob_eq(ob * const *a, ob * const *b) {
     return hero_handle_eq(*a, *b);

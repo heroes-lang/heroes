@@ -104,22 +104,14 @@ void h_ffioutcellonahandletheheaderwritesback_main(void);
 
 #line 13 "tests/golden/run/ffi-out-cell-on-a-handle-the-header-writes-back.hero"
 void h_ffioutcellonahandletheheaderwritesback_main(void) {
-#line 108 "ffioutcellonahandletheheaderwritesback.c"
-    void * *const hero_lend_h0_a = (void * *)hero_lend_local(sizeof(void *), "ffioutcellonahandletheheaderwritesback.main", "a");
+#line 13 "tests/golden/run/ffi-out-cell-on-a-handle-the-header-writes-back.hero"
 #define h0_a (*hero_lend_h0_a)
-    void * *const hero_lend_h1_b = (void * *)hero_lend_local(sizeof(void *), "ffioutcellonahandletheheaderwritesback.main", "b");
+#line 13 "tests/golden/run/ffi-out-cell-on-a-handle-the-header-writes-back.hero"
 #define h1_b (*hero_lend_h1_b)
-    void * t1;
-    void * t2;
-    int32_t t3;
-    int32_t t4;
-    int32_t t5;
-    void * t6;
-    void * t7;
-    HeroStr t8;
-    goto bb0;
+#line 13 "tests/golden/run/ffi-out-cell-on-a-handle-the-header-writes-back.hero"
+    void * *const hero_lend_h0_a = (void * *)hero_lend_local(sizeof(void *), "ffioutcellonahandletheheaderwritesback.main", "a"); void * *const hero_lend_h1_b = (void * *)hero_lend_local(sizeof(void *), "ffioutcellonahandletheheaderwritesback.main", "b"); void * t1; void * t2; int32_t t3; int32_t t4; int32_t t5; void * t6; void * t7; HeroStr t8; goto bb0;
+#line 13 "tests/golden/run/ffi-out-cell-on-a-handle-the-header-writes-back.hero"
 bb0:
-#line 14 "tests/golden/run/ffi-out-cell-on-a-handle-the-header-writes-back.hero"
     t1 = ((void *)0);
 #line 14 "tests/golden/run/ffi-out-cell-on-a-handle-the-header-writes-back.hero"
     h0_a = t1;
@@ -180,7 +172,7 @@ bb0:
     hero_lend_local_give(hero_lend_h0_a);
 #line 19 "tests/golden/run/ffi-out-cell-on-a-handle-the-header-writes-back.hero"
     return;
-#line 184 "ffioutcellonahandletheheaderwritesback.c"
+#line 176 "ffioutcellonahandletheheaderwritesback.c"
 }
 #undef h0_a
 #undef h1_b

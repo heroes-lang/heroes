@@ -105,23 +105,10 @@ void h_deadhandlereadafterconsumethroughonename_main(void);
 
 #line 21 "tests/golden/run/dead-handle-read-after-consume-through-one-name.hero"
 void h_deadhandlereadafterconsumethroughonename_main(void) {
-#line 109 "deadhandlereadafterconsumethroughonename.c"
-    Obj * h0_b;
-    Obj * h1_c;
-    Obj * t1;
-    int64_t t2;
-    int64_t t3;
-    bool t4;
-    Obj * t5;
-    Obj * t6;
-    Obj * t7;
-    HeroStr t8;
-    const char * t9;
-    Obj * t10;
-    HeroStr t12;
-    goto bb0;
+#line 21 "tests/golden/run/dead-handle-read-after-consume-through-one-name.hero"
+    Obj * h0_b; Obj * h1_c; Obj * t1; int64_t t2; int64_t t3; bool t4; Obj * t5; Obj * t6; Obj * t7; HeroStr t8; const char * t9; Obj * t10; HeroStr t12; goto bb0;
+#line 21 "tests/golden/run/dead-handle-read-after-consume-through-one-name.hero"
 bb0:
-#line 22 "tests/golden/run/dead-handle-read-after-consume-through-one-name.hero"
     t1 = obj_new();
 #line 22 "tests/golden/run/dead-handle-read-after-consume-through-one-name.hero"
     hero_handle_acquired(t1, "obj_delete");
@@ -193,7 +180,7 @@ bb2:
 bb3:
 #line 25 "tests/golden/run/dead-handle-read-after-consume-through-one-name.hero"
     goto bb1;
-#line 197 "deadhandlereadafterconsumethroughonename.c"
+#line 184 "deadhandlereadafterconsumethroughonename.c"
 }
 HERO_TU_LOCAL bool h_deadhandlereadafterconsumethroughonename_Json_eq(Obj * const *a, Obj * const *b) {
     return hero_handle_eq(*a, *b);

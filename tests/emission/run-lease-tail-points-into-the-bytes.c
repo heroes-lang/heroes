@@ -102,11 +102,10 @@ void h_leasetailpointsintothebytes_main(void);
 
 #line 18 "tests/golden/run/lease-tail-points-into-the-bytes.hero"
 void h_leasetailpointsintothebytes_tail_of(const char * h0_s, const char * *ph1_out) {
-#line 106 "leasetailpointsintothebytes.c"
-    const char * t1;
-    goto bb0;
+#line 18 "tests/golden/run/lease-tail-points-into-the-bytes.hero"
+    const char * t1; goto bb0;
+#line 18 "tests/golden/run/lease-tail-points-into-the-bytes.hero"
 bb0:
-#line 19 "tests/golden/run/lease-tail-points-into-the-bytes.hero"
     t1 = h0_s;
 #line 19 "tests/golden/run/lease-tail-points-into-the-bytes.hero"
     hero_lend_local_name(ph1_out, "after_dash", "tail");
@@ -114,24 +113,17 @@ bb0:
     (void)after_dash(hero_cstr_nonnull(t1), &(*ph1_out));
 #line 19 "tests/golden/run/lease-tail-points-into-the-bytes.hero"
     return;
-#line 118 "leasetailpointsintothebytes.c"
+#line 117 "leasetailpointsintothebytes.c"
 }
 
 #line 21 "tests/golden/run/lease-tail-points-into-the-bytes.hero"
 void h_leasetailpointsintothebytes_main(void) {
-#line 123 "leasetailpointsintothebytes.c"
-    const char * h0_label;
-    const char * *const hero_lend_h1_tail = (const char * *)hero_lend_local(sizeof(const char *), "leasetailpointsintothebytes.main", "tail");
+#line 21 "tests/golden/run/lease-tail-points-into-the-bytes.hero"
 #define h1_tail (*hero_lend_h1_tail)
-    HeroStr t1;
-    const char * t2;
-    const char * t3;
-    const char * t4;
-    const char * t5;
-    uint64_t t6;
-    goto bb0;
+#line 21 "tests/golden/run/lease-tail-points-into-the-bytes.hero"
+    const char * h0_label; const char * *const hero_lend_h1_tail = (const char * *)hero_lend_local(sizeof(const char *), "leasetailpointsintothebytes.main", "tail"); HeroStr t1; const char * t2; const char * t3; const char * t4; const char * t5; uint64_t t6; goto bb0;
+#line 21 "tests/golden/run/lease-tail-points-into-the-bytes.hero"
 bb0:
-#line 22 "tests/golden/run/lease-tail-points-into-the-bytes.hero"
     t1 = HERO_STR_LIT(hero_str_c4fd56d);
 #line 22 "tests/golden/run/lease-tail-points-into-the-bytes.hero"
     t2 = hero_str_held(t1);
@@ -155,7 +147,7 @@ bb0:
     hero_lend_local_give(hero_lend_h1_tail);
 #line 26 "tests/golden/run/lease-tail-points-into-the-bytes.hero"
     return;
-#line 159 "leasetailpointsintothebytes.c"
+#line 151 "leasetailpointsintothebytes.c"
 }
 #undef h1_tail
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {

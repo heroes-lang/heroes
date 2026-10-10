@@ -11,4 +11,3 @@ tests/golden/check/fixedbugs-402-a-generic-function-value-nothing-binds.hero:74:
 tests/golden/check/fixedbugs-402-a-generic-function-value-nothing-binds.hero:78:33: error[type_mismatch]: expected `(function(i64) -> i64)`, found `(function(A) -> B?)`
 tests/golden/check/fixedbugs-402-a-generic-function-value-nothing-binds.hero:82:33: error[type_mismatch]: expected `(function(i64) -> str)`, found `(function(i64) -> i64)`
 tests/golden/check/fixedbugs-402-a-generic-function-value-nothing-binds.hero:86:8: error[needs_parameter_names]: two of `(function(i64, i64) -> i64)`'s parameters are `i64`, so this type names both of them — give each a name that says which is which
-tests/golden/check/fixedbugs-402-a-generic-function-value-nothing-binds.hero:86:38: error[type_mismatch]: expected `(function(i64, i64) -> i64)`, found `(function(x: i64, y: i64) -> i64)`

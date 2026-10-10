@@ -93,15 +93,10 @@ void h_library_exit(int64_t h0_code);
 
 #line 8 "tests/golden/run/fixedbugs-507-a-loop-ended-by-a-callback-s-exit-builds-silently.hero"
 void h_fixedbugs507aloopendedbyacallbacksexitbuildssilently_stop_at_three(int64_t h0_n) {
-#line 97 "fixedbugs507aloopendedbyacallbacksexitbuildssilently.c"
-    int64_t t1;
-    int64_t t2;
-    bool t3;
-    int64_t t4;
-    int64_t t5;
-    goto bb0;
+#line 8 "tests/golden/run/fixedbugs-507-a-loop-ended-by-a-callback-s-exit-builds-silently.hero"
+    int64_t t1; int64_t t2; bool t3; int64_t t4; int64_t t5; goto bb0;
+#line 8 "tests/golden/run/fixedbugs-507-a-loop-ended-by-a-callback-s-exit-builds-silently.hero"
 bb0:
-#line 9 "tests/golden/run/fixedbugs-507-a-loop-ended-by-a-callback-s-exit-builds-silently.hero"
     t1 = h0_n;
 #line 9 "tests/golden/run/fixedbugs-507-a-loop-ended-by-a-callback-s-exit-builds-silently.hero"
     t2 = INT64_C(2);
@@ -133,21 +128,15 @@ bb2:
 bb3:
 #line 10 "tests/golden/run/fixedbugs-507-a-loop-ended-by-a-callback-s-exit-builds-silently.hero"
     goto bb1;
-#line 137 "fixedbugs507aloopendedbyacallbacksexitbuildssilently.c"
+#line 132 "fixedbugs507aloopendedbyacallbacksexitbuildssilently.c"
 }
 
 #line 13 "tests/golden/run/fixedbugs-507-a-loop-ended-by-a-callback-s-exit-builds-silently.hero"
 void h_fixedbugs507aloopendedbyacallbacksexitbuildssilently_turn(int64_t h0_n, h_0fn_47d100e5 h1_act) {
-#line 142 "fixedbugs507aloopendedbyacallbacksexitbuildssilently.c"
-    h_0fn_47d100e5 t1;
-    int64_t t2;
-    int64_t t3;
-    int64_t t4;
-    int64_t t5;
-    h_0fn_47d100e5 t6;
-    goto bb0;
+#line 13 "tests/golden/run/fixedbugs-507-a-loop-ended-by-a-callback-s-exit-builds-silently.hero"
+    h_0fn_47d100e5 t1; int64_t t2; int64_t t3; int64_t t4; int64_t t5; h_0fn_47d100e5 t6; goto bb0;
+#line 13 "tests/golden/run/fixedbugs-507-a-loop-ended-by-a-callback-s-exit-builds-silently.hero"
 bb0:
-#line 14 "tests/golden/run/fixedbugs-507-a-loop-ended-by-a-callback-s-exit-builds-silently.hero"
     t1 = h1_act;
 #line 14 "tests/golden/run/fixedbugs-507-a-loop-ended-by-a-callback-s-exit-builds-silently.hero"
     t2 = h0_n;
@@ -164,17 +153,15 @@ bb0:
     h_fixedbugs507aloopendedbyacallbacksexitbuildssilently_turn(t5, t6);
 #line 15 "tests/golden/run/fixedbugs-507-a-loop-ended-by-a-callback-s-exit-builds-silently.hero"
     return;
-#line 168 "fixedbugs507aloopendedbyacallbacksexitbuildssilently.c"
+#line 157 "fixedbugs507aloopendedbyacallbacksexitbuildssilently.c"
 }
 
 #line 17 "tests/golden/run/fixedbugs-507-a-loop-ended-by-a-callback-s-exit-builds-silently.hero"
 void h_fixedbugs507aloopendedbyacallbacksexitbuildssilently_main(void) {
-#line 173 "fixedbugs507aloopendedbyacallbacksexitbuildssilently.c"
-    int64_t t1;
-    h_0fn_47d100e5 t2;
-    goto bb0;
+#line 17 "tests/golden/run/fixedbugs-507-a-loop-ended-by-a-callback-s-exit-builds-silently.hero"
+    int64_t t1; h_0fn_47d100e5 t2; goto bb0;
+#line 17 "tests/golden/run/fixedbugs-507-a-loop-ended-by-a-callback-s-exit-builds-silently.hero"
 bb0:
-#line 18 "tests/golden/run/fixedbugs-507-a-loop-ended-by-a-callback-s-exit-builds-silently.hero"
     t1 = INT64_C(0);
 #line 18 "tests/golden/run/fixedbugs-507-a-loop-ended-by-a-callback-s-exit-builds-silently.hero"
     t2 = h_fixedbugs507aloopendedbyacallbacksexitbuildssilently_stop_at_three;
@@ -182,22 +169,21 @@ bb0:
     h_fixedbugs507aloopendedbyacallbacksexitbuildssilently_turn(t1, t2);
 #line 18 "tests/golden/run/fixedbugs-507-a-loop-ended-by-a-callback-s-exit-builds-silently.hero"
     return;
-#line 186 "fixedbugs507aloopendedbyacallbacksexitbuildssilently.c"
+#line 173 "fixedbugs507aloopendedbyacallbacksexitbuildssilently.c"
 }
 
 #line 227 "<heroes library>"
 void h_library_exit(int64_t h0_code) {
-#line 191 "fixedbugs507aloopendedbyacallbacksexitbuildssilently.c"
-    int64_t t1;
-    goto bb0;
+#line 227 "<heroes library>"
+    int64_t t1; goto bb0;
+#line 227 "<heroes library>"
 bb0:
-#line 228 "<heroes library>"
     t1 = h0_code;
 #line 228 "<heroes library>"
     (void)hero_exit(t1);
 #line 228 "<heroes library>"
     return;
-#line 201 "fixedbugs507aloopendedbyacallbacksexitbuildssilently.c"
+#line 187 "fixedbugs507aloopendedbyacallbacksexitbuildssilently.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

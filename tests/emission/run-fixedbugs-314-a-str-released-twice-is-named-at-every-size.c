@@ -97,21 +97,10 @@ void h_fixedbugs314astrreleasedtwiceisnamedateverysize_main(void);
 
 #line 25 "tests/golden/run/fixedbugs-314-a-str-released-twice-is-named-at-every-size.hero"
 void h_fixedbugs314astrreleasedtwiceisnamedateverysize_main(void) {
-#line 101 "fixedbugs314astrreleasedtwiceisnamedateverysize.c"
-    HeroStr h0_word = {0};
-    HeroStr h1_own1 = {0};
-    HeroStr t1;
-    uint64_t t2;
-    HeroStr t3;
-    HeroStr t4;
-    int64_t t5;
-    HeroStr t6;
-    const char * t7;
-    HeroStr t8;
-    HeroStr t9;
-    goto bb0;
+#line 25 "tests/golden/run/fixedbugs-314-a-str-released-twice-is-named-at-every-size.hero"
+    HeroStr h0_word = {0}; HeroStr h1_own1 = {0}; HeroStr t1; uint64_t t2; HeroStr t3; HeroStr t4; int64_t t5; HeroStr t6; const char * t7; HeroStr t8; HeroStr t9; goto bb0;
+#line 25 "tests/golden/run/fixedbugs-314-a-str-released-twice-is-named-at-every-size.hero"
 bb0:
-#line 26 "tests/golden/run/fixedbugs-314-a-str-released-twice-is-named-at-every-size.hero"
     t1 = HERO_STR_LIT(hero_str_3205);
 #line 26 "tests/golden/run/fixedbugs-314-a-str-released-twice-is-named-at-every-size.hero"
     t2 = UINT64_C(32768);
@@ -121,17 +110,16 @@ bb0:
     t8 = h1_own1;
 #line 26 "tests/golden/run/fixedbugs-314-a-str-released-twice-is-named-at-every-size.hero"
     h1_own1 = t3;
-#line 125 "fixedbugs314astrreleasedtwiceisnamedateverysize.c"
+#line 26 "tests/golden/run/fixedbugs-314-a-str-released-twice-is-named-at-every-size.hero"
     hero_str_decref(t8);
 #line 26 "tests/golden/run/fixedbugs-314-a-str-released-twice-is-named-at-every-size.hero"
     t9 = h0_word;
-#line 129 "fixedbugs314astrreleasedtwiceisnamedateverysize.c"
+#line 26 "tests/golden/run/fixedbugs-314-a-str-released-twice-is-named-at-every-size.hero"
     hero_str_incref(t3);
 #line 26 "tests/golden/run/fixedbugs-314-a-str-released-twice-is-named-at-every-size.hero"
     h0_word = t3;
-#line 133 "fixedbugs314astrreleasedtwiceisnamedateverysize.c"
+#line 26 "tests/golden/run/fixedbugs-314-a-str-released-twice-is-named-at-every-size.hero"
     hero_str_decref(t9);
-#line 27 "tests/golden/run/fixedbugs-314-a-str-released-twice-is-named-at-every-size.hero"
     t4 = h0_word;
 #line 27 "tests/golden/run/fixedbugs-314-a-str-released-twice-is-named-at-every-size.hero"
     t5 = hero_str_len(t4);
@@ -144,7 +132,7 @@ bb0:
     t7 = hero_str_lend(t6);
 #line 28 "tests/golden/run/fixedbugs-314-a-str-released-twice-is-named-at-every-size.hero"
     (void)release_behind(hero_cstr_nonnull(t7));
-#line 148 "fixedbugs314astrreleasedtwiceisnamedateverysize.c"
+#line 136 "fixedbugs314astrreleasedtwiceisnamedateverysize.c"
     hero_str_release_at(&h0_word);
     hero_str_release_at(&h1_own1);
     return;

@@ -1,0 +1,18 @@
+# Fixed defect 553, 2026-10-09 (found beside defect 544 by lane b17-check).
+# Symptom: `m = {}`, an empty map with nothing to type it, was refused
+# `cannot_infer` with the guess *annotate the binding: `xs: [i64] = []`*, an
+# array's example for a map. Cause: one fix title served both empty literals,
+# the kind named in the message and not in the example. Repair: each kind has
+# its own constructor and its own example (`contextless_errors.hero`'s
+# `empty_array_literal` and `empty_map_literal`). The shapes: a binding, a
+# receiver, a map inside an array and inside a map, a call's argument, and an
+# empty array beside them, whose example stands.
+
+function main()
+    m = {}  #~ cannot_infer
+    print({}.len())  #~ cannot_infer
+    x = [{}]  #~ cannot_infer
+    y = {"a": {}}  #~ cannot_infer
+    print({})  #~ cannot_infer
+    xs = []  #~ cannot_infer
+    print(m.len() + x.len() + y.len() + xs.len())

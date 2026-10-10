@@ -110,18 +110,10 @@ int64_t h_regressionwildcardbindsnothing_count_of(HeroArrayHeader * h0_xs);
 
 #line 13 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
 int64_t h_regressionwildcardbindsnothing_kind_of(h_regressionwildcardbindsnothing_Token h0_t) {
-#line 114 "regressionwildcardbindsnothing.c"
-    h_regressionwildcardbindsnothing_Token h1_s0;
-    int64_t h2_r0;
-    h_regressionwildcardbindsnothing_Token t1;
-    h_regressionwildcardbindsnothing_Token t2;
-    int64_t t3;
-    int64_t t4;
-    int64_t t5;
-    int64_t t6;
-    goto bb0;
+#line 13 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
+    h_regressionwildcardbindsnothing_Token h1_s0; int64_t h2_r0; h_regressionwildcardbindsnothing_Token t1; h_regressionwildcardbindsnothing_Token t2; int64_t t3; int64_t t4; int64_t t5; int64_t t6; goto bb0;
+#line 13 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
 bb0:
-#line 14 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
     t1 = h0_t;
 #line 14 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
     h1_s0 = t1;
@@ -160,33 +152,15 @@ bb3:
     h2_r0 = t5;
 #line 14 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
     goto bb1;
-#line 164 "regressionwildcardbindsnothing.c"
+#line 156 "regressionwildcardbindsnothing.c"
 }
 
 #line 18 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
 int64_t h_regressionwildcardbindsnothing_count_of(HeroArrayHeader * h0_xs) {
-#line 169 "regressionwildcardbindsnothing.c"
-    int64_t h1_n;
-    HeroArrayHeader * h2_xs0 = {0};
-    int64_t h3_i0;
-    int64_t t1;
-    HeroArrayHeader * t2;
-    int64_t t3;
-    int64_t t4;
-    HeroArrayHeader * t5;
-    int64_t t6;
-    bool t7;
-    int64_t t8;
-    int64_t t9;
-    int64_t t10;
-    int64_t t11;
-    int64_t t12;
-    int64_t t13;
-    int64_t t14;
-    HeroArrayHeader * t15;
-    goto bb0;
+#line 18 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
+    int64_t h1_n; HeroArrayHeader * h2_xs0 = {0}; int64_t h3_i0; int64_t t1; HeroArrayHeader * t2; int64_t t3; int64_t t4; HeroArrayHeader * t5; int64_t t6; bool t7; int64_t t8; int64_t t9; int64_t t10; int64_t t11; int64_t t12; int64_t t13; int64_t t14; HeroArrayHeader * t15; goto bb0;
+#line 18 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
 bb0:
-#line 19 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
     t1 = INT64_C(0);
 #line 19 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
     h1_n = t1;
@@ -194,11 +168,11 @@ bb0:
     t2 = h0_xs;
 #line 21 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
     t15 = h2_xs0;
-#line 198 "regressionwildcardbindsnothing.c"
+#line 21 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
     hero_array_incref(t2);
 #line 21 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
     h2_xs0 = t2;
-#line 202 "regressionwildcardbindsnothing.c"
+#line 21 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
     hero_array_decref(t15);
 #line 21 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
     t3 = INT64_C(0);
@@ -245,7 +219,7 @@ bb3:
 bb4:
 #line 24 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
     t14 = h1_n;
-#line 249 "regressionwildcardbindsnothing.c"
+#line 223 "regressionwildcardbindsnothing.c"
     hero_array_release_at(&h2_xs0);
     return t14;
 }

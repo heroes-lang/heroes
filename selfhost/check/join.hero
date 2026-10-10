@@ -44,6 +44,7 @@ use source
 use resolved
 use check/table
 use check/state
+use check/type_fit
 use value_errors
 use flow_errors
 
@@ -129,7 +130,7 @@ function join_branches(@c: state.Checker, s: source.Source, decls: [ast.Decl], b
             continue
         expected = result.must()
 
-        if ty != expected && !table.poisoned(c.out.types, ty) && !table.poisoned(c.out.types, expected)
+        if ty != expected && !table.poisoned(c.out.types, ty) && !table.poisoned(c.out.types, expected) && !type_fit.unnamed_shadow(c.out.types, c.out.written_types, a: expected, b: ty)
             a = state.show(c, s, decls, expected)
             b = state.show(c, s, decls, ty)
             state.push_diagnostic(@c, value_errors.mismatch(expected: a, got: b, span: branch.span))

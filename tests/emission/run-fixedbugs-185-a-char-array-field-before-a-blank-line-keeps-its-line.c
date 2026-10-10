@@ -122,50 +122,10 @@ void h_fixedbugs185achararrayfieldbeforeablanklinekeepsitsline_main(void);
 
 #line 17 "tests/golden/run/fixedbugs-185-a-char-array-field-before-a-blank-line-keeps-its-line.hero"
 void h_fixedbugs185achararrayfieldbeforeablanklinekeepsitsline_main(void) {
-#line 126 "fixedbugs185achararrayfieldbeforeablanklinekeepsitsline.c"
-    struct label h0_l;
-    h_0opt_f87774a h1_f0 = {0};
-    h_0opt_e201354 h2_f1 = {0};
-    h_0opt_f87774a h3_own3 = {0};
-    h_0opt_e201354 h4_own4 = {0};
-    int32_t t1;
-    int8_t t2;
-    int8_t t3;
-    int8_t t4;
-    int8_t t5;
-    int8_t t6;
-    int8_t t7;
-    int8_t t8;
-    int8_t t9;
-    struct label t11;
-    struct label t12;
-    h_0opt_f87774a t14;
-    h_0opt_f87774a t15;
-    int64_t t16;
-    int64_t t17;
-    bool t18;
-    h_0opt_f87774a t19;
-    HeroFailure t20;
-    h_0opt_f87774a t21;
-    HeroStr t22;
-    struct label t23;
-    int32_t t24;
-    h_0opt_e201354 t25;
-    h_0opt_e201354 t26;
-    int64_t t27;
-    int64_t t28;
-    bool t29;
-    h_0opt_e201354 t30;
-    HeroFailure t31;
-    h_0opt_e201354 t32;
-    int64_t t33;
-    h_0opt_f87774a t34;
-    h_0opt_f87774a t35;
-    h_0opt_e201354 t36;
-    h_0opt_e201354 t37;
-    goto bb0;
+#line 17 "tests/golden/run/fixedbugs-185-a-char-array-field-before-a-blank-line-keeps-its-line.hero"
+    struct label h0_l; h_0opt_f87774a h1_f0 = {0}; h_0opt_e201354 h2_f1 = {0}; h_0opt_f87774a h3_own3 = {0}; h_0opt_e201354 h4_own4 = {0}; int32_t t1; int8_t t2; int8_t t3; int8_t t4; int8_t t5; int8_t t6; int8_t t7; int8_t t8; int8_t t9; struct label t11; struct label t12; h_0opt_f87774a t14; h_0opt_f87774a t15; int64_t t16; int64_t t17; bool t18; h_0opt_f87774a t19; HeroFailure t20; h_0opt_f87774a t21; HeroStr t22; struct label t23; int32_t t24; h_0opt_e201354 t25; h_0opt_e201354 t26; int64_t t27; int64_t t28; bool t29; h_0opt_e201354 t30; HeroFailure t31; h_0opt_e201354 t32; int64_t t33; h_0opt_f87774a t34; h_0opt_f87774a t35; h_0opt_e201354 t36; h_0opt_e201354 t37; goto bb0;
+#line 17 "tests/golden/run/fixedbugs-185-a-char-array-field-before-a-blank-line-keeps-its-line.hero"
 bb0:
-#line 18 "tests/golden/run/fixedbugs-185-a-char-array-field-before-a-blank-line-keeps-its-line.hero"
     t1 = INT64_C(7);
 #line 18 "tests/golden/run/fixedbugs-185-a-char-array-field-before-a-blank-line-keeps-its-line.hero"
     t2 = INT64_C(104);
@@ -210,15 +170,15 @@ bb0:
     t34 = h3_own3;
 #line 19 "tests/golden/run/fixedbugs-185-a-char-array-field-before-a-blank-line-keeps-its-line.hero"
     h3_own3 = t14;
-#line 214 "fixedbugs185achararrayfieldbeforeablanklinekeepsitsline.c"
+#line 19 "tests/golden/run/fixedbugs-185-a-char-array-field-before-a-blank-line-keeps-its-line.hero"
     h_0opt_f87774a_release(&t34);
 #line 19 "tests/golden/run/fixedbugs-185-a-char-array-field-before-a-blank-line-keeps-its-line.hero"
     t35 = h1_f0;
-#line 218 "fixedbugs185achararrayfieldbeforeablanklinekeepsitsline.c"
+#line 19 "tests/golden/run/fixedbugs-185-a-char-array-field-before-a-blank-line-keeps-its-line.hero"
     h_0opt_f87774a_retain(&t14);
 #line 19 "tests/golden/run/fixedbugs-185-a-char-array-field-before-a-blank-line-keeps-its-line.hero"
     h1_f0 = t14;
-#line 222 "fixedbugs185achararrayfieldbeforeablanklinekeepsitsline.c"
+#line 19 "tests/golden/run/fixedbugs-185-a-char-array-field-before-a-blank-line-keeps-its-line.hero"
     h_0opt_f87774a_release(&t35);
 #line 19 "tests/golden/run/fixedbugs-185-a-char-array-field-before-a-blank-line-keeps-its-line.hero"
     t15 = h1_f0;
@@ -249,15 +209,15 @@ bb1:
     t36 = h4_own4;
 #line 20 "tests/golden/run/fixedbugs-185-a-char-array-field-before-a-blank-line-keeps-its-line.hero"
     h4_own4 = t25;
-#line 253 "fixedbugs185achararrayfieldbeforeablanklinekeepsitsline.c"
+#line 20 "tests/golden/run/fixedbugs-185-a-char-array-field-before-a-blank-line-keeps-its-line.hero"
     h_0opt_e201354_release(&t36);
 #line 20 "tests/golden/run/fixedbugs-185-a-char-array-field-before-a-blank-line-keeps-its-line.hero"
     t37 = h2_f1;
-#line 257 "fixedbugs185achararrayfieldbeforeablanklinekeepsitsline.c"
+#line 20 "tests/golden/run/fixedbugs-185-a-char-array-field-before-a-blank-line-keeps-its-line.hero"
     h_0opt_e201354_retain(&t25);
 #line 20 "tests/golden/run/fixedbugs-185-a-char-array-field-before-a-blank-line-keeps-its-line.hero"
     h2_f1 = t25;
-#line 261 "fixedbugs185achararrayfieldbeforeablanklinekeepsitsline.c"
+#line 20 "tests/golden/run/fixedbugs-185-a-char-array-field-before-a-blank-line-keeps-its-line.hero"
     h_0opt_e201354_release(&t37);
 #line 20 "tests/golden/run/fixedbugs-185-a-char-array-field-before-a-blank-line-keeps-its-line.hero"
     t26 = h2_f1;
@@ -275,7 +235,7 @@ bb2:
     t19 = h1_f0;
 #line 19 "tests/golden/run/fixedbugs-185-a-char-array-field-before-a-blank-line-keeps-its-line.hero"
     t20 = t19.as.err;
-#line 279 "fixedbugs185achararrayfieldbeforeablanklinekeepsitsline.c"
+#line 239 "fixedbugs185achararrayfieldbeforeablanklinekeepsitsline.c"
     hero_panic_must(t20);
     hero_unreachable();
 bb3:
@@ -287,7 +247,7 @@ bb3:
     hero_print_int(t33);
 #line 20 "tests/golden/run/fixedbugs-185-a-char-array-field-before-a-blank-line-keeps-its-line.hero"
     hero_print_end();
-#line 291 "fixedbugs185achararrayfieldbeforeablanklinekeepsitsline.c"
+#line 251 "fixedbugs185achararrayfieldbeforeablanklinekeepsitsline.c"
     h_0opt_f87774a_release(hero_slot_escape(&h1_f0));
     h_0opt_e201354_release(hero_slot_escape(&h2_f1));
     h_0opt_f87774a_release(hero_slot_escape(&h3_own3));
@@ -298,7 +258,7 @@ bb4:
     t30 = h2_f1;
 #line 20 "tests/golden/run/fixedbugs-185-a-char-array-field-before-a-blank-line-keeps-its-line.hero"
     t31 = t30.as.err;
-#line 302 "fixedbugs185achararrayfieldbeforeablanklinekeepsitsline.c"
+#line 262 "fixedbugs185achararrayfieldbeforeablanklinekeepsitsline.c"
     hero_panic_must(t31);
     hero_unreachable();
 }

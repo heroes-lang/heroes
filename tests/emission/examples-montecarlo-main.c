@@ -112,54 +112,46 @@ __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
 
 #line 26 "examples/montecarlo/main.hero"
 int64_t h_main_THREADS(void) {
-#line 116 "main.c"
-    int64_t t1;
-    goto bb0;
+#line 26 "examples/montecarlo/main.hero"
+    int64_t t1; goto bb0;
+#line 26 "examples/montecarlo/main.hero"
 bb0:
-#line 27 "examples/montecarlo/main.hero"
     t1 = INT64_C(8);
 #line 27 "examples/montecarlo/main.hero"
     return t1;
-#line 124 "main.c"
+#line 123 "main.c"
 }
 
 #line 29 "examples/montecarlo/main.hero"
 int64_t h_main_DARTS(void) {
-#line 129 "main.c"
-    int64_t t1;
-    goto bb0;
+#line 29 "examples/montecarlo/main.hero"
+    int64_t t1; goto bb0;
+#line 29 "examples/montecarlo/main.hero"
 bb0:
-#line 30 "examples/montecarlo/main.hero"
     t1 = INT64_C(20000);
 #line 30 "examples/montecarlo/main.hero"
     return t1;
-#line 137 "main.c"
+#line 135 "main.c"
 }
 
 #line 33 "examples/montecarlo/main.hero"
 int64_t h_main_SIDE(void) {
-#line 142 "main.c"
-    int64_t t1;
-    goto bb0;
+#line 33 "examples/montecarlo/main.hero"
+    int64_t t1; goto bb0;
+#line 33 "examples/montecarlo/main.hero"
 bb0:
-#line 34 "examples/montecarlo/main.hero"
     t1 = INT64_C(46340);
 #line 34 "examples/montecarlo/main.hero"
     return t1;
-#line 150 "main.c"
+#line 147 "main.c"
 }
 
 #line 36 "examples/montecarlo/main.hero"
 int64_t h_main_next_of(int64_t h0_x) {
-#line 155 "main.c"
-    int64_t t1;
-    int64_t t2;
-    int64_t t3;
-    int64_t t4;
-    int64_t t5;
-    goto bb0;
+#line 36 "examples/montecarlo/main.hero"
+    int64_t t1; int64_t t2; int64_t t3; int64_t t4; int64_t t5; goto bb0;
+#line 36 "examples/montecarlo/main.hero"
 bb0:
-#line 37 "examples/montecarlo/main.hero"
     t1 = INT64_C(16807);
 #line 37 "examples/montecarlo/main.hero"
     t2 = h0_x;
@@ -175,59 +167,15 @@ bb0:
     t5 = t3 % t4;
 #line 37 "examples/montecarlo/main.hero"
     return t5;
-#line 179 "main.c"
+#line 171 "main.c"
 }
 
 #line 41 "examples/montecarlo/main.hero"
 int64_t h_main_inside_for(int64_t h0_seed) {
-#line 184 "main.c"
-    hero_thread_guard("main.inside_for");
-    int64_t h1_hits;
-    int64_t h2_x;
-    int64_t h3_n;
-    int64_t h4_a;
-    int64_t h5_b;
-    int64_t t1;
-    int64_t t2;
-    int64_t t3;
-    int64_t t4;
-    int64_t t5;
-    int64_t t6;
-    int64_t t7;
-    int64_t t8;
-    int64_t t9;
-    bool t10;
-    int64_t t11;
-    int64_t t12;
-    int64_t t13;
-    int64_t t14;
-    int64_t t15;
-    int64_t t16;
-    int64_t t17;
-    int64_t t18;
-    int64_t t19;
-    int64_t t20;
-    int64_t t21;
-    int64_t t22;
-    int64_t t23;
-    int64_t t24;
-    int64_t t25;
-    int64_t t26;
-    int64_t t27;
-    int64_t t28;
-    int64_t t29;
-    int64_t t30;
-    bool t31;
-    int64_t t32;
-    int64_t t33;
-    int64_t t34;
-    int64_t t35;
-    int64_t t36;
-    int64_t t37;
-    int64_t t38;
-    goto bb0;
+#line 41 "examples/montecarlo/main.hero"
+    hero_thread_guard("main.inside_for"); int64_t h1_hits; int64_t h2_x; int64_t h3_n; int64_t h4_a; int64_t h5_b; int64_t t1; int64_t t2; int64_t t3; int64_t t4; int64_t t5; int64_t t6; int64_t t7; int64_t t8; int64_t t9; bool t10; int64_t t11; int64_t t12; int64_t t13; int64_t t14; int64_t t15; int64_t t16; int64_t t17; int64_t t18; int64_t t19; int64_t t20; int64_t t21; int64_t t22; int64_t t23; int64_t t24; int64_t t25; int64_t t26; int64_t t27; int64_t t28; int64_t t29; int64_t t30; bool t31; int64_t t32; int64_t t33; int64_t t34; int64_t t35; int64_t t36; int64_t t37; int64_t t38; goto bb0;
+#line 41 "examples/montecarlo/main.hero"
 bb0:
-#line 42 "examples/montecarlo/main.hero"
     t1 = INT64_C(0);
 #line 42 "examples/montecarlo/main.hero"
     h1_hits = t1;
@@ -349,7 +297,7 @@ bb5:
 bb6:
 #line 53 "examples/montecarlo/main.hero"
     goto bb4;
-#line 353 "main.c"
+#line 301 "main.c"
 }
 
 int64_t h_0cb_main_inside_for(int64_t h0_seed) {
@@ -359,73 +307,25 @@ int64_t h_0cb_main_inside_for(int64_t h0_seed) {
 
 #line 58 "examples/montecarlo/main.hero"
 double h_main_estimate(void) {
-#line 363 "main.c"
-    HeroArrayHeader * h0_handles = {0};
-    int64_t h1_i;
-    int64_t h2_hits;
-    HeroArrayHeader * h3_xs0 = {0};
-    int64_t h4_i0;
-    int64_t h5_h;
-    HeroArrayHeader * h6_own6 = {0};
-    HeroArrayHeader * t1;
-    int64_t t2;
-    int64_t t3;
-    int64_t t4;
-    bool t5;
-    h_0fn_48ac9712 t7;
-    int64_t t8;
-    int64_t t9;
-    int64_t t11;
-    int64_t t12;
-    int64_t t13;
-    int64_t t14;
-    HeroArrayHeader * t15;
-    int64_t t16;
-    int64_t t17;
-    HeroArrayHeader * t18;
-    int64_t t19;
-    bool t20;
-    HeroArrayHeader * t21;
-    int64_t t22;
-    int64_t t23;
-    int64_t t24;
-    int64_t t25;
-    int64_t t26;
-    int64_t t27;
-    int64_t t28;
-    int64_t t29;
-    int64_t t30;
-    int64_t t31;
-    int64_t t32;
-    int64_t t33;
-    double t34;
-    int64_t t35;
-    int64_t t36;
-    int64_t t37;
-    double t38;
-    double t39;
-    HeroArrayHeader * t40;
-    HeroArrayHeader * t41;
-    HeroArrayHeader * t42;
-    goto bb0;
+#line 58 "examples/montecarlo/main.hero"
+    HeroArrayHeader * h0_handles = {0}; int64_t h1_i; int64_t h2_hits; HeroArrayHeader * h3_xs0 = {0}; int64_t h4_i0; int64_t h5_h; HeroArrayHeader * h6_own6 = {0}; HeroArrayHeader * t1; int64_t t2; int64_t t3; int64_t t4; bool t5; h_0fn_48ac9712 t7; int64_t t8; int64_t t9; int64_t t11; int64_t t12; int64_t t13; int64_t t14; HeroArrayHeader * t15; int64_t t16; int64_t t17; HeroArrayHeader * t18; int64_t t19; bool t20; HeroArrayHeader * t21; int64_t t22; int64_t t23; int64_t t24; int64_t t25; int64_t t26; int64_t t27; int64_t t28; int64_t t29; int64_t t30; int64_t t31; int64_t t32; int64_t t33; double t34; int64_t t35; int64_t t36; int64_t t37; double t38; double t39; HeroArrayHeader * t40; HeroArrayHeader * t41; HeroArrayHeader * t42; goto bb0;
+#line 58 "examples/montecarlo/main.hero"
 bb0:
-#line 59 "examples/montecarlo/main.hero"
     t1 = hero_array_new(&hero_desc_int, 1);
 #line 59 "examples/montecarlo/main.hero"
     t40 = h6_own6;
 #line 59 "examples/montecarlo/main.hero"
     h6_own6 = t1;
-#line 419 "main.c"
+#line 59 "examples/montecarlo/main.hero"
     hero_array_decref(t40);
 #line 59 "examples/montecarlo/main.hero"
     t41 = h0_handles;
-#line 423 "main.c"
+#line 59 "examples/montecarlo/main.hero"
     hero_array_incref(t1);
 #line 59 "examples/montecarlo/main.hero"
     h0_handles = t1;
-#line 427 "main.c"
+#line 59 "examples/montecarlo/main.hero"
     hero_array_decref(t41);
-#line 60 "examples/montecarlo/main.hero"
     t2 = INT64_C(0);
 #line 60 "examples/montecarlo/main.hero"
     h1_i = t2;
@@ -469,11 +369,11 @@ bb3:
     t15 = h0_handles;
 #line 68 "examples/montecarlo/main.hero"
     t42 = h3_xs0;
-#line 473 "main.c"
+#line 68 "examples/montecarlo/main.hero"
     hero_array_incref(t15);
 #line 68 "examples/montecarlo/main.hero"
     h3_xs0 = t15;
-#line 477 "main.c"
+#line 68 "examples/montecarlo/main.hero"
     hero_array_decref(t42);
 #line 68 "examples/montecarlo/main.hero"
     t16 = INT64_C(0);
@@ -546,7 +446,7 @@ bb7:
     t38 = hero_int_to_f64(t37);
 #line 71 "examples/montecarlo/main.hero"
     t39 = t34 / t38;
-#line 550 "main.c"
+#line 450 "main.c"
     hero_array_release_at(&h0_handles);
     hero_array_release_at(&h3_xs0);
     hero_array_release_at(&h6_own6);
@@ -555,18 +455,10 @@ bb7:
 
 #line 73 "examples/montecarlo/main.hero"
 void h_main_main(void) {
-#line 559 "main.c"
-    HeroStr t1;
-    int64_t t2;
-    int64_t t3;
-    int64_t t4;
-    HeroStr t5;
-    int64_t t6;
-    HeroStr t7;
-    double t8;
-    goto bb0;
+#line 73 "examples/montecarlo/main.hero"
+    HeroStr t1; int64_t t2; int64_t t3; int64_t t4; HeroStr t5; int64_t t6; HeroStr t7; double t8; goto bb0;
+#line 73 "examples/montecarlo/main.hero"
 bb0:
-#line 74 "examples/montecarlo/main.hero"
     t1 = HERO_STR_LIT(hero_str_5a3c82c4);
 #line 74 "examples/montecarlo/main.hero"
     t2 = h_main_THREADS();
@@ -598,7 +490,7 @@ bb0:
     hero_print_end();
 #line 74 "examples/montecarlo/main.hero"
     return;
-#line 602 "main.c"
+#line 494 "main.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

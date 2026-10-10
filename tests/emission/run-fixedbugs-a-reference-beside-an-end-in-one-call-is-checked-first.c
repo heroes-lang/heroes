@@ -106,17 +106,10 @@ void h_fixedbugsareferencebesideanendinonecallischeckedfirst_main(void);
 
 #line 14 "tests/golden/run/fixedbugs-a-reference-beside-an-end-in-one-call-is-checked-first.hero"
 void h_fixedbugsareferencebesideanendinonecallischeckedfirst_main(void) {
-#line 110 "fixedbugsareferencebesideanendinonecallischeckedfirst.c"
-    ob * h0_a;
-    ob * t1;
-    HeroStr t2;
-    ob * t3;
-    ob * t4;
-    ob * t6;
-    HeroStr t7;
-    goto bb0;
+#line 14 "tests/golden/run/fixedbugs-a-reference-beside-an-end-in-one-call-is-checked-first.hero"
+    ob * h0_a; ob * t1; HeroStr t2; ob * t3; ob * t4; ob * t6; HeroStr t7; goto bb0;
+#line 14 "tests/golden/run/fixedbugs-a-reference-beside-an-end-in-one-call-is-checked-first.hero"
 bb0:
-#line 15 "tests/golden/run/fixedbugs-a-reference-beside-an-end-in-one-call-is-checked-first.hero"
     t1 = ob_new();
 #line 15 "tests/golden/run/fixedbugs-a-reference-beside-an-end-in-one-call-is-checked-first.hero"
     hero_handle_acquired(t1, "ob_put|ob_swap");
@@ -178,7 +171,7 @@ bb0:
     hero_print_end();
 #line 19 "tests/golden/run/fixedbugs-a-reference-beside-an-end-in-one-call-is-checked-first.hero"
     return;
-#line 182 "fixedbugsareferencebesideanendinonecallischeckedfirst.c"
+#line 175 "fixedbugsareferencebesideanendinonecallischeckedfirst.c"
 }
 HERO_TU_LOCAL bool h_fixedbugsareferencebesideanendinonecallischeckedfirst_Ob_eq(ob * const *a, ob * const *b) {
     return hero_handle_eq(*a, *b);

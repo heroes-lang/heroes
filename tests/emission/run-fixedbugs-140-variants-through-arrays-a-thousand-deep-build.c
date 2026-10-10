@@ -24103,43 +24103,25 @@ void h_fixedbugs140variantsthrougharraysathousanddeepbuild_main(void);
 
 #line 5027 "tests/golden/run/fixedbugs-140-variants-through-arrays-a-thousand-deep-build.hero"
 void h_fixedbugs140variantsthrougharraysathousanddeepbuild_main(void) {
-#line 24107 "fixedbugs140variantsthrougharraysathousanddeepbuild.c"
-    HeroArrayHeader * h0_xs = {0};
-    HeroMapHeader * h1_m = {0};
-    HeroArrayHeader * h2_own2 = {0};
-    HeroMapHeader * h3_own3 = {0};
-    HeroArrayHeader * t1;
-    HeroArrayHeader * t2;
-    int64_t t3;
-    HeroArrayHeader * t4;
-    HeroArrayHeader * t5;
-    bool t6;
-    HeroMapHeader * t7;
-    HeroMapHeader * t8;
-    int64_t t9;
-    HeroArrayHeader * t10;
-    HeroArrayHeader * t11;
-    HeroMapHeader * t12;
-    HeroMapHeader * t13;
-    goto bb0;
+#line 5027 "tests/golden/run/fixedbugs-140-variants-through-arrays-a-thousand-deep-build.hero"
+    HeroArrayHeader * h0_xs = {0}; HeroMapHeader * h1_m = {0}; HeroArrayHeader * h2_own2 = {0}; HeroMapHeader * h3_own3 = {0}; HeroArrayHeader * t1; HeroArrayHeader * t2; int64_t t3; HeroArrayHeader * t4; HeroArrayHeader * t5; bool t6; HeroMapHeader * t7; HeroMapHeader * t8; int64_t t9; HeroArrayHeader * t10; HeroArrayHeader * t11; HeroMapHeader * t12; HeroMapHeader * t13; goto bb0;
+#line 5027 "tests/golden/run/fixedbugs-140-variants-through-arrays-a-thousand-deep-build.hero"
 bb0:
-#line 5028 "tests/golden/run/fixedbugs-140-variants-through-arrays-a-thousand-deep-build.hero"
     t1 = hero_array_new(&h_fixedbugs140variantsthrougharraysathousanddeepbuild_R999_desc, 1);
 #line 5028 "tests/golden/run/fixedbugs-140-variants-through-arrays-a-thousand-deep-build.hero"
     t10 = h2_own2;
 #line 5028 "tests/golden/run/fixedbugs-140-variants-through-arrays-a-thousand-deep-build.hero"
     h2_own2 = t1;
-#line 24133 "fixedbugs140variantsthrougharraysathousanddeepbuild.c"
+#line 5028 "tests/golden/run/fixedbugs-140-variants-through-arrays-a-thousand-deep-build.hero"
     hero_array_decref(t10);
 #line 5028 "tests/golden/run/fixedbugs-140-variants-through-arrays-a-thousand-deep-build.hero"
     t11 = h0_xs;
-#line 24137 "fixedbugs140variantsthrougharraysathousanddeepbuild.c"
+#line 5028 "tests/golden/run/fixedbugs-140-variants-through-arrays-a-thousand-deep-build.hero"
     hero_array_incref(t1);
 #line 5028 "tests/golden/run/fixedbugs-140-variants-through-arrays-a-thousand-deep-build.hero"
     h0_xs = t1;
-#line 24141 "fixedbugs140variantsthrougharraysathousanddeepbuild.c"
+#line 5028 "tests/golden/run/fixedbugs-140-variants-through-arrays-a-thousand-deep-build.hero"
     hero_array_decref(t11);
-#line 5029 "tests/golden/run/fixedbugs-140-variants-through-arrays-a-thousand-deep-build.hero"
     t2 = h0_xs;
 #line 5029 "tests/golden/run/fixedbugs-140-variants-through-arrays-a-thousand-deep-build.hero"
     t3 = ((void)(t2 == NULL ? ((void)hero_array_len(t2), hero_unreachable()) : (void)0), t2->len);
@@ -24161,17 +24143,16 @@ bb0:
     t12 = h3_own3;
 #line 5031 "tests/golden/run/fixedbugs-140-variants-through-arrays-a-thousand-deep-build.hero"
     h3_own3 = t7;
-#line 24165 "fixedbugs140variantsthrougharraysathousanddeepbuild.c"
+#line 5031 "tests/golden/run/fixedbugs-140-variants-through-arrays-a-thousand-deep-build.hero"
     hero_map_decref(t12);
 #line 5031 "tests/golden/run/fixedbugs-140-variants-through-arrays-a-thousand-deep-build.hero"
     t13 = h1_m;
-#line 24169 "fixedbugs140variantsthrougharraysathousanddeepbuild.c"
+#line 5031 "tests/golden/run/fixedbugs-140-variants-through-arrays-a-thousand-deep-build.hero"
     hero_map_incref(t7);
 #line 5031 "tests/golden/run/fixedbugs-140-variants-through-arrays-a-thousand-deep-build.hero"
     h1_m = t7;
-#line 24173 "fixedbugs140variantsthrougharraysathousanddeepbuild.c"
+#line 5031 "tests/golden/run/fixedbugs-140-variants-through-arrays-a-thousand-deep-build.hero"
     hero_map_decref(t13);
-#line 5032 "tests/golden/run/fixedbugs-140-variants-through-arrays-a-thousand-deep-build.hero"
     t8 = h1_m;
 #line 5032 "tests/golden/run/fixedbugs-140-variants-through-arrays-a-thousand-deep-build.hero"
     t9 = hero_map_len(t8);
@@ -24179,7 +24160,7 @@ bb0:
     hero_print_int(t9);
 #line 5032 "tests/golden/run/fixedbugs-140-variants-through-arrays-a-thousand-deep-build.hero"
     hero_print_end();
-#line 24183 "fixedbugs140variantsthrougharraysathousanddeepbuild.c"
+#line 24164 "fixedbugs140variantsthrougharraysathousanddeepbuild.c"
     hero_array_release_at(&h0_xs);
     hero_map_release_at(&h1_m);
     hero_array_release_at(&h2_own2);

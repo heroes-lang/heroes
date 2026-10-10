@@ -104,12 +104,10 @@ void h_ffirestzeroapartialrecord_main(void);
 
 #line 12 "tests/golden/run/ffi-rest-zero-a-partial-record.hero"
 SP h_ffirestzeroapartialrecord_built(void) {
-#line 108 "ffirestzeroapartialrecord.c"
-    int32_t t1;
-    SP t2;
-    goto bb0;
+#line 12 "tests/golden/run/ffi-rest-zero-a-partial-record.hero"
+    int32_t t1; SP t2; goto bb0;
+#line 12 "tests/golden/run/ffi-rest-zero-a-partial-record.hero"
 bb0:
-#line 13 "tests/golden/run/ffi-rest-zero-a-partial-record.hero"
     t1 = INT64_C(4);
 #line 13 "tests/golden/run/ffi-rest-zero-a-partial-record.hero"
     t2 = (SP){0};
@@ -119,22 +117,17 @@ bb0:
     t2.kind = t1;
 #line 13 "tests/golden/run/ffi-rest-zero-a-partial-record.hero"
     return t2;
-#line 123 "ffirestzeroapartialrecord.c"
+#line 121 "ffirestzeroapartialrecord.c"
 }
 
 #line 15 "tests/golden/run/ffi-rest-zero-a-partial-record.hero"
 void h_ffirestzeroapartialrecord_main(void) {
-#line 128 "ffirestzeroapartialrecord.c"
-    SP *const hero_lend_h0_s = (SP *)hero_lend_local(sizeof(SP), "ffirestzeroapartialrecord.main", "s");
+#line 15 "tests/golden/run/ffi-rest-zero-a-partial-record.hero"
 #define h0_s (*hero_lend_h0_s)
-    SP t1;
-    SP t2;
-    int32_t t3;
-    HeroStr t4;
-    int64_t t5;
-    goto bb0;
+#line 15 "tests/golden/run/ffi-rest-zero-a-partial-record.hero"
+    SP *const hero_lend_h0_s = (SP *)hero_lend_local(sizeof(SP), "ffirestzeroapartialrecord.main", "s"); SP t1; SP t2; int32_t t3; HeroStr t4; int64_t t5; goto bb0;
+#line 15 "tests/golden/run/ffi-rest-zero-a-partial-record.hero"
 bb0:
-#line 16 "tests/golden/run/ffi-rest-zero-a-partial-record.hero"
     (void)dirty();
     t1 = h_ffirestzeroapartialrecord_built();
 #line 17 "tests/golden/run/ffi-rest-zero-a-partial-record.hero"
@@ -160,7 +153,7 @@ bb0:
     hero_lend_local_give(hero_lend_h0_s);
 #line 18 "tests/golden/run/ffi-rest-zero-a-partial-record.hero"
     return;
-#line 164 "ffirestzeroapartialrecord.c"
+#line 157 "ffirestzeroapartialrecord.c"
 }
 #undef h0_s
 HERO_TU_LOCAL bool h_ffirestzeroapartialrecord_SP_eq(const SP *a, const SP *b) {

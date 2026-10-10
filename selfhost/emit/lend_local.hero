@@ -190,19 +190,20 @@ function guarded(c: state.Checked, names: ctype.Names, f: containers.Function) -
 function pointer(f: containers.Function, at: i64) -> str
     return "hero_lend_" + mangle.slot(index: at, name: f.slots[at].name)
 
-# The prologue's line for a guarded slot, in place of its declaration: the
-# region taken, and the slot's name made the region's for the function.
-function declare(@w: writer.Writer, c: state.Checked, names: ctype.Names, f: containers.Function, at: i64, owner: str)
+# The prologue's statement for a guarded slot, in place of its declaration:
+# the region taken, or "" where the slot has no C type. The slot's name is
+# made the region's for the function by `defined`, a `#define`, which stands
+# on a line of its own above the prologue's one line (`emit/body.hero`,
+# defect 472).
+function declared(c: state.Checked, names: ctype.Names, f: containers.Function, at: i64, owner: str) -> str
     spelled = ctype.c_type(names, c: c, ty: f.slots[at].ty)
 
     if spelled.is_err()
-        return
-    p = pointer(f, at)
-    writer.line(
-        @w,
-        text: "    " + spelled.must() + " *const " + p + " = (" + spelled.must() + " *)hero_lend_local(sizeof(" + spelled.must() + "), " + lend_count.quoted(owner) + ", " + lend_count.quoted(f.slots[at].name) + ");"
-    )
-    writer.line(@w, text: "#define " + mangle.slot(index: at, name: f.slots[at].name) + " (*" + p + ")")
+        return ""
+    return spelled.must() + " *const " + pointer(f, at) + " = (" + spelled.must() + " *)hero_lend_local(sizeof(" + spelled.must() + "), " + lend_count.quoted(owner) + ", " + lend_count.quoted(f.slots[at].name) + ");"
+
+function defined(f: containers.Function, at: i64) -> str
+    return "#define " + mangle.slot(index: at, name: f.slots[at].name) + " (*" + pointer(f, at) + ")"
 
 # Before an `extern` call: each place it is handed whole that may be a
 # guarded local is labelled with the callee and the parameter, for the

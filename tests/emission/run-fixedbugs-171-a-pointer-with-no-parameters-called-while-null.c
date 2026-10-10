@@ -96,12 +96,10 @@ void h_fixedbugs171apointerwithnoparameterscalledwhilenull_main(void);
 
 #line 10 "tests/golden/run/fixedbugs-171-a-pointer-with-no-parameters-called-while-null.hero"
 void h_fixedbugs171apointerwithnoparameterscalledwhilenull_main(void) {
-#line 100 "fixedbugs171apointerwithnoparameterscalledwhilenull.c"
-    HeroStr t1;
-    HeroStr t2;
-    goto bb0;
+#line 10 "tests/golden/run/fixedbugs-171-a-pointer-with-no-parameters-called-while-null.hero"
+    HeroStr t1; HeroStr t2; goto bb0;
+#line 10 "tests/golden/run/fixedbugs-171-a-pointer-with-no-parameters-called-while-null.hero"
 bb0:
-#line 11 "tests/golden/run/fixedbugs-171-a-pointer-with-no-parameters-called-while-null.hero"
     t1 = HERO_STR_LIT(hero_str_43560e4d);
 #line 11 "tests/golden/run/fixedbugs-171-a-pointer-with-no-parameters-called-while-null.hero"
     hero_print_str(t1);
@@ -115,7 +113,7 @@ bb0:
     hero_print_end();
 #line 13 "tests/golden/run/fixedbugs-171-a-pointer-with-no-parameters-called-while-null.hero"
     return;
-#line 119 "fixedbugs171apointerwithnoparameterscalledwhilenull.c"
+#line 117 "fixedbugs171apointerwithnoparameterscalledwhilenull.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

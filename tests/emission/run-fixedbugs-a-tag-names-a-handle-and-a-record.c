@@ -113,25 +113,14 @@ void h_fixedbugsatagnamesahandleandarecord_main(void);
 
 #line 35 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
 void h_fixedbugsatagnamesahandleandarecord_main(void) {
-#line 117 "fixedbugsatagnamesahandleandarecord.c"
-    struct addrinfo *const hero_lend_h0_h = (struct addrinfo *)hero_lend_local(sizeof(struct addrinfo), "fixedbugsatagnamesahandleandarecord.main", "h");
+#line 35 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
 #define h0_h (*hero_lend_h0_h)
-    struct addrinfo * *const hero_lend_h1_r = (struct addrinfo * *)hero_lend_local(sizeof(struct addrinfo *), "fixedbugsatagnamesahandleandarecord.main", "r");
+#line 35 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
 #define h1_r (*hero_lend_h1_r)
-    int32_t h2_rc;
-    int32_t t1;
-    int32_t t2;
-    struct addrinfo t3;
-    struct addrinfo * t4;
-    HeroStr t5;
-    const char * t6;
-    void * t7;
-    int32_t t8;
-    int32_t t9;
-    struct addrinfo * t10;
-    goto bb0;
+#line 35 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
+    struct addrinfo *const hero_lend_h0_h = (struct addrinfo *)hero_lend_local(sizeof(struct addrinfo), "fixedbugsatagnamesahandleandarecord.main", "h"); struct addrinfo * *const hero_lend_h1_r = (struct addrinfo * *)hero_lend_local(sizeof(struct addrinfo *), "fixedbugsatagnamesahandleandarecord.main", "r"); int32_t h2_rc; int32_t t1; int32_t t2; struct addrinfo t3; struct addrinfo * t4; HeroStr t5; const char * t6; void * t7; int32_t t8; int32_t t9; struct addrinfo * t10; goto bb0;
+#line 35 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
 bb0:
-#line 36 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
     t1 = INT64_C(0);
 #line 36 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
     t2 = INT64_C(1);
@@ -181,7 +170,7 @@ bb0:
     hero_lend_local_give(hero_lend_h0_h);
 #line 40 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
     return;
-#line 185 "fixedbugsatagnamesahandleandarecord.c"
+#line 174 "fixedbugsatagnamesahandleandarecord.c"
 }
 #undef h0_h
 #undef h1_r

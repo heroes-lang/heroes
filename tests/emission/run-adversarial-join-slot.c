@@ -91,17 +91,10 @@ void h_adversarialjoinslot_main(void);
 
 #line 17 "tests/golden/run/adversarial-join-slot.hero"
 int64_t h_adversarialjoinslot_pick(bool h0_c) {
-#line 95 "adversarialjoinslot.c"
-    int64_t h1_r0;
-    int64_t h2_v;
-    bool t1;
-    int64_t t2;
-    int64_t t3;
-    int64_t t4;
-    int64_t t5;
-    goto bb0;
+#line 17 "tests/golden/run/adversarial-join-slot.hero"
+    int64_t h1_r0; int64_t h2_v; bool t1; int64_t t2; int64_t t3; int64_t t4; int64_t t5; goto bb0;
+#line 17 "tests/golden/run/adversarial-join-slot.hero"
 bb0:
-#line 18 "tests/golden/run/adversarial-join-slot.hero"
     t1 = h0_c;
 #line 18 "tests/golden/run/adversarial-join-slot.hero"
     if (t1) goto bb2; else goto bb3;
@@ -131,26 +124,15 @@ bb3:
     h1_r0 = t3;
 #line 18 "tests/golden/run/adversarial-join-slot.hero"
     goto bb1;
-#line 135 "adversarialjoinslot.c"
+#line 128 "adversarialjoinslot.c"
 }
 
 #line 24 "tests/golden/run/adversarial-join-slot.hero"
 int64_t h_adversarialjoinslot_nested(bool h0_a, bool h1_b) {
-#line 140 "adversarialjoinslot.c"
-    int64_t h2_r0;
-    int64_t h3_r1;
-    int64_t h4_v;
-    bool t1;
-    bool t2;
-    int64_t t3;
-    int64_t t4;
-    int64_t t5;
-    int64_t t6;
-    int64_t t7;
-    int64_t t8;
-    goto bb0;
+#line 24 "tests/golden/run/adversarial-join-slot.hero"
+    int64_t h2_r0; int64_t h3_r1; int64_t h4_v; bool t1; bool t2; int64_t t3; int64_t t4; int64_t t5; int64_t t6; int64_t t7; int64_t t8; goto bb0;
+#line 24 "tests/golden/run/adversarial-join-slot.hero"
 bb0:
-#line 25 "tests/golden/run/adversarial-join-slot.hero"
     t1 = h0_a;
 #line 25 "tests/golden/run/adversarial-join-slot.hero"
     if (t1) goto bb2; else goto bb3;
@@ -201,47 +183,15 @@ bb6:
     h3_r1 = t4;
 #line 26 "tests/golden/run/adversarial-join-slot.hero"
     goto bb4;
-#line 205 "adversarialjoinslot.c"
+#line 187 "adversarialjoinslot.c"
 }
 
 #line 34 "tests/golden/run/adversarial-join-slot.hero"
 void h_adversarialjoinslot_main(void) {
-#line 210 "adversarialjoinslot.c"
-    int64_t h0_i;
-    int64_t h1_total;
-    bool t1;
-    int64_t t2;
-    bool t3;
-    int64_t t4;
-    bool t5;
-    bool t6;
-    int64_t t7;
-    bool t8;
-    bool t9;
-    int64_t t10;
-    bool t11;
-    bool t12;
-    int64_t t13;
-    int64_t t14;
-    int64_t t15;
-    int64_t t16;
-    int64_t t17;
-    bool t18;
-    int64_t t19;
-    int64_t t20;
-    int64_t t21;
-    int64_t t22;
-    int64_t t23;
-    bool t24;
-    int64_t t25;
-    int64_t t26;
-    int64_t t27;
-    int64_t t28;
-    int64_t t29;
-    int64_t t30;
-    goto bb0;
+#line 34 "tests/golden/run/adversarial-join-slot.hero"
+    int64_t h0_i; int64_t h1_total; bool t1; int64_t t2; bool t3; int64_t t4; bool t5; bool t6; int64_t t7; bool t8; bool t9; int64_t t10; bool t11; bool t12; int64_t t13; int64_t t14; int64_t t15; int64_t t16; int64_t t17; bool t18; int64_t t19; int64_t t20; int64_t t21; int64_t t22; int64_t t23; bool t24; int64_t t25; int64_t t26; int64_t t27; int64_t t28; int64_t t29; int64_t t30; goto bb0;
+#line 34 "tests/golden/run/adversarial-join-slot.hero"
 bb0:
-#line 35 "tests/golden/run/adversarial-join-slot.hero"
     t1 = true;
 #line 35 "tests/golden/run/adversarial-join-slot.hero"
     t2 = h_adversarialjoinslot_pick(t1);
@@ -340,7 +290,7 @@ bb3:
     hero_print_end();
 #line 44 "tests/golden/run/adversarial-join-slot.hero"
     return;
-#line 344 "adversarialjoinslot.c"
+#line 294 "adversarialjoinslot.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

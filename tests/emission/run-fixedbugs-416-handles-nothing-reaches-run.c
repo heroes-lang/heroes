@@ -96,11 +96,10 @@ void h_fixedbugs416handlesnothingreachesrun_main(void);
 
 #line 16 "tests/golden/run/fixedbugs-416-handles-nothing-reaches-run.hero"
 void h_fixedbugs416handlesnothingreachesrun_main(void) {
-#line 100 "fixedbugs416handlesnothingreachesrun.c"
-    int64_t t1;
-    goto bb0;
+#line 16 "tests/golden/run/fixedbugs-416-handles-nothing-reaches-run.hero"
+    int64_t t1; goto bb0;
+#line 16 "tests/golden/run/fixedbugs-416-handles-nothing-reaches-run.hero"
 bb0:
-#line 17 "tests/golden/run/fixedbugs-416-handles-nothing-reaches-run.hero"
     t1 = INT64_C(1);
 #line 17 "tests/golden/run/fixedbugs-416-handles-nothing-reaches-run.hero"
     hero_print_int(t1);
@@ -108,7 +107,7 @@ bb0:
     hero_print_end();
 #line 17 "tests/golden/run/fixedbugs-416-handles-nothing-reaches-run.hero"
     return;
-#line 112 "fixedbugs416handlesnothingreachesrun.c"
+#line 111 "fixedbugs416handlesnothingreachesrun.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs416handlesnothingreachesrun_ByTag_eq(struct only_tag * const *a, struct only_tag * const *b) {
     return hero_handle_eq(*a, *b);

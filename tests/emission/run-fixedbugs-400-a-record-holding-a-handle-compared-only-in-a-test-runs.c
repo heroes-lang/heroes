@@ -100,11 +100,10 @@ void h_fixedbugs400arecordholdingahandlecomparedonlyinatestruns_main(void);
 
 #line 21 "tests/golden/run/fixedbugs-400-a-record-holding-a-handle-compared-only-in-a-test-runs.hero"
 void h_fixedbugs400arecordholdingahandlecomparedonlyinatestruns_main(void) {
-#line 104 "fixedbugs400arecordholdingahandlecomparedonlyinatestruns.c"
-    int64_t t1;
-    goto bb0;
+#line 21 "tests/golden/run/fixedbugs-400-a-record-holding-a-handle-compared-only-in-a-test-runs.hero"
+    int64_t t1; goto bb0;
+#line 21 "tests/golden/run/fixedbugs-400-a-record-holding-a-handle-compared-only-in-a-test-runs.hero"
 bb0:
-#line 22 "tests/golden/run/fixedbugs-400-a-record-holding-a-handle-compared-only-in-a-test-runs.hero"
     t1 = INT64_C(1);
 #line 22 "tests/golden/run/fixedbugs-400-a-record-holding-a-handle-compared-only-in-a-test-runs.hero"
     hero_print_int(t1);
@@ -112,7 +111,7 @@ bb0:
     hero_print_end();
 #line 22 "tests/golden/run/fixedbugs-400-a-record-holding-a-handle-compared-only-in-a-test-runs.hero"
     return;
-#line 116 "fixedbugs400arecordholdingahandlecomparedonlyinatestruns.c"
+#line 115 "fixedbugs400arecordholdingahandlecomparedonlyinatestruns.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs400arecordholdingahandlecomparedonlyinatestruns_Opaque_eq(struct opaque * const *a, struct opaque * const *b) {
     return hero_handle_eq(*a, *b);

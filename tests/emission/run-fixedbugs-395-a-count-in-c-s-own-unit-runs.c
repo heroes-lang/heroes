@@ -148,107 +148,24 @@ uint64_t h_fixedbugs395acountincsownunitruns_HELD_INTS(void) {
 
 #line 34 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
 uint64_t h_fixedbugs395acountincsownunitruns_at_run_time(uint64_t h0_k) {
-#line 152 "fixedbugs395acountincsownunitruns.c"
-    uint64_t t1;
-    goto bb0;
+#line 34 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
+    uint64_t t1; goto bb0;
+#line 34 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
 bb0:
-#line 35 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
     t1 = h0_k;
 #line 35 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
     return t1;
-#line 160 "fixedbugs395acountincsownunitruns.c"
+#line 159 "fixedbugs395acountincsownunitruns.c"
 }
 
 #line 37 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
 void h_fixedbugs395acountincsownunitruns_main(void) {
-#line 165 "fixedbugs395acountincsownunitruns.c"
-    struct held h0_h;
-    struct ten h1_t;
-    uint32_t *const hero_lend_h2_n = (uint32_t *)hero_lend_local(sizeof(uint32_t), "fixedbugs395acountincsownunitruns.main", "n");
+#line 37 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
 #define h2_n (*hero_lend_h2_n)
-    uint8_t t1;
-    uint8_t t2;
-    uint8_t t3;
-    uint8_t t4;
-    uint8_t t5;
-    uint8_t t6;
-    uint8_t t7;
-    uint8_t t8;
-    uint8_t t9;
-    uint8_t t10;
-    uint8_t t11;
-    uint8_t t12;
-    uint8_t t13;
-    uint8_t t14;
-    uint8_t t15;
-    uint8_t t16;
-    int64_t t18;
-    struct held t19;
-    uint8_t t20;
-    uint8_t t21;
-    uint8_t t22;
-    uint8_t t23;
-    uint8_t t24;
-    uint8_t t25;
-    uint8_t t26;
-    uint8_t t27;
-    uint8_t t28;
-    uint8_t t29;
-    int64_t t31;
-    struct ten t32;
-    void * t35;
-    uint64_t t36;
-    int64_t t37;
-    void * t40;
-    uint64_t t41;
-    int64_t t42;
-    void * t45;
-    uint64_t t46;
-    uint64_t t47;
-    int64_t t48;
-    void * t51;
-    uint64_t t52;
-    int64_t t53;
-    void * t56;
-    uint64_t t57;
-    int64_t t58;
-    void * t61;
-    uint64_t t62;
-    int32_t t63;
-    void * t66;
-    uint64_t t67;
-    uint64_t t68;
-    int32_t t69;
-    void * t72;
-    uint64_t t73;
-    int64_t t74;
-    void * t77;
-    uint64_t t78;
-    int64_t t79;
-    void * t82;
-    uint64_t t83;
-    uint64_t t84;
-    int64_t t85;
-    void * t88;
-    uint64_t t89;
-    int64_t t90;
-    void * t93;
-    void * t96;
-    uint64_t t97;
-    int64_t t98;
-    void * t101;
-    uint64_t t102;
-    int64_t t103;
-    uint32_t t104;
-    void * t107;
-    int64_t t108;
-    struct held t109;
-    int64_t t110;
-    struct ten t111;
-    int64_t t112;
-    goto bb0;
+#line 37 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
+    struct held h0_h; struct ten h1_t; uint32_t *const hero_lend_h2_n = (uint32_t *)hero_lend_local(sizeof(uint32_t), "fixedbugs395acountincsownunitruns.main", "n"); uint8_t t1; uint8_t t2; uint8_t t3; uint8_t t4; uint8_t t5; uint8_t t6; uint8_t t7; uint8_t t8; uint8_t t9; uint8_t t10; uint8_t t11; uint8_t t12; uint8_t t13; uint8_t t14; uint8_t t15; uint8_t t16; int64_t t18; struct held t19; uint8_t t20; uint8_t t21; uint8_t t22; uint8_t t23; uint8_t t24; uint8_t t25; uint8_t t26; uint8_t t27; uint8_t t28; uint8_t t29; int64_t t31; struct ten t32; void * t35; uint64_t t36; int64_t t37; void * t40; uint64_t t41; int64_t t42; void * t45; uint64_t t46; uint64_t t47; int64_t t48; void * t51; uint64_t t52; int64_t t53; void * t56; uint64_t t57; int64_t t58; void * t61; uint64_t t62; int32_t t63; void * t66; uint64_t t67; uint64_t t68; int32_t t69; void * t72; uint64_t t73; int64_t t74; void * t77; uint64_t t78; int64_t t79; void * t82; uint64_t t83; uint64_t t84; int64_t t85; void * t88; uint64_t t89; int64_t t90; void * t93; void * t96; uint64_t t97; int64_t t98; void * t101; uint64_t t102; int64_t t103; uint32_t t104; void * t107; int64_t t108; struct held t109; int64_t t110; struct ten t111; int64_t t112; goto bb0;
+#line 37 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
 bb0:
-#line 38 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
     t1 = UINT64_C(0);
 #line 38 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
     t2 = UINT64_C(0);
@@ -518,7 +435,7 @@ bb0:
     hero_lend_local_give(hero_lend_h2_n);
 #line 56 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
     return;
-#line 522 "fixedbugs395acountincsownunitruns.c"
+#line 439 "fixedbugs395acountincsownunitruns.c"
 }
 #undef h2_n
 HERO_TU_LOCAL bool h_fixedbugs395acountincsownunitruns_Held_eq(const struct held *a, const struct held *b) {

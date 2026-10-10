@@ -89,23 +89,10 @@ void h_fixedbugsu64tostr_main(void);
 
 #line 25 "tests/golden/run/fixedbugs-u64-to-str.hero"
 void h_fixedbugsu64tostr_main(void) {
-#line 93 "fixedbugsu64tostr.c"
-    uint64_t h0_n;
-    uint64_t h1_small;
-    HeroStr h2_own2 = {0};
-    HeroStr h3_own3 = {0};
-    uint64_t t1;
-    uint64_t t2;
-    uint64_t t3;
-    HeroStr t4;
-    uint64_t t5;
-    uint64_t t6;
-    HeroStr t7;
-    HeroStr t8;
-    HeroStr t9;
-    goto bb0;
+#line 25 "tests/golden/run/fixedbugs-u64-to-str.hero"
+    uint64_t h0_n; uint64_t h1_small; HeroStr h2_own2 = {0}; HeroStr h3_own3 = {0}; uint64_t t1; uint64_t t2; uint64_t t3; HeroStr t4; uint64_t t5; uint64_t t6; HeroStr t7; HeroStr t8; HeroStr t9; goto bb0;
+#line 25 "tests/golden/run/fixedbugs-u64-to-str.hero"
 bb0:
-#line 26 "tests/golden/run/fixedbugs-u64-to-str.hero"
     t1 = UINT64_C(18446744073709551615);
 #line 26 "tests/golden/run/fixedbugs-u64-to-str.hero"
     h0_n = t1;
@@ -121,7 +108,7 @@ bb0:
     t8 = h2_own2;
 #line 28 "tests/golden/run/fixedbugs-u64-to-str.hero"
     h2_own2 = t4;
-#line 125 "fixedbugsu64tostr.c"
+#line 28 "tests/golden/run/fixedbugs-u64-to-str.hero"
     hero_str_decref(t8);
 #line 28 "tests/golden/run/fixedbugs-u64-to-str.hero"
     hero_print_str(t4);
@@ -137,13 +124,13 @@ bb0:
     t9 = h3_own3;
 #line 30 "tests/golden/run/fixedbugs-u64-to-str.hero"
     h3_own3 = t7;
-#line 141 "fixedbugsu64tostr.c"
+#line 30 "tests/golden/run/fixedbugs-u64-to-str.hero"
     hero_str_decref(t9);
 #line 30 "tests/golden/run/fixedbugs-u64-to-str.hero"
     hero_print_str(t7);
 #line 30 "tests/golden/run/fixedbugs-u64-to-str.hero"
     hero_print_end();
-#line 147 "fixedbugsu64tostr.c"
+#line 134 "fixedbugsu64tostr.c"
     hero_str_release_at(&h2_own2);
     hero_str_release_at(&h3_own3);
     return;

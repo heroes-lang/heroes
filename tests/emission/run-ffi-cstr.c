@@ -101,15 +101,10 @@ void h_fficstr_main(void);
 
 #line 15 "tests/golden/run/ffi-cstr.hero"
 HeroStr h_fficstr_shout(HeroStr h0_text) {
-#line 105 "fficstr.c"
-    HeroStr h1_own1 = {0};
-    HeroStr t1;
-    HeroStr t2;
-    HeroStr t3;
-    HeroStr t4;
-    goto bb0;
+#line 15 "tests/golden/run/ffi-cstr.hero"
+    HeroStr h1_own1 = {0}; HeroStr t1; HeroStr t2; HeroStr t3; HeroStr t4; goto bb0;
+#line 15 "tests/golden/run/ffi-cstr.hero"
 bb0:
-#line 16 "tests/golden/run/ffi-cstr.hero"
     t1 = h0_text;
 #line 16 "tests/golden/run/ffi-cstr.hero"
     t2 = HERO_STR_LIT(hero_str_21);
@@ -119,8 +114,9 @@ bb0:
     t4 = h1_own1;
 #line 16 "tests/golden/run/ffi-cstr.hero"
     h1_own1 = t3;
-#line 123 "fficstr.c"
+#line 16 "tests/golden/run/ffi-cstr.hero"
     hero_str_decref(t4);
+#line 120 "fficstr.c"
     hero_str_incref(t3);
     hero_str_release_at(&h1_own1);
     return t3;
@@ -128,18 +124,10 @@ bb0:
 
 #line 18 "tests/golden/run/ffi-cstr.hero"
 void h_fficstr_main(void) {
-#line 132 "fficstr.c"
-    HeroStr h0_own0 = {0};
-    HeroStr t1;
-    const char * t2;
-    HeroStr t4;
-    HeroStr t5;
-    const char * t6;
-    HeroStr t8;
-    HeroStr t9;
-    goto bb0;
+#line 18 "tests/golden/run/ffi-cstr.hero"
+    HeroStr h0_own0 = {0}; HeroStr t1; const char * t2; HeroStr t4; HeroStr t5; const char * t6; HeroStr t8; HeroStr t9; goto bb0;
+#line 18 "tests/golden/run/ffi-cstr.hero"
 bb0:
-#line 19 "tests/golden/run/ffi-cstr.hero"
     t1 = HERO_STR_LIT(hero_str_79c9889a);
 #line 19 "tests/golden/run/ffi-cstr.hero"
     t2 = hero_str_lend(t1);
@@ -153,7 +141,7 @@ bb0:
     t9 = h0_own0;
 #line 24 "tests/golden/run/ffi-cstr.hero"
     h0_own0 = t5;
-#line 157 "fficstr.c"
+#line 24 "tests/golden/run/ffi-cstr.hero"
     hero_str_decref(t9);
 #line 24 "tests/golden/run/ffi-cstr.hero"
     t6 = hero_str_lend(t5);
@@ -164,7 +152,7 @@ bb0:
     hero_print_str(t8);
 #line 25 "tests/golden/run/ffi-cstr.hero"
     hero_print_end();
-#line 168 "fficstr.c"
+#line 156 "fficstr.c"
     hero_str_release_at(&h0_own0);
     return;
 }

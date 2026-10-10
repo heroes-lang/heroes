@@ -103,14 +103,12 @@ void h_fixedbugs451alocalcwritesafteritsfunctionreturnsisnamed_main(void);
 
 #line 24 "tests/golden/run/fixedbugs-451-a-local-c-writes-after-its-function-returns-is-named.hero"
 int64_t h_fixedbugs451alocalcwritesafteritsfunctionreturnsisnamed_lend(void) {
-#line 107 "fixedbugs451alocalcwritesafteritsfunctionreturnsisnamed.c"
-    int64_t *const hero_lend_h0_n = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs451alocalcwritesafteritsfunctionreturnsisnamed.lend", "n");
+#line 24 "tests/golden/run/fixedbugs-451-a-local-c-writes-after-its-function-returns-is-named.hero"
 #define h0_n (*hero_lend_h0_n)
-    int64_t t1;
-    int64_t t2;
-    goto bb0;
+#line 24 "tests/golden/run/fixedbugs-451-a-local-c-writes-after-its-function-returns-is-named.hero"
+    int64_t *const hero_lend_h0_n = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs451alocalcwritesafteritsfunctionreturnsisnamed.lend", "n"); int64_t t1; int64_t t2; goto bb0;
+#line 24 "tests/golden/run/fixedbugs-451-a-local-c-writes-after-its-function-returns-is-named.hero"
 bb0:
-#line 25 "tests/golden/run/fixedbugs-451-a-local-c-writes-after-its-function-returns-is-named.hero"
     t1 = INT64_C(0);
 #line 25 "tests/golden/run/fixedbugs-451-a-local-c-writes-after-its-function-returns-is-named.hero"
     h0_n = t1;
@@ -122,21 +120,18 @@ bb0:
     hero_lend_local_give(hero_lend_h0_n);
 #line 27 "tests/golden/run/fixedbugs-451-a-local-c-writes-after-its-function-returns-is-named.hero"
     return t2;
-#line 126 "fixedbugs451alocalcwritesafteritsfunctionreturnsisnamed.c"
+#line 124 "fixedbugs451alocalcwritesafteritsfunctionreturnsisnamed.c"
 }
 #undef h0_n
 
 #line 29 "tests/golden/run/fixedbugs-451-a-local-c-writes-after-its-function-returns-is-named.hero"
 int64_t h_fixedbugs451alocalcwritesafteritsfunctionreturnsisnamed_lend_again(void) {
-#line 132 "fixedbugs451alocalcwritesafteritsfunctionreturnsisnamed.c"
-    int64_t *const hero_lend_h0_m = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs451alocalcwritesafteritsfunctionreturnsisnamed.lend_again", "m");
+#line 29 "tests/golden/run/fixedbugs-451-a-local-c-writes-after-its-function-returns-is-named.hero"
 #define h0_m (*hero_lend_h0_m)
-    int64_t t1;
-    int64_t t2;
-    int64_t t3;
-    goto bb0;
+#line 29 "tests/golden/run/fixedbugs-451-a-local-c-writes-after-its-function-returns-is-named.hero"
+    int64_t *const hero_lend_h0_m = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs451alocalcwritesafteritsfunctionreturnsisnamed.lend_again", "m"); int64_t t1; int64_t t2; int64_t t3; goto bb0;
+#line 29 "tests/golden/run/fixedbugs-451-a-local-c-writes-after-its-function-returns-is-named.hero"
 bb0:
-#line 30 "tests/golden/run/fixedbugs-451-a-local-c-writes-after-its-function-returns-is-named.hero"
     t1 = INT64_C(0);
 #line 30 "tests/golden/run/fixedbugs-451-a-local-c-writes-after-its-function-returns-is-named.hero"
     h0_m = t1;
@@ -150,20 +145,16 @@ bb0:
     hero_lend_local_give(hero_lend_h0_m);
 #line 32 "tests/golden/run/fixedbugs-451-a-local-c-writes-after-its-function-returns-is-named.hero"
     return t3;
-#line 154 "fixedbugs451alocalcwritesafteritsfunctionreturnsisnamed.c"
+#line 149 "fixedbugs451alocalcwritesafteritsfunctionreturnsisnamed.c"
 }
 #undef h0_m
 
 #line 34 "tests/golden/run/fixedbugs-451-a-local-c-writes-after-its-function-returns-is-named.hero"
 void h_fixedbugs451alocalcwritesafteritsfunctionreturnsisnamed_main(void) {
-#line 160 "fixedbugs451alocalcwritesafteritsfunctionreturnsisnamed.c"
-    int64_t t1;
-    int64_t t2;
-    HeroStr t3;
-    int64_t t4;
-    goto bb0;
+#line 34 "tests/golden/run/fixedbugs-451-a-local-c-writes-after-its-function-returns-is-named.hero"
+    int64_t t1; int64_t t2; HeroStr t3; int64_t t4; goto bb0;
+#line 34 "tests/golden/run/fixedbugs-451-a-local-c-writes-after-its-function-returns-is-named.hero"
 bb0:
-#line 35 "tests/golden/run/fixedbugs-451-a-local-c-writes-after-its-function-returns-is-named.hero"
     t1 = h_fixedbugs451alocalcwritesafteritsfunctionreturnsisnamed_lend();
 #line 35 "tests/golden/run/fixedbugs-451-a-local-c-writes-after-its-function-returns-is-named.hero"
     hero_print_int(t1);
@@ -184,7 +175,7 @@ bb0:
     hero_print_end();
 #line 38 "tests/golden/run/fixedbugs-451-a-local-c-writes-after-its-function-returns-is-named.hero"
     return;
-#line 188 "fixedbugs451alocalcwritesafteritsfunctionreturnsisnamed.c"
+#line 179 "fixedbugs451alocalcwritesafteritsfunctionreturnsisnamed.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

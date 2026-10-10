@@ -108,26 +108,14 @@ void h_fixedbugs396sha256finalintoonecellaborts_main(void);
 
 #line 16 "tests/golden/run/fixedbugs-396-sha256-final-into-one-cell-aborts.hero"
 void h_fixedbugs396sha256finalintoonecellaborts_main(void) {
-#line 112 "fixedbugs396sha256finalintoonecellaborts.c"
-    struct SHA256state_st *const hero_lend_h0_c = (struct SHA256state_st *)hero_lend_local(sizeof(struct SHA256state_st), "fixedbugs396sha256finalintoonecellaborts.main", "c");
+#line 16 "tests/golden/run/fixedbugs-396-sha256-final-into-one-cell-aborts.hero"
 #define h0_c (*hero_lend_h0_c)
-    uint8_t *const hero_lend_h1_m = (uint8_t *)hero_lend_local(sizeof(uint8_t), "fixedbugs396sha256finalintoonecellaborts.main", "m");
+#line 16 "tests/golden/run/fixedbugs-396-sha256-final-into-one-cell-aborts.hero"
 #define h1_m (*hero_lend_h1_m)
-    uint32_t t1;
-    struct SHA256state_st t2;
-    uint8_t t3;
-    int32_t t4;
-    HeroStr t5;
-    HeroStr t6;
-    const char * t7;
-    uint64_t t8;
-    int32_t t9;
-    int32_t t10;
-    HeroStr t11;
-    uint8_t t12;
-    goto bb0;
+#line 16 "tests/golden/run/fixedbugs-396-sha256-final-into-one-cell-aborts.hero"
+    struct SHA256state_st *const hero_lend_h0_c = (struct SHA256state_st *)hero_lend_local(sizeof(struct SHA256state_st), "fixedbugs396sha256finalintoonecellaborts.main", "c"); uint8_t *const hero_lend_h1_m = (uint8_t *)hero_lend_local(sizeof(uint8_t), "fixedbugs396sha256finalintoonecellaborts.main", "m"); uint32_t t1; struct SHA256state_st t2; uint8_t t3; int32_t t4; HeroStr t5; HeroStr t6; const char * t7; uint64_t t8; int32_t t9; int32_t t10; HeroStr t11; uint8_t t12; goto bb0;
+#line 16 "tests/golden/run/fixedbugs-396-sha256-final-into-one-cell-aborts.hero"
 bb0:
-#line 17 "tests/golden/run/fixedbugs-396-sha256-final-into-one-cell-aborts.hero"
     t1 = UINT64_C(0);
 #line 17 "tests/golden/run/fixedbugs-396-sha256-final-into-one-cell-aborts.hero"
     t2 = (struct SHA256state_st){.num = t1};
@@ -183,7 +171,7 @@ bb0:
     hero_lend_local_give(hero_lend_h0_c);
 #line 21 "tests/golden/run/fixedbugs-396-sha256-final-into-one-cell-aborts.hero"
     return;
-#line 187 "fixedbugs396sha256finalintoonecellaborts.c"
+#line 175 "fixedbugs396sha256finalintoonecellaborts.c"
 }
 #undef h0_c
 #undef h1_m

@@ -113,32 +113,10 @@ void h_fixedbugs396afieldlentasonecellisthebindingsword_main(void);
 
 #line 19 "tests/golden/run/fixedbugs-396-a-field-lent-as-one-cell-is-the-binding-s-word.hero"
 void h_fixedbugs396afieldlentasonecellisthebindingsword_main(void) {
-#line 117 "fixedbugs396afieldlentasonecellisthebindingsword.c"
-    struct cell h0_b;
-    uint8_t t1;
-    uint8_t t2;
-    uint8_t t3;
-    uint8_t t4;
-    uint8_t t5;
-    uint8_t t6;
-    uint8_t t7;
-    uint8_t t8;
-    int64_t t10;
-    struct cell t11;
-    int32_t t12;
-    HeroStr t13;
-    struct cell t14;
-    uint8_t t15;
-    HeroStr t16;
-    struct cell t17;
-    int64_t t19;
-    uint8_t t20;
-    HeroStr t21;
-    struct cell t22;
-    int64_t t23;
-    goto bb0;
+#line 19 "tests/golden/run/fixedbugs-396-a-field-lent-as-one-cell-is-the-binding-s-word.hero"
+    struct cell h0_b; uint8_t t1; uint8_t t2; uint8_t t3; uint8_t t4; uint8_t t5; uint8_t t6; uint8_t t7; uint8_t t8; int64_t t10; struct cell t11; int32_t t12; HeroStr t13; struct cell t14; uint8_t t15; HeroStr t16; struct cell t17; int64_t t19; uint8_t t20; HeroStr t21; struct cell t22; int64_t t23; goto bb0;
+#line 19 "tests/golden/run/fixedbugs-396-a-field-lent-as-one-cell-is-the-binding-s-word.hero"
 bb0:
-#line 20 "tests/golden/run/fixedbugs-396-a-field-lent-as-one-cell-is-the-binding-s-word.hero"
     t1 = UINT64_C(0);
 #line 20 "tests/golden/run/fixedbugs-396-a-field-lent-as-one-cell-is-the-binding-s-word.hero"
     t2 = UINT64_C(0);
@@ -199,7 +177,7 @@ bb0:
     hero_print_end();
 #line 21 "tests/golden/run/fixedbugs-396-a-field-lent-as-one-cell-is-the-binding-s-word.hero"
     return;
-#line 203 "fixedbugs396afieldlentasonecellisthebindingsword.c"
+#line 181 "fixedbugs396afieldlentasonecellisthebindingsword.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs396afieldlentasonecellisthebindingsword_Cell_eq(const struct cell *a, const struct cell *b) {
     if (!(a->m == b->m)) return false;

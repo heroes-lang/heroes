@@ -4102,12 +4102,10 @@ void h_fixedbugs151aflaggedrecordoverathousanddeepnestbuilds_main(void);
 
 #line 2031 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
 void h_fixedbugs151aflaggedrecordoverathousanddeepnestbuilds_main(void) {
-#line 4106 "fixedbugs151aflaggedrecordoverathousanddeepnestbuilds.c"
-    TOP t1;
-    int32_t t2;
-    goto bb0;
+#line 2031 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
+    TOP t1; int32_t t2; goto bb0;
+#line 2031 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
 bb0:
-#line 2032 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
     t1 = make_top();
 #line 2032 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
     t2 = t1.i;
@@ -4117,7 +4115,7 @@ bb0:
     hero_print_end();
 #line 2032 "tests/golden/run/fixedbugs-151-a-flagged-record-over-a-thousand-deep-nest-builds.hero"
     return;
-#line 4121 "fixedbugs151aflaggedrecordoverathousanddeepnestbuilds.c"
+#line 4119 "fixedbugs151aflaggedrecordoverathousanddeepnestbuilds.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs151aflaggedrecordoverathousanddeepnestbuilds_G0_eq(const G0 *a, const G0 *b) {
     if (!(a->v == b->v)) return false;

@@ -101,24 +101,10 @@ void h_abortnullcstrintoc_main(void);
 
 #line 20 "tests/golden/run/abort-null-cstr-into-c.hero"
 void h_abortnullcstrintoc_main(void) {
-#line 105 "abortnullcstrintoc.c"
-    const char * h0_absent;
-    HeroStr t1;
-    HeroStr t2;
-    const char * t3;
-    HeroStr t4;
-    const char * t5;
-    const char * t6;
-    const char * t7;
-    HeroStr t8;
-    const char * t9;
-    const char * t10;
-    const char * t11;
-    bool t12;
-    HeroStr t13;
-    goto bb0;
+#line 20 "tests/golden/run/abort-null-cstr-into-c.hero"
+    const char * h0_absent; HeroStr t1; HeroStr t2; const char * t3; HeroStr t4; const char * t5; const char * t6; const char * t7; HeroStr t8; const char * t9; const char * t10; const char * t11; bool t12; HeroStr t13; goto bb0;
+#line 20 "tests/golden/run/abort-null-cstr-into-c.hero"
 bb0:
-#line 21 "tests/golden/run/abort-null-cstr-into-c.hero"
     t1 = HERO_STR_LIT(hero_str_43560e4d);
 #line 21 "tests/golden/run/abort-null-cstr-into-c.hero"
     hero_print_str(t1);
@@ -167,7 +153,7 @@ bb2:
 bb3:
 #line 34 "tests/golden/run/abort-null-cstr-into-c.hero"
     goto bb1;
-#line 171 "abortnullcstrintoc.c"
+#line 157 "abortnullcstrintoc.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

@@ -138,22 +138,10 @@ struct pt h_fixedbugs094designatedinitialisersleavetherestzero_PT_TWICE(void) {
 
 #line 15 "tests/golden/run/fixedbugs-094-designated-initialisers-leave-the-rest-zero.hero"
 void h_fixedbugs094designatedinitialisersleavetherestzero_main(void) {
-#line 142 "fixedbugs094designatedinitialisersleavetherestzero.c"
-    struct pt h0_p;
-    struct pt h1_t;
-    struct pt t1;
-    struct pt t2;
-    int32_t t3;
-    struct pt t4;
-    int32_t t5;
-    struct pt t6;
-    struct pt t7;
-    int32_t t8;
-    struct pt t9;
-    int32_t t10;
-    goto bb0;
+#line 15 "tests/golden/run/fixedbugs-094-designated-initialisers-leave-the-rest-zero.hero"
+    struct pt h0_p; struct pt h1_t; struct pt t1; struct pt t2; int32_t t3; struct pt t4; int32_t t5; struct pt t6; struct pt t7; int32_t t8; struct pt t9; int32_t t10; goto bb0;
+#line 15 "tests/golden/run/fixedbugs-094-designated-initialisers-leave-the-rest-zero.hero"
 bb0:
-#line 16 "tests/golden/run/fixedbugs-094-designated-initialisers-leave-the-rest-zero.hero"
     t1 = h_fixedbugs094designatedinitialisersleavetherestzero_PT_Y();
 #line 16 "tests/golden/run/fixedbugs-094-designated-initialisers-leave-the-rest-zero.hero"
     h0_p = t1;
@@ -190,7 +178,7 @@ bb0:
     hero_print_end();
 #line 21 "tests/golden/run/fixedbugs-094-designated-initialisers-leave-the-rest-zero.hero"
     return;
-#line 194 "fixedbugs094designatedinitialisersleavetherestzero.c"
+#line 182 "fixedbugs094designatedinitialisersleavetherestzero.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs094designatedinitialisersleavetherestzero_Pt_eq(const struct pt *a, const struct pt *b) {
     if (!(a->x == b->x)) return false;
