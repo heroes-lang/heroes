@@ -1,9 +1,10 @@
 # fixedbugs, defect 570, lane b18-guard, 2026-10-10 (panel 205's R1).
 #
 # SYMPTOM: through a header declaring nothing and writing `#pragma clang
-# diagnostic ignored "-Wimplicit-function-declaration"`, `getpid(x: f64)`
+# diagnostic ignored "-Wimplicit-function-declaration"`, `getpid() -> i64`
 # built with no warning at all and printed `true`, C calling a function no
-# header declares with a `double`.
+# header declares, its result read as the `int` C assumes (panel 205's
+# `ifd`; with a parameter, `getpid(x: f64)`, the base already refused it).
 #
 # CAUSE: clang makes an implicit declaration an error by default in C99 and
 # after, and the header's pragma turned it off.
@@ -14,7 +15,7 @@
 # default errors, so the message is the one a plain header gets.
 
 extern "fixedbugs-570-an-undeclared-function-is-refused-through-the-pragma.h"
-    function getpid(x: f64) -> i32  #~ ffi_unknown_name
+    function getpid() -> i64  #~ ffi_unknown_name
 
 function main()
-    print(getpid(2.5) > 0)
+    print(getpid() > 0)
