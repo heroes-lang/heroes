@@ -84,9 +84,10 @@ function statement(@r: state.Resolver, a: ast.Ast, s: source.Source, decls: [ast
             if !d.ty.is_err()
                 types.resolve_type(@r, a, s, decls, d.ty.must())
 
-            # `v @= e` on a `v` already mutable is its re-binding, told once
-            # with the certain fix that writes `@` (`resolve/meant`).
-            if d.ty.is_err() && meant.meant_rebinding(@r, s, name: d.name, symbol: d.symbol)
+            # `_ @= e` is a discard with the cell's symbol, and `v @= e` on a
+            # `v` already mutable is its re-binding, each told once with the
+            # certain fix that writes what was meant (`resolve/meant`).
+            if meant.declares_no_cell(@r, s, name: d.name, symbol: d.symbol, typed: !d.ty.is_err())
                 return
             _ = state.declare(
                 @r,

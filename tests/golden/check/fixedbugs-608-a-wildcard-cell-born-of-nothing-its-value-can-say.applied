@@ -1,0 +1,12 @@
+# Fixed 2026-10-11, defect 608, lane b20-check: the shape beside it born of a
+# value that cannot say a cell's type, `nullptr` and an empty literal. Before
+# the repair each was told `cannot_infer` with a guess that wrote
+# `_: <Handle> @= nullptr` or `_: [i64] @= []`, a wildcard cell. Now each is
+# told once as a cell nothing re-binds, with the certain fix that writes `=`;
+# `_ = nullptr` then checks and `_ = []` is refused as `cannot_infer`, as it
+# is anywhere, so this case carries an `.applied` and no `.fixed`.
+
+function main()
+    _ = nullptr  #~ never_rebound
+    _ = []  #~ never_rebound
+    print("done")

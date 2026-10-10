@@ -27,6 +27,7 @@ use token
 use diag
 use source
 use resolve/state
+use resolve/errors
 
 # A field lent to C through `.ptr()` is a place C may write: spec § 13, *C
 # writes back through the lend only where the binding is a `@` name*. So
@@ -68,6 +69,14 @@ function meant_by_signature(@r: state.Resolver, a: ast.Ast, s: source.Source, wr
             meant_write(@r, a, s, arg.value)
         k @ k + 1
 
+# A `@=` that declares no cell, told once: the wildcard's at any type, or a
+# re-binding where no type is written (`typed` false). True where told, and
+# the walk then declares nothing.
+function declares_no_cell(@r: state.Resolver, s: source.Source, name: token.Span, symbol: token.Span, typed: bool) -> bool
+    if wildcard_cell(@r, s, name: name, symbol: symbol)
+        return true
+    return !typed && meant_rebinding(@r, s, name: name, symbol: symbol)
+
 # `v @= e` where `v` is already a mutable local in scope, a cell or an `@`
 # parameter: the cell's symbol where its re-binding was meant, a second
 # declaration being refused as shadowing anyway (spec § 5). Told once at the
@@ -83,6 +92,18 @@ function meant_rebinding(@r: state.Resolver, s: source.Source, name: token.Span,
     bound_at = source.elsewhere(s, here: name.start, there: r.out.locals[at].name.start)
     state.push_diagnostic(@r, cell_redeclared(name: source.span_text(s, name), bound_at: bound_at, span: symbol))
     r.out.locals[at].writes @ r.out.locals[at].writes + 1
+    return true
+
+# `_ @= e` or `_: T @= e` (or the old `@`, which `parse/annotation` leaves to
+# this one message for the wildcard): a discard written with the cell's
+# symbol, a cell nothing can re-bind since `_` binds nothing (spec § 5;
+# defect 608). Told once at the `_` with the certain fix that writes `=`, and
+# nothing declared, as `state.declare` declares nothing for `_`. False, and
+# nothing said, for any other name.
+function wildcard_cell(@r: state.Resolver, s: source.Source, name: token.Span, symbol: token.Span) -> bool
+    if name.end - name.start != 1 || source.span_text(s, name) != "_"
+        return false
+    state.push_diagnostic(@r, errors.never_rebound_wildcard(source.span_text(s, symbol), span: name, symbol: symbol))
     return true
 
 function cell_redeclared(name: str, bound_at: str, span: token.Span) -> diag.Diagnostic

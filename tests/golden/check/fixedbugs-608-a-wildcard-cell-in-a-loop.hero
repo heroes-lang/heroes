@@ -1,0 +1,17 @@
+# Fixed 2026-10-11, defect 608, lane b20-check: the shape beside it inside a
+# loop's body, a `for` and a `while`, each a scope of its own. Symptom: both
+# lines were accepted as discards. Now each is told once, with the certain
+# fix that writes `=`, and the loop's own cell `k` is re-bound as before.
+
+function f(x: i64) -> i64
+    return x + 1
+
+function main()
+    for n in range(from: 0, to: 3)
+        _ @= f(n)  #~ never_rebound
+    k @= 0
+
+    while k < 3
+        _ @= f(k)  #~ never_rebound
+        k @ k + 1
+    print(k)

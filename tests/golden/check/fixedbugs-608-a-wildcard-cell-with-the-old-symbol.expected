@@ -1,0 +1,1 @@
+tests/golden/check/fixedbugs-608-a-wildcard-cell-with-the-old-symbol.hero:13:5: error[never_rebound]: `_` binds nothing, so a cell declared on it is one nothing can re-bind — a value dropped on purpose is written `_ = …`: write `=` where the `@` is

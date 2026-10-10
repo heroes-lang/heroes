@@ -1,0 +1,10 @@
+# Fixed 2026-10-11, defect 608, lane b20-check: the shape beside it in a
+# `test` block. Symptom: accepted as a discard. Now told once, with the
+# certain fix that writes `=`.
+
+function f(x: i64) -> i64
+    return x + 1
+
+test "a wildcard cell in a test"
+    _ = f(1)  #~ never_rebound
+    assert f(1) == 2

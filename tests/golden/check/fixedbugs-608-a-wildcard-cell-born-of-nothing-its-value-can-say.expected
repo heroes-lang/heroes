@@ -1,0 +1,2 @@
+tests/golden/check/fixedbugs-608-a-wildcard-cell-born-of-nothing-its-value-can-say.hero:10:5: error[never_rebound]: `_` binds nothing, so a cell declared on it is one nothing can re-bind — a value dropped on purpose is written `_ = …`: write `=` where the `@=` is
+tests/golden/check/fixedbugs-608-a-wildcard-cell-born-of-nothing-its-value-can-say.hero:11:5: error[never_rebound]: `_` binds nothing, so a cell declared on it is one nothing can re-bind — a value dropped on purpose is written `_ = …`: write `=` where the `@=` is

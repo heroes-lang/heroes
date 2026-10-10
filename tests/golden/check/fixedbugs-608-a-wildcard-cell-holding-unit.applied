@@ -1,0 +1,13 @@
+# Fixed 2026-10-11, defect 608, lane b20-check: the shape beside it whose
+# value is `()`. Before the repair the line was told `bound_unit`; now it is
+# told once as a cell nothing re-binds, the resolver's message, which the
+# checker's waits behind as it does for every line. Its certain fix writes
+# `_ = g(1)`, which `check` then refuses as `bound_unit`, so this case
+# carries an `.applied` and no `.fixed`.
+
+function g(x: i64)
+    print(x)
+
+function main()
+    _ = g(1)  #~ never_rebound
+    print("done")
