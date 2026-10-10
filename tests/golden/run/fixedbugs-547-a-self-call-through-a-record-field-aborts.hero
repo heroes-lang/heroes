@@ -1,0 +1,18 @@
+# Defect 547, 2026-10-10, panel 203's R2: the record field beside the
+# parameter. `step` puts itself in a record's field and calls through it, so
+# every call of `step` calls `step` again before it returns; `check` passes it
+# (a call through a field is a call through a value, which no rule follows to
+# what was stored), and the summary route panel 203 measured missed it too.
+# Panel 199 R2's answer holds: an abort that says the stack is exhausted.
+# Under the sanitiser the runtime's guard yields to ASan, which says
+# `stack-overflow`.
+
+record Box
+    f: (function(i64) -> i64)
+
+function step(n: i64) -> i64
+    b = Box(f: step)
+    return b.f(n)
+
+function main()
+    print(step(1))
