@@ -1,0 +1,18 @@
+# fixedbugs, defect 560, lane b18-ffi, 2026-10-10 (panel 202's R3; the
+# ffi-pragmatist's `shim2`).
+#
+# Two modules each bind the same `static inline` shim of the program's own,
+# the shape design.md §4.19 prescribes for a function-like macro, each from a
+# header of its own. `build` compiles each in its own module's unit and
+# prints 3 and 2. Until 2026-10-10 `heroes test` read both headers in one
+# unit and refused it, *redefinition of 'fixedbugs_560_low'*.
+use fixedbugs560/left_shim
+use fixedbugs560/right_shim
+
+function main()
+    print(left_shim.low(status: 259))
+    print(right_shim.low(status: 514))
+
+test "both shims keep the low byte"
+    assert left_shim.low(status: 259) == 3
+    assert right_shim.low(status: 514) == 2

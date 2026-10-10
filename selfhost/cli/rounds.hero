@@ -18,7 +18,6 @@
 
 use source
 use emit/ffi_asked
-use emit/externs as emit_externs
 use cli/compile
 use cli/toolchain
 use cli/compiling
@@ -90,7 +89,7 @@ function run(t: toolchain.Toolchain, options: compile.Options, art: compile.Arti
             struct_tags: struct_tags,
             asked: asked,
             asking: probing.holding(planned.probings, modules: refused_in),
-            unit_headers: unit_headers(art, s, site: site, planned: planned, modules: refused_in),
+            unit_headers: unit_headers(planned: planned, modules: refused_in),
             refused: "clang refused the generated C"
         )
         return Rounds(verdict: refused, binary: "", struct_tags: struct_tags, asked: asked)
@@ -147,8 +146,8 @@ function round(t: toolchain.Toolchain, options: compile.Options, art: compile.Ar
         unread_modules: checked.unread_modules
     )
 
-    if site.is_tests
-        return assemble.fused(t, options, art, s, site, struct_tags: struct_tags, lent: lent, told: @told)
+    # `heroes test` too: one unit per module, as `build` cuts the program
+    # (defect 560), the root's carrying the test runner.
     return assemble.per_module(
         t,
         options,
@@ -170,11 +169,9 @@ function joined(first: [diag.Diagnostic], more: [diag.Diagnostic]) -> [diag.Diag
 
     return out
 
-# The headers of the unit a refusal is, in its order: `heroes test`'s one unit
-# reads every group's, a module's unit its plan's (`emit/unit_plan.hero`).
-function unit_headers(art: compile.Artifact, s: source.Source, site: assemble.Site, planned: probing.Planned, modules: [str]) -> [str]
-    if site.is_tests
-        return emit_externs.headers(art.program, s, art.decls)
+# The headers of the unit a refusal is, in its order: a module's unit's, its
+# plan's (`emit/unit_plan.hero`), `heroes test`'s included since defect 560.
+function unit_headers(planned: probing.Planned, modules: [str]) -> [str]
     out: [str] @ []
 
     for one in probing.holding(planned.probings, modules: modules)

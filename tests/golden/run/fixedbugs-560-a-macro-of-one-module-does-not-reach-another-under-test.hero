@@ -1,0 +1,17 @@
+# fixedbugs, defect 560, lane b18-ffi, 2026-10-10 (panel 202's R3; the
+# ffi-pragmatist's `macro3`).
+#
+# One module's header defines a macro `twice(x)`, a hundredfold, and another
+# module binds a `static inline twice` of `int`. `build` reads each header in
+# its own module's unit and prints 300 and 8. Until 2026-10-10 `heroes test`
+# read both in one unit, where the macro rewrote the other module's call,
+# and the test below computed 400.
+use fixedbugs560/int_twice
+use fixedbugs560/macro_dbl
+
+function main()
+    print(macro_dbl.hundredfold(x: 3))
+    print(int_twice.doubled(x: 4))
+
+test "the other module's twice doubles"
+    assert int_twice.doubled(x: 4) == 8

@@ -1,0 +1,9 @@
+# fixedbugs, defect 560: a module binding `twice` of `long long`.
+extern "fixedbugs-560-long.h"
+    function twice(x: i64) -> i64
+
+function doubled(x: i64) -> i64
+    return twice(x: x)
+
+test "the long twice doubles"
+    assert doubled(x: 3) == 6

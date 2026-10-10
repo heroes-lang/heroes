@@ -1,0 +1,6 @@
+# fixedbugs, defect 560: a module whose header defines `LIMIT` as 100.
+extern "fixedbugs-560-limit.h"
+    function half(x: i64) -> i64
+
+function halved(x: i64) -> i64
+    return half(x: x)

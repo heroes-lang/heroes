@@ -87,7 +87,16 @@ function asked_of(t: toolchain.Toolchain, text: str, under: compiling.Compiling)
 # The question every module's headers are asked, as a refused round of the
 # program's own build would ask them all: its plans under `under`.
 function asked_all(t: toolchain.Toolchain, art: compile.Artifact, s: source.Source, under: compiling.Compiling, struct_tags: {str: bool}) -> ffi_asked.Asked
-    planned = probing.planned(t, under: under, art.program, art.checked, s, art.decls, components: units.components(s))
+    planned = probing.planned(
+        t,
+        under: under,
+        art.program,
+        art.checked,
+        s,
+        art.decls,
+        components: units.components(s),
+        target: .program_build
+    )
     return ask(t, art, s, under: under, struct_tags: struct_tags, asking: planned.probings)
 
 # The defect's own declaration, asked of the real `errno.h`: what is said

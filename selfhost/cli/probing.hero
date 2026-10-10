@@ -30,6 +30,7 @@ use check/state
 use ir/containers
 use emit/members
 use emit/unit_plan
+use emit/decls as emit_decls
 use emit/externs as emit_externs
 use cli/toolchain
 use cli/compiling
@@ -57,11 +58,11 @@ record Planned
     plans: [unit_plan.Plan]
     probings: [Probing]
 
-function planned(t: toolchain.Toolchain, under: compiling.Compiling, p: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl], components: [str]) -> Planned
+function planned(t: toolchain.Toolchain, under: compiling.Compiling, p: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl], components: [str], target: emit_decls.BuildTarget) -> Planned
     no_tags: {str: bool} = {}
     no_units: {str: str} = {}
     whole = members.whole_of(p, c, s, decls, struct_tags: no_tags, lend_units: no_units)
-    plans = unit_plan.plans(components, p, c, s, decls, whole: whole)
+    plans = unit_plan.plans(components, p, c, s, decls, whole: whole, target: target)
     return Planned(whole: whole, plans: plans, probings: probings_of(t, under: under, p, c, s, decls, plans: plans))
 
 # The plans grouped by the header list their units read, in the order the
