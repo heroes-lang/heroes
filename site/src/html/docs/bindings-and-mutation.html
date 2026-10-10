@@ -3,34 +3,34 @@
 
   <h1 class="chapter">Bindings and mutation</h1>
   <p class="tagline">
-    The <code>@</code> symbol marks mutable variables and the operations that change them.
+    The <code>@=</code> symbol declares a mutable variable, and <code>@</code> marks the operations that change it.
   </p>
 
   <p>
     To understand a program, you need to know which operations change its data. In Heroes, the <code>@</code> symbol identifies those operations.
   </p>
 
-  <h3><code>=</code> binds a fixed value, <code>@</code> a mutable one</h3>
+  <h3><code>=</code> binds a fixed value, <code>@=</code> a mutable one</h3>
   <!-- Two spaces before a trailing comment, because that is what `heroes fmt`
        produces: the column alignment this block used to carry is a style the
        formatter undoes the moment anybody runs it, and a page teaching the
        language must not teach a shape the language reformats. -->
   <pre><code>x = 5  <span class="c"># a name for a value, forever</span>
-v: i64 @ 0  <span class="c"># a cell that may change, and the type is required</span>
+v @= 0  <span class="c"># a cell that may change</span>
 v @ v + 1  <span class="c"># changing it</span></code></pre>
   <p>
-    <code>=</code> binds a name to a value that cannot be reassigned. <code>@</code> declares a cell, a variable whose value can change, and also assigns a new value to it. Later in this chapter, you will see how the same symbol marks parameters that a function can change.
+    <code>=</code> binds a name to a value that cannot be reassigned. <code>@=</code> declares a cell, a variable whose value can change, and <code>@</code> assigns a new value to it. Later in this chapter, you will see how <code>@</code> also marks parameters that a function can change.
   </p>
   <p>
-    You must declare a cell&rsquo;s type. Its value can change, but its type stays the same. If you try to change a name bound with <code>=</code>, the compiler reports an error:
+    A cell takes its type from its first value, as a binding does, and you may write the type on the line when you want it there: <code>v: i64 @= 0</code>. Its value can change, but its type stays the same. If you try to change a name bound with <code>=</code>, the compiler reports an error:
   </p>
   <pre><code>$ heroes check mutation.hero
-error[not_mutable]: `start` was bound with `=`, which binds once, forever — a cell is declared with its type: `start: &lt;type&gt; @ &lt;value&gt;`
+error[not_mutable]: `start` was bound with `=`, which binds once, forever — a cell is declared `start @= &lt;value&gt;`
   at mutation.hero:31:5
      |
   31 |     start @ start + 1
      |     ^^^^^
-  fix (guess): declare `start` as a cell: `start: &lt;type&gt; @ &lt;value&gt;`</code></pre>
+  fix (guess): declare `start` as a cell: `start @= &lt;value&gt;`</code></pre>
   <p>
     The fix is tagged <code>guess</code>, a suggestion to review, rather than <code>certain</code>, a definite correction. You may have intended to declare a cell or used the wrong name. The compiler can apply only <code>certain</code> fixes automatically.
   </p>
@@ -53,7 +53,7 @@ error[shadowed_binding]: `start` is already in scope, bound at line 30 — shado
   <figure class="example" data-src="examples/gallery/05-mutation.hero" data-lines="46-51">
 <pre><code><span class="k">test</span> <span class="s">"values are copies"</span>
     a = [<span class="n">1</span>, <span class="n">2</span>, <span class="n">3</span>]
-    b: [<span class="t">i64</span>] @ a
+    b: [<span class="t">i64</span>] @= a
     b @ b.push(<span class="n">4</span>)
     <span class="k">assert</span> a.len() == <span class="n">3</span>
     <span class="k">assert</span> b.len() == <span class="n">4</span></code></pre>
@@ -128,7 +128,7 @@ error[unused_binding]: `spare` is bound and never read — remove the binding, o
   <h3>The program</h3>
   <figure class="example" data-src="examples/gallery/05-mutation.hero" data-lines="53-55">
 <pre><code><span class="k">function</span> main()
-    r: Reader @ Reader(text: <span class="s">"one two"</span>, pos: <span class="n">0</span>)
+    r: Reader @= Reader(text: <span class="s">"one two"</span>, pos: <span class="n">0</span>)
     print(word_at(@r))</code></pre>
     <figcaption>examples/gallery/05-mutation.hero, lines 53&ndash;55</figcaption>
   </figure>

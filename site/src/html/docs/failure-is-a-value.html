@@ -36,7 +36,7 @@
 <span class="k">function</span> number_of(text: <span class="t">str</span>) -&gt; <span class="t">i64</span>?
     <span class="k">if</span> text.len() == <span class="n">0</span>
         <span class="k">return</span> <span class="k">fail</span>(code: <span class="s">"empty"</span>, msg: <span class="s">"there is nothing to read"</span>)
-    total: <span class="t">i64</span> @ <span class="n">0</span>
+    total: <span class="t">i64</span> @= <span class="n">0</span>
 
     <span class="k">for</span> i <span class="k">in</span> range(from: <span class="n">0</span>, to: text.len())
         total @ total * <span class="n">10</span> + digit_of(text[i])?
@@ -51,7 +51,7 @@
     The example also uses a mutable variable, a range, and calls with a dot.
   </p>
   <p>
-    <code>total: i64 @ 0</code> declares a mutable variable. The line <code>total @ total * 10 + …</code> assigns a new value to it. The symbol <code>=</code> binds a name that cannot be reassigned. <a href="/docs/bindings-and-mutation/">Bindings and mutation&nbsp;&rarr;</a>
+    <code>total: i64 @= 0</code> declares a mutable variable. The line <code>total @ total * 10 + …</code> assigns a new value to it. The symbol <code>=</code> binds a name that cannot be reassigned. <a href="/docs/bindings-and-mutation/">Bindings and mutation&nbsp;&rarr;</a>
   </p>
   <p>
     <code>range(from: 0, to: text.len())</code> counts from <code>from</code> up
@@ -70,7 +70,7 @@
   </p>
   <figure class="example" data-src="examples/gallery/03-fallible.hero" data-lines="26-34">
 <pre><code><span class="k">function</span> average_of(parts: [<span class="t">str</span>]) -&gt; <span class="t">i64</span>?
-    sum: <span class="t">i64</span> @ <span class="n">0</span>
+    sum: <span class="t">i64</span> @= <span class="n">0</span>
 
     <span class="k">for</span> p <span class="k">in</span> parts
         sum @ sum + number_of(p)?

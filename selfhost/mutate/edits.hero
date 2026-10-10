@@ -79,6 +79,41 @@ function forget_at_decl(a: ast.Ast, s: source.Source) -> [str]
 
     return out
 
+# **The cell's symbol where its re-binding was meant** (panel 209): `v @ e`
+# on a bare name becomes `v @= e`, which declares a second `v` where one is
+# already in scope; `cell_redeclared` is what should kill it.
+function inverse_at(a: ast.Ast, s: source.Source) -> [str]
+    out: [str] @= []
+
+    for st in a.stmts
+        match st.kind
+            .mutate m =>
+                target = a.exprs[m.place]
+
+                if sites.is_name(target)
+                    span = token.Span(start: target.span.end, end: a.exprs[m.value].span.start)
+                    out @ out.push(sites.edit(s: s, span: span, replacement: " @= "))
+            .bind | .declare | .return_stmt | .break_stmt | .continue_stmt => out @ out
+            .while_stmt | .for_in | .assert_stmt | .expr_stmt | .error     => out @ out
+
+    return out
+
+# **A cell where a binding was meant** (panel 209): `x = e` becomes `x @= e`,
+# a cell nothing re-binds; `never_rebound` is what should kill it.
+function bind_as_cell(a: ast.Ast, s: source.Source) -> [str]
+    out: [str] @= []
+
+    for st in a.stmts
+        match st.kind
+            .bind b =>
+                if b.ty.is_err()
+                    span = token.Span(start: b.name.end, end: a.exprs[b.value].span.start)
+                    out @ out.push(sites.edit(s: s, span: span, replacement: " @= "))
+            .declare | .mutate | .return_stmt | .break_stmt | .continue_stmt => out @ out
+            .while_stmt | .for_in | .assert_stmt | .expr_stmt | .error       => out @ out
+
+    return out
+
 # **A silent new variable, the habit other languages leave behind**: the
 # mutated name is misspelled, so `v @ v + 1` writes to something nobody
 # declared.

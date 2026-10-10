@@ -286,7 +286,7 @@ function declared_word(text: str) -> ForeignWord?
             ForeignWord(message: "`let` is not a word in this language — bind with `=`: `x = 5`", repair: .guidance)
         )
         "var" => ok(
-            ForeignWord(message: "`var` is not a word in this language — declare a mutable cell with `@=`: `v: i64 @= 0`", repair: .guidance)
+            ForeignWord(message: "`var` is not a word in this language — declare a mutable cell with `@=`: `v @= 0`", repair: .guidance)
         )
         "const" => ok(
             ForeignWord(message: "`const` is not a word in this language — use `constant`: `constant MAX: i64`", repair: .swap(word: "constant"))

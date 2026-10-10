@@ -44,6 +44,8 @@ function operators() -> [Operator]
         Operator(id: "boolean-twin", imitates: "`&` for `&&`, the habit C and Java leave behind")
         Operator(id: "local-takes-a-module", imitates: "a local wearing the name a `use` bound")
         Operator(id: "swap-ptr", imitates: "one C handle handed where another belongs")
+        Operator(id: "inverse-at", imitates: "the cell's symbol where its re-binding was meant")
+        Operator(id: "bind-as-cell", imitates: "a cell where a binding was meant")
     ]
 
 function known(id: str) -> bool
@@ -123,6 +125,12 @@ function apply(id: str, name: str, text: str) -> [str]
 
     if id == "swap-ptr"
         return handles.swap_ptr(a: a, s: s, decls: parsed.decls)
+
+    if id == "inverse-at"
+        return edits.inverse_at(a, s)
+
+    if id == "bind-as-cell"
+        return edits.bind_as_cell(a, s)
     return none
 
 test "the table is the list, and the count is read off it"
@@ -145,7 +153,15 @@ test "the table is the list, and the count is read off it"
     # is one type `ptr` today, so the kill rate is 0% by construction: this
     # operator exists to measure a hole (defect 029) and then to measure the
     # form that closes it.
-    assert operators().len() == 16
+    #
+    # 16 -> 18 on 2026-10-10: `inverse-at` and `bind-as-cell`, panel 209's two
+    # rows for the symbol it adopted, `@=` where a re-binding's `@` was meant
+    # and `@=` where a binding's `=` was, each killed by a rule the sitting
+    # landed (`cell_redeclared`, `never_rebound`). The denominator moves
+    # again, on the same terms.
+    assert operators().len() == 18
+    assert known("inverse-at")
+    assert known("bind-as-cell")
     assert known("swap-ptr")
     assert known("swap-args")
     assert known("boolean-twin")
@@ -157,8 +173,17 @@ test "the table is the list, and the count is read off it"
     # way in: the count above moved and this one did not, so the suite went red
     # at exactly the assertion whose own comment says a number in prose expires
     # in silence. `cli/mutate.hero`'s help text is the second.
-    assert ids().len() == 16
+    assert ids().len() == 18
     assert ids()[0] == "swap-args"
+
+test "the cell's symbol lands where a re-binding's `@` was, and where a binding's `=` was"
+    text = "function main()\n    total @= 3\n    total @ total + 1\n    k = 2\n    print(total + k)\n"
+    inverse = apply(id: "inverse-at", name: "x.hero", text: text)
+    assert inverse.len() == 1
+    assert contains(text: inverse[0], needle: "total @= total + 1")
+    cells = apply(id: "bind-as-cell", name: "x.hero", text: text)
+    assert cells.len() == 1
+    assert contains(text: cells[0], needle: "k @= 2")
 
 test "a program that does not parse yields no mutants at all"
     # Rule 2: a mutant that fails to parse measures the lexer, not the thesis —

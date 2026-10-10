@@ -10,8 +10,10 @@ here, never in code.
 |---|---|---|---|
 | swap-args | Swap two same-typed arguments at a call site | classic LLM inversion | mandatory named args (§4.9) |
 | drop-case | Delete one variant case's arm from a `match` | forgotten case | exhaustiveness (§4.7) |
-| forget-at-decl | `v: int @ 0` → `v = 0`, keep later `v @ ...` | mutability confusion | `@` on non-declared name (§4.4) |
-| mutate-undeclared | Introduce `totl @ total + x` (typo'd target) | silent new variable in other langs | mandatory type on declaration (§4.4) |
+| forget-at-decl | `v @= 0` → `v = 0`, keep later `v @ ...` | mutability confusion | `@` on a name bound with `=`, `not_mutable` (§4.4) |
+| mutate-undeclared | Introduce `totl @ total + x` (typo'd target) | silent new variable in other langs | a mutation names a declared cell, `unknown_name` with the declaration offered beside the rename (§4.4; panel 209's R9) |
+| inverse-at | `v @ e` → `v @= e` on a bare name already in scope | the cell's symbol where its re-binding was meant | `cell_redeclared`, one message with a certain fix (§4.4; panel 209) |
+| bind-as-cell | `x = e` → `x @= e` | a cell where a binding was meant | a cell nothing re-binds, `never_rebound`, with a certain fix (§4.4; panel 209) |
 | typo-ident | Typo one identifier at one use site | 1-char edit | no shadowing + unused + undefined (§4.4) |
 | typo-code | Typo the error code in `fail("…", …)` or in the `e.code == "…"` that reads it back | 1-char edit, across the two ends of a contract | **nothing** — §4.6 makes the code a bare `str`, and this row is what measures that |
 | wildcard-variant | Replace a variant arm with `_ =>` | lazy catch-all | `_` ban on variants (§4.7) |

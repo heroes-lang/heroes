@@ -78,7 +78,7 @@ error[type_mismatch]: expected `i64`, found `i64?`
     <figcaption>examples/gallery/10-maps.hero, lines 28&ndash;31</figcaption>
   </figure>
   <p>
-    You can write all the pairs together or declare a mutable map with <code>@</code> and add them one at a time. <code>m[k] @ v</code> inserts the value for key <code>k</code>, replacing the previous value if it exists. An empty map needs an explicit type: <code>m: {str: i64} @ {}</code>.
+    You can write all the pairs together or declare a mutable map with <code>@=</code> and add them one at a time. <code>m[k] @ v</code> inserts the value for key <code>k</code>, replacing the previous value if it exists. An empty map needs an explicit type: <code>m: {str: i64} @= {}</code>.
   </p>
 
   <h3>A map has no order</h3>
@@ -112,7 +112,7 @@ error[type_mismatch]: expected `i64`, found `i64?`
   </figure>
   <figure class="example" data-src="examples/gallery/10-maps.hero" data-lines="33-39">
 <pre><code><span class="k">function</span> total_of(scores: {<span class="t">str</span>: <span class="t">i64</span>}, names: [<span class="t">str</span>]) -&gt; <span class="t">i64</span>
-    sum: <span class="t">i64</span> @ <span class="n">0</span>
+    sum: <span class="t">i64</span> @= <span class="n">0</span>
 
     <span class="k">for</span> name <span class="k">in</span> names
         sum @ sum + score_of(scores, name)

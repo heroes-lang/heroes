@@ -1097,19 +1097,20 @@ recursively. **Rationale:** this was an *omission* discovered in review, and def
 code — all the hand-written predicate functions the earlier code was forced to invent
 (`is_plus(t)`, `is_times(t)`) collapse into `ts[p] == .plus`. A rule that deletes code.
 
-### 4.4 Bindings: `=` and `@`
+### 4.4 Bindings: `=`, `@=` and `@`
 
-Two symbols, and **no assignment operator exists**.
+Three symbols, and **no assignment operator exists**.
 
 ```
 x = 5                 # immutable binding, type inferred
-v: i64 @ 0            # mutable declaration — type REQUIRED
-v @ v + 1             # mutation — never has a type
+v @= 0                # mutable cell, type inferred too; `v: i64 @= 0` writes it
+v @ v + 1             # re-binding — never has a type
 vv @ v + 1            # ERROR: `vv` was never declared
 ```
 
-`=` binds once, forever. `@` declares a cell and re-binds it. One rule — `name SYMBOL value` — where
-`=` binds permanently and `@` binds repeatedly.
+`=` binds once, forever. `@=` declares a cell, and `@` re-binds it (panel 209, 2026-10-10; until
+that day `@` did both and the type was mandatory on the declaration to tell them apart). One rule —
+`name SYMBOL value` — where `=` binds permanently, `@=` opens a cell, and `@` binds it again.
 
 **Why `@`.** The journey: `::`/`:=` (rejected — two nearly identical symbols, visually confusable at
 a dense screen), then `=`+`var` (rejected — `=` doing double duty reopens the typo hole), then `~`
@@ -1127,20 +1128,33 @@ hard-to-follow part — they are the only lines that make behaviour order-depend
 jumps out is a marker, not noise. Same logic as `?` marking error propagation: make the non-obvious
 flow visible.
 
-**Why the type is mandatory on mutable declaration.** Without it, `x @ 5` doesn't tell you whether
-you are *declaring* or *mutating* — you'd have to scan the enclosing block, violating locality. And
-this hole lets typos through silently:
+**What tells a declaration from a re-binding, and why the type stopped being mandatory.** Until
+panel 209 (2026-10-10) one symbol did both and the type told them apart: `x @ 5` alone did not say
+whether it *declared* or *mutated*, a reader had to scan the enclosing block, violating locality, and
+the hole let typos through silently:
 
 ```
-total: i64 @ 0
+total @= 0
 for x in xs
-    totl @ total + x      # would declare a new variable
+    totl @ total + x      # ERROR: `totl` was never declared
 ```
 
-`totl` is read on that very line, so an "unused variable" rule wouldn't catch it. With the type
-mandatory on declaration, `totl @ ...` is an error because `totl` was never declared. The two line
-shapes become visually distinct, and **you pay tokens only at the declaration site**, which is
-exactly where 1.5 says to pay them.
+`totl` is read on that very line, so an "unused variable" rule would not catch it; what catches it is
+that `@` never declares. The symbol now carries the whole distinction: `@=` opens a cell and `@`
+re-binds one, so the two line shapes are told apart by the symbol and not by the annotation, and the
+type is optional on a cell as on a binding, inferred locally from the value (4.5). The sitting's blind
+seat read both forms right in every trial, so the symbol's case rested on 1.2's tokens, about a
+quarter of a declaration line, and on 1.5's uniformity, one rule for the two forms, not on a mistake
+the old shape let through. The old reason's other half had already moved: spec § 5 says a write is
+not a use, so a cell written and never read is unused, and since the sitting **a cell nothing
+re-binds is a compile error too**, `never_rebound`, with a certain fix writing `=` — `v @= 0` with
+no `v @ …` below it was a binding in disguise, which the compiler now says. Three shapes beside the
+typo are told once each, with a certain fix: `v @= e` on a `v` already mutable is the re-binding it
+was meant to be (`cell_redeclared`, write `@`); `p.x @= 1` on a field or an element is the write it
+can only be (`declared_place`); and `totl @ …` on a name nobody declared is `unknown_name` with the
+rename beside a guess that declares it (R9). What a cell's value cannot say — an empty container, a
+bare `nullptr` where a handle was meant — is demanded at the birth, `cannot_infer`, and the cell
+poisoned so the line that would have refused it says nothing more.
 
 **All bindings must be initialised.** This is not a style rule — it **deletes an entire analysis
 from the compiler.** In languages where `var x: i64` can be declared without a value, the compiler
@@ -1165,7 +1179,8 @@ there is none to read.
 **Shadowing is forbidden.** Redeclaring a name already in scope is an error. Costs nothing, kills a
 class of bug where the model believes it is referring to one variable and hits another.
 
-**`@` also marks mutable parameters** — see 4.8. Same symbol, one meaning, three positions.
+**`@` also marks mutable parameters** — see 4.8. One symbol of change, at the declaration's `@=`,
+at the re-binding, and at the parameter and its argument.
 
 ### 4.5 Type inference
 
@@ -1175,11 +1190,13 @@ exactly ours: **errors stay local.** With global inference, a wrong type here su
 thirty lines away. This was chosen for the right reason before the name was known.
 
 Because there is one integer type, no implicit conversions, and mandatory initialisation, the type
-is almost always derivable. **Exactly two cases are not**, and both are "empty container":
+is almost always derivable, for a binding and, since panel 209, for a cell. **The cases that are
+not** are the "empty container" and, on a cell, the bare `nullptr`, a `ptr` where a handle was meant:
 
 ```
 xs: [i64] = []
-m: {str: i64} @ {}
+m: {str: i64} @= {}
+db: CDb @= nullptr
 ```
 
 Handle this in character with the rest of the language — the annotation is not a feature to learn,
@@ -1188,7 +1205,7 @@ it is something **the compiler asks for by name**:
 ```
 error: cannot infer the type of `result` at line 3
   the map literal is empty, so there is nothing to infer from
-  write:  result: {str: i64} @ {}
+  write:  result: {str: i64} @= {}
 ```
 
 ~15 tokens of spec, and the model doesn't have to *decide* anything: either it works, or the

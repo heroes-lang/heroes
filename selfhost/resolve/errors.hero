@@ -46,7 +46,7 @@ function unknown_name(name: str, near: [str], span: token.Span) -> diag.Diagnost
 function unknown_place(name: str, near: [str], span: token.Span) -> diag.Diagnostic
     d: diag.Diagnostic @= unknown_name(name, near, span)
     d.notes @ d.notes.push(
-        "`" + name + " @ …` changes a cell that already exists; a new cell is declared with its type, `" + name + ": <type> @= <value>`, and a value bound once with `" + name + " = <value>`"
+        "`" + name + " @ …` changes a cell that already exists; a new cell is declared `" + name + " @= <value>`, and a value bound once with `" + name + " = <value>`"
     )
     return d
 
@@ -187,7 +187,7 @@ function not_mutable(name: str, kind: resolved.LocalKind, span: token.Span) -> d
         .param => "`" + name + "` is a parameter without `@`, so it cannot be written — mark it `@" + name + "` in the signature and at every call site (copy in, copy out)"
         .loop_var => "`" + name + "` is the loop variable, and it is bound afresh for each element — write to a cell declared outside the loop"
         .payload => "`" + name + "` is bound by the pattern, and a pattern binding is not a cell — bind what you need with `@` outside the `match`"
-        .bind | .cell => "`" + name + "` was bound with `=`, which binds once, forever — a cell is declared with its type: `" + name + ": <type> @= <value>`"
+        .bind | .cell => "`" + name + "` was bound with `=`, which binds once, forever — a cell is declared `" + name + " @= <value>`"
 
     d: diag.Diagnostic @= diag.new_diagnostic(code: "not_mutable", message: message, span: span)
 
@@ -195,7 +195,7 @@ function not_mutable(name: str, kind: resolved.LocalKind, span: token.Span) -> d
         # The type is the missing half and no type exists yet at this stage:
         # prose, not a fix a tool may apply (§4.17).
         d.fixes @ d.fixes.push(
-            diag.Fix(title: "declare `" + name + "` as a cell: `" + name + ": <type> @= <value>`", replacement: "", span: span, certainty: .guess)
+            diag.Fix(title: "declare `" + name + "` as a cell: `" + name + " @= <value>`", replacement: "", span: span, certainty: .guess)
         )
     return d
 

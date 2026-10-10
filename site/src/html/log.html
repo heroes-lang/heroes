@@ -90,7 +90,7 @@
     </li>
     <li id="42">
       <span class="when">Bytes a C library may keep</span>
-      <b>A program can hand a C library text it will keep, and say when it is done with it: <code>x: cstr @ s.lease()</code>, then <code>end_lease(@x)</code>.</b> Every rule proposed to forbid such programs was measured and refused in turn; what closed the hole was a way to say it, not a ban. A lease nobody ends stops the program when <code>main</code> returns, with the count of what was left open.
+      <b>A program can hand a C library text it will keep, and say when it is done with it: <code>x: cstr @= s.lease()</code>, then <code>end_lease(@x)</code>.</b> Every rule proposed to forbid such programs was measured and refused in turn; what closed the hole was a way to say it, not a ban. A lease nobody ends stops the program when <code>main</code> returns, with the count of what was left open.
       <a class="more" href="/docs/the-c-boundary/">The C boundary</a>
     </li>
     <li id="41">
