@@ -194,6 +194,14 @@ CL-040); what conservative would have been is below the list.
 corrected; or the compiler-engineer's H whole for Q2 (the library headers'
 warnings all silenced) with route A for Q1, which builds today.
 
+**Corrected 2026-10-10 by the landing of defect 572** (`b87d2bc2`, lane b18-guard): R3's *a package's `-D` reaches only the units of
+modules whose groups name that package* is narrower than what landed. Asked first by the module's own groups, the repair broke
+`run/fixedbugs-413-libuv-*`: the library module's unit reads `uv.h` for the record it spells and lost libuv's `-I`. So a package's words
+reach the units that read a header its groups name, and no other; where two modules read one header, the package one group names reaches
+both. On Linux arm64 the seats' four `wcwidth` cases are told *`wchar.h` declares `wcwidth` only under `_XOPEN_SOURCE`*, with or without
+`main` naming `ncursesw` (the lane's measurement, not re-run by the coordinator). Taken by the coordinator as the robust reading of R3, a
+unit that reads a header needing that header's package; the author may overturn it.
+
 ## Process notes
 
 - **The compiler-engineer ran `pkill -f "census.sh"` and `pkill -f "xargs -P
@@ -215,6 +223,19 @@ warnings all silenced) with route A for Q1, which builds today.
 | ffi-pragmatist | with P2 and C landed, `p205/gmpmac/g.hero` prints `6`, `gsign.hero` and `hole570/leak.hero` are refused, the 182-header census moves exactly 6 headers to OK and 0 to FAIL, the 20 `examples/` programs with an `extern` build with 0 warnings (scored against S3) | the landing |
 | ffi-pragmatist | with route B (here Y) landed, on Linux arm64 a module whose first group is an own header defining `_GNU_SOURCE` binds `sched_getcpu() -> i32` and prints `true`; `sched_getcpu(x: i32) -> i64` refused | the landing, the CI's Linux legs |
 | spec-warden | P1: H2f reads +10 to +14 real at the landing's `--refresh` | the landing |
+
+**Scored 2026-10-10, at the landing**, from lane b18-guard's commit bodies, which the coordinator read and did not re-run:
+
+- the spec-warden's P1: H2f read +17 real at the one `--refresh`, 9,887 to 9,904 at 13:46 (`83ada2b8`), **a miss by 3**;
+- the compiler-engineer's census: 19 exit codes moved over the 1,456 tracked files with an `extern`, every one a case of the lane (18 of
+  570, 1 of 569; `ee4dda85`), against exactly 7, **a miss**; its size: R1's and R2's commits (`bd1136f9`, `ee4dda85`) add 673 lines and
+  remove 33 over 10 files of `selfhost/`, git's count with tests and comments, the coordinator's `git show --numstat`, against at most 70
+  over 3, **a miss**;
+- the ffi-pragmatist's first, scored against S3, the region R2 took: gmp's `g.hero` prints `6` and `gsign` is refused, **a hit**; the 182
+  Mac headers read 16 refused and 2 with raw warnings before and 10 and 0 after (`ee4dda85`), net counts that do not say which headers
+  moved where, so *exactly 6 to OK and 0 to FAIL* is **unscored**; `hole570/leak.hero` and the 20 `examples/` programs are named in no
+  commit body read, **unscored**;
+- the ffi-pragmatist's second, `sched_getcpu` on Linux arm64: at the CI's Linux legs after the push, **unscored**.
 
 ## Author's verdict
 
