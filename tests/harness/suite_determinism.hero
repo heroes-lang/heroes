@@ -31,6 +31,7 @@
 
 use absence
 use cases
+use one_file_units
 use report
 use shell
 use strings
@@ -92,8 +93,16 @@ function run_all(scratch: str, compiler: str) -> report.Report?
 # caller. It is the machine's only where the case binds what the compiler says
 # is missing and the machine, asked, lacks it (`absence`); until defect 246 the
 # compiler's words alone made the skip.
+#
+# A case whose one file `--emit-c` refuses (`ffi_one_file`, defect 453) is
+# judged on the units `build` writes for it, a unit per module, emitted twice
+# and alike (`one_file_units`): never passed over.
 function c_case(@r: report.Report, @skipped: i64, scratch: str, compiler: str, written: str, item: cases.Case)
     first = dumped(scratch: scratch, compiler: compiler, item: item, flag: "--emit-c", into: "")
+
+    if first.is_err() && one_file_units.refused_one_file(last_error(first))
+        units_alike(@r, scratch: scratch, compiler: compiler, item: item)
+        return
 
     if first.is_err()
         lacks = absence.machine_lacks(scratch: scratch, path: item.source, expected: "", said: last_error(first))
@@ -144,6 +153,53 @@ function c_case(@r: report.Report, @skipped: i64, scratch: str, compiler: str, w
         )
     else
         report.keep_pass(@r)
+
+# The units `build` writes for a case, twice, the same files with the same
+# bytes.
+function units_alike(@r: report.Report, scratch: str, compiler: str, item: cases.Case)
+    label = "determinism/c/" + item.name
+    one = one_file_units.units_of(scratch: scratch, compiler: compiler, source: item.source, tag: item.name + "-a")
+    two = one_file_units.units_of(scratch: scratch, compiler: compiler, source: item.source, tag: item.name + "-b")
+
+    if one.is_err() || two.is_err()
+        report.keep_failure(
+            @r,
+            label: label,
+            detail: "  `--emit-c` refuses " + item.source + "'s one file, and its units could not be asked twice:\n" + last_units_error(one) + last_units_error(two)
+        )
+        return
+    wrong: [str] @ []
+
+    if names_of(one.must()) != names_of(two.must())
+        wrong @ wrong.push(
+            "    the units were " + names_of(one.must()).join(", ") + " and then " + names_of(two.must()).join(", ")
+        )
+    else
+        for i in range(from: 0, to: one.must().len())
+            if one.must()[i].text != two.must()[i].text
+                wrong @ wrong.push("    " + one.must()[i].name + " came out with different bytes the second time")
+
+    if wrong.len() > 0
+        report.keep_failure(
+            @r,
+            label: label,
+            detail: "  `--emit-c` refuses " + item.source + "'s one file, and the units `build` writes for it differ twice — §7 says this stays green at all times:\n" + wrong.join("\n")
+        )
+    else
+        report.keep_pass(@r)
+
+function names_of(units: [one_file_units.Unit]) -> [str]
+    out: [str] @ []
+
+    for unit in units
+        out @ out.push(unit.name)
+
+    return out
+
+function last_units_error(got: [one_file_units.Unit]?) -> str
+    return match got
+        .ok _  => ""
+        .err e => "    " + e.msg + "\n"
 
 # One emission, as text. `into` empty means stdout, which is what the
 # comparison uses; a non-empty `into` writes through `-o` and the answer
@@ -272,4 +328,31 @@ test "fixedbugs: a case that cannot emit is skipped only where the machine lacks
     assert one_skipped == 1
     assert excused.skips.len() == 1
     assert strings.starts_with(text: excused.skips[0], prefix: "SKIP determinism/c/lacks\n")
+    assert !shell.remove_tree(scratch).is_err()
+
+# DEFECT 453's widening in this suite, held as a test (2026-10-10): a program
+# whose one file `--emit-c` refuses is judged on the units `build` writes,
+# alike twice, and reads as a pass, never a skip.
+test "fixedbugs: a case whose one file --emit-c refuses is judged on its units, alike twice (defect 453)"
+    compiler = shell.some_compiler()
+
+    if compiler.is_err()
+        return
+    scratch = shell.own_scratch()
+    planted = one_file_units.planted_two_ways(scratch)
+    assert !planted.is_err()
+    judged: report.Report @ report.empty()
+    none_skipped: i64 @ 0
+    c_case(
+        @judged,
+        @none_skipped,
+        scratch: scratch,
+        compiler: compiler.must(),
+        written: scratch,
+        item: cases.Case(source: planted.must(), expected: "", name: "two-ways")
+    )
+    assert judged.passed == 1
+    assert judged.failed == 0
+    assert none_skipped == 0
+    assert judged.skips.len() == 0
     assert !shell.remove_tree(scratch).is_err()
