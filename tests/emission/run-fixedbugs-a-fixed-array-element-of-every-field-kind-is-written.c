@@ -31,10 +31,13 @@
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
+#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -60,11 +63,11 @@ _Static_assert(_Generic(&((struct kinds *)0)->labels, const char * (*)[2]: 1, de
 _Static_assert(sizeof(struct kinds) - __builtin_offsetof(struct kinds, small) != 0, "heroes-ffi-flex Kinds small");
 #line 19 "tests/golden/run/fixedbugs-a-fixed-array-element-of-every-field-kind-is-written.hero"
 _Static_assert(_Generic(&((struct kinds *)0)->small, _Bool (*)[3]: (sizeof(_Bool) == sizeof(int16_t) && (((_Bool)-1 < 0) == ((int16_t)-1 < 0))), char (*)[3]: (sizeof(char) == sizeof(int16_t) && (((char)-1 < 0) == ((int16_t)-1 < 0))), signed char (*)[3]: (sizeof(signed char) == sizeof(int16_t) && (((signed char)-1 < 0) == ((int16_t)-1 < 0))), short (*)[3]: (sizeof(short) == sizeof(int16_t) && (((short)-1 < 0) == ((int16_t)-1 < 0))), int (*)[3]: (sizeof(int) == sizeof(int16_t) && (((int)-1 < 0) == ((int16_t)-1 < 0))), long (*)[3]: (sizeof(long) == sizeof(int16_t) && (((long)-1 < 0) == ((int16_t)-1 < 0))), long long (*)[3]: (sizeof(long long) == sizeof(int16_t) && (((long long)-1 < 0) == ((int16_t)-1 < 0))), unsigned char (*)[3]: (sizeof(unsigned char) == sizeof(int16_t) && (((unsigned char)-1 < 0) == ((int16_t)-1 < 0))), unsigned short (*)[3]: (sizeof(unsigned short) == sizeof(int16_t) && (((unsigned short)-1 < 0) == ((int16_t)-1 < 0))), unsigned int (*)[3]: (sizeof(unsigned int) == sizeof(int16_t) && (((unsigned int)-1 < 0) == ((int16_t)-1 < 0))), unsigned long (*)[3]: (sizeof(unsigned long) == sizeof(int16_t) && (((unsigned long)-1 < 0) == ((int16_t)-1 < 0))), unsigned long long (*)[3]: (sizeof(unsigned long long) == sizeof(int16_t) && (((unsigned long long)-1 < 0) == ((int16_t)-1 < 0))), default: 0), "heroes-ffi-field Kinds small");
-#line 64 "fixedbugsafixedarrayelementofeveryfieldkindiswritten.c"
+#line 67 "fixedbugsafixedarrayelementofeveryfieldkindiswritten.c"
 
 #line 13 "tests/golden/run/fixedbugs-a-fixed-array-element-of-every-field-kind-is-written.hero"
 _Static_assert(__builtin_classify_type(*(struct kinds *)0) != 13, "heroes-ffi-union Kinds name flags xs ps labels small");
-#line 68 "fixedbugsafixedarrayelementofeveryfieldkindiswritten.c"
+#line 71 "fixedbugsafixedarrayelementofeveryfieldkindiswritten.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -129,6 +132,7 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
+#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
@@ -148,7 +152,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 152 "fixedbugsafixedarrayelementofeveryfieldkindiswritten.c"
+#line 156 "fixedbugsafixedarrayelementofeveryfieldkindiswritten.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugsafixedarrayelementofeveryfieldkindiswritten_Kinds_eq(const struct kinds *a, const struct kinds *b);
@@ -163,49 +167,12 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_fixedbugsafixedarrayelementofeveryfieldkindiswritten_main(void);
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 24 "tests/golden/run/fixedbugs-a-fixed-array-element-of-every-field-kind-is-written.hero"
 void h_fixedbugsafixedarrayelementofeveryfieldkindiswritten_main(void) {
-#line 171 "fixedbugsafixedarrayelementofeveryfieldkindiswritten.c"
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-    struct kinds h0_k;
-    uint8_t t1;
-    uint8_t t2;
-    uint8_t t3;
-    uint8_t t4;
-    uint8_t t5;
-    uint8_t t6;
-    uint8_t t7;
-    uint8_t t8;
-    bool t10;
-    bool t11;
-    float t13;
-    float t14;
-    void * t16;
-    void * t17;
-    const char * t19;
-    const char * t20;
-    int16_t t22;
-    int16_t t23;
-    int16_t t24;
-    struct kinds t26;
-    int64_t t27;
-    uint8_t t28;
-    int64_t t29;
-    bool t30;
-    int64_t t31;
-    float t32;
-    int64_t t33;
-    void * t34;
-    int64_t t35;
-    const char * t36;
-    int64_t t37;
-    int16_t t38;
-    struct kinds t39;
-    int64_t t40;
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
-    goto bb0;
+#line 24 "tests/golden/run/fixedbugs-a-fixed-array-element-of-every-field-kind-is-written.hero"
+    struct kinds h0_k; uint8_t t1; uint8_t t2; uint8_t t3; uint8_t t4; uint8_t t5; uint8_t t6; uint8_t t7; uint8_t t8; bool t10; bool t11; float t13; float t14; void * t16; void * t17; const char * t19; const char * t20; int16_t t22; int16_t t23; int16_t t24; struct kinds t26; int64_t t27; uint8_t t28; int64_t t29; bool t30; int64_t t31; float t32; int64_t t33; void * t34; int64_t t35; const char * t36; int64_t t37; int16_t t38; struct kinds t39; int64_t t40; goto bb0;
+#line 24 "tests/golden/run/fixedbugs-a-fixed-array-element-of-every-field-kind-is-written.hero"
 bb0:
 #line 26 "tests/golden/run/fixedbugs-a-fixed-array-element-of-every-field-kind-is-written.hero"
     t1 = UINT64_C(0);
@@ -284,9 +251,8 @@ bb0:
     hero_print_end();
 #line 39 "tests/golden/run/fixedbugs-a-fixed-array-element-of-every-field-kind-is-written.hero"
     return;
-#line 288 "fixedbugsafixedarrayelementofeveryfieldkindiswritten.c"
+#line 255 "fixedbugsafixedarrayelementofeveryfieldkindiswritten.c"
 }
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_fixedbugsafixedarrayelementofeveryfieldkindiswritten_Kinds_eq(const struct kinds *a, const struct kinds *b) {
     if (!((a->name[0] == b->name[0] && a->name[1] == b->name[1] && a->name[2] == b->name[2] && a->name[3] == b->name[3] && a->name[4] == b->name[4] && a->name[5] == b->name[5] && a->name[6] == b->name[6] && a->name[7] == b->name[7]))) return false;
     if (!((a->flags[0] == b->flags[0] && a->flags[1] == b->flags[1]))) return false;

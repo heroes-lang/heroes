@@ -30,10 +30,13 @@
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
+#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -79,7 +82,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_35d9fe9b, "payload");
 
-#line 83 "cfreesaleaseonalatercall.c"
+#line 86 "cfreesaleaseonalatercall.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -103,6 +106,7 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
+#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
@@ -122,7 +126,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 126 "cfreesaleaseonalatercall.c"
+#line 130 "cfreesaleaseonalatercall.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -135,32 +139,22 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_cfreesaleaseonalatercall_main(void);
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 11 "tests/golden/run/c-frees-a-lease-on-a-later-call.hero"
 void h_cfreesaleaseonalatercall_main(void) {
-#line 143 "cfreesaleaseonalatercall.c"
-    HeroStr h0_x = {0};
-    const char * h1_c;
-    HeroStr t1;
-    HeroStr t2;
-    const char * t3;
-    const char * t4;
-    int64_t t5;
-    HeroStr t6;
-    goto bb0;
+#line 11 "tests/golden/run/c-frees-a-lease-on-a-later-call.hero"
+    HeroStr h0_x = {0}; const char * h1_c; HeroStr t1; HeroStr t2; const char * t3; const char * t4; int64_t t5; HeroStr t6; goto bb0;
+#line 11 "tests/golden/run/c-frees-a-lease-on-a-later-call.hero"
 bb0:
-#line 12 "tests/golden/run/c-frees-a-lease-on-a-later-call.hero"
     t1 = HERO_STR_LIT(hero_str_35d9fe9b);
 #line 12 "tests/golden/run/c-frees-a-lease-on-a-later-call.hero"
     t6 = h0_x;
-#line 158 "cfreesaleaseonalatercall.c"
+#line 12 "tests/golden/run/c-frees-a-lease-on-a-later-call.hero"
     hero_str_incref(t1);
 #line 12 "tests/golden/run/c-frees-a-lease-on-a-later-call.hero"
     h0_x = t1;
-#line 162 "cfreesaleaseonalatercall.c"
+#line 12 "tests/golden/run/c-frees-a-lease-on-a-later-call.hero"
     hero_str_decref(t6);
-#line 13 "tests/golden/run/c-frees-a-lease-on-a-later-call.hero"
     t2 = h0_x;
 #line 13 "tests/golden/run/c-frees-a-lease-on-a-later-call.hero"
     t3 = hero_str_held(t2);
@@ -176,11 +170,10 @@ bb0:
     hero_print_end();
     (void)later_free();
     hero_held_release(&h1_c);
-#line 180 "cfreesaleaseonalatercall.c"
+#line 174 "cfreesaleaseonalatercall.c"
     hero_str_release_at(&h0_x);
     return;
 }
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_incref(v->as.ok);

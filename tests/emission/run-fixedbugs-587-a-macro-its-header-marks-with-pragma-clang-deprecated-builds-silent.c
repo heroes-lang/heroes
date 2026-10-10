@@ -9,9 +9,18 @@
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic ignored "-Wpragma-pack"
+#pragma float_control(push)
 #include "heroes_guard_open.h"
 #include <fixedbugs-587-a-macro-its-header-marks-with-pragma-clang-deprecated-builds-silent.h>
 #include "heroes_guard_close.h"
+#pragma clang diagnostic ignored "-Wignored-pragmas"
+#pragma pack()
+#pragma float_control(pop)
+#pragma float_control(precise, on)
+#pragma GCC visibility push(default)
+#pragma clang section bss="" data="" rodata="" text="" relro=""
+#pragma clang optimize on
 #pragma clang diagnostic pop
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -21,6 +30,7 @@
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
+#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
@@ -70,7 +80,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 74 "fixedbugs587amacroitsheadermarkswithpragmaclangdeprecatedbuildssilent.c"
+#line 84 "fixedbugs587amacroitsheadermarkswithpragmaclangdeprecatedbuildssilent.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -94,6 +104,7 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
+#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
@@ -111,7 +122,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 115 "fixedbugs587amacroitsheadermarkswithpragmaclangdeprecatedbuildssilent.c"
+#line 126 "fixedbugs587amacroitsheadermarkswithpragmaclangdeprecatedbuildssilent.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -128,7 +139,7 @@ void h_fixedbugs587amacroitsheadermarkswithpragmaclangdeprecatedbuildssilent_mai
 
 #line 14 "tests/golden/run/fixedbugs-587-a-macro-its-header-marks-with-pragma-clang-deprecated-builds-silent.hero"
 int64_t h_fixedbugs587amacroitsheadermarkswithpragmaclangdeprecatedbuildssilent_OLD_MAC(void) {
-#line 132 "fixedbugs587amacroitsheadermarkswithpragmaclangdeprecatedbuildssilent.c"
+#line 143 "fixedbugs587amacroitsheadermarkswithpragmaclangdeprecatedbuildssilent.c"
     return OLD_MAC;
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -139,17 +150,17 @@ int64_t h_fixedbugs587amacroitsheadermarkswithpragmaclangdeprecatedbuildssilent_
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
+#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 
 #line 16 "tests/golden/run/fixedbugs-587-a-macro-its-header-marks-with-pragma-clang-deprecated-builds-silent.hero"
 void h_fixedbugs587amacroitsheadermarkswithpragmaclangdeprecatedbuildssilent_main(void) {
-#line 149 "fixedbugs587amacroitsheadermarkswithpragmaclangdeprecatedbuildssilent.c"
-    int64_t t1;
-    goto bb0;
+#line 16 "tests/golden/run/fixedbugs-587-a-macro-its-header-marks-with-pragma-clang-deprecated-builds-silent.hero"
+    int64_t t1; goto bb0;
+#line 16 "tests/golden/run/fixedbugs-587-a-macro-its-header-marks-with-pragma-clang-deprecated-builds-silent.hero"
 bb0:
-#line 17 "tests/golden/run/fixedbugs-587-a-macro-its-header-marks-with-pragma-clang-deprecated-builds-silent.hero"
     t1 = h_fixedbugs587amacroitsheadermarkswithpragmaclangdeprecatedbuildssilent_OLD_MAC();
 #line 17 "tests/golden/run/fixedbugs-587-a-macro-its-header-marks-with-pragma-clang-deprecated-builds-silent.hero"
     hero_print_int(t1);
@@ -157,7 +168,7 @@ bb0:
     hero_print_end();
 #line 17 "tests/golden/run/fixedbugs-587-a-macro-its-header-marks-with-pragma-clang-deprecated-builds-silent.hero"
     return;
-#line 161 "fixedbugs587amacroitsheadermarkswithpragmaclangdeprecatedbuildssilent.c"
+#line 172 "fixedbugs587amacroitsheadermarkswithpragmaclangdeprecatedbuildssilent.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

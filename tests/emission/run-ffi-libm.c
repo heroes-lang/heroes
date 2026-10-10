@@ -33,10 +33,13 @@
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
+#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -81,7 +84,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 85 "ffilibm.c"
+#line 88 "ffilibm.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -105,6 +108,7 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
+#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
@@ -127,7 +131,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 131 "ffilibm.c"
+#line 135 "ffilibm.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -140,27 +144,13 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_ffilibm_main(void);
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 32 "tests/golden/run/ffi-libm.hero"
 void h_ffilibm_main(void) {
-#line 148 "ffilibm.c"
-    double t1;
-    double t2;
-    double t3;
-    double t4;
-    double t5;
-    int64_t t6;
-    int64_t t7;
-    int64_t t8;
-    int64_t t9;
-    double t10;
-    double t11;
-    double t12;
-    double t13;
-    goto bb0;
+#line 32 "tests/golden/run/ffi-libm.hero"
+    double t1; double t2; double t3; double t4; double t5; int64_t t6; int64_t t7; int64_t t8; int64_t t9; double t10; double t11; double t12; double t13; goto bb0;
+#line 32 "tests/golden/run/ffi-libm.hero"
 bb0:
-#line 33 "tests/golden/run/ffi-libm.hero"
     t1 = 0x1p+4;
 #line 33 "tests/golden/run/ffi-libm.hero"
     t2 = sqrt(t1);
@@ -202,9 +192,8 @@ bb0:
     hero_print_end();
 #line 39 "tests/golden/run/ffi-libm.hero"
     return;
-#line 206 "ffilibm.c"
+#line 196 "ffilibm.c"
 }
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_incref(v->as.ok);

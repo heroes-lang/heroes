@@ -30,10 +30,13 @@
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
+#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -79,7 +82,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_35d9fe9b, "payload");
 
-#line 83 "cfreesaleasethroughacallback.c"
+#line 86 "cfreesaleasethroughacallback.c"
 typedef void (*h_0fn_2b4640ec)(const char *);
 typedef struct h_0opt_f87774a {
     int64_t tag;
@@ -104,6 +107,7 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
+#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
@@ -124,7 +128,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 128 "cfreesaleasethroughacallback.c"
+#line 132 "cfreesaleasethroughacallback.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -141,33 +145,22 @@ __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
     return f;
 }
 
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 12 "tests/golden/run/c-frees-a-lease-through-a-callback.hero"
 void h_cfreesaleasethroughacallback_main(void) {
-#line 149 "cfreesaleasethroughacallback.c"
-    HeroStr h0_x = {0};
-    const char * h1_c;
-    HeroStr t1;
-    HeroStr t2;
-    const char * t3;
-    int64_t t4;
-    const char * t5;
-    h_0fn_2b4640ec t6;
-    HeroStr t7;
-    goto bb0;
+#line 12 "tests/golden/run/c-frees-a-lease-through-a-callback.hero"
+    HeroStr h0_x = {0}; const char * h1_c; HeroStr t1; HeroStr t2; const char * t3; int64_t t4; const char * t5; h_0fn_2b4640ec t6; HeroStr t7; goto bb0;
+#line 12 "tests/golden/run/c-frees-a-lease-through-a-callback.hero"
 bb0:
-#line 13 "tests/golden/run/c-frees-a-lease-through-a-callback.hero"
     t1 = HERO_STR_LIT(hero_str_35d9fe9b);
 #line 13 "tests/golden/run/c-frees-a-lease-through-a-callback.hero"
     t7 = h0_x;
-#line 165 "cfreesaleasethroughacallback.c"
+#line 13 "tests/golden/run/c-frees-a-lease-through-a-callback.hero"
     hero_str_incref(t1);
 #line 13 "tests/golden/run/c-frees-a-lease-through-a-callback.hero"
     h0_x = t1;
-#line 169 "cfreesaleasethroughacallback.c"
+#line 13 "tests/golden/run/c-frees-a-lease-through-a-callback.hero"
     hero_str_decref(t7);
-#line 14 "tests/golden/run/c-frees-a-lease-through-a-callback.hero"
     t2 = h0_x;
 #line 14 "tests/golden/run/c-frees-a-lease-through-a-callback.hero"
     t3 = hero_str_held(t2);
@@ -184,11 +177,10 @@ bb0:
 #line 16 "tests/golden/run/c-frees-a-lease-through-a-callback.hero"
     (void)take_cb(hero_cstr_nonnull(t5), (h_0fn_2b4640ec)hero_callback_of((void (*)(void))t6));
     hero_held_release(&h1_c);
-#line 188 "cfreesaleasethroughacallback.c"
+#line 181 "cfreesaleasethroughacallback.c"
     hero_str_release_at(&h0_x);
     return;
 }
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_incref(v->as.ok);

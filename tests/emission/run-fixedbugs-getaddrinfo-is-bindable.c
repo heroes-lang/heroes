@@ -30,10 +30,13 @@
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
+#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -79,7 +82,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_69fd5e8e, "127.0.0.1");
 
-#line 83 "fixedbugsgetaddrinfoisbindable.c"
+#line 86 "fixedbugsgetaddrinfoisbindable.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -103,6 +106,7 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
+#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
@@ -123,7 +127,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 127 "fixedbugsgetaddrinfoisbindable.c"
+#line 131 "fixedbugsgetaddrinfoisbindable.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugsgetaddrinfoisbindable_AI_eq(struct addrinfo * const *a, struct addrinfo * const *b);
@@ -138,27 +142,15 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_fixedbugsgetaddrinfoisbindable_main(void);
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 25 "tests/golden/run/fixedbugs-getaddrinfo-is-bindable.hero"
 void h_fixedbugsgetaddrinfoisbindable_main(void) {
-#line 146 "fixedbugsgetaddrinfoisbindable.c"
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-    struct addrinfo * *const hero_lend_h0_res = (struct addrinfo * *)hero_lend_local(sizeof(struct addrinfo *), "fixedbugsgetaddrinfoisbindable.main", "res");
+#line 25 "tests/golden/run/fixedbugs-getaddrinfo-is-bindable.hero"
 #define h0_res (*hero_lend_h0_res)
-    int32_t h1_rc;
-    struct addrinfo * t1;
-    HeroStr t2;
-    const char * t3;
-    void * t4;
-    void * t5;
-    int32_t t6;
-    int32_t t7;
-    struct addrinfo * t8;
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
-    goto bb0;
+#line 25 "tests/golden/run/fixedbugs-getaddrinfo-is-bindable.hero"
+    struct addrinfo * *const hero_lend_h0_res = (struct addrinfo * *)hero_lend_local(sizeof(struct addrinfo *), "fixedbugsgetaddrinfoisbindable.main", "res"); int32_t h1_rc; struct addrinfo * t1; HeroStr t2; const char * t3; void * t4; void * t5; int32_t t6; int32_t t7; struct addrinfo * t8; goto bb0;
+#line 25 "tests/golden/run/fixedbugs-getaddrinfo-is-bindable.hero"
 bb0:
-#line 26 "tests/golden/run/fixedbugs-getaddrinfo-is-bindable.hero"
     t1 = ((void *)0);
 #line 26 "tests/golden/run/fixedbugs-getaddrinfo-is-bindable.hero"
     h0_res = t1;
@@ -199,10 +191,9 @@ bb0:
     hero_lend_local_give(hero_lend_h0_res);
 #line 29 "tests/golden/run/fixedbugs-getaddrinfo-is-bindable.hero"
     return;
-#line 203 "fixedbugsgetaddrinfoisbindable.c"
+#line 195 "fixedbugsgetaddrinfoisbindable.c"
 }
 #undef h0_res
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_fixedbugsgetaddrinfoisbindable_AI_eq(struct addrinfo * const *a, struct addrinfo * const *b) {
     return hero_handle_eq(*a, *b);
 }

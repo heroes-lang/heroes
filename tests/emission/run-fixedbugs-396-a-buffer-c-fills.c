@@ -32,10 +32,13 @@
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
+#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -45,7 +48,7 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 #line 22 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
 _Static_assert(__builtin_classify_type(((struct pair *)0)->a) == 1 && sizeof(((struct pair *)0)->a) == sizeof(int32_t) && (_Generic(((struct pair *)0)->a, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Pair a");
 _Static_assert(__builtin_classify_type(((struct pair *)0)->b) == 1 && sizeof(((struct pair *)0)->b) == sizeof(int32_t) && (_Generic(((struct pair *)0)->b, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Pair b");
-#line 49 "fixedbugs396abuffercfills.c"
+#line 52 "fixedbugs396abuffercfills.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -124,6 +127,7 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
+#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
@@ -150,7 +154,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 154 "fixedbugs396abuffercfills.c"
+#line 158 "fixedbugs396abuffercfills.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs396abuffercfills_Pair_eq(const struct pair *a, const struct pair *b);
@@ -195,15 +199,12 @@ __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
     return f;
 }
 
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #line 20 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
 int64_t h_fixedbugs396abuffercfills_DIGEST_LEN(void) {
-#line 204 "fixedbugs396abuffercfills.c"
+#line 206 "fixedbugs396abuffercfills.c"
     return DIGEST_LEN;
 }
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
@@ -212,45 +213,32 @@ int64_t h_fixedbugs396abuffercfills_DIGEST_LEN(void) {
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
+#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 
 #line 37 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
 void h_fixedbugs396abuffercfills_inner(void) {
-#line 222 "fixedbugs396abuffercfills.c"
-    hero_thread_guard("fixedbugs396abuffercfills.inner");
-    HeroArrayHeader * h0_other = {0};
-    HeroArrayHeader * h1_own1 = {0};
-    HeroArrayHeader * t1;
-    HeroStr t3;
-    HeroArrayHeader * t4;
-    int64_t t5;
-    HeroStr t6;
-    HeroArrayHeader * t7;
-    int64_t t8;
-    uint8_t t9;
-    HeroArrayHeader * t10;
-    HeroArrayHeader * t11;
-    goto bb0;
+#line 37 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
+    hero_thread_guard("fixedbugs396abuffercfills.inner"); HeroArrayHeader * h0_other = {0}; HeroArrayHeader * h1_own1 = {0}; HeroArrayHeader * t1; HeroStr t3; HeroArrayHeader * t4; int64_t t5; HeroStr t6; HeroArrayHeader * t7; int64_t t8; uint8_t t9; HeroArrayHeader * t10; HeroArrayHeader * t11; goto bb0;
+#line 37 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
 bb0:
-#line 38 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     t1 = hero_array_new(&hero_desc_u8, 1);
 #line 38 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     t10 = h1_own1;
 #line 38 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     h1_own1 = t1;
-#line 244 "fixedbugs396abuffercfills.c"
+#line 38 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     hero_array_decref(t10);
 #line 38 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     t11 = h0_other;
-#line 248 "fixedbugs396abuffercfills.c"
+#line 38 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     hero_array_incref(t1);
 #line 38 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     h0_other = t1;
-#line 252 "fixedbugs396abuffercfills.c"
+#line 38 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     hero_array_decref(t11);
-#line 39 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     {
 #line 39 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     _Static_assert((__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned char) && sizeof(unsigned char) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned short) && sizeof(unsigned short) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned int) && sizeof(unsigned int) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned long) && sizeof(unsigned long) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned long long) && sizeof(unsigned long long) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), char) && (char)-1 > 0) || __builtin_types_compatible_p(__typeof__(*(unsigned char *)0), void), "heroes-ffi-buffer digest32 md 1272 1274 u8 unsigned char *");
@@ -287,7 +275,7 @@ bb0:
     hero_print_int(t9);
 #line 40 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     hero_print_end();
-#line 291 "fixedbugs396abuffercfills.c"
+#line 279 "fixedbugs396abuffercfills.c"
     hero_array_release_at(&h0_other);
     hero_array_release_at(&h1_own1);
     return;
@@ -299,244 +287,9 @@ void h_0cb_fixedbugs396abuffercfills_inner(void) {
 
 #line 42 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
 void h_fixedbugs396abuffercfills_main(void) {
-#line 303 "fixedbugs396abuffercfills.c"
-    HeroArrayHeader * h0_md = {0};
-    HeroArrayHeader * h1_before = {0};
-    HeroArrayHeader * h2_named = {0};
-    HeroArrayHeader * h3_bytes = {0};
-    HeroArrayHeader * h4_ints = {0};
-    HeroArrayHeader * h5_pairs = {0};
-    HeroArrayHeader * h6_reals = {0};
-    HeroArrayHeader * h7_small = {0};
-    h_fixedbugs396abuffercfills_Holder h8_h = {0};
-    HeroArrayHeader * h9_rows = {0};
-    HeroArrayHeader * h10_late = {0};
-    HeroArrayHeader * h11_big = {0};
-    HeroArrayHeader * h12_own12 = {0};
-    HeroArrayHeader * h13_own13 = {0};
-    HeroArrayHeader * h14_own14 = {0};
-    HeroArrayHeader * h15_own15 = {0};
-    HeroArrayHeader * h16_own16 = {0};
-    HeroArrayHeader * h17_own17 = {0};
-    HeroArrayHeader * h18_own18 = {0};
-    HeroArrayHeader * h19_own19 = {0};
-    h_fixedbugs396abuffercfills_Holder h20_own20 = {0};
-    HeroArrayHeader * h21_own21 = {0};
-    HeroArrayHeader * h22_own22 = {0};
-    HeroArrayHeader * h23_own23 = {0};
-    HeroArrayHeader * h24_own24 = {0};
-    HeroArrayHeader * h25_own25 = {0};
-    uint8_t t1;
-    uint8_t t2;
-    uint8_t t3;
-    uint8_t t4;
-    uint8_t t5;
-    uint8_t t6;
-    uint8_t t7;
-    uint8_t t8;
-    uint8_t t9;
-    uint8_t t10;
-    uint8_t t11;
-    uint8_t t12;
-    uint8_t t13;
-    uint8_t t14;
-    uint8_t t15;
-    uint8_t t16;
-    uint8_t t17;
-    uint8_t t18;
-    uint8_t t19;
-    uint8_t t20;
-    uint8_t t21;
-    uint8_t t22;
-    uint8_t t23;
-    uint8_t t24;
-    uint8_t t25;
-    uint8_t t26;
-    uint8_t t27;
-    uint8_t t28;
-    uint8_t t29;
-    uint8_t t30;
-    uint8_t t31;
-    uint8_t t32;
-    uint8_t t33;
-    uint8_t t34;
-    uint8_t t35;
-    uint8_t t36;
-    uint8_t t37;
-    uint8_t t38;
-    uint8_t t39;
-    uint8_t t40;
-    HeroArrayHeader * t41;
-    HeroArrayHeader * t42;
-    int32_t t43;
-    HeroStr t44;
-    HeroArrayHeader * t45;
-    int64_t t46;
-    HeroStr t47;
-    HeroArrayHeader * t48;
-    int64_t t49;
-    uint8_t t50;
-    HeroStr t51;
-    HeroArrayHeader * t52;
-    int64_t t53;
-    uint8_t t54;
-    HeroStr t55;
-    HeroArrayHeader * t56;
-    int64_t t57;
-    HeroStr t58;
-    HeroArrayHeader * t59;
-    int64_t t60;
-    uint8_t t61;
-    HeroArrayHeader * t62;
-    int32_t t63;
-    HeroStr t64;
-    HeroArrayHeader * t65;
-    int64_t t66;
-    HeroStr t67;
-    HeroArrayHeader * t68;
-    int64_t t69;
-    uint8_t t70;
-    HeroArrayHeader * t71;
-    uint64_t t72;
-    int64_t t73;
-    HeroStr t74;
-    HeroArrayHeader * t75;
-    int64_t t76;
-    HeroStr t77;
-    HeroArrayHeader * t78;
-    int64_t t79;
-    uint8_t t80;
-    int32_t t81;
-    HeroArrayHeader * t82;
-    HeroArrayHeader * t83;
-    int64_t t84;
-    HeroStr t85;
-    HeroArrayHeader * t86;
-    int64_t t87;
-    int32_t t88;
-    HeroStr t89;
-    HeroArrayHeader * t90;
-    int64_t t91;
-    int32_t t92;
-    HeroArrayHeader * t93;
-    HeroArrayHeader * t94;
-    int64_t t95;
-    HeroStr t96;
-    HeroArrayHeader * t97;
-    int64_t t98;
-    struct pair t99;
-    int32_t t100;
-    HeroStr t101;
-    HeroArrayHeader * t102;
-    int64_t t103;
-    struct pair t104;
-    int32_t t105;
-    HeroArrayHeader * t106;
-    HeroArrayHeader * t107;
-    int64_t t108;
-    HeroStr t109;
-    HeroArrayHeader * t110;
-    int64_t t111;
-    double t112;
-    uint8_t t113;
-    uint8_t t114;
-    HeroArrayHeader * t115;
-    HeroArrayHeader * t116;
-    int64_t t117;
-    HeroStr t118;
-    HeroArrayHeader * t119;
-    int64_t t120;
-    uint8_t t121;
-    HeroStr t122;
-    HeroArrayHeader * t123;
-    int64_t t124;
-    uint8_t t125;
-    HeroStr t126;
-    HeroArrayHeader * t127;
-    int64_t t128;
-    uint8_t t129;
-    HeroStr t130;
-    HeroArrayHeader * t131;
-    int64_t t132;
-    uint8_t t133;
-    HeroArrayHeader * t134;
-    int64_t t135;
-    h_fixedbugs396abuffercfills_Holder t136;
-    h_fixedbugs396abuffercfills_Holder t138;
-    HeroArrayHeader * t139;
-    int64_t t140;
-    HeroStr t141;
-    h_fixedbugs396abuffercfills_Holder t142;
-    HeroArrayHeader * t143;
-    int64_t t144;
-    uint8_t t145;
-    HeroStr t146;
-    h_fixedbugs396abuffercfills_Holder t147;
-    int64_t t148;
-    HeroArrayHeader * t149;
-    HeroArrayHeader * t150;
-    HeroArrayHeader * t151;
-    int64_t t152;
-    HeroArrayHeader * t154;
-    int64_t t155;
-    HeroArrayHeader * t156;
-    int64_t t157;
-    HeroStr t158;
-    HeroArrayHeader * t159;
-    int64_t t160;
-    HeroArrayHeader * t161;
-    int64_t t162;
-    HeroStr t163;
-    HeroArrayHeader * t164;
-    int64_t t165;
-    HeroArrayHeader * t166;
-    int64_t t167;
-    uint8_t t168;
-    HeroArrayHeader * t169;
-    h_0fn_294870dd t170;
-    HeroArrayHeader * t171;
-    int64_t t172;
-    HeroStr t173;
-    HeroArrayHeader * t174;
-    int64_t t175;
-    uint8_t t176;
-    HeroArrayHeader * t177;
-    uint64_t t178;
-    int64_t t179;
-    HeroStr t180;
-    HeroArrayHeader * t181;
-    int64_t t182;
-    HeroStr t183;
-    HeroArrayHeader * t184;
-    int64_t t185;
-    uint8_t t186;
-    HeroArrayHeader * t187;
-    HeroArrayHeader * t188;
-    HeroArrayHeader * t189;
-    HeroArrayHeader * t190;
-    HeroArrayHeader * t191;
-    HeroArrayHeader * t192;
-    HeroArrayHeader * t193;
-    HeroArrayHeader * t194;
-    HeroArrayHeader * t195;
-    HeroArrayHeader * t196;
-    HeroArrayHeader * t197;
-    HeroArrayHeader * t198;
-    HeroArrayHeader * t199;
-    HeroArrayHeader * t200;
-    HeroArrayHeader * t201;
-    HeroArrayHeader * t202;
-    h_fixedbugs396abuffercfills_Holder t203;
-    h_fixedbugs396abuffercfills_Holder t204;
-    HeroArrayHeader * t205;
-    HeroArrayHeader * t206;
-    HeroArrayHeader * t207;
-    HeroArrayHeader * t208;
-    HeroArrayHeader * t209;
-    HeroArrayHeader * t210;
-    HeroArrayHeader * t211;
-    HeroArrayHeader * t212;
-    goto bb0;
+#line 42 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
+    HeroArrayHeader * h0_md = {0}; HeroArrayHeader * h1_before = {0}; HeroArrayHeader * h2_named = {0}; HeroArrayHeader * h3_bytes = {0}; HeroArrayHeader * h4_ints = {0}; HeroArrayHeader * h5_pairs = {0}; HeroArrayHeader * h6_reals = {0}; HeroArrayHeader * h7_small = {0}; h_fixedbugs396abuffercfills_Holder h8_h = {0}; HeroArrayHeader * h9_rows = {0}; HeroArrayHeader * h10_late = {0}; HeroArrayHeader * h11_big = {0}; HeroArrayHeader * h12_own12 = {0}; HeroArrayHeader * h13_own13 = {0}; HeroArrayHeader * h14_own14 = {0}; HeroArrayHeader * h15_own15 = {0}; HeroArrayHeader * h16_own16 = {0}; HeroArrayHeader * h17_own17 = {0}; HeroArrayHeader * h18_own18 = {0}; HeroArrayHeader * h19_own19 = {0}; h_fixedbugs396abuffercfills_Holder h20_own20 = {0}; HeroArrayHeader * h21_own21 = {0}; HeroArrayHeader * h22_own22 = {0}; HeroArrayHeader * h23_own23 = {0}; HeroArrayHeader * h24_own24 = {0}; HeroArrayHeader * h25_own25 = {0}; uint8_t t1; uint8_t t2; uint8_t t3; uint8_t t4; uint8_t t5; uint8_t t6; uint8_t t7; uint8_t t8; uint8_t t9; uint8_t t10; uint8_t t11; uint8_t t12; uint8_t t13; uint8_t t14; uint8_t t15; uint8_t t16; uint8_t t17; uint8_t t18; uint8_t t19; uint8_t t20; uint8_t t21; uint8_t t22; uint8_t t23; uint8_t t24; uint8_t t25; uint8_t t26; uint8_t t27; uint8_t t28; uint8_t t29; uint8_t t30; uint8_t t31; uint8_t t32; uint8_t t33; uint8_t t34; uint8_t t35; uint8_t t36; uint8_t t37; uint8_t t38; uint8_t t39; uint8_t t40; HeroArrayHeader * t41; HeroArrayHeader * t42; int32_t t43; HeroStr t44; HeroArrayHeader * t45; int64_t t46; HeroStr t47; HeroArrayHeader * t48; int64_t t49; uint8_t t50; HeroStr t51; HeroArrayHeader * t52; int64_t t53; uint8_t t54; HeroStr t55; HeroArrayHeader * t56; int64_t t57; HeroStr t58; HeroArrayHeader * t59; int64_t t60; uint8_t t61; HeroArrayHeader * t62; int32_t t63; HeroStr t64; HeroArrayHeader * t65; int64_t t66; HeroStr t67; HeroArrayHeader * t68; int64_t t69; uint8_t t70; HeroArrayHeader * t71; uint64_t t72; int64_t t73; HeroStr t74; HeroArrayHeader * t75; int64_t t76; HeroStr t77; HeroArrayHeader * t78; int64_t t79; uint8_t t80; int32_t t81; HeroArrayHeader * t82; HeroArrayHeader * t83; int64_t t84; HeroStr t85; HeroArrayHeader * t86; int64_t t87; int32_t t88; HeroStr t89; HeroArrayHeader * t90; int64_t t91; int32_t t92; HeroArrayHeader * t93; HeroArrayHeader * t94; int64_t t95; HeroStr t96; HeroArrayHeader * t97; int64_t t98; struct pair t99; int32_t t100; HeroStr t101; HeroArrayHeader * t102; int64_t t103; struct pair t104; int32_t t105; HeroArrayHeader * t106; HeroArrayHeader * t107; int64_t t108; HeroStr t109; HeroArrayHeader * t110; int64_t t111; double t112; uint8_t t113; uint8_t t114; HeroArrayHeader * t115; HeroArrayHeader * t116; int64_t t117; HeroStr t118; HeroArrayHeader * t119; int64_t t120; uint8_t t121; HeroStr t122; HeroArrayHeader * t123; int64_t t124; uint8_t t125; HeroStr t126; HeroArrayHeader * t127; int64_t t128; uint8_t t129; HeroStr t130; HeroArrayHeader * t131; int64_t t132; uint8_t t133; HeroArrayHeader * t134; int64_t t135; h_fixedbugs396abuffercfills_Holder t136; h_fixedbugs396abuffercfills_Holder t138; HeroArrayHeader * t139; int64_t t140; HeroStr t141; h_fixedbugs396abuffercfills_Holder t142; HeroArrayHeader * t143; int64_t t144; uint8_t t145; HeroStr t146; h_fixedbugs396abuffercfills_Holder t147; int64_t t148; HeroArrayHeader * t149; HeroArrayHeader * t150; HeroArrayHeader * t151; int64_t t152; HeroArrayHeader * t154; int64_t t155; HeroArrayHeader * t156; int64_t t157; HeroStr t158; HeroArrayHeader * t159; int64_t t160; HeroArrayHeader * t161; int64_t t162; HeroStr t163; HeroArrayHeader * t164; int64_t t165; HeroArrayHeader * t166; int64_t t167; uint8_t t168; HeroArrayHeader * t169; h_0fn_294870dd t170; HeroArrayHeader * t171; int64_t t172; HeroStr t173; HeroArrayHeader * t174; int64_t t175; uint8_t t176; HeroArrayHeader * t177; uint64_t t178; int64_t t179; HeroStr t180; HeroArrayHeader * t181; int64_t t182; HeroStr t183; HeroArrayHeader * t184; int64_t t185; uint8_t t186; HeroArrayHeader * t187; HeroArrayHeader * t188; HeroArrayHeader * t189; HeroArrayHeader * t190; HeroArrayHeader * t191; HeroArrayHeader * t192; HeroArrayHeader * t193; HeroArrayHeader * t194; HeroArrayHeader * t195; HeroArrayHeader * t196; HeroArrayHeader * t197; HeroArrayHeader * t198; HeroArrayHeader * t199; HeroArrayHeader * t200; HeroArrayHeader * t201; HeroArrayHeader * t202; h_fixedbugs396abuffercfills_Holder t203; h_fixedbugs396abuffercfills_Holder t204; HeroArrayHeader * t205; HeroArrayHeader * t206; HeroArrayHeader * t207; HeroArrayHeader * t208; HeroArrayHeader * t209; HeroArrayHeader * t210; HeroArrayHeader * t211; HeroArrayHeader * t212; goto bb0;
+#line 42 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
 bb0:
 #line 44 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     t1 = UINT64_C(9);
@@ -665,27 +418,26 @@ bb0:
     t187 = h12_own12;
 #line 43 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     h12_own12 = t41;
-#line 669 "fixedbugs396abuffercfills.c"
+#line 43 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     hero_array_decref(t187);
 #line 43 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     t188 = h0_md;
-#line 673 "fixedbugs396abuffercfills.c"
+#line 43 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     hero_array_incref(t41);
 #line 43 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     h0_md = t41;
-#line 677 "fixedbugs396abuffercfills.c"
+#line 43 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     hero_array_decref(t188);
 #line 85 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     t42 = h0_md;
 #line 85 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     t189 = h1_before;
-#line 683 "fixedbugs396abuffercfills.c"
+#line 85 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     hero_array_incref(t42);
 #line 85 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     h1_before = t42;
-#line 687 "fixedbugs396abuffercfills.c"
+#line 85 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     hero_array_decref(t189);
-#line 86 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     {
 #line 86 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     _Static_assert((__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned char) && sizeof(unsigned char) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned short) && sizeof(unsigned short) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned int) && sizeof(unsigned int) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned long) && sizeof(unsigned long) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned long long) && sizeof(unsigned long long) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), char) && (char)-1 > 0) || __builtin_types_compatible_p(__typeof__(*(unsigned char *)0), void), "heroes-ffi-buffer digest32 md 1272 1274 u8 unsigned char *");
@@ -764,17 +516,16 @@ bb0:
     t190 = h13_own13;
 #line 87 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     h13_own13 = t62;
-#line 768 "fixedbugs396abuffercfills.c"
+#line 87 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     hero_array_decref(t190);
 #line 87 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     t191 = h2_named;
-#line 772 "fixedbugs396abuffercfills.c"
+#line 87 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     hero_array_incref(t62);
 #line 87 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     h2_named = t62;
-#line 776 "fixedbugs396abuffercfills.c"
+#line 87 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     hero_array_decref(t191);
-#line 88 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     {
 #line 88 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     _Static_assert((__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned char) && sizeof(unsigned char) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned short) && sizeof(unsigned short) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned int) && sizeof(unsigned int) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned long) && sizeof(unsigned long) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned long long) && sizeof(unsigned long long) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), char) && (char)-1 > 0) || __builtin_types_compatible_p(__typeof__(*(unsigned char *)0), void), "heroes-ffi-buffer digest_const md 1697 1699 u8 unsigned char *");
@@ -819,17 +570,16 @@ bb0:
     t192 = h14_own14;
 #line 89 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     h14_own14 = t71;
-#line 823 "fixedbugs396abuffercfills.c"
+#line 89 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     hero_array_decref(t192);
 #line 89 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     t193 = h3_bytes;
-#line 827 "fixedbugs396abuffercfills.c"
+#line 89 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     hero_array_incref(t71);
 #line 89 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     h3_bytes = t71;
-#line 831 "fixedbugs396abuffercfills.c"
+#line 89 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     hero_array_decref(t193);
-#line 90 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     t72 = UINT64_C(5);
 #line 90 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     {
@@ -880,17 +630,16 @@ bb0:
     t194 = h15_own15;
 #line 91 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     h15_own15 = t82;
-#line 884 "fixedbugs396abuffercfills.c"
+#line 91 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     hero_array_decref(t194);
 #line 91 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     t195 = h4_ints;
-#line 888 "fixedbugs396abuffercfills.c"
+#line 91 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     hero_array_incref(t82);
 #line 91 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     h4_ints = t82;
-#line 892 "fixedbugs396abuffercfills.c"
+#line 91 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     hero_array_decref(t195);
-#line 92 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     {
 #line 92 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     _Static_assert((__builtin_types_compatible_p(__typeof__(*(int32_t *)0), signed char) && sizeof(signed char) == sizeof(int32_t)) || (__builtin_types_compatible_p(__typeof__(*(int32_t *)0), short) && sizeof(short) == sizeof(int32_t)) || (__builtin_types_compatible_p(__typeof__(*(int32_t *)0), int) && sizeof(int) == sizeof(int32_t)) || (__builtin_types_compatible_p(__typeof__(*(int32_t *)0), long) && sizeof(long) == sizeof(int32_t)) || (__builtin_types_compatible_p(__typeof__(*(int32_t *)0), long long) && sizeof(long long) == sizeof(int32_t)), "heroes-ffi-buffer fill_ints4 p 1401 1402 i32 int32_t *");
@@ -940,17 +689,16 @@ bb0:
     t196 = h16_own16;
 #line 94 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     h16_own16 = t93;
-#line 944 "fixedbugs396abuffercfills.c"
+#line 94 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     hero_array_decref(t196);
 #line 94 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     t197 = h5_pairs;
-#line 948 "fixedbugs396abuffercfills.c"
+#line 94 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     hero_array_incref(t93);
 #line 94 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     h5_pairs = t93;
-#line 952 "fixedbugs396abuffercfills.c"
+#line 94 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     hero_array_decref(t197);
-#line 95 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     {
 #line 95 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     _Static_assert((__builtin_types_compatible_p(__typeof__(*(struct pair *)0), struct pair) && sizeof(struct pair) == sizeof(struct pair)), "heroes-ffi-buffer fill_pairs2 p 1455 1456 Pair struct pair *");
@@ -1004,17 +752,16 @@ bb0:
     t198 = h17_own17;
 #line 97 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     h17_own17 = t106;
-#line 1008 "fixedbugs396abuffercfills.c"
+#line 97 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     hero_array_decref(t198);
 #line 97 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     t199 = h6_reals;
-#line 1012 "fixedbugs396abuffercfills.c"
+#line 97 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     hero_array_incref(t106);
 #line 97 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     h6_reals = t106;
-#line 1016 "fixedbugs396abuffercfills.c"
+#line 97 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     hero_array_decref(t199);
-#line 98 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     {
 #line 98 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     _Static_assert((__builtin_types_compatible_p(__typeof__(*(double *)0), float) && sizeof(float) == sizeof(double)) || (__builtin_types_compatible_p(__typeof__(*(double *)0), double) && sizeof(double) == sizeof(double)) || (__builtin_types_compatible_p(__typeof__(*(double *)0), long double) && sizeof(long double) == sizeof(double)), "heroes-ffi-buffer fill_reals3 p 1510 1511 f64 double *");
@@ -1060,17 +807,16 @@ bb0:
     t200 = h18_own18;
 #line 100 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     h18_own18 = t115;
-#line 1064 "fixedbugs396abuffercfills.c"
+#line 100 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     hero_array_decref(t200);
 #line 100 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     t201 = h7_small;
-#line 1068 "fixedbugs396abuffercfills.c"
+#line 100 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     hero_array_incref(t115);
 #line 100 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     h7_small = t115;
-#line 1072 "fixedbugs396abuffercfills.c"
+#line 100 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     hero_array_decref(t201);
-#line 101 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     {
 #line 101 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     _Static_assert((__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned char) && sizeof(unsigned char) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned short) && sizeof(unsigned short) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned int) && sizeof(unsigned int) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned long) && sizeof(unsigned long) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned long long) && sizeof(unsigned long long) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), char) && (char)-1 > 0) || __builtin_types_compatible_p(__typeof__(*(unsigned char *)0), void), "heroes-ffi-buffer double_bytes p 1565 1566 u8 unsigned char *");
@@ -1144,11 +890,11 @@ bb0:
     t202 = h19_own19;
 #line 103 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     h19_own19 = t134;
-#line 1148 "fixedbugs396abuffercfills.c"
+#line 103 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     hero_array_decref(t202);
 #line 103 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     t135 = INT64_C(7);
-#line 1152 "fixedbugs396abuffercfills.c"
+#line 103 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     hero_array_incref(t134);
 #line 103 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     t136 = (h_fixedbugs396abuffercfills_Holder){.f_digest = t134, .f_after = t135};
@@ -1156,17 +902,16 @@ bb0:
     t203 = h20_own20;
 #line 103 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     h20_own20 = t136;
-#line 1160 "fixedbugs396abuffercfills.c"
+#line 103 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     h_fixedbugs396abuffercfills_Holder_release(&t203);
 #line 103 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     t204 = h8_h;
-#line 1164 "fixedbugs396abuffercfills.c"
+#line 103 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     h_fixedbugs396abuffercfills_Holder_retain(&t136);
 #line 103 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     h8_h = t136;
-#line 1168 "fixedbugs396abuffercfills.c"
+#line 103 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     h_fixedbugs396abuffercfills_Holder_release(&t204);
-#line 104 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     {
 #line 104 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     _Static_assert((__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned char) && sizeof(unsigned char) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned short) && sizeof(unsigned short) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned int) && sizeof(unsigned int) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned long) && sizeof(unsigned long) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned long long) && sizeof(unsigned long long) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), char) && (char)-1 > 0) || __builtin_types_compatible_p(__typeof__(*(unsigned char *)0), void), "heroes-ffi-buffer digest32 md 1272 1274 u8 unsigned char *");
@@ -1218,7 +963,7 @@ bb0:
     t205 = h21_own21;
 #line 106 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     h21_own21 = t149;
-#line 1222 "fixedbugs396abuffercfills.c"
+#line 106 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     hero_array_decref(t205);
 #line 106 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     t150 = hero_array_new(&hero_desc_u8, 1);
@@ -1226,7 +971,7 @@ bb0:
     t206 = h22_own22;
 #line 106 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     h22_own22 = t150;
-#line 1230 "fixedbugs396abuffercfills.c"
+#line 106 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     hero_array_decref(t206);
 #line 106 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     t151 = hero_array_new(&hero_desc_array, 2);
@@ -1238,17 +983,16 @@ bb0:
     t207 = h23_own23;
 #line 106 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     h23_own23 = t151;
-#line 1242 "fixedbugs396abuffercfills.c"
+#line 106 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     hero_array_decref(t207);
 #line 106 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     t208 = h9_rows;
-#line 1246 "fixedbugs396abuffercfills.c"
+#line 106 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     hero_array_incref(t151);
 #line 106 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     h9_rows = t151;
-#line 1250 "fixedbugs396abuffercfills.c"
+#line 106 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     hero_array_decref(t208);
-#line 107 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     t152 = INT64_C(1);
 #line 107 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     hero_array_unshare(&(h9_rows));
@@ -1312,17 +1056,16 @@ bb0:
     t209 = h24_own24;
 #line 109 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     h24_own24 = t169;
-#line 1316 "fixedbugs396abuffercfills.c"
+#line 109 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     hero_array_decref(t209);
 #line 109 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     t210 = h10_late;
-#line 1320 "fixedbugs396abuffercfills.c"
+#line 109 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     hero_array_incref(t169);
 #line 109 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     h10_late = t169;
-#line 1324 "fixedbugs396abuffercfills.c"
+#line 109 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     hero_array_decref(t210);
-#line 110 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     t170 = h_fixedbugs396abuffercfills_inner;
 #line 110 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     {
@@ -1362,17 +1105,16 @@ bb0:
     t211 = h25_own25;
 #line 112 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     h25_own25 = t177;
-#line 1366 "fixedbugs396abuffercfills.c"
+#line 112 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     hero_array_decref(t211);
 #line 112 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     t212 = h11_big;
-#line 1370 "fixedbugs396abuffercfills.c"
+#line 112 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     hero_array_incref(t177);
 #line 112 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     h11_big = t177;
-#line 1374 "fixedbugs396abuffercfills.c"
+#line 112 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     hero_array_decref(t212);
-#line 113 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     t178 = UINT64_C(16777216);
 #line 113 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     {
@@ -1414,7 +1156,7 @@ bb0:
     hero_print_int(t186);
 #line 113 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     hero_print_end();
-#line 1418 "fixedbugs396abuffercfills.c"
+#line 1160 "fixedbugs396abuffercfills.c"
     hero_array_release_at(&h0_md);
     hero_array_release_at(&h1_before);
     hero_array_release_at(&h2_named);
@@ -1443,7 +1185,6 @@ bb0:
     hero_array_release_at(&h25_own25);
     return;
 }
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_fixedbugs396abuffercfills_Pair_eq(const struct pair *a, const struct pair *b) {
     if (!(a->a == b->a)) return false;
     if (!(a->b == b->b)) return false;

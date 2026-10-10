@@ -30,10 +30,13 @@
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
+#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -77,7 +80,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 81 "fixedbugs451alocalcreadsafteritsfunctionreturnsisseenbythesanitiser.c"
+#line 84 "fixedbugs451alocalcreadsafteritsfunctionreturnsisseenbythesanitiser.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -101,6 +104,7 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
+#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
@@ -120,7 +124,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 124 "fixedbugs451alocalcreadsafteritsfunctionreturnsisseenbythesanitiser.c"
+#line 128 "fixedbugs451alocalcreadsafteritsfunctionreturnsisseenbythesanitiser.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -134,18 +138,15 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 int64_t h_fixedbugs451alocalcreadsafteritsfunctionreturnsisseenbythesanitiser_lend(void);
 void h_fixedbugs451alocalcreadsafteritsfunctionreturnsisseenbythesanitiser_main(void);
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 20 "tests/golden/run/fixedbugs-451-a-local-c-reads-after-its-function-returns-is-seen-by-the-sanitiser.hero"
 int64_t h_fixedbugs451alocalcreadsafteritsfunctionreturnsisseenbythesanitiser_lend(void) {
-#line 142 "fixedbugs451alocalcreadsafteritsfunctionreturnsisseenbythesanitiser.c"
-    int64_t *const hero_lend_h0_n = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs451alocalcreadsafteritsfunctionreturnsisseenbythesanitiser.lend", "n");
+#line 20 "tests/golden/run/fixedbugs-451-a-local-c-reads-after-its-function-returns-is-seen-by-the-sanitiser.hero"
 #define h0_n (*hero_lend_h0_n)
-    int64_t t1;
-    int64_t t2;
-    goto bb0;
+#line 20 "tests/golden/run/fixedbugs-451-a-local-c-reads-after-its-function-returns-is-seen-by-the-sanitiser.hero"
+    int64_t *const hero_lend_h0_n = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs451alocalcreadsafteritsfunctionreturnsisseenbythesanitiser.lend", "n"); int64_t t1; int64_t t2; goto bb0;
+#line 20 "tests/golden/run/fixedbugs-451-a-local-c-reads-after-its-function-returns-is-seen-by-the-sanitiser.hero"
 bb0:
-#line 21 "tests/golden/run/fixedbugs-451-a-local-c-reads-after-its-function-returns-is-seen-by-the-sanitiser.hero"
     t1 = INT64_C(0);
 #line 21 "tests/golden/run/fixedbugs-451-a-local-c-reads-after-its-function-returns-is-seen-by-the-sanitiser.hero"
     h0_n = t1;
@@ -157,18 +158,16 @@ bb0:
     hero_lend_local_give(hero_lend_h0_n);
 #line 23 "tests/golden/run/fixedbugs-451-a-local-c-reads-after-its-function-returns-is-seen-by-the-sanitiser.hero"
     return t2;
-#line 161 "fixedbugs451alocalcreadsafteritsfunctionreturnsisseenbythesanitiser.c"
+#line 162 "fixedbugs451alocalcreadsafteritsfunctionreturnsisseenbythesanitiser.c"
 }
 #undef h0_n
 
 #line 25 "tests/golden/run/fixedbugs-451-a-local-c-reads-after-its-function-returns-is-seen-by-the-sanitiser.hero"
 void h_fixedbugs451alocalcreadsafteritsfunctionreturnsisseenbythesanitiser_main(void) {
-#line 167 "fixedbugs451alocalcreadsafteritsfunctionreturnsisseenbythesanitiser.c"
-    int64_t t1;
-    int64_t t2;
-    goto bb0;
+#line 25 "tests/golden/run/fixedbugs-451-a-local-c-reads-after-its-function-returns-is-seen-by-the-sanitiser.hero"
+    int64_t t1; int64_t t2; goto bb0;
+#line 25 "tests/golden/run/fixedbugs-451-a-local-c-reads-after-its-function-returns-is-seen-by-the-sanitiser.hero"
 bb0:
-#line 26 "tests/golden/run/fixedbugs-451-a-local-c-reads-after-its-function-returns-is-seen-by-the-sanitiser.hero"
     t1 = h_fixedbugs451alocalcreadsafteritsfunctionreturnsisseenbythesanitiser_lend();
 #line 26 "tests/golden/run/fixedbugs-451-a-local-c-reads-after-its-function-returns-is-seen-by-the-sanitiser.hero"
     hero_print_int(t1);
@@ -181,9 +180,8 @@ bb0:
     hero_print_end();
 #line 27 "tests/golden/run/fixedbugs-451-a-local-c-reads-after-its-function-returns-is-seen-by-the-sanitiser.hero"
     return;
-#line 185 "fixedbugs451alocalcreadsafteritsfunctionreturnsisseenbythesanitiser.c"
+#line 184 "fixedbugs451alocalcreadsafteritsfunctionreturnsisseenbythesanitiser.c"
 }
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_incref(v->as.ok);
