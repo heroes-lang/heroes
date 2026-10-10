@@ -21,11 +21,12 @@
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -73,7 +74,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_1b811794, "read through the stale copy: ");
 
-#line 77 "limitacopyreadaftercreuseditsaddressisnotcaught.c"
+#line 78 "limitacopyreadaftercreuseditsaddressisnotcaught.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -97,7 +98,6 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
@@ -133,14 +133,24 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_limitacopyreadaftercreuseditsaddressisnotcaught_main(void);
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 24 "tests/golden/run/limit-a-copy-read-after-c-reused-its-address-is-not-caught.hero"
 void h_limitacopyreadaftercreuseditsaddressisnotcaught_main(void) {
-#line 24 "tests/golden/run/limit-a-copy-read-after-c-reused-its-address-is-not-caught.hero"
-    _Pragma("clang diagnostic ignored \"-Wdeprecated-declarations\"") node * h0_a; node * h1_keep; node * h2_b; node * t1; node * t2; node * t3; node * t4; HeroStr t5; node * t6; int64_t t7; node * t8; _Pragma("clang diagnostic warning \"-Wdeprecated-declarations\"") goto bb0;
-#line 24 "tests/golden/run/limit-a-copy-read-after-c-reused-its-address-is-not-caught.hero"
+#line 140 "limitacopyreadaftercreuseditsaddressisnotcaught.c"
+    node * h0_a;
+    node * h1_keep;
+    node * h2_b;
+    node * t1;
+    node * t2;
+    node * t3;
+    node * t4;
+    HeroStr t5;
+    node * t6;
+    int64_t t7;
+    node * t8;
+    goto bb0;
 bb0:
+#line 25 "tests/golden/run/limit-a-copy-read-after-c-reused-its-address-is-not-caught.hero"
     t1 = node_new();
 #line 25 "tests/golden/run/limit-a-copy-read-after-c-reused-its-address-is-not-caught.hero"
     hero_handle_acquired(t1, "node_free");
@@ -195,9 +205,8 @@ bb0:
     }
 #line 30 "tests/golden/run/limit-a-copy-read-after-c-reused-its-address-is-not-caught.hero"
     return;
-#line 199 "limitacopyreadaftercreuseditsaddressisnotcaught.c"
+#line 209 "limitacopyreadaftercreuseditsaddressisnotcaught.c"
 }
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_limitacopyreadaftercreuseditsaddressisnotcaught_Node_eq(node * const *a, node * const *b) {
     return hero_handle_eq(*a, *b);
 }

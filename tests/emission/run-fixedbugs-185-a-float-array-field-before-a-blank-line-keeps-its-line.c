@@ -21,11 +21,12 @@
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -36,7 +37,7 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 _Static_assert(sizeof(Pair) - __builtin_offsetof(Pair, weights) != 0, "heroes-ffi-flex Pair weights");
 #line 10 "tests/golden/run/fixedbugs-185-a-float-array-field-before-a-blank-line-keeps-its-line.hero"
 _Static_assert(_Generic(&((Pair *)0)->weights, float (*)[2]: 1, default: 0) && sizeof(Pair) - __builtin_offsetof(Pair, weights) >= sizeof(float[2]), "heroes-ffi-field Pair weights");
-#line 40 "fixedbugs185afloatarrayfieldbeforeablanklinekeepsitsline.c"
+#line 41 "fixedbugs185afloatarrayfieldbeforeablanklinekeepsitsline.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -97,7 +98,6 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
@@ -132,14 +132,26 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_fixedbugs185afloatarrayfieldbeforeablanklinekeepsitsline_main(void);
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 12 "tests/golden/run/fixedbugs-185-a-float-array-field-before-a-blank-line-keeps-its-line.hero"
 void h_fixedbugs185afloatarrayfieldbeforeablanklinekeepsitsline_main(void) {
-#line 12 "tests/golden/run/fixedbugs-185-a-float-array-field-before-a-blank-line-keeps-its-line.hero"
-    _Pragma("clang diagnostic ignored \"-Wdeprecated-declarations\"") Pair h0_p; float t1; float t2; Pair t4; Pair t5; int64_t t7; float t8; Pair t9; int64_t t11; float t12; float t13; Pair t14; float t15; _Pragma("clang diagnostic warning \"-Wdeprecated-declarations\"") goto bb0;
-#line 12 "tests/golden/run/fixedbugs-185-a-float-array-field-before-a-blank-line-keeps-its-line.hero"
+#line 139 "fixedbugs185afloatarrayfieldbeforeablanklinekeepsitsline.c"
+    Pair h0_p;
+    float t1;
+    float t2;
+    Pair t4;
+    Pair t5;
+    int64_t t7;
+    float t8;
+    Pair t9;
+    int64_t t11;
+    float t12;
+    float t13;
+    Pair t14;
+    float t15;
+    goto bb0;
 bb0:
+#line 13 "tests/golden/run/fixedbugs-185-a-float-array-field-before-a-blank-line-keeps-its-line.hero"
     t1 = 0x1.8p+0;
 #line 13 "tests/golden/run/fixedbugs-185-a-float-array-field-before-a-blank-line-keeps-its-line.hero"
     t2 = 0x1.2p+1;
@@ -173,9 +185,8 @@ bb0:
     hero_print_end();
 #line 15 "tests/golden/run/fixedbugs-185-a-float-array-field-before-a-blank-line-keeps-its-line.hero"
     return;
-#line 177 "fixedbugs185afloatarrayfieldbeforeablanklinekeepsitsline.c"
+#line 189 "fixedbugs185afloatarrayfieldbeforeablanklinekeepsitsline.c"
 }
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_fixedbugs185afloatarrayfieldbeforeablanklinekeepsitsline_Pair_eq(const Pair *a, const Pair *b) {
     if (!((a->weights[0] == b->weights[0] && a->weights[1] == b->weights[1]))) return false;
     return true;

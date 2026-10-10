@@ -22,11 +22,12 @@
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -97,7 +98,7 @@ HERO_STR_STATIC(hero_str_182a0b44, "build/heroes-golden-key-484-not-there.bin");
 HERO_STR_STATIC(hero_str_180e659f, "missing [");
 HERO_STR_STATIC(hero_str_2fb7, "] ");
 
-#line 101 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
+#line 102 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
 typedef struct h_0opt_e1f4933 {
     int64_t tag;
     union {
@@ -137,7 +138,6 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
@@ -194,32 +194,32 @@ HeroStr h_fixedbugs484afileskeymadeincisthekeyofitsshowntext_keyed(HeroStr h0_pa
 void h_fixedbugs484afileskeymadeincisthekeyofitsshowntext_said(HeroStr h0_name, HeroArrayHeader * h1_bytes);
 void h_fixedbugs484afileskeymadeincisthekeyofitsshowntext_main(void);
 HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to);
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 25 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
 int64_t h_fixedbugs484afileskeymadeincisthekeyofitsshowntext_HERO_OS_OK(void) {
-#line 202 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
+#line 201 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
     return HERO_OS_OK;
 }
 
 #line 26 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
 int64_t h_fixedbugs484afileskeymadeincisthekeyofitsshowntext_HERO_OS_NOT_FOUND(void) {
-#line 208 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
+#line 207 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
     return HERO_OS_NOT_FOUND;
 }
 
 #line 27 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
 int64_t h_fixedbugs484afileskeymadeincisthekeyofitsshowntext_HERO_OS_NOT_TEXT(void) {
-#line 214 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
+#line 213 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
     return HERO_OS_NOT_TEXT;
 }
 
 #line 32 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
 HeroStr h_fixedbugs484afileskeymadeincisthekeyofitsshowntext_AT(void) {
-#line 32 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
-    HeroStr t1; goto bb0;
-#line 32 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
+#line 219 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
+    HeroStr t1;
+    goto bb0;
 bb0:
+#line 33 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     t1 = HERO_STR_LIT(hero_str_5de84570);
 #line 225 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
     hero_str_incref(t1);
@@ -228,10 +228,55 @@ bb0:
 
 #line 35 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
 bool h_fixedbugs484afileskeymadeincisthekeyofitsshowntext_put(HeroStr h0_path, HeroArrayHeader * h1_bytes) {
-#line 35 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
-    void * h2_handle; HeroArrayHeader * h3_xs0 = {0}; int64_t h4_i0; int64_t h5_b; h_0opt_e1f4933 h6_f0 = {0}; bool h7_ret0; h_0opt_e1f4933 h8_own8 = {0}; HeroStr t1; const char * t2; HeroStr t3; const char * t4; void * t5; void * t6; void * t7; bool t8; bool t9; HeroArrayHeader * t10; int64_t t11; int64_t t12; HeroArrayHeader * t13; int64_t t14; bool t15; HeroArrayHeader * t16; int64_t t17; int64_t t18; int64_t t19; h_0opt_e1f4933 t20; h_0opt_e1f4933 t21; int64_t t22; int64_t t23; bool t24; h_0opt_e1f4933 t25; HeroFailure t26; h_0opt_e1f4933 t27; int32_t t28; void * t29; int64_t t31; int64_t t32; int64_t t33; void * t34; bool t36; bool t37; HeroArrayHeader * t38; h_0opt_e1f4933 t39; h_0opt_e1f4933 t40; goto bb0;
-#line 35 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
+#line 232 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
+    void * h2_handle;
+    HeroArrayHeader * h3_xs0 = {0};
+    int64_t h4_i0;
+    int64_t h5_b;
+    h_0opt_e1f4933 h6_f0 = {0};
+    bool h7_ret0;
+    h_0opt_e1f4933 h8_own8 = {0};
+    HeroStr t1;
+    const char * t2;
+    HeroStr t3;
+    const char * t4;
+    void * t5;
+    void * t6;
+    void * t7;
+    bool t8;
+    bool t9;
+    HeroArrayHeader * t10;
+    int64_t t11;
+    int64_t t12;
+    HeroArrayHeader * t13;
+    int64_t t14;
+    bool t15;
+    HeroArrayHeader * t16;
+    int64_t t17;
+    int64_t t18;
+    int64_t t19;
+    h_0opt_e1f4933 t20;
+    h_0opt_e1f4933 t21;
+    int64_t t22;
+    int64_t t23;
+    bool t24;
+    h_0opt_e1f4933 t25;
+    HeroFailure t26;
+    h_0opt_e1f4933 t27;
+    int32_t t28;
+    void * t29;
+    int64_t t31;
+    int64_t t32;
+    int64_t t33;
+    void * t34;
+    bool t36;
+    bool t37;
+    HeroArrayHeader * t38;
+    h_0opt_e1f4933 t39;
+    h_0opt_e1f4933 t40;
+    goto bb0;
 bb0:
+#line 36 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     t1 = h0_path;
 #line 36 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     t2 = hero_str_lend(t1);
@@ -257,11 +302,11 @@ bb1:
     t10 = h1_bytes;
 #line 41 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     t38 = h3_xs0;
-#line 41 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
+#line 306 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
     hero_array_incref(t10);
 #line 41 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     h3_xs0 = t10;
-#line 41 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
+#line 310 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
     hero_array_decref(t38);
 #line 41 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     t11 = INT64_C(0);
@@ -318,15 +363,15 @@ bb5:
     t39 = h8_own8;
 #line 42 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     h8_own8 = t20;
-#line 42 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
+#line 367 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
     h_0opt_e1f4933_release(&t39);
 #line 42 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     t40 = h6_f0;
-#line 42 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
+#line 371 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
     h_0opt_e1f4933_retain(&t20);
 #line 42 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     h6_f0 = t20;
-#line 42 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
+#line 375 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
     h_0opt_e1f4933_release(&t40);
 #line 42 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     t21 = h6_f0;
@@ -379,7 +424,7 @@ bb9:
     t25 = h6_f0;
 #line 42 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     t26 = t25.as.err;
-#line 383 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
+#line 428 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
     hero_panic_must(t26);
     hero_unreachable();
 bb10:
@@ -392,10 +437,79 @@ bb10:
 
 #line 50 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
 HeroStr h_fixedbugs484afileskeymadeincisthekeyofitsshowntext_digest(HeroStr h0_text) {
-#line 50 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
-    int64_t h1_m; int64_t h2_a; int64_t h3_b; HeroArrayHeader * h4_xs0 = {0}; int64_t h5_i0; int64_t h6_k; h_0opt_e201354 h7_f0 = {0}; int64_t h8_v; HeroArrayHeader * h9_own9 = {0}; h_0opt_e201354 h10_own10 = {0}; HeroStr h11_own11 = {0}; HeroStr h12_own12 = {0}; HeroStr h13_own13 = {0}; int64_t t1; int64_t t2; int64_t t3; int64_t t4; HeroStr t5; int64_t t6; HeroArrayHeader * t7; int64_t t8; int64_t t9; HeroArrayHeader * t10; int64_t t11; bool t12; HeroArrayHeader * t13; int64_t t14; int64_t t15; HeroStr t16; int64_t t17; uint8_t t18; h_0opt_e201354 t19; h_0opt_e201354 t20; int64_t t21; int64_t t22; bool t23; h_0opt_e201354 t24; HeroFailure t25; h_0opt_e201354 t26; int64_t t27; int64_t t28; int64_t t29; int64_t t30; int64_t t31; int64_t t32; int64_t t33; int64_t t34; int64_t t35; int64_t t36; int64_t t37; int64_t t38; int64_t t39; int64_t t40; int64_t t41; int64_t t42; int64_t t43; int64_t t44; int64_t t45; HeroStr t46; int64_t t47; HeroStr t48; HeroStr t49; HeroArrayHeader * t50; HeroArrayHeader * t51; h_0opt_e201354 t52; h_0opt_e201354 t53; HeroStr t54; HeroStr t55; HeroStr t56; goto bb0;
-#line 50 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
+#line 441 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
+    int64_t h1_m;
+    int64_t h2_a;
+    int64_t h3_b;
+    HeroArrayHeader * h4_xs0 = {0};
+    int64_t h5_i0;
+    int64_t h6_k;
+    h_0opt_e201354 h7_f0 = {0};
+    int64_t h8_v;
+    HeroArrayHeader * h9_own9 = {0};
+    h_0opt_e201354 h10_own10 = {0};
+    HeroStr h11_own11 = {0};
+    HeroStr h12_own12 = {0};
+    HeroStr h13_own13 = {0};
+    int64_t t1;
+    int64_t t2;
+    int64_t t3;
+    int64_t t4;
+    HeroStr t5;
+    int64_t t6;
+    HeroArrayHeader * t7;
+    int64_t t8;
+    int64_t t9;
+    HeroArrayHeader * t10;
+    int64_t t11;
+    bool t12;
+    HeroArrayHeader * t13;
+    int64_t t14;
+    int64_t t15;
+    HeroStr t16;
+    int64_t t17;
+    uint8_t t18;
+    h_0opt_e201354 t19;
+    h_0opt_e201354 t20;
+    int64_t t21;
+    int64_t t22;
+    bool t23;
+    h_0opt_e201354 t24;
+    HeroFailure t25;
+    h_0opt_e201354 t26;
+    int64_t t27;
+    int64_t t28;
+    int64_t t29;
+    int64_t t30;
+    int64_t t31;
+    int64_t t32;
+    int64_t t33;
+    int64_t t34;
+    int64_t t35;
+    int64_t t36;
+    int64_t t37;
+    int64_t t38;
+    int64_t t39;
+    int64_t t40;
+    int64_t t41;
+    int64_t t42;
+    int64_t t43;
+    int64_t t44;
+    int64_t t45;
+    HeroStr t46;
+    int64_t t47;
+    HeroStr t48;
+    HeroStr t49;
+    HeroArrayHeader * t50;
+    HeroArrayHeader * t51;
+    h_0opt_e201354 t52;
+    h_0opt_e201354 t53;
+    HeroStr t54;
+    HeroStr t55;
+    HeroStr t56;
+    goto bb0;
 bb0:
+#line 51 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     t1 = INT64_C(2147483647);
 #line 51 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     h1_m = t1;
@@ -417,15 +531,15 @@ bb0:
     t50 = h9_own9;
 #line 55 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     h9_own9 = t7;
-#line 55 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
+#line 535 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
     hero_array_decref(t50);
 #line 55 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     t51 = h4_xs0;
-#line 55 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
+#line 539 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
     hero_array_incref(t7);
 #line 55 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     h4_xs0 = t7;
-#line 55 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
+#line 543 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
     hero_array_decref(t51);
 #line 55 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     t8 = INT64_C(0);
@@ -466,15 +580,15 @@ bb2:
     t52 = h10_own10;
 #line 56 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     h10_own10 = t19;
-#line 56 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
+#line 584 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
     h_0opt_e201354_release(&t52);
 #line 56 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     t53 = h7_f0;
-#line 56 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
+#line 588 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
     h_0opt_e201354_retain(&t19);
 #line 56 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     h7_f0 = t19;
-#line 56 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
+#line 592 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
     h_0opt_e201354_release(&t53);
 #line 56 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     t20 = h7_f0;
@@ -508,7 +622,7 @@ bb4:
     t54 = h11_own11;
 #line 60 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     h11_own11 = t46;
-#line 60 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
+#line 626 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
     hero_str_decref(t54);
 #line 60 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     t47 = h3_b;
@@ -518,7 +632,7 @@ bb4:
     t55 = h12_own12;
 #line 60 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     h12_own12 = t48;
-#line 60 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
+#line 636 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
     hero_str_decref(t55);
 #line 60 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     t49 = hero_str_concat(t46, t48);
@@ -526,9 +640,8 @@ bb4:
     t56 = h13_own13;
 #line 60 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     h13_own13 = t49;
-#line 60 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
+#line 644 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
     hero_str_decref(t56);
-#line 532 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
     hero_str_incref(t49);
     hero_array_release_at(&h4_xs0);
     h_0opt_e201354_release(hero_slot_escape(&h7_f0));
@@ -591,35 +704,82 @@ bb6:
     t24 = h7_f0;
 #line 56 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     t25 = t24.as.err;
-#line 595 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
+#line 708 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
     hero_panic_must(t25);
     hero_unreachable();
 }
 
 #line 62 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
 HeroStr h_fixedbugs484afileskeymadeincisthekeyofitsshowntext_hex8(int64_t h0_number) {
-#line 62 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
-    HeroStr h1_ds = {0}; HeroStr h2_out = {0}; int64_t h3_value; HeroArrayHeader * h4_xs0 = {0}; int64_t h5_i0; int64_t h6_d; HeroArrayHeader * h7_own7 = {0}; HeroStr h8_own8 = {0}; HeroStr h9_own9 = {0}; HeroStr t1; HeroStr t2; int64_t t3; int64_t t4; int64_t t5; HeroArrayHeader * t6; int64_t t7; int64_t t8; HeroArrayHeader * t9; int64_t t10; bool t11; int64_t t12; int64_t t13; int64_t t14; HeroStr t15; int64_t t16; int64_t t17; int64_t t18; int64_t t19; HeroStr t20; HeroStr t21; HeroStr t22; int64_t t23; int64_t t24; int64_t t25; int64_t t26; int64_t t27; int64_t t28; HeroStr t29; HeroStr t30; HeroStr t31; HeroArrayHeader * t32; HeroArrayHeader * t33; HeroStr t34; HeroStr t35; HeroStr t36; goto bb0;
-#line 62 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
+#line 715 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
+    HeroStr h1_ds = {0};
+    HeroStr h2_out = {0};
+    int64_t h3_value;
+    HeroArrayHeader * h4_xs0 = {0};
+    int64_t h5_i0;
+    int64_t h6_d;
+    HeroArrayHeader * h7_own7 = {0};
+    HeroStr h8_own8 = {0};
+    HeroStr h9_own9 = {0};
+    HeroStr t1;
+    HeroStr t2;
+    int64_t t3;
+    int64_t t4;
+    int64_t t5;
+    HeroArrayHeader * t6;
+    int64_t t7;
+    int64_t t8;
+    HeroArrayHeader * t9;
+    int64_t t10;
+    bool t11;
+    int64_t t12;
+    int64_t t13;
+    int64_t t14;
+    HeroStr t15;
+    int64_t t16;
+    int64_t t17;
+    int64_t t18;
+    int64_t t19;
+    HeroStr t20;
+    HeroStr t21;
+    HeroStr t22;
+    int64_t t23;
+    int64_t t24;
+    int64_t t25;
+    int64_t t26;
+    int64_t t27;
+    int64_t t28;
+    HeroStr t29;
+    HeroStr t30;
+    HeroStr t31;
+    HeroArrayHeader * t32;
+    HeroArrayHeader * t33;
+    HeroStr t34;
+    HeroStr t35;
+    HeroStr t36;
+    goto bb0;
 bb0:
+#line 63 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     t1 = HERO_STR_LIT(hero_str_35b2f7b2);
 #line 63 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     t30 = h1_ds;
-#line 63 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
+#line 767 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
     hero_str_incref(t1);
 #line 63 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     h1_ds = t1;
-#line 63 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
+#line 771 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
     hero_str_decref(t30);
+#line 64 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     t2 = HERO_STR_LIT(hero_str_0);
 #line 64 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     t31 = h2_out;
-#line 64 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
+#line 777 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
     hero_str_incref(t2);
 #line 64 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     h2_out = t2;
-#line 64 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
+#line 781 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
     hero_str_decref(t31);
+#line 65 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     t3 = h0_number;
 #line 65 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     h3_value = t3;
@@ -633,15 +793,15 @@ bb0:
     t32 = h7_own7;
 #line 67 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     h7_own7 = t6;
-#line 67 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
+#line 797 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
     hero_array_decref(t32);
 #line 67 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     t33 = h4_xs0;
-#line 67 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
+#line 801 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
     hero_array_incref(t6);
 #line 67 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     h4_xs0 = t6;
-#line 67 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
+#line 805 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
     hero_array_decref(t33);
 #line 67 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     t7 = INT64_C(0);
@@ -689,7 +849,7 @@ bb2:
     t34 = h8_own8;
 #line 69 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     h8_own8 = t20;
-#line 69 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
+#line 853 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
     hero_str_decref(t34);
 #line 69 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     t21 = h2_out;
@@ -699,16 +859,17 @@ bb2:
     t35 = h9_own9;
 #line 69 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     h9_own9 = t22;
-#line 69 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
+#line 863 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
     hero_str_decref(t35);
 #line 69 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     t36 = h2_out;
-#line 69 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
+#line 867 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
     hero_str_incref(t22);
 #line 69 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     h2_out = t22;
-#line 69 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
+#line 871 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
     hero_str_decref(t36);
+#line 70 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     t23 = h3_value;
 #line 70 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     t24 = INT64_C(16);
@@ -738,7 +899,7 @@ bb3:
 bb4:
 #line 72 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     t29 = h2_out;
-#line 742 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
+#line 903 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
     hero_str_incref(t29);
     hero_str_release_at(&h1_ds);
     hero_str_release_at(&h2_out);
@@ -751,14 +912,45 @@ bb4:
 
 #line 75 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
 HeroStr h_fixedbugs484afileskeymadeincisthekeyofitsshowntext_keyed(HeroStr h0_path) {
-#line 75 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
+#line 916 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
+    int64_t *const hero_lend_h1_status = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs484afileskeymadeincisthekeyofitsshowntext.keyed", "status");
 #define h1_status (*hero_lend_h1_status)
-#line 75 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
+    int64_t *const hero_lend_h2_marks = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs484afileskeymadeincisthekeyofitsshowntext.keyed", "marks");
 #define h2_marks (*hero_lend_h2_marks)
-#line 75 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
-    int64_t *const hero_lend_h1_status = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs484afileskeymadeincisthekeyofitsshowntext.keyed", "status"); int64_t *const hero_lend_h2_marks = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs484afileskeymadeincisthekeyofitsshowntext.keyed", "marks"); HeroStr h3_got = {0}; HeroStr h4_ret0 = {0}; HeroStr h5_own5 = {0}; HeroStr h6_own6 = {0}; HeroStr h7_own7 = {0}; HeroStr h8_own8 = {0}; HeroStr h9_own9 = {0}; int64_t t1; int64_t t2; HeroStr t3; const char * t4; HeroStr t5; int64_t t6; int64_t t7; bool t8; HeroStr t9; HeroStr t10; HeroStr t11; HeroStr t12; HeroStr t13; int64_t t14; int64_t t15; HeroStr t16; HeroStr t17; HeroStr t18; HeroStr t19; HeroStr t20; HeroStr t21; HeroStr t22; HeroStr t23; HeroStr t24; goto bb0;
-#line 75 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
+    HeroStr h3_got = {0};
+    HeroStr h4_ret0 = {0};
+    HeroStr h5_own5 = {0};
+    HeroStr h6_own6 = {0};
+    HeroStr h7_own7 = {0};
+    HeroStr h8_own8 = {0};
+    HeroStr h9_own9 = {0};
+    int64_t t1;
+    int64_t t2;
+    HeroStr t3;
+    const char * t4;
+    HeroStr t5;
+    int64_t t6;
+    int64_t t7;
+    bool t8;
+    HeroStr t9;
+    HeroStr t10;
+    HeroStr t11;
+    HeroStr t12;
+    HeroStr t13;
+    int64_t t14;
+    int64_t t15;
+    HeroStr t16;
+    HeroStr t17;
+    HeroStr t18;
+    HeroStr t19;
+    HeroStr t20;
+    HeroStr t21;
+    HeroStr t22;
+    HeroStr t23;
+    HeroStr t24;
+    goto bb0;
 bb0:
+#line 76 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     t1 = INT64_C(0);
 #line 76 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     h1_status = t1;
@@ -778,15 +970,15 @@ bb0:
     t19 = h5_own5;
 #line 78 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     h5_own5 = t5;
-#line 78 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
+#line 974 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
     hero_str_decref(t19);
 #line 78 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     t20 = h3_got;
-#line 78 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
+#line 978 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
     hero_str_incref(t5);
 #line 78 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     h3_got = t5;
-#line 78 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
+#line 982 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
     hero_str_decref(t20);
 #line 80 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     t6 = h1_status;
@@ -808,7 +1000,7 @@ bb1:
     t21 = h6_own6;
 #line 82 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     h6_own6 = t13;
-#line 82 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
+#line 1004 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
     hero_str_decref(t21);
 #line 82 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     t14 = INT64_C(1);
@@ -820,7 +1012,7 @@ bb1:
     t22 = h7_own7;
 #line 82 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     h7_own7 = t16;
-#line 82 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
+#line 1016 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
     hero_str_decref(t22);
 #line 82 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     t17 = hero_str_concat(t11, t16);
@@ -828,7 +1020,7 @@ bb1:
     t23 = h8_own8;
 #line 82 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     h8_own8 = t17;
-#line 82 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
+#line 1024 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
     hero_str_decref(t23);
 #line 82 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     h4_ret0 = t17;
@@ -844,7 +1036,7 @@ bb2:
     t24 = h9_own9;
 #line 81 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     h9_own9 = t10;
-#line 81 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
+#line 1040 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
     hero_str_decref(t24);
 #line 81 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     h4_ret0 = t10;
@@ -856,7 +1048,7 @@ bb3:
     goto bb1;
 #line 81 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
 bb4:
-#line 860 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
+#line 1052 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
     t18 = h4_ret0;
     hero_str_incref(t18);
     hero_str_release_at(&h3_got);
@@ -874,18 +1066,51 @@ bb4:
 
 #line 84 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
 void h_fixedbugs484afileskeymadeincisthekeyofitsshowntext_said(HeroStr h0_name, HeroArrayHeader * h1_bytes) {
-#line 84 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
+#line 1070 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
+    int64_t *const hero_lend_h2_status = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs484afileskeymadeincisthekeyofitsshowntext.said", "status");
 #define h2_status (*hero_lend_h2_status)
-#line 84 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
-    int64_t *const hero_lend_h2_status = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs484afileskeymadeincisthekeyofitsshowntext.said", "status"); HeroStr h3_key = {0}; HeroStr h4_own4 = {0}; HeroStr h5_own5 = {0}; HeroStr h6_own6 = {0}; HeroStr h7_own7 = {0}; HeroStr h8_own8 = {0}; HeroStr t1; HeroArrayHeader * t2; bool t3; bool t4; HeroStr t5; int64_t t6; HeroStr t7; const char * t8; HeroStr t9; HeroStr t10; HeroStr t11; HeroStr t12; HeroStr t13; HeroStr t14; HeroStr t15; HeroStr t16; bool t17; HeroStr t18; int64_t t19; int64_t t20; bool t21; HeroStr t22; HeroStr t23; HeroStr t24; HeroStr t25; HeroStr t26; HeroStr t27; goto bb0;
-#line 84 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
+    HeroStr h3_key = {0};
+    HeroStr h4_own4 = {0};
+    HeroStr h5_own5 = {0};
+    HeroStr h6_own6 = {0};
+    HeroStr h7_own7 = {0};
+    HeroStr h8_own8 = {0};
+    HeroStr t1;
+    HeroArrayHeader * t2;
+    bool t3;
+    bool t4;
+    HeroStr t5;
+    int64_t t6;
+    HeroStr t7;
+    const char * t8;
+    HeroStr t9;
+    HeroStr t10;
+    HeroStr t11;
+    HeroStr t12;
+    HeroStr t13;
+    HeroStr t14;
+    HeroStr t15;
+    HeroStr t16;
+    bool t17;
+    HeroStr t18;
+    int64_t t19;
+    int64_t t20;
+    bool t21;
+    HeroStr t22;
+    HeroStr t23;
+    HeroStr t24;
+    HeroStr t25;
+    HeroStr t26;
+    HeroStr t27;
+    goto bb0;
 bb0:
+#line 85 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     t1 = h_fixedbugs484afileskeymadeincisthekeyofitsshowntext_AT();
 #line 85 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     t22 = h4_own4;
 #line 85 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     h4_own4 = t1;
-#line 85 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
+#line 1114 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
     hero_str_decref(t22);
 #line 85 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     t2 = h1_bytes;
@@ -906,7 +1131,7 @@ bb1:
     t23 = h5_own5;
 #line 89 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     h5_own5 = t7;
-#line 89 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
+#line 1135 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
     hero_str_decref(t23);
 #line 89 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     t8 = hero_str_lend(t7);
@@ -918,16 +1143,17 @@ bb1:
     t24 = h6_own6;
 #line 89 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     h6_own6 = t9;
-#line 89 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
+#line 1147 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
     hero_str_decref(t24);
 #line 89 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     t25 = h3_key;
-#line 89 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
+#line 1151 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
     hero_str_incref(t9);
 #line 89 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     h3_key = t9;
-#line 89 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
+#line 1155 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
     hero_str_decref(t25);
+#line 90 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     t10 = h0_name;
 #line 90 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     t11 = HERO_STR_LIT(hero_str_20);
@@ -943,7 +1169,7 @@ bb1:
     t26 = h7_own7;
 #line 90 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     h7_own7 = t15;
-#line 90 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
+#line 1173 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
     hero_str_decref(t26);
 #line 90 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     t16 = h_fixedbugs484afileskeymadeincisthekeyofitsshowntext_keyed(t15);
@@ -951,7 +1177,7 @@ bb1:
     t27 = h8_own8;
 #line 90 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     h8_own8 = t16;
-#line 90 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
+#line 1181 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
     hero_str_decref(t27);
 #line 90 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     t17 = hero_str_eq(t14, t16);
@@ -997,7 +1223,7 @@ bb3:
     goto bb1;
 #line 86 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
 bb4:
-#line 1001 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
+#line 1227 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
     hero_str_release_at(&h3_key);
     hero_str_release_at(&h4_own4);
     hero_str_release_at(&h5_own5);
@@ -1011,12 +1237,110 @@ bb4:
 
 #line 92 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
 void h_fixedbugs484afileskeymadeincisthekeyofitsshowntext_main(void) {
-#line 92 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
+#line 1241 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
+    HeroArrayHeader * h0_every = {0};
+    HeroArrayHeader * h1_xs0 = {0};
+    int64_t h2_i0;
+    int64_t h3_k;
+    int64_t *const hero_lend_h4_status = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs484afileskeymadeincisthekeyofitsshowntext.main", "status");
 #define h4_status (*hero_lend_h4_status)
-#line 92 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
-    HeroArrayHeader * h0_every = {0}; HeroArrayHeader * h1_xs0 = {0}; int64_t h2_i0; int64_t h3_k; int64_t *const hero_lend_h4_status = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs484afileskeymadeincisthekeyofitsshowntext.main", "status"); HeroStr h5_missing = {0}; HeroArrayHeader * h6_own6 = {0}; HeroArrayHeader * h7_own7 = {0}; HeroArrayHeader * h8_own8 = {0}; HeroArrayHeader * h9_own9 = {0}; HeroArrayHeader * h10_own10 = {0}; HeroArrayHeader * h11_own11 = {0}; HeroArrayHeader * h12_own12 = {0}; HeroArrayHeader * h13_own13 = {0}; HeroStr h14_own14 = {0}; HeroStr t1; HeroArrayHeader * t2; HeroStr t3; int64_t t4; int64_t t5; int64_t t6; int64_t t7; int64_t t8; int64_t t9; int64_t t10; HeroArrayHeader * t11; HeroStr t12; int64_t t13; int64_t t14; int64_t t15; HeroArrayHeader * t16; HeroStr t17; int64_t t18; int64_t t19; int64_t t20; HeroArrayHeader * t21; HeroStr t22; int64_t t23; int64_t t24; int64_t t25; int64_t t26; int64_t t27; int64_t t28; int64_t t29; int64_t t30; HeroArrayHeader * t31; HeroStr t32; int64_t t33; int64_t t34; int64_t t35; int64_t t36; int64_t t37; int64_t t38; int64_t t39; int64_t t40; int64_t t41; HeroArrayHeader * t42; HeroArrayHeader * t43; int64_t t44; int64_t t45; HeroArrayHeader * t46; int64_t t47; int64_t t48; HeroArrayHeader * t49; int64_t t50; bool t51; HeroArrayHeader * t52; int64_t t53; int64_t t54; int64_t t56; int64_t t57; int64_t t58; int64_t t60; int64_t t61; int64_t t62; HeroStr t63; HeroArrayHeader * t64; int64_t t65; HeroStr t66; const char * t67; HeroStr t68; HeroStr t69; HeroStr t70; HeroStr t71; int64_t t72; int64_t t73; bool t74; HeroArrayHeader * t75; HeroArrayHeader * t76; HeroArrayHeader * t77; HeroArrayHeader * t78; HeroArrayHeader * t79; HeroArrayHeader * t80; HeroArrayHeader * t81; HeroArrayHeader * t82; HeroArrayHeader * t83; HeroArrayHeader * t84; HeroStr t85; HeroStr t86; goto bb0;
-#line 92 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
+    HeroStr h5_missing = {0};
+    HeroArrayHeader * h6_own6 = {0};
+    HeroArrayHeader * h7_own7 = {0};
+    HeroArrayHeader * h8_own8 = {0};
+    HeroArrayHeader * h9_own9 = {0};
+    HeroArrayHeader * h10_own10 = {0};
+    HeroArrayHeader * h11_own11 = {0};
+    HeroArrayHeader * h12_own12 = {0};
+    HeroArrayHeader * h13_own13 = {0};
+    HeroStr h14_own14 = {0};
+    HeroStr t1;
+    HeroArrayHeader * t2;
+    HeroStr t3;
+    int64_t t4;
+    int64_t t5;
+    int64_t t6;
+    int64_t t7;
+    int64_t t8;
+    int64_t t9;
+    int64_t t10;
+    HeroArrayHeader * t11;
+    HeroStr t12;
+    int64_t t13;
+    int64_t t14;
+    int64_t t15;
+    HeroArrayHeader * t16;
+    HeroStr t17;
+    int64_t t18;
+    int64_t t19;
+    int64_t t20;
+    HeroArrayHeader * t21;
+    HeroStr t22;
+    int64_t t23;
+    int64_t t24;
+    int64_t t25;
+    int64_t t26;
+    int64_t t27;
+    int64_t t28;
+    int64_t t29;
+    int64_t t30;
+    HeroArrayHeader * t31;
+    HeroStr t32;
+    int64_t t33;
+    int64_t t34;
+    int64_t t35;
+    int64_t t36;
+    int64_t t37;
+    int64_t t38;
+    int64_t t39;
+    int64_t t40;
+    int64_t t41;
+    HeroArrayHeader * t42;
+    HeroArrayHeader * t43;
+    int64_t t44;
+    int64_t t45;
+    HeroArrayHeader * t46;
+    int64_t t47;
+    int64_t t48;
+    HeroArrayHeader * t49;
+    int64_t t50;
+    bool t51;
+    HeroArrayHeader * t52;
+    int64_t t53;
+    int64_t t54;
+    int64_t t56;
+    int64_t t57;
+    int64_t t58;
+    int64_t t60;
+    int64_t t61;
+    int64_t t62;
+    HeroStr t63;
+    HeroArrayHeader * t64;
+    int64_t t65;
+    HeroStr t66;
+    const char * t67;
+    HeroStr t68;
+    HeroStr t69;
+    HeroStr t70;
+    HeroStr t71;
+    int64_t t72;
+    int64_t t73;
+    bool t74;
+    HeroArrayHeader * t75;
+    HeroArrayHeader * t76;
+    HeroArrayHeader * t77;
+    HeroArrayHeader * t78;
+    HeroArrayHeader * t79;
+    HeroArrayHeader * t80;
+    HeroArrayHeader * t81;
+    HeroArrayHeader * t82;
+    HeroArrayHeader * t83;
+    HeroArrayHeader * t84;
+    HeroStr t85;
+    HeroStr t86;
+    goto bb0;
 bb0:
+#line 93 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     t1 = HERO_STR_LIT(hero_str_7ba188c6);
 #line 93 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     t2 = hero_array_new(&hero_desc_int, 1);
@@ -1024,7 +1348,7 @@ bb0:
     t75 = h6_own6;
 #line 93 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     h6_own6 = t2;
-#line 93 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
+#line 1352 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
     hero_array_decref(t75);
 #line 93 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     h_fixedbugs484afileskeymadeincisthekeyofitsshowntext_said(t1, t2);
@@ -1063,7 +1387,7 @@ bb0:
     t76 = h7_own7;
 #line 94 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     h7_own7 = t11;
-#line 94 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
+#line 1391 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
     hero_array_decref(t76);
 #line 94 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     h_fixedbugs484afileskeymadeincisthekeyofitsshowntext_said(t3, t11);
@@ -1086,7 +1410,7 @@ bb0:
     t77 = h8_own8;
 #line 95 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     h8_own8 = t16;
-#line 95 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
+#line 1414 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
     hero_array_decref(t77);
 #line 95 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     h_fixedbugs484afileskeymadeincisthekeyofitsshowntext_said(t12, t16);
@@ -1109,7 +1433,7 @@ bb0:
     t78 = h9_own9;
 #line 96 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     h9_own9 = t21;
-#line 96 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
+#line 1437 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
     hero_array_decref(t78);
 #line 96 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     h_fixedbugs484afileskeymadeincisthekeyofitsshowntext_said(t17, t21);
@@ -1153,7 +1477,7 @@ bb0:
     t79 = h10_own10;
 #line 100 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     h10_own10 = t31;
-#line 100 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
+#line 1481 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
     hero_array_decref(t79);
 #line 100 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     h_fixedbugs484afileskeymadeincisthekeyofitsshowntext_said(t22, t31);
@@ -1200,7 +1524,7 @@ bb0:
     t80 = h11_own11;
 #line 101 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     h11_own11 = t42;
-#line 101 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
+#line 1528 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
     hero_array_decref(t80);
 #line 101 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     h_fixedbugs484afileskeymadeincisthekeyofitsshowntext_said(t32, t42);
@@ -1209,15 +1533,15 @@ bb0:
     t81 = h12_own12;
 #line 102 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     h12_own12 = t43;
-#line 102 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
+#line 1537 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
     hero_array_decref(t81);
 #line 102 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     t82 = h0_every;
-#line 102 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
+#line 1541 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
     hero_array_incref(t43);
 #line 102 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     h0_every = t43;
-#line 102 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
+#line 1545 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
     hero_array_decref(t82);
 #line 104 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     t44 = INT64_C(0);
@@ -1229,15 +1553,15 @@ bb0:
     t83 = h13_own13;
 #line 104 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     h13_own13 = t46;
-#line 104 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
+#line 1557 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
     hero_array_decref(t83);
 #line 104 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     t84 = h1_xs0;
-#line 104 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
+#line 1561 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
     hero_array_incref(t46);
 #line 104 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     h1_xs0 = t46;
-#line 104 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
+#line 1565 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
     hero_array_decref(t84);
 #line 104 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     t47 = INT64_C(0);
@@ -1314,16 +1638,17 @@ bb4:
     t85 = h14_own14;
 #line 109 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     h14_own14 = t68;
-#line 109 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
+#line 1642 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
     hero_str_decref(t85);
 #line 109 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     t86 = h5_missing;
-#line 109 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
+#line 1646 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
     hero_str_incref(t68);
 #line 109 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     h5_missing = t68;
-#line 109 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
+#line 1650 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
     hero_str_decref(t86);
+#line 110 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     t69 = HERO_STR_LIT(hero_str_180e659f);
 #line 110 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     t70 = h5_missing;
@@ -1345,7 +1670,7 @@ bb4:
     hero_print_bool(t74);
 #line 110 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     hero_print_end();
-#line 1349 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
+#line 1674 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
     hero_array_release_at(&h0_every);
     hero_array_release_at(&h1_xs0);
     hero_str_release_at(&h5_missing);
@@ -1365,25 +1690,41 @@ bb4:
 
 #line 26 "<heroes library>"
 HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to) {
-#line 26 "<heroes library>"
-    HeroArrayHeader * h2_out = {0}; int64_t h3_i; HeroArrayHeader * h4_own4 = {0}; HeroArrayHeader * t1; int64_t t2; int64_t t3; int64_t t4; bool t5; int64_t t7; int64_t t9; int64_t t10; int64_t t11; HeroArrayHeader * t12; HeroArrayHeader * t13; HeroArrayHeader * t14; goto bb0;
-#line 26 "<heroes library>"
+#line 1694 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
+    HeroArrayHeader * h2_out = {0};
+    int64_t h3_i;
+    HeroArrayHeader * h4_own4 = {0};
+    HeroArrayHeader * t1;
+    int64_t t2;
+    int64_t t3;
+    int64_t t4;
+    bool t5;
+    int64_t t7;
+    int64_t t9;
+    int64_t t10;
+    int64_t t11;
+    HeroArrayHeader * t12;
+    HeroArrayHeader * t13;
+    HeroArrayHeader * t14;
+    goto bb0;
 bb0:
+#line 27 "<heroes library>"
     t1 = hero_array_new(&hero_desc_int, 1);
 #line 27 "<heroes library>"
     t13 = h4_own4;
 #line 27 "<heroes library>"
     h4_own4 = t1;
-#line 27 "<heroes library>"
+#line 1718 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
     hero_array_decref(t13);
 #line 27 "<heroes library>"
     t14 = h2_out;
-#line 27 "<heroes library>"
+#line 1722 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
     hero_array_incref(t1);
 #line 27 "<heroes library>"
     h2_out = t1;
-#line 27 "<heroes library>"
+#line 1726 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
     hero_array_decref(t14);
+#line 28 "<heroes library>"
     t2 = h0_from;
 #line 28 "<heroes library>"
     h3_i = t2;
@@ -1415,13 +1756,12 @@ bb2:
 #line 31 "<heroes library>"
 bb3:
     t12 = h2_out;
-#line 1419 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
+#line 1760 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
     hero_array_incref(t12);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h4_own4);
     return t12;
 }
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL void h_0opt_e1f4933_retain(const h_0opt_e1f4933 *v) {
     if (v->tag == INT64_C(0)) {
         return;

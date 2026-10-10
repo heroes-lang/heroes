@@ -21,11 +21,12 @@
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -70,7 +71,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_18109220, "%lld\n");
 
-#line 74 "ffivariadicatafixedarity.c"
+#line 75 "ffivariadicatafixedarity.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -94,7 +95,6 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
@@ -127,14 +127,17 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_ffivariadicatafixedarity_main(void);
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 10 "tests/golden/run/ffi-variadic-at-a-fixed-arity.hero"
 void h_ffivariadicatafixedarity_main(void) {
-#line 10 "tests/golden/run/ffi-variadic-at-a-fixed-arity.hero"
-    HeroStr t1; const char * t2; int64_t t3; int64_t t5; goto bb0;
-#line 10 "tests/golden/run/ffi-variadic-at-a-fixed-arity.hero"
+#line 134 "ffivariadicatafixedarity.c"
+    HeroStr t1;
+    const char * t2;
+    int64_t t3;
+    int64_t t5;
+    goto bb0;
 bb0:
+#line 11 "tests/golden/run/ffi-variadic-at-a-fixed-arity.hero"
     t1 = HERO_STR_LIT(hero_str_18109220);
 #line 11 "tests/golden/run/ffi-variadic-at-a-fixed-arity.hero"
     t2 = hero_str_lend(t1);
@@ -149,9 +152,8 @@ bb0:
     hero_print_end();
 #line 12 "tests/golden/run/ffi-variadic-at-a-fixed-arity.hero"
     return;
-#line 153 "ffivariadicatafixedarity.c"
+#line 156 "ffivariadicatafixedarity.c"
 }
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_incref(v->as.ok);

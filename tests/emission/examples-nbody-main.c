@@ -22,11 +22,12 @@
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -73,7 +74,7 @@ HERO_STR_STATIC(hero_str_2e, ".");
 HERO_STR_STATIC(hero_str_2d, "-");
 HERO_STR_STATIC(hero_str_30, "0");
 
-#line 77 "main.c"
+#line 78 "main.c"
 typedef struct h_main_Body {
     double f_x;
     double f_y;
@@ -115,7 +116,6 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
@@ -190,14 +190,14 @@ double h_main_BILLION(void);
 HeroStr h_main_nine_places(double h0_v);
 HeroStr h_main_padded(int64_t h0_rest);
 bool h_main_near(double h0_a, double h1_b);
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 53 "examples/nbody/main.hero"
 double h_main_PI(void) {
-#line 53 "examples/nbody/main.hero"
-    double t1; goto bb0;
-#line 53 "examples/nbody/main.hero"
+#line 197 "main.c"
+    double t1;
+    goto bb0;
 bb0:
+#line 54 "examples/nbody/main.hero"
     t1 = 0x1.921fb54442d18p+1;
 #line 54 "examples/nbody/main.hero"
     return t1;
@@ -206,22 +206,28 @@ bb0:
 
 #line 56 "examples/nbody/main.hero"
 double h_main_DAYS_PER_YEAR(void) {
-#line 56 "examples/nbody/main.hero"
-    double t1; goto bb0;
-#line 56 "examples/nbody/main.hero"
+#line 210 "main.c"
+    double t1;
+    goto bb0;
 bb0:
+#line 57 "examples/nbody/main.hero"
     t1 = 0x1.6d3d70a3d70a4p+8;
 #line 57 "examples/nbody/main.hero"
     return t1;
-#line 217 "main.c"
+#line 218 "main.c"
 }
 
 #line 59 "examples/nbody/main.hero"
 double h_main_solar_mass(void) {
-#line 59 "examples/nbody/main.hero"
-    double t1; double t2; double t3; double t4; double t5; goto bb0;
-#line 59 "examples/nbody/main.hero"
+#line 223 "main.c"
+    double t1;
+    double t2;
+    double t3;
+    double t4;
+    double t5;
+    goto bb0;
 bb0:
+#line 60 "examples/nbody/main.hero"
     t1 = 0x1p+2;
 #line 60 "examples/nbody/main.hero"
     t2 = h_main_PI();
@@ -233,15 +239,23 @@ bb0:
     t5 = t3 * t4;
 #line 60 "examples/nbody/main.hero"
     return t5;
-#line 237 "main.c"
+#line 243 "main.c"
 }
 
 #line 76 "examples/nbody/main.hero"
 h_main_Body h_main_sun(void) {
-#line 76 "examples/nbody/main.hero"
-    double t1; double t2; double t3; double t4; double t5; double t6; double t7; h_main_Body t8; goto bb0;
-#line 76 "examples/nbody/main.hero"
+#line 248 "main.c"
+    double t1;
+    double t2;
+    double t3;
+    double t4;
+    double t5;
+    double t6;
+    double t7;
+    h_main_Body t8;
+    goto bb0;
 bb0:
+#line 77 "examples/nbody/main.hero"
     t1 = 0x0p+0;
 #line 77 "examples/nbody/main.hero"
     t2 = 0x0p+0;
@@ -259,14 +273,32 @@ bb0:
     t8 = (h_main_Body){.f_x = t1, .f_y = t2, .f_z = t3, .f_vx = t4, .f_vy = t5, .f_vz = t6, .f_mass = t7};
 #line 77 "examples/nbody/main.hero"
     return t8;
-#line 263 "main.c"
+#line 277 "main.c"
 }
 
 #line 85 "examples/nbody/main.hero"
 h_main_Body h_main_jupiter(void) {
-#line 85 "examples/nbody/main.hero"
-    double t1; double t2; double t3; double t4; double t5; double t6; double t7; double t8; double t9; double t10; double t11; double t12; double t13; double t14; double t15; double t16; double t17; double t18; h_main_Body t19; goto bb0;
-#line 85 "examples/nbody/main.hero"
+#line 282 "main.c"
+    double t1;
+    double t2;
+    double t3;
+    double t4;
+    double t5;
+    double t6;
+    double t7;
+    double t8;
+    double t9;
+    double t10;
+    double t11;
+    double t12;
+    double t13;
+    double t14;
+    double t15;
+    double t16;
+    double t17;
+    double t18;
+    h_main_Body t19;
+    goto bb0;
 bb0:
 #line 87 "examples/nbody/main.hero"
     t1 = 0x1.35da0343cd92cp+2;
@@ -302,14 +334,31 @@ bb0:
     t19 = (h_main_Body){.f_x = t1, .f_y = t3, .f_z = t5, .f_vx = t8, .f_vy = t11, .f_vz = t15, .f_mass = t18};
 #line 86 "examples/nbody/main.hero"
     return t19;
-#line 306 "main.c"
+#line 338 "main.c"
 }
 
 #line 102 "examples/nbody/main.hero"
 h_main_Body h_main_saturn(void) {
-#line 102 "examples/nbody/main.hero"
-    double t1; double t2; double t3; double t4; double t5; double t6; double t7; double t8; double t9; double t10; double t11; double t12; double t13; double t14; double t15; double t16; double t17; h_main_Body t18; goto bb0;
-#line 102 "examples/nbody/main.hero"
+#line 343 "main.c"
+    double t1;
+    double t2;
+    double t3;
+    double t4;
+    double t5;
+    double t6;
+    double t7;
+    double t8;
+    double t9;
+    double t10;
+    double t11;
+    double t12;
+    double t13;
+    double t14;
+    double t15;
+    double t16;
+    double t17;
+    h_main_Body t18;
+    goto bb0;
 bb0:
 #line 104 "examples/nbody/main.hero"
     t1 = 0x1.0afcdc332ca67p+3;
@@ -343,14 +392,32 @@ bb0:
     t18 = (h_main_Body){.f_x = t1, .f_y = t2, .f_z = t4, .f_vx = t8, .f_vy = t11, .f_vz = t14, .f_mass = t17};
 #line 103 "examples/nbody/main.hero"
     return t18;
-#line 347 "main.c"
+#line 396 "main.c"
 }
 
 #line 119 "examples/nbody/main.hero"
 h_main_Body h_main_uranus(void) {
-#line 119 "examples/nbody/main.hero"
-    double t1; double t2; double t3; double t4; double t5; double t6; double t7; double t8; double t9; double t10; double t11; double t12; double t13; double t14; double t15; double t16; double t17; double t18; h_main_Body t19; goto bb0;
-#line 119 "examples/nbody/main.hero"
+#line 401 "main.c"
+    double t1;
+    double t2;
+    double t3;
+    double t4;
+    double t5;
+    double t6;
+    double t7;
+    double t8;
+    double t9;
+    double t10;
+    double t11;
+    double t12;
+    double t13;
+    double t14;
+    double t15;
+    double t16;
+    double t17;
+    double t18;
+    h_main_Body t19;
+    goto bb0;
 bb0:
 #line 121 "examples/nbody/main.hero"
     t1 = 0x1.9c9eacea7d9cfp+3;
@@ -386,14 +453,31 @@ bb0:
     t19 = (h_main_Body){.f_x = t1, .f_y = t3, .f_z = t5, .f_vx = t8, .f_vy = t11, .f_vz = t15, .f_mass = t18};
 #line 120 "examples/nbody/main.hero"
     return t19;
-#line 390 "main.c"
+#line 457 "main.c"
 }
 
 #line 136 "examples/nbody/main.hero"
 h_main_Body h_main_neptune(void) {
-#line 136 "examples/nbody/main.hero"
-    double t1; double t2; double t3; double t4; double t5; double t6; double t7; double t8; double t9; double t10; double t11; double t12; double t13; double t14; double t15; double t16; double t17; h_main_Body t18; goto bb0;
-#line 136 "examples/nbody/main.hero"
+#line 462 "main.c"
+    double t1;
+    double t2;
+    double t3;
+    double t4;
+    double t5;
+    double t6;
+    double t7;
+    double t8;
+    double t9;
+    double t10;
+    double t11;
+    double t12;
+    double t13;
+    double t14;
+    double t15;
+    double t16;
+    double t17;
+    h_main_Body t18;
+    goto bb0;
 bb0:
 #line 138 "examples/nbody/main.hero"
     t1 = 0x1.ec267a905572ap+3;
@@ -427,15 +511,23 @@ bb0:
     t18 = (h_main_Body){.f_x = t1, .f_y = t3, .f_z = t4, .f_vx = t7, .f_vy = t10, .f_vz = t14, .f_mass = t17};
 #line 137 "examples/nbody/main.hero"
     return t18;
-#line 431 "main.c"
+#line 515 "main.c"
 }
 
 #line 150 "examples/nbody/main.hero"
 HeroArrayHeader * h_main_system(void) {
-#line 150 "examples/nbody/main.hero"
-    HeroArrayHeader * h0_own0 = {0}; h_main_Body t1; h_main_Body t2; h_main_Body t3; h_main_Body t4; h_main_Body t5; HeroArrayHeader * t6; HeroArrayHeader * t7; goto bb0;
-#line 150 "examples/nbody/main.hero"
+#line 520 "main.c"
+    HeroArrayHeader * h0_own0 = {0};
+    h_main_Body t1;
+    h_main_Body t2;
+    h_main_Body t3;
+    h_main_Body t4;
+    h_main_Body t5;
+    HeroArrayHeader * t6;
+    HeroArrayHeader * t7;
+    goto bb0;
 bb0:
+#line 151 "examples/nbody/main.hero"
     t1 = h_main_sun();
 #line 151 "examples/nbody/main.hero"
     t2 = h_main_jupiter();
@@ -461,9 +553,8 @@ bb0:
     t7 = h0_own0;
 #line 151 "examples/nbody/main.hero"
     h0_own0 = t6;
-#line 151 "examples/nbody/main.hero"
+#line 557 "main.c"
     hero_array_decref(t7);
-#line 467 "main.c"
     hero_array_incref(t6);
     hero_array_release_at(&h0_own0);
     return t6;
@@ -471,10 +562,96 @@ bb0:
 
 #line 158 "examples/nbody/main.hero"
 HeroArrayHeader * h_main_offset_momentum(HeroArrayHeader * h0_bodies) {
-#line 158 "examples/nbody/main.hero"
-    double h1_px; double h2_py; double h3_pz; HeroArrayHeader * h4_xs0 = {0}; int64_t h5_i0; h_main_Body h6_b; h_main_Body h7_first; HeroArrayHeader * h8_out = {0}; int64_t h9_at; HeroArrayHeader * h10_own10 = {0}; double t1; double t2; double t3; HeroArrayHeader * t4; int64_t t5; int64_t t6; HeroArrayHeader * t7; int64_t t8; bool t9; HeroArrayHeader * t10; int64_t t11; h_main_Body t12; double t13; h_main_Body t14; double t15; h_main_Body t16; double t17; double t18; double t19; double t20; h_main_Body t21; double t22; h_main_Body t23; double t24; double t25; double t26; double t27; h_main_Body t28; double t29; h_main_Body t30; double t31; double t32; double t33; int64_t t34; int64_t t35; int64_t t36; HeroArrayHeader * t37; int64_t t38; h_main_Body t39; h_main_Body t40; double t41; h_main_Body t42; double t43; h_main_Body t44; double t45; double t46; double t47; double t48; double t49; double t50; double t51; double t52; double t53; double t54; double t55; double t56; double t57; h_main_Body t58; double t59; h_main_Body t60; HeroArrayHeader * t61; int64_t t62; int64_t t63; HeroArrayHeader * t64; int64_t t65; bool t66; HeroArrayHeader * t68; int64_t t69; h_main_Body t70; int64_t t72; int64_t t73; int64_t t74; HeroArrayHeader * t75; HeroArrayHeader * t76; HeroArrayHeader * t77; HeroArrayHeader * t78; goto bb0;
-#line 158 "examples/nbody/main.hero"
+#line 566 "main.c"
+    double h1_px;
+    double h2_py;
+    double h3_pz;
+    HeroArrayHeader * h4_xs0 = {0};
+    int64_t h5_i0;
+    h_main_Body h6_b;
+    h_main_Body h7_first;
+    HeroArrayHeader * h8_out = {0};
+    int64_t h9_at;
+    HeroArrayHeader * h10_own10 = {0};
+    double t1;
+    double t2;
+    double t3;
+    HeroArrayHeader * t4;
+    int64_t t5;
+    int64_t t6;
+    HeroArrayHeader * t7;
+    int64_t t8;
+    bool t9;
+    HeroArrayHeader * t10;
+    int64_t t11;
+    h_main_Body t12;
+    double t13;
+    h_main_Body t14;
+    double t15;
+    h_main_Body t16;
+    double t17;
+    double t18;
+    double t19;
+    double t20;
+    h_main_Body t21;
+    double t22;
+    h_main_Body t23;
+    double t24;
+    double t25;
+    double t26;
+    double t27;
+    h_main_Body t28;
+    double t29;
+    h_main_Body t30;
+    double t31;
+    double t32;
+    double t33;
+    int64_t t34;
+    int64_t t35;
+    int64_t t36;
+    HeroArrayHeader * t37;
+    int64_t t38;
+    h_main_Body t39;
+    h_main_Body t40;
+    double t41;
+    h_main_Body t42;
+    double t43;
+    h_main_Body t44;
+    double t45;
+    double t46;
+    double t47;
+    double t48;
+    double t49;
+    double t50;
+    double t51;
+    double t52;
+    double t53;
+    double t54;
+    double t55;
+    double t56;
+    double t57;
+    h_main_Body t58;
+    double t59;
+    h_main_Body t60;
+    HeroArrayHeader * t61;
+    int64_t t62;
+    int64_t t63;
+    HeroArrayHeader * t64;
+    int64_t t65;
+    bool t66;
+    HeroArrayHeader * t68;
+    int64_t t69;
+    h_main_Body t70;
+    int64_t t72;
+    int64_t t73;
+    int64_t t74;
+    HeroArrayHeader * t75;
+    HeroArrayHeader * t76;
+    HeroArrayHeader * t77;
+    HeroArrayHeader * t78;
+    goto bb0;
 bb0:
+#line 159 "examples/nbody/main.hero"
     t1 = 0x0p+0;
 #line 159 "examples/nbody/main.hero"
     h1_px = t1;
@@ -488,11 +665,11 @@ bb0:
     t4 = h0_bodies;
 #line 163 "examples/nbody/main.hero"
     t76 = h4_xs0;
-#line 163 "examples/nbody/main.hero"
+#line 669 "main.c"
     hero_array_incref(t4);
 #line 163 "examples/nbody/main.hero"
     h4_xs0 = t4;
-#line 163 "examples/nbody/main.hero"
+#line 673 "main.c"
     hero_array_decref(t76);
 #line 163 "examples/nbody/main.hero"
     t5 = INT64_C(0);
@@ -641,15 +818,15 @@ bb4:
     t77 = h10_own10;
 #line 169 "examples/nbody/main.hero"
     h10_own10 = t61;
-#line 169 "examples/nbody/main.hero"
+#line 822 "main.c"
     hero_array_decref(t77);
 #line 169 "examples/nbody/main.hero"
     t78 = h8_out;
-#line 169 "examples/nbody/main.hero"
+#line 826 "main.c"
     hero_array_incref(t61);
 #line 169 "examples/nbody/main.hero"
     h8_out = t61;
-#line 169 "examples/nbody/main.hero"
+#line 830 "main.c"
     hero_array_decref(t78);
 #line 172 "examples/nbody/main.hero"
     t62 = INT64_C(1);
@@ -691,7 +868,7 @@ bb6:
 bb7:
 #line 178 "examples/nbody/main.hero"
     t75 = h8_out;
-#line 695 "main.c"
+#line 872 "main.c"
     hero_array_incref(t75);
     hero_array_release_at(&h4_xs0);
     hero_array_release_at(&h8_out);
@@ -701,19 +878,154 @@ bb7:
 
 #line 184 "examples/nbody/main.hero"
 HeroArrayHeader * h_main_advanced(HeroArrayHeader * h0_bodies, double h1_dt) {
-#line 184 "examples/nbody/main.hero"
-    HeroArrayHeader * h2_moved = {0}; int64_t h3_i; int64_t h4_j; h_main_Body h5_b; h_main_Body h6_other; double h7_dx; double h8_dy; double h9_dz; double h10_distance; double h11_mag; int64_t h12_at; h_main_Body h13_b; HeroArrayHeader * t1; int64_t t2; int64_t t3; HeroArrayHeader * t4; int64_t t5; bool t6; int64_t t7; int64_t t8; int64_t t9; int64_t t10; HeroArrayHeader * t11; int64_t t12; bool t13; HeroArrayHeader * t14; int64_t t15; h_main_Body t16; HeroArrayHeader * t17; int64_t t18; h_main_Body t19; h_main_Body t20; double t21; h_main_Body t22; double t23; double t24; h_main_Body t25; double t26; h_main_Body t27; double t28; double t29; h_main_Body t30; double t31; h_main_Body t32; double t33; double t34; double t35; double t36; double t37; double t38; double t39; double t40; double t41; double t42; double t43; double t44; double t45; double t46; double t47; double t48; double t49; double t50; double t51; double t52; double t53; int64_t t54; h_main_Body t55; double t56; double t57; double t58; h_main_Body t59; double t60; double t61; double t62; h_main_Body t63; int64_t t64; h_main_Body t65; double t66; double t67; double t68; h_main_Body t69; double t70; double t71; h_main_Body t72; int64_t t73; int64_t t74; int64_t t75; int64_t t76; int64_t t77; int64_t t78; int64_t t79; int64_t t80; HeroArrayHeader * t81; int64_t t82; bool t83; HeroArrayHeader * t84; int64_t t85; h_main_Body t86; int64_t t87; h_main_Body t88; double t89; double t90; h_main_Body t91; double t92; double t93; double t94; h_main_Body t95; double t96; double t97; h_main_Body t98; double t99; double t100; double t101; h_main_Body t102; double t103; double t104; h_main_Body t105; double t106; double t107; double t108; h_main_Body t109; double t110; h_main_Body t111; double t112; h_main_Body t113; double t114; h_main_Body t115; double t116; h_main_Body t117; int64_t t118; int64_t t119; int64_t t120; HeroArrayHeader * t121; HeroArrayHeader * t122; goto bb0;
-#line 184 "examples/nbody/main.hero"
+#line 882 "main.c"
+    HeroArrayHeader * h2_moved = {0};
+    int64_t h3_i;
+    int64_t h4_j;
+    h_main_Body h5_b;
+    h_main_Body h6_other;
+    double h7_dx;
+    double h8_dy;
+    double h9_dz;
+    double h10_distance;
+    double h11_mag;
+    int64_t h12_at;
+    h_main_Body h13_b;
+    HeroArrayHeader * t1;
+    int64_t t2;
+    int64_t t3;
+    HeroArrayHeader * t4;
+    int64_t t5;
+    bool t6;
+    int64_t t7;
+    int64_t t8;
+    int64_t t9;
+    int64_t t10;
+    HeroArrayHeader * t11;
+    int64_t t12;
+    bool t13;
+    HeroArrayHeader * t14;
+    int64_t t15;
+    h_main_Body t16;
+    HeroArrayHeader * t17;
+    int64_t t18;
+    h_main_Body t19;
+    h_main_Body t20;
+    double t21;
+    h_main_Body t22;
+    double t23;
+    double t24;
+    h_main_Body t25;
+    double t26;
+    h_main_Body t27;
+    double t28;
+    double t29;
+    h_main_Body t30;
+    double t31;
+    h_main_Body t32;
+    double t33;
+    double t34;
+    double t35;
+    double t36;
+    double t37;
+    double t38;
+    double t39;
+    double t40;
+    double t41;
+    double t42;
+    double t43;
+    double t44;
+    double t45;
+    double t46;
+    double t47;
+    double t48;
+    double t49;
+    double t50;
+    double t51;
+    double t52;
+    double t53;
+    int64_t t54;
+    h_main_Body t55;
+    double t56;
+    double t57;
+    double t58;
+    h_main_Body t59;
+    double t60;
+    double t61;
+    double t62;
+    h_main_Body t63;
+    int64_t t64;
+    h_main_Body t65;
+    double t66;
+    double t67;
+    double t68;
+    h_main_Body t69;
+    double t70;
+    double t71;
+    h_main_Body t72;
+    int64_t t73;
+    int64_t t74;
+    int64_t t75;
+    int64_t t76;
+    int64_t t77;
+    int64_t t78;
+    int64_t t79;
+    int64_t t80;
+    HeroArrayHeader * t81;
+    int64_t t82;
+    bool t83;
+    HeroArrayHeader * t84;
+    int64_t t85;
+    h_main_Body t86;
+    int64_t t87;
+    h_main_Body t88;
+    double t89;
+    double t90;
+    h_main_Body t91;
+    double t92;
+    double t93;
+    double t94;
+    h_main_Body t95;
+    double t96;
+    double t97;
+    h_main_Body t98;
+    double t99;
+    double t100;
+    double t101;
+    h_main_Body t102;
+    double t103;
+    double t104;
+    h_main_Body t105;
+    double t106;
+    double t107;
+    double t108;
+    h_main_Body t109;
+    double t110;
+    h_main_Body t111;
+    double t112;
+    h_main_Body t113;
+    double t114;
+    h_main_Body t115;
+    double t116;
+    h_main_Body t117;
+    int64_t t118;
+    int64_t t119;
+    int64_t t120;
+    HeroArrayHeader * t121;
+    HeroArrayHeader * t122;
+    goto bb0;
 bb0:
+#line 185 "examples/nbody/main.hero"
     t1 = h0_bodies;
 #line 185 "examples/nbody/main.hero"
     t122 = h2_moved;
-#line 185 "examples/nbody/main.hero"
+#line 1023 "main.c"
     hero_array_incref(t1);
 #line 185 "examples/nbody/main.hero"
     h2_moved = t1;
-#line 185 "examples/nbody/main.hero"
+#line 1027 "main.c"
     hero_array_decref(t122);
+#line 186 "examples/nbody/main.hero"
     t2 = INT64_C(0);
 #line 186 "examples/nbody/main.hero"
     h3_i = t2;
@@ -1003,7 +1315,7 @@ bb8:
 bb9:
 #line 220 "examples/nbody/main.hero"
     t121 = h2_moved;
-#line 1007 "main.c"
+#line 1319 "main.c"
     hero_array_incref(t121);
     hero_array_release_at(&h2_moved);
     return t121;
@@ -1011,9 +1323,41 @@ bb9:
 
 #line 225 "examples/nbody/main.hero"
 h_main_Body h_main_pulled(h_main_Body h0_b, double h1_dx, double h2_dy, double h3_dz, double h4_mass, double h5_mag) {
-#line 225 "examples/nbody/main.hero"
-    h_main_Body t1; double t2; h_main_Body t3; double t4; h_main_Body t5; double t6; h_main_Body t7; double t8; double t9; double t10; double t11; double t12; double t13; double t14; h_main_Body t15; double t16; double t17; double t18; double t19; double t20; double t21; double t22; h_main_Body t23; double t24; double t25; double t26; double t27; double t28; double t29; double t30; h_main_Body t31; double t32; h_main_Body t33; goto bb0;
-#line 225 "examples/nbody/main.hero"
+#line 1327 "main.c"
+    h_main_Body t1;
+    double t2;
+    h_main_Body t3;
+    double t4;
+    h_main_Body t5;
+    double t6;
+    h_main_Body t7;
+    double t8;
+    double t9;
+    double t10;
+    double t11;
+    double t12;
+    double t13;
+    double t14;
+    h_main_Body t15;
+    double t16;
+    double t17;
+    double t18;
+    double t19;
+    double t20;
+    double t21;
+    double t22;
+    h_main_Body t23;
+    double t24;
+    double t25;
+    double t26;
+    double t27;
+    double t28;
+    double t29;
+    double t30;
+    h_main_Body t31;
+    double t32;
+    h_main_Body t33;
+    goto bb0;
 bb0:
 #line 227 "examples/nbody/main.hero"
     t1 = h0_b;
@@ -1077,15 +1421,108 @@ bb0:
     t33 = (h_main_Body){.f_x = t2, .f_y = t4, .f_z = t6, .f_vx = t14, .f_vy = t22, .f_vz = t30, .f_mass = t32};
 #line 226 "examples/nbody/main.hero"
     return t33;
-#line 1081 "main.c"
+#line 1425 "main.c"
 }
 
 #line 239 "examples/nbody/main.hero"
 double h_main_energy(HeroArrayHeader * h0_bodies) {
-#line 239 "examples/nbody/main.hero"
-    double h1_e; int64_t h2_i; h_main_Body h3_b; int64_t h4_j; h_main_Body h5_other; double h6_dx; double h7_dy; double h8_dz; double t1; int64_t t2; int64_t t3; HeroArrayHeader * t4; int64_t t5; bool t6; HeroArrayHeader * t7; int64_t t8; h_main_Body t9; double t10; double t11; h_main_Body t12; double t13; double t14; h_main_Body t15; double t16; h_main_Body t17; double t18; double t19; h_main_Body t20; double t21; h_main_Body t22; double t23; double t24; double t25; h_main_Body t26; double t27; h_main_Body t28; double t29; double t30; double t31; double t32; double t33; int64_t t34; int64_t t35; int64_t t36; int64_t t37; HeroArrayHeader * t38; int64_t t39; bool t40; HeroArrayHeader * t41; int64_t t42; h_main_Body t43; h_main_Body t44; double t45; h_main_Body t46; double t47; double t48; h_main_Body t49; double t50; h_main_Body t51; double t52; double t53; h_main_Body t54; double t55; h_main_Body t56; double t57; double t58; double t59; h_main_Body t60; double t61; h_main_Body t62; double t63; double t64; double t65; double t66; double t67; double t68; double t69; double t70; double t71; double t72; double t73; double t74; double t75; double t76; double t77; double t78; int64_t t79; int64_t t80; int64_t t81; int64_t t82; int64_t t83; int64_t t84; double t85; goto bb0;
-#line 239 "examples/nbody/main.hero"
+#line 1430 "main.c"
+    double h1_e;
+    int64_t h2_i;
+    h_main_Body h3_b;
+    int64_t h4_j;
+    h_main_Body h5_other;
+    double h6_dx;
+    double h7_dy;
+    double h8_dz;
+    double t1;
+    int64_t t2;
+    int64_t t3;
+    HeroArrayHeader * t4;
+    int64_t t5;
+    bool t6;
+    HeroArrayHeader * t7;
+    int64_t t8;
+    h_main_Body t9;
+    double t10;
+    double t11;
+    h_main_Body t12;
+    double t13;
+    double t14;
+    h_main_Body t15;
+    double t16;
+    h_main_Body t17;
+    double t18;
+    double t19;
+    h_main_Body t20;
+    double t21;
+    h_main_Body t22;
+    double t23;
+    double t24;
+    double t25;
+    h_main_Body t26;
+    double t27;
+    h_main_Body t28;
+    double t29;
+    double t30;
+    double t31;
+    double t32;
+    double t33;
+    int64_t t34;
+    int64_t t35;
+    int64_t t36;
+    int64_t t37;
+    HeroArrayHeader * t38;
+    int64_t t39;
+    bool t40;
+    HeroArrayHeader * t41;
+    int64_t t42;
+    h_main_Body t43;
+    h_main_Body t44;
+    double t45;
+    h_main_Body t46;
+    double t47;
+    double t48;
+    h_main_Body t49;
+    double t50;
+    h_main_Body t51;
+    double t52;
+    double t53;
+    h_main_Body t54;
+    double t55;
+    h_main_Body t56;
+    double t57;
+    double t58;
+    double t59;
+    h_main_Body t60;
+    double t61;
+    h_main_Body t62;
+    double t63;
+    double t64;
+    double t65;
+    double t66;
+    double t67;
+    double t68;
+    double t69;
+    double t70;
+    double t71;
+    double t72;
+    double t73;
+    double t74;
+    double t75;
+    double t76;
+    double t77;
+    double t78;
+    int64_t t79;
+    int64_t t80;
+    int64_t t81;
+    int64_t t82;
+    int64_t t83;
+    int64_t t84;
+    double t85;
+    goto bb0;
 bb0:
+#line 240 "examples/nbody/main.hero"
     t1 = 0x0p+0;
 #line 240 "examples/nbody/main.hero"
     h1_e = t1;
@@ -1295,45 +1732,82 @@ bb6:
     h2_i = t84;
 #line 256 "examples/nbody/main.hero"
     goto bb1;
-#line 1299 "main.c"
+#line 1736 "main.c"
 }
 
 #line 261 "examples/nbody/main.hero"
 int64_t h_main_STEPS(void) {
-#line 261 "examples/nbody/main.hero"
-    int64_t t1; goto bb0;
-#line 261 "examples/nbody/main.hero"
+#line 1741 "main.c"
+    int64_t t1;
+    goto bb0;
 bb0:
+#line 262 "examples/nbody/main.hero"
     t1 = INT64_C(1000);
 #line 262 "examples/nbody/main.hero"
     return t1;
-#line 1311 "main.c"
+#line 1749 "main.c"
 }
 
 #line 264 "examples/nbody/main.hero"
 double h_main_STEP(void) {
-#line 264 "examples/nbody/main.hero"
-    double t1; goto bb0;
-#line 264 "examples/nbody/main.hero"
+#line 1754 "main.c"
+    double t1;
+    goto bb0;
 bb0:
+#line 265 "examples/nbody/main.hero"
     t1 = 0x1.47ae147ae147bp-7;
 #line 265 "examples/nbody/main.hero"
     return t1;
-#line 1323 "main.c"
+#line 1762 "main.c"
 }
 
 #line 267 "examples/nbody/main.hero"
 void h_main_main(void) {
-#line 267 "examples/nbody/main.hero"
-    HeroArrayHeader * h0_start = {0}; HeroArrayHeader * h1_moved = {0}; int64_t h2_step; HeroArrayHeader * h3_own3 = {0}; HeroArrayHeader * h4_own4 = {0}; HeroStr h5_own5 = {0}; HeroArrayHeader * h6_own6 = {0}; HeroStr h7_own7 = {0}; HeroArrayHeader * t1; HeroArrayHeader * t2; HeroArrayHeader * t3; double t4; HeroStr t5; HeroArrayHeader * t6; int64_t t7; int64_t t8; int64_t t9; bool t10; HeroArrayHeader * t11; double t12; HeroArrayHeader * t13; int64_t t14; int64_t t15; int64_t t16; HeroArrayHeader * t17; double t18; HeroStr t19; HeroArrayHeader * t20; HeroArrayHeader * t21; HeroArrayHeader * t22; HeroStr t23; HeroArrayHeader * t24; HeroArrayHeader * t25; HeroArrayHeader * t26; HeroStr t27; goto bb0;
-#line 267 "examples/nbody/main.hero"
+#line 1767 "main.c"
+    HeroArrayHeader * h0_start = {0};
+    HeroArrayHeader * h1_moved = {0};
+    int64_t h2_step;
+    HeroArrayHeader * h3_own3 = {0};
+    HeroArrayHeader * h4_own4 = {0};
+    HeroStr h5_own5 = {0};
+    HeroArrayHeader * h6_own6 = {0};
+    HeroStr h7_own7 = {0};
+    HeroArrayHeader * t1;
+    HeroArrayHeader * t2;
+    HeroArrayHeader * t3;
+    double t4;
+    HeroStr t5;
+    HeroArrayHeader * t6;
+    int64_t t7;
+    int64_t t8;
+    int64_t t9;
+    bool t10;
+    HeroArrayHeader * t11;
+    double t12;
+    HeroArrayHeader * t13;
+    int64_t t14;
+    int64_t t15;
+    int64_t t16;
+    HeroArrayHeader * t17;
+    double t18;
+    HeroStr t19;
+    HeroArrayHeader * t20;
+    HeroArrayHeader * t21;
+    HeroArrayHeader * t22;
+    HeroStr t23;
+    HeroArrayHeader * t24;
+    HeroArrayHeader * t25;
+    HeroArrayHeader * t26;
+    HeroStr t27;
+    goto bb0;
 bb0:
+#line 268 "examples/nbody/main.hero"
     t1 = h_main_system();
 #line 268 "examples/nbody/main.hero"
     t20 = h3_own3;
 #line 268 "examples/nbody/main.hero"
     h3_own3 = t1;
-#line 268 "examples/nbody/main.hero"
+#line 1811 "main.c"
     hero_array_decref(t20);
 #line 268 "examples/nbody/main.hero"
     t2 = h_main_offset_momentum(t1);
@@ -1341,16 +1815,17 @@ bb0:
     t21 = h4_own4;
 #line 268 "examples/nbody/main.hero"
     h4_own4 = t2;
-#line 268 "examples/nbody/main.hero"
+#line 1819 "main.c"
     hero_array_decref(t21);
 #line 268 "examples/nbody/main.hero"
     t22 = h0_start;
-#line 268 "examples/nbody/main.hero"
+#line 1823 "main.c"
     hero_array_incref(t2);
 #line 268 "examples/nbody/main.hero"
     h0_start = t2;
-#line 268 "examples/nbody/main.hero"
+#line 1827 "main.c"
     hero_array_decref(t22);
+#line 269 "examples/nbody/main.hero"
     t3 = h0_start;
 #line 269 "examples/nbody/main.hero"
     t4 = h_main_energy(t3);
@@ -1360,7 +1835,7 @@ bb0:
     t23 = h5_own5;
 #line 269 "examples/nbody/main.hero"
     h5_own5 = t5;
-#line 269 "examples/nbody/main.hero"
+#line 1839 "main.c"
     hero_str_decref(t23);
 #line 269 "examples/nbody/main.hero"
     hero_print_str(t5);
@@ -1369,12 +1844,13 @@ bb0:
     t6 = h0_start;
 #line 270 "examples/nbody/main.hero"
     t24 = h1_moved;
-#line 270 "examples/nbody/main.hero"
+#line 1848 "main.c"
     hero_array_incref(t6);
 #line 270 "examples/nbody/main.hero"
     h1_moved = t6;
-#line 270 "examples/nbody/main.hero"
+#line 1852 "main.c"
     hero_array_decref(t24);
+#line 271 "examples/nbody/main.hero"
     t7 = INT64_C(0);
 #line 271 "examples/nbody/main.hero"
     h2_step = t7;
@@ -1401,16 +1877,17 @@ bb2:
     t25 = h6_own6;
 #line 274 "examples/nbody/main.hero"
     h6_own6 = t13;
-#line 274 "examples/nbody/main.hero"
+#line 1881 "main.c"
     hero_array_decref(t25);
 #line 274 "examples/nbody/main.hero"
     t26 = h1_moved;
-#line 274 "examples/nbody/main.hero"
+#line 1885 "main.c"
     hero_array_incref(t13);
 #line 274 "examples/nbody/main.hero"
     h1_moved = t13;
-#line 274 "examples/nbody/main.hero"
+#line 1889 "main.c"
     hero_array_decref(t26);
+#line 275 "examples/nbody/main.hero"
     t14 = h2_step;
 #line 275 "examples/nbody/main.hero"
     t15 = INT64_C(1);
@@ -1432,13 +1909,13 @@ bb3:
     t27 = h7_own7;
 #line 277 "examples/nbody/main.hero"
     h7_own7 = t19;
-#line 277 "examples/nbody/main.hero"
+#line 1913 "main.c"
     hero_str_decref(t27);
 #line 277 "examples/nbody/main.hero"
     hero_print_str(t19);
 #line 277 "examples/nbody/main.hero"
     hero_print_end();
-#line 1442 "main.c"
+#line 1919 "main.c"
     hero_array_release_at(&h0_start);
     hero_array_release_at(&h1_moved);
     hero_array_release_at(&h3_own3);
@@ -1451,22 +1928,85 @@ bb3:
 
 #line 289 "examples/nbody/main.hero"
 double h_main_BILLION(void) {
-#line 289 "examples/nbody/main.hero"
-    double t1; goto bb0;
-#line 289 "examples/nbody/main.hero"
+#line 1932 "main.c"
+    double t1;
+    goto bb0;
 bb0:
+#line 290 "examples/nbody/main.hero"
     t1 = 0x1.dcd65p+29;
 #line 290 "examples/nbody/main.hero"
     return t1;
-#line 1462 "main.c"
+#line 1940 "main.c"
 }
 
 #line 292 "examples/nbody/main.hero"
 HeroStr h_main_nine_places(double h0_v) {
-#line 292 "examples/nbody/main.hero"
-    bool h1_negative; double h2_size; h_0opt_e201354 h3_f0 = {0}; int64_t h4_scaled; int64_t h5_whole; int64_t h6_rest; HeroStr h7_text = {0}; HeroStr h8_ret0 = {0}; h_0opt_e201354 h9_own9 = {0}; HeroStr h10_own10 = {0}; HeroStr h11_own11 = {0}; HeroStr h12_own12 = {0}; HeroStr h13_own13 = {0}; HeroStr h14_own14 = {0}; double t1; double t2; bool t3; double t4; bool t5; double t6; double t7; double t8; double t9; double t10; double t11; double t12; h_0opt_e201354 t13; h_0opt_e201354 t14; int64_t t15; int64_t t16; bool t17; h_0opt_e201354 t18; HeroFailure t19; h_0opt_e201354 t20; int64_t t21; int64_t t22; int64_t t23; int64_t t24; int64_t t25; int64_t t26; int64_t t27; int64_t t28; HeroStr t29; HeroStr t30; HeroStr t31; int64_t t32; HeroStr t33; HeroStr t34; bool t35; HeroStr t36; HeroStr t37; HeroStr t38; HeroStr t39; HeroStr t40; h_0opt_e201354 t41; h_0opt_e201354 t42; HeroStr t43; HeroStr t44; HeroStr t45; HeroStr t46; HeroStr t47; HeroStr t48; goto bb0;
-#line 292 "examples/nbody/main.hero"
+#line 1945 "main.c"
+    bool h1_negative;
+    double h2_size;
+    h_0opt_e201354 h3_f0 = {0};
+    int64_t h4_scaled;
+    int64_t h5_whole;
+    int64_t h6_rest;
+    HeroStr h7_text = {0};
+    HeroStr h8_ret0 = {0};
+    h_0opt_e201354 h9_own9 = {0};
+    HeroStr h10_own10 = {0};
+    HeroStr h11_own11 = {0};
+    HeroStr h12_own12 = {0};
+    HeroStr h13_own13 = {0};
+    HeroStr h14_own14 = {0};
+    double t1;
+    double t2;
+    bool t3;
+    double t4;
+    bool t5;
+    double t6;
+    double t7;
+    double t8;
+    double t9;
+    double t10;
+    double t11;
+    double t12;
+    h_0opt_e201354 t13;
+    h_0opt_e201354 t14;
+    int64_t t15;
+    int64_t t16;
+    bool t17;
+    h_0opt_e201354 t18;
+    HeroFailure t19;
+    h_0opt_e201354 t20;
+    int64_t t21;
+    int64_t t22;
+    int64_t t23;
+    int64_t t24;
+    int64_t t25;
+    int64_t t26;
+    int64_t t27;
+    int64_t t28;
+    HeroStr t29;
+    HeroStr t30;
+    HeroStr t31;
+    int64_t t32;
+    HeroStr t33;
+    HeroStr t34;
+    bool t35;
+    HeroStr t36;
+    HeroStr t37;
+    HeroStr t38;
+    HeroStr t39;
+    HeroStr t40;
+    h_0opt_e201354 t41;
+    h_0opt_e201354 t42;
+    HeroStr t43;
+    HeroStr t44;
+    HeroStr t45;
+    HeroStr t46;
+    HeroStr t47;
+    HeroStr t48;
+    goto bb0;
 bb0:
+#line 293 "examples/nbody/main.hero"
     t1 = h0_v;
 #line 293 "examples/nbody/main.hero"
     t2 = 0x0p+0;
@@ -1509,15 +2049,15 @@ bb1:
     t41 = h9_own9;
 #line 298 "examples/nbody/main.hero"
     h9_own9 = t13;
-#line 298 "examples/nbody/main.hero"
+#line 2053 "main.c"
     h_0opt_e201354_release(&t41);
 #line 298 "examples/nbody/main.hero"
     t42 = h3_f0;
-#line 298 "examples/nbody/main.hero"
+#line 2057 "main.c"
     h_0opt_e201354_retain(&t13);
 #line 298 "examples/nbody/main.hero"
     h3_f0 = t13;
-#line 298 "examples/nbody/main.hero"
+#line 2061 "main.c"
     h_0opt_e201354_release(&t42);
 #line 298 "examples/nbody/main.hero"
     t14 = h3_f0;
@@ -1579,7 +2119,7 @@ bb4:
     t43 = h10_own10;
 #line 301 "examples/nbody/main.hero"
     h10_own10 = t29;
-#line 301 "examples/nbody/main.hero"
+#line 2123 "main.c"
     hero_str_decref(t43);
 #line 301 "examples/nbody/main.hero"
     t30 = HERO_STR_LIT(hero_str_2e);
@@ -1589,7 +2129,7 @@ bb4:
     t44 = h11_own11;
 #line 301 "examples/nbody/main.hero"
     h11_own11 = t31;
-#line 301 "examples/nbody/main.hero"
+#line 2133 "main.c"
     hero_str_decref(t44);
 #line 301 "examples/nbody/main.hero"
     t32 = h6_rest;
@@ -1599,7 +2139,7 @@ bb4:
     t45 = h12_own12;
 #line 301 "examples/nbody/main.hero"
     h12_own12 = t33;
-#line 301 "examples/nbody/main.hero"
+#line 2143 "main.c"
     hero_str_decref(t45);
 #line 301 "examples/nbody/main.hero"
     t34 = hero_str_concat(t31, t33);
@@ -1607,15 +2147,15 @@ bb4:
     t46 = h13_own13;
 #line 301 "examples/nbody/main.hero"
     h13_own13 = t34;
-#line 301 "examples/nbody/main.hero"
+#line 2151 "main.c"
     hero_str_decref(t46);
 #line 301 "examples/nbody/main.hero"
     t47 = h7_text;
-#line 301 "examples/nbody/main.hero"
+#line 2155 "main.c"
     hero_str_incref(t34);
 #line 301 "examples/nbody/main.hero"
     h7_text = t34;
-#line 301 "examples/nbody/main.hero"
+#line 2159 "main.c"
     hero_str_decref(t47);
 #line 303 "examples/nbody/main.hero"
     t35 = h1_negative;
@@ -1627,7 +2167,7 @@ bb5:
     t18 = h3_f0;
 #line 298 "examples/nbody/main.hero"
     t19 = t18.as.err;
-#line 1631 "main.c"
+#line 2171 "main.c"
     hero_panic_must(t19);
     hero_unreachable();
 bb6:
@@ -1649,7 +2189,7 @@ bb7:
     t48 = h14_own14;
 #line 304 "examples/nbody/main.hero"
     h14_own14 = t38;
-#line 304 "examples/nbody/main.hero"
+#line 2193 "main.c"
     hero_str_decref(t48);
 #line 304 "examples/nbody/main.hero"
     h8_ret0 = t38;
@@ -1661,7 +2201,7 @@ bb8:
     goto bb6;
 #line 304 "examples/nbody/main.hero"
 bb9:
-#line 1665 "main.c"
+#line 2205 "main.c"
     t40 = h8_ret0;
     hero_str_incref(t40);
     h_0opt_e201354_release(hero_slot_escape(&h3_f0));
@@ -1677,10 +2217,27 @@ bb9:
 
 #line 309 "examples/nbody/main.hero"
 HeroStr h_main_padded(int64_t h0_rest) {
-#line 309 "examples/nbody/main.hero"
-    HeroStr h1_digits = {0}; HeroStr h2_own2 = {0}; HeroStr h3_own3 = {0}; int64_t t1; HeroStr t2; HeroStr t3; int64_t t4; int64_t t5; bool t6; HeroStr t7; HeroStr t8; HeroStr t9; HeroStr t10; HeroStr t11; HeroStr t12; HeroStr t13; HeroStr t14; goto bb0;
-#line 309 "examples/nbody/main.hero"
+#line 2221 "main.c"
+    HeroStr h1_digits = {0};
+    HeroStr h2_own2 = {0};
+    HeroStr h3_own3 = {0};
+    int64_t t1;
+    HeroStr t2;
+    HeroStr t3;
+    int64_t t4;
+    int64_t t5;
+    bool t6;
+    HeroStr t7;
+    HeroStr t8;
+    HeroStr t9;
+    HeroStr t10;
+    HeroStr t11;
+    HeroStr t12;
+    HeroStr t13;
+    HeroStr t14;
+    goto bb0;
 bb0:
+#line 310 "examples/nbody/main.hero"
     t1 = h0_rest;
 #line 310 "examples/nbody/main.hero"
     t2 = hero_int_to_str(t1);
@@ -1688,19 +2245,17 @@ bb0:
     t11 = h2_own2;
 #line 310 "examples/nbody/main.hero"
     h2_own2 = t2;
-#line 310 "examples/nbody/main.hero"
+#line 2249 "main.c"
     hero_str_decref(t11);
 #line 310 "examples/nbody/main.hero"
     t12 = h1_digits;
-#line 310 "examples/nbody/main.hero"
+#line 2253 "main.c"
     hero_str_incref(t2);
 #line 310 "examples/nbody/main.hero"
     h1_digits = t2;
-#line 310 "examples/nbody/main.hero"
+#line 2257 "main.c"
     hero_str_decref(t12);
-#line 310 "examples/nbody/main.hero"
     goto bb1;
-#line 310 "examples/nbody/main.hero"
 bb1:
 #line 312 "examples/nbody/main.hero"
     t3 = h1_digits;
@@ -1723,23 +2278,21 @@ bb2:
     t13 = h3_own3;
 #line 313 "examples/nbody/main.hero"
     h3_own3 = t9;
-#line 313 "examples/nbody/main.hero"
+#line 2282 "main.c"
     hero_str_decref(t13);
 #line 313 "examples/nbody/main.hero"
     t14 = h1_digits;
-#line 313 "examples/nbody/main.hero"
+#line 2286 "main.c"
     hero_str_incref(t9);
 #line 313 "examples/nbody/main.hero"
     h1_digits = t9;
-#line 313 "examples/nbody/main.hero"
+#line 2290 "main.c"
     hero_str_decref(t14);
-#line 313 "examples/nbody/main.hero"
     goto bb1;
-#line 313 "examples/nbody/main.hero"
 bb3:
 #line 315 "examples/nbody/main.hero"
     t10 = h1_digits;
-#line 1743 "main.c"
+#line 2296 "main.c"
     hero_str_incref(t10);
     hero_str_release_at(&h1_digits);
     hero_str_release_at(&h2_own2);
@@ -1749,10 +2302,26 @@ bb3:
 
 #line 400 "examples/nbody/main.hero"
 bool h_main_near(double h0_a, double h1_b) {
-#line 400 "examples/nbody/main.hero"
-    double h2_d; bool h3_ret0; double t1; double t2; double t3; double t4; double t5; bool t6; double t7; double t8; double t9; bool t10; double t11; double t12; bool t13; bool t14; goto bb0;
-#line 400 "examples/nbody/main.hero"
+#line 2306 "main.c"
+    double h2_d;
+    bool h3_ret0;
+    double t1;
+    double t2;
+    double t3;
+    double t4;
+    double t5;
+    bool t6;
+    double t7;
+    double t8;
+    double t9;
+    bool t10;
+    double t11;
+    double t12;
+    bool t13;
+    bool t14;
+    goto bb0;
 bb0:
+#line 401 "examples/nbody/main.hero"
     t1 = h0_a;
 #line 401 "examples/nbody/main.hero"
     t2 = h1_b;
@@ -1806,11 +2375,10 @@ bb3:
     goto bb1;
 #line 404 "examples/nbody/main.hero"
 bb4:
-#line 1810 "main.c"
+#line 2379 "main.c"
     t14 = h3_ret0;
     return t14;
 }
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_main_Body_eq(const h_main_Body *a, const h_main_Body *b) {
     if (!(a->f_x == b->f_x)) return false;
     if (!(a->f_y == b->f_y)) return false;

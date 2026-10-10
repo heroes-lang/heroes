@@ -22,11 +22,12 @@
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -35,7 +36,7 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 
 #line 11 "tests/golden/run/fixedbugs-092-a-count-in-a-cell-past-the-record-aborts.hero"
 _Static_assert(__builtin_classify_type(((struct one *)0)->a) == 1 && sizeof(((struct one *)0)->a) == sizeof(int32_t) && (_Generic(((struct one *)0)->a, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field One a");
-#line 39 "fixedbugs092acountinacellpasttherecordaborts.c"
+#line 40 "fixedbugs092acountinacellpasttherecordaborts.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -96,7 +97,6 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
@@ -131,18 +131,25 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_fixedbugs092acountinacellpasttherecordaborts_main(void);
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 14 "tests/golden/run/fixedbugs-092-a-count-in-a-cell-past-the-record-aborts.hero"
 void h_fixedbugs092acountinacellpasttherecordaborts_main(void) {
-#line 14 "tests/golden/run/fixedbugs-092-a-count-in-a-cell-past-the-record-aborts.hero"
+#line 138 "fixedbugs092acountinacellpasttherecordaborts.c"
+    struct one *const hero_lend_h0_o = (struct one *)hero_lend_local(sizeof(struct one), "fixedbugs092acountinacellpasttherecordaborts.main", "o");
 #define h0_o (*hero_lend_h0_o)
-#line 14 "tests/golden/run/fixedbugs-092-a-count-in-a-cell-past-the-record-aborts.hero"
+    uint32_t *const hero_lend_h1_n = (uint32_t *)hero_lend_local(sizeof(uint32_t), "fixedbugs092acountinacellpasttherecordaborts.main", "n");
 #define h1_n (*hero_lend_h1_n)
-#line 14 "tests/golden/run/fixedbugs-092-a-count-in-a-cell-past-the-record-aborts.hero"
-    _Pragma("clang diagnostic ignored \"-Wdeprecated-declarations\"") struct one *const hero_lend_h0_o = (struct one *)hero_lend_local(sizeof(struct one), "fixedbugs092acountinacellpasttherecordaborts.main", "o"); uint32_t *const hero_lend_h1_n = (uint32_t *)hero_lend_local(sizeof(uint32_t), "fixedbugs092acountinacellpasttherecordaborts.main", "n"); int32_t t1; struct one t2; uint32_t t3; struct one t4; int32_t t5; int64_t t6; struct one t7; int32_t t8; _Pragma("clang diagnostic warning \"-Wdeprecated-declarations\"") goto bb0;
-#line 14 "tests/golden/run/fixedbugs-092-a-count-in-a-cell-past-the-record-aborts.hero"
+    int32_t t1;
+    struct one t2;
+    uint32_t t3;
+    struct one t4;
+    int32_t t5;
+    int64_t t6;
+    struct one t7;
+    int32_t t8;
+    goto bb0;
 bb0:
+#line 15 "tests/golden/run/fixedbugs-092-a-count-in-a-cell-past-the-record-aborts.hero"
     t1 = INT64_C(0);
 #line 15 "tests/golden/run/fixedbugs-092-a-count-in-a-cell-past-the-record-aborts.hero"
     t2 = (struct one){.a = t1};
@@ -182,11 +189,10 @@ bb0:
     hero_lend_local_give(hero_lend_h0_o);
 #line 19 "tests/golden/run/fixedbugs-092-a-count-in-a-cell-past-the-record-aborts.hero"
     return;
-#line 186 "fixedbugs092acountinacellpasttherecordaborts.c"
+#line 193 "fixedbugs092acountinacellpasttherecordaborts.c"
 }
 #undef h0_o
 #undef h1_n
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_fixedbugs092acountinacellpasttherecordaborts_One_eq(const struct one *a, const struct one *b) {
     if (!(a->a == b->a)) return false;
     return true;

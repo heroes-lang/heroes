@@ -23,11 +23,12 @@
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -71,7 +72,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 75 "ffipointeeattheheaderswidth.c"
+#line 76 "ffipointeeattheheaderswidth.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -95,7 +96,6 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
@@ -130,18 +130,27 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_ffipointeeattheheaderswidth_main(void);
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 16 "tests/golden/run/ffi-pointee-at-the-headers-width.hero"
 void h_ffipointeeattheheaderswidth_main(void) {
-#line 16 "tests/golden/run/ffi-pointee-at-the-headers-width.hero"
+#line 137 "ffipointeeattheheaderswidth.c"
+    int32_t *const hero_lend_h0_e = (int32_t *)hero_lend_local(sizeof(int32_t), "ffipointeeattheheaderswidth.main", "e");
 #define h0_e (*hero_lend_h0_e)
-#line 16 "tests/golden/run/ffi-pointee-at-the-headers-width.hero"
+    double h1_m;
+    int64_t *const hero_lend_h2_t = (int64_t *)hero_lend_local(sizeof(int64_t), "ffipointeeattheheaderswidth.main", "t");
 #define h2_t (*hero_lend_h2_t)
-#line 16 "tests/golden/run/ffi-pointee-at-the-headers-width.hero"
-    int32_t *const hero_lend_h0_e = (int32_t *)hero_lend_local(sizeof(int32_t), "ffipointeeattheheaderswidth.main", "e"); double h1_m; int64_t *const hero_lend_h2_t = (int64_t *)hero_lend_local(sizeof(int64_t), "ffipointeeattheheaderswidth.main", "t"); int32_t t1; double t2; double t3; double t4; int32_t t5; int64_t t6; int64_t t8; int64_t t9; bool t10; goto bb0;
-#line 16 "tests/golden/run/ffi-pointee-at-the-headers-width.hero"
+    int32_t t1;
+    double t2;
+    double t3;
+    double t4;
+    int32_t t5;
+    int64_t t6;
+    int64_t t8;
+    int64_t t9;
+    bool t10;
+    goto bb0;
 bb0:
+#line 17 "tests/golden/run/ffi-pointee-at-the-headers-width.hero"
     t1 = INT64_C(0);
 #line 17 "tests/golden/run/ffi-pointee-at-the-headers-width.hero"
     h0_e = t1;
@@ -183,11 +192,10 @@ bb0:
     hero_lend_local_give(hero_lend_h0_e);
 #line 23 "tests/golden/run/ffi-pointee-at-the-headers-width.hero"
     return;
-#line 187 "ffipointeeattheheaderswidth.c"
+#line 196 "ffipointeeattheheaderswidth.c"
 }
 #undef h0_e
 #undef h2_t
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_incref(v->as.ok);

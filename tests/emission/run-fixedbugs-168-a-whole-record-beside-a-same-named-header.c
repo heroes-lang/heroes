@@ -21,11 +21,12 @@
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -34,11 +35,11 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 
 #line 16 "tests/golden/run/fixedbugs-168-a-whole-record-beside-a-same-named-header.hero"
 _Static_assert(__builtin_classify_type(((E *)0)->x) == 1 && sizeof(((E *)0)->x) == sizeof(int32_t) && (_Generic(((E *)0)->x, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field E x");
-#line 38 "fixedbugs168awholerecordbesideasamenamedheader.c"
+#line 39 "fixedbugs168awholerecordbesideasamenamedheader.c"
 
 #line 15 "tests/golden/run/fixedbugs-168-a-whole-record-beside-a-same-named-header.hero"
 _Static_assert(__builtin_classify_type(*(E *)0) != 13 || sizeof(((E *)0)->x) == sizeof(E), "heroes-ffi-union-narrow E x");
-#line 42 "fixedbugs168awholerecordbesideasamenamedheader.c"
+#line 43 "fixedbugs168awholerecordbesideasamenamedheader.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -102,7 +103,6 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
@@ -137,14 +137,24 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_fixedbugs168awholerecordbesideasamenamedheader_main(void);
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 19 "tests/golden/run/fixedbugs-168-a-whole-record-beside-a-same-named-header.hero"
 void h_fixedbugs168awholerecordbesideasamenamedheader_main(void) {
-#line 19 "tests/golden/run/fixedbugs-168-a-whole-record-beside-a-same-named-header.hero"
-    _Pragma("clang diagnostic ignored \"-Wdeprecated-declarations\"") E h0_p; E h1_q; int32_t t1; E t2; int32_t t3; E t4; E t5; E t6; bool t7; E t8; int32_t t9; _Pragma("clang diagnostic warning \"-Wdeprecated-declarations\"") goto bb0;
-#line 19 "tests/golden/run/fixedbugs-168-a-whole-record-beside-a-same-named-header.hero"
+#line 144 "fixedbugs168awholerecordbesideasamenamedheader.c"
+    E h0_p;
+    E h1_q;
+    int32_t t1;
+    E t2;
+    int32_t t3;
+    E t4;
+    E t5;
+    E t6;
+    bool t7;
+    E t8;
+    int32_t t9;
+    goto bb0;
 bb0:
+#line 20 "tests/golden/run/fixedbugs-168-a-whole-record-beside-a-same-named-header.hero"
     t1 = INT64_C(1);
 #line 20 "tests/golden/run/fixedbugs-168-a-whole-record-beside-a-same-named-header.hero"
     t2 = hero_168_make(t1);
@@ -173,9 +183,8 @@ bb0:
     hero_print_end();
 #line 23 "tests/golden/run/fixedbugs-168-a-whole-record-beside-a-same-named-header.hero"
     return;
-#line 177 "fixedbugs168awholerecordbesideasamenamedheader.c"
+#line 187 "fixedbugs168awholerecordbesideasamenamedheader.c"
 }
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_fixedbugs168awholerecordbesideasamenamedheader_E_eq(const E *a, const E *b) {
     if (!(a->x == b->x)) return false;
     return true;

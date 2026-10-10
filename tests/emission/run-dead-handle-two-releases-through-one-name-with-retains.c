@@ -21,11 +21,12 @@
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -76,7 +77,7 @@ HERO_STR_STATIC(hero_str_6d95b666, "ob_up_ref(a: cert) == 1");
 HERO_STR_STATIC(hero_str_7034b02b, "references held: ");
 HERO_STR_STATIC(hero_str_2507a7e5, "two releases through one name, and both were owed");
 
-#line 80 "deadhandletworeleasesthroughonenamewithretains.c"
+#line 81 "deadhandletworeleasesthroughonenamewithretains.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -100,7 +101,6 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
@@ -137,14 +137,29 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_deadhandletworeleasesthroughonenamewithretains_main(void);
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 18 "tests/golden/run/dead-handle-two-releases-through-one-name-with-retains.hero"
 void h_deadhandletworeleasesthroughonenamewithretains_main(void) {
-#line 18 "tests/golden/run/dead-handle-two-releases-through-one-name-with-retains.hero"
-    _Pragma("clang diagnostic ignored \"-Wdeprecated-declarations\"") ob * h0_cert; ob * t1; HeroStr t2; ob * t3; int32_t t4; int32_t t5; bool t6; HeroStr t7; ob * t8; int64_t t9; ob * t10; HeroStr t11; ob * t12; int64_t t13; ob * t14; HeroStr t15; _Pragma("clang diagnostic warning \"-Wdeprecated-declarations\"") goto bb0;
-#line 18 "tests/golden/run/dead-handle-two-releases-through-one-name-with-retains.hero"
+#line 144 "deadhandletworeleasesthroughonenamewithretains.c"
+    ob * h0_cert;
+    ob * t1;
+    HeroStr t2;
+    ob * t3;
+    int32_t t4;
+    int32_t t5;
+    bool t6;
+    HeroStr t7;
+    ob * t8;
+    int64_t t9;
+    ob * t10;
+    HeroStr t11;
+    ob * t12;
+    int64_t t13;
+    ob * t14;
+    HeroStr t15;
+    goto bb0;
 bb0:
+#line 19 "tests/golden/run/dead-handle-two-releases-through-one-name-with-retains.hero"
     t1 = ob_new();
 #line 19 "tests/golden/run/dead-handle-two-releases-through-one-name-with-retains.hero"
     hero_handle_acquired(t1, "ob_put");
@@ -234,11 +249,10 @@ bb1:
     return;
 #line 25 "tests/golden/run/dead-handle-two-releases-through-one-name-with-retains.hero"
 bb2:
-#line 238 "deadhandletworeleasesthroughonenamewithretains.c"
+#line 253 "deadhandletworeleasesthroughonenamewithretains.c"
     hero_panic_assert_sides(t2, hero_int_to_str(t4), hero_int_to_str(t5));
     hero_unreachable();
 }
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_deadhandletworeleasesthroughonenamewithretains_X509_eq(ob * const *a, ob * const *b) {
     return hero_handle_eq(*a, *b);
 }

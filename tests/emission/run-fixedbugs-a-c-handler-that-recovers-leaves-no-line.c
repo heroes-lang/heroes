@@ -21,11 +21,12 @@
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -72,7 +73,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_3205, "ab");
 HERO_STR_STATIC(hero_str_46d0b2be, "recovered: ");
 
-#line 76 "fixedbugsachandlerthatrecoversleavesnoline.c"
+#line 77 "fixedbugsachandlerthatrecoversleavesnoline.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -96,7 +97,6 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
@@ -127,14 +127,27 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_fixedbugsachandlerthatrecoversleavesnoline_main(void);
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 26 "tests/golden/run/fixedbugs-a-c-handler-that-recovers-leaves-no-line.hero"
 void h_fixedbugsachandlerthatrecoversleavesnoline_main(void) {
-#line 26 "tests/golden/run/fixedbugs-a-c-handler-that-recovers-leaves-no-line.hero"
-    HeroStr h0_word = {0}; __attribute__((unused)) const char * h1_held; HeroStr h2_own2 = {0}; HeroStr t1; uint64_t t2; HeroStr t3; HeroStr t4; const char * t5; HeroStr t6; int32_t t7; int32_t t8; int32_t t9; HeroStr t10; HeroStr t11; goto bb0;
-#line 26 "tests/golden/run/fixedbugs-a-c-handler-that-recovers-leaves-no-line.hero"
+#line 134 "fixedbugsachandlerthatrecoversleavesnoline.c"
+    HeroStr h0_word = {0};
+    __attribute__((unused)) const char * h1_held;
+    HeroStr h2_own2 = {0};
+    HeroStr t1;
+    uint64_t t2;
+    HeroStr t3;
+    HeroStr t4;
+    const char * t5;
+    HeroStr t6;
+    int32_t t7;
+    int32_t t8;
+    int32_t t9;
+    HeroStr t10;
+    HeroStr t11;
+    goto bb0;
 bb0:
+#line 27 "tests/golden/run/fixedbugs-a-c-handler-that-recovers-leaves-no-line.hero"
     t1 = HERO_STR_LIT(hero_str_3205);
 #line 27 "tests/golden/run/fixedbugs-a-c-handler-that-recovers-leaves-no-line.hero"
     t2 = UINT64_C(4);
@@ -144,16 +157,17 @@ bb0:
     t10 = h2_own2;
 #line 27 "tests/golden/run/fixedbugs-a-c-handler-that-recovers-leaves-no-line.hero"
     h2_own2 = t3;
-#line 27 "tests/golden/run/fixedbugs-a-c-handler-that-recovers-leaves-no-line.hero"
+#line 161 "fixedbugsachandlerthatrecoversleavesnoline.c"
     hero_str_decref(t10);
 #line 27 "tests/golden/run/fixedbugs-a-c-handler-that-recovers-leaves-no-line.hero"
     t11 = h0_word;
-#line 27 "tests/golden/run/fixedbugs-a-c-handler-that-recovers-leaves-no-line.hero"
+#line 165 "fixedbugsachandlerthatrecoversleavesnoline.c"
     hero_str_incref(t3);
 #line 27 "tests/golden/run/fixedbugs-a-c-handler-that-recovers-leaves-no-line.hero"
     h0_word = t3;
-#line 27 "tests/golden/run/fixedbugs-a-c-handler-that-recovers-leaves-no-line.hero"
+#line 169 "fixedbugsachandlerthatrecoversleavesnoline.c"
     hero_str_decref(t11);
+#line 28 "tests/golden/run/fixedbugs-a-c-handler-that-recovers-leaves-no-line.hero"
     t4 = h0_word;
 #line 28 "tests/golden/run/fixedbugs-a-c-handler-that-recovers-leaves-no-line.hero"
     t5 = hero_str_held(t4);
@@ -173,12 +187,11 @@ bb0:
 #line 29 "tests/golden/run/fixedbugs-a-c-handler-that-recovers-leaves-no-line.hero"
     hero_print_end();
     hero_held_release(&h1_held);
-#line 177 "fixedbugsachandlerthatrecoversleavesnoline.c"
+#line 191 "fixedbugsachandlerthatrecoversleavesnoline.c"
     hero_str_release_at(&h0_word);
     hero_str_release_at(&h2_own2);
     return;
 }
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_incref(v->as.ok);

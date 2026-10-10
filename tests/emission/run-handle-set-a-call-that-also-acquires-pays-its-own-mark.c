@@ -21,11 +21,12 @@
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -74,7 +75,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_524451e, "reopened and closed once");
 
-#line 78 "handlesetacallthatalsoacquirespaysitsownmark.c"
+#line 79 "handlesetacallthatalsoacquirespaysitsownmark.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -98,7 +99,6 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
@@ -136,14 +136,24 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_handlesetacallthatalsoacquirespaysitsownmark_main(void);
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 13 "tests/golden/run/handle-set-a-call-that-also-acquires-pays-its-own-mark.hero"
 void h_handlesetacallthatalsoacquirespaysitsownmark_main(void) {
-#line 13 "tests/golden/run/handle-set-a-call-that-also-acquires-pays-its-own-mark.hero"
-    _Pragma("clang diagnostic ignored \"-Wdeprecated-declarations\"") hh * h0_a; hh * h1_b; int64_t t1; hh * t2; hh * t3; int64_t t4; hh * t5; hh * t6; int64_t t7; hh * t8; HeroStr t9; _Pragma("clang diagnostic warning \"-Wdeprecated-declarations\"") goto bb0;
-#line 13 "tests/golden/run/handle-set-a-call-that-also-acquires-pays-its-own-mark.hero"
+#line 143 "handlesetacallthatalsoacquirespaysitsownmark.c"
+    hh * h0_a;
+    hh * h1_b;
+    int64_t t1;
+    hh * t2;
+    hh * t3;
+    int64_t t4;
+    hh * t5;
+    hh * t6;
+    int64_t t7;
+    hh * t8;
+    HeroStr t9;
+    goto bb0;
 bb0:
+#line 14 "tests/golden/run/handle-set-a-call-that-also-acquires-pays-its-own-mark.hero"
     t1 = INT64_C(3);
 #line 14 "tests/golden/run/handle-set-a-call-that-also-acquires-pays-its-own-mark.hero"
     t2 = h_open(t1);
@@ -199,9 +209,8 @@ bb0:
     hero_print_end();
 #line 18 "tests/golden/run/handle-set-a-call-that-also-acquires-pays-its-own-mark.hero"
     return;
-#line 203 "handlesetacallthatalsoacquirespaysitsownmark.c"
+#line 213 "handlesetacallthatalsoacquirespaysitsownmark.c"
 }
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_handlesetacallthatalsoacquirespaysitsownmark_H_eq(hh * const *a, hh * const *b) {
     return hero_handle_eq(*a, *b);
 }

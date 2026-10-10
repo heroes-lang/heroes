@@ -21,11 +21,12 @@
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -74,7 +75,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 78 "fixedbugsatagthatneedsstruct.c"
+#line 79 "fixedbugsatagthatneedsstruct.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -98,7 +99,6 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
@@ -140,14 +140,26 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_fixedbugsatagthatneedsstruct_main(void);
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 38 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
 void h_fixedbugsatagthatneedsstruct_main(void) {
-#line 38 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
-    _Pragma("clang diagnostic ignored \"-Wdeprecated-declarations\"") struct probe * h0_p; struct gauge * h1_g; int64_t t1; struct probe * t2; int64_t t3; struct gauge * t4; struct probe * t5; int64_t t6; struct gauge * t7; int64_t t8; int64_t t9; struct probe * t10; struct gauge * t11; _Pragma("clang diagnostic warning \"-Wdeprecated-declarations\"") goto bb0;
-#line 38 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
+#line 147 "fixedbugsatagthatneedsstruct.c"
+    struct probe * h0_p;
+    struct gauge * h1_g;
+    int64_t t1;
+    struct probe * t2;
+    int64_t t3;
+    struct gauge * t4;
+    struct probe * t5;
+    int64_t t6;
+    struct gauge * t7;
+    int64_t t8;
+    int64_t t9;
+    struct probe * t10;
+    struct gauge * t11;
+    goto bb0;
 bb0:
+#line 39 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
     t1 = INT64_C(7);
 #line 39 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
     t2 = probe_open(t1);
@@ -207,9 +219,8 @@ bb0:
     }
 #line 43 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
     return;
-#line 211 "fixedbugsatagthatneedsstruct.c"
+#line 223 "fixedbugsatagthatneedsstruct.c"
 }
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_fixedbugsatagthatneedsstruct_Probe_eq(struct probe * const *a, struct probe * const *b) {
     return hero_handle_eq(*a, *b);
 }

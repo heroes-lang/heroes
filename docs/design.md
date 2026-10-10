@@ -2424,6 +2424,9 @@ names are macros, and such a name is `error[ffi_macro_name]`, whose note drafts 
 like any function, every C type in the draft a placeholder the author fills from the macro's
 documentation, never the declaration's.
 
+A name its header marks deprecated binds and builds silent: a deprecation is advice about a
+program, not a mistake in it, and this language has no warning level (panel 208).
+
 **A module's headers are included in the order its groups are written, and the order is
 load-bearing** (panel 204, ratified 2026-10-10; the sentence panel 091 found owed, carried by
 `issues/2026-09/07/2026-09-07-0000-four-repairs-to-design-md-that-ride-its-opening-sitting-4-19.md`).

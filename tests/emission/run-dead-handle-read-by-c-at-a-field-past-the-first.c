@@ -21,11 +21,12 @@
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -76,7 +77,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_1d67a62c, "ob_far_cell(a: @cert) == 1");
 HERO_STR_STATIC(hero_str_7034b02b, "references held: ");
 
-#line 80 "deadhandlereadbycatafieldpastthefirst.c"
+#line 81 "deadhandlereadbycatafieldpastthefirst.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -100,7 +101,6 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
@@ -137,16 +137,27 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_deadhandlereadbycatafieldpastthefirst_main(void);
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 19 "tests/golden/run/dead-handle-read-by-c-at-a-field-past-the-first.hero"
 void h_deadhandlereadbycatafieldpastthefirst_main(void) {
-#line 19 "tests/golden/run/dead-handle-read-by-c-at-a-field-past-the-first.hero"
+#line 144 "deadhandlereadbycatafieldpastthefirst.c"
+    ob * *const hero_lend_h0_cert = (ob * *)hero_lend_local(sizeof(ob *), "deadhandlereadbycatafieldpastthefirst.main", "cert");
 #define h0_cert (*hero_lend_h0_cert)
-#line 19 "tests/golden/run/dead-handle-read-by-c-at-a-field-past-the-first.hero"
-    _Pragma("clang diagnostic ignored \"-Wdeprecated-declarations\"") ob * *const hero_lend_h0_cert = (ob * *)hero_lend_local(sizeof(ob *), "deadhandlereadbycatafieldpastthefirst.main", "cert"); ob * t1; int64_t t2; int64_t t3; bool t4; ob * t5; HeroStr t6; int32_t t7; int32_t t8; bool t9; HeroStr t10; ob * t11; int64_t t12; _Pragma("clang diagnostic warning \"-Wdeprecated-declarations\"") goto bb0;
-#line 19 "tests/golden/run/dead-handle-read-by-c-at-a-field-past-the-first.hero"
+    ob * t1;
+    int64_t t2;
+    int64_t t3;
+    bool t4;
+    ob * t5;
+    HeroStr t6;
+    int32_t t7;
+    int32_t t8;
+    bool t9;
+    HeroStr t10;
+    ob * t11;
+    int64_t t12;
+    goto bb0;
 bb0:
+#line 20 "tests/golden/run/dead-handle-read-by-c-at-a-field-past-the-first.hero"
     t1 = ob_new();
 #line 20 "tests/golden/run/dead-handle-read-by-c-at-a-field-past-the-first.hero"
     hero_handle_acquired(t1, "ob_put");
@@ -226,12 +237,11 @@ bb4:
     return;
 #line 25 "tests/golden/run/dead-handle-read-by-c-at-a-field-past-the-first.hero"
 bb5:
-#line 230 "deadhandlereadbycatafieldpastthefirst.c"
+#line 241 "deadhandlereadbycatafieldpastthefirst.c"
     hero_panic_assert_sides(t6, hero_int_to_str(t7), hero_int_to_str(t8));
     hero_unreachable();
 }
 #undef h0_cert
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_deadhandlereadbycatafieldpastthefirst_X509_eq(ob * const *a, ob * const *b) {
     return hero_handle_eq(*a, *b);
 }

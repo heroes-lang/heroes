@@ -21,11 +21,12 @@
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -72,7 +73,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_3615c7bd, "a given back twice, and nothing said");
 
-#line 76 "deadhandlecomparedafteritsaddresswashandedoutagain.c"
+#line 77 "deadhandlecomparedafteritsaddresswashandedoutagain.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -96,7 +97,6 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
@@ -132,14 +132,14 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_deadhandlecomparedafteritsaddresswashandedoutagain_closed(hh * *ph0_x);
 void h_deadhandlecomparedafteritsaddresswashandedoutagain_main(void);
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 18 "tests/golden/run/dead-handle-compared-after-its-address-was-handed-out-again.hero"
 void h_deadhandlecomparedafteritsaddresswashandedoutagain_closed(hh * *ph0_x) {
-#line 18 "tests/golden/run/dead-handle-compared-after-its-address-was-handed-out-again.hero"
-    _Pragma("clang diagnostic ignored \"-Wdeprecated-declarations\"") hh * t1; _Pragma("clang diagnostic warning \"-Wdeprecated-declarations\"") goto bb0;
-#line 18 "tests/golden/run/dead-handle-compared-after-its-address-was-handed-out-again.hero"
+#line 139 "deadhandlecomparedafteritsaddresswashandedoutagain.c"
+    hh * t1;
+    goto bb0;
 bb0:
+#line 19 "tests/golden/run/dead-handle-compared-after-its-address-was-handed-out-again.hero"
     t1 = (*ph0_x);
 #line 19 "tests/golden/run/dead-handle-compared-after-its-address-was-handed-out-again.hero"
     {
@@ -160,10 +160,19 @@ bb0:
 
 #line 21 "tests/golden/run/dead-handle-compared-after-its-address-was-handed-out-again.hero"
 void h_deadhandlecomparedafteritsaddresswashandedoutagain_main(void) {
-#line 21 "tests/golden/run/dead-handle-compared-after-its-address-was-handed-out-again.hero"
-    _Pragma("clang diagnostic ignored \"-Wdeprecated-declarations\"") hh * h0_a; hh * h1_b; hh * t1; hh * t2; hh * t3; hh * t4; bool t5; hh * t6; HeroStr t7; _Pragma("clang diagnostic warning \"-Wdeprecated-declarations\"") goto bb0;
-#line 21 "tests/golden/run/dead-handle-compared-after-its-address-was-handed-out-again.hero"
+#line 164 "deadhandlecomparedafteritsaddresswashandedoutagain.c"
+    hh * h0_a;
+    hh * h1_b;
+    hh * t1;
+    hh * t2;
+    hh * t3;
+    hh * t4;
+    bool t5;
+    hh * t6;
+    HeroStr t7;
+    goto bb0;
 bb0:
+#line 22 "tests/golden/run/dead-handle-compared-after-its-address-was-handed-out-again.hero"
     t1 = f_open();
 #line 22 "tests/golden/run/dead-handle-compared-after-its-address-was-handed-out-again.hero"
     hero_handle_acquired(t1, "f_close");
@@ -204,9 +213,8 @@ bb0:
     hero_print_end();
 #line 27 "tests/golden/run/dead-handle-compared-after-its-address-was-handed-out-again.hero"
     return;
-#line 208 "deadhandlecomparedafteritsaddresswashandedoutagain.c"
+#line 217 "deadhandlecomparedafteritsaddresswashandedoutagain.c"
 }
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_deadhandlecomparedafteritsaddresswashandedoutagain_H_eq(hh * const *a, hh * const *b) {
     return hero_handle_eq(*a, *b);
 }

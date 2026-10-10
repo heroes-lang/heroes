@@ -10,6 +10,7 @@ use cli/files
 use cli/flags
 use cli/link_flags
 use cli/libraries
+use cli/link_warning
 use cli/process
 use cli/publish
 use cli/response_file
@@ -102,7 +103,7 @@ function link_objects(t: toolchain.Toolchain, objects: [str], module: str, outpu
         more: pdb_words(suffix: process.exe_suffix(), at: at, inner: inner, module: module)
     )
     line @ strings.with_all(list: line, more: ["-o", stage + "/" + inner])
-    linked = toolchain.run_clang(line: line, what: "linking", err_path: err_path)
+    linked = link_warning.run_link(line: line, what: "linking", err_path: err_path)
     publish.discard(err_path)
 
     if linked.is_err()
@@ -166,7 +167,7 @@ function link_line(objects: [str], level: str, sanitize: bool, search_library: [
 # author's own spelling, as a link published under `build/` does.
 function linked_into(line: [str], t: toolchain.Toolchain, at: str, binary: str) -> str?
     err_path = publish.private_name(t.build + "/link-clang-stderr.txt")
-    linked = toolchain.run_clang(
+    linked = link_warning.run_link(
         line: strings.with_all(list: line, more: ["-o", at]),
         what: "linking",
         err_path: err_path

@@ -22,11 +22,12 @@
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -73,7 +74,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_455ecde8, "both given back");
 
-#line 77 "ffioutcellonahandletheheaderwritesback.c"
+#line 78 "ffioutcellonahandletheheaderwritesback.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -97,7 +98,6 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
@@ -134,18 +134,25 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_ffioutcellonahandletheheaderwritesback_main(void);
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 13 "tests/golden/run/ffi-out-cell-on-a-handle-the-header-writes-back.hero"
 void h_ffioutcellonahandletheheaderwritesback_main(void) {
-#line 13 "tests/golden/run/ffi-out-cell-on-a-handle-the-header-writes-back.hero"
+#line 141 "ffioutcellonahandletheheaderwritesback.c"
+    void * *const hero_lend_h0_a = (void * *)hero_lend_local(sizeof(void *), "ffioutcellonahandletheheaderwritesback.main", "a");
 #define h0_a (*hero_lend_h0_a)
-#line 13 "tests/golden/run/ffi-out-cell-on-a-handle-the-header-writes-back.hero"
+    void * *const hero_lend_h1_b = (void * *)hero_lend_local(sizeof(void *), "ffioutcellonahandletheheaderwritesback.main", "b");
 #define h1_b (*hero_lend_h1_b)
-#line 13 "tests/golden/run/ffi-out-cell-on-a-handle-the-header-writes-back.hero"
-    _Pragma("clang diagnostic ignored \"-Wdeprecated-declarations\"") void * *const hero_lend_h0_a = (void * *)hero_lend_local(sizeof(void *), "ffioutcellonahandletheheaderwritesback.main", "a"); void * *const hero_lend_h1_b = (void * *)hero_lend_local(sizeof(void *), "ffioutcellonahandletheheaderwritesback.main", "b"); void * t1; void * t2; int32_t t3; int32_t t4; int32_t t5; void * t6; void * t7; HeroStr t8; _Pragma("clang diagnostic warning \"-Wdeprecated-declarations\"") goto bb0;
-#line 13 "tests/golden/run/ffi-out-cell-on-a-handle-the-header-writes-back.hero"
+    void * t1;
+    void * t2;
+    int32_t t3;
+    int32_t t4;
+    int32_t t5;
+    void * t6;
+    void * t7;
+    HeroStr t8;
+    goto bb0;
 bb0:
+#line 14 "tests/golden/run/ffi-out-cell-on-a-handle-the-header-writes-back.hero"
     t1 = ((void *)0);
 #line 14 "tests/golden/run/ffi-out-cell-on-a-handle-the-header-writes-back.hero"
     h0_a = t1;
@@ -206,11 +213,10 @@ bb0:
     hero_lend_local_give(hero_lend_h0_a);
 #line 19 "tests/golden/run/ffi-out-cell-on-a-handle-the-header-writes-back.hero"
     return;
-#line 210 "ffioutcellonahandletheheaderwritesback.c"
+#line 217 "ffioutcellonahandletheheaderwritesback.c"
 }
 #undef h0_a
 #undef h1_b
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_ffioutcellonahandletheheaderwritesback_Mem_eq(void * const *a, void * const *b) {
     return hero_handle_eq(*a, *b);
 }

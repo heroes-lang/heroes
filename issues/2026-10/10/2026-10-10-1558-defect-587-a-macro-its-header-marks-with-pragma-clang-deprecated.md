@@ -3,7 +3,7 @@ kind: defect
 area: emit
 milestone: none
 filed: 2026-10-10
-commit: none
+commit: 505f3dc0187fb2276617a378a22cdf37e1a62a92
 github: none
 ---
 
@@ -12,3 +12,5 @@ github: none
     **Origin:** found by panel 208's ffi-pragmatist beside defect 584 (`docs/panel/208-reports/ffi-pragmatist.md` § 3b, its runs under `.claude/worktrees/scratch-b15/208-ffi-pragmatist/`, ignored by git), filed by the coordinator at 15:58 on 2026-10-10, the seat's measurement, not re-run by the coordinator.
 
     **Class: blocking**, 2026-10-10 (`.claude/rules/verification.md` § Bounded discovery): a clang warning on a correct program.
+
+    Repaired at `505f3dc0`, 2026-10-10 (lane b19-dep), gated by its cases and the compiler's own tests; the net is owed at the batch's close. Panel 208's R1, with defect 584: `-Wdeprecated-declarations`, `-Wdeprecated-pragma` and `-Wattribute-warning` ignored over the whole unit after the groups' close (`emit/macro_guard.hero`, `emit/deprecation.hero`), the program's own lines as the compiler's; defect 571's spoken line over the definitions and its prologue and accessor toggles removed; panel 205's header region and raised checks unchanged. Measured: `tests/golden/run/fixedbugs-587-a-macro-its-header-marks-with-pragma-clang-deprecated-builds-silent` exits 0 silent and prints 5, where the base compiler printed three warnings.

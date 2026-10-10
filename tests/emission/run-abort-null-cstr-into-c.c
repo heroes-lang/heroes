@@ -21,11 +21,12 @@
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -74,7 +75,7 @@ HERO_STR_STATIC(hero_str_203132, "zzz");
 HERO_STR_STATIC(hero_str_79, "y");
 HERO_STR_STATIC(hero_str_187ae0ee, "unreachable");
 
-#line 78 "abortnullcstrintoc.c"
+#line 79 "abortnullcstrintoc.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -98,7 +99,6 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
@@ -131,14 +131,27 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_abortnullcstrintoc_main(void);
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 20 "tests/golden/run/abort-null-cstr-into-c.hero"
 void h_abortnullcstrintoc_main(void) {
-#line 20 "tests/golden/run/abort-null-cstr-into-c.hero"
-    const char * h0_absent; HeroStr t1; HeroStr t2; const char * t3; HeroStr t4; const char * t5; const char * t6; const char * t7; HeroStr t8; const char * t9; const char * t10; const char * t11; bool t12; HeroStr t13; goto bb0;
-#line 20 "tests/golden/run/abort-null-cstr-into-c.hero"
+#line 138 "abortnullcstrintoc.c"
+    const char * h0_absent;
+    HeroStr t1;
+    HeroStr t2;
+    const char * t3;
+    HeroStr t4;
+    const char * t5;
+    const char * t6;
+    const char * t7;
+    HeroStr t8;
+    const char * t9;
+    const char * t10;
+    const char * t11;
+    bool t12;
+    HeroStr t13;
+    goto bb0;
 bb0:
+#line 21 "tests/golden/run/abort-null-cstr-into-c.hero"
     t1 = HERO_STR_LIT(hero_str_43560e4d);
 #line 21 "tests/golden/run/abort-null-cstr-into-c.hero"
     hero_print_str(t1);
@@ -187,9 +200,8 @@ bb2:
 bb3:
 #line 34 "tests/golden/run/abort-null-cstr-into-c.hero"
     goto bb1;
-#line 191 "abortnullcstrintoc.c"
+#line 204 "abortnullcstrintoc.c"
 }
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_incref(v->as.ok);

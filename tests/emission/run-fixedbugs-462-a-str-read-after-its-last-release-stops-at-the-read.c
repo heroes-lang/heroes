@@ -21,11 +21,12 @@
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -71,7 +72,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_3205, "ab");
 HERO_STR_STATIC(hero_str_88572c6, "given back");
 
-#line 75 "fixedbugs462astrreadafteritslastreleasestopsattheread.c"
+#line 76 "fixedbugs462astrreadafteritslastreleasestopsattheread.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -95,7 +96,6 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
@@ -128,14 +128,31 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_fixedbugs462astrreadafteritslastreleasestopsattheread_main(void);
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 22 "tests/golden/run/fixedbugs-462-a-str-read-after-its-last-release-stops-at-the-read.hero"
 void h_fixedbugs462astrreadafteritslastreleasestopsattheread_main(void) {
-#line 22 "tests/golden/run/fixedbugs-462-a-str-read-after-its-last-release-stops-at-the-read.hero"
-    HeroStr h0_word = {0}; HeroStr h1_own1 = {0}; HeroStr h2_own2 = {0}; HeroStr t1; uint64_t t2; HeroStr t3; HeroStr t4; HeroStr t5; const char * t6; HeroStr t7; int64_t t8; HeroStr t9; int64_t t10; int64_t t11; HeroStr t12; HeroStr t13; HeroStr t14; HeroStr t15; goto bb0;
-#line 22 "tests/golden/run/fixedbugs-462-a-str-read-after-its-last-release-stops-at-the-read.hero"
+#line 135 "fixedbugs462astrreadafteritslastreleasestopsattheread.c"
+    HeroStr h0_word = {0};
+    HeroStr h1_own1 = {0};
+    HeroStr h2_own2 = {0};
+    HeroStr t1;
+    uint64_t t2;
+    HeroStr t3;
+    HeroStr t4;
+    HeroStr t5;
+    const char * t6;
+    HeroStr t7;
+    int64_t t8;
+    HeroStr t9;
+    int64_t t10;
+    int64_t t11;
+    HeroStr t12;
+    HeroStr t13;
+    HeroStr t14;
+    HeroStr t15;
+    goto bb0;
 bb0:
+#line 23 "tests/golden/run/fixedbugs-462-a-str-read-after-its-last-release-stops-at-the-read.hero"
     t1 = HERO_STR_LIT(hero_str_3205);
 #line 23 "tests/golden/run/fixedbugs-462-a-str-read-after-its-last-release-stops-at-the-read.hero"
     t2 = UINT64_C(32768);
@@ -145,16 +162,17 @@ bb0:
     t13 = h1_own1;
 #line 23 "tests/golden/run/fixedbugs-462-a-str-read-after-its-last-release-stops-at-the-read.hero"
     h1_own1 = t3;
-#line 23 "tests/golden/run/fixedbugs-462-a-str-read-after-its-last-release-stops-at-the-read.hero"
+#line 166 "fixedbugs462astrreadafteritslastreleasestopsattheread.c"
     hero_str_decref(t13);
 #line 23 "tests/golden/run/fixedbugs-462-a-str-read-after-its-last-release-stops-at-the-read.hero"
     t14 = h0_word;
-#line 23 "tests/golden/run/fixedbugs-462-a-str-read-after-its-last-release-stops-at-the-read.hero"
+#line 170 "fixedbugs462astrreadafteritslastreleasestopsattheread.c"
     hero_str_incref(t3);
 #line 23 "tests/golden/run/fixedbugs-462-a-str-read-after-its-last-release-stops-at-the-read.hero"
     h0_word = t3;
-#line 23 "tests/golden/run/fixedbugs-462-a-str-read-after-its-last-release-stops-at-the-read.hero"
+#line 174 "fixedbugs462astrreadafteritslastreleasestopsattheread.c"
     hero_str_decref(t14);
+#line 24 "tests/golden/run/fixedbugs-462-a-str-read-after-its-last-release-stops-at-the-read.hero"
     t4 = HERO_STR_LIT(hero_str_88572c6);
 #line 24 "tests/golden/run/fixedbugs-462-a-str-read-after-its-last-release-stops-at-the-read.hero"
     hero_print_str(t4);
@@ -183,19 +201,18 @@ bb0:
     t15 = h2_own2;
 #line 27 "tests/golden/run/fixedbugs-462-a-str-read-after-its-last-release-stops-at-the-read.hero"
     h2_own2 = t12;
-#line 27 "tests/golden/run/fixedbugs-462-a-str-read-after-its-last-release-stops-at-the-read.hero"
+#line 205 "fixedbugs462astrreadafteritslastreleasestopsattheread.c"
     hero_str_decref(t15);
 #line 27 "tests/golden/run/fixedbugs-462-a-str-read-after-its-last-release-stops-at-the-read.hero"
     hero_print_str(t12);
 #line 27 "tests/golden/run/fixedbugs-462-a-str-read-after-its-last-release-stops-at-the-read.hero"
     hero_print_end();
-#line 193 "fixedbugs462astrreadafteritslastreleasestopsattheread.c"
+#line 211 "fixedbugs462astrreadafteritslastreleasestopsattheread.c"
     hero_str_release_at(&h0_word);
     hero_str_release_at(&h1_own1);
     hero_str_release_at(&h2_own2);
     return;
 }
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_incref(v->as.ok);

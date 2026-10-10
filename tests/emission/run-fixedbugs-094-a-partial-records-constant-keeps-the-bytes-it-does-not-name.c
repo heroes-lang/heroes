@@ -21,11 +21,12 @@
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -34,7 +35,7 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 
 #line 10 "tests/golden/run/fixedbugs-094-a-partial-records-constant-keeps-the-bytes-it-does-not-name.hero"
 _Static_assert(__builtin_classify_type(((struct big *)0)->sig) == 1 && sizeof(((struct big *)0)->sig) == sizeof(int64_t) && (_Generic(((struct big *)0)->sig, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Big sig");
-#line 38 "fixedbugs094apartialrecordsconstantkeepsthebytesitdoesnotname.c"
+#line 39 "fixedbugs094apartialrecordsconstantkeepsthebytesitdoesnotname.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -95,7 +96,6 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
@@ -131,12 +131,10 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 struct big h_fixedbugs094apartialrecordsconstantkeepsthebytesitdoesnotname_BIG_INIT(void);
 void h_fixedbugs094apartialrecordsconstantkeepsthebytesitdoesnotname_main(void);
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #line 11 "tests/golden/run/fixedbugs-094-a-partial-records-constant-keeps-the-bytes-it-does-not-name.hero"
 struct big h_fixedbugs094apartialrecordsconstantkeepsthebytesitdoesnotname_BIG_INIT(void) {
-#line 140 "fixedbugs094apartialrecordsconstantkeepsthebytesitdoesnotname.c"
+#line 138 "fixedbugs094apartialrecordsconstantkeepsthebytesitdoesnotname.c"
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wexcess-initializers"
 #pragma clang diagnostic error "-Wconstant-conversion"
@@ -148,11 +146,10 @@ struct big h_fixedbugs094apartialrecordsconstantkeepsthebytesitdoesnotname_BIG_I
 #pragma clang diagnostic ignored "-Winitializer-overrides"
 #line 11 "tests/golden/run/fixedbugs-094-a-partial-records-constant-keeps-the-bytes-it-does-not-name.hero"
     struct big hero_constant_value = BIG_INIT;
-#line 152 "fixedbugs094apartialrecordsconstantkeepsthebytesitdoesnotname.c"
+#line 150 "fixedbugs094apartialrecordsconstantkeepsthebytesitdoesnotname.c"
 #pragma clang diagnostic pop
     return hero_constant_value;
 }
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
@@ -161,17 +158,22 @@ struct big h_fixedbugs094apartialrecordsconstantkeepsthebytesitdoesnotname_BIG_I
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 
 #line 14 "tests/golden/run/fixedbugs-094-a-partial-records-constant-keeps-the-bytes-it-does-not-name.hero"
 void h_fixedbugs094apartialrecordsconstantkeepsthebytesitdoesnotname_main(void) {
-#line 14 "tests/golden/run/fixedbugs-094-a-partial-records-constant-keeps-the-bytes-it-does-not-name.hero"
-    _Pragma("clang diagnostic ignored \"-Wdeprecated-declarations\"") struct big h0_b; struct big t1; struct big t2; int64_t t3; struct big t4; int64_t t5; _Pragma("clang diagnostic warning \"-Wdeprecated-declarations\"") goto bb0;
-#line 14 "tests/golden/run/fixedbugs-094-a-partial-records-constant-keeps-the-bytes-it-does-not-name.hero"
+#line 168 "fixedbugs094apartialrecordsconstantkeepsthebytesitdoesnotname.c"
+    struct big h0_b;
+    struct big t1;
+    struct big t2;
+    int64_t t3;
+    struct big t4;
+    int64_t t5;
+    goto bb0;
 bb0:
+#line 15 "tests/golden/run/fixedbugs-094-a-partial-records-constant-keeps-the-bytes-it-does-not-name.hero"
     t1 = h_fixedbugs094apartialrecordsconstantkeepsthebytesitdoesnotname_BIG_INIT();
 #line 15 "tests/golden/run/fixedbugs-094-a-partial-records-constant-keeps-the-bytes-it-does-not-name.hero"
     h0_b = t1;
@@ -191,9 +193,8 @@ bb0:
     hero_print_end();
 #line 17 "tests/golden/run/fixedbugs-094-a-partial-records-constant-keeps-the-bytes-it-does-not-name.hero"
     return;
-#line 195 "fixedbugs094apartialrecordsconstantkeepsthebytesitdoesnotname.c"
+#line 197 "fixedbugs094apartialrecordsconstantkeepsthebytesitdoesnotname.c"
 }
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_fixedbugs094apartialrecordsconstantkeepsthebytesitdoesnotname_Big_eq(const struct big *a, const struct big *b) {
     hero_panic("h_fixedbugs094apartialrecordsconstantkeepsthebytesitdoesnotname_Big_eq: a partial record has no structural equality");
 }

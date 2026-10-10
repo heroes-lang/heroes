@@ -22,11 +22,12 @@
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -74,7 +75,7 @@ HERO_STR_STATIC(hero_str_41bb0df2, "C made ");
 HERO_STR_STATIC(hero_str_391e7e27, " bytes");
 HERO_STR_STATIC(hero_str_521d74b5, "C reads ");
 
-#line 78 "fixedbugs245astrccopiesholdinganulstops.c"
+#line 79 "fixedbugs245astrccopiesholdinganulstops.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -98,7 +99,6 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
@@ -131,29 +131,42 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_fixedbugs245astrccopiesholdinganulstops_main(void);
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 13 "tests/golden/run/fixedbugs-245-a-str-c-copies-holding-a-nul-stops.hero"
 void h_fixedbugs245astrccopiesholdinganulstops_main(void) {
-#line 13 "tests/golden/run/fixedbugs-245-a-str-c-copies-holding-a-nul-stops.hero"
-    HeroStr h0_made = {0}; HeroStr h1_own1 = {0}; HeroStr t1; HeroStr t2; HeroStr t3; int64_t t4; HeroStr t5; HeroStr t6; HeroStr t7; const char * t8; uint64_t t9; HeroStr t10; HeroStr t11; goto bb0;
-#line 13 "tests/golden/run/fixedbugs-245-a-str-c-copies-holding-a-nul-stops.hero"
+#line 138 "fixedbugs245astrccopiesholdinganulstops.c"
+    HeroStr h0_made = {0};
+    HeroStr h1_own1 = {0};
+    HeroStr t1;
+    HeroStr t2;
+    HeroStr t3;
+    int64_t t4;
+    HeroStr t5;
+    HeroStr t6;
+    HeroStr t7;
+    const char * t8;
+    uint64_t t9;
+    HeroStr t10;
+    HeroStr t11;
+    goto bb0;
 bb0:
+#line 14 "tests/golden/run/fixedbugs-245-a-str-c-copies-holding-a-nul-stops.hero"
     t1 = made_by_c();
 #line 14 "tests/golden/run/fixedbugs-245-a-str-c-copies-holding-a-nul-stops.hero"
     t10 = h1_own1;
 #line 14 "tests/golden/run/fixedbugs-245-a-str-c-copies-holding-a-nul-stops.hero"
     h1_own1 = t1;
-#line 14 "tests/golden/run/fixedbugs-245-a-str-c-copies-holding-a-nul-stops.hero"
+#line 160 "fixedbugs245astrccopiesholdinganulstops.c"
     hero_str_decref(t10);
 #line 14 "tests/golden/run/fixedbugs-245-a-str-c-copies-holding-a-nul-stops.hero"
     t11 = h0_made;
-#line 14 "tests/golden/run/fixedbugs-245-a-str-c-copies-holding-a-nul-stops.hero"
+#line 164 "fixedbugs245astrccopiesholdinganulstops.c"
     hero_str_incref(t1);
 #line 14 "tests/golden/run/fixedbugs-245-a-str-c-copies-holding-a-nul-stops.hero"
     h0_made = t1;
-#line 14 "tests/golden/run/fixedbugs-245-a-str-c-copies-holding-a-nul-stops.hero"
+#line 168 "fixedbugs245astrccopiesholdinganulstops.c"
     hero_str_decref(t11);
+#line 15 "tests/golden/run/fixedbugs-245-a-str-c-copies-holding-a-nul-stops.hero"
     t2 = HERO_STR_LIT(hero_str_41bb0df2);
 #line 15 "tests/golden/run/fixedbugs-245-a-str-c-copies-holding-a-nul-stops.hero"
     t3 = h0_made;
@@ -182,12 +195,11 @@ bb0:
     hero_print_uint(t9);
 #line 16 "tests/golden/run/fixedbugs-245-a-str-c-copies-holding-a-nul-stops.hero"
     hero_print_end();
-#line 186 "fixedbugs245astrccopiesholdinganulstops.c"
+#line 199 "fixedbugs245astrccopiesholdinganulstops.c"
     hero_str_release_at(&h0_made);
     hero_str_release_at(&h1_own1);
     return;
 }
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_incref(v->as.ok);

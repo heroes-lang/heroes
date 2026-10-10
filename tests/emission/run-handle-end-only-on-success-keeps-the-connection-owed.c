@@ -21,11 +21,12 @@
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -74,7 +75,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_32f019d1, "first close: ");
 HERO_STR_STATIC(hero_str_449e1190, " second close: ");
 
-#line 78 "handleendonlyonsuccesskeepstheconnectionowed.c"
+#line 79 "handleendonlyonsuccesskeepstheconnectionowed.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -98,7 +99,6 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
@@ -134,14 +134,26 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_handleendonlyonsuccesskeepstheconnectionowed_main(void);
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 12 "tests/golden/run/handle-end-only-on-success-keeps-the-connection-owed.hero"
 void h_handleendonlyonsuccesskeepstheconnectionowed_main(void) {
-#line 12 "tests/golden/run/handle-end-only-on-success-keeps-the-connection-owed.hero"
-    _Pragma("clang diagnostic ignored \"-Wdeprecated-declarations\"") db * h0_d; int32_t h1_first; int32_t h2_second; db * t1; db * t2; int32_t t3; db * t4; db * t5; int32_t t6; HeroStr t7; int32_t t8; HeroStr t9; int32_t t10; _Pragma("clang diagnostic warning \"-Wdeprecated-declarations\"") goto bb0;
-#line 12 "tests/golden/run/handle-end-only-on-success-keeps-the-connection-owed.hero"
+#line 141 "handleendonlyonsuccesskeepstheconnectionowed.c"
+    db * h0_d;
+    int32_t h1_first;
+    int32_t h2_second;
+    db * t1;
+    db * t2;
+    int32_t t3;
+    db * t4;
+    db * t5;
+    int32_t t6;
+    HeroStr t7;
+    int32_t t8;
+    HeroStr t9;
+    int32_t t10;
+    goto bb0;
 bb0:
+#line 13 "tests/golden/run/handle-end-only-on-success-keeps-the-connection-owed.hero"
     t1 = db_open();
 #line 13 "tests/golden/run/handle-end-only-on-success-keeps-the-connection-owed.hero"
     hero_handle_acquired(t1, "db_close");
@@ -217,9 +229,8 @@ bb0:
     hero_print_end();
 #line 17 "tests/golden/run/handle-end-only-on-success-keeps-the-connection-owed.hero"
     return;
-#line 221 "handleendonlyonsuccesskeepstheconnectionowed.c"
+#line 233 "handleendonlyonsuccesskeepstheconnectionowed.c"
 }
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_handleendonlyonsuccesskeepstheconnectionowed_Db_eq(db * const *a, db * const *b) {
     return hero_handle_eq(*a, *b);
 }

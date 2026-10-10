@@ -24,11 +24,12 @@
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -38,11 +39,11 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 #line 13 "tests/golden/run/fixedbugs-559-a-macro-of-another-module-does-not-lay-out-a-record-in-the-other-order.hero"
 _Static_assert(__builtin_classify_type(((S *)0)->a) == 1 && sizeof(((S *)0)->a) == sizeof(int32_t) && (_Generic(((S *)0)->a, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field S a");
 _Static_assert(__builtin_classify_type(((S *)0)->b) == 1 && sizeof(((S *)0)->b) == sizeof(int32_t) && (_Generic(((S *)0)->b, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field S b");
-#line 42 "fixedbugs559amacroofanothermoduledoesnotlayoutarecordintheotherorder.c"
+#line 43 "fixedbugs559amacroofanothermoduledoesnotlayoutarecordintheotherorder.c"
 
 #line 12 "tests/golden/run/fixedbugs-559-a-macro-of-another-module-does-not-lay-out-a-record-in-the-other-order.hero"
 _Static_assert(__builtin_classify_type(*(S *)0) != 13, "heroes-ffi-union S a b");
-#line 46 "fixedbugs559amacroofanothermoduledoesnotlayoutarecordintheotherorder.c"
+#line 47 "fixedbugs559amacroofanothermoduledoesnotlayoutarecordintheotherorder.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -106,7 +107,6 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
@@ -144,14 +144,21 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_fixedbugs559amacroofanothermoduledoesnotlayoutarecordintheotherorder_main(void);
 int64_t h_fixedbugs559wide_doubled(int64_t h0_x);
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 17 "tests/golden/run/fixedbugs-559-a-macro-of-another-module-does-not-lay-out-a-record-in-the-other-order.hero"
 void h_fixedbugs559amacroofanothermoduledoesnotlayoutarecordintheotherorder_main(void) {
-#line 17 "tests/golden/run/fixedbugs-559-a-macro-of-another-module-does-not-lay-out-a-record-in-the-other-order.hero"
-    _Pragma("clang diagnostic ignored \"-Wdeprecated-declarations\"") S h0_s; int32_t t1; int32_t t2; S t3; int64_t t4; int64_t t5; S t6; int32_t t7; _Pragma("clang diagnostic warning \"-Wdeprecated-declarations\"") goto bb0;
-#line 17 "tests/golden/run/fixedbugs-559-a-macro-of-another-module-does-not-lay-out-a-record-in-the-other-order.hero"
+#line 151 "fixedbugs559amacroofanothermoduledoesnotlayoutarecordintheotherorder.c"
+    S h0_s;
+    int32_t t1;
+    int32_t t2;
+    S t3;
+    int64_t t4;
+    int64_t t5;
+    S t6;
+    int32_t t7;
+    goto bb0;
 bb0:
+#line 18 "tests/golden/run/fixedbugs-559-a-macro-of-another-module-does-not-lay-out-a-record-in-the-other-order.hero"
     t1 = INT64_C(1);
 #line 18 "tests/golden/run/fixedbugs-559-a-macro-of-another-module-does-not-lay-out-a-record-in-the-other-order.hero"
     t2 = INT64_C(2);
@@ -175,23 +182,24 @@ bb0:
     hero_print_end();
 #line 20 "tests/golden/run/fixedbugs-559-a-macro-of-another-module-does-not-lay-out-a-record-in-the-other-order.hero"
     return;
-#line 179 "fixedbugs559amacroofanothermoduledoesnotlayoutarecordintheotherorder.c"
+#line 186 "fixedbugs559amacroofanothermoduledoesnotlayoutarecordintheotherorder.c"
 }
 
 #line 7 "tests/golden/run/fixedbugs559/wide.hero"
 int64_t h_fixedbugs559wide_doubled(int64_t h0_x) {
-#line 7 "tests/golden/run/fixedbugs559/wide.hero"
-    int64_t t1; int64_t t2; goto bb0;
-#line 7 "tests/golden/run/fixedbugs559/wide.hero"
+#line 191 "fixedbugs559amacroofanothermoduledoesnotlayoutarecordintheotherorder.c"
+    int64_t t1;
+    int64_t t2;
+    goto bb0;
 bb0:
+#line 8 "tests/golden/run/fixedbugs559/wide.hero"
     t1 = h0_x;
 #line 8 "tests/golden/run/fixedbugs559/wide.hero"
     t2 = twice(t1);
 #line 8 "tests/golden/run/fixedbugs559/wide.hero"
     return t2;
-#line 193 "fixedbugs559amacroofanothermoduledoesnotlayoutarecordintheotherorder.c"
+#line 202 "fixedbugs559amacroofanothermoduledoesnotlayoutarecordintheotherorder.c"
 }
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_fixedbugs559amacroofanothermoduledoesnotlayoutarecordintheotherorder_S_eq(const S *a, const S *b) {
     if (!(a->a == b->a)) return false;
     if (!(a->b == b->b)) return false;

@@ -23,11 +23,12 @@
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -42,13 +43,13 @@ _Static_assert(__builtin_classify_type(((struct held *)0)->after) == 1 && sizeof
 #line 19 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
 _Static_assert(__builtin_classify_type(((struct pair *)0)->a) == 1 && sizeof(((struct pair *)0)->a) == sizeof(int32_t) && (_Generic(((struct pair *)0)->a, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Pair a");
 _Static_assert(__builtin_classify_type(((struct pair *)0)->b) == 1 && sizeof(((struct pair *)0)->b) == sizeof(int32_t) && (_Generic(((struct pair *)0)->b, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Pair b");
-#line 46 "fficountedbyastatedextent.c"
+#line 47 "fficountedbyastatedextent.c"
 
 #line 15 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
 _Static_assert(__builtin_classify_type(*(struct held *)0) != 13, "heroes-ffi-union Held buf after");
 #line 18 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
 _Static_assert(__builtin_classify_type(*(struct pair *)0) != 13, "heroes-ffi-union Pair a b");
-#line 52 "fficountedbyastatedextent.c"
+#line 53 "fficountedbyastatedextent.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -120,7 +121,6 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
@@ -164,15 +164,12 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 int64_t h_fficountedbyastatedextent_HELD_LEN(void);
 struct held h_fficountedbyastatedextent_zero(void);
 void h_fficountedbyastatedextent_main(void);
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #line 14 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
 int64_t h_fficountedbyastatedextent_HELD_LEN(void) {
-#line 173 "fficountedbyastatedextent.c"
+#line 171 "fficountedbyastatedextent.c"
     return HELD_LEN;
 }
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
@@ -181,17 +178,34 @@ int64_t h_fficountedbyastatedextent_HELD_LEN(void) {
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 
 #line 28 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
 struct held h_fficountedbyastatedextent_zero(void) {
-#line 28 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
-    uint8_t t1; uint8_t t2; uint8_t t3; uint8_t t4; uint8_t t5; uint8_t t6; uint8_t t7; uint8_t t8; uint8_t t9; uint8_t t10; uint8_t t11; uint8_t t12; uint8_t t13; uint8_t t14; uint8_t t15; uint8_t t16; int64_t t18; struct held t19; goto bb0;
-#line 28 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
+#line 188 "fficountedbyastatedextent.c"
+    uint8_t t1;
+    uint8_t t2;
+    uint8_t t3;
+    uint8_t t4;
+    uint8_t t5;
+    uint8_t t6;
+    uint8_t t7;
+    uint8_t t8;
+    uint8_t t9;
+    uint8_t t10;
+    uint8_t t11;
+    uint8_t t12;
+    uint8_t t13;
+    uint8_t t14;
+    uint8_t t15;
+    uint8_t t16;
+    int64_t t18;
+    struct held t19;
+    goto bb0;
 bb0:
+#line 29 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
     t1 = UINT64_C(0);
 #line 29 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
     t2 = UINT64_C(0);
@@ -229,17 +243,78 @@ bb0:
     t19 = (struct held){.buf = {t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16}, .after = t18};
 #line 29 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
     return t19;
-#line 233 "fficountedbyastatedextent.c"
+#line 247 "fficountedbyastatedextent.c"
 }
 
 #line 31 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
 void h_fficountedbyastatedextent_main(void) {
-#line 31 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
+#line 252 "fficountedbyastatedextent.c"
+    struct held h0_h;
+    struct pair *const hero_lend_h1_pair = (struct pair *)hero_lend_local(sizeof(struct pair), "fficountedbyastatedextent.main", "pair");
 #define h1_pair (*hero_lend_h1_pair)
-#line 31 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
-    _Pragma("clang diagnostic ignored \"-Wdeprecated-declarations\"") struct held h0_h; struct pair *const hero_lend_h1_pair = (struct pair *)hero_lend_local(sizeof(struct pair), "fficountedbyastatedextent.main", "pair"); struct held t1; void * t4; struct held t5; int64_t t7; uint8_t t8; HeroStr t9; struct held t10; int64_t t12; uint8_t t13; HeroStr t14; struct held t15; int64_t t16; struct held t17; void * t20; struct held t21; int64_t t23; uint8_t t24; HeroStr t25; struct held t26; int64_t t28; uint8_t t29; HeroStr t30; struct held t31; int64_t t32; struct held t33; void * t36; struct held t37; int64_t t39; uint8_t t40; HeroStr t41; struct held t42; int64_t t43; struct held t44; void * t47; struct held t48; int64_t t50; uint8_t t51; HeroStr t52; struct held t53; int64_t t54; struct held t55; void * t58; struct held t59; int64_t t61; uint8_t t62; HeroStr t63; struct held t64; int64_t t66; uint8_t t67; HeroStr t68; struct held t69; int64_t t70; int32_t t71; int32_t t72; struct pair t73; struct pair t74; int32_t t75; HeroStr t76; struct pair t77; int32_t t78; _Pragma("clang diagnostic warning \"-Wdeprecated-declarations\"") goto bb0;
-#line 31 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
+    struct held t1;
+    void * t4;
+    struct held t5;
+    int64_t t7;
+    uint8_t t8;
+    HeroStr t9;
+    struct held t10;
+    int64_t t12;
+    uint8_t t13;
+    HeroStr t14;
+    struct held t15;
+    int64_t t16;
+    struct held t17;
+    void * t20;
+    struct held t21;
+    int64_t t23;
+    uint8_t t24;
+    HeroStr t25;
+    struct held t26;
+    int64_t t28;
+    uint8_t t29;
+    HeroStr t30;
+    struct held t31;
+    int64_t t32;
+    struct held t33;
+    void * t36;
+    struct held t37;
+    int64_t t39;
+    uint8_t t40;
+    HeroStr t41;
+    struct held t42;
+    int64_t t43;
+    struct held t44;
+    void * t47;
+    struct held t48;
+    int64_t t50;
+    uint8_t t51;
+    HeroStr t52;
+    struct held t53;
+    int64_t t54;
+    struct held t55;
+    void * t58;
+    struct held t59;
+    int64_t t61;
+    uint8_t t62;
+    HeroStr t63;
+    struct held t64;
+    int64_t t66;
+    uint8_t t67;
+    HeroStr t68;
+    struct held t69;
+    int64_t t70;
+    int32_t t71;
+    int32_t t72;
+    struct pair t73;
+    struct pair t74;
+    int32_t t75;
+    HeroStr t76;
+    struct pair t77;
+    int32_t t78;
+    goto bb0;
 bb0:
+#line 32 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
     t1 = h_fficountedbyastatedextent_zero();
 #line 32 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
     h0_h = t1;
@@ -456,10 +531,9 @@ bb0:
     hero_lend_local_give(hero_lend_h1_pair);
 #line 49 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
     return;
-#line 460 "fficountedbyastatedextent.c"
+#line 535 "fficountedbyastatedextent.c"
 }
 #undef h1_pair
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_fficountedbyastatedextent_Held_eq(const struct held *a, const struct held *b) {
     if (!((a->buf[0] == b->buf[0] && a->buf[1] == b->buf[1] && a->buf[2] == b->buf[2] && a->buf[3] == b->buf[3] && a->buf[4] == b->buf[4] && a->buf[5] == b->buf[5] && a->buf[6] == b->buf[6] && a->buf[7] == b->buf[7] && a->buf[8] == b->buf[8] && a->buf[9] == b->buf[9] && a->buf[10] == b->buf[10] && a->buf[11] == b->buf[11] && a->buf[12] == b->buf[12] && a->buf[13] == b->buf[13] && a->buf[14] == b->buf[14] && a->buf[15] == b->buf[15]))) return false;
     if (!(a->after == b->after)) return false;

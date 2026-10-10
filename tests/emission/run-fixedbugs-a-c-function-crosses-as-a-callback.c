@@ -21,11 +21,12 @@
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -72,7 +73,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 76 "fixedbugsacfunctioncrossesasacallback.c"
+#line 77 "fixedbugsacfunctioncrossesasacallback.c"
 typedef void (*h_0fn_406f9b0)(void *);
 typedef struct h_0opt_f87774a {
     int64_t tag;
@@ -97,7 +98,6 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
@@ -135,14 +135,20 @@ __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
     return f;
 }
 
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 36 "tests/golden/run/fixedbugs-a-c-function-crosses-as-a-callback.hero"
 void h_fixedbugsacfunctioncrossesasacallback_main(void) {
-#line 36 "tests/golden/run/fixedbugs-a-c-function-crosses-as-a-callback.hero"
-    void * h0_b; void * t1; void * t2; int64_t t3; h_0fn_406f9b0 t4; int64_t t5; int64_t t6; goto bb0;
-#line 36 "tests/golden/run/fixedbugs-a-c-function-crosses-as-a-callback.hero"
+#line 142 "fixedbugsacfunctioncrossesasacallback.c"
+    void * h0_b;
+    void * t1;
+    void * t2;
+    int64_t t3;
+    h_0fn_406f9b0 t4;
+    int64_t t5;
+    int64_t t6;
+    goto bb0;
 bb0:
+#line 37 "tests/golden/run/fixedbugs-a-c-function-crosses-as-a-callback.hero"
     t1 = (void *)blob_make();
 #line 37 "tests/golden/run/fixedbugs-a-c-function-crosses-as-a-callback.hero"
     h0_b = t1;
@@ -168,9 +174,8 @@ bb0:
     hero_print_end();
 #line 47 "tests/golden/run/fixedbugs-a-c-function-crosses-as-a-callback.hero"
     return;
-#line 172 "fixedbugsacfunctioncrossesasacallback.c"
+#line 178 "fixedbugsacfunctioncrossesasacallback.c"
 }
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_incref(v->as.ok);

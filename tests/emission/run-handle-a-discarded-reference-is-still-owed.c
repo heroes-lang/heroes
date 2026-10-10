@@ -21,11 +21,12 @@
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -75,7 +76,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_7b9bb5d3, "refs: ");
 HERO_STR_STATIC(hero_str_455ecde8, "both given back");
 
-#line 79 "handleadiscardedreferenceisstillowed.c"
+#line 80 "handleadiscardedreferenceisstillowed.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -99,7 +100,6 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
@@ -136,14 +136,22 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_handleadiscardedreferenceisstillowed_main(void);
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 13 "tests/golden/run/handle-a-discarded-reference-is-still-owed.hero"
 void h_handleadiscardedreferenceisstillowed_main(void) {
-#line 13 "tests/golden/run/handle-a-discarded-reference-is-still-owed.hero"
-    _Pragma("clang diagnostic ignored \"-Wdeprecated-declarations\"") ob * h0_a; ob * t1; ob * t2; HeroStr t4; ob * t5; int64_t t6; ob * t7; ob * t8; HeroStr t9; _Pragma("clang diagnostic warning \"-Wdeprecated-declarations\"") goto bb0;
-#line 13 "tests/golden/run/handle-a-discarded-reference-is-still-owed.hero"
+#line 143 "handleadiscardedreferenceisstillowed.c"
+    ob * h0_a;
+    ob * t1;
+    ob * t2;
+    HeroStr t4;
+    ob * t5;
+    int64_t t6;
+    ob * t7;
+    ob * t8;
+    HeroStr t9;
+    goto bb0;
 bb0:
+#line 14 "tests/golden/run/handle-a-discarded-reference-is-still-owed.hero"
     t1 = ob_new();
 #line 14 "tests/golden/run/handle-a-discarded-reference-is-still-owed.hero"
     hero_handle_acquired(t1, "ob_put");
@@ -206,9 +214,8 @@ bb0:
     hero_print_end();
 #line 19 "tests/golden/run/handle-a-discarded-reference-is-still-owed.hero"
     return;
-#line 210 "handleadiscardedreferenceisstillowed.c"
+#line 218 "handleadiscardedreferenceisstillowed.c"
 }
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_handleadiscardedreferenceisstillowed_Ob_eq(ob * const *a, ob * const *b) {
     return hero_handle_eq(*a, *b);
 }

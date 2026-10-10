@@ -21,11 +21,12 @@
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -40,11 +41,11 @@ _Static_assert(__builtin_classify_type(((SA *)0)->x) == 1 && sizeof(((SA *)0)->x
 #line 17 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
 _Static_assert(__builtin_classify_type(((UD *)0)->c) == 1 && sizeof(((UD *)0)->c) == sizeof(int8_t) && (_Generic(((UD *)0)->c, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field UD c");
 _Static_assert(_Generic(&((UD *)0)->d, double *: 1, default: 0) && sizeof(((UD *)0)->d) == sizeof(double), "heroes-ffi-field UD d");
-#line 44 "ffirestzeroaunionwithonemembernamed.c"
+#line 45 "ffirestzeroaunionwithonemembernamed.c"
 
 #line 11 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
 _Static_assert(__builtin_classify_type(*(SA *)0) != 13, "heroes-ffi-union SA kind c d x");
-#line 48 "ffirestzeroaunionwithonemembernamed.c"
+#line 49 "ffirestzeroaunionwithonemembernamed.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -110,7 +111,6 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
@@ -150,14 +150,16 @@ SA h_ffirestzeroaunionwithonemembernamed_wide(void);
 SA h_ffirestzeroaunionwithonemembernamed_narrow(void);
 UD h_ffirestzeroaunionwithonemembernamed_a_union_type(void);
 void h_ffirestzeroaunionwithonemembernamed_main(void);
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 22 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
 SA h_ffirestzeroaunionwithonemembernamed_wide(void) {
-#line 22 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
-    int32_t t1; double t2; SA t3; goto bb0;
-#line 22 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
+#line 157 "ffirestzeroaunionwithonemembernamed.c"
+    int32_t t1;
+    double t2;
+    SA t3;
+    goto bb0;
 bb0:
+#line 23 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
     t1 = INT64_C(2);
 #line 23 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
     t2 = 0x1.4p+1;
@@ -171,15 +173,18 @@ bb0:
     t3.d = t2;
 #line 23 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
     return t3;
-#line 175 "ffirestzeroaunionwithonemembernamed.c"
+#line 177 "ffirestzeroaunionwithonemembernamed.c"
 }
 
 #line 25 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
 SA h_ffirestzeroaunionwithonemembernamed_narrow(void) {
-#line 25 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
-    int32_t t1; int8_t t2; SA t3; goto bb0;
-#line 25 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
+#line 182 "ffirestzeroaunionwithonemembernamed.c"
+    int32_t t1;
+    int8_t t2;
+    SA t3;
+    goto bb0;
 bb0:
+#line 26 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
     t1 = INT64_C(3);
 #line 26 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
     t2 = INT64_C(7);
@@ -193,15 +198,17 @@ bb0:
     t3.c = t2;
 #line 26 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
     return t3;
-#line 197 "ffirestzeroaunionwithonemembernamed.c"
+#line 202 "ffirestzeroaunionwithonemembernamed.c"
 }
 
 #line 28 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
 UD h_ffirestzeroaunionwithonemembernamed_a_union_type(void) {
-#line 28 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
-    double t1; UD t2; goto bb0;
-#line 28 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
+#line 207 "ffirestzeroaunionwithonemembernamed.c"
+    double t1;
+    UD t2;
+    goto bb0;
 bb0:
+#line 29 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
     t1 = 0x1.8p+0;
 #line 29 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
     t2 = (UD){0};
@@ -211,19 +218,37 @@ bb0:
     t2.d = t1;
 #line 29 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
     return t2;
-#line 215 "ffirestzeroaunionwithonemembernamed.c"
+#line 222 "ffirestzeroaunionwithonemembernamed.c"
 }
 
 #line 31 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
 void h_ffirestzeroaunionwithonemembernamed_main(void) {
-#line 31 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
+#line 227 "ffirestzeroaunionwithonemembernamed.c"
+    SA *const hero_lend_h0_w = (SA *)hero_lend_local(sizeof(SA), "ffirestzeroaunionwithonemembernamed.main", "w");
 #define h0_w (*hero_lend_h0_w)
-#line 31 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
+    SA *const hero_lend_h1_n = (SA *)hero_lend_local(sizeof(SA), "ffirestzeroaunionwithonemembernamed.main", "n");
 #define h1_n (*hero_lend_h1_n)
-#line 31 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
-    _Pragma("clang diagnostic ignored \"-Wdeprecated-declarations\"") SA *const hero_lend_h0_w = (SA *)hero_lend_local(sizeof(SA), "ffirestzeroaunionwithonemembernamed.main", "w"); SA *const hero_lend_h1_n = (SA *)hero_lend_local(sizeof(SA), "ffirestzeroaunionwithonemembernamed.main", "n"); SA t1; SA t2; int32_t t3; HeroStr t4; SA t5; double t6; HeroStr t7; int64_t t8; SA t9; SA t10; int32_t t11; HeroStr t12; SA t13; int8_t t14; HeroStr t15; int64_t t16; UD t17; double t18; _Pragma("clang diagnostic warning \"-Wdeprecated-declarations\"") goto bb0;
-#line 31 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
+    SA t1;
+    SA t2;
+    int32_t t3;
+    HeroStr t4;
+    SA t5;
+    double t6;
+    HeroStr t7;
+    int64_t t8;
+    SA t9;
+    SA t10;
+    int32_t t11;
+    HeroStr t12;
+    SA t13;
+    int8_t t14;
+    HeroStr t15;
+    int64_t t16;
+    UD t17;
+    double t18;
+    goto bb0;
 bb0:
+#line 32 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
     (void)dirty();
     t1 = h_ffirestzeroaunionwithonemembernamed_wide();
 #line 33 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
@@ -299,11 +324,10 @@ bb0:
     hero_lend_local_give(hero_lend_h0_w);
 #line 38 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
     return;
-#line 303 "ffirestzeroaunionwithonemembernamed.c"
+#line 328 "ffirestzeroaunionwithonemembernamed.c"
 }
 #undef h0_w
 #undef h1_n
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_ffirestzeroaunionwithonemembernamed_SA_eq(const SA *a, const SA *b) {
     if (!(a->kind == b->kind)) return false;
     if (!(a->c == b->c)) return false;

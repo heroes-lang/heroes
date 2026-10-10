@@ -21,11 +21,12 @@
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -75,7 +76,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_5bfed3fb, "stale read through the callback ");
 HERO_STR_STATIC(hero_str_678ad40c, "visited ");
 
-#line 79 "deadaddresscopyreachingacallbackcalledbyname.c"
+#line 80 "deadaddresscopyreachingacallbackcalledbyname.c"
 typedef int64_t (*h_0fn_b062dd1)(node *);
 typedef struct h_0opt_f87774a {
     int64_t tag;
@@ -100,7 +101,6 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
@@ -162,14 +162,16 @@ __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
     return f;
 }
 
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 18 "tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero"
 int64_t h_deadaddresscopyreachingacallbackcalledbyname_seen(node * h0_n) {
-#line 18 "tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero"
-    hero_thread_guard("deadaddresscopyreachingacallbackcalledbyname.seen"); _Pragma("clang diagnostic ignored \"-Wdeprecated-declarations\"") node * t1; int64_t t2; _Pragma("clang diagnostic warning \"-Wdeprecated-declarations\"") goto bb0;
-#line 18 "tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero"
+#line 169 "deadaddresscopyreachingacallbackcalledbyname.c"
+    hero_thread_guard("deadaddresscopyreachingacallbackcalledbyname.seen");
+    node * t1;
+    int64_t t2;
+    goto bb0;
 bb0:
+#line 19 "tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero"
     t1 = h0_n;
 #line 19 "tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero"
     hero_handle_alive(t1, "the argument `n` of `node_value`");
@@ -177,7 +179,7 @@ bb0:
     t2 = node_value(t1);
 #line 19 "tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero"
     return t2;
-#line 181 "deadaddresscopyreachingacallbackcalledbyname.c"
+#line 183 "deadaddresscopyreachingacallbackcalledbyname.c"
 }
 
 int64_t h_0cb_deadaddresscopyreachingacallbackcalledbyname_seen(node * h0_n) {
@@ -188,10 +190,27 @@ int64_t h_0cb_deadaddresscopyreachingacallbackcalledbyname_seen(node * h0_n) {
 
 #line 21 "tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero"
 void h_deadaddresscopyreachingacallbackcalledbyname_main(void) {
-#line 21 "tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero"
-    _Pragma("clang diagnostic ignored \"-Wdeprecated-declarations\"") node * h0_mine; HeroArrayHeader * h1_keep = {0}; HeroArrayHeader * h2_own2 = {0}; node * t1; node * t2; HeroArrayHeader * t3; node * t4; HeroStr t5; HeroArrayHeader * t6; int64_t t7; node * t8; int64_t t9; HeroStr t10; h_0fn_b062dd1 t11; int64_t t12; HeroArrayHeader * t13; HeroArrayHeader * t14; _Pragma("clang diagnostic warning \"-Wdeprecated-declarations\"") goto bb0;
-#line 21 "tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero"
+#line 194 "deadaddresscopyreachingacallbackcalledbyname.c"
+    node * h0_mine;
+    HeroArrayHeader * h1_keep = {0};
+    HeroArrayHeader * h2_own2 = {0};
+    node * t1;
+    node * t2;
+    HeroArrayHeader * t3;
+    node * t4;
+    HeroStr t5;
+    HeroArrayHeader * t6;
+    int64_t t7;
+    node * t8;
+    int64_t t9;
+    HeroStr t10;
+    h_0fn_b062dd1 t11;
+    int64_t t12;
+    HeroArrayHeader * t13;
+    HeroArrayHeader * t14;
+    goto bb0;
 bb0:
+#line 22 "tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero"
     t1 = node_new();
 #line 22 "tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero"
     hero_handle_acquired(t1, "node_free");
@@ -206,16 +225,17 @@ bb0:
     t13 = h2_own2;
 #line 23 "tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero"
     h2_own2 = t3;
-#line 23 "tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero"
+#line 229 "deadaddresscopyreachingacallbackcalledbyname.c"
     hero_array_decref(t13);
 #line 23 "tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero"
     t14 = h1_keep;
-#line 23 "tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero"
+#line 233 "deadaddresscopyreachingacallbackcalledbyname.c"
     hero_array_incref(t3);
 #line 23 "tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero"
     h1_keep = t3;
-#line 23 "tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero"
+#line 237 "deadaddresscopyreachingacallbackcalledbyname.c"
     hero_array_decref(t14);
+#line 24 "tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero"
     t4 = h0_mine;
 #line 24 "tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero"
     {
@@ -255,12 +275,11 @@ bb0:
     hero_print_int(t12);
 #line 26 "tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero"
     hero_print_end();
-#line 259 "deadaddresscopyreachingacallbackcalledbyname.c"
+#line 279 "deadaddresscopyreachingacallbackcalledbyname.c"
     hero_array_release_at(&h1_keep);
     hero_array_release_at(&h2_own2);
     return;
 }
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_deadaddresscopyreachingacallbackcalledbyname_Node_eq(node * const *a, node * const *b) {
     return hero_handle_eq(*a, *b);
 }

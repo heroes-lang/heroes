@@ -1,0 +1,18 @@
+# fixedbugs, defect 588, lane b19-dep, 2026-10-10 (panel 208's R2).
+#
+# SYMPTOM: a function its header marks `__attribute__((unavailable))`, bound
+# and never called, exited 2 with *internal error: compiling the generated C
+# failed* and clang's text at the compiler's own probe of the binding: the
+# header's refusal blamed on the compiler.
+#
+# FIX: `emit/ffi_unavailable.hero` reads clang's `'gone' is unavailable` wherever
+# the unit names the binding, and where a group of this program declares the
+# name it is told `ffi_unavailable` on the binding, at exit 1, the header's
+# own words in a note (panel 208's R2; `.claude/rules/c-boundary.md`).
+
+extern "fixedbugs-588-unavailable.h"
+    function gone(x: i64) -> i64  #~ ffi_unavailable
+    function kept(x: i64) -> i64
+
+function main()
+    print(kept(x: 6))

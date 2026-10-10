@@ -1,0 +1,149 @@
+# What the linker says of a C library's own link warning, dropped (design.md
+# §4.19; defect 589, the author's decision of 2026-10-10 after panel 208's
+# R3).
+#
+# **glibc marks a few functions with a `.gnu.warning` section** (`mktemp`,
+# `gets`, `tmpnam`), and GNU ld prints its text whenever an object calls one:
+# `<file>:(<section>+0x<hex>): warning: <text>`, the file the emitted C, a
+# path the author never wrote, under a line naming the function the call
+# stands in. It is a deprecation said at the link, and a deprecation is
+# advice about a program, not a mistake in it (panel 208's R1). No linker
+# word drops it alone: GNU ld's `-w` drops every warning (measured 2026-10-10,
+# Linux arm64, GNU ld 2.44), and LLD prints none. So the link runs under
+# `LC_ALL=C`, which keeps GNU ld's words in this shape, and exactly the lines
+# of this shape are dropped, each with the `in function` line above it that
+# belongs to it; every other line the linker says passes as it did.
+
+use cli/io
+use cli/process
+use cli/strings
+use cli/clang_told
+use cli/toolchain
+
+constant SAID_IN: str
+    ": in function `"
+
+constant WARNING: str
+    "): warning: "
+
+# A link, run as `run_clang` runs a line: under `LC_ALL=C` where `env` is,
+# so GNU ld's words keep their shape, and what it said printed without a C
+# library's section warnings (defect 589).
+function run_link(line: [str], what: str, err_path: str) -> ()?
+    said: str @ ""
+
+    if process.exe_suffix() == ".exe"
+        said @ toolchain.asked_of_clang(line: line, what: what, err_path: err_path)?
+    else
+        said @ toolchain.asked_through(program: "env", words: strings.with_all(list: ["env", "LC_ALL=C"], more: line), what: what, err_path: err_path)?
+    kept = without_section_warnings(said)
+
+    if strings.trimmed(kept).len() > 0
+        io.eprint_raw(text: kept)
+    return ok()
+
+# `said` without the section warnings and the context line each stands under,
+# each line kept ended by its line end.
+function without_section_warnings(said: str) -> str
+    lines = clang_told.lines_of(said)
+    kept: [str] @ []
+    at: i64 @ 0
+
+    while at < lines.len()
+        line = lines[at]
+
+        if is_section_warning(line)
+            at @ at + 1
+            continue
+
+        if at + 1 < lines.len() && is_context(line) && is_section_warning(lines[at + 1])
+            at @ at + 2
+            continue
+        kept @ kept.push(line + "\n")
+        at @ at + 1
+
+    return kept.join("")
+
+# `<file>:(<section>+0x<hex>): warning: <text>`, the file part optionally
+# ending in `:<line>` where the object carries debug lines.
+function is_section_warning(line: str) -> bool
+    cs = line.chars()
+    open = index_of(cs, needle: ":(", from: 0)
+
+    if open < 1
+        return false
+    plus = index_of(cs, needle: "+0x", from: open + 2)
+
+    if plus < open + 3
+        return false
+    i: i64 @ plus + 3
+    digits: i64 @ 0
+
+    while i < cs.len() && is_hex(cs[i])
+        i @ i + 1
+        digits @ digits + 1
+
+    if digits == 0
+        return false
+
+    return starts_at(cs, needle: WARNING, at: i)
+
+# `<linker>: <object>: in function `<name>':`, the line GNU ld writes above
+# what it says of one call.
+function is_context(line: str) -> bool
+    return strings.ends_with(text: line, suffix: "':") && strings.holds(text: line, needle: SAID_IN)
+
+function is_hex(c: str) -> bool
+    return strings.holds(text: "0123456789abcdefABCDEF", needle: c)
+
+# The first index at or after `from` where `needle` starts, -1 where none.
+function index_of(cs: [str], needle: str, from: i64) -> i64
+    at: i64 @ from
+
+    while at + needle.chars().len() <= cs.len()
+        if starts_at(cs, needle: needle, at: at)
+            return at
+        at @ at + 1
+
+    return -1
+
+function starts_at(cs: [str], needle: str, at: i64) -> bool
+    ns = needle.chars()
+
+    if at < 0 || at + ns.len() > cs.len()
+        return false
+    k: i64 @ 0
+
+    while k < ns.len()
+        if cs[at + k] != ns[k]
+            return false
+        k @ k + 1
+
+    return true
+
+## Tests
+
+# GNU ld 2.44's own two lines for `mktemp`, captured in `heroes-linux-arm64`
+# on 2026-10-10 (Debian clang 22.1.8, `-fuse-ld=bfd`), and its line of
+# another warning, `--warn-common`'s, the same run.
+constant MKTEMP: str
+    "/usr/bin/ld.bfd: /tmp/m-eb10d7.o: in function `main':\nm.c:(.text+0x30): warning: the use of `mktemp' is dangerous, better use `mkstemp' or `mkdtemp'\n"
+
+constant COMMON: str
+    "/usr/bin/ld.bfd: /tmp/b-365593.o and /tmp/a-7d34fa.o: warning: multiple common of `c'\n"
+
+test "a section's warning and the line it stands under are dropped"
+    assert without_section_warnings(MKTEMP) == ""
+
+test "another warning of the linker passes as it was said"
+    assert without_section_warnings(COMMON) == COMMON
+    assert without_section_warnings(MKTEMP + COMMON) == COMMON
+
+test "a file's line number before the section is the same shape"
+    assert is_section_warning(
+        "/w/build/tu-1/mktemp.c:89:(.text+0x1c): warning: the use of `mktemp' is dangerous, better use `mkstemp' or `mkdtemp'"
+    )
+
+test "an undefined reference keeps its own context line"
+    said = "/usr/bin/ld.bfd: /tmp/m.o: in function `main':\nm.c:(.text+0x10): undefined reference to `nothere'\n"
+    assert without_section_warnings(said) == said
