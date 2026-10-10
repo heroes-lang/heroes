@@ -43,8 +43,8 @@
 #include <sys/prctl.h>
 #endif
 #if defined(__APPLE__)
-#include <libproc.h>
 #include <pthread.h>
+#include <spawn.h>
 #endif
 #endif
 
@@ -61,11 +61,22 @@
 static _Thread_local char *hero_run_words[HERO_RUN_MAX_ARGS + 1];
 static _Thread_local int64_t hero_run_count = 0;
 
+/* Every word every thread's list holds, so the exit check can tell a list the
+ * program never gave back from a runtime call that kept what it borrowed
+ * (defect 573): the words are scratch, and the scratch count alone said *this
+ * is a runtime bug* of a program that left its last list standing. */
+static _Atomic int64_t hero_run_words_held = 0;
+
+static int64_t hero_run_words_held_at_exit(void) {
+    return atomic_load(&hero_run_words_held);
+}
+
 /* Drop every word. Safe to call twice, and called before every build. */
 void hero_run_reset(void) {
     for (int64_t i = 0; i < hero_run_count; i += 1) {
         hero_release(hero_run_words[i]);
         hero_run_words[i] = NULL;
+        atomic_fetch_sub(&hero_run_words_held, 1);
     }
     hero_run_count = 0;
 }
@@ -89,6 +100,7 @@ void hero_run_arg(HeroStr word) {
     copy[length] = '\0';
     hero_run_words[hero_run_count] = copy;
     hero_run_count += 1;
+    atomic_fetch_add(&hero_run_words_held, 1);
 }
 
 /* Where a stream goes when the caller wants it thrown away. The word is spelled
@@ -432,162 +444,134 @@ static int hero_run_hold(pid_t child) {
 }
 
 #if defined(__APPLE__)
-static void hero_run_sentinel_say(int32_t op, int32_t pid);
-#define HERO_SENTINEL_HOLD 1
-#define HERO_SENTINEL_FREE 2
+static void hero_run_sentinel_say(char op, int32_t pid);
+static void hero_run_sentinel_let_go(int slot);
 #endif
 
-/* Out of the table, before it is reaped: unnamed to the sentinel first, so the
- * pid it held is never one a later process can be given. */
+/* Out of the table, before it is reaped; on Darwin unnamed to the sentinel in
+ * the same step, so the pid it held is never one a later process can be given
+ * and a sentinel started meanwhile is never told it (`hero_run_sentinel_let_go`). */
 static void hero_run_let_go(int slot) {
     if (slot < 0) return;
 #if defined(__APPLE__)
-    int pid = atomic_load(&hero_run_live[slot]);
-    if (pid > 0) hero_run_sentinel_say(HERO_SENTINEL_FREE, (int32_t)pid);
-#endif
+    hero_run_sentinel_let_go(slot);
+#else
     atomic_store(&hero_run_live[slot], 0);
+#endif
 }
 
 #if defined(__APPLE__)
 /* **THE SENTINEL, DARWIN'S ANSWER TO PR_SET_PDEATHSIG** (defect 465; panel 200's
- * R2, ratified 2026-10-09, the ffi-pragmatist's route A with every item the
- * sitting's critic owed it). Before it, 0 of 5 programs ended when the
- * `heroes` that ran them was killed with SIGKILL: each was adopted by launchd
- * and ran on.
+ * R2, ratified 2026-10-09; started by `posix_spawn` since defect 575). Before
+ * it, 0 of 5 programs ended when the `heroes` that ran them was killed with
+ * SIGKILL: each was adopted by launchd and ran on.
  *
- * A process forked from the runner at its first launch holds the read end of a
- * pipe; the write end is the runner's, close-on-exec, so a child holds a copy
- * only between its fork and its exec. Each child names itself down the pipe
- * before it asks after its parent, the runner names it again once its pid is
- * in the table and unnames it before it is reaped, and when the pipe reads its
- * end the runner is gone, by whatever signal, and the sentinel ends every child
- * still named, its group first, and exits. A name given twice is held once.
+ * A process apart, started at the runner's first launch, reads a pipe whose
+ * write end is the runner's alone, close-on-exec, so a child holds a copy only
+ * between its fork and its exec. Each child names itself down it before it
+ * asks after its parent (`h <pid>`), the runner names it again once its pid is
+ * in the table and unnames it before it is reaped (`f <pid>`), and when the
+ * pipe reads its end the runner is gone, by whatever signal, and the sentinel
+ * ends every child still named, its group first, and exits. A name given twice
+ * is held once.
  *
- * **WHAT THE CRITIC OWED IT**, each built here:
- * - the write end is `F_SETNOSIGPIPE` and `O_NONBLOCK`, so a sentinel killed,
- *   stopped or behind never ends its runner (SIGPIPE killed it at 141 in the
- *   sitting) nor holds it or a child before exec: a word that cannot be
- *   written is a sentinel gone, and the runner RESTARTS one, under a lock,
- *   ending the old one first so that its pipe's end ends nothing, and names
- *   every child of its table to the new one;
- * - the runner asks before each launch whether its sentinel still stands, so
- *   a sentinel killed between two launches is replaced before the next child;
- * - a child reaped past the table's 1,024 is unnamed before it is reaped, as
- *   every other is (`hero_run_let_go`);
- * - Darwin alone, `defined(__APPLE__)`: `libproc.h` is Darwin's.
+ * **IT IS THE SYSTEM'S OWN `/bin/sh`, STARTED BY `posix_spawn`** (defect 575,
+ * 2026-10-10). Defect 465 forked the runner for it, and a fork of `heroes`
+ * cost 38.5 million instructions of `heroes run hello`'s 578.8 (7.1%): the
+ * runner's address space copied for a process that needs ten lines. A spawn
+ * copies nothing, needs no fork-safety of the runner's threads or of a C
+ * library it loaded, and gives the sentinel exactly its descriptors
+ * (`POSIX_SPAWN_CLOEXEC_DEFAULT`: the pipe as its input, `/dev/null` as its
+ * output, the life line below as its fourth, nothing else), its own group and
+ * an empty mask; in `ps` it is `sh`, never the runner's name a kill by name
+ * would reach. `HERO_RUN_SENTINEL_SCRIPT` is the whole of it, POSIX `sh` alone
+ * (`read`, `case`, `${…%…}`, `kill`, every one a builtin), and the runner
+ * writes no word of a program into it: the pids arrive down the pipe.
  *
- * **WHAT THE SENTINEL CALLS** is what a fork of a process with threads may: it
- * allocates nothing and touches no lock, and calls `setpgid`, `sigaction`,
- * `sigprocmask`, `close`, `read`, `kill`, `_exit` and `proc_pidinfo`, which on
- * this Mac (arm64, 2026-10-10) is a wrapper of syscall 336 and nothing else,
- * `__proc_info` read by lldb's disassembly. It closes every descriptor but its
- * own read end from the kernel's list, a call at a time until none is left,
- * because a write end of a launch's report pipe held by another thread would
- * keep that launch waiting for an end it never reads, and `ulimit -n` read
- * 1,048,576 in the shell the sitting measured.
+ * **A SENTINEL THAT DIES IS REPLACED AT ONCE** (defect 575). It holds the write
+ * end of a second pipe, its life line, and a thread of the runner, the only
+ * reader, blocks on the read end: the read answers when the sentinel ends,
+ * however, and the thread starts another under the lock and names to it every
+ * child of the table. Until then a sentinel killed was noticed at the
+ * runner's next word, and a runner killed in between left its child. The
+ * thread starts with every signal blocked, so no signal meant for the process
+ * lands on it; where it cannot be started, the runner asks before each launch
+ * whether its sentinel stands, as defect 465 did.
  *
- * **THE PREMISES, written as such**: a process this runtime does not start,
- * forked by a program through C without an exec, holds a copy of the write end
- * and keeps the sentinel waiting while it lives; and a held child's pid reused
- * between launchd's reap and the sentinel's kill, after the runner has gone,
- * would be ended as well, a window of the time the sentinel takes to read one
- * end of file, which no check of a pid alone closes. */
-typedef struct { int32_t op; int32_t pid; } HeroSentinelWord;
+ * **THE WRITE END** is `F_SETNOSIGPIPE` and `O_NONBLOCK`: a word the sentinel
+ * cannot take (it is gone, or stopped and behind) never ends the runner nor
+ * holds it or a child before exec; the runner ends that sentinel, and the
+ * thread replaces it. A word is one line under PIPE_BUF, written whole, so no
+ * two threads' words interleave.
+ *
+ * **THE PREMISES, written as such**: `/bin/sh` is a POSIX shell, as it is on
+ * every macOS; a process this runtime does not start, forked by a program
+ * through C without an exec, holds a copy of the write end and keeps the
+ * sentinel waiting while it lives; and a held child's pid reused between
+ * launchd's reap and the sentinel's kill, after the runner has gone, would be
+ * ended as well, a window of the time the sentinel takes to read one end of
+ * file, which no check of a pid alone closes. */
+#define HERO_RUN_SENTINEL_SCRIPT \
+    "trap '' INT HUP QUIT PIPE\n" \
+    "held=' '\n" \
+    "while read -r op pid; do\n" \
+    "  case $op in\n" \
+    "    h) case $held in *\" $pid \"*) ;; *) held=\"$held$pid \" ;; esac ;;\n" \
+    "    f) case $held in *\" $pid \"*) held=\"${held%%\" $pid \"*} ${held#*\" $pid \"}\" ;; esac ;;\n" \
+    "  esac\n" \
+    "done\n" \
+    "for pid in $held; do kill -KILL -- \"-$pid\" 2>/dev/null; kill -KILL \"$pid\" 2>/dev/null; done\n"
 
 /* The write end, -1 while there is none: read by a child after its fork, so
  * written only under the lock and before or after a close, never between. */
 static _Atomic int hero_run_sentinel_fd = -1;
-/* The sentinel's pid, and whether a word to it has failed since it was
- * started: both the lock's own state, read and written under it alone. */
+/* The read end of the sentinel's life line, read by the watching thread alone
+ * and replaced under the lock by the thread itself. */
+static _Atomic int hero_run_sentinel_life = -1;
+/* The sentinel's pid, and whether a thread watches it: the lock's own state,
+ * read and written under it alone. */
 static pid_t hero_run_sentinel_pid = 0;
-static int hero_run_sentinel_failed = 0;
+static int hero_run_sentinel_watched = 0;
 static pthread_mutex_t hero_run_sentinel_lock = PTHREAD_MUTEX_INITIALIZER;
 
-/* One word down `fd`, whole or not at all: eight bytes, under PIPE_BUF, so no
- * other thread's word is ever interleaved with it. 0, or -1 where the
- * sentinel cannot take it, EPIPE or EAGAIN, never SIGPIPE. */
-static int hero_run_sentinel_put(int fd, int32_t op, int32_t pid) {
-    HeroSentinelWord w;
-    w.op = op;
-    w.pid = pid;
+/* `h <pid>` or `f <pid>` down `fd`, one line written whole. 0, or -1 where the
+ * sentinel cannot take it, EPIPE or EAGAIN, never SIGPIPE. Digits by hand: a
+ * child calls it between fork and exec, where `snprintf` is not safe. */
+static int hero_run_sentinel_put(int fd, char op, int32_t pid) {
+    char line[16];
+    char digits[12];
+    int n = 0;
+    uint32_t value = pid > 0 ? (uint32_t)pid : 0u;
+    do {
+        digits[n] = (char)('0' + (int)(value % 10u));
+        n += 1;
+        value /= 10u;
+    } while (value > 0u && n < 11);
+    int at = 0;
+    line[at++] = op;
+    line[at++] = ' ';
+    while (n > 0) line[at++] = digits[--n];
+    line[at++] = '\n';
     for (;;) {
-        ssize_t n = write(fd, &w, sizeof w);
-        if (n == (ssize_t)sizeof w) return 0;
-        if (n < 0 && errno == EINTR) continue;
+        ssize_t wrote = write(fd, line, (size_t)at);
+        if (wrote == (ssize_t)at) return 0;
+        if (wrote < 0 && errno == EINTR) continue;
         return -1;
     }
 }
 
-/* The sentinel's own table is on its stack, the forking thread's, which it
- * alone uses from its fork on: nothing of it is shared with the runner. */
-static void hero_run_sentinel_loop(int in) {
-    int held[HERO_RUN_LIVE];
-    memset(held, 0, sizeof held);
-    for (;;) {
-        HeroSentinelWord w;
-        size_t have = 0;
-        while (have < sizeof w) {
-            ssize_t got = read(in, (char *)&w + have, sizeof w - have);
-            if (got > 0) { have += (size_t)got; continue; }
-            if (got < 0 && errno == EINTR) continue;
-            break;
-        }
-        if (have < sizeof w) break;
-        int free_at = -1;
-        int held_at = -1;
-        for (int i = 0; i < HERO_RUN_LIVE; i += 1) {
-            if (held[i] == w.pid && w.pid > 0) { held_at = i; break; }
-            if (held[i] == 0 && free_at < 0) free_at = i;
-        }
-        if (w.op == HERO_SENTINEL_HOLD && held_at < 0 && free_at >= 0) held[free_at] = w.pid;
-        if (w.op == HERO_SENTINEL_FREE && held_at >= 0) held[held_at] = 0;
-    }
-    for (int i = 0; i < HERO_RUN_LIVE; i += 1) {
-        int pid = held[i];
-        if (pid > 0) {
-            kill(-(pid_t)pid, SIGKILL);
-            kill((pid_t)pid, SIGKILL);
-        }
-    }
-    _exit(0);
+/* A descriptor moved to 10 or above, close-on-exec, so no spawn file action
+ * below can write over another before it is read; -1 where it cannot be. */
+static int hero_run_sentinel_high(int fd) {
+    if (fd >= 10) return fd;
+    int high = fcntl(fd, F_DUPFD_CLOEXEC, 10);
+    close(fd);
+    return high;
 }
 
-/* In the forked sentinel: its own group, the ending signals ignored but
- * SIGTERM, an empty mask, and every descriptor closed but `keep`. */
-static void hero_run_sentinel_alone(int keep) {
-    setpgid(0, 0);
-    struct sigaction plain;
-    memset(&plain, 0, sizeof plain);
-    sigemptyset(&plain.sa_mask);
-    plain.sa_handler = SIG_DFL;
-    sigaction(SIGTERM, &plain, NULL);
-    plain.sa_handler = SIG_IGN;
-    sigaction(SIGINT, &plain, NULL);
-    sigaction(SIGQUIT, &plain, NULL);
-    sigaction(SIGHUP, &plain, NULL);
-    sigaction(SIGPIPE, &plain, NULL);
-    sigset_t none;
-    sigemptyset(&none);
-    sigprocmask(SIG_SETMASK, &none, NULL);
-    struct proc_fdinfo listed[256];
-    for (;;) {
-        int bytes = proc_pidinfo(getpid(), PROC_PIDLISTFDS, 0, listed, (int)sizeof listed);
-        int n = bytes > 0 ? bytes / (int)sizeof(struct proc_fdinfo) : 0;
-        int closed = 0;
-        for (int i = 0; i < n; i += 1) {
-            int fd = listed[i].proc_fd;
-            if (fd != keep) {
-                close(fd);
-                closed += 1;
-            }
-        }
-        if (closed == 0) break;
-    }
-}
-
-/* Under the lock: a sentinel started, the old one ended first and reaped, and
- * every child of the table named to the new one. A runner whose pipe or fork
- * fails runs on unguarded, as the Linux arm does on a refused request. */
+/* Under the lock: the old sentinel ended and reaped, a new one spawned, and
+ * every child of the table named to it. A runner whose pipe or spawn fails
+ * runs on unguarded, as the Linux arm does on a refused request. */
 static void hero_run_sentinel_restart_locked(void) {
     if (hero_run_sentinel_pid > 0) {
         kill(hero_run_sentinel_pid, SIGKILL);
@@ -597,63 +581,166 @@ static void hero_run_sentinel_restart_locked(void) {
     int old = atomic_load(&hero_run_sentinel_fd);
     atomic_store(&hero_run_sentinel_fd, -1);
     if (old >= 0) close(old);
-    int ends[2];
-    if (pipe(ends) != 0) return;
-    if (fcntl(ends[0], F_SETFD, FD_CLOEXEC) != 0 || fcntl(ends[1], F_SETFD, FD_CLOEXEC) != 0
-        || fcntl(ends[1], F_SETNOSIGPIPE, 1) != 0 || fcntl(ends[1], F_SETFL, O_NONBLOCK) != 0) {
-        close(ends[0]);
-        close(ends[1]);
+    int old_life = atomic_load(&hero_run_sentinel_life);
+    atomic_store(&hero_run_sentinel_life, -1);
+    if (old_life >= 0) close(old_life);
+
+    int words[2];
+    int life[2];
+    if (pipe(words) != 0) return;
+    if (pipe(life) != 0) {
+        close(words[0]);
+        close(words[1]);
         return;
     }
-    pid_t s = fork();
-    if (s < 0) {
-        close(ends[0]);
-        close(ends[1]);
+    for (int i = 0; i < 2; i += 1) {
+        words[i] = hero_run_sentinel_high(words[i]);
+        life[i] = hero_run_sentinel_high(life[i]);
+    }
+    int usable = words[0] >= 0 && words[1] >= 0 && life[0] >= 0 && life[1] >= 0;
+    usable = usable && fcntl(words[0], F_SETFD, FD_CLOEXEC) == 0 && fcntl(words[1], F_SETFD, FD_CLOEXEC) == 0;
+    usable = usable && fcntl(life[0], F_SETFD, FD_CLOEXEC) == 0 && fcntl(life[1], F_SETFD, FD_CLOEXEC) == 0;
+    usable = usable && fcntl(words[1], F_SETNOSIGPIPE, 1) == 0 && fcntl(words[1], F_SETFL, O_NONBLOCK) == 0;
+
+    pid_t s = 0;
+    if (usable) {
+        posix_spawn_file_actions_t actions;
+        posix_spawnattr_t attributes;
+        posix_spawn_file_actions_init(&actions);
+        posix_spawnattr_init(&attributes);
+        posix_spawn_file_actions_adddup2(&actions, words[0], 0);
+        posix_spawn_file_actions_addopen(&actions, 1, "/dev/null", O_WRONLY, 0);
+        posix_spawn_file_actions_addopen(&actions, 2, "/dev/null", O_WRONLY, 0);
+        posix_spawn_file_actions_adddup2(&actions, life[1], 3);
+        posix_spawnattr_setflags(&attributes, (short)(POSIX_SPAWN_CLOEXEC_DEFAULT | POSIX_SPAWN_SETPGROUP | POSIX_SPAWN_SETSIGMASK | POSIX_SPAWN_SETSIGDEF));
+        posix_spawnattr_setpgroup(&attributes, 0);
+        sigset_t none;
+        sigemptyset(&none);
+        posix_spawnattr_setsigmask(&attributes, &none);
+        sigset_t plain;
+        sigemptyset(&plain);
+        sigaddset(&plain, SIGTERM);
+        sigaddset(&plain, SIGINT);
+        sigaddset(&plain, SIGHUP);
+        sigaddset(&plain, SIGQUIT);
+        sigaddset(&plain, SIGPIPE);
+        posix_spawnattr_setsigdefault(&attributes, &plain);
+        char *argv[] = {"sh", "-c", HERO_RUN_SENTINEL_SCRIPT, NULL};
+        char *envp[] = {NULL};
+        if (posix_spawn(&s, "/bin/sh", &actions, &attributes, argv, envp) != 0) s = 0;
+        posix_spawn_file_actions_destroy(&actions);
+        posix_spawnattr_destroy(&attributes);
+    }
+    if (words[0] >= 0) close(words[0]);
+    if (life[1] >= 0) close(life[1]);
+    if (s <= 0) {
+        if (words[1] >= 0) close(words[1]);
+        if (life[0] >= 0) close(life[0]);
         return;
     }
-    if (s == 0) {
-        hero_run_sentinel_alone(ends[0]);
-        hero_run_sentinel_loop(ends[0]);
-    }
-    close(ends[0]);
     hero_run_sentinel_pid = s;
-    atomic_store(&hero_run_sentinel_fd, ends[1]);
+    atomic_store(&hero_run_sentinel_fd, words[1]);
+    atomic_store(&hero_run_sentinel_life, life[0]);
     for (int i = 0; i < HERO_RUN_LIVE; i += 1) {
         int pid = atomic_load(&hero_run_live[i]);
-        if (pid > 0 && hero_run_sentinel_put(ends[1], HERO_SENTINEL_HOLD, (int32_t)pid) != 0) {
-            hero_run_sentinel_failed = 1;
+        if (pid > 0 && hero_run_sentinel_put(words[1], 'h', (int32_t)pid) != 0) {
+            kill(s, SIGKILL);
             return;
         }
     }
-    hero_run_sentinel_failed = 0;
 }
 
-/* Under the lock: whether the sentinel stands. Its own child, so a sentinel
- * that ended is reaped here, and one reaped by another call is gone too. */
+/* The watching thread: a read of the life line answers when the sentinel
+ * ends, and the one that ended is replaced. A sentinel that cannot be started
+ * is asked for again a tenth of a second on, so a full descriptor table does
+ * not spin it. */
+static void *hero_run_sentinel_watch(void *unused) {
+    (void)unused;
+    for (;;) {
+        int fd = atomic_load(&hero_run_sentinel_life);
+        if (fd >= 0) {
+            char byte;
+            ssize_t got = read(fd, &byte, 1);
+            if (got < 0 && errno == EINTR) continue;
+        } else {
+            struct timespec wait;
+            wait.tv_sec = 0;
+            wait.tv_nsec = 100L * 1000L * 1000L;
+            nanosleep(&wait, NULL);
+        }
+        pthread_mutex_lock(&hero_run_sentinel_lock);
+        if (atomic_load(&hero_run_sentinel_life) == fd) hero_run_sentinel_restart_locked();
+        pthread_mutex_unlock(&hero_run_sentinel_lock);
+    }
+    return NULL;
+}
+
+/* Under the lock, where no thread watches: whether the sentinel stands, its
+ * own child reaped here when it has ended (defect 465's check before a launch). */
 static int hero_run_sentinel_stands_locked(void) {
-    if (hero_run_sentinel_pid <= 0 || atomic_load(&hero_run_sentinel_fd) < 0 || hero_run_sentinel_failed) return 0;
+    if (hero_run_sentinel_pid <= 0 || atomic_load(&hero_run_sentinel_fd) < 0) return 0;
     pid_t seen = waitpid(hero_run_sentinel_pid, NULL, WNOHANG);
     if (seen == 0) return 1;
     hero_run_sentinel_pid = 0;
     return 0;
 }
 
-/* Before a launch: a sentinel standing, started or restarted. */
+/* Before a launch: the first starts the sentinel and its watching thread, the
+ * thread created with every signal blocked; with no thread, a sentinel gone is
+ * replaced here. */
 static void hero_run_sentinel_ready(void) {
     pthread_mutex_lock(&hero_run_sentinel_lock);
+    if (hero_run_sentinel_watched) {
+        pthread_mutex_unlock(&hero_run_sentinel_lock);
+        return;
+    }
     if (!hero_run_sentinel_stands_locked()) hero_run_sentinel_restart_locked();
+    if (hero_run_sentinel_pid > 0) {
+        sigset_t all;
+        sigset_t before;
+        sigfillset(&all);
+        pthread_sigmask(SIG_SETMASK, &all, &before);
+        pthread_attr_t attributes;
+        pthread_t watcher;
+        if (pthread_attr_init(&attributes) == 0) {
+            pthread_attr_setdetachstate(&attributes, PTHREAD_CREATE_DETACHED);
+            if (pthread_create(&watcher, &attributes, hero_run_sentinel_watch, NULL) == 0) {
+                hero_run_sentinel_watched = 1;
+            }
+            pthread_attr_destroy(&attributes);
+        }
+        pthread_sigmask(SIG_SETMASK, &before, NULL);
+    }
     pthread_mutex_unlock(&hero_run_sentinel_lock);
 }
 
-/* The runner's word, after a launch and before a reap: a word the sentinel
- * cannot take restarts it, which names the table, and the word is said again. */
-static void hero_run_sentinel_say(int32_t op, int32_t pid) {
+/* The runner's word, after a launch: a word the sentinel cannot take ends it,
+ * and the watching thread replaces it and names the table, this child
+ * included; with no thread, it is replaced here and the word said again. */
+static void hero_run_sentinel_say(char op, int32_t pid) {
     pthread_mutex_lock(&hero_run_sentinel_lock);
     int fd = atomic_load(&hero_run_sentinel_fd);
     if (fd < 0 || hero_run_sentinel_put(fd, op, pid) != 0) {
-        hero_run_sentinel_restart_locked();
-        fd = atomic_load(&hero_run_sentinel_fd);
-        if (fd >= 0 && hero_run_sentinel_put(fd, op, pid) != 0) hero_run_sentinel_failed = 1;
+        if (hero_run_sentinel_watched) {
+            if (hero_run_sentinel_pid > 0) kill(hero_run_sentinel_pid, SIGKILL);
+        } else {
+            hero_run_sentinel_restart_locked();
+            fd = atomic_load(&hero_run_sentinel_fd);
+            if (fd >= 0) (void)hero_run_sentinel_put(fd, op, pid);
+        }
+    }
+    pthread_mutex_unlock(&hero_run_sentinel_lock);
+}
+
+/* Out of the table and unnamed in one step under the lock, so a sentinel the
+ * thread starts meanwhile is named only the children still in the table. */
+static void hero_run_sentinel_let_go(int slot) {
+    pthread_mutex_lock(&hero_run_sentinel_lock);
+    int pid = atomic_load(&hero_run_live[slot]);
+    atomic_store(&hero_run_live[slot], 0);
+    int fd = atomic_load(&hero_run_sentinel_fd);
+    if (pid > 0 && fd >= 0 && hero_run_sentinel_put(fd, 'f', (int32_t)pid) != 0 && hero_run_sentinel_pid > 0) {
+        kill(hero_run_sentinel_pid, SIGKILL);
     }
     pthread_mutex_unlock(&hero_run_sentinel_lock);
 }
@@ -663,7 +750,7 @@ static void hero_run_sentinel_say(int32_t op, int32_t pid) {
  * runner, which names it once its pid is in the table. */
 static void hero_run_sentinel_child_hold(void) {
     int fd = atomic_load(&hero_run_sentinel_fd);
-    if (fd >= 0) (void)hero_run_sentinel_put(fd, HERO_SENTINEL_HOLD, (int32_t)getpid());
+    if (fd >= 0) (void)hero_run_sentinel_put(fd, 'h', (int32_t)getpid());
 }
 #endif
 
@@ -1401,7 +1488,7 @@ int64_t hero_run_go(const char *program, const char *in_path,
     int slot = hero_run_hold(child);
     atomic_fetch_sub(&hero_run_launching, 1);
 #if defined(__APPLE__)
-    hero_run_sentinel_say(slot < 0 ? HERO_SENTINEL_FREE : HERO_SENTINEL_HOLD, (int32_t)child);
+    hero_run_sentinel_say(slot < 0 ? 'f' : 'h', (int32_t)child);
 #endif
     if (slot < 0) {
         kill(-child, SIGKILL);

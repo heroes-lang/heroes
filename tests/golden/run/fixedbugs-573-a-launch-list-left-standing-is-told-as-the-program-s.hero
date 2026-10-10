@@ -1,0 +1,29 @@
+# Fixed defect 573, 2026-10-10 (found by lane b18-close beside defect 465).
+# Symptom: a program binding `hero_os.h`'s launch builder that never called
+# `hero_run_reset()` after its launch died at exit 134 with *1 scratch
+# buffers still live at exit (a runtime call kept what it borrowed) — this is
+# a runtime bug*. Cause: each word `hero_run_arg` copies is scratch the list
+# keeps until the reset, and the exit check counted all scratch as one, the
+# runtime's. Repair: the list counts what it holds, and the exit check tells
+# those words as the program's, naming the call that gives them back; only
+# what is left after is the runtime's (`runtime/parts/alloc.c`).
+# This case: the program runs itself once, with a word that makes the second
+# run end at once, and leaves its list standing.
+
+extern "hero_os.h"
+    function hero_run_reset()
+    function hero_run_arg(word: str)
+    function hero_run_go(program: cstr lent, in_path: cstr lent, out_path: cstr lent, err_path: cstr lent, @status: i64) -> i64
+    function hero_exe_path_shown(@status: i64, @marks: i64) -> str
+
+function main()
+    if args().len() > 0
+        return
+    status: i64 @ 0
+    marks: i64 @ 0
+    program = hero_exe_path_shown(status: @status, marks: @marks)
+    hero_run_reset()
+    hero_run_arg(word: program)
+    hero_run_arg(word: "again")
+    code = hero_run_go(program: program.cstr(), in_path: "".cstr(), out_path: "".cstr(), err_path: "".cstr(), @status)
+    print(code)
