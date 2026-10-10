@@ -1,0 +1,6 @@
+error[ffi_call_shape]: `hidden_cpu` is declared with 1 parameters, and `fixedbugs-568-a-wrong-binding-through-a-switch-header-is-refused.h` gives it 0 — clang read the header, and the call this declaration implies does not fit it
+  at tests/golden/unsupported/fixedbugs-568-a-wrong-binding-through-a-switch-header-is-refused.hero:10:5
+     |
+  10 |     function hidden_cpu(x: i32) -> i64  #~ ffi_call_shape
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: §4.19: an `extern` is checked against the real header. Declare exactly the parameters the header has, at its widths — or, for a function the header declares variadic (`...`), the fixed shape this program calls it with

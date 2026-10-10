@@ -1,0 +1,6 @@
+error[ffi_unknown_name]: `fixedbugs-568-a-name-a-header-declares-only-under-a-switch-is-told-so.h` declares `hidden_cpu` only under `_GNU_SOURCE`: define it in a header of your own that this module's first group names
+  at tests/golden/unsupported/fixedbugs-568-a-name-a-header-declares-only-under-a-switch-is-told-so.hero:14:5
+     |
+  14 |     function hidden_cpu() -> i32  #~ ffi_unknown_name
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: the C library reads `_GNU_SOURCE` once, at the first of its headers a unit reads, and a unit reads them after its groups: a header of your own that defines `_GNU_SOURCE` and then includes `fixedbugs-568-a-name-a-header-declares-only-under-a-switch-is-told-so.h`, named by this module's first group, binds `hidden_cpu` as the header declares it

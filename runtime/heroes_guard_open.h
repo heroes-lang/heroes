@@ -8,8 +8,9 @@
  *
  * A GROUP'S HEADER NEVER REDEFINES A NAME THE UNIT'S OWN C TAKES FROM ITS OWN
  * HEADERS (defect 361, 2026-10-06; selfhost/emit/macro_guard.hero). A
- * generated unit includes this runtime, <math.h> and `hero_os.h`, then the
- * headers its program's `extern` groups name, then the C the compiler wrote.
+ * generated unit includes this runtime and `hero_os.h`, then the headers its
+ * program's `extern` groups name, then `heroes_standard.h`, then the C the
+ * compiler wrote.
  * A macro one of those headers defined rewrote that C: `hero_print_int(x)`
  * was an internal error, `HERO_RUNTIME_ABI` a false stamp, `main` a link
  * with no `main`, and `INT64_C(c) 0` a program printing 0 where it said 42.
@@ -18,9 +19,11 @@
  * `heroes_guard_close.h` after them, and each name below means after them
  * what it meant before: every word `heroes_runtime.h` and `hero_os.h` write,
  * which a runtime macro can put into the unit (`HERO_STR_LIT` writes
- * `HeroStr` and the member `b`); every name C11 gives <stdbool.h>,
- * <stddef.h>, <stdint.h> and <math.h>, the four standard headers read before
- * the groups' (7.18, 7.19, 7.20, 7.12); and `main`. A name the program binds
+ * `HeroStr` and the member `b`); every name C11 gives <stdbool.h> and
+ * <stddef.h>, read before the groups, and <stdint.h> and <math.h>, read after
+ * them (`heroes_standard.h`, defect 568), but the macros of those two the
+ * unit never writes, which are the headers' own (7.18, 7.19, 7.20, 7.12); and
+ * `main`. A name the program binds
  * is pushed again by the unit just before the close, so it keeps the
  * header's meaning. The compiler holds the same list
  * (selfhost/emit/guarded_names.hero), and its test holds the two files and
@@ -28,16 +31,6 @@
  *
  * `runtime.c` includes both, which compiles them with the runtime and puts
  * them under the key every cached object answers to. */
-#pragma push_macro("FP_FAST_FMA")
-#pragma push_macro("FP_FAST_FMAF")
-#pragma push_macro("FP_FAST_FMAL")
-#pragma push_macro("FP_ILOGB0")
-#pragma push_macro("FP_ILOGBNAN")
-#pragma push_macro("FP_INFINITE")
-#pragma push_macro("FP_NAN")
-#pragma push_macro("FP_NORMAL")
-#pragma push_macro("FP_SUBNORMAL")
-#pragma push_macro("FP_ZERO")
 #pragma push_macro("HEROES_RUNTIME_H")
 #pragma push_macro("HERO_ARRAY_LIT")
 #pragma push_macro("HERO_ARRAY_STATIC")
@@ -68,6 +61,7 @@
 #pragma push_macro("HERO_STAGE_MODE")
 #pragma push_macro("HERO_STAGE_OWNER")
 #pragma push_macro("HERO_STAGE_WRITE")
+#pragma push_macro("HERO_STANDARD_AFTER_GROUPS")
 #pragma push_macro("HERO_STATIC_CONSTANTS")
 #pragma push_macro("HERO_STR_LIT")
 #pragma push_macro("HERO_STR_MAGIC")
@@ -77,8 +71,6 @@
 #pragma push_macro("HERO_STR_OK")
 #pragma push_macro("HERO_STR_STATIC")
 #pragma push_macro("HUGE_VAL")
-#pragma push_macro("HUGE_VALF")
-#pragma push_macro("HUGE_VALL")
 #pragma push_macro("HeroArrayHeader")
 #pragma push_macro("HeroDesc")
 #pragma push_macro("HeroFailure")
@@ -87,72 +79,10 @@
 #pragma push_macro("HeroRefcount")
 #pragma push_macro("HeroStr")
 #pragma push_macro("HeroStrHeader")
-#pragma push_macro("INFINITY")
-#pragma push_macro("INT16_C")
-#pragma push_macro("INT16_MAX")
-#pragma push_macro("INT16_MIN")
-#pragma push_macro("INT32_C")
-#pragma push_macro("INT32_MAX")
-#pragma push_macro("INT32_MIN")
 #pragma push_macro("INT64_C")
-#pragma push_macro("INT64_MAX")
 #pragma push_macro("INT64_MIN")
-#pragma push_macro("INT8_C")
-#pragma push_macro("INT8_MAX")
-#pragma push_macro("INT8_MIN")
-#pragma push_macro("INTMAX_C")
-#pragma push_macro("INTMAX_MAX")
-#pragma push_macro("INTMAX_MIN")
-#pragma push_macro("INTPTR_MAX")
-#pragma push_macro("INTPTR_MIN")
-#pragma push_macro("INT_FAST16_MAX")
-#pragma push_macro("INT_FAST16_MIN")
-#pragma push_macro("INT_FAST32_MAX")
-#pragma push_macro("INT_FAST32_MIN")
-#pragma push_macro("INT_FAST64_MAX")
-#pragma push_macro("INT_FAST64_MIN")
-#pragma push_macro("INT_FAST8_MAX")
-#pragma push_macro("INT_FAST8_MIN")
-#pragma push_macro("INT_LEAST16_MAX")
-#pragma push_macro("INT_LEAST16_MIN")
-#pragma push_macro("INT_LEAST32_MAX")
-#pragma push_macro("INT_LEAST32_MIN")
-#pragma push_macro("INT_LEAST64_MAX")
-#pragma push_macro("INT_LEAST64_MIN")
-#pragma push_macro("INT_LEAST8_MAX")
-#pragma push_macro("INT_LEAST8_MIN")
-#pragma push_macro("MATH_ERREXCEPT")
-#pragma push_macro("MATH_ERRNO")
-#pragma push_macro("NAN")
 #pragma push_macro("NULL")
-#pragma push_macro("PTRDIFF_MAX")
-#pragma push_macro("PTRDIFF_MIN")
-#pragma push_macro("SIG_ATOMIC_MAX")
-#pragma push_macro("SIG_ATOMIC_MIN")
-#pragma push_macro("SIZE_MAX")
-#pragma push_macro("UINT16_C")
-#pragma push_macro("UINT16_MAX")
-#pragma push_macro("UINT32_C")
-#pragma push_macro("UINT32_MAX")
 #pragma push_macro("UINT64_C")
-#pragma push_macro("UINT64_MAX")
-#pragma push_macro("UINT8_C")
-#pragma push_macro("UINT8_MAX")
-#pragma push_macro("UINTMAX_C")
-#pragma push_macro("UINTMAX_MAX")
-#pragma push_macro("UINTPTR_MAX")
-#pragma push_macro("UINT_FAST16_MAX")
-#pragma push_macro("UINT_FAST32_MAX")
-#pragma push_macro("UINT_FAST64_MAX")
-#pragma push_macro("UINT_FAST8_MAX")
-#pragma push_macro("UINT_LEAST16_MAX")
-#pragma push_macro("UINT_LEAST32_MAX")
-#pragma push_macro("UINT_LEAST64_MAX")
-#pragma push_macro("UINT_LEAST8_MAX")
-#pragma push_macro("WCHAR_MAX")
-#pragma push_macro("WCHAR_MIN")
-#pragma push_macro("WINT_MAX")
-#pragma push_macro("WINT_MIN")
 #pragma push_macro("a")
 #pragma push_macro("acos")
 #pragma push_macro("acosf")
@@ -257,7 +187,6 @@
 #pragma push_macro("fmod")
 #pragma push_macro("fmodf")
 #pragma push_macro("fmodl")
-#pragma push_macro("fpclassify")
 #pragma push_macro("frexp")
 #pragma push_macro("frexpf")
 #pragma push_macro("frexpl")
@@ -467,16 +396,6 @@
 #pragma push_macro("intmax_t")
 #pragma push_macro("into")
 #pragma push_macro("intptr_t")
-#pragma push_macro("isfinite")
-#pragma push_macro("isgreater")
-#pragma push_macro("isgreaterequal")
-#pragma push_macro("isinf")
-#pragma push_macro("isless")
-#pragma push_macro("islessequal")
-#pragma push_macro("islessgreater")
-#pragma push_macro("isnan")
-#pragma push_macro("isnormal")
-#pragma push_macro("isunordered")
 #pragma push_macro("key")
 #pragma push_macro("keys")
 #pragma push_macro("ldexp")
@@ -520,7 +439,6 @@
 #pragma push_macro("magic")
 #pragma push_macro("main")
 #pragma push_macro("marks")
-#pragma push_macro("math_errhandling")
 #pragma push_macro("max_align_t")
 #pragma push_macro("mode")
 #pragma push_macro("modf")
@@ -580,7 +498,6 @@
 #pragma push_macro("scalbnl")
 #pragma push_macro("seconds")
 #pragma push_macro("sep")
-#pragma push_macro("signbit")
 #pragma push_macro("sin")
 #pragma push_macro("sinf")
 #pragma push_macro("sinh")

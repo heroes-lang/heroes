@@ -103,5 +103,5 @@ function binds_a_group(headers: [str]) -> bool
 test "the two lines name the one warning, quiet and spoken"
     assert QUIET == "#pragma clang diagnostic ignored \"-Wdeprecated-declarations\""
     assert SPOKEN == "#pragma clang diagnostic warning \"-Wdeprecated-declarations\""
-    assert binds_a_group(["math.h", "hero_os.h", "a.h"])
-    assert !binds_a_group(["math.h", "hero_os.h"])
+    assert binds_a_group(["hero_os.h", "a.h"])
+    assert !binds_a_group(["heroes_unit.h", "hero_os.h", "heroes_runtime.h"])

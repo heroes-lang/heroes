@@ -317,7 +317,7 @@ test "a probe per extern with parameters, mutables as pointers, columns exact"
 # wherever a group is bound, a probe or none, and a program binding only the
 # compiler's own headers gets neither.
 test "no probes, no pragma block: the block may only exist when a probe does"
-    for header in ["m.h", "math.h"]
+    for header in ["m.h", "hero_os.h"]
         text = "extern \"" + header + "\"\n    function version() -> i64\n\nfunction main()\n    print(version())\n"
         parsed = parse.parse(text)
         s = source.new_source(name: "t.hero", text: text)
