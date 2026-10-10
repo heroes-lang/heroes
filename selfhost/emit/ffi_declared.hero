@@ -115,6 +115,12 @@ function not_constant(s: source.Source, decls: [ast.Decl], line: str) -> diag.Di
     )
     return ok(d)
 
+# The note an absent name is told with, its name after it, which
+# `cli/header_order.hero` replaces where the header declares the name read
+# alone and not after another group's (panel 204's R3).
+constant UNKNOWN: str
+    "an `extern` names what the header already has (§4.19): check the spelling, or name the header that does declare `"
+
 # The header has no such name at all. A different mistake from the one
 # above and it was being reported as that one — "`sqlite3_openn` does
 # not return `i64`", whose remedy cannot fix a name that does not
@@ -203,9 +209,7 @@ function unknown_name(s: source.Source, tree: ast.Ast, decls: [ast.Decl], line: 
         message: "`" + found.must().header + "` declares no `" + name + "` — clang read the header and could not find it",
         span: found.must().span
     )
-    d.notes @ d.notes.push(
-        "an `extern` names what the header already has (§4.19): check the spelling, or name the header that does declare `" + name + "`"
-    )
+    d.notes @ d.notes.push(UNKNOWN + name + "`")
 
     # clang's own typo correction, when it offered one. A GUESS: it is
     # a suggestion from a search over the header's names, not a fact

@@ -1,0 +1,13 @@
+# fixedbugs, defect 563: a module whose second group's header spells a type
+# its first group's header defines.
+extern "fixedbugs-563-need.h"
+    record Need
+        v: i32
+
+extern "fixedbugs-563-holder.h"  #~ ffi_header_refused
+    record Holder
+        v: i32
+    function holder_need(n: ptr) -> i32
+
+function make(v: i32) -> Holder
+    return Holder(v: v)

@@ -1,0 +1,5 @@
+constant BIG: u8
+    200 + 100
+
+function main()
+    print(BIG)

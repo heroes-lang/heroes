@@ -1,0 +1,6 @@
+#ifndef FIXEDBUGS_563_Q_H
+#define FIXEDBUGS_563_Q_H
+#ifndef FIXEDBUGS_563_LEGACY
+#define FIXEDBUGS_563_Q_VALUE 32768
+#endif
+#endif

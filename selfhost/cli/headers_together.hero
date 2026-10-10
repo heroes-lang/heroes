@@ -99,8 +99,16 @@ function after(s: source.Source, refused: Side, earlier: token.Span, earlier_hea
 # `heroes test`'s, or a module's that spells the other's record.
 function remedy(s: source.Source, one: token.Span, other: token.Span) -> str
     if source.component_at(s, one.start) == source.component_at(s, other.start)
-        return "each group's header is included in the unit clang compiled before a line of its own, so these two are read together there: bind the two groups from two modules, whose units each read their own groups' headers"
-    return "the two groups are two modules', and a unit reads both headers where `heroes test` compiles the whole program as one unit or a module's unit spells a record the other group declares"
+        return ONE_MODULE
+    return TWO_MODULES
+
+# The two remedies, which `cli/header_order.hero` replaces where another
+# order of the groups compiles (panel 204's R3).
+constant ONE_MODULE: str
+    "each group's header is included in the unit clang compiled before a line of its own, so these two are read together there: bind the two groups from two modules, whose units each read their own groups' headers"
+
+constant TWO_MODULES: str
+    "the two groups are two modules', and a unit reads both headers where `heroes test` compiles the whole program as one unit or a module's unit spells a record the other group declares"
 
 # Where a side's line is: the file and its line, and the group's header it
 # arrives through where the file is another (defect 550), so the words are

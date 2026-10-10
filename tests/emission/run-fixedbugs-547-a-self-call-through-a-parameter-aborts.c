@@ -92,13 +92,10 @@ void h_fixedbugs547aselfcallthroughaparameteraborts_main(void);
 
 #line 13 "tests/golden/run/fixedbugs-547-a-self-call-through-a-parameter-aborts.hero"
 int64_t h_fixedbugs547aselfcallthroughaparameteraborts_go(int64_t h0_n, h_0fn_48ac9712 h1_f) {
-#line 96 "fixedbugs547aselfcallthroughaparameteraborts.c"
-    h_0fn_48ac9712 t1;
-    int64_t t2;
-    int64_t t3;
-    goto bb0;
+#line 13 "tests/golden/run/fixedbugs-547-a-self-call-through-a-parameter-aborts.hero"
+    h_0fn_48ac9712 t1; int64_t t2; int64_t t3; goto bb0;
+#line 13 "tests/golden/run/fixedbugs-547-a-self-call-through-a-parameter-aborts.hero"
 bb0:
-#line 14 "tests/golden/run/fixedbugs-547-a-self-call-through-a-parameter-aborts.hero"
     t1 = h1_f;
 #line 14 "tests/golden/run/fixedbugs-547-a-self-call-through-a-parameter-aborts.hero"
     t2 = h0_n;
@@ -106,18 +103,15 @@ bb0:
     t3 = t1(t2);
 #line 14 "tests/golden/run/fixedbugs-547-a-self-call-through-a-parameter-aborts.hero"
     return t3;
-#line 110 "fixedbugs547aselfcallthroughaparameteraborts.c"
+#line 107 "fixedbugs547aselfcallthroughaparameteraborts.c"
 }
 
 #line 16 "tests/golden/run/fixedbugs-547-a-self-call-through-a-parameter-aborts.hero"
 int64_t h_fixedbugs547aselfcallthroughaparameteraborts_step(int64_t h0_n) {
-#line 115 "fixedbugs547aselfcallthroughaparameteraborts.c"
-    int64_t t1;
-    h_0fn_48ac9712 t2;
-    int64_t t3;
-    goto bb0;
+#line 16 "tests/golden/run/fixedbugs-547-a-self-call-through-a-parameter-aborts.hero"
+    int64_t t1; h_0fn_48ac9712 t2; int64_t t3; goto bb0;
+#line 16 "tests/golden/run/fixedbugs-547-a-self-call-through-a-parameter-aborts.hero"
 bb0:
-#line 17 "tests/golden/run/fixedbugs-547-a-self-call-through-a-parameter-aborts.hero"
     t1 = h0_n;
 #line 17 "tests/golden/run/fixedbugs-547-a-self-call-through-a-parameter-aborts.hero"
     t2 = h_fixedbugs547aselfcallthroughaparameteraborts_step;
@@ -125,17 +119,15 @@ bb0:
     t3 = h_fixedbugs547aselfcallthroughaparameteraborts_go(t1, t2);
 #line 17 "tests/golden/run/fixedbugs-547-a-self-call-through-a-parameter-aborts.hero"
     return t3;
-#line 129 "fixedbugs547aselfcallthroughaparameteraborts.c"
+#line 123 "fixedbugs547aselfcallthroughaparameteraborts.c"
 }
 
 #line 19 "tests/golden/run/fixedbugs-547-a-self-call-through-a-parameter-aborts.hero"
 void h_fixedbugs547aselfcallthroughaparameteraborts_main(void) {
-#line 134 "fixedbugs547aselfcallthroughaparameteraborts.c"
-    int64_t t1;
-    int64_t t2;
-    goto bb0;
+#line 19 "tests/golden/run/fixedbugs-547-a-self-call-through-a-parameter-aborts.hero"
+    int64_t t1; int64_t t2; goto bb0;
+#line 19 "tests/golden/run/fixedbugs-547-a-self-call-through-a-parameter-aborts.hero"
 bb0:
-#line 20 "tests/golden/run/fixedbugs-547-a-self-call-through-a-parameter-aborts.hero"
     t1 = INT64_C(1);
 #line 20 "tests/golden/run/fixedbugs-547-a-self-call-through-a-parameter-aborts.hero"
     t2 = h_fixedbugs547aselfcallthroughaparameteraborts_step(t1);
@@ -145,7 +137,7 @@ bb0:
     hero_print_end();
 #line 20 "tests/golden/run/fixedbugs-547-a-self-call-through-a-parameter-aborts.hero"
     return;
-#line 149 "fixedbugs547aselfcallthroughaparameteraborts.c"
+#line 141 "fixedbugs547aselfcallthroughaparameteraborts.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

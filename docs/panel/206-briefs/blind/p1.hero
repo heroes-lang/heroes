@@ -1,0 +1,3 @@
+function main()
+    y: u8 = 200 + 100
+    print(y)

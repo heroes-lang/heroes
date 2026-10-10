@@ -1,0 +1,13 @@
+error[ffi_header_refused]: `fixedbugs-563-jpeg.h` and `fixedbugs-563-tcl.h`, the headers two groups name, define the macro `FIXEDBUGS_563_EXTERN` two ways, which C forbids: clang refuses them together, at `fixedbugs-563-jpeg.h` line 1 and `fixedbugs-563-tcl.h` line 1: 'FIXEDBUGS_563_EXTERN' macro redefined [-Werror,-Wmacro-redefined]
+  at tests/golden/unsupported/fixedbugs-563-a-macro-two-headers-define-unconditionally-is-refused-in-either-order.hero:15:8
+     |
+  15 | extern "fixedbugs-563-jpeg.h"  #~ ffi_header_refused
+     |        ^^^^^^^^^^^^^^^^^^^^^^
+  note: `fixedbugs-563-jpeg.h` line 1 reads `#define FIXEDBUGS_563_EXTERN(type) extern type`
+  note: `fixedbugs-563-tcl.h` line 1 reads `#define FIXEDBUGS_563_EXTERN extern`
+  note: the other group names `fixedbugs-563-tcl.h` at line 12
+  note: C keeps a macro as it is defined until it is undone, and refuses a definition that disagrees (C11 6.10.3p2), so the order of the two decides what a line reading `FIXEDBUGS_563_EXTERN` means: read as this unit reads them, `fixedbugs-563-tcl.h` first, its own lines would read `FIXEDBUGS_563_EXTERN` as `fixedbugs-563-tcl.h` line 1 defines it and every line after `fixedbugs-563-jpeg.h` line 1 as that line defines it
+  note: with `fixedbugs-563-jpeg.h` read before `fixedbugs-563-tcl.h`, clang refuses the unit's headers too: 'FIXEDBUGS_563_EXTERN' macro redefined [-Werror,-Wmacro-redefined]
+  note: which order is the program's to choose, in a header of its own beside this file, the one place a line of C can stand between two headers: `fixedbugs-563-tcl_fixedbugs-563-jpeg.h`, reading `#include <fixedbugs-563-tcl.h>`, `#undef FIXEDBUGS_563_EXTERN` and `#include <fixedbugs-563-jpeg.h>` on three lines, keeps the order the groups are written in; both groups name it in place of their headers, and it is included once
+  fix (guess): name `fixedbugs-563-tcl_fixedbugs-563-jpeg.h`, the header of the program's own the note drafts
+  fix (guess): name `fixedbugs-563-tcl_fixedbugs-563-jpeg.h`, the header of the program's own the note drafts (at tests/golden/unsupported/fixedbugs-563-a-macro-two-headers-define-unconditionally-is-refused-in-either-order.hero:12:8)

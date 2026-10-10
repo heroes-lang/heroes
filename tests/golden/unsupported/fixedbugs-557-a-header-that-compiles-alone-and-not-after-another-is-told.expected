@@ -5,4 +5,4 @@ error[ffi_header_refused]: `fixedbugs-557-function.h`, the header this group nam
      |        ^^^^^^^^^^^^^^^^^^^^^^^^^^
   note: `fixedbugs-557-function.h` line 3 reads `static inline int twice(int x) { return x + x; }`
   note: the other group names `fixedbugs-557-macro.h` at line 12
-  note: each group's header is included in the unit clang compiled before a line of its own, so these two are read together there: bind the two groups from two modules, whose units each read their own groups' headers
+  note: these compile when `fixedbugs-557-function.h` is included before `fixedbugs-557-macro.h`, which the group at line 12 names: a module's headers are included in the order its groups are written, so write this group above that one

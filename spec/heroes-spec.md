@@ -110,9 +110,9 @@ variant Token
     lparen
 ```
 
-Declaration order never matters; mutual recursion needs no forward
-declarations. There are no mutable globals. Constants use SCREAMING_CASE, and
-a written body computes over literals and other constants.
+Declaration order never matters but a group's (section 13); mutual recursion
+needs no forward declarations. There are no mutable globals. Constants use SCREAMING_CASE, and
+a written body computes over literals and other constants, and a step of it that aborts is a compile error.
 
     Declaration = "constant" ident ":" Type Block
                 | "function" ident [ Generics ] Params [ "->" Type ] Block
@@ -347,7 +347,9 @@ with holes type-checks everything else but produces no binary.
 
 ## 13. FFI
 Anything beyond this document — sockets, maths, JSON, databases — comes from C
-libraries. A group names its header, and `link` a library when the symbols need one. clang
+libraries. A group names its header, and `link` a library when the symbols need one; C
+reads a module's headers in the order its groups are written, so one that needs
+another's names comes after it. clang
 checks every result type, constant and record field against that header, and a result may be
 wider than C's. A **parameter** and a **field** are declared at the header's own
 width and sign — `i32` where C says int, `i8` where it says char, `u64` where it

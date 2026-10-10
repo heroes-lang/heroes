@@ -108,18 +108,10 @@ int64_t h_fixedbugs559longtwice_doubled(int64_t h0_x);
 
 #line 19 "tests/golden/run/fixedbugs-559-a-record-beside-another-module-s-header-builds.hero"
 void h_fixedbugs559arecordbesideanothermodulesheaderbuilds_main(void) {
-#line 112 "fixedbugs559arecordbesideanothermodulesheaderbuilds.c"
-    int64_t t1;
-    int64_t t2;
-    int32_t t3;
-    int32_t t4;
-    int32_t t5;
-    Pt t6;
-    int32_t t7;
-    int32_t t8;
-    goto bb0;
+#line 19 "tests/golden/run/fixedbugs-559-a-record-beside-another-module-s-header-builds.hero"
+    int64_t t1; int64_t t2; int32_t t3; int32_t t4; int32_t t5; Pt t6; int32_t t7; int32_t t8; goto bb0;
+#line 19 "tests/golden/run/fixedbugs-559-a-record-beside-another-module-s-header-builds.hero"
 bb0:
-#line 20 "tests/golden/run/fixedbugs-559-a-record-beside-another-module-s-header-builds.hero"
     t1 = INT64_C(3);
 #line 20 "tests/golden/run/fixedbugs-559-a-record-beside-another-module-s-header-builds.hero"
     t2 = h_fixedbugs559longtwice_doubled(t1);
@@ -144,23 +136,21 @@ bb0:
     hero_print_end();
 #line 21 "tests/golden/run/fixedbugs-559-a-record-beside-another-module-s-header-builds.hero"
     return;
-#line 148 "fixedbugs559arecordbesideanothermodulesheaderbuilds.c"
+#line 140 "fixedbugs559arecordbesideanothermodulesheaderbuilds.c"
 }
 
 #line 7 "tests/golden/run/fixedbugs559/long_twice.hero"
 int64_t h_fixedbugs559longtwice_doubled(int64_t h0_x) {
-#line 153 "fixedbugs559arecordbesideanothermodulesheaderbuilds.c"
-    int64_t t1;
-    int64_t t2;
-    goto bb0;
+#line 7 "tests/golden/run/fixedbugs559/long_twice.hero"
+    int64_t t1; int64_t t2; goto bb0;
+#line 7 "tests/golden/run/fixedbugs559/long_twice.hero"
 bb0:
-#line 8 "tests/golden/run/fixedbugs559/long_twice.hero"
     t1 = h0_x;
 #line 8 "tests/golden/run/fixedbugs559/long_twice.hero"
     t2 = twice(t1);
 #line 8 "tests/golden/run/fixedbugs559/long_twice.hero"
     return t2;
-#line 164 "fixedbugs559arecordbesideanothermodulesheaderbuilds.c"
+#line 154 "fixedbugs559arecordbesideanothermodulesheaderbuilds.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs559arecordbesideanothermodulesheaderbuilds_Pt_eq(const Pt *a, const Pt *b) {
     if (!(a->v == b->v)) return false;

@@ -1,0 +1,16 @@
+# fixedbugs, defect 563, lane b18-ffi, 2026-10-10 (panel 204's R1; the
+# compiler-engineer's `dual`, in its other order).
+#
+# The case beside this one with its two groups swapped: `q` first, so `K`
+# is 9 in both headers, and clang says nothing in this order either. The
+# two programs differ only in the order of two groups and print different
+# numbers, which is what spec § 4's *never matters but a group's* says.
+extern "fixedbugs-563-q.h"
+    function qk() -> i32
+
+extern "fixedbugs-563-p.h"
+    function pk() -> i32
+
+function main()
+    print(pk())
+    print(qk())

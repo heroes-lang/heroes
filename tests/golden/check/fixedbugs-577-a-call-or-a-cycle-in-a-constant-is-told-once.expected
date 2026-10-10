@@ -1,0 +1,2 @@
+tests/golden/check/fixedbugs-577-a-call-or-a-cycle-in-a-constant-is-told-once.hero:13:5: error[constant_body]: `constant N`'s body may not contain a call — it may only read literals and other constants
+tests/golden/check/fixedbugs-577-a-call-or-a-cycle-in-a-constant-is-told-once.hero:15:10: error[constant_cycle]: `constant A` is defined in terms of itself through `B`, so it has no value
