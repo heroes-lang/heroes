@@ -305,7 +305,7 @@ test "each name is asked as the compiler writes it, under a file of its own"
     text = "extern \"h.h\"\n    record S tag s_t\n        count: i64\n    function twice(x: i64, y: i64) -> i64\n    function make() -> cstr owned h_free\n    constant LIMIT: i64\n\nfunction main()\n    print(twice(x: LIMIT, y: 1))\n"
     s = source.new_source(name: "t.hero", text: text)
     parsed = parse_of(s)
-    asked = asked_of(s, parsed, headers: ["math.h", "hero_os.h", "h.h"])
+    asked = asked_of(s, parsed, headers: ["hero_os.h", "h.h"])
     names: [str] @ []
 
     for each in asked
@@ -318,7 +318,7 @@ test "each name is asked as the compiler writes it, under a file of its own"
     assert strings.holds(text: got, needle: "make();\n")
 
     # A header the groups do not name, and the compiler's own, are not asked.
-    assert asked_of(s, parsed, headers: ["math.h", "other.h"]).len() == 0
+    assert asked_of(s, parsed, headers: ["hero_os.h", "other.h"]).len() == 0
 
 # The answer is a `#pragma` line under a question's own file, and nothing
 # else: the header's own pragmas, under its file, answer no name.

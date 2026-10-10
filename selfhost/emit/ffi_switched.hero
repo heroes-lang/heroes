@@ -1,0 +1,35 @@
+# A name a group's header declares only under a switch of the C library,
+# told as the header's under it and never as a name it lacks (design.md
+# §4.19, §4.17; panel 205's R3, ratified 2026-10-10; defect 568). Split from
+# `emit/ffi_declared.hero`, which reads clang's word that the name is
+# undeclared, past §11's 300 lines: the answer that the switch would declare
+# it is `cli/switch_ask.hero`'s, and the words are here.
+
+use token
+use diag
+use emit/ffi_lookup
+
+# The header declares `name` only under `macro`, a switch the C library reads
+# once, at the first of its headers a unit reads (panel 205's R3): told so,
+# with the one place the switch can stand.
+function hidden(header: str, name: str, macro: str, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "ffi_unknown_name",
+        message: "`" + header + "` declares `" + name + "` only under `" + macro + "`: define it in a header of your own that this module's first group names",
+        span: span
+    )
+    d.notes @ d.notes.push(
+        "the C library reads `" + macro + "` once, at the first of its headers a unit reads, and a unit reads them after its groups: a header of your own that defines `" + macro + "` and then includes `" + header + "`, named by this module's first group, binds `" + name + "` as the header declares it"
+    )
+    return d
+
+## Tests
+
+test "a name the header declares only under a switch is told so, with where the switch stands"
+    d = hidden(header: "sched.h", name: "sched_getcpu", macro: "_GNU_SOURCE", span: token.Span(start: 0, end: 1))
+    assert d.code == "ffi_unknown_name"
+    assert d.message == "`sched.h` declares `sched_getcpu` only under `_GNU_SOURCE`: define it in a header of your own that this module's first group names"
+    assert ffi_lookup.has(
+        text: d.notes[0],
+        needle: "a header of your own that defines `_GNU_SOURCE` and then includes `sched.h`"
+    )

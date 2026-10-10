@@ -72,7 +72,8 @@ function read(stderr: str) -> ffi_asked.Asked
         types: types,
         results: results,
         fields: fields,
-        widths: widths
+        widths: widths,
+        switched: {}
     )
 
 # The name a question's line asks about: what its file name holds after the
@@ -130,6 +131,10 @@ function merged(first: ffi_asked.Asked, then: ffi_asked.Asked) -> ffi_asked.Aske
     for name in keys(then.widths)
         if out.widths[name].is_err()
             out.widths[name] @ then.widths[name].must()
+
+    for name in keys(then.switched)
+        if out.switched[name].is_err()
+            out.switched[name] @ then.switched[name].must()
 
     return out
 

@@ -1,0 +1,13 @@
+# fixedbugs, defect 568, lane b18-guard, 2026-10-10 (panel 205's R3).
+#
+# Beside `run/fixedbugs-568-the-first-group-s-header-is-read-before-the-c-library`:
+# the switch reaches the header, and the binding is still held to it (the
+# ffi-pragmatist's `sched_getcpu(x: i32) -> i64`, written here on a header of
+# the program's own so every platform reads it). Refused on the base as well:
+# a guard that the switch's reach costs no check.
+
+extern "fixedbugs-568-a-wrong-binding-through-a-switch-header-is-refused.h"
+    function hidden_cpu(x: i32) -> i64  #~ ffi_call_shape
+
+function main()
+    print(hidden_cpu(7) >= 0)

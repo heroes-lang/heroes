@@ -8,8 +8,9 @@
  *
  * A GROUP'S HEADER NEVER REDEFINES A NAME THE UNIT'S OWN C TAKES FROM ITS OWN
  * HEADERS (defect 361, 2026-10-06; selfhost/emit/macro_guard.hero). A
- * generated unit includes this runtime, <math.h> and `hero_os.h`, then the
- * headers its program's `extern` groups name, then the C the compiler wrote.
+ * generated unit includes this runtime and `hero_os.h`, then the headers its
+ * program's `extern` groups name, then `heroes_standard.h`, then the C the
+ * compiler wrote.
  * A macro one of those headers defined rewrote that C: `hero_print_int(x)`
  * was an internal error, `HERO_RUNTIME_ABI` a false stamp, `main` a link
  * with no `main`, and `INT64_C(c) 0` a program printing 0 where it said 42.
@@ -18,9 +19,11 @@
  * `heroes_guard_close.h` after them, and each name below means after them
  * what it meant before: every word `heroes_runtime.h` and `hero_os.h` write,
  * which a runtime macro can put into the unit (`HERO_STR_LIT` writes
- * `HeroStr` and the member `b`); every name C11 gives <stdbool.h>,
- * <stddef.h>, <stdint.h> and <math.h>, the four standard headers read before
- * the groups' (7.18, 7.19, 7.20, 7.12); and `main`. A name the program binds
+ * `HeroStr` and the member `b`); every name C11 gives <stdbool.h> and
+ * <stddef.h>, read before the groups, and <stdint.h> and <math.h>, read after
+ * them (`heroes_standard.h`, defect 568), but the macros of those two the
+ * unit never writes, which are the headers' own (7.18, 7.19, 7.20, 7.12); and
+ * `main`. A name the program binds
  * is pushed again by the unit just before the close, so it keeps the
  * header's meaning. The compiler holds the same list
  * (selfhost/emit/guarded_names.hero), and its test holds the two files and
@@ -28,16 +31,6 @@
  *
  * `runtime.c` includes both, which compiles them with the runtime and puts
  * them under the key every cached object answers to. */
-#pragma pop_macro("FP_FAST_FMA")
-#pragma pop_macro("FP_FAST_FMAF")
-#pragma pop_macro("FP_FAST_FMAL")
-#pragma pop_macro("FP_ILOGB0")
-#pragma pop_macro("FP_ILOGBNAN")
-#pragma pop_macro("FP_INFINITE")
-#pragma pop_macro("FP_NAN")
-#pragma pop_macro("FP_NORMAL")
-#pragma pop_macro("FP_SUBNORMAL")
-#pragma pop_macro("FP_ZERO")
 #pragma pop_macro("HEROES_RUNTIME_H")
 #pragma pop_macro("HERO_ARRAY_LIT")
 #pragma pop_macro("HERO_ARRAY_STATIC")
@@ -68,6 +61,7 @@
 #pragma pop_macro("HERO_STAGE_MODE")
 #pragma pop_macro("HERO_STAGE_OWNER")
 #pragma pop_macro("HERO_STAGE_WRITE")
+#pragma pop_macro("HERO_STANDARD_AFTER_GROUPS")
 #pragma pop_macro("HERO_STATIC_CONSTANTS")
 #pragma pop_macro("HERO_STR_LIT")
 #pragma pop_macro("HERO_STR_MAGIC")
@@ -77,8 +71,6 @@
 #pragma pop_macro("HERO_STR_OK")
 #pragma pop_macro("HERO_STR_STATIC")
 #pragma pop_macro("HUGE_VAL")
-#pragma pop_macro("HUGE_VALF")
-#pragma pop_macro("HUGE_VALL")
 #pragma pop_macro("HeroArrayHeader")
 #pragma pop_macro("HeroDesc")
 #pragma pop_macro("HeroFailure")
@@ -87,72 +79,10 @@
 #pragma pop_macro("HeroRefcount")
 #pragma pop_macro("HeroStr")
 #pragma pop_macro("HeroStrHeader")
-#pragma pop_macro("INFINITY")
-#pragma pop_macro("INT16_C")
-#pragma pop_macro("INT16_MAX")
-#pragma pop_macro("INT16_MIN")
-#pragma pop_macro("INT32_C")
-#pragma pop_macro("INT32_MAX")
-#pragma pop_macro("INT32_MIN")
 #pragma pop_macro("INT64_C")
-#pragma pop_macro("INT64_MAX")
 #pragma pop_macro("INT64_MIN")
-#pragma pop_macro("INT8_C")
-#pragma pop_macro("INT8_MAX")
-#pragma pop_macro("INT8_MIN")
-#pragma pop_macro("INTMAX_C")
-#pragma pop_macro("INTMAX_MAX")
-#pragma pop_macro("INTMAX_MIN")
-#pragma pop_macro("INTPTR_MAX")
-#pragma pop_macro("INTPTR_MIN")
-#pragma pop_macro("INT_FAST16_MAX")
-#pragma pop_macro("INT_FAST16_MIN")
-#pragma pop_macro("INT_FAST32_MAX")
-#pragma pop_macro("INT_FAST32_MIN")
-#pragma pop_macro("INT_FAST64_MAX")
-#pragma pop_macro("INT_FAST64_MIN")
-#pragma pop_macro("INT_FAST8_MAX")
-#pragma pop_macro("INT_FAST8_MIN")
-#pragma pop_macro("INT_LEAST16_MAX")
-#pragma pop_macro("INT_LEAST16_MIN")
-#pragma pop_macro("INT_LEAST32_MAX")
-#pragma pop_macro("INT_LEAST32_MIN")
-#pragma pop_macro("INT_LEAST64_MAX")
-#pragma pop_macro("INT_LEAST64_MIN")
-#pragma pop_macro("INT_LEAST8_MAX")
-#pragma pop_macro("INT_LEAST8_MIN")
-#pragma pop_macro("MATH_ERREXCEPT")
-#pragma pop_macro("MATH_ERRNO")
-#pragma pop_macro("NAN")
 #pragma pop_macro("NULL")
-#pragma pop_macro("PTRDIFF_MAX")
-#pragma pop_macro("PTRDIFF_MIN")
-#pragma pop_macro("SIG_ATOMIC_MAX")
-#pragma pop_macro("SIG_ATOMIC_MIN")
-#pragma pop_macro("SIZE_MAX")
-#pragma pop_macro("UINT16_C")
-#pragma pop_macro("UINT16_MAX")
-#pragma pop_macro("UINT32_C")
-#pragma pop_macro("UINT32_MAX")
 #pragma pop_macro("UINT64_C")
-#pragma pop_macro("UINT64_MAX")
-#pragma pop_macro("UINT8_C")
-#pragma pop_macro("UINT8_MAX")
-#pragma pop_macro("UINTMAX_C")
-#pragma pop_macro("UINTMAX_MAX")
-#pragma pop_macro("UINTPTR_MAX")
-#pragma pop_macro("UINT_FAST16_MAX")
-#pragma pop_macro("UINT_FAST32_MAX")
-#pragma pop_macro("UINT_FAST64_MAX")
-#pragma pop_macro("UINT_FAST8_MAX")
-#pragma pop_macro("UINT_LEAST16_MAX")
-#pragma pop_macro("UINT_LEAST32_MAX")
-#pragma pop_macro("UINT_LEAST64_MAX")
-#pragma pop_macro("UINT_LEAST8_MAX")
-#pragma pop_macro("WCHAR_MAX")
-#pragma pop_macro("WCHAR_MIN")
-#pragma pop_macro("WINT_MAX")
-#pragma pop_macro("WINT_MIN")
 #pragma pop_macro("a")
 #pragma pop_macro("acos")
 #pragma pop_macro("acosf")
@@ -257,7 +187,6 @@
 #pragma pop_macro("fmod")
 #pragma pop_macro("fmodf")
 #pragma pop_macro("fmodl")
-#pragma pop_macro("fpclassify")
 #pragma pop_macro("frexp")
 #pragma pop_macro("frexpf")
 #pragma pop_macro("frexpl")
@@ -467,16 +396,6 @@
 #pragma pop_macro("intmax_t")
 #pragma pop_macro("into")
 #pragma pop_macro("intptr_t")
-#pragma pop_macro("isfinite")
-#pragma pop_macro("isgreater")
-#pragma pop_macro("isgreaterequal")
-#pragma pop_macro("isinf")
-#pragma pop_macro("isless")
-#pragma pop_macro("islessequal")
-#pragma pop_macro("islessgreater")
-#pragma pop_macro("isnan")
-#pragma pop_macro("isnormal")
-#pragma pop_macro("isunordered")
 #pragma pop_macro("key")
 #pragma pop_macro("keys")
 #pragma pop_macro("ldexp")
@@ -520,7 +439,6 @@
 #pragma pop_macro("magic")
 #pragma pop_macro("main")
 #pragma pop_macro("marks")
-#pragma pop_macro("math_errhandling")
 #pragma pop_macro("max_align_t")
 #pragma pop_macro("mode")
 #pragma pop_macro("modf")
@@ -580,7 +498,6 @@
 #pragma pop_macro("scalbnl")
 #pragma pop_macro("seconds")
 #pragma pop_macro("sep")
-#pragma pop_macro("signbit")
 #pragma pop_macro("sin")
 #pragma pop_macro("sinf")
 #pragma pop_macro("sinh")

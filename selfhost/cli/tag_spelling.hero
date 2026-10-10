@@ -120,7 +120,8 @@ function asked_with(types: {str: str}) -> ffi_asked.Asked
         types: types,
         results: untyped,
         fields: untyped,
-        widths: unsized
+        widths: unsized,
+        switched: {}
     )
 
 test "a bare tag the header answers as a struct's is learned, and no other answer is (defect 400)"
