@@ -152,9 +152,12 @@ function mismatch_shape(@c: state.Checker, s: source.Source, decls: [ast.Decl], 
 # argument already bound keeps that binding whatever the context says,
 # and a shape that does not fit says nothing here, because `compare` at
 # the call owns that message — a disagreeing annotation is one diagnostic,
-# not two (the engineer's condition 2). Nothing is bound THROUGH another
-# generic: a generic callee's arguments are synthesised, not checked, so
-# the nested case Go declined (`f(f(f(0)))`) never reaches this walk.
+# not two (the engineer's condition 2). Since panel 203 a generic callee's
+# argument with no type of its own is checked against its parameter once its
+# letters are settled (`check/waiting.hero`), so a nested generic call takes
+# its context from the call around it, `f(f(f(0)))` included, one level at a
+# time and through no unbound letter; until then those arguments were
+# synthesised and the nesting Go declines never reached this walk.
 function bind_missing(c: state.Checker, @bindings: [i64?], param: i64, got: i64)
     if table.poisoned(c.out.types, got)
         return

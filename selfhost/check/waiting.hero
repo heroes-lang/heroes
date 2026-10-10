@@ -1,0 +1,206 @@
+# An argument with no type of its own waits for the call's others (spec § 9,
+# defect 541, panel 203 R1; design.md §4.5, §4.12, §4.13).
+#
+# `first(a: b, b: 255)` with `b: u8`, `g(x: 1, n: ok(2))`, `ns.map(ident)`,
+# `first(a: xs, b: [])`: each argument here has no type of its own, or one the
+# context changes (a number literal's width), and the parameter it stands for
+# names one once the callee's letters it mentions are settled. So such an
+# argument WAITS while the call's other arguments bind the callee's letters
+# (`check/generics.hero`'s `bind`), and is then checked against its parameter
+# with those letters replaced, as a non-generic callee's argument is
+# (`check/walk.hero`'s `settle_waiting` drives it, since checking is the
+# walk's). The receiver of `x.f()` is one of them where its form can hold no
+# field (`check/waiting_order.hero`'s `by_the_call`), so `[].count()` is
+# typed as `count([])` is.
+#
+# **Which arguments wait** is asked of the argument's own form, never of the
+# world (`.claude/rules/module-shape.md`): §4.5's ⇐-only forms
+# (`check/contextual.hero`), a number literal, a generic function's name, a
+# call of `ok`, `fail` or of a generic function (whose result may be what the
+# context gives it), and an array or map literal holding one of those. Every
+# other argument has a type of its own and binds as before.
+#
+# **What settles a letter nothing else does, in this order** (spec § 9: the
+# arguments that have a type of their own, else the context, else a generic
+# call or a literal among them): the context, where a literal it would settle
+# can take it (`context_taken`); then the waiting argument whose synthesis
+# owes least to a literal's default width (`weight`), so `[b8, 1]` speaks
+# before `[2]` and `same(x: b8)` before `2`; then a generic function's name,
+# from the letters bound so far (`partly`); then the forms that refuse
+# themselves, `[]`, `{}`, `ok(…)`, a case, each told where it stands. The
+# order is by form and never by position, so a pair's verdict is the same
+# whichever argument is written first (panel 203 R1 (a)).
+#
+# Nothing is bound THROUGH an unbound letter: no unification variable, no
+# solve (§4.5). A letter an earlier argument left poisoned is that mistake's
+# shadow and settles nothing here, so the argument waiting on it is
+# synthesised as before and its type is the better answer.
+
+use ast
+use source
+use resolved
+use inventory
+use check/table
+use check/state
+use check/contextual
+use check/function_value
+use check/generics as check_generics
+
+# One argument that waits: the expression, and the position of the callee's
+# parameter it stands for, the receiver of `x.f()` standing for the first.
+record Held
+    value: i64
+    at: i64
+
+# Whether the argument `id`, written for a generic callee, waits.
+function needs_context(a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], id: i64) -> bool
+    if function_value.generic_at(a, r, s, decls, id) || contextual.contextual(a, id)
+        return true
+
+    match a.exprs[id].kind
+        .array el =>
+            for e in el.elements
+                if needs_context(a, r, s, decls, id: e)
+                    return true
+        .map en =>
+            for e in en.entries
+                if needs_context(a, r, s, decls, id: e.key) || needs_context(a, r, s, decls, id: e.value)
+                    return true
+        .call cl => return made_by_context(a, r, s, decls, callee: cl.callee)
+        .method => return generic_top(s, decls, named: r.uses[id])
+        .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit | .null_ptr => return false
+        .hole | .name | .unary | .binary | .field | .field_name | .index => return false
+        .variant_case | .try_expr | .if_expr | .match_expr | .error => return false
+
+    return false
+
+# `ok(…)`, `fail(…)`, or a generic function called by its name.
+function made_by_context(a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], callee: i64) -> bool
+    if a.exprs[callee].kind != .name
+        return false
+
+    match r.uses[callee]
+        .builtin b => return inventory.name_of(b.at) == "ok" || inventory.name_of(b.at) == "fail"
+        .top | .local | .module | .unresolved => return generic_top(s, decls, named: r.uses[callee])
+
+    return false
+
+function generic_top(s: source.Source, decls: [ast.Decl], named: resolved.Ref) -> bool
+    match named
+        .top t                                    => return function_value.letters_of(s, decls, decl: t.at).len() > 0
+        .local | .builtin | .module | .unresolved => return false
+
+    return false
+
+# A call of a generic function, by its name or as `x.f()`.
+function generic_call(a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], id: i64) -> bool
+    match a.exprs[id].kind
+        .call cl => return a.exprs[cl.callee].kind == .name && generic_top(s, decls, named: r.uses[cl.callee])
+        .method => return generic_top(s, decls, named: r.uses[id])
+        .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit | .null_ptr => return false
+        .hole | .name | .unary | .binary | .field | .field_name | .index | .array | .map => return false
+        .variant_case | .try_expr | .if_expr | .match_expr | .error => return false
+
+    return false
+
+# Whether every letter of the callee that `ty` names is bound, and to a type
+# that is no mistake's shadow.
+function settled_all(c: state.Checker, ty: i64, callee: [i64?]) -> bool
+    k: i64 @ 0
+
+    while k < callee.len()
+        if !settled(c, callee: callee, at: k) && check_generics.mentions(c, ty: ty, at: k)
+            return false
+        k @ k + 1
+
+    return true
+
+function settled(c: state.Checker, callee: [i64?], at: i64) -> bool
+    return !callee[at].is_err() && !table.poisoned(c.out.types, callee[at].must())
+
+# Whether every letter of the callee `ty` names is bound, one of them to a
+# mistake's shadow: an argument waiting on it is that mistake's shadow too.
+function shadowed(c: state.Checker, ty: i64, callee: [i64?]) -> bool
+    poisoned: bool @ false
+    k: i64 @ 0
+
+    while k < callee.len()
+        if check_generics.mentions(c, ty: ty, at: k)
+            if callee[k].is_err()
+                return false
+
+            if table.poisoned(c.out.types, callee[k].must())
+                poisoned @ true
+        k @ k + 1
+
+    return poisoned
+
+# The callee's letters `ty` names that nothing has settled yet, as written.
+function unsettled(c: state.Checker, s: source.Source, decls: [ast.Decl], decl: i64, ty: i64, callee: [i64?]) -> [str]
+    letters = function_value.letters_of(s, decls, decl: decl)
+    out: [str] @ []
+    k: i64 @ 0
+
+    while k < letters.len() && k < callee.len()
+        if !settled(c, callee: callee, at: k) && check_generics.mentions(c, ty: ty, at: k)
+            out @ out.push(letters[k])
+        k @ k + 1
+
+    return out
+
+## What the context may settle
+
+# Whether the bindings `after`, the context's, may stand: true unless an
+# argument they would settle that `before` left waiting is a literal, or a
+# literal holding them, that can take none of the types they would give it,
+# which is the call answering a type the context does not ask for, one
+# mistake told once at the call (`compare`) and never at each literal.
+function context_taken(@c: state.Checker, a: ast.Ast, decls: [ast.Decl], params: [i64], left: [Held], before: [i64?], after: [i64?]) -> bool
+    newly: bool @ false
+
+    for w in left
+        param = params[w.at]
+
+        if !settled_all(c, ty: param, callee: before) && settled_all(c, ty: param, callee: after)
+            if takes(c, a, decls, id: w.value, ty: check_generics.substitute(@c, param, after))
+                return true
+            newly @ true
+
+    return !newly
+
+# Whether `id`, checked against `ty`, keeps what its literals need: a number
+# literal an integer type, a float literal a float type, `nullptr` a pointer,
+# an array or map literal a type of its shape whose parts its own take. Every
+# other form takes what it is offered and is told by its own check.
+function takes(c: state.Checker, a: ast.Ast, decls: [ast.Decl], id: i64, ty: i64) -> bool
+    if contextual.number_literal(a, id) || contextual.float_literal(a, id) || a.exprs[id].kind == .null_ptr
+        return contextual.adopts(c, a, decls, id: id, offered: ty)
+
+    match a.exprs[id].kind
+        .array el =>
+            element: i64 @ -1
+
+            match table.get(c.out.types, ty)
+                .array w                                                  => element @ w.element
+                .fixed w                                                  => element @ w.element
+                .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return false
+                .map | .fallible | .function_ty | .named                  => return false
+                .case_ty | .failure | .generic | .error                   => return false
+
+            for e in el.elements
+                if !takes(c, a, decls, id: e, ty: element)
+                    return false
+        .map en =>
+            match table.get(c.out.types, ty)
+                .map w =>
+                    for e in en.entries
+                        if !takes(c, a, decls, id: e.key, ty: w.key) || !takes(c, a, decls, id: e.value, ty: w.value)
+                            return false
+                .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return false
+                .array | .fixed | .fallible | .function_ty | .named       => return false
+                .case_ty | .failure | .generic | .error                   => return false
+        .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit | .null_ptr => return true
+        .hole | .name | .unary | .binary | .field | .field_name | .index | .call       => return true
+        .method | .variant_case | .try_expr | .if_expr | .match_expr | .error          => return true
+
+    return true

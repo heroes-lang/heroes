@@ -50,7 +50,7 @@ function printed()
 
 function through_a_generic_callee()
     xs: [i64] = [1, 2, 3]
-    ys = xs.map(ident)  #~ cannot_infer
+    ys = xs.map(ident)
     print(ys.len())
 
 function first_in_an_array()
@@ -105,3 +105,11 @@ function main()
 # told `needs_parameter_names` alone. The `type_mismatch` beside it, the
 # instance's names against a type that writes none, was that refusal's
 # shadow and is quiet now (`type_fit.unnamed_shadow`).
+
+# Corrected 2026-10-10, defect 541 (panel 203 R1), below the program so every
+# line keeps its number: `through_a_generic_callee` is accepted. A generic
+# function's name handed to a generic callee waits while the call's other
+# arguments settle the callee's letters; `xs` settles `map`'s `A`, and
+# `ident`'s instance at that `A` gives `B`. Panel 105's flat rule, which the
+# header cites, is reversed for every argument with no type of its own. The
+# other positions ask for no type, and are told as before.
