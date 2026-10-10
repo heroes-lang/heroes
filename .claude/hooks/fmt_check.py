@@ -257,9 +257,15 @@ def main():
         # the expectation instead, which is the question the case asks.
         return say([told(place, marks_against_expectation(compiler, place))])
     parses = fmt.returncode == 0
+    # A marked case of the annotations suite's directories that parses and is
+    # not canonical on purpose, as defect 576's two are, is judged by its marks
+    # alone, asked below (defect 581, 2026-10-10: this hook told it *not
+    # canonical* as the commit guard refused it; `marks.held_to_marks` is the
+    # rule's one statement, which the guard asks too).
+    on_purpose = place.rel is not None and marks.held_to_marks(place.tree, place.rel, on_disk.decode("utf-8", errors="replace"))
     if not parses:
         refusals.append((place.shown + " does not parse", head(fmt.stderr)))
-    elif fmt.stdout != on_disk:
+    elif fmt.stdout != on_disk and not on_purpose:
         refusals.append((
             place.shown + " is not canonical: run `heroes fmt " + path + " --in-place`.\n"
             "The `canonical` suite fails on it otherwise, and design.md §4.15 "
