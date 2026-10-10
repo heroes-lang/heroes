@@ -1,0 +1,21 @@
+# fixedbugs, defect 559, lane b18-ffi, 2026-10-10 (panel 202's C0; the
+# compiler-engineer's `fprec`).
+#
+# A group record beside a `static inline twice` of `int`, in a program whose
+# other module binds a `twice` of `long long` from its own header. Each module's
+# unit compiles alone. Until 2026-10-10 every module's unit read every group
+# record's header, and the layout check read every header of the program in
+# one unit, so this was refused, *the headers two groups name cannot be
+# compiled in one unit*, while the program without the record built. A
+# module's unit reads its own groups' headers now, and it builds.
+use fixedbugs559/long_twice
+
+extern "fixedbugs-559-int.h"
+    record Pt
+        v: i32
+    function twice(x: i32) -> i32
+    function ptv(p: Pt) -> i32
+
+function main()
+    print(long_twice.doubled(x: 3))
+    print(twice(x: 4) + ptv(p: Pt(v: 1)))

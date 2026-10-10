@@ -1,0 +1,8 @@
+# A module of defect 556's cases (lane b18-ffi, 2026-10-10): it binds the
+# header holding the tentative definition the root module binds.
+
+extern "fixedbugs-556-tentative.h"
+    function bump() -> i32
+
+function counted() -> i32
+    return bump()

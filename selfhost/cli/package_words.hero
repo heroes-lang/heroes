@@ -25,7 +25,7 @@
 # admitted `-Wl,-rpath` (a GNU ld built with upstream's default writes RPATH
 # there, the tag a package that says only `-Wl,-rpath` already gets on it), and
 # `--export-dynamic` is what clang hands the linker for the `-rdynamic` every
-# POSIX link carries (`flags.link_flags`). The word that MOVES a tag,
+# POSIX link carries (`link_flags.link_flags`). The word that MOVES a tag,
 # `--disable-new-dtags`, is not here. Both premises are asked where they can be:
 # `tests/harness/absence.hero`'s *an admitted -Wl,-rpath leaves a RUNPATH* and
 # the test below on `-rdynamic`.
@@ -80,7 +80,7 @@
 # **`-pthread` reaches a COMPILE everywhere and a LINK everywhere but Windows**,
 # where clang 23.1.1 for `x86_64-pc-windows-msvc` calls it at a link *argument
 # unused during compilation* (measured 2026-10-08): a warning on a correct
-# program. The question is the one `flags.link_flags` asks, `exe_suffix()`.
+# program. The question is the one `link_flags.link_flags` asks, `exe_suffix()`.
 #
 # **The list is five tables** (panel 198's R3): `VALUED`, `SEPARATE`, `PASSED`,
 # `RESTATED` and `LINKED`, which `libraries.filter_words` reads and nothing else
@@ -90,7 +90,7 @@
 # and every word of a table is named. What is not here stays refused.
 
 use cli/process
-use cli/flags
+use cli/link_flags
 use cli/strings
 
 # The flag clang reads with its value as the next word alone (clang's
@@ -380,12 +380,12 @@ test "an admitted rpath is one word where a loader reads it, and none on Windows
 # compiler's own POSIX link already carries `-rdynamic`, which clang hands the
 # linker as `-export-dynamic`, so a package's `-Wl,--export-dynamic` adds nothing
 # (Debian GNU ld 2.44 and LLD 22.1.8: the same bytes with and without it). The day
-# `flags.link_flags` stops saying it, the word restates nothing and this fires.
+# `link_flags.link_flags` stops saying it, the word restates nothing and this fires.
 test "the link line carries -rdynamic on every POSIX link, which --export-dynamic restates"
     if process.exe_suffix() != ".exe"
         said: bool @ false
 
-        for flag in flags.link_flags()
+        for flag in link_flags.link_flags()
             if flag == "-rdynamic"
                 said @ true
 

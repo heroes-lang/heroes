@@ -39,6 +39,7 @@ use emit/ctype
 use emit/aggregate
 use emit/writer
 use cli/flags
+use cli/link_flags
 use cli/strings
 use source
 use parse
@@ -147,5 +148,5 @@ test "no word of a compile or a link lets clang see into the runtime (defect 470
     for level in ["-O0", "-O2"]
         compiled = strings.with_all(list: flags.flags(), more: flags.level_words(level, sanitize: false))
 
-        for word in strings.with_all(list: compiled, more: flags.link_flags())
+        for word in strings.with_all(list: compiled, more: link_flags.link_flags())
             assert !strings.starts_with(text: word, prefix: "-flto")

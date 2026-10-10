@@ -1,0 +1,17 @@
+# fixedbugs, defect 563, lane b18-ffi, 2026-10-10 (panel 204's R1; the
+# compiler-engineer's `dual`).
+#
+# Two headers each define `K` only where no header before them has: 5 in
+# `fixedbugs-563-p.h`, 9 in `fixedbugs-563-q.h`. No macro is defined twice,
+# so clang says nothing in either order, and the order the groups are
+# written in is the one that decides: `p` first, so `K` is 5 in both. The
+# case beside this one writes them the other way and prints 9 and 109.
+extern "fixedbugs-563-p.h"
+    function pk() -> i32
+
+extern "fixedbugs-563-q.h"
+    function qk() -> i32
+
+function main()
+    print(pk())
+    print(qk())

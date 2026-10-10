@@ -1,0 +1,277 @@
+# The questions one header list is asked about the names two lists declare,
+# and how clang's answers are read (design.md §4.19; panel 202's C1, ratified
+# 2026-10-10; defect 555). `cli/two_ways.hero` compares two lists' answers;
+# this asks one. Split from it the day it was written, past §11's 300 lines,
+# along the seam between asking clang and judging what it said.
+#
+# **What a list declares is clang's list** (`-ast-list`): every named
+# declaration of a unit of the list's headers alone, kept under what it
+# depends on as a probe's dump is (`cli/pointee.hero`). **What each name is,
+# clang answers too**, in a question unit kept under its own text: the
+# canonical type of a pointer to it, read from clang's `aka`, and whether a
+# `static` redeclaration of it is refused, which is its external linkage, with
+# clang's note where the header declares it.
+
+use bytes
+use emit/ffi_asked
+use emit/clang_place
+use emit/c_text
+use cli/toolchain
+use cli/compiling
+use cli/process
+use cli/publish
+use cli/digest
+use cli/kept
+use cli/libraries
+use cli/strings
+use cli/read_back
+
+constant TYPE: str
+    "hero-c1-type "
+
+constant LINKAGE: str
+    "hero-c1-static "
+
+constant EXTERNAL: str
+    "static declaration of '"
+
+# One name as one header list declares it: the canonical type of the name's
+# pointer, whether it has external linkage, and where the header declares it
+# (`row` 0 where clang named no place).
+record Answer
+    type: str
+    external: bool
+    path: str
+    row: i64
+
+# The names clang lists of a unit of these headers alone (`-ast-list`): every
+# named declaration, kept under what the list depends on as a probe's dump
+# is. A name a qualifier or a space holds is no file-scope C name.
+function listed(t: toolchain.Toolchain, probe: compiling.Probe) -> {str: bool}
+    out: {str: bool} @ {}
+    text = compiling.include_lines(probe.headers)
+    key = digest.digest(
+        t.fingerprint + "|ast_list|" + t.compiler_key + "|" + text + "|words:" + libraries.key_text(probe.words) + "|reads:" + probe.read.must() + "|" + t.runtime_key
+    )
+    dir = t.build + "/twoways-" + key
+    kept_path = dir + "/listed.txt"
+    known = kept.read(kept_path)
+    said: str @ ""
+
+    if !known.is_err()
+        said @ known.must()
+    else
+        ran = listing(dir: dir, text: text, words: probe.words)
+
+        if ran.is_err()
+            return out
+        said @ ran.must()
+        _ = kept.write(path: kept_path, text: said).is_err()
+
+    for name in rows_of(said)
+        if name.len() > 0 && found(text: name, needle: ":").is_err() && found(text: name, needle: " ").is_err() && found(text: name, needle: "(").is_err()
+            out[name] @ true
+
+    return out
+
+function listing(dir: str, text: str, words: [str]) -> str?
+    process.mkdir_all(dir)?
+    path = dir + "/listed-" + digest.digest(text) + ".c"
+    publish.write_whole(path: path, text: text, keyed: true)?
+    said = publish.private_name(dir + "/listed-stdout.txt")
+    line = strings.with_all(list: ["clang", "-fsyntax-only", "-Xclang", "-ast-list"], more: words)
+    ran = process.run(program: "clang", words: line.push(path), out: said, err: process.discard())
+    listed_text = read_back.words(said)
+    publish.discard(said)
+
+    if !ran.started || ran.code != 0
+        return fail(code: "unread", msg: "clang did not list the headers' declarations")
+    return listed_text
+
+# What a header list declares of each of `names`, asked once and kept under
+# everything the answer depends on: the words, the unit's own text, and what
+# the headers resolve to and hold (`compiling.reads`).
+function answers(t: toolchain.Toolchain, probe: compiling.Probe, names: [str]) -> {str: Answer}
+    out: {str: Answer} @ {}
+
+    if names.len() == 0
+        return out
+    text = unit(headers: probe.headers, names: names)
+    key = digest.digest(
+        t.fingerprint + "|two_ways|" + t.compiler_key + "|" + text + "|words:" + libraries.key_text(probe.words) + "|reads:" + probe.read.must() + "|" + t.runtime_key
+    )
+    dir = t.build + "/twoways-" + key
+    said_path = dir + "/said.txt"
+    known = kept.read(said_path)
+
+    if !known.is_err()
+        return read(known.must())
+    said = asked_of(dir: dir, text: text, words: probe.words)
+
+    if said.is_err()
+        return out
+    _ = kept.write(path: said_path, text: said.must()).is_err()
+    return read(said.must())
+
+# The question unit: the headers, then two questions per name.
+function unit(headers: [str], names: [str]) -> str
+    lines: [str] @ c_text.includes(headers)
+    lines @ lines.push("struct hero_c1 { char hero_c; };")
+    index: i64 @ 0
+
+    for name in names
+        lines @ lines.push(c_text.line_directive(at: 1, file: TYPE + name))
+        lines @ lines.push("struct hero_c1 hero_c1_" + index.to_str() + " = (__typeof__(" + name + ") *)0;")
+        lines @ lines.push(c_text.line_directive(at: 1, file: LINKAGE + name))
+        lines @ lines.push("static __typeof__(" + name + ") " + name + ";")
+        index @ index + 1
+
+    return lines.join("\n") + "\n"
+
+# clang's words about the unit, or absent where it could not be asked.
+function asked_of(dir: str, text: str, words: [str]) -> str?
+    process.mkdir_all(dir)?
+    path = dir + "/two-ways-" + digest.digest(text) + ".c"
+    publish.write_whole(path: path, text: text, keyed: true)?
+    err = publish.private_name(dir + "/two-ways-stderr.txt")
+    line = strings.with_all(list: ["clang", "-fsyntax-only", "-ferror-limit=0", "-fno-caret-diagnostics"], more: words)
+    ran = process.run(program: "clang", words: line.push(path), out: process.discard(), err: err)
+    said = read_back.words(err)
+    publish.discard(err)
+
+    if !ran.started
+        return fail(code: "failed", msg: "clang did not start for the question of two declarations")
+    return said
+
+# Each name's answer, from the lines clang wrote under its questions. Read
+# by bytes, a line at a time and never a character at a time: a header list
+# of the compiler's own asks about a thousand names, and its answer is a
+# quarter of a megabyte.
+function read(said: str) -> {str: Answer}
+    types: {str: str} @ {}
+    external: {str: bool} @ {}
+    paths: {str: str} @ {}
+    rows: {str: i64} @ {}
+    lines = rows_of(said)
+    index: i64 @ 0
+
+    while index < lines.len()
+        row = lines[index]
+
+        if bytes.bytes_at(text: row, at: 0, needle: TYPE)
+            canonical = aka_of(row)
+
+            if !canonical.is_err()
+                types[asked_name(row: row, prefix: TYPE)] @ canonical.must()
+        else if bytes.bytes_at(text: row, at: 0, needle: LINKAGE) && !found(text: row, needle: EXTERNAL).is_err()
+            name = asked_name(row: row, prefix: LINKAGE)
+            external[name] @ true
+
+            # clang's note under the refusal is the header's declaration, its
+            # own includes above it (panel 202's (g)).
+            under: i64 @ index + 1
+
+            while under < lines.len() && !clang_place.included(lines[under]).is_err()
+                under @ under + 1
+
+            if under < lines.len() && !found(text: lines[under], needle: ": note: ").is_err()
+                place = clang_place.place(lines[under])
+
+                if !place.is_err()
+                    paths[name] @ place.must().path
+                    rows[name] @ place.must().row
+        index @ index + 1
+
+    out: {str: Answer} @ {}
+
+    # ORDER: none — a table keyed by name.
+    for name in keys(types)
+        out[name] @ Answer(
+            type: types[name].must(),
+            external: !external[name].is_err(),
+            path: paths[name].default(""),
+            row: rows[name].default(0)
+        )
+
+    return out
+
+# The lines of a text, each without the `\r` a Windows clang ends it with.
+function rows_of(text: str) -> [str]
+    out: [str] @ []
+    start: i64 @ 0
+    at: i64 @ 0
+
+    while at <= text.len()
+        if at == text.len() || text[at] == 10
+            end: i64 @ at
+
+            if end > start && text[end - 1] == 13
+                end @ end - 1
+
+            if at < text.len() || end > start
+                out @ out.push(text.slice(from: start, to: end))
+            start @ at + 1
+        at @ at + 1
+
+    return out
+
+# The byte offset of `needle` in `text`, asked of its bytes.
+function found(text: str, needle: str) -> i64?
+    at: i64 @ 0
+
+    while at + needle.len() <= text.len()
+        if bytes.bytes_at(text: text, at: at, needle: needle)
+            return ok(at)
+        at @ at + 1
+
+    return fail(code: "none", msg: "not found")
+
+# The canonical type clang's refusal of the type question names: its `aka`,
+# or the type itself where clang gives none (`emit/ffi_asked.typed_in`'s
+# reading, by bytes).
+function aka_of(row: str) -> str?
+    marker = found(text: row, needle: ffi_asked.INCOMPATIBLE)?
+    from = marker + ffi_asked.INCOMPATIBLE.len()
+    spelled = quoted_from(row, from: from)
+    aka = found(text: row.slice(from: from, to: row.len()), needle: "(aka '")
+
+    if aka.is_err()
+        return ok(spelled)
+    return ok(quoted_from(row, from: from + aka.must() + 6))
+
+# What stands from `from` up to the next `'`.
+function quoted_from(row: str, from: i64) -> str
+    at: i64 @ from
+
+    while at < row.len() && row[at] != 39
+        at @ at + 1
+
+    return row.slice(from: from, to: at)
+
+# The name a question's line asks about: what its file name holds after the
+# question's own words, up to the colon that opens the position.
+function asked_name(row: str, prefix: str) -> str
+    at: i64 @ prefix.len()
+
+    while at < row.len() && row[at] != 58
+        at @ at + 1
+
+    return row.slice(from: prefix.len(), to: at)
+
+## Tests
+
+test "the answers are read from the questions' file names, the linkage from clang's refusal and its note"
+    said = "hero-c1-type twice:1:16: error: initializing 'struct hero_c1' with an expression of incompatible type 'typeof (twice) *' (aka 'long (*)(long)')\nhero-c1-static twice:1:26: error: static declaration of 'twice' follows non-static declaration\n./a.h:3:6: note: previous declaration is here\nhero-c1-type st:1:16: error: initializing 'struct hero_c1' with an expression of incompatible type 'typeof (st) *' (aka 'int (*)(int)')\n"
+    got = read(said)
+    assert got["twice"].must() == Answer(type: "long (*)(long)", external: true, path: "./a.h", row: 3)
+    assert got["st"].must() == Answer(type: "int (*)(int)", external: false, path: "", row: 0)
+    assert got["none"].is_err()
+
+    # Clang on Windows ends its lines `\r\n`, read as ended `\n`.
+    crlf: [str] @ []
+
+    for row in rows_of(said)
+        crlf @ crlf.push(row + "\r\n")
+
+    assert read(crlf.join("")) == got
+    assert rows_of("a\r\nb") == ["a", "b"]

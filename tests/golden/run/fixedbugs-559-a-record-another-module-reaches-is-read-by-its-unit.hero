@@ -1,0 +1,21 @@
+# fixedbugs, defect 559, lane b18-ffi, 2026-10-10 (panel 202's R1), the shape
+# beside the repair.
+#
+# A module's unit reads its own groups' headers since defect 559, and no
+# other module's: until then every unit read every group record's header.
+# A unit that spells another module's group record still reads that
+# record's header, since the record's C type is the header's: this module
+# builds one into an array and compares it, and `holder` passes it, holds
+# it in a record of its own and reads its fields, each unit including
+# `fixedbugs-559-points.h`, and only `holder`'s its own header beside it.
+use fixedbugs559/holder
+use fixedbugs559/points
+
+function main()
+    p = points.make(v: 3)
+    print(holder.get(p: p))
+    h = holder.hold(p: p)
+    xs = [p, points.make(v: 1)]
+    print(xs.len())
+    print(h.p.w)
+    print(p == xs[0])

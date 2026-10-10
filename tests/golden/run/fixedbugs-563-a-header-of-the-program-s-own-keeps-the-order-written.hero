@@ -1,0 +1,17 @@
+# fixedbugs, defect 563, lane b18-ffi, 2026-10-10 (panel 204's R2), the
+# program its refusal's `guess` fixes write.
+#
+# `unsupported/fixedbugs-563-a-macro-two-headers-define-two-ways-is-refused`
+# binds `fixedbugs-563-cap.h` and then `fixedbugs-563-limit.h`, which define
+# `LIMIT` two ways, and is refused. Its note drafts this header of the
+# program's own, `fixedbugs-563-cap_fixedbugs-563-limit.h`: the first header,
+# `#undef LIMIT`, the second. Both groups name it, so it is included once, and
+# the program means what its order said: `cap` caps at 10, read before the
+# second header defines 100.
+extern "fixedbugs-563-cap_fixedbugs-563-limit.h"
+    function cap(v: i32) -> i32
+    function half(x: i64) -> i64
+
+function main()
+    print(half(x: 6))
+    print(cap(v: 50))
