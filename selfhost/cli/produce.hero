@@ -24,6 +24,7 @@ use source
 use modules
 use emit/ffi_asked
 use emit/externs as emit_externs
+use emit/header_packages
 use cli/io
 use cli/compile
 use cli/toolchain
@@ -138,7 +139,13 @@ function produce(path: str, s: source.Source, options: compile.Options, t: toolc
 
     # Asked before clang runs, so a package that is not installed is
     # reported as itself rather than as a header clang could not find.
-    package_flags = libraries.resolve_packages(art.must().packages, build_dir: t.build)
+    each = libraries.resolve_each(art.must().packages, build_dir: t.build)
+    package_flags: [str]? @ fail(code: "none", msg: "not asked")
+
+    match each
+        .ok words => package_flags @ ok(libraries.words_of(words, packages: art.must().packages))
+        .err e    => package_flags @ fail(code: e.code, msg: e.msg)
+
     no_tags: {str: bool} = {}
 
     if package_flags.is_err()
@@ -180,6 +187,8 @@ function produce(path: str, s: source.Source, options: compile.Options, t: toolc
         source_dir: source_dir,
         link_names: names,
         package_flags: package_flags.must(),
+        package_words: each.must(),
+        by_header: header_packages.by_header(art.must().program, s, art.must().decls),
         version: version
     )
     under = assemble.compiled_under(t, options, site)
@@ -197,7 +206,9 @@ function produce(path: str, s: source.Source, options: compile.Options, t: toolc
         s,
         art.must().decls,
         components: units.components(s),
-        target: options.target
+        target: options.target,
+        package_words: site.package_words,
+        by_header: site.by_header
     )
     went = rounds.run(t, options, art.must(), s, site, under: under, planned: planned, answered: @answered)
 

@@ -348,8 +348,8 @@ with holes type-checks everything else but produces no binary.
 ## 13. FFI
 Anything beyond this document — sockets, maths, JSON, databases — comes from C
 libraries. A group names its header, and `link` a library when the symbols need one; C
-reads a module's headers in the order its groups are written, so one that needs
-another's names comes after it. clang
+reads a module's headers in the order its groups are written: one that needs
+another's names comes after it, and one defining `_GNU_SOURCE` first. clang
 checks every result type, constant and record field against that header, and a result may be
 wider than C's. A **parameter** and a **field** are declared at the header's own
 width and sign — `i32` where C says int, `i8` where it says char, `u64` where it

@@ -74,11 +74,17 @@ function unquoted(s: source.Source, span: token.Span) -> str
         return escape.unescape(text)
     return text
 
-# The two headers every unit includes whatever the program binds: math.h
-# for HUGE_VAL, hero_os.h because the generated main calls hero_args_set
-# whether or not the program asks for args().
+# The two headers every unit, and every probe of its headers, reads before
+# its groups whatever the program binds: `heroes_unit.h`, which says the unit
+# reads the C library's standard headers after its groups and includes the
+# runtime's (panel 205's R3, defect 568), and hero_os.h, because the generated
+# main calls hero_args_set whether or not the program asks for args().
+# `<math.h>` was the first seed, for HUGE_VAL, until then: read before the
+# groups it latched the C library's switches, so it comes after them with
+# `<stdint.h>` (`runtime/heroes_standard.h`), and a group binding `math.h` is
+# a group.
 constant SEEDS: [str]
-    ["math.h", "hero_os.h"]
+    ["heroes_unit.h", "hero_os.h"]
 
 # Whether `header` is the compiler's own: a seed, or the runtime's header,
 # which the library binds and every unit has already included. The prelude
@@ -291,7 +297,7 @@ function library_span(library: ast.Library, want_package: bool) -> token.Span?
 
 ## Tests
 
-test "headers seed math and os, dedupe, and see a record-only group"
+test "headers seed the unit's first header and the os header, dedupe, and see a record-only group"
     text = "extern \"sqlite3.h\" link \"sqlite3\"\n    function sqlite3_libversion() -> cstr\n\nextern \"raylib.h\" package \"raylib\"\n    record Color\n        r: i64\n\nfunction main()\n    print(1)\n"
     parsed = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
@@ -301,7 +307,7 @@ test "headers seed math and os, dedupe, and see a record-only group"
     low = lower.lower(parsed.tree, out, c, s, parsed.decls)
     got = headers(low.program, s, parsed.decls)
     assert got.len() == 4
-    assert got[0] == "math.h"
+    assert got[0] == "heroes_unit.h"
     assert got[1] == "hero_os.h"
     assert got[2] == "sqlite3.h"
     assert got[3] == "raylib.h"
@@ -321,7 +327,7 @@ test "a record-only group is included where it is written (panel 204)"
     c: state.Checked @ checker.check(parsed.tree, out, s, parsed.decls)
     low = lower.lower(parsed.tree, out, c, s, parsed.decls)
     got = headers(low.program, s, parsed.decls)
-    assert got == ["math.h", "hero_os.h", "stdio.h", "jpeglib.h", "time.h"]
+    assert got == ["heroes_unit.h", "hero_os.h", "stdio.h", "jpeglib.h", "time.h"]
 
 test "a group head's string reaches C as its value, its escapes decoded (panel 188)"
     s = source.new_source(name: "t.hero", text: "\"a\\tb.h\" \"q\\\\r\" plain")

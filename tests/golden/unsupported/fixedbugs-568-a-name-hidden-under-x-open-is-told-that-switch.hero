@@ -1,0 +1,11 @@
+# fixedbugs, defect 568, lane b18-guard, 2026-10-10 (panel 205's R3).
+#
+# Beside `fixedbugs-568-a-name-a-header-declares-only-under-a-switch-is-told-so`:
+# glibc's `wchar.h` declares `wcwidth` under `_XOPEN_SOURCE`, which
+# `_GNU_SOURCE` implies; the narrower switch is the one told.
+
+extern "fixedbugs-568-a-name-hidden-under-x-open-is-told-that-switch.h"
+    function hidden_width(c: i32) -> i32  #~ ffi_unknown_name
+
+function main()
+    print(hidden_width(65))

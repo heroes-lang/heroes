@@ -29,6 +29,7 @@ use cli/tag_spelling
 use cli/whose
 use cli/two_ways
 use cli/defined_twice
+use cli/pragma_ask
 use diag
 
 # What the rounds came back with: the verdict, the failure already told where
@@ -64,7 +65,6 @@ function run(t: toolchain.Toolchain, options: compile.Options, art: compile.Arti
             t,
             art,
             s,
-            under: under,
             refusals: went.refusals,
             probings: planned.probings,
             struct_tags: @struct_tags
@@ -109,6 +109,18 @@ function round(t: toolchain.Toolchain, options: compile.Options, art: compile.Ar
     # A failure here is the AUTHOR's, and it rides the same mapping a clang
     # failure does — `emit/ffi.hero` reads the assertion's marker back into
     # the parameter's diagnostic.
+    # A name the compiler writes that a group's header defines as a macro
+    # holding a `_Pragma`, told before anything reads a header through it
+    # (`cli/pragma_ask.hero`, defect 570): the author's, and no round after.
+    pragmas = pragma_ask.told(t, planned.probings, s: s, decls: art.decls)
+
+    if pragmas.len() > 0
+        _ = compile.stage(pragmas, s).is_err()
+        held: ()? = fail(
+            code: "diagnostics",
+            msg: "a group's header defines a name this program's C writes as a macro holding a pragma"
+        )
+        return assemble.Round(verdict: held, refusals: [], binary: "", modules: [])
     checked = probing.check_all(t, art.program, art.checked, s, art.decls, planned.probings, answered: @answered)
 
     if checked.verdict.is_err()

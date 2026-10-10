@@ -149,14 +149,21 @@ constant NOISE_BIND: str
 constant NOISE_CALLER: str
     "use noisebind\n\nfunction main()\n    print(noisebind.take(n: 3))\n"
 
-# `static` is the warning: this header reaches a translation unit that
-# calls neither function, and clang says `unused function`. `static
-# inline` is the silence, and C11 is where the difference lives.
+# `#warning` is the warning, and its absence the silence: a header's own
+# directive, which clang prints whatever the region a group's header stands
+# in quiets. Until 2026-10-10 the warning was `static` against `static
+# inline`, clang's `unused function`, which `-Wall` names; since panel 205's
+# R2 (defect 569) a header's own code is quiet of `-Wall`'s warnings, and the
+# case would have had nothing to measure.
 constant NOISE_HEADER_WARNS: str
-    "#include <stdint.h>\nstatic int64_t noise_spare(int64_t n) { return n; }\nstatic inline int64_t noise_take(int64_t n) { return n + 1; }\n"
+    "#include <stdint.h>\n#warning \"noise_spare is unused\"\nstatic inline int64_t noise_spare(int64_t n) { return n; }\nstatic inline int64_t noise_take(int64_t n) { return n + 1; }\n"
 
 constant NOISE_HEADER_SILENT: str
     "#include <stdint.h>\nstatic inline int64_t noise_spare(int64_t n) { return n; }\nstatic inline int64_t noise_take(int64_t n) { return n + 1; }\n"
+
+# What the noisy header's warning says, and the repaired one never does.
+constant NOISE_WORDS: str
+    "noise_spare is unused"
 
 # Where `heroes build` keeps its objects: the `build/` of the directory the
 # harness runs in, the repository root.
@@ -298,11 +305,11 @@ function a_warm_cache_never_replays_a_warning_that_was_repaired(@r: report.Repor
 
     # The premise, asserted rather than assumed: without a warning here
     # the rest of this case tests nothing and would pass vacuously.
-    if !strings.contains(text: noisy.must().err, needle: "unused function")
+    if !strings.contains(text: noisy.must().err, needle: NOISE_WORDS)
         report.keep_failure(
             @r,
             label: label,
-            detail: "  the noisy header produced no `unused function` warning, so this case has nothing to measure. clang said:\n    " + strings.trimmed(noisy.must().err) + "\n  Repair the header above rather than deleting the check: a case that cannot fire is worse than none."
+            detail: "  the noisy header produced no `" + NOISE_WORDS + "` warning, so this case has nothing to measure. clang said:\n    " + strings.trimmed(noisy.must().err) + "\n  Repair the header above rather than deleting the check: a case that cannot fire is worse than none."
         )
         return
 
@@ -317,9 +324,9 @@ function a_warm_cache_never_replays_a_warning_that_was_repaired(@r: report.Repor
             wrong @ wrong.push("    " + attempt + " did not succeed after the header was repaired")
             continue
 
-        if strings.contains(text: said.must().err, needle: "unused function")
+        if strings.contains(text: said.must().err, needle: NOISE_WORDS)
             wrong @ wrong.push(
-                "    " + attempt + " reported `unused function` on a header that no longer has one:\n      " + strings.trimmed(said.must().err)
+                "    " + attempt + " reported `" + NOISE_WORDS + "` on a header that no longer has it:\n      " + strings.trimmed(said.must().err)
             )
 
     if wrong.len() > 0

@@ -1,0 +1,88 @@
+# Which packages' compile words a unit reads: those of the packages named by
+# the groups whose headers it reads (design.md §4.19; panel 205's R3,
+# ratified 2026-10-10; defect 572). Split from `emit/externs.hero`, past
+# §11's 300 lines, along the seam between what the groups name and which
+# unit is handed it.
+
+use ast
+use source
+use ir/containers
+use emit/externs as emit_externs
+
+# Each header a group names, with the packages its groups name, in their
+# written order: asked once per build (`cli/produce.hero`), so a unit's words
+# are looked up and never walked again (panel 205's R3, defect 572). A unit
+# reads its own module's groups' headers and the header of another module's
+# record it spells (`emit/unit_plan.hero`), so the words follow the header: a
+# package's `-I` reaches every unit that must find its header, its `-D` no
+# unit that reads none of its headers.
+function by_header(p: containers.Program, s: source.Source, decls: [ast.Decl]) -> {str: [str]}
+    out: {str: [str]} @ {}
+
+    for f in p.functions
+        spans = emit_externs.extern_spans(decls, f)
+
+        if !spans.header.is_err() && !spans.library.is_err()
+            wanted = emit_externs.library_span(spans.library.must(), want_package: true)
+
+            if !wanted.is_err()
+                with_package(
+                    by: @out,
+                    header: emit_externs.unquoted(s, span: spans.header.must()),
+                    package: emit_externs.unquoted(s, span: wanted.must())
+                )
+
+    for decl in decls
+        match decl.kind
+            .record_decl rec =>
+                if !rec.header.is_err() && !rec.library.is_err()
+                    wanted = emit_externs.library_span(rec.library.must(), want_package: true)
+
+                    if !wanted.is_err()
+                        with_package(
+                            by: @out,
+                            header: emit_externs.unquoted(s, span: rec.header.must()),
+                            package: emit_externs.unquoted(s, span: wanted.must())
+                        )
+            .constant_decl | .function_decl | .variant_decl | .test_decl => continue
+
+    return out
+
+# `package` added to `header`'s packages in `by`, once.
+function with_package(@by: {str: [str]}, header: str, package: str)
+    known: [str] @ by[header].default([])
+
+    for one in known
+        if one == package
+            return
+
+    by[header] @ known.push(package)
+
+# The packages of `listed`'s headers, each once, in the headers' order.
+function of(by: {str: [str]}, listed: [str]) -> [str]
+    out: [str] @ []
+
+    for header in listed
+        for package in by[header].default([])
+            found: bool @ false
+
+            for one in out
+                if one == package
+                    found @ true
+
+            if !found
+                out @ out.push(package)
+
+    return out
+
+## Tests
+
+test "a header's packages are the ones its groups name, each once, in the headers' order"
+    by: {str: [str]} @ {}
+    with_package(by: @by, header: "a.h", package: "pa")
+    with_package(by: @by, header: "a.h", package: "pa")
+    with_package(by: @by, header: "b.h", package: "pb")
+    with_package(by: @by, header: "a.h", package: "pc")
+    assert by["a.h"].must() == ["pa", "pc"]
+    assert of(by, listed: ["hero_os.h", "b.h", "a.h"]) == ["pb", "pa", "pc"]
+    assert of(by, listed: ["wchar.h"]) == []

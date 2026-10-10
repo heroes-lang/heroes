@@ -96,11 +96,15 @@
 #include "heroes_runtime.h"
 
 /* The two lists a generated unit includes around its groups' headers (defect
- * 361), here so they compile with the runtime and are keyed with it: every
- * cached object answers to the files this one names (`cli/runtime_key.hero`).
- * Saved and given back with nothing between, they change nothing here. */
+ * 361), its first header and the standard headers it reads after its groups
+ * (defect 568), here so they compile with the runtime and are keyed with it:
+ * every cached object answers to the files this one names
+ * (`cli/runtime_key.hero`). Saved and given back with nothing between, the
+ * lists change nothing here, and `heroes_runtime.h` is read already. */
+#include "heroes_unit.h"
 #include "heroes_guard_open.h"
 #include "heroes_guard_close.h"
+#include "heroes_standard.h"
 
 #include <locale.h>
 #include <float.h>

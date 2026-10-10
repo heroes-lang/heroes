@@ -1,0 +1,7 @@
+error[ffi_parameter_type]: `s` of `strlen` is declared a different kind of thing from the header's `const char *` — clang read the header, and the two do not convert
+  at tests/golden/unsupported/fixedbugs-570-an-integer-for-a-library-s-pointer-is-refused-through-the-pragma.hero:16:5
+     |
+  16 |     function strlen(s: i64) -> u64  #~ ffi_parameter_type
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: §4.19: a result may be wider than C's, and a parameter is declared at the header's own width and sign. Declare it `cstr`, and convert at the call where the value is known to fit
+  fix (guess): declare it `cstr`

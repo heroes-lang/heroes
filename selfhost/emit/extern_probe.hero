@@ -29,6 +29,7 @@ use emit/ffi_lookup as ffi_lookup
 use emit/lend_type
 use emit/probe_params
 use emit/writer
+use emit/checks_raised
 use parse
 use resolve
 use checker
@@ -127,9 +128,24 @@ function extern_probes(@w: writer.Writer, p: containers.Program, c: state.Checke
             Probe(file: found.file, line: found.line, text: probe_line(probe: probe_name(module: module, name: name), name: name, parameters: parameters.must(), arguments: arguments))
         )
 
-    if probes.len() == 0
+    # Every check raised again at the region's opening, outside its push so
+    # that what follows it keeps them too: a group constant's macro expanded
+    # by an assertion above can have turned one off with a `_Pragma`
+    # (`emit/checks_raised.hero`, defect 570). Wherever the unit binds a
+    # group, with or without a probe.
+    grouped = binds_a_group(p, s, decls)
+
+    if probes.len() == 0 && !grouped
         return
     writer.at_generated(@w)
+
+    if grouped
+        for raised in checks_raised.lines()
+            writer.line(@w, text: raised)
+
+    if probes.len() == 0
+        writer.blank(@w)
+        return
     writer.line(@w, text: "#pragma clang diagnostic push")
 
     for flag in PROBE_ERRORS
@@ -142,6 +158,17 @@ function extern_probes(@w: writer.Writer, p: containers.Program, c: state.Checke
     writer.at_generated(@w)
     writer.line(@w, text: "#pragma clang diagnostic pop")
     writer.blank(@w)
+
+# Whether the unit binds a function or a constant of a group's header, a
+# header other than the compiler's own (`emit/externs.hero`'s `is_own`).
+function binds_a_group(p: containers.Program, s: source.Source, decls: [ast.Decl]) -> bool
+    for f in p.functions
+        header = emit_externs.extern_spans(decls, f).header
+
+        if !header.is_err() && !emit_externs.is_own(emit_externs.unquoted(s, span: header.must()))
+            return true
+
+    return false
 
 # A probe's parameters as C, spelled by `emit/probe_params.hero` and named here
 # as well, since every reader of a probe asks this module for its parts.
@@ -279,20 +306,35 @@ test "a probe per extern with parameters, mutables as pointers, columns exact"
     assert ffi_lookup.has(text: got, needle: "#pragma clang diagnostic error \"-Wimplicit-int-conversion\"")
     assert ffi_lookup.has(text: got, needle: "#pragma clang diagnostic pop")
     assert find_text(line: got, needle: "diagnostic push").must() < find_text(line: got, needle: "hero_ffi_probe_h_t_narrow").must()
+
+    # And every check raised again before the push, so it outlives the pop:
+    # the unit binds a group (defect 570).
+    assert find_text(line: got, needle: "diagnostic error \"-Wsign-conversion\"").must() < find_text(line: got, needle: "diagnostic push").must()
+    assert ffi_lookup.has(text: got, needle: "#pragma clang diagnostic error \"-Wint-conversion\"")
     assert find_text(line: got, needle: "diagnostic pop").must() > find_text(line: got, needle: "hero_ffi_probe_h_t_fill").must()
 
-test "no probes, no pragma: the block may only exist when a probe does"
-    text = "extern \"m.h\"\n    function version() -> i64\n\nfunction main()\n    print(version())\n"
-    parsed = parse.parse(text)
-    s = source.new_source(name: "t.hero", text: text)
-    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
-    c: state.Checked @ checker.check(parsed.tree, out, s, parsed.decls)
-    assert c.diagnostics.len() == 0
-    low = lower.lower(parsed.tree, out, c, s, parsed.decls)
-    names = ctype.new_names(s, parsed.decls)
-    w: writer.Writer @ writer.new_writer("t")
-    extern_probes(@w, low.program, c, names, s, parsed.decls)
-    assert writer.finish(w) == ""
+# The probe block may only exist when a probe does; the checks are raised
+# wherever a group is bound, a probe or none, and a program binding only the
+# compiler's own headers gets neither.
+test "no probes, no pragma block: the block may only exist when a probe does"
+    for header in ["m.h", "hero_os.h"]
+        text = "extern \"" + header + "\"\n    function version() -> i64\n\nfunction main()\n    print(version())\n"
+        parsed = parse.parse(text)
+        s = source.new_source(name: "t.hero", text: text)
+        out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+        c: state.Checked @ checker.check(parsed.tree, out, s, parsed.decls)
+        assert c.diagnostics.len() == 0
+        low = lower.lower(parsed.tree, out, c, s, parsed.decls)
+        names = ctype.new_names(s, parsed.decls)
+        w: writer.Writer @ writer.new_writer("t")
+        extern_probes(@w, low.program, c, names, s, parsed.decls)
+        got = writer.finish(w)
+        assert !ffi_lookup.has(text: got, needle: "diagnostic push")
+
+        if header == "m.h"
+            assert ffi_lookup.has(text: got, needle: checks_raised.lines()[0])
+        else
+            assert got == ""
 
 # Byte offset of the first occurrence of needle, over chars so the scan
 # never splits a character — the ASCII probe lines make the two counts

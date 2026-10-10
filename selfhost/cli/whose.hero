@@ -51,8 +51,11 @@ function of_refusal(failed: ()?, art: compile.Artifact, s: source.Source, t: too
         return fail(code: "failed", msg: message)
 
     # A bound header clang refused on its own is the author's (defect 360),
-    # told before any question is asked of the header after it.
-    if told_header(message, art, s, t, under: under, unit_headers: unit_headers)
+    # told before any question is asked of the header after it. The unit's
+    # headers are asked under the unit's own words (defect 572).
+    words = unit_words(under, asking: asking, unit_headers: unit_headers)
+
+    if told_header(message, art, s, t, under: words, unit_headers: unit_headers)
         return fail(code: "diagnostics", msg: "a header this program binds does not compile")
 
     # A function the linker found no definition of whose header defines it
@@ -70,7 +73,7 @@ function of_refusal(failed: ()?, art: compile.Artifact, s: source.Source, t: too
     answer: ffi_asked.Asked @ ffi_asked.nothing()
 
     if asked.is_err()
-        answer @ header_ask.ask(t, art, s, under: under, struct_tags: struct_tags, asking: asking)
+        answer @ header_ask.ask(t, art, s, struct_tags: struct_tags, asking: asking)
     else
         answer @ asked.must()
 
@@ -80,7 +83,7 @@ function of_refusal(failed: ()?, art: compile.Artifact, s: source.Source, t: too
     theirs: [diag.Diagnostic] @ []
 
     for d in explained(message, art, s, answered, struct_tags: struct_tags, asked: answer)
-        theirs @ theirs.push(name_order.unknown(d, s, art.decls, t, under: under, unit_headers: unit_headers))
+        theirs @ theirs.push(name_order.unknown(d, s, art.decls, t, under: words, unit_headers: unit_headers))
 
     if theirs.len() > 0
         _ = compile.stage(theirs, s).is_err()
@@ -136,6 +139,16 @@ function explained(message: str, art: compile.Artifact, s: source.Source, answer
         struct_tags: struct_tags,
         asked: asked
     )
+
+# The words the refused unit compiled under: the probing's whose headers are
+# the unit's, its packages those of the groups naming its headers (defect
+# 572), else the build's.
+function unit_words(under: compiling.Compiling, asking: [probing.Probing], unit_headers: [str]) -> compiling.Compiling
+    for one in asking
+        if one.headers == unit_headers
+            return one.under
+
+    return under
 
 # Whether clang's refusal is a header a group binds that does not compile
 # (`cli/header_refused.hero`, defect 360): told on the group's string, and the
