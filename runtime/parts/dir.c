@@ -41,6 +41,20 @@ static _Thread_local char **hero_dir_names = NULL;
 static _Thread_local int64_t hero_dir_count = 0;
 static _Thread_local int64_t hero_dir_room = 0;
 
+/* Every name and every block of names every thread's listing holds, so the
+ * exit check can tell a listing the program never released from a runtime
+ * call that kept what it borrowed (defect 573). */
+static _Atomic int64_t hero_dir_names_held = 0;
+static _Atomic int64_t hero_dir_blocks_held = 0;
+
+static int64_t hero_dir_names_held_at_exit(void) {
+    return atomic_load(&hero_dir_names_held);
+}
+
+static int64_t hero_dir_blocks_held_at_exit(void) {
+    return atomic_load(&hero_dir_blocks_held);
+}
+
 /* What a scan is looking for. */
 #define HERO_DIR_FILES 0
 #define HERO_DIR_DIRECTORIES 1
@@ -49,6 +63,7 @@ static void hero_dir_reset(void) {
     for (int64_t i = 0; i < hero_dir_count; i += 1) {
         hero_release(hero_dir_names[i]);
         hero_dir_names[i] = NULL;
+        atomic_fetch_sub(&hero_dir_names_held, 1);
     }
     hero_dir_count = 0;
 }
@@ -59,8 +74,12 @@ static int hero_dir_make_room(void) {
     if (hero_dir_count < hero_dir_room) return 1;
     int64_t wanted = hero_dir_room == 0 ? 256 : hero_dir_room * 2;
     char **grown = hero_alloc((size_t)wanted * sizeof(char *));
+    atomic_fetch_add(&hero_dir_blocks_held, 1);
     for (int64_t i = 0; i < hero_dir_count; i += 1) grown[i] = hero_dir_names[i];
-    if (hero_dir_names != NULL) hero_release(hero_dir_names);
+    if (hero_dir_names != NULL) {
+        hero_release(hero_dir_names);
+        atomic_fetch_sub(&hero_dir_blocks_held, 1);
+    }
     hero_dir_names = grown;
     hero_dir_room = wanted;
     return 1;
@@ -85,6 +104,7 @@ static int hero_dir_remember(const char *prefix, const char *name) {
     joined[lead + tail] = '\0';
     hero_dir_names[hero_dir_count] = joined;
     hero_dir_count += 1;
+    atomic_fetch_add(&hero_dir_names_held, 1);
     return 1;
 }
 
@@ -139,6 +159,7 @@ void hero_dir_release(void) {
     hero_dir_reset();
     if (hero_dir_names != NULL) {
         hero_release(hero_dir_names);
+        atomic_fetch_sub(&hero_dir_blocks_held, 1);
         hero_dir_names = NULL;
         hero_dir_room = 0;
     }
