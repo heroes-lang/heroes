@@ -1,0 +1,7 @@
+error[ffi_header_refused]: `jpeglib.h`, the header this group names, does not compile: clang refuses it at line 984: unknown type name 'FILE'
+  at main.hero:1:8
+    |
+  1 | extern "jpeglib.h" package "libjpeg"
+    |        ^^^^^^^^^^^
+  note: `jpeglib.h` line 984 reads `EXTERN(void) jpeg_stdio_dest(j_compress_ptr cinfo, FILE *outfile);`
+  note: a group's header is compiled as this program's own C includes it, before any declaration of the group is checked against it: repair the header, or name the one that declares this group's C
