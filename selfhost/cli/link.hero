@@ -11,6 +11,7 @@ use cli/flags
 use cli/libraries
 use cli/process
 use cli/publish
+use cli/response_file
 use cli/strings
 use cli/toolchain
 use cli/units
@@ -37,6 +38,10 @@ use cli/units
 # output, so a private file name would leave a new `.pdb` on every build.
 # Inside it the output is the module's own name, never a part of the path
 # asked for: an author's `-o` is not split to find one (`published_as`).
+#
+# **Its words reach clang in a file in the binary's home** (defect 583,
+# `response_file.for_link`): they name every object, and Windows refuses a
+# line past 32,767 characters, which the compiler's own build passed.
 function link_objects(t: toolchain.Toolchain, objects: [str], module: str, output: str?, level: str, sanitize: bool, search_library: [str], package_flags: [str], link_names: [str]) -> str?
     line: [str] @ link_line(
         objects: objects,
@@ -46,7 +51,8 @@ function link_objects(t: toolchain.Toolchain, objects: [str], module: str, outpu
         package_flags: package_flags,
         link_names: link_names
     )
-    binary: str @ binary_home(t, line: line, name: module + process.exe_suffix())
+    home = binary_home(t, line: line, name: module + process.exe_suffix())
+    binary: str @ home
 
     # Where the binary lands, which is `binary` itself but for an author's
     # `-o` that is a link: that one is written through to the file it names
@@ -74,7 +80,8 @@ function link_objects(t: toolchain.Toolchain, objects: [str], module: str, outpu
         # `clang -o /dev/null` does (measured), where a private name beside
         # it could not be made and the build was refused.
         if files.is_special(at)
-            return linked_into(line: line, t: t, at: at, binary: binary)
+            return linked_into(line: response_file.for_link(line: line, home: home)?, t: t, at: at, binary: binary)
+    line @ response_file.for_link(line: line, home: home)?
     stage = publish.private_name(at)
     stage_made = process.mkdir_all(stage)
 
@@ -508,3 +515,87 @@ test "a Windows link records the published PDB's own name, and a POSIX link reco
     assert pdb_words(suffix: "", at: "build/0123456789abcdef/prog", inner: "prog", module: "prog").len() == 0
     assert last_part("a/b\\c.pdb") == "c.pdb"
     assert last_part("plain.pdb") == "plain.pdb"
+
+# **A link past what one Windows line holds** (defect 583): one object named
+# over and over until the paths alone pass 32,767 characters, as the
+# compiler's own 558 did on the Windows box. It links on every platform, the
+# words it ran with are the file's, and the file holds every one of them but
+# `clang`, each object among them.
+test "a link whose objects pass what one Windows command line holds reads every word from its file (defect 583)"
+    t: toolchain.Toolchain @ toolchain.locate_toolchain(hint: "", fingerprint: "port-test").must()
+    t.build @ "build/selftest-link-long"
+    assert !process.remove_tree(t.build).is_err()
+    none: [str] = []
+    memo: {str: str} @ {}
+    told: {str: bool} @ {}
+    runtime = toolchain.runtime_object(t, level: "-O0", sanitize: false).must()
+    made = units.tu_object(
+        t,
+        module: "linklong",
+        tu_text: "int main(void) { return 0; }\n",
+        level: "-O0",
+        sanitize: false,
+        search: "",
+        package_flags: none,
+        source_dir: "",
+        search_include: none,
+        @memo,
+        @told
+    ).must()
+    filler = units.tu_object(
+        t,
+        module: "filler",
+        tu_text: "typedef int hero_filler;\n",
+        level: "-O0",
+        sanitize: false,
+        search: "",
+        package_flags: none,
+        source_dir: "",
+        search_include: none,
+        @memo,
+        @told
+    ).must()
+    objects: [str] @ [runtime, made]
+    length: i64 @ runtime.len() + made.len() + 2
+
+    while length <= 32767
+        objects @ objects.push(filler)
+        length @ length + filler.len() + 1
+
+    no_output: str? = fail(code: "none", msg: "no -o")
+    binary = link_objects(
+        t,
+        objects: objects,
+        module: "linklong",
+        output: no_output,
+        level: "-O0",
+        sanitize: false,
+        search_library: none,
+        package_flags: none,
+        link_names: none
+    ).must()
+    ran = process.run(program: binary, words: [binary], out: process.discard(), err: process.discard())
+    assert ran.started && ran.code == 0
+    line = link_line(
+        objects: objects,
+        level: "-O0",
+        sanitize: false,
+        search_library: none,
+        package_flags: none,
+        link_names: none
+    )
+    home = binary_home(t, line: line, name: "linklong" + process.exe_suffix())
+    assert binary == home
+    words = publish.beside(path: home, name: "link-words.rsp")
+    assert response_file.for_link(line: line, home: home).must() == ["clang", "--rsp-quoting=posix", "@" + words]
+    held = read_file(words).must()
+    assert held == response_file.text_of(line)
+    ends: i64 @ 0
+
+    for i in range(from: 0, to: held.len())
+        if held[i] == 10
+            ends @ ends + 1
+
+    assert ends == line.len() - 1
+    assert strings.holds(text: held, needle: "\n\"" + filler + "\"\n")
+    assert !process.remove_tree(t.build).is_err()
