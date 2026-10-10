@@ -3,12 +3,19 @@
 #include <math.h>
 #include <hero_os.h>
 #include <heroes_runtime.h>
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wall"
+#pragma clang diagnostic ignored "-Wsign-conversion"
+#pragma clang diagnostic error "-Wreturn-type"
+#pragma clang diagnostic error "-Wuninitialized"
+#pragma clang diagnostic error "-Wconditional-uninitialized"
 #include "heroes_guard_open.h"
 #include <fixedbugs-151-unions.h>
 #pragma push_macro("bytes")
 #pragma push_macro("i")
 #pragma push_macro("p")
 #include "heroes_guard_close.h"
+#pragma clang diagnostic pop
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
@@ -40,7 +47,7 @@ _Static_assert(_Generic(&((SARR *)0)->bytes, _Bool (*)[4]: (sizeof(_Bool) == siz
 #line 23 "tests/golden/run/fixedbugs-151-arms-as-wide-as-their-unions-compared.hero"
 _Static_assert(__builtin_classify_type(((SPTR *)0)->kind) == 1 && sizeof(((SPTR *)0)->kind) == sizeof(int32_t) && (_Generic(((SPTR *)0)->kind, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field SPTR kind");
 _Static_assert(__builtin_classify_type(((SPTR *)0)->p) == 5 && _Generic(((SPTR *)0)->p, __typeof__(((SPTR *)0)->p): 1, default: 0) && sizeof(((SPTR *)0)->p) == sizeof(void *), "heroes-ffi-field SPTR p");
-#line 44 "fixedbugs151armsaswideastheirunionscompared.c"
+#line 51 "fixedbugs151armsaswideastheirunionscompared.c"
 
 #line 12 "tests/golden/run/fixedbugs-151-arms-as-wide-as-their-unions-compared.hero"
 _Static_assert(__builtin_classify_type(*(SA *)0) != 13 || sizeof(((SA *)0)->kind) == sizeof(SA), "heroes-ffi-union-narrow SA kind");
@@ -60,7 +67,7 @@ _Static_assert(__builtin_classify_type(*(SARR *)0) != 13 || sizeof(((SARR *)0)->
 _Static_assert(__builtin_classify_type(*(SPTR *)0) != 13 || sizeof(((SPTR *)0)->kind) == sizeof(SPTR), "heroes-ffi-union-narrow SPTR kind");
 #line 22 "tests/golden/run/fixedbugs-151-arms-as-wide-as-their-unions-compared.hero"
 _Static_assert(__builtin_classify_type(*(SPTR *)0) != 13 || sizeof(((SPTR *)0)->p) == sizeof(SPTR), "heroes-ffi-union-narrow SPTR p");
-#line 64 "fixedbugs151armsaswideastheirunionscompared.c"
+#line 71 "fixedbugs151armsaswideastheirunionscompared.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -163,7 +170,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 167 "fixedbugs151armsaswideastheirunionscompared.c"
+#line 174 "fixedbugs151armsaswideastheirunionscompared.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs151armsaswideastheirunionscompared_SA_eq(const SA *a, const SA *b);
@@ -210,7 +217,7 @@ void h_fixedbugs151armsaswideastheirunionscompared_main(void);
 
 #line 33 "tests/golden/run/fixedbugs-151-arms-as-wide-as-their-unions-compared.hero"
 void h_fixedbugs151armsaswideastheirunionscompared_main(void) {
-#line 214 "fixedbugs151armsaswideastheirunionscompared.c"
+#line 221 "fixedbugs151armsaswideastheirunionscompared.c"
     HeroMapHeader * h0_seen = {0};
     HeroMapHeader * h1_own1 = {0};
     int32_t t1;
@@ -315,15 +322,15 @@ bb0:
     t56 = h1_own1;
 #line 35 "tests/golden/run/fixedbugs-151-arms-as-wide-as-their-unions-compared.hero"
     h1_own1 = t16;
-#line 319 "fixedbugs151armsaswideastheirunionscompared.c"
+#line 326 "fixedbugs151armsaswideastheirunionscompared.c"
     hero_map_decref(t56);
 #line 35 "tests/golden/run/fixedbugs-151-arms-as-wide-as-their-unions-compared.hero"
     t57 = h0_seen;
-#line 323 "fixedbugs151armsaswideastheirunionscompared.c"
+#line 330 "fixedbugs151armsaswideastheirunionscompared.c"
     hero_map_incref(t16);
 #line 35 "tests/golden/run/fixedbugs-151-arms-as-wide-as-their-unions-compared.hero"
     h0_seen = t16;
-#line 327 "fixedbugs151armsaswideastheirunionscompared.c"
+#line 334 "fixedbugs151armsaswideastheirunionscompared.c"
     hero_map_decref(t57);
 #line 36 "tests/golden/run/fixedbugs-151-arms-as-wide-as-their-unions-compared.hero"
     t17 = INT64_C(5);
@@ -426,7 +433,7 @@ bb0:
     hero_print_bool(t55);
 #line 47 "tests/golden/run/fixedbugs-151-arms-as-wide-as-their-unions-compared.hero"
     hero_print_end();
-#line 430 "fixedbugs151armsaswideastheirunionscompared.c"
+#line 437 "fixedbugs151armsaswideastheirunionscompared.c"
     hero_map_release_at(&h0_seen);
     hero_map_release_at(&h1_own1);
     return;

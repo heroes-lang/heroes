@@ -3,9 +3,16 @@
 #include <math.h>
 #include <hero_os.h>
 #include <heroes_runtime.h>
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wall"
+#pragma clang diagnostic ignored "-Wsign-conversion"
+#pragma clang diagnostic error "-Wreturn-type"
+#pragma clang diagnostic error "-Wuninitialized"
+#pragma clang diagnostic error "-Wconditional-uninitialized"
 #include "heroes_guard_open.h"
 #include <fixedbugs-413-keepers.h>
 #include "heroes_guard_close.h"
+#pragma clang diagnostic pop
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
@@ -33,11 +40,11 @@ _Static_assert(sizeof(struct pair) - __builtin_offsetof(struct pair, k) != 0, "h
 #line 29 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
 _Static_assert(_Generic(&((struct pair *)0)->k, struct keeper (*)[2]: 1, default: 0) && sizeof(struct pair) - __builtin_offsetof(struct pair, k) >= sizeof(struct keeper[2]), "heroes-ffi-field Pair k");
 _Static_assert(__builtin_classify_type(((struct pair *)0)->after) == 1 && sizeof(((struct pair *)0)->after) == sizeof(int64_t) && (_Generic(((struct pair *)0)->after, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Pair after");
-#line 37 "fixedbugs413arecordcknowsbyitsaddress.c"
+#line 44 "fixedbugs413arecordcknowsbyitsaddress.c"
 
 #line 25 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
 _Static_assert(__builtin_classify_type(*(struct wrap *)0) != 13, "heroes-ffi-union Wrap before k");
-#line 41 "fixedbugs413arecordcknowsbyitsaddress.c"
+#line 48 "fixedbugs413arecordcknowsbyitsaddress.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -123,7 +130,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 127 "fixedbugs413arecordcknowsbyitsaddress.c"
+#line 134 "fixedbugs413arecordcknowsbyitsaddress.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs413arecordcknowsbyitsaddress_Keeper_eq(const struct keeper *a, const struct keeper *b);
@@ -184,7 +191,7 @@ HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to);
 
 #line 34 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
 int32_t h_fixedbugs413arecordcknowsbyitsaddress_start(struct keeper *ph0_k) {
-#line 188 "fixedbugs413arecordcknowsbyitsaddress.c"
+#line 195 "fixedbugs413arecordcknowsbyitsaddress.c"
     int32_t t1;
     goto bb0;
 bb0:
@@ -194,12 +201,12 @@ bb0:
     t1 = keep_init(&(*ph0_k));
 #line 35 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     return t1;
-#line 198 "fixedbugs413arecordcknowsbyitsaddress.c"
+#line 205 "fixedbugs413arecordcknowsbyitsaddress.c"
 }
 
 #line 37 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
 int32_t h_fixedbugs413arecordcknowsbyitsaddress_passed_on(struct keeper *ph0_k) {
-#line 203 "fixedbugs413arecordcknowsbyitsaddress.c"
+#line 210 "fixedbugs413arecordcknowsbyitsaddress.c"
     int32_t t1;
     goto bb0;
 bb0:
@@ -207,12 +214,12 @@ bb0:
     t1 = h_fixedbugs413arecordcknowsbyitsaddress_start(&(*ph0_k));
 #line 38 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     return t1;
-#line 211 "fixedbugs413arecordcknowsbyitsaddress.c"
+#line 218 "fixedbugs413arecordcknowsbyitsaddress.c"
 }
 
 #line 40 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
 int32_t h_fixedbugs413arecordcknowsbyitsaddress_deep(struct keeper *ph0_k, int64_t h1_n) {
-#line 216 "fixedbugs413arecordcknowsbyitsaddress.c"
+#line 223 "fixedbugs413arecordcknowsbyitsaddress.c"
     int32_t h2_ret0;
     int64_t t1;
     int64_t t2;
@@ -263,14 +270,14 @@ bb3:
     goto bb1;
 #line 42 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
 bb4:
-#line 267 "fixedbugs413arecordcknowsbyitsaddress.c"
+#line 274 "fixedbugs413arecordcknowsbyitsaddress.c"
     t9 = h2_ret0;
     return t9;
 }
 
 #line 45 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
 int64_t h_fixedbugs413arecordcknowsbyitsaddress_every_one(HeroArrayHeader * *ph0_ks) {
-#line 274 "fixedbugs413arecordcknowsbyitsaddress.c"
+#line 281 "fixedbugs413arecordcknowsbyitsaddress.c"
     int64_t h1_refused;
     HeroArrayHeader * h2_xs0 = {0};
     int64_t h3_i0;
@@ -320,15 +327,15 @@ bb0:
     t25 = h5_own5;
 #line 48 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     h5_own5 = t5;
-#line 324 "fixedbugs413arecordcknowsbyitsaddress.c"
+#line 331 "fixedbugs413arecordcknowsbyitsaddress.c"
     hero_array_decref(t25);
 #line 48 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     t26 = h2_xs0;
-#line 328 "fixedbugs413arecordcknowsbyitsaddress.c"
+#line 335 "fixedbugs413arecordcknowsbyitsaddress.c"
     hero_array_incref(t5);
 #line 48 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     h2_xs0 = t5;
-#line 332 "fixedbugs413arecordcknowsbyitsaddress.c"
+#line 339 "fixedbugs413arecordcknowsbyitsaddress.c"
     hero_array_decref(t26);
 #line 48 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     t6 = INT64_C(0);
@@ -385,7 +392,7 @@ bb3:
 bb4:
 #line 52 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     t24 = h1_refused;
-#line 389 "fixedbugs413arecordcknowsbyitsaddress.c"
+#line 396 "fixedbugs413arecordcknowsbyitsaddress.c"
     hero_array_release_at(&h2_xs0);
     hero_array_release_at(&h5_own5);
     return t24;
@@ -406,12 +413,12 @@ bb6:
 bb7:
 #line 50 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     goto bb5;
-#line 410 "fixedbugs413arecordcknowsbyitsaddress.c"
+#line 417 "fixedbugs413arecordcknowsbyitsaddress.c"
 }
 
 #line 54 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
 void h_fixedbugs413arecordcknowsbyitsaddress_main(void) {
-#line 415 "fixedbugs413arecordcknowsbyitsaddress.c"
+#line 422 "fixedbugs413arecordcknowsbyitsaddress.c"
     struct keeper *const hero_lend_h0_k = (struct keeper *)hero_lend_local(sizeof(struct keeper), "fixedbugs413arecordcknowsbyitsaddress.main", "k");
 #define h0_k (*hero_lend_h0_k)
     HeroArrayHeader * h1_ks = {0};
@@ -567,15 +574,15 @@ bb0:
     t88 = h9_own9;
 #line 57 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     h9_own9 = t8;
-#line 571 "fixedbugs413arecordcknowsbyitsaddress.c"
+#line 578 "fixedbugs413arecordcknowsbyitsaddress.c"
     hero_array_decref(t88);
 #line 57 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     t89 = h1_ks;
-#line 575 "fixedbugs413arecordcknowsbyitsaddress.c"
+#line 582 "fixedbugs413arecordcknowsbyitsaddress.c"
     hero_array_incref(t8);
 #line 57 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     h1_ks = t8;
-#line 579 "fixedbugs413arecordcknowsbyitsaddress.c"
+#line 586 "fixedbugs413arecordcknowsbyitsaddress.c"
     hero_array_decref(t89);
 #line 58 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     t9 = INT64_C(1);
@@ -624,15 +631,15 @@ bb0:
     t90 = h10_own10;
 #line 59 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     h10_own10 = t20;
-#line 628 "fixedbugs413arecordcknowsbyitsaddress.c"
+#line 635 "fixedbugs413arecordcknowsbyitsaddress.c"
     hero_array_decref(t90);
 #line 59 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     t91 = h2_ws;
-#line 632 "fixedbugs413arecordcknowsbyitsaddress.c"
+#line 639 "fixedbugs413arecordcknowsbyitsaddress.c"
     hero_array_incref(t20);
 #line 59 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     h2_ws = t20;
-#line 636 "fixedbugs413arecordcknowsbyitsaddress.c"
+#line 643 "fixedbugs413arecordcknowsbyitsaddress.c"
     hero_array_decref(t91);
 #line 60 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     t21 = INT64_C(1);
@@ -895,7 +902,7 @@ bb0:
     hero_print_int(t87);
 #line 75 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     hero_print_end();
-#line 899 "fixedbugs413arecordcknowsbyitsaddress.c"
+#line 906 "fixedbugs413arecordcknowsbyitsaddress.c"
     hero_array_release_at(&h1_ks);
     hero_array_release_at(&h2_ws);
     hero_array_release_at(&h9_own9);
@@ -915,7 +922,7 @@ bb0:
 
 #line 26 "<heroes library>"
 HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to) {
-#line 919 "fixedbugs413arecordcknowsbyitsaddress.c"
+#line 926 "fixedbugs413arecordcknowsbyitsaddress.c"
     HeroArrayHeader * h2_out = {0};
     int64_t h3_i;
     HeroArrayHeader * h4_own4 = {0};
@@ -939,15 +946,15 @@ bb0:
     t13 = h4_own4;
 #line 27 "<heroes library>"
     h4_own4 = t1;
-#line 943 "fixedbugs413arecordcknowsbyitsaddress.c"
+#line 950 "fixedbugs413arecordcknowsbyitsaddress.c"
     hero_array_decref(t13);
 #line 27 "<heroes library>"
     t14 = h2_out;
-#line 947 "fixedbugs413arecordcknowsbyitsaddress.c"
+#line 954 "fixedbugs413arecordcknowsbyitsaddress.c"
     hero_array_incref(t1);
 #line 27 "<heroes library>"
     h2_out = t1;
-#line 951 "fixedbugs413arecordcknowsbyitsaddress.c"
+#line 958 "fixedbugs413arecordcknowsbyitsaddress.c"
     hero_array_decref(t14);
 #line 28 "<heroes library>"
     t2 = h0_from;
@@ -981,7 +988,7 @@ bb2:
 #line 31 "<heroes library>"
 bb3:
     t12 = h2_out;
-#line 985 "fixedbugs413arecordcknowsbyitsaddress.c"
+#line 992 "fixedbugs413arecordcknowsbyitsaddress.c"
     hero_array_incref(t12);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h4_own4);

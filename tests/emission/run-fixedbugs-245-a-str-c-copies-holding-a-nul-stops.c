@@ -3,10 +3,17 @@
 #include <math.h>
 #include <hero_os.h>
 #include <heroes_runtime.h>
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wall"
+#pragma clang diagnostic ignored "-Wsign-conversion"
+#pragma clang diagnostic error "-Wreturn-type"
+#pragma clang diagnostic error "-Wuninitialized"
+#pragma clang diagnostic error "-Wconditional-uninitialized"
 #include "heroes_guard_open.h"
 #include <fixedbugs-245-a-str-c-copies-holding-a-nul-stops.h>
 #include <string.h>
 #include "heroes_guard_close.h"
+#pragma clang diagnostic pop
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
@@ -64,7 +71,7 @@ HERO_STR_STATIC(hero_str_41bb0df2, "C made ");
 HERO_STR_STATIC(hero_str_391e7e27, " bytes");
 HERO_STR_STATIC(hero_str_521d74b5, "C reads ");
 
-#line 68 "fixedbugs245astrccopiesholdinganulstops.c"
+#line 75 "fixedbugs245astrccopiesholdinganulstops.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -107,7 +114,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 111 "fixedbugs245astrccopiesholdinganulstops.c"
+#line 118 "fixedbugs245astrccopiesholdinganulstops.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -123,7 +130,7 @@ void h_fixedbugs245astrccopiesholdinganulstops_main(void);
 
 #line 13 "tests/golden/run/fixedbugs-245-a-str-c-copies-holding-a-nul-stops.hero"
 void h_fixedbugs245astrccopiesholdinganulstops_main(void) {
-#line 127 "fixedbugs245astrccopiesholdinganulstops.c"
+#line 134 "fixedbugs245astrccopiesholdinganulstops.c"
     HeroStr h0_made = {0};
     HeroStr h1_own1 = {0};
     HeroStr t1;
@@ -145,15 +152,15 @@ bb0:
     t10 = h1_own1;
 #line 14 "tests/golden/run/fixedbugs-245-a-str-c-copies-holding-a-nul-stops.hero"
     h1_own1 = t1;
-#line 149 "fixedbugs245astrccopiesholdinganulstops.c"
+#line 156 "fixedbugs245astrccopiesholdinganulstops.c"
     hero_str_decref(t10);
 #line 14 "tests/golden/run/fixedbugs-245-a-str-c-copies-holding-a-nul-stops.hero"
     t11 = h0_made;
-#line 153 "fixedbugs245astrccopiesholdinganulstops.c"
+#line 160 "fixedbugs245astrccopiesholdinganulstops.c"
     hero_str_incref(t1);
 #line 14 "tests/golden/run/fixedbugs-245-a-str-c-copies-holding-a-nul-stops.hero"
     h0_made = t1;
-#line 157 "fixedbugs245astrccopiesholdinganulstops.c"
+#line 164 "fixedbugs245astrccopiesholdinganulstops.c"
     hero_str_decref(t11);
 #line 15 "tests/golden/run/fixedbugs-245-a-str-c-copies-holding-a-nul-stops.hero"
     t2 = HERO_STR_LIT(hero_str_41bb0df2);
@@ -184,7 +191,7 @@ bb0:
     hero_print_uint(t9);
 #line 16 "tests/golden/run/fixedbugs-245-a-str-c-copies-holding-a-nul-stops.hero"
     hero_print_end();
-#line 188 "fixedbugs245astrccopiesholdinganulstops.c"
+#line 195 "fixedbugs245astrccopiesholdinganulstops.c"
     hero_str_release_at(&h0_made);
     hero_str_release_at(&h1_own1);
     return;

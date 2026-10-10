@@ -3,9 +3,16 @@
 #include <math.h>
 #include <hero_os.h>
 #include <heroes_runtime.h>
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wall"
+#pragma clang diagnostic ignored "-Wsign-conversion"
+#pragma clang diagnostic error "-Wreturn-type"
+#pragma clang diagnostic error "-Wuninitialized"
+#pragma clang diagnostic error "-Wconditional-uninitialized"
 #include "heroes_guard_open.h"
 #include <handle-set-a-call-that-also-acquires-pays-its-own-mark.h>
 #include "heroes_guard_close.h"
+#pragma clang diagnostic pop
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
@@ -64,7 +71,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_524451e, "reopened and closed once");
 
-#line 68 "handlesetacallthatalsoacquirespaysitsownmark.c"
+#line 75 "handlesetacallthatalsoacquirespaysitsownmark.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -110,7 +117,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 114 "handlesetacallthatalsoacquirespaysitsownmark.c"
+#line 121 "handlesetacallthatalsoacquirespaysitsownmark.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_handlesetacallthatalsoacquirespaysitsownmark_H_eq(hh * const *a, hh * const *b);
@@ -128,7 +135,7 @@ void h_handlesetacallthatalsoacquirespaysitsownmark_main(void);
 
 #line 13 "tests/golden/run/handle-set-a-call-that-also-acquires-pays-its-own-mark.hero"
 void h_handlesetacallthatalsoacquirespaysitsownmark_main(void) {
-#line 132 "handlesetacallthatalsoacquirespaysitsownmark.c"
+#line 139 "handlesetacallthatalsoacquirespaysitsownmark.c"
     hh * h0_a;
     hh * h1_b;
     int64_t t1;
@@ -198,7 +205,7 @@ bb0:
     hero_print_end();
 #line 18 "tests/golden/run/handle-set-a-call-that-also-acquires-pays-its-own-mark.hero"
     return;
-#line 202 "handlesetacallthatalsoacquirespaysitsownmark.c"
+#line 209 "handlesetacallthatalsoacquirespaysitsownmark.c"
 }
 HERO_TU_LOCAL bool h_handlesetacallthatalsoacquirespaysitsownmark_H_eq(hh * const *a, hh * const *b) {
     return hero_handle_eq(*a, *b);

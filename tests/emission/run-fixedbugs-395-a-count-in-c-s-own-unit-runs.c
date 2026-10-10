@@ -3,9 +3,16 @@
 #include <math.h>
 #include <hero_os.h>
 #include <heroes_runtime.h>
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wall"
+#pragma clang diagnostic ignored "-Wsign-conversion"
+#pragma clang diagnostic error "-Wreturn-type"
+#pragma clang diagnostic error "-Wuninitialized"
+#pragma clang diagnostic error "-Wconditional-uninitialized"
 #include "heroes_guard_open.h"
 #include <fixedbugs-395-units.h>
 #include "heroes_guard_close.h"
+#pragma clang diagnostic pop
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
@@ -32,13 +39,13 @@ _Static_assert(sizeof(struct ten) - __builtin_offsetof(struct ten, buf) != 0, "h
 #line 20 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
 _Static_assert(_Generic(&((struct ten *)0)->buf, _Bool (*)[10]: (sizeof(_Bool) == sizeof(uint8_t) && (((_Bool)-1 < 0) == ((uint8_t)-1 < 0))), char (*)[10]: (sizeof(char) == sizeof(uint8_t) && (((char)-1 < 0) == ((uint8_t)-1 < 0))), signed char (*)[10]: (sizeof(signed char) == sizeof(uint8_t) && (((signed char)-1 < 0) == ((uint8_t)-1 < 0))), short (*)[10]: (sizeof(short) == sizeof(uint8_t) && (((short)-1 < 0) == ((uint8_t)-1 < 0))), int (*)[10]: (sizeof(int) == sizeof(uint8_t) && (((int)-1 < 0) == ((uint8_t)-1 < 0))), long (*)[10]: (sizeof(long) == sizeof(uint8_t) && (((long)-1 < 0) == ((uint8_t)-1 < 0))), long long (*)[10]: (sizeof(long long) == sizeof(uint8_t) && (((long long)-1 < 0) == ((uint8_t)-1 < 0))), unsigned char (*)[10]: (sizeof(unsigned char) == sizeof(uint8_t) && (((unsigned char)-1 < 0) == ((uint8_t)-1 < 0))), unsigned short (*)[10]: (sizeof(unsigned short) == sizeof(uint8_t) && (((unsigned short)-1 < 0) == ((uint8_t)-1 < 0))), unsigned int (*)[10]: (sizeof(unsigned int) == sizeof(uint8_t) && (((unsigned int)-1 < 0) == ((uint8_t)-1 < 0))), unsigned long (*)[10]: (sizeof(unsigned long) == sizeof(uint8_t) && (((unsigned long)-1 < 0) == ((uint8_t)-1 < 0))), unsigned long long (*)[10]: (sizeof(unsigned long long) == sizeof(uint8_t) && (((unsigned long long)-1 < 0) == ((uint8_t)-1 < 0))), default: 0), "heroes-ffi-field Ten buf");
 _Static_assert(__builtin_classify_type(((struct ten *)0)->after) == 1 && sizeof(((struct ten *)0)->after) == sizeof(int64_t) && (_Generic(((struct ten *)0)->after, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Ten after");
-#line 36 "fixedbugs395acountincsownunitruns.c"
+#line 43 "fixedbugs395acountincsownunitruns.c"
 
 #line 16 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
 _Static_assert(__builtin_classify_type(*(struct held *)0) != 13, "heroes-ffi-union Held buf after");
 #line 19 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
 _Static_assert(__builtin_classify_type(*(struct ten *)0) != 13, "heroes-ffi-union Ten buf after");
-#line 42 "fixedbugs395acountincsownunitruns.c"
+#line 49 "fixedbugs395acountincsownunitruns.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -142,7 +149,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 146 "fixedbugs395acountincsownunitruns.c"
+#line 153 "fixedbugs395acountincsownunitruns.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs395acountincsownunitruns_Held_eq(const struct held *a, const struct held *b);
@@ -164,7 +171,7 @@ void h_fixedbugs395acountincsownunitruns_main(void);
 
 #line 15 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
 uint64_t h_fixedbugs395acountincsownunitruns_HELD_INTS(void) {
-#line 168 "fixedbugs395acountincsownunitruns.c"
+#line 175 "fixedbugs395acountincsownunitruns.c"
     return HELD_INTS;
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -181,7 +188,7 @@ uint64_t h_fixedbugs395acountincsownunitruns_HELD_INTS(void) {
 
 #line 34 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
 uint64_t h_fixedbugs395acountincsownunitruns_at_run_time(uint64_t h0_k) {
-#line 185 "fixedbugs395acountincsownunitruns.c"
+#line 192 "fixedbugs395acountincsownunitruns.c"
     uint64_t t1;
     goto bb0;
 bb0:
@@ -189,12 +196,12 @@ bb0:
     t1 = h0_k;
 #line 35 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
     return t1;
-#line 193 "fixedbugs395acountincsownunitruns.c"
+#line 200 "fixedbugs395acountincsownunitruns.c"
 }
 
 #line 37 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
 void h_fixedbugs395acountincsownunitruns_main(void) {
-#line 198 "fixedbugs395acountincsownunitruns.c"
+#line 205 "fixedbugs395acountincsownunitruns.c"
     struct held h0_h;
     struct ten h1_t;
     uint32_t *const hero_lend_h2_n = (uint32_t *)hero_lend_local(sizeof(uint32_t), "fixedbugs395acountincsownunitruns.main", "n");
@@ -551,7 +558,7 @@ bb0:
     hero_lend_local_give(hero_lend_h2_n);
 #line 56 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
     return;
-#line 555 "fixedbugs395acountincsownunitruns.c"
+#line 562 "fixedbugs395acountincsownunitruns.c"
 }
 #undef h2_n
 HERO_TU_LOCAL bool h_fixedbugs395acountincsownunitruns_Held_eq(const struct held *a, const struct held *b) {

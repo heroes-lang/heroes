@@ -3,9 +3,16 @@
 #include <math.h>
 #include <hero_os.h>
 #include <heroes_runtime.h>
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wall"
+#pragma clang diagnostic ignored "-Wsign-conversion"
+#pragma clang diagnostic error "-Wreturn-type"
+#pragma clang diagnostic error "-Wuninitialized"
+#pragma clang diagnostic error "-Wconditional-uninitialized"
 #include "heroes_guard_open.h"
 #include <c-frees-a-lease-and-the-runtime-names-it.h>
 #include "heroes_guard_close.h"
+#pragma clang diagnostic pop
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
@@ -60,7 +67,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_35d9fe9b, "payload");
 
-#line 64 "cfreesaleaseandtheruntimenamesit.c"
+#line 71 "cfreesaleaseandtheruntimenamesit.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -103,7 +110,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 107 "cfreesaleaseandtheruntimenamesit.c"
+#line 114 "cfreesaleaseandtheruntimenamesit.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -119,7 +126,7 @@ void h_cfreesaleaseandtheruntimenamesit_main(void);
 
 #line 26 "tests/golden/run/c-frees-a-lease-and-the-runtime-names-it.hero"
 void h_cfreesaleaseandtheruntimenamesit_main(void) {
-#line 123 "cfreesaleaseandtheruntimenamesit.c"
+#line 130 "cfreesaleaseandtheruntimenamesit.c"
     HeroStr h0_x = {0};
     const char * h1_c;
     HeroStr t1;
@@ -134,11 +141,11 @@ bb0:
     t1 = HERO_STR_LIT(hero_str_35d9fe9b);
 #line 27 "tests/golden/run/c-frees-a-lease-and-the-runtime-names-it.hero"
     t6 = h0_x;
-#line 138 "cfreesaleaseandtheruntimenamesit.c"
+#line 145 "cfreesaleaseandtheruntimenamesit.c"
     hero_str_incref(t1);
 #line 27 "tests/golden/run/c-frees-a-lease-and-the-runtime-names-it.hero"
     h0_x = t1;
-#line 142 "cfreesaleaseandtheruntimenamesit.c"
+#line 149 "cfreesaleaseandtheruntimenamesit.c"
     hero_str_decref(t6);
 #line 28 "tests/golden/run/c-frees-a-lease-and-the-runtime-names-it.hero"
     t2 = h0_x;
@@ -155,7 +162,7 @@ bb0:
 #line 30 "tests/golden/run/c-frees-a-lease-and-the-runtime-names-it.hero"
     (void)eat(hero_cstr_nonnull(t5));
     hero_held_release(&h1_c);
-#line 159 "cfreesaleaseandtheruntimenamesit.c"
+#line 166 "cfreesaleaseandtheruntimenamesit.c"
     hero_str_release_at(&h0_x);
     return;
 }

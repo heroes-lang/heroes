@@ -33,7 +33,10 @@
 # platform: the header as the group spells it, the line, clang's message, the
 # line as clang quoted it, the includes clang followed, the notes clang
 # attached, and, where clang names `-Werror`, that the warning is one this
-# compiler's flags make an error in every unit (`cli/flags.hero`).
+# compiler's flags make an error in a header's own code too
+# (`cli/flags.hero`), which since panel 205 passes over `-Wall`'s warnings and
+# sign conversions alone in a header, wherever it was found
+# (`emit/header_region.hero`, defect 569).
 
 use source
 use ast
@@ -239,7 +242,7 @@ function told(rows: [str], first: First, steps: [clang_place.Place], at: i64, gr
 
     if !clang_place.offset_of(text: first.message, needle: AS_ERROR).is_err()
         d.notes @ d.notes.push(
-            "clang's `-Werror` says the warning is one this compiler makes an error in every unit it compiles, the headers each includes among them, and no warning is turned off for a header"
+            "clang's `-Werror` says the warning is one this compiler makes an error in a header's own code too, wherever the header was found: a header's code is passed over for `-Wall`'s warnings and sign conversions alone, never for a missing return, an uninitialised read, a value narrowed to 32 bits or a pointer of another type"
         )
     d.notes @ d.notes.push(
         "a group's header is compiled as this program's own C includes it, before any declaration of the group is checked against it: repair the header, or name the one that declares this group's C"
