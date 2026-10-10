@@ -24,6 +24,7 @@
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
@@ -73,7 +74,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_4a02223e, "opened");
 HERO_STR_STATIC(hero_str_4414937d, "not reached");
 
-#line 77 "fixedbugsatransferintoavaluethatendsitwronglyisstoppedbeforec.c"
+#line 78 "fixedbugsatransferintoavaluethatendsitwronglyisstoppedbeforec.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -119,7 +120,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 123 "fixedbugsatransferintoavaluethatendsitwronglyisstoppedbeforec.c"
+#line 124 "fixedbugsatransferintoavaluethatendsitwronglyisstoppedbeforec.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugsatransferintoavaluethatendsitwronglyisstoppedbeforec_Stream_eq(st * const *a, st * const *b);
@@ -136,10 +137,12 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_fixedbugsatransferintoavaluethatendsitwronglyisstoppedbeforec_main(void);
+#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 16 "tests/golden/run/fixedbugs-a-transfer-into-a-value-that-ends-it-wrongly-is-stopped-before-c.hero"
 void h_fixedbugsatransferintoavaluethatendsitwronglyisstoppedbeforec_main(void) {
-#line 143 "fixedbugsatransferintoavaluethatendsitwronglyisstoppedbeforec.c"
+#line 145 "fixedbugsatransferintoavaluethatendsitwronglyisstoppedbeforec.c"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
     st * h0_s;
     wr * h1_w;
     st * t1;
@@ -148,6 +151,7 @@ void h_fixedbugsatransferintoavaluethatendsitwronglyisstoppedbeforec_main(void) 
     wr * t4;
     wr * t5;
     HeroStr t6;
+#pragma clang diagnostic warning "-Wdeprecated-declarations"
     goto bb0;
 bb0:
 #line 17 "tests/golden/run/fixedbugs-a-transfer-into-a-value-that-ends-it-wrongly-is-stopped-before-c.hero"
@@ -206,8 +210,9 @@ bb0:
     hero_print_end();
 #line 21 "tests/golden/run/fixedbugs-a-transfer-into-a-value-that-ends-it-wrongly-is-stopped-before-c.hero"
     return;
-#line 210 "fixedbugsatransferintoavaluethatendsitwronglyisstoppedbeforec.c"
+#line 214 "fixedbugsatransferintoavaluethatendsitwronglyisstoppedbeforec.c"
 }
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_fixedbugsatransferintoavaluethatendsitwronglyisstoppedbeforec_Stream_eq(st * const *a, st * const *b) {
     return hero_handle_eq(*a, *b);
 }

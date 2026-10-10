@@ -24,6 +24,7 @@
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
@@ -31,7 +32,7 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 
 #line 11 "tests/golden/run/fixedbugs-094-the-systems-mutex-initialiser-builds-a-record.hero"
 _Static_assert(__builtin_classify_type(((hero_mutex *)0)->id) == 1 && sizeof(((hero_mutex *)0)->id) == sizeof(int32_t) && (_Generic(((hero_mutex *)0)->id, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field hero_mutex id");
-#line 35 "fixedbugs094thesystemsmutexinitialiserbuildsarecord.c"
+#line 36 "fixedbugs094thesystemsmutexinitialiserbuildsarecord.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -113,7 +114,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 117 "fixedbugs094thesystemsmutexinitialiserbuildsarecord.c"
+#line 118 "fixedbugs094thesystemsmutexinitialiserbuildsarecord.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs094thesystemsmutexinitialiserbuildsarecord_hero_mutex_eq(const hero_mutex *a, const hero_mutex *b);
@@ -129,10 +130,12 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 hero_mutex h_fixedbugs094thesystemsmutexinitialiserbuildsarecord_HERO_MUTEX_INIT(void);
 void h_fixedbugs094thesystemsmutexinitialiserbuildsarecord_main(void);
+#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #line 12 "tests/golden/run/fixedbugs-094-the-systems-mutex-initialiser-builds-a-record.hero"
 hero_mutex h_fixedbugs094thesystemsmutexinitialiserbuildsarecord_HERO_MUTEX_INIT(void) {
-#line 136 "fixedbugs094thesystemsmutexinitialiserbuildsarecord.c"
+#line 139 "fixedbugs094thesystemsmutexinitialiserbuildsarecord.c"
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wexcess-initializers"
 #pragma clang diagnostic error "-Wconstant-conversion"
@@ -144,10 +147,11 @@ hero_mutex h_fixedbugs094thesystemsmutexinitialiserbuildsarecord_HERO_MUTEX_INIT
 #pragma clang diagnostic ignored "-Winitializer-overrides"
 #line 12 "tests/golden/run/fixedbugs-094-the-systems-mutex-initialiser-builds-a-record.hero"
     hero_mutex hero_constant_value = HERO_MUTEX_INIT;
-#line 148 "fixedbugs094thesystemsmutexinitialiserbuildsarecord.c"
+#line 151 "fixedbugs094thesystemsmutexinitialiserbuildsarecord.c"
 #pragma clang diagnostic pop
     return hero_constant_value;
 }
+#pragma clang diagnostic warning "-Wdeprecated-declarations"
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
@@ -162,7 +166,8 @@ hero_mutex h_fixedbugs094thesystemsmutexinitialiserbuildsarecord_HERO_MUTEX_INIT
 
 #line 16 "tests/golden/run/fixedbugs-094-the-systems-mutex-initialiser-builds-a-record.hero"
 void h_fixedbugs094thesystemsmutexinitialiserbuildsarecord_main(void) {
-#line 166 "fixedbugs094thesystemsmutexinitialiserbuildsarecord.c"
+#line 170 "fixedbugs094thesystemsmutexinitialiserbuildsarecord.c"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
     hero_mutex *const hero_lend_h0_m = (hero_mutex *)hero_lend_local(sizeof(hero_mutex), "fixedbugs094thesystemsmutexinitialiserbuildsarecord.main", "m");
 #define h0_m (*hero_lend_h0_m)
     hero_mutex t1;
@@ -170,6 +175,7 @@ void h_fixedbugs094thesystemsmutexinitialiserbuildsarecord_main(void) {
     int32_t t3;
     int32_t t4;
     int32_t t5;
+#pragma clang diagnostic warning "-Wdeprecated-declarations"
     goto bb0;
 bb0:
 #line 17 "tests/golden/run/fixedbugs-094-the-systems-mutex-initialiser-builds-a-record.hero"
@@ -201,9 +207,10 @@ bb0:
     hero_lend_local_give(hero_lend_h0_m);
 #line 20 "tests/golden/run/fixedbugs-094-the-systems-mutex-initialiser-builds-a-record.hero"
     return;
-#line 205 "fixedbugs094thesystemsmutexinitialiserbuildsarecord.c"
+#line 211 "fixedbugs094thesystemsmutexinitialiserbuildsarecord.c"
 }
 #undef h0_m
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_fixedbugs094thesystemsmutexinitialiserbuildsarecord_hero_mutex_eq(const hero_mutex *a, const hero_mutex *b) {
     hero_panic("h_fixedbugs094thesystemsmutexinitialiserbuildsarecord_hero_mutex_eq: a partial record has no structural equality");
 }

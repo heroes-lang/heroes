@@ -24,6 +24,7 @@
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
@@ -68,7 +69,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_3205, "ab");
 HERO_STR_STATIC(hero_str_88572c6, "given back");
 
-#line 72 "fixedbugs462astrreadafteritslastreleasestopsattheread.c"
+#line 73 "fixedbugs462astrreadafteritslastreleasestopsattheread.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -111,7 +112,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 115 "fixedbugs462astrreadafteritslastreleasestopsattheread.c"
+#line 116 "fixedbugs462astrreadafteritslastreleasestopsattheread.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -124,10 +125,11 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_fixedbugs462astrreadafteritslastreleasestopsattheread_main(void);
+#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 22 "tests/golden/run/fixedbugs-462-a-str-read-after-its-last-release-stops-at-the-read.hero"
 void h_fixedbugs462astrreadafteritslastreleasestopsattheread_main(void) {
-#line 131 "fixedbugs462astrreadafteritslastreleasestopsattheread.c"
+#line 133 "fixedbugs462astrreadafteritslastreleasestopsattheread.c"
     HeroStr h0_word = {0};
     HeroStr h1_own1 = {0};
     HeroStr h2_own2 = {0};
@@ -158,15 +160,15 @@ bb0:
     t13 = h1_own1;
 #line 23 "tests/golden/run/fixedbugs-462-a-str-read-after-its-last-release-stops-at-the-read.hero"
     h1_own1 = t3;
-#line 162 "fixedbugs462astrreadafteritslastreleasestopsattheread.c"
+#line 164 "fixedbugs462astrreadafteritslastreleasestopsattheread.c"
     hero_str_decref(t13);
 #line 23 "tests/golden/run/fixedbugs-462-a-str-read-after-its-last-release-stops-at-the-read.hero"
     t14 = h0_word;
-#line 166 "fixedbugs462astrreadafteritslastreleasestopsattheread.c"
+#line 168 "fixedbugs462astrreadafteritslastreleasestopsattheread.c"
     hero_str_incref(t3);
 #line 23 "tests/golden/run/fixedbugs-462-a-str-read-after-its-last-release-stops-at-the-read.hero"
     h0_word = t3;
-#line 170 "fixedbugs462astrreadafteritslastreleasestopsattheread.c"
+#line 172 "fixedbugs462astrreadafteritslastreleasestopsattheread.c"
     hero_str_decref(t14);
 #line 24 "tests/golden/run/fixedbugs-462-a-str-read-after-its-last-release-stops-at-the-read.hero"
     t4 = HERO_STR_LIT(hero_str_88572c6);
@@ -197,18 +199,19 @@ bb0:
     t15 = h2_own2;
 #line 27 "tests/golden/run/fixedbugs-462-a-str-read-after-its-last-release-stops-at-the-read.hero"
     h2_own2 = t12;
-#line 201 "fixedbugs462astrreadafteritslastreleasestopsattheread.c"
+#line 203 "fixedbugs462astrreadafteritslastreleasestopsattheread.c"
     hero_str_decref(t15);
 #line 27 "tests/golden/run/fixedbugs-462-a-str-read-after-its-last-release-stops-at-the-read.hero"
     hero_print_str(t12);
 #line 27 "tests/golden/run/fixedbugs-462-a-str-read-after-its-last-release-stops-at-the-read.hero"
     hero_print_end();
-#line 207 "fixedbugs462astrreadafteritslastreleasestopsattheread.c"
+#line 209 "fixedbugs462astrreadafteritslastreleasestopsattheread.c"
     hero_str_release_at(&h0_word);
     hero_str_release_at(&h1_own1);
     hero_str_release_at(&h2_own2);
     return;
 }
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_incref(v->as.ok);

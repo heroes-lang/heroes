@@ -24,6 +24,7 @@
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
@@ -73,7 +74,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_1cd7fd75, "ob_up_ref_cell(a: @cert) == 1");
 HERO_STR_STATIC(hero_str_7034b02b, "references held: ");
 
-#line 77 "deadhandlereadbycthroughacellitshouldonlywrite.c"
+#line 78 "deadhandlereadbycthroughacellitshouldonlywrite.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -118,7 +119,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 122 "deadhandlereadbycthroughacellitshouldonlywrite.c"
+#line 123 "deadhandlereadbycthroughacellitshouldonlywrite.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_deadhandlereadbycthroughacellitshouldonlywrite_X509_eq(ob * const *a, ob * const *b);
@@ -133,10 +134,12 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_deadhandlereadbycthroughacellitshouldonlywrite_main(void);
+#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 20 "tests/golden/run/dead-handle-read-by-c-through-a-cell-it-should-only-write.hero"
 void h_deadhandlereadbycthroughacellitshouldonlywrite_main(void) {
-#line 140 "deadhandlereadbycthroughacellitshouldonlywrite.c"
+#line 142 "deadhandlereadbycthroughacellitshouldonlywrite.c"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
     ob * *const hero_lend_h0_cert = (ob * *)hero_lend_local(sizeof(ob *), "deadhandlereadbycthroughacellitshouldonlywrite.main", "cert");
 #define h0_cert (*hero_lend_h0_cert)
     ob * t1;
@@ -151,6 +154,7 @@ void h_deadhandlereadbycthroughacellitshouldonlywrite_main(void) {
     HeroStr t10;
     ob * t11;
     int64_t t12;
+#pragma clang diagnostic warning "-Wdeprecated-declarations"
     goto bb0;
 bb0:
 #line 21 "tests/golden/run/dead-handle-read-by-c-through-a-cell-it-should-only-write.hero"
@@ -233,11 +237,12 @@ bb4:
     return;
 #line 26 "tests/golden/run/dead-handle-read-by-c-through-a-cell-it-should-only-write.hero"
 bb5:
-#line 237 "deadhandlereadbycthroughacellitshouldonlywrite.c"
+#line 241 "deadhandlereadbycthroughacellitshouldonlywrite.c"
     hero_panic_assert_sides(t6, hero_int_to_str(t7), hero_int_to_str(t8));
     hero_unreachable();
 }
 #undef h0_cert
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_deadhandlereadbycthroughacellitshouldonlywrite_X509_eq(ob * const *a, ob * const *b) {
     return hero_handle_eq(*a, *b);
 }

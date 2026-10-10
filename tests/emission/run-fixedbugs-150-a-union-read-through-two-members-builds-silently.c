@@ -26,6 +26,7 @@
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
@@ -34,7 +35,7 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 #line 16 "tests/golden/run/fixedbugs-150-a-union-read-through-two-members-builds-silently.hero"
 _Static_assert(__builtin_classify_type(((W *)0)->i) == 1 && sizeof(((W *)0)->i) == sizeof(int32_t) && (_Generic(((W *)0)->i, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field W i");
 _Static_assert(__builtin_classify_type(((W *)0)->n) == 1 && sizeof(((W *)0)->n) == sizeof(uint32_t) && (_Generic(((W *)0)->n, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 1), "heroes-ffi-field W n");
-#line 38 "fixedbugs150aunionreadthroughtwomembersbuildssilently.c"
+#line 39 "fixedbugs150aunionreadthroughtwomembersbuildssilently.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -113,7 +114,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 117 "fixedbugs150aunionreadthroughtwomembersbuildssilently.c"
+#line 118 "fixedbugs150aunionreadthroughtwomembersbuildssilently.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs150aunionreadthroughtwomembersbuildssilently_W_eq(const W *a, const W *b);
@@ -128,16 +129,19 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_fixedbugs150aunionreadthroughtwomembersbuildssilently_main(void);
+#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 20 "tests/golden/run/fixedbugs-150-a-union-read-through-two-members-builds-silently.hero"
 void h_fixedbugs150aunionreadthroughtwomembersbuildssilently_main(void) {
-#line 135 "fixedbugs150aunionreadthroughtwomembersbuildssilently.c"
+#line 137 "fixedbugs150aunionreadthroughtwomembersbuildssilently.c"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
     W h0_w;
     W t1;
     W t2;
     int32_t t3;
     W t4;
     uint32_t t5;
+#pragma clang diagnostic warning "-Wdeprecated-declarations"
     goto bb0;
 bb0:
 #line 21 "tests/golden/run/fixedbugs-150-a-union-read-through-two-members-builds-silently.hero"
@@ -160,8 +164,9 @@ bb0:
     hero_print_end();
 #line 23 "tests/golden/run/fixedbugs-150-a-union-read-through-two-members-builds-silently.hero"
     return;
-#line 164 "fixedbugs150aunionreadthroughtwomembersbuildssilently.c"
+#line 168 "fixedbugs150aunionreadthroughtwomembersbuildssilently.c"
 }
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_fixedbugs150aunionreadthroughtwomembersbuildssilently_W_eq(const W *a, const W *b) {
     if (!(a->i == b->i)) return false;
     if (!(a->n == b->n)) return false;

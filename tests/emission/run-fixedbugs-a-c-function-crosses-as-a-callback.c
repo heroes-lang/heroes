@@ -24,6 +24,7 @@
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
@@ -69,7 +70,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 73 "fixedbugsacfunctioncrossesasacallback.c"
+#line 74 "fixedbugsacfunctioncrossesasacallback.c"
 typedef void (*h_0fn_406f9b0)(void *);
 typedef struct h_0opt_f87774a {
     int64_t tag;
@@ -114,7 +115,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 118 "fixedbugsacfunctioncrossesasacallback.c"
+#line 119 "fixedbugsacfunctioncrossesasacallback.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -131,10 +132,11 @@ __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
     return f;
 }
 
+#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 36 "tests/golden/run/fixedbugs-a-c-function-crosses-as-a-callback.hero"
 void h_fixedbugsacfunctioncrossesasacallback_main(void) {
-#line 138 "fixedbugsacfunctioncrossesasacallback.c"
+#line 140 "fixedbugsacfunctioncrossesasacallback.c"
     void * h0_b;
     void * t1;
     void * t2;
@@ -170,8 +172,9 @@ bb0:
     hero_print_end();
 #line 47 "tests/golden/run/fixedbugs-a-c-function-crosses-as-a-callback.hero"
     return;
-#line 174 "fixedbugsacfunctioncrossesasacallback.c"
+#line 176 "fixedbugsacfunctioncrossesasacallback.c"
 }
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_incref(v->as.ok);

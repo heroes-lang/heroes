@@ -24,6 +24,7 @@
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
@@ -70,7 +71,7 @@ HERO_STR_STATIC(hero_str_79c9889a, "hello from C");
 HERO_STR_STATIC(hero_str_5cc08313, "computed");
 HERO_STR_STATIC(hero_str_6251eb62, "back in Heroes");
 
-#line 74 "fficstr.c"
+#line 75 "fficstr.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -113,7 +114,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 117 "fficstr.c"
+#line 118 "fficstr.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -127,10 +128,11 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 HeroStr h_fficstr_shout(HeroStr h0_text);
 void h_fficstr_main(void);
+#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 15 "tests/golden/run/ffi-cstr.hero"
 HeroStr h_fficstr_shout(HeroStr h0_text) {
-#line 134 "fficstr.c"
+#line 136 "fficstr.c"
     HeroStr h1_own1 = {0};
     HeroStr t1;
     HeroStr t2;
@@ -148,7 +150,7 @@ bb0:
     t4 = h1_own1;
 #line 16 "tests/golden/run/ffi-cstr.hero"
     h1_own1 = t3;
-#line 152 "fficstr.c"
+#line 154 "fficstr.c"
     hero_str_decref(t4);
     hero_str_incref(t3);
     hero_str_release_at(&h1_own1);
@@ -157,7 +159,7 @@ bb0:
 
 #line 18 "tests/golden/run/ffi-cstr.hero"
 void h_fficstr_main(void) {
-#line 161 "fficstr.c"
+#line 163 "fficstr.c"
     HeroStr h0_own0 = {0};
     HeroStr t1;
     const char * t2;
@@ -182,7 +184,7 @@ bb0:
     t9 = h0_own0;
 #line 24 "tests/golden/run/ffi-cstr.hero"
     h0_own0 = t5;
-#line 186 "fficstr.c"
+#line 188 "fficstr.c"
     hero_str_decref(t9);
 #line 24 "tests/golden/run/ffi-cstr.hero"
     t6 = hero_str_lend(t5);
@@ -193,10 +195,11 @@ bb0:
     hero_print_str(t8);
 #line 25 "tests/golden/run/ffi-cstr.hero"
     hero_print_end();
-#line 197 "fficstr.c"
+#line 199 "fficstr.c"
     hero_str_release_at(&h0_own0);
     return;
 }
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_incref(v->as.ok);

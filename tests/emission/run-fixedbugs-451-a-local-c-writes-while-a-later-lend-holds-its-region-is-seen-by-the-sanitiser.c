@@ -24,6 +24,7 @@
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
@@ -67,7 +68,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 71 "fixedbugs451alocalcwriteswhilealaterlendholdsitsregionisseenbythesanitiser.c"
+#line 72 "fixedbugs451alocalcwriteswhilealaterlendholdsitsregionisseenbythesanitiser.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -112,7 +113,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 116 "fixedbugs451alocalcwriteswhilealaterlendholdsitsregionisseenbythesanitiser.c"
+#line 117 "fixedbugs451alocalcwriteswhilealaterlendholdsitsregionisseenbythesanitiser.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -127,10 +128,11 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 int64_t h_fixedbugs451alocalcwriteswhilealaterlendholdsitsregionisseenbythesanitiser_lend(void);
 int64_t h_fixedbugs451alocalcwriteswhilealaterlendholdsitsregionisseenbythesanitiser_later(void);
 void h_fixedbugs451alocalcwriteswhilealaterlendholdsitsregionisseenbythesanitiser_main(void);
+#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 24 "tests/golden/run/fixedbugs-451-a-local-c-writes-while-a-later-lend-holds-its-region-is-seen-by-the-sanitiser.hero"
 int64_t h_fixedbugs451alocalcwriteswhilealaterlendholdsitsregionisseenbythesanitiser_lend(void) {
-#line 134 "fixedbugs451alocalcwriteswhilealaterlendholdsitsregionisseenbythesanitiser.c"
+#line 136 "fixedbugs451alocalcwriteswhilealaterlendholdsitsregionisseenbythesanitiser.c"
     int64_t *const hero_lend_h0_n = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs451alocalcwriteswhilealaterlendholdsitsregionisseenbythesanitiser.lend", "n");
 #define h0_n (*hero_lend_h0_n)
     int64_t t1;
@@ -149,13 +151,13 @@ bb0:
     hero_lend_local_give(hero_lend_h0_n);
 #line 27 "tests/golden/run/fixedbugs-451-a-local-c-writes-while-a-later-lend-holds-its-region-is-seen-by-the-sanitiser.hero"
     return t2;
-#line 153 "fixedbugs451alocalcwriteswhilealaterlendholdsitsregionisseenbythesanitiser.c"
+#line 155 "fixedbugs451alocalcwriteswhilealaterlendholdsitsregionisseenbythesanitiser.c"
 }
 #undef h0_n
 
 #line 29 "tests/golden/run/fixedbugs-451-a-local-c-writes-while-a-later-lend-holds-its-region-is-seen-by-the-sanitiser.hero"
 int64_t h_fixedbugs451alocalcwriteswhilealaterlendholdsitsregionisseenbythesanitiser_later(void) {
-#line 159 "fixedbugs451alocalcwriteswhilealaterlendholdsitsregionisseenbythesanitiser.c"
+#line 161 "fixedbugs451alocalcwriteswhilealaterlendholdsitsregionisseenbythesanitiser.c"
     int64_t *const hero_lend_h0_m = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs451alocalcwriteswhilealaterlendholdsitsregionisseenbythesanitiser.later", "m");
 #define h0_m (*hero_lend_h0_m)
     int64_t t1;
@@ -181,13 +183,13 @@ bb0:
     hero_lend_local_give(hero_lend_h0_m);
 #line 33 "tests/golden/run/fixedbugs-451-a-local-c-writes-while-a-later-lend-holds-its-region-is-seen-by-the-sanitiser.hero"
     return t4;
-#line 185 "fixedbugs451alocalcwriteswhilealaterlendholdsitsregionisseenbythesanitiser.c"
+#line 187 "fixedbugs451alocalcwriteswhilealaterlendholdsitsregionisseenbythesanitiser.c"
 }
 #undef h0_m
 
 #line 35 "tests/golden/run/fixedbugs-451-a-local-c-writes-while-a-later-lend-holds-its-region-is-seen-by-the-sanitiser.hero"
 void h_fixedbugs451alocalcwriteswhilealaterlendholdsitsregionisseenbythesanitiser_main(void) {
-#line 191 "fixedbugs451alocalcwriteswhilealaterlendholdsitsregionisseenbythesanitiser.c"
+#line 193 "fixedbugs451alocalcwriteswhilealaterlendholdsitsregionisseenbythesanitiser.c"
     int64_t t1;
     int64_t t2;
     goto bb0;
@@ -205,8 +207,9 @@ bb0:
     hero_print_end();
 #line 37 "tests/golden/run/fixedbugs-451-a-local-c-writes-while-a-later-lend-holds-its-region-is-seen-by-the-sanitiser.hero"
     return;
-#line 209 "fixedbugs451alocalcwriteswhilealaterlendholdsitsregionisseenbythesanitiser.c"
+#line 211 "fixedbugs451alocalcwriteswhilealaterlendholdsitsregionisseenbythesanitiser.c"
 }
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_incref(v->as.ok);

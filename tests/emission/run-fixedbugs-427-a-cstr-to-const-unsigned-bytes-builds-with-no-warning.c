@@ -24,6 +24,7 @@
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
@@ -75,7 +76,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_1998f2, "abc");
 HERO_STR_STATIC(hero_str_7a, "z");
 
-#line 79 "fixedbugs427acstrtoconstunsignedbytesbuildswithnowarning.c"
+#line 80 "fixedbugs427acstrtoconstunsignedbytesbuildswithnowarning.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -125,7 +126,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 129 "fixedbugs427acstrtoconstunsignedbytesbuildswithnowarning.c"
+#line 130 "fixedbugs427acstrtoconstunsignedbytesbuildswithnowarning.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -138,10 +139,11 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_fixedbugs427acstrtoconstunsignedbytesbuildswithnowarning_main(void);
+#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 27 "tests/golden/run/fixedbugs-427-a-cstr-to-const-unsigned-bytes-builds-with-no-warning.hero"
 void h_fixedbugs427acstrtoconstunsignedbytesbuildswithnowarning_main(void) {
-#line 145 "fixedbugs427acstrtoconstunsignedbytesbuildswithnowarning.c"
+#line 147 "fixedbugs427acstrtoconstunsignedbytesbuildswithnowarning.c"
     HeroStr h0_s = {0};
     HeroStr h1_t = {0};
     const char * h2_x;
@@ -197,25 +199,25 @@ bb0:
     t37 = h3_own3;
 #line 28 "tests/golden/run/fixedbugs-427-a-cstr-to-const-unsigned-bytes-builds-with-no-warning.hero"
     h3_own3 = t3;
-#line 201 "fixedbugs427acstrtoconstunsignedbytesbuildswithnowarning.c"
+#line 203 "fixedbugs427acstrtoconstunsignedbytesbuildswithnowarning.c"
     hero_str_decref(t37);
 #line 28 "tests/golden/run/fixedbugs-427-a-cstr-to-const-unsigned-bytes-builds-with-no-warning.hero"
     t38 = h0_s;
-#line 205 "fixedbugs427acstrtoconstunsignedbytesbuildswithnowarning.c"
+#line 207 "fixedbugs427acstrtoconstunsignedbytesbuildswithnowarning.c"
     hero_str_incref(t3);
 #line 28 "tests/golden/run/fixedbugs-427-a-cstr-to-const-unsigned-bytes-builds-with-no-warning.hero"
     h0_s = t3;
-#line 209 "fixedbugs427acstrtoconstunsignedbytesbuildswithnowarning.c"
+#line 211 "fixedbugs427acstrtoconstunsignedbytesbuildswithnowarning.c"
     hero_str_decref(t38);
 #line 29 "tests/golden/run/fixedbugs-427-a-cstr-to-const-unsigned-bytes-builds-with-no-warning.hero"
     t4 = h0_s;
 #line 29 "tests/golden/run/fixedbugs-427-a-cstr-to-const-unsigned-bytes-builds-with-no-warning.hero"
     t39 = h1_t;
-#line 215 "fixedbugs427acstrtoconstunsignedbytesbuildswithnowarning.c"
+#line 217 "fixedbugs427acstrtoconstunsignedbytesbuildswithnowarning.c"
     hero_str_incref(t4);
 #line 29 "tests/golden/run/fixedbugs-427-a-cstr-to-const-unsigned-bytes-builds-with-no-warning.hero"
     h1_t = t4;
-#line 219 "fixedbugs427acstrtoconstunsignedbytesbuildswithnowarning.c"
+#line 221 "fixedbugs427acstrtoconstunsignedbytesbuildswithnowarning.c"
     hero_str_decref(t39);
 #line 30 "tests/golden/run/fixedbugs-427-a-cstr-to-const-unsigned-bytes-builds-with-no-warning.hero"
     t5 = h0_s;
@@ -317,12 +319,13 @@ bb0:
     hero_print_str(t36);
 #line 42 "tests/golden/run/fixedbugs-427-a-cstr-to-const-unsigned-bytes-builds-with-no-warning.hero"
     hero_print_end();
-#line 321 "fixedbugs427acstrtoconstunsignedbytesbuildswithnowarning.c"
+#line 323 "fixedbugs427acstrtoconstunsignedbytesbuildswithnowarning.c"
     hero_str_release_at(&h0_s);
     hero_str_release_at(&h1_t);
     hero_str_release_at(&h3_own3);
     return;
 }
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_incref(v->as.ok);

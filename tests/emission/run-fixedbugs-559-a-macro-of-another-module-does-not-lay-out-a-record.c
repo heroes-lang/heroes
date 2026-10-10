@@ -27,6 +27,7 @@
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
@@ -35,11 +36,11 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 #line 15 "tests/golden/run/fixedbugs-559-a-macro-of-another-module-does-not-lay-out-a-record.hero"
 _Static_assert(__builtin_classify_type(((S *)0)->a) == 1 && sizeof(((S *)0)->a) == sizeof(int32_t) && (_Generic(((S *)0)->a, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field S a");
 _Static_assert(__builtin_classify_type(((S *)0)->b) == 1 && sizeof(((S *)0)->b) == sizeof(int32_t) && (_Generic(((S *)0)->b, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field S b");
-#line 39 "fixedbugs559amacroofanothermoduledoesnotlayoutarecord.c"
+#line 40 "fixedbugs559amacroofanothermoduledoesnotlayoutarecord.c"
 
 #line 14 "tests/golden/run/fixedbugs-559-a-macro-of-another-module-does-not-lay-out-a-record.hero"
 _Static_assert(__builtin_classify_type(*(S *)0) != 13, "heroes-ffi-union S a b");
-#line 43 "fixedbugs559amacroofanothermoduledoesnotlayoutarecord.c"
+#line 44 "fixedbugs559amacroofanothermoduledoesnotlayoutarecord.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -129,7 +130,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 133 "fixedbugs559amacroofanothermoduledoesnotlayoutarecord.c"
+#line 134 "fixedbugs559amacroofanothermoduledoesnotlayoutarecord.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs559amacroofanothermoduledoesnotlayoutarecord_S_eq(const S *a, const S *b);
@@ -149,10 +150,12 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_fixedbugs559amacroofanothermoduledoesnotlayoutarecord_main(void);
 int64_t h_fixedbugs559wide_doubled(int64_t h0_x);
+#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 18 "tests/golden/run/fixedbugs-559-a-macro-of-another-module-does-not-lay-out-a-record.hero"
 void h_fixedbugs559amacroofanothermoduledoesnotlayoutarecord_main(void) {
-#line 156 "fixedbugs559amacroofanothermoduledoesnotlayoutarecord.c"
+#line 158 "fixedbugs559amacroofanothermoduledoesnotlayoutarecord.c"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
     S h0_s;
     h_0opt_e201354 h1_f0 = {0};
     h_0opt_e201354 h2_own2 = {0};
@@ -178,6 +181,7 @@ void h_fixedbugs559amacroofanothermoduledoesnotlayoutarecord_main(void) {
     int64_t t20;
     h_0opt_e201354 t21;
     h_0opt_e201354 t22;
+#pragma clang diagnostic warning "-Wdeprecated-declarations"
     goto bb0;
 bb0:
 #line 19 "tests/golden/run/fixedbugs-559-a-macro-of-another-module-does-not-lay-out-a-record.hero"
@@ -207,15 +211,15 @@ bb0:
     t21 = h2_own2;
 #line 20 "tests/golden/run/fixedbugs-559-a-macro-of-another-module-does-not-lay-out-a-record.hero"
     h2_own2 = t11;
-#line 211 "fixedbugs559amacroofanothermoduledoesnotlayoutarecord.c"
+#line 215 "fixedbugs559amacroofanothermoduledoesnotlayoutarecord.c"
     h_0opt_e201354_release(&t21);
 #line 20 "tests/golden/run/fixedbugs-559-a-macro-of-another-module-does-not-lay-out-a-record.hero"
     t22 = h1_f0;
-#line 215 "fixedbugs559amacroofanothermoduledoesnotlayoutarecord.c"
+#line 219 "fixedbugs559amacroofanothermoduledoesnotlayoutarecord.c"
     h_0opt_e201354_retain(&t11);
 #line 20 "tests/golden/run/fixedbugs-559-a-macro-of-another-module-does-not-lay-out-a-record.hero"
     h1_f0 = t11;
-#line 219 "fixedbugs559amacroofanothermoduledoesnotlayoutarecord.c"
+#line 223 "fixedbugs559amacroofanothermoduledoesnotlayoutarecord.c"
     h_0opt_e201354_release(&t22);
 #line 20 "tests/golden/run/fixedbugs-559-a-macro-of-another-module-does-not-lay-out-a-record.hero"
     t12 = h1_f0;
@@ -239,7 +243,7 @@ bb1:
     hero_print_int(t20);
 #line 20 "tests/golden/run/fixedbugs-559-a-macro-of-another-module-does-not-lay-out-a-record.hero"
     hero_print_end();
-#line 243 "fixedbugs559amacroofanothermoduledoesnotlayoutarecord.c"
+#line 247 "fixedbugs559amacroofanothermoduledoesnotlayoutarecord.c"
     h_0opt_e201354_release(hero_slot_escape(&h1_f0));
     h_0opt_e201354_release(hero_slot_escape(&h2_own2));
     return;
@@ -248,14 +252,14 @@ bb2:
     t16 = h1_f0;
 #line 20 "tests/golden/run/fixedbugs-559-a-macro-of-another-module-does-not-lay-out-a-record.hero"
     t17 = t16.as.err;
-#line 252 "fixedbugs559amacroofanothermoduledoesnotlayoutarecord.c"
+#line 256 "fixedbugs559amacroofanothermoduledoesnotlayoutarecord.c"
     hero_panic_must(t17);
     hero_unreachable();
 }
 
 #line 7 "tests/golden/run/fixedbugs559/wide.hero"
 int64_t h_fixedbugs559wide_doubled(int64_t h0_x) {
-#line 259 "fixedbugs559amacroofanothermoduledoesnotlayoutarecord.c"
+#line 263 "fixedbugs559amacroofanothermoduledoesnotlayoutarecord.c"
     int64_t t1;
     int64_t t2;
     goto bb0;
@@ -266,8 +270,9 @@ bb0:
     t2 = twice(t1);
 #line 8 "tests/golden/run/fixedbugs559/wide.hero"
     return t2;
-#line 270 "fixedbugs559amacroofanothermoduledoesnotlayoutarecord.c"
+#line 274 "fixedbugs559amacroofanothermoduledoesnotlayoutarecord.c"
 }
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_fixedbugs559amacroofanothermoduledoesnotlayoutarecord_S_eq(const S *a, const S *b) {
     if (!(a->a == b->a)) return false;
     if (!(a->b == b->b)) return false;

@@ -70,8 +70,8 @@ use emit/field_lend
 use emit/inst
 use emit/term
 use emit/unread
-use emit/record_constant
-use emit/checks_raised
+use emit/constant_accessor
+use emit/deprecation
 use emit/writer
 use emit/lend_local
 use parse
@@ -108,6 +108,12 @@ function definition(@w: writer.Writer, p: instances.Held, c: state.Checked, name
 function built(@w: writer.Writer, p: instances.Held, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], f: containers.Function, guarded_decls: {i64: bool})
     writer.blank(@w)
 
+    # A constant whose value a header holds has an accessor of its own
+    # (`emit/constant_accessor.hero`): no prologue, no blocks.
+    if is_extern_constant(decls, f)
+        constant_accessor.accessor(@w, f, c, names, s, decls)
+        return
+
     # The signature is pointed at the author's declaration: a clang
     # error about a parameter type lands on the line that wrote it.
     writer.at_span(@w, s, offset: f.span.start)
@@ -119,22 +125,6 @@ function built(@w: writer.Writer, p: instances.Held, c: state.Checked, names: ct
             @w,
             text: "/* " + f.name + "<" + signature.render_instance(c, s, decls, bound: f.instance) + "> */"
         )
-
-    # A record's constant is built from the header's value, which may be a
-    # brace list that `return` cannot take (`emit/record_constant.hero`,
-    # defect 094).
-    if record_constant.is_record_value(c, decls, f)
-        record_constant.accessor(@w, f, c, names, s, decls)
-        return
-
-    if is_extern_constant(decls, f)
-        extern_name = source.span_text(s, decls[f.decl].name)
-        writer.line(@w, text: signature.signature(f, c, names, s, decls) + " {")
-        writer.at_generated(@w)
-        writer.line(@w, text: "    return " + extern_name + ";")
-        writer.line(@w, text: "}")
-        checks_raised.after_constant(@w, s, decls, f)
-        return
     writer.line(@w, text: signature.signature(f, c, names, s, decls) + " {")
     writer.at_generated(@w)
 
@@ -145,7 +135,12 @@ function built(@w: writer.Writer, p: instances.Held, c: state.Checked, names: ct
     live = reachable(f)
     read = unread.emitted_reads(f, c)
     owner = source.component_at(s, decls[f.decl].span.start) + "." + f.name
+
+    # The prologue is the compiler's line inside the program's definition, a
+    # group record's `deprecated` attribute quiet over it (defect 571).
+    typed = deprecation.before_prologue(@w, c, s, decls, f)
     prologue(@w, c, names, f, live: live, read: read, owner: owner)
+    deprecation.after_prologue(@w, typed: typed)
     writer.line(@w, text: "    goto " + mangle.block(0) + ";")
     released = lend_local.releases(c, names, f)
     index: i64 @ 0

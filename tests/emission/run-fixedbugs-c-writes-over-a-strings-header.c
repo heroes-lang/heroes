@@ -24,6 +24,7 @@
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
@@ -67,7 +68,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_3205, "ab");
 
-#line 71 "fixedbugscwritesoverastringsheader.c"
+#line 72 "fixedbugscwritesoverastringsheader.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -110,7 +111,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 114 "fixedbugscwritesoverastringsheader.c"
+#line 115 "fixedbugscwritesoverastringsheader.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -123,10 +124,11 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_fixedbugscwritesoverastringsheader_main(void);
+#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 30 "tests/golden/run/fixedbugs-c-writes-over-a-strings-header.hero"
 void h_fixedbugscwritesoverastringsheader_main(void) {
-#line 130 "fixedbugscwritesoverastringsheader.c"
+#line 132 "fixedbugscwritesoverastringsheader.c"
     HeroStr h0_word = {0};
     HeroStr h1_own1 = {0};
     HeroStr t1;
@@ -149,15 +151,15 @@ bb0:
     t7 = h1_own1;
 #line 31 "tests/golden/run/fixedbugs-c-writes-over-a-strings-header.hero"
     h1_own1 = t3;
-#line 153 "fixedbugscwritesoverastringsheader.c"
+#line 155 "fixedbugscwritesoverastringsheader.c"
     hero_str_decref(t7);
 #line 31 "tests/golden/run/fixedbugs-c-writes-over-a-strings-header.hero"
     t8 = h0_word;
-#line 157 "fixedbugscwritesoverastringsheader.c"
+#line 159 "fixedbugscwritesoverastringsheader.c"
     hero_str_incref(t3);
 #line 31 "tests/golden/run/fixedbugs-c-writes-over-a-strings-header.hero"
     h0_word = t3;
-#line 161 "fixedbugscwritesoverastringsheader.c"
+#line 163 "fixedbugscwritesoverastringsheader.c"
     hero_str_decref(t8);
 #line 32 "tests/golden/run/fixedbugs-c-writes-over-a-strings-header.hero"
     t4 = h0_word;
@@ -170,11 +172,12 @@ bb0:
     hero_print_str(t6);
 #line 33 "tests/golden/run/fixedbugs-c-writes-over-a-strings-header.hero"
     hero_print_end();
-#line 174 "fixedbugscwritesoverastringsheader.c"
+#line 176 "fixedbugscwritesoverastringsheader.c"
     hero_str_release_at(&h0_word);
     hero_str_release_at(&h1_own1);
     return;
 }
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_incref(v->as.ok);

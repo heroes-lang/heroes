@@ -24,6 +24,7 @@
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
@@ -73,7 +74,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_31c3, "a ");
 HERO_STR_STATIC(hero_str_3246, "b ");
 
-#line 77 "fixedbugstwothreadsoveroneallocatorgivebacktheirownhandles.c"
+#line 78 "fixedbugstwothreadsoveroneallocatorgivebacktheirownhandles.c"
 typedef int64_t (*h_0fn_48ac9712)(int64_t);
 typedef struct h_0opt_f87774a {
     int64_t tag;
@@ -121,7 +122,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 125 "fixedbugstwothreadsoveroneallocatorgivebacktheirownhandles.c"
+#line 126 "fixedbugstwothreadsoveroneallocatorgivebacktheirownhandles.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugstwothreadsoveroneallocatorgivebacktheirownhandles_S_eq(sn * const *a, sn * const *b);
@@ -144,11 +145,13 @@ __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
     return f;
 }
 
+#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 28 "tests/golden/run/fixedbugs-two-threads-over-one-allocator-give-back-their-own-handles.hero"
 int64_t h_fixedbugstwothreadsoveroneallocatorgivebacktheirownhandles_worker(int64_t h0_slot) {
-#line 151 "fixedbugstwothreadsoveroneallocatorgivebacktheirownhandles.c"
+#line 153 "fixedbugstwothreadsoveroneallocatorgivebacktheirownhandles.c"
     hero_thread_guard("fixedbugstwothreadsoveroneallocatorgivebacktheirownhandles.worker");
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
     int64_t h1_total;
     int64_t h2_i;
     sn * h3_n;
@@ -169,6 +172,7 @@ int64_t h_fixedbugstwothreadsoveroneallocatorgivebacktheirownhandles_worker(int6
     int64_t t15;
     int64_t t16;
     int64_t t17;
+#pragma clang diagnostic warning "-Wdeprecated-declarations"
     goto bb0;
 bb0:
 #line 29 "tests/golden/run/fixedbugs-two-threads-over-one-allocator-give-back-their-own-handles.hero"
@@ -240,7 +244,7 @@ bb3:
     if (__builtin_add_overflow(t15, t16, &t17)) hero_panic_overflow();
 #line 38 "tests/golden/run/fixedbugs-two-threads-over-one-allocator-give-back-their-own-handles.hero"
     return t17;
-#line 244 "fixedbugstwothreadsoveroneallocatorgivebacktheirownhandles.c"
+#line 248 "fixedbugstwothreadsoveroneallocatorgivebacktheirownhandles.c"
 }
 
 int64_t h_0cb_fixedbugstwothreadsoveroneallocatorgivebacktheirownhandles_worker(int64_t h0_slot) {
@@ -250,7 +254,7 @@ int64_t h_0cb_fixedbugstwothreadsoveroneallocatorgivebacktheirownhandles_worker(
 
 #line 40 "tests/golden/run/fixedbugs-two-threads-over-one-allocator-give-back-their-own-handles.hero"
 void h_fixedbugstwothreadsoveroneallocatorgivebacktheirownhandles_main(void) {
-#line 254 "fixedbugstwothreadsoveroneallocatorgivebacktheirownhandles.c"
+#line 258 "fixedbugstwothreadsoveroneallocatorgivebacktheirownhandles.c"
     int64_t h0_a;
     int64_t h1_b;
     h_0fn_48ac9712 t1;
@@ -306,8 +310,9 @@ bb0:
     hero_print_end();
 #line 44 "tests/golden/run/fixedbugs-two-threads-over-one-allocator-give-back-their-own-handles.hero"
     return;
-#line 310 "fixedbugstwothreadsoveroneallocatorgivebacktheirownhandles.c"
+#line 314 "fixedbugstwothreadsoveroneallocatorgivebacktheirownhandles.c"
 }
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_fixedbugstwothreadsoveroneallocatorgivebacktheirownhandles_S_eq(sn * const *a, sn * const *b) {
     return hero_handle_eq(*a, *b);
 }

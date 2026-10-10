@@ -41,6 +41,7 @@ use emit/guarded_names
 use emit/externs as emit_externs
 use emit/checks_raised
 use emit/header_region
+use emit/deprecation
 use cli/strings
 
 # The line before the groups' includes, and the line after them.
@@ -75,7 +76,9 @@ function around(lines: [str], bound: {str: bool}) -> [str]
     for raised in checks_raised.lines()
         out @ out.push(raised)
 
-    return out
+    # And a header's `deprecated` attribute quiet on the compiler's lines
+    # (`emit/deprecation.hero`, defect 571), until the definitions.
+    return out.push(deprecation.QUIET)
 
 # Every C name the program's groups take from a header between the guards:
 # a function's or constant's own name, a record's, its C tag and its fields,
@@ -163,10 +166,11 @@ test "the groups' includes stand between the guard's two, a bound name of the li
         more: [OPEN_LINE, "#include <a.h>", "#pragma push_macro(\"INT64_C\")", CLOSE_LINE, header_region.CLOSING]
     )
     got = around(["#include <a.h>"], bound: bound)
-    assert got.len() == head.len() + checks_raised.lines().len()
+    assert got.len() == head.len() + checks_raised.lines().len() + 1
     assert got.slice(from: 0, to: head.len()) == head
     assert got[head.len()] == "#pragma clang diagnostic error \"-Wreturn-type\""
-    assert got[got.len() - 1] == checks_raised.lines()[checks_raised.lines().len() - 1]
+    assert got[got.len() - 2] == checks_raised.lines()[checks_raised.lines().len() - 1]
+    assert got[got.len() - 1] == deprecation.QUIET
 
 # The two runtime files save and give back this list, in its order, and no
 # other name: a line added to one and not here is named.

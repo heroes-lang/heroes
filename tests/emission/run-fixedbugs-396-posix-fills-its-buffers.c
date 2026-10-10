@@ -25,6 +25,7 @@
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
@@ -34,11 +35,11 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 _Static_assert(__builtin_classify_type(((struct pollfd *)0)->fd) == 1 && sizeof(((struct pollfd *)0)->fd) == sizeof(int32_t) && (_Generic(((struct pollfd *)0)->fd, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field PollFd fd");
 _Static_assert(__builtin_classify_type(((struct pollfd *)0)->events) == 1 && sizeof(((struct pollfd *)0)->events) == sizeof(int16_t) && (_Generic(((struct pollfd *)0)->events, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field PollFd events");
 _Static_assert(__builtin_classify_type(((struct pollfd *)0)->revents) == 1 && sizeof(((struct pollfd *)0)->revents) == sizeof(int16_t) && (_Generic(((struct pollfd *)0)->revents, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field PollFd revents");
-#line 38 "fixedbugs396posixfillsitsbuffers.c"
+#line 39 "fixedbugs396posixfillsitsbuffers.c"
 
 #line 23 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
 _Static_assert(__builtin_classify_type(*(struct pollfd *)0) != 13, "heroes-ffi-union PollFd fd events revents");
-#line 42 "fixedbugs396posixfillsitsbuffers.c"
+#line 43 "fixedbugs396posixfillsitsbuffers.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -146,7 +147,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 150 "fixedbugs396posixfillsitsbuffers.c"
+#line 151 "fixedbugs396posixfillsitsbuffers.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs396posixfillsitsbuffers_PollFd_eq(const struct pollfd *a, const struct pollfd *b);
@@ -184,12 +185,15 @@ HERO_TU_QUIET static const HeroDesc h_fixedbugs396posixfillsitsbuffers_PollFd_de
 int32_t h_fixedbugs396posixfillsitsbuffers_POLLIN(void);
 int32_t h_fixedbugs396posixfillsitsbuffers_POLLOUT(void);
 void h_fixedbugs396posixfillsitsbuffers_main(void);
+#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #line 21 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
 int32_t h_fixedbugs396posixfillsitsbuffers_POLLIN(void) {
-#line 191 "fixedbugs396posixfillsitsbuffers.c"
+#line 194 "fixedbugs396posixfillsitsbuffers.c"
     return POLLIN;
 }
+#pragma clang diagnostic warning "-Wdeprecated-declarations"
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
@@ -202,11 +206,13 @@ int32_t h_fixedbugs396posixfillsitsbuffers_POLLIN(void) {
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #line 22 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
 int32_t h_fixedbugs396posixfillsitsbuffers_POLLOUT(void) {
-#line 208 "fixedbugs396posixfillsitsbuffers.c"
+#line 213 "fixedbugs396posixfillsitsbuffers.c"
     return POLLOUT;
 }
+#pragma clang diagnostic warning "-Wdeprecated-declarations"
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
@@ -221,7 +227,7 @@ int32_t h_fixedbugs396posixfillsitsbuffers_POLLOUT(void) {
 
 #line 29 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
 void h_fixedbugs396posixfillsitsbuffers_main(void) {
-#line 225 "fixedbugs396posixfillsitsbuffers.c"
+#line 231 "fixedbugs396posixfillsitsbuffers.c"
     HeroArrayHeader * h0_fds = {0};
     h_0opt_e1ec52d h1_f0 = {0};
     h_0opt_e1ec52d h2_f1 = {0};
@@ -393,15 +399,15 @@ bb0:
     t132 = h8_own8;
 #line 30 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     h8_own8 = t1;
-#line 397 "fixedbugs396posixfillsitsbuffers.c"
+#line 403 "fixedbugs396posixfillsitsbuffers.c"
     hero_array_decref(t132);
 #line 30 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t133 = h0_fds;
-#line 401 "fixedbugs396posixfillsitsbuffers.c"
+#line 407 "fixedbugs396posixfillsitsbuffers.c"
     hero_array_incref(t1);
 #line 30 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     h0_fds = t1;
-#line 405 "fixedbugs396posixfillsitsbuffers.c"
+#line 411 "fixedbugs396posixfillsitsbuffers.c"
     hero_array_decref(t133);
 #line 31 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     {
@@ -490,15 +496,15 @@ bb0:
     t134 = h9_own9;
 #line 34 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     h9_own9 = t25;
-#line 494 "fixedbugs396posixfillsitsbuffers.c"
+#line 500 "fixedbugs396posixfillsitsbuffers.c"
     h_0opt_e1ec52d_release(&t134);
 #line 34 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t135 = h1_f0;
-#line 498 "fixedbugs396posixfillsitsbuffers.c"
+#line 504 "fixedbugs396posixfillsitsbuffers.c"
     h_0opt_e1ec52d_retain(&t25);
 #line 34 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     h1_f0 = t25;
-#line 502 "fixedbugs396posixfillsitsbuffers.c"
+#line 508 "fixedbugs396posixfillsitsbuffers.c"
     h_0opt_e1ec52d_release(&t135);
 #line 34 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t26 = h1_f0;
@@ -541,15 +547,15 @@ bb1:
     t136 = h10_own10;
 #line 35 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     h10_own10 = t40;
-#line 545 "fixedbugs396posixfillsitsbuffers.c"
+#line 551 "fixedbugs396posixfillsitsbuffers.c"
     h_0opt_e1ec52d_release(&t136);
 #line 35 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t137 = h2_f1;
-#line 549 "fixedbugs396posixfillsitsbuffers.c"
+#line 555 "fixedbugs396posixfillsitsbuffers.c"
     h_0opt_e1ec52d_retain(&t40);
 #line 35 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     h2_f1 = t40;
-#line 553 "fixedbugs396posixfillsitsbuffers.c"
+#line 559 "fixedbugs396posixfillsitsbuffers.c"
     h_0opt_e1ec52d_release(&t137);
 #line 35 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t41 = h2_f1;
@@ -567,7 +573,7 @@ bb2:
     t30 = h1_f0;
 #line 34 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t31 = t30.as.err;
-#line 571 "fixedbugs396posixfillsitsbuffers.c"
+#line 577 "fixedbugs396posixfillsitsbuffers.c"
     hero_panic_must(t31);
     hero_unreachable();
 bb3:
@@ -589,15 +595,15 @@ bb3:
     t138 = h11_own11;
 #line 33 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     h11_own11 = t51;
-#line 593 "fixedbugs396posixfillsitsbuffers.c"
+#line 599 "fixedbugs396posixfillsitsbuffers.c"
     hero_array_decref(t138);
 #line 33 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t139 = h3_watched;
-#line 597 "fixedbugs396posixfillsitsbuffers.c"
+#line 603 "fixedbugs396posixfillsitsbuffers.c"
     hero_array_incref(t51);
 #line 33 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     h3_watched = t51;
-#line 601 "fixedbugs396posixfillsitsbuffers.c"
+#line 607 "fixedbugs396posixfillsitsbuffers.c"
     hero_array_decref(t139);
 #line 38 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t52 = UINT64_C(2);
@@ -645,15 +651,15 @@ bb3:
     t140 = h12_own12;
 #line 42 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     h12_own12 = t64;
-#line 649 "fixedbugs396posixfillsitsbuffers.c"
+#line 655 "fixedbugs396posixfillsitsbuffers.c"
     h_0opt_e1ec52d_release(&t140);
 #line 42 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t141 = h4_f2;
-#line 653 "fixedbugs396posixfillsitsbuffers.c"
+#line 659 "fixedbugs396posixfillsitsbuffers.c"
     h_0opt_e1ec52d_retain(&t64);
 #line 42 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     h4_f2 = t64;
-#line 657 "fixedbugs396posixfillsitsbuffers.c"
+#line 663 "fixedbugs396posixfillsitsbuffers.c"
     h_0opt_e1ec52d_release(&t141);
 #line 42 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t65 = h4_f2;
@@ -671,7 +677,7 @@ bb4:
     t45 = h2_f1;
 #line 35 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t46 = t45.as.err;
-#line 675 "fixedbugs396posixfillsitsbuffers.c"
+#line 681 "fixedbugs396posixfillsitsbuffers.c"
     hero_panic_must(t46);
     hero_unreachable();
 bb5:
@@ -705,15 +711,15 @@ bb5:
     t142 = h13_own13;
 #line 44 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     h13_own13 = t80;
-#line 709 "fixedbugs396posixfillsitsbuffers.c"
+#line 715 "fixedbugs396posixfillsitsbuffers.c"
     h_0opt_e1ec52d_release(&t142);
 #line 44 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t143 = h5_f3;
-#line 713 "fixedbugs396posixfillsitsbuffers.c"
+#line 719 "fixedbugs396posixfillsitsbuffers.c"
     h_0opt_e1ec52d_retain(&t80);
 #line 44 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     h5_f3 = t80;
-#line 717 "fixedbugs396posixfillsitsbuffers.c"
+#line 723 "fixedbugs396posixfillsitsbuffers.c"
     h_0opt_e1ec52d_release(&t143);
 #line 44 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t81 = h5_f3;
@@ -731,7 +737,7 @@ bb6:
     t69 = h4_f2;
 #line 42 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t70 = t69.as.err;
-#line 735 "fixedbugs396posixfillsitsbuffers.c"
+#line 741 "fixedbugs396posixfillsitsbuffers.c"
     hero_panic_must(t70);
     hero_unreachable();
 bb7:
@@ -763,15 +769,15 @@ bb7:
     t144 = h14_own14;
 #line 46 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     h14_own14 = t90;
-#line 767 "fixedbugs396posixfillsitsbuffers.c"
+#line 773 "fixedbugs396posixfillsitsbuffers.c"
     hero_array_decref(t144);
 #line 46 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t145 = h6_buf;
-#line 771 "fixedbugs396posixfillsitsbuffers.c"
+#line 777 "fixedbugs396posixfillsitsbuffers.c"
     hero_array_incref(t90);
 #line 46 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     h6_buf = t90;
-#line 775 "fixedbugs396posixfillsitsbuffers.c"
+#line 781 "fixedbugs396posixfillsitsbuffers.c"
     hero_array_decref(t145);
 #line 47 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t91 = h0_fds;
@@ -875,15 +881,15 @@ bb7:
     t146 = h15_own15;
 #line 49 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     h15_own15 = t120;
-#line 879 "fixedbugs396posixfillsitsbuffers.c"
+#line 885 "fixedbugs396posixfillsitsbuffers.c"
     hero_array_decref(t146);
 #line 49 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t147 = h7_name;
-#line 883 "fixedbugs396posixfillsitsbuffers.c"
+#line 889 "fixedbugs396posixfillsitsbuffers.c"
     hero_array_incref(t120);
 #line 49 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     h7_name = t120;
-#line 887 "fixedbugs396posixfillsitsbuffers.c"
+#line 893 "fixedbugs396posixfillsitsbuffers.c"
     hero_array_decref(t147);
 #line 50 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t121 = UINT64_C(256);
@@ -931,7 +937,7 @@ bb7:
     hero_print_bool(t131);
 #line 50 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     hero_print_end();
-#line 935 "fixedbugs396posixfillsitsbuffers.c"
+#line 941 "fixedbugs396posixfillsitsbuffers.c"
     hero_array_release_at(&h0_fds);
     h_0opt_e1ec52d_release(hero_slot_escape(&h1_f0));
     h_0opt_e1ec52d_release(hero_slot_escape(&h2_f1));
@@ -954,10 +960,11 @@ bb8:
     t85 = h5_f3;
 #line 44 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t86 = t85.as.err;
-#line 958 "fixedbugs396posixfillsitsbuffers.c"
+#line 964 "fixedbugs396posixfillsitsbuffers.c"
     hero_panic_must(t86);
     hero_unreachable();
 }
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_fixedbugs396posixfillsitsbuffers_PollFd_eq(const struct pollfd *a, const struct pollfd *b) {
     if (!(a->fd == b->fd)) return false;
     if (!(a->events == b->events)) return false;

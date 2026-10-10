@@ -24,6 +24,7 @@
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
@@ -72,7 +73,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_63, "c");
 HERO_STR_STATIC(hero_str_1ca80789, "wrote into a deleted object");
 
-#line 76 "deadhandlereadafterconsumethroughonename.c"
+#line 77 "deadhandlereadafterconsumethroughonename.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -116,7 +117,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 120 "deadhandlereadafterconsumethroughonename.c"
+#line 121 "deadhandlereadafterconsumethroughonename.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_deadhandlereadafterconsumethroughonename_Json_eq(Obj * const *a, Obj * const *b);
@@ -131,10 +132,12 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_deadhandlereadafterconsumethroughonename_main(void);
+#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 21 "tests/golden/run/dead-handle-read-after-consume-through-one-name.hero"
 void h_deadhandlereadafterconsumethroughonename_main(void) {
-#line 138 "deadhandlereadafterconsumethroughonename.c"
+#line 140 "deadhandlereadafterconsumethroughonename.c"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
     Obj * h0_b;
     Obj * h1_c;
     Obj * t1;
@@ -148,6 +151,7 @@ void h_deadhandlereadafterconsumethroughonename_main(void) {
     const char * t9;
     Obj * t10;
     HeroStr t12;
+#pragma clang diagnostic warning "-Wdeprecated-declarations"
     goto bb0;
 bb0:
 #line 22 "tests/golden/run/dead-handle-read-after-consume-through-one-name.hero"
@@ -222,8 +226,9 @@ bb2:
 bb3:
 #line 25 "tests/golden/run/dead-handle-read-after-consume-through-one-name.hero"
     goto bb1;
-#line 226 "deadhandlereadafterconsumethroughonename.c"
+#line 230 "deadhandlereadafterconsumethroughonename.c"
 }
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_deadhandlereadafterconsumethroughonename_Json_eq(Obj * const *a, Obj * const *b) {
     return hero_handle_eq(*a, *b);
 }
