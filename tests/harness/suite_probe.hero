@@ -28,8 +28,8 @@
 # lowered. It read 48.59 s of user time that day, 40% of the watchdog.
 #
 # A TREE ROW PROBES ITS FILES ONE AT A TIME (defect 155's second half,
-# 2026-10-02). The harness stops any one program at 120 s of wall
-# (`shell.WATCHDOG_SECONDS`), and `heroes probe selfhost --family multi` in
+# 2026-10-02). The harness stopped any one program at 120 s of wall
+# (`shell.WATCHDOG_SECONDS`, 600 s since defect 605 on 2026-10-11), and `heroes probe selfhost --family multi` in
 # one invocation measured 97.50 s of user time on this Mac (real 104.34, a
 # busy machine, the gate's unoptimised compiler) and was stopped at exit 124
 # on the CI's Linux arm64 runner (run 36987357726), as it had been in the
