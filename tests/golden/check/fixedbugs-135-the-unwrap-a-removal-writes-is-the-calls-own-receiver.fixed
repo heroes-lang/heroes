@@ -13,3 +13,9 @@ function main()
     xs = [1, 2]
     print(label)  #~ bad_operand
     print((xs.len() + 1))  #~ bad_operand
+
+# Corrected 2026-10-10, defect 576, below the program so every line keeps its
+# number: the `must` line is told at column 11, the `(` that opens its
+# receiver, where it was told at the `x` inside it: a call after a
+# parenthesised base spans from the base's opener since that repair. What
+# the removal writes is unchanged.

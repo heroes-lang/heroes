@@ -1,0 +1,47 @@
+# Fixed defect 576, 2026-10-10 (found by lane b18-infer beside defect 564).
+# Symptom: `x: i8 @ -(-128)` was refused *`-(-128` does not fit an `i8`*, the
+# quote and the caret one character short. Cause: a parenthesised expression
+# is its contents (`grammar_expr.hero`'s `group`), and an operator's span was
+# built from its operands' spans, so a parenthesis at the operator's edge fell
+# outside it: a minus or a `!` lost its closer, a binary operator its left
+# operand's opener and its right operand's closer, and a field, an index, a
+# call, a `?` or a `::` after a parenthesised base the base's opener.
+# Repair: the span runs from the first token the operator's form read to the
+# last (`cursor.previous_significant_span`). The shapes: a minus over a
+# parenthesised literal, over two parentheses, over a name, a `!`, a binary
+# operator with a parenthesised left and right operand, and a field, an index
+# and a call after a parenthesised base. A parenthesised expression alone is
+# still its contents, `(n)` told at the `n`. The source is not canonical on
+# purpose: `heroes fmt` writes `-(-128)` as `--128` and drops the parentheses
+# no precedence needs, and the parentheses are this case's subject.
+
+record P
+    x: i64
+
+function f(n: i64) -> i64
+    return n
+
+function main()
+    a: i8 @ -(-128)  #~ int_out_of_range
+    print(a)
+    b: i8 @ -((200))  #~ int_out_of_range
+    print(b)
+    n: i64 = 1
+    c: bool = -(n)  #~ type_mismatch
+    print(c)
+    d: i64 = !(n == 1)  #~ type_mismatch
+    print(d)
+    e: bool = (1 + 2) * 3  #~ type_mismatch
+    print(e)
+    g: bool = 3 * (1 + 2)  #~ type_mismatch
+    print(g)
+    p = P(x: 1)
+    h: bool = (p).x  #~ type_mismatch
+    print(h)
+    xs = [1]
+    k: bool = (xs)[0]  #~ type_mismatch
+    print(k)
+    m: bool = (5).f()  #~ type_mismatch
+    print(m)
+    q: bool = (n)  #~ type_mismatch
+    print(q)

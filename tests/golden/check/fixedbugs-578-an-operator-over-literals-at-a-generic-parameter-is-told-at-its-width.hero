@@ -1,0 +1,34 @@
+# Fixed defect 578, 2026-10-10: the refused half;
+# `run/fixedbugs-578-an-operator-over-literals-at-a-generic-parameter-takes-its-type`
+# holds what is accepted. An operator over literals at a generic function's
+# parameter takes the type the call settles, so a literal that cannot fit it
+# is told where it stands, as in an annotated position (defect 564), a minus
+# included; an integer operator beside a float settles nothing at `f64` and is
+# told at the operator, the same verdict in either order; an integer among
+# floats keeps `mixed_arithmetic`; and a context a literal cannot take is the
+# call's one mismatch (defect 541's `genT2`). Not canonical on purpose: `heroes
+# fmt` writes `-(2)` as `-2`, a literal, where the minus over its operand is
+# the shape.
+
+function id<T>(a: T) -> T
+    return a
+
+function first<A>(a: A, b: A) -> A
+    pair = [a, b]
+    return pair[0]
+
+function inside<T>(x: T) -> T
+    y: T = first(a: 1 + 1, b: 2)  #~ type_mismatch
+    _ = y
+    return x
+
+function main()
+    a: u8 = id(a: 300 + 1)  #~ int_out_of_range
+    print(a)
+    b: u8 = id(a: -(2))  #~ int_out_of_range
+    print(b)
+    print(first(a: 2 + 3, b: 2.5))  #~ type_mismatch
+    print(first(a: 2.5, b: 2 + 3))  #~ type_mismatch
+    c: f64 = id(a: 2 + 3.0)  #~ mixed_arithmetic
+    print(c)
+    print(inside(x: "s"))

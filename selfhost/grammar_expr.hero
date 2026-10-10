@@ -196,6 +196,7 @@ function parse_expr(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
 # Everything at `min_power` or tighter. All of Heroes' binary operators are
 # left-associative, so the recursive call asks for `power + 1`.
 function binary(@c: cursor.Cursor, @a: ast.Ast, text: str, min_power: i64) -> i64
+    first = cursor.current_span(c).start
     left: i64 @ unary(@c, @a, text)
 
     # A CONTROL FORM ENDS THE EXPRESSION, and this is panel 007's rule
@@ -238,7 +239,7 @@ function binary(@c: cursor.Cursor, @a: ast.Ast, text: str, min_power: i64) -> i6
             else
                 _ = cursor.bump(@c)
                 right = binary(@c, @a, text, operator.power + 1)
-                span = token.Span(start: a.exprs[left].span.start, end: a.exprs[right].span.end)
+                span = token.Span(start: first, end: cursor.previous_significant_span(@c).end)
                 left @ ast.push_expr(
                     @a.exprs,
                     ast.Expr(kind: .binary(op: operator.op, left: left, right: right), span: span)
@@ -265,7 +266,7 @@ function unary(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
         op @ .bit_not
     start = cursor.bump(@c).span
     operand = unary(@c, @a, text)
-    span = token.Span(start: start.start, end: a.exprs[operand].span.end)
+    span = token.Span(start: start.start, end: cursor.previous_significant_span(@c).end)
     return ast.push_expr(@a.exprs, ast.Expr(kind: .unary(op: op, operand: operand), span: span))
 
 ## The tightest level — the suffixes
@@ -274,6 +275,7 @@ function unary(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
 # they were written, which is what makes `l.text.slice(from: a, to: b)?[0]` read
 # left to right.
 function postfix(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
+    first = cursor.current_span(c).start
     base: i64 @ primary(@c, @a, text)
 
     # **A suffix never reaches across a block that just closed.** `.ok v =>
@@ -300,17 +302,16 @@ function postfix(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
         k = cursor.current_kind(c)
 
         if k == .dot
-            base @ after_dot(@c, @a, text, base)
+            base @ after_dot(@c, @a, text, base: base, first: first)
 
             if cursor.current_kind(c) == .dot && base < 0
                 chaining @ false
         else if k == .colon_colon
-            base @ after_colon_colon(@c, @a, text, base)
+            base @ after_colon_colon(@c, @a, text, base: base, first: first)
         else if k == .lparen
-            start = a.exprs[base].span
             arguments = call_args(@c, @a, text)
             listed = rest_words.split(@c, @a, text, given: arguments)
-            span = token.Span(start: start.start, end: cursor.previous_significant_span(@c).end)
+            span = token.Span(start: first, end: cursor.previous_significant_span(@c).end)
             base @ ast.push_expr(
                 @a.exprs,
                 ast.Expr(kind: .call(callee: base, args: listed.args, rest: listed.rest), span: span)
@@ -320,11 +321,11 @@ function postfix(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
             _ = cursor.bump(@c)
             index = indexed(@c, @a, text, open: bracket)
             close = unclosed.end_index(@c, text: text, open: bracket)
-            span = token.Span(start: a.exprs[base].span.start, end: close.end)
+            span = token.Span(start: first, end: close.end)
             base @ ast.push_expr(@a.exprs, ast.Expr(kind: .index(base: base, index: index), span: span))
         else if k == .question
             question = cursor.bump(@c).span
-            span = token.Span(start: a.exprs[base].span.start, end: question.end)
+            span = token.Span(start: first, end: question.end)
             base @ ast.push_expr(@a.exprs, ast.Expr(kind: .try_expr(value: base), span: span))
         else
             chaining @ false
@@ -332,7 +333,7 @@ function postfix(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
     return base
 
 # `x.f(y)` is UFCS, `x.f` is a field read: the `(` decides (§4.11).
-function after_dot(@c: cursor.Cursor, @a: ast.Ast, text: str, base: i64) -> i64
+function after_dot(@c: cursor.Cursor, @a: ast.Ast, text: str, base: i64, first: i64) -> i64
     dot = cursor.bump(@c).span
 
     if !cursor.at(c, .ident)
@@ -346,19 +347,18 @@ function after_dot(@c: cursor.Cursor, @a: ast.Ast, text: str, base: i64) -> i64
         past_a_range(@c, @a, text, dot: dot)
         return base
     name = cursor.bump(@c).span
-    start = a.exprs[base].span
 
     if cursor.at(c, .lparen)
         arguments = call_args(@c, @a, text)
         listed = rest_words.split(@c, @a, text, given: arguments)
-        span = token.Span(start: start.start, end: cursor.previous_significant_span(@c).end)
+        span = token.Span(start: first, end: cursor.previous_significant_span(@c).end)
         return ast.push_expr(
             @a.exprs,
             ast.Expr(kind: .method(receiver: base, name: name, args: listed.args, rest: listed.rest), span: span)
         )
     return ast.push_expr(
         @a.exprs,
-        ast.Expr(kind: .field(base: base, name: name), span: token.Span(start: start.start, end: name.end))
+        ast.Expr(kind: .field(base: base, name: name), span: token.Span(start: first, end: name.end))
     )
 
 # Another language's range at the `.` at `dot`, `1..2`, `..n` or `0..=n`,
@@ -382,7 +382,7 @@ function past_a_range(@c: cursor.Cursor, @a: ast.Ast, text: str, dot: token.Span
 #
 # No call may follow, because there is nothing to call: `Point::x(…)` is
 # caught by the postfix loop as a call on a `str`, and says so.
-function after_colon_colon(@c: cursor.Cursor, @a: ast.Ast, text: str, base: i64) -> i64
+function after_colon_colon(@c: cursor.Cursor, @a: ast.Ast, text: str, base: i64, first: i64) -> i64
     _ = cursor.bump(@c)
 
     if !cursor.at(c, .ident)
@@ -395,10 +395,9 @@ function after_colon_colon(@c: cursor.Cursor, @a: ast.Ast, text: str, base: i64)
             )
         return base
     name = cursor.bump(@c).span
-    start = a.exprs[base].span
     return ast.push_expr(
         @a.exprs,
-        ast.Expr(kind: .field_name(base: base, name: name), span: token.Span(start: start.start, end: name.end))
+        ast.Expr(kind: .field_name(base: base, name: name), span: token.Span(start: first, end: name.end))
     )
 
 ## The atoms
