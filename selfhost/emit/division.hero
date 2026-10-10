@@ -1,0 +1,80 @@
+# The guard of an integer `/` and `%` beside the zero test, at the operands'
+# own width (design.md §4.14; panel 035; defect 567). Out of
+# `emit/operator.hero` on 2026-10-10, when the width's own minimum took that
+# file past its ceiling; `operator.binary` writes the zero test and asks
+# here for the rest.
+
+use check/table
+use check/state
+use ir
+use widths
+use source
+use parse
+use resolve
+use checker
+
+# The one quotient a signed width cannot hold, its smallest value by -1, and
+# the guard that aborts on it, or "" where none is owed (defect 567). It is
+# compared at the operands' own width: `INT64_MIN` beside an `int8_t` is a
+# comparison clang knows is always false, so the guard never fired, `-128 /
+# -1` at `i8` printed -128 at exit 0 (C computes in `int` and the store
+# wraps), and `heroes run` warned on a correct program. An unsigned width has
+# no such quotient and takes no guard: its `/` and `%` overflow nothing.
+#
+# Guarded together, reported apart (panel 035's owed message): saying
+# "integer overflow" for `%` was false; the remainder is 0 and overflows
+# nothing, and what has no representation is the quotient on the way. So
+# `%` aborts where `/` does at every width, and says why.
+function guard(c: state.Checked, ty: i64, l: str, r: str, op: ir.BinaryOp) -> str
+    kind: widths.IntKind @ .i64
+
+    match table.get(c.types, ty)
+        .int_ty it                                                 => kind @ it.kind
+        .float_ty | .bool | .str | .ptr | .cstr | .unit            => return ""
+        .array | .fixed | .map | .fallible | .function_ty | .named => return ""
+        .case_ty | .failure | .generic | .error                    => return ""
+
+    smallest: str @ "INT64_MIN"
+    minus_one: str @ "INT64_C(-1)"
+
+    match kind
+        .i8 =>
+            smallest @ "INT8_MIN"
+            minus_one @ "INT8_C(-1)"
+        .i16 =>
+            smallest @ "INT16_MIN"
+            minus_one @ "INT16_C(-1)"
+        .i32 =>
+            smallest @ "INT32_MIN"
+            minus_one @ "INT32_C(-1)"
+        .i64                     => smallest @ smallest
+        .u8 | .u16 | .u32 | .u64 => return ""
+
+    abort_call: str @ "hero_panic_overflow()"
+
+    if op == .rem
+        width = widths.int_name(kind)
+        abort_call @ "hero_panic(\"`%` by -1 at the smallest " + width + ": the remainder is 0, but the quotient it is the rest of has no " + width + "\")"
+
+        # The text `i64` has carried since panel 035, kept byte for byte.
+        if kind == .i64
+            abort_call @ "hero_panic(\"`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64\")"
+    return "    if (" + l + " == " + smallest + " && " + r + " == " + minus_one + ") " + abort_call + ";"
+
+## Tests
+
+test "each signed width is guarded at its own smallest value, and no unsigned one is (defect 567)"
+    text = "function main()\n    print(1)\n"
+    p = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(p.tree, s, p.decls, p.uses)
+    c: state.Checked @ checker.check(p.tree, out, s, p.decls)
+    i8 = table.intern(@c.types, .int_ty(kind: .i8))
+    u8 = table.intern(@c.types, .int_ty(kind: .u8))
+    i64 = table.intern(@c.types, .int_ty(kind: .i64))
+    assert guard(c, ty: i8, l: "t1", r: "t2", op: .div) == "    if (t1 == INT8_MIN && t2 == INT8_C(-1)) hero_panic_overflow();"
+    assert guard(c, ty: u8, l: "t1", r: "t2", op: .div) == ""
+    assert guard(c, ty: u8, l: "t1", r: "t2", op: .rem) == ""
+    assert guard(c, ty: i64, l: "t1", r: "t2", op: .div) == "    if (t1 == INT64_MIN && t2 == INT64_C(-1)) hero_panic_overflow();"
+    narrow = guard(c, ty: i8, l: "t1", r: "t2", op: .rem)
+    assert narrow == "    if (t1 == INT8_MIN && t2 == INT8_C(-1)) hero_panic(\"`%` by -1 at the smallest i8: the remainder is 0, but the quotient it is the rest of has no i8\");"

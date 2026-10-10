@@ -21,6 +21,7 @@ use ir/containers
 use emit/mangle
 use emit/ctype
 use emit/writer
+use emit/division
 use token
 use source
 use parse
@@ -134,19 +135,10 @@ function binary(@w: writer.Writer, c: state.Checked, names: ctype.Names, f: cont
                 if op == .rem
                     operator @ "%"
                 writer.line(@w, text: "    if (" + r + " == 0) hero_panic(\"division by zero\");")
+                guard = division.guard(c, ty: left_ty, l: l, r: r, op: op)
 
-                # Guarded together, reported apart (panel 035's owed
-                # message): saying "integer overflow" for % was false —
-                # the remainder is 0 and overflows nothing; what has no
-                # representation is the quotient C computes on the way.
-                abort_call: str @ "hero_panic_overflow()"
-
-                if op == .rem
-                    abort_call @ "hero_panic(\"`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64\")"
-                writer.line(
-                    @w,
-                    text: "    if (" + l + " == INT64_MIN && " + r + " == INT64_C(-1)) " + abort_call + ";"
-                )
+                if guard != ""
+                    writer.line(@w, text: guard)
                 writer.line(@w, text: "    " + name + " = " + l + " " + operator + " " + r + ";")
                 return
         # The three that are pure bit patterns: every pair of int64_ts
