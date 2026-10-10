@@ -30,9 +30,19 @@
 #      `hero_runtime_check_leaks()` by design, and on Darwin arm64 that
 #      counter is the only leak instrument there is — so the corpus must
 #      keep a path that still CROSSES the gate.
+#
+# **And the gallery since 2026-10-11** (defect 606): `examples/gallery/`
+# holds one program per FILE, which the walk of `main.hero` never found, so
+# `12-interpolation.hero` stood refused by its own compiler with every suite
+# green. Each is `check`ed first; a finished one then takes checks 1 and 3,
+# its `<stem>.expected` OWED, since a lesson's output is known and nothing in
+# the gallery prints the machine's; an unfinished one, a lesson about `???`,
+# is judged by `check`'s holes (`gallery.hero`). Check 2 is not asked of
+# the gallery: a lesson tests itself through the expectation beside it.
 
 use absence
 use expectation
+use gallery
 use report
 use floors
 use shell
@@ -129,9 +139,29 @@ function run_all(scratch: str, compiler: str) -> report.Report?
 
         if !holds(modules: modules, needle: "exit(")
             crossing @ crossing + 1
-        took = one_program(scratch: scratch, compiler: compiler, binaries: binaries, dir: dir, r: @r)
+        took = one_program(
+            scratch: scratch,
+            compiler: compiler,
+            binaries: binaries,
+            p: program_at(scratch: scratch, dir: dir),
+            r: @r
+        )
 
         if took
+            skipped @ skipped + 1
+
+    lessons = gallery.programs(scratch)?
+    floors.check(
+        @r,
+        label: "corpus/gallery",
+        found: lessons.len(),
+        floor: gallery.LEAST,
+        what: "programs in " + gallery.DIR
+    )
+    shell.mkdir_all(binaries + "/gallery")?
+
+    for path in lessons
+        if one_lesson(scratch: scratch, compiler: compiler, binaries: binaries, path: path, r: @r)
             skipped @ skipped + 1
 
     if crossing == 0
@@ -146,19 +176,94 @@ function run_all(scratch: str, compiler: str) -> report.Report?
     # corpus green by testing none of it.
     # One-half, not one-third, since 2026-08-31 — probe.hero's floor carries
     # the measured reason and this one moves with it.
-    if skipped > 0 && skipped * 2 > programs.len()
+    found = programs.len() + lessons.len()
+
+    if skipped > 0 && skipped * 2 > found
         report.keep_failure(
             @r,
             label: "corpus",
-            detail: "  " + skipped.to_str() + " of " + programs.len().to_str() + " programs were skipped for want of a library — this machine is not testing the corpus"
+            detail: "  " + skipped.to_str() + " of " + found.to_str() + " programs were skipped for want of a library — this machine is not testing the corpus"
         )
     return ok(r)
 
+# What one program is to this suite: the name its report gives it, its entry
+# point, what it prints, the words and the input it is handed, and every
+# module it keeps, the ones a missing library is looked for in.
+record Program
+    name: str
+    main: str
+    expected: str
+    passed: [str]
+    stdin: str
+    modules: [str]
+
+# A program directory: its `main.hero` and the files beside it.
+function program_at(scratch: str, dir: str) -> Program
+    return Program(
+        name: strings.base_name(path: dir),
+        main: dir + "/main.hero",
+        expected: dir + "/main.expected",
+        passed: program_arguments(dir),
+        stdin: fed_path(dir),
+        modules: module_paths(scratch: scratch, dir: dir)
+    )
+
+# A gallery program: one file, handed no words and no input.
+function lesson_at(path: str) -> Program
+    nothing: [str] = []
+    return Program(
+        name: gallery.name_of(path),
+        main: path,
+        expected: gallery.expected_of(path),
+        passed: nothing,
+        stdin: "",
+        modules: [path]
+    )
+
+# One gallery program (defect 606): `check` first, since only its answer
+# says whether there is a binary to ask for; then, finished, the program's
+# checks with its expectation owed. Answers whether it was SKIPPED for a
+# missing library, as `one_program` does.
+function one_lesson(scratch: str, compiler: str, binaries: str, path: str, @r: report.Report) -> bool
+    p = lesson_at(path)
+    said = gallery.checked(scratch: scratch, compiler: compiler, path: path)
+
+    if said.is_err()
+        report.keep_failure(@r, label: "corpus/" + p.name, detail: "  `check " + path + "`: " + shell.refusal(said))
+        return false
+
+    if gallery.unfinished(said.must())
+        report.keep_pass(@r)
+        return false
+
+    if said.must().code != 0
+        lacks = absence.machine_lacks(scratch: scratch, path: path, expected: "", said: said.must().err)
+
+        if !lacks.is_err()
+            report.keep_skip(@r, label: "corpus/" + p.name, detail: "  " + lacks.must())
+            return true
+        detail: str @= "  `heroes check` exited " + said.must().code.to_str() + ", and the site shows this program:\n" + said.must().err
+        why = absence.refused(lacks)
+
+        if why.len() > 0
+            detail @ detail + "\n  not skipped for a missing library: " + why
+        report.keep_failure(@r, label: "corpus/" + p.name, detail: detail)
+        return false
+
+    if read_file(p.expected).is_err()
+        report.keep_failure(
+            @r,
+            label: "corpus/" + p.name,
+            detail: "  " + path + " checks clean and " + p.expected + " is not there: a finished gallery program carries what it prints beside it, in the `tests/golden/run/` convention"
+        )
+        return false
+    return one_program(scratch: scratch, compiler: compiler, binaries: binaries, p: p, r: @r)
+
 # One program: its tests in three configurations, then what it prints.
 # Answers whether it was SKIPPED for a missing library.
-function one_program(scratch: str, compiler: str, binaries: str, dir: str, @r: report.Report) -> bool
-    name = strings.base_name(path: dir)
-    main = dir + "/main.hero"
+function one_program(scratch: str, compiler: str, binaries: str, p: Program, @r: report.Report) -> bool
+    name = p.name
+    main = p.main
 
     for level in configurations()
         said = shell.run_guarded(
@@ -185,7 +290,7 @@ function one_program(scratch: str, compiler: str, binaries: str, dir: str, @r: r
             lacks = absence.machine_lacks_among(
                 scratch: scratch,
                 path: main,
-                modules: module_paths(scratch: scratch, dir: dir),
+                modules: p.modules,
                 expected: "",
                 said: said.must().err
             )
@@ -213,16 +318,17 @@ function one_program(scratch: str, compiler: str, binaries: str, dir: str, @r: r
             report.keep_failure(@r, label: "corpus/" + name, detail: "  tripped a sanitiser:\n" + said.must().err)
             return false
 
-    prints(scratch: scratch, compiler: compiler, binaries: binaries, dir: dir, r: @r)
+    prints(scratch: scratch, compiler: compiler, binaries: binaries, p: p, r: @r)
     return false
 
 # `main.expected`, in the same three configurations as `run/`. A program
 # without one is not a failure: `examples/curl/` prints this machine's
-# libcurl, and pinning that would pin the machine.
-function prints(scratch: str, compiler: str, binaries: str, dir: str, @r: report.Report)
-    name = strings.base_name(path: dir)
-    main = dir + "/main.hero"
-    text = read_file(dir + "/main.expected")
+# libcurl, and pinning that would pin the machine. A gallery program's is
+# owed, and its caller asked for it first (`one_lesson`).
+function prints(scratch: str, compiler: str, binaries: str, p: Program, @r: report.Report)
+    name = p.name
+    main = p.main
+    text = read_file(p.expected)
 
     if text.is_err()
         report.keep_pass(@r)
@@ -233,10 +339,10 @@ function prints(scratch: str, compiler: str, binaries: str, dir: str, @r: report
         report.keep_failure(
             @r,
             label: "corpus/" + name,
-            detail: "  " + dir + "/main.expected is not a readable expectation"
+            detail: "  " + p.expected + " is not a readable expectation"
         )
         return
-    passed = program_arguments(dir)
+    passed = p.passed
     binary = binaries + "/" + name + shell.exe_suffix()
     built = shell.run_guarded(
         scratch: scratch,
@@ -246,22 +352,22 @@ function prints(scratch: str, compiler: str, binaries: str, dir: str, @r: report
     if built.is_err() || built.must().code != 0
         report.keep_failure(@r, label: "corpus/" + name, detail: "  building " + main + ": " + shell.ending(built))
         return
-    at_o0 = ran(scratch: scratch, dir: dir, words: shell.both(first: [binary], second: passed))
+    at_o0 = ran(scratch: scratch, p: p, words: shell.both(first: [binary], second: passed))
 
     if judged(@r, name: name, level: "-O0", want: want.must(), said: at_o0)
         return
     at_o2 = ran(
         scratch: scratch,
-        dir: dir,
-        words: shell.both(first: [compiler, "run", main], second: passed_after_dashes(dir))
+        p: p,
+        words: shell.both(first: [compiler, "run", main], second: after_dashes(passed))
     )
 
     if judged(@r, name: name, level: "-O2", want: want.must(), said: at_o2)
         return
     sanitised = ran(
         scratch: scratch,
-        dir: dir,
-        words: shell.both(first: [compiler, "run", main, "--sanitize"], second: passed_after_dashes(dir))
+        p: p,
+        words: shell.both(first: [compiler, "run", main, "--sanitize"], second: after_dashes(passed))
     )
 
     if sanitised.is_err()
@@ -298,8 +404,8 @@ function fed_path(dir: str) -> str
         return ""
     return path
 
-function ran(scratch: str, dir: str, words: [str]) -> shell.Run?
-    return shell.run_fed(scratch: scratch, program: words[0], words: words, stdin_path: fed_path(dir))
+function ran(scratch: str, p: Program, words: [str]) -> shell.Run?
+    return shell.run_fed(scratch: scratch, program: words[0], words: words, stdin_path: p.stdin)
 
 function judged(@r: report.Report, name: str, level: str, want: expectation.Expectation, said: shell.Run?) -> bool
     if said.is_err()
@@ -345,8 +451,10 @@ function program_arguments(dir: str) -> [str]
 # The same arguments, behind the `--` that `heroes run` requires — as
 # words now, since there is no line to splice them into.
 function passed_after_dashes(dir: str) -> [str]
-    passed = program_arguments(dir)
+    return after_dashes(program_arguments(dir))
 
+# Words a program is handed, behind the `--`; none where there are none.
+function after_dashes(passed: [str]) -> [str]
     if passed.len() == 0
         return []
 
@@ -512,7 +620,7 @@ test "fixedbugs: a program whose tests cannot build is skipped only where the ma
         scratch: scratch,
         compiler: compiler.must(),
         binaries: scratch + "/corpus-binaries",
-        dir: tree + "/has",
+        p: program_at(scratch: scratch, dir: tree + "/has"),
         r: @refuted
     )
     assert !took
@@ -530,11 +638,57 @@ test "fixedbugs: a program whose tests cannot build is skipped only where the ma
         scratch: scratch,
         compiler: compiler.must(),
         binaries: scratch + "/corpus-binaries",
-        dir: lacks,
+        p: program_at(scratch: scratch, dir: lacks),
         r: @excused
     )
     assert skipped
     assert excused.failed == 0
     assert excused.skips.len() == 1
     assert strings.starts_with(text: excused.skips[0], prefix: "SKIP corpus/lacks\n")
+    assert !shell.remove_tree(scratch).is_err()
+
+# DEFECT 606's cause in this suite, held as a test (2026-10-11): the gallery's
+# programs are one file each, and the walk of `main.hero` found none of them,
+# so `12-interpolation.hero` stood refused by its own compiler with the gate
+# green. A refused program is told with the compiler's words, a finished one
+# that carries no expectation is told, one with holes is judged by `check`'s
+# holes alone, and one that prints what its expectation says passes.
+test "fixedbugs: a gallery program is checked, owes its expectation, and is run (defect 606)"
+    scratch = shell.own_scratch()
+    tree = scratch + "/corpus-gallery"
+    binaries = scratch + "/corpus-gallery-binaries"
+    assert !shell.remove_tree(tree).is_err()
+    assert !shell.mkdir_all(tree).is_err()
+    assert !shell.mkdir_all(binaries + "/gallery").is_err()
+    compiler = shell.some_compiler().must()
+    assert !write_file(path: tree + "/refused.hero", text: "function main()\n    v @= 1\n    print(v)\n").is_err()
+    assert !write_file(path: tree + "/unowed.hero", text: "function main()\n    print(7)\n").is_err()
+    assert !write_file(path: tree + "/holes.hero", text: "function seven() -> i64\n    return ???\n\nfunction main()\n    print(seven())\n").is_err()
+    assert !write_file(path: tree + "/owed.hero", text: "function main()\n    print(7)\n").is_err()
+    assert !write_file(path: tree + "/owed.expected", text: "7\n").is_err()
+    r: report.Report @= report.empty()
+
+    for name in ["refused", "unowed", "holes", "owed"]
+        took = one_lesson(
+            scratch: scratch,
+            compiler: compiler,
+            binaries: binaries,
+            path: tree + "/" + name + ".hero",
+            r: @r
+        )
+        assert !took
+
+    assert r.failed == 2
+    assert r.passed == 2
+    assert strings.starts_with(text: r.failures[0], prefix: "FAIL corpus/gallery/refused\n")
+    assert strings.contains(text: r.failures[0], needle: "never_rebound")
+    assert strings.starts_with(text: r.failures[1], prefix: "FAIL corpus/gallery/unowed\n")
+    assert strings.contains(text: r.failures[1], needle: "unowed.expected is not there")
+
+    # And an expectation the program does not meet is a failure at its level.
+    assert !write_file(path: tree + "/owed.expected", text: "8\n").is_err()
+    wrong: report.Report @= report.empty()
+    _ = one_lesson(scratch: scratch, compiler: compiler, binaries: binaries, path: tree + "/owed.hero", r: @wrong)
+    assert wrong.failed == 1
+    assert strings.starts_with(text: wrong.failures[0], prefix: "FAIL corpus/gallery/owed at -O0\n")
     assert !shell.remove_tree(scratch).is_err()
