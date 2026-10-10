@@ -1,0 +1,17 @@
+# fixedbugs, defect 560, lane b18-ffi, 2026-10-10 (panel 202's R3; the
+# spec-warden's `cfg`).
+#
+# One module's header defines `LIMIT` as 100, and another's caps at `LIMIT`,
+# defining it as 10 where no header read before it has. `build` reads each in
+# its own module's unit, so `cap` caps at 10, and prints 3 and 10. Until
+# 2026-10-10 `heroes test` read both in one unit, the first module's first,
+# and failed the correct test below, *left: 50 right: 10*.
+use fixedbugs560/limit_half
+use fixedbugs560/cap_ten
+
+function main()
+    print(limit_half.halved(x: 6))
+    print(cap_ten.capped(v: 50))
+
+test "cap is ten"
+    assert cap_ten.capped(v: 50) == 10

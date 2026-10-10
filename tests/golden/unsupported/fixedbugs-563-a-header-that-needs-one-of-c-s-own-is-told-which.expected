@@ -1,0 +1,7 @@
+error[ffi_header_refused]: `fixedbugs-563-file.h`, the header this group names, does not compile: clang refuses it at line 3: unknown type name 'FILE'
+  at tests/golden/unsupported/fixedbugs-563-a-header-that-needs-one-of-c-s-own-is-told-which.hero:9:8
+    |
+  9 | extern "fixedbugs-563-file.h"  #~ ffi_header_refused
+    |        ^^^^^^^^^^^^^^^^^^^^^^
+  note: `fixedbugs-563-file.h` line 3 reads `static inline int file_given(FILE *f) { return f != 0; }`
+  note: `fixedbugs-563-file.h` compiles after `stdio.h`, a header of C's own it uses and does not include: write a group naming `stdio.h` above this one, which a module's unit then reads first; a group binds at least one name, and one holding only a record stands where it is written (§ 13)

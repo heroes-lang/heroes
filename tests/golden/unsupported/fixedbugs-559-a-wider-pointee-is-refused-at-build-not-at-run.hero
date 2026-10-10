@@ -1,0 +1,22 @@
+# fixedbugs, defect 559, lane b18-ffi, 2026-10-10 (panel 202's C0; the
+# critic's `fpwide`).
+#
+# `fill_wide(@x: i32)` over `void fill_wide(long long *x)`, so C writes eight
+# bytes into a four-byte local, beside a module whose header cannot share a
+# unit with this one's. Until 2026-10-10 the pointee check could not read the
+# program's headers together and passed: this built at exit 0, and the
+# binary stopped at exit 134 when C reached past the local, advising a
+# `counted_by` lend where the repair is `i64`. It is refused at the build
+# now, as the same binding is without the other module.
+use fixedbugs559/long_twice
+
+extern "fixedbugs-559-int.h"
+    function twice(x: i32) -> i32
+    function fill_wide(@x: i32)  #~ ffi_parameter_type
+
+function main()
+    y: i32 @ 0
+    z: i32 @ 7
+    fill_wide(@y)
+    print(long_twice.doubled(x: 3))
+    print(y + z + twice(x: 4))

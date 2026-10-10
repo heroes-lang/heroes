@@ -1,0 +1,13 @@
+# Fixed defect 577, 2026-10-10 (panel 206 R1; the critic's `c18`): a step over
+# a constant another module writes, `limits.TOP + 100` in a `u8`, is refused
+# where it is written, the other module's body walked first as this one's
+# own constants are. The value is the other module's, so `limits.TOP` read as
+# 200 makes the sum 300.
+
+use fixedbugs577/limits
+
+constant ABOVE: u8
+    limits.TOP + 100  #~ int_out_of_range
+
+function main()
+    print(ABOVE)

@@ -1,0 +1,21 @@
+# fixedbugs, defect 559, lane b18-ffi, 2026-10-10 (panel 202's C0).
+#
+# `fill_int(@x: i64)` over `void fill_int(int *x)`, beside a module whose
+# header defines `twice` of `long long` where this one's defines it of `int`.
+# Each module's unit compiles its own header alone. Until 2026-10-10 the
+# pointee check read every header of the program in one unit, which did not
+# compile, and passed what it could not read: this built at exit 0 and C
+# wrote four bytes into the eight, printing `11` where the binding is
+# wrong. The same binding without the other module was refused. It is asked
+# of this module's own header now, and refused the same either way.
+use fixedbugs559/long_twice
+
+extern "fixedbugs-559-int.h"
+    function twice(x: i32) -> i32
+    function fill_int(@x: i64)  #~ ffi_parameter_type
+
+function main()
+    y: i64 @ 0
+    fill_int(@y)
+    print(long_twice.doubled(x: 3) + y)
+    print(twice(x: 4))

@@ -118,7 +118,7 @@ function needs_parameter_names(shared: str, shown: str, span: token.Span) -> dia
         span: span
     )
     d.notes @ d.notes.push(
-        "§4.9 names the arguments of a call when two parameters share a type; a value of a function type is called through the type, so the names live in the type and a call through it is checked against them"
+        "§4.9 names the arguments of a call when two parameters share a type; a value of a function type is called through the type, so the names live in the type, a call through it is checked against them, and a function given to it fits where its own names agree"
     )
     return d
 

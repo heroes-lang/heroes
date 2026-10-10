@@ -16,7 +16,15 @@ use cli/toolchain
 use cli/compiling
 use cli/pointee_ask
 use cli/header_ask
+use cli/probing
 use cli/header_refused
+use cli/header_alone
+use cli/macro_twice
+use cli/header_order
+use cli/name_order
+use cli/inline_only
+use cli/group_file
+use diag
 use cli/deep_types
 use cli/link
 use cli/package_missing
@@ -28,8 +36,14 @@ use cli/package_missing
 # wrote after `-o` could spell a marker, and a publish that failed there is not
 # the header disagreeing with anybody. `asked` is the header's answer where the
 # rounds asked it already, under these very `struct_tags`
-# (`cli/tag_spelling.hero`, defect 400), so it is not asked twice.
-function of_refusal(failed: ()?, art: compile.Artifact, s: source.Source, t: toolchain.Toolchain, under: compiling.Compiling, answered: [pointee_ask.Answered], struct_tags: {str: bool}, asked: ffi_asked.Asked?, refused: str) -> ()?
+# (`cli/tag_spelling.hero`, defect 400), so it is not asked twice; `asking`
+# are the headers of the units the refusal is (`cli/probing.hero`), each
+# asked its own modules' questions where it is asked.
+#
+# `unit_headers` are the headers the refused unit includes, in its order: a
+# header clang refused there that compiles alone is told after the earlier
+# one it does not compile after (`cli/header_alone.hero`, defect 557).
+function of_refusal(failed: ()?, art: compile.Artifact, s: source.Source, t: toolchain.Toolchain, under: compiling.Compiling, answered: [pointee_ask.Answered], struct_tags: {str: bool}, asked: ffi_asked.Asked?, asking: [probing.Probing], unit_headers: [str], refused: str) -> ()?
     code = failure_code(failed)
     message = failure_message(failed) + deep_types.note(code, art.decls, art.checked, s)
 
@@ -37,20 +51,42 @@ function of_refusal(failed: ()?, art: compile.Artifact, s: source.Source, t: too
         return fail(code: "failed", msg: message)
 
     # A bound header clang refused on its own is the author's (defect 360),
-    # told before any question is asked of the header after it.
-    if told_header(message, art, s, t)
+    # told before any question is asked of the header after it. The unit's
+    # headers are asked under the unit's own words (defect 572).
+    words = unit_words(under, asking: asking, unit_headers: unit_headers)
+
+    if told_header(message, art, s, t, under: words, unit_headers: unit_headers)
         return fail(code: "diagnostics", msg: "a header this program binds does not compile")
+
+    # A function the linker found no definition of whose header defines it
+    # only `inline` (defect 562, `cli/inline_only.hero`), told before the
+    # reading of a missing `link` would tell it as one.
+    if code == link.REFUSED
+        inline = inline_only.told(message, s, art.decls, t, asking: asking)
+
+        if inline.len() > 0
+            _ = compile.stage(inline, s).is_err()
+            return fail(code: "diagnostics", msg: "a header defines a called function only inline")
 
     # Asked only now, of a round clang refused (defect 152), unless the rounds
     # asked it already.
     answer: ffi_asked.Asked @ ffi_asked.nothing()
 
     if asked.is_err()
-        answer @ header_ask.ask(t, art, s, under: under, struct_tags: struct_tags)
+        answer @ header_ask.ask(t, art, s, struct_tags: struct_tags, asking: asking)
     else
         answer @ asked.must()
 
-    if blamed(message, art, s, answered, struct_tags: struct_tags, asked: answer)
+    # A name told absent from a header that declares it read alone is retold
+    # with the move of a group that reads it so (panel 204's R3,
+    # `cli/name_order.hero`).
+    theirs: [diag.Diagnostic] @ []
+
+    for d in explained(message, art, s, answered, struct_tags: struct_tags, asked: answer)
+        theirs @ theirs.push(name_order.unknown(d, s, art.decls, t, under: words, unit_headers: unit_headers))
+
+    if theirs.len() > 0
+        _ = compile.stage(theirs, s).is_err()
         return fail(code: "diagnostics", msg: "the author's extern disagrees with the header")
 
     # A package's `-l` the linker found no library for, asked after every
@@ -82,7 +118,16 @@ function of_refusal(failed: ()?, art: compile.Artifact, s: source.Source, t: too
 # is yes (CLAUDE.md §7's named exception). One door for the package that could
 # not answer and the unit clang refused — the same eleven lines twice, before.
 function blamed(message: str, art: compile.Artifact, s: source.Source, answered: [pointee_ask.Answered], struct_tags: {str: bool}, asked: ffi_asked.Asked) -> bool
-    theirs = ffi.explain(
+    theirs = explained(message, art, s, answered, struct_tags: struct_tags, asked: asked)
+
+    if theirs.len() == 0
+        return false
+    _ = compile.stage(theirs, s).is_err()
+    return true
+
+# What `emit/ffi.hero` reads back from clang's words, on the `.hero` lines.
+function explained(message: str, art: compile.Artifact, s: source.Source, answered: [pointee_ask.Answered], struct_tags: {str: bool}, asked: ffi_asked.Asked) -> [diag.Diagnostic]
+    return ffi.explain(
         message,
         s,
         art.tree,
@@ -95,20 +140,65 @@ function blamed(message: str, art: compile.Artifact, s: source.Source, answered:
         asked: asked
     )
 
-    if theirs.len() == 0
-        return false
-    _ = compile.stage(theirs, s).is_err()
-    return true
+# The words the refused unit compiled under: the probing's whose headers are
+# the unit's, its packages those of the groups naming its headers (defect
+# 572), else the build's.
+function unit_words(under: compiling.Compiling, asking: [probing.Probing], unit_headers: [str]) -> compiling.Compiling
+    for one in asking
+        if one.headers == unit_headers
+            return one.under
+
+    return under
 
 # Whether clang's refusal is a header a group binds that does not compile
 # (`cli/header_refused.hero`, defect 360): told on the group's string, and the
 # answer is yes.
-function told_header(message: str, art: compile.Artifact, s: source.Source, t: toolchain.Toolchain) -> bool
-    refusal = header_refused.refused(stderr: message, s: s, decls: art.decls, runtime: t.runtime, build: t.build)
+function told_header(message: str, art: compile.Artifact, s: source.Source, t: toolchain.Toolchain, under: compiling.Compiling, unit_headers: [str]) -> bool
+    # A macro two groups' headers define two ways (panel 204's R2).
+    macro = macro_twice.told(message, s, art.decls, t, under: under, unit_headers: unit_headers)
+
+    if macro.len() > 0
+        _ = compile.stage(macro, s).is_err()
+        return true
+    refusal: [diag.Diagnostic] @ header_refused.refused(
+        stderr: message,
+        s: s,
+        decls: art.decls,
+        runtime: t.runtime,
+        build: t.build
+    )
 
     if refusal.len() == 0
         return false
-    _ = compile.stage(refusal, s).is_err()
+
+    # A header refused on its own that compiles alone is two headers'
+    # refusal, the earlier named (defect 557).
+    alone = header_refused.refused_alone(stderr: message, s: s, decls: art.decls, runtime: t.runtime, build: t.build)
+
+    if !alone.is_err()
+        before = header_alone.earlier(t, under: under, header: alone.must().header, headers: unit_headers)
+
+        if !before.is_err()
+            other = group_file.group_of(s, art.decls, path: before.must())
+
+            if !other.is_err()
+                refusal @ header_refused.refused_after(
+                    stderr: message,
+                    s: s,
+                    decls: art.decls,
+                    runtime: t.runtime,
+                    build: t.build,
+                    earlier: other.must()
+                )
+
+    # What the program needs instead of a repair, where clang says an order
+    # of its groups or a header before it compiles (panel 204's R3).
+    told: [diag.Diagnostic] @ []
+
+    for d in refusal
+        told @ told.push(header_order.refused(d, s, art.decls, t, under: under, unit_headers: unit_headers))
+
+    _ = compile.stage(told, s).is_err()
     return true
 
 # The message of a failed `()?`.

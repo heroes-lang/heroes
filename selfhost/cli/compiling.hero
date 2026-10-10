@@ -113,10 +113,15 @@ record Probe
     digests: {str: str}
 
 function probe(build: str, under: Compiling, headers: [str]) -> Probe
-    words = probe_words(under)
     digests: {str: str} @ {}
-    read = reads(build, words: words, headers: headers, @digests)
-    return Probe(words: words, headers: headers, read: read, digests: digests)
+    return probe_with(build, under: under, headers: headers, memo: @digests)
+
+# The same with the build's memo of what it hashed already, which the probes
+# of each module's headers share (`cli/probing.hero`).
+function probe_with(build: str, under: Compiling, headers: [str], @memo: {str: str}) -> Probe
+    words = probe_words(under)
+    read = reads(build, words: words, headers: headers, @memo)
+    return Probe(words: words, headers: headers, read: read, digests: memo)
 
 # The compiler's own flags a probe compiles under, so it reads a header as
 # the program's compile does (defect 163, 2026-10-02): every flag of

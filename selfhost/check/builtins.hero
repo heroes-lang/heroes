@@ -28,6 +28,7 @@ use resolved
 use widths
 use check/table
 use check/state
+use check/type_fit
 use check/ordering
 use check/lend_types
 use check/nested
@@ -198,9 +199,7 @@ function builtin_call(@c: state.Checker, s: source.Source, decls: [ast.Decl], na
             .array a =>
                 if a.element == given[1]
                     return ok(given[0])
-                want = state.show(c, s, decls, a.element)
-                got = state.show(c, s, decls, given[1])
-                state.push_diagnostic(@c, value_errors.mismatch(expected: want, got: got, span: span))
+                mismatch(@c, s, decls, want: a.element, got: given[1], span: span)
                 return ok(state.error_ty_of(c))
             .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return ok(
                 arg_error(@c, s, decls, name: "push", allowed: "`[T]`", got: given[0], span: span)
@@ -361,9 +360,7 @@ function fallible_builtin(@c: state.Checker, s: source.Source, decls: [ast.Decl]
             .fallible o =>
                 if o.payload == given[1]
                     return ok(o.payload)
-                want = state.show(c, s, decls, o.payload)
-                got = state.show(c, s, decls, given[1])
-                state.push_diagnostic(@c, value_errors.mismatch(expected: want, got: got, span: span))
+                mismatch(@c, s, decls, want: o.payload, got: given[1], span: span)
                 return ok(state.error_ty_of(c))
             .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return ok(
                 unwrapping_nothing(@c, s, decls, name: "default", got: given[0], span: span)
@@ -414,6 +411,16 @@ function arg_error(@c: state.Checker, s: source.Source, decls: [ast.Decl], name:
     shown = state.show(c, s, decls, got)
     state.push_diagnostic(@c, value_errors.bad_operand(op: name, allowed: allowed, got: shown, span: span))
     return state.error_ty_of(c)
+
+# `got` where `want` was asked, an argument of `push` or `default`, told
+# unless it is the shadow of a nameless function type the program wrote and
+# was refused already (defect 554, `type_fit.unnamed_shadow`).
+function mismatch(@c: state.Checker, s: source.Source, decls: [ast.Decl], want: i64, got: i64, span: token.Span)
+    if !type_fit.unnamed_shadow(c.out.types, c.out.written_types, a: want, b: got)
+        state.push_diagnostic(
+            @c,
+            value_errors.mismatch(expected: state.show(c, s, decls, want), got: state.show(c, s, decls, got), span: span)
+        )
 
 ## Tests
 

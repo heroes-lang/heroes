@@ -77,11 +77,14 @@ constant WALK: str
 # suite on the merged round, past a quarter above both floors: lane
 # b14-mutate's recovery arm (defect 210), whose modules alone take the walks
 # to 36 and the marks to 42 by that lane's own count.
+#
+# **64 marks and 64 walks at batch 18's gate, 2026-10-10**, measured by this
+# suite on the round, past a quarter above both floors.
 constant LEAST_MARKS: i64
-    42
+    64
 
 constant LEAST_WALKS: i64
-    36
+    64
 
 function run_all(scratch: str) -> report.Report?
     r: report.Report @ report.empty()

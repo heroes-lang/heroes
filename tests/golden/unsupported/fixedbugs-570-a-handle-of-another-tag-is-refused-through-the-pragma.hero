@@ -1,0 +1,21 @@
+# fixedbugs, defect 570, lane b18-guard, 2026-10-10 (panel 205's R1).
+#
+# SYMPTOM: through a header writing `#pragma clang diagnostic ignored
+# "-Wincompatible-pointer-types"`, `take_a(p: B)` against `int take_a(struct
+# a *)`, a handle of another tag (defect 029's class), built and printed `1`.
+#
+# CAUSE: the build's `-Werror=incompatible-pointer-types` is the check, and
+# the header's pragma outranked it at the probe.
+#
+# FIX: after the groups' includes, and again at the probe region, every
+# warning a check of a binding rests on is raised again
+# (`emit/checks_raised.hero`), the build's `-Werror` words and clang's three
+# default errors, so the message is the one a plain header gets.
+
+extern "fixedbugs-570-a-handle-of-another-tag-is-refused-through-the-pragma.h"
+    record A tag a
+    record B tag b
+    function take_a(p: B) -> i32  #~ ffi_parameter_type
+
+function main()
+    print(take_a(nullptr))

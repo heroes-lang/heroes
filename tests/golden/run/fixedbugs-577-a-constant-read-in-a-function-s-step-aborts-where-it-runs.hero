@@ -1,0 +1,12 @@
+# Fixed defect 577, 2026-10-10 (panel 206 R2; the critic's `c12`): the walk
+# judges a constant's own body and no function's. `A + 100` in `main` reads a
+# constant that fits, and the sum overflows the `u8` where it runs, an abort
+# (spec § 7: overflow aborts at every width), the `1` before it flushed first.
+
+constant A: u8
+    200
+
+function main()
+    print(1)
+    x: u8 = A + 100
+    print(x)

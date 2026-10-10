@@ -1,0 +1,18 @@
+# fixedbugs, defect 569, lane b18-guard, 2026-10-10 (panel 205's R2).
+#
+# Beside `run/fixedbugs-569-a-library-s-own-sign-conversion-is-not-the-program-s`:
+# the header's own code is passed over, and the binding is not.
+#
+# SYMPTOM: `twice(x: u64)` against the header's `int twice(int)` was told
+# as the header not compiling, at its own line, never as the declaration.
+#
+# FIX: a group's header is included inside a region of its own
+# (`emit/header_region.hero`): `-Wall` and `-Wsign-conversion` are ignored
+# there, a missing return and an uninitialised read stay errors, and after
+# it every check of a binding is raised again (`emit/checks_raised.hero`).
+
+extern "fixedbugs-569-a-wrong-sign-through-a-library-s-header-is-the-binding-s.h"
+    function twice(x: u32) -> i32  #~ ffi_parameter_type
+
+function main()
+    print(twice(x: 21))

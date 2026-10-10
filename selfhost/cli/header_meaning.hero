@@ -1,0 +1,243 @@
+# What C makes of the names a module binds, in one order of its headers and
+# in another (design.md §4.19; panel 204's R3, ratified 2026-10-10, the
+# completeness critic's correction: *a move that changes what a bound name
+# means says so*; defect 563). A note that tells the author to write one
+# group above another is a change to the program, and where a header read
+# earlier configures one read later, `#ifndef LIMIT` in it, the move can make
+# a function the program calls mean something else: `cfgone`'s `cap` caps at
+# 10 one way and at 100 the other.
+#
+# **So both orders are preprocessed, on the failure path alone**, `clang -E
+# -dD -P` once each, and each bound name's meaning read from both texts the
+# same way: its last `#define` where it is a macro, else its first
+# definition, its body to the closing brace, else its first declaration,
+# else the first line naming it. A name whose two readings differ is named.
+# The reading is the same function of either text, so it can name a name
+# whose text differs and never miss one whose definition does.
+
+use emit/ffi_lookup
+use emit/clang_place
+use cli/toolchain
+use cli/compiling
+use cli/order_trial
+use cli/strings
+
+# The names of `names` whose meaning reads otherwise with the headers in
+# `after`'s order than in `before`'s, in `names`' order; none where either
+# order could not be preprocessed.
+function changed(t: toolchain.Toolchain, under: compiling.Compiling, before: [str], after: [str], names: [str]) -> [str]
+    none: [str] = []
+    one = read_of(t, under: under, headers: before, names: names)
+    two = read_of(t, under: under, headers: after, names: names)
+
+    if one.is_err() || two.is_err()
+        return none
+    return differing(one: one.must(), two: two.must(), names: names)
+
+# The names whose two readings differ. A name with no meaning in either is
+# the refusal's own, absent where the move gives it one, and is no change of
+# meaning.
+function differing(one: {str: str}, two: {str: str}, names: [str]) -> [str]
+    out: [str] @ []
+
+    for name in names
+        was = one[name].default("")
+        is = two[name].default("")
+
+        if was != "" && is != "" && was != is
+            out @ out.push(name)
+
+    return out
+
+# Each of `names` as the unit's opening with `headers` reads it, `clang -E
+# -dD -P` once; absent where it could not be preprocessed.
+function read_of(t: toolchain.Toolchain, under: compiling.Compiling, headers: [str], names: [str]) -> {str: str}?
+    said = order_trial.output(t, words: compiling.probe_words(under), text: order_trial.opening(headers, question: ""), mode: ["-E", "-dD", "-P"])?
+    return ok(readings(lines: ffi_lookup.lines(text: said), names: names))
+
+# Each name's meaning in the lines of a preprocessed text, its blanks folded,
+# read in one pass however many names are asked (a header list of the
+# compiler's own preprocesses to thousands of lines).
+function readings(lines: [str], names: [str]) -> {str: str}
+    wanted: {str: bool} @ {}
+
+    for name in names
+        wanted[name] @ true
+
+    macros: {str: str} @ {}
+    bodies: {str: str} @ {}
+    declared: {str: str} @ {}
+    named: {str: str} @ {}
+    index: i64 @ 0
+
+    while index < lines.len()
+        row = clang_place.without_return(lines[index])
+
+        if strings.starts_with(text: row, prefix: "#")
+            directive = macro_of(row)
+
+            if !directive.is_err() && !wanted[directive.must().name].is_err()
+                macros[directive.must().name] @ directive.must().text
+        else
+            for word in identifiers(row)
+                if !wanted[word.name].is_err() && bodies[word.name].is_err()
+                    if named[word.name].is_err()
+                        named[word.name] @ folded(row)
+                    shape = after_name(lines, row: index, from: word.at + word.name.len())
+
+                    if shape.body
+                        bodies[word.name] @ shape.text
+                    else if shape.called && declared[word.name].is_err()
+                        declared[word.name] @ shape.text
+        index @ index + 1
+
+    out: {str: str} @ {}
+
+    for name in names
+        if macros[name].default("") != ""
+            out[name] @ macros[name].must()
+        else if !bodies[name].is_err()
+            out[name] @ bodies[name].must()
+        else if !declared[name].is_err()
+            out[name] @ declared[name].must()
+        else
+            out[name] @ named[name].default("")
+
+    return out
+
+# A `#define` or `#undef` line's name, and the macro's text after it: the
+# line folded for a definition, nothing for an undefinition.
+record Directive
+    name: str
+    text: str
+
+function macro_of(row: str) -> Directive?
+    for opening in ["#define ", "#undef "]
+        if strings.starts_with(text: row, prefix: opening)
+            rest = row.slice(from: opening.len(), to: row.len())
+            end: i64 @ 0
+
+            while end < rest.len() && ident(rest[end])
+                end @ end + 1
+
+            if end > 0
+                text: str @ ""
+
+                if opening == "#define "
+                    text @ folded(row)
+                return ok(Directive(name: rest.slice(from: 0, to: end), text: text))
+
+    return fail(code: "none", msg: "no macro")
+
+# The identifiers of a line and where each starts.
+record Word
+    name: str
+    at: i64
+
+function identifiers(row: str) -> [Word]
+    out: [Word] @ []
+    index: i64 @ 0
+
+    while index < row.len()
+        if ident(row[index]) && !(row[index] >= '0' && row[index] <= '9')
+            start = index
+
+            while index < row.len() && ident(row[index])
+                index @ index + 1
+
+            out @ out.push(Word(name: row.slice(from: start, to: index), at: start))
+        else if ident(row[index])
+            while index < row.len() && ident(row[index])
+                index @ index + 1
+        else
+            index @ index + 1
+
+    return out
+
+# What follows a name: whether it is called or declared with a parameter
+# list, whether a body follows that list, and the text from the name's line
+# to the end of what follows.
+record Shape
+    called: bool
+    body: bool
+    text: str
+
+function after_name(lines: [str], row: i64, from: i64) -> Shape
+    text: [str] @ []
+    depth: i64 @ 0
+    opened: bool @ false
+    seen_paren: bool @ false
+    at: i64 @ row
+    column: i64 @ from
+
+    while at < lines.len() && at < row + 400
+        line = lines[at]
+        text @ text.push(line)
+
+        while column < line.len()
+            c = line[column]
+
+            if !seen_paren && c != ' ' && c != '\t' && c != '('
+                return Shape(called: false, body: false, text: "")
+
+            if c == '('
+                seen_paren @ true
+                depth @ depth + 1
+            else if c == ')'
+                depth @ depth - 1
+            else if c == '{' && depth == 0 && seen_paren
+                opened @ true
+                depth @ 1
+            else if c == '}' && opened
+                depth @ depth - 1
+
+                if depth == 0
+                    return Shape(called: true, body: true, text: folded(text.join(" ")))
+            else if c == ';' && depth == 0 && !opened
+                return Shape(called: true, body: false, text: folded(text.join(" ")))
+            column @ column + 1
+
+        at @ at + 1
+        column @ 0
+
+    return Shape(called: seen_paren, body: false, text: folded(text.join(" ")))
+
+function ident(c: u8) -> bool
+    return c == '_' || c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c >= '0' && c <= '9'
+
+# A text with every run of blanks one space, and none at its ends.
+function folded(text: str) -> str
+    words: [str] @ []
+    from: i64 @ 0
+    index: i64 @ 0
+
+    while index < text.len()
+        if text[index] == ' ' || text[index] == '\t'
+            if index > from
+                words @ words.push(text.slice(from: from, to: index))
+            from @ index + 1
+        index @ index + 1
+
+    if index > from
+        words @ words.push(text.slice(from: from, to: index))
+    return words.join(" ")
+
+## Tests
+
+test "a bound name's meaning is its last definition as a macro, else its body, read in one pass"
+    lines = [
+        "#define LIMIT 10"
+        "#undef LIMIT"
+        "#define LIMIT 100"
+        "static inline int cap(int v)"
+        "{ return v > 100 ? 100 : v; }"
+        "int capped(void);"
+        "int recap(int);"
+    ]
+    got = readings(lines: lines, names: ["LIMIT", "cap", "capped", "absent"])
+    assert got["LIMIT"].must() == "#define LIMIT 100"
+    assert got["cap"].must() == "static inline int cap(int v) { return v > 100 ? 100 : v; }"
+    assert got["capped"].must() == "int capped(void);"
+    assert got["absent"].must() == ""
+    assert readings(lines: ["#define K 1", "#undef K"], names: ["K"])["K"].must() == ""
+    assert differing(one: {"a": "1", "b": "2", "c": ""}, two: {"a": "1", "b": "3", "c": "x"}, names: ["a", "b", "c"]) == ["b"]

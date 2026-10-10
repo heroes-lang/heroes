@@ -1,0 +1,7 @@
+error[ffi_macro_name]: `fixedbugs-570-a-macro-naming-the-bound-function-holds-a-pragma.h` defines `my_abs` as a macro whose expansion holds a `_Pragma`: where this program's C calls `my_abs`, the pragma changes how clang judges every line after it, the checks of this program's bindings among them
+  at tests/golden/unsupported/fixedbugs-570-a-macro-naming-the-bound-function-holds-a-pragma.hero:16:14
+     |
+  16 |     function my_abs(x: u32) -> i32  #~ ffi_macro_name
+     |              ^^^^^^
+  note: clang read the header, and the expansion of `my_abs` runs `#pragma clang diagnostic ignored "-Wsign-conversion"`
+  note: a header of your own that includes `fixedbugs-570-a-macro-naming-the-bound-function-holds-a-pragma.h` and then writes `#undef my_abs`, named by this group instead, binds the header's own `my_abs` where it declares one

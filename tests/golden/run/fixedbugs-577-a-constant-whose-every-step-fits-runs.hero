@@ -1,0 +1,105 @@
+# Fixed defect 577, 2026-10-10 (panel 206 R1): what the walk over a constant's
+# written body accepts runs, and prints what each body computes. A chain of
+# constants that fits (the critic's `c11`) and a sum read twice (`c23`); a
+# cell a loop writes, which holds no value inside the loop or after it, so
+# `v @ v + 100` is not judged and the loop that runs twice ends at 200; a
+# cell a loop never writes, which keeps its value past the loop; a cell two
+# branches write, uncertain after them; a cell a `match` arm writes; the
+# boundaries of five widths and the bit patterns of the smallest `i64`. And a
+# function, where literal arithmetic aborts only where it runs (R2): the right
+# of `false &&` never runs, so `200 + 100` at a `u8` never overflows (`c20`).
+
+constant A: u8
+    200
+
+constant B: u8
+    A + 55
+
+constant C11: u8
+    B - A
+
+constant C23: u8
+    200 + 50
+
+constant LOOPED: u8
+    v: u8 @ 0
+    i: i64 @ 0
+
+    while i < 2
+        v @ v + 100
+        i @ i + 1
+
+    v
+
+constant UNTOUCHED: u8
+    v: u8 @ 255
+
+    while false
+        i: i64 @ 0
+        i @ i + 1
+
+    v @ 0
+    v + 1
+
+constant CHOSEN: u8
+    v: u8 @ 200
+
+    if A > 1
+        v @ 0
+    else
+        v @ 1
+
+    v + 100
+
+constant ARMED: u8
+    v: u8 @ 200
+
+    w: u8 = match v
+        200 => 1
+        _ =>
+            v @ 0
+            2
+
+    v + w
+
+constant W16: u16
+    65535 + 0
+
+constant N32: i32
+    -2147483648 + 0
+
+constant CHAR: u8
+    'a' + 158
+
+constant MIN64: i64
+    -9223372036854775808 / 1
+
+constant MASK: i64
+    ~0 & 255
+
+constant TOP: i64
+    1 << 63
+
+constant BACK: i64
+    TOP >> 63
+
+function main()
+    print(C11)
+    print(C23)
+    print(C23)
+    print(LOOPED)
+    print(UNTOUCHED)
+    print(CHOSEN)
+    print(ARMED)
+    print(W16)
+    print(N32)
+    print(CHAR)
+    print(MIN64)
+    print(MASK)
+    print(TOP)
+    print(BACK)
+    y: u8 = 0
+
+    if false && y == 200 + 100
+        print(9)
+    print(0)

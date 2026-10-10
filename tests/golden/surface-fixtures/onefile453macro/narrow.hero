@@ -1,0 +1,7 @@
+# Defect 453, lane b18-ffi, 2026-10-10: a module binding a `static inline
+# twice` of `int`, which the other module's macro rewrites in one file.
+extern "onefile-int.h"
+    function twice(x: i32) -> i32  #~ ffi_one_file
+
+function doubled(x: i32) -> i32
+    return twice(x: x)

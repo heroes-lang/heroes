@@ -1,0 +1,92 @@
+# Fixed defect 552, 2026-10-09 (found beside defect 544 by lane b17-check).
+# Symptom: `g(x: 1, ns: [ok(1)])`, `ns: [i64?]` a parameter of the generic
+# `g`, was refused `cannot_infer` telling the program to *pass it where a
+# `T?` is expected*, which it had done; defect 544's message named the rule
+# for `ok(…)` written as the argument itself and not one level down. Cause:
+# a generic function's parameter asks for no type (spec § 9), so the walk
+# synthesises the array literal, and a literal synthesised reads its type
+# from its first element (a map's from its first key and value), which then
+# asks for none either. Repair: the argument's literals are followed down
+# that chain, and a form found there is told the rule, the parameter, and
+# what it gives its type to, its guess binding the whole argument first
+# (`check/generic_argument.hero`'s `places`). The shapes: an array's first
+# element, a later one, a map's first value and key, two levels down, a
+# bare case, an empty array and map inside, and a UFCS receiver's element.
+
+variant Op
+    plus
+    minus
+
+function g<A>(x: A, ns: [i64?]) -> A
+    _ = ns.len()
+    return x
+
+function deep<A>(x: A, ns: [[i64?]]) -> A
+    _ = ns.len()
+    return x
+
+function valued<A>(x: A, m: {str: i64?}) -> A
+    _ = m.len()
+    return x
+
+function keyed<A>(x: A, m: {Op: i64}) -> A
+    _ = m.len()
+    return x
+
+function ops<A>(x: A, os: [Op]) -> A
+    _ = os.len()
+    return x
+
+function nest<A>(x: A, ys: [[i64]], ms: [{str: i64}]) -> A
+    _ = ys.len() + ms.len()
+    return x
+
+function h(ns: [i64?]) -> i64
+    return ns.len()
+
+function main()
+    print(g(x: 1, ns: [ok(1)]))
+    print(g(x: 1, ns: [fail(code: 1, msg: "no"), ok(2)]))  #~ type_mismatch
+    print(valued(x: 1, m: {"a": ok(1)}))
+    print(keyed(x: 1, m: {.plus: 1}))
+    print(deep(x: 1, ns: [[ok(1)]]))
+    print(ops(x: 1, os: [.minus, .plus]))
+    print(nest(x: 1, ys: [[]], ms: [{"a": 1}]))
+    print(nest(x: 1, ys: [[1]], ms: [{}]))
+    print([ok(1)].h())
+
+# Corrected 2026-10-10, defect 541 (panel 203 R1), below the program so every
+# line keeps its number: the nine lines of `main` are accepted but the
+# `fail(…)`, whose `code: 1` is the program's own mistake, now told
+# (`type_mismatch`). Each argument is checked against its concrete parameter,
+# and the receiver of `.h()` against `h`'s. A form inside an argument is told
+# now where its parameter names a letter nothing in the call settles, below,
+# what it gives its type to named as before.
+
+function g2<A>(ns: [A?]) -> i64
+    return ns.len()
+
+function deep2<A>(ns: [[A?]]) -> i64
+    return ns.len()
+
+function valued2<A>(m: {str: A?}) -> i64
+    return m.len()
+
+function keyed2<K>(m: {K: i64}) -> i64
+    return m.len()
+
+function ops2<A>(os: [A]) -> i64
+    return os.len()
+
+function nest2<A>(ys: [[A]]) -> i64
+    return ys.len()
+
+function after_panel_203()
+    print(g2(ns: [ok(1)]))  #~ cannot_infer
+    print(g2(ns: [fail(code: "no", msg: "no"), ok(2)]))  #~ cannot_infer
+    print(valued2(m: {"a": ok(1)}))  #~ cannot_infer
+    print(keyed2(m: {.plus: 1}))  #~ cannot_infer
+    print(deep2(ns: [[ok(1)]]))  #~ cannot_infer
+    print(ops2(os: [.minus, .plus]))  #~ cannot_infer
+    print(nest2(ys: [[]]))  #~ cannot_infer
+    print([ok(1)].g2())  #~ cannot_infer

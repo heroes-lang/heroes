@@ -1,2 +1,1 @@
-tests/golden/check/fixedbugs-a-message-never-shows-a-table-index.hero:27:23: error[cannot_infer]: nothing here says what `T` of `id` is: a generic function used as a value takes its types from the type the context asks for, and this position asks for none
-tests/golden/check/fixedbugs-a-message-never-shows-a-table-index.hero:27:31: error[cannot_infer]: nothing here says what `T` of `id` is: a generic function used as a value takes its types from the type the context asks for, and this position asks for none
+tests/golden/check/fixedbugs-a-message-never-shows-a-table-index.hero:27:11: error[bad_operand]: `join` takes `[str]` and `str`, found `[i64]`

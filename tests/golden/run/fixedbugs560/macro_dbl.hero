@@ -1,0 +1,6 @@
+# fixedbugs, defect 560: a module whose header defines a macro `twice`.
+extern "fixedbugs-560-macro.h"
+    function dbl(x: i64) -> i64
+
+function hundredfold(x: i64) -> i64
+    return dbl(x: x)

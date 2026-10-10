@@ -1,0 +1,18 @@
+# fixedbugs, defect 569, lane b18-guard, 2026-10-10 (panel 205's R2).
+#
+# Beside `run/fixedbugs-569-a-library-s-own-sign-conversion-is-not-the-program-s`:
+# what the region keeps. A header's function with no return on one path runs
+# undefined behaviour when the program calls it, and stays refused wherever
+# the header was found (panel 205's critic, `own4`; route H, which silenced
+# the whole region, built it and printed `1`).
+#
+# FIX: a group's header is included inside a region of its own
+# (`emit/header_region.hero`): `-Wall` and `-Wsign-conversion` are ignored
+# there, a missing return and an uninitialised read stay errors, and after
+# it every check of a binding is raised again (`emit/checks_raised.hero`).
+
+extern "fixedbugs-569-a-header-of-the-program-s-own-with-a-missing-return-is-refused.h"  #~ ffi_header_refused
+    function pick(x: i32) -> i32
+
+function main()
+    print(pick(0))

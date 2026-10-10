@@ -1,0 +1,18 @@
+# fixedbugs, defect 563, lane b18-ffi, 2026-10-10 (panel 204's R3; the
+# coordinator's `jpeg/ba`).
+#
+# `fixedbugs-563-user.h` spells `Need`, which `fixedbugs-563-need.h` defines,
+# and this module writes its group first, so C reads it first and refuses it.
+# Until 2026-10-10 that was told *repair the header*, false of a header that
+# compiles below the other. The unit is compiled once with the other group
+# moved above it, and since it compiles, the move is told in that note's
+# place, and the headline says where it does not compile.
+extern "fixedbugs-563-user.h"  #~ ffi_header_refused
+    function need_v(n: Need) -> i32
+
+extern "fixedbugs-563-need.h"
+    record Need
+        v: i32
+
+function main()
+    print(need_v(n: Need(v: 7)))

@@ -1,0 +1,17 @@
+# fixedbugs, defect 550, lane b18-ffi, 2026-10-10 (panel 202's (g); lane
+# b17-emit's `inc2`).
+#
+# The case beside this one with its two groups the other way round, so
+# clang's first error lands in the included file and its note in
+# `fixedbugs-550-b.h`. Told in the same words, the header the file arrives
+# through named.
+
+extern "fixedbugs-550-b.h"
+    function thrice(x: i32) -> i32
+
+extern "fixedbugs-550-a.h"  #~ ffi_header_refused
+    function twice(x: i64) -> i64
+
+function main()
+    print(twice(x: 3))
+    print(thrice(x: 4))

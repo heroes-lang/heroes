@@ -1,0 +1,10 @@
+tests/golden/check/fixedbugs-576-an-operator-over-a-parenthesised-operand-spans-its-parentheses.hero:25:13: error[int_out_of_range]: `-(-128)` does not fit an `i8`
+tests/golden/check/fixedbugs-576-an-operator-over-a-parenthesised-operand-spans-its-parentheses.hero:27:13: error[int_out_of_range]: `-((200))` does not fit an `i8`
+tests/golden/check/fixedbugs-576-an-operator-over-a-parenthesised-operand-spans-its-parentheses.hero:30:15: error[type_mismatch]: expected `bool`, found `i64`
+tests/golden/check/fixedbugs-576-an-operator-over-a-parenthesised-operand-spans-its-parentheses.hero:32:14: error[type_mismatch]: expected `i64`, found `bool`
+tests/golden/check/fixedbugs-576-an-operator-over-a-parenthesised-operand-spans-its-parentheses.hero:34:15: error[type_mismatch]: expected `bool`, found `i64`
+tests/golden/check/fixedbugs-576-an-operator-over-a-parenthesised-operand-spans-its-parentheses.hero:36:15: error[type_mismatch]: expected `bool`, found `i64`
+tests/golden/check/fixedbugs-576-an-operator-over-a-parenthesised-operand-spans-its-parentheses.hero:39:15: error[type_mismatch]: expected `bool`, found `i64`
+tests/golden/check/fixedbugs-576-an-operator-over-a-parenthesised-operand-spans-its-parentheses.hero:42:15: error[type_mismatch]: expected `bool`, found `i64`
+tests/golden/check/fixedbugs-576-an-operator-over-a-parenthesised-operand-spans-its-parentheses.hero:44:15: error[type_mismatch]: expected `bool`, found `i64`
+tests/golden/check/fixedbugs-576-an-operator-over-a-parenthesised-operand-spans-its-parentheses.hero:46:16: error[type_mismatch]: expected `bool`, found `i64`

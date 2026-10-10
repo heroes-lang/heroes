@@ -1,0 +1,16 @@
+# Fixed defect 577, 2026-10-10 (panel 206 R1 and R4; the critic's `c03`): a
+# group's constant has no body, so its value is C's, platform by platform, and
+# the walk over a written body gives it none. `INT64_MAX + 1` is not judged
+# when the program is compiled, and it aborts where `N` is read, as overflow
+# aborts at every width (spec § 7), the `1` before it flushed first. Defect
+# 579 is the build-time probe that would refuse it.
+
+extern "stdint.h"
+    constant INT64_MAX: i64
+
+constant N: i64
+    INT64_MAX + 1
+
+function main()
+    print(1)
+    print(N)

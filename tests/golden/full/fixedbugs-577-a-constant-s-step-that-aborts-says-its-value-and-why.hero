@@ -1,0 +1,48 @@
+# Fixed defect 577, 2026-10-10 (panel 206 R1): what a refused step of a
+# constant's body says, whole. The message quotes the step and says its
+# value: what it computes and the width it misses, a magnitude past every
+# width said as the bound it passed (and no type named to hold it), the
+# quotient a remainder is the rest of (no wider type named past `i64`),
+# the divisor that is 0 by its name, the count of a shift. The notes say the
+# width's range and the repair, and why the step is an error wherever it
+# stands: its operands are known before the program runs, so it aborts each
+# time it runs, and spec § 4 refuses such a step in a constant's body whether
+# the program reaches it or not.
+#
+# Corrected 2026-10-10, panel 207 R1 and R2: spec § 4 refuses an integer
+# operator that would abort, run or not, at least where its operands are
+# known, and the last note of each message says that class since then, what
+# *known* is named in it (a literal, an operator on known values, a `=` name
+# or written constant holding one, or a cell since its last write with no
+# loop or branch between that writes it), where it said *a step of a
+# constant's body that aborts is a compile error*.
+
+constant BIG: u8
+    200 + 100  #~ int_out_of_range
+
+constant WIDE: i64
+    4294967296 * 4294967296  #~ int_out_of_range
+
+constant REST: i8
+    -128 % -1  #~ int_out_of_range
+
+constant LOWEST: i64
+    -9223372036854775808 % -1  #~ int_out_of_range
+
+constant BELOW: u64
+    0 - 1  #~ int_out_of_range
+
+constant ZERO: u8
+    0
+
+constant SHARE: u8
+    7 / ZERO  #~ division_by_zero
+
+constant LEFT: i64
+    7 % 0  #~ division_by_zero
+
+constant SHIFT: i64
+    1 << 64  #~ int_out_of_range
+
+function main()
+    print(1)

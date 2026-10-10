@@ -1,0 +1,136 @@
+# What C makes of each bound name, read from clang's dump of a unit's
+# opening (design.md §4.19; panel 202's R3, ratified 2026-10-10: *each
+# binding's declaration, its C type and, for a `static inline` definition
+# or a constant, its body or value, read from the dumps*; defect 453). The
+# preprocessed text of a definition does not say what its types are: a
+# `static inline int size(void) { return (int)sizeof(num); }` reads alike
+# whether another header made `num` an `int` or a `long long` before it,
+# and returns 4 or 8. clang's dump of the same definition names every type
+# as it resolved it, `'num':'long long'`, so two units whose dumps of a name
+# differ give it two meanings.
+#
+# **One dump per header list**, `-ast-dump` of the unit's opening, and each
+# name's top-level declaration read from it with every line beneath, its
+# definition where it has a body. What differs between two units' dumps of
+# one declaration and is no meaning is taken out before they are compared:
+# the addresses, the source ranges and columns, and the words saying whether
+# the unit used or referenced it.
+
+use emit/clang_place
+use cli/toolchain
+use cli/compiling
+use cli/order_trial
+use cli/defined_twice
+use cli/strings
+
+# Each of `names` as clang's dump of the unit's opening with `headers`
+# reads it; absent where clang could not dump it.
+function read_of(t: toolchain.Toolchain, under: compiling.Compiling, headers: [str], names: [str]) -> {str: str}?
+    said = order_trial.output(t, words: compiling.probe_words(under), text: order_trial.opening(headers, question: ""), mode: ["-fsyntax-only", "-fno-color-diagnostics", "-Xclang", "-ast-dump"])?
+    return ok(readings(dumped: said, names: names))
+
+# Each wanted name's top-level declaration in a dump, every line beneath it
+# kept: the one with a body where there is one, else the last.
+function readings(dumped: str, names: [str]) -> {str: str}
+    wanted: {str: bool} @ {}
+
+    for name in names
+        wanted[name] @ true
+
+    bodies: {str: str} @ {}
+    declared: {str: str} @ {}
+    taking: str @ ""
+    taken: [str] @ []
+    has_body: bool @ false
+    start: i64 @ 0
+    at: i64 @ 0
+
+    while at <= dumped.len()
+        if at == dumped.len() || dumped[at] == 10
+            row = clang_place.without_return(dumped.slice(from: start, to: at))
+            top = strings.starts_with(text: row, prefix: "|-") || strings.starts_with(text: row, prefix: "`-")
+
+            if top || at == dumped.len()
+                if taking != ""
+                    kept(bodies: @bodies, declared: @declared, name: taking, text: taken.join("\n"), body: has_body)
+                taking @ ""
+                taken @ []
+                has_body @ false
+
+                if top
+                    name = defined_twice.top_of(row).name
+
+                    if !wanted[name].is_err()
+                        taking @ name
+                        taken @ [normalised(row)]
+            else if taking != ""
+                taken @ taken.push(normalised(row))
+
+                if defined_twice.child(row) && clang_place.offset_of(text: row, needle: "-CompoundStmt ").default(-1) == 3
+                    has_body @ true
+            start @ at + 1
+        at @ at + 1
+
+    out: {str: str} @ {}
+
+    for name in names
+        if !bodies[name].is_err()
+            out[name] @ bodies[name].must()
+        else
+            out[name] @ declared[name].default("")
+
+    return out
+
+function kept(@bodies: {str: str}, @declared: {str: str}, name: str, text: str, body: bool)
+    if body
+        if bodies[name].is_err()
+            bodies[name] @ text
+    else
+        declared[name] @ text
+
+# A dump's line without what differs between two units' dumps of one
+# declaration and is no meaning: `0x` addresses, `<…>` ranges, `line:` and
+# `col:` places, and the words `used`, `referenced` and `prev`. The tree's
+# own prefix says how deep the line stands and whether its node is the last
+# of its parent's, which a declaration's place in the unit decides; it is
+# kept as its depth alone.
+function normalised(row: str) -> str
+    lead: i64 @ 0
+
+    while lead < row.len() && (row[lead] == '|' || row[lead] == ' ' || row[lead] == '`' || row[lead] == '-')
+        lead @ lead + 1
+
+    words: [str] @ []
+    depth: i64 @ 0
+    from: i64 @ lead
+    index: i64 @ lead
+
+    while index <= row.len()
+        at_end = index == row.len()
+
+        if !at_end && row[index] == '<'
+            depth @ depth + 1
+        else if !at_end && row[index] == '>' && depth > 0
+            depth @ depth - 1
+            from @ index + 1
+        else if depth == 0 && (at_end || row[index] == ' ')
+            if index > from
+                word = row.slice(from: from, to: index)
+
+                if !strings.starts_with(text: word, prefix: "0x") && !strings.starts_with(text: word, prefix: "line:") && !strings.starts_with(text: word, prefix: "col:") && word != "used" && word != "referenced" && word != "prev"
+                    words @ words.push(word)
+            from @ index + 1
+        index @ index + 1
+
+    return (lead / 2).to_str() + " " + words.join(" ")
+
+## Tests
+
+test "a declaration's dump is read without its addresses, places and use"
+    row = "|-FunctionDecl 0x1234abcd <./num.h:7:1, col:72> col:19 used size 'int (void)' static inline"
+    assert normalised(row) == "1 FunctionDecl size 'int (void)' static inline"
+    assert normalised("`-FunctionDecl 0x9 <b.h:1:1> col:2 size 'int (void)' static inline") == normalised(row)
+    dumped = "|-TypedefDecl 0x1 <a.h:1:1, col:20> col:20 num 'long long'\n|-FunctionDecl 0x2 <a.h:2:1, col:5> col:5 size 'int (void)' static inline\n| `-CompoundStmt 0x3 <col:9, col:40>\n|   `-UnaryExprOrTypeTraitExpr 0x4 <col:20> 'unsigned long' sizeof 'num':'long long'\n`-FunctionDecl 0x5 <a.h:3:1, col:9> col:9 other 'int (void)'\n"
+    got = readings(dumped: dumped, names: ["size", "absent"])
+    assert got["size"].must() == "1 FunctionDecl size 'int (void)' static inline\n2 CompoundStmt\n3 UnaryExprOrTypeTraitExpr 'unsigned long' sizeof 'num':'long long'"
+    assert got["absent"].must() == ""

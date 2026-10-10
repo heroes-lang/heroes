@@ -1,0 +1,13 @@
+error[ffi_header_refused]: `fixedbugs-563-cap.h` and `fixedbugs-563-limit.h`, the headers two groups name, define the macro `LIMIT` two ways, which C forbids: clang refuses them together, at `fixedbugs-563-cap.h` line 2 and `fixedbugs-563-limit.h` line 1: 'LIMIT' macro redefined [-Werror,-Wmacro-redefined]
+  at tests/golden/unsupported/fixedbugs-563-a-macro-two-headers-define-two-ways-is-refused.hero:12:8
+     |
+  12 | extern "fixedbugs-563-cap.h"  #~ ffi_header_refused
+     |        ^^^^^^^^^^^^^^^^^^^^^
+  note: `fixedbugs-563-cap.h` line 2 reads `#define LIMIT 10`
+  note: `fixedbugs-563-limit.h` line 1 reads `#define LIMIT 100`
+  note: the other group names `fixedbugs-563-limit.h` at line 15
+  note: C keeps a macro as it is defined until it is undone, and refuses a definition that disagrees (C11 6.10.3p2), so the order of the two decides what a line reading `LIMIT` means: read as this unit reads them, `fixedbugs-563-cap.h` first, its own lines would read `LIMIT` as `fixedbugs-563-cap.h` line 2 defines it and every line after `fixedbugs-563-limit.h` line 1 as that line defines it
+  note: with `fixedbugs-563-limit.h` read before `fixedbugs-563-cap.h`, the unit's headers compile, and `LIMIT` is what `fixedbugs-563-limit.h` line 1 defines throughout, the lines of `fixedbugs-563-cap.h` that read it among them
+  note: which order is the program's to choose, in a header of its own beside this file, the one place a line of C can stand between two headers: `fixedbugs-563-cap_fixedbugs-563-limit.h`, reading `#include <fixedbugs-563-cap.h>`, `#undef LIMIT` and `#include <fixedbugs-563-limit.h>` on three lines, keeps the order the groups are written in; both groups name it in place of their headers, and it is included once
+  fix (guess): name `fixedbugs-563-cap_fixedbugs-563-limit.h`, the header of the program's own the note drafts
+  fix (guess): name `fixedbugs-563-cap_fixedbugs-563-limit.h`, the header of the program's own the note drafts (at tests/golden/unsupported/fixedbugs-563-a-macro-two-headers-define-two-ways-is-refused.hero:15:8)

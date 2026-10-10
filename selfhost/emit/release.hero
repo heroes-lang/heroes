@@ -39,6 +39,7 @@ use emit/ctype
 use emit/aggregate
 use emit/writer
 use cli/flags
+use cli/link_flags
 use cli/strings
 use source
 use parse
@@ -46,9 +47,11 @@ use resolve
 use checker
 
 # The incref or decref of a value named `name`, dispatched by type with the
-# aggregate fallback.
+# aggregate fallback, under the line its caller claimed: a release inside a
+# line is that line's, so a debugger's `next` from it goes to the next line
+# and a fault in it names the statement (defect 540; until then every one was
+# the generated file's, a stop of its own in the middle of a line).
 function named(@w: writer.Writer, c: state.Checked, names: ctype.Names, ty: i64, name: str, keep: bool)
-    writer.at_generated(@w)
     line: str @ ""
 
     match table.get(c.types, ty)
@@ -113,6 +116,7 @@ function slot(@w: writer.Writer, c: state.Checked, names: ctype.Names, ty: i64, 
         found = aggregate.released_through(c, names, ty: ty, address: escaped)
 
         if found.is_err()
+            writer.at_generated(@w)
             named(@w, c, names, ty: ty, name: name, keep: false)
             return
         line @ "    " + found.must() + ";"
@@ -144,5 +148,5 @@ test "no word of a compile or a link lets clang see into the runtime (defect 470
     for level in ["-O0", "-O2"]
         compiled = strings.with_all(list: flags.flags(), more: flags.level_words(level, sanitize: false))
 
-        for word in strings.with_all(list: compiled, more: flags.link_flags())
+        for word in strings.with_all(list: compiled, more: link_flags.link_flags())
             assert !strings.starts_with(text: word, prefix: "-flto")

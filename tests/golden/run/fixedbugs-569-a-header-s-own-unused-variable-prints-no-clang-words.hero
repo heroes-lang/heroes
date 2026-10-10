@@ -1,0 +1,16 @@
+# fixedbugs, defect 569, lane b18-guard, 2026-10-10 (panel 205's R2).
+#
+# SYMPTOM: a header whose own code holds an unused variable built at exit 0
+# and printed clang's raw `-Wunused-variable`, about a file of the header,
+# over a correct program (panel 205's critic, `wh`).
+#
+# FIX: a group's header is included inside a region of its own
+# (`emit/header_region.hero`): `-Wall` and `-Wsign-conversion` are ignored
+# there, a missing return and an uninitialised read stay errors, and after
+# it every check of a binding is raised again (`emit/checks_raised.hero`).
+
+extern "fixedbugs-569-a-header-s-own-unused-variable-prints-no-clang-words.h"
+    function five() -> i64
+
+function main()
+    print(five())

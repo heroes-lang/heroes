@@ -1,0 +1,10 @@
+# Defect 453, lane b18-ffi, 2026-10-10 (panel 202's R3): `num`'s header
+# makes `onefile_num` an `int` read alone, and a `long long` read after the
+# other module's header, so `onefile_size` returns 4 in `build` and 8 in the
+# one file `--emit-c` writes.
+use wide
+use num
+
+function main()
+    print(num.size())
+    print(wide.bits())

@@ -1,0 +1,60 @@
+error[int_out_of_range]: `200 + 100` computes 300, which does not fit a `u8`
+  at tests/golden/full/fixedbugs-577-a-constant-s-step-that-aborts-says-its-value-and-why.hero:21:5
+     |
+  21 |     200 + 100  #~ int_out_of_range
+     |     ^^^^^^^^^
+  note: a `u8` holds 0 through 255: use a type that holds 300, or change the step
+  note: every operand of this step is known (a literal, an operator on known values, a `=` name or written constant holding one, or a cell since its last write with no loop or branch between that writes it), so the step aborts each time it runs, and in a constant's body such an integer operator is a compile error, run or not, whether or not `BIG` is read (spec § 4)
+
+error[int_out_of_range]: `4294967296 * 4294967296` computes more than 18446744073709551615, which does not fit an `i64`
+  at tests/golden/full/fixedbugs-577-a-constant-s-step-that-aborts-says-its-value-and-why.hero:24:5
+     |
+  24 |     4294967296 * 4294967296  #~ int_out_of_range
+     |     ^^^^^^^^^^^^^^^^^^^^^^^
+  note: an `i64` holds -9223372036854775808 through 9223372036854775807, and no integer type holds more than 18446744073709551615: change the step
+  note: every operand of this step is known (a literal, an operator on known values, a `=` name or written constant holding one, or a cell since its last write with no loop or branch between that writes it), so the step aborts each time it runs, and in a constant's body such an integer operator is a compile error, run or not, whether or not `WIDE` is read (spec § 4)
+
+error[int_out_of_range]: `-128 % -1` computes a remainder whose quotient, 128, does not fit an `i8`
+  at tests/golden/full/fixedbugs-577-a-constant-s-step-that-aborts-says-its-value-and-why.hero:27:5
+     |
+  27 |     -128 % -1  #~ int_out_of_range
+     |     ^^^^^^^^^
+  note: `%` aborts where `/` does, though the remainder would be 0: an `i8` holds -128 through 127, so use a wider type, or change the step
+  note: every operand of this step is known (a literal, an operator on known values, a `=` name or written constant holding one, or a cell since its last write with no loop or branch between that writes it), so the step aborts each time it runs, and in a constant's body such an integer operator is a compile error, run or not, whether or not `REST` is read (spec § 4)
+
+error[int_out_of_range]: `-9223372036854775808 % -1` computes a remainder whose quotient, 9223372036854775808, does not fit an `i64`
+  at tests/golden/full/fixedbugs-577-a-constant-s-step-that-aborts-says-its-value-and-why.hero:30:5
+     |
+  30 |     -9223372036854775808 % -1  #~ int_out_of_range
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: `%` aborts where `/` does, though the remainder would be 0: an `i64` holds -9223372036854775808 through 9223372036854775807, and no integer type is wider: change the step
+  note: every operand of this step is known (a literal, an operator on known values, a `=` name or written constant holding one, or a cell since its last write with no loop or branch between that writes it), so the step aborts each time it runs, and in a constant's body such an integer operator is a compile error, run or not, whether or not `LOWEST` is read (spec § 4)
+
+error[int_out_of_range]: `0 - 1` computes -1, which does not fit a `u64`
+  at tests/golden/full/fixedbugs-577-a-constant-s-step-that-aborts-says-its-value-and-why.hero:33:5
+     |
+  33 |     0 - 1  #~ int_out_of_range
+     |     ^^^^^
+  note: a `u64` holds 0 through 18446744073709551615: use a type that holds -1, or change the step
+  note: every operand of this step is known (a literal, an operator on known values, a `=` name or written constant holding one, or a cell since its last write with no loop or branch between that writes it), so the step aborts each time it runs, and in a constant's body such an integer operator is a compile error, run or not, whether or not `BELOW` is read (spec § 4)
+
+error[division_by_zero]: `7 / ZERO` divides by zero: `ZERO` is 0
+  at tests/golden/full/fixedbugs-577-a-constant-s-step-that-aborts-says-its-value-and-why.hero:39:5
+     |
+  39 |     7 / ZERO  #~ division_by_zero
+     |     ^^^^^^^^
+  note: an integer `/` or `%` by zero aborts, and its right side is known (a literal, an operator on known values, a `=` name or written constant holding one, or a cell since its last write with no loop or branch between that writes it), so the step aborts each time it runs, and in a constant's body such an integer operator is a compile error, run or not, whether or not `SHARE` is read (spec § 4)
+
+error[division_by_zero]: `7 % 0` divides by zero
+  at tests/golden/full/fixedbugs-577-a-constant-s-step-that-aborts-says-its-value-and-why.hero:42:5
+     |
+  42 |     7 % 0  #~ division_by_zero
+     |     ^^^^^
+  note: an integer `/` or `%` by zero aborts, and its right side is known (a literal, an operator on known values, a `=` name or written constant holding one, or a cell since its last write with no loop or branch between that writes it), so the step aborts each time it runs, and in a constant's body such an integer operator is a compile error, run or not, whether or not `LEFT` is read (spec § 4)
+
+error[int_out_of_range]: `1 << 64` shifts by 64, outside 0 through 63
+  at tests/golden/full/fixedbugs-577-a-constant-s-step-that-aborts-says-its-value-and-why.hero:45:5
+     |
+  45 |     1 << 64  #~ int_out_of_range
+     |     ^^^^^^^
+  note: a shift count outside 0..63 aborts, and this count is known (a literal, an operator on known values, a `=` name or written constant holding one, or a cell since its last write with no loop or branch between that writes it), so the step aborts each time it runs, and in a constant's body such an integer operator is a compile error, run or not, whether or not `SHIFT` is read (spec § 4)

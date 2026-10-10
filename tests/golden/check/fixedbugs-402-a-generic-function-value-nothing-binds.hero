@@ -50,7 +50,7 @@ function printed()
 
 function through_a_generic_callee()
     xs: [i64] = [1, 2, 3]
-    ys = xs.map(ident)  #~ cannot_infer
+    ys = xs.map(ident)
     print(ys.len())
 
 function first_in_an_array()
@@ -58,7 +58,7 @@ function first_in_an_array()
     print(fs.len())
 
 function compared()
-    print(ident == twice)  #~ cannot_infer
+    print(ident == twice)
 
 function a_letter_in_the_result_alone()
     _ = nothing  #~ cannot_infer
@@ -83,7 +83,7 @@ function a_context_that_disagrees_with_the_result()
     print(f(1))
 
 function a_context_that_names_no_parameter()
-    f: (function(i64, i64) -> i64) = first  #~ needs_parameter_names type_mismatch
+    f: (function(i64, i64) -> i64) = first  #~ needs_parameter_names
     print(f(1, 2))
 
 function main()
@@ -100,3 +100,22 @@ function main()
     a_context_that_binds_one_letter_of_two()
     a_context_that_disagrees_with_the_result()
     a_context_that_names_no_parameter()
+
+# Corrected 2026-10-09, defect 554: `a_context_that_names_no_parameter` is
+# told `needs_parameter_names` alone. The `type_mismatch` beside it, the
+# instance's names against a type that writes none, was that refusal's
+# shadow and is quiet now (`type_fit.unnamed_shadow`).
+
+# Corrected 2026-10-10, defect 541 (panel 203 R1), below the program so every
+# line keeps its number: `through_a_generic_callee` is accepted. A generic
+# function's name handed to a generic callee waits while the call's other
+# arguments settle the callee's letters; `xs` settles `map`'s `A`, and
+# `ident`'s instance at that `A` gives `B`. Panel 105's flat rule, which the
+# header cites, is reversed for every argument with no type of its own. The
+# other positions ask for no type, and are told as before.
+
+# Corrected 2026-10-10, defect 564 (panel 203 R3), below the program so every
+# line keeps its number: `compared` is accepted. An operand with no type of
+# its own takes the other operand's, a generic function's name among them,
+# so `ident` is the instance at `twice`'s type and `==` compares the two
+# addresses, as two functions of one type compare (spec § 7).

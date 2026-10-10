@@ -1,0 +1,198 @@
+# A generic function's name written as a generic callee's argument, settled
+# from the part of its parameter the call has settled (spec § 9, defect 541,
+# panel 203 R1; design.md §4.12, §4.13).
+#
+# `xs.map(double)` takes both of `map`'s letters from `double`'s signature;
+# `xs.map(ident)`, `ident<A>(x: A) -> A`, takes `A` from `xs` and then `B`
+# from `ident`'s instance at that `A`, which is what this module finds: the
+# name's signature is walked beside the parameter's type (`meet`), each of
+# its own letters taking the part a settled letter of the callee gives it,
+# and the instance so named binds the callee's letters it still lacks
+# (`partly`). A name nothing settles is refused where it stands, told what
+# its parameter asks for and which of the callee's letters nothing says
+# (`refuse`, `check/function_value.hero`'s `refused_argument`).
+#
+# Nothing is bound THROUGH an unbound letter, the callee's or the name's own
+# (§4.5): a name whose letters meet no settled part waits, and is refused
+# only once nothing else in the call can speak (`check/walk.hero`'s
+# `settle_waiting`).
+
+use ast
+use source
+use resolved
+use check/table
+use check/state
+use check/markers
+use check/function_value
+use check/generics as check_generics
+use check/waiting
+
+# Every generic function's name the bindings so far settle in part, its
+# instance binding the callee's letters in turn; what none settles is left.
+function partly(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], params: [i64], left: [waiting.Held], @bindings: [i64?]) -> [waiting.Held]
+    still: [waiting.Held] @ []
+
+    for w in left
+        param = params[w.at]
+        got: i64? @ fail(code: "not_generic", msg: "not a generic function's name")
+
+        if function_value.generic_at(a, r, decls, w.value)
+            got @ through(@c, a, r, s, decls, id: w.value, wanted: param, callee: bindings)
+
+        if got.is_err()
+            still @ still.push(w)
+        else
+            _ = state.record_expr(@c, at: w.value, ty: got.must())
+            check_generics.bind(@c, s, decls, @bindings, param: param, got: got.must(), span: a.exprs[w.value].span)
+
+    return still
+
+# What nothing settled is refused where it stands: a generic function's name
+# told what its parameter asks for and which of the callee's letters nothing
+# says. Whether the call is tainted.
+function refuse(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], decl: i64, params: [i64], left: [waiting.Held], bindings: [i64?]) -> bool
+    for w in left
+        match r.uses[w.value]
+            .top t =>
+                letters = function_value.letters_of(s, decls, decl: decl)
+                asked = function_value.Asked(
+                    callee: source.span_text(s, decls[decl].name),
+                    parameter: parameter_name(s, decls, decl: decl, at: w.at),
+                    ty: params[w.at],
+                    letters: letters,
+                    unsettled: waiting.unsettled(c, s, decls, decl: decl, ty: params[w.at], callee: bindings)
+                )
+                shown = function_value.refused_argument(
+                    @c,
+                    a,
+                    r,
+                    s,
+                    decls,
+                    decl: t.at,
+                    span: a.exprs[w.value].span,
+                    asked: asked
+                )
+                _ = state.record_expr(@c, at: w.value, ty: shown)
+            .local | .module | .builtin | .unresolved => _ = state.record_expr(
+                @c,
+                at: w.value,
+                ty: state.error_ty_of(c)
+            )
+
+    return left.len() > 0
+
+# The name of the callee's parameter `at`, as written.
+function parameter_name(s: source.Source, decls: [ast.Decl], decl: i64, at: i64) -> str
+    match decls[decl].kind
+        .function_decl fd =>
+            if at < fd.value.params.len()
+                return source.span_text(s, fd.value.params[at].name)
+        .constant_decl | .record_decl | .variant_decl | .test_decl => return ""
+
+    return ""
+
+# The instance of the generic function `id` names, its letters bound from the
+# parameter type `wanted` of a callee whose own letters stand at `callee`,
+# where only some of them are bound; or nothing, while one of its letters
+# meets no settled part.
+function through(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], id: i64, wanted: i64, callee: [i64?]) -> i64?
+    span = a.exprs[id].span
+    decl: i64 @ 0
+
+    match r.uses[id]
+        .top t => decl @ t.at
+        .local | .module | .builtin | .unresolved => return fail(
+            code: "not_generic",
+            msg: "not a generic function's name"
+        )
+
+    letters = function_value.letters_of(s, decls, decl: decl)
+    signature = function_value.signature_of(@c, a, r, s, decls, decl: decl)
+    own: [i64?] @ []
+
+    for _ in letters
+        own @ own.push(fail(code: "unbound", msg: "no part of the parameter settled it yet"))
+
+    meet(@c, own: @own, value: signature, wanted: wanted, callee: callee, concrete: false)
+    bound: [i64] @ []
+
+    for b in own
+        if b.is_err()
+            return fail(code: "unbound", msg: "a letter of the value is still unbound")
+        bound @ bound.push(b.must())
+
+    if markers.refused_as_value(@c, s, decls, decl: decl, span: span)
+        return ok(state.error_ty_of(c))
+    c.out.instantiations[span.end] @ bound
+    return ok(function_value.instance_type(@c, s, decls, decl: decl, signature: signature, bindings: own))
+
+# The value's signature walked beside the callee's parameter type. `concrete`
+# says the wanted side holds no letter of the callee any more (a bound letter
+# was replaced by its binding, whose own letters, inside a generic caller,
+# are the caller's), so a letter of the value takes the part it meets as it
+# is. A shape that does not agree binds nothing here: the callee's `bind`
+# owns that message, at the argument.
+function meet(@c: state.Checker, @own: [i64?], value: i64, wanted: i64, callee: [i64?], concrete: bool)
+    if !concrete
+        match table.get(c.out.types, wanted)
+            .generic w =>
+                if w.at < callee.len() && waiting.settled(c, callee: callee, at: w.at)
+                    meet(@c, own: @own, value: value, wanted: callee[w.at].must(), callee: callee, concrete: true)
+                return
+            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit  => fall()
+            .fixed | .map | .array | .fallible | .function_ty | .named => fall()
+            .case_ty | .failure | .error                               => fall()
+
+    match table.get(c.out.types, value)
+        .generic g =>
+            if g.at < own.len() && own[g.at].is_err() && !table.poisoned(c.out.types, wanted)
+                own[g.at] @ ok(wanted)
+        .array v =>
+            match table.get(c.out.types, wanted)
+                .array w => meet(@c, own: @own, value: v.element, wanted: w.element, callee: callee, concrete: concrete)
+                .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return
+                .fixed | .map | .fallible | .function_ty | .named => return
+                .case_ty | .failure | .generic | .error => return
+        .fallible v =>
+            match table.get(c.out.types, wanted)
+                .fallible w => meet(
+                    @c,
+                    own: @own,
+                    value: v.payload,
+                    wanted: w.payload,
+                    callee: callee,
+                    concrete: concrete
+                )
+                .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return
+                .fixed | .map | .array | .function_ty | .named            => return
+                .case_ty | .failure | .generic | .error                   => return
+        .map v =>
+            match table.get(c.out.types, wanted)
+                .map w =>
+                    meet(@c, own: @own, value: v.key, wanted: w.key, callee: callee, concrete: concrete)
+                    meet(@c, own: @own, value: v.value, wanted: w.value, callee: callee, concrete: concrete)
+                .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return
+                .fixed | .array | .fallible | .function_ty | .named       => return
+                .case_ty | .failure | .generic | .error                   => return
+        .function_ty v =>
+            match table.get(c.out.types, wanted)
+                .function_ty w =>
+                    vs = table.params_of(c.out.types, v.params)
+                    ws = table.params_of(c.out.types, w.params)
+
+                    if vs.len() == ws.len()
+                        i: i64 @ 0
+
+                        while i < vs.len()
+                            meet(@c, own: @own, value: vs[i], wanted: ws[i], callee: callee, concrete: concrete)
+                            i @ i + 1
+
+                        meet(@c, own: @own, value: v.result, wanted: w.result, callee: callee, concrete: concrete)
+                .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return
+                .fixed | .map | .fallible | .array | .named               => return
+                .case_ty | .failure | .generic | .error                   => return
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return
+        .fixed | .named | .case_ty | .failure | .error            => return
+
+function fall()
+    return

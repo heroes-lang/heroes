@@ -1,0 +1,17 @@
+# fixedbugs, defect 568, lane b18-guard, 2026-10-10 (panel 205's R3).
+#
+# SYMPTOM: `sched_getcpu` bound from glibc's `sched.h` with no switch was told
+# *`sched.h` declares no `sched_getcpu`*, which is false: it declares it under
+# `_GNU_SOURCE`, and nothing told the author where the switch can stand. This
+# header hides its function as glibc does.
+#
+# FIX: a refused round asks the module's headers again under each switch,
+# `_XOPEN_SOURCE` then `_GNU_SOURCE`, defined before every header
+# (`cli/switch_ask.hero`), and a name declared there is told as hidden, with
+# the one place the switch can stand.
+
+extern "fixedbugs-568-a-name-a-header-declares-only-under-a-switch-is-told-so.h"
+    function hidden_cpu() -> i32  #~ ffi_unknown_name
+
+function main()
+    print(hidden_cpu() >= 0)

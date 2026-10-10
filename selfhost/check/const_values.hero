@@ -1,0 +1,373 @@
+# What one step of a constant's written body computes, and what is told
+# where the step cannot be computed (panel 206 R1, ratified 2026-10-10; spec
+# § 4 and § 7; design.md §4.2). The walk that finds the steps and knows their
+# operands is `check/const_steps.hero`; this module is its arithmetic and its
+# messages, with the width and the value of a literal leaf.
+#
+# A value is a sign and a u64 magnitude, `contextual.LitValue`, the pair every
+# width check in the checker reads: wide enough for `u64`'s top and `i64`'s
+# bottom at once, so a step is computed exactly and its width asked after,
+# with one comparison. A sum or a product whose magnitude passes 2^64 - 1 has
+# no pair; it fits no width, and it is said as *more than* that number.
+#
+# The arithmetic is the emitted C's, step for step (`emit/operator.hero`,
+# `emit/division.hero`): `+ - *` and a negation abort past the width, `/` and
+# `%` truncate toward zero and abort on a zero divisor and on a quotient the
+# width cannot hold (the smallest signed value by -1, `%` included), a shift
+# count outside 0..63 aborts and the shift itself never does, `<<` working on
+# the bit pattern and `>>` keeping the sign, and `& | ^ ~` never abort. The
+# four bitwise operators and the shifts are `i64`'s alone (spec § 7), so they
+# are computed on an `i64` here, by the same operators.
+
+use token
+use diag
+use widths
+use ast
+use source
+use check/state
+use check/table
+use check/contextual
+
+constant U64_MAX: u64
+    18446744073709551615
+
+# The magnitude of `i64`'s smallest value, which has no positive `i64`.
+constant I64_LOWEST: u64
+    9223372036854775808
+
+# A value the walk knows, or none: a leaf with no value here, or a step that
+# already aborted and was told. A sum or a product past every width is none
+# too, its sign kept in `value.negative` for the message.
+record Slot
+    known: bool
+    value: contextual.LitValue
+
+function none() -> Slot
+    return Slot(known: false, value: contextual.LitValue(negative: false, magnitude: 0))
+
+# Zero is never negative, so two spellings of it compare equal.
+function known(negative: bool, magnitude: u64) -> Slot
+    return Slot(known: true, value: contextual.LitValue(negative: negative && magnitude != 0, magnitude: magnitude))
+
+function of(v: contextual.LitValue) -> Slot
+    return known(negative: v.negative, magnitude: v.magnitude)
+
+function past(negative: bool) -> Slot
+    return Slot(known: false, value: contextual.LitValue(negative: negative, magnitude: U64_MAX))
+
+function negated(v: contextual.LitValue) -> contextual.LitValue
+    return contextual.LitValue(negative: !v.negative && v.magnitude != 0, magnitude: v.magnitude)
+
+function fits(kind: widths.IntKind, v: contextual.LitValue) -> bool
+    return widths.int_fits(kind, negative: v.negative, magnitude: v.magnitude)
+
+## What a leaf is worth
+
+# The width the walk recorded on `id`, when it is an integer one: the width
+# the emitted C computes that expression at.
+function width_of(c: state.Checker, id: i64) -> widths.IntKind?
+    return match table.get(c.out.types, c.out.expr_types[id])
+        .int_ty k                                                         => ok(k.kind)
+        .float_ty | .bool | .str | .ptr | .cstr | .unit | .array | .fixed => fail(code: "none", msg: "not an integer")
+        .map | .fallible | .function_ty | .named                          => fail(code: "none", msg: "not an integer")
+        .case_ty | .failure | .generic | .error                           => fail(code: "none", msg: "not an integer")
+
+# A number literal's value at its width. One that does not fit is told where
+# it stands (`check/walk.hero`), and has none here.
+function literal(c: state.Checker, a: ast.Ast, s: source.Source, id: i64) -> Slot
+    width = width_of(c, id)
+    v = contextual.literal_value(a, s, id)
+
+    if width.is_err() || v.is_err() || !fits(width.must(), v.must())
+        return none()
+    return of(v.must())
+
+## The steps
+
+# `x + y`, `x - y` and `x * y`, exactly, or `past` where the magnitude passes
+# every width. Any other operator has no such step.
+function step(op: ast.BinaryOp, x: contextual.LitValue, y: contextual.LitValue) -> Slot
+    return match op
+        .add                                                     => sum(x: x, y: y)
+        .sub                                                     => sum(x: x, y: negated(y))
+        .mul                                                     => product(x: x, y: y)
+        .div | .rem | .eq | .ne | .lt | .le | .gt | .ge          => none()
+        .and | .or | .bit_and | .bit_or | .bit_xor | .shl | .shr => none()
+
+function sum(x: contextual.LitValue, y: contextual.LitValue) -> Slot
+    if x.negative == y.negative
+        if x.magnitude > U64_MAX - y.magnitude
+            return past(negative: x.negative)
+        return known(negative: x.negative, magnitude: x.magnitude + y.magnitude)
+
+    if x.magnitude >= y.magnitude
+        return known(negative: x.negative, magnitude: x.magnitude - y.magnitude)
+    return known(negative: y.negative, magnitude: y.magnitude - x.magnitude)
+
+function product(x: contextual.LitValue, y: contextual.LitValue) -> Slot
+    if y.magnitude != 0 && x.magnitude > U64_MAX / y.magnitude
+        return past(negative: x.negative != y.negative)
+    return known(negative: x.negative != y.negative, magnitude: x.magnitude * y.magnitude)
+
+# `x / y` truncated toward zero, `y` not zero; and the remainder, which takes
+# the sign of `x` (spec § 7: `-7 / 3` is `-2`, `-7 % 3` is `-1`).
+function quotient(x: contextual.LitValue, y: contextual.LitValue) -> contextual.LitValue
+    return known(negative: x.negative != y.negative, magnitude: x.magnitude / y.magnitude).value
+
+function remainder(x: contextual.LitValue, y: contextual.LitValue) -> contextual.LitValue
+    return known(negative: x.negative, magnitude: x.magnitude % y.magnitude).value
+
+# Whether a shift count is one the shift aborts on.
+function count_outside(count: contextual.LitValue) -> bool
+    return count.negative || count.magnitude > 63
+
+## The bit patterns
+
+# An `i64`'s value as its own type, or none where it is not one: a value the
+# walk holds fits the width it was computed at, so none is a value of another
+# width, which the checker already refused under a bitwise operator.
+function bits(v: contextual.LitValue) -> i64?
+    if !v.negative
+        return v.magnitude.to_i64()
+
+    if v.magnitude == I64_LOWEST
+        return ok(-9223372036854775807 - 1)
+    magnitude = v.magnitude.to_i64()?
+    return ok(-magnitude)
+
+function from_bits(b: i64) -> Slot
+    if b >= 0
+        return known(negative: false, magnitude: b.to_u64().default(0))
+
+    if b == -9223372036854775807 - 1
+        return known(negative: true, magnitude: I64_LOWEST)
+    return known(negative: true, magnitude: (-b).to_u64().default(0))
+
+# `x & y`, `x | y`, `x ^ y`, and a shift by a count in 0..63, on the bit
+# pattern; none where an operand is not an `i64`.
+function bitwise(op: ast.BinaryOp, x: contextual.LitValue, y: contextual.LitValue) -> Slot
+    l = bits(x)
+    r = bits(y)
+
+    if l.is_err() || r.is_err()
+        return none()
+    a = l.must()
+    b = r.must()
+
+    return match op
+        .bit_and                                     => from_bits(a & b)
+        .bit_or                                      => from_bits(a | b)
+        .bit_xor                                     => from_bits(a ^ b)
+        .shl                                         => shifted(pattern: a, count: b, left: true)
+        .shr                                         => shifted(pattern: a, count: b, left: false)
+        .add | .sub | .mul | .div | .rem | .eq | .ne => none()
+        .lt | .le | .gt | .ge | .and | .or           => none()
+
+function shifted(pattern: i64, count: i64, left: bool) -> Slot
+    if count < 0 || count > 63
+        return none()
+
+    if left
+        return from_bits(pattern << count)
+    return from_bits(pattern >> count)
+
+function complement(v: contextual.LitValue) -> Slot
+    b = bits(v)
+
+    if b.is_err()
+        return none()
+    return from_bits(~b.must())
+
+## A step, judged
+
+# Where a step stands: its text and its right side's, the constant it is in,
+# and its span, which is what a diagnostic of it says.
+record Place
+    text: str
+    right: str
+    owner: str
+    span: token.Span
+
+# A step's value, or none and the diagnostic that says why it aborts.
+record Outcome
+    slot: Slot
+    told: [diag.Diagnostic]
+
+function kept(s: Slot) -> Outcome
+    no: [diag.Diagnostic] = []
+    return Outcome(slot: s, told: no)
+
+function refused(d: diag.Diagnostic) -> Outcome
+    return Outcome(slot: none(), told: [d])
+
+# An integer step whose right side is known, at the width `kind` the walk
+# recorded on it. A division by a known zero and a shift by a count outside
+# 0..63 abort whatever the left side is, so `x` may be unknown for those.
+function stepped(op: ast.BinaryOp, x: Slot, y: contextual.LitValue, kind: widths.IntKind, at: Place) -> Outcome
+    if (op == .div || op == .rem) && y.magnitude == 0
+        return refused(by_zero(text: at.text, right: at.right, owner: at.owner, span: at.span))
+
+    if (op == .shl || op == .shr) && count_outside(y)
+        return refused(shift_count(text: at.text, count: y, owner: at.owner, span: at.span))
+
+    if !x.known
+        return kept(none())
+
+    return match op
+        .add | .sub | .mul                             => summed(step(op, x: x.value, y: y), kind, at)
+        .div                                           => fitted(quotient(x: x.value, y: y), kind, at)
+        .rem                                           => remaindered(x: x.value, y: y, kind, at)
+        .bit_and | .bit_or | .bit_xor | .shl | .shr    => kept(bitwise(op, x: x.value, y: y))
+        .eq | .ne | .lt | .le | .gt | .ge | .and | .or => kept(none())
+
+# A value at its width: kept where it fits, told where it does not.
+function fitted(v: contextual.LitValue, kind: widths.IntKind, at: Place) -> Outcome
+    if fits(kind, v)
+        return kept(of(v))
+    return refused(overflow(text: at.text, got: of(v), kind, owner: at.owner, span: at.span))
+
+function summed(got: Slot, kind: widths.IntKind, at: Place) -> Outcome
+    if got.known
+        return fitted(got.value, kind, at)
+    return refused(overflow(text: at.text, got: got, kind, owner: at.owner, span: at.span))
+
+function remaindered(x: contextual.LitValue, y: contextual.LitValue, kind: widths.IntKind, at: Place) -> Outcome
+    whole = quotient(x: x, y: y)
+
+    if fits(kind, whole)
+        return kept(of(remainder(x: x, y: y)))
+    return refused(remainder_overflow(text: at.text, whole: whole, kind, owner: at.owner, span: at.span))
+
+## What is told
+
+function shown(v: contextual.LitValue) -> str
+    if v.negative
+        return "-" + v.magnitude.to_str()
+    return v.magnitude.to_str()
+
+# A value past every width, said as the bound it passed.
+function beyond(negative: bool) -> str
+    if negative
+        return "less than -" + U64_MAX.to_str()
+    return "more than " + U64_MAX.to_str()
+
+# Why the step is a compile error wherever it stands, in the words of spec
+# § 4's class (panel 207 R2): its operands are known in that sentence's sense,
+# so it aborts each time it runs, and such an integer operator in a constant's
+# body is refused run or not (a branch not taken, a loop that never runs, a
+# constant nothing reads). The note names what *known* is, since a step the
+# walk does not know, an index or a cell a loop writes, aborts where it runs.
+function reached(known_part: str, owner: str) -> str
+    return known_part + " known (a literal, an operator on known values, a `=` name or written constant holding one, or a cell since its last write with no loop or branch between that writes it), so the step aborts each time it runs, and in a constant's body such an integer operator is a compile error, run or not, whether or not `" + owner + "` is read (spec § 4)"
+
+function range_of(kind: widths.IntKind) -> str
+    return widths.int_article_name(kind) + " holds " + widths.int_low_text(kind) + " through " + widths.int_high_text(kind)
+
+# A step whose value does not fit the width it is computed at: `got` is the
+# value, or `past` where its magnitude passes every width. The repair named is
+# a type that holds the value only where one exists.
+function overflow(text: str, got: Slot, kind: widths.IntKind, owner: str, span: token.Span) -> diag.Diagnostic
+    computed: str @ beyond(negative: got.value.negative)
+
+    if got.known
+        computed @ shown(got.value)
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "int_out_of_range",
+        message: "`" + text + "` computes " + computed + ", which does not fit " + widths.int_article_name(kind),
+        span: span
+    )
+
+    if got.known && held_anywhere(got.value)
+        d.notes @ d.notes.push(range_of(kind) + ": use a type that holds " + computed + ", or change the step")
+    else
+        d.notes @ d.notes.push(range_of(kind) + ", and no integer type holds " + computed + ": change the step")
+    d.notes @ d.notes.push(reached(known_part: "every operand of this step is", owner: owner))
+    return d
+
+function held_anywhere(v: contextual.LitValue) -> bool
+    for kind in widths.int_kinds()
+        if fits(kind, v)
+            return true
+
+    return false
+
+# `%` by -1 at a signed width's smallest value: the remainder is 0, and the C
+# reaches it through the quotient, which the width cannot hold (defect 567).
+# A wider signed type holds both, except past `i64`, where none is.
+function remainder_overflow(text: str, whole: contextual.LitValue, kind: widths.IntKind, owner: str, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "int_out_of_range",
+        message: "`" + text + "` computes a remainder whose quotient, " + shown(whole) + ", does not fit " + widths.int_article_name(kind),
+        span: span
+    )
+    repair: str @ "so use a wider type, or change the step"
+
+    if kind == .i64
+        repair @ "and no integer type is wider: change the step"
+    d.notes @ d.notes.push(
+        "`%` aborts where `/` does, though the remainder would be 0: " + range_of(kind) + ", " + repair
+    )
+    d.notes @ d.notes.push(reached(known_part: "every operand of this step is", owner: owner))
+    return d
+
+# A division or a remainder whose right side is zero. The right side is
+# quoted where it is not the literal itself, since its value is the news.
+function by_zero(text: str, right: str, owner: str, span: token.Span) -> diag.Diagnostic
+    said: str @ "`" + text + "` divides by zero"
+
+    if right != "0"
+        said @ said + ": `" + right + "` is 0"
+    d: diag.Diagnostic @ diag.new_diagnostic(code: "division_by_zero", message: said, span: span)
+    d.notes @ d.notes.push(
+        "an integer `/` or `%` by zero aborts, and " + reached(known_part: "its right side is", owner: owner)
+    )
+    return d
+
+# A shift whose count is outside 0..63.
+function shift_count(text: str, count: contextual.LitValue, owner: str, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "int_out_of_range",
+        message: "`" + text + "` shifts by " + shown(count) + ", outside 0 through 63",
+        span: span
+    )
+    d.notes @ d.notes.push(
+        "a shift count outside 0..63 aborts, and " + reached(known_part: "this count is", owner: owner)
+    )
+    return d
+
+## Tests
+
+function lit(negative: bool, magnitude: u64) -> contextual.LitValue
+    return contextual.LitValue(negative: negative, magnitude: magnitude)
+
+test "a sum, a difference and a product are exact, and past 2^64 - 1 they are none with their sign"
+    assert step(.add, x: lit(negative: false, magnitude: 200), y: lit(negative: false, magnitude: 100)).value.magnitude == 300
+    difference = step(.sub, x: lit(negative: false, magnitude: 2), y: lit(negative: false, magnitude: 3))
+    assert difference.known && difference.value.negative && difference.value.magnitude == 1
+    assert step(.sub, x: lit(negative: true, magnitude: 5), y: lit(negative: true, magnitude: 5)) == known(negative: false, magnitude: 0)
+    top = step(.add, x: lit(negative: false, magnitude: U64_MAX), y: lit(negative: false, magnitude: 1))
+    assert !top.known && !top.value.negative
+    wide = step(.mul, x: lit(negative: true, magnitude: 4294967296), y: lit(negative: false, magnitude: 4294967296))
+    assert !wide.known && wide.value.negative
+    assert beyond(negative: wide.value.negative) == "less than -18446744073709551615"
+
+test "a quotient truncates toward zero and a remainder takes the left side's sign"
+    seven = lit(negative: true, magnitude: 7)
+    three = lit(negative: false, magnitude: 3)
+    assert shown(quotient(x: seven, y: three)) == "-2"
+    assert shown(remainder(x: seven, y: three)) == "-1"
+    assert shown(remainder(x: lit(negative: true, magnitude: 6), y: three)) == "0"
+    assert !fits(.i8, quotient(x: lit(negative: true, magnitude: 128), y: lit(negative: true, magnitude: 1)))
+
+test "a bit pattern is the i64's own, its smallest value included"
+    lowest = lit(negative: true, magnitude: I64_LOWEST)
+    assert bits(lowest).must() == -9223372036854775807 - 1
+    assert from_bits(-9223372036854775807 - 1).value == lowest
+    assert bits(lit(negative: false, magnitude: I64_LOWEST)).is_err()
+    one = lit(negative: false, magnitude: 1)
+    assert bitwise(.shl, x: one, y: lit(negative: false, magnitude: 63)).value == lowest
+    assert shown(bitwise(.shr, x: lowest, y: lit(negative: false, magnitude: 63)).value) == "-1"
+    assert shown(complement(lit(negative: false, magnitude: 0)).value) == "-1"
+    assert shown(bitwise(.bit_xor, x: lit(negative: true, magnitude: 1), y: one).value) == "-2"
+    assert count_outside(lit(negative: false, magnitude: 64)) && count_outside(lit(negative: true, magnitude: 1))
+    assert !count_outside(lit(negative: false, magnitude: 63))

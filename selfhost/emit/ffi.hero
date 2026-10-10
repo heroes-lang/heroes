@@ -239,7 +239,8 @@ function explain(stderr: str, s: source.Source, tree: ast.Ast, decls: [ast.Decl]
             line: line,
             stderr: text,
             macros: asked.macros,
-            types: asked.types
+            types: asked.types,
+            switched: asked.switched
         )
 
         if !unknown_n.is_err()

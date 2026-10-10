@@ -1,0 +1,7 @@
+error[ffi_header_refused]: `fixedbugs-563-user.h`, the header this group names, does not compile where its group is written: clang refuses it at line 1: unknown type name 'Need'
+  at tests/golden/unsupported/fixedbugs-563-a-header-written-above-the-one-it-needs-is-told-the-move.hero:10:8
+     |
+  10 | extern "fixedbugs-563-user.h"  #~ ffi_header_refused
+     |        ^^^^^^^^^^^^^^^^^^^^^^
+  note: `fixedbugs-563-user.h` line 1 reads `static inline int need_v(Need n) { return n.v; }`
+  note: `fixedbugs-563-user.h` compiles when `fixedbugs-563-need.h`, which the group at line 13 names, is included before it: a module's headers are included in the order its groups are written, so write that group above this one

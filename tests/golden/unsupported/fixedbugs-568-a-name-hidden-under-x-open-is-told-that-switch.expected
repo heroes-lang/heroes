@@ -1,0 +1,6 @@
+error[ffi_unknown_name]: `fixedbugs-568-a-name-hidden-under-x-open-is-told-that-switch.h` declares `hidden_width` only under `_XOPEN_SOURCE`: define it in a header of your own that this module's first group names
+  at tests/golden/unsupported/fixedbugs-568-a-name-hidden-under-x-open-is-told-that-switch.hero:8:5
+    |
+  8 |     function hidden_width(c: i32) -> i32  #~ ffi_unknown_name
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: the C library reads `_XOPEN_SOURCE` once, at the first of its headers a unit reads, and a unit reads them after its groups: a header of your own that defines `_XOPEN_SOURCE` and then includes `fixedbugs-568-a-name-hidden-under-x-open-is-told-that-switch.h`, named by this module's first group, binds `hidden_width` as the header declares it

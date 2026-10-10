@@ -1,0 +1,2 @@
+0
+!panic: a launch's argument list still holds 2 word(s) at exit — `hero_run_arg` keeps each word until `hero_run_reset()` gives the list back, and this program did not call it after its last `hero_run_arg`

@@ -1,0 +1,6 @@
+tests/golden/check/fixedbugs-578-an-operator-over-literals-at-a-generic-parameter-is-told-at-its-width.hero:21:12: error[type_mismatch]: expected `T`, found `i64`
+tests/golden/check/fixedbugs-578-an-operator-over-literals-at-a-generic-parameter-is-told-at-its-width.hero:26:19: error[int_out_of_range]: `300` does not fit a `u8`
+tests/golden/check/fixedbugs-578-an-operator-over-literals-at-a-generic-parameter-is-told-at-its-width.hero:28:19: error[int_out_of_range]: `-(2)` does not fit a `u8`
+tests/golden/check/fixedbugs-578-an-operator-over-literals-at-a-generic-parameter-is-told-at-its-width.hero:30:20: error[type_mismatch]: expected `f64`, found `i64`
+tests/golden/check/fixedbugs-578-an-operator-over-literals-at-a-generic-parameter-is-told-at-its-width.hero:31:28: error[type_mismatch]: expected `f64`, found `i64`
+tests/golden/check/fixedbugs-578-an-operator-over-literals-at-a-generic-parameter-is-told-at-its-width.hero:32:20: error[mixed_arithmetic]: `+` takes two of one type — two integers of the SAME width, or two floats of the same width — and found `i64` and `f64`

@@ -1,0 +1,324 @@
+# A constant's written body: an integer operator in it that would abort is a
+# compile error where its operands are known, wherever it is written in the
+# body and whether or not the constant is read (panel 206 R1, its class named
+# by panel 207 R1, both ratified 2026-10-10; spec § 4; design.md §4.2). The
+# emitted C computes the body at every read (`h_<module>_<NAME>()`), so a
+# step whose operands are all known aborts every time; it is refused at its
+# own line instead, `int_out_of_range` or `division_by_zero` with the step
+# quoted and its value said (`check/const_values.hero`, which holds the
+# arithmetic and the messages).
+#
+# **The class is syntactic.** A body holds no call (panel 039,
+# `resolve/constant_body.hero`), so it has no input but literals and other
+# constants. Every operator step is judged where it is written: inside an
+# array or a map literal, a `f"..."` hole, a case's payload, both branches of
+# an `if`, every arm of a `match`, a loop's condition and body, and the right
+# of `&&` and `||`, as `y: u8 = 300` is refused in code that never runs. Each
+# step is computed at the width the walk recorded on it (`c.out.expr_types`),
+# which is the width the C aborts at.
+#
+# **What has a value.** A literal; a written constant, its own body walked
+# first, once (a cycle is the resolver's `constant_cycle`, and the guard here
+# gives it no value); a name the body binds with `=`, which holds what it was
+# bound to; and a cell the body declares with `@`, which holds what was last
+# put in it on the straight path the walk takes. A branch starts from what
+# held before it and forgets, after it, every cell any branch wrote; a loop
+# forgets, for its condition and body, which may run any number of times, and
+# after it, the cells it writes (`check/const_writes.hero`, panel 207's route
+# W), every other cell keeping its value on every turn. A group's constant has
+# no body and no value here (its value is C's, platform by platform: defect
+# 579), and neither has a field, an element, a loop's name or a payload. A
+# step with an operand that has none is not judged: it aborts where it runs, if
+# it does (spec § 7), as an index, an `assert` or a nan does, which are no
+# integer operators (defect 580's `run` cases).
+
+use ast
+use source
+use resolved
+use check/state
+use check/contextual
+use check/const_values as values
+use check/const_writes
+
+record Program
+    a: ast.Ast
+    r: resolved.Resolved
+    s: source.Source
+    decls: [ast.Decl]
+
+record Seen
+    # Per declaration: 0 not walked, 1 being walked, 2 walked; and its value.
+    marks: [i64]
+    values: [values.Slot]
+    # What a name of the body holds, keyed by the expression that first gave
+    # it a value: a `=` binding for good, a cell until a branch or a loop
+    # makes it uncertain.
+    bound: {i64: values.Slot}
+    cells: {i64: values.Slot}
+    # Every cell written, in order, so a branch and a loop forget what they
+    # wrote.
+    wrote: [i64]
+    # The constant whose body is walked, which the message names.
+    owner: str
+
+# The pass: every constant's written body, read or not, once.
+function judged(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl])
+    p = Program(a: a, r: r, s: s, decls: decls)
+    marks: [i64] @ []
+    slots: [values.Slot] @ []
+
+    for _ in decls
+        marks @ marks.push(0)
+        slots @ slots.push(values.none())
+
+    seen: Seen @ Seen(marks: marks, values: slots, bound: {}, cells: {}, wrote: [], owner: "")
+    at: i64 @ 0
+
+    while at < decls.len()
+        walk_constant(@seen, @c, p, at: at)
+        at @ at + 1
+
+function walk_constant(@seen: Seen, @c: state.Checker, p: Program, at: i64)
+    if seen.marks[at] != 0
+        return
+    seen.marks[at] @ 2
+
+    match p.decls[at].kind
+        .constant_decl k =>
+            if k.body.is_err()
+                return
+            seen.marks[at] @ 1
+            owner = seen.owner
+            cells = seen.cells
+            seen.owner @ source.span_text(p.s, p.decls[at].name)
+            seen.cells @ {}
+            got: values.Slot @ values.none()
+
+            # The body's value is its last line's.
+            for sid in k.body.must().stmts
+                got @ statement(@seen, @c, p, sid: sid)
+
+            seen.values[at] @ got
+            seen.marks[at] @ 2
+            seen.owner @ owner
+            seen.cells @ cells
+        .function_decl | .record_decl | .variant_decl | .test_decl => return
+
+# A statement's steps, and its value where it is an expression.
+function statement(@seen: Seen, @c: state.Checker, p: Program, sid: i64) -> values.Slot
+    match p.a.stmts[sid].kind
+        .expr_stmt e => return value(@seen, @c, p, id: e.value)
+        .bind b =>
+            got = value(@seen, @c, p, id: b.value)
+            seen.bound[b.value] @ got
+        .declare d =>
+            got = value(@seen, @c, p, id: d.value)
+            seen.cells[d.value] @ got
+        .mutate m      => mutated(@seen, @c, p, place: m.place, id: m.value)
+        .assert_stmt t => _ = value(@seen, @c, p, id: t.value)
+        .return_stmt t =>
+            if !t.value.is_err()
+                _ = value(@seen, @c, p, id: t.value.must())
+        .while_stmt w =>
+            writes = const_writes.of_loop(p.a, p.r, cond: ok(w.cond), body: w.block)
+            before = forgetting(@seen, writes)
+            from = seen.wrote.len()
+            _ = value(@seen, @c, p, id: w.cond)
+            block(@seen, @c, p, w.block)
+            restored(@seen, before, from: from)
+            _ = forgetting(@seen, writes)
+        .for_in f =>
+            _ = value(@seen, @c, p, id: f.iterable)
+            writes = const_writes.of_loop(
+                p.a,
+                p.r,
+                cond: fail(code: "none", msg: "a `for` has no condition"),
+                body: f.block
+            )
+            before = forgetting(@seen, writes)
+            from = seen.wrote.len()
+            block(@seen, @c, p, f.block)
+            restored(@seen, before, from: from)
+            _ = forgetting(@seen, writes)
+        .break_stmt | .continue_stmt | .error => return values.none()
+
+    return values.none()
+
+function block(@seen: Seen, @c: state.Checker, p: Program, b: ast.Block)
+    for sid in b.stmts
+        _ = statement(@seen, @c, p, sid: sid)
+
+# A loop's start and its end (panel 207's route W): the cells it writes
+# forgotten, every other keeping its value on every turn, and what they all
+# held handed back.
+function forgetting(@seen: Seen, writes: [i64]) -> {i64: values.Slot}
+    before = seen.cells
+
+    for key in writes
+        seen.cells[key] @ values.none()
+
+    return before
+
+# What held before a branch or a loop, less every cell written since `from`.
+function restored(@seen: Seen, before: {i64: values.Slot}, from: i64)
+    seen.cells @ before
+    at: i64 @ from
+
+    while at < seen.wrote.len()
+        seen.cells[seen.wrote[at]] @ values.none()
+        at @ at + 1
+
+# `place @ value`: the value's steps and the place's, and a cell written by
+# its name holds the value from here.
+function mutated(@seen: Seen, @c: state.Checker, p: Program, place: i64, id: i64)
+    got = value(@seen, @c, p, id: id)
+    _ = value(@seen, @c, p, id: place)
+
+    match p.r.uses[place]
+        .local l =>
+            if p.r.locals[l.at].mutable && !p.r.locals[l.at].value.is_err()
+                key = p.r.locals[l.at].value.must()
+                seen.cells[key] @ got
+                seen.wrote @ seen.wrote.push(key)
+        .unresolved | .top | .builtin | .module => return
+
+function value(@seen: Seen, @c: state.Checker, p: Program, id: i64) -> values.Slot
+    match p.a.exprs[id].kind
+        .int_lit | .char_lit => return values.literal(c, p.a, p.s, id: id)
+        .unary u =>
+            if contextual.number_literal(p.a, id)
+                return values.literal(c, p.a, p.s, id: id)
+            return unary(@seen, @c, p, id: id, op: u.op, operand: u.operand)
+        .binary b => return stepped(@seen, @c, p, id: id, op: b.op, left: b.left, right: b.right)
+        .name     => return read(@seen, @c, p, id: id)
+        .field f =>
+            if p.r.uses[f.base] == .module
+                return read(@seen, @c, p, id: id)
+            _ = value(@seen, @c, p, id: f.base)
+        .field_name f => _ = value(@seen, @c, p, id: f.base)
+        .index x =>
+            _ = value(@seen, @c, p, id: x.base)
+            _ = value(@seen, @c, p, id: x.index)
+        .interp ip =>
+            for h in ip.holes
+                _ = value(@seen, @c, p, id: h)
+        .variant_case v =>
+            for arg in v.args
+                _ = value(@seen, @c, p, id: arg.value)
+        .array xs =>
+            for e in xs.elements
+                _ = value(@seen, @c, p, id: e)
+        .map m =>
+            for entry in m.entries
+                _ = value(@seen, @c, p, id: entry.key)
+                _ = value(@seen, @c, p, id: entry.value)
+        .if_expr x => chosen(@seen, @c, p, branches: x.branches, otherwise: x.otherwise)
+        .match_expr m =>
+            _ = value(@seen, @c, p, id: m.scrutinee)
+            matched(@seen, @c, p, arms: m.arms)
+        # A call, a `.` call and a `?` are refused in a body already, at their
+        # place (`constant_body`), and walking their insides would tell one
+        # mistake twice.
+        .call | .method | .try_expr                                    => return values.none()
+        .float_lit | .str_lit | .bool_lit | .null_ptr | .hole | .error => return values.none()
+
+    return values.none()
+
+# Each branch from what held before the `if`, less what an earlier branch
+# wrote; the `if` gives no value.
+function chosen(@seen: Seen, @c: state.Checker, p: Program, branches: [ast.Branch], otherwise: ast.Block?)
+    before = seen.cells
+    from = seen.wrote.len()
+
+    for branch in branches
+        restored(@seen, before, from: from)
+        _ = value(@seen, @c, p, id: branch.cond)
+        block(@seen, @c, p, branch.block)
+
+    if !otherwise.is_err()
+        restored(@seen, before, from: from)
+        block(@seen, @c, p, otherwise.must())
+    restored(@seen, before, from: from)
+
+function matched(@seen: Seen, @c: state.Checker, p: Program, arms: [ast.Arm])
+    before = seen.cells
+    from = seen.wrote.len()
+
+    for arm in arms
+        restored(@seen, before, from: from)
+
+        match arm.body
+            .one_stmt o => _ = statement(@seen, @c, p, sid: o.at)
+            .block b    => block(@seen, @c, p, b.block)
+
+    restored(@seen, before, from: from)
+
+# A name: a written constant's value, its body walked first; what a name the
+# body bound holds; nothing else.
+function read(@seen: Seen, @c: state.Checker, p: Program, id: i64) -> values.Slot
+    if values.width_of(c, id).is_err()
+        return values.none()
+
+    match p.r.uses[id]
+        .top t =>
+            walk_constant(@seen, @c, p, at: t.at)
+
+            if seen.marks[t.at] == 2
+                return seen.values[t.at]
+        .local l =>
+            local = p.r.locals[l.at]
+
+            if local.value.is_err()
+                return values.none()
+
+            if local.mutable
+                return seen.cells[local.value.must()].default(values.none())
+            return seen.bound[local.value.must()].default(values.none())
+        .unresolved | .builtin | .module => return values.none()
+
+    return values.none()
+
+function unary(@seen: Seen, @c: state.Checker, p: Program, id: i64, op: ast.UnaryOp, operand: i64) -> values.Slot
+    v = value(@seen, @c, p, id: operand)
+    width = values.width_of(c, id)
+
+    if !v.known || width.is_err()
+        return values.none()
+
+    return match op
+        .neg => told(@c, values.fitted(values.negated(v.value), width.must(), at: standing(seen, p, id: id, right: "")))
+        .bit_not => values.complement(v.value)
+        .not => values.none()
+
+function stepped(@seen: Seen, @c: state.Checker, p: Program, id: i64, op: ast.BinaryOp, left: i64, right: i64) -> values.Slot
+    x = value(@seen, @c, p, id: left)
+
+    # The right of `&&` and `||` is judged and may not run, so it is a branch.
+    if op == .and || op == .or
+        before = seen.cells
+        from = seen.wrote.len()
+        _ = value(@seen, @c, p, id: right)
+        restored(@seen, before, from: from)
+        return values.none()
+    y = value(@seen, @c, p, id: right)
+    width = values.width_of(c, id)
+
+    if width.is_err() || !y.known
+        return values.none()
+    right_text = source.span_text(p.s, p.a.exprs[right].span)
+    return told(
+        @c,
+        values.stepped(op, x: x, y: y.value, width.must(), at: standing(seen, p, id: id, right: right_text))
+    )
+
+# Where a step stands, for what is told of it.
+function standing(seen: Seen, p: Program, id: i64, right: str) -> values.Place
+    span = p.a.exprs[id].span
+    return values.Place(text: source.span_text(p.s, span), right: right, owner: seen.owner, span: span)
+
+# A step's value, its diagnostic told where it has one.
+function told(@c: state.Checker, o: values.Outcome) -> values.Slot
+    for d in o.told
+        state.push_diagnostic(@c, d)
+
+    return o.slot

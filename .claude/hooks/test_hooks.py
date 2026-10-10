@@ -1715,6 +1715,123 @@ class Marks(unittest.TestCase):
         self.assertEqual(runs(self.tree), ["annotations w"])
 
 
+class NotCanonicalOnPurpose(unittest.TestCase):
+    """Defect 581: a staged golden case that parses and is not canonical on
+    purpose, as defect 576's two are, is judged by its marks whatever `fmt`
+    answers; a case with no mark, and a program `canonical` reads, are still
+    held to `fmt`."""
+
+    def setUp(self):
+        self.top = fresh("hooks-581-")
+        self.tree = make_tree(os.path.join(self.top, "tree"), repo=True)
+        write(os.path.join(self.tree, "tests", "harness", "suite_annotations.hero"), ANNOTATIONS)
+
+    def case(self, rel, marked=True, expected=True):
+        staged(self.tree, rel, "x: i8 @ -(-128) UNCANONICAL" + ("  #~ int_out_of_range" if marked else "") + "\n")
+        if expected:
+            staged(self.tree, rel[: -len(".hero")] + ".expected", "x.hero:1:9: error[int_out_of_range]: ...\n")
+
+    def commit(self, *rels):
+        return guard_bash.verdict("git commit -F m -- " + " ".join(rels), self.tree)
+
+    def test_a_marked_case_not_canonical_its_suite_passes_is_committed(self):
+        answer(self.tree, "annotations", 0, "  annotations (only fixedbugs-576-a): 1 passed, 0 failed\n")
+        self.case("tests/golden/check/fixedbugs-576-a.hero")
+        self.assertIsNone(self.commit("tests/golden/check/fixedbugs-576-a.hero"))
+        self.assertEqual(runs(self.tree), ["annotations fixedbugs-576-a"])
+
+    def test_a_marked_case_not_canonical_its_suite_fails_is_refused_with_the_suite_words(self):
+        answer(
+            self.tree, "annotations", 1,
+            "FAIL annotations/fixedbugs-576-a\n  the annotations and the diagnostics disagree\n"
+            "  annotations (only fixedbugs-576-a): 0 passed, 1 failed\n",
+        )
+        self.case("tests/golden/full/fixedbugs-576-a.hero")
+        said = self.commit("tests/golden/full/fixedbugs-576-a.hero")
+        self.assertIsNotNone(said)
+        self.assertIn("marks and its expectation disagree", said)
+        self.assertNotIn("is not canonical", said)
+
+    def test_a_case_with_no_mark_not_canonical_is_still_refused(self):
+        answer(self.tree, "annotations", 0, "  annotations (only plain): 1 passed, 0 failed\n")
+        self.case("tests/golden/check/plain.hero", marked=False)
+        said = self.commit("tests/golden/check/plain.hero")
+        self.assertIsNotNone(said)
+        self.assertIn("tests/golden/check/plain.hero is not canonical", said)
+        self.assertEqual(runs(self.tree), [])
+
+    def test_a_marked_program_not_canonical_keeps_the_fmt_verdict(self):
+        for rel in ("tests/golden/run/prog.hero", "tests/golden/fixedbugs/prog.hero"):
+            self.case(rel)
+            self.assertIn(rel + " is not canonical", self.commit(rel))
+        self.assertEqual(runs(self.tree), [])
+
+    def test_a_marked_case_not_canonical_with_no_expectation_keeps_the_fmt_verdict(self):
+        self.case("tests/golden/check/lonely.hero", expected=False)
+        self.assertIn("tests/golden/check/lonely.hero is not canonical", self.commit("tests/golden/check/lonely.hero"))
+
+    def test_a_marked_case_not_canonical_staged_unlike_its_working_tree_is_left_to_the_gate(self):
+        self.case("tests/golden/check/w.hero")
+        write(os.path.join(self.tree, "tests", "golden", "check", "w.hero"), "x: i8 @ -(-128) UNCANONICAL  #~ int_out_of_range, edited\n")
+        staged(self.tree, "examples/x.hero", "fine\n")
+        self.assertIsNone(guard_bash.verdict("git commit -i -F m -- examples/x.hero", self.tree))
+        self.assertEqual(runs(self.tree), [])
+
+    def test_a_merge_carrying_marked_cases_not_canonical_is_concluded(self):
+        # The shape that was refused: lane b18-close's merge of a lane whose
+        # two cases of defect 576 are not canonical on purpose.
+        answer(self.tree, "annotations", 0, "  annotations (only fixedbugs-576-): 2 passed, 0 failed\n")
+        write(os.path.join(self.tree, "a.txt"), "a\n")
+        git(self.tree, "add", "--", "a.txt", "tests/harness/suite_annotations.hero")
+        git(self.tree, "commit", "-q", "-m", "a", "--", "a.txt", "tests/harness/suite_annotations.hero")
+        git(self.tree, "checkout", "-q", "-b", "other")
+        self.case("tests/golden/check/fixedbugs-576-a.hero")
+        self.case("tests/golden/full/fixedbugs-576-b.hero")
+        git(self.tree, "commit", "-q", "-m", "o", "--", "tests/golden")
+        git(self.tree, "checkout", "-q", "main")
+        write(os.path.join(self.tree, "a.txt"), "a main\n")
+        git(self.tree, "commit", "-q", "-m", "m", "--", "a.txt")
+        self.assertEqual(git(self.tree, "merge", "--no-commit", "--no-ff", "other", check=False).returncode, 0)
+        for command in ("git commit --no-edit", "git merge --continue"):
+            self.assertIsNone(guard_bash.verdict(command, self.tree), command)
+        self.assertEqual(runs(self.tree), ["annotations fixedbugs-576-"] * 2)
+        unmarked = os.path.join(self.tree, "tests", "golden", "check", "fixedbugs-576-a.hero")
+        staged(self.tree, "tests/golden/check/fixedbugs-576-a.hero", "x: i8 @ -(-128) UNCANONICAL\n")
+        self.assertTrue(os.path.isfile(unmarked))
+        said = guard_bash.verdict("git commit --no-edit", self.tree)
+        self.assertIsNotNone(said)
+        self.assertIn("tests/golden/check/fixedbugs-576-a.hero is not canonical", said)
+
+    # The write-time hook, the same rule through `marks.held_to_marks`: it
+    # told 576's case *not canonical* when it was written.
+    def written_case(self, rel, marked=True):
+        write(os.path.join(self.tree, rel[: -len(".hero")] + ".expected"), "x.hero:1:9: error[int_out_of_range]: ...\n")
+        text = "x: i8 @ -(-128) UNCANONICAL" + ("  #~ int_out_of_range" if marked else "") + "\n"
+        return written(self.tree, write(os.path.join(self.tree, rel), text))
+
+    def test_the_write_hook_judges_a_marked_case_not_canonical_by_its_marks(self):
+        answer(self.tree, "annotations", 0, "  annotations (only fixedbugs-576-a): 1 passed, 0 failed\n")
+        code, said = self.written_case("tests/golden/check/fixedbugs-576-a.hero")
+        self.assertEqual((code, said), (0, ""))
+        self.assertEqual(runs(self.tree), ["annotations fixedbugs-576-a"])
+
+    def test_the_write_hook_tells_a_marked_case_not_canonical_its_suite_fails(self):
+        answer(self.tree, "annotations", 1, "FAIL annotations/fixedbugs-576-a\n  disagree\n")
+        code, said = self.written_case("tests/golden/full/fixedbugs-576-a.hero")
+        self.assertEqual(code, 2, said)
+        self.assertIn("marks and its expectation disagree", said)
+        self.assertNotIn("is not canonical", said)
+
+    def test_the_write_hook_still_tells_an_unmarked_case_or_a_program_not_canonical(self):
+        answer(self.tree, "annotations", 0, "  annotations (only plain): 1 passed, 0 failed\n")
+        code, said = self.written_case("tests/golden/check/plain.hero", marked=False)
+        self.assertEqual(code, 2, said)
+        self.assertIn("is not canonical", said)
+        code, said = self.written_case("tests/golden/run/prog.hero")
+        self.assertEqual(code, 2, said)
+        self.assertIn("is not canonical", said)
+
+
 class Growth(unittest.TestCase):
     """Defect 215: a written `selfhost/` module that might grow a text by `+`
     is asked of `layout` narrowed to it; one that cannot asks nothing."""

@@ -1,0 +1,21 @@
+# fixedbugs, defect 568, lane b18-guard, 2026-10-10 (panel 205's R3).
+#
+# SYMPTOM: a switch the C library reads once, at its first header
+# (`_GNU_SOURCE` at glibc's `features.h`, `_POSIX_C_SOURCE` at Darwin's
+# `sys/cdefs.h`), did nothing from a header of the program's own named by a
+# module's first group: the unit read `<stdint.h>` and `<math.h>` before any
+# group, and on Linux arm64 `sched_getcpu` was refused as undeclared. This
+# header says so itself, on every platform: it stops the build where either
+# was read before it.
+#
+# FIX: `heroes_runtime.h` spells its integer types from clang's builtins and
+# reads no header of the C library; a unit includes its groups' headers
+# first and the compiler's own after them, `hero_os.h` reading `<stdint.h>`
+# and `<math.h>` (`runtime/heroes_standard.h`), so a switch a module's first
+# group sets stands before every header of the library.
+
+extern "fixedbugs-568-the-first-group-s-header-is-read-before-the-c-library.h"
+    function answer() -> i64
+
+function main()
+    print(answer())

@@ -4,8 +4,13 @@
 # the program from a header that makes it a macro: the binding is the
 # header's, so the macro stands and `sqrt(x: 4.0)` is 8.0, as the header
 # says. A guard that gave every listed name back would have taken the root.
+#
+# **Corrected 2026-10-10, defect 568 (panel 205's R3)**: the header now
+# includes <math.h>, which the unit read before the groups until then, and the
+# group says `link "m"`: a module's unit holds a reference to each C function
+# it calls through a group (defect 562), so `sqrt` is libm's on Linux.
 
-extern "fixedbugs-361-a-bound-name-the-guard-holds-keeps-its-header-s-macro.h"
+extern "fixedbugs-361-a-bound-name-the-guard-holds-keeps-its-header-s-macro.h" link "m"
     function sqrt(x: f64) -> f64
 
 function main()

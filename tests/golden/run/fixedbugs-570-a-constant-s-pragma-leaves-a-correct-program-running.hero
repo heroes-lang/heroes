@@ -1,0 +1,21 @@
+# fixedbugs, defect 570, lane b18-guard, 2026-10-10 (panel 205's R1).
+#
+# The correct twin of `unsupported/fixedbugs-570-a-constant-s-pragma-*`: a
+# constant whose value holds a pragma is bound and read, and a lend from a
+# `@` name after its accessor is C's to write.
+
+extern "fixedbugs-570-a-constant-s-pragma-leaves-a-correct-program-running.h"
+    record Slot
+        nsap: u8[8]
+        id: i64
+    function slot_make() -> Slot
+    function slot_fill(p: ptr counted_by n lent, n: i64)
+    function slot_sum(p: ptr counted_by n lent, n: i64) -> i64
+    function abs(x: i32) -> i32
+    constant QUIET_FIVE: i32
+
+function main()
+    t: Slot @ slot_make()
+    slot_fill(p: t.nsap.ptr(), n: 8)
+    print(slot_sum(p: t.nsap.ptr(), n: 8))
+    print(abs(-QUIET_FIVE))

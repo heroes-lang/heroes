@@ -1,0 +1,343 @@
+# A name a group binds that its header defines as a macro whose expansion
+# holds a `_Pragma`, asked of clang before any unit compiles and refused
+# (design.md §4.19, §4.17; panel 205's R1, ratified 2026-10-10; defect 570).
+#
+# **A pragma outranks the command line from the line it stands on**, and a
+# `_Pragma` in a macro stands where the macro is expanded. The compiler raises
+# every check again after a group's header and at the probe region
+# (`emit/checks_raised.hero`), but a name it writes INSIDE a probe or a body
+# carries the pragma onto that very line: `#define my_abs _Pragma("clang
+# diagnostic ignored \"-Wsign-conversion\"") my_abs` turned the probe
+# `(void)(my_abs)(a0)` silent, and `my_abs(x: u32)` against `int my_abs(int)`
+# built and printed `5` (panel 205's compiler-engineer, `callee`). The same
+# held for a function-like macro at a call, a record's tag in a probe's
+# parameters and a field read in a body, each before a call's `const` lend
+# (the lane's shapes beside it). Raising the checks between the callee and its
+# first argument was built and refused by the sitting: it moved clang's column,
+# and every `ffi_parameter_type` lost the parameter it names.
+#
+# **So the question is asked of every name the compiler writes but a
+# constant's**, a function's and each releaser a mark names, a record's name
+# and tag and each field: the header's own text, then each name under
+# `#line 1 "hero-pragma <name>"`, written as the compiler writes it, `(name)`
+# and, for a function, `name(0, ...)` with its declared count, preprocessed
+# (`clang -E`) under the probe's own words. A `_Pragma` reached in the
+# expansion is printed as a `#pragma` line in the question's own file, which
+# is the answer: positive evidence, so a run that could not read the headers
+# answers nothing. A constant is written in an assertion and its accessor
+# alone, each followed by the checks raised again, so its value may hold one.
+#
+# Kept under everything the answer depends on, as a probe's dump is: a warm
+# build asks clang nothing.
+
+use ast
+use token
+use source
+use diag
+use bytes
+use emit/c_text
+use emit/externs as emit_externs
+use emit/macro_guard
+use cli/toolchain
+use cli/compiling
+use cli/probing
+use cli/process
+use cli/publish
+use cli/digest
+use cli/kept
+use cli/libraries
+use cli/read_back
+use cli/strings
+use parse
+
+constant PREFIX: str
+    "hero-pragma "
+
+# One name the compiler writes: what it is, the header its group named, the
+# span it is told at, and how many arguments the compiler calls it with, -1
+# for a name it never calls.
+record Asked
+    name: str
+    kind: str
+    header: str
+    span: token.Span
+    arity: i64
+
+# The diagnostics for every name of every list whose expansion holds a
+# `_Pragma`, each name told once, in the order the lists and their
+# declarations come.
+function told(t: toolchain.Toolchain, probings: [probing.Probing], s: source.Source, decls: [ast.Decl]) -> [diag.Diagnostic]
+    out: [diag.Diagnostic] @ []
+    seen: {str: bool} @ {}
+
+    for one in probings
+        if one.probe.is_err() || one.probe.must().read.is_err()
+            continue
+        asked = asked_of(s, decls, headers: one.headers)
+
+        if asked.len() == 0
+            continue
+        said = answers(t, probe: one.probe.must(), asked: asked)
+
+        for each in asked
+            if !said[each.name].is_err() && seen[each.name].is_err()
+                seen[each.name] @ true
+                out @ out.push(diagnostic(asked: each, pragma: said[each.name].must()))
+
+    return out
+
+# The names the compiler writes from the groups whose header is in
+# `headers`, the compiler's own headers' groups left out (their names are
+# the runtime's), each once, in declaration order.
+function asked_of(s: source.Source, decls: [ast.Decl], headers: [str]) -> [Asked]
+    wanted: {str: bool} @ {}
+
+    for header in headers
+        if !emit_externs.is_own(header)
+            wanted[header] @ true
+
+    out: [Asked] @ []
+    seen: {str: bool} @ {}
+
+    for decl in decls
+        found = macro_guard.header_of(decl)
+
+        if found.is_err()
+            continue
+        header = emit_externs.unquoted(s, span: found.must())
+
+        if wanted[header].is_err()
+            continue
+
+        match decl.kind
+            .function_decl fd =>
+                out @ with_name(
+                    out,
+                    @seen,
+                    s,
+                    span: decl.name,
+                    kind: "function",
+                    header: header,
+                    arity: fd.value.params.len()
+                )
+
+                for mark in [fd.value.owned_result, fd.value.acquires_result, fd.value.retains_result]
+                    if !mark.is_err()
+                        out @ with_words(out, @seen, s, span: mark.must(), header: header)
+
+                for param in fd.value.params
+                    for mark in [param.owned, param.acquires, param.transfers, param.retains]
+                        if !mark.is_err()
+                            out @ with_words(out, @seen, s, span: mark.must(), header: header)
+            .record_decl rec =>
+                out @ with_name(out, @seen, s, span: decl.name, kind: "type", header: header, arity: -1)
+
+                if !rec.tag.is_err()
+                    out @ with_name(out, @seen, s, span: rec.tag.must(), kind: "type", header: header, arity: -1)
+
+                for field in rec.fields
+                    out @ with_name(out, @seen, s, span: field.name, kind: "field", header: header, arity: -1)
+            .constant_decl | .variant_decl | .test_decl => continue
+
+    return out
+
+# `out` with the name `span` holds, where it is not asked already.
+function with_name(out: [Asked], @seen: {str: bool}, s: source.Source, span: token.Span, kind: str, header: str, arity: i64) -> [Asked]
+    name = source.span_text(s, span)
+
+    if !seen[name].is_err()
+        return out
+    seen[name] @ true
+    return out.push(Asked(name: name, kind: kind, header: header, span: span, arity: arity))
+
+# ORDER: by name, as `sort` orders a `str`, which the question unit's lines follow; `out` with each releaser a mark's span names, each called with one argument.
+function with_words(out: [Asked], @seen: {str: bool}, s: source.Source, span: token.Span, header: str) -> [Asked]
+    words: {str: bool} @ {}
+    macro_guard.words_into(@words, text: source.span_text(s, span))
+    grown: [Asked] @ out
+
+    for word in sort(keys(words))
+        if seen[word].is_err()
+            seen[word] @ true
+            grown @ grown.push(Asked(name: word, kind: "function", header: header, span: span, arity: 1))
+
+    return grown
+
+# The question unit: the headers, then each name as the compiler writes it,
+# under its own file name.
+function unit(headers: [str], asked: [Asked]) -> str
+    lines: [str] @ c_text.includes(headers)
+
+    for each in asked
+        lines @ lines.push(c_text.line_directive(at: 1, file: PREFIX + each.name))
+        lines @ lines.push("(" + each.name + ");")
+
+        if each.arity >= 0
+            zeros: [str] @ []
+            k: i64 @ 0
+
+            while k < each.arity
+                zeros @ zeros.push("0")
+                k @ k + 1
+
+            lines @ lines.push(each.name + "(" + zeros.join(", ") + ");")
+
+    return lines.join("\n") + "\n"
+
+# Each name whose expansion printed a `#pragma` line, with the first such
+# line, asked once and kept under what the answer depends on.
+function answers(t: toolchain.Toolchain, probe: compiling.Probe, asked: [Asked]) -> {str: str}
+    text = unit(headers: probe.headers, asked: asked)
+    key = digest.digest(
+        t.fingerprint + "|pragma|" + t.compiler_key + "|" + text + "|words:" + libraries.key_text(probe.words) + "|reads:" + probe.read.must() + "|" + t.runtime_key
+    )
+    dir = t.build + "/pragma-" + key
+    said_path = dir + "/said.txt"
+    known = kept.read(said_path)
+
+    if !known.is_err()
+        return read(known.must())
+    said = preprocessed(dir: dir, text: text, words: probe.words)
+
+    if said.is_err()
+        none: {str: str} = {}
+        return none
+    _ = kept.write(path: said_path, text: said.must()).is_err()
+    return read(said.must())
+
+# What clang's preprocessor wrote of the unit, or absent where it did not
+# start. A run that failed still wrote what it read: an answer is a line
+# under a question, never a silence.
+function preprocessed(dir: str, text: str, words: [str]) -> str?
+    process.mkdir_all(dir)?
+    path = dir + "/pragma-" + digest.digest(text) + ".c"
+    publish.write_whole(path: path, text: text, keyed: true)?
+    out = publish.private_name(dir + "/pragma-stdout.txt")
+    line = strings.with_all(list: ["clang", "-E"], more: words)
+    ran = process.run(program: "clang", words: line.push(path), out: out, err: process.discard())
+    said = read_back.words(out)
+    publish.discard(out)
+
+    if !ran.started
+        return fail(code: "failed", msg: "clang did not start for the question of a macro's pragma")
+    return said
+
+# Each question's first `#pragma` line, read from the preprocessed text: a
+# line marker `# <n> "<file>"` says whose lines follow, and a `#pragma` line
+# under a question's own file is that name's. Read by bytes, and only the
+# lines that open with `#`: the text is every header's, megabytes for some.
+function read(said: str) -> {str: str}
+    out: {str: str} @ {}
+    current: str @ ""
+    n = said.len()
+    at: i64 @ 0
+
+    while at < n
+        while at < n && (said[at] == 32 || said[at] == 9)
+            at @ at + 1
+
+        start = at
+
+        while at < n && said[at] != 10
+            at @ at + 1
+
+        end: i64 @ at
+
+        if end > start && said[end - 1] == 13
+            end @ end - 1
+        at @ at + 1
+
+        if end - start < 3 || said[start] != 35
+            continue
+        line = said.slice(from: start, to: end)
+
+        if line[1] == 32 && line[2] >= 48 && line[2] <= 57
+            current @ marked_file(line)
+        else if bytes.bytes_at(text: line, at: 0, needle: "#pragma ") && bytes.bytes_at(text: current, at: 0, needle: PREFIX)
+            name = current.slice(from: PREFIX.len(), to: current.len())
+
+            if out[name].is_err()
+                out[name] @ line
+
+    return out
+
+# The file a line marker names, between its first two quotes.
+function marked_file(line: str) -> str
+    at: i64 @ 0
+
+    while at < line.len() && line[at] != 34
+        at @ at + 1
+
+    from = at + 1
+    end: i64 @ from
+
+    while end < line.len() && line[end] != 34
+        end @ end + 1
+
+    if from >= line.len()
+        return ""
+    return line.slice(from: from, to: end)
+
+# The refusal, at the name's own declaration.
+function diagnostic(asked: Asked, pragma: str) -> diag.Diagnostic
+    where: str @ "where this program's C calls `" + asked.name + "`"
+
+    if asked.kind == "field"
+        where @ "where this program's C reads the field `" + asked.name + "`"
+    else if asked.kind == "type"
+        where @ "where this program's C names the type `" + asked.name + "`"
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "ffi_macro_name",
+        message: "`" + asked.header + "` defines `" + asked.name + "` as a macro whose expansion holds a `_Pragma`: " + where + ", the pragma changes how clang judges every line after it, the checks of this program's bindings among them",
+        span: asked.span
+    )
+    d.notes @ d.notes.push("clang read the header, and the expansion of `" + asked.name + "` runs `" + pragma + "`")
+    d.notes @ d.notes.push(
+        "a header of your own that includes `" + asked.header + "` and then writes `#undef " + asked.name + "`, named by this group instead, binds the header's own `" + asked.name + "` where it declares one"
+    )
+    return d
+
+## Tests
+
+# The question is written as the compiler writes each name, a function with
+# its declared count, under its own file name.
+test "each name is asked as the compiler writes it, under a file of its own"
+    text = "extern \"h.h\"\n    record S tag s_t\n        count: i64\n    function twice(x: i64, y: i64) -> i64\n    function make() -> cstr owned h_free\n    constant LIMIT: i64\n\nfunction main()\n    print(twice(x: LIMIT, y: 1))\n"
+    s = source.new_source(name: "t.hero", text: text)
+    parsed = parse_of(s)
+    asked = asked_of(s, parsed, headers: ["hero_os.h", "h.h"])
+    names: [str] @ []
+
+    for each in asked
+        names @ names.push(each.name + "/" + each.kind + "/" + each.arity.to_str())
+
+    assert names == ["S/type/-1", "s_t/type/-1", "count/field/-1", "twice/function/2", "make/function/0", "h_free/function/1"]
+    got = unit(headers: ["h.h"], asked: asked)
+    assert strings.holds(text: got, needle: "#line 1 \"hero-pragma twice\"\n(twice);\ntwice(0, 0);\n")
+    assert strings.holds(text: got, needle: "#line 1 \"hero-pragma count\"\n(count);\n#line")
+    assert strings.holds(text: got, needle: "make();\n")
+
+    # A header the groups do not name, and the compiler's own, are not asked.
+    assert asked_of(s, parsed, headers: ["hero_os.h", "other.h"]).len() == 0
+
+# The answer is a `#pragma` line under a question's own file, and nothing
+# else: the header's own pragmas, under its file, answer no name.
+test "a pragma line under a question's file is that name's answer"
+    said = "# 1 \"./h.h\" 1\n#pragma clang diagnostic ignored \"-Wsign-conversion\"\n# 1 \"hero-pragma my_abs\"\n(\n# 1 \"hero-pragma my_abs\"\n#pragma clang diagnostic ignored \"-Wsign-conversion\"\n# 1 \"hero-pragma my_abs\"\n my_abs)(0);\r\n# 1 \"hero-pragma fine\"\n7;\n"
+    got = read(said)
+    assert got["my_abs"].must() == "#pragma clang diagnostic ignored \"-Wsign-conversion\""
+    assert got["fine"].is_err()
+    assert got.len() == 1
+
+test "the refusal names the header, the name and the pragma it expands to"
+    text = "extern \"callee.h\"\n    function my_abs(x: u32) -> i32\n"
+    s = source.new_source(name: "t.hero", text: text)
+    asked = asked_of(s, parse_of(s), headers: ["callee.h"])
+    d = diagnostic(asked: asked[0], pragma: "#pragma clang diagnostic ignored \"-Wsign-conversion\"")
+    assert d.code == "ffi_macro_name"
+    assert d.message == "`callee.h` defines `my_abs` as a macro whose expansion holds a `_Pragma`: where this program's C calls `my_abs`, the pragma changes how clang judges every line after it, the checks of this program's bindings among them"
+    assert source.span_text(s, d.span) == "my_abs"
+    assert d.notes[0] == "clang read the header, and the expansion of `my_abs` runs `#pragma clang diagnostic ignored \"-Wsign-conversion\"`"
+
+function parse_of(s: source.Source) -> [ast.Decl]
+    return parse.parse_source(s).decls

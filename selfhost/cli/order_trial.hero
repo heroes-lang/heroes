@@ -1,0 +1,150 @@
+# One clang run of a unit's opening in an order it was not written in
+# (design.md §4.19; panel 204's R2 and R3, ratified 2026-10-10; defect 563).
+# A refused unit is asked, on the failure path alone, what another order of
+# its headers does: whether it compiles (`compiled`), and what clang's
+# preprocessor makes of it (`output`), so a note saying what a move would do
+# says what clang said and never what an argument predicts.
+#
+# The opening is the unit's own (`emit/decls.prelude`): `heroes_unit.h`, the
+# compiler's two seeds, then the groups' headers in their region and between
+# the guard's two lines, the checks raised again after them
+# (`emit/macro_guard.around`), then `heroes_standard.h`, so a header is read
+# after what every unit reads before it and its own code judged as the unit
+# judges it. Until lane b18-guard met the round (2026-10-10) it opened with
+# `heroes_runtime.h`, which reads `<stdint.h>` where `heroes_unit.h` has not
+# said otherwise, and with no region: a first group's switch was latched in
+# the trial and not in the unit (defect 568), and a header whose own code
+# holds a sign conversion compiled in the unit and in no trial (defect 569).
+
+use emit/c_text
+use emit/externs as emit_externs
+use emit/macro_guard
+use emit/ffi_lookup
+use cli/toolchain
+use cli/clang_first
+use cli/process
+use cli/publish
+use cli/files
+use cli/digest
+use cli/read_back
+use cli/strings
+
+# Whether the unit compiled, whether clang could be asked at all, its first
+# error where it refused, and all it said.
+record Ran
+    asked: bool
+    compiles: bool
+    refusal: str
+    said: str
+
+# The unit's opening with `headers` in this order, then `question`, a line of
+# C asked after them, or nothing.
+function opening(headers: [str], question: str) -> str
+    no_names: {str: bool} = {}
+    lines: [str] @ [macro_guard.FIRST_LINE]
+
+    for line in c_text.includes(emit_externs.SEEDS)
+        lines @ lines.push(line)
+
+    for line in macro_guard.around(c_text.includes(headers), bound: no_names)
+        lines @ lines.push(line)
+
+    lines @ lines.push(macro_guard.STANDARD_LINE)
+
+    if question != ""
+        lines @ lines.push(question)
+    return lines.join("\n") + "\n"
+
+# A unit's headers but the compiler's own, which its opening writes first.
+function theirs(headers: [str]) -> [str]
+    out: [str] @ []
+
+    for header in headers
+        if !emit_externs.is_own(header)
+            out @ out.push(header)
+
+    return out
+
+# `clang -fsyntax-only` of `text` under `words`, written where its bytes
+# name it, so a question asked again finds its unit.
+function compiled(t: toolchain.Toolchain, words: [str], text: str) -> Ran
+    unit = written(t, text: text)
+
+    if unit.is_err()
+        return Ran(asked: false, compiles: false, refusal: "", said: "")
+    return compiled_at(words: words, unit: unit.must(), err: t.build + "/order/order-stderr.txt")
+
+# The same of a text asked once and large, a whole program's
+# (`cli/one_file.hero`): written under a private name and thrown away after,
+# so no digest of its bytes is taken and no copy of it is kept (measured
+# 2026-10-10: keyed by its digest, the compiler's own 49 MB file took the
+# `--emit-c` that wrote it to 512.9 billion instructions, and under a private
+# name to 487.3). Its name ends `.tmp`, so clang is told it is C.
+function compiled_once(t: toolchain.Toolchain, words: [str], text: str) -> Ran
+    dir = t.build + "/order"
+
+    if process.mkdir_all(dir).is_err()
+        return Ran(asked: false, compiles: false, refusal: "", said: "")
+    unit = publish.private_name(dir + "/one-file.c")
+
+    if files.stage(staged: unit, text: text, like: "").is_err()
+        publish.discard(unit)
+        return Ran(asked: false, compiles: false, refusal: "", said: "")
+    ran = compiled_at(words: words, unit: unit, err: dir + "/one-file-stderr.txt")
+    publish.discard(unit)
+    return ran
+
+function compiled_at(words: [str], unit: str, err: str) -> Ran
+    unasked = Ran(asked: false, compiles: false, refusal: "", said: "")
+    said_at = publish.private_name(err)
+    line = strings.with_all(list: ["clang", "-fsyntax-only"], more: words)
+    ran = process.run(
+        program: "clang",
+        words: line.push("-x").push("c").push(unit),
+        out: process.discard(),
+        err: said_at
+    )
+    said = read_back.words(said_at)
+    publish.discard(said_at)
+
+    if !ran.started || said.is_err()
+        return unasked
+
+    if ran.code == 0
+        return Ran(asked: true, compiles: true, refusal: "", said: said.must())
+    first = clang_first.first_error(ffi_lookup.lines(text: said.must()))
+
+    if first.is_err()
+        return Ran(asked: true, compiles: false, refusal: "", said: said.must())
+    return Ran(asked: true, compiles: false, refusal: first.must().message, said: said.must())
+
+# What clang writes on stdout for `text` under `words` and `mode` (`-E -dM`,
+# say), absent where it could not or refused.
+function output(t: toolchain.Toolchain, words: [str], text: str, mode: [str]) -> str?
+    unit = written(t, text: text)?
+    out = publish.private_name(t.build + "/order/order-stdout.txt")
+    line = strings.with_all(list: strings.with_all(list: ["clang"], more: mode), more: words)
+    ran = process.run(program: "clang", words: line.push(unit), out: out, err: process.discard())
+    said = read_back.words(out)
+    publish.discard(out)
+
+    if !ran.started || ran.code != 0
+        return fail(code: "failed", msg: "clang did not preprocess the order")
+    return said
+
+# The unit written where its bytes name it.
+function written(t: toolchain.Toolchain, text: str) -> str?
+    dir = t.build + "/order"
+    process.mkdir_all(dir)?
+    unit = dir + "/order-" + digest.digest(text) + ".c"
+    publish.write_whole(path: unit, text: text, keyed: true)?
+    return ok(unit)
+
+## Tests
+
+# The text is the one a unit this compiler writes opens with, read off an
+# emitted unit (2026-10-10): the C library is read after the groups, and the
+# groups inside the region a unit judges a header's own code by.
+test "the opening is the unit's: heroes_unit.h, the seeds, the groups in their region, the checks raised, then the standard headers"
+    text = opening(["b.h", "a.h"], question: "int q;")
+    assert text == "#include \"heroes_unit.h\"\n#include <heroes_unit.h>\n#include <hero_os.h>\n#pragma clang diagnostic push\n#pragma clang diagnostic ignored \"-Wall\"\n#pragma clang diagnostic ignored \"-Wsign-conversion\"\n#pragma clang diagnostic error \"-Wreturn-type\"\n#pragma clang diagnostic error \"-Wuninitialized\"\n#pragma clang diagnostic error \"-Wconditional-uninitialized\"\n#include \"heroes_guard_open.h\"\n#include <b.h>\n#include <a.h>\n#include \"heroes_guard_close.h\"\n#pragma clang diagnostic pop\n#pragma clang diagnostic error \"-Wreturn-type\"\n#pragma clang diagnostic error \"-Wuninitialized\"\n#pragma clang diagnostic error \"-Wformat\"\n#pragma clang diagnostic error \"-Wconditional-uninitialized\"\n#pragma clang diagnostic error \"-Wshorten-64-to-32\"\n#pragma clang diagnostic error \"-Wsign-conversion\"\n#pragma clang diagnostic error \"-Wincompatible-pointer-types-discards-qualifiers\"\n#pragma clang diagnostic error \"-Wincompatible-pointer-types\"\n#pragma clang diagnostic error \"-Wmacro-redefined\"\n#pragma clang diagnostic error \"-Wint-conversion\"\n#pragma clang diagnostic error \"-Wimplicit-function-declaration\"\n#pragma clang diagnostic error \"-Wincompatible-function-pointer-types\"\n#pragma clang diagnostic ignored \"-Wdeprecated-declarations\"\n#include \"heroes_standard.h\"\nint q;\n"

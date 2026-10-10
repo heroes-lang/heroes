@@ -69,8 +69,10 @@ function fresh(said: str, @told: {str: bool}) -> str
     return kept.join("\n") + "\n"
 
 # `said` in diagnostics: a line that opens one starts it, a note goes on the
-# one above, an include line waits for the diagnostic it leads, and clang's
-# tally is no diagnostic's. A line before any diagnostic is one of its own.
+# one above, its own include lines with it (clang prints a note's since
+# panel 202's (g), `cli/flags.hero`), an include line waits for the
+# diagnostic it leads, and clang's tally is no diagnostic's. A line before
+# any diagnostic is one of its own.
 function diagnostics_of(said: str) -> [Said]
     out: [Said] @ []
     waiting: [str] @ []
@@ -82,7 +84,7 @@ function diagnostics_of(said: str) -> [Said]
             waiting @ waiting.push(line)
         else if is_tally(line)
             continue
-        else if opens(line) && !(open && waiting.len() == 0 && is_note(line))
+        else if opens(line) && !(open && is_note(line))
             if open
                 out @ out.push(current)
             current @ Said(chain: waiting, lines: [line], file: file_of(line))

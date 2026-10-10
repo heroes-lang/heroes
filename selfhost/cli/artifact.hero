@@ -58,14 +58,14 @@
 
 use source
 use emit
-use emit/externs as emit_externs
 use cli/io
 use cli/compile
 use cli/toolchain
-use cli/pointee
+use cli/probing
+use cli/compiling
+use cli/one_file
 use cli/pointee_ask
 use cli/header_types
-use cli/compiling
 use cli/publish
 
 # The artifact, written or printed, AFTER the build's own rounds have passed. A
@@ -76,10 +76,12 @@ use cli/publish
 # tag the header spells with `struct` in front — and `version` is the build's,
 # because `emit_maybe` stamps it. Both come from `cli/produce.hero`, which owns
 # the rounds; this file only applies their answer.
-function write_c(t: toolchain.Toolchain, options: compile.Options, art: compile.Artifact, s: source.Source, @answered: [pointee_ask.Answered], under: compiling.Compiling, struct_tags: {str: bool}, version: str) -> ()?
-    probe = compiling.probe(t.build, under: under, headers: emit_externs.headers(art.program, s, art.decls))
-    checked = pointee.check(t, art.program, art.checked, s, art.decls, answered: @answered, probe: probe)
-    checked?
+#
+# `probings` are the build's, each module's headers asked its own questions
+# (panel 202's C0, `cli/probing.hero`), their answers kept from the rounds.
+function write_c(t: toolchain.Toolchain, options: compile.Options, art: compile.Artifact, s: source.Source, @answered: [pointee_ask.Answered], planned: probing.Planned, under: compiling.Compiling, struct_tags: {str: bool}, version: str) -> ()?
+    checked = probing.check_all(t, art.program, art.checked, s, art.decls, planned.probings, answered: @answered)
+    checked.verdict?
 
     # **THE ARTIFACT IS THE C THAT COMPILED, NOT THE FIRST DRAFT** (defect 049,
     # closing panel 157 R1 the way it was written). Until 2026-09-17 this ran
@@ -101,8 +103,9 @@ function write_c(t: toolchain.Toolchain, options: compile.Options, art: compile.
     #
     # **What the rounds compiled is not this text** (defect 434; this said
     # *`emit_maybe` with the learned tags is exactly what `assemble.fused`
-    # compiles, so the bytes written are the bytes clang accepted*). Only
-    # `heroes test` compiles the fused unit (`assemble.fused`, `.tests_build`);
+    # compiles, so the bytes written are the bytes clang accepted*). No round
+    # compiles the fused unit since defect 560 (2026-10-10), `heroes test`'s
+    # included, which until then did (`assemble.fused`, `.tests_build`);
     # `--emit-c` is a program build, whose rounds compile one unit per module
     # (`assemble.per_module`), and the artifact is the same program rendered
     # whole, as one unit, under the same two answers every one of those units
@@ -120,6 +123,18 @@ function write_c(t: toolchain.Toolchain, options: compile.Options, art: compile.
 
     if struct_tags.len() > 0 || units.len() > 0
         text @ emit.emit_told(target: options.target, p: art.program, c: art.checked, s: s, decls: art.decls, version: version, text: true, struct_tags: struct_tags, lend_units: units).c
+
+    # **The one file is written only where it means the program the units
+    # build** (defect 453, panel 202's R3; `cli/one_file.hero`): where a
+    # module's unit reads other headers than the one file, clang is asked
+    # whether the file compiles and whether each binding means in it what it
+    # means in its module's unit, and a refusal is told at exit 1 with nothing
+    # written.
+    refusal = one_file.refused(t, under, art.program, s, art.decls, text: text, plans: planned.plans)
+
+    if refusal.len() > 0
+        _ = compile.stage(refusal, s).is_err()
+        return fail(code: "diagnostics", msg: "the one file would not mean the program the units build")
 
     if options.output.is_err()
         io.print_artifact(text: text)

@@ -1,0 +1,67 @@
+# A function the linker found no definition of where its header defines it
+# only `inline`, told truly (design.md §4.19, §4.17; panel 202's R2,
+# ratified 2026-10-10; defect 562).
+#
+# **A C99 `inline` definition in a header provides no external definition**
+# (C11 6.7.4p7): a function every declaration of which is `inline` and none
+# `extern` has one only where some file defines it otherwise, a library or
+# one unit. `build` was told *the linker cannot find `twice`, and no group in
+# this program says which library has it*, false where the header defines
+# it, and `run` built and printed a value at `-O2`. Since this defect each
+# module's unit holds a reference to each function it calls
+# (`emit/extern_refs.hero`), so both levels are refused alike, and the
+# refusal is read here: an undefined symbol a group binds whose header list
+# gives it only a C99 inline definition (`cli/defined_twice.inline_only`) is
+# told what C wants and what the author may do, on the binding.
+
+use ast
+use source
+use diag
+use emit/ffi_lookup
+use emit/ffi_build
+use emit/clang_place
+use cli/toolchain
+use cli/probing
+use cli/defined_twice
+use cli/two_ways_ask
+
+# The diagnostics for every undefined symbol the linker named that a group
+# binds and the header lists of `asking` give only an inline definition of.
+function told(message: str, s: source.Source, decls: [ast.Decl], t: toolchain.Toolchain, asking: [probing.Probing]) -> [diag.Diagnostic]
+    out: [diag.Diagnostic] @ []
+    seen: {str: bool} @ {}
+
+    for line in ffi_lookup.lines(text: message)
+        name = ffi_build.undefined_symbol(line)
+
+        if name.is_err() || !seen[name.must()].is_err()
+            continue
+        seen[name.must()] @ true
+        bound = ffi_lookup.declaration(s, decls, name: name.must())
+
+        if bound.is_err() || bound.must().is_constant
+            continue
+
+        for one in asking
+            if !one.probe.is_err() && !one.probe.must().read.is_err() && !defined_twice.inline_only(t, one.probe.must())[name.must()].is_err()
+                answer = two_ways_ask.answers(t, one.probe.must(), names: [name.must()])[name.must()]
+                out @ out.push(diagnostic(name: name.must(), bound: bound.must(), answer: answer))
+                break
+
+    return out
+
+function diagnostic(name: str, bound: ffi_lookup.Declared, answer: two_ways_ask.Answer?) -> diag.Diagnostic
+    place: str @ "`" + bound.header + "`"
+
+    if !answer.is_err() && answer.must().row > 0
+        found = answer.must()
+        place @ "`" + clang_place.shown(path: found.path, directory: clang_place.found_in(path: found.path, spelled: bound.header)) + "` line " + found.row.to_str()
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "ffi_missing_link",
+        message: "`" + name + "` is defined only `inline` in " + place + ", and nothing else defines it: C wants one external definition of it in the program, which a call reaches wherever it is not inlined, and an `inline` definition alone in a header gives none",
+        span: bound.span
+    )
+    d.notes @ d.notes.push(
+        "every unit that calls it references the external definition, at `-O0` and `-O2` alike, so the link refuses it at both: write `" + name + "` `static inline` in the header, so each unit has its own, or link the library that defines it, `extern \"" + bound.header + "\" link \"<library>\"`"
+    )
+    return d

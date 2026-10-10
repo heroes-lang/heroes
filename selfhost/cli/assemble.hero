@@ -1,5 +1,8 @@
-# One round of turning an emitted program into a binary: the pointee check,
-# then the fused unit or one translation unit per module, then the link.
+# The units of one round and their link: one translation unit per module,
+# then the link, for `build`, `run` and, since defect 560 (2026-10-10),
+# `heroes test`, whose fused unit computed or refused another program than
+# `build`. The round that asks the headers before them is
+# `cli/rounds.hero`'s, since panel 202 asks each module's apart.
 #
 # Split out of `cli/produce.hero` on 2026-09-15 (defect 037, panel 152 R1)
 # because a round can now be asked for TWICE. The emitter writes a handle's tag
@@ -29,16 +32,13 @@ use cli/compile
 use cli/toolchain
 use cli/units
 use cli/link
-use cli/pointee
-use cli/pointee_ask
-use cli/header_types
-use cli/layout
+use cli/probing
 use cli/compiling
-use emit
 use emit/unit
 use emit/members
-use emit/externs as emit_externs
 use emit/lend_local
+use emit/header_packages
+use cli/libraries
 
 # What one build has settled before any round runs. Where the binary lands
 # is not among it: under `build/` that is named by the link line, which a
@@ -46,7 +46,6 @@ use emit/lend_local
 record Site
     object: str
     output: str?
-    is_tests: bool
     # Whether the round LINKS after it compiles. `--emit-c` says no (defect
     # 049, 2026-09-17): a tag's spelling is learned at the compile, where clang
     # says *must use 'struct' tag*, and a module with no `main` — every
@@ -57,84 +56,46 @@ record Site
     source_dir: str
     link_names: [str]
     package_flags: [str]
+
+    # Each package's own words: a unit is compiled with the words of the
+    # packages named by the groups whose headers it reads (panel 205's R3,
+    # defect 572), the link with every package's.
+    package_words: {str: [str]}
+
+    # Each group's header and the packages its groups name, asked once
+    # (`header_packages.by_header`), which a unit's words are read from.
+    by_header: {str: [str]}
     version: str
 
 # What a round came back with: the verdict, and EVERY clang refusal it met and
 # not only the first. A program of several modules may need `struct` on a tag in
 # each, and every dirty TU is compiled before any verdict (panel 093 R5), so one
-# round can learn them all and the second is the last.
+# round can learn them all and the second is the last. `modules` are those
+# whose check or unit the verdict is (`cli/header_ask.hero` asks their headers).
 record Round
     verdict: ()?
     refusals: [str]
     binary: str
+    modules: [str]
 
-# `told` is what clang said that this build has printed, across its rounds
-# (defect 327, `cli/clang_told.hero`): the second round compiles again what
-# the first did, and replays it where it is warm. `probe` is the build's
-# (`probe_of`), the same for every round.
-function round(t: toolchain.Toolchain, options: compile.Options, art: compile.Artifact, s: source.Source, site: Site, @answered: [pointee_ask.Answered], probe: compiling.Probe, struct_tags: {str: bool}, @told: {str: bool}) -> Round
-    # What the extern out-parameters point at, asked of the header before
-    # any unit compiles (panel 103): the width and sign of a numeric `@`
-    # against the header's own type. A failure here is the AUTHOR's, and it
-    # rides the same mapping a clang failure does — `emit/ffi.hero` reads the
-    # assertion's marker back into the parameter's diagnostic.
-    checked = pointee.check(t, art.program, art.checked, s, art.decls, answered: @answered, probe: probe)
+# What the checks hand the units: each counted parameter's unit, the probes'
+# digests of what they read (each round's memo starts from them, defect 416),
+# and a pointee dump that did not compile, refused once the units compile and
+# before anything links (`cli/pointee.hero`).
+record Lent
+    units: {str: str}
+    digests: {str: str}
+    unread: ()?
+    unread_modules: [str]
 
-    if checked.is_err()
-        return Round(verdict: checked, refusals: messages_of(checked), binary: "")
-
-    # The header's layout of every group record (panel 186): a field left
-    # out, and a field that lies in a union where the program builds or
-    # compares the record. Its failure rides the same mapping.
-    laid = layout.check(t, art.program, art.checked, s, art.decls, probe: probe)
-
-    if laid.is_err()
-        return Round(verdict: laid, refusals: messages_of(laid), binary: "")
-
-    # The unit each counted parameter's count is compared in, read from the
-    # header by the check above (panel 194's R7): every unit is emitted with
-    # it, so the comparison is in what C counts and never in bytes alone.
-    counted = header_types.lend_units(answered)
-
-    if site.is_tests
-        return fused(
-            t,
-            options,
-            art,
-            s,
-            site,
-            struct_tags: struct_tags,
-            lend_units: counted,
-            digests: probe.digests,
-            told: @told
-        )
-    return per_module(
-        t,
-        options,
-        art,
-        s,
-        site,
-        struct_tags: struct_tags,
-        lend_units: counted,
-        digests: probe.digests,
-        told: @told
-    )
-
-# What both checks ask with, asked of clang once per BUILD and not per round
-# (defect 416, 2026-10-06): the probe's words and what the program's headers
-# resolve to under them (`cli/compiling`), every one of them digested. It is a
-# function of the build's words and headers, which no round changes, and it
-# was asked again by each. Its digests also start each round's own memo
-# (`fused`, `per_module`), where every unit asked them again of the same
-# headers. Measured 2026-10-06, a warm `heroes run`, instructions retired:
-# `run/fixedbugs-a-tag-that-needs-struct`, two rounds, 3.75 billion before
-# and 2.27 after; a one-round `print(1)`, 2.58 and 2.09.
-function probe_of(t: toolchain.Toolchain, options: compile.Options, art: compile.Artifact, s: source.Source, site: Site) -> compiling.Probe
-    return compiling.probe(
-        t.build,
-        under: compiled_under(t, options, site),
-        headers: emit_externs.headers(art.program, s, art.decls)
-    )
+# The verdict of a round whose units compiled, before its link: a pointee dump
+# that did not compile is its refusal, told as clang's words, which `#line`
+# put on the declaration each question is asked of.
+function unread_round(lent: Lent) -> Round?
+    if !lent.unread.is_err()
+        return fail(code: "none", msg: "every dump compiled")
+    refused: ()? = fail(code: "clang", msg: failure_message(lent.unread))
+    return ok(Round(verdict: refused, refusals: messages_of(refused), binary: "", modules: lent.unread_modules))
 
 # What every probe of this build compiles the program's headers under
 # (`cli/compiling`): the level, the sanitizers, the `--include`
@@ -152,79 +113,56 @@ function compiled_under(t: toolchain.Toolchain, options: compile.Options, site: 
         source_dir: site.source_dir
     )
 
-# A test binary keeps the fused unit: `heroes test` compiles once and runs per
-# block, and the fused path is the artifact path the blessed emissions pin. The
-# text is the pipeline's own on the first round; a round that carries a learned
-# tag, or a counted parameter's unit, emits again, because both are in the text.
-#
-# **It is compiled as a translation unit and linked as one** (defect 134): it
-# was written in place under a directory keyed on the SOURCE, `build/<hash>/`,
-# so the second round's text went over the first's under one name while
-# another build's clang read it, and its object and binary were staged under
-# one name each. Through `units.tu_object` the text names its own directory
-# and the object is cached like every other, a warm `heroes test` included.
-function fused(t: toolchain.Toolchain, options: compile.Options, art: compile.Artifact, s: source.Source, site: Site, struct_tags: {str: bool}, lend_units: {str: str}, digests: {str: str}, @told: {str: bool}) -> Round
-    none: [str] = []
-    text: str @ art.c
-
-    if struct_tags.len() > 0 || lend_units.len() > 0
-        text @ emit.emit_told(target: options.target, p: art.program, c: art.checked, s: s, decls: art.decls, version: site.version, text: true, struct_tags: struct_tags, lend_units: lend_units).c
-    memo: {str: str} @ digests
-    made = units.tu_object(
-        t,
-        module: module_names.module_of(s.name),
-        tu_text: text,
-        level: options.level,
-        sanitize: options.sanitize,
-        search: compile.search_key(headers_from: options.headers_from, library: options.library),
-        package_flags: site.package_flags,
-        source_dir: site.source_dir,
-        search_include: options.headers_from,
-        @memo,
-        @told
+# The package words one module's unit compiles under: those of the packages
+# named by the groups whose headers it reads, in their written order (panel
+# 205's R3, defect 572; `emit/header_packages.hero`). A package's `-D`
+# reached every unit until then, so a module binding `wcwidth` from
+# `wchar.h` was told *`wchar.h` declares no `wcwidth`* unless `main` named
+# `ncursesw`, whose `.pc` answers `-D_XOPEN_SOURCE=600`, and another module's
+# package decided its verdict.
+function unit_words(site: Site, headers: [str]) -> [str]
+    return libraries.words_of(
+        site.package_words,
+        packages: header_packages.of(site.by_header, listed: headers)
     )
-
-    if made.is_err()
-        return Round(verdict: carry_failure(made), refusals: [failure_of(made)], binary: "")
-
-    # Compile only, for the reason `Site.link` gives.
-    if !site.link
-        return Round(verdict: ok(), refusals: none, binary: "")
-    return linked_round(t, options, site, objects: [site.object, made.must()], module: module_names.module_of(s.name))
 
 # One .c per module (panel 093): each TU compiled to its own cached object,
 # every dirty TU before any verdict (R5), one link over all of them re-run
 # every build.
-function per_module(t: toolchain.Toolchain, options: compile.Options, art: compile.Artifact, s: source.Source, site: Site, struct_tags: {str: bool}, lend_units: {str: str}, digests: {str: str}, @told: {str: bool}) -> Round
+function per_module(t: toolchain.Toolchain, options: compile.Options, art: compile.Artifact, s: source.Source, site: Site, planned: probing.Planned, struct_tags: {str: bool}, lent: Lent, @told: {str: bool}) -> Round
     root = module_names.module_of(s.name)
     objects: [str] @ [site.object]
     stopped: ()? @ ok()
+    stopped_in: [str] @ []
     refusals: [str] @ []
 
-    # The whole-program tables, built once for the whole round rather than
-    # once per TU. They are functions of the program and of `struct_tags`,
-    # so 157 modules used to buy 157 identical answers — and the arena walk
-    # and the content hashing behind them is what made the per-module
-    # self-build take longer than the fused one.
-    whole = members.whole_of(
+    # The whole-program tables, built once for the whole BUILD rather than
+    # once per TU (`cli/probing.hero`); a round renames only what it learned,
+    # a tag and each counted parameter's unit. 157 modules used to buy 157
+    # identical answers — and the arena walk and the content hashing behind
+    # them is what made the per-module self-build take longer than the fused
+    # one.
+    whole = members.retold(
+        planned.whole,
         art.program,
         c: art.checked,
         s: s,
         decls: art.decls,
         struct_tags: struct_tags,
-        lend_units: lend_local.with_flows(lend_units, art.program, art.checked)
+        lend_units: lend_local.with_flows(lent.units, art.program, art.checked)
     )
 
     # One build's answers about files on disk. Every TU asks whether the
     # headers it read still say the same thing, and 157 of them share
     # almost all of those headers — so the map is threaded through the loop
-    # rather than rebuilt per unit. It starts from the probe's own digests
+    # rather than rebuilt per unit. It starts from the probes' own digests
     # (defect 416), the same build's answers about the same headers.
-    memo: {str: str} @ digests
+    memo: {str: str} @ lent.digests
 
-    for component in units.components(s)
+    for plan in planned.plans
+        component = plan.module
         tu_text = unit.unit(
-            module: component,
+            plan: plan,
             p: art.program,
             c: art.checked,
             s: s,
@@ -240,7 +178,7 @@ function per_module(t: toolchain.Toolchain, options: compile.Options, art: compi
             level: options.level,
             sanitize: options.sanitize,
             search: compile.search_key(headers_from: options.headers_from, library: options.library),
-            package_flags: site.package_flags,
+            package_flags: unit_words(site, headers: plan.headers),
             source_dir: site.source_dir,
             search_include: options.headers_from,
             @memo,
@@ -254,21 +192,34 @@ function per_module(t: toolchain.Toolchain, options: compile.Options, art: compi
             # for what they may teach about a tag.
             if !stopped.is_err()
                 stopped @ carry_failure(made)
+                stopped_in @ [component]
         else
             objects @ objects.push(made.must())
 
     if stopped.is_err()
-        return Round(verdict: stopped, refusals: refusals, binary: "")
+        return Round(verdict: stopped, refusals: refusals, binary: "", modules: stopped_in)
+    unread = unread_round(lent)
+
+    if !unread.is_err()
+        return unread.must()
 
     # Every TU compiled and none refused: for a build that does not link, that
     # IS the verdict, and the refusals it met are what a tag round reads.
     if !site.link
-        return Round(verdict: ok(), refusals: refusals, binary: "")
-    return linked_round(t, options, site, objects: objects, module: root)
+        return Round(verdict: ok(), refusals: refusals, binary: "", modules: [])
+    return linked_round(
+        t,
+        options,
+        site,
+        objects: objects,
+        module: root,
+        modules: probing.every_module(planned.probings)
+    )
 
 # The link over a round's objects, and the round it makes: its verdict, the
-# refusal that verdict is, and where the binary landed.
-function linked_round(t: toolchain.Toolchain, options: compile.Options, site: Site, objects: [str], module: str) -> Round
+# refusal that verdict is, and where the binary landed. A link's refusal is
+# no one unit's, so `modules` are every one.
+function linked_round(t: toolchain.Toolchain, options: compile.Options, site: Site, objects: [str], module: str, modules: [str]) -> Round
     linked = link.link_objects(
         t,
         objects: objects,
@@ -280,7 +231,12 @@ function linked_round(t: toolchain.Toolchain, options: compile.Options, site: Si
         package_flags: site.package_flags,
         link_names: site.link_names
     )
-    return Round(verdict: carry_failure(linked), refusals: refusals_of(linked), binary: linked.default(""))
+    return Round(
+        verdict: carry_failure(linked),
+        refusals: refusals_of(linked),
+        binary: linked.default(""),
+        modules: modules
+    )
 
 # The message of a failed `()?`, as the one-element list a round's refusals
 # are; empty for a verdict that is not a failure.
@@ -288,6 +244,11 @@ function messages_of(verdict: ()?) -> [str]
     match verdict
         .ok    => return []
         .err e => return [e.msg]
+
+function failure_message(failed: ()?) -> str
+    match failed
+        .ok    => return ""
+        .err e => return e.msg
 
 # A fallible path's refusal as the one-element list a round's refusals are;
 # empty for a path that came back.

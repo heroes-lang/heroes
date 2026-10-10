@@ -1,0 +1,57 @@
+# An empty literal written as the whole value of a binding with no
+# annotation, `counts = {}` (defect 574; design.md §4.5: an empty literal
+# takes its type from the context, and an unannotated binding gives none).
+#
+# The walk refuses the literal where it stands, and its guess is the one for
+# any position, *bind it first with its type and use the name here*, since
+# `print({})` has no binding to annotate. Where the position IS a binding, the
+# guess annotates that binding under the name the program gave it. Asked of
+# the value in hand: its own kind and its own span, and only a `cannot_infer`
+# said at exactly that span is told again; a literal nested inside the value,
+# `ys = [{}]`, is no binding's whole value and keeps the general guess.
+
+use token
+use diag
+use ast
+use source
+use check/state
+use contextless_errors
+
+# Tells again, since `from`, what the walk said of the value `value` bound to
+# `name`.
+function retell(@c: state.Checker, a: ast.Ast, s: source.Source, from: i64, value: i64, name: token.Span)
+    written: str @ ""
+    literal: str @ ""
+
+    match a.exprs[value].kind
+        .array items =>
+            if items.elements.len() == 0
+                written @ "[i64]"
+                literal @ "[]"
+        .map entries =>
+            if entries.entries.len() == 0
+                written @ "{str: i64}"
+                literal @ "{}"
+        .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit | .null_ptr => return
+        .name | .hole | .unary | .binary | .field | .field_name | .index | .call       => return
+        .method | .variant_case | .try_expr | .if_expr | .match_expr | .error          => return
+
+    if written == ""
+        return
+    span = a.exprs[value].span
+    k: i64 @ from
+
+    while k < c.out.diagnostics.len()
+        d = c.out.diagnostics[k]
+
+        if d.code == "cannot_infer" && d.span.start == span.start && d.span.end == span.end
+            replace(
+                @c.out.diagnostics,
+                at: k,
+                d: contextless_errors.annotated(d, name: source.span_text(s, name), written: written, literal: literal)
+            )
+        k @ k + 1
+
+# Lent, so the list is written in place (defect 350's shape).
+function replace(@said: [diag.Diagnostic], at: i64, d: diag.Diagnostic)
+    said[at] @ d

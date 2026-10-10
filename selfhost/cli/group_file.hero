@@ -1,0 +1,87 @@
+# Which group a file clang names is the header of, and which files are the
+# compiler's own (design.md §4.19; CLAUDE.md §7's named exception; defects
+# 360, 538 and 550). Split out of `cli/header_refused.hero` on 2026-10-10,
+# when reading the includes clang prints above a note (panel 202's (g)) took
+# that file past §11's 300 lines: that file tells a refused header, and this
+# finds whose header a path is.
+
+use source
+use ast
+use token
+use emit/clang_place
+use emit/clang_name
+use emit/externs as emit_externs
+use cli/strings
+
+# The group a file of the stack is the header of: the header's string on the
+# group's `extern` line, which the diagnostic points at, and the header as the
+# group wrote it.
+record Group
+    span: token.Span
+    header: str
+
+# Whether a file clang names is the compiler's: under the runtime's directory
+# or the build's, as clang was given them, either separator read as `/`.
+function compilers(path: str, runtime: str, build: str) -> bool
+    return beneath(path: path, dir: runtime) || beneath(path: path, dir: build)
+
+function beneath(path: str, dir: str) -> bool
+    p = plain(path)
+    d = plain(dir)
+
+    if d.len() == 0
+        return false
+    return strings.starts_with(text: p, prefix: d + "/")
+
+# A path slashed, without a leading `./`, which clang writes where it was
+# given the directory `.`.
+function plain(path: str) -> str
+    p = clang_place.slashed(path)
+
+    if strings.starts_with(text: p, prefix: "./")
+        return p.slice(from: 2, to: p.len())
+    return p
+
+# The group whose header is the file at `path`, spelled every way clang's
+# path allows, longest first.
+function group_of(s: source.Source, decls: [ast.Decl], path: str) -> Group?
+    for spelled in clang_place.spellings(path)
+        for decl in decls
+            named: token.Span? @ fail(code: "none", msg: "no header")
+
+            match decl.kind
+                .function_decl fd          => named @ fd.value.header
+                .constant_decl k           => named @ k.header
+                .record_decl rec           => named @ rec.header
+                .variant_decl | .test_decl => continue
+
+            if named.is_err()
+                continue
+            header = emit_externs.unquoted(s, span: named.must())
+
+            if clang_name.printed_as(printed: spelled, value: header)
+                return ok(Group(span: named.must(), header: header))
+
+    return fail(code: "none", msg: "no group's header is this file")
+
+# The group a note's file arrives through, and the directory its header was
+# found in: the innermost file of the note's own includes a group names
+# (`clang_place.stack`).
+record Reached
+    group: Group
+    directory: str
+
+function arriving(stderr: str, row: str, s: source.Source, decls: [ast.Decl]) -> Reached?
+    steps = clang_place.stack(stderr: stderr, line: row)
+    at: i64 @ steps.len() - 1
+
+    while at >= 0
+        found = group_of(s, decls, path: steps[at].path)
+
+        if !found.is_err()
+            return ok(
+                Reached(group: found.must(), directory: clang_place.found_in(path: steps[at].path, spelled: found.must().header))
+            )
+        at @ at - 1
+
+    return fail(code: "none", msg: "no group's header reaches the note")

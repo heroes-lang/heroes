@@ -20,21 +20,56 @@ use cli/compiling
 use cli/strings
 use cli/read_back
 use emit/ffi_asked
+use emit/ffi_answer
+use cli/probing
+use cli/switch_ask
+use cli/units
 use emit/ffi_lookup
 use cli/input
 use library_source
 
-# Ask, once, under the words every probe compiles under
-# (`compiling.probe_words`). `-ferror-limit=0` because every question that
+# Ask, once per unit's headers, under the words its probe compiles under
+# (`compiling.probe_words` of its own packages, defect 572). `-ferror-limit=0` because every question that
 # answers is an error line, and clang stops at twenty by default;
 # `-fno-caret-diagnostics` because a line of the unit echoed under its answer
 # is nothing a reader should be handed. `struct_tags` is what the rounds
 # learned, so a call the unit makes spells a handle as theirs did.
-function ask(t: toolchain.Toolchain, art: compile.Artifact, s: source.Source, under: compiling.Compiling, struct_tags: {str: bool}) -> ffi_asked.Asked
+#
+# **Each of `asking` is asked apart, its own modules' names of its own
+# headers** (panel 202's C0, defect 559): a module's unit reads its own
+# groups' headers, so a question asked of every header at once is asked of a
+# unit no build compiles, and two headers each module reads alone did not
+# compile together there. The answers are one (`emit/ffi_answer.merged`), the
+# first asked first.
+function ask(t: toolchain.Toolchain, art: compile.Artifact, s: source.Source, struct_tags: {str: bool}, asking: [probing.Probing]) -> ffi_asked.Asked
+    out: ffi_asked.Asked @ ffi_asked.nothing()
+
+    for one in asking
+        text = ffi_asked.unit(
+            one.program,
+            s,
+            art.decls,
+            art.checked,
+            struct_tags: struct_tags,
+            headers: one.headers,
+            records: ok(one.records)
+        )
+        answer: ffi_asked.Asked @ asked_of(t, text: text, under: one.under)
+
+        # And a name the headers declare only under a switch of the C
+        # library (`cli/switch_ask.hero`, defect 568).
+        answer.switched @ switch_ask.switched(t, under: one.under, one.program, s, art.decls, headers: one.headers)
+        out @ ffi_answer.merged(first: out, then: answer)
+
+    return out
+
+# One unit's answer: nothing where it could not be written or clang could
+# not start.
+function asked_of(t: toolchain.Toolchain, text: str, under: compiling.Compiling) -> ffi_asked.Asked
     unit = publish.private_name(t.build + "/header-ask") + ".c"
     err = publish.private_name(t.build + "/header-ask-stderr.txt")
 
-    if write_file(path: unit, text: ffi_asked.unit(art.program, s, art.decls, art.checked, struct_tags: struct_tags)).is_err()
+    if write_file(path: unit, text: text).is_err()
         return ffi_asked.nothing()
     line = strings.with_all(
         list: ["clang", "-fsyntax-only", "-ferror-limit=0", "-fno-caret-diagnostics"],
@@ -51,9 +86,27 @@ function ask(t: toolchain.Toolchain, art: compile.Artifact, s: source.Source, un
 
     if !ran.started || said.is_err()
         return ffi_asked.nothing()
-    return ffi_asked.read(said.must())
+    return ffi_answer.read(said.must())
 
 ## Tests
+
+# The question every module's headers are asked, as a refused round of the
+# program's own build would ask them all: its plans under `under`.
+function asked_all(t: toolchain.Toolchain, art: compile.Artifact, s: source.Source, under: compiling.Compiling, struct_tags: {str: bool}) -> ffi_asked.Asked
+    no_words: {str: [str]} = {}
+    planned = probing.planned(
+        t,
+        under: under,
+        art.program,
+        art.checked,
+        s,
+        art.decls,
+        components: units.components(s),
+        target: .program_build,
+        package_words: no_words,
+        by_header: no_words
+    )
+    return ask(t, art, s, struct_tags: struct_tags, asking: planned.probings)
 
 # The defect's own declaration, asked of the real `errno.h`: what is said
 # again lands on the declaration's line, and `errno` is no value. `BUFSIZ`,
@@ -77,7 +130,7 @@ test "a refused round's question is asked of the real header (defect 152)"
     art = compile.to_unit(s, options, version: "0.0.0-port").must()
     t = toolchain.locate_toolchain(hint: "", fingerprint: "port-header-ask").must()
     no_tags: {str: bool} = {}
-    got = ask(
+    got = asked_all(
         t,
         art,
         s,
@@ -122,7 +175,7 @@ test "a refused round's questions are asked under the build's level and sanitize
     art = compile.to_unit(s, options, version: "0.0.0-port").must()
     t = toolchain.locate_toolchain(hint: "", fingerprint: "port-header-ask").must()
     no_tags: {str: bool} = {}
-    plain = ask(
+    plain = asked_all(
         t,
         art,
         s,
@@ -145,7 +198,7 @@ test "a refused round's questions are asked under the build's level and sanitize
             runtime: t.runtime,
             source_dir: dir
         )
-        read_so = ask(t, art, s, under: under, struct_tags: no_tags)
+        read_so = asked_all(t, art, s, under: under, struct_tags: no_tags)
         assert !read_so.macros["thing"].is_err()
         assert !read_so.values["thing"].is_err()
 
@@ -179,7 +232,7 @@ test "a refused round's question names the type the header gives a result and a 
     art = compile.to_unit(s, options, version: "0.0.0-port").must()
     t = toolchain.locate_toolchain(hint: "", fingerprint: "port-header-ask").must()
     no_tags: {str: bool} = {}
-    got = ask(
+    got = asked_all(
         t,
         art,
         s,
