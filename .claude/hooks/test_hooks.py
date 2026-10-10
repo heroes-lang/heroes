@@ -1802,6 +1802,35 @@ class NotCanonicalOnPurpose(unittest.TestCase):
         self.assertIsNotNone(said)
         self.assertIn("tests/golden/check/fixedbugs-576-a.hero is not canonical", said)
 
+    # The write-time hook, the same rule through `marks.held_to_marks`: it
+    # told 576's case *not canonical* when it was written.
+    def written_case(self, rel, marked=True):
+        write(os.path.join(self.tree, rel[: -len(".hero")] + ".expected"), "x.hero:1:9: error[int_out_of_range]: ...\n")
+        text = "x: i8 @ -(-128) UNCANONICAL" + ("  #~ int_out_of_range" if marked else "") + "\n"
+        return written(self.tree, write(os.path.join(self.tree, rel), text))
+
+    def test_the_write_hook_judges_a_marked_case_not_canonical_by_its_marks(self):
+        answer(self.tree, "annotations", 0, "  annotations (only fixedbugs-576-a): 1 passed, 0 failed\n")
+        code, said = self.written_case("tests/golden/check/fixedbugs-576-a.hero")
+        self.assertEqual((code, said), (0, ""))
+        self.assertEqual(runs(self.tree), ["annotations fixedbugs-576-a"])
+
+    def test_the_write_hook_tells_a_marked_case_not_canonical_its_suite_fails(self):
+        answer(self.tree, "annotations", 1, "FAIL annotations/fixedbugs-576-a\n  disagree\n")
+        code, said = self.written_case("tests/golden/full/fixedbugs-576-a.hero")
+        self.assertEqual(code, 2, said)
+        self.assertIn("marks and its expectation disagree", said)
+        self.assertNotIn("is not canonical", said)
+
+    def test_the_write_hook_still_tells_an_unmarked_case_or_a_program_not_canonical(self):
+        answer(self.tree, "annotations", 0, "  annotations (only plain): 1 passed, 0 failed\n")
+        code, said = self.written_case("tests/golden/check/plain.hero", marked=False)
+        self.assertEqual(code, 2, said)
+        self.assertIn("is not canonical", said)
+        code, said = self.written_case("tests/golden/run/prog.hero")
+        self.assertEqual(code, 2, said)
+        self.assertIn("is not canonical", said)
+
 
 class Growth(unittest.TestCase):
     """Defect 215: a written `selfhost/` module that might grow a text by `+`
