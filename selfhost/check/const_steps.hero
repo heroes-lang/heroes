@@ -1,11 +1,12 @@
-# A constant's written body: a step of it that aborts is a compile error,
-# wherever it is written in the body and whether or not the constant is read
-# (panel 206 R1, ratified 2026-10-10; spec § 4; design.md §4.2). The emitted C
-# computes the body at every read (`h_<module>_<NAME>()`), so a step whose
-# operands are all known aborts every time; it is refused at its own line
-# instead, `int_out_of_range` or `division_by_zero` with the step quoted and
-# its value said (`check/const_values.hero`, which holds the arithmetic and the
-# messages).
+# A constant's written body: an integer operator in it that would abort is a
+# compile error where its operands are known, wherever it is written in the
+# body and whether or not the constant is read (panel 206 R1, its class named
+# by panel 207 R1, both ratified 2026-10-10; spec § 4; design.md §4.2). The
+# emitted C computes the body at every read (`h_<module>_<NAME>()`), so a
+# step whose operands are all known aborts every time; it is refused at its
+# own line instead, `int_out_of_range` or `division_by_zero` with the step
+# quoted and its value said (`check/const_values.hero`, which holds the
+# arithmetic and the messages).
 #
 # **The class is syntactic.** A body holds no call (panel 039,
 # `resolve/constant_body.hero`), so it has no input but literals and other
@@ -22,19 +23,22 @@
 # bound to; and a cell the body declares with `@`, which holds what was last
 # put in it on the straight path the walk takes. A branch starts from what
 # held before it and forgets, after it, every cell any branch wrote; a loop
-# forgets every cell for its condition and body, which may run any number of
-# times, and after it every cell it wrote. A group's constant has no body and
-# no value here (its value is C's, platform by platform: defect 579), and
-# neither has a field, an element, a loop's name or a payload. A step with an
-# operand that has none is not judged, so nothing is refused that could run.
+# forgets, for its condition and body, which may run any number of times, and
+# after it, the cells it writes (`check/const_writes.hero`, panel 207's route
+# W), every other cell keeping its value on every turn. A group's constant has
+# no body and no value here (its value is C's, platform by platform: defect
+# 579), and neither has a field, an element, a loop's name or a payload. A
+# step with an operand that has none is not judged: it aborts where it runs, if
+# it does (spec § 7), as an index, an `assert` or a nan does, which are no
+# integer operators (defect 580's `run` cases).
 
 use ast
 use source
 use resolved
-use widths
 use check/state
 use check/contextual
 use check/const_values as values
+use check/const_writes
 
 record Program
     a: ast.Ast
@@ -116,17 +120,26 @@ function statement(@seen: Seen, @c: state.Checker, p: Program, sid: i64) -> valu
             if !t.value.is_err()
                 _ = value(@seen, @c, p, id: t.value.must())
         .while_stmt w =>
-            before = forgotten(@seen)
+            writes = const_writes.of_loop(p.a, p.r, cond: ok(w.cond), body: w.block)
+            before = forgetting(@seen, writes)
             from = seen.wrote.len()
             _ = value(@seen, @c, p, id: w.cond)
             block(@seen, @c, p, w.block)
             restored(@seen, before, from: from)
+            _ = forgetting(@seen, writes)
         .for_in f =>
             _ = value(@seen, @c, p, id: f.iterable)
-            before = forgotten(@seen)
+            writes = const_writes.of_loop(
+                p.a,
+                p.r,
+                cond: fail(code: "none", msg: "a `for` has no condition"),
+                body: f.block
+            )
+            before = forgetting(@seen, writes)
             from = seen.wrote.len()
             block(@seen, @c, p, f.block)
             restored(@seen, before, from: from)
+            _ = forgetting(@seen, writes)
         .break_stmt | .continue_stmt | .error => return values.none()
 
     return values.none()
@@ -135,10 +148,15 @@ function block(@seen: Seen, @c: state.Checker, p: Program, b: ast.Block)
     for sid in b.stmts
         _ = statement(@seen, @c, p, sid: sid)
 
-# A loop's start: every cell forgotten, and what they held handed back.
-function forgotten(@seen: Seen) -> {i64: values.Slot}
+# A loop's start and its end (panel 207's route W): the cells it writes
+# forgotten, every other keeping its value on every turn, and what they all
+# held handed back.
+function forgetting(@seen: Seen, writes: [i64]) -> {i64: values.Slot}
     before = seen.cells
-    seen.cells @ {}
+
+    for key in writes
+        seen.cells[key] @ values.none()
+
     return before
 
 # What held before a branch or a loop, less every cell written since `from`.
@@ -268,9 +286,9 @@ function unary(@seen: Seen, @c: state.Checker, p: Program, id: i64, op: ast.Unar
         return values.none()
 
     return match op
-        .neg     => fitted(@seen, @c, p, values.negated(v.value), id: id, kind: width.must())
+        .neg => told(@c, values.fitted(values.negated(v.value), width.must(), at: standing(seen, p, id: id, right: "")))
         .bit_not => values.complement(v.value)
-        .not     => values.none()
+        .not => values.none()
 
 function stepped(@seen: Seen, @c: state.Checker, p: Program, id: i64, op: ast.BinaryOp, left: i64, right: i64) -> values.Slot
     x = value(@seen, @c, p, id: left)
@@ -287,56 +305,20 @@ function stepped(@seen: Seen, @c: state.Checker, p: Program, id: i64, op: ast.Bi
 
     if width.is_err() || !y.known
         return values.none()
-    kind = width.must()
-    span = p.a.exprs[id].span
-    text = source.span_text(p.s, span)
-
-    if (op == .div || op == .rem) && y.value.magnitude == 0
-        right_text = source.span_text(p.s, p.a.exprs[right].span)
-        state.push_diagnostic(@c, values.by_zero(text: text, right: right_text, owner: seen.owner, span: span))
-        return values.none()
-
-    if (op == .shl || op == .shr) && values.count_outside(y.value)
-        state.push_diagnostic(@c, values.shift_count(text: text, count: y.value, owner: seen.owner, span: span))
-        return values.none()
-
-    if !x.known
-        return values.none()
-
-    match op
-        .add | .sub | .mul =>
-            got = values.step(op, x: x.value, y: y.value)
-
-            if got.known
-                return fitted(@seen, @c, p, got.value, id: id, kind: kind)
-            state.push_diagnostic(
-                @c,
-                values.overflow(text: text, got: got, kind, owner: seen.owner, span: span)
-            )
-        .div =>
-            return fitted(@seen, @c, p, values.quotient(x: x.value, y: y.value), id: id, kind: kind)
-        .rem =>
-            whole = values.quotient(x: x.value, y: y.value)
-
-            if values.fits(kind, whole)
-                return values.of(values.remainder(x: x.value, y: y.value))
-            state.push_diagnostic(
-                @c,
-                values.remainder_overflow(text: text, whole: whole, kind, owner: seen.owner, span: span)
-            )
-        .bit_and | .bit_or | .bit_xor | .shl | .shr    => return values.bitwise(op, x: x.value, y: y.value)
-        .eq | .ne | .lt | .le | .gt | .ge | .and | .or => return values.none()
-
-    return values.none()
-
-# A step's value where it fits the width it is computed at; told and none
-# where it does not.
-function fitted(@seen: Seen, @c: state.Checker, p: Program, v: contextual.LitValue, id: i64, kind: widths.IntKind) -> values.Slot
-    if values.fits(kind, v)
-        return values.of(v)
-    span = p.a.exprs[id].span
-    state.push_diagnostic(
+    right_text = source.span_text(p.s, p.a.exprs[right].span)
+    return told(
         @c,
-        values.overflow(text: source.span_text(p.s, span), got: values.of(v), kind, owner: seen.owner, span: span)
+        values.stepped(op, x: x, y: y.value, width.must(), at: standing(seen, p, id: id, right: right_text))
     )
-    return values.none()
+
+# Where a step stands, for what is told of it.
+function standing(seen: Seen, p: Program, id: i64, right: str) -> values.Place
+    span = p.a.exprs[id].span
+    return values.Place(text: source.span_text(p.s, span), right: right, owner: seen.owner, span: span)
+
+# A step's value, its diagnostic told where it has one.
+function told(@c: state.Checker, o: values.Outcome) -> values.Slot
+    for d in o.told
+        state.push_diagnostic(@c, d)
+
+    return o.slot

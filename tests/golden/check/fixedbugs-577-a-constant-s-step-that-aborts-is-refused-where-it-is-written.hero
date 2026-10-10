@@ -23,6 +23,15 @@
 # read twice (`c23`), cells a branch or a loop leaves uncertain, and the
 # boundaries of five widths. Nothing here is read but `main`'s line, so the
 # constants nobody reads are refused as the read ones are (`t05`, `t08`).
+#
+# Corrected 2026-10-10, panel 207 R1: the sentence of spec § 4 quoted above
+# reads since then *an integer operator in it that would abort, run or not,
+# is a compile error at least where its operands are known*, a literal, an
+# operator on known values, a `=` name or written constant holding one, or a
+# cell since its last write with no loop or branch between that writes it.
+# Every refusal here is one; what the walk does not know, an index, an
+# `assert`, a nan, a branch it cannot decide, a cell a loop writes, aborts
+# where it runs (defect 580's `run` cases).
 
 variant Token
     num

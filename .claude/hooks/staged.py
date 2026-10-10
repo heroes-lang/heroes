@@ -118,6 +118,14 @@ def offences(where, paths=()):
     over its own inability to judge, so a marked case whose index holds another
     version than its working tree, which the suite would not read, is left to
     the batch's gate.
+
+    **Whatever `fmt` answers, since 2026-10-10** (defect 581): a marked case
+    of the suite's `DIRECTORIES` that parses and is not canonical on purpose,
+    as defect 576's two are, was refused *not canonical* with its marks green,
+    and a lane merged another lane at an older commit to get past it. Such a
+    case is asked of its marks as one `fmt` refuses is (`marks.held_to_marks`);
+    a case with no mark is held to `fmt` as before, and so is a marked program
+    of `run/` or `emit/`, which the `canonical` suite reads.
     """
     top = toplevel(where)
     if top is None:
@@ -147,10 +155,19 @@ def offences(where, paths=()):
             except (OSError, subprocess.SubprocessError):
                 run, text = None, b""
             said = None
-            if run is not None and run.returncode != 0 and rel.startswith("tests/golden/") and marks.MARK.search(text.decode("utf-8", errors="replace")):
+            shown = text.decode("utf-8", errors="replace")
+            if run is not None and marks.held_to_marks(top, rel, shown):
+                # Its marks are its judge whatever `fmt` answered (defect
+                # 581): asked of the suite where it reads the case as the
+                # commit carries it, left to the gate where the index holds
+                # another version. One with no `.expected` beside it is a
+                # half pair the harness refuses, and keeps `fmt`'s verdict.
                 if held is None and marks.judged_narrowed(top, rel):
                     marked.append(rel)
                     continue
+                if held is not None:
+                    continue
+            if run is not None and run.returncode != 0 and rel.startswith("tests/golden/") and marks.MARK.search(shown):
                 if held is not None or marks.in_run_roots(top, rel):
                     continue
             if run is not None and run.returncode != 0:
