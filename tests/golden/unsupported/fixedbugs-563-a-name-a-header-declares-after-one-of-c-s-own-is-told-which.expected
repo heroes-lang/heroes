@@ -1,0 +1,6 @@
+error[ffi_unknown_name]: `fixedbugs-563-out.h` declares `out_str` only after `stdio.h`, a header of C's own it does not include: clang read it without and could not find it
+  at tests/golden/unsupported/fixedbugs-563-a-name-a-header-declares-after-one-of-c-s-own-is-told-which.hero:9:5
+    |
+  9 |     function out_str() -> i64  #~ ffi_unknown_name
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: write a group naming `stdio.h` above this one, which a module's unit then reads first; a group binds at least one name, and one holding only a record stands where it is written (§ 13)

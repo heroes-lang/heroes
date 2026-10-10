@@ -1,0 +1,116 @@
+# One clang run of a unit's opening in an order it was not written in
+# (design.md §4.19; panel 204's R2 and R3, ratified 2026-10-10; defect 563).
+# A refused unit is asked, on the failure path alone, what another order of
+# its headers does: whether it compiles (`compiled`), and what clang's
+# preprocessor makes of it (`output`), so a note saying what a move would do
+# says what clang said and never what an argument predicts.
+#
+# The opening is the unit's own (`emit/decls.prelude`): `heroes_runtime.h`,
+# the compiler's two seeds, then the groups' headers between the guard's two
+# lines (`emit/macro_guard.hero`), so a header is read after what every unit
+# reads before it.
+
+use emit/c_text
+use emit/externs as emit_externs
+use emit/macro_guard
+use emit/ffi_lookup
+use cli/toolchain
+use cli/clang_first
+use cli/process
+use cli/publish
+use cli/digest
+use cli/read_back
+use cli/strings
+
+# Whether the unit compiled, whether clang could be asked at all, and its
+# first error where it refused.
+record Ran
+    asked: bool
+    compiles: bool
+    refusal: str
+
+# The line every unit opens with, quoted as the prelude writes it
+# (`emit/decls.prelude`).
+constant RUNTIME_LINE: str
+    "#include \"heroes_runtime.h\""
+
+# The unit's opening with `headers` in this order, then `question`, a line of
+# C asked after them, or nothing.
+function opening(headers: [str], question: str) -> str
+    lines: [str] @ [RUNTIME_LINE]
+
+    for line in c_text.includes(emit_externs.SEEDS)
+        lines @ lines.push(line)
+
+    lines @ lines.push(macro_guard.OPEN_LINE)
+
+    for line in c_text.includes(headers)
+        lines @ lines.push(line)
+
+    lines @ lines.push(macro_guard.CLOSE_LINE)
+
+    if question != ""
+        lines @ lines.push(question)
+    return lines.join("\n") + "\n"
+
+# A unit's headers but the compiler's own, which its opening writes first.
+function theirs(headers: [str]) -> [str]
+    out: [str] @ []
+
+    for header in headers
+        if !emit_externs.is_own(header)
+            out @ out.push(header)
+
+    return out
+
+# `clang -fsyntax-only` of `text` under `words`.
+function compiled(t: toolchain.Toolchain, words: [str], text: str) -> Ran
+    unasked = Ran(asked: false, compiles: false, refusal: "")
+    unit = written(t, text: text)
+
+    if unit.is_err()
+        return unasked
+    err = publish.private_name(t.build + "/order/order-stderr.txt")
+    line = strings.with_all(list: ["clang", "-fsyntax-only", "-fno-caret-diagnostics"], more: words)
+    ran = process.run(program: "clang", words: line.push(unit.must()), out: process.discard(), err: err)
+    said = read_back.words(err)
+    publish.discard(err)
+
+    if !ran.started || said.is_err()
+        return unasked
+
+    if ran.code == 0
+        return Ran(asked: true, compiles: true, refusal: "")
+    first = clang_first.first_error(ffi_lookup.lines(text: said.must()))
+
+    if first.is_err()
+        return Ran(asked: true, compiles: false, refusal: "")
+    return Ran(asked: true, compiles: false, refusal: first.must().message)
+
+# What clang writes on stdout for `text` under `words` and `mode` (`-E -dM`,
+# say), absent where it could not or refused.
+function output(t: toolchain.Toolchain, words: [str], text: str, mode: [str]) -> str?
+    unit = written(t, text: text)?
+    out = publish.private_name(t.build + "/order/order-stdout.txt")
+    line = strings.with_all(list: strings.with_all(list: ["clang"], more: mode), more: words)
+    ran = process.run(program: "clang", words: line.push(unit), out: out, err: process.discard())
+    said = read_back.words(out)
+    publish.discard(out)
+
+    if !ran.started || ran.code != 0
+        return fail(code: "failed", msg: "clang did not preprocess the order")
+    return said
+
+# The unit written where its bytes name it.
+function written(t: toolchain.Toolchain, text: str) -> str?
+    dir = t.build + "/order"
+    process.mkdir_all(dir)?
+    unit = dir + "/order-" + digest.digest(text) + ".c"
+    publish.write_whole(path: unit, text: text, keyed: true)?
+    return ok(unit)
+
+## Tests
+
+test "the opening is the unit's: the runtime, the seeds, then the groups between the guard's lines"
+    text = opening(["b.h", "a.h"], question: "int q;")
+    assert text == "#include \"heroes_runtime.h\"\n#include <math.h>\n#include <hero_os.h>\n#include \"heroes_guard_open.h\"\n#include <b.h>\n#include <a.h>\n#include \"heroes_guard_close.h\"\nint q;\n"

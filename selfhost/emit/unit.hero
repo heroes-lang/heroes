@@ -54,93 +54,38 @@ use check/state
 use ir/containers
 use emit
 use emit/synth
-use emit/reach
 use emit/members
+use emit/unit_plan
 use emit/writer
 use emit/decls as emit_decls
-use emit/externs as emit_externs
 use emit/typeorder
 use emit/extern_probe
+use emit/extern_refs
 use emit/perfn
 use emit/descriptors
 use emit/signature
 use emit/body
 use emit/callback_thunk
 
-# One module's translation unit. The caller has already run the gate
+# One module's translation unit, written from its plan
+# (`emit/unit_plan.hero`, which decides what it holds and which headers it
+# reads, before any probe asks them). The caller has already run the gate
 # over the whole program (a refusal is program-wide) and monomorphised;
 # `is_root` says whether this TU carries the shim.
-function unit(module: str, p: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl], version: str, is_root: bool, whole: members.Whole) -> str
-    mine = members.members(module, p, c, s, decls, shown: whole.shown, by_decl: whole.by_decl, callees: whole.callees)
+function unit(plan: unit_plan.Plan, p: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl], version: str, is_root: bool, whole: members.Whole) -> str
+    module = plan.module
+    mine = plan.mine
     keep = mine.defined
-    tu_p = members.tu_program(p, keep: keep)
-
-    # THIS TU's reach, and every whole-program section is filtered by
-    # it — typedefs, per-type functions, descriptors. Trimming the
-    # descriptors alone left `h_parse_Expr_desc` undeclared under
-    # satellites that still mentioned it; trimming NOTHING made a TU
-    # 19,193 lines where 87% belonged to other modules, and the
-    # compiler's own build went 188 s -> 484 s (measured 2026-08-25).
-    # One filter over all four sections is what makes them agree.
-    walked = reach.reach_of(tu_p, c, target: .program_build, shown: members.all_of(tu_p))
-
-    # A PROTOTYPE names types too, and the body walk above cannot see
-    # the ones belonging to another TU's function. So the signatures of
-    # everything this TU declares join the reach before the filter is
-    # built — asked of the value in hand (these exact functions) rather
-    # than argued from "an argument must be a local anyway", which is
-    # true today and is a premise about the world (CLAUDE.md §11).
-    reached: {i64: bool} @ walked.reached
-
-    # A PROBE names types too, and no loop above can see them: an extern
-    # is nobody's Heroes function, so it is in neither `defined` nor
-    # `needed`. The gap survived unnoticed because every boundary type
-    # was a scalar or the header's own record, and neither needs a
-    # typedef this filter could withhold — a function-typed parameter
-    # (panel 111 R4) is the first that does, and it arrived as `unknown
-    # type name 'h_0fn_294870dd'` at exit 2 on a correct binding. Asked
-    # of tu_p, which IS the program the prelude writes its probes from,
-    # so the two lists cannot drift apart. Parameters only: a probe's
-    # own result is always `void` and its call is cast away.
-    for f in tu_p.functions
-        if emit_externs.extern_spans(decls, f).header.is_err()
-            continue
-
-        for slot in f.params
-            reached[f.slots[slot].ty] @ true
-
-    for at in mine.needed
-        f = p.functions[at]
-        reached[f.result] @ true
-
-        for slot in f.params
-            reached[f.slots[slot].ty] @ true
-
-    # Every group record this module declares, used or not (defect 416): the
-    # fused unit spells them all, so a binding the header refutes was refused
-    # by `heroes test` alone (`members.group_records`).
-    groups = members.group_records(module, c, s, decls)
-
-    for id in groups.types
-        reached[id] @ true
+    tu_p = plan.tu_p
+    declared = plan.declared
 
     # Which functions C may call back (panel 111 R9). Over the FULL
     # program, never the TU's slice: a function this TU defines may have
     # its address taken in another module, and the fused path must reach
     # the same answer or the two emitters disagree about one program.
-    # Asked once for the whole build and read here (defect 497).
+    # Asked once for the whole build and read here (defect 497); their
+    # signatures' types are in the plan's reach.
     guarded_decls = whole.callbacks.decls
-
-    # The callback table names every one of them and its thunk in EVERY
-    # TU that can hand C a function (panel 177's item 2), so their
-    # signatures' types join the reach too, or a TU that never calls one
-    # of them is missing the typedef its prototype names.
-    for at in whole.callbacks.functions
-        f = p.functions[at]
-        reached[f.result] @ true
-
-        for slot in f.params
-            reached[f.slots[slot].ty] @ true
 
     # ONE set feeds all four sections, and that is the invariant rather
     # than a tidiness. Every time a section got its own answer the TU
@@ -151,11 +96,10 @@ function unit(module: str, p: containers.Program, c: state.Checked, s: source.So
     # wanted `T?` whose payload descriptor nobody defined
     # (`h_clitoolchain_Toolchain_desc`). Four symptoms, one cause, and
     # the cause is two sets where there should be one.
-    declared = members.declared_reach(c, decls, seed: reach.closed_over(c, reached: reached))
     want: synth.Wanted @ synth.wanted_of(c, reached: declared)
 
     # By declaration too, since a record nothing mentions has no type id.
-    for decl in groups.decls
+    for decl in plan.groups.decls
         want.named[decl] @ true
 
     names = whole.names
@@ -169,7 +113,9 @@ function unit(module: str, p: containers.Program, c: state.Checked, s: source.So
         s: s,
         decls: decls,
         version: version,
-        tu_local: "__attribute__((unused)) static"
+        tu_local: "__attribute__((unused)) static",
+        records: ok(plan.records),
+        headers: plan.headers
     )
     typeorder.definitions(@w, c, names, s, decls, want: want, kinds: whole.kinds)
 
@@ -177,6 +123,10 @@ function unit(module: str, p: containers.Program, c: state.Checked, s: source.So
     # the typedefs and not in the prelude (panel 111 R4). `tu_p` is the
     # same program the reach loop above walked for exactly this reason.
     extern_probe.extern_probes(@w, tu_p, c, names, s, decls)
+
+    # Every function this unit calls through a group, its address held, so
+    # the link needs its definition at every level (defect 562).
+    extern_refs.references(@w, tu_p, s, decls)
     perfn.prototypes(@w, c, names, decls, want: want)
 
     # `declared`, not `walked.reached`: an option this TU prints `_hash`
@@ -191,7 +141,7 @@ function unit(module: str, p: containers.Program, c: state.Checked, s: source.So
         names,
         decls,
         reachable: declared,
-        constructed: walked.constructed,
+        constructed: plan.constructed,
         want: want,
         kinds: whole.kinds
     )

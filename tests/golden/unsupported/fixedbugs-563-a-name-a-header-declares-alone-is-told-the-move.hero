@@ -1,0 +1,19 @@
+# fixedbugs, defect 563, lane b18-ffi, 2026-10-10 (panel 204's R3; the
+# ffi-pragmatist's GLFW, whose `glfw3.h` includes `OpenGL/gl.h` under
+# `GL_GLEXT_LEGACY`).
+#
+# `fixedbugs-563-p.h` defines `FIXEDBUGS_563_LEGACY` and includes
+# `fixedbugs-563-q.h`, which declares `FIXEDBUGS_563_Q_VALUE` only where that
+# macro is not defined, so read after the first group's header, the second's
+# declares nothing. Until 2026-10-10 this was told *`fixedbugs-563-q.h`
+# declares no `FIXEDBUGS_563_Q_VALUE`*, false of the header read alone. It is
+# asked alone now, and the move that reads it so is told.
+extern "fixedbugs-563-p.h"
+    function p_init() -> i32
+
+extern "fixedbugs-563-q.h"
+    constant FIXEDBUGS_563_Q_VALUE: i64  #~ ffi_unknown_name
+
+function main()
+    print(p_init())
+    print(FIXEDBUGS_563_Q_VALUE)

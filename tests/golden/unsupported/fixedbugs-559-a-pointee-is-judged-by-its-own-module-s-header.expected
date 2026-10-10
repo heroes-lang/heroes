@@ -1,0 +1,7 @@
+error[ffi_parameter_type]: `x` of `fill_int` is declared `i64`, and the header's `int *` points at a different width or sign — clang read the header, and C writes back exactly the bytes the header expects
+  at tests/golden/unsupported/fixedbugs-559-a-pointee-is-judged-by-its-own-module-s-header.hero:15:24
+     |
+  15 |     function fill_int(@x: i64)  #~ ffi_parameter_type
+     |                        ^
+  note: §4.19: a C out-parameter is an `@` parameter, and what it points at is held to the header's own width and sign — `u64` where it says `size_t *`, `i32` where it says `int *`
+  fix (guess): declare `x` as `@x: i32`

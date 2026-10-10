@@ -1,0 +1,15 @@
+# fixedbugs, defect 556, lane b18-ffi, 2026-10-10 (panel 202's C2; the
+# critic's `extsame`).
+#
+# Two headers each define `twice`, the same definition, and two modules
+# bind one each. The declarations agree, so nothing is two ways, and the
+# link met two definitions: exit 2 until 2026-10-10. Told at exit 1, both
+# headers and both modules named.
+use fixedbugs556/other
+
+extern "fixedbugs-556-a.h"
+    function twice(x: i64) -> i64  #~ ffi_defined_twice
+
+function main()
+    print(twice(x: 3))
+    print(other.doubled(x: 4))

@@ -1,0 +1,8 @@
+# A module of defect 555's cases (lane b18-ffi, 2026-10-10): its header
+# declares `helper` of `double` and calls it.
+
+extern "fixedbugs-555-helper-b.h"
+    function half(x: f64) -> f64
+
+function halved(x: f64) -> f64
+    return half(x: x)

@@ -1,0 +1,192 @@
+# The rounds of one build (design.md §4.19; defect 037, panel 152 R1; panel
+# 202's C0, ratified 2026-10-10). A round asks each module's headers its
+# questions (`cli/probing.hero`), then compiles the program's units and links
+# them (`cli/assemble.hero`); a round clang refused for a handle's bare tag
+# runs again with what it learned (`cli/tag_spelling.hero`), and a refusal
+# that ends them is read for whose it is (`cli/whose.hero`). Split out of
+# `cli/produce.hero` and `cli/assemble.hero` on 2026-10-10, when the probes
+# became one per module's headers and both files passed §11's 300 lines:
+# `produce` decides what a build is, and this how its rounds go.
+#
+# **A handle's tag is spelled as the author wrote it**, and where clang says
+# *must use 'struct' tag to refer to type 'X'*, which it says only when X
+# names a struct tag of that spelling, in the round or of the record's own
+# declaration (`cli/tag_spelling.hero`, defect 400), the round runs again
+# with `struct X *`. A round that learns nothing ends the loop, so it is
+# bounded by the program's tagged handles; a round costs one failing compile
+# (2026-09-15), the probes asked once per build.
+
+use source
+use emit/ffi_asked
+use emit/externs as emit_externs
+use cli/compile
+use cli/toolchain
+use cli/compiling
+use cli/assemble
+use cli/probing
+use cli/pointee_ask
+use cli/header_types
+use cli/tag_spelling
+use cli/whose
+use cli/two_ways
+use cli/defined_twice
+use diag
+
+# What the rounds came back with: the verdict, the failure already told where
+# it is the author's (`whose.of_refusal`); where the binary landed; the tags
+# they learned; and the header's answer where the last one asked it.
+record Rounds
+    verdict: ()?
+    binary: str
+    struct_tags: {str: bool}
+    asked: ffi_asked.Asked?
+
+function run(t: toolchain.Toolchain, options: compile.Options, art: compile.Artifact, s: source.Source, site: assemble.Site, under: compiling.Compiling, planned: probing.Planned, @answered: [pointee_ask.Answered]) -> Rounds
+    struct_tags: {str: bool} @ {}
+    told: {str: bool} @ {}
+    linked: ()? @ ok()
+    binary: str @ ""
+    asked: ffi_asked.Asked? @ fail(code: "none", msg: "the header was not asked")
+    refused_in: [str] @ []
+
+    while true
+        went = round(t, options, art, s, site, @answered, planned: planned, struct_tags: struct_tags, told: @told)
+        linked @ went.verdict
+        binary @ went.binary
+        refused_in @ went.modules
+
+        if !linked.is_err()
+            break
+
+        # A refusal already told is the author's and ends the rounds.
+        if whose.failure_code(linked) == "diagnostics"
+            return Rounds(verdict: linked, binary: "", struct_tags: struct_tags, asked: asked)
+        lesson = tag_spelling.learn(
+            t,
+            art,
+            s,
+            under: under,
+            refusals: went.refusals,
+            probings: planned.probings,
+            struct_tags: @struct_tags
+        )
+
+        if lesson.learned == 0
+            asked @ lesson.asked
+            break
+
+    if linked.is_err()
+        # Some clang failures are the AUTHOR's, and the ffi mapping is
+        # the only place that decides which (panel 036 rider 3); the
+        # pipeline pieces ride in the Artifact for exactly this call. The
+        # questions are asked of the headers of the units that refused.
+        refused = whose.of_refusal(
+            linked,
+            art,
+            s,
+            t,
+            under: under,
+            answered: answered,
+            struct_tags: struct_tags,
+            asked: asked,
+            asking: probing.holding(planned.probings, modules: refused_in),
+            unit_headers: unit_headers(art, s, site: site, planned: planned, modules: refused_in),
+            refused: "clang refused the generated C"
+        )
+        return Rounds(verdict: refused, binary: "", struct_tags: struct_tags, asked: asked)
+    return Rounds(verdict: ok(), binary: binary, struct_tags: struct_tags, asked: asked)
+
+# `told` is what clang said that this build has printed, across its rounds
+# (defect 327, `cli/clang_told.hero`): the second round compiles again what
+# the first did, and replays it where it is warm. `planned` is the build's
+# (`cli/probing.hero`), the same for every round: each module's plan and the
+# probes of their headers.
+function round(t: toolchain.Toolchain, options: compile.Options, art: compile.Artifact, s: source.Source, site: assemble.Site, @answered: [pointee_ask.Answered], planned: probing.Planned, struct_tags: {str: bool}, @told: {str: bool}) -> assemble.Round
+    # What the extern out-parameters point at, asked of each module's headers
+    # before any unit compiles (panel 103; panel 202's C0): the width and sign
+    # of a numeric `@` against the header's own type. Then the header's
+    # layout of every group record (panel 186): a field left out, and a field
+    # that lies in a union where the program builds or compares the record.
+    # A failure here is the AUTHOR's, and it rides the same mapping a clang
+    # failure does — `emit/ffi.hero` reads the assertion's marker back into
+    # the parameter's diagnostic.
+    checked = probing.check_all(t, art.program, art.checked, s, art.decls, planned.probings, answered: @answered)
+
+    if checked.verdict.is_err()
+        return assemble.Round(
+            verdict: checked.verdict,
+            refusals: assemble.messages_of(checked.verdict),
+            binary: "",
+            modules: checked.modules
+        )
+
+    # One C function two modules' groups bind and their headers declare two
+    # ways, told before any unit compiles (panel 202's C1,
+    # `cli/two_ways.hero`): the author's, said here, and no round after it.
+    # And a name the units of two modules would each define (panel 202's C2,
+    # `cli/defined_twice.hero`), but those told already.
+    two = two_ways.told(t, planned.probings, s: s, decls: art.decls)
+    disagreeing = joined(
+        first: two.diagnostics,
+        more: defined_twice.told(t, planned.probings, s: s, decls: art.decls, skip: two.names)
+    )
+
+    if disagreeing.len() > 0
+        _ = compile.stage(disagreeing, s).is_err()
+        refused: ()? = fail(code: "diagnostics", msg: "two modules' headers disagree about a C name")
+        return assemble.Round(verdict: refused, refusals: [], binary: "", modules: [])
+
+    # The unit each counted parameter's count is compared in, read from the
+    # header by the check above (panel 194's R7): every unit is emitted with
+    # it, so the comparison is in what C counts and never in bytes alone.
+    counted = header_types.lend_units(answered)
+    lent = assemble.Lent(
+        units: counted,
+        digests: probing.digests_of(planned.probings),
+        unread: checked.unread,
+        unread_modules: checked.unread_modules
+    )
+
+    if site.is_tests
+        return assemble.fused(t, options, art, s, site, struct_tags: struct_tags, lent: lent, told: @told)
+    return assemble.per_module(
+        t,
+        options,
+        art,
+        s,
+        site,
+        planned: planned,
+        struct_tags: struct_tags,
+        lent: lent,
+        told: @told
+    )
+
+# Two lists of diagnostics as one.
+function joined(first: [diag.Diagnostic], more: [diag.Diagnostic]) -> [diag.Diagnostic]
+    out: [diag.Diagnostic] @ first
+
+    for d in more
+        out @ out.push(d)
+
+    return out
+
+# The headers of the unit a refusal is, in its order: `heroes test`'s one unit
+# reads every group's, a module's unit its plan's (`emit/unit_plan.hero`).
+function unit_headers(art: compile.Artifact, s: source.Source, site: assemble.Site, planned: probing.Planned, modules: [str]) -> [str]
+    if site.is_tests
+        return emit_externs.headers(art.program, s, art.decls)
+    out: [str] @ []
+
+    for one in probing.holding(planned.probings, modules: modules)
+        for header in one.headers
+            if !holds(out, one: header)
+                out @ out.push(header)
+
+    return out
+
+function holds(list: [str], one: str) -> bool
+    for each in list
+        if each == one
+            return true
+
+    return false

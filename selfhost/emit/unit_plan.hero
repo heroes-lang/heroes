@@ -1,0 +1,195 @@
+# What a module's translation unit holds, decided before a byte of it is
+# written and before any probe asks its headers (design.md §4.19; panel 093;
+# panel 202's R1, ratified 2026-10-10, defect 559). `emit/unit.hero` writes
+# the unit from its plan, and `cli/probing.hero` asks the plan's headers.
+#
+# **A module's unit reads its own groups' headers and no other module's**,
+# the cut every verb makes since panel 202: the headers of its own extern
+# functions and constants, of its own group records, and of every group
+# record its unit reaches, whose C type the unit spells and so must be able
+# to name. Until defect 559 the record-only walk read EVERY group record of
+# the program into every unit (`emit/externs.headers`), so a record bound
+# beside a `static inline twice` in one module put that header in the other
+# module's unit too, where it met the other `twice` (`fprec`), and a macro
+# one module's header defines chose another module's record layout
+# (`skew`). And the probes read every header of the program in one unit,
+# which is the same cause seen from the checks: they now ask each plan's
+# own headers. The unit's own groups' headers come first, in the order they
+# are written (panel 204's R1), and a record of another module's after them.
+#
+# **The reach is the unit's own**, the set its four sections are filtered by
+# (`unit.hero`), so a record is in a unit's headers exactly when the unit
+# spells its type: a fact about the unit in hand, never a premise about which
+# module may name which.
+
+use ast
+use source
+use check/table
+use check/state
+use ir/containers
+use emit/reach
+use emit/members
+use emit/externs as emit_externs
+
+# One module's unit, planned: what it defines and declares (`members`), the
+# program cut to its members, the types its sections spell, closed as C reads
+# them, its own group records, every group record whose header it reads and
+# whose fields it asserts, and those headers in the order it includes them.
+record Plan
+    module: str
+    mine: members.Members
+    tu_p: containers.Program
+    constructed: {i64: bool}
+    declared: {i64: bool}
+    groups: Groups
+    records: {i64: bool}
+    headers: [str]
+
+# A plan per component of the program, in the order the build compiles them
+# (`cli/units.components`), from one build's shared tables.
+function plans(components: [str], p: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl], whole: members.Whole) -> [Plan]
+    out: [Plan] @ []
+
+    for component in components
+        out @ out.push(plan(component, p, c, s, decls, whole: whole))
+
+    return out
+
+function plan(module: str, p: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl], whole: members.Whole) -> Plan
+    mine = members.members(module, p, c, s, decls, shown: whole.shown, by_decl: whole.by_decl, callees: whole.callees)
+    tu_p = members.tu_program(p, keep: mine.defined)
+
+    # THIS TU's reach, and every whole-program section is filtered by
+    # it — typedefs, per-type functions, descriptors. Trimming the
+    # descriptors alone left `h_parse_Expr_desc` undeclared under
+    # satellites that still mentioned it; trimming NOTHING made a TU
+    # 19,193 lines where 87% belonged to other modules, and the
+    # compiler's own build went 188 s -> 484 s (measured 2026-08-25).
+    walked = reach.reach_of(tu_p, c, target: .program_build, shown: members.all_of(tu_p))
+
+    # A PROTOTYPE names types too, and the body walk above cannot see
+    # the ones belonging to another TU's function. So the signatures of
+    # everything this TU declares join the reach before the filter is
+    # built — asked of the value in hand (these exact functions) rather
+    # than argued from "an argument must be a local anyway", which is
+    # true today and is a premise about the world (CLAUDE.md §11).
+    reached: {i64: bool} @ walked.reached
+
+    # A PROBE names types too, and no loop above can see them: an extern
+    # is nobody's Heroes function, so it is in neither `defined` nor
+    # `needed`. A function-typed parameter (panel 111 R4) is the first
+    # boundary type that needs a typedef this filter could withhold, and
+    # it arrived as `unknown type name 'h_0fn_294870dd'` at exit 2 on a
+    # correct binding. Asked of tu_p, which IS the program the prelude
+    # writes its probes from. Parameters only: a probe's own result is
+    # always `void` and its call is cast away.
+    for f in tu_p.functions
+        if emit_externs.extern_spans(decls, f).header.is_err()
+            continue
+
+        for slot in f.params
+            reached[f.slots[slot].ty] @ true
+
+    for at in mine.needed
+        f = p.functions[at]
+        reached[f.result] @ true
+
+        for slot in f.params
+            reached[f.slots[slot].ty] @ true
+
+    # Every group record this module declares, used or not (defect 416).
+    groups = group_records(module, c, s, decls)
+
+    for id in groups.types
+        reached[id] @ true
+
+    # The callback table names every function C may call back and its thunk
+    # in EVERY TU that can hand C a function (panel 177's item 2), so their
+    # signatures' types join the reach too.
+    for at in whole.callbacks.functions
+        f = p.functions[at]
+        reached[f.result] @ true
+
+        for slot in f.params
+            reached[f.slots[slot].ty] @ true
+
+    declared = members.declared_reach(c, decls, seed: reach.closed_over(c, reached: reached))
+    records: {i64: bool} @ {}
+
+    for decl in groups.decls
+        records[decl] @ true
+
+    # ORDER: none, a set; `headers_for` sorts what it walks into written order.
+    for id in keys(declared)
+        match table.get(c.types, id)
+            .named n =>
+                if group_record(decls, decl: n.decl)
+                    records[n.decl] @ true
+            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit    => continue
+            .array | .fixed | .map | .fallible | .function_ty | .case_ty => continue
+            .failure | .generic | .error                                 => continue
+
+    return Plan(
+        module: module,
+        mine: mine,
+        tu_p: tu_p,
+        constructed: walked.constructed,
+        declared: declared,
+        groups: groups,
+        records: records,
+        headers: emit_externs.headers_for(tu_p, s, decls, records: ok(records), own: ok(module))
+    )
+
+# Whether a declaration is a record of an `extern` group.
+function group_record(decls: [ast.Decl], decl: i64) -> bool
+    match decls[decl].kind
+        .record_decl rec                                             => return !rec.header.is_err()
+        .constant_decl | .function_decl | .variant_decl | .test_decl => return false
+
+    return false
+
+# Every group record a module declares, which the module's TU spells whether
+# or not a line of its code reaches it (defect 416, 2026-10-06). **A binding
+# the header refutes is the program's mistake whether or not a line uses
+# it**, and the fused unit, which `heroes test`, `--emit-c` and the seed
+# compile, already said so: its per-type functions are asked of every
+# declaration. Until that day a module's unit spelled only what its code
+# reached, so a handle over a union's tag or a misspelled one that nothing
+# used was refused by `test` alone, and `--emit-c` wrote a unit clang refuses
+# at exit 0. The layout check already asked every group record with fields
+# (`cli/layout.hero`); this reaches the handles, whose only question is their
+# spelling.
+#
+# `decls` are the declarations, which is what the per-type functions are keyed
+# by, since a record nothing mentions is in no type the arena holds; `types`
+# are what they and their fields are, where the arena holds them, so the
+# fields' own functions and typedefs are reached with them.
+record Groups
+    decls: [i64]
+    types: [i64]
+
+function group_records(module: str, c: state.Checked, s: source.Source, decls: [ast.Decl]) -> Groups
+    found: [i64] @ []
+    typed: [i64] @ []
+    index: i64 @ 0
+
+    for decl in decls
+        match decl.kind
+            .record_decl rec =>
+                if !rec.header.is_err() && source.component_at(s, decl.name.start) == module
+                    found @ found.push(index)
+                    id = table.lookup(c.types, .named(decl: index))
+
+                    if !id.is_err()
+                        typed @ typed.push(id.must())
+
+                    for written in members.fields_written(decls, decl: index)
+                        field = state.written_type(c, written)
+
+                        if !field.is_err()
+                            typed @ typed.push(field.must())
+            .constant_decl | .function_decl | .variant_decl | .test_decl => index @ index
+
+        index @ index + 1
+
+    return Groups(decls: found, types: typed)

@@ -1,0 +1,16 @@
+# fixedbugs, defect 562, lane b18-ffi, 2026-10-10 (panel 202's R2; the
+# ffi-pragmatist's `c99`).
+#
+# The header defines `twice` with `inline` alone, which in C provides no
+# external definition, and nothing else defines it. Until 2026-10-10 `build`
+# told *the linker cannot find `twice`, and no group in this program says
+# which library has it*, false of a header that defines it, and `run`, at
+# `-O2`, inlined the call and printed 6: two verdicts. Each module's unit
+# now references what it calls at every level, so both refuse it, told what
+# C wants and the two ways out.
+
+extern "fixedbugs-562-inline.h"
+    function twice(x: i64) -> i64  #~ ffi_missing_link
+
+function main()
+    print(twice(x: 3))

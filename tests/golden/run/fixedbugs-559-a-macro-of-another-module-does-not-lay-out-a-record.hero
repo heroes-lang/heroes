@@ -1,0 +1,20 @@
+# fixedbugs, defect 559, lane b18-ffi, 2026-10-10 (panel 202's C0; the
+# critic's `skew32`).
+#
+# `S` is `{ int a; int b; }` as this module's unit reads
+# `fixedbugs-559-skew.h`, and `{ long long a; int b; }` where the other module's
+# header has defined `WIDE`, which no unit of this module includes. Until
+# 2026-10-10 the probes read every header of the program in one unit, the
+# other module's first, so the correct `a: i32` was refused, here as the
+# header not compiling at all. It builds now, laid out as its own unit reads
+# it.
+use fixedbugs559/wide
+
+extern "fixedbugs-559-skew.h"
+    record S
+        a: i32
+        b: i32
+
+function main()
+    s = S(a: 1, b: 2)
+    print(wide.doubled(x: 3) + to_i64(s.a + s.b).must())

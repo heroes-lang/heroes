@@ -4,6 +4,8 @@
 # a macro defined twice, so clang's warning in the second header carries a
 # note pointing back into the group's header, between that warning and the
 # error. clang prints the error's stack again, and it is the one read.
+# Since 2026-10-10 the warning is a deprecated name's, whose note points back
+# the same way: a macro defined twice is an error since panel 204's R2.
 
 extern "fixedbugs-158-noted-outer.h"
     function seven() -> i32  #~ ffi_missing_header

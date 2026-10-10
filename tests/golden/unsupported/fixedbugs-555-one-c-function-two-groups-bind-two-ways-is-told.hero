@@ -1,0 +1,21 @@
+# fixedbugs, defect 555, lane b18-ffi, 2026-10-10 (panel 202's C1; the
+# critic's `clash`).
+#
+# This module binds `twice` from a header declaring it of `double`, and
+# another binds it from one declaring it of `long long`; a third module's
+# header defines it. Each module's unit compiles its own header alone, and
+# the linker joins the two declarations to one symbol, so C called the
+# `long long` function through a `double` prototype: until 2026-10-10 this
+# built at exit 0 and printed `4.0` for `twice(x: 4.0)`. Both
+# declarations are told now, with clang's canonical types, before anything
+# links.
+use fixedbugs555/long_twice
+use fixedbugs555/defines
+
+extern "fixedbugs-555-double.h"
+    function twice(x: f64) -> f64  #~ ffi_declared_two_ways
+
+function main()
+    print(long_twice.doubled(x: 3))
+    print(twice(x: 4.0))
+    print(defines.unit())
