@@ -5065,9 +5065,10 @@ __attribute__((used)) static void hero_tu_type_order(void *at) {
 }
 
 #undef HERO_TU_LOCAL
-#define HERO_TU_LOCAL __attribute__((unused, used)) static
+#define HERO_TU_LOCAL __attribute__((unused, used, nodebug)) static
 
 #define HERO_COPY(dst, src) do { _Static_assert(__builtin_types_compatible_p(__typeof__(dst), __typeof__(src)), "heroes-copy"); __builtin_memmove(&(dst), &(src), sizeof(dst)); } while (0)
+#define HERO_COPY_HELD(dst, src) do { _Static_assert(__builtin_types_compatible_p(__typeof__(dst), __typeof__(src)), "heroes-copy"); __builtin_memmove(hero_slot_escape(&(dst)), hero_slot_escape(&(src)), sizeof(dst)); } while (0)
 
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wdouble-promotion"
@@ -5083,7 +5084,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 5087 "fixedbugs140recordsathousanddeepbuild.c"
+#line 5088 "fixedbugs140recordsathousanddeepbuild.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs140recordsathousanddeepbuild_R0_eq(const h_fixedbugs140recordsathousanddeepbuild_R0 *a, const h_fixedbugs140recordsathousanddeepbuild_R0 *b);
@@ -7173,7 +7174,7 @@ bb0:
     hero_print_int(t9);
 #line 3021 "tests/golden/run/fixedbugs-140-records-a-thousand-deep-build.hero"
     hero_print_end();
-#line 7177 "fixedbugs140recordsathousanddeepbuild.c"
+#line 7178 "fixedbugs140recordsathousanddeepbuild.c"
     hero_array_release_at(&h0_xs);
     hero_map_release_at(&h1_m);
     hero_array_release_at(&h2_own2);
