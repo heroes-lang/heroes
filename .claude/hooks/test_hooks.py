@@ -40,6 +40,7 @@ HOOKS = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HOOKS)
 
 import guard_bash  # noqa: E402
+import marks  # noqa: E402
 import runs as what_runs  # noqa: E402
 
 FAKE = r"""#!/bin/sh
@@ -1596,6 +1597,18 @@ constant RUN_ROOTS: [str]
     ]
 '''
 
+CANONICAL = '''constant SOURCE_DIRS: [str]
+    [
+        "selfhost"
+        "tests/harness"
+        "examples"
+        "tests/golden/run"
+        "tests/golden/ir"
+        "tests/golden/emit"
+        "tests/golden/fixedbugs"
+    ]
+'''
+
 
 def answer(tree, suite, code, text):
     """What the stand-in's harness says when `suite` is run in `tree`."""
@@ -1830,6 +1843,51 @@ class NotCanonicalOnPurpose(unittest.TestCase):
         code, said = self.written_case("tests/golden/run/prog.hero")
         self.assertEqual(code, 2, said)
         self.assertIn("is not canonical", said)
+
+
+class ProbeFixtures(unittest.TestCase):
+    """Defect 603: a probe fixture under a run root the `canonical` suite does
+    not read (`tests/golden/surface-fixtures/`) parses and is not canonical on
+    purpose, so the commit guard leaves it to the suites that read it; a
+    program of a run root that suite does read (`fixedbugs/`) and a source
+    file keep `fmt`'s verdict, a fixture that does not parse is still refused,
+    and without the suite's file to read the fixture is held to `fmt`, the
+    loud direction."""
+
+    def setUp(self):
+        self.top = fresh("hooks-603-")
+        self.tree = make_tree(os.path.join(self.top, "tree"), repo=True)
+        write(os.path.join(self.tree, "tests", "harness", "suite_annotations.hero"), ANNOTATIONS)
+        write(os.path.join(self.tree, "tests", "harness", "suite_canonical.hero"), CANONICAL)
+
+    def commit(self, *rels):
+        return guard_bash.verdict("git commit -F m -- " + " ".join(rels), self.tree)
+
+    def test_an_unmarked_fixture_not_canonical_is_committed(self):
+        staged(self.tree, "tests/golden/surface-fixtures/comments101/pieces.hero", "x: [i64] = a UNCANONICAL\n")
+        self.assertIsNone(self.commit("tests/golden/surface-fixtures/comments101/pieces.hero"))
+        self.assertEqual(runs(self.tree), [])
+
+    def test_a_program_the_canonical_suite_reads_keeps_the_fmt_verdict(self):
+        staged(self.tree, "tests/golden/fixedbugs/prog.hero", "x = 1 UNCANONICAL\n")
+        self.assertIn("tests/golden/fixedbugs/prog.hero is not canonical", self.commit("tests/golden/fixedbugs/prog.hero"))
+        staged(self.tree, "examples/x.hero", "UNCANONICAL\n")
+        self.assertIn("examples/x.hero is not canonical", self.commit("examples/x.hero"))
+
+    def test_a_fixture_that_does_not_parse_is_still_refused(self):
+        staged(self.tree, "tests/golden/surface-fixtures/comments101/broken.hero", "BROKEN\n")
+        self.assertIn("does not parse", self.commit("tests/golden/surface-fixtures/comments101/broken.hero"))
+
+    def test_without_the_canonical_suite_a_fixture_is_held_to_fmt(self):
+        os.remove(os.path.join(self.tree, "tests", "harness", "suite_canonical.hero"))
+        staged(self.tree, "tests/golden/surface-fixtures/comments101/pieces.hero", "x = a UNCANONICAL\n")
+        self.assertIn("is not canonical", self.commit("tests/golden/surface-fixtures/comments101/pieces.hero"))
+
+    def test_canonical_reads_places_a_file_by_the_suites_own_list(self):
+        self.assertTrue(marks.canonical_reads(self.tree, "selfhost/x.hero"))
+        self.assertTrue(marks.canonical_reads(self.tree, "tests/golden/run/p.hero"))
+        self.assertFalse(marks.canonical_reads(self.tree, "tests/golden/surface-fixtures/a/b.hero"))
+        self.assertFalse(marks.canonical_reads(self.tree, "tests/golden/check/c.hero"))
 
 
 class Growth(unittest.TestCase):

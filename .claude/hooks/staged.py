@@ -170,6 +170,11 @@ def offences(where, paths=()):
             if run is not None and run.returncode != 0 and rel.startswith("tests/golden/") and marks.MARK.search(shown):
                 if held is not None or marks.in_run_roots(top, rel):
                     continue
+            # A probe fixture that parses and is not canonical on purpose,
+            # under a run root the `canonical` suite does not read (defect
+            # 603): no suite holds it to `fmt`, so neither does the guard.
+            if run is not None and run.returncode == 0 and marks.in_run_roots(top, rel) and not marks.canonical_reads(top, rel):
+                continue
             if run is not None and run.returncode != 0:
                 said = rel + " does not parse" + how
             elif run is not None and run.stdout != text:
