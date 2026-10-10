@@ -28,6 +28,8 @@ use cli/header_types
 use cli/tag_spelling
 use cli/whose
 use cli/two_ways
+use cli/defined_twice
+use diag
 
 # What the rounds came back with: the verdict, the failure already told where
 # it is the author's (`whose.of_refusal`); where the binary landed; the tags
@@ -119,11 +121,17 @@ function round(t: toolchain.Toolchain, options: compile.Options, art: compile.Ar
     # One C function two modules' groups bind and their headers declare two
     # ways, told before any unit compiles (panel 202's C1,
     # `cli/two_ways.hero`): the author's, said here, and no round after it.
+    # And a name the units of two modules would each define (panel 202's C2,
+    # `cli/defined_twice.hero`), but those told already.
     two = two_ways.told(t, planned.probings, s: s, decls: art.decls)
+    disagreeing = joined(
+        first: two.diagnostics,
+        more: defined_twice.told(t, planned.probings, s: s, decls: art.decls, skip: two.names)
+    )
 
-    if two.len() > 0
-        _ = compile.stage(two, s).is_err()
-        refused: ()? = fail(code: "diagnostics", msg: "two groups bind one C function two ways")
+    if disagreeing.len() > 0
+        _ = compile.stage(disagreeing, s).is_err()
+        refused: ()? = fail(code: "diagnostics", msg: "two modules' headers disagree about a C name")
         return assemble.Round(verdict: refused, refusals: [], binary: "", modules: [])
 
     # The unit each counted parameter's count is compared in, read from the
@@ -150,3 +158,12 @@ function round(t: toolchain.Toolchain, options: compile.Options, art: compile.Ar
         lent: lent,
         told: @told
     )
+
+# Two lists of diagnostics as one.
+function joined(first: [diag.Diagnostic], more: [diag.Diagnostic]) -> [diag.Diagnostic]
+    out: [diag.Diagnostic] @ first
+
+    for d in more
+        out @ out.push(d)
+
+    return out

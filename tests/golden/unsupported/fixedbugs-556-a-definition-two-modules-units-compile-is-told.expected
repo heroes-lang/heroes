@@ -1,0 +1,6 @@
+error[ffi_defined_twice]: `twice` is defined in `fixedbugs-556-defines.h` line 3, which the units of `fixedbugs-556-a-definition-two-modules-units-compile-is-told` and `fixedbugs556/also` each compile: a C program holds one external definition of a function, and the link would find more
+  at tests/golden/unsupported/fixedbugs-556-a-definition-two-modules-units-compile-is-told.hero:13:14
+     |
+  13 |     function twice(x: i64) -> i64  #~ ffi_defined_twice
+     |              ^^^^^
+  note: a definition in a header is compiled into every unit that includes it, and each module's unit includes its own groups' headers: write `twice` `static inline` in the header, so each unit has its own, or bind the header from one module

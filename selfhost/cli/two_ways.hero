@@ -56,14 +56,21 @@ record Side
     bound: bool
     answer: two_ways_ask.Answer
 
+# What is told, and of which names, which `cli/defined_twice.hero` does not
+# tell again.
+record Told
+    diagnostics: [diag.Diagnostic]
+    names: {str: bool}
+
 # The diagnostics for every name two header lists declare with external
 # linkage and two canonical types, in the order of the names.
-function told(t: toolchain.Toolchain, probings: [probing.Probing], s: source.Source, decls: [ast.Decl]) -> [diag.Diagnostic]
+function told(t: toolchain.Toolchain, probings: [probing.Probing], s: source.Source, decls: [ast.Decl]) -> Told
     out: [diag.Diagnostic] @ []
+    names: {str: bool} @ {}
     lists = own_headers(probings)
 
     if lists.len() < 2
-        return out
+        return Told(diagnostics: out, names: names)
     named: [{str: bool}] @ []
     counts: {str: i64} @ {}
 
@@ -81,7 +88,7 @@ function told(t: toolchain.Toolchain, probings: [probing.Probing], s: source.Sou
             shared @ shared.push(name)
 
     if shared.len() == 0
-        return out
+        return Told(diagnostics: out, names: names)
     shared @ sort(shared)
     each: [{str: two_ways_ask.Answer}] @ []
     at: i64 @ 0
@@ -125,8 +132,9 @@ function told(t: toolchain.Toolchain, probings: [probing.Probing], s: source.Sou
 
         if !clash.is_err()
             out @ out.push(diagnostic(s, name: name, pair: clash.must()))
+            names[name] @ true
 
-    return out
+    return Told(diagnostics: out, names: names)
 
 # The lists whose units read a header no compiler of this project owns, and
 # whose probe read them: the compiler's own headers declare one thing in
