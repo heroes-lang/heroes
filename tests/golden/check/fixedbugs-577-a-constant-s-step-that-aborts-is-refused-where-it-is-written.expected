@@ -1,0 +1,32 @@
+tests/golden/check/fixedbugs-577-a-constant-s-step-that-aborts-is-refused-where-it-is-written.hero:42:5: error[int_out_of_range]: `2 - 3` computes -1, which does not fit a `u8`
+tests/golden/check/fixedbugs-577-a-constant-s-step-that-aborts-is-refused-where-it-is-written.hero:45:5: error[int_out_of_range]: `255 + 1` computes 256, which does not fit a `u8`
+tests/golden/check/fixedbugs-577-a-constant-s-step-that-aborts-is-refused-where-it-is-written.hero:51:5: error[int_out_of_range]: `-M` computes 128, which does not fit an `i8`
+tests/golden/check/fixedbugs-577-a-constant-s-step-that-aborts-is-refused-where-it-is-written.hero:54:14: error[division_by_zero]: `1 / 0` divides by zero
+tests/golden/check/fixedbugs-577-a-constant-s-step-that-aborts-is-refused-where-it-is-written.hero:57:5: error[int_out_of_range]: `-128 / -1` computes 128, which does not fit an `i8`
+tests/golden/check/fixedbugs-577-a-constant-s-step-that-aborts-is-refused-where-it-is-written.hero:60:5: error[int_out_of_range]: `0 - 1` computes -1, which does not fit a `u64`
+tests/golden/check/fixedbugs-577-a-constant-s-step-that-aborts-is-refused-where-it-is-written.hero:63:13: error[int_out_of_range]: `200 + 100` computes 300, which does not fit a `u8`
+tests/golden/check/fixedbugs-577-a-constant-s-step-that-aborts-is-refused-where-it-is-written.hero:67:6: error[int_out_of_range]: `200 + 100` computes 300, which does not fit a `u8`
+tests/golden/check/fixedbugs-577-a-constant-s-step-that-aborts-is-refused-where-it-is-written.hero:73:5: error[division_by_zero]: `7 / Z` divides by zero: `Z` is 0
+tests/golden/check/fixedbugs-577-a-constant-s-step-that-aborts-is-refused-where-it-is-written.hero:76:5: error[int_out_of_range]: `1 << 64` shifts by 64, outside 0 through 63
+tests/golden/check/fixedbugs-577-a-constant-s-step-that-aborts-is-refused-where-it-is-written.hero:79:5: error[int_out_of_range]: `4294967296 * 4294967296` computes more than 18446744073709551615, which does not fit an `i64`
+tests/golden/check/fixedbugs-577-a-constant-s-step-that-aborts-is-refused-where-it-is-written.hero:82:5: error[int_out_of_range]: `-128 % -1` computes a remainder whose quotient, 128, does not fit an `i8`
+tests/golden/check/fixedbugs-577-a-constant-s-step-that-aborts-is-refused-where-it-is-written.hero:85:5: error[int_out_of_range]: `A17 + 100` computes 300, which does not fit a `u8`
+tests/golden/check/fixedbugs-577-a-constant-s-step-that-aborts-is-refused-where-it-is-written.hero:94:13: error[int_out_of_range]: `200 + 100` computes 300, which does not fit a `u8`
+tests/golden/check/fixedbugs-577-a-constant-s-step-that-aborts-is-refused-where-it-is-written.hero:100:9: error[int_out_of_range]: `200 + 100` computes 300, which does not fit a `u8`
+tests/golden/check/fixedbugs-577-a-constant-s-step-that-aborts-is-refused-where-it-is-written.hero:105:5: error[int_out_of_range]: `9223372036854775807 + 1` computes 9223372036854775808, which does not fit an `i64`
+tests/golden/check/fixedbugs-577-a-constant-s-step-that-aborts-is-refused-where-it-is-written.hero:108:5: error[int_out_of_range]: `200 + 100` computes 300, which does not fit a `u8`
+tests/golden/check/fixedbugs-577-a-constant-s-step-that-aborts-is-refused-where-it-is-written.hero:111:5: error[division_by_zero]: `7 % 0` divides by zero
+tests/golden/check/fixedbugs-577-a-constant-s-step-that-aborts-is-refused-where-it-is-written.hero:117:5: error[int_out_of_range]: `A11 + 100` computes 300, which does not fit a `u8`
+tests/golden/check/fixedbugs-577-a-constant-s-step-that-aborts-is-refused-where-it-is-written.hero:120:5: error[int_out_of_range]: `200 + 100` computes 300, which does not fit a `u8`
+tests/golden/check/fixedbugs-577-a-constant-s-step-that-aborts-is-refused-where-it-is-written.hero:124:5: error[int_out_of_range]: `x + 100` computes 300, which does not fit a `u8`
+tests/golden/check/fixedbugs-577-a-constant-s-step-that-aborts-is-refused-where-it-is-written.hero:128:9: error[int_out_of_range]: `v + 100` computes 300, which does not fit a `u8`
+tests/golden/check/fixedbugs-577-a-constant-s-step-that-aborts-is-refused-where-it-is-written.hero:135:13: error[int_out_of_range]: `v + 100` computes 300, which does not fit a `u8`
+tests/golden/check/fixedbugs-577-a-constant-s-step-that-aborts-is-refused-where-it-is-written.hero:139:11: error[int_out_of_range]: `255 + 1` computes 256, which does not fit a `u8`
+tests/golden/check/fixedbugs-577-a-constant-s-step-that-aborts-is-refused-where-it-is-written.hero:142:8: error[int_out_of_range]: `9223372036854775807 + 1` computes 9223372036854775808, which does not fit an `i64`
+tests/golden/check/fixedbugs-577-a-constant-s-step-that-aborts-is-refused-where-it-is-written.hero:145:13: error[int_out_of_range]: `200 + 100` computes 300, which does not fit a `u8`
+tests/golden/check/fixedbugs-577-a-constant-s-step-that-aborts-is-refused-where-it-is-written.hero:148:5: error[int_out_of_range]: `-9223372036854775808 / -1` computes 9223372036854775808, which does not fit an `i64`
+tests/golden/check/fixedbugs-577-a-constant-s-step-that-aborts-is-refused-where-it-is-written.hero:151:5: error[int_out_of_range]: `-9223372036854775808 % -1` computes a remainder whose quotient, 9223372036854775808, does not fit an `i64`
+tests/golden/check/fixedbugs-577-a-constant-s-step-that-aborts-is-refused-where-it-is-written.hero:154:5: error[int_out_of_range]: `1 << -1` shifts by -1, outside 0 through 63
+tests/golden/check/fixedbugs-577-a-constant-s-step-that-aborts-is-refused-where-it-is-written.hero:160:5: error[int_out_of_range]: `TOP - 1` computes -9223372036854775809, which does not fit an `i64`
+tests/golden/check/fixedbugs-577-a-constant-s-step-that-aborts-is-refused-where-it-is-written.hero:163:5: error[int_out_of_range]: `'a' + 159` computes 256, which does not fit a `u8`
+tests/golden/check/fixedbugs-577-a-constant-s-step-that-aborts-is-refused-where-it-is-written.hero:223:13: error[int_out_of_range]: `300` does not fit a `u8`

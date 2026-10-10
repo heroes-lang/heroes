@@ -1,0 +1,49 @@
+# The accessor of a constant whose value a header holds, and what stands
+# around it (design.md §4.19; panel 038; CLAUDE.md §7). Split out of
+# `emit/body.hero` on 2026-10-10, when defects 570 and 571 gave the accessor
+# lines of its own and that file passed §11's 300 lines: a body has a
+# prologue and blocks, an accessor has neither.
+#
+# **The accessor is the compiler's line among the program's**, the one place
+# in the definitions where a group's macro is expanded on purpose: its
+# `return NAME;` (or, for a record's constant, the initialisation
+# `emit/record_constant.hero` writes) names the header's value. So a
+# `deprecated` attribute is quiet over it and spoken again after it
+# (`emit/deprecation.hero`, defect 571), and every check of a binding is
+# raised again after it, since a `_Pragma` in the value reaches every line
+# below (`emit/checks_raised.hero`, defect 570). A constant of the
+# compiler's own headers, the library's `HERO_OS_OK` among them, is the
+# runtime's, and is written with neither.
+
+use ast
+use source
+use check/state
+use ir/containers
+use emit/ctype
+use emit/signature
+use emit/record_constant
+use emit/checks_raised
+use emit/deprecation
+use emit/writer
+
+# The accessor, its signature at the declaration as every signature is.
+function accessor(@w: writer.Writer, f: containers.Function, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl])
+    grouped = deprecation.group_constant(s, decls, f)
+
+    if grouped
+        deprecation.say(@w, line: deprecation.QUIET)
+    writer.at_span(@w, s, offset: f.span.start)
+
+    # A record's constant is built from the header's value, which may be a
+    # brace list that `return` cannot take (defect 094).
+    if record_constant.is_record_value(c, decls, f)
+        record_constant.accessor(@w, f, c, names, s, decls)
+    else
+        writer.line(@w, text: signature.signature(f, c, names, s, decls) + " {")
+        writer.at_generated(@w)
+        writer.line(@w, text: "    return " + source.span_text(s, decls[f.decl].name) + ";")
+        writer.line(@w, text: "}")
+
+    if grouped
+        deprecation.say(@w, line: deprecation.SPOKEN)
+    checks_raised.after_constant(@w, s, decls, f)

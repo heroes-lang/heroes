@@ -1,0 +1,2 @@
+-8
+!panic: `%` by -1 at the smallest i32: the remainder is 0, but the quotient it is the rest of has no i32

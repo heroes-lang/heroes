@@ -53,7 +53,35 @@
 
 #include <stdbool.h>
 #include <stddef.h>
+
+/* **No header of the C library is read before a unit's groups** (panel 205's
+ * R3, defect 568). A switch the library reads once, at its first header,
+ * `_GNU_SOURCE` at glibc's `features.h` and `_POSIX_C_SOURCE` at Darwin's
+ * `sys/cdefs.h`, works only from a header read before every other: this
+ * header included `<stdint.h>` and the unit `<math.h>` first, so a header of
+ * the program's own defining `_GNU_SOURCE` and named by a module's first
+ * group did nothing, and `sched_getcpu` was refused as undeclared. So a unit
+ * the compiler writes says first that it reads the library's standard
+ * headers after its groups (`heroes_unit.h`, then `heroes_standard.h`), and
+ * the integer types are clang's own, which C11 6.7p3 lets `<stdint.h>`
+ * declare again identically, as it does on every platform this compiler
+ * builds for; `<stdbool.h>` and `<stddef.h>` above are clang's own headers
+ * and read no switch. A unit that does not say so, written before then, the
+ * seed among them, or `runtime.c`, reads `<stdint.h>` here as it always
+ * did. */
+#if !defined(HERO_STANDARD_AFTER_GROUPS)
 #include <stdint.h>
+#endif
+typedef __INT8_TYPE__ int8_t;
+typedef __INT16_TYPE__ int16_t;
+typedef __INT32_TYPE__ int32_t;
+typedef __INT64_TYPE__ int64_t;
+typedef __UINT8_TYPE__ uint8_t;
+typedef __UINT16_TYPE__ uint16_t;
+typedef __UINT32_TYPE__ uint32_t;
+typedef __UINT64_TYPE__ uint64_t;
+typedef __INTPTR_TYPE__ intptr_t;
+typedef __UINTPTR_TYPE__ uintptr_t;
 
 #define HERO_RUNTIME_ABI 30
 
@@ -157,12 +185,12 @@ typedef struct {
  * block. Measured (panel 021): with SQLite's own text buffer that write landed
  * inside a valid allocation, so ASan said nothing and the program exited 0 —
  * silent corruption of foreign memory. The tag turns it into a panic. */
-#define HERO_STR_MAGIC UINT64_C(0x4845524f53535452) /* "HEROSSTR" */
+#define HERO_STR_MAGIC ((uint64_t)0x4845524f53535452ULL) /* "HEROSSTR" */
 /* The same mark with its low bit set: this block's bytes hold a NUL (panel
  * 192's R1, defect 245). A fact kept from the block's making, so the lend and
  * the lease ask it in one load and one test; `parts/str.c` says who sets it.
  * Every check of the mark accepts both values. */
-#define HERO_STR_MAGIC_NUL (HERO_STR_MAGIC | UINT64_C(1)) /* "HEROSSTS" */
+#define HERO_STR_MAGIC_NUL (HERO_STR_MAGIC | (uint64_t)1) /* "HEROSSTS" */
 
 /* -- a lease, the held buffer (design.md §4.19's fourth case, panel 124) ---------------
  * Bytes the PROGRAM owns, copied out of a `str`, which C may read for as long
@@ -183,7 +211,7 @@ typedef struct {
     int64_t len;
 } HeroHeldHeader;
 
-#define HERO_HELD_MAGIC UINT64_C(0x4845524f48454c44) /* "HEROHELD" */
+#define HERO_HELD_MAGIC ((uint64_t)0x4845524f48454c44ULL) /* "HEROHELD" */
 
 /* A literal is a static const block: no allocation, no runtime call, and a
  * negative refcount so decref is a no-op. The emitter writes one of these per

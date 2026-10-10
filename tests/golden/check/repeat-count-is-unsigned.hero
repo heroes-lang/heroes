@@ -14,11 +14,25 @@
 #
 # A computed count is written `n.to_u64().must()`, and that aborts with
 # `does_not_fit` at the value rather than inside the primitive.
+#
+# Corrected 2026-10-10, panel 206 R3: a negative literal count does not
+# compile (`-1` is refused `int_out_of_range`); a count computed negative, as
+# `0 - 1` at the `u64` it is asked for, aborts at its subtraction, the path
+# panel 054 ruled for a computed count, told `integer overflow`.
 
 function main()
     print(repeat("-", 40))
     good: u64 @ 3
     print(repeat("ab", good))
-    print(repeat("-", 0 - 1))    #~ type_mismatch
+    print(repeat("-", 0 - 1))
     n: i64 @ 0 - 1
-    print(repeat("-", n))        #~ type_mismatch
+    print(repeat("-", n))  #~ type_mismatch
+
+# Corrected 2026-10-10, defect 564 (panel 203 R3), below the program so every
+# line keeps its number: `repeat("-", 0 - 1)` is accepted by `check`. The
+# operands of `-` take the `u64` the count asks for, as a literal does (spec
+# § 2), each fits, and the subtraction overflows the width when it runs, an
+# abort (spec § 7: overflow aborts at every width). What was refused there was
+# the subtraction met at `i64`, the default its operands had no reason to
+# take. A count written negative, `-1`, is refused where it stands
+# (`int_out_of_range`), and `n` above is refused as before.

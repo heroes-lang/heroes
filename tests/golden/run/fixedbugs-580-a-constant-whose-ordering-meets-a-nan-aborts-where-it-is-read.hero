@@ -1,0 +1,16 @@
+# Fixed defect 580, 2026-10-10 (panel 207 R3; the critic's `s15`): `0.0 / 0.0`
+# is a float's nan, and `<` on floats is not an integer operator, so the walk
+# judges neither. Ordering a nan aborts (spec § 7) where `V` is read, the `1`
+# before it flushed first.
+
+constant V: i64
+    n = 0.0 / 0.0
+
+    if n < 1.0
+        1
+    else
+        2
+
+function main()
+    print(1)
+    print(V)

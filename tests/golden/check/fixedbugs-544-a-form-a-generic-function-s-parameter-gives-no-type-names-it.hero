@@ -35,11 +35,50 @@ function rows<A>(x: A, ys: [i64], m: {str: i64}) -> A
     return x
 
 function main()
-    print(g(x: 1, n: ok(2)))  #~ cannot_infer
+    print(g(x: 1, n: ok(2)))
     y: i64? = ok(1)
-    print(first(a: y, b: ok(2)).must())  #~ cannot_infer
-    print(1.g(ok(2)))  #~ cannot_infer
-    print(g(x: 1, n: fail(code: 1, msg: "no")))  #~ cannot_infer
-    print(pick(x: 1, o: .plus))  #~ cannot_infer
-    print(rows(x: 1, ys: [], m: {"a": 1}))  #~ cannot_infer
-    print(rows(x: 1, ys: [2], m: {}))  #~ cannot_infer
+    print(first(a: y, b: ok(2)).must())
+    print(1.g(ok(2)))
+    print(g(x: 1, n: fail(code: 1, msg: "no")))  #~ type_mismatch
+    print(pick(x: 1, o: .plus))
+    print(rows(x: 1, ys: [], m: {"a": 1}))
+    print(rows(x: 1, ys: [2], m: {}))
+
+# Corrected 2026-10-09, defect 552: a form inside an argument no longer keeps
+# its own message; it is told by the same rule, naming what it gives its type
+# to, and `fixedbugs-552-a-form-inside-a-generic-function-s-argument-names-it`
+# pins it.
+
+# Corrected 2026-10-10, defect 541 (panel 203 R1), below the program so every
+# line keeps its number: the seven lines of `main` are accepted but the
+# `fail(…)`, whose `code: 1` is the program's own mistake, now told
+# (`type_mismatch`). A generic function's argument with no type of its own
+# waits while the call's others settle the callee's letters and is checked
+# against its parameter, a concrete one at once, so `g(x: 1, n: ok(2))` is an
+# `i64?`. The rule this case pinned, *a generic function's parameter asks for
+# none*, left spec § 9 with that sitting. What is told now, at a parameter
+# whose letter nothing in the call settles, is each form below, naming the
+# parameter, the type it asks for and the letter nothing says.
+
+function opt<A>(n: A?) -> i64
+    if n.is_err()
+        return 0
+    return 1
+
+function chosen<A>(o: A) -> i64
+    _ = o
+    return 1
+
+function listed<A>(ys: [A]) -> i64
+    return ys.len()
+
+function mapped<K, V>(m: {K: V}) -> i64
+    return m.len()
+
+function after_panel_203()
+    print(opt(n: ok(2)))  #~ cannot_infer
+    print(opt(n: fail(code: "no", msg: "no")))  #~ cannot_infer
+    print(ok(3).opt())  #~ cannot_infer
+    print(chosen(o: .plus))  #~ cannot_infer
+    print(listed(ys: []))  #~ cannot_infer
+    print(mapped(m: {}))  #~ cannot_infer

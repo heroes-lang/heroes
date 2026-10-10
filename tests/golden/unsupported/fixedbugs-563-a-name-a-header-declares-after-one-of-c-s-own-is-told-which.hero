@@ -1,0 +1,12 @@
+# fixedbugs, defect 563, lane b18-ffi, 2026-10-10 (panel 204's R3), the
+# shape beside the case before it: no other group to move.
+#
+# `fixedbugs-563-out.h` declares `out_str` only where `EOF` is defined, and
+# this module names no `stdio.h`. Each header of C's own the unit does not
+# read is tried before it, and the first after which it declares the name is
+# told as a group to write above this one.
+extern "fixedbugs-563-out.h"
+    function out_str() -> i64  #~ ffi_unknown_name
+
+function main()
+    print(out_str())

@@ -1,0 +1,17 @@
+# Fixed defect 580, 2026-10-10 (panel 207 R3; the critic's `s02`): a cell a
+# branch writes is uncertain after it, since the walk decides no condition,
+# so `v + 100` after `if 1 < 2` writing 200 is not judged. It aborts where `V`
+# is read, as overflow aborts at every width (spec § 7), the `1` before it
+# flushed first.
+
+constant V: u8
+    v: u8 @ 0
+
+    if 1 < 2
+        v @ 200
+
+    v + 100
+
+function main()
+    print(1)
+    print(V)

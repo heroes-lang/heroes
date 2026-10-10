@@ -47,14 +47,15 @@
 # every build of every program sharing the directory after it, with
 # `internal error:` and nothing after the colon.
 #
-# **Two things this file deliberately does not do.** It does not cast: the
-# emitter passes `(void *)&x` for the argument it has checked here
-# (`emit/ops.hero`, `emit/extern_probe.hero`), which is what makes a
-# correct binding compile clean under `-Werror=incompatible-pointer-types`
-# on every clang. And it does not fail a build the dump could not serve: a
-# name the header spells as a macro cannot be `__typeof__`'d, the probe
-# already refuses that name on its own line, and a check that fell over
-# there would be the compiler blaming itself for the author's mistake.
+# **It does not cast**: the emitter passes `(void *)&x` for the argument it
+# has checked here (`emit/ops.hero`, `emit/extern_probe.hero`), which is what
+# makes a correct binding compile clean under
+# `-Werror=incompatible-pointer-types` on every clang. **And it asks one
+# module's headers at a time** (panel 202's C0, `cli/probing.hero`): `p` is
+# the program cut to the modules whose units read `probe.headers`. A name the
+# header spells as a macro cannot be `__typeof__`'d; the dump's refusal of it
+# is told after the module's unit, whose probe refuses that name on its own
+# line first.
 
 use ast
 use source
@@ -192,16 +193,29 @@ function check(t: toolchain.Toolchain, p: containers.Program, c: state.Checked, 
     # check, which stands between a wrong `@` width and the stack. Apple clang
     # 21 writes the byte of a `#line` name as U+FFFD here, measured 2026-10-05.
     json = read_back.words(dump_json)
+    said_of_dump = read_back.words(err_path)
     publish.discard(dump_json)
     publish.discard(err_path)
     rows = deps.rows_of(depfile: depfile, skip: dir + "/", @memo)
     publish.discard(depfile)
 
-    # The headers did not compile in isolation, or a name is a macro
-    # `__typeof__` cannot take: the build's own compile reports it on the
-    # author's line, and this check has nothing to add.
-    if !ran.started || ran.code != 0 || json.is_err()
-        return ok()
+    # **A dump that does not compile is refused, never passed** (panel 202's
+    # C0, defect 559): this said *the build's own compile reports it on the
+    # author's line* and returned `ok()`, and when the dump read every header
+    # of the program in one unit, two headers each module compiles alone
+    # failed it and `fill(@x: i64)` over `void fill(int *x)` built at exit 0,
+    # printing `4294967299`. It reads a module's own headers now, so where
+    # it fails the module's unit fails too and tells it first, which is why
+    # the refusal is `unread` and told only after the units compile
+    # (`cli/probing.hero`), each question `#line`d at its declaration.
+    if !ran.started
+        return fail(code: "failed", msg: "clang did not start for the pointee check's dump")
+
+    if ran.code != 0
+        return fail(code: "unread", msg: said_of_dump.default("the pointee check's dump did not compile"))
+
+    if json.is_err()
+        return fail(code: "failed", msg: "cannot read what the pointee check's dump said: " + failure_note(json))
 
     if rows.is_err()
         return fail(code: "failed", msg: "cannot record what the pointee check read: " + failure_note(rows))

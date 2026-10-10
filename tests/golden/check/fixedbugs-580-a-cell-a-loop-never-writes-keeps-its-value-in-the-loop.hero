@@ -1,0 +1,53 @@
+# Fixed defect 580, 2026-10-10 (panel 207 R1, route W, ratified that day; the
+# critic's `s31` and edge `e16`, the spec-warden's `t8`). Symptom: a cell
+# written before a loop and never written in it was given no value inside the
+# loop, so `t @ a + 100` with `a` a `u8` cell of 200 built and aborted at each
+# read of the constant, the walk forgetting every cell at a loop's entry.
+# Repair: a loop forgets only the cells it writes, its condition and body read
+# whole for them (`check/const_writes.hero`), since a cell it never writes
+# holds on every turn what it held at the loop's start; spec § 4 since panel
+# 207: an integer operator that would abort is a compile error at least where
+# its operands are known, a cell among them since its last write with no loop
+# or branch between that writes it. The shapes: a `while` over a cell it
+# leaves alone, a `for` the same, and an inner loop reading a cell the outer
+# one wrote on the same turn.
+
+constant S31: u8
+    a: u8 @ 200
+    t: u8 @ 0
+    i: i64 @ 0
+
+    while i < 1
+        t @ a + 100  #~ int_out_of_range
+        i @ i + 1
+
+    t
+
+constant T8: u8
+    a: u8 @ 200
+    t: u8 @ 0
+
+    for _ in [1, 2]
+        t @ a + 100  #~ int_out_of_range
+
+    t
+
+constant E16: u8
+    v: u8 @ 0
+    t: u8 @ 0
+    i: i64 @ 0
+
+    while i < 1
+        v @ 200
+        j: i64 @ 0
+
+        while j < 1
+            t @ v + 100  #~ int_out_of_range
+            j @ j + 1
+
+        i @ i + 1
+
+    t
+
+function main()
+    print(S31)

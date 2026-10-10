@@ -1,0 +1,6 @@
+error[field_lend_written]: `t.nsap.ptr()` lends a field of `t` to `slot_fill`, and the header declares that parameter `void *` — C may write through it, and `t` is not a `@` name
+  at tests/golden/unsupported/fixedbugs-570-a-constant-s-pragma-turns-off-no-lend-check.hero:26:18
+     |
+  26 |     slot_fill(p: t.nsap.ptr(), n: 8)  #~ field_lend_written
+     |                  ^^^^^^^^^^^^
+  note: §4.4: only a declared `@` name can be mutated, and a C write is a mutation. Declare `t` with `@` — a `@` cell, or a `@` parameter — and the bytes C writes land where this program reads them back. To only READ the field, lend it to a parameter the header declares `const`

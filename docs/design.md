@@ -682,13 +682,26 @@ Part 2 rules out as a justification.
 - **`#line` when the instruction's line differs from the current effective line** — not per
   statement, and not per span change: `#line N` anchors the *next* line and C then
   auto-increments, so a Heroes line lowering to K C lines drifts by K−1. Restored to the generated
-  file around synthetic prologue/cleanup code, so lldb never blames user lines for housekeeping —
+  file around synthetic cleanup code, so lldb never blames user lines for housekeeping —
   which means the restore directive carries the printer's **own output line count**, making a
   newline-counting writer structural rather than incidental (panel 020, measured against
   `tools/spike/01-first.c`, which advertised `:2` and delivered `:6`). Debugging the emitter
   itself is the *author's* activity, not the tool's capability: it is three lines in the emitter's
   test helper, and `--no-line` is refused by CLAUDE.md §10's stopping rule (panel 016's watch
   list, settled in panel 020).
+
+  **AMENDED 2026-10-10 by panel 200's R4** (defect 472;
+  `docs/panel/200-a-counted-slot-is-released-by-its-address-and-the-emitted-program-s-other-routes-are-ruled.md`):
+  the sentence read *"Restored to the generated file around synthetic prologue/cleanup code"*.
+  The prologue now carries the function's own line: the thread guard, every declaration and its
+  zero, and the `goto` to the first block are **one physical line** under one `#line`, so a
+  `step` into a function and a breakpoint on it stop on its `function` line, which is the
+  function's header and not a statement the author wrote that runs. One line, because a second
+  under the same `#line` would claim the author's next line, and a `#line` before each grew the
+  seed by 28% (the sitting's critic); written as one, the compiler's C fell from 48,311,651 to
+  47,091,837 bytes and from 1,535,984 to 1,207,560 lines. The exit and the cleanup stay the
+  generated file's (defect 335), and since defect 540 a retain or a release inside a line is that
+  line's, the exit's retain and sweep excepted.
 - **The `@` parameter is a pointer parameter, and the body works through it** (panel 196's R1,
   ratified 2026-10-06). The callee is handed a `T *p_l`, and its every read and write of `l` is
   `(*p_l)`, the caller's place itself: no local copy, no copy-in, and `Op::CopyOut` writes no C,
@@ -834,10 +847,20 @@ One file is one **module**, and the file you compile holds `main`. `use geom`
 binds `geom` to the declarations in `geom.hero` beside it, written qualified
 (`geom.dist2(a: p, b: q)`, `p: geom.Point`); every module you name needs its own
 `use`, there are no aliases and no wildcard, and modules may not form a cycle.
-The whole program is still emitted as **one `.c`** — one `.c` per module with
-prototypes across them and a per-module cache is a build architecture, deferred
-to Part 10 step 18 (panel 030 R1, panel 031). This paragraph read "one file, one
-program, **no modules in v1**" until panel 031.
+A program's C is cut by module (panel 093; panel 202 R1, ratified 2026-10-10):
+`build` and `run` compile one unit per module, prototypes across them and each
+unit cached, and each unit reads the headers of its own module's groups and of
+the group records it spells, never another module's, which every probe of the
+headers asks alike. `heroes test` compiles a unit per module too, the root's
+`main` running every module's tests (panel 202 R3, defect 560), and `--emit-c`
+writes the whole program as one `.c`, which is the seed's bootstrap, refused at
+exit 1 where that file cannot mean the program the units build: where it does
+not compile, or where a module's binding means something else in it, each asked
+of clang (defect 453, `cli/one_file.hero`). This paragraph said *`heroes test`
+and `--emit-c` read the whole program as one `.c`* until the same day; it said
+*the whole program is still emitted as one `.c`* until 2026-10-10, stale since
+panel 093 made `build` per module, and it read "one file, one program, **no
+modules in v1**" until panel 031.
 
 ```
 ## Section title
@@ -946,8 +969,13 @@ today into Java and C# `record`. The rejected alternatives:
 **There is no `variable` entity.** Mutable globals are forbidden (locality). Mutable bindings exist
 only as locals.
 
-**Declaration order does not matter.** All top-level names are visible throughout the file. No
-forward declarations, mutual recursion is free, and the model can emit functions in any order.
+**Declaration order does not matter, but a group's** (panel 204, ratified 2026-10-10). All
+top-level names are visible throughout the file. No forward declarations, mutual recursion is free,
+and the model can emit functions in any order. The one order that reaches C is that of a module's
+`extern` groups: C reads the module's headers in the order its groups are written (§4.19), so a
+header that needs another's names is written below it. This paragraph said *declaration order does
+not matter* with no exception until 2026-10-10, while the order of two groups already decided
+whether a program built (panel 091, defect 563).
 
 ### 4.3 Types
 
@@ -1801,11 +1829,28 @@ Rules that keep the cost low:
   The token cost of generics is at use sites, so pay nothing there. And because there are no
   constraints, inference is trivial — look at argument types, deduce `T`. *And when no argument
   carries `T` (panel 105, ratified 2026-09-03): at the type the context asks for — the binding's
-  annotation, the declared result a `return` or an arm answers to, a non-generic callee's parameter
-  — which is the expectation the checker already threads to every literal, `[]` and `fail(…)`. Flat
-  only: a generic callee's arguments are synthesised, so nothing is bound through another generic's
-  parameter. A call that says neither is refused at the call; a parameter that appears nowhere in
-  the signature is refused at the declaration.* **Rust's turbofish
+  annotation, the declared result a `return` or an arm answers to, a callee's parameter — which is
+  the expectation the checker already threads to every literal, `[]` and `fail(…)`; and when
+  neither does, at the type a generic call or a literal argument gives, a literal's `i64` or `f64`.
+  A generic callee's parameter is such a context once its letters are settled (panel 203,
+  ratified 2026-10-10): an argument with no type of its own — a literal, `[]`, `{}`, `ok(…)`,
+  `fail(…)`, a case, a generic function used as a value, a generic call, an array or map literal
+  holding one — waits while the arguments that carry a type settle the callee's letters, then the
+  context where a literal it would settle can take it, then the waiting argument whose type owes
+  least to a literal's default, then a generic function's name from what is bound so far, and is
+  checked against its parameter so substituted; the forms that refuse themselves speak last, so a
+  pair's verdict is the same in either order; and the value before the dot of `x.f(…)` is such an
+  argument where its form can hold no field. So `first(a: b, b: 255)` and `first(a: 255, b: b)`
+  with `b: u8` are both a `u8`, `y: u8 = first(a: 1, b: 2)` is one too, and `[].count()` is
+  `count([])`; `xs.fold(0, keep)` over a `[u8]`, `keep<T>(acc: T, item: T)`, is refused, the
+  literal settling `fold`'s `B` at `i64` before `keep` speaks. A call that settles a letter by none
+  of these is refused at the call (`x = first(a: ok(1), b: ok(2))`); a parameter that appears
+  nowhere in the signature is refused at the declaration.* *Amended by panel 203 (2026-10-10),
+  reversing panel 105's flat rule for every argument with no type of its own:* from 2026-09-03
+  this paragraph said *Flat only: a generic callee's arguments are synthesised, so nothing is
+  bound through another generic's parameter*, and spec § 9 carried that clause as *a generic
+  function's parameter asks for none* from 2026-10-09 (panel 201 R1) until this sitting took it
+  out; until then a literal argument settled its letter at `i64` on its own. **Rust's turbofish
   (`collect::<Vec<i32>>()`) cannot exist in this language**, because there is no syntax to specify
   type arguments manually. That is deliberate: it tokenises terribly, being a very rare sequence.
 - **Monomorphisation.** On seeing `map(nums, plus)` with `nums: [i64]`, generate a copy of the
@@ -2378,6 +2423,63 @@ names are macros, and such a name is `error[ffi_macro_name]`, whose note drafts 
 `static inline` function in a header of the program's own that calls the macro, bound by `extern`
 like any function, every C type in the draft a placeholder the author fills from the macro's
 documentation, never the declaration's.
+
+**A module's headers are included in the order its groups are written, and the order is
+load-bearing** (panel 204, ratified 2026-10-10; the sentence panel 091 found owed, carried by
+`issues/2026-09/07/2026-09-07-0000-four-repairs-to-design-md-that-ride-its-opening-sitting-4-19.md`).
+A module's unit opens with the compiler's own headers, its prefix: `heroes_unit.h`, which reads
+`heroes_runtime.h`, whose integer types are spelled from clang's builtins and which brings only
+clang's own `stdbool.h` and `stddef.h`, then `hero_os.h` (`SEEDS` in `emit/externs.hero`); no
+header of the C library is read before the groups (panel 205 R3, defect 568). Then, between
+`heroes_guard_open.h` and `heroes_guard_close.h`, each header the module's groups name, once, where
+its first group stands, a group holding only records in its place like any other; after them, the
+header of each record of another module's group the unit spells (§4.1). After the guard's close
+comes `heroes_standard.h`, which reads `<stdint.h>` and `<math.h>` and defines again from clang's
+predefined macros the ten of their names the unit's own C writes (`INT64_C`, `UINT64_C`,
+`INT64_MIN`, `HUGE_VAL`, and since defect 567 `INT8_MIN`, `INT16_MIN`, `INT32_MIN` and `INT8_C`,
+`INT16_C`, `INT32_C` at a division's own width), which the guard gives back undefined. Every probe of the unit reads the
+same list, its plan's (`emit/unit_plan.hero`). A
+header that needs another's names compiles only below it: `<jpeglib.h>` declares
+`jpeg_stdio_dest(j_compress_ptr, FILE *)` and includes no `<stdio.h>`, so its group is refused
+above a `stdio.h` group and builds below one, and the prefix is why it fails at `FILE` rather than
+at `size_t`. A header's `#ifndef` default takes an earlier header's definition, so two headers can
+mean another program in the other order (`cfgone`: `3 50` against `3 10`). Where two headers define
+one macro two ways, which C11 6.10.3p2 forbids and clang only warns of, the unit is refused
+(`-Werror=macro-redefined`, panel 204's R2, `cli/macro_twice.hero`), told what the order it reads
+them in and the other order make of the macro, and drafted, as a `guess`, a header of the program's
+own that includes the two with an `#undef` between them; where each defines it only if no header
+before it has, as the compiler-engineer's `dual` does, both orders build and mean two programs, and
+this paragraph is what says so. A header clang refuses where its group stands is told what the
+program needs instead of a repair, each asked of clang on the failure path alone
+(`cli/header_order.hero`, panel 204's R3): the move of another group of its module after which the
+unit compiles, saying so where the move makes a bound name read otherwise; else the header of C's
+own it needs before it; else, for a header not beside the program, the header of the program's own
+the line it needs goes in. **No pass sorts, thins or moves this list** but the repeated header, dropped at its second group, and a change to it
+changes what programs mean, so it is a sitting's (CLAUDE.md § 4). **Until panel 204 a record-only
+group's header came after every other** (panel 061's second walk): `extern "stdio.h"` holding only
+`record CFile tag FILE` above `jpeglib.h` was refused *unknown type name 'FILE'*, and the same
+group with a function in it built. The prefix comes first in every unit, so no group's header is
+read before it, and a line of C between two headers, a `#define` or an `#undef`, has one place to
+go: a header of the program's own that includes the two with the line between them, which one
+group then names in their place. **A switch reaches a module's headers only from its first group**
+(panel 205, ratified 2026-10-10; the spec-warden's sentence). A macro libc reads once, at its first
+header (`_GNU_SOURCE` at glibc's `features.h`, `_POSIX_C_SOURCE` at Darwin's `sys/cdefs.h`), is
+defined in a header of the program's own that the module's first group names, and no header of the
+compiler's own that reads one comes before it. Until panel 205 the prefix's `<stdint.h>` and
+`<math.h>` came first and latched every such switch: `sched_getcpu` was refused `ffi_unknown_name`
+on Linux arm64 through a header defining `_GNU_SOURCE`, the message saying it declares no such
+name, and `strlcpy` stayed declared on this Mac under `_POSIX_C_SOURCE 200112L`. A macro a header
+tests itself (`_XOPEN_SOURCE` for `<ucontext.h>`) worked from any earlier group, and does. **This
+paragraph said until 2026-10-10** that a switch written there *is still read after the prefix, so
+it reaches no header the prefix has read (defect 568)*, true of the compiler it described, which
+left a program no place for one. A name a header declares only under such a switch is told so
+rather than *declares no*: a refused round asks the header again under `_XOPEN_SOURCE 700` and
+under `_GNU_SOURCE 1`, and a name found there is *`sched.h` declares
+`sched_getcpu` only under `_GNU_SOURCE`: define it in a header of your own that this module's first
+group names* (`cli/switch_ask.hero`). And a `package`'s words, its `-D` among them, reach only the
+units that read a header a group naming that package names (defect 572, `emit/header_packages.hero`),
+never every unit of the program: until then a module binding `wcwidth` from `wchar.h` built only
+where `main` named `ncursesw`, and was told *declares no* otherwise.
 
 **A `constant` is the group's second kind of member, and its value is the header's**
 (panel 038). It carries no body — inside a group a declaration is a *signature, not a

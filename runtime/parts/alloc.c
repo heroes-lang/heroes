@@ -257,6 +257,13 @@ static void hero_handle_report_twice_in_one_call(const void *h, size_t held) {
  * wrote through an address it kept is the earlier fault. */
 static void hero_lend_audit_given(const char *when);
 
+/* `parts/run.c` and `parts/dir.c`, later in this unit: the scratch a launch's
+ * argument list and a directory listing hold between calls, which the program
+ * gives back by `hero_run_reset()` and `hero_dir_release()` (defect 573). */
+static int64_t hero_run_words_held_at_exit(void);
+static int64_t hero_dir_names_held_at_exit(void);
+static int64_t hero_dir_blocks_held_at_exit(void);
+
 void hero_runtime_check_leaks(void) {
     hero_lend_audit_given("found when the program ended");
     int64_t blocks = hero_live_blocks;
@@ -267,13 +274,37 @@ void hero_runtime_check_leaks(void) {
                 (long long)blocks);
         hero_abort();
     }
+    /* SCRATCH A PROGRAM HOLDS BY ITS OWN CALLS IS TOLD AS THE PROGRAM'S
+     * (defect 573). A launch's argument list and a directory listing stay
+     * between calls until the program gives them back; one left standing was
+     * told *a runtime call kept what it borrowed — this is a runtime bug*, of a
+     * program that had only not called the release. What is left after them is
+     * still the runtime's. */
     int64_t scratch = hero_live_scratch;
     if (scratch != 0) {
+        int64_t words = hero_run_words_held_at_exit();
+        int64_t names = hero_dir_names_held_at_exit();
+        int64_t listing = names + hero_dir_blocks_held_at_exit();
+        int64_t rest = scratch - words - listing;
         fflush(stdout);
-        fprintf(stderr, "panic: %lld scratch buffers still live at exit "
-                        "(a runtime call kept what it borrowed) — this is a "
-                        "runtime bug\n",
-                (long long)scratch);
+        if (words > 0) {
+            fprintf(stderr, "panic: a launch's argument list still holds %lld word(s) at exit — "
+                            "`hero_run_arg` keeps each word until `hero_run_reset()` gives the list "
+                            "back, and this program did not call it after its last `hero_run_arg`\n",
+                    (long long)words);
+        }
+        if (listing > 0) {
+            fprintf(stderr, "panic: a directory listing of %lld name(s) is still held at exit — "
+                            "`hero_dir_scan` keeps its listing until `hero_dir_release()` gives it "
+                            "back, and this program did not call it after its last scan\n",
+                    (long long)names);
+        }
+        if (rest != 0) {
+            fprintf(stderr, "panic: %lld scratch buffers still live at exit "
+                            "(a runtime call kept what it borrowed) — this is a "
+                            "runtime bug\n",
+                    (long long)rest);
+        }
         hero_abort();
     }
     /* THIRD, AND IT ACCUSES THE PROGRAM RATHER THAN THIS COMPILER. Held bytes

@@ -5,6 +5,13 @@
 # makes errors in every unit, which no group can turn off. Told as the
 # header's, and the note says the warning is one the build's flags make an
 # error.
+#
+# **Corrected 2026-10-10, defect 569 (panel 205's R2)**: *which no group can
+# turn off* was a policy and is reversed: a header's own code is passed over
+# for `-Wall`'s warnings and sign conversions, wherever the header was found,
+# and judged for the rest. This header's value narrowed to `int` is one of the
+# rest, so it is still refused, and the note says what a header's code is held
+# to.
 
 extern "fixedbugs-360-flags.h"  #~ ffi_header_refused
     function thrice(x: i64) -> i64

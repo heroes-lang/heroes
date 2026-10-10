@@ -44,6 +44,7 @@ use check/leasing
 use check/counted
 use check/freer_marks
 use check/endless
+use check/const_steps
 
 # Check one resolved program. The resolver ran first and its answers are
 # inputs, never recomputed.
@@ -112,6 +113,11 @@ function check(a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.D
     # itself before it returns or ends, told at the call; after the types,
     # which say whether `x.f()` calls a field of `x` (§4.11).
     endless.every_path_calls_itself(@c, a, r, s, decls)
+
+    # Panel 206's R1: a step of a constant's written body that aborts, told
+    # where it is written, read or not. After the types, which give each
+    # step the width the C computes it at.
+    const_steps.judged(@c, a, r, s, decls)
 
     # §4.16's FILE-WIDE hole exemption, the same one the unused rule
     # takes: a body that is ??? falls off its end by construction — that

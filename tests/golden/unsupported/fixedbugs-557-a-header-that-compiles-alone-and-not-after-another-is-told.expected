@@ -1,0 +1,8 @@
+error[ffi_header_refused]: `fixedbugs-557-function.h`, the header this group names, compiles alone and not after `fixedbugs-557-macro.h`, the header another group names, where clang refuses it at `fixedbugs-557-function.h` line 3: expected identifier or '('
+  at tests/golden/unsupported/fixedbugs-557-a-header-that-compiles-alone-and-not-after-another-is-told.hero:15:8
+     |
+  15 | extern "fixedbugs-557-function.h"  #~ ffi_header_refused
+     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: `fixedbugs-557-function.h` line 3 reads `static inline int twice(int x) { return x + x; }`
+  note: the other group names `fixedbugs-557-macro.h` at line 12
+  note: these compile when `fixedbugs-557-function.h` is included before `fixedbugs-557-macro.h`, which the group at line 12 names: a module's headers are included in the order its groups are written, so write this group above that one

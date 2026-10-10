@@ -1,0 +1,6 @@
+error[ffi_parameter_type]: `p` of `read_p` is declared a different kind of thing from the header's `int *` — clang read the header, and the two do not convert
+  at tests/golden/unsupported/fixedbugs-570-an-integer-for-a-pointer-is-refused-through-the-pragma.hero:16:5
+     |
+  16 |     function read_p(p: i64) -> i32  #~ ffi_parameter_type
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: §4.19: a parameter is declared as what the header says. `int *` has no name in this language — if it is a struct, declare it as a `record` inside this same `extern` group and the header owns its layout

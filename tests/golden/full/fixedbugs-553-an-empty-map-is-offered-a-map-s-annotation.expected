@@ -1,0 +1,41 @@
+error[cannot_infer]: the map literal is empty, so there is nothing to infer its type from — write the annotation
+  at tests/golden/full/fixedbugs-553-an-empty-map-is-offered-a-map-s-annotation.hero:12:9
+     |
+  12 |     m = {}  #~ cannot_infer
+     |         ^^
+  fix (guess): annotate the binding: `m: {str: i64} = {}`
+
+error[cannot_infer]: the map literal is empty, so there is nothing to infer its type from — write the annotation
+  at tests/golden/full/fixedbugs-553-an-empty-map-is-offered-a-map-s-annotation.hero:13:11
+     |
+  13 |     print({}.len())  #~ cannot_infer
+     |           ^^
+  fix (guess): bind it first with its type, `m: {str: i64} = {}`, and use `m` here
+
+error[cannot_infer]: the map literal is empty, so there is nothing to infer its type from — write the annotation
+  at tests/golden/full/fixedbugs-553-an-empty-map-is-offered-a-map-s-annotation.hero:14:10
+     |
+  14 |     x = [{}]  #~ cannot_infer
+     |          ^^
+  fix (guess): bind it first with its type, `m: {str: i64} = {}`, and use `m` here
+
+error[cannot_infer]: the map literal is empty, so there is nothing to infer its type from — write the annotation
+  at tests/golden/full/fixedbugs-553-an-empty-map-is-offered-a-map-s-annotation.hero:15:15
+     |
+  15 |     y = {"a": {}}  #~ cannot_infer
+     |               ^^
+  fix (guess): bind it first with its type, `m: {str: i64} = {}`, and use `m` here
+
+error[cannot_infer]: the map literal is empty, so there is nothing to infer its type from — write the annotation
+  at tests/golden/full/fixedbugs-553-an-empty-map-is-offered-a-map-s-annotation.hero:16:11
+     |
+  16 |     print({})  #~ cannot_infer
+     |           ^^
+  fix (guess): bind it first with its type, `m: {str: i64} = {}`, and use `m` here
+
+error[cannot_infer]: the array literal is empty, so there is nothing to infer its type from — write the annotation
+  at tests/golden/full/fixedbugs-553-an-empty-map-is-offered-a-map-s-annotation.hero:17:10
+     |
+  17 |     xs = []  #~ cannot_infer
+     |          ^^
+  fix (guess): annotate the binding: `xs: [i64] = []`

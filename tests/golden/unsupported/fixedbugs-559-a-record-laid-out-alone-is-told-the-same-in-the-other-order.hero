@@ -1,0 +1,21 @@
+# fixedbugs, defect 559, lane b18-ffi, 2026-10-10 (panel 202's C0; the
+# critic's `skew64sw`).
+#
+# The case beside this one with its group also binding a function, so its
+# header comes before the other module's in the program's list of headers,
+# the other order of the two. Told the same words: the record is laid out
+# as this module's own unit reads it, whichever header the program names
+# first. The base told this order truly already; it is kept so both orders
+# are pinned.
+use fixedbugs559/wide
+
+extern "fixedbugs-559-skew.h"
+    record S
+        a: i64  #~ ffi_field_type
+        b: i32
+    function sget(s: S) -> i32
+
+function main()
+    s = S(a: 1, b: 2)
+    print(wide.doubled(x: 3) + s.a)
+    print(sget(s: s))

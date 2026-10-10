@@ -8,6 +8,7 @@
 use cli/digest
 use cli/files
 use cli/flags
+use cli/link_flags
 use cli/libraries
 use cli/process
 use cli/publish
@@ -129,7 +130,7 @@ function link_objects(t: toolchain.Toolchain, objects: [str], module: str, outpu
 # program's link, so it fires the day a clang does not. Then the level, its
 # debug word (`flags.level_words`: clang's driver for Windows writes the
 # `.pdb` only when the link line carries a `-g` word), the sanitizers, the
-# link's own flags (`flags.link_flags`, which carries the
+# link's own flags (`link_flags.link_flags`, which carries the
 # measurements: `-rdynamic` on POSIX, the stack reserve and a full link on
 # Windows), the `--library` directories, the objects, a package's link
 # words (`libraries.link_words`) and the `link` names. No include directory:
@@ -138,7 +139,7 @@ function link_objects(t: toolchain.Toolchain, objects: [str], module: str, outpu
 # called *argument unused during compilation*.
 function link_line(objects: [str], level: str, sanitize: bool, search_library: [str], package_flags: [str], link_names: [str]) -> [str]
     line: [str] @ strings.with_all(list: ["clang"], more: flags.level_words(level: level, sanitize: sanitize))
-    line @ strings.with_all(list: line, more: flags.link_flags())
+    line @ strings.with_all(list: line, more: link_flags.link_flags())
 
     for dir in search_library
         line @ strings.with_all(list: line, more: ["-L", dir])

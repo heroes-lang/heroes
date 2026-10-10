@@ -1,7 +1,9 @@
 # A group's header never redefines a name the unit's own C takes from its own
 # headers (design.md §4.19; CLAUDE.md §7; defect 361, 2026-10-06). A unit
-# includes the runtime, <math.h> and `hero_os.h`, then the headers its
-# program's groups name, then every line the compiler wrote, so a macro one
+# includes the runtime and `hero_os.h`, then the headers its program's groups
+# name, then `<stdint.h>` and `<math.h>` (`runtime/heroes_standard.h`, panel
+# 205's R3: read before the groups until 2026-10-10, they latched the C
+# library's switches), then every line the compiler wrote, so a macro one
 # of those headers defined, or a header it includes, rewrote that C: on this
 # Mac, `#define hero_print_int(x) nothing` was *internal error* at exit 2,
 # `HERO_RUNTIME_ABI 99` a false *heroes_runtime.h is from another compiler*,
@@ -11,8 +13,13 @@
 # **The groups' includes stand between `runtime/heroes_guard_open.h` and
 # `runtime/heroes_guard_close.h`**, which save and give back every name in
 # `emit/guarded_names.hero`: every word the runtime's two headers write, every
-# name C11 gives the four standard headers read before the groups, and
-# `main`. A name the program's groups write (`bound_names`), a function,
+# name C11 gives `<stdbool.h>` and `<stddef.h>`, read before the groups, the
+# types and functions of `<stdint.h>` and `<math.h>` and the ten of their
+# macros the unit's own C writes, and `main`. A macro of those two the unit
+# never writes is left to the headers, since under the guard a group's
+# `#define MY_MAX INT32_MAX` would have lost `INT32_MAX` with the region, and
+# the ten are defined again after it (`runtime/heroes_standard.h`). A name
+# the program's groups write (`bound_names`), a function,
 # constant, record, field or releaser of theirs, is pushed again just before
 # the close when the list holds it, so the close gives back the header's own
 # definition: `LIMIT` bound from a macro keeps the header's value, and so would
@@ -39,6 +46,11 @@ use source
 use parse
 use emit/guarded_names
 use emit/externs as emit_externs
+use emit/checks_raised
+use emit/header_region
+use emit/deprecation
+use cli/process
+use cli/strings
 
 # The line before the groups' includes, and the line after them.
 constant OPEN_LINE: str
@@ -47,13 +59,41 @@ constant OPEN_LINE: str
 constant CLOSE_LINE: str
     "#include \"heroes_guard_close.h\""
 
-# The groups' include lines as the unit writes them: between the two guard
-# includes, each name of the list the program binds pushed again before the
-# close; nothing where there are none.
+# The unit's first line, which says it reads the C library's standard headers
+# after its groups, and the line that reads them (defect 568).
+constant FIRST_LINE: str
+    "#include \"heroes_unit.h\""
+
+constant STANDARD_LINE: str
+    "#include \"heroes_standard.h\""
+
+# The macros the unit's own C writes from `<stdint.h>` and `<math.h>`, each
+# guarded and defined again after the groups by `runtime/heroes_standard.h`.
+constant STANDARD_USED: [str]
+    [
+        "INT64_C"
+        "UINT64_C"
+        "INT64_MIN"
+        "HUGE_VAL"
+        "INT8_C"
+        "INT8_MIN"
+        "INT16_C"
+        "INT16_MIN"
+        "INT32_C"
+        "INT32_MIN"
+    ]
+
+# The groups' include lines as the unit writes them: inside the region a
+# header's own code is judged in (`emit/header_region.hero`, defect 569),
+# between the two guard includes, each name of the list the program binds
+# pushed again before the close; after the region every warning a check of a
+# binding rests on raised again, whatever a header's pragma did to it
+# (`emit/checks_raised.hero`, defect 570); nothing where there are none.
 function around(lines: [str], bound: {str: bool}) -> [str]
     if lines.len() == 0
         return lines
-    out: [str] @ [OPEN_LINE]
+    out: [str] @ header_region.opening()
+    out @ out.push(OPEN_LINE)
 
     for line in lines
         out @ out.push(line)
@@ -62,7 +102,15 @@ function around(lines: [str], bound: {str: bool}) -> [str]
         if !bound[name].is_err()
             out @ out.push("#pragma push_macro(\"" + name + "\")")
 
-    return out.push(CLOSE_LINE)
+    out @ out.push(CLOSE_LINE)
+    out @ out.push(header_region.CLOSING)
+
+    for raised in checks_raised.lines()
+        out @ out.push(raised)
+
+    # And a header's `deprecated` attribute quiet on the compiler's lines
+    # (`emit/deprecation.hero`, defect 571), until the definitions.
+    return out.push(deprecation.QUIET)
 
 # Every C name the program's groups take from a header between the guards:
 # a function's or constant's own name, a record's, its C tag and its fields,
@@ -145,7 +193,16 @@ test "the groups' includes stand between the guard's two, a bound name of the li
     assert around(none, bound: bound).len() == 0
     bound["INT64_C"] @ true
     bound["LIMIT"] @ true
-    assert around(["#include <a.h>"], bound: bound) == [OPEN_LINE, "#include <a.h>", "#pragma push_macro(\"INT64_C\")", CLOSE_LINE]
+    head = strings.with_all(
+        list: header_region.opening(),
+        more: [OPEN_LINE, "#include <a.h>", "#pragma push_macro(\"INT64_C\")", CLOSE_LINE, header_region.CLOSING]
+    )
+    got = around(["#include <a.h>"], bound: bound)
+    assert got.len() == head.len() + checks_raised.lines().len() + 1
+    assert got.slice(from: 0, to: head.len()) == head
+    assert got[head.len()] == "#pragma clang diagnostic error \"-Wreturn-type\""
+    assert got[got.len() - 2] == checks_raised.lines()[checks_raised.lines().len() - 1]
+    assert got[got.len() - 1] == deprecation.QUIET
 
 # The two runtime files save and give back this list, in its order, and no
 # other name: a line added to one and not here is named.
@@ -172,13 +229,60 @@ test "the list holds every word the runtime's headers write"
     assert missing.join(" ") == ""
 
 # The premise the list's C11 half rests on: the standard headers a unit reads
-# before its groups are <stdbool.h>, <stddef.h> and <stdint.h>, through the
-# runtime, and <math.h> as a seed. A header added to either is named here,
-# and its names are owed to the list and the two runtime files.
-test "the headers read before the groups are the four the list names and the runtime's own"
-    assert includes_of(read_file("runtime/heroes_runtime.h").must()) == ["<stdbool.h>", "<stddef.h>", "<stdint.h>"]
+# before its groups are clang's own <stdbool.h> and <stddef.h>, through the
+# runtime, which read no switch of the C library; <stdint.h> and <math.h> come
+# after the groups (defect 568). A header added to either is named here, and
+# its names are owed to the list and the two runtime files.
+test "the headers read before the groups are clang's own two, and the library's come after"
+    runtime = read_file("runtime/heroes_runtime.h").must()
+    assert includes_of(runtime) == ["<stdbool.h>", "<stddef.h>", "<stdint.h>"]
+
+    # `<stdint.h>` only for a unit that does not say it reads it after its
+    # groups, a unit written before panel 205's R3; every unit this compiler
+    # writes says so first.
+    assert strings.holds(
+        text: runtime,
+        needle: "#if !defined(HERO_STANDARD_AFTER_GROUPS)\n#include <stdint.h>\n#endif\n"
+    )
+    first = read_file("runtime/heroes_unit.h").must()
+    assert strings.holds(text: first, needle: "#define HERO_STANDARD_AFTER_GROUPS 1\n")
+    assert includes_of(first) == ["\"heroes_runtime.h\""]
     assert includes_of(read_file("runtime/hero_os.h").must()) == ["\"heroes_runtime.h\""]
-    assert emit_externs.SEEDS == ["math.h", "hero_os.h"]
+    assert emit_externs.SEEDS == ["heroes_unit.h", "hero_os.h"]
+    assert includes_of(read_file("runtime/heroes_standard.h").must()) == ["<stdint.h>", "<math.h>"]
+
+# The ten macros the unit writes from the library's standard headers (four
+# when defect 568 was repaired, defect 567's division guard six more) are
+# the ten the guard keeps and `heroes_standard.h` defines again; any other
+# macro of `<stdint.h>` or `<math.h>` an emitter module writes is named here,
+# owed its guard and its definition after the groups.
+test "the unit's own C writes ten macros of the library's standard headers, each guarded and defined again"
+    listed: {str: bool} @ {}
+
+    for name in guarded_names.names()
+        listed[name] @ true
+
+    standard = read_file("runtime/heroes_standard.h").must()
+
+    for name in STANDARD_USED
+        assert !listed[name].is_err()
+        assert strings.holds(text: standard, needle: "#ifndef " + name + "\n")
+
+    for name in guarded_names.left()
+        assert listed[name].is_err()
+
+    written: [str] @ []
+    files = process.files_under("selfhost/emit").must().push("selfhost/emit.hero")
+
+    for path in files
+        if strings.ends_with(text: path, suffix: ".hero") && !strings.ends_with(text: path, suffix: "guarded_names.hero")
+            quoted = quoted_words(read_file(path).must())
+
+            for name in guarded_names.left()
+                if !quoted[name].is_err()
+                    written @ written.push(path + ": " + name)
+
+    assert written.join(" ") == ""
 
 # What a group writes is the header's: the function, the constant, the
 # record and its fields, and a releaser a mark names.
@@ -201,6 +305,44 @@ test "the names a program's groups write are left to their header"
         library: "extern \"hero_os.h\"\n    constant HERO_OS_OK: i64\n"
     )
     assert bound_names(library, parse.parse_source(library).decls)["HERO_OS_OK"].is_err()
+
+# Every identifier inside a string literal of `text`'s code, its comments
+# left out: what an emitter module writes into C.
+function quoted_words(text: str) -> {str: bool}
+    out: {str: bool} @ {}
+    n = text.len()
+    i: i64 @ 0
+    line_start: bool @ true
+
+    while i < n
+        b = text[i]
+
+        if line_start
+            at: i64 @ i
+
+            while at < n && text[at] == 32
+                at @ at + 1
+
+            if at < n && text[at] == 35
+                while i < n && text[i] != 10
+                    i @ i + 1
+
+                continue
+        line_start @ b == 10
+
+        if b == 34
+            i @ i + 1
+            start = i
+
+            while i < n && text[i] != 34 && text[i] != 10
+                if text[i] == 92
+                    i @ i + 1
+                i @ i + 1
+
+            words_into(@out, text: text.slice(from: start, to: i))
+        i @ i + 1
+
+    return out
 
 # The names of a guard file's `#pragma <word>("...")` lines, in order.
 function pragmas(text: str, word: str) -> [str]

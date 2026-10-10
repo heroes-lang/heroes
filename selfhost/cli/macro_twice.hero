@@ -1,0 +1,229 @@
+# A macro two groups' headers define two ways (design.md §4.19, §4.17; panel
+# 204's R2, ratified 2026-10-10; defect 563). C11 §6.10.3p2 makes a macro
+# defined again otherwise a constraint, and clang only warned: so the
+# spec-warden's `cfgone` built in both orders of its two groups, printing `3
+# 10` written one way and `3 50` the other, the first under a warning nobody
+# read. `-Werror=macro-redefined` refuses it in every unit (`cli/flags.hero`),
+# and this tells it in the program's words: the macro, both headers and the
+# lines that define it, what the order the unit reads them in makes of it,
+# what the other order does, and, where the two groups are one module's, the
+# header of the program's own that keeps the order written, an `#undef`
+# between the two, drafted as a `guess` on both groups' strings.
+#
+# **What the other order does is asked, never argued**: on the failure path
+# alone, the unit's headers with the later of the two moved before the
+# earlier are compiled once under the unit's own words, and where they
+# compile, preprocessed once more for the macro's last definition, so the
+# note says the macro is the other header's throughout only where clang's
+# listing of it says so.
+
+use source
+use ast
+use diag
+use emit/clang_place
+use emit/ffi_lookup
+use cli/toolchain
+use cli/compiling
+use cli/clang_first
+use cli/header_refused
+use cli/headers_together
+use cli/order_trial
+use cli/order_groups
+use cli/strings
+
+constant REDEFINED: str
+    "macro redefined [-Werror,-Wmacro-redefined]"
+
+# The diagnostic, or none where clang's first error is not a macro two
+# groups' headers define two ways. `unit_headers` are the refused unit's, in
+# its order.
+function told(stderr: str, s: source.Source, decls: [ast.Decl], t: toolchain.Toolchain, under: compiling.Compiling, unit_headers: [str]) -> [diag.Diagnostic]
+    none: [diag.Diagnostic] = []
+    read = clang_first.reading(stderr: stderr, s: s, decls: decls, runtime: t.runtime, build: t.build)
+
+    if read.is_err() || clang_place.offset_of(text: read.must().first.message, needle: REDEFINED).is_err()
+        return none
+    two = header_refused.sides(read.must())
+    macro = named(read.must().first.message)
+
+    if two.is_err() || macro.is_err()
+        return none
+
+    # clang's note is the definition it read first, so `earlier` is the
+    # header the unit reads first and `later` the one it refused.
+    later = two.must().one
+    earlier = two.must().other
+    other_way = trial(
+        t,
+        under: under,
+        headers: moved(order_trial.theirs(unit_headers), header: later.header, before: earlier.header),
+        macro: macro.must()
+    )
+    return [
+        diagnostic(s, earlier: earlier, later: later, macro: macro.must(), message: read.must().first.message, added: two.must().added, other_way: other_way)
+    ]
+
+# What the other order does: whether the unit's headers compile in it, clang's
+# first error where they do not, and the macro's last definition where they do.
+record Trial
+    compiles: bool
+    refusal: str
+    defined: str
+
+function diagnostic(s: source.Source, earlier: headers_together.Side, later: headers_together.Side, macro: str, message: str, added: [str], other_way: Trial) -> diag.Diagnostic
+    first: headers_together.Side @ earlier
+    second: headers_together.Side @ later
+
+    if sort([earlier.header, later.header])[0] != earlier.header
+        first @ later
+        second @ earlier
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "ffi_header_refused",
+        message: "`" + first.header + "` and `" + second.header + "`, the headers two groups name, define the macro `" + macro + "` two ways, which C forbids: clang refuses them together, at " + headers_together.at_line(first) + headers_together.between(first) + " and " + headers_together.at_line(second) + ": " + message,
+        span: first.span
+    )
+
+    for side in [first, second]
+        if !side.quoted.is_err()
+            d.notes @ d.notes.push(
+                "`" + side.file + "` line " + side.row.to_str() + " reads `" + side.quoted.must() + "`"
+            )
+
+    d.notes @ d.notes.push(
+        "the other group names `" + second.header + "` at " + source.elsewhere(s, here: first.span.start, there: second.span.start)
+    )
+
+    for note in added
+        d.notes @ d.notes.push(note)
+
+    d.notes @ d.notes.push(
+        "C keeps a macro as it is defined until it is undone, and refuses a definition that disagrees (C11 6.10.3p2), so the order of the two decides what a line reading `" + macro + "` means: read as this unit reads them, `" + earlier.header + "` first, its own lines would read `" + macro + "` as " + headers_together.at_line(earlier) + headers_together.between(earlier) + " defines it and every line after " + headers_together.at_line(later) + headers_together.between(later) + " as that line defines it"
+    )
+    d.notes @ d.notes.push(other_note(earlier: earlier, later: later, macro: macro, other_way: other_way))
+
+    if source.component_at(s, earlier.span.start) != source.component_at(s, later.span.start)
+        d.notes @ d.notes.push(headers_together.remedy(s, one: earlier.span, other: later.span))
+        return d
+    own = own_name(earlier: earlier.header, later: later.header)
+    d.notes @ d.notes.push(
+        "which order is the program's to choose, in a header of its own beside this file, the one place a line of C can stand between two headers: `" + own + "`, reading `#include <" + earlier.header + ">`, `#undef " + macro + "` and `#include <" + later.header + ">` on three lines, keeps the order the groups are written in; both groups name it in place of their headers, and it is included once"
+    )
+
+    for side in [first, second]
+        d.fixes @ d.fixes.push(
+            diag.Fix(title: "name `" + own + "`, the header of the program's own the note drafts", replacement: "\"" + own + "\"", span: side.span, certainty: .guess)
+        )
+
+    return d
+
+# The note on the other order, as clang answered it.
+function other_note(earlier: headers_together.Side, later: headers_together.Side, macro: str, other_way: Trial) -> str
+    head = "with `" + later.header + "` read before `" + earlier.header + "`, "
+
+    if !other_way.compiles
+        if other_way.refusal == ""
+            return head + "clang could not be asked whether the unit's headers compile"
+        return head + "clang refuses the unit's headers too: " + other_way.refusal
+
+    if !later.quoted.is_err() && other_way.defined != "" && definition(later.quoted.must()) == other_way.defined
+        return head + "the unit's headers compile, and `" + macro + "` is what " + headers_together.at_line(later) + " defines throughout, the lines of `" + earlier.header + "` that read it among them"
+    return head + "the unit's headers compile, and `" + macro + "` ends defined as neither line reads"
+
+# `headers` with `header` taken from its place and put just before `before`;
+# the two alone, `header` first, where the list holds either not.
+function moved(headers: [str], header: str, before: str) -> [str]
+    if !order_groups.holds(headers, one: header) || !order_groups.holds(headers, one: before)
+        return [header, before]
+    out: [str] @ []
+
+    for one in headers
+        if one == before
+            out @ out.push(header)
+
+        if one != header
+            out @ out.push(one)
+
+    return out
+
+# One clang run of the unit's opening with `headers` (`cli/order_trial.hero`)
+# under the unit's own words, `-Werror=macro-redefined` among them, which a
+# probe's lack (`compiling.probe_words`), and where it compiles, one more
+# listing the macros it ends with.
+function trial(t: toolchain.Toolchain, under: compiling.Compiling, headers: [str], macro: str) -> Trial
+    text = order_trial.opening(headers, question: "")
+    words = compiling.unit_words(under)
+    ran = order_trial.compiled(t, words: words, text: text)
+
+    if !ran.compiles
+        return Trial(compiles: false, refusal: ran.refusal, defined: "")
+    macros = order_trial.output(t, words: words, text: text, mode: ["-E", "-dM"])
+
+    if macros.is_err()
+        return Trial(compiles: true, refusal: "", defined: "")
+    return Trial(compiles: true, refusal: "", defined: last_definition(listing: macros.must(), macro: macro))
+
+# The macro's definition in clang's `-dM` listing, as `definition` words it.
+function last_definition(listing: str, macro: str) -> str
+    found: str @ ""
+
+    for line in ffi_lookup.lines(text: listing)
+        row = clang_place.without_return(line)
+
+        for opening in ["#define " + macro + " ", "#define " + macro + "("]
+            if strings.starts_with(text: row, prefix: opening)
+                found @ definition(row)
+
+    return found
+
+# A `#define` line without its `#` and `define` and with every run of blanks
+# one space, so a header's `#   define EXTERN extern X` and clang's listing of
+# it read alike.
+function definition(line: str) -> str
+    words: [str] @ []
+    from: i64 @ 0
+    index: i64 @ 0
+
+    while index < line.len()
+        if line[index] == ' ' || line[index] == '\t'
+            if index > from
+                words @ words.push(line.slice(from: from, to: index))
+            from @ index + 1
+        index @ index + 1
+
+    if index > from
+        words @ words.push(line.slice(from: from, to: index))
+    start: i64 @ 0
+
+    if words.len() > 0 && words[0] == "#"
+        start @ 1
+
+    if words.len() > start && (words[start] == "define" || words[start] == "#define")
+        start @ start + 1
+    return words.slice(from: start, to: words.len()).join(" ")
+
+# The macro clang names, between its first two quotes.
+function named(message: str) -> str?
+    open = clang_place.offset_of(text: message, needle: "'")?
+    rest = message.slice(from: open + 1, to: message.len())
+    close = clang_place.offset_of(text: rest, needle: "'")?
+    return ok(rest.slice(from: 0, to: close))
+
+# The program's own header's name: the two headers' file names without their
+# extensions, in the order the unit reads them.
+function own_name(earlier: str, later: str) -> str
+    return order_groups.stem(earlier) + "_" + order_groups.stem(later) + ".h"
+
+## Tests
+
+test "the macro clang names is read between its quotes, and a definition is worded alike from a header and a listing"
+    assert named("'LIMIT' macro redefined [-Werror,-Wmacro-redefined]").must() == "LIMIT"
+    assert named("no quotes").is_err()
+    assert definition("#   define EXTERN extern TCL_STORAGE_CLASS") == "EXTERN extern TCL_STORAGE_CLASS"
+    assert definition("#define EXTERN(type)            extern type") == "EXTERN(type) extern type"
+    assert last_definition(listing: "#define A 1\n#define LIMIT 100\n#define LIMITS 3\n", macro: "LIMIT") == "LIMIT 100"
+    assert own_name(earlier: "b.h", later: "lib/a.h") == "b_a.h"
+    assert own_name(earlier: "expect.h", later: "jpeglib.h") == "expect_jpeglib.h"
+
+test "the later header is moved just before the earlier, the rest in place"
+    assert moved(["math.h", "x.h", "b.h", "y.h", "a.h"], header: "a.h", before: "b.h") == ["math.h", "x.h", "a.h", "b.h", "y.h"]
+    assert moved(["math.h"], header: "a.h", before: "b.h") == ["a.h", "b.h"]

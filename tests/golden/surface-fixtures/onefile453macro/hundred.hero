@@ -1,0 +1,7 @@
+# Defect 453, lane b18-ffi, 2026-10-10: a module whose header defines a macro
+# `twice`.
+extern "onefile-macro.h"
+    function dbl(x: i64) -> i64
+
+function hundredfold(x: i64) -> i64
+    return dbl(x: x)

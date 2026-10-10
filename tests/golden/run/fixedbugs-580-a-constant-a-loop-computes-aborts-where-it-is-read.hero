@@ -1,0 +1,21 @@
+# Fixed defect 580, 2026-10-10 (panel 207 R3; the sitting's `p207/loop`): a
+# constant whose overflow comes on a loop's third turn. The walk over a
+# constant's body reads a loop's condition and body once, so a cell the loop
+# writes holds no value there (`check/const_writes.hero`), and `v @ v + 100`
+# is not judged; spec § 4 refuses an integer operator at least where its
+# operands are known, and this one's are not. It aborts where `V` is read, as
+# overflow aborts at every width (spec § 7), the `1` before it flushed first.
+
+constant V: u8
+    v: u8 @ 0
+    i: i64 @ 0
+
+    while i < 3
+        v @ v + 100
+        i @ i + 1
+
+    v
+
+function main()
+    print(1)
+    print(V)

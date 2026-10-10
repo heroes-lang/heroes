@@ -1,0 +1,18 @@
+# fixedbugs, defect 556, lane b18-ffi, 2026-10-10 (panel 202's C2; the
+# ffi-pragmatist's `tent`).
+#
+# A header holds `int counter;`, a tentative definition, which its `static
+# inline bump` reads, and two modules bind `bump`, so each unit defines
+# `counter`. Until 2026-10-10 the verdict was the platform's: on this Mac
+# the two merged and the program printed `1` and `2`, and on Linux the link
+# refused it, a multiple definition, at exit 2. Told at exit 1 on every
+# platform, before anything links, on the group's string, since no group
+# binds `counter`.
+use fixedbugs556/counts
+
+extern "fixedbugs-556-tentative.h"  #~ ffi_defined_twice
+    function bump() -> i32
+
+function main()
+    print(bump())
+    print(counts.counted())

@@ -1,0 +1,90 @@
+# Fixed defect 554, 2026-10-09 (found beside defect 546 by lane b17-check).
+# Symptom: `g: (function(B, B) -> B) = pick`, `pick` generic with two
+# labelled parameters, was told `needs_parameter_names` at the type and a
+# `type_mismatch` at `pick`, two messages for one mistake; so was a plain
+# `add`, and every place a value of the nameless type met a named one. Cause:
+# the type is refused where it is written (`check/type_labels.hero`), and
+# the names that make it differ from `add`'s are what the refusal asks for;
+# the walk compared the two by identity all the same. Repair: a mismatch
+# between a nameless written type with two positions of one type and a type
+# that differs from it by its names alone is quiet
+# (`type_fit.unnamed_shadow`), asked at every place that tells one: a value
+# against what is asked, a UFCS receiver, a generic's bound letter, two
+# branches, `==`, `push` and `default`. Told still: a type that differs in
+# a parameter or the result; and a nameless type a generic's letters made,
+# which nothing refuses, where the program writes that type nowhere
+# (`fixedbugs-554-a-nameless-type-a-generic-made-is-still-told`). Where it
+# also writes it, refused, the two are one id and the second mismatch waits
+# until the first is repaired, the price of asking the type and not where it
+# came from.
+
+function add(a: i64, b: i64) -> i64
+    return a + b
+
+function pick<C>(a: C, b: C) -> C
+    _ = b
+    return a
+
+function cat(a: f64, b: f64) -> str
+    return (a + b).to_str()
+
+function both<A>(x: A, y: A) -> A
+    _ = y
+    return x
+
+function apply(f: (function(i64, i64) -> i64)) -> i64  #~ needs_parameter_names
+    return f(1, 2)
+
+record Box
+    f: (function(i64, i64) -> i64)  #~ needs_parameter_names
+
+function given() -> (function(i64, i64) -> i64)  #~ needs_parameter_names
+    return pick
+
+function generic_value()
+    g: (function(i64, i64) -> i64) = pick  #~ needs_parameter_names
+    print(g(1, 2))
+
+function plain_value()
+    g: (function(i64, i64) -> i64) = add  #~ needs_parameter_names
+    print(g(1, 2))
+
+function as_argument_field_element()
+    print(apply(pick) + apply(add) + Box(f: pick).f(1, 2) + given()(1, 2))
+    fs: [(function(i64, i64) -> i64)] = [pick]  #~ needs_parameter_names
+    print(fs.len())
+
+function as_receiver()
+    print(add.apply())
+
+function as_letter_branch_and_eq(c: bool)
+    g: (function(i64, i64) -> i64) @ add  #~ needs_parameter_names
+    h = both(x: g, y: add)
+
+    k = if c
+        g
+    else
+        add
+    print(h(1, 2) + k(1, 2))
+    print(g == add)
+
+function in_push_store_default()
+    fs: [(function(i64, i64) -> i64)] @ []  #~ needs_parameter_names
+    fs @ fs.push(add)
+    m: {str: (function(i64, i64) -> i64)} @ {}  #~ needs_parameter_names
+    m["a"] @ add
+    o: (function(i64, i64) -> i64)? @ fail(code: "none", msg: "none")  #~ needs_parameter_names
+    print(fs.len() + m.len() + o.default(add)(1, 2))
+
+function still_told()
+    g: (function(i64, i64) -> i64) = cat  #~ needs_parameter_names type_mismatch
+    print(g(1, 2))
+
+function main()
+    generic_value()
+    plain_value()
+    as_argument_field_element()
+    as_receiver()
+    as_letter_branch_and_eq(true)
+    in_push_store_default()
+    still_told()

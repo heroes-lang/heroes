@@ -1,0 +1,11 @@
+# A module of defect 559's cases (lane b18-ffi, 2026-10-10): the group whose
+# record other modules' units spell.
+
+extern "fixedbugs-559-points.h"
+    record Pt
+        v: i32
+        w: i32
+    function pt_make(v: i32) -> Pt
+
+function make(v: i32) -> Pt
+    return pt_make(v: v)

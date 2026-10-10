@@ -115,6 +115,7 @@ function definitions(@w: writer.Writer, c: state.Checked, names: ctype.Names, s:
         in_order(@w, c, names, decls, out: out)
         eager(@w)
         writer.line(@w, text: byte_copy.DEFINITION)
+        writer.line(@w, text: byte_copy.DEFINITION_HELD)
         writer.blank(@w)
         w.copies_bytes @ true
 
@@ -131,10 +132,20 @@ function definitions(@w: writer.Writer, c: state.Checked, names: ctype.Names, s:
 # defines, called or not, which is why it is not every unit's: on the
 # compiler's own 500 units it was 55% more of clang's instructions and 131%
 # more object.
+#
+# **And `nodebug` since defect 566** (2026-10-10): at `-O2` clang inlines a
+# chain's per-type functions into each other, a thousand inlined frames per
+# release of the thousandth level, each in the line table, and the
+# assembly printer and two debug-value analyses were 54e9 of 143e9
+# instructions (the CI's Windows leg passed its 120 s watchdog). Inlined,
+# the code takes its caller's line, these functions being the generated
+# file's: 14.6e9, 40.6e9 and 143.3e9 at 250, 500 and 1,000 levels became
+# 9.2e9, 19.8e9 and 44.7e9. `noinline` instead left `MemCpyOpt`'s
+# stack-move asking post-dominance across one block, 86.5e9 at 1,000.
 function eager(@w: writer.Writer)
     writer.at_generated(@w)
     writer.line(@w, text: "#undef HERO_TU_LOCAL")
-    writer.line(@w, text: "#define HERO_TU_LOCAL __attribute__((unused, used)) static")
+    writer.line(@w, text: "#define HERO_TU_LOCAL __attribute__((unused, used, nodebug)) static")
     writer.blank(@w)
 
 # HOW DEEP A CHAIN OF STRUCTS CLANG IS LEFT TO CONVERT BY ITSELF (defect 170,
@@ -368,7 +379,7 @@ test "past 32 structs held by value clang is handed the chain from its bottom, a
     assert bottom.must() < top.must()
 
 test "past 32 structs held by value the per-type functions are emitted where they are defined, and at 32 they are not (defect 468)"
-    eager_line = "#undef HERO_TU_LOCAL\n#define HERO_TU_LOCAL __attribute__((unused, used)) static\n"
+    eager_line = "#undef HERO_TU_LOCAL\n#define HERO_TU_LOCAL __attribute__((unused, used, nodebug)) static\n"
     assert ffi_lookup.char_index_of(text: chain_text(n: 32), needle: eager_line).is_err()
     past = chain_text(n: 33)
     eager_at = ffi_lookup.char_index_of(text: past, needle: eager_line)
@@ -377,7 +388,7 @@ test "past 32 structs held by value the per-type functions are emitted where the
     assert order_at.must() < eager_at.must()
 
 test "past 32 structs held by value the unit copies its own structs as bytes, and at 32 it does not (defect 522)"
-    definition = byte_copy.DEFINITION + "\n"
+    definition = byte_copy.DEFINITION + "\n" + byte_copy.DEFINITION_HELD + "\n"
     assert ffi_lookup.char_index_of(text: chain_text(n: 32), needle: definition).is_err()
     past = chain_text(n: 33)
     defined_at = ffi_lookup.char_index_of(text: past, needle: definition)

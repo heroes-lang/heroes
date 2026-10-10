@@ -18,25 +18,29 @@ use source
 use check/state
 use emit/ctype
 use emit/extern_field
+use emit/externs as emit_externs
 use emit/writer
 use parse
 use resolve
 use checker
 
-# One assertion per field of every record a group declares. The
-# narrowing is header-present — a fact about the declaration in hand.
+# One assertion per field of every record a group declares whose header
+# the unit reads (`records`, `emit_externs.held`: every one in the fused
+# unit, a module's own and those it reaches in a module's, panel 202 R1).
+# The narrowing is header-present — a fact about the declaration in hand.
 # The marker carries the DECLARATION's name, never the C type's (panel
 # 072 rider 1): with tag, the C type is two words — struct stat — and
 # the error mapper splits on whitespace; the declaration's name is one
 # token by construction.
-function extern_record_assertions(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl])
+function extern_record_assertions(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], records: {i64: bool}?)
     wrote: bool @ false
-    index: i64 @ 0
 
-    for decl in decls
+    for index in emit_externs.walked(decls, records: records)
+        decl = decls[index]
+
         match decl.kind
             .record_decl rec =>
-                if !rec.header.is_err()
+                if !rec.header.is_err() && emit_externs.held(records, decl: index)
                     c_type = ctype.of(names, decl: index)
                     hero_name = source.span_text(s, decl.name)
 
@@ -66,18 +70,7 @@ function extern_record_assertions(@w: writer.Writer, c: state.Checked, names: ct
                             writer.line(@w, text: line)
 
                         wrote @ true
-            # NOT `continue`: this loop keeps the declaration index
-            # itself, and a `continue` in a match arm jumps to the next
-            # iteration — skipping the increment below and shifting
-            # every later declaration by one. The class was found
-            # 2026-08-17 when the selfhost compiler refused its own
-            # parse.hero with a `no_size` cycle that does not exist
-            # (check_sized carried the same shape); the self-mutation is
-            # this language's no-op.
-
-            .constant_decl | .function_decl | .variant_decl | .test_decl => index @ index
-
-        index @ index + 1
+            .constant_decl | .function_decl | .variant_decl | .test_decl => continue
 
     if wrote
         writer.at_generated(@w)
@@ -121,7 +114,8 @@ test "assertions land on the field's line, the probe counts positionally"
     assert c.diagnostics.len() == 0
     names = ctype.new_names(s, parsed.decls)
     w: writer.Writer @ writer.new_writer("t")
-    extern_record_assertions(@w, c, names, s, parsed.decls)
+    every: {i64: bool}? = fail(code: "every", msg: "every group record")
+    extern_record_assertions(@w, c, names, s, parsed.decls, records: every)
     got = writer.finish(w)
 
     # The field assertion carries the declaration's name and lands
@@ -147,7 +141,8 @@ test "an array field's two assertions are two counted lines, each under the fiel
     assert c.diagnostics.len() == 0
     names = ctype.new_names(s, parsed.decls)
     w: writer.Writer @ writer.new_writer("t")
-    extern_record_assertions(@w, c, names, s, parsed.decls)
+    every: {i64: bool}? = fail(code: "every", msg: "every group record")
+    extern_record_assertions(@w, c, names, s, parsed.decls, records: every)
     rows = rows_of(writer.finish(w))
 
     # Each field's flex question, then its field question: both assertions

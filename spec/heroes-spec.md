@@ -110,9 +110,9 @@ variant Token
     lparen
 ```
 
-Declaration order never matters; mutual recursion needs no forward
-declarations. There are no mutable globals. Constants use SCREAMING_CASE, and
-a written body computes over literals and other constants.
+Declaration order never matters but a group's (section 13); mutual recursion
+needs no forward declarations. There are no mutable globals. Constants use SCREAMING_CASE, and
+a written body computes over literals and other constants. An integer operator in it that would abort, run or not, is a compile error at least where its operands are known: a literal, an operator on known values, a `=` name or written constant holding one, or a cell since its last write with no loop or branch between that writes it.
 
     Declaration = "constant" ident ":" Type Block
                 | "function" ident [ Generics ] Params [ "->" Type ] Block
@@ -156,7 +156,8 @@ Shadowing is a compile error: a `use` binds its name for the whole file, so noth
     Place     = ident { "." ident | "[" Expression "]" } .
 
 ## 6. Failure: `T?`
-A `T?` is a `T` or an error: `ok(v)` or `fail(code:, msg:)`; `ok()` is the `()?`. Codes are stable
+A `T?` is a `T` or an error: `ok(v)` or `fail(code:, msg:)`, each taking its type
+from the context; `ok()` is the `()?`. Codes are stable
 snake_case strings; read `e.code` and `e.msg`. No exceptions exist.
 An abort ends the program at once, saying why; no `T?` carries one.
 
@@ -274,10 +275,11 @@ Loops: `while cond` and `for x in xs`, over an array or a `range` (section 11).
 - Top-level functions are values: `xs.fold(0, add)`.
 - Generics: on functions only, no constraints, always inferred, never written
   at the call site: `function map<A, B>(xs: [A], f: (function(A) -> B)) -> [B]`.
-  A type parameter takes its type from the arguments, else from the type the
-  context asks for, and a generic function's parameter asks for none; a call
-  that says neither is an error. `xs.map(double)` takes both from `double`'s
-  signature.
+  A type parameter takes its type from the arguments that have one of their
+  own, else from the type the context asks for, else from a generic call or a
+  literal among them (section 2); `ok(...)`, `[]` and a case name give none, and
+  a call that says none of these is an error. `xs.map(double)` takes both from
+  `double`'s signature.
 - Recursion too deep aborts.
 
     Args     = "(" [ Arg { "," Arg } ] ")" .
@@ -345,7 +347,9 @@ with holes type-checks everything else but produces no binary.
 
 ## 13. FFI
 Anything beyond this document — sockets, maths, JSON, databases — comes from C
-libraries. A group names its header, and `link` a library when the symbols need one. clang
+libraries. A group names its header, and `link` a library when the symbols need one; C
+reads a module's headers in the order its groups are written: one that needs
+another's names comes after it, and one defining `_GNU_SOURCE` first. clang
 checks every result type, constant and record field against that header, and a result may be
 wider than C's. A **parameter** and a **field** are declared at the header's own
 width and sign — `i32` where C says int, `i8` where it says char, `u64` where it

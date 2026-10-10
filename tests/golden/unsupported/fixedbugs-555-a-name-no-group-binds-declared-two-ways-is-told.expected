@@ -1,0 +1,7 @@
+error[ffi_declared_two_ways]: `helper` is declared `long long (long long)` in `fixedbugs-555-helper-a.h` line 3 and `double (double)` in `fixedbugs-555-helper-b.h` line 3: two modules' headers declare one C name two ways, and the linker joins both to one symbol
+  at tests/golden/unsupported/fixedbugs-555-a-name-no-group-binds-declared-two-ways-is-told.hero:15:8
+     |
+  15 | extern "fixedbugs-555-helper-a.h"  #~ ffi_declared_two_ways
+     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: the other module's group is at tests/golden/unsupported/fixedbugs555/half.hero:4
+  note: each module's unit reads its own headers, so both compile, and C then reaches one `helper` through two types, reading what it is given and what it returns as the other's (C11 6.2.7): no group binds `helper`, which the two headers' own code calls, and only one of them can declare it as it is defined: a program binds the two groups together only where their headers agree

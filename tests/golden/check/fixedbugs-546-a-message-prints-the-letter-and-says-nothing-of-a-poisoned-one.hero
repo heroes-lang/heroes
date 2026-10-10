@@ -42,7 +42,22 @@ function firsts<A>(a: [A], b: A) -> A
     return b
 
 function main()
-    f = first(a: ident, b: double)  #~ cannot_infer
+    f = first(a: ident, b: double)
     print(f(2))
-    h = firsts(a: [ident], b: double)  #~ cannot_infer
+    h = firsts(a: [ident], b: double)
+    print(h(3))
+
+# Corrected 2026-10-10, defect 541 (panel 203 R1), below the program so every
+# line keeps its number: the two calls of `main` are accepted. `double` has a
+# type of its own and settles `A`, and `ident`, a generic function's name
+# with none, waits for it and takes the instance it names, as an argument and
+# as an array's element; what was this case's poisoned letter is never
+# poisoned. The poisoned letter met by a later argument is pinned below,
+# where the first argument is a mistake of its own: the second takes its
+# type in silence.
+
+function poisoned()
+    f = first(a: true * 2, b: double)  #~ bad_operand
+    print(f(2))
+    h = firsts(a: [true * 2], b: double)  #~ bad_operand
     print(h(3))

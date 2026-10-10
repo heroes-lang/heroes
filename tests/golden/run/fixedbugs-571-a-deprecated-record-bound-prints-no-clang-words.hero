@@ -1,0 +1,18 @@
+# fixedbugs, defect 571, lane b18-guard, 2026-10-10 (panel 205's R5).
+#
+# SYMPTOM: a struct marked `deprecated`, bound as a record the program never
+# names in its own code: clang printed its warning at the record's field
+# assertion and its per-type functions, the compiler's lines, at exit 0.
+#
+# FIX: `-Wdeprecated-declarations` is quiet on the compiler's own lines, from
+# the groups' close and over each group constant's accessor and the
+# per-type functions, and spoken over the program's own definitions
+# (`emit/deprecation.hero`): the verdict is the one it was.
+
+extern "fixedbugs-571-a-deprecated-record-bound-prints-no-clang-words.h"
+    record OldPair tag old_pair
+        a: i64
+    function one() -> i64
+
+function main()
+    print(one())

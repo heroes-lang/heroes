@@ -1,0 +1,6 @@
+error[ffi_callback_type]: `f` of `run_cb` is not the callback the header declares — clang read the header, and it says `void (*)(void)`
+  at tests/golden/unsupported/fixedbugs-570-a-callback-of-another-type-is-refused-through-the-pragma.hero:16:5
+     |
+  16 |     function run_cb(f: (function(x: i64) -> i64)) -> i32  #~ ffi_callback_type
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: §4.19: a callback is declared with the header's own parameter and result types — each parameter at its width and sign, and `()` where the header says void

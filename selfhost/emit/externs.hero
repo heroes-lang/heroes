@@ -74,11 +74,17 @@ function unquoted(s: source.Source, span: token.Span) -> str
         return escape.unescape(text)
     return text
 
-# The two headers every unit includes whatever the program binds: math.h
-# for HUGE_VAL, hero_os.h because the generated main calls hero_args_set
-# whether or not the program asks for args().
+# The two headers every unit, and every probe of its headers, reads before
+# its groups whatever the program binds: `heroes_unit.h`, which says the unit
+# reads the C library's standard headers after its groups and includes the
+# runtime's (panel 205's R3, defect 568), and hero_os.h, because the generated
+# main calls hero_args_set whether or not the program asks for args().
+# `<math.h>` was the first seed, for HUGE_VAL, until then: read before the
+# groups it latched the C library's switches, so it comes after them with
+# `<stdint.h>` (`runtime/heroes_standard.h`), and a group binding `math.h` is
+# a group.
 constant SEEDS: [str]
-    ["math.h", "hero_os.h"]
+    ["heroes_unit.h", "hero_os.h"]
 
 # Whether `header` is the compiler's own: a seed, or the runtime's header,
 # which the library binds and every unit has already included. The prelude
@@ -94,46 +100,104 @@ function is_own(header: str) -> bool
 
     return false
 
-# Every header a group named, without its quotes, deduplicated and in
-# declaration order — deterministic, so the double-emit test holds.
+# Every header a group named, without its quotes, deduplicated, in the order
+# the groups are WRITTEN (panel 204's R1, ratified 2026-10-10; the
+# compiler-engineer's walk): the bound declarations' indices, sorted, since a
+# declaration's index is its place in the source. So a group holding only
+# records keeps its place among the groups that bind a function or a
+# constant, where until then it was included after all of them, and
+# `extern "stdio.h"` holding only `record CFile tag FILE`, written above
+# `jpeglib.h`, was refused *unknown type name 'FILE'*. A repeated header
+# stands at its first group. Deterministic, so the double-emit test holds.
 # The two seeds first, unconditional, seeded here so a program that also
-# BINDS one does not include it twice.
+# BINDS one does not include it twice. This is the fused unit's list, every
+# module's groups in the order their declarations stand.
 function headers(p: containers.Program, s: source.Source, decls: [ast.Decl]) -> [str]
-    seen: [str] @ SEEDS
+    every: {i64: bool}? = fail(code: "every", msg: "every group record")
+    whole: str? = fail(code: "whole", msg: "every module's groups are the unit's own")
+    return headers_for(p, s, decls, records: every, own: whole)
+
+# The same, for a module's unit: its record-only walk held to `records`, the
+# groups of its own functions and the records its unit reaches, never every
+# record of the program (panel 202 R1, `emit/unit_plan.hero`), so another
+# module's header is not read beside it. **The `own` module's groups come
+# first, in the order they are written**, which is what the specification
+# promises (§ 13); the header of another module's group record the unit
+# spells follows them, in written order, so it never stands between two of
+# the module's own and changes what one of them means.
+function headers_for(p: containers.Program, s: source.Source, decls: [ast.Decl], records: {i64: bool}?, own: str?) -> [str]
+    mine: [i64] @ []
+    others: [i64] @ []
 
     for f in p.functions
-        spans = extern_spans(decls, f)
-
-        if spans.header.is_err()
-            continue
-        header = unquoted(s, span: spans.header.must())
-        already: bool @ false
-
-        for one in seen
-            if one == header
-                already @ true
-
-        if !already
-            seen @ seen.push(header)
+        if !extern_spans(decls, f).header.is_err()
+            if owned(own, s, decls, at: f.decl)
+                mine @ mine.push(f.decl)
+            else
+                others @ others.push(f.decl)
 
     # The record-only group (panel 061): walked over the DECLARATIONS,
-    # because that is where the answer is.
-    for decl in decls
-        match decl.kind
+    # because that is where the answer is; a module's unit walks only the
+    # records it reads, where every one is not asked.
+    for index in walked(decls, records: records)
+        match decls[index].kind
             .record_decl rec =>
-                if !rec.header.is_err()
-                    header = unquoted(s, span: rec.header.must())
-                    already: bool @ false
-
-                    for one in seen
-                        if one == header
-                            already @ true
-
-                    if !already
-                        seen @ seen.push(header)
+                if !rec.header.is_err() && held(records, decl: index)
+                    if owned(own, s, decls, at: index)
+                        mine @ mine.push(index)
+                    else
+                        others @ others.push(index)
             .constant_decl | .function_decl | .variant_decl | .test_decl => continue
 
+    seen: [str] @ SEEDS
+
+    for at in sort(mine)
+        seen @ once(seen, header: unquoted(s, span: header_at(decls, at: at).must()))
+
+    for at in sort(others)
+        seen @ once(seen, header: unquoted(s, span: header_at(decls, at: at).must()))
+
     return seen
+
+# Whether a declaration is the `own` module's, every one in the fused unit.
+function owned(own: str?, s: source.Source, decls: [ast.Decl], at: i64) -> bool
+    match own
+        .ok module => return source.component_at(s, decls[at].name.start) == module
+        .err       => return true
+
+# The header string of the group a declaration belongs to.
+function header_at(decls: [ast.Decl], at: i64) -> token.Span?
+    match decls[at].kind
+        .function_decl fd          => return fd.value.header
+        .constant_decl k           => return k.header
+        .record_decl rec           => return rec.header
+        .variant_decl | .test_decl => return fail(code: "none", msg: "no header")
+
+    return fail(code: "none", msg: "no header")
+
+# `list` with `header` at its end, unless it holds it already.
+function once(list: [str], header: str) -> [str]
+    for one in list
+        if one == header
+            return list
+
+    return list.push(header)
+
+# The declarations a walk of group records visits, in declaration order:
+# every one, or those `records` holds where it is given.
+# ORDER: ascending declaration index — the order the groups are written in,
+# which the unit's include lines observe (panel 204).
+function walked(decls: [ast.Decl], records: {i64: bool}?) -> [i64]
+    match records
+        .ok set => return sort(keys(set))
+        .err    => return range(from: 0, to: decls.len())
+
+# Whether a group record's header is one this unit reads: every one where no
+# set is given, the fused unit's; else the records the set holds.
+function held(records: {i64: bool}?, decl: i64) -> bool
+    match records
+        .ok set => return !set[decl].is_err()
+        .err    => return true
 
 # Every library a group named directly, and every package it asked for
 # — kept apart all the way to the toolchain, because a library name is
@@ -233,7 +297,7 @@ function library_span(library: ast.Library, want_package: bool) -> token.Span?
 
 ## Tests
 
-test "headers seed math and os, dedupe, and see a record-only group"
+test "headers seed the unit's first header and the os header, dedupe, and see a record-only group"
     text = "extern \"sqlite3.h\" link \"sqlite3\"\n    function sqlite3_libversion() -> cstr\n\nextern \"raylib.h\" package \"raylib\"\n    record Color\n        r: i64\n\nfunction main()\n    print(1)\n"
     parsed = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
@@ -243,7 +307,7 @@ test "headers seed math and os, dedupe, and see a record-only group"
     low = lower.lower(parsed.tree, out, c, s, parsed.decls)
     got = headers(low.program, s, parsed.decls)
     assert got.len() == 4
-    assert got[0] == "math.h"
+    assert got[0] == "heroes_unit.h"
     assert got[1] == "hero_os.h"
     assert got[2] == "sqlite3.h"
     assert got[3] == "raylib.h"
@@ -254,6 +318,16 @@ test "headers seed math and os, dedupe, and see a record-only group"
     assert pkgs.len() == 1
     assert pkgs[0] == "raylib"
     assert unjudged(low.program, s, parsed.decls) == ""
+
+test "a record-only group is included where it is written (panel 204)"
+    text = "extern \"stdio.h\"\n    record CFile tag FILE\n\nextern \"jpeglib.h\"\n    function jpeg_std_error(err: ptr) -> ptr\n\nextern \"time.h\"\n    record Tm tag tm partial\n\nfunction main()\n    print(1)\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    c: state.Checked @ checker.check(parsed.tree, out, s, parsed.decls)
+    low = lower.lower(parsed.tree, out, c, s, parsed.decls)
+    got = headers(low.program, s, parsed.decls)
+    assert got == ["heroes_unit.h", "hero_os.h", "stdio.h", "jpeglib.h", "time.h"]
 
 test "a group head's string reaches C as its value, its escapes decoded (panel 188)"
     s = source.new_source(name: "t.hero", text: "\"a\\tb.h\" \"q\\\\r\" plain")

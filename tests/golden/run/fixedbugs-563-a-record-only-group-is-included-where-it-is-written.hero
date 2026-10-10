@@ -1,0 +1,19 @@
+# fixedbugs, defect 563, lane b18-ffi, 2026-10-10 (panel 204's R1; the
+# coordinator's `rec`).
+#
+# `fixedbugs-563-user.h` spells `Need` and includes nothing, so it compiles
+# only below the header that defines it, and this program writes that group
+# first. Until 2026-10-10 a group holding only records had its header
+# included after every group binding a function or a constant, whatever
+# order they were written in, so this was refused, *unknown type name
+# 'Need'*, while the same group with a function in it built. C reads a
+# module's headers in the order its groups are written now (spec § 13).
+extern "fixedbugs-563-need.h"
+    record Need
+        v: i32
+
+extern "fixedbugs-563-user.h"
+    function need_v(n: Need) -> i32
+
+function main()
+    print(need_v(n: Need(v: 7)))

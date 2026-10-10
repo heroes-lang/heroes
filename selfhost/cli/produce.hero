@@ -16,12 +16,15 @@
 # `struct` in front of it. What stays here is what decides: the cache
 # directory, the runtime object, the package question and the rounds. Whose
 # mistake a refused round is went to `cli/whose.hero` on 2026-10-05 (defect
-# 360), the question both verbs that compile ask once it fails.
+# 360), the question both verbs that compile ask once it fails; the rounds
+# themselves to `cli/rounds.hero` on 2026-10-10 (panel 202), once each asked
+# every module's headers apart.
 
 use source
 use modules
 use emit/ffi_asked
 use emit/externs as emit_externs
+use emit/header_packages
 use cli/io
 use cli/compile
 use cli/toolchain
@@ -29,11 +32,13 @@ use cli/pointee_ask
 use cli/clang_floor
 use cli/artifact
 use cli/assemble
+use cli/rounds
+use cli/probing
+use cli/units
 use cli/libraries
 use cli/input
 use cli/process
 use cli/whose
-use cli/tag_spelling
 use library_source
 use cli/kept
 use cli/publish
@@ -73,7 +78,7 @@ function produce(path: str, s: source.Source, options: compile.Options, t: toolc
     floor = clang_floor.check(t.compiler_banner)
 
     if floor.is_err()
-        io.eprint(text: "error: " + failure_message(floor))
+        io.eprint(text: "error: " + whose.failure_message(floor))
         return fail(code: "failed", msg: "clang is below the floor")
     art = compile.to_unit(s, options, version: version)
 
@@ -109,11 +114,6 @@ function produce(path: str, s: source.Source, options: compile.Options, t: toolc
     if unjudged.len() > 0
         io.eprint(text: "internal error: a group head's name was never judged\n  " + unjudged)
         return fail(code: "failed", msg: "a group head's name reached the tools unjudged")
-    is_tests: bool @ false
-
-    match options.target
-        .tests_build   => is_tests @ true
-        .program_build => is_tests @ is_tests
 
     # Where the binary lands is the round's to learn, from the link line it
     # runs (`link.link_objects`), and the C of every unit is written where
@@ -139,7 +139,13 @@ function produce(path: str, s: source.Source, options: compile.Options, t: toolc
 
     # Asked before clang runs, so a package that is not installed is
     # reported as itself rather than as a header clang could not find.
-    package_flags = libraries.resolve_packages(art.must().packages, build_dir: t.build)
+    each = libraries.resolve_each(art.must().packages, build_dir: t.build)
+    package_flags: [str]? @ fail(code: "none", msg: "not asked")
+
+    match each
+        .ok words => package_flags @ ok(libraries.words_of(words, packages: art.must().packages))
+        .err e    => package_flags @ fail(code: e.code, msg: e.msg)
+
     no_tags: {str: bool} = {}
 
     if package_flags.is_err()
@@ -177,68 +183,37 @@ function produce(path: str, s: source.Source, options: compile.Options, t: toolc
     site = assemble.Site(
         object: object.must(),
         output: options.output,
-        is_tests: is_tests,
         link: !art.must().emit_c,
         source_dir: source_dir,
         link_names: names,
         package_flags: package_flags.must(),
+        package_words: each.must(),
+        by_header: header_packages.by_header(art.must().program, s, art.must().decls),
         version: version
     )
     under = assemble.compiled_under(t, options, site)
 
-    # THE ROUNDS (defect 037, panel 152 R1): a handle's tag is spelled as the
-    # author wrote it, and where clang says *must use 'struct' tag to refer to
-    # type 'X'*, which it says only when X names a struct tag of that spelling,
-    # in the round or of the record's own declaration (`cli/tag_spelling.hero`,
-    # defect 400), the round runs again with `struct X *`. A round that learns
-    # nothing ends the loop, so it is bounded by the program's tagged handles;
-    # a round costs one failing compile (2026-09-15), the probe asked once.
-    struct_tags: {str: bool} @ {}
-    told: {str: bool} @ {}
-    linked: ()? @ ok()
-    binary: str @ ""
-    asked: ffi_asked.Asked? @ fail(code: "none", msg: "the header was not asked")
-    probe = assemble.probe_of(t, options, art.must(), s, site)
+    # THE ROUNDS (`cli/rounds.hero`; defect 037, panel 152 R1): each asks every
+    # module's headers its questions, then compiles and links, and runs again
+    # where clang asked `struct` for a handle's tag. What a build settles
+    # before any of them, each module's plan and the probes of their headers,
+    # is planned once (panel 202's C0, `cli/probing.hero`).
+    planned = probing.planned(
+        t,
+        under: under,
+        art.must().program,
+        art.must().checked,
+        s,
+        art.must().decls,
+        components: units.components(s),
+        target: options.target,
+        package_words: site.package_words,
+        by_header: site.by_header
+    )
+    went = rounds.run(t, options, art.must(), s, site, under: under, planned: planned, answered: @answered)
 
-    while true
-        went = assemble.round(
-            t,
-            options,
-            art.must(),
-            s,
-            site,
-            @answered,
-            probe: probe,
-            struct_tags: struct_tags,
-            told: @told
-        )
-        linked @ went.verdict
-        binary @ went.binary
-
-        if !linked.is_err()
-            break
-        lesson = tag_spelling.learn(t, art.must(), s, under: under, refusals: went.refusals, struct_tags: @struct_tags)
-
-        if lesson.learned == 0
-            asked @ lesson.asked
-            break
-
-    if linked.is_err()
-        # Some clang failures are the AUTHOR's, and the ffi mapping is
-        # the only place that decides which (panel 036 rider 3); the
-        # pipeline pieces ride in the Artifact for exactly this call.
-        refused = whose.of_refusal(
-            linked,
-            art.must(),
-            s,
-            t,
-            under: under,
-            answered: answered,
-            struct_tags: struct_tags,
-            asked: asked,
-            refused: "clang refused the generated C"
-        )
-        return fail(code: failure_code(refused), msg: failure_message(refused))
+    if went.verdict.is_err()
+        return fail(code: whose.failure_code(went.verdict), msg: whose.failure_message(went.verdict))
 
     # **`--emit-c` WRITES AFTER THE ROUNDS, WHICH COMPILE AND DO NOT LINK FOR
     # IT** (panel 157 R1; defect 049, 2026-09-17). It sat above them until then,
@@ -252,10 +227,15 @@ function produce(path: str, s: source.Source, options: compile.Options, t: toolc
             art.must(),
             s,
             answered: @answered,
+            planned: planned,
             under: under,
-            struct_tags: struct_tags,
+            struct_tags: went.struct_tags,
             version: version
         )
+
+        # The one file refused, told already (defect 453).
+        if whose.failure_code(wrote) == "diagnostics"
+            return fail(code: "diagnostics", msg: whose.failure_message(wrote))
 
         if wrote.is_err()
             refused = whose.of_refusal(
@@ -265,14 +245,16 @@ function produce(path: str, s: source.Source, options: compile.Options, t: toolc
                 t,
                 under: under,
                 answered: answered,
-                struct_tags: struct_tags,
-                asked: asked,
+                struct_tags: went.struct_tags,
+                asked: went.asked,
+                asking: planned.probings,
+                unit_headers: emit_externs.headers(art.must().program, s, art.must().decls),
                 refused: "the artifact was not written"
             )
-            return fail(code: failure_code(refused), msg: failure_message(refused))
+            return fail(code: whose.failure_code(refused), msg: whose.failure_message(refused))
         none_e: [str] = []
         return ok(Produced(binary: "", tests: none_e, stopped: true))
-    return ok(Produced(binary: binary, tests: art.must().tests, stopped: false))
+    return ok(Produced(binary: went.binary, tests: art.must().tests, stopped: false))
 
 # The failure's message, out of a fallible that is known to be err.
 function failure_text(failed: [str]?) -> str
@@ -280,19 +262,8 @@ function failure_text(failed: [str]?) -> str
         .ok    => return ""
         .err e => return e.msg
 
-# The message of a failed `()?` — the clang floor's and the round's alike.
-# It was two identical functions under two names until 2026-09-04.
-function failure_message(failed: ()?) -> str
-    match failed
-        .ok    => return ""
-        .err e => return e.msg
-
-# Which verdict a failure is: `clang` for clang's refusal and nothing else
-# (`toolchain.run_clang`), so the words below it are chosen by the code.
-function failure_code(failed: ()?) -> str
-    match failed
-        .ok    => return ""
-        .err e => return e.code
+# The message of a failed `()?` and its code, the clang floor's and the
+# round's alike, are `cli/whose.hero`'s, which reads both of a refusal.
 
 function path_code(failed: str?) -> str
     match failed
