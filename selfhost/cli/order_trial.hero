@@ -24,6 +24,7 @@ use cli/toolchain
 use cli/clang_first
 use cli/process
 use cli/publish
+use cli/response_file
 use cli/files
 use cli/digest
 use cli/read_back
@@ -72,7 +73,12 @@ function compiled(t: toolchain.Toolchain, words: [str], text: str) -> Ran
 
     if unit.is_err()
         return Ran(asked: false, compiles: false, refusal: "", said: "")
-    return compiled_at(words: words, unit: unit.must(), err: t.build + "/order/order-stderr.txt")
+    return compiled_at(
+        words: words,
+        unit: unit.must(),
+        dir: t.build + "/order",
+        err: t.build + "/order/order-stderr.txt"
+    )
 
 # The same of a text asked once and large, a whole program's
 # (`cli/one_file.hero`): written under a private name and thrown away after,
@@ -90,14 +96,14 @@ function compiled_once(t: toolchain.Toolchain, words: [str], text: str) -> Ran
     if files.stage(staged: unit, text: text, like: "").is_err()
         publish.discard(unit)
         return Ran(asked: false, compiles: false, refusal: "", said: "")
-    ran = compiled_at(words: words, unit: unit, err: dir + "/one-file-stderr.txt")
+    ran = compiled_at(words: words, unit: unit, dir: dir, err: dir + "/one-file-stderr.txt")
     publish.discard(unit)
     return ran
 
-function compiled_at(words: [str], unit: str, err: str) -> Ran
+function compiled_at(words: [str], unit: str, dir: str, err: str) -> Ran
     unasked = Ran(asked: false, compiles: false, refusal: "", said: "")
     said_at = publish.private_name(err)
-    line = strings.with_all(list: ["clang", "-fsyntax-only"], more: words)
+    line = response_file.carried(line: strings.with_all(list: ["clang", "-fsyntax-only"], more: words), dir: dir)
     ran = process.run(
         program: "clang",
         words: line.push("-x").push("c").push(unit),
@@ -123,7 +129,10 @@ function compiled_at(words: [str], unit: str, err: str) -> Ran
 function output(t: toolchain.Toolchain, words: [str], text: str, mode: [str]) -> str?
     unit = written(t, text: text)?
     out = publish.private_name(t.build + "/order/order-stdout.txt")
-    line = strings.with_all(list: strings.with_all(list: ["clang"], more: mode), more: words)
+    line = response_file.carried(
+        line: strings.with_all(list: strings.with_all(list: ["clang"], more: mode), more: words),
+        dir: t.build + "/order"
+    )
     ran = process.run(program: "clang", words: line.push(unit), out: out, err: process.discard())
     said = read_back.words(out)
     publish.discard(out)

@@ -33,6 +33,7 @@ use cli/toolchain
 use cli/compiling
 use cli/process
 use cli/publish
+use cli/response_file
 use cli/strings
 use cli/read_back
 use cli/switch_ask
@@ -204,9 +205,9 @@ function asked(t: toolchain.Toolchain, under: compiling.Compiling, text: str) ->
 
     if write_file(path: path, text: text).is_err()
         return ""
-    line = strings.with_all(
-        list: ["clang", "-fsyntax-only", "-ferror-limit=0", "-fno-caret-diagnostics"],
-        more: compiling.probe_words(under)
+    line = response_file.carried(
+        line: strings.with_all(list: ["clang", "-fsyntax-only", "-ferror-limit=0", "-fno-caret-diagnostics"], more: compiling.probe_words(under)),
+        dir: t.build + "/words"
     )
     ran = process.run(program: "clang", words: line.push(path), out: process.discard(), err: err)
     said = read_back.words(err)

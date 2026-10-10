@@ -47,6 +47,7 @@ use cli/process
 use cli/publish
 use cli/digest
 use cli/deps
+use cli/response_file
 use emit/c_text
 
 # Everything the program's C is compiled under but the words of one run (its
@@ -169,7 +170,7 @@ function reads(build: str, words: [str], headers: [str], @memo: {str: str}) -> s
     unit = dir + "/reads-" + digest.digest(text) + ".c"
     publish.write_whole(path: unit, text: text, keyed: true)?
     depfile = publish.private_name(dir + "/reads.d")
-    line: [str] @= strings.with_all(list: ["clang"], more: words)
+    line: [str] @= response_file.carried(line: strings.with_all(list: ["clang"], more: words), dir: dir)
     line @ strings.with_all(list: line, more: ["-M", "-MT", "dep", "-MF", depfile, unit])
     ran = process.run(program: "clang", words: line, out: process.discard(), err: process.discard())
 
@@ -263,6 +264,37 @@ test "what a probe's headers resolve to is asked of clang, and a header that app
 # but its link words, the runtime and the source's own directory last; a
 # probe's are the same list but its diagnostics, the level and the
 # sanitizers included.
+# **A probe whose words pass what one Windows line holds reads its headers**
+# (defect 586): the package words a unit compiles under reach every probe's
+# line too, and the probes run before any unit does, so a line held to
+# 32,767 characters stopped the build at its first question.
+test "a probe whose words pass what one Windows command line holds reads its headers, its words read from a file (defect 586)"
+    root = "build/selftest-compiling-long-words"
+    assert !process.remove_tree(root).is_err()
+    assert !process.mkdir_all(root + "/src").is_err()
+    assert !write_file(path: root + "/src/long.h", text: "#if HEROES_LONG_LAST != 586\n#error the words were not read\n#endif\n").is_err()
+    answer: [str] @= ["-DHEROES_LONG_LAST=586"]
+    length: i64 @= 0
+
+    while length <= 32767
+        word = "-DHEROES_LONG_PAD_" + answer.len().to_str() + "_" + "0123456789".repeat(4) + "=1"
+        answer @ answer.push(word)
+        length @ length + word.len() + 1
+
+    c = Compiling(
+        level: "-O0",
+        sanitize: false,
+        search_include: [],
+        package_flags: answer,
+        runtime: "runtime",
+        source_dir: root + "/src"
+    )
+    memo: {str: str} @= {}
+    read = reads(root + "/build", words: probe_words(c), headers: ["long.h"], @memo)
+    assert !read.is_err()
+    assert strings.holds(text: read.must(), needle: "long.h")
+    assert !process.remove_tree(root).is_err()
+
 test "a probe compiles under a unit's words but their diagnostics, the level and the sanitizers included (defect 167)"
     c = Compiling(
         level: "-O2",

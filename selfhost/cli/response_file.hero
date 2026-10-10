@@ -36,6 +36,7 @@
 # codepage.c`). A word that opens with `@` inside the file is read as a
 # file's name, as it is on a line: no word this compiler writes opens so.
 
+use cli/digest
 use cli/process
 use cli/publish
 
@@ -67,6 +68,44 @@ function for_link(line: [str], home: str) -> [str]?
 # `.dSYM`, and a linker writes no `.rsp`, so none of it is published as this.
 constant LINK_WORDS: str
     "link-words.rsp"
+
+# **A compile's words, a unit's or a probe's, in a file named by them**
+# (defect 586). Every package a program's groups name reaches every unit's
+# compile line and every probe's whole (`compiling.search_words`), so the
+# line grows with the packages as the link grew with the objects: the fifty
+# largest `pkg-config --cflags` answers of this Mac's 505 packages are 34,670
+# characters, past the 32,767 Windows takes (measured 2026-10-10). So the line
+# a caller builds, `clang` and the words its run shares with every other run
+# of the build, goes through a file, and the caller adds its own after it,
+# its input, its output and its listing. Always, and not past a length: one
+# path on every platform.
+#
+# **The file is named by its bytes**, `words-<digest>.rsp` in `dir`, so any
+# directory under `build/` serves, every run of the same words reads one file,
+# and no key moves: a key names the words, never the line that carries them.
+# It is read back before it is trusted and written whole where it says
+# anything else (`publish.write_whole`, keyed: another build's copy is these
+# bytes), so a file a power cut zeroed is written again, never read as words.
+# Measured on this Mac: a unit compiled from such a file and from the line
+# gave one object, byte for byte, and one dependency listing, which names no
+# `.rsp`. **Where the file cannot be written the line is run as it stands**:
+# the same words, so no answer can differ, and the build's own writes into
+# the same `build/` say why it refuses.
+function carried(line: [str], dir: str) -> [str]
+    text = text_of(line)
+    at = dir + "/words-" + digest.digest(text) + ".rsp"
+    held = read_file(at)
+
+    if !held.is_err() && held.must() == text
+        return ["clang", QUOTING, "@" + at]
+
+    if process.mkdir_all(dir).is_err()
+        return line
+    written = through(line: line, at: at, keyed: true)
+
+    if written.is_err()
+        return line
+    return written.must()
 
 # The words of `line` but its first, one a line, each by `quoted`.
 function text_of(line: [str]) -> str
@@ -114,6 +153,34 @@ test "a word is written in double quotes with a backslash before each backslash 
     assert quoted("") == "\"\""
     assert text_of(["clang", "x.o", "-l", "m"]) == "\"x.o\"\n\"-l\"\n\"m\"\n"
     assert text_of(["clang"]) == "\n"
+
+test "a compile's words are carried in a file named by them, read back before it is trusted (defect 586)"
+    dir = "build/selftest-response-carried"
+    assert !process.remove_tree(dir).is_err()
+    line = ["clang", "-DA=1", "-I", "a b"]
+    first = carried(line: line, dir: dir)
+    assert first.len() == 3
+    assert first[0] == "clang"
+    assert first[1] == QUOTING
+    at = first[2].slice(from: 1, to: first[2].len())
+    assert at == dir + "/words-" + digest.digest(text_of(line)) + ".rsp"
+    assert read_file(at).must() == text_of(line)
+
+    # The same words are the same file, and other words another.
+    assert carried(line: line, dir: dir) == first
+    assert carried(line: ["clang", "-DA=2"], dir: dir) != first
+
+    # A file that says anything else, as a power cut can leave one, is
+    # written again before clang is pointed at it.
+    assert !write_file(path: at, text: "\"-DA=0\"\n").is_err()
+    assert carried(line: line, dir: dir) == first
+    assert read_file(at).must() == text_of(line)
+
+    # Where no file can be made, the line runs as it stands.
+    blocked = dir + "/blocked"
+    assert !write_file(path: blocked, text: "a file, not a directory\n").is_err()
+    assert carried(line: line, dir: blocked + "/inner") == line
+    assert !process.remove_tree(dir).is_err()
 
 test "the line names the file and the one rule it is read by (defect 583)"
     dir = "build/selftest-response-line"
