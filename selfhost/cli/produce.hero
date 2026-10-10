@@ -216,10 +216,15 @@ function produce(path: str, s: source.Source, options: compile.Options, t: toolc
             art.must(),
             s,
             answered: @answered,
-            probings: planned.probings,
+            planned: planned,
+            under: under,
             struct_tags: went.struct_tags,
             version: version
         )
+
+        # The one file refused, told already (defect 453).
+        if whose.failure_code(wrote) == "diagnostics"
+            return fail(code: "diagnostics", msg: whose.failure_message(wrote))
 
         if wrote.is_err()
             refused = whose.of_refusal(
