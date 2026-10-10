@@ -241,8 +241,11 @@ constant SHARED_BY_DECISION: [str]
 # **62 on 2026-09-26**, printed by `floors.check` when defect 098's life counter
 # made the sixty-second: panel 177's dead set had put six more between calls, and
 # the counter is the one that took the tree past a quarter above 49.
+#
+# **83 on 2026-10-10**, printed by `floors.check` at batch 18's gate, the
+# round's modules taking the tree past a quarter above 62.
 constant LEAST_SHARED_STATE: i64
-    62
+    83
 
 function run_all(scratch: str) -> report.Report?
     nothing: [str] = []

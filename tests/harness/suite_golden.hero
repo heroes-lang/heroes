@@ -137,6 +137,8 @@ function shape_ir() -> Shape
 # **`emit` 6 -> 8 in lane b12-ir12, 2026-10-06**: defect 382's
 # `fixedbugs-382-an-array-literal-is-one-block` took the directory to 8 cases,
 # past its floor of 6 by more than a quarter, and the suite asked for 8.
+# **11 at batch 18's gate, 2026-10-10**: its emit cases took the directory to
+# 11, past 8 by more than a quarter, and the suite asked for 11.
 function shape_emit() -> Shape
     return Shape(
         name: "emit",
@@ -145,7 +147,7 @@ function shape_emit() -> Shape
         flags: ["--emit-c"],
         on_stderr: false,
         want_code: 0,
-        least: 8,
+        least: 11,
         watched: true,
         silent_stdout: false,
         library_skip: false
@@ -183,6 +185,8 @@ function shape_emit() -> Shape
 # **188 at batch 16's lane compiler, 2026-10-09**: defect 517's case took the
 # directory from 187 to 188, past 150 by more than a quarter, and the suite
 # asked for 188.
+# **236 at batch 18's gate, 2026-10-10**: its lanes' cases took the directory
+# to 236, past 188 by more than a quarter, and the suite asked for 236.
 function shape_unsupported() -> Shape
     return Shape(
         name: "unsupported",
@@ -191,7 +195,7 @@ function shape_unsupported() -> Shape
         flags: NO_FLAGS,
         on_stderr: true,
         want_code: 1,
-        least: 188,
+        least: 236,
         watched: true,
         silent_stdout: true,
         library_skip: true
