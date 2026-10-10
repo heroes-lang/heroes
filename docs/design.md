@@ -2392,12 +2392,17 @@ documentation, never the declaration's.
 **A module's headers are included in the order its groups are written, and the order is
 load-bearing** (panel 204, ratified 2026-10-10; the sentence panel 091 found owed, carried by
 `issues/2026-09/07/2026-09-07-0000-four-repairs-to-design-md-that-ride-its-opening-sitting-4-19.md`).
-A module's unit opens with the compiler's own headers, its prefix: `heroes_runtime.h`, which brings
-`stdbool.h`, `stddef.h` and `stdint.h`, then `math.h` and `hero_os.h` (`SEEDS` in
-`emit/externs.hero`). Then, between `heroes_guard_open.h` and `heroes_guard_close.h`, each header
-the module's groups name, once, where its first group stands, a group holding only records in its
-place like any other; after them, the header of each record of another module's group the unit
-spells (§4.1). Every probe of the unit reads the same list, its plan's (`emit/unit_plan.hero`). A
+A module's unit opens with the compiler's own headers, its prefix: `heroes_unit.h`, which reads
+`heroes_runtime.h`, whose integer types are spelled from clang's builtins and which brings only
+clang's own `stdbool.h` and `stddef.h`, then `hero_os.h` (`SEEDS` in `emit/externs.hero`); no
+header of the C library is read before the groups (panel 205 R3, defect 568). Then, between
+`heroes_guard_open.h` and `heroes_guard_close.h`, each header the module's groups name, once, where
+its first group stands, a group holding only records in its place like any other; after them, the
+header of each record of another module's group the unit spells (§4.1). After the guard's close
+comes `heroes_standard.h`, which reads `<stdint.h>` and `<math.h>` and defines again from clang's
+predefined macros the four of their names the unit's own C writes (`INT64_C`, `UINT64_C`,
+`INT64_MIN`, `HUGE_VAL`), which the guard gives back undefined. Every probe of the unit reads the
+same list, its plan's (`emit/unit_plan.hero`). A
 header that needs another's names compiles only below it: `<jpeglib.h>` declares
 `jpeg_stdio_dest(j_compress_ptr, FILE *)` and includes no `<stdio.h>`, so its group is refused
 above a `stdio.h` group and builds below one, and the prefix is why it fails at `FILE` rather than
@@ -2408,11 +2413,27 @@ changes what programs mean, so it is a sitting's (CLAUDE.md § 4). **Until panel
 group's header came after every other** (panel 061's second walk): `extern "stdio.h"` holding only
 `record CFile tag FILE` above `jpeglib.h` was refused *unknown type name 'FILE'*, and the same
 group with a function in it built. The prefix comes first in every unit, so no group's header is
-read before it, and a line of C between two headers, a switch or an `#undef`, has one place to go:
-a header of the program's own that includes the two with the line between them, which one group
-then names in their place. A feature-test switch written there is still read after the prefix, so
-it reaches no header the prefix has read (defect 568); whether such a header builds, and what it
-means, is what clang says of it, as of any header.
+read before it, and a line of C between two headers, a `#define` or an `#undef`, has one place to
+go: a header of the program's own that includes the two with the line between them, which one
+group then names in their place. **A switch reaches a module's headers only from its first group**
+(panel 205, ratified 2026-10-10; the spec-warden's sentence). A macro libc reads once, at its first
+header (`_GNU_SOURCE` at glibc's `features.h`, `_POSIX_C_SOURCE` at Darwin's `sys/cdefs.h`), is
+defined in a header of the program's own that the module's first group names, and no header of the
+compiler's own that reads one comes before it. Until panel 205 the prefix's `<stdint.h>` and
+`<math.h>` came first and latched every such switch: `sched_getcpu` was refused `ffi_unknown_name`
+on Linux arm64 through a header defining `_GNU_SOURCE`, the message saying it declares no such
+name, and `strlcpy` stayed declared on this Mac under `_POSIX_C_SOURCE 200112L`. A macro a header
+tests itself (`_XOPEN_SOURCE` for `<ucontext.h>`) worked from any earlier group, and does. **This
+paragraph said until 2026-10-10** that a switch written there *is still read after the prefix, so
+it reaches no header the prefix has read (defect 568)*, true of the compiler it described, which
+left a program no place for one. A name a header declares only under such a switch is told so
+rather than *declares no*: a refused round asks the header again under `_XOPEN_SOURCE 700` and
+under `_GNU_SOURCE 1`, and a name found there is *`sched.h` declares
+`sched_getcpu` only under `_GNU_SOURCE`: define it in a header of your own that this module's first
+group names* (`cli/switch_ask.hero`). And a `package`'s words, its `-D` among them, reach only the
+units that read a header a group naming that package names (defect 572, `emit/header_packages.hero`),
+never every unit of the program: until then a module binding `wcwidth` from `wchar.h` built only
+where `main` named `ncursesw`, and was told *declares no* otherwise.
 
 **A `constant` is the group's second kind of member, and its value is the header's**
 (panel 038). It carries no body — inside a group a declaration is a *signature, not a
