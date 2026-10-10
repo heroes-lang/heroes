@@ -1,0 +1,6 @@
+error[ffi_defined_twice]: `counter` is defined in `fixedbugs-556-tentative.h` line 3, which the units of `fixedbugs-556-a-tentative-definition-two-modules-units-compile-is-told` and `fixedbugs556/counts` each compile: a C program holds one external definition of an object, and the link would find more
+  at tests/golden/unsupported/fixedbugs-556-a-tentative-definition-two-modules-units-compile-is-told.hero:13:8
+     |
+  13 | extern "fixedbugs-556-tentative.h"  #~ ffi_defined_twice
+     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: an object a header defines is defined in every unit that includes it, a tentative definition among them, one with no initialiser and no `extern`, which is a definition where no other is, and each module's unit includes its own groups' headers: declare `counter` `extern` in the header and define it once, or bind the header from one module; two tentative ones link on some platforms and not on others

@@ -1,0 +1,20 @@
+# fixedbugs, defect 557, lane b18-ffi, 2026-10-10 (panel 202's R2; the
+# critic's `macro`).
+#
+# The first group's header defines a macro `twice(x)`, and the second
+# group's header declares `static inline int twice(int x)`, which the macro
+# turns into no declaration clang can parse when the two are read in this
+# order. clang's first error lands in the second header with no note in the
+# first, and until 2026-10-10 this was told as that header not compiling,
+# where it compiles alone. The two are compiled alone now, and the earlier
+# header whose presence makes it fail is named.
+
+extern "fixedbugs-557-macro.h"
+    function dbl(x: i64) -> i64
+
+extern "fixedbugs-557-function.h"  #~ ffi_header_refused
+    function twice(x: i32) -> i32
+
+function main()
+    print(dbl(x: 3))
+    print(twice(x: 4))

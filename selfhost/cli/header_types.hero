@@ -62,7 +62,9 @@ function dump_unit(headers: [str], wanted: [pointee_ask.Pointee]) -> str
             named @ named.push(one.name)
 
             # Through `*` (defect 411, 2026-10-07): a function pointer the header
-            # declares as a variable is read as the function it points at.
+            # declares as a variable is read as the function it points at; at
+            # the declaration's line, where clang tells it (defect 559).
+            lines @ lines.push(c_text.line_directive(at: one.line, file: one.file))
             lines @ lines.push("extern __typeof__(*" + one.name + ") " + PREFIX + one.name + ";")
 
     return lines.join("\n") + "\n"

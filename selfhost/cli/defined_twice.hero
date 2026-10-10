@@ -1,0 +1,395 @@
+# A C name two or more modules' units would each define, told before the
+# link (design.md §4.19, §1.12; CLAUDE.md §7's named exception; panel 202's
+# C2, ratified 2026-10-10; defect 556).
+#
+# **A definition in a header is compiled into every unit that includes it**,
+# and since panel 093 a program is one unit per module (`cli/probing.hero`).
+# So a header defining `int twice(int x) { ... }`, bound by two modules, put
+# two external definitions of `twice` into the program, and two headers each
+# defining one did the same: `build` stopped at exit 2, *internal error:
+# linking failed: duplicate symbol '_twice'*, the compiler blamed for the
+# author's headers. A tentative definition, `int counter;`, is the same
+# mistake, and its verdict was the platform's: it links on this Mac, where a
+# common symbol merges, and is a multiple definition on Linux (panel 202's
+# ffi-pragmatist). Each is told here, before anything links, on every
+# platform, in the words of the definition clang read.
+#
+# **What a unit defines is clang's dump of its header list** (`-ast-dump`),
+# read at its top level alone: a function with a body whose first
+# declaration is not `static`, and that is no C99 inline definition (every
+# declaration `inline` and none `extern`, C11 6.7.4p7, which provides no
+# external definition), and an object no declaration of which is `static`
+# where one is not `extern` or has an initialiser. A function GNU's
+# `gnu_inline` marks is passed over: its `extern inline` defines nothing.
+# The dump is asked only where two units read headers of their own, the one
+# case where two definitions can meet, and only one list's units read them
+# in every program but those.
+#
+# Where two units' definitions meet, clang's note under a refused `static`
+# redeclaration says where the header defines the name
+# (`cli/two_ways_ask.hero`), and what is told names it and the modules.
+
+use ast
+use source
+use diag
+use bytes
+use emit/ffi_lookup
+use cli/toolchain
+use cli/compiling
+use cli/probing
+use cli/two_ways
+use cli/two_ways_ask
+use cli/process
+use cli/publish
+use cli/digest
+use cli/strings
+use cli/read_back
+
+# One list's definition of a name: whether it is a function's, an object's
+# else.
+record Defining
+    list: i64
+    is_function: bool
+
+# The diagnostics for every name the units of two or more modules would each
+# define, in the order of the names. `skip` are names already told, by
+# `cli/two_ways.hero`, of the same declarations.
+function told(t: toolchain.Toolchain, probings: [probing.Probing], s: source.Source, decls: [ast.Decl], skip: {str: bool}) -> [diag.Diagnostic]
+    out: [diag.Diagnostic] @ []
+    lists = two_ways.own_headers(probings)
+    units: i64 @ 0
+
+    for one in lists
+        units @ units + one.modules.len()
+
+    if units < 2
+        return out
+    defining: {str: [Defining]} @ {}
+    at: i64 @ 0
+
+    for one in lists
+        defined = definitions(t, one.probe.must())
+
+        for name in keys(defined)
+            defining[name] @ defining[name].default([]).push(Defining(list: at, is_function: defined[name].must()))
+
+        at @ at + 1
+
+    for name in sort(keys(defining))
+        found = defining[name].must()
+        count: i64 @ 0
+
+        for one in found
+            count @ count + lists[one.list].modules.len()
+
+        if count >= 2 && skip[name].is_err()
+            out @ out.push(diagnostic(t, lists, name: name, found: found, s: s, decls: decls))
+
+    return out
+
+# The diagnostic: on the first defining list's group, each defining file and
+# its line, and the modules whose units compile it.
+function diagnostic(t: toolchain.Toolchain, lists: [probing.Probing], name: str, found: [Defining], s: source.Source, decls: [ast.Decl]) -> diag.Diagnostic
+    places: [str] @ []
+    first: two_ways.Side? @ fail(code: "none", msg: "no side yet")
+
+    for one in found
+        list = lists[one.list]
+        answered = two_ways_ask.answers(t, list.probe.must(), names: [name])
+        answer = answered[name].default(two_ways_ask.Answer(type: "", external: true, path: "", row: 0))
+        side = two_ways.side_of(list, name: name, answer: answer, s: s, decls: decls)
+
+        if first.is_err()
+            first @ ok(side)
+        compiled: str @ ", which the unit of " + named(s, modules: list.modules) + " compiles"
+
+        if list.modules.len() > 1
+            compiled @ ", which the units of " + named(s, modules: list.modules) + " each compile"
+        places @ places.push(two_ways.where(side) + compiled)
+
+    what: str @ "a function"
+
+    if !found[0].is_function
+        what @ "an object"
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "ffi_defined_twice",
+        message: "`" + name + "` is defined " + places.join(", and ") + ": a C program holds one external definition of " + what + ", and the link would find more",
+        span: first.must().span
+    )
+
+    if found[0].is_function
+        d.notes @ d.notes.push(
+            "a definition in a header is compiled into every unit that includes it, and each module's unit includes its own groups' headers: write `" + name + "` `static inline` in the header, so each unit has its own, or bind the header from one module"
+        )
+    else
+        d.notes @ d.notes.push(
+            "an object a header defines is defined in every unit that includes it, a tentative definition among them, one with no initialiser and no `extern`, which is a definition where no other is, and each module's unit includes its own groups' headers: declare `" + name + "` `extern` in the header and define it once, or bind the header from one module; two tentative ones link on some platforms and not on others"
+        )
+    return d
+
+# Modules named as a `use` line spells them, `a` and `b`, or `a`, `b` and
+# `c`: each component by the module its first file is.
+function named(s: source.Source, modules: [str]) -> str
+    shown: [str] @ []
+
+    for one in modules
+        spelled: str @ one
+
+        for entry in s.files
+            if entry.component == one
+                spelled @ entry.module
+                break
+
+        shown @ shown.push("`" + spelled + "`")
+
+    if shown.len() == 1
+        return shown[0]
+    return shown.slice(from: 0, to: shown.len() - 1).join(", ") + " and " + shown[shown.len() - 1]
+
+# Every name a unit of these headers alone would define with external
+# linkage, and whether it is a function's: clang's dump, read at its top
+# level. Absent from the answer where clang could not dump the headers, which
+# the probes and the units say first.
+function definitions(t: toolchain.Toolchain, probe: compiling.Probe) -> {str: bool}
+    none: {str: bool} = {}
+    dumped = dump_of(t, probe)
+
+    if dumped.is_err()
+        return none
+    return external_definitions(dumped.must())
+
+# Every function these headers alone give only a C99 inline definition of
+# (C11 6.7.4p7): a body, external linkage, and every declaration `inline` and
+# none `extern`, which provides no external definition (defect 562,
+# `cli/inline_only.hero`). Asked on the failure path alone.
+function inline_only(t: toolchain.Toolchain, probe: compiling.Probe) -> {str: bool}
+    none: {str: bool} = {}
+    dumped = dump_of(t, probe)
+
+    if dumped.is_err()
+        return none
+    return merged(tops_of(dumped.must())).inline_only
+
+# clang's dump of a unit of these headers alone, absent where it could not
+# dump them, which the probes and the units say first.
+function dump_of(t: toolchain.Toolchain, probe: compiling.Probe) -> str?
+    text = compiling.include_lines(probe.headers)
+    dir = t.build + "/defined"
+    process.mkdir_all(dir)?
+    unit = dir + "/defined-" + digest.digest(text) + ".c"
+    publish.write_whole(path: unit, text: text, keyed: true)?
+    said = publish.private_name(dir + "/defined-stdout.txt")
+    line = strings.with_all(
+        list: ["clang", "-fsyntax-only", "-fno-color-diagnostics", "-Xclang", "-ast-dump"],
+        more: probe.words
+    )
+    ran = process.run(program: "clang", words: line.push(unit), out: said, err: process.discard())
+    dumped = read_back.words(said)
+    publish.discard(said)
+
+    if !ran.started || ran.code != 0
+        return fail(code: "unread", msg: "clang did not dump the headers")
+    return dumped
+
+# One top-level declaration of the dump: its kind, its name, the words after
+# its type, and whether a line under it is its body or GNU's inline mark.
+record Top
+    kind: str
+    name: str
+    flags: [str]
+    body: bool
+    gnu: bool
+
+function external_definitions(dumped: str) -> {str: bool}
+    return merged(tops_of(dumped)).external
+
+# The dump's top-level declarations, each with its body and GNU mark read
+# from the lines under it.
+function tops_of(dumped: str) -> [Top]
+    tops: [Top] @ []
+    start: i64 @ 0
+    at: i64 @ 0
+
+    while at <= dumped.len()
+        if at == dumped.len() || dumped[at] == 10
+            row = dumped.slice(from: start, to: at)
+
+            if bytes.bytes_at(text: row, at: 0, needle: "|-") || bytes.bytes_at(text: row, at: 0, needle: "`-")
+                tops @ tops.push(top_of(row))
+            else if tops.len() > 0 && child(row)
+                last = tops.len() - 1
+
+                if found_at(text: row, needle: "-CompoundStmt ") == 3
+                    tops[last].body @ true
+
+                if found_at(text: row, needle: "-GNUInlineAttr ") == 3
+                    tops[last].gnu @ true
+            start @ at + 1
+        at @ at + 1
+
+    return tops
+
+# Whether a line is a direct child of the top-level declaration above it.
+function child(row: str) -> bool
+    return bytes.bytes_at(text: row, at: 0, needle: "| |-") || bytes.bytes_at(text: row, at: 0, needle: "| `-") || bytes.bytes_at(text: row, at: 0, needle: "  |-") || bytes.bytes_at(text: row, at: 0, needle: "  `-")
+
+# A top-level line: `|-FunctionDecl 0x… <range> loc [used] name 'type'[:'type'] flags`.
+function top_of(row: str) -> Top
+    kind_end: i64 @ 2
+
+    while kind_end < row.len() && row[kind_end] != 32
+        kind_end @ kind_end + 1
+
+    kind = row.slice(from: 2, to: kind_end)
+    quote = found_at(text: row, needle: " '")
+    none: [str] = []
+
+    if quote < 0
+        return Top(kind: kind, name: "", flags: none, body: false, gnu: false)
+    name_start: i64 @ quote
+
+    while name_start > 0 && row[name_start - 1] != 32
+        name_start @ name_start - 1
+
+    after: i64 @ closing(row, from: quote + 2)
+
+    if after + 1 < row.len() && row[after] == 58 && row[after + 1] == 39
+        after @ closing(row, from: after + 2)
+    flags: [str] @ []
+
+    for word in ffi_lookup.words(row.slice(from: after, to: row.len()))
+        flags @ flags.push(word)
+
+    return Top(kind: kind, name: row.slice(from: name_start, to: quote), flags: flags, body: false, gnu: false)
+
+# The byte after the `'` that closes a quoted type opened before `from`.
+function closing(row: str, from: i64) -> i64
+    at: i64 @ from
+
+    while at < row.len() && row[at] != 39
+        at @ at + 1
+
+    return at + 1
+
+# Each name's declarations as C reads them together: external linkage where
+# the first is not `static`, a function's definition external where it has a
+# body and is no C99 inline definition, an object's where one declaration is
+# not `extern` or has an initialiser.
+record Merged
+    external: {str: bool}
+    inline_only: {str: bool}
+
+function merged(tops: [Top]) -> Merged
+    first_static: {str: bool} @ {}
+    seen: {str: bool} @ {}
+    function_body: {str: bool} @ {}
+    not_inline: {str: bool} @ {}
+    gnu: {str: bool} @ {}
+    object_defined: {str: bool} @ {}
+    functions: {str: bool} @ {}
+
+    for top in tops
+        if top.name.len() == 0 || top.kind != "FunctionDecl" && top.kind != "VarDecl"
+            continue
+
+        if seen[top.name].is_err()
+            seen[top.name] @ true
+
+            if holds(top.flags, word: "static")
+                first_static[top.name] @ true
+
+        if top.kind == "FunctionDecl"
+            functions[top.name] @ true
+
+            if top.body
+                function_body[top.name] @ true
+
+            if top.gnu
+                gnu[top.name] @ true
+
+            if !holds(top.flags, word: "inline") || holds(top.flags, word: "extern")
+                not_inline[top.name] @ true
+        else if !holds(top.flags, word: "extern") || holds(top.flags, word: "cinit") || holds(top.flags, word: "callinit")
+            object_defined[top.name] @ true
+
+    out: {str: bool} @ {}
+    inline: {str: bool} @ {}
+
+    for name in keys(seen)
+        if first_static[name].is_err()
+            if !functions[name].is_err()
+                if !function_body[name].is_err() && gnu[name].is_err()
+                    if !not_inline[name].is_err()
+                        out[name] @ true
+                    else
+                        inline[name] @ true
+            else if !object_defined[name].is_err()
+                out[name] @ false
+
+    return Merged(external: out, inline_only: inline)
+
+function holds(words: [str], word: str) -> bool
+    for one in words
+        if one == word
+            return true
+
+    return false
+
+# The byte offset of `needle` in `text`, or -1.
+function found_at(text: str, needle: str) -> i64
+    at: i64 @ 0
+
+    while at + needle.len() <= text.len()
+        if bytes.bytes_at(text: text, at: at, needle: needle)
+            return at
+        at @ at + 1
+
+    return -1
+
+## Tests
+
+# The shapes the dump writes, as this Mac's clang 21 wrote them for a header
+# of each: a definition, a tentative object, an initialised one, a
+# declaration, a `static` one, a C99 inline definition, an `extern inline`
+# one, a GNU inline one, and a prototype then its definition.
+test "a dump's external definitions are read at its top level, as C reads the declarations together"
+    rows: [str] = [
+        "TranslationUnitDecl 0x1 <<invalid sloc>> <invalid sloc>"
+        "|-FunctionDecl 0x2 </x/c.h:1:1, col:34> col:5 twice 'int (int)'"
+        "| |-ParmVarDecl 0x3 <col:11, col:15> col:15 used x 'int'"
+        "| `-CompoundStmt 0x4 <col:18, col:34>"
+        "|-VarDecl 0x5 <line:2:1, col:5> col:5 used counter 'int'"
+        "|-VarDecl 0x6 <line:3:1, col:14> col:5 inited 'int' cinit"
+        "| `-IntegerLiteral 0x7 <col:14> 'int' 1"
+        "|-VarDecl 0x8 <line:4:1, col:12> col:12 justdecl 'int' extern"
+        "|-VarDecl 0x9 <line:5:1, col:12> col:12 st 'int' static"
+        "|-FunctionDecl 0xa <line:6:1, col:35> col:12 c99 'int (int)' inline"
+        "| `-CompoundStmt 0xb <col:23, col:35>"
+        "|-FunctionDecl 0xc <line:7:1, col:41> col:19 ei 'int (int)' extern inline"
+        "| `-CompoundStmt 0xd <col:29, col:41>"
+        "|-FunctionDecl 0xe <line:8:1, col:69> col:47 gi 'int (int)' extern inline"
+        "| |-CompoundStmt 0xf <col:57, col:69>"
+        "| `-GNUInlineAttr 0x10 <col:16>"
+        "|-FunctionDecl 0x11 <line:9:1, col:14> col:5 proto 'size_t (int)':'unsigned long (int)'"
+        "|-FunctionDecl 0x12 prev 0x11 <col:17, col:46> col:21 proto 'size_t (int)':'unsigned long (int)'"
+        "| `-CompoundStmt 0x13 <col:34, col:46>"
+        "`-FunctionDecl 0x14 <line:10:1, col:41> col:19 bump 'int (void)' static inline"
+        "  `-CompoundStmt 0x15 <col:30, col:41>"
+    ]
+    got = external_definitions(rows.join("\n") + "\n")
+    assert got["twice"].must()
+    assert !got["counter"].must()
+    assert !got["inited"].must()
+    assert got["ei"].must()
+    assert got["proto"].must()
+
+    for name in ["justdecl", "st", "c99", "gi", "bump"]
+        assert got[name].is_err()
+
+    assert got.len() == 5
+
+    # And the one C99 inline definition alone, `c99` (defect 562).
+    assert keys(merged(tops_of(rows.join("\n") + "\n")).inline_only) == ["c99"]
+    s = source.new_source(name: "t.hero", text: "")
+    assert named(s, modules: ["left"]) == "`left`"
+    assert named(s, modules: ["a", "b", "c"]) == "`a`, `b` and `c`"

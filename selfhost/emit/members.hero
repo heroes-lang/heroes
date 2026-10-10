@@ -87,6 +87,19 @@ function whole_of(p: containers.Program, c: state.Checked, s: source.Source, dec
         callees: instances.hold(p)
     )
 
+# The tables a round renders under, from the build's own (panel 202): only
+# the names read what a round learned, a tag clang asked `struct` for and
+# each counted parameter's unit, so the rest is the build's, asked once.
+function retold(built: Whole, p: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl], struct_tags: {str: bool}, lend_units: {str: str}) -> Whole
+    out: Whole @ built
+
+    if struct_tags.len() > 0
+        names: ctype.Names @ ctype.new_names_qualified(s, decls, struct_tags: struct_tags)
+        names @ ctype.with_options(names, c: c, s: s, decls: decls)
+        out.names @ ctype.with_functions(names, c: c, s: s, decls: decls, p: p)
+    out.names.lend_units @ lend_units
+    return out
+
 # What one TU emits, and what it merely declares.
 #
 # `defined` is this module's own functions plus the instances they
@@ -271,51 +284,9 @@ function fields_written(decls: [ast.Decl], decl: i64) -> [i64]
 
     return out
 
-# Every group record a module declares, which the module's TU spells whether
-# or not a line of its code reaches it (defect 416, 2026-10-06). **A binding
-# the header refutes is the program's mistake whether or not a line uses
-# it**, and the fused unit, which `heroes test`, `--emit-c` and the seed
-# compile, already said so: its per-type functions are asked of every
-# declaration. Until that day a module's unit spelled only what its code
-# reached, so a handle over a union's tag or a misspelled one that nothing
-# used was refused by `test` alone, and `--emit-c` wrote a unit clang refuses
-# at exit 0. The layout check already asked every group record with fields
-# (`cli/layout.hero`); this reaches the handles, whose only question is their
-# spelling.
-#
-# `decls` are the declarations, which is what the per-type functions are keyed
-# by, since a record nothing mentions is in no type the arena holds; `types`
-# are what they and their fields are, where the arena holds them, so the
-# fields' own functions and typedefs are reached with them.
-record Groups
-    decls: [i64]
-    types: [i64]
-
-function group_records(module: str, c: state.Checked, s: source.Source, decls: [ast.Decl]) -> Groups
-    found: [i64] @ []
-    typed: [i64] @ []
-    index: i64 @ 0
-
-    for decl in decls
-        match decl.kind
-            .record_decl rec =>
-                if !rec.header.is_err() && source.component_at(s, decl.name.start) == module
-                    found @ found.push(index)
-                    id = table.lookup(c.types, .named(decl: index))
-
-                    if !id.is_err()
-                        typed @ typed.push(id.must())
-
-                    for written in fields_written(decls, decl: index)
-                        field = state.written_type(c, written)
-
-                        if !field.is_err()
-                            typed @ typed.push(field.must())
-            .constant_decl | .function_decl | .variant_decl | .test_decl => index @ index
-
-        index @ index + 1
-
-    return Groups(decls: found, types: typed)
+# Every group record a module declares is `emit/unit_plan.hero`'s
+# `group_records`, since panel 202 a module's plan decides which headers its
+# unit reads.
 
 # A program filtered to one TU's members. Declarations, types and the
 # string table stay whole — every index a kept function carries still
