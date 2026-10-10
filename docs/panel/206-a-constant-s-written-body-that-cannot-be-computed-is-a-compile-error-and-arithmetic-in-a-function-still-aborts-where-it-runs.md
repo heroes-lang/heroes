@@ -137,6 +137,13 @@ CL-040); what conservative would have been is below the list.
 refusal and no sentence, 577 closed on its measurement, the constant's abort
 at each read kept and C4a's sentence (+6) adopted to say so.
 
+**Corrected 2026-10-10 by panel 207** (`docs/panel/207-a-constant-s-body-refuses-at-least-the-integer-steps-whose-operands-are-known-and-the-spec-says-exactly-that.md`, ratified at 12:33):
+R1's heading, *a step that cannot be computed is a compile error*, reads wider than its body: the class R1 built and landed is the integer
+operator whose operands the walk knows (overflow, division or remainder by zero, a shift outside the width), and an index, a string index, an
+`assert`, a nan, a branch the walk cannot decide, a cell read in a loop it was not written in and a group's constant cannot be computed and
+abort where they run; spec § 4's C4b, which took the heading, is replaced by panel 207's R1. Beneath R5: C4a, refused here, was priced again
+at panel 207 and not adopted.
+
 ## Process notes
 
 - **The compiler-engineer created an empty file in `/tmp` at 09:17** by a
