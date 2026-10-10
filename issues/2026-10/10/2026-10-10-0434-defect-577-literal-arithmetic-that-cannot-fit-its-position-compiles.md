@@ -12,3 +12,5 @@ github: none
     **Origin:** found by lane b18-infer beside defect 564 (its final reply and notes, `.claude/worktrees/scratch-b15/b18-infer/notes.txt`, ignored by git), filed by the coordinator at 04:34 on 2026-10-10.
 
     **Class: improvement**, 2026-10-10 (`.claude/rules/verification.md` § Bounded discovery): a compile-time refusal nobody needs for robustness: the program aborts cleanly.
+
+    **Ruled 2026-10-10** by panel 206 (`docs/panel/206-a-constant-s-written-body-that-cannot-be-computed-is-a-compile-error-and-arithmetic-in-a-function-still-aborts-where-it-runs.md`, ratified by 10:22): a constant's written body whose step cannot be computed is a compile error, read or not (R1, C4b in spec § 4), which repairs this item's constant half; in a function body literal arithmetic aborts where it runs, as spec § 7 says (R2: a refusal there refuses code that never runs, and 0 of 6 blind readers wrote the mistake); `repeat`'s count computed negative aborts at its subtraction, panel 054's path (R3). This item closes with R1's landing.
