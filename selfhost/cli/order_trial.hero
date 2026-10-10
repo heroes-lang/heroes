@@ -5,10 +5,16 @@
 # preprocessor makes of it (`output`), so a note saying what a move would do
 # says what clang said and never what an argument predicts.
 #
-# The opening is the unit's own (`emit/decls.prelude`): `heroes_runtime.h`,
-# the compiler's two seeds, then the groups' headers between the guard's two
-# lines (`emit/macro_guard.hero`), so a header is read after what every unit
-# reads before it.
+# The opening is the unit's own (`emit/decls.prelude`): `heroes_unit.h`, the
+# compiler's two seeds, then the groups' headers in their region and between
+# the guard's two lines, the checks raised again after them
+# (`emit/macro_guard.around`), then `heroes_standard.h`, so a header is read
+# after what every unit reads before it and its own code judged as the unit
+# judges it. Until lane b18-guard met the round (2026-10-10) it opened with
+# `heroes_runtime.h`, which reads `<stdint.h>` where `heroes_unit.h` has not
+# said otherwise, and with no region: a first group's switch was latched in
+# the trial and not in the unit (defect 568), and a header whose own code
+# holds a sign conversion compiled in the unit and in no trial (defect 569).
 
 use emit/c_text
 use emit/externs as emit_externs
@@ -31,25 +37,19 @@ record Ran
     refusal: str
     said: str
 
-# The line every unit opens with, quoted as the prelude writes it
-# (`emit/decls.prelude`).
-constant RUNTIME_LINE: str
-    "#include \"heroes_runtime.h\""
-
 # The unit's opening with `headers` in this order, then `question`, a line of
 # C asked after them, or nothing.
 function opening(headers: [str], question: str) -> str
-    lines: [str] @ [RUNTIME_LINE]
+    no_names: {str: bool} = {}
+    lines: [str] @ [macro_guard.FIRST_LINE]
 
     for line in c_text.includes(emit_externs.SEEDS)
         lines @ lines.push(line)
 
-    lines @ lines.push(macro_guard.OPEN_LINE)
-
-    for line in c_text.includes(headers)
+    for line in macro_guard.around(c_text.includes(headers), bound: no_names)
         lines @ lines.push(line)
 
-    lines @ lines.push(macro_guard.CLOSE_LINE)
+    lines @ lines.push(macro_guard.STANDARD_LINE)
 
     if question != ""
         lines @ lines.push(question)
@@ -142,6 +142,9 @@ function written(t: toolchain.Toolchain, text: str) -> str?
 
 ## Tests
 
-test "the opening is the unit's: the runtime, the seeds, then the groups between the guard's lines"
+# The text is the one a unit this compiler writes opens with, read off an
+# emitted unit (2026-10-10): the C library is read after the groups, and the
+# groups inside the region a unit judges a header's own code by.
+test "the opening is the unit's: heroes_unit.h, the seeds, the groups in their region, the checks raised, then the standard headers"
     text = opening(["b.h", "a.h"], question: "int q;")
-    assert text == "#include \"heroes_runtime.h\"\n#include <math.h>\n#include <hero_os.h>\n#include \"heroes_guard_open.h\"\n#include <b.h>\n#include <a.h>\n#include \"heroes_guard_close.h\"\nint q;\n"
+    assert text == "#include \"heroes_unit.h\"\n#include <heroes_unit.h>\n#include <hero_os.h>\n#pragma clang diagnostic push\n#pragma clang diagnostic ignored \"-Wall\"\n#pragma clang diagnostic ignored \"-Wsign-conversion\"\n#pragma clang diagnostic error \"-Wreturn-type\"\n#pragma clang diagnostic error \"-Wuninitialized\"\n#pragma clang diagnostic error \"-Wconditional-uninitialized\"\n#include \"heroes_guard_open.h\"\n#include <b.h>\n#include <a.h>\n#include \"heroes_guard_close.h\"\n#pragma clang diagnostic pop\n#pragma clang diagnostic error \"-Wreturn-type\"\n#pragma clang diagnostic error \"-Wuninitialized\"\n#pragma clang diagnostic error \"-Wformat\"\n#pragma clang diagnostic error \"-Wconditional-uninitialized\"\n#pragma clang diagnostic error \"-Wshorten-64-to-32\"\n#pragma clang diagnostic error \"-Wsign-conversion\"\n#pragma clang diagnostic error \"-Wincompatible-pointer-types-discards-qualifiers\"\n#pragma clang diagnostic error \"-Wincompatible-pointer-types\"\n#pragma clang diagnostic error \"-Wmacro-redefined\"\n#pragma clang diagnostic error \"-Wint-conversion\"\n#pragma clang diagnostic error \"-Wimplicit-function-declaration\"\n#pragma clang diagnostic error \"-Wincompatible-function-pointer-types\"\n#pragma clang diagnostic ignored \"-Wdeprecated-declarations\"\n#include \"heroes_standard.h\"\nint q;\n"
