@@ -3,9 +3,16 @@
 #include <math.h>
 #include <hero_os.h>
 #include <heroes_runtime.h>
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wall"
+#pragma clang diagnostic ignored "-Wsign-conversion"
+#pragma clang diagnostic error "-Wreturn-type"
+#pragma clang diagnostic error "-Wuninitialized"
+#pragma clang diagnostic error "-Wconditional-uninitialized"
 #include "heroes_guard_open.h"
 #include <dead-handle-written-by-c-through-a-cell-it-should-only-write.h>
 #include "heroes_guard_close.h"
+#pragma clang diagnostic pop
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
@@ -66,7 +73,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_2d7822c4, "ob_mark_cell(a: @cert) == 1");
 HERO_STR_STATIC(hero_str_7034b02b, "references held: ");
 
-#line 70 "deadhandlewrittenbycthroughacellitshouldonlywrite.c"
+#line 77 "deadhandlewrittenbycthroughacellitshouldonlywrite.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -111,7 +118,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 115 "deadhandlewrittenbycthroughacellitshouldonlywrite.c"
+#line 122 "deadhandlewrittenbycthroughacellitshouldonlywrite.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_deadhandlewrittenbycthroughacellitshouldonlywrite_X509_eq(ob * const *a, ob * const *b);
@@ -129,7 +136,7 @@ void h_deadhandlewrittenbycthroughacellitshouldonlywrite_main(void);
 
 #line 18 "tests/golden/run/dead-handle-written-by-c-through-a-cell-it-should-only-write.hero"
 void h_deadhandlewrittenbycthroughacellitshouldonlywrite_main(void) {
-#line 133 "deadhandlewrittenbycthroughacellitshouldonlywrite.c"
+#line 140 "deadhandlewrittenbycthroughacellitshouldonlywrite.c"
     ob * *const hero_lend_h0_cert = (ob * *)hero_lend_local(sizeof(ob *), "deadhandlewrittenbycthroughacellitshouldonlywrite.main", "cert");
 #define h0_cert (*hero_lend_h0_cert)
     ob * t1;
@@ -226,7 +233,7 @@ bb4:
     return;
 #line 24 "tests/golden/run/dead-handle-written-by-c-through-a-cell-it-should-only-write.hero"
 bb5:
-#line 230 "deadhandlewrittenbycthroughacellitshouldonlywrite.c"
+#line 237 "deadhandlewrittenbycthroughacellitshouldonlywrite.c"
     hero_panic_assert_sides(t6, hero_int_to_str(t7), hero_int_to_str(t8));
     hero_unreachable();
 }

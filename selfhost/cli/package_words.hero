@@ -33,14 +33,23 @@
 # **`-isystem <dir>` is handed on as `-I<dir>`** (`spelled`), its directory joined
 # or as the next word, as clang reads it (Apple clang 21: `-isystem/x` is
 # `-isystem` and `/x`). clang quiets every diagnostic LOCATED IN a header it finds
-# by `-isystem`, and only those: measured on Apple clang 21 and Debian clang
-# 22.1.8, the program's own lines, a header macro expanded in them among them,
-# keep every `-Werror` the compiler sets, and the header's own inline code loses
-# them. A library's header is judged under those flags as `ffi_header_refused`
-# says (*no warning is turned off for a header*) and as panel 188's
-# compiler-engineer argued from (`-isystem` is refused, so no bound header is in
-# a system directory), so the word is read as the directory it names and the
-# guarantee stands. Seven headers under Debian 13's `/usr/include/mit-krb5`, the
+# by `-isystem`, or in a directory it holds for a system one whatever `-I` says,
+# and only those: measured on Apple clang 21 and Debian clang 22.1.8, the
+# program's own lines, a header macro expanded in them among them, keep every
+# `-Werror` the compiler sets, and the header's own inline code loses them.
+# **Until panel 205 this premise read that no warning is turned off for a
+# header and no bound header is in a system directory**, and both were false:
+# `gmp.h` under Linux's `/usr/include` was quiet and built, the same header
+# under Homebrew's `-I` was refused at its own line 1882, and on this Mac
+# `CPATH` refused it where `C_INCLUDE_PATH` built it (defect 569). Since then
+# a header's own code is judged by one region wherever it was found
+# (`emit/header_region.hero`: `-Wall`'s warnings and sign conversions passed
+# over, a missing return, an uninitialised read, a value narrowed to 32 bits
+# and a pointer of another type refused), and every check of a binding is
+# raised again after it (`emit/checks_raised.hero`). So the word is still read
+# as the directory it names: as `-isystem` it would quiet what the region
+# keeps, and a header's verdict would again depend on how a package spells its
+# directory. Seven headers under Debian 13's `/usr/include/mit-krb5`, the
 # one directory its nine `-isystem` packages name, compile under `-I` with the
 # compiler's flags (krb5.h, gssapi/gssapi.h, gssapi/gssapi_krb5.h, gssrpc/rpc.h,
 # kadm5/admin.h, kdb.h, profile.h; panel 198's compiler-engineer);

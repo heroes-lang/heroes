@@ -40,6 +40,8 @@ use parse
 use emit/guarded_names
 use emit/externs as emit_externs
 use emit/checks_raised
+use emit/header_region
+use cli/strings
 
 # The line before the groups' includes, and the line after them.
 constant OPEN_LINE: str
@@ -48,15 +50,17 @@ constant OPEN_LINE: str
 constant CLOSE_LINE: str
     "#include \"heroes_guard_close.h\""
 
-# The groups' include lines as the unit writes them: between the two guard
-# includes, each name of the list the program binds pushed again before the
-# close, and after the close every warning a check of a binding rests on
-# raised again, whatever a header's pragma did to it (`emit/checks_raised.hero`,
-# defect 570); nothing where there are none.
+# The groups' include lines as the unit writes them: inside the region a
+# header's own code is judged in (`emit/header_region.hero`, defect 569),
+# between the two guard includes, each name of the list the program binds
+# pushed again before the close; after the region every warning a check of a
+# binding rests on raised again, whatever a header's pragma did to it
+# (`emit/checks_raised.hero`, defect 570); nothing where there are none.
 function around(lines: [str], bound: {str: bool}) -> [str]
     if lines.len() == 0
         return lines
-    out: [str] @ [OPEN_LINE]
+    out: [str] @ header_region.opening()
+    out @ out.push(OPEN_LINE)
 
     for line in lines
         out @ out.push(line)
@@ -66,6 +70,7 @@ function around(lines: [str], bound: {str: bool}) -> [str]
             out @ out.push("#pragma push_macro(\"" + name + "\")")
 
     out @ out.push(CLOSE_LINE)
+    out @ out.push(header_region.CLOSING)
 
     for raised in checks_raised.lines()
         out @ out.push(raised)
@@ -153,7 +158,10 @@ test "the groups' includes stand between the guard's two, a bound name of the li
     assert around(none, bound: bound).len() == 0
     bound["INT64_C"] @ true
     bound["LIMIT"] @ true
-    head = [OPEN_LINE, "#include <a.h>", "#pragma push_macro(\"INT64_C\")", CLOSE_LINE]
+    head = strings.with_all(
+        list: header_region.opening(),
+        more: [OPEN_LINE, "#include <a.h>", "#pragma push_macro(\"INT64_C\")", CLOSE_LINE, header_region.CLOSING]
+    )
     got = around(["#include <a.h>"], bound: bound)
     assert got.len() == head.len() + checks_raised.lines().len()
     assert got.slice(from: 0, to: head.len()) == head

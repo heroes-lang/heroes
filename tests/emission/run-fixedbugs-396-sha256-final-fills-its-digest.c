@@ -3,9 +3,16 @@
 #include <math.h>
 #include <hero_os.h>
 #include <heroes_runtime.h>
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wall"
+#pragma clang diagnostic ignored "-Wsign-conversion"
+#pragma clang diagnostic error "-Wreturn-type"
+#pragma clang diagnostic error "-Wuninitialized"
+#pragma clang diagnostic error "-Wconditional-uninitialized"
 #include "heroes_guard_open.h"
 #include <fixedbugs-396-openssl.h>
 #include "heroes_guard_close.h"
+#pragma clang diagnostic pop
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
@@ -24,7 +31,7 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 
 #line 18 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
 _Static_assert(__builtin_classify_type(((struct SHA256state_st *)0)->num) == 1 && sizeof(((struct SHA256state_st *)0)->num) == sizeof(uint32_t) && (_Generic(((struct SHA256state_st *)0)->num, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 1), "heroes-ffi-field Sha256Ctx num");
-#line 28 "fixedbugs396sha256finalfillsitsdigest.c"
+#line 35 "fixedbugs396sha256finalfillsitsdigest.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -128,7 +135,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 132 "fixedbugs396sha256finalfillsitsdigest.c"
+#line 139 "fixedbugs396sha256finalfillsitsdigest.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs396sha256finalfillsitsdigest_Sha256Ctx_eq(const struct SHA256state_st *a, const struct SHA256state_st *b);
@@ -150,7 +157,7 @@ void h_fixedbugs396sha256finalfillsitsdigest_main(void);
 
 #line 15 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
 int64_t h_fixedbugs396sha256finalfillsitsdigest_SHA256_DIGEST_LENGTH(void) {
-#line 154 "fixedbugs396sha256finalfillsitsdigest.c"
+#line 161 "fixedbugs396sha256finalfillsitsdigest.c"
     return SHA256_DIGEST_LENGTH;
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -167,7 +174,7 @@ int64_t h_fixedbugs396sha256finalfillsitsdigest_SHA256_DIGEST_LENGTH(void) {
 
 #line 16 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
 int64_t h_fixedbugs396sha256finalfillsitsdigest_EVP_MAX_MD_SIZE(void) {
-#line 171 "fixedbugs396sha256finalfillsitsdigest.c"
+#line 178 "fixedbugs396sha256finalfillsitsdigest.c"
     return EVP_MAX_MD_SIZE;
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -184,7 +191,7 @@ int64_t h_fixedbugs396sha256finalfillsitsdigest_EVP_MAX_MD_SIZE(void) {
 
 #line 30 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
 void h_fixedbugs396sha256finalfillsitsdigest_main(void) {
-#line 188 "fixedbugs396sha256finalfillsitsdigest.c"
+#line 195 "fixedbugs396sha256finalfillsitsdigest.c"
     struct SHA256state_st *const hero_lend_h0_c = (struct SHA256state_st *)hero_lend_local(sizeof(struct SHA256state_st), "fixedbugs396sha256finalfillsitsdigest.main", "c");
 #define h0_c (*hero_lend_h0_c)
     HeroArrayHeader * h1_md = {0};
@@ -286,25 +293,25 @@ bb0:
     t62 = h6_own6;
 #line 32 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
     h6_own6 = t6;
-#line 290 "fixedbugs396sha256finalfillsitsdigest.c"
+#line 297 "fixedbugs396sha256finalfillsitsdigest.c"
     hero_array_decref(t62);
 #line 32 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
     t63 = h1_md;
-#line 294 "fixedbugs396sha256finalfillsitsdigest.c"
+#line 301 "fixedbugs396sha256finalfillsitsdigest.c"
     hero_array_incref(t6);
 #line 32 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
     h1_md = t6;
-#line 298 "fixedbugs396sha256finalfillsitsdigest.c"
+#line 305 "fixedbugs396sha256finalfillsitsdigest.c"
     hero_array_decref(t63);
 #line 33 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
     t7 = h1_md;
 #line 33 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
     t64 = h2_kept;
-#line 304 "fixedbugs396sha256finalfillsitsdigest.c"
+#line 311 "fixedbugs396sha256finalfillsitsdigest.c"
     hero_array_incref(t7);
 #line 33 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
     h2_kept = t7;
-#line 308 "fixedbugs396sha256finalfillsitsdigest.c"
+#line 315 "fixedbugs396sha256finalfillsitsdigest.c"
     hero_array_decref(t64);
 #line 34 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
     hero_lend_local_name(hero_lend_h0_c, "SHA256_Init", "c");
@@ -415,15 +422,15 @@ bb0:
     t65 = h7_own7;
 #line 37 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
     h7_own7 = t34;
-#line 419 "fixedbugs396sha256finalfillsitsdigest.c"
+#line 426 "fixedbugs396sha256finalfillsitsdigest.c"
     hero_array_decref(t65);
 #line 37 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
     t66 = h4_out;
-#line 423 "fixedbugs396sha256finalfillsitsdigest.c"
+#line 430 "fixedbugs396sha256finalfillsitsdigest.c"
     hero_array_incref(t34);
 #line 37 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
     h4_out = t34;
-#line 427 "fixedbugs396sha256finalfillsitsdigest.c"
+#line 434 "fixedbugs396sha256finalfillsitsdigest.c"
     hero_array_decref(t66);
 #line 38 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
     t35 = UINT64_C(0);
@@ -536,7 +543,7 @@ bb0:
     if (hero_handle_ended(t61, hero_life_0_0) && h3_ctx == t61) h3_ctx = hero_handle_dead();
 #line 47 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
     }
-#line 540 "fixedbugs396sha256finalfillsitsdigest.c"
+#line 547 "fixedbugs396sha256finalfillsitsdigest.c"
     hero_array_release_at(&h1_md);
     hero_array_release_at(&h2_kept);
     hero_array_release_at(&h4_out);

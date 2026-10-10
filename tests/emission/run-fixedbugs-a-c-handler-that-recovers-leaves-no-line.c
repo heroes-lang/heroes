@@ -3,9 +3,16 @@
 #include <math.h>
 #include <hero_os.h>
 #include <heroes_runtime.h>
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wall"
+#pragma clang diagnostic ignored "-Wsign-conversion"
+#pragma clang diagnostic error "-Wreturn-type"
+#pragma clang diagnostic error "-Wuninitialized"
+#pragma clang diagnostic error "-Wconditional-uninitialized"
 #include "heroes_guard_open.h"
 #include <fixedbugs-a-c-handler-that-recovers-leaves-no-line.h>
 #include "heroes_guard_close.h"
+#pragma clang diagnostic pop
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
@@ -62,7 +69,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_3205, "ab");
 HERO_STR_STATIC(hero_str_46d0b2be, "recovered: ");
 
-#line 66 "fixedbugsachandlerthatrecoversleavesnoline.c"
+#line 73 "fixedbugsachandlerthatrecoversleavesnoline.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -103,7 +110,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 107 "fixedbugsachandlerthatrecoversleavesnoline.c"
+#line 114 "fixedbugsachandlerthatrecoversleavesnoline.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -119,7 +126,7 @@ void h_fixedbugsachandlerthatrecoversleavesnoline_main(void);
 
 #line 26 "tests/golden/run/fixedbugs-a-c-handler-that-recovers-leaves-no-line.hero"
 void h_fixedbugsachandlerthatrecoversleavesnoline_main(void) {
-#line 123 "fixedbugsachandlerthatrecoversleavesnoline.c"
+#line 130 "fixedbugsachandlerthatrecoversleavesnoline.c"
     HeroStr h0_word = {0};
     __attribute__((unused)) const char * h1_held;
     HeroStr h2_own2 = {0};
@@ -146,15 +153,15 @@ bb0:
     t10 = h2_own2;
 #line 27 "tests/golden/run/fixedbugs-a-c-handler-that-recovers-leaves-no-line.hero"
     h2_own2 = t3;
-#line 150 "fixedbugsachandlerthatrecoversleavesnoline.c"
+#line 157 "fixedbugsachandlerthatrecoversleavesnoline.c"
     hero_str_decref(t10);
 #line 27 "tests/golden/run/fixedbugs-a-c-handler-that-recovers-leaves-no-line.hero"
     t11 = h0_word;
-#line 154 "fixedbugsachandlerthatrecoversleavesnoline.c"
+#line 161 "fixedbugsachandlerthatrecoversleavesnoline.c"
     hero_str_incref(t3);
 #line 27 "tests/golden/run/fixedbugs-a-c-handler-that-recovers-leaves-no-line.hero"
     h0_word = t3;
-#line 158 "fixedbugsachandlerthatrecoversleavesnoline.c"
+#line 165 "fixedbugsachandlerthatrecoversleavesnoline.c"
     hero_str_decref(t11);
 #line 28 "tests/golden/run/fixedbugs-a-c-handler-that-recovers-leaves-no-line.hero"
     t4 = h0_word;
@@ -176,7 +183,7 @@ bb0:
 #line 29 "tests/golden/run/fixedbugs-a-c-handler-that-recovers-leaves-no-line.hero"
     hero_print_end();
     hero_held_release(&h1_held);
-#line 180 "fixedbugsachandlerthatrecoversleavesnoline.c"
+#line 187 "fixedbugsachandlerthatrecoversleavesnoline.c"
     hero_str_release_at(&h0_word);
     hero_str_release_at(&h2_own2);
     return;

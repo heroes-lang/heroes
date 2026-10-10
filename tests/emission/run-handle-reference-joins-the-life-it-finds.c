@@ -3,9 +3,16 @@
 #include <math.h>
 #include <hero_os.h>
 #include <heroes_runtime.h>
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wall"
+#pragma clang diagnostic ignored "-Wsign-conversion"
+#pragma clang diagnostic error "-Wreturn-type"
+#pragma clang diagnostic error "-Wuninitialized"
+#pragma clang diagnostic error "-Wconditional-uninitialized"
 #include "heroes_guard_open.h"
 #include <handle-reference-joins-the-life-it-finds.h>
 #include "heroes_guard_close.h"
+#pragma clang diagnostic pop
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
@@ -67,7 +74,7 @@ HERO_STR_STATIC(hero_str_7b9bb5d3, "refs: ");
 HERO_STR_STATIC(hero_str_45d6e555, " up_ref: ");
 HERO_STR_STATIC(hero_str_3f94e3d, "released three times, as C expects");
 
-#line 71 "handlereferencejoinsthelifeitfinds.c"
+#line 78 "handlereferencejoinsthelifeitfinds.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -114,7 +121,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 118 "handlereferencejoinsthelifeitfinds.c"
+#line 125 "handlereferencejoinsthelifeitfinds.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_handlereferencejoinsthelifeitfinds_Ob_eq(ob * const *a, ob * const *b);
@@ -132,7 +139,7 @@ void h_handlereferencejoinsthelifeitfinds_main(void);
 
 #line 16 "tests/golden/run/handle-reference-joins-the-life-it-finds.hero"
 void h_handlereferencejoinsthelifeitfinds_main(void) {
-#line 136 "handlereferencejoinsthelifeitfinds.c"
+#line 143 "handlereferencejoinsthelifeitfinds.c"
     ob * h0_a;
     ob * h1_b;
     int32_t h2_rc;
@@ -252,7 +259,7 @@ bb0:
     hero_print_end();
 #line 24 "tests/golden/run/handle-reference-joins-the-life-it-finds.hero"
     return;
-#line 256 "handlereferencejoinsthelifeitfinds.c"
+#line 263 "handlereferencejoinsthelifeitfinds.c"
 }
 HERO_TU_LOCAL bool h_handlereferencejoinsthelifeitfinds_Ob_eq(ob * const *a, ob * const *b) {
     return hero_handle_eq(*a, *b);

@@ -3,10 +3,17 @@
 #include <math.h>
 #include <hero_os.h>
 #include <heroes_runtime.h>
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wall"
+#pragma clang diagnostic ignored "-Wsign-conversion"
+#pragma clang diagnostic error "-Wreturn-type"
+#pragma clang diagnostic error "-Wuninitialized"
+#pragma clang diagnostic error "-Wconditional-uninitialized"
 #include "heroes_guard_open.h"
 #include <fixedbugs-151-unions.h>
 #pragma push_macro("i")
 #include "heroes_guard_close.h"
+#pragma clang diagnostic pop
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
@@ -25,11 +32,11 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 
 #line 9 "tests/golden/run/fixedbugs-151-a-union-in-a-variant-case-compared-by-an-arm-as-wide-builds.hero"
 _Static_assert(__builtin_classify_type(((W *)0)->i) == 1 && sizeof(((W *)0)->i) == sizeof(int32_t) && (_Generic(((W *)0)->i, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field W i");
-#line 29 "fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds.c"
+#line 36 "fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds.c"
 
 #line 8 "tests/golden/run/fixedbugs-151-a-union-in-a-variant-case-compared-by-an-arm-as-wide-builds.hero"
 _Static_assert(__builtin_classify_type(*(W *)0) != 13 || sizeof(((W *)0)->i) == sizeof(W), "heroes-ffi-union-narrow W i");
-#line 33 "fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds.c"
+#line 40 "fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -136,7 +143,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 140 "fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds.c"
+#line 147 "fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_W_eq(const W *a, const W *b);
@@ -179,7 +186,7 @@ void h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_main(void);
 
 #line 17 "tests/golden/run/fixedbugs-151-a-union-in-a-variant-case-compared-by-an-arm-as-wide-builds.hero"
 void h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_main(void) {
-#line 183 "fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds.c"
+#line 190 "fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds.c"
     h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_V h0_a;
     h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_V h1_b;
     HeroMapHeader * h2_m = {0};
@@ -242,15 +249,15 @@ bb0:
     t20 = h3_own3;
 #line 21 "tests/golden/run/fixedbugs-151-a-union-in-a-variant-case-compared-by-an-arm-as-wide-builds.hero"
     h3_own3 = t11;
-#line 246 "fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds.c"
+#line 253 "fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds.c"
     hero_map_decref(t20);
 #line 21 "tests/golden/run/fixedbugs-151-a-union-in-a-variant-case-compared-by-an-arm-as-wide-builds.hero"
     t21 = h2_m;
-#line 250 "fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds.c"
+#line 257 "fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds.c"
     hero_map_incref(t11);
 #line 21 "tests/golden/run/fixedbugs-151-a-union-in-a-variant-case-compared-by-an-arm-as-wide-builds.hero"
     h2_m = t11;
-#line 254 "fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds.c"
+#line 261 "fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds.c"
     hero_map_decref(t21);
 #line 22 "tests/golden/run/fixedbugs-151-a-union-in-a-variant-case-compared-by-an-arm-as-wide-builds.hero"
     t12 = h0_a;
@@ -275,7 +282,7 @@ bb0:
     hero_print_int(t19);
 #line 25 "tests/golden/run/fixedbugs-151-a-union-in-a-variant-case-compared-by-an-arm-as-wide-builds.hero"
     hero_print_end();
-#line 279 "fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds.c"
+#line 286 "fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds.c"
     hero_map_release_at(&h2_m);
     hero_map_release_at(&h3_own3);
     return;

@@ -1,0 +1,7 @@
+error[ffi_parameter_type]: `x` of `twice` is declared a different sign from the header's `int` — clang read the header, and C would convert the value in silence
+  at tests/golden/unsupported/fixedbugs-569-a-wrong-sign-through-a-library-s-header-is-the-binding-s.hero:15:5
+     |
+  15 |     function twice(x: u32) -> i32  #~ ffi_parameter_type
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: §4.19: a result may be wider than C's, and a parameter is declared at the header's own width and sign. Declare it `i32`, and convert at the call where the value is known to fit
+  fix (guess): declare it `i32`

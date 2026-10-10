@@ -3,9 +3,16 @@
 #include <math.h>
 #include <hero_os.h>
 #include <heroes_runtime.h>
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wall"
+#pragma clang diagnostic ignored "-Wsign-conversion"
+#pragma clang diagnostic error "-Wreturn-type"
+#pragma clang diagnostic error "-Wuninitialized"
+#pragma clang diagnostic error "-Wconditional-uninitialized"
 #include "heroes_guard_open.h"
 #include <dead-address-copy-reaching-a-callback-called-by-name.h>
 #include "heroes_guard_close.h"
+#pragma clang diagnostic pop
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
@@ -65,7 +72,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_5bfed3fb, "stale read through the callback ");
 HERO_STR_STATIC(hero_str_678ad40c, "visited ");
 
-#line 69 "deadaddresscopyreachingacallbackcalledbyname.c"
+#line 76 "deadaddresscopyreachingacallbackcalledbyname.c"
 typedef int64_t (*h_0fn_b062dd1)(node *);
 typedef struct h_0opt_f87774a {
     int64_t tag;
@@ -111,7 +118,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 115 "deadaddresscopyreachingacallbackcalledbyname.c"
+#line 122 "deadaddresscopyreachingacallbackcalledbyname.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_deadaddresscopyreachingacallbackcalledbyname_Node_eq(node * const *a, node * const *b);
@@ -154,7 +161,7 @@ __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
 
 #line 18 "tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero"
 int64_t h_deadaddresscopyreachingacallbackcalledbyname_seen(node * h0_n) {
-#line 158 "deadaddresscopyreachingacallbackcalledbyname.c"
+#line 165 "deadaddresscopyreachingacallbackcalledbyname.c"
     hero_thread_guard("deadaddresscopyreachingacallbackcalledbyname.seen");
     node * t1;
     int64_t t2;
@@ -168,7 +175,7 @@ bb0:
     t2 = node_value(t1);
 #line 19 "tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero"
     return t2;
-#line 172 "deadaddresscopyreachingacallbackcalledbyname.c"
+#line 179 "deadaddresscopyreachingacallbackcalledbyname.c"
 }
 
 int64_t h_0cb_deadaddresscopyreachingacallbackcalledbyname_seen(node * h0_n) {
@@ -179,7 +186,7 @@ int64_t h_0cb_deadaddresscopyreachingacallbackcalledbyname_seen(node * h0_n) {
 
 #line 21 "tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero"
 void h_deadaddresscopyreachingacallbackcalledbyname_main(void) {
-#line 183 "deadaddresscopyreachingacallbackcalledbyname.c"
+#line 190 "deadaddresscopyreachingacallbackcalledbyname.c"
     node * h0_mine;
     HeroArrayHeader * h1_keep = {0};
     HeroArrayHeader * h2_own2 = {0};
@@ -214,15 +221,15 @@ bb0:
     t13 = h2_own2;
 #line 23 "tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero"
     h2_own2 = t3;
-#line 218 "deadaddresscopyreachingacallbackcalledbyname.c"
+#line 225 "deadaddresscopyreachingacallbackcalledbyname.c"
     hero_array_decref(t13);
 #line 23 "tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero"
     t14 = h1_keep;
-#line 222 "deadaddresscopyreachingacallbackcalledbyname.c"
+#line 229 "deadaddresscopyreachingacallbackcalledbyname.c"
     hero_array_incref(t3);
 #line 23 "tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero"
     h1_keep = t3;
-#line 226 "deadaddresscopyreachingacallbackcalledbyname.c"
+#line 233 "deadaddresscopyreachingacallbackcalledbyname.c"
     hero_array_decref(t14);
 #line 24 "tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero"
     t4 = h0_mine;
@@ -264,7 +271,7 @@ bb0:
     hero_print_int(t12);
 #line 26 "tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero"
     hero_print_end();
-#line 268 "deadaddresscopyreachingacallbackcalledbyname.c"
+#line 275 "deadaddresscopyreachingacallbackcalledbyname.c"
     hero_array_release_at(&h1_keep);
     hero_array_release_at(&h2_own2);
     return;

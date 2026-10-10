@@ -1,0 +1,8 @@
+error[ffi_header_refused]: `fixedbugs-569-a-header-of-the-program-s-own-with-a-missing-return-is-refused.h`, the header this group names, does not compile: clang refuses it at line 3: non-void function does not return a value in all control paths [-Werror,-Wreturn-type]
+  at tests/golden/unsupported/fixedbugs-569-a-header-of-the-program-s-own-with-a-missing-return-is-refused.hero:14:8
+     |
+  14 | extern "fixedbugs-569-a-header-of-the-program-s-own-with-a-missing-return-is-refused.h"  #~ ffi_header_refused
+     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: `fixedbugs-569-a-header-of-the-program-s-own-with-a-missing-return-is-refused.h` line 3 reads `static inline int pick(int x) { if (x > 0) return 1; }`
+  note: clang's `-Werror` says the warning is one this compiler makes an error in a header's own code too, wherever the header was found: a header's code is passed over for `-Wall`'s warnings and sign conversions alone, never for a missing return, an uninitialised read, a value narrowed to 32 bits or a pointer of another type
+  note: a group's header is compiled as this program's own C includes it, before any declaration of the group is checked against it: repair the header, or name the one that declares this group's C

@@ -3,9 +3,16 @@
 #include <math.h>
 #include <hero_os.h>
 #include <heroes_runtime.h>
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wall"
+#pragma clang diagnostic ignored "-Wsign-conversion"
+#pragma clang diagnostic error "-Wreturn-type"
+#pragma clang diagnostic error "-Wuninitialized"
+#pragma clang diagnostic error "-Wconditional-uninitialized"
 #include "heroes_guard_open.h"
 #include <fixedbugs-396-buffers.h>
 #include "heroes_guard_close.h"
+#pragma clang diagnostic pop
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
@@ -61,7 +68,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_5687795c, "not reached ");
 
-#line 65 "fixedbugs396alocalisnamedbythecallthatoverrunsit.c"
+#line 72 "fixedbugs396alocalisnamedbythecallthatoverrunsit.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -105,7 +112,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 109 "fixedbugs396alocalisnamedbythecallthatoverrunsit.c"
+#line 116 "fixedbugs396alocalisnamedbythecallthatoverrunsit.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -121,7 +128,7 @@ void h_fixedbugs396alocalisnamedbythecallthatoverrunsit_main(void);
 
 #line 10 "tests/golden/run/fixedbugs-396-a-local-is-named-by-the-call-that-overruns-it.hero"
 void h_fixedbugs396alocalisnamedbythecallthatoverrunsit_main(void) {
-#line 125 "fixedbugs396alocalisnamedbythecallthatoverrunsit.c"
+#line 132 "fixedbugs396alocalisnamedbythecallthatoverrunsit.c"
     int32_t *const hero_lend_h0_x = (int32_t *)hero_lend_local(sizeof(int32_t), "fixedbugs396alocalisnamedbythecallthatoverrunsit.main", "x");
 #define h0_x (*hero_lend_h0_x)
     int32_t t1;
@@ -161,7 +168,7 @@ bb0:
     hero_lend_local_give(hero_lend_h0_x);
 #line 15 "tests/golden/run/fixedbugs-396-a-local-is-named-by-the-call-that-overruns-it.hero"
     return;
-#line 165 "fixedbugs396alocalisnamedbythecallthatoverrunsit.c"
+#line 172 "fixedbugs396alocalisnamedbythecallthatoverrunsit.c"
 }
 #undef h0_x
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {

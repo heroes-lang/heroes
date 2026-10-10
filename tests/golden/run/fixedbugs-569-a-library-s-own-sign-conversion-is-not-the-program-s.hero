@@ -1,0 +1,21 @@
+# fixedbugs, defect 569, lane b18-guard, 2026-10-10 (panel 205's R2).
+#
+# SYMPTOM: a header whose own inline code converts a sign, as `gmp.h` does
+# at its line 1882, was refused `ffi_header_refused` by the build's
+# `-Werror=sign-conversion` before any binding was checked, on this Mac where
+# Homebrew's `gmp.h` is found through `-I`; on Linux arm64, `/usr/include`
+# being a system directory to clang, the same program built. GMP, libavutil,
+# avcodec, avformat, swscale and libfdt were refused so.
+#
+# FIX: a group's header is included inside a region of its own
+# (`emit/header_region.hero`): `-Wall` and `-Wsign-conversion` are ignored
+# there, a missing return and an uninitialised read stay errors, and after
+# it every check of a binding is raised again (`emit/checks_raised.hero`).
+
+extern "fixedbugs-569-a-library-s-own-sign-conversion-is-not-the-program-s.h"
+    function twice(x: i32) -> i32
+    function magnitude(x: i32) -> u32
+
+function main()
+    print(twice(x: 21))
+    print(magnitude(x: -5))
