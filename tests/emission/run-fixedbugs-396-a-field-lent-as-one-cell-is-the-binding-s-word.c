@@ -9,10 +9,19 @@
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic ignored "-Wpragma-pack"
+#pragma float_control(push)
 #include "heroes_guard_open.h"
 #include <fixedbugs-396-buffers.h>
 #pragma push_macro("m")
 #include "heroes_guard_close.h"
+#pragma clang diagnostic ignored "-Wignored-pragmas"
+#pragma pack()
+#pragma float_control(pop)
+#pragma float_control(precise, on)
+#pragma GCC visibility push(default)
+#pragma clang section bss="" data="" rodata="" text="" relro=""
+#pragma clang optimize on
 #pragma clang diagnostic pop
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -26,8 +35,6 @@
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
-#pragma clang diagnostic ignored "-Wdeprecated-pragma"
-#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -40,11 +47,11 @@ _Static_assert(sizeof(struct cell) - __builtin_offsetof(struct cell, rest) != 0,
 #line 15 "tests/golden/run/fixedbugs-396-a-field-lent-as-one-cell-is-the-binding-s-word.hero"
 _Static_assert(_Generic(&((struct cell *)0)->rest, _Bool (*)[7]: (sizeof(_Bool) == sizeof(uint8_t) && (((_Bool)-1 < 0) == ((uint8_t)-1 < 0))), char (*)[7]: (sizeof(char) == sizeof(uint8_t) && (((char)-1 < 0) == ((uint8_t)-1 < 0))), signed char (*)[7]: (sizeof(signed char) == sizeof(uint8_t) && (((signed char)-1 < 0) == ((uint8_t)-1 < 0))), short (*)[7]: (sizeof(short) == sizeof(uint8_t) && (((short)-1 < 0) == ((uint8_t)-1 < 0))), int (*)[7]: (sizeof(int) == sizeof(uint8_t) && (((int)-1 < 0) == ((uint8_t)-1 < 0))), long (*)[7]: (sizeof(long) == sizeof(uint8_t) && (((long)-1 < 0) == ((uint8_t)-1 < 0))), long long (*)[7]: (sizeof(long long) == sizeof(uint8_t) && (((long long)-1 < 0) == ((uint8_t)-1 < 0))), unsigned char (*)[7]: (sizeof(unsigned char) == sizeof(uint8_t) && (((unsigned char)-1 < 0) == ((uint8_t)-1 < 0))), unsigned short (*)[7]: (sizeof(unsigned short) == sizeof(uint8_t) && (((unsigned short)-1 < 0) == ((uint8_t)-1 < 0))), unsigned int (*)[7]: (sizeof(unsigned int) == sizeof(uint8_t) && (((unsigned int)-1 < 0) == ((uint8_t)-1 < 0))), unsigned long (*)[7]: (sizeof(unsigned long) == sizeof(uint8_t) && (((unsigned long)-1 < 0) == ((uint8_t)-1 < 0))), unsigned long long (*)[7]: (sizeof(unsigned long long) == sizeof(uint8_t) && (((unsigned long long)-1 < 0) == ((uint8_t)-1 < 0))), default: 0), "heroes-ffi-field Cell rest");
 _Static_assert(__builtin_classify_type(((struct cell *)0)->after) == 1 && sizeof(((struct cell *)0)->after) == sizeof(int64_t) && (_Generic(((struct cell *)0)->after, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Cell after");
-#line 44 "fixedbugs396afieldlentasonecellisthebindingsword.c"
+#line 51 "fixedbugs396afieldlentasonecellisthebindingsword.c"
 
 #line 13 "tests/golden/run/fixedbugs-396-a-field-lent-as-one-cell-is-the-binding-s-word.hero"
 _Static_assert(__builtin_classify_type(*(struct cell *)0) != 13, "heroes-ffi-union Cell m rest after");
-#line 48 "fixedbugs396afieldlentasonecellisthebindingsword.c"
+#line 55 "fixedbugs396afieldlentasonecellisthebindingsword.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -128,7 +135,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 132 "fixedbugs396afieldlentasonecellisthebindingsword.c"
+#line 139 "fixedbugs396afieldlentasonecellisthebindingsword.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs396afieldlentasonecellisthebindingsword_Cell_eq(const struct cell *a, const struct cell *b);
@@ -143,10 +150,12 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_fixedbugs396afieldlentasonecellisthebindingsword_main(void);
+#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 19 "tests/golden/run/fixedbugs-396-a-field-lent-as-one-cell-is-the-binding-s-word.hero"
 void h_fixedbugs396afieldlentasonecellisthebindingsword_main(void) {
-#line 150 "fixedbugs396afieldlentasonecellisthebindingsword.c"
+#line 158 "fixedbugs396afieldlentasonecellisthebindingsword.c"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
     struct cell h0_b;
     uint8_t t1;
     uint8_t t2;
@@ -169,6 +178,7 @@ void h_fixedbugs396afieldlentasonecellisthebindingsword_main(void) {
     HeroStr t21;
     struct cell t22;
     int64_t t23;
+#pragma clang diagnostic warning "-Wdeprecated-declarations"
     goto bb0;
 bb0:
 #line 20 "tests/golden/run/fixedbugs-396-a-field-lent-as-one-cell-is-the-binding-s-word.hero"
@@ -232,8 +242,9 @@ bb0:
     hero_print_end();
 #line 21 "tests/golden/run/fixedbugs-396-a-field-lent-as-one-cell-is-the-binding-s-word.hero"
     return;
-#line 236 "fixedbugs396afieldlentasonecellisthebindingsword.c"
+#line 246 "fixedbugs396afieldlentasonecellisthebindingsword.c"
 }
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_fixedbugs396afieldlentasonecellisthebindingsword_Cell_eq(const struct cell *a, const struct cell *b) {
     if (!(a->m == b->m)) return false;
     if (!((a->rest[0] == b->rest[0] && a->rest[1] == b->rest[1] && a->rest[2] == b->rest[2] && a->rest[3] == b->rest[3] && a->rest[4] == b->rest[4] && a->rest[5] == b->rest[5] && a->rest[6] == b->rest[6]))) return false;

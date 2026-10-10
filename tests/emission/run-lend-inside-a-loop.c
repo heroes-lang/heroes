@@ -9,9 +9,18 @@
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic ignored "-Wpragma-pack"
+#pragma float_control(push)
 #include "heroes_guard_open.h"
 #include <string.h>
 #include "heroes_guard_close.h"
+#pragma clang diagnostic ignored "-Wignored-pragmas"
+#pragma pack()
+#pragma float_control(pop)
+#pragma float_control(precise, on)
+#pragma GCC visibility push(default)
+#pragma clang section bss="" data="" rodata="" text="" relro=""
+#pragma clang optimize on
 #pragma clang diagnostic pop
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -25,8 +34,6 @@
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
-#pragma clang diagnostic ignored "-Wdeprecated-pragma"
-#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -71,7 +78,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_f63dcff, "row-");
 
-#line 75 "lendinsidealoop.c"
+#line 82 "lendinsidealoop.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -114,7 +121,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 118 "lendinsidealoop.c"
+#line 125 "lendinsidealoop.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -127,10 +134,11 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_lendinsidealoop_main(void);
+#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 12 "tests/golden/run/lend-inside-a-loop.hero"
 void h_lendinsidealoop_main(void) {
-#line 134 "lendinsidealoop.c"
+#line 142 "lendinsidealoop.c"
     int64_t h0_at;
     uint64_t h1_total;
     HeroStr h2_own2 = {0};
@@ -188,7 +196,7 @@ bb2:
     t18 = h2_own2;
 #line 17 "tests/golden/run/lend-inside-a-loop.hero"
     h2_own2 = t9;
-#line 192 "lendinsidealoop.c"
+#line 200 "lendinsidealoop.c"
     hero_str_decref(t18);
 #line 17 "tests/golden/run/lend-inside-a-loop.hero"
     t10 = hero_str_concat(t7, t9);
@@ -196,7 +204,7 @@ bb2:
     t19 = h3_own3;
 #line 17 "tests/golden/run/lend-inside-a-loop.hero"
     h3_own3 = t10;
-#line 200 "lendinsidealoop.c"
+#line 208 "lendinsidealoop.c"
     hero_str_decref(t19);
 #line 17 "tests/golden/run/lend-inside-a-loop.hero"
     t11 = hero_str_lend(t10);
@@ -223,11 +231,12 @@ bb3:
     hero_print_uint(t17);
 #line 20 "tests/golden/run/lend-inside-a-loop.hero"
     hero_print_end();
-#line 227 "lendinsidealoop.c"
+#line 235 "lendinsidealoop.c"
     hero_str_release_at(&h2_own2);
     hero_str_release_at(&h3_own3);
     return;
 }
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_incref(v->as.ok);

@@ -9,9 +9,18 @@
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic ignored "-Wpragma-pack"
+#pragma float_control(push)
 #include "heroes_guard_open.h"
 #include <raylib.h>
 #include "heroes_guard_close.h"
+#pragma clang diagnostic ignored "-Wignored-pragmas"
+#pragma pack()
+#pragma float_control(pop)
+#pragma float_control(precise, on)
+#pragma GCC visibility push(default)
+#pragma clang section bss="" data="" rodata="" text="" relro=""
+#pragma clang optimize on
 #pragma clang diagnostic pop
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -25,8 +34,6 @@
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
-#pragma clang diagnostic ignored "-Wdeprecated-pragma"
-#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -89,11 +96,11 @@ _Static_assert(_Generic(&((VrDeviceInfo *)0)->lensDistortionValues, float (*)[4]
 _Static_assert(sizeof(VrDeviceInfo) - __builtin_offsetof(VrDeviceInfo, chromaAbCorrection) != 0, "heroes-ffi-flex VrDeviceInfo chromaAbCorrection");
 #line 77 "tests/golden/run/ffi-a-c-array-member.hero"
 _Static_assert(_Generic(&((VrDeviceInfo *)0)->chromaAbCorrection, float (*)[4]: 1, default: 0) && sizeof(VrDeviceInfo) - __builtin_offsetof(VrDeviceInfo, chromaAbCorrection) >= sizeof(float[4]), "heroes-ffi-field VrDeviceInfo chromaAbCorrection");
-#line 93 "ffiacarraymember.c"
+#line 100 "ffiacarraymember.c"
 
 #line 68 "tests/golden/run/ffi-a-c-array-member.hero"
 _Static_assert(__builtin_classify_type(*(VrDeviceInfo *)0) != 13, "heroes-ffi-union VrDeviceInfo hResolution vResolution hScreenSize vScreenSize eyeToScreenDistance lensSeparationDistance interpupillaryDistance lensDistortionValues chromaAbCorrection");
-#line 97 "ffiacarraymember.c"
+#line 104 "ffiacarraymember.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -178,7 +185,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 182 "ffiacarraymember.c"
+#line 189 "ffiacarraymember.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_ffiacarraymember_Matrix_eq(const Matrix *a, const Matrix *b);
@@ -197,10 +204,12 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_ffiacarraymember_main(void);
+#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 81 "tests/golden/run/ffi-a-c-array-member.hero"
 void h_ffiacarraymember_main(void) {
-#line 204 "ffiacarraymember.c"
+#line 212 "ffiacarraymember.c"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
     VrDeviceInfo h0_device;
     VrStereoConfig h1_config;
     int32_t t1;
@@ -236,6 +245,7 @@ void h_ffiacarraymember_main(void) {
     float t36;
     bool t37;
     VrStereoConfig t38;
+#pragma clang diagnostic warning "-Wdeprecated-declarations"
     goto bb0;
 bb0:
 #line 85 "tests/golden/run/ffi-a-c-array-member.hero"
@@ -317,8 +327,9 @@ bb0:
     (void)UnloadVrStereoConfig(t38);
 #line 101 "tests/golden/run/ffi-a-c-array-member.hero"
     return;
-#line 321 "ffiacarraymember.c"
+#line 331 "ffiacarraymember.c"
 }
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_ffiacarraymember_Matrix_eq(const Matrix *a, const Matrix *b) {
     if (!(a->m0 == b->m0)) return false;
     if (!(a->m4 == b->m4)) return false;

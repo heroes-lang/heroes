@@ -1,0 +1,15 @@
+# fixedbugs, defect 582, lane b19-pack, 2026-10-10, a shape beside
+# `fixedbugs-582-a-header-s-unclosed-pack-push-leaves-two-modules-one-record-layout`:
+# the push left open is in `fixedbugs-582-a-header-that-packs-itself.h`,
+# which the group's header includes, and reached `main`'s records the same
+# way. The close gives back the packing whichever header set it.
+
+use fixedbugs582/pair
+
+extern "fixedbugs-582-a-pack-push-in-a-header-the-group-s-header-includes.h"
+    function llabs(x: i64) -> i64
+
+function main()
+    p = pair.make(llabs(-123456789))
+    print(p.b, " ", pair.second(p), " ", pair.second(pair.Pair(a: 2, b: llabs(-987654321))))
+    print(pair.area(pair.shape(llabs(-7))))

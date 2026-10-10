@@ -9,11 +9,20 @@
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic ignored "-Wpragma-pack"
+#pragma float_control(push)
 #include "heroes_guard_open.h"
 #include <ffi-counted-by-a-stated-extent.h>
 #pragma push_macro("a")
 #pragma push_macro("b")
 #include "heroes_guard_close.h"
+#pragma clang diagnostic ignored "-Wignored-pragmas"
+#pragma pack()
+#pragma float_control(pop)
+#pragma float_control(precise, on)
+#pragma GCC visibility push(default)
+#pragma clang section bss="" data="" rodata="" text="" relro=""
+#pragma clang optimize on
 #pragma clang diagnostic pop
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -27,8 +36,6 @@
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
-#pragma clang diagnostic ignored "-Wdeprecated-pragma"
-#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -43,13 +50,13 @@ _Static_assert(__builtin_classify_type(((struct held *)0)->after) == 1 && sizeof
 #line 19 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
 _Static_assert(__builtin_classify_type(((struct pair *)0)->a) == 1 && sizeof(((struct pair *)0)->a) == sizeof(int32_t) && (_Generic(((struct pair *)0)->a, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Pair a");
 _Static_assert(__builtin_classify_type(((struct pair *)0)->b) == 1 && sizeof(((struct pair *)0)->b) == sizeof(int32_t) && (_Generic(((struct pair *)0)->b, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Pair b");
-#line 47 "fficountedbyastatedextent.c"
+#line 54 "fficountedbyastatedextent.c"
 
 #line 15 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
 _Static_assert(__builtin_classify_type(*(struct held *)0) != 13, "heroes-ffi-union Held buf after");
 #line 18 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
 _Static_assert(__builtin_classify_type(*(struct pair *)0) != 13, "heroes-ffi-union Pair a b");
-#line 53 "fficountedbyastatedextent.c"
+#line 60 "fficountedbyastatedextent.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -145,7 +152,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 149 "fficountedbyastatedextent.c"
+#line 156 "fficountedbyastatedextent.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fficountedbyastatedextent_Held_eq(const struct held *a, const struct held *b);
@@ -164,12 +171,15 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 int64_t h_fficountedbyastatedextent_HELD_LEN(void);
 struct held h_fficountedbyastatedextent_zero(void);
 void h_fficountedbyastatedextent_main(void);
+#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #line 14 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
 int64_t h_fficountedbyastatedextent_HELD_LEN(void) {
-#line 171 "fficountedbyastatedextent.c"
+#line 180 "fficountedbyastatedextent.c"
     return HELD_LEN;
 }
+#pragma clang diagnostic warning "-Wdeprecated-declarations"
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
@@ -184,7 +194,7 @@ int64_t h_fficountedbyastatedextent_HELD_LEN(void) {
 
 #line 28 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
 struct held h_fficountedbyastatedextent_zero(void) {
-#line 188 "fficountedbyastatedextent.c"
+#line 198 "fficountedbyastatedextent.c"
     uint8_t t1;
     uint8_t t2;
     uint8_t t3;
@@ -243,12 +253,13 @@ bb0:
     t19 = (struct held){.buf = {t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16}, .after = t18};
 #line 29 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
     return t19;
-#line 247 "fficountedbyastatedextent.c"
+#line 257 "fficountedbyastatedextent.c"
 }
 
 #line 31 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
 void h_fficountedbyastatedextent_main(void) {
-#line 252 "fficountedbyastatedextent.c"
+#line 262 "fficountedbyastatedextent.c"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
     struct held h0_h;
     struct pair *const hero_lend_h1_pair = (struct pair *)hero_lend_local(sizeof(struct pair), "fficountedbyastatedextent.main", "pair");
 #define h1_pair (*hero_lend_h1_pair)
@@ -312,6 +323,7 @@ void h_fficountedbyastatedextent_main(void) {
     HeroStr t76;
     struct pair t77;
     int32_t t78;
+#pragma clang diagnostic warning "-Wdeprecated-declarations"
     goto bb0;
 bb0:
 #line 32 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
@@ -531,9 +543,10 @@ bb0:
     hero_lend_local_give(hero_lend_h1_pair);
 #line 49 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
     return;
-#line 535 "fficountedbyastatedextent.c"
+#line 547 "fficountedbyastatedextent.c"
 }
 #undef h1_pair
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_fficountedbyastatedextent_Held_eq(const struct held *a, const struct held *b) {
     if (!((a->buf[0] == b->buf[0] && a->buf[1] == b->buf[1] && a->buf[2] == b->buf[2] && a->buf[3] == b->buf[3] && a->buf[4] == b->buf[4] && a->buf[5] == b->buf[5] && a->buf[6] == b->buf[6] && a->buf[7] == b->buf[7] && a->buf[8] == b->buf[8] && a->buf[9] == b->buf[9] && a->buf[10] == b->buf[10] && a->buf[11] == b->buf[11] && a->buf[12] == b->buf[12] && a->buf[13] == b->buf[13] && a->buf[14] == b->buf[14] && a->buf[15] == b->buf[15]))) return false;
     if (!(a->after == b->after)) return false;
