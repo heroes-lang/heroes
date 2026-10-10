@@ -21,11 +21,12 @@
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -74,7 +75,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_543259bb, "ended early");
 HERO_STR_STATIC(hero_str_457adaeb, "still held: ");
 
-#line 78 "handlealiveafteranendinonearm.c"
+#line 79 "handlealiveafteranendinonearm.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -98,7 +99,6 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
@@ -135,14 +135,26 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_handlealiveafteranendinonearm_main(void);
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 15 "tests/golden/run/handle-alive-after-an-end-in-one-arm.hero"
 void h_handlealiveafteranendinonearm_main(void) {
-#line 15 "tests/golden/run/handle-alive-after-an-end-in-one-arm.hero"
-    _Pragma("clang diagnostic ignored \"-Wdeprecated-declarations\"") node * h0_n; int64_t t1; node * t2; node * t3; int64_t t4; int64_t t5; bool t6; node * t7; HeroStr t8; HeroStr t9; node * t10; int64_t t11; node * t12; _Pragma("clang diagnostic warning \"-Wdeprecated-declarations\"") goto bb0;
-#line 15 "tests/golden/run/handle-alive-after-an-end-in-one-arm.hero"
+#line 142 "handlealiveafteranendinonearm.c"
+    node * h0_n;
+    int64_t t1;
+    node * t2;
+    node * t3;
+    int64_t t4;
+    int64_t t5;
+    bool t6;
+    node * t7;
+    HeroStr t8;
+    HeroStr t9;
+    node * t10;
+    int64_t t11;
+    node * t12;
+    goto bb0;
 bb0:
+#line 16 "tests/golden/run/handle-alive-after-an-end-in-one-arm.hero"
     t1 = INT64_C(7);
 #line 16 "tests/golden/run/handle-alive-after-an-end-in-one-arm.hero"
     t2 = node_new(t1);
@@ -220,9 +232,8 @@ bb2:
 bb3:
 #line 20 "tests/golden/run/handle-alive-after-an-end-in-one-arm.hero"
     goto bb1;
-#line 224 "handlealiveafteranendinonearm.c"
+#line 236 "handlealiveafteranendinonearm.c"
 }
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_handlealiveafteranendinonearm_Node_eq(node * const *a, node * const *b) {
     return hero_handle_eq(*a, *b);
 }

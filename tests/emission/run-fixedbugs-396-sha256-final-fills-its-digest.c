@@ -21,11 +21,12 @@
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -34,7 +35,7 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 
 #line 18 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
 _Static_assert(__builtin_classify_type(((struct SHA256state_st *)0)->num) == 1 && sizeof(((struct SHA256state_st *)0)->num) == sizeof(uint32_t) && (_Generic(((struct SHA256state_st *)0)->num, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 1), "heroes-ffi-field Sha256Ctx num");
-#line 38 "fixedbugs396sha256finalfillsitsdigest.c"
+#line 39 "fixedbugs396sha256finalfillsitsdigest.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -111,7 +112,6 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
@@ -158,15 +158,12 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 int64_t h_fixedbugs396sha256finalfillsitsdigest_SHA256_DIGEST_LENGTH(void);
 int64_t h_fixedbugs396sha256finalfillsitsdigest_EVP_MAX_MD_SIZE(void);
 void h_fixedbugs396sha256finalfillsitsdigest_main(void);
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #line 15 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
 int64_t h_fixedbugs396sha256finalfillsitsdigest_SHA256_DIGEST_LENGTH(void) {
-#line 167 "fixedbugs396sha256finalfillsitsdigest.c"
+#line 165 "fixedbugs396sha256finalfillsitsdigest.c"
     return SHA256_DIGEST_LENGTH;
 }
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
@@ -175,18 +172,15 @@ int64_t h_fixedbugs396sha256finalfillsitsdigest_SHA256_DIGEST_LENGTH(void) {
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #line 16 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
 int64_t h_fixedbugs396sha256finalfillsitsdigest_EVP_MAX_MD_SIZE(void) {
-#line 187 "fixedbugs396sha256finalfillsitsdigest.c"
+#line 182 "fixedbugs396sha256finalfillsitsdigest.c"
     return EVP_MAX_MD_SIZE;
 }
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
@@ -195,21 +189,92 @@ int64_t h_fixedbugs396sha256finalfillsitsdigest_EVP_MAX_MD_SIZE(void) {
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 
 #line 30 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
 void h_fixedbugs396sha256finalfillsitsdigest_main(void) {
-#line 30 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
+#line 199 "fixedbugs396sha256finalfillsitsdigest.c"
+    struct SHA256state_st *const hero_lend_h0_c = (struct SHA256state_st *)hero_lend_local(sizeof(struct SHA256state_st), "fixedbugs396sha256finalfillsitsdigest.main", "c");
 #define h0_c (*hero_lend_h0_c)
-#line 30 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
+    HeroArrayHeader * h1_md = {0};
+    HeroArrayHeader * h2_kept = {0};
+    EVP_MD_CTX * h3_ctx;
+    HeroArrayHeader * h4_out = {0};
+    uint32_t *const hero_lend_h5_s = (uint32_t *)hero_lend_local(sizeof(uint32_t), "fixedbugs396sha256finalfillsitsdigest.main", "s");
 #define h5_s (*hero_lend_h5_s)
-#line 30 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
-    _Pragma("clang diagnostic ignored \"-Wdeprecated-declarations\"") struct SHA256state_st *const hero_lend_h0_c = (struct SHA256state_st *)hero_lend_local(sizeof(struct SHA256state_st), "fixedbugs396sha256finalfillsitsdigest.main", "c"); HeroArrayHeader * h1_md = {0}; HeroArrayHeader * h2_kept = {0}; EVP_MD_CTX * h3_ctx; HeroArrayHeader * h4_out = {0}; uint32_t *const hero_lend_h5_s = (uint32_t *)hero_lend_local(sizeof(uint32_t), "fixedbugs396sha256finalfillsitsdigest.main", "s"); HeroArrayHeader * h6_own6 = {0}; HeroArrayHeader * h7_own7 = {0}; uint32_t t1; struct SHA256state_st t2; uint8_t t3; uint8_t t4; uint8_t t5; HeroArrayHeader * t6; HeroArrayHeader * t7; int32_t t8; HeroStr t9; HeroStr t10; const char * t11; uint64_t t12; int32_t t13; HeroStr t14; int32_t t15; HeroArrayHeader * t16; int64_t t17; HeroStr t18; HeroArrayHeader * t19; int64_t t20; uint8_t t21; HeroStr t22; HeroArrayHeader * t23; int64_t t24; uint8_t t25; HeroStr t26; HeroArrayHeader * t27; int64_t t28; HeroStr t29; HeroArrayHeader * t30; int64_t t31; uint8_t t32; EVP_MD_CTX * t33; HeroArrayHeader * t34; uint32_t t35; EVP_MD_CTX * t36; void * t37; void * t38; int32_t t39; HeroStr t40; EVP_MD_CTX * t41; HeroStr t42; const char * t43; uint64_t t44; int32_t t45; HeroStr t46; EVP_MD_CTX * t47; int32_t t48; uint32_t t49; HeroStr t50; HeroArrayHeader * t51; int64_t t52; HeroStr t53; HeroArrayHeader * t54; int64_t t55; uint8_t t56; HeroStr t57; HeroArrayHeader * t58; int64_t t59; uint8_t t60; EVP_MD_CTX * t61; HeroArrayHeader * t62; HeroArrayHeader * t63; HeroArrayHeader * t64; HeroArrayHeader * t65; HeroArrayHeader * t66; _Pragma("clang diagnostic warning \"-Wdeprecated-declarations\"") goto bb0;
-#line 30 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
+    HeroArrayHeader * h6_own6 = {0};
+    HeroArrayHeader * h7_own7 = {0};
+    uint32_t t1;
+    struct SHA256state_st t2;
+    uint8_t t3;
+    uint8_t t4;
+    uint8_t t5;
+    HeroArrayHeader * t6;
+    HeroArrayHeader * t7;
+    int32_t t8;
+    HeroStr t9;
+    HeroStr t10;
+    const char * t11;
+    uint64_t t12;
+    int32_t t13;
+    HeroStr t14;
+    int32_t t15;
+    HeroArrayHeader * t16;
+    int64_t t17;
+    HeroStr t18;
+    HeroArrayHeader * t19;
+    int64_t t20;
+    uint8_t t21;
+    HeroStr t22;
+    HeroArrayHeader * t23;
+    int64_t t24;
+    uint8_t t25;
+    HeroStr t26;
+    HeroArrayHeader * t27;
+    int64_t t28;
+    HeroStr t29;
+    HeroArrayHeader * t30;
+    int64_t t31;
+    uint8_t t32;
+    EVP_MD_CTX * t33;
+    HeroArrayHeader * t34;
+    uint32_t t35;
+    EVP_MD_CTX * t36;
+    void * t37;
+    void * t38;
+    int32_t t39;
+    HeroStr t40;
+    EVP_MD_CTX * t41;
+    HeroStr t42;
+    const char * t43;
+    uint64_t t44;
+    int32_t t45;
+    HeroStr t46;
+    EVP_MD_CTX * t47;
+    int32_t t48;
+    uint32_t t49;
+    HeroStr t50;
+    HeroArrayHeader * t51;
+    int64_t t52;
+    HeroStr t53;
+    HeroArrayHeader * t54;
+    int64_t t55;
+    uint8_t t56;
+    HeroStr t57;
+    HeroArrayHeader * t58;
+    int64_t t59;
+    uint8_t t60;
+    EVP_MD_CTX * t61;
+    HeroArrayHeader * t62;
+    HeroArrayHeader * t63;
+    HeroArrayHeader * t64;
+    HeroArrayHeader * t65;
+    HeroArrayHeader * t66;
+    goto bb0;
 bb0:
+#line 31 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
     t1 = UINT64_C(0);
 #line 31 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
     t2 = (struct SHA256state_st){.num = t1};
@@ -232,25 +297,27 @@ bb0:
     t62 = h6_own6;
 #line 32 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
     h6_own6 = t6;
-#line 32 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
+#line 301 "fixedbugs396sha256finalfillsitsdigest.c"
     hero_array_decref(t62);
 #line 32 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
     t63 = h1_md;
-#line 32 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
+#line 305 "fixedbugs396sha256finalfillsitsdigest.c"
     hero_array_incref(t6);
 #line 32 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
     h1_md = t6;
-#line 32 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
+#line 309 "fixedbugs396sha256finalfillsitsdigest.c"
     hero_array_decref(t63);
+#line 33 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
     t7 = h1_md;
 #line 33 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
     t64 = h2_kept;
-#line 33 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
+#line 315 "fixedbugs396sha256finalfillsitsdigest.c"
     hero_array_incref(t7);
 #line 33 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
     h2_kept = t7;
-#line 33 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
+#line 319 "fixedbugs396sha256finalfillsitsdigest.c"
     hero_array_decref(t64);
+#line 34 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
     hero_lend_local_name(hero_lend_h0_c, "SHA256_Init", "c");
 #line 34 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
     t8 = SHA256_Init(&h0_c);
@@ -359,16 +426,17 @@ bb0:
     t65 = h7_own7;
 #line 37 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
     h7_own7 = t34;
-#line 37 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
+#line 430 "fixedbugs396sha256finalfillsitsdigest.c"
     hero_array_decref(t65);
 #line 37 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
     t66 = h4_out;
-#line 37 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
+#line 434 "fixedbugs396sha256finalfillsitsdigest.c"
     hero_array_incref(t34);
 #line 37 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
     h4_out = t34;
-#line 37 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
+#line 438 "fixedbugs396sha256finalfillsitsdigest.c"
     hero_array_decref(t66);
+#line 38 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
     t35 = UINT64_C(0);
 #line 38 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
     h5_s = t35;
@@ -479,7 +547,7 @@ bb0:
     if (hero_handle_ended(t61, hero_life_0_0) && h3_ctx == t61) h3_ctx = hero_handle_dead();
 #line 47 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
     }
-#line 483 "fixedbugs396sha256finalfillsitsdigest.c"
+#line 551 "fixedbugs396sha256finalfillsitsdigest.c"
     hero_array_release_at(&h1_md);
     hero_array_release_at(&h2_kept);
     hero_array_release_at(&h4_out);
@@ -491,7 +559,6 @@ bb0:
 }
 #undef h0_c
 #undef h5_s
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_fixedbugs396sha256finalfillsitsdigest_Sha256Ctx_eq(const struct SHA256state_st *a, const struct SHA256state_st *b) {
     hero_panic("h_fixedbugs396sha256finalfillsitsdigest_Sha256Ctx_eq: a partial record has no structural equality");
 }

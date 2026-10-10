@@ -21,11 +21,12 @@
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -76,7 +77,7 @@ HERO_STR_STATIC(hero_str_19c449f6, "busy close: ");
 HERO_STR_STATIC(hero_str_79302ff3, " statements still open: ");
 HERO_STR_STATIC(hero_str_68312d6c, "closed: ");
 
-#line 80 "handlealiveunderwhenafterafailedend.c"
+#line 81 "handlealiveunderwhenafterafailedend.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -100,7 +101,6 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
@@ -137,14 +137,29 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_handlealiveunderwhenafterafailedend_main(void);
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 14 "tests/golden/run/handle-alive-under-when-after-a-failed-end.hero"
 void h_handlealiveunderwhenafterafailedend_main(void) {
-#line 14 "tests/golden/run/handle-alive-under-when-after-a-failed-end.hero"
-    _Pragma("clang diagnostic ignored \"-Wdeprecated-declarations\"") db * h0_d; int32_t h1_first; int32_t h2_second; db * t1; db * t2; int32_t t3; HeroStr t4; int32_t t5; HeroStr t6; db * t7; int64_t t8; db * t9; db * t10; int32_t t11; HeroStr t12; int32_t t13; _Pragma("clang diagnostic warning \"-Wdeprecated-declarations\"") goto bb0;
-#line 14 "tests/golden/run/handle-alive-under-when-after-a-failed-end.hero"
+#line 144 "handlealiveunderwhenafterafailedend.c"
+    db * h0_d;
+    int32_t h1_first;
+    int32_t h2_second;
+    db * t1;
+    db * t2;
+    int32_t t3;
+    HeroStr t4;
+    int32_t t5;
+    HeroStr t6;
+    db * t7;
+    int64_t t8;
+    db * t9;
+    db * t10;
+    int32_t t11;
+    HeroStr t12;
+    int32_t t13;
+    goto bb0;
 bb0:
+#line 15 "tests/golden/run/handle-alive-under-when-after-a-failed-end.hero"
     t1 = db_open();
 #line 15 "tests/golden/run/handle-alive-under-when-after-a-failed-end.hero"
     hero_handle_acquired(t1, "db_close");
@@ -233,9 +248,8 @@ bb0:
     hero_print_end();
 #line 20 "tests/golden/run/handle-alive-under-when-after-a-failed-end.hero"
     return;
-#line 237 "handlealiveunderwhenafterafailedend.c"
+#line 252 "handlealiveunderwhenafterafailedend.c"
 }
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_handlealiveunderwhenafterafailedend_Db_eq(db * const *a, db * const *b) {
     return hero_handle_eq(*a, *b);
 }

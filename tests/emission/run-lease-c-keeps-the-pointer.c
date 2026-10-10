@@ -21,11 +21,12 @@
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -72,7 +73,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_f63dcff, "row-");
 HERO_STR_STATIC(hero_str_3390715c, "-payload");
 
-#line 76 "leaseckeepsthepointer.c"
+#line 77 "leaseckeepsthepointer.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -96,7 +97,6 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
@@ -129,14 +129,37 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_leaseckeepsthepointer_main(void);
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 15 "tests/golden/run/lease-c-keeps-the-pointer.hero"
 void h_leaseckeepsthepointer_main(void) {
-#line 15 "tests/golden/run/lease-c-keeps-the-pointer.hero"
-    int64_t h0_at; const char * h1_label; HeroStr h2_own2 = {0}; HeroStr h3_own3 = {0}; HeroStr h4_own4 = {0}; int64_t t1; int64_t t2; int64_t t3; bool t4; HeroStr t5; int64_t t6; HeroStr t7; HeroStr t8; HeroStr t9; HeroStr t10; const char * t11; const char * t12; uint64_t t13; int64_t t14; int64_t t15; int64_t t16; HeroStr t17; HeroStr t18; HeroStr t19; goto bb0;
-#line 15 "tests/golden/run/lease-c-keeps-the-pointer.hero"
+#line 136 "leaseckeepsthepointer.c"
+    int64_t h0_at;
+    const char * h1_label;
+    HeroStr h2_own2 = {0};
+    HeroStr h3_own3 = {0};
+    HeroStr h4_own4 = {0};
+    int64_t t1;
+    int64_t t2;
+    int64_t t3;
+    bool t4;
+    HeroStr t5;
+    int64_t t6;
+    HeroStr t7;
+    HeroStr t8;
+    HeroStr t9;
+    HeroStr t10;
+    const char * t11;
+    const char * t12;
+    uint64_t t13;
+    int64_t t14;
+    int64_t t15;
+    int64_t t16;
+    HeroStr t17;
+    HeroStr t18;
+    HeroStr t19;
+    goto bb0;
 bb0:
+#line 16 "tests/golden/run/lease-c-keeps-the-pointer.hero"
     t1 = INT64_C(0);
 #line 16 "tests/golden/run/lease-c-keeps-the-pointer.hero"
     h0_at = t1;
@@ -163,7 +186,7 @@ bb2:
     t17 = h2_own2;
 #line 19 "tests/golden/run/lease-c-keeps-the-pointer.hero"
     h2_own2 = t7;
-#line 19 "tests/golden/run/lease-c-keeps-the-pointer.hero"
+#line 190 "leaseckeepsthepointer.c"
     hero_str_decref(t17);
 #line 19 "tests/golden/run/lease-c-keeps-the-pointer.hero"
     t8 = hero_str_concat(t5, t7);
@@ -171,7 +194,7 @@ bb2:
     t18 = h3_own3;
 #line 19 "tests/golden/run/lease-c-keeps-the-pointer.hero"
     h3_own3 = t8;
-#line 19 "tests/golden/run/lease-c-keeps-the-pointer.hero"
+#line 198 "leaseckeepsthepointer.c"
     hero_str_decref(t18);
 #line 19 "tests/golden/run/lease-c-keeps-the-pointer.hero"
     t9 = HERO_STR_LIT(hero_str_3390715c);
@@ -181,7 +204,7 @@ bb2:
     t19 = h4_own4;
 #line 19 "tests/golden/run/lease-c-keeps-the-pointer.hero"
     h4_own4 = t10;
-#line 19 "tests/golden/run/lease-c-keeps-the-pointer.hero"
+#line 208 "leaseckeepsthepointer.c"
     hero_str_decref(t19);
 #line 19 "tests/golden/run/lease-c-keeps-the-pointer.hero"
     t11 = hero_str_held(t10);
@@ -207,13 +230,12 @@ bb2:
     goto bb1;
 #line 23 "tests/golden/run/lease-c-keeps-the-pointer.hero"
 bb3:
-#line 211 "leaseckeepsthepointer.c"
+#line 234 "leaseckeepsthepointer.c"
     hero_str_release_at(&h2_own2);
     hero_str_release_at(&h3_own3);
     hero_str_release_at(&h4_own4);
     return;
 }
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_incref(v->as.ok);

@@ -21,11 +21,12 @@
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -37,11 +38,11 @@ _Static_assert(__builtin_classify_type(((struct tm *)0)->tm_year) == 1 && sizeof
 _Static_assert(__builtin_classify_type(((struct tm *)0)->tm_mon) == 1 && sizeof(((struct tm *)0)->tm_mon) == sizeof(int32_t) && (_Generic(((struct tm *)0)->tm_mon, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Broken tm_mon");
 _Static_assert(__builtin_classify_type(((struct tm *)0)->tm_mday) == 1 && sizeof(((struct tm *)0)->tm_mday) == sizeof(int32_t) && (_Generic(((struct tm *)0)->tm_mday, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Broken tm_mday");
 _Static_assert(__builtin_classify_type(((struct tm *)0)->tm_hour) == 1 && sizeof(((struct tm *)0)->tm_hour) == sizeof(int32_t) && (_Generic(((struct tm *)0)->tm_hour, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Broken tm_hour");
-#line 41 "main.c"
+#line 42 "main.c"
 
 #line 53 "examples/ctime/main.hero"
 _Static_assert(__builtin_classify_type(*(struct tm *)0) != 13, "heroes-ffi-union Broken tm_year tm_mon tm_mday tm_hour");
-#line 45 "main.c"
+#line 46 "main.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -133,7 +134,6 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
@@ -205,14 +205,14 @@ h_0opt_13b8cf25 h_main_made(int64_t h0_year, int64_t h1_month, int64_t h2_day, i
 HeroStr h_main_shown(struct tm h0_b);
 HeroStr h_main_padded(int64_t h0_n);
 void h_main_main(void);
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 66 "examples/ctime/main.hero"
 int64_t h_main_C_EPOCH_YEAR(void) {
-#line 66 "examples/ctime/main.hero"
-    int64_t t1; goto bb0;
-#line 66 "examples/ctime/main.hero"
+#line 212 "main.c"
+    int64_t t1;
+    goto bb0;
 bb0:
+#line 67 "examples/ctime/main.hero"
     t1 = INT64_C(1900);
 #line 67 "examples/ctime/main.hero"
     return t1;
@@ -221,10 +221,27 @@ bb0:
 
 #line 69 "examples/ctime/main.hero"
 int64_t h_main_year_of(struct tm h0_b) {
-#line 69 "examples/ctime/main.hero"
-    _Pragma("clang diagnostic ignored \"-Wdeprecated-declarations\"") h_0opt_e201354 h1_f0 = {0}; h_0opt_e201354 h2_own2 = {0}; struct tm t1; int32_t t2; h_0opt_e201354 t3; h_0opt_e201354 t4; int64_t t5; int64_t t6; bool t7; h_0opt_e201354 t8; HeroFailure t9; h_0opt_e201354 t10; int64_t t11; int64_t t12; int64_t t13; h_0opt_e201354 t14; h_0opt_e201354 t15; _Pragma("clang diagnostic warning \"-Wdeprecated-declarations\"") goto bb0;
-#line 69 "examples/ctime/main.hero"
+#line 225 "main.c"
+    h_0opt_e201354 h1_f0 = {0};
+    h_0opt_e201354 h2_own2 = {0};
+    struct tm t1;
+    int32_t t2;
+    h_0opt_e201354 t3;
+    h_0opt_e201354 t4;
+    int64_t t5;
+    int64_t t6;
+    bool t7;
+    h_0opt_e201354 t8;
+    HeroFailure t9;
+    h_0opt_e201354 t10;
+    int64_t t11;
+    int64_t t12;
+    int64_t t13;
+    h_0opt_e201354 t14;
+    h_0opt_e201354 t15;
+    goto bb0;
 bb0:
+#line 70 "examples/ctime/main.hero"
     t1 = h0_b;
 #line 70 "examples/ctime/main.hero"
     t2 = t1.tm_year;
@@ -234,15 +251,15 @@ bb0:
     t14 = h2_own2;
 #line 70 "examples/ctime/main.hero"
     h2_own2 = t3;
-#line 70 "examples/ctime/main.hero"
+#line 255 "main.c"
     h_0opt_e201354_release(&t14);
 #line 70 "examples/ctime/main.hero"
     t15 = h1_f0;
-#line 70 "examples/ctime/main.hero"
+#line 259 "main.c"
     h_0opt_e201354_retain(&t3);
 #line 70 "examples/ctime/main.hero"
     h1_f0 = t3;
-#line 70 "examples/ctime/main.hero"
+#line 263 "main.c"
     h_0opt_e201354_release(&t15);
 #line 70 "examples/ctime/main.hero"
     t4 = h1_f0;
@@ -264,7 +281,7 @@ bb1:
     t12 = h_main_C_EPOCH_YEAR();
 #line 70 "examples/ctime/main.hero"
     if (__builtin_add_overflow(t11, t12, &t13)) hero_panic_overflow();
-#line 268 "main.c"
+#line 285 "main.c"
     h_0opt_e201354_release(hero_slot_escape(&h1_f0));
     h_0opt_e201354_release(hero_slot_escape(&h2_own2));
     return t13;
@@ -273,17 +290,34 @@ bb2:
     t8 = h1_f0;
 #line 70 "examples/ctime/main.hero"
     t9 = t8.as.err;
-#line 277 "main.c"
+#line 294 "main.c"
     hero_panic_must(t9);
     hero_unreachable();
 }
 
 #line 73 "examples/ctime/main.hero"
 int64_t h_main_month_of(struct tm h0_b) {
-#line 73 "examples/ctime/main.hero"
-    _Pragma("clang diagnostic ignored \"-Wdeprecated-declarations\"") h_0opt_e201354 h1_f0 = {0}; h_0opt_e201354 h2_own2 = {0}; struct tm t1; int32_t t2; h_0opt_e201354 t3; h_0opt_e201354 t4; int64_t t5; int64_t t6; bool t7; h_0opt_e201354 t8; HeroFailure t9; h_0opt_e201354 t10; int64_t t11; int64_t t12; int64_t t13; h_0opt_e201354 t14; h_0opt_e201354 t15; _Pragma("clang diagnostic warning \"-Wdeprecated-declarations\"") goto bb0;
-#line 73 "examples/ctime/main.hero"
+#line 301 "main.c"
+    h_0opt_e201354 h1_f0 = {0};
+    h_0opt_e201354 h2_own2 = {0};
+    struct tm t1;
+    int32_t t2;
+    h_0opt_e201354 t3;
+    h_0opt_e201354 t4;
+    int64_t t5;
+    int64_t t6;
+    bool t7;
+    h_0opt_e201354 t8;
+    HeroFailure t9;
+    h_0opt_e201354 t10;
+    int64_t t11;
+    int64_t t12;
+    int64_t t13;
+    h_0opt_e201354 t14;
+    h_0opt_e201354 t15;
+    goto bb0;
 bb0:
+#line 74 "examples/ctime/main.hero"
     t1 = h0_b;
 #line 74 "examples/ctime/main.hero"
     t2 = t1.tm_mon;
@@ -293,15 +327,15 @@ bb0:
     t14 = h2_own2;
 #line 74 "examples/ctime/main.hero"
     h2_own2 = t3;
-#line 74 "examples/ctime/main.hero"
+#line 331 "main.c"
     h_0opt_e201354_release(&t14);
 #line 74 "examples/ctime/main.hero"
     t15 = h1_f0;
-#line 74 "examples/ctime/main.hero"
+#line 335 "main.c"
     h_0opt_e201354_retain(&t3);
 #line 74 "examples/ctime/main.hero"
     h1_f0 = t3;
-#line 74 "examples/ctime/main.hero"
+#line 339 "main.c"
     h_0opt_e201354_release(&t15);
 #line 74 "examples/ctime/main.hero"
     t4 = h1_f0;
@@ -323,7 +357,7 @@ bb1:
     t12 = INT64_C(1);
 #line 74 "examples/ctime/main.hero"
     if (__builtin_add_overflow(t11, t12, &t13)) hero_panic_overflow();
-#line 327 "main.c"
+#line 361 "main.c"
     h_0opt_e201354_release(hero_slot_escape(&h1_f0));
     h_0opt_e201354_release(hero_slot_escape(&h2_own2));
     return t13;
@@ -332,17 +366,32 @@ bb2:
     t8 = h1_f0;
 #line 74 "examples/ctime/main.hero"
     t9 = t8.as.err;
-#line 336 "main.c"
+#line 370 "main.c"
     hero_panic_must(t9);
     hero_unreachable();
 }
 
 #line 76 "examples/ctime/main.hero"
 int64_t h_main_day_of(struct tm h0_b) {
-#line 76 "examples/ctime/main.hero"
-    _Pragma("clang diagnostic ignored \"-Wdeprecated-declarations\"") h_0opt_e201354 h1_f0 = {0}; h_0opt_e201354 h2_own2 = {0}; struct tm t1; int32_t t2; h_0opt_e201354 t3; h_0opt_e201354 t4; int64_t t5; int64_t t6; bool t7; h_0opt_e201354 t8; HeroFailure t9; h_0opt_e201354 t10; int64_t t11; h_0opt_e201354 t12; h_0opt_e201354 t13; _Pragma("clang diagnostic warning \"-Wdeprecated-declarations\"") goto bb0;
-#line 76 "examples/ctime/main.hero"
+#line 377 "main.c"
+    h_0opt_e201354 h1_f0 = {0};
+    h_0opt_e201354 h2_own2 = {0};
+    struct tm t1;
+    int32_t t2;
+    h_0opt_e201354 t3;
+    h_0opt_e201354 t4;
+    int64_t t5;
+    int64_t t6;
+    bool t7;
+    h_0opt_e201354 t8;
+    HeroFailure t9;
+    h_0opt_e201354 t10;
+    int64_t t11;
+    h_0opt_e201354 t12;
+    h_0opt_e201354 t13;
+    goto bb0;
 bb0:
+#line 77 "examples/ctime/main.hero"
     t1 = h0_b;
 #line 77 "examples/ctime/main.hero"
     t2 = t1.tm_mday;
@@ -352,15 +401,15 @@ bb0:
     t12 = h2_own2;
 #line 77 "examples/ctime/main.hero"
     h2_own2 = t3;
-#line 77 "examples/ctime/main.hero"
+#line 405 "main.c"
     h_0opt_e201354_release(&t12);
 #line 77 "examples/ctime/main.hero"
     t13 = h1_f0;
-#line 77 "examples/ctime/main.hero"
+#line 409 "main.c"
     h_0opt_e201354_retain(&t3);
 #line 77 "examples/ctime/main.hero"
     h1_f0 = t3;
-#line 77 "examples/ctime/main.hero"
+#line 413 "main.c"
     h_0opt_e201354_release(&t13);
 #line 77 "examples/ctime/main.hero"
     t4 = h1_f0;
@@ -378,7 +427,7 @@ bb1:
     t10 = h1_f0;
 #line 77 "examples/ctime/main.hero"
     t11 = t10.as.ok;
-#line 382 "main.c"
+#line 431 "main.c"
     h_0opt_e201354_release(hero_slot_escape(&h1_f0));
     h_0opt_e201354_release(hero_slot_escape(&h2_own2));
     return t11;
@@ -387,17 +436,32 @@ bb2:
     t8 = h1_f0;
 #line 77 "examples/ctime/main.hero"
     t9 = t8.as.err;
-#line 391 "main.c"
+#line 440 "main.c"
     hero_panic_must(t9);
     hero_unreachable();
 }
 
 #line 79 "examples/ctime/main.hero"
 int64_t h_main_hour_of(struct tm h0_b) {
-#line 79 "examples/ctime/main.hero"
-    _Pragma("clang diagnostic ignored \"-Wdeprecated-declarations\"") h_0opt_e201354 h1_f0 = {0}; h_0opt_e201354 h2_own2 = {0}; struct tm t1; int32_t t2; h_0opt_e201354 t3; h_0opt_e201354 t4; int64_t t5; int64_t t6; bool t7; h_0opt_e201354 t8; HeroFailure t9; h_0opt_e201354 t10; int64_t t11; h_0opt_e201354 t12; h_0opt_e201354 t13; _Pragma("clang diagnostic warning \"-Wdeprecated-declarations\"") goto bb0;
-#line 79 "examples/ctime/main.hero"
+#line 447 "main.c"
+    h_0opt_e201354 h1_f0 = {0};
+    h_0opt_e201354 h2_own2 = {0};
+    struct tm t1;
+    int32_t t2;
+    h_0opt_e201354 t3;
+    h_0opt_e201354 t4;
+    int64_t t5;
+    int64_t t6;
+    bool t7;
+    h_0opt_e201354 t8;
+    HeroFailure t9;
+    h_0opt_e201354 t10;
+    int64_t t11;
+    h_0opt_e201354 t12;
+    h_0opt_e201354 t13;
+    goto bb0;
 bb0:
+#line 80 "examples/ctime/main.hero"
     t1 = h0_b;
 #line 80 "examples/ctime/main.hero"
     t2 = t1.tm_hour;
@@ -407,15 +471,15 @@ bb0:
     t12 = h2_own2;
 #line 80 "examples/ctime/main.hero"
     h2_own2 = t3;
-#line 80 "examples/ctime/main.hero"
+#line 475 "main.c"
     h_0opt_e201354_release(&t12);
 #line 80 "examples/ctime/main.hero"
     t13 = h1_f0;
-#line 80 "examples/ctime/main.hero"
+#line 479 "main.c"
     h_0opt_e201354_retain(&t3);
 #line 80 "examples/ctime/main.hero"
     h1_f0 = t3;
-#line 80 "examples/ctime/main.hero"
+#line 483 "main.c"
     h_0opt_e201354_release(&t13);
 #line 80 "examples/ctime/main.hero"
     t4 = h1_f0;
@@ -433,7 +497,7 @@ bb1:
     t10 = h1_f0;
 #line 80 "examples/ctime/main.hero"
     t11 = t10.as.ok;
-#line 437 "main.c"
+#line 501 "main.c"
     h_0opt_e201354_release(hero_slot_escape(&h1_f0));
     h_0opt_e201354_release(hero_slot_escape(&h2_own2));
     return t11;
@@ -442,17 +506,103 @@ bb2:
     t8 = h1_f0;
 #line 80 "examples/ctime/main.hero"
     t9 = t8.as.err;
-#line 446 "main.c"
+#line 510 "main.c"
     hero_panic_must(t9);
     hero_unreachable();
 }
 
 #line 82 "examples/ctime/main.hero"
 h_0opt_13b8cf25 h_main_made(int64_t h0_year, int64_t h1_month, int64_t h2_day, int64_t h3_hour) {
-#line 82 "examples/ctime/main.hero"
-    h_0opt_e1f4933 h4_f0 = {0}; int32_t h5_y; h_0opt_e1f4933 h6_f1 = {0}; int32_t h7_m; h_0opt_e1f4933 h8_f2 = {0}; int32_t h9_d; h_0opt_e1f4933 h10_f3 = {0}; int32_t h11_h; h_0opt_13b8cf25 h12_ret0 = {0}; h_0opt_e1f4933 h13_own13 = {0}; h_0opt_e1f4933 h14_own14 = {0}; h_0opt_13b8cf25 h15_own15 = {0}; h_0opt_e1f4933 h16_own16 = {0}; h_0opt_13b8cf25 h17_own17 = {0}; h_0opt_e1f4933 h18_own18 = {0}; h_0opt_13b8cf25 h19_own19 = {0}; h_0opt_13b8cf25 h20_own20 = {0}; h_0opt_13b8cf25 h21_own21 = {0}; int64_t t1; int64_t t2; int64_t t3; h_0opt_e1f4933 t4; h_0opt_e1f4933 t5; int64_t t6; int64_t t7; bool t8; h_0opt_e1f4933 t9; HeroFailure t10; h_0opt_13b8cf25 t11; h_0opt_e1f4933 t12; int32_t t13; int64_t t14; int64_t t15; int64_t t16; h_0opt_e1f4933 t17; h_0opt_e1f4933 t18; int64_t t19; int64_t t20; bool t21; h_0opt_e1f4933 t22; HeroFailure t23; h_0opt_13b8cf25 t24; h_0opt_e1f4933 t25; int32_t t26; int64_t t27; h_0opt_e1f4933 t28; h_0opt_e1f4933 t29; int64_t t30; int64_t t31; bool t32; h_0opt_e1f4933 t33; HeroFailure t34; h_0opt_13b8cf25 t35; h_0opt_e1f4933 t36; int32_t t37; int64_t t38; h_0opt_e1f4933 t39; h_0opt_e1f4933 t40; int64_t t41; int64_t t42; bool t43; h_0opt_e1f4933 t44; HeroFailure t45; h_0opt_13b8cf25 t46; h_0opt_e1f4933 t47; int32_t t48; int32_t t49; int32_t t50; int32_t t51; int32_t t52; struct tm t53; h_0opt_13b8cf25 t54; h_0opt_13b8cf25 t55; h_0opt_e1f4933 t56; h_0opt_e1f4933 t57; h_0opt_e1f4933 t58; h_0opt_e1f4933 t59; h_0opt_13b8cf25 t60; h_0opt_e1f4933 t61; h_0opt_e1f4933 t62; h_0opt_13b8cf25 t63; h_0opt_e1f4933 t64; h_0opt_e1f4933 t65; h_0opt_13b8cf25 t66; h_0opt_13b8cf25 t67; h_0opt_13b8cf25 t68; goto bb0;
-#line 82 "examples/ctime/main.hero"
+#line 517 "main.c"
+    h_0opt_e1f4933 h4_f0 = {0};
+    int32_t h5_y;
+    h_0opt_e1f4933 h6_f1 = {0};
+    int32_t h7_m;
+    h_0opt_e1f4933 h8_f2 = {0};
+    int32_t h9_d;
+    h_0opt_e1f4933 h10_f3 = {0};
+    int32_t h11_h;
+    h_0opt_13b8cf25 h12_ret0 = {0};
+    h_0opt_e1f4933 h13_own13 = {0};
+    h_0opt_e1f4933 h14_own14 = {0};
+    h_0opt_13b8cf25 h15_own15 = {0};
+    h_0opt_e1f4933 h16_own16 = {0};
+    h_0opt_13b8cf25 h17_own17 = {0};
+    h_0opt_e1f4933 h18_own18 = {0};
+    h_0opt_13b8cf25 h19_own19 = {0};
+    h_0opt_13b8cf25 h20_own20 = {0};
+    h_0opt_13b8cf25 h21_own21 = {0};
+    int64_t t1;
+    int64_t t2;
+    int64_t t3;
+    h_0opt_e1f4933 t4;
+    h_0opt_e1f4933 t5;
+    int64_t t6;
+    int64_t t7;
+    bool t8;
+    h_0opt_e1f4933 t9;
+    HeroFailure t10;
+    h_0opt_13b8cf25 t11;
+    h_0opt_e1f4933 t12;
+    int32_t t13;
+    int64_t t14;
+    int64_t t15;
+    int64_t t16;
+    h_0opt_e1f4933 t17;
+    h_0opt_e1f4933 t18;
+    int64_t t19;
+    int64_t t20;
+    bool t21;
+    h_0opt_e1f4933 t22;
+    HeroFailure t23;
+    h_0opt_13b8cf25 t24;
+    h_0opt_e1f4933 t25;
+    int32_t t26;
+    int64_t t27;
+    h_0opt_e1f4933 t28;
+    h_0opt_e1f4933 t29;
+    int64_t t30;
+    int64_t t31;
+    bool t32;
+    h_0opt_e1f4933 t33;
+    HeroFailure t34;
+    h_0opt_13b8cf25 t35;
+    h_0opt_e1f4933 t36;
+    int32_t t37;
+    int64_t t38;
+    h_0opt_e1f4933 t39;
+    h_0opt_e1f4933 t40;
+    int64_t t41;
+    int64_t t42;
+    bool t43;
+    h_0opt_e1f4933 t44;
+    HeroFailure t45;
+    h_0opt_13b8cf25 t46;
+    h_0opt_e1f4933 t47;
+    int32_t t48;
+    int32_t t49;
+    int32_t t50;
+    int32_t t51;
+    int32_t t52;
+    struct tm t53;
+    h_0opt_13b8cf25 t54;
+    h_0opt_13b8cf25 t55;
+    h_0opt_e1f4933 t56;
+    h_0opt_e1f4933 t57;
+    h_0opt_e1f4933 t58;
+    h_0opt_e1f4933 t59;
+    h_0opt_13b8cf25 t60;
+    h_0opt_e1f4933 t61;
+    h_0opt_e1f4933 t62;
+    h_0opt_13b8cf25 t63;
+    h_0opt_e1f4933 t64;
+    h_0opt_e1f4933 t65;
+    h_0opt_13b8cf25 t66;
+    h_0opt_13b8cf25 t67;
+    h_0opt_13b8cf25 t68;
+    goto bb0;
 bb0:
+#line 83 "examples/ctime/main.hero"
     t1 = h0_year;
 #line 83 "examples/ctime/main.hero"
     t2 = h_main_C_EPOCH_YEAR();
@@ -472,15 +622,15 @@ bb0:
     t56 = h13_own13;
 #line 83 "examples/ctime/main.hero"
     h13_own13 = t4;
-#line 83 "examples/ctime/main.hero"
+#line 626 "main.c"
     h_0opt_e1f4933_release(&t56);
 #line 83 "examples/ctime/main.hero"
     t57 = h4_f0;
-#line 83 "examples/ctime/main.hero"
+#line 630 "main.c"
     h_0opt_e1f4933_retain(&t4);
 #line 83 "examples/ctime/main.hero"
     h4_f0 = t4;
-#line 83 "examples/ctime/main.hero"
+#line 634 "main.c"
     h_0opt_e1f4933_release(&t57);
 #line 83 "examples/ctime/main.hero"
     t5 = h4_f0;
@@ -519,15 +669,15 @@ bb1:
     t58 = h14_own14;
 #line 84 "examples/ctime/main.hero"
     h14_own14 = t17;
-#line 84 "examples/ctime/main.hero"
+#line 673 "main.c"
     h_0opt_e1f4933_release(&t58);
 #line 84 "examples/ctime/main.hero"
     t59 = h6_f1;
-#line 84 "examples/ctime/main.hero"
+#line 677 "main.c"
     h_0opt_e1f4933_retain(&t17);
 #line 84 "examples/ctime/main.hero"
     h6_f1 = t17;
-#line 84 "examples/ctime/main.hero"
+#line 681 "main.c"
     h_0opt_e1f4933_release(&t59);
 #line 84 "examples/ctime/main.hero"
     t18 = h6_f1;
@@ -545,7 +695,7 @@ bb2:
     t9 = h4_f0;
 #line 83 "examples/ctime/main.hero"
     t10 = t9.as.err;
-#line 83 "examples/ctime/main.hero"
+#line 699 "main.c"
     hero_failure_retain(&t10);
 #line 83 "examples/ctime/main.hero"
     t11 = (h_0opt_13b8cf25){.tag = INT64_C(1), .as.err = t10};
@@ -553,7 +703,7 @@ bb2:
     t60 = h15_own15;
 #line 83 "examples/ctime/main.hero"
     h15_own15 = t11;
-#line 83 "examples/ctime/main.hero"
+#line 707 "main.c"
     h_0opt_13b8cf25_release(&t60);
 #line 83 "examples/ctime/main.hero"
     h12_ret0 = t11;
@@ -581,15 +731,15 @@ bb3:
     t61 = h16_own16;
 #line 85 "examples/ctime/main.hero"
     h16_own16 = t28;
-#line 85 "examples/ctime/main.hero"
+#line 735 "main.c"
     h_0opt_e1f4933_release(&t61);
 #line 85 "examples/ctime/main.hero"
     t62 = h8_f2;
-#line 85 "examples/ctime/main.hero"
+#line 739 "main.c"
     h_0opt_e1f4933_retain(&t28);
 #line 85 "examples/ctime/main.hero"
     h8_f2 = t28;
-#line 85 "examples/ctime/main.hero"
+#line 743 "main.c"
     h_0opt_e1f4933_release(&t62);
 #line 85 "examples/ctime/main.hero"
     t29 = h8_f2;
@@ -607,7 +757,7 @@ bb4:
     t22 = h6_f1;
 #line 84 "examples/ctime/main.hero"
     t23 = t22.as.err;
-#line 84 "examples/ctime/main.hero"
+#line 761 "main.c"
     hero_failure_retain(&t23);
 #line 84 "examples/ctime/main.hero"
     t24 = (h_0opt_13b8cf25){.tag = INT64_C(1), .as.err = t23};
@@ -615,7 +765,7 @@ bb4:
     t63 = h17_own17;
 #line 84 "examples/ctime/main.hero"
     h17_own17 = t24;
-#line 84 "examples/ctime/main.hero"
+#line 769 "main.c"
     h_0opt_13b8cf25_release(&t63);
 #line 84 "examples/ctime/main.hero"
     h12_ret0 = t24;
@@ -643,15 +793,15 @@ bb5:
     t64 = h18_own18;
 #line 86 "examples/ctime/main.hero"
     h18_own18 = t39;
-#line 86 "examples/ctime/main.hero"
+#line 797 "main.c"
     h_0opt_e1f4933_release(&t64);
 #line 86 "examples/ctime/main.hero"
     t65 = h10_f3;
-#line 86 "examples/ctime/main.hero"
+#line 801 "main.c"
     h_0opt_e1f4933_retain(&t39);
 #line 86 "examples/ctime/main.hero"
     h10_f3 = t39;
-#line 86 "examples/ctime/main.hero"
+#line 805 "main.c"
     h_0opt_e1f4933_release(&t65);
 #line 86 "examples/ctime/main.hero"
     t40 = h10_f3;
@@ -669,7 +819,7 @@ bb6:
     t33 = h8_f2;
 #line 85 "examples/ctime/main.hero"
     t34 = t33.as.err;
-#line 85 "examples/ctime/main.hero"
+#line 823 "main.c"
     hero_failure_retain(&t34);
 #line 85 "examples/ctime/main.hero"
     t35 = (h_0opt_13b8cf25){.tag = INT64_C(1), .as.err = t34};
@@ -677,7 +827,7 @@ bb6:
     t66 = h19_own19;
 #line 85 "examples/ctime/main.hero"
     h19_own19 = t35;
-#line 85 "examples/ctime/main.hero"
+#line 831 "main.c"
     h_0opt_13b8cf25_release(&t66);
 #line 85 "examples/ctime/main.hero"
     h12_ret0 = t35;
@@ -705,7 +855,7 @@ bb7:
     t67 = h20_own20;
 #line 87 "examples/ctime/main.hero"
     h20_own20 = t54;
-#line 87 "examples/ctime/main.hero"
+#line 859 "main.c"
     h_0opt_13b8cf25_release(&t67);
 #line 87 "examples/ctime/main.hero"
     h12_ret0 = t54;
@@ -717,7 +867,7 @@ bb8:
     t44 = h10_f3;
 #line 86 "examples/ctime/main.hero"
     t45 = t44.as.err;
-#line 86 "examples/ctime/main.hero"
+#line 871 "main.c"
     hero_failure_retain(&t45);
 #line 86 "examples/ctime/main.hero"
     t46 = (h_0opt_13b8cf25){.tag = INT64_C(1), .as.err = t45};
@@ -725,7 +875,7 @@ bb8:
     t68 = h21_own21;
 #line 86 "examples/ctime/main.hero"
     h21_own21 = t46;
-#line 86 "examples/ctime/main.hero"
+#line 879 "main.c"
     h_0opt_13b8cf25_release(&t68);
 #line 86 "examples/ctime/main.hero"
     h12_ret0 = t46;
@@ -733,7 +883,7 @@ bb8:
     goto bb9;
 #line 86 "examples/ctime/main.hero"
 bb9:
-#line 737 "main.c"
+#line 887 "main.c"
     t55 = h12_ret0;
     h_0opt_13b8cf25_retain(&t55);
     h_0opt_e1f4933_release(hero_slot_escape(&h4_f0));
@@ -754,10 +904,55 @@ bb9:
 
 #line 89 "examples/ctime/main.hero"
 HeroStr h_main_shown(struct tm h0_b) {
-#line 89 "examples/ctime/main.hero"
-    _Pragma("clang diagnostic ignored \"-Wdeprecated-declarations\"") HeroStr h1_own1 = {0}; HeroStr h2_own2 = {0}; HeroStr h3_own3 = {0}; HeroStr h4_own4 = {0}; HeroStr h5_own5 = {0}; HeroStr h6_own6 = {0}; HeroStr h7_own7 = {0}; HeroStr h8_own8 = {0}; HeroStr h9_own9 = {0}; HeroStr h10_own10 = {0}; HeroStr h11_own11 = {0}; struct tm t1; int64_t t2; HeroStr t3; HeroStr t4; HeroStr t5; struct tm t6; int64_t t7; HeroStr t8; HeroStr t9; HeroStr t10; HeroStr t11; struct tm t12; int64_t t13; HeroStr t14; HeroStr t15; HeroStr t16; HeroStr t17; struct tm t18; int64_t t19; HeroStr t20; HeroStr t21; HeroStr t22; HeroStr t23; HeroStr t24; HeroStr t25; HeroStr t26; HeroStr t27; HeroStr t28; HeroStr t29; HeroStr t30; HeroStr t31; HeroStr t32; HeroStr t33; HeroStr t34; _Pragma("clang diagnostic warning \"-Wdeprecated-declarations\"") goto bb0;
-#line 89 "examples/ctime/main.hero"
+#line 908 "main.c"
+    HeroStr h1_own1 = {0};
+    HeroStr h2_own2 = {0};
+    HeroStr h3_own3 = {0};
+    HeroStr h4_own4 = {0};
+    HeroStr h5_own5 = {0};
+    HeroStr h6_own6 = {0};
+    HeroStr h7_own7 = {0};
+    HeroStr h8_own8 = {0};
+    HeroStr h9_own9 = {0};
+    HeroStr h10_own10 = {0};
+    HeroStr h11_own11 = {0};
+    struct tm t1;
+    int64_t t2;
+    HeroStr t3;
+    HeroStr t4;
+    HeroStr t5;
+    struct tm t6;
+    int64_t t7;
+    HeroStr t8;
+    HeroStr t9;
+    HeroStr t10;
+    HeroStr t11;
+    struct tm t12;
+    int64_t t13;
+    HeroStr t14;
+    HeroStr t15;
+    HeroStr t16;
+    HeroStr t17;
+    struct tm t18;
+    int64_t t19;
+    HeroStr t20;
+    HeroStr t21;
+    HeroStr t22;
+    HeroStr t23;
+    HeroStr t24;
+    HeroStr t25;
+    HeroStr t26;
+    HeroStr t27;
+    HeroStr t28;
+    HeroStr t29;
+    HeroStr t30;
+    HeroStr t31;
+    HeroStr t32;
+    HeroStr t33;
+    HeroStr t34;
+    goto bb0;
 bb0:
+#line 90 "examples/ctime/main.hero"
     t1 = h0_b;
 #line 90 "examples/ctime/main.hero"
     t2 = h_main_year_of(t1);
@@ -767,7 +962,7 @@ bb0:
     t24 = h1_own1;
 #line 90 "examples/ctime/main.hero"
     h1_own1 = t3;
-#line 90 "examples/ctime/main.hero"
+#line 966 "main.c"
     hero_str_decref(t24);
 #line 90 "examples/ctime/main.hero"
     t4 = HERO_STR_LIT(hero_str_2d);
@@ -777,7 +972,7 @@ bb0:
     t25 = h2_own2;
 #line 90 "examples/ctime/main.hero"
     h2_own2 = t5;
-#line 90 "examples/ctime/main.hero"
+#line 976 "main.c"
     hero_str_decref(t25);
 #line 90 "examples/ctime/main.hero"
     t6 = h0_b;
@@ -789,7 +984,7 @@ bb0:
     t26 = h3_own3;
 #line 90 "examples/ctime/main.hero"
     h3_own3 = t8;
-#line 90 "examples/ctime/main.hero"
+#line 988 "main.c"
     hero_str_decref(t26);
 #line 90 "examples/ctime/main.hero"
     t9 = hero_str_concat(t5, t8);
@@ -797,7 +992,7 @@ bb0:
     t27 = h4_own4;
 #line 90 "examples/ctime/main.hero"
     h4_own4 = t9;
-#line 90 "examples/ctime/main.hero"
+#line 996 "main.c"
     hero_str_decref(t27);
 #line 90 "examples/ctime/main.hero"
     t10 = HERO_STR_LIT(hero_str_2d);
@@ -807,7 +1002,7 @@ bb0:
     t28 = h5_own5;
 #line 90 "examples/ctime/main.hero"
     h5_own5 = t11;
-#line 90 "examples/ctime/main.hero"
+#line 1006 "main.c"
     hero_str_decref(t28);
 #line 90 "examples/ctime/main.hero"
     t12 = h0_b;
@@ -819,7 +1014,7 @@ bb0:
     t29 = h6_own6;
 #line 90 "examples/ctime/main.hero"
     h6_own6 = t14;
-#line 90 "examples/ctime/main.hero"
+#line 1018 "main.c"
     hero_str_decref(t29);
 #line 90 "examples/ctime/main.hero"
     t15 = hero_str_concat(t11, t14);
@@ -827,7 +1022,7 @@ bb0:
     t30 = h7_own7;
 #line 90 "examples/ctime/main.hero"
     h7_own7 = t15;
-#line 90 "examples/ctime/main.hero"
+#line 1026 "main.c"
     hero_str_decref(t30);
 #line 90 "examples/ctime/main.hero"
     t16 = HERO_STR_LIT(hero_str_20);
@@ -837,7 +1032,7 @@ bb0:
     t31 = h8_own8;
 #line 90 "examples/ctime/main.hero"
     h8_own8 = t17;
-#line 90 "examples/ctime/main.hero"
+#line 1036 "main.c"
     hero_str_decref(t31);
 #line 90 "examples/ctime/main.hero"
     t18 = h0_b;
@@ -849,7 +1044,7 @@ bb0:
     t32 = h9_own9;
 #line 90 "examples/ctime/main.hero"
     h9_own9 = t20;
-#line 90 "examples/ctime/main.hero"
+#line 1048 "main.c"
     hero_str_decref(t32);
 #line 90 "examples/ctime/main.hero"
     t21 = hero_str_concat(t17, t20);
@@ -857,7 +1052,7 @@ bb0:
     t33 = h10_own10;
 #line 90 "examples/ctime/main.hero"
     h10_own10 = t21;
-#line 90 "examples/ctime/main.hero"
+#line 1056 "main.c"
     hero_str_decref(t33);
 #line 90 "examples/ctime/main.hero"
     t22 = HERO_STR_LIT(hero_str_f48ca);
@@ -867,9 +1062,8 @@ bb0:
     t34 = h11_own11;
 #line 90 "examples/ctime/main.hero"
     h11_own11 = t23;
-#line 90 "examples/ctime/main.hero"
+#line 1066 "main.c"
     hero_str_decref(t34);
-#line 873 "main.c"
     hero_str_incref(t23);
     hero_str_release_at(&h1_own1);
     hero_str_release_at(&h2_own2);
@@ -887,10 +1081,29 @@ bb0:
 
 #line 92 "examples/ctime/main.hero"
 HeroStr h_main_padded(int64_t h0_n) {
-#line 92 "examples/ctime/main.hero"
-    HeroStr h1_r0 = {0}; HeroStr h2_own2 = {0}; HeroStr h3_own3 = {0}; HeroStr h4_own4 = {0}; int64_t t1; int64_t t2; bool t3; HeroStr t4; int64_t t5; HeroStr t6; HeroStr t7; int64_t t8; HeroStr t9; HeroStr t10; HeroStr t11; HeroStr t12; HeroStr t13; HeroStr t14; HeroStr t15; goto bb0;
-#line 92 "examples/ctime/main.hero"
+#line 1085 "main.c"
+    HeroStr h1_r0 = {0};
+    HeroStr h2_own2 = {0};
+    HeroStr h3_own3 = {0};
+    HeroStr h4_own4 = {0};
+    int64_t t1;
+    int64_t t2;
+    bool t3;
+    HeroStr t4;
+    int64_t t5;
+    HeroStr t6;
+    HeroStr t7;
+    int64_t t8;
+    HeroStr t9;
+    HeroStr t10;
+    HeroStr t11;
+    HeroStr t12;
+    HeroStr t13;
+    HeroStr t14;
+    HeroStr t15;
+    goto bb0;
 bb0:
+#line 93 "examples/ctime/main.hero"
     t1 = h0_n;
 #line 93 "examples/ctime/main.hero"
     t2 = INT64_C(10);
@@ -902,7 +1115,7 @@ bb0:
 bb1:
 #line 93 "examples/ctime/main.hero"
     t10 = h1_r0;
-#line 906 "main.c"
+#line 1119 "main.c"
     hero_str_incref(t10);
     hero_str_release_at(&h1_r0);
     hero_str_release_at(&h2_own2);
@@ -920,7 +1133,7 @@ bb2:
     t11 = h2_own2;
 #line 94 "examples/ctime/main.hero"
     h2_own2 = t6;
-#line 94 "examples/ctime/main.hero"
+#line 1137 "main.c"
     hero_str_decref(t11);
 #line 94 "examples/ctime/main.hero"
     t7 = hero_str_concat(t4, t6);
@@ -928,19 +1141,17 @@ bb2:
     t12 = h3_own3;
 #line 94 "examples/ctime/main.hero"
     h3_own3 = t7;
-#line 94 "examples/ctime/main.hero"
+#line 1145 "main.c"
     hero_str_decref(t12);
 #line 93 "examples/ctime/main.hero"
     t13 = h1_r0;
-#line 93 "examples/ctime/main.hero"
+#line 1149 "main.c"
     hero_str_incref(t7);
 #line 93 "examples/ctime/main.hero"
     h1_r0 = t7;
-#line 93 "examples/ctime/main.hero"
+#line 1153 "main.c"
     hero_str_decref(t13);
-#line 93 "examples/ctime/main.hero"
     goto bb1;
-#line 93 "examples/ctime/main.hero"
 bb3:
 #line 96 "examples/ctime/main.hero"
     t8 = h0_n;
@@ -950,26 +1161,101 @@ bb3:
     t14 = h4_own4;
 #line 96 "examples/ctime/main.hero"
     h4_own4 = t9;
-#line 96 "examples/ctime/main.hero"
+#line 1165 "main.c"
     hero_str_decref(t14);
 #line 93 "examples/ctime/main.hero"
     t15 = h1_r0;
-#line 93 "examples/ctime/main.hero"
+#line 1169 "main.c"
     hero_str_incref(t9);
 #line 93 "examples/ctime/main.hero"
     h1_r0 = t9;
-#line 93 "examples/ctime/main.hero"
+#line 1173 "main.c"
     hero_str_decref(t15);
-#line 93 "examples/ctime/main.hero"
     goto bb1;
-#line 966 "main.c"
 }
 
 #line 98 "examples/ctime/main.hero"
 void h_main_main(void) {
-#line 98 "examples/ctime/main.hero"
-    _Pragma("clang diagnostic ignored \"-Wdeprecated-declarations\"") h_0opt_13b8cf25 h0_f0 = {0}; struct tm h1_landing; h_0opt_13b8cf25 h2_f1 = {0}; struct tm h3_millennium; h_0opt_13b8cf25 h4_f2 = {0}; h_0opt_13b8cf25 h5_own5 = {0}; HeroStr h6_own6 = {0}; h_0opt_13b8cf25 h7_own7 = {0}; HeroStr h8_own8 = {0}; h_0opt_13b8cf25 h9_own9 = {0}; int64_t t1; int64_t t2; int64_t t3; int64_t t4; h_0opt_13b8cf25 t5; h_0opt_13b8cf25 t6; int64_t t7; int64_t t8; bool t9; h_0opt_13b8cf25 t10; HeroFailure t11; h_0opt_13b8cf25 t12; struct tm t13; struct tm t14; HeroStr t15; struct tm t16; int64_t t17; struct tm t18; int64_t t19; struct tm t20; int64_t t21; struct tm t22; int32_t t23; struct tm t24; int32_t t25; struct tm t26; int32_t t27; int64_t t28; int64_t t29; int64_t t30; int64_t t31; h_0opt_13b8cf25 t32; h_0opt_13b8cf25 t33; int64_t t34; int64_t t35; bool t36; h_0opt_13b8cf25 t37; HeroFailure t38; h_0opt_13b8cf25 t39; struct tm t40; struct tm t41; HeroStr t42; int64_t t43; int64_t t44; double t45; int64_t t46; int64_t t47; double t48; int64_t t49; int64_t t50; double t51; int64_t t52; int64_t t53; int64_t t54; int64_t t55; h_0opt_13b8cf25 t56; h_0opt_13b8cf25 t57; int64_t t58; int64_t t59; bool t60; h_0opt_13b8cf25 t61; h_0opt_13b8cf25 t62; HeroStr t63; h_0opt_13b8cf25 t64; h_0opt_13b8cf25 t65; HeroStr t66; h_0opt_13b8cf25 t67; h_0opt_13b8cf25 t68; _Pragma("clang diagnostic warning \"-Wdeprecated-declarations\"") goto bb0;
-#line 98 "examples/ctime/main.hero"
+#line 1180 "main.c"
+    h_0opt_13b8cf25 h0_f0 = {0};
+    struct tm h1_landing;
+    h_0opt_13b8cf25 h2_f1 = {0};
+    struct tm h3_millennium;
+    h_0opt_13b8cf25 h4_f2 = {0};
+    h_0opt_13b8cf25 h5_own5 = {0};
+    HeroStr h6_own6 = {0};
+    h_0opt_13b8cf25 h7_own7 = {0};
+    HeroStr h8_own8 = {0};
+    h_0opt_13b8cf25 h9_own9 = {0};
+    int64_t t1;
+    int64_t t2;
+    int64_t t3;
+    int64_t t4;
+    h_0opt_13b8cf25 t5;
+    h_0opt_13b8cf25 t6;
+    int64_t t7;
+    int64_t t8;
+    bool t9;
+    h_0opt_13b8cf25 t10;
+    HeroFailure t11;
+    h_0opt_13b8cf25 t12;
+    struct tm t13;
+    struct tm t14;
+    HeroStr t15;
+    struct tm t16;
+    int64_t t17;
+    struct tm t18;
+    int64_t t19;
+    struct tm t20;
+    int64_t t21;
+    struct tm t22;
+    int32_t t23;
+    struct tm t24;
+    int32_t t25;
+    struct tm t26;
+    int32_t t27;
+    int64_t t28;
+    int64_t t29;
+    int64_t t30;
+    int64_t t31;
+    h_0opt_13b8cf25 t32;
+    h_0opt_13b8cf25 t33;
+    int64_t t34;
+    int64_t t35;
+    bool t36;
+    h_0opt_13b8cf25 t37;
+    HeroFailure t38;
+    h_0opt_13b8cf25 t39;
+    struct tm t40;
+    struct tm t41;
+    HeroStr t42;
+    int64_t t43;
+    int64_t t44;
+    double t45;
+    int64_t t46;
+    int64_t t47;
+    double t48;
+    int64_t t49;
+    int64_t t50;
+    double t51;
+    int64_t t52;
+    int64_t t53;
+    int64_t t54;
+    int64_t t55;
+    h_0opt_13b8cf25 t56;
+    h_0opt_13b8cf25 t57;
+    int64_t t58;
+    int64_t t59;
+    bool t60;
+    h_0opt_13b8cf25 t61;
+    h_0opt_13b8cf25 t62;
+    HeroStr t63;
+    h_0opt_13b8cf25 t64;
+    h_0opt_13b8cf25 t65;
+    HeroStr t66;
+    h_0opt_13b8cf25 t67;
+    h_0opt_13b8cf25 t68;
+    goto bb0;
 bb0:
 #line 100 "examples/ctime/main.hero"
     t1 = INT64_C(1969);
@@ -985,15 +1271,15 @@ bb0:
     t61 = h5_own5;
 #line 100 "examples/ctime/main.hero"
     h5_own5 = t5;
-#line 100 "examples/ctime/main.hero"
+#line 1275 "main.c"
     h_0opt_13b8cf25_release(&t61);
 #line 100 "examples/ctime/main.hero"
     t62 = h0_f0;
-#line 100 "examples/ctime/main.hero"
+#line 1279 "main.c"
     h_0opt_13b8cf25_retain(&t5);
 #line 100 "examples/ctime/main.hero"
     h0_f0 = t5;
-#line 100 "examples/ctime/main.hero"
+#line 1283 "main.c"
     h_0opt_13b8cf25_release(&t62);
 #line 100 "examples/ctime/main.hero"
     t6 = h0_f0;
@@ -1020,7 +1306,7 @@ bb1:
     t63 = h6_own6;
 #line 101 "examples/ctime/main.hero"
     h6_own6 = t15;
-#line 101 "examples/ctime/main.hero"
+#line 1310 "main.c"
     hero_str_decref(t63);
 #line 101 "examples/ctime/main.hero"
     hero_print_str(t15);
@@ -1083,15 +1369,15 @@ bb1:
     t64 = h7_own7;
 #line 112 "examples/ctime/main.hero"
     h7_own7 = t32;
-#line 112 "examples/ctime/main.hero"
+#line 1373 "main.c"
     h_0opt_13b8cf25_release(&t64);
 #line 112 "examples/ctime/main.hero"
     t65 = h2_f1;
-#line 112 "examples/ctime/main.hero"
+#line 1377 "main.c"
     h_0opt_13b8cf25_retain(&t32);
 #line 112 "examples/ctime/main.hero"
     h2_f1 = t32;
-#line 112 "examples/ctime/main.hero"
+#line 1381 "main.c"
     h_0opt_13b8cf25_release(&t65);
 #line 112 "examples/ctime/main.hero"
     t33 = h2_f1;
@@ -1109,7 +1395,7 @@ bb2:
     t10 = h0_f0;
 #line 100 "examples/ctime/main.hero"
     t11 = t10.as.err;
-#line 1113 "main.c"
+#line 1399 "main.c"
     hero_panic_must(t11);
     hero_unreachable();
 bb3:
@@ -1126,7 +1412,7 @@ bb3:
     t66 = h8_own8;
 #line 113 "examples/ctime/main.hero"
     h8_own8 = t42;
-#line 113 "examples/ctime/main.hero"
+#line 1416 "main.c"
     hero_str_decref(t66);
 #line 113 "examples/ctime/main.hero"
     hero_print_str(t42);
@@ -1174,15 +1460,15 @@ bb3:
     t67 = h9_own9;
 #line 121 "examples/ctime/main.hero"
     h9_own9 = t56;
-#line 121 "examples/ctime/main.hero"
+#line 1464 "main.c"
     h_0opt_13b8cf25_release(&t67);
 #line 121 "examples/ctime/main.hero"
     t68 = h4_f2;
-#line 121 "examples/ctime/main.hero"
+#line 1468 "main.c"
     h_0opt_13b8cf25_retain(&t56);
 #line 121 "examples/ctime/main.hero"
     h4_f2 = t56;
-#line 121 "examples/ctime/main.hero"
+#line 1472 "main.c"
     h_0opt_13b8cf25_release(&t68);
 #line 121 "examples/ctime/main.hero"
     t57 = h4_f2;
@@ -1196,7 +1482,7 @@ bb3:
     hero_print_bool(t60);
 #line 121 "examples/ctime/main.hero"
     hero_print_end();
-#line 1200 "main.c"
+#line 1486 "main.c"
     h_0opt_13b8cf25_release(hero_slot_escape(&h0_f0));
     h_0opt_13b8cf25_release(hero_slot_escape(&h2_f1));
     h_0opt_13b8cf25_release(hero_slot_escape(&h4_f2));
@@ -1211,11 +1497,10 @@ bb4:
     t37 = h2_f1;
 #line 112 "examples/ctime/main.hero"
     t38 = t37.as.err;
-#line 1215 "main.c"
+#line 1501 "main.c"
     hero_panic_must(t38);
     hero_unreachable();
 }
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_main_Broken_eq(const struct tm *a, const struct tm *b) {
     hero_panic("h_main_Broken_eq: a partial record has no structural equality");
 }

@@ -22,11 +22,12 @@
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -37,7 +38,7 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 _Static_assert(sizeof(struct nums) - __builtin_offsetof(struct nums, a) != 0, "heroes-ffi-flex Nums a");
 #line 23 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-in-place.hero"
 _Static_assert(_Generic(&((struct nums *)0)->a, _Bool (*)[4]: (sizeof(_Bool) == sizeof(int64_t) && (((_Bool)-1 < 0) == ((int64_t)-1 < 0))), char (*)[4]: (sizeof(char) == sizeof(int64_t) && (((char)-1 < 0) == ((int64_t)-1 < 0))), signed char (*)[4]: (sizeof(signed char) == sizeof(int64_t) && (((signed char)-1 < 0) == ((int64_t)-1 < 0))), short (*)[4]: (sizeof(short) == sizeof(int64_t) && (((short)-1 < 0) == ((int64_t)-1 < 0))), int (*)[4]: (sizeof(int) == sizeof(int64_t) && (((int)-1 < 0) == ((int64_t)-1 < 0))), long (*)[4]: (sizeof(long) == sizeof(int64_t) && (((long)-1 < 0) == ((int64_t)-1 < 0))), long long (*)[4]: (sizeof(long long) == sizeof(int64_t) && (((long long)-1 < 0) == ((int64_t)-1 < 0))), unsigned char (*)[4]: (sizeof(unsigned char) == sizeof(int64_t) && (((unsigned char)-1 < 0) == ((int64_t)-1 < 0))), unsigned short (*)[4]: (sizeof(unsigned short) == sizeof(int64_t) && (((unsigned short)-1 < 0) == ((int64_t)-1 < 0))), unsigned int (*)[4]: (sizeof(unsigned int) == sizeof(int64_t) && (((unsigned int)-1 < 0) == ((int64_t)-1 < 0))), unsigned long (*)[4]: (sizeof(unsigned long) == sizeof(int64_t) && (((unsigned long)-1 < 0) == ((int64_t)-1 < 0))), unsigned long long (*)[4]: (sizeof(unsigned long long) == sizeof(int64_t) && (((unsigned long long)-1 < 0) == ((int64_t)-1 < 0))), default: 0), "heroes-ffi-field Nums a");
-#line 41 "fixedbugsafixedarrayelementiswritteninplace.c"
+#line 42 "fixedbugsafixedarrayelementiswritteninplace.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -100,7 +101,6 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
@@ -135,14 +135,24 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_fixedbugsafixedarrayelementiswritteninplace_main(void);
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 26 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-in-place.hero"
 void h_fixedbugsafixedarrayelementiswritteninplace_main(void) {
-#line 26 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-in-place.hero"
-    _Pragma("clang diagnostic ignored \"-Wdeprecated-declarations\"") struct nums h0_n; int64_t t1; int64_t t2; int64_t t3; int64_t t4; struct nums t6; int64_t t7; int64_t t8; HeroStr t9; struct nums t10; int64_t t11; _Pragma("clang diagnostic warning \"-Wdeprecated-declarations\"") goto bb0;
-#line 26 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-in-place.hero"
+#line 142 "fixedbugsafixedarrayelementiswritteninplace.c"
+    struct nums h0_n;
+    int64_t t1;
+    int64_t t2;
+    int64_t t3;
+    int64_t t4;
+    struct nums t6;
+    int64_t t7;
+    int64_t t8;
+    HeroStr t9;
+    struct nums t10;
+    int64_t t11;
+    goto bb0;
 bb0:
+#line 27 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-in-place.hero"
     t1 = INT64_C(1);
 #line 27 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-in-place.hero"
     t2 = INT64_C(2);
@@ -172,9 +182,8 @@ bb0:
     hero_print_end();
 #line 29 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-in-place.hero"
     return;
-#line 176 "fixedbugsafixedarrayelementiswritteninplace.c"
+#line 186 "fixedbugsafixedarrayelementiswritteninplace.c"
 }
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_fixedbugsafixedarrayelementiswritteninplace_Nums_eq(const struct nums *a, const struct nums *b) {
     if (!((a->a[0] == b->a[0] && a->a[1] == b->a[1] && a->a[2] == b->a[2] && a->a[3] == b->a[3]))) return false;
     return true;

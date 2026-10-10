@@ -21,11 +21,12 @@
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -73,7 +74,7 @@ HERO_STR_STATIC(hero_str_79c9889a, "hello from C");
 HERO_STR_STATIC(hero_str_5cc08313, "computed");
 HERO_STR_STATIC(hero_str_6251eb62, "back in Heroes");
 
-#line 77 "fficstr.c"
+#line 78 "fficstr.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -97,7 +98,6 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
@@ -131,14 +131,18 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 HeroStr h_fficstr_shout(HeroStr h0_text);
 void h_fficstr_main(void);
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 15 "tests/golden/run/ffi-cstr.hero"
 HeroStr h_fficstr_shout(HeroStr h0_text) {
-#line 15 "tests/golden/run/ffi-cstr.hero"
-    HeroStr h1_own1 = {0}; HeroStr t1; HeroStr t2; HeroStr t3; HeroStr t4; goto bb0;
-#line 15 "tests/golden/run/ffi-cstr.hero"
+#line 138 "fficstr.c"
+    HeroStr h1_own1 = {0};
+    HeroStr t1;
+    HeroStr t2;
+    HeroStr t3;
+    HeroStr t4;
+    goto bb0;
 bb0:
+#line 16 "tests/golden/run/ffi-cstr.hero"
     t1 = h0_text;
 #line 16 "tests/golden/run/ffi-cstr.hero"
     t2 = HERO_STR_LIT(hero_str_21);
@@ -148,9 +152,8 @@ bb0:
     t4 = h1_own1;
 #line 16 "tests/golden/run/ffi-cstr.hero"
     h1_own1 = t3;
-#line 16 "tests/golden/run/ffi-cstr.hero"
+#line 156 "fficstr.c"
     hero_str_decref(t4);
-#line 154 "fficstr.c"
     hero_str_incref(t3);
     hero_str_release_at(&h1_own1);
     return t3;
@@ -158,10 +161,18 @@ bb0:
 
 #line 18 "tests/golden/run/ffi-cstr.hero"
 void h_fficstr_main(void) {
-#line 18 "tests/golden/run/ffi-cstr.hero"
-    HeroStr h0_own0 = {0}; HeroStr t1; const char * t2; HeroStr t4; HeroStr t5; const char * t6; HeroStr t8; HeroStr t9; goto bb0;
-#line 18 "tests/golden/run/ffi-cstr.hero"
+#line 165 "fficstr.c"
+    HeroStr h0_own0 = {0};
+    HeroStr t1;
+    const char * t2;
+    HeroStr t4;
+    HeroStr t5;
+    const char * t6;
+    HeroStr t8;
+    HeroStr t9;
+    goto bb0;
 bb0:
+#line 19 "tests/golden/run/ffi-cstr.hero"
     t1 = HERO_STR_LIT(hero_str_79c9889a);
 #line 19 "tests/golden/run/ffi-cstr.hero"
     t2 = hero_str_lend(t1);
@@ -175,7 +186,7 @@ bb0:
     t9 = h0_own0;
 #line 24 "tests/golden/run/ffi-cstr.hero"
     h0_own0 = t5;
-#line 24 "tests/golden/run/ffi-cstr.hero"
+#line 190 "fficstr.c"
     hero_str_decref(t9);
 #line 24 "tests/golden/run/ffi-cstr.hero"
     t6 = hero_str_lend(t5);
@@ -186,11 +197,10 @@ bb0:
     hero_print_str(t8);
 #line 25 "tests/golden/run/ffi-cstr.hero"
     hero_print_end();
-#line 190 "fficstr.c"
+#line 201 "fficstr.c"
     hero_str_release_at(&h0_own0);
     return;
 }
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_incref(v->as.ok);

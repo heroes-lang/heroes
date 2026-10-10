@@ -21,11 +21,12 @@
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -80,7 +81,7 @@ HERO_STR_STATIC(hero_str_4e7b745b, "inside the release, the new node reads ");
 HERO_STR_STATIC(hero_str_29afd6f, "after it, the new node still reads ");
 HERO_STR_STATIC(hero_str_4779ef9d, "inside the next release, a reference to the new node reads ");
 
-#line 84 "fixedbugsacallbackhandedtheaddressareleasefreedbeginsanewlife.c"
+#line 85 "fixedbugsacallbackhandedtheaddressareleasefreedbeginsanewlife.c"
 typedef int64_t (*h_0fn_48ac9712)(int64_t);
 typedef struct h_0opt_f87774a {
     int64_t tag;
@@ -105,7 +106,6 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
@@ -157,14 +157,21 @@ __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
     return f;
 }
 
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 28 "tests/golden/run/fixedbugs-a-callback-handed-the-address-a-release-freed-begins-a-new-life.hero"
 int64_t h_fixedbugsacallbackhandedtheaddressareleasefreedbeginsanewlife_again(int64_t h0_offset) {
-#line 28 "tests/golden/run/fixedbugs-a-callback-handed-the-address-a-release-freed-begins-a-new-life.hero"
-    hero_thread_guard("fixedbugsacallbackhandedtheaddressareleasefreedbeginsanewlife.again"); _Pragma("clang diagnostic ignored \"-Wdeprecated-declarations\"") sn * h1_m; sn * t1; sn * t2; sn * t3; int64_t t4; int64_t t5; int64_t t6; _Pragma("clang diagnostic warning \"-Wdeprecated-declarations\"") goto bb0;
-#line 28 "tests/golden/run/fixedbugs-a-callback-handed-the-address-a-release-freed-begins-a-new-life.hero"
+#line 164 "fixedbugsacallbackhandedtheaddressareleasefreedbeginsanewlife.c"
+    hero_thread_guard("fixedbugsacallbackhandedtheaddressareleasefreedbeginsanewlife.again");
+    sn * h1_m;
+    sn * t1;
+    sn * t2;
+    sn * t3;
+    int64_t t4;
+    int64_t t5;
+    int64_t t6;
+    goto bb0;
 bb0:
+#line 29 "tests/golden/run/fixedbugs-a-callback-handed-the-address-a-release-freed-begins-a-new-life.hero"
     t1 = sn_new();
 #line 29 "tests/golden/run/fixedbugs-a-callback-handed-the-address-a-release-freed-begins-a-new-life.hero"
     hero_handle_acquired(t1, "sn_free|sn_free_then");
@@ -186,7 +193,7 @@ bb0:
     if (__builtin_add_overflow(t4, t5, &t6)) hero_panic_overflow();
 #line 31 "tests/golden/run/fixedbugs-a-callback-handed-the-address-a-release-freed-begins-a-new-life.hero"
     return t6;
-#line 190 "fixedbugsacallbackhandedtheaddressareleasefreedbeginsanewlife.c"
+#line 197 "fixedbugsacallbackhandedtheaddressareleasefreedbeginsanewlife.c"
 }
 
 int64_t h_0cb_fixedbugsacallbackhandedtheaddressareleasefreedbeginsanewlife_again(int64_t h0_offset) {
@@ -196,10 +203,20 @@ int64_t h_0cb_fixedbugsacallbackhandedtheaddressareleasefreedbeginsanewlife_agai
 
 #line 33 "tests/golden/run/fixedbugs-a-callback-handed-the-address-a-release-freed-begins-a-new-life.hero"
 int64_t h_fixedbugsacallbackhandedtheaddressareleasefreedbeginsanewlife_found(int64_t h0_offset) {
-#line 33 "tests/golden/run/fixedbugs-a-callback-handed-the-address-a-release-freed-begins-a-new-life.hero"
-    hero_thread_guard("fixedbugsacallbackhandedtheaddressareleasefreedbeginsanewlife.found"); _Pragma("clang diagnostic ignored \"-Wdeprecated-declarations\"") sn * h1_r; int64_t h2_v; sn * t1; sn * t2; int64_t t3; sn * t4; int64_t t5; int64_t t6; int64_t t7; _Pragma("clang diagnostic warning \"-Wdeprecated-declarations\"") goto bb0;
-#line 33 "tests/golden/run/fixedbugs-a-callback-handed-the-address-a-release-freed-begins-a-new-life.hero"
+#line 207 "fixedbugsacallbackhandedtheaddressareleasefreedbeginsanewlife.c"
+    hero_thread_guard("fixedbugsacallbackhandedtheaddressareleasefreedbeginsanewlife.found");
+    sn * h1_r;
+    int64_t h2_v;
+    sn * t1;
+    sn * t2;
+    int64_t t3;
+    sn * t4;
+    int64_t t5;
+    int64_t t6;
+    int64_t t7;
+    goto bb0;
 bb0:
+#line 34 "tests/golden/run/fixedbugs-a-callback-handed-the-address-a-release-freed-begins-a-new-life.hero"
     t1 = sn_find();
 #line 34 "tests/golden/run/fixedbugs-a-callback-handed-the-address-a-release-freed-begins-a-new-life.hero"
     hero_handle_retained(t1, "sn_put", 0);
@@ -232,7 +249,7 @@ bb0:
     if (__builtin_add_overflow(t5, t6, &t7)) hero_panic_overflow();
 #line 37 "tests/golden/run/fixedbugs-a-callback-handed-the-address-a-release-freed-begins-a-new-life.hero"
     return t7;
-#line 236 "fixedbugsacallbackhandedtheaddressareleasefreedbeginsanewlife.c"
+#line 253 "fixedbugsacallbackhandedtheaddressareleasefreedbeginsanewlife.c"
 }
 
 int64_t h_0cb_fixedbugsacallbackhandedtheaddressareleasefreedbeginsanewlife_found(int64_t h0_offset) {
@@ -242,10 +259,28 @@ int64_t h_0cb_fixedbugsacallbackhandedtheaddressareleasefreedbeginsanewlife_foun
 
 #line 39 "tests/golden/run/fixedbugs-a-callback-handed-the-address-a-release-freed-begins-a-new-life.hero"
 void h_fixedbugsacallbackhandedtheaddressareleasefreedbeginsanewlife_main(void) {
-#line 39 "tests/golden/run/fixedbugs-a-callback-handed-the-address-a-release-freed-begins-a-new-life.hero"
-    _Pragma("clang diagnostic ignored \"-Wdeprecated-declarations\"") sn * h0_a; sn * h1_b; sn * h2_c; sn * t1; HeroStr t2; sn * t3; h_0fn_48ac9712 t4; int64_t t5; sn * t6; HeroStr t7; sn * t8; int64_t t9; sn * t10; sn * t11; HeroStr t12; sn * t13; h_0fn_48ac9712 t14; int64_t t15; _Pragma("clang diagnostic warning \"-Wdeprecated-declarations\"") goto bb0;
-#line 39 "tests/golden/run/fixedbugs-a-callback-handed-the-address-a-release-freed-begins-a-new-life.hero"
+#line 263 "fixedbugsacallbackhandedtheaddressareleasefreedbeginsanewlife.c"
+    sn * h0_a;
+    sn * h1_b;
+    sn * h2_c;
+    sn * t1;
+    HeroStr t2;
+    sn * t3;
+    h_0fn_48ac9712 t4;
+    int64_t t5;
+    sn * t6;
+    HeroStr t7;
+    sn * t8;
+    int64_t t9;
+    sn * t10;
+    sn * t11;
+    HeroStr t12;
+    sn * t13;
+    h_0fn_48ac9712 t14;
+    int64_t t15;
+    goto bb0;
 bb0:
+#line 40 "tests/golden/run/fixedbugs-a-callback-handed-the-address-a-release-freed-begins-a-new-life.hero"
     t1 = sn_new();
 #line 40 "tests/golden/run/fixedbugs-a-callback-handed-the-address-a-release-freed-begins-a-new-life.hero"
     hero_handle_acquired(t1, "sn_free|sn_free_then");
@@ -335,9 +370,8 @@ bb0:
     hero_print_end();
 #line 46 "tests/golden/run/fixedbugs-a-callback-handed-the-address-a-release-freed-begins-a-new-life.hero"
     return;
-#line 339 "fixedbugsacallbackhandedtheaddressareleasefreedbeginsanewlife.c"
+#line 374 "fixedbugsacallbackhandedtheaddressareleasefreedbeginsanewlife.c"
 }
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_fixedbugsacallbackhandedtheaddressareleasefreedbeginsanewlife_S_eq(sn * const *a, sn * const *b) {
     return hero_handle_eq(*a, *b);
 }

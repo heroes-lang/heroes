@@ -21,11 +21,12 @@
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -37,7 +38,7 @@ _Static_assert(sizeof(Slot) - __builtin_offsetof(Slot, nsap) != 0, "heroes-ffi-f
 #line 17 "tests/golden/run/ffi-a-lent-field-reads-through-const.hero"
 _Static_assert(_Generic(&((Slot *)0)->nsap, _Bool (*)[8]: (sizeof(_Bool) == sizeof(uint8_t) && (((_Bool)-1 < 0) == ((uint8_t)-1 < 0))), char (*)[8]: (sizeof(char) == sizeof(uint8_t) && (((char)-1 < 0) == ((uint8_t)-1 < 0))), signed char (*)[8]: (sizeof(signed char) == sizeof(uint8_t) && (((signed char)-1 < 0) == ((uint8_t)-1 < 0))), short (*)[8]: (sizeof(short) == sizeof(uint8_t) && (((short)-1 < 0) == ((uint8_t)-1 < 0))), int (*)[8]: (sizeof(int) == sizeof(uint8_t) && (((int)-1 < 0) == ((uint8_t)-1 < 0))), long (*)[8]: (sizeof(long) == sizeof(uint8_t) && (((long)-1 < 0) == ((uint8_t)-1 < 0))), long long (*)[8]: (sizeof(long long) == sizeof(uint8_t) && (((long long)-1 < 0) == ((uint8_t)-1 < 0))), unsigned char (*)[8]: (sizeof(unsigned char) == sizeof(uint8_t) && (((unsigned char)-1 < 0) == ((uint8_t)-1 < 0))), unsigned short (*)[8]: (sizeof(unsigned short) == sizeof(uint8_t) && (((unsigned short)-1 < 0) == ((uint8_t)-1 < 0))), unsigned int (*)[8]: (sizeof(unsigned int) == sizeof(uint8_t) && (((unsigned int)-1 < 0) == ((uint8_t)-1 < 0))), unsigned long (*)[8]: (sizeof(unsigned long) == sizeof(uint8_t) && (((unsigned long)-1 < 0) == ((uint8_t)-1 < 0))), unsigned long long (*)[8]: (sizeof(unsigned long long) == sizeof(uint8_t) && (((unsigned long long)-1 < 0) == ((uint8_t)-1 < 0))), default: 0), "heroes-ffi-field Slot nsap");
 _Static_assert(__builtin_classify_type(((Slot *)0)->id) == 1 && sizeof(((Slot *)0)->id) == sizeof(int64_t) && (_Generic(((Slot *)0)->id, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Slot id");
-#line 41 "ffialentfieldreadsthroughconst.c"
+#line 42 "ffialentfieldreadsthroughconst.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -101,7 +102,6 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
@@ -138,14 +138,16 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 int64_t h_ffialentfieldreadsthroughconst_total(Slot h0_s);
 void h_ffialentfieldreadsthroughconst_main(void);
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 24 "tests/golden/run/ffi-a-lent-field-reads-through-const.hero"
 int64_t h_ffialentfieldreadsthroughconst_total(Slot h0_s) {
-#line 24 "tests/golden/run/ffi-a-lent-field-reads-through-const.hero"
-    _Pragma("clang diagnostic ignored \"-Wdeprecated-declarations\"") const void * t3; int64_t t4; int64_t t5; _Pragma("clang diagnostic warning \"-Wdeprecated-declarations\"") goto bb0;
-#line 24 "tests/golden/run/ffi-a-lent-field-reads-through-const.hero"
+#line 145 "ffialentfieldreadsthroughconst.c"
+    const void * t3;
+    int64_t t4;
+    int64_t t5;
+    goto bb0;
 bb0:
+#line 25 "tests/golden/run/ffi-a-lent-field-reads-through-const.hero"
     t3 = (const void *)(h0_s.nsap);
 #line 25 "tests/golden/run/ffi-a-lent-field-reads-through-const.hero"
     t4 = INT64_C(8);
@@ -157,14 +159,32 @@ bb0:
     t5 = slot_sum(t3, t4);
 #line 25 "tests/golden/run/ffi-a-lent-field-reads-through-const.hero"
     return t5;
-#line 161 "ffialentfieldreadsthroughconst.c"
+#line 163 "ffialentfieldreadsthroughconst.c"
 }
 
 #line 27 "tests/golden/run/ffi-a-lent-field-reads-through-const.hero"
 void h_ffialentfieldreadsthroughconst_main(void) {
-#line 27 "tests/golden/run/ffi-a-lent-field-reads-through-const.hero"
-    _Pragma("clang diagnostic ignored \"-Wdeprecated-declarations\"") Slot h0_t; __attribute__((unused)) Slot h1_u; Slot t1; const void * t4; int64_t t5; int64_t t6; Slot t7; int64_t t8; Slot t9; void * t12; int64_t t13; void * t16; int64_t t17; int64_t t18; const void * t21; int64_t t22; int64_t t23; Slot t24; int64_t t25; _Pragma("clang diagnostic warning \"-Wdeprecated-declarations\"") goto bb0;
-#line 27 "tests/golden/run/ffi-a-lent-field-reads-through-const.hero"
+#line 168 "ffialentfieldreadsthroughconst.c"
+    Slot h0_t;
+    __attribute__((unused)) Slot h1_u;
+    Slot t1;
+    const void * t4;
+    int64_t t5;
+    int64_t t6;
+    Slot t7;
+    int64_t t8;
+    Slot t9;
+    void * t12;
+    int64_t t13;
+    void * t16;
+    int64_t t17;
+    int64_t t18;
+    const void * t21;
+    int64_t t22;
+    int64_t t23;
+    Slot t24;
+    int64_t t25;
+    goto bb0;
 bb0:
 #line 29 "tests/golden/run/ffi-a-lent-field-reads-through-const.hero"
     t1 = slot_make();
@@ -239,9 +259,8 @@ bb0:
     hero_print_end();
 #line 41 "tests/golden/run/ffi-a-lent-field-reads-through-const.hero"
     return;
-#line 243 "ffialentfieldreadsthroughconst.c"
+#line 263 "ffialentfieldreadsthroughconst.c"
 }
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_ffialentfieldreadsthroughconst_Slot_eq(const Slot *a, const Slot *b) {
     if (!((a->nsap[0] == b->nsap[0] && a->nsap[1] == b->nsap[1] && a->nsap[2] == b->nsap[2] && a->nsap[3] == b->nsap[3] && a->nsap[4] == b->nsap[4] && a->nsap[5] == b->nsap[5] && a->nsap[6] == b->nsap[6] && a->nsap[7] == b->nsap[7]))) return false;
     if (!(a->id == b->id)) return false;

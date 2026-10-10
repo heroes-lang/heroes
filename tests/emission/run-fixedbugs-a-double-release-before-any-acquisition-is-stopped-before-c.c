@@ -21,11 +21,12 @@
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -73,7 +74,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_4a02223e, "opened");
 HERO_STR_STATIC(hero_str_73bdf5b2, "closed twice");
 
-#line 77 "fixedbugsadoublereleasebeforeanyacquisitionisstoppedbeforec.c"
+#line 78 "fixedbugsadoublereleasebeforeanyacquisitionisstoppedbeforec.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -97,7 +98,6 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
@@ -132,14 +132,21 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_fixedbugsadoublereleasebeforeanyacquisitionisstoppedbeforec_main(void);
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 25 "tests/golden/run/fixedbugs-a-double-release-before-any-acquisition-is-stopped-before-c.hero"
 void h_fixedbugsadoublereleasebeforeanyacquisitionisstoppedbeforec_main(void) {
-#line 25 "tests/golden/run/fixedbugs-a-double-release-before-any-acquisition-is-stopped-before-c.hero"
-    _Pragma("clang diagnostic ignored \"-Wdeprecated-declarations\"") gg * h0_a; gg * h1_twice; gg * t1; HeroStr t2; gg * t3; gg * t4; gg * t5; HeroStr t6; _Pragma("clang diagnostic warning \"-Wdeprecated-declarations\"") goto bb0;
-#line 25 "tests/golden/run/fixedbugs-a-double-release-before-any-acquisition-is-stopped-before-c.hero"
+#line 139 "fixedbugsadoublereleasebeforeanyacquisitionisstoppedbeforec.c"
+    gg * h0_a;
+    gg * h1_twice;
+    gg * t1;
+    HeroStr t2;
+    gg * t3;
+    gg * t4;
+    gg * t5;
+    HeroStr t6;
+    goto bb0;
 bb0:
+#line 26 "tests/golden/run/fixedbugs-a-double-release-before-any-acquisition-is-stopped-before-c.hero"
     t1 = g_open();
 #line 26 "tests/golden/run/fixedbugs-a-double-release-before-any-acquisition-is-stopped-before-c.hero"
     hero_handle_lent(t1);
@@ -186,9 +193,8 @@ bb0:
     hero_print_end();
 #line 31 "tests/golden/run/fixedbugs-a-double-release-before-any-acquisition-is-stopped-before-c.hero"
     return;
-#line 190 "fixedbugsadoublereleasebeforeanyacquisitionisstoppedbeforec.c"
+#line 197 "fixedbugsadoublereleasebeforeanyacquisitionisstoppedbeforec.c"
 }
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_fixedbugsadoublereleasebeforeanyacquisitionisstoppedbeforec_G_eq(gg * const *a, gg * const *b) {
     return hero_handle_eq(*a, *b);
 }

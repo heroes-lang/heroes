@@ -23,11 +23,12 @@
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -37,13 +38,13 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 #line 6 "tests/golden/run/fixedbugs559/points.hero"
 _Static_assert(__builtin_classify_type(((Pt *)0)->v) == 1 && sizeof(((Pt *)0)->v) == sizeof(int32_t) && (_Generic(((Pt *)0)->v, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Pt v");
 _Static_assert(__builtin_classify_type(((Pt *)0)->w) == 1 && sizeof(((Pt *)0)->w) == sizeof(int32_t) && (_Generic(((Pt *)0)->w, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Pt w");
-#line 41 "fixedbugs559arecordanothermodulereachesisreadbyitsunit.c"
+#line 42 "fixedbugs559arecordanothermodulereachesisreadbyitsunit.c"
 
 #line 5 "tests/golden/run/fixedbugs559/points.hero"
 _Static_assert(__builtin_classify_type(*(Pt *)0) != 13 || sizeof(((Pt *)0)->v) == sizeof(Pt), "heroes-ffi-union-narrow Pt v");
 #line 5 "tests/golden/run/fixedbugs559/points.hero"
 _Static_assert(__builtin_classify_type(*(Pt *)0) != 13 || sizeof(((Pt *)0)->w) == sizeof(Pt), "heroes-ffi-union-narrow Pt w");
-#line 47 "fixedbugs559arecordanothermodulereachesisreadbyitsunit.c"
+#line 48 "fixedbugs559arecordanothermodulereachesisreadbyitsunit.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -121,7 +122,6 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
@@ -184,14 +184,39 @@ void h_fixedbugs559arecordanothermodulereachesisreadbyitsunit_main(void);
 int64_t h_fixedbugs559holder_get(Pt h0_p);
 h_fixedbugs559holder_Holder h_fixedbugs559holder_hold(Pt h0_p);
 Pt h_fixedbugs559points_make(int32_t h0_v);
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 14 "tests/golden/run/fixedbugs-559-a-record-another-module-reaches-is-read-by-its-unit.hero"
 void h_fixedbugs559arecordanothermodulereachesisreadbyitsunit_main(void) {
-#line 14 "tests/golden/run/fixedbugs-559-a-record-another-module-reaches-is-read-by-its-unit.hero"
-    _Pragma("clang diagnostic ignored \"-Wdeprecated-declarations\"") Pt h0_p; h_fixedbugs559holder_Holder h1_h; HeroArrayHeader * h2_xs = {0}; HeroArrayHeader * h3_own3 = {0}; int32_t t1; Pt t2; Pt t3; int64_t t4; Pt t5; h_fixedbugs559holder_Holder t6; Pt t7; int32_t t8; Pt t9; HeroArrayHeader * t10; HeroArrayHeader * t11; int64_t t12; h_fixedbugs559holder_Holder t13; Pt t14; int32_t t15; Pt t16; HeroArrayHeader * t17; int64_t t18; Pt t19; bool t20; HeroArrayHeader * t21; HeroArrayHeader * t22; _Pragma("clang diagnostic warning \"-Wdeprecated-declarations\"") goto bb0;
-#line 14 "tests/golden/run/fixedbugs-559-a-record-another-module-reaches-is-read-by-its-unit.hero"
+#line 191 "fixedbugs559arecordanothermodulereachesisreadbyitsunit.c"
+    Pt h0_p;
+    h_fixedbugs559holder_Holder h1_h;
+    HeroArrayHeader * h2_xs = {0};
+    HeroArrayHeader * h3_own3 = {0};
+    int32_t t1;
+    Pt t2;
+    Pt t3;
+    int64_t t4;
+    Pt t5;
+    h_fixedbugs559holder_Holder t6;
+    Pt t7;
+    int32_t t8;
+    Pt t9;
+    HeroArrayHeader * t10;
+    HeroArrayHeader * t11;
+    int64_t t12;
+    h_fixedbugs559holder_Holder t13;
+    Pt t14;
+    int32_t t15;
+    Pt t16;
+    HeroArrayHeader * t17;
+    int64_t t18;
+    Pt t19;
+    bool t20;
+    HeroArrayHeader * t21;
+    HeroArrayHeader * t22;
+    goto bb0;
 bb0:
+#line 15 "tests/golden/run/fixedbugs-559-a-record-another-module-reaches-is-read-by-its-unit.hero"
     t1 = INT64_C(3);
 #line 15 "tests/golden/run/fixedbugs-559-a-record-another-module-reaches-is-read-by-its-unit.hero"
     t2 = h_fixedbugs559points_make(t1);
@@ -224,16 +249,17 @@ bb0:
     t21 = h3_own3;
 #line 18 "tests/golden/run/fixedbugs-559-a-record-another-module-reaches-is-read-by-its-unit.hero"
     h3_own3 = t10;
-#line 18 "tests/golden/run/fixedbugs-559-a-record-another-module-reaches-is-read-by-its-unit.hero"
+#line 253 "fixedbugs559arecordanothermodulereachesisreadbyitsunit.c"
     hero_array_decref(t21);
 #line 18 "tests/golden/run/fixedbugs-559-a-record-another-module-reaches-is-read-by-its-unit.hero"
     t22 = h2_xs;
-#line 18 "tests/golden/run/fixedbugs-559-a-record-another-module-reaches-is-read-by-its-unit.hero"
+#line 257 "fixedbugs559arecordanothermodulereachesisreadbyitsunit.c"
     hero_array_incref(t10);
 #line 18 "tests/golden/run/fixedbugs-559-a-record-another-module-reaches-is-read-by-its-unit.hero"
     h2_xs = t10;
-#line 18 "tests/golden/run/fixedbugs-559-a-record-another-module-reaches-is-read-by-its-unit.hero"
+#line 261 "fixedbugs559arecordanothermodulereachesisreadbyitsunit.c"
     hero_array_decref(t22);
+#line 19 "tests/golden/run/fixedbugs-559-a-record-another-module-reaches-is-read-by-its-unit.hero"
     t11 = h2_xs;
 #line 19 "tests/golden/run/fixedbugs-559-a-record-another-module-reaches-is-read-by-its-unit.hero"
     t12 = ((void)(t11 == NULL ? ((void)hero_array_len(t11), hero_unreachable()) : (void)0), t11->len);
@@ -263,7 +289,7 @@ bb0:
     hero_print_bool(t20);
 #line 21 "tests/golden/run/fixedbugs-559-a-record-another-module-reaches-is-read-by-its-unit.hero"
     hero_print_end();
-#line 267 "fixedbugs559arecordanothermodulereachesisreadbyitsunit.c"
+#line 293 "fixedbugs559arecordanothermodulereachesisreadbyitsunit.c"
     hero_array_release_at(&h2_xs);
     hero_array_release_at(&h3_own3);
     return;
@@ -271,10 +297,29 @@ bb0:
 
 #line 13 "tests/golden/run/fixedbugs559/holder.hero"
 int64_t h_fixedbugs559holder_get(Pt h0_p) {
-#line 13 "tests/golden/run/fixedbugs559/holder.hero"
-    _Pragma("clang diagnostic ignored \"-Wdeprecated-declarations\"") h_0opt_e201354 h1_f0 = {0}; h_0opt_e201354 h2_own2 = {0}; Pt t1; int32_t t2; Pt t3; int32_t t4; int32_t t5; h_0opt_e201354 t6; h_0opt_e201354 t7; int64_t t8; int64_t t9; bool t10; h_0opt_e201354 t11; HeroFailure t12; h_0opt_e201354 t13; int64_t t14; int64_t t15; h_0opt_e201354 t16; h_0opt_e201354 t17; _Pragma("clang diagnostic warning \"-Wdeprecated-declarations\"") goto bb0;
-#line 13 "tests/golden/run/fixedbugs559/holder.hero"
+#line 301 "fixedbugs559arecordanothermodulereachesisreadbyitsunit.c"
+    h_0opt_e201354 h1_f0 = {0};
+    h_0opt_e201354 h2_own2 = {0};
+    Pt t1;
+    int32_t t2;
+    Pt t3;
+    int32_t t4;
+    int32_t t5;
+    h_0opt_e201354 t6;
+    h_0opt_e201354 t7;
+    int64_t t8;
+    int64_t t9;
+    bool t10;
+    h_0opt_e201354 t11;
+    HeroFailure t12;
+    h_0opt_e201354 t13;
+    int64_t t14;
+    int64_t t15;
+    h_0opt_e201354 t16;
+    h_0opt_e201354 t17;
+    goto bb0;
 bb0:
+#line 14 "tests/golden/run/fixedbugs559/holder.hero"
     t1 = h0_p;
 #line 14 "tests/golden/run/fixedbugs559/holder.hero"
     t2 = t1.v;
@@ -290,15 +335,15 @@ bb0:
     t16 = h2_own2;
 #line 14 "tests/golden/run/fixedbugs559/holder.hero"
     h2_own2 = t6;
-#line 14 "tests/golden/run/fixedbugs559/holder.hero"
+#line 339 "fixedbugs559arecordanothermodulereachesisreadbyitsunit.c"
     h_0opt_e201354_release(&t16);
 #line 14 "tests/golden/run/fixedbugs559/holder.hero"
     t17 = h1_f0;
-#line 14 "tests/golden/run/fixedbugs559/holder.hero"
+#line 343 "fixedbugs559arecordanothermodulereachesisreadbyitsunit.c"
     h_0opt_e201354_retain(&t6);
 #line 14 "tests/golden/run/fixedbugs559/holder.hero"
     h1_f0 = t6;
-#line 14 "tests/golden/run/fixedbugs559/holder.hero"
+#line 347 "fixedbugs559arecordanothermodulereachesisreadbyitsunit.c"
     h_0opt_e201354_release(&t17);
 #line 14 "tests/golden/run/fixedbugs559/holder.hero"
     t7 = h1_f0;
@@ -318,7 +363,7 @@ bb1:
     t14 = t13.as.ok;
 #line 14 "tests/golden/run/fixedbugs559/holder.hero"
     t15 = twice(t14);
-#line 322 "fixedbugs559arecordanothermodulereachesisreadbyitsunit.c"
+#line 367 "fixedbugs559arecordanothermodulereachesisreadbyitsunit.c"
     h_0opt_e201354_release(hero_slot_escape(&h1_f0));
     h_0opt_e201354_release(hero_slot_escape(&h2_own2));
     return t15;
@@ -327,17 +372,20 @@ bb2:
     t11 = h1_f0;
 #line 14 "tests/golden/run/fixedbugs559/holder.hero"
     t12 = t11.as.err;
-#line 331 "fixedbugs559arecordanothermodulereachesisreadbyitsunit.c"
+#line 376 "fixedbugs559arecordanothermodulereachesisreadbyitsunit.c"
     hero_panic_must(t12);
     hero_unreachable();
 }
 
 #line 16 "tests/golden/run/fixedbugs559/holder.hero"
 h_fixedbugs559holder_Holder h_fixedbugs559holder_hold(Pt h0_p) {
-#line 16 "tests/golden/run/fixedbugs559/holder.hero"
-    _Pragma("clang diagnostic ignored \"-Wdeprecated-declarations\"") Pt t1; int64_t t2; h_fixedbugs559holder_Holder t3; _Pragma("clang diagnostic warning \"-Wdeprecated-declarations\"") goto bb0;
-#line 16 "tests/golden/run/fixedbugs559/holder.hero"
+#line 383 "fixedbugs559arecordanothermodulereachesisreadbyitsunit.c"
+    Pt t1;
+    int64_t t2;
+    h_fixedbugs559holder_Holder t3;
+    goto bb0;
 bb0:
+#line 17 "tests/golden/run/fixedbugs559/holder.hero"
     t1 = h0_p;
 #line 17 "tests/golden/run/fixedbugs559/holder.hero"
     t2 = INT64_C(1);
@@ -345,23 +393,24 @@ bb0:
     t3 = (h_fixedbugs559holder_Holder){.f_p = t1, .f_n = t2};
 #line 17 "tests/golden/run/fixedbugs559/holder.hero"
     return t3;
-#line 349 "fixedbugs559arecordanothermodulereachesisreadbyitsunit.c"
+#line 397 "fixedbugs559arecordanothermodulereachesisreadbyitsunit.c"
 }
 
 #line 10 "tests/golden/run/fixedbugs559/points.hero"
 Pt h_fixedbugs559points_make(int32_t h0_v) {
-#line 10 "tests/golden/run/fixedbugs559/points.hero"
-    int32_t t1; Pt t2; goto bb0;
-#line 10 "tests/golden/run/fixedbugs559/points.hero"
+#line 402 "fixedbugs559arecordanothermodulereachesisreadbyitsunit.c"
+    int32_t t1;
+    Pt t2;
+    goto bb0;
 bb0:
+#line 11 "tests/golden/run/fixedbugs559/points.hero"
     t1 = h0_v;
 #line 11 "tests/golden/run/fixedbugs559/points.hero"
     t2 = pt_make(t1);
 #line 11 "tests/golden/run/fixedbugs559/points.hero"
     return t2;
-#line 363 "fixedbugs559arecordanothermodulereachesisreadbyitsunit.c"
+#line 413 "fixedbugs559arecordanothermodulereachesisreadbyitsunit.c"
 }
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_fixedbugs559points_Pt_eq(const Pt *a, const Pt *b) {
     if (!(a->v == b->v)) return false;
     if (!(a->w == b->w)) return false;

@@ -21,11 +21,12 @@
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -40,11 +41,11 @@ _Static_assert(sizeof(Slot) - __builtin_offsetof(Slot, tag) != 0, "heroes-ffi-fl
 #line 36 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
 _Static_assert(_Generic(&((Slot *)0)->tag, _Bool (*)[4]: (sizeof(_Bool) == sizeof(int8_t) && (((_Bool)-1 < 0) == ((int8_t)-1 < 0))), char (*)[4]: (sizeof(char) == sizeof(int8_t) && (((char)-1 < 0) == ((int8_t)-1 < 0))), signed char (*)[4]: (sizeof(signed char) == sizeof(int8_t) && (((signed char)-1 < 0) == ((int8_t)-1 < 0))), short (*)[4]: (sizeof(short) == sizeof(int8_t) && (((short)-1 < 0) == ((int8_t)-1 < 0))), int (*)[4]: (sizeof(int) == sizeof(int8_t) && (((int)-1 < 0) == ((int8_t)-1 < 0))), long (*)[4]: (sizeof(long) == sizeof(int8_t) && (((long)-1 < 0) == ((int8_t)-1 < 0))), long long (*)[4]: (sizeof(long long) == sizeof(int8_t) && (((long long)-1 < 0) == ((int8_t)-1 < 0))), unsigned char (*)[4]: (sizeof(unsigned char) == sizeof(int8_t) && (((unsigned char)-1 < 0) == ((int8_t)-1 < 0))), unsigned short (*)[4]: (sizeof(unsigned short) == sizeof(int8_t) && (((unsigned short)-1 < 0) == ((int8_t)-1 < 0))), unsigned int (*)[4]: (sizeof(unsigned int) == sizeof(int8_t) && (((unsigned int)-1 < 0) == ((int8_t)-1 < 0))), unsigned long (*)[4]: (sizeof(unsigned long) == sizeof(int8_t) && (((unsigned long)-1 < 0) == ((int8_t)-1 < 0))), unsigned long long (*)[4]: (sizeof(unsigned long long) == sizeof(int8_t) && (((unsigned long long)-1 < 0) == ((int8_t)-1 < 0))), default: 0), "heroes-ffi-field Slot tag");
 _Static_assert(__builtin_classify_type(((Slot *)0)->id) == 1 && sizeof(((Slot *)0)->id) == sizeof(int64_t) && (_Generic(((Slot *)0)->id, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Slot id");
-#line 44 "ffiabytefieldcrossestoc.c"
+#line 45 "ffiabytefieldcrossestoc.c"
 
 #line 34 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
 _Static_assert(__builtin_classify_type(*(Slot *)0) != 13, "heroes-ffi-union Slot nsap tag id");
-#line 48 "ffiabytefieldcrossestoc.c"
+#line 49 "ffiabytefieldcrossestoc.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -116,7 +117,6 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
@@ -156,14 +156,84 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_ffiabytefieldcrossestoc_main(void);
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 41 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
 void h_ffiabytefieldcrossestoc_main(void) {
-#line 41 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
-    _Pragma("clang diagnostic ignored \"-Wdeprecated-declarations\"") Slot h0_s; h_0opt_e201354 h1_f0 = {0}; Slot h2_t; h_0opt_f87774a h3_f1 = {0}; h_0opt_e201354 h4_own4 = {0}; h_0opt_f87774a h5_own5 = {0}; uint8_t t1; uint8_t t2; uint8_t t3; uint8_t t4; uint8_t t5; uint8_t t6; uint8_t t7; uint8_t t8; int8_t t10; int8_t t11; int8_t t12; int8_t t13; int64_t t15; Slot t16; void * t19; int64_t t20; int64_t t21; void * t24; int64_t t25; int64_t t26; void * t29; int64_t t30; void * t33; int64_t t34; int64_t t35; Slot t36; int64_t t38; uint8_t t39; h_0opt_e201354 t40; h_0opt_e201354 t41; int64_t t42; int64_t t43; bool t44; h_0opt_e201354 t45; HeroFailure t46; h_0opt_e201354 t47; int64_t t48; uint8_t t49; uint8_t t50; uint8_t t51; uint8_t t52; uint8_t t53; uint8_t t54; uint8_t t55; uint8_t t56; int8_t t58; int8_t t59; int8_t t60; int8_t t61; int64_t t63; Slot t64; Slot t65; h_0opt_f87774a t67; h_0opt_f87774a t68; int64_t t69; int64_t t70; bool t71; h_0opt_f87774a t72; HeroFailure t73; h_0opt_f87774a t74; HeroStr t75; h_0opt_e201354 t76; h_0opt_e201354 t77; h_0opt_f87774a t78; h_0opt_f87774a t79; _Pragma("clang diagnostic warning \"-Wdeprecated-declarations\"") goto bb0;
-#line 41 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
+#line 163 "ffiabytefieldcrossestoc.c"
+    Slot h0_s;
+    h_0opt_e201354 h1_f0 = {0};
+    Slot h2_t;
+    h_0opt_f87774a h3_f1 = {0};
+    h_0opt_e201354 h4_own4 = {0};
+    h_0opt_f87774a h5_own5 = {0};
+    uint8_t t1;
+    uint8_t t2;
+    uint8_t t3;
+    uint8_t t4;
+    uint8_t t5;
+    uint8_t t6;
+    uint8_t t7;
+    uint8_t t8;
+    int8_t t10;
+    int8_t t11;
+    int8_t t12;
+    int8_t t13;
+    int64_t t15;
+    Slot t16;
+    void * t19;
+    int64_t t20;
+    int64_t t21;
+    void * t24;
+    int64_t t25;
+    int64_t t26;
+    void * t29;
+    int64_t t30;
+    void * t33;
+    int64_t t34;
+    int64_t t35;
+    Slot t36;
+    int64_t t38;
+    uint8_t t39;
+    h_0opt_e201354 t40;
+    h_0opt_e201354 t41;
+    int64_t t42;
+    int64_t t43;
+    bool t44;
+    h_0opt_e201354 t45;
+    HeroFailure t46;
+    h_0opt_e201354 t47;
+    int64_t t48;
+    uint8_t t49;
+    uint8_t t50;
+    uint8_t t51;
+    uint8_t t52;
+    uint8_t t53;
+    uint8_t t54;
+    uint8_t t55;
+    uint8_t t56;
+    int8_t t58;
+    int8_t t59;
+    int8_t t60;
+    int8_t t61;
+    int64_t t63;
+    Slot t64;
+    Slot t65;
+    h_0opt_f87774a t67;
+    h_0opt_f87774a t68;
+    int64_t t69;
+    int64_t t70;
+    bool t71;
+    h_0opt_f87774a t72;
+    HeroFailure t73;
+    h_0opt_f87774a t74;
+    HeroStr t75;
+    h_0opt_e201354 t76;
+    h_0opt_e201354 t77;
+    h_0opt_f87774a t78;
+    h_0opt_f87774a t79;
+    goto bb0;
 bb0:
+#line 42 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
     t1 = UINT64_C(1);
 #line 42 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
     t2 = UINT64_C(0);
@@ -255,15 +325,15 @@ bb0:
     t76 = h4_own4;
 #line 56 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
     h4_own4 = t40;
-#line 56 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
+#line 329 "ffiabytefieldcrossestoc.c"
     h_0opt_e201354_release(&t76);
 #line 56 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
     t77 = h1_f0;
-#line 56 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
+#line 333 "ffiabytefieldcrossestoc.c"
     h_0opt_e201354_retain(&t40);
 #line 56 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
     h1_f0 = t40;
-#line 56 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
+#line 337 "ffiabytefieldcrossestoc.c"
     h_0opt_e201354_release(&t77);
 #line 56 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
     t41 = h1_f0;
@@ -338,15 +408,15 @@ bb1:
     t78 = h5_own5;
 #line 61 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
     h5_own5 = t67;
-#line 61 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
+#line 412 "ffiabytefieldcrossestoc.c"
     h_0opt_f87774a_release(&t78);
 #line 61 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
     t79 = h3_f1;
-#line 61 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
+#line 416 "ffiabytefieldcrossestoc.c"
     h_0opt_f87774a_retain(&t67);
 #line 61 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
     h3_f1 = t67;
-#line 61 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
+#line 420 "ffiabytefieldcrossestoc.c"
     h_0opt_f87774a_release(&t79);
 #line 61 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
     t68 = h3_f1;
@@ -364,7 +434,7 @@ bb2:
     t45 = h1_f0;
 #line 56 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
     t46 = t45.as.err;
-#line 368 "ffiabytefieldcrossestoc.c"
+#line 438 "ffiabytefieldcrossestoc.c"
     hero_panic_must(t46);
     hero_unreachable();
 bb3:
@@ -376,7 +446,7 @@ bb3:
     hero_print_str(t75);
 #line 61 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
     hero_print_end();
-#line 380 "ffiabytefieldcrossestoc.c"
+#line 450 "ffiabytefieldcrossestoc.c"
     h_0opt_e201354_release(hero_slot_escape(&h1_f0));
     h_0opt_f87774a_release(hero_slot_escape(&h3_f1));
     h_0opt_e201354_release(hero_slot_escape(&h4_own4));
@@ -387,11 +457,10 @@ bb4:
     t72 = h3_f1;
 #line 61 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
     t73 = t72.as.err;
-#line 391 "ffiabytefieldcrossestoc.c"
+#line 461 "ffiabytefieldcrossestoc.c"
     hero_panic_must(t73);
     hero_unreachable();
 }
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_ffiabytefieldcrossestoc_Slot_eq(const Slot *a, const Slot *b) {
     if (!((a->nsap[0] == b->nsap[0] && a->nsap[1] == b->nsap[1] && a->nsap[2] == b->nsap[2] && a->nsap[3] == b->nsap[3] && a->nsap[4] == b->nsap[4] && a->nsap[5] == b->nsap[5] && a->nsap[6] == b->nsap[6] && a->nsap[7] == b->nsap[7]))) return false;
     if (!((a->tag[0] == b->tag[0] && a->tag[1] == b->tag[1] && a->tag[2] == b->tag[2] && a->tag[3] == b->tag[3]))) return false;

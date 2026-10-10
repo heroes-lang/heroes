@@ -21,11 +21,12 @@
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -75,7 +76,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_1e4f0b6f, "grow failed, block kept: ");
 HERO_STR_STATIC(hero_str_614b144d, "grown: ");
 
-#line 79 "handletransferintoanullresultisnotmade.c"
+#line 80 "handletransferintoanullresultisnotmade.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -99,7 +100,6 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
@@ -137,14 +137,41 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_handletransferintoanullresultisnotmade_main(void);
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 14 "tests/golden/run/handle-transfer-into-a-null-result-is-not-made.hero"
 void h_handletransferintoanullresultisnotmade_main(void) {
-#line 14 "tests/golden/run/handle-transfer-into-a-null-result-is-not-made.hero"
-    _Pragma("clang diagnostic ignored \"-Wdeprecated-declarations\"") mem * h0_p; mem * h1_q; mem * h2_r; mem * h3_t; int64_t t1; mem * t2; mem * t3; int64_t t4; mem * t5; mem * t6; mem * t7; bool t8; HeroStr t9; mem * t10; int64_t t11; mem * t12; int64_t t13; mem * t14; mem * t15; int64_t t16; mem * t17; mem * t18; mem * t19; bool t20; HeroStr t21; mem * t22; int64_t t23; mem * t24; _Pragma("clang diagnostic warning \"-Wdeprecated-declarations\"") goto bb0;
-#line 14 "tests/golden/run/handle-transfer-into-a-null-result-is-not-made.hero"
+#line 144 "handletransferintoanullresultisnotmade.c"
+    mem * h0_p;
+    mem * h1_q;
+    mem * h2_r;
+    mem * h3_t;
+    int64_t t1;
+    mem * t2;
+    mem * t3;
+    int64_t t4;
+    mem * t5;
+    mem * t6;
+    mem * t7;
+    bool t8;
+    HeroStr t9;
+    mem * t10;
+    int64_t t11;
+    mem * t12;
+    int64_t t13;
+    mem * t14;
+    mem * t15;
+    int64_t t16;
+    mem * t17;
+    mem * t18;
+    mem * t19;
+    bool t20;
+    HeroStr t21;
+    mem * t22;
+    int64_t t23;
+    mem * t24;
+    goto bb0;
 bb0:
+#line 15 "tests/golden/run/handle-transfer-into-a-null-result-is-not-made.hero"
     t1 = INT64_C(8);
 #line 15 "tests/golden/run/handle-transfer-into-a-null-result-is-not-made.hero"
     t2 = mem_new(t1);
@@ -306,9 +333,8 @@ bb5:
 bb6:
 #line 26 "tests/golden/run/handle-transfer-into-a-null-result-is-not-made.hero"
     goto bb4;
-#line 310 "handletransferintoanullresultisnotmade.c"
+#line 337 "handletransferintoanullresultisnotmade.c"
 }
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_handletransferintoanullresultisnotmade_Mem_eq(mem * const *a, mem * const *b) {
     return hero_handle_eq(*a, *b);
 }

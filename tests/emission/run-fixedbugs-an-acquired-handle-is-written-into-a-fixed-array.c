@@ -22,11 +22,12 @@
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -37,7 +38,7 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 _Static_assert(sizeof(struct four) - __builtin_offsetof(struct four, a) != 0, "heroes-ffi-flex Four a");
 #line 23 "tests/golden/run/fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.hero"
 _Static_assert(_Generic(&((struct four *)0)->a, ob * (*)[4]: 1, default: 0) && sizeof(struct four) - __builtin_offsetof(struct four, a) >= sizeof(ob *[4]), "heroes-ffi-field Four a");
-#line 41 "fixedbugsanacquiredhandleiswrittenintoafixedarray.c"
+#line 42 "fixedbugsanacquiredhandleiswrittenintoafixedarray.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -105,7 +106,6 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
@@ -145,14 +145,75 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_fixedbugsanacquiredhandleiswrittenintoafixedarray_main(void);
 HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to);
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 29 "tests/golden/run/fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.hero"
 void h_fixedbugsanacquiredhandleiswrittenintoafixedarray_main(void) {
-#line 29 "tests/golden/run/fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.hero"
-    _Pragma("clang diagnostic ignored \"-Wdeprecated-declarations\"") struct four h0_f; int64_t h1_n; HeroArrayHeader * h2_xs0 = {0}; int64_t h3_i0; int64_t h4_i; HeroArrayHeader * h5_xs1 = {0}; int64_t h6_i1; int64_t h7_i; HeroArrayHeader * h8_own8 = {0}; HeroArrayHeader * h9_own9 = {0}; ob * t1; ob * t2; ob * t3; ob * t4; struct four t6; int64_t t7; int64_t t8; int64_t t9; HeroArrayHeader * t10; int64_t t11; int64_t t12; HeroArrayHeader * t13; int64_t t14; bool t15; HeroArrayHeader * t16; int64_t t17; int64_t t18; int64_t t19; int64_t t20; ob * t21; int64_t t22; int64_t t23; int64_t t24; int64_t t25; int64_t t26; int64_t t27; HeroStr t28; struct four t29; int64_t t30; int64_t t31; int64_t t32; HeroArrayHeader * t33; int64_t t34; int64_t t35; HeroArrayHeader * t36; int64_t t37; bool t38; HeroArrayHeader * t39; int64_t t40; int64_t t41; struct four t42; int64_t t44; ob * t45; int64_t t46; int64_t t47; int64_t t48; HeroStr t49; int64_t t50; HeroArrayHeader * t51; HeroArrayHeader * t52; HeroArrayHeader * t53; HeroArrayHeader * t54; _Pragma("clang diagnostic warning \"-Wdeprecated-declarations\"") goto bb0;
-#line 29 "tests/golden/run/fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.hero"
+#line 152 "fixedbugsanacquiredhandleiswrittenintoafixedarray.c"
+    struct four h0_f;
+    int64_t h1_n;
+    HeroArrayHeader * h2_xs0 = {0};
+    int64_t h3_i0;
+    int64_t h4_i;
+    HeroArrayHeader * h5_xs1 = {0};
+    int64_t h6_i1;
+    int64_t h7_i;
+    HeroArrayHeader * h8_own8 = {0};
+    HeroArrayHeader * h9_own9 = {0};
+    ob * t1;
+    ob * t2;
+    ob * t3;
+    ob * t4;
+    struct four t6;
+    int64_t t7;
+    int64_t t8;
+    int64_t t9;
+    HeroArrayHeader * t10;
+    int64_t t11;
+    int64_t t12;
+    HeroArrayHeader * t13;
+    int64_t t14;
+    bool t15;
+    HeroArrayHeader * t16;
+    int64_t t17;
+    int64_t t18;
+    int64_t t19;
+    int64_t t20;
+    ob * t21;
+    int64_t t22;
+    int64_t t23;
+    int64_t t24;
+    int64_t t25;
+    int64_t t26;
+    int64_t t27;
+    HeroStr t28;
+    struct four t29;
+    int64_t t30;
+    int64_t t31;
+    int64_t t32;
+    HeroArrayHeader * t33;
+    int64_t t34;
+    int64_t t35;
+    HeroArrayHeader * t36;
+    int64_t t37;
+    bool t38;
+    HeroArrayHeader * t39;
+    int64_t t40;
+    int64_t t41;
+    struct four t42;
+    int64_t t44;
+    ob * t45;
+    int64_t t46;
+    int64_t t47;
+    int64_t t48;
+    HeroStr t49;
+    int64_t t50;
+    HeroArrayHeader * t51;
+    HeroArrayHeader * t52;
+    HeroArrayHeader * t53;
+    HeroArrayHeader * t54;
+    goto bb0;
 bb0:
+#line 30 "tests/golden/run/fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.hero"
     t1 = ((void *)0);
 #line 30 "tests/golden/run/fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.hero"
     t2 = ((void *)0);
@@ -177,15 +238,15 @@ bb0:
     t51 = h8_own8;
 #line 33 "tests/golden/run/fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.hero"
     h8_own8 = t10;
-#line 33 "tests/golden/run/fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.hero"
+#line 242 "fixedbugsanacquiredhandleiswrittenintoafixedarray.c"
     hero_array_decref(t51);
 #line 33 "tests/golden/run/fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.hero"
     t52 = h2_xs0;
-#line 33 "tests/golden/run/fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.hero"
+#line 246 "fixedbugsanacquiredhandleiswrittenintoafixedarray.c"
     hero_array_incref(t10);
 #line 33 "tests/golden/run/fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.hero"
     h2_xs0 = t10;
-#line 33 "tests/golden/run/fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.hero"
+#line 250 "fixedbugsanacquiredhandleiswrittenintoafixedarray.c"
     hero_array_decref(t52);
 #line 33 "tests/golden/run/fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.hero"
     t11 = INT64_C(0);
@@ -277,15 +338,15 @@ bb4:
     t53 = h9_own9;
 #line 39 "tests/golden/run/fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.hero"
     h9_own9 = t33;
-#line 39 "tests/golden/run/fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.hero"
+#line 342 "fixedbugsanacquiredhandleiswrittenintoafixedarray.c"
     hero_array_decref(t53);
 #line 39 "tests/golden/run/fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.hero"
     t54 = h5_xs1;
-#line 39 "tests/golden/run/fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.hero"
+#line 346 "fixedbugsanacquiredhandleiswrittenintoafixedarray.c"
     hero_array_incref(t33);
 #line 39 "tests/golden/run/fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.hero"
     h5_xs1 = t33;
-#line 39 "tests/golden/run/fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.hero"
+#line 350 "fixedbugsanacquiredhandleiswrittenintoafixedarray.c"
     hero_array_decref(t54);
 #line 39 "tests/golden/run/fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.hero"
     t34 = INT64_C(0);
@@ -358,7 +419,7 @@ bb8:
     hero_print_int(t50);
 #line 42 "tests/golden/run/fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.hero"
     hero_print_end();
-#line 362 "fixedbugsanacquiredhandleiswrittenintoafixedarray.c"
+#line 423 "fixedbugsanacquiredhandleiswrittenintoafixedarray.c"
     hero_array_release_at(&h2_xs0);
     hero_array_release_at(&h5_xs1);
     hero_array_release_at(&h8_own8);
@@ -368,25 +429,41 @@ bb8:
 
 #line 26 "<heroes library>"
 HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to) {
-#line 26 "<heroes library>"
-    HeroArrayHeader * h2_out = {0}; int64_t h3_i; HeroArrayHeader * h4_own4 = {0}; HeroArrayHeader * t1; int64_t t2; int64_t t3; int64_t t4; bool t5; int64_t t7; int64_t t9; int64_t t10; int64_t t11; HeroArrayHeader * t12; HeroArrayHeader * t13; HeroArrayHeader * t14; goto bb0;
-#line 26 "<heroes library>"
+#line 433 "fixedbugsanacquiredhandleiswrittenintoafixedarray.c"
+    HeroArrayHeader * h2_out = {0};
+    int64_t h3_i;
+    HeroArrayHeader * h4_own4 = {0};
+    HeroArrayHeader * t1;
+    int64_t t2;
+    int64_t t3;
+    int64_t t4;
+    bool t5;
+    int64_t t7;
+    int64_t t9;
+    int64_t t10;
+    int64_t t11;
+    HeroArrayHeader * t12;
+    HeroArrayHeader * t13;
+    HeroArrayHeader * t14;
+    goto bb0;
 bb0:
+#line 27 "<heroes library>"
     t1 = hero_array_new(&hero_desc_int, 1);
 #line 27 "<heroes library>"
     t13 = h4_own4;
 #line 27 "<heroes library>"
     h4_own4 = t1;
-#line 27 "<heroes library>"
+#line 457 "fixedbugsanacquiredhandleiswrittenintoafixedarray.c"
     hero_array_decref(t13);
 #line 27 "<heroes library>"
     t14 = h2_out;
-#line 27 "<heroes library>"
+#line 461 "fixedbugsanacquiredhandleiswrittenintoafixedarray.c"
     hero_array_incref(t1);
 #line 27 "<heroes library>"
     h2_out = t1;
-#line 27 "<heroes library>"
+#line 465 "fixedbugsanacquiredhandleiswrittenintoafixedarray.c"
     hero_array_decref(t14);
+#line 28 "<heroes library>"
     t2 = h0_from;
 #line 28 "<heroes library>"
     h3_i = t2;
@@ -418,13 +495,12 @@ bb2:
 #line 31 "<heroes library>"
 bb3:
     t12 = h2_out;
-#line 422 "fixedbugsanacquiredhandleiswrittenintoafixedarray.c"
+#line 499 "fixedbugsanacquiredhandleiswrittenintoafixedarray.c"
     hero_array_incref(t12);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h4_own4);
     return t12;
 }
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_fixedbugsanacquiredhandleiswrittenintoafixedarray_Ob_eq(ob * const *a, ob * const *b) {
     return hero_handle_eq(*a, *b);
 }

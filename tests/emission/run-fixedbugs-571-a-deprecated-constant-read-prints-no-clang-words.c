@@ -21,11 +21,12 @@
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -69,7 +70,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 73 "fixedbugs571adeprecatedconstantreadprintsnoclangwords.c"
+#line 74 "fixedbugs571adeprecatedconstantreadprintsnoclangwords.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -93,7 +94,6 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
@@ -125,15 +125,12 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 int64_t h_fixedbugs571adeprecatedconstantreadprintsnoclangwords_OLD_LIMIT(void);
 void h_fixedbugs571adeprecatedconstantreadprintsnoclangwords_main(void);
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #line 13 "tests/golden/run/fixedbugs-571-a-deprecated-constant-read-prints-no-clang-words.hero"
 int64_t h_fixedbugs571adeprecatedconstantreadprintsnoclangwords_OLD_LIMIT(void) {
-#line 134 "fixedbugs571adeprecatedconstantreadprintsnoclangwords.c"
+#line 132 "fixedbugs571adeprecatedconstantreadprintsnoclangwords.c"
     return OLD_LIMIT;
 }
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
@@ -142,17 +139,17 @@ int64_t h_fixedbugs571adeprecatedconstantreadprintsnoclangwords_OLD_LIMIT(void) 
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 
 #line 15 "tests/golden/run/fixedbugs-571-a-deprecated-constant-read-prints-no-clang-words.hero"
 void h_fixedbugs571adeprecatedconstantreadprintsnoclangwords_main(void) {
-#line 15 "tests/golden/run/fixedbugs-571-a-deprecated-constant-read-prints-no-clang-words.hero"
-    int64_t t1; goto bb0;
-#line 15 "tests/golden/run/fixedbugs-571-a-deprecated-constant-read-prints-no-clang-words.hero"
+#line 149 "fixedbugs571adeprecatedconstantreadprintsnoclangwords.c"
+    int64_t t1;
+    goto bb0;
 bb0:
+#line 16 "tests/golden/run/fixedbugs-571-a-deprecated-constant-read-prints-no-clang-words.hero"
     t1 = h_fixedbugs571adeprecatedconstantreadprintsnoclangwords_OLD_LIMIT();
 #line 16 "tests/golden/run/fixedbugs-571-a-deprecated-constant-read-prints-no-clang-words.hero"
     hero_print_int(t1);
@@ -160,9 +157,8 @@ bb0:
     hero_print_end();
 #line 16 "tests/golden/run/fixedbugs-571-a-deprecated-constant-read-prints-no-clang-words.hero"
     return;
-#line 164 "fixedbugs571adeprecatedconstantreadprintsnoclangwords.c"
+#line 161 "fixedbugs571adeprecatedconstantreadprintsnoclangwords.c"
 }
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_incref(v->as.ok);

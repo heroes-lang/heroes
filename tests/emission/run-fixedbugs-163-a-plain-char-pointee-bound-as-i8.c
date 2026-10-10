@@ -21,11 +21,12 @@
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -68,7 +69,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 72 "fixedbugs163aplaincharpointeeboundasi8.c"
+#line 73 "fixedbugs163aplaincharpointeeboundasi8.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -92,7 +93,6 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
@@ -125,16 +125,17 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_fixedbugs163aplaincharpointeeboundasi8_main(void);
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 15 "tests/golden/run/fixedbugs-163-a-plain-char-pointee-bound-as-i8.hero"
 void h_fixedbugs163aplaincharpointeeboundasi8_main(void) {
-#line 15 "tests/golden/run/fixedbugs-163-a-plain-char-pointee-bound-as-i8.hero"
+#line 132 "fixedbugs163aplaincharpointeeboundasi8.c"
+    int8_t *const hero_lend_h0_v = (int8_t *)hero_lend_local(sizeof(int8_t), "fixedbugs163aplaincharpointeeboundasi8.main", "v");
 #define h0_v (*hero_lend_h0_v)
-#line 15 "tests/golden/run/fixedbugs-163-a-plain-char-pointee-bound-as-i8.hero"
-    int8_t *const hero_lend_h0_v = (int8_t *)hero_lend_local(sizeof(int8_t), "fixedbugs163aplaincharpointeeboundasi8.main", "v"); int8_t t1; int8_t t2; goto bb0;
-#line 15 "tests/golden/run/fixedbugs-163-a-plain-char-pointee-bound-as-i8.hero"
+    int8_t t1;
+    int8_t t2;
+    goto bb0;
 bb0:
+#line 16 "tests/golden/run/fixedbugs-163-a-plain-char-pointee-bound-as-i8.hero"
     t1 = INT64_C(0);
 #line 16 "tests/golden/run/fixedbugs-163-a-plain-char-pointee-bound-as-i8.hero"
     h0_v = t1;
@@ -150,10 +151,9 @@ bb0:
     hero_lend_local_give(hero_lend_h0_v);
 #line 18 "tests/golden/run/fixedbugs-163-a-plain-char-pointee-bound-as-i8.hero"
     return;
-#line 154 "fixedbugs163aplaincharpointeeboundasi8.c"
+#line 155 "fixedbugs163aplaincharpointeeboundasi8.c"
 }
 #undef h0_v
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_incref(v->as.ok);

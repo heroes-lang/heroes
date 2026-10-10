@@ -23,11 +23,12 @@
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -54,13 +55,13 @@ _Static_assert(_Generic(&((struct holder *)0)->xs, struct cell (*)[3]: 1, defaul
 _Static_assert(sizeof(struct nums) - __builtin_offsetof(struct nums, a) != 0, "heroes-ffi-flex Nums a");
 #line 34 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
 _Static_assert(_Generic(&((struct nums *)0)->a, _Bool (*)[4]: (sizeof(_Bool) == sizeof(int64_t) && (((_Bool)-1 < 0) == ((int64_t)-1 < 0))), char (*)[4]: (sizeof(char) == sizeof(int64_t) && (((char)-1 < 0) == ((int64_t)-1 < 0))), signed char (*)[4]: (sizeof(signed char) == sizeof(int64_t) && (((signed char)-1 < 0) == ((int64_t)-1 < 0))), short (*)[4]: (sizeof(short) == sizeof(int64_t) && (((short)-1 < 0) == ((int64_t)-1 < 0))), int (*)[4]: (sizeof(int) == sizeof(int64_t) && (((int)-1 < 0) == ((int64_t)-1 < 0))), long (*)[4]: (sizeof(long) == sizeof(int64_t) && (((long)-1 < 0) == ((int64_t)-1 < 0))), long long (*)[4]: (sizeof(long long) == sizeof(int64_t) && (((long long)-1 < 0) == ((int64_t)-1 < 0))), unsigned char (*)[4]: (sizeof(unsigned char) == sizeof(int64_t) && (((unsigned char)-1 < 0) == ((int64_t)-1 < 0))), unsigned short (*)[4]: (sizeof(unsigned short) == sizeof(int64_t) && (((unsigned short)-1 < 0) == ((int64_t)-1 < 0))), unsigned int (*)[4]: (sizeof(unsigned int) == sizeof(int64_t) && (((unsigned int)-1 < 0) == ((int64_t)-1 < 0))), unsigned long (*)[4]: (sizeof(unsigned long) == sizeof(int64_t) && (((unsigned long)-1 < 0) == ((int64_t)-1 < 0))), unsigned long long (*)[4]: (sizeof(unsigned long long) == sizeof(int64_t) && (((unsigned long long)-1 < 0) == ((int64_t)-1 < 0))), default: 0), "heroes-ffi-field Nums a");
-#line 58 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
+#line 59 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
 
 #line 25 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
 _Static_assert(__builtin_classify_type(*(struct outer *)0) != 13, "heroes-ffi-union Outer rows tail");
 #line 28 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
 _Static_assert(__builtin_classify_type(*(struct cell *)0) != 13, "heroes-ffi-union Cell v w");
-#line 64 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
+#line 65 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -127,7 +128,6 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
@@ -189,20 +189,145 @@ HERO_TU_QUIET static const HeroDesc h_fixedbugsafixedarrayelementiswrittenatanyd
 
 void h_fixedbugsafixedarrayelementiswrittenatanydepth_main(void);
 HeroArrayHeader * h_library_args(void);
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 38 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
 void h_fixedbugsafixedarrayelementiswrittenatanydepth_main(void) {
-#line 38 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
-    _Pragma("clang diagnostic ignored \"-Wdeprecated-declarations\"") int64_t h0_k; struct outer h1_o; struct holder h2_r; HeroArrayHeader * h3_xs = {0}; HeroArrayHeader * h4_ys = {0}; HeroArrayHeader * h5_own5 = {0}; HeroArrayHeader * h6_own6 = {0}; HeroArrayHeader * t1; int64_t t2; int64_t t3; int64_t t4; int64_t t5; int64_t t6; int64_t t7; struct row t9; int64_t t10; int64_t t11; int64_t t12; struct row t14; int32_t t16; struct outer t17; int64_t t18; int64_t t19; int64_t t20; int64_t t21; int64_t t22; int64_t t23; int64_t t24; struct row t26; int64_t t27; int64_t t28; int64_t t29; int64_t t30; int64_t t31; int64_t t32; int64_t t33; struct outer t34; int64_t t36; struct row t37; int64_t t39; int64_t t40; HeroStr t41; struct outer t42; int64_t t44; struct row t45; int64_t t47; int64_t t48; HeroStr t49; struct outer t50; int64_t t52; struct row t53; int64_t t55; int64_t t56; HeroStr t57; struct outer t58; int32_t t59; HeroStr t60; struct outer t61; int64_t t62; int64_t t63; int64_t t64; struct cell t65; int64_t t66; int64_t t67; struct cell t68; int64_t t69; int64_t t70; struct cell t71; struct holder t73; int64_t t74; int64_t t75; int64_t t76; int64_t t77; struct holder t78; int64_t t80; struct cell t81; int64_t t82; HeroStr t83; struct holder t84; int64_t t86; struct cell t87; int64_t t88; HeroStr t89; struct holder t90; int64_t t92; struct cell t93; int64_t t94; HeroStr t95; struct holder t96; int64_t t97; int64_t t98; int64_t t99; int64_t t100; int64_t t101; struct nums t103; int64_t t104; int64_t t105; int64_t t106; int64_t t107; struct nums t109; HeroArrayHeader * t110; HeroArrayHeader * t111; int64_t t112; int64_t t113; int64_t t114; HeroArrayHeader * t115; int64_t t116; struct nums t117; int64_t t119; int64_t t120; HeroStr t121; HeroArrayHeader * t122; int64_t t123; struct nums t124; int64_t t126; int64_t t127; HeroStr t128; HeroArrayHeader * t129; int64_t t130; struct nums t131; int64_t t133; int64_t t134; HeroArrayHeader * t135; HeroArrayHeader * t136; HeroArrayHeader * t137; HeroArrayHeader * t138; _Pragma("clang diagnostic warning \"-Wdeprecated-declarations\"") goto bb0;
-#line 38 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
+#line 196 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
+    int64_t h0_k;
+    struct outer h1_o;
+    struct holder h2_r;
+    HeroArrayHeader * h3_xs = {0};
+    HeroArrayHeader * h4_ys = {0};
+    HeroArrayHeader * h5_own5 = {0};
+    HeroArrayHeader * h6_own6 = {0};
+    HeroArrayHeader * t1;
+    int64_t t2;
+    int64_t t3;
+    int64_t t4;
+    int64_t t5;
+    int64_t t6;
+    int64_t t7;
+    struct row t9;
+    int64_t t10;
+    int64_t t11;
+    int64_t t12;
+    struct row t14;
+    int32_t t16;
+    struct outer t17;
+    int64_t t18;
+    int64_t t19;
+    int64_t t20;
+    int64_t t21;
+    int64_t t22;
+    int64_t t23;
+    int64_t t24;
+    struct row t26;
+    int64_t t27;
+    int64_t t28;
+    int64_t t29;
+    int64_t t30;
+    int64_t t31;
+    int64_t t32;
+    int64_t t33;
+    struct outer t34;
+    int64_t t36;
+    struct row t37;
+    int64_t t39;
+    int64_t t40;
+    HeroStr t41;
+    struct outer t42;
+    int64_t t44;
+    struct row t45;
+    int64_t t47;
+    int64_t t48;
+    HeroStr t49;
+    struct outer t50;
+    int64_t t52;
+    struct row t53;
+    int64_t t55;
+    int64_t t56;
+    HeroStr t57;
+    struct outer t58;
+    int32_t t59;
+    HeroStr t60;
+    struct outer t61;
+    int64_t t62;
+    int64_t t63;
+    int64_t t64;
+    struct cell t65;
+    int64_t t66;
+    int64_t t67;
+    struct cell t68;
+    int64_t t69;
+    int64_t t70;
+    struct cell t71;
+    struct holder t73;
+    int64_t t74;
+    int64_t t75;
+    int64_t t76;
+    int64_t t77;
+    struct holder t78;
+    int64_t t80;
+    struct cell t81;
+    int64_t t82;
+    HeroStr t83;
+    struct holder t84;
+    int64_t t86;
+    struct cell t87;
+    int64_t t88;
+    HeroStr t89;
+    struct holder t90;
+    int64_t t92;
+    struct cell t93;
+    int64_t t94;
+    HeroStr t95;
+    struct holder t96;
+    int64_t t97;
+    int64_t t98;
+    int64_t t99;
+    int64_t t100;
+    int64_t t101;
+    struct nums t103;
+    int64_t t104;
+    int64_t t105;
+    int64_t t106;
+    int64_t t107;
+    struct nums t109;
+    HeroArrayHeader * t110;
+    HeroArrayHeader * t111;
+    int64_t t112;
+    int64_t t113;
+    int64_t t114;
+    HeroArrayHeader * t115;
+    int64_t t116;
+    struct nums t117;
+    int64_t t119;
+    int64_t t120;
+    HeroStr t121;
+    HeroArrayHeader * t122;
+    int64_t t123;
+    struct nums t124;
+    int64_t t126;
+    int64_t t127;
+    HeroStr t128;
+    HeroArrayHeader * t129;
+    int64_t t130;
+    struct nums t131;
+    int64_t t133;
+    int64_t t134;
+    HeroArrayHeader * t135;
+    HeroArrayHeader * t136;
+    HeroArrayHeader * t137;
+    HeroArrayHeader * t138;
+    goto bb0;
 bb0:
+#line 39 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
     t1 = h_library_args();
 #line 39 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
     t135 = h5_own5;
 #line 39 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
     h5_own5 = t1;
-#line 39 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
+#line 331 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
     hero_array_decref(t135);
 #line 39 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
     t2 = ((void)(t1 == NULL ? ((void)hero_array_len(t1), hero_unreachable()) : (void)0), t1->len);
@@ -443,25 +568,27 @@ bb0:
     t136 = h6_own6;
 #line 52 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
     h6_own6 = t110;
-#line 52 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
+#line 572 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
     hero_array_decref(t136);
 #line 52 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
     t137 = h3_xs;
-#line 52 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
+#line 576 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
     hero_array_incref(t110);
 #line 52 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
     h3_xs = t110;
-#line 52 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
+#line 580 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
     hero_array_decref(t137);
+#line 53 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
     t111 = h3_xs;
 #line 53 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
     t138 = h4_ys;
-#line 53 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
+#line 586 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
     hero_array_incref(t111);
 #line 53 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
     h4_ys = t111;
-#line 53 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
+#line 590 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
     hero_array_decref(t138);
+#line 54 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
     t112 = INT64_C(1);
 #line 54 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
     t113 = h0_k;
@@ -516,7 +643,7 @@ bb0:
     hero_print_int(t134);
 #line 55 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-at-any-depth.hero"
     hero_print_end();
-#line 520 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
+#line 647 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
     hero_array_release_at(&h3_xs);
     hero_array_release_at(&h4_ys);
     hero_array_release_at(&h5_own5);
@@ -526,25 +653,44 @@ bb0:
 
 #line 196 "<heroes library>"
 HeroArrayHeader * h_library_args(void) {
-#line 196 "<heroes library>"
-    HeroArrayHeader * h0_out = {0}; int64_t h1_i; HeroArrayHeader * h2_own2 = {0}; HeroStr h3_own3 = {0}; HeroArrayHeader * t1; int64_t t2; int64_t t3; int64_t t4; bool t5; int64_t t7; HeroStr t8; int64_t t10; int64_t t11; int64_t t12; HeroArrayHeader * t13; HeroArrayHeader * t14; HeroArrayHeader * t15; HeroStr t16; goto bb0;
-#line 196 "<heroes library>"
+#line 657 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
+    HeroArrayHeader * h0_out = {0};
+    int64_t h1_i;
+    HeroArrayHeader * h2_own2 = {0};
+    HeroStr h3_own3 = {0};
+    HeroArrayHeader * t1;
+    int64_t t2;
+    int64_t t3;
+    int64_t t4;
+    bool t5;
+    int64_t t7;
+    HeroStr t8;
+    int64_t t10;
+    int64_t t11;
+    int64_t t12;
+    HeroArrayHeader * t13;
+    HeroArrayHeader * t14;
+    HeroArrayHeader * t15;
+    HeroStr t16;
+    goto bb0;
 bb0:
+#line 197 "<heroes library>"
     t1 = hero_array_new(&hero_desc_str, 1);
 #line 197 "<heroes library>"
     t14 = h2_own2;
 #line 197 "<heroes library>"
     h2_own2 = t1;
-#line 197 "<heroes library>"
+#line 684 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
     hero_array_decref(t14);
 #line 197 "<heroes library>"
     t15 = h0_out;
-#line 197 "<heroes library>"
+#line 688 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
     hero_array_incref(t1);
 #line 197 "<heroes library>"
     h0_out = t1;
-#line 197 "<heroes library>"
+#line 692 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
     hero_array_decref(t15);
+#line 198 "<heroes library>"
     t2 = INT64_C(0);
 #line 198 "<heroes library>"
     h1_i = t2;
@@ -568,7 +714,7 @@ bb2:
     t16 = h3_own3;
 #line 200 "<heroes library>"
     h3_own3 = t8;
-#line 200 "<heroes library>"
+#line 718 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
     hero_str_decref(t16);
 #line 200 "<heroes library>"
     hero_array_push_owned(&h0_out, &t8);
@@ -584,14 +730,13 @@ bb2:
 #line 201 "<heroes library>"
 bb3:
     t13 = h0_out;
-#line 588 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
+#line 734 "fixedbugsafixedarrayelementiswrittenatanydepth.c"
     hero_array_incref(t13);
     hero_array_release_at(&h0_out);
     hero_array_release_at(&h2_own2);
     hero_str_release_at(&h3_own3);
     return t13;
 }
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_fixedbugsafixedarrayelementiswrittenatanydepth_Row_eq(const struct row *a, const struct row *b) {
     if (!((a->a[0] == b->a[0] && a->a[1] == b->a[1] && a->a[2] == b->a[2]))) return false;
     return true;

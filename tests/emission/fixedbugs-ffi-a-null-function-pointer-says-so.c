@@ -21,11 +21,12 @@
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -70,7 +71,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_43560e4d, "before");
 
-#line 74 "ffianullfunctionpointersaysso.c"
+#line 75 "ffianullfunctionpointersaysso.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -94,7 +95,6 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
@@ -127,14 +127,15 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_ffianullfunctionpointersaysso_main(void);
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 46 "tests/golden/fixedbugs/ffi-a-null-function-pointer-says-so.hero"
 void h_ffianullfunctionpointersaysso_main(void) {
-#line 46 "tests/golden/fixedbugs/ffi-a-null-function-pointer-says-so.hero"
-    HeroStr t1; void * t2; goto bb0;
-#line 46 "tests/golden/fixedbugs/ffi-a-null-function-pointer-says-so.hero"
+#line 134 "ffianullfunctionpointersaysso.c"
+    HeroStr t1;
+    void * t2;
+    goto bb0;
 bb0:
+#line 47 "tests/golden/fixedbugs/ffi-a-null-function-pointer-says-so.hero"
     t1 = HERO_STR_LIT(hero_str_43560e4d);
 #line 47 "tests/golden/fixedbugs/ffi-a-null-function-pointer-says-so.hero"
     hero_print_str(t1);
@@ -145,9 +146,8 @@ bb0:
     (void)atexit(t2);
 #line 48 "tests/golden/fixedbugs/ffi-a-null-function-pointer-says-so.hero"
     return;
-#line 149 "ffianullfunctionpointersaysso.c"
+#line 150 "ffianullfunctionpointersaysso.c"
 }
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_incref(v->as.ok);

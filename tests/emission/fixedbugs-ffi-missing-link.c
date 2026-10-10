@@ -21,11 +21,12 @@
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -70,7 +71,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_279ecc0f, "sqlite ");
 
-#line 74 "ffimissinglink.c"
+#line 75 "ffimissinglink.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -94,7 +95,6 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
@@ -125,14 +125,15 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_ffimissinglink_main(void);
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 59 "tests/golden/fixedbugs/ffi-missing-link.hero"
 void h_ffimissinglink_main(void) {
-#line 59 "tests/golden/fixedbugs/ffi-missing-link.hero"
-    HeroStr t1; int64_t t2; goto bb0;
-#line 59 "tests/golden/fixedbugs/ffi-missing-link.hero"
+#line 132 "ffimissinglink.c"
+    HeroStr t1;
+    int64_t t2;
+    goto bb0;
 bb0:
+#line 60 "tests/golden/fixedbugs/ffi-missing-link.hero"
     t1 = HERO_STR_LIT(hero_str_279ecc0f);
 #line 60 "tests/golden/fixedbugs/ffi-missing-link.hero"
     t2 = sqlite3_libversion_number();
@@ -144,9 +145,8 @@ bb0:
     hero_print_end();
 #line 60 "tests/golden/fixedbugs/ffi-missing-link.hero"
     return;
-#line 148 "ffimissinglink.c"
+#line 149 "ffimissinglink.c"
 }
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_incref(v->as.ok);

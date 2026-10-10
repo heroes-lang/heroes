@@ -21,11 +21,12 @@
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -72,7 +73,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_42bddec1, "written");
 
-#line 76 "fixedbugs451alocalcwritesafteritsfunctionreturnsisnamed.c"
+#line 77 "fixedbugs451alocalcwritesafteritsfunctionreturnsisnamed.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -96,7 +97,6 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
@@ -133,16 +133,17 @@ HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 int64_t h_fixedbugs451alocalcwritesafteritsfunctionreturnsisnamed_lend(void);
 int64_t h_fixedbugs451alocalcwritesafteritsfunctionreturnsisnamed_lend_again(void);
 void h_fixedbugs451alocalcwritesafteritsfunctionreturnsisnamed_main(void);
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 24 "tests/golden/run/fixedbugs-451-a-local-c-writes-after-its-function-returns-is-named.hero"
 int64_t h_fixedbugs451alocalcwritesafteritsfunctionreturnsisnamed_lend(void) {
-#line 24 "tests/golden/run/fixedbugs-451-a-local-c-writes-after-its-function-returns-is-named.hero"
+#line 140 "fixedbugs451alocalcwritesafteritsfunctionreturnsisnamed.c"
+    int64_t *const hero_lend_h0_n = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs451alocalcwritesafteritsfunctionreturnsisnamed.lend", "n");
 #define h0_n (*hero_lend_h0_n)
-#line 24 "tests/golden/run/fixedbugs-451-a-local-c-writes-after-its-function-returns-is-named.hero"
-    int64_t *const hero_lend_h0_n = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs451alocalcwritesafteritsfunctionreturnsisnamed.lend", "n"); int64_t t1; int64_t t2; goto bb0;
-#line 24 "tests/golden/run/fixedbugs-451-a-local-c-writes-after-its-function-returns-is-named.hero"
+    int64_t t1;
+    int64_t t2;
+    goto bb0;
 bb0:
+#line 25 "tests/golden/run/fixedbugs-451-a-local-c-writes-after-its-function-returns-is-named.hero"
     t1 = INT64_C(0);
 #line 25 "tests/golden/run/fixedbugs-451-a-local-c-writes-after-its-function-returns-is-named.hero"
     h0_n = t1;
@@ -154,18 +155,21 @@ bb0:
     hero_lend_local_give(hero_lend_h0_n);
 #line 27 "tests/golden/run/fixedbugs-451-a-local-c-writes-after-its-function-returns-is-named.hero"
     return t2;
-#line 158 "fixedbugs451alocalcwritesafteritsfunctionreturnsisnamed.c"
+#line 159 "fixedbugs451alocalcwritesafteritsfunctionreturnsisnamed.c"
 }
 #undef h0_n
 
 #line 29 "tests/golden/run/fixedbugs-451-a-local-c-writes-after-its-function-returns-is-named.hero"
 int64_t h_fixedbugs451alocalcwritesafteritsfunctionreturnsisnamed_lend_again(void) {
-#line 29 "tests/golden/run/fixedbugs-451-a-local-c-writes-after-its-function-returns-is-named.hero"
+#line 165 "fixedbugs451alocalcwritesafteritsfunctionreturnsisnamed.c"
+    int64_t *const hero_lend_h0_m = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs451alocalcwritesafteritsfunctionreturnsisnamed.lend_again", "m");
 #define h0_m (*hero_lend_h0_m)
-#line 29 "tests/golden/run/fixedbugs-451-a-local-c-writes-after-its-function-returns-is-named.hero"
-    int64_t *const hero_lend_h0_m = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs451alocalcwritesafteritsfunctionreturnsisnamed.lend_again", "m"); int64_t t1; int64_t t2; int64_t t3; goto bb0;
-#line 29 "tests/golden/run/fixedbugs-451-a-local-c-writes-after-its-function-returns-is-named.hero"
+    int64_t t1;
+    int64_t t2;
+    int64_t t3;
+    goto bb0;
 bb0:
+#line 30 "tests/golden/run/fixedbugs-451-a-local-c-writes-after-its-function-returns-is-named.hero"
     t1 = INT64_C(0);
 #line 30 "tests/golden/run/fixedbugs-451-a-local-c-writes-after-its-function-returns-is-named.hero"
     h0_m = t1;
@@ -179,16 +183,20 @@ bb0:
     hero_lend_local_give(hero_lend_h0_m);
 #line 32 "tests/golden/run/fixedbugs-451-a-local-c-writes-after-its-function-returns-is-named.hero"
     return t3;
-#line 183 "fixedbugs451alocalcwritesafteritsfunctionreturnsisnamed.c"
+#line 187 "fixedbugs451alocalcwritesafteritsfunctionreturnsisnamed.c"
 }
 #undef h0_m
 
 #line 34 "tests/golden/run/fixedbugs-451-a-local-c-writes-after-its-function-returns-is-named.hero"
 void h_fixedbugs451alocalcwritesafteritsfunctionreturnsisnamed_main(void) {
-#line 34 "tests/golden/run/fixedbugs-451-a-local-c-writes-after-its-function-returns-is-named.hero"
-    int64_t t1; int64_t t2; HeroStr t3; int64_t t4; goto bb0;
-#line 34 "tests/golden/run/fixedbugs-451-a-local-c-writes-after-its-function-returns-is-named.hero"
+#line 193 "fixedbugs451alocalcwritesafteritsfunctionreturnsisnamed.c"
+    int64_t t1;
+    int64_t t2;
+    HeroStr t3;
+    int64_t t4;
+    goto bb0;
 bb0:
+#line 35 "tests/golden/run/fixedbugs-451-a-local-c-writes-after-its-function-returns-is-named.hero"
     t1 = h_fixedbugs451alocalcwritesafteritsfunctionreturnsisnamed_lend();
 #line 35 "tests/golden/run/fixedbugs-451-a-local-c-writes-after-its-function-returns-is-named.hero"
     hero_print_int(t1);
@@ -209,9 +217,8 @@ bb0:
     hero_print_end();
 #line 38 "tests/golden/run/fixedbugs-451-a-local-c-writes-after-its-function-returns-is-named.hero"
     return;
-#line 213 "fixedbugs451alocalcwritesafteritsfunctionreturnsisnamed.c"
+#line 221 "fixedbugs451alocalcwritesafteritsfunctionreturnsisnamed.c"
 }
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_incref(v->as.ok);

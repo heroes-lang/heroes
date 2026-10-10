@@ -21,11 +21,12 @@
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -71,7 +72,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_43560e4d, "before");
 HERO_STR_STATIC(hero_str_5687795c, "not reached ");
 
-#line 75 "fixedbugs396aonecelllocalcoverrunsaborts.c"
+#line 76 "fixedbugs396aonecelllocalcoverrunsaborts.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -95,7 +96,6 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
@@ -128,16 +128,20 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_fixedbugs396aonecelllocalcoverrunsaborts_main(void);
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 9 "tests/golden/run/fixedbugs-396-a-one-cell-local-c-overruns-aborts.hero"
 void h_fixedbugs396aonecelllocalcoverrunsaborts_main(void) {
-#line 9 "tests/golden/run/fixedbugs-396-a-one-cell-local-c-overruns-aborts.hero"
+#line 135 "fixedbugs396aonecelllocalcoverrunsaborts.c"
+    uint8_t *const hero_lend_h0_m = (uint8_t *)hero_lend_local(sizeof(uint8_t), "fixedbugs396aonecelllocalcoverrunsaborts.main", "m");
 #define h0_m (*hero_lend_h0_m)
-#line 9 "tests/golden/run/fixedbugs-396-a-one-cell-local-c-overruns-aborts.hero"
-    uint8_t *const hero_lend_h0_m = (uint8_t *)hero_lend_local(sizeof(uint8_t), "fixedbugs396aonecelllocalcoverrunsaborts.main", "m"); uint8_t t1; HeroStr t2; int32_t t3; HeroStr t4; uint8_t t5; goto bb0;
-#line 9 "tests/golden/run/fixedbugs-396-a-one-cell-local-c-overruns-aborts.hero"
+    uint8_t t1;
+    HeroStr t2;
+    int32_t t3;
+    HeroStr t4;
+    uint8_t t5;
+    goto bb0;
 bb0:
+#line 10 "tests/golden/run/fixedbugs-396-a-one-cell-local-c-overruns-aborts.hero"
     t1 = UINT64_C(0);
 #line 10 "tests/golden/run/fixedbugs-396-a-one-cell-local-c-overruns-aborts.hero"
     h0_m = t1;
@@ -166,10 +170,9 @@ bb0:
     hero_lend_local_give(hero_lend_h0_m);
 #line 13 "tests/golden/run/fixedbugs-396-a-one-cell-local-c-overruns-aborts.hero"
     return;
-#line 170 "fixedbugs396aonecelllocalcoverrunsaborts.c"
+#line 174 "fixedbugs396aonecelllocalcoverrunsaborts.c"
 }
 #undef h0_m
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_incref(v->as.ok);

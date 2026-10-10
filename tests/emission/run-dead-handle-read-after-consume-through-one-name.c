@@ -21,11 +21,12 @@
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -75,7 +76,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_63, "c");
 HERO_STR_STATIC(hero_str_1ca80789, "wrote into a deleted object");
 
-#line 79 "deadhandlereadafterconsumethroughonename.c"
+#line 80 "deadhandlereadafterconsumethroughonename.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -99,7 +100,6 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
@@ -135,14 +135,26 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_deadhandlereadafterconsumethroughonename_main(void);
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 21 "tests/golden/run/dead-handle-read-after-consume-through-one-name.hero"
 void h_deadhandlereadafterconsumethroughonename_main(void) {
-#line 21 "tests/golden/run/dead-handle-read-after-consume-through-one-name.hero"
-    _Pragma("clang diagnostic ignored \"-Wdeprecated-declarations\"") Obj * h0_b; Obj * h1_c; Obj * t1; int64_t t2; int64_t t3; bool t4; Obj * t5; Obj * t6; Obj * t7; HeroStr t8; const char * t9; Obj * t10; HeroStr t12; _Pragma("clang diagnostic warning \"-Wdeprecated-declarations\"") goto bb0;
-#line 21 "tests/golden/run/dead-handle-read-after-consume-through-one-name.hero"
+#line 142 "deadhandlereadafterconsumethroughonename.c"
+    Obj * h0_b;
+    Obj * h1_c;
+    Obj * t1;
+    int64_t t2;
+    int64_t t3;
+    bool t4;
+    Obj * t5;
+    Obj * t6;
+    Obj * t7;
+    HeroStr t8;
+    const char * t9;
+    Obj * t10;
+    HeroStr t12;
+    goto bb0;
 bb0:
+#line 22 "tests/golden/run/dead-handle-read-after-consume-through-one-name.hero"
     t1 = obj_new();
 #line 22 "tests/golden/run/dead-handle-read-after-consume-through-one-name.hero"
     hero_handle_acquired(t1, "obj_delete");
@@ -214,9 +226,8 @@ bb2:
 bb3:
 #line 25 "tests/golden/run/dead-handle-read-after-consume-through-one-name.hero"
     goto bb1;
-#line 218 "deadhandlereadafterconsumethroughonename.c"
+#line 230 "deadhandlereadafterconsumethroughonename.c"
 }
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_deadhandlereadafterconsumethroughonename_Json_eq(Obj * const *a, Obj * const *b) {
     return hero_handle_eq(*a, *b);
 }

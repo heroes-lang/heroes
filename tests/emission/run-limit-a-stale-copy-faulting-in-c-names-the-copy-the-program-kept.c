@@ -22,11 +22,12 @@
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -77,7 +78,7 @@ HERO_STR_STATIC(hero_str_63c4e8c6, "before: ");
 HERO_STR_STATIC(hero_str_2731e935, "null: ");
 HERO_STR_STATIC(hero_str_3043d2a7, "after: ");
 
-#line 81 "limitastalecopyfaultingincnamesthecopytheprogramkept.c"
+#line 82 "limitastalecopyfaultingincnamesthecopytheprogramkept.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -101,7 +102,6 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
@@ -137,14 +137,31 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_limitastalecopyfaultingincnamesthecopytheprogramkept_main(void);
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 24 "tests/golden/run/limit-a-stale-copy-faulting-in-c-names-the-copy-the-program-kept.hero"
 void h_limitastalecopyfaultingincnamesthecopytheprogramkept_main(void) {
-#line 24 "tests/golden/run/limit-a-stale-copy-faulting-in-c-names-the-copy-the-program-kept.hero"
-    _Pragma("clang diagnostic ignored \"-Wdeprecated-declarations\"") outer * h0_a; outer * h1_kept; outer * h2_b; outer * t1; outer * t2; HeroStr t3; outer * t4; int64_t t5; outer * t6; outer * t7; HeroStr t8; outer * t9; outer * t10; bool t11; HeroStr t12; outer * t13; int64_t t14; outer * t15; _Pragma("clang diagnostic warning \"-Wdeprecated-declarations\"") goto bb0;
-#line 24 "tests/golden/run/limit-a-stale-copy-faulting-in-c-names-the-copy-the-program-kept.hero"
+#line 144 "limitastalecopyfaultingincnamesthecopytheprogramkept.c"
+    outer * h0_a;
+    outer * h1_kept;
+    outer * h2_b;
+    outer * t1;
+    outer * t2;
+    HeroStr t3;
+    outer * t4;
+    int64_t t5;
+    outer * t6;
+    outer * t7;
+    HeroStr t8;
+    outer * t9;
+    outer * t10;
+    bool t11;
+    HeroStr t12;
+    outer * t13;
+    int64_t t14;
+    outer * t15;
+    goto bb0;
 bb0:
+#line 25 "tests/golden/run/limit-a-stale-copy-faulting-in-c-names-the-copy-the-program-kept.hero"
     t1 = make();
 #line 25 "tests/golden/run/limit-a-stale-copy-faulting-in-c-names-the-copy-the-program-kept.hero"
     hero_handle_acquired(t1, "release");
@@ -225,9 +242,8 @@ bb0:
     }
 #line 32 "tests/golden/run/limit-a-stale-copy-faulting-in-c-names-the-copy-the-program-kept.hero"
     return;
-#line 229 "limitastalecopyfaultingincnamesthecopytheprogramkept.c"
+#line 246 "limitastalecopyfaultingincnamesthecopytheprogramkept.c"
 }
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_limitastalecopyfaultingincnamesthecopytheprogramkept_Outer_eq(outer * const *a, outer * const *b) {
     return hero_handle_eq(*a, *b);
 }

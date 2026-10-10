@@ -21,11 +21,12 @@
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -70,7 +71,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_35d9fe9b, "payload");
 
-#line 74 "cfreesaleaseandtheruntimenamesit.c"
+#line 75 "cfreesaleaseandtheruntimenamesit.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -94,7 +95,6 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
@@ -127,23 +127,31 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_cfreesaleaseandtheruntimenamesit_main(void);
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 26 "tests/golden/run/c-frees-a-lease-and-the-runtime-names-it.hero"
 void h_cfreesaleaseandtheruntimenamesit_main(void) {
-#line 26 "tests/golden/run/c-frees-a-lease-and-the-runtime-names-it.hero"
-    HeroStr h0_x = {0}; const char * h1_c; HeroStr t1; HeroStr t2; const char * t3; int64_t t4; const char * t5; HeroStr t6; goto bb0;
-#line 26 "tests/golden/run/c-frees-a-lease-and-the-runtime-names-it.hero"
+#line 134 "cfreesaleaseandtheruntimenamesit.c"
+    HeroStr h0_x = {0};
+    const char * h1_c;
+    HeroStr t1;
+    HeroStr t2;
+    const char * t3;
+    int64_t t4;
+    const char * t5;
+    HeroStr t6;
+    goto bb0;
 bb0:
+#line 27 "tests/golden/run/c-frees-a-lease-and-the-runtime-names-it.hero"
     t1 = HERO_STR_LIT(hero_str_35d9fe9b);
 #line 27 "tests/golden/run/c-frees-a-lease-and-the-runtime-names-it.hero"
     t6 = h0_x;
-#line 27 "tests/golden/run/c-frees-a-lease-and-the-runtime-names-it.hero"
+#line 149 "cfreesaleaseandtheruntimenamesit.c"
     hero_str_incref(t1);
 #line 27 "tests/golden/run/c-frees-a-lease-and-the-runtime-names-it.hero"
     h0_x = t1;
-#line 27 "tests/golden/run/c-frees-a-lease-and-the-runtime-names-it.hero"
+#line 153 "cfreesaleaseandtheruntimenamesit.c"
     hero_str_decref(t6);
+#line 28 "tests/golden/run/c-frees-a-lease-and-the-runtime-names-it.hero"
     t2 = h0_x;
 #line 28 "tests/golden/run/c-frees-a-lease-and-the-runtime-names-it.hero"
     t3 = hero_str_held(t2);
@@ -158,11 +166,10 @@ bb0:
 #line 30 "tests/golden/run/c-frees-a-lease-and-the-runtime-names-it.hero"
     (void)eat(hero_cstr_nonnull(t5));
     hero_held_release(&h1_c);
-#line 162 "cfreesaleaseandtheruntimenamesit.c"
+#line 170 "cfreesaleaseandtheruntimenamesit.c"
     hero_str_release_at(&h0_x);
     return;
 }
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
         hero_str_incref(v->as.ok);

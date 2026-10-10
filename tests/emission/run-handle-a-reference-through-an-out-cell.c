@@ -21,11 +21,12 @@
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -76,7 +77,7 @@ HERO_STR_STATIC(hero_str_f60994f, "rc: ");
 HERO_STR_STATIC(hero_str_11f05721, " refs: ");
 HERO_STR_STATIC(hero_str_455ecde8, "both given back");
 
-#line 80 "handleareferencethroughanoutcell.c"
+#line 81 "handleareferencethroughanoutcell.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -100,7 +101,6 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
@@ -137,16 +137,29 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_handleareferencethroughanoutcell_main(void);
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 13 "tests/golden/run/handle-a-reference-through-an-out-cell.hero"
 void h_handleareferencethroughanoutcell_main(void) {
-#line 13 "tests/golden/run/handle-a-reference-through-an-out-cell.hero"
+#line 144 "handleareferencethroughanoutcell.c"
+    ob * h0_a;
+    ob * *const hero_lend_h1_b = (ob * *)hero_lend_local(sizeof(ob *), "handleareferencethroughanoutcell.main", "b");
 #define h1_b (*hero_lend_h1_b)
-#line 13 "tests/golden/run/handle-a-reference-through-an-out-cell.hero"
-    _Pragma("clang diagnostic ignored \"-Wdeprecated-declarations\"") ob * h0_a; ob * *const hero_lend_h1_b = (ob * *)hero_lend_local(sizeof(ob *), "handleareferencethroughanoutcell.main", "b"); int32_t h2_rc; ob * t1; ob * t2; ob * t3; int32_t t4; HeroStr t5; int32_t t6; HeroStr t7; ob * t8; int64_t t9; ob * t10; ob * t11; HeroStr t12; _Pragma("clang diagnostic warning \"-Wdeprecated-declarations\"") goto bb0;
-#line 13 "tests/golden/run/handle-a-reference-through-an-out-cell.hero"
+    int32_t h2_rc;
+    ob * t1;
+    ob * t2;
+    ob * t3;
+    int32_t t4;
+    HeroStr t5;
+    int32_t t6;
+    HeroStr t7;
+    ob * t8;
+    int64_t t9;
+    ob * t10;
+    ob * t11;
+    HeroStr t12;
+    goto bb0;
 bb0:
+#line 14 "tests/golden/run/handle-a-reference-through-an-out-cell.hero"
     t1 = ob_new();
 #line 14 "tests/golden/run/handle-a-reference-through-an-out-cell.hero"
     hero_handle_acquired(t1, "ob_put");
@@ -228,10 +241,9 @@ bb0:
     hero_lend_local_give(hero_lend_h1_b);
 #line 20 "tests/golden/run/handle-a-reference-through-an-out-cell.hero"
     return;
-#line 232 "handleareferencethroughanoutcell.c"
+#line 245 "handleareferencethroughanoutcell.c"
 }
 #undef h1_b
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_handleareferencethroughanoutcell_Ob_eq(ob * const *a, ob * const *b) {
     return hero_handle_eq(*a, *b);
 }

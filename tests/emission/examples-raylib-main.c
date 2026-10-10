@@ -24,11 +24,12 @@
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#pragma clang diagnostic ignored "-Wattribute-warning"
 #include "heroes_standard.h"
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
@@ -54,7 +55,7 @@ _Static_assert(__builtin_classify_type(((AutomationEvent *)0)->type) == 1 && siz
 _Static_assert(sizeof(AutomationEvent) - __builtin_offsetof(AutomationEvent, params) != 0, "heroes-ffi-flex AutomationEvent params");
 #line 101 "examples/raylib/main.hero"
 _Static_assert(_Generic(&((AutomationEvent *)0)->params, _Bool (*)[4]: (sizeof(_Bool) == sizeof(int32_t) && (((_Bool)-1 < 0) == ((int32_t)-1 < 0))), char (*)[4]: (sizeof(char) == sizeof(int32_t) && (((char)-1 < 0) == ((int32_t)-1 < 0))), signed char (*)[4]: (sizeof(signed char) == sizeof(int32_t) && (((signed char)-1 < 0) == ((int32_t)-1 < 0))), short (*)[4]: (sizeof(short) == sizeof(int32_t) && (((short)-1 < 0) == ((int32_t)-1 < 0))), int (*)[4]: (sizeof(int) == sizeof(int32_t) && (((int)-1 < 0) == ((int32_t)-1 < 0))), long (*)[4]: (sizeof(long) == sizeof(int32_t) && (((long)-1 < 0) == ((int32_t)-1 < 0))), long long (*)[4]: (sizeof(long long) == sizeof(int32_t) && (((long long)-1 < 0) == ((int32_t)-1 < 0))), unsigned char (*)[4]: (sizeof(unsigned char) == sizeof(int32_t) && (((unsigned char)-1 < 0) == ((int32_t)-1 < 0))), unsigned short (*)[4]: (sizeof(unsigned short) == sizeof(int32_t) && (((unsigned short)-1 < 0) == ((int32_t)-1 < 0))), unsigned int (*)[4]: (sizeof(unsigned int) == sizeof(int32_t) && (((unsigned int)-1 < 0) == ((int32_t)-1 < 0))), unsigned long (*)[4]: (sizeof(unsigned long) == sizeof(int32_t) && (((unsigned long)-1 < 0) == ((int32_t)-1 < 0))), unsigned long long (*)[4]: (sizeof(unsigned long long) == sizeof(int32_t) && (((unsigned long long)-1 < 0) == ((int32_t)-1 < 0))), default: 0), "heroes-ffi-field AutomationEvent params");
-#line 58 "main.c"
+#line 59 "main.c"
 
 #line 62 "examples/raylib/main.hero"
 _Static_assert(__builtin_classify_type(*(Color *)0) != 13, "heroes-ffi-union Color r g b a");
@@ -64,7 +65,7 @@ _Static_assert(__builtin_classify_type(*(Vector2 *)0) != 13, "heroes-ffi-union V
 _Static_assert(__builtin_classify_type(*(Rectangle *)0) != 13, "heroes-ffi-union Rectangle x y width height");
 #line 98 "examples/raylib/main.hero"
 _Static_assert(__builtin_classify_type(*(AutomationEvent *)0) != 13, "heroes-ffi-union AutomationEvent frame type params");
-#line 68 "main.c"
+#line 69 "main.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -136,7 +137,6 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wsign-conversion"
 #pragma clang diagnostic error "-Wincompatible-pointer-types-discards-qualifiers"
 #pragma clang diagnostic error "-Wincompatible-pointer-types"
-#pragma clang diagnostic error "-Wmacro-redefined"
 #pragma clang diagnostic error "-Wint-conversion"
 #pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
@@ -185,14 +185,71 @@ HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b)
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
 
 void h_main_main(void);
-#pragma clang diagnostic warning "-Wdeprecated-declarations"
 
 #line 103 "examples/raylib/main.hero"
 void h_main_main(void) {
-#line 103 "examples/raylib/main.hero"
-    _Pragma("clang diagnostic ignored \"-Wdeprecated-declarations\"") Color h0_red; Vector2 h1_mid; AutomationEvent h2_event; Rectangle h3_box; uint32_t t1; HeroStr t2; int32_t t3; int32_t t4; int32_t t5; uint8_t t6; uint8_t t7; uint8_t t8; uint8_t t9; Color t10; Color t11; int32_t t12; Color t13; float t14; Color t15; int32_t t16; float t17; float t18; Vector2 t19; float t20; float t21; Vector2 t22; float t23; Vector2 t24; Vector2 t25; float t26; HeroStr t27; Vector2 t28; float t29; uint32_t t30; uint32_t t31; int32_t t32; int32_t t33; int32_t t34; int32_t t35; AutomationEvent t37; AutomationEvent t38; int64_t t40; int32_t t41; float t42; float t43; float t44; float t45; Rectangle t46; float t47; float t48; Vector2 t49; Rectangle t50; bool t51; float t52; float t53; Vector2 t54; Rectangle t55; bool t56; _Pragma("clang diagnostic warning \"-Wdeprecated-declarations\"") goto bb0;
-#line 103 "examples/raylib/main.hero"
+#line 192 "main.c"
+    Color h0_red;
+    Vector2 h1_mid;
+    AutomationEvent h2_event;
+    Rectangle h3_box;
+    uint32_t t1;
+    HeroStr t2;
+    int32_t t3;
+    int32_t t4;
+    int32_t t5;
+    uint8_t t6;
+    uint8_t t7;
+    uint8_t t8;
+    uint8_t t9;
+    Color t10;
+    Color t11;
+    int32_t t12;
+    Color t13;
+    float t14;
+    Color t15;
+    int32_t t16;
+    float t17;
+    float t18;
+    Vector2 t19;
+    float t20;
+    float t21;
+    Vector2 t22;
+    float t23;
+    Vector2 t24;
+    Vector2 t25;
+    float t26;
+    HeroStr t27;
+    Vector2 t28;
+    float t29;
+    uint32_t t30;
+    uint32_t t31;
+    int32_t t32;
+    int32_t t33;
+    int32_t t34;
+    int32_t t35;
+    AutomationEvent t37;
+    AutomationEvent t38;
+    int64_t t40;
+    int32_t t41;
+    float t42;
+    float t43;
+    float t44;
+    float t45;
+    Rectangle t46;
+    float t47;
+    float t48;
+    Vector2 t49;
+    Rectangle t50;
+    bool t51;
+    float t52;
+    float t53;
+    Vector2 t54;
+    Rectangle t55;
+    bool t56;
+    goto bb0;
 bb0:
+#line 104 "examples/raylib/main.hero"
     t1 = UINT64_C(7);
 #line 104 "examples/raylib/main.hero"
     (void)SetRandomSeed(t1);
@@ -338,9 +395,8 @@ bb0:
     hero_print_end();
 #line 125 "examples/raylib/main.hero"
     return;
-#line 342 "main.c"
+#line 399 "main.c"
 }
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 HERO_TU_LOCAL bool h_main_Color_eq(const Color *a, const Color *b) {
     if (!(a->r == b->r)) return false;
     if (!(a->g == b->g)) return false;
