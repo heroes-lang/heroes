@@ -36,7 +36,6 @@
 # reaches expressions only as an absent branch value in the join.
 
 use token
-use diag
 use ast
 use source
 use resolved
@@ -65,6 +64,9 @@ use check/markers
 use check/function_value
 use check/generics as check_generics
 use check/generic_argument
+use check/waiting as waits
+use check/waiting_order as settle_order
+use check/settling
 use check/discard
 use value_errors
 use discard_errors
@@ -79,6 +81,9 @@ use check/interp
 use check/reach
 use check/path_end
 use check/callee_text
+use check/operands
+use check/mismatch
+use check/name_types
 
 ## The two statement-side answers
 
@@ -138,7 +143,7 @@ function synth(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.So
 
         .null_ptr => return state.record_expr(@c, at: id, ty: table.intern(@c.out.types, .ptr))
         .error    => return state.record_expr(@c, at: id, ty: state.error_ty_of(c))
-        .name     => return state.record_expr(@c, at: id, ty: synth_name(@c, a, r, s, decls, id))
+        .name     => return state.record_expr(@c, at: id, ty: name_types.synth_name(@c, a, r, s, decls, id))
         # In value position a hole has no expected type to report — the ⇐
         # path is where §4.16 earns its keep.
 
@@ -153,46 +158,24 @@ function synth(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.So
                 at: id,
                 ty: ops.unary(@c, s, decls, u.op, operand: operand_ty, span: span)
             )
-        .binary b =>
+        .binary =>
             # Every binary operator wants both operands to be one type, so
             # whenever ONE side has no type of its own, the other side's is
             # the expectation: that is what makes `t == .plus` writable,
             # and what gives the ??? in `"n = " + ???` a type to report.
-            # The operator still decides the RESULT; this only settles the
-            # operands.
-            left_ty: i64 @ 0
-            right_ty: i64 @ 0
+            # A generic call, `ok(…)` and an operator of literals have none
+            # either (defect 564), asked of the whole operator tree at once.
+            takes: [{i64: bool}] @ []
 
-            if contextual.contextual(a, b.right) && !contextual.contextual(a, b.left)
-                left_ty @ synth(@c, a, r, s, decls, b.left)
-
-                if contextual.adopts(c, a, decls, id: b.right, offered: left_ty)
-                    check(@c, a, r, s, decls, id: b.right, expected: left_ty)
-                    right_ty @ left_ty
-                else
-                    right_ty @ synth(@c, a, r, s, decls, b.right)
-            else if contextual.contextual(a, b.left) && !contextual.contextual(a, b.right)
-                right_ty @ synth(@c, a, r, s, decls, b.right)
-
-                if contextual.adopts(c, a, decls, id: b.left, offered: right_ty)
-                    check(@c, a, r, s, decls, id: b.left, expected: right_ty)
-                    left_ty @ right_ty
-                else
-                    left_ty @ synth(@c, a, r, s, decls, b.left)
-            else
-                left_ty @ synth(@c, a, r, s, decls, b.left)
-                right_ty @ synth(@c, a, r, s, decls, b.right)
-            return state.record_expr(
-                @c,
-                at: id,
-                ty: ops.binary(@c, s, decls, b.op, left: left_ty, right: right_ty, span: span)
-            )
+            if !operands.small(a, id: id)
+                takes @ operands.taking(a, r, s, decls, id)
+            return state.record_expr(@c, at: id, ty: operator_type(@c, a, r, s, decls, id: id, takes: takes))
         .field f =>
             # A module in base position makes the whole expression one
             # qualified name — `grid.WALL`, a constant next door — which
             # the resolver already decided.
             if r.uses[f.base] == .module
-                return state.record_expr(@c, at: id, ty: synth_name(@c, a, r, s, decls, id))
+                return state.record_expr(@c, at: id, ty: name_types.synth_name(@c, a, r, s, decls, id))
 
             # `Room.name` where `Room` names a record and `name` is one of its
             # fields: the operator is wrong and `::` may be the repair, not a
@@ -333,42 +316,6 @@ function index_of(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source
     check(@c, a, r, s, decls, id: index, expected: key.must())
     return key.must()
 
-function synth_name(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], id: i64) -> i64
-    span = a.exprs[id].span
-
-    match r.uses[id]
-        # The resolver reported it (module_is_not_a_value); one mistake,
-        # one diagnostic, so nothing is said here.
-        .module  => return state.error_ty_of(c)
-        .local l => return c.out.local_types[l.at]
-        .top t =>
-            match decls[t.at].kind
-                # §4.13: a top-level function is a value, its type its
-                # signature, but for an `@` or a generic one where nothing
-                # binds it (defects 398, 402: `check/function_value.hero`).
-                .function_decl   => return function_value.synthesised(@c, a, r, s, decls, decl: t.at, span: span)
-                .constant_decl k => return lower.lower_ty(@c, a, r, k.ty)
-                # A record name is a constructor, not a value on its own
-                # (§4.9): only meaningful as the callee of a call.
-
-                .record_decl =>
-                    state.push_diagnostic(
-                        @c,
-                        contextless_errors.record_name_alone(source.span_text(s, decls[t.at].name), span)
-                    )
-                    return state.error_ty_of(c)
-                .variant_decl | .test_decl => return state.error_ty_of(c)
-        # A built-in used as a value: an error_ty with no diagnostic is
-        # poison that flows to the emitter — found by the closure-list
-        # audit on its first program.
-
-        .builtin b =>
-            state.push_diagnostic(@c, contextless_errors.builtin_as_value(inventory.name_of(b.at), span))
-            return state.error_ty_of(c)
-        .unresolved => return state.error_ty_of(c)
-
-    return state.error_ty_of(c)
-
 ## ⇐ — check against a type the context knows
 
 function check(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], id: i64, expected: i64)
@@ -400,7 +347,7 @@ function check(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.So
         if contextual.adopts(c, a, decls, id: id, offered: expected)
             _ = state.record_expr(@c, at: id, ty: expected)
         else
-            mismatch_shown(@c, s, decls, expected: expected, got: "ptr", span: span)
+            mismatch.shown(@c, s, decls, expected: expected, got: "ptr", span: span)
         return
 
     # A number literal, checked against the width the context asked for —
@@ -425,18 +372,18 @@ function check(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.So
                 # The digits under a minus sign need the type too: the
                 # lowering walks to them and would otherwise find no type,
                 # which reaches the emitter as a type nobody wrote.
-                record_through_neg(@c, a, id: id, ty: expected)
+                operands.record_through_neg(@c, a, id: id, ty: expected)
             .float_ty | .bool | .str | .ptr | .cstr | .unit | .array =>
                 got = table.int_ty_id(c.out.types)
-                mismatch_shown(@c, s, decls, expected: expected, got: state.show(c, s, decls, got), span: span)
+                mismatch.shown(@c, s, decls, expected: expected, got: state.show(c, s, decls, got), span: span)
                 _ = state.record_expr(@c, at: id, ty: got)
             .fixed | .map | .fallible | .function_ty | .named =>
                 got = table.int_ty_id(c.out.types)
-                mismatch_shown(@c, s, decls, expected: expected, got: state.show(c, s, decls, got), span: span)
+                mismatch.shown(@c, s, decls, expected: expected, got: state.show(c, s, decls, got), span: span)
                 _ = state.record_expr(@c, at: id, ty: got)
             .case_ty | .failure | .generic | .error =>
                 got = table.int_ty_id(c.out.types)
-                mismatch_shown(@c, s, decls, expected: expected, got: state.show(c, s, decls, got), span: span)
+                mismatch.shown(@c, s, decls, expected: expected, got: state.show(c, s, decls, got), span: span)
                 _ = state.record_expr(@c, at: id, ty: got)
 
         return
@@ -451,16 +398,16 @@ function check(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.So
             .case_ty | .failure | .generic | .error                => false
 
         if is_float_width
-            record_through_neg(@c, a, id: id, ty: expected)
+            operands.record_through_neg(@c, a, id: id, ty: expected)
         else
             got = table.f64_ty(c.out.types)
-            mismatch_shown(@c, s, decls, expected: expected, got: state.show(c, s, decls, got), span: span)
+            mismatch.shown(@c, s, decls, expected: expected, got: state.show(c, s, decls, got), span: span)
             _ = state.record_expr(@c, at: id, ty: got)
         return
 
     # A generic function's name is the instance this position's type names
     # (defect 402, `check/function_value.hero`).
-    if function_value.generic_at(a, r, s, decls, id)
+    if function_value.generic_at(a, r, decls, id)
         _ = state.record_expr(@c, at: id, ty: function_value.instance(@c, a, r, s, decls, id: id, expected: expected))
         return
 
@@ -476,7 +423,7 @@ function check(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.So
                     .case_ty | .failure | .generic | .error                   => false
 
                 if !is_array
-                    mismatch_shown(@c, s, decls, expected: expected, got: "[]", span: span)
+                    mismatch.shown(@c, s, decls, expected: expected, got: "[]", span: span)
                 _ = state.record_expr(@c, at: id, ty: expected)
                 return
 
@@ -486,7 +433,7 @@ function check(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.So
             if checked_array_literal(@c, a, r, s, decls, id: id, elements: items.elements, expected: expected, span: span)
                 return
             got = synth(@c, a, r, s, decls, id)
-            compare(@c, s, decls, expected: expected, got: got, span: span)
+            mismatch.compare(@c, s, decls, expected: expected, got: got, span: span)
             return
         .map entries =>
             if entries.entries.len() == 0
@@ -497,14 +444,14 @@ function check(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.So
                     .case_ty | .failure | .generic | .error                   => false
 
                 if !is_map
-                    mismatch_shown(@c, s, decls, expected: expected, got: "{}", span: span)
+                    mismatch.shown(@c, s, decls, expected: expected, got: "{}", span: span)
                 _ = state.record_expr(@c, at: id, ty: expected)
                 return
 
             if checked_map_literal(@c, a, r, s, decls, id: id, entries: entries.entries, expected: expected)
                 return
             got = synth(@c, a, r, s, decls, id)
-            compare(@c, s, decls, expected: expected, got: got, span: span)
+            mismatch.compare(@c, s, decls, expected: expected, got: got, span: span)
             return
         .variant_case vc =>
             case_construct(@c, a, r, s, decls, at: id, called: vc.name, given: vc.args, expected: expected)
@@ -535,7 +482,7 @@ function check(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.So
             # was that one fall.
             got = dispatch_call(@c, a, r, s, decls, at: id, callee: cl.callee, given: cl.args, expected: ok(expected))
             _ = state.record_expr(@c, at: id, ty: got)
-            compare(@c, s, decls, expected: expected, got: got, span: span)
+            mismatch.compare(@c, s, decls, expected: expected, got: got, span: span)
             return
         # An if or match in ⇐ position pushes the expectation into every
         # branch, so the error lands in the branch that disagrees — and so
@@ -600,7 +547,7 @@ function check(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.So
                 expected: ok(expected)
             )
             _ = state.record_expr(@c, at: id, ty: got)
-            compare(@c, s, decls, expected: expected, got: got, span: span)
+            mismatch.compare(@c, s, decls, expected: expected, got: got, span: span)
             return
         # `Room.name` where the position asks for a type: what it asks is
         # what decides whether `::` is the one repair (defect 135).
@@ -610,17 +557,104 @@ function check(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.So
                 _ = state.record_expr(@c, at: id, ty: state.error_ty_of(c))
                 return
         .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit | .null_ptr => fall_through()
-        .name | .unary | .binary | .field_name | .index | .hole                        => fall_through()
-        .try_expr | .error                                                             => fall_through()
+        # An operator of forms with no type of their own takes the type its
+        # position asks for, as a literal does (spec § 2; defect 564).
+        .binary b =>
+            if operands.arithmetic(b.op) && operands.numeric(c, expected) && operands.takes_context(a, r, s, decls, id) && operands.leaves_take(c, a, decls, id: id, ty: expected)
+                context_operands(@c, a, r, s, decls, id: id, expected: expected)
+                return
+        .unary u =>
+            if u.op == .neg && operands.numeric(c, expected) && operands.takes_context(a, r, s, decls, id) && operands.leaves_take(c, a, decls, id: id, ty: expected)
+                context_operands(@c, a, r, s, decls, id: id, expected: expected)
+                return
+        .name | .field_name | .index | .hole => fall_through()
+        .try_expr | .error                   => fall_through()
 
     got = synth(@c, a, r, s, decls, id)
-    compare(@c, s, decls, expected: expected, got: got, span: span)
+    mismatch.compare(@c, s, decls, expected: expected, got: got, span: span)
 
 # The no-op an arm may call: an arm body must be a statement, `_ = 0` is
 # a declaration the rule refuses, and a bare function call whose type is
 # () is exactly what a statement is allowed to be.
 function fall_through()
     return
+
+# The operands of an operator `operands.takes_context` holds of, each checked
+# against `expected`, the type the operator's position asks for (defect 564).
+function context_operands(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], id: i64, expected: i64)
+    span = a.exprs[id].span
+
+    match a.exprs[id].kind
+        .binary b =>
+            if operands.arithmetic(b.op)
+                context_operands(@c, a, r, s, decls, id: b.left, expected: expected)
+                context_operands(@c, a, r, s, decls, id: b.right, expected: expected)
+                _ = state.record_expr(
+                    @c,
+                    at: id,
+                    ty: ops.binary(@c, s, decls, b.op, left: expected, right: expected, span: span)
+                )
+                return
+        .unary u =>
+            if u.op == .neg && !contextual.number_literal(a, id) && !contextual.float_literal(a, id)
+                context_operands(@c, a, r, s, decls, id: u.operand, expected: expected)
+                _ = state.record_expr(@c, at: id, ty: ops.unary(@c, s, decls, u.op, operand: expected, span: span))
+                return
+        .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit | .null_ptr => fall_through()
+        .name | .hole | .field | .field_name | .index | .call | .method                => fall_through()
+        .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error    => fall_through()
+
+    check(@c, a, r, s, decls, id: id, expected: expected)
+
+# A binary operator's type, its operands each settling the other's where one
+# has no type of its own and the other has (§4.5). `takes` holds, for the
+# operator tree this one stands in, which operand takes its type from where
+# it stands (`operands.taking`), so a chain is asked once, not at each level;
+# empty for a small tree, which is asked again at each node.
+function operator_type(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], id: i64, takes: [{i64: bool}]) -> i64
+    match a.exprs[id].kind
+        .binary b =>
+            which = operands.pair(a, r, s, decls, takes, left: b.left, right: b.right)
+            left_ty: i64 @ 0
+            right_ty: i64 @ 0
+
+            if which == operands.RIGHT
+                left_ty @ operand_type(@c, a, r, s, decls, id: b.left, takes: takes)
+                right_ty @ offered_to(@c, a, r, s, decls, id: b.right, offered: left_ty, takes: takes)
+            else if which == operands.LEFT
+                right_ty @ operand_type(@c, a, r, s, decls, id: b.right, takes: takes)
+                left_ty @ offered_to(@c, a, r, s, decls, id: b.left, offered: right_ty, takes: takes)
+            else
+                left_ty @ operand_type(@c, a, r, s, decls, id: b.left, takes: takes)
+                right_ty @ operand_type(@c, a, r, s, decls, id: b.right, takes: takes)
+            return ops.binary(@c, s, decls, b.op, left: left_ty, right: right_ty, span: a.exprs[id].span)
+        .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit | .null_ptr => fall_through()
+        .name | .hole | .unary | .field | .field_name | .index | .call | .method       => fall_through()
+        .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error    => fall_through()
+
+    return synth(@c, a, r, s, decls, id)
+
+# An operand synthesised: an arithmetic operator of the same tree from
+# `takes`, anything else as the walk synthesises it.
+function operand_type(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], id: i64, takes: [{i64: bool}]) -> i64
+    if operands.in_tree(a, takes, id: id)
+        return state.record_expr(@c, at: id, ty: operator_type(@c, a, r, s, decls, id: id, takes: takes))
+    return synth(@c, a, r, s, decls, id)
+
+# An operand with no type of its own given the other's, `offered`, where it
+# takes it: an operator of literals at a number, every literal in it held to
+# the width (`context_operands`); else synthesised as it would be.
+function offered_to(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], id: i64, offered: i64, takes: [{i64: bool}]) -> i64
+    if !contextual.adopts(c, a, decls, id: id, offered: offered)
+        return operand_type(@c, a, r, s, decls, id: id, takes: takes)
+
+    if operands.operator(a, id: id)
+        if !operands.numeric(c, offered) || !operands.leaves_take(c, a, decls, id: id, ty: offered)
+            return operand_type(@c, a, r, s, decls, id: id, takes: takes)
+        context_operands(@c, a, r, s, decls, id: id, expected: offered)
+        return offered
+    check(@c, a, r, s, decls, id: id, expected: offered)
+    return offered
 
 # The array-literal half of ⇐, true when the expectation's shape took it.
 function checked_array_literal(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], id: i64, elements: [i64], expected: i64, span: token.Span) -> bool
@@ -669,51 +703,6 @@ function checked_map_literal(@c: state.Checker, a: ast.Ast, r: resolved.Resolved
         .case_ty | .failure | .generic | .error                   => return false
 
     return false
-
-# Record `expected` on the node and on every negated layer under it.
-function record_through_neg(@c: state.Checker, a: ast.Ast, id: i64, ty: i64)
-    at: i64 @ id
-    walking: bool @ true
-
-    while walking
-        _ = state.record_expr(@c, at: at, ty: ty)
-
-        match a.exprs[at].kind
-            .unary u =>
-                if u.op == .neg
-                    at @ u.operand
-                else
-                    walking @ false
-            .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit | .null_ptr => walking @ false
-            .name | .hole | .binary | .field | .field_name | .index | .call | .method      => walking @ false
-            .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error    => walking @ false
-
-function compare(@c: state.Checker, s: source.Source, decls: [ast.Decl], expected: i64, got: i64, span: token.Span)
-    if expected == got || table.poisoned(c.out.types, expected) || table.poisoned(c.out.types, got)
-        return
-
-    # `type_fit.fits` is an id comparison with one exception, a parameter the
-    # declaration called `_` (defect 026, panel 129's ffi seat); a nameless
-    # written type refused already is quiet here (defect 554).
-    if type_fit.fits(@c.out.types, wanted: expected, got: got) || type_fit.unnamed_shadow(c.out.types, c.out.written_types, a: expected, b: got)
-        return
-    a_text = state.show(c, s, decls, expected)
-    b_text = state.show(c, s, decls, got)
-    d: diag.Diagnostic @ value_errors.mismatch(expected: a_text, got: b_text, span: span)
-
-    # A T? where a T was wanted has one obvious repair, and it is a GUESS
-    # (panel 043): .must() aborts on the error case, and whether that is
-    # what the author wants is theirs to say — ?, .default(v) and a match
-    # are the other three answers §4.6 gives.
-    if table.get(c.out.types, got) == .fallible(payload: expected)
-        d.fixes @ d.fixes.push(
-            diag.Fix(title: "`.must()` — abort on the error case, giving `" + a_text + "`", replacement: source.span_text(s, span) + ".must()", span: span, certainty: .guess)
-        )
-    state.push_diagnostic(@c, d)
-
-function mismatch_shown(@c: state.Checker, s: source.Source, decls: [ast.Decl], expected: i64, got: str, span: token.Span)
-    a_text = state.show(c, s, decls, expected)
-    state.push_diagnostic(@c, value_errors.mismatch(expected: a_text, got: got, span: span))
 
 ## Statements — where divergence lives
 
@@ -1437,25 +1426,34 @@ function method(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.S
             # The resolver already said what is wrong with it.
 
             .unresolved | .local | .builtin | .module => return state.error_ty_of(c)
-    said = c.out.diagnostics.len()
-    receiver_ty = synth(@c, a, r, s, decls, receiver)
-    generic_argument.retell_receiver(@c, a, r, s, decls, from: said, id: receiver, at: at)
-    name = source.span_text(s, called)
-    field = field_of_function_type(@c, a, r, s, decls, receiver: receiver_ty, name: name)
 
-    if !field.is_err()
-        return indirect_call(
-            @c,
-            a,
-            r,
-            s,
-            decls,
-            callee_ty: field.must(),
-            callee: token.Span(start: a.exprs[receiver].span.start, end: called.end),
-            given: given,
-            receiver: fail(code: "absent", msg: "the field call takes no receiver"),
-            span: span
-        )
+    # A value whose form can hold no field is the first argument of the
+    # function the call names, typed as every argument is, so `[].count()` is
+    # `count([])` (spec § 9; panel 203 R1 (b), `check/waiting_order.hero`).
+    held: Receiver @ Receiver(at: receiver, ty: fail(code: "absent", msg: "typed by the call"))
+    receiver_ty: i64 @ state.error_ty_of(c)
+    name = source.span_text(s, called)
+
+    if !settle_order.by_the_call(@c, a, r, s, decls, at: at, receiver: receiver)
+        said = c.out.diagnostics.len()
+        receiver_ty @ synth(@c, a, r, s, decls, receiver)
+        held.ty @ ok(receiver_ty)
+        generic_argument.retell_receiver(@c, a, r, s, decls, from: said, id: receiver, at: at)
+        field = name_types.field_of_function_type(@c, a, r, s, decls, receiver: receiver_ty, name: name)
+
+        if !field.is_err()
+            return indirect_call(
+                @c,
+                a,
+                r,
+                s,
+                decls,
+                callee_ty: field.must(),
+                callee: token.Span(start: a.exprs[receiver].span.start, end: called.end),
+                given: given,
+                receiver: fail(code: "absent", msg: "the field call takes no receiver"),
+                span: span
+            )
 
     match r.uses[at]
         .top t =>
@@ -1473,7 +1471,7 @@ function method(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.S
                 decls,
                 decl: t.at,
                 given: given,
-                receiver: ok(receiver_ty),
+                receiver: ok(held),
                 span: span,
                 expected: expected
             )
@@ -1510,6 +1508,13 @@ function ufcs_hides_the_marker(decls: [ast.Decl], decl: i64) -> bool
 
 ## A call to a declared function — where generics are inferred
 
+# The value before the dot of `x.f(…)`: its expression, and its type where the
+# walk read it first, to look for a field (§4.11); none where the call types
+# it as its first argument (`check/waiting_order.hero`'s `by_the_call`).
+record Receiver
+    at: i64
+    ty: i64?
+
 # The header line, sliced from the source: the grammar keeps a signature
 # on one line, so the line IS the signature. (Rust renders it through the
 # printer; on canonical source the two agree byte for byte, and the
@@ -1522,7 +1527,7 @@ function header_line(s: source.Source, from: i64) -> str
 
     return s.text.slice(from: from, to: end)
 
-function user_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], decl: i64, given: [ast.Arg], receiver: i64?, span: token.Span, expected: i64?) -> i64
+function user_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], decl: i64, given: [ast.Arg], receiver: Receiver?, span: token.Span, expected: i64?) -> i64
     match decls[decl].kind
         .function_decl fd =>
             name = source.span_text(s, decls[decl].name)
@@ -1578,17 +1583,28 @@ function user_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: sourc
             # is exempt: the dot IS its position.
             shared = type_fit.shared(params)
 
+            # The arguments with no type of their own a generic callee's
+            # others settle (defect 541, `check/waiting.hero`).
+            waiting: [waits.Held] @ []
+
             if !receiver.is_err()
-                bind_argument(
-                    @c,
-                    s,
-                    decls,
-                    @bindings,
-                    param: params[0],
-                    got: receiver.must(),
-                    span: span,
-                    has_generics: generics > 0
-                )
+                before = receiver.must()
+
+                if !before.ty.is_err()
+                    bind_argument(
+                        @c,
+                        s,
+                        decls,
+                        @bindings,
+                        param: params[0],
+                        got: before.ty.must(),
+                        span: span,
+                        has_generics: generics > 0
+                    )
+                else if generics == 0
+                    check(@c, a, r, s, decls, id: before.at, expected: params[0])
+                else
+                    waiting @ waiting.push(waits.Held(value: before.at, at: 0))
             index: i64 @ 0
             taken = labels.written_labels(s, given)
             asked: labels.Asked @ labels.unasked()
@@ -1644,17 +1660,10 @@ function user_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: sourc
 
                 if generics == 0
                     check(@c, a, r, s, decls, id: arg.value, expected: param)
+                else if waits.needs_context(a, r, s, decls, id: arg.value)
+                    waiting @ waiting.push(waits.Held(value: arg.value, at: position))
                 else
-                    said = c.out.diagnostics.len()
-                    got = synth(@c, a, r, s, decls, arg.value)
-                    generic_argument.retell(@c, a, r, s, decls, from: said, id: arg.value, decl: decl, at: position)
-
-                    # A poisoned argument is a mistake already reported, and
-                    # whatever it left unbound is that mistake's shadow, not a
-                    # second one (§4.5).
-                    if table.poisoned(c.out.types, got)
-                        tainted @ true
-                    check_generics.bind(@c, s, decls, @bindings, param: param, got: got, span: a.exprs[arg.value].span)
+                    tainted @ synth_argument(@c, a, r, s, decls, decl: decl, held: waits.Held(value: arg.value, at: position), param: param, shape: generic_argument.told_plainly(at: position), @bindings) || tainted
 
                 # A marked argument is a place the call writes into, so a
                 # string's byte is refused here as `s[0] @ 65` is (defect 440).
@@ -1678,7 +1687,15 @@ function user_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: sourc
             # position asks for does — the same expectation a literal, an
             # empty `[]` and `fail(…)` take theirs from. Fill-only: a
             # parameter an argument bound keeps that binding, and a shape
-            # that does not fit is `compare`'s message, not ours.
+            # that does not fit is `compare`'s message, not ours. The
+            # arguments that wait take it first (panel 203).
+            dot: i64 @ -1
+
+            if !receiver.is_err()
+                dot @ receiver.must().at
+            call = settling.Call(decl: decl, params: params, receiver: dot, result: result, expected: expected)
+            tainted @ settle_waiting(@c, a, r, s, decls, call, waiting, @bindings) || tainted
+
             if generics > 0 && !expected.is_err()
                 check_generics.bind_missing(c, @bindings, param: result, got: expected.must())
 
@@ -1736,6 +1753,45 @@ function user_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: sourc
         .constant_decl | .record_decl | .variant_decl | .test_decl => return state.error_ty_of(c)
 
     return state.error_ty_of(c)
+
+# A generic callee's argument synthesised alone and bound, told again where
+# it is a form that takes its type from its position (`check/generic_argument.hero`).
+# Whether it is a mistake already reported, whose unbound letters are that
+# mistake's shadow, not a second one (§4.5).
+function synth_argument(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], decl: i64, held: waits.Held, param: i64, shape: generic_argument.Told, @bindings: [i64?]) -> bool
+    said = c.out.diagnostics.len()
+    got = synth(@c, a, r, s, decls, held.value)
+    told: generic_argument.Told @ shape
+    told.unsettled @ waits.unsettled(c, s, decls, decl: decl, ty: param, callee: bindings)
+
+    if told.shadow
+        generic_argument.quiet(@c, a, r, s, from: said, id: held.value)
+    else
+        generic_argument.retell(@c, a, r, s, decls, from: said, id: held.value, decl: decl, told: told)
+    check_generics.bind(@c, s, decls, @bindings, param: param, got: got, span: a.exprs[held.value].span)
+    return table.poisoned(c.out.types, got)
+
+# The arguments that wait (spec § 9, defect 541): `check/settling.hero` says
+# what comes next, by form and never by position, and the walk checks or
+# synthesises it. Whether the call is tainted.
+function settle_waiting(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], call: settling.Call, waiting: [waits.Held], @bindings: [i64?]) -> bool
+    pending: settling.Pending @ settling.Pending(left: waiting, asked: call.expected.is_err())
+    tainted: bool @ false
+
+    while true
+        match settling.next(@c, a, r, s, decls, call, @pending, @bindings)
+            .checked w =>
+                check(@c, a, r, s, decls, id: w.held.value, expected: w.ty)
+                tainted @ table.poisoned(c.out.types, c.out.expr_types[w.held.value]) || tainted
+            .alone w =>
+                shape = generic_argument.Told(
+                    at: w.held.at,
+                    unsettled: generic_argument.none(),
+                    dotted: w.dotted,
+                    shadow: w.shadow
+                )
+                tainted @ synth_argument(@c, a, r, s, decls, decl: call.decl, held: w.held, param: call.params[w.held.at], shape: shape, @bindings) || tainted
+            .done d => return d.tainted || tainted
 
 # The receiver's binding, split out so user_call can treat generic and
 # monomorphic first parameters with one spelling.
@@ -2042,66 +2098,6 @@ function check_named_fields(@c: state.Checker, a: ast.Ast, r: resolved.Resolved,
             )
         index @ index + 1
 
-# A field of the receiver whose type is a function — §4.11's first
-# lookup. A variant case's payload answers this too, and it did not until
-# panel 079: Ty.named alone fell through to UFCS, so a.g(50) on a matched
-# payload reported "no field g" about a payload that declares g — a
-# message asserting a fiction, the one thing §4.17 forbids.
-function field_of_function_type(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], receiver: i64, name: str) -> i64?
-    holder: i64 @ -1
-    case_at: i64 @ -1
-
-    match table.get(c.out.types, receiver)
-        .named n => holder @ n.decl
-        .case_ty vc =>
-            holder @ vc.decl
-            case_at @ vc.at
-        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => holder @ -1
-        .array | .fixed | .map | .fallible | .function_ty         => holder @ -1
-        .failure | .generic | .error                              => holder @ -1
-
-    if holder < 0
-        return fail(code: "absent", msg: "the receiver is not a record or a case")
-    found_ty: i64 @ -1
-
-    match decls[holder].kind
-        .record_decl rec =>
-            if case_at >= 0
-                return fail(code: "absent", msg: "a case type on a record declaration")
-
-            for f in rec.fields
-                if source.span_text(s, f.name) == name
-                    found_ty @ f.ty
-        .variant_decl v =>
-            if case_at < 0
-                return fail(code: "absent", msg: "a variant's own name has no fields")
-
-            for f in v.cases[case_at].fields
-                if source.span_text(s, f.name) == name
-                    found_ty @ f.ty
-        .constant_decl | .function_decl | .test_decl => return fail(code: "absent", msg: "not a data declaration")
-
-    if found_ty < 0
-        return fail(code: "absent", msg: "no field of that name")
-    lowered = lower.lower_ty(@c, a, r, found_ty)
-
-    match table.get(c.out.types, lowered)
-        .function_ty => return ok(lowered)
-        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return fail(
-            code: "absent",
-            msg: "the field does not hold a function"
-        )
-        .array | .fixed | .map | .fallible | .named => return fail(
-            code: "absent",
-            msg: "the field does not hold a function"
-        )
-        .case_ty | .failure | .generic | .error => return fail(
-            code: "absent",
-            msg: "the field does not hold a function"
-        )
-
-    return fail(code: "absent", msg: "unreached")
-
 ## Tests
 
 # Parse, resolve, and walk every body — the driver's shape in miniature,
@@ -2166,6 +2162,20 @@ test "no promotions anywhere, and the width takes the literal"
     assert breaks.out.diagnostics.len() == 1
     assert breaks.out.diagnostics[0].code == "int_out_of_range"
     assert breaks.out.diagnostics[0].message == "`300` does not fit a `u8`"
+
+test "an operator of literals takes the width its position asks for, each literal held to it"
+    # Defect 564: an annotation, a declared result, the other operand and a
+    # float width, each the operator's type; a literal past the width is told
+    # where it stands, and an integer among floats keeps `mixed_arithmetic`.
+    for text in ["function f() -> u8\n    return 2 + 3\n", "function f() -> u8\n    y: u8 = 2 * (3 + 4)\n    return y\n", "function f(b: u8) -> u8\n    return (2 + 3) * b\n", "function f() -> f32\n    return 0.5 * 2.0\n"]
+        assert checked_program(text).out.diagnostics.len() == 0
+
+    wide = checked_program("function f() -> u8\n    return 300 + 1\n")
+    assert wide.out.diagnostics.len() == 1
+    assert wide.out.diagnostics[0].code == "int_out_of_range"
+    mixed = checked_program("function f() -> f32\n    return 1 + 2.0\n")
+    assert mixed.out.diagnostics.len() == 1
+    assert mixed.out.diagnostics[0].code == "mixed_arithmetic"
 
 test "a case with no type of its own takes the other side's"
     c = checked_program("variant Token\n    plus\n    minus\n\nfunction f(t: Token) -> bool\n    return t == .plus\n")
@@ -2325,12 +2335,28 @@ test "a call that says neither is refused at the call, and a disagreeing context
 
     # A parameter an ARGUMENT bound keeps its binding; the annotation that
     # disagrees with it is compare's mismatch, once, on the substituted type.
+    # The literal waits, and the context it cannot take settles nothing
+    # (panel 203, `check/waiting.hero`'s `context_taken`), so the one message
+    # stays at the call and never moves to the literal.
     e = checked_program(
         "function same<A>(x: A) -> A?\n    return ok(x)\n\nfunction main()\n    n: str? = same(1)\n    print(n.is_err())\n"
     )
     assert e.out.diagnostics.len() == 1
     assert e.out.diagnostics[0].code == "type_mismatch"
     assert e.out.diagnostics[0].message == "expected `str?`, found `i64?`"
+
+test "an argument with no type of its own waits for the call's others, and a pair holds in either order"
+    # Defect 541, panel 203 R1 (a): the critic's pairs of two waiting
+    # arguments, each accepted in both orders; two forms that refuse
+    # themselves are one mistake, told once, where the first stands.
+    lib = "function first<A>(a: A, b: A) -> A\n    pair = [a, b]\n    return pair[0]\n\nfunction main()\n    print("
+
+    for call in ["first(a: [1], b: [])", "first(a: [], b: [1])", "first(a: {\"k\": 1}, b: {})", "first(a: {}, b: {\"k\": 1})", "first(a: [[1]], b: [[]])", "first(a: [[]], b: [[1]])"]
+        assert checked_program(lib + call + ".len())\n").out.diagnostics.len() == 0
+
+    told = checked_program(lib + "first(a: [], b: []).len())\n")
+    assert told.out.diagnostics.len() == 1
+    assert told.out.diagnostics[0].message == "`[]` takes its type from the type its position asks for, and `a` of `first` asks for `A`: no other argument and no context says what `A` is"
 
 test "a poisoned argument reports once, and the parameter it left unbound is not a second message"
     # `len` as a value is `builtin_as_value`; the `B` that argument would have

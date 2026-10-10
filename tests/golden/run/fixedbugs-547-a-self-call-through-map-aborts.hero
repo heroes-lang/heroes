@@ -1,0 +1,13 @@
+# Defect 547, 2026-10-10, panel 203's R2: a built-in beside the parameter.
+# `step` hands itself to `map` over a one-element array, so every call of
+# `step` calls `step` again before it returns; `check` passes it, and so did
+# the summary route panel 203 measured, `map`'s loop having a way out where
+# the array is empty. Panel 199 R2's answer holds: an
+# abort that says the stack is exhausted. Under the sanitiser the runtime's
+# guard yields to ASan, which says `stack-overflow`.
+
+function step(n: i64) -> i64
+    return [n].map(step)[0]
+
+function main()
+    print(step(1))

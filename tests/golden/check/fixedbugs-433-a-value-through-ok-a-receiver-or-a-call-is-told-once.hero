@@ -23,10 +23,16 @@ function pair() -> i64[2]?  #~ fixed_outside_a_group
 function main()
     maybe: i64[2]? = ok([])  #~ fixed_outside_a_group
     long: i64[2]? = ok([1, 2, 3])  #~ fixed_outside_a_group
-    a = [].first()  #~ cannot_infer
+    a = [].first()
     b = [1, 2, 3].first()
     c: i64[2] = listed()  #~ fixed_outside_a_group
     d = listed().first()
     e: i64[2]? = ok(listed())  #~ fixed_outside_a_group
     word: i64[2]? = ok("ab")  #~ fixed_outside_a_group type_mismatch
     print(maybe.is_err(), long.is_err(), a, b, c[0], d, e.is_err(), word.is_err(), pair().is_err())
+
+# Corrected 2026-10-10, defect 541 (panel 203 R1 (b)): `[].first()` is told
+# nothing of its own. The value before the dot is typed as `first`'s first
+# argument, as `first([])` is, so the empty literal meets `i64[2]`, and what
+# it is told there is withdrawn with the rest, the refusal's shadow; the
+# header's last sentence held until then.

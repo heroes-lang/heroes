@@ -13,5 +13,19 @@ function h(ns: [i64?]) -> i64
     return ns.len()
 
 function main()
-    print(g(x: 1, ns: [ok(1)]))  #~ cannot_infer
-    print([ok(1)].h())  #~ cannot_infer
+    print(g(x: 1, ns: [ok(1)]))
+    print([ok(1)].h())
+
+# Corrected 2026-10-10, defect 541 (panel 203 R1), below the program so every
+# line keeps its number: both lines of `main` are accepted, the argument
+# checked against `g`'s concrete parameter and the receiver against `h`'s. The
+# whole form of a form inside an argument, and of one inside a receiver, is
+# pinned below, at a generic function's parameter whose letter nothing in
+# the call settles.
+
+function g2<A>(ns: [A?]) -> i64
+    return ns.len()
+
+function after_panel_203()
+    print(g2(ns: [ok(1)]))  #~ cannot_infer
+    print([ok(1)].g2())  #~ cannot_infer

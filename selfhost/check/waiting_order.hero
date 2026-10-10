@@ -1,0 +1,295 @@
+# Which waiting argument settles a generic callee's letters when nothing else
+# does (spec § 9, defect 541, panel 203 R1 (a); design.md §4.5, §4.12).
+#
+# `check/waiting.hero` says which arguments wait; this module says which of
+# them speaks first once the call's other arguments and the context have
+# settled what they can. The order is by FORM, never by position, so a pair's
+# verdict is the same whichever argument is written first: until panel 203's
+# landing `first(a: [1], b: [])` was accepted and `first(a: [], b: [1])`
+# refused, the critic's second pass found, because the forms that refuse
+# themselves were tried by position among the rest.
+#
+# The rule is the synthesis's own: an argument synthesised alone gets the type
+# `check/walk.hero`'s `synth` gives it, part of which may be a literal's
+# default width. The one whose type owes least to a default speaks first
+# (`weight`), so `[b8, 1]` with `b8: u8` settles `[u8]` before `[2]` settles
+# `[i64]`, and `same(x: b8)` speaks before `2`; a form with a part of no type
+# at all, `[]`, `{}`, `ok(…)`, a case, speaks last, after a generic
+# function's name has settled what it can (`check/waiting_names.hero`), and
+# is told where it stands. Among equals the first written speaks, and equal
+# weights give equal types: a literal's default is `i64` or `f64` by its
+# form alone.
+
+use ast
+use source
+use resolved
+use check/table
+use check/state
+use check/lower
+use check/contextual
+use check/function_value
+use check/generics as check_generics
+use check/waiting
+
+# Whether the receiver of the call `at`, `x.f(…)`, is typed by the call as its
+# first argument rather than read first to look for a field (§4.11; panel 203
+# R1 (b)): `f` is a function of the program whose first parameter is not `@`,
+# so UFCS applies, and the receiver waits by a form whose type can hold no
+# field: a literal, `[]`, `{}`, `ok(…)`, `fail(…)`, a case, `???`, `nullptr`,
+# a generic function's name, an array or map literal, or a generic call whose
+# result owes a part to a literal's default or to nothing (`weight` above 0),
+# a number, a container or a fallible. A generic call whose result is all its
+# arguments' own may be a record with a field of that name, so it is read
+# first, as before.
+function by_the_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], at: i64, receiver: i64) -> bool
+    match r.uses[at]
+        .top t =>
+            match decls[t.at].kind
+                .function_decl fd =>
+                    if fd.value.params.len() == 0 || fd.value.params[0].mutable
+                        return false
+                .constant_decl | .record_decl | .variant_decl | .test_decl => return false
+        .local | .builtin | .module | .unresolved => return false
+
+    if !waiting.needs_context(a, r, s, decls, id: receiver)
+        return false
+    return !waiting.generic_call(a, r, decls, id: receiver) || weight(@c, a, r, s, decls, id: receiver, depth: LOOK) > 0
+
+# How deep `weight` looks: a call or a literal nested past it weighs as a
+# literal does. A generic call's weight asks its arguments', so a chain
+# `ident(x: ident(x: …))` asked again at each of its levels cost the square
+# of its depth until this bound: 925 million instructions at depth 80 where
+# the base took 159 (measured 2026-10-10, the critic's `nest/n80`).
+constant LOOK: i64
+    8
+
+# The weight of a form that refuses itself when synthesised.
+constant REFUSES: i64
+    1000000
+
+# How much of the type a waiting argument's synthesis would give it is a
+# literal's default width: 0 where every part is the argument's own, one for
+# each literal that decides a part, REFUSES where a part has no type at all.
+# A local named where a literal could stand, of `i64` or `f64`, weighs as
+# that literal would (`own`): its width is a default's, so a part the other
+# argument's own names more narrowly speaks first, `{k64: {2: 3}}` after
+# `{4: {k9: 5}}`, and the pair's verdict holds in either order.
+# The synthesis this weighs is `check/walk.hero`'s: an array literal takes
+# its first element's type, a map literal its first key's and value's, and a
+# generic call the types its own arguments settle in its result.
+function weight(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], id: i64, depth: i64) -> i64
+    if depth <= 0
+        return 1
+
+    if function_value.generic_at(a, r, decls, id)
+        return REFUSES
+
+    if contextual.number_literal(a, id) || contextual.float_literal(a, id)
+        return 1
+
+    match a.exprs[id].kind
+        .null_ptr             => return 1
+        .hole | .variant_case => return REFUSES
+        .array el =>
+            if el.elements.len() == 0
+                return REFUSES
+            return weight(@c, a, r, s, decls, id: el.elements[0], depth: depth - 1)
+        .map en =>
+            if en.entries.len() == 0
+                return REFUSES
+            return sum(
+                x: weight(@c, a, r, s, decls, id: en.entries[0].key, depth: depth - 1),
+                y: weight(@c, a, r, s, decls, id: en.entries[0].value, depth: depth - 1)
+            )
+        .call cl =>
+            if waiting.made_by_context(a, r, decls, callee: cl.callee)
+                match r.uses[cl.callee]
+                    .top t => return call_weight(
+                        @c,
+                        a,
+                        r,
+                        s,
+                        decls,
+                        decl: t.at,
+                        receiver: -1,
+                        given: cl.args,
+                        depth: depth - 1
+                    )
+                    .builtin | .local | .module | .unresolved => return REFUSES
+            return 0
+        .method m =>
+            match r.uses[id]
+                .top t =>
+                    if waiting.generic_top(decls, named: r.uses[id])
+                        before: i64 @ m.receiver
+
+                        if r.uses[m.receiver] == .module
+                            before @ -1
+                        return call_weight(
+                            @c,
+                            a,
+                            r,
+                            s,
+                            decls,
+                            decl: t.at,
+                            receiver: before,
+                            given: m.args,
+                            depth: depth - 1
+                        )
+                .builtin | .local | .module | .unresolved => return 0
+
+            return 0
+        .name                                                              => return own(c, r, id: id)
+        .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit => return 0
+        .unary | .binary | .field | .field_name | .index                   => return 0
+        .try_expr | .if_expr | .match_expr | .error                        => return 0
+
+    return 0
+
+# What a part with a type of its own weighs: 1 for a local of `i64` or `f64`,
+# a literal's default widths, 0 for any other.
+function own(c: state.Checker, r: resolved.Resolved, id: i64) -> i64
+    match r.uses[id]
+        .local l =>
+            ty = c.out.local_types[l.at]
+
+            if ty == table.int_ty_id(c.out.types) || ty == table.f64_ty(c.out.types)
+                return 1
+        .top | .builtin | .module | .unresolved => return 0
+
+    return 0
+
+function sum(x: i64, y: i64) -> i64
+    if x >= REFUSES || y >= REFUSES
+        return REFUSES
+    return x + y
+
+# A generic call's weight: for each letter its result names, the lightest
+# argument that names it, a generic function's name lending what another
+# letter of its parameter weighs; REFUSES where a letter of the result is
+# named by no argument, `wanted<A>(what: str) -> A?` refused alone.
+function call_weight(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], decl: i64, receiver: i64, given: [ast.Arg], depth: i64) -> i64
+    letters = function_value.letters_of(s, decls, decl: decl)
+    params: [i64] @ []
+    result: i64 @ 0
+
+    # The written types as the walk lowered them, read where it has, since
+    # the weight is asked again at every level of a nested call.
+    match decls[decl].kind
+        .function_decl fd =>
+            for p in fd.value.params
+                params @ params.push(lowered(@c, a, r, at: p.ty))
+
+            result @ lowered(@c, a, r, at: fd.value.result)
+        .constant_decl | .record_decl | .variant_decl | .test_decl => return 0
+
+    values: [i64] @ []
+
+    if receiver >= 0
+        values @ values.push(receiver)
+
+    for arg in given
+        values @ values.push(arg.value)
+
+    if values.len() != params.len()
+        return 0
+    weights: [i64] @ []
+
+    for _ in letters
+        weights @ weights.push(REFUSES)
+
+    i: i64 @ 0
+
+    while i < values.len()
+        w: i64 @ 0
+
+        if waiting.needs_context(a, r, s, decls, id: values[i])
+            w @ weight(@c, a, r, s, decls, id: values[i], depth: depth)
+        else if a.exprs[values[i]].kind == .name
+            w @ own(c, r, id: values[i])
+
+        if w < REFUSES
+            lighten(c, @weights, ty: params[i], w: w)
+        i @ i + 1
+
+    # A generic function's name settles the rest of its parameter's letters
+    # from any one of them (`partly`), once per name so that a chain of them
+    # costs its length.
+    i @ 0
+
+    while i < values.len()
+        if function_value.generic_at(a, r, decls, values[i])
+            lightest: i64 @ REFUSES
+            k: i64 @ 0
+
+            while k < weights.len()
+                if check_generics.mentions(c, ty: params[i], at: k) && weights[k] < lightest
+                    lightest @ weights[k]
+                k @ k + 1
+
+            if lightest < REFUSES
+                lighten(c, @weights, ty: params[i], w: lightest)
+        i @ i + 1
+
+    total: i64 @ 0
+    k: i64 @ 0
+
+    while k < weights.len()
+        if check_generics.mentions(c, ty: result, at: k)
+            total @ sum(x: total, y: weights[k])
+        k @ k + 1
+
+    return total
+
+# The type written at `at`, from the walk's table where it is there.
+function lowered(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, at: i64) -> i64
+    known = state.written_type(c.out, at)
+
+    if !known.is_err()
+        return known.must()
+    return lower.lower_ty(@c, a, r, at)
+
+function lighten(c: state.Checker, @weights: [i64], ty: i64, w: i64)
+    k: i64 @ 0
+
+    while k < weights.len()
+        if check_generics.mentions(c, ty: ty, at: k) && w < weights[k]
+            weights[k] @ w
+        k @ k + 1
+
+# Which waiting argument nothing settled is synthesised next: the lightest
+# that refuses itself in no part, the first written among equals; -1 where
+# none is left but generic functions' names and the forms that refuse
+# themselves. With `refusing`, the first of those forms instead.
+function next_alone(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], left: [waiting.Held], refusing: bool) -> i64
+    best: i64 @ -1
+    lightest: i64 @ REFUSES
+    k: i64 @ 0
+
+    while k < left.len()
+        value = left[k].value
+
+        if !function_value.generic_at(a, r, decls, value)
+            w = weight(@c, a, r, s, decls, id: value, depth: LOOK)
+
+            if refusing && w >= REFUSES
+                return k
+
+            if !refusing && w < lightest
+                best @ k
+                lightest @ w
+        k @ k + 1
+
+    return best
+
+# `left` without its `at`th entry.
+function without(left: [waiting.Held], at: i64) -> [waiting.Held]
+    rest: [waiting.Held] @ []
+    k: i64 @ 0
+
+    while k < left.len()
+        if k != at
+            rest @ rest.push(left[k])
+        k @ k + 1
+
+    return rest

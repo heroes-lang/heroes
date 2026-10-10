@@ -1,0 +1,36 @@
+# Fixed defect 564, 2026-10-10 (panel 203 R3): the refused half;
+# `run/fixedbugs-564-the-operands-of-an-operator-take-the-type-its-position-asks`
+# holds what is accepted. Each operand of an arithmetic operator in a position
+# that asks for a width takes it, so a literal that cannot fit is told where it
+# stands, `int_out_of_range`, as `y: u8 = 300` is; where an operand cannot
+# take the width at all, an integer literal beside a float in an `f32`
+# position, the operator is synthesised as before and told
+# `mixed_arithmetic`, the rule that no width is promoted. A shift or a bitwise
+# operator takes `i64` alone (§4.14), so its value at a narrower width is the
+# mistake, told once at the operator; a comparison asks nothing of its
+# operands; two operands of their own different widths are told as before.
+# Base: each of the first four lines was told *expected `u8`, found `i64`* at
+# the operator, and `y: u16 = 2 + 3` and `r: u8 = 7 % 3`, accepted here, the
+# same at their widths. The `%` is held here and not in the `run/` case: the
+# emitted C of a division or a remainder at a width narrower than `i64`
+# compares it with `INT64_MIN`, and clang warns on that at `-O2`, as it does
+# for `b % 3` with `b: u8` on the base (found beside this repair, reported
+# apart: `selfhost/emit/operator.hero`).
+
+function main()
+    a: u8 = 300 + 1  #~ int_out_of_range
+    print(a)
+    b: u8 = -1 + 2  #~ int_out_of_range
+    print(b)
+    c: u8 = 1 << 2  #~ type_mismatch
+    print(c)
+    d: u8 = 6 & 3  #~ type_mismatch
+    print(d)
+    e: f32 = 1 + 2.0  #~ mixed_arithmetic
+    print(e)
+    y: u16 = 2 + 3
+    z: u8 = 1
+    w: u16 = y + z  #~ mixed_arithmetic
+    print(w)
+    r: u8 = 7 % 3
+    print(r)

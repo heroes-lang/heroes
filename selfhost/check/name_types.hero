@@ -1,0 +1,117 @@
+# The type a name gives, standing alone or after a receiver's dot (design.md
+# §4.5, §4.11, §4.13): `synth_name`, a name's type where the position asks
+# for none, a local's, a constant's, a function's signature or its refusal;
+# and `field_of_function_type`, §4.11's first lookup, the function a record's
+# or a matched case's field holds, which `x.f(…)` calls before any free
+# function named `f`.
+#
+# Moved out of `check/walk.hero` unchanged by panel 203's landing (R1 (f)),
+# whose route grew that file past its decided ceiling: neither calls anything
+# of the walk, and `check/may_end.hero` and `check/self_call.hero` ask the
+# second of them as the walk does.
+
+use ast
+use source
+use resolved
+use inventory
+use contextless_errors
+use check/table
+use check/state
+use check/lower
+use check/function_value
+
+function synth_name(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], id: i64) -> i64
+    span = a.exprs[id].span
+
+    match r.uses[id]
+        # The resolver reported it (module_is_not_a_value); one mistake,
+        # one diagnostic, so nothing is said here.
+        .module  => return state.error_ty_of(c)
+        .local l => return c.out.local_types[l.at]
+        .top t =>
+            match decls[t.at].kind
+                # §4.13: a top-level function is a value, its type its
+                # signature, but for an `@` or a generic one where nothing
+                # binds it (defects 398, 402: `check/function_value.hero`).
+                .function_decl   => return function_value.synthesised(@c, a, r, s, decls, decl: t.at, span: span)
+                .constant_decl k => return lower.lower_ty(@c, a, r, k.ty)
+                # A record name is a constructor, not a value on its own
+                # (§4.9): only meaningful as the callee of a call.
+
+                .record_decl =>
+                    state.push_diagnostic(
+                        @c,
+                        contextless_errors.record_name_alone(source.span_text(s, decls[t.at].name), span)
+                    )
+                    return state.error_ty_of(c)
+                .variant_decl | .test_decl => return state.error_ty_of(c)
+        # A built-in used as a value: an error_ty with no diagnostic is
+        # poison that flows to the emitter — found by the closure-list
+        # audit on its first program.
+
+        .builtin b =>
+            state.push_diagnostic(@c, contextless_errors.builtin_as_value(inventory.name_of(b.at), span))
+            return state.error_ty_of(c)
+        .unresolved => return state.error_ty_of(c)
+
+    return state.error_ty_of(c)
+
+# A field of the receiver whose type is a function — §4.11's first
+# lookup. A variant case's payload answers this too, and it did not until
+# panel 079: Ty.named alone fell through to UFCS, so a.g(50) on a matched
+# payload reported "no field g" about a payload that declares g — a
+# message asserting a fiction, the one thing §4.17 forbids.
+function field_of_function_type(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], receiver: i64, name: str) -> i64?
+    holder: i64 @ -1
+    case_at: i64 @ -1
+
+    match table.get(c.out.types, receiver)
+        .named n => holder @ n.decl
+        .case_ty vc =>
+            holder @ vc.decl
+            case_at @ vc.at
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => holder @ -1
+        .array | .fixed | .map | .fallible | .function_ty         => holder @ -1
+        .failure | .generic | .error                              => holder @ -1
+
+    if holder < 0
+        return fail(code: "absent", msg: "the receiver is not a record or a case")
+    found_ty: i64 @ -1
+
+    match decls[holder].kind
+        .record_decl rec =>
+            if case_at >= 0
+                return fail(code: "absent", msg: "a case type on a record declaration")
+
+            for f in rec.fields
+                if source.span_text(s, f.name) == name
+                    found_ty @ f.ty
+        .variant_decl v =>
+            if case_at < 0
+                return fail(code: "absent", msg: "a variant's own name has no fields")
+
+            for f in v.cases[case_at].fields
+                if source.span_text(s, f.name) == name
+                    found_ty @ f.ty
+        .constant_decl | .function_decl | .test_decl => return fail(code: "absent", msg: "not a data declaration")
+
+    if found_ty < 0
+        return fail(code: "absent", msg: "no field of that name")
+    lowered = lower.lower_ty(@c, a, r, found_ty)
+
+    match table.get(c.out.types, lowered)
+        .function_ty => return ok(lowered)
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return fail(
+            code: "absent",
+            msg: "the field does not hold a function"
+        )
+        .array | .fixed | .map | .fallible | .named => return fail(
+            code: "absent",
+            msg: "the field does not hold a function"
+        )
+        .case_ty | .failure | .generic | .error => return fail(
+            code: "absent",
+            msg: "the field does not hold a function"
+        )
+
+    return fail(code: "absent", msg: "unreached")
