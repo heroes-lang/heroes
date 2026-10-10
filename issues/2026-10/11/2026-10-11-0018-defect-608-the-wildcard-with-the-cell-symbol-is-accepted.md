@@ -3,7 +3,7 @@ kind: defect
 area: resolve
 milestone: none
 filed: 2026-10-11
-commit: none
+commit: 48b54eec467b253c90066ced136f95ecd812cbeb
 github: none
 ---
 
@@ -12,3 +12,5 @@ github: none
     **Origin:** found by the landing session of panel 209 at 00:11 on 2026-10-11, reading the two new operators' kill rates over `examples/` after the push of `m-inferred-cell` (the optimistic chain's panel 187 R2 and the operator table's own measurement); the spec-warden's prediction (3) at the sitting, *the new row kills 100%*, scored false by this shape alone.
 
     **Class: blocking**, 2026-10-11: a wrong program accepted, by `.claude/rules/verification.md` § Bounded discovery's list; the next batch's first item.
+
+    Repaired at `48b54eec467b253c90066ced136f95ecd812cbeb`, 2026-10-11 (lane b20-check), gated by its cases and the compiler's own tests; the net is owed at the batch's close. The resolver's `.declare` arm tells a cell on `_` once at the `_` (`resolve/meant.declares_no_cell`, the message `errors.never_rebound_wildcard`, code `never_rebound`), its certain fix writing `=` over the symbol written, in a hole's module too since nothing can ever re-bind `_`; `parse/annotation.cell_symbol` leaves the old `_: T @ e` to that one message, whose fix then writes `=` in one pass where `old_cell_symbol`'s would have written the refused `@=`. Shapes measured beside it, each refused once: the top of a body and twice in one scope, a `for` and a `while`, a `match` arm and an `if`, `_: T @= e`, the old `_: T @ e`, a hole's module, a `test`, a `T?` value, a `()` value, `nullptr` and `[]`; the last four's fix writes the `_ = e` that `check` then refuses as it refuses that line anywhere (`discarded_failure`, `bound_unit`, `cannot_infer`), the resolver's message waiting for no checker's. `(_, x) @= e` is no statement the grammar admits (`expected_group_close`, unchanged); `_ @ e` is defect 613. `tests/golden/run/fixedbugs-147-…` wrote `_: i64 @= twice(k: 15)` on an arm and now `=`, its C byte-identical. `heroes mutate examples --operator bind-as-cell` 785 -> 832 of 833, the one survivor `examples/gallery/09-holes.hero:31`, the named cell the hole exempts, unchanged. Ten `tests/golden/check/fixedbugs-608-*` cases; check, fixes and annotations 10/0 narrowed, check 678/0 and fixes 975/0 whole, own tests 1597 passed; instructions retired within run-to-run spread (the commit body's numbers).
