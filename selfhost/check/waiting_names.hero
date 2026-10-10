@@ -36,7 +36,7 @@ function partly(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.S
         param = params[w.at]
         got: i64? @ fail(code: "not_generic", msg: "not a generic function's name")
 
-        if function_value.generic_at(a, r, s, decls, w.value)
+        if function_value.generic_at(a, r, decls, w.value)
             got @ through(@c, a, r, s, decls, id: w.value, wanted: param, callee: bindings)
 
         if got.is_err()
