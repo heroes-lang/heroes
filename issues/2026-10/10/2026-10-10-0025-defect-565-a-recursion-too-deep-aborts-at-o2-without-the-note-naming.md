@@ -3,7 +3,7 @@ kind: defect
 area: runtime
 milestone: none
 filed: 2026-10-10
-commit: none
+commit: b3d82b234224aace2ab5b92d4c4219fa86bbbf6a
 github: none
 ---
 
@@ -14,3 +14,5 @@ github: none
     **Class: adjacent**, 2026-10-10 (`.claude/rules/verification.md` § Bounded discovery): a true message less exact than it is at `-O0`.
 
     Measured 2026-10-10 (lane b18-infer), the route the brief left open beside keeping the clause: why the frames cannot be read at `-O2`. In `fixedbugs-547-a-self-call-through-a-parameter-aborts` built at `-O2`, clang inlines `go` into `step` and turns the call through `f` into a direct call, so `step`'s only call is to itself (`otool -tV`: one `bl` to `step`); in `…-through-map-aborts`, `library.map_37f8817a` has no symbol in the binary at all (`nm`), inlined into `step`. The interrupted stack holds `step`'s frames alone, and the handler's walk (`runtime/parts/stack.c`, `hero_stack_names`) has no second name to close a cycle with; at `-O0` `step` calls `go` and `map` (`bl`), and the clause is printed. The field shape names `step` alone at both levels, its call through the field being `step` calling `step`. Every one aborts 134 with `stack exhausted` at both levels, the stop holding. Keeping the clause at `-O2` needs either the frames inlining removes, `noinline` or `-fno-inline` on emitted functions, a run-time cost for every program, or DWARF's inline records read inside the signal handler, a `-g` build and a reader the runtime does not have; CLAUDE.md § Precedence takes the fastest at run time where robustness is not at stake. No change made; whether 565 closes on this measurement is the coordinator's.
+
+    Measured at `b3d82b23`, 2026-10-10 (lane b18-infer), and closed on that measurement by the coordinator at batch 18's close, the batch's own question taking its recommended answer (`.claude/rules/verification.md` § The batch, the author's *5a* of 2026-10-04): at `-O2` the frames the `-O0` clause names are not in the binary (clang inlines `go` and `map` into `step`, `otool -tV` and `nm`), and the runtime's handler says nothing where the cycle is the frame already named (`runtime/parts/stack.c`, `hero_stack_say_recursion`, by design since defect 521). Keeping the clause would cost every program its inlining (`noinline` or `-fno-inline`) or need DWARF's inline records read inside the signal handler; CLAUDE.md § Precedence takes the fastest at run time where robustness is not at stake, and here it is not: every shape aborts 134 with `stack exhausted` at both levels, and the line names a frame that is on the stack. No code changed.
