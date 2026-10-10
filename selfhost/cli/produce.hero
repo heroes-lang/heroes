@@ -113,11 +113,6 @@ function produce(path: str, s: source.Source, options: compile.Options, t: toolc
     if unjudged.len() > 0
         io.eprint(text: "internal error: a group head's name was never judged\n  " + unjudged)
         return fail(code: "failed", msg: "a group head's name reached the tools unjudged")
-    is_tests: bool @ false
-
-    match options.target
-        .tests_build   => is_tests @ true
-        .program_build => is_tests @ is_tests
 
     # Where the binary lands is the round's to learn, from the link line it
     # runs (`link.link_objects`), and the C of every unit is written where
@@ -181,7 +176,6 @@ function produce(path: str, s: source.Source, options: compile.Options, t: toolc
     site = assemble.Site(
         object: object.must(),
         output: options.output,
-        is_tests: is_tests,
         link: !art.must().emit_c,
         source_dir: source_dir,
         link_names: names,
@@ -202,7 +196,8 @@ function produce(path: str, s: source.Source, options: compile.Options, t: toolc
         art.must().checked,
         s,
         art.must().decls,
-        components: units.components(s)
+        components: units.components(s),
+        target: options.target
     )
     went = rounds.run(t, options, art.must(), s, site, under: under, planned: planned, answered: @answered)
 

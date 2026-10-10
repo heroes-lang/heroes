@@ -1,7 +1,7 @@
 # Two headers two groups name, which clang refuses together (design.md §4.17,
 # §4.19; defect 538, panel 200's R1). A unit includes every header its
-# groups name before a line of its own, a module's unit as `build` compiles it
-# and the whole program's as `heroes test` does, so two headers each declaring
+# groups name before a line of its own, a module's unit as `build` and, since
+# defect 560, `heroes test` compile it, so two headers each declaring
 # one C name another way, a `static inline twice` of `long` in one and of
 # `int` in the other, are read together there, and clang's first error lands
 # in whichever came second, its note in the other. Until 2026-10-09 that was
@@ -108,7 +108,7 @@ constant ONE_MODULE: str
     "each group's header is included in the unit clang compiled before a line of its own, so these two are read together there: bind the two groups from two modules, whose units each read their own groups' headers"
 
 constant TWO_MODULES: str
-    "the two groups are two modules', and a unit reads both headers where `heroes test` compiles the whole program as one unit or a module's unit spells a record the other group declares"
+    "the two groups are two modules', and a unit reads both headers where a module's unit spells a record the other group declares"
 
 # Where a side's line is: the file and its line, and the group's header it
 # arrives through where the file is another (defect 550), so the words are

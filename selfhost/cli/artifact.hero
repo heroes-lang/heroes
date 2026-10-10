@@ -101,8 +101,9 @@ function write_c(t: toolchain.Toolchain, options: compile.Options, art: compile.
     #
     # **What the rounds compiled is not this text** (defect 434; this said
     # *`emit_maybe` with the learned tags is exactly what `assemble.fused`
-    # compiles, so the bytes written are the bytes clang accepted*). Only
-    # `heroes test` compiles the fused unit (`assemble.fused`, `.tests_build`);
+    # compiles, so the bytes written are the bytes clang accepted*). No round
+    # compiles the fused unit since defect 560 (2026-10-10), `heroes test`'s
+    # included, which until then did (`assemble.fused`, `.tests_build`);
     # `--emit-c` is a program build, whose rounds compile one unit per module
     # (`assemble.per_module`), and the artifact is the same program rendered
     # whole, as one unit, under the same two answers every one of those units

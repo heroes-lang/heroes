@@ -202,8 +202,42 @@ function one_case(scratch: str, compiler: str, binaries: str, item: cases.Case, 
         if sanitised_failed(@r, scratch: scratch, compiler: compiler, item: item, want: want, flags: flags)
             return false
 
+    if tested_failed(@r, scratch: scratch, compiler: compiler, item: item)
+        return false
+
     report.keep_pass(@r)
     return false
+
+# **`heroes test` where the case holds tests** (defect 560, 2026-10-10):
+# until then `test` compiled the whole program as one unit, so a program of
+# two modules whose headers each define a `static inline twice` built and
+# printed `6 8` while `test` refused it, and a test asserting what `build`
+# computes failed under `test` alone. A case whose program holds a `test`
+# block is asked `heroes test` too, and every test must pass. Answers
+# whether it FAILED, the failure recorded.
+function tested_failed(@r: report.Report, scratch: str, compiler: str, item: cases.Case) -> bool
+    text = read_file(item.source)
+
+    if text.is_err() || !strings.starts_with(text: text.must(), prefix: "test \"") && !strings.contains(text: text.must(), needle: "\ntest \"")
+        return false
+    said = shell.run(scratch: scratch, program: compiler, words: [compiler, "test", item.source])
+
+    if said.is_err()
+        report.keep_failure(
+            @r,
+            label: "run/" + item.name + " under test",
+            detail: "  `test " + item.source + "`: " + shell.refusal(said)
+        )
+        return true
+
+    if said.must().code == 0
+        return false
+    report.keep_failure(
+        @r,
+        label: "run/" + item.name + " under test",
+        detail: "  `test " + item.source + "` exited " + said.must().code.to_str() + ":\n" + said.must().out + said.must().err
+    )
+    return true
 
 # One sanitised configuration, `run <case> <flags>` with the fill handed to
 # the program (`freed_bytes.filled`, defect 321): what ASan frees is
