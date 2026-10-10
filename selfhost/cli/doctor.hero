@@ -138,7 +138,7 @@ function checks(build_dir: str, runtime_hint: str?) -> [Check]
 
 # Where the linker and the C libraries live, asked as each platform's
 # toolchain answers it (defect 336). **Windows is asked first, and by the
-# runtime** (`exe_suffix()`, the question `flags.link_flags` asks): its shell
+# runtime** (`exe_suffix()`, the question `link_flags.link_flags` asks): its shell
 # may have no `uname` at all, and Git's answers `MINGW64_NT-…`, which read as
 # Linux and drew Linux's `cc` row and advice, FAIL on the Windows box where
 # `heroes build` built and ran programs (panel 191's compiler-engineer). The

@@ -53,6 +53,12 @@ use checker
 constant AS_ERROR: str
     "[-Werror"
 
+# The refusal's last note, which `cli/header_order.hero` replaces where a
+# move of a group, a header of C's own before it or a header of the
+# program's own is what the program needs instead (panel 204's R3).
+constant REPAIR: str
+    "a group's header is compiled as this program's own C includes it, before any declaration of the group is checked against it: repair the header, or name the one that declares this group's C"
+
 # The diagnostic for a header clang refused, or none where clang's first error
 # is not this class. `runtime` and `build` are the directories whose files are
 # the compiler's, as clang was given them.
@@ -64,9 +70,11 @@ function refused(stderr: str, s: source.Source, decls: [ast.Decl], runtime: str,
         return none
     one = read.must()
 
-    if !one.beside.is_err()
+    two = sides(one)
+
+    if !two.is_err()
         return [
-            pair(s, one.rows, first: one.first, steps: one.steps, at: one.at, group: one.group, beside: one.beside.must(), note: one.note, notes: one.notes)
+            headers_together.told(s, one: two.must().one, other: two.must().other, message: one.first.message, added: two.must().added)
         ]
     return [told(one.rows, first: one.first, steps: one.steps, at: one.at, group: one.group, notes: one.notes)]
 
@@ -158,43 +166,52 @@ function told(rows: [str], first: clang_first.First, steps: [clang_place.Place],
         d.notes @ d.notes.push(
             "clang's `-Werror` says the warning is one this compiler makes an error in every unit it compiles, the headers each includes among them, and no warning is turned off for a header"
         )
-    d.notes @ d.notes.push(
-        "a group's header is compiled as this program's own C includes it, before any declaration of the group is checked against it: repair the header, or name the one that declares this group's C"
-    )
+    d.notes @ d.notes.push(REPAIR)
     return d
 
-# The two headers clang refused together, `group`'s where its first error
-# lies and `beside`'s where `note` points (defect 538): told in the headers'
-# own order, never the `use` lines'.
-function pair(s: source.Source, rows: [str], first: clang_first.First, steps: [clang_place.Place], at: i64, group: group_file.Group, beside: group_file.Reached, note: clang_first.Attached, notes: [clang_first.Attached]) -> diag.Diagnostic
-    directory = clang_place.found_in(path: steps[at].path, spelled: group.header)
-    refused_file: str @ group.header
+# The two headers clang refused together, the group's where its first error
+# lies and the other's where its note points (defect 538), with clang's other
+# notes worded: told in the headers' own order, never the `use` lines', by
+# `headers_together.told`, or as one macro two headers define two ways
+# (`cli/macro_twice.hero`, panel 204's R2). Absent where no note names
+# another group's header.
+record Sides
+    one: headers_together.Side
+    other: headers_together.Side
+    added: [str]
 
-    if at < steps.len() - 1
-        refused_file @ clang_place.shown(path: first.place.path, directory: directory)
+function sides(read: clang_first.Reading) -> Sides?
+    if read.beside.is_err()
+        return fail(code: "none", msg: "no note names another group's header")
+    beside = read.beside.must()
+    directory = clang_place.found_in(path: read.steps[read.at].path, spelled: read.group.header)
+    refused_file: str @ read.group.header
+
+    if read.at < read.steps.len() - 1
+        refused_file @ clang_place.shown(path: read.first.place.path, directory: directory)
     one = headers_together.Side(
-        span: group.span,
-        header: group.header,
+        span: read.group.span,
+        header: read.group.header,
         file: refused_file,
-        row: first.place.row,
-        quoted: clang_excerpt.of(rows, after: first.row)
+        row: read.first.place.row,
+        quoted: clang_excerpt.of(read.rows, after: read.first.row)
     )
     other = headers_together.Side(
         span: beside.group.span,
         header: beside.group.header,
-        file: clang_place.shown(path: note.path, directory: beside.directory),
-        row: note.row,
-        quoted: clang_excerpt.of(rows, after: note.index)
+        file: clang_place.shown(path: read.note.path, directory: beside.directory),
+        row: read.note.row,
+        quoted: clang_excerpt.of(read.rows, after: read.note.index)
     )
     added: [str] @ []
 
-    for each in notes
-        if each.index != note.index
+    for each in read.notes
+        if each.index != read.note.index
             added @ added.push(
                 "clang adds, at `" + clang_place.shown(path: each.path, directory: directory) + "` line " + each.row.to_str() + ": " + each.text
             )
 
-    return headers_together.told(s, one: one, other: other, message: first.message, added: added)
+    return ok(Sides(one: one, other: other, added: added))
 
 ## Tests
 

@@ -1,0 +1,20 @@
+# fixedbugs, defect 563, lane b18-ffi, 2026-10-10 (panel 204's R2; the
+# spec-warden's `cfgone`, its second order).
+#
+# `fixedbugs-563-cap.h` defines `LIMIT` as 10 where nothing has, and
+# `fixedbugs-563-limit.h` defines it as 100 whatever came before, which C11
+# 6.10.3p2 forbids once the first has. Read in this order, `cap` would cap at
+# 10 and every line after the second header read 100: until 2026-10-10 this
+# built at exit 0 and printed 3 and 10, under a clang warning nobody read,
+# where the other order of the two groups printed 3 and 50. It is refused
+# now, told the other order's meaning and a header of the program's own that
+# keeps this one, which the two `guess` fixes name.
+extern "fixedbugs-563-cap.h"  #~ ffi_header_refused
+    function cap(v: i32) -> i32
+
+extern "fixedbugs-563-limit.h"
+    function half(x: i64) -> i64
+
+function main()
+    print(half(x: 6))
+    print(cap(v: 50))

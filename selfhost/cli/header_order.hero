@@ -1,0 +1,338 @@
+# What a refused header needs instead of a repair (design.md §4.19, §4.17;
+# panel 204's R3, ratified 2026-10-10: the compiler-engineer's search with
+# the completeness critic's corrections; defect 563). A unit reads a
+# module's headers in the order its groups are written (`emit/externs`), so
+# `extern "jpeglib.h"` written above `extern "stdio.h"` is refused at
+# `FILE`, and until panel 204 that was told *repair the header*, false of a
+# header that compiles below the other, and of every header the author did
+# not write. So, only once clang has refused a header a group names:
+#
+# - **a move**: each other group of the refused one's module, in the unit's
+#   order, is tried once on the other side of it, the whole unit's opening
+#   compiled (`cli/order_trial.hero`), and the first order that compiles is
+#   told in place of the note it makes false, the headline with it; and
+#   where that order makes a bound name read otherwise, the note says which
+#   (`cli/header_meaning.hero`);
+# - **a header of C's own**: where no move compiles and the refusal is one
+#   header's, each C11 header the unit does not read is tried just before it,
+#   and the first after which it compiles is told as a group to write above;
+# - **a header of the program's own**: where neither compiles and the header
+#   is not beside the program, the note says where the line of C it needs
+#   goes, and a `guess` fix names that header, never *repair the header*.
+#
+# And on `ffi_unknown_name`'s path, where clang finds no name a header
+# declares read alone (GLFW's `glfw3.h` read before `OpenGL/gl.h`, which it
+# then includes without `glext.h`): the header is asked alone, and the move
+# that reads it before the other group's is told. A build that compiles pays
+# nothing for any of it.
+
+use source
+use ast
+use diag
+use emit/externs as emit_externs
+use emit/ffi_declared
+use cli/toolchain
+use cli/compiling
+use cli/order_trial
+use cli/header_meaning
+use cli/header_refused
+use cli/headers_together
+use cli/order_groups
+use cli/strings
+
+# The C11 headers (C11 7.1.2) but the four every unit reads already, the
+# likeliest a header leans on first.
+constant STANDARD: [str]
+    [
+        "stdio.h"
+        "stdlib.h"
+        "string.h"
+        "stdarg.h"
+        "time.h"
+        "limits.h"
+        "inttypes.h"
+        "errno.h"
+        "ctype.h"
+        "signal.h"
+        "setjmp.h"
+        "locale.h"
+        "wchar.h"
+        "wctype.h"
+        "float.h"
+        "assert.h"
+        "complex.h"
+        "fenv.h"
+        "iso646.h"
+        "stdalign.h"
+        "stdatomic.h"
+        "stdnoreturn.h"
+        "tgmath.h"
+        "threads.h"
+        "uchar.h"
+    ]
+
+# A move that compiles: the other group's header, whether it goes before the
+# refused one (else the refused one goes before it), and both orders.
+record Move
+    other: str
+    before: bool
+    written: [str]
+    order: [str]
+
+# `d`, a header's refusal, with what the program needs instead where clang
+# says one of the three compiles.
+function refused(d: diag.Diagnostic, s: source.Source, decls: [ast.Decl], t: toolchain.Toolchain, under: compiling.Compiling, unit_headers: [str]) -> diag.Diagnostic
+    if d.code != "ffi_header_refused"
+        return d
+    header = emit_externs.unquoted(s, span: d.span)
+    written = order_trial.theirs(unit_headers)
+    found = search(
+        s,
+        decls,
+        t,
+        under: under,
+        written: written,
+        target: header,
+        module: source.component_at(s, d.span.start),
+        question: ""
+    )
+
+    if !found.is_err()
+        out: diag.Diagnostic @ d
+        out.message @ retold(d.message)
+        out.notes @ replaced(d.notes, said: move_note(s, decls, target: header, move: found.must(), at: d.span.start))
+        meant = meaning_note(
+            s,
+            decls,
+            t,
+            under: under,
+            move: found.must(),
+            module: source.component_at(s, d.span.start)
+        )
+
+        if meant != ""
+            out.notes @ out.notes.push(meant)
+        return out
+
+    if !order_groups.holds(d.notes, one: header_refused.REPAIR)
+        return d
+    module = source.component_at(s, d.span.start)
+    context = above(
+        t,
+        under: under,
+        written: written,
+        target: header,
+        missing: order_groups.written_above(s, decls, header: header, module: module, unit: written)
+    )
+
+    if !context.is_err()
+        out: diag.Diagnostic @ d
+        out.notes @ replaced(
+            d.notes,
+            said: "`" + header + "` compiles after `" + context.must() + "`, which this module's groups name above this one; a module that spells a record of this group reads `" + header + "` in its own unit, after its own groups' headers and without those (design.md §4.1), so that module needs a group of its own naming `" + context.must() + "` above its others"
+        )
+        return out
+    prerequisite = standard(t, under: under, written: written, target: header)
+
+    if !prerequisite.is_err()
+        out: diag.Diagnostic @ d
+        out.notes @ replaced(
+            d.notes,
+            said: "`" + header + "` compiles after `" + prerequisite.must() + "`, a header of C's own it uses and does not include: write a group naming `" + prerequisite.must() + "` above this one, which a module's unit then reads first; a group binds at least one name, and one holding only a record stands where it is written (§ 13)"
+        )
+        return out
+
+    if order_groups.beside_program(under, header: header)
+        return d
+
+    if order_groups.index_text(text: d.message, part: header_refused.AS_ERROR) >= 0
+        out: diag.Diagnostic @ d
+        out.notes @ replaced(
+            d.notes,
+            said: "`" + header + "` is not this program's to repair: its own code draws the warning this compiler makes an error in every unit"
+        )
+        return out
+    own = order_groups.stem(header) + "_own.h"
+    out: diag.Diagnostic @ d
+    out.notes @ replaced(
+        d.notes,
+        said: "`" + header + "` is not this program's to repair: what it needs before it, a definition its documentation names or a header it does not include, goes in a header of the program's own beside this file, `" + own + "`, written as that line and then `#include <" + header + ">`, which this group then names"
+    )
+    out.fixes @ out.fixes.push(
+        diag.Fix(title: "name `" + own + "`, the header of the program's own the note drafts", replacement: "\"" + own + "\"", span: d.span, certainty: .guess)
+    )
+    return out
+
+# `d`, a name told absent from its header, retold where the header declares
+# it read alone and one move of a group reads it so.
+function unknown(d: diag.Diagnostic, s: source.Source, decls: [ast.Decl], t: toolchain.Toolchain, under: compiling.Compiling, unit_headers: [str]) -> diag.Diagnostic
+    if d.code != "ffi_unknown_name"
+        return d
+    bound = order_groups.bound_at(s, decls, span: d.span)
+
+    if bound.is_err()
+        return d
+    name = bound.must().name
+    header = bound.must().header
+    question = "static void hero_order_q(void) { (void)(" + name + "); }"
+
+    if !order_trial.compiled(t, words: compiling.unit_words(under), text: order_trial.opening([header], question: question)).compiles
+        return d
+    found = search(
+        s,
+        decls,
+        t,
+        under: under,
+        written: order_trial.theirs(unit_headers),
+        target: header,
+        module: source.component_at(s, d.span.start),
+        question: question
+    )
+    out: diag.Diagnostic @ d
+    notes: [str] @ []
+
+    for note in d.notes
+        if !strings.starts_with(text: note, prefix: ffi_declared.UNKNOWN)
+            notes @ notes.push(note)
+
+    if found.is_err()
+        out.message @ "`" + header + "` declares `" + name + "` read alone, and not where this unit reads it, after the headers before it: clang could not find it there"
+        out.notes @ notes.push(
+            "a header this unit reads before `" + header + "` changes what it declares, and no order of this module's groups reads it alone"
+        )
+        return out
+    out.message @ "`" + header + "` declares `" + name + "` read alone, and not after `" + found.must().other + "`, the header another group names: clang read them in this module's order and could not find it"
+    notes @ notes.push(move_note(s, decls, target: header, move: found.must(), at: d.span.start))
+    meant = meaning_note(s, decls, t, under: under, move: found.must(), module: source.component_at(s, d.span.start))
+
+    if meant != ""
+        notes @ notes.push(meant)
+    out.notes @ notes
+    return out
+
+# The first move of a group of `module` across the refused header, in the
+# unit's order, after which the unit's opening and `question` compile.
+function search(s: source.Source, decls: [ast.Decl], t: toolchain.Toolchain, under: compiling.Compiling, written: [str], target: str, module: str, question: str) -> Move?
+    here = order_groups.index_of(written, one: target)
+
+    if here < 0
+        return fail(code: "none", msg: "the unit does not read the header")
+    words = compiling.unit_words(under)
+    other: i64 @ 0
+
+    while other < written.len()
+        if other != here && !order_groups.group_in(s, decls, header: written[other], module: module).is_err()
+            order: [str] @ []
+
+            if other > here
+                order @ order_groups.moved(written, from: other, to: here)
+            else
+                order @ order_groups.moved(written, from: here, to: other)
+
+            if order_trial.compiled(t, words: words, text: order_trial.opening(order, question: question)).compiles
+                return ok(Move(other: written[other], before: other > here, written: written, order: order))
+        other @ other + 1
+
+    return fail(code: "none", msg: "no move compiles")
+
+# The headers `missing`, this module's groups' written above the refused one
+# that the unit does not read, read just before it, joined where the unit
+# then compiles.
+function above(t: toolchain.Toolchain, under: compiling.Compiling, written: [str], target: str, missing: [str]) -> str?
+    here = order_groups.index_of(written, one: target)
+
+    if here < 0 || missing.len() == 0
+        return fail(code: "none", msg: "nothing written above is missing")
+    order: [str] @ []
+
+    for one in written.slice(from: 0, to: here)
+        order @ order.push(one)
+
+    for one in missing
+        order @ order.push(one)
+
+    for one in written.slice(from: here, to: written.len())
+        order @ order.push(one)
+
+    if !order_trial.compiled(t, words: compiling.unit_words(under), text: order_trial.opening(order, question: "")).compiles
+        return fail(code: "none", msg: "the module's own order does not compile here")
+    return ok(missing.join("`, `"))
+
+# The first C11 header the unit does not read after which the refused one
+# compiles where it stands.
+function standard(t: toolchain.Toolchain, under: compiling.Compiling, written: [str], target: str) -> str?
+    here = order_groups.index_of(written, one: target)
+
+    if here < 0
+        return fail(code: "none", msg: "the unit does not read the header")
+    words = compiling.unit_words(under)
+
+    for candidate in STANDARD
+        if order_groups.index_of(written, one: candidate) < 0
+            order: [str] @ []
+
+            for one in written.slice(from: 0, to: here)
+                order @ order.push(one)
+
+            order @ order.push(candidate)
+
+            for one in written.slice(from: here, to: written.len())
+                order @ order.push(one)
+
+            if order_trial.compiled(t, words: words, text: order_trial.opening(order, question: "")).compiles
+                return ok(candidate)
+
+    return fail(code: "none", msg: "no header of C's own is what it needs")
+
+function move_note(s: source.Source, decls: [ast.Decl], target: str, move: Move, at: i64) -> str
+    where = source.elsewhere(
+        s,
+        here: at,
+        there: order_groups.group_in(s, decls, header: move.other, module: source.component_at(s, at)).must().start
+    )
+
+    if move.before
+        return "`" + target + "` compiles when `" + move.other + "`, which the group at " + where + " names, is included before it: a module's headers are included in the order its groups are written, so write that group above this one"
+    return "these compile when `" + target + "` is included before `" + move.other + "`, which the group at " + where + " names: a module's headers are included in the order its groups are written, so write this group above that one"
+
+# What the move changes of the names the module binds, said where it changes
+# any.
+function meaning_note(s: source.Source, decls: [ast.Decl], t: toolchain.Toolchain, under: compiling.Compiling, move: Move, module: str) -> str
+    names = order_groups.bound_names(s, decls, module: module)
+    differ = header_meaning.changed(t, under: under, before: move.written, after: move.order, names: names)
+
+    if differ.len() == 0
+        return ""
+    return "the move changes what C makes of `" + differ.join("`, `") + "`, which read otherwise in that order than as the groups are written: check the moved program means what it should"
+
+# The headline with the words a move falsifies replaced: the pair's *cannot
+# be compiled in one unit* and the one header's *does not compile*.
+function retold(message: str) -> str
+    pair = "cannot be compiled in one unit: clang refuses them together"
+    one = "the header this group names, does not compile:"
+    cut = order_groups.index_text(text: message, part: pair)
+
+    if cut >= 0
+        return message.slice(from: 0, to: cut) + "compile in one unit only in another order: clang refuses them in this one" + message.slice(from: cut + pair.len(), to: message.len())
+    at = order_groups.index_text(text: message, part: one)
+
+    if at >= 0
+        return message.slice(from: 0, to: at) + "the header this group names, does not compile where its group is written:" + message.slice(from: at + one.len(), to: message.len())
+    return message
+
+# `notes` with the note a finding makes false replaced by `said`, or with
+# `said` after them where none is.
+function replaced(notes: [str], said: str) -> [str]
+    out: [str] @ []
+    done: bool @ false
+
+    for note in notes
+        if !done && (note == header_refused.REPAIR || note == headers_together.ONE_MODULE || note == headers_together.TWO_MODULES)
+            out @ out.push(said)
+            done @ true
+        else
+            out @ out.push(note)
+
+    if !done
+        out @ out.push(said)
+    return out

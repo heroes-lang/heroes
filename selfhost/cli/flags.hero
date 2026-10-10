@@ -9,10 +9,10 @@
 # corrected — a count in prose is the premise §11 says expires in
 # silence. The reasons ride each flag below; the array is the fact.
 
-# The eighteen — the bootstrap's thirteen in their order but `-g`, then
+# The nineteen — the bootstrap's thirteen in their order but `-g`, then
 # panel 103's, then panel 154's, then panel 161's, then panel 199's two, then
-# panel 202's; the debug word is the level's since panel 197 (`debug_words`
-# below):
+# panel 202's, then panel 204's; the debug word is the level's since panel 197
+# (`debug_words` below):
 # - gnu11 not c11: one predefined macro apart (__STRICT_ANSI__), whose
 #   only effect on glibc is to hide M_PI, strdup, fileno and most of
 #   what §1.11 says a program binds (panel 047, ratified).
@@ -117,6 +117,14 @@
 #   `cli/header_refused.hero` reads the group's header the file arrives
 #   through. Words, never a type's meaning, so it reaches every probe too;
 #   the key names this list, so every key moved once.
+# - **-Werror=macro-redefined is panel 204's R2** (defect 563, ratified
+#   2026-10-10): a macro defined again otherwise is a constraint of C11
+#   §6.10.3p2, and clang only warns. So two groups' headers defining one macro
+#   two ways built at exit 0 under a warning nobody read, the program meaning
+#   what the order of its groups chose (`cfgone`: `3 10` written one way, `3
+#   50` the other). Refused now, and told in the program's words
+#   (`cli/macro_twice.hero`). Words, so it reaches every probe; the key names
+#   this list, so every key moved once.
 use cli/process
 
 function flags() -> [str]
@@ -139,6 +147,7 @@ function flags() -> [str]
         "-fno-optimize-sibling-calls"
         "-Wno-infinite-recursion"
         "-fdiagnostics-show-note-include-stack"
+        "-Werror=macro-redefined"
     ]
 
 # **THE DEBUG WORD IS THE LEVEL'S** (panel 197, defects 219 and 322,
@@ -183,93 +192,6 @@ function level_words(level: str, sanitize: bool) -> [str]
 
     return out
 
-# **WHAT A BINARY IS LINKED WITH, and it exists for one platform.**
-#
-# Windows gives a process's main thread **1 MB** of stack where POSIX gives 8,
-# and that is not a tuning knob: it is the difference between this compiler
-# running and being killed. Measured on the CI's Windows leg 2026-08-31, with
-# two seeds built from the same `seed/heroes.c` minutes apart:
-#
-#     1 MB   build selfhost/lexer.hero --dump-ir    exit 127, both streams empty
-#     1 MB   build selfhost/lexer.hero --emit-c     exit 127, both streams empty
-#    64 MB   build selfhost/lexer.hero --dump-ir    exit 0
-#    64 MB   build selfhost/lexer.hero --emit-c     exit 0
-#    64 MB   build selfhost/main.hero  --emit-c     exit 0  — the whole compiler
-#
-# A recursive-descent grammar and a recursive lowering pass are what spend it,
-# so the shape that dies is a real module rather than a big one:
-# `process.hero` at 193 lines builds under 1 MB and `lexer.hero` does not.
-# There is no message because the process is not panicking — it is killed, and
-# `hero_panic`'s `fprintf` is never reached. Four rounds of CI went into that
-# silence.
-#
-# **64 MB is the number that was RUN.** 8 MB (POSIX parity) and 16 were not
-# measured, and this list states measurements rather than preferences.
-#
-# **AND IT DOES NOT COST NOTHING — this comment said it did, and panel 107
-# measured that false.** The sentence deleted here read *"the reserve is address
-# space on a 64-bit target and not committed memory, so a large one costs
-# nothing real"*, and it is true for a program that stays inside its stack (max
-# RSS 2,768,896 bytes large against 2,752,512 small, binary 525,312 both) and
-# **false for the case this flag exists for**: a program that runs away takes max
-# RSS **9,814,016 → 68,534,272**. That is CLAUDE.md §11's expiring premise in
-# its usual shape — the argument still reads as valid, and only the premise
-# died. Three more things the sitting ran, none of them known when the number
-# was chosen: the flag **overrides the operator** (`pthread_get_stacksize_np`
-# reports 67,108,864 under `ulimit -s 1024`), Darwin grants it **above the hard
-# rlimit** (67,108,864 > 67,092,480), and 64 MB is exactly Apple's documented
-# ceiling, so there is no margin above it. Bringing it down still owes its own
-# measurement; the number argued from this compiler's own frames would be
-# **16 MB** (`docs/panel/107`, the compiler seat's condition 2).
-#
-# **AND IT IS WINDOWS' AND STAYS WINDOWS', by ruling.** Panel 107 was convened
-# to pass the same number on all three platforms and **refused all three
-# mechanisms**, each on a measurement: `-Wl,-z,stacksize=` is ignored by GNU ld
-# and rejected by lld, leaving `PT_GNU_STACK` `p_memsz` at 0x0 and the depth
-# unchanged, while printing a warning on every Linux build forever through
-# `toolchain.hero`'s stderr forwarding; running `main` on a created thread with
-# a chosen size breaks `examples/sdl/` (`SDL_Init(VIDEO)` needs the process's
-# real main thread); and stating a depth in the spec would be false on the day
-# it landed. What the sitting adopted instead is the **per-thread guard**: the
-# uniformity a program can be given is a named abort on every thread, not a
-# number, because the number cannot be made uniform on any of these platforms.
-#
-# **It is a LINK flag and it is asked of the machine, not of a `#if`.** Passing
-# `-Wl,` to a compile step is an unused argument, and passing `/STACK:` to `ld`
-# is an error — so it goes into the two link lines only, and the platform is read
-# off `exe_suffix()`, which is the runtime answering about the machine it is on
-# (issues/2026-08/14/2026-08-14-0005-is-not-a-fact-about-the-program-so-the-driver.md's rule, `in_the_c_runtime`'s shape). `selfhost/` gains no
-# platform axis: it asks a question and gets a fact.
-function link_flags() -> [str]
-    # **`-rdynamic` on every POSIX link line** (panel 104, 2026-09-03). The stack
-    # guard names the function that ran out of stack through `dladdr`, and glibc's
-    # `dladdr` reads only `.dynsym` — measured in the Linux image: without the
-    # flag the message is `panic: stack exhausted` and nothing more; with it,
-    # `… in d100000.down`, and the binary grows 134,640 → 142,832 bytes. Darwin
-    # names the symbol either way, from its symbol table under every debug word
-    # (`in deep.down` under `-g`, line tables and `-g0` alike, panel 197; this
-    # said *`-g` on every build*, which was never the cause), nothing strips,
-    # and it accepts the flag (measured: exit 0, no diagnostic), so the flag is
-    # POSIX's rather than Linux's — `selfhost/` still asks the machine one question,
-    # `exe_suffix()`, and gains no second platform axis.
-    if process.exe_suffix() != ".exe"
-        return ["-rdynamic"]
-
-    # **`/INCREMENTAL:NO` because this compiler stages and renames.** Every
-    # binary is linked to `<name>.tmp` and then published with a rename, so
-    # MSVC's incremental linker never finds the previous output it is looking
-    # for and says so ON STDOUT:
-    #
-    #     LINK : build\7163f9e162a1ca14\prog.exe.tmp not found or not built
-    #            by the last incremental link; performing full link
-    #
-    # Measured on the Windows leg 2026-08-31 (run 33386236619) inside
-    # `cache/a header edit is not invisible`, where it arrived in the middle of
-    # a program's output and the harness compares that byte for byte. The link
-    # is always full here by construction, so saying so costs nothing and buys
-    # a clean stream.
-    return ["-Wl,/STACK:67108864", "-Wl,/INCREMENTAL:NO"]
-
 # What --sanitize adds — NOT a leak detector: ASan's is missing on
 # Darwin arm64, and leaks are hero_runtime_check_leaks()'s job in the
 # generated main. What these catch is use-after-free and double-free.
@@ -281,9 +203,9 @@ function sanitizers(sanitize: bool) -> [str]
 
 ## Tests
 
-test "the array is the fact: eighteen flags, gnu11 named first and panel 202's last"
+test "the array is the fact: nineteen flags, gnu11 named first and panel 204's last"
     got = flags()
-    assert got.len() == 18
+    assert got.len() == 19
     assert got[0] == "-std=gnu11"
     assert got[9] == "-fno-delete-null-pointer-checks"
     assert got[12] == "-Werror=incompatible-pointer-types-discards-qualifiers"
@@ -305,6 +227,9 @@ test "the array is the fact: eighteen flags, gnu11 named first and panel 202's l
 
     # And panel 202's (g): a note's includes, read by the header's refusal.
     assert got[17] == "-fdiagnostics-show-note-include-stack"
+
+    # And panel 204's R2: a macro two headers define two ways is refused.
+    assert got[18] == "-Werror=macro-redefined"
     assert got[3] == "-Wall"
     assert sanitizers(sanitize: true).len() == 1
     assert sanitizers(sanitize: false).len() == 0
@@ -316,10 +241,10 @@ test "the array is the fact: eighteen flags, gnu11 named first and panel 202's l
     assert debug_words("-O0") == ["-g"]
     assert debug_words("-O2") == ["-gline-tables-only"]
     o2 = level_words(level: "-O2", sanitize: true)
-    assert o2.len() == 21
-    assert o2[18] == "-O2"
-    assert o2[19] == "-gline-tables-only"
-    assert o2[20] == "-fsanitize=address,undefined"
+    assert o2.len() == 22
+    assert o2[19] == "-O2"
+    assert o2[20] == "-gline-tables-only"
+    assert o2[21] == "-fsanitize=address,undefined"
     assert level_words(level: "-O0", sanitize: false) == flags().push("-O0").push("-g")
 
     # A call stays a call at every level (panel 199's R2), the words each
@@ -489,25 +414,6 @@ test "the level's words keep a unit's columns, and a `#line` carries the C file'
 
         assert columns[0] == columns[1]
         assert columns[0] == 0 == (process.exe_suffix() == ".exe")
-
-test "the link flags are one platform's, and the platform is asked not assumed"
-    # On this machine the answer is whatever `exe_suffix()` says, so the case
-    # asserts the RULE rather than a number it cannot know: exactly one flag on
-    # Windows, none anywhere else, and never a `-Wl,` on a compile line.
-    got = link_flags()
-
-    if process.exe_suffix() == ".exe"
-        assert got.len() == 2
-        assert got[0] == "-Wl,/STACK:67108864"
-        assert got[1] == "-Wl,/INCREMENTAL:NO"
-    else
-        assert got == ["-rdynamic"]
-
-    # And a link flag never reaches a compile line. `flags()` is pinned at
-    # fifteen above, so the way this could break is somebody pasting the
-    # stack reserve into the wrong list — which this names exactly.
-    for flag in flags()
-        assert flag != "-Wl,/STACK:67108864"
 
 # **A unit compiled by hand for Windows is compiled as `heroes build`
 # compiles it** (defect 192): every macro `flags()` defines is the runtime
