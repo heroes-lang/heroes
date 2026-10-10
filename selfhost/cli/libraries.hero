@@ -244,6 +244,28 @@ function key_text(words: [str]) -> str
 
     return parts.join("|")
 
+# Each package's own words, asked one package at a time as `resolve_packages`
+# asks them, so a module's unit can be handed the words of the packages its
+# own groups name and no other module's (panel 205's R3, defect 572); the
+# first package that cannot answer stops the build as it would there.
+function resolve_each(packages: [str], build_dir: str) -> {str: [str]}?
+    out: {str: [str]} @ {}
+
+    for package in packages
+        out[package] @ resolve_packages(packages: [package], build_dir: build_dir)?
+
+    return ok(out)
+
+# The words of `packages`, in their order, from what `resolve_each` answered.
+function words_of(each: {str: [str]}, packages: [str]) -> [str]
+    out: [str] @ []
+
+    for package in packages
+        for word in each[package].default([])
+            out @ out.push(word)
+
+    return out
+
 # Ask the machine about each package, and let nothing through that is
 # not on the list. The failure is deliberately not silent and not a
 # fallback: a package that cannot be resolved must stop the build,

@@ -32,7 +32,6 @@ use emit/ffi_tag
 use emit/ffi_asked
 use cli/compile
 use cli/toolchain
-use cli/compiling
 use cli/header_ask
 use cli/probing
 use parse
@@ -51,7 +50,7 @@ record Lesson
 # end: each one that runs again has learned a tag the program declares.
 # `probings` are the build's, every module's headers, each asked its own
 # records' questions (`cli/header_ask.hero`).
-function learn(t: toolchain.Toolchain, art: compile.Artifact, s: source.Source, under: compiling.Compiling, refusals: [str], probings: [probing.Probing], @struct_tags: {str: bool}) -> Lesson
+function learn(t: toolchain.Toolchain, art: compile.Artifact, s: source.Source, refusals: [str], probings: [probing.Probing], @struct_tags: {str: bool}) -> Lesson
     learned: i64 @ 0
 
     for tag in ffi_tag.needs_struct(s, art.decls, stderr: refusals.join("\n"))
@@ -64,7 +63,7 @@ function learn(t: toolchain.Toolchain, art: compile.Artifact, s: source.Source, 
 
     if learned > 0 || still.len() == 0
         return Lesson(learned: learned, asked: unasked)
-    asked = header_ask.ask(t, art, s, under: under, struct_tags: struct_tags, asking: probings)
+    asked = header_ask.ask(t, art, s, struct_tags: struct_tags, asking: probings)
 
     for tag in answered_struct(asked, tags: still)
         struct_tags[tag] @ true

@@ -36,6 +36,8 @@ use emit
 use emit/unit
 use emit/members
 use emit/lend_local
+use emit/header_packages
+use cli/libraries
 
 # What one build has settled before any round runs. Where the binary lands
 # is not among it: under `build/` that is named by the link line, which a
@@ -54,6 +56,15 @@ record Site
     source_dir: str
     link_names: [str]
     package_flags: [str]
+
+    # Each package's own words: a module's unit is compiled with the words
+    # of the packages its own groups name alone (panel 205's R3, defect 572),
+    # the link and the fused unit with every package's.
+    package_words: {str: [str]}
+
+    # Each group's header and the packages its groups name, asked once
+    # (`header_packages.by_header`), which a unit's words are read from.
+    by_header: {str: [str]}
     version: str
 
 # What a round came back with: the verdict, and EVERY clang refusal it met and
@@ -100,6 +111,19 @@ function compiled_under(t: toolchain.Toolchain, options: compile.Options, site: 
         package_flags: site.package_flags,
         runtime: t.runtime,
         source_dir: site.source_dir
+    )
+
+# The package words one module's unit compiles under: those of the packages
+# named by the groups whose headers it reads, in their written order (panel
+# 205's R3, defect 572; `emit/header_packages.hero`). A package's `-D`
+# reached every unit until then, so a module binding `wcwidth` from
+# `wchar.h` was told *`wchar.h` declares no `wcwidth`* unless `main` named
+# `ncursesw`, whose `.pc` answers `-D_XOPEN_SOURCE=600`, and another module's
+# package decided its verdict.
+function unit_words(site: Site, headers: [str]) -> [str]
+    return libraries.words_of(
+        site.package_words,
+        packages: header_packages.of(site.by_header, listed: headers)
     )
 
 # A test binary keeps the fused unit: `heroes test` compiles once and runs per
@@ -206,7 +230,7 @@ function per_module(t: toolchain.Toolchain, options: compile.Options, art: compi
             level: options.level,
             sanitize: options.sanitize,
             search: compile.search_key(headers_from: options.headers_from, library: options.library),
-            package_flags: site.package_flags,
+            package_flags: unit_words(site, headers: plan.headers),
             source_dir: site.source_dir,
             search_include: options.headers_from,
             @memo,
