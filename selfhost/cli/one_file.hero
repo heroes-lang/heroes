@@ -1,0 +1,236 @@
+# Whether the one file `--emit-c` writes means the program `build` builds
+# (design.md §4.1, §4.19; panel 202's R3, its second half, ratified
+# 2026-10-10; defect 453). `build`, `run` and `test` compile a unit per
+# module, each reading its own groups' headers; `--emit-c` writes the whole
+# program as one file, which the seed bootstraps from (panel 200 R1), and
+# that file reads every module's headers together. Until 2026-10-10 no clang
+# run read it: `fp`, two modules each binding a `static inline twice` of
+# another type, was written at exit 0 as a file clang refuses, and `macro3`
+# and `cfg` as files clang compiles into another program, one module's
+# macro rewriting the other's call or choosing its default.
+#
+# **Asked only where a unit reads other headers than the one file**: a
+# program whose modules' units read the one file's headers, every program
+# of one module among them, is the units' program by construction, and costs
+# nothing more. Elsewhere, two questions, each clang's:
+#
+# - **the file compiles**, `-fsyntax-only` under the units' own words; where
+#   clang refuses two groups' headers together, the two modules and their
+#   headers are named;
+# - **each binding means in it what it means in its module's unit**: the
+#   module's bound names asked of both header lists, each name's canonical C
+#   type (`cli/two_ways_ask.hero`'s question) and its definition read from
+#   the preprocessed text of each, its last `#define`, its body or its
+#   declaration (`cli/header_meaning.hero`), so a typedef moving between
+#   headers with their order moves no name's reading.
+#
+# A refusal is `ffi_one_file`, at exit 1, and no file is written.
+
+use source
+use ast
+use diag
+use token
+use ir/containers
+use emit/externs as emit_externs
+use emit/unit_plan
+use cli/toolchain
+use cli/compiling
+use cli/order_trial
+use cli/header_meaning
+use cli/dump_meaning
+use cli/two_ways_ask
+use cli/clang_first
+use cli/header_refused
+use cli/headers_together
+
+# The refusal of `text`, the one file, or none where it means what the units
+# do.
+function refused(t: toolchain.Toolchain, under: compiling.Compiling, p: containers.Program, s: source.Source, decls: [ast.Decl], text: str, plans: [unit_plan.Plan]) -> [diag.Diagnostic]
+    none: [diag.Diagnostic] = []
+    whole = emit_externs.headers(p, s, decls)
+    fused = order_trial.theirs(whole)
+    differing: [unit_plan.Plan] @ []
+
+    # A unit that reads no group's header but the compiler's own reads none
+    # the one file could read otherwise.
+    for plan in plans
+        mine = order_trial.theirs(plan.headers)
+
+        if mine.len() > 0 && mine != fused
+            differing @ differing.push(plan)
+
+    if differing.len() == 0
+        return none
+    ran = order_trial.compiled_once(t, words: compiling.unit_words(under), text: text)
+
+    if !ran.asked
+        return none
+
+    if !ran.compiles
+        return [uncompiled(s, decls, t, said: ran.said, message: ran.refusal)]
+    by_module = bound(s, decls)
+    asked: [str] @ []
+
+    for plan in differing
+        for name in by_module[plan.module].default([])
+            asked @ asked.push(name)
+
+    if asked.len() == 0
+        return none
+    memo: {str: str} @ {}
+    one = compiling.probe_with(t.build, under: under, headers: whole, memo: @memo)
+    theirs = two_ways_ask.answers(t, one, names: asked)
+    fused_read = header_meaning.read_of(t, under: under, headers: fused, names: asked)
+    fused_dump = dump_meaning.read_of(t, under: under, headers: fused, names: asked)
+
+    for plan in differing
+        names = by_module[plan.module].default([])
+
+        if names.len() > 0
+            own = compiling.probe_with(t.build, under: under, headers: plan.headers, memo: @memo)
+            mine = two_ways_ask.answers(t, own, names: names)
+            read: [str] @ []
+            own_read = header_meaning.read_of(t, under: under, headers: order_trial.theirs(plan.headers), names: names)
+
+            if !own_read.is_err() && !fused_read.is_err()
+                read @ header_meaning.differing(one: own_read.must(), two: fused_read.must(), names: names)
+            own_dump = dump_meaning.read_of(t, under: under, headers: order_trial.theirs(plan.headers), names: names)
+
+            if !own_dump.is_err() && !fused_dump.is_err()
+                for name in header_meaning.differing(one: own_dump.must(), two: fused_dump.must(), names: names)
+                    read @ read.push(name)
+
+            for name in names
+                typed = !mine[name].is_err() && !theirs[name].is_err() && mine[name].must().type != theirs[name].must().type
+
+                if typed || holds(read, one: name)
+                    return [
+                        meant_otherwise(s, decls, plan: plan, name: name, fused: fused, typed: typed, mine: type_of(mine, name: name), theirs: type_of(theirs, name: name))
+                    ]
+
+    return none
+
+# Every function and constant each module's groups bind from a header that is
+# not the compiler's own, by its C name, in written order: one walk of the
+# declarations.
+function bound(s: source.Source, decls: [ast.Decl]) -> {str: [str]}
+    out: {str: [str]} @ {}
+
+    for decl in decls
+        named: token.Span? @ fail(code: "none", msg: "no header")
+
+        match decl.kind
+            .function_decl fd                         => named @ fd.value.header
+            .constant_decl k                          => named @ k.header
+            .record_decl | .variant_decl | .test_decl => continue
+
+        if !named.is_err() && !emit_externs.is_own(emit_externs.unquoted(s, span: named.must()))
+            module = source.component_at(s, decl.name.start)
+            out[module] @ out[module].default([]).push(source.span_text(s, decl.name))
+
+    return out
+
+# The one file clang refuses: the two groups' headers it refuses together
+# where its note points into another's (`header_refused.sides`), else its
+# first error on the first group of the program.
+function uncompiled(s: source.Source, decls: [ast.Decl], t: toolchain.Toolchain, said: str, message: str) -> diag.Diagnostic
+    read = clang_first.reading(stderr: said, s: s, decls: decls, runtime: t.runtime, build: t.build)
+
+    if !read.is_err()
+        two = header_refused.sides(read.must())
+
+        if !two.is_err()
+            first: headers_together.Side @ two.must().one
+            second: headers_together.Side @ two.must().other
+
+            if sort([first.header, second.header])[0] != first.header
+                first @ two.must().other
+                second @ two.must().one
+            d: diag.Diagnostic @ diag.new_diagnostic(
+                code: "ffi_one_file",
+                message: "`--emit-c` writes this program as one file, and in it `" + first.header + "`, the header this group names, and `" + second.header + "`, which another module's group names at " + source.elsewhere(s, here: first.span.start, there: second.span.start) + ", cannot be compiled together: clang refuses them, at " + headers_together.at_line(first) + headers_together.between(first) + " and " + headers_together.at_line(second) + ": " + message,
+                span: first.span
+            )
+
+            for side in [first, second]
+                if !side.quoted.is_err()
+                    d.notes @ d.notes.push(
+                        "`" + side.file + "` line " + side.row.to_str() + " reads `" + side.quoted.must() + "`"
+                    )
+
+            d.notes @ d.notes.push(UNITS)
+            return d
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "ffi_one_file",
+        message: "`--emit-c` writes this program as one file, which reads every module's headers together, and clang refuses it where each module's unit compiles: " + message,
+        span: first_group(decls)
+    )
+    d.notes @ d.notes.push(UNITS)
+    return d
+
+# A binding that means something else in the one file than in its module's
+# unit.
+function meant_otherwise(s: source.Source, decls: [ast.Decl], plan: unit_plan.Plan, name: str, fused: [str], typed: bool, mine: str, theirs: str) -> diag.Diagnostic
+    at = name_span(s, decls, module: plan.module, name: name)
+    others: [str] @ []
+
+    for header in fused
+        if !holds(order_trial.theirs(plan.headers), one: header)
+            others @ others.push("`" + header + "`")
+
+    d: diag.Diagnostic @ diag.new_diagnostic(
+        code: "ffi_one_file",
+        message: "`--emit-c` writes this program as one file, and in it `" + name + "`, which this group binds, is not what this module's own unit makes of it: the one file reads it beside the headers other modules' groups name, " + others.join(", "),
+        span: at
+    )
+
+    if typed
+        d.notes @ d.notes.push(
+            "its C type is `" + mine + "` in this module's unit and `" + theirs + "` in the one file"
+        )
+    else
+        d.notes @ d.notes.push(
+            "its definition reads otherwise in the one file than in this module's unit, as clang reads each: another module's header changes it there, or defines it first"
+        )
+    d.notes @ d.notes.push(UNITS)
+    return d
+
+constant UNITS: str
+    "each module's unit reads its own groups' headers (design.md §4.1), so `build`, `run` and `test` compile this program as it is written; the one file `--emit-c` writes reads every module's together, and is not written where it cannot mean that program"
+
+function type_of(answers: {str: two_ways_ask.Answer}, name: str) -> str
+    if answers[name].is_err()
+        return ""
+    return answers[name].must().type
+
+function holds(list: [str], one: str) -> bool
+    for each in list
+        if each == one
+            return true
+
+    return false
+
+# The span of the declaration `module` binds as `name`.
+function name_span(s: source.Source, decls: [ast.Decl], module: str, name: str) -> token.Span
+    for decl in decls
+        if source.component_at(s, decl.name.start) == module && source.span_text(s, decl.name) == name
+            return decl.name
+
+    return first_group(decls)
+
+# The string of the program's first group, where nothing nearer is.
+function first_group(decls: [ast.Decl]) -> token.Span
+    for decl in decls
+        match decl.kind
+            .function_decl fd =>
+                if !fd.value.header.is_err()
+                    return fd.value.header.must()
+            .constant_decl k =>
+                if !k.header.is_err()
+                    return k.header.must()
+            .record_decl rec =>
+                if !rec.header.is_err()
+                    return rec.header.must()
+            .variant_decl | .test_decl => continue
+
+    return token.Span(start: 0, end: 0)

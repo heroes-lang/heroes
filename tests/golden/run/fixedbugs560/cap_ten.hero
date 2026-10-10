@@ -1,0 +1,7 @@
+# fixedbugs, defect 560: a module whose header caps at `LIMIT`, 10 where no
+# header read before it defines one.
+extern "fixedbugs-560-cap.h"
+    function cap(v: i32) -> i32
+
+function capped(v: i32) -> i32
+    return cap(v: v)

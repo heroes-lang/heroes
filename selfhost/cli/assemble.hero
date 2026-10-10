@@ -1,6 +1,8 @@
-# The units of one round and their link: the fused unit or one translation
-# unit per module, then the link. The round that asks the headers before
-# them is `cli/rounds.hero`'s, since panel 202 asks each module's apart.
+# The units of one round and their link: one translation unit per module,
+# then the link, for `build`, `run` and, since defect 560 (2026-10-10),
+# `heroes test`, whose fused unit computed or refused another program than
+# `build`. The round that asks the headers before them is
+# `cli/rounds.hero`'s, since panel 202 asks each module's apart.
 #
 # Split out of `cli/produce.hero` on 2026-09-15 (defect 037, panel 152 R1)
 # because a round can now be asked for TWICE. The emitter writes a handle's tag
@@ -32,7 +34,6 @@ use cli/units
 use cli/link
 use cli/probing
 use cli/compiling
-use emit
 use emit/unit
 use emit/members
 use emit/lend_local
@@ -43,7 +44,6 @@ use emit/lend_local
 record Site
     object: str
     output: str?
-    is_tests: bool
     # Whether the round LINKS after it compiles. `--emit-c` says no (defect
     # 049, 2026-09-17): a tag's spelling is learned at the compile, where clang
     # says *must use 'struct' tag*, and a module with no `main` — every
@@ -100,58 +100,6 @@ function compiled_under(t: toolchain.Toolchain, options: compile.Options, site: 
         package_flags: site.package_flags,
         runtime: t.runtime,
         source_dir: site.source_dir
-    )
-
-# A test binary keeps the fused unit: `heroes test` compiles once and runs per
-# block, and the fused path is the artifact path the blessed emissions pin. The
-# text is the pipeline's own on the first round; a round that carries a learned
-# tag, or a counted parameter's unit, emits again, because both are in the text.
-#
-# **It is compiled as a translation unit and linked as one** (defect 134): it
-# was written in place under a directory keyed on the SOURCE, `build/<hash>/`,
-# so the second round's text went over the first's under one name while
-# another build's clang read it, and its object and binary were staged under
-# one name each. Through `units.tu_object` the text names its own directory
-# and the object is cached like every other, a warm `heroes test` included.
-function fused(t: toolchain.Toolchain, options: compile.Options, art: compile.Artifact, s: source.Source, site: Site, struct_tags: {str: bool}, lent: Lent, @told: {str: bool}) -> Round
-    none: [str] = []
-    every = [module_names.module_of(s.name)]
-    text: str @ art.c
-
-    if struct_tags.len() > 0 || lent.units.len() > 0
-        text @ emit.emit_told(target: options.target, p: art.program, c: art.checked, s: s, decls: art.decls, version: site.version, text: true, struct_tags: struct_tags, lend_units: lent.units).c
-    memo: {str: str} @ lent.digests
-    made = units.tu_object(
-        t,
-        module: module_names.module_of(s.name),
-        tu_text: text,
-        level: options.level,
-        sanitize: options.sanitize,
-        search: compile.search_key(headers_from: options.headers_from, library: options.library),
-        package_flags: site.package_flags,
-        source_dir: site.source_dir,
-        search_include: options.headers_from,
-        @memo,
-        @told
-    )
-
-    if made.is_err()
-        return Round(verdict: carry_failure(made), refusals: [failure_of(made)], binary: "", modules: every)
-    unread = unread_round(lent)
-
-    if !unread.is_err()
-        return unread.must()
-
-    # Compile only, for the reason `Site.link` gives.
-    if !site.link
-        return Round(verdict: ok(), refusals: none, binary: "", modules: none)
-    return linked_round(
-        t,
-        options,
-        site,
-        objects: [site.object, made.must()],
-        module: module_names.module_of(s.name),
-        modules: every
     )
 
 # One .c per module (panel 093): each TU compiled to its own cached object,

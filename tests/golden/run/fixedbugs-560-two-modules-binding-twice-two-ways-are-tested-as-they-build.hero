@@ -1,0 +1,20 @@
+# fixedbugs, defect 560, lane b18-ffi, 2026-10-10 (panel 202's R3; the
+# sitting's `fp`, with tests).
+#
+# Two modules each bind a `static inline twice` from a header of their own,
+# one of `long long` and one of `int`. `build` compiles a unit per module and
+# prints 6 and 8. Until 2026-10-10 `heroes test` compiled the whole program
+# as one unit, where the two `twice` are one name declared two ways, and
+# refused it. It compiles a unit per module now, the root's carrying the
+# runner of every module's tests, and the program's `main` never runs before
+# them.
+use fixedbugs560/long_twice
+use fixedbugs560/int_twice
+
+function main()
+    print(long_twice.doubled(x: 3))
+    print(int_twice.doubled(x: 4))
+
+test "both modules double"
+    assert long_twice.doubled(x: 1) == 2
+    assert int_twice.doubled(x: 2) == 4
