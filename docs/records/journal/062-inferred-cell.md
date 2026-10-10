@@ -127,3 +127,12 @@ issues 1,976 of which 74 open, questions 466 of which 441 open.
 
 **The chain entry**: row 84, `m-inferred-cell`, closed 2026-10-10, this
 journal.
+
+**Corrected 2026-10-11**: the tag `m-inferred-cell` this journal's close
+placed was deleted from origin and from the trunk's checkout at 00:45 by the
+author's instruction, until the seven `blocking` defects open at the tag
+close (590, 591, 592, 602, 603, 604, 605, filed 2026-10-10 before the
+milestone closed); the repository's ruleset for milestone tags was suspended
+for the four seconds of the deletion and read back unchanged. The tag's
+object, `c779a8f8` on `d32c19a1`, is kept to be placed again unchanged. The
+record is `issues/2026-10/11/2026-10-11-0045-the-tag-m-inferred-cell-waits-for-its-seven-blocking-defects.md`.
