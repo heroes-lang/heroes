@@ -1,0 +1,15 @@
+# Fixed defect 564, 2026-10-10 (panel 203 R3): the overflow the critic's first
+# pass predicted. `first(a: 200, b: 2) + 100` in a `u8` position was refused
+# on the base, `+`'s operands taking no type from the annotation; with panel
+# 203's general route the generic call takes `u8` from it, and so does `100`,
+# so the sum is a `u8`, and 200 and 100 overflow it: an abort, as overflow
+# aborts at every width (spec § 7), the `1` before it flushed first.
+
+function first<A>(a: A, b: A) -> A
+    _ = b
+    return a
+
+function main()
+    print(1)
+    y: u8 = first(a: 200, b: 2) + 100
+    print(y)

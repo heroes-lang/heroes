@@ -1,0 +1,284 @@
+# The operands of an arithmetic operator that take their type from where the
+# operator stands (spec § 2: a literal takes the type its context asks for,
+# `b: u8 @ 255`, and `b + 1` is a `u8`; spec § 7: both sides one numeric
+# type; design.md §4.5; defect 564, panel 203 R3, panel 042's ruling 3).
+#
+# `y: u8 = 2 + 3`, `show(v: 2 + 3)` with `v: u8`, `e: u8 = 2 * (3 + 4)`, `d:
+# f32 = 0.5 * 2.0` and `b8 + (2 + 3)`: an operator whose every operand has no
+# type of its own has none either, so the type its position asks for, an
+# annotation's, a parameter's, a declared result's or the other operand's,
+# is its operands' (`check/walk.hero` asks `takes_context` once where the
+# position names a type and hands it down, `context_operands`). Until panel
+# 203's landing such an operator was synthesised, each literal at `i64`, and
+# refused against a narrower width; panel 042 priced this residual inside its
+# ruling 3 and it never landed.
+#
+# **Which operators**: `+ - * / %`, whose result is their operands' type, and
+# a unary `-`. A comparison answers `bool` whatever its operands are, so a
+# position asking for `bool` says nothing of them; `& | ^ << >> ~` take `i64`
+# alone (§4.14), so a position asking for a narrower width is a mistake their
+# own message tells. **Which operands**: those with no type of their own,
+# `check/waiting.hero`'s `needs_context` (a literal, a generic call, `[]`,
+# `ok(…)`, …), and an operator of them, at any depth.
+
+use ast
+use source
+use resolved
+use check/table
+use check/state
+use check/contextual
+use check/function_value
+use check/waiting
+
+# The size of an operator tree asked again at each of its nodes rather than
+# once through a map (`taking`).
+constant SMALL: i64
+    32
+
+# What `pair` answers.
+constant NEITHER: i64
+    0
+
+constant RIGHT: i64
+    1
+
+constant LEFT: i64
+    2
+
+constant BOTH: i64
+    3
+
+# Whether `op`'s result is its operands' own type.
+function arithmetic(op: ast.BinaryOp) -> bool
+    return match op
+        .add | .sub | .mul | .div | .rem                         => true
+        .eq | .ne | .lt | .le | .gt | .ge                        => false
+        .and | .or | .bit_and | .bit_or | .bit_xor | .shl | .shr => false
+
+# Whether the type `ty` is one an arithmetic operator answers: a number.
+function numeric(c: state.Checker, ty: i64) -> bool
+    return match table.get(c.out.types, ty)
+        .int_ty | .float_ty                                   => true
+        .bool | .str | .ptr | .cstr | .unit | .array | .fixed => false
+        .map | .fallible | .function_ty | .named              => false
+        .case_ty | .failure | .generic | .error               => false
+
+# Whether `id` takes its type from where it stands: a form with no type of its
+# own (`waiting.needs_context`), or an arithmetic operator or a minus whose
+# every operand does. The form is read first and the common ones answered on
+# the spot, since the walk asks this of both operands of every operator.
+function takes_context(a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], id: i64) -> bool
+    match a.exprs[id].kind
+        .int_lit | .char_lit | .float_lit | .null_ptr | .hole | .variant_case => return true
+        .str_lit | .interp | .bool_lit | .field_name | .index | .try_expr => return false
+        .if_expr | .match_expr | .error => return false
+        .name | .field => return function_value.generic_at(a, r, decls, id)
+        .binary b => return arithmetic(b.op) && takes_context(a, r, s, decls, id: b.left) && takes_context(a, r, s, decls, id: b.right)
+        .unary u                        => return u.op == .neg && takes_context(a, r, s, decls, id: u.operand)
+        .array | .map | .call | .method => return waiting.needs_context(a, r, s, decls, id)
+
+    return false
+
+# Whether every operand `takes_context` reaches can take `ty`: an integer
+# literal an integer width, a float literal a float one (`check/waiting.hero`'s
+# `takes`). Where one cannot, `1 + 2.0` in an `f32` position, the operator is
+# synthesised as before and told `mixed_arithmetic`, the rule that no width
+# is promoted, rather than the one literal's mismatch.
+function leaves_take(c: state.Checker, a: ast.Ast, decls: [ast.Decl], id: i64, ty: i64) -> bool
+    match a.exprs[id].kind
+        .binary b =>
+            if arithmetic(b.op)
+                return leaves_take(c, a, decls, id: b.left, ty: ty) && leaves_take(c, a, decls, id: b.right, ty: ty)
+        .unary u =>
+            if u.op == .neg && !contextual.number_literal(a, id) && !contextual.float_literal(a, id)
+                return leaves_take(c, a, decls, id: u.operand, ty: ty)
+        .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit | .null_ptr => return waiting.takes(
+            c,
+            a,
+            decls,
+            id: id,
+            ty: ty
+        )
+        .name | .hole | .field | .field_name | .index | .call | .method => return waiting.takes(
+            c,
+            a,
+            decls,
+            id: id,
+            ty: ty
+        )
+        .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error => return waiting.takes(
+            c,
+            a,
+            decls,
+            id: id,
+            ty: ty
+        )
+
+    return waiting.takes(c, a, decls, id: id, ty: ty)
+
+# Whether `id` is an arithmetic operator or a minus of a non-literal.
+function operator(a: ast.Ast, id: i64) -> bool
+    match a.exprs[id].kind
+        .binary b => return arithmetic(b.op)
+        .unary u => return u.op == .neg && !contextual.number_literal(a, id) && !contextual.float_literal(a, id)
+        .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit | .null_ptr => return false
+        .hole | .name | .field | .field_name | .index | .call | .method => return false
+        .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error => return false
+
+    return false
+
+# Whether `id` is an arithmetic operator of the tree `takes` was made for, or
+# of a small one, which every arithmetic operator under its root is.
+function in_tree(a: ast.Ast, takes: [{i64: bool}], id: i64) -> bool
+    match a.exprs[id].kind
+        .binary b => return arithmetic(b.op) && (takes.len() == 0 || !takes[0][id].is_err())
+        .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit | .null_ptr => return false
+        .hole | .name | .unary | .field | .field_name | .index | .call | .method => return false
+        .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error => return false
+
+    return false
+
+# Which nodes of the operator tree `id` heads take their type from where they
+# stand: the operands of `id`, and below them every arithmetic operator and
+# minus, each from its own operands, its leaves by `waiting.needs_context`.
+# One walk from the root and one back from the leaves, so a chain of a
+# thousand `+` is asked a thousand times and never a million. A tree of at
+# most `SMALL` nodes, nearly every one a program writes, gets no map: `waits`
+# asks `takes_context` of it again at each node, which costs less there than
+# a map's allocation, measured on five thousand lines of `t @ t + a * b - 1`.
+function taking(a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], id: i64) -> [{i64: bool}]
+    none: [{i64: bool}] = []
+
+    if small(a, id: id)
+        return none
+    order: [i64] @ [id]
+    k: i64 @ 0
+
+    while k < order.len()
+        at = order[k]
+
+        match a.exprs[at].kind
+            .binary b =>
+                if k == 0 || arithmetic(b.op)
+                    order @ order.push(b.left)
+                    order @ order.push(b.right)
+            .unary u =>
+                if operator(a, id: at)
+                    order @ order.push(u.operand)
+            .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit | .null_ptr => k @ k
+            .hole | .name | .field | .field_name | .index | .call | .method                => k @ k
+            .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error    => k @ k
+
+        k @ k + 1
+
+    out: {i64: bool} @ {}
+    k @ order.len() - 1
+
+    while k >= 0
+        at = order[k]
+        out[at] @ node_takes(a, r, s, decls, out, id: at, root: k == 0)
+        k @ k - 1
+
+    return [out]
+
+# Whether the operator tree `id` heads has at most `SMALL` nodes, asked by
+# the walk before it hands `taking` the program's records to read.
+function small(a: ast.Ast, id: i64) -> bool
+    return size(a, id: id, budget: SMALL, root: true) <= SMALL
+
+# The nodes of the tree under `id`, counted until there are more than `budget`.
+function size(a: ast.Ast, id: i64, budget: i64, root: bool) -> i64
+    if budget <= 0
+        return 1
+
+    match a.exprs[id].kind
+        .binary b =>
+            if root || arithmetic(b.op)
+                left = 1 + size(a, id: b.left, budget: budget - 1, root: false)
+                return left + size(a, id: b.right, budget: budget - left, root: false)
+        .unary u =>
+            if operator(a, id: id)
+                return 1 + size(a, id: u.operand, budget: budget - 1, root: false)
+        .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit | .null_ptr => return 1
+        .hole | .name | .field | .field_name | .index | .call | .method                => return 1
+        .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error    => return 1
+
+    return 1
+
+# One node's answer, its operands' already in `out`.
+function node_takes(a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], out: {i64: bool}, id: i64, root: bool) -> bool
+    match a.exprs[id].kind
+        .binary b =>
+            if arithmetic(b.op)
+                return out[b.left].default(false) && out[b.right].default(false)
+
+            if root
+                return false
+        .unary u =>
+            if operator(a, id: id)
+                return out[u.operand].default(false)
+        .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit | .null_ptr => return waiting.needs_context(
+            a,
+            r,
+            s,
+            decls,
+            id: id
+        )
+        .hole | .name | .field | .field_name | .index | .call | .method => return waiting.needs_context(
+            a,
+            r,
+            s,
+            decls,
+            id: id
+        )
+        .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error => return waiting.needs_context(
+            a,
+            r,
+            s,
+            decls,
+            id: id
+        )
+
+    return waiting.needs_context(a, r, s, decls, id: id)
+
+# Which of an operator's two operands, `left` and `right`, have no type of
+# their own: `NEITHER`, `RIGHT` alone, `LEFT` alone or `BOTH`, from `takes`
+# where the walk above reached them and asked of each whole in a small tree.
+function pair(a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], takes: [{i64: bool}], left: i64, right: i64) -> i64
+    which: i64 @ NEITHER
+
+    if takes.len() == 0
+        if takes_context(a, r, s, decls, id: left)
+            which @ which + LEFT
+
+        if takes_context(a, r, s, decls, id: right)
+            which @ which + RIGHT
+        return which
+
+    if takes[0][left].default(false)
+        which @ which + LEFT
+
+    if takes[0][right].default(false)
+        which @ which + RIGHT
+    return which
+
+# Record `expected` on the node and on every negated layer under it, which
+# the lowering walks to and would otherwise find untyped. Moved here from
+# `check/walk.hero` unchanged with defect 564, where it reaches nothing of the
+# walk.
+function record_through_neg(@c: state.Checker, a: ast.Ast, id: i64, ty: i64)
+    at: i64 @ id
+    walking: bool @ true
+
+    while walking
+        _ = state.record_expr(@c, at: at, ty: ty)
+
+        match a.exprs[at].kind
+            .unary u =>
+                if u.op == .neg
+                    at @ u.operand
+                else
+                    walking @ false
+            .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit | .null_ptr => walking @ false
+            .name | .hole | .binary | .field | .field_name | .index | .call | .method      => walking @ false
+            .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error    => walking @ false

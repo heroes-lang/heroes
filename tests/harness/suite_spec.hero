@@ -82,7 +82,7 @@ constant LEDGER: str
 # DATED, and prose beside the constant is neither, however dated it looks. The
 # constant is the count; `ledger` below is what holds it to the file.
 constant LEDGER_ROWS: i64
-    101
+    102
 
 # design.md §1.6's figure, pinned — the number `heroes measure` computes from the
 # spec, restated here because something re-derives and compares it on every run.

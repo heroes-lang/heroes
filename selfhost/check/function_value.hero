@@ -18,10 +18,14 @@
 #   `instantiations` at the name as a call's are at the call, so that
 #   `ir/mono.hero` makes the copy and `emit/func_ref.hero` names it. Where the
 #   position asks for none (a discard, an unannotated binding, `print`, either
-#   side of `==`, or a generic callee's argument, under panel 105's flat rule)
-#   the name is refused, `cannot_infer`, naming every type parameter left
-#   unbound and the two ways to bind one. A context the value cannot be is
-#   `type_mismatch`, the generic signature shown with its own letters.
+#   side of `==`) the name is refused, `cannot_infer`, naming every type
+#   parameter left unbound and the two ways to bind one. A context the value
+#   cannot be is `type_mismatch`, the generic signature shown with its own
+#   letters. A generic callee's parameter is such a context once the call's
+#   other arguments settle its letters (panel 203, `check/waiting.hero`), and
+#   where nothing does the name is refused there, told what the parameter
+#   asks for (`refused_argument`); until panel 203's landing it was refused as
+#   a position asking for none, under panel 105's flat rule.
 #
 # Until 2026-10-06 the name synthesised its signature, letters and all. `_ =
 # ident` checked at exit 0 and the build stopped at exit 2 in the verifier, *an
@@ -83,7 +87,7 @@ function signature_of(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: so
 
 # Whether this expression names a GENERIC top-level function: a bare name, or
 # one a module qualifies (`helper.ident`), which the resolver answers alike.
-function generic_at(a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], id: i64) -> bool
+function generic_at(a: ast.Ast, r: resolved.Resolved, decls: [ast.Decl], id: i64) -> bool
     named = match a.exprs[id].kind
         .name                                                                          => true
         .field f                                                                       => r.uses[f.base] == .module
@@ -95,10 +99,18 @@ function generic_at(a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [
         return false
 
     match r.uses[id]
-        .top t                                    => return letters_of(s, decls, decl: t.at).len() > 0
+        .top t                                    => return generic(decls, decl: t.at)
         .local | .module | .builtin | .unresolved => return false
 
     return false
+
+# Whether the declaration `decl` is a function with type parameters, asked
+# without spelling them, since the walk asks it of every name it checks and
+# every operand that may wait (`check/waiting.hero`).
+function generic(decls: [ast.Decl], decl: i64) -> bool
+    return match decls[decl].kind
+        .function_decl fd                                          => fd.value.generics.len() > 0
+        .constant_decl | .record_decl | .variant_decl | .test_decl => false
 
 # The type parameters a function declares, as written; none for anything else.
 function letters_of(s: source.Source, decls: [ast.Decl], decl: i64) -> [str]
@@ -129,6 +141,32 @@ function synthesised(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: sou
         )
         return state.error_ty_of(c)
     return signature
+
+# What a generic callee's parameter asks of a generic function's name written
+# as its argument: the callee and the parameter as written, the parameter's
+# type, the callee's letters, and those of them nothing in the call says.
+record Asked
+    callee: str
+    parameter: str
+    ty: i64
+    letters: [str]
+    unsettled: [str]
+
+# ⇒ at a generic callee's parameter whose letters no other argument and no
+# context settles: the name is refused as `synthesised` refuses it, its
+# message saying what the parameter asks for, never that it asks for none.
+function refused_argument(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], decl: i64, span: token.Span, asked: Asked) -> i64
+    if markers.refused_as_value(@c, s, decls, decl: decl, span: span)
+        return state.error_ty_of(c)
+    letters = letters_of(s, decls, decl: decl)
+    signature = signature_of(@c, a, r, s, decls, decl: decl)
+    shown = render.render_ty(c.out.types, s, decls, signature, letters)
+    wanted = render.render_ty(c.out.types, s, decls, asked.ty, asked.letters)
+    state.push_diagnostic(
+        @c,
+        unbound_argument(name: source.span_text(s, span), letters: letters, signature: shown, asked: asked, wanted: wanted, span: span)
+    )
+    return state.error_ty_of(c)
 
 # ⇐: the instance the expected type names, every type parameter bound from it
 # alone, as a call's context binds what its arguments left (panel 105), and
@@ -234,6 +272,28 @@ function unbound(name: str, letters: [str], signature: str, span: token.Span) ->
     )
     return d
 
+# The same message where the position is a generic callee's parameter: what
+# it asks for, and which of the callee's letters no other argument and no
+# context says; the fix gives the name its type first and passes that.
+function unbound_argument(name: str, letters: [str], signature: str, asked: Asked, wanted: str, span: token.Span) -> diag.Diagnostic
+    are: str @ "is"
+
+    if letters.len() > 1
+        are @ "are"
+    message: str @ "nothing here says what " + spoken(letters) + " of `" + name + "` " + are + ": a generic function used as a value takes its types from the type its position asks for, and `" + asked.parameter + "` of `" + asked.callee + "` asks for `" + wanted + "`"
+
+    if asked.unsettled.len() > 0
+        theirs: str @ "is"
+
+        if asked.unsettled.len() > 1
+            theirs @ "are"
+        message @ message + ", where no other argument and no context says what " + spoken(asked.unsettled) + " of `" + asked.callee + "` " + theirs
+    d: diag.Diagnostic @ diag.new_diagnostic(code: "cannot_infer", message: message, span: span)
+    d.fixes @ d.fixes.push(
+        diag.Fix(title: "give it its type first, `v: " + signature + " = " + name + "` with a type written for " + spoken(letters) + ", and pass `v`", replacement: "", span: span, certainty: .guess)
+    )
+    return d
+
 # `A`, `A` and `B`, `A`, `B` and `C`: the letters as a sentence names them.
 function spoken(letters: [str]) -> str
     quoted: [str] @ []
@@ -254,6 +314,22 @@ test "the letters are named as a sentence names them"
     assert spoken(one) == "`A`"
     assert spoken(two) == "`A` and `B`"
     assert spoken(three) == "`A`, `B` and `C`"
+
+test "a name nothing settles at a generic callee's parameter is told what the parameter asks for"
+    one: [str] = ["A"]
+    asked = Asked(callee: "apply", parameter: "f", ty: 0, letters: one, unsettled: one)
+    d = unbound_argument(
+        name: "ident",
+        letters: one,
+        signature: "(function(A) -> A)",
+        asked: asked,
+        wanted: "(function(A) -> A)",
+        span: token.Span(start: 0, end: 5)
+    )
+    assert d.code == "cannot_infer"
+    assert d.message == "nothing here says what `A` of `ident` is: a generic function used as a value takes its types from the type its position asks for, and `f` of `apply` asks for `(function(A) -> A)`, where no other argument and no context says what `A` of `apply` is"
+    assert d.fixes[0].certainty == .guess
+    assert d.fixes[0].title == "give it its type first, `v: (function(A) -> A) = ident` with a type written for `A`, and pass `v`"
 
 test "an unbound value names every letter once, and offers the two ways to bind one"
     two: [str] = ["A", "B"]

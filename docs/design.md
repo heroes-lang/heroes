@@ -1824,11 +1824,28 @@ Rules that keep the cost low:
   The token cost of generics is at use sites, so pay nothing there. And because there are no
   constraints, inference is trivial — look at argument types, deduce `T`. *And when no argument
   carries `T` (panel 105, ratified 2026-09-03): at the type the context asks for — the binding's
-  annotation, the declared result a `return` or an arm answers to, a non-generic callee's parameter
-  — which is the expectation the checker already threads to every literal, `[]` and `fail(…)`. Flat
-  only: a generic callee's arguments are synthesised, so nothing is bound through another generic's
-  parameter. A call that says neither is refused at the call; a parameter that appears nowhere in
-  the signature is refused at the declaration.* **Rust's turbofish
+  annotation, the declared result a `return` or an arm answers to, a callee's parameter — which is
+  the expectation the checker already threads to every literal, `[]` and `fail(…)`; and when
+  neither does, at the type a generic call or a literal argument gives, a literal's `i64` or `f64`.
+  A generic callee's parameter is such a context once its letters are settled (panel 203,
+  ratified 2026-10-10): an argument with no type of its own — a literal, `[]`, `{}`, `ok(…)`,
+  `fail(…)`, a case, a generic function used as a value, a generic call, an array or map literal
+  holding one — waits while the arguments that carry a type settle the callee's letters, then the
+  context where a literal it would settle can take it, then the waiting argument whose type owes
+  least to a literal's default, then a generic function's name from what is bound so far, and is
+  checked against its parameter so substituted; the forms that refuse themselves speak last, so a
+  pair's verdict is the same in either order; and the value before the dot of `x.f(…)` is such an
+  argument where its form can hold no field. So `first(a: b, b: 255)` and `first(a: 255, b: b)`
+  with `b: u8` are both a `u8`, `y: u8 = first(a: 1, b: 2)` is one too, and `[].count()` is
+  `count([])`; `xs.fold(0, keep)` over a `[u8]`, `keep<T>(acc: T, item: T)`, is refused, the
+  literal settling `fold`'s `B` at `i64` before `keep` speaks. A call that settles a letter by none
+  of these is refused at the call (`x = first(a: ok(1), b: ok(2))`); a parameter that appears
+  nowhere in the signature is refused at the declaration.* *Amended by panel 203 (2026-10-10),
+  reversing panel 105's flat rule for every argument with no type of its own:* from 2026-09-03
+  this paragraph said *Flat only: a generic callee's arguments are synthesised, so nothing is
+  bound through another generic's parameter*, and spec § 9 carried that clause as *a generic
+  function's parameter asks for none* from 2026-10-09 (panel 201 R1) until this sitting took it
+  out; until then a literal argument settled its letter at `i64` on its own. **Rust's turbofish
   (`collect::<Vec<i32>>()`) cannot exist in this language**, because there is no syntax to specify
   type arguments manually. That is deliberate: it tokenises terribly, being a very rare sequence.
 - **Monomorphisation.** On seeing `map(nums, plus)` with `nums: [i64]`, generate a copy of the
